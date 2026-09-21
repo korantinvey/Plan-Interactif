@@ -46,7 +46,7 @@ module.exports = {
   "{n} ajout ou retrait au total.": "{n} addition or removal in total.",
   "Parcours partagés": "Shared visit plans",
   "{n} étapes reprises par ceux qui les ont reçus.": "{n} stops taken up by those who received them.",
-  "{n} étape reprise par ceux qui les ont reçus.": "{n} stop taken up by those who received them.",
+  "{n} étape reprise par qui l'a reçue.": "{n} stop taken up by the person who received it.",
   "Aucune étape reprise pour l'instant.": "No stops taken up yet.",
   "Par moyen d'accès": "By way in",
   "Les visites ne se comparent pas d'une porte à l'autre : rouvrir une application en ouvre une à chaque fois, un cadre en ouvre une par page du site qui le porte. Et la somme des visiteurs dépasse le total ci-dessus — un navigateur, une application et un cadre posé sur un site tiers ne partagent aucun jeton, le même visiteur y compte une fois par porte et une seule au total.":

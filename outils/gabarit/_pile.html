@@ -255,7 +255,7 @@ function construitPanneau(){
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",
           "« " + x.ref.nom + " » et " +
-          (n ? "ses " + n + " forme" + (n > 1 ? "s" : "") : "son contenu") +
+          (n > 1 ? "ses " + n + " formes" : n ? "sa forme" : "son contenu") +
           " seront définitivement perdus.",
           "Supprimer", () => {
             memorise();

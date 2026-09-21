@@ -1695,7 +1695,7 @@ sans que rien ne le signale — d'où le `run_worker_first` de `wrangler.jsonc`,
 qui fait passer le script devant pour ce seul chemin.
 
 **Le nom du salon sur l'écran d'accueil.** L'application s'appelle « Plan SMCL
-by Event2Plan », et non du nom du produit : c'est le salon qu'on cherche du
+by Event2Map », et non du nom du produit : c'est le salon qu'on cherche du
 regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
 est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
 sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
@@ -1727,7 +1727,7 @@ l'écran d'accueil ».
 L'icône se choisit entre deux : celle du produit, la même pour tous les salons,
 ou le logo du salon, déposé là. Rien de déposé, c'est celle du produit — il n'y
 a pas de mode à régler à côté de l'image, qui aurait pu la contredire. Le nom,
-lui, est un champ : vide, c'est « Plan SMCL by Event2Plan » ; écrit, c'est ce
+lui, est un champ : vide, c'est « Plan SMCL by Event2Map » ; écrit, c'est ce
 qui paraît sous l'icône, tel quel.
 
 Un seul fichier à choisir, deux images fabriquées. Android ne pose pas une
@@ -2718,6 +2718,73 @@ Apple refuse le jeton autrement, par un 403 sans explication.
 
 `workflow_dispatch` permet de relancer le déploiement Supabase à la main depuis
 l'onglet **Actions**, sans rien pousser.
+
+### La relecture des pull requests
+
+Une quatrième chaîne ne déploie rien : elle lit. Sur chaque pull request,
+`.github/workflows/relecture.yml` fait relire le diff et commente ce qu'il y
+trouve. Elle **propose** — les outils qu'on lui accorde ne savent que lire le
+dépôt et écrire des commentaires, et son jeton n'a que `contents: read` : rien
+ne se corrige tout seul, et rien ne part sur `main` en son nom.
+
+Elle ne redouble pas les contrôles mécaniques. `Pages` reconstruit les pages,
+analyse le JavaScript de tout ce qui est servi et refuse une phrase affichée
+sans traduction ; ce qu'il voit n'est pas à dire deux fois. La relecture prend
+l'autre moitié, celle qu'aucun script ne sait voir et qui se paie après la
+fusion : un effet CSS ajouté au plan mais jamais rejoué dans le rendu WebGL,
+donc invisible pour qui regarde ; une migration datée d'avant la dernière de
+`main`, qui fait échouer le déploiement sur `main` ; un fichier fabriqué
+corrigé en direct, que la construction suivante efface. Chacun des trois est
+déjà arrivé.
+
+Ce qu'elle cherche est écrit dans `.claude/skills/relecture/SKILL.md`, et non
+dans le workflow : la même liste sert aux sessions Claude Code qui relisent à
+la main, et une liste tenue à deux endroits finit par dire deux choses. Pour
+étendre la relecture, c'est ce fichier qu'on complète.
+
+Il lui faut un secret, au même endroit que les autres — **Settings → Secrets
+and variables → Actions**. Deux voies, et une seule à choisir :
+
+| secret | ce qu'il consomme | comment l'obtenir |
+|---|---|---|
+| `CLAUDE_CODE_OAUTH_TOKEN` | un abonnement Claude (Pro, Max, Team, Enterprise) | `claude setup-token` dans un Claude Code connecté |
+| `ANTHROPIC_API_KEY` | la facturation à l'appel | console.anthropic.com |
+
+**Le jeton d'abonnement est préféré**, parce qu'il ne coûte rien de plus que ce
+qui est déjà payé. Plus court encore : `/install-github-app`, dans Claude Code,
+installe l'application GitHub, propose de fabriquer ce jeton et pose le secret
+lui-même — il demande `gh` et les droits d'administration du dépôt. Le jeton est
+attaché au compte de qui l'a fabriqué, donc c'est sa consommation qui est
+débitée ; et il vaut longtemps sans valoir toujours, si bien qu'une relecture
+qui repasse au rouge sur une erreur d'authentification veut dire qu'il est à
+refaire. Le workflow passe les deux entrées à l'action, celle qui reste vide
+valant absente.
+
+Tant qu'aucun des deux n'est posé, la tâche s'arrête en vert en disant lequel
+elle attend, et son journal nomme la voie retenue quand il y en a une — c'est le
+seul endroit où cela se lit après coup. Un garde-fou qu'on n'a pas encore
+branché n'est pas un défaut du code relu, et une pull request rouge pour cette
+raison ferait douter du reste. Une branche venue d'une bifurcation est laissée
+de côté, les secrets du dépôt ne lui étant pas accessibles.
+
+Un dernier réglage se lit mal et coûte tout : l'action refuse par défaut d'être
+déclenchée par un robot, pour qu'un robot ne l'appelle pas en boucle. Or les
+pull requests de ce dépôt sont le plus souvent ouvertes depuis une session
+Claude Code, donc signées `claude[bot]` — et la relecture s'arrêtait là, sur une
+tâche rouge dont seul le journal disait pourquoi. D'où `allowed_bots: claude`
+dans le workflow : ce robot-là, nommément, et pas `*` qui ferait relire les pull
+requests de n'importe quel automate.
+
+Et une conséquence qui surprend la première fois : **l'action refuse de tourner
+quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
+file must exist and have identical content to the version on the repository's
+default branch ». C'est ce qui empêche une pull request de réécrire le workflow
+pour détourner le jeton, donc c'est une bonne chose ; mais cela veut dire qu'une
+modification de ce fichier **ne peut pas être essayée sur sa propre pull
+request** : la tâche s'arrête, en vert, avec un avertissement dans son journal.
+Elle ne vaudra qu'après la fusion. Pour la vérifier alors, il suffit de relancer
+la tâche depuis l'onglet **Actions** : le workflow est désormais celui de `main`,
+et la relecture part pour de bon.
 
 ## Fabriquer les pages
 

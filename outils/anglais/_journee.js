@@ -60,10 +60,6 @@ module.exports = {
   "Le salon ferme à {heure}.": "The show closes at {heure}.",
   "Peu importe": "Any",
   "Par où vous entrez": "Where you come in",
-  "La journée commencera à « {entree} » ({pavillon}), la seule entrée repérée.":
-    "Your day will start at “{entree}” ({pavillon}), the only entrance marked.",
-  "La journée commencera à « {entree} », la seule entrée repérée.":
-    "Your day will start at “{entree}”, the only entrance marked.",
   "Aucune entrée n'est repérée sur ce plan : la journée commencera au premier exposant de votre liste.":
     "No entrance is marked on this map: your day will start at the first exhibitor on your list.",
   "Organiser": "Plan my day",
@@ -101,7 +97,7 @@ module.exports = {
   "Vos {n} conférences de ces journées ne seront pas dans votre visite.":
     "Your {n} conferences on those days will not be part of your visit.",
   "Heure d'arrivée, chaque jour": "Arrival time, each day",
-  "On place d'abord les conférences que vous avez retenues — elles ont lieu le jour qu'elles ont lieu — puis on répartit les stands entre vos journées. Le curseur, plus bas, dit si elles doivent se valoir ou non.":
+  "On place d'abord les conférences que vous avez retenues — elles se posent le jour où elles ont lieu — puis on répartit les stands entre vos journées. Le curseur, plus bas, dit si elles doivent se valoir ou non.":
     "The conferences you picked go in first — each on the day it takes place — then the stands are shared out between your days. The slider below says whether those days should match one another or not.",
   "Les horaires changent d'un jour à l'autre : chaque journée commence à l'ouverture de son jour.":
     "Opening hours differ from day to day: each day starts when the show opens that day.",

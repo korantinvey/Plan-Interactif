@@ -124,8 +124,9 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
-| `.github/workflows/` | reconstruction des pages, déploiement Supabase |
+| `.github/workflows/` | reconstruction des pages, déploiement Supabase, relecture des pull requests |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
+| `.claude/skills/` | les compétences du dépôt, dont la relecture |
 
 ## Chercher sans tout ouvrir
 
@@ -200,7 +201,9 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | thème du plan — un seul, le clair ; pas de mode sombre ni de suivi de l'appareil | jetons `_head.html` `:root` ; la nuit ne vit plus que dans la console, `_console.css` et `_console-base.html` ; barre du navigateur `outils/pwa.js` `BARRE_CLAIRE` / `BARRE_DEUX_THEMES`, choisie par l'option `deuxThemes` de `outils/genere.js` `page()` |
 | plan d'un bord à l'autre de l'écran — à la place de l'heure et de la poignée de gestes | `display` du manifeste dans `outils/pwa.js`, qui dit aussi ce que coûte chacune des deux voies (bande noire au lancement, ou bandeau du navigateur à chaque demande faite par la page) ; retraits rendus sous `@media (display-mode: fullscreen)` dans `_head.html` ; option `pleinEcran` de `outils/genere.js` `page()` (`viewport-fit=cover`) ; jetons `--sys-*` de `_head.html` `:root`, repris par `.app`, `.topbar`, `.bandeAdmin`, les tiroirs et `_tutoriel.html` `placeTuto` ; couleur dont le système peint sa barre `_js.html` `poseTonDeLaBarre`, jeton `--ton-barre` posé par `.topbar` et par les modèles qui peignent le bandeau |
 | les deux bandes qui s'effacent pendant qu'on manipule le plan — celle du salon, celle de la recherche | sur écran étroit la barre se pose par-dessus la scène, qui prend toute la hauteur : `_head.html` `.topbar` (rangs superposés) et `.side`, toutes deux par la classe `.pliee` ; pliées par `_js.html` `plieLesBandes` au glissement et au pincement, rendues par `saisitPlan` ; hauteur mesurée par `mesureBarre` (jeton `--barre`), et ce qu'elle couvre du plan par `masqueHaut`, relu par `fit`, `cadreSur` et le cadrage de `_itineraire.html` |
-| barre du salon sur un téléphone — bande retirée, pictos à la verticale au bord droit en légère transparence | `_head.html` § « max-width:900px », les règles `html:not(.mode-admin) .topbar` : fond et titre retirés, `.tools` posée hors du flux à droite, jetons du modèle rendus à la page par `inherit`, onglets des pavillons en pastille ; ton de la barre du système repris au fond du plan (`_js.html` `poseTonDeLaBarre`, relancé au franchissement du seuil) |
+| barre du salon sur un téléphone — bande retirée, pictos à la verticale au bord droit en légère transparence | `_head.html` § « max-width:900px », les règles `html:not(.mode-admin):not(.barre-bande) .topbar` : fond et titre retirés, `.tools` posée hors du flux à droite, jetons du modèle rendus à la page par `inherit`, onglets des pavillons en pastille ; ton de la barre du système repris au fond du plan (`_js.html` `poseTonDeLaBarre`, relancé au franchissement du seuil) |
+| choisir entre ce plan sans bande et un bandeau réduit | `_admin1.html` `CHOIX_BARRE`, `modeBarre`, `appliqueBarre`, bloc `blocBarre` (onglet « Admin », profil administrateur) ; réglage `_barre`, classe `barre-bande` posée dès le premier trait d'après le cache `plan-conf:<salon>` ; règles du bandeau réduit `_head.html` § « L'autre choix », logo du salon à côté du nom `_js.html` `poseLogoSalon` (l'icône d'onglet, `#logoSalon`) |
+| onglets des pavillons qui débordent — fondu du bord, flèche qui avance | `_head.html` `.halls-bande` (cadre `.bande`, barre `.defile`), flèche empruntée à `.poi` ; marquage `_js.html` `majFondus`, rappelé par `onglets` |
 | styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |
 | console multi-événements | `_console-js.html`, socle `_console-base.html` |
 | icône d'onglet des pages du plan | `_console-js.html` `champFavicon`, posée par `_js.html` `poseFavicon`, migration `icone_d_onglet_du_salon` |
@@ -226,6 +229,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
 | fenêtre d'avancement d'une synchronisation, flux retenu en chemin | `_console-js.html` `fenetreAvancement` et `fluxFonction` ; secours qui relit l'avancement à la base `suitAuServeur`, déposé par `sync-evenement/` `garde` et `depose` dans la colonne `sync_avancement`, migration `l_avancement_d_une_synchronisation` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
+| ce qu'une relecture doit chercher dans un diff — parité SVG/WebGL, horodatage d'une migration, fichier fabriqué édité en direct, clé dans le commit | `.claude/skills/relecture/SKILL.md`, chargée par le workflow `.github/workflows/relecture.yml` et par les sessions qui relisent à la main ; elle ne redit pas ce que `npm run verifie` voit déjà |
 | fraîcheur du plan chez le visiteur — version, entête, publication immédiate | empreinte `_partage/version.ts` `versionDuPlan` (posée en en-tête `X-Version`), entête `src/index.mjs` `entete` (`?entete=1`, clé `ver1:`), demande `_admin2.html` `demandePlan`, amorce `outils/genere.js` `PRECHARGE` |
 
 ## Déploiement
@@ -250,6 +254,22 @@ Toute nouvelle adresse de déploiement doit être ajoutée à
 exception : `mesure` accepte toutes les origines — un cadre ou une coque qu'on
 n'a pas prévue doit pouvoir compter sans qu'on tienne une liste, et CORS n'y
 gardait rien qu'un `curl` n'ignore.
+
+## Tenir au courant pendant le travail
+
+Un long silence ne se lit pas comme du travail en cours, il se lit comme une
+panne. Donc, pendant la réflexion comme pendant la construction, un point
+d'avancement **toutes les deux minutes environ** : une ou deux phrases disant
+ce qui vient d'être fait et ce qui se fait maintenant. Même sans résultat neuf
+— « toujours dans la relecture de `_js.html`, rien de concluant pour l'instant »
+vaut mieux que rien, parce que c'est justement l'information qui manque.
+
+Ces points ne remplacent pas la liste d'étapes, tenue à jour à mesure qu'elles
+se terminent : ils s'y ajoutent.
+
+Et **un travail long s'annonce avant d'être lancé** — une construction, une
+batterie de tests, une synchronisation, une mesure. Le dire coûte une ligne ;
+le laisser découvrir coûte toute l'attente.
 
 ## Conventions
 

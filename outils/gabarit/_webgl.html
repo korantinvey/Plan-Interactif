@@ -438,33 +438,102 @@ function constTexte(){
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
-     Le décalage des tirets se passe au shader à chaque pas, sans toucher aux
-     données — en pixels, comme le « stroke-dashoffset » d'un trait qui ne
-     grossit pas au zoom. La bibliothèque compte le long du trait en
-     demi-épaisseurs, d'où la division. */
-  class DefileTirets extends deck.LayerExtension {
+
+     Ils taillent leurs tirets eux-mêmes, au lieu de décaler ceux de la
+     bibliothèque. Décaler les siens paraissait pourtant tenir en une ligne —
+     ajouter au « vDashOffset » qu'elle pose en fin de shader — mais cette
+     ligne n'a jamais rien fait : les deux extensions écrivent au même endroit,
+     et celle de la bibliothèque repasse derrière, quel que soit leur ordre.
+     Rien ne le signalait, le trait se dessinait juste immobile, et le rendu
+     SVG défilait pendant ce temps — c'est-à-dire chez presque personne, le
+     WebGL étant le rendu par défaut.
+
+     Le trajet garde donc sa propre distance parcourue, « vDefilePos », et le
+     fragment décide lui-même de ce qu'il jette. Les longueurs se comptent en
+     demi-épaisseurs de trait, comme celles de la bibliothèque, et le décalage
+     arrive en pixels — comme le « stroke-dashoffset » d'un trait qui ne
+     grossit pas au zoom —, d'où la division au moment de le passer.
+
+     Un trait qui ne défile pas donne des tirets de longueur nulle : le
+     fragment n'en tient alors aucun compte, et la bibliothèque reste seule à
+     pointiller ce qu'elle pointille. */
+  class TiretsQuiDefilent extends deck.LayerExtension {
     getShaders(){
+      const bloc = "layout(std140) uniform defileUniforms {\n  vec2 tirets;\n  float decalage;\n} defile;\n";
       return {
-        modules: [{ name: "defile", vs: "layout(std140) uniform defileUniforms {\n  float decalage;\n} defile;\n",
-                    uniformTypes: { decalage: "f32" } }],
-        inject: { "vs:#main-end": "vDashOffset += defile.decalage / max(widthPixels.x, 0.001);" },
+        modules: [{ name: "defile", vs: bloc, fs: bloc,
+                    uniformTypes: { tirets: "vec2<f32>", decalage: "f32" } }],
+        inject: {
+          "vs:#decl": "out float vDefilePos;",
+          "vs:#main-end": "vDefilePos = vPathPosition.y;",
+          "fs:#decl": "in float vDefilePos;",
+          "fs:DECKGL_FILTER_COLOR":
+            "float uniteDefile = defile.tirets.x + defile.tirets.y;\n" +
+            "if (uniteDefile > 0.0 &&\n" +
+            "    mod(vDefilePos + defile.decalage, uniteDefile) > defile.tirets.x) discard;",
+        },
       };
     }
-    draw(){ this.setShaderModuleProps({ defile: { decalage: this.props.decalage || 0 } }); }
+    draw(){
+      const demi = Math.max(this.props.demiEpaisseur || 1, .001);
+      this.setShaderModuleProps({ defile: { tirets: this.props.tirets || [0, 0],
+                                            decalage: (this.props.decalage || 0) / demi } });
+    }
   }
-  DefileTirets.extensionName = "DefileTirets";
-  DefileTirets.defaultProps = { decalage: 0 };
+  TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
+  TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0 };
+  /* Le contour d'une lettre, et le flou qu'il prenait au zoom.
+
+     Un texte SDF ne garde pas la forme de ses lettres : il garde, pour chaque
+     point de l'atlas, la distance au bord le plus proche. Le shader fond le
+     contour sur une bande fixe — deux points et demi de l'atlas —, mesurée
+     dans la texture et non à l'écran. Tant que la lettre reste petite, cette
+     bande vaut une fraction de pixel et ne se voit pas ; agrandie vingt fois,
+     elle s'agrandit autant, et le nom d'un stand devient une tache.
+
+     Elle se recalcule donc pour chaque pixel, d'après ce que la distance varie
+     d'un pixel au suivant — « fwidth » —, ce qui la ramène à la largeur d'un
+     pixel quel que soit le zoom. Elle ne dépasse jamais celle d'origine : aux
+     tailles où le rendu convenait, rien ne change. Grossir l'atlas aurait eu
+     le même effet à l'œil, mais sa fabrication est quatre fois plus lourde, et
+     elle se refait dès qu'un caractère nouveau paraît.
+
+     L'injection se pose en fin de fragment, seul endroit où les variables de
+     la bibliothèque sont déclarées, et se tait pendant la passe de
+     désignation, dont la couleur ne doit rien recevoir. Elle est posée sur
+     toutes les couches de texte, et non sur les seules grandes : deux jeux
+     d'extensions feraient deux programmes à compiler là où un seul suffit, et
+     « sdf.enabled » la rend muette sur l'atlas des petits textes. */
+  class LissageSdf extends deck.LayerExtension {
+    getShaders(){
+      return { inject: { "fs:#main-end": [
+        "if (sdf.enabled && !bool(picking.isActive)) {",
+        "  float dist = texture(iconsTexture, vTextureCoords).a;",
+        "  float bande = clamp(fwidth(dist) * 0.6, 0.0008, sdf.gamma);",
+        "  float dedans = smoothstep(sdf.buffer - bande, sdf.buffer + bande, dist);",
+        "  if (sdf.outlineBuffer > 0.0) {",
+        "    vec4 teinte = mix(sdf.outlineColor, vColor, dedans);",
+        "    dedans = smoothstep(sdf.outlineBuffer - bande, sdf.outlineBuffer + bande, dist);",
+        "    fragColor = vec4(teinte.rgb, dedans * teinte.a * layer.opacity);",
+        "  } else {",
+        "    fragColor.a = dedans * vColor.a * layer.opacity;",
+        "  }",
+        "}",
+      ].join("\n") } };
+    }
+  }
+  LissageSdf.extensionName = "LissageSdf";
   /* Des objets créés une fois pour toutes : la bibliothèque compare ces
      réglages par identité, et un nouvel objet — même identique — lui faisait
      régénérer l'atlas des polices et recompiler ses shaders. */
-  const textes = [new FiltreZoom()];
+  const textes = [new FiltreZoom(), new LissageSdf()];
   return (CONST_TEXTE = {
     petit: { ext: textes, mode: 1, atlas: { sdf: false, fontSize: 24, buffer: 2 } },
     grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 6 } },
     /* Tous les traits partagent un seul programme : tirets — un trait plein
        en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
-    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new DefileTirets(), new FiltreZoom()],
+    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new TiretsQuiDefilent(), new FiltreZoom()],
     sansDeclencheur: {},
   });
 }
@@ -884,15 +953,29 @@ function couchesDeBloc(acc, cle){
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
   partage(tous, acc.prises, repondus).forEach((liste, k) => {
     if (!liste.length) return;
-    // les pointillés qui défilent ont leur couche : c'est elle seule qui bouge
+    // ce qui défile a ses couches : ce sont elles seules qui bougent
     const K = constTexte();
-    [liste.filter(d => !d.defile), liste.filter(d => d.defile)].forEach((l, j) => {
-      if (!l.length) return;
-      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + (j ? "-defile" : ""), data: l, pickable: k === 0,
+    /* Les traits qui défilent sont taillés par « TiretsQuiDefilent », et non
+       par la bibliothèque : elle les laisse donc tranquilles. Leur réglage est
+       unique par couche et non porté par la donnée — d'où une couche par
+       longueur, les trois traits de la comète n'ayant pas la même. */
+    const parLongueur = new Map();
+    for (const d of liste) if (d.defile){
+      const c = d.dash.join(" ") + "/" + d.largeur;
+      if (!parLongueur.has(c)) parLongueur.set(c, []);
+      parLongueur.get(c).push(d);
+    }
+    const lots = [[liste.filter(d => !d.defile), ""]];
+    [...parLongueur.values()].forEach((l, n) => lots.push([l, "-defile" + n]));
+    for (const [l, marque] of lots){
+      if (!l.length) continue;
+      const bouge = marque !== "";
+      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + marque, data: l, pickable: k === 0,
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
-        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: j === 1,
-        extensions: K.traits, getDashArray: d => d.dash, dashJustified: false }));
-    });
+        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
+        extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
+        tirets: bouge ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
+    }
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
@@ -1306,14 +1389,21 @@ function couchesPhareNoms(){
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
 }
 
-/* Les pointillés du sens, tenus d'accord avec « #itin .iSens » et
-   « @keyframes defile » de la feuille de style : la période des tirets, le
-   nombre de paliers qu'ils font pour la parcourir, et le temps d'un tour.
-   Trois nombres écrits deux fois, faute de pouvoir passer une valeur de la
-   feuille de style au shader ; les changer d'un seul côté fait défiler le
-   rendu par la carte graphique à une autre allure que le rendu SVG. */
-const DEFILE_PERIODE = 18, DEFILE_PALIERS = 9, DEFILE_DUREE = .6;
-const palierDefile = t => Math.floor(t / DEFILE_DUREE * DEFILE_PALIERS);
+/* La comète du sens, tenue d'accord avec « #itin .iSens » et ses
+   « @keyframes comete » : la période qu'une tête parcourt, et le temps qu'elle
+   y met. Deux nombres écrits deux fois, faute de pouvoir passer une valeur de
+   la feuille de style au shader ; les changer d'un seul côté fait courir la
+   tête à une autre allure sous la carte graphique.
+
+   Elle avance par images de trentième de seconde. Chacune repeint le plan
+   sous le trajet, qui traverse le salon entier — trente par seconde est ce
+   qu'il faut pour qu'une tête qui file à cent trente pixels par seconde ne
+   saute pas, là où les tirets qu'elle remplace se contentaient de quinze : on
+   ne voyait pas sauter un tiret parmi douze. */
+const COMETE_PERIODE = 200, COMETE_DUREE = 1.5, COMETE_HZ = 30;
+const palierDefile = t => Math.floor(t * COMETE_HZ);
+/* Où en est la tête de sa course, entre 0 et 1, au palier où l'on est. */
+const phaseComete = t => (palierDefile(t) / COMETE_HZ) % COMETE_DUREE / COMETE_DUREE;
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
@@ -1324,9 +1414,11 @@ function animeCouche(c){
     const s = echellePhare(GL.temps), [x, y] = ph.centre;
     return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
   }
-  // « defile » : neuf paliers de deux pixels en six dixièmes de seconde
+  /* La comète : le décalage part de la longueur du trait et descend d'une
+     période, comme le « stroke-dashoffset » de ses images-clés. Partir de sa
+     propre longueur est ce qui fait tomber les trois têtes au même endroit. */
   if (c.props.defile && GL.bouge) return c.clone({
-    decalage: -(palierDefile(GL.temps) % DEFILE_PALIERS) * (DEFILE_PERIODE / DEFILE_PALIERS) });
+    decalage: c.props.tirets[0] * c.props.demiEpaisseur - COMETE_PERIODE * phaseComete(GL.temps) });
   return c;
 }
 

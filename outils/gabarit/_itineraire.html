@@ -2508,8 +2508,11 @@ function peintItineraire(p){
     const pts = fini ? e.pts : coupeMarche(e.pts, mes.cumuls[j], d);
     if (!pts) return;
     const chemin = "M" + pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
-    out += '<path class="iHalo" d="' + chemin + '"/><path class="iTrait" d="' + chemin +
-           '"/><path class="iSens" d="' + chemin + '"/>';
+    out += '<path class="iHalo" d="' + chemin + '"/><path class="iTrait" d="' + chemin + '"/>';
+    /* La comète attend que le trait soit arrivé. Chaque image du tracé
+       réécrit le groupe, ce qui relance son animation : elle resterait figée
+       au départ, une pastille de plus sur le point de départ. */
+    if (fini) for (let n = 1; n <= 5; n++) out += '<path class="iSens iC' + n + '" d="' + chemin + '"/>';
   });
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
      chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
@@ -2872,13 +2875,13 @@ function montreResultat(etat){
      mauvaise surprise. */
   (ROUTE.etapes || []).forEach(e => {
     if (!e.foule) return;
-    const quand = (s) => "sa conférence " +
+    const quand = (s, sujet) => sujet + " conférence " +
       (s.quoi === "sort" ? "se termine à " : "commence à ") + s.h;
     e.foule.contournees.forEach(s => dit("iNote",
-      "Le trajet contourne « " + s.nom + " » : " + quand(s) + ", et l'allée qui la " +
+      "Le trajet contourne « " + s.nom + " » : " + quand(s, "sa") + ", et l'allée qui la " +
       "borde va se remplir. Environ " + ecritDistance(s.sup) + " de plus."));
     e.foule.longees.forEach(s => dit("iNote",
-      "Le trajet longe « " + s.nom + " », dont " + quand(s) + " : attendez-vous " +
+      "Le trajet longe « " + s.nom + " », où " + quand(s, "une") + " — attendez-vous " +
       "à du monde dans l'allée."));
   });
 
