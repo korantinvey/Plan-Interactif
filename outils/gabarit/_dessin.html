@@ -180,12 +180,37 @@ let calqueActif = null;   // id du calque en cours d'édition
 let outil = "main";
 let enCours = null;       // tracé en construction
 
-/* Historique des dessins. L'instantané ne copie que les calques et leurs
-   tableaux de formes : les formes elles-mêmes, images comprises, sont
-   partagées par référence — mémoriser reste donc quasi gratuit. */
+/* Historique des dessins. L'instantané copie les calques, leurs tableaux de
+   formes, et chaque forme — sans quoi il ne gardait rien de ce qui se retouche
+   sur place. Car tous les gestes d'édition écrivent *dans* la forme : le
+   glissement, la poignée tirée, l'arrondi, le libellé, la taille au clavier, la
+   ligne d'un arrêt, les passages posés. L'instantané pris juste avant portait
+   donc le même objet, déjà modifié, et Ctrl+Z retraçait le plan sans rien
+   défaire : seuls l'ajout et la suppression, qui touchent le tableau,
+   s'annulaient vraiment. `_batiments.html` `reposeBatiment` contourne ce piège
+   depuis longtemps en refabriquant ses formes ; il valait mieux le fermer.
+   Les points, eux, sont toujours remplacés par un tableau neuf, jamais écrits
+   en place : en copier la liste suffit, et `src` d'une image reste partagé. */
 const HIST = [], REFAIRE = [];
-const instantane = () => mesCalques().map(c => Object.assign({}, c, { formes: c.formes.slice() }));
-function memorise(){
+const instantane = () => mesCalques().map(c => Object.assign({}, c, {
+  formes: c.formes.map(f => Object.assign({}, f,
+    f.pts ? { pts: f.pts.slice() } : null)),
+}));
+/* Une salve ne mémorise qu'à son premier événement. Un champ de saisie en
+   envoie un par frappe, et chacun mémorisait un état : les cinquante
+   emplacements se remplissaient de variantes du même mot, et les gestes d'avant
+   en étaient chassés. La salve se referme quand on quitte le champ, ou dès
+   qu'autre chose se mémorise — c'est ce que fait déjà le nuancier avec son
+   drapeau `couleurEnCours`. */
+let salveEnCours = "";
+const clotSalve = () => { salveEnCours = ""; };
+function memorise(salve){
+  if (salve){
+    if (salveEnCours === salve) return;
+    salveEnCours = salve;
+  } else {
+    salveEnCours = "";
+  }
   HIST.push(instantane());
   if (HIST.length > 50) HIST.shift();
   REFAIRE.length = 0;
@@ -195,8 +220,15 @@ function restaure(source, autre){
   autre.push(instantane());
   DESSINS[P().id] = source.pop();
   if (calqueActif && !trouveCalque(calqueActif)) activeCalque(null);
-  enregistreDessins(); dessineDessins();
-  if (ADMIN) construitPanneau();
+  /* La forme choisie a pu partir avec l'état qu'on vient de défaire : Ctrl+D
+     puis Ctrl+Z retirait la copie du calque, et laissait son cadre et ses
+     quatre poignées affichés sur place, le panneau « Élément » ouvert sur elle.
+     Les commandes qui en dépendent ne faisaient alors plus rien, `formeParId`
+     ne rendant plus rien — un refus muet. */
+  if (formeSel && !formeParId(formeSel)) formeSel = null;
+  clotSalve();
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+  if (ADMIN){ construitPanneau(); majElement(); }
   return true;
 }
 function annule(){
@@ -2193,8 +2225,12 @@ $("repereLigne").oninput = proposeCouleurLigne;
 $("repereCouleur").oninput = () => { couleurALaMain = true; };
 
 $("elemSupprimer").onclick = supprimeForme;
-$("elemTexte").oninput = appliqueTexte;
-$("elemTaille").oninput = appliqueTexte;
+/* Une frappe n'est pas un geste : la salve entière se défait d'un seul Ctrl+Z
+   (voir `memorise`), et la quitter en rouvre une. */
+$("elemTexte").oninput = () => appliqueTexte("texte");
+$("elemTexte").onblur = clotSalve;
+$("elemTaille").oninput = () => appliqueTexte("taille");
+$("elemTaille").onblur = clotSalve;
 if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
 /* L'épaisseur et le style se reprennent sur une ligne déjà posée : on juge un
    trait sur le plan, pas dans une liste déroulante. */
@@ -2208,8 +2244,9 @@ if ($("elemHauteur")) $("elemHauteur").oninput = () => appliqueDimension("h");
 $("elemPicto").onchange = appliquePicto;
 /* Le mode et la ligne d'un arrêt se reprennent comme son type, et dans le même
    panneau : on juge une pastille sur le plan, pas dans une liste. */
-$("elemMode").onchange = appliqueTransport;
-$("elemLigne").oninput = appliqueTransport;
+$("elemMode").onchange = () => appliqueTransport();
+$("elemLigne").oninput = () => appliqueTransport("ligne");
+$("elemLigne").onblur = clotSalve;
 /* La couleur, elle, se peint à chaque événement du nuancier et ne s'écrit
    qu'au repos : la rafale ne refait que la forme tirée, jamais tous les
    calques. Le retour en arrière tient le geste entier — on mémorise au premier

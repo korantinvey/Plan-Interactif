@@ -224,7 +224,7 @@ Fonctions :
 
 - l.660 · Page de rapport
 
-### `_dessin.html` — 2423 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2460 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -232,34 +232,34 @@ Fonctions :
 
 `enAttente` 42 · `litRange` 69 · `ouvreDessins` 81 · `reprendCommun` 106
 `notePubliees` 132 · `dejaPubliee` 138 · `marqueAttente` 144 · `mesCalques` 152
-`enregistreDessins` 153 · `instantane` 187 · `memorise` 188 · `restaure` 193 · `annule` 202
-`refais` 214 · `trouveCalque` 216 · `nouvelId` 217 · `cheminArrondi` 235 · `estCadre` 278
-`cheminForme` 280 · `styleTrait` 300 · `longueurFleche` 326 · `cheminFleche` 333
-`marqueFleche` 362 · `rafraichitFleches` 373 · `poseTrait` 389 · `traceForme` 399
-`dessineDessins` 414 · `redessineForme` 455 · `peintCalque` 479 · `versPlan` 485
-`apercu` 491 · `apercuGuide` 503 · `toleranceTrace` 527 · `aimanteContour` 532
-`rayonContour` 535 · `redresseTrace` 554 · `traceGuide` 588 · `fermeIci` 595
-`ajouteForme` 600 · `pictoDe` 727 · `nomTypeRepereFr` 783 · `nomTypeRepere` 785
-`typeZone` 815 · `pictoForme` 822 · `estPorte` 842 · `ouvreEntrant` 843 · `ouvreSortant` 844
-`modeDit` 879 · `lettreMode` 880 · `estTransport` 884 · `modeTransport` 887
-`glypheRepere` 899 · `cleLigne` 936 · `ligneAffichee` 947 · `couleurLigne` 955
-`couleurRepere` 961 · `encreRepere` 967 · `nomLigneFr` 981 · `libelleDoffice` 989
-`couleurEcrite` 996 · `traceRepere` 1015 · `nomSurLePlan` 1128 · `etiquetteSociete` 1139
-`seRattache` 1167 · `societeDeForme` 1179 · `societesDuPlan` 1191
-`remplitListeSocietes` 1206 · `societeSaisie` 1214 · `traceImage` 1241
-`traceStandDessine` 1266 · `texteStandDessine` 1290 · `poseLibellesDessines` 1308
-`decoupeStand` 1329 · `marqueStandsDessines` 1341 · `rafraichitStandsDessines` 1356
-`oublieReperes` 1386 · `reperesCherchables` 1388 · `vaAuRepere` 1432 · `clePoi` 1475
-`pastillePoi` 1484 · `cartouchePoi` 1488 · `ouvrePoi` 1607 · `mesureCartouche` 1680
-`pharePoi` 1696 · `phareRepere` 1700 · `phareZone` 1702 · `eclairePoi` 1708
-`oublieChoixPoi` 1741 · `signale` 1750 · `calquePourImage` 1764 · `lienImageSaisi` 1792
-`formeImage` 1803 · `poseImage` 1812 · `ditImagePosee` 1834 · `importeImage` 1842
-`dessinPointerDown` 1893 · `dessinPointerMove` 1978 · `dessinPointerUp` 2016
-`termineTrace` 2057 · `aide` 2069 · `outilOffert` 2098 · `choisitOutil` 2101
-`enchaineStand` 2132 · `optionsModes` 2162 · `proposeCouleurLigne` 2173
-`montreTransport` 2184 · `activeCalque` 2238 · `cleVerrou` 2296 · `verrouille` 2297
-`basculeVerrou` 2299 · `pictoVerrou` 2316 · `montreRoleIti` 2350 · `creeCalque` 2381
-`demandeNom` 2394 · `renommeCalque` 2413
+`enregistreDessins` 153 · `instantane` 195 · `clotSalve` 206 · `memorise` 207
+`restaure` 218 · `annule` 234 · `refais` 246 · `trouveCalque` 248 · `nouvelId` 249
+`cheminArrondi` 267 · `estCadre` 310 · `cheminForme` 312 · `styleTrait` 332
+`longueurFleche` 358 · `cheminFleche` 365 · `marqueFleche` 394 · `rafraichitFleches` 405
+`poseTrait` 421 · `traceForme` 431 · `dessineDessins` 446 · `redessineForme` 487
+`peintCalque` 511 · `versPlan` 517 · `apercu` 523 · `apercuGuide` 535 · `toleranceTrace` 559
+`aimanteContour` 564 · `rayonContour` 567 · `redresseTrace` 586 · `traceGuide` 620
+`fermeIci` 627 · `ajouteForme` 632 · `pictoDe` 759 · `nomTypeRepereFr` 815
+`nomTypeRepere` 817 · `typeZone` 847 · `pictoForme` 854 · `estPorte` 874
+`ouvreEntrant` 875 · `ouvreSortant` 876 · `modeDit` 911 · `lettreMode` 912
+`estTransport` 916 · `modeTransport` 919 · `glypheRepere` 931 · `cleLigne` 968
+`ligneAffichee` 979 · `couleurLigne` 987 · `couleurRepere` 993 · `encreRepere` 999
+`nomLigneFr` 1013 · `libelleDoffice` 1021 · `couleurEcrite` 1028 · `traceRepere` 1047
+`nomSurLePlan` 1160 · `etiquetteSociete` 1171 · `seRattache` 1199 · `societeDeForme` 1211
+`societesDuPlan` 1223 · `remplitListeSocietes` 1238 · `societeSaisie` 1246
+`traceImage` 1273 · `traceStandDessine` 1298 · `texteStandDessine` 1322
+`poseLibellesDessines` 1340 · `decoupeStand` 1361 · `marqueStandsDessines` 1373
+`rafraichitStandsDessines` 1388 · `oublieReperes` 1418 · `reperesCherchables` 1420
+`vaAuRepere` 1464 · `clePoi` 1507 · `pastillePoi` 1516 · `cartouchePoi` 1520
+`ouvrePoi` 1639 · `mesureCartouche` 1712 · `pharePoi` 1728 · `phareRepere` 1732
+`phareZone` 1734 · `eclairePoi` 1740 · `oublieChoixPoi` 1773 · `signale` 1782
+`calquePourImage` 1796 · `lienImageSaisi` 1824 · `formeImage` 1835 · `poseImage` 1844
+`ditImagePosee` 1866 · `importeImage` 1874 · `dessinPointerDown` 1925
+`dessinPointerMove` 2010 · `dessinPointerUp` 2048 · `termineTrace` 2089 · `aide` 2101
+`outilOffert` 2130 · `choisitOutil` 2133 · `enchaineStand` 2164 · `optionsModes` 2194
+`proposeCouleurLigne` 2205 · `montreTransport` 2216 · `activeCalque` 2275 · `cleVerrou` 2333
+`verrouille` 2334 · `basculeVerrou` 2336 · `pictoVerrou` 2353 · `montreRoleIti` 2387
+`creeCalque` 2418 · `demandeNom` 2431 · `renommeCalque` 2450
 
 Éléments :
 
