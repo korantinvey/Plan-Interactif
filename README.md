@@ -2809,6 +2809,38 @@ Elle ne vaudra qu'après la fusion. Pour la vérifier alors, il suffit de relanc
 la tâche depuis l'onglet **Actions** : le workflow est désormais celui de `main`,
 et la relecture part pour de bon.
 
+### Le correctif qu'on demande
+
+La relecture dit ce qui cloche ; `.github/workflows/correctif.yml` le répare.
+On le demande d'un commentaire `@claude …` sous une issue ou une pull request —
+ce qui marche depuis l'application GitHub d'un téléphone — ou depuis l'onglet
+**Actions**, en tapant la consigne à la main. Il corrige, valide, et la tâche
+ouvre une pull request avec le résultat.
+
+C'est la même action et le même secret que la relecture, avec une différence
+qui change tout : celui-ci a le droit d'éditer les fichiers. D'où la forme du
+workflow, qui tient à une question — jusqu'où va ce droit.
+
+**Il s'arrête à la branche.** La tâche ne pousse que sur
+`claude/correctif-<numéro d'exécution>`, un nom écrit dans le workflow : ni la
+consigne ni le modèle ne choisissent la destination, et aucun outil de poussée
+ne lui est accordé. Il édite et valide, la tâche pousse. `main` est donc hors
+d'atteinte **par construction**, et non par consigne — la seule garantie qui
+tienne, puisqu'une poussée sur `main` applique les migrations et redéploie,
+c'est-à-dire met en production sans que personne ait rien lu. La fusion reste
+un geste humain, comme pour n'importe quelle pull request.
+
+Deux choses lui sont retirées pour la même raison. Les **migrations** : il ne
+peut pas en déposer une, il écrit ce qu'il faudrait et on en décide. Les
+**pages fabriquées** : la tâche lance `npm run construire` après lui et valide
+le résultat dans un commit séparé, comme `pages.yml` le fait sur une poussée.
+
+Une demande écrite sous une pull request ouvre malgré tout sa propre branche
+depuis `main` : le correctif arrive à côté, dans sa pull request, et ne pousse
+pas sur celle d'en face. Et aucun robot n'est autorisé à le réveiller — un
+correctif que réclame un automate est une boucle qui attend son tour, là où la
+relecture, qui ne sait que commenter, ne risquait rien.
+
 ## Fabriquer les pages
 
 Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,
