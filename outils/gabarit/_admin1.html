@@ -249,9 +249,12 @@ function appliqueCommandes(){
  * Ouvertes par défaut, comme les commandes : un réglage absent ne doit rien
  * retirer à un salon déjà en place.
  *
- * Fermer une option retire la porte, jamais ce qui est derrière — c'est la
+ * Fermer une option grise la porte, jamais ce qui est derrière — c'est la
  * règle du parcours de visite, qui se retire sans vider les listes déjà
- * constituées. Les stands et les images déjà dessinés restent sur le plan, les
+ * constituées. Grise et non retirée : une commande absente n'apprend rien, là
+ * où une commande grise dit ce que le salon n'a pas pris et ce qui se prend.
+ * Chez le visiteur, en revanche, elle disparaît : on ne lui montre pas un
+ * produit qu'il ne peut pas acheter. Les stands et les images déjà dessinés restent sur le plan, les
  * conférences restent dans l'instantané, ce qui était réglé pour la suggestion
  * reste écrit : rouvrir l'option retrouve le tout.
  *
@@ -268,8 +271,8 @@ const OPTIONS = [
   { cle: "dessinStand", classe: "sans-dessin-stand",
     libelle: "Dessin des stands",
     aide: "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il " +
-      "héberge, sur sa part d'un emplacement. Fermée, l'outil quitte la boîte " +
-      "à outils ; les découpages déjà tracés restent sur le plan.",
+      "héberge, sur sa part d'un emplacement. Fermée, l'outil reste dans la boîte " +
+      "à outils, grisé ; les découpages déjà tracés restent sur le plan.",
     // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
     apres: () => { if (outil === "stand") choisitOutil("main"); } },
   { cle: "imageStand", classe: "sans-image-stand",
@@ -278,18 +281,22 @@ const OPTIONS = [
       "sur son emplacement ouvre sa fiche au toucher, celle de l'enseigne " +
       "désignée même sur un stand partagé. C'est le lien qui se prend, non " +
       "l'image : fermée, l'outil image reste et les images se posent comme " +
-      "n'importe quel dessin, mais le champ qui nomme l'exposant s'en va et " +
+      "n'importe quel dessin, mais le champ qui nomme l'exposant est grisé et " +
       "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
-    /* Le champ paraît et s'en va tout seul, la feuille de style s'en charge.
-       Sa liste de choix, elle, n'est remplie qu'en prenant l'outil : on la
-       remplit ici pour l'exploitant qui ouvre l'option l'outil déjà en main. */
-    apres: () => { if (outil === "image" && optionActive("imageStand")) remplitListeSocietes(); } },
+    /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
+       et sa liste de choix se posent en JS, et seulement l'outil en main : on
+       repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
+    apres: () => { if (outil === "image") poseChampImage(); } },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +
       "les conférences retenus et trace le trajet d'un bout à l'autre. " +
-      "Fermée, le parcours reste une liste. Elle se calcule avec le moteur de " +
-      "l'itinéraire : la commande retirée plus haut emporte le bouton avec elle." },
+      "Fermée, le bouton vous reste, grisé, et le visiteur ne l'a plus : son " +
+      "parcours reste une liste. Elle se calcule avec le moteur de " +
+      "l'itinéraire : la commande retirée plus haut emporte le bouton avec elle.",
+    /* Le bouton s'éteint par `rafraichitParcours`, qui l'éteint déjà sur une
+       liste vide : la feuille de style seule le laissait prendre au clavier. */
+    apres: () => rafraichitParcours() },
   { cle: "programme",
     libelle: "Programme de conférences",
     aide: "Les conférences du salon : le programme d'une zone, celles qu'un " +
@@ -309,7 +316,7 @@ const OPTIONS = [
     aide: "L'exposant de plus, proposé au visiteur quand plusieurs de ceux " +
       "qu'il a retenus se ressemblent — le plus consulté du salon sur ce " +
       "critère, ou celui que l'organisateur a désigné. Fermée, l'onglet " +
-      "« Suggestion » quitte ces réglages et plus rien n'est proposé ; ce qui " +
+      "« Suggestion » reste ici, grisé, et plus rien n'est proposé ; ce qui " +
       "y était réglé est gardé.",
     apres: () => rafraichitParcours() },
 ];
@@ -1537,13 +1544,18 @@ function ouvreReglages(ouvrir){
        aucune position à ramener. */
     const ramene = (b) => requestAnimationFrame(() =>
       b.scrollIntoView({ block: "nearest", inline: "nearest" }));
-    const volet = (titre) => {
+    const volet = (titre, eteint) => {
       const i = boutons.length;
       const actif = nomme ? titre === nomme : i === 0;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
       b.setAttribute("aria-pressed", String(actif));
+      /* L'onglet d'une option que le salon n'a pas prise reste là, gris et
+         sans prise, plutôt que de disparaître : un onglet absent n'apprend
+         rien, et celui-ci dit ce qui se prend. Ce qui était réglé derrière est
+         gardé, et se retrouve le jour où l'option s'ouvre. */
+      if (eteint){ b.classList.add("eteint"); b.disabled = true; }
       b.onclick = () => {
         // une fiche de zone laissée dans l'onglet d'à côté s'enregistre en le quittant
         verseFicheZone();
@@ -1572,9 +1584,9 @@ function ouvreReglages(ouvrir){
     voletRecherche(volet("Recherche"));
     /* La suggestion suit la recherche pour la même raison : elle parle de ce
        que le visiteur obtient, et elle se lit dans la foulée des critères,
-       qu'elle emprunte. Elle n'a d'onglet que là où le salon l'a prise : son
-       option se ferme depuis « Admin », et l'onglet part avec elle. */
-    if (suggestionOfferte()) voletSuggestion(volet(NOM_VOLET_SUGGESTION));
+       qu'elle emprunte. Son option se ferme depuis « Admin » ; l'onglet reste
+       alors là, grisé, parce qu'une option se voit pour être prise. */
+    voletSuggestion(volet(NOM_VOLET_SUGGESTION, !suggestionOfferte()));
     /* « Fiche Stand » ferme la série de ce que le visiteur obtient : on ne
        range les champs qu'une fois qu'on sait lesquels paraissent, et son
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
@@ -2198,9 +2210,9 @@ function blocOptions(hote){
   tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
   tete.querySelector(".eyebrow").textContent = "Les options du plan";
   tete.querySelector(".d").textContent = "Ce que ce salon a pris. Une option " +
-    "fermée retire ce qui y mène — un outil de la boîte à outils, un bouton du " +
-    "plan, un onglet de ces réglages — sans défaire le travail fait dessous : " +
-    "la rouvrir le retrouve.";
+    "fermée grise ce qui y mène — un outil de la boîte à outils, un bouton du " +
+    "plan, un onglet de ces réglages — pour vous, et le retire au visiteur, " +
+    "sans défaire le travail fait dessous : la rouvrir le retrouve.";
   hote.appendChild(tete);
 
   const bloc = document.createElement("div");

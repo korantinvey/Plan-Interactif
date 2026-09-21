@@ -937,16 +937,24 @@ html.cale-tourne #plan{cursor:crosshair}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
-   plutôt que de laisser les derniers déborder de la palette. Elle en range
-   huit aussi bien — le dessin des stands est une option du plan, et un salon
-   qui ne l'a pas prise n'a pas son bouton (voir « OPTIONS » de
-   « _admin1.html »). */
+   plutôt que de laisser les derniers déborder de la palette. Ils sont neuf
+   quel que soit le salon — celui qui n'a pas pris le dessin des stands garde
+   son bouton, grisé (voir « OPTIONS » de « _admin1.html »), la grille n'a donc
+   jamais de trou à combler. */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:15px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
+/* Une option non prise grise sa commande au lieu de la retirer : l'exploitant
+   voit ce qu'il n'a pas pris, et l'organisateur ce qui se prend. Le clic ne
+   fait rien de son côté — `_dessin.html` `outilOffert` retombe sur la
+   sélection. Ce qui est vendu se montre, donc, mais seulement à qui peut
+   l'acheter : le visiteur, lui, ne voit toujours rien (voir `#btnJournee`). */
+html.sans-dessin-stand .outilsBtns button[data-o="stand"],
+html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
+  opacity:.4;filter:grayscale(1);cursor:default;
+  border-color:var(--line);color:var(--ink-3)}
 .outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .outils input:focus{border-color:var(--accent);outline:none}
@@ -1000,11 +1008,17 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils.mode-stand #standSoc{display:block}
 /* Celui de l'outil image demande la même société, sans l'exiger : une image
    existe d'abord pour ce qu'elle montre, et le rattachement n'en fait qu'une
-   porte de plus vers la fiche. C'est lui, et lui seul, que l'option retire —
-   l'outil reste, les images se posent toujours, elles ne mènent plus nulle
-   part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
+   porte de plus vers la fiche. C'est lui, et lui seul, que l'option grise —
+   l'outil reste entier, les images se posent toujours, elles ne mènent plus
+   nulle part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
 .outils.mode-image #imageSoc{display:block}
-html.sans-image-stand .outils #imageSoc{display:none}
+/* Grisé plutôt que retiré, comme l'outil de stand plus haut. Le gris est tout
+   ce que la feuille de style peut faire : elle ne retire pas du parcours au
+   clavier, et « pointer-events » non plus. C'est `_dessin.html`
+   `poseChampImage` qui pose « disabled », d'où le gris propre au champ
+   désactivé par-dessus celui-ci. */
+html.sans-image-stand .outils #imageSoc{
+  opacity:.4;filter:grayscale(1);pointer-events:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 /* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
@@ -3153,8 +3167,13 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
    parcours n'aurait rien à quoi s'adresser. */
 html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
 /* Et la journée a son option à elle : un salon peut vouloir l'itinéraire sans
-   vouloir qu'on lui organise sa visite. */
-html.sans-journee #btnJournee{display:none}
+   vouloir qu'on lui organise sa visite. Le bouton se montre alors à
+   l'exploitant, éteint — c'est une option, il doit savoir qu'elle existe — et
+   n'existe pas pour le visiteur, à qui on ne montre pas un produit qu'il ne
+   peut pas prendre. Son gris est celui de « [disabled] » plus haut, posé par
+   `_parcours.html` avec celui de la liste vide : deux raisons de ne pas
+   pouvoir organiser sa journée, un seul aspect. */
+html:not(.mode-admin).sans-journee #btnJournee{display:none}
 
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
@@ -3461,6 +3480,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
   color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
 .ongReg button:hover{color:var(--ink)}
+/* L'onglet d'une option non prise : là, gris, et sans prise. Le réglage qu'il
+   porte reste écrit derrière, et se retrouve le jour où l'option s'ouvre. */
+.ongReg button.eteint,.ongReg button.eteint:hover{opacity:.45;cursor:default;color:var(--ink-3)}
 .ongReg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 /* Changer d'onglet remplaçait un panneau par un autre d'un seul coup, et sur
    la hauteur de ces fenêtres — une planche d'aperçus, une liste de zones — on
@@ -11112,9 +11134,12 @@ function appliqueCommandes(){
  * Ouvertes par défaut, comme les commandes : un réglage absent ne doit rien
  * retirer à un salon déjà en place.
  *
- * Fermer une option retire la porte, jamais ce qui est derrière — c'est la
+ * Fermer une option grise la porte, jamais ce qui est derrière — c'est la
  * règle du parcours de visite, qui se retire sans vider les listes déjà
- * constituées. Les stands et les images déjà dessinés restent sur le plan, les
+ * constituées. Grise et non retirée : une commande absente n'apprend rien, là
+ * où une commande grise dit ce que le salon n'a pas pris et ce qui se prend.
+ * Chez le visiteur, en revanche, elle disparaît : on ne lui montre pas un
+ * produit qu'il ne peut pas acheter. Les stands et les images déjà dessinés restent sur le plan, les
  * conférences restent dans l'instantané, ce qui était réglé pour la suggestion
  * reste écrit : rouvrir l'option retrouve le tout.
  *
@@ -11131,8 +11156,8 @@ const OPTIONS = [
   { cle: "dessinStand", classe: "sans-dessin-stand",
     libelle: "Dessin des stands",
     aide: "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il " +
-      "héberge, sur sa part d'un emplacement. Fermée, l'outil quitte la boîte " +
-      "à outils ; les découpages déjà tracés restent sur le plan.",
+      "héberge, sur sa part d'un emplacement. Fermée, l'outil reste dans la boîte " +
+      "à outils, grisé ; les découpages déjà tracés restent sur le plan.",
     // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
     apres: () => { if (outil === "stand") choisitOutil("main"); } },
   { cle: "imageStand", classe: "sans-image-stand",
@@ -11141,18 +11166,22 @@ const OPTIONS = [
       "sur son emplacement ouvre sa fiche au toucher, celle de l'enseigne " +
       "désignée même sur un stand partagé. C'est le lien qui se prend, non " +
       "l'image : fermée, l'outil image reste et les images se posent comme " +
-      "n'importe quel dessin, mais le champ qui nomme l'exposant s'en va et " +
+      "n'importe quel dessin, mais le champ qui nomme l'exposant est grisé et " +
       "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
-    /* Le champ paraît et s'en va tout seul, la feuille de style s'en charge.
-       Sa liste de choix, elle, n'est remplie qu'en prenant l'outil : on la
-       remplit ici pour l'exploitant qui ouvre l'option l'outil déjà en main. */
-    apres: () => { if (outil === "image" && optionActive("imageStand")) remplitListeSocietes(); } },
+    /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
+       et sa liste de choix se posent en JS, et seulement l'outil en main : on
+       repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
+    apres: () => { if (outil === "image") poseChampImage(); } },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +
       "les conférences retenus et trace le trajet d'un bout à l'autre. " +
-      "Fermée, le parcours reste une liste. Elle se calcule avec le moteur de " +
-      "l'itinéraire : la commande retirée plus haut emporte le bouton avec elle." },
+      "Fermée, le bouton vous reste, grisé, et le visiteur ne l'a plus : son " +
+      "parcours reste une liste. Elle se calcule avec le moteur de " +
+      "l'itinéraire : la commande retirée plus haut emporte le bouton avec elle.",
+    /* Le bouton s'éteint par `rafraichitParcours`, qui l'éteint déjà sur une
+       liste vide : la feuille de style seule le laissait prendre au clavier. */
+    apres: () => rafraichitParcours() },
   { cle: "programme",
     libelle: "Programme de conférences",
     aide: "Les conférences du salon : le programme d'une zone, celles qu'un " +
@@ -11172,7 +11201,7 @@ const OPTIONS = [
     aide: "L'exposant de plus, proposé au visiteur quand plusieurs de ceux " +
       "qu'il a retenus se ressemblent — le plus consulté du salon sur ce " +
       "critère, ou celui que l'organisateur a désigné. Fermée, l'onglet " +
-      "« Suggestion » quitte ces réglages et plus rien n'est proposé ; ce qui " +
+      "« Suggestion » reste ici, grisé, et plus rien n'est proposé ; ce qui " +
       "y était réglé est gardé.",
     apres: () => rafraichitParcours() },
 ];
@@ -12400,13 +12429,18 @@ function ouvreReglages(ouvrir){
        aucune position à ramener. */
     const ramene = (b) => requestAnimationFrame(() =>
       b.scrollIntoView({ block: "nearest", inline: "nearest" }));
-    const volet = (titre) => {
+    const volet = (titre, eteint) => {
       const i = boutons.length;
       const actif = nomme ? titre === nomme : i === 0;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
       b.setAttribute("aria-pressed", String(actif));
+      /* L'onglet d'une option que le salon n'a pas prise reste là, gris et
+         sans prise, plutôt que de disparaître : un onglet absent n'apprend
+         rien, et celui-ci dit ce qui se prend. Ce qui était réglé derrière est
+         gardé, et se retrouve le jour où l'option s'ouvre. */
+      if (eteint){ b.classList.add("eteint"); b.disabled = true; }
       b.onclick = () => {
         // une fiche de zone laissée dans l'onglet d'à côté s'enregistre en le quittant
         verseFicheZone();
@@ -12435,9 +12469,9 @@ function ouvreReglages(ouvrir){
     voletRecherche(volet("Recherche"));
     /* La suggestion suit la recherche pour la même raison : elle parle de ce
        que le visiteur obtient, et elle se lit dans la foulée des critères,
-       qu'elle emprunte. Elle n'a d'onglet que là où le salon l'a prise : son
-       option se ferme depuis « Admin », et l'onglet part avec elle. */
-    if (suggestionOfferte()) voletSuggestion(volet(NOM_VOLET_SUGGESTION));
+       qu'elle emprunte. Son option se ferme depuis « Admin » ; l'onglet reste
+       alors là, grisé, parce qu'une option se voit pour être prise. */
+    voletSuggestion(volet(NOM_VOLET_SUGGESTION, !suggestionOfferte()));
     /* « Fiche Stand » ferme la série de ce que le visiteur obtient : on ne
        range les champs qu'une fois qu'on sait lesquels paraissent, et son
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
@@ -13061,9 +13095,9 @@ function blocOptions(hote){
   tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
   tete.querySelector(".eyebrow").textContent = "Les options du plan";
   tete.querySelector(".d").textContent = "Ce que ce salon a pris. Une option " +
-    "fermée retire ce qui y mène — un outil de la boîte à outils, un bouton du " +
-    "plan, un onglet de ces réglages — sans défaire le travail fait dessous : " +
-    "la rouvrir le retrouve.";
+    "fermée grise ce qui y mène — un outil de la boîte à outils, un bouton du " +
+    "plan, un onglet de ces réglages — pour vous, et le retire au visiteur, " +
+    "sans défaire le travail fait dessous : la rouvrir le retrouve.";
   hote.appendChild(tete);
 
   const bloc = document.createElement("div");
@@ -16899,6 +16933,18 @@ function societesDuPlan(){
   return out;
 }
 
+/* Le champ qui rattache une image à un exposant, posé selon que le salon a
+   pris l'option. La feuille de style le grise, mais le gris s'atteint encore
+   au clavier, et un champ grisé où l'on peut taper ment sur ce qu'il fera.
+   Comme le bouton de la journée, c'est donc « disabled » qui ferme, et il se
+   rouvre par le même chemin le jour où l'option se prend. */
+function poseChampImage(){
+  const ch = $("imageSoc");
+  const offert = optionActive("imageStand");
+  if (ch) ch.disabled = !offert;
+  if (offert) remplitListeSocietes();
+}
+
 function remplitListeSocietes(){
   const l = $("listeSoc");
   if (!l) return;
@@ -17487,8 +17533,9 @@ function calquePourImage(){
  */
 function lienImageSaisi(){
   /* Le rattachement est une option du salon : fermée, la feuille de style
-     retire le champ, mais ce qu'on y avait saisi avant y reste. C'est ici
-     qu'on refuse, plutôt que de lier depuis un champ que personne ne voit. */
+     grise le champ, mais ce qu'on y avait saisi avant y reste — et se relit,
+     puisque le champ demeure. C'est ici qu'on refuse, donc, plutôt que de
+     lier depuis un champ que l'option a fermé. */
   if (!optionActive("imageStand")) return null;
   const ch = $("imageSoc");
   const l = ch ? societeSaisie(ch.value) : null;
@@ -17787,9 +17834,10 @@ function aide(){
 }
 
 /* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
-   stands n'a pas son bouton dans la palette (voir « OPTIONS » de
-   « _admin1.html »). L'image, elle, n'est pas une option — c'en est une de la
-   rattacher à un exposant, et c'est son champ qui s'en va. */
+   stands garde son bouton dans la palette, grisé, et c'est ici que le clic
+   retombe sur la sélection (voir « OPTIONS » de « _admin1.html »). L'image,
+   elle, n'est pas une option — c'en est une de la rattacher à un exposant, et
+   c'est son champ qui se grise. */
 const OPTION_OUTIL = { stand: "dessinStand" };
 const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
 
@@ -17820,7 +17868,7 @@ function choisitOutil(o){
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
      geste est de choisir un fichier, et le champ n'est qu'une option — au sens
      propre, puisque le salon peut ne pas l'avoir prise. */
-  if (o === "image" && optionActive("imageStand")) remplitListeSocietes();
+  if (o === "image") poseChampImage();
   aide();
 }
 
@@ -22281,9 +22329,12 @@ function rafraichitParcours(){
   if (c){ c.textContent = n; c.hidden = n === 0; }
   /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
      plutôt que d'apparaître au premier signet — sa présence dit ce à quoi la
-     liste servira. */
+     liste servira. Même geste quand le salon n'a pas pris l'option : elle se
+     voit pour être prise, et l'éteindre ferme aussi le clavier, que la feuille
+     de style seule laissait passer. Le visiteur, lui, ne voit rien
+     (`_head.html`, « sans-journee »). */
   const org = $("btnJournee");
-  if (org) org.disabled = n === 0;
+  if (org) org.disabled = n === 0 || racine.classList.contains("sans-journee");
   /* Et de même le partage : une liste vide se partage techniquement — le lien
      serait valide — mais n'apprendrait rien à personne. */
   const part = $("btnPartage");

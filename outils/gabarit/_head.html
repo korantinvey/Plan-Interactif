@@ -937,16 +937,24 @@ html.cale-tourne #plan{cursor:crosshair}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
-   plutôt que de laisser les derniers déborder de la palette. Elle en range
-   huit aussi bien — le dessin des stands est une option du plan, et un salon
-   qui ne l'a pas prise n'a pas son bouton (voir « OPTIONS » de
-   « _admin1.html »). */
+   plutôt que de laisser les derniers déborder de la palette. Ils sont neuf
+   quel que soit le salon — celui qui n'a pas pris le dessin des stands garde
+   son bouton, grisé (voir « OPTIONS » de « _admin1.html »), la grille n'a donc
+   jamais de trou à combler. */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:15px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
+/* Une option non prise grise sa commande au lieu de la retirer : l'exploitant
+   voit ce qu'il n'a pas pris, et l'organisateur ce qui se prend. Le clic ne
+   fait rien de son côté — `_dessin.html` `outilOffert` retombe sur la
+   sélection. Ce qui est vendu se montre, donc, mais seulement à qui peut
+   l'acheter : le visiteur, lui, ne voit toujours rien (voir `#btnJournee`). */
+html.sans-dessin-stand .outilsBtns button[data-o="stand"],
+html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
+  opacity:.4;filter:grayscale(1);cursor:default;
+  border-color:var(--line);color:var(--ink-3)}
 .outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .outils input:focus{border-color:var(--accent);outline:none}
@@ -1000,11 +1008,17 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils.mode-stand #standSoc{display:block}
 /* Celui de l'outil image demande la même société, sans l'exiger : une image
    existe d'abord pour ce qu'elle montre, et le rattachement n'en fait qu'une
-   porte de plus vers la fiche. C'est lui, et lui seul, que l'option retire —
-   l'outil reste, les images se posent toujours, elles ne mènent plus nulle
-   part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
+   porte de plus vers la fiche. C'est lui, et lui seul, que l'option grise —
+   l'outil reste entier, les images se posent toujours, elles ne mènent plus
+   nulle part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
 .outils.mode-image #imageSoc{display:block}
-html.sans-image-stand .outils #imageSoc{display:none}
+/* Grisé plutôt que retiré, comme l'outil de stand plus haut. Le gris est tout
+   ce que la feuille de style peut faire : elle ne retire pas du parcours au
+   clavier, et « pointer-events » non plus. C'est `_dessin.html`
+   `poseChampImage` qui pose « disabled », d'où le gris propre au champ
+   désactivé par-dessus celui-ci. */
+html.sans-image-stand .outils #imageSoc{
+  opacity:.4;filter:grayscale(1);pointer-events:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 /* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
@@ -3153,8 +3167,13 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
    parcours n'aurait rien à quoi s'adresser. */
 html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
 /* Et la journée a son option à elle : un salon peut vouloir l'itinéraire sans
-   vouloir qu'on lui organise sa visite. */
-html.sans-journee #btnJournee{display:none}
+   vouloir qu'on lui organise sa visite. Le bouton se montre alors à
+   l'exploitant, éteint — c'est une option, il doit savoir qu'elle existe — et
+   n'existe pas pour le visiteur, à qui on ne montre pas un produit qu'il ne
+   peut pas prendre. Son gris est celui de « [disabled] » plus haut, posé par
+   `_parcours.html` avec celui de la liste vide : deux raisons de ne pas
+   pouvoir organiser sa journée, un seul aspect. */
+html:not(.mode-admin).sans-journee #btnJournee{display:none}
 
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
@@ -3461,6 +3480,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
   color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
 .ongReg button:hover{color:var(--ink)}
+/* L'onglet d'une option non prise : là, gris, et sans prise. Le réglage qu'il
+   porte reste écrit derrière, et se retrouve le jour où l'option s'ouvre. */
+.ongReg button.eteint,.ongReg button.eteint:hover{opacity:.45;cursor:default;color:var(--ink-3)}
 .ongReg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 /* Changer d'onglet remplaçait un panneau par un autre d'un seul coup, et sur
    la hauteur de ces fenêtres — une planche d'aperçus, une liste de zones — on
