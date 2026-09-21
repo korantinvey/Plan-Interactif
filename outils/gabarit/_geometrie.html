@@ -471,6 +471,14 @@ function finGesteGeo(o){
   if (p){ p.enveloppe = null; elargitEmprise(p, o); }
   oublieGrilles();
   dessineMarques();
+  /* Les marques des distinctions recopient le tracé du stand, ou la boîte de
+     son tracé, et leur relevé ne se refaisait qu'au changement de pavillon ou
+     de mode : le liseré d'un nouvel exposant restait sur l'ancien contour,
+     décalé du stand qu'il désigne. Ici, et non dans `retraceGeo` : la forme se
+     tire à la souris, et refaire le relevé de tous les stands à chaque image du
+     geste coûterait plus que la marque ne vaut. */
+  oublieDists();
+  dessineDists();
   libelles();
 }
 

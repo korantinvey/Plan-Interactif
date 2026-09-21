@@ -324,10 +324,10 @@ function appliqueSociete(){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
-function appliqueTexte(){
+function appliqueTexte(salve){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
-  memorise();
+  memorise(salve);
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
@@ -375,14 +375,14 @@ function appliqueTrait(){
  * changer de ligne c'est en prendre la couleur, et non garder par inadvertance
  * celle de la précédente.
  */
-function appliqueTransport(){
+function appliqueTransport(salve){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || !estTransport(cible.f)) return;
   const f = cible.f;
   const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
   const memeLigne = mode === f.mode && ligne === String(f.ligne || "");
   const choisie = memeLigne ? $("elemCouleur").value : couleurLigne(mode, ligne);
-  memorise();
+  memorise(salve);
   if (f.txt === libelleDoffice(pictoForme(f), f.mode, f.ligne))
     f.txt = libelleDoffice(pictoForme(f), mode, ligne);
   f.mode = mode;
