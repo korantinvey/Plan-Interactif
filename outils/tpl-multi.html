@@ -10455,6 +10455,7 @@ function appliqueApparence(){
   appliqueCouleursData();
   appliqueCommandes();
   appliqueOptions();
+  appliqueLangue();
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
@@ -10609,6 +10610,28 @@ function appliqueOptions(){
     if (o.classe) racine.classList.toggle(o.classe, !optionActive(o.cle));
   });
 }
+
+/* ------------------------------------------------------------
+   Les langues du plan
+
+   Toute page sait l'anglais, mais ce qu'un plan montre vient pour moitié de
+   ses données — noms d'exposants, descriptions, nomenclature — et rien ne les
+   traduit. Un salon dont les données sont en français seul y gagne une page
+   mi-anglaise, mi-française, moins lisible que la version française : à
+   l'exploitant de fermer la version anglaise le temps que ses données suivent.
+
+   Deux réglages plutôt qu'un, car les deux plans ne s'adressent pas aux mêmes
+   gens : l'anglais du plan public est pour les visiteurs étrangers, celui de
+   l'administration pour l'exploitant qui ne lit pas le français. Fermer l'un
+   n'a aucune raison de fermer l'autre. C'est la page qui décide lequel des
+   deux la regarde, et non le mode administration : le plan d'administration
+   reste le plan d'administration avant même que l'identité soit vérifiée.
+   ------------------------------------------------------------ */
+/** La version anglaise est-elle ouverte sur cette page ? Oui par défaut : un
+ *  réglage absent ne doit rien retirer à un salon déjà en place. */
+const langueOfferte = () => conf("_langues")[PLAN_ADMIN ? "admin" : "public"] !== false;
+
+const appliqueLangue = () => LANGUE.offre(langueOfferte());
 
 /**
  * Ce que la recherche a le droit de remonter.
@@ -12292,6 +12315,10 @@ function voletAdmin(hote){
      pris. */
   blocOptions(hote);
 
+  /* Les langues ferment la série des cases : elles ne retirent ni une commande
+     du plan ni une option vendue, mais une façon de le lire. */
+  blocLangues(hote);
+
   /* Les deux derniers réglages ne sont pas des cases : ils passent donc après
      toutes celles-ci, chacun sous son intertitre. Ce que porte l'application
      installée d'abord (`_application.html`) — c'est du même ordre que
@@ -12344,6 +12371,60 @@ function blocOptions(hote){
     const aide = document.createElement("p");
     aide.className = "aideR";
     aide.textContent = o.aide;
+    bloc.appendChild(aide);
+  });
+  hote.appendChild(bloc);
+}
+
+/**
+ * Les langues du plan, dans l'onglet « Admin ».
+ *
+ * Une case par plan, et non une seule pour les deux : l'exploitant ouvre
+ * souvent l'anglais aux visiteurs bien avant de le vouloir pour lui-même, et
+ * l'inverse arrive aussi — une agence étrangère qui règle un salon dont les
+ * données n'ont pas encore été traduites.
+ *
+ * La case de l'administration décide de la page où on la coche : la décocher
+ * repasse ces réglages-ci au français sur-le-champ, drapeau compris. C'est
+ * voulu — on voit ce qu'on vient de faire —, et la case reste là pour rouvrir.
+ */
+function blocLangues(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "Les langues du plan";
+  tete.querySelector(".d").textContent = "Le bouton à drapeau passe le plan " +
+    "en anglais sans le recharger. Fermée, la version anglaise s'en va avec " +
+    "son bouton et le plan ne se lit qu'en français.";
+  hote.appendChild(tete);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  [
+    { cle: "public", libelle: "Version anglaise du plan public",
+      aide: "Ce que voient les visiteurs. Le plan traduit ce qu'il écrit " +
+        "lui-même ; ce que le salon porte — noms d'exposants, descriptions, " +
+        "nomenclature — reste dans la langue des données, sauf là où la " +
+        "source en donne une version anglaise." },
+    { cle: "admin", libelle: "Version anglaise de l'administration",
+      aide: "Ces réglages, la boîte à outils et la bande du haut, sur le plan " +
+        "d'administration. Sans effet sur ce que voient les visiteurs." },
+  ].forEach(l => {
+    const label = document.createElement("label");
+    label.innerHTML = '<input type="checkbox"><span></span>';
+    label.querySelector("span").textContent = l.libelle;
+    const c = label.querySelector("input");
+    c.checked = conf("_langues")[l.cle] !== false;
+    c.onchange = e => {
+      conf("_langues")[l.cle] = e.target.checked;
+      enregistreConf();
+      appliqueLangue();
+    };
+    bloc.appendChild(label);
+
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = l.aide;
     bloc.appendChild(aide);
   });
   hote.appendChild(bloc);
