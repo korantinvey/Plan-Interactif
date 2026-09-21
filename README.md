@@ -2775,6 +2775,15 @@ tâche rouge dont seul le journal disait pourquoi. D'où `allowed_bots: claude`
 dans le workflow : ce robot-là, nommément, et pas `*` qui ferait relire les pull
 requests de n'importe quel automate.
 
+L'action cache la sortie du modèle — un journal de tâche est public, et elle
+peut y verser ce qu'ont rendu les outils. Le revers se paie quand elle échoue :
+une relecture qui meurt sur sa première demande ne dit pas pourquoi, et le mode
+débogage de GitHub n'y change rien, contrairement à ce que son message laisse
+croire (`show_full_output` seul lève le masque, et il lève tout). D'où la
+dernière étape du workflow, qui ne relève du compte-rendu que son message
+final, celui qui porte la raison : c'est là qu'on lit une authentification
+rejetée ou une limite atteinte.
+
 Et une conséquence qui surprend la première fois : **l'action refuse de tourner
 quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
 file must exist and have identical content to the version on the repository's
