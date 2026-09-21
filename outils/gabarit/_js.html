@@ -3624,7 +3624,11 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  met("ville", LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court");
+  /* Le code postal n'a pas de ligne à lui : il se pose devant la ville, comme
+     sur une enveloppe. Il reste à part jusqu'ici pour que le filtre « Ville »
+     coche des villes et non des codes postaux. */
+  met("ville", LIBELLE_CORPS.ville,
+    esc([soc.cp, soc.ville].filter(Boolean).join(" ")), "court");
   met("pays", LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court");
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
