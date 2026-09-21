@@ -191,6 +191,12 @@ button{cursor:pointer;background:none;border:none}
 html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
   line-height:1.18;overflow-wrap:anywhere}
+/* Le logo du salon ne paraît qu'en bande réduite, sur un téléphone : ailleurs
+   la barre a la place d'écrire le nom en entier, et une image de plus n'y
+   ajouterait rien. Il est caché ici plutôt que par l'attribut « hidden », que
+   `poseLogoSalon` retire dès qu'il y a une image à montrer — la règle qui la
+   montre est plus bas, sous « max-width:900px ». */
+.logoSalon{display:none}
 .brand h1.attente{color:var(--ink-3)}
 .brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
@@ -4176,7 +4182,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     padding:calc(3px + var(--sys-haut)) 10px 3px;
     min-height:calc(38px + var(--sys-haut))}
   html.barre-bande:not(.mode-admin) .topbar .iconbtn{width:27px;height:27px}
-  html.barre-bande:not(.mode-admin) .brand h1{font-size:13.5px}
+  html.barre-bande:not(.mode-admin) .brand h1{font-size:13.5px;min-width:0}
+  /* Le logo du salon à côté du nom. Il vient de l'icône de l'onglet : c'est la
+     seule image du salon que la page ait déjà sous la main — elle arrive avec
+     les données, et ne coûte pas un appel de plus.
+
+     Elle n'est pas carrée pour autant : la console garde les proportions d'un
+     logo en longueur, qui à seize pixels se reconnaît mieux ainsi. D'où la
+     hauteur imposée et la largeur laissée libre — bornée tout de même, sans
+     quoi un logo à rallonge prendrait la bande pour lui seul et le nom du
+     salon passerait à la ligne derrière lui. */
+  html.barre-bande:not(.mode-admin) .brand{display:flex;align-items:center;gap:7px}
+  html.barre-bande:not(.mode-admin) .logoSalon{display:block;flex:0 0 auto;
+    height:22px;width:auto;max-width:72px;object-fit:contain}
   html.barre-bande:not(.mode-admin) .halls button{padding:3px 9px;font-size:12px}
 
   /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
@@ -4760,6 +4778,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 
   <header class="topbar" id="bandeau">
     <div class="brand">
+      <!-- Le logo du salon, posé par `poseLogoSalon` (_js.html) : il n'a de
+           place que dans la bande réduite d'un téléphone, et reste caché
+           partout ailleurs. -->
+      <img class="logoSalon" id="logoSalon" alt="" hidden>
       <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
            celui d'un salon annoncerait le mauvais pendant tout le
            chargement d'un autre. Un intitulé neutre, grisé tant qu'il n'est
