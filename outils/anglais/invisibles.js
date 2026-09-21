@@ -42,6 +42,7 @@ module.exports = [
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
   "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
+  "LissageSdf",
 
   // `_rappels.html` : le motif de deux pannes internes, porté par une
   // exception que la page rattrape sans jamais l'afficher — ce que le visiteur
