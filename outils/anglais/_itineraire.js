@@ -66,10 +66,10 @@ module.exports = {
     "The route goes around “{salle}”: its conference ends at {heure}, and the aisle beside it is about to fill up. About {distance} further.",
   "Le trajet contourne « {salle} » : sa conférence commence à {heure}, et l'allée qui la borde va se remplir. Environ {distance} de plus.":
     "The route goes around “{salle}”: its conference starts at {heure}, and the aisle beside it is about to fill up. About {distance} further.",
-  "Le trajet longe « {salle} » : sa conférence se termine à {heure} — attendez-vous à du monde dans l'allée.":
-    "The route runs along “{salle}”: its conference ends at {heure} — expect crowds in the aisle.",
-  "Le trajet longe « {salle} » : sa conférence commence à {heure} — attendez-vous à du monde dans l'allée.":
-    "The route runs along “{salle}”: its conference starts at {heure} — expect crowds in the aisle.",
+  "Le trajet longe « {salle} », où une conférence se termine à {heure} — attendez-vous à du monde dans l'allée.":
+    "The route runs along “{salle}”, where a conference ends at {heure} — expect crowds in the aisle.",
+  "Le trajet longe « {salle} », où une conférence commence à {heure} — attendez-vous à du monde dans l'allée.":
+    "The route runs along “{salle}”, where a conference starts at {heure} — expect crowds in the aisle.",
   "Sortez du {de}, rejoignez le {vers}.": "Leave {de} and go to {vers}.",
   "{distance} dans le pavillon": "{distance} in the hall",
   "tracé à l'écran": "shown on screen",
