@@ -94,9 +94,16 @@ jobs:
           # superficiel ne rapporte pas.
           fetch-depth: 0
 
+      # Une relecture qui n'aboutit pas ne rougit pas la pull request. C'est le
+      # même raisonnement que la garde plus haut, poussé jusqu'au bout : un
+      # garde-fou en panne n'est pas un défaut du code relu, et une croix rouge
+      # posée sur chaque pull request du dépôt n'apprend qu'une chose, à ne plus
+      # regarder les croix rouges. La panne se lit à l'étape suivante, qui la
+      # nomme et l'affiche en avertissement.
       - uses: anthropics/claude-code-action@v1
         id: relire
         if: steps.acces.outputs.posee == 'oui'
+        continue-on-error: true
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -160,10 +167,15 @@ jobs:
       # porte la raison — jamais ce que les outils ont lu, jamais la relecture
       # elle-même, et seulement quand la tâche a échoué.
       - name: Dire pourquoi la relecture a échoué
-        if: failure() && steps.relire.outputs.execution_file != ''
+        if: always() && steps.relire.outcome == 'failure'
         env:
           COMPTE_RENDU: ${{ steps.relire.outputs.execution_file }}
         run: |
+          echo "::warning::La relecture n'a pas abouti ; sa raison suit."
+          if [ -z "$COMPTE_RENDU" ] || [ ! -f "$COMPTE_RENDU" ]; then
+            echo "Aucun compte-rendu : la tâche s'est arrêtée avant d'en écrire un."
+            exit 0
+          fi
           python3 - "$COMPTE_RENDU" <<'PY'
           import json, sys
           brut = open(sys.argv[1], encoding="utf-8").read().strip()

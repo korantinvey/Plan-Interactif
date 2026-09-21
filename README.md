@@ -2782,7 +2782,11 @@ débogage de GitHub n'y change rien, contrairement à ce que son message laisse
 croire (`show_full_output` seul lève le masque, et il lève tout). D'où la
 dernière étape du workflow, qui ne relève du compte-rendu que son message
 final, celui qui porte la raison : c'est là qu'on lit une authentification
-rejetée ou une limite atteinte.
+rejetée ou une limite atteinte. Et cette panne-là ne rougit pas la pull
+request — même raisonnement que plus haut, poussé jusqu'au bout : un garde-fou
+en panne n'est pas un défaut du code relu, et une croix rouge sur chaque pull
+request du dépôt n'apprend qu'une chose, à ne plus regarder les croix rouges.
+Elle s'affiche en avertissement, ce qui se voit sans ouvrir le journal.
 
 Et une conséquence qui surprend la première fois : **l'action refuse de tourner
 quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
