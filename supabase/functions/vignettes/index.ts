@@ -62,6 +62,35 @@ function adressesDeLogos(instantanes: { charge: unknown }[]): string[] {
   return [...vues];
 }
 
+/* Relever ces adresses demande de lire les instantanés du salon en entier, et
+   la console revient enregistrer par paquets de huit : sans cette mémoire, un
+   salon de cinq cents logos ferait relire soixante fois toute sa charge. Elle
+   ne vit que le temps d'une préparation, et un instantané refait pendant ce
+   temps n'attend qu'une minute pour être vu. */
+const VIE_ADRESSES = 60_000;
+const memoireDesAdresses = new Map<string, { le: number; adresses: string[] }>();
+
+/** Les adresses de logo que porte ce salon-là, relevées dans ses instantanés.
+ *  Elles disent ce qu'il reste à faire, et — l'écriture étant nommée par la
+ *  seule empreinte de l'adresse — ce qu'on accepte d'enregistrer. */
+async function adressesDuSalon(
+  db: ReturnType<typeof service>,
+  evenementId: string,
+): Promise<string[]> {
+  const garde = memoireDesAdresses.get(evenementId);
+  if (garde && Date.now() - garde.le < VIE_ADRESSES) return garde.adresses;
+
+  const { data: plans } = await db.from("plan")
+    .select("id").eq("evenement_id", evenementId);
+  const ids = (plans ?? []).map((p) => (p as { id: string }).id);
+  if (!ids.length) return [];
+  const { data: instantanes } = await db.from("instantane")
+    .select("charge").in("plan_id", ids);
+  const adresses = adressesDeLogos((instantanes ?? []) as { charge: unknown }[]);
+  memoireDesAdresses.set(evenementId, { le: Date.now(), adresses });
+  return adresses;
+}
+
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -110,9 +139,17 @@ Deno.serve(async (req) => {
     /* Ce que la console vient de fabriquer. Elle l'envoie par petits paquets,
        et repart aussitôt chercher la suite : c'est le seul geste qui écrit. */
     if (corps.vignettes?.length) {
+      /* Le droit vérifié plus haut porte sur un salon ; la table, elle, est
+         globale et nommée par la seule empreinte de l'adresse. Sans ce filtre,
+         un exploitant n'ayant accès qu'au salon A enregistrerait sous l'adresse
+         de logo d'un exposant du salon B l'image de son choix, servie un an aux
+         visiteurs de B. L'adresse vient du client : elle se relit en base. */
+      const permises = new Set(await adressesDuSalon(db, corps.evenementId));
       const lignes = [];
+      let refusees = 0;
       for (const v of corps.vignettes) {
         if (!v?.source || !v.image) continue;
+        if (!permises.has(v.source)) { refusees++; continue; }
         lignes.push({
           cle: await cleDeVignette(v.source),
           source: v.source,
@@ -122,21 +159,14 @@ Deno.serve(async (req) => {
           pose: new Date().toISOString(),
         });
       }
-      if (!lignes.length) return repond({ enregistrees: 0 });
+      if (!lignes.length) return repond({ enregistrees: 0, refusees });
       const { error } = await db.from("vignette_de_logo")
         .upsert(lignes, { onConflict: "cle" });
       if (error) return repond({ erreur: error.message }, 500);
-      return repond({ enregistrees: lignes.length });
+      return repond({ enregistrees: lignes.length, refusees });
     }
 
-    const { data: plans } = await db.from("plan")
-      .select("id").eq("evenement_id", corps.evenementId);
-    const ids = (plans ?? []).map((p) => (p as { id: string }).id);
-    if (!ids.length) return repond({ aFaire: [], reste: 0, total: 0 });
-
-    const { data: instantanes } = await db.from("instantane")
-      .select("charge").in("plan_id", ids);
-    const adresses = adressesDeLogos((instantanes ?? []) as { charge: unknown }[]);
+    const adresses = await adressesDuSalon(db, corps.evenementId);
     if (!adresses.length) return repond({ aFaire: [], reste: 0, total: 0 });
 
     /* Ce qui est déjà fait, demandé par adresse : la table porte les deux, et
