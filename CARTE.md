@@ -101,19 +101,20 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_batiments.html` — 534 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_batiments.html` — 558 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
-`CLE_CALAGE` 26 · `bibliothequeDispo` 27 · `batimentsPoses` 34 · `estBatiment` 41
-`hallsPoses` 44 · `lieuDuCalque` 50 · `poseCalage` 56 · `ouvreBibliotheque` 65
-`vueDuLieu` 161 · `lanceCalage` 201 · `effaceLeTempsDuCalage` 229 · `cadreCalage` 248
-`finCalage` 261 · `pivoteCalage` 272 · `degresCalage` 288 · `dessineCalage` 293
-`calagePointerDown` 316 · `calagePointerMove` 329 · `calagePointerUp` 345
-`reposeBatiment` 358 · `ajouteBatiments` 374 · `boutonRecale` 458 · `pictoRecale` 467
-`calageRelu` 484 · `rouvreCalage` 510 · `mentionOsm` 529
+`CLE_CALAGE` 26 · `bibliothequeDispo` 27 · `refBatiment` 44 · `refForme` 48
+`marqueBatiment` 51 · `batimentsPoses` 54 · `estBatiment` 61 · `hallsPoses` 64
+`lieuDuCalque` 70 · `poseCalage` 76 · `ouvreBibliotheque` 85 · `vueDuLieu` 181
+`lanceCalage` 221 · `effaceLeTempsDuCalage` 249 · `cadreCalage` 268 · `finCalage` 281
+`pivoteCalage` 292 · `degresCalage` 308 · `dessineCalage` 313 · `calagePointerDown` 336
+`calagePointerMove` 349 · `calagePointerUp` 365 · `reposeBatiment` 378
+`ajouteBatiments` 394 · `boutonRecale` 478 · `pictoRecale` 487 · `calageRelu` 504
+`rouvreCalage` 530 · `mentionOsm` 553
 
 ### `_borne.html` — 370 l. → plan-admin.html, plan-smcl.html, plan.html
 

@@ -11,6 +11,7 @@
     "essai": "node outils/serve.js",
     "migration": "node outils/migration.js",
     "polices": "node outils/polices.js",
+    "lieux": "node outils/lieux.js",
     "bd": "supabase db push",
     "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
     "sup": "supabase"
