@@ -326,7 +326,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 5247 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5255 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -409,7 +409,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3170 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3173 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -433,15 +433,15 @@ Fonctions :
 `passagePraticable` 2083 · `passagesDe` 2091 · `sortiesDe` 2101 · `plansRelies` 2109
 `balayage` 2133 · `distanceDepuis` 2147 · `cheminLiaisons` 2174 · `routeParLiaisons` 2258
 `routeEntre` 2294 · `calculeRoute` 2333 · `couleurNappe` 2359 · `rafraichitApercu` 2365
-`marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2442 · `mesureMarches` 2449
-`coupeMarche` 2464 · `distancesDesArrets` 2480 · `peintItineraire` 2492
-`lanceTracage` 2540 · `dessineItineraire` 2565 · `rafraichitBouts` 2587
-`cadreItineraire` 2610 · `champIti` 2634 · `ecritDistance` 2638 · `ecritDuree` 2646
-`fermeSugg` 2651 · `montreSugg` 2658 · `choisitPoint` 2692 · `valideSaisie` 2701
-`effaceItineraire` 2713 · `relance` 2740 · `phraseLiaison` 2791 · `montreResultat` 2805
-`bandeauVisee` 2947 · `armeVisee` 2970 · `finVisee` 2988 · `viseItineraire` 3004
-`visePoi` 3010 · `visePoint` 3016 · `ouvreItineraire` 3048 · `fermeItineraire` 3076
-`versItineraire` 3086 · `versItineraireDe` 3089
+`marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2445 · `mesureMarches` 2452
+`coupeMarche` 2467 · `distancesDesArrets` 2483 · `peintItineraire` 2495
+`lanceTracage` 2543 · `dessineItineraire` 2568 · `rafraichitBouts` 2590
+`cadreItineraire` 2613 · `champIti` 2637 · `ecritDistance` 2641 · `ecritDuree` 2649
+`fermeSugg` 2654 · `montreSugg` 2661 · `choisitPoint` 2695 · `valideSaisie` 2704
+`effaceItineraire` 2716 · `relance` 2743 · `phraseLiaison` 2794 · `montreResultat` 2808
+`bandeauVisee` 2950 · `armeVisee` 2973 · `finVisee` 2991 · `viseItineraire` 3007
+`visePoi` 3013 · `visePoint` 3019 · `ouvreItineraire` 3051 · `fermeItineraire` 3079
+`versItineraire` 3089 · `versItineraireDe` 3092
 
 ### `_journee.html` — 2136 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -716,7 +716,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1388 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1398 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -738,9 +738,9 @@ Fonctions :
 `brancheSurvolWebgl` 1154 · `poseSurvolWebgl` 1174 · `poseCurseurWebgl` 1183
 `poseFocusWebgl` 1192 · `aplatsDe` 1199 · `coucheSurvol` 1202 · `coucheFocus` 1211
 `couchesPhare` 1238 · `lueurDe` 1254 · `opacitePhare` 1292 · `echellePhare` 1293
-`couchesPhareNoms` 1296 · `animeCouche` 1310 · `majAnimationWebgl` 1324 · `animeWebgl` 1332
-`objetSous` 1355 · `cibleWebgl` 1362 · `priseWebgl` 1369 · `libelleSousWebgl` 1374
-`rectEcranWebgl` 1379
+`couchesPhareNoms` 1296 · `palierDefile` 1316 · `animeCouche` 1319
+`majAnimationWebgl` 1334 · `animeWebgl` 1342 · `objetSous` 1365 · `cibleWebgl` 1372
+`priseWebgl` 1379 · `libelleSousWebgl` 1384 · `rectEcranWebgl` 1389
 
 ## Dans `web/`, mais que la construction ne produit pas
 
