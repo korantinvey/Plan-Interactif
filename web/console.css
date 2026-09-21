@@ -181,7 +181,12 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .lien:hover{color:var(--ink)}
 
 /* Les deux boutons ronds de la barre du haut : recharger, et le thème. */
-.icone{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);
+/* `padding:0` : les six points que le navigateur pose de lui-même sur un
+   `button` ne laissaient que quatorze points dedans, la largeur exacte d'un
+   pictogramme — mais pas celle du drapeau de la bascule de langue, qui en fait
+   vingt. Trop large pour sa boîte, il ne se centrait plus : il partait du bord
+   gauche et débordait à droite. */
+.icone{padding:0;width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .icone:hover{border-color:var(--line-strong);color:var(--ink)}
 .icone svg{width:14px;height:14px}
