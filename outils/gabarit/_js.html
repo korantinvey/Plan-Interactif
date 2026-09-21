@@ -190,12 +190,30 @@ function indexe(d){
      confronte la base à ce que le poste garde, et il faut que ce soit ce
      salon-ci qu'il garde. */
   ouvreDessins(d);
+  /* Les réglages, posés du plus ancien écrit au plus récent.
+     Le même bloc est recopié dans chaque pavillon, un `await` par tour : un
+     envoi interrompu à mi-parcours laisse le pavillon 1 porter le réglage neuf
+     et les suivants l'ancien. Pris dans l'ordre des pavillons, c'est le dernier
+     lu qui gagnait, donc l'ancien — et le réglage neuf disparaissait au
+     rechargement, sans que rien ne le rattrape. Par date d'écriture, il tient.
+     Un visiteur ne reçoit pas cette date : ses pavillons portent tous le même
+     bloc, et l'ordre n'y décide de rien.
+     `reglagesDuSalon` au passage : un enregistrement d'avant le cloisonnement
+     porte les calques d'autres salons, qui ne désignent rien ici et
+     fausseraient la publication. */
+  const reglagesEnBase = {};
+  DATA.plans
+    .filter(p => p.apparence?.reglages && Object.keys(p.apparence.reglages).length)
+    .map(p => p.apparence)
+    .sort((a, b) => String(a.modifie_le || "").localeCompare(String(b.modifie_le || "")))
+    .forEach(a => {
+      const bloc = reglagesDuSalon(a.reglages);
+      Object.assign(reglagesEnBase, bloc);
+      Object.assign(CONF, bloc);
+    });
+
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
-    // un enregistrement d'avant le cloisonnement porte les calques d'autres
-    // salons : ils ne désignent rien ici, et fausseraient la publication
-    if (a.reglages && Object.keys(a.reglages).length)
-      Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
        ailleurs — sauf sur ce que ce poste n'a jamais réussi à publier : cela
@@ -232,6 +250,12 @@ function indexe(d){
       if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
+  /* Ce que la base disait, et non ce que la page tient : l'envoi comparera le
+     poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
+     resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
+     repart au prochain envoi — ce navigateur est le seul endroit où il est. */
+  if (ADMIN) noteReglagesCharges(reglagesEnBase);
+
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de
      marche lisent tous la forme de l'emplacement, et doivent lire celle qui
