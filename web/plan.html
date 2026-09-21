@@ -1094,7 +1094,15 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .row .hall{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
   padding:1px 5px;border-radius:3px;background:var(--surface-2);color:var(--ink-3);margin-left:6px;vertical-align:1px}
 .tools{display:flex;gap:6px}
-.iconbtn{position:relative;width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
+/* Le `padding:0` n'est pas une coquetterie : le navigateur pose de lui-même
+   six points de part et d'autre d'un `button`, et le bouton fait trente-deux
+   points de large, bordure comprise. Il ne restait donc que dix-huit points à
+   l'intérieur — moins que les vingt du drapeau de la bascule de langue. Une
+   piste de grille plus large que la boîte qui la contient ne se centre pas :
+   elle part du bord gauche et déborde à droite, et le drapeau s'en allait
+   contre la bordure. Sur un téléphone, où le bouton tombe à vingt-sept points,
+   les pictogrammes de quinze y glissaient à leur tour. */
+.iconbtn{padding:0;position:relative;width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
