@@ -15427,32 +15427,35 @@ function marqueZonesMasquees(){
  * première qui échoue.
  */
 async function ecritColonnesEvenement(travaux){
-  let cfg = null, ses = null;
-  try {
-    cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
-    ses = JSON.parse(localStorage.getItem("console-session") || "null");
-  } catch (e) {}
-  if (!cfg?.url || !ses?.access_token) throw new Error("session absente, reconnectez-vous");
+  const acces = accesBase();
+  if (!acces) throw new Error("session absente, reconnectez-vous");
 
-  const entetes = { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token };
   const colonnes = travaux.map(t => t.colonne).join(",");
-  const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=" + colonnes + "&slug=eq." +
-    encodeURIComponent(DATA.slug), { headers: entetes })
-    .then(r => r.ok ? r.json() : []).catch(() => []);
+  /* Les deux appels passent par `base` (_pousse.html), qui échange le jeton
+     d'avance et refait l'appel sur un refus de jeton. Un jeton Supabase vit une
+     heure, et cette page peut rester ouverte une matinée sans qu'aucun geste ne
+     le renouvelle : la description d'une zone tapée à 10 h 30 partait alors
+     dans un 401 que rien ne rattrapait — la fiche en cours étant déjà oubliée,
+     le texte saisi n'existait plus nulle part. */
+  const enBase = await base(acces,
+    "evenement?select=" + colonnes + "&slug=eq." + encodeURIComponent(DATA.slug));
 
   const tables = {}, corps = { modifie_le: new Date().toISOString() };
   travaux.forEach(t => {
-    const table = { ...(enBase[0]?.[t.colonne] || t.secours || {}) };
+    /* `secours` ne vaut que pour une colonne vide en base. Une lecture manquée
+       n'y retombe plus : `base` jette, et l'écriture n'a pas lieu. Repartir de
+       ce que la page tenait à son ouverture, puis remplacer la colonne
+       entière, effaçait les fiches qu'un collègue y avait mises depuis. */
+    const table = { ...(enBase?.[0]?.[t.colonne] || t.secours || {}) };
     t.change(table);
     tables[t.colonne] = corps[t.colonne] = table;
   });
 
-  const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
     method: "PATCH",
-    headers: { ...entetes, "Content-Type": "application/json", "Prefer": "return=minimal" },
+    headers: { "Prefer": "return=minimal" },
     body: JSON.stringify(corps),
   });
-  if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
   return tables;
 }
 

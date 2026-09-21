@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4798 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 4801 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.3725 · 10. Mode administration
 - l.3833 · La fiche d'une zone organisateur
 - l.4542 · Masquer une zone organisateur
-- l.4625 · Placer un libellé à la main
+- l.4628 · Placer un libellé à la main
 
 Fonctions :
 
@@ -48,11 +48,11 @@ Fonctions :
 `reduitLogo` 4062 · `cadreLogo` 4105 · `champLogo` 4177 · `editeurRiche` 4215
 `memeFicheZone` 4372 · `suitFicheZone` 4379 · `verseFicheZone` 4387 · `ficheZone` 4413
 `enregistreZone` 4438 · `basculeAffichageZone` 4553 · `marqueZonesMasquees` 4570
-`ecritColonnesEvenement` 4590 · `ecritColonneEvenement` 4621 · `cleLibelle` 4646
-`empreinteLibelle` 4662 · `placementLibelle` 4670 · `posePlacement` 4680
-`libelleAutomatique` 4697 · `modePlacementLibelles` 4706 · `majPaletteLibelle` 4725
-`choisitLibelle` 4742 · `pousseLibelle` 4749 · `libellePointerDown` 4757
-`libellePointerMove` 4773 · `libellePointerUp` 4782
+`ecritColonnesEvenement` 4590 · `ecritColonneEvenement` 4624 · `cleLibelle` 4649
+`empreinteLibelle` 4665 · `placementLibelle` 4673 · `posePlacement` 4683
+`libelleAutomatique` 4700 · `modePlacementLibelles` 4709 · `majPaletteLibelle` 4728
+`choisitLibelle` 4745 · `pousseLibelle` 4752 · `libellePointerDown` 4760
+`libellePointerMove` 4776 · `libellePointerUp` 4785
 
 Éléments :
 
@@ -800,7 +800,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `jeton` 80 · `client` 83
 
-### `supabase/functions/plan-public/index.ts` — 1033 l.
+### `supabase/functions/plan-public/index.ts` — 1050 l.
 
 `cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 118 · `avecVignette` 155
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
