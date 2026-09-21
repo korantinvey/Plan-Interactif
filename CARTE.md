@@ -312,7 +312,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_geometrie.html` — 647 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_geometrie.html` — 655 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 octies. Reprendre à la main la géométrie d'un emplacement
 
@@ -326,10 +326,10 @@ Fonctions :
 `boutonVerrouGeo` 296 · `modeGeometrie` 307 · `objetGeoSous` 333 · `groupeGeo` 342
 `choisitGeo` 347 · `cadreGeo` 361 · `prisesGeo` 381 · `curseurGeo` 393
 `dessinePoigneesGeo` 396 · `ecritDimensionsGeo` 424 · `nomSorteGeo` 436
-`majPaletteGeo` 438 · `finGesteGeo` 468 · `enregistreGeo` 478 · `geometrieOrigine` 491
-`retraceGeo` 506 · `pousseGeometrie` 517 · `appliqueDimensionGeo` 534
-`geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
-`geometriePointerUp` 633
+`majPaletteGeo` 438 · `finGesteGeo` 468 · `enregistreGeo` 486 · `geometrieOrigine` 499
+`retraceGeo` 514 · `pousseGeometrie` 525 · `appliqueDimensionGeo` 542
+`geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
+`geometriePointerUp` 641
 
 ### `_head.html` — 5481 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
@@ -466,7 +466,7 @@ Fonctions :
 `perimeJournee` 1656 · `oublieSejour` 1671 · `ouvreOrganisation` 1686 · `essaieSejour` 2061
 `lanceSejour` 2088 · `refaitSejour` 2120
 
-### `_js.html` — 5065 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 5070 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.543 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -474,11 +474,11 @@ Fonctions :
 - l.995 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.1131 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.2362 · 6. Vue
-- l.2788 · 7. Sélection et fiche
-- l.4151 · 8. Interactions du plan
-- l.4579 · Ce que les tiroirs lisent d'un geste
-- l.4625 · Le tiroir de la liste — écrans étroits
-- l.4847 · Les tiroirs menés par la hauteur — écrans étroits
+- l.2793 · 7. Sélection et fiche
+- l.4156 · 8. Interactions du plan
+- l.4584 · Ce que les tiroirs lisent d'un geste
+- l.4630 · Le tiroir de la liste — écrans étroits
+- l.4852 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -510,21 +510,21 @@ Fonctions :
 `figeTextes` 2394 · `rendTextes` 2402 · `cadrage` 2438 · `peintLibelles` 2443
 `detacheLibelles` 2449 · `rattacheLibelles` 2461 · `etireLibelles` 2479 · `appliqueVue` 2487
 `rafraichitVue` 2531 · `poseVue` 2545 · `mesureBarre` 2574 · `masqueHaut` 2598
-`masque` 2605 · `masqueDroite` 2637 · `fit` 2648 · `stoppeZoom` 2681 · `glisseVersVise` 2687
-`glisseVers` 2729 · `rectVisee` 2751 · `zoom` 2771 · `echelle` 2780 · `ETROIT` 2794
-`anime` 2810 · `noeud` 2834 · `canalPlan` 2844 · `rangSociete` 2852 · `select` 2861
-`centre` 2886 · `centrePoint` 2890 · `montre` 2935 · `libelleCorps` 2967 · `ordreCorps` 2984
-`groupesFiche` 3016 · `montreIntitule` 3029 · `valeurCorps` 3049 · `champCorps` 3062
-`groupeCorps` 3074 · `corpsRange` 3087 · `momentLocal` 3122 · `programme` 3145
-`jourLong` 3178 · `ficheConf` 3189 · `lien` 3336 · `adresseWeb` 3344 · `pictoRS` 3387
-`adresseSure` 3405 · `adresseVignette` 3436 · `adresseImage` 3454 · `imageSure` 3467
-`assainitRiche` 3496 · `enBlocs` 3536 · `rangeRiche` 3549 · `ecarteClicFantome` 3577
-`nomSociete` 3586 · `societes` 3599 · `choisitExposant` 3610 · `poseMarque` 3648
-`montreMarque` 3708 · `poseCode` 3731 · `rangeMarque` 3772 · `ouvre` 3835 · `ferme` 4123
-`onglet` 4141 · `milieu` 4171 · `commencePince` 4177 · `suitPince` 4191
-`plieLesBandes` 4244 · `saisitPlan` 4258 · `cibleElargie` 4340 · `planifieFiltre` 4535
-`traceurDeGeste` 4603 · `cranVoisin` 4622 · `retraitBas` 4648 · `mesureTiroir` 4662
-`montreTiroir` 4665 · `hisseTiroir` 4669 · `tiroirCrante` 4874
+`masque` 2605 · `masqueDroite` 2642 · `fit` 2653 · `stoppeZoom` 2686 · `glisseVersVise` 2692
+`glisseVers` 2734 · `rectVisee` 2756 · `zoom` 2776 · `echelle` 2785 · `ETROIT` 2799
+`anime` 2815 · `noeud` 2839 · `canalPlan` 2849 · `rangSociete` 2857 · `select` 2866
+`centre` 2891 · `centrePoint` 2895 · `montre` 2940 · `libelleCorps` 2972 · `ordreCorps` 2989
+`groupesFiche` 3021 · `montreIntitule` 3034 · `valeurCorps` 3054 · `champCorps` 3067
+`groupeCorps` 3079 · `corpsRange` 3092 · `momentLocal` 3127 · `programme` 3150
+`jourLong` 3183 · `ficheConf` 3194 · `lien` 3341 · `adresseWeb` 3349 · `pictoRS` 3392
+`adresseSure` 3410 · `adresseVignette` 3441 · `adresseImage` 3459 · `imageSure` 3472
+`assainitRiche` 3501 · `enBlocs` 3541 · `rangeRiche` 3554 · `ecarteClicFantome` 3582
+`nomSociete` 3591 · `societes` 3604 · `choisitExposant` 3615 · `poseMarque` 3653
+`montreMarque` 3713 · `poseCode` 3736 · `rangeMarque` 3777 · `ouvre` 3840 · `ferme` 4128
+`onglet` 4146 · `milieu` 4176 · `commencePince` 4182 · `suitPince` 4196
+`plieLesBandes` 4249 · `saisitPlan` 4263 · `cibleElargie` 4345 · `planifieFiltre` 4540
+`traceurDeGeste` 4608 · `cranVoisin` 4627 · `retraitBas` 4653 · `mesureTiroir` 4667
+`montreTiroir` 4670 · `hisseTiroir` 4674 · `tiroirCrante` 4879
 
 Éléments :
 

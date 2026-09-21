@@ -2613,8 +2613,13 @@ function masque(){
   const iti = $("itineraire");
   if (iti && iti.classList.contains("open")) bas = Math.max(bas, iti.offsetHeight);
   if (tiroir){
+    /* Sur le corps, là où la mesure la pose — lue sur la racine elle revenait
+       vide, et le repli de 164 px tenait lieu de mesure pour une bande qui en
+       fait quatre-vingt-dix. Trente pixels de masque en trop, et la moitié en
+       décalage sur tout ce qui cadre. La lecture d'à côté, celle du glissement,
+       le disait déjà. */
     bas = Math.max(bas, ficheOuverte
-      ? parseFloat(getComputedStyle(document.documentElement)
+      ? parseFloat(getComputedStyle(document.body)
           .getPropertyValue("--replie")) || 164
       : r.bottom - tiroir.getBoundingClientRect().top);
   }
