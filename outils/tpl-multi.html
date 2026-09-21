@@ -1615,7 +1615,7 @@ html .detail-hd .badge.dist.teinte{
 /* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
    sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
    elles s'effacent, et leurs champs se suivent comme s'ils étaient seuls. */
-.cInfos,.cConf{display:contents}
+.cInfos,.cConf,.cProd{display:contents}
 /* Deux onglets quand la fiche est trop étroite pour tout montrer d'un coup :
    ce qu'est l'exposant, puis ce qu'il anime. Ils ne paraissent que s'il y a
    les deux, et s'effacent dès que la fiche s'élargit — deux colonnes disent
@@ -1640,13 +1640,26 @@ html .detail-hd .badge.dist.teinte{
   background:var(--accent);color:var(--accent-ink);
   font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;text-align:center}
 .ong[aria-selected="true"] .n{background:var(--accent-ink);color:var(--accent)}
+/* Un onglet sans volet à montrer ne paraît pas : un exposant tient des
+   conférences sans présenter de produits, ou l'inverse, et c'est le cas
+   courant. « display » posé par la règle du dessus l'emporterait sur
+   l'attribut, d'où cette ligne-ci. */
+.ong[hidden]{display:none}
 @media (max-width:1099.98px){
   /* le trait de l'en-tête passerait juste au-dessus des onglets */
   .detail.deux .detail-hd{border-bottom:none}
-  .detail.deux[data-onglet="prog"] .cInfos{display:none}
-  .detail.deux:not([data-onglet="prog"]) .cConf{display:none}
-  /* l'onglet nomme déjà le programme, le libellé du champ ferait doublon */
-  .detail.deux[data-onglet="prog"] .cConf > .field > .eyebrow{display:none}
+  /* Un volet par onglet, et les deux autres effacés. Écrit position par
+     position plutôt qu'en négatif : à deux volets le négatif suffisait, à
+     trois il fallait dire « ni l'un ni l'autre » deux fois par volet. */
+  .detail.deux[data-onglet="detail"] .cConf,
+  .detail.deux[data-onglet="detail"] .cProd{display:none}
+  .detail.deux[data-onglet="prog"] .cInfos,
+  .detail.deux[data-onglet="prog"] .cProd{display:none}
+  .detail.deux[data-onglet="prod"] .cInfos,
+  .detail.deux[data-onglet="prod"] .cConf{display:none}
+  /* l'onglet nomme déjà le volet, le libellé du champ ferait doublon */
+  .detail.deux[data-onglet="prog"] .cConf > .field > .eyebrow,
+  .detail.deux[data-onglet="prod"] .cProd > .field > .eyebrow{display:none}
 }
 /* Un exposant qui tient cinq conférences repoussait son adresse et ses
    contacts loin sous la ligne de flottaison. Quand il en tient, la fiche
@@ -1660,13 +1673,18 @@ html .detail-hd .badge.dist.teinte{
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px 20px}
   .detail.deux .cInfos{grid-column:1;display:flex;flex-direction:column;gap:15px}
   .detail.deux .cConf{grid-column:2;display:flex;flex-direction:column}
+  /* Sous le programme, dans la même colonne : ce qu'un exposant anime et ce
+     qu'il présente se lisent du même côté, en face de ce qu'il est. Une
+     troisième colonne aurait mangé le plan que la fiche sert. */
+  .detail.deux .cProd{grid-column:2;display:flex;flex-direction:column}
   .detail.deux .acts{grid-column:1/-1}
 }
 /* Une fiche a deux blocs — ce qu'elle décrit, ce qu'elle programme — et l'un
    des deux est souvent vide : une zone sans description, un stand sans
    conférence. Vide, il reste un élément de la colonne, et l'écart qui le
    sépare du suivant se lisait comme une marge de trop en haut de la fiche. */
-.detail-bd > .cInfos:empty,.detail-bd > .cConf:empty{display:none}
+.detail-bd > .cInfos:empty,.detail-bd > .cConf:empty,
+.detail-bd > .cProd:empty{display:none}
 .field{display:flex;flex-direction:column;gap:3px}
 .field .v{font-size:14px;line-height:1.45}
 .field .v a{color:var(--accent)}
@@ -1729,6 +1747,36 @@ html .detail-hd .badge.dist.teinte{
   font-family:"IBM Plex Mono",monospace}
 .prog .t{font-size:13px;line-height:1.35;color:var(--ink)}
 .prog .ty{font-size:11px;color:var(--ink-3)}
+/* Le catalogue d'un exposant.
+
+   Une grille et non une pile : un produit se reconnaît à son image, et quatre
+   vignettes côte à côte se parcourent d'un regard là où quatre rangs empilés
+   se font défiler. La largeur minimale tient le nom sur deux lignes — un
+   « Impresora de Sublimación FEDAR » n'en tient pas sur une — et la grille se
+   ramène d'elle-même à deux colonnes dans un volet étroit, à une seule dans le
+   tiroir d'un téléphone. */
+.prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
+  gap:8px;margin-top:2px}
+.prod{display:flex;flex-direction:column;gap:6px;padding:7px;width:100%;
+  text-align:left;background:var(--surface-2);border:none;
+  border-radius:var(--radius);cursor:pointer;transition:background .15s}
+.prod:hover{background:var(--line)}
+.prod:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Un logo de produit est large plus souvent que carré, et l'image est l'objet
+   même : on la loge entière dans un carré plutôt que de la recadrer — c'est
+   la leçon des avatars, où le nom de l'enseigne se retrouvait amputé. Le fond
+   clair tient la place quand elle est plus étroite que haute. */
+.prod .v{display:block;width:100%;aspect-ratio:1;object-fit:contain;
+  background:var(--surface);border-radius:calc(var(--radius) - 2px)}
+/* Sans image, le carré reste : les noms d'une liste à moitié illustrée ne
+   s'alignaient plus, et le catalogue se lisait comme deux listes. */
+.prod .v.vide{background:var(--line)}
+.prod .t{font-size:12.5px;line-height:1.3;color:var(--ink);overflow-wrap:anywhere}
+/* L'image dans la fenêtre du produit : l'originale, que la source ne borne
+   pas. Une hauteur maximale l'empêche de pousser la présentation hors de
+   l'écran sur un panorama comme sur un portrait. */
+.prodImg{display:block;width:100%;max-height:44vh;object-fit:contain;
+  margin-bottom:4px;border-radius:var(--radius);background:var(--surface-2)}
 /* Les exposants qui tiennent une conférence. Le nom d'abord, son emplacement
    au bout : c'est un rang qu'on lit, puis qu'on suit jusqu'à la fiche. */
 .expos{display:flex;flex-direction:column;gap:6px;margin-top:2px}
@@ -5506,6 +5554,8 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
           aria-controls="dPaneInfos" aria-selected="true">Détail</button>
         <button type="button" class="ong" id="dOngProg" role="tab"
           aria-controls="dPaneConf" aria-selected="false">Programme<span class="n" id="dOngNb"></span></button>
+        <button type="button" class="ong" id="dOngProd" role="tab"
+          aria-controls="dPaneProd" aria-selected="false">Produits<span class="n" id="dOngNbProd"></span></button>
       </div>
       <div class="detail-bd" id="dBody"></div>
     </section>
@@ -8798,6 +8848,116 @@ function programme(l, titre){
   return out + '</div></div>';
 }
 
+/* Les produits de la fiche ouverte, dans l'ordre où elle les montre.
+
+   Ils vivent sur la société et non dans un index global, à la différence des
+   conférences : une conférence se cherche depuis le programme d'une salle ou
+   depuis un parcours retenu, un produit ne s'atteint que par la fiche qui le
+   porte. Le rang suffit donc à le désigner, et il ne vaut que le temps où
+   cette fiche est ouverte. */
+let produitsOuverts = [];
+
+/**
+ * Le catalogue d'un exposant : ce qu'il présente sur son stand.
+ *
+ * La liste ne montre que la vignette et le nom — un exposant en porte quatre à
+ * la médiane et jusqu'à quarante-quatre, et une présentation de dix lignes
+ * chacune ferait de la fiche un catalogue à faire défiler. Le reste tient dans
+ * la fenêtre qu'un appui ouvre, comme pour une conférence.
+ */
+function produits(l, titre){
+  l = l || [];
+  if (!l.length) return "";
+  let out = '<div class="field prod-bloc"><span class="eyebrow">' +
+    esc(titre || "Produits") + '</span><div class="prods">';
+  l.forEach((p, i) => {
+    /* La vignette est bornée à 500 px par la source, et se charge à la demande :
+       une fiche ouverte au large en montre quatre, une à l'étroit une seule
+       avant qu'on fasse défiler. Le carré vide tient sa place quand il n'y a
+       pas d'image — sans lui, les noms d'une liste mi-illustrée ne
+       s'alignaient plus. */
+    const v = adresseImage(p.image);
+    out += '<button type="button" class="prod" data-prod="' + i + '">' +
+      (v ? '<img class="v" src="' + esc(v) + '" alt="" loading="lazy">'
+         : '<span class="v vide" aria-hidden="true"></span>') +
+      '<span class="t">' + esc(p.nom) + '</span></button>';
+  });
+  return out + '</div></div>';
+}
+
+/**
+ * La fiche d'un produit, dans une fenêtre.
+ *
+ * Elle ne compte pas : le vocabulaire des mesures est fermé — une cible que la
+ * synchronisation n'a pas déclarée est écartée à l'écriture — et les produits
+ * n'y sont pas déclarés. Mieux vaut ne rien envoyer que d'envoyer ce qui sera
+ * jeté sans le dire.
+ */
+function ficheProduit(rang){
+  const p = produitsOuverts[Number(rang)];
+  if (!p) return;
+  ouvreModale(p.nom, corps => {
+    /* L'originale et non la vignette : elle n'est bornée par rien — jusqu'à
+       six mille pixels — mais la fenêtre n'en ouvre qu'une à la fois, et c'est
+       le seul endroit où l'on regarde vraiment l'image. */
+    const img = adresseImage(p.grande || p.image);
+    if (img){
+      const el = document.createElement("img");
+      el.className = "prodImg";
+      el.src = img;
+      el.alt = "";
+      corps.appendChild(el);
+    }
+    /* La présentation porte du balisage : elle s'écrit dans un éditeur, chez
+       l'organisateur, et arrive par la même API que le reste. On ne garde donc
+       que ce qu'on reconnaît, comme pour la description d'une zone. Elle est
+       dans la langue où l'exposant l'a saisie : Eventmaker en tient bien une
+       traduction, mais ne la rend par aucun chemin de son API. */
+    if (p.texte){
+      const w = document.createElement("div");
+      w.className = "field large";
+      w.innerHTML = '<span class="eyebrow"></span><div class="riche" translate="no"></div>';
+      w.querySelector(".eyebrow").textContent = "Présentation";
+      w.querySelector(".riche").innerHTML = assainitRiche(p.texte);
+      corps.appendChild(w);
+    }
+    if ((p.themes || []).length){
+      const w = document.createElement("div");
+      w.className = "field";
+      w.innerHTML = '<span class="eyebrow"></span><span class="v"></span>';
+      w.querySelector(".eyebrow").textContent = "Thématiques";
+      const v = w.querySelector(".v");
+      p.themes.forEach(t => {
+        const el = document.createElement("span");
+        el.className = "ligne";
+        el.textContent = t;
+        v.appendChild(el);
+      });
+      corps.appendChild(w);
+    }
+    /* La documentation et la vidéo mènent hors du plan : deux boutons au pied
+       de la fenêtre, et non deux adresses écrites au long — celles-ci sont des
+       chemins de dépôt à rallonge, illisibles et qui coupent la fenêtre en
+       deux. */
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    const sortie = (adr, libelle) => {
+      const u = adresseWeb(adr);
+      if (!u) return;
+      const b = document.createElement("a");
+      b.className = "btn";
+      b.href = u;
+      b.target = "_blank";
+      b.rel = "noopener";
+      b.textContent = libelle;
+      acts.appendChild(b);
+    };
+    sortie(p.doc, "Documentation");
+    sortie(p.video, "Vidéo");
+    if (acts.childNodes.length) corps.appendChild(acts);
+  }, [{ libelle: "Fermer", genre: "primaire" }], "fiche");
+}
+
 /** Une date écrite en toutes lettres : « samedi 14 mars 2026 ». */
 function jourLong(d){
   if (!d) return "";
@@ -9537,6 +9697,18 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const confs = ok("conferences", zone
     ? programme(P().parZone && P().parZone.get(o.id))
     : programme(sien, "Conférences"));
+  /* Le catalogue de la société qu'on regarde, et non celui du stand : chaque
+     enseigne hébergée a le sien, et le titulaire n'a aucun titre sur celui de
+     qui il loge. Une zone organisateur n'en a pas — elle n'est pas un
+     exposant.
+
+     Le rang relevé ici est celui que la liste affichera : c'est lui qui
+     désignera le produit à ouvrir, et il ne vaut que tant que cette fiche-ci
+     est ouverte. Il se relève donc après le réglage, et non avant — un
+     catalogue que le salon ne montre pas n'a pas de rang du tout. */
+  const catalogue = (!zone && montre(t, "produits") && soc.produits) || [];
+  produitsOuverts = catalogue;
+  const prods = produits(catalogue, "Produits");
   /* Le corps de la fiche, champ par champ sous sa clé plutôt que d'un seul
      tenant : l'ordre de lecture n'est pas le même d'un salon à l'autre — ici
      la nomenclature prime, là l'adresse — et c'est l'exploitant qui le règle
@@ -9681,14 +9853,22 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      a les deux — un stand sans conférence n'a rien à mettre en face, une zone
      n'a pas de fiche. La largeur décide ensuite de la forme : deux colonnes
      au large, deux onglets à l'étroit. */
-  const partage = !zone && !!confs && !!infos;
+  /* Deux choses peuvent se ranger en face de ce qu'est l'exposant : ce qu'il
+     anime, et ce qu'il présente. L'une ou l'autre suffit à partager la fiche,
+     et chaque onglet ne paraît que s'il a de quoi remplir son volet — un
+     interrupteur à trois positions dont une vide ferait appuyer pour rien. */
+  const partage = !zone && (!!confs || !!prods) && !!infos;
   $("detail").classList.toggle("deux", partage);
   $("dOnglets").hidden = !partage;
+  $("dOngProg").hidden = !confs;
+  $("dOngProd").hidden = !prods;
   $("dOngNb").textContent = partage && sien.length ? sien.length : "";
+  $("dOngNbProd").textContent = partage && catalogue.length ? catalogue.length : "";
   // une fiche s'ouvre sur le détail : c'est ce qu'on est venu y lire
   onglet("detail");
   $("dBody").innerHTML = bloc2("cInfos", "dPaneInfos", infos) +
     bloc2("cConf", "dPaneConf", confs) +
+    bloc2("cProd", "dPaneProd", prods) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
   /* Une conférence ouverte d'ici vient soit du programme d'une salle, soit
@@ -9696,6 +9876,8 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const canalConf = zone ? "salle" : "exposant";
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf, canalConf));
+  $("dBody").querySelectorAll("[data-prod]").forEach(b =>
+    b.onclick = () => ficheProduit(b.dataset.prod));
   /* Le signet du parcours vit en haut, à côté de la croix : retenir un
      exposant porte sur la fiche entière. Une zone organisateur ne se retient
      pas elle-même — ce sont ses conférences qu'on ajoute, chacune à son heure. */
@@ -9772,11 +9954,13 @@ function ferme(){
    entière, et la bascule ne relit rien. */
 function onglet(n){
   $("detail").dataset.onglet = n;
-  $("dOngInfo").setAttribute("aria-selected", String(n !== "prog"));
+  $("dOngInfo").setAttribute("aria-selected", String(n === "detail"));
   $("dOngProg").setAttribute("aria-selected", String(n === "prog"));
+  $("dOngProd").setAttribute("aria-selected", String(n === "prod"));
 }
 $("dOngInfo").onclick = () => onglet("detail");
 $("dOngProg").onclick = () => onglet("prog");
+$("dOngProd").onclick = () => onglet("prod");
 $("closeDetail").onclick = ferme;
 $("voile").onclick = ferme;
 
