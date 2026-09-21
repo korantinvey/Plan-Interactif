@@ -1012,9 +1012,11 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
    l'outil reste entier, les images se posent toujours, elles ne mènent plus
    nulle part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
 .outils.mode-image #imageSoc{display:block}
-/* Grisé plutôt que retiré, comme l'outil de stand plus haut. « pointer-events »
-   plutôt que « disabled » : la feuille de style suffit, et rien à défaire
-   quand l'option se rouvre. */
+/* Grisé plutôt que retiré, comme l'outil de stand plus haut. Le gris est tout
+   ce que la feuille de style peut faire : elle ne retire pas du parcours au
+   clavier, et « pointer-events » non plus. C'est `_dessin.html`
+   `poseChampImage` qui pose « disabled », d'où le gris propre au champ
+   désactivé par-dessus celui-ci. */
 html.sans-image-stand .outils #imageSoc{
   opacity:.4;filter:grayscale(1);pointer-events:none}
 #elemPicto[hidden]{display:none}

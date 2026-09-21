@@ -1235,6 +1235,18 @@ function societesDuPlan(){
   return out;
 }
 
+/* Le champ qui rattache une image à un exposant, posé selon que le salon a
+   pris l'option. La feuille de style le grise, mais le gris s'atteint encore
+   au clavier, et un champ grisé où l'on peut taper ment sur ce qu'il fera.
+   Comme le bouton de la journée, c'est donc « disabled » qui ferme, et il se
+   rouvre par le même chemin le jour où l'option se prend. */
+function poseChampImage(){
+  const ch = $("imageSoc");
+  const offert = optionActive("imageStand");
+  if (ch) ch.disabled = !offert;
+  if (offert) remplitListeSocietes();
+}
+
 function remplitListeSocietes(){
   const l = $("listeSoc");
   if (!l) return;
@@ -2158,7 +2170,7 @@ function choisitOutil(o){
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
      geste est de choisir un fichier, et le champ n'est qu'une option — au sens
      propre, puisque le salon peut ne pas l'avoir prise. */
-  if (o === "image" && optionActive("imageStand")) remplitListeSocietes();
+  if (o === "image") poseChampImage();
   aide();
 }
 

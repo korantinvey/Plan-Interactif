@@ -1896,9 +1896,11 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
    l'outil reste entier, les images se posent toujours, elles ne mènent plus
    nulle part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
 .outils.mode-image #imageSoc{display:block}
-/* Grisé plutôt que retiré, comme l'outil de stand plus haut. « pointer-events »
-   plutôt que « disabled » : la feuille de style suffit, et rien à défaire
-   quand l'option se rouvre. */
+/* Grisé plutôt que retiré, comme l'outil de stand plus haut. Le gris est tout
+   ce que la feuille de style peut faire : elle ne retire pas du parcours au
+   clavier, et « pointer-events » non plus. C'est `_dessin.html`
+   `poseChampImage` qui pose « disabled », d'où le gris propre au champ
+   désactivé par-dessus celui-ci. */
 html.sans-image-stand .outils #imageSoc{
   opacity:.4;filter:grayscale(1);pointer-events:none}
 #elemPicto[hidden]{display:none}
@@ -12050,10 +12052,10 @@ const OPTIONS = [
       "l'image : fermée, l'outil image reste et les images se posent comme " +
       "n'importe quel dessin, mais le champ qui nomme l'exposant est grisé et " +
       "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
-    /* Le champ paraît et s'en va tout seul, la feuille de style s'en charge.
-       Sa liste de choix, elle, n'est remplie qu'en prenant l'outil : on la
-       remplit ici pour l'exploitant qui ouvre l'option l'outil déjà en main. */
-    apres: () => { if (outil === "image" && optionActive("imageStand")) remplitListeSocietes(); } },
+    /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
+       et sa liste de choix se posent en JS, et seulement l'outil en main : on
+       repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
+    apres: () => { if (outil === "image") poseChampImage(); } },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +
@@ -17815,6 +17817,18 @@ function societesDuPlan(){
   return out;
 }
 
+/* Le champ qui rattache une image à un exposant, posé selon que le salon a
+   pris l'option. La feuille de style le grise, mais le gris s'atteint encore
+   au clavier, et un champ grisé où l'on peut taper ment sur ce qu'il fera.
+   Comme le bouton de la journée, c'est donc « disabled » qui ferme, et il se
+   rouvre par le même chemin le jour où l'option se prend. */
+function poseChampImage(){
+  const ch = $("imageSoc");
+  const offert = optionActive("imageStand");
+  if (ch) ch.disabled = !offert;
+  if (offert) remplitListeSocietes();
+}
+
 function remplitListeSocietes(){
   const l = $("listeSoc");
   if (!l) return;
@@ -18738,7 +18752,7 @@ function choisitOutil(o){
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
      geste est de choisir un fichier, et le champ n'est qu'une option — au sens
      propre, puisque le salon peut ne pas l'avoir prise. */
-  if (o === "image" && optionActive("imageStand")) remplitListeSocietes();
+  if (o === "image") poseChampImage();
   aide();
 }
 
