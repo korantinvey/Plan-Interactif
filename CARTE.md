@@ -224,7 +224,7 @@ Fonctions :
 
 - l.660 · Page de rapport
 
-### `_dessin.html` — 2460 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2462 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -253,13 +253,13 @@ Fonctions :
 `vaAuRepere` 1464 · `clePoi` 1507 · `pastillePoi` 1516 · `cartouchePoi` 1520
 `ouvrePoi` 1639 · `mesureCartouche` 1712 · `pharePoi` 1728 · `phareRepere` 1732
 `phareZone` 1734 · `eclairePoi` 1740 · `oublieChoixPoi` 1773 · `signale` 1782
-`calquePourImage` 1796 · `lienImageSaisi` 1824 · `formeImage` 1835 · `poseImage` 1844
-`ditImagePosee` 1866 · `importeImage` 1874 · `dessinPointerDown` 1925
-`dessinPointerMove` 2010 · `dessinPointerUp` 2048 · `termineTrace` 2089 · `aide` 2101
-`outilOffert` 2130 · `choisitOutil` 2133 · `enchaineStand` 2164 · `optionsModes` 2194
-`proposeCouleurLigne` 2205 · `montreTransport` 2216 · `activeCalque` 2275 · `cleVerrou` 2333
-`verrouille` 2334 · `basculeVerrou` 2336 · `pictoVerrou` 2353 · `montreRoleIti` 2387
-`creeCalque` 2418 · `demandeNom` 2431 · `renommeCalque` 2450
+`calquePourImage` 1796 · `lienImageSaisi` 1824 · `formeImage` 1836 · `poseImage` 1845
+`ditImagePosee` 1867 · `importeImage` 1875 · `dessinPointerDown` 1926
+`dessinPointerMove` 2011 · `dessinPointerUp` 2049 · `termineTrace` 2090 · `aide` 2102
+`outilOffert` 2132 · `choisitOutil` 2135 · `enchaineStand` 2166 · `optionsModes` 2196
+`proposeCouleurLigne` 2207 · `montreTransport` 2218 · `activeCalque` 2277 · `cleVerrou` 2335
+`verrouille` 2336 · `basculeVerrou` 2338 · `pictoVerrou` 2355 · `montreRoleIti` 2389
+`creeCalque` 2420 · `demandeNom` 2433 · `renommeCalque` 2452
 
 Éléments :
 

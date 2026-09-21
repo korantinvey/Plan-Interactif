@@ -1823,8 +1823,9 @@ function calquePourImage(){
  */
 function lienImageSaisi(){
   /* Le rattachement est une option du salon : fermée, la feuille de style
-     retire le champ, mais ce qu'on y avait saisi avant y reste. C'est ici
-     qu'on refuse, plutôt que de lier depuis un champ que personne ne voit. */
+     grise le champ, mais ce qu'on y avait saisi avant y reste — et se relit,
+     puisque le champ demeure. C'est ici qu'on refuse, donc, plutôt que de
+     lier depuis un champ que l'option a fermé. */
   if (!optionActive("imageStand")) return null;
   const ch = $("imageSoc");
   const l = ch ? societeSaisie(ch.value) : null;
@@ -2123,9 +2124,10 @@ function aide(){
 }
 
 /* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
-   stands n'a pas son bouton dans la palette (voir « OPTIONS » de
-   « _admin1.html »). L'image, elle, n'est pas une option — c'en est une de la
-   rattacher à un exposant, et c'est son champ qui s'en va. */
+   stands garde son bouton dans la palette, grisé, et c'est ici que le clic
+   retombe sur la sélection (voir « OPTIONS » de « _admin1.html »). L'image,
+   elle, n'est pas une option — c'en est une de la rattacher à un exposant, et
+   c'est son champ qui se grise. */
 const OPTION_OUTIL = { stand: "dessinStand" };
 const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
 
