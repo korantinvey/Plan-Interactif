@@ -2806,11 +2806,14 @@ qu'un tel diff ne se lit pas avec ce qu'on lui accorde, puis a rendu son avis
 en message simple, que l'action jette. Sur la pull request : une coche verte et
 pas un mot, exactement ce que montre une relecture satisfaite. D'où la
 vérification finale — si aucun avis n'a été posé depuis le début de la tâche,
-elle le dit sur la pull request. Et le compte-rendu relève désormais à chaque
-exécution ce que la relecture a coûté, appels refusés compris : une dépense
-qu'on ne voit pas ne se juge pas. La leçon vaut d'être retenue : un très gros
-périmètre se relit par domaine, en plusieurs fois, pas en une pull request
-géante.
+elle le dit sur la pull request. Elle ne parle que d'une relecture qui s'est
+réellement tenue : celle qu'arrête la garde d'identité juste en dessous n'a
+rien à dire, et se plaindre de son silence reviendrait à commenter chaque pull
+request qui touche au workflow — la première ayant été la sienne. Et le
+compte-rendu relève désormais à chaque exécution ce que la relecture a coûté,
+appels refusés compris : une dépense qu'on ne voit pas ne se juge pas. La leçon
+vaut d'être retenue : un très gros périmètre se relit par domaine, en plusieurs
+fois, pas en une pull request géante.
 
 Et une conséquence qui surprend la première fois : **l'action refuse de tourner
 quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
