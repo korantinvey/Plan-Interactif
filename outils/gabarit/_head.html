@@ -3001,6 +3001,11 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
 #itin .iNum{fill:var(--surface);text-anchor:middle;dominant-baseline:central;
   font-family:"IBM Plex Mono",monospace;font-weight:600}
 #itin .iNum.conf{fill:var(--accent)}
+/* Le temps que le trait s'écrive, ce qu'il n'a pas encore atteint attend.
+   Écrite dès la première image plutôt qu'ajoutée en chemin, la pastille garde
+   son rang : le zoom relit les pastilles dans l'ordre pour les redimensionner,
+   et l'une qui manquerait décalerait toutes les suivantes. */
+#itin .aVenir{opacity:0}
 /* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
    disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
    journée, c'est calculer un itinéraire : sans le moteur, le bouton du
