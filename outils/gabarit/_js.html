@@ -287,6 +287,7 @@ function indexe(d){
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
   poseFavicon(DATA.favicon);
+  poseLogoSalon(DATA.favicon);
   /* Et l'écran d'accueil d'iOS, qui ne lit pas le manifeste : le nom et
      l'icône du salon plutôt que ceux du produit. */
   nommeApplication(nom);
@@ -459,6 +460,27 @@ function poseFavicon(src){
   }
   l.type = img.slice(5, img.indexOf(";"));
   l.href = img;
+}
+
+/**
+ * Le même logo, mais dans la bande du haut.
+ *
+ * L'icône de l'onglet est la seule image du salon que la page ait déjà : elle
+ * arrive avec les données, et la montrer ne coûte pas un appel de plus. Sur un
+ * téléphone réglé en bande réduite, elle dit le salon plus vite que son nom —
+ * on reconnaît une marque d'un coup d'œil, on lit un nom.
+ *
+ * L'attribut plutôt qu'une classe : sans image, l'élément doit quitter la
+ * ligne, et non s'y tenir à zéro pixel entre le bord et le nom. La feuille de
+ * style décide ensuite s'il y a une bande où le montrer (`_head.html`,
+ * « .logoSalon »).
+ */
+function poseLogoSalon(src){
+  const el = $("logoSalon");
+  if (!el) return;
+  const img = imageSure(src);
+  el.hidden = !img;
+  if (img) el.src = img;
 }
 
 /**
@@ -693,7 +715,10 @@ function onglets(){
      que répéter le titre — souvent mot pour mot, Klipso nommant son plan
      unique comme le salon — et sur un écran étroit il lui prend sa largeur. */
   const seul = DATA.plans.length < 2;
-  $("halls").hidden = seul;
+  /* Le cadre et non la barre : vidée, elle laisserait son cadre — un fondu, deux
+     flèches et, sur un téléphone, la pastille qui les porte — annoncer des
+     onglets qui n'existent pas. */
+  $("hallsBande").hidden = seul;
   // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
   document.documentElement.classList.toggle("un-pavillon", seul);
   if (seul) { $("halls").innerHTML = ""; return; }
@@ -702,6 +727,9 @@ function onglets(){
     ' title="' + esc(p.libelle) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
   $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
+  /* Les onglets viennent d'arriver : personne d'autre ne saura qu'ils débordent
+     — le défilement n'a pas bougé, et la fenêtre non plus. */
+  majFondus();
 }
 
 function changePlan(i){
