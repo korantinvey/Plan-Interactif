@@ -443,7 +443,7 @@ module.exports = {
     "No record in this show carries the field yet: the marks set here will stay invisible until the source fills it in.",
   "Le champ « Nouvel exposant » est décoché dans la console : les marques réglées ici ne paraîtront qu'une fois le champ rendu visible.":
     "The \u201cNew exhibitor\u201d field is unticked in the console: the marks set here will only show once the field is made visible.",
-  "Couleur de la marque": "Mark colour",
+  "Couleur des marques": "Colour of the marks",
   "Sur le plan": "On the map",
   "Une forme posée sur le stand. Le coin corné se place sur l'angle de la boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise déjà.":
     "A shape laid on the stand. The folded corner sits on the corner of the outline's box: an L-shaped stand has no such corner, and its fold spills into the aisle. The outline, for its part, borrows the stroke selection already uses.",
