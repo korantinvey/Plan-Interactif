@@ -435,24 +435,35 @@ module.exports = {
   "Une bande aussi basse que possible : le nom du salon, les pavillons, les commandes.":
     "A band as short as it can be: the show name, the halls, the controls.",
 
-  // l'onglet « Nouveaux » — ce que le plan montre de ses nouveaux exposants
-  "Nouveaux": "New arrivals",
-  "La synchronisation pose un champ « Nouvel exposant » sur les fiches des salons qui distinguent leurs nouveaux venus. Ce que le plan en montre se règle ici, surface par surface : le stand sur le plan, la ligne dans la liste des résultats, la tête de la fiche qu'on ouvre. Le choix se voit tout de suite derrière cette fenêtre.":
-    "Synchronisation puts a \u201cNew exhibitor\u201d field on the records of shows that single out their newcomers. What the map makes of it is set here, surface by surface: the stand on the map, the row in the result list, the head of the record that opens. The choice shows at once behind this window.",
-  "Aucune fiche de ce salon ne porte le champ pour l'instant : les marques réglées ici resteront invisibles jusqu'à ce que la source le renseigne.":
-    "No record in this show carries the field yet: the marks set here will stay invisible until the source fills it in.",
+  // les onglets « Nouveaux » et « Adhérents » — ce que le plan montre des
+  // distinctions d'un exposant. Le paragraphe d'accueil et la note du champ
+  // décoché nomment la distinction : deux versions, une par onglet.
+  "La synchronisation pose un champ « Nouvel exposant » sur les fiches des salons qui distinguent leurs nouveaux venus. Ce que le plan en montre se règle ici, surface par surface : le stand sur le plan, la ligne dans la liste des résultats, la tête de la fiche qu'on ouvre. Le choix se voit tout de suite derrière cette fenêtre, et les deux distinctions se cumulent : un exposant qui les porte toutes deux montre les deux marques.":
+    "Synchronisation puts a \u201cNew exhibitor\u201d field on the records of shows that single out their newcomers. What the map makes of it is set here, surface by surface: the stand on the map, the row in the result list, the head of the record that opens. The choice shows at once behind this window, and the two distinctions add up: an exhibitor carrying both shows both marks.",
+  "La synchronisation pose un champ « Adhérent syndicat » sur les fiches des salons dont le syndicat tient la liste de ses membres. Ce que le plan en montre se règle ici, surface par surface : le stand sur le plan, la ligne dans la liste des résultats, la tête de la fiche qu'on ouvre. Le choix se voit tout de suite derrière cette fenêtre, et les deux distinctions se cumulent : un exposant qui les porte toutes deux montre les deux marques.":
+    "Synchronisation puts a \u201cTrade body member\u201d field on the records of shows whose trade body keeps a list of its members. What the map makes of it is set here, surface by surface: the stand on the map, the row in the result list, the head of the record that opens. The choice shows at once behind this window, and the two distinctions add up: an exhibitor carrying both shows both marks.",
+  "Aucune fiche de ce salon ne porte le champ pour l'instant : les marques réglées ici resteront invisibles jusqu'à ce que la source le renseigne. Le champ se désigne dans la console, onglet « Stand ».":
+    "No record in this show carries the field yet: the marks set here will stay invisible until the source fills it in. The field is designated in the console, \u201cStand\u201d tab.",
   "Le champ « Nouvel exposant » est décoché dans la console : les marques réglées ici ne paraîtront qu'une fois le champ rendu visible.":
     "The \u201cNew exhibitor\u201d field is unticked in the console: the marks set here will only show once the field is made visible.",
+  "Le champ « Adhérent syndicat » est décoché dans la console : les marques réglées ici ne paraîtront qu'une fois le champ rendu visible.":
+    "The \u201cTrade body member\u201d field is unticked in the console: the marks set here will only show once the field is made visible.",
   "Couleur des marques": "Colour of the marks",
   "Sur le plan": "On the map",
-  "Une forme posée sur le stand. Le coin corné se place sur l'angle de la boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise déjà.":
-    "A shape laid on the stand. The folded corner sits on the corner of the outline's box: an L-shaped stand has no such corner, and its fold spills into the aisle. The outline, for its part, borrows the stroke selection already uses.",
+  "Une forme posée sur le stand. Le coin corné se place sur l'angle de la boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise déjà. Deux distinctions affichées prennent chacune un coin, l'une à droite et l'autre à gauche : elles ne se recouvrent pas.":
+    "A shape laid on the stand. The folded corner sits on the corner of the outline's box: an L-shaped stand has no such corner, and its fold spills into the aisle. The outline, for its part, borrows the stroke selection already uses. Two distinctions on show take a corner each, one on the right and one on the left: they do not overlap.",
   "Dans la liste": "In the list",
   "La ligne des résultats. Le cartouche dit le mot, mais l'ellipse le mange sur une enseigne longue ; la mention descend sur la seconde ligne, où rien ne la tronque.":
     "The result row. The tag says the word, but the ellipsis eats it on a long brand name; the caption drops to the second line, where nothing truncates it.",
   "En tête de fiche": "At the head of the record",
   "Ce qu'on lit en ouvrant un stand. Le coin corné se pose à gauche : le coin droit porte déjà le logo de l'exposant et la croix de fermeture. Le bandeau prend toute la largeur et descend le nom d'une ligne.":
     "What you read when a stand opens. The folded corner goes on the left: the right corner already carries the exhibitor's logo and the close button. The banner takes the full width and pushes the name down a line.",
+  // le coin ne se partage pas : la phrase s'ajoute à l'aide ci-dessus quand
+  // l'autre distinction l'occupe déjà
+  "Ce qu'on lit en ouvrant un stand. Le coin corné se pose à gauche : le coin droit porte déjà le logo de l'exposant et la croix de fermeture. Le bandeau prend toute la largeur et descend le nom d'une ligne. Le coin corné est déjà pris par l'autre distinction : choisi ici, c'est la pastille qui paraîtra.":
+    "What you read when a stand opens. The folded corner goes on the left: the right corner already carries the exhibitor's logo and the close button. The banner takes the full width and pushes the name down a line. The folded corner is already taken by the other distinction: chosen here, the pill will show instead.",
+  " Le coin corné est déjà pris par l'autre distinction : choisi ici, c'est la pastille qui paraîtra.":
+    " The folded corner is already taken by the other distinction: chosen here, the pill will show instead.",
   // les marques, une planche par surface
   "Point d'angle": "Corner dot",
   "Coin corn\u00e9": "Folded corner",
@@ -463,4 +474,11 @@ module.exports = {
   "Mention sous le nom": "Caption under the name",
   "Pastille": "Pill",
   "Bandeau": "Banner",
+  // le texte que l'exploitant écrit sur la marque. Ce qu'il y met est une
+  // donnée : il paraît tel quel dans les deux langues, l'aide le dit.
+  "Texte de la marque": "Text of the mark",
+  "Ce que la marque écrit : la pastille, le bandeau et la mention sous le nom le portent en entier, le cartouche et le coin corné n'en tiennent que deux ou trois mots. Laissez vide pour « Nouvel exposant ». Le texte s'affiche tel quel, y compris sur la version anglaise du plan.":
+    "What the mark writes: the pill, the banner and the caption under the name carry it in full; the tag and the folded corner hold only two or three words. Leave empty for \u201cNew exhibitor\u201d. The text shows as typed, on the English version of the map too.",
+  "Ce que la marque écrit : la pastille, le bandeau et la mention sous le nom le portent en entier, le cartouche et le coin corné n'en tiennent que deux ou trois mots. Laissez vide pour « Adhérent syndicat ». Le texte s'affiche tel quel, y compris sur la version anglaise du plan.":
+    "What the mark writes: the pill, the banner and the caption under the name carry it in full; the tag and the folded corner hold only two or three words. Leave empty for \u201cTrade body member\u201d. The text shows as typed, on the English version of the map too.",
 };

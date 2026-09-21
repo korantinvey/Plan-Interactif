@@ -328,4 +328,8 @@ module.exports = {
     "{n} logos prepared, {r} unreadable at their source.",
   "Préparation des logos impossible : {e}": "Cannot prepare logos: {e}",
   "Aucun logo à préparer sur ce salon.": "No logos to prepare for this event.",
+  // la ligne « Adhérent syndicat » du mapping des champs
+  "Adhérent syndicat": "Trade body member",
+  "Marque l'exposant membre du syndicat du salon. Le champ porte rarement un oui : cochez sous lui celles de ses valeurs qui comptent pour une adhésion. Ce que le plan en montre se règle depuis l'engrenage du plan, onglet « Adhérents ».":
+    "Marks the exhibitor as a member of the show's trade body. The field rarely carries a yes: tick below it whichever of its values count as membership. What the map makes of it is set from the map's gear, \u201cMembers\u201d tab.",
 };

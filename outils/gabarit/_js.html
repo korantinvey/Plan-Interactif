@@ -269,7 +269,7 @@ function indexe(d){
         kind: "coex", id: s.id, i: k, p: i, code: s.code, sect: s.sect,
         nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
         nomencl: x.nomencl, themes: x.themes, perso: x.perso,
-        perso_en: x.perso_en, neuf: x.neuf,
+        perso_en: x.perso_en, neuf: x.neuf, adh: x.adh,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
                 " " + (s.sect || "") + " " + (x.themes || []).join(" ") +
@@ -687,7 +687,7 @@ function montePlan(){
     esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>').join("");
   emp = p.emprise;
   // les tracés relevés valaient pour les stands du pavillon qu'on quitte
-  oublieNeufs();
+  oublieDists();
   calqueActif = null;
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
@@ -745,22 +745,57 @@ function changePlan(i){
 }
 
 /* ------------------------------------------------------------
-   Les nouveaux venus
+   Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
-   Un salon qui distingue ses nouveaux exposants le dit par un champ que la
+   Un salon qui distingue certains de ses exposants le dit par un champ que la
    synchronisation pose sur la fiche. Ce qu'on en montre se règle surface par
-   surface, depuis l'onglet « Nouveaux » des réglages : la marque qui se lit
-   bien sur une fiche qu'on ouvre — un mot — ne tient pas sur un stand qu'on
-   survole, où le rendu WebGL ne rejoue que des formes.
+   surface, depuis les onglets « Nouveaux » et « Adhérents » des réglages : la
+   marque qui se lit bien sur une fiche qu'on ouvre — un mot — ne tient pas sur
+   un stand qu'on survole, où le rendu WebGL ne rejoue que des formes.
+
+   Les deux se cumulent, et c'est la règle qui commande tout ce qui suit : un
+   nouvel adhérent porte les deux marques, aux trois endroits, et aucune ne
+   passe devant l'autre. D'où une table plutôt que deux jeux de fonctions — en
+   ajouter une troisième ne doit être qu'une ligne de plus — et le rang, qui
+   décide du coin où la marque se pose pour que deux ne se recouvrent pas.
    ------------------------------------------------------------ */
 
-/** Cette société est-elle un nouveau venu, et le salon le montre-t-il ? */
-const estNeuf = (x) => Boolean(x && x.neuf) && montre("stand", "nouveau");
+const DISTINCTIONS = [
+  /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
+     « promotion », et c'est la phrase à côté qui la dit « nouvel exposant ».
+     Une adhésion n'a pas d'image évidente, et l'étincelle en ferait une
+     réclame — d'où la pastille nue. */
+  { cle: "neuf", champ: "neuf", cible: "nouveau", reglage: "_neuf",
+    onglet: "Nouveaux", texte: "Nouvel exposant", court: "Nouveau", picto: true,
+    nomChamp: "Nouvel exposant",
+    quoi: "les fiches des salons qui distinguent leurs nouveaux venus" },
+  { cle: "adherent", champ: "adh", cible: "adherent", reglage: "_adherent",
+    onglet: "Adhérents", texte: "Adhérent syndicat", court: "Adhérent",
+    nomChamp: "Adhérent syndicat",
+    quoi: "les fiches des salons dont le syndicat tient la liste de ses membres" },
+];
 
-/** Un emplacement dont le titulaire ou l'un de ses hébergés vient d'arriver.
- *  Une zone organisateur n'est jamais neuve : elle n'est pas un exposant. */
-const standNeuf = (o) => Boolean(o) && o.kind !== "zone" &&
-  societes(o).some(s => estNeuf(s.soc));
+/** Le texte d'une marque, celui de l'exploitant s'il en a saisi un.
+ *
+ *  Il vaut pour les deux langues : ce qu'un salon écrit là est une donnée,
+ *  comme le nom d'un exposant, et le dictionnaire ne le connaît pas. Un
+ *  syndicat porte son nom à lui — « Adhérent UNAM » —, qui ne se traduit pas
+ *  davantage. */
+const texteDist = (d) => String(conf(d.reglage).texte || "").trim() || d.texte;
+
+/** La même chose en court : un coin corné et un cartouche ne tiennent pas une
+ *  phrase. Un texte saisi n'en a qu'une version — à l'exploitant de le faire
+ *  court, et les vignettes des réglages le lui montrent. */
+const texteCourtDist = (d) =>
+  String(conf(d.reglage).texte || "").trim() || d.court;
+
+/** Cette société porte-t-elle cette distinction, et le salon la montre-t-il ? */
+const porteDist = (x, d) => Boolean(x && x[d.champ]) && montre("stand", d.cible);
+
+/** Un emplacement dont le titulaire ou l'un de ses hébergés la porte.
+ *  Une zone organisateur n'en porte jamais : elle n'est pas un exposant. */
+const standPorte = (o, d) => Boolean(o) && o.kind !== "zone" &&
+  societes(o).some(s => porteDist(s.soc, d));
 
 /* Les marques du plan vivent hors des couches, comme les liserés de la
    sélection et du parcours et pour la même raison : posée dans le groupe du
@@ -768,11 +803,11 @@ const standNeuf = (o) => Boolean(o) && o.kind !== "zone" &&
    après lui. Le calque ne reçoit aucun clic — c'est le stand qu'on désigne,
    pas sa marque — et se range sous « #marques », que la sélection garde au
    sommet. */
-function calqueNeufs(){
-  let g = $("neufs");
+function calqueDists(){
+  let g = $("dists");
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "neufs";
+    g.id = "dists";
     g.setAttribute("aria-hidden", "true");
     svg.insertBefore(g, svg.querySelector("#marques, #itin, #apercu, #poignees"));
   }
@@ -782,14 +817,14 @@ function calqueNeufs(){
 /* L'étincelle de la pastille, redessinée sur le plan. Le même tracé que celui
    de la feuille de style — c'est la même distinction, et deux dessins pour
    elle en feraient deux. */
-const ETOILE_NEUF =
+const ETOILE_DIST =
   '<path d="M9.8 0.2C9.8 5.9 13.9 10 19.6 10C13.9 10 9.8 14.1 9.8 19.8' +
   'C9.8 14.1 5.7 10 0 10C5.7 10 9.8 5.9 9.8 0.2Z"/>' +
   '<path d="M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6' +
   'C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z"/>';
 
 /**
- * La marque d'un stand, dans le mode retenu.
+ * La marque d'un stand, dans le mode retenu et au rang de sa distinction.
  *
  * Sa taille suit celle du stand, entre deux bornes : un demi-mètre sur une
  * échoppe de trois mètres de côté reste visible, et la même marque à l'échelle
@@ -799,84 +834,163 @@ const ETOILE_NEUF =
  * lui-même : un stand en L n'a pas cet angle-là, et sa corne déborde dans
  * l'allée. C'est le prix de cette marque, et le volet des réglages le dit.
  */
-function traceNeuf(mode, p){
-  if (mode === "lisere") return '<path class="neufLis" d="' + p.getAttribute("d") + '"/>';
-  const b = p.getBBox();
-  if (!(b.width > 0) || !(b.height > 0)) return "";
+function traceDist(mode, p, b, rang, deuxLiseres){
+  /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
+     recouvrait le premier et le stand n'en montrait qu'un. Le premier s'élargit
+     donc, et le second se pose dessus — un halo d'une couleur, un trait de
+     l'autre. Seul, il garde son épaisseur d'origine : c'est le liseré des
+     salons déjà en ligne, et il n'a pas à grossir. */
+  if (mode === "lisere")
+    return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" d="' +
+      p.getAttribute("d") + '"/>';
+  if (!b || !(b.width > 0) || !(b.height > 0)) return "";
   const c = Math.min(Math.max(Math.min(b.width, b.height) * .34, .5), 1.6);
   const n = (v) => v.toFixed(2);
-  const x = b.x + b.width, y = b.y;
+  /* La première marque prend le coin haut droit, la suivante le coin haut
+     gauche : au même coin, la seconde recouvrait la première et le stand n'en
+     montrait plus qu'une. */
+  const droite = rang % 2 === 0;
+  const x = droite ? b.x + b.width : b.x, y = b.y, s = droite ? -1 : 1;
   if (mode === "corne")
-    return '<path class="neufPlein" d="M' + n(x - c) + ' ' + n(y) + 'L' + n(x) + ' ' +
+    return '<path class="dPlein" d="M' + n(x + s * c) + ' ' + n(y) + 'L' + n(x) + ' ' +
       n(y) + 'L' + n(x) + ' ' + n(y + c) + 'Z"/>';
   if (mode === "point")
-    return '<circle class="neufPlein" cx="' + n(x - c * .58) + '" cy="' + n(y + c * .58) +
+    return '<circle class="dPlein" cx="' + n(x + s * c * .58) + '" cy="' + n(y + c * .58) +
       '" r="' + n(c * .34) + '"/>';
-  return '<g class="neufPlein" transform="translate(' + n(x - c * 1.08) + ' ' +
-    n(y + c * .08) + ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_NEUF + '</g>';
+  return '<g class="dPlein" transform="translate(' +
+    n(droite ? x - c * 1.08 : x + c * .08) + ' ' + n(y + c * .08) +
+    ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_DIST + '</g>';
 }
 
 /* Le relevé demande la boîte de chaque forme, que seul le navigateur sait
    rendre : il coûte une mise en page. On le garde donc d'un geste à l'autre,
    et on ne le refait qu'au changement de pavillon ou de mode — le retrait
    d'une recherche, lui, ne déplace rien. */
-let NEUFS_VUS = { plan: -1, mode: "", traces: [] };
-const oublieNeufs = () => { NEUFS_VUS = { plan: -1, mode: "", traces: [] }; };
+let DISTS_VUES = { plan: -1, modes: "", traces: [] };
+const oublieDists = () => { DISTS_VUES = { plan: -1, modes: "", traces: [] }; };
 
-function releveNeufs(mode){
+/** Les modes du plan réunis en une clé : c'est ce qui décide si le relevé garde
+ *  sa valeur, et il en faut autant que de distinctions. */
+const modesDuPlan = () => DISTINCTIONS.map(d => modeDist(d, "plan")).join("|");
+
+function releveDists(){
   const traces = [];
+  const actives = DISTINCTIONS
+    .map((d, rang) => ({ d, rang, mode: modeDist(d, "plan") }))
+    .filter(x => x.mode !== "aucun");
+  const deuxLiseres = actives.filter(x => x.mode === "lisere").length > 1;
   $("stands").querySelectorAll("g.stand").forEach(g => {
     const o = parId.get(g.dataset.id);
-    if (!o || !standNeuf(o)) return;
-    const p = g.querySelector("path");
-    const d = p ? traceNeuf(mode, p) : "";
-    if (d) traces.push({ id: g.dataset.id, d });
+    const p = o && g.querySelector("path");
+    if (!p) return;
+    // une seule mise en page par stand, même quand il porte les deux marques
+    let b = null;
+    actives.forEach(({ d, rang, mode }) => {
+      if (!standPorte(o, d)) return;
+      if (mode !== "lisere" && !b) b = p.getBBox();
+      const t = traceDist(mode, p, b, rang, deuxLiseres);
+      if (t) traces.push({ id: g.dataset.id, cle: d.cle, d: t });
+    });
   });
-  NEUFS_VUS = { plan: state.plan, mode, traces };
+  DISTS_VUES = { plan: state.plan, modes: modesDuPlan(), traces };
 }
 
 /**
- * Les marques des nouveaux venus, posées sur le plan.
+ * Les marques des distinctions, posées sur le plan.
  *
  * Elles suivent le retrait d'une recherche comme les stands qu'elles
  * désignent : une marque restée à pleine force au milieu d'un hall effacé se
  * lirait comme un résultat.
  */
-function dessineNeufs(){
+function dessineDists(){
   if (!DATA) return;
-  const mode = modeNeuf("plan");
-  const g = calqueNeufs();
+  const g = calqueDists();
   const eteint = $("stands").style.display === "none";
-  if (mode === "aucun" || eteint){
+  if (eteint || DISTINCTIONS.every(d => modeDist(d, "plan") === "aucun")){
     if (g.firstChild) g.textContent = "";
     return;
   }
-  if (NEUFS_VUS.plan !== state.plan || NEUFS_VUS.mode !== mode) releveNeufs(mode);
+  if (DISTS_VUES.plan !== state.plan || DISTS_VUES.modes !== modesDuPlan())
+    releveDists();
   const dim = new Set();
   $("stands").querySelectorAll("g.dim").forEach(x => dim.add(x.dataset.id));
-  g.innerHTML = NEUFS_VUS.traces.map(t =>
-    '<g class="neufM' + (dim.has(t.id) ? " dim" : "") + '">' + t.d + '</g>').join("");
+  /* La classe de la distinction porte sa teinte, qu'un jeton de la racine lui
+     donne : une couleur changée repeint alors les marques sans qu'on les
+     réécrive, sur le plan comme dans les neuf cents lignes de la liste. */
+  g.innerHTML = DISTS_VUES.traces.map(t =>
+    '<g class="dM d-' + t.cle + (dim.has(t.id) ? " dim" : "") + '">' +
+    t.d + '</g>').join("");
 }
 
 /**
- * La marque d'un nouveau venu dans une ligne de la liste, en trois morceaux :
- * ce qui précède le nom, ce qui le suit, et ce qui descend sous lui. Le même
- * découpage sert à la vraie liste et aux vignettes des réglages, sans quoi
- * l'exploitant choisirait sa marque sur une ligne qui n'est pas la sienne —
- * d'où le mode en second argument, que les vignettes imposent.
+ * Les marques d'une ligne de la liste, en trois morceaux : ce qui précède le
+ * nom, ce qui le suit, et ce qui descend sous lui. Les distinctions s'y
+ * cumulent dans l'ordre de la table, et deux mentions sous le nom se joignent
+ * comme le reste de la seconde ligne.
  */
-function marqueNeufListe(neuf, force){
-  const vide = { avant: "", apres: "", sous: "" };
-  if (!neuf) return vide;
-  const mode = force || modeNeuf("liste");
-  if (mode === "point")
-    return { ...vide, avant: '<span class="nPoint" title="Nouvel exposant"></span>' };
-  if (mode === "cartouche")
-    return { ...vide, apres: '<span class="nCart">Nouveau</span>' };
-  if (mode === "sousligne")
-    return { ...vide, sous: '<span class="nSous">Nouvel exposant</span>' };
-  return vide;
+function marquesListe(porte){
+  let avant = "", apres = "";
+  const sous = [];
+  DISTINCTIONS.forEach(d => {
+    if (!porte(d)) return;
+    const mode = modeDist(d, "liste");
+    const c = " d-" + d.cle;
+    if (mode === "point")
+      avant += '<span class="nPoint' + c + '" title="' +
+        esc(texteDist(d)) + '"></span>';
+    else if (mode === "cartouche")
+      apres += '<span class="nCart' + c + '">' + esc(texteCourtDist(d)) + '</span>';
+    else if (mode === "sousligne")
+      sous.push('<span class="nSous' + c + '">' + esc(texteDist(d)) + '</span>');
+  });
+  return { avant, apres, sous: sous.join(" · ") };
 }
+
+/* La société dont la fiche est ouverte, gardée pour la seule raison qu'un
+   réglage changé doit se voir sans rouvrir la fiche. */
+let SOC_FICHE = null;
+
+/**
+ * Les marques en tête de la fiche ouverte.
+ *
+ * Trois places, et une seule qui ne se partage pas : le coin. La pastille se
+ * range à côté de sa voisine, les bandeaux s'empilent, mais deux coins cornés
+ * au même angle n'en font qu'un — le second reprend donc sa pastille, et le
+ * volet des réglages le dit à qui vient de le choisir.
+ */
+function poseDistsFiche(soc){
+  SOC_FICHE = soc || null;
+  const past = $("dPast"), rubans = $("dRubans"), corne = $("dCorne");
+  past.textContent = rubans.textContent = corne.textContent = "";
+  corne.hidden = true;
+  DISTINCTIONS.forEach(d => {
+    if (!porteDist(SOC_FICHE, d)) return;
+    /* La teinte choisie doit passer devant celle que le modèle de fiche donne
+       à la pastille : la classe le dit, la feuille de style s'en sert pour
+       peser un cran de plus que les onze modèles. */
+    const c = " d-" + d.cle + (couleurDist(d) ? " teinte" : "") +
+      (d.picto ? " pic" : "");
+    let mode = modeDist(d, "fiche");
+    if (mode === "corne" && !corne.hidden) mode = "pastille";
+    if (mode === "pastille")
+      past.insertAdjacentHTML("beforeend",
+        '<span class="badge dist' + c + '">' + esc(texteDist(d)) + '</span>');
+    else if (mode === "bandeau")
+      rubans.insertAdjacentHTML("beforeend",
+        '<div class="rubanDist' + c + '">' + esc(texteDist(d)) + '</div>');
+    else if (mode === "corne"){
+      corne.hidden = false;
+      corne.className = "corneDist d-" + d.cle;
+      corne.innerHTML = '<span>' + esc(texteCourtDist(d)) + '</span>';
+    }
+  });
+  /* La tête de fiche réserve sa gauche au coin corné, comme elle réserve sa
+     droite aux actions. La réserve ne vaut que s'il y en a un. */
+  $("detail").classList.toggle("avecCorne", !corne.hidden);
+}
+
+/** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
+const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
 
 /* ============================================================
    4. Libellés — le nom de l'exposant prime sur le numéro
@@ -1283,11 +1397,13 @@ const LECTURE_CRITERE = {
   thematiques: o => o.themes,
   // un oui/non n'a qu'une valeur à cocher : le champ lui-même
   nouveau: o => o.neuf ? ["Oui"] : [],
+  adherent: o => o.adh ? ["Oui"] : [],
 };
-const OUI_NON = { nouveau: true };
+const OUI_NON = { nouveau: true, adherent: true };
 const LIBELLE_CRITERE = {
   secteur: "Secteur", ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
   thematiques: "Thématiques", nouveau: "Nouvel exposant",
+  adherent: "Adhérent syndicat",
 };
 /* Thématiques et secteurs ont eu chacun leur bande de puces sous la recherche.
    Elles prenaient la place de deux lignes de résultats — un salon range parfois
@@ -1847,9 +1963,9 @@ function marqueRetrait(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
-  // les marques des nouveaux venus vivent hors des stands : le retrait ne les
+  // les marques des distinctions vivent hors des stands : le retrait ne les
   // atteint pas tout seul
-  dessineNeufs();
+  dessineDists();
 }
 
 function appliqueFiltre(){
@@ -2034,7 +2150,7 @@ function liste(){
     const sous = sousLigne(o);
     /* Un hébergé se marque pour lui seul : la ligne porte son nom, pas celui
        du stand, et son hôte peut être là depuis dix ans. */
-    const mn = marqueNeufListe(heberge ? estNeuf(o) : standNeuf(o));
+    const mn = marquesListe(d => heberge ? porteDist(o, d) : standPorte(o, d));
     /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
        c'est une forme dessinée, pas un objet du plan — et son identifiant seul
        ne dirait pas où aller le chercher. */
@@ -3775,16 +3891,11 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     part.textContent = (heberges.length + 1) + " exposants ici";
     part.onclick = () => choisitExposant(o, null, canal, false);
   }
-  /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
-     l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
-     que l'exploitant la laisse voir. Une zone organisateur n'est jamais
-     nouvelle : elle n'est pas un exposant. */
-  /* Les trois marques paraissent ou non pour la même raison ; c'est la feuille
-     de style qui retient celle que l'exploitant a choisie, sous
-     « data-neuf-fiche ». Un réglage changé se voit ainsi sur la fiche ouverte,
-     sans la rouvrir. */
-  const venu = !zone && estNeuf(soc);
-  $("dNeuf").hidden = $("dCorne").hidden = $("dRuban").hidden = !venu;
+  /* Les marques de la fiche — nouveau venu, adhérent. Elles ne paraissent que
+     si la synchronisation les a posées — les champs qui les portent n'existent
+     pas sur tous les salons — et que l'exploitant les laisse voir. Une zone
+     organisateur n'en porte aucune : elle n'est pas un exposant. */
+  poseDistsFiche(zone ? null : soc);
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
   /* Le programme est rattaché au stand par le dossier de son titulaire : la

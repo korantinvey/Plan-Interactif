@@ -73,4 +73,14 @@ module.exports = {
   "Thématique": "Theme",
   "Présentation": "Presentation",
   "Situer sur le plan": "Show on map",
+  // les distinctions d'un exposant — la table de `_js.html`, dont les onglets
+  // des réglages et les volets d'aide tirent leurs mots
+  "Nouveaux": "New arrivals",
+  "Adhérents": "Members",
+  "Adhérent syndicat": "Trade body member",
+  "Adhérent": "Member",
+  "les fiches des salons qui distinguent leurs nouveaux venus":
+    "the records of shows that single out their newcomers",
+  "les fiches des salons dont le syndicat tient la liste de ses membres":
+    "the records of shows whose trade body keeps a list of its members",
 };
