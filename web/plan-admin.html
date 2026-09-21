@@ -7133,8 +7133,10 @@ function traceDist(mode, p, b, rang, deuxLiseres){
   /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
      recouvrait le premier et le stand n'en montrait qu'un. Le premier s'élargit
      donc, et le second se pose dessus — un halo d'une couleur, un trait de
-     l'autre. Seul, il garde son épaisseur d'origine : c'est le liseré des
-     salons déjà en ligne, et il n'a pas à grossir. */
+     l'autre. Le drapeau se décide stand par stand, et non pour le pavillon :
+     sur un stand qui ne porte qu'une des deux distinctions, il n'y a rien à
+     éviter, et le trait reste celui de la sélection — celui des salons déjà en
+     ligne. */
   if (mode === "lisere")
     return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" d="' +
       p.getAttribute("d") + '"/>';
@@ -7173,15 +7175,20 @@ function releveDists(){
   const actives = DISTINCTIONS
     .map((d, rang) => ({ d, rang, mode: modeDist(d, "plan") }))
     .filter(x => x.mode !== "aucun");
-  const deuxLiseres = actives.filter(x => x.mode === "lisere").length > 1;
   $("stands").querySelectorAll("g.stand").forEach(g => {
     const o = parId.get(g.dataset.id);
     const p = o && g.querySelector("path");
     if (!p) return;
+    /* Les distinctions que ce stand-ci porte, et elles seules : c'est d'après
+       elles que le liseré s'élargit ou non. Compter les modes du pavillon
+       élargissait le trait de tous les stands dès que les deux distinctions
+       étaient réglées en liseré, y compris ceux qui n'en portaient qu'une. */
+    const siennes = actives.filter(x => standPorte(o, x.d));
+    if (!siennes.length) return;
+    const deuxLiseres = siennes.filter(x => x.mode === "lisere").length > 1;
     // une seule mise en page par stand, même quand il porte les deux marques
     let b = null;
-    actives.forEach(({ d, rang, mode }) => {
-      if (!standPorte(o, d)) return;
+    siennes.forEach(({ d, rang, mode }) => {
       if (mode !== "lisere" && !b) b = p.getBBox();
       const t = traceDist(mode, p, b, rang, deuxLiseres);
       if (t) traces.push({ id: g.dataset.id, cle: d.cle, d: t });
