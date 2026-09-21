@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4208 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 4237 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.3135 · 10. Mode administration
-- l.3243 · La fiche d'une zone organisateur
-- l.3952 · Masquer une zone organisateur
-- l.4035 · Placer un libellé à la main
+- l.3164 · 10. Mode administration
+- l.3272 · La fiche d'une zone organisateur
+- l.3981 · Masquer une zone organisateur
+- l.4064 · Placer un libellé à la main
 
 Fonctions :
 
@@ -37,17 +37,17 @@ Fonctions :
 `champsFicheZone` 1569 · `ficheZoneEnPlace` 1639 · `voletPlan` 1657 · `blocRappel` 1705
 `ditEssaiRappel` 1809 · `voletAdmin` 1834 · `blocOptions` 2017 · `blocHoraires` 2065
 `sallesSituees` 2198 · `voletPmr` 2214 · `nomDuTon` 2305 · `voletApparence` 2310
-`clesFiche` 2509 · `voletOrdre` 2526 · `enregistreConf` 3084 · `rgbHex` 3091 · `hexa` 3098
-`luminance` 3102 · `ecarte` 3116 · `joli` 3131 · `retireAdmin` 3152 · `activeAdmin` 3165
-`champZone` 3269 · `champsZone` 3294 · `champSalles` 3386 · `nomDeZone` 3438
-`reduitLogo` 3472 · `cadreLogo` 3515 · `champLogo` 3587 · `editeurRiche` 3625
-`memeFicheZone` 3782 · `suitFicheZone` 3789 · `verseFicheZone` 3797 · `ficheZone` 3823
-`enregistreZone` 3848 · `basculeAffichageZone` 3963 · `marqueZonesMasquees` 3980
-`ecritColonnesEvenement` 4000 · `ecritColonneEvenement` 4031 · `cleLibelle` 4056
-`empreinteLibelle` 4072 · `placementLibelle` 4080 · `posePlacement` 4090
-`libelleAutomatique` 4107 · `modePlacementLibelles` 4116 · `majPaletteLibelle` 4135
-`choisitLibelle` 4152 · `pousseLibelle` 4159 · `libellePointerDown` 4167
-`libellePointerMove` 4183 · `libellePointerUp` 4192
+`clesFiche` 2509 · `voletOrdre` 2526 · `enregistreConf` 3113 · `rgbHex` 3120 · `hexa` 3127
+`luminance` 3131 · `ecarte` 3145 · `joli` 3160 · `retireAdmin` 3181 · `activeAdmin` 3194
+`champZone` 3298 · `champsZone` 3323 · `champSalles` 3415 · `nomDeZone` 3467
+`reduitLogo` 3501 · `cadreLogo` 3544 · `champLogo` 3616 · `editeurRiche` 3654
+`memeFicheZone` 3811 · `suitFicheZone` 3818 · `verseFicheZone` 3826 · `ficheZone` 3852
+`enregistreZone` 3877 · `basculeAffichageZone` 3992 · `marqueZonesMasquees` 4009
+`ecritColonnesEvenement` 4029 · `ecritColonneEvenement` 4060 · `cleLibelle` 4085
+`empreinteLibelle` 4101 · `placementLibelle` 4109 · `posePlacement` 4119
+`libelleAutomatique` 4136 · `modePlacementLibelles` 4145 · `majPaletteLibelle` 4164
+`choisitLibelle` 4181 · `pousseLibelle` 4188 · `libellePointerDown` 4196
+`libellePointerMove` 4212 · `libellePointerUp` 4221
 
 Éléments :
 

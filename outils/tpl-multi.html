@@ -12798,6 +12798,33 @@ function voletOrdre(hote){
      première. */
   let file = Promise.resolve();
 
+  /**
+   * L'ordre à écrire : celui du volet, où reprennent leur place les champs
+   * qu'il n'a pas montrés.
+   *
+   * Le volet ne range que ce que le salon renseigne — `clesPortees` écarte un
+   * champ qu'aucune fiche ne porte, il n'aurait rien à montrer. L'ordre
+   * enregistré, lui, le connaît peut-être : un champ créé dans la console
+   * attend la synchronisation suivante pour porter enfin quelque chose, et la
+   * place qu'on lui avait donnée est déjà dans l'ordre. L'écraser par la seule
+   * liste du volet la perdrait — le champ reparaîtrait un jour au bout de la
+   * fiche, sans que personne l'y ait mis, et le premier glissé venu suffisait.
+   *
+   * Chaque absent retrouve donc sa place derrière le voisin de gauche que le
+   * nouvel ordre connaît, comme `ordreCorps` le fait pour un champ que le
+   * réglage ignore.
+   */
+  const ordreGarde = (vus, ancien) => {
+    const sortie = vus.slice();
+    ancien.forEach((c, i) => {
+      if (toutes.indexOf(c) >= 0 || sortie.indexOf(c) >= 0) return;
+      let j = -1;
+      for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(ancien[k]);
+      sortie.splice(j + 1, 0, c);
+    });
+    return sortie;
+  };
+
   /** Les champs que la fiche montre, dans l'ordre, sections aplaties. */
   const aplati = (b) => {
     const s = [];
@@ -12815,7 +12842,7 @@ function voletOrdre(hote){
   const pose = (d) => {
     DATA.fiche = DATA.fiche || {};
     const vus = aplati(d.blocs);
-    DATA.fiche.ordre = vus;
+    DATA.fiche.ordre = ordreGarde(vus, DATA.fiche.ordre || []);
     /* Une section vide ne réunit rien et n'a pas de place dans l'ordre — rien
        n'y renvoie. Elle vit dans le volet le temps qu'on la remplisse. */
     DATA.fiche.groupes = d.blocs.filter(b => b.membres && b.membres.length)
@@ -12842,7 +12869,9 @@ function voletOrdre(hote){
     if (o && !(o.coex && o.coex.length && coexChoisit())) ouvre(o, null);
     dit("Enregistrement…");
     file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
-      t.ordre = (DATA.fiche.ordre || []).slice();
+      // la colonne relue peut porter un absent que le poste n'avait pas : une
+      // autre console a pu créer le champ pendant qu'on rangeait celle-ci
+      t.ordre = ordreGarde(DATA.fiche.ordre || [], t.ordre || []);
       const g = DATA.fiche.groupes || [];
       // un salon qui n'a plus de section n'en garde pas la trace en creux
       if (g.length) t.groupes = g; else delete t.groupes;
