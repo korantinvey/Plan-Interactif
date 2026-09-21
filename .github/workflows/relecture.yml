@@ -174,22 +174,29 @@ jobs:
       # débogage de GitHub n'y change rien, contrairement à ce que son message
       # laisse croire. Deux heures se sont perdues là.
       #
-      # On ne relève donc du compte-rendu que son dernier message, celui qui
-      # porte la raison — jamais ce que les outils ont lu, jamais la relecture
-      # elle-même, et seulement quand la tâche a échoué.
-      - name: Dire pourquoi la relecture a échoué
-        if: always() && steps.relire.outcome == 'failure'
+      # On ne relève donc du compte-rendu que son dernier message : ce qu'il dit
+      # de la tâche elle-même, et rien de ce qu'elle a lu ni écrit. Ce message
+      # porte deux choses. Ce que la relecture a coûté — durée, nombre
+      # d'échanges, jetons lus et écrits, dont ceux servis par le cache —, relevé
+      # à chaque exécution, parce qu'une dépense qu'on ne voit pas ne se juge
+      # pas. Et la raison d'un échec, quand il y en a un.
+      - name: Dire ce que la relecture a coûté, et pourquoi elle a échoué
+        if: always() && steps.relire.outcome != 'skipped'
         env:
           COMPTE_RENDU: ${{ steps.relire.outputs.execution_file }}
+          ISSUE: ${{ steps.relire.outcome }}
         run: |
-          echo "::warning::La relecture n'a pas abouti ; sa raison suit."
+          if [ "$ISSUE" = "failure" ]; then
+            echo "::warning::La relecture n'a pas abouti ; sa raison suit."
+          fi
           if [ -z "$COMPTE_RENDU" ] || [ ! -f "$COMPTE_RENDU" ]; then
             echo "Aucun compte-rendu : la tâche s'est arrêtée avant d'en écrire un."
             exit 0
           fi
-          python3 - "$COMPTE_RENDU" <<'PY'
+          python3 - "$COMPTE_RENDU" "$ISSUE" <<'PY'
           import json, sys
           brut = open(sys.argv[1], encoding="utf-8").read().strip()
+          echoue = sys.argv[2] == "failure"
           try:
               messages = json.loads(brut)
               if isinstance(messages, dict):
@@ -199,7 +206,21 @@ jobs:
               messages = [json.loads(l) for l in brut.splitlines() if l.strip()]
 
           for m in messages:
-              if isinstance(m, dict) and m.get("type") == "result":
+              if not (isinstance(m, dict) and m.get("type") == "result"):
+                  continue
+              duree = m.get("duration_ms")
+              if duree is not None:
+                  print("durée     :", round(duree / 1000), "s")
+              print("échanges  :", m.get("num_turns"))
+              cout = m.get("total_cost_usd")
+              if cout is not None:
+                  print("coût      :", f"{cout:.4f} USD" if cout else "0 (abonnement)")
+              for modele, u in (m.get("modelUsage") or {}).items():
+                  lus = (u.get("inputTokens") or 0)
+                  caches = (u.get("cacheReadInputTokens") or 0) + (u.get("cacheCreationInputTokens") or 0)
+                  ecrits = (u.get("outputTokens") or 0)
+                  print(f"{modele} : {lus + caches} jetons lus dont {caches} de cache, {ecrits} écrits")
+              if echoue:
                   print("sous-type :", m.get("subtype"))
                   print("en erreur :", m.get("is_error"))
                   raison = m.get("result") or m.get("error") or ""

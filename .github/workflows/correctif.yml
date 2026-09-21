@@ -232,21 +232,28 @@ jobs:
             gh issue comment "$NUMERO" --body-file /tmp/dit.md
           fi
 
-      # Un correctif qui n'aboutit pas doit le dire, faute de quoi la tâche
-      # verte laisse croire à une branche qui n'existe pas.
-      - name: Dire pourquoi le correctif a échoué
-        if: always() && steps.corriger.outcome == 'failure'
+      # Ce que le correctif a coûté se relève à chaque exécution — durée,
+      # échanges, jetons —, et la raison d'un échec quand il y en a un : une
+      # tâche verte qui n'a rien produit laisse croire à une branche qui
+      # n'existe pas. Comme dans `relecture.yml`, on ne lit du compte-rendu que
+      # son dernier message, jamais ce que le correctif a lu ni écrit.
+      - name: Dire ce que le correctif a coûté, et pourquoi il a échoué
+        if: always() && steps.corriger.outcome != 'skipped'
         env:
           COMPTE_RENDU: ${{ steps.corriger.outputs.execution_file }}
+          ISSUE: ${{ steps.corriger.outcome }}
         run: |
-          echo "::warning::Le correctif n'a pas abouti ; sa raison suit."
+          if [ "$ISSUE" = "failure" ]; then
+            echo "::warning::Le correctif n'a pas abouti ; sa raison suit."
+          fi
           if [ -z "$COMPTE_RENDU" ] || [ ! -f "$COMPTE_RENDU" ]; then
             echo "Aucun compte-rendu : la tâche s'est arrêtée avant d'en écrire un."
             exit 0
           fi
-          python3 - "$COMPTE_RENDU" <<'PY'
+          python3 - "$COMPTE_RENDU" "$ISSUE" <<'PY'
           import json, sys
           brut = open(sys.argv[1], encoding="utf-8").read().strip()
+          echoue = sys.argv[2] == "failure"
           try:
               messages = json.loads(brut)
               if isinstance(messages, dict):
@@ -256,7 +263,21 @@ jobs:
               messages = [json.loads(l) for l in brut.splitlines() if l.strip()]
 
           for m in messages:
-              if isinstance(m, dict) and m.get("type") == "result":
+              if not (isinstance(m, dict) and m.get("type") == "result"):
+                  continue
+              duree = m.get("duration_ms")
+              if duree is not None:
+                  print("durée     :", round(duree / 1000), "s")
+              print("échanges  :", m.get("num_turns"))
+              cout = m.get("total_cost_usd")
+              if cout is not None:
+                  print("coût      :", f"{cout:.4f} USD" if cout else "0 (abonnement)")
+              for modele, u in (m.get("modelUsage") or {}).items():
+                  lus = (u.get("inputTokens") or 0)
+                  caches = (u.get("cacheReadInputTokens") or 0) + (u.get("cacheCreationInputTokens") or 0)
+                  ecrits = (u.get("outputTokens") or 0)
+                  print(f"{modele} : {lus + caches} jetons lus dont {caches} de cache, {ecrits} écrits")
+              if echoue:
                   print("sous-type :", m.get("subtype"))
                   print("en erreur :", m.get("is_error"))
                   raison = m.get("result") or m.get("error") or ""
