@@ -2788,6 +2788,16 @@ en panne n'est pas un défaut du code relu, et une croix rouge sur chaque pull
 request du dépôt n'apprend qu'une chose, à ne plus regarder les croix rouges.
 Elle s'affiche en avertissement, ce qui se voit sans ouvrir le journal.
 
+Compter **cinq minutes** : c'est ce qu'a pris la première relecture aboutie, sur
+un diff de cinq cents lignes de source. Elle s'arrête d'office à quinze, parce
+que rien ne se lit d'une tâche avant sa fin — une relecture en cours et une
+relecture partie en boucle se ressemblent, et seule la seconde a besoin qu'on
+l'interrompe. Le diff qu'elle lit écarte `web/`, `CARTE.md` et
+`outils/tpl-multi.html` : une ligne de gabarit s'y recopie quatre fois, et ces
+quatre exemplaires noieraient le reste. Enfin son avis **remplace le
+précédent** au lieu de s'empiler : une pull request reprise cinq fois n'a pas à
+porter cinq avis dont quatre périmés.
+
 Et une conséquence qui surprend la première fois : **l'action refuse de tourner
 quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
 file must exist and have identical content to the version on the repository's

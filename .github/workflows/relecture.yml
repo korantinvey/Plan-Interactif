@@ -104,6 +104,12 @@ jobs:
         id: relire
         if: steps.acces.outputs.posee == 'oui'
         continue-on-error: true
+        # Une relecture aboutie prend cinq minutes ; passé le triple, elle
+        # tourne pour rien. Sans cette borne elle tenait le runner sans rien
+        # dire — et faute de journal avant la fin, une tâche en cours ne se
+        # distingue pas d'une tâche partie en boucle. La borne la fait échouer,
+        # donc parler : l'étape de diagnostic la nomme.
+        timeout-minutes: 15
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -117,9 +123,6 @@ jobs:
           # tâche ne part qu'à l'ouverture et à la poussée, jamais sur un
           # commentaire, et la relecture ne sait que commenter.
           allowed_bots: claude
-          # Un seul commentaire, réécrit à chaque poussée : une pull request
-          # reprise cinq fois n'a pas à porter cinq avis dont quatre périmés.
-          use_sticky_comment: true
           prompt: |
             DÉPÔT : ${{ github.repository }}
             PULL REQUEST : ${{ github.event.pull_request.number }}
@@ -137,8 +140,16 @@ jobs:
             ligne, plutôt que d'ouvrir les gros modules en entier.
 
             Relis le diff de la pull request, puis écris en français accentué.
+            Lis-le sans les fichiers fabriqués, qui recopient les sources en
+            quatre exemplaires et noieraient le reste :
 
-            Poste un commentaire général avec `gh pr comment` : ce que tu as
+                git diff origin/${{ github.event.pull_request.base.ref }}...HEAD -- . ':!web' ':!CARTE.md' ':!outils/tpl-multi.html'
+
+            Poste un commentaire général avec
+            `gh pr comment ${{ github.event.pull_request.number }} --edit-last --body-file <fichier>`,
+            et sans `--edit-last` si la commande échoue faute d'un avis
+            précédent : une pull request reprise cinq fois n'a pas à porter cinq
+            avis dont quatre périmés. Dedans : ce que tu as
             regardé en une phrase, puis ce que tu as trouvé, du plus grave au
             plus léger, chaque point nommant le fichier, la ligne, le cas où ça
             casse et la correction. Utilise
