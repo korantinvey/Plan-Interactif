@@ -191,6 +191,12 @@ button{cursor:pointer;background:none;border:none}
 html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
   line-height:1.18;overflow-wrap:anywhere}
+/* Le logo du salon ne paraît qu'en bande réduite, sur un téléphone : ailleurs
+   la barre a la place d'écrire le nom en entier, et une image de plus n'y
+   ajouterait rien. Il est caché ici plutôt que par l'attribut « hidden », que
+   `poseLogoSalon` retire dès qu'il y a une image à montrer — la règle qui la
+   montre est plus bas, sous « max-width:900px ». */
+.logoSalon{display:none}
 .brand h1.attente{color:var(--ink-3)}
 .brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
@@ -199,6 +205,12 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
 @media (max-width:1150px){.stats{display:none}.tools{margin-left:auto}}
 .stats b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--ink);
   font-variant-numeric:tabular-nums;line-height:1.2}
+/* Le cadre des onglets ne sert qu'à porter les flèches et le fondu : il passe
+   donc au travers, et c'est la barre des pavillons qui reste la pièce que les
+   modèles habillent et que la barre du haut aligne. Le fondu, lui, garde les
+   quarante-quatre points des autres bandes : raccourci, le compte du dernier
+   onglet restait sous le chevron à demi effacé, et les deux se brouillaient. */
+.halls-bande{display:flex;min-width:0}
 .halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
 .halls button{padding:5px 13px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap}
 .halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -1148,13 +1160,20 @@ html.sans-image-stand .outils #imageSoc{display:none}
    le détache sans rien dessiner. Elle est tirée du jeton et non du blanc : un
    modèle qui repeint le cartouche repeint la tache avec, sinon elle resterait
    claire sur un fond qui ne l'est plus. */
-.poi .fleche{width:25px;height:25px;margin-top:-12px;
+/* Les pavillons sont dans le même cas, et prennent donc le même chevron. Leur
+   pastille flotte elle aussi sur le plan depuis que la barre du salon n'est
+   plus une bande sur un téléphone, et deux disques blancs bordés y auraient
+   fait deux commandes de plus à côté de deux onglets — le fondu dit déjà qu'il
+   en reste, la flèche n'a qu'à dire par où. Elle y gagne en prime la taille
+   qu'il lui faut : vingt-cinq points tiennent dans une pastille où le disque
+   des bandes de critères n'aurait rien laissé autour de lui. */
+:is(.poi,.halls-bande) .fleche{width:25px;height:25px;margin-top:-12px;
   border:0;box-shadow:none;color:var(--ink-2);opacity:.72;
   background:radial-gradient(closest-side,var(--surface) 38%,transparent)}
-.poi .fleche svg{width:13px;height:13px;stroke-width:2.2}
-.poi .fleche:active{opacity:1}
-.poi[data-gauche] .fleche[data-vers="-1"]{left:1px}
-.poi[data-droite] .fleche[data-vers="1"]{right:1px}
+:is(.poi,.halls-bande) .fleche svg{width:13px;height:13px;stroke-width:2.2}
+:is(.poi,.halls-bande) .fleche:active{opacity:1}
+:is(.poi,.halls-bande)[data-gauche] .fleche[data-vers="-1"]{left:1px}
+:is(.poi,.halls-bande)[data-droite] .fleche[data-vers="1"]{right:1px}
 .poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
   border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
   font-size:12px;cursor:pointer}
@@ -4092,7 +4111,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      Vide, elle ne vaut plus que le retrait du système — ce qui s'ancre en haut
      de la scène remonte d'autant sans qu'aucune de leurs règles l'apprenne.
      ------------------------------------------------------------ */
-  html:not(.mode-admin) .topbar{background:none;border-bottom:none;min-height:0;
+  html:not(.mode-admin):not(.barre-bande) .topbar{background:none;border-bottom:none;min-height:0;
     align-items:flex-start;padding:calc(10px + var(--sys-haut)) 10px 0;
     /* Le vide qu'elle laisse rend le geste au hall : transparente, elle
        recevait encore le doigt venu saisir le plan. */
@@ -4111,45 +4130,80 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     --accent:inherit;--accent-soft:inherit;--accent-ink:inherit}
   /* Ce qu'elle porte reprend le doigt pour lui — sauf pliée : invisible, elle
      recevait encore l'appui du stand qu'elle recouvrait. */
-  html:not(.mode-admin) .topbar:not(.pliee) > *{pointer-events:auto}
-  html:not(.mode-admin) .brand{display:none}
+  html:not(.mode-admin):not(.barre-bande) .topbar:not(.pliee) > *{pointer-events:auto}
+  html:not(.mode-admin):not(.barre-bande) .brand{display:none}
   /* Les pictos à la verticale, au bord droit, à la hauteur où ils étaient.
      Hors du flux : la bande n'a plus de contenu à aligner, et sa hauteur —
      celle que le cadrage lit — ne doit pas devenir la leur. */
-  html:not(.mode-admin) .tools{position:absolute;right:10px;
+  html:not(.mode-admin):not(.barre-bande) .tools{position:absolute;right:10px;
     top:calc(10px + var(--sys-haut));flex-direction:column;gap:8px;
     transition:transform .22s ease}
   /* Chacun s'en va par le bord d'où il vient : les onglets remontent avec la
      bande, les pictos sortent par la droite. */
-  html:not(.mode-admin) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
+  html:not(.mode-admin):not(.barre-bande) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
   /* La légère transparence : le hall se voit dessous, le liseré et l'ombre
      suffisent à poser le bouton. Tout est réécrit ici, jusqu'à l'aplat de
      l'accent et la pastille du parcours, parce que les modèles les peignent à
      la main pour une bande qui n'est plus là. */
-  html:not(.mode-admin) .topbar .iconbtn{
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn{
     background:color-mix(in srgb,var(--surface) 78%,transparent);
     border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
     color:var(--ink-2);box-shadow:var(--shadow)}
-  html:not(.mode-admin) .topbar .iconbtn[aria-pressed="true"]{background:var(--accent);
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn[aria-pressed="true"]{background:var(--accent);
     border-color:var(--accent);color:#fff}
-  html:not(.mode-admin) .topbar .compteur{background:var(--accent);color:#fff;
+  html:not(.mode-admin):not(.barre-bande) .topbar .compteur{background:var(--accent);color:#fff;
     border-color:var(--surface)}
   /* Les pavillons : une pastille au coin, qui tient sa largeur de ses onglets
      au lieu de barrer l'écran — une bande qui le traverse prend le doigt sur
      toute la largeur, et il n'y a plus de bande pour le justifier. Elle garde
      le fond de la page même là où le modèle le retire : sans bande dessous, un
      onglet écrit à même le plan ne se lit plus. */
-  html:not(.mode-admin) .topbar .halls{flex:0 1 auto;max-width:calc(100% - 52px);
-    padding:3px;background:color-mix(in srgb,var(--surface) 78%,transparent);
+  html:not(.mode-admin):not(.barre-bande) .topbar .halls-bande{flex:0 1 auto;max-width:calc(100% - 52px)}
+  html:not(.mode-admin):not(.barre-bande) .topbar .halls{padding:3px;
+    background:color-mix(in srgb,var(--surface) 78%,transparent);
     border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
     box-shadow:var(--shadow)}
 
+  /* ------------------------------------------------------------
+     L'autre choix : la bande, réduite à ce qu'elle peut être.
+
+     Un plan sans bande ne dit plus le nom du salon, et tous les salons n'en
+     veulent pas ainsi — celui d'un lieu qu'on ne connaît pas se nomme. La bande
+     revient donc sur demande, réglée dans l'onglet « Admin » (`blocBarre`,
+     `_admin1.html`), et rognée de tout ce qui pouvait l'être : trente-huit
+     points au lieu de quarante-six, des boutons de vingt-sept, un titre d'un
+     point et demi plus bas. Deux lignes de nom y tiennent encore — c'est la
+     règle qui protège le nom, et elle ne se paie que sur un nom long.
+
+     Rien d'autre ne change : la bande se pose toujours par-dessus le hall et se
+     plie au geste, comme elle le faisait avant qu'il y ait un choix.
+     ------------------------------------------------------------ */
+  html.barre-bande:not(.mode-admin) .topbar{gap:8px;
+    padding:calc(3px + var(--sys-haut)) 10px 3px;
+    min-height:calc(38px + var(--sys-haut))}
+  html.barre-bande:not(.mode-admin) .topbar .iconbtn{width:27px;height:27px}
+  html.barre-bande:not(.mode-admin) .brand h1{font-size:13.5px;min-width:0}
+  /* Le logo du salon à côté du nom. Il vient de l'icône de l'onglet : c'est la
+     seule image du salon que la page ait déjà sous la main — elle arrive avec
+     les données, et ne coûte pas un appel de plus.
+
+     Elle n'est pas carrée pour autant : la console garde les proportions d'un
+     logo en longueur, qui à seize pixels se reconnaît mieux ainsi. D'où la
+     hauteur imposée et la largeur laissée libre — bornée tout de même, sans
+     quoi un logo à rallonge prendrait la bande pour lui seul et le nom du
+     salon passerait à la ligne derrière lui. */
+  html.barre-bande:not(.mode-admin) .brand{display:flex;align-items:center;gap:7px}
+  html.barre-bande:not(.mode-admin) .logoSalon{display:block;flex:0 0 auto;
+    height:22px;width:auto;max-width:72px;object-fit:contain}
+  html.barre-bande:not(.mode-admin) .halls button{padding:3px 9px;font-size:12px}
+
   /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
      au-dessus d'eux dans la grille, mais devant eux sur l'écran. Et la colonne
-     des pictos leur est interdite : centré sur toute la largeur, un bandeau
-     passait dessous. */
-  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px));
-    right:52px;max-width:calc(100% - 64px)}
+     des pictos leur est interdite, quand il y en a une : centré sur toute la
+     largeur, un bandeau passait dessous. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
+  html:not(.mode-admin):not(.barre-bande) :is(.viseur,.iciRappel){right:52px;
+    max-width:calc(100% - 64px)}
   /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
      long, donc autant de hauteur laissée au plan. */
   .brand h1{font-size:15px}
@@ -4162,7 +4216,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Sans onglets, ce partage n'a plus lieu d'être : le nom prend la barre et
      tient souvent sur une ligne, là où 40 % l'auraient plié en trois. */
   html.un-pavillon .brand{flex:1 1 auto;max-width:none}
-  .halls{flex:1 1 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .halls-bande{flex:1 1 0}
+  .halls{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
   .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
@@ -4675,6 +4730,11 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 .dem .d{font-size:11.5px;line-height:1.45;color:var(--ink-3)}
 .dem .coche{flex:0 0 auto;color:var(--accent);font-size:13px;visibility:hidden}
 .dem[aria-pressed="true"] .coche{visibility:visible}
+/* Les deux vues du choix de la barre (`blocBarre`) : un écran de téléphone, et
+   ce qui change dedans. Le cadre au trait de la page, ce qui change à l'accent
+   — une vignette ne vaut que si l'œil trouve la différence sans la chercher. */
+.vueBarre .cadre{stroke:var(--line-strong)}
+.vueBarre .part{stroke:var(--accent)}
 /* Les champs du sponsor ne paraissent qu'à son mode, et se détachent du choix
    comme le premier champ du volet de la suggestion. */
 .voletSpons{margin-top:16px}
@@ -4718,6 +4778,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 
   <header class="topbar" id="bandeau">
     <div class="brand">
+      <!-- Le logo du salon, posé par `poseLogoSalon` (_js.html) : il n'a de
+           place que dans la bande réduite d'un téléphone, et reste caché
+           partout ailleurs. -->
+      <img class="logoSalon" id="logoSalon" alt="" hidden>
       <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
            celui d'un salon annoncerait le mauvais pendant tout le
            chargement d'un autre. Un intitulé neutre, grisé tant qu'il n'est
@@ -4725,7 +4789,21 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <h1 id="titre" class="attente">Plan du salon</h1>
       <span class="sub" id="sub"></span>
     </div>
-    <nav class="halls" id="halls" aria-label="Pavillons"></nav>
+    <!-- Les pavillons ne tiennent pas toujours sur la largeur : trois halls
+         nommés « Galerie Diaghilev » en débordent sur un téléphone. Ils
+         défilent donc par le côté, et la bande dit par quel bord il en reste —
+         voir « Une bande qui défile ne le dit pas d'elle-même ». -->
+    <div class="bande halls-bande" id="hallsBande" hidden>
+      <nav class="halls defile" id="halls" aria-label="Pavillons"></nav>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
     <div class="stats">
       <div><b id="nStands">—</b>emplacements</div>
       <div><b id="nExpo">—</b>exposants</div>
@@ -5542,6 +5620,7 @@ function indexe(d){
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
   poseFavicon(DATA.favicon);
+  poseLogoSalon(DATA.favicon);
   /* Et l'écran d'accueil d'iOS, qui ne lit pas le manifeste : le nom et
      l'icône du salon plutôt que ceux du produit. */
   nommeApplication(nom);
@@ -5714,6 +5793,27 @@ function poseFavicon(src){
   }
   l.type = img.slice(5, img.indexOf(";"));
   l.href = img;
+}
+
+/**
+ * Le même logo, mais dans la bande du haut.
+ *
+ * L'icône de l'onglet est la seule image du salon que la page ait déjà : elle
+ * arrive avec les données, et la montrer ne coûte pas un appel de plus. Sur un
+ * téléphone réglé en bande réduite, elle dit le salon plus vite que son nom —
+ * on reconnaît une marque d'un coup d'œil, on lit un nom.
+ *
+ * L'attribut plutôt qu'une classe : sans image, l'élément doit quitter la
+ * ligne, et non s'y tenir à zéro pixel entre le bord et le nom. La feuille de
+ * style décide ensuite s'il y a une bande où le montrer (`_head.html`,
+ * « .logoSalon »).
+ */
+function poseLogoSalon(src){
+  const el = $("logoSalon");
+  if (!el) return;
+  const img = imageSure(src);
+  el.hidden = !img;
+  if (img) el.src = img;
 }
 
 /**
@@ -5948,7 +6048,10 @@ function onglets(){
      que répéter le titre — souvent mot pour mot, Klipso nommant son plan
      unique comme le salon — et sur un écran étroit il lui prend sa largeur. */
   const seul = DATA.plans.length < 2;
-  $("halls").hidden = seul;
+  /* Le cadre et non la barre : vidée, elle laisserait son cadre — un fondu, deux
+     flèches et, sur un téléphone, la pastille qui les porte — annoncer des
+     onglets qui n'existent pas. */
+  $("hallsBande").hidden = seul;
   // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
   document.documentElement.classList.toggle("un-pavillon", seul);
   if (seul) { $("halls").innerHTML = ""; return; }
@@ -5957,6 +6060,9 @@ function onglets(){
     ' title="' + esc(p.libelle) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
   $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
+  /* Les onglets viennent d'arriver : personne d'autre ne saura qu'ils débordent
+     — le défilement n'a pas bougé, et la fenêtre non plus. */
+  majFondus();
 }
 
 function changePlan(i){
@@ -10399,6 +10505,19 @@ function sousCalques(cle){
 
 const racine = document.documentElement;
 
+/* La barre du salon sur un téléphone : avec bande, ou sans.
+
+   Le choix se pose ici, au premier trait de la page, sur ce que la visite
+   précédente a laissé dans le stockage — comme le générique du sponsor, et
+   pour la même raison. Attendu à l'arrivée des données, il aurait ouvert le
+   plan sans bande puis fait tomber une bande dessus, sous les yeux du
+   visiteur. `appliqueBarre` le repose ensuite d'après la configuration reçue,
+   qui seule fait foi. */
+try {
+  racine.classList.toggle("barre-bande",
+    (JSON.parse(localStorage.getItem(CLE_CONF) || "{}")._barre || {}).mode === "bande");
+} catch (e) {}
+
 /* Les couches de données n'ont pas de SVG propre : leur visibilité joue sur
    l'affichage du groupe, leur couleur sur une variable CSS. */
 function styleDataGroupe(nom, on){
@@ -10467,6 +10586,7 @@ function appliqueApparence(){
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
+  appliqueBarre();
   appliqueModele();
 }
 
@@ -10965,6 +11085,29 @@ function appliqueFond(){
   const v = conf("_fond").couleur;
   if (trio(v)) racine.style.setProperty("--c-fond", v);
   else racine.style.removeProperty("--c-fond");
+}
+
+/**
+ * Avec bande, ou sans : ce que la barre du salon devient sur un téléphone.
+ *
+ * Sans bande, le hall va d'un bord à l'autre de l'écran et les commandes se
+ * posent dessus, rangées au bord droit : c'est le plan qu'on vient voir, et
+ * quarante-six points de haut valent trois lignes de stands. Avec, le nom du
+ * salon reste lu en haut — ce qui compte pour un lieu où l'on arrive sans le
+ * connaître — et les commandes ne recouvrent rien.
+ *
+ * Aucune des deux n'a raison partout, d'où le choix. Il ne vaut que sur écran
+ * étroit : au large, la barre garde son rang, et la classe ne rencontre aucune
+ * règle (voir `_head.html`, « max-width:900px »).
+ */
+const modeBarre = () => conf("_barre").mode === "bande" ? "bande" : "flottante";
+
+function appliqueBarre(){
+  racine.classList.toggle("barre-bande", modeBarre() === "bande");
+  /* Ce n'est plus la même couleur qui touche la barre du système : la surface
+     de la bande quand elle est là, le fond du plan quand il monte jusqu'en
+     haut. */
+  poseTonDeLaBarre();
 }
 
 /* Les habillages du plan. Chacun tient en cinq pièces — le bandeau du haut,
@@ -12327,11 +12470,14 @@ function voletAdmin(hote){
      du plan ni une option vendue, mais une façon de le lire. */
   blocLangues(hote);
 
-  /* Les deux derniers réglages ne sont pas des cases : ils passent donc après
-     toutes celles-ci, chacun sous son intertitre. Ce que porte l'application
-     installée d'abord (`_application.html`) — c'est du même ordre que
-     l'invitation à l'installer, cochée plus haut —, puis le générique du
-     démarrage (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+  /* Les derniers réglages ne sont pas des cases : ils passent donc après toutes
+     celles-ci, chacun sous son intertitre. La barre du haut sur un téléphone
+     d'abord — c'est la mise en page de l'écran, et elle commande ce que les
+     réglages du dessous ont pour cadre —, puis ce que porte l'application
+     installée (`_application.html`), du même ordre que l'invitation à
+     l'installer cochée plus haut, et enfin le générique du démarrage
+     (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+  blocBarre(hote);
   blocApplication(hote);
   blocSponsor(hote);
 }
@@ -12436,6 +12582,83 @@ function blocLangues(hote){
     bloc.appendChild(aide);
   });
   hote.appendChild(bloc);
+}
+
+/* Les deux barres qu'un téléphone peut porter, dans l'onglet « Admin ». Une
+   vignette chacune : un choix de mise en page se juge d'un coup d'œil, et deux
+   lignes de texte n'auraient pas dit où vont les commandes. */
+const CHOIX_BARRE = [
+  { mode: "flottante",
+    titre: "Sans bandeau",
+    resume: "Le hall d'un bord à l'autre ; les commandes se posent dessus, au bord droit.",
+    vue: '<svg class="vueBarre" viewBox="0 0 34 34" fill="none" aria-hidden="true">' +
+      '<rect class="cadre" x="7.5" y="3.5" width="19" height="27" rx="3"/>' +
+      '<path class="part" d="M22 8.5h.01M22 13.5h.01M22 18.5h.01" stroke-width="3.4" stroke-linecap="round"/>' +
+      '</svg>' },
+  { mode: "bande",
+    titre: "Bandeau réduit",
+    resume: "Une bande aussi basse que possible : le nom du salon, les pavillons, les commandes.",
+    vue: '<svg class="vueBarre" viewBox="0 0 34 34" fill="none" aria-hidden="true">' +
+      '<rect class="cadre" x="7.5" y="3.5" width="19" height="27" rx="3"/>' +
+      '<path class="part" d="M9.5 8h15" stroke-width="4.5"/>' +
+      '</svg>' },
+];
+
+/**
+ * Où l'on choisit la barre du haut pour les téléphones.
+ *
+ * Dans l'onglet « Admin », comme le générique du démarrage et pour la même
+ * raison : ce n'est pas un réglage de salon mais une façon de poser le plan,
+ * qu'on arrête une fois et qu'on ne rouvre plus.
+ *
+ * Le choix se voit sur-le-champ quand on l'ouvre depuis un téléphone, et pas
+ * du tout depuis un poste de travail — la barre y garde son rang dans les deux
+ * cas. D'où les vignettes : elles sont, sur grand écran, la seule chose qui
+ * montre ce qu'on choisit.
+ */
+function blocBarre(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "La barre du haut, sur un téléphone";
+  tete.querySelector(".d").textContent = "Un écran de téléphone se compte en " +
+    "lignes de stands : la bande du haut en prend trois. Le plan peut donc " +
+    "s'en passer, ses commandes rangées sur le hall, ou la garder pour que le " +
+    "nom du salon reste lu. Sans effet sur un ordinateur, où la barre ne coûte " +
+    "rien.";
+  hote.appendChild(tete);
+
+  const choix = document.createElement("div");
+  choix.className = "choixDem";
+  hote.appendChild(choix);
+
+  const boutons = CHOIX_BARRE.map(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dem";
+    b.innerHTML = '<span class="v"></span><span class="x">' +
+      '<span class="t"></span><span class="d"></span></span>' +
+      '<span class="coche">\u2713</span>';
+    b.querySelector(".v").innerHTML = c.vue;
+    b.querySelector(".t").textContent = c.titre;
+    b.querySelector(".d").textContent = c.resume;
+    b.onclick = () => pose(c.mode);
+    choix.appendChild(b);
+    return { b: b, c: c };
+  });
+
+  const suit = () => {
+    const mode = modeBarre();
+    boutons.forEach(({ b, c }) => b.setAttribute("aria-pressed", String(c.mode === mode)));
+  };
+  const pose = (mode) => {
+    if (modeBarre() === mode) return;
+    conf("_barre").mode = mode;
+    enregistreConf();
+    appliqueBarre();
+    suit();
+  };
+  suit();
 }
 
 /**
