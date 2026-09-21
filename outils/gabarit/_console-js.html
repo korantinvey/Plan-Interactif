@@ -1369,6 +1369,14 @@ function caseFiche(type, cle, libelle, aide, apres) {
    ------------------------------------------------------------------ */
 const PREFIXE_PERSO = "perso:";
 
+/* La seconde origine d'un champ propre au salon : celle qui porte l'anglais.
+   Un champ à choix voit ses valeurs traduites toutes seules — la source
+   déclare l'anglais de ses listes — mais un texte libre, une description,
+   n'a rien de tel : sa version anglaise ne peut venir que d'un second champ
+   de la source. Le même suffixe vit dans « champs.ts », côté serveur. */
+const SUFFIXE_EN = "@en";
+const cibleEn = (cle) => PREFIXE_PERSO + cle + SUFFIXE_EN;
+
 const champsPersos = (e) => {
   const l = e.fiche && e.fiche.perso;
   return Array.isArray(l) ? l : [];
@@ -1521,10 +1529,13 @@ function retireChampPerso(cle, libelle, redessine) {
       Object.keys(corr).forEach((src) => {
         const bloc = { ...(corr[src] || {}) };
         ["champs", "valeurs"].forEach((k) => {
-          if (!bloc[k] || bloc[k][cible] === undefined) return;
-          bloc[k] = { ...bloc[k] };
-          delete bloc[k][cible];
-          touche = true;
+          // l'origine anglaise part avec la française : c'est le même champ
+          [cible, cibleEn(cle)].forEach((c) => {
+            if (!bloc[k] || bloc[k][c] === undefined) return;
+            bloc[k] = { ...bloc[k] };
+            delete bloc[k][c];
+            touche = true;
+          });
         });
         corr[src] = bloc;
       });
@@ -1548,6 +1559,7 @@ function lignesPerso(e, redessine) {
   return champsPersos(e).map((c) => ({
     cle: PREFIXE_PERSO + c.cle,
     cible: PREFIXE_PERSO + c.cle,
+    cibleEn: cibleEn(c.cle),
     libelle: c.libelle,
     critere: true,
     outils: [
@@ -1758,7 +1770,9 @@ function ouvreFiche(apres) {
             "pour en faire un critère de recherche — et n'existe que pour cet " +
             "événement. Un champ à choix multiple se sépare tout seul : la " +
             "source joint ses valeurs par un point-virgule, et chacune compte " +
-            "pour elle-même." },
+            "pour elle-même. La version anglaise vient d'un second champ de la " +
+            "source, à désigner sous le premier : un champ à choix a déjà " +
+            "l'anglais de ses valeurs, un texte libre n'en a aucun." },
         [
           perso.length ? tableauChamps(perso, "stand", src, true, true) : null,
           (() => {
@@ -1968,11 +1982,27 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
     /* Le champ d'origine d'abord : c'est lui que la case va montrer ou
        cacher, il doit donc exister avant elle. */
     const cellule = tr.querySelector("td.orig");
-    let choix = null;
+    let choix = null, choixEn = null;
     if (l.cible) {
       choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; },
         l.ouiNon);
       cellule.appendChild(choix.hote);
+      /* Et l'origine de l'anglais, pour les champs qui en acceptent une : un
+         champ à choix voit ses valeurs traduites par la source, un texte libre
+         n'a d'anglais que celui qu'un second champ porte. Sous la première et
+         non à côté : c'est le même champ en deux temps, et une colonne de plus
+         serait à lire sur toutes les lignes qui n'en ont pas. */
+      if (l.cibleEn) {
+        choixEn = champOrigine(src, l.cibleEn, null, false, "pas de version anglaise");
+        const bloc = document.createElement("div");
+        bloc.className = "origine-en";
+        const e = document.createElement("span");
+        e.className = "etiq";
+        e.textContent = "Version anglaise";
+        bloc.appendChild(e);
+        bloc.appendChild(choixEn.hote);
+        cellule.appendChild(bloc);
+      }
     } else {
       const fixe = document.createElement("span");
       fixe.className = "etat-salle";
@@ -1998,6 +2028,7 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
       tr.classList.toggle("source-inerte", !sert);
       if (!choix) return;
       choix.hote.hidden = !sert;
+      if (choixEn) choixEn.hote.parentNode.hidden = !sert;
       // la barre de couleur dit d'où vient un champ : sans champ, elle ne dit
       // plus rien
       if (sert) choix.dis(); else delete tr.dataset.etat;
@@ -2189,7 +2220,7 @@ function autreFace(valeurs) {
  * fenêtre : une fenêtre où la moitié des gestes se valide et l'autre pas
  * serait un piège.
  */
-function champOrigine(src, cible, apres, ouiNon) {
+function champOrigine(src, cible, apres, ouiNon, sansChamp) {
   const e = courant();
   const bloc = correspondance(e, src);
   const detectes = bloc.detectes || [];
@@ -2267,7 +2298,8 @@ function champOrigine(src, cible, apres, ouiNon) {
     const genre = vide ? (sansDefaut || !propose1 ? "libre" : "manque")
       : v === DEFAUT_CHAMP || suggere ? "auto" : "manuel";
     etat.textContent = vide
-      ? (sansDefaut ? "sans champ d'origine connu"
+      ? (sansChamp ? sansChamp
+        : sansDefaut ? "sans champ d'origine connu"
         : propose1 ? "champ habituel introuvable : à désigner" : "laissé vide")
       : v === DEFAUT_CHAMP ? "champ par défaut"
       : suggere ? "proposé d'après le dernier relevé" : "choisi à la main";

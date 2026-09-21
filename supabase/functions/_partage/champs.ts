@@ -351,6 +351,24 @@ function valeursDe(v: unknown): string[] {
 
 export const PREFIXE_PERSO = "perso:";
 
+/**
+ * La seconde origine d'un champ propre au salon : celle qui porte l'anglais.
+ *
+ * Un champ à choix voit ses valeurs traduites toutes seules — la source
+ * déclare l'anglais de ses listes, et la synchronisation le relève. Un champ
+ * de texte libre n'a rien de tel : une description saisie en français reste en
+ * français, et la version anglaise du plan la montrait telle quelle. Elle ne
+ * peut venir que d'un second champ de la source, que l'exploitant désigne
+ * comme il a désigné le premier.
+ *
+ * Une clé de champ personnalisé ne porte que des lettres, des chiffres et des
+ * traits d'union : l'arobase ne peut donc pas la heurter.
+ */
+export const SUFFIXE_EN = "@en";
+
+/** La cible qui porte l'anglais d'un champ propre au salon. */
+export const cibleEn = (cle: string) => PREFIXE_PERSO + cle + SUFFIXE_EN;
+
 /** Un champ personnalisé, tel que la console le définit. */
 export interface ChampPerso {
   cle: string;
@@ -395,11 +413,15 @@ export function champsPerso(fiche: unknown): ChampPerso[] {
 export function cibles(fournisseur: string, fiche: unknown): Cible[] {
   return [
     ...(CIBLES[fournisseur] ?? []),
-    ...champsPerso(fiche).map((c) => ({
+    ...champsPerso(fiche).flatMap((c) => [{
       cle: PREFIXE_PERSO + c.cle,
       libelle: c.libelle,
       multiple: c.multiple,
-    })),
+    }, {
+      cle: cibleEn(c.cle),
+      libelle: c.libelle + " (anglais)",
+      multiple: c.multiple,
+    }]),
   ];
 }
 

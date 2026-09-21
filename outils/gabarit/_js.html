@@ -144,6 +144,12 @@ function indexe(d){
         clesCriteres().flatMap(c => valeursCritere(s, c)))
         .map(v => anglais[v]).filter(Boolean);
       if (traduites.length) s.rech += " " + traduites.join(" ").toLowerCase();
+      /* L'anglais des champs propres au salon ne vient pas du dictionnaire
+         mais de la source, par la seconde origine que l'exploitant lui a
+         désignée : il est déjà sur la fiche, il n'a qu'à entrer dans ce qu'on
+         cherche. Sans quoi un visiteur taperait un mot qu'il vient de lire
+         sans rien trouver. */
+      s.rech += texteAnglaisPerso(s);
     });
   });
   /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
@@ -262,11 +268,12 @@ function indexe(d){
       const h = {
         kind: "coex", id: s.id, i: k, p: i, code: s.code, sect: s.sect,
         nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
-        nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
+        nomencl: x.nomencl, themes: x.themes, perso: x.perso,
+        perso_en: x.perso_en, neuf: x.neuf,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
                 " " + (s.sect || "") + " " + (x.themes || []).join(" ") +
-                " " + texteCriteres(h)).toLowerCase();
+                " " + texteCriteres(h)).toLowerCase() + texteAnglaisPerso(h);
       return h;
     })));
   PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
@@ -1197,6 +1204,23 @@ function valeursCritere(o, cle){
 /** Tout ce qu'une fiche porte de critères, pour la recherche plein texte. */
 function texteCriteres(o){
   return clesCriteres().flatMap(c => valeursCritere(o, c)).join(" ");
+}
+
+/**
+ * L'anglais des champs propres au salon, pour la recherche plein texte.
+ *
+ * Tous, et pas seulement ceux qui sont des critères : ce qu'une fiche montre
+ * doit se retrouver en le tapant, et la version anglaise est justement celle
+ * que le visiteur anglophone a sous les yeux. Le français entre déjà dans le
+ * rang par ailleurs — les deux s'y ajoutent, la recherche ne sachant pas dans
+ * quelle langue on lui parle.
+ *
+ * Elle rend son espace de tête : le rang s'assemble par concaténation, et une
+ * fiche sans anglais n'a alors rien à y ajouter.
+ */
+function texteAnglaisPerso(o){
+  const l = Object.values(o.perso_en || {}).flatMap(v => separeValeurs(v));
+  return l.length ? " " + l.join(" ").toLowerCase() : "";
 }
 
 /**
@@ -3659,15 +3683,31 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      de les faire remonter. */
   const perso = (!zone && DATA.fiche && DATA.fiche.perso) || [];
   perso.forEach(c => {
-    const v = (soc.perso || {})[c.cle];
-    if (v === undefined || v === null || v === "") return;
     // le point-virgule sépare les valeurs d'un champ à choix : la fiche les
     // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
-    const l = separeValeurs(v);
-    if (!l.length) return;
-    met(PREFIXE_PERSO + c.cle, esc(c.libelle), l.length > 1
-      ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
-      : esc(l[0]));
+    const fr = separeValeurs((soc.perso || {})[c.cle]);
+    const en = separeValeurs((soc.perso_en || {})[c.cle]);
+    if (!fr.length && !en.length) return;
+    /* Deux versions quand l'exploitant a désigné une origine anglaise : les
+       deux sont posées, et la langue de la page dit laquelle se voit — la
+       bascule n'a ainsi rien à redessiner, comme pour la description d'une
+       zone. Ce qui vient de la source ne passe pas par le dictionnaire : un
+       champ à choix y trouve l'anglais de ses valeurs, un texte libre n'y
+       trouverait rien. Une seule version sert aux deux langues.
+
+       Le marqueur va sur un bloc qui les réunit, et non sur chaque ligne : la
+       règle qui cache l'autre langue est moins spécifique que celle qui fait
+       des lignes des blocs, et une ligne marquée restait visible. Le bloc,
+       lui, n'a rien qui lui dispute son affichage — et les lignes d'une
+       langue gardent entre elles l'écart qu'elles ont ailleurs. */
+    const lignes = (l) => l.map(x => '<span class="ligne">' + esc(x) + '</span>');
+    const bloc = (l, lg) => '<div data-lg="' + lg + '" translate="no">' +
+      lignes(l).join("") + '</div>';
+    const seule = fr.length ? fr : en;
+    met(PREFIXE_PERSO + c.cle, esc(c.libelle),
+      fr.length && en.length ? [bloc(fr, "fr"), bloc(en, "en")]
+      : seule.length > 1 ? lignes(seule)
+      : esc(seule[0]));
   });
   /* Ce que l'exploitant a écrit sur une zone, depuis les réglages du plan.
      C'est tout ce qu'une zone a en propre : Klipso ne lui donne qu'un nom et

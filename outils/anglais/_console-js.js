@@ -189,8 +189,10 @@ module.exports = {
     "No exhibitor source: there is no source field to map. Choose one in “Data sources by domain”.",
   "Ce qui ne s'affiche pas": "What is not shown",
   "Champs propres à ce salon": "Fields specific to this show",
-  "Un champ que ce salon est seul à tenir. Il se règle comme les autres — un champ d'origine, une case pour l'afficher, une case pour en faire un critère de recherche — et n'existe que pour cet événement. Un champ à choix multiple se sépare tout seul : la source joint ses valeurs par un point-virgule, et chacune compte pour elle-même.":
-    "A field only this show has. It is set up like the others — a source field, a box to show it, a box to make it a search filter — and only exists for this event. A multiple-choice field is split automatically: the source joins its values with a semicolon, and each one counts on its own.",
+  "Un champ que ce salon est seul à tenir. Il se règle comme les autres — un champ d'origine, une case pour l'afficher, une case pour en faire un critère de recherche — et n'existe que pour cet événement. Un champ à choix multiple se sépare tout seul : la source joint ses valeurs par un point-virgule, et chacune compte pour elle-même. La version anglaise vient d'un second champ de la source, à désigner sous le premier : un champ à choix a déjà l'anglais de ses valeurs, un texte libre n'en a aucun.":
+    "A field only this show has. It is set up like the others — a source field, a box to show it, a box to make it a search filter — and only exists for this event. A multiple-choice field is split automatically: the source joins its values with a semicolon, and each one counts on its own. The English version comes from a second source field, to be picked below the first one: a choice field already carries the English of its values, free text carries none.",
+  "Version anglaise": "English version",
+  "pas de version anglaise": "no English version",
   "Ajouter un champ": "Add a field",
   "Aucun champ propre à ce salon pour le moment.": "No show-specific fields yet.",
   "Les champs proposés viennent du relevé de la dernière synchronisation, le {date}.":
