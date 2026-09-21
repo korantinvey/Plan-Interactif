@@ -199,6 +199,21 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
 @media (max-width:1150px){.stats{display:none}.tools{margin-left:auto}}
 .stats b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--ink);
   font-variant-numeric:tabular-nums;line-height:1.2}
+/* Le cadre des onglets ne sert qu'à porter les flèches et le fondu : il passe
+   donc au travers, et c'est la barre des pavillons qui reste la pièce que les
+   modèles habillent et que la barre du haut aligne. Le fondu est plus court
+   qu'ailleurs — une pastille de deux onglets n'a pas quarante-quatre points à
+   donner. */
+.halls-bande{display:flex;min-width:0;--fondu:34px}
+/* Sa flèche est celle des bandes de critères, non le chevron effacé du
+   cartouche : celui-ci se pose sur le plan nu, où il n'a qu'à se laisser
+   deviner, quand celle-là doit se voir sur une pastille déjà pleine de mots.
+   Elle se mesure en revanche à la pastille, qui est plus basse qu'un panneau —
+   vingt-sept points dans trente-cinq ne laissaient rien autour. */
+.halls-bande .fleche{width:25px;height:25px;margin-top:-12px}
+.halls-bande .fleche svg{width:13px;height:13px}
+.halls-bande[data-gauche] .fleche[data-vers="-1"]{left:2px}
+.halls-bande[data-droite] .fleche[data-vers="1"]{right:2px}
 .halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
 .halls button{padding:5px 13px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap}
 .halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -4131,8 +4146,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      toute la largeur, et il n'y a plus de bande pour le justifier. Elle garde
      le fond de la page même là où le modèle le retire : sans bande dessous, un
      onglet écrit à même le plan ne se lit plus. */
-  html:not(.mode-admin) .topbar .halls{flex:0 1 auto;max-width:calc(100% - 52px);
-    padding:3px;background:color-mix(in srgb,var(--surface) 78%,transparent);
+  html:not(.mode-admin) .topbar .halls-bande{flex:0 1 auto;max-width:calc(100% - 52px)}
+  html:not(.mode-admin) .topbar .halls{padding:3px;
+    background:color-mix(in srgb,var(--surface) 78%,transparent);
     border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
     box-shadow:var(--shadow)}
 
@@ -4154,7 +4170,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Sans onglets, ce partage n'a plus lieu d'être : le nom prend la barre et
      tient souvent sur une ligne, là où 40 % l'auraient plié en trois. */
   html.un-pavillon .brand{flex:1 1 auto;max-width:none}
-  .halls{flex:1 1 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .halls-bande{flex:1 1 0}
+  .halls{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
   .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
@@ -4717,7 +4734,21 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <h1 id="titre" class="attente">Plan du salon</h1>
       <span class="sub" id="sub"></span>
     </div>
-    <nav class="halls" id="halls" aria-label="Pavillons"></nav>
+    <!-- Les pavillons ne tiennent pas toujours sur la largeur : trois halls
+         nommés « Galerie Diaghilev » en débordent sur un téléphone. Ils
+         défilent donc par le côté, et la bande dit par quel bord il en reste —
+         voir « Une bande qui défile ne le dit pas d'elle-même ». -->
+    <div class="bande halls-bande" id="hallsBande" hidden>
+      <nav class="halls defile" id="halls" aria-label="Pavillons"></nav>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
     <div class="stats">
       <div><b id="nStands">—</b>emplacements</div>
       <div><b id="nExpo">—</b>exposants</div>
@@ -5940,7 +5971,10 @@ function onglets(){
      que répéter le titre — souvent mot pour mot, Klipso nommant son plan
      unique comme le salon — et sur un écran étroit il lui prend sa largeur. */
   const seul = DATA.plans.length < 2;
-  $("halls").hidden = seul;
+  /* Le cadre et non la barre : vidée, elle laisserait son cadre — un fondu, deux
+     flèches et, sur un téléphone, la pastille qui les porte — annoncer des
+     onglets qui n'existent pas. */
+  $("hallsBande").hidden = seul;
   // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
   document.documentElement.classList.toggle("un-pavillon", seul);
   if (seul) { $("halls").innerHTML = ""; return; }
@@ -5949,6 +5983,9 @@ function onglets(){
     ' title="' + esc(p.libelle) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
   $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
+  /* Les onglets viennent d'arriver : personne d'autre ne saura qu'ils débordent
+     — le défilement n'a pas bougé, et la fenêtre non plus. */
+  majFondus();
 }
 
 function changePlan(i){
