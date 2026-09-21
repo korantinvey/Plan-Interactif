@@ -441,18 +441,21 @@ const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
  * trouver en tapant ce qu'on lisait hier. Les autres ne se lisent que sur la
  * fiche — ou comme critère, d'où la réserve de `retraits()`.
  */
-const CHAMPS_FICHE: Record<string, string> = {
-  logo: "logo",
-  hall: "hall",
-  adresse: "adr",
-  ville: "ville",
-  pays: "pays",
-  telephone: "tel",
-  site: "site",
-  facebook: "fb",
-  linkedin: "li",
-  instagram: "ig",
-  nomenclature: "nomencl",
+const CHAMPS_FICHE: Record<string, string[]> = {
+  logo: ["logo"],
+  hall: ["hall"],
+  adresse: ["adr"],
+  /* Le code postal n'a pas de case à lui : il se pose devant la ville sur la
+     fiche, et part donc avec elle. Laissé derrière, il descendrait chez le
+     visiteur d'un salon qui a justement retiré la ville. */
+  ville: ["ville", "cp"],
+  pays: ["pays"],
+  telephone: ["tel"],
+  site: ["site"],
+  facebook: ["fb"],
+  linkedin: ["li"],
+  instagram: ["ig"],
+  nomenclature: ["nomencl"],
 };
 
 /* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la
@@ -491,7 +494,7 @@ function retraits(fiche: Record<string, unknown>): Retraits | null {
 
   const cles = Object.entries(CHAMPS_FICHE)
     .filter(([cible]) => retire(cible))
-    .map(([, cle]) => cle);
+    .flatMap(([, cles]) => cles);
   const persos = ((fiche.perso ?? []) as { cle?: string }[])
     .map((c) => String(c?.cle ?? ""))
     .filter((cle) => cle && retire(PREFIXE_PERSO + cle));

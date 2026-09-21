@@ -1213,12 +1213,13 @@ Deno.serve(async (req) => {
           const contacts = !ok ? {} : expoEm
             ? (em
               ? {
-                adr: em.adresse, ville: em.ville, pays: em.pays, tel: em.tel,
+                adr: em.adresse, cp: em.cp, ville: em.ville, pays: em.pays,
+                tel: em.tel,
                 fb: em.facebook, li: em.linkedin, ig: em.instagram,
               }
               : {})
             : {
-              adr: ou([val("adresse"), val("codePostal")].filter(Boolean).join(", ")),
+              adr: val("adresse"), cp: val("codePostal"),
               ville: val("ville"), pays: val("pays"), tel: val("telephone"),
               fb: val("facebook"), li: val("linkedin"), ig: val("instagram"),
             };
@@ -1682,7 +1683,7 @@ function hebergee(x: ExposantEm): Record<string, unknown> {
   const o: Record<string, unknown> = { nom: x.nom };
   const champs: [string, unknown][] = [
     ["plan", x.raison], ["logo", x.logo], ["site", nettoieUrl(x.site)],
-    ["adr", x.adresse], ["ville", x.ville],
+    ["adr", x.adresse], ["cp", x.cp], ["ville", x.ville],
     ["pays", x.pays], ["tel", x.tel], ["fb", x.facebook],
     ["li", x.linkedin], ["ig", x.instagram],
   ];
