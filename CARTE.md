@@ -278,7 +278,7 @@ Fonctions :
 `appliquePicto` 401 · `supprimeForme` 427 · `editionPointerDown` 437
 `editionPointerMove` 483 · `editionPointerUp` 537
 
-### `_environs.html` — 1596 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1625 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -292,16 +292,16 @@ Fonctions :
 `vueGL` 498 · `styleDuFond` 518 · `guetteLaCarte` 546 · `poseCarteGL` 557
 `diagnostiqueGL` 639 · `relanceCarteGL` 659 · `videCarteGL` 671 · `dessineFondCarte` 687
 `cleMasqueCarte` 783 · `masqueCarte` 784 · `basculeMasqueCarte` 786
-`boutonMasqueCarte` 797 · `pictoMasque` 808 · `formesMasquantes` 820 · `cheminDuHall` 842
-`poseMasqueCarte` 861 · `carreDeTerrain` 895 · `chercheBatiments` 911 · `aireDuContour` 938
-`centreDuContour` 947 · `axeDuContour` 960 · `empriseDesObjets` 977
-`batimentsCandidats` 995 · `caleSurBatiment` 1016 · `retientLeHall` 1042
-`manqueCalage` 1064 · `enregistreCalage` 1073 · `calageEnregistre` 1090
-`oublieCalageEnCours` 1111 · `litCoordonnees` 1123 · `rafraichitCarte` 1137
-`armeCalage` 1179 · `pivotCalage` 1190 · `glisseCarte` 1194 · `cartePointerDown` 1201
-`cartePointerMove` 1215 · `cartePointerUp` 1234 · `ditCalage` 1242 · `ditCarte` 1251
-`majCalage` 1259 · `appliqueCalage` 1274 · `tourneCalage` 1281 · `construitCalage` 1287
-`ouvreCalage` 1435 · `fermeCalage` 1444 · `voletEnvirons` 1472
+`boutonMasqueCarte` 797 · `pictoMasque` 808 · `formesMasquantes` 820 · `contourDuHall` 842
+`cheminDuHall` 849 · `poseMasqueCarte` 867 · `carreDeTerrain` 901 · `chercheBatiments` 917
+`aireDuContour` 944 · `centreDuContour` 953 · `axeDuContour` 966 · `empriseDesObjets` 983
+`batimentsCandidats` 1001 · `caleSurBatiment` 1022 · `retientLeHall` 1048
+`manqueCalage` 1070 · `enregistreCalage` 1079 · `calageEnregistre` 1096
+`oublieCalageEnCours` 1117 · `litCoordonnees` 1129 · `rafraichitCarte` 1143
+`armeCalage` 1185 · `pivotCalage` 1196 · `glisseCarte` 1200 · `cartePointerDown` 1207
+`cartePointerMove` 1221 · `cartePointerUp` 1240 · `ditCalage` 1248 · `ditCarte` 1257
+`majCalage` 1265 · `appliqueCalage` 1287 · `tourneCalage` 1294 · `construitCalage` 1300
+`ouvreCalage` 1464 · `fermeCalage` 1473 · `voletEnvirons` 1501
 
 ### `_export.html` — 215 l. → admin-plans.html, rapport.html
 
