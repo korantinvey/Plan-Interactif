@@ -2767,6 +2767,25 @@ branché n'est pas un défaut du code relu, et une pull request rouge pour cette
 raison ferait douter du reste. Une branche venue d'une bifurcation est laissée
 de côté, les secrets du dépôt ne lui étant pas accessibles.
 
+Un dernier réglage se lit mal et coûte tout : l'action refuse par défaut d'être
+déclenchée par un robot, pour qu'un robot ne l'appelle pas en boucle. Or les
+pull requests de ce dépôt sont le plus souvent ouvertes depuis une session
+Claude Code, donc signées `claude[bot]` — et la relecture s'arrêtait là, sur une
+tâche rouge dont seul le journal disait pourquoi. D'où `allowed_bots: claude`
+dans le workflow : ce robot-là, nommément, et pas `*` qui ferait relire les pull
+requests de n'importe quel automate.
+
+Et une conséquence qui surprend la première fois : **l'action refuse de tourner
+quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
+file must exist and have identical content to the version on the repository's
+default branch ». C'est ce qui empêche une pull request de réécrire le workflow
+pour détourner le jeton, donc c'est une bonne chose ; mais cela veut dire qu'une
+modification de ce fichier **ne peut pas être essayée sur sa propre pull
+request** : la tâche s'arrête, en vert, avec un avertissement dans son journal.
+Elle ne vaudra qu'après la fusion. Pour la vérifier alors, il suffit de relancer
+la tâche depuis l'onglet **Actions** : le workflow est désormais celui de `main`,
+et la relecture part pour de bon.
+
 ## Fabriquer les pages
 
 Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,
