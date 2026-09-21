@@ -92,6 +92,19 @@ function sousCalques(cle){
 
 const racine = document.documentElement;
 
+/* La barre du salon sur un téléphone : avec bande, ou sans.
+
+   Le choix se pose ici, au premier trait de la page, sur ce que la visite
+   précédente a laissé dans le stockage — comme le générique du sponsor, et
+   pour la même raison. Attendu à l'arrivée des données, il aurait ouvert le
+   plan sans bande puis fait tomber une bande dessus, sous les yeux du
+   visiteur. `appliqueBarre` le repose ensuite d'après la configuration reçue,
+   qui seule fait foi. */
+try {
+  racine.classList.toggle("barre-bande",
+    (JSON.parse(localStorage.getItem(CLE_CONF) || "{}")._barre || {}).mode === "bande");
+} catch (e) {}
+
 /* Les couches de données n'ont pas de SVG propre : leur visibilité joue sur
    l'affichage du groupe, leur couleur sur une variable CSS. */
 function styleDataGroupe(nom, on){
@@ -160,6 +173,7 @@ function appliqueApparence(){
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
+  appliqueBarre();
   appliqueModele();
 }
 
@@ -658,6 +672,29 @@ function appliqueFond(){
   const v = conf("_fond").couleur;
   if (trio(v)) racine.style.setProperty("--c-fond", v);
   else racine.style.removeProperty("--c-fond");
+}
+
+/**
+ * Avec bande, ou sans : ce que la barre du salon devient sur un téléphone.
+ *
+ * Sans bande, le hall va d'un bord à l'autre de l'écran et les commandes se
+ * posent dessus, rangées au bord droit : c'est le plan qu'on vient voir, et
+ * quarante-six points de haut valent trois lignes de stands. Avec, le nom du
+ * salon reste lu en haut — ce qui compte pour un lieu où l'on arrive sans le
+ * connaître — et les commandes ne recouvrent rien.
+ *
+ * Aucune des deux n'a raison partout, d'où le choix. Il ne vaut que sur écran
+ * étroit : au large, la barre garde son rang, et la classe ne rencontre aucune
+ * règle (voir `_head.html`, « max-width:900px »).
+ */
+const modeBarre = () => conf("_barre").mode === "bande" ? "bande" : "flottante";
+
+function appliqueBarre(){
+  racine.classList.toggle("barre-bande", modeBarre() === "bande");
+  /* Ce n'est plus la même couleur qui touche la barre du système : la surface
+     de la bande quand elle est là, le fond du plan quand il monte jusqu'en
+     haut. */
+  poseTonDeLaBarre();
 }
 
 /* Les habillages du plan. Chacun tient en cinq pièces — le bandeau du haut,
@@ -2020,11 +2057,14 @@ function voletAdmin(hote){
      du plan ni une option vendue, mais une façon de le lire. */
   blocLangues(hote);
 
-  /* Les deux derniers réglages ne sont pas des cases : ils passent donc après
-     toutes celles-ci, chacun sous son intertitre. Ce que porte l'application
-     installée d'abord (`_application.html`) — c'est du même ordre que
-     l'invitation à l'installer, cochée plus haut —, puis le générique du
-     démarrage (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+  /* Les derniers réglages ne sont pas des cases : ils passent donc après toutes
+     celles-ci, chacun sous son intertitre. La barre du haut sur un téléphone
+     d'abord — c'est la mise en page de l'écran, et elle commande ce que les
+     réglages du dessous ont pour cadre —, puis ce que porte l'application
+     installée (`_application.html`), du même ordre que l'invitation à
+     l'installer cochée plus haut, et enfin le générique du démarrage
+     (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+  blocBarre(hote);
   blocApplication(hote);
   blocSponsor(hote);
 }
@@ -2129,6 +2169,83 @@ function blocLangues(hote){
     bloc.appendChild(aide);
   });
   hote.appendChild(bloc);
+}
+
+/* Les deux barres qu'un téléphone peut porter, dans l'onglet « Admin ». Une
+   vignette chacune : un choix de mise en page se juge d'un coup d'œil, et deux
+   lignes de texte n'auraient pas dit où vont les commandes. */
+const CHOIX_BARRE = [
+  { mode: "flottante",
+    titre: "Sans bandeau",
+    resume: "Le hall d'un bord à l'autre ; les commandes se posent dessus, au bord droit.",
+    vue: '<svg class="vueBarre" viewBox="0 0 34 34" fill="none" aria-hidden="true">' +
+      '<rect class="cadre" x="7.5" y="3.5" width="19" height="27" rx="3"/>' +
+      '<path class="part" d="M22 8.5h.01M22 13.5h.01M22 18.5h.01" stroke-width="3.4" stroke-linecap="round"/>' +
+      '</svg>' },
+  { mode: "bande",
+    titre: "Bandeau réduit",
+    resume: "Une bande aussi basse que possible : le nom du salon, les pavillons, les commandes.",
+    vue: '<svg class="vueBarre" viewBox="0 0 34 34" fill="none" aria-hidden="true">' +
+      '<rect class="cadre" x="7.5" y="3.5" width="19" height="27" rx="3"/>' +
+      '<path class="part" d="M9.5 8h15" stroke-width="4.5"/>' +
+      '</svg>' },
+];
+
+/**
+ * Où l'on choisit la barre du haut pour les téléphones.
+ *
+ * Dans l'onglet « Admin », comme le générique du démarrage et pour la même
+ * raison : ce n'est pas un réglage de salon mais une façon de poser le plan,
+ * qu'on arrête une fois et qu'on ne rouvre plus.
+ *
+ * Le choix se voit sur-le-champ quand on l'ouvre depuis un téléphone, et pas
+ * du tout depuis un poste de travail — la barre y garde son rang dans les deux
+ * cas. D'où les vignettes : elles sont, sur grand écran, la seule chose qui
+ * montre ce qu'on choisit.
+ */
+function blocBarre(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "La barre du haut, sur un téléphone";
+  tete.querySelector(".d").textContent = "Un écran de téléphone se compte en " +
+    "lignes de stands : la bande du haut en prend trois. Le plan peut donc " +
+    "s'en passer, ses commandes rangées sur le hall, ou la garder pour que le " +
+    "nom du salon reste lu. Sans effet sur un ordinateur, où la barre ne coûte " +
+    "rien.";
+  hote.appendChild(tete);
+
+  const choix = document.createElement("div");
+  choix.className = "choixDem";
+  hote.appendChild(choix);
+
+  const boutons = CHOIX_BARRE.map(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dem";
+    b.innerHTML = '<span class="v"></span><span class="x">' +
+      '<span class="t"></span><span class="d"></span></span>' +
+      '<span class="coche">\u2713</span>';
+    b.querySelector(".v").innerHTML = c.vue;
+    b.querySelector(".t").textContent = c.titre;
+    b.querySelector(".d").textContent = c.resume;
+    b.onclick = () => pose(c.mode);
+    choix.appendChild(b);
+    return { b: b, c: c };
+  });
+
+  const suit = () => {
+    const mode = modeBarre();
+    boutons.forEach(({ b, c }) => b.setAttribute("aria-pressed", String(c.mode === mode)));
+  };
+  const pose = (mode) => {
+    if (modeBarre() === mode) return;
+    conf("_barre").mode = mode;
+    enregistreConf();
+    appliqueBarre();
+    suit();
+  };
+  suit();
 }
 
 /**

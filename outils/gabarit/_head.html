@@ -201,19 +201,10 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
   font-variant-numeric:tabular-nums;line-height:1.2}
 /* Le cadre des onglets ne sert qu'à porter les flèches et le fondu : il passe
    donc au travers, et c'est la barre des pavillons qui reste la pièce que les
-   modèles habillent et que la barre du haut aligne. Le fondu est plus court
-   qu'ailleurs — une pastille de deux onglets n'a pas quarante-quatre points à
-   donner. */
-.halls-bande{display:flex;min-width:0;--fondu:34px}
-/* Sa flèche est celle des bandes de critères, non le chevron effacé du
-   cartouche : celui-ci se pose sur le plan nu, où il n'a qu'à se laisser
-   deviner, quand celle-là doit se voir sur une pastille déjà pleine de mots.
-   Elle se mesure en revanche à la pastille, qui est plus basse qu'un panneau —
-   vingt-sept points dans trente-cinq ne laissaient rien autour. */
-.halls-bande .fleche{width:25px;height:25px;margin-top:-12px}
-.halls-bande .fleche svg{width:13px;height:13px}
-.halls-bande[data-gauche] .fleche[data-vers="-1"]{left:2px}
-.halls-bande[data-droite] .fleche[data-vers="1"]{right:2px}
+   modèles habillent et que la barre du haut aligne. Le fondu, lui, garde les
+   quarante-quatre points des autres bandes : raccourci, le compte du dernier
+   onglet restait sous le chevron à demi effacé, et les deux se brouillaient. */
+.halls-bande{display:flex;min-width:0}
 .halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
 .halls button{padding:5px 13px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap}
 .halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
@@ -1163,13 +1154,20 @@ html.sans-image-stand .outils #imageSoc{display:none}
    le détache sans rien dessiner. Elle est tirée du jeton et non du blanc : un
    modèle qui repeint le cartouche repeint la tache avec, sinon elle resterait
    claire sur un fond qui ne l'est plus. */
-.poi .fleche{width:25px;height:25px;margin-top:-12px;
+/* Les pavillons sont dans le même cas, et prennent donc le même chevron. Leur
+   pastille flotte elle aussi sur le plan depuis que la barre du salon n'est
+   plus une bande sur un téléphone, et deux disques blancs bordés y auraient
+   fait deux commandes de plus à côté de deux onglets — le fondu dit déjà qu'il
+   en reste, la flèche n'a qu'à dire par où. Elle y gagne en prime la taille
+   qu'il lui faut : vingt-cinq points tiennent dans une pastille où le disque
+   des bandes de critères n'aurait rien laissé autour de lui. */
+:is(.poi,.halls-bande) .fleche{width:25px;height:25px;margin-top:-12px;
   border:0;box-shadow:none;color:var(--ink-2);opacity:.72;
   background:radial-gradient(closest-side,var(--surface) 38%,transparent)}
-.poi .fleche svg{width:13px;height:13px;stroke-width:2.2}
-.poi .fleche:active{opacity:1}
-.poi[data-gauche] .fleche[data-vers="-1"]{left:1px}
-.poi[data-droite] .fleche[data-vers="1"]{right:1px}
+:is(.poi,.halls-bande) .fleche svg{width:13px;height:13px;stroke-width:2.2}
+:is(.poi,.halls-bande) .fleche:active{opacity:1}
+:is(.poi,.halls-bande)[data-gauche] .fleche[data-vers="-1"]{left:1px}
+:is(.poi,.halls-bande)[data-droite] .fleche[data-vers="1"]{right:1px}
 .poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
   border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
   font-size:12px;cursor:pointer}
@@ -4099,7 +4097,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      Vide, elle ne vaut plus que le retrait du système — ce qui s'ancre en haut
      de la scène remonte d'autant sans qu'aucune de leurs règles l'apprenne.
      ------------------------------------------------------------ */
-  html:not(.mode-admin) .topbar{background:none;border-bottom:none;min-height:0;
+  html:not(.mode-admin):not(.barre-bande) .topbar{background:none;border-bottom:none;min-height:0;
     align-items:flex-start;padding:calc(10px + var(--sys-haut)) 10px 0;
     /* Le vide qu'elle laisse rend le geste au hall : transparente, elle
        recevait encore le doigt venu saisir le plan. */
@@ -4118,46 +4116,68 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     --accent:inherit;--accent-soft:inherit;--accent-ink:inherit}
   /* Ce qu'elle porte reprend le doigt pour lui — sauf pliée : invisible, elle
      recevait encore l'appui du stand qu'elle recouvrait. */
-  html:not(.mode-admin) .topbar:not(.pliee) > *{pointer-events:auto}
-  html:not(.mode-admin) .brand{display:none}
+  html:not(.mode-admin):not(.barre-bande) .topbar:not(.pliee) > *{pointer-events:auto}
+  html:not(.mode-admin):not(.barre-bande) .brand{display:none}
   /* Les pictos à la verticale, au bord droit, à la hauteur où ils étaient.
      Hors du flux : la bande n'a plus de contenu à aligner, et sa hauteur —
      celle que le cadrage lit — ne doit pas devenir la leur. */
-  html:not(.mode-admin) .tools{position:absolute;right:10px;
+  html:not(.mode-admin):not(.barre-bande) .tools{position:absolute;right:10px;
     top:calc(10px + var(--sys-haut));flex-direction:column;gap:8px;
     transition:transform .22s ease}
   /* Chacun s'en va par le bord d'où il vient : les onglets remontent avec la
      bande, les pictos sortent par la droite. */
-  html:not(.mode-admin) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
+  html:not(.mode-admin):not(.barre-bande) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
   /* La légère transparence : le hall se voit dessous, le liseré et l'ombre
      suffisent à poser le bouton. Tout est réécrit ici, jusqu'à l'aplat de
      l'accent et la pastille du parcours, parce que les modèles les peignent à
      la main pour une bande qui n'est plus là. */
-  html:not(.mode-admin) .topbar .iconbtn{
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn{
     background:color-mix(in srgb,var(--surface) 78%,transparent);
     border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
     color:var(--ink-2);box-shadow:var(--shadow)}
-  html:not(.mode-admin) .topbar .iconbtn[aria-pressed="true"]{background:var(--accent);
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn[aria-pressed="true"]{background:var(--accent);
     border-color:var(--accent);color:#fff}
-  html:not(.mode-admin) .topbar .compteur{background:var(--accent);color:#fff;
+  html:not(.mode-admin):not(.barre-bande) .topbar .compteur{background:var(--accent);color:#fff;
     border-color:var(--surface)}
   /* Les pavillons : une pastille au coin, qui tient sa largeur de ses onglets
      au lieu de barrer l'écran — une bande qui le traverse prend le doigt sur
      toute la largeur, et il n'y a plus de bande pour le justifier. Elle garde
      le fond de la page même là où le modèle le retire : sans bande dessous, un
      onglet écrit à même le plan ne se lit plus. */
-  html:not(.mode-admin) .topbar .halls-bande{flex:0 1 auto;max-width:calc(100% - 52px)}
-  html:not(.mode-admin) .topbar .halls{padding:3px;
+  html:not(.mode-admin):not(.barre-bande) .topbar .halls-bande{flex:0 1 auto;max-width:calc(100% - 52px)}
+  html:not(.mode-admin):not(.barre-bande) .topbar .halls{padding:3px;
     background:color-mix(in srgb,var(--surface) 78%,transparent);
     border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
     box-shadow:var(--shadow)}
 
+  /* ------------------------------------------------------------
+     L'autre choix : la bande, réduite à ce qu'elle peut être.
+
+     Un plan sans bande ne dit plus le nom du salon, et tous les salons n'en
+     veulent pas ainsi — celui d'un lieu qu'on ne connaît pas se nomme. La bande
+     revient donc sur demande, réglée dans l'onglet « Admin » (`blocBarre`,
+     `_admin1.html`), et rognée de tout ce qui pouvait l'être : trente-huit
+     points au lieu de quarante-six, des boutons de vingt-sept, un titre d'un
+     point et demi plus bas. Deux lignes de nom y tiennent encore — c'est la
+     règle qui protège le nom, et elle ne se paie que sur un nom long.
+
+     Rien d'autre ne change : la bande se pose toujours par-dessus le hall et se
+     plie au geste, comme elle le faisait avant qu'il y ait un choix.
+     ------------------------------------------------------------ */
+  html.barre-bande:not(.mode-admin) .topbar{gap:8px;
+    padding:calc(3px + var(--sys-haut)) 10px 3px;
+    min-height:calc(38px + var(--sys-haut))}
+  html.barre-bande:not(.mode-admin) .topbar .iconbtn{width:27px;height:27px}
+  html.barre-bande:not(.mode-admin) .brand h1{font-size:13.5px}
+  html.barre-bande:not(.mode-admin) .halls button{padding:3px 9px;font-size:12px}
+
   /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
      au-dessus d'eux dans la grille, mais devant eux sur l'écran. Et la colonne
-     des pictos leur est interdite : centré sur toute la largeur, un bandeau
-     passait dessous. */
-  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px));
-    right:52px;max-width:calc(100% - 64px)}
+     des pictos leur est interdite, quand il y en a une : centré sur toute la
+     largeur, un bandeau passait dessous. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
+  html:not(.mode-admin):not(.barre-bande) :is(.viseur,.iciRappel){right:52px;
+    max-width:calc(100% - 64px)}
   /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
      long, donc autant de hauteur laissée au plan. */
   .brand h1{font-size:15px}
@@ -4684,6 +4704,11 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 .dem .d{font-size:11.5px;line-height:1.45;color:var(--ink-3)}
 .dem .coche{flex:0 0 auto;color:var(--accent);font-size:13px;visibility:hidden}
 .dem[aria-pressed="true"] .coche{visibility:visible}
+/* Les deux vues du choix de la barre (`blocBarre`) : un écran de téléphone, et
+   ce qui change dedans. Le cadre au trait de la page, ce qui change à l'accent
+   — une vignette ne vaut que si l'œil trouve la différence sans la chercher. */
+.vueBarre .cadre{stroke:var(--line-strong)}
+.vueBarre .part{stroke:var(--accent)}
 /* Les champs du sponsor ne paraissent qu'à son mode, et se détachent du choix
    comme le premier champ du volet de la suggestion. */
 .voletSpons{margin-top:16px}
