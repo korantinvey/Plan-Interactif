@@ -516,13 +516,16 @@ function ampute(
   const s = { ...stand };
   for (const cle of r.cles) delete s[cle];
 
-  if (r.persos.length && s.perso) {
-    const perso = { ...(s.perso as Record<string, unknown>) };
+  /* Les deux versions d'un champ propre au salon se retirent ensemble :
+     l'anglaise n'est pas un autre champ, c'est le même dans l'autre langue. */
+  for (const table of ["perso", "perso_en"]) {
+    if (!r.persos.length || !s[table]) continue;
+    const perso = { ...(s[table] as Record<string, unknown>) };
     for (const cle of r.persos) delete perso[cle];
     // la clé ne descend pas quand elle ne porte plus rien : le stand la portait
     // vide sur tout un salon
-    if (Object.keys(perso).length) s.perso = perso;
-    else delete s.perso;
+    if (Object.keys(perso).length) s[table] = perso;
+    else delete s[table];
   }
 
   if (Array.isArray(s.coex)) {
