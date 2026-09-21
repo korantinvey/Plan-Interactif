@@ -5744,6 +5744,98 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 .dem .v img{display:block;width:100%;height:100%;object-fit:contain}
 /* Ce que l'enregistrement du nom raconte, sous son champ. */
 .ditNomApp{display:block;margin-top:6px}
+
+/* ------------------------------------------------------------
+   Ce que le doigt exige, et que la souris n'exigeait pas
+
+   Trois choses qui ne se voient pas sur un écran de bureau, et qui se paient
+   toutes sur un téléphone : un écran couché plus court que le plancher de la
+   grille, un champ qui déclenche le zoom de Safari, et des boutons dessinés
+   pour le curseur. Elles sont réunies ici plutôt que corrigées chacune à sa
+   règle : ce sont les mêmes conditions d'écran qui les lèvent, et la prochaine
+   du même genre a désormais un endroit où aller.
+   ------------------------------------------------------------ */
+
+/* Le plancher de la grille, et l'écran couché.
+
+   « .app » ne descend pas sous 560 points : au-dessous, la colonne de gauche
+   et le plan se disputent une hauteur qui ne suffit plus à l'un ni à l'autre.
+   Sur un bureau, la page se met alors à défiler, et c'est le moindre mal.
+
+   Sur un téléphone couché — 390 points de haut — c'est le pire : la grille
+   dépasse de 170 points, la page défile sous une liste et une fiche qui, elles,
+   sont fixes et ne défilent pas avec, et le cartouche des repères se retrouve
+   soixante-huit points sous le bord de l'écran, atteignable en poussant une
+   page dont rien ne dit qu'elle est plus haute que l'écran. Le plan doit tenir
+   dans ce qu'on voit, serré plutôt que coupé : le plancher se retire là où le
+   doigt règne et où l'écran est trop court pour lui. */
+@media (pointer:coarse) and (max-height:560px){
+  .app{min-height:0}
+  /* Couché, le tiroir déplié ne laisserait que soixante-dix points de plan :
+     on ne saurait plus de quoi la liste parle. Il rend la moitié de l'écran. */
+  .side{height:56dvh}
+  .side[data-cran="demi"]{transform:translateY(calc(100% - 34dvh))}
+  :is(.detail,.parcours,.itineraire).open[data-cran="plein"]{max-height:80dvh}
+}
+
+/* Le champ de saisie, et le zoom de Safari.
+
+   Sous seize points, iOS agrandit la page à la mise au point du champ — et ne
+   la réduit pas en sortant. Le visiteur tape trois lettres, et se retrouve avec
+   un plan grossi de travers qu'il doit repincer. Aucun réglage ne le désarme,
+   hors « maximum-scale », qui interdirait aussi le zoom voulu : la seule sortie
+   est la taille du texte. Elle ne coûte rien là où elle s'applique — un champ
+   qu'on remplit au doigt gagne à être lisible — et ne touche pas le bureau, où
+   la densité des panneaux compte davantage. */
+@media (pointer:coarse){
+  .search input,.grp-crit .tamis,.iChamp input{font-size:16px}
+  /* Le tamis d'un critère porte une liste courte : à seize points il tiendrait
+     moins de valeurs à l'écran. Il se resserre en hauteur de ce qu'il vient de
+     prendre en largeur. */
+  .grp-crit .tamis{padding:5px 10px}
+}
+
+/* La cible, et le bouton qu'on dessine.
+
+   Les systèmes demandent quarante-quatre points ; la barre du salon en donne
+   vingt-sept, et la croix de la fiche dix-huit sur vingt-six. Ce n'est pas une
+   étourderie : la bande a été rognée à trente-huit points pour rendre au plan
+   la hauteur qu'elle lui prenait, et grossir les boutons la rouvrirait
+   d'autant.
+
+   Mais ce qu'un doigt atteint n'est pas ce qu'un œil voit. La cible s'étend
+   donc sans que le bouton grandisse, par un calque invisible centré sur lui.
+   Elle s'arrête à ce que le voisinage permet : deux cibles qui se recouvrent
+   se voleraient le geste, et la plus tardive gagnerait — un bouton deviendrait
+   inatteignable en grossissant celui d'à côté. D'où les écarts relevés en même
+   temps que les tailles, et des cibles de trente-huit à quarante-quatre points
+   plutôt qu'un nombre unique qu'on n'aurait tenu nulle part. */
+@media (pointer:coarse){
+  :is(.topbar .iconbtn,.crit-btn,.vide-q,.hdActs > button)::after{
+    content:"";position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:max(100%,var(--cible-l,44px));height:max(100%,var(--cible-h,44px))}
+
+  /* La bande : trois boutons à six points l'un de l'autre, dans trente-huit
+     points de haut. La cible prend l'écart et la bande entière, pas plus. */
+  html.barre-bande:not(.mode-admin) .topbar .iconbtn{--cible-l:33px;--cible-h:38px}
+  /* Sans bande, les boutons flottent sur le plan, empilés à huit points : rien
+     ne borne leur largeur, et la hauteur se prend sur l'écart. */
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn{--cible-h:38px}
+  /* La rangée des actions de la fiche : une marque de vingt-huit points, une
+     croix de dix-huit sur vingt-six, six points entre les deux. Deux cibles
+     n'y tiennent pas sans se toucher, et celle du dessus prendrait le geste de
+     l'autre — on fermerait la fiche en croyant la marquer. L'écart s'ouvre donc
+     à quatorze points : le titre les cède sans se plier, et deux cibles de
+     trente-six tiennent, à un point près du bord de l'écran. */
+  .hdActs{gap:14px}
+  /* « .hdActs .close » pose « static » plus haut, et l'emporterait sur un
+     sélecteur plus court : le calque n'aurait plus de bouton où se caler. */
+  .detail-hd .hdActs > button{position:relative;--cible-l:36px;--cible-h:44px}
+  /* La croix de la recherche vit dans le champ, contre le bouton des critères
+     posé juste après : elle s'arrête avant lui. */
+  .vide-q{--cible-l:34px;--cible-h:40px}
+}
 </style>
 
 <div class="app">
