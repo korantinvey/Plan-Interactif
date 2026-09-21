@@ -34773,22 +34773,50 @@ function constTexte(){
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
-     Le décalage des tirets se passe au shader à chaque pas, sans toucher aux
-     données — en pixels, comme le « stroke-dashoffset » d'un trait qui ne
-     grossit pas au zoom. La bibliothèque compte le long du trait en
-     demi-épaisseurs, d'où la division. */
-  class DefileTirets extends deck.LayerExtension {
+
+     Ils taillent leurs tirets eux-mêmes, au lieu de décaler ceux de la
+     bibliothèque. Décaler les siens paraissait pourtant tenir en une ligne —
+     ajouter au « vDashOffset » qu'elle pose en fin de shader — mais cette
+     ligne n'a jamais rien fait : les deux extensions écrivent au même endroit,
+     et celle de la bibliothèque repasse derrière, quel que soit leur ordre.
+     Rien ne le signalait, le trait se dessinait juste immobile, et le rendu
+     SVG défilait pendant ce temps — c'est-à-dire chez presque personne, le
+     WebGL étant le rendu par défaut.
+
+     Le trajet garde donc sa propre distance parcourue, « vDefilePos », et le
+     fragment décide lui-même de ce qu'il jette. Les longueurs se comptent en
+     demi-épaisseurs de trait, comme celles de la bibliothèque, et le décalage
+     arrive en pixels — comme le « stroke-dashoffset » d'un trait qui ne
+     grossit pas au zoom —, d'où la division au moment de le passer.
+
+     Un trait qui ne défile pas donne des tirets de longueur nulle : le
+     fragment n'en tient alors aucun compte, et la bibliothèque reste seule à
+     pointiller ce qu'elle pointille. */
+  class TiretsQuiDefilent extends deck.LayerExtension {
     getShaders(){
+      const bloc = "layout(std140) uniform defileUniforms {\n  vec2 tirets;\n  float decalage;\n} defile;\n";
       return {
-        modules: [{ name: "defile", vs: "layout(std140) uniform defileUniforms {\n  float decalage;\n} defile;\n",
-                    uniformTypes: { decalage: "f32" } }],
-        inject: { "vs:#main-end": "vDashOffset += defile.decalage / max(widthPixels.x, 0.001);" },
+        modules: [{ name: "defile", vs: bloc, fs: bloc,
+                    uniformTypes: { tirets: "vec2<f32>", decalage: "f32" } }],
+        inject: {
+          "vs:#decl": "out float vDefilePos;",
+          "vs:#main-end": "vDefilePos = vPathPosition.y;",
+          "fs:#decl": "in float vDefilePos;",
+          "fs:DECKGL_FILTER_COLOR":
+            "float uniteDefile = defile.tirets.x + defile.tirets.y;\n" +
+            "if (uniteDefile > 0.0 &&\n" +
+            "    mod(vDefilePos + defile.decalage, uniteDefile) > defile.tirets.x) discard;",
+        },
       };
     }
-    draw(){ this.setShaderModuleProps({ defile: { decalage: this.props.decalage || 0 } }); }
+    draw(){
+      const demi = Math.max(this.props.demiEpaisseur || 1, .001);
+      this.setShaderModuleProps({ defile: { tirets: this.props.tirets || [0, 0],
+                                            decalage: (this.props.decalage || 0) / demi } });
+    }
   }
-  DefileTirets.extensionName = "DefileTirets";
-  DefileTirets.defaultProps = { decalage: 0 };
+  TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
+  TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0 };
   /* Des objets créés une fois pour toutes : la bibliothèque compare ces
      réglages par identité, et un nouvel objet — même identique — lui faisait
@@ -34799,7 +34827,7 @@ function constTexte(){
     grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 6 } },
     /* Tous les traits partagent un seul programme : tirets — un trait plein
        en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
-    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new DefileTirets(), new FiltreZoom()],
+    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new TiretsQuiDefilent(), new FiltreZoom()],
     sansDeclencheur: {},
   });
 }
@@ -35223,10 +35251,15 @@ function couchesDeBloc(acc, cle){
     const K = constTexte();
     [liste.filter(d => !d.defile), liste.filter(d => d.defile)].forEach((l, j) => {
       if (!l.length) return;
+      /* Les tirets qui défilent sont taillés par « TiretsQuiDefilent », et non
+         par la bibliothèque : elle les laisse donc tranquilles. Ils tiennent
+         dans un réglage unique et non dans la donnée — le trajet est seul sur
+         sa couche, et tous ses morceaux portent le même pointillé. */
       out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + (j ? "-defile" : ""), data: l, pickable: k === 0,
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
         jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: j === 1,
-        extensions: K.traits, getDashArray: d => d.dash, dashJustified: false }));
+        extensions: K.traits, getDashArray: j ? [0, 0] : d => d.dash, dashJustified: false,
+        tirets: j ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
     });
   });
   let i = 0;
