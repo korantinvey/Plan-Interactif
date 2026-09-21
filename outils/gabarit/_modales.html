@@ -1,0 +1,189 @@
+
+/* ============================================================
+   Fenêtres modales : confirmation et réorganisation des calques
+   ============================================================ */
+/**
+ * Une fenêtre par-dessus le plan.
+ *
+ * `genre` la range autrement : « cote » la pose à gauche et retire le voile,
+ * pour une fenêtre dont on regarde l'effet sur le plan pendant qu'on s'en sert.
+ * Sans lui, elle est au milieu, sur fond grisé — ce qu'il faut quand elle
+ * demande une réponse avant de rendre la main.
+ */
+/* Ce qu'une fenêtre laisse en train de se faire.
+ *
+ * Une saisie qui n'a pas de bouton d'enregistrement — on ne « valide » pas une
+ * fiche qu'on est en train d'écrire, on la quitte — doit partir avec la fenêtre
+ * quelle que soit la porte : la croix, le pied, le voile, « Échap », ou une
+ * autre fenêtre qui prend la place. Toutes passent par ici ; le crochet est
+ * posé par qui remplit la fenêtre, et ne joue qu'une fois. */
+let avantFermeture = null;
+
+function verseModale(){
+  const f = avantFermeture;
+  avantFermeture = null;
+  if (f) f();
+}
+
+/* Ce qui attend que la place se libère.
+ *
+ * Une proposition qui arrive pendant qu'une fenêtre est ouverte ne la remplace
+ * pas : on ne retire pas sous les yeux ce qu'on est en train de lire. Elle n'a
+ * pas à se perdre pour autant — elle se pose ici, et part quand la fenêtre se
+ * ferme. À la fermeture seulement : une fenêtre qui en remplace une autre ne
+ * libère rien, et ce qui attendait attend encore. */
+let apresFermeture = null;
+
+function ouvreModale(titre, remplitCorps, boutons, genre){
+  verseModale();
+  if (genre) $("modale").dataset.genre = genre;
+  else delete $("modale").dataset.genre;
+  /* L'habillage se pose ici plutôt qu'une fois pour toutes : il dépend du
+     genre, que chaque fenêtre apporte en s'ouvrant. */
+  habilleModale();
+  $("mTitre").textContent = titre;
+  $("mCorps").innerHTML = "";
+  remplitCorps($("mCorps"));
+  $("mPied").innerHTML = "";
+  boutons.forEach(b => {
+    const el = document.createElement("button");
+    el.className = "btn" + (b.genre ? " " + b.genre : "");
+    el.textContent = b.libelle;
+    el.onclick = () => { if (b.action) b.action(); if (b.ferme !== false) fermeModale(); };
+    $("mPied").appendChild(el);
+  });
+  $("modale").classList.add("open");
+}
+function fermeModale(){
+  verseModale();
+  $("modale").classList.remove("open");
+  /* Après le retrait, et non avant : ce qui attendait la place ouvre sa propre
+     fenêtre, et la trouverait sinon encore occupée. */
+  const f = apresFermeture;
+  apresFermeture = null;
+  if (f) f();
+}
+$("mFermer").onclick = fermeModale;
+$("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && $("modale").classList.contains("open")) fermeModale();
+});
+
+function confirme(titre, message, libelleOui, action){
+  ouvreModale(titre, corps => {
+    const p = document.createElement("p");
+    p.textContent = message;
+    corps.appendChild(p);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: libelleOui, genre: "danger", action: action },
+  ]);
+}
+
+/* ------------------------------------------------------------
+   Réorganisation : le premier rang de la liste est le calque le
+   plus en avant, comme dans n'importe quel gestionnaire de calques.
+   ------------------------------------------------------------ */
+const GENRE = { fond: "plan", data: "données", dessin: "dessin" };
+let tireK = null;
+
+function deplaceVers(k, cible, apres){
+  const liste = pile().map(x => x.k);
+  const i = liste.indexOf(k);
+  if (i < 0) return;
+  liste.splice(i, 1);
+  let j = liste.indexOf(cible);
+  if (j < 0) j = liste.length - 1;
+  liste.splice(apres ? j + 1 : j, 0, k);
+  CONF[clePile()] = liste;
+  enregistreConf();
+  ordonneDom(); construitPanneau(); remplitOrdre();
+}
+function versExtremite(k, devant){
+  const liste = pile().map(x => x.k).filter(x => x !== k);
+  devant ? liste.push(k) : liste.unshift(k);   // fin de tableau = premier plan
+  CONF[clePile()] = liste;
+  enregistreConf();
+  ordonneDom(); construitPanneau(); remplitOrdre();
+}
+
+function remplitOrdre(hote){
+  const ul = hote || $("mCorps").querySelector(".ordre");
+  if (!ul) return;
+  ul.innerHTML = "";
+  // affichage du premier plan vers l'arrière-plan
+  pile().slice().reverse().forEach(x => {
+    const li = document.createElement("li");
+    li.draggable = true;
+    li.dataset.k = x.k;
+    li.innerHTML = '<span class="poignee" aria-hidden="true">&#8942;&#8942;</span>' +
+      '<span class="nom"></span>' +
+      '<span class="bouts">' +
+      // seul un calque de dessin nous appartient : les autres portent le nom
+      // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      /* Verrouillé, il ne se renomme pas non plus : le cadenas prend la place
+         du crayon, et dit d'un coup d'œil lesquels sont protégés — c'est ici,
+         la liste complète sous les yeux, qu'on s'en aperçoit le mieux. Le rang,
+         lui, reste libre : il ne touche pas au dessin, et se reprend d'un
+         geste. */
+      (x.t === "dessin"
+        ? (verrouille(x.ref)
+            ? '<span class="verrou" title="Calque verrouillé : ouvrez son cadenas dans la pile pour le renommer">' +
+              pictoVerrou(true) + '</span>'
+            : '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>') : "") +
+      '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
+      '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
+    const nom = li.querySelector(".nom");
+    nom.textContent = x.nom;
+    const g = document.createElement("span");
+    g.className = "genre"; g.textContent = GENRE[x.t];
+    nom.appendChild(g);
+
+    li.querySelectorAll(".bouts button[data-h]").forEach(b =>
+      b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === "1"); });
+    const cr = li.querySelector("[data-ren]");
+    if (cr){
+      cr.onclick = ev => {
+        ev.stopPropagation();
+        // la fenêtre de renommage remplace celle-ci, puis on revient
+        renommeCalque(x.ref, () => ouvreOrdre());
+      };
+    }
+
+    li.ondragstart = ev => { tireK = x.k; li.classList.add("drag");
+                             ev.dataTransfer.effectAllowed = "move";
+                             try { ev.dataTransfer.setData("text/plain", x.k); } catch (e) {} };
+    li.ondragend = () => { tireK = null; li.classList.remove("drag");
+                           ul.querySelectorAll("li").forEach(n => n.classList.remove("avant", "apres")); };
+    li.ondragover = ev => {
+      if (!tireK || tireK === x.k) return;
+      ev.preventDefault();
+      const r = li.getBoundingClientRect();
+      const bas = ev.clientY > r.top + r.height / 2;
+      li.classList.toggle("apres", bas);
+      li.classList.toggle("avant", !bas);
+    };
+    li.ondragleave = () => li.classList.remove("avant", "apres");
+    li.ondrop = ev => {
+      if (!tireK || tireK === x.k) return;
+      ev.preventDefault();
+      const r = li.getBoundingClientRect();
+      const bas = ev.clientY > r.top + r.height / 2;
+      // la liste est inversée : « en dessous » à l'écran = plus en arrière
+      deplaceVers(tireK, x.k, !bas);
+      tireK = null;
+    };
+    ul.appendChild(li);
+  });
+}
+
+function ouvreOrdre(){
+  ouvreModale("Ordre des calques", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Glissez pour réordonner. Le premier de la liste est au premier plan.";
+    const ul = document.createElement("ul");
+    ul.className = "ordre";
+    corps.appendChild(p); corps.appendChild(ul);
+    remplitOrdre(ul);
+  }, [{ libelle: "Terminé" }], "outil");
+}

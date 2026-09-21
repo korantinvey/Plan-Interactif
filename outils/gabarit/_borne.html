@@ -1,0 +1,370 @@
+/* ============================================================
+   11 quinquies. La borne interactive — un plan qui sait où il est
+
+   Le plan pose la même question à tout le monde : « d'où partez-vous ? ».
+   Elle est inévitable sur un téléphone — sous une charpente métallique le GPS
+   ne situe rien, et baliser les allées demanderait une pose que personne ne
+   finance. Elle est absurde sur l'écran vissé à l'entrée du hall, qui, lui,
+   ne bouge pas de la journée : il suffit de le lui dire une fois.
+
+   Le mode se déclare dans l'adresse, `?borne`, et nulle part ailleurs. C'est
+   exactement ce qu'un navigateur de borne sait faire — ouvrir une adresse et
+   ne plus en sortir — et cela laisse l'état du mode visible : on en sort en
+   rouvrant la page sans le paramètre, jamais par un réglage caché. Ce n'est
+   pas non plus un réglage du salon : ceux-là partent chez tous les visiteurs
+   (voir `_pousse.html`), et la position d'un écran n'appartient qu'à cet
+   écran-là.
+
+   Trois choses changent, et ce sont les trois qu'on attend d'une borne :
+
+     — le départ n'est plus une question. Il est là où la borne est posée, le
+       champ le dit et ne se laisse pas modifier, et « J'y vais » depuis une
+       fiche donne le trajet sans rien demander de plus ;
+     — le plan porte un « Vous êtes ici », la seule chose qu'on cherche des
+       yeux en arrivant devant un écran qu'on n'a pas choisi ;
+     — la borne se remet d'elle-même après un temps sans un geste : le visiteur
+       suivant ne trouve pas la recherche, la fiche ni l'itinéraire du
+       précédent.
+
+   Et une quatrième, invisible : la mesure compte des visiteurs, pas des
+   appareils. Une borne en reçoit des centaines dans la journée, son jeton ne
+   peut donc pas être retenu, et chaque remise à zéro vaut une visite de plus —
+   voir `_mesure.html`.
+   ============================================================ */
+
+/* La position est gardée sous le nom du salon : le même écran peut servir
+   deux éditions, et ce n'est pas le même hall. */
+const CLE_BORNE = "plan-borne:" + SLUG;
+
+/* Le mot réservé qui refait la pose. L'exploitant qui déplace l'écran n'a
+   rien à effacer sur l'appareil : il rouvre la page avec `?borne=poser`,
+   désigne le nouvel endroit, et repart. */
+const BORNE_POSER = "poser";
+
+/* Quatre-vingt-dix secondes sans un geste. Celui qui lit un itinéraire touche
+   l'écran bien avant ; celui qui est parti l'est depuis un moment. */
+const BORNE_REPOS = 90000;
+
+const _borneDite = new URLSearchParams(location.search).get("borne");
+const _borneMot = (_borneDite || "").trim();
+const BORNE = _borneDite !== null;
+/* Une valeur qui n'est pas le mot réservé nomme le lieu : `?borne=Entrée Nord`
+   fixe la position dans l'adresse elle-même. C'est ce qu'il faut pour un
+   appareil dont le navigateur vide son stockage chaque nuit — rien à retenir,
+   donc rien à perdre. */
+const BORNE_LIEU_DIT = BORNE && _borneMot.toLowerCase() !== BORNE_POSER ? _borneMot : "";
+
+/* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
+   elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
+let LIEU_BORNE = null;
+
+/** Le départ imposé, lu par l'itinéraire et par l'organisation de la journée. */
+function pointBorne(){ return LIEU_BORNE; }
+
+/* ------------------------------------------------------------
+   Ce que l'appareil retient
+   ------------------------------------------------------------ */
+/* Le pavillon est gardé par son identifiant et non par son rang : une
+   synchronisation qui ajoute un hall décale les rangs, et la borne se
+   retrouverait posée ailleurs sans que personne l'ait touchée. */
+function borneRetenue(){
+  try {
+    const o = JSON.parse(localStorage.getItem(CLE_BORNE) || "null");
+    return o && typeof o.plan === "string" && Array.isArray(o.xy) ? o : null;
+  } catch (e) { return null; }
+}
+function retientBorne(o){
+  try { localStorage.setItem(CLE_BORNE, JSON.stringify(o)); } catch (e) {}
+}
+function oublieBorne(){
+  try { localStorage.removeItem(CLE_BORNE); } catch (e) {}
+}
+
+/* ------------------------------------------------------------
+   Le point de la borne
+   ------------------------------------------------------------ */
+/**
+ * Ce que le calcul d'itinéraire attend : un pavillon et une position.
+ *
+ * Sans `obj` ni contour : une borne n'est pas un emplacement dont il faudrait
+ * sortir, c'est un point dans une allée, et `accroche` sait déjà rejoindre la
+ * case praticable la plus proche d'un point nu.
+ *
+ * Le nom est celui que le visiteur lira dans le champ de départ. Le lieu — le
+ * repère sur lequel la borne a été posée, s'il y en a un — l'accompagne en
+ * second : « Vous êtes ici » ne dit pas où, et l'exploitant qui vérifie sa
+ * borne veut lire « Entrée Nord ».
+ */
+function lieuBorne(i, xy, lieu){
+  const p = DATA.plans[i];
+  return { cle: "borne", genre: "borne", p: i, xy: xy.slice(), lieu: lieu || "",
+           nom: "Vous êtes ici",
+           detail: p.libelle + (lieu ? " · " + lieu : "") };
+}
+
+/**
+ * Le lieu que l'adresse nomme.
+ *
+ * `pointSaisi` tranche une saisie de visiteur : il exige le nom entier, faute
+ * de quoi il rend la main plutôt qu'un trajet faux. Ici personne n'est devant
+ * l'écran pour se raviser — c'est une adresse écrite une fois pour toutes, et
+ * l'exploitant y écrit ce qu'il lit sur le plan : le libellé d'un repère, ou
+ * le numéro d'un stand, « A15 » et non « Stand A15 ». On accepte donc le
+ * mieux classé des candidats, qui place déjà en tête le repère nommé puis le
+ * code exact — et rien du tout quand rien ne correspond, ce qui renvoie à la
+ * pose plutôt qu'à un endroit tiré au sort.
+ */
+function lieuNomme(txt){
+  return pointSaisi(txt) || candidats(txt)[0] || null;
+}
+
+/** Un point désigné du doigt, là où il n'y avait rien à désigner. */
+function pointLibre(xy){ return lieuBorne(state.plan, xy, ""); }
+
+/**
+ * Imposer le départ, d'où que vienne le point.
+ *
+ * Un repère apporte son nom, un emplacement le sien ; un point nu n'en a pas,
+ * et c'est très bien — le pavillon suffit à dire où l'on est.
+ *
+ * Ce qui suit vaut pour une borne comme pour le code affiché dans le hall
+ * (`_ici.html`) : le départ cesse d'être une question, le plan se porte sur le
+ * bon pavillon, le point paraît, et le tiroir reprend ce départ-là. Ce qui les
+ * sépare tient dans ce qui appelle — l'un enregistre sa position, l'autre non.
+ */
+function poseDepartImpose(pt){
+  LIEU_BORNE = lieuBorne(pt.p, pt.xy, pt.genre === "borne" ? pt.lieu : pt.nom);
+  visee = null;
+  bandeauVisee();
+  if (state.plan !== LIEU_BORNE.p) changePlan(LIEU_BORNE.p);
+  dessineBorne();
+  remetLeDepart();
+  fermeItineraire();
+}
+
+/** Poser la borne : le départ imposé, plus ce que l'appareil en retient. */
+function poseLaBorne(pt){
+  if (!pt) return false;
+  poseDepartImpose(pt);
+  /* Une position dictée par l'adresse ne s'enregistre pas : elle se relit à
+     chaque ouverture, et la retenir ferait deux vérités à corriger le jour
+     où l'écran change de place. */
+  if (!BORNE_LIEU_DIT)
+    retientBorne({ plan: DATA.plans[LIEU_BORNE.p].id, xy: LIEU_BORNE.xy, lieu: LIEU_BORNE.lieu });
+  return true;
+}
+
+/**
+ * Le tiroir remis sur la borne.
+ *
+ * `effaceItineraire` rearme la visée sur le champ qui reste à remplir — ce
+ * qu'il faut quand on vient de vider son tiroir, jamais quand la borne
+ * repart au repos : le plan resterait en « désignez votre arrivée », et le
+ * premier appui du visiteur remplirait un champ au lieu d'ouvrir une fiche.
+ */
+function remetLeDepart(){
+  effaceItineraire();
+  visee = null;
+  bandeauVisee();
+}
+
+/**
+ * Un appui pendant la pose.
+ *
+ * Un repère est un lieu nommé, et c'est pour cela que l'exploitant l'a posé :
+ * la borne en prend le nom. Partout ailleurs — une allée, un carrefour, la
+ * cloison d'un stand qu'on frôle — c'est l'endroit exact du doigt qui compte,
+ * et non ce qui se trouvait dessous.
+ */
+function poseBorneIci(clientX, clientY, cible){
+  if (visee !== "borne") return false;
+  const id = cible && !cible.dataset.id ? cible.dataset.poi : null;
+  const rep = id ? formeParId(id) : null;
+  return poseLaBorne(rep && rep.f.t === "repere" ? pointRepere(rep.f, P())
+                                                 : pointLibre(versPlan(clientX, clientY)));
+}
+
+/** Reprendre la pose : le plan redevient une liste d'endroits à désigner. */
+function armeLaPose(){
+  ferme();
+  fermeItineraire();
+  fermeParcours();
+  visee = "borne";
+  bandeauVisee();
+}
+
+/* ------------------------------------------------------------
+   Le bandeau de pose
+   ------------------------------------------------------------ */
+/**
+ * Il ne paraît que tant que la borne ignore où elle est, et s'efface pendant
+ * le geste : le bandeau de visée dit déjà ce qu'on attend, et deux bandeaux
+ * qui se répondent ne se lisent plus.
+ */
+function montreBandeauBorne(){
+  const b = $("bornePose");
+  if (!b) return;
+  b.hidden = !BORNE || !!LIEU_BORNE || visee === "borne";
+}
+
+/* ------------------------------------------------------------
+   Le départ, dans le tiroir
+   ------------------------------------------------------------ */
+/**
+ * Le moteur de langue ne traduit pas la valeur d'un champ de saisie — elle
+ * vient du code ici, et non des données : on la réécrit donc soi-même, et
+ * encore après une bascule de langue.
+ */
+function ecritDepartBorne(){
+  if (!LIEU_BORNE) return;
+  const c = $("iDepart");
+  if (c){ c.value = traduit(LIEU_BORNE.nom); c.title = LIEU_BORNE.detail; }
+}
+document.addEventListener("click", e => {
+  if (e.target.closest && e.target.closest("[data-langue]")) setTimeout(ecritDepartBorne, 0);
+});
+
+/* ------------------------------------------------------------
+   « Vous êtes ici »
+   ------------------------------------------------------------ */
+/** Rayon du point, constant à l'écran, donc exprimé en mètres d'après le zoom. */
+function rayonBorne(){
+  const r = cadrePlan();
+  return Math.max(.4, view.w / (r.width || 1) * 7);
+}
+
+function dessineBorne(){
+  let g = $("borneIci");
+  if (!LIEU_BORNE || !DATA || !view || LIEU_BORNE.p !== state.plan){
+    if (g) g.remove();
+    return;
+  }
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "borneIci";
+    // sous le trait de l'itinéraire, qui part justement d'ici
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+  }
+  rempliBorne(g);
+}
+
+/** Le zoom change : le point garde sa taille à l'écran, pas celle du plan. */
+function rafraichitBorne(){
+  const g = $("borneIci");
+  if (g && LIEU_BORNE && view) rempliBorne(g);
+}
+
+function rempliBorne(g){
+  const r = rayonBorne(), x = LIEU_BORNE.xy[0], y = LIEU_BORNE.xy[1];
+  g.innerHTML = '<title></title>' +
+    '<circle class="bOnde" cx="' + x + '" cy="' + y + '" r="' + (r * 2.6).toFixed(2) + '"/>' +
+    '<circle class="bPoint" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(2) + '"/>' +
+    '<text class="bNom" x="' + x + '" y="' + (y - r * 3.4).toFixed(2) +
+    '" font-size="' + (r * 2).toFixed(2) + '"></text>';
+  /* Le titre et le nom passent par « textContent » : le moteur de langue les
+     traduit là où il ne traduirait pas une valeur d'attribut construite. */
+  g.querySelector("title").textContent = LIEU_BORNE.nom;
+  g.querySelector(".bNom").textContent = LIEU_BORNE.nom;
+}
+
+/* ------------------------------------------------------------
+   Le repos
+   ------------------------------------------------------------ */
+/**
+ * Une borne n'appartient à personne : ce que le visiteur précédent a cherché,
+ * retenu et demandé doit avoir disparu quand le suivant arrive. On remet donc
+ * l'écran dans l'état du premier matin — la recherche vide, aucune fiche, le
+ * parcours oublié, le pavillon de la borne cadré — et l'on compte une visite
+ * de plus, parce que c'en est une.
+ *
+ * Rien ne se remet pendant qu'on s'en sert : le compte à rebours repart à
+ * chaque geste, et la remise ne se fait qu'une fois, tant qu'un geste n'a pas
+ * relancé la borne.
+ */
+let reposBorne = null, borneServie = false;
+
+function relanceRepos(){
+  if (!BORNE) return;
+  borneServie = true;
+  clearTimeout(reposBorne);
+  reposBorne = setTimeout(reposeLaBorne, BORNE_REPOS);
+}
+
+function reposeLaBorne(){
+  clearTimeout(reposBorne);
+  reposBorne = null;
+  if (!BORNE || !borneServie) return;
+  borneServie = false;
+  fermeModale();
+  ferme();
+  fermeParcours();
+  fermeItineraire();
+  videLeParcours();
+  videRecherche();
+  remetLeDepart();
+  if (LIEU_BORNE && state.plan !== LIEU_BORNE.p) changePlan(LIEU_BORNE.p);
+  else if (view) fit();
+  dessineBorne();
+  /* Le visiteur suivant est un autre visiteur : son jeton aussi. */
+  renouvelleVisiteur();
+  /* Et c'est son démarrage à lui : l'écran qu'il trouve en arrivant est le
+     premier du plan, comme au chargement d'une page. Le générique du sponsor y
+     a donc la même place — sans chargement à couvrir cette fois, il compte ses
+     secondes depuis maintenant (`_sponsor.html`). */
+  ouvreSponsor(sponsorRetenu(), true);
+}
+
+/* ------------------------------------------------------------
+   Démarrage
+   ------------------------------------------------------------ */
+/**
+ * Où la borne est posée, dans l'ordre de ce qui fait autorité : ce que
+ * l'adresse dit, puis ce que l'appareil a retenu. Rien des deux, et c'est la
+ * pose qu'on demande.
+ *
+ * Un lieu nommé dans l'adresse que le plan ne connaît pas ne se devine pas :
+ * plutôt que de poser la borne au hasard, on redemande — l'exploitant lira
+ * son erreur de frappe sur l'écran, ce qui vaut mieux qu'un trajet faux.
+ */
+function demarreBorne(){
+  if (!BORNE) return;
+  racine.classList.add("mode-borne");
+  /* Le champ de départ devient une étiquette : il dit d'où l'on part, et n'a
+     plus rien à recevoir. Il reste un champ — le tiroir garde sa forme, et un
+     lecteur d'écran continue d'en lire le libellé — mais il cesse d'être une
+     liste déroulante, qui n'aurait plus rien à dérouler. */
+  const c = $("iDepart");
+  if (c){
+    c.readOnly = true;
+    ["role", "aria-autocomplete", "aria-expanded", "aria-controls"]
+      .forEach(a => c.removeAttribute(a));
+  }
+  if (BORNE_LIEU_DIT){
+    const pt = lieuNomme(BORNE_LIEU_DIT);
+    if (pt){ poseLaBorne(pt); return; }
+  } else if (_borneMot.toLowerCase() === BORNE_POSER){
+    // on repose : l'ancienne position ne doit pas revenir si la pose est laissée en plan
+    oublieBorne();
+  } else {
+    const garde = borneRetenue();
+    const i = garde ? DATA.plans.findIndex(p => p.id === garde.plan) : -1;
+    if (i >= 0){
+      LIEU_BORNE = lieuBorne(i, garde.xy, garde.lieu);
+      if (state.plan !== i) changePlan(i);
+      dessineBorne();
+      remetLeDepart();
+      return;
+    }
+    // un pavillon disparu depuis : mieux vaut redemander que pointer un hall démonté
+    if (garde) oublieBorne();
+  }
+  armeLaPose();
+}
+
+const _bornePoser = $("bornePoser");
+if (_bornePoser) _bornePoser.onclick = armeLaPose;
+
+if (BORNE){
+  ["pointerdown", "keydown", "wheel"].forEach(n =>
+    addEventListener(n, relanceRepos, { passive: true, capture: true }));
+}

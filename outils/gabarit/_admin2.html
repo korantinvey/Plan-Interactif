@@ -1,0 +1,271 @@
+/* ============================================================
+   12. Démarrage
+   ============================================================ */
+/* ------------------------------------------------------------------
+   Démarrage : données figées si elles sont dans la page, sinon appel
+   à l'API. Une panne du réseau doit se voir, pas laisser un écran vide.
+   ------------------------------------------------------------------ */
+function demarre(d){
+  indexe(d);
+  /* Le générique du sponsor avant le plan, et non après : ce qu'il couvre,
+     c'est justement le temps que le plan met à se dessiner. Il sait déjà être
+     là depuis l'ouverture de la page, posé d'après ce que l'appareil garde du
+     salon ; cet appel-là lui apprend ce que les données en disent vraiment
+     (`_sponsor.html`). */
+  accueilleSponsor();
+  montePlan();
+  fit();
+  liste();
+  /* Le plan est dessiné : le générique peut finir de compter ses secondes,
+     puis s'estomper. Sans ce rappel il attendrait son butoir. */
+  suitSponsor();
+  // le plan chargé, le bouton peut dire où en est l'enregistrement
+  majAttente();
+  /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
+     trop vite, réseau coupé — repart de lui-même : c'est la seule occasion de
+     le rattraper, personne ne viendra cliquer pour lui. */
+  rattrapeRetard();
+  // le plan est manipulable : le fond peut arriver derrière
+  chargeFond(state.plan);
+  /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
+     savoir avant qu'un lien reçu n'ouvre une fiche et son « J'y vais ». */
+  demarreBorne();
+  /* Puis le code affiché dans le hall, si l'adresse en porte un : même besoin,
+     et le même empressement — « J'y vais » depuis une fiche ouverte par un lien
+     reçu doit déjà savoir d'où l'on part (voir `_ici.html`). */
+  demarreIci();
+  /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
+     pour laquelle cette page vient d'être ouverte, et il retire son fragment
+     de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait
+     un stand dont le code serait tout le parcours. */
+  accueilleParcoursPartage();
+  const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
+  if (v && v !== "admin"){
+    const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
+    if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
+  }
+  /* Un rappel touché sur l'écran de veille ouvre la page sur sa conférence :
+     c'est la seule raison pour laquelle elle vient de s'ouvrir, et la fiche est
+     ce que le visiteur venait y lire. */
+  const rc = new URLSearchParams(location.search).get("conf");
+  if (rc && CONFS.has(String(rc))) setTimeout(() => ficheConf(rc, "lien"), 80);
+  /* La visite guidée passe après tout cela, et attend son tour : un lien vers
+     un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
+     propose que si rien d'autre n'a pris la place entre-temps. */
+  proposeTutoriel();
+  /* L'invitation à installer vient ensuite. La visite guidée renonce pour toute
+     la visite si l'écran est pris quand elle se propose, l'invitation sait
+     attendre : c'est donc elle qui cède son tour. */
+  accueilleInvitation();
+  /* Les vignettes des logos en dernier, et à tête reposée : le plan est
+     affiché, le fond en route, et ce chargement-là n'est demandé par personne.
+     Il rend instantané le logo de toute fiche ouverte ensuite. */
+  if (window.requestIdleCallback) requestIdleCallback(prechargeLesVignettes, { timeout: 4000 });
+  else setTimeout(prechargeLesVignettes, 1500);
+}
+
+function annonce(txt, erreur){
+  const l = $("list");
+  l.innerHTML = '<div class="empty"></div>';
+  l.querySelector(".empty").textContent = txt;
+  if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
+  /* La ligne du compte se tait hors recherche ; l'état du chargement y passe
+     quand même, c'est là qu'on le lit. */
+  $("count").hidden = false;
+  $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
+  if (erreur){
+    // plus rien n'arrivera : le titre neutre est définitif, il cesse d'attendre
+    $("titre").classList.remove("attente");
+    /* Et le générique du sponsor s'efface : il couvre le plan, donc la place où
+       l'on cherchera pourquoi il n'y en a pas. Le message passe avant le logo. */
+    fermeSponsor();
+  }
+}
+
+/**
+ * En-têtes de l'appel. En administration on présente sa session : c'est elle
+ * qui donne accès aux événements encore en brouillon. Ils sont lus à chaque
+ * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
+ */
+function entetesApi(){
+  const e = {};
+  if (document.documentElement.dataset.role !== "admin") return e;
+  try {
+    const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
+                || window.PLAN_CONFIG || null;
+    const ses = JSON.parse(localStorage.getItem("console-session") || "null");
+    if (cfg?.anonKey && ses?.access_token){
+      e["apikey"] = cfg.anonKey;
+      e["Authorization"] = "Bearer " + ses.access_token;
+    }
+  } catch (err) {}
+  return e;
+}
+
+/**
+ * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
+ * décoratif. On le charge après coup, une seule fois par pavillon, et on
+ * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte une
+ * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
+ * le redemande que lorsque le dessin servi n'est plus le même.
+ */
+const _fonds = new Map();
+function chargeFond(i){
+  const p = DATA?.plans?.[i];
+  if (!p || !API) return Promise.resolve();
+  if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
+  if (_fonds.has(p.id)) return _fonds.get(p.id);
+
+  /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
+     l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
+     seul à recevoir un fond découpé — ce que l'apparence en montre. Tant
+     qu'elle ne bouge pas, il n'y a rien à retélécharger ; dès qu'elle bouge,
+     le navigateur ne peut pas resservir l'ancien. Un salon servi par une
+     version antérieure du service n'en porte pas : on retombe alors sur
+     l'horodatage de synchronisation, qui était la règle jusqu'ici. */
+  const q = API + "?slug=" + encodeURIComponent(SLUG) +
+            "&fond=" + encodeURIComponent(p.id) +
+            "&v=" + encodeURIComponent(p.versionFond || DATA.genereLe || "0");
+  const promesse = fetch(q, { headers: entetesApi() })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(d => {
+      const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
+      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
+      // le pavillon a pu changer pendant le chargement
+      if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
+    })
+    .catch(e => {
+      _fonds.delete(p.id);          // une panne réseau ne doit pas être définitive
+      console.warn("Fond de plan indisponible :", e.message);
+    });
+  _fonds.set(p.id, promesse);
+  return promesse;
+}
+
+/**
+ * Ce qu'on dit d'un chargement qui n'aboutit pas.
+ *
+ * Depuis que le service de second plan garde ce qui a déjà servi (`_sw.js`),
+ * une coupure de réseau ne mène plus ici : le salon ouvert une fois s'affiche
+ * sans rien redemander. Ne restent donc que ceux qu'on n'a jamais ouverts sur
+ * cet appareil — et c'est cela qu'il faut dire, plutôt que le « Failed to
+ * fetch » du navigateur, qui n'est ni en français ni une explication.
+ *
+ * Seule une demande qui n'aboutit pas vaut ce mot, et c'est `TypeError` qui la
+ * désigne : un appel refusé ou un salon vide répondent, eux, et ont déjà leur
+ * message. `navigator.onLine` ne sert pas à trancher — il ne dit que l'état de
+ * l'interface, et vaut « en ligne » derrière un portail captif ou un serveur
+ * muet, c'est-à-dire précisément là où l'on se croyait connecté.
+ */
+function panneDuChargement(e){
+  return e.name === "TypeError"
+    ? "Plan indisponible : le réseau est injoignable, et ce salon n'a pas " +
+      "encore été ouvert sur cet appareil."
+    : "Plan indisponible : " + e.message;
+}
+
+/* La version du plan qu'on avait la dernière fois, par salon : c'est elle qui
+   nomme l'adresse qu'on redemande, et le navigateur la sert alors de son
+   cache. Un stockage qui refuse ne casse rien — on repart de l'entête. */
+const CLE_VERSION = () => "plan-version:" + SLUG;
+const versionRetenue = () => {
+  try { return localStorage.getItem(CLE_VERSION()) || ""; } catch (e) { return ""; }
+};
+const retientVersion = (v) => {
+  try { if (v) localStorage.setItem(CLE_VERSION(), v); } catch (e) {}
+};
+
+/**
+ * Le plan, à la version qui se sert aujourd'hui.
+ *
+ * Le plan pèse un demi-mégaoctet et ne change qu'une fois par jour. Le
+ * redemander à chaque ouverture de page était payer cinq cent mille octets pour
+ * apprendre que rien n'avait bougé ; le garder longtemps pour l'éviter, c'était
+ * ne plus pouvoir rien corriger avant l'expiration. L'entête tranche : il dit
+ * quelle version se sert, en cinquante octets, et le plan part sous une adresse
+ * qui la porte, déclarée immuable. Ce qu'un appareil a déjà, il le garde un an ;
+ * ce qui change lui parvient dans la demi-minute.
+ *
+ * Les deux demandes partent ensemble depuis l'en-tête de la page, le plan sous
+ * la version d'hier : le pari se gagne presque toujours, et le plan est là
+ * quand l'entête répond. Perdu, on le redemande une fois, sous la bonne.
+ *
+ * Un entête muet ne bloque rien : ce qu'on avait pris d'avance sert tel quel —
+ * mieux vaut le plan d'hier que pas de plan —, et à défaut on retombe sur
+ * l'adresse sans version, celle d'avant, qui reste servie. C'est aussi ce qui
+ * se passe hors ligne, où le service rend ce qu'il garde.
+ */
+function demandePlan(){
+  const q = (sup) => API + "?slug=" + encodeURIComponent(SLUG) + sup;
+  const attendu = versionRetenue();
+  const avance = window.__plan ||
+    (attendu ? fetch(q("&v=" + encodeURIComponent(attendu))) : null);
+  const dit = window.__entete ||
+    fetch(q("&entete=1")).then(r => r.ok ? r.json() : null).catch(() => null);
+  window.__plan = window.__entete = null;
+
+  return dit.then(async (e) => {
+    const v = e && e.v;
+    if (avance){
+      const r = await avance.catch(() => null);
+      if (r && r.ok && (!v || r.headers.get("X-Version") === v)){
+        retientVersion(r.headers.get("X-Version") || attendu);
+        return r;
+      }
+    }
+    const r = await fetch(v ? q("&v=" + encodeURIComponent(v)) : q(""));
+    if (r.ok) retientVersion(r.headers.get("X-Version"));
+    return r;
+  });
+}
+
+function charge(){
+  annonce("Chargement du plan…");
+  const entetes = entetesApi();
+  /* En administration, la session passe dans la demande et le brouillon qu'elle
+     rend ne doit rester nulle part : ni version, ni cache, et donc pas d'entête
+     — l'exploitant regarde l'état réel, jamais une copie.
+     Pour le visiteur, les demandes sont déjà parties depuis l'en-tête de la
+     page : on les récupère plutôt que d'en lancer d'autres. */
+  const depart = entetes.Authorization
+    ? fetch(API + "?slug=" + encodeURIComponent(SLUG),
+            { headers: entetes, cache: "no-store" })
+    : demandePlan();
+  window.__plan = window.__entete = null;
+  return depart
+    .then(r => {
+      // session périmée : on repasse par l'écran de connexion plutôt que
+      // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
+      if (r.status === 401 && typeof ecranAcces === "function"){
+        try { localStorage.removeItem("console-session"); } catch (e) {}
+        ecranAcces("Session expirée, reconnectez-vous.");
+        return Promise.reject(new Error("Session expirée."));
+      }
+      return r.ok ? r.json()
+                  : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status))));
+    })
+    .then(d => {
+      if (!d.plans?.length) throw new Error("Aucun pavillon : lancez une synchronisation depuis la console.");
+      demarre(d);
+    })
+    .catch(e => annonce(panneDuChargement(e), true));
+}
+
+const fige = document.getElementById("data").textContent.trim();
+if (fige && fige.indexOf("__DATA__") < 0) demarre(JSON.parse(fige));
+else if (!API) annonce("Aucune source de données configurée.", true);
+// en administration, on attend la session : sans elle les brouillons sont invisibles
+else if (document.documentElement.dataset.role === "admin") annonce("Vérification de l'identité…");
+else charge();
+
+// les mesures de texte dépendent des polices : on retrace une fois chargées
+// les polices peuvent arriver avant les données : on ne retrace que si
+// quelque chose est déjà affiché
+if (document.fonts && document.fonts.ready)
+  document.fonts.ready.then(() => { if (DATA && view){ _lg.clear(); libelles(); } });
+
+addEventListener("resize", () => { if (DATA && view) fit(); });
+
+
+/*__PORTE_ADMIN__*/
+</script>

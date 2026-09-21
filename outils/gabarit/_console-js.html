@@ -1,0 +1,3272 @@
+
+const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
+                 [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
+                 [1440, "Une fois par jour"]];
+
+let EVTS = [], selection = null, PLANS = {};
+
+
+/**
+ * Ce qu'il faut dire d'une fonction qui refuse.
+ *
+ * Deux refus portent le même numéro sans venir du même endroit. La fonction
+ * s'explique dans `erreur` ; la passerelle, elle, écarte les jetons qu'elle
+ * juge périmés avant même de l'appeler, et nomme son champ autrement. Faute de
+ * lire les deux, un « Erreur 401 » nu tenait lieu d'explication — et la
+ * session, elle, restait ouverte sur un jeton qui ne valait plus rien.
+ */
+async function refus(r) {
+  const j = await r.json().catch(() => ({}));
+  /* Le jeton a déjà été renouvelé puis réessayé par `appel` : un 401 qui
+     arrive jusqu'ici est une session bel et bien finie. */
+  if (r.status === 401) {
+    deconnecte("Session expirée, reconnectez-vous.");
+    return "Session expirée.";
+  }
+  return j.erreur || j.message || j.msg || "Erreur " + r.status;
+}
+
+/**
+ * Appel d'une fonction qui rend compte au fil de l'eau.
+ *
+ * La réponse est un flux de lignes JSON plutôt qu'un objet unique : une
+ * synchronisation dure trop longtemps pour qu'un message figé dise où l'on en
+ * est. On lit ligne à ligne, on prévient l'appelant de chacune, et on renvoie
+ * la dernière — celle qui porte le résultat.
+ */
+async function fluxFonction(nom, corps, surLigne, trace) {
+  const dit = trace || (() => {});
+  const url = CFG.url + "/functions/v1/" + nom;
+  dit({ evt: "appel", url });
+  const r = await appel(url, { method: "POST", body: JSON.stringify(corps) });
+  /* Ce que le serveur a répondu, et surtout par quel chemin : un flux retenu
+     par un relais et un serveur lent se ressemblent trait pour trait de
+     l'extérieur. Les en-têtes qui les distinguent — l'encodage surtout — ne se
+     lisent d'une autre origine que si la fonction les expose, ce qu'elle
+     fait. */
+  dit({
+    evt: "reponse", statut: r.status,
+    entetes: ["content-type", "content-encoding", "cache-control",
+              "x-accel-buffering", "date"]
+      .reduce((o, c) => ({ ...o, [c]: r.headers.get(c) }), {}),
+  });
+  // un refus arrive avant le flux, sous forme d'objet unique
+  if (!r.ok || !r.body) throw new Error(await refus(r));
+
+  const lecteur = r.body.getReader();
+  const dec = new TextDecoder();
+  const FIN = String.fromCharCode(10);
+  let reste = "", dernier = null;
+  /* Le flux se referme quoi qu'il arrive. Une erreur annoncée par le serveur
+     sortait d'ici par une exception, en laissant la connexion ouverte : le
+     navigateur la tenait jusqu'au ramassage, et une synchronisation relancée
+     tout de suite en ouvrait une seconde à côté de la première. */
+  try {
+    for (;;) {
+      const { done, value } = await lecteur.read();
+      if (done) { dit({ evt: "flux-fini" }); break; }
+      /* Le poids de chaque tronçon, et l'instant où il arrive. C'est là que se
+         lit un tampon : une synchronisation servie au fil de l'eau rend des
+         dizaines de tronçons étalés sur une minute, une réponse retenue n'en
+         rend qu'un, à la fin. */
+      dit({ evt: "troncon", octets: value.length });
+      reste += dec.decode(value, { stream: true });
+      let i;
+      while ((i = reste.indexOf(FIN)) >= 0) {
+        const ligne = reste.slice(0, i).trim();
+        reste = reste.slice(i + 1);
+        // le remplissage du flux est un commentaire : deux points en tête
+        if (!ligne || ligne[0] === ":") continue;
+        /* On accepte les deux habillages. Les pages et les fonctions ne se
+           déploient pas ensemble — Cloudflare suit le dépôt, Supabase a son
+           propre workflow — et pendant quelques minutes une page neuve parle à
+           l'ancienne fonction, ou l'inverse. */
+        const utile = ligne.slice(0, 5) === "data:" ? ligne.slice(5).trim() : ligne;
+        if (!utile) continue;
+        let o;
+        try { o = JSON.parse(utile); } catch (e) { continue; }
+        dit({ evt: "ligne", ligne: o });
+        if (o.erreur) throw new Error(o.erreur);
+        surLigne(o);
+        if (o.ok) dernier = o;
+      }
+    }
+  } finally {
+    lecteur.cancel().catch(() => {});
+  }
+  return dernier;
+}
+
+/**
+ * La fenêtre qui rend compte d'une synchronisation.
+ *
+ * Elle montre trois choses, et pas une de plus : où l'on en est dans
+ * l'ensemble, où l'on en est dans l'étape qui tourne, et ce qui a été compté.
+ * La barre du haut est jalonnée d'une étape à l'autre — un jalon par étape,
+ * régulièrement espacés — parce qu'une barre nue dit qu'on attend sans dire
+ * quoi ; la sous-barre suit les éléments de l'étape en cours ; le tableau en
+ * dessous garde les chiffres, qui sont ce qu'on vient vérifier.
+ *
+ * Les jalons sont à intervalle égal, et leur part n'est pas chiffrée. Posés à
+ * la part que le nombre d'éléments valait à chaque étape, ils tombaient à des
+ * endroits — 46 %, 57 % — qui donnaient à lire une précision qui n'existe pas :
+ * ce sont des estimations, pas une promesse de durée. Une étape vaut une
+ * étape ; ce qui se compte vraiment se compte dans l'étape, sur la sous-barre
+ * et dans le tableau.
+ *
+ * Les étapes sont annoncées par le serveur, non devinées ici : lui seul sait
+ * ce qu'il va réellement faire. Le poids qu'il leur donne — leur nombre
+ * d'éléments, estimé d'après la dernière synchronisation puis corrigé — ne
+ * décide plus de la largeur d'un segment ; il sert de repère à l'avancement
+ * d'une étape dont on ignore le total, et un poids nul dit qu'elle n'est pas
+ * reprise du tout.
+ *
+ * La fenêtre ne se ferme pas d'elle-même : le bilan est ce qu'on vient y lire,
+ * et il arrive à la dernière ligne.
+ */
+function fenetreAvancement(titre, etiquette) {
+  let etapes = [], vivante = true, plafond = 0, annoncees = false;
+  const compte = new Map();
+  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte, chrono, relais;
+  const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
+
+  /* Le temps écoulé depuis le clic, affiché en clair.
+
+     Une attente ne se raconte pas : « c'est long » ne dit pas si l'on a
+     patienté six secondes ou soixante, et c'est pourtant là-dessus que se
+     tranche un serveur lent d'une réponse retenue en chemin. Le chronomètre
+     rend cette différence lisible sans ouvrir le journal. */
+  const duree = (ms) => {
+    const s = Math.floor(ms / 1000);
+    return s < 60 ? s + " s"
+      : Math.floor(s / 60) + " min " + String(s % 60).padStart(2, "0") + " s";
+  };
+
+  /* Le journal de la synchronisation, du clic à la dernière ligne.
+
+     Il ne garde pas seulement ce que le serveur a dit, mais quand chaque chose
+     est arrivée et en combien de tronçons : c'est la seule façon de
+     distinguer, après coup, un serveur lent d'un relais qui retient. Il sert
+     donc au diagnostic d'un défaut d'affichage autant qu'à celui d'une
+     synchronisation ratée.
+
+     Il vit dans la page et nulle part ailleurs : on ne l'envoie à personne, on
+     le télécharge. */
+  const t0 = performance.now();
+  const horloge = setInterval(() => {
+    if (chrono) chrono.textContent = duree(performance.now() - t0);
+  }, 500);
+  const journal = {
+    salon: etiquette || titre,
+    ouvertLe: new Date().toISOString(),
+    page: location.href,
+    navigateur: navigator.userAgent,
+    lignes: [],
+  };
+  const trace = (o) => {
+    journal.lignes.push({ ms: Math.round(performance.now() - t0), ...o });
+    /* La réponse reçue mérite d'être dite : tant qu'on lit « Connexion au
+       serveur… », on ne sait pas si c'est le réseau, la fonction ou un tampon
+       qui fait attendre. Ce message-là tranche entre le premier et les deux
+       autres. */
+    if (o.evt === "reponse" && quoi && !annoncees) {
+      quoi.textContent = "Réponse reçue — en attente de la première étape…";
+    }
+  };
+
+  function telechargeJournal() {
+    const nomFichier = "synchro-" +
+      String(etiquette || "salon").toLowerCase().normalize("NFD")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + "-" +
+      new Date().toISOString().slice(0, 19).replace(/[:T-]/g, "") + ".json";
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(
+      new Blob([JSON.stringify(journal, null, 2)], { type: "application/json" }));
+    lien.download = nomFichier;
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    // révoquer tout de suite annulerait le téléchargement en cours
+    setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
+  }
+
+  ouvreModale(titre, (c) => {
+    const d = document.createElement("div");
+    d.className = "sync";
+    d.innerHTML =
+      '<div class="sync-tete"><span class="eyebrow">Avancement</span>' +
+        '<span class="sync-chrono mono">0 s</span>' +
+        '<span class="sync-pct mono">0 %</span></div>' +
+      '<div class="sync-noms"></div>' +
+      '<div class="sync-rail"><span class="sync-depart"></span></div>' +
+      '<p class="sync-ecarte" hidden></p>' +
+      '<p class="sync-relais" hidden></p>' +
+      '<div class="sync-cours"><span class="sync-quoi"></span>' +
+        '<span class="sync-compte mono"></span></div>' +
+      '<div class="sync-sous" data-etat="battant"><span></span></div>' +
+      '<dl class="sync-chiffres"></dl>' +
+      '<p class="sync-bilan"></p>';
+    c.appendChild(d);
+    rail = d.querySelector(".sync-rail");
+    noms = d.querySelector(".sync-noms");
+    pctTxt = d.querySelector(".sync-pct");
+    quoi = d.querySelector(".sync-quoi");
+    compteTxt = d.querySelector(".sync-compte");
+    sous = d.querySelector(".sync-sous");
+    sousJauge = sous.querySelector("span");
+    dl = d.querySelector(".sync-chiffres");
+    bilan = d.querySelector(".sync-bilan");
+    ecarte = d.querySelector(".sync-ecarte");
+    chrono = d.querySelector(".sync-chrono");
+    relais = d.querySelector(".sync-relais");
+    quoi.textContent = "Connexion au serveur…";
+  }, [
+    /* Le journal se télécharge aussi pendant que ça tourne, et pas seulement
+       à la fin : une synchronisation qui reste muette est justement celle dont
+       on voudrait le relevé, et attendre une fin qui ne vient pas le rendrait
+       inatteignable. */
+    { libelle: "Journal", action: () => { telechargeJournal(); return false; } },
+    { libelle: "Fermer", genre: "primaire" },
+  ], () => { vivante = false; clearInterval(horloge); });
+  verrouilleModale(true);
+
+  // Les étapes qui ont un segment : celles que la synchronisation reprend.
+  const vues = () => etapes.filter((e) => e.poids > 0);
+
+  /* Un segment par étape, tous de même largeur, et un jalon au bout de chacun.
+     Une étape non reprise n'a pas de segment : elle en occuperait un sans
+     jamais rien y faire avancer. Elle est nommée sous la barre, pour qu'on la
+     sache écartée et non oubliée. */
+  function construitRail() {
+    if (!rail) return;
+    rail.innerHTML = '<span class="sync-depart"></span>';
+    noms.innerHTML = "";
+    vues().forEach((e) => {
+      e.seg = document.createElement("div");
+      e.seg.className = "sync-seg";
+      e.seg.innerHTML =
+        '<span class="sync-piste"><span></span></span><span class="sync-point"></span>';
+      rail.appendChild(e.seg);
+
+      e.nom = document.createElement("div");
+      e.nom.className = "sync-nom";
+      e.nom.textContent = e.libelle;
+      e.nom.title = e.libelle + (e.source && e.source !== "aucun" ? " — " + e.source : "");
+      noms.appendChild(e.nom);
+    });
+    const hors = etapes.filter((e) => e.poids <= 0);
+    ecarte.hidden = !hors.length;
+    ecarte.textContent = hors.length
+      ? "Non repris : " + hors.map((e) => e.libelle + (e.det ? " (" + e.det + ")" : "")).join(" · ")
+      : "";
+  }
+
+  function rafraichit() {
+    if (!rail) return;
+    vues().forEach((e) => {
+      if (!e.seg) return;
+      e.seg.dataset.etat = e.etat;
+      e.nom.dataset.etat = e.etat;
+      e.seg.querySelector(".sync-piste > span").style.width =
+        Math.round(e.frac * 100) + "%";
+    });
+    /* Le pourcentage et le remplissage disent la même chose, et c'est la
+       condition pour qu'on les croie : les segments étant égaux, la part faite
+       est la moyenne de ce que chaque étape a avancé. */
+    const l = vues();
+    const p = l.reduce((a, e) => a + e.frac, 0) / (l.length || 1) * 100;
+    plafond = Math.max(plafond, Math.min(100, p));
+    pctTxt.textContent = Math.round(plafond) + " %";
+    /* Tant qu'aucune étape n'a bougé, le curseur se tient au point de départ.
+       Une barre entièrement grise et un écran figé se ressemblent trop : c'est
+       ce point allumé, avec le chronomètre et la sous-barre qui bat, qui dit
+       qu'on attend le serveur et non qu'on a planté. */
+    rail.dataset.etat = l.some((e) => e.etat !== "attente") ? "" : "connexion";
+  }
+
+  return {
+    /** Le relevé de ce que le flux a rendu, et de quand. */
+    trace,
+
+    /**
+     * Dire que l'avancement ne vient pas du flux, mais d'un relevé au serveur.
+     *
+     * Une fois, et sans plus disparaître : c'est la seule marque visible d'un
+     * flux retenu en chemin. Sans elle, on chercherait la panne du côté de la
+     * synchronisation — qui, elle, se déroule normalement — au lieu de la
+     * chercher entre le serveur et ce poste-là.
+     */
+    avoueReleve() {
+      if (!relais || !relais.hidden) return;
+      relais.hidden = false;
+      relais.textContent = "Flux retenu en chemin — avancement relevé au serveur.";
+    },
+
+    /**
+     * La liste des étapes. `pressenties` distingue celle que la console a
+     * devinée pour ne pas ouvrir sur une barre vide de celle que le serveur
+     * annonce, qui seule fait foi et remplace la première.
+     */
+    ouvre(liste, pressenties) {
+      etapes = liste.map((e) => ({
+        cle: e.cle, libelle: e.libelle, source: e.source,
+        poids: Math.max(0, Number(e.poids ?? 1) || 0), frac: 0, etat: "attente", det: "",
+      }));
+      if (!pressenties) annoncees = true;
+      construitRail();
+      rafraichit();
+    },
+
+    /** Une ligne du flux qui parle d'une étape : son état, son poids, son avancement. */
+    pas(o) {
+      const e = etapes.find((x) => x.cle === o.etape);
+      if (!e) return;
+      let refaire = false;
+      if (o.poids !== undefined) {
+        e.poids = Math.max(0, Number(o.poids) || 0);
+        refaire = true;
+      }
+      /* Le détail d'une étape sans segment s'affiche sous la barre, dans la
+         ligne des écartées : une étape qui pesait déjà zéro n'en refait pas
+         une, et son « non synchronisé » ne s'y serait jamais posé. */
+      if (o.info !== undefined && e.det !== String(o.info)) {
+        e.det = String(o.info);
+        if (e.poids <= 0) refaire = true;
+      }
+      if (o.fait !== undefined) {
+        /* Sans total connu — les catégories Eventmaker ne disent pas combien
+           de fiches elles portent — l'estimation d'après la dernière
+           synchronisation tient lieu de repère. Plafonnée, elle ne prétend
+           jamais avoir fini. */
+        const f = o.total
+          ? Math.min(1, o.fait / o.total)
+          : Math.min(0.95, e.poids ? o.fait / e.poids : 0);
+        e.frac = Math.max(e.frac, f);
+      }
+      if (o.etat) {
+        e.etat = o.etat;
+        if (o.etat === "fait") e.frac = 1;
+        if (o.etat === "ignoree") {
+          e.frac = 1;
+          if (e.poids > 0) { e.poids = 0; refaire = true; }
+        }
+      }
+      if (o.etat === "encours" && quoi) {
+        quoi.textContent = e.libelle + " · " + (o.detail || e.det || "en cours");
+        const u = o.unite ? " " + o.unite : "";
+        /* Un pavillon entamé compte pour le premier, pas pour zéro : la part
+           est fractionnaire — c'est elle qui remplit la sous-barre — mais le
+           décompte se lit en éléments entiers. */
+        compteTxt.textContent = o.fait === undefined ? ""
+          : o.total ? Math.ceil(o.fait).toLocaleString("fr-FR") + " / " + nb(o.total) + u
+          : o.fait ? nb(o.fait) + u : "";
+        const bat = o.fait !== undefined && !o.total;
+        sous.dataset.etat = bat ? "battant" : "chiffre";
+        sousJauge.style.width = bat ? "100%"
+          : Math.round((o.total ? Math.min(1, o.fait / o.total) : 0) * 100) + "%";
+      }
+      if (refaire) construitRail();
+      rafraichit();
+    },
+
+    /** Les compteurs, qui s'écrasent par leur nom et ne font qu'une ligne chacun. */
+    chiffres(o) {
+      Object.entries(o || {}).forEach(([k, v]) => compte.set(k, v));
+      if (!dl) return;
+      dl.innerHTML = "";
+      compte.forEach((v, k) => {
+        const l = document.createElement("div");
+        l.innerHTML = "<dt></dt><dd></dd>";
+        l.querySelector("dt").textContent = k;
+        l.querySelector("dd").textContent = nb(v);
+        dl.appendChild(l);
+      });
+    },
+
+    /**
+     * Le mot de la fin, et la fenêtre rendue à qui voudra la fermer.
+     *
+     * Trois fins, et non deux : une synchronisation peut aboutir en laissant
+     * un défaut derrière elle — une nomenclature restée en codes — et la dire
+     * « interrompue » serait faux, la taire le serait autant.
+     *   "ok"     tout est passé
+     *   "alerte" c'est fait, mais quelque chose est à regarder
+     *   "echec"  on s'est arrêté en chemin
+     */
+    fini(message, issue) {
+      // ne déverrouiller que si c'est toujours cette fenêtre-ci qui est ouverte :
+      // une autre a pu prendre sa place pendant que la synchronisation tournait
+      if (vivante) verrouilleModale(false);
+      clearInterval(horloge);
+      if (chrono) chrono.textContent = duree(performance.now() - t0);
+      trace({ evt: "fin", issue: issue || "ok", message });
+      if (!bilan) return;
+      const panne = issue === "echec";
+      bilan.className = "sync-bilan " + (issue || "ok");
+      bilan.textContent = message;
+      /* Sur échec la sous-barre s'efface au lieu de se figer : battante, elle
+         restait pleine et se lisait comme une étape réussie, quand le jalon
+         rouge au-dessus disait le contraire. Ce qu'elle comptait est de toute
+         façon resté dans le tableau. */
+      sous.hidden = panne;
+      sous.dataset.etat = "fini";
+      quoi.textContent = panne ? "Interrompu" : "Terminé";
+      compteTxt.textContent = "";
+      if (!panne) {
+        sousJauge.style.width = "100%";
+        plafond = 100;
+        pctTxt.textContent = "100 %";
+      }
+    },
+  };
+}
+
+async function fonction(nom, corps) {
+  const r = await appel(CFG.url + "/functions/v1/" + nom, {
+    method: "POST",
+    body: JSON.stringify(corps),
+  });
+  if (!r.ok) throw new Error(await refus(r));
+  return await r.json().catch(() => ({}));
+}
+
+
+
+/* ------------------------------------------------------------------
+   Données
+   ------------------------------------------------------------------ */
+const slugifie = (t) => String(t).toLowerCase().normalize("NFD")
+  .replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-|-$/g, "").slice(0, 40);
+
+const courant = () => EVTS.find((e) => e.id === selection);
+
+async function charge() {
+  // le rôle avant les salons : c'est lui qui dit ce que la console propose,
+  // et la liste des salons n'est déjà plus la même d'un profil à l'autre
+  await litMonProfil();
+  /* La base ne renvoie que les salons du compte : un organisateur n'en reçoit
+     que les siens, un administrateur les reçoit tous. Le tri par date de
+     modification met en tête celui qu'on vient de toucher. */
+  EVTS = await rest("evenement?select=*&order=modifie_le.desc");
+  if (!EVTS.some((e) => e.id === selection)) {
+    selection = (selonAdresse() || EVTS[0])?.id ?? null;
+  }
+  if (selection) await chargePlans(selection);
+  dessine();
+}
+
+async function chargePlans(id) {
+  PLANS[id] = await rest("plan?evenement_id=eq." + id +
+    "&select=id,id_klipso,libelle,hall,publie,nb_stands,nb_zones&order=libelle.asc");
+}
+
+async function majEvenement(id, champs) {
+  await rest("evenement?id=eq." + id, {
+    method: "PATCH",
+    headers: { "Prefer": "return=minimal" },
+    body: JSON.stringify({ ...champs, modifie_le: new Date().toISOString() }),
+  });
+}
+
+/* ------------------------------------------------------------------
+   Choix du salon
+
+   La console n'affiche qu'un salon à la fois : la liste de tous les autres
+   tenait une colonne entière de l'écran pour un choix qu'on fait une fois en
+   arrivant. Elle se replie donc dans la barre du haut, comme sur la page de
+   rapport, et la fiche prend toute la largeur.
+
+   Ce que la liste porte ne se décide pas ici : la base ne renvoie que les
+   salons auxquels le compte a droit.
+   ------------------------------------------------------------------ */
+/** Le salon nommé dans l'adresse, s'il fait partie de ceux qu'on peut ouvrir. */
+function selonAdresse() {
+  const slug = new URLSearchParams(location.search).get("plan");
+  return slug ? EVTS.find((e) => e.slug === slug) || null : null;
+}
+
+/* Le salon ouvert tient dans l'adresse : on revient sur la console par un
+   signet ou par le bouton « Console » du rapport, et on retrouve le sien
+   plutôt que le premier de la liste. */
+function majAdresse() {
+  const e = courant();
+  const url = new URL(location.href);
+  if (e?.slug) url.searchParams.set("plan", e.slug);
+  else url.searchParams.delete("plan");
+  history.replaceState(null, "", url);
+}
+
+/**
+ * Ce que la barre du haut dit du salon ouvert, et ce qu'elle en commande.
+ *
+ * Ces boutons vivaient en tête de fiche, sur une seconde rangée. Ils décrivent
+ * pourtant le même salon que la liste déroulante voisine : les réunir fait un
+ * seul endroit où commander, et une ligne au lieu de deux.
+ */
+function majBarre() {
+  const e = courant();
+  const badge = $("etatEvt");
+  badge.hidden = !e;
+  if (e) {
+    badge.className = "etat " + e.etat;
+    badge.textContent = e.etat === "publie" ? "Publié" : "Brouillon";
+  }
+  // sans salon ouvert, les commandes qui le visent n'ont pas d'objet ; celles
+  // de la console — les comptes, le projet — restent, elles, atteignables
+  document.querySelectorAll('.menu-pan [data-portee="salon"]').forEach((b) => {
+    b.hidden = !e;
+  });
+  $("sepActions").hidden = !e;
+  $("lienPublic").hidden = !e;
+  $("lienAdmin").hidden = !e;
+  if (!e) return;
+
+  majLiens(e);
+  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier l'événement";
+  $("btnEtat").onclick = async () => {
+    e.etat = e.etat === "publie" ? "brouillon" : "publie";
+    try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
+    catch (err) { signale(err.message, true); }
+  };
+  $("btnSources").onclick = () => ouvreSources(() => dessine());
+  // dupliquer, c'est créer un salon : réservé à l'administrateur, comme
+  // « Nouveau ». La base le refuserait de toute façon, mais un bouton qui
+  // n'aboutit jamais est un bouton de trop.
+  $("btnDupliquer").hidden = MOI?.role !== "admin";
+  $("btnDupliquer").onclick = () => dupliquer(e);
+  $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
+    "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
+    "définitivement perdus.", "Supprimer", async () => {
+      try {
+        await rest("evenement?id=eq." + e.id, { method: "DELETE" });
+        selection = null;
+        await charge();
+      } catch (err) { signale(err.message, true); }
+    });
+}
+
+function dessineChoix() {
+  const sel = $("choixEvt");
+  // rien à choisir : la liste vide n'aurait rien à dire que la fiche ne dise
+  sel.hidden = !EVTS.length;
+  if (!EVTS.length) { sel.innerHTML = ""; return; }
+  /* Un brouillon se signale dans la liste : c'est le seul état dont on doive
+     se souvenir avant même d'ouvrir la fiche — son plan public ne répond pas. */
+  sel.innerHTML = EVTS.map((e) =>
+    '<option value="' + e.id + '"' + (e.id === selection ? " selected" : "") + '>' +
+    esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
+  sel.onchange = async () => {
+    selection = sel.value;
+    if (!PLANS[selection]) await chargePlans(selection);
+    dessine();
+  };
+}
+
+/* ------------------------------------------------------------------
+   Fiche
+   ------------------------------------------------------------------ */
+function champ(cle, libelle, aide, attrs) {
+  const e = courant();
+  const l = document.createElement("label");
+  l.innerHTML = '<span></span><input ' + (attrs || "") + '>' + (aide ? '<span class="aide"></span>' : "");
+  l.querySelector("span").textContent = libelle;
+  if (aide) l.querySelector(".aide").textContent = aide;
+  const i = l.querySelector("input");
+  i.value = e[cle] == null ? "" : e[cle];
+  let attente;
+  i.oninput = () => {
+    e[cle] = i.value;
+    if (cle === "slug") e.slug = slugifie(i.value);
+    clearTimeout(attente);
+    attente = setTimeout(async () => {
+      try {
+        await majEvenement(e.id, { [cle]: e[cle] });
+        if (cle === "nom") dessineChoix();
+        if (cle === "slug") { i.value = e.slug; majIntegration(); majAdresse(); }
+      } catch (err) { signale(err.message, true); }
+    }, 500);
+  };
+  return l;
+}
+
+
+/* ------------------------------------------------------------------
+   Icône de l'onglet
+
+   Les paliers de réduction, du plus généreux au plus maigre : on descend tant
+   que le résultat dépasse le poids retenu. Cent vingt-huit pixels suffisent
+   partout — l'onglet en montre seize, la barre des favoris trente-deux, le
+   raccourci d'un écran d'accueil rarement plus de cent vingt.
+
+   Le poids se compte en caractères du data-URI, non en octets du fichier
+   d'origine : c'est lui qui part avec le plan, chez chaque visiteur, et il
+   pèse un tiers de plus que l'image — quatre caractères de base64 pour trois
+   octets, d'où le diviseur de l'affichage.
+   ------------------------------------------------------------------ */
+const PALIERS_ICONE = [128, 96, 64, 48];
+const POIDS_ICONE = 22000;
+
+/**
+ * L'icône, redessinée en png quel que soit le fichier déposé.
+ *
+ * Le png et non le webp, à l'inverse du logo d'une zone : le second pèse moins,
+ * mais l'avantage ne se voit pas sur une image de cette taille, et le premier
+ * est le seul format que tous les navigateurs acceptent dans « link rel=icon ».
+ * Le svg passe par le même canevas et en ressort matriciel — c'est voulu : il
+ * porte du script, et les pages du plan ne reconnaissent à l'affichage que les
+ * formats qu'on fabrique ici.
+ *
+ * Les proportions sont gardées : un logo large écrasé dans un carré ne se
+ * reconnaît plus, et le navigateur sait loger une image qui n'est pas carrée.
+ */
+function reduitIcone(fichier) {
+  return new Promise((tenu, rompu) => {
+    if (!fichier || String(fichier.type).indexOf("image/") !== 0) {
+      return rompu(new Error("ce fichier n'est pas une image"));
+    }
+    const fr = new FileReader();
+    fr.onerror = () => rompu(new Error("fichier illisible"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rompu(new Error("image illisible"));
+      img.onload = () => {
+        // un svg sans dimensions intrinsèques se dessine à rien : on lui en prête
+        const l0 = img.naturalWidth || 128, h0 = img.naturalHeight || 128;
+        for (const max of PALIERS_ICONE) {
+          const k = Math.min(1, max / Math.max(l0, h0));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(l0 * k));
+          c.height = Math.max(1, Math.round(h0 * k));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const src = c.toDataURL("image/png");
+          if (src.length <= POIDS_ICONE) return tenu(src);
+        }
+        rompu(new Error("image trop lourde, même réduite — une icône, pas une photo"));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(fichier);
+  });
+}
+
+/**
+ * Le champ de l'icône : la choisir, la voir, la retirer.
+ *
+ * Il s'écrit au moment du choix, et non à la sortie de la fiche comme les
+ * champs de texte voisins : déposer une image est déjà un geste achevé, et
+ * rien ne s'y saisit à moitié. Le retrait part de même, et rend l'onglet à
+ * l'icône du navigateur.
+ *
+ * La vignette est aussi la cible du glisser-déposer — c'est le geste qu'on
+ * fait devant elle, et il évite la boîte de dialogue du système.
+ */
+function champFavicon() {
+  const e = courant();
+  const l = document.createElement("div");
+  l.className = "champ-fic";
+  l.innerHTML = '<span></span>' +
+    '<div class="iconeZ"><div class="vue"></div>' +
+    '<div class="actes"><button type="button" class="btn petit"></button>' +
+    '<button type="button" class="btn petit oter">Retirer</button>' +
+    '<span class="dit"></span></div>' +
+    '<input type="file" accept="image/*" hidden></div>' +
+    '<span class="aide"></span>';
+  l.querySelector("span").textContent = "Icône de l'onglet";
+  l.querySelector(".aide").textContent =
+    "Elle paraît dans l'onglet du plan public comme dans celui de " +
+    "l'administration, à côté du nom du salon. Réduite puis enregistrée avec " +
+    "l'événement, elle part avec le plan sans dépendre d'un fichier hébergé " +
+    "ailleurs. Un carré se reconnaît mieux à seize pixels qu'un logo en " +
+    "longueur. Glissez-la sur la vignette, ou choisissez-la.";
+
+  const vue = l.querySelector(".vue");
+  const choisir = l.querySelector(".actes button");
+  const oter = l.querySelector(".oter");
+  const dit = l.querySelector(".dit");
+  const fichier = l.querySelector("input");
+
+  const peint = (mot) => {
+    vue.innerHTML = e.favicon ? '<img alt="">' : '<span>Aucune</span>';
+    if (e.favicon) vue.querySelector("img").src = e.favicon;
+    choisir.textContent = e.favicon ? "Remplacer…" : "Choisir un fichier…";
+    oter.hidden = !e.favicon;
+    dit.dataset.mal = "false";
+    dit.textContent = mot !== undefined ? mot
+      : e.favicon ? Math.round(e.favicon.length / 1365) + " Ko" : "";
+  };
+
+  const ecrit = async (src) => {
+    const avant = e.favicon;
+    e.favicon = src;
+    peint(src ? "Enregistrement…" : "Retrait…");
+    try {
+      await majEvenement(e.id, { favicon: src || null });
+      peint();
+    } catch (err) {
+      // l'écran doit montrer ce que la base tient, pas ce qu'on a tenté
+      e.favicon = avant;
+      peint();
+      signale(err.message, true);
+    }
+  };
+
+  const prend = (f) => {
+    if (!f) return;
+    peint("Lecture…");
+    reduitIcone(f).then(ecrit).catch((err) => {
+      dit.textContent = "Échec : " + err.message;
+      dit.dataset.mal = "true";
+    });
+  };
+
+  choisir.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
+  oter.onclick = () => ecrit("");
+  vue.addEventListener("dragover", (ev) => {
+    ev.preventDefault();
+    vue.dataset.survol = "1";
+  });
+  vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
+  vue.addEventListener("drop", (ev) => {
+    ev.preventDefault();
+    delete vue.dataset.survol;
+    prend(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]);
+  });
+
+  peint();
+  return l;
+}
+
+/* ------------------------------------------------------------------
+   Fuseau horaire
+
+   Il date les jours du rapport et de la mesure, et dit à la page l'heure qu'il
+   est au salon. Trois provenances, dans cet ordre : celui qu'on règle ici,
+   celui qu'Eventmaker donne à la synchronisation, et Paris. C'est la base qui
+   tranche — un déclencheur calcule `fuseau` depuis les deux autres — et le
+   champ relit ce qu'elle a retenu plutôt que de le deviner.
+   ------------------------------------------------------------------ */
+const FUSEAU_DEFAUT = "Europe/Paris";
+
+/**
+ * Le nom saisi, écrit comme la liste l'écrit — « Europe/Paris » pour
+ * « europe/paris » —, ou nul s'il ne se lit pas.
+ *
+ * Pas `resolvedOptions()` : il ramène un fuseau à celui dont il est l'alias,
+ * et « America/Montreal » revenait sous les yeux en « America/Toronto ». Le
+ * même fuseau, mais pas celui qu'on a choisi.
+ */
+function fuseauConnu(nom, connus) {
+  const bas = nom.toLowerCase();
+  const tel = connus.find((z) => z.toLowerCase() === bas);
+  if (tel) return tel;
+  try {
+    new Intl.DateTimeFormat("fr-FR", { timeZone: nom });
+    return nom;
+  } catch (e) {
+    return null;
+  }
+}
+
+function champFuseau() {
+  const e = courant();
+  const l = document.createElement("label");
+  l.innerHTML = '<span>Fuseau horaire</span>' +
+    '<input list="fuseaux" spellcheck="false" autocomplete="off">' +
+    '<datalist id="fuseaux"></datalist><span class="aide"></span>';
+  const i = l.querySelector("input");
+  const aide = l.querySelector(".aide");
+  // la liste vient du navigateur : c'est lui qui devra lire le fuseau retenu
+  const connus = typeof Intl.supportedValuesOf === "function"
+    ? Intl.supportedValuesOf("timeZone") : [];
+  l.querySelector("datalist").innerHTML =
+    connus.map((z) => '<option value="' + esc(z) + '">').join("");
+
+  // ce que donnerait le champ vide : c'est ce que l'invite montre
+  const sansChoix = () => e.fuseau_source || FUSEAU_DEFAUT;
+  const peint = (mot) => {
+    i.value = e.fuseau_choisi || "";
+    i.placeholder = sansChoix();
+    aide.classList.toggle("alerte", Boolean(mot));
+    aide.textContent = mot || (e.fuseau_choisi
+      ? "Choisi ici, il l'emporte sur la synchronisation. Videz le champ pour " +
+        "revenir à " + sansChoix() + (e.fuseau_source ? ", donné par Eventmaker." : ", le défaut.")
+      : e.fuseau_source
+      ? "Donné par Eventmaker à la synchronisation. Choisissez-en un autre pour l'écarter."
+      : "Par défaut : aucune source n'en donne. Réglez-le si le salon se tient ailleurs.") +
+      (mot ? "" : " Il date les jours du rapport et l'heure du plan.");
+  };
+
+  i.onchange = async () => {
+    const saisi = i.value.trim();
+    const nom = saisi ? fuseauConnu(saisi, connus) : null;
+    if (saisi && !nom) {
+      // la saisie reste sous les yeux : on corrige une faute, on ne la retape pas
+      aide.classList.add("alerte");
+      aide.textContent = "« " + saisi + " » n'est pas un fuseau connu : choisissez-le dans la liste.";
+      return;
+    }
+    try {
+      const [r] = await rest("evenement?id=eq." + e.id +
+        "&select=fuseau,fuseau_source,fuseau_choisi", {
+        method: "PATCH",
+        headers: { "Prefer": "return=representation" },
+        body: JSON.stringify({ fuseau_choisi: nom, modifie_le: new Date().toISOString() }),
+      });
+      if (!r) throw new Error("modification refusée");
+      Object.assign(e, r);
+      /* La base traduit à son tour, et rend nul ce qu'elle ne sait pas lire —
+         un nom trop récent pour son répertoire de fuseaux. Le taire laisserait
+         croire que le choix a pris. */
+      peint(nom && !r.fuseau_choisi
+        ? "La base ne connaît pas « " + nom + " » : c'est " + r.fuseau + " qui reste retenu."
+        : undefined);
+    } catch (err) {
+      peint();
+      signale(err.message, true);
+    }
+  };
+
+  peint();
+  return l;
+}
+
+function dessineFiche() {
+  const e = courant();
+  const f = $("fiche");
+  if (!SESSION) { f.innerHTML = '<div class="vide">Connectez-vous pour accéder aux événements.</div>'; return; }
+  if (!e) {
+    /* Un organisateur sans salon n'a rien à créer et rien à choisir : lui
+       proposer « Nouveau » l'enverrait contre un refus de la base. Ce qui lui
+       manque, c'est une affectation, et c'est cela qu'on lui dit. */
+    f.innerHTML = '<div class="vide"></div>';
+    f.querySelector(".vide").innerHTML = MOI?.role === "admin"
+      ? "Aucun salon pour l'instant.<br>Créez-en un avec « Nouveau »."
+      : "Aucun salon ne vous a été affecté.<br>" +
+        "Demandez l'accès à l'administrateur du projet.";
+    return;
+  }
+  f.innerHTML = "";
+
+  const b1 = bloc("Identité");
+  const g1 = grille();
+  g1.appendChild(champ("nom", "Nom de l'événement"));
+  g1.appendChild(champ("slug", "Identifiant d'URL", "Sert d'adresse publique du plan."));
+  g1.appendChild(champFavicon());
+  g1.appendChild(champFuseau());
+  b1.appendChild(g1);
+  f.appendChild(b1);
+
+  /* D'où viennent les données, ce qu'on en montre, et à quelle fraîcheur : la
+     synchronisation tenait un bloc à elle pour une liste déroulante et un
+     bouton, et la question qu'elle répond est celle des lignes voisines. */
+  const bd = bloc("Données");
+  bd.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
+    ouvreProvenance));
+  bd.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
+
+  const rythme = document.createElement("select");
+  rythme.setAttribute("aria-label", "Rythme de rafraîchissement");
+  rythme.innerHTML = RYTHMES.map((r) => '<option value="' + r[0] + '"' +
+    (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("");
+  rythme.onchange = async (ev) => {
+    e.rythme_min = +ev.target.value;
+    try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
+    catch (err) { signale(err.message, true); }
+  };
+  const bsync = document.createElement("button");
+  bsync.className = "btn petit";
+  bsync.id = "btnSync";
+  bsync.textContent = "Synchroniser maintenant";
+  bd.appendChild(ligneOutil("Synchronisation", '<span id="msgSync"></span>', [rythme, bsync]));
+
+  f.appendChild(bd);
+  majMsgSync(e);
+  $("btnSync").onclick = () => synchronise(e);
+
+  /* --- pavillons --- */
+  const plans = PLANS[e.id] || [];
+  const publies = plans.filter((p) => p.publie).length;
+  const b3 = bloc("Pavillons", plans.length
+    ? plans.length + " pavillon" + (plans.length > 1 ? "s" : "") + " · " +
+      publies + " publié" + (publies > 1 ? "s" : "")
+    : "");
+  if (!plans.length) {
+    const p = document.createElement("p");
+    p.className = "astuce";
+    p.textContent = "Aucun pavillon connu. Lancez une synchronisation pour les récupérer.";
+    b3.appendChild(p);
+  } else {
+    const t = document.createElement("table");
+    // nommé pour qu'un écran étroit le fasse défiler seul, sans emporter la fiche
+    t.className = "pavillons";
+    t.innerHTML = "<thead><tr><th>Publier</th><th>Pavillon</th><th>Hall</th>" +
+      '<th class="num">Emplacements</th><th class="num">Zones</th></tr></thead><tbody></tbody>';
+    const tb = t.querySelector("tbody");
+    plans.forEach((p) => {
+      const tr = document.createElement("tr");
+      if (!p.publie) tr.className = "eteint";
+      tr.innerHTML = '<td><label class="coche"><input type="checkbox"' +
+        (p.publie ? " checked" : "") + '></label></td>' +
+        '<td class="nomplan"></td><td class="mono hall"></td>' +
+        '<td class="num">' + (p.nb_stands ?? "—") + '</td>' +
+        '<td class="num">' + (p.nb_zones ?? "—") + '</td>';
+      tr.querySelector(".nomplan").textContent = p.libelle;
+      tr.querySelector(".hall").textContent = p.hall || "—";
+      tr.querySelector("input").onchange = async (ev) => {
+        p.publie = ev.target.checked;
+        try {
+          await rest("plan?id=eq." + p.id, {
+            method: "PATCH",
+            headers: { "Prefer": "return=minimal" },
+            body: JSON.stringify({ publie: p.publie }),
+          });
+          dessine();
+        } catch (err) { signale(err.message, true); }
+      };
+      tb.appendChild(tr);
+    });
+    b3.appendChild(t);
+  }
+  f.appendChild(b3);
+
+  const b4 = bloc("Intégration");
+  const astuce = document.createElement("p");
+  astuce.className = "astuce";
+  /* Le rapport sépare les portes d'accès : le dire ici, où l'on décide de
+     poser le cadre, évite de chercher plus tard pourquoi les visites du site
+     n'apparaissent pas dans le même chiffre que celles du plan. */
+  astuce.textContent = "Collez ce fragment dans la page du salon. Les visites " +
+    "qui en viennent se comptent à part, sous « Cadre sur un site », dans le " +
+    "rapport d'utilisation.";
+  b4.appendChild(astuce);
+  const zone = document.createElement("div");
+  zone.className = "integration";
+  zone.style.marginTop = "10px";
+  zone.innerHTML = '<textarea id="fragment" readonly></textarea>' +
+    '<button class="btn petit" id="btnCopier">Copier</button>';
+  b4.appendChild(zone);
+  f.appendChild(b4);
+  majIntegration();
+  $("btnCopier").onclick = (ev) => {
+    navigator.clipboard?.writeText($("fragment").value).then(
+      () => { ev.target.textContent = "Copié"; setTimeout(() => ev.target.textContent = "Copier", 1600); },
+      () => { ev.target.textContent = "Échec"; });
+  };
+}
+
+/* ============================================================
+   Provenance des données
+   Un domaine, un fournisseur. La liste des fournisseurs diffère par domaine :
+   la géométrie du plan ne vient que de Klipso, le reste pourra venir
+   d'ailleurs. La clé d'identification reste celle de l'événement.
+   ============================================================ */
+const DOMAINES = [
+  ["plan",        "Plan",        ["klipso"],
+   "La géométrie des pavillons et des calques."],
+  ["stands",      "Exposants",   ["klipso", "eventmaker"],
+   "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan."],
+  ["conferences", "Conférences", ["aucun", "klipso", "eventmaker"],
+   "Aucune synchronisation ne les reprend encore."],
+  ["produits",    "Produits",    ["aucun", "klipso", "eventmaker"],
+   "Aucune synchronisation ne les reprend encore."],
+];
+const FOURNISSEURS = {
+  aucun: "Non synchronisé", klipso: "Klipso", eventmaker: "Eventmaker",
+};
+
+/* Un domaine que rien ne reprend vaut mieux « non synchronisé » qu'un
+   fournisseur choisi par défaut : celui-ci laisserait croire à une reprise. */
+const DEFAUT_DOMAINE = {
+  plan: "klipso", stands: "klipso", conferences: "aucun", produits: "aucun",
+};
+
+/* Chaque fournisseur désigne l'événement à sa façon. Klipso n'est pas dans
+   cette liste : son identité tient dans « Instance » et « Identifiant
+   d'événement », déjà saisis plus haut dans la fiche. */
+/**
+ * Les réglages de raccordement, fournisseur par fournisseur.
+ *
+ * C'est cette liste qui décide des onglets de la fenêtre « Sources de
+ * données » : brancher un outil de plus revient à y ajouter une entrée, sans
+ * toucher au reste.
+ *
+ * Un champ vit soit dans une colonne de l'événement — c'est le cas de Klipso,
+ * dont l'instance et l'identifiant précèdent le modèle multi-fournisseurs —
+ * soit dans la colonne « cles », indexée par fournisseur.
+ */
+const FOURNISSEURS_CONF = [
+  {
+    cle: "klipso",
+    nom: "Klipso",
+    champs: [
+      { colonne: "instance", libelle: "Instance", aide: "Le sous-domaine Klipso." },
+      { colonne: "event_id", libelle: "Identifiant d'événement",
+        aide: "Le GUID transmis dans l'en-tête X-GAIA-EventId." },
+    ],
+  },
+  {
+    cle: "eventmaker",
+    nom: "Eventmaker",
+    champs: [
+      { dansCles: "eventmaker", libelle: "Identifiant de l'événement",
+        aide: "Vingt-quatre caractères, visibles dans l'adresse de l'événement sur app.eventmaker.io.",
+        forme: /^[0-9a-f]{24}$/i, exemple: "69ef6fb4406b394eda9b8a3e" },
+    ],
+  },
+];
+
+/** Un fournisseur est-il retenu quelque part ? */
+const fournisseurUtilise = (e, cle) =>
+  DOMAINES.some(([d]) => ((e.sources || {})[d] || {}).fournisseur === cle);
+
+/** Le fournisseur retenu pour un domaine, défaut compris. */
+const source = (e, dom) =>
+  ((e.sources || {})[dom] || {}).fournisseur || DEFAUT_DOMAINE[dom] || "klipso";
+
+/** Champ de clé. Il n'est pas caché quand le fournisseur n'est pas encore
+ *  retenu : on saisit souvent l'identifiant avant de basculer la source. */
+function champCle(cle, libelle, aide, forme, exemple) {
+  const e = courant();
+  const l = document.createElement("label");
+  l.innerHTML = '<span></span><input spellcheck="false"><span class="aide"></span>';
+  l.querySelector("span").textContent = libelle;
+  const i = l.querySelector("input"), a = l.querySelector(".aide");
+  i.value = (e.cles || {})[cle] || "";
+  i.placeholder = exemple;
+  if (!fournisseurUtilise(e, cle)) l.classList.add("source-inerte");
+
+  const dit = () => {
+    const v = i.value.trim();
+    a.textContent = v && forme && !forme.test(v)
+      ? "Format inattendu — un identifiant ressemble à « " + exemple + " »."
+      : aide;
+    a.classList.toggle("alerte", Boolean(v && forme && !forme.test(v)));
+  };
+  dit();
+
+  let attente;
+  i.oninput = () => {
+    dit();
+    clearTimeout(attente);
+    attente = setTimeout(async () => {
+      e.cles = { ...(e.cles || {}) };
+      const v = i.value.trim();
+      if (v) e.cles[cle] = v; else delete e.cles[cle];
+      try { await majEvenement(e.id, { cles: e.cles }); }
+      catch (err) { signale(err.message, true); }
+    }, 500);
+  };
+  return l;
+}
+
+/** Une ligne de provenance, enregistrée à chaque modification. */
+function ligneSource(dom, libelle, offerts, aide) {
+  const e = courant();
+  const src = (e.sources && e.sources[dom]) || {};
+  const choisi = src.fournisseur || DEFAUT_DOMAINE[dom] || "klipso";
+  const l = document.createElement("label");
+  l.innerHTML = '<span></span><select>' +
+    offerts.map((k) => '<option value="' + k + '"' +
+      (choisi === k ? " selected" : "") + '>' +
+      FOURNISSEURS[k] + '</option>').join("") +
+    '</select><span class="aide"></span>';
+  l.querySelector("span").textContent = libelle;
+  l.querySelector(".aide").textContent = aide;
+  l.querySelector("select").onchange = async (ev) => {
+    e.sources = { ...(e.sources || {}) };
+    e.sources[dom] = { fournisseur: ev.target.value };
+    try { await majEvenement(e.id, { sources: e.sources }); }
+    catch (err) { signale(err.message, true); }
+  };
+  return l;
+}
+
+/* ============================================================
+   Contenu de la fiche détail
+   Deux décisions par ligne, et elles vont ensemble : ce que la fiche montre —
+   l'état de commercialisation d'un stand n'a rien à faire sur le site du
+   salon — et le champ d'origine qui l'alimente, dont le nom change d'un salon
+   à l'autre. Les régler dans deux fenêtres séparées revenait à faire deux fois
+   le tour de la même liste.
+
+   Le réglage vit à côté de l'événement, et non dans le navigateur de celui qui
+   l'a fait — sinon le visiteur n'en verrait rien.
+   ============================================================ */
+
+/**
+ * Une ligne de la fiche.
+ *
+ *   cle     nomme le réglage d'affichage. Absente, la ligne ne se masque pas.
+ *   cible   nomme le champ d'origine à associer. Absente, rien n'est à régler :
+ *           la valeur vient du plan, pas d'une fiche d'exposant.
+ *   fixe    dit d'où vient la valeur quand il n'y a pas de champ à choisir.
+ *   source  restreint la ligne à un fournisseur. Absente, elle vaut pour tous.
+ *   critere autorise la ligne à servir de critère de recherche sur le plan.
+ *           Toutes ne s'y prêtent pas : un numéro de téléphone ou une adresse
+ *           ne se choisissent pas dans une liste, et le secteur a déjà sa
+ *           bande de puces sur le plan — un second filtre pour lui ferait
+ *           double emploi.
+ */
+const LIGNES_FICHE = [
+  /* --- ce que le plan porte --- */
+  { groupe: "stand", cle: "hall", libelle: "Hall",
+    fixe: "hall de l'emplacement",
+    aide: "Affiché devant le numéro de stand, sur les seuls stands dont le " +
+      "hall est renseigné. Il se lit sur l'emplacement et non sur le " +
+      "pavillon, un même plan pouvant en couvrir deux. Décoché tant qu'on ne " +
+      "l'a pas voulu." },
+  { groupe: "stand", cle: "code", libelle: "Numéro de stand",
+    fixe: "allée et numéro de l'emplacement",
+    aide: "Affiché à côté du pavillon." },
+  { groupe: "stand", cle: "niveaux", libelle: "Niveaux",
+    fixe: "nombre de niveaux de l'emplacement",
+    aide: "Seulement au-delà d'un niveau." },
+  { groupe: "stand", cle: "secteur", libelle: "Secteur",
+    fixe: "secteur de l'emplacement",
+    aide: "Le découpage commercial du plan, que Klipso porte sur " +
+      "l'emplacement. Les couleurs et le filtre par secteur se règlent, eux, " +
+      "depuis le plan." },
+
+  /* --- ce que la fiche de la société porte --- */
+  { cible: "nom", libelle: "Enseigne",
+    aide: "Le titre de la fiche : toujours affiché." },
+  { cle: "raison", cible: "raison", libelle: "Raison sociale",
+    aide: "Quand elle diffère de l'enseigne." },
+  /* Le seul champ de la fiche qui ne soit pas du texte. Il vaut pour les deux
+     fournisseurs : Eventmaker le porte d'office sur l'avatar de la fiche,
+     Klipso n'a rien qui s'en approche mais un salon peut tenir une adresse
+     d'image dans un champ à lui. */
+  { cle: "logo", cible: "logo", libelle: "Logo",
+    aide: "Le logo de l'enseigne, en tête de fiche. Sur Eventmaker, c'est " +
+      "« avatar » qu'il faut désigner : « avatar_medium » et " +
+      "« avatar_thumb » sont recadrés au carré et coupent les bords d'un " +
+      "logo en largeur — et sur une fiche sans logo, ils rendent les " +
+      "initiales de la personne inscrite." },
+  { cle: "adresse", cible: "adresse", libelle: "Adresse" },
+  { cible: "codePostal", libelle: "Code postal", montre: "avec la ville",
+    suit: "ville",
+    aide: "Se pose devant la ville, sur la même ligne, comme sur une " +
+      "enveloppe. Il n'entre pas pour autant dans le filtre « Ville », qui " +
+      "fait cocher des villes et non des codes postaux." },
+  { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
+  { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
+  /* La console nomme le champ plus précisément que la fiche, qui n'a qu'un
+     téléphone à montrer et n'a pas à dire lequel. L'aperçu suit la fiche :
+     c'est ce que le visiteur lira. */
+  { cle: "telephone", cible: "telephone", libelle: "Téléphone société",
+    surFiche: "Téléphone" },
+  { cle: "site", cible: "site", libelle: "Site web" },
+  { cle: "facebook", cible: "facebook", libelle: "Facebook" },
+  { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
+  { cle: "instagram", cible: "instagram", libelle: "Instagram" },
+  { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
+    critere: true,
+    aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
+  /* Klipso n'a pas de thématiques : ses rubriques passent par la
+     nomenclature, et proposer une ligne que rien n'alimenterait ferait
+     chercher un champ qui n'existe pas. */
+  { cle: "thematiques", cible: "thematiques", libelle: "Thématiques",
+    source: "eventmaker", critere: true,
+    aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon " +
+      "le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous " +
+      "à l'exemple, certains salons n'y portent que des codes. Un salon qui " +
+      "les tient dans Eventmaker même, et non dans un champ de fiche, les " +
+      "porte sous « thematic_ids »." },
+  { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant", ouiNon: true,
+    critere: true,
+    aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
+      "salons qui distinguent leurs nouveaux venus." },
+  /* Aucun fournisseur ne porte l'adhésion : c'est le syndicat du salon qui
+     tient ses membres, et l'organisateur recopie la réponse dans un champ à
+     lui. Souvent avec des valeurs qui ne sont pas des oui — « À jour »,
+     « Membre titulaire » —, d'où les valeurs à cocher sous le champ. */
+  { cle: "adherent", cible: "adherent", libelle: "Adhérent syndicat", ouiNon: true,
+    critere: true,
+    aide: "Marque l'exposant membre du syndicat du salon. Le champ porte " +
+      "rarement un oui : cochez sous lui celles de ses valeurs qui comptent " +
+      "pour une adhésion. Ce que le plan en montre se règle depuis " +
+      "l'engrenage du plan, onglet « Adhérents »." },
+  /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
+     d'où elle vient, sans quoi l'en-tête du cadre mentirait pour elle. */
+  { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
+    aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
+];
+
+/* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la
+   règle générale, et pour la raison qui la fonde. Un champ absent du réglage
+   paraît parce qu'il paraissait déjà avant que le réglage existe ; le hall,
+   lui, n'a jamais paru, et Klipso y porte parfois le code du dossier plutôt
+   qu'un nom de hall — « SMCL26_P71 ». S'afficher de lui-même le publierait
+   d'un coup sur tous les salons déjà en ligne.
+
+   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de « _js.html »,
+   qui décide de ce que le visiteur reçoit : les deux se suivent. */
+const FICHE_MASQUEE_PAR_DEFAUT = { hall: true };
+
+/** Un champ paraît-il sur la fiche, réglage ou défaut ? */
+function paraitSurFiche(e, type, cle) {
+  const regle = ((e.fiche || {})[type] || {})[cle];
+  return FICHE_MASQUEE_PAR_DEFAUT[cle] ? regle === true : regle !== false;
+}
+
+/** D'où vient le programme, dit dans la colonne d'origine. */
+function origineConferences(e) {
+  const src = source(e, "conferences");
+  return src === "aucun" ? "programme non synchronisé"
+    : "programme · " + (FOURNISSEURS[src] || src);
+}
+
+/**
+ * Les deux cadres de l'onglet Stand.
+ *
+ * Une fiche d'exposant assemble deux choses qui n'ont ni la même nature ni la
+ * même provenance : l'emplacement, que Klipso porte parce que c'est lui qui
+ * porte le plan, et la société qui l'occupe, qui peut venir d'ailleurs. Mêlées
+ * dans une seule liste, on ne savait plus laquelle des deux sources une ligne
+ * interrogeait.
+ */
+const CADRES_FICHE = [
+  { cle: "stand", titre: "Le stand", domaine: "plan",
+    aide: "L'emplacement tel que le plan le décrit. Rien ne s'y règle : ces " +
+      "valeurs ne sont pas des champs de fiche." },
+  { cle: "exposant", titre: "L'exposant", domaine: "stands",
+    aide: "La société rattachée à l'emplacement, et ce que sa fiche porte." },
+];
+
+/**
+ * Ce qui ne paraît jamais sur la fiche, mais décide de ce qu'elle contient.
+ *
+ * Les deux premières lignes sont les plus lourdes de conséquences de toute la
+ * fenêtre : c'est par elles qu'une fiche Eventmaker retrouve son emplacement
+ * sur le plan. Mal réglées, aucun exposant n'apparaît. Klipso n'a ni l'une ni
+ * l'autre à régler — le numéro se compose de l'allée et du numéro portés par
+ * l'emplacement, le dossier est une clé du modèle.
+ */
+const LIGNES_RATTACHEMENT = {
+  klipso: [
+    { cible: "exclu", libelle: "Exclu de la liste", ouiNon: true,
+      aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
+  ],
+  eventmaker: [
+    /* « Numéro de stand » figure déjà plus haut, mais ce n'est pas le même :
+       celui-là est affiché et vient du plan, celui-ci est lu sur la fiche de
+       l'exposant pour l'y rattacher. Le libellé doit dire lequel des deux. */
+    { cible: "stand", libelle: "Numéro de stand de l'exposant",
+      aide: "Le numéro tel que sa fiche le porte, comparé à celui du plan, " +
+        "mise en forme ignorée. Mal réglé, aucun exposant n'apparaît." },
+    { cible: "dossier", libelle: "Identifiant de dossier",
+      aide: "Le dossier Klipso recopié sur la fiche : le rattachement le plus sûr." },
+    /* Un stand Klipso ne porte que le dossier de son titulaire : les sociétés
+       qu'il héberge n'ont que le numéro pour s'y raccrocher, d'où ce champ à
+       part — le même que ci-dessus dans presque tous les cas, mais que le
+       salon qui range le stand hôte ailleurs peut détourner. */
+    { cible: "coexposant", libelle: "Rattachement des co-exposants",
+      aide: "Le champ où un co-exposant porte le stand de son hôte. Les fiches " +
+        "qui désignent ainsi un stand déjà pris par un dossier sont ses " +
+        "co-exposants, et la fiche du stand les liste tous. " +
+        "« Aucun » les retire du plan." },
+    { cible: "exclu", libelle: "Exclu de la liste", ouiNon: true,
+      aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
+  ],
+};
+
+/* Ce qui se règle mais que rien n'alimente : à montrer en retrait plutôt qu'à
+   taire, sans quoi on croirait le champ déjà repris. */
+const FICHE_INERTE = [];
+
+/** Ce qu'on lit sans ouvrir : les exceptions, pas la liste complète. */
+function resumeProvenance(e) {
+  const s = e.sources || {};
+  const autres = DOMAINES
+    .filter(([d]) => ((s[d] || {}).fournisseur || DEFAUT_DOMAINE[d] || "klipso") !==
+      (DEFAUT_DOMAINE[d] || "klipso"))
+    .map(([d, lib]) => lib + " : " +
+      (FOURNISSEURS[s[d].fournisseur] || s[d].fournisseur));
+  // une source retenue sans son identifiant ne peut rien lire : le dire ici
+  // plutôt que d'attendre l'échec de la synchronisation
+  const manque = FOURNISSEURS_CONF
+    .filter((f) => fournisseurUtilise(e, f.cle) && f.champs.some((c) =>
+      c.dansCles ? !(e.cles || {})[c.dansCles] : !e[c.colonne]))
+    .map((f) => f.nom);
+  if (manque.length) autres.push("raccordement " + manque.join(", ") + " incomplet");
+  return autres.length ? autres.join(" · ") : "Klipso pour tout";
+}
+
+function resumeFiche(e) {
+  const caches = LIGNES_FICHE
+    .filter((l) => l.cle && !paraitSurFiche(e, "stand", l.cle)).map((l) => l.libelle);
+
+  /* La correspondance tient dans le même réglage : la dire ici évite d'ouvrir
+     la fenêtre pour savoir si elle a été touchée. */
+  const src = source(e, "stands");
+  const bloc = correspondance(e, src);
+  const associes = Object.keys(bloc.champs || {}).length;
+  const mots = [caches.length ? "Masqué — " + caches.join(", ") : "Tout affiché"];
+  /* Deux réglages qui ne se voient pas dans la liste des champs masqués : les
+     champs que le salon s'est ajoutés, et ceux qu'il propose à la recherche. */
+  const nPerso = champsPersos(e).length;
+  if (nPerso) mots.push(nPerso + " champ" + (nPerso > 1 ? "s" : "") + " propre" +
+    (nPerso > 1 ? "s" : "") + " au salon");
+  const nCrit = Object.keys(criteres(e)).length;
+  mots.push(nCrit ? nCrit + " critère" + (nCrit > 1 ? "s" : "") + " de recherche"
+    : "aucun critère de recherche");
+  /* Le rangement du corps et les champs d'une fiche de zone se règlent depuis
+     le plan, mais ils vivent dans la même colonne : les taire ici ferait
+     croire la fiche à son état d'origine. */
+  if ((((e.fiche || {}).ordre) || []).length) mots.push("ordre d'affichage remanié");
+  const nZone = Object.values(((e.fiche || {}).zone) || {})
+    .filter((v) => v === false).length;
+  if (nZone) mots.push(nZone + " champ" + (nZone > 1 ? "s" : "") +
+    " de zone masqué" + (nZone > 1 ? "s" : ""));
+  const nGrp = (((e.fiche || {}).groupes) || []).length;
+  if (nGrp) mots.push(nGrp + " groupe" + (nGrp > 1 ? "s" : "") + " de champs");
+  if (src !== "aucun") {
+    mots.push(associes
+      ? associes + " champ" + (associes > 1 ? "s" : "") + " associé" +
+        (associes > 1 ? "s" : "") + " à la main"
+      : bloc.detecteLe ? "champs d'origine proposés" : "champs d'origine non relevés");
+  }
+  return mots.join(" · ");
+}
+
+/**
+ * Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
+ * tard ne doit pas le faire disparaître des salons déjà réglés — sauf ceux
+ * que « FICHE_MASQUEE_PAR_DEFAUT » réserve, qui attendent d'être cochés.
+ *
+ * `apres` sert aux lignes où la case commande autre chose qu'elle-même — le
+ * champ d'origine se grise quand le champ ne paraît plus.
+ */
+function caseFiche(type, cle, libelle, aide, apres) {
+  const e = courant();
+  const l = document.createElement("label");
+  l.className = "case";
+  l.innerHTML = '<input type="checkbox"><span></span>' +
+                (aide ? '<span class="aide"></span>' : "");
+  l.querySelector("span").textContent = libelle;
+  if (aide) l.querySelector(".aide").textContent = aide;
+  const i = l.querySelector("input");
+  i.checked = paraitSurFiche(e, type, cle);
+  if (!libelle) i.setAttribute("aria-label", "Afficher ce champ sur la fiche");
+  if (apres) apres(i.checked);
+  i.onchange = async () => {
+    e.fiche = { ...(e.fiche || {}) };
+    e.fiche[type] = { ...(e.fiche[type] || {}), [cle]: i.checked };
+    if (apres) apres(i.checked);
+    try { await majEvenement(e.id, { fiche: e.fiche }); }
+    catch (err) {
+      signale(err.message, true);
+      i.checked = !i.checked;
+      if (apres) apres(i.checked);
+    }
+  };
+  return l;
+}
+
+/* ------------------------------------------------------------------
+   Champs propres au salon
+
+   Les cibles de la fiche sont les mêmes partout, et c'est bien ainsi : une
+   enseigne, une ville, un site web se retrouvent d'un salon à l'autre. Mais
+   chaque salon a un champ que les autres n'ont pas — « Gamme de produits »,
+   « Franchise depuis », « Pays d'origine de l'enseigne » — dont personne
+   d'autre n'a l'usage. L'ajouter au code revenait à l'ajouter à tous les
+   salons pour qu'un seul s'en serve.
+
+   Un champ créé ici n'appartient donc qu'à son événement : son libellé vit
+   dans la fiche, son champ d'origine dans la correspondance, comme n'importe
+   quelle cible. Le préfixe le met hors d'atteinte d'une cible du code.
+   ------------------------------------------------------------------ */
+const PREFIXE_PERSO = "perso:";
+
+/* La seconde origine d'un champ propre au salon : celle qui porte l'anglais.
+   Un champ à choix voit ses valeurs traduites toutes seules — la source
+   déclare l'anglais de ses listes — mais un texte libre, une description,
+   n'a rien de tel : sa version anglaise ne peut venir que d'un second champ
+   de la source. Le même suffixe vit dans « champs.ts », côté serveur. */
+const SUFFIXE_EN = "@en";
+const cibleEn = (cle) => PREFIXE_PERSO + cle + SUFFIXE_EN;
+
+const champsPersos = (e) => {
+  const l = e.fiche && e.fiche.perso;
+  return Array.isArray(l) ? l : [];
+};
+
+/** Les cibles retenues comme critères de recherche, jamais nul. */
+const criteres = (e) => (e.fiche && e.fiche.criteres) || {};
+
+/** Écrit la fiche d'un trait, et la remet en place si le service refuse. */
+async function ecritFiche(e, part) {
+  const avant = e.fiche;
+  e.fiche = { ...(e.fiche || {}), ...part };
+  try { await majEvenement(e.id, { fiche: e.fiche }); }
+  catch (err) { e.fiche = avant; signale(err.message, true); }
+}
+
+/**
+ * La case « critère de recherche ».
+ *
+ * Elle ne décide pas de l'affichage mais de la recherche : un champ retenu
+ * ici devient un filtre proposé au visiteur, et ses valeurs entrent dans ce
+ * que la recherche plein texte balaie. Non cochée par défaut — un plan qui
+ * offrirait douze filtres d'office ne se lirait plus.
+ */
+function caseCritere(cle, apres) {
+  const e = courant();
+  const l = document.createElement("label");
+  l.className = "case";
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  const i = l.querySelector("input");
+  i.checked = criteres(e)[cle] === true;
+  i.setAttribute("aria-label", "Proposer ce champ dans les critères de recherche");
+  i.onchange = async () => {
+    const c = { ...criteres(e) };
+    if (i.checked) c[cle] = true; else delete c[cle];
+    await ecritFiche(e, { criteres: c });
+    i.checked = criteres(courant())[cle] === true;
+    if (apres) apres(i.checked);
+  };
+  return l;
+}
+
+/** Une clé technique tirée du libellé, unique dans l'événement. */
+function clePerso(e, libelle) {
+  const base = slugifie(libelle) || "champ";
+  const pris = new Set(champsPersos(e).map((c) => c.cle));
+  if (!pris.has(base)) return base;
+  for (let n = 2; ; n++) if (!pris.has(base + "-" + n)) return base + "-" + n;
+}
+
+/** Crée un champ propre à ce salon, puis redessine la fenêtre. */
+function ajouteChampPerso(redessine) {
+  const e = courant();
+  demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
+    "", async (libelle) => {
+      const perso = champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]);
+      await ecritFiche(e, { perso });
+      redessine();
+    });
+}
+
+/**
+ * Renomme un champ : seuls les intitulés changent, la clé et le réglage restent.
+ *
+ * L'intitulé se donne dans les deux langues, et les deux champs paraissent
+ * quelle que soit la langue de la console : c'est l'exploitant qui l'a écrit,
+ * aucun dictionnaire ne le connaît. L'anglais est facultatif — laissé vide, la
+ * version anglaise du plan montre l'intitulé français.
+ */
+function renommeChampPerso(cle, redessine) {
+  const e = courant();
+  const actuel = champsPersos(e).find((c) => c.cle === cle) || {};
+  let fr, en;
+  const champ = (corps, texte, valeur, lang) => {
+    const l = document.createElement("label");
+    l.innerHTML = "<span></span><input>";
+    l.querySelector("span").textContent = texte;
+    const i = l.querySelector("input");
+    i.value = valeur || "";
+    i.lang = lang;
+    corps.appendChild(l);
+    return i;
+  };
+  const valide = async () => {
+    const libelle = fr.value.trim();
+    const libelleEn = en.value.trim();
+    const perso = champsPersos(e).map((c) => {
+      if (c.cle !== cle) return c;
+      const n = { ...c, libelle };
+      if (libelleEn) n.libelle_en = libelleEn; else delete n.libelle_en;
+      return n;
+    });
+    await ecritFiche(e, { perso });
+    redessine();
+  };
+  ouvreModale("Renommer le champ", (corps) => {
+    fr = champ(corps, "Intitulé en français", actuel.libelle, "fr");
+    en = champ(corps, "Intitulé en anglais", actuel.libelle_en, "en");
+    const aide = document.createElement("p");
+    aide.className = "aide";
+    aide.textContent = "Laissé vide, l'intitulé en français s'affiche aussi dans la version " +
+      "anglaise du plan.";
+    corps.appendChild(aide);
+    setTimeout(() => { fr.focus(); fr.select(); }, 30);
+  }, [{ libelle: "Annuler" },
+      // sans intitulé français, la fenêtre reste ouverte : c'est lui qui nomme le champ
+      { libelle: "Valider", genre: "primaire",
+        action: () => { if (!fr.value.trim()) { fr.focus(); return false; } valide(); } }]);
+}
+
+/**
+ * Retire un champ, et tout ce qui parlait de lui.
+ *
+ * Le laisser dans la correspondance ferait demander à l'API un champ que plus
+ * rien n'affiche, et le laisser dans les critères offrirait au visiteur un
+ * filtre sans valeurs.
+ */
+function retireChampPerso(cle, libelle, redessine) {
+  const e = courant();
+  const cible = PREFIXE_PERSO + cle;
+  confirme("Retirer « " + libelle + " » ?",
+    "Le champ, son origine et son réglage de recherche sont effacés. Les " +
+    "valeurs déjà synchronisées disparaîtront de la fiche à la prochaine " +
+    "synchronisation.", "Retirer", async () => {
+      const stand = { ...((e.fiche || {}).stand || {}) };
+      const crit = { ...criteres(e) };
+      delete stand[cible];
+      delete crit[cible];
+      await ecritFiche(e, {
+        perso: champsPersos(e).filter((c) => c.cle !== cle),
+        stand, criteres: crit,
+        /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
+           sous le même intitulé à la place qu'occupait le premier. Et avec lui
+           la section qui le réunissait et le sort réservé à son intitulé, qui
+           ne décrivent plus rien. */
+        ordre: (((e.fiche || {}).ordre) || []).filter((c) => c !== cible),
+        groupes: (((e.fiche || {}).groupes) || [])
+          .map((g) => ({ ...g, cles: (g.cles || []).filter((c) => c !== cible) }))
+          .filter((g) => g.cles.length),
+        intitules: (() => {
+          const i = { ...((e.fiche || {}).intitules || {}) };
+          delete i[cible];
+          return i;
+        })(),
+      });
+      /* La correspondance se nettoie de son côté : elle est rangée par
+         fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
+      const corr = { ...(e.correspondances || {}) };
+      let touche = false;
+      Object.keys(corr).forEach((src) => {
+        const bloc = { ...(corr[src] || {}) };
+        ["champs", "valeurs"].forEach((k) => {
+          // l'origine anglaise part avec la française : c'est le même champ
+          [cible, cibleEn(cle)].forEach((c) => {
+            if (!bloc[k] || bloc[k][c] === undefined) return;
+            bloc[k] = { ...bloc[k] };
+            delete bloc[k][c];
+            touche = true;
+          });
+        });
+        corr[src] = bloc;
+      });
+      if (touche) {
+        e.correspondances = corr;
+        try { await majEvenement(e.id, { correspondances: corr }); }
+        catch (err) { signale(err.message, true); }
+      }
+      redessine();
+    });
+}
+
+/**
+ * Les lignes du cadre des champs propres au salon.
+ *
+ * Mêmes lignes que les autres cadres — une case d'affichage, un champ
+ * d'origine, un critère — plus de quoi renommer et retirer : ces champs-là
+ * n'existent que parce qu'on les a créés.
+ */
+function lignesPerso(e, redessine) {
+  return champsPersos(e).map((c) => ({
+    cle: PREFIXE_PERSO + c.cle,
+    cible: PREFIXE_PERSO + c.cle,
+    cibleEn: cibleEn(c.cle),
+    libelle: c.libelle,
+    critere: true,
+    outils: [
+      { titre: "Renommer", texte: "\u270E",
+        action: () => renommeChampPerso(c.cle, gardeLaPlace(redessine)) },
+      { titre: "Retirer", texte: "\u00D7", genre: "danger",
+        action: () => retireChampPerso(c.cle, c.libelle, gardeLaPlace(redessine)) },
+    ],
+  }));
+}
+
+/**
+ * Une ligne du bloc « Données » : ce dont il s'agit, ce que cela vaut, et de
+ * quoi le changer. Les trois colonnes sont les mêmes d'une ligne à l'autre —
+ * c'est cet alignement qui fait retrouver la ligne qu'on cherche.
+ */
+function ligneOutil(titre, valeur, controles) {
+  const d = document.createElement("div");
+  d.className = "reglage-ligne";
+  d.innerHTML = '<span class="rt"></span><span class="rv">' + valeur +
+                '</span><span class="act"></span>';
+  d.querySelector(".rt").textContent = titre;
+  const a = d.querySelector(".act");
+  controles.forEach((c) => a.appendChild(c));
+  return d;
+}
+
+/**
+ * Une ligne dont le détail s'ouvre en fenêtre : quatre listes déroulantes et
+ * neuf cases à cocher rendaient la fiche illisible alors qu'on n'y touche
+ * qu'une fois par salon. Ici, seul le résumé reste.
+ */
+function ligneReglage(titre, resume, ouvre) {
+  const b = document.createElement("button");
+  b.className = "btn petit";
+  b.textContent = "Modifier";
+  const d = ligneOutil(titre, "", [b]);
+  const v = d.querySelector(".rv");
+  const maj = () => { v.textContent = resume(); };
+  maj();
+  b.onclick = () => ouvre(maj);
+  return d;
+}
+
+function ouvreProvenance(apres) {
+  ouvreModale("Provenance des données", (corps) => {
+    const e = courant();
+    const g = grille();
+    DOMAINES.forEach(([dom, lib, offerts, aide]) => {
+      const l = ligneSource(dom, lib, offerts, aide);
+      if (source(e, dom) === "aucun") l.classList.add("source-inerte");
+      g.appendChild(l);
+    });
+    corps.appendChild(g);
+    const note = document.createElement("p");
+    note.className = "aide";
+    note.textContent = "Les identifiants d'événement se saisissent dans " +
+      "« Sources de données », au menu Actions de la fiche.";
+    corps.appendChild(note);
+  }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Fenêtre des raccordements, un onglet par fournisseur. Chaque onglet dit
+ * aussi ce qu'il alimente : un identifiant saisi sans qu'aucun domaine ne
+ * s'en serve ne produirait rien, et c'est le genre d'oubli qu'on ne voit pas.
+ */
+function ouvreSources(apres) {
+  ouvreModale("Sources de données", (corps) => {
+    const e = courant();
+    const barre = document.createElement("div");
+    barre.className = "onglets";
+    const boutons = [], panneaux = [];
+
+    FOURNISSEURS_CONF.forEach((f, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = f.nom;
+      b.setAttribute("aria-pressed", String(i === 0));
+      barre.appendChild(b);
+      boutons.push(b);
+
+      const pan = document.createElement("div");
+      pan.hidden = i > 0;
+      const g = grille();
+      f.champs.forEach((c) => {
+        g.appendChild(c.dansCles
+          ? champCle(c.dansCles, c.libelle, c.aide, c.forme, c.exemple)
+          : champ(c.colonne, c.libelle, c.aide, 'spellcheck="false"'));
+      });
+      pan.appendChild(g);
+
+      const sert = DOMAINES.filter(([d]) => source(e, d) === f.cle).map(([, lib]) => lib);
+      const note = document.createElement("p");
+      note.className = "aide";
+      note.textContent = sert.length
+        ? "Alimente : " + sert.join(", ") + "."
+        : "Aucun domaine n'utilise cette source pour le moment.";
+      pan.appendChild(note);
+      panneaux.push(pan);
+
+      b.onclick = () => {
+        boutons.forEach((x, k) => x.setAttribute("aria-pressed", String(k === i)));
+        panneaux.forEach((x, k) => { x.hidden = k !== i; });
+      };
+    });
+
+    corps.appendChild(barre);
+    panneaux.forEach((x) => corps.appendChild(x));
+  }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Un cadre de la fenêtre : ce dont il parle, et de qui cela vient.
+ *
+ * L'en-tête nomme le fournisseur plutôt que de le laisser deviner : c'est la
+ * question qu'on se pose devant une ligne mal réglée — « ce champ, je le
+ * cherche chez qui ? »
+ */
+function cadreFiche(def, contenus) {
+  const e = courant();
+  const src = source(e, def.domaine);
+  const d = document.createElement("div");
+  d.className = "cadre";
+  d.innerHTML = '<div class="cadre-hd"><span class="eyebrow"></span>' +
+                '<span class="prov"></span></div>' +
+                '<p class="aide"></p>';
+  d.querySelector(".eyebrow").textContent = def.titre;
+  const prov = d.querySelector(".prov");
+  prov.textContent = FOURNISSEURS[src] || src;
+  prov.dataset.src = src;
+  if (def.aide) d.querySelector(".aide").textContent = def.aide;
+  else d.querySelector(".aide").remove();
+  contenus.filter(Boolean).forEach((c) => d.appendChild(c));
+  return d;
+}
+
+/**
+ * Fenêtre de la fiche détail : ce qu'elle montre, et ce qui l'alimente.
+ *
+ * Elle ne parle que du stand. Une zone organisateur ne tire rien d'une fiche
+ * d'exposant — tout ce qu'elle montre s'écrit zone par zone, depuis le plan —
+ * et ses quatre cases se règlent là où on les écrit, dans l'onglet « Zones »
+ * des réglages du plan. Ici, elles n'avaient qu'un onglet pour elles seules.
+ *
+ * Sur la ligne, la case et la liste déroulante vont ensemble : décider qu'un
+ * champ paraît et décider d'où il vient sont la même question, posée deux fois
+ * si on les sépare. Décocher retire la liste sans effacer le réglage.
+ */
+function ouvreFiche(apres) {
+  const e = courant();
+  const src = source(e, "stands");
+  const bloc = correspondance(e, src);
+  const mappable = src !== "aucun";
+
+  /* Une ligne réservée à un autre fournisseur n'a rien à faire ici : le champ
+     qu'elle propose n'existe pas de ce côté, et la case masquerait un champ
+     que la fiche n'affiche de toute façon pas. */
+  const lignes = () => LIGNES_FICHE.filter((l) => !l.source || l.source === src);
+
+  ouvreModale("Fiche détail", (corps) => {
+    /* Sans source d'exposants, il n'y a pas de champ d'origine à associer : le
+       tableau n'aurait qu'une colonne vide, et la liste de cases suffit. */
+    if (!mappable) {
+      const cases = document.createElement("div");
+      cases.className = "colonne-cases";
+      lignes().filter((l) => l.cle).forEach((l) => {
+        const c = caseFiche("stand", l.cle, l.libelle, l.aide);
+        if (FICHE_INERTE.indexOf(l.cle) >= 0) c.classList.add("source-inerte");
+        cases.appendChild(c);
+      });
+      corps.appendChild(cases);
+      const p = document.createElement("p");
+      p.className = "aide";
+      p.textContent = "Aucune source d'exposants : il n'y a pas de champ " +
+        "d'origine à associer. Choisissez-en une dans « Provenance des données ».";
+      corps.appendChild(p);
+    } else {
+      /* Avant les champs, les fiches : désigner un champ d'origine ne sert à
+         rien tant qu'on lit les mauvaises fiches. Le cadre vient donc en
+         premier, et il n'existe que pour Eventmaker — Klipso range ses
+         exposants par dossier, pas par catégorie d'invités. */
+      if (src === "eventmaker") corps.appendChild(cadreCategories(src));
+      CADRES_FICHE.forEach((def) => {
+        const duCadre = lignes().filter((l) => (l.groupe || "exposant") === def.cle);
+        /* Le rattachement rejoint le cadre de l'exposant : ces champs sont lus
+           sur sa fiche comme les autres, ils n'en sortent simplement rien
+           d'affichable. */
+        const rattachement = def.cle !== "exposant" ? null
+          : (LIGNES_RATTACHEMENT[src] || []);
+        corps.appendChild(cadreFiche(def, [
+          tableauChamps(duCadre, "stand", src, true, def.cle === "exposant"),
+          rattachement && rattachement.length ? sousTitre("Ce qui ne s'affiche pas") : null,
+          rattachement && rattachement.length
+            ? tableauChamps(rattachement, "stand", src, false) : null,
+        ]));
+      });
+
+      /* Les champs que ce salon s'est ajoutés, dans un cadre à eux : ils ne
+         viennent pas d'une liste que le code tient, et ce sont les seuls
+         qu'on puisse renommer ou retirer. */
+      const redessine = () => ouvreFiche(apres);
+      const perso = lignesPerso(e, redessine);
+      corps.appendChild(cadreFiche(
+        { titre: "Champs propres à ce salon", domaine: "stands",
+          aide: "Un champ que ce salon est seul à tenir. Il se règle comme les " +
+            "autres — un champ d'origine, une case pour l'afficher, une case " +
+            "pour en faire un critère de recherche — et n'existe que pour cet " +
+            "événement. Un champ à choix multiple se sépare tout seul : la " +
+            "source joint ses valeurs par un point-virgule, et chacune compte " +
+            "pour elle-même. La version anglaise vient d'un second champ de la " +
+            "source, à désigner sous le premier : un champ à choix a déjà " +
+            "l'anglais de ses valeurs, un texte libre n'en a aucun." },
+        [
+          perso.length ? tableauChamps(perso, "stand", src, true, true) : null,
+          (() => {
+            const pied = document.createElement("div");
+            pied.className = "pied-perso";
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn petit";
+            b.textContent = "Ajouter un champ";
+            b.onclick = () => ajouteChampPerso(gardeLaPlace(redessine));
+            pied.appendChild(b);
+            if (!perso.length) {
+              const p = document.createElement("span");
+              p.className = "aide";
+              p.textContent = "Aucun champ propre à ce salon pour le moment.";
+              pied.appendChild(p);
+            }
+            return pied;
+          })(),
+        ]));
+    }
+
+    const note = document.createElement("p");
+    note.className = "aide";
+    note.textContent = mappable
+      ? (bloc.detecteLe
+        ? "Les champs proposés viennent du relevé de la dernière " +
+          "synchronisation, le " + new Date(bloc.detecteLe).toLocaleString("fr-FR",
+            { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) +
+          ". Un champ choisi à la main n'est plus jamais reproposé, et le " +
+          "réglage prend effet à la synchronisation suivante."
+        : "Les champs d'origine se relèvent à la synchronisation : lancez-en " +
+          "une pour qu'ils soient proposés ici.")
+      : "Le nom et le pavillon sont toujours affichés : sans eux la fiche ne " +
+        "désigne plus rien.";
+    corps.appendChild(note);
+
+    /* D'où vient un champ se décide ici, et nulle part ailleurs : c'est la
+       seule fenêtre qui voie le relevé de la source. Ce que la fiche en montre
+       se décide des deux côtés — la case ici, le glissé sur le plan — parce que
+       c'est le même réglage, et que le plan seul peut le faire juger : l'aperçu
+       y porte l'habillage retenu et les valeurs d'un vrai stand. Le dire, faute
+       de quoi on chercherait le reste dans cette fenêtre — c'est là qu'il
+       était. */
+    const ou = document.createElement("p");
+    ou.className = "aide";
+    ou.textContent = "Décocher un champ le renvoie en réserve sur le plan, où " +
+      "il attend d'être réaffiché. C'est là que se règle le reste de la fiche " +
+      "— l'ordre des champs, les sections qui les réunissent sous un même " +
+      "titre, les intitulés qui paraissent devant les valeurs : engrenage, " +
+      "« Fiche Stand ». Ce qu'une fiche de zone organisateur montre — logo, " +
+      "description, lien, programme — s'y règle aussi : engrenage, « Zones ».";
+    corps.appendChild(ou);
+  }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Les catégories d'invités qui portent les exposants.
+ *
+ * Eventmaker range toutes ses fiches — visiteurs, intervenants, organisateurs,
+ * exposants — dans les mêmes catégories, nommées librement par l'organisateur.
+ * La synchronisation devinait laquelle est celle des exposants en cherchant
+ * qui porte un numéro de stand ; elle se trompait de deux façons, et le cadre
+ * répond aux deux.
+ *
+ * Elle retient une catégorie entière dès qu'une seule de ses fiches porte un
+ * numéro : « EXPOSANT (raison sociale) » de Moove On mêle 51 sociétés et 36
+ * personnes, et c'est le champ d'une personne que la console proposait. Et
+ * elle ne voit pas une catégorie d'exposants dont aucune fiche ne porte encore
+ * de numéro — au début d'un salon, c'est-à-dire quand on le règle.
+ *
+ * Cocher, c'est donc décider : la synchronisation suivante ne lit plus que
+ * ces catégories-là, sans les sonder. Tout décocher rend la main à la
+ * détection, qui reste le bon réglage pour un salon qui n'a jamais posé de
+ * problème.
+ */
+function cadreCategories(src) {
+  const e = courant();
+  const bloc = correspondance(e, src);
+  const catalogue = bloc.catalogue || [];
+  const detectees = bloc.retenues || [];
+  // le choix vit à côté du relevé, comme les champs : c'est le même réglage
+  const choisies = [].concat(bloc.categories || []).map(String);
+
+  const zone = document.createElement("div");
+  zone.className = "valeurs";
+
+  const note = document.createElement("p");
+  note.className = "aide";
+
+  const AUTO = "Aucune catégorie désignée : la synchronisation cherche " +
+    "elle-même celles dont les fiches portent un numéro de stand";
+  const dis = () => {
+    note.textContent = choisies.length > 1
+      ? choisies.length + " catégories désignées : la synchronisation ne lira " +
+        "que leurs fiches."
+      : choisies.length
+      ? "1 catégorie désignée : la synchronisation ne lira que ses fiches."
+      : !catalogue.length
+      ? "Les catégories se relèvent à la synchronisation : lancez-en une pour " +
+        "qu'elles soient proposées ici."
+      : detectees.length
+      ? AUTO + ", et la dernière en a retenu " + detectees.length + "."
+      : AUTO + ", et la dernière n'en a retenu aucune.";
+  };
+
+  const enregistre = async () => {
+    const e2 = courant();
+    const avant = e2.correspondances;
+    const corr = { ...(e2.correspondances || {}) };
+    const part = { ...(corr[src] || {}) };
+    if (choisies.length) part.categories = [...choisies];
+    else delete part.categories;
+    corr[src] = part;
+    e2.correspondances = corr;
+    try { await majEvenement(e2.id, { correspondances: corr }); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+  };
+
+  catalogue.forEach((c) => {
+    const id = String(c.id);
+    const l = document.createElement("label");
+    l.className = "puce";
+    /* Celle que la dernière synchronisation avait retenue d'elle-même se
+       signale : c'est la réponse à « laquelle, déjà ? » sur un salon dont on
+       ne connaît pas la nomenclature interne. */
+    const auto = detectees.indexOf(id) >= 0;
+    if (!auto) l.dataset.hors = "1";
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = c.nom || id;
+    l.title = auto ? "des fiches de cette catégorie portent un numéro de stand"
+      : "aucune fiche de cette catégorie ne portait de numéro de stand";
+    const i = l.querySelector("input");
+    i.checked = choisies.indexOf(id) >= 0;
+    i.onchange = () => {
+      const k = choisies.indexOf(id);
+      if (i.checked && k < 0) choisies.push(id);
+      if (!i.checked && k >= 0) choisies.splice(k, 1);
+      enregistre();
+      dis();
+    };
+    zone.appendChild(l);
+  });
+
+  dis();
+  return cadreFiche(
+    { titre: "Catégories d'invités", domaine: "stands",
+      aide: "Les fiches que la synchronisation lit. Une catégorie Eventmaker " +
+        "mêle souvent les sociétés et les personnes qui les représentent : " +
+        "cochez celles qui portent les exposants, et rien d'autre n'est lu. " +
+        "Tout décocher rend la main à la détection automatique. Le réglage " +
+        "prend effet à la synchronisation suivante." },
+    [catalogue.length ? zone : null, note]);
+}
+
+const sousTitre = (txt) => {
+  const s = document.createElement("span");
+  s.className = "eyebrow sous-titre";
+  s.textContent = txt;
+  return s;
+};
+
+/**
+ * Le tableau d'un groupe de lignes.
+ *
+ * `avecCases` distingue ce que la fiche montre — une case décide de son
+ * affichage — de ce qui ne s'affiche jamais mais décide du reste : le numéro
+ * de stand par lequel une fiche retrouve son emplacement, l'exclusion du
+ * catalogue. Les seconds n'ont rien à cocher.
+ */
+function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
+  const t = document.createElement("table");
+  t.className = "champs";
+  t.innerHTML = "<thead><tr>" + (avecCases ? "<th>Afficher</th>" : "") +
+    "<th>Sur la fiche</th><th>Champ d'origine</th>" +
+    (avecCriteres ? "<th>Critère</th>" : "") + "</tr></thead>";
+  const tb = document.createElement("tbody");
+
+  /* Une ligne peut n'avoir pas de case à elle et suivre celle d'une autre :
+     le code postal tient sur la ligne de l'adresse, et disparaît avec elle.
+     Elles s'inscrivent ici, et la case du chef de file les entraîne. */
+  const suiveurs = {};
+  const affiche = (cle) => paraitSurFiche(courant(), type, cle);
+
+  lignes.forEach((l) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = (avecCases ? '<td class="montre"></td>' : "") +
+      '<td class="n"><span class="lib"></span><span class="aide"></span></td>' +
+      '<td class="orig"></td>' + (avecCriteres ? '<td class="critere"></td>' : "");
+    tr.querySelector(".lib").textContent = l.libelle;
+    if (l.aide) tr.querySelector(".aide").textContent = l.aide;
+
+    /* Renommer et retirer vivent à côté de l'intitulé : c'est de lui qu'ils
+       parlent, et un champ créé à la main est le seul à en avoir. */
+    (l.outils || []).forEach((o) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "outil" + (o.genre ? " " + o.genre : "");
+      b.title = o.titre;
+      b.setAttribute("aria-label", o.titre + " " + l.libelle);
+      b.textContent = o.texte;
+      b.onclick = o.action;
+      // dans l'intitulé et non après lui : ils tiennent sur sa ligne
+      tr.querySelector(".lib").appendChild(b);
+    });
+
+    /* Le champ d'origine d'abord : c'est lui que la case va montrer ou
+       cacher, il doit donc exister avant elle. */
+    const cellule = tr.querySelector("td.orig");
+    let choix = null, choixEn = null;
+    if (l.cible) {
+      choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; },
+        l.ouiNon);
+      cellule.appendChild(choix.hote);
+      /* Et l'origine de l'anglais, pour les champs qui en acceptent une : un
+         champ à choix voit ses valeurs traduites par la source, un texte libre
+         n'a d'anglais que celui qu'un second champ porte. Sous la première et
+         non à côté : c'est le même champ en deux temps, et une colonne de plus
+         serait à lire sur toutes les lignes qui n'en ont pas. */
+      if (l.cibleEn) {
+        choixEn = champOrigine(src, l.cibleEn, null, false, "pas de version anglaise");
+        const bloc = document.createElement("div");
+        bloc.className = "origine-en";
+        const e = document.createElement("span");
+        e.className = "etiq";
+        e.textContent = "Version anglaise";
+        bloc.appendChild(e);
+        bloc.appendChild(choixEn.hote);
+        cellule.appendChild(bloc);
+      }
+    } else {
+      const fixe = document.createElement("span");
+      fixe.className = "etat-salle";
+      fixe.dataset.genre = "libre";
+      // le programme change de fournisseur d'un salon à l'autre : sa mention
+      // se calcule, elle ne s'écrit pas
+      fixe.textContent = (typeof l.fixe === "function" ? l.fixe(courant()) : l.fixe) ||
+        "sans champ à régler";
+      cellule.appendChild(fixe);
+    }
+
+    /* Un champ que la fiche ne montre pas n'a pas de source à choisir : la
+       liste disparaît plutôt que de rester là, grisée, à occuper une ligne
+       pour rien. Le réglage, lui, n'est pas effacé — il revient tel quel en
+       recochant.
+
+       Sauf s'il sert de critère de recherche : il est alors lu sans paraître,
+       et cacher son origine reviendrait à en interdire le réglage. */
+    let montreOn = true, critereOn = criteres(courant())[l.cle] === true;
+    const bascule = (montre) => {
+      if (montre !== undefined) montreOn = montre;
+      const sert = montreOn || critereOn;
+      tr.classList.toggle("source-inerte", !sert);
+      if (!choix) return;
+      choix.hote.hidden = !sert;
+      if (choixEn) choixEn.hote.parentNode.hidden = !sert;
+      // la barre de couleur dit d'où vient un champ : sans champ, elle ne dit
+      // plus rien
+      if (sert) choix.dis(); else delete tr.dataset.etat;
+    };
+
+    /* La case du critère ne décide pas de l'affichage mais de la recherche :
+       un champ peut filtrer sans paraître sur la fiche — un code interne, une
+       famille de produits — et l'inverse est vrai tout autant. */
+    if (avecCriteres && l.critere && l.cle) {
+      const cc = tr.querySelector(".critere");
+      cc.appendChild(caseCritere(l.cle, (on) => {
+        critereOn = on;
+        bascule();
+      }));
+      /* En colonne empilée — un téléphone — les en-têtes du tableau
+         disparaissent : la case dirait « oui » à une question qu'on ne lit
+         plus. L'étiquette ne paraît que là. */
+      const etiq = document.createElement("span");
+      etiq.className = "etiq";
+      etiq.textContent = "Critère de recherche";
+      cc.appendChild(etiq);
+    }
+
+    if (avecCases) {
+      const c = tr.querySelector(".montre");
+      if (!l.cle) {
+        // rien à décider ici : la case mentirait en laissant croire au choix
+        const tj = document.createElement("span");
+        tj.className = "etat-salle";
+        tj.dataset.genre = "libre";
+        tj.textContent = l.montre || "toujours";
+        c.appendChild(tj);
+        if (l.suit) {
+          (suiveurs[l.suit] = suiveurs[l.suit] || []).push(bascule);
+          bascule(affiche(l.suit));
+        }
+      } else {
+        c.appendChild(caseFiche(type, l.cle, "", null, (montre) => {
+          bascule(montre);
+          (suiveurs[l.cle] || []).forEach((f) => f(montre));
+        }));
+      }
+    }
+    tb.appendChild(tr);
+  });
+
+  t.appendChild(tb);
+  return t;
+}
+
+/* ------------------------------------------------------------------
+   Correspondance des champs d'origine
+
+   Les champs d'exposant ne portent pas le même nom d'un salon à l'autre :
+   « x_Catalogue_RaisonSociale » ici, autre chose ailleurs, et côté Eventmaker
+   ce sont des champs de fiche nommés par l'organisateur. Écrits dans la
+   synchronisation, ils condamnaient un salon nommé autrement à un déploiement.
+
+   La liste des champs disponibles vient de la synchronisation, qui les relève
+   en lisant les fiches — il n'y a rien à demander de plus, et rien à détecter
+   à part.
+   ------------------------------------------------------------------ */
+
+/* Deux valeurs qui ne sont pas des noms de champ : « rien de réglé », qui
+   laisse jouer le champ par défaut, et « ne rien lire », qui est un choix.
+   La seconde s'enregistre en chaîne vide ; l'absence, elle, veut dire la
+   première. Le « = » de tête les met hors d'atteinte d'un nom de champ. */
+const DEFAUT_CHAMP = "=defaut";
+const AUCUN_CHAMP = "=aucun";
+
+/* Une cible peut lire plusieurs champs — le premier renseigné l'emporte, sauf
+   la nomenclature où ils se cumulent. La liste déroulante n'a qu'une valeur
+   par ligne : on la compose en les joignant, aucun nom de champ ne portant de
+   barre verticale. */
+const encode = (v) => v === undefined || v === null ? DEFAUT_CHAMP
+  : ([].concat(v).filter(Boolean).join("|") || AUCUN_CHAMP);
+const decode = (v) => v === DEFAUT_CHAMP ? undefined
+  : v === AUCUN_CHAMP ? ""
+  : v.indexOf("|") >= 0 ? v.split("|") : v;
+
+/** Le bloc de correspondance d'un fournisseur, jamais nul. */
+const correspondance = (e, src) => (e.correspondances || {})[src] || {};
+
+// le préfixe dit l'origine, que le groupe annonce déjà
+const sansPrefixe = (cle) => String(cle).replace(/^[a-z]+:/, "");
+const courte = (v) => {
+  const t = String(v || "").trim();
+  return t.length > 34 ? t.slice(0, 32) + "…" : t;
+};
+
+/**
+ * L'intitulé d'un champ dans la liste déroulante.
+ *
+ * Trois choses, dans cet ordre : le nom technique, parce que c'est lui qu'on
+ * retrouvera dans l'API ; son libellé quand le schéma en donne un de
+ * différent ; et une valeur telle qu'elle a été lue. C'est cette dernière qui
+ * fait choisir — « x_Catalogue_RaisonSociale » et « x_Catalogue_Enseigne » ne
+ * se distinguent que par ce qu'elles contiennent, et les champs personnalisés
+ * d'un salon portent des noms que personne ne reconnaît de mémoire.
+ */
+function intitule(d) {
+  const technique = sansPrefixe(d.cle);
+  const lib = d.libelle && d.libelle !== technique ? technique + " — " + d.libelle : technique;
+  return lib + "  ·  " + (d.exemple ? courte(d.exemple) : "(vide sur les fiches lues)");
+}
+
+/**
+ * L'intitulé d'une cible qui lit plusieurs champs à la suite — « address »,
+ * puis « address_2 » quand le premier est vide. L'exemple est celui du premier
+ * champ qui en porte un : c'est la valeur que la fiche montrera le plus
+ * souvent.
+ */
+function intituleSuite(v, detectes) {
+  const parts = v.split("|");
+  const d = parts.map((c) => detectes.find((x) => x.cle === c)).find((x) => x && x.exemple);
+  return parts.map(sansPrefixe).join(", puis ") + (d ? "  ·  " + courte(d.exemple) : "");
+}
+
+/**
+ * Les valeurs d'un champ à choix, une par entrée, points-virgules défaits.
+ *
+ * Ni Klipso ni Eventmaker ne rendent une liste : ils joignent les valeurs
+ * d'un champ à choix multiple dans une seule chaîne — « Nouveaux exposants;
+ * Exposants internationaux ». Prise entière, elle ferait une valeur à cocher
+ * de plus par combinaison, et aucune ne désignerait ce que l'exploitant vise.
+ */
+const separeValeurs = (v) => [].concat(v)
+  .filter((x) => x !== null && x !== undefined)
+  .flatMap((x) => String(x).split(";"))
+  .map((x) => x.trim()).filter(Boolean);
+
+/* Les accords que la synchronisation reconnaît d'elle-même, quand aucune
+   valeur n'a été retenue. La liste est celle de `champs.ts` : la console ne
+   peut pas l'importer, elle la recopie — et les deux se corrigent ensemble,
+   sans quoi la fenêtre annoncerait l'inverse de ce qui se passe. */
+const ACCORDS = ["true", "1", "oui", "o", "yes", "y", "vrai", "x", "on", "✓", "✔"];
+
+/* Les deux faces d'un oui/non, telles que les sources les écrivent. La
+   synchronisation n'a que faire de la seconde colonne — un « non » et une
+   valeur quelconque ne déclenchent rien ni l'un ni l'autre — mais ici elle
+   compte : c'est en ne voyant que « false » qu'on sait que « true » existe. */
+const FACES = [
+  ["true", "false"], ["vrai", "faux"], ["oui", "non"], ["yes", "no"],
+  ["1", "0"], ["o", "n"], ["y", "n"], ["on", "off"],
+];
+
+/** Une valeur comparée sans égard à la casse ni aux espaces, comme au serveur. */
+const aplani = (v) => String(v === null || v === undefined ? "" : v).trim().toLowerCase();
+
+/**
+ * L'écriture du voisin : « FALSE » appelle « TRUE », « Non » appelle « Oui ».
+ *
+ * La valeur déduite est cochée telle quelle et comparée telle quelle à ce que
+ * portent les fiches : la comparaison ignore la casse, mais l'exploitant, lui,
+ * relit ce qu'il a coché — une face écrite autrement que sa voisine se lirait
+ * comme une valeur d'ailleurs.
+ */
+function memeStyle(modele, mot) {
+  const m = String(modele || "");
+  if (m && m === m.toUpperCase() && m !== m.toLowerCase()) return mot.toUpperCase();
+  if (m && m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase()) {
+    return mot[0].toUpperCase() + mot.slice(1);
+  }
+  return mot;
+}
+
+/**
+ * L'autre face d'un oui/non dont les fiches ne montrent qu'un côté.
+ *
+ * Un salon où personne n'est encore exclu porte « false » sur toutes ses
+ * fiches : le relevé n'a donc que « false » à proposer, et l'exploitant n'a
+ * rien à cocher — alors que c'est « true » qu'il vise. La face manquante se
+ * déduit du couple, et se propose signalée : elle existe, elle n'est
+ * simplement portée par personne pour l'instant.
+ */
+function autreFace(valeurs) {
+  const vues = valeurs.map(aplani);
+  if (!vues.length) return [];
+  const paire = FACES.find((f) => vues.every((v) => f.indexOf(v) >= 0));
+  if (!paire) return [];
+  return paire.filter((f) => vues.indexOf(f) < 0)
+    .map((f) => memeStyle(valeurs[0], f));
+}
+
+/**
+ * La liste déroulante des champs d'origine d'une cible, et ce qu'elle vaut.
+ *
+ * Le réglage s'enregistre à chaque changement, comme les cases de la même
+ * fenêtre : une fenêtre où la moitié des gestes se valide et l'autre pas
+ * serait un piège.
+ */
+function champOrigine(src, cible, apres, ouiNon, sansChamp) {
+  const e = courant();
+  const bloc = correspondance(e, src);
+  const detectes = bloc.detectes || [];
+  const defauts = bloc.defauts || null;
+  const propose = bloc.propose || null;
+  const regle = (bloc.champs || {})[cible];
+
+  /* Rien de réglé et une proposition sous la main : c'est elle qu'on montre.
+     Elle ne s'enregistre pas pour autant — elle décrit ce que la
+     synchronisation ferait de toute façon, et l'enregistrer ne changerait
+     rien qu'en apparence. */
+  const propose1 = propose ? encode(propose[cible] || []) : null;
+  const choisi = regle !== undefined ? encode(regle)
+    : propose1 !== null ? propose1 : DEFAUT_CHAMP;
+  const parDefaut = defauts ? ([].concat(defauts[cible] || []))[0] : null;
+  // « proposé » et « choisi à la main » ne se distinguent que par là : le
+  // relever une fois pour toutes le figerait au premier état affiché
+  let reglee = regle !== undefined;
+
+  const hote = document.createElement("div");
+  const sel = document.createElement("select");
+  const opt = (v, txt, dans) => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = txt;
+    (dans || sel).appendChild(o);
+  };
+  opt(DEFAUT_CHAMP, parDefaut ? "Par défaut — " + parDefaut
+    : defauts ? "Par défaut — aucun champ" : "Par défaut");
+  opt(AUCUN_CHAMP, "Aucun — laisser vide");
+  // une cible qui lit plusieurs champs à la suite ne se dit pas dans une liste
+  // de champs uniques : elle a son entrée à elle
+  const suites = {};
+  [choisi, propose1].forEach((v) => {
+    if (!v || v.indexOf("|") < 0 || suites[v]) return;
+    suites[v] = true;
+    opt(v, intituleSuite(v, detectes));
+  });
+  /* Les champs se rangent par origine — personnalisés d'abord, ce sont eux qui
+     diffèrent d'un salon à l'autre — sans quoi deux cents entrées se lisent
+     comme une seule. */
+  const groupes = {};
+  detectes.forEach((d) => {
+    const g = d.groupe || "Champs";
+    if (!groupes[g]) {
+      groupes[g] = document.createElement("optgroup");
+      groupes[g].label = g;
+      sel.appendChild(groupes[g]);
+    }
+    opt(d.cle, intitule(d), groupes[g]);
+  });
+  /* Un champ réglé que le dernier relevé ne connaît pas reste proposé : mieux
+     vaut le montrer signalé que le remplacer en silence — il peut n'être
+     renseigné sur aucune des fiches lues, et rester le bon. */
+  if (choisi !== DEFAUT_CHAMP && choisi !== AUCUN_CHAMP && !suites[choisi] &&
+      !detectes.some((d) => d.cle === choisi)) {
+    opt(choisi, choisi + " (absent du dernier relevé)");
+  }
+  sel.value = choisi;
+  hote.appendChild(sel);
+
+  const etat = document.createElement("span");
+  etat.className = "etat-salle";
+  hote.appendChild(etat);
+
+  /* Une cible vide n'appelle pas toujours au secours. Certaines n'ont aucun
+     champ d'origine d'office — Klipso ne porte ni adresse ni réseaux sociaux —
+     et rester vides est leur état normal ; seules celles dont le champ habituel
+     a disparu méritent le rouge. */
+  const sansDefaut = defauts !== null && !([].concat(defauts[cible] || [])).length;
+  const dis = () => {
+    const v = sel.value;
+    const vide = v === AUCUN_CHAMP;
+    const suggere = propose1 !== null && v === propose1 && !reglee;
+    const genre = vide ? (sansDefaut || !propose1 ? "libre" : "manque")
+      : v === DEFAUT_CHAMP || suggere ? "auto" : "manuel";
+    etat.textContent = vide
+      ? (sansChamp ? sansChamp
+        : sansDefaut ? "sans champ d'origine connu"
+        : propose1 ? "champ habituel introuvable : à désigner" : "laissé vide")
+      : v === DEFAUT_CHAMP ? "champ par défaut"
+      : suggere ? "proposé d'après le dernier relevé" : "choisi à la main";
+    etat.dataset.genre = genre;
+    if (apres) apres(genre);
+  };
+  dis();
+
+  /* Le champ retenu et les valeurs qui le font compter vivent dans le même
+     bloc : c'est un seul réglage en deux temps, et il s'enregistre d'un coup. */
+  const enregistre = async (part) => {
+    const e2 = courant();
+    const avant = e2.correspondances;
+    const corr = { ...(e2.correspondances || {}) };
+    corr[src] = { ...(corr[src] || {}), ...part };
+    e2.correspondances = corr;
+    try { await majEvenement(e2.id, { correspondances: corr }); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+  };
+
+  sel.onchange = () => {
+    const champs = { ...(correspondance(courant(), src).champs || {}) };
+    const v = decode(sel.value);
+    reglee = v !== undefined;
+    if (v === undefined) delete champs[cible]; else champs[cible] = v;
+    /* Les valeurs retenues appartenaient au champ précédent : les garder
+       désignerait des valeurs que le nouveau ne porte pas. */
+    const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
+    delete valeurs[cible];
+    enregistre({ champs, valeurs });
+    dis();
+    majValeurs();
+  };
+
+  /* ---- les valeurs qui valent oui ----
+
+     Un champ à choix ne répond pas par oui ou non : « anciennete » vaut
+     « Nouveau Client », « Client N-1 » ou « Retour », et c'est à l'exploitant
+     de dire lesquelles comptent — un salon signalera les retours, un autre
+     non. Les valeurs proposées sont celles que le champ peut prendre : celles
+     que la synchronisation a vues, celles que la source déclare sans qu'aucune
+     fiche ne les porte, et la face manquante d'un oui/non. Un champ de texte
+     libre n'en a aucune, et retombe alors sur le oui/non usuel. */
+  const zoneValeurs = document.createElement("div");
+  zoneValeurs.className = "valeurs";
+  if (ouiNon) hote.appendChild(zoneValeurs);
+
+  function majValeurs() {
+    if (!ouiNon) return;
+    zoneValeurs.innerHTML = "";
+    // sans champ désigné, il n'y a pas de valeur à qualifier
+    if (sel.value === DEFAUT_CHAMP || sel.value === AUCUN_CHAMP) {
+      zoneValeurs.hidden = true;
+      return;
+    }
+    zoneValeurs.hidden = false;
+
+    /* Séparées ici aussi, et pas seulement au relevé : un salon réglé avant ce
+       découpage porte encore des valeurs entières, et n'attend pas la
+       prochaine synchronisation pour se laisser cocher. */
+    const retenues = separeValeurs(
+      (correspondance(courant(), src).valeurs || {})[cible] || []);
+    const d = detectes.find((x) => x.cle === sel.value);
+    const relevees = separeValeurs((d && d.valeurs) || []);
+    // la codification du champ, quand la source en déclare une : code → libellé
+    const choix = (d && d.choix) || {};
+    /* Le relevé a bien lu ce champ, mais ses valeurs ne se ressemblent pas
+       assez pour faire une liste : une raison sociale, une date. Le dire
+       épargne d'attendre une synchronisation qui n'en relèverait pas plus. */
+    const libre = !!(d && d.libre);
+
+    /* Quatre provenances pour une même liste, et l'ordre les range : ce que
+       les fiches portent, ce que la source déclare sans que rien ne le porte,
+       la face manquante d'un oui/non, puis ce que l'exploitant a retenu — car
+       une valeur retenue reste proposée même si le relevé l'ignore : saisie à
+       la main, ou relevée avant que la synchronisation ne garde les valeurs
+       distinctes. L'effacer de l'affichage reviendrait à l'effacer tout court.
+
+       Tout ce qui n'a été vu sur aucune fiche est marqué : la valeur est
+       cochable, mais l'exploitant doit savoir que personne ne la porte —
+       c'est parfois le signe qu'il vise le mauvais champ. */
+    const offertes = [];
+    const offre = (v, hors) => {
+      if (!v || offertes.some((o) => o.v === v)) return;
+      offertes.push({ v, hors });
+    };
+    relevees.forEach((v) => offre(v, false));
+    Object.keys(choix).forEach((v) => offre(v, true));
+    autreFace(relevees).forEach((v) => offre(v, true));
+    retenues.forEach((v) => offre(v, true));
+    /* Sans valeur retenue, la synchronisation s'en remet aux accords usuels :
+       un champ qui peut en porter un signale donc déjà, et le dire en rouge
+       comme un réglage manquant serait un faux appel au secours. */
+    const accords = offertes.map((o) => o.v).filter((v) => ACCORDS.indexOf(aplani(v)) >= 0);
+
+    const dit = document.createElement("span");
+    dit.className = "mini";
+    zoneValeurs.appendChild(dit);
+    /* Un champ dont on connaît un exemple mais aucune valeur vient d'un relevé
+       plus vieux que la façon de les garder : le dire avec sa date épargne
+       d'attendre une liste qu'une synchronisation lancée depuis remplirait. */
+    const dateReleve = bloc.detecteLe
+      ? new Date(bloc.detecteLe).toLocaleString("fr-FR",
+        { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+      : null;
+    const rappel = () => {
+      dit.textContent = retenues.length
+        ? "vaut oui quand la valeur est :"
+        : accords.length
+          ? "aucune valeur retenue : « " + accords.join(" », « ") + " » " +
+            (accords.length > 1 ? "valent" : "vaut") + " oui d'office"
+          : offertes.length
+            ? "aucune valeur retenue : rien ne sera signalé"
+            : libre
+              ? "trop de valeurs différentes pour en proposer la liste : " +
+                "saisissez celle qui compte"
+              : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
+                " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
+      dit.dataset.genre = retenues.length || accords.length ? "" : "manque";
+    };
+    rappel();
+
+    /* Le libellé plutôt que le code quand la codification en donne un : un
+       champ à choix Klipso ne porte que « FEP26_GAM102 », et c'est
+       « Prêt-à-porter » que l'exploitant cherche. Le code reste sous la
+       souris — c'est lui qui sera comparé aux fiches. */
+    const puce = (v, hors) => {
+      const l = document.createElement("label");
+      l.className = "puce";
+      if (hors) l.dataset.hors = "1";
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = choix[v] || v;
+      l.title = (choix[v] ? v + " — " : "") +
+        (hors ? "portée par aucune des fiches relevées" : "relevée sur les fiches");
+      const i = l.querySelector("input");
+      i.checked = retenues.indexOf(v) >= 0;
+      i.onchange = () => {
+        const k = retenues.indexOf(v);
+        if (i.checked && k < 0) retenues.push(v);
+        if (!i.checked && k >= 0) retenues.splice(k, 1);
+        const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
+        if (retenues.length) valeurs[cible] = [...retenues]; else delete valeurs[cible];
+        enregistre({ valeurs });
+        rappel();
+      };
+      zoneValeurs.appendChild(l);
+      return l;
+    };
+    offertes.forEach((o) => puce(o.v, o.hors));
+
+    /* De quoi désigner une valeur que le relevé ignore. Il n'en a pas toujours
+       une liste : un salon synchronisé avant que la synchronisation ne les
+       garde n'en a aucune, et un champ de texte libre non plus. Attendre le
+       prochain passage pour régler la fiche serait une attente de trop. */
+    const ajout = document.createElement("input");
+    ajout.type = "text";
+    ajout.className = "ajout-valeur";
+    ajout.placeholder = "autre valeur…";
+    ajout.spellcheck = false;
+    ajout.onkeydown = (ev) => {
+      if (ev.key !== "Enter") return;
+      ev.preventDefault();
+      /* Une saisie recopiée depuis une fiche porte parfois la chaîne entière :
+         elle vaut alors autant de valeurs qu'elle en joint. */
+      const saisies = separeValeurs(ajout.value)
+        .filter((v) => !offertes.some((o) => o.v === v));
+      ajout.value = "";
+      if (!saisies.length) return;
+      saisies.forEach((v) => {
+        retenues.push(v);
+        offertes.push({ v, hors: true });
+        const l = puce(v, true);
+        l.querySelector("input").checked = true;
+      });
+      const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
+      valeurs[cible] = [...retenues];
+      enregistre({ valeurs });
+      zoneValeurs.appendChild(ajout);
+      rappel();
+    };
+    zoneValeurs.appendChild(ajout);
+  }
+  majValeurs();
+
+  return { hote, sel, dis };
+}
+
+
+function majLiens(e) {
+  const q = "?plan=" + encodeURIComponent(e.slug || "");
+  // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
+  // laisser cliquer vers une page qui répondra « introuvable »
+  const brouillon = e.etat !== "publie";
+  const enBrouillon = "L'événement est en brouillon : le plan public n'est pas encore servi.";
+  const pub = $("lienPublic"), adm = $("lienAdmin");
+  if (pub) {
+    pub.href = BASE_PAGES + "plan" + q;
+    pub.classList.toggle("inactif", brouillon);
+    pub.title = brouillon ? enBrouillon : "Ouvrir le plan tel que le voient les visiteurs";
+  }
+  /* La borne n'est que le plan public avec un paramètre de plus. Le lien est
+     là pour qu'on n'ait pas à l'écrire de mémoire : on l'ouvre sur la tablette
+     posée dans le salon, ou l'on copie son adresse pour l'y porter. */
+  const bor = $("lienBorne");
+  if (bor) {
+    bor.href = BASE_PAGES + "plan" + q + "&borne";
+    bor.classList.toggle("inactif", brouillon);
+    bor.title = brouillon ? enBrouillon
+      : "Le plan sur un écran posé dans le salon : il demande où il est, " +
+        "puis les itinéraires en partent";
+  }
+  if (adm) {
+    adm.href = BASE_PAGES + "plan-admin" + q;
+    adm.title = "Ouvrir le plan avec les calques et les outils de dessin" +
+      (e.etat !== "publie" ? " — accessible même en brouillon" : "");
+  }
+  // le rapport reste dans l'onglet : c'est une autre page de la console, pas
+  // une sortie vers le plan
+  const rap = $("lienRapport");
+  if (rap) {
+    rap.href = BASE_PAGES + "rapport" + q;
+    rap.title = "Visites, recherches et fiches ouvertes";
+  }
+}
+
+function majIntegration() {
+  const e = courant(), t = $("fragment");
+  if (!e || !t) return;
+  t.value = '<iframe src="' + BASE_PAGES + 'plan?plan=' + (e.slug || "evenement") +
+    '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"></iframe>';
+}
+
+function majMsgSync(e) {
+  const m = $("msgSync");
+  if (!m) return;
+  if (e.derniere_err) { m.className = "err"; m.textContent = "Dernière erreur : " + e.derniere_err; return; }
+  m.className = "";
+  // la ligne s'intitule déjà « Synchronisation » : le mot n'a pas à revenir
+  m.textContent = e.derniere_sync
+    ? "Dernière : " +
+      new Date(e.derniere_sync).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
+    : "Jamais synchronisé.";
+}
+
+/* ------------------------------------------------------------------
+   Synchronisation
+   ------------------------------------------------------------------ */
+
+/**
+ * Les étapes telles qu'on les attend, avant que le serveur ne les annonce.
+ *
+ * La fenêtre s'ouvre au clic, mais la première ligne du flux ne vient qu'après
+ * la connexion, le contrôle des droits et deux lectures en base. Sans cette
+ * prévision, on regarderait une barre vide pendant tout ce temps — et une
+ * barre vide se lit comme un blocage.
+ *
+ * Elle se calcule ici comme là-bas, et à partir des mêmes éléments : les
+ * sources réglées sur le salon, et les emplacements du dernier passage, que la
+ * console a déjà en mémoire pour les afficher. Les deux listes coïncident donc
+ * en pratique ; si elles divergeaient, c'est celle du serveur qui ferait foi,
+ * puisqu'elle remplace celle-ci dès son arrivée.
+ */
+function etapesPressenties(e) {
+  const emplacements =
+    (PLANS[e.id] || []).reduce((a, p) => a + (p.nb_stands || 0), 0) || 300;
+  const stands = source(e, "stands"), conf = source(e, "conferences");
+  return [
+    { cle: "exposants", libelle: "Exposants", source: stands,
+      poids: stands === "eventmaker" ? emplacements : 20 },
+    { cle: "conferences", libelle: "Conférences", source: conf,
+      poids: conf === "eventmaker" ? Math.round(emplacements / 4) : 0 },
+    { cle: "plan", libelle: "Plan", source: source(e, "plan"), poids: emplacements },
+    { cle: "produits", libelle: "Produits", source: source(e, "produits"), poids: 0 },
+  ];
+}
+
+/* Le rythme du relevé de secours.
+
+   Le silence se mesure sur le battement du flux, non sur ses lignes : la
+   lecture des fiches ou l'allègement d'un calque tiennent la ligne muette
+   pendant des dizaines de secondes sans que rien n'aille mal, et c'est
+   justement pour le dire que la fonction pousse du remplissage toutes les deux
+   secondes. Cinq secondes sans un octet, ce sont donc deux battements manqués
+   — un retard que la lenteur seule n'explique plus.
+
+   Puis deux secondes entre deux lectures, soit l'ordre de grandeur du dépôt
+   d'en face : une écriture par seconde et demie au plus. */
+const RELEVE_SILENCE = 5000, RELEVE_RYTHME = 2000;
+
+/**
+ * L'avancement relu sur la fiche du salon, quand le flux ne passe pas.
+ *
+ * Le flux ne parvient pas partout : un antivirus qui inspecte le TLS, un
+ * relais d'entreprise, un compresseur qui attend d'avoir de quoi remplir son
+ * bloc gardent la réponse entière et ne la rendent qu'à la fin. La fenêtre
+ * reste alors sur « Connexion au serveur… » toute la synchronisation durant,
+ * puis affiche le bilan d'un coup — sur un poste, quand le téléphone d'à côté
+ * déroule les étapes du même salon. Le serveur a déjà fait tout ce qu'il peut
+ * pour que le flux traverse ; ce qui le retient est de l'autre côté.
+ *
+ * On lit donc ailleurs ce qu'on n'arrive pas à recevoir : la fonction dépose
+ * où elle en est sur la ligne du salon, et une requête ordinaire va l'y
+ * chercher. Elle rejoue les mêmes lignes que le flux, si bien que la fenêtre
+ * ignore laquelle des deux voies la nourrit.
+ *
+ * Le relevé se reconnaît à un jeton tiré ici et passé à la fonction, non à sa
+ * date : comparer l'horloge du serveur à celle du poste reviendrait à confier
+ * l'affichage au réglage de ce dernier. Un jeton qui ne correspond pas — une
+ * fonction d'avant qui ne le renvoie pas encore, un relevé qu'une
+ * synchronisation morte a laissé là — laisse simplement le secours muet.
+ */
+function suitAuServeur(id, jeton, applique, vue) {
+  let vivant = true, minuteur = null, annonce = false;
+  let dernierSigne = Date.now();
+
+  const tour = async () => {
+    /* Le secours se retire tant que le flux donne signe de vie — mais il ne se
+       retire pas pour de bon : une réponse rendue par à-coups, ou dont seul le
+       premier tronçon passe avant qu'un tampon ne se referme, laisserait
+       sinon la fenêtre muette pour tout le reste. */
+    if (vivant && Date.now() - dernierSigne >= RELEVE_SILENCE) {
+      try {
+        const r = await rest("evenement?id=eq." + id + "&select=sync_avancement");
+        const etat = r?.[0]?.sync_avancement;
+        if (vivant && etat && etat.jeton === jeton) {
+          const lignes = etat.lignes || [];
+          vue.trace({ evt: "releve", lignes: lignes.length });
+          vue.avoueReleve();
+          lignes.forEach((o) => {
+            /* L'annonce des étapes refait la barre et remet chacune à zéro :
+               la rejouer à chaque tour la ferait clignoter pour rien. */
+            if (o.etapes && annonce) return;
+            if (o.etapes) annonce = true;
+            applique(o);
+          });
+        }
+      } catch (err) {
+        // une lecture manquée n'est qu'un tour perdu : la synchronisation, elle,
+        // suit son cours de son côté
+        vue.trace({ evt: "releve-refuse", message: err.message });
+      }
+    }
+    if (vivant) minuteur = setTimeout(tour, RELEVE_RYTHME);
+  };
+
+  minuteur = setTimeout(tour, RELEVE_SILENCE);
+  return {
+    /** Un octet est arrivé par le flux : c'est qu'il n'a pas été retenu. */
+    signeDeVie() { dernierSigne = Date.now(); },
+    arrete() { vivant = false; clearTimeout(minuteur); },
+  };
+}
+
+async function synchronise(e) {
+  const b = $("btnSync");
+  if (b) b.disabled = true;
+  /* La fenêtre s'ouvre avant le premier octet, et non à la première ligne du
+     flux : entre le clic et la réponse du serveur il s'écoule quelques
+     secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
+  const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"), e.nom);
+  vue.ouvre(etapesPressenties(e), true);
+  let enCours = null;
+  // ce qu'une ligne change à la fenêtre, qu'elle vienne du flux ou du relevé
+  const suit = (o) => {
+    if (o.etapes) vue.ouvre(o.etapes);
+    else if (o.chiffres) vue.chiffres(o.chiffres);
+    else if (o.etape) {
+      if (o.etat === "encours") enCours = o.etape;
+      vue.pas(o);
+    }
+  };
+  /* Le secours est armé dès le départ et se tait tant que le flux coule : là
+     où celui-ci passe, il n'aura pas lu une seule fois. */
+  const jeton = (crypto.randomUUID && crypto.randomUUID()) ||
+    String(Date.now()) + String(Math.random()).slice(2);
+  const releve = suitAuServeur(e.id, jeton, suit, vue);
+  /* Ce qui tient le flux pour vivant, ce sont ses octets et non ses lignes :
+     une étape muette pendant une minute continue de recevoir le remplissage
+     que la fonction pousse toutes les deux secondes. */
+  const trace = (o) => {
+    if (o.evt === "troncon" || o.evt === "reponse") releve.signeDeVie();
+    vue.trace(o);
+  };
+  signale("Synchronisation en cours…");
+  try {
+    const j = await fluxFonction("sync-evenement", { evenementId: e.id, jeton },
+      suit, trace);
+    if (!j) throw new Error("Synchronisation interrompue avant la fin.");
+    const pav = j.pavillons || [];
+    const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
+    /* Combien de stands ont trouvé leur fiche chez le fournisseur d'exposants.
+       C'est le chiffre qui dit si l'appariement tient : il ne paraît que quand
+       les exposants viennent d'ailleurs que du plan, seul cas où il existe.
+       « Apparié » n'est pas « nommé » — une fiche trouvée mais exclue du
+       catalogue laisse le stand sans nom, et compte quand même ici. */
+    const app = pav.some((p) => p.apparies !== undefined)
+      ? ", " + pav.reduce((a, p) => a + (p.apparies || 0), 0) + " appariés"
+      : "";
+    // sans libellés, la nomenclature s'affiche en codes : le dire tout de
+    // suite plutôt que de laisser découvrir des « FEP26_NOM10201 » sur le plan
+    const n = j.nomenclature || {};
+    const suite = n.erreur
+      ? " Nomenclature en codes : " + n.erreur
+      : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
+    const mot = pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
+      total + " emplacements" + app + "." + suite;
+    vue.fini(mot, n.erreur ? "alerte" : "ok");
+    signale(mot, !!n.erreur);
+    await charge();
+    /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
+       elles ne font pas partie du plan, rien ne les attend, et leur fabrication
+       peut durer plusieurs minutes sur un gros salon. Elle se suit dans la
+       barre du haut, et s'arrête si l'on quitte la console — le lot suivant
+       reprendra où celui-ci s'est arrêté. */
+    fabriqueLesVignettes(e);
+  } catch (err) {
+    // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
+    if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });
+    vue.fini(err.message, "echec");
+    signale(err.message, true);
+  } finally {
+    releve.arrete();
+    if ($("btnSync")) $("btnSync").disabled = false;
+  }
+}
+
+/**
+ * Les vignettes des logos, fabriquées ici, après la synchronisation.
+ *
+ * Elles se faisaient au serveur : la plateforme n'accorde pas à une fonction
+ * le temps de calcul qu'il faut pour décoder des images, et elle refusait
+ * l'appel avant même le premier logo. Ce navigateur, lui, a la puissance — et
+ * il ne le fait qu'une fois par salon, pour tous les visiteurs qui suivront.
+ *
+ * Le recadrage est celui du plan, emprunté au même module : une vignette doit
+ * être cadrée comme la page l'aurait fait, puisqu'elle prend sa place.
+ *
+ * La fonction ne fait que dire ce qui manque et enregistrer ce qu'on lui rend.
+ * On lui renvoie par paquets plutôt qu'un par un : chaque envoi est un
+ * aller-retour, et cent allers-retours pour cent logos doubleraient la durée.
+ *
+ * Rien n'attend ces vignettes. Un logo qui n'en a pas se charge chez sa
+ * source, comme il l'a toujours fait, et fermer la console ne fait que
+ * repousser le reste à la prochaine synchronisation.
+ */
+const PAQUET_VIGNETTES = 8;
+/* Une garde, non une limite du salon : un serveur qui répondrait toujours
+   « il en reste » ferait tourner cette boucle sans fin. */
+const TOURS_VIGNETTES = 200;
+
+async function fabriqueLesVignettes(e) {
+  let faites = 0, refusees = 0, total = 0;
+  for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
+    let lot;
+    try {
+      lot = await fonction("vignettes", { evenementId: e.id });
+    } catch (err) {
+      /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
+         qui ne commence jamais sans rien annoncer laisse chercher du mauvais
+         côté. */
+      signale(traduit("Préparation des logos impossible : {e}")
+        .replace("{e}", err.message), true);
+      return;
+    }
+    total = lot.total || total;
+    if (!lot.aFaire || !lot.aFaire.length) break;
+
+    const paquet = [];
+    for (const source of lot.aFaire) {
+      const v = await vignetteDeLogo(source);
+      if (v) paquet.push(v);
+      else refusees++;
+      if (paquet.length >= PAQUET_VIGNETTES) {
+        faites += await envoieVignettes(e, paquet);
+        paquet.length = 0;
+        signale(traduit("Préparation des logos : {n} sur {t}…")
+          .replace("{n}", faites + refusees).replace("{t}", total));
+      }
+    }
+    if (paquet.length) faites += await envoieVignettes(e, paquet);
+    signale(traduit("Préparation des logos : {n} sur {t}…")
+      .replace("{n}", faites + refusees).replace("{t}", total));
+  }
+
+  /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
+     premier cas surprend quand on attend le contraire — un champ de logo non
+     désigné dans la correspondance, et pas une fiche n'en porte — et le taire
+     laisse chercher du côté de la fabrication ce qui se règle du côté des
+     sources. */
+  if (!total) { signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
+  if (!faites && !refusees) return;
+  /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
+     un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
+     qui n'atteint jamais son total sans explication en serait une. */
+  const mot = refusees
+    ? traduit("{n} logos préparés, {r} illisibles chez leur source.")
+      .replace("{n}", faites).replace("{r}", refusees)
+    : traduit("{n} logos préparés pour les fiches.").replace("{n}", faites);
+  signale(mot);
+}
+
+/** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son
+ *  paquet : le tour suivant redemandera les mêmes adresses. */
+async function envoieVignettes(e, paquet) {
+  try {
+    const r = await fonction("vignettes", { evenementId: e.id, vignettes: paquet });
+    return r.enregistrees || 0;
+  } catch (err) {
+    return 0;
+  }
+}
+
+function dupliquer(e) {
+  demande("Dupliquer l'événement", "Nom de la copie", e.nom + " — copie", async (nom) => {
+    try {
+      // l'édition suivante a ses propres identifiants Klipso : on ne recopie
+      // ni l'identifiant d'événement, ni les pavillons. Le fuseau choisi, si :
+      // l'édition suivante se tient d'ordinaire au même endroit
+      await rest("evenement", {
+        method: "POST",
+        headers: { "Prefer": "return=representation" },
+        body: JSON.stringify({
+          nom, slug: slugifie(nom), instance: e.instance,
+          rythme_min: e.rythme_min, etat: "brouillon",
+          fuseau_choisi: e.fuseau_choisi ?? null,
+        }),
+      });
+      await charge();
+    } catch (err) { signale(err.message, true); }
+  });
+}
+
+/* ------------------------------------------------------------------
+   Barre du haut
+   ------------------------------------------------------------------ */
+$("btnNouveau").onclick = () =>
+  demande("Nouvel événement", "Nom de l'événement", "", async (nom) => {
+    signale("Création…");
+    try {
+      const rep = await rest("evenement", {
+        method: "POST",
+        headers: { "Prefer": "return=representation" },
+        body: JSON.stringify({
+          nom, slug: slugifie(nom) || "evenement", instance: "", etat: "brouillon",
+        }),
+      });
+      const cree = Array.isArray(rep) ? rep[0] : rep;
+      if (cree?.id) selection = cree.id;
+      await charge();
+      signale("Événement créé.");
+    } catch (err) { signale(err.message, true); }
+  });
+
+/* Rechargement à la demande : la console ne surveille pas la base, et une
+   synchronisation lancée ailleurs ne se voit pas toute seule. */
+$("btnRecharger").onclick = async () => {
+  const b = $("btnRecharger");
+  if (b.disabled) return;
+  b.disabled = true;
+  b.classList.add("occupe");
+  try {
+    const avant = PLANS;
+    PLANS = {};
+    await charge();
+    signale("Données rechargées.");
+    void avant;
+  } catch (e) {
+    signale(e.message, true);
+  } finally {
+    b.disabled = false;
+    b.classList.remove("occupe");
+  }
+};
+
+/* Un relevé de ce que la console a en main — les salons et leurs pavillons —
+   copié dans le presse-papiers. Rien ne s'enregistre : cela sert à joindre un
+   état à un signalement, pas à sauvegarder quoi que ce soit. */
+$("btnExport").onclick = (ev) => {
+  const b = ev.currentTarget;
+  const txt = JSON.stringify({ evenements: EVTS, plans: PLANS }, null, 2);
+  navigator.clipboard?.writeText(txt).then(
+    () => { b.textContent = "Copié"; setTimeout(() => b.textContent = "Copier les données (JSON)", 1700); },
+    () => { b.textContent = "Échec de la copie"; });
+};
+/* La console n'a pas de sélecteur de période : elle exporte tout l'historique.
+   Celui qui veut découper regarde le rapport, qui offre le même bouton sous la
+   période affichée. */
+$("btnExcel").onclick = (ev) => exporteExposants(ev.currentTarget, null);
+$("btnProjet").onclick = () => ecranConfig();
+
+
+
+
+/* ------------------------------------------------------------------
+   Comptes et accès
+
+   Deux écrans plutôt qu'un. Le premier est un annuaire : une ligne par
+   personne, ce qu'il faut pour la reconnaître, et rien de plus — on y cherche
+   quelqu'un, on n'y règle rien. Le second est sa fiche, où tout se modifie.
+
+   Les réglages tenaient d'abord dans la liste elle-même. À quatre comptes la
+   fenêtre faisait trois écrans de haut, et l'on y perdait de vue celui qu'on
+   était venu chercher.
+
+   Créer un compte, envoyer son invitation ou le supprimer demande la clé de
+   service : tout passe donc par la fonction `comptes`, jamais par la table.
+   ------------------------------------------------------------------ */
+let MOI = null;
+let COMPTES = [];
+
+/** Le rôle du compte connecté. Il décide de ce que la console propose ; ce
+ *  qu'elle obtient, c'est la base qui le décide. */
+async function litMonProfil() {
+  const id = idCompte();
+  MOI = null;
+  if (!id) return;
+  const r = await rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
+  MOI = (Array.isArray(r) ? r[0] : null) || null;
+}
+
+const NOM_ROLE = { admin: "Administrateur", organisateur: "Organisateur" };
+
+/** L'adresse où retomber après avoir cliqué le lien reçu par courriel. */
+const RETOUR_MDP = () => PAGE_MDP;
+
+async function litComptes() {
+  const r = await fonction("comptes", { action: "liste" });
+  COMPTES = r.profils || [];
+  return COMPTES;
+}
+
+/* Un message qui vit dans la fenêtre plutôt que dans la barre du haut, restée
+   derrière le voile. Rendu avec le reste, il survit au redessin — sans quoi un
+   enregistrement réussi effacerait sa propre confirmation. */
+function ligneMessage(corps, id, mot) {
+  const p = document.createElement("p");
+  p.id = id;
+  p.className = "aide" + (mot.erreur ? " alerte" : "");
+  p.textContent = mot.texte;
+  corps.appendChild(p);
+}
+
+/* Les salons cochés. Un administrateur les a tous par définition : lui en
+   cocher serait laisser croire qu'on peut lui en retirer. */
+function casesSalons(role, choisis) {
+  const zone = document.createElement("div");
+  zone.className = "valeurs";
+  const note = (texte) => {
+    const p = document.createElement("p");
+    p.className = "aide";
+    p.textContent = texte;
+    zone.appendChild(p);
+  };
+  if (role === "admin") { note("Tous les salons, y compris ceux créés plus tard."); return zone; }
+  if (!EVTS.length) { note("Aucun salon à affecter pour l'instant."); return zone; }
+  EVTS.forEach((e) => {
+    const l = document.createElement("label");
+    l.className = "puce";
+    l.innerHTML = "<input type='checkbox'><span></span>";
+    l.querySelector("span").textContent = e.nom;
+    const c = l.querySelector("input");
+    c.value = e.id;
+    c.checked = choisis.includes(e.id);
+    zone.appendChild(l);
+  });
+  return zone;
+}
+
+const cochés = (zone) =>
+  Array.from(zone.querySelectorAll("input:checked")).map((c) => c.value);
+
+/* ------------------------------------------------------------------
+   L'annuaire
+   ------------------------------------------------------------------ */
+function ouvreComptes(message) {
+  let hote = null;
+  let mot = { texte: message || "Chargement…", erreur: !!(message && message.erreur) };
+
+  function ligne(c) {
+    const tr = document.createElement("tr");
+    // une invitation jamais ouverte se signale en bord de ligne : c'est ce qui
+    // distingue un compte créé d'un compte qui sert
+    tr.dataset.actif = c.actif ? "oui" : "non";
+
+    const tdNom = document.createElement("td");
+    tdNom.className = "n";
+    tdNom.textContent = c.nom || "—";
+    const tdPrenom = document.createElement("td");
+    tdPrenom.textContent = c.prenom || "—";
+    const tdMail = document.createElement("td");
+    tdMail.className = "mail";
+    tdMail.textContent = c.email;
+
+    const tdRole = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "prov";
+    badge.textContent = NOM_ROLE[c.role] || c.role;
+    tdRole.appendChild(badge);
+    if (!c.actif) {
+      const att = document.createElement("span");
+      att.className = "prov";
+      att.dataset.src = "aucun";
+      att.textContent = "En attente";
+      tdRole.appendChild(att);
+    }
+    if (c.id === MOI?.id) {
+      const vous = document.createElement("span");
+      vous.className = "prov";
+      vous.dataset.src = "aucun";
+      vous.textContent = "Vous";
+      tdRole.appendChild(vous);
+    }
+
+    const tdAct = document.createElement("td");
+    tdAct.className = "act";
+    const bt = document.createElement("button");
+    bt.className = "btn petit";
+    bt.textContent = "Modifier";
+    bt.onclick = () => ouvreFicheCompte(c);
+    tdAct.appendChild(bt);
+
+    tr.append(tdNom, tdPrenom, tdMail, tdRole, tdAct);
+    return tr;
+  }
+
+  function rendu(corps) {
+    corps.innerHTML = "";
+    if (COMPTES.length) {
+      // le tableau garde ses colonnes sur écran étroit plutôt que de les
+      // écraser : il défile, la fenêtre non
+      const cadre = document.createElement("div");
+      cadre.className = "table-defile";
+      const t = document.createElement("table");
+      t.className = "comptes";
+      t.innerHTML = "<thead><tr><th>Nom</th><th>Prénom</th><th>E-mail</th>" +
+        "<th>Profil</th><th></th></tr></thead><tbody></tbody>";
+      const tb = t.querySelector("tbody");
+      COMPTES.forEach((c) => tb.appendChild(ligne(c)));
+      cadre.appendChild(t);
+      corps.appendChild(cadre);
+    }
+    ligneMessage(corps, "comptesMsg", mot);
+  }
+
+  ouvreModale("Comptes et accès", (corps) => {
+    hote = corps;
+    rendu(corps);
+    litComptes()
+      .then(() => {
+        mot = { texte: COMPTES.length ? "" : "Aucun compte.", erreur: false };
+        if (hote) rendu(hote);
+      })
+      .catch((e) => {
+        mot = { texte: e.message, erreur: true };
+        if (hote) rendu(hote);
+      });
+  }, [{ libelle: "Fermer" },
+      { libelle: "Inviter quelqu'un", genre: "primaire",
+        // la fenêtre est remplacée par la fiche, elle ne doit pas se refermer
+        action: () => { ouvreFicheCompte(null); return false; } }],
+     () => { hote = null; });
+}
+
+/* ------------------------------------------------------------------
+   La fiche d'une personne — la même pour l'inviter et pour la modifier
+   ------------------------------------------------------------------ */
+function ouvreFicheCompte(c) {
+  const neuf = !c;
+  const moi = !neuf && c.id === MOI?.id;
+  let mot = { texte: "", erreur: false };
+  let cMail, cNom, cPrenom, selRole, zone;
+  let surSuppression = false;
+
+  const dis = (texte, erreur) => {
+    mot = { texte, erreur: !!erreur };
+    const p = $("ficheMsg");
+    if (p) { p.textContent = texte; p.className = "aide" + (erreur ? " alerte" : ""); }
+  };
+
+  /** Retour à l'annuaire, qui recharge : ce qu'on vient d'écrire doit s'y voir. */
+  const retour = (message) => ouvreComptes(message);
+
+  const champs = () => ({
+    nom: cNom.value,
+    prenom: cPrenom.value,
+    role: selRole.value,
+    evenements: selRole.value === "admin" ? [] : cochés(zone),
+  });
+
+  async function enregistre() {
+    dis("Enregistrement…");
+    try {
+      await fonction("comptes", { action: "maj", id: c.id, ...champs() });
+      retour("Compte enregistré.");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function invite() {
+    const email = cMail.value.trim();
+    if (email.indexOf("@") < 1) return dis("Adresse incomplète.", true);
+    dis("Envoi de l'invitation…");
+    try {
+      await fonction("comptes",
+        { action: "invite", email, ...champs(), retour: RETOUR_MDP() });
+      retour("Invitation envoyée à " + email + ".");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function envoieLien() {
+    dis("Envoi…");
+    try {
+      await fonction("comptes", { action: "relance", id: c.id, retour: RETOUR_MDP() });
+      dis("Lien envoyé à " + c.email + ".");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function supprime() {
+    /* La fenêtre est déjà celle qui est ouverte : une demande de confirmation
+       la remplacerait. On confirme donc sur place, au second clic. */
+    if (!surSuppression) {
+      surSuppression = true;
+      dis("Cliquez à nouveau sur « Supprimer » pour confirmer.", true);
+      setTimeout(() => { if (surSuppression) { surSuppression = false; dis(""); } }, 5000);
+      return;
+    }
+    surSuppression = false;
+    dis("Suppression…");
+    try {
+      await fonction("comptes", { action: "supprime", id: c.id });
+      retour("Compte supprimé.");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  const boutons = [{ libelle: "Retour", action: () => { retour(); return false; } }];
+  if (neuf) {
+    boutons.push({ libelle: "Envoyer l'invitation", genre: "primaire",
+                   action: () => { invite(); return false; } });
+  } else {
+    if (!moi) {
+      boutons.push({ libelle: "Supprimer", genre: "danger",
+                     action: () => { supprime(); return false; } });
+    }
+    boutons.push({ libelle: "Envoyer un lien de mot de passe",
+                   action: () => { envoieLien(); return false; } });
+    boutons.push({ libelle: "Enregistrer", genre: "primaire",
+                   action: () => { enregistre(); return false; } });
+  }
+
+  ouvreModale(neuf ? "Inviter quelqu'un" : "Modifier le compte", (corps) => {
+    const cadre = document.createElement("div");
+    cadre.className = "cadre compte";
+
+    if (neuf) {
+      const aide = document.createElement("p");
+      aide.className = "aide";
+      aide.textContent = "Le compte est créé sans mot de passe : l'invité en " +
+        "reçoit un lien par courriel, et le choisit lui-même.";
+      cadre.appendChild(aide);
+    }
+
+    const g = grille();
+    const lMail = document.createElement("label");
+    lMail.innerHTML = "<span>Adresse e-mail</span><input type='email'>";
+    cMail = lMail.querySelector("input");
+    if (!neuf) {
+      cMail.value = c.email;
+      /* L'adresse est l'identité du compte auprès du service d'authentification :
+         la changer ici la désaccorderait de celle qui ouvre la session. */
+      cMail.readOnly = true;
+      const note = document.createElement("span");
+      note.className = "aide";
+      note.textContent = "L'adresse ne se change pas : c'est elle qui ouvre la session.";
+      lMail.appendChild(note);
+    }
+    const lNom = document.createElement("label");
+    lNom.innerHTML = "<span>Nom</span><input autocomplete='family-name'>";
+    cNom = lNom.querySelector("input");
+    if (!neuf) cNom.value = c.nom || "";
+    const lPrenom = document.createElement("label");
+    lPrenom.innerHTML = "<span>Prénom</span><input autocomplete='given-name'>";
+    cPrenom = lPrenom.querySelector("input");
+    if (!neuf) cPrenom.value = c.prenom || "";
+    const lRole = document.createElement("label");
+    lRole.innerHTML = "<span>Profil</span><select>" +
+      "<option value='organisateur'>Organisateur</option>" +
+      "<option value='admin'>Administrateur</option></select>";
+    selRole = lRole.querySelector("select");
+    selRole.value = neuf ? "organisateur" : c.role;
+    // se retirer soi-même l'administration fermerait la porte de l'intérieur
+    selRole.disabled = moi;
+    if (moi) {
+      const note = document.createElement("span");
+      note.className = "aide";
+      note.textContent = "Vous ne pouvez pas retirer votre propre rôle.";
+      lRole.appendChild(note);
+    }
+    g.append(lMail, lNom, lPrenom, lRole);
+    cadre.appendChild(g);
+
+    const titre = document.createElement("span");
+    titre.className = "eyebrow sous-titre";
+    titre.textContent = "Salons";
+    cadre.appendChild(titre);
+    zone = casesSalons(selRole.value, neuf ? [] : (c.evenements || []));
+    cadre.appendChild(zone);
+    // changer de profil change ce qu'il y a à cocher : la liste suit sans
+    // qu'on ait à refermer la fenêtre
+    selRole.onchange = () => {
+      const neuve = casesSalons(selRole.value, cochés(zone));
+      zone.replaceWith(neuve);
+      zone = neuve;
+    };
+
+    corps.appendChild(cadre);
+    ligneMessage(corps, "ficheMsg", mot);
+    setTimeout(() => (neuf ? cMail : cNom).focus(), 40);
+  }, boutons);
+}
+
+$("btnComptes").onclick = () => ouvreComptes();
+
+/* ------------------------------------------------------------------
+   Rendu et démarrage
+   ------------------------------------------------------------------ */
+/** Fin de session : la console n'a plus d'événements à montrer. */
+function videEcran() {
+  EVTS = []; selection = null; MOI = null;
+  dessine();
+}
+
+function dessine() {
+  /* Les valeurs des listes du salon affiché — critères, correspondances — se
+     lisent en anglais dans la console anglaise, comme sur le plan. */
+  LANGUE.donnees("sources", (courant() || {}).libelles_en || {});
+  // les comptes et la création d'un salon sont le fait de l'administrateur ;
+  // un organisateur reçoit ses salons, il ne s'en donne pas
+  const patron = MOI?.role === "admin";
+  $("btnComptes").hidden = !patron;
+  $("btnNouveau").hidden = !patron;
+  dessineChoix();
+  majBarre();
+  dessineFiche();
+  majAdresse();
+}
+
+async function demarre() {
+  try {
+    await charge();
+  } catch (e) {
+    $("fiche").innerHTML = '<div class="vide"></div>';
+    $("fiche").querySelector(".vide").textContent = "Chargement impossible : " + e.message;
+  }
+}
+
+if (!CFG) ecranConfig();
+else if (!SESSION) ecranConnexion();
+else demarre();
+</script>

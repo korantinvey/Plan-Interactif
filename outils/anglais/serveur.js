@@ -1,0 +1,134 @@
+/* Ce que les fonctions Supabase (`supabase/functions/`) écrivent et que les
+   pages affichent telles quelles : les étapes et les compteurs de la
+   synchronisation, les noms qu'elle donne aux calques de Klipso, les refus.
+
+   Aucune page ne porte ces phrases dans son code — elles arrivent du serveur.
+   Le contrôle ne les relève donc pas, et toute page qui interroge le serveur
+   emporte ce fichier : une phrase ajoutée côté serveur s'ajoute ici à la main. */
+module.exports = {
+  // la synchronisation, étape par étape
+  "Recherche des catégories d'invités": "Looking up guest categories",
+  "Lecture des fiches": "Reading records",
+  "fiches": "records",
+  "Fiches lues": "Records read",
+  "Exposants retenus": "Exhibitors kept",
+  "Écartés — non inscrits": "Left out — not registered",
+  "{n} exposants lus": "{n} exhibitors read",
+  "Lecture du programme": "Reading the programme",
+  "Rattachement des exposants": "Linking exhibitors",
+  "conférences": "conferences",
+  "Conférences tenues par un exposant": "Conferences run by an exhibitor",
+  "Conférences avec intervenants": "Conferences with speakers",
+  "{n} conférences lues": "{n} conferences read",
+  "{n} conférences lues, {n2} tenues par un exposant": "{n} conferences read, {n2} run by an exhibitor",
+  "Codification des champs à choix": "Decoding choice fields",
+  /* Le libellé que le relevé pose à côté de « thematic_ids », le champ natif
+     d'Eventmaker où vivent les thématiques d'un salon qui n'en fait pas un
+     champ de fiche. */
+  "Thématiques du salon": "Show themes",
+  "Aucun pavillon à traiter.": "No halls to process.",
+  "pavillons": "halls",
+  "Pavillon « {pavillon} »": "Hall “{pavillon}”",
+  "Calque « {calque} »": "Layer “{calque}”",
+  "Enregistrement du pavillon": "Saving the hall",
+  "Pavillon terminé": "Hall done",
+  "Emplacements": "Stands",
+  "Emplacements nommés": "Named stands",
+  "Emplacements appariés": "Matched stands",
+  "Co-exposants": "Co-exhibitors",
+  "Zones organisateur": "Organiser areas",
+  "Conférences": "Conferences",
+  // le compte d'une étape, suivi de l'unité que le serveur lui donne
+  "{n} fiches": "{n} records",
+  "{n} conférences": "{n} conferences",
+  "{n} pavillons": "{n} halls",
+  "{n} pavillon": "{n} hall",
+  "{n} / {n2} pavillons": "{n} / {n2} halls",
+  "{n} rattachés": "{n} linked",
+  "{n} rattachés, {n2} champs relevés": "{n} linked, {n2} fields collected",
+  "{n} / {n2} salles situées": "{n} / {n2} rooms located",
+  "non synchronisé": "not synchronised",
+  "{source} — pas encore repris": "{source} — not supported yet",
+  "Dossier exposant": "Exhibitor record",
+  "Fiche invité": "Guest record",
+  "champ personnalisé": "custom field",
+  "champ standard": "standard field",
+  "Champ personnalisé": "Custom field",
+
+  // les calques de Klipso, sous les noms que la synchronisation leur donne
+  "Bâtiment": "Building",
+  "Poteaux": "Pillars",
+  "Délimitation des secteurs": "Sector boundaries",
+  "Fil jaune": "Yellow line",
+  "Cotes des allées": "Aisle dimensions",
+  "Cotes des îlots": "Island dimensions",
+  "Lettres d'allée": "Aisle letters",
+  "Numérotation des stands": "Stand numbering",
+  "Textes des zones organisateur": "Organiser area labels",
+  "Noms des zones IG": "IG area names",
+  "Zones non élingables": "No-rigging zones",
+
+  // les refus
+  "Authentification requise.": "Authentication required.",
+  "evenementId manquant.": "evenementId missing.",
+  "Salon inaccessible.": "Show not accessible.",
+  "Source « {source} » pas encore prise en charge pour le plan.": "Source “{source}” is not supported for the map yet.",
+  "Source « {source} » pas encore prise en charge pour les exposants.": "Source “{source}” is not supported for exhibitors yet.",
+  "Identifiant de l'événement Eventmaker manquant : renseignez-le dans « Source des données ».":
+    "Eventmaker event ID missing: enter it under “Data sources”.",
+  "Jeton Eventmaker absent des secrets.": "Eventmaker token missing from the secrets.",
+  "Clé API refusée par GAIA.": "API key rejected by GAIA.",
+  "Réponse GAIA invalide.": "Invalid GAIA response.",
+  "Métadonnées refusées par GAIA.": "Metadata rejected by GAIA.",
+  "Chemin de codification illisible : {chemin}": "Unreadable codification path: {chemin}",
+  "Codification refusée par GAIA.": "Codification rejected by GAIA.",
+  "Média {media} indisponible ({code}).": "Media {media} unavailable ({code}).",
+  "champ non déclaré par le schéma": "field not declared by the schema",
+  "Méthode non permise.": "Method not allowed.",
+  "Réservé à l'administrateur.": "Administrator only.",
+  "Corps illisible.": "Unreadable request body.",
+  "Adresse invalide.": "Invalid address.",
+  "Compte manquant.": "Account missing.",
+  "Rôle inconnu.": "Unknown role.",
+  "Vous ne pouvez pas retirer votre propre rôle d'administrateur.": "You cannot remove your own administrator role.",
+  "Compte introuvable.": "Account not found.",
+  "Vous ne pouvez pas supprimer votre propre compte.": "You cannot delete your own account.",
+  "Action inconnue.": "Unknown action.",
+  "Adresse de retour non autorisée : ajoutez cette origine à ORIGINES_AUTORISEES.":
+    "Return address not allowed: add this origin to ORIGINES_AUTORISEES.",
+  "Paramètres manquants.": "Missing parameters.",
+  "Événement introuvable ou non publié.": "Event not found or not published.",
+  "Paramètre slug manquant.": "Missing slug parameter.",
+  "Session expirée : reconnectez-vous.": "Session expired: please sign in again.",
+  "Événement introuvable.": "Event not found.",
+  "Pavillon introuvable.": "Hall not found.",
+  "Aucun pavillon : lancez une synchronisation.": "No halls: run a synchronisation.",
+  "Aucun pavillon publié.": "No published halls.",
+  "Le dessin de ce pavillon est absent : lancez une synchronisation.":
+    "This hall has no drawing: run a synchronisation.",
+
+  /* Une lecture ou une écriture qui n'a pas abouti, suivie de ce que la base en
+     a dit. Le détail reste dans la langue de la base — c'est le message d'un
+     moteur, non une phrase à nous — mais ce qui le précède dit en clair quelle
+     part du plan manque, et c'est cela qu'on lit en premier. */
+  "{quoi} : {detail}": "{quoi}: {detail}",
+  "Lecture du pavillon": "Reading the hall",
+  "Lecture des pavillons": "Reading the halls",
+  "Lecture du dessin du pavillon": "Reading the hall drawing",
+  "Lecture de l'apparence du pavillon": "Reading the hall appearance",
+  "Lecture de l'apparence": "Reading the appearance",
+  "Lecture des calques": "Reading the layers",
+  "Lecture des calques de dessin": "Reading the drawing layers",
+  "Lecture des instantanés": "Reading the snapshots",
+  "Écriture du pavillon « {pavillon} »": "Saving hall “{pavillon}”",
+  "Écriture du calque « {calque} »": "Saving layer “{calque}”",
+  "Écriture de l'emprise du pavillon": "Saving the hall extent",
+  "Écriture de l'instantané du pavillon": "Saving the hall snapshot",
+  "Écriture des cibles de mesure": "Saving the measurement targets",
+  "Écriture des salles du programme": "Saving the programme rooms",
+  "Écriture du relevé des champs": "Saving the field survey",
+  "Écriture des catégories reconnues": "Saving the recognised categories",
+  "Écriture du fuseau du salon": "Saving the show time zone",
+  "Écriture de la date de synchronisation": "Saving the synchronisation date",
+  "la base n'a rien rendu": "the database returned nothing",
+};

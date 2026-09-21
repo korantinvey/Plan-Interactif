@@ -1,0 +1,25 @@
+{
+  "name": "plan-interactif",
+  "version": "1.0.0",
+  "description": "Plans de salon interactifs alimentés par Klipso",
+  "scripts": {
+    "construire": "node outils/assemble.js && node outils/genere.js && node outils/carte.js",
+    "controle": "node outils/controle.js",
+    "traductions": "node outils/traductions.js",
+    "verifie": "node outils/verifie.js",
+    "typage": "npx --yes deno@2 check supabase/functions/*/index.ts supabase/functions/_partage/*.ts",
+    "essai": "node outils/serve.js",
+    "migration": "node outils/migration.js",
+    "polices": "node outils/polices.js",
+    "lieux": "node outils/lieux.js",
+    "bd": "supabase db push",
+    "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
+    "sup": "supabase"
+  },
+  "type": "commonjs",
+  "private": true,
+  "devDependencies": {
+    "supabase": "^2.116.0",
+    "wrangler": "^4.0.0"
+  }
+}

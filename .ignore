@@ -1,0 +1,20 @@
+# Ce que la recherche plein texte doit ignorer (ripgrep, et donc l'outil de
+# recherche de Claude Code). Rien à voir avec `.gitignore` : ces fichiers
+# restent versionnés et servis, ils sortent seulement des résultats de
+# recherche.
+#
+# La raison : `web/` et `outils/tpl-multi.html` sont fabriqués depuis
+# `outils/gabarit/`. Le même code y vit donc en cinq exemplaires, et une
+# recherche de « calque » remontait 444 lignes là où 44 disent tout — le reste
+# étant la même chose recopiée. Chercher dans la source, une fois, suffit.
+#
+# Pour inspecter malgré tout une page construite (vérifier ce qu'a produit
+# `npm run construire`), il faut la nommer : un chemin explicite passe outre
+# cette liste.
+
+/web/
+/outils/tpl-multi.html
+
+# 6 Mo de données figées sur une poignée de lignes : une recherche qui y touche
+# ramène des lignes de centaines de milliers de caractères.
+/outils/plans.json

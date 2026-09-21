@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "plan",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "essai"],
+      "port": 4180
+    }
+  ]
+}

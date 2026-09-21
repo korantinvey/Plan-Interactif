@@ -1,0 +1,16 @@
+project_id = "jylkfskotuafptaxujao"
+
+[functions.sync-evenement]
+verify_jwt = false
+
+[functions.plan-public]
+verify_jwt = false
+
+[functions.mesure]
+verify_jwt = false
+
+[functions.vignettes]
+verify_jwt = false
+
+[functions.rappels]
+verify_jwt = false

@@ -1,0 +1,499 @@
+<div class="modale" id="modale">
+  <div class="mfen" role="dialog" aria-modal="true">
+    <header><h3 id="mTitre"></h3><button id="mFermer" aria-label="Fermer">&times;</button></header>
+    <div class="mcorps" id="mCorps"></div>
+    <footer id="mPied"></footer>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Socle commun de la console et du rapport — accès au projet
+   Tout passe par l'API REST de Supabase. La clé publique et l'adresse du
+   projet sont demandées au premier lancement puis conservées sur le poste :
+   elles n'ont pas à vivre dans le dépôt, et changent selon l'environnement.
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const CLE_CFG = "console-config";
+const CLE_SESSION = "console-session";
+
+let CFG = null, SESSION = null;
+try { CFG = JSON.parse(localStorage.getItem(CLE_CFG) || "null"); } catch (e) {}
+try { SESSION = JSON.parse(localStorage.getItem(CLE_SESSION) || "null"); } catch (e) {}
+if (window.PLAN_CONFIG && !CFG) CFG = window.PLAN_CONFIG;
+
+/* ------------------------------------------------------------------
+   Appels
+
+   Un jeton d'accès ne vaut qu'une heure ; la console, elle, reste ouverte la
+   journée. Celui que la connexion posait périmait donc sur place, et tout ce
+   qui partait ensuite revenait refusé : la table déconnectait sans prévenir,
+   et les fonctions n'affichaient qu'« Erreur 401 » — au milieu d'une
+   invitation, le mot ne dit rien de ce qu'il faut faire. Le jeton de
+   renouvellement arrivait pourtant avec lui à la connexion, et dormait.
+   ------------------------------------------------------------------ */
+function entetes(json) {
+  const h = { "apikey": CFG.anonKey };
+  if (SESSION?.access_token) h["Authorization"] = "Bearer " + SESSION.access_token;
+  if (json) h["Content-Type"] = "application/json";
+  return h;
+}
+
+/** La charge utile d'un jeton. Elle se lit sans le serveur — seule la
+ *  signature demande sa clé, et c'est lui qui la vérifiera à chaque appel. */
+function contenuJeton(jeton) {
+  try {
+    const p = String(jeton || "").split(".")[1];
+    if (!p) return null;
+    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch (e) { return null; }
+}
+
+/** Secondes restantes au jeton. Illisible, on le suppose bon : le serveur
+ *  tranchera, et son refus déclenchera le renouvellement. */
+function resteJeton() {
+  const exp = contenuJeton(SESSION?.access_token)?.exp;
+  return typeof exp === "number" ? exp - Date.now() / 1000 : Infinity;
+}
+
+/* Un renouvellement à la fois. La console lance ses appels de front — le
+   profil, les salons, les plans — et un jeton de renouvellement ne sert qu'une
+   fois : trois échanges simultanés en perdraient deux, et la session avec. */
+let renouvellement = null;
+
+function renouvelle() {
+  if (!SESSION?.refresh_token) return Promise.resolve(false);
+  if (!renouvellement) {
+    renouvellement = (async () => {
+      try {
+        const r = await fetch(CFG.url + "/auth/v1/token?grant_type=refresh_token", {
+          method: "POST",
+          headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: SESSION.refresh_token }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j?.access_token) return false;
+        SESSION = j;
+        // un stockage refusé ne doit pas coûter la session en cours
+        try { localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION)); } catch (e) {}
+        return true;
+      } catch (e) {
+        // une coupure du réseau n'est pas une session finie : on ne déconnecte pas
+        return false;
+      } finally {
+        renouvellement = null;
+      }
+    })();
+  }
+  return renouvellement;
+}
+
+/**
+ * Un appel au projet, jeton frais en main : échangé avant de partir s'il
+ * touche à sa fin, échangé puis l'appel refait s'il est refusé malgré tout.
+ *
+ * Le 403 reste où il est : c'est un droit qui manque, pas un jeton qui se
+ * périme, et le renouveler ne le donnerait pas.
+ */
+async function appel(url, options = {}) {
+  const envoie = () => fetch(url, {
+    ...options,
+    headers: { ...entetes(!!options.body), ...(options.headers || {}) },
+  });
+  if (SESSION?.access_token && resteJeton() < 60) await renouvelle();
+  const r = await envoie();
+  if (r.status !== 401 || !SESSION?.refresh_token) return r;
+  return (await renouvelle()) ? envoie() : r;
+}
+
+async function rest(chemin, options = {}) {
+  const r = await appel(CFG.url + "/rest/v1/" + chemin, options);
+  if (r.status === 401 || r.status === 403) {
+    deconnecte("Session expirée, reconnectez-vous.");
+    throw new Error("Non autorisé.");
+  }
+  const txt = await r.text();
+  let corps = null;
+  try { corps = txt ? JSON.parse(txt) : null; } catch (e) { corps = { message: txt }; }
+  if (!r.ok) {
+    const d = [corps?.message, corps?.details, corps?.hint].filter(Boolean).join(" — ");
+    throw new Error(d || "Erreur " + r.status + " sur " + chemin);
+  }
+  return corps;
+}
+
+/* ------------------------------------------------------------------
+   Fenêtres
+   ------------------------------------------------------------------ */
+// Une fenêtre de réglage doit rafraîchir son résumé en se fermant, et elle se
+// ferme de quatre façons : le bouton, la croix, l'arrière-plan, la touche
+// Échap. D'où un rappel porté par la fermeture plutôt que par le bouton.
+let apresModale = null;
+
+/* Le rappel ne joue qu'une fois, et il joue toujours : une fenêtre remplacée
+   par une autre — « Inviter quelqu'un » qui pose la fiche par-dessus la liste —
+   n'est pas fermée, mais ce qu'elle tenait doit quand même être rendu. Écraser
+   le rappel au lieu de le jouer laissait `hote` pointer sur un corps de fenêtre
+   déjà réemployé, et la liste des comptes, en arrivant, effaçait le formulaire
+   d'invitation en cours de saisie. */
+function verseModale() {
+  const f = apresModale;
+  apresModale = null;
+  if (f) f();
+}
+
+function ouvreModale(titre, remplit, boutons, apres) {
+  verseModale();
+  modaleVerrou = false;
+  apresModale = apres || null;
+  $("mTitre").textContent = titre;
+  $("mCorps").innerHTML = "";
+  remplit($("mCorps"));
+  $("mPied").innerHTML = "";
+  boutons.forEach((b) => {
+    const el = document.createElement("button");
+    el.className = "btn" + (b.genre ? " " + b.genre : "");
+    el.textContent = b.libelle;
+    el.onclick = () => { if (b.action && b.action() === false) return; fermeModale(); };
+    $("mPied").appendChild(el);
+  });
+  $("modale").classList.add("open");
+}
+/* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
+   à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
+   personne pour la suivre, et son compte rendu serait perdu. Verrouillée, elle
+   ne cède qu'à la croix et au bouton — deux gestes qu'on ne fait pas par
+   mégarde. */
+let modaleVerrou = false;
+const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
+
+const fermeModale = () => {
+  modaleVerrou = false;
+  $("modale").classList.remove("open");
+  verseModale();
+};
+$("mFermer").onclick = fermeModale;
+$("modale").addEventListener("click", (e) => {
+  if (e.target === $("modale") && !modaleVerrou) fermeModale();
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !modaleVerrou) fermeModale();
+});
+
+/**
+ * Redessiner une fenêtre sans la faire remonter en haut.
+ *
+ * Une fenêtre qui se rouvre se remplit de zéro, et son corps repart au
+ * premier réglage : les champs propres au salon sont tout en bas de la fiche
+ * détail, si bien qu'en ajouter un renvoyait l'exploitant à mille pixels de
+ * l'endroit où il travaillait. La place se relève au clic, et non au moment de
+ * redessiner : la fenêtre de saisie qui s'intercale réemploie le même corps, et
+ * l'aurait déjà effacée.
+ */
+function gardeLaPlace(redessine) {
+  const haut = $("mCorps").scrollTop;
+  return () => { redessine(); $("mCorps").scrollTop = haut; };
+}
+
+function demande(titre, libelle, valeur, suite) {
+  let champ;
+  ouvreModale(titre, (corps) => {
+    const l = document.createElement("label");
+    l.innerHTML = "<span></span><input>";
+    l.querySelector("span").textContent = libelle;
+    champ = l.querySelector("input");
+    champ.value = valeur || "";
+    corps.appendChild(l);
+    setTimeout(() => { champ.focus(); champ.select(); }, 30);
+    champ.onkeydown = (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        const v = champ.value.trim();
+        if (v) { fermeModale(); suite(v); }
+      }
+    };
+  }, [{ libelle: "Annuler" },
+      { libelle: "Valider", genre: "primaire",
+        action: () => { const v = champ.value.trim(); if (!v) return false; suite(v); } }]);
+}
+
+function confirme(titre, message, libelleOui, action) {
+  ouvreModale(titre, (corps) => {
+    const p = document.createElement("p");
+    p.textContent = message;
+    corps.appendChild(p);
+  }, [{ libelle: "Annuler" }, { libelle: libelleOui, genre: "danger", action }]);
+}
+
+/* ------------------------------------------------------------------
+   Configuration et connexion
+   ------------------------------------------------------------------ */
+function ecranConfig() {
+  let url, cle;
+  ouvreModale("Connexion au projet", (corps) => {
+    const p = document.createElement("p");
+    p.innerHTML = "L'adresse de l'<strong>API</strong> du projet, en " +
+      "<code>.supabase.co</code> — pas celle du tableau de bord. La clé publique " +
+      "est faite pour circuler côté navigateur : c'est son rôle. Ne mettez jamais " +
+      "ici la clé de service.";
+    const l1 = document.createElement("label");
+    l1.innerHTML = "<span>Adresse du projet</span><input placeholder='https://xxxx.supabase.co'>";
+    const l2 = document.createElement("label");
+    l2.innerHTML = "<span>Clé publique (anon)</span><input placeholder='eyJhbGciOi…'>";
+    corps.append(p, l1, l2);
+    url = l1.querySelector("input");
+    cle = l2.querySelector("input");
+    url.value = CFG?.url || "";
+    cle.value = CFG?.anonKey || "";
+    p.hidden = !!(CFG?.url && CFG?.anonKey);
+    setTimeout(() => url.focus(), 30);
+  }, [{ libelle: "Valider", genre: "primaire", action: () => {
+    const u = url.value.trim().replace(/\/+$/, ""), k = cle.value.trim();
+    if (!u || !k) return false;
+    CFG = { url: u, anonKey: k };
+    localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
+    ecranConnexion();
+  } }]);
+}
+
+/**
+ * L'adresse du tableau de bord et celle de l'API se ressemblent assez pour
+ * qu'on les confonde. On accepte les deux formes et on retient la bonne.
+ *   tableau de bord : https://supabase.com/dashboard/project/<ref>
+ *   API             : https://<ref>.supabase.co
+ * Écrit sans expression régulière : la lecture y gagne, et le fichier ne
+ * dépend d'aucun échappement.
+ */
+function normaliseUrl(saisie) {
+  let u = String(saisie || "").trim();
+  while (u.length && u[u.length - 1] === "/") u = u.slice(0, -1);
+  if (!u) return "";
+
+  const marque = "supabase.com/dashboard/project/";
+  const i = u.toLowerCase().indexOf(marque);
+  if (i >= 0) {
+    const ref = u.slice(i + marque.length).split("/")[0].split("?")[0];
+    if (ref) return "https://" + ref + ".supabase.co";
+  }
+
+  // la seule référence du projet, sans point ni protocole
+  if (u.indexOf(".") < 0 && u.indexOf(":") < 0) return "https://" + u + ".supabase.co";
+
+  if (u.slice(0, 4).toLowerCase() !== "http") u = "https://" + u;
+  return u;
+}
+
+function ecranConnexion(message) {
+  let mail, mdp, msg;
+  ouvreModale("Connexion", (corps) => {
+    const l1 = document.createElement("label");
+    l1.innerHTML = "<span>Adresse e-mail</span><input type='email' autocomplete='username'>";
+    const l2 = document.createElement("label");
+    l2.innerHTML = "<span>Mot de passe</span><input type='password' autocomplete='current-password'>";
+    msg = document.createElement("p");
+    msg.style.color = "var(--rouge)";
+    if (message) msg.textContent = message;
+    corps.append(l1, l2, msg);
+    mail = l1.querySelector("input");
+    mdp = l2.querySelector("input");
+    setTimeout(() => mail.focus(), 30);
+    mdp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); tente(); } };
+    const info = document.createElement("p");
+    info.className = "aide";
+    info.style.marginTop = "-4px";
+    info.textContent = "Projet : " + (CFG?.url || "non configuré");
+    corps.appendChild(info);
+  }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+      { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
+      { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
+
+  async function tente() {
+    msg.textContent = "Connexion…";
+    msg.style.color = "var(--ink-3)";
+    try {
+      const url = CFG.url;
+      const r = await fetch(url + "/auth/v1/token?grant_type=password", {
+        method: "POST",
+        headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: mail.value.trim(), password: mdp.value }),
+      });
+      // Une réponse vide ne doit pas ressortir en « Unexpected end of JSON
+      // input » : on lit le texte, puis on tente de l'interpréter.
+      const txt = await r.text();
+      let j = {};
+      try { j = txt ? JSON.parse(txt) : {}; } catch (e) { j = { msg: txt.slice(0, 120) }; }
+      if (!r.ok) {
+        throw new Error((j.error_description || j.msg || "Identifiants refusés.") +
+          " (HTTP " + r.status + ")");
+      }
+      if (!j.access_token) {
+        throw new Error("Réponse inattendue de " + url + " — HTTP " + r.status +
+          (txt ? "" : ", corps vide") + ". Vérifiez l'adresse du projet.");
+      }
+      SESSION = j;
+      localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION));
+      fermeModale();
+      demarre();
+    } catch (e) {
+      msg.style.color = "var(--rouge)";
+      msg.textContent = e.message;
+    }
+  }
+}
+
+/**
+ * Fin de session. Ce qu'il faut effacer à l'écran dépend de la page : la
+ * console vide sa liste d'événements, le rapport ses chiffres. Chacune le dit
+ * en définissant `videEcran`.
+ */
+function deconnecte(message) {
+  SESSION = null;
+  // un stockage refusé ne doit pas priver l'exploitant de l'écran de connexion
+  try { localStorage.removeItem(CLE_SESSION); } catch (e) {}
+  if (typeof videEcran === "function") videEcran();
+  ecranConnexion(message);
+}
+
+/* Le message va dans la barre du haut, qui existe toujours, et en écho dans
+   la fiche quand elle est ouverte. Une erreur avalée est pire qu'une erreur. */
+let effaceur;
+function signale(txt, erreur) {
+  const s = $("statut");
+  if (s) {
+    s.className = "statut " + (erreur ? "err" : "ok");
+    s.textContent = txt;
+    clearTimeout(effaceur);
+    if (!erreur) effaceur = setTimeout(() => { s.textContent = ""; s.className = "statut"; }, 6000);
+  }
+  const m = $("msgSync");
+  if (m) { m.className = erreur ? "err" : "ok"; m.textContent = txt; }
+  if (erreur) console.error("[console]", txt);
+}
+
+/* ------------------------------------------------------------------
+   Briques d'affichage
+   ------------------------------------------------------------------ */
+/**
+ * Un bloc de la fiche : son intitulé, et à droite ce qui se compte sans le lire
+ * — « 1 pavillon · 1 publié ». La note est facultative ; les blocs qui n'ont
+ * rien à compter n'en portent pas.
+ */
+const bloc = (titre, note) => {
+  const d = document.createElement("div");
+  d.className = "bloc";
+  const h = document.createElement("div");
+  h.className = "bloc-hd";
+  const t = document.createElement("span");
+  t.className = "eyebrow";
+  t.textContent = titre;
+  h.appendChild(t);
+  if (note) {
+    const n = document.createElement("span");
+    n.className = "note";
+    n.textContent = note;
+    h.appendChild(n);
+  }
+  d.appendChild(h);
+  return d;
+};
+const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
+
+/* Un menu déplié se referme sur un clic ailleurs et sur Échap : sans cela il
+   resterait ouvert au-dessus de la fiche, et rien ne dirait comment le fermer. */
+document.addEventListener("click", (ev) => {
+  document.querySelectorAll("details.menu[open]").forEach((d) => {
+    if (!d.contains(ev.target) || ev.target.closest(".menu-pan")) d.open = false;
+  });
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  document.querySelectorAll("details.menu[open]").forEach((d) => d.open = false);
+});
+
+/** Adresse de base des pages, déduite de celle de la console. */
+const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+/* La page qui pose un mot de passe, qu'on y arrive par une invitation, par un
+   oubli, ou depuis un écran de connexion. Elle est servie sans extension par
+   Cloudflare, comme les autres. */
+const PAGE_MDP = BASE_PAGES + "motdepasse";
+
+/* Même repli que sur la racine, pour le cas où le « Site URL » du projet
+   désigne la console : un jeton de mot de passe n'a rien à faire ici, et
+   l'écran de connexion serait une impasse pour celui qui l'apporte. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  const type = h.get("type") || q.get("type") || "";
+  const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
+    (type === "recovery" || type === "invite" || type === "signup");
+  if (jeton || h.get("error_description") || q.get("error_description")) {
+    location.replace(PAGE_MDP + location.search + location.hash);
+  }
+})();
+
+/**
+ * L'identifiant du compte connecté, lu dans le jeton.
+ *
+ * Il y est déjà — c'est le champ `sub` — et le demander au serveur coûterait
+ * un aller-retour à chaque chargement pour une donnée que le navigateur tient
+ * en main.
+ */
+const idCompte = () => contenuJeton(SESSION?.access_token)?.sub || null;
+
+/* ------------------------------------------------------------------
+   Thème
+   ------------------------------------------------------------------ */
+const CLE_THEME = "console-theme";
+try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+
+/* Sans réglage enregistré, le thème est celui du système : c'est lui qu'il
+   faut interroger pour savoir vers quoi bascule le bouton. */
+const themeSombre = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+$("btnTheme").onclick = () => {
+  const next = themeSombre() ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+};
+
+/* ------------------------------------------------------------------
+   Compte
+   ------------------------------------------------------------------ */
+/**
+ * Les initiales de l'adresse : « korantin.vey@… » donne « KV », « alexandra@… »
+ * donne « AL ». Le profil porte bien un nom, mais il arrive après le premier
+ * dessin de la barre, et parfois pas du tout — l'adresse, elle, est dans le
+ * jeton qu'on tient déjà.
+ */
+function initialesDe(mail) {
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "··").toUpperCase();
+}
+
+/* Le panneau se remplit à l'ouverture, jamais au chargement : la session peut
+   arriver après — on vient de se connecter — et l'ouverture est le seul moment
+   où l'on est sûr d'avoir quelque chose de juste à montrer. */
+const menuCompte = document.querySelector("details.menu.compte");
+if (menuCompte) {
+  menuCompte.addEventListener("toggle", () => {
+    if (!menuCompte.open) return;
+    const mail = contenuJeton(SESSION?.access_token)?.email || "";
+    $("initiales").textContent = mail ? initialesDe(mail) : "··";
+    $("compteMail").textContent = mail || "session inconnue";
+    // le libellé annonce où l'on va, pas où l'on est
+    $("btnTheme").textContent = themeSombre() ? "Thème clair" : "Thème sombre";
+  });
+  $("btnSortir").onclick = () => {
+    menuCompte.open = false;
+    deconnecte();
+  };
+}
