@@ -35604,10 +35604,51 @@ function constTexte(){
   DefileTirets.extensionName = "DefileTirets";
   DefileTirets.defaultProps = { decalage: 0 };
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0 };
+  /* Le contour d'une lettre, et le flou qu'il prenait au zoom.
+
+     Un texte SDF ne garde pas la forme de ses lettres : il garde, pour chaque
+     point de l'atlas, la distance au bord le plus proche. Le shader fond le
+     contour sur une bande fixe — deux points et demi de l'atlas —, mesurée
+     dans la texture et non à l'écran. Tant que la lettre reste petite, cette
+     bande vaut une fraction de pixel et ne se voit pas ; agrandie vingt fois,
+     elle s'agrandit autant, et le nom d'un stand devient une tache.
+
+     Elle se recalcule donc pour chaque pixel, d'après ce que la distance varie
+     d'un pixel au suivant — « fwidth » —, ce qui la ramène à la largeur d'un
+     pixel quel que soit le zoom. Elle ne dépasse jamais celle d'origine : aux
+     tailles où le rendu convenait, rien ne change. Grossir l'atlas aurait eu
+     le même effet à l'œil, mais sa fabrication est quatre fois plus lourde, et
+     elle se refait dès qu'un caractère nouveau paraît.
+
+     L'injection se pose en fin de fragment, seul endroit où les variables de
+     la bibliothèque sont déclarées, et se tait pendant la passe de
+     désignation, dont la couleur ne doit rien recevoir. Elle est posée sur
+     toutes les couches de texte, et non sur les seules grandes : deux jeux
+     d'extensions feraient deux programmes à compiler là où un seul suffit, et
+     « sdf.enabled » la rend muette sur l'atlas des petits textes. */
+  class LissageSdf extends deck.LayerExtension {
+    getShaders(){
+      return { inject: { "fs:#main-end": [
+        "if (sdf.enabled && !bool(picking.isActive)) {",
+        "  float dist = texture(iconsTexture, vTextureCoords).a;",
+        "  float bande = clamp(fwidth(dist) * 0.6, 0.0008, sdf.gamma);",
+        "  float dedans = smoothstep(sdf.buffer - bande, sdf.buffer + bande, dist);",
+        "  if (sdf.outlineBuffer > 0.0) {",
+        "    vec4 teinte = mix(sdf.outlineColor, vColor, dedans);",
+        "    dedans = smoothstep(sdf.outlineBuffer - bande, sdf.outlineBuffer + bande, dist);",
+        "    fragColor = vec4(teinte.rgb, dedans * teinte.a * layer.opacity);",
+        "  } else {",
+        "    fragColor.a = dedans * vColor.a * layer.opacity;",
+        "  }",
+        "}",
+      ].join("\n") } };
+    }
+  }
+  LissageSdf.extensionName = "LissageSdf";
   /* Des objets créés une fois pour toutes : la bibliothèque compare ces
      réglages par identité, et un nouvel objet — même identique — lui faisait
      régénérer l'atlas des polices et recompiler ses shaders. */
-  const textes = [new FiltreZoom()];
+  const textes = [new FiltreZoom(), new LissageSdf()];
   return (CONST_TEXTE = {
     petit: { ext: textes, mode: 1, atlas: { sdf: false, fontSize: 24, buffer: 2 } },
     grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 6 } },

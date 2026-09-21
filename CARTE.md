@@ -717,7 +717,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1398 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1439 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -728,20 +728,20 @@ Fonctions :
 `remonteWebgl` 232 · `vueDeck` 249 · `vueWebgl` 258 · `blocDe` 267 · `enEdition` 297
 `majEditionWebgl` 301 · `cleBloc` 313 · `planifieWebgl` 339 · `toutRepeindreWebgl` 343
 `blocsDansLOrdre` 350 · `repeintWebgl` 355 · `assembleWebgl` 379 · `constTexte` 413
-`jeuDeCaracteres` 493 · `couchesTexte` 504 · `mulM` 538 · `appM` 541 · `echelleM` 542
-`lisTransform` 544 · `lisTrace` 566 · `lisPoints` 634 · `num` 640 · `anneau` 642
-`rectArrondi` 648 · `couleurGl` 662 · `accVide` 679 · `convertitBloc` 680 · `accDe` 696
-`parcoursGl` 703 · `avecTrous` 743 · `formeGl` 764 · `texteGl` 800 · `imageGl` 823
-`partage` 855 · `designeGl` 861 · `couchesDeBloc` 863 · `modelesLibellesHtml` 924
-`poseModelesLibelles` 934 · `lisModelesLibelles` 940 · `emplacementWebgl` 969
-`libellesWebgl` 1017 · `groupesNoms` 1080 · `couchesNoms` 1096 · `couchesPastilles` 1107
-`couchesLibellesWebgl` 1122 · `couchesDessineesWebgl` 1129 · `stage` 1150
-`brancheSurvolWebgl` 1154 · `poseSurvolWebgl` 1174 · `poseCurseurWebgl` 1183
-`poseFocusWebgl` 1192 · `aplatsDe` 1199 · `coucheSurvol` 1202 · `coucheFocus` 1211
-`couchesPhare` 1238 · `lueurDe` 1254 · `opacitePhare` 1292 · `echellePhare` 1293
-`couchesPhareNoms` 1296 · `palierDefile` 1316 · `animeCouche` 1319
-`majAnimationWebgl` 1334 · `animeWebgl` 1342 · `objetSous` 1365 · `cibleWebgl` 1372
-`priseWebgl` 1379 · `libelleSousWebgl` 1384 · `rectEcranWebgl` 1389
+`jeuDeCaracteres` 534 · `couchesTexte` 545 · `mulM` 579 · `appM` 582 · `echelleM` 583
+`lisTransform` 585 · `lisTrace` 607 · `lisPoints` 675 · `num` 681 · `anneau` 683
+`rectArrondi` 689 · `couleurGl` 703 · `accVide` 720 · `convertitBloc` 721 · `accDe` 737
+`parcoursGl` 744 · `avecTrous` 784 · `formeGl` 805 · `texteGl` 841 · `imageGl` 864
+`partage` 896 · `designeGl` 902 · `couchesDeBloc` 904 · `modelesLibellesHtml` 965
+`poseModelesLibelles` 975 · `lisModelesLibelles` 981 · `emplacementWebgl` 1010
+`libellesWebgl` 1058 · `groupesNoms` 1121 · `couchesNoms` 1137 · `couchesPastilles` 1148
+`couchesLibellesWebgl` 1163 · `couchesDessineesWebgl` 1170 · `stage` 1191
+`brancheSurvolWebgl` 1195 · `poseSurvolWebgl` 1215 · `poseCurseurWebgl` 1224
+`poseFocusWebgl` 1233 · `aplatsDe` 1240 · `coucheSurvol` 1243 · `coucheFocus` 1252
+`couchesPhare` 1279 · `lueurDe` 1295 · `opacitePhare` 1333 · `echellePhare` 1334
+`couchesPhareNoms` 1337 · `palierDefile` 1357 · `animeCouche` 1360
+`majAnimationWebgl` 1375 · `animeWebgl` 1383 · `objetSous` 1406 · `cibleWebgl` 1413
+`priseWebgl` 1420 · `libelleSousWebgl` 1425 · `rectEcranWebgl` 1430
 
 ## Dans `web/`, mais que la construction ne produit pas
 
