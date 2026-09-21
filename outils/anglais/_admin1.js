@@ -411,4 +411,16 @@ module.exports = {
   "Le programme de conférences n'est pas pris sur ce salon.": "The conference programme is not taken on this show.",
   "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas d'horaire à rappeler.":
     "The conference programme is not taken on this show: there is no time to remind anyone of.",
+
+  /* Les langues du plan, dans l'onglet « Admin » : une case par plan, et ce que
+     fermer la version anglaise retire. */
+  "Les langues du plan": "The map's languages",
+  "Le bouton à drapeau passe le plan en anglais sans le recharger. Fermée, la version anglaise s'en va avec son bouton et le plan ne se lit qu'en français.":
+    "The flag button switches the map to English without reloading it. Closed, the English version leaves along with its button and the map reads in French only.",
+  "Version anglaise du plan public": "English version of the public map",
+  "Ce que voient les visiteurs. Le plan traduit ce qu'il écrit lui-même ; ce que le salon porte — noms d'exposants, descriptions, nomenclature — reste dans la langue des données, sauf là où la source en donne une version anglaise.":
+    "What visitors see. The map translates what it writes itself; what the show carries \u2014 exhibitor names, descriptions, categories \u2014 stays in the language of the data, except where the source gives an English version of it.",
+  "Version anglaise de l'administration": "English version of the administration",
+  "Ces réglages, la boîte à outils et la bande du haut, sur le plan d'administration. Sans effet sur ce que voient les visiteurs.":
+    "These settings, the toolbox and the top bar, on the administration map. No effect on what visitors see.",
 };

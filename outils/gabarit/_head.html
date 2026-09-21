@@ -4732,10 +4732,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <div><b id="nZones">—</b>zones</div>
     </div>
     <div class="tools">
-      <button class="iconbtn" id="btnItineraire" aria-pressed="false"
-        title="Calculer un itinéraire" aria-label="Calculer un itinéraire">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
-      </button>
+      <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
+           le drapeau de la langue vers laquelle il mène — c'est ce que
+           cherche des yeux quelqu'un qui ne lit pas la page. -->
+      <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
       <button class="iconbtn" id="btnParcours" aria-pressed="false"
         title="Mon parcours de visite" aria-label="Mon parcours de visite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
@@ -4747,10 +4747,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
-      <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
-           le drapeau de la langue vers laquelle il mène — c'est ce que
-           cherche des yeux quelqu'un qui ne lit pas la page. -->
-      <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
+      <button class="iconbtn" id="btnItineraire" aria-pressed="false"
+        title="Calculer un itinéraire" aria-label="Calculer un itinéraire">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
+      </button>
       <!-- L'exploitant connecté, et par où sortir. -->
       <details class="compte" id="menuCompte" hidden>
         <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
