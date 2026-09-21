@@ -3745,6 +3745,11 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
 #itin .iNum{fill:var(--surface);text-anchor:middle;dominant-baseline:central;
   font-family:"IBM Plex Mono",monospace;font-weight:600}
 #itin .iNum.conf{fill:var(--accent)}
+/* Le temps que le trait s'écrive, ce qu'il n'a pas encore atteint attend.
+   Écrite dès la première image plutôt qu'ajoutée en chemin, la pastille garde
+   son rang : le zoom relit les pastilles dans l'ordre pour les redimensionner,
+   et l'une qui manquerait décalerait toutes les suivantes. */
+#itin .aVenir{opacity:0}
 /* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
    disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
    journée, c'est calculer un itinéraire : sans le moteur, le bouton du
@@ -19404,26 +19409,46 @@ const bibliothequeDispo = () => ADMIN && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.
    bâtiment est un fond, il ne doit pas passer devant les stands. */
 const COULEUR_BATIMENT = "#77787e";
 
+/* ------------------------------------------------------------
+   Ce qui identifie un hall
+
+   Un hall se reconnaissait à sa référence OpenStreetMap, puisqu'il n'en venait
+   pas d'ailleurs. Les contours relevés à la main sur un plan coté n'en ont
+   pas, et leur en inventer une ferait paraître la mention d'OpenStreetMap sur
+   un plan où pas un trait n'en vient. La référence dit donc aussi la source :
+   `osm` pour ce que la bibliothèque relève du cadastre, `ref` pour le reste.
+   ------------------------------------------------------------ */
+
+/** La référence d'un hall de la bibliothèque. */
+const refBatiment = (b) => b.osm || b.ref;
+
+/** Celle d'une forme posée sur le plan. Les plans d'avant les contours saisis
+ *  ne portent que `osm` : leurs halls se reconnaissent encore. */
+const refForme = (f) => f.osm || f.ref;
+
+/** Ce que la forme emporte, la source comprise. */
+const marqueBatiment = (b) => b.osm ? { osm: b.osm } : { ref: b.ref };
+
 /** Les bâtiments déjà posés sur ce pavillon, par leur référence OSM. */
 function batimentsPoses(){
   const s = new Set();
-  mesCalques().forEach(c => (c.formes || []).forEach(f => { if (f.osm) s.add(f.osm); }));
+  mesCalques().forEach(c => (c.formes || []).forEach(f => { if (refForme(f)) s.add(refForme(f)); }));
   return s;
 }
 
 /** Un calque venu de la bibliothèque : ses formes portent une référence OSM. */
-const estBatiment = (c) => !!c && (c.formes || []).some(f => f.osm);
+const estBatiment = (c) => !!c && (c.formes || []).some(f => refForme(f));
 
 /** Les halls de ce lieu déjà sur le plan, dans l'ordre de la bibliothèque. */
 function hallsPoses(lieu){
   const poses = batimentsPoses();
-  return lieu.batiments.filter(b => poses.has(b.osm));
+  return lieu.batiments.filter(b => poses.has(refBatiment(b)));
 }
 
 /** Le lieu d'où vient un calque, reconnu à la référence OSM de ses formes. */
 function lieuDuCalque(c){
-  const refs = new Set((c.formes || []).map(f => f.osm).filter(Boolean));
-  return LIEUX.lieux.find(l => l.batiments.some(b => refs.has(b.osm))) || null;
+  const refs = new Set((c.formes || []).map(refForme).filter(Boolean));
+  return LIEUX.lieux.find(l => l.batiments.some(b => refs.has(refBatiment(b)))) || null;
 }
 
 /** Un point du lieu, porté dans le repère du plan. */
@@ -19470,7 +19495,7 @@ function ouvreBibliotheque(){
       const ul = document.createElement("div");
       ul.className = "biblioHalls";
       lieu.batiments.forEach(b => {
-        const deja = poses.has(b.osm);
+        const deja = poses.has(refBatiment(b));
         const l = document.createElement("label");
         l.className = "biblioHall" + (deja ? " deja" : "");
         l.innerHTML = '<input type="checkbox"><span></span>' + (deja ? "<i>déjà sur le plan</i>" : "");
@@ -19522,7 +19547,7 @@ function ouvreBibliotheque(){
            ne répondait à rien. */
         const poses = batimentsPoses();
         const halls = lieu.batiments.filter(b =>
-          choisis.has(b.nom) || (reprise && poses.has(b.osm)));
+          choisis.has(b.nom) || (reprise && poses.has(refBatiment(b))));
         if (!halls.length) return;
         fermeModale();
         if (cale && !recaler) ajouteBatiments(lieu, halls, t);
@@ -19546,11 +19571,11 @@ function vueDuLieu(lieu, choisis, poses, bascule){
   lieu.batiments.forEach(b => {
     const g = document.createElementNS(ns, "path");
     g.setAttribute("d", b.contours.map(c => "M" + c.map(p => p.join(" ")).join("L") + "Z").join(""));
-    g.setAttribute("class", poses.has(b.osm) ? "deja" : choisis.has(b.nom) ? "choisi" : "");
+    g.setAttribute("class", poses.has(refBatiment(b)) ? "deja" : choisis.has(b.nom) ? "choisi" : "");
     const titre = document.createElementNS(ns, "title");
     titre.textContent = b.nom;
     g.appendChild(titre);
-    if (!poses.has(b.osm)) g.addEventListener("click", () => bascule(b.nom));
+    if (!poses.has(refBatiment(b))) g.addEventListener("click", () => bascule(b.nom));
     s.appendChild(g);
   });
   return s;
@@ -19601,10 +19626,10 @@ function lanceCalage(lieu, halls, depart){
  * arrive aux calques ni aux réglages, et annuler ne laisse rien derrière.
  */
 function effaceLeTempsDuCalage(halls){
-  const refs = new Set(halls.map(b => b.osm));
+  const refs = new Set(halls.map(refBatiment));
   const hote = $("couches");
   mesCalques().forEach(c => (c.formes || []).forEach(f => {
-    if (!refs.has(f.osm)) return;
+    if (!refs.has(refForme(f))) return;
     const n = hote.querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
     if (n) n.dataset.cale = "1";
   }));
@@ -19731,14 +19756,14 @@ function calagePointerUp(){
  *  un pavillon repris dix fois ne dérive pas d'un centimètre à chaque fois. */
 function reposeBatiment(b, t){
   mesCalques().forEach(c => {
-    if (!(c.formes || []).some(f => f.osm === b.osm)) return;
+    if (!(c.formes || []).some(f => refForme(f) === refBatiment(b))) return;
     let j = 0;
     /* Des formes neuves, plutôt que leurs points réécrits : l'instantané de
        l'historique copie les tableaux mais partage les formes, si bien qu'une
        forme retouchée sur place l'est aussi dans le passé. Un calage repris
        déplace tous les halls d'un coup — le rendre serait long à la main. */
     c.formes = c.formes.map(f => {
-      if (f.osm !== b.osm) return f;
+      if (refForme(f) !== refBatiment(b)) return f;
       const k = b.contours[j++];
       return k ? Object.assign({}, f, { pts: k.map(p => poseCalage(t, p)) }) : f;
     });
@@ -19751,19 +19776,19 @@ function ajouteBatiments(lieu, halls, t){
      seconde fois : son calque garde son nom, sa couleur, son rang et son
      cadenas, et ne reçoit que de nouveaux points. */
   const poses = batimentsPoses();
-  halls.filter(b => poses.has(b.osm)).forEach(b => reposeBatiment(b, t));
-  const neufs = halls.filter(b => !poses.has(b.osm)).map((b, i) => {
+  halls.filter(b => poses.has(refBatiment(b))).forEach(b => reposeBatiment(b, t));
+  const neufs = halls.filter(b => !poses.has(refBatiment(b))).map((b, i) => {
     const id = nouvelId() + i;
     return {
       id: id, nom: b.nom, couleur: COULEUR_BATIMENT, rempli: false, visible: true,
-      formes: b.contours.map((k, j) => ({
+      /* La référence du hall voyage avec la forme : les colonnes du calque
+         sont fixées, le contenu des formes ne l'est pas. Elle dit ce qui est
+         déjà posé, et, quand elle vient d'OpenStreetMap, appelle la mention
+         de la source sur le plan public. */
+      formes: b.contours.map((k, j) => Object.assign({
         t: "poly", id: id + "f" + j, ep: 3,
-        /* La référence OSM voyage avec la forme : les colonnes du calque sont
-           fixées, le contenu des formes ne l'est pas. Elle dit ce qui est
-           déjà posé, et appelle la mention de la source sur le plan public. */
-        osm: b.osm,
         pts: k.map(p => poseCalage(t, p)),
-      })),
+      }, marqueBatiment(b))),
     };
   });
   neufs.forEach(c => {
@@ -19857,7 +19882,7 @@ const pictoRecale = () =>
  */
 function calageRelu(lieu, c){
   for (const b of lieu.batiments){
-    const f = (c.formes || []).find(x => x.osm === b.osm && x.pts && x.pts.length > 1);
+    const f = (c.formes || []).find(x => refForme(x) === refBatiment(b) && x.pts && x.pts.length > 1);
     const k = f && b.contours[0];
     if (!k || k.length < 2) continue;
     /* Le point le plus éloigné du premier, et non le premier qui s'en écarte :
@@ -19899,6 +19924,10 @@ function rouvreCalage(c){
    La licence d'OpenStreetMap demande qu'on la cite partout où ses données se
    montrent, et donc sur le plan public : la mention paraît dès qu'un calque
    visible porte un contour qui en vient, et s'efface avec lui.
+
+   D'où le `f.osm` en propre, et non `refForme` : un contour relevé à la main
+   sur un plan coté ne doit rien à OpenStreetMap, et le citer à tort dirait
+   d'une donnée qu'elle vient d'ailleurs que de là où elle vient.
    ------------------------------------------------------------ */
 function mentionOsm(){
   const m = $("mentionOsm");
@@ -25791,7 +25820,154 @@ function rayonBout(){
   return Math.max(.4, view.w / (r.width || 1) * 6);
 }
 
-function dessineItineraire(){
+/* ------------------------------------------------------------
+   Le trait qui se trace
+
+   Paru d'un coup, un trajet ne dit pas par où il commence : le regard le
+   prend au milieu, puis cherche lequel de ses deux bouts est le départ. Il
+   s'écrit donc du départ vers l'arrivée — assez vite pour qu'on n'attende
+   rien, assez lentement pour qu'on voie le sens —, et les pointillés qui
+   défilent le redisent ensuite tant qu'il reste à l'écran.
+
+   Le trait se raccourcit par ses points, et non par un « stroke-dashoffset »
+   animé en feuille de style : le plan est peint par la carte graphique, qui
+   relit le SVG et ne verrait pas une animation qu'elle n'a pas lue. Ce sont
+   les mêmes formes, écrites plus courtes à chaque image.
+   ------------------------------------------------------------ */
+const TRACAGE_MS = 620;   // le temps de lire le sens, pas celui d'attendre
+/* Réécrire le trait salit son bloc, et la carte graphique repeint alors le
+   plan entier — le défilement des pointillés n'avance déjà que par paliers,
+   pour cette raison même. Trente images par seconde suffisent à un trait qui
+   s'allonge ; soixante doublaient la dépense sans que cela se voie. */
+const TRACAGE_HZ = 30;
+
+let tracage = null;                 // l'image demandée tant que le trait s'allonge
+let vuTrace = null, vuPlan = null;  // ce que le trait montre déjà
+
+function arreteTracage(){
+  if (tracage) cancelAnimationFrame(tracage);
+  tracage = null;
+}
+
+/** Distances cumulées le long des marches d'ici : pour chacune, celle déjà
+ *  parcourue à chacun de ses points, et le total à l'arrivée. */
+function mesureMarches(marches){
+  let total = 0;
+  const cumuls = marches.map(e => {
+    const c = [total];
+    for (let i = 1; i < e.pts.length; i++){
+      total += Math.hypot(e.pts[i][0] - e.pts[i - 1][0], e.pts[i][1] - e.pts[i - 1][1]);
+      c.push(total);
+    }
+    return c;
+  });
+  return { cumuls, total };
+}
+
+/** Une marche arrêtée à la distance « d », son dernier point posé entre deux
+ *  sommets. Rien tant que le trait ne l'a pas rejointe. */
+function coupeMarche(pts, cum, d){
+  if (d <= cum[0]) return null;
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length; i++){
+    if (cum[i] <= d){ out.push(pts[i]); continue; }
+    const k = (d - cum[i - 1]) / Math.max(1e-6, cum[i] - cum[i - 1]);
+    out.push([pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * k,
+              pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * k]);
+    break;
+  }
+  return out.length > 1 ? out : null;
+}
+
+/** Où chaque arrêt tombe le long du trait. Sa pastille attend que le trait
+ *  l'ait rejoint : posée d'avance, elle annoncerait la fin d'un trajet qu'on
+ *  est encore en train d'écrire. */
+function distancesDesArrets(marches, mes, arrets){
+  return arrets.map(a => {
+    let mieux = Infinity, d = 0;
+    marches.forEach((e, j) => e.pts.forEach((q, i) => {
+      const ex = q[0] - a.xy[0], ey = q[1] - a.xy[1], e2 = ex * ex + ey * ey;
+      if (e2 < mieux){ mieux = e2; d = mes.cumuls[j][i]; }
+    }));
+    return d;
+  });
+}
+
+/** Le trait tel qu'il est à « p » de sa course — 1 : entier. */
+function peintItineraire(p){
+  const g = $("itin");
+  if (!g) return;
+  const marches = marchesIci();
+  if (!marches.length){ g.innerHTML = ""; return; }
+
+  const mes = mesureMarches(marches);
+  const fini = p >= 1;
+  const d = fini ? Infinity : p * mes.total;
+  const r = rayonBout();
+  let out = "";
+  marches.forEach((e, j) => {
+    const pts = fini ? e.pts : coupeMarche(e.pts, mes.cumuls[j], d);
+    if (!pts) return;
+    const chemin = "M" + pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
+    out += '<path class="iHalo" d="' + chemin + '"/><path class="iTrait" d="' + chemin +
+           '"/><path class="iSens" d="' + chemin + '"/>';
+  });
+  /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
+     chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
+     d'un point à un autre n'a que deux bouts, et un chiffre y serait du
+     bruit — il garde ses deux pastilles nues. */
+  const arrets = (TRACE.arrets || []).filter(a => a.p === state.plan);
+  /* Les pastilles à venir sont écrites, mais transparentes : « rafraichitBouts »
+     les retrouve par leur rang, et un zoom pendant que le trait s'allonge les
+     décalerait toutes si elles manquaient. */
+  if (arrets.length){
+    const rr = (r * 1.5).toFixed(2);
+    const ou = fini ? null : distancesDesArrets(marches, mes, arrets);
+    arrets.forEach((a, i) => {
+      const attend = ou && ou[i] > d ? " aVenir" : "";
+      /* Le point de départ n'est pas un arrêt : on n'y visite rien, et lui
+         donner un rang décalerait tous les autres d'une unité. */
+      out += '<circle class="iBout' + (a.conf ? " conf" : "") + attend + '" cx="' + a.xy[0] +
+             '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
+      if (a.n) out += '<text class="iNum' + (a.conf ? " conf" : "") + attend + '" x="' + a.xy[0] +
+             '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
+    });
+  } else {
+    const pd = marches[0].pts[0];
+    const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
+    out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
+           '<circle class="iBout fin' + (fini ? "" : " aVenir") + '" cx="' + pa[0] + '" cy="' + pa[1] +
+           '" r="' + r.toFixed(2) + '"/>';
+  }
+  g.innerHTML = out;
+}
+
+function lanceTracage(){
+  const t0 = performance.now();
+  let palier = -1;
+  const image = (t) => {
+    const p = Math.min(1, (t - t0) / TRACAGE_MS);
+    /* Une course qui part vif et se pose à l'arrivée : le départ se voit
+       d'emblée, et le dernier mètre ne file pas sous l'œil. */
+    const q = 1 - (1 - p) * (1 - p);
+    const n = Math.floor((t - t0) / (1000 / TRACAGE_HZ));
+    if (n !== palier || p >= 1){ palier = n; peintItineraire(q); }
+    tracage = p < 1 ? requestAnimationFrame(image) : null;
+  };
+  // le départ paraît le premier : sa pastille, et rien du trait
+  peintItineraire(0);
+  tracage = requestAnimationFrame(image);
+}
+
+/**
+ * Pose le trajet sur le plan.
+ *
+ * « anime » ne se dit pas d'ordinaire : le trait se retrace quand ce qu'il
+ * montre change — un autre calcul, un autre pavillon —, et se repose tel
+ * quel autrement, sans quoi rouvrir le tiroir ou remonter le pavillon le
+ * rejouerait sans raison.
+ */
+function dessineItineraire(anime){
   let g = $("itin");
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -25799,38 +25975,16 @@ function dessineItineraire(){
     // au-dessus des calques, sous les poignées d'édition et l'aperçu de tracé
     svg.insertBefore(g, svg.querySelector("#apercu, #poignees"));
   }
+  const neuf = TRACE !== vuTrace || state.plan !== vuPlan;
+  vuTrace = TRACE; vuPlan = state.plan;
+  /* Le calcul remonte le pavillon du départ avant de redemander le trait :
+     l'animation lancée là ne doit pas mourir de l'appel qui la suit. */
+  if (tracage && !neuf && anime !== true) return;
+  arreteTracage();
   const marches = marchesIci();
   if (!marches.length){ g.innerHTML = ""; return; }
-
-  const r = rayonBout();
-  let out = "";
-  marches.forEach(e => {
-    const d = "M" + e.pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
-    out += '<path class="iHalo" d="' + d + '"/><path class="iTrait" d="' + d +
-           '"/><path class="iSens" d="' + d + '"/>';
-  });
-  /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
-     chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
-     d'un point à un autre n'a que deux bouts, et un chiffre y serait du
-     bruit — il garde ses deux pastilles nues. */
-  const arrets = (TRACE.arrets || []).filter(a => a.p === state.plan);
-  if (arrets.length){
-    const rr = (r * 1.5).toFixed(2);
-    arrets.forEach(a => {
-      /* Le point de départ n'est pas un arrêt : on n'y visite rien, et lui
-         donner un rang décalerait tous les autres d'une unité. */
-      out += '<circle class="iBout' + (a.conf ? " conf" : "") + '" cx="' + a.xy[0] +
-             '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
-      if (a.n) out += '<text class="iNum' + (a.conf ? " conf" : "") + '" x="' + a.xy[0] +
-             '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
-    });
-  } else {
-    const pd = marches[0].pts[0];
-    const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
-    out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
-           '<circle class="iBout fin" cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
-  }
-  g.innerHTML = out;
+  if ((anime === undefined ? neuf : anime) && !REDUIT) lanceTracage();
+  else peintItineraire(1);
 }
 
 /** Le zoom change : seules les pastilles ont besoin d'être reprises, le trait

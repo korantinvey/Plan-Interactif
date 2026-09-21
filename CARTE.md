@@ -101,19 +101,20 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_batiments.html` — 534 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_batiments.html` — 558 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
-`CLE_CALAGE` 26 · `bibliothequeDispo` 27 · `batimentsPoses` 34 · `estBatiment` 41
-`hallsPoses` 44 · `lieuDuCalque` 50 · `poseCalage` 56 · `ouvreBibliotheque` 65
-`vueDuLieu` 161 · `lanceCalage` 201 · `effaceLeTempsDuCalage` 229 · `cadreCalage` 248
-`finCalage` 261 · `pivoteCalage` 272 · `degresCalage` 288 · `dessineCalage` 293
-`calagePointerDown` 316 · `calagePointerMove` 329 · `calagePointerUp` 345
-`reposeBatiment` 358 · `ajouteBatiments` 374 · `boutonRecale` 458 · `pictoRecale` 467
-`calageRelu` 484 · `rouvreCalage` 510 · `mentionOsm` 529
+`CLE_CALAGE` 26 · `bibliothequeDispo` 27 · `refBatiment` 44 · `refForme` 48
+`marqueBatiment` 51 · `batimentsPoses` 54 · `estBatiment` 61 · `hallsPoses` 64
+`lieuDuCalque` 70 · `poseCalage` 76 · `ouvreBibliotheque` 85 · `vueDuLieu` 181
+`lanceCalage` 221 · `effaceLeTempsDuCalage` 249 · `cadreCalage` 268 · `finCalage` 281
+`pivoteCalage` 292 · `degresCalage` 308 · `dessineCalage` 313 · `calagePointerDown` 336
+`calagePointerMove` 349 · `calagePointerUp` 365 · `reposeBatiment` 378
+`ajouteBatiments` 394 · `boutonRecale` 478 · `pictoRecale` 487 · `calageRelu` 504
+`rouvreCalage` 530 · `mentionOsm` 553
 
 ### `_borne.html` — 370 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -325,7 +326,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 5242 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5247 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -408,7 +409,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3045 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3170 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -432,13 +433,15 @@ Fonctions :
 `passagePraticable` 2083 · `passagesDe` 2091 · `sortiesDe` 2101 · `plansRelies` 2109
 `balayage` 2133 · `distanceDepuis` 2147 · `cheminLiaisons` 2174 · `routeParLiaisons` 2258
 `routeEntre` 2294 · `calculeRoute` 2333 · `couleurNappe` 2359 · `rafraichitApercu` 2365
-`marchesIci` 2408 · `rayonBout` 2413 · `dessineItineraire` 2418 · `rafraichitBouts` 2462
-`cadreItineraire` 2485 · `champIti` 2509 · `ecritDistance` 2513 · `ecritDuree` 2521
-`fermeSugg` 2526 · `montreSugg` 2533 · `choisitPoint` 2567 · `valideSaisie` 2576
-`effaceItineraire` 2588 · `relance` 2615 · `phraseLiaison` 2666 · `montreResultat` 2680
-`bandeauVisee` 2822 · `armeVisee` 2845 · `finVisee` 2863 · `viseItineraire` 2879
-`visePoi` 2885 · `visePoint` 2891 · `ouvreItineraire` 2923 · `fermeItineraire` 2951
-`versItineraire` 2961 · `versItineraireDe` 2964
+`marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2442 · `mesureMarches` 2449
+`coupeMarche` 2464 · `distancesDesArrets` 2480 · `peintItineraire` 2492
+`lanceTracage` 2540 · `dessineItineraire` 2565 · `rafraichitBouts` 2587
+`cadreItineraire` 2610 · `champIti` 2634 · `ecritDistance` 2638 · `ecritDuree` 2646
+`fermeSugg` 2651 · `montreSugg` 2658 · `choisitPoint` 2692 · `valideSaisie` 2701
+`effaceItineraire` 2713 · `relance` 2740 · `phraseLiaison` 2791 · `montreResultat` 2805
+`bandeauVisee` 2947 · `armeVisee` 2970 · `finVisee` 2988 · `viseItineraire` 3004
+`visePoi` 3010 · `visePoint` 3016 · `ouvreItineraire` 3048 · `fermeItineraire` 3076
+`versItineraire` 3086 · `versItineraireDe` 3089
 
 ### `_journee.html` — 2136 l. → plan-admin.html, plan-smcl.html, plan.html
 
