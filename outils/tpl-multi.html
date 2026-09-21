@@ -32867,7 +32867,7 @@ function formesMasquantes(){
 }
 
 /**
- * Le tracé du hall, vidé de la carte.
+ * Le hall relevé, celui qu'on vide de la carte.
  *
  * Sans lui une voie passe par-dessus le pavillon — le périphérique le franchit
  * dans les données parce qu'il le franchit pour de bon — et le plan se
@@ -32878,10 +32878,16 @@ function formesMasquantes(){
  * donner : le premier s'arrête au dernier stand, le second ne couvre que ce
  * qu'on a bien voulu tracer.
  */
-function cheminDuHall(){
+function contourDuHall(){
   const cal = calageCourant();
   const pts = cal && cal.halls && DATA ? cal.halls[P().id] : null;
-  if (!pts || pts.length < 3 || cal.vide === false) return "";
+  return pts && pts.length >= 3 ? pts : null;
+}
+
+/** Le même, en tracé — et rien du tout si l'exploitant a décoché. */
+function cheminDuHall(){
+  const pts = contourDuHall();
+  if (!pts || calageCourant().vide === false) return "";
   return "M" + pts.map(q => q[0] + " " + q[1]).join("L") + "Z";
 }
 
@@ -33300,6 +33306,13 @@ function majCalage(){
   if (!corps || !ENV_CAL) return;
   const rot = corps.querySelector(".cRot");
   if (rot) rot.value = Math.round(ENV_CAL.angle / DEG * 10) / 10;
+  /* Ici plutôt qu'à la construction : « Situer le salon » relève le contour
+     du hall alors que la palette est déjà ouverte, et la case doit paraître
+     sans qu'on la referme pour la rouvrir. */
+  const aVider = !!contourDuHall();
+  const cv = corps.querySelector(".cVide"), cs = corps.querySelector(".cSansVide");
+  if (cv) cv.hidden = !aVider;
+  if (cs) cs.hidden = aVider;
   const bat = corps.querySelector(".cBati");
   if (bat){
     bat.hidden = !ENV_BATIS.length;
@@ -33447,9 +33460,18 @@ function construitCalage(){
   corps.appendChild(force);
 
   /* Vider le hall. Coché d'office : c'est presque toujours ce qu'on veut, et
-     le décocher se comprend tout de suite en voyant ce qui revient. */
+     le décocher se comprend tout de suite en voyant ce qui revient.
+
+     Mais seulement s'il y a un contour à vider. Celui-ci vient du bâtiment
+     d'OpenStreetMap auquel « Situer le salon » s'est accroché, et un hall
+     enterré n'en a pas : au Grimaldi Forum les salles passent sous l'avenue
+     Princesse Grace et sous la mer, qu'aucune vue aérienne ne relève. La case
+     restait alors cochée sur rien — exactement ce que le bouton de la pile
+     s'interdit plus haut : un réglage sans effet fait douter des autres.
+     Reste à dire où aller, puisque le moyen existe, sur le calque qui dessine
+     le bâtiment. */
   const vide = document.createElement("label");
-  vide.className = "cCoche";
+  vide.className = "cCoche cVide";
   vide.innerHTML = '<input type="checkbox"><span>Vider le hall sous le plan</span>';
   const cVide = vide.querySelector("input");
   cVide.checked = ENV_CAL.vide !== false;
@@ -33458,6 +33480,14 @@ function construitCalage(){
     poseMasqueCarte();
   };
   corps.appendChild(vide);
+
+  const sansHall = document.createElement("p");
+  sansHall.className = "calageAide cSansVide";
+  sansHall.textContent = "Aucun contour de hall n'a été relevé ici : pour vider " +
+    "la carte sous le bâtiment, allumez le cadre percé sur la ligne du calque " +
+    "qui le dessine, dans la pile des calques. Seules ses surfaces fermées " +
+    "percent — un trait désigne un endroit, il n'en occupe pas.";
+  corps.appendChild(sansHall);
 
   const aide = document.createElement("p");
   aide.className = "calageAide";
