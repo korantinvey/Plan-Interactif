@@ -217,9 +217,9 @@ Fonctions :
 
 `#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 714 l. → console.css
+### `_console.css` — 719 l. → console.css
 
-- l.655 · Page de rapport
+- l.660 · Page de rapport
 
 ### `_dessin.html` — 2422 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -328,7 +328,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 5333 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5341 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
