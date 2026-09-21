@@ -2349,6 +2349,24 @@ drapeau. À la première visite enfin, la langue du navigateur : le français po
 qui le lit, l'anglais pour les autres, car un visiteur allemand ou japonais lit
 plus souvent l'anglais que le français.
 
+**Un salon peut la fermer.** Les pages traduisent ce qu'elles écrivent
+elles-mêmes ; ce que le salon porte — noms d'exposants, descriptions,
+nomenclature — reste dans la langue des données, sauf là où la source en donne
+une version anglaise. Un salon dont les données sont en français seul y gagne
+donc une page à moitié traduite, moins lisible que la française. Deux cases,
+dans l'onglet « Admin » des réglages du plan et réservées au profil
+administrateur, ferment la version anglaise du plan public et celle de
+l'administration, séparément : l'anglais des visiteurs et celui de l'exploitant
+n'ont pas de raison d'aller ensemble. Fermée, la version anglaise s'en va avec
+son drapeau et `?lang=en` ne l'impose plus.
+
+Le réglage vient des données, et les données arrivent après la page : le temps
+qu'elles parviennent, un visiteur anglophone aurait déjà l'anglais sous les
+yeux. Chaque ouverture laisse donc sur l'appareil ce qu'elle a appris — une
+clé `plan-langues:` par salon et par plan —, et la suivante part dans la bonne
+langue au premier trait. La page ne change sous les yeux du visiteur qu'à la
+visite qui suit un changement de réglage.
+
 **Pourquoi le code reste en français.** Les pages écrivent leurs textes de
 mille façons — `textContent`, un gabarit passé à `innerHTML`, un `title` posé à
 la volée — et plusieurs sessions les retouchent en même temps. Envelopper chaque
