@@ -3822,27 +3822,42 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
 #itin path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 #itin .iHalo{stroke:var(--surface);stroke-width:8;opacity:.9}
 #itin .iTrait{stroke:var(--accent);stroke-width:3.5}
-/* Des traits clairs qui défilent : ils disent le sens du trajet, ce qu'un
-   trait plein ne fait pas, et sans ajouter de flèches qui se chevaucheraient
-   dans les virages.
+/* La comète, qui dit le sens du trajet.
 
-   Ils étaient des points d'un pixel espacés de onze, avançant de onze pixels
-   par seconde : présents à la loupe, invisibles à l'usage — sur un trait bleu
-   de trois pixels et demi, personne ne les voyait bouger. Des tirets de six
-   pixels, larges de deux, qui parcourent leur période en six dixièmes de
-   seconde, se lisent d'un coup d'œil ; ils restent plus fins que le trait,
-   qui garde ses bords bleus, sans quoi le trajet paraîtrait pointillé.
+   Des tirets clairs le disaient avant elle. Ils marchaient, mais ils se
+   lisaient comme un motif : il fallait les regarder pour voir qu'ils
+   avançaient. Une tête vive suivie d'une traîne qui s'efface se lit d'un coup
+   d'œil, et sans flèches qui se chevaucheraient dans les virages.
 
-   Ils avancent par sauts de deux pixels, et non d'un glissement continu : le
-   décalage d'un tracé ne se délègue pas au compositeur — même piège que le
-   halo des points d'intérêt — et chaque valeur nouvelle repeint le plan sous
-   le trajet, qui traverse le salon entier. Neuf paliers par tour valent quinze
-   repeints par seconde au lieu de soixante, sans qu'on lise le sens moins
-   bien. « _webgl.html » rejoue ces trois nombres : les changer ici seul
-   dérègle le rendu par la carte graphique. */
-#itin .iSens{stroke:var(--accent-ink);stroke-width:2;stroke-dasharray:6 12;opacity:.95;
-  animation:defile .6s steps(9) infinite}
-@keyframes defile{to{stroke-dashoffset:-18}}
+   Elle tient en cinq traits d'une même tête, du plus long et pâle au plus
+   court et vif, et du plus fin au plus large. Ils partagent la période et la
+   course ; chacun part décalé de sa propre longueur, si bien que leurs têtes
+   tombent ensemble et que leurs queues s'étagent derrière. Cinq et non trois :
+   à trois, la traîne se lisait par marches, et la tête comme un bloc.
+
+   La tête déborde le trait — quatre pixels et trois sur trois et demi —, ce
+   qui lui donne sa lueur ; la queue rentre dessous et laisse le trajet bleu.
+   Une tête passe toutes les trois secondes en un point donné, et il en court
+   plusieurs à la fois sur un long trajet : une seule tête traversant un hall
+   entier laisserait le trait immobile la plupart du temps.
+
+   Le glissement est continu ici, et non par paliers comme les tirets qu'elle
+   remplace : une tête qui avance de neuf pixels d'un coup saute à l'œil, quand
+   un tiret parmi douze ne se voyait pas sauter. « _webgl.html » rejoue la
+   période et la durée : les changer ici seul dérègle le rendu par la carte
+   graphique. */
+#itin .iSens{stroke:var(--accent-ink);animation-duration:1.5s;
+  animation-timing-function:linear;animation-iteration-count:infinite}
+#itin .iC1{stroke-width:2.4;opacity:.10;stroke-dasharray:52 148;animation-name:comete1}
+#itin .iC2{stroke-width:2.8;opacity:.16;stroke-dasharray:38 162;animation-name:comete2}
+#itin .iC3{stroke-width:3.2;opacity:.26;stroke-dasharray:26 174;animation-name:comete3}
+#itin .iC4{stroke-width:3.7;opacity:.42;stroke-dasharray:15 185;animation-name:comete4}
+#itin .iC5{stroke-width:4.3;opacity:.85;stroke-dasharray:7 193;animation-name:comete5}
+@keyframes comete1{from{stroke-dashoffset:52}to{stroke-dashoffset:-148}}
+@keyframes comete2{from{stroke-dashoffset:38}to{stroke-dashoffset:-162}}
+@keyframes comete3{from{stroke-dashoffset:26}to{stroke-dashoffset:-174}}
+@keyframes comete4{from{stroke-dashoffset:15}to{stroke-dashoffset:-185}}
+@keyframes comete5{from{stroke-dashoffset:7}to{stroke-dashoffset:-193}}
 @media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
 @media (prefers-reduced-motion:reduce){.chalTete button svg{transition:none}}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
@@ -26307,8 +26322,11 @@ function peintItineraire(p){
     const pts = fini ? e.pts : coupeMarche(e.pts, mes.cumuls[j], d);
     if (!pts) return;
     const chemin = "M" + pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
-    out += '<path class="iHalo" d="' + chemin + '"/><path class="iTrait" d="' + chemin +
-           '"/><path class="iSens" d="' + chemin + '"/>';
+    out += '<path class="iHalo" d="' + chemin + '"/><path class="iTrait" d="' + chemin + '"/>';
+    /* La comète attend que le trait soit arrivé. Chaque image du tracé
+       réécrit le groupe, ce qui relance son animation : elle resterait figée
+       au départ, une pastille de plus sur le point de départ. */
+    if (fini) for (let n = 1; n <= 5; n++) out += '<path class="iSens iC' + n + '" d="' + chemin + '"/>';
   });
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
      chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
@@ -36333,20 +36351,29 @@ function couchesDeBloc(acc, cle){
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
   partage(tous, acc.prises, repondus).forEach((liste, k) => {
     if (!liste.length) return;
-    // les pointillés qui défilent ont leur couche : c'est elle seule qui bouge
+    // ce qui défile a ses couches : ce sont elles seules qui bougent
     const K = constTexte();
-    [liste.filter(d => !d.defile), liste.filter(d => d.defile)].forEach((l, j) => {
-      if (!l.length) return;
-      /* Les tirets qui défilent sont taillés par « TiretsQuiDefilent », et non
-         par la bibliothèque : elle les laisse donc tranquilles. Ils tiennent
-         dans un réglage unique et non dans la donnée — le trajet est seul sur
-         sa couche, et tous ses morceaux portent le même pointillé. */
-      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + (j ? "-defile" : ""), data: l, pickable: k === 0,
+    /* Les traits qui défilent sont taillés par « TiretsQuiDefilent », et non
+       par la bibliothèque : elle les laisse donc tranquilles. Leur réglage est
+       unique par couche et non porté par la donnée — d'où une couche par
+       longueur, les trois traits de la comète n'ayant pas la même. */
+    const parLongueur = new Map();
+    for (const d of liste) if (d.defile){
+      const c = d.dash.join(" ") + "/" + d.largeur;
+      if (!parLongueur.has(c)) parLongueur.set(c, []);
+      parLongueur.get(c).push(d);
+    }
+    const lots = [[liste.filter(d => !d.defile), ""]];
+    [...parLongueur.values()].forEach((l, n) => lots.push([l, "-defile" + n]));
+    for (const [l, marque] of lots){
+      if (!l.length) continue;
+      const bouge = marque !== "";
+      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + marque, data: l, pickable: k === 0,
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
-        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: j === 1,
-        extensions: K.traits, getDashArray: j ? [0, 0] : d => d.dash, dashJustified: false,
-        tirets: j ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
-    });
+        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
+        extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
+        tirets: bouge ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
+    }
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
@@ -36760,14 +36787,21 @@ function couchesPhareNoms(){
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
 }
 
-/* Les pointillés du sens, tenus d'accord avec « #itin .iSens » et
-   « @keyframes defile » de la feuille de style : la période des tirets, le
-   nombre de paliers qu'ils font pour la parcourir, et le temps d'un tour.
-   Trois nombres écrits deux fois, faute de pouvoir passer une valeur de la
-   feuille de style au shader ; les changer d'un seul côté fait défiler le
-   rendu par la carte graphique à une autre allure que le rendu SVG. */
-const DEFILE_PERIODE = 18, DEFILE_PALIERS = 9, DEFILE_DUREE = .6;
-const palierDefile = t => Math.floor(t / DEFILE_DUREE * DEFILE_PALIERS);
+/* La comète du sens, tenue d'accord avec « #itin .iSens » et ses
+   « @keyframes comete » : la période qu'une tête parcourt, et le temps qu'elle
+   y met. Deux nombres écrits deux fois, faute de pouvoir passer une valeur de
+   la feuille de style au shader ; les changer d'un seul côté fait courir la
+   tête à une autre allure sous la carte graphique.
+
+   Elle avance par images de trentième de seconde. Chacune repeint le plan
+   sous le trajet, qui traverse le salon entier — trente par seconde est ce
+   qu'il faut pour qu'une tête qui file à cent trente pixels par seconde ne
+   saute pas, là où les tirets qu'elle remplace se contentaient de quinze : on
+   ne voyait pas sauter un tiret parmi douze. */
+const COMETE_PERIODE = 200, COMETE_DUREE = 1.5, COMETE_HZ = 30;
+const palierDefile = t => Math.floor(t * COMETE_HZ);
+/* Où en est la tête de sa course, entre 0 et 1, au palier où l'on est. */
+const phaseComete = t => (palierDefile(t) / COMETE_HZ) % COMETE_DUREE / COMETE_DUREE;
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
@@ -36778,9 +36812,11 @@ function animeCouche(c){
     const s = echellePhare(GL.temps), [x, y] = ph.centre;
     return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
   }
-  // « defile » : neuf paliers de deux pixels en six dixièmes de seconde
+  /* La comète : le décalage part de la longueur du trait et descend d'une
+     période, comme le « stroke-dashoffset » de ses images-clés. Partir de sa
+     propre longueur est ce qui fait tomber les trois têtes au même endroit. */
   if (c.props.defile && GL.bouge) return c.clone({
-    decalage: -(palierDefile(GL.temps) % DEFILE_PALIERS) * (DEFILE_PERIODE / DEFILE_PALIERS) });
+    decalage: c.props.tirets[0] * c.props.demiEpaisseur - COMETE_PERIODE * phaseComete(GL.temps) });
   return c;
 }
 

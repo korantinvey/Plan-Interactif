@@ -328,7 +328,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 5341 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5356 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -411,7 +411,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3174 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3177 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -437,13 +437,13 @@ Fonctions :
 `routeEntre` 2294 · `calculeRoute` 2333 · `couleurNappe` 2359 · `rafraichitApercu` 2365
 `marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2446 · `mesureMarches` 2453
 `coupeMarche` 2468 · `distancesDesArrets` 2484 · `peintItineraire` 2496
-`lanceTracage` 2544 · `dessineItineraire` 2569 · `rafraichitBouts` 2591
-`cadreItineraire` 2614 · `champIti` 2638 · `ecritDistance` 2642 · `ecritDuree` 2650
-`fermeSugg` 2655 · `montreSugg` 2662 · `choisitPoint` 2696 · `valideSaisie` 2705
-`effaceItineraire` 2717 · `relance` 2744 · `phraseLiaison` 2795 · `montreResultat` 2809
-`bandeauVisee` 2951 · `armeVisee` 2974 · `finVisee` 2992 · `viseItineraire` 3008
-`visePoi` 3014 · `visePoint` 3020 · `ouvreItineraire` 3052 · `fermeItineraire` 3080
-`versItineraire` 3090 · `versItineraireDe` 3093
+`lanceTracage` 2547 · `dessineItineraire` 2572 · `rafraichitBouts` 2594
+`cadreItineraire` 2617 · `champIti` 2641 · `ecritDistance` 2645 · `ecritDuree` 2653
+`fermeSugg` 2658 · `montreSugg` 2665 · `choisitPoint` 2699 · `valideSaisie` 2708
+`effaceItineraire` 2720 · `relance` 2747 · `phraseLiaison` 2798 · `montreResultat` 2812
+`bandeauVisee` 2954 · `armeVisee` 2977 · `finVisee` 2995 · `viseItineraire` 3011
+`visePoi` 3017 · `visePoint` 3023 · `ouvreItineraire` 3055 · `fermeItineraire` 3083
+`versItineraire` 3093 · `versItineraireDe` 3096
 
 ### `_journee.html` — 2136 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -718,7 +718,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1472 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1490 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -733,16 +733,16 @@ Fonctions :
 `lisTransform` 613 · `lisTrace` 635 · `lisPoints` 703 · `num` 709 · `anneau` 711
 `rectArrondi` 717 · `couleurGl` 731 · `accVide` 748 · `convertitBloc` 749 · `accDe` 765
 `parcoursGl` 772 · `avecTrous` 812 · `formeGl` 833 · `texteGl` 869 · `imageGl` 892
-`partage` 924 · `designeGl` 930 · `couchesDeBloc` 932 · `modelesLibellesHtml` 998
-`poseModelesLibelles` 1008 · `lisModelesLibelles` 1014 · `emplacementWebgl` 1043
-`libellesWebgl` 1091 · `groupesNoms` 1154 · `couchesNoms` 1170 · `couchesPastilles` 1181
-`couchesLibellesWebgl` 1196 · `couchesDessineesWebgl` 1203 · `stage` 1224
-`brancheSurvolWebgl` 1228 · `poseSurvolWebgl` 1248 · `poseCurseurWebgl` 1257
-`poseFocusWebgl` 1266 · `aplatsDe` 1273 · `coucheSurvol` 1276 · `coucheFocus` 1285
-`couchesPhare` 1312 · `lueurDe` 1328 · `opacitePhare` 1366 · `echellePhare` 1367
-`couchesPhareNoms` 1370 · `palierDefile` 1390 · `animeCouche` 1393
-`majAnimationWebgl` 1408 · `animeWebgl` 1416 · `objetSous` 1439 · `cibleWebgl` 1446
-`priseWebgl` 1453 · `libelleSousWebgl` 1458 · `rectEcranWebgl` 1463
+`partage` 924 · `designeGl` 930 · `couchesDeBloc` 932 · `modelesLibellesHtml` 1007
+`poseModelesLibelles` 1017 · `lisModelesLibelles` 1023 · `emplacementWebgl` 1052
+`libellesWebgl` 1100 · `groupesNoms` 1163 · `couchesNoms` 1179 · `couchesPastilles` 1190
+`couchesLibellesWebgl` 1205 · `couchesDessineesWebgl` 1212 · `stage` 1233
+`brancheSurvolWebgl` 1237 · `poseSurvolWebgl` 1257 · `poseCurseurWebgl` 1266
+`poseFocusWebgl` 1275 · `aplatsDe` 1282 · `coucheSurvol` 1285 · `coucheFocus` 1294
+`couchesPhare` 1321 · `lueurDe` 1337 · `opacitePhare` 1375 · `echellePhare` 1376
+`couchesPhareNoms` 1379 · `palierDefile` 1404 · `phaseComete` 1406 · `animeCouche` 1409
+`majAnimationWebgl` 1426 · `animeWebgl` 1434 · `objetSous` 1457 · `cibleWebgl` 1464
+`priseWebgl` 1471 · `libelleSousWebgl` 1476 · `rectEcranWebgl` 1481
 
 ## Dans `web/`, mais que la construction ne produit pas
 
