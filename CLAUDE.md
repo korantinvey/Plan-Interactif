@@ -172,7 +172,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | reprendre à la main la forme d'un stand ou d'une zone venue de la source | `_geometrie.html` — réglage `_geo:<id>` gardé tant que l'empreinte du tracé source ne bouge pas ; crayon et cadenas (fermé d'avance) posés par `_pile.html` sur les couches `data:stands` et `data:zones` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
 | ordre des calques, pile, couleur du fond du plan | `_pile.html` |
-| fond de carte sous le pavillon, calage du plan sur la Terre | `_environs.html` ; groupe `#fondCarte` posé par `_js.html` `appliqueVue`, limite de recul `recul` ; migration `calage_du_plan_sur_la_terre` |
+| fond de carte sous le pavillon, calage du plan sur la Terre | `_environs.html` ; groupe `#fondCarte` posé par `_js.html` `appliqueVue`, limite de recul `recul` ; **un calage par pavillon**, colonne `plan.calage` lue par `calagePose` et écrite par `enregistreCalage` (identifiant de base par `_pousse.html` `identifiants`), oubli du réglage en cours à `_js.html` `changePlan` ; migrations `calage_du_plan_sur_la_terre` puis `le_calage_de_la_carte_par_pavillon` |
 | placer et tourner la carte à la main | `_environs.html` § Placer à la main, branché dans la chaîne des gestes de `_js.html` |
 | rendu vectoriel du fond, libellés droits sur un plan tourné | `_environs.html` § Le rendu vectoriel — MapLibre chargé à la demande, toile `#fondCarteGL` |
 | vider le hall sous la carte | `_environs.html` § Le trou sous le pavillon — contour gelé par `retientLeHall`, aplat `#trouDuFond`, bouton par calque posé par `_pile.html` |

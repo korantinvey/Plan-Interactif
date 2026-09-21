@@ -744,7 +744,7 @@ Deno.serve(async (req) => {
     const plans = await lu(
       publies(
         sb.from("plan")
-          .select("id, id_klipso, libelle, hall, emprise")
+          .select("id, id_klipso, libelle, hall, emprise, calage")
           .eq("evenement_id", evt.id),
         identifie,
       ).order("libelle", { ascending: true })
@@ -861,6 +861,8 @@ Deno.serve(async (req) => {
          la page qui pose les tuiles, sous le plan, à chaque changement de vue.
          Trois nombres et un nom : rien qui ne se lise déjà sur n'importe quelle
          carte du même endroit. */
+      // remplacé par le calage de chaque pavillon, plus bas ; gardé le temps
+      // que les pages en cache cessent de le lire
       calage: evt.calage ?? null,
       /* L'anglais des valeurs des listes, relevé dans les sources : la version
          anglaise de la page traduit avec lui secteurs, nomenclature et champs
@@ -898,6 +900,10 @@ Deno.serve(async (req) => {
           libelle: p.libelle,
           hall: p.hall,
           emprise: p.emprise ?? charge.emprise ?? null,
+          // où tombe le repère de ce pavillon sur la Terre ; les halls d'un
+          // parc ne partagent pas toujours une origine, d'où un calage par
+          // pavillon et non par salon
+          calage: p.calage ?? null,
           // ce que la page joindra à l'adresse du fond : tant qu'elle ne bouge
           // pas, le navigateur ne redemande rien
           versionFond: versions.get(p.id),

@@ -707,6 +707,8 @@ function onglets(){
 function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
+  /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
+  if (typeof oublieCalageEnCours === "function") oublieCalageEnCours();
   ferme();
   montePlan(); fit(); liste();
   chargeFond(i);
