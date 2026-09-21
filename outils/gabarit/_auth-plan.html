@@ -107,7 +107,10 @@ function ecranAcces(message){
       localStorage.setItem(CLE_CFG_A, JSON.stringify({ url, anonKey }));
       localStorage.setItem(CLE_SESSION_A, JSON.stringify(j));
       voile.remove();
-      litProfilA({ url, anonKey }, j);
+      /* Attendu : le profil ne se connaît qu'au retour de la base, et sans
+         cela un administrateur qui ouvrait ses réglages aussitôt, sur un
+         réseau lent, n'y trouvait pas son onglet « Admin ». */
+      await litProfilA({ url, anonKey }, j);
       activeAdmin();
       poseCompte();
       charge();
@@ -194,7 +197,7 @@ document.addEventListener("keydown", (ev) => {
   const cfg = configuration();
   const session = litLocal(CLE_SESSION_A);
   if (await sessionValide(cfg, session)){
-    litProfilA(cfg, session);
+    await litProfilA(cfg, session);
     activeAdmin(); poseCompte(); charge();
   }
   else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);

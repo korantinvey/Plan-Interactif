@@ -560,8 +560,15 @@ function refuseMesure(refus){
     MESURE_VISITEUR = "";
     effaceJetonsVisiteur();
   } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
-    MESURE_RETENU = true;
-    MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+    /* Comme au démarrage, et pour la même raison : sur une borne, un visiteur
+       qui cochait le refus puis un suivant qui le décochait faisaient écrire un
+       jeton durable sur un appareil partagé, et le disaient retenu — le rapport
+       ne pouvait plus signaler qu'il recompte peut-être. */
+    if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
+    else {
+      MESURE_RETENU = true;
+      MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+    }
   }
 }
 

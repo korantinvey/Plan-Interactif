@@ -8094,8 +8094,13 @@ function masque(){
   const iti = $("itineraire");
   if (iti && iti.classList.contains("open")) bas = Math.max(bas, iti.offsetHeight);
   if (tiroir){
+    /* Sur le corps, là où la mesure la pose — lue sur la racine elle revenait
+       vide, et le repli de 164 px tenait lieu de mesure pour une bande qui en
+       fait quatre-vingt-dix. Trente pixels de masque en trop, et la moitié en
+       décalage sur tout ce qui cadre. La lecture d'à côté, celle du glissement,
+       le disait déjà. */
     bas = Math.max(bas, ficheOuverte
-      ? parseFloat(getComputedStyle(document.documentElement)
+      ? parseFloat(getComputedStyle(document.body)
           .getPropertyValue("--replie")) || 164
       : r.bottom - tiroir.getBoundingClientRect().top);
   }
@@ -8983,8 +8988,16 @@ function assainitRiche(html){
     de.childNodes.forEach(n => {
       if (n.nodeType === 3){ vers.appendChild(document.createTextNode(n.nodeValue)); return; }
       if (n.nodeType !== 1) return;
-      if (RICHE_MUETTES[n.tagName]) return;
-      const nom = RICHE_BALISES[n.tagName];
+      /* `tagName` n'est en capitales que pour un élément HTML : un `<svg>` ou
+         un `<math>` analysés dans un document HTML sont des éléments étrangers
+         et gardent la casse d'écriture. Les deux entrées « SVG » et « MATH » de
+         la table ne pouvaient donc jamais correspondre : ils tombaient dans la
+         branche « inconnue : on la déplie », et leurs enfants avec — dans un
+         sous-arbre SVG, `<script>` et `<style>` ont eux aussi un nom
+         minuscule, et leur texte finissait affiché en clair. */
+      const balise = n.tagName.toUpperCase();
+      if (RICHE_MUETTES[balise]) return;
+      const nom = RICHE_BALISES[balise];
       // inconnue : on la déplie, son contenu reste
       if (!nom){ copie(n, vers); return; }
       const e = document.createElement(nom);
@@ -12758,8 +12771,15 @@ function blocRappel(hote){
     essai.onclick = async () => {
       essai.disabled = true;
       ditEssaiRappel(etat, "envoi");
-      ditEssaiRappel(etat, await essaieRappelReel());
-      essai.disabled = false;
+      /* Un navigateur qui rejette la demande d'autorisation, au lieu de rendre
+         « refusé », laissait le bouton éteint sur « Envoi… » indéfiniment. */
+      try {
+        ditEssaiRappel(etat, await essaieRappelReel());
+      } catch (e) {
+        ditEssaiRappel(etat, "panne");
+      } finally {
+        essai.disabled = false;
+      }
     };
   }
 
@@ -15797,12 +15817,37 @@ let calqueActif = null;   // id du calque en cours d'édition
 let outil = "main";
 let enCours = null;       // tracé en construction
 
-/* Historique des dessins. L'instantané ne copie que les calques et leurs
-   tableaux de formes : les formes elles-mêmes, images comprises, sont
-   partagées par référence — mémoriser reste donc quasi gratuit. */
+/* Historique des dessins. L'instantané copie les calques, leurs tableaux de
+   formes, et chaque forme — sans quoi il ne gardait rien de ce qui se retouche
+   sur place. Car tous les gestes d'édition écrivent *dans* la forme : le
+   glissement, la poignée tirée, l'arrondi, le libellé, la taille au clavier, la
+   ligne d'un arrêt, les passages posés. L'instantané pris juste avant portait
+   donc le même objet, déjà modifié, et Ctrl+Z retraçait le plan sans rien
+   défaire : seuls l'ajout et la suppression, qui touchent le tableau,
+   s'annulaient vraiment. `_batiments.html` `reposeBatiment` contourne ce piège
+   depuis longtemps en refabriquant ses formes ; il valait mieux le fermer.
+   Les points, eux, sont toujours remplacés par un tableau neuf, jamais écrits
+   en place : en copier la liste suffit, et `src` d'une image reste partagé. */
 const HIST = [], REFAIRE = [];
-const instantane = () => mesCalques().map(c => Object.assign({}, c, { formes: c.formes.slice() }));
-function memorise(){
+const instantane = () => mesCalques().map(c => Object.assign({}, c, {
+  formes: c.formes.map(f => Object.assign({}, f,
+    f.pts ? { pts: f.pts.slice() } : null)),
+}));
+/* Une salve ne mémorise qu'à son premier événement. Un champ de saisie en
+   envoie un par frappe, et chacun mémorisait un état : les cinquante
+   emplacements se remplissaient de variantes du même mot, et les gestes d'avant
+   en étaient chassés. La salve se referme quand on quitte le champ, ou dès
+   qu'autre chose se mémorise — c'est ce que fait déjà le nuancier avec son
+   drapeau `couleurEnCours`. */
+let salveEnCours = "";
+const clotSalve = () => { salveEnCours = ""; };
+function memorise(salve){
+  if (salve){
+    if (salveEnCours === salve) return;
+    salveEnCours = salve;
+  } else {
+    salveEnCours = "";
+  }
   HIST.push(instantane());
   if (HIST.length > 50) HIST.shift();
   REFAIRE.length = 0;
@@ -15812,8 +15857,15 @@ function restaure(source, autre){
   autre.push(instantane());
   DESSINS[P().id] = source.pop();
   if (calqueActif && !trouveCalque(calqueActif)) activeCalque(null);
-  enregistreDessins(); dessineDessins();
-  if (ADMIN) construitPanneau();
+  /* La forme choisie a pu partir avec l'état qu'on vient de défaire : Ctrl+D
+     puis Ctrl+Z retirait la copie du calque, et laissait son cadre et ses
+     quatre poignées affichés sur place, le panneau « Élément » ouvert sur elle.
+     Les commandes qui en dépendent ne faisaient alors plus rien, `formeParId`
+     ne rendant plus rien — un refus muet. */
+  if (formeSel && !formeParId(formeSel)) formeSel = null;
+  clotSalve();
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+  if (ADMIN){ construitPanneau(); majElement(); }
   return true;
 }
 function annule(){
@@ -17810,8 +17862,12 @@ $("repereLigne").oninput = proposeCouleurLigne;
 $("repereCouleur").oninput = () => { couleurALaMain = true; };
 
 $("elemSupprimer").onclick = supprimeForme;
-$("elemTexte").oninput = appliqueTexte;
-$("elemTaille").oninput = appliqueTexte;
+/* Une frappe n'est pas un geste : la salve entière se défait d'un seul Ctrl+Z
+   (voir `memorise`), et la quitter en rouvre une. */
+$("elemTexte").oninput = () => appliqueTexte("texte");
+$("elemTexte").onblur = clotSalve;
+$("elemTaille").oninput = () => appliqueTexte("taille");
+$("elemTaille").onblur = clotSalve;
 if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
 /* L'épaisseur et le style se reprennent sur une ligne déjà posée : on juge un
    trait sur le plan, pas dans une liste déroulante. */
@@ -17825,8 +17881,9 @@ if ($("elemHauteur")) $("elemHauteur").oninput = () => appliqueDimension("h");
 $("elemPicto").onchange = appliquePicto;
 /* Le mode et la ligne d'un arrêt se reprennent comme son type, et dans le même
    panneau : on juge une pastille sur le plan, pas dans une liste. */
-$("elemMode").onchange = appliqueTransport;
-$("elemLigne").oninput = appliqueTransport;
+$("elemMode").onchange = () => appliqueTransport();
+$("elemLigne").oninput = () => appliqueTransport("ligne");
+$("elemLigne").onblur = clotSalve;
 /* La couleur, elle, se peint à chaque événement du nuancier et ne s'écrit
    qu'au repos : la rafale ne refait que la forme tirée, jamais tous les
    calques. Le retour en arrière tient le geste entier — on mémorise au premier
@@ -18364,10 +18421,10 @@ function appliqueSociete(){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
-function appliqueTexte(){
+function appliqueTexte(salve){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
-  memorise();
+  memorise(salve);
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
@@ -18415,14 +18472,14 @@ function appliqueTrait(){
  * changer de ligne c'est en prendre la couleur, et non garder par inadvertance
  * celle de la précédente.
  */
-function appliqueTransport(){
+function appliqueTransport(salve){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || !estTransport(cible.f)) return;
   const f = cible.f;
   const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
   const memeLigne = mode === f.mode && ligne === String(f.ligne || "");
   const choisie = memeLigne ? $("elemCouleur").value : couleurLigne(mode, ligne);
-  memorise();
+  memorise(salve);
   if (f.txt === libelleDoffice(pictoForme(f), f.mode, f.ligne))
     f.txt = libelleDoffice(pictoForme(f), mode, ligne);
   f.mode = mode;
@@ -19544,6 +19601,14 @@ function finGesteGeo(o){
   if (p){ p.enveloppe = null; elargitEmprise(p, o); }
   oublieGrilles();
   dessineMarques();
+  /* Les marques des distinctions recopient le tracé du stand, ou la boîte de
+     son tracé, et leur relevé ne se refaisait qu'au changement de pavillon ou
+     de mode : le liseré d'un nouvel exposant restait sur l'ancien contour,
+     décalé du stand qu'il désigne. Ici, et non dans `retraceGeo` : la forme se
+     tire à la souris, et refaire le relevé de tous les stands à chaque image du
+     geste coûterait plus que la marque ne vaut. */
+  oublieDists();
+  dessineDists();
   libelles();
 }
 
@@ -21869,7 +21934,14 @@ function basculeParcours(genre, id, canal){
  * une fenêtre qui en propose un vingt et unième.
  */
 function verseAuParcours(stands, confs, canal, remplace){
-  if (remplace) PARCOURS = { stands: [], confs: [] };
+  /* La réserve part avec la liste, comme au vidage : elle s'écrit dans le
+     stockage avec elle, et un rang mis de côté en juin reparaissait dans la
+     liste reçue en septembre le jour où les données le reconnaissaient à
+     nouveau — alors qu'on avait demandé un remplacement. */
+  if (remplace){
+    PARCOURS = { stands: [], confs: [] };
+    MIS_DE_COTE = { stands: [], confs: [] };
+  }
   stands.forEach(id => {
     if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
     mesure("parcours", canal, id, "fiche_stand");
@@ -23696,11 +23768,15 @@ const ESSAI_RAPPEL_AVANCE = 30000;   // ms : le temps que la tâche de la minute
 
 async function essaieRappelReel(){
   if (!RAPPELS_API || !SLUG || !poussePossible()) return "impossible";
+  /* La demande suit le geste sans rien attendre entre les deux, comme pour
+     l'interrupteur : un `await` placé avant la ferait refuser par Safari. La
+     recherche du service en était un, juste au-dessus — sur un iPhone où
+     l'autorisation n'avait jamais été donnée, aucune invite ne paraissait et
+     l'écran annonçait un refus. Un faux diagnostic, sur le bouton dont tout
+     l'objet est de diagnostiquer. */
+  if (await Notification.requestPermission() !== "granted") return "refus";
   const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
   if (!reg) return "sansService";
-  /* La demande suit le geste sans rien attendre entre les deux, comme pour
-     l'interrupteur : un `await` placé avant la ferait refuser par Safari. */
-  if (await Notification.requestPermission() !== "granted") return "refus";
   let ab;
   try { ab = await abonne(reg); } catch (e) { return "panne"; }
   try {
@@ -25607,7 +25683,15 @@ function candidats(q){
   const v = q.trim().toLowerCase();
   const out = [];
   DATA.plans.forEach(p => reperesDe(p).forEach(f => {
-    if (!v || String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
+    /* Sous le nom que l'écran montre — donc traduit —, et aussi sous celui des
+       données. La liste affichait « Exit », le visiteur tapait « Exit », et
+       « sortie » ne le contenait pas : la liste se vidait sur « aucun repère ne
+       porte ce nom » alors qu'il était là, et la saisie passant par ici, aucun
+       trajet ne se calculait. Choisir dans la liste marchait encore ; taper
+       non, et sur un téléphone on tape. */
+    const nom = nomRepere(f).toLowerCase();
+    if (!v || nom.indexOf(v) >= 0 ||
+        String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
   }));
   if (!v) return out.slice(0, 12);
 
@@ -30555,8 +30639,15 @@ function refuseMesure(refus){
     MESURE_VISITEUR = "";
     effaceJetonsVisiteur();
   } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
-    MESURE_RETENU = true;
-    MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+    /* Comme au démarrage, et pour la même raison : sur une borne, un visiteur
+       qui cochait le refus puis un suivant qui le décochait faisaient écrire un
+       jeton durable sur un appareil partagé, et le disaient retenu — le rapport
+       ne pouvait plus signaler qu'il recompte peut-être. */
+    if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
+    else {
+      MESURE_RETENU = true;
+      MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+    }
   }
 }
 
@@ -32023,8 +32114,13 @@ function versLePlan(ll, cal){
  */
 function reancre(cal, pt){
   const ll = versTerre(pt, cal);
+  /* `style` en fait partie : l'adresse qu'on colle parce que celle du fond
+     rend un 404 se perdait au premier ré-ancrage — et la rotation ré-ancre à
+     chaque image du geste. La carte repartait sur le style d'origine et le
+     champ se vidait au tracé suivant, sans un mot. */
   return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1], angle: cal.angle,
-           fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide };
+           fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide,
+           style: cal.style };
 }
 
 /**
@@ -32521,8 +32617,11 @@ function poseCarteGL(cal, fond){
   ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
   guetteLaCarte(sig);
   chargeMapLibre().then(gl => {
-    // un autre fond a été choisi, ou la carte retirée, pendant le chargement
-    if (gen !== _genGL) return;
+    /* Un autre fond a été choisi, ou la carte retirée, pendant le chargement.
+       On rend le drapeau : sans cela il restait levé sur une carte jamais
+       posée, et tout montage suivant sortait à la première ligne — « Situer le
+       salon » ne montait plus rien, sans un mot, jusqu'au rechargement. */
+    if (gen !== _genGL){ _monteGL = false; return; }
     const v = vueGL(cal);
     _styleGL = sig;
     _carteGL = new gl.Map({
@@ -32549,9 +32648,10 @@ function poseCarteGL(cal, fond){
     });
   }).catch(e => {
     /* Le montage annulé ne condamne rien : celui qui l'a remplacé est en cours,
-       et c'est à lui de dire s'il aboutit. */
-    if (gen !== _genGL) return;
+       et c'est à lui de dire s'il aboutit. Le drapeau se rend dans les deux
+       cas, le remplaçant ayant le sien. */
     _monteGL = false;
+    if (gen !== _genGL) return;
     _echecGL = e.message;
     hote.hidden = true;
     ditCarte("Carte vectorielle indisponible (" + e.message +
@@ -32610,7 +32710,10 @@ function videCarteGL(){
      l'arrivée de la bibliothèque, sur un hôte devenu invisible. */
   _genGL++;
   const hote = $("fondCarteGL");
-  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; _monteGL = false; }
+  /* Hors du `if` : c'est quand aucune carte n'est encore posée — un montage
+     justement en vol — que le drapeau avait le plus besoin d'être rendu. */
+  _monteGL = false;
+  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
   if (hote) hote.hidden = true;
 }
 

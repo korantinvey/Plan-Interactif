@@ -1861,7 +1861,15 @@ function candidats(q){
   const v = q.trim().toLowerCase();
   const out = [];
   DATA.plans.forEach(p => reperesDe(p).forEach(f => {
-    if (!v || String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
+    /* Sous le nom que l'écran montre — donc traduit —, et aussi sous celui des
+       données. La liste affichait « Exit », le visiteur tapait « Exit », et
+       « sortie » ne le contenait pas : la liste se vidait sur « aucun repère ne
+       porte ce nom » alors qu'il était là, et la saisie passant par ici, aucun
+       trajet ne se calculait. Choisir dans la liste marchait encore ; taper
+       non, et sur un téléphone on tape. */
+    const nom = nomRepere(f).toLowerCase();
+    if (!v || nom.indexOf(v) >= 0 ||
+        String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
   }));
   if (!v) return out.slice(0, 12);
 
