@@ -2767,6 +2767,14 @@ branché n'est pas un défaut du code relu, et une pull request rouge pour cette
 raison ferait douter du reste. Une branche venue d'une bifurcation est laissée
 de côté, les secrets du dépôt ne lui étant pas accessibles.
 
+Un dernier réglage se lit mal et coûte tout : l'action refuse par défaut d'être
+déclenchée par un robot, pour qu'un robot ne l'appelle pas en boucle. Or les
+pull requests de ce dépôt sont le plus souvent ouvertes depuis une session
+Claude Code, donc signées `claude[bot]` — et la relecture s'arrêtait là, sur une
+tâche rouge dont seul le journal disait pourquoi. D'où `allowed_bots: claude`
+dans le workflow : ce robot-là, nommément, et pas `*` qui ferait relire les pull
+requests de n'importe quel automate.
+
 ## Fabriquer les pages
 
 Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,

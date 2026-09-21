@@ -92,6 +92,16 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # L'action refuse d'être déclenchée par un robot, pour qu'un robot ne
+          # l'appelle pas en boucle. Or les pull requests de ce dépôt sont
+          # ouvertes depuis une session, donc signées `claude[bot]` : sans cette
+          # ligne la relecture ne se lançait que sur celles ouvertes à la main,
+          # ce qui ne s'est vu qu'en lisant le journal d'une tâche rouge. On
+          # nomme ce seul robot plutôt que `*`, qui ferait relire les pull
+          # requests de n'importe quel automate. Aucune boucle à craindre : la
+          # tâche ne part qu'à l'ouverture et à la poussée, jamais sur un
+          # commentaire, et la relecture ne sait que commenter.
+          allowed_bots: claude
           # Un seul commentaire, réécrit à chaque poussée : une pull request
           # reprise cinq fois n'a pas à porter cinq avis dont quatre périmés.
           use_sticky_comment: true
