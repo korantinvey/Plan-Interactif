@@ -1695,7 +1695,7 @@ sans que rien ne le signale — d'où le `run_worker_first` de `wrangler.jsonc`,
 qui fait passer le script devant pour ce seul chemin.
 
 **Le nom du salon sur l'écran d'accueil.** L'application s'appelle « Plan SMCL
-by Event2Plan », et non du nom du produit : c'est le salon qu'on cherche du
+by Event2Map », et non du nom du produit : c'est le salon qu'on cherche du
 regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
 est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
 sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
@@ -1727,7 +1727,7 @@ l'écran d'accueil ».
 L'icône se choisit entre deux : celle du produit, la même pour tous les salons,
 ou le logo du salon, déposé là. Rien de déposé, c'est celle du produit — il n'y
 a pas de mode à régler à côté de l'image, qui aurait pu la contredire. Le nom,
-lui, est un champ : vide, c'est « Plan SMCL by Event2Plan » ; écrit, c'est ce
+lui, est un champ : vide, c'est « Plan SMCL by Event2Map » ; écrit, c'est ce
 qui paraît sous l'icône, tel quel.
 
 Un seul fichier à choisir, deux images fabriquées. Android ne pose pas une
@@ -2718,6 +2718,37 @@ Apple refuse le jeton autrement, par un 403 sans explication.
 
 `workflow_dispatch` permet de relancer le déploiement Supabase à la main depuis
 l'onglet **Actions**, sans rien pousser.
+
+### La relecture des pull requests
+
+Une quatrième chaîne ne déploie rien : elle lit. Sur chaque pull request,
+`.github/workflows/relecture.yml` fait relire le diff et commente ce qu'il y
+trouve. Elle **propose** — les outils qu'on lui accorde ne savent que lire le
+dépôt et écrire des commentaires, et son jeton n'a que `contents: read` : rien
+ne se corrige tout seul, et rien ne part sur `main` en son nom.
+
+Elle ne redouble pas les contrôles mécaniques. `Pages` reconstruit les pages,
+analyse le JavaScript de tout ce qui est servi et refuse une phrase affichée
+sans traduction ; ce qu'il voit n'est pas à dire deux fois. La relecture prend
+l'autre moitié, celle qu'aucun script ne sait voir et qui se paie après la
+fusion : un effet CSS ajouté au plan mais jamais rejoué dans le rendu WebGL,
+donc invisible pour qui regarde ; une migration datée d'avant la dernière de
+`main`, qui fait échouer le déploiement sur `main` ; un fichier fabriqué
+corrigé en direct, que la construction suivante efface. Chacun des trois est
+déjà arrivé.
+
+Ce qu'elle cherche est écrit dans `.claude/skills/relecture/SKILL.md`, et non
+dans le workflow : la même liste sert aux sessions Claude Code qui relisent à
+la main, et une liste tenue à deux endroits finit par dire deux choses. Pour
+étendre la relecture, c'est ce fichier qu'on complète.
+
+Il lui faut un secret de plus, `ANTHROPIC_API_KEY`, au même endroit que les
+autres — **Settings → Secrets and variables → Actions**, la clé venant de
+console.anthropic.com. Tant qu'il est absent, la tâche s'arrête en vert en
+disant qu'elle l'attend : un garde-fou qu'on n'a pas encore branché n'est pas
+un défaut du code relu, et une pull request rouge pour cette raison ferait
+douter du reste. Une branche venue d'une bifurcation est laissée de côté, les
+secrets du dépôt ne lui étant pas accessibles.
 
 ## Fabriquer les pages
 

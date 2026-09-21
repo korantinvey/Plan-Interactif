@@ -286,8 +286,9 @@ function dessineRapport() {
      nombre d'étapes reprises en sous-titre, plutôt qu'un envoi seul. */
   chiffre(g1, r.partages, "Parcours partagés",
     r.partages_repris
-      ? nb(r.partages_repris) + " étape" + (r.partages_repris > 1 ? "s" : "") +
-        " reprise" + (r.partages_repris > 1 ? "s" : "") + " par ceux qui les ont reçus."
+      ? (r.partages_repris > 1
+          ? nb(r.partages_repris) + " étapes reprises par ceux qui les ont reçus."
+          : nb(r.partages_repris) + " étape reprise par qui l'a reçue.")
       : "Aucune étape reprise pour l'instant.");
   b1.appendChild(g1);
   f.appendChild(b1);

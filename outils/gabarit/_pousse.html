@@ -611,7 +611,7 @@ function litSauvegarde(fichier){
     const dAilleurs = s.salon && DATA?.slug && s.salon !== DATA.slug;
     confirme("Restaurer cette sauvegarde ?",
       "Elle date du " + String(s.date || "").slice(0, 10) +
-      (dAilleurs ? ", et vient du salon « " + s.salon + " »" : "") +
+      (dAilleurs ? ", vient du salon « " + s.salon + " »" : "") +
       " et porte " + compte + " calque" + (compte > 1 ? "s" : "") + " de dessin. " +
       "Les calques et l'apparence en place seront remplacés" +
       (dAilleurs ? ", pour autant qu'elle nomme des pavillons d'ici." : "."),

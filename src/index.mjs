@@ -367,8 +367,8 @@ async function rappels(requete, url) {
 }
 
 /* Le nom que porte l'application installée faute d'un autre : le salon
-   d'abord, la marque en signature — « Plan SMCL by Event2Plan ». */
-const MARQUE = "Event2Plan";
+   d'abord, la marque en signature — « Plan SMCL by Event2Map ». */
+const MARQUE = "Event2Map";
 /* Un nom de salon tient en une ligne. Au-delà, ce n'est plus un nom, et rien
    ne l'afficherait de toute façon : les systèmes coupent bien avant. */
 const NOM_MAX = 64;

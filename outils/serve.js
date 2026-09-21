@@ -121,7 +121,7 @@ http.createServer((q, s) => {
         const nom = String(dit.evenement || "").trim();
         const choisi = String(dit.app || "").trim();
         if (r.statusCode === 200 && nom){
-          contenu.name = choisi || "Plan " + nom + " by Event2Plan";
+          contenu.name = choisi || "Plan " + nom + " by Event2Map";
           contenu.short_name = choisi || nom;
         }
         const empreinte = String(dit.icone || "");
