@@ -49,19 +49,28 @@ jobs:
       pull-requests: write
       id-token: write
     env:
+      # Deux façons de payer la relecture, et le workflow accepte l'une ou
+      # l'autre : le jeton d'abonnement passe par le forfait Claude, la clé API
+      # est facturée à l'appel. Poser le jeton suffit à basculer, sans toucher
+      # au workflow.
+      JETON: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       CLE: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
-      # Sans la clé, la tâche s'arrête en vert au lieu de rougir à chaque pull
-      # request : un garde-fou absent n'est pas un défaut du code relu.
-      - name: Vérifier que la clé est posée
+      # Sans identifiant, la tâche s'arrête en vert au lieu de rougir à chaque
+      # pull request : un garde-fou absent n'est pas un défaut du code relu.
+      - name: Vérifier qu'un identifiant est posé
         id: cle
         run: |
-          if [ -z "$CLE" ]; then
-            echo 'Secret ANTHROPIC_API_KEY absent : relecture ignorée.'
-            echo 'Posez-le dans Settings → Secrets and variables → Actions.'
-            echo 'posee=non' >> "$GITHUB_OUTPUT"
-          else
+          if [ -n "$JETON" ]; then
+            echo 'Relecture par le jeton d abonnement.'
             echo 'posee=oui' >> "$GITHUB_OUTPUT"
+          elif [ -n "$CLE" ]; then
+            echo 'Relecture par la cle API.'
+            echo 'posee=oui' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Ni CLAUDE_CODE_OAUTH_TOKEN ni ANTHROPIC_API_KEY : relecture ignoree.'
+            echo 'Posez l un des deux dans Settings → Secrets and variables → Actions.'
+            echo 'posee=non' >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v5
@@ -75,6 +84,9 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         if: steps.cle.outputs.posee == 'oui'
         with:
+          # Les deux entrées sont facultatives et l'action retient celle qui
+          # n'est pas vide : le secret absent se rend comme une chaîne vide.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Un seul commentaire, réécrit à chaque poussée : une pull request
           # reprise cinq fois n'a pas à porter cinq avis dont quatre périmés.
