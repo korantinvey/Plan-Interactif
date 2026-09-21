@@ -2775,6 +2775,17 @@ tâche rouge dont seul le journal disait pourquoi. D'où `allowed_bots: claude`
 dans le workflow : ce robot-là, nommément, et pas `*` qui ferait relire les pull
 requests de n'importe quel automate.
 
+Et une conséquence qui surprend la première fois : **l'action refuse de tourner
+quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
+file must exist and have identical content to the version on the repository's
+default branch ». C'est ce qui empêche une pull request de réécrire le workflow
+pour détourner le jeton, donc c'est une bonne chose ; mais cela veut dire qu'une
+modification de ce fichier **ne peut pas être essayée sur sa propre pull
+request** : la tâche s'arrête, en vert, avec un avertissement dans son journal.
+Elle ne vaudra qu'après la fusion. Pour la vérifier alors, il suffit de relancer
+la tâche depuis l'onglet **Actions** : le workflow est désormais celui de `main`,
+et la relecture part pour de bon.
+
 ## Fabriquer les pages
 
 Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,

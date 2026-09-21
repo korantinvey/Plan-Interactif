@@ -24,6 +24,13 @@
 # `/install-github-app` le fabrique et le pose tout seul. Les deux entrées sont
 # passées à l'action, celle qui reste vide valant absente — c'est déjà ce qu'elle
 # voit quand un workflow n'en déclare qu'une.
+#
+# Dernier point, qui se découvre mal : l'action refuse de tourner quand ce
+# fichier diffère de la version portée par `main`, pour qu'une pull request ne
+# le réécrive pas afin de détourner le jeton. Une retouche d'ici ne s'essaie
+# donc pas sur sa propre pull request — la tâche s'arrête en vert, en le disant
+# dans son journal, et ne vaut qu'après la fusion. On la relance alors depuis
+# l'onglet « Actions » pour la voir enfin partir.
 name: Relecture
 
 on:
