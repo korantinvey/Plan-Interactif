@@ -806,11 +806,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
 `rendIconeApp` 392 · `retraits` 488 · `ampute` 512 · `masquesDe` 555 · `masquesDuPlan` 575
 
-### `supabase/functions/sync-evenement/index.ts` — 1758 l.
+### `supabase/functions/sync-evenement/index.ts` — 1768 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `ecrit` 143 · `gaia` 151 · `libellesChoix` 162
 `retiensAnglais` 189 · `fournisseur` 207 · `raccourci` 215 · `enClair` 252 · `range` 278
-`champsKlipso` 299 · `hebergee` 1713 · `nettoieUrl` 1734 · `groupeTextes` 1744
+`champsKlipso` 299 · `hebergee` 1723 · `nettoieUrl` 1744 · `groupeTextes` 1754
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

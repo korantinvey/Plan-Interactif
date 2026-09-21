@@ -118,7 +118,12 @@ async function enregistre(req: Request) {
       titre: String(r?.titre ?? "").slice(0, 200),
       corps: String(r?.corps ?? "").slice(0, 400),
       adresse: String(r?.adresse ?? "").slice(0, 500),
-      vie: Math.round(Number(r?.vie) || 900),
+      /* Bornée ici, comme `mesure` borne son `recul`. La fonction SQL clamme
+         bien, mais son cast arrive après la sérialisation : `1e+308` n'est pas
+         un littéral entier, elle levait, et l'enregistrement rendait 500 pour
+         *tout* le lot — les soixante rappels du visiteur, pas la seule ligne
+         fautive. Les bornes sont celles du SQL. */
+      vie: Math.min(86400, Math.max(60, Math.round(Number(r?.vie) || 900) || 900)),
       /* L'heure que la page a lue, telle que la source l'écrivait. Elle ne sert
          pas à l'envoi : elle sert à reconnaître, des jours plus tard, un
          programme qui a bougé sous un rappel déjà posé. */

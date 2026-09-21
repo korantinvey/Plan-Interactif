@@ -434,6 +434,11 @@ Deno.serve(async (req) => {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
 
+  /* Le salon visé, retenu hors du `try` : c'est le rattrapage tout en bas qui
+     en a besoin, et le corps de la requête est lu une fois pour toutes — le
+     recloner y lève. */
+  let salonVise = "";
+
   try {
     /* La synchronisation écrit dans la base et interroge Klipso avec la clé
        de l'organisateur : elle exige un utilisateur authentifié, pas la
@@ -450,6 +455,7 @@ Deno.serve(async (req) => {
     }
 
     const corps = await req.json();
+    salonVise = String(corps.evenementId ?? "");
 
     /* ------------------ synchronisation complète ------------------ */
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
@@ -1692,10 +1698,14 @@ Deno.serve(async (req) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     try {
-      const corps = await req.clone().json().catch(() => ({}));
-      if (corps.evenementId) {
+      /* `req.clone()` levait ici : le corps est consommé bien plus haut, et le
+         `.catch` était accroché au `.json()`, pas au clonage — l'exception
+         partait donc dans le `catch` muet d'à côté. Toute panne survenue après
+         cette lecture était rendue en 500 à l'appelant et jamais inscrite : la
+         console montrait une erreur périmée, ou rien. */
+      if (salonVise) {
         await client().from("evenement")
-          .update({ derniere_err: message }).eq("id", corps.evenementId);
+          .update({ derniere_err: message }).eq("id", salonVise);
       }
     } catch { /* la remontée de l'erreur prime sur son enregistrement */ }
     return repond({ erreur: message }, 500);
