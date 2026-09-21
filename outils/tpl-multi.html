@@ -8815,7 +8815,11 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  met("ville", LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court");
+  /* Le code postal n'a pas de ligne à lui : il se pose devant la ville, comme
+     sur une enveloppe. Il reste à part jusqu'ici pour que le filtre « Ville »
+     coche des villes et non des codes postaux. */
+  met("ville", LIBELLE_CORPS.ville,
+    esc([soc.cp, soc.ville].filter(Boolean).join(" ")), "court");
   met("pays", LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court");
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
@@ -11245,7 +11249,8 @@ const LECTURE_CORPS = {
   raison: o => o.plan && o.plan !== o.nom ? o.plan : "",
   secteur: o => o.sect,
   adresse: o => o.adr,
-  ville: o => o.ville,
+  // le code postal se pose devant la ville, comme sur la fiche
+  ville: o => [o.cp, o.ville].filter(Boolean).join(" "),
   pays: o => o.pays,
   niveaux: o => o.niveaux > 1 ? String(o.niveaux) : "",
   telephone: o => o.tel,
@@ -11267,7 +11272,7 @@ const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
 const EXEMPLES_CORPS = {
   nom: "Ateliers Ligneron", code: "D14", pavillon: "Pavillon 2",
   raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
-  adresse: "8 rue de la Filature", ville: "Nantes", pays: "France",
+  adresse: "8 rue de la Filature", ville: "44000 Nantes", pays: "France",
   niveaux: "2", telephone: "02 40 00 00 00", site: "ateliers-ligneron.fr",
   facebook: "facebook.com/ligneron", linkedin: "linkedin.com/company/ligneron",
   instagram: "instagram.com/ligneron",
