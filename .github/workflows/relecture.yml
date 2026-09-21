@@ -17,6 +17,13 @@
 # lire le dépôt et écrire des commentaires — ni édition, ni commit, ni poussée —
 # et le jeton n'a que `contents: read`. Ce qu'il faut corriger se corrige à la
 # main, ou dans une session, jamais par cette tâche.
+#
+# Deux authentifications possibles, et une seule suffit. `CLAUDE_CODE_OAUTH_TOKEN`
+# fait consommer un abonnement Claude, `ANTHROPIC_API_KEY` facture à l'appel. Le
+# premier est préféré : il ne coûte rien de plus que ce qui est déjà payé, et
+# `/install-github-app` le fabrique et le pose tout seul. Les deux entrées sont
+# passées à l'action, celle qui reste vide valant absente — c'est déjà ce qu'elle
+# voit quand un workflow n'en déclare qu'une.
 name: Relecture
 
 on:
@@ -49,23 +56,31 @@ jobs:
       pull-requests: write
       id-token: write
     env:
+      JETON: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       CLE: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
-      # Sans la clé, la tâche s'arrête en vert au lieu de rougir à chaque pull
-      # request : un garde-fou absent n'est pas un défaut du code relu.
-      - name: Vérifier que la clé est posée
-        id: cle
+      # Sans aucun des deux secrets, la tâche s'arrête en vert au lieu de rougir à
+      # chaque pull request : un garde-fou absent n'est pas un défaut du code relu.
+      # Le journal nomme la voie retenue, seul endroit où cela se lit après coup.
+      - name: Vérifier qu'une authentification est posée
+        id: acces
         run: |
-          if [ -z "$CLE" ]; then
-            echo 'Secret ANTHROPIC_API_KEY absent : relecture ignorée.'
-            echo 'Posez-le dans Settings → Secrets and variables → Actions.'
-            echo 'posee=non' >> "$GITHUB_OUTPUT"
-          else
+          if [ -n "$JETON" ]; then
+            echo 'Authentification par abonnement (CLAUDE_CODE_OAUTH_TOKEN).'
             echo 'posee=oui' >> "$GITHUB_OUTPUT"
+          elif [ -n "$CLE" ]; then
+            echo 'Authentification par clé API (ANTHROPIC_API_KEY).'
+            echo 'posee=oui' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Aucune authentification posée : relecture ignorée.'
+            echo 'Posez CLAUDE_CODE_OAUTH_TOKEN (claude setup-token, ou'
+            echo '/install-github-app) ou ANTHROPIC_API_KEY dans'
+            echo 'Settings → Secrets and variables → Actions.'
+            echo 'posee=non' >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v5
-        if: steps.cle.outputs.posee == 'oui'
+        if: steps.acces.outputs.posee == 'oui'
         with:
           # Tout l'historique : comparer l'horodatage d'une migration à la
           # dernière de `main` demande de connaître `main`, qu'un clone
@@ -73,8 +88,9 @@ jobs:
           fetch-depth: 0
 
       - uses: anthropics/claude-code-action@v1
-        if: steps.cle.outputs.posee == 'oui'
+        if: steps.acces.outputs.posee == 'oui'
         with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # Un seul commentaire, réécrit à chaque poussée : une pull request
           # reprise cinq fois n'a pas à porter cinq avis dont quatre périmés.
