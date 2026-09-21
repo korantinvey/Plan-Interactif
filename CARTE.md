@@ -332,8 +332,8 @@ Fonctions :
 Éléments :
 
 `#bandeAdmin` · `#bandeActs` · `#bandeau` · `#titre` · `#sub` · `#halls` · `#nStands`
-`#nExpo` · `#nZones` · `#btnItineraire` · `#btnParcours` · `#nParcours` · `#btnLayers`
-`#btnReglages` · `#btnLangue` · `#menuCompte` · `#avatarCompte` · `#compteMail`
+`#nExpo` · `#nZones` · `#btnLangue` · `#btnParcours` · `#nParcours` · `#btnLayers`
+`#btnReglages` · `#btnItineraire` · `#menuCompte` · `#avatarCompte` · `#compteMail`
 `#btnSortir` · `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side` · `#poignee` · `#q`
 `#videQ` · `#btnFiltres` · `#nFiltres` · `#panCrit` · `#critCorps` · `#critPied`
 `#critVider` · `#critVoir` · `#actifs` · `#count` · `#countTxt` · `#list` · `#piedSide`
