@@ -47,32 +47,37 @@ jobs:
       - name: Contrôler la syntaxe des pages
         run: node outils/controle.js
 
+      # `CARTE.md` est une sortie de construction au même titre que `web/`, et
+      # `npm run verifie` contrôle les deux. Ce workflow n'en regardait qu'une :
+      # un index en retard passait donc les contrôles, restait en retard sur
+      # `main`, et ne se découvrait qu'au prochain `npm run verifie` de
+      # quelqu'un — qui échouait alors sur un fichier qu'il n'avait pas touché.
       - name: Valider la reconstruction
         if: github.event_name == 'push'
         run: |
-          if [ -z "$(git status --porcelain web)" ]; then
+          if [ -z "$(git status --porcelain web CARTE.md)" ]; then
             echo 'Pages déjà à jour.'
             exit 0
           fi
           echo 'Pages reconstruites :'
-          git status --porcelain web
+          git status --porcelain web CARTE.md
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add web
+          git add web CARTE.md
           git commit -m 'Reconstruit les pages depuis le gabarit'
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Signaler un retard des pages
         if: github.event_name == 'pull_request'
         run: |
-          if [ -n "$(git status --porcelain web)" ]; then
+          if [ -n "$(git status --porcelain web CARTE.md)" ]; then
             echo 'Les pages versionnées sont en retard sur outils/gabarit/ :'
-            git status --porcelain web
+            git status --porcelain web CARTE.md
             echo
             echo 'Lancez « npm run construire » et validez le résultat.'
             exit 1
           fi
-          echo 'Pages à jour : web/ correspond bien à outils/gabarit/.'
+          echo 'Pages à jour : web/ et CARTE.md correspondent bien à outils/gabarit/.'
 
       # Toute phrase affichée doit exister en anglais : le contrôle relève les
       # chaînes visibles du gabarit et les cherche dans `outils/anglais/`. Placé
