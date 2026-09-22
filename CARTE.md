@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4824 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 5092 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.3748 · 10. Mode administration
-- l.3856 · La fiche d'une zone organisateur
-- l.4565 · Masquer une zone organisateur
-- l.4651 · Placer un libellé à la main
+- l.4016 · 10. Mode administration
+- l.4124 · La fiche d'une zone organisateur
+- l.4833 · Masquer une zone organisateur
+- l.4919 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,32 +27,35 @@ Fonctions :
 `appliqueCommandes` 222 · `optionActive` 326 · `programmeOffert` 331
 `suggestionOfferte` 332 · `appliqueOptions` 334 · `langueOfferte` 358 · `appliqueLangue` 360
 `catalogueTenu` 365 · `chercheSorte` 435 · `voletRecherche` 438 · `minutesVisite` 495
-`lueHeure` 522 · `lueDate` 526 · `datesSalon` 533 · `horairesSalon` 547 · `salonPartage` 560
-`presseNuanciers` 591 · `suitNuancier` 607 · `trio` 635 · `melange` 645
-`appliqueAccent` 659 · `appliqueFond` 693 · `modeDist` 740 · `couleurDist` 752
-`appliqueDists` 774 · `modeBarre` 804 · `appliqueBarre` 806 · `modeleRetenu` 846
-`policeChoisie` 1002 · `policeDuModele` 1007 · `feuillePolice` 1017 · `chargePolice` 1039
-`policePrete` 1059 · `policeDesNoms` 1077 · `posePoliceLibelles` 1106
-`appliqueModele` 1138 · `habilleModale` 1182 · `texteCorps` 1254 · `clesPortees` 1279
-`standApercu` 1299 · `lignesApercu` 1323 · `contenuApercu` 1353 · `apercuFiche` 1390
-`apercuListe` 1468 · `apercuDuo` 1490 · `glisseFenetre` 1523 · `ouvreReglages` 1534
-`voletZones` 1654 · `champsFicheZone` 1756 · `ficheZoneEnPlace` 1826 · `voletPlan` 1844
-`blocRappel` 1892 · `ditEssaiRappel` 2003 · `voletAdmin` 2028 · `blocOptions` 2218
-`blocLangues` 2265 · `blocBarre` 2339 · `blocHoraires` 2397 · `sallesSituees` 2530
-`voletPmr` 2546 · `nomDuTon` 2637 · `svgVignette` 2646 · `barreVignette` 2648
-`vignetteDistPlan` 2652 · `vignetteDistListe` 2665 · `vignetteDistFiche` 2679
-`salonDitSes` 2699 · `coinPris` 2706 · `voletDist` 2729 · `voletApparence` 2894
-`clesFiche` 3093 · `voletOrdre` 3110 · `enregistreConf` 3697 · `rgbHex` 3704 · `hexa` 3711
-`luminance` 3715 · `ecarte` 3729 · `joli` 3744 · `retireAdmin` 3765 · `activeAdmin` 3778
-`champZone` 3882 · `champsZone` 3907 · `champSalles` 3999 · `nomDeZone` 4051
-`reduitLogo` 4085 · `cadreLogo` 4128 · `champLogo` 4200 · `editeurRiche` 4238
-`memeFicheZone` 4395 · `suitFicheZone` 4402 · `verseFicheZone` 4410 · `ficheZone` 4436
-`enregistreZone` 4461 · `basculeAffichageZone` 4576 · `marqueZonesMasquees` 4593
-`ecritColonnesEvenement` 4613 · `ecritColonneEvenement` 4647 · `cleLibelle` 4672
-`empreinteLibelle` 4688 · `placementLibelle` 4696 · `posePlacement` 4706
-`libelleAutomatique` 4723 · `modePlacementLibelles` 4732 · `majPaletteLibelle` 4751
-`choisitLibelle` 4768 · `pousseLibelle` 4775 · `libellePointerDown` 4783
-`libellePointerMove` 4799 · `libellePointerUp` 4808
+`capaciteGeree` 544 · `capaciteFixee` 545 · `capaciteParSurface` 546 · `regleCapacite` 551
+`aireDuStand` 569 · `capaciteStand` 594 · `phraseCapacite` 613 · `lueHeure` 658
+`lueDate` 662 · `datesSalon` 669 · `horairesSalon` 683 · `salonPartage` 696
+`presseNuanciers` 727 · `suitNuancier` 743 · `trio` 771 · `melange` 781
+`appliqueAccent` 795 · `appliqueFond` 829 · `modeDist` 876 · `couleurDist` 888
+`appliqueDists` 910 · `modeBarre` 940 · `appliqueBarre` 942 · `modeleRetenu` 982
+`policeChoisie` 1138 · `policeDuModele` 1143 · `feuillePolice` 1153 · `chargePolice` 1175
+`policePrete` 1195 · `policeDesNoms` 1213 · `posePoliceLibelles` 1242
+`appliqueModele` 1274 · `habilleModale` 1318 · `texteCorps` 1390 · `clesPortees` 1415
+`standApercu` 1435 · `lignesApercu` 1459 · `contenuApercu` 1489 · `apercuFiche` 1526
+`apercuListe` 1604 · `apercuDuo` 1626 · `glisseFenetre` 1659 · `ouvreReglages` 1670
+`voletZones` 1795 · `champsFicheZone` 1897 · `ficheZoneEnPlace` 1967 · `voletPlan` 1985
+`blocRappel` 2033 · `ditEssaiRappel` 2144 · `voletAdmin` 2169 · `blocOptions` 2359
+`blocLangues` 2406 · `blocBarre` 2480 · `blocHoraires` 2538 · `voletParcours` 2680
+`sallesSituees` 2798 · `voletPmr` 2814 · `nomDuTon` 2905 · `svgVignette` 2914
+`barreVignette` 2916 · `vignetteDistPlan` 2920 · `vignetteDistListe` 2933
+`vignetteDistFiche` 2947 · `salonDitSes` 2967 · `coinPris` 2974 · `voletDist` 2997
+`voletApparence` 3162 · `clesFiche` 3361 · `voletOrdre` 3378 · `enregistreConf` 3965
+`rgbHex` 3972 · `hexa` 3979 · `luminance` 3983 · `ecarte` 3997 · `joli` 4012
+`retireAdmin` 4033 · `activeAdmin` 4046 · `champZone` 4150 · `champsZone` 4175
+`champSalles` 4267 · `nomDeZone` 4319 · `reduitLogo` 4353 · `cadreLogo` 4396
+`champLogo` 4468 · `editeurRiche` 4506 · `memeFicheZone` 4663 · `suitFicheZone` 4670
+`verseFicheZone` 4678 · `ficheZone` 4704 · `enregistreZone` 4729
+`basculeAffichageZone` 4844 · `marqueZonesMasquees` 4861 · `ecritColonnesEvenement` 4881
+`ecritColonneEvenement` 4915 · `cleLibelle` 4940 · `empreinteLibelle` 4956
+`placementLibelle` 4964 · `posePlacement` 4974 · `libelleAutomatique` 4991
+`modePlacementLibelles` 5000 · `majPaletteLibelle` 5019 · `choisitLibelle` 5036
+`pousseLibelle` 5043 · `libellePointerDown` 5051 · `libellePointerMove` 5067
+`libellePointerUp` 5076
 
 Éléments :
 
@@ -331,7 +334,7 @@ Fonctions :
 `geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
 `geometriePointerUp` 641
 
-### `_head.html` — 5735 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5746 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
