@@ -2558,6 +2558,34 @@ const appliqueVue = () => {
    fin du geste ou une pause de la main. */
 let imageDemandee = null, libellesEnAttente = null;
 
+/**
+ * Ce qu'un changement de vue, et lui seul, oblige à refaire des noms.
+ *
+ * En SVG, tout : `libelles` choisit pour la vue du moment ce qui tient dans
+ * chaque forme et ce qui reste lisible, et il faut le refaire.
+ *
+ * Sous la carte graphique, rien. Les noms y sont préparés une fois pour
+ * toutes, avec leurs seuils de zoom, et c'est le shader qui les montre ou les
+ * tait — `libellesWebgl` ne lit pas `view`. Le parcourir quand même relisait
+ * les six cents emplacements, habillait chaque nom, recomposait la clé de
+ * comparaison, la trouvait identique et jetait tout : quelques dizaines de
+ * millisecondes sur un téléphone, prises deux fois là où elles se voient le
+ * plus — au doigt levé, et au milieu du geste, la pause de la main déclenchant
+ * le retri. C'est ce qui se sentait comme des saccades en déplaçant le plan.
+ *
+ * Reste ce que la vue change vraiment ici : ce qui garde sa taille à l'écran
+ * quel que soit le zoom — pastilles de l'itinéraire, pointes de flèche, point
+ * de la borne —, que `appliqueVue` court-circuite tant que le dessin tient le
+ * plan. Un nom qui change, lui, ne passe pas par la vue : la recherche, la
+ * sélection et les réglages appellent `libelles` pour leur compte.
+ */
+function libellesDeLaVue(){
+  if (!GL.actif){ libelles(); return; }
+  if (typeof rafraichitBouts === "function") rafraichitBouts();
+  if (typeof rafraichitFleches === "function") rafraichitFleches();
+  if (typeof rafraichitBorne === "function") rafraichitBorne();
+}
+
 /** Pendant un geste : le strict nécessaire, une fois par image. */
 function rafraichitVue(){
   if (!imageDemandee){
@@ -2569,7 +2597,7 @@ function rafraichitVue(){
     });
   }
   clearTimeout(libellesEnAttente);
-  libellesEnAttente = setTimeout(() => { libellesEnAttente = null; libelles(); }, 150);
+  libellesEnAttente = setTimeout(() => { libellesEnAttente = null; libellesDeLaVue(); }, 150);
 }
 
 /** À la fin d'un geste, ou pour un saut de vue : tout, sans attendre. */
@@ -2577,7 +2605,7 @@ function poseVue(){
   stoppeZoom();
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
-  appliqueVue(); echelle(); libelles();
+  appliqueVue(); echelle(); libellesDeLaVue();
   if (CALAGE) dessineCalage();
 }
 
@@ -2813,11 +2841,17 @@ function zoom(f, fx, fy){
   glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
                w: nw, h: base.h * k });
 }
+/* Ce que la règle affiche déjà. Écrire `textContent` remplace le texte même
+   quand il ne change pas — le nœud est jeté et refait, et la règle se remet en
+   page à chaque image d'un glissement, où pourtant l'échelle ne bouge pas. */
+let _pasEchelle = null;
 function echelle(){
   const r = cadrePlan();
   const mParPx = view.w / (r.width || 1);
   const pas = [1, 2, 5, 10, 20, 50, 100, 200].find(p => p >= mParPx * 90) || 200;
   $("scaleBar").style.width = (pas / mParPx) + "px";
+  if (pas === _pasEchelle) return;
+  _pasEchelle = pas;
   $("scaleTxt").textContent = pas + " m";
 }
 
