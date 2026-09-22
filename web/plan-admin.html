@@ -1853,9 +1853,18 @@ html.sans-image-stand .outils #imageSoc{
 .dcal .repere.plaque{--encre-poi:var(--ink)}
 .dcal .repere.plaque > rect{fill:var(--surface)}
 .dcal .repere .barres rect{fill:currentColor;stroke:none}
+/* L'anneau du métro : la ligne ne s'y étale pas davantage, elle colore le M et
+   le rond du numéro sur le même champ clair. Le pictogramme prend donc la
+   couleur du groupe, à rebours des autres arrêts où il prenait l'encre ; et
+   l'encre, elle, s'écrit dans le rond, seul endroit qui porte la couleur —
+   blanc dans le vert du 12, noir dans le jaune du 1. */
+.dcal .repere.anneau > rect{fill:var(--surface)}
+.dcal .repere.anneau .glyphe path{fill:currentColor}
+.dcal .repere .indice rect{fill:currentColor;stroke:none}
 /* Le liseré qui marque l'arrêt ouvert est clair : posé sur une plaque claire,
    il ne ferait que l'élargir. C'est l'encre qui le porte là. */
-.dcal .repere.plaque.sel > rect,.dcal .repere.plaque.phare > rect{stroke:var(--ink)}
+.dcal .repere.plaque.sel > rect,.dcal .repere.plaque.phare > rect,
+.dcal .repere.anneau.sel > rect,.dcal .repere.anneau.phare > rect{stroke:var(--ink)}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -17845,7 +17854,12 @@ const MODES_TRANSPORT = [
      dans son symbole — l'anneau porte son M — et n'a donc pas à se réécrire à
      côté ; celle du tram fait partie du nom de la ligne, que la signalétique
      écrit « T3a », et le pictogramme ne la dit pas. */
-  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true },
+  /* Le métro ne pose pas davantage sa couleur en aplat : la signalétique
+     donne son anneau à la couleur de la ligne, sur champ clair, et range
+     l'indice dans une pastille pleine de cette même couleur — le M vert, et
+     le 12 dans son rond vert. Ce n'est pas la couleur qui s'en va, c'est
+     l'aplat : elle passe au symbole, où elle se lit aussi bien. */
+  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true, anneau: true },
   /* Le tram porte sa couleur autrement que les deux autres. La signalétique
      n'en fait pas un aplat : elle encadre l'indice de deux barres, sur champ
      clair — c'est ainsi que « T3a » s'écrit sur le quai, et c'est à ces deux
@@ -18010,10 +18024,16 @@ function traceRepere(f){
      repère. Mais l'encre ne se calcule plus ici : le champ est le même pour
      toutes les lignes, et la feuille de style la donne une fois pour toutes. */
   const plaque = Boolean(estTransport(f) && modeDit(f.mode).plaque);
+  /* L'anneau du métro tient sa couleur du groupe comme les barres du tram, et
+     sur le même champ clair. L'encre, elle, se calcule encore : elle n'écrit
+     plus sur le champ mais dans la pastille de l'indice, qui est à la couleur
+     de la ligne — blanc dans le vert du 12, noir dans le jaune du 1. */
+  const anneau = Boolean(estTransport(f) && modeDit(f.mode).anneau);
   const teinte = fond
     ? ' style="color:' + fond +
       (plaque ? "" : ';--encre-poi:' + encreRepere(fond)) + '"' : "";
   const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
+               (anneau ? " anneau" : "") +
                (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
                '" tabindex="0" role="button" aria-label="' +
@@ -18049,7 +18069,13 @@ function traceRepere(f){
     const corps = t * 1.1;
     const lt = ligne ? largeur(ligne, P_NOM) * corps : 0;
     const ecart = ligne ? cote * .12 : 0;
-    const w = cote + ecart + lt;
+    /* Le rond du métro est de la taille du pictogramme, pour que l'anneau et
+       l'indice se lisent comme deux pastilles de même poids. Il s'allonge en
+       gélule quand le numéro déborde — « 3bis » ne tient pas dans un cercle
+       sans qu'on réduise le chiffre au point de ne plus le voir de loin. */
+    const rond = anneau && ligne ? Math.max(k, lt + k * .35) : 0;
+    const li = rond || lt;
+    const w = cote + ecart + li;
     const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     /* Les barres se retirent des bords : à ras, leurs angles dépasseraient des
        coins arrondis de la plaque. Elles s'arrondissent comme sur le quai, et
@@ -18058,6 +18084,17 @@ function traceRepere(f){
     const barre = (by) => '<rect x="' + (x + retrait).toFixed(2) +
       '" y="' + by.toFixed(2) + '" width="' + (w - 2 * retrait).toFixed(2) +
       '" height="' + hBarre.toFixed(2) + '" rx="' + (hBarre / 2).toFixed(2) + '"/>';
+    /* L'indice : le numéro seul partout, et dans sa pastille au métro. Celle-ci
+       se groupe avec lui, comme les barres du tram et pour la même raison — le
+       liseré de sélection ne vise que les enfants directs de la pastille, et
+       cernerait sinon le rond au lieu du repère. */
+    const indice = (cx) => !ligne ? "" :
+      (rond ? '<g class="indice"><rect x="' + (cx - rond / 2).toFixed(2) +
+        '" y="' + (f.pts[0][1] - k / 2).toFixed(2) + '" width="' + rond.toFixed(2) +
+        '" height="' + k.toFixed(2) + '" rx="' + (k / 2).toFixed(2) + '"/>' : "") +
+      '<text x="' + cx.toFixed(2) + '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
+      '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' +
+      (rond ? '</g>' : "");
     return tete +
       '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
@@ -18066,9 +18103,7 @@ function traceRepere(f){
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
       '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
-      (ligne ? '<text x="' + (x + cote - m + ecart + lt / 2).toFixed(2) +
-        '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
-        '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' : "") +
+      indice(x + cote - m + ecart + li / 2) +
       '</g>';
   }
 
