@@ -1483,18 +1483,45 @@ const themeFiltrable = (n) => CRITERES.some(c => c.cle === CLE_THEMES &&
 const PLAN_ADMIN = document.documentElement.dataset.role === "admin";
 
 /**
- * Les champs retenus comme critères, dans l'ordre où la console les range.
+ * L'ordre où le panneau range ses filtres, tel que l'exploitant l'a voulu.
+ *
+ * Sans réglage, l'ordre reste celui d'origine — le secteur en tête, puis les
+ * champs dans l'ordre où la console les a cochés. C'est un ordre de hasard : il
+ * dit dans quel ordre on a coché des cases, non par quoi un visiteur commence à
+ * trancher son salon. D'où ce rangement, réglé depuis l'onglet « Recherche ».
+ *
+ * Un critère que le réglage ne connaît pas garde sa place naturelle, derrière
+ * le premier voisin de gauche que le réglage connaît : un champ coché dans la
+ * console après coup paraît là où il serait paru, et non au bout de la liste où
+ * personne ne l'a mis.
+ */
+function ordreCriteres(cles){
+  const regle = ((conf("_crit").ordre) || []).filter(c => cles.indexOf(c) >= 0);
+  if (!regle.length) return cles;
+  const sortie = regle.slice();
+  cles.forEach((c, i) => {
+    if (sortie.indexOf(c) >= 0) return;
+    let j = -1;
+    for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(cles[k]);
+    sortie.splice(j + 1, 0, c);
+  });
+  return sortie;
+}
+
+/**
+ * Les champs retenus comme critères, dans l'ordre où le panneau les montrera.
  *
  * Le secteur ouvre la marche et ne se coche pas : il ne vient d'aucun champ de
  * fiche à associer mais du plan lui-même, où il est là ou n'est pas. Le
  * réglage qui l'éteint est celui des couleurs, et il l'éteint des deux côtés.
  * C'est aussi le découpage le plus large du salon : le poser en tête range les
- * critères du plus grossier au plus fin.
+ * critères du plus grossier au plus fin — c'est l'ordre par défaut, que
+ * l'exploitant refait à sa main si son salon se tranche autrement.
  */
 function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
   const cochees = Object.keys(r).filter(k => r[k] === true);
-  return secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees;
+  return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
 }
 
 /** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
@@ -1590,6 +1617,20 @@ function indexeCriteres(){
     if (!CRITERES.some(c => c.cle === k)) state.crit.delete(k);
   });
   majCriteres();
+}
+
+/**
+ * L'ordre des filtres vient de changer : on refait l'index, et le panneau.
+ *
+ * `majCriteres` relit le panneau déplié sans le réécrire — c'est ce qui lui
+ * garde le groupe ouvert et le tamis tapé —, et un rang échangé ne se lit pas
+ * dans une relecture. Le seul geste qui change l'ordre étant le rangement des
+ * réglages, il peut bien coûter un panneau réécrit.
+ */
+function refaitCriteres(){
+  indexeCriteres();
+  const pan = $("panCrit");
+  if (pan && !pan.hidden) remplitCriteres();
 }
 
 /** Ce que la liste retient d'un critère : une valeur cochée suffit. */

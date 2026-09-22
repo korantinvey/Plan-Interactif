@@ -3841,6 +3841,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    chaque geste part en base tout seul, et rien d'autre ne le dirait. */
 .etatO{font-size:12px;color:var(--ink-3)}
 .etatO[data-mal="true"]{color:var(--rouge)}
+/* Le même rangement, dans l'onglet « Recherche » : les filtres du panneau des
+   critères. Il n'a ni réserve ni aperçu — un filtre se coche dans la console,
+   et le panneau derrière la fenêtre tient lieu d'aperçu —, si bien que la
+   liste est seule sous son intertitre et doit s'en écarter d'elle-même. */
+.ordreCrit{margin-top:11px}
+.ordreCrit + .videO{margin-top:9px}
 @media (max-width:760px){
   .ficheTrois{grid-template-columns:minmax(0,1fr)}
   .ordreApercu{position:static}
