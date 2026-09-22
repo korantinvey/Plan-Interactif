@@ -25700,14 +25700,20 @@ function grille(p, pmr){
   const x0 = X0 - PAS_GRILLE, y0 = Y0 - PAS_GRILLE;
   const w = Math.ceil((X1 - X0) / PAS_GRILLE) + 2;
   const h = Math.ceil((Y1 - Y0) / PAS_GRILLE) + 2;
-  const cv = document.createElement("canvas");
-  cv.width = w; cv.height = h;
-  const ctx = cv.getContext("2d", { willReadFrequently: true });
-  ctx.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
+  // une toile réglée sur la grille : même repère, même dégagement, de sorte
+  // que deux relevés faits dessus se recouvrent case pour case
+  const toile = () => {
+    const cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    const c = cv.getContext("2d", { willReadFrequently: true });
+    c.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
                    -x0 / PAS_GRILLE, -y0 / PAS_GRILLE);
-  ctx.lineJoin = ctx.lineCap = "round";
-  ctx.lineWidth = 2 * (pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
-  ctx.fillStyle = ctx.strokeStyle = "#000";
+    c.lineJoin = c.lineCap = "round";
+    c.lineWidth = 2 * (pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
+    c.fillStyle = c.strokeStyle = "#000";
+    return c;
+  };
+  const ctx = toile();
 
   const barre = (d, trait) => {
     const t = new Path2D(d);
@@ -25814,7 +25820,25 @@ function grille(p, pmr){
   // moitié, la case est du côté du mur
   for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
 
-  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, pmr: pmr, co: co, si: si };
+  /* Ce que l'exploitant a tracé pour barrer, relevé à part. La grille ne dit
+     pas pourquoi une case est mur, et il faut pourtant les distinguer : on
+     traverse l'emplacement qu'on a désigné — c'est ce qui fait partir le trait
+     du stand et non de l'allée devant lui —, jamais la cloison tracée en
+     travers, fût-elle posée dans cet emplacement. Une cloison basse au fond
+     d'un restaurant est dans son contour, et le trait la coupait au motif
+     qu'elle était chez lui. */
+  const traces = formesRole(p, "obstacle").concat(pmr ? formesRole(p, "pmr") : []);
+  let cloisons = null;
+  if (traces.length){
+    const bx = toile();
+    traces.forEach(o => { const t = new Path2D(o.d); if (!o.trait) bx.fill(t); bx.stroke(t); });
+    const bp = bx.getImageData(0, 0, w, h).data;
+    cloisons = new Uint8Array(w * h);
+    for (let i = 0; i < cloisons.length; i++) cloisons[i] = bp[i * 4 + 3] > 128 ? 1 : 0;
+  }
+
+  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, cloisons: cloisons,
+              pmr: pmr, co: co, si: si };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
   g.crete = cretes(g);
@@ -25978,7 +26002,7 @@ const PORTEE_POINT = 80;
  * accepte de fouiller : un pavillon entier repeint pour chaque accroche
  * coûterait plus que toutes les recherches réunies.
  */
-function empriseDe(g, d, cx0, cy0, cote){
+function empriseDe(g, p, d, cx0, cy0, cote){
   const cv = document.createElement("canvas");
   cv.width = cote; cv.height = cote;
   const ctx = cv.getContext("2d", { willReadFrequently: true });
@@ -25989,9 +26013,34 @@ function empriseDe(g, d, cx0, cy0, cote){
   ctx.fillStyle = ctx.strokeStyle = "#000";
   const t = new Path2D(d);
   ctx.fill(t); ctx.stroke(t);
+  /* Ce qu'un autre occupe n'est pas sien, fût-il dans son contour : une zone
+     non traversable posée au fond d'une zone orga, un stand qui la déborde.
+     On retranche leur plein seul — leur dégagement est partagé avec le nôtre,
+     et l'ôter refermerait la bouche d'un emplacement serré. */
+  if (p){
+    const c0 = horsGrille(g, [g.x0 + (cx0 + cote / 2) * PAS_GRILLE,
+                              g.y0 + (cy0 + cote / 2) * PAS_GRILLE]);
+    const portee = cote * PAS_GRILLE + 40;
+    ctx.globalCompositeOperation = "destination-out";
+    for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+      if (!v.d || v.d === d) continue;
+      const c = v.lc || v.c;
+      if (!c || Math.abs(c[0] - c0[0]) > portee || Math.abs(c[1] - c0[1]) > portee) continue;
+      ctx.fill(new Path2D(v.d));
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
   const px = ctx.getImageData(0, 0, cote, cote).data;
   const m = new Uint8Array(cote * cote);
   for (let i = 0; i < m.length; i++) m[i] = px[i * 4 + 3] > 128 ? 1 : 0;
+  /* Et ce qui a été tracé pour barrer ne lui appartient jamais, où qu'on
+     l'ait posé : c'est tout l'objet d'une cloison. */
+  if (g.cloisons)
+    for (let y = 0; y < cote; y++) for (let x = 0; x < cote; x++){
+      const gx = cx0 + x, gy = cy0 + y;
+      if (gx < 0 || gy < 0 || gx >= g.w || gy >= g.h) continue;
+      if (g.cloisons[gy * g.w + gx]) m[y * cote + x] = 0;
+    }
   return m;
 }
 
@@ -26010,7 +26059,7 @@ function empriseDe(g, d, cx0, cy0, cote){
  * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
  * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accrocheDepuis(g, xy, chez, portee){
+function accrocheDepuis(g, p, xy, chez, portee){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const [gx, gy] = celluleDe(g, xy[0], xy[1]);
@@ -26023,7 +26072,7 @@ function accrocheDepuis(g, xy, chez, portee){
   const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
   const cote = 2 * portee + 1;
   const cx0 = dx0 - portee, cy0 = dy0 - portee;
-  const sien = chez ? empriseDe(g, chez, cx0, cy0, cote) : null;
+  const sien = chez ? empriseDe(g, p, chez, cx0, cy0, cote) : null;
   const chezSoi = (nx, ny) => {
     if (!sien) return true;
     const px = nx - cx0, py = ny - cy0;
@@ -26097,10 +26146,10 @@ function versLeMilieu(g, i){
  * essai cherche à la portée d'un emplacement, sans quoi on rendrait joignable
  * le stand que la portée écarte — ce qu'elle est là pour empêcher.
  */
-function accroche(g, xy, chez){
-  let r = accrocheDepuis(g, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
+function accroche(g, p, xy, chez){
+  let r = accrocheDepuis(g, p, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
   if (chez && !(r >= 0 && g.nappe[r])){
-    const large = accrocheDepuis(g, xy, null, PORTEE_ACCROCHE);
+    const large = accrocheDepuis(g, p, xy, null, PORTEE_ACCROCHE);
     if (large >= 0 && g.nappe[large]) r = large;
   }
   return r >= 0 && g.nappe[r] ? versLeMilieu(g, r) : r;
@@ -27066,18 +27115,28 @@ function faceDeSortie(p, obj, ancre){
  * par le passage laissé entre deux stands, mais en tranchant l'angle de celui
  * qui le borde. Un visiteur ne traverse pas un stand, il en fait le tour.
  *
- * On ne garde donc un accès que si ce trait ne franchit que l'emprise qu'il
- * dessert, dégagement compris — la même peinture que la grille, pour que les
- * deux se recouvrent exactement. Les autres ne sont pas des façades : le
- * trajet passera par celle d'à côté, quitte à contourner.
+ * On ne garde donc un accès que si ce trait n'entre dans aucun autre
+ * emplacement, et ne coupe aucune cloison tracée — pas même une posée chez
+ * celui qu'on dessert, comme la cloison basse au fond d'un restaurant, que le
+ * trait franchissait au motif qu'elle était chez lui. Les autres accès ne sont
+ * pas des façades : le trajet passera par celle d'à côté, quitte à contourner.
  */
-function raccordTient(g, xy, c, d){
-  if (!d) return true;
+function raccordTient(g, p, obj, xy, c){
+  if (!p || !obj || !obj.d) return true;
   const B = centreCase(g, c);
-  const a = celluleDe(g, xy[0], xy[1]), b = celluleDe(g, B[0], B[1]);
-  const cx0 = Math.min(a[0], b[0]) - 2, cy0 = Math.min(a[1], b[1]) - 2;
-  const cote = Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) + 5;
-  const sien = empriseDe(g, d, cx0, cy0, cote);
+  const ctx = document.createElement("canvas").getContext("2d");
+  /* Ce qu'on regarde, ce sont les contours, non la grille : le dégagement d'un
+     voisin déborde sur l'allée qu'on longe, et l'interdire fermerait tout
+     passage un peu serré. Frôler est permis ; entrer, non. */
+  const x0 = Math.min(xy[0], B[0]) - 5, x1 = Math.max(xy[0], B[0]) + 5;
+  const y0 = Math.min(xy[1], B[1]) - 5, y1 = Math.max(xy[1], B[1]) + 5;
+  const autres = [];
+  for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+    if (v === obj || v.id === obj.id || !v.d) continue;
+    const c2 = v.lc || v.c;
+    if (!c2 || c2[0] < x0 - 40 || c2[0] > x1 + 40 || c2[1] < y0 - 40 || c2[1] > y1 + 40) continue;
+    autres.push(new Path2D(v.d));
+  }
   const l = Math.hypot(B[0] - xy[0], B[1] - xy[1]);
   const n = Math.max(1, Math.ceil(l / (PAS_GRILLE / 2)));
   for (let k = 0; k <= n; k++){
@@ -27085,10 +27144,9 @@ function raccordTient(g, xy, c, d){
     const x = xy[0] + (B[0] - xy[0]) * u, y = xy[1] + (B[1] - xy[1]) * u;
     const i = caseDe(g, x, y);
     if (i < 0) return false;
-    if (!g.mur[i]) continue;
-    const [px, py] = celluleDe(g, x, y);
-    const qx = px - cx0, qy = py - cy0;
-    if (qx < 0 || qy < 0 || qx >= cote || qy >= cote || sien[qy * cote + qx] !== 1) return false;
+    // une cloison tracée ne se franchit pas, même posée chez celui qu'on dessert
+    if (g.cloisons && g.cloisons[i]) return false;
+    if (autres.some(t => ctx.isPointInPath(t, x, y))) return false;
   }
   return true;
 }
@@ -27100,19 +27158,19 @@ function accesDe(g, p, obj, xy){
   if (p && d){
     const pas = PAS_GRILLE + (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
     for (const f of facesLibres(p, obj)){
-      const c = accroche(g, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
+      const c = accroche(g, p, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
       if (c >= 0 && g.nappe[c] && !vus.has(c)){ vus.add(c); out.push(c); }
     }
     /* Une seule façade se garde telle quelle : l'écarter rendrait
        l'emplacement injoignable, et un trait qui coupe se voit et se
        comprend là où l'absence de trajet ne s'explique pas. */
     if (out.length > 1){
-      const tiennent = out.filter(c => raccordTient(g, xy, c, d));
+      const tiennent = out.filter(c => raccordTient(g, p, obj, xy, c));
       if (tiennent.length) return tiennent;
     }
   }
   if (!out.length){
-    const c = accroche(g, xy, d);
+    const c = accroche(g, p, xy, d);
     if (c >= 0) out.push(c);
   }
   return out;
@@ -27525,7 +27583,7 @@ function balayage(p, pmr, xy, chez){
   const g = grille(p, pmr);
   /* On ne sort pas d'un emplacement en traversant son voisin : l'accroche s'en
      tient à l'emprise du sien, quand on sait laquelle c'est. */
-  const c = accroche(g, xy, chez);
+  const c = accroche(g, p, xy, chez);
   const b = { g: g, d: c >= 0 ? distancesDepuis(g, c) : null };
   BALAYAGES.set(cle, b);
   return b;
