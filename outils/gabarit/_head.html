@@ -1508,6 +1508,13 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    numéro n'en aurait rien su. */
 .detail-hd{--titre:19px}
 .detail-hd h2{font-family:"Archivo",sans-serif;font-size:var(--titre);letter-spacing:-.02em;
+  /* Une hauteur de ligne entière, arrondie plutôt que fixée : la taille du
+     nom vit en variable et chaque modèle la redéfinit, si bien qu'un nombre
+     en pixels n'en vaudrait que pour un seul. À 1,5 sur dix-neuf pixels elle
+     tombait sur 28,5, et le corps de la fiche démarrait un demi-pixel plus
+     bas que la grille de l'écran. Un navigateur qui ignore « round » retombe
+     sur la valeur héritée, celle d'avant. */
+  line-height:round(calc(var(--titre) * 1.5), 1px);
   margin:8px 0 6px;text-wrap:balance;padding-right:26px}
 .badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
   background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
@@ -1516,7 +1523,11 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    l'accompagne. Il vaut quatre cinquièmes du nom, sur tous les modèles — d'où
    le poids de ce sélecteur, qui doit passer devant ceux qui règlent la taille
    des pastilles modèle par modèle. */
-.detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8)}
+.detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8);
+  /* Quatre cinquièmes de dix-neuf pixels font 15,2, et une ligne à 1,5 en
+     fait 22,8 : la ligne du numéro portait la fraction que le titre
+     au-dessus venait de perdre. Même arrondi, sur la même variable. */
+  line-height:round(calc(var(--titre) * 1.2), 1px)}
 /* La ligne du type — « Stand », « Zone » — porte aussi la mention des nouveaux
    venus : c'est la première ligne qu'on lit, avant même le nom, et la pastille
    y annonce l'exposant au lieu de commenter son numéro, deux lignes plus bas.
@@ -1608,6 +1619,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .rubanDist{display:flex;align-items:center;gap:7px;padding:6px 18px;
   background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  /* Une hauteur de ligne entière, et non l'héritée : à 1,5 sur onze pixels
+     elle valait 16,5, le bandeau 28,5, et tout ce qu'il descend dans la
+     fiche tombait entre deux rangées de pixels. */
+  line-height:16px;
   letter-spacing:.06em;text-transform:uppercase}
 /* La teinte choisie l'emporte sur celle que le modèle de fiche donne à la
    pastille : l'exploitant qui la règle veut celle-là, pas celle de
@@ -1703,7 +1718,11 @@ html .detail-hd .badge.dist.teinte{
 .detail-bd > .cInfos:empty,.detail-bd > .cConf:empty,
 .detail-bd > .cProd:empty{display:none}
 .field{display:flex;flex-direction:column;gap:3px}
-.field .v{font-size:14px;line-height:1.45}
+/* La hauteur de ligne est donnée en pixels entiers, et non en proportion :
+   1,45 sur quatorze pixels valait 20,3, chaque champ 38,3, et la fraction
+   s'ajoutait à elle-même d'un champ au suivant — le sixième démarrait un
+   pixel et demi sous la grille de l'écran. */
+.field .v{font-size:14px;line-height:20px}
 .field .v a{color:var(--accent)}
 /* Une valeur multiple s'écrit en lignes. Les pastilles convenaient à des codes
    de trois caractères ; les libellés sont des phrases. */
