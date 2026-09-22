@@ -27095,11 +27095,24 @@ function faceDeSortie(p, obj, ancre){
  * Un emplacement sans face libre — enclavé, ou dont le dégagement mange le
  * seul passage — retombe sur l'accroche depuis son centre, qui sait relâcher
  * la règle plutôt que de rendre la main.
+ *
+ * Les faces ne valent que pour ce dont l'intérieur est mur, et c'est le cas
+ * de tout emplacement : son dégagement le referme bien avant son centre. Une
+ * zone où l'on marche — une agora, un restaurant dont on n'a barré que les
+ * cloisons — est son propre accès, et le trajet la rejoint en suivant ses
+ * allées. L'aborder par ses faces la faisait prendre par le côté le plus
+ * proche à vol d'oiseau, puis rejoindre son centre d'un trait droit : sur une
+ * zone de quarante mètres, c'est une traversée que rien ne contrôle, et elle
+ * coupait à travers la cloison là où l'exploitant avait justement laissé une
+ * ouverture. Partir du point montré rend ce détour à l'A*, qui sort par où
+ * l'on passe.
  */
 function accesDe(g, p, obj, xy){
   const d = obj && obj.d;
   const out = [];
   const vus = new Set();
+  const ici = caseDe(g, xy[0], xy[1]);
+  if (ici >= 0 && g.nappe[ici]) return [versLeMilieu(g, ici)];
   if (p && d){
     const pas = PAS_GRILLE + (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
     for (const f of facesLibres(p, obj)){
