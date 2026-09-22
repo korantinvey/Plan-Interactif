@@ -4363,9 +4363,10 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   $("voile").classList.add("on");
   ecarteClicFantome();
   /* Le plan vient sur l'emplacement maintenant, et non avant d'ouvrir : la
-     fiche est posée, et sa largeur — une ou deux colonnes, on ne le sait
-     qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
-     ordre pour les deux écrans, là où il en fallait un par écran. */
+     fiche est posée, et le cadrage sait enfin ce qu'elle couvre — un panneau
+     au bord droit sur un écran large, un tiroir au bas d'un téléphone, dont
+     la hauteur dépend de ce qu'on vient d'y écrire. Un seul ordre pour les
+     deux écrans, là où il en fallait un par écran. */
   if (recentrer) centre(o);
   anime(() => rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici

@@ -2437,9 +2437,10 @@ html .detail-hd .badge.dist.teinte{
 .expos button:hover{border-color:var(--line-strong)}
 .expos .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
-/* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
-   sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
-   elles s'effacent, et leurs champs se suivent comme s'ils étaient seuls. */
+/* Les volets de la fiche s'effacent : leurs champs se suivent dans le corps
+   comme s'ils étaient seuls, et c'est l'onglet qui décide lequel des trois
+   paraît. Le volet n'est là que pour être montré ou caché d'un bloc — lui
+   laisser une boîte ajouterait un écart au-dessus de son premier champ. */
 .cInfos,.cConf,.cProd{display:contents}
 /* Les onglets de la fiche : ce qu'est l'exposant, ce qu'il anime, ce qu'il
    présente. Ils ne paraissent que s'il y a de quoi partager — un stand sans
@@ -10872,9 +10873,10 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   $("voile").classList.add("on");
   ecarteClicFantome();
   /* Le plan vient sur l'emplacement maintenant, et non avant d'ouvrir : la
-     fiche est posée, et sa largeur — une ou deux colonnes, on ne le sait
-     qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
-     ordre pour les deux écrans, là où il en fallait un par écran. */
+     fiche est posée, et le cadrage sait enfin ce qu'elle couvre — un panneau
+     au bord droit sur un écran large, un tiroir au bas d'un téléphone, dont
+     la hauteur dépend de ce qu'on vient d'y écrire. Un seul ordre pour les
+     deux écrans, là où il en fallait un par écran. */
   if (recentrer) centre(o);
   anime(() => rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
