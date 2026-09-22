@@ -151,6 +151,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 |---|---|
 | recherche, index des exposants, liste | `_js.html` § 1 et 5 |
 | panneau des critères déplié sous la recherche | `_js.html` `remplitCriteres`, `ouvreCriteres`, `fermeCriteres`, relecture par `majCriteres` ; balisage `_head.html` `#panCrit` et styles `.pan-crit` |
+| ordre des filtres dans ce panneau | réglage `_admin1.html` `blocOrdreCriteres` (onglet « Recherche », au bas de `voletRecherche`), clé `_crit.ordre` de la configuration ; application `_js.html` `ordreCriteres`, relue par `clesCriteres`, panneau refait par `refaitCriteres` ; styles `_head.html` `.ordreCrit`, empruntés au rangement de la fiche |
 | sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_js.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
 | logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `_js.html` `poseMarque`, `recadreMarque`, `rangeMarque` |
