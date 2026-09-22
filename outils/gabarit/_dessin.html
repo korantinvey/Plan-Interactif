@@ -134,6 +134,23 @@ function notePubliees(id, cles){
   try { localStorage.setItem(clePubliees, JSON.stringify(PUBLIES)); } catch (e) {}
 }
 
+/**
+ * Range la copie du poste telle que le chargement vient de la reconstituer.
+ *
+ * Les deux rangements ne peuvent pas avancer l'un sans l'autre. Le chargement
+ * notait les clés que la base venait de rendre, mais gardait en mémoire seule
+ * la liste des calques qu'il avait confrontée à elle : le rangement du poste
+ * restait à la veille, et n'était réécrit qu'au premier trait tracé. Au
+ * rechargement suivant, le poste relisait donc ses vieux calques face à une
+ * liste de clés déjà à jour, n'y retrouvait pas les leurs, et les prenait pour
+ * un travail jamais publié. Un calque supprimé depuis un autre poste
+ * disparaissait ainsi au premier rechargement, puis revenait au deuxième,
+ * republié en base et annoncé comme rescapé.
+ */
+function rangeDessins(){
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); } catch (e) {}
+}
+
 /** Ce calque a-t-il déjà été vu en base ? */
 const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
 
