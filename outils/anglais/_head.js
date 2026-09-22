@@ -114,6 +114,7 @@ module.exports = {
   "Changer l'heure d'arrivée": "Change arrival time",
   "Revenir à ma liste": "Back to my list",
 
+  "Centrer sur le plan": "Centre on map",
   "Itinéraire": "Directions",
   "Se rendre": "Getting there",
   "à définir": "to be set",

@@ -331,7 +331,7 @@ Fonctions :
 `geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
 `geometriePointerUp` 641
 
-### `_head.html` — 5645 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5675 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -362,15 +362,15 @@ Fonctions :
 `#libNom` · `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#geoReg` · `#geoNom`
 `#geoFerme` · `#geoDim` · `#geoLargeur` · `#geoHauteur` · `#geoOrigine` · `#geoAide`
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile`
-`#detail` · `#poigneeFiche` · `#dRubans` · `#dMarque` · `#closeDetail` · `#dCorne`
-`#dKind` · `#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis`
-`#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd`
-`#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours` · `#pEyebrow`
-`#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#btnPartage` · `#jJours` · `#pCorps`
-`#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
-`#poigneeItineraire` · `#closeItineraire` · `#iResume` · `#iCorps` · `#iDepart` · `#iViseA`
-`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
-`#videItineraire`
+`#detail` · `#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque`
+`#closeDetail` · `#dCorne` · `#dKind` · `#dPast` · `#dName` · `#dRen` · `#dLogo`
+`#dBadges` · `#dCode` · `#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg`
+`#dOngNb` · `#dOngProd` · `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours`
+`#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee`
+`#btnPartage` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied`
+`#jRefaire` · `#jRetour` · `#itineraire` · `#poigneeItineraire` · `#closeItineraire`
+`#iResume` · `#iCorps` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee`
+`#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
@@ -467,7 +467,7 @@ Fonctions :
 `perimeJournee` 1656 · `oublieSejour` 1671 · `ouvreOrganisation` 1686 · `essaieSejour` 2061
 `lanceSejour` 2088 · `refaitSejour` 2120
 
-### `_js.html` — 5236 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 5290 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.567 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -476,10 +476,10 @@ Fonctions :
 - l.1155 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.2386 · 6. Vue
 - l.2817 · 7. Sélection et fiche
-- l.4322 · 8. Interactions du plan
-- l.4750 · Ce que les tiroirs lisent d'un geste
-- l.4796 · Le tiroir de la liste — écrans étroits
-- l.5018 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4362 · 8. Interactions du plan
+- l.4790 · Ce que les tiroirs lisent d'un geste
+- l.4836 · Le tiroir de la liste — écrans étroits
+- l.5062 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -514,19 +514,19 @@ Fonctions :
 `masque` 2629 · `masqueDroite` 2666 · `fit` 2677 · `stoppeZoom` 2710 · `glisseVersVise` 2716
 `glisseVers` 2758 · `rectVisee` 2780 · `zoom` 2800 · `echelle` 2809 · `ETROIT` 2823
 `anime` 2839 · `noeud` 2863 · `canalPlan` 2873 · `rangSociete` 2881 · `select` 2890
-`centre` 2915 · `centrePoint` 2919 · `montre` 2964 · `libelleCorps` 2996 · `ordreCorps` 3013
-`groupesFiche` 3045 · `montreIntitule` 3058 · `valeurCorps` 3078 · `champCorps` 3091
-`groupeCorps` 3103 · `corpsRange` 3116 · `momentLocal` 3151 · `programme` 3174
-`produits` 3223 · `ficheProduit` 3251 · `jourLong` 3317 · `ficheConf` 3328 · `lien` 3475
-`adresseWeb` 3483 · `pictoRS` 3526 · `adresseSure` 3544 · `adresseVignette` 3575
-`adresseImage` 3593 · `imageSure` 3606 · `assainitRiche` 3635 · `enBlocs` 3683
-`rangeRiche` 3696 · `ecarteClicFantome` 3724 · `nomSociete` 3733 · `societes` 3746
-`choisitExposant` 3757 · `poseMarque` 3795 · `montreMarque` 3855 · `poseCode` 3878
-`rangeMarque` 3919 · `ouvre` 3982 · `ferme` 4292 · `onglet` 4310 · `milieu` 4342
-`commencePince` 4348 · `suitPince` 4362 · `plieLesBandes` 4415 · `saisitPlan` 4429
-`cibleElargie` 4511 · `planifieFiltre` 4706 · `traceurDeGeste` 4774 · `cranVoisin` 4793
-`retraitBas` 4819 · `mesureTiroir` 4833 · `montreTiroir` 4836 · `hisseTiroir` 4840
-`tiroirCrante` 5045
+`centre` 2915 · `brancheActesFiche` 2926 · `centreEtBaisseLaFiche` 2942 · `centrePoint` 2960
+`montre` 3005 · `libelleCorps` 3037 · `ordreCorps` 3054 · `groupesFiche` 3086
+`montreIntitule` 3099 · `valeurCorps` 3119 · `champCorps` 3132 · `groupeCorps` 3144
+`corpsRange` 3157 · `momentLocal` 3192 · `programme` 3215 · `produits` 3264
+`ficheProduit` 3292 · `jourLong` 3358 · `ficheConf` 3369 · `lien` 3516 · `adresseWeb` 3524
+`pictoRS` 3567 · `adresseSure` 3585 · `adresseVignette` 3616 · `adresseImage` 3634
+`imageSure` 3647 · `assainitRiche` 3676 · `enBlocs` 3724 · `rangeRiche` 3737
+`ecarteClicFantome` 3765 · `nomSociete` 3774 · `societes` 3787 · `choisitExposant` 3798
+`poseMarque` 3836 · `montreMarque` 3896 · `poseCode` 3919 · `rangeMarque` 3960
+`ouvre` 4023 · `ferme` 4332 · `onglet` 4350 · `milieu` 4382 · `commencePince` 4388
+`suitPince` 4402 · `plieLesBandes` 4455 · `saisitPlan` 4469 · `cibleElargie` 4551
+`planifieFiltre` 4746 · `traceurDeGeste` 4814 · `cranVoisin` 4833 · `retraitBas` 4859
+`mesureTiroir` 4873 · `montreTiroir` 4876 · `hisseTiroir` 4880 · `tiroirCrante` 5089
 
 Éléments :
 
@@ -707,7 +707,7 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 899 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 903 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -716,10 +716,10 @@ Fonctions :
 `reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
 `tutoJournee` 86 · `zoneDuTuto` 94 · `insecable` 111 · `phraseTrajetTuto` 117
-`chapitresTuto` 373 · `proposeTutoriel` 393 · `lanceTutoriel` 451 · `quitteTutoriel` 537
-`chapitreTuto` 548 · `battementTuto` 557 · `finTuto` 575 · `afficheTuto` 592 · `pxTuto` 647
-`boiteTuto` 650 · `repereTuto` 664 · `rameneTuto` 697 · `placeTuto` 735 · `voileTuto` 816
-`rafaleTuto` 833 · `marqueZoneTuto` 853 · `marqueLibelleTuto` 888
+`chapitresTuto` 377 · `proposeTutoriel` 397 · `lanceTutoriel` 455 · `quitteTutoriel` 541
+`chapitreTuto` 552 · `battementTuto` 561 · `finTuto` 579 · `afficheTuto` 596 · `pxTuto` 651
+`boiteTuto` 654 · `repereTuto` 668 · `rameneTuto` 701 · `placeTuto` 739 · `voileTuto` 820
+`rafaleTuto` 837 · `marqueZoneTuto` 857 · `marqueLibelleTuto` 892
 
 Éléments :
 

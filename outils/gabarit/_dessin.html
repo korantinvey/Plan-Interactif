@@ -1700,9 +1700,9 @@ function ouvrePoi(id, depuis, recentrer){
   $("dBody").innerHTML = '<div class="cInfos" id="dPaneInfos">' + dessert + "</div>" +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
-  $("dGo").onclick = () => centrePoint(f.pts[0]);
   // « j'y vais » : l'arrivée est ce repère, le départ reste à dire
-  $("dItin").onclick = () => versItineraireDe(pointRepere(f, p));
+  brancheActesFiche(() => centrePoint(f.pts[0]),
+                    () => versItineraireDe(pointRepere(f, p)));
 
   $("detail").classList.add("open");
   $("voile").classList.add("on");

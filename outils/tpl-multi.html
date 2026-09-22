@@ -2993,6 +2993,12 @@ button.expo:hover{background:var(--line)}
 .hdActs .close{position:static;top:auto;right:auto}
 .hdActs .marque{width:28px;height:28px}
 .hdActs .marque[hidden]{display:none}
+/* Les pictos d'action ne paraissent que sur écran étroit : au large, les
+   boutons du pied de la fiche tiennent dans la colonne sans qu'on déroule. */
+.pAct{display:none;flex:none;width:28px;height:28px;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink-2)}
+.pAct svg{width:15px;height:15px}
+.pAct:hover{border-color:var(--line-strong);color:var(--ink)}
 
 /* ------------------------------------------------------------
    Itinéraire : le tiroir, et le trait sur le plan
@@ -3213,7 +3219,7 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
    disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
    journée, c'est calculer un itinéraire : sans le moteur, le bouton du
    parcours n'aurait rien à quoi s'adresser. */
-html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
+html.sans-itineraire .btn.itin,html.sans-itineraire .pAct.itin,html.sans-itineraire #btnJournee{display:none}
 /* Et la journée a son option à elle : un salon peut vouloir l'itinéraire sans
    vouloir qu'on lui organise sa visite. Le bouton se montre alors à
    l'exploitant, éteint — c'est une option, il doit savoir qu'elle existe — et
@@ -4594,6 +4600,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
+  /* Les deux actions passent du pied de la fiche à sa tête. Au pied, elles
+     arrivaient après les champs, le programme et le catalogue : il fallait
+     dérouler toute une fiche pour trouver « Itinéraire », et rien ne disait
+     qu'il y avait quelque chose plus bas. En tête, elles sont sous le pouce
+     dès l'ouverture — et à deux pictos, elles n'y prennent pas la ligne du
+     nom. Les boutons du pied s'en vont : les garder ferait deux fois la même
+     commande, à deux endroits, sur l'écran le plus étroit. */
+  .detail .pAct{display:inline-flex}
+  .detail .acts{display:none}
+  /* La tête réserve de quoi les laisser passer : l'étui des pastilles et le
+     nom s'arrêtaient à la marque et à la croix seules. */
+  .detail .detail-hd .hdTete{padding-right:130px}
   .detail-hd{--titre:17px}
   .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
@@ -5533,6 +5551,18 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <div class="rubansDist" id="dRubans"></div>
       <div class="detail-hd">
         <div class="hdActs">
+          <!-- Les deux actions de la fiche, en pictos, pour l'écran étroit :
+               au pied du corps elles se trouvaient sous les champs, le
+               programme et le catalogue, et il fallait dérouler une fiche
+               entière pour tomber sur « Itinéraire ». En tête, elles sont là
+               dès que la fiche s'ouvre. Au large, les boutons du pied
+               suffisent — ils s'y voient sans rien dérouler. -->
+          <button class="pAct" id="dGoIco" title="Centrer sur le plan" aria-label="Centrer sur le plan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+          <button class="pAct itin" id="dItinIco" title="Itinéraire" aria-label="Itinéraire">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
+          </button>
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
@@ -8559,6 +8589,47 @@ function select(id, recentrer, canal, iSoc){
 }
 const centre = (o) => centrePoint(o.c);
 
+/* Les deux actions d'une fiche vivent à deux endroits : les boutons du pied,
+   que le grand écran montre sans qu'on déroule, et les pictos de l'en-tête,
+   que l'écran étroit met à leur place. Un seul branchement pour les deux —
+   posé deux fois, l'un des deux jeux serait resté sur la fiche d'avant. La
+   fiche d'un stand et celle d'un repère y passent toutes deux.
+ *
+ * @param go   cadrer le plan sur ce que la fiche décrit
+ * @param itin partir d'ici vers l'itinéraire
+ */
+function brancheActesFiche(go, itin){
+  const sur = (id, f) => { const b = $(id); if (b) b.onclick = f; };
+  const cadre = () => centreEtBaisseLaFiche(go);
+  sur("dGo", cadre); sur("dGoIco", cadre);
+  sur("dItin", itin); sur("dItinIco", itin);
+}
+
+/**
+ * Cadre le plan depuis la fiche, après l'avoir fait descendre.
+ *
+ * Sur un téléphone la fiche occupe plus de la moitié de l'écran : centrer sans
+ * la baisser posait le stand visé derrière elle, et le geste avait l'air de ne
+ * rien faire. Elle descend donc à son cran le plus bas, et le cadrage attend
+ * qu'elle y soit — il mesure ce qu'elle cache du plan, et le mesurerait encore
+ * à sa hauteur d'avant.
+ */
+function centreEtBaisseLaFiche(cadre){
+  const fiche = $("detail");
+  const baisse = baisseTiroir.detail;
+  if (!fiche || !baisse || !baisse()){ cadre(); return; }
+  let fait = false;
+  const fini = () => { if (fait) return; fait = true; cadre(); };
+  fiche.addEventListener("transitionend", function fin(e){
+    if (e.target !== fiche || e.propertyName !== "max-height") return;
+    fiche.removeEventListener("transitionend", fin);
+    fini();
+  });
+  /* Un tiroir qui ne transitionne pas — mouvement réduit par le système,
+     onglet en arrière-plan — n'enverrait jamais l'événement. */
+  setTimeout(fini, 350);
+}
+
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
 function centrePoint(xy){
@@ -9892,9 +9963,8 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      près ce qu'on cherchait, et qu'on veut voir le reste. */
   $("dBody").querySelectorAll(".theme").forEach(b =>
     b.onclick = () => filtreTheme(b.dataset.t));
-  $("dGo").onclick = () => centre(o);
   // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
-  $("dItin").onclick = () => versItineraire(o);
+  brancheActesFiche(() => centre(o), () => versItineraire(o));
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");
   if (cr){
@@ -10483,6 +10553,10 @@ let montreTiroir = () => {};
    haut : déplié dans la bande qui dépasse, il y prendrait la place de ce
    qu'elle doit montrer. */
 let hisseTiroir = () => {};
+/* Et un tiroir cranté descend aussi sur ordre d'ailleurs : centrer le plan
+   depuis une fiche n'a aucun intérêt tant que la fiche couvre l'endroit visé.
+   Un ordre par tiroir, posé par `tiroirCrante`. */
+const baisseTiroir = {};
 
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
@@ -10717,6 +10791,16 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     poignee.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
+
+  /* Descendre sur ordre d'ailleurs, et dire si l'on a bougé : centrer le plan
+     depuis une fiche attend la fin de la descente pour mesurer ce que la fiche
+     cache encore. Déjà au cran le plus bas, rien ne bouge et rien n'est à
+     attendre. */
+  baisseTiroir[panneau] = () => {
+    if (!etroit() || cran() === "replie") return false;
+    pose("replie");
+    return true;
+  };
 
   /* Le nombre n'est qu'un garde-fou : `mesure` pose la variable à la
      construction et à chaque ouverture, si bien qu'elle est toujours lue
@@ -17674,9 +17758,9 @@ function ouvrePoi(id, depuis, recentrer){
   $("dBody").innerHTML = '<div class="cInfos" id="dPaneInfos">' + dessert + "</div>" +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
-  $("dGo").onclick = () => centrePoint(f.pts[0]);
   // « j'y vais » : l'arrivée est ce repère, le départ reste à dire
-  $("dItin").onclick = () => versItineraireDe(pointRepere(f, p));
+  brancheActesFiche(() => centrePoint(f.pts[0]),
+                    () => versItineraireDe(pointRepere(f, p)));
 
   $("detail").classList.add("open");
   $("voile").classList.add("on");
@@ -35266,8 +35350,12 @@ const CHAPITRES_TUTO = [
       }
       /* Depuis une fiche, le trajet part avec son arrivée : c'est le chemin qu'on
          prend quand on vient de lire ce qu'on veut aller voir. */
-      const itin = tutoFicheOuverte() && $("dItin");
-      if (itin && itin.getClientRects().length) return { cle: "fiche", cible: itin,
+      /* Le bouton du pied au large, le picto de l'en-tête sur un écran
+         étroit : c'est la même action à deux endroits, et seul celui qui se
+         voit peut se désigner. */
+      const itin = tutoFicheOuverte() &&
+        [$("dItinIco"), $("dItin")].find(b => b && b.getClientRects().length);
+      if (itin) return { cle: "fiche", cible: itin,
         texte: "Pour vous y rendre, touchez « Itinéraire » : l'arrivée sera « " +
                $("dName").textContent + " »." };
       return { cle: "bouton", cible: $("btnItineraire"),
