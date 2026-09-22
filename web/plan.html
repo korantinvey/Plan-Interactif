@@ -30692,55 +30692,107 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      choisi. Elle se calcule sur le moment et ne s'écrit nulle part — les
      compteurs étant partagés, tout le monde relâche pareil.
      ------------------------------------------------------------------ */
-  let relache = 0;
-  /* Le plafond se débraye le temps d'un dernier essai — voir `depart`. Un
-     drapeau plutôt qu'un paramètre remis à zéro : `trop` et `sature` sont
-     appelés des milliers de fois, et doivent lire l'état, non le recevoir. */
-  let plafonne = !!plafond;
+  /* ------------------------------------------------------------------
+     Le plafond d'un stand
+
+     La règle tient en deux phrases. Une demi-heure pleine sur un stand est
+     **indisponible** : la journée ne s'y pose pas, et l'ordre se réarrange
+     autour. Si toutes celles que ce visiteur pourrait encore atteindre sont
+     pleines, on les relève **toutes d'un cran** — l'exposant n'est jamais
+     retiré du parcours de personne.
+
+     Deux choses en découlent, et ce sont deux simplifications.
+
+     La relâche est **par stand**, et se déclenche quand la pose échoue. Une
+     version précédente la faisait monter globalement — pour tous les stands à
+     la fois — et seulement quand un exposant restait dehors du séjour entier :
+     trop large, et trop tard. Il a aussi fallu écarter l'idée de la lire
+     d'avance dans la ligne du stand : une journée ne peut poser une visite
+     qu'aux heures où son trajet passe, et un créneau libre à midi ne sert à
+     rien à qui aura fini le hall à onze heures.
+
+     Et l'indisponibilité est un refus, non un prix. Elle l'avait d'abord été,
+     puis chiffrée à dix kilomètres pour survivre aux reprises ; mais un prix
+     se négocie, et la simulation le montrait — le plafond était dépassé de
+     quelques unités même quand la place existait. Un refus ne se négocie pas :
+     il est vérifié à chaque mouvement, y compris sur les visites qui reculent
+     quand on en insère une devant elles.
+     ------------------------------------------------------------------ */
+
+  /* Ce qu'on a relevé, stand par stand. Zéro dans le cas ordinaire ; un cran
+     de plus chaque fois qu'un stand n'a trouvé aucune place, et seulement
+     pour celui-là. */
+  const RELACHES = new Map();
+  const cleRelache = (j, i) => j.cle + "|" + i;
+  const relacheDe = (j, i) => RELACHES.get(cleRelache(j, i)) || 0;
+
+  /* Au-delà, ce n'est plus le plafond qui refuse : c'est l'heure de fermeture,
+     une conférence, ou une allée qui ne mène nulle part. Relever encore ferait
+     payer un tour de recherche pour ne rien libérer. */
+  const CRANS_MAX = 12;
+  let crans = 0;
+
+  /**
+   * Relever d'un cran les stands qui n'ont trouvé aucune place.
+   *
+   * C'est la seconde moitié de la règle, et c'est un dernier recours : elle ne
+   * s'emploie qu'une fois les reprises passées, quand réarranger n'a plus
+   * suffi. Desserrer avant d'avoir réarrangé coûte cher — mesuré, cela fait
+   * remonter la saturation de trois à cinq fois la capacité, pour rien.
+   *
+   * On ne relève pas non plus un stand parce qu'on aurait deviné d'avance que
+   * sa ligne est pleine : « tous ses autres créneaux » sont exactement ceux
+   * que cette journée-là pouvait lui offrir, pas ceux d'un horaire théorique
+   * où le visiteur attendrait midi sans rien faire.
+   */
+  const releve = (candidats, jours) => {
+    if (crans >= CRANS_MAX) return false;
+    crans++;
+    for (const s of candidats)
+      for (const j of jours)
+        RELACHES.set(cleRelache(j, s), relacheDe(j, s) + 1);
+    return true;
+  };
+
+  /** Cette demi-heure est-elle encore disponible sur ce stand ? */
+  const dispo = (j, i, tr) => {
+    const cap = plafond.capacite(i);
+    return cap <= 0 || plafond.charge(j.cle, i, tr) < cap + relacheDe(j, i);
+  };
 
   /* L'heure à laquelle on arrive sur un stand : ce qu'on a marché pour
      l'atteindre, plus les visites qui l'ont précédé dans le créneau. C'est la
      formule de `tempsCreneau`, appliquée à un préfixe au lieu du tout. */
-  const trop = (c, k, mArrivee, s) => plafonne &&
-    plafond(c.jour.cle, s, trancheDe(c.t0 + tempsCreneau(c, mArrivee, k)), relache);
+  const trop = (c, k, mArrivee, s) => !!plafond &&
+    !dispo(c.jour, s, trancheDe(c.t0 + tempsCreneau(c, mArrivee, k)));
 
-/**
-   * Combien de visites d'un créneau tombent sur une demi-heure déjà pleine.
-   *
-   * Un compte, et non un oui ou un non : une reprise doit pouvoir réduire la
-   * saturation d'un cran sans avoir à la faire disparaître d'un coup, sinon un
-   * créneau qui en porte deux resterait figé dans l'état où on l'a trouvé.
-   *
-   * Les distances cumulées viennent de `mesureCreneau`, donc de `remet`, donc
-   * toujours à jour.
-   */
-  const nSature = (c) => {
-    if (!plafonne) return 0;
-    let n = 0;
+  /** Une seule visite posée sur une demi-heure indisponible suffit à refuser
+   *  l'arrangement : c'est un refus, pas un compte à minimiser. */
+  const sature = (c) => {
+    if (!plafond) return false;
     for (let k = 0; k < c.stands.length; k++)
-      if (trop(c, k, (c.pref && c.pref[k]) || 0, c.stands[k])) n++;
-    return n;
+      if (trop(c, k, (c.pref && c.pref[k]) || 0, c.stands[k])) return true;
+    return false;
   };
 
   /**
-   * Ce que coûte une visite posée sur une demi-heure pleine.
+   * Peut-on glisser ce stand à cette place sans rien surcharger ?
    *
-   * Dix kilomètres : plus que n'importe quel détour dans n'importe quel hall,
-   * et plus que le forfait de changement de pavillon qui est déjà une
-   * dissuasion et non une mesure (`TRANSFERT_M`). C'est donc un refus, énoncé
-   * dans la monnaie que l'ordonnanceur parle — et c'est ce qui le rend
-   * étanche. La pose, elle, refuse franchement : on ne pose jamais sciemment
-   * sur une case pleine (voir `insere`). Ce prix-ci sert à ce que la phase de
-   * reprise ne défasse pas ce refus en cherchant à raccourcir.
-   *
-   * Il a fallu le découvrir : la saturation avait d'abord été rangée dans
-   * `deborde`, aux côtés du débordement horaire. Or les reprises portent pour
-   * celui-ci une échappatoire — « un créneau qui débordait déjà garde le droit
-   * de raccourcir » — et cette échappatoire rendait la contrainte lettre
-   * morte : simulés, cent visiteurs sur les mêmes vingt stands recevaient tous
-   * le même programme, à la minute près, plafond ou pas.
+   * Le candidat d'abord, puis **tout ce qui le suit** : insérer une visite
+   * recule les suivantes du temps de la visite et du détour, et l'une d'elles
+   * peut tomber sur une demi-heure pleine. Ne contrôler que le candidat, c'est
+   * ce que faisait la version d'avant — et c'est ce qui laissait le plafond
+   * être dépassé de quelques unités.
    */
-  const PEINE_SATUREE = 10000;   // mètres — une dissuasion, jamais une distance
+  const posePossible = (c, s, k, d) => {
+    if (!plafond) return true;
+    const avant = k === 0 ? 0 : c.pref[k - 1];
+    const prec = k === 0 ? c.de : c.stands[k - 1];
+    if (trop(c, k, avant + dist(prec, s), s)) return false;
+    for (let x = k; x < c.stands.length; x++)
+      if (trop(c, x + 1, c.pref[x] + d, c.stands[x])) return false;
+    return true;
+  };
 
   /**
    * Ce qu'un créneau coûte, en mètres.
@@ -30752,8 +30804,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * patienter, ce dont le forfait rend déjà compte de l'autre côté.
    */
   const coutCreneau = (c) =>
-    (c.dernier ? c.m + visiteEnMetres * c.stands.length : c.m) +
-    PEINE_SATUREE * nSature(c);
+    c.dernier ? c.m + visiteEnMetres * c.stands.length : c.m;
 
   /**
    * Un créneau qui déborde sur son rendez-vous.
@@ -30840,18 +30891,14 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
             const d = ecartInsertion(c, s, k);
             const m = c.m + d, n = c.stands.length + 1;
             if (c.tMax !== null && c.t0 + tempsCreneau(c, m, n) > c.tMax) continue;
-            /* Ce que coûterait d'y arriver : les mètres du préfixe, plus le pas
-               qui mène à ce stand-ci. Les visites qui le suivent reculent
-               d'autant, et c'est `sature` qui les rattrapera au tour d'après —
-               les essayer toutes ici ferait de l'insertion un calcul carré. */
-            if (trop(c, k, (k === 0 ? 0 : c.pref[k - 1]) +
-                           dist(k === 0 ? c.de : c.stands[k - 1], s), s)) continue;
+            if (!posePossible(c, s, k, d)) continue;
             const t = total(j, j.m + d,
                             j.cout + d + (c.dernier ? visiteEnMetres : 0), j.n + 1);
             if (!choix || t < choix.t) choix = { t: t, c: c, k: k, s: s };
           }
         }
       }
+      // rien ne se pose : on rend la main, c'est à `essai` de décider la suite
       if (!choix) break;
       choix.c.stands.splice(choix.k, 0, choix.s);
       remet(choix.c);
@@ -30887,8 +30934,11 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
             c.stands.splice(i, k - i + 1, ...c.stands.slice(i, k + 1).reverse());
             remet(c);
             /* Un créneau qui débordait déjà garde le droit de raccourcir : le
-               refuser l'enfermerait dans l'ordre où on l'a trouvé. */
-            if (metres() < avant - 1e-9 && (debordait || !deborde(c))) gagne = true;
+               refuser l'enfermerait dans l'ordre où on l'a trouvé. L'heure se
+               négocie ainsi ; la disponibilité d'une demi-heure, jamais — d'où
+               le `sature` qui s'ajoute sans échappatoire. */
+            if (metres() < avant - 1e-9 && (debordait || !deborde(c)) &&
+                !sature(c)) gagne = true;
             else { c.stands = copie; remet(c); }
           }
         }
@@ -30912,9 +30962,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
               const m = d.m + e, n = d.stands.length + 1;
               if (d.tMax !== null && d.t0 + tempsCreneau(d, m, n) > d.tMax &&
                   !(d === c && debordait)) continue;
-              // même garde qu'à l'insertion, et pour la même raison
-              if (trop(d, k, (k === 0 ? 0 : d.pref[k - 1]) +
-                             dist(k === 0 ? d.de : d.stands[k - 1], s), s)) continue;
+              if (!posePossible(d, s, k, e)) continue;
               const j = d.jour;
               const note = meme
                 ? metres() + e + (d.dernier ? visiteEnMetres : 0)
@@ -30950,7 +30998,8 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
             const avant = total();
             a.stands[i] = u; b.stands[k] = s;
             remet(a); remet(b);
-            if (!deborde(a) && !deborde(b) && total() < avant - 1e-9) gagne = true;
+            if (!deborde(a) && !deborde(b) && !sature(a) && !sature(b) &&
+                total() < avant - 1e-9) gagne = true;
             else { a.stands[i] = s; b.stands[k] = u; remet(a); remet(b); }
           }
         }
@@ -31019,51 +31068,27 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
        au plus, tant que cela pose quelque chose. */
     for (let passe = 0; passe < 3 && dehorsLibres.length && insere(dehorsLibres); passe++)
       reprend(tours);
+    /* Il reste des exposants dehors alors que le plafond est en jeu : c'est
+       maintenant, et seulement maintenant, qu'on relève d'un cran ceux-là. La
+       règle est tenue — aucun exposant n'est retiré d'un parcours — et elle
+       l'est au dernier moment, quand les reprises ont montré qu'aucun
+       arrangement ne les logeait. */
+    while (plafond && (dehorsLibres.length || dehorsImposes.length) &&
+           releve(dehorsImposes.concat(dehorsLibres), jours)){
+      if (dehorsImposes.length) insere(dehorsImposes);
+      insere(dehorsLibres);
+      reprend(tours);
+    }
     return { note: total(), etat: etat(), dehors: dehorsImposes.concat(dehorsLibres) };
   };
 
-  /* Trois crans : un stand dont la charge dépasse de trois son plafond est un
-     stand qu'on ne désengorgera pas en le décalant. Au-delà, c'est l'essai sans
-     plafond qui tranche, et il coûte moins cher que dix crans de plus. */
-  const RELACHE_MAX = 3;
-
-  /**
-   * Un départ, et la soupape qui va avec.
-   *
-   * La règle tient en une phrase : **le plafond ne coûte jamais un exposant à
-   * personne**. Il déplace des heures, il ne retire rien. Tant qu'il reste
-   * quelqu'un dehors, il monte donc d'un cran — mieux vaut une équipe un peu
-   * bousculée qu'un visiteur privé de ce qu'il a choisi.
-   *
-   * On ne s'arrête surtout pas au premier cran qui ne libère rien, et c'est
-   * une erreur qu'on a faite : un stand chargé à deux au-dessus de son plafond
-   * ne se débloque qu'au deuxième cran, si bien que l'arrêt anticipé laissait
-   * dehors une journée entière — précisément ce que la soupape existe pour
-   * empêcher.
-   *
-   * Et si trois crans n'y suffisent pas, un dernier essai se fait sans plafond
-   * du tout. Ce qui sort alors ne sort pas à cause de lui : c'est l'heure de
-   * fermeture, une conférence, ou un stand qu'aucune allée n'atteint. Le doute
-   * ne se laisse pas planer — il se lève, au prix d'un calcul.
-   */
-  const depart = (ecartALaPose) => {
-    let r = essai(ecartALaPose);
-    if (!plafonne || !r.dehors.length) return r;
-    while (r.dehors.length && relache < RELACHE_MAX){
-      relache++;
-      r = essai(ecartALaPose);
-    }
-    if (!r.dehors.length) return r;
-    plafonne = false;
-    const libre = essai(ecartALaPose);
-    plafonne = true;
-    return libre.dehors.length < r.dehors.length ? libre : r;
-  };
-
-  const avec = depart(true);
+  /* Plus de soupape ici : elle vit dans `insere`, qui relève d'un cran les
+     stands auxquels il n'a trouvé aucune place. Un départ est donc un départ,
+     et rien d'autre. */
+  const avec = essai(true);
   /* Un seul jour n'a pas d'écart à compter : le second départ rendrait le
      premier, au mot près, et coûterait le double pour rien. */
-  const sans = jours.length > 1 ? depart(false) : avec;
+  const sans = jours.length > 1 ? essai(false) : avec;
   /* À égalité, celui qui comptait l'écart dès la pose : c'est le calcul
      qu'on décrit partout ailleurs, et le second n'est là que s'il fait mieux.
      Un stand de moins laissé dehors l'emporte sur des mètres, toujours : une
@@ -31381,10 +31406,13 @@ function prepareSejour(choix, fige){
    * la surface — ne refuse jamais rien : zéro se lit comme une absence de
    * limite, jamais comme une limite nulle.
    */
-  const plafond = (chargeSuivie() && CHARGE) ? (cleJour, i, tranche, relache) => {
-    const id = PTS[i] && PTS[i].id;
-    const cap = id ? capaciteStand(parId.get(String(id))) : 0;
-    return cap > 0 && chargeCellule(cleJour, id, tranche) >= cap + relache;
+  const plafond = (chargeSuivie() && CHARGE) ? {
+    capacite: (i) => {
+      const id = PTS[i] && PTS[i].id;
+      return id ? capaciteStand(parId.get(String(id))) : 0;
+    },
+    charge: (cleJour, i, tranche) =>
+      chargeCellule(cleJour, PTS[i] && PTS[i].id, tranche),
   } : null;
 
   rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe,
