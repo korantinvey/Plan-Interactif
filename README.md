@@ -2719,28 +2719,14 @@ Apple refuse le jeton autrement, par un 403 sans explication.
 `workflow_dispatch` permet de relancer le déploiement Supabase à la main depuis
 l'onglet **Actions**, sans rien pousser.
 
-### La relecture des pull requests
+### Le correctif qu'on demande
 
-Une quatrième chaîne ne déploie rien : elle lit. Sur chaque pull request,
-`.github/workflows/relecture.yml` fait relire le diff et commente ce qu'il y
-trouve. Elle **propose** — les outils qu'on lui accorde ne savent que lire le
-dépôt et écrire des commentaires, et son jeton n'a que `contents: read` : rien
-ne se corrige tout seul, et rien ne part sur `main` en son nom.
-
-Elle ne redouble pas les contrôles mécaniques. `Pages` reconstruit les pages,
-analyse le JavaScript de tout ce qui est servi et refuse une phrase affichée
-sans traduction ; ce qu'il voit n'est pas à dire deux fois. La relecture prend
-l'autre moitié, celle qu'aucun script ne sait voir et qui se paie après la
-fusion : un effet CSS ajouté au plan mais jamais rejoué dans le rendu WebGL,
-donc invisible pour qui regarde ; une migration datée d'avant la dernière de
-`main`, qui fait échouer le déploiement sur `main` ; un fichier fabriqué
-corrigé en direct, que la construction suivante efface. Chacun des trois est
-déjà arrivé.
-
-Ce qu'elle cherche est écrit dans `.claude/skills/relecture/SKILL.md`, et non
-dans le workflow : la même liste sert aux sessions Claude Code qui relisent à
-la main, et une liste tenue à deux endroits finit par dire deux choses. Pour
-étendre la relecture, c'est ce fichier qu'on complète.
+Une quatrième chaîne ne déploie rien : elle écrit.
+`.github/workflows/correctif.yml` rédige le correctif qu'on lui demande, d'un
+commentaire `@claude …` sous une issue ou une pull request — ce qui marche
+depuis l'application GitHub d'un téléphone — ou depuis l'onglet **Actions**, en
+tapant la consigne à la main. Il corrige, valide, et la tâche ouvre une pull
+request avec le résultat.
 
 Il lui faut un secret, au même endroit que les autres — **Settings → Secrets
 and variables → Actions**. Deux voies, et une seule à choisir :
@@ -2755,94 +2741,15 @@ qui est déjà payé. Plus court encore : `/install-github-app`, dans Claude Cod
 installe l'application GitHub, propose de fabriquer ce jeton et pose le secret
 lui-même — il demande `gh` et les droits d'administration du dépôt. Le jeton est
 attaché au compte de qui l'a fabriqué, donc c'est sa consommation qui est
-débitée ; et il vaut longtemps sans valoir toujours, si bien qu'une relecture
-qui repasse au rouge sur une erreur d'authentification veut dire qu'il est à
-refaire. Le workflow passe les deux entrées à l'action, celle qui reste vide
-valant absente.
+débitée ; et il vaut longtemps sans valoir toujours, si bien qu'un correctif qui
+repasse au rouge sur une erreur d'authentification veut dire qu'il est à refaire.
+Le workflow passe les deux entrées à l'action, celle qui reste vide valant
+absente. Tant qu'aucun des deux n'est posé, la tâche s'arrête en vert en disant
+lequel elle attend, et son journal nomme la voie retenue quand il y en a une —
+c'est le seul endroit où cela se lit après coup.
 
-Tant qu'aucun des deux n'est posé, la tâche s'arrête en vert en disant lequel
-elle attend, et son journal nomme la voie retenue quand il y en a une — c'est le
-seul endroit où cela se lit après coup. Un garde-fou qu'on n'a pas encore
-branché n'est pas un défaut du code relu, et une pull request rouge pour cette
-raison ferait douter du reste. Une branche venue d'une bifurcation est laissée
-de côté, les secrets du dépôt ne lui étant pas accessibles.
-
-Un dernier réglage se lit mal et coûte tout : l'action refuse par défaut d'être
-déclenchée par un robot, pour qu'un robot ne l'appelle pas en boucle. Or les
-pull requests de ce dépôt sont le plus souvent ouvertes depuis une session
-Claude Code, donc signées `claude[bot]` — et la relecture s'arrêtait là, sur une
-tâche rouge dont seul le journal disait pourquoi. D'où `allowed_bots: claude`
-dans le workflow : ce robot-là, nommément, et pas `*` qui ferait relire les pull
-requests de n'importe quel automate.
-
-L'action cache la sortie du modèle — un journal de tâche est public, et elle
-peut y verser ce qu'ont rendu les outils. Le revers se paie quand elle échoue :
-une relecture qui meurt sur sa première demande ne dit pas pourquoi, et le mode
-débogage de GitHub n'y change rien, contrairement à ce que son message laisse
-croire (`show_full_output` seul lève le masque, et il lève tout). D'où la
-dernière étape du workflow, qui ne relève du compte-rendu que son message
-final, celui qui porte la raison : c'est là qu'on lit une authentification
-rejetée ou une limite atteinte. Et cette panne-là ne rougit pas la pull
-request — même raisonnement que plus haut, poussé jusqu'au bout : un garde-fou
-en panne n'est pas un défaut du code relu, et une croix rouge sur chaque pull
-request du dépôt n'apprend qu'une chose, à ne plus regarder les croix rouges.
-Elle s'affiche en avertissement, ce qui se voit sans ouvrir le journal.
-
-Compter **cinq minutes** : c'est ce qu'a pris la première relecture aboutie, sur
-un diff de cinq cents lignes de source. Elle s'arrête d'office à quinze, parce
-que rien ne se lit d'une tâche avant sa fin — une relecture en cours et une
-relecture partie en boucle se ressemblent, et seule la seconde a besoin qu'on
-l'interrompe. Le diff qu'elle lit écarte `web/`, `CARTE.md` et
-`outils/tpl-multi.html` : une ligne de gabarit s'y recopie quatre fois, et ces
-quatre exemplaires noieraient le reste. Enfin son avis **remplace le
-précédent** au lieu de s'empiler : une pull request reprise cinq fois n'a pas à
-porter cinq avis dont quatre périmés.
-
-Reste un cas qui ne se voyait pas du tout : **une relecture qui aboutit sans
-rien écrire**. Elle est arrivée sur un diff de 71 000 lignes — tout le code du
-dépôt, ouvert exprès en pull request pour le passer en revue. La tâche a tourné
-deux minutes quarante, s'est vu refuser dix de ses propres appels d'outil parce
-qu'un tel diff ne se lit pas avec ce qu'on lui accorde, puis a rendu son avis
-en message simple, que l'action jette. Sur la pull request : une coche verte et
-pas un mot, exactement ce que montre une relecture satisfaite. D'où la
-vérification finale — si aucun avis n'a été posé depuis le début de la tâche,
-elle le dit sur la pull request. Elle ne parle que d'une relecture qui s'est
-réellement tenue : celle qu'arrête la garde d'identité juste en dessous n'a
-rien à dire, et se plaindre de son silence reviendrait à commenter chaque pull
-request qui touche au workflow — la première ayant été la sienne. Et que d'une
-poussée qui apporte des sources : refusionner `main` et reconstruire les pages
-laisse le diff relisible **strictement identique**, la relecture rend alors son
-avis en vingt secondes sans rien poster, et elle a raison — elle a déjà tout dit
-sur ce diff-là. La comparaison porte donc sur le diff de la pull request, pas
-sur celui de la poussée, entêtes de morceau retirées : quarante lignes venues de
-la base décalent les numéros sans rien changer à ce qu'il y a à relire. Et le
-compte-rendu relève désormais à chaque exécution ce que la relecture a coûté,
-appels refusés compris : une dépense qu'on ne voit pas ne se juge pas. La leçon
-vaut d'être retenue : un très gros périmètre se relit par domaine, en plusieurs
-fois, pas en une pull request géante.
-
-Et une conséquence qui surprend la première fois : **l'action refuse de tourner
-quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
-file must exist and have identical content to the version on the repository's
-default branch ». C'est ce qui empêche une pull request de réécrire le workflow
-pour détourner le jeton, donc c'est une bonne chose ; mais cela veut dire qu'une
-modification de ce fichier **ne peut pas être essayée sur sa propre pull
-request** : la tâche s'arrête, en vert, avec un avertissement dans son journal.
-Elle ne vaudra qu'après la fusion. Pour la vérifier alors, il suffit de relancer
-la tâche depuis l'onglet **Actions** : le workflow est désormais celui de `main`,
-et la relecture part pour de bon.
-
-### Le correctif qu'on demande
-
-La relecture dit ce qui cloche ; `.github/workflows/correctif.yml` le répare.
-On le demande d'un commentaire `@claude …` sous une issue ou une pull request —
-ce qui marche depuis l'application GitHub d'un téléphone — ou depuis l'onglet
-**Actions**, en tapant la consigne à la main. Il corrige, valide, et la tâche
-ouvre une pull request avec le résultat.
-
-C'est la même action et le même secret que la relecture, avec une différence
-qui change tout : celui-ci a le droit d'éditer les fichiers. D'où la forme du
-workflow, qui tient à une question — jusqu'où va ce droit.
+Cette chaîne-là a le droit d'éditer les fichiers. D'où la forme du workflow,
+qui tient à une question — jusqu'où va ce droit.
 
 **Il s'arrête à la branche.** La tâche ne pousse que sur
 `claude/correctif-<numéro d'exécution>`, un nom écrit dans le workflow : ni la
@@ -2861,8 +2768,23 @@ le résultat dans un commit séparé, comme `pages.yml` le fait sur une poussée
 Une demande écrite sous une pull request ouvre malgré tout sa propre branche
 depuis `main` : le correctif arrive à côté, dans sa pull request, et ne pousse
 pas sur celle d'en face. Et aucun robot n'est autorisé à le réveiller — un
-correctif que réclame un automate est une boucle qui attend son tour, là où la
-relecture, qui ne sait que commenter, ne risquait rien.
+correctif que réclame un automate est une boucle qui attend son tour.
+
+Une dernière chose se découvre mal : **l'action refuse de tourner quand
+`correctif.yml` diffère de la version portée par `main`** — « the workflow file
+must exist and have identical content to the version on the repository's
+default branch ». C'est ce qui empêche une pull request de réécrire le workflow
+pour détourner le jeton, donc c'est une bonne chose ; mais cela veut dire qu'une
+modification de ce fichier **ne peut pas être essayée sur sa propre pull
+request**. Elle ne vaudra qu'après la fusion, et se vérifie alors depuis
+l'onglet **Actions**.
+
+Rien ne relit plus les pull requests tout seul : le robot qui commentait chaque
+diff a été retiré, parce qu'il faisait attendre cinq minutes à chaque poussée ce
+qu'une session relit à la demande. Ce qu'il fallait chercher est dans
+`CLAUDE.md` — parité entre les deux rendus du plan, horodatage d'une migration,
+fichier fabriqué corrigé en direct, coût d'un geste répété — et se relit là où
+l'on relit.
 
 ## Fabriquer les pages
 
