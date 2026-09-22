@@ -278,7 +278,7 @@ Fonctions :
 `appliquePicto` 401 · `supprimeForme` 427 · `editionPointerDown` 437
 `editionPointerMove` 483 · `editionPointerUp` 537
 
-### `_environs.html` — 1638 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1652 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -290,18 +290,18 @@ Fonctions :
 `pixelsMercator` 343 · `latitudeDePixel` 352 · `metresParPixel` 360 · `echelleDesTuiles` 378
 `niveauDesTuiles` 390 · `adresseTuile` 397 · `tuilesDeLaVue` 407 · `chargeMapLibre` 472
 `vueGL` 503 · `styleDuFond` 523 · `guetteLaCarte` 551 · `poseCarteGL` 562
-`diagnostiqueGL` 648 · `relanceCarteGL` 668 · `videCarteGL` 680 · `dessineFondCarte` 699
-`cleMasqueCarte` 795 · `masqueCarte` 796 · `basculeMasqueCarte` 798
-`boutonMasqueCarte` 809 · `pictoMasque` 820 · `formesMasquantes` 832 · `contourDuHall` 854
-`cheminDuHall` 861 · `poseMasqueCarte` 879 · `carreDeTerrain` 913 · `chercheBatiments` 929
-`aireDuContour` 956 · `centreDuContour` 965 · `axeDuContour` 978 · `empriseDesObjets` 995
-`batimentsCandidats` 1013 · `caleSurBatiment` 1034 · `retientLeHall` 1060
-`manqueCalage` 1082 · `enregistreCalage` 1091 · `calageEnregistre` 1108
-`oublieCalageEnCours` 1129 · `litCoordonnees` 1141 · `rafraichitCarte` 1155
-`armeCalage` 1197 · `pivotCalage` 1208 · `glisseCarte` 1212 · `cartePointerDown` 1219
-`cartePointerMove` 1233 · `cartePointerUp` 1252 · `ditCalage` 1260 · `ditCarte` 1269
-`majCalage` 1277 · `appliqueCalage` 1299 · `tourneCalage` 1306 · `construitCalage` 1312
-`ouvreCalage` 1477 · `fermeCalage` 1486 · `voletEnvirons` 1514
+`diagnostiqueGL` 648 · `relanceCarteGL` 668 · `videCarteGL` 680 · `dessineFondCarte` 705
+`cleMasqueCarte` 809 · `masqueCarte` 810 · `basculeMasqueCarte` 812
+`boutonMasqueCarte` 823 · `pictoMasque` 834 · `formesMasquantes` 846 · `contourDuHall` 868
+`cheminDuHall` 875 · `poseMasqueCarte` 893 · `carreDeTerrain` 927 · `chercheBatiments` 943
+`aireDuContour` 970 · `centreDuContour` 979 · `axeDuContour` 992 · `empriseDesObjets` 1009
+`batimentsCandidats` 1027 · `caleSurBatiment` 1048 · `retientLeHall` 1074
+`manqueCalage` 1096 · `enregistreCalage` 1105 · `calageEnregistre` 1122
+`oublieCalageEnCours` 1143 · `litCoordonnees` 1155 · `rafraichitCarte` 1169
+`armeCalage` 1211 · `pivotCalage` 1222 · `glisseCarte` 1226 · `cartePointerDown` 1233
+`cartePointerMove` 1247 · `cartePointerUp` 1266 · `ditCalage` 1274 · `ditCarte` 1283
+`majCalage` 1291 · `appliqueCalage` 1313 · `tourneCalage` 1320 · `construitCalage` 1326
+`ouvreCalage` 1491 · `fermeCalage` 1500 · `voletEnvirons` 1528
 
 ### `_export.html` — 215 l. → admin-plans.html, rapport.html
 
@@ -467,7 +467,7 @@ Fonctions :
 `perimeJournee` 1656 · `oublieSejour` 1671 · `ouvreOrganisation` 1686 · `essaieSejour` 2061
 `lanceSejour` 2088 · `refaitSejour` 2120
 
-### `_js.html` — 5236 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 5270 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.567 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -475,11 +475,11 @@ Fonctions :
 - l.1019 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.1155 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.2386 · 6. Vue
-- l.2817 · 7. Sélection et fiche
-- l.4322 · 8. Interactions du plan
-- l.4750 · Ce que les tiroirs lisent d'un geste
-- l.4796 · Le tiroir de la liste — écrans étroits
-- l.5018 · Les tiroirs menés par la hauteur — écrans étroits
+- l.2851 · 7. Sélection et fiche
+- l.4356 · 8. Interactions du plan
+- l.4784 · Ce que les tiroirs lisent d'un geste
+- l.4830 · Le tiroir de la liste — écrans étroits
+- l.5052 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -510,23 +510,23 @@ Fonctions :
 `prechargeLesVignettes` 2312 · `chargeUnLot` 2358 · `cadrePlan` 2401 · `oublieCadre` 2402
 `figeTextes` 2418 · `rendTextes` 2426 · `cadrage` 2462 · `peintLibelles` 2467
 `detacheLibelles` 2473 · `rattacheLibelles` 2485 · `etireLibelles` 2503 · `appliqueVue` 2511
-`rafraichitVue` 2555 · `poseVue` 2569 · `mesureBarre` 2598 · `masqueHaut` 2622
-`masque` 2629 · `masqueDroite` 2666 · `fit` 2677 · `stoppeZoom` 2710 · `glisseVersVise` 2716
-`glisseVers` 2758 · `rectVisee` 2780 · `zoom` 2800 · `echelle` 2809 · `ETROIT` 2823
-`anime` 2839 · `noeud` 2863 · `canalPlan` 2873 · `rangSociete` 2881 · `select` 2890
-`centre` 2915 · `centrePoint` 2919 · `montre` 2964 · `libelleCorps` 2996 · `ordreCorps` 3013
-`groupesFiche` 3045 · `montreIntitule` 3058 · `valeurCorps` 3078 · `champCorps` 3091
-`groupeCorps` 3103 · `corpsRange` 3116 · `momentLocal` 3151 · `programme` 3174
-`produits` 3223 · `ficheProduit` 3251 · `jourLong` 3317 · `ficheConf` 3328 · `lien` 3475
-`adresseWeb` 3483 · `pictoRS` 3526 · `adresseSure` 3544 · `adresseVignette` 3575
-`adresseImage` 3593 · `imageSure` 3606 · `assainitRiche` 3635 · `enBlocs` 3683
-`rangeRiche` 3696 · `ecarteClicFantome` 3724 · `nomSociete` 3733 · `societes` 3746
-`choisitExposant` 3757 · `poseMarque` 3795 · `montreMarque` 3855 · `poseCode` 3878
-`rangeMarque` 3919 · `ouvre` 3982 · `ferme` 4292 · `onglet` 4310 · `milieu` 4342
-`commencePince` 4348 · `suitPince` 4362 · `plieLesBandes` 4415 · `saisitPlan` 4429
-`cibleElargie` 4511 · `planifieFiltre` 4706 · `traceurDeGeste` 4774 · `cranVoisin` 4793
-`retraitBas` 4819 · `mesureTiroir` 4833 · `montreTiroir` 4836 · `hisseTiroir` 4840
-`tiroirCrante` 5045
+`libellesDeLaVue` 2575 · `rafraichitVue` 2583 · `poseVue` 2597 · `mesureBarre` 2626
+`masqueHaut` 2650 · `masque` 2657 · `masqueDroite` 2694 · `fit` 2705 · `stoppeZoom` 2738
+`glisseVersVise` 2744 · `glisseVers` 2786 · `rectVisee` 2808 · `zoom` 2828 · `echelle` 2841
+`ETROIT` 2857 · `anime` 2873 · `noeud` 2897 · `canalPlan` 2907 · `rangSociete` 2915
+`select` 2924 · `centre` 2949 · `centrePoint` 2953 · `montre` 2998 · `libelleCorps` 3030
+`ordreCorps` 3047 · `groupesFiche` 3079 · `montreIntitule` 3092 · `valeurCorps` 3112
+`champCorps` 3125 · `groupeCorps` 3137 · `corpsRange` 3150 · `momentLocal` 3185
+`programme` 3208 · `produits` 3257 · `ficheProduit` 3285 · `jourLong` 3351
+`ficheConf` 3362 · `lien` 3509 · `adresseWeb` 3517 · `pictoRS` 3560 · `adresseSure` 3578
+`adresseVignette` 3609 · `adresseImage` 3627 · `imageSure` 3640 · `assainitRiche` 3669
+`enBlocs` 3717 · `rangeRiche` 3730 · `ecarteClicFantome` 3758 · `nomSociete` 3767
+`societes` 3780 · `choisitExposant` 3791 · `poseMarque` 3829 · `montreMarque` 3889
+`poseCode` 3912 · `rangeMarque` 3953 · `ouvre` 4016 · `ferme` 4326 · `onglet` 4344
+`milieu` 4376 · `commencePince` 4382 · `suitPince` 4396 · `plieLesBandes` 4449
+`saisitPlan` 4463 · `cibleElargie` 4545 · `planifieFiltre` 4740 · `traceurDeGeste` 4808
+`cranVoisin` 4827 · `retraitBas` 4853 · `mesureTiroir` 4867 · `montreTiroir` 4870
+`hisseTiroir` 4874 · `tiroirCrante` 5079
 
 Éléments :
 
