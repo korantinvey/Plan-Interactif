@@ -2462,14 +2462,29 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    au-dessus d'elle une bande pleine au haut du tiroir. Un bandeau qui occupe
    déjà ce haut le lui reprend, et c'est le script qui l'y remet — voir
    « poseDistsFiche ». */
-.corneDist{position:absolute;top:0;left:0;width:64px;height:64px;
+/* La bande fait 100 px, mais on n'en voit que la corde qu'elle coupe dans le
+   carré : plus elle est proche de l'angle, plus cette corde est courte. Posée
+   à 13 px du haut, elle n'en montrait que 64, et « NOUVEAU » — centré dans les
+   100 px — venait mourir à ses deux bouts. L'écarter de l'angle allonge la
+   corde d'autant : ici elle en montre 77, soit une quinzaine de pixels de part
+   et d'autre du mot. Le carré qui la rogne suit, sans quoi il couperait ses
+   pointes, et la réserve que la tête de fiche lui laisse aussi — elle vaut la
+   largeur que la bande prend sur le bord haut.
+
+   Encore faut-il que le mot tombe au milieu de cette corde, et non au milieu
+   des 100 px : les deux ne coïncident que si le centre de la bande est à
+   égale distance des deux bords du carré, d'où « left + 50 = top + demi-
+   épaisseur ». Descendre la bande sans reculer sa gauche l'avait décentrée,
+   et le mot, toujours centré sur elle, se retrouvait à sept pixels du bout
+   d'en bas pour vingt-deux de l'autre. */
+.corneDist{position:absolute;top:0;left:0;width:72px;height:72px;
   overflow:hidden;pointer-events:none;z-index:1}
-.corneDist span{position:absolute;top:13px;left:-28px;width:100px;
+.corneDist span{position:absolute;top:17px;left:-23px;width:100px;
   padding:3px 0;text-align:center;transform:rotate(-45deg);
   background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase}
-.detail.avecCorne .detail-hd .hdTete{padding-left:58px}
+.detail.avecCorne .detail-hd .hdTete{padding-left:68px}
 /* Le bandeau prend toute la largeur : rien ne lui dispute sa place, et il
    descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
    est déjà à l'étroit. C'est à l'exploitant d'en juger, et deux bandeaux
