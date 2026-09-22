@@ -60,7 +60,7 @@
  * qui était rangé sous la version d'avant : ces fonds et ces vignettes sont
  * dans le cache versionné, et c'est lui qu'on jette. C'est la dernière.
  */
-const VERSION = "6d9a9e86fa51";
+const VERSION = "91fc4988590c";
 const CACHE = "plan-" + VERSION;
 const DURABLE = "plan-durable";
 const HORS_LIGNE = "hors-ligne.html";
