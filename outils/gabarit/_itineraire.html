@@ -1567,7 +1567,7 @@ function nettoie(pts){
 }
 
 /**
- * Les faces libres d'un emplacement : celles qu'aucun voisin ne borde.
+ * Les faces libres d'un emplacement : les portions qu'aucun voisin ne borde.
  *
  * Un stand de rangée est mitoyen sur trois côtés et n'ouvre que sur le
  * quatrième. Le déduire du pavage ne marchait qu'à moitié : entre deux stands
@@ -1595,8 +1595,11 @@ function facesLibres(p, o){
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   s.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
                    y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+  /* Une zone qu'on traverse ne ferme aucune façade : on marche dessus, et le
+     stand qu'elle longe s'ouvre par là comme sur une allée. Seul ce qui barre
+     compte comme voisin. */
   const pres = [];
-  for (const v of p.stands.concat(p.zones)){
+  for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
     if (v === o || v.id === o.id || !v.d) continue;
     const c = v.lc || v.c;
     if (!c || c[0] < x0 - 40 || c[0] > x1 + 40 || c[1] < y0 - 40 || c[1] > y1 + 40) continue;
@@ -1612,13 +1615,34 @@ function facesLibres(p, o){
     let ux = -(B[1] - A[1]) / l, uy = (B[0] - A[0]) / l;
     const mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
     if (ctx.isPointInPath(moi, mx + ux * .05, my + uy * .05)){ ux = -ux; uy = -uy; }
-    let libre = true;
-    for (let k = 1; k <= 5 && libre; k++){
-      const u = k / 6;
+    /* On relève le côté pas à pas plutôt que d'en juger d'un bloc. Cinq
+       points et un verdict unique suffisent à un stand, dont les côtés font
+       quelques mètres ; une zone en fait quarante, bordée de stands sur toute
+       sa longueur sauf aux deux passages qu'on y a laissés — et ces
+       passages-là sont précisément ce par quoi on y entre. Le côté entier
+       était déclaré mitoyen, la zone n'ouvrait plus que par le bout resté
+       vide, et le trajet en faisait le tour pour la traverser ensuite de part
+       en part. Chaque portion libre est donc une façade à elle seule — et un
+       côté que rien ne borde n'en rend qu'une, la sienne, dont le milieu est
+       celui qu'on relevait déjà. */
+    const pas = PAS_GRILLE / 2;
+    const n = Math.max(1, Math.round(l / pas));
+    let debut = -1;
+    const pose = (a, b) => {
+      // une ouverture plus étroite que le passage n'en est pas une
+      if (b - a < 2 * DEGAGEMENT) return;
+      const u = (a + b) / 2 / l;
+      out.push({ mid: [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u],
+                 u: [ux, uy], l: b - a });
+    };
+    for (let k = 0; k <= n; k++){
+      const u = k / n;
       const x = A[0] + (B[0] - A[0]) * u + ux * .3, y = A[1] + (B[1] - A[1]) * u + uy * .3;
-      if (pres.some(t => ctx.isPointInPath(t, x, y))) libre = false;
+      const pris = pres.some(t => ctx.isPointInPath(t, x, y));
+      if (!pris && debut < 0) debut = u * l;
+      else if (pris && debut >= 0){ pose(debut, u * l); debut = -1; }
     }
-    if (libre) out.push({ mid: [mx, my], u: [ux, uy], l: l });
+    if (debut >= 0) pose(debut, l);
   }
   FACES.set(cle, out);
   return out;
@@ -1719,24 +1743,11 @@ function faceDeSortie(p, obj, ancre){
  * Un emplacement sans face libre — enclavé, ou dont le dégagement mange le
  * seul passage — retombe sur l'accroche depuis son centre, qui sait relâcher
  * la règle plutôt que de rendre la main.
- *
- * Les faces ne valent que pour ce dont l'intérieur est mur, et c'est le cas
- * de tout emplacement : son dégagement le referme bien avant son centre. Une
- * zone où l'on marche — une agora, un restaurant dont on n'a barré que les
- * cloisons — est son propre accès, et le trajet la rejoint en suivant ses
- * allées. L'aborder par ses faces la faisait prendre par le côté le plus
- * proche à vol d'oiseau, puis rejoindre son centre d'un trait droit : sur une
- * zone de quarante mètres, c'est une traversée que rien ne contrôle, et elle
- * coupait à travers la cloison là où l'exploitant avait justement laissé une
- * ouverture. Partir du point montré rend ce détour à l'A*, qui sort par où
- * l'on passe.
  */
 function accesDe(g, p, obj, xy){
   const d = obj && obj.d;
   const out = [];
   const vus = new Set();
-  const ici = caseDe(g, xy[0], xy[1]);
-  if (ici >= 0 && g.nappe[ici]) return [versLeMilieu(g, ici)];
   if (p && d){
     const pas = PAS_GRILLE + (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
     for (const f of facesLibres(p, obj)){
