@@ -15,7 +15,9 @@
     "bd": "supabase db push",
     "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
     "sup": "supabase",
-    "essais": "node outils/essais/capacite.js"
+    "essais": "node outils/essais/capacite.js",
+    "adoption": "node outils/essais/adoption.js",
+    "simulation": "node outils/essais/simulation.js"
   },
   "type": "commonjs",
   "private": true,

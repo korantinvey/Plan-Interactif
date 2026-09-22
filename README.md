@@ -1482,6 +1482,18 @@ les réglages, ce qu'ils donnent sur ce salon-ci : combien d'emplacements sont
 dessinés, et quelle capacité médiane en sort. Un chiffre choisi sans voir ce
 qu'il produit sur six cents emplacements est un chiffre choisi au hasard.
 
+**Ce que la capacité mesure, et ce qu'elle ne mesure pas.** Elle ne modélise
+pas la fréquentation du salon : le compteur ne voit que les journées
+organisées, et ignore tout des visiteurs qui n'ouvrent pas le plan. C'est un
+**budget de concentration de nos propres utilisateurs** — de quoi éviter que le
+calcul fabrique lui-même des attroupements qu'il aurait seul provoqués, en
+donnant le même ordre à tout le monde. Trois notions ne se confondent donc
+jamais : la **capacité théorique**, qui vient de la configuration et que le
+moteur ne modifie en aucun cas ; la **charge annoncée**, qui est le nombre de
+journées organisées déclarées sur ce stand à cette demi-heure ; et la
+**capacité effective**, que le calcul se donne le temps d'un rangement et qui
+ne sort pas de lui.
+
 **C'est un prix, jamais un refus.** Une capacité déduite d'une surface dit un
 confort, pas une limite physique : lui donner force de loi reviendrait à
 laisser une règle de trois décider du parcours de quelqu'un. Le calcul chiffre
@@ -1491,6 +1503,23 @@ en dessous de soixante pour cent d'occupation ; quarante mètres à soixante-dix
 deux cents à pleine capacité, huit cents à une fois et demie. Un stand très
 demandé reste donc visitable, et personne n'est jamais retiré du parcours de
 qui que ce soit : seule l'heure se négocie.
+
+**Le moteur réordonne d'abord, et ne paie qu'ensuite.** Ranger une journée
+n'a jamais consisté à suivre le plan dans l'ordre : le calcul essaie des
+milliers d'ordres — il en retourne des morceaux, déplace un arrêt, échange deux
+stands entre deux jours — et retient celui qui coûte le moins. Depuis que la
+charge entre dans ce coût, chacun de ces essais la voit. Visiter B avant A
+parce que A est pris à dix heures n'est donc pas un cas particulier qu'il
+faudrait prévoir : c'est ce que la recherche trouve d'elle-même. Là où un
+créneau paie une peine, elle va plus loin et essaie **tous** les ordres d'une
+fenêtre de sept arrêts autour de l'arrêt le plus cher — ce que les mouvements
+simples n'atteignent pas toujours. Là où rien ne se paie, rien de tout cela ne
+se déclenche, et le parcours est exactement celui d'avant.
+
+Une conférence retenue ne bouge jamais : elle découpe la journée en fenêtres,
+et c'est **à l'intérieur** de chaque fenêtre que les stands se réordonnent. De
+même, le calcul ne se met pas à traverser le hall : changer de pavillon coûte
+trois cents mètres au score, et aucune congestion ordinaire ne les rembourse.
 
 Ce qui en découle est un arbitrage, et c'est bien le but : un trajet de huit
 cent cinquante mètres qui arrive sur un stand à trente pour cent vaut mieux

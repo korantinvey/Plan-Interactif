@@ -12210,7 +12210,18 @@ function aireDuStand(o){
  * mètres carrés par personne, un stand de neuf tomberait sinon à zéro, et un
  * zéro se lit ici comme une absence de plafond — l'inverse de ce qu'il faut.
  */
-function capaciteStand(o){
+/**
+ * La capacité **théorique** d'un stand : ce que sa surface laisse supposer, ou
+ * ce que l'exploitant a déclaré.
+ *
+ * Elle est une donnée de la configuration, et **rien dans le moteur ne la
+ * modifie jamais**. Ce que l'ordonnanceur manipule, quand il lui faut desserrer
+ * la mesure, est une capacité *effective* qu'il calcule chez lui pour le temps
+ * d'un rangement — voir `capaciteEffective` dans `_journee.html`. Les deux ne
+ * se confondent pas : celle-ci se règle et s'affiche, celle-là ne sort pas du
+ * calcul.
+ */
+function capaciteTheorique(o){
   if (!capaciteGeree()) return 0;
   /* Le chiffre imposé l'emporte : quand l'exploitant connaît l'équipe d'un
      salon mieux que la surface ne la devine, c'est lui qui a raison. C'est
@@ -12240,7 +12251,7 @@ function phraseCapacite(){
   let dessines = 0;
   ((DATA && DATA.plans) || []).forEach(pl => (pl.stands || []).forEach(o => {
     if (aireDuStand(o) > 0) dessines++;
-    const n = capaciteStand(o);
+    const n = capaciteTheorique(o);
     if (n > 0) caps.push(n);
   }));
   if (!dessines && capaciteParSurface() && !capaciteFixee())
@@ -29418,6 +29429,16 @@ const EQUILIBRE = 4;
    de toute façon surdemandée partout à la fois. Même là le stand reste
    visitable — c'est un prix, il n'y a pas d'infini dans ce tableau.
    ------------------------------------------------------------ */
+/* Ce qui, sur un plan, a une capacité et se remplit.
+   Un seul genre aujourd'hui — les autres sont écrits là pour dire où ils
+   iraient, non pour être implémentés avant qu'on en ait besoin :
+   zone, allee, entree, escalier, liaison. */
+const GENRES_RESSOURCE = { stand: "stand" };
+
+/* Lire la charge autour de l'heure d'arrivée, ou dans la seule case où elle
+   tombe. Mesuré sur les deux réglages — voir `npm run simulation`. */
+let LISSAGE_CHARGE = true;
+
 const PEINE_CHARGE = [
   [ .60,    0],   // la marge : en dessous, on ne compte rien
   [ .80,   80],   // faible
@@ -29906,15 +29927,64 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      titre que le détour.
      ------------------------------------------------------------------ */
 
-  /* La capacité du jour, facteur d'adaptation compris. Quand un salon est
-     globalement surdemandé — dix mille visiteurs pour six mille places —, on
-     ne va pas peindre le hall entier en rouge : la journée ne sait pas faire
-     autrement que de les recevoir, et la peine doit alors mesurer la
-     **concentration**, pas la surdemande. Le facteur dilate les capacités
-     d'autant, et la courbe retrouve son rôle : départager les demi-heures
-     entre elles. */
-  const capaciteDe = (j, i) =>
-    plafond.capacite(i) * (plafond.facteur ? plafond.facteur(j.cle) : 1);
+  /* ------------------------------------------------------------------
+     Trois notions, qu'il ne faut jamais confondre
+
+     La **capacité théorique** est ce que la surface laisse supposer, ou ce que
+     l'exploitant a déclaré. Elle vient de la configuration, elle s'affiche dans
+     le volet, et le moteur ne la modifie jamais.
+
+     La **charge annoncée** est le nombre de journées organisées qui se sont
+     déclarées sur ce stand pendant cette demi-heure. Ce ne sont pas les
+     visiteurs du salon : c'est la seule population que le compteur voie, celle
+     qui se sert de l'outil. La capacité n'est donc pas ici un modèle de la
+     fréquentation réelle — elle est un **budget de concentration** de nos
+     propres utilisateurs, de quoi éviter que le calcul fabrique lui-même des
+     attroupements qui n'auraient pas eu lieu sans lui.
+
+     La **capacité effective** est ce que l'ordonnanceur emploie le temps d'un
+     rangement. Elle ne sort pas d'ici, ne s'écrit nulle part, et ne vaut que
+     pour le jour où on la calcule.
+     ------------------------------------------------------------------ */
+  const capaciteEffective = (j, i) => {
+    const r = plafond.ressource(i);
+    return r ? r.capacite * (plafond.dilatation ? plafond.dilatation(j.cle) : 1) : 0;
+  };
+
+  /* Ce que dure une visite, en minutes. On ne se le fait pas passer : c'est
+     exactement ce que `tempsCreneau` compte pour une visite et zéro mètre, et
+     le redemander en paramètre laisserait deux chiffres se contredire. */
+  const DUREE_VISITE = Math.max(1, tempsCreneau({ stands: [] }, 0, 1));
+
+  /**
+   * La charge autour d'une heure, et non dans la case où elle tombe.
+   *
+   * Les demi-heures sont l'unité de la capacité, non une frontière du monde :
+   * arriver à 10 h 29 ou à 10 h 31 ne doit pas rendre deux réponses
+   * étrangères l'une à l'autre. On lit donc **toutes** les tranches que la
+   * visite traverse, chacune au prorata du temps qu'on y passe — une visite de
+   * vingt minutes commencée à 10 h 29 compte pour un vingtième dans la tranche
+   * de dix heures et dix-neuf vingtièmes dans celle de dix heures et demie.
+   *
+   * C'est le lissage que la frontière brutale appelait, et il ne coûte qu'une
+   * ou deux lectures de plus : une visite ne chevauche jamais plus de deux
+   * tranches tant qu'elle dure moins d'une demi-heure.
+   */
+  const chargeAutourDe = (cleJour, s, t) => {
+    if (!LISSAGE_CHARGE)
+      return plafond.chargeAnnoncee(cleJour, s, trancheDe(t));
+    const fin = t + DUREE_VISITE;
+    let somme = 0, poids = 0, deb = t, tr = trancheDe(t), borne = (tr + 1) * 30;
+    while (deb < fin){
+      const f = Math.min(fin, borne), w = f - deb;
+      somme += w * plafond.chargeAnnoncee(cleJour, s, tr);
+      poids += w;
+      deb = f;
+      tr = Math.min(TRANCHES_JOUR - 1, tr + 1);
+      borne += 30;
+    }
+    return poids > 0 ? somme / poids : 0;
+  };
 
   /* L'heure à laquelle on arrive sur un stand : ce qu'on a marché pour
      l'atteindre, plus les visites qui l'ont précédé dans le créneau. C'est la
@@ -29923,10 +29993,17 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      n'est calculée pour la charge. */
   const peineDe = (c, k, mArrivee, s) => {
     if (!plafond) return 0;
-    const cap = capaciteDe(c.jour, s);
+    const cap = capaciteEffective(c.jour, s);
     if (!(cap > 0)) return 0;
-    const tr = trancheDe(c.t0 + tempsCreneau(c, mArrivee, k));
-    return peineDeCharge(plafond.charge(c.jour.cle, s, tr), cap);
+    const t = c.t0 + tempsCreneau(c, mArrivee, k);
+    /* Le visiteur se compte lui-même : ce qu'on chiffre est la charge telle
+       qu'elle sera **s'il vient**, non telle qu'elle est sans lui. Sans ce un,
+       deux demi-heures à une place près se valent alors que l'une déborderait
+       et pas l'autre. Le plan qu'on a soi-même annoncé la veille est déjà dans
+       le relevé et se compte donc deux fois — une unité sur une capacité qui
+       en vaut trois ou douze, et le retirer demanderait au serveur de
+       reconnaître l'appelant. */
+    return peineDeCharge(chargeAutourDe(c.jour.cle, s, t) + 1, cap);
   };
 
   /** Ce que la charge coûte à un créneau tel qu'il est rangé. */
@@ -30182,6 +30259,77 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
       }
 
       if (!gagne) break;
+    }
+    /* Une fois les mouvements simples épuisés, on regarde de près là où ça
+       coûte — voir `permuteCongestion`. */
+    permuteCongestion();
+  };
+
+  /**
+   * Tout essayer, mais seulement là où la congestion se paie.
+   *
+   * Les trois mouvements ci-dessus sont puissants et pas exhaustifs : ils
+   * retournent un morceau, déplacent un arrêt, échangent deux arrêts de deux
+   * jours. Certains ordres ne s'atteignent par aucune suite de ces trois-là
+   * sans passer par un arrangement pire, que la recherche refuse en chemin.
+   * Quand le créneau paie une peine, ces ordres-là valent d'être essayés.
+   *
+   * Deux bornes, et les deux comptent. On ne permute **que si le créneau
+   * paie** : là où la congestion n'est pas un problème, le moteur garde
+   * exactement le comportement qu'il avait, ce qui est la seule façon de ne
+   * pas faire payer à tout le monde une mécanique qui ne sert qu'à quelques-uns.
+   * Et on ne permute qu'une **fenêtre** : sept arrêts font cinq mille ordres,
+   * quatorze en feraient quatre-vingt-sept milliards. La fenêtre se pose
+   * autour de l'arrêt le plus cher, qui est par construction celui dont le
+   * déplacement rapporte le plus.
+   *
+   * Les arrêts qui encadrent la fenêtre ne bougent pas : c'est ce qui en fait
+   * un mouvement local, comparable aux autres, et ce qui garantit qu'aucune
+   * contrainte d'ailleurs n'est touchée — le jour d'un stand imposé, les
+   * mètres d'un changement de pavillon, l'heure d'une conférence continuent
+   * d'être jugés par `deborde` et par le score, comme pour tout mouvement.
+   */
+  const PERMUTE_MAX = 7;
+  const permuteCongestion = () => {
+    if (!plafond) return;
+    for (const c of creneaux){
+      const n = c.stands.length;
+      if (n < 3 || peineCreneau(c) <= 0) continue;
+
+      /* L'arrêt le plus cher, et la fenêtre autour de lui. */
+      let pire = 0, cher = -1;
+      for (let k = 0; k < n; k++){
+        const p = peineDe(c, k, (c.pref && c.pref[k]) || 0, c.stands[k]);
+        if (p > pire){ pire = p; cher = k; }
+      }
+      if (cher < 0) continue;
+      const L = Math.min(n, PERMUTE_MAX);
+      const w0 = Math.max(0, Math.min(n - L, cher - (L >> 1)));
+      const fenetre = c.stands.slice(w0, w0 + L);
+
+      const debordait = deborde(c);
+      let note = metres(), meilleure = null;
+      const essaieOrdre = (fait, reste) => {
+        if (!reste.length){
+          const avant = c.stands.slice();
+          c.stands = c.stands.slice(0, w0).concat(fait, c.stands.slice(w0 + L));
+          remet(c);
+          if (metres() < note - 1e-9 && (debordait || !deborde(c))){
+            note = metres(); meilleure = fait.slice();
+          }
+          c.stands = avant; remet(c);
+          return;
+        }
+        for (let i = 0; i < reste.length; i++)
+          essaieOrdre(fait.concat([reste[i]]),
+                      reste.slice(0, i).concat(reste.slice(i + 1)));
+      };
+      essaieOrdre([], fenetre);
+
+      if (meilleure){
+        c.stands = c.stands.slice(0, w0).concat(meilleure, c.stands.slice(w0 + L));
+        remet(c);
+      }
     }
   };
 
@@ -30561,26 +30709,56 @@ function prepareSejour(choix, fige){
   const restants = iStands.slice();
 
   /**
-   * La capacité d'un stand, vue de l'ordonnanceur.
+   * Les ressources du séjour, une par arrêt.
    *
-   * Lui ne connaît que des indices ; c'est ici qu'on sait à quel exposant ils
-   * mènent, ce que son équipe peut recevoir et ce que les autres journées ont
-   * déjà annoncé. Nul quand l'exploitant n'a pas ouvert le réglage, quand le
-   * visiteur a refusé la mesure, ou quand la charge n'est pas encore arrivée :
-   * la visite se range alors comme avant, sans rien à payer.
+   * Une **ressource** est ce qui a une capacité et se remplit. Aujourd'hui les
+   * stands, et eux seuls. Demain, peut-être, une zone, une allée étroite, une
+   * entrée, un escalier, une liaison entre pavillons : ils se remplissent
+   * aussi, et rien de ce qui suit ne les distingue d'un stand. C'est pourquoi
+   * le genre est porté par la ressource et non deviné par l'ordonnanceur —
+   * lui ne demande que « que peut recevoir le point numéro i », et cette
+   * question aura la même forme le jour où le point sera une passerelle.
    *
-   * Un stand sans capacité connue — personne ne l'a dessiné, et le réglage est
-   * à la surface — ne coûte jamais rien : zéro se lit comme une absence de
-   * limite, jamais comme une limite nulle.
+   * Rien n'est implémenté pour ces autres genres, et il ne faut pas les
+   * ajouter tant que rien ne les demande. Ce qui est fait ici est d'avoir
+   * cessé de supposer, à trois endroits du calcul, que la chose qui se remplit
+   * est un stand.
+   *
+   * Le tableau est bâti une fois et non à la demande : `peineDe` est dans la
+   * boucle la plus chaude du calcul, et y allouer un objet par essai coûterait
+   * plus que tout le reste.
+   */
+  const RESSOURCES = PTS.map((pt, i) => {
+    const o = pt && pt.id ? parId.get(String(pt.id)) : null;
+    if (!o) return null;
+    const cap = capaciteTheorique(o);
+    /* Zéro se lit comme une absence de limite, jamais comme une limite nulle :
+       un stand que personne n'a dessiné, sur un salon réglé à la surface, ne
+       coûte jamais rien. */
+    if (!(cap > 0)) return null;
+    return {
+      id: String(pt.id),
+      genre: GENRES_RESSOURCE.stand,
+      capacite: cap,
+      /* D'où vient ce chiffre : de la surface dessinée, ou de l'exploitant.
+         Ne sert pas au calcul — sert à expliquer un résultat surprenant, et à
+         savoir ce qu'on peut faire évoluer sans mentir. */
+      source: capaciteFixee() ? "exploitant" : "surface",
+    };
+  });
+
+  /**
+   * Ce que l'ordonnanceur sait de la capacité.
+   *
+   * Nul quand l'exploitant n'a pas ouvert le réglage, quand le visiteur a
+   * refusé la mesure, ou quand la charge n'est pas encore arrivée : la visite
+   * se range alors comme avant, sans rien à payer.
    */
   const plafond = (chargeSuivie() && CHARGE) ? {
-    capacite: (i) => {
-      const id = PTS[i] && PTS[i].id;
-      return id ? capaciteStand(parId.get(String(id))) : 0;
-    },
-    charge: (cleJour, i, tranche) =>
+    ressource: (i) => RESSOURCES[i] || null,
+    chargeAnnoncee: (cleJour, i, tranche) =>
       chargeCellule(cleJour, PTS[i] && PTS[i].id, tranche),
-    facteur: facteurDeCharge,
+    dilatation: dilatationDuJour,
   } : null;
 
   rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe,
@@ -31791,53 +31969,91 @@ function annoncePlan(){
 function plafondMinimal(){
   let min = 0;
   PARCOURS.stands.forEach(id => {
-    const n = capaciteStand(parId.get(String(id)));
+    const n = capaciteTheorique(parId.get(String(id)));
     if (n > 0 && (!min || n < min)) min = n;
   });
   return Math.max(1, Math.ceil(SEUIL_PEINE * (min || 1)));
 }
 
 /* ------------------------------------------------------------
-   Le facteur d'adaptation d'une journée
+   La dilatation des capacités, quand le salon est globalement surdemandé
 
    Une capacité déduite d'une surface dit un confort, pas une limite physique.
-   Quand un salon attend dix mille visiteurs pour six mille places, toutes ses
-   demi-heures sont au-dessus du seuil, la courbe rend partout le même rouge —
-   et ne départage plus rien, ce qui est précisément son seul emploi.
+   Quand ce que les journées organisées demandent dépasse globalement ce que
+   les stands demandés peuvent recevoir, toutes les demi-heures passent
+   au-dessus du seuil : la courbe rend partout le même rouge, et cesse de
+   départager quoi que ce soit — ce qui est son seul emploi. On desserre alors
+   la mesure d'un peu.
 
-   On dilate donc les capacités du rapport constaté. La peine cesse alors de
-   mesurer la surdemande du salon, sur laquelle la journée d'un visiteur ne
-   peut rien, pour mesurer ce sur quoi elle peut : la **concentration** d'une
-   demi-heure par rapport aux autres.
+   **D'un peu, et c'est tout l'objet de ce qui suit.** Une dilatation qui
+   suivrait la demande serait circulaire : elle dirait « puisque beaucoup de
+   gens veulent ce stand, il peut recevoir beaucoup de gens », et la peine
+   s'évanouirait exactement là où elle sert. Une version précédente le faisait
+   — le rapport constaté, appliqué tel quel, jusqu'à quatre fois — et un salon
+   deux fois surdemandé y voyait toutes ses capacités doubler, ramenant un
+   stand à deux cents pour cent à cent pile, c'est-à-dire à deux cents mètres
+   de peine au lieu de mille deux cents.
+
+   La dilatation est donc **progressive et plafonnée bas** : un cinquième au
+   plus, atteint à deux fois la demande, et rien en dessous du seuil. La
+   demande continue ainsi de produire de la peine quand la capacité s'adapte,
+   ce qui est la seule propriété qui compte ici.
+
+   Elle est aussi **globale au jour**, et non par stand — et c'est délibéré.
+   Dilater la capacité d'un stand parce qu'il est demandé, ce serait
+   précisément la circularité qu'on écarte. Dilater celle de tous parce que le
+   salon entier est surdemandé répond à une autre question, qui porte sur le
+   salon et non sur la popularité d'un stand.
 
    Le rapport se calcule sur les stands qui ont une charge annoncée et une
-   capacité connue, non sur le hall entier. Comparer la demande de vingt
+   capacité connue, non sur le hall entier : comparer la demande de vingt
    stands à la capacité de six cents rendrait toujours un, et le mécanisme ne
-   se déclencherait jamais. La question posée est bien « ce que les gens
-   demandent est-il globalement au-dessus de ce qui peut être reçu ».
+   se déclencherait jamais.
    ------------------------------------------------------------ */
+
+/* Le rapport constaté, et ce qu'on desserre en face. Interpolé entre les
+   points, plafonné au dernier — deux fois la demande ne donne pas deux fois
+   la capacité, elle donne un cinquième de plus. */
+const DILATATION = [
+  [1.00, 1.00],   // sous la capacité : on ne desserre rien
+  [1.25, 1.05],
+  [1.50, 1.10],
+  [2.00, 1.20],   // et pas davantage au-delà
+];
 
 /* Une journée de salon ouvre rarement moins de six heures ; sous ce plancher,
    c'est la lecture qui est partielle, pas la journée qui est courte. */
 const TRANCHES_MINI = 12;
 
-/* Au-delà, ce n'est plus un salon surdemandé, c'est une donnée fausse — et la
-   dilater davantage éteindrait la courbe au lieu de l'étalonner. */
-const FACTEUR_MAX = 4;
+const DILATATIONS = new Map();
 
-const FACTEURS = new Map();
+/** Ce que le rapport « demande sur capacité » desserre. Jamais moins d'un :
+ *  on n'a pas à serrer un salon que personne ne demande. */
+function dilatationPour(rapport){
+  const D = DILATATION;
+  if (!(rapport > D[0][0])) return 1;
+  for (let i = 1; i < D.length; i++)
+    if (rapport <= D[i][0])
+      return D[i - 1][1] + (D[i][1] - D[i - 1][1]) *
+             (rapport - D[i - 1][0]) / (D[i][0] - D[i - 1][0]);
+  return D[D.length - 1][1];
+}
 
-/** De combien les capacités de ce jour-là sont dilatées. Jamais en dessous
- *  d'un : on n'a pas à serrer un salon que personne ne demande. */
-function facteurDeCharge(cleJour){
+/**
+ * De combien les capacités de ce jour-là sont desserrées.
+ *
+ * Ne touche pas à la capacité théorique, qui reste celle de la configuration :
+ * ce nombre ne sert qu'à `capaciteEffective`, le temps d'un rangement.
+ */
+function dilatationDuJour(cleJour){
   const cle = String(cleJour);
-  if (FACTEURS.has(cle)) return FACTEURS.get(cle);
+  if (DILATATIONS.has(cle)) return DILATATIONS.get(cle);
   let f = 1;
   const j = CHARGE && CHARGE[cle];
   if (j){
     let demande = 0, capacite = 0, tMin = TRANCHES_JOUR, tMax = -1;
     for (const id in j){
-      const cap = capaciteStand(parId.get(String(id)));
+      const cap = capaciteTheorique(parId.get(String(id)));
       if (!(cap > 0)) continue;   // sans capacité connue, ce stand ne dit rien
       for (const tr in j[id]){
         demande += +j[id][tr] || 0;
@@ -31849,11 +32065,10 @@ function facteurDeCharge(cleJour){
     }
     if (tMax >= 0 && capacite > 0){
       const tranches = Math.max(TRANCHES_MINI, tMax - tMin + 1);
-      const rapport = demande / (capacite * tranches);
-      if (rapport > 1) f = Math.min(FACTEUR_MAX, rapport);
+      f = dilatationPour(demande / (capacite * tranches));
     }
   }
-  FACTEURS.set(cle, f);
+  DILATATIONS.set(cle, f);
   return f;
 }
 
@@ -31873,7 +32088,7 @@ function litLaCharge(){
   fetch(CHARGE_API + "?slug=" + encodeURIComponent(SLUG) +
         "&min=" + plafondMinimal())
     .then(r => r.ok ? r.json() : null)
-    .then(d => { if (d && d.jours){ CHARGE = d.jours; FACTEURS.clear(); } })
+    .then(d => { if (d && d.jours){ CHARGE = d.jours; DILATATIONS.clear(); } })
     .catch(() => {})
     .then(() => { _chargeEnCours = false; });
 }

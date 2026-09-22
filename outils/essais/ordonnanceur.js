@@ -26,8 +26,26 @@ function ancre(lignes, debut){
   return i;
 }
 
-const lignes = fs.readFileSync(GABARIT, "utf8").split("\n");
-const peine = ancre(lignes, "const PEINE_CHARGE = [");
+/**
+ * Extraire l'ordonnanceur d'un gabarit donné.
+ *
+ * Le chemin est un paramètre pour une seule raison : comparer le moteur du
+ * jour à celui d'un commit précédent, ce que fait `simulation.js` en écrivant
+ * la version d'avant dans un fichier temporaire. Sans cela, « ce que faisait
+ * la version précédente » serait ce que j'en dis, et non ce qu'elle fait.
+ */
+function depuis(chemin){
+const lignes = fs.readFileSync(chemin || GABARIT, "utf8").split("\n");
+/* On part du premier des réglages de la congestion, non de la courbe : les
+   genres de ressource et l'interrupteur du lissage la précèdent dans le
+   gabarit, et les omettre rendrait un module qui ne compile pas. Les versions
+   plus anciennes n'ont que la courbe — d'où le repli. */
+const tete = lignes.findIndex(l => l.startsWith("const GENRES_RESSOURCE"));
+const peine = tete >= 0 ? tete : ancre(lignes, "const PEINE_CHARGE = [");
+/* La dilatation n'existe pas dans toutes les versions qu'on peut extraire :
+   une ancre absente rend -1, et le morceau est simplement omis. */
+const dilat = lignes.findIndex(l => l.startsWith("const DILATATION = ["));
+const dilatFin = lignes.findIndex(l => l.startsWith("function dilatationDuJour("));
 const ecart = ancre(lignes, "function ecartDesJours(");
 const range = ancre(lignes, "function rangeSejour(");
 const tranche = ancre(lignes, "const TRANCHES_JOUR = ");
@@ -40,9 +58,22 @@ const source = [
   lignes.slice(ecart, range).join("\n"),
   lignes.slice(tranche, tranche + 4).join("\n"),
   lignes.slice(range, fin + 2).join("\n"),
-  "module.exports = { rangeSejour, trancheDe, peineDeCharge, PEINE_CHARGE, PEINE_MAX, SEUIL_PEINE };",
+  /* La dilatation : sa table et son interpolation, sans `dilatationDuJour`
+     qui, lui, lit la charge servie à la page et n'a pas de sens hors d'elle. */
+  (dilat >= 0 && dilatFin > dilat ? lignes.slice(dilat, dilatFin).join("\n") : ""),
+  "module.exports = { rangeSejour, trancheDe, peineDeCharge, PEINE_CHARGE," +
+  " PEINE_MAX, SEUIL_PEINE," +
+  (dilat >= 0 ? " DILATATION, dilatationPour, TRANCHES_MINI," : "") +
+  /* De quoi mesurer le lissage contre son absence, sur le même moteur : le
+     comparer d'une version à l'autre mêlerait deux changements. */
+  (lignes.some(l => l.startsWith("let LISSAGE_CHARGE"))
+    ? " poseLissage: (v) => { LISSAGE_CHARGE = v; }," : "") + " };",
 ].join("\n");
 
 const m = new Module("ordonnanceur-extrait", module);
-m._compile(source, GABARIT);
-module.exports = m.exports;
+m._compile(source, chemin || GABARIT);
+return m.exports;
+}
+
+module.exports = depuis();
+module.exports.depuis = depuis;

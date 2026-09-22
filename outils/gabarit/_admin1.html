@@ -776,7 +776,18 @@ function aireDuStand(o){
  * mètres carrés par personne, un stand de neuf tomberait sinon à zéro, et un
  * zéro se lit ici comme une absence de plafond — l'inverse de ce qu'il faut.
  */
-function capaciteStand(o){
+/**
+ * La capacité **théorique** d'un stand : ce que sa surface laisse supposer, ou
+ * ce que l'exploitant a déclaré.
+ *
+ * Elle est une donnée de la configuration, et **rien dans le moteur ne la
+ * modifie jamais**. Ce que l'ordonnanceur manipule, quand il lui faut desserrer
+ * la mesure, est une capacité *effective* qu'il calcule chez lui pour le temps
+ * d'un rangement — voir `capaciteEffective` dans `_journee.html`. Les deux ne
+ * se confondent pas : celle-ci se règle et s'affiche, celle-là ne sort pas du
+ * calcul.
+ */
+function capaciteTheorique(o){
   if (!capaciteGeree()) return 0;
   /* Le chiffre imposé l'emporte : quand l'exploitant connaît l'équipe d'un
      salon mieux que la surface ne la devine, c'est lui qui a raison. C'est
@@ -806,7 +817,7 @@ function phraseCapacite(){
   let dessines = 0;
   ((DATA && DATA.plans) || []).forEach(pl => (pl.stands || []).forEach(o => {
     if (aireDuStand(o) > 0) dessines++;
-    const n = capaciteStand(o);
+    const n = capaciteTheorique(o);
     if (n > 0) caps.push(n);
   }));
   if (!dessines && capaciteParSurface() && !capaciteFixee())
