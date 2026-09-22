@@ -349,8 +349,8 @@ const CHAPITRES_TUTO = [
                  "retenues gardent la leur, les stands se glissent entre elles. Il lui " +
                  "faut un parcours : touchez un stand sur le plan, puis son signet." };
       }
-      /* Le pied du tiroir ne porte pas le même mot selon qu'on a retenu un jour
-         ou plusieurs : le nommer de travers enverrait chercher un bouton qui
+      /* La reprise ne porte pas le même mot selon qu'on a retenu un jour ou
+         plusieurs : le nommer de travers enverrait chercher un bouton qui
          n'est pas là. */
       if (tiroir && vueJournee) return { cle: "refaire", cible: $("jRefaire"),
         texte: SEJOUR && SEJOUR.jours.length > 1
