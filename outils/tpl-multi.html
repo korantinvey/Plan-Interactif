@@ -25182,7 +25182,7 @@ const PORTEE_POINT = 80;
  * accepte de fouiller : un pavillon entier repeint pour chaque accroche
  * coûterait plus que toutes les recherches réunies.
  */
-function empriseDe(g, d, cx0, cy0, cote){
+function empriseDe(g, p, d, cx0, cy0, cote){
   const cv = document.createElement("canvas");
   cv.width = cote; cv.height = cote;
   const ctx = cv.getContext("2d", { willReadFrequently: true });
@@ -25193,9 +25193,34 @@ function empriseDe(g, d, cx0, cy0, cote){
   ctx.fillStyle = ctx.strokeStyle = "#000";
   const t = new Path2D(d);
   ctx.fill(t); ctx.stroke(t);
+  /* Ce qu'un autre occupe n'est pas sien, fût-il dans son contour : une zone
+     non traversable posée au fond d'une zone orga, un stand qui la déborde.
+     On retranche leur plein seul — leur dégagement est partagé avec le nôtre,
+     et l'ôter refermerait la bouche d'un emplacement serré. */
+  if (p){
+    const c0 = horsGrille(g, [g.x0 + (cx0 + cote / 2) * PAS_GRILLE,
+                              g.y0 + (cy0 + cote / 2) * PAS_GRILLE]);
+    const portee = cote * PAS_GRILLE + 40;
+    ctx.globalCompositeOperation = "destination-out";
+    for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+      if (!v.d || v.d === d) continue;
+      const c = v.lc || v.c;
+      if (!c || Math.abs(c[0] - c0[0]) > portee || Math.abs(c[1] - c0[1]) > portee) continue;
+      ctx.fill(new Path2D(v.d));
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
   const px = ctx.getImageData(0, 0, cote, cote).data;
   const m = new Uint8Array(cote * cote);
   for (let i = 0; i < m.length; i++) m[i] = px[i * 4 + 3] > 128 ? 1 : 0;
+  /* Et ce qui a été tracé pour barrer ne lui appartient jamais, où qu'on
+     l'ait posé : c'est tout l'objet d'une cloison. */
+  if (g.cloisons)
+    for (let y = 0; y < cote; y++) for (let x = 0; x < cote; x++){
+      const gx = cx0 + x, gy = cy0 + y;
+      if (gx < 0 || gy < 0 || gx >= g.w || gy >= g.h) continue;
+      if (g.cloisons[gy * g.w + gx]) m[y * cote + x] = 0;
+    }
   return m;
 }
 
@@ -25214,7 +25239,7 @@ function empriseDe(g, d, cx0, cy0, cote){
  * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
  * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accrocheDepuis(g, xy, chez, portee){
+function accrocheDepuis(g, p, xy, chez, portee){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const [gx, gy] = celluleDe(g, xy[0], xy[1]);
@@ -25227,7 +25252,7 @@ function accrocheDepuis(g, xy, chez, portee){
   const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
   const cote = 2 * portee + 1;
   const cx0 = dx0 - portee, cy0 = dy0 - portee;
-  const sien = chez ? empriseDe(g, chez, cx0, cy0, cote) : null;
+  const sien = chez ? empriseDe(g, p, chez, cx0, cy0, cote) : null;
   const chezSoi = (nx, ny) => {
     if (!sien) return true;
     const px = nx - cx0, py = ny - cy0;
@@ -25301,10 +25326,10 @@ function versLeMilieu(g, i){
  * essai cherche à la portée d'un emplacement, sans quoi on rendrait joignable
  * le stand que la portée écarte — ce qu'elle est là pour empêcher.
  */
-function accroche(g, xy, chez){
-  let r = accrocheDepuis(g, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
+function accroche(g, p, xy, chez){
+  let r = accrocheDepuis(g, p, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
   if (chez && !(r >= 0 && g.nappe[r])){
-    const large = accrocheDepuis(g, xy, null, PORTEE_ACCROCHE);
+    const large = accrocheDepuis(g, p, xy, null, PORTEE_ACCROCHE);
     if (large >= 0 && g.nappe[large]) r = large;
   }
   return r >= 0 && g.nappe[r] ? versLeMilieu(g, r) : r;
@@ -26313,7 +26338,7 @@ function accesDe(g, p, obj, xy){
   if (p && d){
     const pas = PAS_GRILLE + (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
     for (const f of facesLibres(p, obj)){
-      const c = accroche(g, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
+      const c = accroche(g, p, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
       if (c >= 0 && g.nappe[c] && !vus.has(c)){ vus.add(c); out.push(c); }
     }
     /* Une seule façade se garde telle quelle : l'écarter rendrait
@@ -26325,7 +26350,7 @@ function accesDe(g, p, obj, xy){
     }
   }
   if (!out.length){
-    const c = accroche(g, xy, d);
+    const c = accroche(g, p, xy, d);
     if (c >= 0) out.push(c);
   }
   return out;
@@ -26738,7 +26763,7 @@ function balayage(p, pmr, xy, chez){
   const g = grille(p, pmr);
   /* On ne sort pas d'un emplacement en traversant son voisin : l'accroche s'en
      tient à l'emprise du sien, quand on sait laquelle c'est. */
-  const c = accroche(g, xy, chez);
+  const c = accroche(g, p, xy, chez);
   const b = { g: g, d: c >= 0 ? distancesDepuis(g, c) : null };
   BALAYAGES.set(cle, b);
   return b;
