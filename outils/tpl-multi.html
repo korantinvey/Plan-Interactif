@@ -29813,9 +29813,22 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
 
      La règle tient en deux phrases. Une demi-heure pleine sur un stand est
      **indisponible** : la journée ne s'y pose pas, et l'ordre se réarrange
-     autour. Si toutes celles que ce visiteur pourrait encore atteindre sont
-     pleines, on les relève **toutes d'un cran** — l'exposant n'est jamais
-     retiré du parcours de personne.
+     autour. Si aucune place ne se trouve nulle part, on relève ce stand
+     **d'un cran** — l'exposant n'est jamais retiré du parcours de personne.
+
+     Sur ce que « nulle part » recouvre, car l'expression est trompeuse. Ce
+     n'est pas le visiteur qui serait empêché d'aller quelque part : c'est sa
+     journée qui est un bloc continu. `tempsCreneau` additionne la marche et
+     les visites sans jamais ménager de temps mort — la seule attente que ce
+     module connaisse est celle qu'une conférence impose. Quatorze stands à
+     partir de dix heures font donc une journée de dix heures à seize heures
+     trente, et l'ordre décide seulement **quel** stand tombe dans **quelle**
+     demi-heure de cet intervalle-là. Il ne crée pas de demi-heure nouvelle.
+
+     Ce qui déplace vraiment l'intervalle : l'heure d'arrivée que le visiteur
+     a dite, une conférence qui y creuse un trou, et — sur un séjour de
+     plusieurs jours — le passage du stand à un autre jour, que les reprises
+     savent faire.
 
      Deux choses en découlent, et ce sont deux simplifications.
 
@@ -29857,9 +29870,11 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * remonter la saturation de trois à cinq fois la capacité, pour rien.
    *
    * On ne relève pas non plus un stand parce qu'on aurait deviné d'avance que
-   * sa ligne est pleine : « tous ses autres créneaux » sont exactement ceux
-   * que cette journée-là pouvait lui offrir, pas ceux d'un horaire théorique
-   * où le visiteur attendrait midi sans rien faire.
+   * sa ligne est pleine. Une version l'a tenté, en cherchant une demi-heure
+   * libre entre l'ouverture et la fermeture : elle en trouvait à midi pour un
+   * visiteur qui aurait fini le hall à onze heures, concluait qu'il restait de
+   * la place, et le laissait sans rien. C'est la recherche qui sait ce qu'elle
+   * peut offrir, pas un balayage de l'horaire.
    */
   const releve = (candidats, jours) => {
     if (crans >= CRANS_MAX) return false;
