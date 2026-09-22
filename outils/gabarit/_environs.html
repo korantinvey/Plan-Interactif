@@ -694,6 +694,12 @@ function videCarteGL(){
    réécrirait les mêmes trente balises et redemanderait les mêmes tuiles. */
 let _fondPose = "";
 let _tuilesMuettes = 0;
+/* Ce qui ne dépend que du calage, et non de la vue : l'opacité rendue à la
+   feuille de style, le crédit, et la matrice du groupe des tuiles. Les
+   réécrire à chaque image d'un glissement coûtait cher pour rien — surtout la
+   première, posée sur la racine, qui remet en cause le style des sept mille
+   nœuds du plan, et que le guet du rendu WebGL relit à chaque fois. */
+let _calagePose = "";
 
 /** Le fond de carte, refait pour la vue courante. */
 function dessineFondCarte(){
@@ -704,11 +710,17 @@ function dessineFondCarte(){
   if (!cal || !fond || typeof view === "undefined" || !view){
     if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
     videCarteGL();
+    _calagePose = "";
     if (credit) credit.hidden = true;
     return;
   }
-  racine.style.setProperty("--carte-force", forceCarte(cal));
-  if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
+  const force = forceCarte(cal);
+  if (credit && credit.hidden){ credit.hidden = false; _calagePose = ""; }
+  if (String(force) + "|" + fond.credit !== _calagePose){
+    _calagePose = String(force) + "|" + fond.credit;
+    racine.style.setProperty("--carte-force", force);
+    if (credit) credit.textContent = fond.credit;
+  }
   /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
      et se la voit poser ici, à chaque changement de vue. C'est le prix de
      n'être pas repris par le rendu de la carte graphique. */
@@ -731,10 +743,12 @@ function dessineFondCarte(){
      elle qui rend le glissement fluide — déplacer la carte d'un mètre ne
      redemande aucune image. */
   const r6 = (v) => Math.round(v * 1e6) / 1e6;
-  hote.setAttribute("transform",
+  const matrice =
     "translate(" + r6(cal.x) + " " + r6(cal.y) + ")" +
     " rotate(" + r6(cal.angle / DEG) + ")" +
-    " scale(" + r6(t.k.x) + " " + r6(t.k.y) + ")");
+    " scale(" + r6(t.k.x) + " " + r6(t.k.y) + ")";
+  // elle ne tient qu'au calage et au niveau de tuiles : un glissement ne la change pas
+  if (matrice !== hote.getAttribute("transform")) hote.setAttribute("transform", matrice);
 
   /* Les tuiles, elles, ne se réécrivent que lorsque le carré change : les
      recréer à chaque image les ferait redécoder, et la carte scintillerait
