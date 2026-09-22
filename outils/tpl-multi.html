@@ -29490,14 +29490,64 @@ const chargeDuJour = (m, n, visiteEnMetres) => m + visiteEnMetres * n;
  * `restants` les stands à poser, et `imposeDe` ceux que le visiteur a lui-même
  * placés : ils ne vont que là où il l'a dit.
  */
-function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, imposeDe){
+function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, imposeDe,
+                     plafond){
   const creneaux = [];
   jours.forEach(j => j.creneaux.forEach(c => { c.jour = j; creneaux.push(c); }));
 
+  /* Les mètres du créneau, et au passage ce qu'on a marché en arrivant sur
+     chaque stand. Ce second tableau ne coûte rien ici — on parcourt déjà — et
+     c'est lui qui dira l'heure d'une visite sans refaire le trajet à chaque
+     candidat essayé. */
   const mesureCreneau = (c) => {
     let m = 0, prec = c.de;
-    for (const s of c.stands){ m += dist(prec, s); prec = s; }
+    const pref = [];
+    for (const s of c.stands){ m += dist(prec, s); pref.push(m); prec = s; }
+    c.pref = pref;
     return m + dist(prec, c.vers);
+  };
+
+  /* ------------------------------------------------------------------
+     Le plafond d'un stand
+
+     Ce qui empêche une visite n'est pas la densité de l'allée, c'est que toute
+     l'équipe du stand est déjà en conversation : le visiteur suivant n'est reçu
+     par personne. Une demi-heure pleine n'est donc pas un endroit où poser une
+     visite — et ce n'est pas une peine à payer, c'est un refus, au même titre
+     qu'un créneau qui déborderait sur une conférence.
+
+     Le remède ne coûte pourtant presque rien au visiteur, et c'est ce qui
+     distingue ce modèle de celui qu'on avait d'abord retenu : il garde son
+     exposant, seule l'heure bouge. Rien ne dit que ce sera la demi-heure
+     suivante — l'ordre entier peut se rejouer autour, et c'est justement ce
+     que l'ordonnanceur cherche.
+
+     `relache` est la soupape. Si tous les créneaux d'un stand sont pleins, le
+     plafond monte d'un plutôt que de laisser un exposant dehors : mieux vaut
+     une équipe un peu bousculée qu'un visiteur à qui l'on retire ce qu'il a
+     choisi. Elle se calcule sur le moment et ne s'écrit nulle part — les
+     compteurs étant partagés, tout le monde relâche pareil.
+     ------------------------------------------------------------------ */
+  let relache = 0;
+  /* Le plafond se débraye le temps d'un dernier essai — voir `depart`. Un
+     drapeau plutôt qu'un paramètre remis à zéro : `trop` et `sature` sont
+     appelés des milliers de fois, et doivent lire l'état, non le recevoir. */
+  let plafonne = !!plafond;
+
+  /* L'heure à laquelle on arrive sur un stand : ce qu'on a marché pour
+     l'atteindre, plus les visites qui l'ont précédé dans le créneau. C'est la
+     formule de `tempsCreneau`, appliquée à un préfixe au lieu du tout. */
+  const trop = (c, k, mArrivee, s) => plafonne &&
+    plafond(c.jour.cle, s, trancheDe(c.t0 + tempsCreneau(c, mArrivee, k)), relache);
+
+  /* Le créneau tel qu'il est : chacun de ses stands tombe-t-il sur une
+     demi-heure qui le supporte ? Les distances cumulées viennent de
+     `mesureCreneau`, donc de `remet`, donc toujours à jour. */
+  const sature = (c) => {
+    if (!plafonne) return false;
+    for (let k = 0; k < c.stands.length; k++)
+      if (trop(c, k, (c.pref && c.pref[k]) || 0, c.stands[k])) return true;
+    return false;
   };
 
   /**
@@ -29521,8 +29571,8 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * infini, et plus rien ne se posait nulle part. Le refus se prononce donc
    * sur le créneau qu'on touche, et le compte du séjour reste un nombre.
    */
-  const deborde = (c) => c.tMax !== null &&
-    c.t0 + tempsCreneau(c, c.m, c.stands.length) > c.tMax;
+  const deborde = (c) => (c.tMax !== null &&
+    c.t0 + tempsCreneau(c, c.m, c.stands.length) > c.tMax) || sature(c);
 
   /* Un créneau vient de changer : lui et son jour se remettent d'accord. Les
      totaux se tiennent à jour de proche en proche — les refaire en entier à
@@ -29596,6 +29646,12 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
             const d = ecartInsertion(c, s, k);
             const m = c.m + d, n = c.stands.length + 1;
             if (c.tMax !== null && c.t0 + tempsCreneau(c, m, n) > c.tMax) continue;
+            /* Ce que coûterait d'y arriver : les mètres du préfixe, plus le pas
+               qui mène à ce stand-ci. Les visites qui le suivent reculent
+               d'autant, et c'est `sature` qui les rattrapera au tour d'après —
+               les essayer toutes ici ferait de l'insertion un calcul carré. */
+            if (trop(c, k, (k === 0 ? 0 : c.pref[k - 1]) +
+                           dist(k === 0 ? c.de : c.stands[k - 1], s), s)) continue;
             const t = total(j, j.m + d,
                             j.cout + d + (c.dernier ? visiteEnMetres : 0), j.n + 1);
             if (!choix || t < choix.t) choix = { t: t, c: c, k: k, s: s };
@@ -29662,6 +29718,9 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
               const m = d.m + e, n = d.stands.length + 1;
               if (d.tMax !== null && d.t0 + tempsCreneau(d, m, n) > d.tMax &&
                   !(d === c && debordait)) continue;
+              // même garde qu'à l'insertion, et pour la même raison
+              if (trop(d, k, (k === 0 ? 0 : d.pref[k - 1]) +
+                             dist(k === 0 ? d.de : d.stands[k - 1], s), s)) continue;
               const j = d.jour;
               const note = meme
                 ? metres() + e + (d.dernier ? visiteEnMetres : 0)
@@ -29769,10 +29828,48 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
     return { note: total(), etat: etat(), dehors: dehorsImposes.concat(dehorsLibres) };
   };
 
-  const avec = essai(true);
+  /* Trois crans : un stand dont la charge dépasse de trois son plafond est un
+     stand qu'on ne désengorgera pas en le décalant. Au-delà, c'est l'essai sans
+     plafond qui tranche, et il coûte moins cher que dix crans de plus. */
+  const RELACHE_MAX = 3;
+
+  /**
+   * Un départ, et la soupape qui va avec.
+   *
+   * La règle tient en une phrase : **le plafond ne coûte jamais un exposant à
+   * personne**. Il déplace des heures, il ne retire rien. Tant qu'il reste
+   * quelqu'un dehors, il monte donc d'un cran — mieux vaut une équipe un peu
+   * bousculée qu'un visiteur privé de ce qu'il a choisi.
+   *
+   * On ne s'arrête surtout pas au premier cran qui ne libère rien, et c'est
+   * une erreur qu'on a faite : un stand chargé à deux au-dessus de son plafond
+   * ne se débloque qu'au deuxième cran, si bien que l'arrêt anticipé laissait
+   * dehors une journée entière — précisément ce que la soupape existe pour
+   * empêcher.
+   *
+   * Et si trois crans n'y suffisent pas, un dernier essai se fait sans plafond
+   * du tout. Ce qui sort alors ne sort pas à cause de lui : c'est l'heure de
+   * fermeture, une conférence, ou un stand qu'aucune allée n'atteint. Le doute
+   * ne se laisse pas planer — il se lève, au prix d'un calcul.
+   */
+  const depart = (ecartALaPose) => {
+    let r = essai(ecartALaPose);
+    if (!plafonne || !r.dehors.length) return r;
+    while (r.dehors.length && relache < RELACHE_MAX){
+      relache++;
+      r = essai(ecartALaPose);
+    }
+    if (!r.dehors.length) return r;
+    plafonne = false;
+    const libre = essai(ecartALaPose);
+    plafonne = true;
+    return libre.dehors.length < r.dehors.length ? libre : r;
+  };
+
+  const avec = depart(true);
   /* Un seul jour n'a pas d'écart à compter : le second départ rendrait le
      premier, au mot près, et coûterait le double pour rien. */
-  const sans = jours.length > 1 ? essai(false) : avec;
+  const sans = jours.length > 1 ? depart(false) : avec;
   /* À égalité, celui qui comptait l'écart dès la pose : c'est le calcul
      qu'on décrit partout ailleurs, et le second n'est là que s'il fait mieux.
      Un stand de moins laissé dehors l'emporte sur des mètres, toujours : une
@@ -30076,7 +30173,28 @@ function prepareSejour(choix, fige){
      tôt aurait absorbé sans rien coûter — et c'est la part des visites dans ce
      qu'une journée pèse, quand on compare les jours entre eux. */
   const restants = iStands.slice();
-  rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe);
+
+  /**
+   * Le plafond d'un stand, vu de l'ordonnanceur.
+   *
+   * Lui ne connaît que des indices ; c'est ici qu'on sait à quel exposant ils
+   * mènent, ce que son équipe peut recevoir et ce que les autres journées ont
+   * déjà annoncé. Nul quand l'exploitant n'a pas ouvert le réglage, quand le
+   * visiteur a refusé la mesure, ou quand la charge n'est pas encore arrivée :
+   * la visite se range alors comme avant, sans contrainte.
+   *
+   * Un stand sans plafond connu — personne ne l'a dessiné, et le réglage est à
+   * la surface — ne refuse jamais rien : zéro se lit comme une absence de
+   * limite, jamais comme une limite nulle.
+   */
+  const plafond = (chargeSuivie() && CHARGE) ? (cleJour, i, tranche, relache) => {
+    const id = PTS[i] && PTS[i].id;
+    const cap = id ? capaciteStand(parId.get(String(id))) : 0;
+    return cap > 0 && chargeCellule(cleJour, id, tranche) >= cap + relache;
+  } : null;
+
+  rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe,
+              plafond);
 
   return { choix: choix, jours: jours, PTS: PTS, dist: dist, enMinutes: enMinutes,
            tv: tv, pmr: pmr, iDepart: iDepart, restants: restants,
@@ -30708,6 +30826,11 @@ function ouvreOrganisation(){
      les deux, l'aperçu du curseur l'aura bâtie, et la jeter reviendrait à
      refaire ce qu'on vient de faire sous les yeux du visiteur. */
   MATRICE = null;
+  /* Et la charge annoncée, demandée maintenant pour être là quand on validera.
+     Elle ne bloque rien : un calcul lancé avant son arrivée se fait sans
+     plafond, et le suivant l'aura. Mieux vaut une journée sans contrainte
+     qu'une roue qui tourne devant quelqu'un qui attend son programme. */
+  litLaCharge();
   const tous = joursSalon();
   const dispo = joursAVenir();
   /* Sans date connue, on organise une journée sans nom : c'était le cas avant
@@ -31094,6 +31217,9 @@ function essaieSejour(choix, cleAffichee, fige){
   }
   SEJOUR = s;
   montreLeJour(s.jours.find(j => j.cle === cleAffichee) || s.jours[0]);
+  /* Le plan vient de changer : on l'annonce, une fois le calme revenu. Après
+     l'affichage et non avant — ce qui se voit passe d'abord. */
+  annoncePlan();
   return true;
 }
 
@@ -31117,11 +31243,16 @@ function lanceSejour(choix){
     : (choix.jours[0].nom || "Journée organisée");
   $("pResume").textContent = "calcul…";
   $("jCorps").innerHTML = '<p class="iNote">Recherche du meilleur ordre de visite…</p>';
-  /* Organiser une visite, c'est calculer des dizaines d'itinéraires : cela se
-     compte avec eux, faute d'un genre à soi en base. Sans cible pour autant :
-     les rattacher aux stands traversés ferait passer pour autant de demandes
-     de visiteurs ce qui n'est qu'un clic sur « organiser ». */
-  mesure("itineraire");
+  /* Organiser une visite se comptait avec les itinéraires, faute d'un genre à
+     soi en base. Elle en a un désormais (migration `la_charge_prevue_des_stands`),
+     et le chiffre du rapport cesse de mélanger deux gestes qui ne disent pas la
+     même chose : calculer un trajet, et mettre une journée en heures.
+
+     Sans cible, comme avant : les rattacher aux stands traversés ferait passer
+     pour autant de demandes de visiteurs ce qui n'est qu'un clic sur
+     « organiser ». Ce que ces stands deviennent, c'est un plan annoncé — et
+     celui-là part par un autre chemin, sous l'identifiant du parcours. */
+  mesure("journee");
   setTimeout(() => essaieSejour(choix, ""), 30);
 }
 
@@ -31140,6 +31271,171 @@ function lanceSejour(choix){
 function refaitSejour(cleAffichee, fige){
   if (!SEJOUR) return;
   essaieSejour(SEJOUR.choix, cleAffichee || (JOURNEE ? JOURNEE.cle : ""), fige);
+}
+
+/* ------------------------------------------------------------
+   La charge annoncée — ce que les autres journées ont déjà posé
+   ------------------------------------------------------------ */
+/**
+ * Deux mouvements, et un seul objet : que les stands ne se remplissent pas
+ * tous à la même demi-heure.
+ *
+ * On annonce ce qu'on a prévu, on lit ce que les autres ont prévu. Ce qui en
+ * sort n'est pas une peine à payer en mètres mais un plafond : une demi-heure
+ * pleine sur un stand n'est pas un endroit où l'on pose une visite, et
+ * l'ordonnanceur cherche le meilleur arrangement sans elle — qui n'est pas
+ * forcément la demi-heure d'après, tout l'ordre pouvant se rejouer autour.
+ *
+ * Rien de cela ne se tente sans les deux conditions qui le rendent honnête :
+ * l'exploitant a ouvert le réglage (`capaciteGeree`), et le visiteur n'a pas
+ * refusé la mesure. Un plan annoncé est une donnée qu'on garde, fût-ce deux
+ * jours, et il tombe sous le même refus que le reste.
+ */
+const PLAN_API = API ? API.replace(/[^/]*$/, "plan-de-visite") : "";
+const CHARGE_API = API ? API.replace(/[^/]*$/, "charge") : "";
+
+/* La demi-heure plutôt que l'heure : une visite dure vingt minutes par défaut,
+   et l'heure pleine serait deux fois trop large pour dire qu'une équipe est
+   prise. Quarante-huit dans une journée, et la dernière absorbe ce qui
+   dépasse — une visite programmée à minuit passé est de toute façon une
+   journée qu'on a mal dite. */
+const TRANCHES_JOUR = 48;
+const trancheDe = (min) =>
+  Math.max(0, Math.min(TRANCHES_JOUR - 1, Math.floor((+min || 0) / 30)));
+
+/* Le temps mort avant d'annoncer. Une journée se recalcule à chaque retouche,
+   et annoncer chacune ferait payer un aller-retour pour un plan qui n'aura pas
+   vécu dix secondes. Quatre secondes : plus long qu'une rafale de retouches,
+   plus court que le temps de refermer le tiroir. */
+const REPOS_PLAN = 4000;
+
+/* Le dernier plan annoncé, pour ne pas le redire. Sur l'appareil et non en
+   mémoire : rouvrir le plan le lendemain rejouerait sinon l'annonce d'un
+   séjour que personne n'a retouché. */
+const CLE_POSE = "plan-journee-pose";
+
+let CHARGE = null;          // ce que les autres ont annoncé, par jour et par stand
+let _chargeEnCours = false;
+let _reposPlan = null;
+
+/** La journée organisée est-elle sous plafond ? Deux clés, et les deux
+ *  doivent tourner : le réglage du salon, et le consentement du visiteur. */
+const chargeSuivie = () =>
+  typeof capaciteGeree === "function" && capaciteGeree() &&
+  typeof mesureOuverte === "function" && mesureOuverte() &&
+  !!SLUG && !BORNE;
+
+/** Le jour d'un séjour, tel que la base le veut : « AAAA-MM-JJ ». */
+function jourISO(cle){
+  const d = dateDeCle(cle);
+  return d ? String(d.an).padStart(4, "0") + "-" +
+             String(d.mois).padStart(2, "0") + "-" +
+             String(d.jour).padStart(2, "0") : "";
+}
+
+/** Le séjour, réduit à ce qu'il annonce : un stand, un jour, une demi-heure. */
+function etapesDuSejour(){
+  if (!SEJOUR) return [];
+  const l = [];
+  SEJOUR.jours.forEach(j => {
+    const jour = jourISO(j.cle);
+    if (!jour || !Array.isArray(j.etapes)) return;
+    j.etapes.forEach(e => {
+      if (e.genre !== "stand" || !e.o) return;
+      l.push({ jour: jour, tranche: trancheDe(e.t0), cible: String(e.o.id) });
+    });
+  });
+  return l;
+}
+
+/**
+ * Annoncer le plan — une fois le calme revenu, et seulement s'il a changé.
+ *
+ * L'identifiant du parcours est ce qui rend l'annonce répétable : le serveur
+ * efface le plan précédent avant de poser celui-ci, si bien que dix retouches
+ * d'un même visiteur restent un visiteur. C'est la seule raison pour laquelle
+ * il existe, et il ne se tire qu'ici, au premier plan annoncé.
+ *
+ * Une panne ne se rattrape pas, à la différence des mesures : un plan raté
+ * sera réannoncé au prochain calcul, et un plan périmé ne vaut rien. La file
+ * de `_mesure.html` porte des gestes déjà faits ; ici on porte une intention,
+ * qui n'a pas à survivre à la journée qu'elle décrit.
+ */
+function annoncePlan(){
+  if (!PLAN_API || !chargeSuivie()) return;
+  clearTimeout(_reposPlan);
+  _reposPlan = setTimeout(() => {
+    const etapes = etapesDuSejour();
+    const empreinte = JSON.stringify(etapes);
+    let pose = "";
+    try { pose = localStorage.getItem(CLE_POSE + ":" + SLUG) || ""; } catch (e) {}
+    // rien n'a bougé : le serveur porte déjà ce plan-là
+    if (empreinte === pose) return;
+    try { localStorage.setItem(CLE_POSE + ":" + SLUG, empreinte); } catch (e) {}
+    fetch(PLAN_API, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: SLUG, plan: identifiantParcours(), etapes: etapes }),
+      keepalive: true,
+    }).catch(() => {
+      /* L'empreinte se défait : sans cela un plan qui n'est jamais parti
+         passerait pour posé, et ne serait plus jamais réannoncé. */
+      try { localStorage.removeItem(CLE_POSE + ":" + SLUG); } catch (e) {}
+    });
+  }, REPOS_PLAN);
+}
+
+/**
+ * Le plus petit plafond que cette visite ait à respecter.
+ *
+ * Il borne ce que le serveur renvoie : une cellule au-dessous ne saturera
+ * jamais rien ici, et l'emporter serait payer du réseau pour du silence. Sur
+ * un salon de six cents stands, c'est la différence entre quelques kilo-octets
+ * et le mégaoctet — dans un hall où le réseau est justement ce qui manque.
+ */
+function plafondMinimal(){
+  let min = 0;
+  PARCOURS.stands.forEach(id => {
+    const n = capaciteStand(parId.get(String(id)));
+    if (n > 0 && (!min || n < min)) min = n;
+  });
+  return min || 1;
+}
+
+/**
+ * Lire la charge, une fois par ouverture du tiroir d'organisation.
+ *
+ * Elle ne se redemande pas à chaque recalcul : elle bouge à l'échelle de la
+ * demi-journée, le relais la garde une minute, et une visite qu'on retouche
+ * trois fois n'a pas à payer trois fois. Elle ne bloque rien non plus — un
+ * calcul lancé avant qu'elle n'arrive se fait sans plafond, et le suivant
+ * l'aura. Mieux vaut une journée organisée sans contrainte qu'une roue qui
+ * tourne devant quelqu'un qui attend son programme.
+ */
+function litLaCharge(){
+  if (!CHARGE_API || !chargeSuivie() || _chargeEnCours) return;
+  _chargeEnCours = true;
+  fetch(CHARGE_API + "?slug=" + encodeURIComponent(SLUG) +
+        "&min=" + plafondMinimal())
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (d && d.jours) CHARGE = d.jours; })
+    .catch(() => {})
+    .then(() => { _chargeEnCours = false; });
+}
+
+/**
+ * Combien de journées annoncent déjà ce stand, sur cette demi-heure-là.
+ *
+ * Le plan qu'on a soi-même annoncé en fait partie — on se compte donc parmi
+ * ceux qui remplissent le créneau qu'on occupe déjà. C'est voulu : le retirer
+ * demanderait au serveur de distinguer l'appelant, donc de le reconnaître, et
+ * l'erreur qu'on éviterait ainsi vaut une unité sur un plafond qui en compte
+ * trois ou quatre.
+ */
+function chargeCellule(cleJour, id, tranche){
+  if (!CHARGE) return 0;
+  const j = CHARGE[String(cleJour)];
+  const s = j && j[String(id)];
+  return (s && +s[String(tranche)]) || 0;
 }
 
 /* ------------------------------------------------------------

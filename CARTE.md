@@ -452,7 +452,7 @@ Fonctions :
 `viseItineraire` 3087 · `visePoi` 3093 · `visePoint` 3099 · `ouvreItineraire` 3131
 `fermeItineraire` 3159 · `versItineraire` 3169 · `versItineraireDe` 3172
 
-### `_journee.html` — 2136 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2432 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -462,13 +462,15 @@ Fonctions :
 `jourBref` 155 · `joursSalon` 165 · `joursAVenir` 194 · `joursDefaut` 212
 `confsParJour` 222 · `pointConf` 239 · `departsProposes` 258 · `matriceJournee` 291
 `ecartDesJours` 417 · `poidsDesJours` 447 · `chargeDuJour` 470 · `rangeSejour` 479
-`derouleJournee` 788 · `prepareSejour` 930 · `calculeSejour` 1077 · `apercuRepartition` 1111
-`rangJournee` 1125 · `lienJournee` 1137 · `boutonJour` 1160 · `arretJournee` 1173
-`remplitOnglets` 1220 · `jourDuStand` 1249 · `ouvreChoixJour` 1261 · `figeLaVisite` 1318
-`placeSurJour` 1327 · `rendAuPlan` 1335 · `retireDuSejour` 1341 · `remplitJournee` 1351
-`ecritApercu` 1564 · `appliqueVueParcours` 1594 · `traceJournee` 1636 · `montreLeJour` 1645
-`perimeJournee` 1660 · `oublieSejour` 1675 · `ouvreOrganisation` 1690 · `essaieSejour` 2065
-`lanceSejour` 2092 · `refaitSejour` 2126
+`derouleJournee` 885 · `prepareSejour` 1027 · `calculeSejour` 1195
+`apercuRepartition` 1229 · `rangJournee` 1243 · `lienJournee` 1255 · `boutonJour` 1278
+`arretJournee` 1291 · `remplitOnglets` 1338 · `jourDuStand` 1367 · `ouvreChoixJour` 1379
+`figeLaVisite` 1436 · `placeSurJour` 1445 · `rendAuPlan` 1453 · `retireDuSejour` 1459
+`remplitJournee` 1469 · `ecritApercu` 1682 · `appliqueVueParcours` 1712
+`traceJournee` 1754 · `montreLeJour` 1763 · `perimeJournee` 1778 · `oublieSejour` 1793
+`ouvreOrganisation` 1808 · `essaieSejour` 2188 · `lanceSejour` 2218 · `refaitSejour` 2257
+`trancheDe` 2289 · `chargeSuivie` 2309 · `jourISO` 2315 · `etapesDuSejour` 2323
+`annoncePlan` 2350 · `plafondMinimal` 2381 · `litLaCharge` 2400 · `chargeCellule` 2420
 
 ### `_js.html` — 5361 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -876,8 +878,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 787 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 85 · `amontPour` 94 · `cleDe` 102 · `cleDeLot` 108 · `condense` 115 · `cleVersion` 126 `rangeLaVersion` 129 · `ditVersion` 137 · `meta` 146 · `gardable` 162 · `range` 168 `rafraichit` 175 · `entete` 210 · `oublie` 252 · `rappels` 338 · `cleApp` 383 `cheminDuSalon` 414 · `pageDuSalon` 431 · `appDuSalon` 455 · `iconesDuSalon` 501 `manifeste` 541 · `iconeApp` 630 · `mesure` 651
+- `src/index.mjs` — 880 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 100 · `amontPour` 109 · `cleDe` 117 · `cleDeLot` 123 · `condense` 130 `cleVersion` 141 · `rangeLaVersion` 144 · `ditVersion` 152 · `meta` 161 · `gardable` 177 `range` 183 · `rafraichit` 190 · `entete` 225 · `oublie` 267 · `rappels` 353 · `cleApp` 398 `cheminDuSalon` 429 · `pageDuSalon` 446 · `appDuSalon` 470 · `iconesDuSalon` 516 `manifeste` 556 · `iconeApp` 645 · `mesure` 666 · `planDeVisite` 702 · `chargePrevue` 740
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
