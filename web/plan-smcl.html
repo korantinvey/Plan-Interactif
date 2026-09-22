@@ -23528,6 +23528,48 @@ const QUARANTAINE_JOURS = 120;
 const cleParcours = () =>
   "plan-parcours:" + (SLUG || (DATA && DATA.evenement) || "");
 
+/**
+ * L'identifiant de ce parcours-ci.
+ *
+ * Il existe pour une seule raison : qu'une personne ne fasse pas un
+ * embouteillage à elle seule. La journée organisée se recalcule à chaque
+ * retouche — un stand déplacé, un jour changé, un exposant retiré — et sans
+ * identifiant, les dix essais d'un même visiteur s'empileraient dans les
+ * compteurs de charge comme dix visiteurs distincts. Sous un identifiant, le
+ * plan suivant remplace le précédent au lieu de s'y ajouter.
+ *
+ * Il ne se tire qu'à la première journée organisée, et jamais avant : celui qui
+ * compose une liste sans jamais demander qu'on la mette en heures n'a rien à
+ * envoyer, et n'a donc pas à porter d'identifiant.
+ *
+ * Il n'est pas le jeton de mesure, et ne doit jamais voyager avec lui. Les
+ * deux sortent du même générateur — c'est du hasard, il n'y en a qu'une sorte
+ * — mais les rapprocher rendrait joignables « ce que cette personne compte
+ * faire » et « ce qu'elle a consulté », c'est-à-dire une trajectoire. Ils
+ * partent par deux chemins séparés, et c'est voulu.
+ *
+ * Il vit dans le même stockage que la liste, et meurt avec elle : Safari efface
+ * au bout de sept jours sans visite (voir plus haut). Le visiteur reconstruit
+ * alors un parcours neuf sous un identifiant neuf, et l'ancien plan reste en
+ * base jusqu'à la fin de son jour. Cet identifiant-là dédoublonne les
+ * retouches, pas les pertes de stockage — et les retouches sont le cas
+ * courant.
+ */
+let ID_PARCOURS = "";
+
+/* Assez long pour ne pas se rencontrer, assez court pour tenir dans une clé
+   primaire sans peser. Même forme que les jetons du reste du produit. */
+const FORME_ID_PARCOURS = /^[A-Za-z0-9_-]{6,40}$/;
+
+/** L'identifiant, tiré et gardé au premier besoin. */
+function identifiantParcours(){
+  if (!FORME_ID_PARCOURS.test(ID_PARCOURS)){
+    ID_PARCOURS = jetonMesure();
+    enregistreParcours();
+  }
+  return ID_PARCOURS;
+}
+
 const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
 const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
 
@@ -23563,6 +23605,10 @@ function chargeParcours(){
   try { b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {}; }
   catch (e) { b = {}; }   // stockage refusé ou contenu illisible
   const dates = b.decote && typeof b.decote === "object" ? b.decote : {};
+  /* Un identifiant illisible — un stockage à moitié écrit, une version d'avant
+     — vaut une absence : le prochain plan en tire un neuf plutôt que d'écrire
+     sous un nom qui ne désigne rien. */
+  ID_PARCOURS = FORME_ID_PARCOURS.test(b.id) ? b.id : "";
   PARCOURS = { stands: [], confs: [] };
   MIS_DE_COTE = { stands: [], confs: [] };
   trieParcours("stands", Array.isArray(b.stands) ? b.stands.map(String) : [],
@@ -23599,6 +23645,8 @@ function parcoursAEcrire(){
     });
   });
   if (Object.keys(dates).length) sortie.decote = dates;
+  // tant qu'aucune journée n'a été organisée, il n'y a rien à nommer
+  if (ID_PARCOURS) sortie.id = ID_PARCOURS;
   return sortie;
 }
 

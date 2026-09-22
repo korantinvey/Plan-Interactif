@@ -585,22 +585,23 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 710 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 758 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
-`cleParcours` 63 · `casierParcours` 66 · `dansParcours` 67 · `jourParcours` 70
-`attenduDepuisTropLongtemps` 75 · `trieParcours` 86 · `chargeParcours` 96
-`parcoursAEcrire` 126 · `enregistreParcours` 140 · `tientLeStockage` 169
-`basculeParcours` 190 · `verseAuParcours` 235 · `plurielParcours` 261
-`contenuParcours` 270 · `retenusPourParcours` 296 · `ajouteToutAuParcours` 321
-`poseToutAuParcours` 344 · `signetParcours` 370 · `boutonParcours` 376
-`rafraichitMarque` 381 · `brancheParcours` 394 · `calqueMarques` 426 · `dessineMarques` 442
-`marqueParcours` 472 · `rafraichitParcours` 486 · `instantConf` 517 · `cleTemps` 521
-`jourCourt` 527 · `nomDeStand` 534 · `rangParcours` 536 · `groupeParcours` 556
-`remplitParcours` 565 · `ouvreParcours` 654 · `fermeParcours` 666 · `videLeParcours` 682
+`cleParcours` 63 · `identifiantParcours` 100 · `casierParcours` 108 · `dansParcours` 109
+`jourParcours` 112 · `attenduDepuisTropLongtemps` 117 · `trieParcours` 128
+`chargeParcours` 138 · `parcoursAEcrire` 172 · `enregistreParcours` 188
+`tientLeStockage` 217 · `basculeParcours` 238 · `verseAuParcours` 283
+`plurielParcours` 309 · `contenuParcours` 318 · `retenusPourParcours` 344
+`ajouteToutAuParcours` 369 · `poseToutAuParcours` 392 · `signetParcours` 418
+`boutonParcours` 424 · `rafraichitMarque` 429 · `brancheParcours` 442 · `calqueMarques` 474
+`dessineMarques` 490 · `marqueParcours` 520 · `rafraichitParcours` 534 · `instantConf` 565
+`cleTemps` 569 · `jourCourt` 575 · `nomDeStand` 582 · `rangParcours` 584
+`groupeParcours` 604 · `remplitParcours` 613 · `ouvreParcours` 702 · `fermeParcours` 714
+`videLeParcours` 730
 
 ### `_partage.html` — 766 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -871,6 +872,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260917121232_l_avancement_d_une_synchronisation_releve_sur_la_fiche_du_salon.sql` — evenement
 - `20260921132502_un_seul_nom_de_produit_dans_le_commentaire_du_nom_de_l_application.sql` — —
 - `20260921145417_le_calage_de_la_carte_par_pavillon.sql` — plan
+- `20260922144359_la_charge_prevue_des_stands.sql` — plan_de_visite, compteur, fn enregistre_mesures, fn pose_plan_de_visite, fn charge_prevue, fn purge_presences, fn reinitialise_compteurs, fn rapport_utilisation
 
 ## Le reste
 
