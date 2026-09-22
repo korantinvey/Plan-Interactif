@@ -331,7 +331,7 @@ Fonctions :
 `geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
 `geometriePointerUp` 641
 
-### `_head.html` — 5706 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5692 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -467,7 +467,7 @@ Fonctions :
 `perimeJournee` 1660 · `oublieSejour` 1675 · `ouvreOrganisation` 1690 · `essaieSejour` 2065
 `lanceSejour` 2092 · `refaitSejour` 2126
 
-### `_js.html` — 5332 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 5333 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.567 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -476,10 +476,10 @@ Fonctions :
 - l.1163 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.2394 · 6. Vue
 - l.2859 · 7. Sélection et fiche
-- l.4404 · 8. Interactions du plan
-- l.4832 · Ce que les tiroirs lisent d'un geste
-- l.4878 · Le tiroir de la liste — écrans étroits
-- l.5104 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4405 · 8. Interactions du plan
+- l.4833 · Ce que les tiroirs lisent d'un geste
+- l.4879 · Le tiroir de la liste — écrans étroits
+- l.5105 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -523,11 +523,11 @@ Fonctions :
 `adresseImage` 3676 · `imageSure` 3689 · `assainitRiche` 3718 · `enBlocs` 3766
 `rangeRiche` 3779 · `ecarteClicFantome` 3807 · `nomSociete` 3816 · `societes` 3829
 `choisitExposant` 3840 · `poseMarque` 3878 · `montreMarque` 3938 · `poseCode` 3961
-`rangeMarque` 4002 · `ouvre` 4065 · `ferme` 4374 · `onglet` 4392 · `milieu` 4424
-`commencePince` 4430 · `suitPince` 4444 · `plieLesBandes` 4497 · `saisitPlan` 4511
-`cibleElargie` 4593 · `planifieFiltre` 4788 · `traceurDeGeste` 4856 · `cranVoisin` 4875
-`retraitBas` 4901 · `mesureTiroir` 4915 · `montreTiroir` 4918 · `hisseTiroir` 4922
-`tiroirCrante` 5131
+`rangeMarque` 4002 · `ouvre` 4065 · `ferme` 4375 · `onglet` 4393 · `milieu` 4425
+`commencePince` 4431 · `suitPince` 4445 · `plieLesBandes` 4498 · `saisitPlan` 4512
+`cibleElargie` 4594 · `planifieFiltre` 4789 · `traceurDeGeste` 4857 · `cranVoisin` 4876
+`retraitBas` 4902 · `mesureTiroir` 4916 · `montreTiroir` 4919 · `hisseTiroir` 4923
+`tiroirCrante` 5132
 
 Éléments :
 
