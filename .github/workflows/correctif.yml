@@ -1,9 +1,8 @@
 # Écrit le correctif qu'on lui demande, et l'ouvre en pull request.
 #
-# La relecture (`relecture.yml`) dit ce qui cloche ; celle-ci le répare. Même
-# action, même jeton, une seule différence qui change tout : elle a le droit
-# d'éditer les fichiers. D'où la question qui décide de la forme de ce
-# workflow — jusqu'où va ce droit.
+# C'est le seul automate du dépôt qui touche au code : il a le droit d'éditer
+# les fichiers. D'où la question qui décide de la forme de ce workflow —
+# jusqu'où va ce droit.
 #
 # Il s'arrête à la branche. La tâche ne pousse que sur `claude/correctif-…`,
 # **écrit ici, dans ce fichier** : ni la consigne, ni le modèle ne choisissent
@@ -18,8 +17,7 @@
 # l'onglet « Actions », en tapant la consigne à la main. Dans les deux cas
 # l'action refuse quiconque n'a pas le droit d'écrire sur le dépôt, et aucun
 # robot n'est autorisé : un correctif que réclame un automate est une boucle
-# qui attend son tour, là où la relecture, qui ne sait que commenter, ne
-# risquait rien.
+# qui attend son tour.
 #
 # La branche part toujours de `main`, y compris quand la demande est écrite
 # sous une pull request : le correctif arrive alors dans sa propre pull request,
@@ -28,11 +26,11 @@
 #
 # Les pages fabriquées ne sont pas son affaire. La tâche lance `npm run
 # construire` après elle et valide le résultat dans un commit séparé, comme
-# `pages.yml` le fait sur une poussée : c'est une règle du dépôt, pas un travail
-# de relecture, et la lui confier ne ferait que lui donner mille lignes à
+# `pages.yml` le fait sur une poussée : c'est une règle du dépôt, pas le
+# correctif demandé, et la lui confier ne ferait que lui donner mille lignes à
 # écrire.
 #
-# Enfin, comme `relecture.yml` : l'action refuse de tourner quand ce fichier
+# Enfin, et cela se découvre mal : l'action refuse de tourner quand ce fichier
 # diffère de la version portée par `main`, pour qu'une pull request ne le
 # réécrive pas afin de détourner le jeton. Une retouche d'ici ne s'essaie donc
 # pas sur sa propre pull request, et ne vaut qu'après la fusion.
@@ -70,7 +68,9 @@ jobs:
       CLE: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       # Sans authentification, la tâche s'arrête en vert plutôt que de rougir :
-      # même raisonnement que dans `relecture.yml`, et le journal nomme la voie.
+      # un garde-fou qu'on n'a pas branché n'est pas un défaut du dépôt, et une
+      # croix rouge à chaque demande n'apprend qu'à ne plus les regarder. Le
+      # journal nomme la voie retenue quand il y en a une.
       - name: Vérifier qu'une authentification est posée
         id: acces
         run: |
@@ -119,8 +119,8 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         id: corriger
         if: steps.acces.outputs.posee == 'oui'
-        # Vingt-cinq minutes, là où la relecture s'arrête à quinze : corriger
-        # demande de lire, d'écrire, puis de vérifier — et `npm run verifie`
+        # Vingt-cinq minutes : corriger demande de lire, d'écrire, puis de
+        # vérifier — et `npm run verifie`
         # reconstruit tout. Au-delà, elle tourne pour rien, et rien ne se lit
         # d'une tâche avant sa fin.
         timeout-minutes: 25
@@ -139,10 +139,9 @@ jobs:
             ${{ github.event_name == 'workflow_dispatch' && inputs.consigne || github.event.comment.body }}
             ---
 
-            Lis d'abord `CLAUDE.md`, puis `.claude/skills/relecture/SKILL.md`,
-            qui dit ce que ce dépôt paie cher. Sers-toi de `CARTE.md`, qui donne
-            les numéros de ligne, plutôt que d'ouvrir les gros modules en
-            entier.
+            Lis d'abord `CLAUDE.md`, qui dit ce que ce dépôt paie cher.
+            Sers-toi de `CARTE.md`, qui donne les numéros de ligne, plutôt que
+            d'ouvrir les gros modules en entier.
 
             Corrige, et rien de plus. Ce qui n'est pas demandé ne se corrige pas
             au passage : une branche qui répare deux choses se relit deux fois
@@ -235,8 +234,8 @@ jobs:
       # Ce que le correctif a coûté se relève à chaque exécution — durée,
       # échanges, jetons —, et la raison d'un échec quand il y en a un : une
       # tâche verte qui n'a rien produit laisse croire à une branche qui
-      # n'existe pas. Comme dans `relecture.yml`, on ne lit du compte-rendu que
-      # son dernier message, jamais ce que le correctif a lu ni écrit.
+      # n'existe pas. On ne lit du compte-rendu que son dernier message, jamais
+      # ce que le correctif a lu ni écrit : un journal de tâche est public.
       - name: Dire ce que le correctif a coûté, et pourquoi il a échoué
         if: always() && steps.corriger.outcome != 'skipped'
         env:

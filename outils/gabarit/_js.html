@@ -2654,7 +2654,15 @@ function poseVue(){
 function mesureBarre(){
   const b = $("bandeau");
   if (!b) return;
-  const px = Math.round(b.getBoundingClientRect().height) + "px";
+  /* Arrondie au pixel supérieur, et rendue à la barre elle-même : la scène
+     occupe la rangée suivante de la grille, et elle commence donc là où la
+     barre finit. Un nom de salon qui passe à la ligne lui donnait 79,59 —
+     le plan, la liste et la fiche démarraient sur un demi-pixel, et leur
+     texte s'y rejouait entre deux rangées au lieu d'une. Au supérieur, pour
+     ne jamais rogner ce que la barre porte : c'est son contenu qui commande
+     sa hauteur, on ne fait que la finir sur un pixel entier. */
+  const px = Math.ceil(b.getBoundingClientRect().height) + "px";
+  if (b.style.minHeight !== px) b.style.minHeight = px;
   if (document.body.style.getPropertyValue("--barre") !== px)
     document.body.style.setProperty("--barre", px);
 }
