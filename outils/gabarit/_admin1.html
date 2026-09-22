@@ -672,6 +672,142 @@ function minutesVisite(){
   return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
 }
 
+/* ------------------------------------------------------------
+   Le parcours intelligent — ce qu'un stand reçoit à la fois
+   ------------------------------------------------------------ */
+/**
+ * Pourquoi un plafond par stand, et non une peine par endroit.
+ *
+ * La journée organisée range les stands au plus court depuis la porte
+ * d'entrée. Tous les visiteurs partent donc du même point, et le plus court
+ * est le même pour tous : les premières travées se remplissent à l'ouverture
+ * pendant que le fond reste vide. La première idée — écarter le calcul des
+ * abords encombrés, comme on l'écarte des salles qui se vident — répond à
+ * côté : ce qui empêche une visite, ce n'est pas la densité de l'allée, c'est
+ * que toute l'équipe du stand est déjà en conversation. Le visiteur suivant
+ * n'est reçu par personne, qu'il soit venu de l'entrée ou du fond.
+ *
+ * Et le remède change avec le modèle. Une allée encombrée s'évite en allant
+ * ailleurs — cela coûte des mètres au visiteur et une visite à l'exposant. Un
+ * stand saturé s'évite en y allant plus tard : le visiteur garde son exposant,
+ * l'exposant garde sa visite, et la peine se paie en minutes de décalage, que
+ * personne ne remarque.
+ *
+ * Reste le chiffre, qu'aucune donnée ne porte. Klipso ne dit pas combien de
+ * personnes tiennent un stand, et le plan ne le devine pas davantage. Deux
+ * façons de le dire, parce qu'elles ne servent pas les mêmes salons : un
+ * chiffre unique quand les emplacements se ressemblent, une règle à la surface
+ * quand ils vont du deux-mètres au pavillon.
+ */
+const REGLAGES_CAPACITE = {
+  /* Trois : l'équipe courante d'un stand de salon professionnel — deux
+     personnes qui reçoivent, une qui montre — et ce qu'un emplacement de neuf
+     mètres carrés tient debout sans gêner le passage. */
+  nombre: { defaut: 3,  min: 1, max: 50,  pas: 1 },
+  /* Vingt mètres carrés par visiteur reçu : un coin de table, deux chaises et
+     le passage autour. Un salon d'affaires en demande davantage, un salon
+     grand public beaucoup moins — d'où le réglage. */
+  parM2:  { defaut: 20, min: 2, max: 200, pas: 1 },
+};
+
+/* Les cases et les chiffres ne partagent jamais une clé : `fixe` dit que la
+   première façon est retenue, `nombre` dit combien — sous un seul nom, le
+   chiffre saisi écrasait le booléen et la case s'éteignait toute seule.
+
+   Décochées d'avance, toutes les trois : ceci change l'ordre de visite de tout
+   le monde, et ne s'allume pas dans le dos de l'exploitant. */
+const capaciteGeree = () => conf("_capacite").visible === true;
+const capaciteFixee = () => conf("_capacite").fixe === true;
+const capaciteParSurface = () => conf("_capacite").surface === true;
+
+/* Une valeur hors bornes — un champ à moitié tapé, une configuration d'avant —
+   retombe sur l'origine plutôt que de fausser un plafond. Même geste que
+   `regleFoule`, et pour la même raison. */
+function regleCapacite(k){
+  const r = REGLAGES_CAPACITE[k], v = +conf("_capacite")[k];
+  return isFinite(v) && v >= r.min && v <= r.max ? v : r.defaut;
+}
+
+/**
+ * La surface d'un emplacement, en mètres carrés.
+ *
+ * Les coordonnées du plan sont des mètres : c'est ce dont vit le calcul
+ * d'itinéraire, qui y compte ses pas de cinquante centimètres (`PAS_GRILLE`).
+ * L'aire du contour est donc une surface, sans conversion ni échelle à lire.
+ *
+ * `sommets` relit les nombres du tracé sans distinguer une courbe d'un
+ * segment : sur un emplacement, quadrilatère dans l'immense majorité des cas,
+ * c'est exact ; sur une forme adoucie, c'est approché par ses points de
+ * contrôle. Le même raccourci ferme déjà le hall (`enveloppe`), et un plafond
+ * de visiteurs ne se joue pas au mètre carré près.
+ */
+function aireDuStand(o){
+  if (!o || !o.d) return 0;
+  const pts = sommets(o);
+  return pts.length > 2 ? aireDuContour(pts) : 0;
+}
+
+/**
+ * Ce qu'un stand reçoit à la fois — et zéro quand on n'en sait rien.
+ *
+ * Zéro ne dit pas « n'accueille personne », il dit « aucun plafond connu ».
+ * Un emplacement que personne n'a dessiné n'a pas de surface, et la règle à la
+ * surface n'a alors rien à en dire. Confondre les deux fermerait des stands
+ * entiers sur un salon à moitié dessiné : c'est à ce qui s'en sert de traiter
+ * le zéro comme une absence, jamais comme une limite.
+ *
+ * Les deux cases cochées, c'est le plus grand des deux qui vaut. Le nombre
+ * fixe devient un plancher — une équipe minimale, quelle que soit la taille —
+ * et les grands emplacements montent au-dessus à la surface. Les additionner
+ * ferait d'un stand de deux cents mètres carrés un guichet de treize
+ * personnes, ce qu'aucun salon ne tient.
+ *
+ * Un emplacement dessiné reçoit toujours au moins un visiteur : à vingt
+ * mètres carrés par personne, un stand de neuf tomberait sinon à zéro, et un
+ * zéro se lit ici comme une absence de plafond — l'inverse de ce qu'il faut.
+ */
+function capaciteStand(o){
+  if (!capaciteGeree()) return 0;
+  let n = capaciteFixee() ? regleCapacite("nombre") : 0;
+  if (capaciteParSurface()){
+    const a = aireDuStand(o);
+    if (a > 0) n = Math.max(n, Math.floor(a / regleCapacite("parM2")) || 1);
+  }
+  return n;
+}
+
+/**
+ * Ce que les réglages donnent sur ce salon-ci.
+ *
+ * Un plafond choisi sans voir ce qu'il produit sur six cents emplacements est
+ * un plafond choisi au hasard : la médiane dit en un chiffre si l'on vient de
+ * régler un salon où chacun reçoit trois personnes ou un salon où chacun en
+ * reçoit une. La médiane et non la moyenne — un pavillon de mille mètres
+ * carrés tirerait la seconde à lui tout seul.
+ */
+function phraseCapacite(){
+  if (!capaciteGeree() || (!capaciteFixee() && !capaciteParSurface())) return "";
+  const caps = [];
+  let dessines = 0;
+  ((DATA && DATA.plans) || []).forEach(pl => (pl.stands || []).forEach(o => {
+    if (aireDuStand(o) > 0) dessines++;
+    const n = capaciteStand(o);
+    if (n > 0) caps.push(n);
+  }));
+  if (!dessines && capaciteParSurface() && !capaciteFixee())
+    return "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit " +
+      "rien d'eux, et ils restent tous sans plafond.";
+  if (!caps.length) return "";
+  caps.sort((a, b) => a - b);
+  const med = caps[caps.length >> 1];
+  return "Sur ce salon : " + dessines + " emplacement" + (dessines > 1 ? "s" : "") +
+    " dessiné" + (dessines > 1 ? "s" : "") + ". Capacité médiane : " + med + ".";
+}
+
+/* Nommé plutôt qu'écrit deux fois : l'intitulé sert d'onglet et de nom de
+   volet à rouvrir, comme pour la suggestion et la mesure. */
+const NOM_VOLET_PARCOURS = "Parcours intelligent";
+
 /**
  * Les dates du salon, et ses heures jour par jour.
  *
@@ -1796,6 +1932,11 @@ function ouvreReglages(ouvrir){
        qu'il règle — la foule d'une sortie de conférence — n'a aucune prise sur
        un salon dont le programme n'est situé nulle part. Le rattachement se
        fait dans les réglages du plan, et l'onglet apparaît ensuite. */
+    /* « Parcours intelligent » précède « PMR » : les deux règlent le moteur
+       qui trace et qui ordonne, non ce que la page montre. L'onglet reste là,
+       gris, quand la journée organisée n'est pas prise — ce qu'il règle n'a
+       alors aucune visite à étaler, et une option se voit pour être prise. */
+    voletParcours(volet(NOM_VOLET_PARCOURS, !optionActive("journee")));
     if (sallesSituees()) voletPmr(volet("PMR"));
     /* La mesure a son volet à elle, et en dernier. Elle ne parle ni de ce que
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
@@ -2697,6 +2838,133 @@ function blocHoraires(hote){
 
   remplit();
   hote.appendChild(bloc);
+}
+
+/**
+ * L'onglet « Parcours intelligent ».
+ *
+ * Une case maîtresse, et sous elle les deux façons de dire ce qu'un stand
+ * reçoit. Les deux peuvent tenir ensemble — le nombre fixe sert alors de
+ * plancher — et l'aperçu au pied dit ce que cela donne ici, sur les
+ * emplacements de ce salon, plutôt que dans l'absolu.
+ *
+ * Les champs disparaissent avec la case qui les commande, comme les trois
+ * chiffres de « PMR » : un champ qu'on modifie sans effet fait douter de tous
+ * les autres.
+ */
+function voletParcours(hote){
+  const p = document.createElement("p");
+  p.textContent = "La journée organisée range les stands au plus court depuis " +
+    "la porte d'entrée : tout le monde part du même point, à la même heure, et " +
+    "reçoit le même ordre — les premières travées se remplissent à l'ouverture " +
+    "pendant que le fond reste vide. Ce qui suit lui apprend ce qu'un stand " +
+    "peut recevoir à la fois, de quoi décaler une visite d'une demi-heure " +
+    "plutôt que de la poser devant une équipe déjà prise.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent =
+    "Gestion du nombre de visiteurs simultanés sur un stand";
+  const c = l.querySelector("input");
+  c.checked = capaciteGeree();
+  bloc.appendChild(l);
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.textContent = "Un stand reçoit autant de visiteurs à la fois qu'il a de " +
+    "monde pour les accueillir. Au-delà, la visite se décale à un autre moment " +
+    "de la journée — l'exposant n'est jamais retiré du parcours de personne.";
+  bloc.appendChild(aide);
+  hote.appendChild(bloc);
+
+  const detail = document.createElement("div");
+  const apercu = document.createElement("p");
+  apercu.className = "aideR";
+  /* Réécrit à chaque frappe : c'est la seule façon de choisir un chiffre en
+     voyant ce qu'il fait, et le compte tient en un tour des emplacements. */
+  const ecritApercu = () => {
+    const t = phraseCapacite();
+    apercu.textContent = t;
+    apercu.hidden = !t;
+  };
+
+  /**
+   * Une façon de dire la capacité : sa case, son chiffre, son aide.
+   *
+   * `cle` porte la case dans la configuration, `k` le chiffre dans
+   * `REGLAGES_CAPACITE` — les bornes et l'origine viennent de là, et non d'une
+   * seconde liste qui finirait par diverger.
+   */
+  const facon = (cle, k, libelle, avant, unite, explication) => {
+    const b = document.createElement("div");
+    b.className = "reglages";
+    const lb = document.createElement("label");
+    lb.innerHTML = '<input type="checkbox"><span></span>';
+    lb.querySelector("span").textContent = libelle;
+    const ca = lb.querySelector("input");
+    ca.checked = conf("_capacite")[cle] === true;
+    b.appendChild(lb);
+    detail.appendChild(b);
+
+    const r = REGLAGES_CAPACITE[k];
+    const d = document.createElement("div");
+    d.className = "reglage-nb";
+    d.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + r.min + '" max="' + r.max + '" step="' + r.pas + '">' +
+      '<span class="u"></span></label><span class="aide"></span>';
+    d.querySelector(".l").textContent = avant;
+    d.querySelector(".u").textContent = unite;
+    d.querySelector(".aide").textContent = explication;
+    const n = d.querySelector("input");
+    n.value = regleCapacite(k);
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient que
+       ce qui tient dans les bornes, et le champ se remet d'aplomb en le
+       quittant — comme le temps de visite et les chiffres de la foule. */
+    n.oninput = e => {
+      const v = +e.target.value;
+      if (!isFinite(v) || v < r.min || v > r.max) return;
+      conf("_capacite")[k] = v;
+      enregistreConf();
+      ecritApercu();
+    };
+    n.onblur = () => { n.value = regleCapacite(k); };
+    detail.appendChild(d);
+
+    const maj = () => { d.hidden = !ca.checked; };
+    ca.onchange = e => {
+      conf("_capacite")[cle] = e.target.checked;
+      enregistreConf();
+      maj();
+      ecritApercu();
+    };
+    maj();
+  };
+
+  facon("fixe", "nombre", "Un nombre fixe, le même pour tous les stands",
+    "Reçoit au plus", "visiteurs à la fois",
+    "Le choix d'un salon dont les emplacements se ressemblent. Trois : une " +
+    "équipe de trois personnes en reçoit trois en même temps, et le quatrième " +
+    "est prié d'attendre — c'est lui que la journée organisée ira poser " +
+    "ailleurs dans l'après-midi.");
+  facon("surface", "parM2", "Un nombre selon la surface du stand",
+    "Un visiteur par tranche de", "m²",
+    "La surface se lit sur le plan, telle que le stand y est dessiné. Un " +
+    "emplacement dessiné reçoit toujours au moins un visiteur ; un " +
+    "emplacement que personne n'a dessiné n'a pas de surface, et reste sans " +
+    "plafond. Les deux cases cochées, c'est le plus grand des deux qui " +
+    "vaut : le nombre fixe devient un plancher.");
+  detail.appendChild(apercu);
+  hote.appendChild(detail);
+
+  const maj = () => { detail.hidden = !c.checked; ecritApercu(); };
+  c.onchange = e => {
+    conf("_capacite").visible = e.target.checked;
+    enregistreConf();
+    maj();
+  };
+  maj();
 }
 
 /** Y a-t-il de quoi parler de foule ? Une conférence rattachée à une zone,

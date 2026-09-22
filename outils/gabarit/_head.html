@@ -3582,7 +3582,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    l'air, ses zones, sa mesure. Séparés par des onglets plutôt qu'empilés —
    l'apparence est une planche d'aperçus, et poussait tout le reste hors de
    l'écran. */
-.ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
+/* Les onglets passent à la ligne plutôt que de sortir par la droite. Élargir
+   la fenêtre n'achète qu'un onglet ou deux, et il s'en ajoute à chaque
+   fonction vendue : sans le retour à la ligne, le dernier finit toujours
+   par se couper, et on ne défile pas dans une barre qu'on n'a pas vue
+   déborder. Le « gap » vaut déjà pour les deux axes. */
+.ongReg{display:flex;flex-wrap:wrap;gap:3px;margin:0 0 14px;padding:3px;
+  background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
   color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
@@ -3612,7 +3618,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    leur « flex:1 » : à largeur égale, le plus long serait coupé quand les
    autres gardent du vide. */
 @media (max-width:640px){
-  .ongReg{overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+  .ongReg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+    scroll-snap-type:x proximity}
   .ongReg::-webkit-scrollbar{display:none}
   .ongReg button{flex:none;padding:8px 10px;font-size:12.5px;scroll-snap-align:center}
 }
@@ -4004,7 +4011,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    touchait la valeur du bloc précédent, et se lisait comme sa suite. */
 .modale[data-genre="fiche"] .mcorps > * + *{margin-top:15px}
 .modale[data-genre="large"]{align-items:start;padding-block-start:min(7vh,54px)}
-.modale[data-genre="large"] .mfen{width:min(760px,100%);
+/* Sept cent soixante pixels tenaient pour huit onglets et une planche
+   d'aperçus. Il y en a douze, et la fiche d'une zone se lit en deux colonnes :
+   mille rend au contenu la place qu'il demandait, sans dépasser la largeur
+   confortable d'une ligne de texte dans les volets qui n'en ont qu'une. */
+.modale[data-genre="large"] .mfen{width:min(1000px,100%);
   /* le haut mange sa part de l'écran : la hauteur maximale la lui rend, sans
      quoi le pied de la fenêtre sortirait par le bas sur un écran court */
   max-height:calc(100dvh - min(7vh,54px) - 20px)}
