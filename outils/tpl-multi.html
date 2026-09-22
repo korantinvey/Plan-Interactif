@@ -5795,6 +5795,15 @@ function nomsAnglaisDesZones(){
   LANGUE.donnees("zones", t);
 }
 
+/* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
+   thématiques — tout ce que sa fenêtre montre en propre. Sa présentation reste
+   dehors : elle porte du balisage, pèse dix lignes par produit, et un mot-clé
+   qui y répondrait retiendrait un exposant sans que rien à l'écran dise
+   pourquoi. */
+const texteProduits = (l) => (l || [])
+  .map(p => (p.nom || "") + " " + (p.themes || []).join(" "))
+  .join(" ").toLowerCase();
+
 function indexe(d){
   DATA = d;
   DATA.plans.forEach((p, i) => {
@@ -5842,6 +5851,10 @@ function indexe(d){
          cherche. Sans quoi un visiteur taperait un mot qu'il vient de lire
          sans rien trouver. */
       s.rech += texteAnglaisPerso(s);
+      /* Le catalogue se range à part, et non dans « rech » : l'exploitant le
+         retire ou le remet depuis l'onglet « Recherche » sans que rien ne
+         soit réindexé, et le mot-clé n'y répond que si la case est cochée. */
+      s.rechProd = texteProduits(s.produits);
     });
   });
   /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
@@ -5990,6 +6003,8 @@ function indexe(d){
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
                 " " + (s.sect || "") + " " + (x.themes || []).join(" ") +
                 " " + texteCriteres(h)).toLowerCase() + texteAnglaisPerso(h);
+      // son catalogue est à elle, comme ses thématiques et ses rubriques
+      h.rechProd = texteProduits(x.produits);
       return h;
     })));
   PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
@@ -7633,8 +7648,13 @@ function visible(o){
      sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
      pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
   if (!cherchable(o)) return false;
+  /* Le catalogue n'est pas une sorte d'objet mais un texte de plus sur une
+     société : un produit ne se trouve qu'en retenant le stand qui le présente,
+     et c'est bien ce qu'on cherche en tapant son nom. D'où ce second rang,
+     interrogé après l'autre et seulement s'il le faut. */
   return dansCriteres(o) &&
-    (!state.qn || (o.rech || "").includes(state.qn));
+    (!state.qn || (o.rech || "").includes(state.qn) ||
+     (chercheSorte("produits") && (o.rechProd || "").includes(state.qn)));
 }
 
 /* Les stands qu'une société hébergée éclaire. Le plan doit rester allumé sur
@@ -11664,6 +11684,13 @@ const langueOfferte = () => conf("_langues")[PLAN_ADMIN ? "admin" : "public"] !=
 
 const appliqueLangue = () => LANGUE.offre(langueOfferte());
 
+/* Ce salon tient-il un catalogue ? Les produits suivent la société et non le
+   pavillon : c'est sur les stands, et sur les enseignes qu'ils hébergent,
+   qu'il faut les chercher pour savoir s'il en est venu. */
+const catalogueTenu = () => (DATA?.plans || []).some(p =>
+  (p.stands || []).some(s => (s.produits || []).length ||
+    (s.coex || []).some(x => (x.produits || []).length)));
+
 /**
  * Ce que la recherche a le droit de remonter.
  *
@@ -11704,17 +11731,21 @@ const SORTES_RECHERCHE = [
       ? "Le programme n'est pas synchronisé : sa source se règle depuis " +
         "la console, dans « Source des données »."
       : "Le programme de conférences n'est pas pris sur ce salon." },
-  /* Les produits se règlent déjà dans la console — « Produits », source au
-     choix — mais la synchronisation les annonce « pas encore repris » et le
-     plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
-     a réglé cette source doit lire ici pourquoi la recherche n'en remonte
-     rien, plutôt que de chercher une case absente. Elle s'allumera le jour où
-     la synchronisation les rapportera. */
+  /* Les produits ne sont pas une sorte d'objet : ils se posent sur la société
+     — le stand, et chacune de ses hébergées —, et cocher revient à faire
+     répondre un exposant au nom de ce qu'il présente. D'où deux conditions,
+     et deux gestes différents pour les remplir : un catalogue synchronisé, et
+     une fiche qui le montre — sans elle les produits ne descendent même pas
+     chez le visiteur, et il n'y aurait rien à chercher. */
   { cle: "produits", libelle: "Produits",
-    aide: "Ce que les exposants présentent, nommé produit par produit.",
-    dispo: () => (DATA?.plans || []).some(p => (p.produits || []).length),
-    absent: "Les produits ne sont pas encore repris par la synchronisation, " +
-      "quelle que soit la source réglée dans la console." },
+    aide: "Le nom de ce qu'un exposant présente, et les thématiques du " +
+      "produit : le stand qui le porte répond au mot-clé.",
+    dispo: () => catalogueTenu() && montre("stand", "produits"),
+    absent: () => catalogueTenu()
+      ? "La fiche ne montre pas les produits : la case se coche depuis la " +
+        "console, dans « Fiche détail »."
+      : "Aucun produit n'est remonté par la synchronisation : leur source se " +
+        "règle depuis la console, dans « Source des données »." },
   { cle: "poi", libelle: "Points d'intérêt",
     aide: "Les repères posés sur le plan : entrées, WC, escaliers, parkings, " +
       "vestiaires. Le cartouche du bas les récapitule de son côté, que cette " +
