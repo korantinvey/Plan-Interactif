@@ -22,9 +22,12 @@ module.exports = {
   "Le programme n'est pas synchronisé : sa source se règle depuis la console, dans « Source des données ».":
     "The programme is not synchronised: its source is set in the console, under “Data sources”.",
   "Produits": "Products",
-  "Ce que les exposants présentent, nommé produit par produit.": "What exhibitors present, named product by product.",
-  "Les produits ne sont pas encore repris par la synchronisation, quelle que soit la source réglée dans la console.":
-    "Products are not yet picked up by the synchronisation, whatever source is set in the console.",
+  "Le nom de ce qu'un exposant présente, et les thématiques du produit : le stand qui le porte répond au mot-clé.":
+    "The name of what an exhibitor presents, and the product's themes: the stand carrying it answers the keyword.",
+  "La fiche ne montre pas les produits : la case se coche depuis la console, dans « Fiche détail ».":
+    "The details panel does not show products: tick the box in the console, under “Details panel”.",
+  "Aucun produit n'est remonté par la synchronisation : leur source se règle depuis la console, dans « Source des données ».":
+    "No product came back from the synchronisation: their source is set in the console, under “Data sources”.",
   "Les repères posés sur le plan : entrées, WC, escaliers, parkings, vestiaires. Le cartouche du bas les récapitule de son côté, que cette case soit cochée ou non.":
     "The landmarks placed on the map: entrances, toilets, stairs, car parks, cloakrooms. The panel at the bottom lists them anyway, whether this box is ticked or not.",
   "Aucun repère n'est posé sur les plans de ce salon : ils se dessinent depuis la boîte à outils.":
