@@ -2395,6 +2395,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .rubanDist{display:flex;align-items:center;gap:7px;padding:6px 18px;
   background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  /* Une hauteur de ligne entière, et non l'héritée : à 1,5 sur onze pixels
+     elle valait 16,5, le bandeau 28,5, et tout ce qu'il descend dans la
+     fiche tombait entre deux rangées de pixels. */
+  line-height:16px;
   letter-spacing:.06em;text-transform:uppercase}
 /* La teinte choisie l'emporte sur celle que le modèle de fiche donne à la
    pastille : l'exploitant qui la règle veut celle-là, pas celle de
@@ -9126,7 +9130,15 @@ function poseVue(){
 function mesureBarre(){
   const b = $("bandeau");
   if (!b) return;
-  const px = Math.round(b.getBoundingClientRect().height) + "px";
+  /* Arrondie au pixel supérieur, et rendue à la barre elle-même : la scène
+     occupe la rangée suivante de la grille, et elle commence donc là où la
+     barre finit. Un nom de salon qui passe à la ligne lui donnait 79,59 —
+     le plan, la liste et la fiche démarraient sur un demi-pixel, et leur
+     texte s'y rejouait entre deux rangées au lieu d'une. Au supérieur, pour
+     ne jamais rogner ce que la barre porte : c'est son contenu qui commande
+     sa hauteur, on ne fait que la finir sur un pixel entier. */
+  const px = Math.ceil(b.getBoundingClientRect().height) + "px";
+  if (b.style.minHeight !== px) b.style.minHeight = px;
   if (document.body.style.getPropertyValue("--barre") !== px)
     document.body.style.setProperty("--barre", px);
 }

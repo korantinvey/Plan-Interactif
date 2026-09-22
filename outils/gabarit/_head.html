@@ -1577,6 +1577,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .rubanDist{display:flex;align-items:center;gap:7px;padding:6px 18px;
   background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  /* Une hauteur de ligne entière, et non l'héritée : à 1,5 sur onze pixels
+     elle valait 16,5, le bandeau 28,5, et tout ce qu'il descend dans la
+     fiche tombait entre deux rangées de pixels. */
+  line-height:16px;
   letter-spacing:.06em;text-transform:uppercase}
 /* La teinte choisie l'emporte sur celle que le modèle de fiche donne à la
    pastille : l'exploitant qui la règle veut celle-là, pas celle de
