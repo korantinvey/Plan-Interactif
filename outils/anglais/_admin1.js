@@ -35,6 +35,15 @@ module.exports = {
   "Ce que le champ de recherche remonte. Le sommaire du pavillon n'en dépend pas : sans mot-clé, la liste reste celle de ses emplacements. Publiez la configuration pour que le changement parvienne aux visiteurs.":
     "What the search box brings up. The hall's list does not depend on it: without a keyword, the list stays that of its stands. Publish the configuration for the change to reach visitors.",
 
+  // l'ordre des filtres, au bas de l'onglet « Recherche »
+  "L'ordre des filtres": "The order of the filters",
+  "Le panneau qui se déplie sous la recherche range ses filtres dans cet ordre. Mettez en tête ce par quoi un visiteur de ce salon commence à trancher : c'est le seul filtre qu'il lise sans dérouler. Les champs qui servent de filtre, eux, se cochent dans la console, dans « Fiche détail ».":
+    "The panel that unfolds under the search box lists its filters in this order. Put first whatever a visitor to this show narrows down by: it is the only filter they read without scrolling. The fields used as filters are ticked in the console, under “Details panel”.",
+  "Un seul filtre : il n'y a pas d'ordre à régler.": "Only one filter: there is no order to set.",
+  "Aucun filtre : le panneau des critères ne s'ouvre pas. Les champs qui servent de filtre se cochent dans la console, dans « Fiche détail ».":
+    "No filter: the criteria panel does not open. The fields used as filters are ticked in the console, under “Details panel”.",
+  "vient du plan": "comes from the map",
+
   // les modèles d'habillage
   "Sobre": "Plain",
   "Le rendu d'origine : un seul rythme, de la liste à la fiche.": "The original look: one rhythm, from the list to the details.",
