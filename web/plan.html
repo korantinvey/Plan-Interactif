@@ -6865,11 +6865,14 @@ function indexe(d){
            un calque tracé depuis un autre poste, que ce poste-ci n'a jamais
            connu : l'ignorer ici, c'était l'effacer au premier envoi. Un calque
            déjà connu puis retiré d'ici, lui, a bien été supprimé à la main, et
-           ne revient pas. */
-        const locaux = DESSINS[p.id] || [];
+           ne revient pas. Dans l'autre sens non plus : un calque que la base
+           nous avait rendu et qu'elle n'a plus a été supprimé depuis un autre
+           poste, et le travail en attente à côté ne le ressuscite pas. */
+        const locaux = (DESSINS[p.id] || []).filter(c =>
+          deLaBase.some(b => b.id === c.id) || !dejaPubliee(p.id, c.id));
         const ailleurs = deLaBase.filter(b =>
           !locaux.some(c => c.id === b.id) && !dejaPubliee(p.id, b.id));
-        if (ailleurs.length) DESSINS[p.id] = locaux.concat(ailleurs);
+        DESSINS[p.id] = locaux.concat(ailleurs);
       } else if (ADMIN){
         /* Rien en attente, et pourtant des calques d'ici que la base n'a jamais
            confirmés : un enregistrement a échoué sans se faire entendre — une
@@ -6888,6 +6891,11 @@ function indexe(d){
       if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
+  /* Et la copie du poste remise dans son rangement telle qu'on vient de la
+     reconstituer : elle et la liste des clés publiées doivent décrire le même
+     instant, sans quoi l'ouverture suivante les compare de travers — voir
+     `rangeDessins`. */
+  if (ADMIN) rangeDessins();
   /* Ce que la base disait, et non ce que la page tient : l'envoi comparera le
      poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
      resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
@@ -17438,6 +17446,23 @@ function reprendCommun(d, temoin){
 function notePubliees(id, cles){
   PUBLIES[id] = cles.slice();
   try { localStorage.setItem(clePubliees, JSON.stringify(PUBLIES)); } catch (e) {}
+}
+
+/**
+ * Range la copie du poste telle que le chargement vient de la reconstituer.
+ *
+ * Les deux rangements ne peuvent pas avancer l'un sans l'autre. Le chargement
+ * notait les clés que la base venait de rendre, mais gardait en mémoire seule
+ * la liste des calques qu'il avait confrontée à elle : le rangement du poste
+ * restait à la veille, et n'était réécrit qu'au premier trait tracé. Au
+ * rechargement suivant, le poste relisait donc ses vieux calques face à une
+ * liste de clés déjà à jour, n'y retrouvait pas les leurs, et les prenait pour
+ * un travail jamais publié. Un calque supprimé depuis un autre poste
+ * disparaissait ainsi au premier rechargement, puis revenait au deuxième,
+ * republié en base et annoncé comme rescapé.
+ */
+function rangeDessins(){
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); } catch (e) {}
 }
 
 /** Ce calque a-t-il déjà été vu en base ? */
