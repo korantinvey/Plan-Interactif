@@ -452,7 +452,7 @@ Fonctions :
 `viseItineraire` 3145 · `visePoi` 3151 · `visePoint` 3157 · `ouvreItineraire` 3189
 `fermeItineraire` 3217 · `versItineraire` 3227 · `versItineraireDe` 3230
 
-### `_journee.html` — 2505 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2523 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -462,15 +462,15 @@ Fonctions :
 `jourBref` 155 · `joursSalon` 165 · `joursAVenir` 194 · `joursDefaut` 212
 `confsParJour` 222 · `pointConf` 239 · `departsProposes` 258 · `matriceJournee` 291
 `ecartDesJours` 417 · `poidsDesJours` 447 · `chargeDuJour` 470 · `rangeSejour` 479
-`derouleJournee` 955 · `prepareSejour` 1097 · `calculeSejour` 1268
-`apercuRepartition` 1302 · `rangJournee` 1316 · `lienJournee` 1328 · `boutonJour` 1351
-`arretJournee` 1364 · `remplitOnglets` 1411 · `jourDuStand` 1440 · `ouvreChoixJour` 1452
-`figeLaVisite` 1509 · `placeSurJour` 1518 · `rendAuPlan` 1526 · `retireDuSejour` 1532
-`remplitJournee` 1542 · `ecritApercu` 1755 · `appliqueVueParcours` 1785
-`traceJournee` 1827 · `montreLeJour` 1836 · `perimeJournee` 1851 · `oublieSejour` 1866
-`ouvreOrganisation` 1881 · `essaieSejour` 2261 · `lanceSejour` 2291 · `refaitSejour` 2330
-`trancheDe` 2362 · `chargeSuivie` 2382 · `jourISO` 2388 · `etapesDuSejour` 2396
-`annoncePlan` 2423 · `plafondMinimal` 2454 · `litLaCharge` 2473 · `chargeCellule` 2493
+`derouleJournee` 973 · `prepareSejour` 1115 · `calculeSejour` 1286
+`apercuRepartition` 1320 · `rangJournee` 1334 · `lienJournee` 1346 · `boutonJour` 1369
+`arretJournee` 1382 · `remplitOnglets` 1429 · `jourDuStand` 1458 · `ouvreChoixJour` 1470
+`figeLaVisite` 1527 · `placeSurJour` 1536 · `rendAuPlan` 1544 · `retireDuSejour` 1550
+`remplitJournee` 1560 · `ecritApercu` 1773 · `appliqueVueParcours` 1803
+`traceJournee` 1845 · `montreLeJour` 1854 · `perimeJournee` 1869 · `oublieSejour` 1884
+`ouvreOrganisation` 1899 · `essaieSejour` 2279 · `lanceSejour` 2309 · `refaitSejour` 2348
+`trancheDe` 2380 · `chargeSuivie` 2400 · `jourISO` 2406 · `etapesDuSejour` 2414
+`annoncePlan` 2441 · `plafondMinimal` 2472 · `litLaCharge` 2491 · `chargeCellule` 2511
 
 ### `_js.html` — 5402 l. → plan-admin.html, plan-smcl.html, plan.html
 

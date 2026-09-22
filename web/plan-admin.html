@@ -30675,10 +30675,22 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
   const cleRelache = (j, i) => j.cle + "|" + i;
   const relacheDe = (j, i) => RELACHES.get(cleRelache(j, i)) || 0;
 
-  /* Au-delà, ce n'est plus le plafond qui refuse : c'est l'heure de fermeture,
-     une conférence, ou une allée qui ne mène nulle part. Relever encore ferait
-     payer un tour de recherche pour ne rien libérer. */
-  const CRANS_MAX = 12;
+  /* Un garde-fou, et rien d'autre.
+
+     Il était à douze, ce qui semblait large — puis une simulation à l'échelle
+     d'un vrai salon l'a épuisé : trois mille programmes sur un hall qui peut
+     en absorber la moitié, et cinq cent quatre-vingts exposants se
+     retrouvaient retirés de parcours, ce que la règle interdit. Un stand
+     chargé de vingt fois son plafond demande vingt crans ; en compter douze
+     revenait à abandonner à mi-chemin.
+
+     On a aussi essayé de s'arrêter au bout de quelques tours qui n'avaient
+     rien logé, pour ne pas tourner en vain quand c'est l'heure qui bloque :
+     c'était pire. À forte charge, les premiers crans ne libèrent rien — il en
+     faut dix avant que la première place s'ouvre —, et le critère coupait
+     avant. Mieux vaut un garde-fou franc, et des tours qui ne coûtent rien :
+     voir plus bas, on ne réarrange qu'une fois, à la fin. */
+  const CRANS_MAX = 200;
   let crans = 0;
 
   /**
@@ -31023,13 +31035,19 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
        maintenant, et seulement maintenant, qu'on relève d'un cran ceux-là. La
        règle est tenue — aucun exposant n'est retiré d'un parcours — et elle
        l'est au dernier moment, quand les reprises ont montré qu'aucun
-       arrangement ne les logeait. */
+       arrangement ne les logeait.
+
+       Chaque tour ne fait que relever et poser : réarranger à chacun d'eux
+       coûterait cent fois le calcul pour un résultat que la reprise finale
+       rend de toute façon. */
+    let releve1 = false;
     while (plafond && (dehorsLibres.length || dehorsImposes.length) &&
            releve(dehorsImposes.concat(dehorsLibres), jours)){
+      releve1 = true;
       if (dehorsImposes.length) insere(dehorsImposes);
       insere(dehorsLibres);
-      reprend(tours);
     }
+    if (releve1) reprend(tours);
     return { note: total(), etat: etat(), dehors: dehorsImposes.concat(dehorsLibres) };
   };
 
