@@ -1,6 +1,6 @@
 ---
 name: relecture
-description: Relit un diff de ce dépôt pour y trouver les fautes que rien ne contrôle automatiquement — parité SVG/WebGL, horodatage d'une migration, fichier fabriqué édité en direct, clé dans le commit, coût d'un rendu. À charger avant de relire une pull request ou ses propres modifications, et utilisée par le workflow `Relecture`.
+description: Relit un diff de ce dépôt pour y trouver les fautes que rien ne contrôle automatiquement — parité SVG/WebGL, horodatage d'une migration, fichier fabriqué édité en direct, clé dans le commit, coût d'un rendu. À charger avant de relire une pull request ou ses propres modifications, et lue par le workflow `Correctif` avant d'écrire.
 ---
 
 # Relire un changement du plan interactif
