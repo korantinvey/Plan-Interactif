@@ -2921,6 +2921,47 @@ function select(id, recentrer, canal, iSoc){
 }
 const centre = (o) => centrePoint(o.c);
 
+/* Les deux actions d'une fiche vivent à deux endroits : les boutons du pied,
+   que le grand écran montre sans qu'on déroule, et les pictos de l'en-tête,
+   que l'écran étroit met à leur place. Un seul branchement pour les deux —
+   posé deux fois, l'un des deux jeux serait resté sur la fiche d'avant. La
+   fiche d'un stand et celle d'un repère y passent toutes deux.
+ *
+ * @param go   cadrer le plan sur ce que la fiche décrit
+ * @param itin partir d'ici vers l'itinéraire
+ */
+function brancheActesFiche(go, itin){
+  const sur = (id, f) => { const b = $(id); if (b) b.onclick = f; };
+  const cadre = () => centreEtBaisseLaFiche(go);
+  sur("dGo", cadre); sur("dGoIco", cadre);
+  sur("dItin", itin); sur("dItinIco", itin);
+}
+
+/**
+ * Cadre le plan depuis la fiche, après l'avoir fait descendre.
+ *
+ * Sur un téléphone la fiche occupe plus de la moitié de l'écran : centrer sans
+ * la baisser posait le stand visé derrière elle, et le geste avait l'air de ne
+ * rien faire. Elle descend donc à son cran le plus bas, et le cadrage attend
+ * qu'elle y soit — il mesure ce qu'elle cache du plan, et le mesurerait encore
+ * à sa hauteur d'avant.
+ */
+function centreEtBaisseLaFiche(cadre){
+  const fiche = $("detail");
+  const baisse = baisseTiroir.detail;
+  if (!fiche || !baisse || !baisse()){ cadre(); return; }
+  let fait = false;
+  const fini = () => { if (fait) return; fait = true; cadre(); };
+  fiche.addEventListener("transitionend", function fin(e){
+    if (e.target !== fiche || e.propertyName !== "max-height") return;
+    fiche.removeEventListener("transitionend", fin);
+    fini();
+  });
+  /* Un tiroir qui ne transitionne pas — mouvement réduit par le système,
+     onglet en arrière-plan — n'enverrait jamais l'événement. */
+  setTimeout(fini, 350);
+}
+
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
 function centrePoint(xy){
@@ -4254,9 +4295,8 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      près ce qu'on cherchait, et qu'on veut voir le reste. */
   $("dBody").querySelectorAll(".theme").forEach(b =>
     b.onclick = () => filtreTheme(b.dataset.t));
-  $("dGo").onclick = () => centre(o);
   // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
-  $("dItin").onclick = () => versItineraire(o);
+  brancheActesFiche(() => centre(o), () => versItineraire(o));
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");
   if (cr){
@@ -4845,6 +4885,10 @@ let montreTiroir = () => {};
    haut : déplié dans la bande qui dépasse, il y prendrait la place de ce
    qu'elle doit montrer. */
 let hisseTiroir = () => {};
+/* Et un tiroir cranté descend aussi sur ordre d'ailleurs : centrer le plan
+   depuis une fiche n'a aucun intérêt tant que la fiche couvre l'endroit visé.
+   Un ordre par tiroir, posé par `tiroirCrante`. */
+const baisseTiroir = {};
 
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
@@ -5079,6 +5123,16 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     poignee.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
+
+  /* Descendre sur ordre d'ailleurs, et dire si l'on a bougé : centrer le plan
+     depuis une fiche attend la fin de la descente pour mesurer ce que la fiche
+     cache encore. Déjà au cran le plus bas, rien ne bouge et rien n'est à
+     attendre. */
+  baisseTiroir[panneau] = () => {
+    if (!etroit() || cran() === "replie") return false;
+    pose("replie");
+    return true;
+  };
 
   /* Le nombre n'est qu'un garde-fou : `mesure` pose la variable à la
      construction et à chaque ouverture, si bien qu'elle est toujours lue

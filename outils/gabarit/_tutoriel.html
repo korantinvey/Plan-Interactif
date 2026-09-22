@@ -246,8 +246,12 @@ const CHAPITRES_TUTO = [
       }
       /* Depuis une fiche, le trajet part avec son arrivée : c'est le chemin qu'on
          prend quand on vient de lire ce qu'on veut aller voir. */
-      const itin = tutoFicheOuverte() && $("dItin");
-      if (itin && itin.getClientRects().length) return { cle: "fiche", cible: itin,
+      /* Le bouton du pied au large, le picto de l'en-tête sur un écran
+         étroit : c'est la même action à deux endroits, et seul celui qui se
+         voit peut se désigner. */
+      const itin = tutoFicheOuverte() &&
+        [$("dItinIco"), $("dItin")].find(b => b && b.getClientRects().length);
+      if (itin) return { cle: "fiche", cible: itin,
         texte: "Pour vous y rendre, touchez « Itinéraire » : l'arrivée sera « " +
                $("dName").textContent + " »." };
       return { cle: "bouton", cible: $("btnItineraire"),
