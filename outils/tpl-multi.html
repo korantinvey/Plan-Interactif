@@ -3841,6 +3841,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    chaque geste part en base tout seul, et rien d'autre ne le dirait. */
 .etatO{font-size:12px;color:var(--ink-3)}
 .etatO[data-mal="true"]{color:var(--rouge)}
+/* Le même rangement, dans l'onglet « Recherche » : les filtres du panneau des
+   critères. Il n'a ni réserve ni aperçu — un filtre se coche dans la console,
+   et le panneau derrière la fenêtre tient lieu d'aperçu —, si bien que la
+   liste est seule sous son intertitre et doit s'en écarter d'elle-même. */
+.ordreCrit{margin-top:11px}
+.ordreCrit + .videO{margin-top:9px}
 @media (max-width:760px){
   .ficheTrois{grid-template-columns:minmax(0,1fr)}
   .ordreApercu{position:static}
@@ -7229,18 +7235,45 @@ const themeFiltrable = (n) => CRITERES.some(c => c.cle === CLE_THEMES &&
 const PLAN_ADMIN = document.documentElement.dataset.role === "admin";
 
 /**
- * Les champs retenus comme critères, dans l'ordre où la console les range.
+ * L'ordre où le panneau range ses filtres, tel que l'exploitant l'a voulu.
+ *
+ * Sans réglage, l'ordre reste celui d'origine — le secteur en tête, puis les
+ * champs dans l'ordre où la console les a cochés. C'est un ordre de hasard : il
+ * dit dans quel ordre on a coché des cases, non par quoi un visiteur commence à
+ * trancher son salon. D'où ce rangement, réglé depuis l'onglet « Recherche ».
+ *
+ * Un critère que le réglage ne connaît pas garde sa place naturelle, derrière
+ * le premier voisin de gauche que le réglage connaît : un champ coché dans la
+ * console après coup paraît là où il serait paru, et non au bout de la liste où
+ * personne ne l'a mis.
+ */
+function ordreCriteres(cles){
+  const regle = ((conf("_crit").ordre) || []).filter(c => cles.indexOf(c) >= 0);
+  if (!regle.length) return cles;
+  const sortie = regle.slice();
+  cles.forEach((c, i) => {
+    if (sortie.indexOf(c) >= 0) return;
+    let j = -1;
+    for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(cles[k]);
+    sortie.splice(j + 1, 0, c);
+  });
+  return sortie;
+}
+
+/**
+ * Les champs retenus comme critères, dans l'ordre où le panneau les montrera.
  *
  * Le secteur ouvre la marche et ne se coche pas : il ne vient d'aucun champ de
  * fiche à associer mais du plan lui-même, où il est là ou n'est pas. Le
  * réglage qui l'éteint est celui des couleurs, et il l'éteint des deux côtés.
  * C'est aussi le découpage le plus large du salon : le poser en tête range les
- * critères du plus grossier au plus fin.
+ * critères du plus grossier au plus fin — c'est l'ordre par défaut, que
+ * l'exploitant refait à sa main si son salon se tranche autrement.
  */
 function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
   const cochees = Object.keys(r).filter(k => r[k] === true);
-  return secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees;
+  return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
 }
 
 /** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
@@ -7336,6 +7369,20 @@ function indexeCriteres(){
     if (!CRITERES.some(c => c.cle === k)) state.crit.delete(k);
   });
   majCriteres();
+}
+
+/**
+ * L'ordre des filtres vient de changer : on refait l'index, et le panneau.
+ *
+ * `majCriteres` relit le panneau déplié sans le réécrire — c'est ce qui lui
+ * garde le groupe ouvert et le tamis tapé —, et un rang échangé ne se lit pas
+ * dans une relecture. Le seul geste qui change l'ordre étant le rangement des
+ * réglages, il peut bien coûter un panneau réécrit.
+ */
+function refaitCriteres(){
+  indexeCriteres();
+  const pan = $("panCrit");
+  if (pan && !pan.hidden) remplitCriteres();
 }
 
 /** Ce que la liste retient d'un critère : une valeur cochée suffit. */
@@ -11862,6 +11909,181 @@ function voletRecherche(hote){
     bloc.appendChild(aide);
   });
   hote.appendChild(bloc);
+
+  blocOrdreCriteres(hote);
+}
+
+/**
+ * L'ordre des filtres du panneau des critères.
+ *
+ * Les champs qui servent de filtre se cochent dans la console, un par un, et
+ * arrivaient sur le plan dans l'ordre où on avait coché leurs cases — un ordre
+ * qui ne dit rien de la façon dont on cherche un exposant. Le premier de la
+ * liste est pourtant le seul qu'on lise sans dérouler quand il y en a six : il
+ * décide de la première question qu'on pose au salon. Un salon régional range
+ * la région en tête, un salon de métiers le profil.
+ *
+ * Le rangement ne se fait donc pas dans la console, où l'on ne voit pas le
+ * plan, mais ici, à côté du panneau qui les montre.
+ *
+ * Deux façons de déplacer, et il en faut deux : la poignée, qui traverse la
+ * liste d'un geste, et les flèches, seul chemin au clavier — et au doigt, le
+ * glisser-déposer du navigateur ignorant le tactile.
+ */
+function blocOrdreCriteres(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "L'ordre des filtres";
+  tete.querySelector(".d").textContent = "Le panneau qui se déplie sous la " +
+    "recherche range ses filtres dans cet ordre. Mettez en tête ce par quoi un " +
+    "visiteur de ce salon commence à trancher : c'est le seul filtre qu'il lise " +
+    "sans dérouler. Les champs qui servent de filtre, eux, se cochent dans la " +
+    "console, dans « Fiche détail ».";
+  hote.appendChild(tete);
+
+  /* La copie de travail. Elle part de l'ordre affiché, et non du réglage
+     enregistré : celui-ci ne connaît peut-être pas un champ coché depuis, et
+     « clesCriteres » lui a déjà rendu la place qui lui revient. */
+  let cles = clesCriteres();
+
+  const liste = document.createElement("div");
+  liste.className = "ordreListe ordreCrit";
+  liste.hidden = !cles.length;
+  hote.appendChild(liste);
+
+  const rien = document.createElement("p");
+  rien.className = "videO";
+  rien.textContent = cles.length
+    ? "Un seul filtre : il n'y a pas d'ordre à régler."
+    : "Aucun filtre : le panneau des critères ne s'ouvre pas. Les champs qui " +
+      "servent de filtre se cochent dans la console, dans « Fiche détail ».";
+  rien.hidden = cles.length > 1;
+  hote.appendChild(rien);
+
+  /* Le rang part en configuration, et le panneau se refait dans la foulée :
+     ouvert derrière la fenêtre, il est le seul retour visible du geste. */
+  const enregistre = () => {
+    conf("_crit").ordre = cles.slice();
+    enregistreConf();
+    refaitCriteres();
+  };
+
+  /* Ce qu'on tire. Le dessin fait foi pendant le geste : le tableau n'est plus
+     qu'un souvenir de ce qu'il était avant, et se relit au lâcher. */
+  let tire = null;
+
+  /* Les flèches des deux bouts s'éteignent : sans cela, le premier filtre
+     garderait un « monter » actif alors qu'il est déjà en tête. */
+  const majBouts = () => {
+    [...liste.children].forEach((el, i, tous) => {
+      const b = el.querySelectorAll("button.fleche");
+      b[0].disabled = i === 0;
+      b[1].disabled = i === tous.length - 1;
+    });
+  };
+
+  liste.addEventListener("dragover", ev => {
+    if (!tire) return;
+    // sans quoi le navigateur refuse le dépôt et rejoue l'animation de retour
+    ev.preventDefault();
+    const apres = [...liste.children].find(d => {
+      if (d === tire) return false;
+      const r = d.getBoundingClientRect();
+      /* On vise le milieu de la ligne, et non son bord : le bord ferait
+         basculer l'insertion dès qu'on l'effleure, et la liste tremblerait
+         sous le curseur au lieu de le suivre. */
+      return ev.clientY < r.top + r.height / 2;
+    }) || null;
+    if (apres === tire.nextSibling || apres === tire) return;
+    liste.insertBefore(tire, apres);
+    majBouts();
+  });
+
+  /* Déplacer d'un rang, puis rendre la main à la flèche qu'on vient
+     d'actionner : remonter un filtre de quatre rangs demande quatre clics, et
+     le suivant doit tomber au même endroit. */
+  const deplace = (cle, pas, sens) => {
+    const i = cles.indexOf(cle), j = i + pas;
+    if (i < 0 || j < 0 || j >= cles.length) return;
+    cles.splice(j, 0, cles.splice(i, 1)[0]);
+    rendu({ cle, sens });
+    enregistre();
+  };
+
+  /** Ce qui distingue deux filtres de même intitulé : d'où le champ vient. */
+  const origine = (cle) => cle === CLE_SECTEUR ? "vient du plan"
+    : cle.indexOf(PREFIXE_PERSO) === 0 ? "propre au salon" : "";
+
+  const ligne = (cle) => {
+    const libelle = libelleCritere(cle);
+    const d = document.createElement("div");
+    d.className = "ordreLigne";
+    d.dataset.cle = cle;
+    d.draggable = true;
+
+    const poi = document.createElement("span");
+    poi.className = "prise";
+    poi.setAttribute("aria-hidden", "true");
+    poi.textContent = "⠿";
+    d.appendChild(poi);
+
+    const l = document.createElement("span");
+    l.className = "lib";
+    l.textContent = libelle;
+    d.appendChild(l);
+
+    const e = document.createElement("span");
+    e.className = "etiq";
+    e.textContent = origine(cle);
+    d.appendChild(e);
+
+    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "outil fleche";
+      b.textContent = pas < 0 ? "▲" : "▼";
+      b.title = titre;
+      b.setAttribute("aria-label", titre + " " + libelle);
+      b.onclick = () => deplace(cle, pas, sens);
+      d.appendChild(b);
+    });
+
+    d.ondragstart = ev => {
+      /* Firefox n'ouvre pas de glissé sans donnée transportée, et le texte
+         déposé ailleurs vaut mieux que la clé technique. */
+      ev.dataTransfer.setData("text/plain", libelle);
+      ev.dataTransfer.effectAllowed = "move";
+      tire = d;
+      // la classe se pose au tour suivant : posée tout de suite, elle entrerait
+      // dans l'image que le navigateur vient de prendre de la ligne
+      setTimeout(() => d.classList.add("tire"), 0);
+    };
+    d.ondragend = () => {
+      d.classList.remove("tire");
+      tire = null;
+      const avant = JSON.stringify(cles);
+      cles = [...liste.children].map(el => el.dataset.cle);
+      // un glissé qui n'a rien déplacé n'a rien à enregistrer
+      if (JSON.stringify(cles) === avant) return;
+      rendu();
+      enregistre();
+    };
+    return d;
+  };
+
+  const rendu = (focus) => {
+    liste.textContent = "";
+    cles.forEach(cle => liste.appendChild(ligne(cle)));
+    majBouts();
+    if (!focus) return;
+    const el = liste.querySelector('[data-cle="' + CSS.escape(focus.cle) + '"]');
+    if (!el) return;
+    const b = el.querySelectorAll("button.fleche");
+    if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();
+  };
+
+  rendu();
 }
 
 /**
@@ -25207,14 +25429,20 @@ function grille(p, pmr){
   const x0 = X0 - PAS_GRILLE, y0 = Y0 - PAS_GRILLE;
   const w = Math.ceil((X1 - X0) / PAS_GRILLE) + 2;
   const h = Math.ceil((Y1 - Y0) / PAS_GRILLE) + 2;
-  const cv = document.createElement("canvas");
-  cv.width = w; cv.height = h;
-  const ctx = cv.getContext("2d", { willReadFrequently: true });
-  ctx.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
+  // une toile réglée sur la grille : même repère, même dégagement, de sorte
+  // que deux relevés faits dessus se recouvrent case pour case
+  const toile = () => {
+    const cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    const c = cv.getContext("2d", { willReadFrequently: true });
+    c.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
                    -x0 / PAS_GRILLE, -y0 / PAS_GRILLE);
-  ctx.lineJoin = ctx.lineCap = "round";
-  ctx.lineWidth = 2 * (pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
-  ctx.fillStyle = ctx.strokeStyle = "#000";
+    c.lineJoin = c.lineCap = "round";
+    c.lineWidth = 2 * (pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
+    c.fillStyle = c.strokeStyle = "#000";
+    return c;
+  };
+  const ctx = toile();
 
   const barre = (d, trait) => {
     const t = new Path2D(d);
@@ -25321,7 +25549,25 @@ function grille(p, pmr){
   // moitié, la case est du côté du mur
   for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
 
-  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, pmr: pmr, co: co, si: si };
+  /* Ce que l'exploitant a tracé pour barrer, relevé à part. La grille ne dit
+     pas pourquoi une case est mur, et il faut pourtant les distinguer : on
+     traverse l'emplacement qu'on a désigné — c'est ce qui fait partir le trait
+     du stand et non de l'allée devant lui —, jamais la cloison tracée en
+     travers, fût-elle posée dans cet emplacement. Une cloison basse au fond
+     d'un restaurant est dans son contour, et le trait la coupait au motif
+     qu'elle était chez lui. */
+  const traces = formesRole(p, "obstacle").concat(pmr ? formesRole(p, "pmr") : []);
+  let cloisons = null;
+  if (traces.length){
+    const bx = toile();
+    traces.forEach(o => { const t = new Path2D(o.d); if (!o.trait) bx.fill(t); bx.stroke(t); });
+    const bp = bx.getImageData(0, 0, w, h).data;
+    cloisons = new Uint8Array(w * h);
+    for (let i = 0; i < cloisons.length; i++) cloisons[i] = bp[i * 4 + 3] > 128 ? 1 : 0;
+  }
+
+  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, cloisons: cloisons,
+              pmr: pmr, co: co, si: si };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
   g.crete = cretes(g);
@@ -25485,7 +25731,7 @@ const PORTEE_POINT = 80;
  * accepte de fouiller : un pavillon entier repeint pour chaque accroche
  * coûterait plus que toutes les recherches réunies.
  */
-function empriseDe(g, d, cx0, cy0, cote){
+function empriseDe(g, p, d, cx0, cy0, cote){
   const cv = document.createElement("canvas");
   cv.width = cote; cv.height = cote;
   const ctx = cv.getContext("2d", { willReadFrequently: true });
@@ -25496,9 +25742,34 @@ function empriseDe(g, d, cx0, cy0, cote){
   ctx.fillStyle = ctx.strokeStyle = "#000";
   const t = new Path2D(d);
   ctx.fill(t); ctx.stroke(t);
+  /* Ce qu'un autre occupe n'est pas sien, fût-il dans son contour : une zone
+     non traversable posée au fond d'une zone orga, un stand qui la déborde.
+     On retranche leur plein seul — leur dégagement est partagé avec le nôtre,
+     et l'ôter refermerait la bouche d'un emplacement serré. */
+  if (p){
+    const c0 = horsGrille(g, [g.x0 + (cx0 + cote / 2) * PAS_GRILLE,
+                              g.y0 + (cy0 + cote / 2) * PAS_GRILLE]);
+    const portee = cote * PAS_GRILLE + 40;
+    ctx.globalCompositeOperation = "destination-out";
+    for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+      if (!v.d || v.d === d) continue;
+      const c = v.lc || v.c;
+      if (!c || Math.abs(c[0] - c0[0]) > portee || Math.abs(c[1] - c0[1]) > portee) continue;
+      ctx.fill(new Path2D(v.d));
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
   const px = ctx.getImageData(0, 0, cote, cote).data;
   const m = new Uint8Array(cote * cote);
   for (let i = 0; i < m.length; i++) m[i] = px[i * 4 + 3] > 128 ? 1 : 0;
+  /* Et ce qui a été tracé pour barrer ne lui appartient jamais, où qu'on
+     l'ait posé : c'est tout l'objet d'une cloison. */
+  if (g.cloisons)
+    for (let y = 0; y < cote; y++) for (let x = 0; x < cote; x++){
+      const gx = cx0 + x, gy = cy0 + y;
+      if (gx < 0 || gy < 0 || gx >= g.w || gy >= g.h) continue;
+      if (g.cloisons[gy * g.w + gx]) m[y * cote + x] = 0;
+    }
   return m;
 }
 
@@ -25517,7 +25788,7 @@ function empriseDe(g, d, cx0, cy0, cote){
  * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
  * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accrocheDepuis(g, xy, chez, portee){
+function accrocheDepuis(g, p, xy, chez, portee){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const [gx, gy] = celluleDe(g, xy[0], xy[1]);
@@ -25530,7 +25801,7 @@ function accrocheDepuis(g, xy, chez, portee){
   const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
   const cote = 2 * portee + 1;
   const cx0 = dx0 - portee, cy0 = dy0 - portee;
-  const sien = chez ? empriseDe(g, chez, cx0, cy0, cote) : null;
+  const sien = chez ? empriseDe(g, p, chez, cx0, cy0, cote) : null;
   const chezSoi = (nx, ny) => {
     if (!sien) return true;
     const px = nx - cx0, py = ny - cy0;
@@ -25604,10 +25875,10 @@ function versLeMilieu(g, i){
  * essai cherche à la portée d'un emplacement, sans quoi on rendrait joignable
  * le stand que la portée écarte — ce qu'elle est là pour empêcher.
  */
-function accroche(g, xy, chez){
-  let r = accrocheDepuis(g, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
+function accroche(g, p, xy, chez){
+  let r = accrocheDepuis(g, p, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
   if (chez && !(r >= 0 && g.nappe[r])){
-    const large = accrocheDepuis(g, xy, null, PORTEE_ACCROCHE);
+    const large = accrocheDepuis(g, p, xy, null, PORTEE_ACCROCHE);
     if (large >= 0 && g.nappe[large]) r = large;
   }
   return r >= 0 && g.nappe[r] ? versLeMilieu(g, r) : r;
@@ -26573,18 +26844,28 @@ function faceDeSortie(p, obj, ancre){
  * par le passage laissé entre deux stands, mais en tranchant l'angle de celui
  * qui le borde. Un visiteur ne traverse pas un stand, il en fait le tour.
  *
- * On ne garde donc un accès que si ce trait ne franchit que l'emprise qu'il
- * dessert, dégagement compris — la même peinture que la grille, pour que les
- * deux se recouvrent exactement. Les autres ne sont pas des façades : le
- * trajet passera par celle d'à côté, quitte à contourner.
+ * On ne garde donc un accès que si ce trait n'entre dans aucun autre
+ * emplacement, et ne coupe aucune cloison tracée — pas même une posée chez
+ * celui qu'on dessert, comme la cloison basse au fond d'un restaurant, que le
+ * trait franchissait au motif qu'elle était chez lui. Les autres accès ne sont
+ * pas des façades : le trajet passera par celle d'à côté, quitte à contourner.
  */
-function raccordTient(g, xy, c, d){
-  if (!d) return true;
+function raccordTient(g, p, obj, xy, c){
+  if (!p || !obj || !obj.d) return true;
   const B = centreCase(g, c);
-  const a = celluleDe(g, xy[0], xy[1]), b = celluleDe(g, B[0], B[1]);
-  const cx0 = Math.min(a[0], b[0]) - 2, cy0 = Math.min(a[1], b[1]) - 2;
-  const cote = Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) + 5;
-  const sien = empriseDe(g, d, cx0, cy0, cote);
+  const ctx = document.createElement("canvas").getContext("2d");
+  /* Ce qu'on regarde, ce sont les contours, non la grille : le dégagement d'un
+     voisin déborde sur l'allée qu'on longe, et l'interdire fermerait tout
+     passage un peu serré. Frôler est permis ; entrer, non. */
+  const x0 = Math.min(xy[0], B[0]) - 5, x1 = Math.max(xy[0], B[0]) + 5;
+  const y0 = Math.min(xy[1], B[1]) - 5, y1 = Math.max(xy[1], B[1]) + 5;
+  const autres = [];
+  for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+    if (v === obj || v.id === obj.id || !v.d) continue;
+    const c2 = v.lc || v.c;
+    if (!c2 || c2[0] < x0 - 40 || c2[0] > x1 + 40 || c2[1] < y0 - 40 || c2[1] > y1 + 40) continue;
+    autres.push(new Path2D(v.d));
+  }
   const l = Math.hypot(B[0] - xy[0], B[1] - xy[1]);
   const n = Math.max(1, Math.ceil(l / (PAS_GRILLE / 2)));
   for (let k = 0; k <= n; k++){
@@ -26592,10 +26873,9 @@ function raccordTient(g, xy, c, d){
     const x = xy[0] + (B[0] - xy[0]) * u, y = xy[1] + (B[1] - xy[1]) * u;
     const i = caseDe(g, x, y);
     if (i < 0) return false;
-    if (!g.mur[i]) continue;
-    const [px, py] = celluleDe(g, x, y);
-    const qx = px - cx0, qy = py - cy0;
-    if (qx < 0 || qy < 0 || qx >= cote || qy >= cote || sien[qy * cote + qx] !== 1) return false;
+    // une cloison tracée ne se franchit pas, même posée chez celui qu'on dessert
+    if (g.cloisons && g.cloisons[i]) return false;
+    if (autres.some(t => ctx.isPointInPath(t, x, y))) return false;
   }
   return true;
 }
@@ -26607,19 +26887,19 @@ function accesDe(g, p, obj, xy){
   if (p && d){
     const pas = PAS_GRILLE + (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
     for (const f of facesLibres(p, obj)){
-      const c = accroche(g, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
+      const c = accroche(g, p, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
       if (c >= 0 && g.nappe[c] && !vus.has(c)){ vus.add(c); out.push(c); }
     }
     /* Une seule façade se garde telle quelle : l'écarter rendrait
        l'emplacement injoignable, et un trait qui coupe se voit et se
        comprend là où l'absence de trajet ne s'explique pas. */
     if (out.length > 1){
-      const tiennent = out.filter(c => raccordTient(g, xy, c, d));
+      const tiennent = out.filter(c => raccordTient(g, p, obj, xy, c));
       if (tiennent.length) return tiennent;
     }
   }
   if (!out.length){
-    const c = accroche(g, xy, d);
+    const c = accroche(g, p, xy, d);
     if (c >= 0) out.push(c);
   }
   return out;
@@ -27032,7 +27312,7 @@ function balayage(p, pmr, xy, chez){
   const g = grille(p, pmr);
   /* On ne sort pas d'un emplacement en traversant son voisin : l'accroche s'en
      tient à l'emprise du sien, quand on sait laquelle c'est. */
-  const c = accroche(g, xy, chez);
+  const c = accroche(g, p, xy, chez);
   const b = { g: g, d: c >= 0 ? distancesDepuis(g, c) : null };
   BALAYAGES.set(cle, b);
   return b;
