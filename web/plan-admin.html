@@ -30640,15 +30640,43 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
   const trop = (c, k, mArrivee, s) => plafonne &&
     plafond(c.jour.cle, s, trancheDe(c.t0 + tempsCreneau(c, mArrivee, k)), relache);
 
-  /* Le créneau tel qu'il est : chacun de ses stands tombe-t-il sur une
-     demi-heure qui le supporte ? Les distances cumulées viennent de
-     `mesureCreneau`, donc de `remet`, donc toujours à jour. */
-  const sature = (c) => {
-    if (!plafonne) return false;
+/**
+   * Combien de visites d'un créneau tombent sur une demi-heure déjà pleine.
+   *
+   * Un compte, et non un oui ou un non : une reprise doit pouvoir réduire la
+   * saturation d'un cran sans avoir à la faire disparaître d'un coup, sinon un
+   * créneau qui en porte deux resterait figé dans l'état où on l'a trouvé.
+   *
+   * Les distances cumulées viennent de `mesureCreneau`, donc de `remet`, donc
+   * toujours à jour.
+   */
+  const nSature = (c) => {
+    if (!plafonne) return 0;
+    let n = 0;
     for (let k = 0; k < c.stands.length; k++)
-      if (trop(c, k, (c.pref && c.pref[k]) || 0, c.stands[k])) return true;
-    return false;
+      if (trop(c, k, (c.pref && c.pref[k]) || 0, c.stands[k])) n++;
+    return n;
   };
+
+  /**
+   * Ce que coûte une visite posée sur une demi-heure pleine.
+   *
+   * Dix kilomètres : plus que n'importe quel détour dans n'importe quel hall,
+   * et plus que le forfait de changement de pavillon qui est déjà une
+   * dissuasion et non une mesure (`TRANSFERT_M`). C'est donc un refus, énoncé
+   * dans la monnaie que l'ordonnanceur parle — et c'est ce qui le rend
+   * étanche. La pose, elle, refuse franchement : on ne pose jamais sciemment
+   * sur une case pleine (voir `insere`). Ce prix-ci sert à ce que la phase de
+   * reprise ne défasse pas ce refus en cherchant à raccourcir.
+   *
+   * Il a fallu le découvrir : la saturation avait d'abord été rangée dans
+   * `deborde`, aux côtés du débordement horaire. Or les reprises portent pour
+   * celui-ci une échappatoire — « un créneau qui débordait déjà garde le droit
+   * de raccourcir » — et cette échappatoire rendait la contrainte lettre
+   * morte : simulés, cent visiteurs sur les mêmes vingt stands recevaient tous
+   * le même programme, à la minute près, plafond ou pas.
+   */
+  const PEINE_SATUREE = 10000;   // mètres — une dissuasion, jamais une distance
 
   /**
    * Ce qu'un créneau coûte, en mètres.
@@ -30659,7 +30687,9 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * ne coûtent que leur chemin — ce qu'ils ne remplissent pas se passe à
    * patienter, ce dont le forfait rend déjà compte de l'autre côté.
    */
-  const coutCreneau = (c) => c.dernier ? c.m + visiteEnMetres * c.stands.length : c.m;
+  const coutCreneau = (c) =>
+    (c.dernier ? c.m + visiteEnMetres * c.stands.length : c.m) +
+    PEINE_SATUREE * nSature(c);
 
   /**
    * Un créneau qui déborde sur son rendez-vous.
@@ -30671,8 +30701,8 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * infini, et plus rien ne se posait nulle part. Le refus se prononce donc
    * sur le créneau qu'on touche, et le compte du séjour reste un nombre.
    */
-  const deborde = (c) => (c.tMax !== null &&
-    c.t0 + tempsCreneau(c, c.m, c.stands.length) > c.tMax) || sature(c);
+  const deborde = (c) => c.tMax !== null &&
+    c.t0 + tempsCreneau(c, c.m, c.stands.length) > c.tMax;
 
   /* Un créneau vient de changer : lui et son jour se remettent d'accord. Les
      totaux se tiennent à jour de proche en proche — les refaire en entier à
