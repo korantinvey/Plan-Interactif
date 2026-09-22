@@ -1770,8 +1770,14 @@ html .detail-hd .badge.dist.teinte{
    se font défiler. La largeur minimale tient le nom sur deux lignes — un
    « Impresora de Sublimación FEDAR » n'en tient pas sur une — et la grille se
    ramène d'elle-même à deux colonnes dans un volet étroit, à une seule dans le
-   tiroir d'un téléphone. */
-.prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
+   tiroir d'un téléphone.
+
+   « auto-fit » et non « auto-fill » : les deux comptent les colonnes que la
+   largeur permet, mais « auto-fill » garde celles qu'aucun produit n'occupe.
+   Un exposant qui n'en présente qu'un laissait donc la moitié du volet en
+   blanc, à côté d'une vignette de la taille prévue pour quatre. Repliées, les
+   pistes vides rendent leur place au seul produit. */
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
   gap:8px;margin-top:2px}
 .prod{display:flex;flex-direction:column;gap:6px;padding:7px;width:100%;
   text-align:left;background:var(--surface-2);border:none;
@@ -2736,8 +2742,14 @@ button.expo:hover{background:var(--line)}
 .pActs{flex:none;display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
   border-bottom:1px solid var(--line)}
 .pActs[hidden]{display:none}
-.pActs .jOrg{flex:1;min-width:0}
+.pActs .jOrg,.pActs .jRefait{flex:1;min-width:0}
 .pActs .jPart{flex:none}
+/* La rangée sert les deux vues du tiroir : la liste s'organise, la journée se
+   reprend, et le partage ne quitte jamais la tête — une journée organisée est
+   justement ce qu'on veut donner à qui vient avec soi. Le bouton qui ne sert
+   pas à cette vue s'efface ; `display:flex` ci-dessus l'emporterait sinon sur
+   son attribut. */
+.pActs .btn[hidden]{display:none}
 /* Organiser sa journée n'est pas une action de rangement comme les autres :
    c'est ce pour quoi la liste a été faite, et le bouton le dit. */
 .pActs .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
@@ -5634,6 +5646,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="btn jOrg" id="btnJournee" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
           Organiser ma journée</button>
+        <button class="btn jRefait" id="jRefaire" type="button" hidden>Changer l'heure d'arrivée</button>
         <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
           Partager</button>
@@ -5645,7 +5658,6 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="vider" id="videParcours">Vider le parcours</button>
       </div>
       <div class="pPied" id="jPied" hidden>
-        <button class="btn" id="jRefaire" type="button">Changer l'heure d'arrivée</button>
         <button class="vider retour" id="jRetour">Revenir à ma liste</button>
       </div>
     </section>
@@ -30142,17 +30154,21 @@ function appliqueVueParcours(){
   const sur = vueJournee && !!JOURNEE;
   const plusieurs = sur && SEJOUR && SEJOUR.jours.length > 1;
   $("pCorps").hidden = sur;
-  /* La rangée de commandes appartient à la liste : la visite organisée a les
-     siennes, et « Organiser ma journée » posé au-dessus de la journée qu'on
-     vient d'organiser n'inviterait à rien. */
-  $("pActs").hidden = sur;
+  /* La rangée de commandes reste dans les deux vues : c'est la journée
+     organisée qu'on veut donner à qui vient avec soi, et la cacher avec le
+     reste retirait le partage au moment même où il sert. Seule change la
+     commande de gauche — organiser une liste, ou reprendre la journée faite ;
+     « Organiser ma journée » posé au-dessus de la journée qu'on vient
+     d'organiser n'inviterait à rien. */
+  $("btnJournee").hidden = sur;
+  $("jRefaire").hidden = !sur;
   $("pPied").hidden = sur;
   $("jJours").hidden = !plusieurs;
   $("jCorps").hidden = !sur;
   $("jPied").hidden = !sur;
   $("pEyebrow").textContent = sur ? (plusieurs ? "Ma visite" : "Ma journée") : "Mon parcours";
   $("pTitre").textContent = sur ? (JOURNEE.nom || "Journée organisée") : "Parcours de visite";
-  /* Le pied ne propose pas la même chose selon qu'il y a une journée ou
+  /* La reprise ne propose pas la même chose selon qu'il y a une journée ou
      plusieurs : l'heure d'arrivée seule, ou les jours avec elle. */
   $("jRefaire").textContent = plusieurs
     ? "Changer mes jours et mon heure" : "Changer l'heure d'arrivée";
@@ -30636,7 +30652,8 @@ function lanceSejour(choix){
   vueJournee = true;
   SEJOUR = null;
   JOURNEE = null;
-  $("pCorps").hidden = $("pPied").hidden = $("pActs").hidden = true;
+  $("pCorps").hidden = $("pPied").hidden = $("btnJournee").hidden = true;
+  $("jRefaire").hidden = false;
   $("jJours").hidden = true;
   $("jCorps").hidden = $("jPied").hidden = false;
   $("pEyebrow").textContent = choix.jours.length > 1 ? "Ma visite" : "Ma journée";
@@ -30662,7 +30679,8 @@ function lanceSejour(choix){
  *
  * `fige` porte la visite telle qu'elle était : une retouche ne rebat pas les
  * cartes, elle déplace ce qu'on lui a dit de déplacer. Reprendre l'ensemble
- * reste possible, et c'est le pied du tiroir qui le propose en toutes lettres.
+ * reste possible, et c'est la rangée de commandes qui le propose en toutes
+ * lettres.
  */
 function refaitSejour(cleAffichee, fige){
   if (!SEJOUR) return;
@@ -35563,8 +35581,8 @@ const CHAPITRES_TUTO = [
                  "retenues gardent la leur, les stands se glissent entre elles. Il lui " +
                  "faut un parcours : touchez un stand sur le plan, puis son signet." };
       }
-      /* Le pied du tiroir ne porte pas le même mot selon qu'on a retenu un jour
-         ou plusieurs : le nommer de travers enverrait chercher un bouton qui
+      /* La reprise ne porte pas le même mot selon qu'on a retenu un jour ou
+         plusieurs : le nommer de travers enverrait chercher un bouton qui
          n'est pas là. */
       if (tiroir && vueJournee) return { cle: "refaire", cible: $("jRefaire"),
         texte: SEJOUR && SEJOUR.jours.length > 1
