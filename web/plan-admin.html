@@ -2381,9 +2381,16 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    Le coin corné se pose à gauche et non à droite, où sa référence le met : le
    coin droit porte déjà le logo de l'exposant et la croix de fermeture, et la
    marque passait dessous. La réserve qu'il demande est le pendant de celle
-   que les actions prennent de l'autre côté. */
+   que les actions prennent de l'autre côté.
+
+   Il se cale sur le coin de la fiche entière — d'où sa place dans le balisage,
+   hors de la tête —, et non sur celui de sa tête : sur l'écran étroit la fiche
+   est un tiroir que coiffe une prise, et la marque ancrée à la tête laissait
+   au-dessus d'elle une bande pleine au haut du tiroir. Un bandeau qui occupe
+   déjà ce haut le lui reprend, et c'est le script qui l'y remet — voir
+   « poseDistsFiche ». */
 .corneDist{position:absolute;top:0;left:0;width:64px;height:64px;
-  overflow:hidden;pointer-events:none}
+  overflow:hidden;pointer-events:none;z-index:1}
 .corneDist span{position:absolute;top:13px;left:-28px;width:100px;
   padding:3px 0;text-align:center;transform:rotate(-45deg);
   background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
@@ -6399,11 +6406,6 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
-        <!-- Le coin corné, pour qui le préfère à la pastille. Il se glisse
-             sous les actions : la croix de fermeture reste au-dessus, sans
-             quoi la marque la recouvrirait. Une seule distinction l'occupe :
-             deux coins au même angle n'en feraient qu'un. -->
-        <div class="corneDist" id="dCorne" hidden aria-hidden="true"></div>
         <div class="hdTete"><span class="eyebrow" id="dKind"></span><span class="pastDist" id="dPast"></span></div>
         <div class="hdNom">
           <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
@@ -6412,6 +6414,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         </div>
         <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
       </div>
+      <!-- Le coin corné, pour qui le préfère à la pastille. Il tient au coin
+           du tiroir et non à celui de l'en-tête : posé dans l'en-tête, il
+           commençait sous la prise du tiroir sur l'écran étroit, et laissait
+           au-dessus de lui une bande pleine ; le modèle « grille », qui rogne
+           sa tête de fiche, l'y aurait coupé net. Il vient donc après elle,
+           pour se peindre par-dessus son fond — la croix de fermeture occupe
+           l'autre bord, loin de lui. Le script l'y renvoie quand un bandeau
+           occupe le haut du tiroir. Une seule distinction l'occupe : deux
+           coins au même angle n'en feraient qu'un. -->
+      <div class="corneDist" id="dCorne" hidden aria-hidden="true"></div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
           aria-controls="dPaneInfos" aria-selected="true">Détail</button>
@@ -7519,6 +7531,14 @@ function poseDistsFiche(soc){
   /* La tête de fiche réserve sa gauche au coin corné, comme elle réserve sa
      droite aux actions. La réserve ne vaut que s'il y en a un. */
   $("detail").classList.toggle("avecCorne", !corne.hidden);
+  /* Le coin corné tient au coin de la fiche entière : sur l'écran étroit il
+     monte ainsi jusqu'au haut du tiroir, au lieu de commencer sous la prise
+     qui le coiffe. Sauf si un bandeau occupe déjà ce haut — les distinctions
+     se cumulent, et aucune ne passe devant l'autre : la marque rentre alors
+     dans la tête de fiche, dont elle retrouve le coin, et laisse le bandeau
+     au-dessus d'elle. */
+  const tete = $("detail").querySelector(".detail-hd");
+  if (rubans.children.length) tete.append(corne); else tete.after(corne);
 }
 
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
