@@ -1033,9 +1033,18 @@ html.sans-image-stand .outils #imageSoc{
 .dcal .repere.plaque{--encre-poi:var(--ink)}
 .dcal .repere.plaque > rect{fill:var(--surface)}
 .dcal .repere .barres rect{fill:currentColor;stroke:none}
+/* L'anneau du métro : la ligne ne s'y étale pas davantage, elle colore le M et
+   le rond du numéro sur le même champ clair. Le pictogramme prend donc la
+   couleur du groupe, à rebours des autres arrêts où il prenait l'encre ; et
+   l'encre, elle, s'écrit dans le rond, seul endroit qui porte la couleur —
+   blanc dans le vert du 12, noir dans le jaune du 1. */
+.dcal .repere.anneau > rect{fill:var(--surface)}
+.dcal .repere.anneau .glyphe path{fill:currentColor}
+.dcal .repere .indice rect{fill:currentColor;stroke:none}
 /* Le liseré qui marque l'arrêt ouvert est clair : posé sur une plaque claire,
    il ne ferait que l'élargir. C'est l'encre qui le porte là. */
-.dcal .repere.plaque.sel > rect,.dcal .repere.plaque.phare > rect{stroke:var(--ink)}
+.dcal .repere.plaque.sel > rect,.dcal .repere.plaque.phare > rect,
+.dcal .repere.anneau.sel > rect,.dcal .repere.anneau.phare > rect{stroke:var(--ink)}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -1572,15 +1581,37 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    Le coin corné se pose à gauche et non à droite, où sa référence le met : le
    coin droit porte déjà le logo de l'exposant et la croix de fermeture, et la
    marque passait dessous. La réserve qu'il demande est le pendant de celle
-   que les actions prennent de l'autre côté. */
-.corneDist{position:absolute;top:0;left:0;width:64px;height:64px;
-  overflow:hidden;pointer-events:none}
-.corneDist span{position:absolute;top:13px;left:-28px;width:100px;
+   que les actions prennent de l'autre côté.
+
+   Il se cale sur le coin de la fiche entière — d'où sa place dans le balisage,
+   hors de la tête —, et non sur celui de sa tête : sur l'écran étroit la fiche
+   est un tiroir que coiffe une prise, et la marque ancrée à la tête laissait
+   au-dessus d'elle une bande pleine au haut du tiroir. Un bandeau qui occupe
+   déjà ce haut le lui reprend, et c'est le script qui l'y remet — voir
+   « poseDistsFiche ». */
+/* La bande fait 100 px, mais on n'en voit que la corde qu'elle coupe dans le
+   carré : plus elle est proche de l'angle, plus cette corde est courte. Posée
+   à 13 px du haut, elle n'en montrait que 64, et « NOUVEAU » — centré dans les
+   100 px — venait mourir à ses deux bouts. L'écarter de l'angle allonge la
+   corde d'autant : ici elle en montre 77, soit une quinzaine de pixels de part
+   et d'autre du mot. Le carré qui la rogne suit, sans quoi il couperait ses
+   pointes, et la réserve que la tête de fiche lui laisse aussi — elle vaut la
+   largeur que la bande prend sur le bord haut.
+
+   Encore faut-il que le mot tombe au milieu de cette corde, et non au milieu
+   des 100 px : les deux ne coïncident que si le centre de la bande est à
+   égale distance des deux bords du carré, d'où « left + 50 = top + demi-
+   épaisseur ». Descendre la bande sans reculer sa gauche l'avait décentrée,
+   et le mot, toujours centré sur elle, se retrouvait à sept pixels du bout
+   d'en bas pour vingt-deux de l'autre. */
+.corneDist{position:absolute;top:0;left:0;width:72px;height:72px;
+  overflow:hidden;pointer-events:none;z-index:1}
+.corneDist span{position:absolute;top:17px;left:-23px;width:100px;
   padding:3px 0;text-align:center;transform:rotate(-45deg);
   background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase}
-.detail.avecCorne .detail-hd .hdTete{padding-left:58px}
+.detail.avecCorne .detail-hd .hdTete{padding-left:68px}
 /* Le bandeau prend toute la largeur : rien ne lui dispute sa place, et il
    descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
    est déjà à l'étroit. C'est à l'exploitant d'en juger, et deux bandeaux
@@ -1627,14 +1658,14 @@ html .detail-hd .badge.dist.teinte{
 .expos button:hover{border-color:var(--line-strong)}
 .expos .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
-/* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
-   sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
-   elles s'effacent, et leurs champs se suivent comme s'ils étaient seuls. */
+/* Les volets de la fiche s'effacent : leurs champs se suivent dans le corps
+   comme s'ils étaient seuls, et c'est l'onglet qui décide lequel des trois
+   paraît. Le volet n'est là que pour être montré ou caché d'un bloc — lui
+   laisser une boîte ajouterait un écart au-dessus de son premier champ. */
 .cInfos,.cConf,.cProd{display:contents}
-/* Deux onglets quand la fiche est trop étroite pour tout montrer d'un coup :
-   ce qu'est l'exposant, puis ce qu'il anime. Ils ne paraissent que s'il y a
-   les deux, et s'effacent dès que la fiche s'élargit — deux colonnes disent
-   alors la même chose sans faire choisir. */
+/* Les onglets de la fiche : ce qu'est l'exposant, ce qu'il anime, ce qu'il
+   présente. Ils ne paraissent que s'il y a de quoi partager — un stand sans
+   conférence ni produit n'a rien à mettre en face. */
 /* Deux libellés posés côte à côte ne se donnaient pas pour un bouton : on les
    lisait comme un titre, et le programme restait derrière un onglet que
    personne n'appuyait. D'où l'interrupteur — une piste creuse, la moitié
@@ -1660,40 +1691,26 @@ html .detail-hd .badge.dist.teinte{
    courant. « display » posé par la règle du dessus l'emporterait sur
    l'attribut, d'où cette ligne-ci. */
 .ong[hidden]{display:none}
-@media (max-width:1099.98px){
-  /* le trait de l'en-tête passerait juste au-dessus des onglets */
-  .detail.deux .detail-hd{border-bottom:none}
-  /* Un volet par onglet, et les deux autres effacés. Écrit position par
-     position plutôt qu'en négatif : à deux volets le négatif suffisait, à
-     trois il fallait dire « ni l'un ni l'autre » deux fois par volet. */
-  .detail.deux[data-onglet="detail"] .cConf,
-  .detail.deux[data-onglet="detail"] .cProd{display:none}
-  .detail.deux[data-onglet="prog"] .cInfos,
-  .detail.deux[data-onglet="prog"] .cProd{display:none}
-  .detail.deux[data-onglet="prod"] .cInfos,
-  .detail.deux[data-onglet="prod"] .cConf{display:none}
-  /* l'onglet nomme déjà le volet, le libellé du champ ferait doublon */
-  .detail.deux[data-onglet="prog"] .cConf > .field > .eyebrow,
-  .detail.deux[data-onglet="prod"] .cProd > .field > .eyebrow{display:none}
-}
-/* Un exposant qui tient cinq conférences repoussait son adresse et ses
-   contacts loin sous la ligne de flottaison. Quand il en tient, la fiche
-   s'élargit et les met en regard : l'exposant à gauche, son programme à
-   droite. Elle n'y consent qu'au-delà de 1100 px — plus étroite, elle
-   mangerait le plan qu'elle sert, et les onglets prennent le relais. */
-@media (min-width:1100px){
-  .onglets{display:none}
-  .detail.deux{width:min(640px,56vw)}
-  .detail.deux .detail-bd{display:grid;align-content:start;
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px 20px}
-  .detail.deux .cInfos{grid-column:1;display:flex;flex-direction:column;gap:15px}
-  .detail.deux .cConf{grid-column:2;display:flex;flex-direction:column}
-  /* Sous le programme, dans la même colonne : ce qu'un exposant anime et ce
-     qu'il présente se lisent du même côté, en face de ce qu'il est. Une
-     troisième colonne aurait mangé le plan que la fiche sert. */
-  .detail.deux .cProd{grid-column:2;display:flex;flex-direction:column}
-  .detail.deux .acts{grid-column:1/-1}
-}
+/* le trait de l'en-tête passerait juste au-dessus des onglets */
+.detail.deux .detail-hd{border-bottom:none}
+/* Un volet par onglet, et les deux autres effacés. Écrit position par
+   position plutôt qu'en négatif : à deux volets le négatif suffisait, à
+   trois il fallait dire « ni l'un ni l'autre » deux fois par volet. */
+.detail.deux[data-onglet="detail"] .cConf,
+.detail.deux[data-onglet="detail"] .cProd{display:none}
+.detail.deux[data-onglet="prog"] .cInfos,
+.detail.deux[data-onglet="prog"] .cProd{display:none}
+.detail.deux[data-onglet="prod"] .cInfos,
+.detail.deux[data-onglet="prod"] .cConf{display:none}
+/* l'onglet nomme déjà le volet, le libellé du champ ferait doublon */
+.detail.deux[data-onglet="prog"] .cConf > .field > .eyebrow,
+.detail.deux[data-onglet="prod"] .cProd > .field > .eyebrow{display:none}
+/* Les onglets valent à toutes les largeurs. La fiche s'est longtemps élargie
+   au-delà de 1100 px pour ranger le programme en face de l'exposant, en deux
+   colonnes : elle passait alors à 640 px et mangeait la moitié du plan
+   qu'elle sert, pour une seconde colonne souvent courte — deux conférences en
+   regard de quinze champs. L'interrupteur dit la même chose sans rien prendre
+   au plan, et la fiche se lit de la même façon sur les deux écrans. */
 /* Une fiche a deux blocs — ce qu'elle décrit, ce qu'elle programme — et l'un
    des deux est souvent vide : une zone sans description, un stand sans
    conférence. Vide, il reste un élément de la colonne, et l'écart qui le
@@ -1773,8 +1790,14 @@ html .detail-hd .badge.dist.teinte{
    se font défiler. La largeur minimale tient le nom sur deux lignes — un
    « Impresora de Sublimación FEDAR » n'en tient pas sur une — et la grille se
    ramène d'elle-même à deux colonnes dans un volet étroit, à une seule dans le
-   tiroir d'un téléphone. */
-.prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
+   tiroir d'un téléphone.
+
+   « auto-fit » et non « auto-fill » : les deux comptent les colonnes que la
+   largeur permet, mais « auto-fill » garde celles qu'aucun produit n'occupe.
+   Un exposant qui n'en présente qu'un laissait donc la moitié du volet en
+   blanc, à côté d'une vignette de la taille prévue pour quatre. Repliées, les
+   pistes vides rendent leur place au seul produit. */
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
   gap:8px;margin-top:2px}
 .prod{display:flex;flex-direction:column;gap:6px;padding:7px;width:100%;
   text-align:left;background:var(--surface-2);border:none;
@@ -2739,8 +2762,14 @@ button.expo:hover{background:var(--line)}
 .pActs{flex:none;display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
   border-bottom:1px solid var(--line)}
 .pActs[hidden]{display:none}
-.pActs .jOrg{flex:1;min-width:0}
+.pActs .jOrg,.pActs .jRefait{flex:1;min-width:0}
 .pActs .jPart{flex:none}
+/* La rangée sert les deux vues du tiroir : la liste s'organise, la journée se
+   reprend, et le partage ne quitte jamais la tête — une journée organisée est
+   justement ce qu'on veut donner à qui vient avec soi. Le bouton qui ne sert
+   pas à cette vue s'efface ; `display:flex` ci-dessus l'emporterait sinon sur
+   son attribut. */
+.pActs .btn[hidden]{display:none}
 /* Organiser sa journée n'est pas une action de rangement comme les autres :
    c'est ce pour quoi la liste a été faite, et le bouton le dit. */
 .pActs .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
@@ -5592,11 +5621,6 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
-        <!-- Le coin corné, pour qui le préfère à la pastille. Il se glisse
-             sous les actions : la croix de fermeture reste au-dessus, sans
-             quoi la marque la recouvrirait. Une seule distinction l'occupe :
-             deux coins au même angle n'en feraient qu'un. -->
-        <div class="corneDist" id="dCorne" hidden aria-hidden="true"></div>
         <div class="hdTete"><span class="eyebrow" id="dKind"></span><span class="pastDist" id="dPast"></span></div>
         <div class="hdNom">
           <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
@@ -5605,6 +5629,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         </div>
         <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
       </div>
+      <!-- Le coin corné, pour qui le préfère à la pastille. Il tient au coin
+           du tiroir et non à celui de l'en-tête : posé dans l'en-tête, il
+           commençait sous la prise du tiroir sur l'écran étroit, et laissait
+           au-dessus de lui une bande pleine ; le modèle « grille », qui rogne
+           sa tête de fiche, l'y aurait coupé net. Il vient donc après elle,
+           pour se peindre par-dessus son fond — la croix de fermeture occupe
+           l'autre bord, loin de lui. Le script l'y renvoie quand un bandeau
+           occupe le haut du tiroir. Une seule distinction l'occupe : deux
+           coins au même angle n'en feraient qu'un. -->
+      <div class="corneDist" id="dCorne" hidden aria-hidden="true"></div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
           aria-controls="dPaneInfos" aria-selected="true">Détail</button>
@@ -5632,6 +5666,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="btn jOrg" id="btnJournee" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
           Organiser ma journée</button>
+        <button class="btn jRefait" id="jRefaire" type="button" hidden>Changer l'heure d'arrivée</button>
         <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
           Partager</button>
@@ -5643,7 +5678,6 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="vider" id="videParcours">Vider le parcours</button>
       </div>
       <div class="pPied" id="jPied" hidden>
-        <button class="btn" id="jRefaire" type="button">Changer l'heure d'arrivée</button>
         <button class="vider retour" id="jRetour">Revenir à ma liste</button>
       </div>
     </section>
@@ -5804,6 +5838,15 @@ function nomsAnglaisDesZones(){
   LANGUE.donnees("zones", t);
 }
 
+/* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
+   thématiques — tout ce que sa fenêtre montre en propre. Sa présentation reste
+   dehors : elle porte du balisage, pèse dix lignes par produit, et un mot-clé
+   qui y répondrait retiendrait un exposant sans que rien à l'écran dise
+   pourquoi. */
+const texteProduits = (l) => (l || [])
+  .map(p => (p.nom || "") + " " + (p.themes || []).join(" "))
+  .join(" ").toLowerCase();
+
 function indexe(d){
   DATA = d;
   DATA.plans.forEach((p, i) => {
@@ -5851,6 +5894,10 @@ function indexe(d){
          cherche. Sans quoi un visiteur taperait un mot qu'il vient de lire
          sans rien trouver. */
       s.rech += texteAnglaisPerso(s);
+      /* Le catalogue se range à part, et non dans « rech » : l'exploitant le
+         retire ou le remet depuis l'onglet « Recherche » sans que rien ne
+         soit réindexé, et le mot-clé n'y répond que si la case est cochée. */
+      s.rechProd = texteProduits(s.produits);
     });
   });
   /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
@@ -5999,6 +6046,8 @@ function indexe(d){
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
                 " " + (s.sect || "") + " " + (x.themes || []).join(" ") +
                 " " + texteCriteres(h)).toLowerCase() + texteAnglaisPerso(h);
+      // son catalogue est à elle, comme ses thématiques et ses rubriques
+      h.rechProd = texteProduits(x.produits);
       return h;
     })));
   PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
@@ -6712,6 +6761,14 @@ function poseDistsFiche(soc){
   /* La tête de fiche réserve sa gauche au coin corné, comme elle réserve sa
      droite aux actions. La réserve ne vaut que s'il y en a un. */
   $("detail").classList.toggle("avecCorne", !corne.hidden);
+  /* Le coin corné tient au coin de la fiche entière : sur l'écran étroit il
+     monte ainsi jusqu'au haut du tiroir, au lieu de commencer sous la prise
+     qui le coiffe. Sauf si un bandeau occupe déjà ce haut — les distinctions
+     se cumulent, et aucune ne passe devant l'autre : la marque rentre alors
+     dans la tête de fiche, dont elle retrouve le coin, et laisse le bandeau
+     au-dessus d'elle. */
+  const tete = $("detail").querySelector(".detail-hd");
+  if (rubans.children.length) tete.append(corne); else tete.after(corne);
 }
 
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
@@ -7634,8 +7691,13 @@ function visible(o){
      sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
      pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
   if (!cherchable(o)) return false;
+  /* Le catalogue n'est pas une sorte d'objet mais un texte de plus sur une
+     société : un produit ne se trouve qu'en retenant le stand qui le présente,
+     et c'est bien ce qu'on cherche en tapant son nom. D'où ce second rang,
+     interrogé après l'autre et seulement s'il le faut. */
   return dansCriteres(o) &&
-    (!state.qn || (o.rech || "").includes(state.qn));
+    (!state.qn || (o.rech || "").includes(state.qn) ||
+     (chercheSorte("produits") && (o.rechProd || "").includes(state.qn)));
 }
 
 /* Les stands qu'une société hébergée éclaire. Le plan doit rester allumé sur
@@ -9990,8 +10052,8 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     '<div class="' + cls + '" id="' + id + '" role="tabpanel">' + h + '</div>';
   /* Ce qu'est l'exposant et ce qu'il anime se partagent la fiche dès qu'il y
      a les deux — un stand sans conférence n'a rien à mettre en face, une zone
-     n'a pas de fiche. La largeur décide ensuite de la forme : deux colonnes
-     au large, deux onglets à l'étroit. */
+     n'a pas de fiche. La forme est la même à toutes les largeurs : un
+     interrupteur, un volet à la fois. */
   /* Deux choses peuvent se ranger en face de ce qu'est l'exposant : ce qu'il
      anime, et ce qu'il présente. L'une ou l'autre suffit à partager la fiche,
      et chaque onglet ne paraît que s'il a de quoi remplir son volet — un
@@ -10064,9 +10126,10 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   $("voile").classList.add("on");
   ecarteClicFantome();
   /* Le plan vient sur l'emplacement maintenant, et non avant d'ouvrir : la
-     fiche est posée, et sa largeur — une ou deux colonnes, on ne le sait
-     qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
-     ordre pour les deux écrans, là où il en fallait un par écran. */
+     fiche est posée, et le cadrage sait enfin ce qu'elle couvre — un panneau
+     au bord droit sur un écran large, un tiroir au bas d'un téléphone, dont
+     la hauteur dépend de ce qu'on vient d'y écrire. Un seul ordre pour les
+     deux écrans, là où il en fallait un par écran. */
   if (recentrer) centre(o);
   anime(() => rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
@@ -11672,6 +11735,13 @@ const langueOfferte = () => conf("_langues")[PLAN_ADMIN ? "admin" : "public"] !=
 
 const appliqueLangue = () => LANGUE.offre(langueOfferte());
 
+/* Ce salon tient-il un catalogue ? Les produits suivent la société et non le
+   pavillon : c'est sur les stands, et sur les enseignes qu'ils hébergent,
+   qu'il faut les chercher pour savoir s'il en est venu. */
+const catalogueTenu = () => (DATA?.plans || []).some(p =>
+  (p.stands || []).some(s => (s.produits || []).length ||
+    (s.coex || []).some(x => (x.produits || []).length)));
+
 /**
  * Ce que la recherche a le droit de remonter.
  *
@@ -11712,17 +11782,21 @@ const SORTES_RECHERCHE = [
       ? "Le programme n'est pas synchronisé : sa source se règle depuis " +
         "la console, dans « Source des données »."
       : "Le programme de conférences n'est pas pris sur ce salon." },
-  /* Les produits se règlent déjà dans la console — « Produits », source au
-     choix — mais la synchronisation les annonce « pas encore repris » et le
-     plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
-     a réglé cette source doit lire ici pourquoi la recherche n'en remonte
-     rien, plutôt que de chercher une case absente. Elle s'allumera le jour où
-     la synchronisation les rapportera. */
+  /* Les produits ne sont pas une sorte d'objet : ils se posent sur la société
+     — le stand, et chacune de ses hébergées —, et cocher revient à faire
+     répondre un exposant au nom de ce qu'il présente. D'où deux conditions,
+     et deux gestes différents pour les remplir : un catalogue synchronisé, et
+     une fiche qui le montre — sans elle les produits ne descendent même pas
+     chez le visiteur, et il n'y aurait rien à chercher. */
   { cle: "produits", libelle: "Produits",
-    aide: "Ce que les exposants présentent, nommé produit par produit.",
-    dispo: () => (DATA?.plans || []).some(p => (p.produits || []).length),
-    absent: "Les produits ne sont pas encore repris par la synchronisation, " +
-      "quelle que soit la source réglée dans la console." },
+    aide: "Le nom de ce qu'un exposant présente, et les thématiques du " +
+      "produit : le stand qui le porte répond au mot-clé.",
+    dispo: () => catalogueTenu() && montre("stand", "produits"),
+    absent: () => catalogueTenu()
+      ? "La fiche ne montre pas les produits : la case se coche depuis la " +
+        "console, dans « Fiche détail »."
+      : "Aucun produit n'est remonté par la synchronisation : leur source se " +
+        "règle depuis la console, dans « Source des données »." },
   { cle: "poi", libelle: "Points d'intérêt",
     aide: "Les repères posés sur le plan : entrées, WC, escaliers, parkings, " +
       "vestiaires. Le cartouche du bas les récapitule de son côté, que cette " +
@@ -17026,7 +17100,12 @@ const MODES_TRANSPORT = [
      dans son symbole — l'anneau porte son M — et n'a donc pas à se réécrire à
      côté ; celle du tram fait partie du nom de la ligne, que la signalétique
      écrit « T3a », et le pictogramme ne la dit pas. */
-  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true },
+  /* Le métro ne pose pas davantage sa couleur en aplat : la signalétique
+     donne son anneau à la couleur de la ligne, sur champ clair, et range
+     l'indice dans une pastille pleine de cette même couleur — le M vert, et
+     le 12 dans son rond vert. Ce n'est pas la couleur qui s'en va, c'est
+     l'aplat : elle passe au symbole, où elle se lit aussi bien. */
+  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true, anneau: true },
   /* Le tram porte sa couleur autrement que les deux autres. La signalétique
      n'en fait pas un aplat : elle encadre l'indice de deux barres, sur champ
      clair — c'est ainsi que « T3a » s'écrit sur le quai, et c'est à ces deux
@@ -17191,10 +17270,16 @@ function traceRepere(f){
      repère. Mais l'encre ne se calcule plus ici : le champ est le même pour
      toutes les lignes, et la feuille de style la donne une fois pour toutes. */
   const plaque = Boolean(estTransport(f) && modeDit(f.mode).plaque);
+  /* L'anneau du métro tient sa couleur du groupe comme les barres du tram, et
+     sur le même champ clair. L'encre, elle, se calcule encore : elle n'écrit
+     plus sur le champ mais dans la pastille de l'indice, qui est à la couleur
+     de la ligne — blanc dans le vert du 12, noir dans le jaune du 1. */
+  const anneau = Boolean(estTransport(f) && modeDit(f.mode).anneau);
   const teinte = fond
     ? ' style="color:' + fond +
       (plaque ? "" : ';--encre-poi:' + encreRepere(fond)) + '"' : "";
   const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
+               (anneau ? " anneau" : "") +
                (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
                '" tabindex="0" role="button" aria-label="' +
@@ -17230,7 +17315,13 @@ function traceRepere(f){
     const corps = t * 1.1;
     const lt = ligne ? largeur(ligne, P_NOM) * corps : 0;
     const ecart = ligne ? cote * .12 : 0;
-    const w = cote + ecart + lt;
+    /* Le rond du métro est de la taille du pictogramme, pour que l'anneau et
+       l'indice se lisent comme deux pastilles de même poids. Il s'allonge en
+       gélule quand le numéro déborde — « 3bis » ne tient pas dans un cercle
+       sans qu'on réduise le chiffre au point de ne plus le voir de loin. */
+    const rond = anneau && ligne ? Math.max(k, lt + k * .35) : 0;
+    const li = rond || lt;
+    const w = cote + ecart + li;
     const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     /* Les barres se retirent des bords : à ras, leurs angles dépasseraient des
        coins arrondis de la plaque. Elles s'arrondissent comme sur le quai, et
@@ -17239,6 +17330,17 @@ function traceRepere(f){
     const barre = (by) => '<rect x="' + (x + retrait).toFixed(2) +
       '" y="' + by.toFixed(2) + '" width="' + (w - 2 * retrait).toFixed(2) +
       '" height="' + hBarre.toFixed(2) + '" rx="' + (hBarre / 2).toFixed(2) + '"/>';
+    /* L'indice : le numéro seul partout, et dans sa pastille au métro. Celle-ci
+       se groupe avec lui, comme les barres du tram et pour la même raison — le
+       liseré de sélection ne vise que les enfants directs de la pastille, et
+       cernerait sinon le rond au lieu du repère. */
+    const indice = (cx) => !ligne ? "" :
+      (rond ? '<g class="indice"><rect x="' + (cx - rond / 2).toFixed(2) +
+        '" y="' + (f.pts[0][1] - k / 2).toFixed(2) + '" width="' + rond.toFixed(2) +
+        '" height="' + k.toFixed(2) + '" rx="' + (k / 2).toFixed(2) + '"/>' : "") +
+      '<text x="' + cx.toFixed(2) + '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
+      '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' +
+      (rond ? '</g>' : "");
     return tete +
       '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
@@ -17247,9 +17349,7 @@ function traceRepere(f){
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
       '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
-      (ligne ? '<text x="' + (x + cote - m + ecart + lt / 2).toFixed(2) +
-        '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
-        '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' : "") +
+      indice(x + cote - m + ecart + li / 2) +
       '</g>';
   }
 
@@ -30114,17 +30214,21 @@ function appliqueVueParcours(){
   const sur = vueJournee && !!JOURNEE;
   const plusieurs = sur && SEJOUR && SEJOUR.jours.length > 1;
   $("pCorps").hidden = sur;
-  /* La rangée de commandes appartient à la liste : la visite organisée a les
-     siennes, et « Organiser ma journée » posé au-dessus de la journée qu'on
-     vient d'organiser n'inviterait à rien. */
-  $("pActs").hidden = sur;
+  /* La rangée de commandes reste dans les deux vues : c'est la journée
+     organisée qu'on veut donner à qui vient avec soi, et la cacher avec le
+     reste retirait le partage au moment même où il sert. Seule change la
+     commande de gauche — organiser une liste, ou reprendre la journée faite ;
+     « Organiser ma journée » posé au-dessus de la journée qu'on vient
+     d'organiser n'inviterait à rien. */
+  $("btnJournee").hidden = sur;
+  $("jRefaire").hidden = !sur;
   $("pPied").hidden = sur;
   $("jJours").hidden = !plusieurs;
   $("jCorps").hidden = !sur;
   $("jPied").hidden = !sur;
   $("pEyebrow").textContent = sur ? (plusieurs ? "Ma visite" : "Ma journée") : "Mon parcours";
   $("pTitre").textContent = sur ? (JOURNEE.nom || "Journée organisée") : "Parcours de visite";
-  /* Le pied ne propose pas la même chose selon qu'il y a une journée ou
+  /* La reprise ne propose pas la même chose selon qu'il y a une journée ou
      plusieurs : l'heure d'arrivée seule, ou les jours avec elle. */
   $("jRefaire").textContent = plusieurs
     ? "Changer mes jours et mon heure" : "Changer l'heure d'arrivée";
@@ -30608,7 +30712,8 @@ function lanceSejour(choix){
   vueJournee = true;
   SEJOUR = null;
   JOURNEE = null;
-  $("pCorps").hidden = $("pPied").hidden = $("pActs").hidden = true;
+  $("pCorps").hidden = $("pPied").hidden = $("btnJournee").hidden = true;
+  $("jRefaire").hidden = false;
   $("jJours").hidden = true;
   $("jCorps").hidden = $("jPied").hidden = false;
   $("pEyebrow").textContent = choix.jours.length > 1 ? "Ma visite" : "Ma journée";
@@ -30634,7 +30739,8 @@ function lanceSejour(choix){
  *
  * `fige` porte la visite telle qu'elle était : une retouche ne rebat pas les
  * cartes, elle déplace ce qu'on lui a dit de déplacer. Reprendre l'ensemble
- * reste possible, et c'est le pied du tiroir qui le propose en toutes lettres.
+ * reste possible, et c'est la rangée de commandes qui le propose en toutes
+ * lettres.
  */
 function refaitSejour(cleAffichee, fige){
   if (!SEJOUR) return;
@@ -35535,8 +35641,8 @@ const CHAPITRES_TUTO = [
                  "retenues gardent la leur, les stands se glissent entre elles. Il lui " +
                  "faut un parcours : touchez un stand sur le plan, puis son signet." };
       }
-      /* Le pied du tiroir ne porte pas le même mot selon qu'on a retenu un jour
-         ou plusieurs : le nommer de travers enverrait chercher un bouton qui
+      /* La reprise ne porte pas le même mot selon qu'on a retenu un jour ou
+         plusieurs : le nommer de travers enverrait chercher un bouton qui
          n'est pas là. */
       if (tiroir && vueJournee) return { cle: "refaire", cible: $("jRefaire"),
         texte: SEJOUR && SEJOUR.jours.length > 1
