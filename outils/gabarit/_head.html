@@ -2993,6 +2993,12 @@ button.expo:hover{background:var(--line)}
 .hdActs .close{position:static;top:auto;right:auto}
 .hdActs .marque{width:28px;height:28px}
 .hdActs .marque[hidden]{display:none}
+/* Les pictos d'action ne paraissent que sur écran étroit : au large, les
+   boutons du pied de la fiche tiennent dans la colonne sans qu'on déroule. */
+.pAct{display:none;flex:none;width:28px;height:28px;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink-2)}
+.pAct svg{width:15px;height:15px}
+.pAct:hover{border-color:var(--line-strong);color:var(--ink)}
 
 /* ------------------------------------------------------------
    Itinéraire : le tiroir, et le trait sur le plan
@@ -3213,7 +3219,7 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
    disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
    journée, c'est calculer un itinéraire : sans le moteur, le bouton du
    parcours n'aurait rien à quoi s'adresser. */
-html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
+html.sans-itineraire .btn.itin,html.sans-itineraire .pAct.itin,html.sans-itineraire #btnJournee{display:none}
 /* Et la journée a son option à elle : un salon peut vouloir l'itinéraire sans
    vouloir qu'on lui organise sa visite. Le bouton se montre alors à
    l'exploitant, éteint — c'est une option, il doit savoir qu'elle existe — et
@@ -4594,6 +4600,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
+  /* Les deux actions passent du pied de la fiche à sa tête. Au pied, elles
+     arrivaient après les champs, le programme et le catalogue : il fallait
+     dérouler toute une fiche pour trouver « Itinéraire », et rien ne disait
+     qu'il y avait quelque chose plus bas. En tête, elles sont sous le pouce
+     dès l'ouverture — et à deux pictos, elles n'y prennent pas la ligne du
+     nom. Les boutons du pied s'en vont : les garder ferait deux fois la même
+     commande, à deux endroits, sur l'écran le plus étroit. */
+  .detail .pAct{display:inline-flex}
+  .detail .acts{display:none}
+  /* La tête réserve de quoi les laisser passer : l'étui des pastilles et le
+     nom s'arrêtaient à la marque et à la croix seules. */
+  .detail .detail-hd .hdTete{padding-right:130px}
   .detail-hd{--titre:17px}
   .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
@@ -5533,6 +5551,18 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <div class="rubansDist" id="dRubans"></div>
       <div class="detail-hd">
         <div class="hdActs">
+          <!-- Les deux actions de la fiche, en pictos, pour l'écran étroit :
+               au pied du corps elles se trouvaient sous les champs, le
+               programme et le catalogue, et il fallait dérouler une fiche
+               entière pour tomber sur « Itinéraire ». En tête, elles sont là
+               dès que la fiche s'ouvre. Au large, les boutons du pied
+               suffisent — ils s'y voient sans rien dérouler. -->
+          <button class="pAct" id="dGoIco" title="Centrer sur le plan" aria-label="Centrer sur le plan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+          <button class="pAct itin" id="dItinIco" title="Itinéraire" aria-label="Itinéraire">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
+          </button>
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
