@@ -8254,8 +8254,30 @@ function libellesDeLaVue(){
   if (typeof rafraichitBorne === "function") rafraichitBorne();
 }
 
-/** Pendant un geste : le strict nécessaire, une fois par image. */
+/**
+ * Pendant un geste : le strict nécessaire, une fois par image.
+ *
+ * La vue part au dessin tout de suite, hors de l'image demandée juste après.
+ *
+ * La bibliothèque a sa propre boucle, et elle réserve son image à la fin du
+ * rappel précédent — « redraw, puis requestAnimationFrame ». Son tour vient
+ * donc toujours avant le nôtre, demandé pendant le geste : une vue posée dans
+ * notre rappel arrivait trop tard et n'était peinte qu'à l'image suivante. Le
+ * plan traînait d'un cran derrière le doigt, et surtout derrière le fond de
+ * carte, que le navigateur peint dans l'image même — deux couches décalées
+ * d'une image, d'autant plus visiblement que la main va vite. C'est ce
+ * battement qu'on prenait pour des saccades.
+ *
+ * Ici nous sommes dans la remise de l'événement, avant les rappels d'image :
+ * la bibliothèque trouve la vue posée quand son tour vient, et les deux
+ * couches avancent ensemble. Un écran tactile échantillonnant plus vite qu'il
+ * n'affiche, la vue lui est parfois poussée deux fois pour une image — c'est
+ * sans conséquence, elle ne dessine pas là, et c'est l'emploi même que la
+ * bibliothèque fait de sa vue : son propre contrôleur la pousse à chaque
+ * événement du pointeur.
+ */
 function rafraichitVue(){
+  if (GL.actif) vueWebgl();
   if (!imageDemandee){
     imageDemandee = requestAnimationFrame(() => {
       imageDemandee = null;
