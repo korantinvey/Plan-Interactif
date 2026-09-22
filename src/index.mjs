@@ -34,6 +34,7 @@ const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
 const RAPPELS = BASE + "rappels";
+const PLAN_DE_VISITE = BASE + "plan-de-visite";
 /* Oublier n'est pas anonyme : on vérifie la session auprès du même projet que
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
@@ -52,6 +53,20 @@ const MESURE_MAX = 4096;
    déjà écrite : quelques centaines d'octets, soixante au plus. Au-delà, ce
    n'est plus un parcours. */
 const RAPPELS_MAX = 32768;
+
+/* Un plan de visite porte deux cents étapes au plus, chacune un jour, une
+   demi-heure et un identifiant de stand. Au-delà, ce n'est plus une visite. */
+const PLAN_MAX = 16384;
+
+/* Ce que la charge annoncée peut vieillir sans mentir.
+
+   Elle bouge lentement : ce sont des visiteurs qui préparent leur journée, pas
+   des gestes de navigation. Une minute de retard sur un compteur qui met
+   l'après-midi à changer d'une unité ne fausse aucun arrangement — quand
+   relayer sans cache ferait payer un aller-retour à chaque recalcul, et il y
+   en a un par retouche. Court exprès, tout de même : trop long et le premier
+   visiteur d'une matinée contraindrait encore ceux de midi. */
+const CHARGE_TTL = 60;
 
 /* Le plan sans son fond peut changer à chaque synchronisation. Dix minutes,
    jusqu'ici — mais ce délai-là n'est pas ce qui fait la fraîcheur : c'est
@@ -674,6 +689,79 @@ async function mesure(requete) {
   });
 }
 
+/**
+ * Relais des plans de visite : un aller simple, sans identité et sans cache.
+ *
+ * Le même chemin que la mesure, et la même absence de cache — mais pas le même
+ * point d'entrée, et c'est voulu. Le plan porte l'identifiant du parcours, la
+ * mesure porte le jeton du visiteur : les faire voyager ensemble rendrait
+ * joignables « ce que cette personne compte faire » et « ce qu'elle a
+ * consulté », c'est-à-dire une trajectoire. Deux chemins séparés, c'est ce qui
+ * rend la promesse vérifiable plutôt qu'énoncée.
+ */
+async function planDeVisite(requete) {
+  if (requete.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_MESURE });
+  }
+  if (requete.method !== "POST") {
+    return new Response("Méthode non permise", { status: 405, headers: CORS_MESURE });
+  }
+  const corps = await requete.text();
+  if (corps.length > PLAN_MAX) {
+    return new Response(null, { status: 413, headers: CORS_MESURE });
+  }
+  const reponse = await fetch(PLAN_DE_VISITE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: corps,
+  });
+  return new Response(reponse.body, {
+    status: reponse.status,
+    headers: {
+      ...CORS_MESURE,
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+/**
+ * Relais de la charge annoncée, avec une minute de mémoire.
+ *
+ * Le cache est celui du bord, par l'en-tête, et non le stockage du Worker : la
+ * charge n'a pas besoin d'être oubliée à la seconde comme le plan l'est par
+ * `/api/oublie`, elle a besoin de ne pas coûter un aller-retour par recalcul.
+ * Une journée organisée se refait à chaque retouche, et il y en a dix.
+ *
+ * `min` voyage dans l'adresse et entre donc dans la clé du cache : deux pages
+ * qui n'ont pas les mêmes stands ne demandent pas le même minimum, et
+ * partageraient sinon une réponse amputée.
+ */
+async function chargePrevue(url) {
+  const slug = url.searchParams.get("slug") ?? "";
+  if (!SLUG.test(slug)) {
+    return new Response(JSON.stringify({ erreur: "Salon inconnu." }), {
+      status: 400,
+      headers: { ...CORS_MESURE, "Content-Type": "application/json" },
+    });
+  }
+  const amont = new URL(PLAN_DE_VISITE);
+  amont.searchParams.set("slug", slug);
+  const min = url.searchParams.get("min");
+  if (min && /^[0-9]{1,4}$/.test(min)) amont.searchParams.set("min", min);
+  const reponse = await fetch(amont.toString());
+  return new Response(reponse.body, {
+    status: reponse.status,
+    headers: {
+      ...CORS_MESURE,
+      "Content-Type": "application/json",
+      "Cache-Control": reponse.ok
+        ? "public, max-age=" + CHARGE_TTL
+        : "no-store",
+    },
+  });
+}
+
 export default {
   async fetch(requete, env, ctx) {
     const url = new URL(requete.url);
@@ -692,6 +780,11 @@ export default {
        répond en outre à toute origine, pour les portes qui ne sont pas servies
        d'ici : voir `mesure` plus haut. */
     if (url.pathname === "/api/mesure") return mesure(requete);
+    /* Le plan de visite annoncé, et la charge qu'il fait : même chemin, même
+       origine, et deux verbes. Le premier écrit sans rien rendre, le second
+       rend sans rien écrire. */
+    if (url.pathname === "/api/plan-de-visite") return planDeVisite(requete);
+    if (url.pathname === "/api/charge") return chargePrevue(url);
     /* Les rappels de conférence prennent le même chemin, pour la même raison :
        l'origine de la page, et rien à reconfigurer si le domaine change. */
     if (url.pathname === "/api/rappels" || url.pathname === "/api/rappels/cle") {
