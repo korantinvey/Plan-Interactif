@@ -1018,6 +1018,14 @@ function poseDistsFiche(soc){
   /* La tête de fiche réserve sa gauche au coin corné, comme elle réserve sa
      droite aux actions. La réserve ne vaut que s'il y en a un. */
   $("detail").classList.toggle("avecCorne", !corne.hidden);
+  /* Le coin corné tient au coin de la fiche entière : sur l'écran étroit il
+     monte ainsi jusqu'au haut du tiroir, au lieu de commencer sous la prise
+     qui le coiffe. Sauf si un bandeau occupe déjà ce haut — les distinctions
+     se cumulent, et aucune ne passe devant l'autre : la marque rentre alors
+     dans la tête de fiche, dont elle retrouve le coin, et laisse le bandeau
+     au-dessus d'elle. */
+  const tete = $("detail").querySelector(".detail-hd");
+  if (rubans.children.length) tete.append(corne); else tete.after(corne);
 }
 
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
