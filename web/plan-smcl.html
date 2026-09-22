@@ -2572,8 +2572,14 @@ html .detail-hd .badge.dist.teinte{
    se font défiler. La largeur minimale tient le nom sur deux lignes — un
    « Impresora de Sublimación FEDAR » n'en tient pas sur une — et la grille se
    ramène d'elle-même à deux colonnes dans un volet étroit, à une seule dans le
-   tiroir d'un téléphone. */
-.prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
+   tiroir d'un téléphone.
+
+   « auto-fit » et non « auto-fill » : les deux comptent les colonnes que la
+   largeur permet, mais « auto-fill » garde celles qu'aucun produit n'occupe.
+   Un exposant qui n'en présente qu'un laissait donc la moitié du volet en
+   blanc, à côté d'une vignette de la taille prévue pour quatre. Repliées, les
+   pistes vides rendent leur place au seul produit. */
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
   gap:8px;margin-top:2px}
 .prod{display:flex;flex-direction:column;gap:6px;padding:7px;width:100%;
   text-align:left;background:var(--surface-2);border:none;
