@@ -3834,6 +3834,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    chaque geste part en base tout seul, et rien d'autre ne le dirait. */
 .etatO{font-size:12px;color:var(--ink-3)}
 .etatO[data-mal="true"]{color:var(--rouge)}
+/* Le même rangement, dans l'onglet « Recherche » : les filtres du panneau des
+   critères. Il n'a ni réserve ni aperçu — un filtre se coche dans la console,
+   et le panneau derrière la fenêtre tient lieu d'aperçu —, si bien que la
+   liste est seule sous son intertitre et doit s'en écarter d'elle-même. */
+.ordreCrit{margin-top:11px}
+.ordreCrit + .videO{margin-top:9px}
 @media (max-width:760px){
   .ficheTrois{grid-template-columns:minmax(0,1fr)}
   .ordreApercu{position:static}
@@ -7225,18 +7231,45 @@ const themeFiltrable = (n) => CRITERES.some(c => c.cle === CLE_THEMES &&
 const PLAN_ADMIN = document.documentElement.dataset.role === "admin";
 
 /**
- * Les champs retenus comme critères, dans l'ordre où la console les range.
+ * L'ordre où le panneau range ses filtres, tel que l'exploitant l'a voulu.
+ *
+ * Sans réglage, l'ordre reste celui d'origine — le secteur en tête, puis les
+ * champs dans l'ordre où la console les a cochés. C'est un ordre de hasard : il
+ * dit dans quel ordre on a coché des cases, non par quoi un visiteur commence à
+ * trancher son salon. D'où ce rangement, réglé depuis l'onglet « Recherche ».
+ *
+ * Un critère que le réglage ne connaît pas garde sa place naturelle, derrière
+ * le premier voisin de gauche que le réglage connaît : un champ coché dans la
+ * console après coup paraît là où il serait paru, et non au bout de la liste où
+ * personne ne l'a mis.
+ */
+function ordreCriteres(cles){
+  const regle = ((conf("_crit").ordre) || []).filter(c => cles.indexOf(c) >= 0);
+  if (!regle.length) return cles;
+  const sortie = regle.slice();
+  cles.forEach((c, i) => {
+    if (sortie.indexOf(c) >= 0) return;
+    let j = -1;
+    for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(cles[k]);
+    sortie.splice(j + 1, 0, c);
+  });
+  return sortie;
+}
+
+/**
+ * Les champs retenus comme critères, dans l'ordre où le panneau les montrera.
  *
  * Le secteur ouvre la marche et ne se coche pas : il ne vient d'aucun champ de
  * fiche à associer mais du plan lui-même, où il est là ou n'est pas. Le
  * réglage qui l'éteint est celui des couleurs, et il l'éteint des deux côtés.
  * C'est aussi le découpage le plus large du salon : le poser en tête range les
- * critères du plus grossier au plus fin.
+ * critères du plus grossier au plus fin — c'est l'ordre par défaut, que
+ * l'exploitant refait à sa main si son salon se tranche autrement.
  */
 function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
   const cochees = Object.keys(r).filter(k => r[k] === true);
-  return secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees;
+  return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
 }
 
 /** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
@@ -7332,6 +7365,20 @@ function indexeCriteres(){
     if (!CRITERES.some(c => c.cle === k)) state.crit.delete(k);
   });
   majCriteres();
+}
+
+/**
+ * L'ordre des filtres vient de changer : on refait l'index, et le panneau.
+ *
+ * `majCriteres` relit le panneau déplié sans le réécrire — c'est ce qui lui
+ * garde le groupe ouvert et le tamis tapé —, et un rang échangé ne se lit pas
+ * dans une relecture. Le seul geste qui change l'ordre étant le rangement des
+ * réglages, il peut bien coûter un panneau réécrit.
+ */
+function refaitCriteres(){
+  indexeCriteres();
+  const pan = $("panCrit");
+  if (pan && !pan.hidden) remplitCriteres();
 }
 
 /** Ce que la liste retient d'un critère : une valeur cochée suffit. */
@@ -11858,6 +11905,181 @@ function voletRecherche(hote){
     bloc.appendChild(aide);
   });
   hote.appendChild(bloc);
+
+  blocOrdreCriteres(hote);
+}
+
+/**
+ * L'ordre des filtres du panneau des critères.
+ *
+ * Les champs qui servent de filtre se cochent dans la console, un par un, et
+ * arrivaient sur le plan dans l'ordre où on avait coché leurs cases — un ordre
+ * qui ne dit rien de la façon dont on cherche un exposant. Le premier de la
+ * liste est pourtant le seul qu'on lise sans dérouler quand il y en a six : il
+ * décide de la première question qu'on pose au salon. Un salon régional range
+ * la région en tête, un salon de métiers le profil.
+ *
+ * Le rangement ne se fait donc pas dans la console, où l'on ne voit pas le
+ * plan, mais ici, à côté du panneau qui les montre.
+ *
+ * Deux façons de déplacer, et il en faut deux : la poignée, qui traverse la
+ * liste d'un geste, et les flèches, seul chemin au clavier — et au doigt, le
+ * glisser-déposer du navigateur ignorant le tactile.
+ */
+function blocOrdreCriteres(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "L'ordre des filtres";
+  tete.querySelector(".d").textContent = "Le panneau qui se déplie sous la " +
+    "recherche range ses filtres dans cet ordre. Mettez en tête ce par quoi un " +
+    "visiteur de ce salon commence à trancher : c'est le seul filtre qu'il lise " +
+    "sans dérouler. Les champs qui servent de filtre, eux, se cochent dans la " +
+    "console, dans « Fiche détail ».";
+  hote.appendChild(tete);
+
+  /* La copie de travail. Elle part de l'ordre affiché, et non du réglage
+     enregistré : celui-ci ne connaît peut-être pas un champ coché depuis, et
+     « clesCriteres » lui a déjà rendu la place qui lui revient. */
+  let cles = clesCriteres();
+
+  const liste = document.createElement("div");
+  liste.className = "ordreListe ordreCrit";
+  liste.hidden = !cles.length;
+  hote.appendChild(liste);
+
+  const rien = document.createElement("p");
+  rien.className = "videO";
+  rien.textContent = cles.length
+    ? "Un seul filtre : il n'y a pas d'ordre à régler."
+    : "Aucun filtre : le panneau des critères ne s'ouvre pas. Les champs qui " +
+      "servent de filtre se cochent dans la console, dans « Fiche détail ».";
+  rien.hidden = cles.length > 1;
+  hote.appendChild(rien);
+
+  /* Le rang part en configuration, et le panneau se refait dans la foulée :
+     ouvert derrière la fenêtre, il est le seul retour visible du geste. */
+  const enregistre = () => {
+    conf("_crit").ordre = cles.slice();
+    enregistreConf();
+    refaitCriteres();
+  };
+
+  /* Ce qu'on tire. Le dessin fait foi pendant le geste : le tableau n'est plus
+     qu'un souvenir de ce qu'il était avant, et se relit au lâcher. */
+  let tire = null;
+
+  /* Les flèches des deux bouts s'éteignent : sans cela, le premier filtre
+     garderait un « monter » actif alors qu'il est déjà en tête. */
+  const majBouts = () => {
+    [...liste.children].forEach((el, i, tous) => {
+      const b = el.querySelectorAll("button.fleche");
+      b[0].disabled = i === 0;
+      b[1].disabled = i === tous.length - 1;
+    });
+  };
+
+  liste.addEventListener("dragover", ev => {
+    if (!tire) return;
+    // sans quoi le navigateur refuse le dépôt et rejoue l'animation de retour
+    ev.preventDefault();
+    const apres = [...liste.children].find(d => {
+      if (d === tire) return false;
+      const r = d.getBoundingClientRect();
+      /* On vise le milieu de la ligne, et non son bord : le bord ferait
+         basculer l'insertion dès qu'on l'effleure, et la liste tremblerait
+         sous le curseur au lieu de le suivre. */
+      return ev.clientY < r.top + r.height / 2;
+    }) || null;
+    if (apres === tire.nextSibling || apres === tire) return;
+    liste.insertBefore(tire, apres);
+    majBouts();
+  });
+
+  /* Déplacer d'un rang, puis rendre la main à la flèche qu'on vient
+     d'actionner : remonter un filtre de quatre rangs demande quatre clics, et
+     le suivant doit tomber au même endroit. */
+  const deplace = (cle, pas, sens) => {
+    const i = cles.indexOf(cle), j = i + pas;
+    if (i < 0 || j < 0 || j >= cles.length) return;
+    cles.splice(j, 0, cles.splice(i, 1)[0]);
+    rendu({ cle, sens });
+    enregistre();
+  };
+
+  /** Ce qui distingue deux filtres de même intitulé : d'où le champ vient. */
+  const origine = (cle) => cle === CLE_SECTEUR ? "vient du plan"
+    : cle.indexOf(PREFIXE_PERSO) === 0 ? "propre au salon" : "";
+
+  const ligne = (cle) => {
+    const libelle = libelleCritere(cle);
+    const d = document.createElement("div");
+    d.className = "ordreLigne";
+    d.dataset.cle = cle;
+    d.draggable = true;
+
+    const poi = document.createElement("span");
+    poi.className = "prise";
+    poi.setAttribute("aria-hidden", "true");
+    poi.textContent = "⠿";
+    d.appendChild(poi);
+
+    const l = document.createElement("span");
+    l.className = "lib";
+    l.textContent = libelle;
+    d.appendChild(l);
+
+    const e = document.createElement("span");
+    e.className = "etiq";
+    e.textContent = origine(cle);
+    d.appendChild(e);
+
+    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "outil fleche";
+      b.textContent = pas < 0 ? "▲" : "▼";
+      b.title = titre;
+      b.setAttribute("aria-label", titre + " " + libelle);
+      b.onclick = () => deplace(cle, pas, sens);
+      d.appendChild(b);
+    });
+
+    d.ondragstart = ev => {
+      /* Firefox n'ouvre pas de glissé sans donnée transportée, et le texte
+         déposé ailleurs vaut mieux que la clé technique. */
+      ev.dataTransfer.setData("text/plain", libelle);
+      ev.dataTransfer.effectAllowed = "move";
+      tire = d;
+      // la classe se pose au tour suivant : posée tout de suite, elle entrerait
+      // dans l'image que le navigateur vient de prendre de la ligne
+      setTimeout(() => d.classList.add("tire"), 0);
+    };
+    d.ondragend = () => {
+      d.classList.remove("tire");
+      tire = null;
+      const avant = JSON.stringify(cles);
+      cles = [...liste.children].map(el => el.dataset.cle);
+      // un glissé qui n'a rien déplacé n'a rien à enregistrer
+      if (JSON.stringify(cles) === avant) return;
+      rendu();
+      enregistre();
+    };
+    return d;
+  };
+
+  const rendu = (focus) => {
+    liste.textContent = "";
+    cles.forEach(cle => liste.appendChild(ligne(cle)));
+    majBouts();
+    if (!focus) return;
+    const el = liste.querySelector('[data-cle="' + CSS.escape(focus.cle) + '"]');
+    if (!el) return;
+    const b = el.querySelectorAll("button.fleche");
+    if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();
+  };
+
+  rendu();
 }
 
 /**
