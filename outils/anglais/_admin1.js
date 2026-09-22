@@ -499,21 +499,27 @@ module.exports = {
     "The organised day sorts stands by the shortest walk from the entrance door: everyone sets off from the same point, at the same time, and gets the same order \u2014 the first aisles fill up at opening while the far end stays empty. What follows tells it how many visitors a stand can take at once, enough to move a visit half an hour rather than dropping it in front of a team that is already busy.",
   "Gestion du nombre de visiteurs simultanés sur un stand":
     "Manage how many visitors a stand takes at once",
-  "Un stand reçoit autant de visiteurs à la fois qu'il a de monde pour les accueillir. Au-delà, la visite se décale à un autre moment de la journée — l'exposant n'est jamais retiré du parcours de personne.":
-    "A stand takes as many visitors at once as it has people to welcome them. Beyond that, the visit moves to another moment of the day \u2014 the exhibitor is never dropped from anybody's visit plan.",
+  "Un stand reçoit autant de visiteurs à la fois qu'il a de monde pour les accueillir. Au-delà, la journée organisée préfère un autre moment — sans jamais l'interdire, et sans jamais retirer l'exposant du parcours de personne.":
+    "A stand takes as many visitors at once as it has people to welcome them. Beyond that, the organised day prefers another moment \u2014 without ever forbidding it, and without ever dropping the exhibitor from anybody's visit plan.",
   "Un nombre fixe, le même pour tous les stands":
     "A fixed number, the same for every stand",
-  "Reçoit au plus": "Takes at most",
+  "Reçoit": "Takes",
   "visiteurs à la fois": "visitors at once",
-  "Le choix d'un salon dont les emplacements se ressemblent. Trois : une équipe de trois personnes en reçoit trois en même temps, et le quatrième est prié d'attendre — c'est lui que la journée organisée ira poser ailleurs dans l'après-midi.":
-    "The choice for a show whose stands are much alike. Three: a team of three welcomes three at a time, and the fourth is left waiting \u2014 that fourth is the one the organised day will place elsewhere in the afternoon.",
+  "Le choix d'un salon dont les emplacements se ressemblent, ou d'un exploitant qui connaît ses équipes mieux que la surface ne les devine. Cochée, cette case l'emporte sur le calcul à la surface.":
+    "The choice for a show whose stands are much alike, or for an operator who knows their teams better than floor area guesses them. Ticked, this box overrides the floor-area calculation.",
   "Un nombre selon la surface du stand": "A number based on the stand's floor area",
-  "Un visiteur par tranche de": "One visitor per",
-  "La surface se lit sur le plan, telle que le stand y est dessiné. Un emplacement dessiné reçoit toujours au moins un visiteur ; un emplacement que personne n'a dessiné n'a pas de surface, et reste sans plafond. Les deux cases cochées, c'est le plus grand des deux qui vaut : le nombre fixe devient un plancher.":
-    "Floor area is read from the map, as the stand is drawn on it. A drawn stand always takes at least one visitor; a stand nobody has drawn has no area, and stays without a cap. With both boxes ticked, the larger of the two wins: the fixed number becomes a floor.",
+  "visiteurs par tranche de 10 m²": "visitors per 10 m²",
+  "La surface se lit sur le plan, telle que le stand y est dessiné. Un emplacement que personne n'a dessiné n'a pas de surface, et ne porte donc aucune contrainte.":
+    "Floor area is read from the map, as the stand is drawn on it. A stand nobody has drawn has no area, and so carries no constraint.",
+  "Jamais moins de": "Never fewer than",
+  "Un module de six mètres carrés tient trois visiteurs debout, même s'il est petit : sans ce plancher, les plus petits stands porteraient une contrainte que leur surface seule leur invente.":
+    "A six-square-metre booth holds three standing visitors, small as it is: without this floor, the smallest stands would carry a constraint their floor area alone invents for them.",
+  "Jamais plus de": "Never more than",
+  "Au-delà, la règle de trois rendrait des chiffres qui ne veulent plus rien dire : un pavillon de cinq cents mètres carrés ne reçoit pas cent cinquante personnes à la fois, il en reçoit autant que son équipe en accueille.":
+    "Beyond that, the rule of three would return figures that no longer mean anything: a five-hundred-square-metre hall does not take a hundred and fifty people at once, it takes as many as its team welcomes.",
   // l'aperçu au pied du volet : ce que les réglages donnent sur ce salon-ci
-  "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit rien d'eux, et ils restent tous sans plafond.":
-    "No stand is drawn on this show: floor area says nothing about them, and every one of them stays without a cap.",
+  "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit rien d'eux, et aucun ne porte de contrainte.":
+    "No stand is drawn on this show: floor area says nothing about them, and none of them carries a constraint.",
   "Sur ce salon : {n} emplacements dessinés. Capacité médiane : {n2}.":
     "On this show: {n} stands drawn. Median capacity: {n2}.",
   "Sur ce salon : {n} emplacement dessiné. Capacité médiane : {n2}.":

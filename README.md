@@ -1464,6 +1464,71 @@ le service répond 404 ou 410, et tout ce que cet appareil attendait s'efface.
 Rouvrir le plan répare tout — un abonnement neuf, une liste reposée —, et c'est
 la seule réparation qu'il y ait.
 
+### Ce qu'un stand peut recevoir à la fois
+
+La journée organisée range les stands au plus court depuis la porte : tout le
+monde part du même point, à la même heure, et reçoit le même ordre. Les
+premières travées se remplissent donc à l'ouverture pendant que le fond reste
+vide — et l'exposant du fond, qui a payé le même emplacement, reçoit son monde
+à quinze heures ou pas du tout.
+
+L'onglet **« Parcours intelligent »** du menu engrenage ouvre le remède. Coché,
+il apprend au calcul ce qu'un stand peut recevoir à la fois, et lui fait
+préférer une demi-heure calme à une demi-heure prise. Deux façons de le dire :
+à la surface — trois visiteurs par tranche de dix mètres carrés, jamais moins
+de trois, jamais plus de soixante —, ou d'un nombre fixe quand l'exploitant
+connaît ses équipes mieux que la surface ne les devine. Le volet montre, sous
+les réglages, ce qu'ils donnent sur ce salon-ci : combien d'emplacements sont
+dessinés, et quelle capacité médiane en sort. Un chiffre choisi sans voir ce
+qu'il produit sur six cents emplacements est un chiffre choisi au hasard.
+
+**C'est un prix, jamais un refus.** Une capacité déduite d'une surface dit un
+confort, pas une limite physique : lui donner force de loi reviendrait à
+laisser une règle de trois décider du parcours de quelqu'un. Le calcul chiffre
+donc la charge en mètres — la monnaie qu'il emploie déjà pour dire qu'un
+changement de pavillon coûte trois cents mètres — et l'ajoute au trajet. Rien
+en dessous de soixante pour cent d'occupation ; quarante mètres à soixante-dix,
+deux cents à pleine capacité, huit cents à une fois et demie. Un stand très
+demandé reste donc visitable, et personne n'est jamais retiré du parcours de
+qui que ce soit : seule l'heure se négocie.
+
+Ce qui en découle est un arbitrage, et c'est bien le but : un trajet de huit
+cent cinquante mètres qui arrive sur un stand à trente pour cent vaut mieux
+qu'un trajet de huit cent vingt qui y arrive à soixante-dix. Trente mètres de
+détour, quarante mètres de peine évitée. Deux cents mètres de détour pour la
+même peine, en revanche, ne se font pas.
+
+**Quand le salon est globalement surdemandé**, les capacités se dilatent
+d'autant. Dix mille visiteurs pour six mille places, et toutes les demi-heures
+passent au-dessus du seuil : la courbe rendrait partout le même rouge, et ne
+départagerait plus rien — ce qui est son seul emploi. Le facteur ramène la
+mesure sur ce que la journée d'un visiteur peut changer, la **concentration**
+d'une demi-heure par rapport aux autres, et non la surdemande du salon, sur
+laquelle elle ne peut rien.
+
+**Ce que le compteur voit, et ce qu'il ne voit pas.** Une journée organisée
+s'annonce : quatre secondes après la dernière retouche, la page envoie la liste
+des couples « stand, demi-heure » qu'elle vient de poser, sous un identifiant
+propre au parcours. Cet identifiant **remplace** ce que le même parcours avait
+annoncé la veille au lieu de s'y ajouter : quelqu'un qui recalcule sa journée
+six fois ne fait pas un embouteillage à lui tout seul. Les plans passés
+s'effacent d'eux-mêmes, la table ne gardant que les jours à venir.
+
+Ce que cet identifiant n'est pas : le jeton de mesure. Les deux ne voyagent
+jamais ensemble, par deux services distincts — `/api/plan-de-visite` d'un côté,
+`/api/mesure` de l'autre —, et c'est ce qui rend la promesse vérifiable plutôt
+que déclarative. Le compteur voit donc des journées organisées, jamais des
+visiteurs ; il ignore les quatre-vingt-dix-neuf pour cent qui n'organisent
+rien, et la capacité est un nombre physique comparé à un échantillon. Rien de
+tout cela ne se tente sans les deux clés qui le rendent honnête : l'exploitant
+a ouvert le réglage, et le visiteur n'a pas refusé la mesure.
+
+Mesuré sur un hall de cinq cents exposants et mille journées organisées, aux
+heures d'arrivée qu'on observe vraiment, le pire stand passe de quatre fois et
+demie sa capacité à une fois et un tiers, les visites qui trouvaient une équipe
+entièrement prise de mille cinquante-neuf à huit — pour quarante-six mètres de
+marche en plus, sur sept cent vingt.
+
 ## La visite guidée
 
 Le programme d'une salle, le chemin jusqu'à elle, le parcours qu'on se compose,
