@@ -2335,7 +2335,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    Elle se réserve donc le coin entier, cette largeur que la ligne du type se
    réserve déjà. La réserve suit la marque : elle tombe quand celle-ci déménage
    sous le numéro, où le coin est loin. */
-.detail-hd .hdNom:has(> .logoZone:not([hidden])){padding-right:62px}
+.detail-hd .hdNom:has(> .logoZone:not([hidden])){padding-right:var(--coin-actes)}
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
@@ -2405,7 +2405,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    lui garde de l'air même quand le milieu n'existe plus, sur un écran étroit
    ou sous le tampon penché du modèle kraft. */
 .detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;
-  column-gap:14px;row-gap:4px;padding-right:62px}
+  column-gap:14px;row-gap:4px;padding-right:var(--coin-actes)}
 /* Les pastilles voyagent dans un étui : deux marges automatiques, une par
    pastille, les auraient écartées aux deux bouts de ce qui reste. Vide, l'étui
    ne prend pas de place — la tête de fiche d'un exposant sans distinction est
@@ -3873,6 +3873,11 @@ button.expo:hover{background:var(--line)}
 
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
+/* Ce que les actions du coin prennent de la ligne, en un seul endroit : la
+   ligne du type et celle de la marque s'en écartent toutes deux, et deux
+   nombres tenus séparément ont fini par dire deux choses — la marque passait
+   sous les pictos que l'écran étroit ajoute, la ligne du type non. */
+.detail-hd{--coin-actes:62px}
 .hdActs{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px}
 .hdActs .close{position:static;top:auto;right:auto}
 .hdActs .marque{width:28px;height:28px}
@@ -5493,9 +5498,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      commande, à deux endroits, sur l'écran le plus étroit. */
   .detail .pAct{display:inline-flex}
   .detail .acts{display:none}
-  /* La tête réserve de quoi les laisser passer : l'étui des pastilles et le
-     nom s'arrêtaient à la marque et à la croix seules. */
-  .detail .detail-hd .hdTete{padding-right:130px}
+  /* Le coin porte quatre boutons au lieu de deux : la ligne du type et celle
+     de la marque s'en écartent d'autant. Sans quoi le logo d'un exposant,
+     haut de trois lignes de titre, remontait dans leur bande et passait
+     dessous. */
+  .detail .detail-hd{--coin-actes:130px}
   .detail-hd{--titre:17px}
   .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
