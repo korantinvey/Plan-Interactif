@@ -334,7 +334,7 @@ Fonctions :
 `geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
 `geometriePointerUp` 641
 
-### `_head.html` — 5752 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5759 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
