@@ -139,10 +139,9 @@ jobs:
             ${{ github.event_name == 'workflow_dispatch' && inputs.consigne || github.event.comment.body }}
             ---
 
-            Lis d'abord `CLAUDE.md`, puis `.claude/skills/relecture/SKILL.md`,
-            qui dit ce que ce dépôt paie cher. Sers-toi de `CARTE.md`, qui donne
-            les numéros de ligne, plutôt que d'ouvrir les gros modules en
-            entier.
+            Lis d'abord `CLAUDE.md`, qui dit ce que ce dépôt paie cher.
+            Sers-toi de `CARTE.md`, qui donne les numéros de ligne, plutôt que
+            d'ouvrir les gros modules en entier.
 
             Corrige, et rien de plus. Ce qui n'est pas demandé ne se corrige pas
             au passage : une branche qui répare deux choses se relit deux fois

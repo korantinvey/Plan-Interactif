@@ -2781,9 +2781,10 @@ l'onglet **Actions**.
 
 Rien ne relit plus les pull requests tout seul : le robot qui commentait chaque
 diff a été retiré, parce qu'il faisait attendre cinq minutes à chaque poussée ce
-qu'une session relit à la demande. Ce qu'il cherchait n'est pas perdu — c'est
-`.claude/skills/relecture/SKILL.md`, que charge une session Claude Code à qui
-l'on demande de relire, et que lit le correctif avant d'écrire.
+qu'une session relit à la demande. Ce qu'il fallait chercher est dans
+`CLAUDE.md` — parité entre les deux rendus du plan, horodatage d'une migration,
+fichier fabriqué corrigé en direct, coût d'un geste répété — et se relit là où
+l'on relit.
 
 ## Fabriquer les pages
 
