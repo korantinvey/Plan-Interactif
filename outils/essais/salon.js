@@ -316,7 +316,7 @@ function simuleSalon(o){
      même forme sans que le moteur change. */
   const plafond = {
     ressource: (i) => (SEUILS[i] > 0
-      ? { id: "stand-" + i, genre: "stand", capacite: SEUILS[i],
+      ? { id: "stand-" + i, genre: "stand", seuil: SEUILS[i],
           source: "surface" } : null),
     chargeAnnoncee: (cleJour, i, tr) => photo.get(cle(i, jourCourant, tr)) || 0,
     /* Pas de dilatation ici : le seuil est un compte brut de nos utilisateurs,

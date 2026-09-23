@@ -82,9 +82,11 @@ Deno.serve(async (req) => {
        reborne — le chiffre vient du navigateur.
 
        Le commentaire de la migration qui pose `charge_prevue` décrit, lui, un
-       refus de poser sur une demi-heure pleine : c'était la règle du jour où
-       elle a été écrite, et une migration ne se réécrit pas. La page en fait
-       depuis un prix. */
+       refus de poser sur une demi-heure pleine, et parle de « capacité » :
+       c'était la règle et le mot du jour où elle a été écrite, et une migration
+       ne se réécrit pas. La page en fait depuis un prix, et ce qu'elle règle
+       est un **seuil de concentration de ses propres utilisateurs** — non une
+       capacité de stand, qu'elle n'a aucun moyen de connaître. */
     if (req.method === "GET") {
       const slug = String(url.searchParams.get("slug") ?? "").slice(0, 80);
       if (!slug) return json({ erreur: "Paramètres manquants." }, 400);

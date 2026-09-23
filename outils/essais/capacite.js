@@ -37,7 +37,7 @@ function hall(x){
 const P = (cap, charge, dilat) => ({
   ressource: (i) => {
     const n = typeof cap === "function" ? cap(i) : cap;
-    return n > 0 ? { id: "s" + i, genre: "stand", capacite: n,
+    return n > 0 ? { id: "s" + i, genre: "stand", seuil: n,
                      source: "surface" } : null;
   },
   chargeAnnoncee: (cle, i, tr) => charge(i, tr),

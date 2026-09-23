@@ -495,33 +495,33 @@ module.exports = {
     "What the mark writes: the pill, the banner and the caption under the name carry it in full; the tag and the folded corner hold only two or three words. Leave empty for \u201cTrade body member\u201d. The text shows as typed, on the English version of the map too.",
   // l'onglet « Parcours intelligent » : ce qu'un stand reçoit à la fois
   "Parcours intelligent": "Smart visit plan",
-  "La journée organisée range les stands au plus court depuis la porte d'entrée : tout le monde part du même point, à la même heure, et reçoit le même ordre — les premières travées se remplissent à l'ouverture pendant que le fond reste vide. Ce qui suit lui apprend ce qu'un stand peut recevoir à la fois, de quoi décaler une visite d'une demi-heure plutôt que de la poser devant une équipe déjà prise.":
-    "The organised day sorts stands by the shortest walk from the entrance door: everyone sets off from the same point, at the same time, and gets the same order \u2014 the first aisles fill up at opening while the far end stays empty. What follows tells it how many visitors a stand can take at once, enough to move a visit half an hour rather than dropping it in front of a team that is already busy.",
-  "Gestion du nombre de visiteurs simultanés sur un stand":
-    "Manage how many visitors a stand takes at once",
-  "Un stand reçoit autant de visiteurs à la fois qu'il a de monde pour les accueillir. Au-delà, la journée organisée préfère un autre moment — sans jamais l'interdire, et sans jamais retirer l'exposant du parcours de personne.":
-    "A stand takes as many visitors at once as it has people to welcome them. Beyond that, the organised day prefers another moment \u2014 without ever forbidding it, and without ever dropping the exhibitor from anybody's visit plan.",
-  "Un nombre fixe, le même pour tous les stands":
-    "A fixed number, the same for every stand",
-  "Reçoit": "Takes",
-  "visiteurs à la fois": "visitors at once",
+  "La journée organisée range les stands au plus court depuis la porte d'entrée : tout le monde part du même point, à la même heure, et reçoit le même ordre — les premières travées se remplissent à l'ouverture pendant que le fond reste vide. Ce qui suit apprend au calcul à étaler ses propres recommandations dans la journée, plutôt que d'envoyer tout le monde au même endroit au même moment.":
+    "The organised day sorts stands by the shortest walk from the entrance door: everyone sets off from the same point, at the same time, and gets the same order \u2014 the first aisles fill up at opening while the far end stays empty. What follows teaches the calculation to spread its own recommendations through the day, rather than sending everybody to the same place at the same moment.",
+  "Étaler dans le temps les visiteurs qui suivent le plan":
+    "Spread out the visitors who follow the map",
+  "Le plan ne compte que les visiteurs qui organisent leur journée avec lui : il ignore tout des autres, et ne mesure donc pas la fréquentation de vos stands. Le seuil ci-dessous dit à partir de combien de ces visiteurs-là, en même temps sur un stand, le calcul doit chercher un autre ordre. Il ne l'interdit jamais, et ne retire l'exposant du parcours de personne.":
+    "The map counts only the visitors who plan their day with it: it knows nothing of the others, and so does not measure footfall on your stands. The threshold below says how many of those visitors, at once on one stand, make the calculation look for another order. It never forbids that stand, and never drops the exhibitor from anybody's visit plan.",
+  "Un seuil fixe, le même pour tous les stands":
+    "A fixed threshold, the same for every stand",
+  "Seuil de": "Threshold of",
+  "à la fois": "at once",
   "Le choix d'un salon dont les emplacements se ressemblent, ou d'un exploitant qui connaît ses équipes mieux que la surface ne les devine. Cochée, cette case l'emporte sur le calcul à la surface.":
     "The choice for a show whose stands are much alike, or for an operator who knows their teams better than floor area guesses them. Ticked, this box overrides the floor-area calculation.",
-  "Un nombre selon la surface du stand": "A number based on the stand's floor area",
-  "visiteurs par tranche de 10 m²": "visitors per 10 m²",
-  "La surface se lit sur le plan, telle que le stand y est dessiné. Un emplacement que personne n'a dessiné n'a pas de surface, et ne porte donc aucune contrainte.":
-    "Floor area is read from the map, as the stand is drawn on it. A stand nobody has drawn has no area, and so carries no constraint.",
+  "Un seuil calculé sur la surface du stand": "A threshold worked out from the stand's floor area",
+  "par tranche de 10 m²": "per 10 m²",
+  "La surface se lit sur le plan, telle que le stand y est dessiné. Un emplacement que personne n'a dessiné n'a pas de surface, et ne porte donc aucun seuil.":
+    "Floor area is read from the map, as the stand is drawn on it. A stand nobody has drawn has no area, and so carries no threshold.",
   "Jamais moins de": "Never fewer than",
-  "Un module de six mètres carrés tient trois visiteurs debout, même s'il est petit : sans ce plancher, les plus petits stands porteraient une contrainte que leur surface seule leur invente.":
-    "A six-square-metre booth holds three standing visitors, small as it is: without this floor, the smallest stands would carry a constraint their floor area alone invents for them.",
+  "Sans ce plancher, les plus petits stands porteraient un seuil que leur seule surface leur invente — un module de six mètres carrés tient bien trois visiteurs debout.":
+    "Without this floor, the smallest stands would carry a threshold their floor area alone invents for them \u2014 a six-square-metre booth does hold three standing visitors.",
   "Jamais plus de": "Never more than",
-  "Au-delà, la règle de trois rendrait des chiffres qui ne veulent plus rien dire : un pavillon de cinq cents mètres carrés ne reçoit pas cent cinquante personnes à la fois, il en reçoit autant que son équipe en accueille.":
-    "Beyond that, the rule of three would return figures that no longer mean anything: a five-hundred-square-metre hall does not take a hundred and fifty people at once, it takes as many as its team welcomes.",
+  "Au-delà, la règle de trois rendrait un seuil si haut qu'il ne se déclencherait jamais.":
+    "Beyond that, the rule of three would return a threshold so high it would never come into play.",
   // l'aperçu au pied du volet : ce que les réglages donnent sur ce salon-ci
-  "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit rien d'eux, et aucun ne porte de contrainte.":
-    "No stand is drawn on this show: floor area says nothing about them, and none of them carries a constraint.",
-  "Sur ce salon : {n} emplacements dessinés. Capacité médiane : {n2}.":
-    "On this show: {n} stands drawn. Median capacity: {n2}.",
-  "Sur ce salon : {n} emplacement dessiné. Capacité médiane : {n2}.":
-    "On this show: {n} stand drawn. Median capacity: {n2}.",
+  "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit rien d'eux, et aucun ne porte de seuil.":
+    "No stand is drawn on this show: floor area says nothing about them, and none of them carries a threshold.",
+  "Sur ce salon : {n} emplacements dessinés. Seuil médian : {n2}.":
+    "On this show: {n} stands drawn. Median threshold: {n2}.",
+  "Sur ce salon : {n} emplacement dessiné. Seuil médian : {n2}.":
+    "On this show: {n} stand drawn. Median threshold: {n2}.",
 };

@@ -12107,50 +12107,55 @@ function minutesVisite(){
 }
 
 /* ------------------------------------------------------------
-   Le parcours intelligent — ce qu'un stand reçoit à la fois
+   Le parcours intelligent — le seuil de concentration
    ------------------------------------------------------------ */
 /**
- * Pourquoi un plafond par stand, et non une peine par endroit.
+ * Ce que ce réglage règle, et ce qu'il ne prétend pas savoir.
  *
  * La journée organisée range les stands au plus court depuis la porte
  * d'entrée. Tous les visiteurs partent donc du même point, et le plus court
  * est le même pour tous : les premières travées se remplissent à l'ouverture
- * pendant que le fond reste vide. La première idée — écarter le calcul des
- * abords encombrés, comme on l'écarte des salles qui se vident — répond à
- * côté : ce qui empêche une visite, ce n'est pas la densité de l'allée, c'est
- * que toute l'équipe du stand est déjà en conversation. Le visiteur suivant
- * n'est reçu par personne, qu'il soit venu de l'entrée ou du fond.
+ * pendant que le fond reste vide. C'est **le calcul** qui fabrique cet
+ * attroupement, en donnant le même ordre à tout le monde, et c'est lui seul
+ * que ce réglage corrige.
  *
- * Et le remède change avec le modèle. Une allée encombrée s'évite en allant
- * ailleurs — cela coûte des mètres au visiteur et une visite à l'exposant. Un
- * stand saturé s'évite en y allant plus tard : le visiteur garde son exposant,
- * l'exposant garde sa visite, et la peine se paie en minutes de décalage, que
- * personne ne remarque.
+ * D'où le mot, et il n'est pas cosmétique. Ce n'est **pas une capacité** :
+ * nous ne savons pas combien de personnes un stand reçoit, personne ne nous le
+ * dit, et le compteur ne voit que les journées organisées depuis le plan — il
+ * ignore tout des visiteurs qui ne l'ouvrent jamais, c'est-à-dire de l'immense
+ * majorité. Un seuil de trois ne dit donc pas « ce stand reçoit trois
+ * personnes ». Il dit : *au-delà de trois des nôtres en même temps, le moteur
+ * cherche un autre ordre*. Prétendre autre chose serait une mesure inventée,
+ * affichée à un exploitant qui n'a aucun moyen de la démentir.
  *
- * Reste le chiffre, qu'aucune donnée ne porte. Klipso ne dit pas combien de
- * personnes tiennent un stand, et le plan ne le devine pas davantage. Deux
- * façons de le dire, parce qu'elles ne servent pas les mêmes salons : un
- * chiffre unique quand les emplacements se ressemblent, une règle à la surface
- * quand ils vont du deux-mètres au pavillon.
+ * Le remède, lui, ne coûte presque rien : un stand trop demandé à dix heures
+ * s'évite en y allant plus tard. Le visiteur garde son exposant, l'exposant
+ * garde sa visite, et seule l'heure bouge.
+ *
+ * Reste le chiffre. La surface est ce qu'on a, faute de mieux, et deux façons
+ * de le dire parce qu'elles ne servent pas les mêmes salons : un chiffre
+ * unique quand les emplacements se ressemblent, une règle à la surface quand
+ * ils vont du deux-mètres au pavillon. Un relevé empirique, stand par stand,
+ * prendrait la place de l'un comme de l'autre sans que rien d'autre bouge.
  */
-const REGLAGES_CAPACITE = {
-  /* Ce qu'une tranche de dix mètres carrés absorbe par demi-heure. Trois :
-     dix mètres carrés reçoivent trois personnes à la fois, cent en reçoivent
-     trente. La tranche de dix plutôt que le mètre carré parce que c'est ainsi
-     qu'on le dit à voix haute — et parce qu'un champ où l'on tape « 0,3 » est
-     un champ où l'on se trompe d'un facteur dix. Le chiffre vaut ce que vaut
-     une règle de trois sur une surface : un point de départ, pas une mesure,
-     et c'est pourquoi il se règle. */
+const REGLAGES_SEUIL = {
+  /* Combien des nôtres, par tranche de dix mètres carrés et par demi-heure,
+     avant que le moteur ne cherche un autre ordre. La tranche de dix plutôt
+     que le mètre carré parce que c'est ainsi qu'on le dit à voix haute — et
+     parce qu'un champ où l'on tape « 0,3 » est un champ où l'on se trompe d'un
+     facteur dix. Ce que vaut une règle de trois sur une surface : un point de
+     départ, pas une mesure, et c'est pourquoi il se règle. */
   parDix:   { defaut: 3,   min: .5,  max: 20,  pas: .5 },
-  /* En dessous, plus personne n'est reçu nulle part : un module de six mètres
-     carrés tient bien trois visiteurs debout, même s'il est petit. */
+  /* En dessous, les plus petits stands porteraient une contrainte que leur
+     seule surface leur invente : un module de six mètres carrés tient bien
+     trois visiteurs debout. */
   plancher: { defaut: 3,   min: 1,   max: 20,  pas: 1 },
-  /* Au-delà, le coefficient rendrait des chiffres qui ne veulent plus rien
-     dire : un stand de cinq cents mètres carrés n'accueille pas cent cinquante
-     personnes à la fois, il en accueille autant que son équipe en reçoit. */
+  /* Au-delà, la règle de trois rendrait des chiffres qui ne veulent plus rien
+     dire, et un seuil si haut qu'il ne se déclencherait jamais. */
   plafond:  { defaut: 60,  min: 5,   max: 300, pas: 5 },
-  /* La capacité que l'exploitant impose lui-même, quand il la connaît mieux
-     que la surface. Elle remplace le calcul plutôt que de s'y ajouter. */
+  /* Le seuil que l'exploitant impose lui-même, quand il connaît ses équipes
+     mieux que la surface ne les devine. Il remplace le calcul plutôt que de
+     s'y ajouter. */
   nombre:   { defaut: 3,   min: 1,   max: 200, pas: 1 },
 };
 
@@ -12160,15 +12165,15 @@ const REGLAGES_CAPACITE = {
 
    Décochées d'avance, toutes les trois : ceci change l'ordre de visite de tout
    le monde, et ne s'allume pas dans le dos de l'exploitant. */
-const capaciteGeree = () => conf("_capacite").visible === true;
-const capaciteFixee = () => conf("_capacite").fixe === true;
-const capaciteParSurface = () => conf("_capacite").surface === true;
+const seuilGere = () => conf("_capacite").visible === true;
+const seuilImpose = () => conf("_capacite").fixe === true;
+const seuilParSurface = () => conf("_capacite").surface === true;
 
 /* Une valeur hors bornes — un champ à moitié tapé, une configuration d'avant —
    retombe sur l'origine plutôt que de fausser un plafond. Même geste que
    `regleFoule`, et pour la même raison. */
-function regleCapacite(k){
-  const r = REGLAGES_CAPACITE[k], v = +conf("_capacite")[k];
+function regleSeuil(k){
+  const r = REGLAGES_SEUIL[k], v = +conf("_capacite")[k];
   return isFinite(v) && v >= r.min && v <= r.max ? v : r.defaut;
 }
 
@@ -12211,57 +12216,56 @@ function aireDuStand(o){
  * zéro se lit ici comme une absence de plafond — l'inverse de ce qu'il faut.
  */
 /**
- * La capacité **théorique** d'un stand : ce que sa surface laisse supposer, ou
- * ce que l'exploitant a déclaré.
+ * Le seuil de concentration d'un stand : le nombre d'utilisateurs du plan
+ * simultanés au-delà duquel le moteur cherche à répartir.
  *
- * Elle est une donnée de la configuration, et **rien dans le moteur ne la
- * modifie jamais**. Ce que l'ordonnanceur manipule, quand il lui faut desserrer
- * la mesure, est une capacité *effective* qu'il calcule chez lui pour le temps
- * d'un rangement — voir `capaciteEffective` dans `_journee.html`. Les deux ne
- * se confondent pas : celle-ci se règle et s'affiche, celle-là ne sort pas du
+ * C'est une donnée de la configuration, et **rien dans le moteur ne la modifie
+ * jamais**. Ce que l'ordonnanceur manipule, quand il lui faut desserrer la
+ * mesure, est un seuil *effectif* qu'il calcule chez lui le temps d'un
+ * rangement — voir `seuilEffectif` dans `_journee.html`. Les deux ne se
+ * confondent pas : celui-ci se règle et s'affiche, celui-là ne sort pas du
  * calcul.
  */
-function capaciteTheorique(o){
-  if (!capaciteGeree()) return 0;
-  /* Le chiffre imposé l'emporte : quand l'exploitant connaît l'équipe d'un
-     salon mieux que la surface ne la devine, c'est lui qui a raison. C'est
-     aussi la porte par laquelle une capacité déclarée par l'exposant, ou
-     apprise des mesures, entrera un jour sans rien changer d'autre. */
-  if (capaciteFixee()) return regleCapacite("nombre");
-  if (!capaciteParSurface()) return 0;
+function seuilConcentration(o){
+  if (!seuilGere()) return 0;
+  /* Le chiffre imposé l'emporte : quand l'exploitant connaît ses équipes mieux
+     que la surface ne les devine, c'est lui qui a raison. C'est aussi la porte
+     par laquelle un seuil relevé stand par stand entrera un jour sans rien
+     changer d'autre. */
+  if (seuilImpose()) return regleSeuil("nombre");
+  if (!seuilParSurface()) return 0;
   const a = aireDuStand(o);
   if (a <= 0) return 0;   // rien de dessiné : on ne sait pas, on ne borne pas
-  return Math.max(regleCapacite("plancher"),
-                  Math.min(regleCapacite("plafond"),
-                           Math.round(a * regleCapacite("parDix") / 10)));
+  return Math.max(regleSeuil("plancher"),
+                  Math.min(regleSeuil("plafond"),
+                           Math.round(a * regleSeuil("parDix") / 10)));
 }
 
 /**
  * Ce que les réglages donnent sur ce salon-ci.
  *
- * Un plafond choisi sans voir ce qu'il produit sur six cents emplacements est
- * un plafond choisi au hasard : la médiane dit en un chiffre si l'on vient de
- * régler un salon où chacun reçoit trois personnes ou un salon où chacun en
- * reçoit une. La médiane et non la moyenne — un pavillon de mille mètres
- * carrés tirerait la seconde à lui tout seul.
+ * Un seuil choisi sans voir ce qu'il produit sur six cents emplacements est un
+ * seuil choisi au hasard : la médiane dit en un chiffre ce qu'on vient de
+ * régler. La médiane et non la moyenne — un pavillon de mille mètres carrés
+ * tirerait la seconde à lui tout seul.
  */
-function phraseCapacite(){
-  if (!capaciteGeree() || (!capaciteFixee() && !capaciteParSurface())) return "";
+function phraseSeuil(){
+  if (!seuilGere() || (!seuilImpose() && !seuilParSurface())) return "";
   const caps = [];
   let dessines = 0;
   ((DATA && DATA.plans) || []).forEach(pl => (pl.stands || []).forEach(o => {
     if (aireDuStand(o) > 0) dessines++;
-    const n = capaciteTheorique(o);
+    const n = seuilConcentration(o);
     if (n > 0) caps.push(n);
   }));
-  if (!dessines && capaciteParSurface() && !capaciteFixee())
+  if (!dessines && seuilParSurface() && !seuilImpose())
     return "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit " +
-      "rien d'eux, et aucun ne porte de contrainte.";
+      "rien d'eux, et aucun ne porte de seuil.";
   if (!caps.length) return "";
   caps.sort((a, b) => a - b);
   const med = caps[caps.length >> 1];
   return "Sur ce salon : " + dessines + " emplacement" + (dessines > 1 ? "s" : "") +
-    " dessiné" + (dessines > 1 ? "s" : "") + ". Capacité médiane : " + med + ".";
+    " dessiné" + (dessines > 1 ? "s" : "") + ". Seuil médian : " + med + ".";
 }
 
 /* Nommé plutôt qu'écrit deux fois : l'intitulé sert d'onglet et de nom de
@@ -14317,9 +14321,9 @@ function voletParcours(hote){
   p.textContent = "La journée organisée range les stands au plus court depuis " +
     "la porte d'entrée : tout le monde part du même point, à la même heure, et " +
     "reçoit le même ordre — les premières travées se remplissent à l'ouverture " +
-    "pendant que le fond reste vide. Ce qui suit lui apprend ce qu'un stand " +
-    "peut recevoir à la fois, de quoi décaler une visite d'une demi-heure " +
-    "plutôt que de la poser devant une équipe déjà prise.";
+    "pendant que le fond reste vide. Ce qui suit apprend au calcul à étaler " +
+    "ses propres recommandations dans la journée, plutôt que d'envoyer tout le " +
+    "monde au même endroit au même moment.";
   hote.appendChild(p);
 
   const bloc = document.createElement("div");
@@ -14327,15 +14331,17 @@ function voletParcours(hote){
   const l = document.createElement("label");
   l.innerHTML = '<input type="checkbox"><span></span>';
   l.querySelector("span").textContent =
-    "Gestion du nombre de visiteurs simultanés sur un stand";
+    "Étaler dans le temps les visiteurs qui suivent le plan";
   const c = l.querySelector("input");
-  c.checked = capaciteGeree();
+  c.checked = seuilGere();
   bloc.appendChild(l);
   const aide = document.createElement("p");
   aide.className = "aideR";
-  aide.textContent = "Un stand reçoit autant de visiteurs à la fois qu'il a de " +
-    "monde pour les accueillir. Au-delà, la journée organisée préfère un autre " +
-    "moment — sans jamais l'interdire, et sans jamais retirer l'exposant du " +
+  aide.textContent = "Le plan ne compte que les visiteurs qui organisent leur " +
+    "journée avec lui : il ignore tout des autres, et ne mesure donc pas la " +
+    "fréquentation de vos stands. Le seuil ci-dessous dit à partir de combien " +
+    "de ces visiteurs-là, en même temps sur un stand, le calcul doit chercher " +
+    "un autre ordre. Il ne l'interdit jamais, et ne retire l'exposant du " +
     "parcours de personne.";
   bloc.appendChild(aide);
   hote.appendChild(bloc);
@@ -14346,17 +14352,22 @@ function voletParcours(hote){
   /* Réécrit à chaque frappe : c'est la seule façon de choisir un chiffre en
      voyant ce qu'il fait, et le compte tient en un tour des emplacements. */
   const ecritApercu = () => {
-    const t = phraseCapacite();
+    const t = phraseSeuil();
     apercu.textContent = t;
     apercu.hidden = !t;
   };
 
   /**
-   * Une façon de dire la capacité : sa case, son chiffre, son aide.
+   * Une façon de dire le seuil : sa case, ses chiffres, leurs aides.
    *
    * `cle` porte la case dans la configuration, `k` le chiffre dans
-   * `REGLAGES_CAPACITE` — les bornes et l'origine viennent de là, et non d'une
+   * `REGLAGES_SEUIL` — les bornes et l'origine viennent de là, et non d'une
    * seconde liste qui finirait par diverger.
+   *
+   * Les clés gardent leurs noms d'origine (`_capacite`, `fixe`, `nombre`) :
+   * elles sont déjà écrites dans la configuration des salons en production, et
+   * les renommer perdrait le réglage de ceux qui l'ont activé. Le mot juste
+   * est dans le code et à l'écran ; la clé, elle, est une adresse.
    */
   const facon = (cle, libelle, champs) => {
     const b = document.createElement("div");
@@ -14370,7 +14381,7 @@ function voletParcours(hote){
     detail.appendChild(b);
 
     const boites = champs.map(ch => {
-      const r = REGLAGES_CAPACITE[ch.k];
+      const r = REGLAGES_SEUIL[ch.k];
       const d = document.createElement("div");
       d.className = "reglage-nb";
       d.innerHTML = '<label><span class="l"></span>' +
@@ -14380,7 +14391,7 @@ function voletParcours(hote){
       d.querySelector(".u").textContent = ch.unite;
       d.querySelector(".aide").textContent = ch.aide;
       const n = d.querySelector("input");
-      n.value = regleCapacite(ch.k);
+      n.value = regleSeuil(ch.k);
       /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
          que ce qui tient dans les bornes, et le champ se remet d'aplomb en le
          quittant — comme le temps de visite et les chiffres de la foule. */
@@ -14391,7 +14402,7 @@ function voletParcours(hote){
         enregistreConf();
         ecritApercu();
       };
-      n.onblur = () => { n.value = regleCapacite(ch.k); };
+      n.onblur = () => { n.value = regleSeuil(ch.k); };
       detail.appendChild(d);
       return d;
     });
@@ -14406,23 +14417,21 @@ function voletParcours(hote){
     maj();
   };
 
-  facon("surface", "Un nombre selon la surface du stand", [
-    { k: "parDix", avant: "Reçoit", unite: "visiteurs par tranche de 10 m²",
+  facon("surface", "Un seuil calculé sur la surface du stand", [
+    { k: "parDix", avant: "Seuil de", unite: "par tranche de 10 m²",
       aide: "La surface se lit sur le plan, telle que le stand y est dessiné. " +
         "Un emplacement que personne n'a dessiné n'a pas de surface, et ne " +
-        "porte donc aucune contrainte." },
-    { k: "plancher", avant: "Jamais moins de", unite: "visiteurs à la fois",
-      aide: "Un module de six mètres carrés tient trois visiteurs debout, " +
-        "même s'il est petit : sans ce plancher, les plus petits stands " +
-        "porteraient une contrainte que leur surface seule leur invente." },
-    { k: "plafond", avant: "Jamais plus de", unite: "visiteurs à la fois",
-      aide: "Au-delà, la règle de trois rendrait des chiffres qui ne veulent " +
-        "plus rien dire : un pavillon de cinq cents mètres carrés ne reçoit " +
-        "pas cent cinquante personnes à la fois, il en reçoit autant que son " +
-        "équipe en accueille." },
+        "porte donc aucun seuil." },
+    { k: "plancher", avant: "Jamais moins de", unite: "à la fois",
+      aide: "Sans ce plancher, les plus petits stands porteraient un seuil que " +
+        "leur seule surface leur invente — un module de six mètres carrés " +
+        "tient bien trois visiteurs debout." },
+    { k: "plafond", avant: "Jamais plus de", unite: "à la fois",
+      aide: "Au-delà, la règle de trois rendrait un seuil si haut qu'il ne se " +
+        "déclencherait jamais." },
   ]);
-  facon("fixe", "Un nombre fixe, le même pour tous les stands", [
-    { k: "nombre", avant: "Reçoit", unite: "visiteurs à la fois",
+  facon("fixe", "Un seuil fixe, le même pour tous les stands", [
+    { k: "nombre", avant: "Seuil de", unite: "à la fois",
       aide: "Le choix d'un salon dont les emplacements se ressemblent, ou " +
         "d'un exploitant qui connaît ses équipes mieux que la surface ne les " +
         "devine. Cochée, cette case l'emporte sur le calcul à la surface." },
@@ -29458,9 +29467,9 @@ const SEUIL_PEINE = PEINE_CHARGE[0][0];
  * Rend des mètres, comparables à ceux du trajet. Zéro sans capacité connue :
  * un stand que personne n'a dessiné ne se voit imposer aucune contrainte.
  */
-function peineDeCharge(charge, capacite){
-  if (!(capacite > 0)) return 0;
-  const taux = (+charge || 0) / capacite;
+function peineDeCharge(charge, seuil){
+  if (!(seuil > 0)) return 0;
+  const taux = (+charge || 0) / seuil;
   const P = PEINE_CHARGE;
   if (taux <= P[0][0]) return 0;
   for (let i = 1; i < P.length; i++)
@@ -29877,7 +29886,7 @@ const chargeDuJour = (m, n, visiteEnMetres) => m + visiteEnMetres * n;
  * placés : ils ne vont que là où il l'a dit.
  */
 function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, imposeDe,
-                     plafond){
+                     concentration){
   const creneaux = [];
   jours.forEach(j => j.creneaux.forEach(c => { c.jour = j; creneaux.push(c); }));
 
@@ -29912,7 +29921,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
 
      Ensuite l'effet de bord : un refus laisse des exposants dehors quand tout
      est plein, ce qu'aucune règle ne veut. Il fallait alors une soupape — un
-     plafond relevé d'un cran, et un garde-fou sur le nombre de crans — soit
+     seuil relevé d'un cran, et un garde-fou sur le nombre de crans — soit
      une machinerie entière dont un prix n'a aucun besoin. Un stand demandé
      reste dans le parcours ; seule son heure se négocie.
 
@@ -29946,9 +29955,9 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      rangement. Elle ne sort pas d'ici, ne s'écrit nulle part, et ne vaut que
      pour le jour où on la calcule.
      ------------------------------------------------------------------ */
-  const capaciteEffective = (j, i) => {
-    const r = plafond.ressource(i);
-    return r ? r.capacite * (plafond.dilatation ? plafond.dilatation(j.cle) : 1) : 0;
+  const seuilEffectif = (j, i) => {
+    const r = concentration.ressource(i);
+    return r ? r.seuil * (concentration.dilatation ? concentration.dilatation(j.cle) : 1) : 0;
   };
 
   /* Ce que dure une visite, en minutes. On ne se le fait pas passer : c'est
@@ -29972,12 +29981,12 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    */
   const chargeAutourDe = (cleJour, s, t) => {
     if (!LISSAGE_CHARGE)
-      return plafond.chargeAnnoncee(cleJour, s, trancheDe(t));
+      return concentration.chargeAnnoncee(cleJour, s, trancheDe(t));
     const fin = t + DUREE_VISITE;
     let somme = 0, poids = 0, deb = t, tr = trancheDe(t), borne = (tr + 1) * 30;
     while (deb < fin){
       const f = Math.min(fin, borne), w = f - deb;
-      somme += w * plafond.chargeAnnoncee(cleJour, s, tr);
+      somme += w * concentration.chargeAnnoncee(cleJour, s, tr);
       poids += w;
       deb = f;
       tr = Math.min(TRANCHES_JOUR - 1, tr + 1);
@@ -29992,8 +30001,8 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      c'est l'heure que le moteur emploie déjà partout ailleurs, aucune autre
      n'est calculée pour la charge. */
   const peineDe = (c, k, mArrivee, s) => {
-    if (!plafond) return 0;
-    const cap = capaciteEffective(c.jour, s);
+    if (!concentration) return 0;
+    const cap = seuilEffectif(c.jour, s);
     if (!(cap > 0)) return 0;
     const t = c.t0 + tempsCreneau(c, mArrivee, k);
     /* Le visiteur se compte lui-même : ce qu'on chiffre est la charge telle
@@ -30008,7 +30017,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
 
   /** Ce que la charge coûte à un créneau tel qu'il est rangé. */
   const peineCreneau = (c) => {
-    if (!plafond) return 0;
+    if (!concentration) return 0;
     let p = 0;
     for (let k = 0; k < c.stands.length; k++)
       p += peineDe(c, k, (c.pref && c.pref[k]) || 0, c.stands[k]);
@@ -30017,7 +30026,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
 
   /** Ce que coûterait le stand qu'on envisage de glisser à cette place. */
   const peineCandidat = (c, s, k) => {
-    if (!plafond) return 0;
+    if (!concentration) return 0;
     const avant = k === 0 ? 0 : c.pref[k - 1];
     const prec = k === 0 ? c.de : c.stands[k - 1];
     return peineDe(c, k, avant + dist(prec, s), s);
@@ -30032,7 +30041,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * insertion qui désengorge la fin d'un créneau mérite d'être vue.
    */
   const peineDecalee = (c, k, d) => {
-    if (!plafond) return 0;
+    if (!concentration) return 0;
     let p = 0;
     for (let x = k; x < c.stands.length; x++)
       p += peineDe(c, x + 1, c.pref[x] + d, c.stands[x]) -
@@ -30291,7 +30300,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    */
   const PERMUTE_MAX = 7;
   const permuteCongestion = () => {
-    if (!plafond) return;
+    if (!concentration) return;
     for (const c of creneaux){
       const n = c.stands.length;
       if (n < 3 || peineCreneau(c) <= 0) continue;
@@ -30731,7 +30740,7 @@ function prepareSejour(choix, fige){
   const RESSOURCES = PTS.map((pt, i) => {
     const o = pt && pt.id ? parId.get(String(pt.id)) : null;
     if (!o) return null;
-    const cap = capaciteTheorique(o);
+    const cap = seuilConcentration(o);
     /* Zéro se lit comme une absence de limite, jamais comme une limite nulle :
        un stand que personne n'a dessiné, sur un salon réglé à la surface, ne
        coûte jamais rien. */
@@ -30739,7 +30748,7 @@ function prepareSejour(choix, fige){
     return {
       id: String(pt.id),
       genre: GENRES_RESSOURCE.stand,
-      capacite: cap,
+      seuil: cap,
       /* D'où vient ce chiffre : de la surface dessinée, ou de l'exploitant.
          Ne sert pas au calcul — sert à expliquer un résultat surprenant, et à
          savoir ce qu'on peut faire évoluer sans mentir. */
@@ -30754,7 +30763,7 @@ function prepareSejour(choix, fige){
    * refusé la mesure, ou quand la charge n'est pas encore arrivée : la visite
    * se range alors comme avant, sans rien à payer.
    */
-  const plafond = (chargeSuivie() && CHARGE) ? {
+  const concentration = (chargeSuivie() && CHARGE) ? {
     ressource: (i) => RESSOURCES[i] || null,
     chargeAnnoncee: (cleJour, i, tranche) =>
       chargeCellule(cleJour, PTS[i] && PTS[i].id, tranche),
@@ -30762,7 +30771,7 @@ function prepareSejour(choix, fige){
   } : null;
 
   rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe,
-              plafond);
+              concentration);
 
   return { choix: choix, jours: jours, PTS: PTS, dist: dist, enMinutes: enMinutes,
            tv: tv, pmr: pmr, iDepart: iDepart, restants: restants,
@@ -31396,7 +31405,7 @@ function ouvreOrganisation(){
   MATRICE = null;
   /* Et la charge annoncée, demandée maintenant pour être là quand on validera.
      Elle ne bloque rien : un calcul lancé avant son arrivée se fait sans
-     plafond, et le suivant l'aura. Mieux vaut une journée sans contrainte
+     seuil, et le suivant l'aura. Mieux vaut une journée sans contrainte
      qu'une roue qui tourne devant quelqu'un qui attend son programme. */
   litLaCharge();
   const tous = joursSalon();
@@ -31856,7 +31865,7 @@ function refaitSejour(cleAffichee, fige){
  * un stand très demandé reste visitable, simplement plus cher à placer là.
  *
  * Rien de cela ne se tente sans les deux conditions qui le rendent honnête :
- * l'exploitant a ouvert le réglage (`capaciteGeree`), et le visiteur n'a pas
+ * l'exploitant a ouvert le réglage (`seuilGere`), et le visiteur n'a pas
  * refusé la mesure. Un plan annoncé est une donnée qu'on garde, fût-ce deux
  * jours, et il tombe sous le même refus que le reste.
  */
@@ -31887,10 +31896,10 @@ let CHARGE = null;          // ce que les autres ont annoncé, par jour et par s
 let _chargeEnCours = false;
 let _reposPlan = null;
 
-/** La journée organisée est-elle sous plafond ? Deux clés, et les deux
- *  doivent tourner : le réglage du salon, et le consentement du visiteur. */
+/** La journée organisée doit-elle répartir ? Deux clés, et les deux doivent
+ *  tourner : le réglage du salon, et le consentement du visiteur. */
 const chargeSuivie = () =>
-  typeof capaciteGeree === "function" && capaciteGeree() &&
+  typeof seuilGere === "function" && seuilGere() &&
   typeof mesureOuverte === "function" && mesureOuverte() &&
   !!SLUG && !BORNE;
 
@@ -31966,10 +31975,10 @@ function annoncePlan(){
  * d'adaptation ne fait jamais que l'élever : une cellule écartée ici ne
  * pourrait pas devenir coûteuse plus tard.
  */
-function plafondMinimal(){
+function celluleUtile(){
   let min = 0;
   PARCOURS.stands.forEach(id => {
-    const n = capaciteTheorique(parId.get(String(id)));
+    const n = seuilConcentration(parId.get(String(id)));
     if (n > 0 && (!min || n < min)) min = n;
   });
   return Math.max(1, Math.ceil(SEUIL_PEINE * (min || 1)));
@@ -32043,7 +32052,7 @@ function dilatationPour(rapport){
  * De combien les capacités de ce jour-là sont desserrées.
  *
  * Ne touche pas à la capacité théorique, qui reste celle de la configuration :
- * ce nombre ne sert qu'à `capaciteEffective`, le temps d'un rangement.
+ * ce nombre ne sert qu'à `seuilEffectif`, le temps d'un rangement.
  */
 function dilatationDuJour(cleJour){
   const cle = String(cleJour);
@@ -32051,9 +32060,9 @@ function dilatationDuJour(cleJour){
   let f = 1;
   const j = CHARGE && CHARGE[cle];
   if (j){
-    let demande = 0, capacite = 0, tMin = TRANCHES_JOUR, tMax = -1;
+    let demande = 0, seuil = 0, tMin = TRANCHES_JOUR, tMax = -1;
     for (const id in j){
-      const cap = capaciteTheorique(parId.get(String(id)));
+      const cap = seuilConcentration(parId.get(String(id)));
       if (!(cap > 0)) continue;   // sans capacité connue, ce stand ne dit rien
       for (const tr in j[id]){
         demande += +j[id][tr] || 0;
@@ -32061,11 +32070,11 @@ function dilatationDuJour(cleJour){
         if (t < tMin) tMin = t;
         if (t > tMax) tMax = t;
       }
-      capacite += cap;
+      seuil += cap;
     }
-    if (tMax >= 0 && capacite > 0){
+    if (tMax >= 0 && seuil > 0){
       const tranches = Math.max(TRANCHES_MINI, tMax - tMin + 1);
-      f = dilatationPour(demande / (capacite * tranches));
+      f = dilatationPour(demande / (seuil * tranches));
     }
   }
   DILATATIONS.set(cle, f);
@@ -32078,7 +32087,7 @@ function dilatationDuJour(cleJour){
  * Elle ne se redemande pas à chaque recalcul : elle bouge à l'échelle de la
  * demi-journée, le relais la garde une minute, et une visite qu'on retouche
  * trois fois n'a pas à payer trois fois. Elle ne bloque rien non plus — un
- * calcul lancé avant qu'elle n'arrive se fait sans plafond, et le suivant
+ * calcul lancé avant qu'elle n'arrive se fait sans seuil, et le suivant
  * l'aura. Mieux vaut une journée organisée sans contrainte qu'une roue qui
  * tourne devant quelqu'un qui attend son programme.
  */
@@ -32086,7 +32095,7 @@ function litLaCharge(){
   if (!CHARGE_API || !chargeSuivie() || _chargeEnCours) return;
   _chargeEnCours = true;
   fetch(CHARGE_API + "?slug=" + encodeURIComponent(SLUG) +
-        "&min=" + plafondMinimal())
+        "&min=" + celluleUtile())
     .then(r => r.ok ? r.json() : null)
     .then(d => { if (d && d.jours){ CHARGE = d.jours; DILATATIONS.clear(); } })
     .catch(() => {})
@@ -32099,7 +32108,7 @@ function litLaCharge(){
  * Le plan qu'on a soi-même annoncé en fait partie — on se compte donc parmi
  * ceux qui remplissent le créneau qu'on occupe déjà. C'est voulu : le retirer
  * demanderait au serveur de distinguer l'appelant, donc de le reconnaître, et
- * l'erreur qu'on éviterait ainsi vaut une unité sur un plafond qui en compte
+ * l'erreur qu'on éviterait ainsi vaut une unité sur un seuil qui en compte
  * trois ou quatre.
  */
 function chargeCellule(cleJour, id, tranche){
