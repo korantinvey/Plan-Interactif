@@ -39002,7 +39002,23 @@ function constTexte(){
      désignation, dont la couleur ne doit rien recevoir. Elle est posée sur
      toutes les couches de texte, et non sur les seules grandes : deux jeux
      d'extensions feraient deux programmes à compiler là où un seul suffit, et
-     « sdf.enabled » la rend muette sur l'atlas des petits textes. */
+     « sdf.enabled » la rend muette sur l'atlas des petits textes.
+
+     Les petits textes avaient leur défaut à eux, à l'autre bout : leur atlas
+     est dessiné en 24 points et presque toujours lu plus petit, par les
+     réductions successives que la carte graphique en tient. Un seul
+     échantillon mélange alors deux de ces réductions, et les plus fortes ne
+     gardent plus rien d'une lettre : les jambages s'empâtent, les lettres
+     voisines de l'atlas bavent dans le glyphe, et un nom de six pixels
+     s'étire en tache. Quatre échantillons répartis sur le pixel, chacun lu
+     une réduction plus nette, rendent ce que la lettre couvre vraiment. Cela
+     ne coûte qu'aux pixels de texte — une fraction de l'écran —, et rien à
+     l'atlas.
+
+     La couverture est ensuite relevée d'un cran (puissance ¾) : un
+     navigateur renforce le contraste d'une petite lettre sombre sur fond
+     clair, et la couverture brute la laissait grise et grêle à côté du même
+     nom en SVG. */
   class LissageSdf extends deck.LayerExtension {
     getShaders(){
       return { inject: { "fs:#main-end": [
@@ -39017,6 +39033,13 @@ function constTexte(){
         "  } else {",
         "    fragColor.a = dedans * vColor.a * layer.opacity;",
         "  }",
+        "} else if (!bool(picking.isActive)) {",
+        "  vec2 pasX = dFdx(vTextureCoords), pasY = dFdy(vTextureCoords);",
+        "  float couvre = texture(iconsTexture, vTextureCoords - 0.125 * pasX - 0.375 * pasY, -1.0).a;",
+        "  couvre += texture(iconsTexture, vTextureCoords + 0.375 * pasX - 0.125 * pasY, -1.0).a;",
+        "  couvre += texture(iconsTexture, vTextureCoords + 0.125 * pasX + 0.375 * pasY, -1.0).a;",
+        "  couvre += texture(iconsTexture, vTextureCoords - 0.375 * pasX + 0.125 * pasY, -1.0).a;",
+        "  fragColor.a = pow(0.25 * couvre, 0.75) * vColor.a * layer.opacity;",
         "}",
       ].join("\n") } };
     }
@@ -39027,7 +39050,10 @@ function constTexte(){
      régénérer l'atlas des polices et recompiler ses shaders. */
   const textes = [new FiltreZoom(), new LissageSdf()];
   return (CONST_TEXTE = {
-    petit: { ext: textes, mode: 1, atlas: { sdf: false, fontSize: 24, buffer: 2 } },
+    /* Quatre points de marge autour de chaque glyphe, et non deux : dans les
+       réductions de l'atlas où lisent les petits textes, deux points n'en
+       valaient plus qu'un demi, et la lettre d'à côté s'invitait. */
+    petit: { ext: textes, mode: 1, atlas: { sdf: false, fontSize: 24, buffer: 4 } },
     grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 6 } },
     /* Tous les traits partagent un seul programme : tirets — un trait plein
        en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
