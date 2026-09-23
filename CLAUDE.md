@@ -127,7 +127,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `.github/workflows/` | reconstruction des pages, déploiement Supabase, sauvegarde et écriture des correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | les essais hors page — `npm run essais` (douze cas) et `npm run fep26` (salon synthétique) ; l'ordonnanceur est extrait du gabarit par ancres, jamais recopié |
-| `outils/appels.js` | `npm run appels` — cherche les fonctions appelées que rien ne déclare, le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas |
+| `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir
 

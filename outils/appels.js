@@ -93,18 +93,30 @@ function scriptsDe(html){
    une valeur, `/` divise ; après un opérateur ou une parenthèse ouvrante, il
    ouvre une expression. */
 function sansTexte(js){
-  let out = "", i = 0, n = js.length;
-  const vide = (s) => s.replace(/[^\n]/g, " ");
-  /* Le dernier caractère significatif écrit, pour trancher `/`.
+  const n = js.length;
+  let out = "", i = 0;
 
-     On garde une queue courte plutôt que de relire `out` : le relire coûtait
-     le carré de la taille du fichier, et le contrôle ne finissait plus sur un
-     paquet de deux mégaoctets. */
+  /* La pile des gabarits ouverts. `-1` : on lit le texte du gabarit ; un
+     nombre positif ou nul : on lit l'expression d'un `${…}`, et le nombre
+     compte les accolades ouvertes dedans. Pile vide : du code ordinaire.
+
+     Sans cette pile, un gabarit imbriqué — et une page en est pleine, du
+     genre `<div>${l.map(x => `<i>${x}</i>`).join("")}</div>` — faisait prendre
+     l'accent grave ouvrant de l'intérieur pour la fermeture de l'extérieur.
+     Tout ce qui suivait était lu à contretemps, et des fonctions parfaitement
+     déclarées passaient pour absentes. */
+  const pile = [];
+  const dansTexte = () => pile.length && pile[pile.length - 1] === -1;
+
+  /* La queue des derniers caractères significatifs, pour distinguer une
+     division d'une expression régulière. On la garde courte : relire toute la
+     sortie coûtait le carré de la taille du fichier. */
   let queue = "";
   const pousse = (t) => {
-    const u = t.replace(/\s+$/, "");
+    const u = String(t).replace(/\s+$/, "");
     if (u) queue = (queue + u).slice(-32);
   };
+  const vide = (t) => t.replace(/[^\n]/g, " ");
   const APRES = ["return", "typeof", "case", "in", "of", "new", "delete",
                  "void", "instanceof", "do", "else", "yield", "await"];
   const finDeValeur = () => {
@@ -115,40 +127,64 @@ function sansTexte(js){
       return !APRES.includes((queue.match(/[\w$]+$/) || [""])[0]);
     return false;
   };
+
   while (i < n){
     const c = js[i], d = js[i + 1];
-    if (c === "/" && d !== "/" && d !== "*" && !finDeValeur()){
-      let j = i + 1, crochet = false;
+
+    /* Le texte d'un gabarit : tout s'efface, sauf ce qui l'ouvre et le ferme. */
+    if (dansTexte()){
+      if (c === "\\"){ out += "  "; i += 2; continue; }
+      if (c === "`"){ pile.pop(); out += "`"; pousse("'x'"); i++; continue; }
+      if (c === "$" && d === "{"){
+        pile[pile.length - 1] = 0;      // on passe à l'expression
+        out += "  "; i += 2; continue;
+      }
+      out += c === "\n" ? "\n" : " "; i++; continue;
+    }
+
+    /* Du code : commentaires, chaînes, expressions régulières, gabarits. */
+    if (c === "/" && d === "/"){
+      const k = js.indexOf("\n", i); const j = k < 0 ? n : k;
+      out += vide(js.slice(i, j)); i = j; continue;
+    }
+    if (c === "/" && d === "*"){
+      const k = js.indexOf("*/", i + 2); const j = k < 0 ? n : k + 2;
+      out += vide(js.slice(i, j)); i = j; continue;
+    }
+    if (c === '"' || c === "'"){
+      let j = i + 1;
+      while (j < n && js[j] !== c){ if (js[j] === "\\") j++; j++; }
+      out += c + vide(js.slice(i + 1, j)) + (js[j] || "");
+      pousse("'x'"); i = j + 1; continue;
+    }
+    if (c === "`"){ pile.push(-1); out += "`"; i++; continue; }
+    if (c === "/" && !finDeValeur()){
+      let j = i + 1, crochet = false, ferme = false;
       while (j < n){
         const x = js[j];
         if (x === "\\"){ j += 2; continue; }
         if (x === "[") crochet = true;
         else if (x === "]") crochet = false;
-        else if (x === "/" && !crochet) break;
-        else if (x === "\n") break;   // pas une expression régulière après tout
+        else if (x === "/" && !crochet){ ferme = true; break; }
+        else if (x === "\n") break;   // une division, après tout
         j++;
       }
-      if (j < n && js[j] === "/"){
-        out += vide(js.slice(i, j + 1));
-        queue = (queue + "/x/").slice(-32);   // une expression est une valeur
-        i = j + 1;
+      if (ferme){
+        out += vide(js.slice(i, j + 1)); i = j + 1;
         while (i < n && /[gimsuyvd]/.test(js[i])){ out += " "; i++; }
-        continue;
+        pousse("/x/"); continue;
       }
     }
-    if (c === "/" && d === "/"){
-      const f = js.indexOf("\n", i); const j = f < 0 ? n : f;
-      out += vide(js.slice(i, j)); i = j; continue;
-    }
-    if (c === "/" && d === "*"){
-      const f = js.indexOf("*/", i + 2); const j = f < 0 ? n : f + 2;
-      out += vide(js.slice(i, j)); i = j; continue;
-    }
-    if (c === '"' || c === "'" || c === "`"){
-      let j = i + 1;
-      while (j < n && js[j] !== c){ if (js[j] === "\\") j++; j++; }
-      out += c + vide(js.slice(i + 1, j)) + (js[j] || "");
-      queue = (queue + "'x'").slice(-32); i = j + 1; continue;
+    /* Les accolades de l'expression d'un gabarit : la dernière nous y ramène. */
+    if (pile.length){
+      if (c === "{"){ pile[pile.length - 1]++; }
+      else if (c === "}"){
+        if (pile[pile.length - 1] === 0){
+          pile[pile.length - 1] = -1;   // retour au texte du gabarit
+          out += " "; i++; continue;
+        }
+        pile[pile.length - 1]--;
+      }
     }
     out += c; pousse(c); i++;
   }
