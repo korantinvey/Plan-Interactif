@@ -34,4 +34,7 @@ module.exports = {
     "Click the next corner; come back to the first one, or press Enter, to close. Esc cancels.",
   "Cliquez le premier sommet de la zone.": "Click the area's first corner.",
   "Cliquez le premier sommet du stand.": "Click the stand's first corner.",
+  "Exposant introuvable — à relier": "Exhibitor not found — link again",
+  "Facultatif — ouvre sa fiche": "Optional — opens their details",
+  "Exposant introuvable : choisissez-le dans la liste.": "Exhibitor not found: pick one from the list.",
 };
