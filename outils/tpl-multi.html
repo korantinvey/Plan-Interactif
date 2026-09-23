@@ -5610,7 +5610,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <div id="geoInfos" hidden>
         <label class="elemChamp" id="geoCodeL"><span>Numéro</span>
           <input id="geoCode" type="text" maxlength="20" placeholder="B42"></label>
-        <label class="elemChamp"><span>Nom</span>
+        <label class="elemChamp" id="geoSocL"><span>Exposant</span>
+          <input id="geoSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+            placeholder="Facultatif — ouvre sa fiche"></label>
+        <label class="elemChamp" id="geoTitreL"><span>Nom</span>
           <input id="geoTitre" type="text" maxlength="120"></label>
       </div>
       <div id="geoDim" hidden>
@@ -6085,8 +6088,12 @@ function indexe(d){
   // et le relevé des repères, que la recherche interroge
   oublieReperes();
 
-  TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
-  parId = new Map(TOUS.map(o => [o.id, o]));
+  /* Un stand ajouté et lié à un exposant n'est que la forme de celui-ci : il
+     reste dans l'index, pour que la reprise de forme le retrouve, mais pas
+     dans ce qu'on cherche et qu'on compte — l'exposant y est déjà. */
+  const formes = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
+  TOUS = formes.filter(o => !o.lien);
+  parId = new Map(formes.map(o => [o.id, o]));
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
      qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
      propre que son nom et son rang, par lequel la fiche la retrouvera. */
@@ -6517,8 +6524,16 @@ const baliseZone = (z) =>
   '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
   '" tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>';
+/* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :
+   c'est par lui que la reprise de forme le retrouve. Lié à un exposant, il
+   prend en « data-id » et « data-soc » l'emplacement et le rang de la société
+   qu'il matérialise, comme un stand dessiné : le clic, la fiche, la couleur du
+   secteur et la chaleur lisent déjà ces deux-là, et n'ont rien à apprendre. */
 const baliseStand = (s) =>
-  '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
+  '<g class="stand" data-id="' + esc(s.lien ? s.lien.stand : s.id) + '"' +
+  (s.ajout ? ' data-aj="' + esc(s.id) + '"' : "") +
+  (s.lien ? ' data-soc="' + s.lien.soc + '"' : "") +
+  ' tabindex="0" role="button" aria-label="' +
   esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>';
 
 function montePlan(){
@@ -6897,8 +6912,14 @@ function libelles(){
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
 
   for (const s of p.stands){
-    const sel = s.id === state.sel && !decoupe;
-    if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
+    /* Un stand ajouté et lié se conduit comme un découpage : il est choisi
+       quand sa société l'est, et suit le filtre de celle-ci. */
+    const hote = s.lien && parId.get(s.lien.stand);
+    const sel = hote
+      ? s.lien.stand === state.sel && s.lien.soc === state.selSoc
+      : s.id === state.sel && !decoupe;
+    const vu = hote ? visibleSociete(hote, s.lien.soc) : visibleSurPlan(s);
+    if (!sel && (!vu || !dansVue(s))) continue;
     /* Le stand garde le nom de son titulaire, quelle que soit la fiche
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
@@ -7851,7 +7872,10 @@ function marqueRetrait(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
-    g.classList.toggle("dim", !!o && !visibleSurPlan(o));
+    // un stand ajouté et lié suit sa société, comme un stand dessiné
+    const vu = !o || (g.dataset.soc !== undefined
+      ? visibleSociete(o, Number(g.dataset.soc)) : visibleSurPlan(o));
+    g.classList.toggle("dim", !vu);
   });
   document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
@@ -7986,7 +8010,8 @@ function liste(){
      d'une conférence, et le sommaire d'un pavillon est celui de ses
      emplacements : ajouter là trois cents sessions noierait les stands qu'on
      est venu parcourir. */
-  const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
+  const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS
+                   : P().stands.filter(o => !o.lien))
     .concat(q ? CONFERENCES : [])
     /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
        un critère décrit une société, et un escalier n'en est pas une. */
@@ -18141,7 +18166,8 @@ function societesDuPlan(){
   const range = (a, b) => a.localeCompare(b, "fr", { sensitivity: "base", numeric: true });
   const cle = (s) => nomSurLePlan(s) || s.code || "";
   const out = [];
-  P().stands.slice().sort((a, b) => range(cle(a), cle(b))).forEach(s => {
+  // un stand ajouté à la main n'est pas une société : c'est lui qu'on lie
+  P().stands.filter(s => !s.ajout).sort((a, b) => range(cle(a), cle(b))).forEach(s => {
     const liste = societes(s)
       .filter(x => s.code || nomSurLePlan(x.soc))
       .map(x => ({ o: s, i: x.i, soc: x.soc,
@@ -18289,8 +18315,11 @@ function poseLibellesDessines(pxParM){
  */
 function decoupeStand(id, iSoc){
   const z = (id === null || id === undefined) ? null : $("couches");
-  return (z && z.querySelector('.dcal .sdes[data-id="' + CSS.escape(String(id)) +
-                               '"][data-soc="' + Number(iSoc) + '"]')) || null;
+  /* Un stand ajouté sur la couche Stands et lié à la même société en est un
+     aussi : il porte les mêmes deux attributs. */
+  const q = '[data-id="' + CSS.escape(String(id)) + '"][data-soc="' + Number(iSoc) + '"]';
+  return (z && z.querySelector('.dcal .sdes' + q)) ||
+         (z && $("stands").querySelector('g[data-aj]' + q)) || null;
 }
 
 /**
@@ -20743,6 +20772,7 @@ function modeGeometrie(sorte){
   }
   /* Passer d'une couche à l'autre ne garde pas le choix : ses poignées
      seraient restées sur un stand alors qu'on reprend les zones. */
+  if (SORTE_GEO === "stands" && SORTE_GEO !== avant) remplitListeSocietes();
   if (SORTE_GEO !== avant){ glisseGeo = null; fermeAjout(false); outilGeo = ""; svg.style.cursor = ""; choisitGeo(null); }
   /* On sort d'ici par plusieurs chemins — le crayon, la croix de la palette,
      la touche d'échappement, l'ouverture d'un calque, le cadenas qu'on
@@ -20760,19 +20790,24 @@ function objetGeoSous(e){
   const g = GL.actif ? cibleWebgl(e.clientX, e.clientY)
                      : e.target.closest("#stands > g[data-id], #zones > g[data-id]");
   if (!g || !g.parentNode || g.parentNode.id !== SORTE_GEO) return null;
-  return parId.get(g.dataset.id) || null;
+  // un stand ajouté et lié porte en « data-id » l'exposant, en « data-aj » lui-même
+  return parId.get(g.dataset.aj || g.dataset.id) || null;
 }
 
 /** Le groupe qui porte le tracé d'un emplacement du pavillon affiché. */
 function groupeGeo(o){
   const hote = $(o.kind === "zone" ? "zones" : "stands");
-  return hote ? hote.querySelector('g[data-id="' + CSS.escape(o.id) + '"]') : null;
+  if (!hote) return null;
+  const q = CSS.escape(o.id);
+  return o.ajout ? hote.querySelector('g[data-aj="' + q + '"]')
+                 : hote.querySelector('g[data-id="' + q + '"]:not([data-aj])');
 }
 
 function choisitGeo(id){
   geoSel = id;
   document.querySelectorAll("#stands > g, #zones > g")
-    .forEach(g => g.classList.toggle("geopick", Boolean(id) && g.dataset.id === id));
+    .forEach(g => g.classList.toggle("geopick",
+      Boolean(id) && (g.dataset.aj || g.dataset.id) === id));
   dessinePoigneesGeo();
   majPaletteGeo();
 }
@@ -21038,16 +21073,40 @@ function rechAjout(o){
   if (o.kind === "stand") o.rechProd = "";
 }
 
-/** L'objet du plan qu'une entrée décrit, tel que la source l'aurait servi. */
-function objetAjoute(id, r, i){
+/** L'objet du plan qu'une entrée décrit, tel que la source l'aurait servi.
+ *  « hotes » retrouve l'emplacement de la source auquel un stand est lié. */
+function objetAjoute(id, r, i, hotes){
   const zone = r.sorte === "zones";
-  const o = { id: id, ajout: true, kind: SORTES_AJOUT[r.sorte], p: i,
-              nom: String(r.nom || "").trim() || null };
+  const o = { id: id, ajout: true, kind: SORTES_AJOUT[r.sorte], p: i };
   if (zone) FICHE_AJOUT.forEach(k => { if (r[k]) o[k] = r[k]; });
-  else o.code = String(r.code || "").trim();
   poseGeometrie(o, r.p);
+  poseLien(o, r, hotes);
   rechAjout(o);
   return o;
+}
+
+/**
+ * Ce qu'un stand ajouté désigne, s'il est lié à un exposant.
+ *
+ * Il matérialise alors une société de la source, comme le stand dessiné d'un
+ * calque : on lui emprunte son nom, et le numéro de son emplacement s'il n'en
+ * a pas reçu un en propre. Une société que la synchronisation a retirée depuis
+ * ne laisse pas un stand au nom d'une autre : le lien se tait, le stand
+ * redevient ce qu'on lui avait écrit, et la palette dit qu'il est à relier.
+ */
+function poseLien(o, r, hotes){
+  delete o.lien; delete o.lienPerdu;
+  const propre = String(r.code || "").trim();
+  o.nom = String(r.nom || "").trim() || null;
+  if (o.kind === "stand") o.code = propre;
+  if (o.kind !== "stand" || !r.stand) return;
+  const h = hotes(String(r.stand));
+  const i = Number.isInteger(r.soc) ? r.soc : -1;
+  const soc = h && (i < 0 ? h : (h.coex || [])[i]);
+  if (!soc){ o.lienPerdu = true; return; }
+  o.lien = { stand: h.id, soc: i };
+  o.nom = nomSurLePlan(soc) || null;
+  o.code = propre || h.code || "";
 }
 
 /**
@@ -21071,13 +21130,16 @@ function appliqueAjouts(){
     p.zones = p.zones.filter(o => !o.ajout);
   });
   const noms = [];
+  // l'index n'est pas encore bâti : les emplacements de la source, relevés ici
+  const source = new Map(DATA.plans.flatMap(p => p.stands).map(s => [String(s.id), s]));
+  const hotes = (id) => source.get(id);
   Object.keys(CONF).forEach(k => {
     if (k.indexOf(PREFIXE_AJOUT) !== 0) return;
     const r = CONF[k];
     const i = r ? rang.get(String(r.plan)) : undefined;
     if (i === undefined || !SORTES_AJOUT[r.sorte] || !anneauxValides(r.p)) return;
     if (r.masquee && !admin) return;
-    const o = objetAjoute(k.slice(PREFIXE_AJOUT.length), r, i);
+    const o = objetAjoute(k.slice(PREFIXE_AJOUT.length), r, i, hotes);
     DATA.plans[i][r.sorte].push(o);
     elargitEmprise(DATA.plans[i], o);
     if (o.kind === "stand" && o.nom) noms.push(o.nom);
@@ -21118,7 +21180,7 @@ function ajouteEmplacement(anneaux){
   const r = { plan: P().id, sorte: sorte, p: anneaux };
   CONF[cleAjout(id)] = r;
   enregistreConf();
-  const o = objetAjoute(id, r, state.plan);
+  const o = objetAjoute(id, r, state.plan, (h) => parId.get(h));
   P()[sorte].push(o);
   TOUS.push(o);
   parId.set(o.id, o);
@@ -21146,7 +21208,8 @@ function renommeAjout(champ, valeur){
   if (!r) return;
   const v = String(valeur || "").trim();
   if (v) r[champ] = v; else delete r[champ];
-  if (champ === "code") o.code = v;
+  // lié, le stand reprend le numéro de l'emplacement quand on efface le sien
+  if (champ === "code") o.code = v || (o.lien ? (parId.get(o.lien.stand) || {}).code || "" : "");
   else {
     o.nom = v || null;
     if (o.kind === "stand" && v) LANGUE.protege([v]);
@@ -21163,6 +21226,42 @@ function renommeAjout(champ, valeur){
   if (state.sel === o.id) ouvre(o, null);
 }
 
+/**
+ * Lier un stand ajouté à un exposant, ou l'en délier.
+ *
+ * Le groupe se refait sur place : ce sont ses attributs qui disent ce qu'il
+ * désigne, et le clic, la couleur du secteur et la chaleur les lisent. Il
+ * quitte ou rejoint aussi la liste — lié, il n'est que la forme de l'exposant,
+ * qui y figure déjà.
+ */
+function lieAjout(texte){
+  const o = geoSel && parId.get(geoSel);
+  const r = o && o.ajout && o.kind === "stand" && CONF[cleAjout(o.id)];
+  if (!r) return;
+  const v = String(texte || "").trim();
+  const l = v ? societeSaisie(v) : null;
+  if (v && !l){
+    $("geoAide").textContent = "Exposant introuvable : choisissez-le dans la liste.";
+    return;
+  }
+  if (l){ r.stand = l.o.id; r.soc = l.i; } else { delete r.stand; delete r.soc; }
+  enregistreConf();
+  poseLien(o, r, (h) => parId.get(h));
+  rechAjout(o);
+  TOUS = TOUS.filter(x => x !== o);
+  if (!o.lien) TOUS.push(o);
+  const g = groupeGeo(o);
+  if (g){
+    g.outerHTML = baliseStand(o);
+    groupeGeo(o).classList.add("geopick");
+  }
+  appliqueSecteurs();
+  marqueRetrait();
+  recompteEmplacements();
+  libelles(); liste();
+  majPaletteGeo();
+}
+
 /** Les champs d'un emplacement ajouté. On n'écrit que ce qui change : réécrire
  *  un champ qu'on remplit y replacerait le curseur. */
 function ecritInfosAjout(o){
@@ -21170,10 +21269,24 @@ function ecritInfosAjout(o){
   if (!z) return;
   z.hidden = !(o && o.ajout);
   if (z.hidden) return;
-  $("geoCodeL").hidden = o.kind === "zone";
-  const met = (id, v) => { const c = $(id); if (c.value !== v) c.value = v; };
-  met("geoCode", String(o.code || ""));
+  const stand = o.kind === "stand";
+  $("geoCodeL").hidden = !stand;
+  $("geoSocL").hidden = !stand;
+  // lié, le stand porte le nom de l'exposant : il n'y a rien à écrire
+  $("geoTitreL").hidden = Boolean(o.lien);
+  /* Le lien se vend avec le dessin des stands : sans l'option, le champ se
+     ferme comme celui du calque de dessin, et ce qui est déjà lié le reste. */
+  $("geoSoc").disabled = !optionActive("dessinStand");
+  const r = CONF[cleAjout(o.id)] || {};
+  const met = (id, v) => { const c = $(id); if (c.value !== v && document.activeElement !== c) c.value = v; };
+  met("geoCode", String(r.code || (o.lien ? "" : o.code) || ""));
+  $("geoCode").placeholder = o.lien ? String(o.code || "B42") : "B42";
   met("geoTitre", String(o.nom || ""));
+  const l = o.lien && parId.get(o.lien.stand);
+  const soc = l && (o.lien.soc < 0 ? l : (l.coex || [])[o.lien.soc]);
+  met("geoSoc", soc ? etiquetteSociete(l, soc) || "" : "");
+  $("geoSoc").placeholder = o.lienPerdu ? "Exposant introuvable — à relier"
+                                        : "Facultatif — ouvre sa fiche";
   $("geoTitre").placeholder = o.kind === "zone" ? "Espace presse, garderie…" : "Nom de l'exposant";
 }
 
@@ -21396,6 +21509,8 @@ if ($("geoReg")) $("geoReg").querySelectorAll(".geoOutils button").forEach(b =>
   b.onclick = () => choisitOutilGeo(b.dataset.g));
 if ($("geoCode")) $("geoCode").oninput = () => renommeAjout("code", $("geoCode").value);
 if ($("geoTitre")) $("geoTitre").oninput = () => renommeAjout("nom", $("geoTitre").value);
+// le lien ne se pose qu'une fois l'exposant choisi, pas à chaque lettre tapée
+if ($("geoSoc")) $("geoSoc").onchange = () => lieAjout($("geoSoc").value);
 // la liste se range par nom : on la refait une fois le mot écrit, pas à chaque lettre
 ["geoCode", "geoTitre"].forEach(id => { if ($(id)) $(id).onchange = () => liste(); });
 if ($("geoSupprime")) $("geoSupprime").onclick = supprimeAjout;

@@ -304,8 +304,12 @@ function indexe(d){
   // et le relevé des repères, que la recherche interroge
   oublieReperes();
 
-  TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
-  parId = new Map(TOUS.map(o => [o.id, o]));
+  /* Un stand ajouté et lié à un exposant n'est que la forme de celui-ci : il
+     reste dans l'index, pour que la reprise de forme le retrouve, mais pas
+     dans ce qu'on cherche et qu'on compte — l'exposant y est déjà. */
+  const formes = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
+  TOUS = formes.filter(o => !o.lien);
+  parId = new Map(formes.map(o => [o.id, o]));
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
      qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
      propre que son nom et son rang, par lequel la fiche la retrouvera. */
@@ -736,8 +740,16 @@ const baliseZone = (z) =>
   '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
   '" tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>';
+/* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :
+   c'est par lui que la reprise de forme le retrouve. Lié à un exposant, il
+   prend en « data-id » et « data-soc » l'emplacement et le rang de la société
+   qu'il matérialise, comme un stand dessiné : le clic, la fiche, la couleur du
+   secteur et la chaleur lisent déjà ces deux-là, et n'ont rien à apprendre. */
 const baliseStand = (s) =>
-  '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
+  '<g class="stand" data-id="' + esc(s.lien ? s.lien.stand : s.id) + '"' +
+  (s.ajout ? ' data-aj="' + esc(s.id) + '"' : "") +
+  (s.lien ? ' data-soc="' + s.lien.soc + '"' : "") +
+  ' tabindex="0" role="button" aria-label="' +
   esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>';
 
 function montePlan(){
@@ -1116,8 +1128,14 @@ function libelles(){
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
 
   for (const s of p.stands){
-    const sel = s.id === state.sel && !decoupe;
-    if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
+    /* Un stand ajouté et lié se conduit comme un découpage : il est choisi
+       quand sa société l'est, et suit le filtre de celle-ci. */
+    const hote = s.lien && parId.get(s.lien.stand);
+    const sel = hote
+      ? s.lien.stand === state.sel && s.lien.soc === state.selSoc
+      : s.id === state.sel && !decoupe;
+    const vu = hote ? visibleSociete(hote, s.lien.soc) : visibleSurPlan(s);
+    if (!sel && (!vu || !dansVue(s))) continue;
     /* Le stand garde le nom de son titulaire, quelle que soit la fiche
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
@@ -2070,7 +2088,10 @@ function marqueRetrait(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
-    g.classList.toggle("dim", !!o && !visibleSurPlan(o));
+    // un stand ajouté et lié suit sa société, comme un stand dessiné
+    const vu = !o || (g.dataset.soc !== undefined
+      ? visibleSociete(o, Number(g.dataset.soc)) : visibleSurPlan(o));
+    g.classList.toggle("dim", !vu);
   });
   document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
@@ -2205,7 +2226,8 @@ function liste(){
      d'une conférence, et le sommaire d'un pavillon est celui de ses
      emplacements : ajouter là trois cents sessions noierait les stands qu'on
      est venu parcourir. */
-  const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
+  const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS
+                   : P().stands.filter(o => !o.lien))
     .concat(q ? CONFERENCES : [])
     /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
        un critère décrit une société, et un escalier n'en est pas une. */
