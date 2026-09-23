@@ -53,6 +53,16 @@ try {
   process.exit(1);
 }
 
+/* Et les droits des tables : une migration qui crée une table sans `grant`
+   passe sans erreur, et la table reste injoignable par l'API de données — on
+   ne le verrait qu'au premier appel, en production. */
+try {
+  lance("droits.js");
+} catch (e) {
+  console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
+  process.exit(1);
+}
+
 /* La version anglaise se contrôle au même geste : une phrase affichée sans sa
    traduction resterait en français sous les yeux de qui a demandé l'anglais,
    et rien d'autre ne le verrait. */

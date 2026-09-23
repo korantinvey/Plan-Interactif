@@ -71,6 +71,16 @@ dernière de `main`** : si elle lui est antérieure, réhorodatez-la. C'est sans
 risque tant qu'elle n'a jamais été appliquée — et le savoir se lit dans le
 journal du déploiement, qui la nomme.
 
+**Une table neuve porte ses droits dans sa migration.** Depuis le 30 octobre
+2026, Supabase n'accorde plus rien de lui-même sur une table créée dans
+`public` : sans `grant`, l'API de données la refuse — aux fonctions aussi, la
+clé `service_role` ignorant le RLS mais pas les droits. La migration, elle,
+passe sans erreur, et le défaut n'apparaît qu'au premier appel en production.
+Le squelette de `npm run migration` rappelle les trois `grant` ; `npm run
+droits`, chaîné dans `npm run verifie`, refuse un `create table` qui n'en a
+aucun. Les tables d'avant ont reçu les leurs d'un coup, par la migration
+`les_droits_de_l_api_de_donnees_ecrits_dans_les_migrations`.
+
 **Jamais de poussée forcée.** Le workflow `Pages` commite sur la branche poussée
 quand `web/` était en retard : le clone local se retrouve derrière sans l'avoir
 vu, et un `--force` efface alors le travail d'à côté. `git pull --rebase`, et
@@ -127,6 +137,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `.github/workflows/` | reconstruction des pages, déploiement Supabase, sauvegarde et écriture des correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | les essais hors page — `npm run essais` (douze cas) et `npm run fep26` (salon synthétique) ; l'ordonnanceur est extrait du gabarit par ancres, jamais recopié |
+| `outils/droits.js` | les tables créées sans `grant` — injoignables par l'API de données depuis le 30 octobre 2026, sans que la migration échoue. Chaîné dans `npm run verifie` ; seul, `npm run droits` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir

@@ -19,7 +19,8 @@
     "adoption": "node outils/essais/adoption.js",
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
-    "appels": "node outils/appels.js"
+    "appels": "node outils/appels.js",
+    "droits": "node outils/droits.js"
   },
   "type": "commonjs",
   "private": true,

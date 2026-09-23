@@ -65,5 +65,18 @@ if (fs.existsSync(fichier)) {
 
 // Le « pourquoi » en tête : c'est la forme qu'ont toutes les migrations en
 // place, et la seule chose qu'on regrette de ne pas trouver six mois après.
-fs.writeFileSync(fichier, `-- ${titre}\n--\n-- Pourquoi : \n\n`);
+//
+// Le rappel des droits suit : depuis le 30 octobre 2026, Supabase n'en accorde
+// plus aucun à une table neuve, et la migration qui l'oublie passe sans erreur.
+fs.writeFileSync(fichier, `-- ${titre}
+--
+-- Pourquoi : 
+
+-- Une table créée ici reçoit ses droits ici, sans quoi l'API de données la
+-- refuse (\`npm run droits\` le vérifie). Ne garder que ce qu'elle sert :
+--
+--   grant select on public.<table> to anon;
+--   grant select, insert, update, delete on public.<table> to authenticated;
+--   grant select, insert, update, delete on public.<table> to service_role;
+`);
 console.log("Migration créée :", path.relative(path.join(__dirname, ".."), fichier));

@@ -876,6 +876,7 @@ Fonctions :
 - `20260921132502_un_seul_nom_de_produit_dans_le_commentaire_du_nom_de_l_application.sql` — —
 - `20260921145417_le_calage_de_la_carte_par_pavillon.sql` — plan
 - `20260922144359_la_charge_prevue_des_stands.sql` — plan_de_visite, compteur, fn enregistre_mesures, fn pose_plan_de_visite, fn charge_prevue, fn purge_presences, fn reinitialise_compteurs, fn rapport_utilisation
+- `20260923181138_les_droits_de_l_api_de_donnees_ecrits_dans_les_migrations.sql` — —
 
 ## Le reste
 
