@@ -29,3 +29,6 @@ outils/chk.js
 # État local de `wrangler dev` : caches, bases de simulation, paquet temporaire.
 # Il se refait tout seul, et ne décrit que la machine qui l'a produit.
 .wrangler/
+
+# Sorties de simulation : régénérées par `npm run fep26`, jamais relues par le code.
+simulations/

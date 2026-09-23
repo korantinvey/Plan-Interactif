@@ -41,6 +41,18 @@ try {
   process.exit(1);
 }
 
+/* Et les noms, au même geste. La syntaxe ne résout rien : une fonction appelée
+   après avoir été renommée dans le module d'à côté passe les deux contrôles
+   précédents sans un mot, et casse au premier clic. Les modules du plan étant
+   soudés dans un espace de noms unique, un renommage traverse des fichiers que
+   rien ne relie — c'est arrivé, et c'est pour cela que ceci existe. */
+try {
+  lance("appels.js");
+} catch (e) {
+  console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
+  process.exit(1);
+}
+
 /* La version anglaise se contrôle au même geste : une phrase affichée sans sa
    traduction resterait en français sous les yeux de qui a demandé l'anglais,
    et rien d'autre ne le verrait. */

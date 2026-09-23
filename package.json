@@ -14,7 +14,12 @@
     "lieux": "node outils/lieux.js",
     "bd": "supabase db push",
     "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
-    "sup": "supabase"
+    "sup": "supabase",
+    "essais": "node outils/essais/capacite.js",
+    "adoption": "node outils/essais/adoption.js",
+    "simulation": "node outils/essais/simulation.js",
+    "fep26": "node outils/essais/fep26.js",
+    "appels": "node outils/appels.js"
   },
   "type": "commonjs",
   "private": true,
