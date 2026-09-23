@@ -418,7 +418,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3311 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3315 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -440,19 +440,19 @@ Fonctions :
 `versPorte` 2045 · `typeLiaison` 2106 · `nomRepere` 2114 · `oublieLiaisons` 2132
 `lienEcrits` 2144 · `ecritLiens` 2153 · `annuaireLiaisons` 2158 · `liensDe` 2190
 `coutLiaison` 2210 · `passagePraticable` 2217 · `passagesDe` 2225 · `sortiesDe` 2235
-`plansRelies` 2243 · `balayage` 2267 · `distanceDepuis` 2281 · `cheminLiaisons` 2308
-`routeParLiaisons` 2392 · `routeEntre` 2428 · `calculeRoute` 2467 · `couleurNappe` 2493
-`rafraichitApercu` 2499 · `marchesIci` 2542 · `rayonBout` 2547 · `arreteTracage` 2580
-`mesureMarches` 2587 · `coupeMarche` 2602 · `distancesDesArrets` 2618
-`peintItineraire` 2630 · `lanceTracage` 2681 · `dessineItineraire` 2706
-`rafraichitBouts` 2728 · `cadreItineraire` 2751 · `champIti` 2775 · `ecritDistance` 2779
-`ecritDuree` 2787 · `fermeSugg` 2792 · `montreSugg` 2799 · `choisitPoint` 2833
-`valideSaisie` 2842 · `effaceItineraire` 2854 · `relance` 2881 · `phraseLiaison` 2932
-`montreResultat` 2946 · `bandeauVisee` 3088 · `armeVisee` 3111 · `finVisee` 3129
-`viseItineraire` 3145 · `visePoi` 3151 · `visePoint` 3157 · `ouvreItineraire` 3189
-`fermeItineraire` 3217 · `versItineraire` 3227 · `versItineraireDe` 3230
+`plansRelies` 2243 · `balayage` 2267 · `distanceDepuis` 2285 · `cheminLiaisons` 2312
+`routeParLiaisons` 2396 · `routeEntre` 2432 · `calculeRoute` 2471 · `couleurNappe` 2497
+`rafraichitApercu` 2503 · `marchesIci` 2546 · `rayonBout` 2551 · `arreteTracage` 2584
+`mesureMarches` 2591 · `coupeMarche` 2606 · `distancesDesArrets` 2622
+`peintItineraire` 2634 · `lanceTracage` 2685 · `dessineItineraire` 2710
+`rafraichitBouts` 2732 · `cadreItineraire` 2755 · `champIti` 2779 · `ecritDistance` 2783
+`ecritDuree` 2791 · `fermeSugg` 2796 · `montreSugg` 2803 · `choisitPoint` 2837
+`valideSaisie` 2846 · `effaceItineraire` 2858 · `relance` 2885 · `phraseLiaison` 2936
+`montreResultat` 2950 · `bandeauVisee` 3092 · `armeVisee` 3115 · `finVisee` 3133
+`viseItineraire` 3149 · `visePoi` 3155 · `visePoint` 3161 · `ouvreItineraire` 3193
+`fermeItineraire` 3221 · `versItineraire` 3231 · `versItineraireDe` 3234
 
-### `_journee.html` — 2790 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2797 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -461,17 +461,17 @@ Fonctions :
 `peineDeCharge` 134 · `minutesDe` 201 · `finInstant` 202 · `ecritHeure` 204
 `ecritMinutes` 209 · `dateDeCle` 222 · `jourBref` 228 · `joursSalon` 238 · `joursAVenir` 267
 `joursDefaut` 285 · `confsParJour` 295 · `pointConf` 312 · `departsProposes` 331
-`matriceJournee` 364 · `ecartDesJours` 490 · `poidsDesJours` 520 · `chargeDuJour` 543
-`rangeSejour` 552 · `derouleJournee` 1106 · `prepareSejour` 1248 · `calculeSejour` 1450
-`apercuRepartition` 1484 · `rangJournee` 1498 · `lienJournee` 1510 · `boutonJour` 1533
-`arretJournee` 1546 · `remplitOnglets` 1593 · `jourDuStand` 1622 · `ouvreChoixJour` 1634
-`figeLaVisite` 1691 · `placeSurJour` 1700 · `rendAuPlan` 1708 · `retireDuSejour` 1714
-`remplitJournee` 1724 · `ecritApercu` 1937 · `appliqueVueParcours` 1967
-`traceJournee` 2009 · `montreLeJour` 2018 · `perimeJournee` 2033 · `oublieSejour` 2048
-`ouvreOrganisation` 2063 · `essaieSejour` 2443 · `lanceSejour` 2473 · `refaitSejour` 2512
-`trancheDe` 2545 · `chargeSuivie` 2565 · `jourISO` 2571 · `etapesDuSejour` 2579
-`annoncePlan` 2606 · `celluleUtile` 2642 · `dilatationPour` 2705 · `dilatationDuJour` 2721
-`litLaCharge` 2758 · `chargeCellule` 2778
+`matriceJournee` 364 · `ecartDesJours` 497 · `poidsDesJours` 527 · `chargeDuJour` 550
+`rangeSejour` 559 · `derouleJournee` 1113 · `prepareSejour` 1255 · `calculeSejour` 1457
+`apercuRepartition` 1491 · `rangJournee` 1505 · `lienJournee` 1517 · `boutonJour` 1540
+`arretJournee` 1553 · `remplitOnglets` 1600 · `jourDuStand` 1629 · `ouvreChoixJour` 1641
+`figeLaVisite` 1698 · `placeSurJour` 1707 · `rendAuPlan` 1715 · `retireDuSejour` 1721
+`remplitJournee` 1731 · `ecritApercu` 1944 · `appliqueVueParcours` 1974
+`traceJournee` 2016 · `montreLeJour` 2025 · `perimeJournee` 2040 · `oublieSejour` 2055
+`ouvreOrganisation` 2070 · `essaieSejour` 2450 · `lanceSejour` 2480 · `refaitSejour` 2519
+`trancheDe` 2552 · `chargeSuivie` 2572 · `jourISO` 2578 · `etapesDuSejour` 2586
+`annoncePlan` 2613 · `celluleUtile` 2649 · `dilatationPour` 2712 · `dilatationDuJour` 2728
+`litLaCharge` 2765 · `chargeCellule` 2785
 
 ### `_js.html` — 5410 l. → plan-admin.html, plan-smcl.html, plan.html
 
