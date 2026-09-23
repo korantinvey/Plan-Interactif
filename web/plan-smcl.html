@@ -38851,13 +38851,14 @@ function constTexte(){
   class FiltreZoom extends deck.LayerExtension {
     getShaders(){
       return {
-        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n} filtreZoom;\n",
-                    uniformTypes: { mode: "f32" } }],
+        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n  float muet;\n} filtreZoom;\n",
+                    uniformTypes: { mode: "f32", muet: "f32" } }],
         inject: {
           "vs:#decl": "in vec3 instanceZoomFiltre;",
           "vs:DECKGL_FILTER_GL_POSITION":
             "float z = log2(project.scale);\n" +
             "bool garde = filtreZoom.mode > 1.5 ? z < instanceZoomFiltre.z : (filtreZoom.mode > 0.5 && z >= instanceZoomFiltre.z);\n" +
+            "if (filtreZoom.muet > 0.5 && !bool(picking.isActive)) garde = true;\n" +
             "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || garde) position = vec4(0.0, 0.0, 2.0, 1.0);",
         },
       };
@@ -38866,7 +38867,7 @@ function constTexte(){
       const am = this.getAttributeManager();
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
-    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0 } }); }
+    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0, muet: this.props.muetALEcran ? 1 : 0 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
@@ -38914,7 +38915,7 @@ function constTexte(){
   }
   TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
   TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
-  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0 };
+  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0, muetALEcran: false };
   /* Le contour d'une lettre, et le flou qu'il prenait au zoom.
 
      Un texte SDF ne garde pas la forme de ses lettres : il garde, pour chaque
@@ -38964,7 +38965,9 @@ function constTexte(){
      sautillent d'un pixel pendant le zoom. */
   class LissageSdf extends deck.LayerExtension {
     getShaders(){
-      return { inject: { "fs:#main-end": [
+      const bloc = "layout(std140) uniform sousPixelUniforms {\n  float decalage;\n  float largeur;\n} sousPixel;\n";
+      return { modules: [{ name: "sousPixel", fs: bloc, uniformTypes: { decalage: "f32", largeur: "f32" } }],
+               inject: { "fs:#main-end": [
         "if (sdf.enabled && !bool(picking.isActive)) {",
         "  float dist = texture(iconsTexture, vTextureCoords).a;",
         "  float bande = clamp(fwidth(dist) * 0.6, 0.0008, sdf.gamma);",
@@ -38978,10 +38981,12 @@ function constTexte(){
         "  }",
         "} else if (!bool(picking.isActive)) {",
         "  vec2 pasX = dFdx(vTextureCoords), pasY = dFdy(vTextureCoords);",
-        "  float couvre = texture(iconsTexture, vTextureCoords - 0.125 * pasX - 0.375 * pasY, -1.0).a;",
-        "  couvre += texture(iconsTexture, vTextureCoords + 0.375 * pasX - 0.125 * pasY, -1.0).a;",
-        "  couvre += texture(iconsTexture, vTextureCoords + 0.125 * pasX + 0.375 * pasY, -1.0).a;",
-        "  couvre += texture(iconsTexture, vTextureCoords - 0.375 * pasX + 0.125 * pasY, -1.0).a;",
+        "  vec2 centre = vTextureCoords + pasX * sousPixel.decalage;",
+        "  pasX *= sousPixel.largeur;",
+        "  float couvre = texture(iconsTexture, centre - 0.125 * pasX - 0.375 * pasY, -1.0).a;",
+        "  couvre += texture(iconsTexture, centre + 0.375 * pasX - 0.125 * pasY, -1.0).a;",
+        "  couvre += texture(iconsTexture, centre + 0.125 * pasX + 0.375 * pasY, -1.0).a;",
+        "  couvre += texture(iconsTexture, centre - 0.375 * pasX + 0.125 * pasY, -1.0).a;",
         "  float reduit = length(fwidth(vTextureCoords) * vec2(textureSize(iconsTexture, 0)));",
         "  float releve = mix(0.75, 0.55, clamp((reduit - 2.0) / 3.0, 0.0, 1.0));",
         "  fragColor.a = pow(0.25 * couvre, releve) * vColor.a * layer.opacity;",
@@ -38990,6 +38995,11 @@ function constTexte(){
     }
   }
   LissageSdf.extensionName = "LissageSdf";
+  LissageSdf.defaultProps = { sousPixel: [0, 1] };
+  LissageSdf.prototype.draw = function(){
+    const [decalage, largeur] = this.props.sousPixel || [0, 1];
+    this.setShaderModuleProps({ sousPixel: { decalage, largeur } });
+  };
   /* Des objets créés une fois pour toutes : la bibliothèque compare ces
      réglages par identité, et un nouvel objet — même identique — lui faisait
      régénérer l'atlas des polices et recompiler ses shaders. */
@@ -39039,6 +39049,59 @@ function jeuDeCaracteres(items){
   return JEU_CARACTERES;
 }
 
+/* Les petits noms d'un écran de PC, lissés sous-pixel par sous-pixel.
+
+   Sur un téléphone, un nom de cinq pixels CSS en couvre dix ou quinze : il se
+   lit net. Sur un écran de PC, il n'en a que cinq, et le navigateur tient son
+   texte lisible par un moyen que la carte graphique ne lui emprunte pas
+   d'elle-même : il lisse chaque bord sur les trois sous-pixels — rouge, vert,
+   bleu — côte à côte dans le pixel (ClearType sous Windows). Trois fois plus
+   de finesse à l'horizontale, là où les lettres en manquent.
+
+   La même chose se refait ici : chaque petit nom est peint trois fois, une
+   par canal, chacune ne pouvant écrire que le sien (« colorMask ») et lisant
+   la lettre un tiers de pixel plus à gauche ou plus à droite. Le mélange se
+   fait alors canal par canal, exactement comme le lissage du navigateur.
+   Chaque passe lit 0,6 pixel de large, plus que son tiers de pixel : les
+   franges colorées restent ainsi aussi discrètes que celles du navigateur.
+
+   Ce mélange n'est juste que sur un fond opaque. La toile n'a qu'une
+   opacité par pixel, pas une par canal : là où elle est transparente — le
+   sol, sous lequel paraissent le fond de la page ou la carte —, les trois
+   couvertures ne peuvent pas s'y reporter, et les lettres y prenaient des
+   franges sombres et bleutées. Seuls les noms écrits sur l'aplat d'un stand
+   en profitent donc (« SUR_UN_STAND ») : ce sont eux, justement, qu'on lit
+   petits. Les noms de zone et les textes dessinés gardent le lissage
+   ordinaire. La passe verte, celle du milieu, porte l'opacité du tout.
+
+   La désignation, elle, lit la couleur de ce qui est peint : trois passes à
+   un seul canal lui donneraient des identifiants tronqués. La couche
+   d'origine reste donc, pour elle seule — muette à l'écran, son shader
+   envoyant chaque lettre hors du cadre hors de la passe de désignation.
+
+   Réservé aux écrans de densité inférieure à 1,75 : au-delà, les pixels sont
+   assez fins pour que le lissage ordinaire suffise, et c'est le cas des Mac,
+   que le système n'a plus jamais lissés ainsi depuis 2018 — des franges
+   colorées y détonneraient, écartées d'office. */
+const PASSES_SOUS_PIXEL = [
+  { canal: "-r", masque: [true, false, false, false], decalage: -1 / 3 },
+  { canal: "-v", masque: [false, true, false, true], decalage: 0 },
+  { canal: "-b", masque: [false, false, true, false], decalage: 1 / 3 },
+];
+function sousPixelOffert(){
+  if ((window.devicePixelRatio || 1) >= 1.75) return false;
+  return !/Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || "");
+}
+function couchesPetites(id, commun, K, sousPixel){
+  const base = { ...commun, fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode };
+  if (!sousPixel || !sousPixelOffert()) return [new deck.TextLayer({ ...base, id: id + "-petit" })];
+  return [
+    ...(commun.pickable ? [new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true })] : []),
+    ...PASSES_SOUS_PIXEL.map(p => new deck.TextLayer({ ...base, id: id + "-petit" + p.canal,
+      pickable: false, sousPixel: [p.decalage, .6], parameters: { colorMask: p.masque } })),
+  ];
+}
+
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
@@ -39061,7 +39124,7 @@ function couchesTexte(id, items, famille, graisse, extra){
       getColor: halo.couleur, getPixelOffset: [x, y], updateTriggers: { ...commun.updateTriggers, getColor: halo.couleur.join() } })) : [];
   return [
     ...autour,
-    new deck.TextLayer({ ...commun, id: id + "-petit", fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode }),
+    ...couchesPetites(id, commun, K, extra.sousPixel),
     new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext, modeFiltre: K.grand.mode,
       ...(halo ? { outlineWidth: Math.min(.9, halo.largeur * 2.6), outlineColor: halo.couleur } : {}) }),
   ];
@@ -39624,6 +39687,12 @@ function libellesWebgl(){
   planifieWebgl();
 }
 
+/* Ce qui s'écrit sur l'aplat d'un stand — son nom, son numéro, ceux qu'il
+   héberge —, par opposition au nom d'une zone, posé sur le sol ou sur un
+   aplat translucide. Le lissage sous-pixel n'est juste que sur un fond
+   opaque : voir « couchesPetites ». */
+const SUR_UN_STAND = /^(nm|cd|coexN)\b/;
+
 /* Les noms se regroupent par police une fois par version, et non à chaque pas
    de zoom : un nouveau tableau, même au contenu identique, passe pour des
    données neuves, et la bibliothèque remettait en page les mille noms à chaque
@@ -39638,8 +39707,9 @@ function groupesNoms(cle, liste){
     const mo = GL.modeles.get(d.cls) || GL.modeles.get("nm");
     if (!mo || !mo.visible) continue;
     // un liseré se règle pour toute une couche : les noms qui en portent un vont ensemble
-    const k = mo.famille + "|" + mo.graisse + "|" + (mo.halo ? mo.halo.couleur.join() + "/" + mo.halo.largeur.toFixed(3) : "");
-    if (!groupes.has(k)) groupes.set(k, { mo, items: [] });
+    const sp = SUR_UN_STAND.test(d.cls);
+    const k = mo.famille + "|" + mo.graisse + "|" + (mo.halo ? mo.halo.couleur.join() + "/" + mo.halo.largeur.toFixed(3) : "") + (sp ? "|sp" : "");
+    if (!groupes.has(k)) groupes.set(k, { mo, sp, items: [] });
     groupes.get(k).items.push(d);
   }
   GL.groupes.set(cle, { version, groupes: [...groupes.values()] });
@@ -39648,7 +39718,7 @@ function groupesNoms(cle, liste){
 function couchesNoms(prefixe, groupes){
   let i = 0;
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }
