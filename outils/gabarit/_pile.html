@@ -164,7 +164,7 @@ function construitPanneau(){
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       (sorte ? boutonVerrouGeo(sorte) +
                '<button class="ren rgeo" data-geo="' + sorte +
-               '" title="Reprendre la géométrie à la main">&#9998;</button>' : "") +
+               '" title="Reprendre ou ajouter des formes à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
@@ -290,7 +290,7 @@ function construitPanneau(){
       const cr = d.querySelector(".rgeo");
       cr.setAttribute("aria-pressed", SORTE_GEO === sorte);
       cr.disabled = ferme;
-      if (ferme) cr.title = "Couche verrouillée : ouvrez son cadenas pour reprendre une forme.";
+      if (ferme) cr.title = "Couche verrouillée : ouvrez son cadenas pour reprendre ou ajouter une forme.";
       cr.onclick = ev => {
         ev.stopPropagation();
         modeGeometrie(SORTE_GEO === sorte ? null : sorte);

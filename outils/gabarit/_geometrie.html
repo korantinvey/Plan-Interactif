@@ -204,8 +204,9 @@ function reposeSource(o){
 function poseGeometrie(o, anneaux){
   /* Le relevé de la source se prend ici, et nulle part ailleurs : c'est le
      seul passage obligé de tout ce qui touche à la forme, et le prendre après
-     coup relèverait la retouche en croyant relever la source. */
-  geometrieSource(o);
+     coup relèverait la retouche en croyant relever la source. Un emplacement
+     ajouté à la main n'a pas de source : sa forme est sa seule vérité. */
+  if (!o.ajout) geometrieSource(o);
   o.d = traceGeo(anneaux);
   const b = boiteGeo(anneaux);
   o.c = b.c; o.bb = b.bb;
@@ -318,7 +319,7 @@ function modeGeometrie(sorte){
   }
   /* Passer d'une couche à l'autre ne garde pas le choix : ses poignées
      seraient restées sur un stand alors qu'on reprend les zones. */
-  if (SORTE_GEO !== avant){ glisseGeo = null; choisitGeo(null); }
+  if (SORTE_GEO !== avant){ glisseGeo = null; fermeAjout(false); outilGeo = ""; svg.style.cursor = ""; choisitGeo(null); }
   /* On sort d'ici par plusieurs chemins — le crayon, la croix de la palette,
      la touche d'échappement, l'ouverture d'un calque, le cadenas qu'on
      referme. Les crayons s'allument donc ici, une fois pour tous. */
@@ -445,10 +446,19 @@ function majPaletteGeo(){
     ? (o.nom || o.code || (o.kind === "zone" ? "Zone sans nom" : "Stand"))
     : nomSorteGeo(SORTE_GEO);
   $("geoOrigine").disabled = !(o && CONF[cleGeo(o.id)]);
+  // un emplacement ajouté n'a pas d'origine où revenir : il se supprime
+  $("geoOrigine").hidden = Boolean(o && o.ajout);
+  $("geoSupprime").hidden = !(o && o.ajout);
+  $("geoFiche").hidden = !(o && o.ajout && o.kind === "zone");
+  ecritInfosAjout(o);
   ecritDimensionsGeo(o);
-  $("geoAide").textContent = !o
-    ? (SORTE_GEO === "zones" ? "Cliquez une zone pour reprendre sa forme."
-                             : "Cliquez un emplacement pour reprendre sa forme.")
+  $("geoReg").querySelectorAll(".geoOutils button").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.g === outilGeo));
+  $("geoAide").textContent = outilGeo
+    ? aideAjout()
+    : !o
+    ? (SORTE_GEO === "zones" ? "Cliquez une zone pour reprendre sa forme, ou ajoutez-en une."
+                             : "Cliquez un emplacement pour reprendre sa forme, ou ajoutez-en un.")
     : (CONF[cleGeo(o.id)]
         ? "Glissez la forme ou ses poignées, ou ajustez-la aux flèches du clavier."
         : "Glissez la forme pour la déplacer, ou ses poignées pour la redimensionner. " +
@@ -484,6 +494,7 @@ function finGesteGeo(o){
 
 /** Retenir la forme reprise, avec l'empreinte de celle dont elle part. */
 function enregistreGeo(o){
+  if (o.ajout){ enregistreAjout(o); return; }
   const a = anneauxGeo(o.d);
   const src = geometrieSource(o);
   /* Une forme revenue sur celle de la source n'est pas une retouche : elle
@@ -554,10 +565,312 @@ function appliqueDimensionGeo(){
 }
 
 /* ------------------------------------------------------------
+   Ajouter à une couche ce que la source n'a pas
+
+   La source ne dit pas tout, ou pas à temps : un stand vendu la veille de
+   l'ouverture, un îlot redécoupé au montage, une zone — espace presse,
+   point de rendez-vous, garderie — que l'organisateur n'a jamais saisie. On
+   les dessine alors là où ils seront cherchés : un stand parmi les stands,
+   une zone parmi les zones, et non sur un calque de dessin où ils ne
+   prendraient ni la couleur de la couche, ni sa place dans la pile, ni la
+   recherche, ni la fiche.
+
+   Ils se rangent dans la configuration du salon, une entrée par élément,
+   comme la retouche d'une forme — et pour la même raison : la
+   synchronisation réécrit l'instantané de la source, jamais la
+   configuration. Ils traversent donc toutes les synchronisations, et la
+   publication, qui ne renvoie que les clés changées, n'écrase pas celui
+   qu'un autre poste vient d'ajouter.
+
+   Une zone ajoutée garde aussi sa fiche dans son entrée. Celle d'une zone de
+   la source vit dans les colonnes de l'événement, que le serveur n'applique
+   qu'aux zones de l'instantané : la fiche d'une zone qu'il ne connaît pas n'y
+   parviendrait jamais au visiteur.
+   ------------------------------------------------------------ */
+const PREFIXE_AJOUT = "_ajout:";
+const cleAjout = (id) => PREFIXE_AJOUT + id;
+const SORTES_AJOUT = { stands: "stand", zones: "zone" };
+/* Ce que la fiche d'une zone ajoutée retient, en plus de son nom. Les salles
+   de conférence n'y sont pas : leur colonne est indexée par salle, et le
+   serveur retrouve les zones ajoutées dans la configuration du pavillon pour
+   y rattacher le programme. */
+const FICHE_AJOUT = ["nom_en", "type", "description", "description_en", "lien",
+                     "logo", "traversable", "masquee"];
+
+let outilGeo = "";       // « », « rect » ou « poly » : choisir, ou ajouter
+let traceAjout = null;   // la forme en cours de tracé
+
+/** Des anneaux lisibles : ce qui vient de la configuration a pu être écrit
+ *  par une autre version de la page, ou abîmé en route. */
+const anneauxValides = (a) => Array.isArray(a) && a.length > 0 && a.every(r =>
+  Array.isArray(r) && r.length > 2 && r.every(q =>
+    Array.isArray(q) && isFinite(q[0]) && isFinite(q[1])));
+
+/** Ce sur quoi porte la recherche, comme `indexe` l'assemble pour la source. */
+function rechAjout(o){
+  o.rech = (o.kind === "zone"
+    ? String(o.nom || "") + " " + String(o.nom_en || "")
+    : String(o.nom || "") + " " + String(o.code || "")).toLowerCase();
+  if (o.kind === "stand") o.rechProd = "";
+}
+
+/** L'objet du plan qu'une entrée décrit, tel que la source l'aurait servi. */
+function objetAjoute(id, r, i){
+  const zone = r.sorte === "zones";
+  const o = { id: id, ajout: true, kind: SORTES_AJOUT[r.sorte], p: i,
+              nom: String(r.nom || "").trim() || null };
+  if (zone) FICHE_AJOUT.forEach(k => { if (r[k]) o[k] = r[k]; });
+  else o.code = String(r.code || "").trim();
+  poseGeometrie(o, r.p);
+  rechAjout(o);
+  return o;
+}
+
+/**
+ * Les emplacements ajoutés, versés dans leur pavillon.
+ *
+ * Appelée par « indexe », les réglages lus et avant toute retouche : ce qui
+ * suit — le tracé, les noms, la recherche, les aimants, la grille de marche —
+ * ne doit pas savoir d'où vient un stand. Ceux d'un chargement précédent sont
+ * retirés d'abord : un second passage les aurait posés deux fois.
+ *
+ * Une zone ajoutée puis retirée du plan public ne part pas chez le visiteur,
+ * comme celle de la source que le serveur écarte ; l'administration la garde,
+ * pâlie, pour qu'on puisse revenir sur ce choix.
+ */
+function appliqueAjouts(){
+  if (!DATA) return;
+  const admin = ADMIN || document.documentElement.dataset.role === "admin";
+  const rang = new Map(DATA.plans.map((p, i) => [String(p.id), i]));
+  DATA.plans.forEach(p => {
+    p.stands = p.stands.filter(o => !o.ajout);
+    p.zones = p.zones.filter(o => !o.ajout);
+  });
+  const noms = [];
+  Object.keys(CONF).forEach(k => {
+    if (k.indexOf(PREFIXE_AJOUT) !== 0) return;
+    const r = CONF[k];
+    const i = r ? rang.get(String(r.plan)) : undefined;
+    if (i === undefined || !SORTES_AJOUT[r.sorte] || !anneauxValides(r.p)) return;
+    if (r.masquee && !admin) return;
+    const o = objetAjoute(k.slice(PREFIXE_AJOUT.length), r, i);
+    DATA.plans[i][r.sorte].push(o);
+    elargitEmprise(DATA.plans[i], o);
+    if (o.kind === "stand" && o.nom) noms.push(o.nom);
+  });
+  // un nom d'enseigne ne se traduit pas, qu'il vienne de la source ou d'ici
+  if (noms.length) LANGUE.protege(noms);
+  nomsAnglaisDesZones();
+}
+
+/** Retenir la forme d'un emplacement ajouté, là où il vit. */
+function enregistreAjout(o){
+  const r = CONF[cleAjout(o.id)];
+  if (r) r.p = anneauxGeo(o.d);
+  enregistreConf();
+  finGesteGeo(o);
+  majPaletteGeo();
+}
+
+/** Les compteurs du pied de liste, qui disent ce que le salon compte. */
+function recompteEmplacements(){
+  $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
+  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
+    HEBERGES.filter(o => o.nom).length;
+  $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+}
+
+/**
+ * Un emplacement neuf, à sa place dans la couche.
+ *
+ * Posé dans le groupe de sa couche plutôt que par un remontage du pavillon :
+ * celui-ci viderait l'historique des dessins et refermerait ce qu'on a ouvert,
+ * pour un seul stand de plus.
+ */
+function ajouteEmplacement(anneaux){
+  const sorte = SORTE_GEO;
+  if (!sorte || !anneauxValides(anneaux)) return;
+  const id = "ajout-" + nouvelId();
+  const r = { plan: P().id, sorte: sorte, p: anneaux };
+  CONF[cleAjout(id)] = r;
+  enregistreConf();
+  const o = objetAjoute(id, r, state.plan);
+  P()[sorte].push(o);
+  TOUS.push(o);
+  parId.set(o.id, o);
+  $(sorte).insertAdjacentHTML("beforeend",
+    o.kind === "zone" ? baliseZone(o) : baliseStand(o));
+  // la couleur d'un secteur et le retrait d'une recherche se posent sur les
+  // groupes : celui-ci vient de naître
+  appliqueSecteurs();
+  marqueRetrait();
+  finGesteGeo(o);
+  recompteEmplacements();
+  liste();
+  /* L'outil reste pris : un îlot se découpe en cinq stands d'affilée. Le
+     dernier posé est choisi, et son champ offert, pour qu'on le numérote
+     avant de tracer le suivant. */
+  choisitGeo(o.id);
+  const champ = $(o.kind === "zone" ? "geoTitre" : "geoCode");
+  if (champ){ champ.focus(); champ.select(); }
+}
+
+/** Le numéro ou le nom d'un emplacement ajouté, tel qu'on le tape. */
+function renommeAjout(champ, valeur){
+  const o = geoSel && parId.get(geoSel);
+  const r = o && o.ajout && CONF[cleAjout(o.id)];
+  if (!r) return;
+  const v = String(valeur || "").trim();
+  if (v) r[champ] = v; else delete r[champ];
+  if (champ === "code") o.code = v;
+  else {
+    o.nom = v || null;
+    if (o.kind === "stand" && v) LANGUE.protege([v]);
+    if (o.kind === "zone") nomsAnglaisDesZones();
+  }
+  rechAjout(o);
+  const g = groupeGeo(o);
+  if (g) g.setAttribute("aria-label", o.kind === "zone" ? (o.nom || "zone")
+                                      : (o.nom || ("Stand " + (o.code || ""))));
+  enregistreConf();
+  libelles();
+  $("geoNom").textContent = o.nom || o.code ||
+    (o.kind === "zone" ? "Zone sans nom" : "Stand");
+  if (state.sel === o.id) ouvre(o, null);
+}
+
+/** Les champs d'un emplacement ajouté. On n'écrit que ce qui change : réécrire
+ *  un champ qu'on remplit y replacerait le curseur. */
+function ecritInfosAjout(o){
+  const z = $("geoInfos");
+  if (!z) return;
+  z.hidden = !(o && o.ajout);
+  if (z.hidden) return;
+  $("geoCodeL").hidden = o.kind === "zone";
+  const met = (id, v) => { const c = $(id); if (c.value !== v) c.value = v; };
+  met("geoCode", String(o.code || ""));
+  met("geoTitre", String(o.nom || ""));
+  $("geoTitre").placeholder = o.kind === "zone" ? "Espace presse, garderie…" : "Nom de l'exposant";
+}
+
+/** Supprimer un emplacement ajouté : lui seul se retire, la source n'y perd rien. */
+function supprimeAjout(){
+  const o = geoSel && parId.get(geoSel);
+  if (!o || !o.ajout) return;
+  const zone = o.kind === "zone";
+  const nom = o.nom || o.code;
+  confirme(zone ? "Supprimer la zone ?" : "Supprimer le stand ?",
+    nom ? "« " + nom + " » sera retiré du plan, pour tous les visiteurs une fois publié."
+        : zone ? "Cette zone sera retirée du plan, pour tous les visiteurs une fois publié."
+               : "Ce stand sera retiré du plan, pour tous les visiteurs une fois publié.",
+    "Supprimer", () => {
+      delete CONF[cleAjout(o.id)];
+      enregistreConf();
+      const p = DATA.plans[o.p];
+      const sorte = o.kind === "zone" ? "zones" : "stands";
+      p[sorte] = p[sorte].filter(x => x !== o);
+      TOUS = TOUS.filter(x => x !== o);
+      parId.delete(o.id);
+      const g = groupeGeo(o);
+      if (g) g.remove();
+      if (state.sel === o.id) ferme();
+      choisitGeo(null);
+      finGesteGeo(o);
+      recompteEmplacements();
+      liste();
+    });
+}
+
+/* ------------------------------------------------------------
+   Le tracé d'un emplacement ajouté
+   ------------------------------------------------------------ */
+function choisitOutilGeo(o){
+  fermeAjout(false);
+  outilGeo = o === "rect" || o === "poly" ? o : "";
+  svg.style.cursor = outilGeo ? "crosshair" : "";
+  majPaletteGeo();
+}
+
+function aideAjout(){
+  const zone = SORTE_GEO === "zones";
+  if (outilGeo === "rect") return zone
+    ? "Glissez pour tracer la zone. Elle s'accroche aux emplacements voisins — Alt pour relâcher."
+    : "Glissez pour tracer le stand. Il s'accroche aux emplacements voisins — Alt pour relâcher.";
+  if (traceAjout)
+    return "Cliquez le sommet suivant ; revenez sur le premier, ou Entrée, pour fermer. Échap renonce.";
+  return zone ? "Cliquez le premier sommet de la zone." : "Cliquez le premier sommet du stand.";
+}
+
+function fermeAjout(valider){
+  const t = traceAjout;
+  traceAjout = null;
+  apercu(null); apercuGuide(null); montreCote(null); montreAimants(null);
+  if (valider && t && t.t === "poly" && t.pts.length >= 3)
+    ajouteEmplacement([t.pts.map(q => [arrondiGeo(q[0]), arrondiGeo(q[1])])]);
+  if (SORTE_GEO) majPaletteGeo();
+}
+
+function ajoutPointerDown(e){
+  e.preventDefault();
+  const p = aimante(versPlan(e.clientX, e.clientY), { alt: e.altKey });
+  if (outilGeo === "rect"){
+    traceAjout = { t: "rect", pts: [p, p] };
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    return true;
+  }
+  if (!traceAjout) traceAjout = { t: "poly", pts: [p] };
+  else if (fermeIci(p, traceAjout.pts)){ fermeAjout(true); return true; }
+  else traceAjout.pts.push(p);
+  apercu(cheminForme({ t: "ligne", pts: traceAjout.pts }));
+  majPaletteGeo();
+  return true;
+}
+
+function ajoutPointerMove(e){
+  const brut = versPlan(e.clientX, e.clientY);
+  if (!traceAjout){
+    // rien de commencé : on montre ce qui s'accrocherait, et la vue reste libre
+    montreAimants([brut], { alt: e.altKey });
+    return false;
+  }
+  const p = aimante(brut, { alt: e.altKey });
+  if (traceAjout.t === "rect"){
+    traceAjout.pts[1] = p;
+    apercu(cheminForme(traceAjout));
+    montreCote(coteCadre(traceAjout.pts[0], p), p);
+  } else {
+    const pts = traceAjout.pts;
+    const q = fermeIci(p, pts) ? pts[0] : p;
+    apercu(cheminForme({ t: "ligne", pts: pts.concat([q]) }));
+    const b = pts[pts.length - 1];
+    montreCote(ecritMetres(Math.hypot(q[0] - b[0], q[1] - b[1])) + " m", q);
+  }
+  return true;
+}
+
+function ajoutPointerUp(e){
+  if (!traceAjout) return false;
+  // le polygone reste ouvert d'un clic à l'autre
+  if (traceAjout.t !== "rect") return true;
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  const [a, b] = traceAjout.pts;
+  traceAjout = null;
+  apercu(null); montreCote(null);
+  // un clic sans glisser n'est pas un stand : on ne pose pas un point
+  if (Math.abs(b[0] - a[0]) > .3 && Math.abs(b[1] - a[1]) > .3){
+    const x0 = arrondiGeo(Math.min(a[0], b[0])), y0 = arrondiGeo(Math.min(a[1], b[1]));
+    const x1 = arrondiGeo(Math.max(a[0], b[0])), y1 = arrondiGeo(Math.max(a[1], b[1]));
+    ajouteEmplacement([[[x0, y0], [x1, y0], [x1, y1], [x0, y1]]]);
+  } else majPaletteGeo();
+  return true;
+}
+
+/* ------------------------------------------------------------
    Le geste ; chaque fonction renvoie vrai si l'événement est consommé
    ------------------------------------------------------------ */
 function geometriePointerDown(e){
   if (!SORTE_GEO) return false;
+  if (outilGeo) return ajoutPointerDown(e);
   const o = geoSel && parId.get(geoSel);
   const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
   if (pgn && o){
@@ -589,6 +902,7 @@ function geometriePointerDown(e){
 const accrocheGeo = (e, o) => ({ alt: e.altKey, saufPlan: o.id });
 
 function geometriePointerMove(e){
+  if (SORTE_GEO && outilGeo) return ajoutPointerMove(e);
   if (!glisseGeo) return false;
   const o = glisseGeo.o;
   const p = versPlan(e.clientX, e.clientY);
@@ -639,6 +953,7 @@ function geometriePointerMove(e){
 }
 
 function geometriePointerUp(e){
+  if (SORTE_GEO && outilGeo) return ajoutPointerUp(e);
   if (!glisseGeo) return false;
   const o = glisseGeo.o;
   glisseGeo = null;
@@ -653,3 +968,14 @@ if ($("geoFerme")) $("geoFerme").onclick = () => modeGeometrie(null);
 if ($("geoOrigine")) $("geoOrigine").onclick = geometrieOrigine;
 if ($("geoLargeur")) $("geoLargeur").oninput = appliqueDimensionGeo;
 if ($("geoHauteur")) $("geoHauteur").oninput = appliqueDimensionGeo;
+if ($("geoReg")) $("geoReg").querySelectorAll(".geoOutils button").forEach(b =>
+  b.onclick = () => choisitOutilGeo(b.dataset.g));
+if ($("geoCode")) $("geoCode").oninput = () => renommeAjout("code", $("geoCode").value);
+if ($("geoTitre")) $("geoTitre").oninput = () => renommeAjout("nom", $("geoTitre").value);
+// la liste se range par nom : on la refait une fois le mot écrit, pas à chaque lettre
+["geoCode", "geoTitre"].forEach(id => { if ($(id)) $(id).onchange = () => liste(); });
+if ($("geoSupprime")) $("geoSupprime").onclick = supprimeAjout;
+if ($("geoFiche")) $("geoFiche").onclick = () => {
+  const o = geoSel && parId.get(geoSel);
+  if (o && o.ajout && o.kind === "zone") ficheZone(o);
+};

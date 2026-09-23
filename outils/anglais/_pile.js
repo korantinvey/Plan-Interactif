@@ -13,9 +13,9 @@ module.exports = {
   "⇅ Réorganiser les calques": "⇅ Reorder layers",
   "Contour seul ou surface remplie": "Outline only or filled",
   "Placer les libellés à la main": "Place labels by hand",
-  "Reprendre la géométrie à la main": "Reshape by hand",
-  "Couche verrouillée : ouvrez son cadenas pour reprendre une forme.":
-    "Locked layer: open its padlock to reshape anything.",
+  "Reprendre ou ajouter des formes à la main": "Reshape or add shapes by hand",
+  "Couche verrouillée : ouvrez son cadenas pour reprendre ou ajouter une forme.":
+    "Locked layer: open its padlock to reshape or add a shape.",
   "Dessiner sur ce calque": "Draw on this layer",
   "Supprimer le calque": "Delete layer",
   "Ce calque compte dans les itinéraires, même masqué.": "This layer counts for routes, even when hidden.",

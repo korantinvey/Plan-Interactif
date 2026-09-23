@@ -4949,6 +4949,7 @@ function ficheZone(o){
  * n'a pas touché ne touche donc pas à sa colonne.
  */
 async function enregistreZone(o, v, depart){
+  if (o.ajout) return enregistreZoneAjoutee(o, v, depart);
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
   /* La version anglaise se range dans la fiche, avec le reste de ce que
@@ -5052,6 +5053,66 @@ async function enregistreZone(o, v, depart){
 }
 
 
+/**
+ * La fiche d'une zone ajoutée à la main, rangée avec sa forme.
+ *
+ * Les colonnes de l'événement ne valent que pour les zones de la source : le
+ * serveur ne les applique qu'à celles-là. Celle-ci garde donc tout dans son
+ * entrée de configuration (`_geometrie.html`), et part aux visiteurs à la
+ * publication, avec le reste de l'apparence.
+ */
+async function enregistreZoneAjoutee(o, v, depart){
+  const r = CONF[cleAjout(o.id)];
+  if (!r) return;
+  const fiche = {
+    nom_en: String(v.libelleEn || "").trim(),
+    type: TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "",
+    description: String(v.description || ""),
+    description_en: String(v.descriptionEn || ""),
+    lien: adresseSure(v.lien),
+    logo: imageSure(v.logo),
+    traversable: !!v.traversable,
+  };
+  const nom = String(v.libelle || "").trim();
+  if (nom) r.nom = nom; else delete r.nom;
+  Object.keys(fiche).forEach(k => {
+    if (fiche[k]) r[k] = o[k] = fiche[k];
+    else { delete r[k]; o[k] = undefined; }
+  });
+  o.nom = nom || null;
+  enregistreConf();
+  oublieGrilles();
+  nomsAnglaisDesZones();
+  rechAjout(o);
+  libelles(); liste();
+  cartouchePoi();
+  majPaletteGeo();
+  if (state.sel === o.id) ouvre(o, null);
+  /* Les salles font exception : leur colonne est indexée par salle, non par
+     zone, et c'est le serveur qui rattache le programme — il reconnaît les
+     zones ajoutées en relisant la configuration du pavillon. On l'écrit donc
+     comme pour une zone de la source, et seulement si une coche a bougé —
+     en dernier : un échec en base ne doit pas perdre le reste de la fiche,
+     déjà rangé dans la configuration. */
+  const salles = Array.isArray(v.salles) ? v.salles : null;
+  if (salles && (!depart || String(depart.salles) !== String(salles))){
+    const rattache = (t) => Object.keys(t).forEach(id => {
+      const s = t[id];
+      const ici = salles.indexOf(id) >= 0;
+      if (!s || ici === (s.zone === o.id)) return;
+      s.zone = ici ? o.id : null;
+      s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
+    });
+    rattache(DATA.salles || {});
+    rangeConferences();
+    const tables = await ecritColonnesEvenement([
+      { colonne: "salles", secours: DATA.salles, change: rattache }]);
+    if (tables.salles){ DATA.salles = tables.salles; rangeConferences(); }
+    // la fiche ouverte montrait le programme d'avant la coche
+    if (state.sel === o.id) ouvre(o, null);
+  }
+}
+
 /* ============================================================
    Masquer une zone organisateur
    Toutes les zones que Klipso renvoie ne s'adressent pas au visiteur : un
@@ -5065,6 +5126,17 @@ async function enregistreZone(o, v, depart){
    ============================================================ */
 async function basculeAffichageZone(o){
   const masquer = !o.masquee;
+  // une zone ajoutée à la main se masque dans son entrée, comme sa fiche
+  const r = o.ajout && CONF[cleAjout(o.id)];
+  if (r){
+    if (masquer) r.masquee = true; else delete r.masquee;
+    o.masquee = masquer || undefined;
+    enregistreConf();
+    marqueZonesMasquees();
+    libelles();
+    ouvre(o, null);
+    return;
+  }
   try {
     const masques = await ecritColonneEvenement("zones_masquees", DATA.zonesMasquees, t => {
       if (masquer) t[o.id] = true; else delete t[o.id];

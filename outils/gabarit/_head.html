@@ -983,6 +983,13 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
   font-size:12.5px;color:var(--ink-2);background:var(--surface)}
 .libreg .auto:hover:not([disabled]){border-color:var(--line-strong);color:var(--ink)}
 .libreg .auto[disabled]{opacity:.4;cursor:default}
+.libreg .auto[hidden]{display:none}
+/* Trois outils seulement pour reprendre une couche du salon : le choix d'une
+   forme, et les deux façons d'en ajouter une. Sur la grille à cinq du dessin,
+   ils laissaient deux cases vides au bout de la rangée. */
+.outilsBtns.geoOutils{grid-template-columns:repeat(3,1fr)}
+#geoInfos{display:flex;flex-direction:column;gap:6px}
+#geoInfos[hidden]{display:none}
 .dcal image{pointer-events:none}
 .dcal.editable image{pointer-events:auto}
 .elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
@@ -5593,6 +5600,19 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
             aria-label="Terminer la reprise des géométries">&times;</button>
         </span>
       </div>
+      <!-- Ajouter à la couche ce que la source n'a pas : un stand de dernière
+           minute, une zone que le salon n'a pas dessinée. -->
+      <div class="outilsBtns geoOutils">
+        <button data-g="" title="Choisir une forme pour la reprendre" aria-pressed="true">&#9099;</button>
+        <button data-g="rect" title="Ajouter un rectangle">&#9645;</button>
+        <button data-g="poly" title="Ajouter un polygone — clic pour chaque sommet, Entrée pour fermer">&#11040;</button>
+      </div>
+      <div id="geoInfos" hidden>
+        <label class="elemChamp" id="geoCodeL"><span>Numéro</span>
+          <input id="geoCode" type="text" maxlength="20" placeholder="B42"></label>
+        <label class="elemChamp"><span>Nom</span>
+          <input id="geoTitre" type="text" maxlength="120"></label>
+      </div>
       <div id="geoDim" hidden>
         <label class="elemChamp"><span>Largeur</span>
           <input id="geoLargeur" type="number" min="0.1" max="999" step="0.5"></label>
@@ -5600,6 +5620,8 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
           <input id="geoHauteur" type="number" min="0.1" max="999" step="0.5"></label>
       </div>
       <button class="auto" id="geoOrigine">Géométrie d'origine</button>
+      <button class="auto" id="geoFiche" hidden>Fiche de la zone…</button>
+      <button class="auto" id="geoSupprime" hidden>Supprimer</button>
       <div class="outilsPied"><span id="geoAide"></span></div>
     </div>
 
