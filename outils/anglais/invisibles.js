@@ -6,6 +6,11 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  // `_guidage.html` : l'empreinte de la bibliothèque de lecture des codes
+  "sha384-QGoPn9UMeEaAJK+yr90CuRdLxfK4fTOSGaUFpDV1AYiODFmsn4DPCTxmgn6c22T/",
+  // `_guidage.html` : le côté d'un virage, qui ne s'affiche que fondu dans
+  // « Tournez à droite » ou « Dans {d}, tournez à gauche », traduits entiers
+  "à droite", "à gauche",
   // `_environs.html` : le corps de la requête Overpass, qui part au serveur
   // et ne s'affiche jamais
   "[out:json][timeout:60][bbox:",

@@ -334,7 +334,27 @@ Fonctions :
 `geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
 `geometriePointerUp` 641
 
-### `_head.html` — 5759 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_guidage.html` — 622 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 11 octies. Le guidage par la caméra — démonstration
+
+Fonctions :
+
+`cheminGuide` 68 · `pointGuide` 85 · `sensGuide` 99 · `projetteGuide` 106 · `ecartAngle` 120
+`relevesVirages` 126 · `virageSuivant` 142 · `capDeLaCamera` 160 · `recoitCap` 168
+`poseCap` 184 · `capLisse` 192 · `regardSurLePlan` 201 · `caleGuidage` 213 · `capFiable` 221
+`recoitMouvement` 232 · `avanceGuidage` 246 · `lecteurDeCodes` 263 · `codeDeLAffiche` 292
+`lisUneImage` 300 · `recaleSur` 329 · `basculeScan` 351 · `ditGuidage` 364
+`styleGuidage` 373 · `construitGuidage` 414 · `dessineCarteGuide` 453 · `ecritSiChange` 481
+`consigneGuidage` 493 · `boucleGuidage` 528 · `ouvreGuidage` 548 · `coupeCamera` 577
+`fermeGuidage` 584 · `toucheGuidage` 599 · `boutonGuidage` 614
+
+Éléments :
+
+`#guideVideo` · `#guideSansCam` · `#guideFleche` · `#guideConsigne` · `#guideReste`
+`#guideFerme` · `#guideCarte` · `#guideNote` · `#guideScan` · `#guideCale` · `#guideAvance`
+
+### `_head.html` — 5763 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -418,7 +438,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3315 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3317 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -448,9 +468,9 @@ Fonctions :
 `rafraichitBouts` 2732 · `cadreItineraire` 2755 · `champIti` 2779 · `ecritDistance` 2783
 `ecritDuree` 2791 · `fermeSugg` 2796 · `montreSugg` 2803 · `choisitPoint` 2837
 `valideSaisie` 2846 · `effaceItineraire` 2858 · `relance` 2885 · `phraseLiaison` 2936
-`montreResultat` 2950 · `bandeauVisee` 3092 · `armeVisee` 3115 · `finVisee` 3133
-`viseItineraire` 3149 · `visePoi` 3155 · `visePoint` 3161 · `ouvreItineraire` 3193
-`fermeItineraire` 3221 · `versItineraire` 3231 · `versItineraireDe` 3234
+`montreResultat` 2950 · `bandeauVisee` 3094 · `armeVisee` 3117 · `finVisee` 3135
+`viseItineraire` 3151 · `visePoi` 3157 · `visePoint` 3163 · `ouvreItineraire` 3195
+`fermeItineraire` 3223 · `versItineraire` 3233 · `versItineraireDe` 3236
 
 ### `_journee.html` — 2797 l. → plan-admin.html, plan-smcl.html, plan.html
 

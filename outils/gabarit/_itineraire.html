@@ -3006,6 +3006,8 @@ function montreResultat(etat){
                                       (ROUTE.liaisons > 1 ? "s" : "")
                    : "");
     z.appendChild(bilan);
+    /* Le trait se suit aussi téléphone levé (voir `_guidage.html`). */
+    boutonGuidage(z);
   }
 
   /* Ce que le calcul a fait des sorties de conférence. Sans un mot, un détour

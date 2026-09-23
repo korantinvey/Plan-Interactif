@@ -3119,6 +3119,10 @@ button.expo:hover{background:var(--line)}
   background:var(--accent-soft);border-radius:var(--radius)}
 .iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
 .iBilan span{font-size:12.5px;color:var(--ink-2)}
+/* Le guidage par la caméra : une action, pas une information — il se détache
+   du bilan qu'il suit. */
+.iGuidage{align-self:flex-start;padding:9px 14px;border-radius:999px;border:0;
+  background:var(--accent);color:var(--accent-ink,#fff);font:inherit;font-weight:600;cursor:pointer}
 /* Effacer, c'est défaire les deux champs juste au-dessus : le lien se range
    sous le bilan qu'il annule, et non au pied d'un volet que le trajet laisse
    aux trois quarts vide — il y tombait si bas qu'on le cherchait. */
@@ -28126,6 +28130,8 @@ function montreResultat(etat){
                                       (ROUTE.liaisons > 1 ? "s" : "")
                    : "");
     z.appendChild(bilan);
+    /* Le trait se suit aussi téléphone levé (voir `_guidage.html`). */
+    boutonGuidage(z);
   }
 
   /* Ce que le calcul a fait des sorties de conférence. Sans un mot, un détour
@@ -29375,6 +29381,628 @@ if (_iciStop) _iciStop.onclick = () => {
   ICI_PERDU = false;
   montreBandeauIci();
 };
+/* ============================================================
+   11 octies. Le guidage par la caméra — démonstration
+
+   L'itinéraire trace un trait sur le plan, et le visiteur doit encore le
+   rapporter à l'allée où il se tient : où est le nord du plan, de quel côté
+   part le trait. Sous une charpente de hall, c'est là qu'on se trompe — pas
+   sur le chemin, sur le premier pas.
+
+   Ce mode lève le téléphone : l'image de la caméra, et par-dessus une flèche
+   posée au sol qui montre où aller, le prochain virage, ce qui reste. Trois
+   capteurs, et aucun ne suffit seul — le mode tient à la façon dont ils se
+   rattrapent.
+
+   **La boussole dit où l'on regarde**, jamais où l'on est. Elle se trompe
+   sous l'acier d'un hall de dix à trente degrés, et d'autant plus près d'une
+   poutre. Deux corrections : le calage du pavillon sur la Terre (voir
+   `_environs.html`) traduit le nord en direction du plan, et le bouton
+   « Caler » — « je fais face au trajet » — absorbe ce que l'acier ajoute.
+   Sans calage enregistré, c'est lui seul qui oriente la flèche.
+
+   **Les pas disent de combien on avance.** L'accéléromètre les compte, et la
+   position glisse le long du trait, jamais à côté : on suit un trajet, on ne
+   se promène pas. L'erreur s'accumule — dix pour cent de la distance, à peu
+   près —, d'où le troisième.
+
+   **L'affiche dit où l'on est, exactement.** Le code « Vous êtes ici »
+   (voir `_ici.html`), photographié depuis ce mode, remet la position à zéro :
+   sur le trait s'il en est proche, sinon le trajet repart de l'affiche.
+   Chaque affiche du hall devient un point de passage, et la dérive des pas ne
+   dure que d'une affiche à l'autre.
+
+   Rien ne quitte le téléphone : l'image est lue sur place et jamais
+   enregistrée, les capteurs ne servent qu'à la flèche.
+   ============================================================ */
+
+/* Longueur d'un pas. La moyenne adulte ; l'écart d'un visiteur à l'autre est
+   ce que les affiches rattrapent. */
+const GUIDE_PAS = 0.7;
+/* Où la flèche vise, le long du trait. Trop près, elle s'affole à chaque
+   pas de côté ; trop loin, elle coupe les virages. */
+const GUIDE_VISEE = 5;
+/* À partir de combien de degrés une inflexion du trait est un virage qu'on
+   annonce. En deçà, c'est l'allée qui ondule. */
+const GUIDE_VIRAGE = 35;
+/* Au-delà de cet écart au trait, une affiche scannée ne recale plus : elle
+   fait repartir le trajet d'elle. */
+const GUIDE_ECART = 8;
+
+const GUIDE = {
+  ouvert: false, flux: null, boucle: 0,
+  pts: [], cumul: [], total: 0, s: 0, virages: [],
+  // ce que l'écran montre déjà : on ne réécrit que ce qui change
+  vu: {},
+  // le cap lissé, en vecteur : une moyenne d'angles se trompe à 359°/1°
+  capX: 0, capY: 1, aCap: false, absolu: false, decalage: 0, cale: false,
+  // le podomètre
+  filtre: 9.81, haut: false, dernierPas: 0, pas: 0,
+  // la lecture des affiches
+  scan: false, lecteur: null, toile: null, derniereLecture: 0,
+};
+
+/* ------------------------------------------------------------
+   Le trait, tel qu'on le parcourt
+   ------------------------------------------------------------ */
+/** Les marches du pavillon regardé, bout à bout, et leurs distances cumulées.
+ *  Un trajet qui change de pavillon s'arrête ici au dernier point de celui-ci :
+ *  la suite se guide quand on y est. */
+function cheminGuide(){
+  const pts = [];
+  marchesIci().forEach(e => e.pts.forEach(q => {
+    const d = pts[pts.length - 1];
+    if (!d || Math.hypot(q[0] - d[0], q[1] - d[1]) > 1e-3) pts.push(q.slice());
+  }));
+  const cumul = [0];
+  for (let i = 1; i < pts.length; i++)
+    cumul.push(cumul[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  GUIDE.pts = pts;
+  GUIDE.cumul = cumul;
+  GUIDE.total = cumul[cumul.length - 1] || 0;
+  GUIDE.s = Math.min(GUIDE.s, GUIDE.total);
+  relevesVirages();
+}
+
+/** Le point du trait à « s » mètres du départ. */
+function pointGuide(s){
+  const p = GUIDE.pts, c = GUIDE.cumul;
+  if (!p.length) return [0, 0];
+  if (s <= 0) return p[0].slice();
+  for (let i = 1; i < p.length; i++){
+    if (c[i] < s) continue;
+    const k = (s - c[i - 1]) / Math.max(1e-6, c[i] - c[i - 1]);
+    return [p[i - 1][0] + (p[i][0] - p[i - 1][0]) * k, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * k];
+  }
+  return p[p.length - 1].slice();
+}
+
+/** La direction du trait autour de « s », en radians du plan. Lue sur deux
+ *  mètres et non sur un segment : le tracé lissé en compte de très courts. */
+function sensGuide(s){
+  const a = pointGuide(Math.max(0, s - 1)), b = pointGuide(Math.min(GUIDE.total, s + 1));
+  return Math.atan2(b[1] - a[1], b[0] - a[0]);
+}
+
+/** Le point du trait le plus proche de « xy » : sa distance au départ, et
+ *  l'écart. */
+function projetteGuide(xy){
+  const p = GUIDE.pts;
+  let mieux = { s: 0, ecart: Infinity };
+  for (let i = 1; i < p.length; i++){
+    const ax = p[i - 1][0], ay = p[i - 1][1], dx = p[i][0] - ax, dy = p[i][1] - ay;
+    const l2 = dx * dx + dy * dy || 1e-9;
+    const k = Math.max(0, Math.min(1, ((xy[0] - ax) * dx + (xy[1] - ay) * dy) / l2));
+    const e = Math.hypot(ax + dx * k - xy[0], ay + dy * k - xy[1]);
+    if (e < mieux.ecart) mieux = { s: GUIDE.cumul[i - 1] + Math.sqrt(l2) * k, ecart: e };
+  }
+  return mieux;
+}
+
+/** L'écart entre deux angles, ramené entre -π et π. */
+const ecartAngle = a => Math.atan2(Math.sin(a), Math.cos(a));
+
+/**
+ * Les virages du trait, relevés une fois par trajet : la consigne les relit à
+ * chaque image, et les rechercher à chaque fois coûtait le carré du tracé.
+ */
+function relevesVirages(){
+  const v = [];
+  for (let i = 1; i < GUIDE.pts.length - 1; i++){
+    const c = GUIDE.cumul[i];
+    const t = ecartAngle(sensGuide(c + 2) - sensGuide(c - 2)) * 180 / Math.PI;
+    if (Math.abs(t) < GUIDE_VIRAGE) continue;
+    /* Deux sommets d'un même coude se suivent de près : le premier suffit. */
+    if (v.length && c - v[v.length - 1].c < 3) continue;
+    /* Le plan a son Y vers le bas : un angle qui croît tourne dans le sens
+       des aiguilles d'une montre, donc vers la droite de celui qui marche. */
+    v.push({ c, droite: t > 0 });
+  }
+  GUIDE.virages = v;
+}
+
+/** Le prochain virage après « s » : à quelle distance, et de quel côté. */
+function virageSuivant(s){
+  const v = GUIDE.virages.find(x => x.c > s + 1);
+  return v ? { d: v.c - s, droite: v.droite } : null;
+}
+
+/* ------------------------------------------------------------
+   Le cap — où regarde la caméra
+   ------------------------------------------------------------ */
+/**
+ * La direction de la caméra arrière, en degrés depuis le nord, d'après les
+ * trois angles de l'appareil.
+ *
+ * `alpha` seul dit où pointe le haut d'un téléphone posé à plat ; tenu droit
+ * devant soi, c'est son dos qu'il faut suivre, et les trois angles y
+ * concourent (la formule est celle de la spécification W3C). Posé à plat, le
+ * dos regarde le sol et ne dit plus rien : on revient alors au haut de
+ * l'appareil.
+ */
+function capDeLaCamera(al, be, ga){
+  const r = Math.PI / 180, cA = Math.cos(al * r), sA = Math.sin(al * r),
+        cB = Math.cos(be * r), sB = Math.sin(be * r), cG = Math.cos(ga * r), sG = Math.sin(ga * r);
+  let x = -cA * sG - sA * sB * cG, y = -sA * sG + cA * sB * cG;
+  if (Math.hypot(x, y) < .35){ x = -sA * cB; y = cA * cB; }
+  return (Math.atan2(x, y) * 180 / Math.PI + 360) % 360;
+}
+
+function recoitCap(e){
+  let cap = null;
+  if (typeof e.webkitCompassHeading === "number" && e.webkitCompassHeading >= 0){
+    // iOS donne le cap tout fait, déjà rapporté au nord
+    cap = e.webkitCompassHeading;
+    GUIDE.absolu = true;
+  } else if (e.alpha !== null && e.alpha !== undefined){
+    cap = capDeLaCamera(e.alpha, e.beta || 0, e.gamma || 0);
+    GUIDE.absolu = e.absolute === true || e.type === "deviceorientationabsolute";
+  }
+  if (cap === null) return;
+  poseCap(cap);
+}
+
+/** Un cap de plus, fondu dans les précédents : la boussole tremble, et une
+ *  flèche qui tremble ne se suit pas. */
+function poseCap(cap){
+  const r = cap * Math.PI / 180, x = Math.sin(r), y = Math.cos(r);
+  const k = GUIDE.aCap ? .2 : 1;
+  GUIDE.capX += (x - GUIDE.capX) * k;
+  GUIDE.capY += (y - GUIDE.capY) * k;
+  GUIDE.aCap = true;
+}
+
+const capLisse = () => (Math.atan2(GUIDE.capX, GUIDE.capY) * 180 / Math.PI + 360) % 360;
+
+/**
+ * Le cap, rapporté au plan : l'angle du regard dans le repère du pavillon.
+ *
+ * Avec un cap vrai et un calage, le nord se traduit (voir `tourneEnvirons`,
+ * qui sert dans les deux sens). Sinon le cap ne vaut qu'à une constante près,
+ * et c'est « Caler » qui la fixe.
+ */
+function regardSurLePlan(){
+  const r = capLisse() * Math.PI / 180;
+  const cal = typeof calagePose === "function" ? calagePose() : null;
+  let a;
+  if (GUIDE.absolu && cal){
+    const v = tourneEnvirons(Math.sin(r), Math.cos(r), cal.angle);
+    a = Math.atan2(v[1], v[0]);
+  } else a = -r;
+  return a + GUIDE.decalage;
+}
+
+/** « Je fais face au trajet » : ce que la boussole se trompe ici, retenu. */
+function caleGuidage(){
+  if (!GUIDE.pts.length) return;
+  GUIDE.decalage += ecartAngle(sensGuide(GUIDE.s) - regardSurLePlan());
+  GUIDE.cale = true;
+  ditGuidage("Boussole calée sur le trajet.");
+}
+
+/** La boussole mérite-t-elle qu'on la suive sans l'avoir calée ? */
+const capFiable = () => GUIDE.cale || (GUIDE.absolu && !!calagePose());
+
+/* ------------------------------------------------------------
+   Les pas
+   ------------------------------------------------------------ */
+/**
+ * Un pas, c'est un pic de l'accélération totale. Filtrée d'abord — la main
+ * qui tient le téléphone tremble plus vite qu'on ne marche —, puis comptée au
+ * franchissement d'un seuil haut, et réarmée sous un seuil bas : un seul pic
+ * qui oscille ne fait qu'un pas.
+ */
+function recoitMouvement(e){
+  const g = e.accelerationIncludingGravity;
+  if (!g || g.x === null) return;
+  const m = Math.hypot(g.x, g.y, g.z);
+  GUIDE.filtre += (m - GUIDE.filtre) * .25;
+  const t = performance.now();
+  if (!GUIDE.haut && GUIDE.filtre > 11.2 && t - GUIDE.dernierPas > 300){
+    GUIDE.haut = true;
+    GUIDE.dernierPas = t;
+    GUIDE.pas++;
+    avanceGuidage(GUIDE_PAS);
+  } else if (GUIDE.haut && GUIDE.filtre < 10.2) GUIDE.haut = false;
+}
+
+function avanceGuidage(m){
+  GUIDE.s = Math.max(0, Math.min(GUIDE.total, GUIDE.s + m));
+}
+
+/* ------------------------------------------------------------
+   L'affiche, relue par la caméra
+   ------------------------------------------------------------ */
+/* Même règle que pour le dessin WebGL : servie par le site, version et
+   empreinte figées. Elle ne sert qu'où le navigateur n'a pas son propre
+   lecteur de codes — Safari, Firefox. */
+const JSQR = {
+  src: "bibliotheques/jsQR-1.4.0.min.js",
+  integrite: "sha384-QGoPn9UMeEaAJK+yr90CuRdLxfK4fTOSGaUFpDV1AYiODFmsn4DPCTxmgn6c22T/",
+};
+
+/** Le lecteur de codes : celui du navigateur s'il en a un, sinon jsQR chargé
+ *  à la demande. Rend une fonction image → texte, ou rien. */
+function lecteurDeCodes(){
+  if (GUIDE.lecteur) return GUIDE.lecteur;
+  GUIDE.lecteur = new Promise(ok => {
+    if ("BarcodeDetector" in window){
+      try {
+        const d = new BarcodeDetector({ formats: ["qr_code"] });
+        return ok(async toile => {
+          const r = await d.detect(toile);
+          return r.length ? r[0].rawValue : null;
+        });
+      } catch (e) {}
+    }
+    const s = document.createElement("script");
+    s.src = JSQR.src; s.integrity = JSQR.integrite;
+    s.onload = () => ok(async toile => {
+      const c = toile.getContext("2d");
+      const im = c.getImageData(0, 0, toile.width, toile.height);
+      const r = window.jsQR(im.data, im.width, im.height, { inversionAttempts: "dontInvert" });
+      return r ? r.data : null;
+    });
+    s.onerror = () => ok(null);
+    document.head.appendChild(s);
+  });
+  return GUIDE.lecteur;
+}
+
+/** Ce qu'une affiche dit : l'adresse entière, ou le code nu qu'on aurait
+ *  tapé. Seul `?ici=` compte — le reste de l'adresse est le plan qu'on a
+ *  déjà sous les yeux. */
+function codeDeLAffiche(txt){
+  try {
+    const u = new URL(txt);
+    return u.searchParams.get("ici");
+  } catch (e) {}
+  return txt;
+}
+
+async function lisUneImage(){
+  const v = $("guideVideo");
+  if (!GUIDE.scan || !v || !v.videoWidth) return;
+  const t = performance.now();
+  if (t - GUIDE.derniereLecture < 250) return;
+  GUIDE.derniereLecture = t;
+  const lire = await lecteurDeCodes();
+  if (!lire){ basculeScan(false); ditGuidage("Lecture des codes indisponible sur cet appareil."); return; }
+  const toile = GUIDE.toile || (GUIDE.toile = document.createElement("canvas"));
+  const l = Math.min(640, v.videoWidth);
+  toile.width = l;
+  toile.height = Math.round(v.videoHeight * l / v.videoWidth);
+  toile.getContext("2d", { willReadFrequently: true }).drawImage(v, 0, 0, toile.width, toile.height);
+  let txt = null;
+  try { txt = await lire(toile); } catch (e) {}
+  if (!txt || !GUIDE.scan) return;
+  const pt = litCodeIci(codeDeLAffiche(txt));
+  if (!pt){ ditGuidage("Ce code n'est pas une affiche « Vous êtes ici » de ce plan."); return; }
+  basculeScan(false);
+  recaleSur(pt);
+}
+
+/**
+ * La position, remise à zéro par une affiche.
+ *
+ * Près du trait, on glisse le long de lui : le trajet reste le même, seule la
+ * distance parcourue change. Loin de lui — un détour, une allée ratée —, le
+ * trajet repart de l'affiche : c'est le seul point dont on soit sûr.
+ */
+function recaleSur(pt){
+  if (navigator.vibrate) navigator.vibrate(60);
+  if (pt.p === state.plan && GUIDE.pts.length){
+    const pr = projetteGuide(pt.xy);
+    if (pr.ecart <= GUIDE_ECART){
+      GUIDE.s = pr.s;
+      ditGuidage("Position recalée sur l'affiche.");
+      return;
+    }
+  }
+  ITI.a = pt;
+  $("iDepart").value = pt.nom;
+  try { ROUTE = TRACE = calculeRoute(); } catch (e) { ROUTE = TRACE = null; }
+  if (pt.p !== state.plan) changePlan(pt.p);
+  dessineItineraire();
+  montreResultat();
+  GUIDE.s = 0;
+  cheminGuide();
+  ditGuidage(GUIDE.pts.length ? "Trajet recalculé depuis l'affiche."
+                              : "Aucun chemin depuis cette affiche.");
+}
+
+function basculeScan(on){
+  GUIDE.scan = on === undefined ? !GUIDE.scan : on;
+  const b = $("guideScan");
+  if (b) b.setAttribute("aria-pressed", String(GUIDE.scan));
+  const g = $("guidage");
+  if (g) g.classList.toggle("scanne", GUIDE.scan);
+  if (GUIDE.scan && !GUIDE.flux) ditGuidage("Sans caméra, aucune affiche ne peut être lue.");
+}
+
+/* ------------------------------------------------------------
+   L'écran
+   ------------------------------------------------------------ */
+let _ditGuidage = 0;
+function ditGuidage(txt){
+  const n = $("guideNote");
+  if (!n) return;
+  n.textContent = txt;
+  n.hidden = false;
+  clearTimeout(_ditGuidage);
+  _ditGuidage = setTimeout(() => { n.hidden = true; }, 2600);
+}
+
+function styleGuidage(){
+  if ($("styleGuidage")) return;
+  const s = document.createElement("style");
+  s.id = "styleGuidage";
+  s.textContent = `
+.guidage{position:fixed;inset:0;z-index:60;background:#0d1320;color:#fff;overflow:hidden;
+  font-family:"Archivo",system-ui,sans-serif;touch-action:none;user-select:none}
+.guidage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.guidage .gVoile{position:absolute;inset:0;background:linear-gradient(#0008,#0000 30%,#0000 60%,#000a)}
+.guidage .gHaut{position:absolute;left:0;right:0;top:0;padding:calc(14px + var(--sys-haut,0px)) 16px 0;
+  display:flex;gap:10px;align-items:flex-start}
+.guidage .gConsigne{flex:1;min-width:0}
+.guidage .gConsigne b{display:block;font-size:26px;line-height:1.1;letter-spacing:-.02em;
+  text-shadow:0 1px 6px #0009}
+.guidage .gConsigne span{display:block;margin-top:4px;font-size:14px;opacity:.85;text-shadow:0 1px 4px #0009;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guidage .gConsigne span b{display:inline;font-size:inherit;letter-spacing:0;font-weight:600}
+.guidage button{font:inherit;color:inherit;background:#0009;border:1px solid #fff4;border-radius:999px;
+  padding:9px 14px;font-size:14px;font-weight:600;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.guidage button[aria-pressed=true]{background:#fff;color:#0d1320}
+.guidage .gFerme{padding:9px 12px}
+.guidage .gSol{position:absolute;left:50%;top:58%;width:0;height:0;perspective:520px}
+.guidage .gFleche{position:absolute;left:-70px;top:-70px;width:140px;height:140px;
+  transform:rotateX(58deg) rotateZ(var(--rel,0deg));transition:transform .12s linear;
+  filter:drop-shadow(0 6px 10px #0008)}
+.guidage.arrive .gFleche{transform:rotateX(58deg) scale(.8)}
+.guidage .gCarte{position:absolute;right:14px;bottom:calc(136px + var(--sys-bas,0px));width:128px;height:128px;
+  border-radius:50%;background:#0d1320cc;border:1px solid #fff3;overflow:hidden}
+.guidage .gBas{position:absolute;left:0;right:0;bottom:0;padding:0 14px calc(16px + var(--sys-bas,0px));
+  display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.guidage .gNote{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);max-width:80%;
+  background:#000c;padding:10px 14px;border-radius:12px;font-size:14px;text-align:center}
+.guidage .gViseur{position:absolute;left:50%;top:45%;width:220px;height:220px;margin:-110px 0 0 -110px;
+  border:3px solid #fff;border-radius:18px;box-shadow:0 0 0 999px #0007;display:none}
+.guidage.scanne .gViseur{display:block}
+.guidage.scanne .gSol,.guidage.scanne .gCarte{display:none}
+.guidage .gSansCam{position:absolute;left:16px;right:16px;top:45%;text-align:center;font-size:13px;opacity:.6}
+`;
+  document.head.appendChild(s);
+}
+
+function construitGuidage(){
+  styleGuidage();
+  let g = $("guidage");
+  if (g) return g;
+  g = document.createElement("div");
+  g.id = "guidage";
+  g.className = "guidage";
+  g.setAttribute("role", "dialog");
+  g.setAttribute("aria-label", "Guidage par la caméra");
+  g.innerHTML = `
+    <video id="guideVideo" playsinline muted autoplay></video>
+    <p class="gSansCam" id="guideSansCam" hidden>Caméra indisponible : la flèche guide quand même.</p>
+    <div class="gVoile"></div>
+    <div class="gSol"><svg class="gFleche" id="guideFleche" viewBox="-70 -70 140 140" aria-hidden="true">
+      <path d="M0-62 L44 6 L16 6 L16 58 L-16 58 L-16 6 L-44 6 Z" fill="#20d5e8" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>
+    </svg></div>
+    <div class="gViseur" aria-hidden="true"></div>
+    <div class="gHaut">
+      <div class="gConsigne" aria-live="polite"><b id="guideConsigne"></b><span id="guideReste"></span></div>
+      <button type="button" class="gFerme" id="guideFerme" aria-label="Fermer le guidage">✕</button>
+    </div>
+    <svg class="gCarte" id="guideCarte" viewBox="-64 -64 128 128" aria-hidden="true"></svg>
+    <p class="gNote" id="guideNote" hidden></p>
+    <div class="gBas">
+      <button type="button" id="guideScan" aria-pressed="false">Scanner une affiche</button>
+      <button type="button" id="guideCale">Caler</button>
+      <button type="button" id="guideAvance">Avancer de 5 m</button>
+    </div>`;
+  document.body.appendChild(g);
+  $("guideFerme").onclick = fermeGuidage;
+  $("guideScan").onclick = () => basculeScan();
+  $("guideCale").onclick = caleGuidage;
+  $("guideAvance").onclick = () => avanceGuidage(5);
+  return g;
+}
+
+/** La petite carte, tournée pour que le regard soit en haut : on y voit le
+ *  trait comme on le voit devant soi. Deux pixels par mètre — trente mètres
+ *  autour de soi, de quoi voir le virage qui vient. */
+function dessineCarteGuide(pos, regard){
+  const c = $("guideCarte");
+  if (!c) return;
+  const cle = pos[0].toFixed(1) + "," + pos[1].toFixed(1) + "," + Math.round(regard * 90);
+  if (GUIDE.vu.carte === cle) return;
+  GUIDE.vu.carte = cle;
+  const k = 2, rot = -Math.PI / 2 - regard, co = Math.cos(rot), si = Math.sin(rot);
+  const tr = q => {
+    const x = (q[0] - pos[0]) * k, y = (q[1] - pos[1]) * k;
+    return (x * co - y * si).toFixed(1) + "," + (x * si + y * co).toFixed(1);
+  };
+  const fait = [], reste = [];
+  GUIDE.pts.forEach((q, i) => (GUIDE.cumul[i] <= GUIDE.s ? fait : reste).push(q));
+  const ici = pointGuide(GUIDE.s);
+  fait.push(ici); reste.unshift(ici);
+  c.innerHTML =
+    '<polyline points="' + fait.map(tr).join(" ") + '" fill="none" stroke="#fff5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<polyline points="' + reste.map(tr).join(" ") + '" fill="none" stroke="#20d5e8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="M0 0 L-14 -30 A33 33 0 0 1 14 -30 Z" fill="#fff3"/>' +
+    '<circle r="6" fill="#20d5e8" stroke="#fff" stroke-width="2.5"/>';
+}
+
+/**
+ * Écrire seulement ce qui change. La boucle tourne à chaque image, et chaque
+ * écriture réveille le moteur de langue et le guet du dessin WebGL, qui
+ * observent tout le document : réécrire la même phrase soixante fois par
+ * seconde suffisait à figer la page.
+ */
+function ecritSiChange(el, cle, txt, but){
+  const k = txt + "|" + (but || "");
+  if (GUIDE.vu[cle] === k) return;
+  GUIDE.vu[cle] = k;
+  el.textContent = txt;
+  if (but){
+    const q = document.createElement("b");
+    q.textContent = but;
+    el.append(" · ", q);
+  }
+}
+
+function consigneGuidage(){
+  const g = $("guidage");
+  const dit = txt => ecritSiChange($("guideConsigne"), "c", txt);
+  const reste = GUIDE.total - GUIDE.s;
+  const arrive = GUIDE.pts.length > 1 && reste < 3;
+  if (g.classList.contains("arrive") !== arrive) g.classList.toggle("arrive", arrive);
+  if (GUIDE.pts.length < 2){
+    dit("Aucun trajet à suivre sur ce pavillon.");
+    ecritSiChange($("guideReste"), "r", "");
+    return null;
+  }
+  const but = ITI.b ? ITI.b.nom : "";
+  if (arrive){
+    dit("Vous êtes arrivé");
+    ecritSiChange($("guideReste"), "r", but);
+    return null;
+  }
+  const regard = regardSurLePlan();
+  const pos = pointGuide(GUIDE.s), vise = pointGuide(Math.min(GUIDE.total, GUIDE.s + GUIDE_VISEE));
+  const rel = ecartAngle(Math.atan2(vise[1] - pos[1], vise[0] - pos[0]) - regard) * 180 / Math.PI;
+  const v = virageSuivant(GUIDE.s);
+  /* Des phrases entières, et non des morceaux mis bout à bout : le moteur de
+     langue ne reconnaît qu'une phrase qu'il a dans son dictionnaire. */
+  const cote = v && v.droite ? "à droite" : "à gauche";
+  if (!capFiable())
+    dit("Tournez-vous dans le sens du trait, puis touchez « Caler ».");
+  else if (Math.abs(rel) > 110) dit("Faites demi-tour");
+  else if (v && v.d < 4) dit("Tournez " + cote);
+  else if (v && v.d < 25) dit("Dans " + ecritDistance(v.d) + ", tournez " + cote);
+  else dit("Tout droit sur " + ecritDistance(v ? v.d : reste));
+  /* Le lieu d'arrivée vient des données, et reste dans sa langue. */
+  ecritSiChange($("guideReste"), "r", "Reste " + ecritDistance(reste), but);
+  return { rel, pos, regard };
+}
+
+function boucleGuidage(){
+  if (!GUIDE.ouvert) return;
+  GUIDE.boucle = requestAnimationFrame(boucleGuidage);
+  const e = consigneGuidage();
+  if (e){
+    const rel = Math.round(e.rel) + "deg";
+    if (GUIDE.vu.rel !== rel){ GUIDE.vu.rel = rel; $("guideFleche").style.setProperty("--rel", rel); }
+    dessineCarteGuide(e.pos, e.regard);
+  }
+  if (GUIDE.scan) lisUneImage();
+}
+
+/* ------------------------------------------------------------
+   Ouvrir, fermer
+   ------------------------------------------------------------ */
+/**
+ * L'ouverture passe par un toucher, et c'est obligé : iOS ne livre la
+ * boussole et l'accéléromètre qu'après une permission demandée dans le geste
+ * même. D'où l'ordre — permissions d'abord, caméra ensuite, qui peut attendre.
+ */
+async function ouvreGuidage(){
+  GUIDE.vu = {};
+  cheminGuide();
+  GUIDE.s = 0;
+  GUIDE.ouvert = true;
+  construitGuidage().hidden = false;
+  for (const Ev of [window.DeviceOrientationEvent, window.DeviceMotionEvent]){
+    if (Ev && typeof Ev.requestPermission === "function"){
+      try { await Ev.requestPermission(); } catch (e) {}
+    }
+  }
+  const absolu = "ondeviceorientationabsolute" in window;
+  window.addEventListener(absolu ? "deviceorientationabsolute" : "deviceorientation", recoitCap);
+  window.addEventListener("devicemotion", recoitMouvement);
+  document.addEventListener("keydown", toucheGuidage);
+  boucleGuidage();
+  try {
+    GUIDE.flux = await navigator.mediaDevices.getUserMedia(
+      { video: { facingMode: { ideal: "environment" } }, audio: false });
+    if (!GUIDE.ouvert){ coupeCamera(); return; }
+    const v = $("guideVideo");
+    v.srcObject = GUIDE.flux;
+    await v.play().catch(() => {});
+    $("guideSansCam").hidden = true;
+  } catch (e){
+    $("guideSansCam").hidden = false;
+  }
+}
+
+function coupeCamera(){
+  if (GUIDE.flux) GUIDE.flux.getTracks().forEach(t => t.stop());
+  GUIDE.flux = null;
+  const v = $("guideVideo");
+  if (v) v.srcObject = null;
+}
+
+function fermeGuidage(){
+  GUIDE.ouvert = false;
+  cancelAnimationFrame(GUIDE.boucle);
+  basculeScan(false);
+  coupeCamera();
+  window.removeEventListener("deviceorientationabsolute", recoitCap);
+  window.removeEventListener("deviceorientation", recoitCap);
+  window.removeEventListener("devicemotion", recoitMouvement);
+  document.removeEventListener("keydown", toucheGuidage);
+  const g = $("guidage");
+  if (g) g.hidden = true;
+}
+
+/** Au clavier, pour l'essayer sans téléphone : les flèches tournent et font
+ *  avancer, Échap referme. */
+function toucheGuidage(e){
+  if (e.key === "Escape"){ fermeGuidage(); return; }
+  const pas = { ArrowLeft: -15, ArrowRight: 15 }[e.key];
+  if (pas !== undefined){
+    const r = (capLisse() + pas) * Math.PI / 180;
+    GUIDE.capX = Math.sin(r); GUIDE.capY = Math.cos(r); GUIDE.aCap = true;
+    e.preventDefault();
+    return;
+  }
+  if (e.key === "ArrowUp"){ avanceGuidage(2); e.preventDefault(); }
+  if (e.key === "ArrowDown"){ avanceGuidage(-2); e.preventDefault(); }
+}
+
+/** Le bouton qui l'ouvre, au pied du résultat de l'itinéraire — seulement
+ *  quand il y a un trait à suivre dans le pavillon regardé. */
+function boutonGuidage(z){
+  if (!marchesIci().length) return;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "iGuidage";
+  b.textContent = "Me guider avec la caméra";
+  b.onclick = ouvreGuidage;
+  z.appendChild(b);
+}
 /* ============================================================
    11 ter. Organiser sa visite
    ============================================================ */
