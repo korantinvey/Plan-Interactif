@@ -75,10 +75,11 @@ const EQUILIBRE = 4;
 /* ------------------------------------------------------------
    Ce qu'une demi-heure chargée coûte, en mètres
 
-   La capacité d'un stand n'est pas une porte qui se ferme, c'est un confort
-   qui se dégrade : à mesure qu'une équipe est prise, être reçu devient moins
-   probable, jamais impossible. Ce que l'ordonnanceur en retient est donc un
-   prix, et il le paie dans la seule monnaie qu'il connaisse — le mètre, celle
+   Le seuil d'un stand n'est pas une porte qui se ferme. Il dit à partir de
+   combien de **nos** utilisateurs simultanés le calcul doit chercher un autre
+   ordre, et rien de plus : le plan ne connaît pas la fréquentation réelle du
+   stand, et ne prétend pas la connaître. Ce que l'ordonnanceur en retient est
+   donc un prix, payé dans la seule monnaie qu'il connaisse — le mètre, celle
    de `TRANSFERT_M` qui chiffre déjà un changement de pavillon.
 
    Les points ci-dessous se lisent « à tel taux d'occupation, tel détour vaut
@@ -92,25 +93,29 @@ const EQUILIBRE = 4;
    soixante-dix après huit cent vingt. Trente mètres de détour doivent donc
    être couverts par la peine de 70 % — d'où les quarante qu'elle vaut.
 
-   Au-delà de deux fois la capacité la courbe continue à la même pente, puis
+   Au-delà de deux fois le seuil la courbe continue à la même pente, puis
    plafonne : pousser plus fort ne distinguerait plus rien, et la journée est
    de toute façon surdemandée partout à la fois. Même là le stand reste
    visitable — c'est un prix, il n'y a pas d'infini dans ce tableau.
    ------------------------------------------------------------ */
-/* Ce qui, sur un plan, a une capacité et se remplit.
+/* Ce qui, sur un plan, porte un seuil et se remplit.
    Un seul genre aujourd'hui — les autres sont écrits là pour dire où ils
    iraient, non pour être implémentés avant qu'on en ait besoin :
    zone, allee, entree, escalier, liaison. */
 const GENRES_RESSOURCE = { stand: "stand" };
 
 /* Lire la charge autour de l'heure d'arrivée, ou dans la seule case où elle
-   tombe. Mesuré sur les deux réglages — voir `npm run simulation`. */
+   tombe. Le lissage ne change rien aux agrégats — mesuré sur cinq taux
+   d'adoption — mais il retire un cas absurde : deux visiteurs séparés de deux
+   minutes, de part et d'autre de dix heures et demie, voyaient leurs journées
+   différer de mille quatre cent soixante-sept mètres. Le douzième cas de
+   `npm run essais` le vérifie, lissage coupé puis remis. */
 let LISSAGE_CHARGE = true;
 
 const PEINE_CHARGE = [
   [ .60,    0],   // la marge : en dessous, on ne compte rien
   [ .80,   80],   // faible
-  [1.00,  200],   // significative : le stand est à sa capacité
+  [1.00,  200],   // significative : le stand est à son seuil
   [1.20,  450],   // forte : plus qu'un changement de pavillon
   [1.50,  800],   // très forte
   [2.00, 1200],   // très forte, et toujours franchissable
@@ -123,8 +128,8 @@ const SEUIL_PEINE = PEINE_CHARGE[0][0];
 /**
  * Ce que coûte une visite posée sur une demi-heure déjà chargée.
  *
- * Rend des mètres, comparables à ceux du trajet. Zéro sans capacité connue :
- * un stand que personne n'a dessiné ne se voit imposer aucune contrainte.
+ * Rend des mètres, comparables à ceux du trajet. Zéro sans seuil connu : un
+ * stand que personne n'a dessiné ne se voit imposer aucune contrainte.
  */
 function peineDeCharge(charge, seuil){
   if (!(seuil > 0)) return 0;
@@ -574,9 +579,9 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      renversement par rapport à la version précédente, qui rendait une
      demi-heure pleine **indisponible**. Trois choses le motivent.
 
-     D'abord le fond : la capacité est une estimation de confort déduite d'une
-     surface, pas une mesure. Lui donner force de loi, c'est donner à une règle
-     de trois le dernier mot sur le parcours de quelqu'un.
+     D'abord le fond : le seuil est une estimation déduite d'une surface, pas
+     une mesure. Lui donner force de loi, c'est donner à une règle de trois le
+     dernier mot sur le parcours de quelqu'un.
 
      Ensuite l'effet de bord : un refus laisse des exposants dehors quand tout
      est plein, ce qu'aucune règle ne veut. Il fallait alors une soupape — un
@@ -584,8 +589,8 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      une machinerie entière dont un prix n'a aucun besoin. Un stand demandé
      reste dans le parcours ; seule son heure se négocie.
 
-     Enfin la mesure : la version chiffrée saturait moins que la version qui
-     refusait — trois fois la capacité contre quatre et demie sur la même
+     Enfin la mesure : la version chiffrée concentrait moins que la version qui
+     refusait — trois fois le seuil contre quatre et demie sur la même
      simulation. Un refus ne se déplace pas, il se contourne au plus près ;
      un prix se compare, et la recherche locale sait le faire descendre.
 
@@ -598,21 +603,21 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
   /* ------------------------------------------------------------------
      Trois notions, qu'il ne faut jamais confondre
 
-     La **capacité théorique** est ce que la surface laisse supposer, ou ce que
-     l'exploitant a déclaré. Elle vient de la configuration, elle s'affiche dans
-     le volet, et le moteur ne la modifie jamais.
+     Le **seuil de concentration** est ce que la surface laisse supposer, ou ce
+     que l'exploitant a déclaré. Il vient de la configuration, il s'affiche dans
+     le volet, et le moteur ne le modifie jamais.
 
      La **charge annoncée** est le nombre de journées organisées qui se sont
      déclarées sur ce stand pendant cette demi-heure. Ce ne sont pas les
      visiteurs du salon : c'est la seule population que le compteur voie, celle
-     qui se sert de l'outil. La capacité n'est donc pas ici un modèle de la
-     fréquentation réelle — elle est un **budget de concentration** de nos
-     propres utilisateurs, de quoi éviter que le calcul fabrique lui-même des
-     attroupements qui n'auraient pas eu lieu sans lui.
+     qui se sert de l'outil. Rien ici n'est donc un modèle de la fréquentation
+     réelle — c'est un **budget de concentration de nos propres utilisateurs**,
+     de quoi éviter que le calcul fabrique lui-même des attroupements qui
+     n'auraient pas eu lieu sans lui.
 
-     La **capacité effective** est ce que l'ordonnanceur emploie le temps d'un
-     rangement. Elle ne sort pas d'ici, ne s'écrit nulle part, et ne vaut que
-     pour le jour où on la calcule.
+     Le **seuil effectif** est ce que l'ordonnanceur emploie le temps d'un
+     rangement. Il ne sort pas d'ici, ne s'écrit nulle part, et ne vaut que
+     pour le jour où on le calcule.
      ------------------------------------------------------------------ */
   const seuilEffectif = (j, i) => {
     const r = concentration.ressource(i);
@@ -627,7 +632,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
   /**
    * La charge autour d'une heure, et non dans la case où elle tombe.
    *
-   * Les demi-heures sont l'unité de la capacité, non une frontière du monde :
+   * Les demi-heures sont l'unité du seuil, non une frontière du monde :
    * arriver à 10 h 29 ou à 10 h 31 ne doit pas rendre deux réponses
    * étrangères l'une à l'autre. On lit donc **toutes** les tranches que la
    * visite traverse, chacune au prorata du temps qu'on y passe — une visite de
@@ -668,7 +673,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
        qu'elle sera **s'il vient**, non telle qu'elle est sans lui. Sans ce un,
        deux demi-heures à une place près se valent alors que l'une déborderait
        et pas l'autre. Le plan qu'on a soi-même annoncé la veille est déjà dans
-       le relevé et se compte donc deux fois — une unité sur une capacité qui
+       le relevé et se compte donc deux fois — une unité sur un seuil qui
        en vaut trois ou douze, et le retirer demanderait au serveur de
        reconnaître l'appelant. */
     return peineDeCharge(chargeAutourDe(c.jour.cle, s, t) + 1, cap);
@@ -718,7 +723,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * patienter, ce dont le forfait rend déjà compte de l'autre côté.
    *
    * S'y ajoute ce que la charge coûte, dans la même monnaie : c'est par ce
-   * seul point que la capacité entre dans le calcul, et c'est ce qui fait que
+   * seul point que la concentration entre dans le calcul, et c'est ce qui fait que
    * toutes les reprises la voient sans qu'aucune ait à la connaître.
    */
   const coutCreneau = (c) =>
@@ -1064,7 +1069,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
        prix a remplacé le refus : un stand chargé se pose quand même, plus cher.
        Ce qui reste dehors ne l'est donc que pour une raison d'heure — une
        conférence qu'aucun arrangement ne contourne —, comme avant que la
-       capacité n'existe. */
+       concentration n'existait pas. */
     return { note: total(), etat: etat(), dehors: dehorsImposes.concat(dehorsLibres) };
   };
 
@@ -1379,7 +1384,7 @@ function prepareSejour(choix, fige){
   /**
    * Les ressources du séjour, une par arrêt.
    *
-   * Une **ressource** est ce qui a une capacité et se remplit. Aujourd'hui les
+   * Une **ressource** est ce qui porte un seuil et se remplit. Aujourd'hui les
    * stands, et eux seuls. Demain, peut-être, une zone, une allée étroite, une
    * entrée, un escalier, une liaison entre pavillons : ils se remplissent
    * aussi, et rien de ce qui suit ne les distingue d'un stand. C'est pourquoi
@@ -1411,12 +1416,12 @@ function prepareSejour(choix, fige){
       /* D'où vient ce chiffre : de la surface dessinée, ou de l'exploitant.
          Ne sert pas au calcul — sert à expliquer un résultat surprenant, et à
          savoir ce qu'on peut faire évoluer sans mentir. */
-      source: capaciteFixee() ? "exploitant" : "surface",
+      source: seuilImpose() ? "exploitant" : "surface",
     };
   });
 
   /**
-   * Ce que l'ordonnanceur sait de la capacité.
+   * Ce que l'ordonnanceur sait de la concentration.
    *
    * Nul quand l'exploitant n'a pas ouvert le réglage, quand le visiteur a
    * refusé la mesure, ou quand la charge n'est pas encore arrivée : la visite
@@ -2630,7 +2635,7 @@ function annoncePlan(){
  * quelques kilo-octets et le mégaoctet — dans un hall où le réseau est
  * justement ce qui manque.
  *
- * On calcule le seuil sur la capacité **non dilatée**, car le facteur
+ * On calcule la borne sur le seuil **non desserré**, car le desserrage
  * d'adaptation ne fait jamais que l'élever : une cellule écartée ici ne
  * pourrait pas devenir coûteuse plus tard.
  */
@@ -2644,9 +2649,9 @@ function celluleUtile(){
 }
 
 /* ------------------------------------------------------------
-   La dilatation des capacités, quand le salon est globalement surdemandé
+   Le desserrage des seuils, quand le salon est globalement surdemandé
 
-   Une capacité déduite d'une surface dit un confort, pas une limite physique.
+   Un seuil déduit d'une surface est une estimation, pas une limite.
    Quand ce que les journées organisées demandent dépasse globalement ce que
    les stands demandés peuvent recevoir, toutes les demi-heures passent
    au-dessus du seuil : la courbe rend partout le même rouge, et cesse de
@@ -2658,32 +2663,32 @@ function celluleUtile(){
    gens veulent ce stand, il peut recevoir beaucoup de gens », et la peine
    s'évanouirait exactement là où elle sert. Une version précédente le faisait
    — le rapport constaté, appliqué tel quel, jusqu'à quatre fois — et un salon
-   deux fois surdemandé y voyait toutes ses capacités doubler, ramenant un
+   deux fois surdemandé y voyait tous ses seuils doubler, ramenant un
    stand à deux cents pour cent à cent pile, c'est-à-dire à deux cents mètres
    de peine au lieu de mille deux cents.
 
    La dilatation est donc **progressive et plafonnée bas** : un cinquième au
    plus, atteint à deux fois la demande, et rien en dessous du seuil. La
-   demande continue ainsi de produire de la peine quand la capacité s'adapte,
+   demande continue ainsi de produire de la peine quand le seuil s'adapte,
    ce qui est la seule propriété qui compte ici.
 
    Elle est aussi **globale au jour**, et non par stand — et c'est délibéré.
-   Dilater la capacité d'un stand parce qu'il est demandé, ce serait
+   Desserrer le seuil d'un stand parce qu'il est demandé, ce serait
    précisément la circularité qu'on écarte. Dilater celle de tous parce que le
    salon entier est surdemandé répond à une autre question, qui porte sur le
    salon et non sur la popularité d'un stand.
 
    Le rapport se calcule sur les stands qui ont une charge annoncée et une
-   capacité connue, non sur le hall entier : comparer la demande de vingt
-   stands à la capacité de six cents rendrait toujours un, et le mécanisme ne
+   seuil connu, non sur le hall entier : comparer la demande de vingt stands
+   au seuil cumulé de six cents rendrait toujours un, et le mécanisme ne
    se déclencherait jamais.
    ------------------------------------------------------------ */
 
 /* Le rapport constaté, et ce qu'on desserre en face. Interpolé entre les
    points, plafonné au dernier — deux fois la demande ne donne pas deux fois
-   la capacité, elle donne un cinquième de plus. */
+   le seuil, elle en donne un cinquième de plus. */
 const DILATATION = [
-  [1.00, 1.00],   // sous la capacité : on ne desserre rien
+  [1.00, 1.00],   // sous le seuil : on ne desserre rien
   [1.25, 1.05],
   [1.50, 1.10],
   [2.00, 1.20],   // et pas davantage au-delà
@@ -2695,7 +2700,7 @@ const TRANCHES_MINI = 12;
 
 const DILATATIONS = new Map();
 
-/** Ce que le rapport « demande sur capacité » desserre. Jamais moins d'un :
+/** Ce que le rapport « demande sur seuil » desserre. Jamais moins d'un :
  *  on n'a pas à serrer un salon que personne ne demande. */
 function dilatationPour(rapport){
   const D = DILATATION;
@@ -2708,9 +2713,9 @@ function dilatationPour(rapport){
 }
 
 /**
- * De combien les capacités de ce jour-là sont desserrées.
+ * De combien les seuils de ce jour-là sont desserrés.
  *
- * Ne touche pas à la capacité théorique, qui reste celle de la configuration :
+ * Ne touche pas au seuil de concentration, qui reste celui de la configuration :
  * ce nombre ne sert qu'à `seuilEffectif`, le temps d'un rangement.
  */
 function dilatationDuJour(cleJour){
@@ -2722,7 +2727,7 @@ function dilatationDuJour(cleJour){
     let demande = 0, seuil = 0, tMin = TRANCHES_JOUR, tMax = -1;
     for (const id in j){
       const cap = seuilConcentration(parId.get(String(id)));
-      if (!(cap > 0)) continue;   // sans capacité connue, ce stand ne dit rien
+      if (!(cap > 0)) continue;   // sans seuil connu, ce stand ne dit rien
       for (const tr in j[id]){
         demande += +j[id][tr] || 0;
         const t = +tr;
