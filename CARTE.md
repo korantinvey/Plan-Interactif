@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 5366 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 5386 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.4238 · 10. Mode administration
 - l.4346 · La fiche d'une zone organisateur
-- l.5096 · Masquer une zone organisateur
-- l.5193 · Placer un libellé à la main
+- l.5116 · Masquer une zone organisateur
+- l.5213 · Placer un libellé à la main
 
 Fonctions :
 
@@ -47,15 +47,15 @@ Fonctions :
 `voletApparence` 3384 · `clesFiche` 3583 · `voletOrdre` 3600 · `enregistreConf` 4187
 `rgbHex` 4194 · `hexa` 4201 · `luminance` 4205 · `ecarte` 4219 · `joli` 4234
 `retireAdmin` 4255 · `activeAdmin` 4268 · `champZone` 4372 · `champsZone` 4397
-`champSalles` 4492 · `nomDeZone` 4544 · `reduitLogo` 4578 · `cadreLogo` 4621
-`champLogo` 4693 · `editeurRiche` 4731 · `memeFicheZone` 4888 · `suitFicheZone` 4895
-`verseFicheZone` 4903 · `ficheZone` 4929 · `enregistreZone` 4954
-`enregistreZoneAjoutee` 5067 · `basculeAffichageZone` 5107 · `marqueZonesMasquees` 5135
-`ecritColonnesEvenement` 5155 · `ecritColonneEvenement` 5189 · `cleLibelle` 5214
-`empreinteLibelle` 5230 · `placementLibelle` 5238 · `posePlacement` 5248
-`libelleAutomatique` 5265 · `modePlacementLibelles` 5274 · `majPaletteLibelle` 5293
-`choisitLibelle` 5310 · `pousseLibelle` 5317 · `libellePointerDown` 5325
-`libellePointerMove` 5341 · `libellePointerUp` 5350
+`champSalles` 4489 · `nomDeZone` 4541 · `reduitLogo` 4575 · `cadreLogo` 4618
+`champLogo` 4690 · `editeurRiche` 4728 · `memeFicheZone` 4885 · `suitFicheZone` 4892
+`verseFicheZone` 4900 · `ficheZone` 4926 · `enregistreZone` 4951
+`enregistreZoneAjoutee` 5064 · `basculeAffichageZone` 5127 · `marqueZonesMasquees` 5155
+`ecritColonnesEvenement` 5175 · `ecritColonneEvenement` 5209 · `cleLibelle` 5234
+`empreinteLibelle` 5250 · `placementLibelle` 5258 · `posePlacement` 5268
+`libelleAutomatique` 5285 · `modePlacementLibelles` 5294 · `majPaletteLibelle` 5313
+`choisitLibelle` 5330 · `pousseLibelle` 5337 · `libellePointerDown` 5345
+`libellePointerMove` 5361 · `libellePointerUp` 5370
 
 Éléments :
 
@@ -315,7 +315,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_geometrie.html` — 980 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_geometrie.html` — 981 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 octies. Reprendre à la main la géométrie d'un emplacement
 
@@ -331,12 +331,12 @@ Fonctions :
 `dessinePoigneesGeo` 397 · `ecritDimensionsGeo` 425 · `nomSorteGeo` 437
 `majPaletteGeo` 439 · `finGesteGeo` 478 · `enregistreGeo` 496 · `geometrieOrigine` 510
 `retraceGeo` 525 · `pousseGeometrie` 536 · `appliqueDimensionGeo` 553 · `cleAjout` 591
-`anneauxValides` 604 · `rechAjout` 609 · `objetAjoute` 617 · `appliqueAjouts` 640
-`enregistreAjout` 666 · `recompteEmplacements` 675 · `ajouteEmplacement` 689
-`renommeAjout` 718 · `ecritInfosAjout` 743 · `supprimeAjout` 756 · `choisitOutilGeo` 786
-`aideAjout` 793 · `fermeAjout` 803 · `ajoutPointerDown` 812 · `ajoutPointerMove` 828
-`ajoutPointerUp` 850 · `geometriePointerDown` 870 · `accrocheGeo` 901
-`geometriePointerMove` 903 · `geometriePointerUp` 954
+`anneauxValides` 605 · `rechAjout` 610 · `objetAjoute` 618 · `appliqueAjouts` 641
+`enregistreAjout` 667 · `recompteEmplacements` 676 · `ajouteEmplacement` 690
+`renommeAjout` 719 · `ecritInfosAjout` 744 · `supprimeAjout` 757 · `choisitOutilGeo` 787
+`aideAjout` 794 · `fermeAjout` 804 · `ajoutPointerDown` 813 · `ajoutPointerMove` 829
+`ajoutPointerUp` 851 · `geometriePointerDown` 871 · `accrocheGeo` 902
+`geometriePointerMove` 904 · `geometriePointerUp` 955
 
 ### `_head.html` — 5781 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -809,7 +809,7 @@ Fonctions :
 
 `jeton` 80 · `client` 83
 
-### `supabase/functions/plan-public/index.ts` — 1065 l.
+### `supabase/functions/plan-public/index.ts` — 1079 l.
 
 `cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 118 · `avecVignette` 155
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361

@@ -591,8 +591,9 @@ const PREFIXE_AJOUT = "_ajout:";
 const cleAjout = (id) => PREFIXE_AJOUT + id;
 const SORTES_AJOUT = { stands: "stand", zones: "zone" };
 /* Ce que la fiche d'une zone ajoutée retient, en plus de son nom. Les salles
-   de conférence n'y sont pas : leur rattachement se fait côté serveur, sur
-   les seules zones de l'instantané. */
+   de conférence n'y sont pas : leur colonne est indexée par salle, et le
+   serveur retrouve les zones ajoutées dans la configuration du pavillon pour
+   y rattacher le programme. */
 const FICHE_AJOUT = ["nom_en", "type", "description", "description_en", "lien",
                      "logo", "traversable", "masquee"];
 
