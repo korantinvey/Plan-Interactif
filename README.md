@@ -1464,6 +1464,106 @@ le service répond 404 ou 410, et tout ce que cet appareil attendait s'efface.
 Rouvrir le plan répare tout — un abonnement neuf, une liste reposée —, et c'est
 la seule réparation qu'il y ait.
 
+### Le seuil de concentration
+
+La journée organisée range les stands au plus court depuis la porte : tout le
+monde part du même point, à la même heure, et reçoit le même ordre. Les
+premières travées se remplissent donc à l'ouverture pendant que le fond reste
+vide — et l'exposant du fond, qui a payé le même emplacement, reçoit son monde
+à quinze heures ou pas du tout.
+
+L'onglet **« Parcours intelligent »** du menu engrenage ouvre le remède. Coché,
+il fait préférer au calcul une demi-heure calme à une demi-heure déjà prise.
+Deux façons de dire le seuil : à la surface — trois par tranche de dix mètres
+carrés, jamais moins de trois, jamais plus de soixante —, ou un nombre fixe
+quand l'exploitant connaît ses équipes mieux que la surface ne les devine. Le
+volet montre, sous les réglages, ce qu'ils donnent sur ce salon-ci : combien
+d'emplacements sont dessinés, et quel seuil médian en sort. Un chiffre choisi
+sans voir ce qu'il produit sur six cents emplacements est un chiffre choisi au
+hasard.
+
+**Ce n'est pas une capacité, et le mot compte.** Le plan ne sait pas combien de
+personnes un stand reçoit : personne ne le lui dit, et son compteur ne voit que
+les journées organisées depuis lui — il ignore tout des visiteurs qui ne
+l'ouvrent jamais, c'est-à-dire de l'immense majorité. Un seuil de trois ne dit
+donc pas « ce stand reçoit trois personnes ». Il dit : *au-delà de trois des
+nôtres en même temps, le calcul cherche un autre ordre*. C'est un **budget de
+concentration de nos propres utilisateurs**, de quoi éviter que le plan
+fabrique lui-même les attroupements qu'il aurait seul provoqués en donnant le
+même ordre à tout le monde. Prétendre autre chose serait afficher à un
+exploitant une mesure inventée, qu'il n'aurait aucun moyen de démentir.
+
+Trois notions ne se confondent donc jamais : le **seuil de concentration**, qui
+vient de la configuration et que le moteur ne modifie en aucun cas ; la **charge
+annoncée**, nombre de journées organisées déclarées sur ce stand à cette
+demi-heure ; et le **seuil effectif**, que le calcul se donne le temps d'un
+rangement et qui ne sort pas de lui.
+
+**C'est un prix, jamais un refus.** Un seuil déduit d'une surface est une
+estimation, pas une limite : lui donner force de loi reviendrait à laisser une
+règle de trois décider du parcours de quelqu'un. Le calcul chiffre
+donc la charge en mètres — la monnaie qu'il emploie déjà pour dire qu'un
+changement de pavillon coûte trois cents mètres — et l'ajoute au trajet. Rien
+en dessous de soixante pour cent d'occupation ; quarante mètres à soixante-dix,
+deux cents au seuil, huit cents à une fois et demie. Un stand très
+demandé reste donc visitable, et personne n'est jamais retiré du parcours de
+qui que ce soit : seule l'heure se négocie.
+
+**Le moteur réordonne d'abord, et ne paie qu'ensuite.** Ranger une journée
+n'a jamais consisté à suivre le plan dans l'ordre : le calcul essaie des
+milliers d'ordres — il en retourne des morceaux, déplace un arrêt, échange deux
+stands entre deux jours — et retient celui qui coûte le moins. Depuis que la
+charge entre dans ce coût, chacun de ces essais la voit. Visiter B avant A
+parce que A est pris à dix heures n'est donc pas un cas particulier qu'il
+faudrait prévoir : c'est ce que la recherche trouve d'elle-même. Là où un
+créneau paie une peine, elle va plus loin et essaie **tous** les ordres d'une
+fenêtre de sept arrêts autour de l'arrêt le plus cher — ce que les mouvements
+simples n'atteignent pas toujours. Là où rien ne se paie, rien de tout cela ne
+se déclenche, et le parcours est exactement celui d'avant.
+
+Une conférence retenue ne bouge jamais : elle découpe la journée en fenêtres,
+et c'est **à l'intérieur** de chaque fenêtre que les stands se réordonnent. De
+même, le calcul ne se met pas à traverser le hall : changer de pavillon coûte
+trois cents mètres au score, et aucune congestion ordinaire ne les rembourse.
+
+Ce qui en découle est un arbitrage, et c'est bien le but : un trajet de huit
+cent cinquante mètres qui arrive sur un stand à trente pour cent vaut mieux
+qu'un trajet de huit cent vingt qui y arrive à soixante-dix. Trente mètres de
+détour, quarante mètres de peine évitée. Deux cents mètres de détour pour la
+même peine, en revanche, ne se font pas.
+
+**Quand le salon est globalement surdemandé**, les seuils se desserrent — d'un
+cinquième au plus. Si ce que les journées organisées demandent dépasse partout
+les seuils, la courbe rend le même rouge d'un bout à l'autre du hall, et ne
+départage plus rien : c'est pourtant son seul emploi. Le desserrage ramène la
+mesure sur ce que la journée d'un visiteur peut changer — la **concentration**
+d'une demi-heure par rapport aux autres — et non sur la demande globale, sur
+laquelle elle ne peut rien. Un cinquième au plus, et jamais davantage : suivre
+la demande dirait « puisqu'ils sont nombreux à le vouloir, il peut les
+recevoir », ce qui tourne en rond.
+
+**Ce que le compteur voit, et ce qu'il ne voit pas.** Une journée organisée
+s'annonce : quatre secondes après la dernière retouche, la page envoie la liste
+des couples « stand, demi-heure » qu'elle vient de poser, sous un identifiant
+propre au parcours. Cet identifiant **remplace** ce que le même parcours avait
+annoncé la veille au lieu de s'y ajouter : quelqu'un qui recalcule sa journée
+six fois ne fait pas un embouteillage à lui tout seul. Les plans passés
+s'effacent d'eux-mêmes, la table ne gardant que les jours à venir.
+
+Ce que cet identifiant n'est pas : le jeton de mesure. Les deux ne voyagent
+jamais ensemble, par deux services distincts — `/api/plan-de-visite` d'un côté,
+`/api/mesure` de l'autre —, et c'est ce qui rend la promesse vérifiable plutôt
+que déclarative. Le compteur voit donc des journées organisées, jamais des
+visiteurs ; il ignore les quatre-vingt-dix-neuf pour cent qui n'organisent
+rien. Rien de tout cela ne se tente sans les deux clés qui le rendent honnête :
+l'exploitant a ouvert le réglage, et le visiteur n'a pas refusé la mesure.
+
+Mesuré sur un hall de cinq cents exposants et mille journées organisées, aux
+heures d'arrivée qu'on observe vraiment, le pire stand passe de quatre fois et
+demie son seuil à une fois et un tiers, les visites qui trouvaient une équipe
+entièrement prise de mille cinquante-neuf à huit — pour quarante-six mètres de
+marche en plus, sur sept cent vingt.
+
 ## La visite guidée
 
 Le programme d'une salle, le chemin jusqu'à elle, le parcours qu'on se compose,

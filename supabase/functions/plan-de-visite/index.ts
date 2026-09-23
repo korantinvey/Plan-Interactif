@@ -76,9 +76,17 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
 
-    /* La lecture. `min` est la plus petite capacité que la page ait à
-       respecter : au-dessous, une cellule ne saturera jamais rien chez elle, et
-       l'emporter serait payer du réseau pour du silence. La base reborne. */
+    /* La lecture. `min` est la plus petite cellule qui coûte quelque chose à
+       la page : au-dessous du seuil de sa courbe, une cellule ne pèse rien
+       chez elle, et l'emporter serait payer du réseau pour du silence. La base
+       reborne — le chiffre vient du navigateur.
+
+       Le commentaire de la migration qui pose `charge_prevue` décrit, lui, un
+       refus de poser sur une demi-heure pleine, et parle de « capacité » :
+       c'était la règle et le mot du jour où elle a été écrite, et une migration
+       ne se réécrit pas. La page en fait depuis un prix, et ce qu'elle règle
+       est un **seuil de concentration de ses propres utilisateurs** — non une
+       capacité de stand, qu'elle n'a aucun moyen de connaître. */
     if (req.method === "GET") {
       const slug = String(url.searchParams.get("slug") ?? "").slice(0, 80);
       if (!slug) return json({ erreur: "Paramètres manquants." }, 400);

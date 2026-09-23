@@ -673,41 +673,56 @@ function minutesVisite(){
 }
 
 /* ------------------------------------------------------------
-   Le parcours intelligent — ce qu'un stand reçoit à la fois
+   Le parcours intelligent — le seuil de concentration
    ------------------------------------------------------------ */
 /**
- * Pourquoi un plafond par stand, et non une peine par endroit.
+ * Ce que ce réglage règle, et ce qu'il ne prétend pas savoir.
  *
  * La journée organisée range les stands au plus court depuis la porte
  * d'entrée. Tous les visiteurs partent donc du même point, et le plus court
  * est le même pour tous : les premières travées se remplissent à l'ouverture
- * pendant que le fond reste vide. La première idée — écarter le calcul des
- * abords encombrés, comme on l'écarte des salles qui se vident — répond à
- * côté : ce qui empêche une visite, ce n'est pas la densité de l'allée, c'est
- * que toute l'équipe du stand est déjà en conversation. Le visiteur suivant
- * n'est reçu par personne, qu'il soit venu de l'entrée ou du fond.
+ * pendant que le fond reste vide. C'est **le calcul** qui fabrique cet
+ * attroupement, en donnant le même ordre à tout le monde, et c'est lui seul
+ * que ce réglage corrige.
  *
- * Et le remède change avec le modèle. Une allée encombrée s'évite en allant
- * ailleurs — cela coûte des mètres au visiteur et une visite à l'exposant. Un
- * stand saturé s'évite en y allant plus tard : le visiteur garde son exposant,
- * l'exposant garde sa visite, et la peine se paie en minutes de décalage, que
- * personne ne remarque.
+ * D'où le mot, et il n'est pas cosmétique. Ce n'est **pas une capacité** :
+ * nous ne savons pas combien de personnes un stand reçoit, personne ne nous le
+ * dit, et le compteur ne voit que les journées organisées depuis le plan — il
+ * ignore tout des visiteurs qui ne l'ouvrent jamais, c'est-à-dire de l'immense
+ * majorité. Un seuil de trois ne dit donc pas « ce stand reçoit trois
+ * personnes ». Il dit : *au-delà de trois des nôtres en même temps, le moteur
+ * cherche un autre ordre*. Prétendre autre chose serait une mesure inventée,
+ * affichée à un exploitant qui n'a aucun moyen de la démentir.
  *
- * Reste le chiffre, qu'aucune donnée ne porte. Klipso ne dit pas combien de
- * personnes tiennent un stand, et le plan ne le devine pas davantage. Deux
- * façons de le dire, parce qu'elles ne servent pas les mêmes salons : un
- * chiffre unique quand les emplacements se ressemblent, une règle à la surface
- * quand ils vont du deux-mètres au pavillon.
+ * Le remède, lui, ne coûte presque rien : un stand trop demandé à dix heures
+ * s'évite en y allant plus tard. Le visiteur garde son exposant, l'exposant
+ * garde sa visite, et seule l'heure bouge.
+ *
+ * Reste le chiffre. La surface est ce qu'on a, faute de mieux, et deux façons
+ * de le dire parce qu'elles ne servent pas les mêmes salons : un chiffre
+ * unique quand les emplacements se ressemblent, une règle à la surface quand
+ * ils vont du deux-mètres au pavillon. Un relevé empirique, stand par stand,
+ * prendrait la place de l'un comme de l'autre sans que rien d'autre bouge.
  */
-const REGLAGES_CAPACITE = {
-  /* Trois : l'équipe courante d'un stand de salon professionnel — deux
-     personnes qui reçoivent, une qui montre — et ce qu'un emplacement de neuf
-     mètres carrés tient debout sans gêner le passage. */
-  nombre: { defaut: 3,  min: 1, max: 50,  pas: 1 },
-  /* Vingt mètres carrés par visiteur reçu : un coin de table, deux chaises et
-     le passage autour. Un salon d'affaires en demande davantage, un salon
-     grand public beaucoup moins — d'où le réglage. */
-  parM2:  { defaut: 20, min: 2, max: 200, pas: 1 },
+const REGLAGES_SEUIL = {
+  /* Combien des nôtres, par tranche de dix mètres carrés et par demi-heure,
+     avant que le moteur ne cherche un autre ordre. La tranche de dix plutôt
+     que le mètre carré parce que c'est ainsi qu'on le dit à voix haute — et
+     parce qu'un champ où l'on tape « 0,3 » est un champ où l'on se trompe d'un
+     facteur dix. Ce que vaut une règle de trois sur une surface : un point de
+     départ, pas une mesure, et c'est pourquoi il se règle. */
+  parDix:   { defaut: 3,   min: .5,  max: 20,  pas: .5 },
+  /* En dessous, les plus petits stands porteraient une contrainte que leur
+     seule surface leur invente : un module de six mètres carrés tient bien
+     trois visiteurs debout. */
+  plancher: { defaut: 3,   min: 1,   max: 20,  pas: 1 },
+  /* Au-delà, la règle de trois rendrait des chiffres qui ne veulent plus rien
+     dire, et un seuil si haut qu'il ne se déclencherait jamais. */
+  plafond:  { defaut: 60,  min: 5,   max: 300, pas: 5 },
+  /* Le seuil que l'exploitant impose lui-même, quand il connaît ses équipes
+     mieux que la surface ne les devine. Il remplace le calcul plutôt que de
+     s'y ajouter. */
+  nombre:   { defaut: 3,   min: 1,   max: 200, pas: 1 },
 };
 
 /* Les cases et les chiffres ne partagent jamais une clé : `fixe` dit que la
@@ -716,15 +731,15 @@ const REGLAGES_CAPACITE = {
 
    Décochées d'avance, toutes les trois : ceci change l'ordre de visite de tout
    le monde, et ne s'allume pas dans le dos de l'exploitant. */
-const capaciteGeree = () => conf("_capacite").visible === true;
-const capaciteFixee = () => conf("_capacite").fixe === true;
-const capaciteParSurface = () => conf("_capacite").surface === true;
+const seuilGere = () => conf("_capacite").visible === true;
+const seuilImpose = () => conf("_capacite").fixe === true;
+const seuilParSurface = () => conf("_capacite").surface === true;
 
 /* Une valeur hors bornes — un champ à moitié tapé, une configuration d'avant —
    retombe sur l'origine plutôt que de fausser un plafond. Même geste que
    `regleFoule`, et pour la même raison. */
-function regleCapacite(k){
-  const r = REGLAGES_CAPACITE[k], v = +conf("_capacite")[k];
+function regleSeuil(k){
+  const r = REGLAGES_SEUIL[k], v = +conf("_capacite")[k];
   return isFinite(v) && v >= r.min && v <= r.max ? v : r.defaut;
 }
 
@@ -766,42 +781,57 @@ function aireDuStand(o){
  * mètres carrés par personne, un stand de neuf tomberait sinon à zéro, et un
  * zéro se lit ici comme une absence de plafond — l'inverse de ce qu'il faut.
  */
-function capaciteStand(o){
-  if (!capaciteGeree()) return 0;
-  let n = capaciteFixee() ? regleCapacite("nombre") : 0;
-  if (capaciteParSurface()){
-    const a = aireDuStand(o);
-    if (a > 0) n = Math.max(n, Math.floor(a / regleCapacite("parM2")) || 1);
-  }
-  return n;
+/**
+ * Le seuil de concentration d'un stand : le nombre d'utilisateurs du plan
+ * simultanés au-delà duquel le moteur cherche à répartir.
+ *
+ * C'est une donnée de la configuration, et **rien dans le moteur ne la modifie
+ * jamais**. Ce que l'ordonnanceur manipule, quand il lui faut desserrer la
+ * mesure, est un seuil *effectif* qu'il calcule chez lui le temps d'un
+ * rangement — voir `seuilEffectif` dans `_journee.html`. Les deux ne se
+ * confondent pas : celui-ci se règle et s'affiche, celui-là ne sort pas du
+ * calcul.
+ */
+function seuilConcentration(o){
+  if (!seuilGere()) return 0;
+  /* Le chiffre imposé l'emporte : quand l'exploitant connaît ses équipes mieux
+     que la surface ne les devine, c'est lui qui a raison. C'est aussi la porte
+     par laquelle un seuil relevé stand par stand entrera un jour sans rien
+     changer d'autre. */
+  if (seuilImpose()) return regleSeuil("nombre");
+  if (!seuilParSurface()) return 0;
+  const a = aireDuStand(o);
+  if (a <= 0) return 0;   // rien de dessiné : on ne sait pas, on ne borne pas
+  return Math.max(regleSeuil("plancher"),
+                  Math.min(regleSeuil("plafond"),
+                           Math.round(a * regleSeuil("parDix") / 10)));
 }
 
 /**
  * Ce que les réglages donnent sur ce salon-ci.
  *
- * Un plafond choisi sans voir ce qu'il produit sur six cents emplacements est
- * un plafond choisi au hasard : la médiane dit en un chiffre si l'on vient de
- * régler un salon où chacun reçoit trois personnes ou un salon où chacun en
- * reçoit une. La médiane et non la moyenne — un pavillon de mille mètres
- * carrés tirerait la seconde à lui tout seul.
+ * Un seuil choisi sans voir ce qu'il produit sur six cents emplacements est un
+ * seuil choisi au hasard : la médiane dit en un chiffre ce qu'on vient de
+ * régler. La médiane et non la moyenne — un pavillon de mille mètres carrés
+ * tirerait la seconde à lui tout seul.
  */
-function phraseCapacite(){
-  if (!capaciteGeree() || (!capaciteFixee() && !capaciteParSurface())) return "";
+function phraseSeuil(){
+  if (!seuilGere() || (!seuilImpose() && !seuilParSurface())) return "";
   const caps = [];
   let dessines = 0;
   ((DATA && DATA.plans) || []).forEach(pl => (pl.stands || []).forEach(o => {
     if (aireDuStand(o) > 0) dessines++;
-    const n = capaciteStand(o);
+    const n = seuilConcentration(o);
     if (n > 0) caps.push(n);
   }));
-  if (!dessines && capaciteParSurface() && !capaciteFixee())
+  if (!dessines && seuilParSurface() && !seuilImpose())
     return "Aucun emplacement n'est dessiné sur ce salon : la surface ne dit " +
-      "rien d'eux, et ils restent tous sans plafond.";
+      "rien d'eux, et aucun ne porte de seuil.";
   if (!caps.length) return "";
   caps.sort((a, b) => a - b);
   const med = caps[caps.length >> 1];
   return "Sur ce salon : " + dessines + " emplacement" + (dessines > 1 ? "s" : "") +
-    " dessiné" + (dessines > 1 ? "s" : "") + ". Capacité médiane : " + med + ".";
+    " dessiné" + (dessines > 1 ? "s" : "") + ". Seuil médian : " + med + ".";
 }
 
 /* Nommé plutôt qu'écrit deux fois : l'intitulé sert d'onglet et de nom de
@@ -2857,9 +2887,9 @@ function voletParcours(hote){
   p.textContent = "La journée organisée range les stands au plus court depuis " +
     "la porte d'entrée : tout le monde part du même point, à la même heure, et " +
     "reçoit le même ordre — les premières travées se remplissent à l'ouverture " +
-    "pendant que le fond reste vide. Ce qui suit lui apprend ce qu'un stand " +
-    "peut recevoir à la fois, de quoi décaler une visite d'une demi-heure " +
-    "plutôt que de la poser devant une équipe déjà prise.";
+    "pendant que le fond reste vide. Ce qui suit apprend au calcul à étaler " +
+    "ses propres recommandations dans la journée, plutôt que d'envoyer tout le " +
+    "monde au même endroit au même moment.";
   hote.appendChild(p);
 
   const bloc = document.createElement("div");
@@ -2867,15 +2897,18 @@ function voletParcours(hote){
   const l = document.createElement("label");
   l.innerHTML = '<input type="checkbox"><span></span>';
   l.querySelector("span").textContent =
-    "Gestion du nombre de visiteurs simultanés sur un stand";
+    "Étaler dans le temps les visiteurs qui suivent le plan";
   const c = l.querySelector("input");
-  c.checked = capaciteGeree();
+  c.checked = seuilGere();
   bloc.appendChild(l);
   const aide = document.createElement("p");
   aide.className = "aideR";
-  aide.textContent = "Un stand reçoit autant de visiteurs à la fois qu'il a de " +
-    "monde pour les accueillir. Au-delà, la visite se décale à un autre moment " +
-    "de la journée — l'exposant n'est jamais retiré du parcours de personne.";
+  aide.textContent = "Le plan ne compte que les visiteurs qui organisent leur " +
+    "journée avec lui : il ignore tout des autres, et ne mesure donc pas la " +
+    "fréquentation de vos stands. Le seuil ci-dessous dit à partir de combien " +
+    "de ces visiteurs-là, en même temps sur un stand, le calcul doit chercher " +
+    "un autre ordre. Il ne l'interdit jamais, et ne retire l'exposant du " +
+    "parcours de personne.";
   bloc.appendChild(aide);
   hote.appendChild(bloc);
 
@@ -2885,19 +2918,24 @@ function voletParcours(hote){
   /* Réécrit à chaque frappe : c'est la seule façon de choisir un chiffre en
      voyant ce qu'il fait, et le compte tient en un tour des emplacements. */
   const ecritApercu = () => {
-    const t = phraseCapacite();
+    const t = phraseSeuil();
     apercu.textContent = t;
     apercu.hidden = !t;
   };
 
   /**
-   * Une façon de dire la capacité : sa case, son chiffre, son aide.
+   * Une façon de dire le seuil : sa case, ses chiffres, leurs aides.
    *
    * `cle` porte la case dans la configuration, `k` le chiffre dans
-   * `REGLAGES_CAPACITE` — les bornes et l'origine viennent de là, et non d'une
+   * `REGLAGES_SEUIL` — les bornes et l'origine viennent de là, et non d'une
    * seconde liste qui finirait par diverger.
+   *
+   * Les clés gardent leurs noms d'origine (`_capacite`, `fixe`, `nombre`) :
+   * elles sont déjà écrites dans la configuration des salons en production, et
+   * les renommer perdrait le réglage de ceux qui l'ont activé. Le mot juste
+   * est dans le code et à l'écran ; la clé, elle, est une adresse.
    */
-  const facon = (cle, k, libelle, avant, unite, explication) => {
+  const facon = (cle, libelle, champs) => {
     const b = document.createElement("div");
     b.className = "reglages";
     const lb = document.createElement("label");
@@ -2908,31 +2946,34 @@ function voletParcours(hote){
     b.appendChild(lb);
     detail.appendChild(b);
 
-    const r = REGLAGES_CAPACITE[k];
-    const d = document.createElement("div");
-    d.className = "reglage-nb";
-    d.innerHTML = '<label><span class="l"></span>' +
-      '<input type="number" min="' + r.min + '" max="' + r.max + '" step="' + r.pas + '">' +
-      '<span class="u"></span></label><span class="aide"></span>';
-    d.querySelector(".l").textContent = avant;
-    d.querySelector(".u").textContent = unite;
-    d.querySelector(".aide").textContent = explication;
-    const n = d.querySelector("input");
-    n.value = regleCapacite(k);
-    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient que
-       ce qui tient dans les bornes, et le champ se remet d'aplomb en le
-       quittant — comme le temps de visite et les chiffres de la foule. */
-    n.oninput = e => {
-      const v = +e.target.value;
-      if (!isFinite(v) || v < r.min || v > r.max) return;
-      conf("_capacite")[k] = v;
-      enregistreConf();
-      ecritApercu();
-    };
-    n.onblur = () => { n.value = regleCapacite(k); };
-    detail.appendChild(d);
+    const boites = champs.map(ch => {
+      const r = REGLAGES_SEUIL[ch.k];
+      const d = document.createElement("div");
+      d.className = "reglage-nb";
+      d.innerHTML = '<label><span class="l"></span>' +
+        '<input type="number" min="' + r.min + '" max="' + r.max + '" step="' + r.pas + '">' +
+        '<span class="u"></span></label><span class="aide"></span>';
+      d.querySelector(".l").textContent = ch.avant;
+      d.querySelector(".u").textContent = ch.unite;
+      d.querySelector(".aide").textContent = ch.aide;
+      const n = d.querySelector("input");
+      n.value = regleSeuil(ch.k);
+      /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+         que ce qui tient dans les bornes, et le champ se remet d'aplomb en le
+         quittant — comme le temps de visite et les chiffres de la foule. */
+      n.oninput = e => {
+        const v = +e.target.value;
+        if (!isFinite(v) || v < r.min || v > r.max) return;
+        conf("_capacite")[ch.k] = v;
+        enregistreConf();
+        ecritApercu();
+      };
+      n.onblur = () => { n.value = regleSeuil(ch.k); };
+      detail.appendChild(d);
+      return d;
+    });
 
-    const maj = () => { d.hidden = !ca.checked; };
+    const maj = () => { boites.forEach(d => { d.hidden = !ca.checked; }); };
     ca.onchange = e => {
       conf("_capacite")[cle] = e.target.checked;
       enregistreConf();
@@ -2942,19 +2983,25 @@ function voletParcours(hote){
     maj();
   };
 
-  facon("fixe", "nombre", "Un nombre fixe, le même pour tous les stands",
-    "Reçoit au plus", "visiteurs à la fois",
-    "Le choix d'un salon dont les emplacements se ressemblent. Trois : une " +
-    "équipe de trois personnes en reçoit trois en même temps, et le quatrième " +
-    "est prié d'attendre — c'est lui que la journée organisée ira poser " +
-    "ailleurs dans l'après-midi.");
-  facon("surface", "parM2", "Un nombre selon la surface du stand",
-    "Un visiteur par tranche de", "m²",
-    "La surface se lit sur le plan, telle que le stand y est dessiné. Un " +
-    "emplacement dessiné reçoit toujours au moins un visiteur ; un " +
-    "emplacement que personne n'a dessiné n'a pas de surface, et reste sans " +
-    "plafond. Les deux cases cochées, c'est le plus grand des deux qui " +
-    "vaut : le nombre fixe devient un plancher.");
+  facon("surface", "Un seuil calculé sur la surface du stand", [
+    { k: "parDix", avant: "Seuil de", unite: "par tranche de 10 m²",
+      aide: "La surface se lit sur le plan, telle que le stand y est dessiné. " +
+        "Un emplacement que personne n'a dessiné n'a pas de surface, et ne " +
+        "porte donc aucun seuil." },
+    { k: "plancher", avant: "Jamais moins de", unite: "à la fois",
+      aide: "Sans ce plancher, les plus petits stands porteraient un seuil que " +
+        "leur seule surface leur invente — un module de six mètres carrés " +
+        "tient bien trois visiteurs debout." },
+    { k: "plafond", avant: "Jamais plus de", unite: "à la fois",
+      aide: "Au-delà, la règle de trois rendrait un seuil si haut qu'il ne se " +
+        "déclencherait jamais." },
+  ]);
+  facon("fixe", "Un seuil fixe, le même pour tous les stands", [
+    { k: "nombre", avant: "Seuil de", unite: "à la fois",
+      aide: "Le choix d'un salon dont les emplacements se ressemblent, ou " +
+        "d'un exploitant qui connaît ses équipes mieux que la surface ne les " +
+        "devine. Cochée, cette case l'emporte sur le calcul à la surface." },
+  ]);
   detail.appendChild(apercu);
   hote.appendChild(detail);
 
