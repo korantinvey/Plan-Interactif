@@ -1267,7 +1267,8 @@ function societesDuPlan(){
   const range = (a, b) => a.localeCompare(b, "fr", { sensitivity: "base", numeric: true });
   const cle = (s) => nomSurLePlan(s) || s.code || "";
   const out = [];
-  P().stands.slice().sort((a, b) => range(cle(a), cle(b))).forEach(s => {
+  // un stand ajouté à la main n'est pas une société : c'est lui qu'on lie
+  P().stands.filter(s => !s.ajout).sort((a, b) => range(cle(a), cle(b))).forEach(s => {
     const liste = societes(s)
       .filter(x => s.code || nomSurLePlan(x.soc))
       .map(x => ({ o: s, i: x.i, soc: x.soc,
@@ -1415,8 +1416,11 @@ function poseLibellesDessines(pxParM){
  */
 function decoupeStand(id, iSoc){
   const z = (id === null || id === undefined) ? null : $("couches");
-  return (z && z.querySelector('.dcal .sdes[data-id="' + CSS.escape(String(id)) +
-                               '"][data-soc="' + Number(iSoc) + '"]')) || null;
+  /* Un stand ajouté sur la couche Stands et lié à la même société en est un
+     aussi : il porte les mêmes deux attributs. */
+  const q = '[data-id="' + CSS.escape(String(id)) + '"][data-soc="' + Number(iSoc) + '"]';
+  return (z && z.querySelector('.dcal .sdes' + q)) ||
+         (z && $("stands").querySelector('g[data-aj]' + q)) || null;
 }
 
 /**

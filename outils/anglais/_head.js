@@ -135,4 +135,5 @@ module.exports = {
     "Add a polygon — click each corner, Enter to close",
   "Numéro": "Number",
   "Fiche de la zone…": "Area details…",
+  "Facultatif — ouvre sa fiche": "Optional — opens their details",
 };
