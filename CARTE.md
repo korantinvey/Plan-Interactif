@@ -734,7 +734,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1516 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1527 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -745,20 +745,20 @@ Fonctions :
 `remonteWebgl` 232 · `vueDeck` 249 · `vueWebgl` 258 · `blocDe` 267 · `enEdition` 297
 `majEditionWebgl` 301 · `cleBloc` 313 · `planifieWebgl` 339 · `toutRepeindreWebgl` 343
 `blocsDansLOrdre` 350 · `repeintWebgl` 355 · `assembleWebgl` 379 · `constTexte` 413
-`jeuDeCaracteres` 588 · `couchesTexte` 599 · `mulM` 633 · `appM` 636 · `echelleM` 637
-`lisTransform` 639 · `lisTrace` 661 · `lisPoints` 729 · `num` 735 · `anneau` 737
-`rectArrondi` 743 · `couleurGl` 757 · `accVide` 774 · `convertitBloc` 775 · `accDe` 791
-`parcoursGl` 798 · `avecTrous` 838 · `formeGl` 859 · `texteGl` 895 · `imageGl` 918
-`partage` 950 · `designeGl` 956 · `couchesDeBloc` 958 · `modelesLibellesHtml` 1033
-`poseModelesLibelles` 1043 · `lisModelesLibelles` 1049 · `emplacementWebgl` 1078
-`libellesWebgl` 1126 · `groupesNoms` 1189 · `couchesNoms` 1205 · `couchesPastilles` 1216
-`couchesLibellesWebgl` 1231 · `couchesDessineesWebgl` 1238 · `stage` 1259
-`brancheSurvolWebgl` 1263 · `poseSurvolWebgl` 1283 · `poseCurseurWebgl` 1292
-`poseFocusWebgl` 1301 · `aplatsDe` 1308 · `coucheSurvol` 1311 · `coucheFocus` 1320
-`couchesPhare` 1347 · `lueurDe` 1363 · `opacitePhare` 1401 · `echellePhare` 1402
-`couchesPhareNoms` 1405 · `palierDefile` 1430 · `phaseComete` 1432 · `animeCouche` 1435
-`majAnimationWebgl` 1452 · `animeWebgl` 1460 · `objetSous` 1483 · `cibleWebgl` 1490
-`priseWebgl` 1497 · `libelleSousWebgl` 1502 · `rectEcranWebgl` 1507
+`jeuDeCaracteres` 599 · `couchesTexte` 610 · `mulM` 644 · `appM` 647 · `echelleM` 648
+`lisTransform` 650 · `lisTrace` 672 · `lisPoints` 740 · `num` 746 · `anneau` 748
+`rectArrondi` 754 · `couleurGl` 768 · `accVide` 785 · `convertitBloc` 786 · `accDe` 802
+`parcoursGl` 809 · `avecTrous` 849 · `formeGl` 870 · `texteGl` 906 · `imageGl` 929
+`partage` 961 · `designeGl` 967 · `couchesDeBloc` 969 · `modelesLibellesHtml` 1044
+`poseModelesLibelles` 1054 · `lisModelesLibelles` 1060 · `emplacementWebgl` 1089
+`libellesWebgl` 1137 · `groupesNoms` 1200 · `couchesNoms` 1216 · `couchesPastilles` 1227
+`couchesLibellesWebgl` 1242 · `couchesDessineesWebgl` 1249 · `stage` 1270
+`brancheSurvolWebgl` 1274 · `poseSurvolWebgl` 1294 · `poseCurseurWebgl` 1303
+`poseFocusWebgl` 1312 · `aplatsDe` 1319 · `coucheSurvol` 1322 · `coucheFocus` 1331
+`couchesPhare` 1358 · `lueurDe` 1374 · `opacitePhare` 1412 · `echellePhare` 1413
+`couchesPhareNoms` 1416 · `palierDefile` 1441 · `phaseComete` 1443 · `animeCouche` 1446
+`majAnimationWebgl` 1463 · `animeWebgl` 1471 · `objetSous` 1494 · `cibleWebgl` 1501
+`priseWebgl` 1508 · `libelleSousWebgl` 1513 · `rectEcranWebgl` 1518
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
