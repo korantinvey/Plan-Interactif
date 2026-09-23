@@ -17,7 +17,8 @@
     "sup": "supabase",
     "essais": "node outils/essais/capacite.js",
     "adoption": "node outils/essais/adoption.js",
-    "simulation": "node outils/essais/simulation.js"
+    "simulation": "node outils/essais/simulation.js",
+    "fep26": "node outils/essais/fep26.js"
   },
   "type": "commonjs",
   "private": true,
