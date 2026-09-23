@@ -28288,10 +28288,14 @@ function balayage(p, pmr, xy, chez){
   return b;
 }
 
-/** Rend -1 quand aucune allée ne mène au point demandé. */
-function distanceDepuis(bal, xy, chez){
+/** Rend -1 quand aucune allée ne mène au point demandé.
+ *
+ *  Le plan vient en second, comme partout ailleurs : `accroche` en a besoin
+ *  pour savoir quelle emprise est celle de l'arrêt, et le lui refuser faisait
+ *  chercher l'accroche à partir d'un point indéfini. */
+function distanceDepuis(bal, p, xy, chez){
   if (!bal.d) return -1;
-  const c = accroche(bal.g, xy, chez);
+  const c = accroche(bal.g, p, xy, chez);
   if (c < 0) return -1;
   return bal.d[c] >= 0 ? bal.d[c] * PAS_GRILLE : -1;
 }
@@ -28374,7 +28378,7 @@ function cheminLiaisons(a, b, pmr){
     const bal = balayage(p, pmr, noeuds[u].xy, noeuds[u].d);
     for (let v = 0; v < n; v++){
       if (v === u || vu[v] || noeuds[v].ip !== noeuds[u].ip) continue;
-      const m = distanceDepuis(bal, noeuds[v].xy, noeuds[v].d);
+      const m = distanceDepuis(bal, p, noeuds[v].xy, noeuds[v].d);
       if (m < 0) continue;
       const d = D[u] + m;
       if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "marche" }; }
@@ -30650,9 +30654,16 @@ function matriceJournee(pts, pmr){
   parPlan.forEach((idx, ip) => {
     const p = DATA.plans[ip];
     const g = grille(p, pmr);
-    // l'emprise de l'arrêt : on n'accroche pas une allée à travers un voisin
-    const cases = idx.map(i => accroche(g, pts[i].xy, pts[i].d));
-    const portes = sortiesDe(p, pmr).map(f => accroche(g, f.pts[0]))
+    /* L'emprise de l'arrêt : on n'accroche pas une allée à travers un voisin.
+       Le plan se passe en second — `accroche(g, p, xy, chez)` — et l'oublier
+       décalait tout d'un cran : le contour partait dans `xy`, dont la première
+       coordonnée valait alors `undefined`. Le balayage, parti d'une case
+       `NaN`, n'était borné par rien — ni `NaN > portée`, ni `NaN >= g.w` ne
+       sont vrais — et empilait neuf voisins par tour jusqu'à faire déborder la
+       longueur du tableau. La journée organisée ne rendait donc rien du tout,
+       et l'écran disait seulement que le calcul n'avait pas abouti. */
+    const cases = idx.map(i => accroche(g, p, pts[i].xy, pts[i].d));
+    const portes = sortiesDe(p, pmr).map(f => accroche(g, p, f.pts[0]))
       .filter(c => c >= 0 && g.nappe[c]);
     idx.forEach((i, k) => {
       const d = distancesDepuis(g, cases[k]);
