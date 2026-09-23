@@ -517,10 +517,19 @@ function constTexte(){
      ne coûte qu'aux pixels de texte — une fraction de l'écran —, et rien à
      l'atlas.
 
-     La couverture est ensuite relevée d'un cran (puissance ¾) : un
-     navigateur renforce le contraste d'une petite lettre sombre sur fond
-     clair, et la couverture brute la laissait grise et grêle à côté du même
-     nom en SVG. */
+     La couverture est ensuite relevée : un navigateur renforce le contraste
+     d'une petite lettre sombre sur fond clair, et la couverture brute la
+     laissait grise et grêle à côté du même nom en SVG. Il la renforce
+     d'autant plus que la lettre est petite, et le relèvement fait de même —
+     puissance ¾ tant que l'atlas n'est réduit que de moitié, jusqu'à 0,55
+     quand il l'est cinq fois, vers cinq pixels de corps. Plus fort, les
+     lettres s'empâtent ; un nom de stand à cette taille restait
+     pâle et paraissait flou.
+
+     Caler les lettres sur la grille des pixels, comme le navigateur cale sa
+     ligne de base, a été essayé : à l'horizontale l'espacement se dérègle
+     (« VE RT »), à la verticale le gain ne se voit pas, et les noms
+     sautillent d'un pixel pendant le zoom. */
   class LissageSdf extends deck.LayerExtension {
     getShaders(){
       return { inject: { "fs:#main-end": [
@@ -541,7 +550,9 @@ function constTexte(){
         "  couvre += texture(iconsTexture, vTextureCoords + 0.375 * pasX - 0.125 * pasY, -1.0).a;",
         "  couvre += texture(iconsTexture, vTextureCoords + 0.125 * pasX + 0.375 * pasY, -1.0).a;",
         "  couvre += texture(iconsTexture, vTextureCoords - 0.375 * pasX + 0.125 * pasY, -1.0).a;",
-        "  fragColor.a = pow(0.25 * couvre, 0.75) * vColor.a * layer.opacity;",
+        "  float reduit = length(fwidth(vTextureCoords) * vec2(textureSize(iconsTexture, 0)));",
+        "  float releve = mix(0.75, 0.55, clamp((reduit - 2.0) / 3.0, 0.0, 1.0));",
+        "  fragColor.a = pow(0.25 * couvre, releve) * vColor.a * layer.opacity;",
         "}",
       ].join("\n") } };
     }
