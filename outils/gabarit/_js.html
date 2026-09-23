@@ -282,6 +282,11 @@ function indexe(d){
      marche lisent tous la forme de l'emplacement, et doivent lire celle qui
      vaut. Une forme que la source a déplacée depuis reprend la sienne —
      l'empreinte en décide (voir `_geometrie.html`). */
+  /* Et, avant elles, les stands et les zones que l'exploitant a ajoutés à la
+     main : rangés dans la configuration et non dans l'instantané de la
+     source, ils traversent les synchronisations, et doivent être dans le
+     pavillon avant que quoi que ce soit ne le lise. */
+  appliqueAjouts();
   appliqueGeometries();
 
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
@@ -720,18 +725,25 @@ function monteHabillage(){
    ce drapeau permet aux deux ordres d'arrivée d'aboutir. */
 let MONTE = false;
 
+/* Le balisage d'une zone et d'un stand, sortis de « montePlan » pour qu'un
+   emplacement ajouté à la main (`_geometrie.html`) se pose dans le même
+   groupe que ceux de la source, sans qu'on remonte tout le pavillon.
+
+   Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
+   elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
+   sera pas sur le plan public. */
+const baliseZone = (z) =>
+  '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
+  '" tabindex="0" role="button" aria-label="' +
+  esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>';
+const baliseStand = (s) =>
+  '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
+  esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>';
+
 function montePlan(){
   const p = P();
-  /* Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
-     elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
-     sera pas sur le plan public. */
-  $("zones").innerHTML = p.zones.map(z =>
-    '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
-    '" tabindex="0" role="button" aria-label="' +
-    esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
-  $("stands").innerHTML = p.stands.map(s =>
-    '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
-    esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>').join("");
+  $("zones").innerHTML = p.zones.map(baliseZone).join("");
+  $("stands").innerHTML = p.stands.map(baliseStand).join("");
   emp = p.emprise;
   // les tracés relevés valaient pour les stands du pavillon qu'on quitte
   oublieDists();
@@ -4824,6 +4836,10 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "Escape"){
     if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
+    /* Un tracé d'emplacement s'abandonne d'abord, puis l'outil qui l'a
+       commencé : on renonce à une forme sans quitter la couche. */
+    if (SORTE_GEO && traceAjout){ fermeAjout(false); return; }
+    if (SORTE_GEO && outilGeo){ choisitOutilGeo(""); return; }
     /* Une forme choisie se relâche d'abord, le mode ensuite : deux crans pour
        une même touche, comme ailleurs sur le plan. */
     if (SORTE_GEO && geoSel){ choisitGeo(null); return; }
@@ -4838,6 +4854,7 @@ document.addEventListener("keydown", e => {
      outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
      défairait la forme à l'instant posée. */
   if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
+  if (e.key === "Enter" && !saisie && traceAjout){ e.preventDefault(); fermeAjout(true); }
 });
 
 $("btnFiltres").onclick = basculeCriteres;

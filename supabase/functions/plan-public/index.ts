@@ -918,6 +918,20 @@ Deno.serve(async (req) => {
           ((charge.zones ?? []) as Record<string, unknown>[])
             .map((z) => String(z.id)),
         );
+        /* Et les zones que l'exploitant a ajoutées à la main : elles ne sont
+           pas dans l'instantané, qui ne connaît que la source, mais dans la
+           configuration du pavillon (clés « _ajout: », voir
+           `_geometrie.html`). Une salle qu'on leur a rattachée doit y mener
+           comme à n'importe quelle zone — le même bloc est recopié dans chaque
+           pavillon, d'où le pavillon relu dans l'entrée. */
+        const reglages = (parApparence[p.id]?.reglages ?? {}) as Record<string, unknown>;
+        for (const [cle, v] of Object.entries(reglages)) {
+          const r = v as Record<string, unknown> | null;
+          if (cle.startsWith("_ajout:") && r?.sorte === "zones" &&
+              String(r.plan) === String(p.id_klipso)) {
+            zonesDuPlan.add(cle.slice("_ajout:".length));
+          }
+        }
         return {
           id: p.id_klipso,
           libelle: p.libelle,
