@@ -334,7 +334,7 @@ Fonctions :
 `geometriePointerDown` 559 · `accrocheGeo` 589 · `geometriePointerMove` 591
 `geometriePointerUp` 641
 
-### `_head.html` — 5752 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5752 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -759,13 +759,6 @@ Fonctions :
 `couchesPhareNoms` 1379 · `palierDefile` 1404 · `phaseComete` 1406 · `animeCouche` 1409
 `majAnimationWebgl` 1426 · `animeWebgl` 1434 · `objetSous` 1457 · `cibleWebgl` 1464
 `priseWebgl` 1471 · `libelleSousWebgl` 1476 · `rectEcranWebgl` 1481
-
-## Dans `web/`, mais que la construction ne produit pas
-
-Ces fichiers sont servis sans qu'aucune source ne les regénère : les
-corriger dans `outils/gabarit/` ne les changera pas.
-
-- `web/plan-salon.html`
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
