@@ -817,11 +817,11 @@ Fonctions :
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
 `rendIconeApp` 392 · `retraits` 493 · `ampute` 517 · `masquesDe` 560 · `masquesDuPlan` 580
 
-### `supabase/functions/sync-evenement/index.ts` — 1893 l.
+### `supabase/functions/sync-evenement/index.ts` — 1894 l.
 
 `cors` 43 · `bourre` 112 · `client` 122 · `ecrit` 144 · `gaia` 152 · `libellesChoix` 163
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
-`champsKlipso` 300 · `hebergee` 1841 · `nettoieUrl` 1869 · `groupeTextes` 1879
+`champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
