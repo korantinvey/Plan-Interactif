@@ -191,10 +191,10 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3287 l. → admin-plans.html
+### `_console-js.html` — 3374 l. → admin-plans.html
 
 - l.959 · Provenance des données
-- l.1086 · Contenu de la fiche détail
+- l.1096 · Contenu de la fiche détail
 
 Fonctions :
 
@@ -202,30 +202,30 @@ Fonctions :
 `courant` 442 · `charge` 444 · `chargePlans` 459 · `majEvenement` 464 · `selonAdresse` 484
 `majAdresse` 492 · `majBarre` 507 · `dessineChoix` 549 · `champ` 569 · `reduitIcone` 623
 `champFavicon` 664 · `fuseauConnu` 760 · `champFuseau` 772 · `dessineFiche` 835
-`fournisseurUtilise` 1021 · `source` 1025 · `champCle` 1030 · `ligneSource` 1065
-`paraitSurFiche` 1216 · `origineConferences` 1222 · `origineProduits` 1229
-`resumeProvenance` 1294 · `resumeFiche` 1311 · `caseFiche` 1356 · `cibleEn` 1404
-`champsPersos` 1406 · `criteres` 1412 · `ecritFiche` 1415 · `caseCritere` 1430
-`clePerso` 1449 · `ajouteChampPerso` 1457 · `renommeChampPerso` 1475
-`retireChampPerso` 1523 · `lignesPerso` 1584 · `ligneOutil` 1605 · `ligneReglage` 1621
-`ouvreProvenance` 1633 · `ouvreSources` 1656 · `cadreFiche` 1708 · `ouvreFiche` 1738
-`cadreCategories` 1878 · `sousTitre` 1957 · `tableauChamps` 1972 · `encode` 2132
-`decode` 2134 · `correspondance` 2139 · `sansPrefixe` 2142 · `courte` 2143 · `intitule` 2158
-`intituleSuite` 2170 · `separeValeurs` 2184 · `aplani` 2205 · `memeStyle` 2215
-`autreFace` 2233 · `champOrigine` 2249 · `majLiens` 2517 · `majIntegration` 2554
-`majMsgSync` 2561 · `etapesPressenties` 2591 · `suitAuServeur` 2641 · `synchronise` 2683
-`fabriqueLesVignettes` 2780 · `envoieVignettes` 2833 · `dupliquer` 2842
-`litMonProfil` 2942 · `RETOUR_MDP` 2953 · `litComptes` 2955 · `ligneMessage` 2964
-`casesSalons` 2974 · `ouvreComptes` 3004 · `ouvreFicheCompte` 3096 · `videEcran` 3255
-`dessine` 3260 · `demarre` 3275
+`fournisseurUtilise` 1021 · `sourceNom` 1031 · `source` 1035 · `champCle` 1040
+`ligneSource` 1075 · `paraitSurFiche` 1233 · `origineConferences` 1239
+`origineProduits` 1246 · `resumeProvenance` 1311 · `resumeFiche` 1332 · `caseFiche` 1377
+`cibleEn` 1425 · `champsPersos` 1427 · `criteres` 1433 · `ecritFiche` 1436
+`caseCritere` 1451 · `clePerso` 1470 · `ajouteChampPerso` 1478 · `renommeChampPerso` 1496
+`retireChampPerso` 1544 · `lignesPerso` 1605 · `ligneOutil` 1626 · `ligneReglage` 1642
+`ouvreProvenance` 1654 · `ouvreSources` 1677 · `cadreFiche` 1729 · `ouvreFiche` 1759
+`cadreCategories` 1899 · `sousTitre` 1978 · `tableauChamps` 1993 · `encode` 2219
+`decode` 2221 · `correspondance` 2226 · `sansPrefixe` 2229 · `courte` 2230 · `intitule` 2245
+`intituleSuite` 2257 · `separeValeurs` 2271 · `aplani` 2292 · `memeStyle` 2302
+`autreFace` 2320 · `champOrigine` 2336 · `majLiens` 2604 · `majIntegration` 2641
+`majMsgSync` 2648 · `etapesPressenties` 2678 · `suitAuServeur` 2728 · `synchronise` 2770
+`fabriqueLesVignettes` 2867 · `envoieVignettes` 2920 · `dupliquer` 2929
+`litMonProfil` 3029 · `RETOUR_MDP` 3040 · `litComptes` 3042 · `ligneMessage` 3051
+`casesSalons` 3061 · `ouvreComptes` 3091 · `ouvreFicheCompte` 3183 · `videEcran` 3342
+`dessine` 3347 · `demarre` 3362
 
 Éléments :
 
 `#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 719 l. → console.css
+### `_console.css` — 725 l. → console.css
 
-- l.660 · Page de rapport
+- l.666 · Page de rapport
 
 ### `_dessin.html` — 2521 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -817,11 +817,11 @@ Fonctions :
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
 `rendIconeApp` 392 · `retraits` 493 · `ampute` 517 · `masquesDe` 560 · `masquesDuPlan` 580
 
-### `supabase/functions/sync-evenement/index.ts` — 1852 l.
+### `supabase/functions/sync-evenement/index.ts` — 1893 l.
 
 `cors` 43 · `bourre` 112 · `client` 122 · `ecrit` 144 · `gaia` 152 · `libellesChoix` 163
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
-`champsKlipso` 300 · `hebergee` 1800 · `nettoieUrl` 1828 · `groupeTextes` 1838
+`champsKlipso` 300 · `hebergee` 1841 · `nettoieUrl` 1869 · `groupeTextes` 1879
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
