@@ -18,6 +18,8 @@ outils/*.json
 # raison encore : elle ne se régénère qu'avec le réseau (`node outils/lieux.js`).
 !outils/lieux.json
 supabase/.temp/
+# Et ce que la CLI y ajoute quand elle démarre une base locale (`npm run migrations`).
+supabase/.branches/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont
 # déjà épinglées dans les imports des fonctions : le versionner n'ajouterait

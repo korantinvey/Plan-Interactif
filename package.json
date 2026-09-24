@@ -20,7 +20,8 @@
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
     "appels": "node outils/appels.js",
-    "navigateur": "playwright test"
+    "navigateur": "playwright test",
+    "migrations": "node outils/rejoue-migrations.js"
   },
   "type": "commonjs",
   "private": true,

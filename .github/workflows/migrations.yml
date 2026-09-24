@@ -1,0 +1,56 @@
+# Rejoue toutes les migrations sur une base neuve avant qu'elles atteignent
+# `main`, où `supabase.yml` les applique directement à la production.
+#
+# Sans lui, une migration n'était exécutée pour la première fois qu'en
+# production : une faute de SQL bloquait le déploiement après la fusion, et un
+# horodatage devenu antérieur à la dernière migration de `main` n'était refusé
+# qu'à ce moment-là — quand la migration ne peut plus être réécrite.
+#
+# Ici, sur la branche, la migration fautive se corrige encore librement : elle
+# n'a jamais été appliquée. Le détail des trois contrôles est en tête de
+# `outils/rejoue-migrations.js`, qui se lance aussi à la main :
+# `npm run migrations`.
+name: Migrations
+
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'outils/rejoue-migrations.js'
+      - '.github/workflows/migrations.yml'
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'outils/rejoue-migrations.js'
+      - '.github/workflows/migrations.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: migrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rejouer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # L'ordre se juge contre la dernière migration de `main` : il faut la
+      # connaître, pas l'historique entier.
+      - name: Relever les migrations de main
+        run: git fetch --depth=1 origin main
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Docker est déjà sur le coureur : la base jetable y démarre, reçoit les
+      # migrations, et disparaît avec lui.
+      - name: Rejouer les migrations sur une base neuve
+        run: npm run migrations

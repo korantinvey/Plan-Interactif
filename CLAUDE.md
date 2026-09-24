@@ -71,6 +71,19 @@ dernière de `main`** : si elle lui est antérieure, réhorodatez-la. C'est sans
 risque tant qu'elle n'a jamais été appliquée — et le savoir se lit dans le
 journal du déploiement, qui la nomme.
 
+**Une migration se rejoue avant de partir.** `npm run migrations` monte un
+Postgres Supabase jetable dans Docker, y rejoue toutes les migrations depuis
+zéro, les passe au lint, et vérifie que celles de la branche sont postérieures
+à la dernière de `main` — en proposant le `git mv` sinon. Le workflow
+`Migrations` le fait sur toute branche qui en touche une, et `supabase.yml` une
+dernière fois avant d'écrire en production. Une extension ne se crée pas
+depuis un bloc `do $$ … $$` d'une migration : Supabase le refuse dans une
+transaction, et un `exception when others` avale le refus sans bruit — ce qui
+est arrivé à `pg_net`, activée depuis à la main. Écrivez `create extension`
+nu, hors bloc ; une extension activée par le tableau de bord s'ajoute à
+`EXTENSIONS_DU_TABLEAU_DE_BORD` dans `outils/rejoue-migrations.js`, sans quoi le
+rejeu ne ressemble plus à la production.
+
 **Jamais de poussée forcée.** Le workflow `Pages` commite sur la branche poussée
 quand `web/` était en retard : le clone local se retrouve derrière sans l'avoir
 vu, et un `--force` efface alors le travail d'à côté. `git pull --rebase`, et
@@ -124,10 +137,11 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
-| `.github/workflows/` | reconstruction des pages, déploiement Supabase, sauvegarde et écriture des correctifs |
+| `.github/workflows/` | reconstruction des pages, rejeu des migrations, déploiement Supabase, sauvegarde et écriture des correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | les essais hors page — `npm run essais` (douze cas) et `npm run fep26` (salon synthétique) ; l'ordonnanceur est extrait du gabarit par ancres, jamais recopié |
 | `outils/navigateur/` | les essais dans Chromium, sur les pages construites — `npm run navigateur` ; le plan de démonstration parcouru comme un visiteur (recherche, fiche, langue, rendu SVG, écran de téléphone), coupé de tout tiers, et les autres pages montées sans erreur. Lancés par le workflow `Pages` ; configuration `playwright.config.js` |
+| `outils/rejoue-migrations.js` | le rejeu des migrations sur une base neuve — ordre, rejeu, lint ; `npm run migrations`, ou `npm run migrations -- ordre` sans Docker. Lancé par les workflows `Migrations` et `Supabase` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir

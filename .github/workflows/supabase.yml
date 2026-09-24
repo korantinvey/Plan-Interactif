@@ -47,6 +47,14 @@ jobs:
       - name: Vérifier le typage des fonctions
         run: npm run typage
 
+      # Dernière garde avant la production : toutes les migrations, rejouées
+      # sur une base jetable. Le workflow `Migrations` l'a déjà fait sur la
+      # branche ; ceci couvre ce qui arrive sur `main` sans y être passé — une
+      # poussée directe, une fusion qui mêle deux branches. Une migration qui
+      # échoue ici n'a pas touché la base de production.
+      - name: Rejouer les migrations sur une base neuve
+        run: npm run migrations
+
       # Les migrations sont numérotées et rejouables : seules les absentes de la
       # table d'historique distante sont appliquées.
       - name: Appliquer les migrations
