@@ -722,7 +722,7 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 903 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 908 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -731,10 +731,10 @@ Fonctions :
 `reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
 `tutoJournee` 86 · `zoneDuTuto` 94 · `insecable` 111 · `phraseTrajetTuto` 117
-`chapitresTuto` 377 · `proposeTutoriel` 397 · `lanceTutoriel` 455 · `quitteTutoriel` 541
-`chapitreTuto` 552 · `battementTuto` 561 · `finTuto` 579 · `afficheTuto` 596 · `pxTuto` 651
-`boiteTuto` 654 · `repereTuto` 668 · `rameneTuto` 701 · `placeTuto` 739 · `voileTuto` 820
-`rafaleTuto` 837 · `marqueZoneTuto` 857 · `marqueLibelleTuto` 892
+`chapitresTuto` 377 · `proposeTutoriel` 397 · `lanceTutoriel` 460 · `quitteTutoriel` 546
+`chapitreTuto` 557 · `battementTuto` 566 · `finTuto` 584 · `afficheTuto` 601 · `pxTuto` 656
+`boiteTuto` 659 · `repereTuto` 673 · `rameneTuto` 706 · `placeTuto` 744 · `voileTuto` 825
+`rafaleTuto` 842 · `marqueZoneTuto` 862 · `marqueLibelleTuto` 897
 
 Éléments :
 

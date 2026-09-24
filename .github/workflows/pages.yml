@@ -85,3 +85,24 @@ jobs:
       # signale seulement la traduction manquante.
       - name: Contrôler les traductions
         run: node outils/traductions.js
+
+      # Les contrôles qui précèdent lisent les sources ; aucun n'ouvre une page.
+      # Ceux-ci la chargent dans Chromium comme un visiteur — recherche, fiche,
+      # bascule de langue, rendu SVG, écran de téléphone — et échouent sur une
+      # erreur JavaScript ou un appel à un tiers. Placés en dernier, eux non
+      # plus ne retiennent pas la reconstruction.
+      - name: Installer Chromium pour les essais
+        run: npx playwright install --with-deps chromium
+
+      - name: Essayer les pages dans un navigateur
+        run: npm run navigateur
+
+      # Trace, captures et état de la page de chaque essai raté : de quoi voir
+      # ce qui a cassé sans le rejouer (`npx playwright show-trace`).
+      - name: Garder les traces des essais ratés
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: essais-navigateur
+          path: test-results/
+          retention-days: 7

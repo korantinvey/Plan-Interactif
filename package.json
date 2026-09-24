@@ -19,11 +19,13 @@
     "adoption": "node outils/essais/adoption.js",
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
-    "appels": "node outils/appels.js"
+    "appels": "node outils/appels.js",
+    "navigateur": "playwright test"
   },
   "type": "commonjs",
   "private": true,
   "devDependencies": {
+    "@playwright/test": "1.56.1",
     "supabase": "^2.116.0",
     "wrangler": "^4.0.0"
   }
