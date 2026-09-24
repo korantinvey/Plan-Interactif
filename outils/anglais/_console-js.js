@@ -125,6 +125,16 @@ module.exports = {
     "The commercial layout of the map, which Klipso stores on the stand. Sector colours and the sector filter are set from the map.",
   "Enseigne": "Brand",
   "Le titre de la fiche : toujours affiché.": "The record's title: always shown.",
+  "Le titre de la fiche, et le nom écrit sur le stand et dans la liste : toujours affiché. Il peut venir d'une autre source que le reste de la fiche ; à défaut de valeur de ce côté, c'est le nom que porte la source des exposants qui paraît.":
+    "The record's title, and the name written on the booth and in the list: always shown. It can come from a different source than the rest of the record; when that side has no value, the name held by the exhibitor source is shown.",
+  // la source propre au nom des stands
+  "Source": "Source",
+  "{source} — comme les exposants": "{source} — same as exhibitors",
+  "Nom des stands : {source}": "Booth names: {source}",
+  "Les champs de {source} seront proposés après la prochaine synchronisation.":
+    "{source} fields will be offered after the next sync.",
+  "Identifiant Eventmaker manquant : renseignez-le dans « Source des données ».":
+    "Eventmaker ID missing: enter it under “Data sources”.",
   "Quand elle diffère de l'enseigne.": "When it differs from the brand.",
   "Le logo de l'enseigne, en tête de fiche. Sur Eventmaker, c'est « avatar » qu'il faut désigner : « avatar_medium » et « avatar_thumb » sont recadrés au carré et coupent les bords d'un logo en largeur — et sur une fiche sans logo, ils rendent les initiales de la personne inscrite.":
     "The brand's logo, at the top of the record. On Eventmaker, choose “avatar”: “avatar_medium” and “avatar_thumb” are cropped square and cut off the edges of a wide logo — and on a record without a logo, they return the registrant's initials.",

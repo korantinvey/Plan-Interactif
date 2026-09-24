@@ -331,6 +331,12 @@ table.champs td.critere .etiq{display:none;font-size:11px;color:var(--ink-3)}
    et rien ne doit faire croire à deux champs voisins. */
 .origine-en{margin-top:8px;padding-left:10px;border-left:2px solid var(--line)}
 .origine-en .etiq{display:block;margin-bottom:3px;font-size:11px;color:var(--ink-3)}
+/* La source du nom, au-dessus de son champ : elle décide de la liste qu'on
+   lit juste en dessous, elle se lit donc avant elle. */
+.source-propre{margin-bottom:6px}
+.source-propre .etiq{display:block;margin-bottom:3px;font-size:11px;color:var(--ink-3)}
+td.orig > .aide{display:block;margin-top:4px;font-size:11.5px;color:var(--ink-3)}
+td.orig > .aide.alerte{color:var(--rouge)}
 /* Renommer et retirer un champ propre au salon : deux boutons discrets posés
    après l'intitulé, seuls de toute la fenêtre à agir sur la ligne elle-même. */
 table.champs .outil{margin-left:6px;padding:0 5px;font-size:12px;line-height:1.4;
