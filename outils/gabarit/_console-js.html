@@ -1019,7 +1019,17 @@ const FOURNISSEURS_CONF = [
 
 /** Un fournisseur est-il retenu quelque part ? */
 const fournisseurUtilise = (e, cle) =>
-  DOMAINES.some(([d]) => ((e.sources || {})[d] || {}).fournisseur === cle);
+  DOMAINES.some(([d]) => ((e.sources || {})[d] || {}).fournisseur === cle) ||
+  sourceNom(e) === cle;
+
+/* Les fournisseurs chez qui le nom des stands peut se lire : ceux qui portent
+   des fiches d'exposant. */
+const SOURCES_NOM = ["klipso", "eventmaker"];
+
+/** D'où vient le nom posé sur le stand et dans la liste — par défaut, de la
+ *  même source que les exposants : c'était la seule règle avant ce choix. */
+const sourceNom = (e) =>
+  ((e.sources || {}).nom || {}).fournisseur || source(e, "stands");
 
 /** Le fournisseur retenu pour un domaine, défaut compris. */
 const source = (e, dom) =>
@@ -1130,8 +1140,15 @@ const LIGNES_FICHE = [
       "depuis le plan." },
 
   /* --- ce que la fiche de la société porte --- */
-  { cible: "nom", libelle: "Enseigne",
-    aide: "Le titre de la fiche : toujours affiché." },
+  /* La seule ligne dont la source se choisit à part : le nom écrit sur le
+     stand n'est pas toujours celui de la fiche société. Klipso tient souvent
+     l'enseigne courte que le salon veut lire sur son plan, Eventmaker la
+     raison sociale entière — ou l'inverse. */
+  { cible: "nom", libelle: "Enseigne", sourcePropre: "nom",
+    aide: "Le titre de la fiche, et le nom écrit sur le stand et dans la " +
+      "liste : toujours affiché. Il peut venir d'une autre source que le " +
+      "reste de la fiche ; à défaut de valeur de ce côté, c'est le nom que " +
+      "porte la source des exposants qui paraît." },
   { cle: "raison", cible: "raison", libelle: "Raison sociale",
     aide: "Quand elle diffère de l'enseigne." },
   /* Le seul champ de la fiche qui ne soit pas du texte. Il vaut pour les deux
@@ -1298,6 +1315,10 @@ function resumeProvenance(e) {
       (DEFAUT_DOMAINE[d] || "klipso"))
     .map(([d, lib]) => lib + " : " +
       (FOURNISSEURS[s[d].fournisseur] || s[d].fournisseur));
+  // le nom se règle dans la fiche, mais c'est une provenance comme une autre
+  if (sourceNom(e) !== source(e, "stands")) {
+    autres.push("Nom des stands : " + (FOURNISSEURS[sourceNom(e)] || sourceNom(e)));
+  }
   // une source retenue sans son identifiant ne peut rien lire : le dire ici
   // plutôt que d'attendre l'échec de la synchronisation
   const manque = FOURNISSEURS_CONF
@@ -2009,7 +2030,73 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
        cacher, il doit donc exister avant elle. */
     const cellule = tr.querySelector("td.orig");
     let choix = null, choixEn = null;
-    if (l.cible) {
+    if (l.cible && l.sourcePropre) {
+      /* La source d'abord, puis le champ chez elle : changer de fournisseur
+         change la liste des champs proposés, et le réglage du champ reste
+         rangé chez chacun — revenir à l'autre le retrouve tel qu'on l'a
+         laissé. */
+      const hote = document.createElement("div");
+      hote.className = "source-propre";
+      const etiq = document.createElement("span");
+      etiq.className = "etiq";
+      etiq.textContent = "Source";
+      const choixSrc = document.createElement("select");
+      SOURCES_NOM.forEach((k) => {
+        const o = document.createElement("option");
+        o.value = k;
+        o.textContent = FOURNISSEURS[k] +
+          (k === src ? " — comme les exposants" : "");
+        choixSrc.appendChild(o);
+      });
+      choixSrc.value = sourceNom(courant());
+      const note = document.createElement("span");
+      note.className = "aide";
+      hote.appendChild(etiq);
+      hote.appendChild(choixSrc);
+      cellule.appendChild(hote);
+
+      const pose = () => {
+        const srcN = choixSrc.value;
+        const suivant = champOrigine(srcN, l.cible,
+          (genre) => { tr.dataset.etat = genre; }, l.ouiNon);
+        if (choix) choix.hote.replaceWith(suivant.hote);
+        else cellule.appendChild(suivant.hote);
+        choix = suivant;
+        /* Une source qu'aucune synchronisation n'a encore lue n'a pas de
+           champs à proposer : le dire, plutôt que de laisser croire la liste
+           complète avec sa seule entrée « Par défaut ». */
+        const e2 = courant();
+        const sansCle = srcN === "eventmaker" && !(e2.cles || {}).eventmaker;
+        note.textContent = sansCle
+          ? "Identifiant Eventmaker manquant : renseignez-le dans « Source des données »."
+          : !(correspondance(e2, srcN).detectes || []).length
+            ? "Les champs de " + FOURNISSEURS[srcN] + " seront proposés après " +
+              "la prochaine synchronisation."
+            : "";
+        note.classList.toggle("alerte", sansCle);
+        note.hidden = !note.textContent;
+        suivant.hote.after(note);
+      };
+      pose();
+
+      choixSrc.onchange = async () => {
+        const e2 = courant();
+        const avant = e2.sources;
+        e2.sources = { ...(e2.sources || {}) };
+        /* Revenir à la source des exposants efface le réglage plutôt que de
+           l'écrire : le nom la suit alors, même si on la change plus tard. */
+        if (choixSrc.value === source(e2, "stands")) delete e2.sources.nom;
+        else e2.sources.nom = { fournisseur: choixSrc.value };
+        pose();
+        try { await majEvenement(e2.id, { sources: e2.sources }); }
+        catch (err) {
+          e2.sources = avant;
+          choixSrc.value = sourceNom(e2);
+          pose();
+          signale(err.message, true);
+        }
+      };
+    } else if (l.cible) {
       choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; },
         l.ouiNon);
       cellule.appendChild(choix.hote);

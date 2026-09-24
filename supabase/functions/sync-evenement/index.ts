@@ -487,6 +487,16 @@ Deno.serve(async (req) => {
        posé sur le plan, et il reste le seul recours pour un emplacement que
        l'autre source ne connaît pas. */
     const srcStands = fournisseur(evt, "stands");
+    /* D'où vient le nom posé sur le stand et dans la liste. Il suit la source
+       des exposants tant qu'on ne l'en sépare pas — c'était la seule règle
+       avant que ce choix existe. On l'en sépare pour une raison qui revient :
+       Klipso tient le nom que le salon veut lire sur son plan, une enseigne
+       courte saisie pour lui, quand la fiche Eventmaker porte la raison sociale
+       entière — ou l'inverse. Le champ lu est celui que la correspondance du
+       fournisseur retenu désigne pour « nom ». */
+    const srcNom = String(evt.sources?.nom?.fournisseur || srcStands);
+    // Eventmaker se lit dès que l'un des deux réglages le désigne
+    const lireEm = srcStands === "eventmaker" || srcNom === "eventmaker";
     /* Les champs que ce salon-ci s'est ajoutés. Ils se règlent et se lisent
        comme les autres cibles : tout ce qui parcourt les cibles doit donc voir
        les deux listes réunies, faute de quoi un champ personnalisé ne serait
@@ -533,12 +543,18 @@ Deno.serve(async (req) => {
         tousParStand: Map<string, ExposantEm[]>;
       }
       | null = null;
+    /* Les fiches Eventmaker où lire le nom, quand il y est lu. Les mêmes que
+       `expoEm` si les exposants en viennent aussi ; sinon lues pour le seul
+       nom, et rapprochées des emplacements Klipso de la même façon. */
+    let nomsEm: typeof expoEm = null;
     let resumeEm: Record<string, unknown> | null = null;
-    /* Les champs que la source porte, relevés au passage. C'est la matière de
-       la correspondance : sans eux la console n'aurait rien à proposer, et il
-       serait absurde d'aller les redemander alors qu'on vient de lire les
-       fiches où ils se trouvent. */
-    let detectes: Record<string, unknown>[] = [];
+    /* Les champs que chaque source porte, relevés au passage. C'est la matière
+       de la correspondance : sans eux la console n'aurait rien à proposer, et
+       il serait absurde d'aller les redemander alors qu'on vient de lire les
+       fiches où ils se trouvent. Rangés par fournisseur : le nom peut venir de
+       l'un quand les exposants viennent de l'autre, et la console propose
+       alors les champs des deux. */
+    const detectes: Record<string, Record<string, unknown>[]> = {};
     /* Les catégories d'invités de l'événement, toutes, et celles qui ont été
        retenues. La console les offre à cocher : sans elles, l'exploitant ne
        peut désigner celle de ses exposants qu'en la devinant. */
@@ -546,7 +562,12 @@ Deno.serve(async (req) => {
     let retenuesEm: string[] = [];
     // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
     // un message d'erreur vaut mieux qu'une barre d'avancement qui s'arrête.
-    if (srcStands === "eventmaker") {
+    if (srcNom !== "klipso" && srcNom !== "eventmaker") {
+      return repond({
+        erreur: `Source « ${srcNom} » pas encore prise en charge pour le nom des stands.`,
+      }, 400);
+    }
+    if (lireEm) {
       if (!String((evt.cles ?? {}).eventmaker ?? "")) {
         return repond({
           erreur: "Identifiant de l'événement Eventmaker manquant : " +
@@ -600,7 +621,7 @@ Deno.serve(async (req) => {
       /* Klipso rend les exposants avec les stands : l'étape ne fait alors que
          relever les champs, deux appels. Eventmaker, lui, parcourt des
          centaines de fiches — à peu près autant que d'emplacements. */
-      exposants: srcStands === "eventmaker" ? emplacements : 20,
+      exposants: lireEm ? emplacements : 20,
       conferences: srcConf === "eventmaker" ? Math.round(emplacements / 4) : 0,
       plan: emplacements,
       /* Deux appels pour le plus gros catalogue du compte, là où les exposants
@@ -782,7 +803,7 @@ Deno.serve(async (req) => {
          normalisée. C'est l'étape la plus longue — plusieurs centaines de
          fiches à parcourir — d'où sa place dans le flux. */
       etape("exposants", "encours");
-      if (srcStands === "eventmaker") {
+      if (lireEm) {
         avance("exposants", 0, null, "Recherche des catégories d'invités");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
@@ -806,12 +827,14 @@ Deno.serve(async (req) => {
         const r = await em.exposants(
           String((evt.cles ?? {}).eventmaker), connues, codes,
           (lus) => avance("exposants", lus, null, "Lecture des fiches", "fiches"));
-        expoEm = {
+        const lus = {
           parDossier: r.parDossier,
           parStand: r.parStand,
           tousParStand: r.tousParStand,
         };
-        detectes = r.champs;
+        if (srcStands === "eventmaker") expoEm = lus;
+        if (srcNom === "eventmaker") nomsEm = lus;
+        detectes.eventmaker = r.champs;
         catalogueEm = r.catalogue;
         retenuesEm = r.categoriesIds;
         resumeEm = {
@@ -992,9 +1015,9 @@ Deno.serve(async (req) => {
          côté des dizaines que coûte un pavillon. L'échec n'est pas bloquant :
          la correspondance en place continue de fonctionner, seule la liste
          proposée à l'exploitant manquera. */
-      if (srcStands === "klipso") {
+      if (srcStands === "klipso" || srcNom === "klipso") {
         try {
-          detectes = await champsKlipso(g);
+          detectes.klipso = await champsKlipso(g);
         } catch (e) {
           console.error("relevé des champs d'exposant :", e);
         }
@@ -1346,11 +1369,25 @@ Deno.serve(async (req) => {
           avecProduits += produits.length +
             coex.reduce((a, x) => a + ((x.produits as unknown[])?.length ?? 0), 0);
 
+          /* Le nom, lu chez la source qui lui est propre. Il ne décide pas de
+             ce qui paraît — c'est la source des exposants qui retient ou non
+             l'emplacement — et une fiche vide de ce côté retombe sur le nom
+             que porte la société : un stand retenu mais sans nom se lirait
+             comme un emplacement libre. Une fiche Eventmaker exclue du
+             catalogue ne prête pas le sien. */
+          const ficheNom = !nomsEm ? undefined : nomsEm === expoEm ? em
+            : (dossier ? nomsEm.parDossier.get(dossier) : undefined) ??
+              (code ? nomsEm.parStand.get(cleStand(code)) : undefined);
+          const nomChoisi = srcNom === "eventmaker"
+            ? (ficheNom && !ficheNom.exclu ? ficheNom.nom : null)
+            : val("nom");
+          const nomSociete = expoEm ? em?.nom : val("nom");
+
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
             code,
             plan: (expoEm ? em?.raison : null) ?? val("raison"),
-            nom: !ok ? null : expoEm ? em!.nom : val("nom"),
+            nom: !ok ? null : (nomChoisi || nomSociete || null),
             site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
             /* Le logo en tête de fiche. La clé ne descend pas quand il n'y en
                a pas : l'instantané est servi au public, et une adresse absente
@@ -1592,7 +1629,8 @@ Deno.serve(async (req) => {
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés" +
-        (detectes.length ? ", " + detectes.length + " champs relevés" : ""));
+        ((detectes[srcStands] ?? []).length
+          ? ", " + detectes[srcStands].length + " champs relevés" : ""));
       if (confEm) {
         await ecrit(
           db.from("evenement").update({ salles: sallesConf }).eq("id", evt.id),
@@ -1626,27 +1664,30 @@ Deno.serve(async (req) => {
          La proposition se calcule ici plutôt que dans la console : c'est la
          synchronisation qui sait quel champ elle lirait à défaut de réglage, et
          deux listes de défauts finiraient par diverger. */
-      if (detectes.length) {
-        const connus = new Set(detectes.map((d) => String(d.cle)));
-        const defauts = DEFAUTS[srcStands] ?? {};
-        const propose: Record<string, string[]> = {};
-        for (const c of cibles(srcStands, evt.fiche)) {
-          propose[c.cle] = (defauts[c.cle] ?? []).filter((n) => connus.has(n));
-        }
+      const releves = Object.entries(detectes).filter(([, d]) => d.length);
+      if (releves.length) {
         const { data: frais } = await db.from("evenement")
           .select("correspondances").eq("id", evt.id).single();
         const corr = { ...((frais?.correspondances ?? {}) as Record<string, any>) };
-        corr[srcStands] = {
-          ...(corr[srcStands] ?? {}),
-          detectes, defauts, propose,
-          /* Le catalogue et ce qui a été retenu, mais jamais `categories` :
-             celui-là est le choix de l'exploitant, et la synchronisation
-             n'écrit que ce qu'elle a vu. */
-          ...(catalogueEm.length
-            ? { catalogue: catalogueEm, retenues: retenuesEm }
-            : {}),
-          detecteLe: new Date().toISOString(),
-        };
+        for (const [four, vus] of releves) {
+          const connus = new Set(vus.map((d) => String(d.cle)));
+          const defauts = DEFAUTS[four] ?? {};
+          const propose: Record<string, string[]> = {};
+          for (const c of cibles(four, evt.fiche)) {
+            propose[c.cle] = (defauts[c.cle] ?? []).filter((n) => connus.has(n));
+          }
+          corr[four] = {
+            ...(corr[four] ?? {}),
+            detectes: vus, defauts, propose,
+            /* Le catalogue et ce qui a été retenu, mais jamais `categories` :
+               celui-là est le choix de l'exploitant, et la synchronisation
+               n'écrit que ce qu'elle a vu. */
+            ...(four === "eventmaker" && catalogueEm.length
+              ? { catalogue: catalogueEm, retenues: retenuesEm }
+              : {}),
+            detecteLe: new Date().toISOString(),
+          };
+        }
         await ecrit(
           db.from("evenement").update({ correspondances: corr }).eq("id", evt.id),
           "Écriture du relevé des champs",
