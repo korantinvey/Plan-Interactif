@@ -882,8 +882,8 @@ Fonctions :
 
 ## Le reste
 
-- `src/index.mjs` — 880 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 100 · `amontPour` 109 · `cleDe` 117 · `cleDeLot` 123 · `condense` 130 `cleVersion` 141 · `rangeLaVersion` 144 · `ditVersion` 152 · `meta` 161 · `gardable` 177 `range` 183 · `rafraichit` 190 · `entete` 225 · `oublie` 267 · `rappels` 353 · `cleApp` 398 `cheminDuSalon` 429 · `pageDuSalon` 446 · `appDuSalon` 470 · `iconesDuSalon` 516 `manifeste` 556 · `iconeApp` 645 · `mesure` 666 · `planDeVisite` 702 · `chargePrevue` 740
+- `src/index.mjs` — 893 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 100 · `amontPour` 109 · `cleDe` 117 · `cleDeLot` 123 · `condense` 130 `cleVersion` 154 · `rangeLaVersion` 157 · `ditVersion` 165 · `meta` 174 · `gardable` 190 `range` 196 · `rafraichit` 203 · `entete` 238 · `oublie` 280 · `rappels` 366 · `cleApp` 411 `cheminDuSalon` 442 · `pageDuSalon` 459 · `appDuSalon` 483 · `iconesDuSalon` 529 `manifeste` 569 · `iconeApp` 658 · `mesure` 679 · `planDeVisite` 715 · `chargePrevue` 753
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
