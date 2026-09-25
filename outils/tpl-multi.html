@@ -1117,6 +1117,9 @@ html.sans-image-stand .outils #imageSoc{
 .elem input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .elem input:focus{border-color:var(--accent);outline:none}
+.elemChamp .quart{flex:none;padding:6px 9px;font-size:12.5px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.elemChamp .quart:hover{border-color:var(--accent);color:var(--accent)}
 
 /* Les poignées d'une forme dessinée et celles d'un emplacement repris se
    ressemblent parce que c'est le même geste : chacune a son calque, les deux
@@ -5543,6 +5546,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
+        <label class="elemChamp" id="elemRotationBloc" hidden><span>Rotation</span>
+          <input id="elemRotation" type="number" min="-180" max="180" step="5">
+          <button type="button" class="quart" id="elemRotationQuart"
+            title="Tourner d'un quart de tour">&#8635; 90°</button></label>
         <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
           <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
         <div id="elemTraitReg" hidden>
@@ -17353,10 +17360,19 @@ function traceForme(f){
     ? traceStandDessine(f)
     : f.t === "texte"
     ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
-      '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
+      '" font-size="' + (f.taille || 2) + '"' + rotationTexte(f) + '>' + esc(f.txt) + '</text></g>'
     : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
       '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
       marqueFleche(f) + '</g>';
+}
+
+/** Un texte pivote autour de son point d'ancrage, celui qu'on a cliqué pour
+ *  le poser : c'est lui qui reste sous la poignée, et le nom d'une allée
+ *  oblique se couche le long d'elle sans quitter l'endroit où on l'a mis. Le
+ *  rendu WebGL relit l'attribut, et n'a donc rien à rejouer. */
+function rotationTexte(f){
+  const a = +f.rot || 0;
+  return a ? ' transform="rotate(' + a + " " + f.pts[0][0] + " " + f.pts[0][1] + ')"' : "";
 }
 
 function dessineDessins(){
@@ -19191,6 +19207,13 @@ $("elemTexte").oninput = () => appliqueTexte("texte");
 $("elemTexte").onblur = clotSalve;
 $("elemTaille").oninput = () => appliqueTexte("taille");
 $("elemTaille").onblur = clotSalve;
+$("elemRotation").oninput = () => appliqueRotation("rotation");
+$("elemRotation").onblur = clotSalve;
+$("elemRotationQuart").onclick = () => {
+  const r = $("elemRotation");
+  r.value = String(((Math.round(+r.value || 0) + 90 + 180) % 360 + 360) % 360 - 180);
+  appliqueRotation();
+};
 if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
 /* L'épaisseur et le style se reprennent sur une ligne déjà posée : on juge un
    trait sur le plan, pas dans une liste déroulante. */
@@ -19472,14 +19495,58 @@ function dessinePoignees(){
   const t = Math.max(.15, view.w / (r.width || 1) * 5);   // demi-côté, en mètres
   const b = boite(f);
   const marge = t;
-  g.innerHTML =
-    '<rect class="cadreSel" x="' + (b[0] - marge) + '" y="' + (b[1] - marge) +
-    '" width="' + (b[2] - b[0] + 2 * marge) + '" height="' + (b[3] - b[1] + 2 * marge) + '"/>' +
-    poignees(f).map((p, i) =>
+  const pgns = poignees(f).map((p, i) =>
       '<rect class="pgn" data-i="' + i + '" style="cursor:' + curseurPoignee(f, i) + '"' +
       ' x="' + (p[0] - t) + '" y="' + (p[1] - t) +
       '" width="' + (2 * t) + '" height="' + (2 * t) + '"/>').join("");
+  if (f.t === "texte"){ g.innerHTML = cadreTexte(f, t) + pgns; return; }
+  g.innerHTML =
+    '<rect class="cadreSel" x="' + (b[0] - marge) + '" y="' + (b[1] - marge) +
+    '" width="' + (b[2] - b[0] + 2 * marge) + '" height="' + (b[3] - b[1] + 2 * marge) + '"/>' +
+    pgns;
 }
+
+/**
+ * Le cadre d'un texte, tourné avec lui, et la poignée qui le fait pivoter.
+ *
+ * Un texte n'a qu'un point ; son étendue se lit sur le nœud tracé, avant sa
+ * rotation — `getBBox` la donne dans le repère du texte, que le SVG soit
+ * affiché ou seulement relu par le WebGL. La poignée prolonge la ligne du
+ * texte à droite, à hauteur de ses lettres : c'est là que la main la cherche,
+ * et la tirer autour du point d'ancrage couche le texte dans la direction où
+ * on l'emmène.
+ */
+function cadreTexte(f, t){
+  const n = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text');
+  let bb = null;
+  try { bb = n && n.getBBox(); } catch (e) {}
+  const x = f.pts[0][0], y = f.pts[0][1], taille = f.taille || 2;
+  if (!bb || !(bb.width > 0))
+    bb = { x: x - taille * f.txt.length * .28, y: y - taille * .8, width: taille * f.txt.length * .56, height: taille };
+  const tourne = ' transform="rotate(' + (+f.rot || 0) + " " + x + " " + y + ')"';
+  const d = bb.x + bb.width + t, h = poigneeRotation(f, t);
+  return '<g' + tourne + '>' +
+    '<rect class="cadreSel" x="' + (bb.x - t) + '" y="' + (bb.y - t) +
+    '" width="' + (bb.width + 2 * t) + '" height="' + (bb.height + 2 * t) + '"/>' +
+    '<line class="cadreSel" x1="' + d + '" y1="' + h[1] + '" x2="' + (h[0] - t) + '" y2="' + h[1] + '"/>' +
+    '<circle class="pgn rot" data-i="rot" style="cursor:grab" cx="' + h[0] + '" cy="' + h[1] +
+    '" r="' + (1.2 * t) + '"/></g>';
+}
+
+/** La place de la poignée de rotation dans le repère du texte, avant qu'il
+ *  tourne : le geste en tire l'angle qu'elle fait déjà avec le point
+ *  d'ancrage, pour que le texte ne saute pas au premier mouvement. */
+function poigneeRotation(f, t){
+  const n = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text');
+  let bb = null;
+  try { bb = n && n.getBBox(); } catch (e) {}
+  const taille = f.taille || 2;
+  const droite = bb && bb.width > 0 ? bb.x + bb.width : f.pts[0][0] + taille * f.txt.length * .28;
+  return [droite + 5 * t, f.pts[0][1] - taille * .33];
+}
+
+/** Un angle ramené entre −180 et 180 degrés. */
+const angleBorne = a => +((((a + 180) % 360) + 360) % 360 - 180).toFixed(1);
 
 function choisitForme(id){
   formeSel = id;
@@ -19514,6 +19581,10 @@ function majElement(){
     $("elemTexte").value = f.txt || "";
     $("elemTaille").value = f.taille || 2;
   }
+  /* L'orientation ne vaut que pour un texte libre : le libellé d'un repère
+     accompagne un pictogramme qui, lui, reste droit. */
+  $("elemRotationBloc").hidden = f.t !== "texte";
+  if (f.t === "texte") $("elemRotation").value = +f.rot || 0;
 
   /* L'arrondi se règle après coup, et sur n'importe quel tracé : un contour
      posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
@@ -19753,6 +19824,22 @@ function appliqueTexte(salve){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
+/** L'orientation d'un texte, en degrés, ramenée entre −180 et 180 : 270 et
+ *  −90 couchent le texte de la même façon, et une seule écriture évite qu'un
+ *  tour complet ne s'accumule au fil des clics. Droit, il n'écrit rien. */
+function appliqueRotation(salve){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "texte") return;
+  const v = parseFloat($("elemRotation").value);
+  if (!isFinite(v)) return;
+  memorise(salve);
+  const a = angleBorne(v);
+  if (a) cible.f.rot = a; else delete cible.f.rot;
+  /* L'angle se règle flèche tenue, comme l'arrondi : rien d'autre ne bouge
+     que le texte et le cadre qui tourne avec lui. */
+  enregistreDessins(); redessineForme(cible.f); dessinePoignees();
+}
+
 /** L'arrondi des coins de la forme choisie. */
 function appliqueRayon(){
   const cible = formeSel && formeParId(formeSel);
@@ -19860,6 +19947,20 @@ function editionPointerDown(e){
 
   // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
   const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
+  if (pgn && formeSel && pgn.dataset.i === "rot"){
+    const cible = formeParId(formeSel);
+    if (cible && cible.f.t === "texte"){
+      memorise();
+      const f = cible.f, c = f.pts[0];
+      const r = cadrePlan();
+      const h = poigneeRotation(f, Math.max(.15, view.w / (r.width || 1) * 5));
+      geste = { type: "rotation", f: f,
+                cale: Math.atan2(h[1] - c[1], h[0] - c[0]) * 180 / Math.PI };
+      svg.style.cursor = "grabbing";
+      try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+      return true;
+    }
+  }
   if (pgn && formeSel){
     const cible = formeParId(formeSel);
     if (cible){
@@ -19903,6 +20004,7 @@ function editionPointerDown(e){
 function editionPointerMove(e){
   if (!geste) return false;
   const p = versPlan(e.clientX, e.clientY);
+  if (geste.type === "rotation"){ tourneTexte(geste, p, e); return true; }
   let dx = p[0] - geste.depart[0], dy = p[1] - geste.depart[1];
   const f = geste.f;
   // une forme ne s'accroche pas à elle-même : elle ne bougerait plus
@@ -19952,6 +20054,30 @@ function editionPointerMove(e){
   }
   ecritDimensions(f);
   return true;
+}
+
+/**
+ * Le texte suit la poignée autour de son point d'ancrage.
+ *
+ * Maj tenue, il avance par quinzièmes de demi-tour ; sinon au degré, mais
+ * l'horizontale et la verticale le retiennent à quatre degrés près — un texte
+ * qu'on voulait droit et qu'on lâche à 1,5° se lit penché sans qu'on voie
+ * pourquoi. Alt lâche cette retenue, comme il lâche les aimants.
+ */
+function tourneTexte(g, p, e){
+  const f = g.f, c = f.pts[0];
+  if (Math.hypot(p[0] - c[0], p[1] - c[1]) < 1e-3) return;
+  let a = Math.atan2(p[1] - c[1], p[0] - c[0]) * 180 / Math.PI - g.cale;
+  if (e.shiftKey) a = Math.round(a / 15) * 15;
+  else {
+    a = Math.round(a);
+    const droit = Math.round(a / 90) * 90;
+    if (!e.altKey && Math.abs(a - droit) <= 4) a = droit;
+  }
+  a = angleBorne(a);
+  if (a) f.rot = a; else delete f.rot;
+  redessineForme(f); dessinePoignees();
+  if ($("elemRotation")) $("elemRotation").value = a;
 }
 
 function editionPointerUp(e){
