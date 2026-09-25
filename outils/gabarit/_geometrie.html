@@ -252,7 +252,9 @@ function elargitEmprise(p, o){
 function appliqueGeometries(){
   if (!DATA) return;
   DATA.plans.forEach(p => {
-    for (const o of p.stands.concat(p.zones)){
+    /* Une zone masquée reprise à la main l'est aussi pour le trajet du
+       visiteur, qui n'en a que la forme : c'est la reprise qui doit valoir. */
+    for (const o of p.stands.concat(p.zones, p.zonesCachees || [])){
       if (!CONF[cleGeo(o.id)]) continue;
       // `retoucheGeo` relève la géométrie servie avant d'y toucher : c'est
       // elle que l'empreinte décrit, et c'est encore elle qui est en place
@@ -675,6 +677,7 @@ function appliqueAjouts(){
   DATA.plans.forEach(p => {
     p.stands = p.stands.filter(o => !o.ajout);
     p.zones = p.zones.filter(o => !o.ajout);
+    p.zonesCachees = (p.zonesCachees || []).filter(o => !o.ajout);
   });
   const noms = [];
   // l'index n'est pas encore bâti : les emplacements de la source, relevés ici
@@ -685,8 +688,13 @@ function appliqueAjouts(){
     const r = CONF[k];
     const i = r ? rang.get(String(r.plan)) : undefined;
     if (i === undefined || !SORTES_AJOUT[r.sorte] || !anneauxValides(r.p)) return;
-    if (r.masquee && !admin) return;
     const o = objetAjoute(k.slice(PREFIXE_AJOUT.length), r, i, hotes);
+    /* Masquée, elle ne paraît pas au visiteur mais reste du terrain : le
+       trajet se calcule dans sa page, et doit être celui de la console. */
+    if (r.masquee && !admin){
+      if (o.kind === "zone") DATA.plans[i].zonesCachees.push(o);
+      return;
+    }
     DATA.plans[i][r.sorte].push(o);
     elargitEmprise(DATA.plans[i], o);
     if (o.kind === "stand" && o.nom) noms.push(o.nom);

@@ -1004,6 +1004,30 @@ Deno.serve(async (req) => {
                 ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
             }),
+          /* Les zones masquées restent du terrain. Le visiteur ne les voit
+             pas, mais le calcul d'itinéraire se fait dans sa page : sans elles,
+             une galerie masquée qu'on a déclarée traversable ne s'ouvrait que
+             dans la console, et le visiteur lisait « aucun chemin » là où
+             l'exploitant voyait un trajet — ou, à l'inverse, coupait par une
+             réserve masquée que la console contournait. Il n'en reçoit que la
+             forme : ni nom, ni fiche, rien qui s'affiche ou se cherche.
+             Absente quand il n'y en a pas, pour ne pas changer la version du
+             plan des salons qui n'en masquent aucune. */
+          ...(() => {
+            if (identifie) return {};
+            const masquees = evt.zones_masquees ?? {};
+            const cachees = ((charge.zones ?? []) as Record<string, unknown>[])
+              .filter((z) => masquees[String(z.id)])
+              .map((z) => ({
+                id: z.id,
+                d: z.d,
+                ...(z.c ? { c: z.c } : {}),
+                ...((evt.zones_traversables ?? {})[String(z.id)]
+                  ? { traversable: true }
+                  : {}),
+              }));
+            return cachees.length ? { zonesCachees: cachees } : {};
+          })(),
           /* Le rattachement d'une salle s'applique ici, comme le nom d'une
              zone : il se choisit depuis les réglages du plan et doit paraître
              sans attendre la prochaine synchronisation, qui seule l'a inscrit
