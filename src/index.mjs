@@ -137,12 +137,25 @@ async function condense(texte, octets) {
    L'entête la lit à chaque ouverture de page : la prendre dans la métadonnée du
    plan obligerait à en relire les cinq cents kilo-octets pour en tirer seize
    signes, et c'est précisément le temps qu'on cherche à rendre. Elle est écrite
-   avec le plan et retirée avec lui — voir `oublie`. */
-const cleVersion = (slug) => "ver1:" + slug;
+   avec le plan et retirée avec lui — voir `oublie`.
+
+   Elle se garde un jour, et non la semaine de la garde. Rien d'autre ne la
+   refait : la page demande le plan sous la version annoncée, que rien ne
+   périme, et seul un enregistrement dans la console l'oublie. Un changement de
+   ce que la fonction produit — une mise à jour du code, sans que personne
+   n'enregistre — restait donc invisible une semaine, fenêtre privée comprise :
+   la galerie traversable de FUNEXPO n'arrivait pas aux visiteurs. Un jour,
+   c'est le délai du plan lui-même, et une lecture de la base par salon et par
+   jour.
+
+   Le « 2 » force chaque salon à la redemander au déploiement de ce relais :
+   les entrées d'avant, gardées pour une semaine, taisaient justement ce
+   changement. */
+const cleVersion = (slug) => "ver2:" + slug;
 
 /** Range la version à côté du plan, sans faire attendre la visite. */
 const rangeLaVersion = (cache, slug, v) =>
-  cache.put(cleVersion(slug), v, { expirationTtl: GARDE }).catch(() => {});
+  cache.put(cleVersion(slug), v, { expirationTtl: TTL_PLAN }).catch(() => {});
 
 /** La version, et rien d'autre : une cinquantaine d'octets.
  *
