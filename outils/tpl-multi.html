@@ -6526,10 +6526,16 @@ let MONTE = false;
 
    Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
    elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
-   sera pas sur le plan public. */
+   sera pas sur le plan public.
+
+   Une zone ajoutée à la main porte, comme un stand, son identifiant dans
+   « data-aj » : c'est le seul attribut par lequel la reprise de forme
+   (`groupeGeo`) retrouve un ajout. Sans lui, la forme retouchée
+   s'enregistrait mais le tracé restait à sa taille de naissance. */
 const baliseZone = (z) =>
-  '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
-  '" tabindex="0" role="button" aria-label="' +
+  '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id + '"' +
+  (z.ajout ? ' data-aj="' + esc(z.id) + '"' : "") +
+  ' tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :
    c'est par lui que la reprise de forme le retrouve. Lié à un exposant, il
