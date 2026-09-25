@@ -235,7 +235,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | fenêtre d'avancement d'une synchronisation, flux retenu en chemin | `_console-js.html` `fenetreAvancement` et `fluxFonction` ; secours qui relit l'avancement à la base `suitAuServeur`, déposé par `sync-evenement/` `garde` et `depose` dans la colonne `sync_avancement`, migration `l_avancement_d_une_synchronisation` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
 | faire écrire un correctif — `@claude …` sous une issue ou une pull request, ou l'onglet « Actions » | `.github/workflows/correctif.yml` ; il édite, valide et laisse la tâche pousser sur `claude/correctif-<run>` puis ouvrir la pull request — aucun outil de poussée ne lui est accordé, et la destination est écrite dans le workflow, jamais choisie par le modèle |
-| fraîcheur du plan chez le visiteur — version, entête, publication immédiate | empreinte `_partage/version.ts` `versionDuPlan` (posée en en-tête `X-Version`), entête `src/index.mjs` `entete` (`?entete=1`, clé `ver1:`), demande `_admin2.html` `demandePlan`, amorce `outils/genere.js` `PRECHARGE` |
+| fraîcheur du plan chez le visiteur — version, entête, publication immédiate | empreinte `_partage/version.ts` `versionDuPlan` (posée en en-tête `X-Version`), entête `src/index.mjs` `entete` (`?entete=1`, clé `ver2:`, gardée un jour), demande `_admin2.html` `demandePlan`, amorce `outils/genere.js` `PRECHARGE` |
 
 ## Déploiement
 
