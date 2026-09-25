@@ -536,17 +536,18 @@ Deno.serve(async (req) => {
        de stand nous intéresse, les autres non. Les catégories d'invités
        diffèrent d'un salon à l'autre, elles sont donc détectées et non
        configurées. */
-    let expoEm:
-      | {
-        parDossier: Map<string, ExposantEm>;
-        parStand: Map<string, ExposantEm>;
-        tousParStand: Map<string, ExposantEm[]>;
-      }
-      | null = null;
+    type FichesEm = {
+      parDossier: Map<string, ExposantEm>;
+      parStand: Map<string, ExposantEm>;
+      tousParStand: Map<string, ExposantEm[]>;
+    };
+    let expoEm: FichesEm | null = null;
     /* Les fiches Eventmaker où lire le nom, quand il y est lu. Les mêmes que
        `expoEm` si les exposants en viennent aussi ; sinon lues pour le seul
        nom, et rapprochées des emplacements Klipso de la même façon. */
-    let nomsEm: typeof expoEm = null;
+    // un type nommé, et non « typeof expoEm » : celui-là est lu ici après
+    // l'affectation à null, et TypeScript l'y réduit à null
+    let nomsEm: FichesEm | null = null;
     let resumeEm: Record<string, unknown> | null = null;
     /* Les champs que chaque source porte, relevés au passage. C'est la matière
        de la correspondance : sans eux la console n'aurait rien à proposer, et

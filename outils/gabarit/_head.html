@@ -1117,6 +1117,9 @@ html.sans-image-stand .outils #imageSoc{
 .elem input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .elem input:focus{border-color:var(--accent);outline:none}
+.elemChamp .quart{flex:none;padding:6px 9px;font-size:12.5px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.elemChamp .quart:hover{border-color:var(--accent);color:var(--accent)}
 
 /* Les poignées d'une forme dessinée et celles d'un emplacement repris se
    ressemblent parce que c'est le même geste : chacune a son calque, les deux
@@ -5543,6 +5546,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
+        <label class="elemChamp" id="elemRotationBloc" hidden><span>Rotation</span>
+          <input id="elemRotation" type="number" min="-180" max="180" step="5">
+          <button type="button" class="quart" id="elemRotationQuart"
+            title="Tourner d'un quart de tour">&#8635; 90°</button></label>
         <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
           <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
         <div id="elemTraitReg" hidden>
