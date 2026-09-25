@@ -89,6 +89,7 @@ module.exports = {
   "Largeur": "Width",
   "Hauteur": "Height",
   "Taille": "Size",
+  "Tourner d'un quart de tour": "Rotate a quarter turn",
   "Lier à un stand — numéro ou exposant": "Link to a stand — number or exhibitor",
   "Exposant — numéro ou nom": "Exhibitor — number or name",
   "Annuler · Ctrl+Z": "Undo · Ctrl+Z",
