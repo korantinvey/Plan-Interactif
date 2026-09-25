@@ -20831,7 +20831,9 @@ function elargitEmprise(p, o){
 function appliqueGeometries(){
   if (!DATA) return;
   DATA.plans.forEach(p => {
-    for (const o of p.stands.concat(p.zones)){
+    /* Une zone masquée reprise à la main l'est aussi pour le trajet du
+       visiteur, qui n'en a que la forme : c'est la reprise qui doit valoir. */
+    for (const o of p.stands.concat(p.zones, p.zonesCachees || [])){
       if (!CONF[cleGeo(o.id)]) continue;
       // `retoucheGeo` relève la géométrie servie avant d'y toucher : c'est
       // elle que l'empreinte décrit, et c'est encore elle qui est en place
@@ -21254,6 +21256,7 @@ function appliqueAjouts(){
   DATA.plans.forEach(p => {
     p.stands = p.stands.filter(o => !o.ajout);
     p.zones = p.zones.filter(o => !o.ajout);
+    p.zonesCachees = (p.zonesCachees || []).filter(o => !o.ajout);
   });
   const noms = [];
   // l'index n'est pas encore bâti : les emplacements de la source, relevés ici
@@ -21264,8 +21267,13 @@ function appliqueAjouts(){
     const r = CONF[k];
     const i = r ? rang.get(String(r.plan)) : undefined;
     if (i === undefined || !SORTES_AJOUT[r.sorte] || !anneauxValides(r.p)) return;
-    if (r.masquee && !admin) return;
     const o = objetAjoute(k.slice(PREFIXE_AJOUT.length), r, i, hotes);
+    /* Masquée, elle ne paraît pas au visiteur mais reste du terrain : le
+       trajet se calcule dans sa page, et doit être celui de la console. */
+    if (r.masquee && !admin){
+      if (o.kind === "zone") DATA.plans[i].zonesCachees.push(o);
+      return;
+    }
     DATA.plans[i][r.sorte].push(o);
     elargitEmprise(DATA.plans[i], o);
     if (o.kind === "stand" && o.nom) noms.push(o.nom);
@@ -25924,7 +25932,7 @@ function enveloppe(p){
   if (garde) return garde;
   const pts = [];
   for (const o of p.stands) pts.push(...sommets(o));
-  for (const o of p.zones) pts.push(...sommets(o));
+  for (const o of zonesDuTerrain(p)) pts.push(...sommets(o));
   pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cote = (suite) => {
     const r = [];
@@ -26054,6 +26062,16 @@ const ROLES_ITI = [
  */
 const zoneTraversee = (z) => Boolean(z && z.traversable);
 
+/**
+ * Les zones qui font le terrain : celles du plan, et celles que l'exploitant
+ * a masquées. Le visiteur ne reçoit de ces dernières que la forme, à part
+ * (`zonesCachees`) — assez pour que son trajet soit celui de la console. Sans
+ * elles, une galerie masquée mais traversable restait fermée chez lui seul,
+ * et il lisait « aucun chemin » là où l'exploitant voyait un trajet.
+ */
+const zonesDuTerrain = (p) =>
+  p.zonesCachees && p.zonesCachees.length ? p.zones.concat(p.zonesCachees) : p.zones;
+
 const cleRoleIti = (id) => "_iti:" + id;
 const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
 const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
@@ -26126,7 +26144,7 @@ function anglePlan(p){
      de tour près, un angle fait alors le tour entier, et 89° se moyenne avec
      1° sans tomber au milieu, à 45°. */
   const bacs = new Float64Array(90), vc = new Float64Array(90), vs = new Float64Array(90);
-  for (const o of p.stands.concat(p.zones)){
+  for (const o of p.stands.concat(zonesDuTerrain(p))){
     const s = sommets(o);
     for (let i = 0; i + 1 < s.length; i++){
       const dx = s[i + 1][0] - s[i][0], dy = s[i + 1][1] - s[i][1];
@@ -26235,7 +26253,7 @@ function grille(p, pmr){
      la moitié posée du côté de l'allée — un demi-mètre, de quoi barrer une
      grille au pas d'une case. Borné à ce qui est déjà ouvert, car un trait
      rendu partout percerait aussi le mur du hall là où la zone l'épouse. */
-  const traversees = p.zones.filter(zoneTraversee).map(z => new Path2D(z.d));
+  const traversees = zonesDuTerrain(p).filter(zoneTraversee).map(z => new Path2D(z.d));
   if (traversees.length){
     ctx.globalCompositeOperation = "destination-out";
     traversees.forEach(t => ctx.fill(t));
@@ -26251,7 +26269,7 @@ function grille(p, pmr){
   /* Les emplacements repassent par-dessus : un stand posé dans une zone
      traversable la barre toujours, ce que son contour ne dit pas. Elle-même ne
      se mure pas — c'est tout l'objet. */
-  for (const o of p.zones) if (!zoneTraversee(o)) barre(o.d);
+  for (const o of zonesDuTerrain(p)) if (!zoneTraversee(o)) barre(o.d);
   formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
   if (pmr) formesRole(p, "pmr").forEach(o => barre(o.d, o.trait));
 
@@ -26329,7 +26347,7 @@ function grille(p, pmr){
      la première allée, franchissait du même pas une zone fermée : faute de
      chemin, le trait passait au travers. Relevé à part, il se refuse. */
   const bz = toile();
-  for (const o of p.zones) if (!zoneTraversee(o)) bz.fill(new Path2D(o.d));
+  for (const o of zonesDuTerrain(p)) if (!zoneTraversee(o)) bz.fill(new Path2D(o.d));
   const pz = bz.getImageData(0, 0, w, h).data;
   const bs = toile();
   for (const o of p.stands) bs.fill(new Path2D(o.d));
@@ -26523,7 +26541,7 @@ function empriseDe(g, p, d, cx0, cy0, cote){
                               g.y0 + (cy0 + cote / 2) * PAS_GRILLE]);
     const portee = cote * PAS_GRILLE + 40;
     ctx.globalCompositeOperation = "destination-out";
-    for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+    for (const v of p.stands.concat(zonesDuTerrain(p).filter(z => !zoneTraversee(z)))){
       if (!v.d || v.d === d) continue;
       const c = v.lc || v.c;
       if (!c || Math.abs(c[0] - c0[0]) > portee || Math.abs(c[1] - c0[1]) > portee) continue;
@@ -27487,7 +27505,7 @@ function facesLibres(p, o){
      stand qu'elle longe s'ouvre par là comme sur une allée. Seul ce qui barre
      compte comme voisin. */
   const pres = [];
-  for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+  for (const v of p.stands.concat(zonesDuTerrain(p).filter(z => !zoneTraversee(z)))){
     if (v === o || v.id === o.id || !v.d) continue;
     const c = v.lc || v.c;
     if (!c || c[0] < x0 - 40 || c[0] > x1 + 40 || c[1] < y0 - 40 || c[1] > y1 + 40) continue;
@@ -27658,7 +27676,7 @@ function raccordTient(g, p, obj, xy, c){
   const x0 = Math.min(xy[0], B[0]) - 5, x1 = Math.max(xy[0], B[0]) + 5;
   const y0 = Math.min(xy[1], B[1]) - 5, y1 = Math.max(xy[1], B[1]) + 5;
   const autres = [];
-  for (const v of p.stands.concat(p.zones.filter(z => !zoneTraversee(z)))){
+  for (const v of p.stands.concat(zonesDuTerrain(p).filter(z => !zoneTraversee(z)))){
     if (v === obj || v.id === obj.id || !v.d) continue;
     const c2 = v.lc || v.c;
     if (!c2 || c2[0] < x0 - 40 || c2[0] > x1 + 40 || c2[1] < y0 - 40 || c2[1] > y1 + 40) continue;

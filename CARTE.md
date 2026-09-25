@@ -316,7 +316,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_geometrie.html` — 1067 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_geometrie.html` — 1075 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 octies. Reprendre à la main la géométrie d'un emplacement
 
@@ -326,19 +326,19 @@ Fonctions :
 `boiteAnneaux` 86 · `dansAnneau` 104 · `distSegmentGeo` 115 · `distBordGeo` 124
 `poleGeo` 134 · `porteeGeo` 153 · `boiteGeo` 161 · `geometrieSource` 186
 `reposeSource` 195 · `poseGeometrie` 204 · `retoucheGeo` 218 · `elargitEmprise` 231
-`appliqueGeometries` 252 · `cleVerrouGeo` 279 · `geoVerrouille` 280 · `basculeVerrouGeo` 282
-`boutonVerrouGeo` 297 · `modeGeometrie` 308 · `objetGeoSous` 335 · `groupeGeo` 345
-`choisitGeo` 353 · `cadreGeo` 368 · `prisesGeo` 388 · `curseurGeo` 400
-`dessinePoigneesGeo` 403 · `ecritDimensionsGeo` 431 · `nomSorteGeo` 443
-`majPaletteGeo` 445 · `finGesteGeo` 484 · `enregistreGeo` 502 · `geometrieOrigine` 516
-`retraceGeo` 531 · `pousseGeometrie` 542 · `appliqueDimensionGeo` 559 · `cleAjout` 597
-`anneauxValides` 611 · `rechAjout` 616 · `objetAjoute` 625 · `poseLien` 644
-`appliqueAjouts` 671 · `enregistreAjout` 700 · `recompteEmplacements` 709
-`ajouteEmplacement` 723 · `renommeAjout` 752 · `lieAjout` 784 · `ecritInfosAjout` 814
-`supprimeAjout` 841 · `choisitOutilGeo` 871 · `aideAjout` 878 · `fermeAjout` 888
-`ajoutPointerDown` 897 · `ajoutPointerMove` 913 · `ajoutPointerUp` 935
-`geometriePointerDown` 955 · `accrocheGeo` 986 · `geometriePointerMove` 988
-`geometriePointerUp` 1039
+`appliqueGeometries` 252 · `cleVerrouGeo` 281 · `geoVerrouille` 282 · `basculeVerrouGeo` 284
+`boutonVerrouGeo` 299 · `modeGeometrie` 310 · `objetGeoSous` 337 · `groupeGeo` 347
+`choisitGeo` 355 · `cadreGeo` 370 · `prisesGeo` 390 · `curseurGeo` 402
+`dessinePoigneesGeo` 405 · `ecritDimensionsGeo` 433 · `nomSorteGeo` 445
+`majPaletteGeo` 447 · `finGesteGeo` 486 · `enregistreGeo` 504 · `geometrieOrigine` 518
+`retraceGeo` 533 · `pousseGeometrie` 544 · `appliqueDimensionGeo` 561 · `cleAjout` 599
+`anneauxValides` 613 · `rechAjout` 618 · `objetAjoute` 627 · `poseLien` 646
+`appliqueAjouts` 673 · `enregistreAjout` 708 · `recompteEmplacements` 717
+`ajouteEmplacement` 731 · `renommeAjout` 760 · `lieAjout` 792 · `ecritInfosAjout` 822
+`supprimeAjout` 849 · `choisitOutilGeo` 879 · `aideAjout` 886 · `fermeAjout` 896
+`ajoutPointerDown` 905 · `ajoutPointerMove` 921 · `ajoutPointerUp` 943
+`geometriePointerDown` 963 · `accrocheGeo` 994 · `geometriePointerMove` 996
+`geometriePointerUp` 1047
 
 ### `_head.html` — 5791 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -426,39 +426,39 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3356 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3366 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
 Fonctions :
 
 `sommets` 104 · `enveloppe` 124 · `oublieGrilles` 167 · `calquesDe` 172 · `reperesDe` 177
-`zoneTraversee` 257 · `cleRoleIti` 259 · `roleIti` 260 · `nomRoleIti` 261
-`estCirculation` 264 · `formesRole` 289 · `anglePlan` 321 · `dansGrille` 360
-`horsGrille` 361 · `grille` 371 · `distanceAuMur` 560 · `cretes` 603 · `nappePrincipale` 621
-`celluleDe` 656 · `caseDe` 660 · `centreCase` 665 · `empriseDe` 708 · `accrocheDepuis` 770
-`versLeMilieu` 843 · `accroche` 878 · `Tas` 893 · `travail` 937 · `cherche` 960
-`distancesDepuis` 1027 · `distancesMulti` 1041 · `regleFoule` 1113 · `ecarteFoule` 1130
-`heureAuSalon` 1134 · `sallesEnMouvement` 1143 · `foule` 1186 · `bilanFoule` 1274
-`reduit` 1303 · `guidageAllees` 1366 · `recentre` 1422 · `passable` 1507 · `lisse` 1541
-`longueur` 1568 · `longueurDehors` 1584 · `nettoie` 1626 · `oublieFaces` 1673
-`facesLibres` 1675 · `amorce` 1772 · `faceDeSortie` 1807 · `raccordTient` 1853
-`accesDe` 1883 · `couplesAcces` 1935 · `troncon` 1968 · `pointObjet` 2011
-`pointRepere` 2018 · `candidats` 2027 · `pointSaisi` 2061 · `portesDe` 2079
-`versPorte` 2086 · `typeLiaison` 2147 · `nomRepere` 2155 · `oublieLiaisons` 2173
-`lienEcrits` 2185 · `ecritLiens` 2194 · `annuaireLiaisons` 2199 · `liensDe` 2231
-`coutLiaison` 2251 · `passagePraticable` 2258 · `passagesDe` 2266 · `sortiesDe` 2276
-`plansRelies` 2284 · `balayage` 2308 · `distanceDepuis` 2326 · `cheminLiaisons` 2353
-`routeParLiaisons` 2437 · `routeEntre` 2473 · `calculeRoute` 2512 · `couleurNappe` 2538
-`rafraichitApercu` 2544 · `marchesIci` 2587 · `rayonBout` 2592 · `arreteTracage` 2625
-`mesureMarches` 2632 · `coupeMarche` 2647 · `distancesDesArrets` 2663
-`peintItineraire` 2675 · `lanceTracage` 2726 · `dessineItineraire` 2751
-`rafraichitBouts` 2773 · `cadreItineraire` 2796 · `champIti` 2820 · `ecritDistance` 2824
-`ecritDuree` 2832 · `fermeSugg` 2837 · `montreSugg` 2844 · `choisitPoint` 2878
-`valideSaisie` 2887 · `effaceItineraire` 2899 · `relance` 2926 · `phraseLiaison` 2977
-`montreResultat` 2991 · `bandeauVisee` 3133 · `armeVisee` 3156 · `finVisee` 3174
-`viseItineraire` 3190 · `visePoi` 3196 · `visePoint` 3202 · `ouvreItineraire` 3234
-`fermeItineraire` 3262 · `versItineraire` 3272 · `versItineraireDe` 3275
+`zoneTraversee` 257 · `zonesDuTerrain` 266 · `cleRoleIti` 269 · `roleIti` 270
+`nomRoleIti` 271 · `estCirculation` 274 · `formesRole` 299 · `anglePlan` 331
+`dansGrille` 370 · `horsGrille` 371 · `grille` 381 · `distanceAuMur` 570 · `cretes` 613
+`nappePrincipale` 631 · `celluleDe` 666 · `caseDe` 670 · `centreCase` 675 · `empriseDe` 718
+`accrocheDepuis` 780 · `versLeMilieu` 853 · `accroche` 888 · `Tas` 903 · `travail` 947
+`cherche` 970 · `distancesDepuis` 1037 · `distancesMulti` 1051 · `regleFoule` 1123
+`ecarteFoule` 1140 · `heureAuSalon` 1144 · `sallesEnMouvement` 1153 · `foule` 1196
+`bilanFoule` 1284 · `reduit` 1313 · `guidageAllees` 1376 · `recentre` 1432 · `passable` 1517
+`lisse` 1551 · `longueur` 1578 · `longueurDehors` 1594 · `nettoie` 1636 · `oublieFaces` 1683
+`facesLibres` 1685 · `amorce` 1782 · `faceDeSortie` 1817 · `raccordTient` 1863
+`accesDe` 1893 · `couplesAcces` 1945 · `troncon` 1978 · `pointObjet` 2021
+`pointRepere` 2028 · `candidats` 2037 · `pointSaisi` 2071 · `portesDe` 2089
+`versPorte` 2096 · `typeLiaison` 2157 · `nomRepere` 2165 · `oublieLiaisons` 2183
+`lienEcrits` 2195 · `ecritLiens` 2204 · `annuaireLiaisons` 2209 · `liensDe` 2241
+`coutLiaison` 2261 · `passagePraticable` 2268 · `passagesDe` 2276 · `sortiesDe` 2286
+`plansRelies` 2294 · `balayage` 2318 · `distanceDepuis` 2336 · `cheminLiaisons` 2363
+`routeParLiaisons` 2447 · `routeEntre` 2483 · `calculeRoute` 2522 · `couleurNappe` 2548
+`rafraichitApercu` 2554 · `marchesIci` 2597 · `rayonBout` 2602 · `arreteTracage` 2635
+`mesureMarches` 2642 · `coupeMarche` 2657 · `distancesDesArrets` 2673
+`peintItineraire` 2685 · `lanceTracage` 2736 · `dessineItineraire` 2761
+`rafraichitBouts` 2783 · `cadreItineraire` 2806 · `champIti` 2830 · `ecritDistance` 2834
+`ecritDuree` 2842 · `fermeSugg` 2847 · `montreSugg` 2854 · `choisitPoint` 2888
+`valideSaisie` 2897 · `effaceItineraire` 2909 · `relance` 2936 · `phraseLiaison` 2987
+`montreResultat` 3001 · `bandeauVisee` 3143 · `armeVisee` 3166 · `finVisee` 3184
+`viseItineraire` 3200 · `visePoi` 3206 · `visePoint` 3212 · `ouvreItineraire` 3244
+`fermeItineraire` 3272 · `versItineraire` 3282 · `versItineraireDe` 3285
 
 ### `_journee.html` — 2797 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -813,7 +813,7 @@ Fonctions :
 
 `jeton` 80 · `client` 83
 
-### `supabase/functions/plan-public/index.ts` — 1079 l.
+### `supabase/functions/plan-public/index.ts` — 1103 l.
 
 `cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 118 · `avecVignette` 155
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
