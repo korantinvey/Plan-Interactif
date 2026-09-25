@@ -227,7 +227,7 @@ Fonctions :
 
 - l.666 · Page de rapport
 
-### `_dessin.html` — 2521 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2537 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -239,47 +239,47 @@ Fonctions :
 `memorise` 224 · `restaure` 235 · `annule` 251 · `refais` 263 · `trouveCalque` 265
 `nouvelId` 266 · `cheminArrondi` 284 · `estCadre` 327 · `cheminForme` 329 · `styleTrait` 349
 `longueurFleche` 375 · `cheminFleche` 382 · `marqueFleche` 411 · `rafraichitFleches` 422
-`poseTrait` 438 · `traceForme` 448 · `dessineDessins` 463 · `redessineForme` 504
-`peintCalque` 528 · `versPlan` 534 · `apercu` 540 · `apercuGuide` 552 · `toleranceTrace` 576
-`aimanteContour` 581 · `rayonContour` 584 · `redresseTrace` 603 · `traceGuide` 637
-`fermeIci` 644 · `ajouteForme` 649 · `pictoDe` 776 · `nomTypeRepereFr` 832
-`nomTypeRepere` 834 · `typeZone` 864 · `pictoForme` 871 · `estPorte` 891
-`ouvreEntrant` 892 · `ouvreSortant` 893 · `modeDit` 933 · `lettreMode` 934
-`estTransport` 938 · `modeTransport` 941 · `glypheRepere` 953 · `cleLigne` 990
-`ligneAffichee` 1001 · `couleurLigne` 1009 · `couleurRepere` 1015 · `encreRepere` 1021
-`nomLigneFr` 1035 · `libelleDoffice` 1043 · `couleurEcrite` 1050 · `traceRepere` 1069
-`nomSurLePlan` 1203 · `etiquetteSociete` 1214 · `seRattache` 1242 · `societeDeForme` 1254
-`societesDuPlan` 1266 · `poseChampImage` 1287 · `remplitListeSocietes` 1294
-`societeSaisie` 1302 · `traceImage` 1329 · `traceStandDessine` 1354
-`texteStandDessine` 1378 · `poseLibellesDessines` 1396 · `decoupeStand` 1417
-`marqueStandsDessines` 1432 · `rafraichitStandsDessines` 1447 · `oublieReperes` 1477
-`reperesCherchables` 1479 · `vaAuRepere` 1523 · `clePoi` 1566 · `pastillePoi` 1575
-`cartouchePoi` 1579 · `ouvrePoi` 1698 · `mesureCartouche` 1771 · `pharePoi` 1787
-`phareRepere` 1791 · `phareZone` 1793 · `eclairePoi` 1799 · `oublieChoixPoi` 1832
-`signale` 1841 · `calquePourImage` 1855 · `lienImageSaisi` 1883 · `formeImage` 1895
-`poseImage` 1904 · `ditImagePosee` 1926 · `importeImage` 1934 · `dessinPointerDown` 1985
-`dessinPointerMove` 2070 · `dessinPointerUp` 2108 · `termineTrace` 2149 · `aide` 2161
-`outilOffert` 2191 · `choisitOutil` 2194 · `enchaineStand` 2225 · `optionsModes` 2255
-`proposeCouleurLigne` 2266 · `montreTransport` 2277 · `activeCalque` 2336 · `cleVerrou` 2394
-`verrouille` 2395 · `basculeVerrou` 2397 · `pictoVerrou` 2414 · `montreRoleIti` 2448
-`creeCalque` 2479 · `demandeNom` 2492 · `renommeCalque` 2511
+`poseTrait` 438 · `traceForme` 448 · `rotationTexte` 467 · `dessineDessins` 472
+`redessineForme` 513 · `peintCalque` 537 · `versPlan` 543 · `apercu` 549 · `apercuGuide` 561
+`toleranceTrace` 585 · `aimanteContour` 590 · `rayonContour` 593 · `redresseTrace` 612
+`traceGuide` 646 · `fermeIci` 653 · `ajouteForme` 658 · `pictoDe` 785
+`nomTypeRepereFr` 841 · `nomTypeRepere` 843 · `typeZone` 873 · `pictoForme` 880
+`estPorte` 900 · `ouvreEntrant` 901 · `ouvreSortant` 902 · `modeDit` 942 · `lettreMode` 943
+`estTransport` 947 · `modeTransport` 950 · `glypheRepere` 962 · `cleLigne` 999
+`ligneAffichee` 1010 · `couleurLigne` 1018 · `couleurRepere` 1024 · `encreRepere` 1030
+`nomLigneFr` 1044 · `libelleDoffice` 1052 · `couleurEcrite` 1059 · `traceRepere` 1078
+`nomSurLePlan` 1212 · `etiquetteSociete` 1223 · `seRattache` 1251 · `societeDeForme` 1263
+`societesDuPlan` 1275 · `poseChampImage` 1296 · `remplitListeSocietes` 1303
+`societeSaisie` 1311 · `traceImage` 1338 · `traceStandDessine` 1363
+`texteStandDessine` 1387 · `poseLibellesDessines` 1405 · `decoupeStand` 1426
+`marqueStandsDessines` 1441 · `rafraichitStandsDessines` 1456 · `oublieReperes` 1486
+`reperesCherchables` 1488 · `vaAuRepere` 1532 · `clePoi` 1575 · `pastillePoi` 1584
+`cartouchePoi` 1588 · `ouvrePoi` 1707 · `mesureCartouche` 1780 · `pharePoi` 1796
+`phareRepere` 1800 · `phareZone` 1802 · `eclairePoi` 1808 · `oublieChoixPoi` 1841
+`signale` 1850 · `calquePourImage` 1864 · `lienImageSaisi` 1892 · `formeImage` 1904
+`poseImage` 1913 · `ditImagePosee` 1935 · `importeImage` 1943 · `dessinPointerDown` 1994
+`dessinPointerMove` 2079 · `dessinPointerUp` 2117 · `termineTrace` 2158 · `aide` 2170
+`outilOffert` 2200 · `choisitOutil` 2203 · `enchaineStand` 2234 · `optionsModes` 2264
+`proposeCouleurLigne` 2275 · `montreTransport` 2286 · `activeCalque` 2352 · `cleVerrou` 2410
+`verrouille` 2411 · `basculeVerrou` 2413 · `pictoVerrou` 2430 · `montreRoleIti` 2464
+`creeCalque` 2495 · `demandeNom` 2508 · `renommeCalque` 2527
 
 Éléments :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `_edition.html` — 547 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_edition.html` — 566 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
 Fonctions :
 
 `formeParId` 11 · `boite` 19 · `curseurPoignee` 27 · `poignees` 32 · `dessinePoignees` 41
-`choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 192 · `ecritDesDeuxCotes` 214
-`changeLien` 226 · `changeDureeLien` 242 · `majLiens` 259 · `appliqueSociete` 311
-`appliqueTexte` 327 · `appliqueRayon` 337 · `appliqueTrait` 350 · `appliqueTransport` 378
-`appliquePicto` 401 · `supprimeForme` 427 · `editionPointerDown` 437
-`editionPointerMove` 483 · `editionPointerUp` 537
+`choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 196 · `ecritDesDeuxCotes` 218
+`changeLien` 230 · `changeDureeLien` 246 · `majLiens` 263 · `appliqueSociete` 315
+`appliqueTexte` 331 · `appliqueRotation` 343 · `appliqueRayon` 356 · `appliqueTrait` 369
+`appliqueTransport` 397 · `appliquePicto` 420 · `supprimeForme` 446
+`editionPointerDown` 456 · `editionPointerMove` 502 · `editionPointerUp` 556
 
 ### `_environs.html` — 1652 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -339,7 +339,7 @@ Fonctions :
 `geometriePointerDown` 955 · `accrocheGeo` 986 · `geometriePointerMove` 988
 `geometriePointerUp` 1039
 
-### `_head.html` — 5784 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 5791 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -365,21 +365,22 @@ Fonctions :
 `#elemSupprimer` · `#elemPicto` · `#elemTransport` · `#elemMode` · `#elemLigne`
 `#elemCouleur` · `#elemTexte` · `#elemLiens` · `#elemLiensListe` · `#elemLienAjout`
 `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur` · `#elemTailleBloc`
-`#elemTaille` · `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg` · `#elemEpaisseur`
-`#elemStyle` · `#elemFleche` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg`
-`#libNom` · `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#geoReg` · `#geoNom`
-`#geoFerme` · `#geoInfos` · `#geoCodeL` · `#geoCode` · `#geoSocL` · `#geoSoc` · `#geoTitreL`
-`#geoTitre` · `#geoDim` · `#geoLargeur` · `#geoHauteur` · `#geoOrigine` · `#geoFiche`
-`#geoSupprime` · `#geoAide` · `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
-`#panel` · `#pile` · `#voile` · `#detail` · `#poigneeFiche` · `#dRubans` · `#dGoIco`
-`#dItinIco` · `#dMarque` · `#closeDetail` · `#dKind` · `#dPast` · `#dName` · `#dRen`
-`#dLogo` · `#dBadges` · `#dCode` · `#dVis` · `#dPartage` · `#dCorne` · `#dOnglets`
-`#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd` · `#dOngNbProd` · `#dBody` · `#parcours`
-`#poigneeParcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs`
-`#btnJournee` · `#jRefaire` · `#btnPartage` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied`
-`#videParcours` · `#jPied` · `#jRetour` · `#itineraire` · `#poigneeItineraire`
-`#closeItineraire` · `#iResume` · `#iCorps` · `#iDepart` · `#iViseA` · `#iSugg`
-`#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
+`#elemTaille` · `#elemRotationBloc` · `#elemRotation` · `#elemRotationQuart`
+`#elemRayonBloc` · `#elemRayon` · `#elemTraitReg` · `#elemEpaisseur` · `#elemStyle`
+`#elemFleche` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
+`#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#geoReg` · `#geoNom` · `#geoFerme`
+`#geoInfos` · `#geoCodeL` · `#geoCode` · `#geoSocL` · `#geoSoc` · `#geoTitreL` · `#geoTitre`
+`#geoDim` · `#geoLargeur` · `#geoHauteur` · `#geoOrigine` · `#geoFiche` · `#geoSupprime`
+`#geoAide` · `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile`
+`#voile` · `#detail` · `#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque`
+`#closeDetail` · `#dKind` · `#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode`
+`#dVis` · `#dPartage` · `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb`
+`#dOngProd` · `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours`
+`#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire`
+`#btnPartage` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied`
+`#jRetour` · `#itineraire` · `#poigneeItineraire` · `#closeItineraire` · `#iResume`
+`#iCorps` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB`
+`#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
