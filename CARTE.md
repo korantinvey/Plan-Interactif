@@ -268,18 +268,19 @@ Fonctions :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `_edition.html` — 566 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_edition.html` — 650 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
 Fonctions :
 
 `formeParId` 11 · `boite` 19 · `curseurPoignee` 27 · `poignees` 32 · `dessinePoignees` 41
-`choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 196 · `ecritDesDeuxCotes` 218
-`changeLien` 230 · `changeDureeLien` 246 · `majLiens` 263 · `appliqueSociete` 315
-`appliqueTexte` 331 · `appliqueRotation` 343 · `appliqueRayon` 356 · `appliqueTrait` 369
-`appliqueTransport` 397 · `appliquePicto` 420 · `supprimeForme` 446
-`editionPointerDown` 456 · `editionPointerMove` 502 · `editionPointerUp` 556
+`cadreTexte` 76 · `poigneeRotation` 96 · `angleBorne` 106 · `choisitForme` 108
+`majElement` 119 · `candidatsLiaison` 240 · `ecritDesDeuxCotes` 262 · `changeLien` 274
+`changeDureeLien` 290 · `majLiens` 307 · `appliqueSociete` 359 · `appliqueTexte` 375
+`appliqueRotation` 387 · `appliqueRayon` 401 · `appliqueTrait` 414 · `appliqueTransport` 442
+`appliquePicto` 465 · `supprimeForme` 491 · `editionPointerDown` 501
+`editionPointerMove` 561 · `tourneTexte` 624 · `editionPointerUp` 640
 
 ### `_environs.html` — 1652 l. → plan-admin.html, plan-smcl.html, plan.html
 
