@@ -27150,7 +27150,22 @@ function grille(p, pmr){
     for (let i = 0; i < cloisons.length; i++) cloisons[i] = bp[i * 4 + 3] > 128 ? 1 : 0;
   }
 
-  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, cloisons: cloisons,
+  /* Ce qui barre en propre, sans dégagement : le plein des stands et des zones
+     qu'on ne traverse pas. La grille le confond avec le hors-hall — tout y est
+     mur —, et l'accroche d'un repère, qui doit franchir le parvis pour gagner
+     la première allée, franchissait du même pas une zone fermée : faute de
+     chemin, le trait passait au travers. Relevé à part, il se refuse. */
+  const bz = toile();
+  for (const o of p.zones) if (!zoneTraversee(o)) bz.fill(new Path2D(o.d));
+  const pz = bz.getImageData(0, 0, w, h).data;
+  const bs = toile();
+  for (const o of p.stands) bs.fill(new Path2D(o.d));
+  const ps = bs.getImageData(0, 0, w, h).data;
+  const barrage = new Uint8Array(w * h);
+  for (let i = 0; i < barrage.length; i++)
+    barrage[i] = (pz[i * 4 + 3] > 128 ? BARRE_ZONE : 0) | (ps[i * 4 + 3] > 128 ? BARRE_STAND : 0);
+
+  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, cloisons: cloisons, barrage: barrage,
               pmr: pmr, co: co, si: si };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
@@ -27372,7 +27387,12 @@ function empriseDe(g, p, d, cx0, cy0, cote){
  * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
  * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accrocheDepuis(g, p, xy, chez, portee){
+/* Les deux sortes de plein que relève `barrage` : une zone qu'on ne traverse
+   pas ne se franchit jamais, un stand seulement quand on cherche l'allée
+   d'un point — un repère n'entre chez personne. */
+const BARRE_ZONE = 1, BARRE_STAND = 2;
+
+function accrocheDepuis(g, p, xy, chez, portee, sansStands){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const [gx, gy] = celluleDe(g, xy[0], xy[1]);
@@ -27392,9 +27412,20 @@ function accrocheDepuis(g, p, xy, chez, portee){
     return px >= 0 && py >= 0 && px < cote && py < cote && sien[py * cote + px] === 1;
   };
 
+  /* Hors de son propre emplacement, ce qui barre ne se franchit pas : ni la
+     cloison tracée, ni la zone fermée, ni — pour un point — le stand d'un
+     autre. Faute d'allée atteinte sans eux, il n'y a pas de chemin, et mieux
+     vaut le dire que de tracer un trait qui passe au travers.
+     Un point posé dans ce qui barre — une entrée dessinée dans la zone
+     d'accueil — doit pourtant pouvoir en sortir : tant qu'on n'a traversé que
+     du barré depuis lui, on est encore chez lui. */
+  const masque = BARRE_ZONE | (sansStands ? BARRE_STAND : 0);
+  const barre = (j) => !sien && ((g.cloisons && g.cloisons[j]) || (g.barrage[j] & masque));
   const vu = new Uint8Array(g.w * g.h);
+  const dedans = new Uint8Array(g.w * g.h);
   const file = [d];
   vu[d] = 1;
+  if (barre(d)) dedans[d] = 1;
   let repli = -1;
   for (let k = 0; k < file.length; k++){
     const i = file[k], cx = i % g.w, cy = (i - cx) / g.w;
@@ -27405,10 +27436,16 @@ function accrocheDepuis(g, p, xy, chez, portee){
       if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
       const j = ny * g.w + nx;
       if (vu[j]) continue;
-      vu[j] = 1;
       if (g.nappe[j]) return j;
       // le mur d'un autre ne se franchit pas : c'est là toute la règle
-      if (g.mur[j] && !chezSoi(nx, ny)) continue;
+      if (g.mur[j] && !chezSoi(nx, ny)){ vu[j] = 1; continue; }
+      /* Refusé depuis dehors, un barré reste à voir : on peut encore l'aborder
+         depuis dedans, par un autre côté. */
+      if (barre(j)){
+        if (!dedans[i]) continue;
+        dedans[j] = 1;
+      }
+      vu[j] = 1;
       // une poche fermée ne mène nulle part : on la traverse sans s'y arrêter
       if (repli < 0 && !g.mur[j]) repli = j;
       file.push(j);
@@ -27455,12 +27492,16 @@ function versLeMilieu(g, i){
  * alors la règle plutôt que de rendre la main, quitte à retrouver un trait qui
  * coupe par le voisin. Ce qui se voit, au moins, se comprend.
  *
+ * Relâchée, elle ne l'est qu'envers les stands : une zone fermée ou une
+ * cloison tracée ne se franchit jamais, et l'emplacement qu'elles enclavent
+ * reste injoignable — le tiroir le dit, au lieu d'un trait qui les traverse.
+ *
  * La règle relâchée reste celle du voisinage, jamais la distance : le second
  * essai cherche à la portée d'un emplacement, sans quoi on rendrait joignable
  * le stand que la portée écarte — ce qu'elle est là pour empêcher.
  */
 function accroche(g, p, xy, chez){
-  let r = accrocheDepuis(g, p, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
+  let r = accrocheDepuis(g, p, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT, !chez);
   if (chez && !(r >= 0 && g.nappe[r])){
     const large = accrocheDepuis(g, p, xy, null, PORTEE_ACCROCHE);
     if (large >= 0 && g.nappe[large]) r = large;
