@@ -713,14 +713,6 @@ function enregistreAjout(o){
   majPaletteGeo();
 }
 
-/** Les compteurs du pied de liste, qui disent ce que le salon compte. */
-function recompteEmplacements(){
-  $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
-  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
-    HEBERGES.filter(o => o.nom).length;
-  $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
-}
-
 /**
  * Un emplacement neuf, à sa place dans la couche.
  *
@@ -746,7 +738,6 @@ function ajouteEmplacement(anneaux){
   appliqueSecteurs();
   marqueRetrait();
   finGesteGeo(o);
-  recompteEmplacements();
   liste();
   /* L'outil reste pris : un îlot se découpe en cinq stands d'affilée. Le
      dernier posé est choisi, et son champ offert, pour qu'on le numérote
@@ -812,7 +803,6 @@ function lieAjout(texte){
   }
   appliqueSecteurs();
   marqueRetrait();
-  recompteEmplacements();
   libelles(); liste();
   majPaletteGeo();
 }
@@ -868,7 +858,6 @@ function supprimeAjout(){
       if (state.sel === o.id) ferme();
       choisitGeo(null);
       finGesteGeo(o);
-      recompteEmplacements();
       liste();
     });
 }

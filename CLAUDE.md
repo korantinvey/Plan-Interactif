@@ -33,12 +33,11 @@ avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
 
 ## Ne jamais modifier directement
 
-- `web/*.html`, `web/console.css`, `web/config.js`, `web/sw.js`,
-  `web/manifeste.webmanifest`, `web/icone*` — sortie de la construction ;
-  éditez `outils/gabarit/`, `outils/pwa.js` ou `outils/icones.js`.
-- `outils/tpl-multi.html` — intermédiaire, régénéré par `assemble.js`.
-- `CARTE.md` — index relu dans les sources par `carte.js`. Pour le corriger,
-  corrigez ce qu'il décrit : un bandeau de section, un nom de fonction.
+Les sorties de la construction — `web/` hors `polices/` et `bibliotheques/`,
+`outils/tpl-multi.html`, `CARTE.md` — et toute migration déjà sur `main`.
+`.claude/hooks/garde.js` refuse ces écritures dans une session Claude Code et
+nomme la source à corriger ; la règle vaut aussi hors de lui, pour une retouche
+à la main ou le workflow `correctif.yml`.
 
 ## Plusieurs sessions en parallèle
 
@@ -71,10 +70,8 @@ dernière de `main`** : si elle lui est antérieure, réhorodatez-la. C'est sans
 risque tant qu'elle n'a jamais été appliquée — et le savoir se lit dans le
 journal du déploiement, qui la nomme.
 
-**Jamais de poussée forcée.** Le workflow `Pages` commite sur la branche poussée
-quand `web/` était en retard : le clone local se retrouve derrière sans l'avoir
-vu, et un `--force` efface alors le travail d'à côté. `git pull --rebase`, et
-`npm run verifie` avant de valider pour que le robot n'ait rien à ajouter.
+**Jamais de poussée forcée** — le garde la refuse : le workflow `Pages` a pu
+commiter sur la branche, et `--force` effacerait ce commit. `git pull --rebase`.
 
 ## Données figées
 
