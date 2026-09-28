@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 5430 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 5438 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.4282 · 10. Mode administration
-- l.4390 · La fiche d'une zone organisateur
-- l.5160 · Masquer une zone organisateur
-- l.5257 · Placer un libellé à la main
+- l.4290 · 10. Mode administration
+- l.4398 · La fiche d'une zone organisateur
+- l.5168 · Masquer une zone organisateur
+- l.5265 · Placer un libellé à la main
 
 Fonctions :
 
@@ -39,23 +39,23 @@ Fonctions :
 `standApercu` 1635 · `lignesApercu` 1659 · `contenuApercu` 1689 · `apercuFiche` 1726
 `apercuListe` 1804 · `apercuDuo` 1826 · `glisseFenetre` 1859 · `ouvreReglages` 1870
 `voletZones` 1998 · `champsFicheZone` 2100 · `ficheZoneEnPlace` 2170 · `voletPlan` 2188
-`blocRappel` 2236 · `ditEssaiRappel` 2347 · `voletCoexposants` 2381 · `voletAdmin` 2443
-`blocOptions` 2608 · `blocLangues` 2655 · `blocBarre` 2729 · `blocHoraires` 2787
-`voletParcours` 2929 · `sallesSituees` 3064 · `voletPmr` 3080 · `nomDuTon` 3171
-`svgVignette` 3180 · `barreVignette` 3182 · `vignetteDistPlan` 3186
-`vignetteDistListe` 3199 · `vignetteDistFiche` 3213 · `salonDitSes` 3233 · `coinPris` 3240
-`voletDist` 3263 · `voletApparence` 3428 · `clesFiche` 3627 · `voletOrdre` 3644
-`enregistreConf` 4231 · `rgbHex` 4238 · `hexa` 4245 · `luminance` 4249 · `ecarte` 4263
-`joli` 4278 · `retireAdmin` 4299 · `activeAdmin` 4312 · `champZone` 4416 · `champsZone` 4441
-`champSalles` 4533 · `nomDeZone` 4585 · `reduitLogo` 4619 · `cadreLogo` 4662
-`champLogo` 4734 · `editeurRiche` 4772 · `memeFicheZone` 4929 · `suitFicheZone` 4936
-`verseFicheZone` 4944 · `ficheZone` 4970 · `enregistreZone` 4995
-`enregistreZoneAjoutee` 5108 · `basculeAffichageZone` 5171 · `marqueZonesMasquees` 5199
-`ecritColonnesEvenement` 5219 · `ecritColonneEvenement` 5253 · `cleLibelle` 5278
-`empreinteLibelle` 5294 · `placementLibelle` 5302 · `posePlacement` 5312
-`libelleAutomatique` 5329 · `modePlacementLibelles` 5338 · `majPaletteLibelle` 5357
-`choisitLibelle` 5374 · `pousseLibelle` 5381 · `libellePointerDown` 5389
-`libellePointerMove` 5405 · `libellePointerUp` 5414
+`blocRappel` 2236 · `ditEssaiRappel` 2347 · `voletCoexposants` 2381 · `voletAdmin` 2451
+`blocOptions` 2616 · `blocLangues` 2663 · `blocBarre` 2737 · `blocHoraires` 2795
+`voletParcours` 2937 · `sallesSituees` 3072 · `voletPmr` 3088 · `nomDuTon` 3179
+`svgVignette` 3188 · `barreVignette` 3190 · `vignetteDistPlan` 3194
+`vignetteDistListe` 3207 · `vignetteDistFiche` 3221 · `salonDitSes` 3241 · `coinPris` 3248
+`voletDist` 3271 · `voletApparence` 3436 · `clesFiche` 3635 · `voletOrdre` 3652
+`enregistreConf` 4239 · `rgbHex` 4246 · `hexa` 4253 · `luminance` 4257 · `ecarte` 4271
+`joli` 4286 · `retireAdmin` 4307 · `activeAdmin` 4320 · `champZone` 4424 · `champsZone` 4449
+`champSalles` 4541 · `nomDeZone` 4593 · `reduitLogo` 4627 · `cadreLogo` 4670
+`champLogo` 4742 · `editeurRiche` 4780 · `memeFicheZone` 4937 · `suitFicheZone` 4944
+`verseFicheZone` 4952 · `ficheZone` 4978 · `enregistreZone` 5003
+`enregistreZoneAjoutee` 5116 · `basculeAffichageZone` 5179 · `marqueZonesMasquees` 5207
+`ecritColonnesEvenement` 5227 · `ecritColonneEvenement` 5261 · `cleLibelle` 5286
+`empreinteLibelle` 5302 · `placementLibelle` 5310 · `posePlacement` 5320
+`libelleAutomatique` 5337 · `modePlacementLibelles` 5346 · `majPaletteLibelle` 5365
+`choisitLibelle` 5382 · `pousseLibelle` 5389 · `libellePointerDown` 5397
+`libellePointerMove` 5413 · `libellePointerUp` 5422
 
 Éléments :
 
