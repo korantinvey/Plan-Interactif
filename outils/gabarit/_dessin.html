@@ -1395,6 +1395,12 @@ function texteStandDessine(f, pxParM){
   if (!sel && (!visibleSociete(l.o, l.i) ||
                cx < view.x - 25 || cx > view.x + view.w + 25 ||
                cy < view.y - 25 || cy > view.y + view.h + 25)) return "";
+  /* En étiquettes, la place de ce nom s'est décidée avec celle des stands du
+     plan (`etiquettesDuPlan`) : sous le plancher, l'étiquette ou rien. */
+  const c = ETIQ_POSEES.get("f:" + f.id);
+  if (c && Math.log2(pxParM) < c.zFin)
+    // au centre du moment : la forme a pu bouger depuis le dernier placement
+    return Math.log2(pxParM) >= c.z ? etiquetteSvg({ ...c, xy: [cx, cy] }, pxParM) : "";
   return libelleEmplacement({ nom: nom, code: l.o.code }, [cx, cy],
                             b[2] - b[0], b[3] - b[1], sel, pxParM);
 }

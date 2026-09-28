@@ -5447,6 +5447,8 @@ function libellePointerUp(e){
   glisseLib = null;
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   enregistreConf();
+  // les étiquettes ont gardé leurs seuils le temps du geste : on les replace
+  if (etiquettesActives()) libelles();
   return true;
 }
 

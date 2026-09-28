@@ -1633,7 +1633,7 @@ html.poi-actif #marques .parc{display:none}
    stand sur l'allée ou sur le voisin. Le liseré clair la détache de ce
    qu'elle recouvre ; mesuré en « em », il suit le corps comme celui de la
    carte de chaleur. */
-#labels text.etiq{paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:.22em;
+#labels text.etiq,.dcal .lab text.etiq{paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:.22em;
   stroke-linejoin:round;stroke-linecap:round}
 /* Sur la carte de chaleur, l'emplacement ne porte plus les couleurs de la page
    mais sa température. Aucune encre unique ne
@@ -7814,18 +7814,7 @@ function libelles(){
     if ((!sel && !vu) || (!s.code && !s.nom)) continue;
     retenus.push({ s, sel });
   }
-  const etiq = new Map();
-  if (etiquettesActives()){
-    for (const { s, sel } of retenus){
-      const reg = placementLibelle(s);
-      if (libelleForce(reg)) continue;
-      const ps = place(s);
-      const c = candidatEtiquette(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel);
-      if (c) etiq.set(s.id, c);
-    }
-    const seuils = placeEtiquettes([...etiq.values()]);
-    etiq.forEach((c, id) => { c.z = seuils.get(id); });
-  }
+  const etiq = etiquettesDuPlan(retenus);
   const zoom = Math.log2(pxParM);
   // les étiquettes débordent : écrites après les autres, elles passent dessus
   let dessus = "";
@@ -7938,14 +7927,13 @@ const MARGE_ETIQUETTE = 2;       // l'air laissé entre deux étiquettes, en pix
 
 /* Le réglage de l'exploitant, que l'adresse peut contredire (`?libelles=
    etiquettes` ou `ajustes`) : de quoi comparer les deux rendus sur un même
-   plan sans rien enregistrer. Le placement à la main reste sur les libellés
-   ajustés — c'est eux qu'il règle. */
+   plan sans rien enregistrer. */
 const LIBELLES_ADRESSE = new URLSearchParams(location.search).get("libelles");
 function modeLibelles(){
   if (LIBELLES_ADRESSE === "etiquettes" || LIBELLES_ADRESSE === "ajustes") return LIBELLES_ADRESSE;
   return conf("_libelles").mode === "etiquettes" ? "etiquettes" : "ajustes";
 }
-const etiquettesActives = () => modeLibelles() === "etiquettes" && !PLACE_LIBELLES;
+const etiquettesActives = () => modeLibelles() === "etiquettes";
 
 /* Le tirage : stable pour un visiteur, différent d'un visiteur à l'autre. Au
    recul, chacun voit donc une part des noms, et c'est l'ensemble du public qui
@@ -7966,25 +7954,33 @@ function tirage(id){
 }
 
 /**
- * Ce qu'une étiquette doit savoir d'un stand : son nom tel que le stand le
- * découpe, et les deux boîtes qu'elle occupe — en pixels sous le plancher, en
- * mètres au-dessus. Les lignes sont celles du libellé ajusté : au zoom où
- * l'un prend le relais de l'autre, les deux sont alors le même texte, à la
- * même taille, et rien ne saute.
+ * Ce qu'une étiquette doit savoir de ce qu'elle nomme : son nom tel que la
+ * place le découpe, et les deux boîtes qu'elle occupe — en pixels sous le
+ * plancher, en mètres au-dessus. Les lignes sont celles du libellé ajusté : au
+ * zoom où l'un prend le relais de l'autre, les deux sont alors le même texte,
+ * à la même taille, et rien ne saute.
+ *
+ * `e` décrit ce qui porte le nom — un stand du plan ou un stand dessiné :
+ * `cle` le distingue dans le calcul, `stand` est l'emplacement que le parcours
+ * retient. `k` est le facteur du placement à la main : il agrandit le libellé
+ * ajusté, et l'étiquette avec lui. `force`, ce qu'on retouche à la main : il
+ * passe devant, comme le stand choisi, pour rester à portée du doigt.
  */
-function candidatEtiquette(s, xy, w, h, sel){
-  if (!s.nom) return null;
-  const nom = habille(s.nom, w * .9, h * .62, 2.4, P_NOM);
+function candidatEtiquette(e){
+  if (!e.nom) return null;
+  const nom = habille(e.nom, e.w * .9, e.h * .62, 2.4, P_NOM);
   if (!nom || !(nom.f > 0)) return null;
+  const k = e.k || 1, corps = PLANCHER_ETIQUETTE * k, fn = nom.f * k;
   const em = Math.max(...nom.lignes.map(l => largeur(l, P_NOM)));
   const hauteur = nom.lignes.length * 1.18;
-  const rang = sel ? 0 : PARCOURS.stands.some(id => String(id) === String(s.id)) ? 1 : 2;
-  return { id: s.id, xy, lignes: nom.lignes, sel, rang, tirage: tirage(s.id),
+  const devant = e.sel || e.force;
+  const rang = devant ? 0 : PARCOURS.stands.some(id => String(id) === String(e.stand)) ? 1 : 2;
+  return { id: e.cle, xy: e.xy, lignes: nom.lignes, sel: e.sel, devant, rang, tirage: tirage(e.cle), corps,
     // le zoom où le nom ajusté atteint le plancher : au-delà, il tient dans son stand
-    zFin: Math.log2(PLANCHER_ETIQUETTE / nom.f),
-    pw: PLANCHER_ETIQUETTE * em / 2 + MARGE_ETIQUETTE,
-    ph: PLANCHER_ETIQUETTE * hauteur / 2 + MARGE_ETIQUETTE,
-    mw: nom.f * em / 2, mh: nom.f * hauteur / 2 };
+    zFin: Math.log2(corps / fn),
+    pw: corps * em / 2 + MARGE_ETIQUETTE,
+    ph: corps * hauteur / 2 + MARGE_ETIQUETTE,
+    mw: fn * em / 2, mh: fn * hauteur / 2 };
 }
 
 /* Le zoom à partir duquel deux boîtes cessent de se toucher sur un axe.
@@ -8021,18 +8017,22 @@ const separation = (a, b) => Math.min(
  *
  * Le calcul se garde tant que rien ne change — mêmes stands retenus, même
  * rang, même police. C'est l'ouverture d'un pavillon ou un filtre qui le
- * relance, jamais le geste.
+ * relance, jamais le geste. Le glisser d'un libellé réglé à la main en est un
+ * aussi : pendant qu'il bouge, les autres gardent leurs seuils — celui qu'on
+ * tient passe devant de toute façon —, et tout se recalcule quand on le lâche.
  */
 let ETIQUETTES = { cle: "", seuils: new Map() };
 function placeEtiquettes(cands){
-  const cle = PLANCHER_ETIQUETTE + "|" + P_NOM.join() + "|" + cands.map(c =>
-    c.id + ":" + c.rang + ":" + c.xy[0].toFixed(1) + "," + c.xy[1].toFixed(1) + ":" + c.mw.toFixed(3)).join("|");
+  const cle = P_NOM.join() + "|" + cands.map(c =>
+    c.id + ":" + c.rang + ":" + c.xy[0].toFixed(1) + "," + c.xy[1].toFixed(1) + ":" + c.mw.toFixed(3) +
+    ":" + c.corps.toFixed(2)).join("|");
   if (cle === ETIQUETTES.cle) return ETIQUETTES.seuils;
+  if (typeof glisseLib !== "undefined" && glisseLib && ETIQUETTES.seuils.size) return ETIQUETTES.seuils;
   const ordre = cands.slice().sort((a, b) => a.rang - b.rang || a.tirage - b.tirage);
   const poses = [], seuils = new Map();
   for (const c of ordre){
     let z = -LOIN_ETIQUETTE;
-    if (!c.sel) for (const j of poses){
+    if (!c.devant) for (const j of poses){
       const s = separation(c, j);
       if (s > j.z && s > z) z = s;
     }
@@ -8045,9 +8045,55 @@ function placeEtiquettes(cands){
 }
 const LOIN_ETIQUETTE = 99;
 
-/** L'étiquette elle-même, écrite au plancher dans le repère du plan. */
+/**
+ * Les étiquettes du pavillon, prêtes à écrire : celles des stands retenus par
+ * l'appelant, et celles des stands dessinés à la main.
+ *
+ * Les deux sortes se disputent la même place et se placent donc ensemble,
+ * même si elles ne s'écrivent pas au même endroit — les premières dans
+ * « #labels », les secondes dans leur propre forme, pour que le calque qui les
+ * porte ne les recouvre pas. Un calque masqué ne compte pas : ce qu'il porte
+ * ne se voit pas, et n'a pas à écarter les noms de ses voisins.
+ *
+ * Le résultat se garde dans `ETIQ_POSEES`, où l'écriture des stands dessinés
+ * le relit (`texteStandDessine`).
+ */
+let ETIQ_POSEES = new Map();
+function etiquettesDuPlan(retenus){
+  const etiq = new Map();
+  if (!etiquettesActives()) return (ETIQ_POSEES = etiq);
+  for (const { s, sel } of retenus){
+    const reg = placementLibelle(s), ps = place(s);
+    const c = candidatEtiquette({ cle: s.id, stand: s.id, nom: s.nom, xy: decaleLibelle(ancre(s), reg),
+      w: ps[0], h: ps[1], sel, force: libelleForce(reg), k: facteurLibelle(reg) });
+    if (c) etiq.set(c.id, c);
+  }
+  for (const cal of mesCalques()){
+    if (cal.visible === false) continue;
+    for (const f of cal.formes){
+      if (f.t !== "stand") continue;
+      const l = societeDeForme(f);
+      if (!l) continue;
+      const sel = l.o.id === state.sel && l.i === state.selSoc;
+      if (!sel && !visibleSociete(l.o, l.i)) continue;
+      const b = boite(f);
+      const c = candidatEtiquette({ cle: "f:" + f.id, stand: l.o.id, nom: nomSurLePlan(l.soc),
+        xy: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], w: b[2] - b[0], h: b[3] - b[1], sel });
+      if (c) etiq.set(c.id, c);
+    }
+  }
+  const seuils = placeEtiquettes([...etiq.values()]);
+  /* Pendant un glisser, les seuils sont ceux d'avant : ce qui passe devant
+     s'y lit, et ce qui n'y figure pas encore attend le lâcher. */
+  etiq.forEach((c, id) => {
+    c.z = c.devant ? -LOIN_ETIQUETTE : seuils.has(id) ? seuils.get(id) : c.zFin;
+  });
+  return (ETIQ_POSEES = etiq);
+}
+
+/** L'étiquette elle-même, écrite à son corps dans le repère du plan. */
 function etiquetteSvg(c, pxParM){
-  return lignesSvg(c.lignes, PLANCHER_ETIQUETTE / pxParM, c.xy[0], c.xy[1],
+  return lignesSvg(c.lignes, c.corps / pxParM, c.xy[0], c.xy[1],
     "nm etiq" + (c.sel ? " sel" : ""));
 }
 
@@ -18014,6 +18060,8 @@ function libellePointerUp(e){
   glisseLib = null;
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   enregistreConf();
+  // les étiquettes ont gardé leurs seuils le temps du geste : on les replace
+  if (etiquettesActives()) libelles();
   return true;
 }
 
@@ -19423,6 +19471,12 @@ function texteStandDessine(f, pxParM){
   if (!sel && (!visibleSociete(l.o, l.i) ||
                cx < view.x - 25 || cx > view.x + view.w + 25 ||
                cy < view.y - 25 || cy > view.y + view.h + 25)) return "";
+  /* En étiquettes, la place de ce nom s'est décidée avec celle des stands du
+     plan (`etiquettesDuPlan`) : sous le plancher, l'étiquette ou rien. */
+  const c = ETIQ_POSEES.get("f:" + f.id);
+  if (c && Math.log2(pxParM) < c.zFin)
+    // au centre du moment : la forme a pu bouger depuis le dernier placement
+    return Math.log2(pxParM) >= c.z ? etiquetteSvg({ ...c, xy: [cx, cy] }, pxParM) : "";
   return libelleEmplacement({ nom: nom, code: l.o.code }, [cx, cy],
                             b[2] - b[0], b[3] - b[1], sel, pxParM);
 }
@@ -40697,34 +40751,26 @@ function libellesWebgl(){
     if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
     retenus.push({ s, sel, reg: placementLibelle(s) });
   }
-  /* Les étiquettes, placées d'un coup sur tout le pavillon comme en SVG.
-     Leur taille est en pixels : elles vont dans une couche à part, que la
-     bibliothèque n'agrandit pas au zoom. */
-  const etiq = new Map(), etiquettes = [];
-  if (etiquettesActives()){
-    for (const { s, sel, reg } of retenus){
-      if (libelleForce(reg)) continue;
-      const ps = place(s);
-      const c = candidatEtiquette(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel);
-      if (c) etiq.set(s.id, c);
-    }
-    const seuils = placeEtiquettes([...etiq.values()]);
-    etiq.forEach((c, id) => {
-      c.z = seuils.get(id);
-      if (c.z < c.zFin) etiquettes.push({ text: c.lignes.join("\n"), position: c.xy,
-        taille: PLANCHER_ETIQUETTE, cls: "nm etiq" + (c.sel ? " sel" : ""),
-        z0: c.z, z1: c.zFin, pick: false, lbl: id });
-    });
-  }
+  /* Les étiquettes, placées d'un coup sur tout le pavillon comme en SVG, les
+     stands dessinés avec les autres. Leur taille est en pixels : elles vont
+     dans des couches à part, que la bibliothèque n'agrandit pas au zoom. Celle
+     qu'on retouche à la main se désigne et se marque comme un libellé ajusté. */
+  const etiq = etiquettesDuPlan(retenus);
+  const etiquette = (c, lbl) => ({ text: c.lignes.join("\n"), position: c.xy, taille: c.corps,
+    cls: "nm etiq" + (c.sel ? " sel" : ""), z0: c.z, z1: c.zFin,
+    pick: Boolean(PLACE_LIBELLES && lbl && lbl === libSel), lbl });
+  const etiquettes = [];
   for (const { s, sel, reg } of retenus){
     const ps = place(s), c = etiq.get(s.id);
+    if (c && c.z < c.zFin) etiquettes.push(etiquette(c, s.id));
     emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles,
       c ? c.zFin : -LOIN);
   }
   /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
      calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
-     nom qu'il porte. Il se peint donc juste après le calque qui les tient. */
-  const couches = $("couches");
+     nom qu'il porte. Il se peint donc juste après le calque qui les tient —
+     l'étiquette aussi, qui n'a pas de libellé à régler à la main. */
+  const couches = $("couches"), dessinesEtiq = new Map();
   for (const cal of mesCalques()){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
@@ -40735,16 +40781,21 @@ function libellesWebgl(){
       const nom = nomSurLePlan(l.soc);
       const sel = l.o.id === state.sel && l.i === state.selSoc;
       if ((!nom && !l.o.code) || (!sel && !visibleSociete(l.o, l.i))) continue;
-      const b = boite(f);
+      const b = boite(f), c = etiq.get("f:" + f.id);
       if (!dessines.has(dcal)) dessines.set(dcal, []);
+      if (c && c.z < c.zFin){
+        if (!dessinesEtiq.has(dcal)) dessinesEtiq.set(dcal, []);
+        dessinesEtiq.get(dcal).push(etiquette(c, null));
+      }
       emplacementWebgl({ nom, code: l.o.code }, [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2],
-        b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
+        b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null, c ? c.zFin : -LOIN);
     }
   }
   const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
   const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#") +
-    "#" + etiquettes.map(ecrit).join("|");
+    "#" + etiquettes.map(ecrit).join("|") +
+    "#" + [...dessinesEtiq].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
   if (cle === GL.cleLibelles) return;
   GL.cleLibelles = cle;
   GL.libelles = items.filter(d => !d.cls.endsWith(" phare"));
@@ -40752,6 +40803,7 @@ function libellesWebgl(){
   GL.etiquettes = etiquettes;
   GL.pastilles = pastilles;
   GL.dessines = dessines;
+  GL.dessinesEtiq = dessinesEtiq;
   GL.versionLibelles = (GL.versionLibelles || 0) + 1;
   GL.couchesLibelles = null;
   planifieWebgl();
@@ -40823,10 +40875,11 @@ function couchesLibellesWebgl(){
 
 /** Les noms des stands dessinés d'un calque, posés juste au-dessus de lui. */
 function couchesDessineesWebgl(b){
-  const liste = GL.dessines.get(b);
-  if (!liste || !liste.length) return [];
+  const liste = GL.dessines.get(b) || [], etiq = (GL.dessinesEtiq && GL.dessinesEtiq.get(b)) || [];
+  if (!liste.length && !etiq.length) return [];
   const cle = cleBloc(b);
-  return couchesNoms(cle + "-noms-", groupesNoms(cle, liste));
+  return [...couchesNoms(cle + "-noms-", groupesNoms(cle, liste)),
+    ...couchesNoms(cle + "-etiq-", groupesNoms(cle + "-etiq", etiq), "pixels")];
 }
 
 /* ------------------------------------------------------------
