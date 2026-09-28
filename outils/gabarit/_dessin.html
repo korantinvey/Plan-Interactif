@@ -1401,13 +1401,12 @@ function texteStandDessine(f, pxParM){
   const reg = placementLibelle(o);
   /* En étiquettes, la place de ce nom s'est décidée avec celle des stands du
      plan (`etiquettesDuPlan`) : sous le plancher, l'étiquette ou rien. */
-  const c = ETIQ_POSEES.get(o.id);
-  if (c && Math.log2(pxParM) < c.zFin)
-    // au centre du moment : la forme a pu bouger depuis le dernier placement
-    return Math.log2(pxParM) >= c.z || PLACE_LIBELLES
-      ? groupe(etiquetteSvg({ ...c, xy: decaleLibelle(o.c, reg) }, pxParM, Math.log2(pxParM) < c.z)) : "";
+  const c = ETIQ_POSEES.get(o.id), zoom = Math.log2(pxParM);
+  if (c && zoom < c.zFin && zoom >= c.z) return groupe(etiquetteSvg(c, pxParM));
+  // sans place pour l'étiquette, le libellé ajusté ; pâle, elle, en mode placement
+  const pale = c && zoom < c.zFin && PLACE_LIBELLES ? groupe(etiquetteSvg(c, pxParM, true)) : "";
   // le décalage réglé, « libelleEmplacement » l'applique lui-même
-  return groupe(libelleEmplacement({ nom: o.nom, code: o.code }, o.c,
+  return pale + groupe(libelleEmplacement({ nom: o.nom, code: o.code }, o.c,
                                    o.bb[0], o.bb[1], sel, pxParM, reg));
 }
 

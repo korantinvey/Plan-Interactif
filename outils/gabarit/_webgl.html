@@ -688,6 +688,7 @@ function couchesTexte(id, items, famille, graisse, extra){
     data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
     getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: pixels ? "pixels" : "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
+    getPixelOffset: d => d.decalage || [0, 0],
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
     lineHeight: extra.lineHeight || 1, updateTriggers: extra.updateTriggers || K.sansDeclencheur,
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1, seuilAtlas(d)],
@@ -699,7 +700,7 @@ function couchesTexte(id, items, famille, graisse, extra){
      ce qui est à peu près ce qu'un liseré mesure à cette taille. */
   const autour = halo ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([x, y], k) =>
     new deck.TextLayer({ ...commun, id: id + "-petit-halo-" + k, fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode,
-      getColor: halo.couleur, getPixelOffset: [x, y], updateTriggers: { ...commun.updateTriggers, getColor: halo.couleur.join() } })) : [];
+      getColor: halo.couleur, getPixelOffset: d => d.decalage ? [d.decalage[0] + x, d.decalage[1] + y] : [x, y], updateTriggers: { ...commun.updateTriggers, getColor: halo.couleur.join() } })) : [];
   return [
     ...autour,
     ...couchesPetites(id, commun, K, extra.sousPixel),
@@ -1159,7 +1160,7 @@ const LOIN = 99;
  * se lit. Mêmes mesures que « libelleEmplacement » et « ligneCode » : c'est
  * aussi ce qu'écrit un stand dessiné, qui n'a simplement pas de pastille.
  */
-function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles, zDebut = -LOIN){
+function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles, trou = null){
   const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
   const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
   const fn = nom ? nom.f * k : 0;
@@ -1183,13 +1184,14 @@ function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles, zDebut = -LOIN
   const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
   const pose = (lignes, f, x, y, cls, z0, z1) =>
     noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick, lbl: s.id });
-  /* Sous « zDebut », c'est l'étiquette qui parle pour le stand (voir « Les
+  /* Dans « trou », c'est l'étiquette qui parle pour le stand (voir « Les
      étiquettes », dans _js.html) : le libellé ajusté n'y écrit rien, pas même
-     son numéro. */
-  const bornes = [...new Set([-LOIN, zDebut, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
+     son numéro. Hors de lui, il reste — là où l'étiquette n'a pas de place,
+     comme au-delà du zoom où le nom tient dans son stand. */
+  const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN, ...(trou || [])])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
-    if (zm < zDebut) continue;
+    if (trou && zm >= trou[0] && zm < trou[1]) continue;
     const nomLisible = nom && zm >= zN;
     const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
     if (!nomLisible && !codeLisible) continue;
@@ -1240,7 +1242,10 @@ function libellesWebgl(){
      dans des couches à part, que la bibliothèque n'agrandit pas au zoom. Celle
      qu'on retouche à la main se désigne et se marque comme un libellé ajusté. */
   const etiq = etiquettesDuPlan(retenus);
-  const etiquette = (c, lbl, cache) => ({ text: c.lignes.join("\n"), position: c.xy, taille: c.corps,
+  /* Accrochée à un point du plan, décalée en pixels : une étiquette posée
+     dans l'allée garde sa distance au bord de son stand à tous les zooms. */
+  const etiquette = (c, lbl, cache) => ({ text: c.lignes.join("\n"), position: [c.ax, c.ay],
+    decalage: [c.ox, c.oy], taille: c.corps,
     cls: "nm etiq" + (c.sel ? " sel" : "") + (cache ? " cache" : ""),
     z0: cache ? -LOIN : c.z, z1: cache ? c.z : c.zFin,
     pick: Boolean(PLACE_LIBELLES && lbl && lbl === libSel), lbl });
@@ -1254,7 +1259,7 @@ function libellesWebgl(){
     const ps = place(s), c = etiq.get(s.id);
     if (c) etiquettes.push(...etiquettesDe(c, s.id));
     emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles,
-      c ? c.zFin : -LOIN);
+      c && c.z < c.zFin ? [c.z, c.zFin] : null);
   }
   /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
      calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
@@ -1283,10 +1288,10 @@ function libellesWebgl(){
         dessinesEtiq.get(dcal).push(...etiquettesDe(c, o.id));
       }
       emplacementWebgl({ id: o.id, nom, code: l.o.code }, decaleLibelle(o.c, reg),
-        o.bb[0], o.bb[1], sel, reg, dessines.get(dcal), null, c ? c.zFin : -LOIN);
+        o.bb[0], o.bb[1], sel, reg, dessines.get(dcal), null, c && c.z < c.zFin ? [c.z, c.zFin] : null);
     }
   }
-  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
+  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + (d.decalage ? d.decalage.join() : "") + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
   const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#") +
     "#" + etiquettes.map(ecrit).join("|") +
