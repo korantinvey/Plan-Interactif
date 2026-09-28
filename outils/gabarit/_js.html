@@ -347,11 +347,6 @@ function indexe(d){
   /* Et l'écran d'accueil d'iOS, qui ne lit pas le manifeste : le nom et
      l'icône du salon plutôt que ceux du produit. */
   nommeApplication(nom);
-  $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
-  $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
-  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
-    HEBERGES.filter(o => o.nom).length;
-  $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
 }
 
