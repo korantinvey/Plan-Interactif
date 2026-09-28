@@ -751,6 +751,9 @@ html.poi-actif #marques .parc{display:none}
    carte de chaleur. */
 #labels text.etiq,.dcal .lab text.etiq{paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:.22em;
   stroke-linejoin:round;stroke-linecap:round}
+/* En mode placement, l'étiquette qu'un visiteur ne verrait pas — elle cède à
+   une autre — reste montrée, pâle, pour qu'on puisse l'écarter à la main. */
+#labels text.etiq.cache,.dcal .lab text.etiq.cache{opacity:.4}
 /* Sur la carte de chaleur, l'emplacement ne porte plus les couleurs de la page
    mais sa température. Aucune encre unique ne
    tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le
@@ -791,11 +794,11 @@ html.mode-chaleur .dcal .lab text:not(.sel){
    dessous qu'on désigne à travers lui, et c'est sa fiche qu'on veut. Dedans,
    c'est le nom lui-même qu'on attrape — d'où le pointeur, et la teinte
    d'accent qui dit lequel répondra. */
-html.mode-libelles #labels .lbl{cursor:move}
-html.mode-libelles #labels .lbl text,
+html.mode-libelles :is(#labels,.dcal .lab) .lbl{cursor:move}
+html.mode-libelles :is(#labels,.dcal .lab) .lbl text,
 html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
-html.mode-libelles #labels .lbl:hover text,
-html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
+html.mode-libelles :is(#labels,.dcal .lab) .lbl:hover text,
+html.mode-libelles :is(#labels,.dcal .lab) .lbl.pick text{fill:var(--accent)}
 
 /* Reprendre la géométrie d'un emplacement.
    Une seule couche répond à la fois — celle dont on a ouvert le crayon — et

@@ -1106,7 +1106,7 @@ function couchesDeBloc(acc, cle){
    serait illisible, les deux dès qu'il le devient.
    ------------------------------------------------------------ */
 const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel",
-  "coexN", "coexN sel", "coexPast", "coexPast sel", "nm etiq", "nm etiq sel"];
+  "coexN", "coexN sel", "coexPast", "coexPast sel", "nm etiq", "nm etiq sel", "nm etiq cache", "nm etiq sel cache"];
 // le libellé d'une zone mise en avant ; celui qu'on déplace à la main
 const CLASSES_PHARE = ["zn", "zn sel", "zn masquee", "zn sel masquee"];
 
@@ -1240,20 +1240,29 @@ function libellesWebgl(){
      dans des couches à part, que la bibliothèque n'agrandit pas au zoom. Celle
      qu'on retouche à la main se désigne et se marque comme un libellé ajusté. */
   const etiq = etiquettesDuPlan(retenus);
-  const etiquette = (c, lbl) => ({ text: c.lignes.join("\n"), position: c.xy, taille: c.corps,
-    cls: "nm etiq" + (c.sel ? " sel" : ""), z0: c.z, z1: c.zFin,
+  const etiquette = (c, lbl, cache) => ({ text: c.lignes.join("\n"), position: c.xy, taille: c.corps,
+    cls: "nm etiq" + (c.sel ? " sel" : "") + (cache ? " cache" : ""),
+    z0: cache ? -LOIN : c.z, z1: cache ? c.z : c.zFin,
     pick: Boolean(PLACE_LIBELLES && lbl && lbl === libSel), lbl });
+  /* L'étiquette, et en mode placement celle qui cède, montrée pâle en deçà
+     de son seuil (voir « etiquetteSvg »). */
+  const etiquettesDe = (c, lbl) => [
+    ...(c.z < c.zFin ? [etiquette(c, lbl)] : []),
+    ...(PLACE_LIBELLES && c.z > -LOIN ? [etiquette(c, lbl, true)] : [])];
   const etiquettes = [];
   for (const { s, sel, reg } of retenus){
     const ps = place(s), c = etiq.get(s.id);
-    if (c && c.z < c.zFin) etiquettes.push(etiquette(c, s.id));
+    if (c) etiquettes.push(...etiquettesDe(c, s.id));
     emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles,
       c ? c.zFin : -LOIN);
   }
   /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
      calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
      nom qu'il porte. Il se peint donc juste après le calque qui les tient —
-     l'étiquette aussi, qui n'a pas de libellé à régler à la main. */
+     l'étiquette aussi. */
+  // les pâles d'abord, sous les autres (voir « libelles »)
+  const pale = d => / cache$/.test(d.cls) ? 0 : 1;
+  etiquettes.sort((a, b) => pale(a) - pale(b));
   const couches = $("couches"), dessinesEtiq = new Map();
   for (const cal of mesCalques()){
     if (cal.visible === false) continue;
@@ -1265,14 +1274,16 @@ function libellesWebgl(){
       const nom = nomSurLePlan(l.soc);
       const sel = l.o.id === state.sel && l.i === state.selSoc;
       if ((!nom && !l.o.code) || (!sel && !visibleSociete(l.o, l.i))) continue;
-      const b = boite(f), c = etiq.get("f:" + f.id);
+      /* Réglable à la main sous la clé de sa forme, comme en SVG : le libellé
+         porte cette clé, que la désignation rend au geste. */
+      const o = objetDessine(f), reg = placementLibelle(o), c = etiq.get(o.id);
       if (!dessines.has(dcal)) dessines.set(dcal, []);
-      if (c && c.z < c.zFin){
+      if (c){
         if (!dessinesEtiq.has(dcal)) dessinesEtiq.set(dcal, []);
-        dessinesEtiq.get(dcal).push(etiquette(c, null));
+        dessinesEtiq.get(dcal).push(...etiquettesDe(c, o.id));
       }
-      emplacementWebgl({ nom, code: l.o.code }, [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2],
-        b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null, c ? c.zFin : -LOIN);
+      emplacementWebgl({ id: o.id, nom, code: l.o.code }, decaleLibelle(o.c, reg),
+        o.bb[0], o.bb[1], sel, reg, dessines.get(dcal), null, c ? c.zFin : -LOIN);
     }
   }
   const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");

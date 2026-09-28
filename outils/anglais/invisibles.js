@@ -39,7 +39,7 @@ module.exports = [
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-textes-", "-image-",
-  "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-", "nm etiq", "nm etiq sel", "-etiq-", "-etiq",
+  "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-", "nm etiq", "nm etiq sel", "-etiq-", "-etiq", "nm etiq cache", "nm etiq sel cache",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
   "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
   "LissageSdf",

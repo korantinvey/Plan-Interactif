@@ -1385,24 +1385,45 @@ function traceStandDessine(f){
  * du texte à l'écran qui décide s'il est lisible ou s'il vaut mieux se taire.
  */
 function texteStandDessine(f, pxParM){
-  const l = societeDeForme(f);
-  if (!l) return "";
-  const nom = nomSurLePlan(l.soc);
-  if (!nom && !l.o.code) return "";
-  const b = boite(f);
-  const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  const o = objetDessine(f);
+  if (!o) return "";
+  const l = o.lien;
+  if (!o.nom && !o.code) return "";
+  const cx = o.c[0], cy = o.c[1];
   const sel = l.o.id === state.sel && l.i === state.selSoc;
   if (!sel && (!visibleSociete(l.o, l.i) ||
                cx < view.x - 25 || cx > view.x + view.w + 25 ||
                cy < view.y - 25 || cy > view.y + view.h + 25)) return "";
+  /* Le libellé se règle à la main comme celui d'un stand du plan : il porte
+     donc le même groupe, sous la clé de sa forme, pour que le geste le trouve. */
+  const groupe = (x) => x ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+    '" data-lbl="' + esc(o.id) + '">' + x + '</g>' : "";
+  const reg = placementLibelle(o);
   /* En étiquettes, la place de ce nom s'est décidée avec celle des stands du
      plan (`etiquettesDuPlan`) : sous le plancher, l'étiquette ou rien. */
-  const c = ETIQ_POSEES.get("f:" + f.id);
+  const c = ETIQ_POSEES.get(o.id);
   if (c && Math.log2(pxParM) < c.zFin)
     // au centre du moment : la forme a pu bouger depuis le dernier placement
-    return Math.log2(pxParM) >= c.z ? etiquetteSvg({ ...c, xy: [cx, cy] }, pxParM) : "";
-  return libelleEmplacement({ nom: nom, code: l.o.code }, [cx, cy],
-                            b[2] - b[0], b[3] - b[1], sel, pxParM);
+    return Math.log2(pxParM) >= c.z || PLACE_LIBELLES
+      ? groupe(etiquetteSvg({ ...c, xy: decaleLibelle(o.c, reg) }, pxParM, Math.log2(pxParM) < c.z)) : "";
+  // le décalage réglé, « libelleEmplacement » l'applique lui-même
+  return groupe(libelleEmplacement({ nom: o.nom, code: o.code }, o.c,
+                                   o.bb[0], o.bb[1], sel, pxParM, reg));
+}
+
+/**
+ * Un stand dessiné, vu comme ce que nomme son libellé : la clé « f: » de sa
+ * forme, le nom de sa société et le numéro de l'emplacement, son centre et sa
+ * taille — de quoi le placer à la main (`placementLibelle`, dont l'empreinte
+ * lit `c` et `bb`) comme on place celui d'un stand du plan. Rien, si la forme
+ * n'est rattachée à aucune société.
+ */
+function objetDessine(f){
+  const l = societeDeForme(f);
+  if (!l) return null;
+  const b = boite(f);
+  return { id: "f:" + f.id, kind: "dessine", lien: l, nom: nomSurLePlan(l.soc), code: l.o.code,
+           c: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], bb: [b[2] - b[0], b[3] - b[1]] };
 }
 
 /** Les libellés de tous les stands dessinés du pavillon, posés dans leurs
