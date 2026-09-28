@@ -13917,8 +13917,16 @@ function voletCoexposants(hote){
     s.coex.map(x => String(x.nom || x.id || ""))));
   const compte = document.createElement("p");
   compte.className = "aideR";
-  compte.textContent = societes.size + " co-exposants sur " +
-    partages.length + " stands partagés.";
+  /* Quatre phrases entières plutôt qu'un « s » accolé : le dictionnaire
+     anglais traduit une phrase par modèle, et un mot recollé n'y répondrait
+     pas. Une société seule peut couvrir deux stands — deux emplacements
+     réunis —, d'où le singulier devant un pluriel. */
+  const n = societes.size, m = partages.length;
+  compte.textContent = n > 1
+    ? (m > 1 ? n + " co-exposants sur " + m + " stands partagés."
+      : n + " co-exposants sur un stand partagé.")
+    : (m > 1 ? "Un co-exposant sur " + m + " stands partagés."
+      : "Un co-exposant sur un stand partagé.");
   bloc.appendChild(compte);
 
   [{ cle: "_coexNombre",
