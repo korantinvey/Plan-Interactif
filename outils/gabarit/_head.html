@@ -745,6 +745,12 @@ html.poi-actif #marques .parc{display:none}
    à chaque ouverture de fiche, et deux atlas de police à fabriquer. Cent
    trente millisecondes pour une nuance que l'accent disait déjà. */
 #labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent))}
+/* L'étiquette : un nom à taille fixe à l'écran, qui peut déborder de son
+   stand sur l'allée ou sur le voisin. Le liseré clair la détache de ce
+   qu'elle recouvre ; mesuré en « em », il suit le corps comme celui de la
+   carte de chaleur. */
+#labels text.etiq{paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:.22em;
+  stroke-linejoin:round;stroke-linecap:round}
 /* Sur la carte de chaleur, l'emplacement ne porte plus les couleurs de la page
    mais sa température. Aucune encre unique ne
    tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le

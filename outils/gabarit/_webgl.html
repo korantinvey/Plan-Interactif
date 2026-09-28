@@ -678,14 +678,19 @@ function couchesPetites(id, commun, K, sousPixel){
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
+  /* Un texte en pixels garde sa taille à tous les zooms : il est petit ou
+     grand une fois pour toutes, et le seuil qui choisit l'atlas se pose aux
+     bornes — toujours lu dans l'un, jamais dans l'autre. */
+  const pixels = extra.unites === "pixels";
+  const seuilAtlas = pixels ? (d => d.taille < SEUIL_PETIT_TEXTE ? 100 : -100)
+                            : (d => Math.log2(SEUIL_PETIT_TEXTE / d.taille));
   const commun = {
     data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
-    getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
+    getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: pixels ? "pixels" : "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
     lineHeight: extra.lineHeight || 1, updateTriggers: extra.updateTriggers || K.sansDeclencheur,
-    getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
-                         Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
+    getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1, seuilAtlas(d)],
   };
   /* Le liseré clair qui détache un nom de ce qu'il recouvre — carte de
      chaleur, zone mise en avant. Les grands textes le tirent de leur champ de
@@ -1101,7 +1106,7 @@ function couchesDeBloc(acc, cle){
    serait illisible, les deux dès qu'il le devient.
    ------------------------------------------------------------ */
 const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel",
-  "coexN", "coexN sel", "coexPast", "coexPast sel"];
+  "coexN", "coexN sel", "coexPast", "coexPast sel", "nm etiq", "nm etiq sel"];
 // le libellé d'une zone mise en avant ; celui qu'on déplace à la main
 const CLASSES_PHARE = ["zn", "zn sel", "zn masquee", "zn sel masquee"];
 
@@ -1154,7 +1159,7 @@ const LOIN = 99;
  * se lit. Mêmes mesures que « libelleEmplacement » et « ligneCode » : c'est
  * aussi ce qu'écrit un stand dessiné, qui n'a simplement pas de pastille.
  */
-function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
+function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles, zDebut = -LOIN){
   const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
   const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
   const fn = nom ? nom.f * k : 0;
@@ -1178,9 +1183,13 @@ function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
   const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
   const pose = (lignes, f, x, y, cls, z0, z1) =>
     noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick, lbl: s.id });
-  const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
+  /* Sous « zDebut », c'est l'étiquette qui parle pour le stand (voir « Les
+     étiquettes », dans _js.html) : le libellé ajusté n'y écrit rien, pas même
+     son numéro. */
+  const bornes = [...new Set([-LOIN, zDebut, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
+    if (zm < zDebut) continue;
     const nomLisible = nom && zm >= zN;
     const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
     if (!nomLisible && !codeLisible) continue;
@@ -1220,11 +1229,35 @@ function libellesWebgl(){
       pick: Boolean(PLACE_LIBELLES && z.id === libSel), lbl: z.id });
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
+  const retenus = [];
   for (const s of p.stands){
     const sel = s.id === state.sel && !decoupe;
     if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
-    const ps = place(s), reg = placementLibelle(s);
-    emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
+    retenus.push({ s, sel, reg: placementLibelle(s) });
+  }
+  /* Les étiquettes, placées d'un coup sur tout le pavillon comme en SVG.
+     Leur taille est en pixels : elles vont dans une couche à part, que la
+     bibliothèque n'agrandit pas au zoom. */
+  const etiq = new Map(), etiquettes = [];
+  if (etiquettesActives()){
+    for (const { s, sel, reg } of retenus){
+      if (libelleForce(reg)) continue;
+      const ps = place(s);
+      const c = candidatEtiquette(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel);
+      if (c) etiq.set(s.id, c);
+    }
+    const seuils = placeEtiquettes([...etiq.values()]);
+    etiq.forEach((c, id) => {
+      c.z = seuils.get(id);
+      if (c.z < c.zFin) etiquettes.push({ text: c.lignes.join("\n"), position: c.xy,
+        taille: PLANCHER_ETIQUETTE, cls: "nm etiq" + (c.sel ? " sel" : ""),
+        z0: c.z, z1: c.zFin, pick: false, lbl: id });
+    });
+  }
+  for (const { s, sel, reg } of retenus){
+    const ps = place(s), c = etiq.get(s.id);
+    emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles,
+      c ? c.zFin : -LOIN);
   }
   /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
      calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
@@ -1248,11 +1281,13 @@ function libellesWebgl(){
   }
   const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
   const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
-    "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
+    "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#") +
+    "#" + etiquettes.map(ecrit).join("|");
   if (cle === GL.cleLibelles) return;
   GL.cleLibelles = cle;
   GL.libelles = items.filter(d => !d.cls.endsWith(" phare"));
   GL.libellesPhare = items.filter(d => d.cls.endsWith(" phare"));
+  GL.etiquettes = etiquettes;
   GL.pastilles = pastilles;
   GL.dessines = dessines;
   GL.versionLibelles = (GL.versionLibelles || 0) + 1;
@@ -1279,8 +1314,10 @@ function groupesNoms(cle, liste){
   for (const d of liste){
     const mo = GL.modeles.get(d.cls) || GL.modeles.get("nm");
     if (!mo || !mo.visible) continue;
-    // un liseré se règle pour toute une couche : les noms qui en portent un vont ensemble
-    const sp = SUR_UN_STAND.test(d.cls);
+    /* Un liseré se règle pour toute une couche : les noms qui en portent un
+       vont ensemble. Une étiquette déborde du stand sur le sol transparent,
+       où le lissage sous-pixel frangerait ses lettres. */
+    const sp = SUR_UN_STAND.test(d.cls) && !/\betiq\b/.test(d.cls);
     const k = mo.famille + "|" + mo.graisse + "|" + (mo.halo ? mo.halo.couleur.join() + "/" + mo.halo.largeur.toFixed(3) : "") + (sp ? "|sp" : "");
     if (!groupes.has(k)) groupes.set(k, { mo, sp, items: [] });
     groupes.get(k).items.push(d);
@@ -1288,10 +1325,10 @@ function groupesNoms(cle, liste){
   GL.groupes.set(cle, { version, groupes: [...groupes.values()] });
   return GL.groupes.get(cle).groupes;
 }
-function couchesNoms(prefixe, groupes){
+function couchesNoms(prefixe, groupes, unites){
   let i = 0;
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp, unites,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }
@@ -1316,7 +1353,9 @@ function couchesPastilles(){
 
 function couchesLibellesWebgl(){
   if (!GL.couchesLibelles)
-    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles))];
+    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles)),
+      // les étiquettes débordent sur l'allée et les stands voisins : par-dessus
+      ...couchesNoms("etiquettes-", groupesNoms("etiquettes", GL.etiquettes || []), "pixels")];
   return GL.couchesLibelles;
 }
 

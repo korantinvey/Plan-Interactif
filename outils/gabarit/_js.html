@@ -1128,6 +1128,10 @@ function libelles(){
      ordinaire, et c'est le découpage qui écrit le sien en évidence. */
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
 
+  /* Les étiquettes se placent sur tout le pavillon, et non sur la seule vue :
+     leur rang ne doit pas changer selon ce qu'on regarde. D'où une première
+     passe, qui ne fait que relever ce qui a un nom. */
+  const retenus = [];
   for (const s of p.stands){
     /* Un stand ajouté et lié se conduit comme un découpage : il est choisi
        quand sa société l'est, et suit le filtre de celle-ci. */
@@ -1136,15 +1140,41 @@ function libelles(){
       ? s.lien.stand === state.sel && s.lien.soc === state.selSoc
       : s.id === state.sel && !decoupe;
     const vu = hote ? visibleSociete(hote, s.lien.soc) : visibleSurPlan(s);
-    if (!sel && (!vu || !dansVue(s))) continue;
     /* Le stand garde le nom de son titulaire, quelle que soit la fiche
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
-    if (!s.code && !s.nom) continue;
+    if ((!sel && !vu) || (!s.code && !s.nom)) continue;
+    retenus.push({ s, sel });
+  }
+  const etiq = new Map();
+  if (etiquettesActives()){
+    for (const { s, sel } of retenus){
+      const reg = placementLibelle(s);
+      if (libelleForce(reg)) continue;
+      const ps = place(s);
+      const c = candidatEtiquette(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel);
+      if (c) etiq.set(s.id, c);
+    }
+    const seuils = placeEtiquettes([...etiq.values()]);
+    etiq.forEach((c, id) => { c.z = seuils.get(id); });
+  }
+  const zoom = Math.log2(pxParM);
+  // les étiquettes débordent : écrites après les autres, elles passent dessus
+  let dessus = "";
+
+  for (const { s, sel } of retenus){
+    if (!sel && !dansVue(s)) continue;
+    const c = etiq.get(s.id);
+    // sous le plancher, l'étiquette ; au-dessus, le libellé ajusté, comme avant
+    if (c && zoom < c.zFin){
+      if (zoom >= c.z) dessus += groupe(s, etiquetteSvg(c, pxParM));
+      continue;
+    }
     const ps = place(s);
     out += groupe(s, libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM,
                                         placementLibelle(s)));
   }
+  out += dessus;
 
   /* Retriés en plein geste — la main a marqué une pause —, les libellés sont
      encore sur le calque du zoom. On le repeint à la vue du moment : les noms
@@ -1212,6 +1242,145 @@ function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
   if (nomLisible){ out += lignesSvg(nom.lignes, fn, xy[0], y + hNom / 2, "nm" + c); y += hNom; }
   if (codeLisible) out += ligneCode(s, xy[0], y + fc * .92, fc, w * .9 * k, c);
   return out;
+}
+
+/* ------------------------------------------------------------
+ * Les étiquettes : un nom qui ne dépend plus de la place qu'on a louée.
+ *
+ * Ajusté à son stand, un nom grandit avec la surface et rapetisse avec sa
+ * longueur : au recul, seuls restent lisibles les grands stands aux noms
+ * courts, et c'est justement la vue qu'on a en ouvrant le plan. Le mode
+ * « étiquettes » donne à chaque nom un plancher en pixels : tant que le stand
+ * le porte au-dessus de ce plancher, rien ne change ; en dessous, le nom
+ * garde cette taille à l'écran, sur un liseré clair, quitte à déborder sur
+ * l'allée.
+ *
+ * Tous ne tiennent pas : au recul, les étiquettes se recouvrent. Ce qui
+ * décide alors n'est plus la surface mais un rang — le stand choisi, puis
+ * ceux du parcours, puis un tirage propre à chaque visiteur. Deux étiquettes
+ * à taille fixe autour de points fixes s'écartent l'une de l'autre à mesure
+ * qu'on zoome : leur recouvrement ne dépend que du zoom, et cesse passé un
+ * seuil qui se calcule d'un coup. Chaque étiquette reçoit donc, une fois par
+ * pavillon et par filtre, le zoom à partir duquel elle ne gêne plus aucune de
+ * celles qui la précèdent — ce que le rendu WebGL sait déjà filtrer à chaque
+ * image, sans rien recalculer pendant le geste.
+ * ------------------------------------------------------------ */
+const PLANCHER_ETIQUETTE = 11;   // corps du nom à l'écran, en pixels CSS
+const MARGE_ETIQUETTE = 2;       // l'air laissé entre deux étiquettes, en pixels
+
+/* Le réglage de l'exploitant, que l'adresse peut contredire (`?libelles=
+   etiquettes` ou `ajustes`) : de quoi comparer les deux rendus sur un même
+   plan sans rien enregistrer. Le placement à la main reste sur les libellés
+   ajustés — c'est eux qu'il règle. */
+const LIBELLES_ADRESSE = new URLSearchParams(location.search).get("libelles");
+function modeLibelles(){
+  if (LIBELLES_ADRESSE === "etiquettes" || LIBELLES_ADRESSE === "ajustes") return LIBELLES_ADRESSE;
+  return conf("_libelles").mode === "etiquettes" ? "etiquettes" : "ajustes";
+}
+const etiquettesActives = () => modeLibelles() === "etiquettes" && !PLACE_LIBELLES;
+
+/* Le tirage : stable pour un visiteur, différent d'un visiteur à l'autre. Au
+   recul, chacun voit donc une part des noms, et c'est l'ensemble du public qui
+   les voit tous — plutôt que tout le monde les mêmes. */
+const GRAINE_ETIQUETTES = (() => {
+  const cle = "plan-tirage";
+  try {
+    let g = localStorage.getItem(cle);
+    if (!g){ g = String(Math.random()).slice(2, 10); localStorage.setItem(cle, g); }
+    return g;
+  } catch (e){ return String(Math.random()).slice(2, 10); }
+})();
+function tirage(id){
+  let h = 2166136261;
+  const t = GRAINE_ETIQUETTES + "|" + id;
+  for (let i = 0; i < t.length; i++){ h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+/**
+ * Ce qu'une étiquette doit savoir d'un stand : son nom tel que le stand le
+ * découpe, et les deux boîtes qu'elle occupe — en pixels sous le plancher, en
+ * mètres au-dessus. Les lignes sont celles du libellé ajusté : au zoom où
+ * l'un prend le relais de l'autre, les deux sont alors le même texte, à la
+ * même taille, et rien ne saute.
+ */
+function candidatEtiquette(s, xy, w, h, sel){
+  if (!s.nom) return null;
+  const nom = habille(s.nom, w * .9, h * .62, 2.4, P_NOM);
+  if (!nom || !(nom.f > 0)) return null;
+  const em = Math.max(...nom.lignes.map(l => largeur(l, P_NOM)));
+  const hauteur = nom.lignes.length * 1.18;
+  const rang = sel ? 0 : PARCOURS.stands.some(id => String(id) === String(s.id)) ? 1 : 2;
+  return { id: s.id, xy, lignes: nom.lignes, sel, rang, tirage: tirage(s.id),
+    // le zoom où le nom ajusté atteint le plancher : au-delà, il tient dans son stand
+    zFin: Math.log2(PLANCHER_ETIQUETTE / nom.f),
+    pw: PLANCHER_ETIQUETTE * em / 2 + MARGE_ETIQUETTE,
+    ph: PLANCHER_ETIQUETTE * hauteur / 2 + MARGE_ETIQUETTE,
+    mw: nom.f * em / 2, mh: nom.f * hauteur / 2 };
+}
+
+/* Le zoom à partir duquel deux boîtes cessent de se toucher sur un axe.
+   Chacune y mesure, de demi-largeur, le plus grand de sa part en pixels —
+   ramenée en mètres par s = 2^-zoom — et de sa part en mètres : l'étiquette
+   sous le plancher, le libellé ajusté au-dessus. La somme croît avec s, par
+   morceaux droits ; on cherche le plus grand s qui la garde sous l'écart. */
+function separationAxe(d, pa, ma, pb, mb){
+  if (ma + mb >= d) return Infinity;
+  const ba = ma / pa, bb = mb / pb;
+  const bornes = [0, Math.min(ba, bb), Math.max(ba, bb), Infinity];
+  for (let i = 0; i + 1 < bornes.length; i++){
+    const lo = bornes[i], hi = bornes[i + 1];
+    if (hi <= lo) continue;
+    const a = (lo >= ba ? pa : 0) + (lo >= bb ? pb : 0);
+    const c = (lo >= ba ? 0 : ma) + (lo >= bb ? 0 : mb);
+    if (hi === Infinity || a * hi + c > d) return a > 0 ? -Math.log2((d - c) / a) : -Infinity;
+  }
+  return -Infinity;
+}
+const separation = (a, b) => Math.min(
+  separationAxe(Math.abs(a.xy[0] - b.xy[0]), a.pw, a.mw, b.pw, b.mw),
+  separationAxe(Math.abs(a.xy[1] - b.xy[1]), a.ph, a.mh, b.ph, b.mh));
+
+/**
+ * Le zoom d'apparition de chaque étiquette, par rang.
+ *
+ * Une étiquette cède à celles qui la précèdent, et à elles seules : si l'une
+ * d'elles est encore cachée au zoom où les deux se touchent, il n'y a pas de
+ * conflit. Sinon elle attend de ne plus la toucher — et ne réapparaît jamais
+ * pour disparaître ensuite : un nom qui clignote au fil du zoom se lit plus
+ * mal qu'un nom qui attend. Elle n'attend jamais au-delà du zoom où elle tient
+ * dans son stand : là, c'est le libellé ajusté, et il paraît comme avant.
+ *
+ * Le calcul se garde tant que rien ne change — mêmes stands retenus, même
+ * rang, même police. C'est l'ouverture d'un pavillon ou un filtre qui le
+ * relance, jamais le geste.
+ */
+let ETIQUETTES = { cle: "", seuils: new Map() };
+function placeEtiquettes(cands){
+  const cle = PLANCHER_ETIQUETTE + "|" + P_NOM.join() + "|" + cands.map(c =>
+    c.id + ":" + c.rang + ":" + c.xy[0].toFixed(1) + "," + c.xy[1].toFixed(1) + ":" + c.mw.toFixed(3)).join("|");
+  if (cle === ETIQUETTES.cle) return ETIQUETTES.seuils;
+  const ordre = cands.slice().sort((a, b) => a.rang - b.rang || a.tirage - b.tirage);
+  const poses = [], seuils = new Map();
+  for (const c of ordre){
+    let z = -LOIN_ETIQUETTE;
+    if (!c.sel) for (const j of poses){
+      const s = separation(c, j);
+      if (s > j.z && s > z) z = s;
+    }
+    z = Math.min(z, c.zFin);
+    poses.push({ ...c, z });
+    seuils.set(c.id, z);
+  }
+  ETIQUETTES = { cle, seuils };
+  return seuils;
+}
+const LOIN_ETIQUETTE = 99;
+
+/** L'étiquette elle-même, écrite au plancher dans le repère du plan. */
+function etiquetteSvg(c, pxParM){
+  return lignesSvg(c.lignes, PLANCHER_ETIQUETTE / pxParM, c.xy[0], c.xy[1],
+    "nm etiq" + (c.sel ? " sel" : ""));
 }
 
 /* ============================================================

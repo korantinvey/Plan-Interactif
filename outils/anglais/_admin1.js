@@ -447,6 +447,17 @@ module.exports = {
   "Une bande aussi basse que possible : le nom du salon, les pavillons, les commandes.":
     "A band as short as it can be: the show name, the halls, the controls.",
 
+  // les noms des stands, ajustés ou en étiquettes — onglet « Apparence »
+  "Les noms des stands": "Stand names",
+  "Ajusté à son stand, un nom grandit avec la surface et rapetisse avec sa longueur : au recul, seuls les grands stands aux noms courts restent lisibles. En étiquettes, chaque nom garde une taille lisible ; quand ils se chevauchent, le stand choisi et le parcours du visiteur passent d'abord, puis un tirage propre à chacun.":
+    "Fitted to its stand, a name grows with the floor area and shrinks with its length: zoomed out, only large stands with short names stay readable. As labels, every name keeps a readable size; where they overlap, the selected stand and the visitor's plan come first, then a draw of their own for each visitor.",
+  "Ajustés au stand": "Fitted to the stand",
+  "Chaque nom remplit son stand : un grand stand se lit de loin, un petit en zoomant.":
+    "Each name fills its stand: a large stand reads from afar, a small one as you zoom in.",
+  "Étiquettes": "Labels",
+  "Tous les noms à la même taille à l'écran ; au recul, ceux qui se chevauchent cèdent à tour de rôle.":
+    "Every name the same size on screen; zoomed out, those that overlap take turns giving way.",
+
   // les onglets « Nouveaux » et « Adhérents » — ce que le plan montre des
   // distinctions d'un exposant. Le paragraphe d'accueil et la note du champ
   // décoché nomment la distinction : deux versions, une par onglet.

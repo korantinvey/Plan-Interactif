@@ -2650,6 +2650,80 @@ function blocLangues(hote){
   hote.appendChild(bloc);
 }
 
+/* Les deux façons d'écrire les noms des stands, dans l'onglet « Apparence ».
+   Le moteur est dans _js.html, « Les étiquettes ». */
+const CHOIX_LIBELLES = [
+  { mode: "ajustes",
+    titre: "Ajustés au stand",
+    resume: "Chaque nom remplit son stand : un grand stand se lit de loin, un petit en zoomant.",
+    vue: '<svg class="vueBarre" viewBox="0 0 34 34" fill="none" aria-hidden="true">' +
+      '<rect class="cadre" x="3.5" y="7.5" width="16" height="19" rx="1.5"/>' +
+      '<rect class="cadre" x="22.5" y="7.5" width="8" height="8" rx="1.5"/>' +
+      '<path class="part" d="M7 17h9" stroke-width="3.4"/>' +
+      '<path class="part" d="M25 11.5h3" stroke-width="1.2"/>' +
+      '</svg>' },
+  { mode: "etiquettes",
+    titre: "Étiquettes",
+    resume: "Tous les noms à la même taille à l'écran ; au recul, ceux qui se chevauchent cèdent à tour de rôle.",
+    vue: '<svg class="vueBarre" viewBox="0 0 34 34" fill="none" aria-hidden="true">' +
+      '<rect class="cadre" x="3.5" y="7.5" width="16" height="19" rx="1.5"/>' +
+      '<rect class="cadre" x="22.5" y="7.5" width="8" height="8" rx="1.5"/>' +
+      '<path class="part" d="M8 17h7M22 11.5h9" stroke-width="2.4"/>' +
+      '</svg>' },
+];
+
+/**
+ * Où l'on choisit la façon d'écrire les noms des stands.
+ *
+ * L'ajusté reste le rendu d'origine : un plan déjà réglé ne doit pas changer
+ * d'allure sans qu'on l'ait voulu. Le choix se voit sur-le-champ, en reculant
+ * sur le plan — c'est là que les deux diffèrent.
+ */
+function blocLibelles(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "Les noms des stands";
+  tete.querySelector(".d").textContent = "Ajusté à son stand, un nom grandit " +
+    "avec la surface et rapetisse avec sa longueur : au recul, seuls les grands " +
+    "stands aux noms courts restent lisibles. En étiquettes, chaque nom garde " +
+    "une taille lisible ; quand ils se chevauchent, le stand choisi et le " +
+    "parcours du visiteur passent d'abord, puis un tirage propre à chacun.";
+  hote.appendChild(tete);
+
+  const choix = document.createElement("div");
+  choix.className = "choixDem";
+  hote.appendChild(choix);
+
+  const boutons = CHOIX_LIBELLES.map(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dem";
+    b.innerHTML = '<span class="v"></span><span class="x">' +
+      '<span class="t"></span><span class="d"></span></span>' +
+      '<span class="coche">✓</span>';
+    b.querySelector(".v").innerHTML = c.vue;
+    b.querySelector(".t").textContent = c.titre;
+    b.querySelector(".d").textContent = c.resume;
+    b.onclick = () => pose(c.mode);
+    choix.appendChild(b);
+    return { b: b, c: c };
+  });
+
+  const suit = () => {
+    const mode = modeLibelles();
+    boutons.forEach(({ b, c }) => b.setAttribute("aria-pressed", String(c.mode === mode)));
+  };
+  const pose = (mode) => {
+    if (conf("_libelles").mode === mode) return;
+    conf("_libelles").mode = mode;
+    enregistreConf();
+    libelles();
+    suit();
+  };
+  suit();
+}
+
 /* Les deux barres qu'un téléphone peut porter, dans l'onglet « Admin ». Une
    vignette chacune : un choix de mise en page se juge d'un coup d'œil, et deux
    lignes de texte n'auraient pas dit où vont les commandes. */
@@ -3518,6 +3592,7 @@ function voletApparence(hote){
   blocPolice.querySelector(".raz").onclick = () => posePolice(null);
   hote.appendChild(blocPolice);
   majPolices();
+  blocLibelles(hote);
 
   const titre = document.createElement("span");
   titre.className = "eyebrow";
