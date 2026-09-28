@@ -198,13 +198,6 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
    montre est plus bas, sous « max-width:900px ». */
 .logoSalon{display:none}
 .brand h1.attente{color:var(--ink-3)}
-.brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
-.stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
-/* Les compteurs partis, c'est aux outils de tenir le bout de la barre :
-   sans quoi ils se rangeaient contre le titre, au milieu du vide. */
-@media (max-width:1150px){.stats{display:none}.tools{margin-left:auto}}
-.stats b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--ink);
-  font-variant-numeric:tabular-nums;line-height:1.2}
 /* Le cadre des onglets ne sert qu'à porter les flèches et le fondu : il passe
    donc au travers, et c'est la barre des pavillons qui reste la pièce que les
    modèles habillent et que la barre du haut aligne. Le fondu, lui, garde les
@@ -217,7 +210,9 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .halls button .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);margin-left:6px}
 .row .hall{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
   padding:1px 5px;border-radius:3px;background:var(--surface-2);color:var(--ink-3);margin-left:6px;vertical-align:1px}
-.tools{display:flex;gap:6px}
+/* Plus de compteurs au bout de la barre — ils ne servaient à personne : aux
+   outils de la tenir, sans quoi ils se rangeaient contre le titre. */
+.tools{display:flex;gap:6px;margin-left:auto}
 /* Le `padding:0` n'est pas une coquetterie : le navigateur pose de lui-même
    six points de part et d'autre d'un `button`, et le bouton fait trente-deux
    points de large, bordure comprise. Il ne restait donc que dix-huit points à
@@ -2547,7 +2542,7 @@ button.expo:hover{background:var(--line)}
   border-bottom-style:dashed;
   background-image:repeating-linear-gradient(180deg,
     color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
-.bandeau-console :is(.brand h1,.brand .sub,.halls button){font-family:"IBM Plex Mono",monospace}
+.bandeau-console :is(.brand h1,.halls button){font-family:"IBM Plex Mono",monospace}
 .bandeau-console .brand h1{font-weight:500;letter-spacing:-.01em}
 .bandeau-console .brand h1::before{content:"› ";color:var(--accent)}
 .bandeau-console .halls button[aria-pressed="true"]{background:var(--surface-2);color:var(--accent);
@@ -2593,7 +2588,6 @@ button.expo:hover{background:var(--line)}
   font-size:14px}
 .bandeau-magazine .halls button[aria-pressed="true"]{background:none;color:var(--ink);
   box-shadow:inset 0 -2px 0 var(--accent)}
-.bandeau-magazine .stats b{font-family:"Fraunces",Georgia,serif;font-size:17px}
 .bandeau-magazine :is(.iconbtn,.compte > summary){border-radius:0}
 
 /* Brut — le même papier, le même noir et la même ombre dure que la liste : la
@@ -2658,7 +2652,7 @@ button.expo:hover{background:var(--line)}
   --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
   border-bottom:1px dashed var(--line-strong);
   background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
-.bandeau-kraft :is(.brand h1,.brand .sub,.halls button,.stats,.stats b){
+.bandeau-kraft :is(.brand h1,.halls button){
   font-family:"Courier Prime",monospace}
 .bandeau-kraft .brand h1{font-weight:700;text-transform:uppercase;letter-spacing:.01em}
 .bandeau-kraft .halls button{font-weight:700}
@@ -4517,7 +4511,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .halls-bande{flex:1 1 0}
   .halls{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
-  .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
      « Administration » cède la place — la nuit et la marque le disent déjà. */
   .bandeAdmin{padding:calc(4px + var(--sys-haut)) 12px 4px;
@@ -5194,7 +5187,6 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
            chargement d'un autre. Un intitulé neutre, grisé tant qu'il n'est
            pas le vrai, réserve la place sans rien affirmer. -->
       <h1 id="titre" class="attente">Plan du salon</h1>
-      <span class="sub" id="sub"></span>
     </div>
     <!-- Les pavillons ne tiennent pas toujours sur la largeur : trois halls
          nommés « Galerie Diaghilev » en débordent sur un téléphone. Ils
@@ -5210,11 +5202,6 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         aria-label="Voir la suite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-    </div>
-    <div class="stats">
-      <div><b id="nStands">—</b>emplacements</div>
-      <div><b id="nExpo">—</b>exposants</div>
-      <div><b id="nZones">—</b>zones</div>
     </div>
     <div class="tools">
       <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte

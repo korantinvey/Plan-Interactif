@@ -11,9 +11,6 @@ module.exports = {
   // la bande de l'outil, au-dessus du bandeau du salon — même mot que le lien
   // de la console vers cette page, et donc même traduction
   "Administration": "Admin",
-  "emplacements": "stands",
-  "exposants": "exhibitors",
-  "zones": "areas",
 
   "Calculer un itinéraire": "Get directions",
   "Mon parcours de visite": "My visit plan",
