@@ -104,6 +104,7 @@ module.exports = {
   "Apparence": "Appearance",
   "Zones": "Areas",
   "PMR": "Accessibility",
+  "Co-Exposants": "Co-exhibitors",
 
   // l'onglet « Zones »
   "Ce que le visiteur lit sur une zone organisateur. La source n'en donne que le contour et parfois un nom : le reste s'écrit ici, et paraît sans attendre la prochaine synchronisation.":
@@ -136,8 +137,19 @@ module.exports = {
   "Montrer les secteurs — couleurs et filtre": "Show sectors — colours and filter",
   "Suivre les allées une à une — pour un hall arrondi ou aux rangées désaccordées":
     "Follow the aisles one by one — for a rounded hall or one with uneven rows",
+
+  // l'onglet « Co-Exposants »
+  "Les sociétés hébergées sur le stand d'un autre exposant. Publiez la configuration pour que le changement parvienne aux visiteurs.":
+    "Companies hosted on another exhibitor's stand. Publish the configuration for the change to reach visitors.",
+  "Aucun stand partagé sur ce salon pour l'instant. Les co-exposants se rattachent à leur hôte par la synchronisation : dans la console, désignez le champ « Rattachement des co-exposants » — celui où une fiche porte le numéro du stand qui l'accueille —, puis synchronisez.":
+    "No shared stand at this show yet. Co-exhibitors are linked to their host by the synchronisation: in the console, choose the “Co-exhibitor link” field — the one where a record holds the number of the stand hosting it —, then synchronise.",
+  "{n} co-exposants sur {m} stands partagés.": "{n} co-exhibitors on {m} shared stands.",
   "Compter les co-exposants sur le plan": "Count co-exhibitors on the map",
+  "Une pastille à côté du numéro du stand dit combien de sociétés il héberge, en plus de son titulaire.":
+    "A badge next to the stand number shows how many companies it hosts, besides its holder.",
   "Afficher la liste des co-exposants au clic sur le stand": "Show the list of co-exhibitors when the stand is clicked",
+  "Toucher un stand partagé propose d'abord de choisir la société. Décochée, le stand mène droit à son titulaire ; les sociétés hébergées restent dans la liste des exposants.":
+    "Tapping a shared stand first asks which company to open. Unticked, the stand leads straight to its holder; hosted companies stay in the exhibitor list.",
   "min": "min",
   "Temps de visite par stand": "Visiting time per stand",
   "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce qui décide combien de stands tiennent entre deux conférences.":
