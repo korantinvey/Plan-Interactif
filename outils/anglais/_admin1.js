@@ -144,6 +144,9 @@ module.exports = {
   "Aucun stand partagé sur ce salon pour l'instant. Les co-exposants se rattachent à leur hôte par la synchronisation : dans la console, désignez le champ « Rattachement des co-exposants » — celui où une fiche porte le numéro du stand qui l'accueille —, puis synchronisez.":
     "No shared stand at this show yet. Co-exhibitors are linked to their host by the synchronisation: in the console, choose the “Co-exhibitor link” field — the one where a record holds the number of the stand hosting it —, then synchronise.",
   "{n} co-exposants sur {m} stands partagés.": "{n} co-exhibitors on {m} shared stands.",
+  "{n} co-exposants sur un stand partagé.": "{n} co-exhibitors on one shared stand.",
+  "Un co-exposant sur {m} stands partagés.": "One co-exhibitor on {m} shared stands.",
+  "Un co-exposant sur un stand partagé.": "One co-exhibitor on one shared stand.",
   "Compter les co-exposants sur le plan": "Count co-exhibitors on the map",
   "Une pastille à côté du numéro du stand dit combien de sociétés il héberge, en plus de son titulaire.":
     "A badge next to the stand number shows how many companies it hosts, besides its holder.",
