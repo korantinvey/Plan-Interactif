@@ -12404,11 +12404,6 @@ function horairesSalon(jour){
   return { ouverture: ouverture, fermeture: fermeture };
 }
 
-/** Ce salon héberge-t-il des sociétés sur le stand d'une autre ? La question
- *  se pose sur les trois pavillons : un seul stand partagé suffit. */
-const salonPartage = () => (DATA?.plans || [])
-  .some(p => (p.stands || []).some(s => (s.coex || []).length));
-
 /* ------------------------------------------------------------
    La rafale du sélecteur de couleur
 
@@ -13483,6 +13478,9 @@ function ouvreReglages(ouvrir){
     /* « Admin » après tout le reste : l'organisateur ne le voit pas, et les
        onglets qu'il partage avec l'administrateur gardent ainsi la même place
        sous les yeux de l'un et de l'autre. */
+    /* « Co-Exposants » juste avant « Admin », et pour le même seul profil : ses
+       cases en venaient, et l'organisateur ne les réglait pas. */
+    if (PROFIL_ADMIN) voletCoexposants(volet("Co-Exposants"));
     if (PROFIL_ADMIN) voletAdmin(volet("Admin"));
     /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
        sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
@@ -13879,6 +13877,77 @@ function ditEssaiRappel(etat, issue){
  * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
  * que de quoi retirer une commande qu'on lui a vendue.
  */
+/**
+ * Les stands partagés, dans leur onglet à eux.
+ *
+ * Leurs deux cases vivaient au milieu de « Admin », sous condition : sur un
+ * salon dont la synchronisation n'avait rattaché personne, elles n'y étaient
+ * pas, et rien ne disait pourquoi — on les cherchait parmi dix autres. L'onglet
+ * reste donc là même sans stand partagé, et dit alors où le rattachement se
+ * règle : c'est une affaire de source, que la console tient, et non de page.
+ */
+function voletCoexposants(hote){
+  const p = document.createElement("p");
+  p.textContent = "Les sociétés hébergées sur le stand d'un autre exposant. " +
+    "Publiez la configuration pour que le changement parvienne aux visiteurs.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  hote.appendChild(bloc);
+
+  /* Deux emplacements réunis font deux stands qui listent les mêmes sociétés :
+     on compte les sociétés par leur nom, pas les listes. */
+  const partages = (DATA?.plans || []).flatMap(pl => pl.stands || [])
+    .filter(s => (s.coex || []).length);
+  if (!partages.length){
+    const n = document.createElement("p");
+    n.className = "aideR";
+    n.textContent = "Aucun stand partagé sur ce salon pour l'instant. Les " +
+      "co-exposants se rattachent à leur hôte par la synchronisation : dans la " +
+      "console, désignez le champ « Rattachement des co-exposants » — celui où " +
+      "une fiche porte le numéro du stand qui l'accueille —, puis synchronisez.";
+    bloc.appendChild(n);
+    return;
+  }
+  const societes = new Set(partages.flatMap(s =>
+    s.coex.map(x => String(x.nom || x.id || ""))));
+  const compte = document.createElement("p");
+  compte.className = "aideR";
+  compte.textContent = societes.size + " co-exposants sur " +
+    partages.length + " stands partagés.";
+  bloc.appendChild(compte);
+
+  [{ cle: "_coexNombre",
+     libelle: "Compter les co-exposants sur le plan",
+     aide: "Une pastille à côté du numéro du stand dit combien de sociétés il " +
+       "héberge, en plus de son titulaire.",
+     // le compte fait partie du libellé du stand : il se redessine avec lui
+     apres: () => libelles() },
+   { cle: "_coexChoix",
+     libelle: "Afficher la liste des co-exposants au clic sur le stand",
+     aide: "Toucher un stand partagé propose d'abord de choisir la société. " +
+       "Décochée, le stand mène droit à son titulaire ; les sociétés hébergées " +
+       "restent dans la liste des exposants." }
+  ].forEach(r => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = r.libelle;
+    const c = l.querySelector("input");
+    c.checked = conf(r.cle).visible !== false;
+    c.onchange = e => {
+      conf(r.cle).visible = e.target.checked;
+      enregistreConf();
+      if (r.apres) r.apres();
+    };
+    bloc.appendChild(l);
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = r.aide;
+    bloc.appendChild(aide);
+  });
+}
+
 function voletAdmin(hote){
   const p = document.createElement("p");
   p.textContent = "Ce que les visiteurs voient sur le plan. " +
@@ -13943,31 +14012,6 @@ function voletAdmin(hote){
       if (typeof relance === "function") relance();
     };
     bloc.appendChild(l);
-  }
-
-  /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
-     a : sur un salon d'un exposant par emplacement, ces deux cases ne
-     promettraient qu'un plan déjà tel quel. */
-  if (salonPartage()){
-    [{ cle: "_coexNombre",
-       libelle: "Compter les co-exposants sur le plan",
-       // le compte fait partie du libellé du stand : il se redessine avec lui
-       apres: () => libelles() },
-     { cle: "_coexChoix",
-       libelle: "Afficher la liste des co-exposants au clic sur le stand" }
-    ].forEach(r => {
-      const l = document.createElement("label");
-      l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = r.libelle;
-      const c = l.querySelector("input");
-      c.checked = conf(r.cle).visible !== false;
-      c.onchange = e => {
-        conf(r.cle).visible = e.target.checked;
-        enregistreConf();
-        if (r.apres) r.apres();
-      };
-      bloc.appendChild(l);
-    });
   }
 
   /* L'invitation à installer le plan est une fenêtre de plus sous les yeux du
