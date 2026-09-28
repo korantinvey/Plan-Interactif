@@ -4410,15 +4410,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    l'air, ses zones, sa mesure. Séparés par des onglets plutôt qu'empilés —
    l'apparence est une planche d'aperçus, et poussait tout le reste hors de
    l'écran. */
-/* Les onglets passent à la ligne plutôt que de sortir par la droite. Élargir
-   la fenêtre n'achète qu'un onglet ou deux, et il s'en ajoute à chaque
-   fonction vendue : sans le retour à la ligne, le dernier finit toujours
-   par se couper, et on ne défile pas dans une barre qu'on n'a pas vue
-   déborder. Le « gap » vaut déjà pour les deux axes. */
-.ongReg{display:flex;flex-wrap:wrap;gap:3px;margin:0 0 14px;padding:3px;
+/* Les onglets tiennent sur une seule rangée : un retour à la ligne laissait
+   le dernier seul au second rang, étiré sur toute la largeur, et la pilule
+   de la barre n'y ressemblait plus à rien. Ce qui cède, c'est l'intitulé —
+   « Fiche Stand », « Parcours intelligent » passent sur deux lignes,
+   équilibrées par « balance » — et l'espace autour, resserré. Il s'ajoute un
+   onglet à chaque fonction vendue : quand même les mots ne tiendront plus,
+   la barre défile plutôt que de couper le dernier. */
+.ongReg{display:flex;flex-wrap:nowrap;gap:3px;margin:0 0 14px;padding:3px;
+  overflow-x:auto;scrollbar-width:none;
   background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
-.ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
+.ongReg::-webkit-scrollbar{display:none}
+.ongReg button{flex:1 1 auto;padding:6px 8px;border-radius:999px;font-size:13px;font-weight:600;
+  line-height:1.25;text-wrap:balance;
   color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
 .ongReg button:hover{color:var(--ink)}
 /* L'onglet d'une option non prise : là, gris, et sans prise. Le réglage qu'il
@@ -4446,9 +4451,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    leur « flex:1 » : à largeur égale, le plus long serait coupé quand les
    autres gardent du vide. */
 @media (max-width:640px){
-  .ongReg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
-    scroll-snap-type:x proximity}
-  .ongReg::-webkit-scrollbar{display:none}
+  .ongReg{scroll-snap-type:x proximity}
   .ongReg button{flex:none;padding:8px 10px;font-size:12.5px;scroll-snap-align:center}
 }
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
