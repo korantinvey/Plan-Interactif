@@ -811,13 +811,18 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
      confondus. Rend le nombre de stands posés : une reprise qui raccourcit un
      créneau borné peut y libérer la place d'un stand refusé au premier
      passage. */
+  /* Le jour qu'un départ a déjà choisi pour un stand, le temps d'une pose —
+     voir le troisième départ, plus bas. Ailleurs il reste nul, et la pose
+     regarde tous les jours. */
+  let jourVise = null;
   const insere = (candidats) => {
     let poses = 0;
     while (candidats.length){
       let choix = null;
       for (const s of candidats){
         const impose = imposeDe ? imposeDe(s) : null;
-        for (const c of (impose ? impose.creneaux : creneaux)){
+        const vise = !impose && jourVise ? jourVise.get(s) : null;
+        for (const c of (impose ? impose.creneaux : vise ? vise.creneaux : creneaux)){
           const j = c.jour;
           for (let k = 0; k <= c.stands.length; k++){
             const d = ecartInsertion(c, s, k);
@@ -1057,12 +1062,105 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
     creneaux.forEach(remet);
   };
 
-  const essai = (ecartALaPose) => {
+  /**
+   * Un troisième départ : la tournée entière d'abord, les jours ensuite.
+   *
+   * Chaque jour part de l'entrée et y revient. Ce qu'il coûte tient donc
+   * d'abord à son stand le plus lointain — l'aller et le retour —, et les
+   * stands proches se prennent en passant. Le bon partage n'est pas « les
+   * proches, puis les lointains », qui envoie le second jour aux quatre coins
+   * du hall, mais une boucle par côté : le nord un jour, le sud l'autre.
+   *
+   * Les deux premiers départs n'y arrivent pas, et les reprises non plus :
+   * elles déplacent ou échangent un stand à la fois, et retirer d'un jour un
+   * seul stand du nord ne le raccourcit en rien tant qu'un autre l'y envoie
+   * encore. Il faudrait déplacer le groupe entier d'un coup. Sur un séjour de
+   * vingt-sept stands relevé au SMCL, les deux jours montaient au nord et
+   * redescendaient au sud, et le partage par côté marchait un sixième de
+   * moins.
+   *
+   * On fait donc ce que ferait le visiteur s'il n'avait qu'un jour : la plus
+   * courte boucle qui passe par tous ses stands. Elle fait le tour du salon,
+   * côté après côté ; la couper en morceaux consécutifs donne un côté par
+   * jour. Les coupes se placent là où la somme des journées — retours à
+   * l'entrée compris, c'est ce qu'on marche — est la plus faible, chaque jour
+   * gardant à peu près la part que le curseur lui donne. Les reprises
+   * affinent comme pour les autres départs, et le résultat n'est retenu que
+   * s'il fait mieux : il ne peut rien dégrader.
+   */
+  const groupesParTournee = () => {
+    const k = jours.length, n = libres.length;
+    const entree = jours[0].creneaux.length ? jours[0].creneaux[0].de : -1;
+
+    /* La boucle : au plus proche depuis l'entrée, puis des retournements tant
+       qu'ils raccourcissent. Le nombre de passes est borné, comme les
+       reprises, pour qu'une liste démesurée ne fige pas un téléphone. */
+    const t = [], pris = new Set();
+    let prec = entree;
+    while (t.length < n){
+      let s = null, d = Infinity;
+      for (const x of libres) if (!pris.has(x) && dist(prec, x) < d){ d = dist(prec, x); s = x; }
+      t.push(s); pris.add(s); prec = s;
+    }
+    const pt = (i) => i < 0 || i >= n ? entree : t[i];
+    for (let passe = 0, gagne = true; gagne && passe < tours; passe++){
+      gagne = false;
+      for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++){
+        const g = dist(pt(i - 1), t[i]) + dist(t[j], pt(j + 1)) -
+                  dist(pt(i - 1), t[j]) - dist(t[i], pt(j + 1));
+        if (g > 1e-9){
+          for (let a = i, b = j; a < b; a++, b--){ const x = t[a]; t[a] = t[b]; t[b] = x; }
+          gagne = true;
+        }
+      }
+    }
+
+    /* Ce que coûte un jour fait des stands t[a] à t[b - 1] : l'aller depuis
+       l'entrée, le morceau de boucle, le retour. */
+    const pas = [0];
+    for (let i = 1; i < n; i++) pas.push(pas[i - 1] + dist(t[i - 1], t[i]));
+    const jour = (a, b) => dist(entree, t[a]) + pas[b - 1] - pas[a] + dist(t[b - 1], entree);
+
+    /* Les coupes, par programmation dynamique : chaque jour garde entre les
+       trois quarts et les cinq quarts de sa part — de quoi suivre la forme du
+       salon sans laisser un jour presque vide, que l'écart rattraperait mal. */
+    const somme = poids.reduce((x, y) => x + y, 0);
+    const borne = poids.map(w => {
+      const c = n * w / somme;
+      return [Math.max(1, Math.floor(c * 0.75)), Math.ceil(c * 1.25)];
+    });
+    const C = [new Float64Array(n + 1).fill(Infinity)], R = [];
+    C[0][0] = 0;
+    for (let d = 0; d < k; d++){
+      C.push(new Float64Array(n + 1).fill(Infinity));
+      R.push(new Int32Array(n + 1).fill(-1));
+      for (let a = 0; a < n; a++){
+        if (C[d][a] === Infinity) continue;
+        for (let b = a + borne[d][0]; b <= Math.min(n, a + borne[d][1]); b++){
+          const v = C[d][a] + jour(a, b);
+          if (v < C[d + 1][b]){ C[d + 1][b] = v; R[d][b] = a; }
+        }
+      }
+    }
+    if (C[k][n] === Infinity) return null;
+    const groupes = new Map();
+    for (let d = k - 1, b = n; d >= 0; d--){
+      const a = R[d][b];
+      for (let i = a; i < b; i++) groupes.set(t[i], jours[d]);
+      b = a;
+    }
+    return groupes;
+  };
+
+  const essai = (ecartALaPose, groupes) => {
     creneaux.forEach(c => { c.stands = []; });
     creneaux.forEach(remet);
     const dehorsImposes = imposes.slice(), dehorsLibres = libres.slice();
     peseEcart = ecartALaPose;
     if (dehorsImposes.length) insere(dehorsImposes);
+    /* Des groupes déjà formés : chacun se pose d'abord dans son jour, et ce
+       qu'une conférence y empêche se cherche ensuite une place partout. */
+    if (groupes){ jourVise = groupes; insere(dehorsLibres); jourVise = null; }
     insere(dehorsLibres);
     peseEcart = true;
     reprend(tours);
@@ -1084,13 +1182,18 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
   /* Un seul jour n'a pas d'écart à compter : le second départ rendrait le
      premier, au mot près, et coûterait le double pour rien. */
   const sans = jours.length > 1 ? essai(false) : avec;
+  const groupes = jours.length > 1 && libres.length > jours.length
+    ? groupesParTournee() : null;
+  const vois = groupes ? essai(true, groupes) : avec;
   /* À égalité, celui qui comptait l'écart dès la pose : c'est le calcul
-     qu'on décrit partout ailleurs, et le second n'est là que s'il fait mieux.
-     Un stand de moins laissé dehors l'emporte sur des mètres, toujours : une
-     visite plus courte parce qu'on y voit moins n'est pas plus courte. */
-  const mieux = sans.dehors.length < avec.dehors.length ||
-                (sans.dehors.length === avec.dehors.length && sans.note < avec.note - 1e-9);
-  const gagnant = mieux ? sans : avec;
+     qu'on décrit partout ailleurs, et les autres ne sont là que s'ils font
+     mieux. Un stand de moins laissé dehors l'emporte sur des mètres,
+     toujours : une visite plus courte parce qu'on y voit moins n'est pas plus
+     courte. */
+  const meilleur = (a, b) =>
+    b.dehors.length < a.dehors.length ||
+    (b.dehors.length === a.dehors.length && b.note < a.note - 1e-9) ? b : a;
+  const gagnant = meilleur(meilleur(avec, sans), vois);
   remonte(gagnant.etat);
 
   /* Ce qui n'a trouvé sa place nulle part. Les imposés en tête : ils n'ont pas
