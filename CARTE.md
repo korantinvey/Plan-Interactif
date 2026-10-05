@@ -459,7 +459,7 @@ Fonctions :
 `viseItineraire` 3200 · `visePoi` 3206 · `visePoint` 3212 · `ouvreItineraire` 3244
 `fermeItineraire` 3272 · `versItineraire` 3282 · `versItineraireDe` 3285
 
-### `_journee.html` — 2900 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2972 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -469,16 +469,16 @@ Fonctions :
 `ecritMinutes` 209 · `dateDeCle` 222 · `jourBref` 228 · `joursSalon` 238 · `joursAVenir` 267
 `joursDefaut` 285 · `confsParJour` 295 · `pointConf` 312 · `departsProposes` 331
 `matriceJournee` 364 · `ecartDesJours` 497 · `poidsDesJours` 527 · `chargeDuJour` 550
-`rangeSejour` 559 · `derouleJournee` 1216 · `prepareSejour` 1358 · `calculeSejour` 1560
-`apercuRepartition` 1594 · `rangJournee` 1608 · `lienJournee` 1620 · `boutonJour` 1643
-`arretJournee` 1656 · `remplitOnglets` 1703 · `jourDuStand` 1732 · `ouvreChoixJour` 1744
-`figeLaVisite` 1801 · `placeSurJour` 1810 · `rendAuPlan` 1818 · `retireDuSejour` 1824
-`remplitJournee` 1834 · `ecritApercu` 2047 · `appliqueVueParcours` 2077
-`traceJournee` 2119 · `montreLeJour` 2128 · `perimeJournee` 2143 · `oublieSejour` 2158
-`ouvreOrganisation` 2173 · `essaieSejour` 2553 · `lanceSejour` 2583 · `refaitSejour` 2622
-`trancheDe` 2655 · `chargeSuivie` 2675 · `jourISO` 2681 · `etapesDuSejour` 2689
-`annoncePlan` 2716 · `celluleUtile` 2752 · `dilatationPour` 2815 · `dilatationDuJour` 2831
-`litLaCharge` 2868 · `chargeCellule` 2888
+`rangeSejour` 559 · `derouleJournee` 1288 · `prepareSejour` 1430 · `calculeSejour` 1632
+`apercuRepartition` 1666 · `rangJournee` 1680 · `lienJournee` 1692 · `boutonJour` 1715
+`arretJournee` 1728 · `remplitOnglets` 1775 · `jourDuStand` 1804 · `ouvreChoixJour` 1816
+`figeLaVisite` 1873 · `placeSurJour` 1882 · `rendAuPlan` 1890 · `retireDuSejour` 1896
+`remplitJournee` 1906 · `ecritApercu` 2119 · `appliqueVueParcours` 2149
+`traceJournee` 2191 · `montreLeJour` 2200 · `perimeJournee` 2215 · `oublieSejour` 2230
+`ouvreOrganisation` 2245 · `essaieSejour` 2625 · `lanceSejour` 2655 · `refaitSejour` 2694
+`trancheDe` 2727 · `chargeSuivie` 2747 · `jourISO` 2753 · `etapesDuSejour` 2761
+`annoncePlan` 2788 · `celluleUtile` 2824 · `dilatationPour` 2887 · `dilatationDuJour` 2903
+`litLaCharge` 2940 · `chargeCellule` 2960
 
 ### `_js.html` — 5450 l. → plan-admin.html, plan-smcl.html, plan.html
 

@@ -32081,38 +32081,110 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
       }
     }
 
-    /* Ce que coûte un jour fait des stands t[a] à t[b - 1] : l'aller depuis
-       l'entrée, le morceau de boucle, le retour. */
+    /* Ce que coûte un morceau t[a] à t[b - 1] : l'aller depuis l'entrée, le
+       morceau de boucle, le retour. */
     const pas = [0];
     for (let i = 1; i < n; i++) pas.push(pas[i - 1] + dist(t[i - 1], t[i]));
-    const jour = (a, b) => dist(entree, t[a]) + pas[b - 1] - pas[a] + dist(t[b - 1], entree);
+    const boucle = (a, b) => dist(entree, t[a]) + pas[b - 1] - pas[a] + dist(t[b - 1], entree);
 
-    /* Les coupes, par programmation dynamique : chaque jour garde entre les
-       trois quarts et les cinq quarts de sa part — de quoi suivre la forme du
-       salon sans laisser un jour presque vide, que l'écart rattraperait mal. */
-    const somme = poids.reduce((x, y) => x + y, 0);
-    const borne = poids.map(w => {
+    /* Les salles où chaque jour a rendez-vous. L'heure, elle, n'est pas
+       l'affaire de ce départ : un créneau qui déborderait sur une conférence
+       est refusé à la pose comme aux reprises, quel que soit le départ. Ce
+       qui compte ici est le lieu — un jour qui doit passer par la salle du
+       nord a tout intérêt à prendre les stands du nord, puisqu'il y va de
+       toute façon. */
+    const salles = jours.map(j => j.creneaux
+      .filter(c => !c.dernier && c.vers !== null && c.vers >= 0).map(c => c.vers));
+
+    /* Le détour par une salle, pour chaque morceau : la meilleure arête où
+       la glisser, l'aller et le retour compris. Il se tient de proche en
+       proche quand le morceau s'allonge, d'où un tableau par début de
+       morceau plutôt qu'un calcul par paire. */
+    const detours = new Map();
+    const detour = (x) => {
+      if (detours.has(x)) return detours.get(x);
+      const D = [];
+      for (let a = 0; a < n; a++){
+        const ligne = new Float64Array(n + 1);
+        let interieur = Infinity;
+        for (let b = a + 1; b <= n; b++){
+          if (b - 1 > a) interieur = Math.min(interieur,
+            dist(t[b - 2], x) + dist(x, t[b - 1]) - dist(t[b - 2], t[b - 1]));
+          ligne[b] = Math.min(interieur,
+            dist(entree, x) + dist(x, t[a]) - dist(entree, t[a]),
+            dist(t[b - 1], x) + dist(x, entree) - dist(t[b - 1], entree));
+        }
+        D.push(ligne);
+      }
+      detours.set(x, D);
+      return D;
+    };
+    const jour = (d, a, b) => {
+      let v = boucle(a, b);
+      for (const x of salles[d]) v += detour(x)[a][b];
+      return v;
+    };
+
+    /* La part de chaque jour : ce que le curseur lui donne, et, quand toutes
+       les journées ont une heure de fin, le temps qui lui reste hors de ses
+       conférences — un jour pris par deux heures de table ronde ne porte pas
+       autant de stands que celui qu'on a tout entier. */
+    const libre = jours.map(j => j.creneaux.reduce((m, c) =>
+      c.tMax === null ? NaN : m + Math.max(0, c.tMax - c.t0), 0));
+    const parTemps = libre.every(m => m > 0);
+    const part = poids.map((w, d) => w * (parTemps ? libre[d] : 1));
+    const somme = part.reduce((x, y) => x + y, 0);
+    const borne = part.map(w => {
       const c = n * w / somme;
       return [Math.max(1, Math.floor(c * 0.75)), Math.ceil(c * 1.25)];
     });
-    const C = [new Float64Array(n + 1).fill(Infinity)], R = [];
-    C[0][0] = 0;
-    for (let d = 0; d < k; d++){
-      C.push(new Float64Array(n + 1).fill(Infinity));
-      R.push(new Int32Array(n + 1).fill(-1));
-      for (let a = 0; a < n; a++){
-        if (C[d][a] === Infinity) continue;
-        for (let b = a + borne[d][0]; b <= Math.min(n, a + borne[d][1]); b++){
-          const v = C[d][a] + jour(a, b);
-          if (v < C[d + 1][b]){ C[d + 1][b] = v; R[d][b] = a; }
+
+    /* Les coupes, par programmation dynamique, les jours pris dans un ordre
+       donné : le premier morceau au premier, et ainsi de suite. Chaque jour
+       garde entre les trois quarts et les cinq quarts de sa part — de quoi
+       suivre la forme du salon sans laisser un jour presque vide, que
+       l'écart rattraperait mal. */
+    const coupe = (ordre) => {
+      const C = [new Float64Array(n + 1).fill(Infinity)], R = [];
+      C[0][0] = 0;
+      ordre.forEach((d, r) => {
+        C.push(new Float64Array(n + 1).fill(Infinity));
+        R.push(new Int32Array(n + 1).fill(-1));
+        for (let a = 0; a < n; a++){
+          if (C[r][a] === Infinity) continue;
+          for (let b = a + borne[d][0]; b <= Math.min(n, a + borne[d][1]); b++){
+            const v = C[r][a] + jour(d, a, b);
+            if (v < C[r + 1][b]){ C[r + 1][b] = v; R[r][b] = a; }
+          }
         }
-      }
+      });
+      return { v: C[k][n], R: R, ordre: ordre };
+    };
+
+    /* Sans conférence, les jours sont interchangeables et l'ordre du
+       calendrier suffit. Avec, le morceau du nord doit aller au jour qui a sa
+       salle au nord : on essaie qui prend quel morceau. Un salon dure
+       rarement plus de quatre jours ; au-delà, les ordres se comptent par
+       centaines et l'on s'en tient au calendrier. */
+    const ordres = [];
+    const permute = (fait, reste) => {
+      if (!reste.length){ ordres.push(fait); return; }
+      reste.forEach((d, i) => permute(fait.concat([d]), reste.slice(0, i).concat(reste.slice(i + 1))));
+    };
+    const calendrier = jours.map((j, d) => d);
+    if (salles.some(l => l.length) && k <= 4) permute([], calendrier);
+    else ordres.push(calendrier);
+    let mieux = null;
+    for (const o of ordres){
+      const r = coupe(o);
+      if (!mieux || r.v < mieux.v) mieux = r;
     }
-    if (C[k][n] === Infinity) return null;
+    if (mieux.v === Infinity) return null;
+
     const groupes = new Map();
-    for (let d = k - 1, b = n; d >= 0; d--){
-      const a = R[d][b];
-      for (let i = a; i < b; i++) groupes.set(t[i], jours[d]);
+    for (let r = k - 1, b = n; r >= 0; r--){
+      const a = mieux.R[r][b];
+      for (let i = a; i < b; i++) groupes.set(t[i], jours[mieux.ordre[r]]);
       b = a;
     }
     return groupes;
