@@ -581,18 +581,16 @@ Fonctions :
 `groupeParcours` 604 · `remplitParcours` 613 · `ouvreParcours` 702 · `fermeParcours` 714
 `videLeParcours` 730
 
-### `_partage.html` — 761 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 453 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
 Fonctions :
 
 `codeIdParcours` 54 · `codeParcours` 72 · `champParcours` 84 · `litCodeParcours` 91
-`lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
-`qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrChemin` 407
-`qrSvg` 429 · `ouvrePartageParcours` 441 · `boutonsPartage` 497
-`accueilleParcoursPartage` 575 · `adoptePartage` 653 · `parcoursACopier` 688
-`ouvreGardeParcours` 703 · `demandeGardeParcours` 733 · `poseGardeParcours` 746
+`lienParcours` 117 · `ouvrePartageParcours` 133 · `boutonsPartage` 189
+`accueilleParcoursPartage` 267 · `adoptePartage` 345 · `parcoursACopier` 380
+`ouvreGardeParcours` 395 · `demandeGardeParcours` 425 · `poseGardeParcours` 438
 
 ### `_pile.html` — 533 l. → plan-admin.html
 
@@ -870,9 +868,18 @@ Fonctions :
 `refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
 `brancheMesure` 656
 
-### `modules/plan.mjs` — 31 l. → plan
+### `modules/plan.mjs` — 33 l. → plan
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
+
+### `modules/qr.mjs` — 315 l. → plan
+
+- l.1 · Le code QR, sans bibliothèque
+
+Fonctions :
+
+`qrMotsBruts` 36 · `qrMotsUtiles` 45 · `qrMul` 56 · `qrGenerateur` 59 · `qrReste` 70
+`qrAlignements` 81 · `qrTrame` 97 · `qrChemin` 286 · `qrSvg` 308
 
 ### `modules/rapport.mjs` — 11 l. → rapport
 
