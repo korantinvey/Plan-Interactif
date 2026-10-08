@@ -1491,8 +1491,10 @@ function construitCalage(){
 function ouvreCalage(){
   if (!ENV_CAL) return;
   if (typeof fermeModale === "function") fermeModale();
+  /* @admin — la boîte à outils n'existe qu'en administration */
   const o = $("outils");
   if (o) o.classList.remove("open");
+  /* @fin-admin */
   construitCalage();
   $("calage").hidden = false;
 }

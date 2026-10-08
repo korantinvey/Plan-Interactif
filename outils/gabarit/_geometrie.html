@@ -266,6 +266,7 @@ function appliqueGeometries(){
   });
 }
 
+/* @admin — la reprise à la main d'un emplacement */
 /* ------------------------------------------------------------
    Le verrou des deux couches de données
 
@@ -571,6 +572,7 @@ function appliqueDimensionGeo(){
   dessinePoigneesGeo();
   enregistreGeo(o);
 }
+/* @fin-admin */
 
 /* ------------------------------------------------------------
    Ajouter à une couche ce que la source n'a pas
@@ -705,6 +707,7 @@ function appliqueAjouts(){
 }
 
 /** Retenir la forme d'un emplacement ajouté, là où il vit. */
+/* @admin — l'ajout d'un emplacement à une couche */
 function enregistreAjout(o){
   const r = CONF[cleAjout(o.id)];
   if (r) r.p = anneauxGeo(o.d);
@@ -1058,6 +1061,7 @@ if ($("geoSoc")) $("geoSoc").onchange = () => lieAjout($("geoSoc").value);
 // la liste se range par nom : on la refait une fois le mot écrit, pas à chaque lettre
 ["geoCode", "geoTitre"].forEach(id => { if ($(id)) $(id).onchange = () => liste(); });
 if ($("geoSupprime")) $("geoSupprime").onclick = supprimeAjout;
+/* @fin-admin */
 /* @admin — la palette des emplacements n'existe qu'en administration */
 if ($("geoFiche")) $("geoFiche").onclick = () => {
   const o = geoSel && parId.get(geoSel);

@@ -12609,7 +12609,8 @@ const OPTIONS = [
       "héberge, sur sa part d'un emplacement. Fermée, l'outil reste dans la boîte " +
       "à outils, grisé ; les découpages déjà tracés restent sur le plan.",
     // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
-    apres: () => { if (outil === "stand") choisitOutil("main"); } },
+    apres: () => { if (outil === "stand") choisitOutil("main"); },
+  },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
     aide: "Le rattachement d'une image du dessin à un exposant : le logo posé " +
@@ -12621,7 +12622,8 @@ const OPTIONS = [
     /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
        et sa liste de choix se posent en JS, et seulement l'outil en main : on
        repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
-    apres: () => { if (outil === "image") poseChampImage(); } },
+    apres: () => { if (outil === "image") poseChampImage(); },
+  },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +

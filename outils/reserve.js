@@ -26,24 +26,47 @@
  * contrôle qui suit le refuse à la construction, comme un élément retiré du
  * balisage que le script public irait encore chercher.
  */
-const { sansTexte } = require("./appels.js");
+const { sansTexte, declares } = require("./appels.js");
 
 const DEBUT = /^\s*(?:\/\*|<!--)\s*@admin\b.*?(?:\*\/|-->)\s*$/;
 const FIN = /^\s*(?:\/\*|<!--)\s*@fin-admin\s*(?:\*\/|-->)\s*$/;
+
+/* Une tranche de script doit se suffire : autant d'accolades, de parenthèses
+   et de crochets ouverts que fermés. Une borne posée une ligne trop bas
+   emporte l'accolade qui ferme la fonction d'à côté, et la page publique ne
+   s'analyse plus — l'analyseur le dit alors à la ligne 26 994 d'un fichier
+   temporaire ; ici, on nomme la tranche. Le balisage n'est pas compté : sa
+   prose a des parenthèses qui ne s'apparient pas. */
+function equilibre(lignes, debut) {
+  if (/^\s*<!--/.test(lignes[0] || "")) return;
+  const t = sansTexte(lignes.slice(1).join("\n"));
+  const n = (re) => (t.match(re) || []).length;
+  const ecarts = [["{", "}"], ["(", ")"], ["[", "]"]]
+    .map(([o, f]) => [o + f, n(new RegExp("\\" + o, "g")) - n(new RegExp("\\" + f, "g"))])
+    .filter(([, d]) => d);
+  if (ecarts.length)
+    throw new Error("tranche @admin de la l." + debut + " déséquilibrée (" +
+      ecarts.map(([p, d]) => p + " " + (d > 0 ? "+" : "") + d).join(", ") +
+      ") : une borne coupe un bloc en deux");
+}
 
 /** Découpe le texte : `garde` dit si l'intérieur des tranches reste. */
 function decoupe(texte, garde) {
   const sortie = [];
   let ouverte = 0;
+  let tranche = [];
   texte.split("\n").forEach((l, i) => {
+    if (ouverte && !FIN.test(l)) tranche.push(l);
     if (DEBUT.test(l)) {
       if (ouverte) throw new Error("tranche @admin ouverte l." + (i + 1) +
         " dans celle de la l." + ouverte + " : elles ne s'emboîtent pas");
       ouverte = i + 1;
+      tranche = [l];
       return;
     }
     if (FIN.test(l)) {
       if (!ouverte) throw new Error("@fin-admin l." + (i + 1) + " sans @admin");
+      equilibre(tranche, ouverte);
       ouverte = 0;
       return;
     }
@@ -109,14 +132,26 @@ function cite(admin, publique) {
   const ro = /\btypeof\s+([A-Za-z_$][\w$]*)/g;
   while ((m = ro.exec(jsP))) optionnels.add(m[1]);
 
+  /* Un nom que la page publique redéclare ailleurs, à n'importe quelle
+     profondeur, y est présumé local : `boite` ou `geste` ne désignent pas
+     partout la fonction de l'éditeur. C'est l'indulgence d'`appels.js`, pour
+     la même raison — un contrôle qui crie à tort finit débranché. */
+  const locaux = declares(jsP);
   const fautes = [];
   const lignes = jsP.split("\n");
-  const cherche = new Set(retires.filter((n) => !optionnels.has(n)));
+  const cherche = new Set(retires.filter((n) => !optionnels.has(n) && !locaux.has(n)));
   lignes.forEach((l, i) => {
     const re = /(^|[^.\w$])([A-Za-z_$][\w$]*)/g;
     let x;
-    while ((x = re.exec(l)))
-      if (cherche.has(x[2])) fautes.push(x[2] + " (script, l." + (i + 1) + ")");
+    while ((x = re.exec(l))) {
+      if (!cherche.has(x[2])) continue;
+      /* `{ aide: "…" }` nomme une clé, pas la fonction : on le reconnaît au
+         deux-points qui suit et à l'accolade ou la virgule qui précède. */
+      const apres = l.slice(x.index + x[0].length).match(/^\s*(\S)/);
+      const avant = l.slice(0, x.index + x[1].length).match(/(\S)\s*$/);
+      if (apres && apres[1] === ":" && (!avant || /[{,]/.test(avant[1]))) continue;
+      fautes.push(x[2] + " (script, l." + (i + 1) + ")");
+    }
   });
 
   /* Les éléments : le script public lit `$("id")` dans ses chaînes, qu'on

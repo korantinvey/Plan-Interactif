@@ -5170,6 +5170,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 </style>
 
 <div class="app">
+  <!-- @admin — la bande de l'outil -->
   <!-- La bande de l'outil, au-dessus de celle du salon. Elle ne paraît qu'une
        fois l'identité vérifiée — `activeAdmin` y range les commandes
        d'édition — et la page publique la retire du document. -->
@@ -5178,6 +5179,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     <span class="bandeNom">Administration</span>
     <div class="bandeActs" id="bandeActs"></div>
   </div>
+  <!-- @fin-admin -->
 
   <header class="topbar" id="bandeau">
     <div class="brand">
@@ -5216,16 +5218,19 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
         <span class="compteur" id="nParcours" hidden>0</span>
       </button>
+      <!-- @admin — les calques et les réglages -->
       <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
+      <!-- @fin-admin -->
       <button class="iconbtn" id="btnItineraire" aria-pressed="false"
         title="Calculer un itinéraire" aria-label="Calculer un itinéraire">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
       </button>
+      <!-- @admin — le compte de l'exploitant -->
       <!-- L'exploitant connecté, et par où sortir. -->
       <details class="compte" id="menuCompte" hidden>
         <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
@@ -5234,6 +5239,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
           <button class="sortie" id="btnSortir">Se déconnecter</button>
         </div>
       </details>
+      <!-- @fin-admin -->
     </div>
   </header>
 
@@ -5382,6 +5388,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
     </div>
+    <!-- @admin — le calage d'un hall -->
     <!-- Le calage d'un bâtiment de la bibliothèque : le geste, l'angle au
          quart de degré près, et les deux issues. Voir « _batiments.html ». -->
     <div class="viseur calage" id="calageBat" hidden>
@@ -5392,6 +5399,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <button type="button" id="calageStop">Annuler</button>
       <button type="button" class="fort" id="calageValide">Valider</button>
     </div>
+    <!-- @fin-admin -->
     <!-- Ce que le plan sait de la position du visiteur quand il est arrivé par
          un code affiché dans le hall, et le seul endroit où l'éteindre. Il ne
          s'efface pas une fois lu : il est l'état du mode. Voir « _ici.html ». -->
@@ -5427,6 +5435,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </div>
     </div>
 
+    <!-- @admin — la boîte à outils du dessin et le panneau « Élément » -->
     <div class="outils" id="outils">
       <div class="outilsTete">
         <span class="eyebrow" id="outilsCalque"></span>
@@ -5571,7 +5580,9 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="reset" id="annuleDernier">Annuler &nbsp;·&nbsp; Ctrl+Z</button>
       </div>
     </div>
+    <!-- @fin-admin -->
 
+    <!-- @admin — la palette des libellés -->
     <div class="outils libreg" id="libReg">
       <div class="outilsTete">
         <span class="eyebrow" id="libNom"></span>
@@ -5585,7 +5596,9 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <button class="auto" id="libAuto">Placement automatique</button>
       <div class="outilsPied"><span id="libAide"></span></div>
     </div>
+    <!-- @fin-admin -->
 
+    <!-- @admin — la palette des emplacements -->
     <!-- Reprendre la géométrie d'un emplacement. La palette s'ouvre avec le
          mode, avant même qu'une forme soit choisie : c'est elle qui dit qu'on
          y est, et par où en sortir. -->
@@ -5624,6 +5637,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <button class="auto" id="geoSupprime" hidden>Supprimer</button>
       <div class="outilsPied"><span id="geoAide"></span></div>
     </div>
+    <!-- @fin-admin -->
 
     <div class="modale" id="modale">
       <div class="mfen" role="dialog" aria-modal="true">
@@ -5633,10 +5647,12 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </div>
     </div>
 
+    <!-- @admin — le panneau des calques -->
     <div class="panel" id="panel">
       <span class="eyebrow">Ordre des calques</span>
       <div id="pile"></div>
     </div>
+    <!-- @fin-admin -->
 
     <div class="voile" id="voile"></div>
     <section class="detail" id="detail" aria-live="polite">
@@ -6544,9 +6560,13 @@ function montePlan(){
   calqueActif = null;
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
+  /* @admin — la reprise d'un emplacement et l'historique de l'éditeur */
   if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
+  /* @fin-admin */
+  /* @admin — la boîte à outils n'existe qu'en administration */
   { const o = $("outils"); if (o) o.classList.remove("open"); }
+  /* @fin-admin */
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
@@ -8483,7 +8503,9 @@ function rafraichitVue(){
       imageDemandee = null;
       appliqueVue(); echelle();
       // la poignée du calage se mesure en pixels : elle suit la vue
+      /* @admin — le calage d'un hall */
       if (CALAGE) dessineCalage();
+      /* @fin-admin */
     });
   }
   clearTimeout(libellesEnAttente);
@@ -8496,7 +8518,9 @@ function poseVue(){
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libellesDeLaVue();
+  /* @admin — le calage d'un hall */
   if (CALAGE) dessineCalage();
+  /* @fin-admin */
 }
 
 /**
@@ -10433,6 +10457,7 @@ svg.addEventListener("pointerdown", e => {
   /* Caler la carte passe avant tout : tant qu'un mode est armé, la main saisit
      le fond et non le plan — c'est le seul geste que la palette attend. */
   if (typeof cartePointerDown === "function" && cartePointerDown(e)) return;
+  /* @admin — les gestes de l'éditeur */
   if (libellePointerDown(e)) return;
   /* Reprendre la forme d'un emplacement passe avant sa fiche : le geste vise
      la géométrie, pas l'exposant qui la loue. */
@@ -10440,6 +10465,7 @@ svg.addEventListener("pointerdown", e => {
   // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
   if (calagePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
+  /* @fin-admin */
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
            cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
@@ -10450,10 +10476,12 @@ svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
   if (typeof cartePointerMove === "function" && cartePointerMove(e)) return;
+  /* @admin — les gestes de l'éditeur */
   if (libellePointerMove(e)) return;
   if (geometriePointerMove(e)) return;
   if (calagePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
+  /* @fin-admin */
   if (!drag) return;
   const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
@@ -10520,10 +10548,12 @@ svg.addEventListener("pointerup", e => {
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
+  /* @admin — les gestes de l'éditeur */
   if (libellePointerUp(e)) return;
   if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
+  /* @fin-admin */
   const d = drag; drag = null; saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
@@ -10598,6 +10628,7 @@ svg.addEventListener("keydown", e => {
 });
 document.addEventListener("keydown", e => {
   const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  /* @admin — les raccourcis et les flèches de l'éditeur */
   if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
     const t = e.key.toLowerCase();
     if (t === "z" && !e.shiftKey){ e.preventDefault(); annule(); return; }
@@ -10637,7 +10668,9 @@ document.addEventListener("keydown", e => {
                 e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return;
   }
+  /* @fin-admin */
   if (e.key === "Escape"){
+    /* @admin — Échap referme d'abord les modes de l'éditeur */
     if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
     /* Un tracé d'emplacement s'abandonne d'abord, puis l'outil qui l'a
        commencé : on renonce à une forme sans quitter la couche. */
@@ -10650,14 +10683,19 @@ document.addEventListener("keydown", e => {
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
+    /* @fin-admin */
     ferme();
+    /* @admin — le panneau des calques n'existe qu'en administration */
     if ($("panel")) $("panel").classList.remove("open");
+    /* @fin-admin */
   }
+  /* @admin — Entrée ferme un tracé de l'éditeur */
   /* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un
      outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
      défairait la forme à l'instant posée. */
   if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
   if (e.key === "Enter" && !saisie && traceAjout){ e.preventDefault(); fermeAjout(true); }
+  /* @fin-admin */
 });
 
 $("btnFiltres").onclick = basculeCriteres;
@@ -11790,8 +11828,11 @@ const OPTIONS = [
     aide: "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il " +
       "héberge, sur sa part d'un emplacement. Fermée, l'outil reste dans la boîte " +
       "à outils, grisé ; les découpages déjà tracés restent sur le plan.",
+    /* @admin — l'outil qu'on ferme ne s'est jamais tenu en main hors de l'administration */
     // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
-    apres: () => { if (outil === "stand") choisitOutil("main"); } },
+    apres: () => { if (outil === "stand") choisitOutil("main"); },
+    /* @fin-admin */
+  },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
     aide: "Le rattachement d'une image du dessin à un exposant : le logo posé " +
@@ -11800,10 +11841,13 @@ const OPTIONS = [
       "l'image : fermée, l'outil image reste et les images se posent comme " +
       "n'importe quel dessin, mais le champ qui nomme l'exposant est grisé et " +
       "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
+    /* @admin — le champ image ne se pose qu'outil en main */
     /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
        et sa liste de choix se posent en JS, et seulement l'outil en main : on
        repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
-    apres: () => { if (outil === "image") poseChampImage(); } },
+    apres: () => { if (outil === "image") poseChampImage(); },
+    /* @fin-admin */
+  },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +
@@ -16837,6 +16881,7 @@ function placementLibelle(o){
   return r && r.e === empreinteLibelle(o) ? r : null;
 }
 
+/* @admin — le placement des libellés à la main */
 /**
  * Poser un placement, sans l'écrire sur le poste : un glisser en produit un
  * par image, et enregistrer à chaque fois sérialiserait toute la configuration
@@ -16961,6 +17006,7 @@ if ($("libTaille")){
   };
   $("libTaille").onchange = enregistreConf;
 }
+/* @fin-admin */
 
 /* ============================================================
    11. Calques de dessin
@@ -17130,6 +17176,7 @@ function marqueAttente(id, oui){
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
+/* @admin — l'enregistrement d'un trait tracé */
 const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
      la grille de marche qui les ignore n'a plus cours, et l'annuaire des
@@ -17155,11 +17202,13 @@ const enregistreDessins = () => {
      c'est justement quand son quota déborde que la base doit avoir le dessin. */
   programmePublication();
 };
+/* @fin-admin */
 
 let calqueActif = null;   // id du calque en cours d'édition
 let outil = "main";
 let enCours = null;       // tracé en construction
 
+/* @admin — l'historique d'annulation de l'éditeur */
 /* Historique des dessins. L'instantané copie les calques, leurs tableaux de
    formes, et chaque forme — sans quoi il ne gardait rien de ce qui se retouche
    sur place. Car tous les gestes d'édition écrivent *dans* la forme : le
@@ -17224,6 +17273,7 @@ function annule(){
   if (!restaure(HIST, REFAIRE)) $("outilsAide").textContent = "Rien à annuler.";
 }
 function refais(){ restaure(REFAIRE, HIST); }
+/* @fin-admin */
 
 const trouveCalque = id => mesCalques().find(c => c.id === id);
 const nouvelId = () => "d" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
@@ -17395,6 +17445,7 @@ function rafraichitFleches(){
   });
 }
 
+/* @admin — le réglage du trait qu'on trace */
 /** Ce que la palette règle, posé sur la ligne qui vient d'être tracée. On ne
  *  retient que l'écart au trait ordinaire : une ligne sans réglage suit son
  *  calque, aujourd'hui comme le jour où il changera d'allure. */
@@ -17405,6 +17456,7 @@ function poseTrait(f){
   if (s && s.value === "pointille") f.pointille = true;
   if (fl && fl.value) f.fleche = fl.value;
 }
+/* @fin-admin */
 
 /** Le balisage d'une forme, seule. Sorti de « dessineDessins » pour qu'un
  *  geste puisse refaire une forme sans refaire le plan. */
@@ -17544,6 +17596,7 @@ function apercuGuide(d){
    les suit pas.
    ------------------------------------------------------------ */
 
+/* @admin — le tracé : visée, aimants, redressement */
 /** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
 function toleranceTrace(){
   const r = cadrePlan();
@@ -17617,7 +17670,9 @@ function fermeIci(p, pts){
   if (pts.length < 3) return false;
   return Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]) < toleranceTrace() * 1.5;
 }
+/* @fin-admin */
 
+/* @admin — la pose d'une forme tracée */
 function ajouteForme(f){
   const c = trouveCalque(calqueActif);
   if (!c) return;
@@ -17629,6 +17684,7 @@ function ajouteForme(f){
   aide();
   return f.id;
 }
+/* @fin-admin */
 
 /* Les libellés courants, pour ne pas les ressaisir à chaque salon. */
 /**
@@ -18251,6 +18307,7 @@ function societesDuPlan(){
   return out;
 }
 
+/* @admin — les champs de la boîte à outils qui nomment un exposant */
 /* Le champ qui rattache une image à un exposant, posé selon que le salon a
    pris l'option. La feuille de style le grise, mais le gris s'atteint encore
    au clavier, et un champ grisé où l'on peut taper ment sur ce qu'il fera.
@@ -18279,6 +18336,7 @@ function societeSaisie(txt){
       || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
       || null;
 }
+/* @fin-admin */
 
 /**
  * Une image posée sur le plan, et ce qu'elle désigne.
@@ -18824,6 +18882,7 @@ let imageEnAttente = null;
 const MAX_PX = 1400;
 
 /* On ne refuse plus une image faute de calque actif : on en ouvre un. */
+/* @admin — les images posées, les gestes et la boîte à outils du dessin */
 function calquePourImage(){
   if (calqueActif && trouveCalque(calqueActif)) return trouveCalque(calqueActif);
   /* Le dernier calque s'ouvre d'office, mais pas s'il est verrouillé : l'image
@@ -19498,6 +19557,7 @@ function renommeCalque(c, apres){
   });
 }
 
+/* @fin-admin */
 
 /* ============================================================
    Édition des formes existantes
@@ -19521,6 +19581,7 @@ function boite(f){
   return [Math.min.apply(null, xs), Math.min.apply(null, ys),
           Math.max.apply(null, xs), Math.max.apply(null, ys)];
 }
+/* @admin — les poignées, le panneau « Élément » et les gestes d'édition */
 
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
    sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
@@ -20148,6 +20209,8 @@ function editionPointerUp(e){
   enregistreDessins();
   return true;
 }
+/* @fin-admin */
+/* @admin — la cote, les aimants et la répétition ne servent qu'à dessiner */
 
 /* ============================================================
    11 quater. Dessiner juste — cote, aimants, répétition
@@ -20634,6 +20697,7 @@ function appliqueDimension(quoi){
   enregistreDessins(); redessineForme(f); dessinePoignees();
   ecritDimensions(f);
 }
+/* @fin-admin */
 
 /* ============================================================
    11 octies. Reprendre à la main la géométrie d'un emplacement
@@ -20902,6 +20966,7 @@ function appliqueGeometries(){
   });
 }
 
+/* @admin — la reprise à la main d'un emplacement */
 /* ------------------------------------------------------------
    Le verrou des deux couches de données
 
@@ -21207,6 +21272,7 @@ function appliqueDimensionGeo(){
   dessinePoigneesGeo();
   enregistreGeo(o);
 }
+/* @fin-admin */
 
 /* ------------------------------------------------------------
    Ajouter à une couche ce que la source n'a pas
@@ -21341,6 +21407,7 @@ function appliqueAjouts(){
 }
 
 /** Retenir la forme d'un emplacement ajouté, là où il vit. */
+/* @admin — l'ajout d'un emplacement à une couche */
 function enregistreAjout(o){
   const r = CONF[cleAjout(o.id)];
   if (r) r.p = anneauxGeo(o.d);
@@ -21694,12 +21761,14 @@ if ($("geoSoc")) $("geoSoc").onchange = () => lieAjout($("geoSoc").value);
 // la liste se range par nom : on la refait une fois le mot écrit, pas à chaque lettre
 ["geoCode", "geoTitre"].forEach(id => { if ($(id)) $(id).onchange = () => liste(); });
 if ($("geoSupprime")) $("geoSupprime").onclick = supprimeAjout;
+/* @fin-admin */
 /* @admin — la palette des emplacements n'existe qu'en administration */
 if ($("geoFiche")) $("geoFiche").onclick = () => {
   const o = geoSel && parId.get(geoSel);
   if (o && o.ajout && o.kind === "zone") ficheZone(o);
 };
 /* @fin-admin */
+/* @admin — la pose et le calage des halls d'un lieu connu */
 /* ============================================================
    11 quinquies. Bâtiments de la bibliothèque
 
@@ -22240,6 +22309,7 @@ function rouvreCalage(c){
   if (!t || !halls.length) return;
   lanceCalage(lieu, halls, t);
 }
+/* @fin-admin */
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -22314,6 +22384,7 @@ function deplaceCouche(k, dir){
   construitPanneau();
 }
 
+/* @admin — les boutons du panneau des calques */
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom
 
@@ -22374,7 +22445,9 @@ function intertitre(hote, cle){
   hote.appendChild(t);
 }
 
+/* @fin-admin */
 function construitPanneau(){
+  /* @admin — le panneau des calques, que la page publique vide */
   const hote = $("pile");
   hote.innerHTML = "";
   const reorg = document.createElement("button");
@@ -22604,8 +22677,10 @@ function construitPanneau(){
   /* Les réglages généraux vivent dans leur propre fenêtre, ouverte par
      l'engrenage : ici ils allongeaient une pile déjà longue et se lisaient
      comme une couche de plus. */
+  /* @fin-admin */
 }
 
+/* @admin — les sections du panneau des calques */
 /* ============================================================
    Repères
    Ce que le plan pose sur un stand sans que les données le disent : la
@@ -22796,6 +22871,7 @@ function defautCouleur(x){
   if (x.t === "fond") return jeton("--plan-line");
   return jeton(x.k === "data:zones" ? "--zone" : x.k === "data:stands" ? "--stand" : "--ink");
 }
+/* @fin-admin */
 /* ============================================================
    Enregistrer la configuration
    Les couleurs, la visibilité, l'ordre des calques et les dessins vivaient
@@ -23361,6 +23437,7 @@ async function pousseConfiguration(auto){
   }
 }
 
+/* @admin — la sauvegarde et la restauration de la configuration */
 /* ============================================================
    La sauvegarde emportée
 
@@ -23491,6 +23568,7 @@ function brancheSauvegarde(){
   r.onclick = () => { f.value = ""; f.click(); };
   f.onchange = () => { if (f.files && f.files[0]) litSauvegarde(f.files[0]); };
 }
+/* @fin-admin */
 
 /* ============================================================
    Fenêtres modales : confirmation et réorganisation des calques
@@ -23573,6 +23651,7 @@ function confirme(titre, message, libelleOui, action){
   ]);
 }
 
+/* @admin — la fenêtre d'ordre des calques */
 /* ------------------------------------------------------------
    Réorganisation : le premier rang de la liste est le calque le
    plus en avant, comme dans n'importe quel gestionnaire de calques.
@@ -23680,6 +23759,7 @@ function ouvreOrdre(){
     remplitOrdre(ul);
   }, [{ libelle: "Terminé" }], "outil");
 }
+/* @fin-admin */
 
 /* ============================================================
    11 bis. Parcours de visite
@@ -36402,8 +36482,10 @@ function construitCalage(){
 function ouvreCalage(){
   if (!ENV_CAL) return;
   if (typeof fermeModale === "function") fermeModale();
+  /* @admin — la boîte à outils n'existe qu'en administration */
   const o = $("outils");
   if (o) o.classList.remove("open");
+  /* @fin-admin */
   construitCalage();
   $("calage").hidden = false;
 }

@@ -51,6 +51,18 @@ la page publique cite encore un nom ou un `$("id")` qu'on lui a retiré, et le
 nomme — on élargit alors la tranche, ou l'on en sort ce nom. Un appel gardé par
 `typeof nom === "function"` reste permis.
 
+Une tranche se borne sur des lignes entières, et doit se suffire : elle refuse
+de se fermer sur des accolades déséquilibrées. Le piège est la dernière ligne
+d'une propriété qui ferme aussi son objet (`apres: () => {…} },`) : on passe
+`},` à la ligne avant de borner. Pour vider une fonction que le public appelle
+sans s'en servir — `construitPanneau`, `retourAuxReglages` —, on borne son
+corps et l'on garde sa signature.
+
+Sont déjà en tranches : la fenêtre des réglages, la fiche d'une zone, et tout
+l'outil de dessin — boîte à outils, gestes, aimants, panneau et ordre des
+calques, calage des halls, reprise et ajout d'emplacements, placement des
+libellés, sauvegarde de la configuration — avec leur balisage.
+
 Ce contrôle ne voit que le JavaScript et les identifiants d'éléments : la
 feuille de style n'a pas encore de tranche, faute de pouvoir prouver qu'une
 règle ne sert plus au visiteur.

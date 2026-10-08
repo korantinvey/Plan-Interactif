@@ -763,9 +763,13 @@ function montePlan(){
   calqueActif = null;
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
+  /* @admin — la reprise d'un emplacement et l'historique de l'éditeur */
   if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
+  /* @fin-admin */
+  /* @admin — la boîte à outils n'existe qu'en administration */
   { const o = $("outils"); if (o) o.classList.remove("open"); }
+  /* @fin-admin */
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
@@ -2702,7 +2706,9 @@ function rafraichitVue(){
       imageDemandee = null;
       appliqueVue(); echelle();
       // la poignée du calage se mesure en pixels : elle suit la vue
+      /* @admin — le calage d'un hall */
       if (CALAGE) dessineCalage();
+      /* @fin-admin */
     });
   }
   clearTimeout(libellesEnAttente);
@@ -2715,7 +2721,9 @@ function poseVue(){
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libellesDeLaVue();
+  /* @admin — le calage d'un hall */
   if (CALAGE) dessineCalage();
+  /* @fin-admin */
 }
 
 /**
@@ -4652,6 +4660,7 @@ svg.addEventListener("pointerdown", e => {
   /* Caler la carte passe avant tout : tant qu'un mode est armé, la main saisit
      le fond et non le plan — c'est le seul geste que la palette attend. */
   if (typeof cartePointerDown === "function" && cartePointerDown(e)) return;
+  /* @admin — les gestes de l'éditeur */
   if (libellePointerDown(e)) return;
   /* Reprendre la forme d'un emplacement passe avant sa fiche : le geste vise
      la géométrie, pas l'exposant qui la loue. */
@@ -4659,6 +4668,7 @@ svg.addEventListener("pointerdown", e => {
   // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
   if (calagePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
+  /* @fin-admin */
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
            cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
@@ -4669,10 +4679,12 @@ svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
   if (typeof cartePointerMove === "function" && cartePointerMove(e)) return;
+  /* @admin — les gestes de l'éditeur */
   if (libellePointerMove(e)) return;
   if (geometriePointerMove(e)) return;
   if (calagePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
+  /* @fin-admin */
   if (!drag) return;
   const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
@@ -4739,10 +4751,12 @@ svg.addEventListener("pointerup", e => {
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
+  /* @admin — les gestes de l'éditeur */
   if (libellePointerUp(e)) return;
   if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
+  /* @fin-admin */
   const d = drag; drag = null; saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
@@ -4817,6 +4831,7 @@ svg.addEventListener("keydown", e => {
 });
 document.addEventListener("keydown", e => {
   const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  /* @admin — les raccourcis et les flèches de l'éditeur */
   if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
     const t = e.key.toLowerCase();
     if (t === "z" && !e.shiftKey){ e.preventDefault(); annule(); return; }
@@ -4856,7 +4871,9 @@ document.addEventListener("keydown", e => {
                 e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return;
   }
+  /* @fin-admin */
   if (e.key === "Escape"){
+    /* @admin — Échap referme d'abord les modes de l'éditeur */
     if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
     /* Un tracé d'emplacement s'abandonne d'abord, puis l'outil qui l'a
        commencé : on renonce à une forme sans quitter la couche. */
@@ -4869,14 +4886,19 @@ document.addEventListener("keydown", e => {
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
+    /* @fin-admin */
     ferme();
+    /* @admin — le panneau des calques n'existe qu'en administration */
     if ($("panel")) $("panel").classList.remove("open");
+    /* @fin-admin */
   }
+  /* @admin — Entrée ferme un tracé de l'éditeur */
   /* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un
      outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
      défairait la forme à l'instant posée. */
   if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
   if (e.key === "Enter" && !saisie && traceAjout){ e.preventDefault(); fermeAjout(true); }
+  /* @fin-admin */
 });
 
 $("btnFiltres").onclick = basculeCriteres;

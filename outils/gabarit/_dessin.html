@@ -167,6 +167,7 @@ function marqueAttente(id, oui){
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
+/* @admin — l'enregistrement d'un trait tracé */
 const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
      la grille de marche qui les ignore n'a plus cours, et l'annuaire des
@@ -192,11 +193,13 @@ const enregistreDessins = () => {
      c'est justement quand son quota déborde que la base doit avoir le dessin. */
   programmePublication();
 };
+/* @fin-admin */
 
 let calqueActif = null;   // id du calque en cours d'édition
 let outil = "main";
 let enCours = null;       // tracé en construction
 
+/* @admin — l'historique d'annulation de l'éditeur */
 /* Historique des dessins. L'instantané copie les calques, leurs tableaux de
    formes, et chaque forme — sans quoi il ne gardait rien de ce qui se retouche
    sur place. Car tous les gestes d'édition écrivent *dans* la forme : le
@@ -261,6 +264,7 @@ function annule(){
   if (!restaure(HIST, REFAIRE)) $("outilsAide").textContent = "Rien à annuler.";
 }
 function refais(){ restaure(REFAIRE, HIST); }
+/* @fin-admin */
 
 const trouveCalque = id => mesCalques().find(c => c.id === id);
 const nouvelId = () => "d" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
@@ -432,6 +436,7 @@ function rafraichitFleches(){
   });
 }
 
+/* @admin — le réglage du trait qu'on trace */
 /** Ce que la palette règle, posé sur la ligne qui vient d'être tracée. On ne
  *  retient que l'écart au trait ordinaire : une ligne sans réglage suit son
  *  calque, aujourd'hui comme le jour où il changera d'allure. */
@@ -442,6 +447,7 @@ function poseTrait(f){
   if (s && s.value === "pointille") f.pointille = true;
   if (fl && fl.value) f.fleche = fl.value;
 }
+/* @fin-admin */
 
 /** Le balisage d'une forme, seule. Sorti de « dessineDessins » pour qu'un
  *  geste puisse refaire une forme sans refaire le plan. */
@@ -581,6 +587,7 @@ function apercuGuide(d){
    les suit pas.
    ------------------------------------------------------------ */
 
+/* @admin — le tracé : visée, aimants, redressement */
 /** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
 function toleranceTrace(){
   const r = cadrePlan();
@@ -654,7 +661,9 @@ function fermeIci(p, pts){
   if (pts.length < 3) return false;
   return Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]) < toleranceTrace() * 1.5;
 }
+/* @fin-admin */
 
+/* @admin — la pose d'une forme tracée */
 function ajouteForme(f){
   const c = trouveCalque(calqueActif);
   if (!c) return;
@@ -666,6 +675,7 @@ function ajouteForme(f){
   aide();
   return f.id;
 }
+/* @fin-admin */
 
 /* Les libellés courants, pour ne pas les ressaisir à chaque salon. */
 /**
@@ -1288,6 +1298,7 @@ function societesDuPlan(){
   return out;
 }
 
+/* @admin — les champs de la boîte à outils qui nomment un exposant */
 /* Le champ qui rattache une image à un exposant, posé selon que le salon a
    pris l'option. La feuille de style le grise, mais le gris s'atteint encore
    au clavier, et un champ grisé où l'on peut taper ment sur ce qu'il fera.
@@ -1316,6 +1327,7 @@ function societeSaisie(txt){
       || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
       || null;
 }
+/* @fin-admin */
 
 /**
  * Une image posée sur le plan, et ce qu'elle désigne.
@@ -1861,6 +1873,7 @@ let imageEnAttente = null;
 const MAX_PX = 1400;
 
 /* On ne refuse plus une image faute de calque actif : on en ouvre un. */
+/* @admin — les images posées, les gestes et la boîte à outils du dessin */
 function calquePourImage(){
   if (calqueActif && trouveCalque(calqueActif)) return trouveCalque(calqueActif);
   /* Le dernier calque s'ouvre d'office, mais pas s'il est verrouillé : l'image
@@ -2535,3 +2548,4 @@ function renommeCalque(c, apres){
   });
 }
 
+/* @fin-admin */
