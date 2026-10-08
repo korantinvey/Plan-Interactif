@@ -7885,6 +7885,10 @@ function marqueRetrait(){
 }
 
 function appliqueFiltre(){
+  /* On peut taper avant que le plan soit arrivé : la recherche est déjà dans
+     `state`, et le montage la reprendra. Peindre maintenant, c'était lire les
+     pavillons d'un plan qui n'existe pas encore. */
+  if (!DATA) return;
   marqueRetrait();
   libelles(); liste();
 }
