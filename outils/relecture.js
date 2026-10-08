@@ -48,7 +48,7 @@ const PAGES = {
   "plan.html": [...TETE, ...BOUTS.map((b) => html(b, lisBout(b))),
     { fichier: "../genere.js", js: true, texte: "retireAdmin();" }],
   "admin-plans.html": [...TETE, html("_console-head.html"), ...CONSOLE.map((f) => html(f)),
-    html("_console-js.html"), js("_marque.html")],
+    html("_console-js.html")],
   "rapport.html": [...TETE, html("_rapport-head.html"), ...CONSOLE.map((f) => html(f)),
     html("_rapport-js.html")],
   "index.html": [...TETE, html("_index.html")],
@@ -69,7 +69,7 @@ const FAMILLE = {
   "plan-admin.html": "plan",
   "plan.html": "plan",
   "admin-plans.html": "console",
-  "rapport.html": "console",
+  "rapport.html": "rapport",
 };
 const globalesDesModules = (page) => FAMILLE[page]
   ? Object.fromEntries(modules.exposes(FAMILLE[page]).map((n) => [n, "readonly"])) : {};

@@ -41,7 +41,7 @@ tous les autres sans le dire. Il en sort **progressivement**, vers de vrais
 modules dans `outils/gabarit/modules/` — extension `.mjs`, `import` et
 `export` explicites. esbuild (dépendance de développement, version épinglée)
 les réunit par point d'entrée — `plan.mjs` pour les trois pages du plan,
-`console.mjs` pour la console et le rapport — en un script posé **avant** le
+`console.mjs` et `rapport.mjs` pour les deux écrans de l'exploitant — en un script posé **avant** le
 code soudé, ni minifié ni renommé : une erreur remontée doit désigner une ligne
 lisible.
 
@@ -57,7 +57,8 @@ Les gestes qui vont avec :
   l'exporter, l'importer et l'exposer dans le point d'entrée des pages qui
   l'emploient, puis supprimer l'original. Une fonction recopiée dans deux pages
   — c'était le cas de `$`, `esc`, `separeValeurs` dans le plan et la console —
-  devient un seul module importé deux fois.
+  devient un seul module importé deux fois. Ce qui ne sert qu'au module n'est
+  pas exporté : il devient privé, invisible du code soudé.
 - **Un module n'appelle jamais le code soudé** : il n'importe que d'autres
   modules. On sort donc d'abord ce dont tout dépend, puis ce qui en dépend.
 - **Un nom qui quitte la liste exposée** est un nom que le code soudé n'appelle
@@ -197,7 +198,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `outils/essais/navigateur/` | le plan dans Chromium par Playwright — `npm run navigateur` : ouvert, cherché, lu en fiche, en anglais, sur téléphone. Les données viennent de `outils/plans.json`, interceptées (`aide.js` `prepare`) : un essai ne doit rien au réseau. Une phrase de l'interface citée par un essai change avec lui. `PLAN_ADRESSE=https://<branche>-plan-interactif.interactiveplan.workers.dev npm run navigateur` éprouve un déploiement plutôt que le serveur local |
 | `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Le code des pages se relit **tel que la page l'assemble**, jamais module par module (l'espace de noms est unique), et chaque remarque revient au module et à sa ligne ; un nom inutilisé ou inconnu ne compte que s'il l'est dans toutes les pages qui portent le module |
 | `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`. Un **cliquet** : les remarques d'aujourd'hui sont dans `outils/types-acceptes.json`, seule une nouvelle échoue ; quand le stock baisse, `npm run types -- --resserre` |
-| `outils/gabarit/modules/` | les modules sortis du code soudé, réunis par esbuild — points d'entrée `plan.mjs` et `console.mjs` ; assemblage, liste exposée et provenance de chaque nom dans `outils/modules.js` |
+| `outils/gabarit/modules/` | les modules sortis du code soudé, réunis par esbuild — points d'entrée `plan.mjs`, `console.mjs` et `rapport.mjs` ; assemblage, liste exposée et provenance de chaque nom dans `outils/modules.js` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir
@@ -232,7 +233,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | ordre des filtres dans ce panneau | réglage `_admin1.html` `blocOrdreCriteres` (onglet « Recherche », au bas de `voletRecherche`), clé `_crit.ordre` de la configuration ; application `_recherche.html` `ordreCriteres`, relue par `clesCriteres`, panneau refait par `refaitCriteres` ; styles `_styles-modeles-parcours.css` `.ordreCrit`, empruntés au rangement de la fiche |
 | sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_recherche.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | rendu et libellés `_rendu.html` § 3, 4 ; zoom `_vue.html` § 6 ; sélection et fiche `_fiche.html` § 7 ; gestes `_gestes.html` § 8 |
-| logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `_fiche.html` `poseMarque`, `rangeMarque` ; recadrage `_marque.html` `recadreMarque` |
+| logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `_fiche.html` `poseMarque`, `rangeMarque` ; recadrage par le module `modules/marque.mjs` `recadreMarque` (le plan) et `vignetteDeLogo` (les vignettes que la console fabrique, à la même règle) |
 | dessin WebGL du plan (rendu par défaut, `?rendu=svg` pour l'écarter) | `_webgl.html` — il relit le SVG caché : un effet visuel ajouté au plan en CSS (animation, filtre) doit y être rejoué, sans quoi il ne se voit qu'en SVG ; bibliothèque dans `web/bibliotheques/` |
 | ce que la fiche montre, ordre des champs, sections, intitulés | réglage `_ordre-fiche.html` `voletOrdre` (réserve à gauche, fiche au milieu, aperçu à droite) ; rendu `_fiche.html` `corpsRange`, `champCorps`, `montreIntitule` ; migrations `groupes_de_champs`, `intitules_des_champs` |
 | tiroirs du bas sur écran étroit — liste, fiche, parcours, itinéraire | `_gestes.html` § Le tiroir de la liste, § Les tiroirs menés par la hauteur (`tiroirCrante`, un appel par tiroir) ; crans et prise dans `_styles-plan.css` et `_styles-parcours.css` `.side`, `.detail`, `.parcours`, `.itineraire`, `.poignee` ; la liste cède la bande aux trois autres par `cede` |

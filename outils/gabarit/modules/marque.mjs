@@ -52,11 +52,11 @@ const MARQUES_RECADREES = new Map();
  * relire pour en retirer les marges. On le dit donc ici, une fois, plutôt que
  * de reconnaître une vignette à la forme de son adresse — elle n'en a plus.
  */
-function marquePrete(src){
+export function marquePrete(src){
   MARQUES_RECADREES.set(src, Promise.resolve(src));
 }
 
-function recadreMarque(src){
+export function recadreMarque(src){
   /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
      trouver à retirer coûterait le décodage qu'on a justement déplacé. */
   if (src.indexOf("vignette=") >= 0) return Promise.resolve(src);
@@ -129,6 +129,7 @@ const imageChargee = (src) => new Promise(fin => {
  */
 const vignetteMarque = async (octets, w, h, coupe) => {
   try {
+    /** @type {ImageBitmapOptions} */
     const opts = { resizeWidth: w, resizeHeight: h, resizeQuality: coupe ? "high" : "low" };
     return coupe
       ? await createImageBitmap(octets, coupe.x, coupe.y, coupe.w, coupe.h, opts)
@@ -243,7 +244,7 @@ async function toileMarque(octets, im, b, cote){
  * refusé, format qu'on ne sait pas lire. Ce n'est pas une panne : le logo se
  * chargera chez sa source, comme il l'a toujours fait.
  */
-async function vignetteDeLogo(source){
+export async function vignetteDeLogo(source){
   let octets = null;
   try {
     const r = await fetch(source, { mode: "cors", credentials: "omit" });

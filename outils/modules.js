@@ -26,7 +26,8 @@ const MODULES = path.join(__dirname, "gabarit", "modules");
 /** Les points d'entrée, par famille de pages. */
 const ENTREES = {
   plan: "plan.mjs",       // plan public, démonstration, administration
-  console: "console.mjs", // console et rapport, qui partagent leur socle
+  console: "console.mjs", // la console
+  rapport: "rapport.mjs", // le rapport, même socle que la console sans ses outils
 };
 
 /**
