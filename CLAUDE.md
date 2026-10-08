@@ -276,6 +276,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | placer et tourner la carte à la main | `_environs.html` § Placer à la main, branché dans la chaîne des gestes de `_gestes.html` |
 | rendu vectoriel du fond, libellés droits sur un plan tourné | `_environs.html` § Le rendu vectoriel — MapLibre chargé à la demande, toile `#fondCarteGL` |
 | vider le hall sous la carte | `_environs.html` § Le trou sous le pavillon — contour gelé par `retientLeHall`, aplat `#trouDuFond`, bouton par calque posé par `_pile.html` |
+| session de l'exploitant — casiers du projet et de la session, jeton lu, échangé avant de partir ou après un refus, appel à la base | `modules/session.mjs` (`accesBase`, `base`, `contenuJeton`, `resteJeton`, `echangeSession`, `CLE_CFG`, `CLE_SESSION`) : **un seul échange pour la console et le plan**, qui n'en tenaient chacun qu'une copie ; la console garde sa session (`SESSION`) et ses appels (`appel`, `rest`) dans `_console-base.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
 | garder un parcours préparé longtemps à l'avance — copie emportée, rang mis de côté, stockage persistant | `_partage.html` § La copie qu'on se garde (`ouvreGardeParcours`, `poseGardeParcours`) ; `_parcours.html` `MIS_DE_COTE`, `trieParcours`, `parcoursAEcrire`, `QUARANTAINE_JOURS`, `tientLeStockage` ; ce que l'application installée d'iOS ne reprend pas `_installation.html` `poseGardeInstallation` ; note `_styles-parcours.css` `.pGarde` |

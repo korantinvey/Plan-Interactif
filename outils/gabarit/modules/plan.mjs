@@ -16,6 +16,7 @@ import { esc, separeValeurs, COLLATION } from "./texte.mjs";
 import { hslHex, rgbHex, hexa, luminance } from "./couleurs.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
 import { API, SLUG, cheminDuSalon, cheminPartageable, BORNE } from "./salon.mjs";
+import { accesBase, base } from "./session.mjs";
 import { ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre }
   from "./fenetre.mjs";
 import { lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche }
@@ -36,6 +37,7 @@ Object.assign(globalThis, {
   hslHex, rgbHex, hexa, luminance,
   marquePrete, recadreMarque,
   API, SLUG, cheminDuSalon, cheminPartageable, BORNE,
+  accesBase, base,
   ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre,
   lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche,
   arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteAnneaux, boiteGeo,
