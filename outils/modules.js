@@ -49,21 +49,38 @@ function reprises(entree) {
 
 /**
  * Les noms qu'un point d'entrée confie au code soudé, dans l'ordre où il les
- * écrit. On les lit dans l'arbre du module : l'appel `Object.assign` sur
- * `globalThis`, et les clés de son objet littéral — rien d'autre n'est admis,
- * pour que la liste reste lisible par un outil comme par un humain.
+ * écrit. On les lit dans l'arbre du module, sous deux formes et deux seules :
+ *
+ * - `Object.assign(globalThis, { … })`, pour ce qui ne change pas — une
+ *   fonction, une constante, un objet qu'on modifie sans le remplacer ;
+ * - `Object.defineProperties(globalThis, vivants({ NOM: () => NOM, … }))`,
+ *   pour un état que le module réaffecte (`DATA`) : le code soudé le lit par
+ *   un accesseur, et lit donc toujours la valeur du moment.
+ *
+ * Dans les deux cas, les clés d'un objet littéral et rien d'autre, pour que la
+ * liste reste lisible par un outil comme par un humain.
  */
+function objetExpose(e) {
+  if (!e || e.type !== "CallExpression" || e.callee.type !== "MemberExpression" ||
+      e.callee.object.name !== "Object" || !e.arguments[0] || e.arguments[0].name !== "globalThis")
+    return null;
+  if (e.callee.property.name === "assign") return { forme: "Object.assign", o: e.arguments[1] };
+  if (e.callee.property.name !== "defineProperties") return null;
+  const v = e.arguments[1];
+  if (!v || v.type !== "CallExpression" || v.callee.name !== "vivants")
+    throw new Error("Object.defineProperties(globalThis, …) attend vivants({ … })");
+  return { forme: "vivants", o: v.arguments[0] };
+}
+
 function exposes(entree) {
   const ast = lisEntree(entree);
   const noms = reprises(entree).flatMap(exposes);
   for (const n of ast.body) {
-    const e = n.type === "ExpressionStatement" && n.expression;
-    if (!e || e.type !== "CallExpression" || e.callee.type !== "MemberExpression" ||
-        e.callee.object.name !== "Object" || e.callee.property.name !== "assign" ||
-        !e.arguments[0] || e.arguments[0].name !== "globalThis") continue;
-    const o = e.arguments[1];
+    const trouve = n.type === "ExpressionStatement" && objetExpose(n.expression);
+    if (!trouve) continue;
+    const o = trouve.o;
     if (!o || o.type !== "ObjectExpression")
-      throw new Error(ENTREES[entree] + " : Object.assign(globalThis, …) attend un objet littéral");
+      throw new Error(ENTREES[entree] + " : " + trouve.forme + " attend un objet littéral");
     for (const p of o.properties) {
       if (p.type !== "Property" || p.computed || p.key.type !== "Identifier")
         throw new Error(ENTREES[entree] + " : seules des clés nommées s'exposent au code soudé");

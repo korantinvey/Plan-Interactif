@@ -483,15 +483,15 @@ Fonctions :
 `celluleUtile` 2615 · `dilatationPour` 2678 · `dilatationDuJour` 2694 · `litLaCharge` 2731
 `chargeCellule` 2751
 
-### `_js.html` — 566 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 540 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.52 · 1. Index global — la recherche porte sur tous les pavillons
+- l.27 · 1. Index global — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`P` 49 · `nomDeLaZone` 69 · `nomsAnglaisDesZones` 71 · `texteProduits` 84 · `indexe` 88
-`chronoConf` 328 · `confsDuPlan` 333 · `indexeConferences` 351 · `rangeConferences` 429
-`poseFavicon` 476 · `poseLogoSalon` 502 · `poseTonDeLaBarre` 539
+`nomDeLaZone` 44 · `nomsAnglaisDesZones` 46 · `texteProduits` 59 · `indexe` 63
+`chronoConf` 302 · `confsDuPlan` 307 · `indexeConferences` 325 · `rangeConferences` 403
+`poseFavicon` 450 · `poseLogoSalon` 476 · `poseTonDeLaBarre` 513
 
 Éléments :
 
@@ -829,6 +829,14 @@ Fonctions :
 
 `$` 10
 
+### `modules/donnees.mjs` — 84 l. → plan, plan-admin
+
+- l.1 · Les données du plan, leurs index, et ce que la vue regarde
+
+Fonctions :
+
+`poseDonnees` 50 · `P` 84
+
 ### `modules/fenetre.mjs` — 100 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
@@ -865,19 +873,19 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 157 · `toileMarque` 223 · `vignetteDeLogo` 247
 
-### `modules/mesure.mjs` — 660 l. → plan, plan-admin
+### `modules/mesure.mjs` — 654 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`mesureOuverte` 71 · `jetonMesure` 74 · `jourIso` 113 · `echeanceMesure` 114
-`jetonRetenu` 139 · `supportMesure` 188 · `renouvelleVisiteur` 240 · `fraisEnFile` 307
-`litLaFile` 311 · `ecritLaFile` 324 · `metEnFile` 339 · `retireDeLaFile` 350
-`chargeDe` 361 · `envoiePaquet` 374 · `beaconne` 399 · `pousseLaFile` 420
-`envoieMesures` 439 · `mesure` 476 · `brancheLesEnvois` 491 · `effaceJetonsVisiteur` 546
-`refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
-`brancheMesure` 656
+`mesureOuverte` 66 · `jetonMesure` 69 · `jourIso` 108 · `echeanceMesure` 109
+`jetonRetenu` 134 · `supportMesure` 183 · `renouvelleVisiteur` 235 · `fraisEnFile` 302
+`litLaFile` 306 · `ecritLaFile` 319 · `metEnFile` 334 · `retireDeLaFile` 345
+`chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
+`envoieMesures` 434 · `mesure` 471 · `brancheLesEnvois` 486 · `effaceJetonsVisiteur` 541
+`refuseMesure` 559 · `ouvreConfidentialite` 586 · `brancheLaNotice` 637
+`brancheMesure` 651
 
 ### `modules/notifications.mjs` — 89 l. → plan, plan-admin
 
@@ -892,7 +900,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 54 l. → plan, plan-admin
+### `modules/plan.mjs` — 66 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -960,6 +968,14 @@ Fonctions :
 Fonctions :
 
 `esc` 6 · `separeValeurs` 17
+
+### `modules/vivant.mjs` — 36 l. → plan, plan-admin
+
+- l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
+
+Fonctions :
+
+`vivants` 25
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 

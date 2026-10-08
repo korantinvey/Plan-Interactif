@@ -15,6 +15,9 @@ import { $ } from "./dom.mjs";
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
 import { hslHex, rgbHex, hexa, luminance } from "./couleurs.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
+import { vivants } from "./vivant.mjs";
+import { DATA, TOUS, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, PAR_HEBERGE, poseDonnees, state, P }
+  from "./donnees.mjs";
 import { API, SLUG, cheminDuSalon, cheminPartageable, BORNE } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
@@ -35,6 +38,7 @@ import { mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, 
   from "./mesure.mjs";
 
 Object.assign(globalThis, {
+  poseDonnees, state, P,
   $, esc, separeValeurs, COLLATION,
   hslHex, rgbHex, hexa, luminance,
   marquePrete, recadreMarque,
@@ -52,3 +56,11 @@ Object.assign(globalThis, {
   QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg,
   mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure,
 });
+
+/* Les données du plan, que le module remplace à chaque chargement : le code
+   soudé les lit par accesseur, et les remplace par `poseDonnees`. */
+Object.defineProperties(globalThis, vivants({
+  DATA: () => DATA, TOUS: () => TOUS, parId: () => parId, CONFS: () => CONFS,
+  EXPOSANTS: () => EXPOSANTS, HEBERGES: () => HEBERGES, CONFERENCES: () => CONFERENCES,
+  PAR_HEBERGE: () => PAR_HEBERGE,
+}));

@@ -660,7 +660,7 @@ function lieAjout(texte){
   enregistreConf();
   poseLien(o, r, (h) => parId.get(h));
   rechAjout(o);
-  TOUS = TOUS.filter(x => x !== o);
+  poseDonnees({ TOUS: TOUS.filter(x => x !== o) });
   if (!o.lien) TOUS.push(o);
   const g = groupeGeo(o);
   if (g){
@@ -717,7 +717,7 @@ function supprimeAjout(){
       const p = DATA.plans[o.p];
       const sorte = o.kind === "zone" ? "zones" : "stands";
       p[sorte] = p[sorte].filter(x => x !== o);
-      TOUS = TOUS.filter(x => x !== o);
+      poseDonnees({ TOUS: TOUS.filter(x => x !== o) });
       parId.delete(o.id);
       const g = groupeGeo(o);
       if (g) g.remove();
