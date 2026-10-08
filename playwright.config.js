@@ -14,6 +14,11 @@
  */
 const { defineConfig, devices } = require("@playwright/test");
 
+/* `PLAN_ADRESSE=https://…` fait viser un déploiement — une prévisualisation de
+   branche, la production — au lieu du serveur local. Les données restent celles
+   de `plans.json` : on éprouve les pages servies, pas les salons du jour. */
+const ADRESSE = process.env.PLAN_ADRESSE || "http://localhost:4180";
+
 module.exports = defineConfig({
   testDir: "outils/essais/navigateur",
   // les essais d'une page se gênent si l'on en lance trop à la fois sur une
@@ -24,7 +29,7 @@ module.exports = defineConfig({
   expect: { timeout: 15_000 },
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
   use: {
-    baseURL: "http://localhost:4180",
+    baseURL: ADRESSE,
     trace: "retain-on-failure",
     locale: "fr-FR",
     timezoneId: "Europe/Paris",
@@ -33,7 +38,7 @@ module.exports = defineConfig({
     { name: "bureau", use: { ...devices["Desktop Chrome"], viewport: { width: 1400, height: 900 } } },
     { name: "telephone", use: { ...devices["Pixel 7"] }, grep: /@telephone/ },
   ],
-  webServer: {
+  webServer: process.env.PLAN_ADRESSE ? undefined : {
     command: "node outils/serve.js",
     url: "http://localhost:4180/plan-smcl.html",
     reuseExistingServer: !process.env.CI,

@@ -43,7 +43,9 @@ async function prepare(page, { premiereVisite = false } = {}) {
     erreurs.push("console : " + t.slice(0, 200));
   });
 
-  await page.route(/^https?:\/\/(?!localhost[:/])/, (r) => r.abort());
+  // tout ce qui ne va pas vers les pages éprouvées (`PLAN_ADRESSE`, à défaut le serveur local)
+  const chez = new URL(process.env.PLAN_ADRESSE || "http://localhost:4180").origin;
+  await page.route((url) => url.origin !== chez, (r) => r.abort());
   await page.route("**/api/**", (r) => {
     const url = new URL(r.request().url());
     if (url.pathname === "/api/plan") {
