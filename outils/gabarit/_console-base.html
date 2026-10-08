@@ -13,6 +13,11 @@
    projet sont demandées au premier lancement puis conservées sur le poste :
    elles n'ont pas à vivre dans le dépôt, et changent selon l'environnement.
    ============================================================ */
+/* Un élément de la page, lu par son identifiant. Rendu sans type précis
+   pour `npm run types` : chaque appel saurait mieux que lui ce qu'il attend
+   — un champ, un bouton, un canevas —, et le dire à chaque fois chargerait
+   le code de plus d'annotations qu'il n'en éviterait d'erreurs. */
+/** @returns {any} */
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -257,33 +262,6 @@ function ecranConfig() {
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();
   } }]);
-}
-
-/**
- * L'adresse du tableau de bord et celle de l'API se ressemblent assez pour
- * qu'on les confonde. On accepte les deux formes et on retient la bonne.
- *   tableau de bord : https://supabase.com/dashboard/project/<ref>
- *   API             : https://<ref>.supabase.co
- * Écrit sans expression régulière : la lecture y gagne, et le fichier ne
- * dépend d'aucun échappement.
- */
-function normaliseUrl(saisie) {
-  let u = String(saisie || "").trim();
-  while (u.length && u[u.length - 1] === "/") u = u.slice(0, -1);
-  if (!u) return "";
-
-  const marque = "supabase.com/dashboard/project/";
-  const i = u.toLowerCase().indexOf(marque);
-  if (i >= 0) {
-    const ref = u.slice(i + marque.length).split("/")[0].split("?")[0];
-    if (ref) return "https://" + ref + ".supabase.co";
-  }
-
-  // la seule référence du projet, sans point ni protocole
-  if (u.indexOf(".") < 0 && u.indexOf(":") < 0) return "https://" + u + ".supabase.co";
-
-  if (u.slice(0, 4).toLowerCase() !== "http") u = "https://" + u;
-  return u;
 }
 
 function ecranConnexion(message) {

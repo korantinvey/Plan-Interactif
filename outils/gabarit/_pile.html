@@ -43,17 +43,6 @@ function ordonneDom(){
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
 }
 
-function deplaceCouche(k, dir){
-  const liste = pile().map(x => x.k);
-  const i = liste.indexOf(k), j = i + dir;
-  if (i < 0 || j < 0 || j >= liste.length) return;
-  liste[i] = liste[j]; liste[j] = k;
-  CONF[clePile()] = liste;
-  enregistreConf();
-  ordonneDom();
-  construitPanneau();
-}
-
 /* @admin — les boutons du panneau des calques */
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom

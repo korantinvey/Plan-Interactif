@@ -426,6 +426,17 @@ const empreinte = crypto.createHash("sha256");
 for (const f of FABRIQUEES) empreinte.update(f).update(fs.readFileSync(W + f));
 const version = empreinte.digest("hex").slice(0, 12);
 
+/* La même version, remise au Worker. Les pages ne sont plus versionnées :
+   Cloudflare les construit au déploiement (`wrangler.jsonc` `build`). Le
+   danger était un déploiement qui passe sans que la construction ait tourné
+   — des pages absentes, un site vide. Le Worker importe donc ce fichier, que
+   seule la construction écrit : s'il manque, l'empaquetage échoue, et rien
+   ne part. La production garde alors la version d'avant, au lieu d'une page
+   blanche. `/api/pages` la dit, pour savoir ce qui est en ligne. */
+fs.writeFileSync(path.join(D, "..", "src", "pages.mjs"),
+  "// Écrit par outils/genere.js — ne pas modifier, ne pas versionner.\n" +
+  "export const VERSION_DES_PAGES = " + JSON.stringify(version) + ";\n");
+
 fs.writeFileSync(W + "sw.js",
   epureScript(fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version)));
 

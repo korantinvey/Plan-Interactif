@@ -4,6 +4,11 @@
   // au plus près du visiteur (voir src/index.js).
   "name": "plan-interactif",
   "main": "./src/index.mjs",
+  // Les pages de `web/` ne sont plus versionnées : elles se construisent ici,
+  // avant chaque déploiement — production comme prévisualisation d'une branche.
+  // Sans cette étape, `src/pages.mjs` manque et le Worker ne s'empaquette pas :
+  // un déploiement sans pages échoue au lieu de publier un site vide.
+  "build": { "command": "npm run construire" },
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./web",

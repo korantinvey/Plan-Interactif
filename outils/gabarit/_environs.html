@@ -354,12 +354,6 @@ function latitudeDePixel(py, z){
   return Math.atan(Math.sinh(Math.PI * (1 - 2 * py / n))) / DEG;
 }
 
-/** Ce que vaut un pixel de la pyramide, en mètres au sol, par la formule
- *  sphérique. Sert à choisir le niveau, et à rien d'autre : un écart de trois
- *  millièmes ne change jamais un arrondi. */
-const metresParPixel = (lat, z) =>
-  TOUR_MERCATOR * Math.cos(lat * DEG) / (PX_TUILE * Math.pow(2, z));
-
 /**
  * Ce que vaut un pixel de la pyramide, en mètres du plan — vers l'est, et vers
  * le sud.

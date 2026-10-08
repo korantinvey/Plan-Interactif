@@ -4,11 +4,13 @@ Plans de salon interactifs alimentés par Klipso (API GAIA), avec une console
 d'administration multi-événements. Le `README.md` décrit le système et son
 déploiement ; ce fichier ne retient que ce qui se paie cher quand on l'ignore.
 
-## La chaîne de fabrication, et son piège
+## La chaîne de fabrication
 
 Les pages de `web/` ne sont pas écrites à la main : elles sont **assemblées**
-depuis `outils/gabarit/`, puis **versionnées**, car Cloudflare les sert sans
-étape de construction.
+depuis `outils/gabarit/`, et **ne sont pas versionnées**. Cloudflare les
+construit à chaque déploiement (`wrangler.jsonc` `build`), la CI pour ses
+contrôles, chacun chez soi par `npm run construire`. Seuls `web/polices/` et
+`web/bibliotheques/`, qui ne se refont qu'avec le réseau, restent dans le dépôt.
 
 ```
 outils/gabarit/*.html, *.css → outils/tpl-multi.html → web/*.html
@@ -17,19 +19,18 @@ outils/gabarit/_sw.js + outils/pwa.js         → web/sw.js, manifeste, icônes
 outils/gabarit/** + supabase/**               → CARTE.md
 ```
 
-Le piège tient en une phrase : modifier un module de `outils/gabarit/` sans
-reconstruire laisse un dépôt d'apparence juste, et des visiteurs qui reçoivent
-l'ancienne page. Donc, après toute retouche du gabarit :
+Un déploiement sans construction ne peut pas passer : `genere.js` écrit
+`src/pages.mjs` (non versionné), que le Worker importe — s'il manque, le Worker
+ne s'empaquette pas, et la production garde la version d'avant au lieu d'un
+site vide. `/api/pages` dit quelle construction est en ligne.
 
 ```bash
-npm run construire   # reconstruit web/
-npm run verifie      # reconstruit, et sort en erreur si web/ était en retard
+npm run construire   # construit web/ pour essayer chez soi (npm run essai)
+npm run verifie      # construit, contrôle tout, et dit si CARTE.md était en retard
 ```
 
-Les pages reconstruites font partie du commit. Le workflow `Pages` rattrape
-l'oubli — il reconstruit et valide sur la branche poussée — mais ne comptez pas
-dessus : il ajoute alors un commit par-dessus le vôtre, que vous devrez tirer
-avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
+`CARTE.md`, lui, reste versionné — on le lit sans rien construire. Lancez
+`npm run verifie` avant de valider : il le refait et signale s'il bougeait.
 
 ## Ce que le visiteur ne reçoit pas
 
@@ -80,14 +81,13 @@ nomme la source à corriger ; la règle vaut aussi hors de lui, pour une retouch
 Deux conversations ouvertes sur le même dépôt se heurtaient à deux endroits.
 Les deux sont désamorcés, chacun avec un geste qui l'accompagne.
 
-**Les fichiers fabriqués ne se fusionnent plus.** `.gitattributes` marque
-`web/**`, `outils/tpl-multi.html` et `CARTE.md` en `merge=ours` : git garde la
-version en place au lieu de mélanger deux reconstructions — une ligne de gabarit
-en réécrivait mille, recopiées quatre fois, et le conflit portait sur du contenu
-que personne n'avait tapé. Le geste qui va avec n'est pas optionnel : **après
-toute fusion ou rebasage, `npm run construire`**, sans quoi `web/` ne reflète
-qu'une des deux branches. `npm run verifie` le signale, le workflow `Pages` le
-rattrape — un commit plus tard, à retirer avant la poussée suivante.
+**Les fichiers fabriqués ne se fusionnent plus.** Les pages ne sont plus
+versionnées du tout : deux branches ne se disputent plus mille lignes de page
+recopiées. Reste `CARTE.md`, marqué `merge=ours` dans `.gitattributes` : git
+garde la version en place au lieu de mélanger deux index. Le geste qui va avec :
+**après toute fusion ou rebasage, `npm run construire`**, qui refait l'index
+depuis les sources fusionnées. `npm run verifie` le signale, le workflow `Pages`
+le rattrape — un commit plus tard, à tirer avant la poussée suivante.
 
 **Les migrations sont horodatées à la seconde**, non plus numérotées à la
 suite : `npm run migration -- "Titre"` produit `AAAAMMJJHHMMSS_titre.sql`.
@@ -107,7 +107,7 @@ risque tant qu'elle n'a jamais été appliquée — et le savoir se lit dans le
 journal du déploiement, qui la nomme.
 
 **Jamais de poussée forcée** — le garde la refuse : le workflow `Pages` a pu
-commiter sur la branche, et `--force` effacerait ce commit. `git pull --rebase`.
+commiter l'index sur la branche, et `--force` effacerait ce commit. `git pull --rebase`.
 
 ## Données figées
 
@@ -153,13 +153,16 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | | |
 |---|---|
 | `outils/gabarit/` | la source des pages |
-| `web/` | les pages construites, servies par Cloudflare |
+| `web/` | les pages construites, servies par Cloudflare — non versionnées, sauf `polices/` et `bibliotheques/` |
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
 | `.github/workflows/` | reconstruction des pages, déploiement Supabase, sauvegarde et écriture des correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | les essais hors page — `npm run essais` (douze cas) et `npm run fep26` (salon synthétique) ; l'ordonnanceur est extrait du gabarit par ancres, jamais recopié |
+| `outils/essais/navigateur/` | le plan dans Chromium par Playwright — `npm run navigateur` : ouvert, cherché, lu en fiche, en anglais, sur téléphone. Les données viennent de `outils/plans.json`, interceptées (`aide.js` `prepare`) : un essai ne doit rien au réseau. Une phrase de l'interface citée par un essai change avec lui. `PLAN_ADRESSE=https://<branche>-plan-interactif.interactiveplan.workers.dev npm run navigateur` éprouve un déploiement plutôt que le serveur local |
+| `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Le code des pages se relit **tel que la page l'assemble**, jamais module par module (l'espace de noms est unique), et chaque remarque revient au module et à sa ligne ; un nom inutilisé ou inconnu ne compte que s'il l'est dans toutes les pages qui portent le module |
+| `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`. Un **cliquet** : les remarques d'aujourd'hui sont dans `outils/types-acceptes.json`, seule une nouvelle échoue ; quand le stock baisse, `npm run types -- --resserre` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir
@@ -281,9 +284,13 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 ## Déploiement
 
 Rien ne se déploie à la main. Une poussée sur `main` applique les migrations et
-redéploie les fonctions (`supabase.yml`) ; Cloudflare suit le dépôt de son côté
-pour `web/` et le Worker. Toute poussée, sur n'importe quelle branche,
-reconstruit les pages (`pages.yml`).
+redéploie les fonctions (`supabase.yml`) ; Cloudflare suit le dépôt de son côté,
+construit les pages et déploie le Worker — en production pour `main`, en
+version de prévisualisation pour toute autre branche, à l'adresse
+`<branche>-plan-interactif.interactiveplan.workers.dev`. Il construit sous Node
+22, fixé par `.nvmrc` : son image passe sinon à Node 24 d'elle-même. Toute
+poussée lance aussi `pages.yml` (construction, syntaxe, anglais, index) et
+`essais.yml` (relecture, types, moteur, navigateur).
 
 Conséquence à garder en tête : **une migration poussée sur `main` part en
 production**. Les migrations sont rejouables et jamais réécrites : une

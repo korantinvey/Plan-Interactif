@@ -1,22 +1,21 @@
-# Les pages de `web/`, `tpl-multi.html` et `CARTE.md` ne s'écrivent pas : ils se
-# fabriquent depuis `outils/gabarit/`. Une ligne changée dans un module du
-# gabarit en réécrit donc un millier, recopiées en quatre exemplaires — et deux
-# branches parallèles se retrouvent à arbitrer un conflit sur du contenu que
-# personne n'a tapé. L'arbitrage est même piégeux : garder un morceau de chaque
-# côté fige une page dans un état que le gabarit ne produit plus.
+# `CARTE.md` ne s'écrit pas : il se fabrique depuis `outils/gabarit/` et
+# `supabase/`. Une ligne changée dans un module en déplace des dizaines dans
+# l'index — et deux branches parallèles se retrouvent à arbitrer un conflit sur
+# du contenu que personne n'a tapé, où garder un morceau de chaque côté fige un
+# index que les sources ne produisent plus.
 #
-# `merge=ours` retire ces fichiers de la fusion : git garde la version en place
-# sans rien mélanger, et `npm run construire` rétablit ensuite la vérité depuis
-# le gabarit, lui, fusionné normalement. Le conflit disparaît sans perte, parce
-# que rien de ce qu'il portait n'était une source.
+# `merge=ours` le retire de la fusion : git garde la version en place sans
+# rien mélanger, et `npm run construire` rétablit ensuite la vérité depuis les
+# sources, elles, fusionnées normalement.
+#
+# Les pages de `web/` et `tpl-multi.html` avaient la même règle ; elles ne sont
+# plus versionnées du tout (voir `.gitignore`), et le problème a disparu avec.
 #
 # Le pilote `ours` est déclaré par `.claude/hooks/session-start.sh`, à chaque
 # ouverture de session. Sur un clone où il n'a jamais tourné, git revient
 # silencieusement à la fusion ligne à ligne : l'ancien comportement, pénible
 # mais pas faux.
-web/**                merge=ours
+CARTE.md              merge=ours
 # La bibliothèque du dessin est vérifiée par son empreinte au chargement : un
 # seul octet converti en fin de ligne, et le navigateur la refuse.
 web/bibliotheques/**  -text
-outils/tpl-multi.html merge=ours
-CARTE.md              merge=ours
