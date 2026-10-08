@@ -196,41 +196,13 @@ const REFUS = new Set();   // clés de jours décochés à la main
 let MATRICE = null;   // { cle, D }
 
 /* ------------------------------------------------------------
-   Les heures
+   Les heures — les lire et les écrire : `modules/temps.mjs`
    ------------------------------------------------------------ */
-const minutesDe = (d) => d ? (+d.h) * 60 + (+d.min) : null;
 const finInstant = (c) => momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
-
-function ecritHeure(m){
-  // une journée qui déborde sur la nuit repasse par zéro plutôt que d'écrire 26h
-  const t = ((Math.round(m) % 1440) + 1440) % 1440;
-  return String(Math.floor(t / 60)).padStart(2, "0") + "h" + String(t % 60).padStart(2, "0");
-}
-function ecritMinutes(m){
-  const t = Math.max(1, Math.round(m));
-  if (t < 60) return t + " min";
-  const h = Math.floor(t / 60), r = t % 60;
-  return h + " h" + (r ? " " + r + " min" : "");
-}
 
 /* ------------------------------------------------------------
    Les jours
    ------------------------------------------------------------ */
-/** Une clé de jour — « 20270321 », telle que `momentLocal` la rend — relue en
- *  date. C'est par elle que les conférences, les horaires et les choix du
- *  visiteur se rejoignent, sans jamais passer par un fuseau. */
-const dateDeCle = (cle) => /^\d{8}$/.test(String(cle))
-  ? { an: +String(cle).slice(0, 4), mois: +String(cle).slice(4, 6), jour: +String(cle).slice(6, 8) }
-  : null;
-
-/** Le jour en deux mots — « mar. 21 » : un onglet en porte trois de front sur
- *  un téléphone, ce que « mardi 21 mars » ne permet pas. */
-function jourBref(cle){
-  const d = dateDeCle(cle);
-  if (!d) return "";
-  return JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()].slice(0, 3) + ". " + d.jour;
-}
-
 /** Les jours du salon, dans l'ordre. Ceux que l'exploitant a datés d'abord :
  *  un salon sans conférence a des jours lui aussi, et c'est parmi eux que le
  *  visiteur choisit les siens. À défaut, les jours où le programme a quelque
@@ -2573,14 +2545,6 @@ const chargeSuivie = () =>
   typeof seuilGere === "function" && seuilGere() &&
   typeof mesureOuverte === "function" && mesureOuverte() &&
   !!SLUG && !BORNE;
-
-/** Le jour d'un séjour, tel que la base le veut : « AAAA-MM-JJ ». */
-function jourISO(cle){
-  const d = dateDeCle(cle);
-  return d ? String(d.an).padStart(4, "0") + "-" +
-             String(d.mois).padStart(2, "0") + "-" +
-             String(d.jour).padStart(2, "0") : "";
-}
 
 /** Le séjour, réduit à ce qu'il annonce : un stand, un jour, une demi-heure. */
 function etapesDuSejour(){
