@@ -46,11 +46,13 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { API, SLUG, BORNE } from "./salon.mjs";
+import { ouvreModale } from "./fenetre.mjs";
 
-/* Ce que le module demande à la page sans pouvoir l'importer : le code soudé
-   le lui confie au branchement (`brancheMesure`). Rien de cela ne sert avant. */
-/** @type {{ salon: () => (string|null), ouvreModale: (titre: string, remplit: Function, boutons?: any[], genre?: string) => void }} */
-let _page = { salon: () => null, ouvreModale: () => {} };
+/* Ce que le module demande à la page sans pouvoir l'importer — le nom du salon,
+   qui arrive avec les données : le code soudé le lui confie au branchement
+   (`brancheMesure`). Rien de cela ne sert avant. */
+/** @type {{ salon: () => (string|null) }} */
+let _page = { salon: () => null };
 
 const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
 const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
@@ -588,7 +590,7 @@ function refuseMesure(refus){
 
 function ouvreConfidentialite(){
   const salon = _page.salon();
-  _page.ouvreModale("Confidentialité", fenetre => {
+  ouvreModale("Confidentialité", fenetre => {
     const corps = document.createElement("div");
     corps.className = "notice";
     fenetre.appendChild(corps);
@@ -648,8 +650,8 @@ function brancheLaNotice(){
 /**
  * Le branchement de la mesure, appelé par le script soudé à la place que ce
  * module y tenait (`_branche-mesure.html`) : il lui confie ce que le module ne
- * peut pas importer — le nom du salon, une fois les données arrivées, et la
- * fenêtre commune — puis compte la visite et pose la notice.
+ * peut pas importer — le nom du salon, une fois les données arrivées — puis
+ * compte la visite et pose la notice.
  */
 export function brancheMesure(page){
   _page = page;

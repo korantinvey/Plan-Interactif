@@ -698,7 +698,7 @@ function poseGardeInstallation(corps, repond, revient){
     repond();
     /* La fenêtre de la copie attend que celle-ci ait libéré la place, et
        rouvre celle-ci en partant (`_modales.html`). */
-    apresFermeture = () => demandeGardeParcours(revient);
+    poseApresFermeture(() => demandeGardeParcours(revient));
     fermeModale();
   };
   bloc.appendChild(b);
@@ -774,7 +774,7 @@ function ouvreInvitation(facon, apercu){
                             () => ouvreInvitation(facon, apercu));
   }, [{ libelle: "Plus tard" }, accepte], "installe");
 
-  avantFermeture = () => {
+  poseAvantFermeture(() => {
     if (apercu) return retourAuxReglages("installation");
     /* « J'ai compris » ouvre la porte du rappel sur iOS — c'est le seul signe
        qu'y donne un visiteur d'avoir eu affaire à l'installation
@@ -785,7 +785,7 @@ function ouvreInvitation(facon, apercu){
       retientInstallation({ compris: true, rappelVue: jourInstallation() });
     }
     else if (!reponse) refuseInstallation();
-  };
+  });
 }
 
 /**
@@ -854,17 +854,17 @@ function ouvreRappel(facon, apercu){
         } },
   ], "installe");
 
-  avantFermeture = () => {
+  poseAvantFermeture(() => {
     if (apercu){
       /* La fenêtre de repli prend la place de celle-ci, une fois qu'elle l'a
          libérée : ouverte plus tôt, elle la trouverait encore occupée
          (`_modales.html`). */
-      if (demandee && ouvre) apresFermeture = () => ouvreRetrouve(true);
+      if (demandee && ouvre) poseApresFermeture(() => ouvreRetrouve(true));
       else retourAuxReglages("installation");
       return;
     }
     if (!demandee) refuseRappel();
-  };
+  });
 }
 
 /**
@@ -885,7 +885,7 @@ function ouvreRetrouve(apercu){
       "reste consultable même sans réseau.";
     corps.appendChild(p);
   }, [{ libelle: "Compris", genre: "accent" }], "installe");
-  if (apercu) avantFermeture = () => retourAuxReglages("installation");
+  if (apercu) poseAvantFermeture(() => retourAuxReglages("installation"));
 }
 
 /* ------------------------------------------------------------

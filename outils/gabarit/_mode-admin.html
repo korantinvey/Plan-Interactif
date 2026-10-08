@@ -661,7 +661,7 @@ function suitFicheZone(o, valeurs, etat, apres){
   ficheZoneEnCours = { o, valeurs, etat, apres, depart: valeurs() };
   /* La fenêtre peut se fermer de quatre façons, et par une cinquième quand une
      autre prend sa place : toutes passent par « verseModale ». */
-  avantFermeture = () => { verseFicheZone(); ficheZoneEnCours = null; };
+  poseAvantFermeture(() => { verseFicheZone(); ficheZoneEnCours = null; });
 }
 
 /** Enregistre la fiche ouverte, si et seulement si elle a changé. */
