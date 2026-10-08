@@ -294,7 +294,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_fiche.html` — 1500 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_fiche.html` — 1326 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 7. Sélection et fiche
 
@@ -305,11 +305,9 @@ Fonctions :
 `montre` 191 · `libelleCorps` 223 · `ordreCorps` 240 · `groupesFiche` 272
 `montreIntitule` 285 · `valeurCorps` 305 · `champCorps` 318 · `groupeCorps` 330
 `corpsRange` 343 · `programme` 358 · `produits` 407 · `ficheProduit` 435 · `ficheConf` 505
-`lien` 652 · `adresseWeb` 660 · `pictoRS` 703 · `adresseSure` 721 · `adresseVignette` 752
-`adresseImage` 770 · `imageSure` 783 · `assainitRiche` 812 · `enBlocs` 860
-`rangeRiche` 873 · `ecarteClicFantome` 901 · `nomSociete` 910 · `societes` 923
-`choisitExposant` 934 · `poseMarque` 972 · `montreMarque` 1032 · `poseCode` 1055
-`rangeMarque` 1096 · `ouvre` 1159 · `ferme` 1471 · `onglet` 1489
+`pictoRS` 685 · `adresseVignette` 709 · `ecarteClicFantome` 727 · `nomSociete` 736
+`societes` 749 · `choisitExposant` 760 · `poseMarque` 798 · `montreMarque` 858
+`poseCode` 881 · `rangeMarque` 922 · `ouvre` 985 · `ferme` 1297 · `onglet` 1315
 
 Éléments :
 
@@ -865,7 +863,7 @@ Fonctions :
 `refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
 `brancheMesure` 656
 
-### `modules/plan.mjs` — 37 l. → plan
+### `modules/plan.mjs` — 40 l. → plan
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -889,6 +887,15 @@ Fonctions :
 Fonctions :
 
 `cheminDuSalon` 26 · `cheminPartageable` 37
+
+### `modules/sur.mjs` — 190 l. → plan
+
+- l.1 · Ce qui vient d'ailleurs, relu avant d'être affiché
+
+Fonctions :
+
+`lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
+`assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
 
 ### `modules/temps.mjs` — 104 l. → plan
 

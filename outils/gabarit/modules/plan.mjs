@@ -18,6 +18,8 @@ import { marquePrete, recadreMarque } from "./marque.mjs";
 import { API, SLUG, cheminDuSalon, cheminPartageable, BORNE } from "./salon.mjs";
 import { ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre }
   from "./fenetre.mjs";
+import { lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche }
+  from "./sur.mjs";
 import { JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jourISO,
   minutesDe, ecritHeure, ecritMinutes } from "./temps.mjs";
 import { QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg } from "./qr.mjs";
@@ -30,6 +32,7 @@ Object.assign(globalThis, {
   marquePrete, recadreMarque,
   API, SLUG, cheminDuSalon, cheminPartageable, BORNE,
   ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre,
+  lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche,
   JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jourISO,
   minutesDe, ecritHeure, ecritMinutes,
   QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg,
