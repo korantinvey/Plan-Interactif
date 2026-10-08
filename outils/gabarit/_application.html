@@ -34,6 +34,7 @@
    logo qu'un mode ignore — et il aurait fallu trancher.
    ============================================================ */
 
+/* @admin — la fabrication de l'icône, depuis un logo déposé */
 /* Ce qu'une icône d'application mesure, et ce que la paire a le droit de
    peser.
 
@@ -172,6 +173,7 @@ function reduitIconeApp(fichier){
     fr.readAsDataURL(fichier);
   });
 }
+/* @fin-admin */
 
 /**
  * L'adresse où le relais sert l'icône de ce salon.
@@ -195,6 +197,7 @@ const appDuSalon = () => (DATA && DATA.app) || {};
 /** L'icône de l'application de ce salon, s'il en a déposé une. */
 const iconeDeLApplication = (masque) => adresseIconeApp(appDuSalon().icone, masque);
 
+/* @admin — le réglage de l'application, dans l'onglet « Admin » */
 /**
  * Le nom que l'écran d'accueil portera faute d'un autre.
  *
@@ -451,3 +454,4 @@ function blocApplication(hote){
   peint();
   suit();
 }
+/* @fin-admin */

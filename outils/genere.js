@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const icones = require("./icones.js");
 const pwa = require("./pwa.js");
 const traductions = require("./traductions.js");
+const reserve = require("./reserve.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -200,9 +201,20 @@ function connecte(t) {
     .replace(marque, '<script data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">\n/* Sans viewport');
 }
 
+/* Le gabarit sous ses deux formes : entier pour l'administration, amputé de
+   ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). */
+const tplAdmin = reserve.pourLAdmin(tpl);
+const tplPublic = reserve.pourLePublic(tpl);
+/* Une tranche retirée dont un nom reste cité ailleurs ne casse rien ici : elle
+   casse chez le visiteur, au moment où ce code-là s'exécute. On le refuse donc
+   avant d'écrire la moindre page. Les données et la porte n'y changent rien :
+   le gabarit seul suffit à juger. */
+reserve.verifie(tplAdmin, tplPublic, "Le plan public");
+
 /* --- page publique : le mode administration n'est jamais activé --- */
+const planPublic = connecte(tplPublic).replace("/*__PORTE_ADMIN__*/", "retireAdmin();");
 fs.writeFileSync(W + "plan.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+  page(planPublic,
        { tete: PRECHARGE, application: true, pleinEcran: true,
          salon: SLUG_DEFAUT }));
 
@@ -211,14 +223,14 @@ fs.writeFileSync(W + "plan.html",
    n'en a que faire, elle ne part qu'avec l'administration. */
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
 fs.writeFileSync(W + "plan-admin.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth)
+  page(connecte(tplAdmin).replace("/*__PORTE_ADMIN__*/", auth)
                     .replace("/*__LIEUX__*/null", () => LIEUX),
        { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
-  page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
-          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
+                .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */

@@ -1525,6 +1525,7 @@ function habilleModale(){
     fen.classList.toggle("modele-" + x.cle, porte && x.cle === cle));
 }
 
+/* @admin — les aperçus de la fenêtre des réglages */
 /* ------------------------------------------------------------------
    L'exposant des aperçus
 
@@ -1830,6 +1831,7 @@ function apercuDuo(cle, vu){
   d.appendChild(apercuFiche(cle, vu));
   return d;
 }
+/* @fin-admin */
 
 /**
  * Réglages généraux du plan.
@@ -1867,6 +1869,7 @@ function glisseFenetre(change){
               { duration: 190, easing: "ease-out" });
 }
 
+/* @admin — la fenêtre des réglages et ses volets */
 function ouvreReglages(ouvrir){
   ouvreModale("Réglages du plan", corps => {
     const barre = document.createElement("div");
@@ -4233,6 +4236,7 @@ function voletOrdre(hote){
   rendu();
   dit("");
 }
+/* @fin-admin */
 
 /** Les réglages d'apparence se posent sur le poste, puis montent en base
  *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
@@ -4316,6 +4320,7 @@ function retireAdmin(){
   });
 }
 
+/* @admin — l'ouverture du mode administration, que seule la porte authentifiée appelle */
 /** Ouvre le mode administration, une fois l'identité vérifiée. */
 function activeAdmin(){
   if (ADMIN) return;
@@ -4393,8 +4398,10 @@ function activeAdmin(){
      la barre du système prolonge, et non plus le bandeau du salon. */
   poseTonDeLaBarre();
 }
+/* @fin-admin */
 
 
+/* @admin — la fiche d'une zone, qu'on ne remplit qu'en administration */
 /* ============================================================
    La fiche d'une zone organisateur
    Une zone tire son nom de Klipso, ou des textes posés sur le plan. Quand ni
@@ -5164,6 +5171,7 @@ async function enregistreZoneAjoutee(o, v, depart){
     if (state.sel === o.id) ouvre(o, null);
   }
 }
+/* @fin-admin */
 
 /* ============================================================
    Masquer une zone organisateur

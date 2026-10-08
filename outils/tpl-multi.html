@@ -10229,7 +10229,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const cr = $("dRen");
   if (cr){
     cr.hidden = !(ADMIN && zone);
+    /* @admin — le crayon ne paraît qu'en administration */
     cr.onclick = () => ficheZone(o);
+    /* @fin-admin */
   }
   /* Une zone technique — réserve, quai de livraison — n'apprend rien au
      visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
@@ -13036,6 +13038,7 @@ function habilleModale(){
     fen.classList.toggle("modele-" + x.cle, porte && x.cle === cle));
 }
 
+/* @admin — les aperçus de la fenêtre des réglages */
 /* ------------------------------------------------------------------
    L'exposant des aperçus
 
@@ -13341,6 +13344,7 @@ function apercuDuo(cle, vu){
   d.appendChild(apercuFiche(cle, vu));
   return d;
 }
+/* @fin-admin */
 
 /**
  * Réglages généraux du plan.
@@ -13378,6 +13382,7 @@ function glisseFenetre(change){
               { duration: 190, easing: "ease-out" });
 }
 
+/* @admin — la fenêtre des réglages et ses volets */
 function ouvreReglages(ouvrir){
   ouvreModale("Réglages du plan", corps => {
     const barre = document.createElement("div");
@@ -15744,6 +15749,7 @@ function voletOrdre(hote){
   rendu();
   dit("");
 }
+/* @fin-admin */
 
 /** Les réglages d'apparence se posent sur le poste, puis montent en base
  *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
@@ -15827,6 +15833,7 @@ function retireAdmin(){
   });
 }
 
+/* @admin — l'ouverture du mode administration, que seule la porte authentifiée appelle */
 /** Ouvre le mode administration, une fois l'identité vérifiée. */
 function activeAdmin(){
   if (ADMIN) return;
@@ -15904,8 +15911,10 @@ function activeAdmin(){
      la barre du système prolonge, et non plus le bandeau du salon. */
   poseTonDeLaBarre();
 }
+/* @fin-admin */
 
 
+/* @admin — la fiche d'une zone, qu'on ne remplit qu'en administration */
 /* ============================================================
    La fiche d'une zone organisateur
    Une zone tire son nom de Klipso, ou des textes posés sur le plan. Quand ni
@@ -16675,6 +16684,7 @@ async function enregistreZoneAjoutee(o, v, depart){
     if (state.sel === o.id) ouvre(o, null);
   }
 }
+/* @fin-admin */
 
 /* ============================================================
    Masquer une zone organisateur
@@ -21680,10 +21690,12 @@ if ($("geoSoc")) $("geoSoc").onchange = () => lieAjout($("geoSoc").value);
 // la liste se range par nom : on la refait une fois le mot écrit, pas à chaque lettre
 ["geoCode", "geoTitre"].forEach(id => { if ($(id)) $(id).onchange = () => liste(); });
 if ($("geoSupprime")) $("geoSupprime").onclick = supprimeAjout;
+/* @admin — la palette des emplacements n'existe qu'en administration */
 if ($("geoFiche")) $("geoFiche").onclick = () => {
   const o = geoSel && parId.get(geoSel);
   if (o && o.ajout && o.kind === "zone") ficheZone(o);
 };
+/* @fin-admin */
 /* ============================================================
    11 quinquies. Bâtiments de la bibliothèque
 
@@ -34003,6 +34015,7 @@ function rangChaleur(hote){
   hote.appendChild(d);
 }
 
+/* @admin — la remise à zéro, un volet des réglages */
 /* ============================================================
    Remise à zéro des compteurs
 
@@ -34206,6 +34219,7 @@ async function lanceRemiseAZero(){
     if (b){ b.disabled = false; b.textContent = "Réinitialiser"; }
   }
 }
+/* @fin-admin */
 /* ============================================================
    15. La suggestion — un exposant de plus, pour compléter la visite
 
@@ -34549,6 +34563,7 @@ function fenetreSuggestion(){
         action: () => select(s.o.id, true, CANAL_SUGG) }], "sugg");
 }
 
+/* @admin — le réglage de la suggestion */
 /* ------------------------------------------------------------
    Côté administration
    ------------------------------------------------------------ */
@@ -34889,6 +34904,7 @@ function voletSuggestion(hote){
 
   dessine();
 }
+/* @fin-admin */
 /* ============================================================
    16. Les environs — le pavillon dans son quartier
 
@@ -37197,11 +37213,13 @@ function teteInvitation(corps, sousTitre){
    l'invitation à installer et le rappel des conférences, et ils se ressemblent
    assez pour qu'on revienne au mauvais si on ne le nomme pas. */
 function retourAuxReglages(marque){
+  /* @admin — un aperçu n'est ouvert que depuis les réglages */
   queueMicrotask(() => {
     ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
+  /* @fin-admin */
 }
 
 /**
@@ -40376,6 +40394,7 @@ const CHOIX_SPONSOR = [
     resume: "Celui d'un partenaire du salon, avec son nom et son lien." },
 ];
 
+/* @admin — le réglage du générique, dans l'onglet « Admin » */
 /**
  * Où l'on choisit ce qui paraît au démarrage, et où on le regarde avant de le
  * vendre.
@@ -40552,6 +40571,7 @@ function blocSponsor(hote){
 
   suit();
 }
+/* @fin-admin */
 /* ============================================================
    19. L'application installée — son icône et son nom
 
@@ -40588,6 +40608,7 @@ function blocSponsor(hote){
    logo qu'un mode ignore — et il aurait fallu trancher.
    ============================================================ */
 
+/* @admin — la fabrication de l'icône, depuis un logo déposé */
 /* Ce qu'une icône d'application mesure, et ce que la paire a le droit de
    peser.
 
@@ -40726,6 +40747,7 @@ function reduitIconeApp(fichier){
     fr.readAsDataURL(fichier);
   });
 }
+/* @fin-admin */
 
 /**
  * L'adresse où le relais sert l'icône de ce salon.
@@ -40749,6 +40771,7 @@ const appDuSalon = () => (DATA && DATA.app) || {};
 /** L'icône de l'application de ce salon, s'il en a déposé une. */
 const iconeDeLApplication = (masque) => adresseIconeApp(appDuSalon().icone, masque);
 
+/* @admin — le réglage de l'application, dans l'onglet « Admin » */
 /**
  * Le nom que l'écran d'accueil portera faute d'un autre.
  *
@@ -41005,6 +41028,7 @@ function blocApplication(hote){
   peint();
   suit();
 }
+/* @fin-admin */
 /* ============================================================
    12. Démarrage
    ============================================================ */

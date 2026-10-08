@@ -654,11 +654,13 @@ function teteInvitation(corps, sousTitre){
    l'invitation à installer et le rappel des conférences, et ils se ressemblent
    assez pour qu'on revienne au mauvais si on ne le nomme pas. */
 function retourAuxReglages(marque){
+  /* @admin — un aperçu n'est ouvert que depuis les réglages */
   queueMicrotask(() => {
     ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
+  /* @fin-admin */
 }
 
 /**

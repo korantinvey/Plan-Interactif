@@ -4448,7 +4448,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const cr = $("dRen");
   if (cr){
     cr.hidden = !(ADMIN && zone);
+    /* @admin — le crayon ne paraît qu'en administration */
     cr.onclick = () => ficheZone(o);
+    /* @fin-admin */
   }
   /* Une zone technique — réserve, quai de livraison — n'apprend rien au
      visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
