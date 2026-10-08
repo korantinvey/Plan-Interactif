@@ -68,9 +68,10 @@ function minutesRappel(){
 }
 
 /* ------------------------------------------------------------
-   Ce que l'appareil sait faire
+   Ce que l'appareil sait faire — `modules/notifications.mjs` le dit
+   (`poussePossible`, `iOSsansInstallation`), et tient l'adresse du serveur
+   (`RAPPELS_API`)
    ------------------------------------------------------------ */
-const RAPPELS_API = API ? API.replace(/[^/]*$/, "rappels") : "";
 
 /** Le consentement se retient ici, à côté du parcours qu'il accompagne.
  *  L'autorisation du navigateur ne suffit pas à le dire : elle a pu être
@@ -89,10 +90,6 @@ function retientRappels(){
   } catch (e) {}
 }
 
-/** L'appareil peut-il recevoir un rappel ? Trois objets doivent exister, et
- *  leur absence est la façon dont un iPhone non installé se signale. */
-const poussePossible = () => !!(
-  "serviceWorker" in navigator && "PushManager" in window && "Notification" in window);
 
 /** Le rappel a-t-il lieu d'être proposé ici ? La page à données figées n'a pas
  *  d'API, l'administration n'a pas de visiteur, et l'exploitant peut ne pas
@@ -101,11 +98,6 @@ const rappelsOfferts = () => !!(
   RAPPELS_API && SLUG && rappelsVoulus() && !BORNE &&
   document.documentElement.dataset.role !== "admin");
 
-/** Un plan ouvert dans un onglet iOS : le seul cas où l'absence de `PushManager`
- *  se répare, et où dire comment vaut mieux que se taire. */
-const iOSsansInstallation = () => !poussePossible() &&
-  /iP(hone|od|ad)|Macintosh/.test(navigator.userAgent) && "ontouchend" in document &&
-  supportMesure() === "web";
 
 /* ------------------------------------------------------------
    L'instant d'une conférence
@@ -134,15 +126,7 @@ const iOSsansInstallation = () => !poussePossible() &&
  */
 function instantAbsolu(c){
   const p = instantConf(c);
-  if (!p) return NaN;
-  const mural = Date.UTC(p.an, p.mois - 1, p.jour, +p.h, +p.min);
-  let t = mural;
-  for (let i = 0; i < 2; i++){
-    const lu = momentLocal(new Date(t).toISOString(), DATA.fuseau);
-    if (!lu) return NaN;
-    t = mural - (Date.UTC(lu.an, lu.mois - 1, lu.jour, +lu.h, +lu.min) - t);
-  }
-  return t;
+  return p ? instantMural(p, DATA.fuseau) : NaN;
 }
 
 /** Les conférences retenues qui n'ont pas encore commencé. Le reste du tiroir
@@ -155,25 +139,6 @@ function confsARappeler(){
     .filter(r => !isNaN(r.t) && r.t > maintenant);
 }
 
-/**
- * L'heure que la source donne à une conférence, ramenée à la minute.
- *
- * Elle part avec le rappel, non pour être lue mais pour être relue : le serveur
- * la compare au programme à chaque synchronisation, et oublie le rappel dont
- * l'heure a bougé depuis (`oublie_rappels_perimes`). Sans ce relevé, un rappel
- * posé dix jours avant le salon partirait à l'heure d'alors, et annoncerait un
- * horaire qui n'existe plus.
- *
- * Les deux champs y entrent, et non celui que `instantConf` a retenu : ce qu'on
- * cherche n'est pas l'instant — le serveur ne sait pas analyser une date comme
- * la page — mais de savoir si la source a changé d'avis. À la minute, parce
- * qu'un export qui ajoute des secondes ne déplace aucune conférence.
- *
- * La forme est celle que `empreinte_debut` refait côté base : les deux doivent
- * écrire la même chaîne, sans quoi tout rappel passerait pour démenti.
- */
-const heureVue = v => String(v || "").replace(/ /g, "T").slice(0, 16);
-const empreinteDebut = c => heureVue(c.debutLocal) + "|" + heureVue(c.debut);
 
 /**
  * Ce qu'on demande au serveur de garder, et rien de plus.
@@ -205,51 +170,11 @@ function rappelsDuParcours(){
     });
 }
 
-/** Où mène la notification : cette page, ce salon, cette conférence. L'adresse
- *  est absolue — le service de second plan l'ouvrira sans contexte. */
-function adresseDuRappel(id){
-  const u = new URL(location.href);
-  u.hash = "";
-  u.searchParams.set("conf", id);
-  return u.href;
-}
 
 /* ------------------------------------------------------------
-   S'abonner, et se tenir à jour
+   S'abonner, et se tenir à jour — l'abonnement lui-même (`abonne`,
+   `abonnementCourant`) est dans `modules/notifications.mjs`
    ------------------------------------------------------------ */
-/** La clé publique du serveur, sous la forme d'octets : Safari n'accepte pas
- *  la chaîne base64url que Chrome tolère. */
-function octetsDeCle(b64){
-  const net = String(b64).replace(/-/g, "+").replace(/_/g, "/");
-  const brut = atob(net + "=".repeat((4 - net.length % 4) % 4));
-  const o = new Uint8Array(brut.length);
-  for (let i = 0; i < brut.length; i++) o[i] = brut.charCodeAt(i);
-  return o;
-}
-
-async function abonnementCourant(){
-  const reg = await navigator.serviceWorker.getRegistration();
-  return reg ? await reg.pushManager.getSubscription() : null;
-}
-
-/* L'inscription se passe de main en main quand on l'a déjà : `ready` ne répond
-   jamais là où rien n'est inscrit, et la page d'administration n'inscrit pas le
-   service — c'est le plan public qui le pose. L'essai des réglages va donc la
-   chercher lui-même, et la tend plutôt que de laisser attendre. */
-async function abonne(inscription){
-  const reg = inscription || await navigator.serviceWorker.ready;
-  const deja = await reg.pushManager.getSubscription();
-  if (deja) return deja;
-  const r = await fetch(RAPPELS_API + "/cle");
-  if (!r.ok) throw new Error("clé indisponible");
-  const cle = (await r.json()).cle;
-  if (!cle) throw new Error("clé absente");
-  /* `userVisibleOnly` n'est pas négociable : le navigateur n'accorde le Web
-     Push qu'à qui s'engage à montrer chaque message reçu. Cela tombe bien —
-     c'est exactement ce qu'on veut en faire. */
-  return await reg.pushManager.subscribe({
-    userVisibleOnly: true, applicationServerKey: octetsDeCle(cle) });
-}
 
 let _syncRappels = null;
 
