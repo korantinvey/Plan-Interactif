@@ -24,6 +24,7 @@ const { BOUTS, lisBout } = require("./assemble.js");
 const { REGLES, GLOBALES_PAGE } = require("../eslint.config.js");
 const globals = require("globals");
 const modules = require("./modules.js");
+const reserve = require("./reserve.js");
 
 const RACINE = path.join(__dirname, "..");
 const G = path.join(__dirname, "gabarit");
@@ -37,15 +38,33 @@ const html = (f, texte = lis(f)) => ({ fichier: f, js: false, texte });
 const TETE = [js("_config.js"), js("_langue.js")];
 const CONSOLE = ["_console-base.html", "_classeur.html", "_export.html"];
 
+/* Les morceaux du plan tels que le visiteur les reçoit. Une tranche peut
+   courir d'un morceau au suivant — les plus longs sont coupés en morceaux
+   consécutifs (`assemble.js`) : on découpe donc le gabarit d'un tenant, puis
+   on le rend à chaque morceau, ligne pour ligne. */
+const BOUTS_PUBLICS = (() => {
+  const textes = BOUTS.map((b) => lisBout(b));
+  const lignes = reserve.pourLePublicEnBlanc(textes.join("\n")).split("\n");
+  let i = 0;
+  return textes.map((t) => {
+    const n = t.split("\n").length;
+    const morceau = lignes.slice(i, i + n).join("\n");
+    i += n;
+    return morceau;
+  });
+})();
+
 const PAGES = {
   /* Le plan d'administration contient le plan public : mêmes modules, plus
      l'accès de l'exploitant, posé à la fin du script. Relire celui-là relit
      donc les deux. */
   "plan-admin.html": [...TETE, ...BOUTS.map((b) => html(b, lisBout(b))), js("_auth-plan.html")],
-  /* Le plan public : les mêmes modules, et à la place de l'accès ce que
-     `genere.js` pose en fin de script. Relu à part, sans quoi `retireAdmin`,
-     qu'il est seul à appeler, passerait pour inutile. */
-  "plan.html": [...TETE, ...BOUTS.map((b) => html(b, lisBout(b))),
+  /* Le plan public : les mêmes modules sans leurs tranches `@admin`, et à la
+     place de l'accès ce que `genere.js` pose en fin de script. Relu à part,
+     sans quoi `retireAdmin`, qu'il est seul à appeler, passerait pour inutile ;
+     et relu tel qu'il est livré, sans quoi un appel d'administration y
+     chercherait un nom que seule l'administration reçoit. */
+  "plan.html": [...TETE, ...BOUTS.map((b, i) => html(b, BOUTS_PUBLICS[i])),
     { fichier: "../genere.js", js: true, texte: "retireAdmin();" }],
   "admin-plans.html": [...TETE, html("_console-head.html"), ...CONSOLE.map((f) => html(f)),
     html("_console-js.html")],
@@ -66,7 +85,7 @@ const PAGES = {
    `scriptDesModules`). Leurs noms exposés sont, pour la relecture, ce que la
    page trouve sans le déclarer — comme `LANGUE` ou `traduit`. */
 const FAMILLE = {
-  "plan-admin.html": "plan",
+  "plan-admin.html": "plan-admin",
   "plan.html": "plan",
   "admin-plans.html": "console",
   "rapport.html": "rapport",

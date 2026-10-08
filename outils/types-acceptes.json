@@ -17,7 +17,6 @@
  "_admin2.html | TS2339 | Property '__plan' does not exist on type 'Window & typeof globalThis'. | const avance = window.__plan ||": 1,
  "_admin2.html | TS2339 | Property '__plan' does not exist on type 'Window & typeof globalThis'. | window.__plan = window.__entete = null;": 2,
  "_admin2.html | TS2339 | Property 'PLAN_CONFIG' does not exist on type 'Window & typeof globalThis'. | || window.PLAN_CONFIG || null;": 1,
- "_application.html | TS2322 | Type 'string | ArrayBuffer' is not assignable to type 'string'.   Type 'ArrayBuffer' is not assignable to type 'string'. | img.src = fr.result;": 1,
  "_application.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | delete vue.dataset.survol;": 1,
  "_application.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | dit.dataset.mal = \"false\";": 1,
  "_application.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | dit.dataset.mal = \"true\";": 1,

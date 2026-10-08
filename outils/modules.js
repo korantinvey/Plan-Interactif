@@ -25,10 +25,27 @@ const MODULES = path.join(__dirname, "gabarit", "modules");
 
 /** Les points d'entrée, par famille de pages. */
 const ENTREES = {
-  plan: "plan.mjs",       // plan public, démonstration, administration
-  console: "console.mjs", // la console
-  rapport: "rapport.mjs", // le rapport, même socle que la console sans ses outils
+  plan: "plan.mjs",             // plan public et démonstration
+  "plan-admin": "plan-admin.mjs", // l'administration : le plan, et ce que le visiteur ne reçoit pas
+  console: "console.mjs",       // la console
+  rapport: "rapport.mjs",       // le rapport, même socle que la console sans ses outils
 };
+
+const lisEntree = (entree) => acorn.parse(
+  fs.readFileSync(path.join(MODULES, ENTREES[entree]), "utf8"),
+  { ecmaVersion: "latest", sourceType: "module" });
+
+/* Un point d'entrée qui en importe un autre sans rien nommer
+   (`import "./plan.mjs"`) le reprend en entier : ses noms exposés compris.
+   C'est ainsi que l'administration a le plan, plus ce qui n'est qu'à elle,
+   dans un seul script — deux scripts auraient chacun leur exemplaire des
+   modules partagés, et deux états qui divergent. */
+function reprises(entree) {
+  return lisEntree(entree).body
+    .filter((n) => n.type === "ImportDeclaration" && !n.specifiers.length)
+    .map((n) => Object.keys(ENTREES).find((e) => "./" + ENTREES[e] === n.source.value))
+    .filter(Boolean);
+}
 
 /**
  * Les noms qu'un point d'entrée confie au code soudé, dans l'ordre où il les
@@ -37,10 +54,8 @@ const ENTREES = {
  * pour que la liste reste lisible par un outil comme par un humain.
  */
 function exposes(entree) {
-  const fichier = path.join(MODULES, ENTREES[entree]);
-  const ast = acorn.parse(fs.readFileSync(fichier, "utf8"),
-    { ecmaVersion: "latest", sourceType: "module" });
-  const noms = [];
+  const ast = lisEntree(entree);
+  const noms = reprises(entree).flatMap(exposes);
   for (const n of ast.body) {
     const e = n.type === "ExpressionStatement" && n.expression;
     if (!e || e.type !== "CallExpression" || e.callee.type !== "MemberExpression" ||
@@ -64,9 +79,9 @@ function exposes(entree) {
  * chaque nom plutôt qu'un `any` — c'est tout l'intérêt d'un module.
  */
 function origines(entree) {
-  const ast = acorn.parse(fs.readFileSync(path.join(MODULES, ENTREES[entree]), "utf8"),
-    { ecmaVersion: "latest", sourceType: "module" });
-  const de = new Map();
+  const ast = lisEntree(entree);
+  const herites = new Map(reprises(entree).flatMap(origines).map((o) => [o.nom, o]));
+  const de = new Map(herites);
   for (const n of ast.body) {
     if (n.type !== "ImportDeclaration") continue;
     const source = path.join(MODULES, n.source.value);

@@ -57,15 +57,14 @@ Fonctions :
 `reprendTaille` 387 · `dupliqueForme` 408 · `pousseForme` 433 · `ecritDimensions` 450
 `appliqueDimension` 469
 
-### `_application.html` — 457 l. → plan-admin.html
+### `_application.html` — 327 l. → plan-admin.html
 
 - l.1 · 19. L'application installée — son icône et son nom
 
 Fonctions :
 
-`fondPourIconeApp` 93 · `dessineIconeApp` 125 · `reduitIconeApp` 152 · `adresseIconeApp` 187
-`appDuSalon` 195 · `iconeDeLApplication` 198 · `nomAppDefaut` 209 · `ecritApplication` 224
-`blocApplication` 265
+`adresseIconeApp` 57 · `appDuSalon` 65 · `iconeDeLApplication` 68 · `nomAppDefaut` 79
+`ecritApplication` 94 · `blocApplication` 135
 
 ### `_auth-plan.html` — 204 l. → plan-admin.html
 
@@ -812,7 +811,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la console
 
-### `modules/couleurs.mjs` — 34 l. → plan
+### `modules/couleurs.mjs` — 34 l. → plan, plan-admin
 
 - l.1 · Les couleurs : d'une notation à l'autre, et ce que l'œil en perçoit
 
@@ -820,7 +819,7 @@ Fonctions :
 
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31
 
-### `modules/dom.mjs` — 10 l. → plan, console, rapport
+### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le document : ce que tout le code demande à la page
 
@@ -828,7 +827,7 @@ Fonctions :
 
 `$` 10
 
-### `modules/fenetre.mjs` — 100 l. → plan
+### `modules/fenetre.mjs` — 100 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
@@ -837,7 +836,15 @@ Fonctions :
 `_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
 `ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 93
 
-### `modules/marque.mjs` — 282 l. → plan, console
+### `modules/icone-app.mjs` — 137 l. → plan-admin
+
+- l.1 · L'icône de l'application, fabriquée depuis un logo déposé
+
+Fonctions :
+
+`fondPourIconeApp` 55 · `dessineIconeApp` 87 · `reduitIconeApp` 114
+
+### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
 
@@ -846,7 +853,7 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 157 · `toileMarque` 223 · `vignetteDeLogo` 247
 
-### `modules/mesure.mjs` — 660 l. → plan
+### `modules/mesure.mjs` — 660 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -860,11 +867,15 @@ Fonctions :
 `refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
 `brancheMesure` 656
 
-### `modules/plan.mjs` — 45 l. → plan
+### `modules/plan-admin.mjs` — 18 l. → plan-admin
+
+- l.1 · Point d'entrée de la page d'administration du plan
+
+### `modules/plan.mjs` — 45 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/qr.mjs` — 315 l. → plan
+### `modules/qr.mjs` — 315 l. → plan, plan-admin
 
 - l.1 · Le code QR, sans bibliothèque
 
@@ -877,7 +888,7 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
-### `modules/salon.mjs` — 43 l. → plan
+### `modules/salon.mjs` — 43 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
 
@@ -885,7 +896,7 @@ Fonctions :
 
 `cheminDuSalon` 26 · `cheminPartageable` 37
 
-### `modules/sur.mjs` — 190 l. → plan
+### `modules/sur.mjs` — 190 l. → plan, plan-admin
 
 - l.1 · Ce qui vient d'ailleurs, relu avant d'être affiché
 
@@ -894,7 +905,7 @@ Fonctions :
 `lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
 `assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
 
-### `modules/temps.mjs` — 104 l. → plan
+### `modules/temps.mjs` — 104 l. → plan, plan-admin
 
 - l.1 · Les dates et les heures du salon
 
@@ -903,7 +914,7 @@ Fonctions :
 `momentLocal` 32 · `jourLong` 55 · `jourCourt` 62 · `dateDeCle` 69 · `jourBref` 75
 `jourISO` 82 · `minutesDe` 92 · `ecritHeure` 94 · `ecritMinutes` 99
 
-### `modules/terre.mjs` — 173 l. → plan
+### `modules/terre.mjs` — 173 l. → plan, plan-admin
 
 - l.1 · Le plan sur la Terre — le calcul, sans la carte
 
@@ -913,7 +924,7 @@ Fonctions :
 `pixelsMercator` 87 · `latitudeDePixel` 96 · `echelleDesTuiles` 116 · `niveauDesTuiles` 128
 `aireDuContour` 138 · `centreDuContour` 147 · `axeDuContour` 160
 
-### `modules/texte.mjs` — 25 l. → plan, console, rapport
+### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 

@@ -40,8 +40,9 @@ bout à bout dans un espace de noms unique, où chacun appelle les fonctions de
 tous les autres sans le dire. Il en sort **progressivement**, vers de vrais
 modules dans `outils/gabarit/modules/` — extension `.mjs`, `import` et
 `export` explicites. esbuild (dépendance de développement, version épinglée)
-les réunit par point d'entrée — `plan.mjs` pour les trois pages du plan,
-`console.mjs` et `rapport.mjs` pour les deux écrans de l'exploitant — en un script posé **avant** le
+les réunit par point d'entrée — `plan.mjs` pour le plan public et la
+démonstration, `plan-admin.mjs` pour l'administration, `console.mjs` et
+`rapport.mjs` pour les deux écrans de l'exploitant — en un script posé **avant** le
 code soudé, ni minifié ni renommé : une erreur remontée doit désigner une ligne
 lisible.
 
@@ -98,6 +99,16 @@ d'une propriété qui ferme aussi son objet (`apres: () => {…} },`) : on passe
 `},` à la ligne avant de borner. Pour vider une fonction que le public appelle
 sans s'en servir — `construitPanneau`, `retourAuxReglages` —, on borne son
 corps et l'on garde sa signature.
+
+Les modules suivent la même partition, par leur point d'entrée : une tranche
+n'aurait aucun effet dans un module, posé après la découpe. `plan-admin.mjs`
+reprend `plan.mjs` en entier (`import "./plan.mjs"`) et expose en plus ce que
+seule l'administration reçoit — un seul script par page, sans quoi deux
+exemplaires d'un module partagé auraient deux états. Un nom exposé là et non
+dans `plan.mjs` compte pour `reserve.js` comme un nom sorti d'une tranche. Le
+geste qui va avec : **un module d'exploitant s'importe dans `plan-admin.mjs`,
+jamais dans `plan.mjs`**. La relecture et les types relisent `plan.html` tel
+qu'il est livré, tranches retirées.
 
 Sont déjà en tranches : la fenêtre des réglages, la fiche d'une zone, et tout
 l'outil de dessin — boîte à outils, gestes, aimants, panneau et ordre des
@@ -203,7 +214,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `outils/essais/navigateur/` | le plan dans Chromium par Playwright — `npm run navigateur` : ouvert, cherché, lu en fiche, en anglais, sur téléphone ; et les règles de `modules/sur.mjs` éprouvées sur des entrées hostiles. Les données viennent de `outils/plans.json`, interceptées (`aide.js` `prepare`) : un essai ne doit rien au réseau. Une phrase de l'interface citée par un essai change avec lui. `PLAN_ADRESSE=https://<branche>-plan-interactif.interactiveplan.workers.dev npm run navigateur` éprouve un déploiement plutôt que le serveur local |
 | `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Le code des pages se relit **tel que la page l'assemble**, jamais module par module (l'espace de noms est unique), et chaque remarque revient au module et à sa ligne ; un nom inutilisé ou inconnu ne compte que s'il l'est dans toutes les pages qui portent le module |
 | `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`. Un **cliquet** : les remarques d'aujourd'hui sont dans `outils/types-acceptes.json`, seule une nouvelle échoue ; quand le stock baisse, `npm run types -- --resserre` |
-| `outils/gabarit/modules/` | les modules sortis du code soudé, réunis par esbuild — points d'entrée `plan.mjs`, `console.mjs` et `rapport.mjs` ; assemblage, liste exposée et provenance de chaque nom dans `outils/modules.js` |
+| `outils/gabarit/modules/` | les modules sortis du code soudé, réunis par esbuild — points d'entrée `plan.mjs`, `plan-admin.mjs`, `console.mjs` et `rapport.mjs` ; assemblage, liste exposée et provenance de chaque nom dans `outils/modules.js` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir
@@ -309,7 +320,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` ; fond de carte gardé par `tuileDeCarte` (tuiles, cache durable) et `fondDeCarte` (MapLibre, styles) — fournisseurs `FONDS_DE_CARTE`, bornes `borneLesLots` et `borneLesTuiles` |
 | installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `application()` pour le seul plan public ; nom, icônes et adresse de départ par salon dans `src/index.mjs` `manifeste`, `appDuSalon` (`MARQUE`), qui les tient de `plan-public?slug=…&app=1` (`TTL_APP`, réponse non gardée en amont) ; nom et icône sur l'écran d'accueil d'iOS par `_installation.html` `nommeApplication` |
 | une application par salon, qui n'ouvre que le sien — portée du manifeste | adresse `/plan-<salon>` : `src/index.mjs` `cheminDuSalon`, `CHEMIN_SALON`, `pageDuSalon`, écrite dans `start_url`, `scope` et `id` par `manifeste` ; lue par `modules/salon.mjs` `SLUG` et par le bloc en tête de `outils/pwa.js` `application()` ; ramenée au plan public pour ce qui se partage par `modules/salon.mjs` `cheminPartageable` (`_partage.html`, `_ici.html`) ; visée par `_installation.html` `adresseApplication` (`intent://`) ; clé du cache hors ligne ramenée à `/plan` dans `_sw.js` `navigation` |
-| icône et nom de l'application d'un salon — déposer un logo, ou garder celui du produit | `_application.html` (`blocApplication`, posé dans `_volets.html` `voletAdmin`) ; deux images d'un fichier par `reduitIconeApp`, fond du masque par `fondPourIconeApp` ; colonnes `icone_app`, `icone_app_masque`, `nom_app` et empreinte calculée `icone_app_version`, migration `l_icone_et_le_nom_de_l_application_installee` ; servies par `plan-public` (`?icone=1`) et relayées par `src/index.mjs` `iconeApp` (`/api/icone`) |
+| icône et nom de l'application d'un salon — déposer un logo, ou garder celui du produit | `_application.html` (`blocApplication`, posé dans `_volets.html` `voletAdmin`) ; deux images d'un fichier par `modules/icone-app.mjs` `reduitIconeApp` (administration seule, par `plan-admin.mjs`), fond du masque par `fondPourIconeApp` ; colonnes `icone_app`, `icone_app_masque`, `nom_app` et empreinte calculée `icone_app_version`, migration `l_icone_et_le_nom_de_l_application_installee` ; servies par `plan-public` (`?icone=1`) et relayées par `src/index.mjs` `iconeApp` (`/api/icone`) |
 | commentaires retirés des pages servies — le gabarit garde les siens | `outils/genere.js` `epure` (scripts situés par acorn puis découpés sans réimpression, styles et balisage par `epureStyle`, `epureBalisage`) ; appliqué par `page()` et à `sw.js`, `config.js`, `console.css`. Un commentaire n'atteint donc jamais le visiteur — y nommer une personne reste à éviter : le dépôt, lui, le garde |
 | quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
 | fenêtre qui invite le visiteur à installer le plan | `_installation.html` — moment `essaieInvitation` (lancé par `_admin2.html` `demarre`), façon par navigateur `faconInstallation`, confirmation après installation `ouvreInstalle` ; case `caseInstallation`, posée par `_volets.html` `voletAdmin`. Ne jamais y écrire `rel="manifest"` entre guillemets : la construction y reconnaît la page installable |

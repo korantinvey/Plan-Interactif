@@ -302,12 +302,13 @@ const auth = fs.readFileSync(D + "/gabarit/_auth-plan.html", "utf8");
 /** Branche la page sur l'API plutôt que sur des données figées. Les réglages
  *  se posent sur le script des modules : c'est `modules/salon.mjs` qui les lit. */
 function connecte(t) {
-  const marque = '<script data-modules="plan">';
-  if (t.split(marque).length !== 2) throw new Error("script des modules introuvable, ou en double");
+  const marque = /<script data-modules="(plan|plan-admin)">/g;
+  if ((t.match(marque) || []).length !== 1) throw new Error("script des modules introuvable, ou en double");
   return t
     .replace('<script id="data" type="application/json">/*__DATA__*/</script>',
              '<script id="data" type="application/json"></script>')
-    .replace(marque, '<script data-modules="plan" data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">');
+    .replace(marque, (m, entree) =>
+      '<script data-modules="' + entree + '" data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">');
 }
 
 /* Les modules (`outils/gabarit/modules/`) passent avant le code soudé, qui
@@ -315,21 +316,26 @@ function connecte(t) {
    Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
 const scriptDesModules = (entree) =>
   '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
-const MODULES_PLAN = scriptDesModules("plan");
-function poseModulesDuPlan(t) {
+function poseModulesDuPlan(t, entree) {
   const marque = "<script>\n/* Sans viewport";
   if (t.split(marque).length !== 2) throw new Error("script du plan introuvable, ou en double");
-  return t.replace(marque, () => MODULES_PLAN + marque);
+  const script = scriptDesModules(entree);
+  return t.replace(marque, () => script + marque);
 }
 /* Le gabarit sous ses deux formes : entier pour l'administration, amputé de
-   ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). */
-const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl));
-const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl));
+   ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). Les
+   modules suivent la même partition : l'administration reçoit le point
+   d'entrée qui reprend celui du plan et y ajoute les siens. */
+const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl), "plan-admin");
+const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl), "plan");
 /* Une tranche retirée dont un nom reste cité ailleurs ne casse rien ici : elle
    casse chez le visiteur, au moment où ce code-là s'exécute. On le refuse donc
-   avant d'écrire la moindre page. Les données et la porte n'y changent rien :
-   le gabarit seul suffit à juger. */
-reserve.verifie(tplAdmin, tplPublic, "Le plan public");
+   avant d'écrire la moindre page. Un nom que seul le point d'entrée de
+   l'administration expose est retiré au même titre. Les données et la porte
+   n'y changent rien : le gabarit seul suffit à juger. */
+const publics = new Set(modules.exposes("plan"));
+reserve.verifie(tplAdmin, tplPublic, "Le plan public",
+  modules.exposes("plan-admin").filter((n) => !publics.has(n)));
 
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
