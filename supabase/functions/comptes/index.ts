@@ -55,6 +55,27 @@ const service = () =>
 
 const ROLES = ["admin", "organisateur"];
 
+/* Un identifiant de compte ou de salon est un uuid, et rien d'autre : ce qui
+   n'en a pas la forme se refuse ici, en le disant, plutôt que de remonter de
+   la base comme une erreur interne. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/* Plus de salons qu'un projet n'en tiendra jamais : la borne ne gêne personne,
+   et une liste démesurée n'atteint pas la base. */
+const SALONS_MAX = 1000;
+
+/** Les salons voulus pour un compte : `null` quand la console n'en dit rien —
+ *  ils restent alors tels quels —, une erreur quand un identifiant est faux. */
+function salonsVoulus(brut: unknown): string[] | null | { erreur: string } {
+  if (brut === undefined || brut === null) return null;
+  if (!Array.isArray(brut) || brut.length > SALONS_MAX) {
+    return { erreur: "Liste de salons invalide." };
+  }
+  const voulus = [...new Set(brut.map((e) => String(e ?? "").trim()).filter(Boolean))];
+  if (voulus.some((e) => !UUID.test(e))) return { erreur: "Identifiant de salon invalide." };
+  return voulus;
+}
+
 /** Une adresse de retour venue du navigateur ne vaut que si elle désigne une
  *  origine déclarée : c'est elle qui recevra le jeton du lien.
  *
@@ -112,22 +133,25 @@ Deno.serve(async (req) => {
     if (!corps) return repond({ erreur: "Corps illisible." }, 400);
     const action = String(corps.action ?? "");
 
-    /** Les salons affectés à un profil, remplacés en bloc : la console envoie
-     *  la liste voulue, pas une différence qu'elle aurait à calculer. */
-    const ecritAcces = async (profilId: string, evenements: unknown) => {
-      if (!Array.isArray(evenements)) return;
-      const voulus = evenements.map((e) => String(e)).filter(Boolean);
-      /* L'effacement d'abord, et son échec compte autant que celui de l'ajout.
-         Tu, il laissait au profil les salons qu'on venait justement de lui
-         retirer, pendant que la console affichait la liste voulue : un droit
-         qu'on croit repris ne doit jamais rester ouvert en silence. */
-      const { error: eVieux } = await db.from("acces").delete().eq("profil_id", profilId);
-      if (eVieux) throw new Error(eVieux.message);
-      if (voulus.length) {
-        const { error } = await db.from("acces").insert(
-          voulus.map((evenement_id) => ({ profil_id: profilId, evenement_id })));
-        if (error) throw new Error(error.message);
-      }
+    /** Le profil et ses salons, écrits en une seule transaction par
+     *  `ecrit_compte` : la console envoie la liste voulue, pas une différence
+     *  qu'elle aurait à calculer.
+     *
+     *  Ils s'écrivaient en trois temps — profil, effacement, insertion — et un
+     *  salon supprimé entre l'affichage et l'envoi faisait échouer l'insertion
+     *  après l'effacement : le compte restait sans aucun salon, le rôle déjà
+     *  changé. Tout passe désormais, ou rien. */
+    const ecritCompte = async (
+      profilId: string,
+      champs: Record<string, unknown>,
+      evenements: string[] | null,
+    ) => {
+      const { error } = await db.rpc("ecrit_compte", {
+        p_profil: profilId,
+        p_champs: champs,
+        p_evenements: evenements,
+      });
+      if (error) throw new Error(error.message);
     };
 
     /* ---------------------------------------------------------- liste */
@@ -177,6 +201,8 @@ Deno.serve(async (req) => {
       const prenom = String(corps.prenom ?? "").trim().slice(0, 120) || null;
       const retour = retourValide(corps.retour);
       if (corps.retour && !retour) return repond({ erreur: RETOUR_REFUSE }, 400);
+      const salons = salonsVoulus(corps.evenements);
+      if (salons && !Array.isArray(salons)) return repond(salons, 400);
 
       const { data, error } = await db.auth.admin.inviteUserByEmail(email, {
         redirectTo: retour ?? undefined,
@@ -187,19 +213,33 @@ Deno.serve(async (req) => {
 
       /* Le déclencheur a posé le profil ; on écrit ensuite ce que le
          déclencheur ne pouvait pas savoir seul — et on le réaffirme, parce
-         qu'un tout premier compte naît administrateur quoi qu'on demande. */
-      await db.from("profil")
-        .update({ nom, prenom, role, email, modifie_le: new Date().toISOString() })
-        .eq("id", id);
-      await ecritAcces(id, corps.evenements);
+         qu'un tout premier compte naît administrateur quoi qu'on demande.
+
+         Son échec se dit : tu, il laissait un compte invité sous le rôle par
+         défaut, sans ses salons, pendant que la console annonçait l'invitation
+         réussie. Le compte existe alors déjà — le courriel est parti — et
+         reste organisateur sans salon : il ne voit rien tant qu'on ne l'a pas
+         repris, ce qui est le côté sûr. */
+      try {
+        await ecritCompte(id, { nom, prenom, role, email }, salons ?? []);
+      } catch (e) {
+        return repond({
+          erreur: "Invitation envoyée, mais le rôle et les salons n'ont pas pu être " +
+            "enregistrés : modifiez le compte pour les reprendre. (" +
+            (e instanceof Error ? e.message : String(e)) + ")",
+          id,
+        }, 500);
+      }
       return repond({ ok: true, id });
     }
 
     /* ------------------------------------------------------ modification */
     if (action === "maj") {
       const id = String(corps.id ?? "");
-      if (!id) return repond({ erreur: "Compte manquant." }, 400);
-      const champs: Record<string, unknown> = { modifie_le: new Date().toISOString() };
+      if (!UUID.test(id)) return repond({ erreur: "Compte manquant ou invalide." }, 400);
+      const salons = salonsVoulus(corps.evenements);
+      if (salons && !Array.isArray(salons)) return repond(salons, 400);
+      const champs: Record<string, unknown> = {};
       if (corps.nom !== undefined) champs.nom = String(corps.nom ?? "").trim().slice(0, 120) || null;
       if (corps.prenom !== undefined) {
         champs.prenom = String(corps.prenom ?? "").trim().slice(0, 120) || null;
@@ -213,9 +253,12 @@ Deno.serve(async (req) => {
         }
         champs.role = String(corps.role);
       }
-      const { error } = await db.from("profil").update(champs).eq("id", id);
-      if (error) return repond({ erreur: error.message }, 400);
-      await ecritAcces(id, corps.evenements);
+      try {
+        await ecritCompte(id, champs, salons);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        return repond({ erreur: message }, /Compte inconnu/.test(message) ? 404 : 400);
+      }
       return repond({ ok: true });
     }
 
@@ -226,6 +269,7 @@ Deno.serve(async (req) => {
        compte n'est jamais recréé — le recréer lui ferait perdre ses salons. */
     if (action === "relance") {
       const id = String(corps.id ?? "");
+      if (!UUID.test(id)) return repond({ erreur: "Compte manquant ou invalide." }, 400);
       const { data: cible } = await db
         .from("profil").select("email").eq("id", id).maybeSingle();
       if (!cible?.email) return repond({ erreur: "Compte introuvable." }, 404);
@@ -246,6 +290,7 @@ Deno.serve(async (req) => {
     /* ---------------------------------------------------------- suppression */
     if (action === "supprime") {
       const id = String(corps.id ?? "");
+      if (!UUID.test(id)) return repond({ erreur: "Compte manquant ou invalide." }, 400);
       if (id === user.id) {
         return repond({ erreur: "Vous ne pouvez pas supprimer votre propre compte." }, 400);
       }

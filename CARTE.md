@@ -972,7 +972,7 @@ Fonctions :
 
 `octetsDeVignette` 12
 
-### `supabase/functions/_partage/push.ts` — 229 l.
+### `supabase/functions/_partage/push.ts` — 247 l.
 
 `octets` 49 · `base64url` 57 · `colle` 63 · `texte` 71 · `cleDeSignature` 83
 `jetonVapid` 105 · `derive` 131 · `chiffre` 145 · `pousse` 201
@@ -986,9 +986,9 @@ Fonctions :
 
 `versionFond` 47 · `versionDuPlan` 92 · `condense` 96
 
-### `supabase/functions/_partage/vignette.ts` — 28 l.
+### `supabase/functions/_partage/vignette.ts` — 52 l.
 
-`cleDeVignette` 23
+`cleDeVignette` 23 · `imageReconnue` 38
 
 ### `supabase/functions/mesure/index.ts` — 173 l.
 
@@ -1061,11 +1061,12 @@ Fonctions :
 - `20260921145417_le_calage_de_la_carte_par_pavillon.sql` — plan
 - `20260922144359_la_charge_prevue_des_stands.sql` — plan_de_visite, compteur, fn enregistre_mesures, fn pose_plan_de_visite, fn charge_prevue, fn purge_presences, fn reinitialise_compteurs, fn rapport_utilisation
 - `20261008172816_la_porte_publique_des_mesures.sql` — fn mesure_publique
+- `20261008232403_le_cloisonnement_des_presences_et_des_droits_d_execution.sql` — fn ecrit_compte
 
 ## Le reste
 
-- `src/index.mjs` — 965 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 104 · `amontPour` 113 · `cleDe` 121 · `cleDeLot` 127 · `condense` 134 `cleVersion` 158 · `rangeLaVersion` 161 · `ditVersion` 169 · `meta` 178 · `gardable` 194 `range` 200 · `rafraichit` 207 · `entete` 242 · `oublie` 284 · `rappels` 370 · `cleApp` 415 `cheminDuSalon` 446 · `pageDuSalon` 463 · `appDuSalon` 487 · `iconesDuSalon` 533 `manifeste` 573 · `iconeApp` 662 · `mesure` 706 · `planDeVisite` 781 · `chargePrevue` 819
+- `src/index.mjs` — 984 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 107 · `amontPour` 116 · `cleDe` 124 · `cleDeLot` 130 · `condense` 137 `cleVersion` 161 · `rangeLaVersion` 164 · `ditVersion` 172 · `meta` 181 · `gardable` 197 `range` 203 · `rafraichit` 210 · `entete` 245 · `oublie` 294 · `rappels` 389 · `cleApp` 434 `cheminDuSalon` 465 · `pageDuSalon` 482 · `appDuSalon` 506 · `iconesDuSalon` 552 `manifeste` 592 · `iconeApp` 681 · `mesure` 725 · `planDeVisite` 800 · `chargePrevue` 838
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

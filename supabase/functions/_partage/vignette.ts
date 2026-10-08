@@ -26,3 +26,27 @@ export async function cleDeVignette(source: string): Promise<string> {
   return [...new Uint8Array(empreinte).slice(0, 12)]
     .map((n) => n.toString(16).padStart(2, "0")).join("");
 }
+
+/** Une vignette en base64 : trois cents kilo-octets, cent fois la taille
+ *  ordinaire d'un logo réduit. */
+export const IMAGE_MAX = 300_000;
+
+/** Les formats qu'un navigateur rend par `toBlob` : WebP d'ordinaire, PNG ou
+ *  JPEG là où il ne sait pas encoder le WebP. Reconnus à leurs premiers octets,
+ *  puisque l'image est servie sous un type d'image : du SVG ou du HTML n'a rien
+ *  à faire dans cette table. */
+export function imageReconnue(base64: string): boolean {
+  if (base64.length > IMAGE_MAX || base64.length < 16) return false;
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) return false;
+  let tete: Uint8Array;
+  try {
+    tete = Uint8Array.from(atob(base64.slice(0, 16)), (c) => c.charCodeAt(0));
+  } catch (_e) {
+    return false;
+  }
+  const texte = (de: number, a: number) => String.fromCharCode(...tete.slice(de, a));
+  const webp = texte(0, 4) === "RIFF" && texte(8, 12) === "WEBP";
+  const png = tete[0] === 0x89 && texte(1, 4) === "PNG";
+  const jpeg = tete[0] === 0xff && tete[1] === 0xd8 && tete[2] === 0xff;
+  return webp || png || jpeg;
+}

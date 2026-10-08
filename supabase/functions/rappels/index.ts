@@ -35,7 +35,7 @@
  * plus qu'aucun journal ne le nommerait.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { pousse } from "../_partage/push.ts";
+import { pousse, servicePush } from "../_partage/push.ts";
 
 /*
  * Toutes les origines, comme `mesure`, et pour la même raison : un plan posé
@@ -55,6 +55,7 @@ const CORS = {
 
 /** Ce qu'un appareil peut poser en une fois. La base reborne de son côté. */
 const RANGS_MAX = 60;
+
 
 /** Ce qu'une minute peut emporter. Au-delà, la minute suivante prend la suite —
  *  un rappel en retard d'une minute reste un rappel. */
@@ -105,7 +106,10 @@ async function enregistre(req: Request) {
   /* L'abonnement est une adresse, et elle sert telle quelle à poster : on
      refuse ici ce qui n'en est pas une, plutôt que de le découvrir à l'envoi. */
   try {
-    if (new URL(point).protocol !== "https:") return refus("Abonnement invalide.");
+    const u = new URL(point);
+    if (u.protocol !== "https:" || u.port || u.username || !servicePush(u.hostname)) {
+      return refus("Abonnement invalide.");
+    }
   } catch (_e) {
     return refus("Abonnement invalide.");
   }

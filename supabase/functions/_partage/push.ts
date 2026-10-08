@@ -227,3 +227,21 @@ export async function pousse(
   });
   return { parti: r.ok, statut: r.status, perime: r.status === 404 || r.status === 410 };
 }
+
+/* Les services de notification des navigateurs, et eux seuls : Chrome, Edge
+   Chromium, Opera, Samsung Internet et Brave passent par Google ; Firefox par
+   Mozilla ; Safari par Apple ; l'ancien Edge par Microsoft.
+
+   L'adresse d'abonnement vient du navigateur, c'est-à-dire de n'importe qui :
+   bornée au seul « https », elle faisait de cette fonction un relais qui poste,
+   à l'heure dite, vers l'hôte de son choix — soixante requêtes par abonnement,
+   autant d'abonnements qu'on voulait en déposer. */
+const SERVICES_PUSH = [
+  "fcm.googleapis.com",
+  "android.googleapis.com",
+  "updates.push.services.mozilla.com",
+  "web.push.apple.com",
+];
+const SUFFIXES_PUSH = [".push.apple.com", ".notify.windows.com", ".push.services.mozilla.com"];
+export const servicePush = (hote: string): boolean =>
+  SERVICES_PUSH.includes(hote) || SUFFIXES_PUSH.some((s) => hote.endsWith(s));

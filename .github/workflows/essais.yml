@@ -3,7 +3,8 @@
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
 # les appels sans déclaration, la relecture ESLint, le cliquet des types, les
-# douze cas du moteur de la journée organisée,
+# douze cas du moteur de la journée organisée, le cloisonnement des salons
+# dans une vraie base (les migrations rejouées sur le Postgres de la machine),
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
 #
@@ -53,6 +54,11 @@ jobs:
 
       - name: Moteur de la journée organisée
         run: npm run essais
+
+      # Le Postgres de l'image Ubuntu, sans service à démarrer : l'essai monte
+      # sa propre grappe, y rejoue les migrations, et la jette en partant.
+      - name: La base — cloisonnement des salons et droits
+        run: npm run essais:base
 
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium

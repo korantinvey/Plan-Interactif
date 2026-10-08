@@ -15,7 +15,7 @@
  * le même nom.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { cleDeVignette } from "../_partage/vignette.ts";
+import { cleDeVignette, imageReconnue } from "../_partage/vignette.ts";
 
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
@@ -38,6 +38,22 @@ const METHODES = { "Access-Control-Allow-Methods": "POST, OPTIONS" };
    coup de pioche, et un lot plus petit multiplierait les allers-retours pour
    rien. */
 const LOT = Number(Deno.env.get("LOT_VIGNETTES") ?? 40);
+
+/* Ce qu'un envoi peut porter. La console en envoie huit à la fois, de six
+   cents pixels au plus — quelques kilo-octets chacune. Les bornes laissent une
+   large marge à cet usage et ferment la porte au reste : sans elles, un compte
+   connecté faisait lire à la fonction, puis écrire en base, autant de
+   mégaoctets qu'il voulait, dans une table que chaque visiteur relit. */
+const PAR_ENVOI = 32;
+const CORPS_MAX = 4 * 1024 * 1024;
+const COTE_MAX = 4096;
+
+const cote = (v: unknown) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 && n <= COTE_MAX ? n : 0;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const service = () =>
   createClient(
@@ -121,11 +137,28 @@ Deno.serve(async (req) => {
       return repond({ erreur: "Authentification requise." }, 401);
     }
 
-    const corps = await req.json().catch(() => ({})) as {
+    if (req.method !== "POST") return repond({ erreur: "Méthode non permise." }, 405);
+    /* Lu en texte d'abord, pour en borner la taille avant de le déplier : un
+       JSON de cent mégaoctets coûte sa mémoire dès qu'on le parse. */
+    const brut = await req.text();
+    if (brut.length > CORPS_MAX) return repond({ erreur: "Envoi trop lourd." }, 413);
+    let corps: {
       evenementId?: string;
       vignettes?: { source: string; image: string; largeur: number; hauteur: number }[];
     };
-    if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
+    try {
+      corps = JSON.parse(brut || "{}");
+    } catch (_e) {
+      return repond({ erreur: "Corps illisible." }, 400);
+    }
+    if (!corps || typeof corps !== "object") return repond({ erreur: "Corps illisible." }, 400);
+    if (typeof corps.evenementId !== "string" || !UUID.test(corps.evenementId)) {
+      return repond({ erreur: "evenementId manquant ou invalide." }, 400);
+    }
+    if (corps.vignettes !== undefined &&
+        (!Array.isArray(corps.vignettes) || corps.vignettes.length > PAR_ENVOI)) {
+      return repond({ erreur: `Au plus ${PAR_ENVOI} vignettes par envoi.` }, 413);
+    }
 
     /* La suite écrit avec la clé de service, qui ignore les politiques de la
        base : c'est donc ici, et nulle part plus loin, que se vérifie le droit
@@ -148,20 +181,30 @@ Deno.serve(async (req) => {
       const lignes = [];
       let refusees = 0;
       for (const v of corps.vignettes) {
-        if (!v?.source || !v.image) continue;
+        if (typeof v?.source !== "string" || typeof v.image !== "string") { refusees++; continue; }
         if (!permises.has(v.source)) { refusees++; continue; }
+        const largeur = cote(v.largeur), hauteur = cote(v.hauteur);
+        if (!largeur || !hauteur || !imageReconnue(v.image)) { refusees++; continue; }
         lignes.push({
           cle: await cleDeVignette(v.source),
           source: v.source,
           image: v.image,
-          largeur: v.largeur | 0,
-          hauteur: v.hauteur | 0,
+          largeur,
+          hauteur,
           pose: new Date().toISOString(),
         });
       }
       if (!lignes.length) return repond({ enregistrees: 0, refusees });
+      /* Une vignette déjà là ne se remplace pas. Sa clé lui sert de version :
+         la page publique la déclare immuable, gardée un an par le relais et
+         les navigateurs. La remplacer ne corrigerait donc personne, et la
+         table étant commune aux salons, cela laissait l'exploitant d'un salon
+         réécrire le logo qu'un exposant présent ailleurs montre aux visiteurs
+         des autres. La console ne demande de toute façon que les adresses qui
+         n'en ont pas ; une source qui change d'image se rattrape en effaçant
+         l'ancienne, comme la table le prévoit. */
       const { error } = await db.from("vignette_de_logo")
-        .upsert(lignes, { onConflict: "cle" });
+        .upsert(lignes, { onConflict: "cle", ignoreDuplicates: true });
       if (error) return repond({ erreur: error.message }, 500);
       return repond({ enregistrees: lignes.length, refusees });
     }

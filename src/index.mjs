@@ -43,6 +43,9 @@ const PLAN_DE_VISITE = BASE + "plan-de-visite";
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
 const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
+/* Et le droit sur le salon, demandé à la base sous l'identité de l'appelant :
+   ses politiques ne lui rendent que les salons qui lui sont affectés. */
+const SALONS = BASE.replace("/functions/v1/", "/rest/v1/") + "evenement";
 const PARAMS = ["slug", "fond", "v", "vignette", "vignettes"];
 
 /* Un slug nomme un salon : des minuscules, des chiffres, des traits. Le
@@ -280,6 +283,13 @@ async function entete(url, env, ctx) {
  * pour autant — il faut présenter une session de ce projet, sans quoi ce chemin
  * serait un moyen de vider le cache en boucle. Le fond de plan n'est pas
  * concerné : son adresse porte sa version, et l'apparence entre dedans.
+ *
+ * Une session ne suffit pas non plus : il faut qu'elle ait ce salon. Sans quoi
+ * n'importe quel compte du projet — l'organisateur d'un autre salon, ou un
+ * compte né d'une inscription laissée ouverte — vidait le cache de tous les
+ * salons en boucle, chaque oubli coûtant trois écritures sur un stockage qui
+ * n'en accepte que mille par jour : le quota parti, plus rien ne se gardait et
+ * chaque visite descendait jusqu'à la base.
  */
 async function oublie(requete, env) {
   if (requete.method !== "POST") {
@@ -291,9 +301,18 @@ async function oublie(requete, env) {
   const jeton = requete.headers.get("Authorization");
   const apikey = requete.headers.get("apikey");
   if (!jeton || !apikey) return dit({ erreur: "Session absente." }, 401);
-  const qui = await fetch(AUTH, { headers: { "Authorization": jeton, apikey } })
-    .catch(() => null);
+  const qui = await fetch(AUTH, {
+    headers: { "Authorization": jeton, apikey },
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
   if (!qui || !qui.ok) return dit({ erreur: "Session refusée." }, 401);
+
+  const salon = await fetch(
+    SALONS + "?select=id&slug=eq." + encodeURIComponent(slug),
+    { headers: { "Authorization": jeton, apikey }, signal: AbortSignal.timeout(10000) },
+  ).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!Array.isArray(salon)) return dit({ erreur: "Droit sur le salon invérifiable." }, 502);
+  if (!salon.length) return dit({ erreur: "Ce salon ne vous est pas accessible." }, 403);
 
   if (env.CACHE) {
     /* Le plan, et ce que porte l'application installée : renommer un salon dans
