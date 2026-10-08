@@ -1,7 +1,6 @@
 /* `outils/gabarit/_partage.html` — partager son parcours par un lien ou un
    code, et accueillir celui qu'on reçoit. */
 module.exports = {
-  "Code à photographier qui ouvre ce parcours": "Code to scan that opens this visit plan",
   "Faites photographier ce code : le plan s'ouvrira sur le même parcours.":
     "Have this code scanned: the map will open on the same visit plan.",
   "Ce parcours porte trop d'étapes pour un code lisible de loin. Envoyez le lien, il fait le même travail.":

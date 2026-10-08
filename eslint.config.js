@@ -59,10 +59,13 @@ module.exports = [
     rules: REGLES,
   },
   /* Les modules du gabarit : de vrais modules, relus seuls. Ce qu'ils
-     confient au code soudé, la relecture des pages le tient pour déclaré. */
+     confient au code soudé, la relecture des pages le tient pour déclaré.
+     Le moteur de langue, lui, est posé avant tout script de la page : un
+     module peut s'en servir pour ce qui quitte la page traduit. */
   {
     files: ["outils/gabarit/modules/**/*.mjs"],
-    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.browser },
+    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: {
+      ...globals.browser, LANGUE: GLOBALES_PAGE.LANGUE, traduit: GLOBALES_PAGE.traduit } },
     rules: REGLES,
   },
   {
