@@ -113,7 +113,7 @@ function manifeste() {
        s'écrit alors sur la couleur du salon plutôt que sur du noir. Son prix :
        les quarante-trois points de cette bande restent à l'horloge, et le
        contenu de la barre se range dessous (`viewport-fit=cover`, jetons
-       `--sys-*` de `_head.html`).
+       `--sys-*` de `_styles-jetons.css`).
 
        « fullscreen ». L'horloge et la poignée de gestes s'effacent, et le
        système ne prévient personne — c'est l'installation qui l'a accordé.

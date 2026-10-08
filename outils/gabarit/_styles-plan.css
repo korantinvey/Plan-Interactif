@@ -1,0 +1,1600 @@
+/* L'écran du plan : barre, recherche et critères, liste, plan et calques, fiche,
+   outils de l'administration et leurs gris. */
+/* ------------------------------------------------------------------
+   Les gris de l'outil
+
+   Le plan garde les siens, greiges : ce sont ceux du visiteur, et l'exploitant
+   qui travaille doit les voir tels qu'ils seront. Mais ce qui n'existe qu'en
+   administration n'a personne à qui ressembler — le panneau des calques, la
+   boîte à dessin, la palette des libellés et les fenêtres que `GENRES_OUTIL`
+   tient déjà à l'écart de l'habillage du salon. Ces surfaces passent aux gris
+   bleutés de la marque, ceux de la console : les deux écrans de l'outil
+   parlent enfin du même gris.
+
+   Les jetons sont redéfinis sur ces blocs, et non sur la racine : les règles
+   qui les peignent n'ont pas à savoir qu'elles ont changé de côté, et rien de
+   ce qui vit ailleurs n'est touché. L'accent n'en fait pas partie — il
+   appartient au salon.
+   ------------------------------------------------------------------ */
+html.mode-admin :is(#panel,#outils,#libReg),
+html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+  --surface:#FFFFFF;--surface-2:#F4F8FB;
+  --line:#D2DFEA;--line-strong:#AFC2D3;
+  --ink:#071F3A;--ink-2:#3C5670;--ink-3:#54708C}
+/* Des gris bleutés ne se remarquent pas : à côté du greige du plan, l'écart
+   est de quelques points et ne dit rien. Deux choses le disent vraiment — un
+   filet de cyan en tête de chaque panneau de l'outil, et ses intertitres
+   écrits à l'accent de la marque au lieu du gris. C'est le cyan profond et non
+   le vif : ici, ils portent du texte sur du blanc.
+
+   Et c'est `--m-cyan-profond` en dur, non `--accent` : sur cette page,
+   l'accent appartient au salon. */
+html.mode-admin :is(#panel,#outils,#libReg){border-top:2px solid var(--m-cyan)}
+html.mode-admin :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan-profond)}
+
+/* Un texte écrit dans les deux langues ne montre que celui de la page. */
+html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
+
+/* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
+   administration — la page publique n'a pas de session à montrer, et
+   `retireAdmin` le retire du document. Le panneau se décrit ici en entier :
+   cette page ne charge pas `console.css`, où vivent les menus de la console. */
+.compte{position:relative}
+.compte > summary{list-style:none;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;user-select:none;
+  background:var(--accent-soft);color:var(--accent);border:1px solid transparent;
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.03em;text-transform:uppercase}
+.compte > summary::-webkit-details-marker{display:none}
+.compte > summary:hover,.compte[open] > summary{border-color:var(--accent)}
+.compte-pan{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:220px;
+  padding:5px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.compte-pan .qui{padding:7px 10px 9px;font-size:12.5px;color:var(--ink-2);
+  overflow-wrap:anywhere;border-bottom:1px solid var(--line);margin-bottom:5px}
+.compte-pan button{display:block;width:100%;text-align:left;padding:8px 10px;
+  font-size:13px;border-radius:var(--radius);color:var(--ink);white-space:nowrap}
+.compte-pan button:hover{background:var(--surface-2)}
+.compte-pan button.sortie{color:var(--rouge)}
+
+.side{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+
+/* La poignée du tiroir : sur écran étroit la liste se hisse par-dessus le
+   plan, et cette barre est la prise qu'on saisit. Sur grand écran la liste a
+   sa colonne, il n'y a pas de tiroir, donc pas de prise. */
+.poignee{display:none}
+.search{padding:14px 16px 12px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px}
+/* La recherche prend la place, le bouton des critères ce qu'il faut : sur un
+   téléphone les deux tiennent sur la même ligne, et le tiroir replié ne perd
+   pas une ligne de plus. */
+.search-field{position:relative;flex:1;min-width:0}
+.crit-btn{position:relative;flex:0 0 auto;display:inline-flex;align-items:center;
+  justify-content:center;width:34px;height:34px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface-2);color:var(--ink-2)}
+.crit-btn:hover{border-color:var(--line-strong);color:var(--ink)}
+.crit-btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.crit-btn svg{width:15px;height:15px}
+/* Rien à filtrer encore : le bouton reste, en retrait, pour dire ce qui manque
+   — il n'est montré qu'en administration dans ce cas. */
+.crit-btn.vide{color:var(--ink-3);border-style:dashed}
+.crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
+  padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
+  font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Déplié, le bouton garde la marque de ce qu'il a ouvert — la pastille du
+   nombre retenu, elle, dit autre chose et se peint par « aria-pressed ». */
+.crit-btn[aria-expanded="true"]{border-color:var(--line-strong);color:var(--ink)}
+
+/* Le panneau des critères, déplié dans la colonne.
+
+   Il prend la bande sous la recherche plutôt que de flotter à côté du bouton :
+   une fenêtre posée là recouvrait la liste dont elle décide, et l'on cochait
+   sans voir ce qu'il restait. Il pousse donc la liste vers le bas au lieu de
+   passer devant, et défile pour son compte quand les critères sont nombreux —
+   sans jamais prendre plus de la moitié de la colonne, faute de quoi il ne
+   resterait rien de ce qu'il filtre. */
+.pan-crit{display:flex;flex-direction:column;max-height:56%;
+  padding:2px 16px 10px;border-bottom:1px solid var(--line)}
+/* Les critères défilent, le pied ne bouge pas : le compte qu'il porte parle de
+   ce qu'on est en train de cocher, et il ne le dirait plus s'il fallait
+   descendre le chercher sous deux cents valeurs. */
+.crit-corps{min-height:0;overflow-y:auto}
+.crit-pied{flex:0 0 auto}
+.crit-actes{display:flex;gap:8px;margin-top:9px}
+.crit-actes .btn{flex:1 1 0;text-align:center}
+.crit-actes .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
+/* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
+   replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
+.actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
+  border-bottom:1px solid var(--line);scrollbar-width:none}
+.actifs::-webkit-scrollbar{display:none}
+.actifs .actif{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;
+  max-width:100%;padding:4px 8px 4px 10px;font-size:12px;color:var(--ink);
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px}
+.actifs .actif .k{color:var(--ink-3);font-size:11px;flex:0 0 auto}
+.actifs .actif .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actifs .actif .v:empty{display:none}
+.actifs .actif .x{color:var(--ink-3);font-size:13px;line-height:1;flex:0 0 auto}
+.actifs .actif:hover .x{color:var(--ink)}
+.actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
+.actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
+.search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
+.search :is(input,.champ){width:100%;padding:9px 30px 9px 32px;background:var(--surface-2);
+  border:1px solid transparent;border-radius:var(--radius)}
+.search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* La croix qui défait la recherche. Celle du navigateur ne se montre qu'au
+   survol, jamais sur un téléphone, et s'efface sur les modèles qui peignent le
+   champ : un plan éteint par une recherche vaine se rallumait lettre à lettre.
+   On garde donc la nôtre, et on retire la sienne pour n'en avoir qu'une. */
+.vide-q{position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;padding:0;display:flex;align-items:center;
+  justify-content:center;border:0;background:none;border-radius:999px;
+  color:var(--ink-3);font-size:17px;line-height:1}
+.vide-q:hover{color:var(--ink)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+/* Le champ de la vignette des modèles. Un <input> ne peut pas vivre dans le
+   bouton qui choisit le modèle — pas plus qu'un bouton n'en contient un autre
+   — et l'habillage se joue pourtant sur la boîte de recherche : elle est donc
+   rejouée par une balise neutre, que les modèles habillent avec la vraie. */
+.search .champ{display:block;color:var(--ink-3);font-size:13px;line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* La pastille d'un secteur, sur la puce qui le coche et sur celle qui le dit
+   retenu. Un liseré la borde : une couleur pâle, choisie pour un aplat,
+   disparaîtrait sinon sur le fond clair du panneau. */
+.pastille{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+  border:1px solid var(--line-strong);
+  background:var(--sect-c,hsl(var(--sect-h) 60% var(--sect-dot-l)))}
+/* Une bande qui défile ne le dit pas d'elle-même.
+
+   En tiroir, les critères retenus tiennent sur une ligne qui déborde par le
+   côté : une puce coupée net au bord de l'écran ressemble à un défaut de
+   cadrage, pas à une invitation à pousser du doigt. Le bord par lequel il reste
+   quelque chose s'estompe donc, et lui seul — arrivé au bout, plus rien ne
+   s'efface, et l'on sait qu'on a tout vu.
+
+   Un masque plutôt qu'un dégradé de couleur : il découpe au lieu de teindre, et
+   tient donc sur n'importe quel fond sans avoir à être décliné, par-dessus
+   celui du tiroir comme par-dessus celui de la bande. */
+.bande{position:relative;--fondu:44px}
+.bande[data-gauche] .defile,.bande[data-droite] .defile{
+  -webkit-mask-image:var(--masque);mask-image:var(--masque)}
+.bande[data-droite]{
+  --masque:linear-gradient(to right,#000 calc(100% - var(--fondu)),transparent)}
+.bande[data-gauche]{
+  --masque:linear-gradient(to right,transparent,#000 var(--fondu))}
+.bande[data-gauche][data-droite]{
+  --masque:linear-gradient(to right,transparent,#000 var(--fondu),
+    #000 calc(100% - var(--fondu)),transparent)}
+/* La flèche, posée sur le fondu du côté où il reste quelque chose.
+
+   Le fondu seul ne suffisait pas : il dit qu'on n'a pas tout vu, il ne dit pas
+   comment voir le reste, et le geste ne vient pas de lui-même sur une bande
+   large de trois puces. La flèche le dit, et le fait — une pression avance
+   d'un écran, sans qu'on ait à pousser du doigt. Elle est hors de la bande,
+   sinon le masque l'effacerait avec les puces qu'elle surmonte.
+
+   Elle ne paraît jamais au large : les bandes s'y replient sur plusieurs
+   lignes, rien ne déborde, et aucun bord ne se marque. */
+.bande .fleche{display:none;position:absolute;top:50%;z-index:2;
+  width:27px;height:27px;margin-top:-13px;border-radius:50%;
+  align-items:center;justify-content:center;
+  background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line-strong);box-shadow:0 1px 5px rgba(0,0,0,.16)}
+.bande .fleche svg{width:15px;height:15px}
+.bande .fleche:active{background:var(--surface-2)}
+.bande[data-gauche] .fleche[data-vers="-1"]{display:flex;left:5px}
+.bande[data-droite] .fleche[data-vers="1"]{display:flex;right:5px}
+.count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between}
+.list{overflow-y:auto;flex:1;min-height:0}
+/* Le pied de la liste porte la notice de confidentialité : une mention, pas
+   une commande. Discrète, mais toujours au même endroit — c'est là qu'on
+   cherche d'ordinaire ces choses, et la barre du haut n'a pas de place à
+   perdre sur un téléphone. */
+.side-pied{border-top:1px solid var(--line);padding:5px 16px;display:flex;justify-content:flex-end}
+.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:12px;color:var(--ink-3);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line-strong)}
+.lien-discret:hover{color:var(--ink)}
+.row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
+  padding:9px 16px;border-bottom:1px solid var(--line)}
+.row:hover{background:var(--surface-2)}
+.row[aria-current="true"]{background:var(--accent-soft)}
+/* Le numéro tient sur une ligne : c'est un tout, et l'empiler en deux morceaux
+   le donnait à lire comme deux numéros. La case s'élargit plutôt, jusqu'au
+   plafond que `caseNumero` lui fixe. */
+.row .code{font-family:"IBM Plex Mono",monospace;font-size:var(--caseF,11.5px);font-weight:500;
+  padding:3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2)}
+.row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
+/* Une zone et une conférence n'ont pas de numéro : leur case dit la sorte. En
+   lettres, et sans le cadre — celui-ci cite un numéro peint sur une cloison,
+   et l'emprunter pour un mot ferait lire « Zone » comme un emplacement. */
+.row[data-sorte="zone"] .code,.row[data-sorte="conf"] .code{
+  font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;border-color:transparent;background:var(--surface-2);color:var(--ink-3)}
+.row.l .code{opacity:.5}
+/* Le second bloc d'une ligne doit pouvoir rétrécir sous la largeur de son
+   texte : sans cela il s'étire à la taille du nom, et l'ellipse annoncée plus
+   bas ne se déclenche jamais — le nom se coupait net au bord de l'écran. */
+.row>span{min-width:0}
+/* `overflow` ne s'applique pas à une boîte en ligne : tant que ces deux-là
+   étaient de simples `span`, l'ellipse annoncée ici ne se déclenchait jamais
+   et les noms longs se coupaient net. Les passer en bloc la rend effective —
+   le retour à la ligne qui les séparait devient alors inutile. */
+.row .nm{display:block;font-weight:500;font-size:13.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .s{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Les trois marques d'un nouveau venu dans la liste. Le point se lit en
+   balayant la colonne sans prendre la place du nom ; le cartouche dit le mot,
+   au prix de l'ellipse qui le mange sur une enseigne longue ; la mention
+   descend sur la seconde ligne, où rien ne la tronque. */
+.row .nPoint{display:inline-block;width:7px;height:7px;border-radius:50%;
+  margin-right:7px;vertical-align:1px;background:var(--d,var(--accent))}
+.row .nCart{display:inline-block;margin-left:7px;padding:1px 5px;
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;vertical-align:1px;
+  border:1px solid var(--d,var(--accent));border-radius:2px;
+  color:var(--d,var(--accent))}
+.row .nSous{color:var(--d,var(--accent));font-weight:600}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+
+/* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
+   bord droit : la scène a donc toujours de quoi défiler. Or `hidden` cache la
+   barre sans interdire le défilement par programme — mettre le curseur dans un
+   tiroir encore en transition, donc hors champ, faisait glisser toute la scène
+   pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
+   tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
+   refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
+/* Le fond du plan se règle : le gris d'origine convient à la plupart des
+   salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
+   au panneau, la teinte choisie se pose telle quelle ; sans réglage, le jeton
+   reste absent et le fond de la page reprend la main. */
+/* « min-height:0 » pour la même raison que la liste d'à côté : une piste de
+   grille ne descend pas sous la taille de son contenu tant qu'on ne l'y
+   autorise pas, et le plan qu'elle porte se mesure à elle — les deux
+   s'arc-boutaient. La scène gardait donc la hauteur qu'elle avait avant que la
+   grille ne rende sa bande au système, et le bas du plan, ses boutons de zoom
+   et son échelle passaient sous la poignée de gestes. */
+.stage{position:relative;overflow:hidden;overflow:clip;min-height:0;
+  background:var(--c-fond,var(--ground))}
+/* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
+   imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
+   — la pastille se voyait, son glyphe partait hors du cadre, et le repère
+   n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
+   de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
+   donc que la règle ne le touche pas. */
+/* Le plan se positionne, et pour une seule raison : la toile de la carte
+   vectorielle est en position absolue, et une boîte positionnée se peint
+   au-dessus d'une boîte qui ne l'est pas. Sans ces deux rangs, la carte
+   recouvrait le plan au lieu de se glisser dessous. */
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+  position:relative;z-index:1}
+/* Le curseur de la main qui tient le plan est posé en style en ligne, et non
+   par une classe : « cursor » s'hérite, et une règle qui en dépend fait
+   remettre en cause le style des sept mille nœuds du plan — cent cinquante
+   millisecondes, à chaque doigt posé et à chaque doigt levé. La même valeur
+   écrite en ligne n'en coûte aucune. Voir « saisitPlan », _js.html. */
+
+/* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
+   noirs d'origine héritent du gris de trait du plan, qui les tient en retrait. */
+#couches .cal{color:var(--plan-line)}
+#couches .cal path,#couches .cal polyline,#couches .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
+/* Le groupe d'un calque porte stroke: currentColor pour ses tracés. Un texte
+   en hérite aussi, avec l'épaisseur par défaut d'une unité — soit un mètre ici,
+   trois fois la hauteur des glyphes : les mots devenaient des taches. Un texte
+   se peint, il ne se contourne pas. */
+#couches .cal text{fill:currentColor;stroke:none;font-family:var(--sans)}
+
+/* Le plan se tait pendant qu'on zoome.
+
+   Changer l'échelle de la « viewBox » oblige le navigateur à remettre en page
+   tout le SVG, et le texte y coûte tout : mille deux cent soixante-quatre
+   « text », remesurés glyphe par glyphe à chaque image, quatre-vingt-huit
+   millisecondes — dont quatre-vingts pour eux seuls. Onze images par seconde,
+   là où il en faut soixante : c'était toute la saccade.
+
+   Les textes se retirent donc le temps du geste. Le reste du plan — formes,
+   couleurs, sélection — suit le zoom en temps réel, pour huit millisecondes.
+   La plupart sont d'ailleurs ceux des calques importés du DAO, cotes d'allées
+   et numérotation, illisibles en plein mouvement. Les libellés de l'appli,
+   eux, ne sont plus dans le plan quand la règle s'applique : ils passent sur
+   le calque qui suit.
+
+   « display:none » et non « visibility », qui laisserait la mise en page —
+   donc la dépense — intacte. */
+#plan.fige text{display:none}
+
+/* Le calque où passent les libellés le temps d'un zoom, pour rester à l'écran
+   sans être repeints à chaque image. Voir « detacheLibelles » dans le module
+   de la vue.
+
+   « will-change » n'est pas ici un conseil au navigateur, c'est le mécanisme :
+   sans lui, le calque est re-rastérisé à chaque étirement, et le zoom reperd
+   l'image sur cinq que coûtaient les libellés restés dans le plan. L'origine
+   en haut à gauche est celle que suppose le calcul de l'étirement. */
+.calque-libelles{position:absolute;inset:0;pointer-events:none;
+  transform-origin:0 0;will-change:transform}
+.calque-libelles > svg{display:block;width:100%;height:100%}
+
+/* Le plan peint par la carte graphique — le rendu par défaut, `?rendu=svg`
+   pour l'écarter ; voir « Le plan peint par la carte graphique ». Le SVG
+   reste en place et reçoit les gestes, mais
+   ne montre plus rien : « visibility » et non « display », pour que sa
+   géométrie et ses styles calculés restent lisibles par le peintre — et que
+   le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
+   dessin passe au-dessus sans prendre le clic.
+
+   Le plan ne paraît qu'une fois : le SVG reste caché pendant que le dessin se
+   prépare (« gl-attente »), et le dessin entre en fondu à sa première image
+   (« gl-pret »). Si rien ne vient, le script retire l'attente et le SVG se
+   montre en secours. */
+.plan-gl{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s ease-out}
+html.gl-pret .plan-gl{opacity:1}
+@media (prefers-reduced-motion:reduce){.plan-gl{transition:none}}
+html.gl-attente #plan > *,html.gl-pret #plan > *{visibility:hidden}
+html.rendu-webgl .calque-libelles{display:none}
+/* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
+   carte graphique qui dit ce qu'il vise. */
+html.rendu-webgl .stage > svg{position:relative}
+/* Une animation lue au vol figerait n'importe laquelle de ses images : un
+   calque encore à demi fondu, un repère saisi au creux de son battement. La
+   carte graphique rejoue elle-même les battements et le défilement. */
+html.rendu-webgl #plan *{animation:none!important}
+/* Le clavier parcourt le plan par ses stands, et un élément caché ne prend
+   pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
+   rien : ni peints ni visés par le pointeur — la carte graphique les montre,
+   et leur liseré de focus avec eux. */
+html.gl-pret #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
+html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
+
+/* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
+   telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
+   beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
+   se lit sur le fond de la zone. */
+/* Une image liée à un stand s'ouvre au clic comme le stand lui-même. */
+/* Les calques de dessin laissent passer le clic vers le plan. Une image liée à
+   un stand est l'exception : elle doit s'ouvrir comme lui, y compris sur la
+   page publique où le mode édition n'existe pas. */
+.dcal .forme.lie{cursor:pointer;pointer-events:auto}
+.dcal .forme.lie image{pointer-events:all}
+.zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
+  stroke:var(--c-zone,var(--zone));stroke-width:1.2;
+  vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
+/* Une zone éteinte par l'exploitant : présente en administration, absente du
+   plan public. La teinte pâlie le dit sans la faire disparaître — c'est de sa
+   fiche qu'on revient sur le choix, encore faut-il pouvoir la désigner. */
+.zone.masquee path{fill-opacity:.14;stroke-opacity:.4}
+.stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
+  stroke-width:1;vector-effect:non-scaling-stroke}
+/* La teinte du secteur est posée sur le groupe par la page. La règle vient
+   avant le survol et la sélection, à spécificité égale, pour leur laisser la
+   main : un stand qu'on désigne doit se voir plus que son secteur. */
+.stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
+/* La carte de chaleur, en administration. Elle vient après le secteur — c'est
+   la même question posée autrement, et on ne lit pas les deux à la fois — mais
+   avant le survol et la sélection, qui gardent la main sur elle. */
+.stand[data-chaleur] path{fill:var(--chal-c)}
+/* Les deux liserés que le plan pose sur un stand — celui de la sélection,
+   celui du parcours — se tracent dans « #marques », un calque à part posé
+   au-dessus des couches, et non sur le stand lui-même : une cloison mitoyenne
+   appartient aux deux stands qu'elle sépare, et le second tracé y effaçait le
+   liseré du premier. Le calque ne reçoit aucun clic — c'est le stand qu'on
+   désigne, pas sa marque.
+
+   Le parcours reste le plus discret des deux : ce qu'on a retenu doit se
+   retrouver sur le plan sans le relire, sans pour autant se confondre avec ce
+   qu'on vient de désigner. Une zone y entre par ses conférences. */
+#marques{pointer-events:none}
+#marques path{fill:none;stroke-dasharray:none;vector-effect:non-scaling-stroke}
+#marques .parc{stroke:var(--c-parc,var(--accent));stroke-width:2}
+#marques .sel{stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+/* le trait discontinu est ce qui distingue une zone d'un stand : sa sélection
+   le garde */
+#marques .sel.zn{stroke-dasharray:5 4}
+/* Les marques des nouveaux venus, dans leur calque à part pour la raison qui
+   vaut pour les liserés au-dessus : une cloison mitoyenne appartient aux deux
+   stands qu'elle sépare, et le second tracé effaçait ce que le premier
+   portait. Elles ne reçoivent aucun clic — c'est le stand qu'on ouvre.
+
+   Leur teinte se règle à part de l'accent : un exploitant peut vouloir
+   distinguer ses nouveaux venus sans emprunter la couleur qui désigne déjà ce
+   qu'on a retenu. La même pour les trois surfaces — elles disent la même
+   chose. Sans réglage, c'est l'accent du salon. */
+/* Une distinction porte sa teinte en jeton sur la racine, et sa classe la
+   reprend : deux marques vivent côte à côte dans la même tête de fiche, et un
+   jeton unique leur aurait donné la même couleur. C'est le seul endroit de la
+   feuille de style qui nomme les distinctions — le prix de la teinte posée en
+   haut, qui repeint les neuf cents lignes de la liste sans qu'on les réécrive.
+
+   Sans réglage, chacune retombe sur l'accent du salon : c'est l'état de tous
+   les salons déjà en ligne. */
+.d-neuf{--d:var(--d-neuf,var(--accent));
+  --d-doux:var(--d-neuf-doux,var(--accent-soft));
+  --d-ink:var(--d-neuf-ink,var(--accent-ink))}
+.d-adherent{--d:var(--d-adherent,var(--accent));
+  --d-doux:var(--d-adherent-doux,var(--accent-soft));
+  --d-ink:var(--d-adherent-ink,var(--accent-ink))}
+#dists{pointer-events:none}
+#dists .dPlein{fill:var(--d,var(--accent));stroke:none}
+/* Le premier des deux liserés s'élargit, et le second se pose dessus : de la
+   même épaisseur, ils se recouvraient et la seconde distinction ne se voyait
+   pas. Seul, un liseré garde l'épaisseur du trait de la sélection. */
+#dists .dLis.large{stroke-width:6}
+#dists .dLis{fill:none;stroke:var(--d,var(--accent));stroke-width:2.4;
+  vector-effect:non-scaling-stroke}
+html.sans-parcours #marques .parc{display:none}
+/* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
+   plan ne l'atteignait donc pas, et ses liserés restaient seuls à pleine force
+   au milieu d'un hall effacé — on les prenait pour ce que le cartouche venait
+   de désigner. Le temps d'une mise en avant, ils s'effacent tout à fait : ce
+   qu'on a retenu se retrouve en refermant le cartouche. */
+html.poi-actif #marques .parc{display:none}
+.stand:hover path,.zone:hover path{fill:var(--accent-soft)}
+/* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
+   qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
+   et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
+   par-dessus. Sans réglage, l'accent d'origine.
+
+   Seul l'aplat se pose ici : le liseré monte dans « #marques », hors d'atteinte
+   des stands voisins. */
+.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft))}
+.stand,.zone{cursor:pointer}
+.dim{opacity:.22}
+
+/* le contour de focus par défaut dessine un gros rectangle noir autour du
+   groupe SVG : on le remplace par un renforcement du tracé du stand */
+.stage > svg{-webkit-tap-highlight-color:transparent}
+.stand:focus,.zone:focus{outline:none}
+.stand:focus-visible,.zone:focus-visible{outline:none}
+.stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
+
+/* Deux endroits écrivent le même libellé : « #labels », qui porte ceux du
+   plan, et « .lab » — le libellé qu'un stand dessiné garde dans sa propre
+   forme, faute de pouvoir compter sur l'ordre des couches. Les règles valent
+   pour les deux, et le second sélecteur passe par « .dcal » pour l'emporter
+   sur l'habillage du calque, qui teinte tout ce qu'il porte. */
+#labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
+  fill:var(--c-lab-stand,var(--ink-2));
+  font-family:var(--police-lab-code,"IBM Plex Mono",monospace);
+  font-weight:var(--graisse-lab-code,500)}
+#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
+#labels text.zn{font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
+#labels text.zn.masquee{opacity:.45}
+/* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
+   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré.
+
+   La couleur, et elle seule : le nom du stand choisi était aussi mis en gras,
+   et cette graisse-là coûtait cher. Le rendu WebGL groupe les noms par police
+   et par graisse, une couche par groupe ; un seul nom en 700 créait donc deux
+   couches de texte qui n'existaient pas — police du nom et police du numéro —
+   à chaque ouverture de fiche, et deux atlas de police à fabriquer. Cent
+   trente millisecondes pour une nuance que l'accent disait déjà. */
+#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent))}
+/* Sur la carte de chaleur, l'emplacement ne porte plus les couleurs de la page
+   mais sa température. Aucune encre unique ne
+   tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le
+   jaune. Le liseré la porte des deux côtés — c'est la solution des cartes
+   posées sur photo, et elle dit au passage que le plan est en lecture.
+   Le liseré se mesure en « em » et non en pixels : le plan a son propre
+   repère, où un pixel vaut d'autant plus de mètres qu'on a dézoomé — posé en
+   dur, il noyait les enseignes dès qu'on prenait du recul, au moment précis où
+   l'on regarde la carte en entier.
+   La couleur que l'exploitant a pu choisir pour ses libellés est écartée le
+   temps de cette lecture : elle avait été accordée à ses stands, pas à une
+   caméra thermique. La sélection et les pastilles de coexposants gardent la
+   leur — ce sont des marques, pas des noms peints sur une cloison. */
+html.mode-chaleur #labels text:not(.zn):not(.sel):not(.coexN),
+html.mode-chaleur .dcal .lab text:not(.sel){
+  fill:#0F1316;paint-order:stroke;stroke:rgba(255,255,255,.82);stroke-width:.15em;
+  stroke-linejoin:round;stroke-linecap:round}
+/* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
+   la page, comme la pastille des nouveaux venus sur la fiche : c'est une
+   distinction, pas une alerte, et le plan a déjà le langage des zones. */
+#labels .coexPast{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1;
+  vector-effect:non-scaling-stroke;pointer-events:none}
+/* Un stand sélectionné se remplit de cette même teinte douce : la pastille y
+   fondait dans le fond. Elle prend alors celui de la page, et son trait la
+   tient. Ce trait et le nombre suivent la sélection : sur un salon qui a
+   choisi sa couleur, l'accent d'origine détonnerait au milieu du stand. */
+#labels .coexPast.sel{fill:var(--surface);stroke:var(--c-sel-trait,var(--accent))}
+#labels text.coexN{fill:var(--accent);font-weight:700}
+#labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
+/* Le réglage qui masque les libellés de stand emporte la pastille : elle en
+   fait partie, et la laisser flotter seule ne se comprendrait pas. Il emporte
+   aussi ceux des stands dessinés : ce sont des libellés de stand. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast,
+.sans-lab-stand .dcal .lab{display:none}
+.sans-lab-zone #labels text.zn{display:none}
+/* Placer un libellé à la main.
+   Hors de ce mode un libellé ne reçoit aucun clic : c'est le stand qui est
+   dessous qu'on désigne à travers lui, et c'est sa fiche qu'on veut. Dedans,
+   c'est le nom lui-même qu'on attrape — d'où le pointeur, et la teinte
+   d'accent qui dit lequel répondra. */
+html.mode-libelles #labels .lbl{cursor:move}
+html.mode-libelles #labels .lbl text,
+html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
+html.mode-libelles #labels .lbl:hover text,
+html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
+
+/* Reprendre la géométrie d'un emplacement.
+   Une seule couche répond à la fois — celle dont on a ouvert le crayon — et
+   c'est ce que disent les deux classes. Ailleurs, le clic garde son sens
+   ordinaire : il ouvre la fiche, ou déplace la vue. La forme reprise se cerne
+   d'un liseré d'accent, le même que celui de ses poignées : sans lui, on ne
+   sait pas laquelle des deux voisines répondra au glisser. */
+html.mode-geo-stands #stands g,html.mode-geo-zones #zones g{cursor:move}
+html.mode-geo-stands #stands g.geopick path,
+html.mode-geo-zones #zones g.geopick path{stroke:var(--accent);stroke-width:2.5}
+
+/* --- calques de dessin --- */
+.dcal{pointer-events:none}
+.dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
+  stroke-linejoin:round;stroke-linecap:round}
+.dcal.plein path{fill:currentColor;fill-opacity:.25}
+.dcal text{fill:currentColor;text-anchor:middle;
+  font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600)}
+.dcal.editable{pointer-events:auto}
+/* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
+   calques restent sourds : leur clic appartient à la vue, sans quoi un geste
+   destiné au plan emportait un dessin voisin. L'image liée à un stand fait
+   exception plus haut — elle ouvre sa fiche, comme pour un visiteur. */
+/* une forme en contour seul doit rester attrapable par son intérieur */
+.dcal.editable path,.dcal.editable image,
+.dcal.editable text,.dcal.editable rect{pointer-events:all}
+.dcal.editable .forme{cursor:pointer}
+.dcal.editable .forme.pick{cursor:move}
+@keyframes halo{0%{opacity:.15}35%{opacity:1}100%{opacity:1}}
+/* Une forme déclarée infranchissable pour les PMR ne change rien pour le
+   visiteur — c'est le trajet qui en tient compte, pas le dessin. L'exploitant,
+   lui, doit la reconnaître pendant qu'il édite, sans quoi il la coche deux
+   fois ou l'oublie. */
+/* Un calque qui porte un rôle ne change rien pour le visiteur — c'est le
+   trajet qui en tient compte, pas le dessin. L'exploitant, lui, doit le
+   reconnaître pendant qu'il édite, sans quoi il le règle deux fois. */
+html.mode-edition .dcal.role path{stroke-dasharray:5 3}
+html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
+  fill-opacity:.12}
+/* Un couloir réservé au fauteuil est une circulation qui n'en est pas toujours
+   une : il se remplit comme elle, et garde le pointillé du rôle pour dire que
+   son ouverture dépend du mode. */
+html.mode-edition .dcal.circulation-pmr path{fill:currentColor;fill-opacity:.12}
+/* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
+   lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
+   la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.
+   Le sélecteur porte « html » pour tenir devant celui du rôle « circulation »,
+   plus spécifique, qui repeindrait le découpage en allée. */
+html .dcal .forme.sdes path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
+  stroke-width:1;stroke-dasharray:none;fill-opacity:1}
+html .dcal .forme.sdes[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
+html .dcal .forme.sdes[data-chaleur] path{fill:var(--chal-c)}
+/* Rattaché — « lie », comme une image liée — il répond au pointeur par son
+   tracé, y compris sur la page publique où le mode édition n'existe pas.
+   Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
+.dcal .forme.sdes.lie path{pointer-events:all}
+html .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+/* Le liseré de la sélection reste sur la forme : « #marques » recopie les
+   tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
+   pas de cloison mitoyenne à ménager — il est posé sur son hôte. */
+html .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+.dcal .forme.sdes:focus{outline:none}
+html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
+.dcal .forme.neuve{animation:halo .5s ease-out 2}
+.dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
+  outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.dcal .forme.neuve{animation:none}}
+
+#apercu{fill:none;stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke;
+  stroke-dasharray:6 4;pointer-events:none}
+/* Le repère d'alignement dit d'où vient la ligne sur laquelle le point vient
+   de s'accrocher : sans lui, l'accrochage passe pour une main qui tremble. */
+#apercuGuide{fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;
+  stroke-dasharray:2 5;opacity:.55;pointer-events:none}
+/* Les points d'accrochage à portée du geste. Discrets : ils annoncent une
+   possibilité, ils ne désignent rien — c'est la croix du repère d'alignement
+   qui dit lequel a pris. */
+#aimantsVus{pointer-events:none}
+#aimantsVus circle{fill:var(--accent);fill-opacity:.6;stroke:var(--surface);
+  stroke-width:1px;vector-effect:non-scaling-stroke}
+/* Un cran de grille n'est qu'une graduation : il se voit sans disputer au
+   coin du stand le regard qu'on lui porte. */
+#aimantsVus .cran{fill-opacity:.3;stroke:none}
+/* La cote se lit par-dessus le fond de plan, qui porte déjà ses propres
+   cotes et ses hachures : le liseré de la couleur du fond la détache sans
+   qu'il faille lui poser un cartouche. */
+#cote{fill:var(--accent);stroke:var(--surface);stroke-width:3px;paint-order:stroke;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke;font-weight:600;
+  pointer-events:none;user-select:none}
+
+/* On travaille longtemps dans cette palette : elle est assez large pour que les
+   libellés tiennent sur une ligne, et bornée en hauteur pour ne jamais sortir
+   du plan sur un écran bas — elle défile alors plutôt que de déborder. */
+.outils{position:absolute;top:12px;left:12px;z-index:6;display:none;flex-direction:column;gap:9px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:12px 14px;width:264px;
+  max-height:calc(100% - 24px);overflow-y:auto}
+.outils.open{display:flex}
+/* La palette de calage partage l'allure de celle du dessin — et sa place : les
+   deux ne servent jamais en même temps, ouvrir l'une ferme l'autre. Elle
+   s'affiche par `hidden`, non par une classe : rien d'autre ne la commande. */
+.calage:not([hidden]){display:flex}
+.calage .cRang{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cRang > span{flex:1;min-width:0}
+.calage select,.calage input[type="number"]{padding:5px 7px;font-size:12.5px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.calage input[type="number"]{width:74px;text-align:right}
+.calage .cGrille{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.calage .cGrille button,.calage .cLigne button{height:30px;border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink-2);font-size:12px;padding:0 6px}
+.calage .cGrille button:hover,.calage .cLigne button:hover{border-color:var(--line-strong);color:var(--ink)}
+.calage .cLigne{display:flex;gap:4px}
+.calage .cLigne button{flex:1;min-width:0}
+.calage .cMode{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.calage .cMode button{height:26px;border:none;border-radius:999px;font-size:11.5px;
+  font-weight:600;color:var(--ink-2);padding:0}
+.calage .cMode button:hover{color:var(--ink)}
+.calage .cMode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.calageAide{font-size:11px;color:var(--ink-3);line-height:1.4;margin:0}
+.calage .cCoche{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cCoche input{width:auto;margin:0}
+.calage input[type="range"]{flex:1;min-width:0;padding:0;background:none;border:none;accent-color:var(--accent)}
+.calage .cAvance{display:flex;flex-direction:column;gap:4px}
+.calage .cAvance input{width:100%;padding:5px 7px;font-size:11.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.calage .cAvance input:focus{border-color:var(--accent);outline:none}
+.calage .cAvance .cAide{font-size:10.5px;color:var(--ink-3);line-height:1.4;overflow-wrap:anywhere}
+/* Un mode armé change ce que la main fait du plan : le curseur est la seule
+   chose qui le dise avant le premier geste. */
+html.cale-deplace #plan{cursor:grab}
+html.cale-tourne #plan{cursor:crosshair}
+.calageEtat{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin:0}
+.calageEtat.alerte{color:var(--rouge)}
+.outilsTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.outilsActs{display:flex;align-items:center;gap:2px}
+.outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
+#renommeOutils{font-size:12px}
+.outilsTete button:hover{color:var(--ink)}
+/* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
+   plutôt que de laisser les derniers déborder de la palette. Ils sont neuf
+   quel que soit le salon — celui qui n'a pas pris le dessin des stands garde
+   son bouton, grisé (voir « OPTIONS » de « _admin1.html »), la grille n'a donc
+   jamais de trou à combler. */
+.outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-2);font-size:15px;display:grid;place-items:center}
+.outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
+.outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Une option non prise grise sa commande au lieu de la retirer : l'exploitant
+   voit ce qu'il n'a pas pris, et l'organisateur ce qui se prend. Le clic ne
+   fait rien de son côté — `_dessin.html` `outilOffert` retombe sur la
+   sélection. Ce qui est vendu se montre, donc, mais seulement à qui peut
+   l'acheter : le visiteur, lui, ne voit toujours rien (voir `#btnJournee`). */
+html.sans-dessin-stand .outilsBtns button[data-o="stand"],
+html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
+  opacity:.4;filter:grayscale(1);cursor:default;
+  border-color:var(--line);color:var(--ink-3)}
+.outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.outils input:focus{border-color:var(--accent);outline:none}
+.outils .choix{display:none;width:100%;padding:7px;border:1px solid var(--accent);
+  border-radius:var(--radius);font-size:12.5px;color:var(--accent);background:var(--surface)}
+.outils .choix:hover{background:var(--accent);color:#fff}
+.outils.mode-image .choix{display:block}
+.outils #texteADessiner{display:none}
+.outils.mode-texte #texteADessiner{display:block}
+#contourReg{display:none;flex-direction:column;gap:6px}
+.outils.mode-contour #contourReg{display:flex}
+/* L'épaisseur, le pointillé et la flèche se règlent avant de tracer, comme
+   l'arrondi du contour : une allée provisoire et un mur ne se dessinent pas du
+   même trait, et on le sait avant de poser le premier point. */
+#traitReg{display:none;flex-direction:column;gap:6px}
+.outils.mode-ligne #traitReg{display:flex}
+#vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
+.outils.mode-image #vignette[data-prete]{display:flex}
+#vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
+/* La palette de placement emprunte l'allure de la barre de dessin — même
+   coin, même cadre — parce qu'elle joue le même rôle : elle règle ce qu'on est
+   en train de retoucher sur le plan. Les deux ne s'ouvrent jamais ensemble,
+   entrer en placement referme le dessin. */
+.libreg input[type="range"]{padding:0;border:none;background:none;accent-color:var(--accent)}
+.libreg .auto{width:100%;padding:7px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:12.5px;color:var(--ink-2);background:var(--surface)}
+.libreg .auto:hover:not([disabled]){border-color:var(--line-strong);color:var(--ink)}
+.libreg .auto[disabled]{opacity:.4;cursor:default}
+.libreg .auto[hidden]{display:none}
+/* Trois outils seulement pour reprendre une couche du salon : le choix d'une
+   forme, et les deux façons d'en ajouter une. Sur la grille à cinq du dessin,
+   ils laissaient deux cases vides au bout de la rangée. */
+.outilsBtns.geoOutils{grid-template-columns:repeat(3,1fr)}
+#geoInfos{display:flex;flex-direction:column;gap:6px}
+#geoInfos[hidden]{display:none}
+.dcal image{pointer-events:none}
+.dcal.editable image{pointer-events:auto}
+.elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
+  border-top:1px solid var(--line)}
+.elem[hidden]{display:none}
+/* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
+   accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
+#repereType,#repereTexte{display:none}
+.outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
+#repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Un arrêt demande deux précisions de plus — ce qui passe là, et quelle ligne
+   — puis la couleur, pour les réseaux que la table des lignes ne connaît pas.
+   Les trois ne paraissent que sous leur type : elles ne diraient rien d'un
+   vestiaire. */
+#repereTransport,#elemTransport{display:none;flex-direction:column;gap:6px}
+.outils.mode-repere.mode-transport #repereTransport{display:flex}
+#elemTransport:not([hidden]){display:flex}
+.elemChamp .cc{flex:1;height:22px;padding:2px}
+/* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
+   n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
+.outils #standSoc,.outils #imageSoc{display:none}
+.outils.mode-stand #standSoc{display:block}
+/* Celui de l'outil image demande la même société, sans l'exiger : une image
+   existe d'abord pour ce qu'elle montre, et le rattachement n'en fait qu'une
+   porte de plus vers la fiche. C'est lui, et lui seul, que l'option grise —
+   l'outil reste entier, les images se posent toujours, elles ne mènent plus
+   nulle part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
+.outils.mode-image #imageSoc{display:block}
+/* Grisé plutôt que retiré, comme l'outil de stand plus haut. Le gris est tout
+   ce que la feuille de style peut faire : elle ne retire pas du parcours au
+   clavier, et « pointer-events » non plus. C'est `_dessin.html`
+   `poseChampImage` qui pose « disabled », d'où le gris propre au champ
+   désactivé par-dessus celui-ci. */
+html.sans-image-stand .outils #imageSoc{
+  opacity:.4;filter:grayscale(1);pointer-events:none}
+#elemPicto[hidden]{display:none}
+.dcal .repere > rect{fill:currentColor;stroke:none}
+/* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
+   calque. Un arrêt que sa ligne colore la remplace : le jaune du 1 se lit en
+   noir, et c'est la pastille qui l'a calculé en se dessinant. */
+.dcal .repere .glyphe path{fill:var(--encre-poi,var(--surface));stroke:none}
+.dcal .repere text{fill:var(--encre-poi,var(--surface));font-weight:700;text-anchor:middle}
+/* La plaque du tram : la signalétique n'y met pas la couleur en aplat, elle en
+   tire deux barres qui encadrent l'indice — « T3a » en sombre sur champ clair.
+   L'encre n'a donc plus à se calculer au tracé comme celle des autres arrêts :
+   le champ est le même pour toutes les lignes, et elle se lit dessus. */
+.dcal .repere.plaque{--encre-poi:var(--ink)}
+.dcal .repere.plaque > rect{fill:var(--surface)}
+.dcal .repere .barres rect{fill:currentColor;stroke:none}
+/* L'anneau du métro : la ligne ne s'y étale pas davantage, elle colore le M et
+   le rond du numéro sur le même champ clair. Le pictogramme prend donc la
+   couleur du groupe, à rebours des autres arrêts où il prenait l'encre ; et
+   l'encre, elle, s'écrit dans le rond, seul endroit qui porte la couleur —
+   blanc dans le vert du 12, noir dans le jaune du 1. */
+.dcal .repere.anneau > rect{fill:var(--surface)}
+.dcal .repere.anneau .glyphe path{fill:currentColor}
+.dcal .repere .indice rect{fill:currentColor;stroke:none}
+/* Le liseré qui marque l'arrêt ouvert est clair : posé sur une plaque claire,
+   il ne ferait que l'élargir. C'est l'encre qui le porte là. */
+.dcal .repere.plaque.sel > rect,.dcal .repere.plaque.phare > rect,
+.dcal .repere.anneau.sel > rect,.dcal .repere.anneau.phare > rect{stroke:var(--ink)}
+/* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
+   son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
+   n'y répond pas. */
+.dcal .repere{pointer-events:auto;cursor:pointer}
+.dcal .repere *{pointer-events:all}
+/* Le repère ouvert se marque comme le fait le cartouche : un liseré clair
+   autour de la pastille. Le contour du navigateur, lui, est retiré — il
+   dessine un carré noir autour d'un groupe SVG, à côté de la forme qu'il
+   entoure — et remplacé au clavier par le même liseré, en encre. */
+.dcal .repere.sel > rect{stroke:var(--surface);stroke-width:.6;paint-order:stroke}
+.dcal .repere:focus{outline:none}
+.dcal .repere:focus-visible > rect{stroke:var(--ink);stroke-width:.5;paint-order:stroke}
+/* Ce qu'un passage rejoint sur un autre plan : un escalier son palier à
+   l'étage, une porte celle du hall d'en face. La liste se lit d'un coup
+   d'œil, chaque ligne se retire d'une croix. */
+.elemLiens{display:flex;flex-direction:column;gap:5px}
+.elemLiens[hidden]{display:none}
+.elemLiens select{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.elemLiens select:focus{border-color:var(--accent);outline:none}
+.elemLiens i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.elemLiens i:empty{display:none}
+.lienListe{display:flex;flex-direction:column;gap:4px}
+.lienListe:empty{display:none}
+.lienListe .lien{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);
+  padding:4px 4px 4px 7px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--accent)}
+.lienListe .lien span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le temps du passage : un champ étroit, son unité collée, et l'invite qui
+   montre le temps ordinaire du type — vide ne veut pas dire zéro. */
+.elem .lienListe .lien input{width:44px;flex:none;padding:2px 4px;font-size:11.5px;
+  text-align:right;background:var(--surface);border:1px solid var(--line)}
+.lienListe .lien b{font-weight:400;font-size:10.5px;color:var(--ink-3)}
+.elemTete{display:flex;align-items:center;justify-content:space-between}
+.elemChamp{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3)}
+.elemChamp input{flex:1;min-width:0}
+.elemChamp select{flex:1;min-width:0;padding:7px 9px;font-size:13px;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.elemChamp select:focus{border-color:var(--accent);outline:none}
+.elemChamp[hidden]{display:none}
+/* La palette de reprise des géométries emprunte celle des libellés : même
+   place, même allure, et les deux ne servent jamais en même temps. */
+#elemDim,#geoDim{display:flex;flex-direction:column;gap:6px}
+#elemDim[hidden],#geoDim[hidden]{display:none}
+#elemTraitReg{display:flex;flex-direction:column;gap:6px}
+#elemTraitReg[hidden]{display:none}
+/* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
+   puisque c'est en dessinant qu'on le décide. */
+.outilsRole{display:flex;flex-direction:column;gap:3px}
+.outilsRole select{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.outilsRole select:focus{border-color:var(--accent);outline:none}
+.outilsRole i{font-style:normal;font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+.outilsRole i:empty{display:none}
+.outilsVoir{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3);
+  cursor:pointer}
+.outils .outilsVoir input{width:15px;height:15px;flex:none;padding:0;accent-color:var(--accent)}
+#nappe{pointer-events:none;image-rendering:pixelated;opacity:.55}
+.calq .rle{font-style:normal;font-size:10px;padding:1px 5px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
+.btnSup:hover{color:#C2372B}
+.elem input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.elem input:focus{border-color:var(--accent);outline:none}
+.elemChamp .quart{flex:none;padding:6px 9px;font-size:12.5px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.elemChamp .quart:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Les poignées d'une forme dessinée et celles d'un emplacement repris se
+   ressemblent parce que c'est le même geste : chacune a son calque, les deux
+   modes ne s'ouvrant jamais ensemble. */
+#poignees,#poigneesGeo{pointer-events:none}
+#poignees .cadreSel,#poigneesGeo .cadreSel{fill:none;stroke:var(--accent);stroke-width:1;
+  stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.8}
+#poignees .pgn,#poigneesGeo .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
+  vector-effect:non-scaling-stroke;pointer-events:auto}
+#poignees .pgn:hover,#poigneesGeo .pgn:hover{fill:var(--accent-soft)}
+.outilsPied{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-3)}
+.calq .mv{width:15px;height:18px;border:none;color:var(--ink-3);font-size:11px;line-height:1;padding:0}
+.calq .mv:hover{color:var(--ink)}
+.calq .mv[disabled]{opacity:.25;cursor:default}
+.calq .ren{width:18px;height:18px;border:none;color:var(--ink-3);font-size:11px;line-height:1}
+.calq .ren:hover{color:var(--accent)}
+.calq .ren[aria-pressed="true"]{color:var(--accent)}
+.mcorps input.nomcalque{width:100%;padding:8px 10px;font-size:14px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface-2);color:var(--ink)}
+.mcorps input.nomcalque:focus{border-color:var(--accent);outline:none}
+.mcorps .biblioLieu{width:100%;padding:7px 9px;font-size:13.5px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface-2);color:var(--ink)}
+.mcorps .biblioVue{display:block;width:100%;max-height:240px;margin:10px 0 6px}
+.biblioVue path{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:1.2;
+  vector-effect:non-scaling-stroke;cursor:pointer}
+.biblioVue path:hover{stroke:var(--accent)}
+.biblioVue path.choisi{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.biblioVue path.deja{fill:var(--line);stroke:var(--line-strong);cursor:default}
+.biblioHalls{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 12px;
+  max-height:220px;overflow:auto;font-size:13px}
+.biblioHall{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer}
+.biblioHall input{accent-color:var(--accent)}
+.biblioHall.deja{color:var(--ink-3);cursor:default}
+.biblioHall i{font-style:normal;font-size:11px}
+.biblioNote{margin:10px 0 0;font-size:12.5px;color:var(--ink-2)}
+.biblioRecale{display:inline-flex;align-items:center;gap:6px;margin-top:4px;cursor:pointer}
+.biblioMention{margin:6px 0 0;font-size:11px;color:var(--ink-3)}
+.calq .sup{width:18px;height:18px;border:none;color:var(--ink-3);font-size:14px;line-height:1}
+.calq .sup:hover{color:#C2372B}
+/* Le cadenas d'un calque de dessin. Fermé, il prend la couleur d'accent et son
+   boîtier se remplit : la ligne protégée se repère en parcourant la colonne,
+   sans lire un seul intitulé. Ce qu'il éteint s'efface au lieu de disparaître —
+   un bouton manquant ferait croire à un calque d'une autre espèce. */
+.pictoVerrou{width:12px;height:12px;display:block;margin:auto}
+.pictoVerrou rect,.pictoVerrou path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
+.calq .verr{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .verr:hover{color:var(--ink)}
+.calq .verr[aria-pressed="true"]{color:var(--accent)}
+.calq .verr[aria-pressed="true"] .pictoVerrou rect{fill:currentColor}
+.calq .masq{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .masq:hover{color:var(--ink)}
+.calq .masq[aria-pressed="true"]{color:var(--accent)}
+.pictoMasque{width:12px;height:12px;display:block;margin:auto}
+.pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
+.pictoMasque .trou{stroke-dasharray:1.7 1.2}
+/* Reprendre le calage d'un hall de la bibliothèque. Il ne s'éteint pas avec le
+   cadenas qui le suit : voir « Reprendre le calage » dans `_batiments.html`. */
+.calq .recal{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .recal:hover{color:var(--accent)}
+.pictoRecale{width:12px;height:12px;display:block;margin:auto}
+.pictoRecale path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
+.calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
+.calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
+.calq.perso label span{font-weight:600}
+.calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
+  border-radius:3px;background:var(--surface-2);color:var(--ink)}
+.calq.actif{background:var(--accent-soft);border-radius:3px;margin:0 -4px;padding:2px 4px}
+.panel .ajout{width:100%;margin-top:6px;padding:6px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
+.panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Ces deux-là déclarent « display:flex », qui l'emporte sur la règle du
+   navigateur masquant un élément porteur de « hidden » : sans ces lignes,
+   l'attribut ne masque rien. Le piège s'est déjà refermé une fois sur la barre
+   de zoom, et il vaut pour tout ce qui se cache par attribut dans cette page. */
+.zoombar[hidden],.scalebar[hidden]{display:none}
+.zoombar{position:absolute;left:14px;bottom:14px;display:flex;flex-direction:column;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.zoombar button{width:34px;height:34px;display:grid;place-items:center;color:var(--ink-2)}
+.zoombar button+button{border-top:1px solid var(--line)}
+.zoombar button:hover{color:var(--ink);background:var(--surface-2)}
+.zoombar svg{width:14px;height:14px}
+/* Cartouche des points d'intérêt, au bas du plan. Il ne paraît que s'il y a
+   des repères, et se retire de l'échelle pour ne pas la masquer. */
+/* Centré par des marges automatiques, et non par « left:50% » : un élément
+   absolu ancré au milieu ne peut s'étendre que vers la droite, si bien que sa
+   largeur était plafonnée à la moitié de l'écran. Le cartouche passait à la
+   ligne pour deux pixels manquants, et le « max-width » annoncé plus bas ne
+   servait à rien. Ancré des deux côtés, il dispose enfin de toute la largeur. */
+/* Le cartouche est le cadre, et les pastilles défilent dedans : c'est la
+   disposition qu'impose « .bande », dont il reprend le fondu et les flèches
+   (voir plus haut). Une bande estompée sur ses bords ne peut pas porter le
+   cartouche lui-même — le masque dissoudrait son fond et son liseré avec les
+   pastilles qu'il recouvre, et la flèche posée dessus s'effacerait avec.
+
+   « position » l'emporte sur le « relative » de « .bande » par l'ordre du
+   fichier, et ce n'est pas un hasard qu'on subit : le cartouche est ancré au
+   bas du plan, la règle qui le pose vient donc après celle qui le range parmi
+   les bandes. */
+.poi{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;bottom:16px;z-index:12;
+  max-width:min(760px,72%);
+  padding:7px 9px;background:var(--surface);border:1px solid var(--line);
+  /* le rayon commun vaut 3 px : des angles presque vifs autour de pastilles
+     entièrement rondes, et posés sur un tiroir aux coins adoucis */
+  border-radius:12px;box-shadow:var(--shadow)}
+.poi[hidden]{display:none}
+.poiDefile{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+/* La flèche du cartouche est plus discrète que celle des bandes de critères.
+   Là elle surmonte un panneau, où un bouton de plus ne surprend personne ; ici
+   elle se pose sur le plan, au bas de l'écran, et le disque blanc bordé qui la
+   porte ailleurs ajoutait deux commandes à un cartouche qui n'en demandait pas
+   — on les prenait pour des pastilles muettes, entre celles qui le sont. Le
+   chevron seul donc, à demi effacé : assez pour dire par où pousser, trop peu
+   pour qu'on l'appuie en croyant choisir. C'est l'opacité qui répond au doigt,
+   faute de disque à peindre.
+
+   Sous lui un fondu rond, et non un disque : nu, le chevron se confondait avec
+   la dernière lettre de la pastille qu'il surmonte — on lisait
+   « Restauration› ». Une tache de la couleur du cartouche, sans bord ni ombre,
+   le détache sans rien dessiner. Elle est tirée du jeton et non du blanc : un
+   modèle qui repeint le cartouche repeint la tache avec, sinon elle resterait
+   claire sur un fond qui ne l'est plus. */
+/* Les pavillons sont dans le même cas, et prennent donc le même chevron. Leur
+   pastille flotte elle aussi sur le plan depuis que la barre du salon n'est
+   plus une bande sur un téléphone, et deux disques blancs bordés y auraient
+   fait deux commandes de plus à côté de deux onglets — le fondu dit déjà qu'il
+   en reste, la flèche n'a qu'à dire par où. Elle y gagne en prime la taille
+   qu'il lui faut : vingt-cinq points tiennent dans une pastille où le disque
+   des bandes de critères n'aurait rien laissé autour de lui. */
+:is(.poi,.halls-bande) .fleche{width:25px;height:25px;margin-top:-12px;
+  border:0;box-shadow:none;color:var(--ink-2);opacity:.72;
+  background:radial-gradient(closest-side,var(--surface) 38%,transparent)}
+:is(.poi,.halls-bande) .fleche svg{width:13px;height:13px;stroke-width:2.2}
+:is(.poi,.halls-bande) .fleche:active{opacity:1}
+:is(.poi,.halls-bande)[data-gauche] .fleche[data-vers="-1"]{left:1px}
+:is(.poi,.halls-bande)[data-droite] .fleche[data-vers="1"]{right:1px}
+.poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+  font-size:12px;cursor:pointer}
+.poiBtn:hover{border-color:var(--line-strong);color:var(--ink)}
+/* La couleur des points d'intérêt se règle à part de l'accent : le
+   cartouche et la mise en avant vont ensemble, et l'exploitant qui veut
+   distinguer « où déjeuner » du reste du plan ne peut pas le faire en
+   déplaçant la couleur principale, qui peint la moitié de l'écran. Sans
+   réglage, c'est l'accent — le plan d'origine ne bouge pas. */
+.poiBtn[aria-pressed="true"]{background:var(--c-poi,var(--accent));
+  border-color:var(--c-poi,var(--accent));color:var(--c-poi-ink,#fff)}
+.poiBtn i{font-style:normal;font-size:10.5px;opacity:.7}
+/* « .stage svg » impose 100 % à tout SVG du plan : il faut une règle plus
+   précise pour que le pictogramme du cartouche garde sa taille. */
+.poi .poiPicto{width:17px;height:17px;flex:none}
+.poi .poiPicto path{fill:currentColor}
+/* Mise en avant : tout le plan s'efface sauf les repères retenus, qui gagnent
+   un liseré, un halo et un battement. Faire pulser l'opacité du repère
+   lui-même le rendait invisible une fois sur deux — c'est l'inverse de
+   l'effet recherché. */
+/* Le retrait est franc : à demi effacé, le plan se lisait encore, et l'œil
+   hésitait entre ce qu'on lui montrait et tout le reste. Assez pour que le
+   hall reste reconnaissable, trop peu pour qu'on y cherche un nom.
+
+   Les zones et leurs libellés s'effacent un par un et non par calque entier :
+   depuis qu'une zone typée répond au cartouche, ce calque-là porte à la fois
+   ce qu'on met en avant et ce qu'on met en retrait. */
+html.poi-actif #stands,
+html.poi-actif #couches .cal,
+html.poi-actif #zones g:not(.phare),
+html.poi-actif #labels .lbl:not(.phare),
+html.poi-actif .dcal .forme:not(.phare){opacity:.16}
+.dcal .repere.phare > rect{stroke:var(--surface);stroke-width:.5;paint-order:stroke}
+/* Une zone ne peut pas battre comme un repère : celui-ci est une pastille de
+   quatre mètres qu'on grossit sans gêner personne, une zone tient parfois le
+   quart du hall et grandirait par-dessus ses voisines. C'est donc sa présence
+   qui bat, et non sa taille — « opacity », comme « transform », est animée par
+   le compositeur sans repeindre le plan.
+
+   Elle gagne en même temps sa pleine teinte et un liseré d'accent : sur un plan
+   passé au blanc, une zone à demi transparente ne ressortait pas de ce qu'elle
+   recouvre. Le liseré continu la distingue aussi des zones ordinaires, que le
+   trait discontinu marque. */
+html.poi-actif #zones g.phare path{fill-opacity:.92;
+  stroke:var(--c-poi,var(--accent));stroke-width:3;stroke-dasharray:none}
+/* Le halo est un « drop-shadow » posé une fois — c'est l'animer qui coûtait le
+   repaint du plan entier, pas le porter — et c'est l'opacité du groupe, seule
+   animée, qui le fait battre avec la zone. Deux passes plutôt qu'une : la
+   première cerne, la seconde diffuse. Les longueurs sont en unités du plan,
+   c'est-à-dire en mètres : le halo garde donc sa proportion au zoom. */
+#zones g.phare{filter:drop-shadow(0 0 2px var(--c-poi,var(--accent)))
+    drop-shadow(0 0 7px var(--c-poi,var(--accent)));
+  animation:pulseZone 1.5s ease-in-out infinite}
+@keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.58}}
+/* Le nom de la zone est écrit dans la couche des libellés, pas dans la zone :
+   il ne bat donc pas avec elle, et restait d'une seule couleur sur un aplat qui
+   passe du plein au pâle — noyé dans la teinte à un bout du battement.
+
+   Il bat maintenant lui aussi, de l'encre à l'accent, et se détache du fond
+   quoi qu'il arrive : le halo clair posé derrière les lettres le tient sur
+   l'aplat le plus vif comme sur le plus effacé. C'est la même parade que sur la
+   carte de chaleur, à la même mesure — « .15em », qui suit la taille du texte
+   plutôt que le zoom. */
+#labels .lbl.phare text{fill:#0F1316;paint-order:stroke;stroke:rgba(255,255,255,.85);
+  stroke-width:.15em;stroke-linejoin:round;stroke-linecap:round;
+  animation:titrePhare 1.5s ease-in-out infinite}
+@keyframes titrePhare{0%,100%{fill:#0F1316}50%{fill:var(--c-poi,var(--accent))}}
+/* Le battement passe par « transform », et non par « filter ».
+   Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
+   délègue pas au compositeur, si bien que le navigateur recalculait les styles
+   et repeignait le plan entier — cinq cents stands et leurs libellés — à
+   chaque image, tant qu'un point d'intérêt restait mis en avant. Le plan et
+   l'interface partagent une seule couche : sur un téléphone, tout l'écran
+   tremblait avec lui, à commencer par le bandeau du haut. « transform » et
+   « opacity » sont les deux propriétés que le compositeur anime seul, sans
+   rien repeindre ; le halo reste donc posé une fois pour toutes, et c'est la
+   taille du repère qui bat. */
+.dcal .repere.phare{filter:drop-shadow(0 0 1.2px var(--c-poi,var(--accent)))
+    drop-shadow(0 0 3.5px var(--c-poi,var(--accent)));
+  transform-box:fill-box;transform-origin:center;
+  animation:pulsePoi 1.4s ease-in-out infinite}
+@keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+@media (prefers-reduced-motion:reduce){
+  .dcal .repere.phare,#zones g.phare,#labels .lbl.phare text{animation:none}
+}
+/* Sur un écran étroit, le cartouche passait à la ligne dès trois familles de
+   repères : une pastille seule sous deux autres, et le plan perdait la hauteur
+   de la ligne en trop au moment où il en a le moins. Il tient donc sur une
+   seule ligne, quitte à déborder — ce qui dépasse se fait glisser du doigt,
+   comme les pavillons de la barre du haut, qui cèdent de la même façon. La
+   barre de défilement est masquée : elle aurait mangé, sous les pastilles, le
+   tiers de ce qu'on venait de gagner.
+
+   Restait à le dire. Une pastille coupée net au bord du cartouche se lit comme
+   un défaut de cadrage et non comme une invitation à pousser : sans barre de
+   défilement, rien n'annonçait la moitié des points d'intérêt du hall. Le
+   cartouche est donc une « .bande » comme les critères retenus — le bord par
+   lequel il reste quelque chose s'estompe et porte une flèche, qui le dit et
+   le fait. Arrivé au bout, plus rien ne s'efface.
+
+   « justify-content » repasse au début : centré, un contenu plus large que son
+   cadre déborde des deux côtés et le premier bouton devient inatteignable.
+   Tant que tout tient, le cartouche reste centré par ses marges automatiques —
+   sa largeur épouse son contenu — et rien ne change à l'œil. */
+@media (max-width:760px){
+  /* Le glissement est horizontal, et rien d'autre. « overflow-x:auto » fait
+     passer « overflow-y » de « visible » à « auto » — la règle est dans la
+     spécification, les deux axes ne peuvent pas être de natures différentes —
+     et le cartouche devenait une zone de défilement dans les deux sens. Le
+     plan, lui, refuse les gestes du navigateur (« touch-action:none ») : sur
+     un téléphone, le cartouche était donc le seul endroit du bas de l'écran
+     où un doigt qui monte escamotait la barre du navigateur, et tout ce qui
+     s'ancre au bas de la page — le cartouche le premier — montait avec elle.
+     On tient l'axe vertical des deux côtés : plus rien à défiler, et plus de
+     geste à donner au navigateur. « pinch-zoom » reste permis, c'est le seul
+     agrandissement dont dispose qui lit mal.
+
+     « overscroll-behavior-x » retient le bout de course : arrivé à la dernière
+     pastille, l'élan continuait sur la page et faisait revenir la barre par
+     l'autre chemin. */
+  /* Le cadre garde la même permission que la bande qu'il porte : le geste est
+     autorisé par l'intersection des valeurs rencontrées jusqu'à la zone qui
+     défile, et le plan la refuse juste au-dessus. */
+  .poi{max-width:calc(100% - 24px);bottom:12px;padding:6px 8px;
+    touch-action:pan-x pinch-zoom}
+  .poiDefile{flex-wrap:nowrap;justify-content:flex-start;
+    overflow-x:auto;overflow-y:hidden;
+    touch-action:pan-x pinch-zoom;overscroll-behavior-x:contain;
+    scrollbar-width:none;-ms-overflow-style:none;
+    gap:5px}
+  .poiDefile::-webkit-scrollbar{display:none}
+  /* Sans cela les pastilles se compriment au lieu de déborder : le libellé s'y
+     coupait en deux lignes, et le cartouche regagnait la hauteur qu'on venait
+     de lui retirer. */
+  .poiBtn{flex:none;white-space:nowrap}
+}
+
+.scalebar{position:absolute;left:60px;bottom:18px;font-size:11px;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:7px}
+.scalebar i{display:block;height:6px;border:1px solid var(--ink-3);border-top:none}
+/* Sous l'échelle, dont elle partage la discrétion : une obligation de la
+   licence, pas une information qu'on vient chercher. */
+.mention-osm{position:absolute;left:60px;bottom:3px;font-size:10px;color:var(--ink-3);
+  pointer-events:none;white-space:nowrap}
+.mention-osm[hidden]{display:none}
+
+/* Le fond de carte. Les tuiles se posent bord à bord et le navigateur laisse
+   un cheveu blanc entre deux bords calculés au millième : elles se recouvrent
+   donc d'un pouce, ce qui ne se voit pas et supprime la couture. Une tuile qui
+   ne répond pas ne laisse rien — pas de cadre brisé sous le plan. */
+/* Le fond se tient en retrait : il situe le pavillon, il ne raconte pas le
+   quartier, et à pleine force il dispute l'œil aux stands. La force est un
+   réglage du salon, posée en variable par le calage. */
+#fondCarte{opacity:var(--carte-force,.62)}
+/* Par l'identifiant, et non par la classe : MapLibre pose sa propre classe sur
+   le conteneur qu'on lui donne, avec « position:relative », et sa feuille est
+   injectée après la nôtre. À spécificité égale la sienne l'emportait, le
+   conteneur perdait son positionnement absolu et s'effondrait à zéro de haut —
+   la carte se montait sans rien montrer. Un sélecteur d'identifiant tranche,
+   quel que soit l'ordre d'arrivée. */
+#fondCarteGL{position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  pointer-events:none;opacity:var(--carte-force,.62)}
+#fondCarteGL canvas{outline:none}
+/* Le calque des tuiles : au-dessus de la carte vectorielle, au-dessous du
+   plan — que celui-ci soit peint en SVG ou par la carte graphique, tous deux
+   venant après lui dans la scène. */
+#fondTuiles{position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  pointer-events:none;display:block}
+/* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
+   l'exploitant choisit, ou le gris de la page à défaut. */
+#trouDuFond{fill:var(--c-fond,var(--ground));stroke:none}
+#fondCarte image{image-rendering:auto}
+.creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
+  background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;
+  border-radius:3px;pointer-events:none;max-width:60%;text-align:right}
+
+.detail{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
+  border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;z-index:4;
+  box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);will-change:transform,opacity}
+.detail.open{transform:none}
+.detail-hd{padding:18px 18px 14px;border-bottom:1px solid var(--line);position:relative}
+/* Un crayon accolé au nom : c'est la marque du renommage partout dans la
+   page — sur un calque de dessin comme sur une zone. */
+.crayon{border:none;background:none;color:var(--ink-3);font-size:14px;line-height:1;
+  padding:2px 4px;border-radius:var(--radius);vertical-align:middle;cursor:pointer}
+.crayon:hover{color:var(--accent);background:var(--surface-2)}
+/* Dans l'en-tête, le crayon est *dans* le titre, à la suite du dernier mot :
+   posé après le bloc, il retombait sur la ligne des pastilles et semblait
+   proposer de renommer le pavillon. Il n'hérite pas de la graisse du titre —
+   un modèle de fiche peut le vouloir gras et large, une icône reste une
+   icône. */
+.detail-hd h2 .crayon{margin-left:6px;font-weight:400;letter-spacing:normal}
+.detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
+/* Le nom d'une fiche et la marque qui l'accompagne tiennent sur une ligne, et
+   se séparent en deux quand le nom prend toute la place : c'est le seul
+   arbitrage à rendre, et le retour à la ligne du flex le rend tout seul — il
+   décide sur la largeur naturelle du nom, avant de la comprimer. Un nom court
+   garde donc son logo à côté de lui, un nom long le passe en dessous.
+
+   La réserve de droite quitte le titre pour la ligne entière : elle tient le
+   texte à l'écart du coin des actions ; la marque, plus haute qu'une ligne,
+   en demande davantage — c'est la règle d'en dessous. */
+.detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
+  column-gap:12px;row-gap:2px;padding-right:26px}
+.detail-hd .hdNom h2{padding-right:0;margin-right:auto}
+/* Vingt-six pixels tiennent un texte à l'écart du coin : haut d'une ligne, il
+   passe sous le signet et la croix sans jamais les atteindre. La marque, elle,
+   vaut trois lignes de titre — elle remonte dans leur bande, et le peu qui
+   restait à droite l'y menait tout droit dès que le nom mangeait la ligne.
+   Elle se réserve donc le coin entier, cette largeur que la ligne du type se
+   réserve déjà. La réserve suit la marque : elle tombe quand celle-ci déménage
+   sous le numéro, où le coin est loin. */
+.detail-hd .hdNom:has(> .logoZone:not([hidden])){padding-right:var(--coin-actes)}
+/* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
+   source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
+   blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
+   rapportée. Contenu plutôt que découpé — un logo tronqué n'est plus le logo.
+
+   La hauteur est celle d'une vignette qu'on regarde, et non d'une puce posée
+   à côté d'un mot : un logo se lit, et le premier essai, haut comme deux
+   lignes de titre, ne le donnait pas à lire. Un logo en largeur ne tient donc
+   plus à côté d'un nom un peu long — il rejoint alors la ligne du numéro, où
+   la page le pose et le borne, faute pour la feuille de connaître la longueur
+   d'un numéro de stand. */
+.detail-hd{--marque-h:72px}
+.detail-hd .logoZone{width:auto;height:auto;object-fit:contain;
+  max-width:min(300px,100%);max-height:var(--marque-h)}
+/* La place de la marque est tenue dès qu'on sait qu'il y en a une, et avant
+   même de l'avoir reçue : sans cela l'en-tête grandissait de vingt à trente
+   pixels à son arrivée, et tout ce qu'on lisait dessous sautait d'autant.
+
+   Une hauteur, et une largeur nulle : c'est la hauteur qui fait sauter la
+   page. La largeur, elle, déciderait du pli — à côté du nom ou sous le
+   numéro — et on ne la connaît pas encore ; la taire jusque-là évite de
+   choisir deux fois. */
+.detail-hd .logoZone[data-attend]{visibility:hidden;width:0;min-width:0;
+  height:var(--marque-h)}
+/* Sur la ligne du nom, la marque est un élément de la ligne flex, qui la
+   replie sous le nom quand elle n'y tient pas — c'est ce repli que la page
+   guette pour la déménager. Le « :not » de chaque règle laisse l'attribut
+   « hidden » faire son office quel que soit l'ordre de la feuille.
+
+   Elle s'y pose au milieu de ce que le nom laisse, plutôt que collée contre lui
+   avec un vide à droite : un nom court lui donnait l'air d'un mot de plus
+   accroché au titre. Le centrage tient à deux marges automatiques — celle que
+   le nom porte à sa droite, celle que la marque porte à la sienne — qui se
+   partagent à parts égales ce qui reste de la ligne. */
+.detail-hd .hdNom > .logoZone:not([hidden]){display:block;margin:0 auto 0 0}
+/* Sur la ligne du numéro, elle suit les pastilles dans le fil du texte, alignée
+   sur leur milieu : la ligne s'ouvre à sa hauteur plutôt que de s'en ajouter
+   une. Pas de marge automatique ici — elle se range derrière le numéro, et non
+   au milieu de ce qu'il laisse. */
+.detail-hd .hdBadges > .logoZone:not([hidden]){display:inline-block;
+  vertical-align:middle;margin:0 0 0 10px}
+/* La taille du nom vit en variable sur l'en-tête, et non sur le titre : le
+   numéro de stand s'y accorde, et il n'est pas dans le titre. Chaque modèle de
+   fiche redéfinit la variable au lieu de la taille — sur le titre seul, le
+   numéro n'en aurait rien su. */
+.detail-hd{--titre:19px}
+.detail-hd h2{font-family:"Archivo",sans-serif;font-size:var(--titre);letter-spacing:-.02em;
+  /* Une hauteur de ligne entière, arrondie plutôt que fixée : la taille du
+     nom vit en variable et chaque modèle la redéfinit, si bien qu'un nombre
+     en pixels n'en vaudrait que pour un seul. À 1,5 sur dix-neuf pixels elle
+     tombait sur 28,5, et le corps de la fiche démarrait un demi-pixel plus
+     bas que la grille de l'écran. Un navigateur qui ignore « round » retombe
+     sur la valeur héritée, celle d'avant. */
+  line-height:round(calc(var(--titre) * 1.5), 1px);
+  margin:8px 0 6px;text-wrap:balance;padding-right:26px}
+.badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+/* Le numéro de stand se lit de loin : c'est par lui qu'on se repère sur le
+   plan, et onze pixels le rendaient plus discret que la mention qui
+   l'accompagne. Il vaut quatre cinquièmes du nom, sur tous les modèles — d'où
+   le poids de ce sélecteur, qui doit passer devant ceux qui règlent la taille
+   des pastilles modèle par modèle. */
+.detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8);
+  /* Quatre cinquièmes de dix-neuf pixels font 15,2, et une ligne à 1,5 en
+     fait 22,8 : la ligne du numéro portait la fraction que le titre
+     au-dessus venait de perdre. Même arrondi, sur la même variable. */
+  line-height:round(calc(var(--titre) * 1.2), 1px)}
+/* La ligne du type — « Stand », « Zone » — porte aussi la mention des nouveaux
+   venus : c'est la première ligne qu'on lit, avant même le nom, et la pastille
+   y annonce l'exposant au lieu de commenter son numéro, deux lignes plus bas.
+   La réserve de droite est celle du coin des actions, marque et croix : sans
+   elle, une pastille un peu longue passait dessous. Quand la place manque, le
+   flex la renvoie sous le libellé plutôt que de la comprimer.
+
+   La pastille ne se range pas contre le libellé : ses marges automatiques la
+   posent au milieu de ce qui reste entre lui et le coin des actions — collée
+   au mot « Stand », elle s'en faisait lire comme la suite. L'écart de la ligne
+   lui garde de l'air même quand le milieu n'existe plus, sur un écran étroit
+   ou sous le tampon penché du modèle kraft. */
+.detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;
+  column-gap:14px;row-gap:4px;padding-right:var(--coin-actes)}
+/* Les pastilles voyagent dans un étui : deux marges automatiques, une par
+   pastille, les auraient écartées aux deux bouts de ce qui reste. Vide, l'étui
+   ne prend pas de place — la tête de fiche d'un exposant sans distinction est
+   celle qu'elle était. */
+.detail-hd .hdTete .pastDist{display:flex;flex-wrap:wrap;align-items:center;
+  gap:8px;margin-inline:auto}
+.detail-hd .hdTete .pastDist:empty{display:none}
+/* Une distinction se signale au-dessus du nom. La pastille reprend l'accent de
+   la page plutôt qu'une couleur à elle : c'est une distinction, pas une
+   alerte, et une teinte de plus ferait un troisième langage sur le plan après
+   celui des zones. Le texte est de la fonte du corps — un numéro de stand se
+   lit en mono, une mention se lit comme une phrase. */
+.badge.dist{background:var(--accent-soft);color:var(--accent);font-family:inherit;
+  font-weight:600;align-items:center}
+/* Le pictogramme qui précède la mention. Il ne vaut pas pour lui-même : une
+   étincelle seule se lit « promotion », et c'est la phrase à côté qui la dit
+   « nouvel exposant ». Il tient dans la feuille de style et non dans le
+   balisage — chaque modèle a le sien, et la fiche comme la vignette d'aperçu
+   des réglages le prennent du même endroit, la classe du modèle, sans qu'une
+   ligne de script ait à le poser. Un masque plutôt qu'une image : il se peint
+   de la couleur de la pastille, celle que chaque modèle lui a donnée, et un
+   tampon kraft n'a pas à emporter son encre. */
+.badge.dist,.rubanDist{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9.8 0.2C9.8 5.9 13.9 10.0 19.6 10.0C13.9 10.0 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10.0 0.0 10.0C5.7 10.0 9.8 5.9 9.8 0.2Z'/%3E%3Cpath d='M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z'/%3E%3C/svg%3E")}
+/* Le picto ne vaut que pour les distinctions qui en ont un, d'où la classe :
+   l'étincelle des nouveaux venus sur une pastille d'adhérent la ferait lire
+   comme une réclame. */
+.badge.dist.pic::before,.rubanDist.pic::before{content:"";flex:none;
+  width:12px;height:12px;background:currentColor;
+  -webkit-mask:var(--picto) center/contain no-repeat;mask:var(--picto) center/contain no-repeat}
+.rubanDist.pic::before{width:13px;height:13px}
+/* Les deux autres façons d'annoncer une distinction, au choix de l'exploitant
+   depuis les onglets « Nouveaux » et « Adhérents ». C'est le script qui retient
+   celle qu'il a prise, et qui refait la tête de la fiche ouverte quand le
+   réglage change : la feuille de style ne saurait pas dire laquelle des deux
+   distinctions occupe le coin.
+
+   Le coin corné se pose à gauche et non à droite, où sa référence le met : le
+   coin droit porte déjà le logo de l'exposant et la croix de fermeture, et la
+   marque passait dessous. La réserve qu'il demande est le pendant de celle
+   que les actions prennent de l'autre côté.
+
+   Il se cale sur le coin de la fiche entière — d'où sa place dans le balisage,
+   hors de la tête —, et non sur celui de sa tête : sur l'écran étroit la fiche
+   est un tiroir que coiffe une prise, et la marque ancrée à la tête laissait
+   au-dessus d'elle une bande pleine au haut du tiroir. Un bandeau qui occupe
+   déjà ce haut le lui reprend, et c'est le script qui l'y remet — voir
+   « poseDistsFiche ». */
+/* La bande fait 100 px, mais on n'en voit que la corde qu'elle coupe dans le
+   carré : plus elle est proche de l'angle, plus cette corde est courte. Posée
+   à 13 px du haut, elle n'en montrait que 64, et « NOUVEAU » — centré dans les
+   100 px — venait mourir à ses deux bouts. L'écarter de l'angle allonge la
+   corde d'autant : ici elle en montre 77, soit une quinzaine de pixels de part
+   et d'autre du mot. Le carré qui la rogne suit, sans quoi il couperait ses
+   pointes, et la réserve que la tête de fiche lui laisse aussi — elle vaut la
+   largeur que la bande prend sur le bord haut.
+
+   Encore faut-il que le mot tombe au milieu de cette corde, et non au milieu
+   des 100 px : les deux ne coïncident que si le centre de la bande est à
+   égale distance des deux bords du carré, d'où « left + 50 = top + demi-
+   épaisseur ». Descendre la bande sans reculer sa gauche l'avait décentrée,
+   et le mot, toujours centré sur elle, se retrouvait à sept pixels du bout
+   d'en bas pour vingt-deux de l'autre. */
+.corneDist{position:absolute;top:0;left:0;width:72px;height:72px;
+  overflow:hidden;pointer-events:none;z-index:1}
+.corneDist span{position:absolute;top:17px;left:-23px;width:100px;
+  padding:3px 0;text-align:center;transform:rotate(-45deg);
+  background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
+  font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase}
+.detail.avecCorne .detail-hd .hdTete{padding-left:68px}
+/* Le bandeau prend toute la largeur : rien ne lui dispute sa place, et il
+   descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
+   est déjà à l'étroit. C'est à l'exploitant d'en juger, et deux bandeaux
+   descendent le nom de deux lignes. */
+.rubanDist{display:flex;align-items:center;gap:7px;padding:6px 18px;
+  background:var(--d,var(--accent));color:var(--d-ink,var(--accent-ink));
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  /* Une hauteur de ligne entière, et non l'héritée : à 1,5 sur onze pixels
+     elle valait 16,5, le bandeau 28,5, et tout ce qu'il descend dans la
+     fiche tombait entre deux rangées de pixels. */
+  line-height:16px;
+  letter-spacing:.06em;text-transform:uppercase}
+/* La teinte choisie l'emporte sur celle que le modèle de fiche donne à la
+   pastille : l'exploitant qui la règle veut celle-là, pas celle de
+   l'habillage. Le sélecteur passe donc devant les onze modèles, qui nomment
+   tous la classe du modèle puis la pastille — d'où « html » en tête, qui ne
+   sert qu'à peser un cran de plus. */
+html .detail-hd .badge.dist.teinte{
+  background:var(--d-doux);color:var(--d)}
+/* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
+   un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
+   plusieurs — et le clic n'est que la suite logique. */
+.badge.part{font-family:inherit;margin-left:6px;cursor:pointer;
+  border:1px solid var(--line-strong)}
+.badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
+/* « Affiché : oui/non » — l'interrupteur d'une zone organisateur, en
+   administration seulement. Une pastille comme les autres, car c'est d'abord
+   un état qu'on lit ; la puce qui la précède en donne la réponse de loin, sans
+   relire le mot. */
+.badge.bascule{font-family:inherit;margin-left:6px;cursor:pointer;
+  align-items:center;border:1px solid var(--line-strong)}
+.badge.bascule::before{content:"";width:7px;height:7px;border-radius:50%;
+  background:var(--accent)}
+.badge.bascule[aria-pressed="false"]{color:var(--ink-3)}
+.badge.bascule[aria-pressed="false"]::before{background:var(--ink-3)}
+.badge.bascule:hover{color:var(--ink);border-color:var(--ink-3)}
+/* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
+   société — jusqu'à une douzaine sur les plus peuplés — et rien d'autre que
+   leur nom : celle qui loue le stand vient en tête, ce qui la dit assez. */
+.expos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.expos button{display:flex;width:100%;align-items:baseline;gap:9px;text-align:left;
+  padding:9px 11px;border:1px solid transparent;border-radius:5px;
+  background:var(--surface-2);font-size:13.5px;color:var(--ink)}
+.expos button:hover{border-color:var(--line-strong)}
+.expos .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
+/* Les volets de la fiche s'effacent : leurs champs se suivent dans le corps
+   comme s'ils étaient seuls, et c'est l'onglet qui décide lequel des trois
+   paraît. Le volet n'est là que pour être montré ou caché d'un bloc — lui
+   laisser une boîte ajouterait un écart au-dessus de son premier champ. */
+.cInfos,.cConf,.cProd{display:contents}
+/* Les onglets de la fiche : ce qu'est l'exposant, ce qu'il anime, ce qu'il
+   présente. Ils ne paraissent que s'il y a de quoi partager — un stand sans
+   conférence ni produit n'a rien à mettre en face. */
+/* Deux libellés posés côte à côte ne se donnaient pas pour un bouton : on les
+   lisait comme un titre, et le programme restait derrière un onglet que
+   personne n'appuyait. D'où l'interrupteur — une piste creuse, la moitié
+   active en relief — que tout le monde reconnaît, et le nombre en pastille
+   d'accent qui dit qu'il y a quelque chose à voir de ce côté. */
+.onglets{display:flex;gap:3px;margin:12px 18px 0;padding:3px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.onglets[hidden]{display:none}
+.ong{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding:9px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.ong:hover{color:var(--ink)}
+.ong[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);
+  box-shadow:0 2px 10px -4px var(--accent)}
+/* La pastille est pleine, pas teintée : c'est elle qui doit attraper l'œil
+   depuis l'onglet qu'on ne regarde pas. Sur l'onglet actif, où elle se
+   poserait sur son propre aplat, elle s'inverse. */
+.ong .n{min-width:19px;padding:1px 6px;border-radius:999px;
+  background:var(--accent);color:var(--accent-ink);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;text-align:center}
+.ong[aria-selected="true"] .n{background:var(--accent-ink);color:var(--accent)}
+/* Un onglet sans volet à montrer ne paraît pas : un exposant tient des
+   conférences sans présenter de produits, ou l'inverse, et c'est le cas
+   courant. « display » posé par la règle du dessus l'emporterait sur
+   l'attribut, d'où cette ligne-ci. */
+.ong[hidden]{display:none}
+/* le trait de l'en-tête passerait juste au-dessus des onglets */
+.detail.deux .detail-hd{border-bottom:none}
+/* Un volet par onglet, et les deux autres effacés. Écrit position par
+   position plutôt qu'en négatif : à deux volets le négatif suffisait, à
+   trois il fallait dire « ni l'un ni l'autre » deux fois par volet. */
+.detail.deux[data-onglet="detail"] .cConf,
+.detail.deux[data-onglet="detail"] .cProd{display:none}
+.detail.deux[data-onglet="prog"] .cInfos,
+.detail.deux[data-onglet="prog"] .cProd{display:none}
+.detail.deux[data-onglet="prod"] .cInfos,
+.detail.deux[data-onglet="prod"] .cConf{display:none}
+/* l'onglet nomme déjà le volet, le libellé du champ ferait doublon */
+.detail.deux[data-onglet="prog"] .cConf > .field > .eyebrow,
+.detail.deux[data-onglet="prod"] .cProd > .field > .eyebrow{display:none}
+/* Les onglets valent à toutes les largeurs. La fiche s'est longtemps élargie
+   au-delà de 1100 px pour ranger le programme en face de l'exposant, en deux
+   colonnes : elle passait alors à 640 px et mangeait la moitié du plan
+   qu'elle sert, pour une seconde colonne souvent courte — deux conférences en
+   regard de quinze champs. L'interrupteur dit la même chose sans rien prendre
+   au plan, et la fiche se lit de la même façon sur les deux écrans. */
+/* Une fiche a deux blocs — ce qu'elle décrit, ce qu'elle programme — et l'un
+   des deux est souvent vide : une zone sans description, un stand sans
+   conférence. Vide, il reste un élément de la colonne, et l'écart qui le
+   sépare du suivant se lisait comme une marge de trop en haut de la fiche. */
+.detail-bd > .cInfos:empty,.detail-bd > .cConf:empty,
+.detail-bd > .cProd:empty{display:none}
+.field{display:flex;flex-direction:column;gap:3px}
+/* La hauteur de ligne est donnée en pixels entiers, et non en proportion :
+   1,45 sur quatorze pixels valait 20,3, chaque champ 38,3, et la fraction
+   s'ajoutait à elle-même d'un champ au suivant — le sixième démarrait un
+   pixel et demi sous la grille de l'écran. */
+.field .v{font-size:14px;line-height:20px}
+.field .v a{color:var(--accent)}
+/* Une valeur multiple s'écrit en lignes. Les pastilles convenaient à des codes
+   de trois caractères ; les libellés sont des phrases. */
+.field .v .ligne{display:block}
+.field .v .ligne + .ligne{margin-top:3px}
+/* L'intitulé d'un champ réuni sous un titre, quand l'exploitant le lui laisse :
+   devant sa valeur et non au-dessus, où il ferait un second titre sous le
+   premier. Trois lignes sous « Contact » ne disent plus laquelle est le
+   téléphone : c'est à cela qu'il sert. */
+.field .v .ligne > .lib{color:var(--ink-3);margin-right:7px}
+/* Une thématique de la fiche mène aux exposants qui la partagent : elle se
+   souligne au survol pour le dire, mais garde la graisse et l'alignement des
+   autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
+.field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
+.field .v .ligne.theme:hover{text-decoration:underline}
+/* Un réseau social se lit à son logo, non à son adresse : les pictos tiennent
+   sur une seule ligne, côte à côte, là où trois adresses empilées prenaient
+   trois lignes pour redire le nom de l'exposant. Ils suivent la couleur des
+   liens de la fiche — chaque habillage a la sienne — plutôt que celle des
+   marques, qui se disputeraient la page. */
+.field .v .ligne.rs{display:inline-flex;vertical-align:middle}
+.field .v .ligne.rs + .ligne.rs{margin-top:0;margin-left:12px}
+.field .v a.rs{display:inline-flex;line-height:0}
+.field .v a.rs svg{width:21px;height:21px;fill:currentColor}
+.field .v a.rs:hover{opacity:.7}
+/* La description d'une zone, écrite dans un éditeur : elle porte ses propres
+   paragraphes et ses propres listes, là où tous les autres champs tiennent en
+   une ligne. Ses marges extérieures reviennent au champ, qui espace déjà. */
+.field .v .riche > *:first-child{margin-top:0}
+.field .v .riche > *:last-child{margin-bottom:0}
+.field .v .riche p{margin:0 0 .55em}
+.field .v .riche ul,.field .v .riche ol{margin:0 0 .55em;padding-left:1.25em}
+.field .v .riche li{margin:0 0 .2em}
+/* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
+   c'est par elle qu'on se repère, et un filet de la couleur de son type. */
+.prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+/* Le jour reste collé en haut pendant qu'on parcourt le programme : une zone
+   en aligne parfois vingt-trois sur trois jours, et savoir lequel on lit
+   compte autant que l'heure. */
+/* Le fond doit couvrir aussi la marge haute du conteneur — seize pixels —
+   sans quoi la vignette suivante transparaît au-dessus du libellé collé. */
+.prog .jour{position:sticky;top:-16px;z-index:1;
+  margin:4px 0 3px;padding:16px 0 6px;background:var(--surface);
+  font-size:13.5px;font-weight:600;color:var(--ink);
+  border-bottom:1px solid var(--line-strong)}
+.prog .jour:first-child{margin-top:-10px}
+.prog .conf{display:flex;flex-direction:column;gap:2px;padding:7px 9px;width:100%;
+  text-align:left;background:var(--surface-2);border:none;
+  border-radius:var(--radius);border-left:2px solid var(--tc,var(--line-strong));
+  cursor:pointer;transition:background .15s}
+.prog .conf:hover{background:var(--line)}
+.prog .conf:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* le type d'une conférence, dans sa couleur Eventmaker */
+.conf-type{display:inline-block;margin-bottom:4px;padding:3px 9px;border-radius:999px;
+  font-size:11px;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--tc,var(--ink-2));border:1px solid var(--tc,var(--line))}
+.prog .h{font-size:11.5px;font-weight:600;color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace}
+.prog .t{font-size:13px;line-height:1.35;color:var(--ink)}
+.prog .ty{font-size:11px;color:var(--ink-3)}
+/* Le catalogue d'un exposant.
+
+   Une grille et non une pile : un produit se reconnaît à son image, et quatre
+   vignettes côte à côte se parcourent d'un regard là où quatre rangs empilés
+   se font défiler. La largeur minimale tient le nom sur deux lignes — un
+   « Impresora de Sublimación FEDAR » n'en tient pas sur une — et la grille se
+   ramène d'elle-même à deux colonnes dans un volet étroit, à une seule dans le
+   tiroir d'un téléphone.
+
+   « auto-fit » et non « auto-fill » : les deux comptent les colonnes que la
+   largeur permet, mais « auto-fill » garde celles qu'aucun produit n'occupe.
+   Un exposant qui n'en présente qu'un laissait donc la moitié du volet en
+   blanc, à côté d'une vignette de la taille prévue pour quatre. Repliées, les
+   pistes vides rendent leur place au seul produit. */
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+  gap:8px;margin-top:2px}
+.prod{display:flex;flex-direction:column;gap:6px;padding:7px;width:100%;
+  text-align:left;background:var(--surface-2);border:none;
+  border-radius:var(--radius);cursor:pointer;transition:background .15s}
+.prod:hover{background:var(--line)}
+.prod:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Un logo de produit est large plus souvent que carré, et l'image est l'objet
+   même : on la loge entière dans un carré plutôt que de la recadrer — c'est
+   la leçon des avatars, où le nom de l'enseigne se retrouvait amputé. Le fond
+   clair tient la place quand elle est plus étroite que haute. */
+.prod .v{display:block;width:100%;aspect-ratio:1;object-fit:contain;
+  background:var(--surface);border-radius:calc(var(--radius) - 2px)}
+/* Sans image, le carré reste : les noms d'une liste à moitié illustrée ne
+   s'alignaient plus, et le catalogue se lisait comme deux listes. */
+.prod .v.vide{background:var(--line)}
+.prod .t{font-size:12.5px;line-height:1.3;color:var(--ink);overflow-wrap:anywhere}
+/* L'image dans la fenêtre du produit : l'originale, que la source ne borne
+   pas. Une hauteur maximale l'empêche de pousser la présentation hors de
+   l'écran sur un panorama comme sur un portrait. */
+.prodImg{display:block;width:100%;max-height:44vh;object-fit:contain;
+  margin-bottom:4px;border-radius:var(--radius);background:var(--surface-2)}
+/* Les exposants qui tiennent une conférence. Le nom d'abord, son emplacement
+   au bout : c'est un rang qu'on lit, puis qu'on suit jusqu'à la fiche. */
+.expos{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.expo{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  width:100%;padding:7px 9px;text-align:left;background:var(--surface-2);
+  border-radius:var(--radius);transition:background .15s}
+button.expo:hover{background:var(--line)}
+.expo .n{font-size:13px;line-height:1.35;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.expo .c{flex:none;font-size:11px;color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace}
+/* Un stand hors du plan se lit, mais ne mène nulle part : rien ne doit le
+   faire passer pour un bouton. */
+.expo.statique{background:none;padding:0}
+/* Qui parle, et qui anime : le rang d'un exposant, en plus sobre. Ce qu'ils
+   portent au bout n'est pas un code d'emplacement mais une enseigne — elle se
+   lit donc dans la police du texte, non dans celle des numéros.
+
+   La cellule du nom est elle-même une rangée, et c'est ce qui tient tout : la
+   mention y est un élément à part, insécable, qu'aucun manque de place ne peut
+   renvoyer à la ligne suivante. Rejetée seule sous un nom, elle se lisait comme
+   l'intitulé de la section d'en dessous — vingt-huit fois sur soixante-treize à
+   la largeur d'un téléphone. C'est l'enseigne qui cède maintenant, et elle le
+   fait sans tromper personne : un nom de société sur deux lignes reste un nom
+   de société. */
+.gens{gap:3px}
+.gens .n{display:flex;align-items:baseline;gap:7px;min-width:0;flex:1 1 auto}
+/* Un patronyme ne se coupe qu'entre deux mots — jamais au milieu, sauf s'il ne
+   tient pas seul sur la ligne. */
+.gens .n .nm{min-width:0;overflow-wrap:break-word}
+/* L'enseigne se coupe par une ellipse plutôt que de passer à la ligne : une
+   rangée par personne était tout l'objet de ce bloc, et un nom de société sur
+   deux lignes le défaisait une fois sur quatre. C'est l'usage de la maison —
+   la liste latérale tronque de même —, et le nom complet reste sous le
+   pointeur, dans la recherche, et sur la fiche de l'exposant quand il en tient
+   un stand. Onze pixels plutôt que onze et demi : un tiers de troncatures en
+   moins sur le programme de Franchise Expo, sans que les noms cèdent
+   davantage. */
+.gens .c{flex:0 1 auto;max-width:44%;font-family:inherit;font-size:11px;
+  text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Qui anime plutôt que d'intervenir, dit au passage : une nuance, pas un titre
+   — d'où le bas de casse, qui la sépare de tous les intitulés de la fiche. */
+.gens .r{flex:none;white-space:nowrap;font-size:11px;color:var(--ink-3)}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
+.btn:hover{border-color:var(--line-strong)}
+

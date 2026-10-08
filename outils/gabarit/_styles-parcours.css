@@ -1,0 +1,601 @@
+/* Le parcours de visite, la journée organisée, l'itinéraire, la borne. */
+/* ------------------------------------------------------------
+   Parcours de visite
+
+   Le visiteur retient des exposants et des conférences en circulant, puis
+   relit sa liste sur place. La marque est la même partout — un signet creux
+   tant que la chose n'y est pas, plein dès qu'elle y entre — pour qu'on la
+   reconnaisse aussi bien dans le programme d'une zone que sur une fiche.
+   ------------------------------------------------------------ */
+.marque{flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3);display:grid;place-items:center;background:var(--surface)}
+.marque svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.marque:hover{border-color:var(--line-strong);color:var(--ink)}
+.marque[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.marque[aria-pressed="true"] svg{fill:currentColor}
+.btn.parc{display:inline-flex;align-items:center;gap:7px}
+.btn.parc svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.btn.parc[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.btn.parc[aria-pressed="true"] svg{fill:currentColor}
+/* Dans une fenêtre modale, les champs n'ont pas l'écartement que leur donne le
+   corps de la fiche : le bouton se collerait au dernier paragraphe. */
+.mcorps .acts{margin-top:13px}
+/* La vignette d'une conférence garde toute la largeur qu'elle peut : le
+   signet se pose à côté, hors du bouton — un bouton n'en contient pas un autre. */
+.confRang{display:flex;align-items:center;gap:6px}
+.confRang .conf{flex:1;min-width:0}
+
+/* Le nombre porté par le bouton de la barre : sans lui, rien ne dirait qu'un
+   parcours a été commencé lors d'une visite précédente. */
+.compteur{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:600;
+  font-family:"IBM Plex Mono",monospace;display:grid;place-items:center;line-height:1;
+  border:1.5px solid var(--surface)}
+.compteur[hidden]{display:none}
+
+/* Le tiroir occupe la place de la fiche — à droite sur grand écran, en bas sur
+   téléphone : c'est le même geste, regarder une liste à côté du plan. Les deux
+   ne s'ouvrent jamais ensemble, ils se disputeraient la même bande. */
+/* « background-color » ici et sur l'itinéraire, et non « background » :
+   plusieurs modèles posent un fond tramé ou un dégradé sur le panneau, et la
+   forme courte, écrite après eux dans la feuille, l'effacerait. La fiche, elle,
+   vient avant les modèles et peut garder la forme courte. */
+.parcours{position:absolute;top:0;right:0;bottom:0;width:340px;background-color:var(--surface);
+  border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;
+  z-index:4;box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);
+  transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.parcours.open{transform:none}
+.parcours .detail-hd h2{margin:0 0 4px}
+.pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.pPied[hidden]{display:none}
+:is(.pPied,.pActs) .btn{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 12px;font-size:13px}
+.pPied .btn{width:100%}
+:is(.pPied,.pActs) .btn svg{width:15px;height:15px;flex:none}
+/* Les deux commandes du parcours, sur une rangée et en tête du tiroir.
+
+   Au pied, elles disparaissaient : une liste de vingt exposants les pousse
+   hors de l'écran, et il fallait dérouler tout ce qu'on avait retenu pour
+   retrouver quoi en faire. Or ce sont elles qui disent à quoi la liste sert —
+   l'organiser, ou la passer à quelqu'un — et cela se lit avant la liste, pas
+   après. Reste au pied ce qui l'efface, qu'on ne cherche pas et qui ne doit
+   pas tomber sous le pouce.
+
+   « Organiser » prend la place qui reste : c'est la commande longue, et celle
+   pour laquelle la liste a été faite. */
+.pActs{flex:none;display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
+  border-bottom:1px solid var(--line)}
+.pActs[hidden]{display:none}
+.pActs .jOrg,.pActs .jRefait{flex:1;min-width:0}
+.pActs .jPart{flex:none}
+/* La rangée sert les deux vues du tiroir : la liste s'organise, la journée se
+   reprend, et le partage ne quitte jamais la tête — une journée organisée est
+   justement ce qu'on veut donner à qui vient avec soi. Le bouton qui ne sert
+   pas à cette vue s'efface ; `display:flex` ci-dessus l'emporterait sinon sur
+   son attribut. */
+.pActs .btn[hidden]{display:none}
+/* Organiser sa journée n'est pas une action de rangement comme les autres :
+   c'est ce pour quoi la liste a été faite, et le bouton le dit. */
+.pActs .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.pActs .jOrg:hover{border-color:var(--accent)}
+.pActs .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
+  color:var(--ink-3);cursor:default}
+.pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
+.pPied .vider:hover{color:var(--rouge)}
+/* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
+   menace sur la liste qu'on retrouve. */
+.pPied .vider.retour:hover{color:var(--ink)}
+.pGroupe{display:flex;flex-direction:column;gap:7px}
+/* Le jour sépare les conférences comme il le fait dans le programme d'une
+   zone : sans lui, « 10h30 » ne dit pas de quelle matinée il parle. */
+.pGroupe .jour{margin:5px 0 1px;padding-bottom:5px;font-size:13.5px;font-weight:600;
+  color:var(--ink);border-bottom:1px solid var(--line-strong)}
+.pRang{display:flex;align-items:center;gap:6px}
+.pRang .pOuvre{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--line-strong));transition:background .15s}
+.pRang .pOuvre:hover{background:var(--line)}
+.pRang .pt{font-size:13px;line-height:1.35;color:var(--ink)}
+.pRang .ps{font-size:11.5px;color:var(--ink-3)}
+.pRang .pOte{width:28px;height:28px;flex:none;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3);font-size:15px;line-height:1}
+.pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
+.pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La copie qu'on se garde, au pied de la liste.
+
+   Un filet la sépare de ce qui précède : elle ne parle pas des rangs retenus,
+   elle parle de la liste elle-même, et sans ce trait on la lisait comme un
+   rang de plus mal rangé. Le gris et la petite taille sont ceux d'une mention,
+   non d'une alarme — ce qu'elle annonce n'arrivera peut-être pas. Le bouton,
+   lui, prend toute la largeur : c'est une réponse, et sur un téléphone elle se
+   touche au pouce. */
+.pGarde{margin-top:2px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px}
+.pGarde p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+.pGarde .btn{display:flex;align-items:center;justify-content:center;
+  padding:8px 12px;font-size:12.5px}
+/* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
+   plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
+   et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
+   rangée. Le pouce doit l'atteindre — la ligne entière est la commande, pas la
+   seule case. */
+.rapBloc{margin:2px 0 4px;padding:9px 10px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2)}
+.rapBascule{display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--ink)}
+.rapBascule input{width:16px;height:16px;flex:none;accent-color:var(--accent);cursor:pointer}
+.rapBascule input:disabled{cursor:progress}
+.rapBascule .t{min-width:0}
+.rapAide{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+/* Seule dans son cadre — un iPhone non installé, des notifications refusées —
+   l'explication n'a pas d'intitulé au-dessus d'elle à qui s'aligner. */
+.rapBloc > .rapAide:first-child{margin-top:0}
+/* La même carte, au premier plan : une fenêtre étroite, qui ne tient qu'une
+   proposition. Le fond et le trait discontinu n'ont plus lieu d'être — ils
+   disaient « pas encore épinglé » dans une colonne de rangs qui, eux, l'étaient,
+   et ici il n'y a rien autour à quoi se comparer. */
+.modale[data-genre="sugg"] .mfen{width:min(420px,100%)}
+.modale[data-genre="sugg"] .pSugg{padding:0;border:none;background:none;gap:11px}
+/* La proposition qui ferme le tiroir.
+   Elle ne se déguise pas en rang du parcours : ce qui est dessous a été retenu,
+   ce qui est ici ne l'est pas encore. D'où le fond d'accent et le trait
+   discontinu — la même carte, pas encore épinglée. Le rang qu'elle porte, lui,
+   reprend l'allure des autres : c'est le même exposant, ouvert du même geste. */
+.pSugg{display:flex;flex-direction:column;gap:7px;padding:11px 12px;
+  border:1px dashed var(--line-strong);border-radius:var(--radius);
+  background:var(--accent-soft)}
+.pSugg .sTete{display:flex;align-items:center;gap:8px}
+.pSugg .sTete .eyebrow{flex:1;min-width:0}
+.pSugg .sEcarte{flex:none;width:22px;height:22px;color:var(--ink-3);font-size:15px;
+  line-height:1}
+.pSugg .sEcarte:hover{color:var(--ink)}
+.pSugg .sMotif{margin:0;font-size:12px;line-height:1.5;color:var(--ink-2)}
+/* Le fond du rang vient du panneau, pas du tiroir : posé sur l'accent, le gris
+   de « surface-2 » s'y serait fondu. */
+.pSugg .pRang .pOuvre{background:var(--surface)}
+.pSugg .pRang .pOuvre:hover{background:var(--surface-2)}
+/* La réponse que la carte attend, de la largeur de la carte.
+   Pleine d'accent, et la seule : le fond d'accent pâle du tiroir avale un
+   bouton en retrait, et dans la fenêtre le pied est en retrait pour elle. */
+.pSugg .btn.parc{width:100%;justify-content:center;padding:9px 12px;font-size:13px;
+  background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pSugg .btn.parc:hover{border-color:var(--accent);filter:brightness(1.08)}
+.pSugg .btn.parc svg{width:15px;height:15px}
+/* ------------------------------------------------------------
+   La journée organisée
+
+   Le même tiroir, une autre vue : la liste qu'on a composée devient un
+   déroulé d'heures. Les deux ne s'affichent jamais ensemble — c'est la même
+   journée, lue avant puis après le calcul.
+   ------------------------------------------------------------ */
+.jBilan{display:flex;flex-direction:column;gap:2px;padding:11px 12px;
+  background:var(--accent-soft);border-radius:var(--radius)}
+.jBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
+.jBilan span{font-size:12.5px;color:var(--ink-2)}
+.jFil{display:flex;flex-direction:column;gap:3px}
+.jRang{display:flex;gap:9px;align-items:flex-start}
+/* L'heure tient une colonne à elle : alignée à droite, les minutes se lisent
+   les unes sous les autres et la journée se parcourt d'un regard. */
+.jH{flex:none;width:38px;padding-top:9px;text-align:right;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+/* Ce qui relie deux arrêts — la marche, l'attente, le changement de pavillon
+   — n'est pas un arrêt : le trait pointillé le dit sans un mot de plus. */
+.jRang.lien .jH{padding-top:1px}
+.jL{flex:1;min-width:0;margin-left:8px;padding:1px 0 5px 14px;
+  border-left:1px dashed var(--line-strong);
+  font-size:11.5px;color:var(--ink-3);line-height:1.5}
+.jArret{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--accent));transition:background .15s}
+.jArret:hover{background:var(--line)}
+/* Le rang de l'arrêt, le même que la pastille posée sur le plan : c'est par
+   lui qu'on passe de la liste au trait, et du trait à la liste. */
+.jN{flex:none;width:20px;height:20px;border-radius:999px;background:var(--accent);
+  color:var(--accent-ink);font-size:10.5px;font-weight:600;font-family:"IBM Plex Mono",monospace;
+  display:grid;place-items:center;line-height:1}
+.jArret.conf .jN{background:var(--surface);color:var(--accent);
+  box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* Un rendez-vous qu'on n'atteint pas garde sa place et son heure, mais cesse
+   de se donner pour acquis : c'est au visiteur d'arbitrer. */
+.jArret.tard{border-left-color:var(--rouge)}
+.jArret.tard .jS{color:var(--rouge)}
+.jTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jT{font-size:13px;line-height:1.35;color:var(--ink)}
+.jS{font-size:11.5px;color:var(--ink-3)}
+.jD{flex:none;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+/* Ce qui n'a pas trouvé sa place dans la journée : on le montre plutôt que de
+   le laisser disparaître sans un mot. */
+.jReste{display:flex;flex-direction:column;gap:7px}
+.jReste .pRang .pOuvre{opacity:.72}
+/* Le total de la visite entière, sous celui du jour : trois jours de marche ne
+   se devinent pas d'une journée. */
+.jBilan i{font-style:normal;font-size:11.5px;color:var(--ink-3)}
+
+/* ------------------------------------------------------------
+   Les jours d'une visite, et le passage de l'un à l'autre
+
+   Une rangée d'onglets sous les commandes, hors du corps qui défile : c'est le
+   seul endroit d'où l'on voit l'équilibre de la visite, et il ne doit pas
+   partir en haut de l'écran dès qu'on déroule une journée. Elle défile
+   latéralement — un salon de cinq jours ne tient pas en largeur sur un
+   téléphone, et rétrécir les onglets jusqu'à ce qu'ils tiennent les rendrait
+   illisibles.
+   ------------------------------------------------------------ */
+/* « flex:none » n'est pas une précaution : le tiroir est une colonne souple, et
+   un tiroir bas de téléphone y comprime ce qu'il peut. La rangée y perdait sa
+   seconde ligne — la distance du jour — et coupait la première en deux. */
+.jJours{flex:none;display:flex;gap:6px;padding:9px 18px 10px;
+  border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.jJours::-webkit-scrollbar{display:none}
+.jJours[hidden]{display:none}
+.jOnglet{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:6px 11px;min-width:64px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-2);transition:background .15s,border-color .15s,color .15s}
+.jOnglet:hover{border-color:var(--line-strong)}
+.jOnglet .t{font-size:12.5px;font-weight:600;white-space:nowrap;line-height:1.3}
+.jOnglet .s{font-size:10.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;
+  white-space:nowrap;line-height:1.3}
+/* Le jour qu'on regarde porte l'accent, comme le trait qu'il a posé sur le
+   plan : l'un désigne l'autre. */
+.jOnglet[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--accent)}
+.jOnglet[aria-pressed="true"] .s{color:var(--accent);opacity:.8}
+
+/* Changer un exposant de jour. Le bouton se pose à côté de l'arrêt et non
+   dessus — l'arrêt ouvre la fiche, c'est ce qu'on attend d'un nom sur lequel on
+   appuie — et sa cible fait la taille d'un pouce. */
+.jBouge{flex:none;width:30px;height:30px;display:grid;place-items:center;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);color:var(--ink-3);transition:color .15s,border-color .15s}
+.jRang .jBouge{margin-top:5px}
+.jBouge:hover{color:var(--accent);border-color:var(--accent)}
+.jBouge svg{width:15px;height:15px}
+/* Un jour que le visiteur a imposé lui-même se voit : sans cela, il ne saurait
+   plus lequel de ses stands il a rangé à la main. */
+.jBouge.pose{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+
+/* Les trois questions posées avant le calcul. Elles tiennent dans la fenêtre
+   modale, où rien d'autre ne se règle par un champ. */
+.jForm{display:flex;flex-direction:column;gap:12px;margin-top:13px}
+.jForm label{display:flex;flex-direction:column;gap:4px}
+.jForm select,.jForm input{width:100%;padding:8px 9px;font-size:13.5px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink)}
+.jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
+.jSansPorte,.jHeures{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+/* Les jours de venue : une case par jour, pas une liste déroulante. On en coche
+   deux, et il faut voir d'un coup ceux qu'on a pris. */
+.jForm .jBloc{display:flex;flex-direction:column;gap:4px}
+.jCases{display:flex;flex-direction:column;gap:2px}
+.jForm .jCase{flex-direction:row;align-items:center;gap:10px;padding:7px 9px;
+  border-radius:var(--radius);cursor:pointer;font-size:13.5px;color:var(--ink)}
+.jForm .jCase:hover{background:var(--surface-2)}
+.jForm .jCase input{width:17px;height:17px;flex:none;padding:0;accent-color:var(--accent)}
+/* Ce que le jour porte déjà, poussé à droite comme dans l'aperçu : le jour se
+   lit d'abord, son compte ensuite — et la case cochée d'avance s'explique
+   d'elle-même. */
+.jForm .jCase .jCaseConfs{margin-left:auto;flex:none;font-size:11.5px;color:var(--ink-3)}
+/* Décocher un jour qui porte des conférences les laisse dehors. Ce n'est pas
+   une faute, c'est une conséquence — dite sur le ton des alertes du tiroir,
+   sous les cases, là où le geste vient d'avoir lieu. */
+.jForm .jHorsJour{margin:2px 0 0;font-size:12.5px;line-height:1.5;color:var(--rouge)}
+
+/* Le curseur de répartition, et ce qu'il donne à voir.
+
+   Un champ « range » n'est pas une boîte de saisie : la règle qui encadre les
+   champs du formulaire lui poserait un fond et une bordure autour de sa glissière.
+   On la défait ici, et on lui laisse une hauteur de pouce. */
+.jPente{display:flex;flex-direction:column;gap:4px}
+.jForm .jPente input[type="range"]{width:100%;height:26px;margin:0;padding:0;
+  background:none;border:none;border-radius:0;accent-color:var(--accent);cursor:pointer}
+/* Un seul jour retenu n'a rien à répartir : le bloc s'éteint sans disparaître,
+   pour que cocher un second jour le rallume là où on l'avait vu. */
+.jPente.eteint{opacity:.45}
+.jPente.eteint input[type="range"]{cursor:default}
+.jBornes{display:flex;justify-content:space-between;gap:10px;
+  font-size:11px;color:var(--ink-3)}
+.jPenteDit{margin:2px 0 0;font-size:12.5px;color:var(--ink-2);text-align:center}
+
+/* L'aperçu : une ligne par journée, le jour à gauche et ce qu'il porte à
+   droite. Pendant le recalcul il pâlit au lieu de se vider — un tableau qui
+   clignote à chaque cran du curseur se lit moins bien qu'un tableau en retard
+   d'un dixième de seconde. */
+.jApercu{display:flex;flex-direction:column;padding:8px 11px;
+  background:var(--surface-2);border-radius:var(--radius)}
+.jApercu[hidden]{display:none}
+.jApercu.calcul{opacity:.5}
+.jApercuRang{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:4px 0;font-size:12.5px}
+.jApercuRang + .jApercuRang{border-top:1px solid var(--line)}
+/* Un nom de jour ne passe pas à la ligne sous le compte : sur un écran étroit
+   il se coupe, et le compte reste lisible — c'est lui qui bouge. */
+.jApercuRang .j{min-width:0;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jApercuRang .n{flex:none;font-size:11.5px;color:var(--ink-3);text-align:right}
+.jApercuReste{margin:6px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.45}
+
+/* La feuille qui demande vers quel jour déplacer un exposant.
+
+   Un jour par bouton, pleine largeur : sur un téléphone, c'est la seule forme
+   qui se touche sans viser. Glisser un rang d'une liste à l'autre aurait
+   demandé de tenir, de viser et de lâcher au bon endroit dans un tiroir qui
+   défile — un geste de bureau, pas un geste de salon. */
+.jChoix{display:flex;flex-direction:column;gap:7px;margin-top:13px}
+.jChoixJour{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  width:100%;padding:11px 13px;text-align:left;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);
+  transition:background .15s,border-color .15s}
+.jChoixJour:hover{background:var(--line);border-color:var(--line-strong)}
+.jChoixJour .t{font-size:14px;font-weight:600;color:var(--ink)}
+.jChoixJour .s{font-size:11.5px;color:var(--ink-3)}
+/* Le jour où il est déjà : on le montre pour situer, on ne l'écarte pas — le
+   toucher revient à l'y retenir, ce que son sous-titre annonce. */
+.jChoixJour[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.jChoixJour[aria-current="true"] .t{color:var(--accent)}
+.jChoixLibre,.jChoixOte{display:block;width:100%;margin-top:9px;padding:8px;
+  font-size:12.5px;text-align:center;text-decoration:underline;color:var(--ink-3)}
+.jChoixLibre:hover{color:var(--ink)}
+.jChoixOte:hover{color:var(--rouge)}
+
+/* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
+   entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
+/* Ce que les actions du coin prennent de la ligne, en un seul endroit : la
+   ligne du type et celle de la marque s'en écartent toutes deux, et deux
+   nombres tenus séparément ont fini par dire deux choses — la marque passait
+   sous les pictos que l'écran étroit ajoute, la ligne du type non. */
+.detail-hd{--coin-actes:62px}
+.hdActs{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px}
+.hdActs .close{position:static;top:auto;right:auto}
+.hdActs .marque{width:28px;height:28px}
+.hdActs .marque[hidden]{display:none}
+/* Les pictos d'action ne paraissent que sur écran étroit : au large, les
+   boutons du pied de la fiche tiennent dans la colonne sans qu'on déroule. */
+.pAct{display:none;flex:none;width:28px;height:28px;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink-2)}
+.pAct svg{width:15px;height:15px}
+.pAct:hover{border-color:var(--line-strong);color:var(--ink)}
+
+/* ------------------------------------------------------------
+   Itinéraire : le tiroir, et le trait sur le plan
+   ------------------------------------------------------------ */
+/* Troisième occupant de la même bande que la fiche et le parcours — à droite
+   au large, en bas sur téléphone. Les trois ne s'ouvrent jamais ensemble. */
+.itineraire{position:absolute;top:0;right:0;bottom:0;width:340px;background-color:var(--surface);
+  border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;
+  z-index:4;box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);
+  transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.itineraire.open{transform:none}
+.itineraire .detail-hd h2{margin:0 0 4px}
+.iCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+/* Le champ de départ, l'inversion, le champ d'arrivée : trois lignes d'une
+   même grille, la flèche à cheval sur les deux champs qu'elle échange. */
+.iChamps{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:end}
+/* Le champ porte sa liste : elle se déroule sous lui, et non sous les deux.
+   Posée en dessous du bloc, elle paraissait appartenir à l'arrivée alors qu'on
+   tapait le départ. */
+.iChamp{position:relative;display:flex;flex-direction:column;gap:3px;min-width:0}
+.iChamp input{width:100%;padding:8px 36px 8px 9px;font-size:13.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.iChamp input:focus{border-color:var(--accent);outline:none}
+/* L'invite prend l'encre tertiaire plutôt que le gris du navigateur, qui ne
+   sait rien du fond : sur le bloc de couleur du modèle « Verre », elle s'y
+   perdait. */
+.iChamp input::placeholder{color:var(--ink-3);opacity:1}
+/* Le viseur vit au bord du champ qu'il remplit : c'est la même action que la
+   saisie, dite autrement. */
+.iVise{position:absolute;right:3px;bottom:3px;width:28px;height:28px;display:grid;
+  place-items:center;border-radius:var(--radius);color:var(--ink-3)}
+.iVise:hover{color:var(--ink);background:var(--line)}
+.iVise[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent)}
+.iVise svg{width:15px;height:15px}
+.iEchange{grid-column:2;grid-row:1/3;align-self:center;width:34px;height:34px;
+  display:grid;place-items:center;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3)}
+.iEchange:hover{border-color:var(--line-strong);color:var(--ink)}
+.iEchange svg{width:15px;height:15px}
+/* La liste sert les deux champs à tour de rôle : elle se déplace dans celui
+   qu'on remplit plutôt que d'exister en double. */
+.iSugg{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:6;
+  display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto;
+  border:1px solid var(--line-strong);border-radius:var(--radius);padding:4px;
+  background:var(--surface);box-shadow:var(--shadow)}
+.iSugg[hidden]{display:none}
+.iSug{display:flex;flex-direction:column;gap:1px;text-align:left;padding:6px 8px;
+  border-radius:var(--radius);width:100%}
+.iSug:hover,.iSug.vis{background:var(--line)}
+.iSug .n{font-size:13px;color:var(--ink);line-height:1.3}
+.iSug .s{font-size:11.5px;color:var(--ink-3)}
+/* Un repère n'est pas un exposant : le liseré le dit sans un mot de plus. */
+.iSug.rep{border-left:2px solid var(--accent)}
+.iRien{margin:0;padding:6px 8px;font-size:12.5px;color:var(--ink-3)}
+.iPmr{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink-3);
+  line-height:1.45;cursor:pointer}
+.iPmr input{width:16px;height:16px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.iPmr b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+.iResultat{display:flex;flex-direction:column;gap:12px}
+.iBilan{display:flex;flex-direction:column;gap:2px;padding:11px 12px;
+  background:var(--accent-soft);border-radius:var(--radius)}
+.iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
+.iBilan span{font-size:12.5px;color:var(--ink-2)}
+/* Effacer, c'est défaire les deux champs juste au-dessus : le lien se range
+   sous le bilan qu'il annule, et non au pied d'un volet que le trajet laisse
+   aux trois quarts vide — il y tombait si bas qu'on le cherchait. */
+.iVider{align-self:flex-start;font-size:12px;color:var(--ink-3);text-decoration:underline}
+.iVider:hover{color:var(--rouge)}
+.iNote{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
+.iAlerte{margin:0;font-size:12.5px;line-height:1.6;color:var(--rouge)}
+.iEtapes{display:flex;flex-direction:column;gap:7px}
+.iEtape{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:var(--surface-2);
+  border-radius:var(--radius);border-left:2px solid var(--accent)}
+.iEtape.transfert{border-left-style:dashed;border-left-color:var(--line-strong)}
+/* Une étape qui se déroule dans un pavillon qu'on ne regarde pas s'y rend
+   d'un clic : c'est un bouton, mais il garde l'aspect des autres étapes —
+   c'est la même liste, et seul le survol le distingue. */
+.iEtape.ailleurs{width:100%;text-align:left}
+.iEtape.ailleurs:hover{background:var(--accent-soft)}
+.iEtape .t{font-size:13px;color:var(--ink)}
+.iEtape .s{font-size:11.5px;color:var(--ink-3)}
+
+/* ------------------------------------------------------------
+   La borne interactive
+   ------------------------------------------------------------ */
+/* Le bandeau de pose se range en bas, à l'opposé du bandeau de visée : les
+   deux ne paraissent jamais ensemble, mais celui-ci s'adresse à l'exploitant
+   qui installe l'écran, et celui-là au doigt qui est en train de désigner. */
+.bornePose{position:absolute;left:0;right:0;bottom:14px;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:8px 12px 8px 15px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.bornePose[hidden]{display:none}
+.bornePose button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+/* Le départ d'une borne ne se choisit pas : sa cible et l'inversion quittent
+   le tiroir plutôt que d'y rester sans effet, et le champ reprend sa largeur.
+   Un plan ouvert par un code affiché dans le hall est dans le même cas, à ceci
+   près qu'il s'éteint — mais cela se dit au bas de l'écran, pas dans le tiroir
+   (voir « _ici.html »). */
+html:is(.mode-borne,.mode-ici) :is(#iViseA,#iEchange){display:none}
+html:is(.mode-borne,.mode-ici) .iChamps{grid-template-columns:1fr}
+html:is(.mode-borne,.mode-ici) .iChamp input[readonly]{background:var(--accent-soft);
+  border-color:transparent;color:var(--ink);cursor:default}
+
+/* Le rappel du code affiché emprunte la pastille du bandeau de pose : c'est la
+   même forme au même endroit, et les deux ne paraissent jamais ensemble — une
+   borne sait où elle est, et n'a pas de code à scanner. Il passe en revanche
+   sous les tiroirs, qui montent du bas sur un écran étroit : la position du
+   visiteur peut attendre qu'il referme sa fiche. */
+.iciRappel{z-index:11}
+.iciRappel b{font-weight:600}
+
+/* « Vous êtes ici ». C'est la première chose qu'on cherche des yeux devant un
+   écran qu'on n'a pas choisi : le point ne suit donc pas le zoom — il garde sa
+   taille à l'écran, comme les pastilles du trajet — et son nom se lit par-dessus
+   le plan, cerné de la couleur du fond plutôt que posé sur une étiquette. */
+#borneIci{pointer-events:none}
+#borneIci .bOnde{fill:var(--accent);opacity:.16}
+#borneIci .bPoint{fill:var(--accent);stroke:var(--surface);stroke-width:2;
+  vector-effect:non-scaling-stroke}
+#borneIci .bNom{fill:var(--ink);font-family:"Archivo",sans-serif;font-weight:700;
+  text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:4;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+
+/* Pendant la visée, le plan devient une liste de choix : le curseur le dit à
+   la souris, le bandeau le dit à tout le monde. */
+.viseur{position:absolute;top:12px;left:0;right:0;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:7px 12px 7px 14px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.viseur[hidden]{display:none}
+.viseur button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+html.vise-plan #plan{cursor:crosshair}
+.viseur.calage button.fort{color:#fff;background:var(--accent);text-decoration:none;
+  padding:3px 12px;border-radius:999px}
+.viseur.calage button[hidden]{display:none}
+/* Le contour proposé pendant le calage : en pointillés, comme tout ce qui
+   n'est pas encore posé, et d'un trait qui ne grossit pas au zoom. */
+#calageApercu{pointer-events:none}
+/* Le contour et sa poignée se saisissent ; ailleurs, le glisser reste à la
+   vue, qu'il faut pouvoir déplacer pour ajuster. */
+#calageApercu .contour{pointer-events:visiblePainted;cursor:move}
+#calageApercu .poignee{pointer-events:all;cursor:grab;fill:var(--surface);stroke:var(--accent);
+  stroke-width:2;vector-effect:non-scaling-stroke}
+#calageApercu .tige{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3;
+  vector-effect:non-scaling-stroke}
+html.cale-geste #calageApercu .poignee{cursor:grabbing}
+/* Le hall qu'on reprend s'efface le temps du geste : sans cela le contour en
+   pointillés part sur le gris qui l'attend, et l'on croit traîner une copie.
+   Posé sur les nœuds du plan seulement, il s'en va avec le bandeau. */
+#couches [data-cale]{display:none}
+.viseur.calage .calageAngle{display:inline-flex;align-items:center;gap:3px;color:var(--ink-2)}
+.viseur.calage .calageAngle input{width:64px;padding:2px 5px;font-size:12.5px;text-align:right;
+  border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink)}
+#calageApercu .contour{fill:var(--accent);fill-opacity:.08;stroke:var(--accent);stroke-width:2;
+  stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+
+/* Le tracé. Son épaisseur est donnée en pixels et ne suit pas le zoom : un
+   trait qui grossit avec le plan finit par masquer les stands qu'il longe,
+   et disparaît quand on recule pour voir le trajet entier. */
+#itin{pointer-events:none}
+#itin path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+#itin .iHalo{stroke:var(--surface);stroke-width:8;opacity:.9}
+#itin .iTrait{stroke:var(--accent);stroke-width:3.5}
+/* La comète, qui dit le sens du trajet.
+
+   Des tirets clairs le disaient avant elle. Ils marchaient, mais ils se
+   lisaient comme un motif : il fallait les regarder pour voir qu'ils
+   avançaient. Une tête vive suivie d'une traîne qui s'efface se lit d'un coup
+   d'œil, et sans flèches qui se chevaucheraient dans les virages.
+
+   Elle tient en cinq traits d'une même tête, du plus long et pâle au plus
+   court et vif, et du plus fin au plus large. Ils partagent la période et la
+   course ; chacun part décalé de sa propre longueur, si bien que leurs têtes
+   tombent ensemble et que leurs queues s'étagent derrière. Cinq et non trois :
+   à trois, la traîne se lisait par marches, et la tête comme un bloc.
+
+   La tête déborde le trait — quatre pixels et trois sur trois et demi —, ce
+   qui lui donne sa lueur ; la queue rentre dessous et laisse le trajet bleu.
+   Une tête passe toutes les trois secondes en un point donné, et il en court
+   plusieurs à la fois sur un long trajet : une seule tête traversant un hall
+   entier laisserait le trait immobile la plupart du temps.
+
+   Le glissement est continu ici, et non par paliers comme les tirets qu'elle
+   remplace : une tête qui avance de neuf pixels d'un coup saute à l'œil, quand
+   un tiret parmi douze ne se voyait pas sauter. « _webgl.html » rejoue la
+   période et la durée : les changer ici seul dérègle le rendu par la carte
+   graphique. */
+#itin .iSens{stroke:var(--accent-ink);animation-duration:1.5s;
+  animation-timing-function:linear;animation-iteration-count:infinite}
+#itin .iC1{stroke-width:2.4;opacity:.10;stroke-dasharray:52 148;animation-name:comete1}
+#itin .iC2{stroke-width:2.8;opacity:.16;stroke-dasharray:38 162;animation-name:comete2}
+#itin .iC3{stroke-width:3.2;opacity:.26;stroke-dasharray:26 174;animation-name:comete3}
+#itin .iC4{stroke-width:3.7;opacity:.42;stroke-dasharray:15 185;animation-name:comete4}
+#itin .iC5{stroke-width:4.3;opacity:.85;stroke-dasharray:7 193;animation-name:comete5}
+@keyframes comete1{from{stroke-dashoffset:52}to{stroke-dashoffset:-148}}
+@keyframes comete2{from{stroke-dashoffset:38}to{stroke-dashoffset:-162}}
+@keyframes comete3{from{stroke-dashoffset:26}to{stroke-dashoffset:-174}}
+@keyframes comete4{from{stroke-dashoffset:15}to{stroke-dashoffset:-185}}
+@keyframes comete5{from{stroke-dashoffset:7}to{stroke-dashoffset:-193}}
+@media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
+@media (prefers-reduced-motion:reduce){.chalTete button svg{transition:none}}
+#itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
+  vector-effect:non-scaling-stroke}
+#itin .iBout.fin{fill:var(--surface);stroke:var(--accent)}
+/* La pastille d'une conférence se distingue de celle d'un stand : l'heure y
+   est imposée, et c'est autour d'elle que le reste de la journée s'est rangé. */
+#itin .iBout.conf{fill:var(--surface);stroke-width:3.5}
+#itin .iNum{fill:var(--surface);text-anchor:middle;dominant-baseline:central;
+  font-family:"IBM Plex Mono",monospace;font-weight:600}
+#itin .iNum.conf{fill:var(--accent)}
+/* Le temps que le trait s'écrive, ce qu'il n'a pas encore atteint attend.
+   Écrite dès la première image plutôt qu'ajoutée en chemin, la pastille garde
+   son rang : le zoom relit les pastilles dans l'ordre pour les redimensionner,
+   et l'une qui manquerait décalerait toutes les suivantes. */
+#itin .aVenir{opacity:0}
+/* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
+   disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
+   journée, c'est calculer un itinéraire : sans le moteur, le bouton du
+   parcours n'aurait rien à quoi s'adresser. */
+html.sans-itineraire .btn.itin,html.sans-itineraire .pAct.itin,html.sans-itineraire #btnJournee{display:none}
+/* Et la journée a son option à elle : un salon peut vouloir l'itinéraire sans
+   vouloir qu'on lui organise sa visite. Le bouton se montre alors à
+   l'exploitant, éteint — c'est une option, il doit savoir qu'elle existe — et
+   n'existe pas pour le visiteur, à qui on ne montre pas un produit qu'il ne
+   peut pas prendre. Son gris est celui de « [disabled] » plus haut, posé par
+   `_parcours.html` avec celui de la liste vide : deux raisons de ne pas
+   pouvoir organiser sa journée, un seul aspect. */
+html:not(.mode-admin).sans-journee #btnJournee{display:none}
+
+/* L'exploitant peut retirer le parcours : il disparaît alors partout à la
+   fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
+   resterait des signets sans destination. Ce que le visiteur avait retenu
+   n'est pas effacé pour autant : le réglage peut se rouvrir. */
+html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
+/* « .iconbtn » déclare « display:grid » : sans cette règle, « hidden » n'y
+   masquerait rien — le même piège que la barre de zoom et l'échelle. */
+.iconbtn[hidden]{display:none}
+

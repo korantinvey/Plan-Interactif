@@ -79,7 +79,7 @@ function marques(html) {
  *                   Le plan public, et lui seul (voir `outils/pwa.js`).
  *   `pleinEcran`  — la page va jusqu'aux bords de l'écran, sous les barres du
  *                   système : l'heure et la poignée de gestes se posent sur
- *                   elle au lieu de la border. `_head.html` reprend alors les
+ *                   elle au lieu de la border. `_styles-jetons.css` reprend alors les
  *                   retraits par ses jetons `--sys-*`, faute de quoi le nom du
  *                   salon passerait sous l'horloge. Les pages du plan, qu'on
  *                   ouvre pour regarder un hall ; pas la console, qu'on lit
