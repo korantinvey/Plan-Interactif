@@ -642,7 +642,11 @@ function sources() {
     .filter((f) => f.endsWith(".html"))
     .sort()
     .map((f) => path.join(GABARIT, f));
-  return liste;
+  /* Les modules affichent comme le reste : une phrase qui y passe se traduit
+     au même titre, et doit se trouver dans le dictionnaire. */
+  const modules = path.join(GABARIT, "modules");
+  return liste.concat(fs.readdirSync(modules).filter((f) => f.endsWith(".mjs")).sort()
+    .map((f) => path.join(modules, f)));
 }
 
 if (require.main === module) {

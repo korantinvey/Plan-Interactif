@@ -42,7 +42,7 @@ module.exports = [
       "outils/tpl-multi.html", "outils/chk.js", "outils/brut/**", "outils/svg/**",
       "simulations/**", "test-results/**", "playwright-report/**",
       // relus par `outils/relecture.js`, tels que la page les assemble
-      "outils/gabarit/**", "!outils/gabarit/_sw.js",
+      "outils/gabarit/*.{html,css,js}", "!outils/gabarit/_sw.js",
     ],
   },
   {
@@ -56,6 +56,13 @@ module.exports = [
     // peu de chose près — `AbortSignal` y est, que la liste ne nomme pas
     languageOptions: { ecmaVersion: "latest", sourceType: "module",
       globals: { ...globals.serviceworker, AbortSignal: "readonly" } },
+    rules: REGLES,
+  },
+  /* Les modules du gabarit : de vrais modules, relus seuls. Ce qu'ils
+     confient au code soudé, la relecture des pages le tient pour déclaré. */
+  {
+    files: ["outils/gabarit/modules/**/*.mjs"],
+    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.browser },
     rules: REGLES,
   },
   {

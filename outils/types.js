@@ -22,7 +22,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const ts = require("typescript");
-const { compose, PAGES } = require("./relecture.js");
+const { compose, PAGES, FAMILLE } = require("./relecture.js");
+const modules = require("./modules.js");
 
 const ACCEPTES = path.join(__dirname, "types-acceptes.json");
 
@@ -35,7 +36,18 @@ const DECLARATIONS = [
   "declare var __DICTIONNAIRE__: any;",
 ].join("\n");
 
+/* Ce que les modules confient à une page, avec le type de leur définition
+   même : `typeof import(…)`, et non un `any` recopié ici. Une signature changée
+   dans un module se vérifie ainsi aussitôt dans tout le code soudé qui l'appelle. */
+const declarationsDesModules = (page) => !FAMILLE[page] ? "" :
+  modules.origines(FAMILLE[page]).map((o) =>
+    "declare var " + o.nom + ": typeof import(" + JSON.stringify(o.source) + ")." + o.exporte + ";"
+  ).join("\n");
+
 const OPTIONS = {
+  // les modules se résolvent comme esbuild les résout : par leur chemin, extension comprise
+  module: ts.ModuleKind.ESNext,
+  moduleResolution: ts.ModuleResolutionKind.Bundler,
   allowJs: true,
   checkJs: true,
   noEmit: true,
@@ -50,12 +62,19 @@ function verifiePage(page, dossier) {
   const fichier = path.join(dossier, page.replace(/\.html$/, ".js"));
   const decl = path.join(dossier, "globales.d.ts");
   fs.writeFileSync(fichier, texte);
-  fs.writeFileSync(decl, DECLARATIONS);
+  fs.writeFileSync(decl, DECLARATIONS + "\n" + declarationsDesModules(page));
   const programme = ts.createProgram([fichier, decl], OPTIONS);
   return ts.getPreEmitDiagnostics(programme)
-    .filter((d) => d.file && path.resolve(d.file.fileName) === path.resolve(fichier))
+    .filter((d) => d.file && (path.resolve(d.file.fileName) === path.resolve(fichier) ||
+      path.resolve(d.file.fileName).startsWith(modules.MODULES + path.sep)))
     .map((d) => {
       const { line } = d.file.getLineAndCharacterOfPosition(d.start);
+      // une remarque dans un module se rapporte à lui, ligne pour ligne
+      if (path.resolve(d.file.fileName) !== path.resolve(fichier)) {
+        const message = ts.flattenDiagnosticMessageText(d.messageText, " ").split(" ").slice(0, 40).join(" ");
+        return { module: "modules/" + path.basename(d.file.fileName), ligne: line + 1, code: "TS" + d.code,
+          message, source: d.file.text.split("\n")[line].trim() };
+      }
       const ligne = line + 1;
       let i = table.length - 1;
       while (i > 0 && table[i][0] > ligne) i--;

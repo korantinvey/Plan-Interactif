@@ -5,6 +5,7 @@ const icones = require("./icones.js");
 const pwa = require("./pwa.js");
 const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
+const modules = require("./modules.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -308,10 +309,20 @@ function connecte(t) {
     .replace(marque, '<script data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">\n/* Sans viewport');
 }
 
+/* Les modules (`outils/gabarit/modules/`) passent avant le code soudé, qui
+   trouve leurs noms dans l'objet global : leur script se pose devant le sien.
+   Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
+const scriptDesModules = (entree) => "<script>\n" + modules.assemble(entree) + "</script>\n";
+const MODULES_PLAN = scriptDesModules("plan");
+function poseModulesDuPlan(t) {
+  const marque = "<script>\n/* Sans viewport";
+  if (t.split(marque).length !== 2) throw new Error("script du plan introuvable, ou en double");
+  return t.replace(marque, () => MODULES_PLAN + marque);
+}
 /* Le gabarit sous ses deux formes : entier pour l'administration, amputé de
    ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). */
-const tplAdmin = reserve.pourLAdmin(tpl);
-const tplPublic = reserve.pourLePublic(tpl);
+const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl));
+const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl));
 /* Une tranche retirée dont un nom reste cité ailleurs ne casse rien ici : elle
    casse chez le visiteur, au moment où ce code-là s'exécute. On le refuse donc
    avant d'écrire la moindre page. Les données et la porte n'y changent rien :
@@ -361,7 +372,7 @@ const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
 const enScript = (f) =>
   "<script>\n" + fs.readFileSync(D + "/gabarit/" + f, "utf8") + "\n</script>\n";
 const assemble = (tete, ...corps) =>
-  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + socle +
+  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules("console") + socle +
   corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
 
 /* Les deux écrans exportent le même classeur : le module d'écriture puis celui
