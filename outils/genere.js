@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const icones = require("./icones.js");
 const pwa = require("./pwa.js");
 const traductions = require("./traductions.js");
+const esbuild = require("esbuild");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -92,10 +93,53 @@ function marques(html) {
  *                   la console et de ce qui l'entoure. Les pages du plan n'ont
  *                   que le clair et n'en veulent qu'une (voir `outils/pwa.js`).
  */
+/**
+ * Ce qui part chez le visiteur, débarrassé de ce qui ne sert qu'à nous.
+ *
+ * Les sources sont écrites pour être lues : chaque choix y est expliqué, et
+ * ces explications pesaient plus que le code — un script de 1,6 Mo, dont les
+ * trois cinquièmes de commentaires, téléchargés par chaque téléphone du salon,
+ * et lus tels quels par quiconque ouvrait la source de la page. Ils restent
+ * dans `outils/gabarit/` ; la page n'en garde rien.
+ *
+ * Blancs et commentaires seulement, et quelques réécritures sans effet sur le
+ * sens : aucun nom n'est raccourci. Les modules partagent un seul espace de
+ * noms, des attributs `onclick` appellent des fonctions par leur nom, et le
+ * dictionnaire anglais cherche les phrases telles qu'écrites — renommer
+ * casserait les trois sans que la construction le voie.
+ *
+ * Seuls les scripts exécutables passent : une donnée (`application/json`) se
+ * garde telle quelle. `PLAN_LISIBLE=1` construit sans rien retirer, pour lire
+ * une page servie ; `npm run verifie` le signalerait alors comme un retard.
+ */
+const LISIBLE = process.env.PLAN_LISIBLE === "1";
+const REGLAGES_JS = {
+  loader: "js", minifyWhitespace: true, minifySyntax: true,
+  // en ASCII par défaut : chaque lettre accentuée deviendrait six caractères
+  charset: "utf8", legalComments: "none",
+};
+function minifie(html) {
+  if (LISIBLE) return html;
+  return html
+    .replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, (tout, attributs, corps) => {
+      if (!corps.trim() || /\bsrc=/.test(attributs)) return tout;
+      const type = (attributs.match(/\btype="([^"]*)"/) || [])[1];
+      if (type && type !== "module" && !/javascript/.test(type)) return tout;
+      const js = esbuild.transformSync(corps, REGLAGES_JS).code.trim();
+      return "<script" + attributs + ">" + js + "</script>";
+    })
+    .replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/g, (tout, attributs, corps) =>
+      corps.trim()
+        ? "<style" + attributs + ">" +
+          esbuild.transformSync(corps, { loader: "css", minify: true, charset: "utf8", legalComments: "none" }).code.trim() +
+          "</style>"
+        : tout);
+}
+
 function page(contenu, options) {
   const { role, tete, application, autonome, deuxThemes, pleinEcran,
           salon } = options || {};
-  return '<!doctype html>\n<html lang="fr"' +
+  return minifie('<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     /* `viewport-fit=cover` étend la page sous les barres du système au lieu de
@@ -110,7 +154,7 @@ function page(contenu, options) {
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
-    "\n</body>\n</html>\n";
+    "\n</body>\n</html>\n");
 }
 
 /**

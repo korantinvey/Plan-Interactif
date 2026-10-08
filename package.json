@@ -25,6 +25,7 @@
   "type": "commonjs",
   "private": true,
   "devDependencies": {
+    "esbuild": "0.24.0",
     "supabase": "^2.116.0",
     "wrangler": "^4.0.0"
   }

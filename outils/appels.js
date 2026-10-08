@@ -231,8 +231,11 @@ function declares(js){
   ajoute(/\b(?:window|globalThis|self)\.([A-Za-z_$][\w$]*)\s*=[^=]/g);
   ajoute(/\bfor\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g);
   /* Les propriétés abrégées d'un objet littéral sont des méthodes, pas des
-     appels libres : `{ nom(){ … } }`. */
-  ajoute(/^\s*([A-Za-z_$][\w$]*)\s*\([^()]*\)\s*\{/gm);
+     appels libres : `{ nom(){ … } }`. Reconnues en début de ligne dans une
+     source, et dans une page minifiée — où il n'y a plus de lignes — derrière
+     ce qui seul peut les précéder : `{`, `,`, `;` ou la fin d'une autre
+     méthode. Un appel n'est jamais suivi d'une accolade. */
+  ajoute(/(?:^|[{,;}])\s*([A-Za-z_$][\w$]*)\s*\([^()]*\)\s*\{/gm);
   return d;
 }
 
@@ -305,7 +308,10 @@ for (const f of fs.readdirSync(WEB).filter(x => /\.(html|js)$/.test(x)).sort()){
 if (fautes){
   console.error("\nUn appel sans déclaration part en erreur au premier clic.\n" +
     "Corrigez-le, ou — si c'est le contrôle qui se trompe — ajoutez le nom à\n" +
-    "`FOURNIS` dans `outils/appels.js`.\n");
+    "`FOURNIS` dans `outils/appels.js`.\n" +
+    "Les pages servies sont minifiées : pour des numéros de ligne qui disent\n" +
+    "quelque chose, construisez-les lisibles — `PLAN_LISIBLE=1 node outils/genere.js`\n" +
+    "— puis relancez ce contrôle.\n");
   process.exit(1);
 }
 console.log("Appels : " + pages + " paquet(s) contrôlé(s), tous les noms se résolvent.");

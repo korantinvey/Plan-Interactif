@@ -26,6 +26,12 @@ npm run construire   # reconstruit web/
 npm run verifie      # reconstruit, et sort en erreur si web/ était en retard
 ```
 
+Les pages de `web/` sont **minifiées** par `genere.js` (`minifie`) : les
+commentaires du gabarit pesaient plus que le code, et partaient chez chaque
+visiteur. Aucun nom n'est raccourci. Pour lire une page servie,
+`PLAN_LISIBLE=1 node outils/genere.js` la construit sans rien retirer — à ne
+pas valider, `npm run verifie` y verrait un retard.
+
 Les pages reconstruites font partie du commit. Le workflow `Pages` rattrape
 l'oubli — il reconstruit et valide sur la branche poussée — mais ne comptez pas
 dessus : il ajoute alors un commit par-dessus le vôtre, que vous devrez tirer
