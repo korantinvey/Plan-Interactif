@@ -225,9 +225,10 @@ function ouvreSponsor(s, horsDemarrage){
   const porte = document.createElement(s.lien ? "a" : "div");
   porte.className = "sponsorLogo";
   if (s.lien){
-    porte.href = s.lien;
-    porte.target = "_blank";
-    porte.rel = "noopener noreferrer";
+    const lien = /** @type {HTMLAnchorElement} */ (porte);
+    lien.href = s.lien;
+    lien.target = "_blank";
+    lien.rel = "noopener noreferrer";
   }
   if (s.mode === "marque"){
     /* La marque est un dessin, non une image déposée : elle vient de la

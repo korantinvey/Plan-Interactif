@@ -427,7 +427,7 @@ function proposeTutoriel(){
         const li = document.createElement("li");
         const n = document.createElement("span");
         n.className = "n";
-        n.textContent = i + 1;
+        n.textContent = String(i + 1);
         const t = document.createElement("span");
         const b = document.createElement("b");
         b.textContent = c.titre;
@@ -797,6 +797,7 @@ function placeTuto(force){
     const c = cout(x, y);
     if (c < mieux){ mieux = c; choix = [x, y]; }
   });
+  if (!choix) return;   // aucune place à proposer : la bulle reste où elle est
   if (!force && TUTO.pos && mieux >= cout(TUTO.pos[0], TUTO.pos[1]) * .7) return;
   if (TUTO.pos && TUTO.pos[0] === choix[0] && TUTO.pos[1] === choix[1]) return;
   /* À la première pose, la bulle paraît à sa place : glisser depuis le coin de

@@ -37,6 +37,24 @@ const DECLARATIONS = [
   "declare function traduit(phrase: string): string;",
   "declare var deck: any;",
   "declare var __DICTIONNAIRE__: any;",
+  /* Un élément cherché par sélecteur, rendu sans type précis — la règle de
+     `$` (`modules/dom.mjs`), pour la même raison : la bibliothèque rend un
+     `Element` nu, sans `dataset`, `value` ni `onclick`, et chaque recherche
+     aurait dû dire si elle tient un champ, un bouton ou une image. Le type
+     se précise là où il sert, par `@type`. Une recherche par balise
+     (`querySelector("svg")`) garde son type exact. */
+  /* Ce que la page pose elle-même sur `window` avant son script — l'amorce de
+     `genere.js` (`__plan`, `__entete`), la configuration (`PLAN_CONFIG`) —,
+     ce qu'une bibliothèque chargée à la demande y pose (`maplibregl`), et ce
+     que des navigateurs offrent sans que la norme le dise : chaque usage le
+     teste avant de s'en servir. */
+  "interface Window { PLAN_CONFIG?: any; __plan?: Promise<Response> | null;",
+  "  __entete?: Promise<any> | null; maplibregl?: any; clipboardData?: DataTransfer; }",
+  "interface Navigator { connection?: any; getInstalledRelatedApps?: () => Promise<any[]>; }",
+  "interface ParentNode {",
+  "  querySelector<E extends Element = any>(selectors: string): E | null;",
+  "  querySelectorAll<E extends Element = any>(selectors: string): NodeListOf<E>;",
+  "}",
 ].join("\n");
 
 /* Ce que les modules confient à une page, avec le type de leur définition
@@ -55,7 +73,10 @@ const RETIRES_DU_PUBLIC = (() => {
   // découpé avant d'être réduit au code : les bornes sont des commentaires
   const gabarit = BOUTS.map((b) => lisBout(b)).join("\n");
   const publics = new Set(modules.exposes("plan"));
-  return reserve.retiresDe(sansTexte(gabarit), sansTexte(reserve.pourLePublic(gabarit)),
+  /* L'accès de l'exploitant (`_auth-plan.html`) n'est posé que dans
+     l'administration : ce qu'il déclare manque aussi au visiteur. */
+  const acces = fs.readFileSync(path.join(__dirname, "gabarit", "_auth-plan.html"), "utf8");
+  return reserve.retiresDe(sansTexte(gabarit + "\n" + acces), sansTexte(reserve.pourLePublic(gabarit)),
     modules.exposes("plan-admin").filter((n) => !publics.has(n)));
 })();
 const declarationsRetirees = (page) => page !== "plan.html" ? "" :

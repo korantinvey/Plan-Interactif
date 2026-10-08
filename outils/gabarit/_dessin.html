@@ -956,7 +956,8 @@ const MODES_TRANSPORT = [
   { v: "tram",  nom: "Tram",  lettre: "t", plaque: true },
 ];
 
-const modeDit = (mode) => MODES_TRANSPORT.find(m => m.v === mode) || {};
+const modeDit = (mode) => MODES_TRANSPORT.find(m => m.v === mode) ||
+  /** @type {Partial<typeof MODES_TRANSPORT[number]>} */ ({});
 const lettreMode = (mode) => modeDit(mode).lettre || "";
 
 /** Ce repère est-il un arrêt ? Le type le dit, et lui seul : un repère nommé
@@ -1678,7 +1679,7 @@ function cartouchePoi(){
       const b = document.createElement("button");
       b.type = "button";
       b.className = "poiBtn";
-      b.setAttribute("aria-pressed", cle === poiChoisi);
+      b.setAttribute("aria-pressed", String(cle === poiChoisi));
       const g = PICTOS[o.picto];
       // largeur et hauteur en attributs : un <svg> sans dimension explicite
       // s'étale à la place disponible, et le cartouche y perdait sa mise en page
@@ -1983,7 +1984,7 @@ function importeImage(fichier, centre){
       poseImage(centre);
     };
     img.onerror = () => { $("outilsAide").textContent = "Image illisible."; };
-    img.src = fr.result;
+    img.src = String(fr.result);   // un data-URI : `readAsDataURL` ne rend rien d'autre
   };
   fr.readAsDataURL(fichier);
 }

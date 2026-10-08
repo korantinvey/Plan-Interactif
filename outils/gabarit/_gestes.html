@@ -228,7 +228,7 @@ svg.addEventListener("pointerup", e => {
   if (libellePointerUp(e)) return;
   if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
-  if (calagePointerUp(e)) return;
+  if (calagePointerUp()) return;
   /* @fin-admin */
   const d = drag; drag = null; saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}

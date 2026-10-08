@@ -596,7 +596,7 @@ function dessineFondCarte(){
   if (credit && credit.hidden){ credit.hidden = false; _calagePose = ""; }
   if (String(force) + "|" + fond.credit !== _calagePose){
     _calagePose = String(force) + "|" + fond.credit;
-    racine.style.setProperty("--carte-force", force);
+    racine.style.setProperty("--carte-force", String(force));
     if (credit) credit.textContent = fond.credit;
   }
   /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
@@ -1282,7 +1282,7 @@ function construitCalage(){
   nForce.title = "À gauche le fond s'efface, à droite il reprend toute sa force";
   nForce.oninput = () => {
     ENV_CAL.force = +nForce.value / 100;
-    racine.style.setProperty("--carte-force", forceCarte(ENV_CAL));
+    racine.style.setProperty("--carte-force", String(forceCarte(ENV_CAL)));
   };
   corps.appendChild(force);
 
