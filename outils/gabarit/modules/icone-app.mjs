@@ -5,6 +5,7 @@
    le reçoit jamais. Il ne sait rien du salon — un fichier en entrée, deux
    images en sortie —, `_application.html` les enregistre.
    ============================================================ */
+import { litImage } from "./depot-image.mjs";
 
 /* Ce qu'une icône d'application mesure, et ce que la paire a le droit de
    peser.
@@ -112,26 +113,14 @@ function dessineIconeApp(img, taille, part, fond){
  * servies à tous les visiteurs.
  */
 export function reduitIconeApp(fichier){
-  return new Promise((tenu, rompu) => {
-    if (!fichier || String(fichier.type).indexOf("image/") !== 0)
-      return rompu(new Error("ce fichier n'est pas une image"));
-    const fr = new FileReader();
-    fr.onerror = () => rompu(new Error("fichier illisible"));
-    fr.onload = () => {
-      const img = new Image();
-      img.onerror = () => rompu(new Error("image illisible"));
-      img.onload = () => {
-        const fond = fondPourIconeApp(img);
-        for (const taille of ICONE_APP_TAILLES){
-          const icone = dessineIconeApp(img, taille, ICONE_APP_PLEIN, "");
-          const masque = dessineIconeApp(img, taille, ICONE_APP_SURE, fond);
-          if (icone.length + masque.length <= ICONE_APP_POIDS)
-            return tenu({ icone: icone, masque: masque, fond: fond });
-        }
-        rompu(new Error("image trop lourde, même réduite — un logo, pas une photo"));
-      };
-      img.src = String(fr.result);   // un data-URI : `readAsDataURL` ne rend rien d'autre
-    };
-    fr.readAsDataURL(fichier);
+  return litImage(fichier).then(img => {
+    const fond = fondPourIconeApp(img);
+    for (const taille of ICONE_APP_TAILLES){
+      const icone = dessineIconeApp(img, taille, ICONE_APP_PLEIN, "");
+      const masque = dessineIconeApp(img, taille, ICONE_APP_SURE, fond);
+      if (icone.length + masque.length <= ICONE_APP_POIDS)
+        return { icone: icone, masque: masque, fond: fond };
+    }
+    throw new Error("image trop lourde, même réduite — un logo, pas une photo");
   });
 }

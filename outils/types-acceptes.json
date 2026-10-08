@@ -128,7 +128,6 @@
  "_modales.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === \"1\"); });": 1,
  "_modales.html | TS2339 | Property 'onclick' does not exist on type 'Element'. | b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === \"1\"); });": 1,
  "_modales.html | TS2339 | Property 'onclick' does not exist on type 'Element'. | cr.onclick = ev => {": 1,
- "_mode-admin.html | TS2322 | Type 'string | ArrayBuffer' is not assignable to type 'string'.   Type 'ArrayBuffer' is not assignable to type 'string'. | img.src = fr.result;": 1,
  "_mode-admin.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | const z = parId.get(g.dataset.id);": 1,
  "_mode-admin.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | etat.dataset.genre = c.checked ? (s.auto === o.id ? \"auto\" : \"manuel\")": 1,
  "_mode-admin.html | TS2345 | Argument of type 'boolean' is not assignable to parameter of type 'string'. | if (crayon) crayon.setAttribute(\"aria-pressed\", PLACE_LIBELLES);": 1,

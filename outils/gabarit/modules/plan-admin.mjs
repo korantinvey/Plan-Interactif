@@ -11,8 +11,9 @@
    comme un nom sorti d'une tranche `@admin`.
    ============================================================ */
 import "./plan.mjs";
+import { reduitLogo } from "./depot-image.mjs";
 import { reduitIconeApp } from "./icone-app.mjs";
 
 Object.assign(globalThis, {
-  reduitIconeApp,
+  reduitLogo, reduitIconeApp,
 });

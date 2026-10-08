@@ -512,24 +512,24 @@ Fonctions :
 
 `deplaceVers` 19 · `versExtremite` 31 · `remplitOrdre` 39 · `ouvreOrdre` 109
 
-### `_mode-admin.html` — 1157 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mode-admin.html` — 1106 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 10. Mode administration
 - l.114 · La fiche d'une zone organisateur
-- l.885 · Masquer une zone organisateur
-- l.982 · Placer un libellé à la main
+- l.834 · Masquer une zone organisateur
+- l.931 · Placer un libellé à la main
 
 Fonctions :
 
 `retireAdmin` 20 · `activeAdmin` 34 · `champZone` 140 · `champsZone` 165 · `champSalles` 257
-`nomDeZone` 309 · `reduitLogo` 343 · `cadreLogo` 386 · `champLogo` 458 · `editeurRiche` 496
-`memeFicheZone` 653 · `suitFicheZone` 660 · `verseFicheZone` 668 · `ficheZone` 694
-`enregistreZone` 719 · `enregistreZoneAjoutee` 832 · `basculeAffichageZone` 896
-`marqueZonesMasquees` 924 · `ecritColonnesEvenement` 944 · `ecritColonneEvenement` 978
-`cleLibelle` 1003 · `empreinteLibelle` 1019 · `placementLibelle` 1027 · `posePlacement` 1038
-`libelleAutomatique` 1055 · `modePlacementLibelles` 1064 · `majPaletteLibelle` 1083
-`choisitLibelle` 1100 · `pousseLibelle` 1107 · `libellePointerDown` 1115
-`libellePointerMove` 1131 · `libellePointerUp` 1140
+`nomDeZone` 309 · `cadreLogo` 335 · `champLogo` 407 · `editeurRiche` 445
+`memeFicheZone` 602 · `suitFicheZone` 609 · `verseFicheZone` 617 · `ficheZone` 643
+`enregistreZone` 668 · `enregistreZoneAjoutee` 781 · `basculeAffichageZone` 845
+`marqueZonesMasquees` 873 · `ecritColonnesEvenement` 893 · `ecritColonneEvenement` 927
+`cleLibelle` 952 · `empreinteLibelle` 968 · `placementLibelle` 976 · `posePlacement` 987
+`libelleAutomatique` 1004 · `modePlacementLibelles` 1013 · `majPaletteLibelle` 1032
+`choisitLibelle` 1049 · `pousseLibelle` 1056 · `libellePointerDown` 1064
+`libellePointerMove` 1080 · `libellePointerUp` 1089
 
 Éléments :
 
@@ -819,6 +819,14 @@ Fonctions :
 
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31
 
+### `modules/depot-image.mjs` — 73 l. → plan-admin
+
+- l.1 · Une image déposée par l'exploitant, lue puis réduite
+
+Fonctions :
+
+`litImage` 16 · `reduitLogo` 57
+
 ### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le document : ce que tout le code demande à la page
@@ -836,13 +844,13 @@ Fonctions :
 `_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
 `ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 93
 
-### `modules/icone-app.mjs` — 137 l. → plan-admin
+### `modules/icone-app.mjs` — 126 l. → plan-admin
 
 - l.1 · L'icône de l'application, fabriquée depuis un logo déposé
 
 Fonctions :
 
-`fondPourIconeApp` 55 · `dessineIconeApp` 87 · `reduitIconeApp` 114
+`fondPourIconeApp` 56 · `dessineIconeApp` 88 · `reduitIconeApp` 115
 
 ### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
@@ -867,7 +875,7 @@ Fonctions :
 `refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
 `brancheMesure` 656
 
-### `modules/plan-admin.mjs` — 18 l. → plan-admin
+### `modules/plan-admin.mjs` — 19 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
