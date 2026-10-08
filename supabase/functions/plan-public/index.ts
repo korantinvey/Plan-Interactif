@@ -469,7 +469,7 @@ const CHAMPS_FICHE: Record<string, string[]> = {
    lui, n'a jamais paru. Ici la conséquence va plus loin qu'à l'écran : non
    coché, il ne part pas du tout.
 
-   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de « _js.html » —
+   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de « _fiche.html » —
    et dans la console : les trois se suivent. */
 const MASQUE_PAR_DEFAUT: Record<string, boolean> = { hall: true };
 

@@ -19,12 +19,13 @@
     "adoption": "node outils/essais/adoption.js",
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
+    "charge": "node outils/essais/charge.js",
     "appels": "node outils/appels.js"
   },
   "type": "commonjs",
   "private": true,
   "devDependencies": {
-    "esbuild": "0.28.2",
+    "acorn": "8.14.0",
     "supabase": "^2.116.0",
     "wrangler": "^4.0.0"
   }
