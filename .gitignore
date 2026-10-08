@@ -32,3 +32,7 @@ outils/chk.js
 
 # Sorties de simulation : régénérées par `npm run fep26`, jamais relues par le code.
 simulations/
+
+# Ce que laissent les essais du navigateur : traces et rapport d’un échec.
+test-results/
+playwright-report/

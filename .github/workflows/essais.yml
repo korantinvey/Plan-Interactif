@@ -1,0 +1,62 @@
+# Les essais, à chaque poussée et sur chaque pull request.
+#
+# `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
+# qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
+# les appels sans déclaration, les douze cas du moteur de la journée organisée,
+# puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
+# anglais, sur téléphone (`outils/essais/navigateur/`).
+#
+# Les essais du navigateur ne parlent jamais au réseau : les données du plan
+# sont servies depuis `outils/plans.json`. Une panne de la production ne peut
+# donc pas faire rougir ce workflow, ni ce workflow peser sur la production.
+name: Essais
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: essais-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  essais:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Les essais portent sur ce que la construction produit, pas sur ce qui
+      # est versionné : une page en retard sur son gabarit serait sinon éprouvée
+      # à la place de la bonne.
+      - name: Construire les pages
+        run: npm run construire
+
+      - name: Appels sans déclaration
+        run: npm run appels
+
+      - name: Moteur de la journée organisée
+        run: npm run essais
+
+      - name: Installer Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Le plan dans le navigateur
+        run: npm run navigateur
+
+      - name: Garder la trace d'un échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-du-navigateur
+          path: test-results/
+          retention-days: 7
