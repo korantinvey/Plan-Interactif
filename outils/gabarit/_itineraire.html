@@ -2873,7 +2873,7 @@ function montreSugg(r){
       b.type = "button";
       b.className = "iSug" + (pt.genre === "repere" ? " rep" : "");
       b.setAttribute("role", "option");
-      b.dataset.i = i;
+      b.dataset.i = String(i);
       b.innerHTML = '<span class="n"></span><span class="s"></span>';
       b.querySelector(".n").textContent = pt.nom;
       b.querySelector(".s").textContent = pt.detail;

@@ -202,7 +202,7 @@ Fonctions :
 
 - l.666 · Page de rapport
 
-### `_dessin.html` — 2558 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2559 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -219,25 +219,25 @@ Fonctions :
 `toleranceTrace` 599 · `aimanteContour` 604 · `rayonContour` 607 · `redresseTrace` 626
 `traceGuide` 660 · `fermeIci` 667 · `ajouteForme` 674 · `pictoDe` 802
 `nomTypeRepereFr` 858 · `nomTypeRepere` 860 · `typeZone` 890 · `pictoForme` 897
-`estPorte` 917 · `ouvreEntrant` 918 · `ouvreSortant` 919 · `modeDit` 959 · `lettreMode` 960
-`estTransport` 964 · `modeTransport` 967 · `glypheRepere` 979 · `cleLigne` 1016
-`ligneAffichee` 1027 · `couleurLigne` 1035 · `couleurRepere` 1041 · `encreRepere` 1047
-`nomLigneFr` 1061 · `libelleDoffice` 1069 · `couleurEcrite` 1076 · `traceRepere` 1095
-`nomSurLePlan` 1229 · `etiquetteSociete` 1240 · `seRattache` 1268 · `societeDeForme` 1280
-`societesDuPlan` 1292 · `poseChampImage` 1314 · `remplitListeSocietes` 1321
-`societeSaisie` 1329 · `traceImage` 1357 · `traceStandDessine` 1382
-`texteStandDessine` 1406 · `poseLibellesDessines` 1424 · `decoupeStand` 1445
-`marqueStandsDessines` 1460 · `rafraichitStandsDessines` 1475 · `oublieReperes` 1505
-`reperesCherchables` 1507 · `vaAuRepere` 1551 · `clePoi` 1594 · `pastillePoi` 1603
-`cartouchePoi` 1607 · `ouvrePoi` 1726 · `mesureCartouche` 1799 · `pharePoi` 1815
-`phareRepere` 1819 · `phareZone` 1821 · `eclairePoi` 1827 · `oublieChoixPoi` 1860
-`signale` 1869 · `calquePourImage` 1884 · `lienImageSaisi` 1912 · `formeImage` 1924
-`poseImage` 1933 · `ditImagePosee` 1955 · `importeImage` 1963 · `dessinPointerDown` 2014
-`dessinPointerMove` 2099 · `dessinPointerUp` 2137 · `termineTrace` 2178 · `aide` 2190
-`outilOffert` 2220 · `choisitOutil` 2223 · `enchaineStand` 2254 · `optionsModes` 2284
-`proposeCouleurLigne` 2295 · `montreTransport` 2306 · `activeCalque` 2372 · `cleVerrou` 2430
-`verrouille` 2431 · `basculeVerrou` 2433 · `pictoVerrou` 2450 · `montreRoleIti` 2484
-`creeCalque` 2515 · `demandeNom` 2528 · `renommeCalque` 2547
+`estPorte` 917 · `ouvreEntrant` 918 · `ouvreSortant` 919 · `modeDit` 959 · `lettreMode` 961
+`estTransport` 965 · `modeTransport` 968 · `glypheRepere` 980 · `cleLigne` 1017
+`ligneAffichee` 1028 · `couleurLigne` 1036 · `couleurRepere` 1042 · `encreRepere` 1048
+`nomLigneFr` 1062 · `libelleDoffice` 1070 · `couleurEcrite` 1077 · `traceRepere` 1096
+`nomSurLePlan` 1230 · `etiquetteSociete` 1241 · `seRattache` 1269 · `societeDeForme` 1281
+`societesDuPlan` 1293 · `poseChampImage` 1315 · `remplitListeSocietes` 1322
+`societeSaisie` 1330 · `traceImage` 1358 · `traceStandDessine` 1383
+`texteStandDessine` 1407 · `poseLibellesDessines` 1425 · `decoupeStand` 1446
+`marqueStandsDessines` 1461 · `rafraichitStandsDessines` 1476 · `oublieReperes` 1506
+`reperesCherchables` 1508 · `vaAuRepere` 1552 · `clePoi` 1595 · `pastillePoi` 1604
+`cartouchePoi` 1608 · `ouvrePoi` 1727 · `mesureCartouche` 1800 · `pharePoi` 1816
+`phareRepere` 1820 · `phareZone` 1822 · `eclairePoi` 1828 · `oublieChoixPoi` 1861
+`signale` 1870 · `calquePourImage` 1885 · `lienImageSaisi` 1913 · `formeImage` 1925
+`poseImage` 1934 · `ditImagePosee` 1956 · `importeImage` 1964 · `dessinPointerDown` 2015
+`dessinPointerMove` 2100 · `dessinPointerUp` 2138 · `termineTrace` 2179 · `aide` 2191
+`outilOffert` 2221 · `choisitOutil` 2224 · `enchaineStand` 2255 · `optionsModes` 2285
+`proposeCouleurLigne` 2296 · `montreTransport` 2307 · `activeCalque` 2373 · `cleVerrou` 2431
+`verrouille` 2432 · `basculeVerrou` 2434 · `pictoVerrou` 2451 · `montreRoleIti` 2485
+`creeCalque` 2516 · `demandeNom` 2529 · `renommeCalque` 2548
 
 Éléments :
 
@@ -580,19 +580,19 @@ Fonctions :
 `accueilleParcoursPartage` 267 · `adoptePartage` 345 · `parcoursACopier` 380
 `ouvreGardeParcours` 395 · `demandeGardeParcours` 425 · `poseGardeParcours` 438
 
-### `_pile.html` — 533 l. → plan-admin.html
+### `_pile.html` — 536 l. → plan-admin.html
 
 - l.2 · Pile des calques
-- l.47 · Panneau : deux sections, chacune rangée par nom
-- l.343 · Repères
-- l.395 · Fond du plan
+- l.50 · Panneau : deux sections, chacune rangée par nom
+- l.346 · Repères
+- l.398 · Fond du plan
 
 Fonctions :
 
-`clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `nature` 65
-`boutonAjout` 72 · `boutonVerrou` 92 · `intertitre` 100 · `construitPanneau` 108
-`sectionSelection` 359 · `sectionFond` 415 · `ligneCouleur` 473 · `rangSecteur` 493
-`rangSous` 506 · `defautCouleur` 528
+`clePile` 8 · `entrees` 10 · `pile` 24 · `groupe` 36 · `ordonneDom` 44 · `nature` 68
+`boutonAjout` 75 · `boutonVerrou` 95 · `intertitre` 103 · `construitPanneau` 111
+`sectionSelection` 362 · `sectionFond` 418 · `ligneCouleur` 476 · `rangSecteur` 496
+`rangSous` 509 · `defautCouleur` 531
 
 ### `_pousse.html` — 697 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -692,7 +692,7 @@ Fonctions :
 `ancre` 492 · `place` 493 · `libelles` 495 · `decaleLibelle` 582 · `facteurLibelle` 583
 `libelleForce` 584 · `libelleZone` 587 · `libelleEmplacement` 606
 
-### `_sponsor.html` — 571 l. → plan-admin.html
+### `_sponsor.html` — 572 l. → plan-admin.html
 
 - l.1 · 18. Le sponsor — un logo le temps du chargement
 
@@ -700,8 +700,8 @@ Fonctions :
 
 `reglageSponsor` 96 · `secondesSponsor` 99 · `modeSponsor` 112 · `sponsorRetenu` 131
 `cleSponsor` 162 · `sponsorEnCache` 165 · `retientSponsor` 180 · `ouvreSponsor` 205
-`suitSponsor` 297 · `resteSponsor` 322 · `fermeSponsor` 328 · `accueilleSponsor` 344
-`blocSponsor` 413
+`suitSponsor` 298 · `resteSponsor` 323 · `fermeSponsor` 329 · `accueilleSponsor` 345
+`blocSponsor` 414
 
 ### `_styles-divers.css` — 315 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -735,7 +735,7 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 903 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 904 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -746,8 +746,8 @@ Fonctions :
 `tutoJournee` 86 · `zoneDuTuto` 94 · `insecable` 111 · `phraseTrajetTuto` 117
 `chapitresTuto` 377 · `proposeTutoriel` 397 · `lanceTutoriel` 455 · `quitteTutoriel` 541
 `chapitreTuto` 552 · `battementTuto` 561 · `finTuto` 579 · `afficheTuto` 596 · `pxTuto` 651
-`boiteTuto` 654 · `repereTuto` 668 · `rameneTuto` 701 · `placeTuto` 739 · `voileTuto` 820
-`rafaleTuto` 837 · `marqueZoneTuto` 857 · `marqueLibelleTuto` 892
+`boiteTuto` 654 · `repereTuto` 668 · `rameneTuto` 701 · `placeTuto` 739 · `voileTuto` 821
+`rafaleTuto` 838 · `marqueZoneTuto` 858 · `marqueLibelleTuto` 893
 
 Éléments :
 

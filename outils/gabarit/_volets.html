@@ -1065,7 +1065,7 @@ function voletApparence(hote){
     b.type = "button";
     b.innerHTML = '<span></span><span class="n"></span>';
     b.firstChild.textContent = g.nom;
-    b.lastChild.textContent = POLICES_NOMS.filter(q => q.genre === g.cle).length;
+    b.lastChild.textContent = String(POLICES_NOMS.filter(q => q.genre === g.cle).length);
     b.onclick = () => montreGenre(g.cle);
     blocPolice.querySelector(".genresPol").appendChild(b);
     return { b, g };

@@ -644,7 +644,7 @@ function reduitIcone(fichier) {
         }
         rompu(new Error("image trop lourde, même réduite — une icône, pas une photo"));
       };
-      img.src = fr.result;
+      img.src = String(fr.result);   // un data-URI : `readAsDataURL` ne rend rien d'autre
     };
     fr.readAsDataURL(fichier);
   });
@@ -2877,12 +2877,12 @@ async function fabriqueLesVignettes(e) {
         faites += await envoieVignettes(e, paquet);
         paquet.length = 0;
         signale(traduit("Préparation des logos : {n} sur {t}…")
-          .replace("{n}", faites + refusees).replace("{t}", total));
+          .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
       }
     }
     if (paquet.length) faites += await envoieVignettes(e, paquet);
     signale(traduit("Préparation des logos : {n} sur {t}…")
-      .replace("{n}", faites + refusees).replace("{t}", total));
+      .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
   }
 
   /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
@@ -2897,8 +2897,8 @@ async function fabriqueLesVignettes(e) {
      qui n'atteint jamais son total sans explication en serait une. */
   const mot = refusees
     ? traduit("{n} logos préparés, {r} illisibles chez leur source.")
-      .replace("{n}", faites).replace("{r}", refusees)
-    : traduit("{n} logos préparés pour les fiches.").replace("{n}", faites);
+      .replace("{n}", String(faites)).replace("{r}", String(refusees))
+    : traduit("{n} logos préparés pour les fiches.").replace("{n}", String(faites));
   signale(mot);
 }
 
