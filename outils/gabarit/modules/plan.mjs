@@ -15,9 +15,14 @@ import { $ } from "./dom.mjs";
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
 import { hslHex, rgbHex, hexa, luminance } from "./couleurs.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
+import { API, SLUG, cheminDuSalon, cheminPartageable, BORNE } from "./salon.mjs";
+import { mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure }
+  from "./mesure.mjs";
 
 Object.assign(globalThis, {
   $, esc, separeValeurs, COLLATION,
   hslHex, rgbHex, hexa, luminance,
   marquePrete, recadreMarque,
+  API, SLUG, cheminDuSalon, cheminPartageable, BORNE,
+  mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure,
 });

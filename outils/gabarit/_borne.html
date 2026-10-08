@@ -47,7 +47,7 @@ const BORNE_REPOS = 90000;
 
 const _borneDite = new URLSearchParams(location.search).get("borne");
 const _borneMot = (_borneDite || "").trim();
-const BORNE = _borneDite !== null;
+// `BORNE` lui-même vient de `modules/salon.mjs` : la mesure le lit avant ce module
 /* Une valeur qui n'est pas le mot réservé nomme le lieu : `?borne=Entrée Nord`
    fixe la position dans l'adresse elle-même. C'est ce qu'il faut pour un
    appareil dont le navigateur vide son stockage chaque nuit — rien à retenir,

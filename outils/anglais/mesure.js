@@ -1,4 +1,4 @@
-/* `outils/gabarit/_mesure.html` — la mesure d'utilisation : la notice de
+/* `outils/gabarit/modules/mesure.mjs` — la mesure d'utilisation : la notice de
    confidentialité et le refus. */
 module.exports = {
   "Confidentialité": "Privacy",
