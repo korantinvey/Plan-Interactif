@@ -88,7 +88,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
            porte : le moteur tourne avant lui. Sans cela `/plan` nu, qui est
            bien une adresse publique, écrivait sous une clé sans salon ce que
            `/plan-<salon>` relisait sous la sienne. */
-        "__SALON_DEFAUT__" || "";
+        "__SALON_DEFAUT__";
     } catch (e) {}
     return "plan-langues:" + (racine.dataset.role === "admin" ? "admin@" : "") + salon;
   }

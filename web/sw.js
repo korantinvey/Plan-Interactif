@@ -1,4 +1,4 @@
-const VERSION = "9bed7675edec";
+const VERSION = "89d130ab322c";
 const CACHE = "plan-" + VERSION;
 const DURABLE = "plan-durable";
 const HORS_LIGNE = "hors-ligne.html";

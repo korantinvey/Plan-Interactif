@@ -2,7 +2,8 @@
 #
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
-# les appels sans déclaration, les douze cas du moteur de la journée organisée,
+# les appels sans déclaration, la relecture ESLint, le cliquet des types, les
+# douze cas du moteur de la journée organisée,
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
 #
@@ -43,6 +44,12 @@ jobs:
 
       - name: Appels sans déclaration
         run: npm run appels
+
+      - name: Relecture par ESLint
+        run: npm run lint
+
+      - name: Types (cliquet de outils/types-acceptes.json)
+        run: npm run types
 
       - name: Moteur de la journée organisée
         run: npm run essais

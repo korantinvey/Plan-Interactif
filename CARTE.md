@@ -137,17 +137,17 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 499 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 477 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`$` 16 · `esc` 17 · `entetes` 38 · `contenuJeton` 47 · `resteJeton` 57 · `renouvelle` 67
-`appel` 101 · `rest` 112 · `verseModale` 142 · `ouvreModale` 148 · `verrouilleModale` 171
-`fermeModale` 173 · `gardeLaPlace` 196 · `demande` 201 · `confirme` 223 · `ecranConfig` 234
-`normaliseUrl` 270 · `ecranConnexion` 289 · `deconnecte` 352 · `signale` 363 · `bloc` 384
-`grille` 402 · `idCompte` 445 · `themeSombre` 455 · `initialesDe` 475
+`$` 21 · `esc` 22 · `entetes` 43 · `contenuJeton` 52 · `resteJeton` 62 · `renouvelle` 72
+`appel` 106 · `rest` 117 · `verseModale` 147 · `ouvreModale` 153 · `verrouilleModale` 176
+`fermeModale` 178 · `gardeLaPlace` 201 · `demande` 206 · `confirme` 228 · `ecranConfig` 239
+`ecranConnexion` 267 · `deconnecte` 330 · `signale` 341 · `bloc` 362 · `grille` 380
+`idCompte` 423 · `themeSombre` 433 · `initialesDe` 453
 
 Éléments :
 
@@ -256,7 +256,7 @@ Fonctions :
 
 ### `_entete.html` — 6 l.
 
-### `_environs.html` — 1652 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1646 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -265,21 +265,21 @@ Fonctions :
 `metresParDegre` 43 · `tourneEnvirons` 60 · `versTerre` 66 · `versLePlan` 73 · `reancre` 88
 `emprisePavillon` 114 · `centrePavillon` 129 · `styleSobre` 206 · `forceCarte` 300
 `calagePose` 318 · `calageCourant` 330 · `fondCourant` 333 · `recul` 338
-`pixelsMercator` 343 · `latitudeDePixel` 352 · `metresParPixel` 360 · `echelleDesTuiles` 378
-`niveauDesTuiles` 390 · `adresseTuile` 397 · `tuilesDeLaVue` 407 · `chargeMapLibre` 472
-`vueGL` 503 · `styleDuFond` 523 · `guetteLaCarte` 551 · `poseCarteGL` 562
-`diagnostiqueGL` 648 · `relanceCarteGL` 668 · `videCarteGL` 680 · `dessineFondCarte` 705
-`cleMasqueCarte` 809 · `masqueCarte` 810 · `basculeMasqueCarte` 812
-`boutonMasqueCarte` 823 · `pictoMasque` 834 · `formesMasquantes` 846 · `contourDuHall` 868
-`cheminDuHall` 875 · `poseMasqueCarte` 893 · `carreDeTerrain` 927 · `chercheBatiments` 943
-`aireDuContour` 970 · `centreDuContour` 979 · `axeDuContour` 992 · `empriseDesObjets` 1009
-`batimentsCandidats` 1027 · `caleSurBatiment` 1048 · `retientLeHall` 1074
-`manqueCalage` 1096 · `enregistreCalage` 1105 · `calageEnregistre` 1122
-`oublieCalageEnCours` 1143 · `litCoordonnees` 1155 · `rafraichitCarte` 1169
-`armeCalage` 1211 · `pivotCalage` 1222 · `glisseCarte` 1226 · `cartePointerDown` 1233
-`cartePointerMove` 1247 · `cartePointerUp` 1266 · `ditCalage` 1274 · `ditCarte` 1283
-`majCalage` 1291 · `appliqueCalage` 1313 · `tourneCalage` 1320 · `construitCalage` 1326
-`ouvreCalage` 1491 · `fermeCalage` 1500 · `voletEnvirons` 1528
+`pixelsMercator` 343 · `latitudeDePixel` 352 · `echelleDesTuiles` 372
+`niveauDesTuiles` 384 · `adresseTuile` 391 · `tuilesDeLaVue` 401 · `chargeMapLibre` 466
+`vueGL` 497 · `styleDuFond` 517 · `guetteLaCarte` 545 · `poseCarteGL` 556
+`diagnostiqueGL` 642 · `relanceCarteGL` 662 · `videCarteGL` 674 · `dessineFondCarte` 699
+`cleMasqueCarte` 803 · `masqueCarte` 804 · `basculeMasqueCarte` 806
+`boutonMasqueCarte` 817 · `pictoMasque` 828 · `formesMasquantes` 840 · `contourDuHall` 862
+`cheminDuHall` 869 · `poseMasqueCarte` 887 · `carreDeTerrain` 921 · `chercheBatiments` 937
+`aireDuContour` 964 · `centreDuContour` 973 · `axeDuContour` 986 · `empriseDesObjets` 1003
+`batimentsCandidats` 1021 · `caleSurBatiment` 1042 · `retientLeHall` 1068
+`manqueCalage` 1090 · `enregistreCalage` 1099 · `calageEnregistre` 1116
+`oublieCalageEnCours` 1137 · `litCoordonnees` 1149 · `rafraichitCarte` 1163
+`armeCalage` 1205 · `pivotCalage` 1216 · `glisseCarte` 1220 · `cartePointerDown` 1227
+`cartePointerMove` 1241 · `cartePointerUp` 1260 · `ditCalage` 1268 · `ditCarte` 1277
+`majCalage` 1285 · `appliqueCalage` 1307 · `tourneCalage` 1314 · `construitCalage` 1320
+`ouvreCalage` 1485 · `fermeCalage` 1494 · `voletEnvirons` 1522
 
 ### `_export.html` — 215 l. → admin-plans.html, rapport.html
 
@@ -335,19 +335,19 @@ Fonctions :
 `ajoutPointerUp` 932 · `geometriePointerDown` 952 · `accrocheGeo` 983
 `geometriePointerMove` 985 · `geometriePointerUp` 1036
 
-### `_gestes.html` — 936 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_gestes.html` — 937 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.3 · 8. Interactions du plan
-- l.436 · Ce que les tiroirs lisent d'un geste
-- l.482 · Le tiroir de la liste — écrans étroits
-- l.708 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4 · 8. Interactions du plan
+- l.437 · Ce que les tiroirs lisent d'un geste
+- l.483 · Le tiroir de la liste — écrans étroits
+- l.709 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
-`milieu` 23 · `commencePince` 29 · `suitPince` 43 · `plieLesBandes` 96 · `saisitPlan` 110
-`cibleElargie` 192 · `planifieFiltre` 392 · `traceurDeGeste` 460 · `cranVoisin` 479
-`retraitBas` 505 · `mesureTiroir` 519 · `montreTiroir` 522 · `hisseTiroir` 526
-`tiroirCrante` 735
+`milieu` 24 · `commencePince` 30 · `suitPince` 44 · `plieLesBandes` 97 · `saisitPlan` 111
+`cibleElargie` 193 · `planifieFiltre` 393 · `traceurDeGeste` 461 · `cranVoisin` 480
+`retraitBas` 506 · `mesureTiroir` 520 · `montreTiroir` 523 · `hisseTiroir` 527
+`tiroirCrante` 736
 
 ### `_head.html` — 612 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -490,16 +490,16 @@ Fonctions :
 `annoncePlan` 2613 · `celluleUtile` 2649 · `dilatationPour` 2712 · `dilatationDuJour` 2728
 `litLaCharge` 2765 · `chargeCellule` 2785
 
-### `_js.html` — 593 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 598 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.79 · 1. Index global — la recherche porte sur tous les pavillons
+- l.84 · 1. Index global — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`$` 15 · `esc` 17 · `cheminDuSalon` 35 · `cheminPartageable` 46 · `P` 76 · `nomDeLaZone` 96
-`nomsAnglaisDesZones` 98 · `texteProduits` 111 · `indexe` 115 · `chronoConf` 355
-`confsDuPlan` 360 · `indexeConferences` 378 · `rangeConferences` 456 · `poseFavicon` 503
-`poseLogoSalon` 529 · `poseTonDeLaBarre` 566
+`$` 20 · `esc` 22 · `cheminDuSalon` 40 · `cheminPartageable` 51 · `P` 81 · `nomDeLaZone` 101
+`nomsAnglaisDesZones` 103 · `texteProduits` 116 · `indexe` 120 · `chronoConf` 360
+`confsDuPlan` 365 · `indexeConferences` 383 · `rangeConferences` 461 · `poseFavicon` 508
+`poseLogoSalon` 534 · `poseTonDeLaBarre` 571
 
 Éléments :
 
@@ -563,14 +563,14 @@ Fonctions :
 
 `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_motdepasse.html` — 249 l. → motdepasse.html
+### `_motdepasse.html` — 254 l. → motdepasse.html
 
 - l.61 · Poser un mot de passe
 
 Fonctions :
 
-`$` 77 · `CFG` 79 · `dit` 87 · `fragment` 93 · `garde` 100 · `lit` 104 · `demandeLien` 177
-`ouvreSaisie` 186
+`$` 82 · `CFG` 84 · `dit` 92 · `fragment` 98 · `garde` 105 · `lit` 109 · `demandeLien` 182
+`ouvreSaisie` 191
 
 Éléments :
 
@@ -602,7 +602,7 @@ Fonctions :
 `groupeParcours` 604 · `remplitParcours` 613 · `ouvreParcours` 702 · `fermeParcours` 714
 `videLeParcours` 730
 
-### `_partage.html` — 766 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 761 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -611,23 +611,23 @@ Fonctions :
 `codeIdParcours` 54 · `codeParcours` 72 · `champParcours` 84 · `litCodeParcours` 91
 `lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
 `qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrChemin` 407
-`qrSvg` 429 · `ouvrePartageParcours` 446 · `boutonsPartage` 502
-`accueilleParcoursPartage` 580 · `adoptePartage` 658 · `parcoursACopier` 693
-`ouvreGardeParcours` 708 · `demandeGardeParcours` 738 · `poseGardeParcours` 751
+`qrSvg` 429 · `ouvrePartageParcours` 441 · `boutonsPartage` 497
+`accueilleParcoursPartage` 575 · `adoptePartage` 653 · `parcoursACopier` 688
+`ouvreGardeParcours` 703 · `demandeGardeParcours` 733 · `poseGardeParcours` 746
 
-### `_pile.html` — 538 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 527 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
-- l.57 · Panneau : deux sections, chacune rangée par nom
-- l.349 · Repères
-- l.401 · Fond du plan
+- l.46 · Panneau : deux sections, chacune rangée par nom
+- l.338 · Repères
+- l.390 · Fond du plan
 
 Fonctions :
 
-`clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`nature` 75 · `boutonAjout` 82 · `boutonVerrou` 102 · `intertitre` 110
-`construitPanneau` 117 · `sectionSelection` 365 · `sectionFond` 421 · `ligneCouleur` 479
-`rangSecteur` 499 · `rangSous` 512 · `defautCouleur` 534
+`clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `nature` 64
+`boutonAjout` 71 · `boutonVerrou` 91 · `intertitre` 99 · `construitPanneau` 106
+`sectionSelection` 354 · `sectionFond` 410 · `ligneCouleur` 468 · `rangSecteur` 488
+`rangSous` 501 · `defautCouleur` 523
 
 ### `_pousse.html` — 695 l. → plan-admin.html, plan-smcl.html, plan.html
 

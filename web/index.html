@@ -22,7 +22,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     try {
       salon = new URLSearchParams(location.search).get("plan") ||
         (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
-        "" || "";
+        "";
     } catch (e) {}
     return "plan-langues:" + (racine.dataset.role === "admin" ? "admin@" : "") + salon;
   }

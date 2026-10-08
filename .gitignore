@@ -17,6 +17,9 @@ outils/*.json
 # La bibliothèque des lieux, versée dans la page d'administration. Même
 # raison encore : elle ne se régénère qu'avec le réseau (`node outils/lieux.js`).
 !outils/lieux.json
+# Le cliquet des types : ce que `npm run types` accepte encore. Il fait foi
+# en intégration, il ne se régénère donc pas de lui-même.
+!outils/types-acceptes.json
 supabase/.temp/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont

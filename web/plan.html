@@ -22,7 +22,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     try {
       salon = new URLSearchParams(location.search).get("plan") ||
         (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
-        "smcl-2026" || "";
+        "smcl-2026";
     } catch (e) {}
     return "plan-langues:" + (racine.dataset.role === "admin" ? "admin@" : "") + salon;
   }
@@ -5125,7 +5125,7 @@ const PLAFOND_SORTE = 500;
 const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
 
 const codeCase = (o) => CASE_SORTE[o.kind] ||
-  String(o.code || "").replace(/\s*([-–—\/])\s*/g, "$1").trim() || "—";
+  String(o.code || "").replace(/\s*([-–—/])\s*/g, "$1").trim() || "—";
 
 const CASE_MIN = 48, CASE_MAX = 92, CASE_CADRE = 10, CASE_POLICE = 11.5;
 function caseNumero(){
@@ -14157,17 +14157,6 @@ function ordonneDom(){
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
 }
 
-function deplaceCouche(k, dir){
-  const liste = pile().map(x => x.k);
-  const i = liste.indexOf(k), j = i + dir;
-  if (i < 0 || j < 0 || j >= liste.length) return;
-  liste[i] = liste[j]; liste[j] = k;
-  CONF[clePile()] = liste;
-  enregistreConf();
-  ordonneDom();
-  construitPanneau();
-}
-
 const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
 const nature = x => x.t === "dessin" ? "dessin" : "salon";
 
@@ -15754,11 +15743,6 @@ function qrSvg(m, etiquette){
     '<rect width="' + t.cote + '" height="' + t.cote + '" fill="#fff"/>' +
     '<path d="' + t.d + '" fill="#000"/></svg>';
 }
-
-const PICTO_PARTAGE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-  '<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/>' +
-  '<circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>';
 
 function ouvrePartageParcours(){
   const lien = lienParcours();
@@ -21751,9 +21735,6 @@ function latitudeDePixel(py, z){
   const n = PX_TUILE * Math.pow(2, z);
   return Math.atan(Math.sinh(Math.PI * (1 - 2 * py / n))) / DEG;
 }
-
-const metresParPixel = (lat, z) =>
-  TOUR_MERCATOR * Math.cos(lat * DEG) / (PX_TUILE * Math.pow(2, z));
 
 function echelleDesTuiles(cal, z){
   const m = metresParDegre(cal.lat);

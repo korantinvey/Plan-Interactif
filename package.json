@@ -21,14 +21,20 @@
     "fep26": "node outils/essais/fep26.js",
     "charge": "node outils/essais/charge.js",
     "appels": "node outils/appels.js",
-    "navigateur": "playwright test"
+    "navigateur": "playwright test",
+    "lint": "node outils/relecture.js",
+    "types": "node outils/types.js"
   },
   "type": "commonjs",
   "private": true,
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@playwright/test": "^1.56.1",
     "acorn": "8.14.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
     "supabase": "^2.116.0",
+    "typescript": "^5.7.3",
     "wrangler": "^4.0.0"
   }
 }

@@ -5802,6 +5802,11 @@ if (!document.querySelector('meta[name="viewport"]')){
   document.head.appendChild(mv);
 }
 
+/* Un élément de la page, lu par son identifiant. Rendu sans type précis
+   pour `npm run types` : chaque appel saurait mieux que lui ce qu'il attend
+   — un champ, un bouton, un canevas —, et le dire à chaque fois chargerait
+   le code de plus d'annotations qu'il n'en éviterait d'erreurs. */
+/** @returns {any} */
 const $ = id => document.getElementById(id);
 const svg = $("plan");
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
@@ -7954,7 +7959,7 @@ const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
  * n'y ajoutent rien.
  */
 const codeCase = (o) => CASE_SORTE[o.kind] ||
-  String(o.code || "").replace(/\s*([-–—\/])\s*/g, "$1").trim() || "—";
+  String(o.code || "").replace(/\s*([-–—/])\s*/g, "$1").trim() || "—";
 
 /**
  * La case du numéro, de même largeur sur toutes les lignes.
@@ -10313,7 +10318,8 @@ $("closeDetail").onclick = ferme;
 $("voile").onclick = ferme;
 
 /* Les gestes sur le plan (§ 8) et les tiroirs des écrans étroits.
-   Suite de `_fiche.html` ; ferme le script ouvert par `_js.html`. */
+   Suite de `_fiche.html`. Sa balise de fin est retirée à l'assemblage : le
+   script ouvert par `_js.html` court jusqu'à `_admin2.html`, qui le ferme. */
 /* ============================================================
    8. Interactions du plan
    ============================================================ */
@@ -22314,17 +22320,6 @@ function ordonneDom(){
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
 }
 
-function deplaceCouche(k, dir){
-  const liste = pile().map(x => x.k);
-  const i = liste.indexOf(k), j = i + dir;
-  if (i < 0 || j < 0 || j >= liste.length) return;
-  liste[i] = liste[j]; liste[j] = k;
-  CONF[clePile()] = liste;
-  enregistreConf();
-  ordonneDom();
-  construitPanneau();
-}
-
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom
 
@@ -24889,11 +24884,6 @@ function qrSvg(m, etiquette){
 /* ------------------------------------------------------------
    La fenêtre de partage
    ------------------------------------------------------------ */
-const PICTO_PARTAGE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-  '<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/>' +
-  '<circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>';
-
 function ouvrePartageParcours(){
   const lien = lienParcours();
   const trame = qrTrame(Array.from(new TextEncoder().encode(lien)));
@@ -35271,12 +35261,6 @@ function latitudeDePixel(py, z){
   const n = PX_TUILE * Math.pow(2, z);
   return Math.atan(Math.sinh(Math.PI * (1 - 2 * py / n))) / DEG;
 }
-
-/** Ce que vaut un pixel de la pyramide, en mètres au sol, par la formule
- *  sphérique. Sert à choisir le niveau, et à rien d'autre : un écart de trois
- *  millièmes ne change jamais un arrondi. */
-const metresParPixel = (lat, z) =>
-  TOUR_MERCATOR * Math.cos(lat * DEG) / (PX_TUILE * Math.pow(2, z));
 
 /**
  * Ce que vaut un pixel de la pyramide, en mètres du plan — vers l'est, et vers

@@ -63,6 +63,18 @@ try {
   process.exit(1);
 }
 
+/* La relecture par ESLint, puis le cliquet des types : ce qu'un développeur
+   attend d'un dépôt, et ce qui voit une variable morte ou un appel faux là où
+   la syntaxe et `appels.js` ne regardent pas. */
+for (const script of ["relecture.js", "types.js"]) {
+  try {
+    lance(script);
+  } catch (e) {
+    console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
+    process.exit(1);
+  }
+}
+
 let bouge = "";
 try {
   bouge = execFileSync("git", ["status", "--porcelain", "web", "CARTE.md"], { cwd: racine })

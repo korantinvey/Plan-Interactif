@@ -265,7 +265,7 @@ function paraitVisible(t) {
   if (/^[\w/-]+\?[\w-]+=/.test(t) || /\$\d/.test(t) || /^\|\w+$/.test(t)) return false; // requête, remplacement, clé
   if (/^[\w.-]*\/[\w./-]*$/.test(t)) return false;                               // chemin
   if (/^[;\s]*[a-z-]+:\s*$/.test(t)) return false;                               // propriété CSS
-  if (/^[\w.\[\]-]+\.(html?|js|mjs|ts|css|json|png|svg|jpe?g|webp|gif|xlsx|xml|rels|csv|webmanifest|sql)$/i.test(t)) return false;
+  if (/^[\w.[\]-]+\.(html?|js|mjs|ts|css|json|png|svg|jpe?g|webp|gif|xlsx|xml|rels|csv|webmanifest|sql)$/i.test(t)) return false;
   if (/^<\?|^=\w+$/.test(t)) return false;                                        // déclaration XML, valeur réservée
   if (/^[;\s]*--[\w-]+:?$|^_[\w-]*:?$|^[a-z][\w-]*:$/.test(t)) return false;  // variable CSS, clé de réglage, préfixe
   if (/^[a-z]+\/[\w.+*-]*$/.test(t)) return false;                              // type MIME
@@ -276,7 +276,7 @@ function paraitVisible(t) {
   if (/(^|[\s;])[-a-z]+\s*:\s*[^;]*;|var\(--|rgba?\(|\b\d+(px|em|rem|vh|vw)\b/.test(t) && !ACCENTS.test(t)) return false; // CSS
   if (/[{};]\s*$|^\s*[{}]|=>|===|!==|\bfunction\b|\breturn\b/.test(t)) return false;
   if (/^[A-Z0-9_]+$/.test(t)) return false;                                     // constante, sigle
-  if (!/\s/.test(t) && !ACCENTS.test(t) && /^[.#]?[a-z][\w-]*([.#:\[\]="'][\w-]*)*$/.test(t)) return false; // identifiant, classe, sélecteur
+  if (!/\s/.test(t) && !ACCENTS.test(t) && /^[.#]?[a-z][\w-]*([.#:[\]="'][\w-]*)*$/.test(t)) return false; // identifiant, classe, sélecteur
   if (/^[\w-]+(\s[\w-]+)+$/.test(t) && t.split(" ").every((w) => /^[a-z]+(-[a-z0-9]+)+$|^[a-z]+[A-Z]\w*$|^[a-z]{1,3}\d*$/.test(w))) return false; // liste de classes
   if (/^\[?[\w-]+(=|\^=|\*=)["']?/.test(t) && !/\s[a-zà-ÿ]{2,}\s/.test(t)) return false; // sélecteur d'attribut
   return true;
@@ -417,7 +417,7 @@ function parcours(texte, debutJs, rappel, toutes = false) {
         if (j.type !== "chaine" && j.type !== "gabarit") return;
         if (!toutes && !/[A-Za-zÀ-ÿ]{2}/.test(j.valeur)) return;
         const ctx = contexteDe(jetons, k);
-        if (/<[a-zA-Z\/!]|=\s*"|"\s*>|^\s*["']\s*$/.test(j.valeur)) {
+        if (/<[a-zA-Z/!]|=\s*"|"\s*>|^\s*["']\s*$/.test(j.valeur)) {
           for (const p of texteDuBalisage(j.valeur)) {
             rappel({ valeur: p.valeur, pos: j.debut, genre: p.genre === "texte" ? "js-html" : "js-attr",
               concat: true, muet: ctx.muet, comparaison: ctx.comparaison });
