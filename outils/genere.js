@@ -5,6 +5,7 @@ const icones = require("./icones.js");
 const pwa = require("./pwa.js");
 const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
+const { epure } = require("./epure.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -96,7 +97,10 @@ function marques(html) {
 function page(contenu, options) {
   const { role, tete, application, autonome, deuxThemes, pleinEcran,
           salon } = options || {};
-  return '<!doctype html>\n<html lang="fr"' +
+  /* Les commentaires restent dans les sources et ne partent pas : voir
+     `outils/epure.js`. En dernier, une fois les marqueurs remplacés et le
+     dictionnaire anglais choisi sur la page entière, comme avant. */
+  return epure('<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     /* `viewport-fit=cover` étend la page sous les barres du système au lieu de
@@ -111,7 +115,7 @@ function page(contenu, options) {
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
-    "\n</body>\n</html>\n";
+    "\n</body>\n</html>\n", role || "page");
 }
 
 /**

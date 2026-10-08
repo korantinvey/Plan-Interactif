@@ -26,6 +26,12 @@ npm run construire   # reconstruit web/
 npm run verifie      # reconstruit, et sort en erreur si web/ était en retard
 ```
 
+Les pages de `web/` partent **sans leurs commentaires** : `outils/epure.js` les
+retire à la sortie de `genere.js` `page()`, scripts et styles analysés par
+esbuild (dépendance de développement, version épinglée), sans minification ni
+renommage. C'est près de la moitié du plan public. Les explications vivent donc
+dans `outils/gabarit/` seul : on ne les cherche pas dans une page construite.
+
 Les pages reconstruites font partie du commit. Le workflow `Pages` rattrape
 l'oubli — il reconstruit et valide sur la branche poussée — mais ne comptez pas
 dessus : il ajoute alors un commit par-dessus le vôtre, que vous devrez tirer
