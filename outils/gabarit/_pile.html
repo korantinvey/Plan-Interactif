@@ -43,6 +43,7 @@ function ordonneDom(){
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
 }
 
+/* @admin — les boutons du panneau des calques */
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom
 
@@ -103,7 +104,9 @@ function intertitre(hote, cle){
   hote.appendChild(t);
 }
 
+/* @fin-admin */
 function construitPanneau(){
+  /* @admin — le panneau des calques, que la page publique vide */
   const hote = $("pile");
   hote.innerHTML = "";
   const reorg = document.createElement("button");
@@ -333,8 +336,10 @@ function construitPanneau(){
   /* Les réglages généraux vivent dans leur propre fenêtre, ouverte par
      l'engrenage : ici ils allongeaient une pile déjà longue et se lisaient
      comme une couche de plus. */
+  /* @fin-admin */
 }
 
+/* @admin — les sections du panneau des calques */
 /* ============================================================
    Repères
    Ce que le plan pose sur un stand sans que les données le disent : la
@@ -525,3 +530,4 @@ function defautCouleur(x){
   if (x.t === "fond") return jeton("--plan-line");
   return jeton(x.k === "data:zones" ? "--zone" : x.k === "data:stands" ? "--stand" : "--ink");
 }
+/* @fin-admin */

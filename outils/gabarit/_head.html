@@ -1,6 +1,7 @@
 </style>
 
 <div class="app">
+  <!-- @admin — la bande de l'outil -->
   <!-- La bande de l'outil, au-dessus de celle du salon. Elle ne paraît qu'une
        fois l'identité vérifiée — `activeAdmin` y range les commandes
        d'édition — et la page publique la retire du document. -->
@@ -9,6 +10,7 @@
     <span class="bandeNom">Administration</span>
     <div class="bandeActs" id="bandeActs"></div>
   </div>
+  <!-- @fin-admin -->
 
   <header class="topbar" id="bandeau">
     <div class="brand">
@@ -47,16 +49,19 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
         <span class="compteur" id="nParcours" hidden>0</span>
       </button>
+      <!-- @admin — les calques et les réglages -->
       <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
+      <!-- @fin-admin -->
       <button class="iconbtn" id="btnItineraire" aria-pressed="false"
         title="Calculer un itinéraire" aria-label="Calculer un itinéraire">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
       </button>
+      <!-- @admin — le compte de l'exploitant -->
       <!-- L'exploitant connecté, et par où sortir. -->
       <details class="compte" id="menuCompte" hidden>
         <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
@@ -65,6 +70,7 @@
           <button class="sortie" id="btnSortir">Se déconnecter</button>
         </div>
       </details>
+      <!-- @fin-admin -->
     </div>
   </header>
 
@@ -213,6 +219,7 @@
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
     </div>
+    <!-- @admin — le calage d'un hall -->
     <!-- Le calage d'un bâtiment de la bibliothèque : le geste, l'angle au
          quart de degré près, et les deux issues. Voir « _batiments.html ». -->
     <div class="viseur calage" id="calageBat" hidden>
@@ -223,6 +230,7 @@
       <button type="button" id="calageStop">Annuler</button>
       <button type="button" class="fort" id="calageValide">Valider</button>
     </div>
+    <!-- @fin-admin -->
     <!-- Ce que le plan sait de la position du visiteur quand il est arrivé par
          un code affiché dans le hall, et le seul endroit où l'éteindre. Il ne
          s'efface pas une fois lu : il est l'état du mode. Voir « _ici.html ». -->
@@ -258,6 +266,7 @@
       </div>
     </div>
 
+    <!-- @admin — la boîte à outils du dessin et le panneau « Élément » -->
     <div class="outils" id="outils">
       <div class="outilsTete">
         <span class="eyebrow" id="outilsCalque"></span>
@@ -402,7 +411,9 @@
         <button class="reset" id="annuleDernier">Annuler &nbsp;·&nbsp; Ctrl+Z</button>
       </div>
     </div>
+    <!-- @fin-admin -->
 
+    <!-- @admin — la palette des libellés -->
     <div class="outils libreg" id="libReg">
       <div class="outilsTete">
         <span class="eyebrow" id="libNom"></span>
@@ -416,7 +427,9 @@
       <button class="auto" id="libAuto">Placement automatique</button>
       <div class="outilsPied"><span id="libAide"></span></div>
     </div>
+    <!-- @fin-admin -->
 
+    <!-- @admin — la palette des emplacements -->
     <!-- Reprendre la géométrie d'un emplacement. La palette s'ouvre avec le
          mode, avant même qu'une forme soit choisie : c'est elle qui dit qu'on
          y est, et par où en sortir. -->
@@ -455,6 +468,7 @@
       <button class="auto" id="geoSupprime" hidden>Supprimer</button>
       <div class="outilsPied"><span id="geoAide"></span></div>
     </div>
+    <!-- @fin-admin -->
 
     <div class="modale" id="modale">
       <div class="mfen" role="dialog" aria-modal="true">
@@ -464,10 +478,12 @@
       </div>
     </div>
 
+    <!-- @admin — le panneau des calques -->
     <div class="panel" id="panel">
       <span class="eyebrow">Ordre des calques</span>
       <div id="pile"></div>
     </div>
+    <!-- @fin-admin -->
 
     <div class="voile" id="voile"></div>
     <section class="detail" id="detail" aria-live="polite">

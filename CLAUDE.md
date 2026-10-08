@@ -32,6 +32,42 @@ npm run verifie      # construit, contrôle tout, et dit si CARTE.md était en r
 `CARTE.md`, lui, reste versionné — on le lit sans rien construire. Lancez
 `npm run verifie` avant de valider : il le refait et signale s'il bougeait.
 
+## Ce que le visiteur ne reçoit pas
+
+Les trois pages du plan sont soudées des mêmes modules, et le code
+d'administration y est tissé dans le code public. Les tranches qui ne servent
+qu'à l'administration sont bornées dans la source :
+
+```
+/* @admin — pourquoi */        ou, dans le balisage,   <!-- @admin — pourquoi -->
+…
+/* @fin-admin */                                        <!-- @fin-admin -->
+```
+
+`plan.html` et `plan-smcl.html` les perdent entières ; `plan-admin.html` ne perd
+que les lignes des marqueurs, et reste donc identique à ce qu'il serait sans
+eux. Le geste qui va avec : **un réglage, un volet, une fenêtre d'exploitant
+s'écrit dans une tranche**. `outils/reserve.js` fait échouer la construction si
+la page publique cite encore un nom ou un `$("id")` qu'on lui a retiré, et le
+nomme — on élargit alors la tranche, ou l'on en sort ce nom. Un appel gardé par
+`typeof nom === "function"` reste permis.
+
+Une tranche se borne sur des lignes entières, et doit se suffire : elle refuse
+de se fermer sur des accolades déséquilibrées. Le piège est la dernière ligne
+d'une propriété qui ferme aussi son objet (`apres: () => {…} },`) : on passe
+`},` à la ligne avant de borner. Pour vider une fonction que le public appelle
+sans s'en servir — `construitPanneau`, `retourAuxReglages` —, on borne son
+corps et l'on garde sa signature.
+
+Sont déjà en tranches : la fenêtre des réglages, la fiche d'une zone, et tout
+l'outil de dessin — boîte à outils, gestes, aimants, panneau et ordre des
+calques, calage des halls, reprise et ajout d'emplacements, placement des
+libellés, sauvegarde de la configuration — avec leur balisage.
+
+Ce contrôle ne voit que le JavaScript et les identifiants d'éléments : la
+feuille de style n'a pas encore de tranche, faute de pouvoir prouver qu'une
+règle ne sert plus au visiteur.
+
 ## Ne jamais modifier directement
 
 Les sorties de la construction — `web/` hors `polices/` et `bibliotheques/`,
@@ -221,6 +257,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
 | export tableur des exposants | `_export.html` (console **et** rapport), écriture `.xlsx` dans `_classeur.html` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
 | accès administrateur d'un plan | `_auth-plan.html` |
+| retirer du plan public ce qui ne sert qu'à l'administration | tranches `@admin` … `@fin-admin` dans les modules, découpées et contrôlées par `outils/reserve.js`, appliquées par `outils/genere.js` (`tplAdmin`, `tplPublic`) |
 | consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` ; fond de carte gardé par `tuileDeCarte` (tuiles, cache durable) et `fondDeCarte` (MapLibre, styles) — fournisseurs `FONDS_DE_CARTE`, bornes `borneLesLots` et `borneLesTuiles` |
 | installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `application()` pour le seul plan public ; nom, icônes et adresse de départ par salon dans `src/index.mjs` `manifeste`, `appDuSalon` (`MARQUE`), qui les tient de `plan-public?slug=…&app=1` (`TTL_APP`, réponse non gardée en amont) ; nom et icône sur l'écran d'accueil d'iOS par `_installation.html` `nommeApplication` |
 | une application par salon, qui n'ouvre que le sien — portée du manifeste | adresse `/plan-<salon>` : `src/index.mjs` `cheminDuSalon`, `CHEMIN_SALON`, `pageDuSalon`, écrite dans `start_url`, `scope` et `id` par `manifeste` ; lue par `_js.html` `SLUG` et par le bloc en tête de `outils/pwa.js` `application()` ; ramenée au plan public pour ce qui se partage par `_js.html` `cheminPartageable` (`_partage.html`, `_ici.html`) ; visée par `_installation.html` `adresseApplication` (`intent://`) ; clé du cache hors ligne ramenée à `/plan` dans `_sw.js` `navigation` |

@@ -203,7 +203,9 @@ function rafraichitVue(){
       imageDemandee = null;
       appliqueVue(); echelle();
       // la poignée du calage se mesure en pixels : elle suit la vue
+      /* @admin — le calage d'un hall */
       if (CALAGE) dessineCalage();
+      /* @fin-admin */
     });
   }
   clearTimeout(libellesEnAttente);
@@ -216,7 +218,9 @@ function poseVue(){
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libellesDeLaVue();
+  /* @admin — le calage d'un hall */
   if (CALAGE) dessineCalage();
+  /* @fin-admin */
 }
 
 /**

@@ -1,5 +1,6 @@
 /* La fenêtre des réglages : aperçus, onglets, volets Zones, Plan, Co-exposants.
    Suite de `_admin1.html`, dans le même script. */
+/* @admin — les aperçus de la fenêtre des réglages */
 /* ------------------------------------------------------------------
    L'exposant des aperçus
 
@@ -305,6 +306,7 @@ function apercuDuo(cle, vu){
   d.appendChild(apercuFiche(cle, vu));
   return d;
 }
+/* @fin-admin */
 
 /**
  * Réglages généraux du plan.
@@ -342,6 +344,7 @@ function glisseFenetre(change){
               { duration: 190, easing: "ease-out" });
 }
 
+/* @admin — la fenêtre des réglages et ses volets */
 function ouvreReglages(ouvrir){
   ouvreModale("Réglages du plan", corps => {
     const barre = document.createElement("div");

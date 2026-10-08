@@ -172,9 +172,13 @@ function montePlan(){
   calqueActif = null;
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
+  /* @admin — la reprise d'un emplacement et l'historique de l'éditeur */
   if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
+  /* @fin-admin */
+  /* @admin — la boîte à outils n'existe qu'en administration */
   { const o = $("outils"); if (o) o.classList.remove("open"); }
+  /* @fin-admin */
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
