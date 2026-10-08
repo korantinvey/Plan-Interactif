@@ -65,6 +65,113 @@ function marques(html) {
 }
 
 /**
+ * Les commentaires retirés de ce qui part chez le visiteur.
+ *
+ * Le gabarit est abondamment commenté, et c'est voulu : il dit pourquoi chaque
+ * chose est comme elle est. Mais ce récit voyageait avec la page — plus de la
+ * moitié de `plan.html`, compressé compris — et quiconque ouvrait les sources
+ * le lisait, exemples d'adresses compris. Il reste donc dans `outils/gabarit/`
+ * et s'arrête ici.
+ *
+ * Pour les scripts, c'est acorn qui dit où sont les commentaires : un `//` dans
+ * une adresse, un `/*` dans une chaîne ou une expression régulière n'en sont
+ * pas, et seul un analyseur le sait. Il ne fait que les situer — on les découpe
+ * dans le texte d'origine, sans rien réimprimer : le code servi est celui du
+ * gabarit, à l'octet près, commentaires en moins. Un outil qui réimprime
+ * (esbuild, essayé d'abord) gardait les commentaires posés dans un objet ou au
+ * milieu d'une expression, et semait les siens.
+ *
+ * Les espaces restent : les retirer ne gagnait presque rien une fois la page
+ * compressée, et une erreur remontée par un navigateur doit encore désigner
+ * une ligne lisible.
+ */
+const acorn = require("acorn");
+
+function epureScript(code, module) {
+  const plages = [];
+  acorn.parse(code, {
+    ecmaVersion: "latest", sourceType: module ? "module" : "script",
+    onComment: (bloc, texte, debut, fin) => plages.push([debut, fin]),
+  });
+  return retire(code, plages);
+}
+
+/* Le CSS n'a que deux pièges, les chaînes et les commentaires : pas besoin
+   d'analyseur pour les distinguer. */
+function epureStyle(code) {
+  const plages = [];
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i];
+    if (c === '"' || c === "'") {
+      for (i++; i < code.length && code[i] !== c; i++) if (code[i] === "\\") i++;
+    } else if (c === "/" && code[i + 1] === "*") {
+      const fin = code.indexOf("*/", i + 2);
+      if (fin < 0) throw new Error("commentaire CSS sans fin");
+      plages.push([i, fin + 2]);
+      i = fin + 1;
+    }
+  }
+  return retire(code, plages);
+}
+
+/**
+ * Découpe des plages de commentaires dans un texte. Un commentaire seul sur
+ * ses lignes les emporte avec lui ; au milieu du code, il cède la place à un
+ * blanc — un saut de ligne s'il en contenait un, car pour l'insertion
+ * automatique des points-virgules un commentaire qui franchit une ligne vaut
+ * une fin de ligne : `return /* … ⏎ … *\/ x` ne renvoie pas `x`, et ne doit
+ * pas se mettre à le faire.
+ */
+function retire(code, plages) {
+  const blanc = (c) => c === " " || c === "\t";
+  let sortie = "", depuis = 0;
+  for (const [debut, fin] of plages) {
+    let a = debut, b = fin;
+    while (a > depuis && blanc(code[a - 1])) a--;
+    while (b < code.length && blanc(code[b])) b++;
+    const enTete = a === 0 || code[a - 1] === "\n";
+    const enQueue = b === code.length || code[b] === "\n" || code[b] === "\r";
+    if (enTete && enQueue) {
+      sortie += code.slice(depuis, a);
+      depuis = code[b] === "\r" ? b + 2 : b + 1;
+    } else {
+      sortie += code.slice(depuis, enTete ? debut : a) +
+        (/[\n\r\u2028\u2029]/.test(code.slice(debut, fin)) ? "\n" :
+         enTete || enQueue ? "" : " ");
+      depuis = b;
+    }
+  }
+  return sortie + code.slice(Math.min(depuis, code.length));
+}
+
+function epure(html) {
+  const morceaux = [];
+  const balise = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+  let depuis = 0;
+  for (let m; (m = balise.exec(html)); ) {
+    morceaux.push(epureBalisage(html.slice(depuis, m.index)));
+    const [, nom, attributs, code] = m;
+    const module = /\btype="module"/.test(attributs);
+    // un script chargé d'ailleurs n'a pas de corps ; des données ne sont pas du code
+    const intact = /\bsrc=/.test(attributs) ||
+      (nom.toLowerCase() === "script" && /\btype=/.test(attributs) && !module);
+    morceaux.push(intact ? m[0] :
+      "<" + nom + attributs + ">" +
+      (nom.toLowerCase() === "style" ? epureStyle(code) : epureScript(code, module)) +
+      "</" + nom + ">");
+    depuis = balise.lastIndex;
+  }
+  morceaux.push(epureBalisage(html.slice(depuis)));
+  return morceaux.join("");
+}
+
+/* Seul sur sa ligne, un commentaire l'emporte avec lui ; entre deux mots, il
+   laisse un blanc, faute de quoi il les collerait. */
+const epureBalisage = (s) =>
+  s.replace(/[ \t]*<!--[\s\S]*?-->[ \t]*(\r?\n)?/g, (m, saut, i, tout) =>
+    i === 0 || tout[i - 1] === "\n" ? "" : saut || " ");
+
+/**
  * Le squelette d'une page.
  *
  * Sans déclaration d'encodage, un navigateur suppose Windows-1252 : les accents
@@ -95,7 +202,7 @@ function marques(html) {
 function page(contenu, options) {
   const { role, tete, application, autonome, deuxThemes, pleinEcran,
           salon } = options || {};
-  return '<!doctype html>\n<html lang="fr"' +
+  return epure('<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     /* `viewport-fit=cover` étend la page sous les barres du système au lieu de
@@ -110,7 +217,7 @@ function page(contenu, options) {
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
-    "\n</body>\n</html>\n";
+    "\n</body>\n</html>\n");
 }
 
 /**
@@ -222,9 +329,11 @@ fs.writeFileSync(W + "plan-smcl.html",
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
-fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
+fs.writeFileSync(W + "config.js",
+  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
-fs.copyFileSync(D + "/gabarit/_console.css", W + "console.css");
+fs.writeFileSync(W + "console.css",
+  epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8")));
 
 /* --- page d'accueil : la racine ne doit pas répondre 404 --- */
 fs.writeFileSync(W + "index.html",
@@ -307,7 +416,7 @@ for (const f of FABRIQUEES) empreinte.update(f).update(fs.readFileSync(W + f));
 const version = empreinte.digest("hex").slice(0, 12);
 
 fs.writeFileSync(W + "sw.js",
-  fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version));
+  epureScript(fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version)));
 
 for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
   const s = fs.readFileSync(W + f, "utf8");

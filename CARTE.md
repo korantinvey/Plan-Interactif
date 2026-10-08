@@ -480,7 +480,7 @@ Fonctions :
 `annoncePlan` 2613 · `celluleUtile` 2649 · `dilatationPour` 2712 · `dilatationDuJour` 2728
 `litLaCharge` 2765 · `chargeCellule` 2785
 
-### `_js.html` — 5450 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 5450 l.
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.594 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -715,7 +715,7 @@ Fonctions :
 `poseSuggestion` 302 · `fenetreSuggestion` 316 · `relevePalmares` 355 · `etiquetteSugg` 375
 `voletSuggestion` 385
 
-### `_sw.js` — 562 l. → sw.js
+### `_sw.js` — 562 l.
 
 Fonctions :
 
