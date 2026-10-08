@@ -258,6 +258,12 @@ function appels(js){
   return l;
 }
 
+/* La construction emprunte ce qui précède pour vérifier qu'une page publique
+   ne cite rien de ce qu'on lui a retiré (`outils/reserve.js`) : deux lectures
+   du JavaScript qui divergeraient se contrediraient sans qu'on le voie. */
+module.exports = { sansTexte, declares, appels, FOURNIS };
+if (require.main !== module) return;
+
 if (!fs.existsSync(WEB)){
   console.error("`web/` est absent : lancez d'abord `npm run construire`.");
   process.exit(1);

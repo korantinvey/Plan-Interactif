@@ -29,6 +29,7 @@ function retireAdmin(){
   });
 }
 
+/* @admin — l'ouverture du mode administration, que seule la porte authentifiée appelle */
 /** Ouvre le mode administration, une fois l'identité vérifiée. */
 function activeAdmin(){
   if (ADMIN) return;
@@ -106,8 +107,10 @@ function activeAdmin(){
      la barre du système prolonge, et non plus le bandeau du salon. */
   poseTonDeLaBarre();
 }
+/* @fin-admin */
 
 
+/* @admin — la fiche d'une zone, qu'on ne remplit qu'en administration */
 /* ============================================================
    La fiche d'une zone organisateur
    Une zone tire son nom de Klipso, ou des textes posés sur le plan. Quand ni
@@ -877,6 +880,7 @@ async function enregistreZoneAjoutee(o, v, depart){
     if (state.sel === o.id) ouvre(o, null);
   }
 }
+/* @fin-admin */
 
 /* ============================================================
    Masquer une zone organisateur
@@ -1025,6 +1029,7 @@ function placementLibelle(o){
   return r && r.e === empreinteLibelle(o) ? r : null;
 }
 
+/* @admin — le placement des libellés à la main */
 /**
  * Poser un placement, sans l'écrire sur le poste : un glisser en produit un
  * par image, et enregistrer à chaque fois sérialiserait toute la configuration
@@ -1149,3 +1154,4 @@ if ($("libTaille")){
   };
   $("libTaille").onchange = enregistreConf;
 }
+/* @fin-admin */

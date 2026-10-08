@@ -273,8 +273,11 @@ const OPTIONS = [
     aide: "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il " +
       "héberge, sur sa part d'un emplacement. Fermée, l'outil reste dans la boîte " +
       "à outils, grisé ; les découpages déjà tracés restent sur le plan.",
+    /* @admin — l'outil qu'on ferme ne s'est jamais tenu en main hors de l'administration */
     // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
-    apres: () => { if (outil === "stand") choisitOutil("main"); } },
+    apres: () => { if (outil === "stand") choisitOutil("main"); },
+    /* @fin-admin */
+  },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
     aide: "Le rattachement d'une image du dessin à un exposant : le logo posé " +
@@ -283,10 +286,13 @@ const OPTIONS = [
       "l'image : fermée, l'outil image reste et les images se posent comme " +
       "n'importe quel dessin, mais le champ qui nomme l'exposant est grisé et " +
       "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
+    /* @admin — le champ image ne se pose qu'outil en main */
     /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
        et sa liste de choix se posent en JS, et seulement l'outil en main : on
        repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
-    apres: () => { if (outil === "image") poseChampImage(); } },
+    apres: () => { if (outil === "image") poseChampImage(); },
+    /* @fin-admin */
+  },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +

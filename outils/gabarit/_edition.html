@@ -21,6 +21,7 @@ function boite(f){
   return [Math.min.apply(null, xs), Math.min.apply(null, ys),
           Math.max.apply(null, xs), Math.max.apply(null, ys)];
 }
+/* @admin — les poignées, le panneau « Élément » et les gestes d'édition */
 
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
    sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
@@ -648,3 +649,4 @@ function editionPointerUp(e){
   enregistreDessins();
   return true;
 }
+/* @fin-admin */

@@ -563,6 +563,7 @@ async function pousseConfiguration(auto){
   }
 }
 
+/* @admin — la sauvegarde et la restauration de la configuration */
 /* ============================================================
    La sauvegarde emportée
 
@@ -693,3 +694,4 @@ function brancheSauvegarde(){
   r.onclick = () => { f.value = ""; f.click(); };
   f.onchange = () => { if (f.files && f.files[0]) litSauvegarde(f.files[0]); };
 }
+/* @fin-admin */
