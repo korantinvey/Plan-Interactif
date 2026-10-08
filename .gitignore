@@ -29,6 +29,19 @@ deno.lock
 
 outils/chk.js
 
+# Les pages fabriquées : Cloudflare les construit au déploiement
+# (`wrangler.jsonc` `build`), la CI pour ses essais, chacun chez soi par
+# `npm run construire`. Les versionner faisait d'une ligne de gabarit mille
+# lignes de diff, et de deux branches un conflit sur du texte que personne
+# n'avait tapé. Restent versionnées les deux parties de `web/` qui ne se
+# refont qu'avec le réseau : les polices et la bibliothèque du dessin.
+/web/*
+!/web/polices/
+!/web/bibliotheques/
+outils/tpl-multi.html
+# la version des pages remise au Worker, écrite par la construction
+src/pages.mjs
+
 # État local de `wrangler dev` : caches, bases de simulation, paquet temporaire.
 # Il se refait tout seul, et ne décrit que la machine qui l'a produit.
 .wrangler/
