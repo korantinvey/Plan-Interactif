@@ -7,5 +7,10 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs } from "./texte.mjs";
+import { CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON }
+  from "./session.mjs";
 
-Object.assign(globalThis, { $, esc, separeValeurs });
+Object.assign(globalThis, {
+  $, esc, separeValeurs,
+  CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON,
+});

@@ -16,8 +16,8 @@
 /* `$`, `esc` et `separeValeurs` viennent des modules, posés avant ce
    script : voir `outils/gabarit/modules/console.mjs`. */
 
-const CLE_CFG = "console-config";
-const CLE_SESSION = "console-session";
+/* Les casiers du projet et de la session, la lecture d'un jeton et son
+   échange sont communs avec le plan : `modules/session.mjs`. */
 
 let CFG = null, SESSION = null;
 try { CFG = JSON.parse(localStorage.getItem(CLE_CFG) || "null"); } catch (e) {}
@@ -41,53 +41,15 @@ function entetes(json) {
   return h;
 }
 
-/** La charge utile d'un jeton. Elle se lit sans le serveur — seule la
- *  signature demande sa clé, et c'est lui qui la vérifiera à chaque appel. */
-function contenuJeton(jeton) {
-  try {
-    const p = String(jeton || "").split(".")[1];
-    if (!p) return null;
-    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/")));
-  } catch (e) { return null; }
-}
-
-/** Secondes restantes au jeton. Illisible, on le suppose bon : le serveur
- *  tranchera, et son refus déclenchera le renouvellement. */
-function resteJeton() {
-  const exp = contenuJeton(SESSION?.access_token)?.exp;
-  return typeof exp === "number" ? exp - Date.now() / 1000 : Infinity;
-}
-
-/* Un renouvellement à la fois. La console lance ses appels de front — le
-   profil, les salons, les plans — et un jeton de renouvellement ne sert qu'une
-   fois : trois échanges simultanés en perdraient deux, et la session avec. */
-let renouvellement = null;
-
+/** Renouvelle la session de la console : l'échange est commun avec le plan,
+ *  la session qu'il rend est celle de cette page. */
 function renouvelle() {
   if (!SESSION?.refresh_token) return Promise.resolve(false);
-  if (!renouvellement) {
-    renouvellement = (async () => {
-      try {
-        const r = await fetch(CFG.url + "/auth/v1/token?grant_type=refresh_token", {
-          method: "POST",
-          headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
-          body: JSON.stringify({ refresh_token: SESSION.refresh_token }),
-        });
-        const j = await r.json().catch(() => null);
-        if (!r.ok || !j?.access_token) return false;
-        SESSION = j;
-        // un stockage refusé ne doit pas coûter la session en cours
-        try { localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION)); } catch (e) {}
-        return true;
-      } catch (e) {
-        // une coupure du réseau n'est pas une session finie : on ne déconnecte pas
-        return false;
-      } finally {
-        renouvellement = null;
-      }
-    })();
-  }
-  return renouvellement;
+  return echangeSession(CFG, SESSION).then((neuve) => {
+    if (!neuve) return false;
+    SESSION = neuve;
+    return true;
+  });
 }
 
 /**
@@ -102,7 +64,7 @@ async function appel(url, options = {}) {
     ...options,
     headers: { ...entetes(!!options.body), ...(options.headers || {}) },
   });
-  if (SESSION?.access_token && resteJeton() < 60) await renouvelle();
+  if (SESSION?.access_token && resteJeton(SESSION.access_token) < RESTE_JETON) await renouvelle();
   const r = await envoie();
   if (r.status !== 401 || !SESSION?.refresh_token) return r;
   return (await renouvelle()) ? envoie() : r;

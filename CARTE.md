@@ -140,17 +140,17 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 472 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 434 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`entetes` 37 · `contenuJeton` 46 · `resteJeton` 56 · `renouvelle` 66 · `appel` 100
-`rest` 111 · `verseModale` 141 · `ouvreModale` 147 · `verrouilleModale` 170
-`fermeModale` 172 · `gardeLaPlace` 195 · `demande` 200 · `confirme` 222 · `ecranConfig` 233
-`ecranConnexion` 261 · `deconnecte` 324 · `signale` 335 · `bloc` 356 · `grille` 374
-`idCompte` 418 · `themeSombre` 428 · `initialesDe` 448
+`entetes` 37 · `renouvelle` 46 · `appel` 62 · `rest` 73 · `verseModale` 103
+`ouvreModale` 109 · `verrouilleModale` 132 · `fermeModale` 134 · `gardeLaPlace` 157
+`demande` 162 · `confirme` 184 · `ecranConfig` 195 · `ecranConnexion` 223 · `deconnecte` 286
+`signale` 297 · `bloc` 318 · `grille` 336 · `idCompte` 380 · `themeSombre` 390
+`initialesDe` 410
 
 Éléments :
 
@@ -594,20 +594,19 @@ Fonctions :
 `sectionSelection` 362 · `sectionFond` 418 · `ligneCouleur` 476 · `rangSecteur` 496
 `rangSous` 509 · `defautCouleur` 531
 
-### `_pousse.html` — 697 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pousse.html` — 591 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · Enregistrer la configuration
-- l.567 · La sauvegarde emportée
+- l.461 · La sauvegarde emportée
 
 Fonctions :
 
-`accesBase` 57 · `autoDispo` 69 · `enRetard` 72 · `etatCourant` 85 · `majAttente` 96
-`compteRescapes` 110 · `ditAlerte` 123 · `ditEtat` 167 · `programmeEnvoi` 174
-`programmePublication` 188 · `rattrapeRetard` 195 · `envoie` 200 · `presse` 213
-`resteSession` 247 · `renouvelleSession` 263 · `base` 287 · `identifiants` 335
-`reglagesSeuls` 350 · `noteReglagesCharges` 361 · `oublieCache` 375
-`pousseConfiguration` 394 · `sauvegardeCourante` 587 · `telechargeSauvegarde` 609
-`appliqueSauvegarde` 632 · `litSauvegarde` 666 · `brancheSauvegarde` 688
+`autoDispo` 63 · `enRetard` 66 · `etatCourant` 79 · `majAttente` 90 · `compteRescapes` 104
+`ditAlerte` 117 · `ditEtat` 161 · `programmeEnvoi` 168 · `programmePublication` 182
+`rattrapeRetard` 189 · `envoie` 194 · `presse` 207 · `identifiants` 229
+`reglagesSeuls` 244 · `noteReglagesCharges` 255 · `oublieCache` 269
+`pousseConfiguration` 288 · `sauvegardeCourante` 481 · `telechargeSauvegarde` 503
+`appliqueSauvegarde` 526 · `litSauvegarde` 560 · `brancheSauvegarde` 582
 
 ### `_rappels.html` — 648 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -804,7 +803,7 @@ Fonctions :
 `majAnimationWebgl` 1540 · `animeWebgl` 1548 · `objetSous` 1571 · `cibleWebgl` 1578
 `priseWebgl` 1585 · `libelleSousWebgl` 1590 · `rectEcranWebgl` 1595
 
-### `modules/console.mjs` — 14 l. → console
+### `modules/console.mjs` — 20 l. → console
 
 - l.1 · Point d'entrée de la console
 
@@ -886,7 +885,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 48 l. → plan, plan-admin
+### `modules/plan.mjs` — 50 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -899,7 +898,7 @@ Fonctions :
 `qrMotsBruts` 36 · `qrMotsUtiles` 45 · `qrMul` 56 · `qrGenerateur` 59 · `qrReste` 70
 `qrAlignements` 81 · `qrTrame` 97 · `qrChemin` 286 · `qrSvg` 308
 
-### `modules/rapport.mjs` — 11 l. → rapport
+### `modules/rapport.mjs` — 16 l. → rapport
 
 - l.1 · Point d'entrée du rapport
 
@@ -910,6 +909,14 @@ Fonctions :
 Fonctions :
 
 `cheminDuSalon` 26 · `cheminPartageable` 37
+
+### `modules/session.mjs` — 133 l. → plan, plan-admin, console, rapport
+
+- l.1 · La session de l'exploitant, et l'appel à la base
+
+Fonctions :
+
+`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
 
 ### `modules/sur.mjs` — 190 l. → plan, plan-admin
 
