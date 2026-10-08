@@ -614,7 +614,21 @@ function signaturesDe(fichierDico) {
   _signatures.set(fichierDico, sig);
   return sig;
 }
-const modulePresent = (html, fichierDico) => signaturesDe(fichierDico).some((l) => html.includes(l));
+/* Un module de `gabarit/modules/` n'a pas de ligne à retrouver telle quelle :
+   esbuild le réimprime. Il laisse en revanche, dans le script qu'il assemble,
+   le chemin de chaque module qu'il y verse — et c'est ce chemin qu'on cherche,
+   avant que la page perde ses commentaires. Son dictionnaire porte son nom
+   (`outils/anglais/mesure.js` pour `modules/mesure.mjs`). */
+const repereModule = (fichierDico) => {
+  const nom = fichierDico.replace(/\.js$/, "");
+  return fs.existsSync(path.join(GABARIT, "modules", nom + ".mjs"))
+    ? "// outils/gabarit/modules/" + nom + ".mjs" : null;
+};
+const modulePresent = (html, fichierDico) => {
+  const repere = repereModule(fichierDico);
+  if (repere) return html.includes(repere);
+  return signaturesDe(fichierDico).some((l) => html.includes(l));
+};
 
 function dictionnairePour(html, dico = chargeDictionnaire()) {
   const dansPage = presente(corpusDe(html));

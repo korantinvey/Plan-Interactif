@@ -108,6 +108,10 @@ Fonctions :
 `ecritDepartBorne` 218 · `rayonBorne` 231 · `dessineBorne` 236 · `rafraichitBorne` 252
 `rempliBorne` 257 · `relanceRepos` 286 · `reposeLaBorne` 293 · `demarreBorne` 329
 
+### `_branche-mesure.html` — 10 l.
+
+- l.1 · 13. Mesure d'utilisation — le branchement
+
 ### `_chaleur.html` — 638 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
@@ -490,16 +494,15 @@ Fonctions :
 `annoncePlan` 2613 · `celluleUtile` 2649 · `dilatationPour` 2712 · `dilatationDuJour` 2728
 `litLaCharge` 2765 · `chargeCellule` 2785
 
-### `_js.html` — 592 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 566 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.78 · 1. Index global — la recherche porte sur tous les pavillons
+- l.52 · 1. Index global — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`cheminDuSalon` 34 · `cheminPartageable` 45 · `P` 75 · `nomDeLaZone` 95
-`nomsAnglaisDesZones` 97 · `texteProduits` 110 · `indexe` 114 · `chronoConf` 354
-`confsDuPlan` 359 · `indexeConferences` 377 · `rangeConferences` 455 · `poseFavicon` 502
-`poseLogoSalon` 528 · `poseTonDeLaBarre` 565
+`P` 49 · `nomDeLaZone` 69 · `nomsAnglaisDesZones` 71 · `texteProduits` 84 · `indexe` 88
+`chronoConf` 328 · `confsDuPlan` 333 · `indexeConferences` 351 · `rangeConferences` 429
+`poseFavicon` 476 · `poseLogoSalon` 502 · `poseTonDeLaBarre` 539
 
 Éléments :
 
@@ -508,19 +511,6 @@ Fonctions :
 ### `_langue.js` — 792 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
-
-### `_mesure.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
-
-- l.1 · 13. Mesure d'utilisation
-
-Fonctions :
-
-`mesureOuverte` 61 · `jetonMesure` 64 · `jourIso` 103 · `echeanceMesure` 104
-`jetonRetenu` 128 · `supportMesure` 177 · `renouvelleVisiteur` 228 · `fraisEnFile` 295
-`litLaFile` 299 · `ecritLaFile` 312 · `metEnFile` 327 · `retireDeLaFile` 338
-`chargeDe` 349 · `envoiePaquet` 362 · `beaconne` 387 · `pousseLaFile` 408
-`envoieMesures` 427 · `mesure` 464 · `effaceJetonsVisiteur` 530 · `refuseMesure` 548
-`ouvreConfidentialite` 575
 
 ### `_modales.html` — 191 l. → plan-admin.html
 
@@ -858,13 +848,35 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 157 · `toileMarque` 223 · `vignetteDeLogo` 247
 
-### `modules/plan.mjs` — 23 l. → plan
+### `modules/mesure.mjs` — 658 l. → plan
+
+- l.1 · 13. Mesure d'utilisation
+
+Fonctions :
+
+`mesureOuverte` 69 · `jetonMesure` 72 · `jourIso` 111 · `echeanceMesure` 112
+`jetonRetenu` 137 · `supportMesure` 186 · `renouvelleVisiteur` 238 · `fraisEnFile` 305
+`litLaFile` 309 · `ecritLaFile` 322 · `metEnFile` 337 · `retireDeLaFile` 348
+`chargeDe` 359 · `envoiePaquet` 372 · `beaconne` 397 · `pousseLaFile` 418
+`envoieMesures` 437 · `mesure` 474 · `brancheLesEnvois` 489 · `effaceJetonsVisiteur` 544
+`refuseMesure` 562 · `ouvreConfidentialite` 589 · `brancheLaNotice` 639
+`brancheMesure` 654
+
+### `modules/plan.mjs` — 28 l. → plan
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
 ### `modules/rapport.mjs` — 11 l. → rapport
 
 - l.1 · Point d'entrée du rapport
+
+### `modules/salon.mjs` — 43 l. → plan
+
+- l.1 · Le salon et la page : ce que l'adresse et la construction disent
+
+Fonctions :
+
+`cheminDuSalon` 26 · `cheminPartageable` 37
 
 ### `modules/texte.mjs` — 25 l. → plan, console, rapport
 

@@ -44,6 +44,14 @@
    aucune API à appeler, et la page d'administration, où ce qu'on mesurerait
    serait l'exploitant en train de préparer son salon.
    ============================================================ */
+import { $ } from "./dom.mjs";
+import { API, SLUG, BORNE } from "./salon.mjs";
+
+/* Ce que le module demande à la page sans pouvoir l'importer : le code soudé
+   le lui confie au branchement (`brancheMesure`). Rien de cela ne sert avant. */
+/** @type {{ salon: () => (string|null), ouvreModale: (titre: string, remplit: Function, boutons?: any[], genre?: string) => void }} */
+let _page = { salon: () => null, ouvreModale: () => {} };
+
 const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
 const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
   document.documentElement.dataset.role !== "admin");
@@ -58,10 +66,10 @@ const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
 const CLE_REFUS = "plan-mesure-refusee";
 let MESURE_REFUSEE = false;
 try { MESURE_REFUSEE = localStorage.getItem(CLE_REFUS) === "1"; } catch (e) {}
-const mesureOuverte = () => MESURE_ACTIVE && !MESURE_REFUSEE;
+export const mesureOuverte = () => MESURE_ACTIVE && !MESURE_REFUSEE;
 
 /** Un jeton de quelques caractères, tiré du générateur du navigateur. */
-function jetonMesure(){
+export function jetonMesure(){
   const t = new Uint8Array(9);
   (crypto && crypto.getRandomValues ? crypto : { getRandomValues: a => {
     for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
@@ -125,6 +133,7 @@ function echeanceMesure(){
  * Le jeton est rangé avec son échéance, `{"jeton": …, "echeance": "AAAA-MM-JJ"}`.
  * Une valeur nue est un jeton d'avant l'échéance écrite : elle reçoit la sienne.
  */
+/** @param {string} cle @param {"localStorage" | "sessionStorage"} casier */
 function jetonRetenu(cle, casier){
   try {
     const ou = window[casier];
@@ -174,14 +183,15 @@ const SUPPORTS = ["web", "integre", "pwa", "appli"];
  * Rien de tout cela ne dit quoi que ce soit du visiteur : c'est la façon dont
  * la page est affichée, et elle ne prend que quatre valeurs.
  */
-function supportMesure(){
+export function supportMesure(){
   const dit = new URLSearchParams(location.search).get("support");
   if (dit && SUPPORTS.includes(dit)) return dit;
   if (/^(capacitor|ionic|app|tauri):$/.test(location.protocol)) return "appli";
   try {
     if (window.top !== window.self) return "integre";
   } catch (e) { return "integre"; }
-  if (navigator.standalone === true) return "pwa";
+  // propre à Safari sur iOS, et absent des types du navigateur
+  if (/** @type {any} */ (navigator).standalone === true) return "pwa";
   try {
     if (["standalone", "fullscreen", "minimal-ui", "window-controls-overlay"]
         .some(m => matchMedia("(display-mode: " + m + ")").matches)) return "pwa";
@@ -225,7 +235,7 @@ if (mesureOuverte()){
 }
 
 /** Le visiteur suivant d'une borne : un autre jeton, et une visite de plus. */
-function renouvelleVisiteur(){
+export function renouvelleVisiteur(){
   if (!mesureOuverte()) return;
   /* Ce qui attendait de partir appartient encore au visiteur précédent : le
      paquet s'en va sous son jeton, sinon ses gestes seraient mis au compte du
@@ -461,7 +471,7 @@ function envoieMesures(dernier){
  * connaît pas plutôt que de l'enregistrer sous un nom approximatif, et une
  * cible que l'événement ne porte pas est écartée de même.
  */
-function mesure(genre, canal, cible, objet){
+export function mesure(genre, canal, cible, objet){
   if (!mesureOuverte()) return;
   const g = { genre: genre };
   if (canal) g.canal = canal;
@@ -473,7 +483,11 @@ function mesure(genre, canal, cible, objet){
   _envoiDiffere = setTimeout(() => envoieMesures(), MESURE_DELAI);
 }
 
-if (MESURE_ACTIVE){
+/* La visite comptée et les envois de fin de page : au branchement, et non à
+   l'évaluation du module — ils partaient à cette place-là du script soudé, et
+   les écouteurs de fermeture gardent ainsi leur rang parmi ceux du plan. */
+function brancheLesEnvois(){
+  if (!MESURE_ACTIVE) return;
   /* Une visite par session d'onglet. Rouvrir le plan après l'avoir fermé en
      fait une seconde ; naviguer dedans pendant deux heures, une seule.
 
@@ -573,8 +587,8 @@ function refuseMesure(refus){
 }
 
 function ouvreConfidentialite(){
-  const salon = DATA && DATA.evenement;
-  ouvreModale("Confidentialité", fenetre => {
+  const salon = _page.salon();
+  _page.ouvreModale("Confidentialité", fenetre => {
     const corps = document.createElement("div");
     corps.className = "notice";
     fenetre.appendChild(corps);
@@ -620,10 +634,25 @@ function ouvreConfidentialite(){
   }, [{ libelle: "Fermer" }]);
 }
 
-if (MESURE_ACTIVE){
+/* Ce que la page fait au branchement, à la place que le module tenait dans le
+   script soudé : le lien « Confidentialité » posé au pied de la liste. */
+function brancheLaNotice(){
+  if (!MESURE_ACTIVE) return;
   // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un
   // salon, et les paquets qu'un autre plan n'avait pas pu envoyer
   if (MESURE_REFUSEE){ effaceJetonsVisiteur(); ecritLaFile([]); }
   $("piedSide").hidden = false;
   $("btnConfidentialite").onclick = ouvreConfidentialite;
+}
+
+/**
+ * Le branchement de la mesure, appelé par le script soudé à la place que ce
+ * module y tenait (`_branche-mesure.html`) : il lui confie ce que le module ne
+ * peut pas importer — le nom du salon, une fois les données arrivées, et la
+ * fenêtre commune — puis compte la visite et pose la notice.
+ */
+export function brancheMesure(page){
+  _page = page;
+  brancheLesEnvois();
+  brancheLaNotice();
 }

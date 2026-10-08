@@ -299,20 +299,22 @@ const PRECHARGE = [
 const tpl = fs.readFileSync(D + "/tpl-multi.html", "utf8");
 const auth = fs.readFileSync(D + "/gabarit/_auth-plan.html", "utf8");
 
-/** Branche la page sur l'API plutôt que sur des données figées. */
+/** Branche la page sur l'API plutôt que sur des données figées. Les réglages
+ *  se posent sur le script des modules : c'est `modules/salon.mjs` qui les lit. */
 function connecte(t) {
-  const marque = '<script>\n/* Sans viewport';
-  if (t.indexOf(marque) < 0) throw new Error("balise de script introuvable");
+  const marque = '<script data-modules="plan">';
+  if (t.split(marque).length !== 2) throw new Error("script des modules introuvable, ou en double");
   return t
     .replace('<script id="data" type="application/json">/*__DATA__*/</script>',
              '<script id="data" type="application/json"></script>')
-    .replace(marque, '<script data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">\n/* Sans viewport');
+    .replace(marque, '<script data-modules="plan" data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">');
 }
 
 /* Les modules (`outils/gabarit/modules/`) passent avant le code soudé, qui
    trouve leurs noms dans l'objet global : leur script se pose devant le sien.
    Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
-const scriptDesModules = (entree) => "<script>\n" + modules.assemble(entree) + "</script>\n";
+const scriptDesModules = (entree) =>
+  '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
 const MODULES_PLAN = scriptDesModules("plan");
 function poseModulesDuPlan(t) {
   const marque = "<script>\n/* Sans viewport";
