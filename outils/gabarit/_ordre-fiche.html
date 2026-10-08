@@ -632,24 +632,6 @@ const enregistreConf = () => {
   programmePublication();
 };
 
-/** Une couleur Klipso « rgb(r,g,b) » vers la notation attendue par le
- *  sélecteur de couleur. */
-const rgbHex = (s) => {
-  const m = String(s || "").match(/\d+/g);
-  if (!m || m.length < 3) return null;
-  return "#" + m.slice(0, 3)
-    .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
-};
-
-const hexa = (v) => "#" + v.map(c => c.toString(16).padStart(2, "0")).join("");
-
-/** Luminance relative d'un triplet, au sens du calcul de contraste : 0 pour le
- *  noir, 1 pour le blanc, en passant par la courbe de l'œil. */
-const luminance = (v) => [0.2126, 0.7152, 0.0722].reduce((a, poids, i) => {
-  const s = v[i] / 255;
-  return a + poids * (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
-}, 0);
-
 /**
  * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
  * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
