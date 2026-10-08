@@ -26,12 +26,6 @@ npm run construire   # reconstruit web/
 npm run verifie      # reconstruit, et sort en erreur si web/ était en retard
 ```
 
-Les pages de `web/` sont **minifiées** par `genere.js` (`minifie`) : les
-commentaires du gabarit pesaient plus que le code, et partaient chez chaque
-visiteur. Aucun nom n'est raccourci. Pour lire une page servie,
-`PLAN_LISIBLE=1 node outils/genere.js` la construit sans rien retirer — à ne
-pas valider, `npm run verifie` y verrait un retard.
-
 Les pages reconstruites font partie du commit. Le workflow `Pages` rattrape
 l'oubli — il reconstruit et valide sur la branche poussée — mais ne comptez pas
 dessus : il ajoute alors un commit par-dessus le vôtre, que vous devrez tirer
@@ -228,6 +222,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `application()` pour le seul plan public ; nom, icônes et adresse de départ par salon dans `src/index.mjs` `manifeste`, `appDuSalon` (`MARQUE`), qui les tient de `plan-public?slug=…&app=1` (`TTL_APP`, réponse non gardée en amont) ; nom et icône sur l'écran d'accueil d'iOS par `_installation.html` `nommeApplication` |
 | une application par salon, qui n'ouvre que le sien — portée du manifeste | adresse `/plan-<salon>` : `src/index.mjs` `cheminDuSalon`, `CHEMIN_SALON`, `pageDuSalon`, écrite dans `start_url`, `scope` et `id` par `manifeste` ; lue par `_js.html` `SLUG` et par le bloc en tête de `outils/pwa.js` `application()` ; ramenée au plan public pour ce qui se partage par `_js.html` `cheminPartageable` (`_partage.html`, `_ici.html`) ; visée par `_installation.html` `adresseApplication` (`intent://`) ; clé du cache hors ligne ramenée à `/plan` dans `_sw.js` `navigation` |
 | icône et nom de l'application d'un salon — déposer un logo, ou garder celui du produit | `_application.html` (`blocApplication`, posé dans `_volets.html` `voletAdmin`) ; deux images d'un fichier par `reduitIconeApp`, fond du masque par `fondPourIconeApp` ; colonnes `icone_app`, `icone_app_masque`, `nom_app` et empreinte calculée `icone_app_version`, migration `l_icone_et_le_nom_de_l_application_installee` ; servies par `plan-public` (`?icone=1`) et relayées par `src/index.mjs` `iconeApp` (`/api/icone`) |
+| commentaires retirés des pages servies — le gabarit garde les siens | `outils/genere.js` `epure` (scripts situés par acorn puis découpés sans réimpression, styles et balisage par `epureStyle`, `epureBalisage`) ; appliqué par `page()` et à `sw.js`, `config.js`, `console.css`. Un commentaire n'atteint donc jamais le visiteur — y nommer une personne reste à éviter : le dépôt, lui, le garde |
 | quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
 | fenêtre qui invite le visiteur à installer le plan | `_installation.html` — moment `essaieInvitation` (lancé par `_admin2.html` `demarre`), façon par navigateur `faconInstallation`, confirmation après installation `ouvreInstalle` ; case `caseInstallation`, posée par `_volets.html` `voletAdmin`. Ne jamais y écrire `rel="manifest"` entre guillemets : la construction y reconnaît la page installable |
 | rappel au visiteur qui a l'application et lit le navigateur | `_installation.html` § L'application déjà posée sur l'appareil — ce que le rappel peut proposer ici `faconRappel` (« ouvrir » sur Android, « suggerer » sur iOS, où rien ne dit qu'elle est là), `appliInstallee`, démenti du système `verifieApplication`, ouverture `lanceApplication` (`intent://`) ; fenêtre `ouvreRappel` dans ses deux formes et son repli `ouvreRetrouve`, aiguillées par `essaieInvitation` ; délai `RAPPEL_DELAI` ; `related_applications` du manifeste dans `outils/pwa.js`, adressé par `src/index.mjs` `manifeste` |

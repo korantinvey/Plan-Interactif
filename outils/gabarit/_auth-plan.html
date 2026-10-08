@@ -158,7 +158,7 @@ async function litProfilA(cfg, session){
   } catch (e) { PROFIL_ADMIN = false; }
 }
 
-/** « korantin.vey@… » donne « KV » ; à défaut, les deux premières lettres. */
+/** « jeanne.martin@… » donne « JM » ; à défaut, les deux premières lettres. */
 function initialesDe(mail){
   const local = String(mail || "").split("@")[0];
   const mots = local.split(/[.\-_+]+/).filter(Boolean);

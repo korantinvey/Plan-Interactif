@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1527 l.
+### `_admin1.html` — 1527 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 
@@ -33,7 +33,7 @@ Fonctions :
 `policePrete` 1395 · `policeDesNoms` 1413 · `posePoliceLibelles` 1442
 `appliqueModele` 1474 · `habilleModale` 1518
 
-### `_admin2.html` — 271 l.
+### `_admin2.html` — 271 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
@@ -43,7 +43,7 @@ Fonctions :
 `CLE_VERSION` 170 · `versionRetenue` 171 · `retientVersion` 174 · `demandePlan` 198
 `charge` 222
 
-### `_aimants.html` — 486 l.
+### `_aimants.html` — 486 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 quater. Dessiner juste — cote, aimants, répétition
 
@@ -57,7 +57,7 @@ Fonctions :
 `reprendTaille` 386 · `dupliqueForme` 407 · `pousseForme` 432 · `ecritDimensions` 449
 `appliqueDimension` 468
 
-### `_application.html` — 453 l.
+### `_application.html` — 453 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 19. L'application installée — son icône et son nom
 
@@ -67,7 +67,7 @@ Fonctions :
 `appDuSalon` 193 · `iconeDeLApplication` 196 · `nomAppDefaut` 206 · `ecritApplication` 221
 `blocApplication` 262
 
-### `_auth-plan.html` — 204 l.
+### `_auth-plan.html` — 204 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
@@ -81,7 +81,7 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_batiments.html` — 558 l.
+### `_batiments.html` — 558 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
@@ -96,7 +96,7 @@ Fonctions :
 `ajouteBatiments` 394 · `boutonRecale` 478 · `pictoRecale` 487 · `calageRelu` 504
 `rouvreCalage` 530 · `mentionOsm` 553
 
-### `_borne.html` — 370 l.
+### `_borne.html` — 370 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. La borne interactive — un plan qui sait où il est
 
@@ -108,7 +108,7 @@ Fonctions :
 `ecritDepartBorne` 218 · `rayonBorne` 231 · `dessineBorne` 236 · `rafraichitBorne` 252
 `rempliBorne` 257 · `relanceRepos` 286 · `reposeLaBorne` 293 · `demarreBorne` 329
 
-### `_chaleur.html` — 636 l.
+### `_chaleur.html` — 636 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.434 · Remise à zéro des compteurs
@@ -126,7 +126,7 @@ Fonctions :
 
 `#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
-### `_classeur.html` — 234 l.
+### `_classeur.html` — 234 l. → admin-plans.html, rapport.html
 
 - l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
 
@@ -137,7 +137,7 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 499 l.
+### `_console-base.html` — 499 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -163,7 +163,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3374 l.
+### `_console-js.html` — 3374 l. → admin-plans.html
 
 - l.959 · Provenance des données
 - l.1096 · Contenu de la fiche détail
@@ -199,7 +199,7 @@ Fonctions :
 
 - l.666 · Page de rapport
 
-### `_dessin.html` — 2537 l.
+### `_dessin.html` — 2537 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -240,7 +240,7 @@ Fonctions :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `_edition.html` — 650 l.
+### `_edition.html` — 650 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
@@ -256,7 +256,7 @@ Fonctions :
 
 ### `_entete.html` — 6 l.
 
-### `_environs.html` — 1652 l.
+### `_environs.html` — 1652 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -281,7 +281,7 @@ Fonctions :
 `majCalage` 1291 · `appliqueCalage` 1313 · `tourneCalage` 1320 · `construitCalage` 1326
 `ouvreCalage` 1491 · `fermeCalage` 1500 · `voletEnvirons` 1528
 
-### `_export.html` — 215 l.
+### `_export.html` — 215 l. → admin-plans.html, rapport.html
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
 
@@ -290,7 +290,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_fiche.html` — 1548 l.
+### `_fiche.html` — 1548 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 7. Sélection et fiche
 
@@ -312,7 +312,7 @@ Fonctions :
 
 `#dGo` · `#dItin`
 
-### `_geometrie.html` — 1064 l.
+### `_geometrie.html` — 1064 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 octies. Reprendre à la main la géométrie d'un emplacement
 
@@ -335,7 +335,7 @@ Fonctions :
 `ajoutPointerUp` 932 · `geometriePointerDown` 952 · `accrocheGeo` 983
 `geometriePointerMove` 985 · `geometriePointerUp` 1036
 
-### `_gestes.html` — 936 l.
+### `_gestes.html` — 936 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 8. Interactions du plan
 - l.436 · Ce que les tiroirs lisent d'un geste
@@ -398,7 +398,7 @@ Fonctions :
 
 `#reessaie`
 
-### `_ici.html` — 572 l.
+### `_ici.html` — 572 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 septies. « Vous êtes ici » — le code affiché dans le hall
 
@@ -411,13 +411,13 @@ Fonctions :
 `ouvreCodeIci` 428 · `boutonsCodeIci` 480 · `telechargeAfficheIci` 504
 `imprimeAfficheIci` 522 · `boutonCodeIci` 551
 
-### `_index.html` — 45 l.
+### `_index.html` — 45 l. → index.html
 
 Éléments :
 
 `#secours`
 
-### `_installation.html` — 937 l.
+### `_installation.html` — 937 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
@@ -435,7 +435,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3366 l.
+### `_itineraire.html` — 3366 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -469,7 +469,7 @@ Fonctions :
 `viseItineraire` 3200 · `visePoi` 3206 · `visePoint` 3212 · `ouvreItineraire` 3244
 `fermeItineraire` 3272 · `versItineraire` 3282 · `versItineraireDe` 3285
 
-### `_journee.html` — 2797 l.
+### `_journee.html` — 2797 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -490,7 +490,7 @@ Fonctions :
 `annoncePlan` 2613 · `celluleUtile` 2649 · `dilatationPour` 2712 · `dilatationDuJour` 2728
 `litLaCharge` 2765 · `chargeCellule` 2785
 
-### `_js.html` — 593 l.
+### `_js.html` — 593 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 
@@ -505,11 +505,11 @@ Fonctions :
 
 `#data`
 
-### `_langue.js` — 792 l.
+### `_langue.js` — 792 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
-### `_marque.html` — 281 l.
+### `_marque.html` — 281 l. → admin-plans.html, plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · La marque sans le vide qui l'entoure
 
@@ -518,7 +518,7 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 156 · `toileMarque` 222 · `vignetteDeLogo` 246
 
-### `_mesure.html` — 629 l.
+### `_mesure.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -531,7 +531,7 @@ Fonctions :
 `envoieMesures` 427 · `mesure` 464 · `effaceJetonsVisiteur` 530 · `refuseMesure` 548
 `ouvreConfidentialite` 575
 
-### `_modales.html` — 189 l.
+### `_modales.html` — 189 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Fenêtres modales : confirmation et réorganisation des calques
 
@@ -540,7 +540,7 @@ Fonctions :
 `verseModale` 22 · `ouvreModale` 37 · `fermeModale` 57 · `confirme` 72 · `deplaceVers` 90
 `versExtremite` 102 · `remplitOrdre` 110 · `ouvreOrdre` 180
 
-### `_mode-admin.html` — 1151 l.
+### `_mode-admin.html` — 1151 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 10. Mode administration
 - l.111 · La fiche d'une zone organisateur
@@ -563,7 +563,7 @@ Fonctions :
 
 `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_motdepasse.html` — 249 l.
+### `_motdepasse.html` — 249 l. → motdepasse.html
 
 - l.61 · Poser un mot de passe
 
@@ -577,14 +577,14 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_ordre-fiche.html` — 679 l.
+### `_ordre-fiche.html` — 679 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Fonctions :
 
 `clesFiche` 25 · `voletOrdre` 42 · `enregistreConf` 629 · `rgbHex` 636 · `hexa` 643
 `luminance` 647 · `ecarte` 661 · `joli` 676
 
-### `_parcours.html` — 758 l.
+### `_parcours.html` — 758 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -602,7 +602,7 @@ Fonctions :
 `groupeParcours` 604 · `remplitParcours` 613 · `ouvreParcours` 702 · `fermeParcours` 714
 `videLeParcours` 730
 
-### `_partage.html` — 766 l.
+### `_partage.html` — 766 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -615,7 +615,7 @@ Fonctions :
 `accueilleParcoursPartage` 580 · `adoptePartage` 658 · `parcoursACopier` 693
 `ouvreGardeParcours` 708 · `demandeGardeParcours` 738 · `poseGardeParcours` 751
 
-### `_pile.html` — 538 l.
+### `_pile.html` — 538 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : deux sections, chacune rangée par nom
@@ -629,7 +629,7 @@ Fonctions :
 `construitPanneau` 117 · `sectionSelection` 365 · `sectionFond` 421 · `ligneCouleur` 479
 `rangSecteur` 499 · `rangSous` 512 · `defautCouleur` 534
 
-### `_pousse.html` — 695 l.
+### `_pousse.html` — 695 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · Enregistrer la configuration
 - l.566 · La sauvegarde emportée
@@ -644,7 +644,7 @@ Fonctions :
 `pousseConfiguration` 394 · `sauvegardeCourante` 586 · `telechargeSauvegarde` 608
 `appliqueSauvegarde` 631 · `litSauvegarde` 665 · `brancheSauvegarde` 687
 
-### `_rappels.html` — 648 l.
+### `_rappels.html` — 648 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -666,7 +666,7 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 444 l.
+### `_rapport-js.html` — 444 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
@@ -701,7 +701,7 @@ Fonctions :
 `caseNumero` 965 · `sousLigne` 985 · `liste` 999 · `marqueChoisie` 1127
 `prechargeMarque` 1153 · `prechargeLesVignettes` 1210 · `chargeUnLot` 1256
 
-### `_reglages.html` — 924 l.
+### `_reglages.html` — 924 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Fonctions :
 
@@ -728,7 +728,7 @@ Fonctions :
 `ancre` 492 · `place` 493 · `libelles` 495 · `decaleLibelle` 582 · `facteurLibelle` 583
 `libelleForce` 584 · `libelleZone` 587 · `libelleEmplacement` 606
 
-### `_sponsor.html` — 569 l.
+### `_sponsor.html` — 569 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 18. Le sponsor — un logo le temps du chargement
 
@@ -751,7 +751,7 @@ Fonctions :
 
 ### `_styles-plan.css` — 1600 l. → plan-admin.html, plan-smcl.html, plan.html
 
-### `_suggestion.html` — 683 l.
+### `_suggestion.html` — 683 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
 
@@ -763,7 +763,7 @@ Fonctions :
 `poseSuggestion` 302 · `fenetreSuggestion` 316 · `relevePalmares` 355 · `etiquetteSugg` 375
 `voletSuggestion` 385
 
-### `_sw.js` — 562 l. → sw.js
+### `_sw.js` — 562 l.
 
 Fonctions :
 
@@ -771,7 +771,7 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 903 l.
+### `_tutoriel.html` — 903 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -800,7 +800,7 @@ Fonctions :
 `vignetteDistListe` 760 · `vignetteDistFiche` 774 · `salonDitSes` 794 · `coinPris` 801
 `voletDist` 824 · `voletApparence` 989
 
-### `_vue.html` — 475 l.
+### `_vue.html` — 475 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 6. Vue
 
@@ -813,7 +813,7 @@ Fonctions :
 `stoppeZoom` 363 · `glisseVersVise` 369 · `glisseVers` 411 · `rectVisee` 433 · `zoom` 453
 `echelle` 466
 
-### `_webgl.html` — 1602 l.
+### `_webgl.html` — 1602 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
