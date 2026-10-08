@@ -22,7 +22,7 @@
  * parlent alors de l'essai, pas du plan.
  *
  *   node outils/essais/charge.js --base https://… --salon smcl-2026
- *        [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee]
+ *        [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee] [--journal bilan.txt] [--mesures-seules]
  */
 "use strict";
 
@@ -41,6 +41,12 @@ const MONTEE = Number(opt("montee", 60)) * 1000;
 const DUREE = Number(opt("duree", 300)) * 1000;
 const ECRIRE = opt("ecrire", false) === true;
 const JOURNEE = opt("journee", false) === true;
+const JOURNAL = opt("journal", "");
+/* Les mesures seules, sans télécharger les pages : c'est le chemin qui écrit en
+   base, et le seul que le cache ne protège pas. Lancé d'une machine au lien
+   modeste, l'essai complet sature ce lien bien avant le serveur, et noie ce
+   qu'on voulait lire. */
+const MESURES_SEULES = opt("mesures-seules", false) === true;
 const SALON_MESURE = ECRIRE ? SALON : "essai-de-charge-inexistant";
 
 if (!BASE || !SALON) {
@@ -50,7 +56,7 @@ if (!BASE || !SALON) {
 
 /* Les relevés, par sorte d'appel : durées, codes, et ce que dit le cache. */
 const releves = {};
-const releve = (sorte) => releves[sorte] ||= { durees: [], codes: {}, cache: {}, octets: 0, pannes: {} };
+const releve = (sorte) => releves[sorte] ||= { durees: [], premier: [], codes: {}, cache: {}, octets: 0, pannes: {} };
 let enCours = 0, pic = 0, total = 0;
 const parSeconde = new Map();
 
@@ -58,18 +64,24 @@ async function appel(sorte, url, init) {
   const r = releve(sorte);
   const t0 = performance.now();
   enCours++; pic = Math.max(pic, enCours); total++;
+  /* Le délai couvre la lecture du corps, pas seulement l'arrivée des entêtes :
+     un corps qui ne finit jamais tenait sinon l'appel « en cours » pour toujours. */
+  const signal = AbortSignal.timeout(30000);
   try {
-    const rep = await fetch(url, { ...init, signal: AbortSignal.timeout(30000) });
-    const corps = await rep.arrayBuffer();
-    r.durees.push(performance.now() - t0);
+    const rep = await fetch(url, { ...init, signal });
+    // le premier octet dit ce que fait le serveur ; la fin, ce que fait aussi le lien
+    r.premier.push(performance.now() - t0);
     r.codes[rep.status] = (r.codes[rep.status] || 0) + 1;
     const c = rep.headers.get("x-cache");
     if (c) r.cache[c] = (r.cache[c] || 0) + 1;
-    r.octets += corps.byteLength;
+    /* Lu en flux et jeté : garder les corps, c'était 2 Mo par page fois quatre
+       mille appels en vol — la machine qui essaie tombait avant le serveur. */
+    if (rep.body) for await (const morceau of rep.body) r.octets += morceau.byteLength;
+    r.durees.push(performance.now() - t0);
     return rep;
   } catch (e) {
     // une panne compte comme une réponse : c'est justement ce qu'on cherche
-    const cause = e.name === "TimeoutError" ? "délai dépassé" : (e.cause?.code || e.message);
+    const cause = e.name === "TimeoutError" || signal.aborted ? "délai dépassé" : (e.cause?.code || e.message);
     r.pannes[cause] = (r.pannes[cause] || 0) + 1;
     r.durees.push(performance.now() - t0);
     return null;
@@ -85,8 +97,8 @@ const jetonVisiteur = () => Math.random().toString(36).slice(2, 14);
 
 async function visiteur() {
   const api = BASE + "/api/plan?slug=" + encodeURIComponent(SALON);
-  await appel("page", BASE + "/plan?plan=" + encodeURIComponent(SALON));
-  await Promise.all([
+  if (!MESURES_SEULES) await appel("page", BASE + "/plan?plan=" + encodeURIComponent(SALON));
+  if (!MESURES_SEULES) await Promise.all([
     appel("entête", api + "&entete=1"),
     appel("plan", api),
   ]);
@@ -120,23 +132,32 @@ const centile = (t, p) => {
 };
 const ms = (x) => Math.round(x) + " ms";
 
-function bilan() {
+/* Le bilan se refait à mi-course et s'écrit à mesure dans `--journal` : un
+   essai qui s'interrompt — la machine qui essaie, plus souvent que le serveur —
+   garde ainsi ce qu'il avait déjà vu. */
+function bilan(enCourse) {
   const duree = (Date.now() - debut) / 1000;
-  console.log("\n— Bilan —");
-  console.log(`${VISITEURS} visiteurs, arrivés en ${MONTEE / 1000} s, ${DUREE / 1000} s de visite chacun ; ${Math.round(duree)} s en tout.`);
-  console.log(`${total} appels ; pic de ${pic} appels simultanés ; ${Math.max(...parSeconde.values())} appels au plus fort d'une seconde.`);
-  console.log(`Mesures ${ECRIRE ? "ÉCRITES dans le salon " + SALON : "adressées à un salon inexistant (rien d'écrit)"}.\n`);
+  const l = [];
+  l.push(enCourse ? `— Bilan d'étape, à ${Math.round(duree)} s —` : "— Bilan —");
+  l.push(`${VISITEURS} visiteurs, arrivés en ${MONTEE / 1000} s, ${DUREE / 1000} s de visite chacun ; ${Math.round(duree)} s en tout.`);
+  l.push(`${total} appels ; pic de ${pic} appels simultanés ; ${Math.max(0, ...parSeconde.values())} appels au plus fort d'une seconde.`);
+  l.push(`Mesures ${ECRIRE ? "ÉCRITES dans le salon " + SALON : "adressées à un salon inexistant (rien d'écrit)"}.`);
+  l.push("Premier octet : ce que met le serveur à répondre. Fin : avec le transfert, que borne aussi le lien de la machine qui essaie.\n");
   for (const [sorte, r] of Object.entries(releves)) {
     const n = r.durees.length;
     const pannes = Object.values(r.pannes).reduce((a, b) => a + b, 0);
     const erreurs = Object.entries(r.codes).filter(([c]) => c >= 500 || c == 429).reduce((a, [, n]) => a + n, 0);
-    console.log(`${sorte.padEnd(7)} ${String(n).padStart(6)} appels  médiane ${ms(centile(r.durees, 50)).padStart(8)}  p95 ${ms(centile(r.durees, 95)).padStart(8)}  p99 ${ms(centile(r.durees, 99)).padStart(8)}  max ${ms(centile(r.durees, 100)).padStart(8)}`);
-    console.log(`        codes ${JSON.stringify(r.codes)}` +
+    l.push(`${sorte.padEnd(7)} ${String(n).padStart(6)} appels  premier octet : médiane ${ms(centile(r.premier, 50)).padStart(8)}  p95 ${ms(centile(r.premier, 95)).padStart(8)}  p99 ${ms(centile(r.premier, 99)).padStart(8)}`);
+    l.push(`                      fin : médiane ${ms(centile(r.durees, 50)).padStart(8)}  p95 ${ms(centile(r.durees, 95)).padStart(8)}  max ${ms(centile(r.durees, 100)).padStart(8)}`);
+    l.push(`        codes ${JSON.stringify(r.codes)}` +
       (Object.keys(r.cache).length ? `  cache ${JSON.stringify(r.cache)}` : "") +
       (pannes ? `  pannes ${JSON.stringify(r.pannes)}` : "") +
       `  ${(r.octets / 1e6).toFixed(1)} Mo` +
       (erreurs || pannes ? `  ⚠ ${(((erreurs + pannes) / n) * 100).toFixed(1)} % en échec` : ""));
   }
+  const texte = l.join("\n");
+  if (JOURNAL) require("fs").writeFileSync(JOURNAL, texte + "\n");
+  if (!enCourse) console.log("\n" + texte);
 }
 
 const debut = Date.now();
@@ -146,6 +167,7 @@ const suivi = setInterval(() => {
   const ligne = `${t} s — ${total} appels, ${enCours} en cours, pic ${pic}`;
   if (process.stdout.isTTY) process.stdout.write("\r" + ligne + "   ");
   else if (t % 10 === 0) console.log(ligne);
+  if (t % 30 === 0) bilan(true);
 }, 1000);
 process.on("SIGINT", () => { clearInterval(suivi); bilan(); process.exit(1); });
 
