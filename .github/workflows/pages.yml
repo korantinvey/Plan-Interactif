@@ -1,17 +1,15 @@
-# Les pages de `web/` sont fabriquées depuis `outils/gabarit/` puis versionnées,
-# car Cloudflare les sert sans étape de construction. Le risque tenait à l'oubli :
-# un module modifié, une reconstruction sautée, et les visiteurs recevaient
-# l'ancienne page. Ce workflow retire l'oubli de l'équation.
+# Les pages de `web/` se construisent depuis `outils/gabarit/` — chez
+# Cloudflare au déploiement (`wrangler.jsonc` `build`), ici pour les contrôler.
+# Elles ne sont plus versionnées : ce workflow ne les valide donc plus, il
+# s'assure qu'elles se construisent, que leur syntaxe tient et que leur anglais
+# est complet. Une page qui ne se construit pas échouerait de toute façon au
+# déploiement ; mieux vaut le voir ici, sur la branche, qu'en production.
 #
-# Sur une poussée, il reconstruit et valide lui-même le résultat : une retouche
-# du gabarit faite depuis un téléphone ou une session distante suffit, la page
-# suit. Le commit qui en résulte réveille à son tour le déploiement Cloudflare.
-#
-# La poussée est faite avec le jeton de l'action, qui ne redéclenche aucun
-# workflow : la reconstruction ne peut donc pas s'appeler en boucle.
-#
-# Sur une pull request, il se contente de signaler l'écart — la branche peut
-# venir d'une bifurcation, où l'action n'a pas le droit d'écrire.
+# Reste `CARTE.md`, l'index des sources, qui est versionné parce qu'on le lit
+# sans rien construire. Sur une poussée, il est refait et validé s'il était en
+# retard ; la poussée se fait avec le jeton de l'action, qui ne redéclenche
+# aucun workflow. Sur une pull request, l'écart est seulement signalé — la
+# branche peut venir d'une bifurcation, où l'action n'a pas le droit d'écrire.
 name: Pages
 
 on:
@@ -33,55 +31,43 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version-file: '.nvmrc'
           cache: npm
 
       - run: npm ci
 
-      - name: Reconstruire les pages
+      - name: Construire les pages
         run: npm run construire
 
-      # Contrôle le JavaScript de toutes les pages construites, analysé en
-      # module ES : plus sévère qu'un `<script>` classique, elle refuse les
-      # redéclarations — la collision que l'espace de noms unique rend possible.
+      # Le JavaScript de toutes les pages construites, analysé en module ES :
+      # plus sévère qu'un `<script>` classique, il refuse les redéclarations —
+      # la collision que l'espace de noms unique rend possible.
       - name: Contrôler la syntaxe des pages
         run: node outils/controle.js
 
-      # `CARTE.md` est une sortie de construction au même titre que `web/`, et
-      # `npm run verifie` contrôle les deux. Ce workflow n'en regardait qu'une :
-      # un index en retard passait donc les contrôles, restait en retard sur
-      # `main`, et ne se découvrait qu'au prochain `npm run verifie` de
-      # quelqu'un — qui échouait alors sur un fichier qu'il n'avait pas touché.
-      - name: Valider la reconstruction
-        if: github.event_name == 'push'
-        run: |
-          if [ -z "$(git status --porcelain web CARTE.md)" ]; then
-            echo 'Pages déjà à jour.'
-            exit 0
-          fi
-          echo 'Pages reconstruites :'
-          git status --porcelain web CARTE.md
-          git config user.name  'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add web CARTE.md
-          git commit -m 'Reconstruit les pages depuis le gabarit'
-          git push origin "HEAD:${GITHUB_REF_NAME}"
-
-      - name: Signaler un retard des pages
-        if: github.event_name == 'pull_request'
-        run: |
-          if [ -n "$(git status --porcelain web CARTE.md)" ]; then
-            echo 'Les pages versionnées sont en retard sur outils/gabarit/ :'
-            git status --porcelain web CARTE.md
-            echo
-            echo 'Lancez « npm run construire » et validez le résultat.'
-            exit 1
-          fi
-          echo 'Pages à jour : web/ et CARTE.md correspondent bien à outils/gabarit/.'
-
       # Toute phrase affichée doit exister en anglais : le contrôle relève les
-      # chaînes visibles du gabarit et les cherche dans `outils/anglais/`. Placé
-      # après la validation, il ne retient pas la reconstruction des pages — il
-      # signale seulement la traduction manquante.
+      # chaînes visibles du gabarit et les cherche dans `outils/anglais/`.
       - name: Contrôler les traductions
         run: node outils/traductions.js
+
+      - name: Valider l'index des sources
+        if: github.event_name == 'push'
+        run: |
+          if [ -z "$(git status --porcelain CARTE.md)" ]; then
+            echo 'CARTE.md déjà à jour.'
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add CARTE.md
+          git commit -m "Refait l'index des sources"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Signaler un index en retard
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -n "$(git status --porcelain CARTE.md)" ]; then
+            echo 'CARTE.md est en retard sur ses sources : lancez « npm run construire » et validez-le.'
+            exit 1
+          fi
+          echo 'CARTE.md à jour.'

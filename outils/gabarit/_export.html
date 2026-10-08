@@ -153,7 +153,7 @@ function nomFichierExport(e, jours) {
    Excel refuse au-delà de trente et un caractères, et refuse `[]:*?/\`. */
 const nomFeuilleExport = (jours) =>
   ("Exposants (" + libellePeriode(jours) + ")")
-    .replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31);
+    .replace(/[[\]:*?/\\]/g, " ").slice(0, 31);
 
 /**
  * Fabriquer le classeur, et le proposer à l'enregistrement.

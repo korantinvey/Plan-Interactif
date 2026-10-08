@@ -946,7 +946,7 @@ const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
  * n'y ajoutent rien.
  */
 const codeCase = (o) => CASE_SORTE[o.kind] ||
-  String(o.code || "").replace(/\s*([-–—\/])\s*/g, "$1").trim() || "—";
+  String(o.code || "").replace(/\s*([-–—/])\s*/g, "$1").trim() || "—";
 
 /**
  * La case du numéro, de même largeur sur toutes les lignes.

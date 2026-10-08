@@ -206,7 +206,6 @@ console.log("\n=== 8. Plusieurs visiteurs : la charge s'étale ===");
   const stands = Array.from({ length: N }, (_, i) => i);
   const compte = (avecCapacite) => {
     const ch = {};                                  // stand|tranche → nombre
-    const lu = (i, t) => ch[i + "|" + t] || 0;
     for (let v = 0; v < VIS; v++){
       const gele = Object.assign({}, ch);           // photo figée, comme en vrai
       const p = avecCapacite

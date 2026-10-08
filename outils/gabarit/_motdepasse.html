@@ -74,6 +74,11 @@
    requête sous forme de jeton à vérifier (`?token_hash=…&type=…`). On accepte
    les deux plutôt que de dépendre d'un réglage de projet.
    ============================================================ */
+/* Un élément de la page, lu par son identifiant. Rendu sans type précis
+   pour `npm run types` : chaque appel saurait mieux que lui ce qu'il attend
+   — un champ, un bouton, un canevas —, et le dire à chaque fois chargerait
+   le code de plus d'annotations qu'il n'en éviterait d'erreurs. */
+/** @returns {any} */
 const $ = (id) => document.getElementById(id);
 
 const CFG = (() => {

@@ -1752,7 +1752,7 @@ salon rouvrait celui d'un autre. La spécification prévoit bien qu'un
 aurait tout réglé, mais Chromium refuse alors d'installer : il vérifie la
 validité d'une adresse qu'il n'a pas encore remplacée.
 
-Le manifeste versionné porte donc l'adresse nue — le salon par défaut — et la
+Le manifeste construit porte donc l'adresse nue — le salon par défaut — et la
 page nomme le sien : `manifeste.webmanifest?salon=…`. Le Worker reprend alors
 ce même fichier et y écrit ce qui revient au salon : son nom, ses icônes, et
 son adresse. Un manifeste à tenir, aucun à fabriquer par salon — et, sans
@@ -2760,21 +2760,24 @@ concerne :
 
 | ce que vous poussez | ce qui se passe | qui s'en charge |
 |---|---|---|
-| `outils/gabarit/` | les pages de `web/` sont reconstruites et validées | `.github/workflows/pages.yml` |
-| `web/`, `src/` | le site et le Worker sont redéployés | Cloudflare, par son intégration Git |
+| `outils/gabarit/` | les pages sont construites et contrôlées, l'index `CARTE.md` refait | `.github/workflows/pages.yml` |
+| tout le dépôt | relecture, types, moteur de journée, plan dans le navigateur | `.github/workflows/essais.yml` |
+| `outils/gabarit/`, `web/`, `src/` | les pages sont construites et le Worker déployé — production pour `main`, prévisualisation pour une branche | Cloudflare, par son intégration Git (`wrangler.jsonc` `build`) |
 | `supabase/` | migrations appliquées, fonctions redéployées | `.github/workflows/supabase.yml` |
 
-La reconstruction des pages mérite un mot. `web/` est versionné parce que
-Cloudflare sert sans étape de construction, ce qui laissait la place à un oubli
-coûteux : un module modifié, une reconstruction sautée, et les visiteurs
-recevaient l'ancienne page. Le workflow reconstruit désormais lui-même et
-valide le résultat sur la branche poussée. Une retouche du gabarit faite depuis
-un téléphone suffit donc, et le commit produit réveille à son tour Cloudflare.
+La construction des pages mérite un mot. `web/` était versionné, Cloudflare
+servant sans étape de construction — ce qui laissait la place à un oubli
+coûteux, et faisait d'une ligne de gabarit mille lignes de diff. Cloudflare
+construit désormais les pages à chaque déploiement (`build` de
+`wrangler.jsonc`, sous Node 22 fixé par `.nvmrc`). Un déploiement qui
+sauterait cette étape échoue au lieu de publier un site vide : le Worker
+importe `src/pages.mjs`, que seule la construction écrit. `/api/pages` donne
+la version des pages en ligne.
 
-Il pousse avec le jeton de l'action, qui ne redéclenche aucun workflow : la
-reconstruction ne peut pas s'appeler en boucle. Sur une pull request, il se
-borne à signaler l'écart — la branche peut venir d'une bifurcation, où l'action
-n'a pas le droit d'écrire.
+`pages.yml` construit et contrôle sur chaque poussée, et ne valide plus que
+l'index `CARTE.md` s'il était en retard — avec le jeton de l'action, qui ne
+redéclenche aucun workflow. Sur une pull request, il se borne à signaler
+l'écart.
 
 ### Les deux secrets à créer
 
@@ -2888,21 +2891,18 @@ l'on relit.
 
 ## Fabriquer les pages
 
-Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,
-puis **versionnées** : c'est ce qui permet à Cloudflare de les servir sans étape
-de construction. Le revers est qu'on peut modifier un module et oublier de
-reconstruire — le dépôt paraît juste, et les visiteurs reçoivent l'ancienne page.
+Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`.
+Elles ne sont pas versionnées : Cloudflare les construit au déploiement, et
+chacun chez soi pour essayer.
 
 ```bash
-npm run construire   # gabarit/ → tpl-multi.html → web/*.html
-npm run verifie      # reconstruit, et signale si web/ était en retard
+npm run construire   # gabarit/ → tpl-multi.html → web/*.html, et CARTE.md
+npm run verifie      # construit, contrôle tout, signale un CARTE.md en retard
 npm run essai        # sert web/ sur http://localhost:4180
+npm run navigateur   # le plan dans Chromium, par Playwright
+npm run lint         # la relecture ESLint, ramenée aux modules du gabarit
+npm run types        # les types par TypeScript, en cliquet
 ```
-
-`npm run verifie` sort en erreur si les pages versionnées ne correspondaient pas
-à leurs sources. Le workflow Pages fait ce travail à votre place sur toute
-poussée ; lancer `verifie` localement reste plus rapide que d'attendre le
-retour de l'intégration, et évite un commit de reconstruction en plus du vôtre.
 
 ### Les polices
 
