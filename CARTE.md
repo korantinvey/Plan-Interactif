@@ -309,28 +309,25 @@ Fonctions :
 
 `#dGo` · `#dItin`
 
-### `_geometrie.html` — 1070 l. → plan-admin.html
+### `_geometrie.html` — 933 l. → plan-admin.html
 
 - l.2 · 11 octies. Reprendre à la main la géométrie d'un emplacement
 
 Fonctions :
 
-`cleGeo` 30 · `arrondiGeo` 38 · `empreinteGeo` 49 · `anneauxGeo` 69 · `traceGeo` 82
-`boiteAnneaux` 86 · `dansAnneau` 104 · `distSegmentGeo` 115 · `distBordGeo` 124
-`poleGeo` 134 · `porteeGeo` 153 · `boiteGeo` 161 · `geometrieSource` 186
-`reposeSource` 195 · `poseGeometrie` 204 · `retoucheGeo` 218 · `elargitEmprise` 231
-`appliqueGeometries` 252 · `cleVerrouGeo` 282 · `geoVerrouille` 283 · `basculeVerrouGeo` 285
-`boutonVerrouGeo` 300 · `modeGeometrie` 311 · `objetGeoSous` 338 · `groupeGeo` 348
-`choisitGeo` 356 · `cadreGeo` 371 · `prisesGeo` 391 · `curseurGeo` 403
-`dessinePoigneesGeo` 406 · `ecritDimensionsGeo` 434 · `nomSorteGeo` 446
-`majPaletteGeo` 448 · `finGesteGeo` 487 · `enregistreGeo` 505 · `geometrieOrigine` 519
-`retraceGeo` 534 · `pousseGeometrie` 545 · `appliqueDimensionGeo` 562 · `cleAjout` 601
-`anneauxValides` 615 · `rechAjout` 620 · `objetAjoute` 629 · `poseLien` 648
-`appliqueAjouts` 675 · `enregistreAjout` 711 · `ajouteEmplacement` 726 · `renommeAjout` 754
-`lieAjout` 786 · `ecritInfosAjout` 815 · `supprimeAjout` 842 · `choisitOutilGeo` 871
-`aideAjout` 878 · `fermeAjout` 888 · `ajoutPointerDown` 897 · `ajoutPointerMove` 913
-`ajoutPointerUp` 935 · `geometriePointerDown` 955 · `accrocheGeo` 986
-`geometriePointerMove` 988 · `geometriePointerUp` 1039
+`cleGeo` 30 · `geometrieSource` 49 · `reposeSource` 58 · `poseGeometrie` 67
+`retoucheGeo` 81 · `elargitEmprise` 94 · `appliqueGeometries` 115 · `cleVerrouGeo` 145
+`geoVerrouille` 146 · `basculeVerrouGeo` 148 · `boutonVerrouGeo` 163 · `modeGeometrie` 174
+`objetGeoSous` 201 · `groupeGeo` 211 · `choisitGeo` 219 · `cadreGeo` 234 · `prisesGeo` 254
+`curseurGeo` 266 · `dessinePoigneesGeo` 269 · `ecritDimensionsGeo` 297 · `nomSorteGeo` 309
+`majPaletteGeo` 311 · `finGesteGeo` 350 · `enregistreGeo` 368 · `geometrieOrigine` 382
+`retraceGeo` 397 · `pousseGeometrie` 408 · `appliqueDimensionGeo` 425 · `cleAjout` 464
+`anneauxValides` 478 · `rechAjout` 483 · `objetAjoute` 492 · `poseLien` 511
+`appliqueAjouts` 538 · `enregistreAjout` 574 · `ajouteEmplacement` 589 · `renommeAjout` 617
+`lieAjout` 649 · `ecritInfosAjout` 678 · `supprimeAjout` 705 · `choisitOutilGeo` 734
+`aideAjout` 741 · `fermeAjout` 751 · `ajoutPointerDown` 760 · `ajoutPointerMove` 776
+`ajoutPointerUp` 798 · `geometriePointerDown` 818 · `accrocheGeo` 849
+`geometriePointerMove` 851 · `geometriePointerUp` 902
 
 ### `_gestes.html` — 951 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -844,6 +841,16 @@ Fonctions :
 `_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
 `ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 93
 
+### `modules/forme.mjs` — 154 l. → plan, plan-admin
+
+- l.1 · La forme d'un emplacement — anneaux, tracé, empreinte, ancrage du nom
+
+Fonctions :
+
+`arrondiGeo` 14 · `empreinteGeo` 25 · `anneauxGeo` 45 · `traceGeo` 58 · `boiteAnneaux` 62
+`dansAnneau` 80 · `distSegmentGeo` 91 · `distBordGeo` 100 · `poleGeo` 110 · `porteeGeo` 129
+`boiteGeo` 137
+
 ### `modules/icone-app.mjs` — 126 l. → plan-admin
 
 - l.1 · L'icône de l'application, fabriquée depuis un logo déposé
@@ -879,7 +886,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 45 l. → plan, plan-admin
+### `modules/plan.mjs` — 48 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
