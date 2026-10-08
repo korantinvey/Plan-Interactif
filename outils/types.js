@@ -24,6 +24,9 @@ const path = require("path");
 const ts = require("typescript");
 const { compose, PAGES, FAMILLE } = require("./relecture.js");
 const modules = require("./modules.js");
+const reserve = require("./reserve.js");
+const { BOUTS, lisBout } = require("./assemble.js");
+const { sansTexte } = require("./appels.js");
 
 const ACCEPTES = path.join(__dirname, "types-acceptes.json");
 
@@ -44,6 +47,20 @@ const declarationsDesModules = (page) => !FAMILLE[page] ? "" :
     "declare var " + o.nom + ": typeof import(" + JSON.stringify(o.source) + ")." + o.exporte + ";"
   ).join("\n");
 
+/* La page publique n'a pas ce que l'administration seule reçoit, et ne s'y
+   adresse que par `typeof nom === "function"` — la construction refuse tout
+   autre appel (`outils/reserve.js`). Ces noms y sont donc déclarés sans type :
+   leur signature se vérifie dans la page d'administration, qui les a. */
+const RETIRES_DU_PUBLIC = (() => {
+  // découpé avant d'être réduit au code : les bornes sont des commentaires
+  const gabarit = BOUTS.map((b) => lisBout(b)).join("\n");
+  const publics = new Set(modules.exposes("plan"));
+  return reserve.retiresDe(sansTexte(gabarit), sansTexte(reserve.pourLePublic(gabarit)),
+    modules.exposes("plan-admin").filter((n) => !publics.has(n)));
+})();
+const declarationsRetirees = (page) => page !== "plan.html" ? "" :
+  RETIRES_DU_PUBLIC.map((n) => "declare var " + n + ": any;").join("\n");
+
 const OPTIONS = {
   // les modules se résolvent comme esbuild les résout : par leur chemin, extension comprise
   module: ts.ModuleKind.ESNext,
@@ -62,7 +79,8 @@ function verifiePage(page, dossier) {
   const fichier = path.join(dossier, page.replace(/\.html$/, ".js"));
   const decl = path.join(dossier, "globales.d.ts");
   fs.writeFileSync(fichier, texte);
-  fs.writeFileSync(decl, DECLARATIONS + "\n" + declarationsDesModules(page));
+  fs.writeFileSync(decl, DECLARATIONS + "\n" + declarationsDesModules(page) + "\n" +
+    declarationsRetirees(page));
   const programme = ts.createProgram([fichier, decl], OPTIONS);
   return ts.getPreEmitDiagnostics(programme)
     .filter((d) => d.file && (path.resolve(d.file.fileName) === path.resolve(fichier) ||
