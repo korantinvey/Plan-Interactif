@@ -377,6 +377,13 @@ const ANGLE_FLECHE = .45;   // demi-ouverture des branches, en radians (~26°)
  * un trait très épais avalerait sa propre pointe.
  */
 function longueurFleche(f){
+  /* Au montage, les calques se dessinent avant que la vue soit posée : lire
+     `view.w` arrêtait là tout le démarrage, et une seule ligne fléchée
+     laissait le plan vide chez chaque visiteur. La pointe naît donc nulle —
+     son tracé existe, et c'est lui que la première pose de la vue,
+     `appliqueVue` puis `rafraichitFleches`, met à sa taille. Ne rien tracer
+     ne suffisait pas : il n'y aurait eu aucune pointe à reprendre. */
+  if (!view) return 0;
   const r = cadrePlan();
   const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
   return view.w / (r.width || 1) * (4 + ep * 3);
