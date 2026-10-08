@@ -17,6 +17,8 @@ import { hslHex, rgbHex, hexa, luminance } from "./couleurs.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
 import { API, SLUG, cheminDuSalon, cheminPartageable, BORNE } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
+import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
+  abonnementCourant, abonne } from "./notifications.mjs";
 import { ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre }
   from "./fenetre.mjs";
 import { lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche }
@@ -27,7 +29,7 @@ import { DEG, metresParDegre, versTerre, versLePlan, reancre, PX_TUILE, TOUR_MER
   latitudeDePixel, echelleDesTuiles, niveauDesTuiles, aireDuContour, centreDuContour, axeDuContour }
   from "./terre.mjs";
 import { JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jourISO,
-  minutesDe, ecritHeure, ecritMinutes } from "./temps.mjs";
+  minutesDe, ecritHeure, ecritMinutes, instantMural } from "./temps.mjs";
 import { QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure }
   from "./mesure.mjs";
@@ -38,13 +40,15 @@ Object.assign(globalThis, {
   marquePrete, recadreMarque,
   API, SLUG, cheminDuSalon, cheminPartageable, BORNE,
   accesBase, base,
+  RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
+  abonnementCourant, abonne,
   ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre,
   lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche,
   arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteAnneaux, boiteGeo,
   DEG, metresParDegre, versTerre, versLePlan, reancre, PX_TUILE, TOUR_MERCATOR, pixelsMercator,
   latitudeDePixel, echelleDesTuiles, niveauDesTuiles, aireDuContour, centreDuContour, axeDuContour,
   JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jourISO,
-  minutesDe, ecritHeure, ecritMinutes,
+  minutesDe, ecritHeure, ecritMinutes, instantMural,
   QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg,
   mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure,
 });

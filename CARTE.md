@@ -608,20 +608,18 @@ Fonctions :
 `pousseConfiguration` 288 · `sauvegardeCourante` 481 · `telechargeSauvegarde` 503
 `appliqueSauvegarde` 526 · `litSauvegarde` 560 · `brancheSauvegarde` 582
 
-### `_rappels.html` — 648 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 573 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
 Fonctions :
 
-`reglageRappel` 63 · `rappelsVoulus` 64 · `minutesRappel` 65 · `cleRappels` 78
-`chargeRappels` 81 · `retientRappels` 85 · `poussePossible` 94 · `rappelsOfferts` 100
-`iOSsansInstallation` 106 · `instantAbsolu` 135 · `confsARappeler` 151 · `heureVue` 175
-`empreinteDebut` 176 · `rappelsDuParcours` 187 · `adresseDuRappel` 210 · `octetsDeCle` 222
-`abonnementCourant` 230 · `abonne` 239 · `synchroniseRappels` 265 · `eteintRappels` 288
-`allumeRappels` 303 · `aideRappel` 320 · `poseRappels` 336 · `cleInviteRappel` 457
-`inviteRappelFaite` 460 · `retientInviteRappel` 465 · `fenetreRappel` 500
-`proposeRappels` 533 · `essaieRappelReel` 595 · `reprendRappels` 637
+`reglageRappel` 63 · `rappelsVoulus` 64 · `minutesRappel` 65 · `cleRappels` 79
+`chargeRappels` 82 · `retientRappels` 86 · `rappelsOfferts` 97 · `instantAbsolu` 127
+`confsARappeler` 135 · `rappelsDuParcours` 152 · `synchroniseRappels` 190
+`eteintRappels` 213 · `allumeRappels` 228 · `aideRappel` 245 · `poseRappels` 261
+`cleInviteRappel` 382 · `inviteRappelFaite` 385 · `retientInviteRappel` 390
+`fenetreRappel` 425 · `proposeRappels` 458 · `essaieRappelReel` 520 · `reprendRappels` 562
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
@@ -881,11 +879,20 @@ Fonctions :
 `refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
 `brancheMesure` 656
 
+### `modules/notifications.mjs` — 89 l. → plan, plan-admin
+
+- l.1 · Les notifications — ce que l'appareil sait recevoir, et l'abonnement
+
+Fonctions :
+
+`poussePossible` 19 · `iOSsansInstallation` 24 · `adresseDuRappel` 30 · `heureVue` 54
+`empreinteDebut` 55 · `octetsDeCle` 59 · `abonnementCourant` 67 · `abonne` 76
+
 ### `modules/plan-admin.mjs` — 19 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 50 l. → plan, plan-admin
+### `modules/plan.mjs` — 54 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -927,14 +934,14 @@ Fonctions :
 `lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
 `assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
 
-### `modules/temps.mjs` — 104 l. → plan, plan-admin
+### `modules/temps.mjs` — 129 l. → plan, plan-admin
 
 - l.1 · Les dates et les heures du salon
 
 Fonctions :
 
 `momentLocal` 32 · `jourLong` 55 · `jourCourt` 62 · `dateDeCle` 69 · `jourBref` 75
-`jourISO` 82 · `minutesDe` 92 · `ecritHeure` 94 · `ecritMinutes` 99
+`jourISO` 82 · `instantMural` 103 · `minutesDe` 117 · `ecritHeure` 119 · `ecritMinutes` 124
 
 ### `modules/terre.mjs` — 173 l. → plan, plan-admin
 

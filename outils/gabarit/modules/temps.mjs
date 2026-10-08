@@ -86,6 +86,31 @@ export function jourISO(cle){
              String(d.jour).padStart(2, "0") : "";
 }
 
+/**
+ * L'instant absolu d'une heure murale du salon — `{ an, mois, jour, h, min }`,
+ * telle que `momentLocal` la rend —, dans son fuseau, ce jour-là.
+ *
+ * Tout le reste raisonne en heure locale du salon ; une minuterie, elle, se
+ * pose sur un instant. On suppose l'heure murale exprimée en UTC, on regarde
+ * ce que le fuseau en aurait affiché, et on corrige de l'écart. Deux tours,
+ * parce que la correction peut elle-même franchir le changement d'heure — un
+ * dimanche de mars à deux heures et demie du matin.
+ *
+ * Un fuseau que le navigateur ne connaît pas ne donne pas d'instant du tout
+ * (`NaN`) : c'est la règle de `momentLocal`, qui refuse une heure plutôt que
+ * d'en afficher une fausse.
+ */
+export function instantMural(p, fuseau){
+  const mural = Date.UTC(p.an, p.mois - 1, p.jour, +p.h, +p.min);
+  let t = mural;
+  for (let i = 0; i < 2; i++){
+    const lu = momentLocal(new Date(t).toISOString(), fuseau);
+    if (!lu) return NaN;
+    t = mural - (Date.UTC(lu.an, lu.mois - 1, lu.jour, +lu.h, +lu.min) - t);
+  }
+  return t;
+}
+
 /* ------------------------------------------------------------
    Les heures, en minutes depuis minuit
    ------------------------------------------------------------ */
