@@ -30,6 +30,10 @@
  * l'application installée, complété ici du salon d'où l'on installe — son nom,
  * et l'adresse de ses icônes, que ce même script sert de la base.
  */
+/* Écrit par la construction, jamais versionné : sans lui, pas de déploiement
+   (voir `outils/genere.js`). */
+import { VERSION_DES_PAGES } from "./pages.mjs";
+
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
@@ -867,6 +871,12 @@ export default {
     }
     // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
     if (url.pathname === "/api/oublie") return oublie(requete, env);
+    // la construction en ligne : ce qu'un déploiement a vraiment emporté
+    if (url.pathname === "/api/pages") {
+      return new Response(JSON.stringify({ pages: VERSION_DES_PAGES }), {
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      });
+    }
     if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
     /* La question que chaque ouverture de page pose, et la seule : le plan
        a-t-il changé. Elle se répond du stockage, sans rien relayer. */

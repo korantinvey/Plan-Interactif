@@ -86,7 +86,7 @@ function pagesDe(texte) {
    Ce qu'on relève dans un module
    ------------------------------------------------------------------ */
 
-/** Les bandeaux `/* ==== n. Titre ==== *​/` qui découpent déjà le code. */
+// Les bandeaux « /* ==== n. Titre ==== */ » qui découpent déjà le code.
 function sections(ls) {
   const out = [];
   for (let i = 0; i < ls.length; i++) {
