@@ -4,6 +4,8 @@
 <script src="config.js"></script>
 
 <style>
+/* Les styles du plan, première feuille : jetons de couleur et de mesure, bande d'administration.
+   Ouverte en fin de `_entete.html` ; les feuilles suivent dans l'ordre de `outils/assemble.js`. */
 :root{
   --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC;
   --line:#D2D5CB; --line-strong:#B4B9AC;
@@ -272,6 +274,8 @@ html.mode-admin .app{grid-template-rows:auto auto 1fr}
 /* Du blanc sur le cyan vif ne fait que 1,9 pour 1 ; la nuit y fait 9,3. */
 .bandeAdmin .iconbtn[aria-pressed="true"]{color:var(--accent-ink)}
 
+/* L'écran du plan : barre, recherche et critères, liste, plan et calques, fiche,
+   outils de l'administration et leurs gris. */
 /* ------------------------------------------------------------------
    Les gris de l'outil
 
@@ -1870,6 +1874,7 @@ button.expo:hover{background:var(--line)}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
 
+/* Les modèles de fiche, de liste et de bandeau. */
 /* ------------------------------------------------------------
    Modèles de fiche
 
@@ -2699,6 +2704,7 @@ button.expo:hover{background:var(--line)}
 .bandeau-nu .iconbtn[aria-pressed="true"]{background:none;border-color:transparent;
   color:var(--accent)}
 
+/* Le parcours de visite, la journée organisée, l'itinéraire, la borne. */
 /* ------------------------------------------------------------
    Parcours de visite
 
@@ -3299,6 +3305,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    masquerait rien — le même piège que la barre de zoom et l'échelle. */
 .iconbtn[hidden]{display:none}
 
+/* Les modèles appliqués au parcours de visite et à l'itinéraire. */
 /* ------------------------------------------------------------
    Modèles — le parcours de visite et l'itinéraire
 
@@ -4854,6 +4861,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 @keyframes parait{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
 
+/* Alerte d'enregistrement, visite guidée, générique du sponsor, cibles tactiles.
+   Le balisage de `_head.html` referme la feuille. */
 /* ------------------------------------------------------------
    L'alerte d'enregistrement
    Un plan qui n'est pas en base ne peut pas se signaler plus discrètement que
@@ -6372,6 +6381,8 @@ function poseTonDeLaBarre(){
    tablette qu'on tourne franchit ce seuil sans rien changer d'autre. */
 matchMedia("(max-width:900px)").addEventListener("change", () => poseTonDeLaBarre());
 
+/* Le plan à l'écran : mesure du texte (§ 2), rendu du pavillon (§ 3), libellés (§ 4).
+   Suite de `_js.html`, dans le même script : l'ordre d'assemblage est celui de `outils/assemble.js`. */
 /* ============================================================
    2. Mesure de texte — largeur réelle dans la police de rendu
    ============================================================ */
@@ -6691,10 +6702,8 @@ function traceDist(mode, p, b, rang, deuxLiseres){
   /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
      recouvrait le premier et le stand n'en montrait qu'un. Le premier s'élargit
      donc, et le second se pose dessus — un halo d'une couleur, un trait de
-     l'autre. Le drapeau se décide stand par stand, et non pour le pavillon :
-     sur un stand qui ne porte qu'une des deux distinctions, il n'y a rien à
-     éviter, et le trait reste celui de la sélection — celui des salons déjà en
-     ligne. */
+     l'autre. Seul, il garde son épaisseur d'origine : c'est le liseré des
+     salons déjà en ligne, et il n'a pas à grossir. */
   if (mode === "lisere")
     return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" d="' +
       p.getAttribute("d") + '"/>';
@@ -7002,6 +7011,8 @@ function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
   return out;
 }
 
+/* La recherche, les secteurs et le panneau des critères (§ 5).
+   Suite de `_rendu.html`, dans le même script. */
 /* ============================================================
    5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
       pavillon affiché, dès qu'on filtre on balaie les trois
@@ -8283,6 +8294,8 @@ $("list").addEventListener("pointerdown", e => {
     prechargeMarque(b.dataset.id, Number(b.dataset.soc));
 });
 
+/* La vue (§ 6) : cadrage, zoom, libellés à l'échelle, part du plan que couvre la barre.
+   Suite de `_recherche.html`, dans le même script. */
 /* ============================================================
    6. Vue
    ============================================================ */
@@ -8756,6 +8769,8 @@ function echelle(){
   $("scaleTxt").textContent = pas + " m";
 }
 
+/* La sélection et la fiche d'un exposant (§ 7).
+   Suite de `_vue.html`, dans le même script. */
 /* ============================================================
    7. Sélection et fiche
    ============================================================ */
@@ -10302,6 +10317,8 @@ $("dOngProd").onclick = () => onglet("prod");
 $("closeDetail").onclick = ferme;
 $("voile").onclick = ferme;
 
+/* Les gestes sur le plan (§ 8) et les tiroirs des écrans étroits.
+   Suite de `_fiche.html` ; ferme le script ouvert par `_js.html`. */
 /* ============================================================
    8. Interactions du plan
    ============================================================ */
@@ -13043,6 +13060,8 @@ function habilleModale(){
     fen.classList.toggle("modele-" + x.cle, porte && x.cle === cle));
 }
 
+/* La fenêtre des réglages : aperçus, onglets, volets Zones, Plan, Co-exposants.
+   Suite de `_admin1.html`, dans le même script. */
 /* ------------------------------------------------------------------
    L'exposant des aperçus
 
@@ -13965,6 +13984,8 @@ function voletCoexposants(hote){
     bloc.appendChild(aide);
   });
 }
+/* Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence.
+   Suite de `_reglages.html`, dans le même script. */
 
 function voletAdmin(hote){
   const p = document.createElement("p");
@@ -15128,6 +15149,8 @@ function voletApparence(hote){
   hote.appendChild(grille);
 }
 
+/* Ce que la fiche montre, dans quel ordre, sous quels titres (volet « Fiche »).
+   Suite de `_volets.html`, dans le même script. */
 /* ------------------------------------------------------------------
    Ce que la fiche montre, dans quel ordre, et sous quels titres
 
@@ -15805,6 +15828,8 @@ const joli = (id) => String(id)
   .replace(/^[0-9]+-/, "").replace(/[_-]+/g, " ").toLowerCase()
   .replace(/^./, (c) => c.toUpperCase());
 
+/* Le mode administration (§ 10) : fiche et masquage d'une zone, libellés placés à la main.
+   Suite de `_ordre-fiche.html`, dans le même script. */
 /* ============================================================
    10. Mode administration
    Il n'existe que dans la page dédiée, et seulement une fois l'utilisateur

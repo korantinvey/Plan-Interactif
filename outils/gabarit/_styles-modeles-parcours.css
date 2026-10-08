@@ -1,0 +1,1556 @@
+/* Les modèles appliqués au parcours de visite et à l'itinéraire. */
+/* ------------------------------------------------------------
+   Modèles — le parcours de visite et l'itinéraire
+
+   Les deux tiroirs prennent l'habillage choisi comme la fiche. Ils occupent la
+   même bande de l'écran, s'ouvrent depuis la fiche et y ramènent : un parcours
+   resté au rendu d'origine contre une fiche kraft ne faisait pas un salon, il
+   en faisait deux. « appliqueModele » pose donc la même classe sur les trois.
+
+   Le gros du travail se fait tout seul. Un modèle redéfinit ses jetons de
+   couleur sur le panneau, et tout ce qui s'y peint les lit déjà — l'en-tête,
+   les pastilles, les boutons, les filets. Ne restent ici que les pièces
+   propres aux tiroirs, celles que la fiche n'a pas.
+
+   Trois formes y reviennent, et se traitent ensemble : la vignette — un stand
+   retenu, un arrêt de la journée, une étape du trajet —, le bilan qui chiffre
+   la durée, et le champ de saisie.
+
+   Ces règles suivent « .parcours » et « .itineraire » dans la feuille plutôt
+   que de rester avec les autres modèles : écrites plus haut, leur bord et leur
+   fond se seraient fait recouvrir par les deux panneaux.
+   ------------------------------------------------------------ */
+
+/* Cinq modèles imposent leur fond sans rien demander à la page : trois dans le
+   noir, deux sur un papier clair. Le rouge des alertes suit le fond qu'on lui
+   donne, et non celui de la page. */
+.modele-console,.modele-signal,.modele-verre{--rouge:#FF8B7E}
+.modele-brut,.modele-kraft{--rouge:#C2372B}
+
+/* Le bord gauche et l'ombre du tiroir, que les modèles redessinent pour la
+   fiche avant que les panneaux ne posent les leurs. */
+:is(.parcours,.itineraire).modele-grille{border-left:2px solid var(--ink)}
+:is(.parcours,.itineraire).modele-brut{border-left:3px solid #111}
+:is(.parcours,.itineraire).modele-verre{border-left-color:rgba(255,255,255,.28);
+  border-radius:20px 0 0 20px}
+:is(.parcours,.itineraire).modele-billet{border-radius:16px 0 0 16px}
+:is(.parcours,.itineraire).modele-nu{box-shadow:none;border-left-color:transparent}
+
+/* Grille — les filets francs de la fiche traversent les tiroirs : une étape,
+   un arrêt, un stand retenu se séparent d'un trait plein plutôt que de flotter
+   sur un aplat. Le liseré de gauche reste : il porte la couleur du type de
+   conférence, un retard, une correspondance — ce qu'un fond gris ne dit pas. */
+.modele-grille :is(.pRang .pOuvre,.jArret,.iEtape){background:none;
+  border-bottom:1px solid var(--ink);padding:10px 0 10px 10px}
+.modele-grille .pGroupe .jour{border-bottom:2px solid var(--ink);
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase}
+.modele-grille :is(.jBilan,.iBilan){background:var(--accent-base);color:var(--accent-ink)}
+.modele-grille :is(.jBilan span,.iBilan span){color:var(--accent-ink);opacity:.75}
+.modele-grille :is(.iChamp input,.iSugg){border-color:var(--ink)}
+.modele-grille .pPied{border-top:2px solid var(--ink)}.modele-grille .pActs{border-bottom:2px solid var(--ink)}
+
+/* Console — la police de la régie descend du panneau sur tout ce qu'il porte ;
+   restent l'invite des libellés, que la fiche réserve à ses champs, et les
+   filets qui passent au pointillé. */
+.modele-console .iChamp .eyebrow::before{content:"$ ";color:var(--accent)}
+.modele-console :is(.jBilan b,.iBilan b){font-family:"IBM Plex Mono",monospace;font-size:18px}
+.modele-console :is(.pRang .pOuvre,.jArret,.iEtape){border-left-style:dashed}
+.modele-console .pGroupe .jour{border-bottom-style:dashed}
+.modele-console .pPied{border-top-style:dashed}.modele-console .pActs{border-bottom-style:dashed}
+
+/* Billet — la perforation du talon sépare ici les jours, les listes et le
+   pied ; les champs prennent l'arrondi plein des boutons. */
+.modele-billet .pGroupe .jour{border-bottom:2px dashed var(--line-strong)}
+.modele-billet .pPied{border-top:2px dashed var(--line-strong)}.modele-billet .pActs{border-bottom:2px dashed var(--line-strong)}
+.modele-billet :is(.pRang .pOuvre,.jArret,.iEtape){border-left-style:dashed}
+.modele-billet :is(.iChamp input,.pRang .pOte,.iVise,.iEchange){border-radius:999px}
+.modele-billet :is(.pRang .ps,.iEtape .s,.jS){font-family:"IBM Plex Mono",monospace;font-size:11px}
+
+/* Magazine — le sommaire du catalogue : serif à fort contraste, italiques pour
+   ce qui commente, et le filet posé au-dessus de chaque entrée plutôt qu'un
+   aplat sous elle. Le liseré de gauche s'y refait en filet du haut : la
+   couleur qu'il portait reste celle du trait. */
+.modele-magazine :is(.pRang .pOuvre,.jArret,.iEtape){background:none;
+  border-left:none;border-top:1px solid var(--line);border-radius:0;padding:10px 0}
+.modele-magazine .iEtape.transfert{border-top-style:dashed}
+.modele-magazine :is(.pRang .pt,.iEtape .t,.jT){font-family:"Fraunces",Georgia,serif;
+  font-size:14.5px;line-height:1.25}
+.modele-magazine :is(.pRang .ps,.iEtape .s,.jS,.pVide,.iNote){font-style:italic}
+.modele-magazine .pGroupe .jour{font-family:"Fraunces",Georgia,serif;font-style:italic;
+  font-weight:600;font-size:15px;border-bottom-color:var(--ink)}
+.modele-magazine :is(.jBilan b,.iBilan b){font-family:"Fraunces",Georgia,serif;font-weight:600}
+.modele-magazine .iChamp .eyebrow{font-family:"Fraunces",Georgia,serif;font-style:italic;
+  font-size:12.5px;letter-spacing:0;text-transform:none}
+
+/* Brut — le trait de deux pixels et l'ombre dure : chaque vignette est une
+   caisse posée sur le papier, et le liseré de gauche s'épaissit d'autant. */
+.modele-brut :is(.pRang .pOuvre,.jArret,.iEtape){border:2px solid #111;
+  border-left-width:5px;border-left-color:var(--tc,var(--accent))}
+.modele-brut :is(.jBilan,.iBilan,.iChamp input,.iSugg,
+  .pRang .pOte,.iEchange){border:2px solid #111}
+.modele-brut .iEtape.transfert{border-left-style:dashed;border-left-color:#111}
+.modele-brut .jN{border:2px solid #111}
+.modele-brut .pGroupe .jour{border-bottom:3px solid #111;font-weight:700;
+  font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.modele-brut .pPied{border-top:3px solid #111}.modele-brut .pActs{border-bottom:3px solid #111}
+
+/* Verre — chaque vignette devient un carreau translucide sur le bloc de
+   couleur, comme les champs de la fiche et les lignes de la liste. */
+.modele-verre :is(.pRang .pOuvre,.jArret,.iEtape,.jBilan,.iBilan){
+  background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);border-radius:13px}
+.modele-verre :is(.pRang .pOuvre:hover,.jArret:hover,.iEtape.ailleurs:hover){
+  background:rgba(255,255,255,.2)}
+.modele-verre .iChamp input{background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.2);border-radius:999px}
+/* La liste de suggestions se pose sur le plan, hors du bloc : le carreau
+   translucide des autres panneaux la rendrait illisible, elle reprend donc le
+   fond plein du dégradé. */
+.modele-verre .iSugg{background:var(--accent-fort);border-color:rgba(255,255,255,.3);
+  border-radius:14px}
+.modele-verre .iEtape.transfert{border-left:3px dashed rgba(255,255,255,.5)}
+.modele-verre :is(.pRang .pOte,.iEchange,.iVise){border-radius:999px}
+.modele-verre .jArret.conf .jN{background:rgba(255,255,255,.24);color:#fff}
+
+/* Kraft — le carton, la machine à écrire et le pointillé de perforation. */
+.modele-kraft :is(.pRang .pt,.iEtape .t,.jT,.pGroupe .jour){font-family:"Courier Prime",monospace}
+.modele-kraft :is(.pRang .pOuvre,.jArret,.iEtape,.jBilan,.iBilan,
+  .iChamp input){background:rgba(255,252,244,.55)}
+.modele-kraft .iChamp input{border-color:var(--line-strong)}
+.modele-kraft :is(.jBilan b,.iBilan b){font-family:"Courier Prime",monospace;font-size:18px}
+.modele-kraft .pGroupe .jour{border-bottom:1px dashed var(--line-strong);
+  font-weight:700;font-size:12.5px;text-transform:uppercase}
+.modele-kraft .pPied{border-top:1px dashed var(--line-strong)}.modele-kraft .pActs{border-bottom:1px dashed var(--line-strong)}
+
+/* Signalétique — capitales, flèche et gros filet : un arrêt se lit comme une
+   direction de hall, ce qui va de soi pour deux panneaux qui ne parlent que
+   de se rendre quelque part. */
+.modele-signal :is(.pRang .pt,.iEtape .t,.jT){font-weight:700;font-size:12.5px;
+  letter-spacing:.02em;text-transform:uppercase}
+.modele-signal :is(.pRang .pt,.iEtape .t,.jT)::before{content:"→ ";
+  color:var(--accent-clair);font-weight:500}
+.modele-signal :is(.pRang .pOuvre,.jArret,.iEtape){border-left-width:4px}
+.modele-signal .pGroupe .jour{border-bottom:2px solid var(--accent-fort);
+  font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+
+/* Chronologie — le rail de la fiche court dans les deux tiroirs, qui sont
+   déjà des suites : ce qu'on a retenu, puis les étapes du trajet. La journée
+   organisée garde le sien, elle en avait un avant les modèles. */
+.modele-chrono :is(.pGroupe,.iEtapes){position:relative;padding-left:22px;gap:0}
+.modele-chrono :is(.pGroupe,.iEtapes)::before{content:"";position:absolute;
+  left:5px;top:8px;bottom:10px;width:2px;background:linear-gradient(var(--accent),var(--line))}
+.modele-chrono :is(.pRang,.iEtape){position:relative;padding-bottom:14px}
+.modele-chrono :is(.pRang,.iEtape)::before{content:"";position:absolute;left:-22px;
+  width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.modele-chrono .pRang::before{top:14px}
+.modele-chrono .iEtape::before{top:5px}
+/* Le rail a pris la place du liseré : la correspondance se dit alors par son
+   point, creusé comme la vignette qu'il remplace. */
+.modele-chrono .iEtape.transfert::before{border-style:dashed}
+.modele-chrono .pGroupe .jour{margin-left:-22px}
+.modele-chrono :is(.pRang .pOuvre,.iEtape){background:none;border-left:none;padding-left:0}
+.modele-chrono :is(.jBilan,.iBilan){border-radius:16px}
+
+/* Nu — ni cadre, ni fond, ni case : un arrêt se reconnaît à son heure et à son
+   nom. Le survol, qui n'a plus d'aplat où se dire, souligne. */
+.modele-nu :is(.pRang .pOuvre,.jArret,.iEtape,.jBilan,.iBilan){background:none;
+  border-left:none;border-radius:0;padding:6px 0}
+.modele-nu :is(.pRang .pOuvre:hover,.jArret:hover,.iEtape.ailleurs:hover){background:none}
+.modele-nu :is(.pRang .pOuvre:hover .pt,.jArret:hover .jT,
+  .iEtape.ailleurs:hover .t){text-decoration:underline;text-underline-offset:4px}
+.modele-nu :is(.pRang .pt,.iEtape .t,.jT){font-size:14.5px;font-weight:600;letter-spacing:-.02em}
+.modele-nu .pGroupe .jour{border-bottom:none;font-size:15px;font-weight:700;letter-spacing:-.02em}
+.modele-nu .iChamp input{background:none;
+  border-width:0 0 1px;border-radius:0;padding-left:0}
+.modele-nu :is(.pRang .pOte,.iEchange){border-color:transparent}
+.modele-nu .pPied{border-top:none}.modele-nu .pActs{border-bottom:none}
+
+.panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
+  max-height:min(74vh,600px,100% - 24px - var(--chalh,0px));overflow-y:auto}
+.panel.open{display:block}
+.panel .eyebrow{display:block;margin-bottom:8px}
+
+/* Le cartouche de la carte de chaleur.
+   Le plan porte les couleurs ; il reste à dire ce qu'elles valent, sur quelle
+   période, et lesquels des neuf cents emplacements sont en tête — dix stands
+   voisins tous rouges se ressemblent, et le premier ne se distingue pas du
+   dixième. En bas à droite : le seul coin que ni le zoom, ni l'échelle, ni la
+   pile des calques n'occupent. */
+.chalbar{position:absolute;right:12px;bottom:12px;z-index:6;width:272px;
+  display:flex;flex-direction:column;gap:9px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:12px 14px;
+  max-height:calc(100% - 24px);overflow-y:auto}
+.chalbar[hidden]{display:none}
+.chalTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.chalTete button{color:var(--ink-3);line-height:0;padding:2px 3px}
+.chalTete button:hover{color:var(--ink)}
+.chalTete button svg{width:14px;height:14px;display:block;transition:transform .15s}
+.chalTete button[aria-expanded="false"] svg{transform:rotate(180deg)}
+/* Replié sur sa légende. C'est l'échelle qu'on garde et non le titre seul : sur
+   une rampe thermique, la couleur ne dit pas seule ce qu'elle vaut, et le
+   cartouche replié reste la carte de la carte. */
+.chalbar.reduit{width:auto;max-width:272px}
+.chalbar.reduit .chalPer,.chalbar.reduit .chalEtat,.chalbar.reduit .chalTop{display:none}
+.chalPer{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.chalPer button{min-width:0;height:26px;border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink-2);font-size:11.5px}
+.chalPer button:hover{border-color:var(--line-strong);color:var(--ink)}
+.chalPer button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.chalEch[hidden]{display:none}
+.chalEch i{display:block;height:8px;border-radius:3px;border:1px solid var(--line)}
+/* Les bornes portent des nombres et non des parts : l'échelle est
+   logarithmique, et une bande graduée en pourcentages mentirait sur l'écart
+   entre son milieu et son bout. */
+.chalEch .bornes{display:grid;grid-template-columns:1fr auto 1fr;margin-top:3px;
+  font-size:10.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.chalEch .bornes span:nth-child(2){text-align:center}
+.chalEch .bornes span:last-child{text-align:right}
+.chalEtat{margin:0;font-size:11.5px;color:var(--ink-3);line-height:1.45}
+.chalEtat.err{color:var(--rouge,#C2372B)}
+.chalTop{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.chalTop button{display:flex;width:100%;align-items:baseline;gap:7px;text-align:left;
+  padding:4px 6px;border:1px solid transparent;border-radius:4px;
+  font-size:12px;color:var(--ink)}
+.chalTop button:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.chalTop button[disabled]{color:var(--ink-3);cursor:default}
+.chalTop button[disabled]:hover{border-color:transparent;background:none}
+.chalTop .rang,.chalTop .code,.chalTop .n{font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;color:var(--ink-3);flex:0 0 auto}
+.chalTop .n{font-size:11px;color:var(--ink-2)}
+/* Les visiteurs distincts, sous le nombre d'ouvertures : deux nombres au même
+   endroit se confondraient, l'un sous l'autre se comparent. */
+.chalTop .v{font-size:10px;color:var(--ink-3);margin-left:5px}
+.chalTop .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
+   d'administration au bas du panneau. Le libellé n'a pas de case à cocher
+   devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
+.apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+/* Ce que le salon fournit et ce que l'exploitant a dessiné se suivent dans la
+   même pile : un trait et un intertitre disent où l'une finit et l'autre
+   commence. Le premier de la liste vient sous le bouton de réorganisation, qui
+   le sépare déjà — inutile d'y ajouter un trait. */
+.panel .secpile{margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+.panel .reorg + .secpile{margin-top:0;padding-top:0;border-top:none}
+.apart .calq label{cursor:default}
+.calq.sous{padding-left:15px}
+.calq.sous label{font-size:12px;color:var(--ink-2)}
+.calq.sous .cc,.calq.sous .fillbtn{transform:scale(.88)}
+.calq{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:2px 0}
+.calq label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;min-width:0}
+.calq label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Réglages généraux, dans leur fenêtre : une case à cocher par ligne, avec de
+   quoi viser au doigt sans effleurer la voisine. */
+/* Un réglage qui se chiffre, sous ceux qui se cochent : même famille, autre
+   geste. L'unité est écrite à côté du champ plutôt que dans son libellé, où
+   elle se lirait comme faisant partie de la question. */
+.reglage-nb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:5px}
+.reglage-nb label{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink)}
+.reglage-nb .l{flex:1;min-width:0}
+.reglage-nb input{width:74px;padding:6px 8px;font-size:13.5px;text-align:right;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink);font-family:"IBM Plex Mono",monospace}
+.reglage-nb input:focus{border-color:var(--accent);outline:none}
+.reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
+.reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
+/* Les dates du salon, puis une rangée par jour : deux champs d'heure, et une
+   croix pour laisser un jour sans heures. Un champ d'heure ou de date porte
+   son sélecteur, il ne tient pas dans la largeur d'un nombre. */
+.reglage-nb .hRang{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink)}
+.reglage-nb.horaires > .l{font-size:14px;color:var(--ink);margin-bottom:3px}
+.reglage-nb .hRang .l{color:var(--ink-2)}
+.reglage-nb .hRang .u{margin-left:4px}
+.reglage-nb .hRang .u:first-child{margin-left:0}
+.reglage-nb .hJours{display:flex;flex-direction:column;gap:6px;margin:4px 0 2px}
+.reglage-nb input[type="date"]{width:138px;text-align:left}
+.reglage-nb input[type="time"]{width:96px;text-align:left}
+.reglage-nb .hEfface{flex:none;width:24px;height:24px;padding:0;border:0;background:none;
+  color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;border-radius:var(--radius)}
+.reglage-nb .hEfface:hover{color:var(--ink);background:var(--surface-2)}
+.reglage-nb .hEfface[hidden]{display:inline-block !important;visibility:hidden}
+.reglage-nb .aide.alerte{color:var(--rouge)}
+
+/* Le volet des environs. Un champ de coordonnées se colle plutôt qu'il ne se
+   tape : il prend toute la largeur, là où les autres réglages n'ont qu'un
+   nombre à loger. */
+.envCoord input{width:100%;padding:6px 8px;font-size:13.5px;text-align:left;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.envCoord input:focus{border-color:var(--accent);outline:none}
+.envRot input{width:88px}
+.envFond select{width:100%;padding:6px 8px;font-size:13.5px}
+.envEtat{font-size:12.5px;color:var(--ink-3);line-height:1.5;margin:10px 0 0}
+.envEtat.alerte{color:var(--rouge)}
+.envFin{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+
+/* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
+   remonte, ce qu'elle suggère, comment la fiche se range, de quoi le plan a
+   l'air, ses zones, sa mesure. Séparés par des onglets plutôt qu'empilés —
+   l'apparence est une planche d'aperçus, et poussait tout le reste hors de
+   l'écran. */
+/* Les onglets tiennent sur une seule rangée : un retour à la ligne laissait
+   le dernier seul au second rang, étiré sur toute la largeur, et la pilule
+   de la barre n'y ressemblait plus à rien. Ce qui cède, c'est l'intitulé —
+   « Fiche Stand », « Parcours intelligent » passent sur deux lignes,
+   équilibrées par « balance » — et l'espace autour, resserré. Il s'ajoute un
+   onglet à chaque fonction vendue : quand même les mots ne tiendront plus,
+   la barre défile plutôt que de couper le dernier. */
+.ongReg{display:flex;flex-wrap:nowrap;gap:3px;margin:0 0 14px;padding:3px;
+  overflow-x:auto;scrollbar-width:none;
+  background:var(--surface-2);
+  border:1px solid var(--line);border-radius:999px}
+.ongReg::-webkit-scrollbar{display:none}
+.ongReg button{flex:1 1 auto;padding:6px 8px;border-radius:999px;font-size:13px;font-weight:600;
+  line-height:1.25;text-wrap:balance;
+  color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
+.ongReg button:hover{color:var(--ink)}
+/* L'onglet d'une option non prise : là, gris, et sans prise. Le réglage qu'il
+   porte reste écrit derrière, et se retrouve le jour où l'option s'ouvre. */
+.ongReg button.eteint,.ongReg button.eteint:hover{opacity:.45;cursor:default;color:var(--ink-3)}
+.ongReg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+/* Changer d'onglet remplaçait un panneau par un autre d'un seul coup, et sur
+   la hauteur de ces fenêtres — une planche d'aperçus, une liste de zones — on
+   ne voyait pas ce qui avait bougé. Le volet qui paraît monte donc d'un pas.
+   Une animation, et non une transition : le panneau sortant est retiré du flux
+   par « hidden », et deux volets en fondu croisé demanderaient de tenir les
+   deux hauteurs à la fois. Elle repart à chaque fois que le volet redevient
+   visible — un élément en « display:none » n'anime rien, et reprend au
+   début quand il reparaît. */
+.voletReg{animation:entreVolet .18s ease-out}
+@keyframes entreVolet{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .voletReg{animation:none}
+  .ongReg button{transition:none}
+}
+/* Les onglets étaient quatre, ils sont huit : sur un téléphone, « Apparence »
+   et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
+   resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
+   ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
+   leur « flex:1 » : à largeur égale, le plus long serait coupé quand les
+   autres gardent du vide. */
+@media (max-width:640px){
+  .ongReg{scroll-snap-type:x proximity}
+  .ongReg button{flex:none;padding:8px 10px;font-size:12.5px;scroll-snap-align:center}
+}
+/* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
+   on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
+   dernière pastille ouvre le nuancier du système pour ceux qui ont un
+   hexadécimal à respecter.
+   La police des noms, qui le suit, en reprend la tête : ce qui est en place,
+   et de quoi revenir à ce que prévoit le modèle. */
+.reglage-coul,.reglage-police{margin:2px 0 18px}
+.reglage-coul .tete,.reglage-police .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val,.reglage-police .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  color:var(--ink-3)}
+.reglage-coul .raz,.reglage-police .raz{margin-left:auto;font-size:12px;color:var(--ink-3);
+  text-decoration:underline}
+.reglage-coul .raz:hover,.reglage-police .raz:hover{color:var(--ink)}
+.nuancier{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:352px}
+.nuancier button,.nuancier .perso{position:relative;display:block;width:100%;aspect-ratio:1;
+  padding:0;border:1px solid rgba(0,0,0,.18);border-radius:6px}
+/* Le ton retenu se cerne d'un anneau posé à l'extérieur : un liseré pris sur
+   la pastille aurait mangé la couleur qu'on est en train de juger. */
+.nuancier button[aria-pressed="true"]::after{content:"";position:absolute;inset:-4px;
+  border:2px solid var(--ink);border-radius:9px}
+.nuancier .perso{display:grid;place-items:center;cursor:pointer;overflow:hidden;
+  background:conic-gradient(#E4574B,#E4B14B,#5FBE6A,#4BB6E4,#6B5FE4,#D45FC0,#E4574B)}
+.nuancier .perso input{position:absolute;inset:0;width:100%;height:100%;padding:0;
+  border:none;opacity:0;cursor:pointer}
+.nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
+  background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Le même nuancier dans le panneau des calques, où il n'a pas la largeur d'une
+   fenêtre de réglages : les pastilles se serrent au lieu de pousser le panneau
+   par-dessus le plan qu'on est en train de repeindre. Le titre et le retour à
+   l'origine tiennent sur une ligne, comme la tête du nuancier d'accent. */
+.fondp .tete{display:flex;align-items:baseline;gap:10px}
+.fondp .tete .eyebrow{margin-bottom:0}
+.fondp .tete .reset{margin-left:auto}
+.fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* L'onglet « Nouveaux ». Trois blocs qui posent la même question à trois
+   endroits, donc trois blocs de même forme : un intitulé, ce que la marque
+   coûte à cet endroit-là, la planche des marques, et le nuancier.
+
+   Les vignettes sont des schémas et non la chose même : une fiche réduite à
+   soixante pixels ne se lirait pas, et ce qui se juge ici est la place de la
+   marque. Le vrai rendu se voit derrière la fenêtre — le plan et la liste
+   suivent le clic. */
+.blocDist{margin:0 0 26px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.blocDist:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.blocDist .aDist{margin:5px 0 12px;font-size:12.5px;color:var(--ink-2);max-width:62ch}
+.voletReg > .note{margin:0 0 18px;padding:9px 12px;font-size:12.5px;
+  background:var(--surface-2);border-left:3px solid var(--line-strong);
+  border-radius:0 3px 3px 0;color:var(--ink-2)}
+.choixDist{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.vgN{display:flex;flex-direction:column;align-items:center;gap:6px;width:92px;
+  padding:8px 6px 9px;border:1px solid var(--line);border-radius:5px;
+  background:var(--surface);cursor:pointer}
+.vgN:hover{border-color:var(--line-strong)}
+.vgN[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.vgN .ap{display:block;width:100%}
+.vgN svg{display:block;width:100%;height:auto}
+.vgN .n{font-size:11px;line-height:1.25;text-align:center;color:var(--ink-2)}
+.vgN[aria-pressed="true"] .n{color:var(--ink);font-weight:600}
+/* Les trois planches se peignent de la teinte retenue, celle-là même que le
+   nuancier du bas règle : on voit ce qu'on choisit avant de cliquer. */
+.vgN .mq{fill:var(--d,var(--accent))}
+.vgN .mqT{stroke:var(--d,var(--accent))}
+/* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
+   l'allure du bouton des critères de recherche une fois actif — c'en est un,
+   de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
+.genresPol{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.genresPol button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);font-size:12px;font-weight:600}
+.genresPol button:hover{border-color:var(--line-strong);color:var(--ink)}
+.genresPol button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.genresPol .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
+  color:var(--ink-3)}
+/* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
+   ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas
+   sur une vignette, et tronqué il ne se reconnaîtrait plus. Les vignettes d'un
+   même rang s'alignent sur la plus haute, la grille s'en charge, et le nom
+   reste en haut de chacune pour que le rang se lise d'une traite. */
+.polices{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px}
+.pol{display:flex;flex-direction:column;gap:3px;min-width:0;
+  padding:8px 10px 7px;text-align:left;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:6px}
+.pol:hover{border-color:var(--line-strong)}
+.pol[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.pol .t{font-size:16px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}
+.pol .g{font-size:11px;line-height:1.3;color:var(--ink-3)}
+/* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
+   ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
+   bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
+   qui est ce qui les distingue.
+
+   Les deux côte à côte, dans l'ordre de l'écran : c'est ensemble qu'ils font
+   l'habillage, et un modèle se choisit sur l'accord des deux. La vignette est
+   donc plus large qu'au temps où elle ne montrait que la fiche. */
+.modeles{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+.mod{display:block;width:100%;padding:0;text-align:left;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mod:hover{border-color:var(--line-strong)}
+.mod[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.mod .vue{display:block;position:relative;height:198px;overflow:hidden;background:var(--ground);
+  -webkit-mask-image:linear-gradient(#000 74%,transparent);mask-image:linear-gradient(#000 74%,transparent)}
+.mod .nom{display:flex;align-items:center;gap:7px;padding:9px 11px;font-size:12.5px;
+  font-weight:600;border-top:1px solid var(--line)}
+.mod .nom .coche{margin-left:auto;color:var(--accent);font-size:13px;visibility:hidden}
+.mod[aria-pressed="true"] .nom .coche{visibility:visible}
+.mod .resume{display:block;padding:0 11px 10px;font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+/* L'aperçu porte les mêmes classes que la liste et la fiche du plan : c'est la
+   même feuille de style qui l'habille, à l'échelle près. La réduction est
+   posée une fois sur le couple, sans quoi les deux moitiés ne seraient pas au
+   même format. */
+.duo{--reduc:.58;position:absolute;top:0;left:0;
+  width:calc(100% / var(--reduc));height:calc(100% / var(--reduc));
+  transform:scale(var(--reduc));transform-origin:top left;
+  display:flex;pointer-events:none}
+/* La liste garde une largeur fixe : proportionnelle, elle se serait resserrée
+   au point de couper les noms sur la vignette la plus étroite. */
+.apercu-liste{flex:0 0 152px}
+.apercu{flex:1 1 auto}
+.apercu,.apercu-liste{min-width:0;overflow:hidden;
+  /* « background-color » et non le raccourci : celui-ci effacerait le fond
+     que les modèles peignent — le dégradé du verre, le grain du kraft — car
+     cette règle vient après la leur. */
+  background-color:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
+/* La liste de l'aperçu ne défile pas : ce qui dépasse la vignette s'efface
+   avec le reste, sous le fondu du bas. */
+.apercu-liste .list{overflow:hidden}
+/* La vignette est trois fois plus étroite que le vrai panneau : le compteur y
+   passait à la ligne, et l'on jugeait un habillage sur un défaut de largeur
+   qu'aucun visiteur ne verra. Il se coupe, comme un nom trop long. */
+.apercu-liste .count span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* La fiche d'un stand, en trois colonnes : les champs dont le salon dispose,
+   ceux que la fiche montre, et la fiche telle qu'elle en sortira. Une liste de
+   quinze intitulés ne dit pas ce qu'on obtient — on réglait un ordre sans voir
+   la fiche, et il fallait ouvrir le plan public pour juger. La réserve est
+   étroite : on n'y lit qu'un nom, quand la colonne du milieu porte les
+   commandes de chaque champ. */
+.ficheTrois{display:grid;grid-template-columns:168px minmax(0,1fr) 244px;
+  gap:14px;align-items:start;margin-top:12px}
+.ficheCol{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ficheCol > .eyebrow{display:block}
+/* L'aperçu se colle en haut : les listes sont plus longues que lui, et le
+   laisser défiler reviendrait à ranger des champs sans plus rien voir de ce
+   qu'on range. */
+.ordreApercu{position:sticky;top:0}
+.ordreApercu > .aideO{margin:1px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
+/* L'aperçu porte les classes de la vraie fiche, comme les vignettes des
+   modèles : c'est la même feuille de style qui l'habille. Il ne se réduit pas,
+   lui — on y lit des valeurs, pas une silhouette — et défile pour son compte :
+   une fiche fournie passe sous le bord de la fenêtre, et c'est justement le bas
+   qu'on vient vérifier. Le défilement s'arrête à lui plutôt que d'emporter la
+   fenêtre une fois le bas atteint. */
+.vueO{display:block;max-height:min(52dvh,430px);overflow:auto;
+  overscroll-behavior:contain}
+/* La vignette d'un modèle se coupe dans sa tuile ; l'aperçu du rangement se
+   déroule en entier — c'est le bas de la fiche qu'on vient vérifier — et c'est
+   le cadre qui défile. Posé en ligne comme les vignettes, il s'étirait à la
+   hauteur du cadre : rien ne débordait, et le seul défilement était celui de
+   son corps, hors d'atteinte puisque l'aperçu est inerte et que la roulette le
+   traverse. Il reprend donc sa hauteur naturelle, et le cadre la borne. */
+.vueO .detail-bd{overflow:visible;flex:none}
+/* Les deux listes reçoivent un dépôt, et le disent : le trait tient lieu de
+   bac, y compris quand la liste est vide et qu'il n'y aurait rien à viser. */
+.ficheDispo,.ordreListe{display:flex;flex-direction:column;gap:3px;
+  min-height:58px;padding:5px;border:1px dashed var(--line);
+  border-radius:var(--radius)}
+.videO{margin:0;font-size:11px;color:var(--ink-3);line-height:1.45}
+.ordreLigne{display:flex;align-items:center;gap:8px;font-size:13px;
+  padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:grab}
+.ordreLigne:active{cursor:grabbing}
+.ordreLigne .prise,.grpTete .prise{flex:0 0 auto;color:var(--ink-3);font-size:15px;line-height:1}
+.ordreLigne .lib{color:var(--ink);min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.ordreLigne .etiq{flex:1;font-size:11px;color:var(--ink-3);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ordreLigne .etiq:not(:empty){margin-left:2px}
+/* Un champ en réserve ne se règle pas : tant qu'il ne paraît pas, il n'a ni
+   intitulé à montrer ni voisins à doubler. Il s'efface d'autant, et le nom
+   qu'on vient y chercher prend toute la place. */
+.ordreLigne.dispo{background:var(--surface);padding:5px 7px;font-size:12.5px}
+.cocheO{flex:0 0 auto;width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
+.ordreLigne .outil,.grpTete .outil{flex:0 0 auto;width:22px;height:20px;
+  border:1px solid var(--line);border-radius:3px;font-size:10px;color:var(--ink-2);
+  background:var(--surface)}
+.ordreLigne .outil:not(:disabled):hover,.grpTete .outil:not(:disabled):hover{
+  border-color:var(--accent);color:var(--accent)}
+.ordreLigne .outil.danger:not(:disabled):hover,.grpTete .outil.danger:not(:disabled):hover{
+  border-color:var(--rouge);color:var(--rouge)}
+.ordreLigne .outil:disabled{opacity:.3;cursor:default}
+/* Le bloc tiré s'efface là où il était : c'est le trou qui se déplace sous le
+   curseur qui dit où le lâcher le posera. */
+.ordreLigne.tire,.ordreGrp.tire{opacity:.4}
+.ordreLigne.tire .outil,.ordreGrp.tire .outil{visibility:hidden}
+/* Une section se lit comme un champ de plus : elle se déplace d'un bloc, et ses
+   membres se serrent sous son titre plutôt qu'à côté des autres champs. Le
+   liseré d'accent tient lieu d'accolade. */
+.ordreGrp{border:1px solid var(--line);border-left:2px solid var(--accent);
+  border-radius:var(--radius);background:var(--surface-2);cursor:grab}
+.ordreGrp:active{cursor:grabbing}
+.grpTete{display:flex;align-items:center;gap:8px;padding:6px 9px}
+.grpTitre{flex:1;min-width:0;padding:4px 7px;font-size:13px;font-weight:600;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.grpTitre:focus{border-color:var(--accent);outline:none}
+/* Une section vide garde la hauteur d'une ligne : c'est là qu'on vise pour y
+   déposer le premier champ. */
+.grpMembres{display:flex;flex-direction:column;gap:3px;min-height:26px;
+  padding:0 9px 8px 22px}
+.ordreGrp .ordreLigne{background:var(--surface)}
+.piedO{display:flex;align-items:center;gap:10px;margin-top:2px}
+/* Le bouton garde sa ligne : un échec d'enregistrement tient en deux lignes à
+   côté de lui, et le repliait sur deux mots. */
+.piedO .btn{flex:0 0 auto;white-space:nowrap}
+/* Ce que l'enregistrement devient, à côté du bouton qui ouvre une section :
+   chaque geste part en base tout seul, et rien d'autre ne le dirait. */
+.etatO{font-size:12px;color:var(--ink-3)}
+.etatO[data-mal="true"]{color:var(--rouge)}
+/* Le même rangement, dans l'onglet « Recherche » : les filtres du panneau des
+   critères. Il n'a ni réserve ni aperçu — un filtre se coche dans la console,
+   et le panneau derrière la fenêtre tient lieu d'aperçu —, si bien que la
+   liste est seule sous son intertitre et doit s'en écarter d'elle-même. */
+.ordreCrit{margin-top:11px}
+.ordreCrit + .videO{margin-top:9px}
+@media (max-width:760px){
+  .ficheTrois{grid-template-columns:minmax(0,1fr)}
+  .ordreApercu{position:static}
+  .vueO{max-width:320px}
+}
+/* Les zones organisateur dans les réglages : la liste d'un côté, la fiche de
+   celle qu'on a choisie de l'autre. Un exploitant les reprend l'une après
+   l'autre, et doit voir en même temps ce qu'il écrit et ce qui reste à
+   écrire. */
+.zonesReg{display:grid;grid-template-columns:minmax(0,208px) minmax(0,1fr);
+  gap:14px;align-items:start;margin-top:12px}
+/* La liste défile pour elle seule : vingt-deux zones auraient poussé le bouton
+   d'enregistrement hors de la fenêtre. */
+.listeZ{display:flex;flex-direction:column;gap:2px;max-height:46dvh;
+  overflow-y:auto;padding-right:2px}
+.listeZ button{display:flex;align-items:baseline;gap:7px;width:100%;padding:7px 9px;
+  font-size:13px;text-align:left;color:var(--ink-2);background:var(--surface-2);
+  border:1px solid transparent;border-radius:var(--radius)}
+.listeZ button:hover{border-color:var(--line-strong);color:var(--ink)}
+.listeZ button[aria-pressed="true"]{background:var(--accent-soft);
+  border-color:var(--accent);color:var(--ink);font-weight:600}
+.listeZ .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.listeZ .etat{flex:none;font-size:10.5px;color:var(--ink-3);
+  letter-spacing:.03em;text-transform:uppercase}
+.detailZ{min-width:0}
+.ouZ{margin:0 0 10px;font-size:11.5px;color:var(--ink-3)}
+.champZ{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.champZ .tZ{font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-2)}
+.champZ input,.champZ select{width:100%;padding:8px 10px;font-size:14px;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
+.champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Les salles du programme, dans la fiche de la zone : une coche par salle, et
+   sous elle ce qu'il en est déjà — trouvée par la synchronisation, choisie à
+   la main, partie dans une autre zone, ou encore nulle part. La liste est
+   celle du programme entier, d'où le défilement : c'est de là qu'on voit ce
+   qui reste à situer. */
+.sallesZ{display:flex;flex-direction:column;max-height:32dvh;overflow-y:auto;
+  padding:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.sallesZ label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:1px 9px;align-items:baseline;padding:6px 7px;border-radius:var(--radius);
+  cursor:pointer}
+.sallesZ label:hover{background:var(--accent-soft)}
+/* La coche n'est pas un champ de saisie : la largeur pleine des autres champs
+   de la fiche l'étirerait sur toute la ligne. */
+.champZ .sallesZ input{width:auto;margin:0;padding:0}
+.champZ .cocheZ{display:flex;align-items:center;gap:9px;padding:2px 0;
+  font-size:14px;color:var(--ink);cursor:pointer}
+.champZ .cocheZ input{width:16px;height:16px;flex:none;margin:0;padding:0;
+  accent-color:var(--accent)}
+.sallesZ .nS{font-size:13.5px;color:var(--ink)}
+.sallesZ .cS{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+.sallesZ .eS{grid-column:2/-1;font-size:11px;color:var(--ink-3)}
+.sallesZ .eS[data-genre="manque"]{color:var(--rouge)}
+.sallesZ .eS[data-genre="manuel"]{color:var(--accent)}
+/* Le seuil se chiffre entre deux champs qui se choisissent : sa règle de
+   séparation le détache de ce qui précède, rien ne le détachait de ce qui
+   suit. */
+.voletSugg .reglage-nb + .champZ{margin-top:16px}
+/* Les valeurs d'un critère, dans les réglages de la suggestion : ce qu'on
+   propose en face de chacune, et combien d'exposants la portent. Le nombre est
+   ce qui dit si une valeur pèse — une ville à trois exposants ne déclenchera
+   presque jamais. La liste défile pour elle seule : un salon rangé par ville en
+   compte cent, et le reste du volet doit rester atteignable. */
+.suggVals{display:flex;flex-direction:column;gap:5px;max-height:34dvh;overflow-y:auto;
+  padding:6px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.suggVals .rang{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto;
+  gap:3px 10px;align-items:center;padding:5px 6px;border-radius:var(--radius)}
+.suggVals .rang:hover{background:var(--accent-soft)}
+.suggVals .nV{font-size:13px;color:var(--ink);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.suggVals .vV{font-size:12.5px;color:var(--ink-2);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+/* Une valeur que personne n'a encore consultée ne propose rien : elle le dit en
+   italique, comme une absence et non comme un nom. */
+.suggVals .vV.rien{color:var(--ink-3);font-style:italic}
+.suggVals .cV{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+/* Les champs de la fiche prennent toute la largeur ; ici ils tiennent dans une
+   colonne, et la taille de leur texte doit rester celle de la ligne. */
+.champZ .suggVals select{width:100%;padding:5px 7px;font-size:12.5px}
+@media (max-width:640px){
+  .suggVals .rang{grid-template-columns:minmax(0,1fr) auto}
+  .suggVals .vV,.champZ .suggVals select{grid-column:1/-1}
+}
+/* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
+   vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
+   il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
+.champZ .logoZ{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.champZ .logoZ .vue{flex:none;display:flex;align-items:center;justify-content:center;
+  width:106px;height:74px;padding:6px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2);overflow:hidden}
+.champZ .logoZ .vue[data-survol]{border-color:var(--accent);background:var(--accent-soft)}
+.champZ .logoZ .vue img{max-width:100%;max-height:100%;object-fit:contain}
+.champZ .logoZ .vue span{font-size:11.5px;line-height:1.4;text-align:center;color:var(--ink-3)}
+.champZ .logoZ .actes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.champZ .logoZ .actes button{padding:6px 11px;font-size:12.5px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.champZ .logoZ .actes button:hover{border-color:var(--line-strong);color:var(--ink)}
+/* Le poids du logo tel qu'il partira, et l'échec quand il n'a pas pu être lu :
+   la même ligne, pour que rien ne saute en passant de l'un à l'autre. */
+.ditZ{font-size:12px;color:var(--ink-3)}
+.ditZ[data-mal="true"]{color:#C2372B}
+/* La fiche n'a pas de bouton : elle s'enregistre quand on la quitte. Reste à
+   le dire, et à dire ensuite ce qu'il en est advenu — au même endroit, pour que
+   la ligne ne fasse pas sauter la mise en page en changeant de texte. */
+.etatZ{font-size:12px;color:var(--ink-3)}
+.etatZ.seul{margin:2px 0 0}
+.etatZ[data-mal="true"]{color:#C2372B}
+
+/* L'éditeur de la description. Sa barre ne propose que ce que la fiche sait
+   afficher : proposer un titre ou une couleur montrerait une mise en forme
+   que la relecture retire à l'affichage. */
+.edrich{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);overflow:hidden}
+.edrich:focus-within{border-color:var(--accent)}
+.edrich .barre{display:flex;flex-wrap:wrap;gap:2px;padding:4px;
+  border-bottom:1px solid var(--line)}
+.edrich .barre button{min-width:27px;height:26px;padding:0 7px;font-size:12.5px;
+  line-height:1;color:var(--ink-2);border-radius:3px}
+.edrich .barre button.lg{font-size:11.5px}
+.edrich .barre button:hover{background:var(--line);color:var(--ink)}
+.edrich .barre button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.edrich .lienbarre{display:flex;gap:6px;padding:6px;background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.edrich .lienbarre[hidden]{display:none}
+.edrich .lienbarre input{flex:1;min-width:0;padding:5px 8px;font-size:12.5px;
+  color:var(--ink);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.edrich .lienbarre input:focus{border-color:var(--accent);outline:none}
+.edrich .lienbarre button{flex:none;padding:5px 10px;font-size:12px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.edrich .lienbarre button:hover{border-color:var(--line-strong);color:var(--ink)}
+.edrich .lienbarre button.ok{color:var(--accent);border-color:var(--accent)}
+.edrich .zone{min-height:118px;max-height:32dvh;overflow-y:auto;padding:9px 10px;
+  font-size:14px;line-height:1.5;color:var(--ink)}
+.edrich .zone:focus{outline:none}
+.edrich .zone > *:first-child{margin-top:0}
+.edrich .zone p{margin:0 0 .55em}
+.edrich .zone ul,.edrich .zone ol{margin:0 0 .55em;padding-left:1.25em}
+.edrich .zone a{color:var(--accent)}
+/* Un éditeur vide ne dit pas ce qu'on y met : la consigne s'efface à la
+   première frappe, comme dans un champ ordinaire. */
+.edrich .zone:empty::before{content:attr(data-vide);color:var(--ink-3)}
+/* Sur un écran étroit la fenêtre n'a plus deux colonnes à donner : la liste
+   passe au-dessus de la fiche, raccourcie pour ne pas la repousser. */
+@media (max-width:640px){
+  .zonesReg{grid-template-columns:minmax(0,1fr)}
+  .listeZ{max-height:26dvh}
+}
+/* Une fenêtre à onglets ne garde pas la même hauteur d'un volet à l'autre :
+   centrée, elle remontait et redescendait à chaque clic, et la barre d'onglets
+   fuyait sous le curseur qui venait de la viser. Elle s'accroche donc par le
+   haut, à distance fixe du bord : c'est le bas qui bouge, là où l'on ne
+   regarde pas — et « glisseFenetre » y mène en glissant. */
+/* La fiche d'une conférence empile des blocs, comme celle d'un stand : elle les
+   espace donc pareil — `.detail-bd` s'en tient à 15 px. Sans cela un intitulé
+   touchait la valeur du bloc précédent, et se lisait comme sa suite. */
+.modale[data-genre="fiche"] .mcorps > * + *{margin-top:15px}
+.modale[data-genre="large"]{align-items:start;padding-block-start:min(7vh,54px)}
+/* Sept cent soixante pixels tenaient pour huit onglets et une planche
+   d'aperçus. Il y en a douze, et la fiche d'une zone se lit en deux colonnes :
+   mille rend au contenu la place qu'il demandait, sans dépasser la largeur
+   confortable d'une ligne de texte dans les volets qui n'en ont qu'une. */
+.modale[data-genre="large"] .mfen{width:min(1000px,100%);
+  /* le haut mange sa part de l'écran : la hauteur maximale la lui rend, sans
+     quoi le pied de la fenêtre sortirait par le bas sur un écran court */
+  max-height:calc(100dvh - min(7vh,54px) - 20px)}
+.reglages{margin-top:10px}
+.reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
+  cursor:pointer;padding:7px 0}
+.reglages input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
+/* Ce qu'une case promet, en une ligne. « Produits » ou « Points d'intérêt »
+   ne se devinent pas depuis leur intitulé, et un réglage qu'on ne comprend
+   pas ne se touche pas. L'alignement reprend la case et son écart, pour que
+   l'aide parte sous l'intitulé et non sous la coche. */
+.reglages .aideR{margin:-5px 0 7px 25px;font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Une sorte que rien n'alimente garde son rang, éteinte : l'exploitant qui
+   cherche « Produits » doit lire pourquoi la case ne répond pas, plutôt que
+   de se demander où elle est passée. */
+.reglages label.eteint{cursor:default}
+.reglages label.eteint span{color:var(--ink-3)}
+.cc{width:24px;height:18px;padding:0;border:1px solid var(--line-strong);border-radius:3px;
+  background:none;cursor:pointer;flex:none}
+.cc::-webkit-color-swatch-wrapper{padding:1px}
+.cc::-webkit-color-swatch{border:none;border-radius:2px}
+.calq .opts{display:flex;align-items:center;gap:6px}
+.fillbtn{width:20px;height:18px;border:1px solid var(--line-strong);border-radius:3px;
+  color:var(--ink-3);display:grid;place-items:center;padding:0}
+.fillbtn:hover{border-color:var(--ink-2);color:var(--ink-2)}
+.fillbtn svg{width:11px;height:11px;display:block}
+.fillbtn svg rect{fill:none;stroke:currentColor;stroke-width:1.5}
+.fillbtn[aria-pressed="true"]{border-color:var(--ink-2);color:var(--ink)}
+.fillbtn[aria-pressed="true"] svg rect{fill:currentColor}
+.modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
+  place-items:center;padding:20px}
+.modale.open{display:grid}
+/* « background-color » et non « background », comme sur le parcours et
+   l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
+   classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
+   forme courte — écrite après eux dans la feuille — les effacerait. */
+.mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
+  display:flex;flex-direction:column;overflow:hidden}
+.mfen header{display:flex;align-items:center;justify-content:space-between;
+  padding:15px 18px 12px;border-bottom:1px solid var(--line)}
+.mfen h2{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
+/* La fenêtre a son propre titre, et sa règle passait devant celle de la fiche
+   dans l'aperçu des modèles — qui vit dans une fenêtre. Le nom y prenait seize
+   pixels quel que soit le modèle, et le numéro, qui suit la variable, cessait
+   de lui être proportionnel. L'aperçu doit montrer la fiche, pas la fenêtre. */
+.mfen .detail-hd h2{font-size:var(--titre)}
+.mfen header button{color:var(--ink-3);font-size:18px;line-height:1;padding:2px 4px}
+.mfen header button:hover{color:var(--ink)}
+/* L'écran d'accès porte la marque, et il est le seul de cette page à le faire :
+   c'est le moment où l'on s'adresse à l'exploitant, avant que le plan derrière
+   ne redevienne celui de son salon. Le titre vient contre elle plutôt qu'à
+   l'autre bout de la fenêtre. */
+.mfen header.teteMarque{justify-content:flex-start;gap:12px}
+.marqueE2M{flex:0 0 auto;width:58px;height:58px;display:block}
+.marqueE2M svg{width:100%;height:100%;display:block}
+/* L'accent de cet écran est celui de la marque et non celui du salon : on n'a
+   pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
+   connecte. */
+#acces{--accent:var(--m-cyan-profond);--accent-soft:#D7EFFB;--accent-ink:#FFFFFF}
+/* Et ses champs. Cette page ne charge pas `console.css`, où les libellés
+   savent se tenir : faute de règle ici, l'intitulé et son champ se suivaient
+   sur la même ligne et se chevauchaient — sur le premier écran que voit un
+   exploitant. */
+/* Le bouton plein prend le cyan vif, comme celui de la console : l'accent
+   rabattu reste pour les bordures et les liserés de focus, qui portent leur
+   contraste sur du blanc, mais un aplat n'a pas cette contrainte. */
+#acces .btn.accent{background:var(--m-cyan);border-color:var(--m-cyan);color:var(--m-nuit)}
+#acces .astuce{margin:0 0 4px;font-size:12.5px;color:var(--ink-3)}
+#acces label{display:flex;flex-direction:column;gap:4px;margin-top:11px}
+#acces label span{font-size:12.5px;color:var(--ink-2)}
+#acces input{width:100%;padding:8px 10px;background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius)}
+#acces input:focus{border-color:var(--accent);outline:none}
+.mcorps{padding:12px 14px;overflow-y:auto;flex:1}
+.mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.mfen footer{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;
+  padding:12px 18px 16px;border-top:1px solid var(--line)}
+/* Le bouton qui porte ce pour quoi la fenêtre s'est ouverte. Le rouge du
+   « danger » dit ce qu'on perd ; l'accent, ce vers quoi l'on va. */
+.mfen footer .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
+.mfen footer .btn.accent:hover{filter:brightness(1.08)}
+/* Un lien déguisé en bouton reste un bouton : souligné, il trahissait le
+   déguisement au pied de l'écran d'accès. */
+.mfen footer a.btn{text-decoration:none;color:var(--ink)}
+.mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
+.mfen footer .btn.danger:hover{filter:brightness(1.1)}
+/* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
+   visible et rouge — c'est bien ce qu'il fera — mais éteint : le retirer
+   laisserait croire qu'il n'y a rien à faire, le griser en gris le rangerait
+   parmi les commandes ordinaires. */
+.mfen footer .btn[disabled]{opacity:.4;cursor:default;filter:none}
+
+/* La fenêtre de partage du parcours.
+
+   Le code se photographie : il reste noir sur blanc quelles que soient les
+   couleurs de la page, et garde sa plaque blanche jusque sous le modèle de
+   fiche le plus sombre. Un code
+   inversé se lit encore sur un bon appareil, mal sur les autres, et rien
+   n'obligeait à courir ce risque pour une image de dix secondes. */
+.qrPlaque{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;display:grid;place-items:center}
+.qrPlaque svg{display:block;width:min(240px,58vw);height:auto}
+/* Le lien en clair : sélectionnable à la souris, et replié plutôt que de faire
+   déborder la fenêtre. La hauteur vaut exactement trois interlignes — une
+   quatrième ligne coupée en deux se lit comme un défaut d'affichage, alors
+   qu'elle ne dit que « faites défiler ». */
+.mcorps textarea.qrLien{width:100%;resize:none;padding:8px 10px;font-size:12px;
+  font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
+.mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La même mise en garde dans une fenêtre : le filet la sépare des gestes
+   d'installation comme il la sépare de la liste, mais il lui faut l'air d'un
+   paragraphe et non celui d'un pied de colonne. */
+.mcorps .pGarde{margin-top:15px;padding-top:13px}
+/* L'endroit que le code désignera, entre la phrase et le damier : c'est la
+   seule ligne que l'exploitant relit avant d'imprimer trente affiches. */
+.mcorps p.iciOu{margin-top:10px;font-family:"Archivo",sans-serif;font-weight:600;
+  font-size:14px;color:var(--ink)}
+
+/* L'affiche à imprimer. Elle vit à la racine du corps, hors de la fenêtre qui
+   l'a produite, parce que la règle d'impression éteint les enfants du corps un
+   par un et n'aurait pas su distinguer l'affiche du voile qui la porte. Le cran
+   posé sur « html » ne dure que le temps du tirage : une impression ordinaire
+   de la page reste ce qu'elle était. */
+#afficheQr{display:none}
+@media print{
+  html.imprime-qr body > *{display:none}
+  html.imprime-qr body > #afficheQr{display:block}
+  html.imprime-qr #afficheQr svg{width:100%;height:auto}
+}
+/* La notice de confidentialité : des paragraphes qui respirent, et le refus
+   posé comme une réponse, à part du texte qui l'explique. */
+.mcorps .notice p + p{margin-top:8px}
+.mcorps label.refusMesure{display:flex;align-items:center;gap:9px;margin:14px 0 2px;padding:10px 12px;
+  font-size:13.5px;font-weight:500;color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:pointer}
+.mcorps label.refusMesure input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent)}
+.mcorps p.noteRefus{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* Ce qu'un parcours reçu apporte, avant de l'accepter. */
+.mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.mcorps ul.partListe li{padding-left:13px;position:relative}
+.mcorps ul.partListe li::before{content:"";position:absolute;left:0;top:8px;
+  width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.mcorps ul.partListe li.reste{color:var(--ink-3);font-style:italic}
+.mcorps ul.partListe li.reste::before{background:var(--line-strong)}
+
+/* La remise à zéro des compteurs.
+   La phrase qui dit « sans retour » ne peut pas se lire comme les autres :
+   c'est la seule que l'on regrette de ne pas avoir lue. */
+.mcorps p.alerte{color:#C2372B;font-weight:500}
+.mcorps p.etatRaz{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:12px;
+  color:var(--ink-3);line-height:1.5}
+.mcorps p.etatRaz.err{color:#C2372B}
+.mcorps .razMot{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:13px}
+.mcorps .razMot span{color:var(--ink-2)}
+
+/* L'invitation à installer le plan.
+   Étroite comme celle de la suggestion : elle ne porte qu'une proposition. Sur
+   téléphone, la règle commune en fait une feuille posée en bas de l'écran — là
+   où le système pose les siennes, et où le pouce trouve « Installer ». La
+   largeur ne vaut donc qu'au-delà : posée sur la feuille, elle l'arrêtait à
+   quelques pixels du bord, et la liste dépassait dans l'interstice. */
+@media (min-width:901px){
+  .modale[data-genre="installe"] .mfen{width:min(400px,100%)}
+}
+.instTete{display:flex;align-items:center;gap:13px;margin:4px 0 12px}
+/* L'icône telle que l'écran d'accueil la montrera, avec l'ombre légère d'une
+   icône posée sur un fond : sans elle, le bleu se lirait comme un aplat de la
+   fenêtre. */
+.instIcone{flex:none;width:52px;height:52px;border-radius:12px;
+  box-shadow:0 5px 14px -7px rgba(0,0,0,.5)}
+.instTete b{display:block;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.instTete span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
+.mcorps ol.instEtapes{margin:12px 0 2px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ol.instEtapes li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;
+  line-height:1.5;color:var(--ink-2)}
+.mcorps ol.instEtapes .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ol.instEtapes b{color:var(--ink);font-weight:600}
+/* Le pictogramme se lit dans la phrase, à la hauteur du texte : c'est le même
+   dessin que dans la barre du navigateur, qu'on y cherchera des yeux. */
+.instPicto{white-space:nowrap}
+.instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
+  vertical-align:-.25em;color:var(--accent)}
+/* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
+   pleins — la case reste ce qu'on règle. Deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences : même geste, même
+   allure. */
+.reglages .aideR :is(.apercuInst, .apercuRappel){padding:0;font-size:inherit;
+  color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+
+/* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
+   puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
+   nombre de fiches que chacune retient — sans lui, on coche à l'aveugle. Le
+   titre du groupe, lui, ne dit que ce qui y est retenu. */
+.grp-crit{padding:0;border-top:1px solid var(--line)}
+.grp-crit:first-child{border-top:none}
+/* Le titre est la prise : replié, un critère tient sur une ligne, et le
+   panneau les montre tous plutôt qu'un seul déplié. */
+.grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
+  cursor:pointer;list-style:none}
+.grp-crit > summary::-webkit-details-marker{display:none}
+.grp-crit > summary::after{content:"";width:7px;height:7px;margin-left:auto;
+  border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
+.grp-crit[open] > summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.grp-crit > summary .t{font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-2)}
+.grp-crit > summary .r{font-size:11.5px;color:var(--ink-3)}
+.grp-crit > summary .r[data-on="true"]{color:var(--accent);font-weight:600}
+/* Un critère réglé mais que rien ne renseigne : seul l'exploitant le voit, et
+   il doit le voir comme un manque, pas comme un filtre parmi d'autres. */
+.grp-crit > summary .r[data-manque="true"]{color:var(--rouge,#C2372B)}
+.vide-crit{margin:0 0 10px;font-size:12px;color:var(--ink-3);line-height:1.5}
+.grp-crit > *:last-child{margin-bottom:10px}
+.grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Un critère à cent valeurs ne pousse plus rien hors de vue : le compte et les
+   boutons sont hors du cadre qui défile, et il n'en faut donc pas un second
+   ici — deux défilements emboîtés, le doigt se trompe toujours de l'un pour
+   l'autre. Le tamis au-dessus reste, qui raccourcit la liste plutôt que de la
+   faire défiler. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px}
+.puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.puce-crit:hover{border-color:var(--line-strong)}
+.puce-crit[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink);font-weight:600}
+.puce-crit .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.puce-crit .n{font-size:11px;color:var(--ink-3);flex:0 0 auto}
+.puce-crit[aria-pressed="true"] .n{color:var(--accent)}
+.puces-crit .aucune{font-size:12px;color:var(--ink-3)}
+.compte-crit{margin:14px 0 0;padding-top:10px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-3)}
+/* Prendre d'un geste tout ce que la recherche a retenu. Sous le compte, dont il
+   est la suite, et de la largeur du panneau : une puce de plus au milieu des
+   valeurs se serait prise pour un critère. */
+.tout-parc{width:100%;justify-content:center;margin-top:9px;padding:9px 12px;
+  font-size:13px;background:var(--surface-2)}
+.tout-parc:hover:not([disabled]){border-color:var(--accent);color:var(--accent)}
+.tout-parc[disabled]{opacity:.45;cursor:default}
+
+/* liste réordonnable : le premier rang est le plus en avant */
+.ordre{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ordre li{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;
+  padding:7px 9px;border:1px solid transparent;border-radius:4px;background:var(--surface-2);
+  font-size:13px;cursor:grab}
+.ordre li:hover{border-color:var(--line-strong)}
+.ordre li.drag{opacity:.4}
+.ordre li.avant{box-shadow:inset 0 2px 0 var(--accent)}
+.ordre li.apres{box-shadow:inset 0 -2px 0 var(--accent)}
+.ordre .poignee{color:var(--ink-3);font-size:13px;line-height:1;cursor:grab}
+.ordre .nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ordre .genre{font-size:10px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;
+  border:1px solid var(--line);border-radius:3px;padding:1px 5px;margin-left:6px}
+.ordre .bouts{display:flex;gap:2px}
+.ordre .bouts button{width:22px;height:20px;border:1px solid var(--line);border-radius:3px;
+  color:var(--ink-3);font-size:11px;line-height:1}
+.ordre .bouts button:hover{border-color:var(--accent);color:var(--accent)}
+/* Le cadenas tient la place du crayon qu'il remplace : sans cette largeur, les
+   deux flèches de rang remonteraient d'un cran sur les lignes verrouillées et
+   la colonne se déchirerait. */
+.ordre .verrou{display:grid;place-items:center;width:22px;height:20px;color:var(--accent)}
+.reorg{width:100%;margin-bottom:8px;padding:6px;border:1px solid var(--line);
+  border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
+.reorg:hover{border-color:var(--accent);color:var(--accent)}
+
+.importzone{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.importzone textarea{width:100%;height:76px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  padding:6px;border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);color:var(--ink);resize:vertical}
+.importzone textarea:focus{border-color:var(--accent);outline:none}
+.importzone .rangee{display:flex;gap:10px}
+.adminbar{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:12px;
+  padding-top:10px;border-top:1px solid var(--line)}
+.panel .reset{font-size:12px;color:var(--ink-3);text-decoration:underline}
+/* Publier n'est pas un réglage parmi d'autres : c'est le geste qui rend le
+   travail visible aux visiteurs. Il se distingue des liens qui l'entourent.
+
+   Le bouton vit maintenant dans la bande d'administration et non plus au pied
+   du panneau : les règles valent pour les deux, le temps qu'une fenêtre
+   d'ancienne configuration en laisse encore un derrière elle. L'encre est le
+   jeton et non un blanc en dur — sur l'accent jaune d'un salon, du blanc ne
+   faisait que 1,9 pour 1. */
+:is(.panel,.bandeAdmin) .reset.fort{display:block;width:100%;padding:7px 10px;
+  text-decoration:none;text-align:center;color:var(--accent-ink);background:var(--accent);
+  border-radius:var(--radius);font-weight:500}
+:is(.panel,.bandeAdmin) .reset.fort:hover{opacity:.9;color:var(--accent-ink)}
+.panel .reset:hover{color:var(--ink)}
+/* L'enregistrement se fait tout seul : le bouton en rend compte plus qu'il ne
+   commande, et se tait dès qu'il n'y a plus rien à dire. Un aplat d'accent y
+   réclamerait un clic qui n'a plus lieu d'être — il ne le garde donc que le
+   temps d'un envoi qui attend son tour. */
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"],
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]{background:var(--surface-2);color:var(--ink-3);
+  font-weight:400}
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"]:hover,
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
+/* Un échec doit se voir sans pour autant crier : le rouge passe au trait et au
+   texte plutôt qu'à l'aplat, qui aurait sonné l'alarme pour un envoi à
+   reprendre. */
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
+  box-shadow:inset 0 0 0 1px var(--rouge)}
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
+
+.voile{position:fixed;inset:0;background:rgba(8,10,12,.55);z-index:14;
+  opacity:0;pointer-events:none;transition:opacity .2s;display:none}
+
+@media (max-width:900px){
+  /* `1fr` ne borne pas : un élément de grille garde `min-width:auto`, et la
+     barre de titre — nom de l'événement et pavillons, tous en `nowrap` —
+     imposait sa largeur incompressible à toute la colonne. Sur un écran de
+     412 px la page s'étalait sur 579, et le plan sortait par la droite.
+     `minmax(0,1fr)` autorise la colonne à rétrécir ; encore faut-il que son
+     contenu l'accepte, d'où les `min-width:0` qui suivent. */
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
+  .topbar,.brand{min-width:0}
+  /* La barre se resserre : le plan est ce qu'on vient voir, et quatorze points
+     de moins sur elle sont quatorze de plus pour le hall. Les boutons passent
+     de trente-deux points à trente — au-dessus encore de ce qu'un doigt vise
+     sans s'y reprendre — et les marges du haut et du bas cèdent trois points
+     chacune. */
+  .topbar{gap:10px;padding:calc(5px + var(--sys-haut)) 12px 5px;
+    min-height:calc(46px + var(--sys-haut))}
+  .topbar .iconbtn{width:30px;height:30px}
+  .halls{padding:2px}
+  .halls button{padding:4px 11px}
+
+  /* La barre passe par-dessus le plan plutôt que de lui prendre un rang.
+
+     Deux choses viennent avec. Le hall occupe toute la hauteur de la scène —
+     la barre ne lui retire plus rien, elle se pose dessus. Et elle peut
+     s'effacer le temps d'un geste sans que rien ne soit remis en page : une
+     scène qui change de taille pendant un glissement, c'est le SVG entier
+     recalculé au doigt posé puis au doigt levé, et la saccade avec.
+
+     Le cadrage, lui, sait ce qu'elle couvre — voir `masqueHaut` dans
+     `_js.html` : sans quoi le stand qu'on vient d'ouvrir se posait derrière
+     elle.
+
+     Pas en administration : la bande de l'outil tient le premier rang, et
+     deux bandes superposées ne se liraient plus. */
+  /* Rangée et colonne, toutes deux écrites : la scène placée à la main sur les
+     rangées mais laissée au placement automatique pour la colonne s'en voyait
+     offrir une nouvelle, à côté de la barre au lieu d'être dessous. */
+  html:not(.mode-admin) .stage{grid-row:1/-1;grid-column:1/-1}
+  /* La barre se place explicitement elle aussi : deux éléments posés à la main
+     se superposent, quand celui qu'on laisse au placement automatique se voit
+     offrir une rangée de plus — la barre se retrouvait alors au bas de
+     l'écran, sous le plan. */
+  html:not(.mode-admin) .topbar{grid-row:1/2;
+    transition:transform .22s ease,opacity .22s ease}
+  html:not(.mode-admin) .topbar.pliee{transform:translateY(-100%);opacity:0;
+    pointer-events:none}
+
+  /* ------------------------------------------------------------
+     Et sur un téléphone, elle cesse d'être une bande.
+
+     Elle prenait quarante-six points en travers du hall pour trois choses : le
+     nom du salon — que le visiteur vient de lire sur l'affiche, le code QR ou
+     l'icône qu'il a touchée —, des compteurs déjà partis plus haut, et trois
+     boutons. Restent les boutons, rangés à la verticale contre le bord droit
+     et posés sur le plan en légère transparence. Le hall commence alors au ras
+     de l'écran, et plus rien de ce qui reste ne lui prend une ligne.
+
+     L'élément, lui, reste : il garde son rang, sa transition et son pli, et
+     c'est sa hauteur que `mesureBarre` et `masqueHaut` lisent (`_js.html`).
+     Vide, elle ne vaut plus que le retrait du système — ce qui s'ancre en haut
+     de la scène remonte d'autant sans qu'aucune de leurs règles l'apprenne.
+     ------------------------------------------------------------ */
+  html:not(.mode-admin):not(.barre-bande) .topbar{background:none;border-bottom:none;min-height:0;
+    align-items:flex-start;padding:calc(10px + var(--sys-haut)) 10px 0;
+    /* Le vide qu'elle laisse rend le geste au hall : transparente, elle
+       recevait encore le doigt venu saisir le plan. */
+    pointer-events:none;
+    /* Le système peint sa barre de ce qui la touche, et ce n'est plus la
+       surface de la bande : c'est le fond du plan (voir `poseTonDeLaBarre`). */
+    --ton-barre:var(--c-fond,var(--ground));
+    /* L'habillage du salon peignait cette bande, et ses jetons sont ceux de
+       l'aplat qu'il posait — l'accent de « Billet », la nuit de « Console », le
+       blanc translucide de « Verre ». Sans aplat sous eux, ils laissaient les
+       pictos illisibles sur le greige du hall : ils reviennent donc à ceux de
+       la page, comme les boutons de zoom posés sur le même plan. Les formes,
+       elles, restent au modèle — c'est la couleur qui n'a plus de fond. */
+    --surface:inherit;--surface-2:inherit;--line:inherit;--line-strong:inherit;
+    --ink:inherit;--ink-2:inherit;--ink-3:inherit;
+    --accent:inherit;--accent-soft:inherit;--accent-ink:inherit}
+  /* Ce qu'elle porte reprend le doigt pour lui — sauf pliée : invisible, elle
+     recevait encore l'appui du stand qu'elle recouvrait. */
+  html:not(.mode-admin):not(.barre-bande) .topbar:not(.pliee) > *{pointer-events:auto}
+  html:not(.mode-admin):not(.barre-bande) .brand{display:none}
+  /* Les pictos à la verticale, au bord droit, à la hauteur où ils étaient.
+     Hors du flux : la bande n'a plus de contenu à aligner, et sa hauteur —
+     celle que le cadrage lit — ne doit pas devenir la leur. */
+  html:not(.mode-admin):not(.barre-bande) .tools{position:absolute;right:10px;
+    top:calc(10px + var(--sys-haut));flex-direction:column;gap:8px;
+    transition:transform .22s ease}
+  /* Chacun s'en va par le bord d'où il vient : les onglets remontent avec la
+     bande, les pictos sortent par la droite. */
+  html:not(.mode-admin):not(.barre-bande) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
+  /* La légère transparence : le hall se voit dessous, le liseré et l'ombre
+     suffisent à poser le bouton. Tout est réécrit ici, jusqu'à l'aplat de
+     l'accent et la pastille du parcours, parce que les modèles les peignent à
+     la main pour une bande qui n'est plus là. */
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn{
+    background:color-mix(in srgb,var(--surface) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
+    color:var(--ink-2);box-shadow:var(--shadow)}
+  html:not(.mode-admin):not(.barre-bande) .topbar .iconbtn[aria-pressed="true"]{background:var(--accent);
+    border-color:var(--accent);color:#fff}
+  html:not(.mode-admin):not(.barre-bande) .topbar .compteur{background:var(--accent);color:#fff;
+    border-color:var(--surface)}
+  /* Les pavillons : une pastille au coin, qui tient sa largeur de ses onglets
+     au lieu de barrer l'écran — une bande qui le traverse prend le doigt sur
+     toute la largeur, et il n'y a plus de bande pour le justifier. Elle garde
+     le fond de la page même là où le modèle le retire : sans bande dessous, un
+     onglet écrit à même le plan ne se lit plus. */
+  html:not(.mode-admin):not(.barre-bande) .topbar .halls-bande{flex:0 1 auto;max-width:calc(100% - 52px)}
+  html:not(.mode-admin):not(.barre-bande) .topbar .halls{padding:3px;
+    background:color-mix(in srgb,var(--surface) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
+    box-shadow:var(--shadow)}
+
+  /* ------------------------------------------------------------
+     L'autre choix : la bande, réduite à ce qu'elle peut être.
+
+     Un plan sans bande ne dit plus le nom du salon, et tous les salons n'en
+     veulent pas ainsi — celui d'un lieu qu'on ne connaît pas se nomme. La bande
+     revient donc sur demande, réglée dans l'onglet « Admin » (`blocBarre`,
+     `_admin1.html`), et rognée de tout ce qui pouvait l'être : trente-huit
+     points au lieu de quarante-six, des boutons de vingt-sept, un titre d'un
+     point et demi plus bas. Deux lignes de nom y tiennent encore — c'est la
+     règle qui protège le nom, et elle ne se paie que sur un nom long.
+
+     Rien d'autre ne change : la bande se pose toujours par-dessus le hall et se
+     plie au geste, comme elle le faisait avant qu'il y ait un choix.
+     ------------------------------------------------------------ */
+  html.barre-bande:not(.mode-admin) .topbar{gap:8px;
+    padding:calc(3px + var(--sys-haut)) 10px 3px;
+    min-height:calc(38px + var(--sys-haut))}
+  html.barre-bande:not(.mode-admin) .topbar .iconbtn{width:27px;height:27px}
+  html.barre-bande:not(.mode-admin) .brand h1{font-size:13.5px;min-width:0}
+  /* Le logo du salon à côté du nom. Il vient de l'icône de l'onglet : c'est la
+     seule image du salon que la page ait déjà sous la main — elle arrive avec
+     les données, et ne coûte pas un appel de plus.
+
+     Elle n'est pas carrée pour autant : la console garde les proportions d'un
+     logo en longueur, qui à seize pixels se reconnaît mieux ainsi. D'où la
+     hauteur imposée et la largeur laissée libre — bornée tout de même, sans
+     quoi un logo à rallonge prendrait la bande pour lui seul et le nom du
+     salon passerait à la ligne derrière lui. */
+  html.barre-bande:not(.mode-admin) .brand{display:flex;align-items:center;gap:7px}
+  html.barre-bande:not(.mode-admin) .logoSalon{display:block;flex:0 0 auto;
+    height:22px;width:auto;max-width:72px;object-fit:contain}
+  html.barre-bande:not(.mode-admin) .halls button{padding:3px 9px;font-size:12px}
+
+  /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
+     au-dessus d'eux dans la grille, mais devant eux sur l'écran. Et la colonne
+     des pictos leur est interdite, quand il y en a une : centré sur toute la
+     largeur, un bandeau passait dessous. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
+  html:not(.mode-admin):not(.barre-bande) :is(.viseur,.iciRappel){right:52px;
+    max-width:calc(100% - 64px)}
+  /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
+     long, donc autant de hauteur laissée au plan. */
+  .brand h1{font-size:15px}
+  /* Les pavillons défilent latéralement plutôt que de pousser les murs. C'est
+     donc à eux de céder la place en premier : ils restent atteignables au
+     doigt, là où un titre rogné ne se retrouve pas. Le titre, lui, passe à la
+     ligne dans la part qui lui revient — il s'y arrêtait sur « Franchise Expo
+     Paris 20 ». */
+  .brand{flex:0 1 auto;max-width:40%}
+  /* Sans onglets, ce partage n'a plus lieu d'être : le nom prend la barre et
+     tient souvent sur une ligne, là où 40 % l'auraient plié en trois. */
+  html.un-pavillon .brand{flex:1 1 auto;max-width:none}
+  .halls-bande{flex:1 1 0}
+  .halls{flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .halls::-webkit-scrollbar{display:none}
+  /* La bande de l'outil garde sa marque et ses commandes ; le mot
+     « Administration » cède la place — la nuit et la marque le disent déjà. */
+  .bandeAdmin{padding:calc(4px + var(--sys-haut)) 12px 4px;
+    min-height:calc(56px + var(--sys-haut));gap:10px}
+  .bandeMarque{width:46px;height:46px}
+  .bandeNom{display:none}
+  /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
+     le bouton cède du texte plutôt que de pousser les autres hors de l'écran. */
+  .bandeAdmin .reset.fort{max-width:46vw;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap}
+
+  /* Le plan est ce qu'on vient voir : il prend toute la hauteur restante, et
+     la liste se replie en tiroir posé par-dessus. Elle occupait auparavant une
+     bande figée de 216 px dont la recherche et le compteur mangeaient la plus
+     grande part : il restait 71 px de liste — une ligne et demie pour cinq
+     cents résultats. */
+  /* Trois crans plutôt que deux. Le cran du milieu est celui qui sert le
+     plus : on lit la liste sans perdre le plan de vue, et c'est là qu'on
+     répond à « qu'y a-t-il près de l'entrée ». Tout ou rien obligeait à
+     choisir entre les deux. */
+  /* Les tiroirs sont posés sur la fenêtre et non dans la grille : le retrait
+     que celle-ci s'impose ne les atteint pas, et ils le reprennent chacun pour
+     soi. Leur fond descend bien jusqu'au bord de l'écran — une bande de gris
+     sous un tiroir de couleur se verrait — mais ce qu'ils portent se retire de
+     la poignée de gestes. La part qui dépasse au repos grandit d'autant, sans
+     quoi la recherche serait passée dessous. */
+  .side{
+    position:fixed;left:0;right:0;bottom:0;z-index:12;
+    height:82vh;height:82dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
+    border-right:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    transform:translateY(calc(100% - var(--replie,164px) - var(--sys-bas)));
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+  }
+  .side[data-cran="demi"]{transform:translateY(calc(100% - 46dvh))}
+  .side[data-cran="plein"]{transform:translateY(0)}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .side.glisse{transition:none}
+  /* Replié, ce tiroir garde tout de même sa bande de recherche au bas de
+     l'écran. La fiche et le parcours la recouvrent ; l'itinéraire descendu à
+     son cran le plus bas est plus court qu'elle, et elle dépassait derrière
+     lui — deux bords arrondis, deux prises, et rien pour dire laquelle mène
+     quoi. Il cède donc la bande tout entière, et la reprend en se refermant
+     (voir `_js.html`). */
+  .side.cede{transform:translateY(100%)}
+  /* Et il descend aussi le temps qu'on manœuvre le plan, comme la barre du
+     salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
+     bande de recherche en occupe le bas. Il remonte au doigt levé, à son cran
+     d'avant — celui-ci est écrit dans son attribut, que le pli ne touche pas
+     (voir `plieLesBandes`, _js.html). Écrite après les crans, la règle
+     l'emporte sur eux le temps qu'elle dure. */
+  .side.pliee{transform:translateY(100%)}
+
+  /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
+     seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
+  .actifs{flex-wrap:nowrap;overflow-x:auto}
+  /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
+     sur un écran qu'il occuperait tout entier. */
+  .modale{padding:0;place-items:end stretch}
+  /* Posée contre le bord de l'écran, la fenêtre y descend son fond et remonte
+     ce qu'elle porte : son pied tombait sous la poignée de gestes. */
+  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none;
+    padding-bottom:var(--sys-bas)}
+  /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
+  .puce-crit{padding:8px 12px}
+  .grp-crit > summary{padding:13px 2px}
+
+  /* La cible du pouce, et non la barre qu'il vise : celle-ci fait quatre
+     pixels de haut, la prise en faisait vingt, et le doigt en demande
+     davantage. Elle prend donc huit pixels de la marge haute de la recherche,
+     qui les lui cède — la barre ne bouge pas d'un pixel, l'écart non plus,
+     seul l'appui porte plus loin. Par de la marge et non par un débord : ce
+     qui suit se peint par-dessus, et lui reprendrait ces huit pixels au
+     moment de désigner qui reçoit l'appui.
+
+     Les trois autres tiroirs se prennent en outre par leur en-tête, ce que la
+     liste ne peut pas offrir : on n'attrape pas un champ de recherche. */
+  .poignee{display:block;width:100%;padding:10px 0 14px;background:transparent;
+    touch-action:none;cursor:grab}
+  .side .search{padding-top:6px}
+  .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
+    border-radius:999px;background:var(--line-strong)}
+
+  /* Les commandes du plan se posent au-dessus du tiroir replié : ancrées en
+     bas comme elles l'étaient, il les recouvrait. */
+  .zoombar{bottom:calc(var(--replie,150px) + 14px);transition:opacity .2s ease}
+  /* L'échelle passe au-dessus du cartouche, qui sur un écran étroit est assez
+     large pour la traverser. Sa hauteur est mesurée, et vaut zéro en l'absence
+     de repères : l'échelle reprend alors sa place. */
+  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px);
+    transition:opacity .2s ease}
+  /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
+  .sans-zoom .scalebar{left:14px}
+  .poi{bottom:calc(var(--replie,150px) + 12px);transition:opacity .2s ease}
+  /* Le cartouche, l'échelle et les boutons de zoom sont posés au-dessus du
+     tiroir replié. Le tiroir qui monte passe dessous sans les emporter : ils
+     restaient devant la liste à désigner un plan devenu invisible. Ils
+     s'effacent le temps qu'elle occupe la place, et reviennent avec le plan.
+     Effacés plutôt que retirés : « display:none » remettrait leur hauteur
+     mesurée à zéro, et l'échelle redescendrait sur le cartouche au retour. */
+  html[data-tiroir="demi"] .poi,
+  html[data-tiroir="plein"] .poi,
+  html[data-tiroir="demi"] .zoombar,
+  html[data-tiroir="plein"] .zoombar,
+  html[data-tiroir="demi"] .scalebar,
+  html[data-tiroir="plein"] .scalebar{opacity:0;pointer-events:none}
+  /* En tiroir, la pile est ancrée en bas et le cartouche en haut : sa hauteur
+     se borne des deux côtés, sinon elle remonte sous lui. */
+  .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px;
+    max-height:calc(100% - var(--replie,150px) - var(--chalh,0px) - 36px)}
+  /* Le cartouche prend toute la largeur restante : à 272 px il laissait une
+     colonne vide sans rien y gagner, et son palmarès se coupait au milieu des
+     enseignes. Il partage ce coin avec la pile des calques, qui se referme
+     quand il s'ouvre. */
+  /* Le cartouche passe en haut du plan. En bas il partageait le coin de la
+     pile des calques, où vit désormais l'interrupteur qui l'ouvre : l'un
+     recouvrait l'autre au moment précis où l'on s'en sert. En haut à droite,
+     rien ne l'attend — la palette de dessin tient l'autre coin. */
+  .chalbar{top:12px;bottom:auto;right:12px;left:auto;
+    width:auto;max-width:calc(100% - 24px);max-height:46dvh}
+
+  /* La fiche devient un tiroir elle aussi. En fenêtre centrée sur voile, elle
+     masquait le plan au moment précis où l'on venait d'y désigner un stand :
+     on perdait de vue ce qu'on regardait. Posée en bas, elle laisse le plan
+     visible et manipulable derrière — c'est pour cela qu'il n'y a plus de
+     voile, qui interceptait aussi les gestes. */
+  .voile{display:none}
+  .detail{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:56dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    /* Le coin corné tient au coin du tiroir, par-dessus la prise : sans la
+       coupe, il ressortait carré de l'angle que le tiroir arrondit. */
+    overflow:hidden;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    /* au-dessus du tiroir de la liste, qui se replie quand elle s'ouvre */
+    z-index:13;
+    transform:translateY(100%);opacity:1;pointer-events:none;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
+  }
+  .detail.open{transform:translateY(0);pointer-events:auto}
+  /* Trois crans, comme la liste, et la même prise pour les parcourir. Le cran
+     joue ici la hauteur et non le glissement : la fiche se lit en défilant, et
+     un tiroir poussé sous le bord de l'écran y aurait caché la fin de son
+     corps. Le cran le plus bas garde l'en-tête — on voit de quel stand il
+     s'agit tout en regardant le plan derrière. */
+  /* La hauteur repliée est celle de l'en-tête, mesurée : la bande rendue au
+     système s'y ajoute, sinon c'est le nom du stand qui s'y perdrait. */
+  .detail.open[data-cran="replie"]{max-height:calc(var(--fiche-replie,132px) + var(--sys-bas))}
+  .detail.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .detail.glisse{transition:none}
+  /* L'en-tête ne se laisse pas comprimer au cran le plus bas : sans cela il
+     s'écrasait au profit d'un corps qu'on ne voit plus. */
+  .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
+  /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
+     qu'elle surmonte porte déjà sa propre marge — et se saisit avec elle, ce
+     qui lui donne la hauteur que la pastille n'a pas. */
+  .detail > .poignee{padding:9px 0 3px}
+  /* L'en-tête mène le tiroir : il lui faut le contrat tactile de la poignée,
+     sans quoi le navigateur voit un déplacement de page dans le geste. */
+  :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
+  .detail-hd{padding:16px 16px 13px}
+  .onglets{margin:10px 16px 0}
+  /* Les deux actions passent du pied de la fiche à sa tête. Au pied, elles
+     arrivaient après les champs, le programme et le catalogue : il fallait
+     dérouler toute une fiche pour trouver « Itinéraire », et rien ne disait
+     qu'il y avait quelque chose plus bas. En tête, elles sont sous le pouce
+     dès l'ouverture — et à deux pictos, elles n'y prennent pas la ligne du
+     nom. Les boutons du pied s'en vont : les garder ferait deux fois la même
+     commande, à deux endroits, sur l'écran le plus étroit. */
+  .detail .pAct{display:inline-flex}
+  .detail .acts{display:none}
+  /* Le coin porte quatre boutons au lieu de deux : la ligne du type et celle
+     de la marque s'en écartent d'autant. Sans quoi le logo d'un exposant,
+     haut de trois lignes de titre, remontait dans leur bande et passait
+     dessous. */
+  .detail .detail-hd{--coin-actes:130px}
+  .detail-hd{--titre:17px}
+  .detail-hd h2{margin:6px 0 5px}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
+     discrète, pour laisser la place à ce qu'on est venu lire. */
+  .detail-hd{--marque-h:56px}
+  .detail-hd .logoZone{max-width:min(240px,100%)}
+  /* seul le corps défile : le nom et le code restent sous les yeux */
+  .detail-bd{padding:14px 16px 18px;overflow-y:auto}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les
+     champs qui tiennent en un mot — niveaux, ville, pays, téléphone, réseaux —
+     se rangent deux par deux au lieu d'empiler autant de lignes qu'il faut
+     faire défiler une à une ; l'adresse, le site et le programme gardent la
+     largeur entière. */
+  .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:11px 14px;align-content:start}
+  .detail-bd .field,.detail-bd .acts{grid-column:1/-1;min-width:0}
+  .detail-bd .field.court{grid-column:auto}
+  /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
+     sa colonne au lieu de revenir à la ligne. */
+  .field .v{font-size:13.5px;overflow-wrap:anywhere}
+  /* Le libellé du jour se colle en haut du corps, dont la marge vaut ici
+     quatorze pixels et non seize. */
+  .prog{gap:6px}
+  .prog .jour{top:-14px;padding-top:14px}
+  /* Une vignette tenait trois lignes pour deux informations utiles : l'heure
+     et le type partagent la première, le titre prend la seconde. */
+  .prog .conf{flex-flow:row wrap;align-items:baseline;column-gap:8px;padding:6px 8px}
+  .prog .conf .ty{order:1}
+  .prog .conf .t{order:2;flex:0 0 100%}
+
+  /* Le parcours suit la fiche : même bande basse, même glissement, mêmes trois
+     crans. Son cran du milieu monte un peu plus haut — c'est une liste qu'on
+     parcourt, pas une fiche qu'on lit — sans masquer le plan pour autant. */
+  .parcours{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:68dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    z-index:13;
+    transform:translateY(100%);pointer-events:none;
+    /* Descendu au plus bas, le tiroir ne garde que son en-tête : la rangée de
+       commandes et le pied passent sous le bord de l'écran, et le bord du
+       tiroir les y coupe net plutôt que de les laisser dépasser dessous. */
+    overflow:hidden;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
+  }
+  .parcours.open{transform:translateY(0);pointer-events:auto}
+  .parcours.open[data-cran="replie"]{max-height:calc(var(--parc-replie,132px) + var(--sys-bas))}
+  .parcours.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .parcours.glisse{transition:none}
+  /* Seul le corps se comprime : l'en-tête, les commandes et le pied gardent
+     leur taille et sortent par le bas, sinon ils s'écrasaient tous les trois
+     au profit d'une liste qu'on ne voit plus. */
+  .parcours > :is(.poignee,.detail-hd,.pActs,.pPied){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .parcours > .poignee{padding:9px 0 3px}
+  .pCorps{padding:14px 16px}
+  .pPied{padding:10px 16px 18px}
+  .pActs{padding:11px 16px 12px}
+  /* La rangée des jours mange sur le peu de hauteur d'un tiroir bas : elle s'y
+     resserre, et laisse le premier arrêt visible sans dérouler. */
+  .jJours{padding:8px 16px 9px}
+  .jOnglet{padding:5px 10px;min-width:60px}
+
+  /* L'itinéraire suit les deux autres, crans compris, mais son cran du milieu
+     ne monte pas comme le leur : on ne le lit pas, on le remplit — et ce qu'on
+     remplit se juge sur le plan, pas dans le tiroir. À soixante-seize pour cent
+     de l'écran il recouvrait le trajet qu'il venait de tracer. La moitié lui
+     suffit, à condition que ce qu'il porte s'y resserre : c'est l'objet des
+     règles qui suivent. */
+  .itineraire{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:50dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    z-index:13;
+    transform:translateY(100%);pointer-events:none;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
+  }
+  .itineraire.open{transform:translateY(0);pointer-events:auto}
+  /* Le cran du bas rend le trajet entier à l'œil — c'est lui qu'on est venu
+     voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
+     liste des lieux proposés sous un champ. */
+  .itineraire.open[data-cran="replie"]{max-height:calc(var(--itin-replie,64px) + var(--sys-bas))}
+  .itineraire.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .itineraire.glisse{transition:none}
+  /* Seul le corps se comprime : la prise et l'en-tête gardent leur taille, et
+     c'est l'en-tête qui reste quand le tiroir descend. */
+  .itineraire > :is(.poignee,.detail-hd){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .itineraire > .poignee{padding:9px 0 3px}
+  /* L'en-tête tient sur une ligne : le titre, et le bilan du trajet à sa
+     suite. Le sur-titre « Se rendre » redisait le titre, et la pastille sur sa
+     propre ligne coûtait la hauteur d'un champ — trois lignes pour deux mots
+     et un chiffre. */
+  .itineraire .detail-hd{display:flex;flex-wrap:wrap;align-items:baseline;
+    column-gap:10px;row-gap:2px;padding:11px 40px 10px 16px}
+  .itineraire .detail-hd .eyebrow{display:none}
+  .itineraire .detail-hd h2{margin:0;padding-right:0;font-size:16.5px}
+  .itineraire .detail-hd .close{top:7px;right:9px}
+  /* Quand le corps annonce le bilan, la pastille de l'en-tête dit la même
+     chose deux lignes plus haut : elle s'efface au profit du bloc qui en dit
+     davantage — passages empruntés, option accessible. Sans trajet, elle
+     reste : c'est alors le seul état affiché. */
+  .itineraire:has(.iBilan) .detail-hd .badge{display:none}
+  /* Sauf tiroir descendu : le bloc qui en disait davantage est alors sous le
+     bord de l'écran, et la pastille redevient le seul endroit où lire ce que
+     coûte le trajet qu'on regarde. */
+  .itineraire[data-cran="replie"]:has(.iBilan) .detail-hd .badge{display:inline-flex}
+  .iCorps{padding:12px 16px 14px;gap:10px}
+  .iChamps{gap:6px}
+  .iSugg{max-height:min(160px,30dvh)}
+  /* Le tiroir ne fait que la hauteur de ce qu'il porte, et la liste déroulée
+     ne compte pas dans cette hauteur : sous le second champ, elle passait sous
+     le bord de l'écran. Le corps se réserve de quoi la loger le temps qu'elle
+     est ouverte — il défile alors, plutôt que de la couper. */
+  .iCorps:has(.iSugg:not([hidden])){padding-bottom:172px}
+  /* Ce que l'option évite tient en trois lignes, lues une fois pour toutes :
+     sur un écran étroit elles valaient un quart du tiroir. Le libellé suffit à
+     décider ; le détail reste dit aux lecteurs d'écran, à qui il ne coûte
+     aucune hauteur. */
+  .iPmr .quoi{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .iPmr{align-items:center;gap:10px}
+  .iPmr input{margin-top:0}
+  /* « Choisissez un départ et une arrivée » : les deux invites des champs le
+     disent déjà, juste au-dessus, et cette phrase-ci prenait quatre lignes
+     pour l'expliquer une seconde fois. */
+  .iIntro{display:none}
+  /* Le bilan passe en ligne : la distance, la durée à sa suite. Empilés, les
+     deux tenaient la place d'une étape de trajet. */
+  .iBilan{flex-flow:row wrap;align-items:baseline;column-gap:8px;row-gap:1px;
+    padding:9px 11px}
+  .iBilan b{font-size:17px}
+
+  /* Les trois panneaux ne sont plus une colonne à droite mais une bande en
+     bas : le bord gauche que leur modèle redessine n'a plus de côté où se
+     tenir, et l'arrondi se reprend en haut. Sans cela, un modèle qui arrondit
+     la colonne — verre, billet — laissait le tiroir cranté sur téléphone. */
+  :is(.detail,.parcours,.itineraire)[class*="modele-"]{
+    border-left:none;border-radius:14px 14px 0 0}
+}
+
+/* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
+   apparition brutale sous le curseur. */
+#couches .cal{animation:parait .25s ease-out}
+@keyframes parait{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
+

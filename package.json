@@ -19,6 +19,7 @@
     "adoption": "node outils/essais/adoption.js",
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
+    "charge": "node outils/essais/charge.js",
     "appels": "node outils/appels.js"
   },
   "type": "commonjs",
