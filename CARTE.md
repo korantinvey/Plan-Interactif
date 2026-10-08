@@ -509,15 +509,6 @@ Fonctions :
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
-### `_marque.html` — 281 l. → admin-plans.html, plan-admin.html, plan-smcl.html, plan.html
-
-- l.1 · La marque sans le vide qui l'entoure
-
-Fonctions :
-
-`marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
-`vignetteMarque` 130 · `boiteMarque` 156 · `toileMarque` 222 · `vignetteDeLogo` 246
-
 ### `_mesure.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13. Mesure d'utilisation
@@ -838,9 +829,9 @@ Fonctions :
 `majAnimationWebgl` 1538 · `animeWebgl` 1546 · `objetSous` 1569 · `cibleWebgl` 1576
 `priseWebgl` 1583 · `libelleSousWebgl` 1588 · `rectEcranWebgl` 1593
 
-### `modules/console.mjs` — 12 l. → console
+### `modules/console.mjs` — 14 l. → console
 
-- l.1 · Point d'entrée de la console et du rapport
+- l.1 · Point d'entrée de la console
 
 ### `modules/couleurs.mjs` — 34 l. → plan
 
@@ -850,7 +841,7 @@ Fonctions :
 
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31
 
-### `modules/dom.mjs` — 10 l. → plan, console
+### `modules/dom.mjs` — 10 l. → plan, console, rapport
 
 - l.1 · Le document : ce que tout le code demande à la page
 
@@ -858,11 +849,24 @@ Fonctions :
 
 `$` 10
 
-### `modules/plan.mjs` — 21 l. → plan
+### `modules/marque.mjs` — 282 l. → plan, console
+
+- l.1 · La marque sans le vide qui l'entoure
+
+Fonctions :
+
+`marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
+`vignetteMarque` 130 · `boiteMarque` 157 · `toileMarque` 223 · `vignetteDeLogo` 247
+
+### `modules/plan.mjs` — 23 l. → plan
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/texte.mjs` — 25 l. → plan, console
+### `modules/rapport.mjs` — 11 l. → rapport
+
+- l.1 · Point d'entrée du rapport
+
+### `modules/texte.mjs` — 25 l. → plan, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 

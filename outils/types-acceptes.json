@@ -127,8 +127,6 @@
  "_langue.js | TS2339 | Property 'matches' does not exist on type 'Node'. | if (n.nodeType !== 1 || !n.matches(EXCLUS)) return NodeFilter.FILTER_ACCEPT;": 1,
  "_langue.js | TS2339 | Property 'title' does not exist on type 'Element'. | b.title = dit;": 1,
  "_langue.js | TS2740 | Type 'Node' is missing the following properties from type 'HTMLElement': accessKey, accessKeyLabel, autocapitalize, dir, and 252 more. | } while ((n = marcheur.nextNode()));": 1,
- "_marque.html | TS2345 | Argument of type '{ resizeWidth: any; resizeHeight: any; resizeQuality: string; }' is not assignable to parameter of type 'ImageBitmapOptions'.   Types of property 'resizeQuality' are incompatible.     Type 'string' is not assignable to type 'ResizeQuality'. | : await createImageBitmap(octets, opts);": 1,
- "_marque.html | TS2345 | Argument of type '{ resizeWidth: any; resizeHeight: any; resizeQuality: string; }' is not assignable to parameter of type 'ImageBitmapOptions'.   Types of property 'resizeQuality' are incompatible.     Type 'string' is not assignable to type 'ResizeQuality'. | ? await createImageBitmap(octets, coupe.x, coupe.y, coupe.w, coupe.h, opts)": 1,
  "_mesure.html | TS2339 | Property 'getItem' does not exist on type 'Window'. | const v = ou.getItem(cle), aujourdhui = jourIso(new Date());": 1,
  "_mesure.html | TS2339 | Property 'setItem' does not exist on type 'Window'. | if (garde.echeance > aujourdhui) ou.setItem(cle, JSON.stringify(garde));": 1,
  "_mesure.html | TS2339 | Property 'setItem' does not exist on type 'Window'. | ou.setItem(cle, JSON.stringify(n));": 1,

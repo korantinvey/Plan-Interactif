@@ -366,25 +366,21 @@ fs.writeFileSync(W + "index.html",
    Chacun n'écrit ensuite que ce qui lui est propre. */
 const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
 
-/* Un module écrit pour le plan, qui assemble tout son code en un seul script :
-   il n'a donc pas de balises à lui, et la console — qui juxtapose des modules
-   qui en portent — les lui prête. */
-const enScript = (f) =>
-  "<script>\n" + fs.readFileSync(D + "/gabarit/" + f, "utf8") + "\n</script>\n";
-const assemble = (tete, ...corps) =>
-  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules("console") + socle +
+/* Chaque écran reçoit le script de son point d'entrée, avant le socle. */
+const assemble = (entree, tete, ...corps) =>
+  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules(entree) + socle +
   corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
 
 /* Les deux écrans exportent le même classeur : le module d'écriture puis celui
-   de l'export passent avant, et c'est la page qui ferme le script. */
-/* La console fabrique les vignettes des logos : elle emprunte au plan la règle
-   de recadrage, pour qu'une vignette soit cadrée comme la page l'aurait fait. */
+   de l'export passent avant, et c'est la page qui ferme le script. La console
+   fabrique en plus les vignettes des logos, avec la règle de recadrage du plan
+   (`modules/marque.mjs`) : une vignette est cadrée comme la page l'aurait fait. */
 fs.writeFileSync(W + "admin-plans.html",
-  page(assemble("_console-head.html", "_classeur.html", "_export.html", "_console-js.html") +
-    enScript("_marque.html"), { deuxThemes: true }));
+  page(assemble("console", "_console-head.html", "_classeur.html", "_export.html", "_console-js.html"),
+       { deuxThemes: true }));
 
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html"),
+  page(assemble("rapport", "_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html"),
        { deuxThemes: true }));
 
 /* --- poser son mot de passe ---
