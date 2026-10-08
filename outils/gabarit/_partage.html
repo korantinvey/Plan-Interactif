@@ -723,7 +723,7 @@ function ouvreGardeParcours(apres){
       "enregistré sur nos serveurs, et il n'y a ni compte ni adresse e-mail à donner.";
     corps.appendChild(note);
   }, boutonsPartage(lien, false), "partage");
-  if (apres) apresFermeture = apres;
+  if (apres) poseApresFermeture(apres);
 }
 
 /* Le geste qui demande que la liste tienne, et la fenêtre qui s'ensuit. Les

@@ -505,7 +505,7 @@ function fenetreRappel(){
      justement de retenir, le plus souvent. On ne la remplace pas : la
      proposition attend qu'elle se referme, et repasse alors par ici, ses
      conditions relues. */
-  if ($("modale").classList.contains("open")){ apresFermeture = fenetreRappel; return; }
+  if ($("modale").classList.contains("open")){ poseApresFermeture(fenetreRappel); return; }
   proposeRappels();
 }
 
@@ -562,7 +562,7 @@ function proposeRappels(apercu){
 
   /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
      précédente avait laissé en train de se faire. */
-  avantFermeture = apercu ? () => retourAuxReglages("rappel") : retientInviteRappel;
+  poseAvantFermeture(apercu ? () => retourAuxReglages("rappel") : retientInviteRappel);
 }
 
 /* ------------------------------------------------------------

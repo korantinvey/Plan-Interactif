@@ -512,14 +512,13 @@ Fonctions :
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
-### `_modales.html` — 191 l. → plan-admin.html
+### `_modales.html` — 119 l. → plan-admin.html
 
-- l.2 · Fenêtres modales : confirmation et réorganisation des calques
+- l.2 · Fenêtres modales — le branchement, et la réorganisation des calques
 
 Fonctions :
 
-`verseModale` 22 · `ouvreModale` 37 · `fermeModale` 57 · `confirme` 72 · `deplaceVers` 91
-`versExtremite` 103 · `remplitOrdre` 111 · `ouvreOrdre` 181
+`deplaceVers` 19 · `versExtremite` 31 · `remplitOrdre` 39 · `ouvreOrdre` 109
 
 ### `_mode-admin.html` — 1157 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -839,6 +838,15 @@ Fonctions :
 
 `$` 10
 
+### `modules/fenetre.mjs` — 100 l. → plan
+
+- l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
+
+Fonctions :
+
+`_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
+`ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 93
+
 ### `modules/marque.mjs` — 282 l. → plan, console
 
 - l.1 · La marque sans le vide qui l'entoure
@@ -848,21 +856,21 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 157 · `toileMarque` 223 · `vignetteDeLogo` 247
 
-### `modules/mesure.mjs` — 658 l. → plan
+### `modules/mesure.mjs` — 660 l. → plan
 
 - l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`mesureOuverte` 69 · `jetonMesure` 72 · `jourIso` 111 · `echeanceMesure` 112
-`jetonRetenu` 137 · `supportMesure` 186 · `renouvelleVisiteur` 238 · `fraisEnFile` 305
-`litLaFile` 309 · `ecritLaFile` 322 · `metEnFile` 337 · `retireDeLaFile` 348
-`chargeDe` 359 · `envoiePaquet` 372 · `beaconne` 397 · `pousseLaFile` 418
-`envoieMesures` 437 · `mesure` 474 · `brancheLesEnvois` 489 · `effaceJetonsVisiteur` 544
-`refuseMesure` 562 · `ouvreConfidentialite` 589 · `brancheLaNotice` 639
-`brancheMesure` 654
+`mesureOuverte` 71 · `jetonMesure` 74 · `jourIso` 113 · `echeanceMesure` 114
+`jetonRetenu` 139 · `supportMesure` 188 · `renouvelleVisiteur` 240 · `fraisEnFile` 307
+`litLaFile` 311 · `ecritLaFile` 324 · `metEnFile` 339 · `retireDeLaFile` 350
+`chargeDe` 361 · `envoiePaquet` 374 · `beaconne` 399 · `pousseLaFile` 420
+`envoieMesures` 439 · `mesure` 476 · `brancheLesEnvois` 491 · `effaceJetonsVisiteur` 546
+`refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
+`brancheMesure` 656
 
-### `modules/plan.mjs` — 28 l. → plan
+### `modules/plan.mjs` — 31 l. → plan
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
