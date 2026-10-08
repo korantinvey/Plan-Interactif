@@ -20,6 +20,9 @@ import { ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermet
   from "./fenetre.mjs";
 import { lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche }
   from "./sur.mjs";
+import { DEG, metresParDegre, versTerre, versLePlan, reancre, PX_TUILE, TOUR_MERCATOR, pixelsMercator,
+  latitudeDePixel, echelleDesTuiles, niveauDesTuiles, aireDuContour, centreDuContour, axeDuContour }
+  from "./terre.mjs";
 import { JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jourISO,
   minutesDe, ecritHeure, ecritMinutes } from "./temps.mjs";
 import { QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg } from "./qr.mjs";
@@ -33,6 +36,8 @@ Object.assign(globalThis, {
   API, SLUG, cheminDuSalon, cheminPartageable, BORNE,
   ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre,
   lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche,
+  DEG, metresParDegre, versTerre, versLePlan, reancre, PX_TUILE, TOUR_MERCATOR, pixelsMercator,
+  latitudeDePixel, echelleDesTuiles, niveauDesTuiles, aireDuContour, centreDuContour, axeDuContour,
   JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jourISO,
   minutesDe, ecritHeure, ecritMinutes,
   QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg,
