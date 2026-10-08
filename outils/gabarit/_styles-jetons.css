@@ -1,0 +1,270 @@
+/* Les styles du plan, première feuille : jetons de couleur et de mesure, bande d'administration.
+   Ouverte en fin de `_entete.html` ; les feuilles suivent dans l'ordre de `outils/assemble.js`. */
+:root{
+  --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC;
+  --line:#D2D5CB; --line-strong:#B4B9AC;
+  --ink:#15181A; --ink-2:#4A4F52; --ink-3:#7C8285;
+  --accent:#2F49D1; --accent-soft:#DCE1FA; --accent-ink:#FFFFFF;
+  /* Ce qui alerte — un rendez-vous manqué, un retrait — porté par un jeton et
+     non par un ton en dur : les modèles peignent les tiroirs sur des fonds
+     qu'ils choisissent, et un rouge d'imprimerie disparaît sur du noir. Même
+     paire que la console, pour que les deux écrans parlent du même rouge. */
+  --rouge:#C2372B;
+  /* Les tons de la marque : la nuit, le cyan et le rose d'Event2Map. Ils ne
+     suivent pas le salon — une marque qui change de couleur selon le client
+     n'en est plus une. Ils ne peignent donc que ce qui appartient à l'outil :
+     la bande d'administration, l'écran d'accès. Jamais le plan, dont les
+     couleurs sont celles du salon.
+
+     Le cyan a deux valeurs, et pour la raison qu'a déjà notée `console.css` :
+     le cyan vif est trop clair pour porter du texte sur du blanc — il ne sert
+     donc qu'en aplat, ou sur le bleu de nuit de la bande, et le cyan profond
+     porte le texte sur le blanc de la page. */
+  --m-nuit:#071F3A; --m-cyan:#35C2FF; --m-cyan-profond:#0A6C93; --m-rose:#FF4D6D;
+  /* L'accent décliné : les modèles de fiche s'en servent pour composer un
+     dégradé ou un aplat sans avoir à deviner la couleur choisie. « base »
+     reste l'accent tel qu'il est peint, même là où un modèle redéfinit
+     « --accent » pour son propre usage. */
+  --accent-base:#2F49D1; --accent-clair:#6A80EE; --accent-fort:#1B2A8E;
+  --zone:#C98A06; --zone-soft:#F7EAC6;
+  --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
+  /* Un secteur n'a qu'une teinte : sa saturation et sa clarté sont posées ici,
+     les mêmes pour tous, sans quoi le libellé du stand — écrit à l'encre du
+     texte — deviendrait illisible sur les plus soutenus. */
+  --sect-s:58%; --sect-l:87%; --sect-dot-l:40%;
+  --plan-line:#A8AEA1; --plan-ink:#8A9082;
+  --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
+  --radius:3px;
+  /* La pile du sans, écrite une fois. Elle l'était à deux endroits — la page
+     entière d'un côté, les libellés du plan de l'autre — et les deux ne
+     disaient pas la même chose : « Segoe UI, system-ui » ici, rien là. Tant
+     qu'Instrument Sans arrive, personne ne s'en aperçoit ; dès qu'il manque —
+     un salon derrière un filtre, un hall sans réseau, une page publiée qui
+     n'appelle rien au dehors — l'interface passait à la police du système et
+     le plan à celle du navigateur. Deux polices sur un écran, pour le même
+     nom d'exposant lu deux fois. */
+  --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  /* La liste déroulante d'un « select » est peinte par le système, hors de la
+     page : ses tons ne peuvent donc pas être ceux d'un modèle, qui les pose
+     translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
+     redéfinit. */
+  --menu-fond:#FBFBF8; --menu-encre:#15181A;
+  /* Ce que le système garde pour lui.
+
+     Les pages du plan vont jusqu'aux bords de l'écran — `viewport-fit=cover`,
+     posé par `outils/genere.js` — au lieu de s'arrêter au bord des barres du
+     système. Le plan y gagne la bande de gris qu'il perdait en haut et en bas,
+     et la barre du salon monte enfin derrière l'heure : c'est tout l'objet de
+     la manœuvre. Mais l'horloge, la poignée de gestes et l'encoche se posent
+     alors sur la page, et ce qui se tenait là-dessous devient illisible ou
+     intouchable. Ces quatre jetons sont la mesure de ce qu'il faut leur
+     rendre.
+
+     Ils valent zéro partout où il n'y a rien à éviter — un écran de bureau, un
+     onglet de navigateur, un téléphone sans encoche — si bien qu'une règle qui
+     les ajoute ne déplace rien dans ces cas-là. Écrits en jetons plutôt qu'en
+     `env()` à chaque fois, parce qu'ils se lisent dans des `calc()` déjà longs
+     et qu'un nom y dit ce qu'une fonction n'expliquait pas. */
+  --sys-haut:env(safe-area-inset-top,0px);
+  --sys-bas:env(safe-area-inset-bottom,0px);
+  --sys-gauche:env(safe-area-inset-left,0px);
+  --sys-droite:env(safe-area-inset-right,0px);
+}
+/* En plein écran, il n'y a plus de barres à éviter.
+
+   Le plan ne le demande plus — `outils/pwa.js` dit au long pourquoi l'heure
+   sur la couleur du salon a été préférée à une bande noire comme à un bandeau
+   du navigateur. La règle reste pour les plein écran qui viennent d'ailleurs :
+   celui d'un navigateur de bureau, celui que le manifeste réclamerait si l'on
+   rebasculait. Le navigateur continue alors d'annoncer des retraits que plus
+   aucune barre ne justifie, et la barre du salon garderait la place d'une
+   horloge qui n'est plus là.
+
+   Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
+   les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,
+   plein écran ou non. En haut, elle ne rencontre qu'un aplat de couleur — la
+   barre du salon — que la caméra traverse sans rien cacher. */
+@media (display-mode: fullscreen){
+  :root{--sys-haut:0px;--sys-bas:0px}
+}
+/* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
+   fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
+   sur un téléphone dont le thème sombre a été posé une fois pour toutes et
+   oublié, et à côté d'une signalétique imprimée en noir sur blanc. Le plan est
+   de ce côté-là, et n'en change pas — ni d'après la préférence de l'appareil,
+   ni sur demande. La nuit reste à la console, où l'on travaille la journée
+   durant. */
+
+*{box-sizing:border-box}
+/* Le fond du plan, et non le gris de la page : c'est lui qui paraît dans la
+   bande rendue au système en bas de l'écran, et la couture ne doit pas se voir
+   entre la scène et son pourtour. Sans réglage, le gris reprend la main. */
+body{margin:0;background:var(--c-fond,var(--ground));color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+/* Le rechargement par glissement, retiré au navigateur.
+
+   Un doigt qui tire vers le bas sur une page arrivée en haut de sa course la
+   fait recharger. Sur un téléphone, c'est exactement le geste des tiroirs : on
+   saisit la liste, la fiche, le parcours ou l'itinéraire pour les redescendre,
+   la prise est manquée de quelques pixels ou le tiroir est déjà au plus bas, et
+   le salon repart pour un chargement complet — la recherche tapée, le stand
+   ouvert et le parcours retenu avec lui. Rien ici n'attend d'être rafraîchi de la sorte :
+   la page redemande ses données d'elle-même, et le plan tient dans la hauteur
+   de l'écran sans jamais défiler.
+
+   Sur la racine et sur le corps à la fois : les navigateurs ne s'accordent pas
+   sur celui des deux dont la valeur commande la fenêtre. */
+html,body{overscroll-behavior-y:none}
+/* Et le geste s'arrête au tiroir au lieu de remonter à la page : arrivé au bout
+   de sa liste, le doigt qui continue emportait ce qu'il y a derrière — un
+   sursaut du plan, pour un tiroir qui ne bougeait plus. */
+.list,.detail-bd,.pCorps,.iCorps{overscroll-behavior:contain}
+button,input,textarea{font:inherit;color:inherit}
+/* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
+   fond : sous « Verre » — encre blanche sur un carreau translucide — elles
+   écrivaient du blanc sur le blanc du système, et ne paraissaient qu'au
+   survol. Elles reçoivent donc leurs propres tons, que le champ soit habillé
+   ou non, et le menu que le système peint hors de la page reste du côté clair
+   quoi qu'ait réglé l'appareil. */
+select{color-scheme:light}
+option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
+input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
+button{cursor:pointer;background:none;border:none}
+/* « hidden » ne masque rien tant qu'une règle d'auteur pose un display : la
+   nôtre l'emporte sur la feuille du navigateur, et l'élément reste peint. La
+   pastille « Nouvel exposant » paraissait ainsi sur toutes les fiches, la
+   condition qui la pilote n'ayant jamais eu le dernier mot. On tranche ici
+   plutôt qu'un sélecteur à la fois, comme il avait fallu le faire pour les
+   onglets. */
+[hidden]{display:none !important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+/* `100vh` vaut, sur un navigateur mobile, la hauteur barre d'outils masquée :
+   le bas de la page tombe sous l'écran, et tout ce qui s'y ancre — cartouche
+   des points d'intérêt, boutons de zoom, échelle — descend avec lui. Le tiroir,
+   lui, est `position:fixed` et se cale sur le bas réellement visible. Les deux
+   se manquaient de la hauteur exacte de la barre du navigateur, si bien que le
+   cartouche recouvrait la recherche et que le bouton « ajuster » passait
+   dessous. `100dvh` suit cette barre et remet tout le monde d'accord. */
+/* La grille s'arrête au bord de ce que le système garde — en bas la poignée
+   de gestes, sur les côtés l'encoche en paysage. Tout ce qui s'ancre au bas de
+   la scène suit alors sans qu'aucune de ses règles ait à le savoir : les
+   boutons de zoom, l'échelle, le cartouche des repères et la pile des calques
+   se mesurent à la scène, qui vient de raccourcir d'autant.
+
+   Le haut n'en est pas : c'est la barre du salon qui monte sous l'horloge, et
+   elle se retire elle-même — voir « .topbar » et « .bandeAdmin ». */
+.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px;
+  padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche)}
+/* La barre se mesure à son contenu au lieu de le rogner : un nom de salon
+   long — « Franchise Expo Paris 2027 » — passe à la ligne et la barre grandit
+   d'autant. Tronqué, il ne disait plus quel salon on regardait, et c'est la
+   seule chose que cette barre ait à dire. */
+/* Elle est la première chose que l'écran porte, et c'est pour cela qu'elle
+   passe sous la barre du système : son fond continue derrière l'heure et la
+   batterie, et l'application cesse d'être un rectangle posé sur un liseré
+   blanc. Son contenu, lui, se retire de la hauteur de cette barre — un nom de
+   salon sous l'horloge ne se lit pas. La barre grandit donc d'autant plutôt
+   que de rogner ce qu'elle porte.
+
+   « --ton-barre » est la couleur dont le système peint la sienne, et c'est
+   `poseTonDeLaBarre` (_js.html) qui la lui donne : la surface de la barre,
+   telle que le modèle du salon l'a redéfinie. Deux modèles y échappent et se
+   nomment plus bas — leur fond ne vient pas de leur surface.
+
+   Tout cela vaut de la barre tant qu'elle est une bande. Sur un téléphone elle
+   cesse d'en être une — plus de fond, plus de rang, et ses pictos rangés au
+   bord droit du hall : voir « max-width:900px ». */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;
+  padding:calc(8px + var(--sys-haut)) 18px 8px;min-height:calc(60px + var(--sys-haut));
+  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5;
+  --ton-barre:var(--surface)}
+/* Sauf en administration, où la bande de l'outil est au-dessus : c'est elle
+   qui touche le haut de l'écran, et le retrait lui revient. */
+html.mode-admin .topbar{padding-top:8px;min-height:60px}
+.brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
+  line-height:1.18;overflow-wrap:anywhere}
+/* Le logo du salon ne paraît qu'en bande réduite, sur un téléphone : ailleurs
+   la barre a la place d'écrire le nom en entier, et une image de plus n'y
+   ajouterait rien. Il est caché ici plutôt que par l'attribut « hidden », que
+   `poseLogoSalon` retire dès qu'il y a une image à montrer — la règle qui la
+   montre est plus bas, sous « max-width:900px ». */
+.logoSalon{display:none}
+.brand h1.attente{color:var(--ink-3)}
+/* Le cadre des onglets ne sert qu'à porter les flèches et le fondu : il passe
+   donc au travers, et c'est la barre des pavillons qui reste la pièce que les
+   modèles habillent et que la barre du haut aligne. Le fondu, lui, garde les
+   quarante-quatre points des autres bandes : raccourci, le compte du dernier
+   onglet restait sous le chevron à demi effacé, et les deux se brouillaient. */
+.halls-bande{display:flex;min-width:0}
+.halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
+.halls button{padding:5px 13px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap}
+.halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.halls button .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);margin-left:6px}
+.row .hall{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  padding:1px 5px;border-radius:3px;background:var(--surface-2);color:var(--ink-3);margin-left:6px;vertical-align:1px}
+/* Plus de compteurs au bout de la barre — ils ne servaient à personne : aux
+   outils de la tenir, sans quoi ils se rangeaient contre le titre. */
+.tools{display:flex;gap:6px;margin-left:auto}
+/* Le `padding:0` n'est pas une coquetterie : le navigateur pose de lui-même
+   six points de part et d'autre d'un `button`, et le bouton fait trente-deux
+   points de large, bordure comprise. Il ne restait donc que dix-huit points à
+   l'intérieur — moins que les vingt du drapeau de la bascule de langue. Une
+   piste de grille plus large que la boîte qui la contient ne se centre pas :
+   elle part du bord gauche et déborde à droite, et le drapeau s'en allait
+   contre la bordure. Sur un téléphone, où le bouton tombe à vingt-sept points,
+   les pictogrammes de quinze y glissaient à leur tour. */
+.iconbtn{padding:0;position:relative;width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
+.iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
+.iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.iconbtn svg{width:15px;height:15px}
+
+/* ------------------------------------------------------------------
+   La bande d'administration
+
+   Le bandeau du dessous appartient au salon : il porte l'habillage que
+   l'exploitant a choisi, et son rôle est de lui montrer ce que verront ses
+   visiteurs. Les commandes de l'outil — calques, réglages, compte,
+   enregistrement — s'y habillaient pourtant comme le reste, et la marque du
+   produit n'aurait pu s'y poser sans déguiser le salon en Event2Map. Elles
+   remontent donc dans une bande à elles, dans la nuit de la marque, d'où l'on
+   voit aussi d'un coup d'œil qu'on édite au lieu de regarder.
+
+   Elle redéfinit les jetons de surface pour son propre compte plutôt que de
+   repeindre chaque bouton : le bouton d'icône, l'avatar du compte et celui de
+   l'enregistrement sont ceux de partout ailleurs, et suivent. L'accent y est
+   le cyan de la marque et non celui du salon — c'est la seule bande de
+   l'écran qui ne parle pas du salon.
+   ------------------------------------------------------------------ */
+.bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:12px;
+  padding:calc(5px + var(--sys-haut)) 18px 5px;min-height:calc(66px + var(--sys-haut));
+  background:var(--m-nuit);color:var(--ink);
+  /* La nuit de la marque, et non la surface que la bande redéfinit juste en
+     dessous pour ses boutons : c'est le fond de la bande que le système doit
+     prolonger. */
+  --ton-barre:var(--m-nuit);
+  --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
+  --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
+  --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
+  --rouge:var(--m-rose)}
+/* La bande prend un rang de la grille, et seulement quand elle existe. */
+html.mode-admin .app{grid-template-rows:auto auto 1fr}
+/* La marque se lit, ou elle ne sert à rien. À vingt-six pixels, le bloc cyan
+   en faisait dix-sept et chaque capitale du monogramme quatre — `icones.js` le
+   dit d'ailleurs lui-même : la marque complète ne vaut qu'à partir de trente-
+   deux. C'est donc la bande qui s'ajuste à elle. */
+.bandeMarque{flex:0 0 auto;width:54px;height:54px;display:block}
+.bandeMarque svg{width:100%;height:100%;display:block}
+.bandeNom{font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+.bandeActs{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* Au pied du panneau, le bouton d'enregistrement prenait toute la largeur ;
+   ici il se mesure à son texte. */
+.bandeAdmin .reset.fort{width:auto;padding:5px 12px;font-size:12.5px}
+/* Du blanc sur le cyan vif ne fait que 1,9 pour 1 ; la nuit y fait 9,3. */
+.bandeAdmin .iconbtn[aria-pressed="true"]{color:var(--accent-ink)}
+

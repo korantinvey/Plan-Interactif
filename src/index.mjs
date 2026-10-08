@@ -675,7 +675,30 @@ async function iconeApp(url) {
   });
 }
 
-/** Relais des mesures : un aller simple, sans identité et sans cache. */
+/**
+ * Les mesures : un aller simple, sans identité et sans cache.
+ *
+ * Elles vont droit à la base, par son interface REST, et non plus par la
+ * fonction `mesure`. Un essai de charge l'a décidé : à cent paquets par
+ * seconde, six sur dix n'arrivaient pas en trente secondes — non que la base
+ * peinait à écrire, mais parce que chaque paquet réveillait une fonction dont
+ * le seul travail était d'appeler la base. La porte `mesure_publique` borne
+ * le paquet elle-même (migration `la_porte_publique_des_mesures`) : la clé
+ * publique qui l'ouvre circule dans chaque page, rien ne doit donc tenir à ce
+ * que le Worker filtre avant elle.
+ *
+ * La fonction reste le repli : quand la porte manque — le Worker et la base ne
+ * se déploient pas au même instant — ou qu'elle flanche. Un paquet refusé à
+ * tort serait perdu, la page ne réessayant pas un refus. Le prix de ce choix :
+ * une base qui écrit puis répond au-delà du délai verra son paquet compté une
+ * seconde fois par la fonction. Rare, et un geste de trop vaut mieux qu'une
+ * visite perdue.
+ */
+const PORTE_MESURES = BASE.replace("/functions/v1/", "/rest/v1/rpc/") + "mesure_publique";
+/* La clé « publishable » : faite pour circuler, c'est celle de `config.js`.
+   Ce qui protège la base, ce sont ses droits, pas le secret de cette clé. */
+const CLE_PUBLIQUE = "sb_publishable_N5rJYe35-Kcaw70ZoTJRaQ_lvVVc_5F";
+
 async function mesure(requete) {
   if (requete.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_MESURE });
@@ -687,6 +710,45 @@ async function mesure(requete) {
   if (corps.length > MESURE_MAX) {
     return new Response(null, { status: 413, headers: CORS_MESURE });
   }
+  const repond = (status, erreur) => new Response(
+    erreur ? JSON.stringify({ erreur }) : null,
+    { status, headers: { ...CORS_MESURE, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+
+  let paquet;
+  try { paquet = JSON.parse(corps); } catch { paquet = null; }
+  if (!paquet || typeof paquet !== "object") return repond(400, "Corps illisible.");
+
+  /* Les types seulement : la base attend un booléen et un entier, et refuserait
+     le paquet entier pour un `recul` en texte. Le reste se borne là-bas. */
+  const recul = Math.round(Number(paquet.recul));
+  const parametres = {
+    p_slug: String(paquet.slug ?? ""),
+    p_visiteur: String(paquet.visiteur ?? ""),
+    p_gestes: Array.isArray(paquet.gestes) ? paquet.gestes : [],
+    p_support: String(paquet.support ?? ""),
+    // `retenu` ne vaut faux que dit faux : une page d'avant ne l'envoie pas
+    p_retenu: paquet.retenu !== false,
+    p_recul: Number.isFinite(recul) && recul > 0 ? Math.min(recul, 90 * 86400) : 0,
+  };
+
+  const base = await fetch(PORTE_MESURES, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: CLE_PUBLIQUE },
+    body: JSON.stringify(parametres),
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
+
+  if (base && base.ok) {
+    const pris = await base.json().catch(() => null);
+    return pris === false ? repond(404, "Événement introuvable ou non publié.") : repond(204);
+  }
+  // un paquet que la porte juge mal formé ne passera pas mieux par la fonction
+  if (base && base.status === 400) {
+    const e = await base.json().catch(() => ({}));
+    if (e && e.code === "22023") return repond(400, "Paramètres manquants.");
+  }
+
+  // le repli : la porte absente, en panne, ou muette
   const reponse = await fetch(MESURE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
