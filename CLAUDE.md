@@ -67,6 +67,14 @@ Les gestes qui vont avec :
   le code soudé appelle à la place que le module y tenait : `brancheMesure`,
   dans `_branche-mesure.html`. Ce qui s'exécutait au chargement y passe aussi,
   pour garder son rang parmi le reste du plan.
+- **Un état que le module réaffecte** — les données du salon, remplacées à
+  chaque chargement — ne se confie pas par `Object.assign`, qui figerait la
+  première valeur : le point d'entrée le pose en accesseur,
+  `Object.defineProperties(globalThis, vivants({ DATA: () => DATA, … }))`
+  (`modules/vivant.mjs`). Le code soudé le lit par son nom comme avant, et le
+  remplace par la porte du module — `poseDonnees({ TOUS: … })` ; une
+  affectation directe lève une erreur au lieu d'échouer sans bruit. Un module,
+  lui, l'importe : c'est ce qui libère les domaines qui en dépendent.
 - **Un nom qui quitte la liste exposée** est un nom que le code soudé n'appelle
   plus : c'est ainsi que la soudure se défait, un domaine après l'autre.
 - `npm run verifie`, `npm run lint` et `npm run types` relisent les modules :
@@ -244,6 +252,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 
 | intention | où |
 |---|---|
+| données du salon et leurs index — `DATA`, `TOUS`, `parId`, `CONFS`, `EXPOSANTS`, `HEBERGES`, `CONFERENCES`, `PAR_HEBERGE` —, l'état de la vue `state`, le pavillon courant `P` | `modules/donnees.mjs` ; posés par `_js.html` `indexe` au travers de `poseDonnees`, seule porte d'écriture ; lus en accesseurs par le code soudé, importés par les modules |
 | recherche, index des exposants, liste | index `_js.html` § 1, recherche et liste `_recherche.html` § 5 |
 | panneau des critères déplié sous la recherche | `_recherche.html` `remplitCriteres`, `ouvreCriteres`, `fermeCriteres`, relecture par `majCriteres` ; balisage `_head.html` `#panCrit`, styles `_styles-plan.css` `.pan-crit` |
 | ordre des filtres dans ce panneau | réglage `_admin1.html` `blocOrdreCriteres` (onglet « Recherche », au bas de `voletRecherche`), clé `_crit.ordre` de la configuration ; application `_recherche.html` `ordreCriteres`, relue par `clesCriteres`, panneau refait par `refaitCriteres` ; styles `_styles-modeles-parcours.css` `.ordreCrit`, empruntés au rangement de la fiche |
@@ -292,7 +301,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | visite guidée du premier démarrage | `_tutoriel.html` (chapitres `CHAPITRES_TUTO`), proposée par `_admin2.html` `demarre` ; case et « Essayer » dans `_reglages.html` `voletPlan` ; styles `_styles-divers.css` § La visite guidée ; anglais `outils/anglais/_tutoriel.js` |
 | options vendues à part — dessin des stands, images sur un stand, journée organisée, programme de conférences, recommandation sponsorisée | `_admin1.html` `OPTIONS`, `optionActive`, `_volets.html` `blocOptions` (onglet « Admin », profil administrateur) ; ce qui se ferme par la feuille de style sous `html.sans-dessin-stand` (bouton de l'outil), `sans-image-stand` (champ `#imageSoc`, l'outil image restant) et `sans-journee` dans `_styles-plan.css` et `_styles-parcours.css`, le code refusant ensuite par `outilOffert` et `seRattache` ; le programme se refait par `_js.html` `indexeConferences` (clé `_options`) |
 | logo au démarrage, le temps du chargement — rien, la marque, un sponsor | `_sponsor.html` (`MODES_SPONSOR`, `modeSponsor`) — posé au premier trait d'après le cache `plan-sponsor:<slug>`, corrigé par `accueilleSponsor` dans `_admin2.html` `demarre`, rendu par `suitSponsor` ; réglage `_sponsor` et bloc `blocSponsor` (`CHOIX_SPONSOR`) au bas de `_volets.html` `voletAdmin`, donc réservé au profil administrateur ; marque du produit par `MARQUE_SPONSOR`, posée par `genere.js` à la place de `<!--__MARQUE__-->` ; styles `_styles-divers.css` § Le générique du sponsor et § Le générique du démarrage ; rejoué par `_borne.html` `reposeLaBorne` ; `resteSponsor` fait attendre `_tutoriel.html` et `_installation.html` |
-| comptage d'usage | module `modules/mesure.mjs`, branché par le code soudé à sa place d'origine (`_branche-mesure.html` `brancheMesure`, qui lui confie le nom du salon) ; relais `src/index.mjs` `mesure`, qui écrit **sans fonction intermédiaire** par la porte SQL `mesure_publique` (migration `la_porte_publique_des_mesures`, ouverte à `anon` : c'est elle qui borne le paquet) puis `enregistre_mesures` (migration `compteurs`) ; `supabase/functions/mesure/` n'est plus que le repli — porte absente ou en panne. Essai de charge `npm run charge` (`outils/essais/charge.js`, `--mesures-seules` pour ce seul chemin) |
+| comptage d'usage | module `modules/mesure.mjs`, branché par le code soudé à sa place d'origine (`_branche-mesure.html` `brancheMesure`) ; le nom du salon lu dans `modules/donnees.mjs` ; relais `src/index.mjs` `mesure`, qui écrit **sans fonction intermédiaire** par la porte SQL `mesure_publique` (migration `la_porte_publique_des_mesures`, ouverte à `anon` : c'est elle qui borne le paquet) puis `enregistre_mesures` (migration `compteurs`) ; `supabase/functions/mesure/` n'est plus que le repli — porte absente ou en panne. Essai de charge `npm run charge` (`outils/essais/charge.js`, `--mesures-seules` pour ce seul chemin) |
 | mesure faite sans réseau, renvoyée à la reconnexion | `modules/mesure.mjs` § La file, `pousseLaFile`, `beaconne` ; recul porté par le paquet, borné par `mesure_publique` et la migration `les_mesures_qui_ont_attendu_le_reseau` |
 | mesure sans bandeau : notice « Confidentialité », refus, vie du jeton, purge | `modules/mesure.mjs` § La notice, et le refus, `MESURE_VIE_MOIS` ; lien `_head.html` `#btnConfidentialite` ; `purge_presences` chaque nuit, migration `conservation_des_jetons` ; README « Sans bandeau de consentement » |
 | polices des pages | modèles en tête de `outils/polices.js`, polices au choix relues dans `_admin1.html` `POLICES_NOMS` ; puis `npm run polices` → `web/polices/` ; déclarées par `genere.js` `feuillePolices` à la place de `<!--__POLICES__-->`, les polices au choix chargées par `feuillePolice` |
