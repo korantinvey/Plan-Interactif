@@ -91,7 +91,6 @@
  "_export.html | TS2769 | No overload matches this call.   Overload 1 of 2, '(...items: ConcatArray<{ titre: string; largeur: number; lit: (r: any) => any; }>[]): { titre: string; largeur: number; lit: (r: any) => any; }[]', gave the following error.   | canaux.reduce((cols, [cle, lib]) => {": 1,
  "_fiche.html | TS2339 | Property 'title' does not exist on type 'Element'. | if (g.p.societe) ens.title = g.p.societe;": 1,
  "_fiche.html | TS2339 | Property 'type' does not exist on type 'HTMLButtonElement | HTMLDivElement'.   Property 'type' does not exist on type 'HTMLDivElement'. | if (o) el.type = \"button\";": 1,
- "_fiche.html | TS2345 | Argument of type 'Date' is not assignable to parameter of type 'number'. | if (isNaN(d)) return null;": 1,
  "_geometrie.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | b.setAttribute(\"aria-pressed\", b.dataset.geo === SORTE_GEO));": 1,
  "_geometrie.html | TS2339 | Property 'dataset' does not exist on type 'Element'. | Boolean(id) && (g.dataset.aj || g.dataset.id) === id));": 2,
  "_geometrie.html | TS2345 | Argument of type 'boolean' is not assignable to parameter of type 'string'. | b.setAttribute(\"aria-pressed\", b.dataset.geo === SORTE_GEO));": 1,

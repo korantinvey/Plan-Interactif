@@ -572,9 +572,6 @@ const cleTemps = c => {
   // s'intercaler n'importe où
   return d ? d.cle + d.h + d.min : "999999999999";
 };
-const jourCourt = d => d
-  ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
-  : "";
 
 /** Le nom sous lequel un exposant paraît dans une liste : son enseigne, faute
  *  de quoi ce que le plan porte, faute de quoi son numéro d'emplacement. La

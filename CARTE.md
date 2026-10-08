@@ -294,7 +294,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_fiche.html` — 1550 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_fiche.html` — 1500 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 7. Sélection et fiche
 
@@ -304,13 +304,12 @@ Fonctions :
 `centre` 101 · `brancheActesFiche` 112 · `centreEtBaisseLaFiche` 128 · `centrePoint` 146
 `montre` 191 · `libelleCorps` 223 · `ordreCorps` 240 · `groupesFiche` 272
 `montreIntitule` 285 · `valeurCorps` 305 · `champCorps` 318 · `groupeCorps` 330
-`corpsRange` 343 · `momentLocal` 378 · `programme` 401 · `produits` 450 · `ficheProduit` 478
-`jourLong` 544 · `ficheConf` 555 · `lien` 702 · `adresseWeb` 710 · `pictoRS` 753
-`adresseSure` 771 · `adresseVignette` 802 · `adresseImage` 820 · `imageSure` 833
-`assainitRiche` 862 · `enBlocs` 910 · `rangeRiche` 923 · `ecarteClicFantome` 951
-`nomSociete` 960 · `societes` 973 · `choisitExposant` 984 · `poseMarque` 1022
-`montreMarque` 1082 · `poseCode` 1105 · `rangeMarque` 1146 · `ouvre` 1209 · `ferme` 1521
-`onglet` 1539
+`corpsRange` 343 · `programme` 358 · `produits` 407 · `ficheProduit` 435 · `ficheConf` 505
+`lien` 652 · `adresseWeb` 660 · `pictoRS` 703 · `adresseSure` 721 · `adresseVignette` 752
+`adresseImage` 770 · `imageSure` 783 · `assainitRiche` 812 · `enBlocs` 860
+`rangeRiche` 873 · `ecarteClicFantome` 901 · `nomSociete` 910 · `societes` 923
+`choisitExposant` 934 · `poseMarque` 972 · `montreMarque` 1032 · `poseCode` 1055
+`rangeMarque` 1096 · `ouvre` 1159 · `ferme` 1471 · `onglet` 1489
 
 Éléments :
 
@@ -473,26 +472,25 @@ Fonctions :
 `viseItineraire` 3200 · `visePoi` 3206 · `visePoint` 3212 · `ouvreItineraire` 3244
 `fermeItineraire` 3272 · `versItineraire` 3282 · `versItineraireDe` 3285
 
-### `_journee.html` — 2797 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2761 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
 Fonctions :
 
-`peineDeCharge` 134 · `minutesDe` 201 · `finInstant` 202 · `ecritHeure` 204
-`ecritMinutes` 209 · `dateDeCle` 222 · `jourBref` 228 · `joursSalon` 238 · `joursAVenir` 267
-`joursDefaut` 285 · `confsParJour` 295 · `pointConf` 312 · `departsProposes` 331
-`matriceJournee` 364 · `ecartDesJours` 497 · `poidsDesJours` 527 · `chargeDuJour` 550
-`rangeSejour` 559 · `derouleJournee` 1113 · `prepareSejour` 1255 · `calculeSejour` 1457
-`apercuRepartition` 1491 · `rangJournee` 1505 · `lienJournee` 1517 · `boutonJour` 1540
-`arretJournee` 1553 · `remplitOnglets` 1600 · `jourDuStand` 1629 · `ouvreChoixJour` 1641
-`figeLaVisite` 1698 · `placeSurJour` 1707 · `rendAuPlan` 1715 · `retireDuSejour` 1721
-`remplitJournee` 1731 · `ecritApercu` 1944 · `appliqueVueParcours` 1974
-`traceJournee` 2016 · `montreLeJour` 2025 · `perimeJournee` 2040 · `oublieSejour` 2055
-`ouvreOrganisation` 2070 · `essaieSejour` 2450 · `lanceSejour` 2480 · `refaitSejour` 2519
-`trancheDe` 2552 · `chargeSuivie` 2572 · `jourISO` 2578 · `etapesDuSejour` 2586
-`annoncePlan` 2613 · `celluleUtile` 2649 · `dilatationPour` 2712 · `dilatationDuJour` 2728
-`litLaCharge` 2765 · `chargeCellule` 2785
+`peineDeCharge` 134 · `finInstant` 201 · `joursSalon` 210 · `joursAVenir` 239
+`joursDefaut` 257 · `confsParJour` 267 · `pointConf` 284 · `departsProposes` 303
+`matriceJournee` 336 · `ecartDesJours` 469 · `poidsDesJours` 499 · `chargeDuJour` 522
+`rangeSejour` 531 · `derouleJournee` 1085 · `prepareSejour` 1227 · `calculeSejour` 1429
+`apercuRepartition` 1463 · `rangJournee` 1477 · `lienJournee` 1489 · `boutonJour` 1512
+`arretJournee` 1525 · `remplitOnglets` 1572 · `jourDuStand` 1601 · `ouvreChoixJour` 1613
+`figeLaVisite` 1670 · `placeSurJour` 1679 · `rendAuPlan` 1687 · `retireDuSejour` 1693
+`remplitJournee` 1703 · `ecritApercu` 1916 · `appliqueVueParcours` 1946
+`traceJournee` 1988 · `montreLeJour` 1997 · `perimeJournee` 2012 · `oublieSejour` 2027
+`ouvreOrganisation` 2042 · `essaieSejour` 2422 · `lanceSejour` 2452 · `refaitSejour` 2491
+`trancheDe` 2524 · `chargeSuivie` 2544 · `etapesDuSejour` 2550 · `annoncePlan` 2577
+`celluleUtile` 2613 · `dilatationPour` 2676 · `dilatationDuJour` 2692 · `litLaCharge` 2729
+`chargeCellule` 2749
 
 ### `_js.html` — 566 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -563,7 +561,7 @@ Fonctions :
 
 `clesFiche` 25 · `voletOrdre` 42 · `enregistreConf` 630 · `ecarte` 644 · `joli` 659
 
-### `_parcours.html` — 758 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 755 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -577,9 +575,8 @@ Fonctions :
 `ajouteToutAuParcours` 369 · `poseToutAuParcours` 392 · `signetParcours` 418
 `boutonParcours` 424 · `rafraichitMarque` 429 · `brancheParcours` 442 · `calqueMarques` 474
 `dessineMarques` 490 · `marqueParcours` 520 · `rafraichitParcours` 534 · `instantConf` 565
-`cleTemps` 569 · `jourCourt` 575 · `nomDeStand` 582 · `rangParcours` 584
-`groupeParcours` 604 · `remplitParcours` 613 · `ouvreParcours` 702 · `fermeParcours` 714
-`videLeParcours` 730
+`cleTemps` 569 · `nomDeStand` 579 · `rangParcours` 581 · `groupeParcours` 601
+`remplitParcours` 610 · `ouvreParcours` 699 · `fermeParcours` 711 · `videLeParcours` 727
 
 ### `_partage.html` — 453 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -868,7 +865,7 @@ Fonctions :
 `refuseMesure` 564 · `ouvreConfidentialite` 591 · `brancheLaNotice` 641
 `brancheMesure` 656
 
-### `modules/plan.mjs` — 33 l. → plan
+### `modules/plan.mjs` — 37 l. → plan
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -892,6 +889,15 @@ Fonctions :
 Fonctions :
 
 `cheminDuSalon` 26 · `cheminPartageable` 37
+
+### `modules/temps.mjs` — 104 l. → plan
+
+- l.1 · Les dates et les heures du salon
+
+Fonctions :
+
+`momentLocal` 32 · `jourLong` 55 · `jourCourt` 62 · `dateDeCle` 69 · `jourBref` 75
+`jourISO` 82 · `minutesDe` 92 · `ecritHeure` 94 · `ecritMinutes` 99
 
 ### `modules/texte.mjs` — 25 l. → plan, console, rapport
 

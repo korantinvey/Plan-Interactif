@@ -354,49 +354,6 @@ function corpsRange(ordre, champs){
   }).join("");
 }
 
-/**
- * Le programme d'une zone, en vignettes chronologiques.
- *
- * L'heure vient d'Eventmaker sous sa forme locale — « 03/14/2026 10:30 » — ce
- * qui évite de deviner le fuseau du salon depuis le navigateur d'un visiteur
- * qui peut être ailleurs. On la relit telle quelle plutôt que d'en faire une
- * date, dont le rendu dépendrait justement du fuseau.
- */
-const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet",
-              "août", "septembre", "octobre", "novembre", "décembre"];
-
-/**
- * L'heure d'une conférence, dans le fuseau du salon.
- *
- * Eventmaker donne deux formes. « 03/14/2026 10:30 » est l'heure locale du
- * salon : on la relit telle quelle, c'est la seule qui ne demande rien. La
- * forme ISO, elle, porte un décalage — souvent Z — qu'il faut ramener au
- * fuseau de l'événement, sans quoi un visiteur d'un autre pays lirait des
- * horaires faux.
- */
-function momentLocal(v, fuseau){
-  const t = String(v || "");
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})/.exec(t);
-  if (m){
-    return { jour: +m[2], mois: +m[1], an: +m[3], h: m[4].padStart(2, "0"), min: m[5],
-             cle: m[3] + m[1] + m[2] };
-  }
-  const d = new Date(t);
-  if (isNaN(d)) return null;
-  try {
-    const p = Object.fromEntries(new Intl.DateTimeFormat("fr-FR", {
-      timeZone: fuseau || undefined, year: "numeric", month: "2-digit",
-      day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
-    }).formatToParts(d).map(x => [x.type, x.value]));
-    return { jour: +p.day, mois: +p.month, an: +p.year,
-             h: String(p.hour).padStart(2, "0"), min: p.minute,
-             cle: p.year + p.month + p.day };
-  } catch (e) {
-    return null;   // fuseau inconnu : mieux vaut taire l'heure que la fausser
-  }
-}
-
 /** Le programme d'une zone, ou celui d'un exposant : la même liste, rendue. */
 function programme(l, titre){
   l = l || [];
@@ -538,13 +495,6 @@ function ficheProduit(rang){
     sortie(p.video, "Vidéo");
     if (acts.childNodes.length) corps.appendChild(acts);
   }, [{ libelle: "Fermer", genre: "primaire" }], "fiche");
-}
-
-/** Une date écrite en toutes lettres : « samedi 14 mars 2026 ». */
-function jourLong(d){
-  if (!d) return "";
-  const dt = new Date(d.an, d.mois - 1, d.jour);
-  return JOURS[dt.getDay()] + " " + d.jour + " " + MOIS[d.mois - 1] + " " + d.an;
 }
 
 /**
