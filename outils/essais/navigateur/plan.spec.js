@@ -120,6 +120,77 @@ test.describe("le plan de démonstration", () => {
   });
 });
 
+/* Les règles de `modules/sur.mjs`, éprouvées sur ce qu'un visiteur ne devrait
+   jamais recevoir. Elles ne dépendent de rien du plan : on les appelle telles
+   que la page les tient, puis on pose leur sortie dans le document pour
+   vérifier que rien ne s'y exécute. */
+test.describe("ce qui vient d'ailleurs", () => {
+  test("les adresses et les logos ne gardent que ce qui ne s'exécute pas", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const r = await page.evaluate(() => {
+      // ce que le module confie à la page (`modules/plan.mjs`)
+      const { adresseSure, imageSure, adresseImage } = /** @type {any} */ (globalThis);
+      return {
+        refusees: ["javascript:alert(1)", " JaVaScRiPt:alert(1)", "java\u0000script:alert(1)",
+          "data:text/html,<script>alert(1)</script>", "vbscript:x", "ftp://x.fr", "@compte"]
+          .map((v) => adresseSure(v)),
+        gardees: ["https://exemple.fr", "exemple.fr/page", "mailto:a@b.fr", "tel:+33100000000"]
+          .map((v) => adresseSure(v)),
+        images: ["data:image/svg+xml;base64,PHN2Zz4=", "https://x.fr/logo.png", "javascript:alert(1)",
+          "data:image/png;base64,iVBORw0KGgo="].map((v) => imageSure(v)),
+        logos: ["javascript:alert(1)", "data:image/png;base64,AAAA", "https://x.fr/l.png"]
+          .map((v) => adresseImage(v)),
+      };
+    });
+    expect(r.refusees).toEqual(["", "", "", "", "", "", ""]);
+    expect(r.gardees).toEqual(["https://exemple.fr", "https://exemple.fr/page", "mailto:a@b.fr",
+      "tel:+33100000000"]);
+    expect(r.images).toEqual(["", "", "", "data:image/png;base64,iVBORw0KGgo="]);
+    expect(r.logos).toEqual(["", "", "https://x.fr/l.png"]);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("une description ne garde que sa mise en forme", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const r = await page.evaluate(() => {
+      const { assainitRiche } = /** @type {any} */ (globalThis);
+      const piege = "window.__piege = 1";
+      const entrees = [
+        "<p>Bonjour <b>gras</b> <i>it</i></p>",
+        "<script>" + piege + "</script>texte",
+        "<img src=x onerror=\"" + piege + "\">après",
+        "<a href=\"javascript:" + piege + "\">lien</a>",
+        "<a href=\"exemple.fr\" onclick=\"" + piege + "\">site</a>",
+        "<svg><script>" + piege + "</script><style>*{}</style>t</svg>",
+        "<iframe srcdoc=\"<script>" + piege + "</script>\"></iframe>ok",
+        "<div>un<ul><li>a</li></ul>deux</div>",
+      ];
+      const sorties = entrees.map((h) => assainitRiche(h));
+      // posées dans la page, comme la fiche le fait : rien ne doit s'y lancer
+      const hote = document.createElement("div");
+      hote.innerHTML = sorties.join("");
+      document.body.appendChild(hote);
+      return { sorties, balises: [...new Set([...hote.querySelectorAll("*")].map((e) => e.tagName))].sort(),
+        attributs: [...new Set([...hote.querySelectorAll("*")].flatMap((e) => e.getAttributeNames()))].sort() };
+    });
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => /** @type {any} */ (window).__piege)).toBeUndefined();
+    expect(r.balises).toEqual(["A", "EM", "LI", "P", "STRONG", "UL"]);
+    expect(r.attributs).toEqual(["href", "rel", "target"]);
+    expect(r.sorties[0]).toBe("<p>Bonjour <strong>gras</strong> <em>it</em></p>");
+    expect(r.sorties[3]).toBe("<p>lien</p>");
+    expect(r.sorties[4]).toBe('<p><a href="https://exemple.fr" target="_blank" rel="noopener">site</a></p>');
+    // le texte d'un script, même glissé dans un SVG, n'est pas du texte
+    expect(r.sorties.join("")).not.toContain("__piege");
+    expect(r.sorties[7]).toBe("<p>un</p><ul><li>a</li></ul><p>deux</p>");
+    expect(erreurs).toEqual([]);
+  });
+});
+
 test.describe("les autres pages", () => {
   for (const [nom, adresse] of [
     ["l'accueil", "/index.html"],
