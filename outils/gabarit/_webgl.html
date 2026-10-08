@@ -739,7 +739,9 @@ function lisTransform(t){
  *  — assez finement pour qu'aucun zoom du plan n'en montre les facettes. */
 function lisTrace(d){
   const out = [];
-  let cur = null, x = 0, y = 0, x0 = 0, y0 = 0, cx = 0, cy = 0, prec = "";
+  /** @type {{ pts: number[][], ferme: boolean } | null} */
+  let cur = null;
+  let x = 0, y = 0, x0 = 0, y0 = 0, cx = 0, cy = 0, prec = "";
   const jetons = d.match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/g) || [];
   let i = 0, cmd = "";
   const nb = () => parseFloat(jetons[i++]);

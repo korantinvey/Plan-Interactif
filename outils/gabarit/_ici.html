@@ -492,6 +492,7 @@ function boutonsCodeIci(pt, lien, trame){
         () => { if (bCopie) bCopie.textContent = "Échec de la copie"; });
     },
   };
+  /** @type {{ libelle: string, genre?: string, ferme?: boolean, action?: () => void }[]} */
   const boutons = [{ libelle: "Fermer" }, copie];
   if (trame) boutons.push(
     { libelle: "Imprimer", ferme: false, action: () => imprimeAfficheIci(pt, trame) },

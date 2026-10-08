@@ -871,7 +871,7 @@ function dessineFiche() {
   rythme.innerHTML = RYTHMES.map((r) => '<option value="' + r[0] + '"' +
     (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("");
   rythme.onchange = async (ev) => {
-    e.rythme_min = +ev.target.value;
+    e.rythme_min = +(/** @type {HTMLSelectElement} */ (ev.target)).value;
     try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
     catch (err) { signale(err.message, true); }
   };
@@ -962,6 +962,8 @@ function dessineFiche() {
    la géométrie du plan ne vient que de Klipso, le reste pourra venir
    d'ailleurs. La clé d'identification reste celle de l'événement.
    ============================================================ */
+/* Par domaine : sa clé, son nom, les sources qui savent le servir, ce qu'il porte. */
+/** @type {[string, string, string[], string][]} */
 const DOMAINES = [
   ["plan",        "Plan",        ["klipso"],
    "La géométrie des pavillons et des calques."],
@@ -2141,7 +2143,7 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
       tr.classList.toggle("source-inerte", !sert);
       if (!choix) return;
       choix.hote.hidden = !sert;
-      if (choixEn) choixEn.hote.parentNode.hidden = !sert;
+      if (choixEn) choixEn.hote.parentElement.hidden = !sert;
       // la barre de couleur dit d'où vient un champ : sans champ, elle ne dit
       // plus rien
       if (sert) choix.dis(); else delete tr.dataset.etat;

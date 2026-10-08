@@ -376,8 +376,9 @@ const grille = () => { const d = document.createElement("div"); d.className = "g
 /* Un menu déplié se referme sur un clic ailleurs et sur Échap : sans cela il
    resterait ouvert au-dessus de la fiche, et rien ne dirait comment le fermer. */
 document.addEventListener("click", (ev) => {
+  const cible = /** @type {HTMLElement} */ (ev.target);
   document.querySelectorAll("details.menu[open]").forEach((d) => {
-    if (!d.contains(ev.target) || ev.target.closest(".menu-pan")) d.open = false;
+    if (!d.contains(cible) || cible.closest(".menu-pan")) d.open = false;
   });
 });
 document.addEventListener("keydown", (ev) => {

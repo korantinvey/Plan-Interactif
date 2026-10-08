@@ -303,7 +303,7 @@ svg.addEventListener("keydown", e => {
   }
 });
 document.addEventListener("keydown", e => {
-  const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  const saisie = /^(INPUT|TEXTAREA)$/.test(/** @type {HTMLElement} */ (e.target).tagName);
   /* @admin — les raccourcis et les flèches de l'éditeur */
   if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
     const t = e.key.toLowerCase();

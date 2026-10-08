@@ -556,7 +556,7 @@ function ficheConf(id, canal){
         // lit quand même, il ne se clique pas
         const el = document.createElement(o ? "button" : "div");
         el.className = "expo" + (o ? "" : " statique");
-        if (o) el.type = "button";
+        if (o) /** @type {HTMLButtonElement} */ (el).type = "button";
         el.innerHTML = '<span class="n"></span><span class="c"></span>';
         el.querySelector(".n").textContent =
           (o && (o.nom || o.plan)) || x.e.nom || ("Stand " + code).trim();

@@ -261,11 +261,11 @@ function voletOrdre(hote){
    * ce qui se passe sous le curseur.
    */
   const dessin = () => ({
-    blocs: [...liste.children].map(el => el.dataset.cle
+    blocs: /** @type {HTMLElement[]} */ ([...liste.children]).map(el => el.dataset.cle
       ? { cle: el.dataset.cle }
       : { id: el.dataset.ref, titre: el.querySelector(".grpTitre").value,
           membres: [...el.querySelector(".grpMembres").children].map(x => x.dataset.cle) }),
-    caches: [...dispo.children].map(el => el.dataset.cle),
+    caches: /** @type {HTMLElement[]} */ ([...dispo.children]).map(el => el.dataset.cle),
   });
 
   /* Relire le dessin refait les blocs : les boutons déjà posés tiennent les
@@ -440,7 +440,7 @@ function voletOrdre(hote){
   };
 
   const fleches = (hote, libelle, repere, i, j) => {
-    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
+    /** @type {[string, number, number][]} */ ([["Monter", -1, 0], ["Descendre", 1, 1]]).forEach(([titre, pas, sens]) => {
       const b = outil(hote, pas < 0 ? "▲" : "▼", titre + " " + libelle,
         () => deplace(i, j, pas, sens, repere), "fleche");
       b.title = titre;
