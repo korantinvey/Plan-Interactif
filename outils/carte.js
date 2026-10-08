@@ -19,6 +19,7 @@ const path = require("path");
 const D = __dirname;
 const RACINE = path.join(D, "..");
 const GABARIT = path.join(D, "gabarit");
+const modules = require("./modules.js");
 const WEB = path.join(RACINE, "web");
 
 const lis = (p) => fs.readFileSync(p, "utf8");
@@ -56,8 +57,16 @@ const PAGES = fs.existsSync(WEB)
  * deux y est. On ne retient donc, comme empreinte, que ce qui n'appartient
  * qu'à un seul module.
  */
+/* Les sources du gabarit : ses morceaux, puis ses modules — un dossier à part,
+   rangé sous le nom qu'on y cherche (`modules/texte.mjs`). */
+const SOURCES = [
+  ...fs.readdirSync(GABARIT).filter((f) => fs.statSync(path.join(GABARIT, f)).isFile()),
+  ...fs.readdirSync(path.join(GABARIT, "modules")).filter((f) => f.endsWith(".mjs"))
+    .map((f) => "modules/" + f),
+].sort();
+
 const PARTAGE = new Map();
-for (const f of fs.readdirSync(GABARIT)) {
+for (const f of SOURCES) {
   for (const t of new Set(lignes(lis(path.join(GABARIT, f))).map((l) => l.trim()))) {
     PARTAGE.set(t, (PARTAGE.get(t) || 0) + 1);
   }
@@ -106,8 +115,8 @@ function fonctions(ls) {
   const out = [];
   for (let i = 0; i < ls.length; i++) {
     const m =
-      /^(?:async\s+)?function\s*\*?\s*([A-Za-z0-9_$]+)/.exec(ls[i]) ||
-      /^(?:const|let)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z0-9_$]+\s*=>)/.exec(ls[i]);
+      /^(?:export\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z0-9_$]+)/.exec(ls[i]) ||
+      /^(?:export\s+)?(?:const|let)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z0-9_$]+\s*=>)/.exec(ls[i]);
     if (m) out.push({ l: i + 1, nom: m[1] });
   }
   return out;
@@ -154,11 +163,13 @@ ecrit(
   ""
 );
 
-for (const nom of fs.readdirSync(GABARIT).sort()) {
+for (const nom of SOURCES) {
   const chemin = path.join(GABARIT, nom);
   const texte = lis(chemin);
   const ls = lignes(texte);
-  const vers = pagesDe(texte);
+  /* Un module ne se retrouve pas dans les pages par son texte : esbuild le
+     réimprime. Ce sont les points d'entrée qui l'embarquent qui le disent. */
+  const vers = nom.startsWith("modules/") ? modules.entreesDe(nom) : pagesDe(texte);
 
   ecrit(`### \`${nom}\` — ${compte(texte)} l.` + (vers.length ? ` → ${vers.join(", ")}` : ""));
 

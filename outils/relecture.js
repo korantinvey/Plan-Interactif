@@ -23,6 +23,7 @@ const { ESLint, Linter } = require("eslint");
 const { BOUTS, lisBout } = require("./assemble.js");
 const { REGLES, GLOBALES_PAGE } = require("../eslint.config.js");
 const globals = require("globals");
+const modules = require("./modules.js");
 
 const RACINE = path.join(__dirname, "..");
 const G = path.join(__dirname, "gabarit");
@@ -61,6 +62,18 @@ const PAGES = {
  * deux scripts ne doivent pas se souder en une instruction que la page,
  * elle, n'exécute jamais d'un seul tenant.
  */
+/* Les pages qui reçoivent le script des modules, et lequel (`genere.js`
+   `scriptDesModules`). Leurs noms exposés sont, pour la relecture, ce que la
+   page trouve sans le déclarer — comme `LANGUE` ou `traduit`. */
+const FAMILLE = {
+  "plan-admin.html": "plan",
+  "plan.html": "plan",
+  "admin-plans.html": "console",
+  "rapport.html": "console",
+};
+const globalesDesModules = (page) => FAMILLE[page]
+  ? Object.fromEntries(modules.exposes(FAMILLE[page]).map((n) => [n, "readonly"])) : {};
+
 function compose(morceaux) {
   let texte = "";
   const table = [];  // [première ligne, fichier], dans l'ordre
@@ -140,7 +153,7 @@ function relitLesPages() {
       languageOptions: {
         ecmaVersion: "latest",
         sourceType: "script",
-        globals: { ...globals.browser, ...GLOBALES_PAGE },
+        globals: { ...globals.browser, ...GLOBALES_PAGE, ...globalesDesModules(page) },
       },
       linterOptions: { reportUnusedDisableDirectives: "error" },
       rules: REGLES,
@@ -178,4 +191,4 @@ if (require.main === module) {
   })().catch((e) => { console.error(e); process.exit(1); });
 }
 
-module.exports = { compose, PAGES };
+module.exports = { compose, PAGES, FAMILLE };

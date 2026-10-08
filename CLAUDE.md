@@ -14,6 +14,7 @@ contrôles, chacun chez soi par `npm run construire`. Seuls `web/polices/` et
 
 ```
 outils/gabarit/*.html, *.css → outils/tpl-multi.html → web/*.html
+outils/gabarit/modules/*.mjs  → esbuild, un script par point d'entrée → posé dans web/*.html
 outils/gabarit/_console.css                   → web/console.css
 outils/gabarit/_sw.js + outils/pwa.js         → web/sw.js, manifeste, icônes
 outils/gabarit/** + supabase/**               → CARTE.md
@@ -31,6 +32,39 @@ npm run verifie      # construit, contrôle tout, et dit si CARTE.md était en r
 
 `CARTE.md`, lui, reste versionné — on le lit sans rien construire. Lancez
 `npm run verifie` avant de valider : il le refait et signale s'il bougeait.
+
+## Les modules, et le code soudé
+
+Le code des pages a longtemps été un seul script par page : des morceaux mis
+bout à bout dans un espace de noms unique, où chacun appelle les fonctions de
+tous les autres sans le dire. Il en sort **progressivement**, vers de vrais
+modules dans `outils/gabarit/modules/` — extension `.mjs`, `import` et
+`export` explicites. esbuild (dépendance de développement, version épinglée)
+les réunit par point d'entrée — `plan.mjs` pour les trois pages du plan,
+`console.mjs` pour la console et le rapport — en un script posé **avant** le
+code soudé, ni minifié ni renommé : une erreur remontée doit désigner une ligne
+lisible.
+
+Le code soudé ne sait pas importer. Un point d'entrée lui confie donc ses noms
+par `Object.assign(globalThis, { … })`, un objet littéral de noms et rien
+d'autre : `outils/modules.js` relit cette liste, et la construction, la
+relecture ESLint et les types en tirent ce que la page trouve sans le déclarer
+— les types avec la signature réelle de chaque nom, par `typeof import(…)`.
+
+Les gestes qui vont avec :
+
+- **Sortir du code vers un module** : le déplacer avec ses commentaires,
+  l'exporter, l'importer et l'exposer dans le point d'entrée des pages qui
+  l'emploient, puis supprimer l'original. Une fonction recopiée dans deux pages
+  — c'était le cas de `$`, `esc`, `separeValeurs` dans le plan et la console —
+  devient un seul module importé deux fois.
+- **Un module n'appelle jamais le code soudé** : il n'importe que d'autres
+  modules. On sort donc d'abord ce dont tout dépend, puis ce qui en dépend.
+- **Un nom qui quitte la liste exposée** est un nom que le code soudé n'appelle
+  plus : c'est ainsi que la soudure se défait, un domaine après l'autre.
+- `npm run verifie`, `npm run lint` et `npm run types` relisent les modules :
+  ESLint comme des modules, la traduction comme toute source affichée,
+  `CARTE.md` avec les points d'entrée qui les embarquent.
 
 ## Ce que le visiteur ne reçoit pas
 
@@ -163,6 +197,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `outils/essais/navigateur/` | le plan dans Chromium par Playwright — `npm run navigateur` : ouvert, cherché, lu en fiche, en anglais, sur téléphone. Les données viennent de `outils/plans.json`, interceptées (`aide.js` `prepare`) : un essai ne doit rien au réseau. Une phrase de l'interface citée par un essai change avec lui. `PLAN_ADRESSE=https://<branche>-plan-interactif.interactiveplan.workers.dev npm run navigateur` éprouve un déploiement plutôt que le serveur local |
 | `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Le code des pages se relit **tel que la page l'assemble**, jamais module par module (l'espace de noms est unique), et chaque remarque revient au module et à sa ligne ; un nom inutilisé ou inconnu ne compte que s'il l'est dans toutes les pages qui portent le module |
 | `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`. Un **cliquet** : les remarques d'aujourd'hui sont dans `outils/types-acceptes.json`, seule une nouvelle échoue ; quand le stock baisse, `npm run types -- --resserre` |
+| `outils/gabarit/modules/` | les modules sortis du code soudé, réunis par esbuild — points d'entrée `plan.mjs` et `console.mjs` ; assemblage, liste exposée et provenance de chaque nom dans `outils/modules.js` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir
@@ -257,6 +292,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
 | export tableur des exposants | `_export.html` (console **et** rapport), écriture `.xlsx` dans `_classeur.html` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
 | accès administrateur d'un plan | `_auth-plan.html` |
+| utilitaires communs — élément par identifiant `$`, échappement `esc`, valeurs d'un champ à choix `separeValeurs`, tri des noms `COLLATION`, conversions de couleur | modules `dom.mjs`, `texte.mjs`, `couleurs.mjs` dans `outils/gabarit/modules/`, servis au plan par `plan.mjs` et à la console par `console.mjs` |
 | retirer du plan public ce qui ne sert qu'à l'administration | tranches `@admin` … `@fin-admin` dans les modules, découpées et contrôlées par `outils/reserve.js`, appliquées par `outils/genere.js` (`tplAdmin`, `tplPublic`) |
 | consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` ; fond de carte gardé par `tuileDeCarte` (tuiles, cache durable) et `fondDeCarte` (MapLibre, styles) — fournisseurs `FONDS_DE_CARTE`, bornes `borneLesLots` et `borneLesTuiles` |
 | installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `application()` pour le seul plan public ; nom, icônes et adresse de départ par salon dans `src/index.mjs` `manifeste`, `appDuSalon` (`MARQUE`), qui les tient de `plan-public?slug=…&app=1` (`TTL_APP`, réponse non gardée en amont) ; nom et icône sur l'écran d'accueil d'iOS par `_installation.html` `nommeApplication` |

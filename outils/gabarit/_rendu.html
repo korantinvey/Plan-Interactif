@@ -16,10 +16,6 @@ function largeur(txt, police){
   }
   return v;
 }
-/* Comparer deux noms selon les règles du français demande un comparateur.
-   `localeCompare` avec des options en rebâtit un à chaque appel : sur les
-   milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
-const COLLATION = new Intl.Collator("fr", { numeric: true });
 
 /* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
    de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le

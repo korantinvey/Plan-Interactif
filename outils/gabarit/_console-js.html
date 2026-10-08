@@ -2260,19 +2260,6 @@ function intituleSuite(v, detectes) {
   return parts.map(sansPrefixe).join(", puis ") + (d ? "  ·  " + courte(d.exemple) : "");
 }
 
-/**
- * Les valeurs d'un champ à choix, une par entrée, points-virgules défaits.
- *
- * Ni Klipso ni Eventmaker ne rendent une liste : ils joignent les valeurs
- * d'un champ à choix multiple dans une seule chaîne — « Nouveaux exposants;
- * Exposants internationaux ». Prise entière, elle ferait une valeur à cocher
- * de plus par combinaison, et aucune ne désignerait ce que l'exploitant vise.
- */
-const separeValeurs = (v) => [].concat(v)
-  .filter((x) => x !== null && x !== undefined)
-  .flatMap((x) => String(x).split(";"))
-  .map((x) => x.trim()).filter(Boolean);
-
 /* Les accords que la synchronisation reconnaît d'elle-même, quand aucune
    valeur n'a été retenue. La liste est celle de `champs.ts` : la console ne
    peut pas l'importer, elle la recopie — et les deux se corrigent ensemble,

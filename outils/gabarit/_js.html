@@ -12,15 +12,9 @@ if (!document.querySelector('meta[name="viewport"]')){
   document.head.appendChild(mv);
 }
 
-/* Un élément de la page, lu par son identifiant. Rendu sans type précis
-   pour `npm run types` : chaque appel saurait mieux que lui ce qu'il attend
-   — un champ, un bouton, un canevas —, et le dire à chaque fois chargerait
-   le code de plus d'annotations qu'il n'en éviterait d'erreurs. */
-/** @returns {any} */
-const $ = id => document.getElementById(id);
+/* `$`, `esc` et les autres utilitaires du socle viennent des modules
+   (`outils/gabarit/modules/`), posés avant ce script : voir `plan.mjs`. */
 const svg = $("plan");
-const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
-  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /* Deux origines possibles pour les données : figées dans la page, ou
    servies par l'API. La page est la même, seul le démarrage diffère. */
