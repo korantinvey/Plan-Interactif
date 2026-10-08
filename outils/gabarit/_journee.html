@@ -1084,7 +1084,9 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
  */
 function derouleJournee(j, ctx){
   const PTS = ctx.PTS, dist = ctx.dist, enMinutes = ctx.enMinutes, tv = ctx.tv;
-  const etapes = [], arrets = [], trace = [], retards = [];
+  /** @type {Record<string, any>[]} */   // un stand, une conférence, une attente…
+  const etapes = [];
+  const arrets = [], trace = [], retards = [];
   let t = j.arrivee, m = 0, coupe = false, rang = 0;
 
   /**

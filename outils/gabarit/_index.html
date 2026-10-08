@@ -39,7 +39,7 @@ const langue = q.get("lang") ? "lang=" + encodeURIComponent(q.get("lang")) : "";
 const cible = (jeton || souci) ? "motdepasse" + location.search + location.hash
   : slug ? "plan?plan=" + encodeURIComponent(slug) + (langue && "&" + langue) + location.hash
   : "admin-plans" + (langue && "?" + langue);
-document.getElementById("secours").href = cible;
+/** @type {HTMLAnchorElement} */ (document.getElementById("secours")).href = cible;
 location.replace(cible);
 </script>
 <noscript><meta http-equiv="refresh" content="0; url=admin-plans"></noscript>

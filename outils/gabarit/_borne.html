@@ -221,7 +221,8 @@ function ecritDepartBorne(){
   if (c){ c.value = traduit(LIEU_BORNE.nom); c.title = LIEU_BORNE.detail; }
 }
 document.addEventListener("click", e => {
-  if (e.target.closest && e.target.closest("[data-langue]")) setTimeout(ecritDepartBorne, 0);
+  const cible = /** @type {HTMLElement} */ (e.target);
+  if (cible.closest && cible.closest("[data-langue]")) setTimeout(ecritDepartBorne, 0);
 });
 
 /* ------------------------------------------------------------

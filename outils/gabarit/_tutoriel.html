@@ -517,10 +517,11 @@ function lanceTutoriel(){
     chapitres: chapitres, i: -1, m: {}, cle: "", texte: "", suite: "",
     cible: null, pos: null, raf: 0, rafale: 0,
     pouls: setInterval(battementTuto, TUTO_POULS),
-    ecoutes: [["click", geste, true], ["keyup", geste, true], ["input", geste, true],
+    ecoutes: /** @type {[string, EventListener, boolean][]} */ ([
+              ["click", geste, true], ["keyup", geste, true], ["input", geste, true],
               ["keydown", echap, true],
               ["transitionrun", rafaleTuto, true], ["scroll", rafaleTuto, true],
-              ["resize", recadre, false]],
+              ["resize", recadre, false]]),
   };
   TUTO.ecoutes.forEach(([t, f, c]) => addEventListener(t, f, c));
 

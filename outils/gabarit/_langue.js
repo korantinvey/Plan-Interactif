@@ -501,7 +501,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
       traduitElement(noeud);
     }
     const marcheur = document.createTreeWalker(noeud, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-      acceptNode: (n) => {
+      acceptNode: (/** @type {Element} */ n) => {
         if (n.nodeType !== 1 || !n.matches(EXCLUS)) return NodeFilter.FILTER_ACCEPT;
         if (!n.matches(EXCLUS_ATTRIBUTS)) traduitElement(n);
         return NodeFilter.FILTER_REJECT;
@@ -580,6 +580,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   /** Remet le français partout où la traduction est encore en place. */
   function restaure() {
     const marcheur = document.createTreeWalker(racine, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    /** @type {any} */   // un texte ou un élément, selon ce que la marche rencontre
     let n = racine;
     do {
       if (n.nodeType === 3) {
@@ -706,7 +707,8 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     });
   }
   document.addEventListener("click", (e) => {
-    const b = e.target.closest && e.target.closest("[data-langue]");
+    const cible = /** @type {HTMLElement} */ (e.target);
+    const b = cible.closest && cible.closest("[data-langue]");
     if (b) { e.preventDefault(); if (ANGLAIS) bascule(); }
   });
   document.addEventListener("DOMContentLoaded", majBascules, { once: true });

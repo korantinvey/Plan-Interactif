@@ -1984,7 +1984,9 @@ function troncon(p, pmr, depart, arrivee, objD, objA){
      qui va justement à la conférence : les deux bouts du tronçon sont exempts. */
   const exempts = new Set([objD, objA].filter(Boolean).map(o => String(o.id)));
   const f = pmr ? foule(p, pmr, sallesEnMouvement(p, exempts)) : null;
-  let mieux = null, retenu = null;
+  /** @type {{ genre: string, p: any, pts: any[], m: number, foule?: any } | null} */
+  let mieux = null;
+  let retenu = null;
   for (const [a, b] of couplesAcces(g, A, B)){
     const retourne = a > b;
     let suite = cherche(g, retourne ? b : a, retourne ? a : b, f && f.peine);
@@ -2367,6 +2369,8 @@ function cheminLiaisons(a, b, pmr){
   /* Les deux bouts du trajet peuvent être des emplacements : ils gardent leur
      emprise et leur objet, dont dépendent l'accroche à l'allée et l'amorce. Un
      passage, lui, n'est qu'un point. */
+  // le départ et l'arrivée, puis chaque liaison : des nœuds de formes diverses
+  /** @type {Record<string, any>[]} */
   const noeuds = [{ ip: a.p, xy: a.xy.slice(), d: a.d, obj: a.obj },
                   { ip: b.p, xy: b.xy.slice(), d: b.d, obj: b.obj }];
   const rang = new Map();
@@ -2445,7 +2449,9 @@ function cheminLiaisons(a, b, pmr){
  * qui serait faux.
  */
 function routeParLiaisons(sauts, pmr){
-  const etapes = [], avertis = [];
+  /** @type {Record<string, any>[]} */   // une marche, une liaison, un passage…
+  const etapes = [];
+  const avertis = [];
   let minutes = 0, liaisons = 0;
   for (const s of sauts){
     if (s.genre === "liaison"){
@@ -2496,6 +2502,7 @@ function routeEntre(a, b, pmr){
   const pa = DATA.plans[a.p], pb = DATA.plans[b.p];
   const t1 = versPorte(pa, pmr, a.xy, false, a.obj);
   const t2 = versPorte(pb, pmr, b.xy, true, b.obj);
+  /** @type {Record<string, any>[]} */
   const etapes = [];
   const avertis = [];
   if (t1) etapes.push(t1);
@@ -3088,7 +3095,7 @@ function montreResultat(etat){
       const ailleurs = e.genre === "marche" && e.p !== state.plan;
       const d = document.createElement(ailleurs ? "button" : "div");
       if (ailleurs){
-        d.type = "button";
+        /** @type {HTMLButtonElement} */ (d).type = "button";
         d.onclick = () => {
           changePlan(e.p);
           dessineItineraire();

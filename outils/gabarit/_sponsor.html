@@ -257,7 +257,7 @@ function ouvreSponsor(s, horsDemarrage){
      lui. Le logo fait exception quand il porte un lien — on l'a touché pour
      aller voir le sponsor, pas pour s'en débarrasser. */
   boite.addEventListener("pointerdown", e => {
-    if (s.lien && porte.contains(e.target)) return;
+    if (s.lien && porte.contains(/** @type {Node} */ (e.target))) return;
     fermeSponsor();
   });
   /* Et pour qui n'a pas de doigt à poser : la touche qui ferme tout le reste

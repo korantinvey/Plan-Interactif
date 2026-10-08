@@ -88,6 +88,7 @@ function annonce(txt, erreur){
  * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
  */
 function entetesApi(){
+  /** @type {Record<string, string>} */
   const e = {};
   if (document.documentElement.dataset.role !== "admin") return e;
   try {

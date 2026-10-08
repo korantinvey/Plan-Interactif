@@ -126,7 +126,7 @@ function colonnesExport(lignes, presence) {
         });
       }
       return cols;
-    }, []),
+    }, /** @type {typeof COL_TETE} */ ([])),
     COL_PIED.reduce((cols, c) => {
       cols.push(c);
       if (presence && COL_PIED_V[c.titre]) cols.push(COL_PIED_V[c.titre]);
