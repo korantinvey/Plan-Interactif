@@ -11,7 +11,7 @@
    activer, le chargement du plan — lui est confié par `brancheAcces`, que le
    code soudé appelle à la place que ce code tenait (`_auth-plan.html`, versé
    par `genere.js` dans la seule page d'administration). Le profil du compte,
-   qu'il lit, est à lui : les réglages le lisent par accesseur.
+   qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton } from "./session.mjs";
@@ -27,8 +27,8 @@ let charge;
 
 /* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
    « Admin » aux réglages — la base, elle, ne distingue pas les deux profils
-   sur un salon affecté. Posé ici, où on le lit ; les réglages le lisent par
-   accesseur (`plan-admin.mjs`). */
+   sur un salon affecté. Posé ici, où on le lit ; la fenêtre des réglages
+   l'importe (`reglages.mjs`). */
 export let PROFIL_ADMIN = false;
 
 function litLocal(cle){

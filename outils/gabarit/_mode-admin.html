@@ -5,9 +5,10 @@
 
    Il n'existe que dans la page dédiée, et seulement une fois l'utilisateur
    authentifié. Son état, `ADMIN`, et le retrait de ses commandes de la page
-   publique vivent dans `modules/mode-admin.mjs` ; le profil du compte,
-   `PROFIL_ADMIN`, dans `modules/acces-admin.mjs`, qui le lit. Le code soudé
-   les lit par accesseur, comme avant par leur nom.
+   publique vivent dans `modules/mode-admin.mjs`, que le code soudé lit par
+   accesseur, comme avant par son nom ; le profil du compte, `PROFIL_ADMIN`,
+   dans `modules/acces-admin.mjs`, qui le lit, et que la fenêtre des réglages
+   importe (`modules/reglages.mjs`).
 
    Le reste est d'exploitant, dans des modules que seul `plan-admin.mjs`
    embarque : l'ouverture du mode et la bande de l'outil
