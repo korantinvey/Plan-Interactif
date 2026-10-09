@@ -1,24 +1,11 @@
-/* `outils/gabarit/_sponsor.html` — le générique du démarrage : ce que le
-   visiteur lit au-dessus du logo, et le volet où l'exploitant choisit entre
-   rien, la marque du produit et le logo d'un sponsor.
+/* `outils/gabarit/modules/reglage-sponsor.mjs` — le volet où l'exploitant
+   choisit ce qui paraît au démarrage : rien, la marque du produit ou le logo
+   d'un sponsor. Ce que le visiteur lit du générique est dans `sponsor.js`.
 
    « Générique » se dit « splash screen » dans l'écran, et non « title card » :
    c'est le mot qu'un exploitant anglophone reconnaît d'une application, et il
    décrit ce qu'il voit — un écran qui passe. */
 module.exports = {
-  // ce que le visiteur lit au-dessus du logo, et ce que l'image se dit
-  "Avec le soutien de": "With the support of",
-  "Partenaire officiel": "Official partner",
-  "Sponsor officiel": "Official sponsor",
-  "En partenariat avec": "In partnership with",
-  "Logo du sponsor": "Sponsor logo",
-  /* La mention de la marque et son nom ne changent pas de langue : « powered
-     by » est l'usage dans les deux, et « Event2Map » est un nom propre. Les
-     entrées restent, sans quoi le contrôle les signalerait à chaque
-     construction. */
-  "powered by": "powered by",
-  "Event2Map": "Event2Map",
-
   // le bloc, dans l'onglet « Admin » des réglages
   "Au démarrage": "At startup",
   "Ce que le visiteur voit le temps que le plan s'affiche, puis qui s'efface de lui-même. C'est le seul écran que tous les visiteurs traversent — chaque visite comptée dans le rapport d'utilisation le voit — et il ne retarde personne : l'attente qu'il occupe avait lieu de toute façon.":

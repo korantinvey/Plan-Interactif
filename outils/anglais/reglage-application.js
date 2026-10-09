@@ -1,4 +1,4 @@
-/* `outils/gabarit/_application.html` — l'icône et le nom de l'application
+/* `outils/gabarit/modules/reglage-application.mjs` — l'icône et le nom de l'application
    installée : le volet où l'exploitant dépose le logo du salon, ou laisse
    celui du produit.
 

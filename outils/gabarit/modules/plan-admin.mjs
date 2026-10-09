@@ -12,8 +12,14 @@
    ============================================================ */
 import "./plan.mjs";
 import { reduitLogo } from "./depot-image.mjs";
-import { reduitIconeApp } from "./icone-app.mjs";
+import { blocApplication, brancheReglageApplication } from "./reglage-application.mjs";
+import { blocSponsor, brancheReglageSponsor } from "./reglage-sponsor.mjs";
+import { coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur }
+  from "./chaleur.mjs";
 
 Object.assign(globalThis, {
-  reduitLogo, reduitIconeApp,
+  reduitLogo,
+  blocApplication, brancheReglageApplication,
+  blocSponsor, brancheReglageSponsor,
+  coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur,
 });

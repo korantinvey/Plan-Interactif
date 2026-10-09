@@ -1,4 +1,4 @@
-/* `outils/gabarit/_chaleur.html` — la carte de chaleur et son cartouche, le
+/* `outils/gabarit/modules/chaleur.mjs` — la carte de chaleur et son cartouche, le
    volet « Statistiques », la remise à zéro des compteurs. */
 module.exports = {
   // le cartouche
