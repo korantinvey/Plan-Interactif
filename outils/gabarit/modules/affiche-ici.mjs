@@ -370,7 +370,7 @@ function imprimeAfficheIci(pt, trame){
  * Le bouton de la bande de l'outil.
  *
  * Il vit là plutôt que dans les réglages du salon : ce n'est pas une
- * configuration qui part chez tous les visiteurs (voir `_pousse.html`), c'est
+ * configuration qui part chez tous les visiteurs (voir `enregistrement.mjs`), c'est
  * un geste qu'on refait à chaque affiche, et qui demande le plan sous les
  * yeux.
  */

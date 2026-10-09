@@ -961,7 +961,7 @@ function couchesDeBloc(acc, cle){
    serait illisible, les deux dès qu'il le devient.
 
    Cette préparation suit les règles des libellés du SVG, et reste avec
-   elles dans le code soudé (`_webgl.html` `libellesWebgl`), qui la dépose
+   elles (`libelles.mjs` `libellesWebgl`), qui la dépose
    dans `GL`. Ici, les témoins de style qui disent l'encre et la police de
    chaque sorte de nom, et les couches qui les peignent.
    ------------------------------------------------------------ */

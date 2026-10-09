@@ -12,7 +12,7 @@
    ne plus en sortir — et cela laisse l'état du mode visible : on en sort en
    rouvrant la page sans le paramètre, jamais par un réglage caché. Ce n'est
    pas non plus un réglage du salon : ceux-là partent chez tous les visiteurs
-   (voir `_pousse.html`), et la position d'un écran n'appartient qu'à cet
+   (voir `enregistrement.mjs`), et la position d'un écran n'appartient qu'à cet
    écran-là.
 
    Trois choses changent, et ce sont les trois qu'on attend d'une borne :
@@ -29,7 +29,7 @@
    Et une quatrième, invisible : la mesure compte des visiteurs, pas des
    appareils. Une borne en reçoit des centaines dans la journée, son jeton ne
    peut donc pas être retenu, et chaque remise à zéro vaut une visite de plus —
-   voir `_mesure.html`.
+   voir `mesure.mjs`.
 
    La borne touche au tiroir de l'itinéraire, à sa visée et aux tiroirs du
    plan, encore soudés : `_borne.html` les lui confie par `brancheBorne`, à la

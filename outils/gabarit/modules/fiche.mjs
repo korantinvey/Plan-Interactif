@@ -700,7 +700,7 @@ function montreMarque(marque){
  * zone n'en a jamais, un repère non plus.
  *
  * Elle vit ici parce que deux fiches l'écrivent — celle d'un stand ou d'une
- * zone, et celle d'un repère (`ouvrePoi`, _dessin.html). La seconde la
+ * zone, et celle d'un repère (`ouvrePoi`, `points-interet.mjs`). La seconde la
  * recopiait, et un second écrivain oublie une remise à zéro par champ ajouté :
  * le filigrane gardait le numéro du stand consulté juste avant, et la pastille
  * restait invisible pour avoir été cachée par la fiche d'une zone.

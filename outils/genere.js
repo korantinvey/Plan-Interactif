@@ -270,7 +270,7 @@ const SLUG_DEFAUT = "smcl-2026";
 const PRECHARGE = [
   "<script>",
   "{",
-  /* Le salon se lit là où il se trouve, comme dans `_js.html` `SLUG` et dans
+  /* Le salon se lit là où il se trouve, comme dans `modules/salon.mjs` `SLUG` et dans
      `outils/pwa.js` : le paramètre qu'on partage, ou le chemin que
      l'application installée ouvre. Ce chemin-là est le seul qu'elle ouvre —
      elle n'a pas de `?plan=` —, si bien qu'un préchargement qui l'ignorait

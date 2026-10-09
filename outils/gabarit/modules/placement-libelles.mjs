@@ -44,7 +44,7 @@ const racine = document.documentElement;
 /** @type {any} */
 let glisseLib = null;   // le geste en cours
 
-/** Le geste abandonné : le pointeur annulé ne relâchera rien (`_gestes.html`). */
+/** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheLibelle(){
   glisseLib = null;
 }

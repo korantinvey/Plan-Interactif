@@ -88,7 +88,7 @@ export const enregistreDessins = () => {
    ligne d'un arrêt, les passages posés. L'instantané pris juste avant portait
    donc le même objet, déjà modifié, et Ctrl+Z retraçait le plan sans rien
    défaire : seuls l'ajout et la suppression, qui touchent le tableau,
-   s'annulaient vraiment. `_batiments.html` `reposeBatiment` contourne ce piège
+   s'annulaient vraiment. `batiments.mjs` `reposeBatiment` contourne ce piège
    depuis longtemps en refabriquant ses formes ; il valait mieux le fermer.
    Les points, eux, sont toujours remplacés par un tableau neuf, jamais écrits
    en place : en copier la liste suffit, et `src` d'une image reste partagé. */
