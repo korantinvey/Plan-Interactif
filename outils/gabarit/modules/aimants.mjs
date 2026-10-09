@@ -40,6 +40,9 @@ const toleranceTrace = () => soude.toleranceTrace();
 const apercuGuide = (d) => soude.apercuGuide(d);
 const formeParId = (id) => soude.formeParId(id);
 const ajouteForme = (f) => soude.ajouteForme(f);
+/* Le choix d'une forme et ses poignées vivent dans `edition.mjs`, qui importe
+   ce module-ci pour accrocher ses gestes : les importer en retour bouclerait.
+   Ils restent donc confiés par `_aimants.html`, comme le reste du dessin. */
 const choisitForme = (id) => soude.choisitForme(id);
 const signale = (id) => soude.signale(id);
 const memorise = () => soude.memorise();

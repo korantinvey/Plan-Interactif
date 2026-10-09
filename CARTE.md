@@ -155,19 +155,13 @@ Fonctions :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `_edition.html` — 652 l. → plan-admin.html
+### `_edition.html` — 45 l. → plan-admin.html
 
-- l.2 · Édition des formes existantes
+- l.1 · Édition des formes existantes
 
 Fonctions :
 
-`formeParId` 11 · `boite` 19 · `curseurPoignee` 28 · `poignees` 33 · `dessinePoignees` 42
-`cadreTexte` 77 · `poigneeRotation` 97 · `angleBorne` 107 · `choisitForme` 109
-`majElement` 120 · `candidatsLiaison` 241 · `ecritDesDeuxCotes` 263 · `changeLien` 275
-`changeDureeLien` 291 · `majLiens` 308 · `appliqueSociete` 360 · `appliqueTexte` 376
-`appliqueRotation` 388 · `appliqueRayon` 402 · `appliqueTrait` 415 · `appliqueTransport` 443
-`appliquePicto` 466 · `supprimeForme` 492 · `editionPointerDown` 502
-`editionPointerMove` 562 · `tourneTexte` 625 · `editionPointerUp` 641
+`formeParId` 14 · `boite` 22
 
 ### `_entete.html` — 6 l.
 
@@ -523,7 +517,7 @@ Fonctions :
 `telechargeAfficheIci` 331 · `imprimeAfficheIci` 349 · `boutonCodeIci` 378
 `brancheAfficheIci` 402
 
-### `modules/aimants.mjs` — 531 l. → plan-admin
+### `modules/aimants.mjs` — 534 l. → plan-admin
 
 - l.1 · Dessiner juste — cote, aimants, répétition
 
@@ -531,15 +525,15 @@ Fonctions :
 
 `vue` 31 · `imageEnAttente` 32 · `formeSel` 33 · `calqueActif` 34 · `cadrePlan` 35
 `mesCalques` 36 · `estCadre` 37 · `boite` 38 · `toleranceTrace` 39 · `apercuGuide` 40
-`formeParId` 41 · `ajouteForme` 42 · `choisitForme` 43 · `signale` 44 · `memorise` 45
-`enregistreDessins` 46 · `redessineForme` 47 · `dessinePoignees` 48 · `brancheAimants` 53
-`ecritMetres` 60 · `coteCadre` 64 · `montreCote` 76 · `aimantsActifs` 104 · `axesDe` 108
-`pointsAimants` 113 · `oublieAimantsDuPlan` 133 · `aimantsDuPlan` 135 · `pasAimant` 168
-`cale` 176 · `sousLeGeste` 181 · `cranGrille` 192 · `oublieAimants` 209
-`aimantsDessines` 211 · `coinsGeste` 237 · `montreAimants` 259 · `meilleurSommet` 324
-`croixAimant` 338 · `correction` 362 · `aimante` 403 · `retientTaille` 417
-`reprendTaille` 431 · `dupliqueForme` 452 · `pousseForme` 477 · `ecritDimensions` 494
-`appliqueDimension` 513
+`formeParId` 41 · `ajouteForme` 42 · `choisitForme` 46 · `signale` 47 · `memorise` 48
+`enregistreDessins` 49 · `redessineForme` 50 · `dessinePoignees` 51 · `brancheAimants` 56
+`ecritMetres` 63 · `coteCadre` 67 · `montreCote` 79 · `aimantsActifs` 107 · `axesDe` 111
+`pointsAimants` 116 · `oublieAimantsDuPlan` 136 · `aimantsDuPlan` 138 · `pasAimant` 171
+`cale` 179 · `sousLeGeste` 184 · `cranGrille` 195 · `oublieAimants` 212
+`aimantsDessines` 214 · `coinsGeste` 240 · `montreAimants` 262 · `meilleurSommet` 327
+`croixAimant` 341 · `correction` 365 · `aimante` 406 · `retientTaille` 420
+`reprendTaille` 434 · `dupliqueForme` 455 · `pousseForme` 480 · `ecritDimensions` 497
+`appliqueDimension` 516
 
 ### `modules/apercus.mjs` — 347 l. → plan-admin
 
@@ -738,6 +732,27 @@ Fonctions :
 Fonctions :
 
 `brancheDuplication` 26 · `dupliquer` 30
+
+### `modules/edition.mjs` — 722 l. → plan-admin
+
+- l.1 · Édition des formes existantes
+
+Fonctions :
+
+`vue` 43 · `formeSel` 44 · `poseFormeSel` 45 · `outil` 46 · `calqueActif` 47
+`cadrePlan` 48 · `formeParId` 49 · `boite` 50 · `estCadre` 51 · `memorise` 52
+`enregistreDessins` 53 · `dessineDessins` 54 · `redessineForme` 55 · `versPlan` 56
+`apercuGuide` 57 · `pictoForme` 58 · `nomTypeRepere` 59 · `estTransport` 60
+`modeTransport` 61 · `optionsModes` 62 · `couleurRepere` 63 · `couleurLigne` 64
+`couleurEcrite` 65 · `libelleDoffice` 66 · `seRattache` 67 · `societeDeForme` 68
+`etiquetteSociete` 69 · `societeSaisie` 70 · `remplitListeSocietes` 71 · `brancheEdition` 84
+`curseurPoignee` 99 · `poignees` 104 · `dessinePoignees` 113 · `cadreTexte` 148
+`poigneeRotation` 168 · `angleBorne` 178 · `choisitForme` 180 · `majElement` 191
+`candidatsLiaison` 312 · `ecritDesDeuxCotes` 334 · `changeLien` 346 · `changeDureeLien` 362
+`majLiens` 379 · `appliqueSociete` 431 · `appliqueTexte` 447 · `appliqueRotation` 459
+`appliqueRayon` 473 · `appliqueTrait` 486 · `appliqueTransport` 514 · `appliquePicto` 537
+`supprimeForme` 563 · `editionPointerDown` 573 · `editionPointerMove` 633
+`tourneTexte` 696 · `editionPointerUp` 712
 
 ### `modules/emplacements.mjs` — 302 l. → plan, plan-admin
 
@@ -1094,7 +1109,7 @@ Fonctions :
 `choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
 `libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
 
-### `modules/plan-admin.mjs` — 94 l. → plan-admin
+### `modules/plan-admin.mjs` — 104 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
