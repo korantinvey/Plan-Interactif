@@ -26,12 +26,13 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
   cleMasqueCarte, masqueCarte, contourDuHall, poseMasqueCarte, refaitFondCarte,
   confieCalageEnCours } from "./environs.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
+import { vue, svg, versPlan, poseVue } from "./vue.mjs";
 
 /* Ce que le code soudé confie au branchement : les réglages (`CONF`, que le
    changement de salon remplace, et `conf`, qui en ouvre une entrée) et leur
    enregistrement, le panneau des calques et ce qui dit s'il est là
-   (`ADMIN`, `MONTE`), la vue (`view`) et ses gestes. Ce qui change se lit à
-   l'instant. */
+   (`ADMIN`, `MONTE`), et la main qui tient le plan. Ce qui change se lit à
+   l'instant. La vue, elle, s'importe de `vue.mjs`. */
 /**
  * @typedef {object} PageCalage
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
@@ -40,11 +41,7 @@ import { identifiants, oublieCache } from "./enregistrement.mjs";
  * @property {() => void} construitPanneau
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
  * @property {() => boolean} monte le plan monté, `MONTE`
- * @property {() => any} vue la vue du moment, `view`
- * @property {any} svg le plan
- * @property {(clientX: number, clientY: number) => number[]} versPlan
  * @property {(tenu: boolean) => void} saisitPlan
- * @property {() => void} poseVue
  */
 /** @type {PageCalage} */
 let soude;
@@ -391,7 +388,7 @@ function armeCalage(mode){
 
 /** Le milieu de la vue : le pivot des rotations. Tourner autour de l'ancre
  *  ferait fuir la carte — elle est à sept kilomètres du hall. */
-const pivotCalage = () => { const view = soude.vue(); return [view.x + view.w / 2, view.y + view.h / 2]; };
+const pivotCalage = () => { const view = vue(); return [view.x + view.w / 2, view.y + view.h / 2]; };
 
 /** Pendant le geste, on ne refait que la carte et le chiffre de la rotation :
  *  reconstruire le panneau des calques à chaque image le rendrait saccadé. */
@@ -404,21 +401,21 @@ function glisseCarte(){
 
 export function cartePointerDown(e){
   if (!CALAGE_MODE || !ENV_CAL || !calageCourant()) return false;
-  const p = soude.versPlan(e.clientX, e.clientY);
+  const p = versPlan(e.clientX, e.clientY);
   const pivot = pivotCalage();
   _glisseCalage = {
     tourne: CALAGE_MODE === "tourne" || e.shiftKey,
     p: p, pivot: pivot, angle0: ENV_CAL.angle,
     a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
   };
-  soude.svg.setPointerCapture(e.pointerId);
+  svg.setPointerCapture(e.pointerId);
   soude.saisitPlan(true);
   return true;
 }
 
 export function cartePointerMove(e){
   if (!_glisseCalage) return false;
-  const p = soude.versPlan(e.clientX, e.clientY);
+  const p = versPlan(e.clientX, e.clientY);
   if (_glisseCalage.tourne){
     /* L'angle du pointeur autour du pivot, et non son déplacement : on saisit
        un point et on le fait tourner, ce que la main sait faire sans y penser.
@@ -439,7 +436,7 @@ export function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
   soude.saisitPlan(false);
-  try { if (soude.svg.hasPointerCapture(e.pointerId)) soude.svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
 
@@ -546,7 +543,7 @@ function construitCalage(){
     appliqueCalage();
     /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
        limite change sans que rien ne le montre. */
-    soude.poseVue();
+    poseVue();
   };
   corps.appendChild(fond);
   corps.appendChild(avance);
@@ -803,7 +800,7 @@ export function voletEnvirons(hote){
       champ.value = "";
       fermeCalage();
       rafraichitCarte();
-      soude.poseVue();
+      poseVue();
       dit("La carte est retirée.");
     } catch (e) { dit("Échec : " + e.message, true); }
     bEfface.disabled = false;

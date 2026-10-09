@@ -36,23 +36,26 @@ découpe, qui devait garder le comportement à l'identique. À reprendre à la f
 9. **Console : jeton de mot de passe arrivé par erreur** — pendant la
    redirection vers la page du mot de passe, la console commence quand même à
    charger ; `GET profil` et `GET evenement` partent ou non selon le moment.
+10. **Cadrage initial sur téléphone** : `fit` varie de quelques pixels d'un
+    chargement à l'autre, sans doute selon le moment où la barre et le tiroir
+    sont mesurés.
 
 ## Code et outils
 
-14. **Phrase publique dans un dictionnaire d'exploitant** : « Touchez le plan à
+11. **Phrase publique dans un dictionnaire d'exploitant** : « Touchez le plan à
     l'endroit où ce code sera affiché. » est affichée par `bandeauVisee`
     (`modules/tiroir-itineraire.mjs`, public) mais traduite dans
     `outils/anglais/affiche-ici.js` ; la page publique ne la reçoit que parce
     qu'elle trouve la phrase dans son propre code.
 
 
-10. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
+12. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
    dictionnaire d'une page par les premières lignes de déclaration d'un
    fichier source ; une ligne banale partagée y verse un dictionnaire entier
    à tort. À reprendre seule, une fois la découpe finie.
-11. ~~`initialesDe` recopiée~~ — réglé par la sortie de la console : une seule copie dans `modules/session.mjs`.
-12. **`btnRecharger`** : code mort.
-13. **Commentaires périmés** :
+13. ~~`initialesDe` recopiée~~ — réglé par la sortie de la console : une seule copie dans `modules/session.mjs`.
+14. **`btnRecharger`** : code mort.
+15. **Commentaires périmés** :
     - celui d'`ecritColonnesEvenement` attribue `base` à `_pousse.html` ;
       elle vit dans `modules/session.mjs` ;
     - un commentaire orphelin décrivant `voletAdmin` se trouve avant

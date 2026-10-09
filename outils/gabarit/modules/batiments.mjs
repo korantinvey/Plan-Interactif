@@ -25,32 +25,25 @@
 
    Ce que le code soudé tient encore — la bibliothèque des lieux, que la
    construction verse dans sa page, les calques de dessin et leur historique,
-   les réglages et leur enregistrement, le panneau des calques, la vue et ses
-   gestes — lui est confié par `brancheBatiments`, que `_batiments.html`
-   appelle à la place que ce code y tenait.
+   les réglages et leur enregistrement, le panneau des calques — lui est
+   confié par `brancheBatiments`, que `_batiments.html` appelle à la place que
+   ce code y tenait. La vue et ses gestes s'importent de `vue.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, priseWebgl } from "./webgl.mjs";
+import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg } from "./vue.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change — les réglages
    (`CONF`, que le changement de salon remplace), le mode administrateur
-   (`ADMIN`), la vue (`view`) — se lit à l'instant ; la vue se remplace par sa
-   porte, `changeVue`, puisque sa variable vit dans le code soudé. */
+   (`ADMIN`) — se lit à l'instant. La vue, elle, s'importe de `vue.mjs`. */
 /**
  * @typedef {object} PageBatiments
  * @property {any} lieux la bibliothèque des lieux, `LIEUX` — `null` hors de l'administration
- * @property {any} svg le plan
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => any} vue la vue du moment, `view`
- * @property {(v: any) => void} changeVue remplace la vue, `view = …`
- * @property {() => void} poseVue
- * @property {() => DOMRect} cadrePlan
- * @property {() => number} masque
- * @property {(clientX: number, clientY: number) => number[]} versPlan
  * @property {() => any[]} mesCalques
  * @property {(id: any) => void} activeCalque
  * @property {() => void} memorise
@@ -68,12 +61,6 @@ let soude;
 const reglages = () => soude.conf();
 const confDe = (cle) => soude.confDe(cle);
 const estAdmin = () => soude.estAdmin();
-const vue = () => soude.vue();
-const changeVue = (v) => soude.changeVue(v);
-const poseVue = () => soude.poseVue();
-const cadrePlan = () => soude.cadrePlan();
-const masque = () => soude.masque();
-const versPlan = (x, y) => soude.versPlan(x, y);
 const mesCalques = () => soude.mesCalques();
 const activeCalque = (id) => soude.activeCalque(id);
 const memorise = () => soude.memorise();
@@ -92,8 +79,6 @@ const racine = document.documentElement;
    le bouton qui l'ouvre ne paraît pas. */
 /** @type {any} */
 let LIEUX = null;
-/** @type {any} */
-let svg = null;
 
 const CLE_CALAGE = () => "_calage:" + P().id;
 export const bibliothequeDispo = () => estAdmin() && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.length);
@@ -518,7 +503,6 @@ function ajouteBatiments(lieu, halls, t){
 export function brancheBatiments(page){
   soude = page;
   LIEUX = page.lieux;
-  svg = page.svg;
   $("calageValide").onclick = () => {
     const c = CALAGE;
     if (!c) return;

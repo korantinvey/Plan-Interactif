@@ -70,6 +70,9 @@ import { SORTE_GEO, brancheEmplacements, appliqueAjouts, appliqueGeometries } fr
 import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
   bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
   brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { brancheVue, emp, poseEmprise, vise, cadrePlan, figeTextes, appliqueVue, repeintLibelles,
+  rafraichitVue, poseVue, masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom,
+  versPlan } from "./vue.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -120,6 +123,8 @@ Object.assign(globalThis, {
   ITI, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
   bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
   brancheTiroirItineraire,
+  brancheVue, poseEmprise, cadrePlan, figeTextes, appliqueVue, repeintLibelles, rafraichitVue, poseVue,
+  masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom, versPlan,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -169,3 +174,8 @@ Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "mod
    code soudé, qui la lui confie. Elle ne change que par sa porte
    (`poseVisee`), par laquelle la borne l'arme pour elle. */
 Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee"));
+/* L'emprise du pavillon, que le montage du plan remplace (`poseEmprise`), et
+   la vue visée par un trajet en cours, que seul `glisseVers` pose : les gestes
+   et la fiche les lisent par accesseur. */
+Object.defineProperties(globalThis, vivants({ emp: () => emp }, "poseEmprise"));
+Object.defineProperties(globalThis, vivants({ vise: () => vise }, "glisseVers"));

@@ -10,9 +10,9 @@
    `plan-admin.mjs` embarque.
 
    Ce que le code soudé tient encore leur est confié ici, à la place que ce
-   code y tenait : les réglages, la vue et le calque ouvert par des lecteurs
-   — ils changent sans cesse —, ce qui se déclare dans `_dessin.html` par des
-   détours.
+   code y tenait : les réglages et le calque ouvert par des lecteurs — ils
+   changent sans cesse —, ce qui se déclare dans `_dessin.html` par des
+   détours. La vue, l'outil l'importe de `modules/vue.mjs`.
    ============================================================ */
 brancheEmplacements({
   conf: () => CONF, nomSurLePlan: (soc) => nomSurLePlan(soc), nomsAnglaisDesZones,
@@ -20,13 +20,13 @@ brancheEmplacements({
 
 /* @admin — la reprise et l'ajout d'un emplacement, outil de l'exploitant */
 brancheRepriseEmplacements({
-  svg, vue: () => view, conf: () => CONF, confDe: conf, calqueActif: () => calqueActif,
-  enregistreConf, construitPanneau, cadrePlan, libelles, oublieDists, dessineDists, baliseZone, baliseStand,
+  conf: () => CONF, confDe: conf, calqueActif: () => calqueActif,
+  enregistreConf, construitPanneau, libelles, oublieDists, dessineDists, baliseZone, baliseStand,
   appliqueSecteurs, marqueRetrait, liste, nomsAnglaisDesZones, ouvre, ferme, optionActive,
   pictoVerrou: (f) => pictoVerrou(f), activeCalque: (id) => activeCalque(id),
   remplitListeSocietes: () => remplitListeSocietes(), societeSaisie: (t) => societeSaisie(t),
   etiquetteSociete: (o, soc) => etiquetteSociete(o, soc), apercu: (d) => apercu(d),
-  apercuGuide: (d) => apercuGuide(d), versPlan: (x, y) => versPlan(x, y), fermeIci: (p, pts) => fermeIci(p, pts),
+  apercuGuide: (d) => apercuGuide(d), fermeIci: (p, pts) => fermeIci(p, pts),
   cheminForme: (f) => cheminForme(f), nouvelId: () => nouvelId(),
 });
 /* @fin-admin */
