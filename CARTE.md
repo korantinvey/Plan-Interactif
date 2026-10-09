@@ -548,15 +548,16 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 314 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 342 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`majAttente` 40 · `rattrapeRetard` 41 · `demarre` 47 · `annonce` 108 · `entetesApi` 131
-`chargeFond` 155 · `panneDuChargement` 202 · `CLE_VERSION` 212 · `versionRetenue` 213
-`retientVersion` 216 · `demandePlan` 240 · `charge` 264 · `brancheDemarrage` 304
+`majAttente` 40 · `rattrapeRetard` 41 · `recadreListePosee` 58 · `demarre` 74
+`annonce` 136 · `entetesApi` 159 · `chargeFond` 183 · `panneDuChargement` 230
+`CLE_VERSION` 240 · `versionRetenue` 241 · `retientVersion` 244 · `demandePlan` 268
+`charge` 292 · `brancheDemarrage` 332
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
