@@ -1,4 +1,4 @@
-/* `outils/gabarit/_export.html` — le classeur des exposants, partagé par la
+/* `outils/gabarit/modules/export.mjs` — le classeur des exposants, partagé par la
    console et le rapport. Ses intitulés partent traduits dans le fichier. */
 module.exports = {
   "Clic sur le plan": "Click on the map",

@@ -9,17 +9,6 @@ module.exports = {
   "Toutes les 6 heures": "Every 6 hours",
   "Une fois par jour": "Once a day",
 
-  // la fenêtre de synchronisation
-  "Réponse reçue — en attente de la première étape…": "Response received — waiting for the first step…",
-  "Avancement": "Progress",
-  "Connexion au serveur…": "Connecting to the server…",
-  "Flux retenu en chemin — avancement relevé au serveur.":
-    "Stream held up on the way — progress read from the server.",
-  "Journal": "Log",
-  "Non repris : {etapes}": "Not included: {etapes}",
-  "en cours": "in progress",
-  "Interrompu": "Interrupted",
-
   // la barre du haut et la fiche du salon
   "Publié": "Published",
   "Brouillon": "Draft",
@@ -29,7 +18,6 @@ module.exports = {
   "Supprimer l'événement ?": "Delete event?",
   "« {salon} », ses pavillons, son apparence et ses dessins seront définitivement perdus.":
     "“{salon}”, its halls, its appearance and its drawings will be permanently lost.",
-  "image trop lourde, même réduite — une icône, pas une photo": "image too heavy, even reduced — an icon, not a photo",
   "Icône de l'onglet": "Tab icon",
   "Elle paraît dans l'onglet du plan public comme dans celui de l'administration, à côté du nom du salon. Réduite puis enregistrée avec l'événement, elle part avec le plan sans dépendre d'un fichier hébergé ailleurs. Un carré se reconnaît mieux à seize pixels qu'un logo en longueur. Glissez-la sur la vignette, ou choisissez-la.":
     "It appears in the browser tab of the public map and of the admin map, next to the show's name. Reduced and saved with the event, it travels with the map without depending on a file hosted elsewhere. A square is easier to recognise at sixteen pixels than a wide logo. Drag it onto the thumbnail, or choose it.",
@@ -231,7 +219,9 @@ module.exports = {
   "toujours": "always",
 
   // le champ d'origine et ses valeurs
-  "(vide sur les fiches lues)": "(empty on the records read)",
+  /* Composé par `modules/correspondance.mjs` `intituleSuite`, mais rangé ici :
+     un modèle sans attache fixe à ses bords est essayé dans l'ordre du
+     dictionnaire, et le déplacer changerait son rang dans chaque page. */
   "{champs}, puis {suite}": "{champs}, then {suite}",
   "Par défaut — {champ}": "Default — {champ}",
   "Par défaut — aucun champ": "Default — no field",

@@ -129,15 +129,6 @@ Fonctions :
 
 `#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
-### `_classeur.html` — 234 l. → admin-plans.html, rapport.html
-
-- l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
-
-Fonctions :
-
-`CRC_TABLE` 29 · `crc32` 39 · `archiveZip` 54 · `texteXml` 110 · `colonneXl` 113
-`XL_PARTS` 124 · `feuilleXl` 178 · `classeurXl` 214 · `enregistreFichier` 225
-
 ### `_config.js` — 15 l. → config.js
 
 ### `_console-base.html` — 434 l. → admin-plans.html, rapport.html
@@ -166,33 +157,30 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3363 l. → admin-plans.html
+### `_console-js.html` — 2812 l. → admin-plans.html
 
-- l.959 · Provenance des données
-- l.1098 · Contenu de la fiche détail
+- l.589 · Provenance des données
+- l.728 · Contenu de la fiche détail
 
 Fonctions :
 
-`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 127 · `fonction` 424 · `slugifie` 438
-`courant` 442 · `charge` 444 · `chargePlans` 459 · `majEvenement` 464 · `selonAdresse` 484
-`majAdresse` 492 · `majBarre` 507 · `dessineChoix` 549 · `champ` 569 · `reduitIcone` 623
-`champFavicon` 664 · `fuseauConnu` 760 · `champFuseau` 772 · `dessineFiche` 835
-`fournisseurUtilise` 1023 · `sourceNom` 1033 · `source` 1037 · `champCle` 1042
-`ligneSource` 1077 · `paraitSurFiche` 1235 · `origineConferences` 1241
-`origineProduits` 1248 · `resumeProvenance` 1313 · `resumeFiche` 1334 · `caseFiche` 1379
-`cibleEn` 1427 · `champsPersos` 1429 · `criteres` 1435 · `ecritFiche` 1438
-`caseCritere` 1453 · `clePerso` 1472 · `ajouteChampPerso` 1480 · `renommeChampPerso` 1498
-`retireChampPerso` 1546 · `lignesPerso` 1607 · `ligneOutil` 1628 · `ligneReglage` 1644
-`ouvreProvenance` 1656 · `ouvreSources` 1679 · `cadreFiche` 1731 · `ouvreFiche` 1761
-`cadreCategories` 1901 · `sousTitre` 1980 · `tableauChamps` 1995 · `encode` 2221
-`decode` 2223 · `correspondance` 2228 · `sansPrefixe` 2231 · `courte` 2232 · `intitule` 2247
-`intituleSuite` 2259 · `aplani` 2281 · `memeStyle` 2291 · `autreFace` 2309
-`champOrigine` 2325 · `majLiens` 2593 · `majIntegration` 2630 · `majMsgSync` 2637
-`etapesPressenties` 2667 · `suitAuServeur` 2717 · `synchronise` 2759
-`fabriqueLesVignettes` 2856 · `envoieVignettes` 2909 · `dupliquer` 2918
-`litMonProfil` 3018 · `RETOUR_MDP` 3029 · `litComptes` 3031 · `ligneMessage` 3040
-`casesSalons` 3050 · `ouvreComptes` 3080 · `ouvreFicheCompte` 3172 · `videEcran` 3331
-`dessine` 3336 · `demarre` 3351
+`refus` 18 · `fluxFonction` 37 · `fonction` 106 · `slugifie` 120 · `courant` 124
+`charge` 126 · `chargePlans` 141 · `majEvenement` 146 · `selonAdresse` 166
+`majAdresse` 174 · `majBarre` 189 · `dessineChoix` 231 · `champ` 251 · `champFavicon` 294
+`fuseauConnu` 390 · `champFuseau` 402 · `dessineFiche` 465 · `fournisseurUtilise` 653
+`sourceNom` 663 · `source` 667 · `champCle` 672 · `ligneSource` 707 · `paraitSurFiche` 865
+`origineConferences` 871 · `origineProduits` 878 · `resumeProvenance` 943
+`resumeFiche` 964 · `caseFiche` 1009 · `cibleEn` 1057 · `champsPersos` 1059
+`criteres` 1065 · `ecritFiche` 1068 · `caseCritere` 1083 · `clePerso` 1102
+`ajouteChampPerso` 1110 · `renommeChampPerso` 1128 · `retireChampPerso` 1176
+`lignesPerso` 1237 · `ligneOutil` 1258 · `ligneReglage` 1274 · `ouvreProvenance` 1286
+`ouvreSources` 1309 · `cadreFiche` 1361 · `ouvreFiche` 1391 · `cadreCategories` 1531
+`sousTitre` 1610 · `tableauChamps` 1625 · `champOrigine` 1851 · `majLiens` 2119
+`majIntegration` 2156 · `majMsgSync` 2163 · `etapesPressenties` 2193 · `synchronise` 2208
+`fabriqueLesVignettes` 2305 · `envoieVignettes` 2358 · `dupliquer` 2367
+`litMonProfil` 2467 · `RETOUR_MDP` 2478 · `litComptes` 2480 · `ligneMessage` 2489
+`casesSalons` 2499 · `ouvreComptes` 2529 · `ouvreFicheCompte` 2621 · `videEcran` 2780
+`dessine` 2785 · `demarre` 2800
 
 Éléments :
 
@@ -281,14 +269,9 @@ Fonctions :
 `appliqueCalage` 1153 · `tourneCalage` 1160 · `construitCalage` 1166 · `ouvreCalage` 1331
 `fermeCalage` 1342 · `voletEnvirons` 1370
 
-### `_export.html` — 215 l. → admin-plans.html, rapport.html
+### `_export.html` — 12 l. → admin-plans.html, rapport.html
 
-- l.2 · Export par exposant — une ligne par stand, une colonne par provenance
-
-Fonctions :
-
-`nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
-`nomFeuilleExport` 154 · `exporteExposants` 170
+- l.1 · Export par exposant — le branchement
 
 ### `_fiche.html` — 1326 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -801,9 +784,35 @@ Fonctions :
 `majAnimationWebgl` 1540 · `animeWebgl` 1548 · `objetSous` 1571 · `cibleWebgl` 1578
 `priseWebgl` 1585 · `libelleSousWebgl` 1590 · `rectEcranWebgl` 1595
 
-### `modules/console.mjs` — 20 l. → console
+### `modules/avancement.mjs` — 432 l. → console
+
+- l.1 · L'avancement d'une synchronisation — la fenêtre, et son secours
+
+Fonctions :
+
+`brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
+
+### `modules/classeur.mjs` — 235 l. → console, rapport
+
+- l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
+
+Fonctions :
+
+`CRC_TABLE` 30 · `crc32` 40 · `archiveZip` 55 · `texteXml` 111 · `colonneXl` 114
+`XL_PARTS` 125 · `feuilleXl` 179 · `classeurXl` 215 · `enregistreFichier` 226
+
+### `modules/console.mjs` — 37 l. → console
 
 - l.1 · Point d'entrée de la console
+
+### `modules/correspondance.mjs` — 122 l. → console
+
+- l.1 · Correspondance des champs d'origine — le vocabulaire du réglage
+
+Fonctions :
+
+`encode` 27 · `decode` 29 · `correspondance` 34 · `sansPrefixe` 37 · `courte` 38
+`intitule` 53 · `intituleSuite` 65 · `aplani` 87 · `memeStyle` 97 · `autreFace` 115
 
 ### `modules/couleurs.mjs` — 34 l. → plan, plan-admin
 
@@ -837,6 +846,15 @@ Fonctions :
 
 `poseDonnees` 50 · `P` 84
 
+### `modules/export.mjs` — 232 l. → console, rapport
+
+- l.2 · Export par exposant — une ligne par stand, une colonne par provenance
+
+Fonctions :
+
+`nb` 34 · `colonnesExport` 118 · `libellePeriode` 150 · `nomFichierExport` 156
+`nomFeuilleExport` 166 · `exporteExposants` 182 · `brancheExport` 230
+
 ### `modules/fenetre.mjs` — 100 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
@@ -863,6 +881,14 @@ Fonctions :
 Fonctions :
 
 `fondPourIconeApp` 56 · `dessineIconeApp` 88 · `reduitIconeApp` 115
+
+### `modules/icone-onglet.mjs` — 58 l. → console
+
+- l.1 · Icône de l'onglet
+
+Fonctions :
+
+`reduitIcone` 30
 
 ### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
@@ -913,7 +939,7 @@ Fonctions :
 `qrMotsBruts` 36 · `qrMotsUtiles` 45 · `qrMul` 56 · `qrGenerateur` 59 · `qrReste` 70
 `qrAlignements` 81 · `qrTrame` 97 · `qrChemin` 286 · `qrSvg` 308
 
-### `modules/rapport.mjs` — 16 l. → rapport
+### `modules/rapport.mjs` — 20 l. → rapport
 
 - l.1 · Point d'entrée du rapport
 

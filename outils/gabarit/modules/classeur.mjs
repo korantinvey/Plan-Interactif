@@ -18,6 +18,7 @@
    Ce qu'il sait faire, et rien de plus : une feuille, une ligne d'en-têtes en
    gras et figée, des colonnes larges à la demande, du texte et des nombres.
    ============================================================ */
+import { esc } from "./texte.mjs";
 
 /**
  * CRC32, table précalculée.
@@ -211,7 +212,7 @@ function feuilleXl(colonnes, lignes){
 }
 
 /** Le classeur complet, prêt à enregistrer. */
-const classeurXl = (titre, colonnes, lignes) =>
+export const classeurXl = (titre, colonnes, lignes) =>
   archiveZip(XL_PARTS(feuilleXl(colonnes, lignes), titre));
 
 /**
@@ -222,7 +223,7 @@ const classeurXl = (titre, colonnes, lignes) =>
  * ouverte la journée. Le délai laisse au navigateur le temps de lire l'adresse
  * avant qu'elle ne disparaisse.
  */
-function enregistreFichier(blob, nom){
+export function enregistreFichier(blob, nom){
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
