@@ -87,14 +87,24 @@ export function confirme(titre, message, libelleOui, action){
 /**
  * Le branchement de la fenêtre, appelé par le script soudé à la place que ce
  * module y tenait (`_modales.html`) : la croix, le voile et « Échap » s'y
- * posent au même rang qu'avant parmi les écouteurs du plan — « Échap » ferme
- * aussi la fiche et les tiroirs, et l'ordre décide de qui l'entend d'abord.
+ * posent au même rang qu'avant parmi les écouteurs du plan. « Échap » ferme
+ * aussi la fiche et les tiroirs : la fenêtre ouverte le prend avant eux, à la
+ * capture, quel que soit ce rang.
  */
 export function brancheFenetre({ habille }){
   _habille = habille;
   $("mFermer").onclick = fermeModale;
   $("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
+  /* La fenêtre est devant tout : « Échap » est à elle, et à elle seule. Les
+     autres écoutes de la touche demandaient bien « pas de fenêtre ouverte ? »,
+     mais après celle-ci, qui venait de la fermer : la fiche (sur `document`)
+     l'entendait avant, le tiroir de la liste, du parcours ou de l'itinéraire
+     juste après, et tous partaient avec elle. Prise à la capture, sur la
+     fenêtre du navigateur, elle passe la première, et ne va pas plus loin —
+     ni aux tiroirs, ni à la visite guidée qui écoute au même rang. */
   addEventListener("keydown", e => {
-    if (e.key === "Escape" && $("modale").classList.contains("open")) fermeModale();
-  });
+    if (e.key !== "Escape" || !$("modale").classList.contains("open")) return;
+    e.stopImmediatePropagation();
+    fermeModale();
+  }, true);
 }

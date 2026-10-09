@@ -4,18 +4,55 @@
    2. Mesure de texte — largeur réelle dans la police de rendu
    ============================================================ */
 const _cvs = document.createElement("canvas").getContext("2d");
+/* Une mesure par police et par texte, sous la clé « police|texte » : la
+   police, telle que le canevas la reçoit, se relit de la clé quand il faut
+   remesurer. */
 const _lg = new Map();
+function mesureTexte(police, txt){
+  _cvs.font = police;
+  const v = _cvs.measureText(txt).width / 100;
+  return v > 0 ? v : txt.length * .55;
+}
 function largeur(txt, police){
-  const k = police[0] + police[1] + "|" + txt;
+  const p = police[0] + " 100px " + police[1];
+  const k = p + "|" + txt;
   let v = _lg.get(k);
   if (v === undefined){
-    _cvs.font = police[0] + " 100px " + police[1];
-    v = _cvs.measureText(txt).width / 100;
-    if (!(v > 0)) v = txt.length * .55;
+    v = mesureTexte(p, txt);
     _lg.set(k, v);
   }
   return v;
 }
+
+/* Une police qui arrive après la mesure la rend fausse : tant que son fichier
+   manque, le canevas mesure dans celle de repli. Et elle arrive souvent après —
+   celle des numéros n'est demandée qu'au premier tracé du plan, celle d'un
+   modèle qu'au moment où on le choisit, la partie accentuée d'une police qu'au
+   premier nom qui en a besoin. `document.fonts.ready`, tenu une seule fois au
+   chargement, n'en voit aucune. On guette donc chaque arrivée, et l'on refait
+   les mesures gardées : si l'une change, le plan se retrace sur les bonnes.
+   La comparaison épargne le tracé aux polices qui ne touchent pas le plan —
+   celle d'une fiche, d'une fenêtre.
+
+   Posée ici, au tout début du script, l'écoute passe avant celle du rendu
+   WebGL, qui repeint à la même arrivée en relisant les libellés : il les
+   trouve ainsi déjà retaillés. */
+function remesureTextes(){
+  let change = false;
+  for (const [k, v] of _lg){
+    const i = k.indexOf("|");
+    const w = mesureTexte(k.slice(0, i), k.slice(i + 1));
+    if (w !== v){ _lg.set(k, w); change = true; }
+  }
+  return change;
+}
+if (document.fonts && document.fonts.addEventListener)
+  document.fonts.addEventListener("loadingdone", () => {
+    if (!remesureTextes() || !DATA || !view) return;
+    // les repères et les stands dessinés portent leur nom dans leur forme, la
+    // liste taille la case du numéro sur la même mesure
+    dessineDessins(); libelles(); liste();
+  });
 
 /* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
    de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le
