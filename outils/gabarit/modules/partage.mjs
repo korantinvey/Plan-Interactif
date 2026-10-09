@@ -70,7 +70,12 @@ export function ouvrePartageParcours(){
   ouvreModale("Partager mon parcours", corps => {
     const p = document.createElement("p");
     p.textContent = lisible
-      ? "Faites photographier ce code : le plan s'ouvrira sur le même parcours."
+      /* Le bouton « Scanner » se nomme ici : c'est lui qui garde l'autre
+         visiteur dans le site ou l'application du salon, quand l'appareil
+         photo l'en ferait sortir (`modules/lecteur-qr.mjs`). */
+      ? "Faites scanner ce code avec l'appareil photo, ou avec le bouton " +
+        "« Scanner » de « Mon parcours » si le plan est déjà ouvert : l'autre " +
+        "téléphone reçoit le même parcours."
       : "Ce parcours porte trop d'étapes pour un code lisible de loin. " +
         "Envoyez le lien, il fait le même travail.";
     corps.appendChild(p);

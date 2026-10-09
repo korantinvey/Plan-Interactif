@@ -56,6 +56,19 @@ export function accueilleParcoursPartage(){
      mis en signet se réimposerait des semaines plus tard. Un cadre tiers cloisonné
      n'a pas le droit de réécrire l'adresse : le partage y marche quand même. */
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  proposeParcoursRecu(brut);
+}
+
+/**
+ * Proposer au visiteur le parcours qu'un code porte — `parcours=…`, sans le
+ * dièse.
+ *
+ * Deux chemins y mènent : le lien ouvert, qui l'apporte dans l'adresse, et le
+ * code lu par la caméra du plan (`modules/lecteur-qr.mjs`), le seul qui marche
+ * quand le plan vit dans le site ou l'application d'un salon — le lien, lui,
+ * ouvrirait le plan nu, hors de chez eux.
+ */
+export function proposeParcoursRecu(brut){
   // l'exploitant a pu retirer le parcours de ce salon : le lien n'a alors nulle
   // part où poser ce qu'il porte
   if (conf("_parcours").visible === false) return;

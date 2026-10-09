@@ -839,6 +839,16 @@
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* Le lecteur de code : une image carrée, assez grande pour viser sans
+   plisser les yeux, et un viseur qui dit où mettre le code. Le refus se voit
+   en rouge, la recherche en gris : on lit l'état sans lire la phrase. */
+.lecteurQr{position:relative;margin:12px auto 0;width:min(300px,70vw);aspect-ratio:1;
+  border-radius:10px;overflow:hidden;background:#000}
+.lecteurQr video{display:block;width:100%;height:100%;object-fit:cover}
+.lecteurQr .viseur{position:absolute;inset:16%;border:2px solid rgba(255,255,255,.85);
+  border-radius:8px;box-shadow:0 0 0 999px rgba(0,0,0,.28);pointer-events:none}
+.mcorps p.lecteurEtat{text-align:center;min-height:18px}
+.mcorps p.lecteurEtat.refus{color:var(--rouge)}
 /* La même mise en garde dans une fenêtre : le filet la sépare des gestes
    d'installation comme il la sépare de la liste, mais il lui faut l'air d'un
    paragraphe et non celui d'un pied de colonne. */

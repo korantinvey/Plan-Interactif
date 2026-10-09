@@ -23,6 +23,7 @@ import { brancheSponsor } from "./sponsor.mjs";
 import { brancheItineraire } from "./itineraire.mjs";
 import { instantConf } from "./parcours.mjs";
 import { branchePartage } from "./partage.mjs";
+import { brancheLecteur } from "./lecteur-qr.mjs";
 import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { brancheEnvirons } from "./environs.mjs";
 import { brancheRappels } from "./rappels.mjs";
@@ -97,7 +98,7 @@ Object.assign(globalThis, {
   brancheTiroirItineraire,
   basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, videLeParcours, brancheTiroirParcours,
-  branchePartage,
+  branchePartage, brancheLecteur,
   brancheVue, cadrePlan, appliqueVue,
   brancheConfiguration, conf,
   brancheApparence,

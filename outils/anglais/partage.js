@@ -2,8 +2,8 @@
    un code, et en garder une copie. L'accueil d'un parcours reçu est dans
    `parcours-recu.js`. */
 module.exports = {
-  "Faites photographier ce code : le plan s'ouvrira sur le même parcours.":
-    "Have this code scanned: the map will open on the same visit plan.",
+  "Faites scanner ce code avec l'appareil photo, ou avec le bouton « Scanner » de « Mon parcours » si le plan est déjà ouvert : l'autre téléphone reçoit le même parcours.":
+    "Have this code scanned with the camera, or with the “Scan” button in “My visit” if the map is already open: the other phone gets the same visit plan.",
   "Ce parcours porte trop d'étapes pour un code lisible de loin. Envoyez le lien, il fait le même travail.":
     "This visit plan has too many stops for a code that scans from a distance. Send the link: it does the same job.",
   "Le parcours tient dans le lien lui-même : rien n'est enregistré sur nos serveurs, et il n'y a ni compte ni adresse e-mail à donner.":

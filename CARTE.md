@@ -101,7 +101,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.4 · 8. Interactions du plan — le branchement
 
-### `_head.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 632 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -139,10 +139,10 @@ l'endroit où l'on corrige quoi que ce soit.
 `#dVis` · `#dPartage` · `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb`
 `#dOngProd` · `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours`
 `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire`
-`#btnPartage` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied`
-`#jRetour` · `#itineraire` · `#poigneeItineraire` · `#closeItineraire` · `#iResume`
-`#iCorps` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB`
-`#iPmr` · `#iResultat` · `#videItineraire`
+`#btnPartage` · `#btnScanner` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied`
+`#videParcours` · `#jPied` · `#jRetour` · `#itineraire` · `#poigneeItineraire`
+`#closeItineraire` · `#iResume` · `#iCorps` · `#iDepart` · `#iViseA` · `#iSugg`
+`#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
@@ -207,7 +207,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.2 · 11 bis. Parcours de visite — le branchement
 
-### `_partage.html` — 12 l.
+### `_partage.html` — 16 l.
 
 - l.1 · 11 quinquies. Partager son parcours — le branchement
 
@@ -246,7 +246,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 270 l. → plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1556 l. → plan-smcl.html
+### `_styles-modeles-parcours.css` — 1566 l. → plan-smcl.html
 
 ### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
@@ -964,6 +964,15 @@ Fonctions :
 `montreLeJour` 731 · `perimeJournee` 746 · `oublieSejour` 761 · `ouvreOrganisation` 776
 `essaieSejour` 1156 · `lanceSejour` 1186 · `refaitSejour` 1225 · `brancheJournee` 1241
 
+### `modules/lecteur-qr.mjs` — 271 l. → plan, plan-admin
+
+- l.1 · Lire le code d'un parcours avec la caméra du plan
+
+Fonctions :
+
+`lecteurOffert` 59 · `chargeJsQR` 68 · `decodeur` 87 · `litParcours` 135
+`ouvreLecteur` 154 · `brancheLecteur` 266
+
 ### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
 
 - l.1 · Placer un libellé à la main — ce que le plan public en reçoit
@@ -1131,13 +1140,13 @@ Fonctions :
 `basculeVerrou` 757 · `pictoVerrou` 774 · `montreRoleIti` 808 · `creeCalque` 821
 `demandeNom` 834 · `renommeCalque` 859 · `brancheOutilDessin` 875
 
-### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
+### `modules/parcours-recu.mjs` — 141 l. → plan, plan-admin
 
 - l.1 · Le parcours reçu
 
 Fonctions :
 
-`accueilleParcoursPartage` 48 · `adoptePartage` 126
+`accueilleParcoursPartage` 48 · `proposeParcoursRecu` 71 · `adoptePartage` 139
 
 ### `modules/parcours.mjs` — 439 l. → plan, plan-admin
 
@@ -1154,15 +1163,15 @@ Fonctions :
 `rafraichitMarque` 317 · `calqueMarques` 350 · `dessineMarques` 368 · `marqueParcours` 398
 `instantConf` 416 · `cleTemps` 420 · `nomDeStand` 430 · `groupeParcours` 432
 
-### `modules/partage.mjs` — 351 l. → plan, plan-admin
+### `modules/partage.mjs` — 356 l. → plan, plan-admin
 
 - l.1 · Partager son parcours, et en garder une copie
 
 Fonctions :
 
-`lienParcours` 49 · `ouvrePartageParcours` 65 · `boutonsPartage` 121 · `copieLien` 195
-`champDuLien` 211 · `aCopierALaMain` 222 · `parcoursACopier` 267 · `ouvreGardeParcours` 282
-`demandeGardeParcours` 312 · `poseGardeParcours` 325 · `branchePartage` 349
+`lienParcours` 49 · `ouvrePartageParcours` 65 · `boutonsPartage` 126 · `copieLien` 200
+`champDuLien` 216 · `aCopierALaMain` 227 · `parcoursACopier` 272 · `ouvreGardeParcours` 287
+`demandeGardeParcours` 317 · `poseGardeParcours` 330 · `branchePartage` 354
 
 ### `modules/pile.mjs` — 549 l. → plan-admin
 
@@ -1192,7 +1201,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 189 l. → plan, plan-admin
+### `modules/plan.mjs` — 190 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 

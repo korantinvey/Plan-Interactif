@@ -71,7 +71,7 @@
   border-bottom:1px solid var(--line)}
 .pActs[hidden]{display:none}
 .pActs .jOrg,.pActs .jRefait{flex:1;min-width:0}
-.pActs .jPart{flex:none}
+.pActs .jPart,.pActs .jScan{flex:none}
 /* La rangée sert les deux vues du tiroir : la liste s'organise, la journée se
    reprend, et le partage ne quitte jamais la tête — une journée organisée est
    justement ce qu'on veut donner à qui vient avec soi. Le bouton qui ne sert

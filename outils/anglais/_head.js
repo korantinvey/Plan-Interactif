@@ -111,6 +111,7 @@ module.exports = {
   "Parcours de visite": "Visit plan",
   "Organiser ma journée": "Plan my day",
   "Partager mon parcours": "Share my visit plan",
+  "Scanner un parcours": "Scan a visit plan",
   "Partager": "Share",
   "Vider le parcours": "Clear my visit plan",
   "Changer l'heure d'arrivée": "Change arrival time",

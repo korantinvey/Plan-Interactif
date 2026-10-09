@@ -68,4 +68,7 @@ module.exports = [
   "» n'est pas un état du profil connecté",
   // `modules/evenements.mjs` : la même erreur, pour la porte des salons de la console
   "» n'est ni EVTS, ni selection, ni PLANS",
+  // `modules/lecteur-qr.mjs` : la cause d'un décodeur manquant, rattrapée par
+  // une phrase à elle avant d'atteindre l'écran
+  "jsQR absent", "jsQR introuvable",
 ];
