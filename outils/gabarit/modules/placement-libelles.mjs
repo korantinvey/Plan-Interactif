@@ -43,6 +43,8 @@ const racine = document.documentElement;
 
 /** @type {any} */
 let glisseLib = null;   // le geste en cours
+/** Un libellé est-il tenu sous le doigt ? L'envoi au repos attend qu'on le lâche. */
+export const libelleGlisse = () => Boolean(glisseLib);
 
 /** Le geste abandonné : le pointeur annulé ne relâchera rien (`_gestes.html`). */
 export function lacheLibelle(){

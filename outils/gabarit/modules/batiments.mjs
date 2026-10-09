@@ -254,6 +254,8 @@ function vueDuLieu(lieu, choisis, poses, bascule){
    ------------------------------------------------------------ */
 export let CALAGE = null;
 let gesteCalage = null;
+/** Un hall qu'on cale est-il tenu ? L'envoi au repos attend qu'on le lâche. */
+export const halleGlissee = () => Boolean(gesteCalage);
 
 function lanceCalage(lieu, halls, depart){
   activeCalque(null);
