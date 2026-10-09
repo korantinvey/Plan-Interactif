@@ -173,6 +173,35 @@ test.describe("ce qui vient d'ailleurs", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Le dernier rempart : si une injection passait les règles de
+     `modules/sur.mjs`, la politique de sécurité de la page (`outils/genere.js`
+     `poseCsp`) refuse encore de l'exécuter — et la page, elle, n'en viole
+     aucune en se chargeant. */
+  test("un script injecté ne s'exécute pas, et la page n'enfreint pas sa politique", async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = /** @type {any} */ (window);
+      w.__violations = [];
+      document.addEventListener("securitypolicyviolation",
+        (e) => w.__violations.push(e.violatedDirective + " " + (e.blockedURI || "en ligne")));
+    });
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    expect(await page.evaluate(() => /** @type {any} */ (window).__violations)).toEqual([]);
+    const r = await page.evaluate(async () => {
+      const w = /** @type {any} */ (window);
+      w.__pirate = 0;
+      const s = document.createElement("script");
+      s.textContent = "window.__pirate = 1";
+      document.body.appendChild(s);
+      await new Promise((ok) => setTimeout(ok, 200));
+      return { pirate: w.__pirate, violations: w.__violations.length };
+    });
+    expect(r).toEqual({ pirate: 0, violations: 1 });
+    // le refus est annoncé dans la console : c'est lui, et lui seul
+    expect(erreurs.filter((e) => !/Content Security Policy/.test(e))).toEqual([]);
+  });
+
   test("une description ne garde que sa mise en forme", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);

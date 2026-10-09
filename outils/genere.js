@@ -400,20 +400,66 @@ function sortScripts(html) {
     .replace(LANGUE_EN_LIGNE, () => '<script src="/' + langueJs + '"></script>');
 }
 
+/* La politique de sécurité des pages du plan.
+
+   Ce qu'elle garde, c'est le script : une description d'exposant, un nom de
+   zone, un logo viennent d'ailleurs, et `modules/sur.mjs` les relit avant de
+   les poser ; si une injection passait quand même, elle ne pourrait rien
+   exécuter. N'est permis que ce que la page sert elle-même, MapLibre à son
+   adresse exacte, et les quelques scripts restés en ligne, chacun par son
+   empreinte — calculée ici, sur ce qui part vraiment. Le reste est large à
+   dessein : les logos et les tuiles viennent de partout (`img-src https:`),
+   l'administration parle au projet Supabase que la console lui a donné
+   (`connect-src https:`), et les styles posés par le code exigent
+   `'unsafe-inline'`. MapLibre lance ses travaux depuis des `blob:`.
+
+   Posée en balise et non en en-tête : la page se sert telle quelle par les
+   fichiers statiques comme par le relais (`/plan-<salon>`), et la balise la
+   suit partout. Elle vient juste après le jeu de caractères, avant tout script
+   — elle ne protège que ce qui la suit. */
+const MAPLIBRE = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.";
+const EN_LIGNE = /<script((?:(?!\bsrc=)[^>])*)>([\s\S]*?)<\/script>/g;
+function poseCsp(html) {
+  const empreintes = [...html.matchAll(EN_LIGNE)]
+    .filter(([, attributs, code]) => code.trim() && !/type="application\/json"/.test(attributs))
+    .map(([, , code]) => "'sha256-" + crypto.createHash("sha256").update(code).digest("base64") + "'");
+  const politique = [
+    "default-src 'self'",
+    /* deck.gl compile un petit décodeur en WebAssembly : la permission ne
+       vaut que pour lui, jamais pour `eval` ni `new Function`. */
+    "script-src 'self' 'wasm-unsafe-eval' " + MAPLIBRE + "js " + empreintes.join(" "),
+    "style-src 'self' 'unsafe-inline' " + MAPLIBRE + "css",
+    "img-src 'self' https: data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https: data: blob:",
+    "worker-src 'self' blob:",
+    "child-src 'self' blob:",
+    "media-src 'self' https: data: blob:",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+  const charset = '<meta charset="utf-8">\n';
+  if (html.split(charset).length !== 2) throw new Error("jeu de caractères introuvable, ou en double");
+  return html.replace(charset, () => charset +
+    '<meta http-equiv="Content-Security-Policy" content="' + politique + '">\n');
+}
+
 /* --- page publique : le mode administration n'est jamais activé --- */
-fs.writeFileSync(W + "plan.html", sortScripts(
+fs.writeFileSync(W + "plan.html", poseCsp(sortScripts(
   page(lieFeuille(connecte(tplPublic)).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
        { tete: PRECHARGE, application: true, pleinEcran: true,
-         salon: SLUG_DEFAUT })));
+         salon: SLUG_DEFAUT }))));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
    n'en a que faire, elle ne part qu'avec l'administration. */
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
-fs.writeFileSync(W + "plan-admin.html", sortScripts(
+fs.writeFileSync(W + "plan-admin.html", poseCsp(sortScripts(
   page(lieFeuille(connecte(tplAdmin)).replace("/*__PORTE_ADMIN__*/", auth)
                     .replace("/*__LIEUX__*/null", () => LIEUX),
-       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT })));
+       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }))));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
