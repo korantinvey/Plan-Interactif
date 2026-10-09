@@ -13,9 +13,10 @@
  * en-tête. Et celles que l'exploitant peut préférer pour les noms du plan, qui
  * ne se chargent qu'une fois choisies : chacune a sa feuille, que la page
  * demande à `polices/`. Les secondes se lisent dans le gabarit même
- * (`POLICES_NOMS`, dans `_admin1.html`) — l'onglet qui les propose est la seule
- * liste, et en ajouter une, c'est l'y écrire puis relancer ce script. La
- * construction échoue tant qu'une police proposée n'est pas rapatriée.
+ * (`POLICES_NOMS`, dans `modules/polices-plan.mjs`) — l'onglet qui les propose
+ * est la seule liste, et en ajouter une, c'est l'y écrire puis relancer ce
+ * script. La construction échoue tant qu'une police proposée n'est pas
+ * rapatriée.
  *
  * Ce script ne fait pas partie de la construction, et c'est voulu : il
  * télécharge, alors que `npm run construire` doit tourner sans réseau. Les
@@ -80,13 +81,13 @@ const nomDeFichier = (famille) =>
  * et la construction, pas les laisser croire qu'il n'y a plus rien à servir.
  */
 function policesAuChoix() {
-  const source = fs.readFileSync(path.join(__dirname, "gabarit", "_admin1.html"), "utf8");
+  const source = fs.readFileSync(path.join(__dirname, "gabarit", "modules", "polices-plan.mjs"), "utf8");
   const bloc = /const POLICES_NOMS = \[([\s\S]*?)\]\.map\(/.exec(source);
   const lignes = bloc
     ? [...bloc[1].matchAll(/\[\s*"([^"]+)"\s*,\s*"(\d+)"\s*,\s*"[^"]*"\s*(,\s*P_\w+\s*)?\]/g)]
     : [];
   if (!lignes.length) {
-    throw new Error("`POLICES_NOMS` ne se lit plus dans _admin1.html : ajustez `policesAuChoix` (outils/polices.js).");
+    throw new Error("`POLICES_NOMS` ne se lit plus dans modules/polices-plan.mjs : ajustez `policesAuChoix` (outils/polices.js).");
   }
   return lignes.filter((m) => !m[3]).map((m) => ({ nom: m[1], graisse: m[2] }));
 }
