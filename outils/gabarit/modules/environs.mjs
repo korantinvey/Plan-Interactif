@@ -509,6 +509,10 @@ function poseCarteGL(cal, fond){
        cas, le remplaçant ayant le sien. */
     _monteGL = false;
     if (gen !== _genGL) return;
+    /* La panne est dite : la minuterie du silence, armée pour ce montage,
+       l'aurait remplacée neuf secondes plus tard par un « service qui ne
+       répond pas », qui accuse le fond quand c'est la bibliothèque qui manque. */
+    clearTimeout(_guetGL);
     _echecGL = e.message;
     hote.hidden = true;
     ditCarte("Carte vectorielle indisponible (" + e.message +
