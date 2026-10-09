@@ -47,6 +47,12 @@ import { brancheItineraire, PAS_GRILLE, ALLURE, ALLURE_PMR, sommets, oublieGrill
   pointSaisi, portesDe, typeLiaison, nomRepere, oublieLiaisons, sortiesDe, plansRelies, routeEntre,
   mesureMarches, coupeMarche, distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, liensDe }
   from "./itineraire.mjs";
+import { PARCOURS, poseParcours, brancheListeParcours, identifiantParcours, casierParcours, dansParcours,
+  chargeParcours, enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET,
+  signetParcours, boutonParcours, rafraichitMarque, dessineMarques, marqueParcours, instantConf, cleTemps,
+  nomDeStand, groupeParcours } from "./parcours.mjs";
+import { CLE_LIEN_PARCOURS, litCodeParcours } from "./lien-parcours.mjs";
+import { ouvrePartageParcours, demandeGardeParcours, poseGardeParcours } from "./partage.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -75,6 +81,12 @@ Object.assign(globalThis, {
   anglePlan, grille, accroche, distancesDepuis, heureAuSalon, pointObjet, pointRepere, candidats,
   pointSaisi, portesDe, typeLiaison, nomRepere, oublieLiaisons, sortiesDe, plansRelies, routeEntre,
   mesureMarches, coupeMarche, distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, liensDe,
+  poseParcours, brancheListeParcours, identifiantParcours, casierParcours, dansParcours,
+  chargeParcours, enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET,
+  signetParcours, boutonParcours, rafraichitMarque, dessineMarques, marqueParcours, instantConf, cleTemps,
+  nomDeStand, groupeParcours,
+  CLE_LIEN_PARCOURS, litCodeParcours,
+  ouvrePartageParcours, demandeGardeParcours, poseGardeParcours,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -89,3 +101,10 @@ Object.defineProperties(globalThis, vivants({
    la préparation du séjour la lit par accesseur. Seul le module l'écrit, par
    `litLaCharge`. */
 Object.defineProperties(globalThis, vivants({ CHARGE: () => CHARGE }, "litLaCharge"));
+
+/* La liste du visiteur, que le module remplace au chargement, au vidage, et
+   quand un parcours reçu prend sa place : le code soudé la lit par accesseur,
+   et la remplace par `poseParcours`. */
+Object.defineProperties(globalThis, vivants({
+  PARCOURS: () => PARCOURS,
+}, "poseParcours"));
