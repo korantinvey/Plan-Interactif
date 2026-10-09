@@ -953,9 +953,13 @@ function marqueZoneTuto(z){
     if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
   });
   if (!vue){ if (g) g.remove(); return; }
-  // la forme se réécrit avec le pavillon : sa marque se repose à chaque pouls
+  /* La forme se réécrit avec le pavillon : sa marque se repose à chaque pouls —
+     mais seulement si elle l'a perdue. Reposer une classe déjà là réécrit
+     quand même l'attribut, et le guet de la carte graphique y voit un
+     changement : tout le plan se redessinait quatre fois par seconde, une
+     image toutes les quatre secondes sous un rendu logiciel. */
   const forme = $("zones").querySelector('g[data-id="' + CSS.escape(z.id) + '"]');
-  if (forme) forme.classList.add("tutoCible");
+  if (forme && !forme.classList.contains("tutoCible")) forme.classList.add("tutoCible");
   if (g && g.dataset.id === z.id) return;
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
