@@ -15,9 +15,7 @@
 brancheApercus({
   PREFIXE_PERSO, codeCase, ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS,
 });
-brancheReglageRappel({ programmeOffert, enregistreConf: () => enregistreConf() });
+brancheReglageRappel({ enregistreConf: () => enregistreConf() });
 brancheReglages({
-  conf, enregistreConf: () => enregistreConf(), REDUIT, voletRecherche, suggestionOfferte,
-  optionActive, NOM_VOLET_PARCOURS, DISTINCTIONS, VISITE_MIN, VISITE_MAX, minutesVisite, montre,
-  ouvre, libelles,
+  enregistreConf: () => enregistreConf(), REDUIT, DISTINCTIONS, montre, ouvre, libelles,
 });

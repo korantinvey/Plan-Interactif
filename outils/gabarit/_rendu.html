@@ -54,14 +54,10 @@ if (document.fonts && document.fonts.addEventListener)
     dessineDessins(); libelles(); liste();
   });
 
-/* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
-   de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le
-   modèle d'habillage les remplace, et `posePoliceLibelles` les repose. Ce
-   sont celles-là qu'il faut mesurer, jamais celles d'origine : un nom taillé
-   sur une chasse fixe déborde d'un serif, et se perd au milieu d'un stand
-   qu'il devait remplir. */
-let P_NOM = ["600", '"Instrument Sans", "Segoe UI", system-ui, sans-serif'];
-let P_CODE = ["500", '"IBM Plex Mono", monospace'];
+/* La graisse et la police dans lesquelles le plan écrit ses libellés,
+   `P_NOM` et `P_CODE`, vivent avec la police des noms
+   (`modules/polices-plan.mjs`) : on les lit ici par accesseur, et seul
+   `posePoliceLibelles` les remplace. */
 
 function decoupe(txt, n){
   if (n === 1) return [txt];
@@ -199,7 +195,7 @@ function montePlan(){
   const p = P();
   $("zones").innerHTML = p.zones.map(baliseZone).join("");
   $("stands").innerHTML = p.stands.map(baliseStand).join("");
-  emp = p.emprise;
+  poseEmprise(p.emprise);
   // les tracés relevés valaient pour les stands du pavillon qu'on quitte
   oublieDists();
   calqueActif = null;
@@ -601,7 +597,7 @@ function libelles(){
   /* Retriés en plein geste — la main a marqué une pause —, les libellés sont
      encore sur le calque du zoom. On le repeint à la vue du moment : les noms
      qui viennent de devenir lisibles naîtraient sinon déjà étirés. */
-  if (libPeints) peintLibelles(vueEcrite);
+  repeintLibelles();
   l.innerHTML = out;
   /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
      non ici : un calque posé par-dessus celui des textes recouvrirait sinon le

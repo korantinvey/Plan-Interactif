@@ -15,8 +15,9 @@
    plusieurs endroits. Le module la lit donc par un lecteur, et la change par
    la porte que le code soudé lui confie (`poseFormeSel`).
 
-   Le reste de l'outil de dessin — le calque actif, l'outil tenu, la vue,
-   l'historique, l'enregistrement, le tracé — reste soudé lui aussi.
+   Le reste de l'outil de dessin — le calque actif, l'outil tenu,
+   l'historique, l'enregistrement, le tracé — reste soudé lui aussi. La vue,
+   elle, s'importe de `vue.mjs`.
    `_edition.html` le confie par `brancheEdition`, à la place que ce code y
    tenait ; ce qui change d'un geste à l'autre se confie par un lecteur,
    jamais par sa valeur du moment.
@@ -30,22 +31,18 @@ import { GL, priseWebgl } from "./webgl.mjs";
 import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
+import { vue, cadrePlan, versPlan, svg } from "./vue.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, la
-   forme choisie, l'outil tenu et le calque actif sont des lecteurs : les
-   gestes et la boîte à outils les remplacent sans cesse. */
+/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La forme
+   choisie, l'outil tenu et le calque actif sont des lecteurs : les gestes et
+   la boîte à outils les remplacent sans cesse. */
 /** @type {Record<string, any>} */
 let soude = {};
-/** Le plan, que les poignées habitent et dont les gestes capturent le pointeur.
- *  @type {SVGSVGElement} */
-let svg;
 
-const vue = () => soude.vue();
 const formeSel = () => soude.formeSel();
 const poseFormeSel = (id) => soude.poseFormeSel(id);
 const outil = () => soude.outil();
 const calqueActif = () => soude.calqueActif();
-const cadrePlan = () => soude.cadrePlan();
 const formeParId = (id) => soude.formeParId(id);
 const boite = (f) => soude.boite(f);
 const estCadre = (f) => soude.estCadre(f);
@@ -53,7 +50,6 @@ const memorise = (salve) => soude.memorise(salve);
 const enregistreDessins = () => soude.enregistreDessins();
 const dessineDessins = () => soude.dessineDessins();
 const redessineForme = (f) => soude.redessineForme(f);
-const versPlan = (x, y) => soude.versPlan(x, y);
 const apercuGuide = (d) => soude.apercuGuide(d);
 const pictoForme = (f) => soude.pictoForme(f);
 const nomTypeRepere = (v) => soude.nomTypeRepere(v);
@@ -83,7 +79,6 @@ let MODES_TRANSPORT;
  *  chargement : il n'y a qu'à retenir ce qui est confié. */
 export function brancheEdition(page){
   soude = page;
-  svg = page.svg;
   EPAISSEUR_TRAIT = page.EPAISSEUR_TRAIT;
   TYPES_REPERE = page.TYPES_REPERE;
   MODES_TRANSPORT = page.MODES_TRANSPORT;
