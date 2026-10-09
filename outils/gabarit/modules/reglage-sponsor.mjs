@@ -9,10 +9,10 @@ import { fermeModale } from "./fenetre.mjs";
 import { MENTIONS_SPONSOR, MARQUE_SPONSOR, SPONSOR_MIN, SPONSOR_MAX, reglageSponsor,
   secondesSponsor, modeSponsor, sponsorRetenu, ouvreSponsor, fermeSponsor } from "./sponsor.mjs";
 
-/* Ce que le code soudé tient encore, et que le branchement confie : le champ
-   intitulé et le cadre de dépôt d'un logo (`_mode-admin.html`), l'envoi de la
-   configuration (`_ordre-fiche.html`), et le glissement de la fenêtre des
-   réglages (`_reglages.html`). */
+/* Ce que le branchement confie : le champ intitulé et le cadre de dépôt d'un
+   logo (`modules/fiche-zone.mjs`), et ce que le code soudé tient encore —
+   l'envoi de la configuration (`_ordre-fiche.html`), et le glissement de la
+   fenêtre des réglages (`_reglages.html`). */
 /** @type {(hote: HTMLElement, titre: string, dedans: any, aide?: string) => any} */
 let champZone;
 /** @type {(depart: any, pose: (src: any) => void) => { cadre: HTMLElement }} */

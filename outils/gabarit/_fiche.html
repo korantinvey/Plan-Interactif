@@ -1274,7 +1274,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
       vis.title = affichee
         ? "Retirer cette zone du plan public"
         : "Remettre cette zone sur le plan public";
+      /* @admin — la pastille ne paraît qu'en administration */
       vis.onclick = () => basculeAffichageZone(o);
+      /* @fin-admin */
     }
   }
   /* La marque se range une fois l'en-tête entièrement écrit : c'est la largeur

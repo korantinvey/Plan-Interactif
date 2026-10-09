@@ -37,6 +37,12 @@ import { voletOrdre, brancheReglageFiche } from "./reglage-fiche.mjs";
 import { CALAGE, bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
+import { activeAdmin, brancheBandeAdmin } from "./bande-admin.mjs";
+import { champZone, champsZone, cadreLogo, suitFicheZone, verseFicheZone, ficheZone, basculeAffichageZone,
+  ecritColonneEvenement, brancheFicheZone } from "./fiche-zone.mjs";
+import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+  libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
+import { PROFIL_ADMIN } from "./acces-admin.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -63,9 +69,19 @@ Object.assign(globalThis, {
   voletOrdre, brancheReglageFiche,
   bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
+  activeAdmin, brancheBandeAdmin,
+  champZone, champsZone, cadreLogo, suitFicheZone, verseFicheZone, ficheZone, basculeAffichageZone,
+  ecritColonneEvenement, brancheFicheZone,
+  lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+  libellePointerUp, branchePlacementLibelles,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
    l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
    poignée qui se mesure en pixels. */
 Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
+
+/* Le profil du compte, « admin » ou non : le module le pose en lisant le
+   compte à l'ouverture de la session. Les réglages le lisent par accesseur,
+   pour ouvrir ou non les onglets que seul l'administrateur reçoit. */
+Object.defineProperties(globalThis, vivants({ PROFIL_ADMIN: () => PROFIL_ADMIN }, "litProfilA"));
