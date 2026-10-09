@@ -436,9 +436,13 @@ async function navigation(e, requete) {
      L'adresse propre à un salon — `/plan-<salon>`, celle que son application
      ouvre — est ramenée à ce même chemin nu : c'est le même fichier, servi par
      le relais, et le ranger deux fois aurait rendu au visiteur qui installe la
-     copie qu'on venait justement d'éviter. */
+     copie qu'on venait justement d'éviter.
+
+     Sauf `/plan-admin` et `/plan-smcl`, qui sont d'autres fichiers servis à
+     leur adresse nue : ramenés à `/plan`, l'administration ou la démonstration
+     devenaient la copie hors ligne du plan public (`modules/salon.mjs`). */
   const cle = new Request(new URL(requete.url).pathname
-    .replace(/^\/plan-[a-z0-9][a-z0-9-]{0,63}$/, "/plan"));
+    .replace(/^\/plan-(?!(?:admin|smcl)$)[a-z0-9][a-z0-9-]{0,63}$/, "/plan"));
   try {
     return await dabordReseau(e, requete, cle);
   } catch (panne) {

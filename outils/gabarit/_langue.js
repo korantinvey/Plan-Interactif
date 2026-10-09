@@ -77,7 +77,11 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      Les deux bouts calculent la clé ici, donc de la même façon — une page qui
      ne nomme aucun salon, la console, n'écrit rien et ne lit donc rien.
      ------------------------------------------------------------------ */
-  const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
+  /* `/plan-admin` et `/plan-smcl` sont des pages, non des salons : la même
+     exception que `modules/salon.mjs` `SLUG`, sans quoi l'administration
+     ouverte à son adresse nue lisait sous « admin » ce qu'elle avait appris
+     de son salon. */
+  const CHEMIN_SALON = /^\/plan-(?!(?:admin|smcl)$)([a-z0-9][a-z0-9-]{0,63})$/;
   function cleDesLangues() {
     let salon = "";
     try {

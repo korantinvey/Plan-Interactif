@@ -215,3 +215,68 @@ test.describe("les autres pages", () => {
     expect(erreurs).toEqual([]);
   });
 });
+
+/* `/plan-<salon>` est l'adresse que l'application d'un salon ouvre. Deux pages
+   de `web/` commencent pareil, et Cloudflare sert chacune à son adresse nue :
+   `/plan-admin`, `/plan-smcl`. Elles ne nomment aucun salon — l'administration
+   prenait « admin » pour le sien, et le partait chercher, l'annonçait, le
+   rangeait. */
+test.describe("le salon que nomme l'adresse", () => {
+  /** Le salon que la page s'est donné, une fois ses modules chargés — sans
+   *  attendre le plan, que la démonstration met longtemps à dessiner. */
+  const salonDe = async (page, adresse) => {
+    await page.goto(adresse, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => typeof /** @type {any} */ (window).SLUG === "string");
+    return page.evaluate(() => /** @type {any} */ (window).SLUG);
+  };
+
+  test("l'administration à son adresse nue n'est pas un salon", async ({ page }) => {
+    const erreurs = await prepare(page);
+    // faute de `?plan=`, le salon que la construction a posé, comme à `/plan-admin.html`
+    expect(await salonDe(page, "/plan-admin")).toBe(await salonDe(page, "/plan-admin.html"));
+    expect(await salonDe(page, "/plan-admin")).toBe("smcl-2026");
+    expect(await salonDe(page, "/plan-admin?plan=fep27")).toBe("fep27");
+    expect(erreurs).toEqual([]);
+  });
+
+  test("la démonstration à son adresse nue n'est pas un salon", async ({ page }) => {
+    await prepare(page);
+    // aucun salon, comme à `/plan-smcl.html` : ses données sont dans la page
+    expect(await salonDe(page, "/plan-smcl")).toBe("");
+  });
+
+  test("l'adresse d'un salon le nomme toujours", async ({ page }) => {
+    await prepare(page);
+    expect(await salonDe(page, "/plan-fep27")).toBe("fep27");
+    expect(await salonDe(page, "/plan-admins")).toBe("admins");
+    expect(await salonDe(page, "/plan-smcl-2026")).toBe("smcl-2026");
+  });
+
+  test("l'anglais fermé par l'exploitant le reste à l'adresse nue", async ({ page }) => {
+    await prepare(page);
+    /* Ce que l'administration de ce salon a appris de lui : le français seul.
+       La clé nomme le salon ; lue sous « admin », elle ne disait plus rien. */
+    await page.addInitScript(() => localStorage.setItem("plan-langues:admin@smcl-2026", "fr"));
+    await page.goto("/plan-admin?lang=en");
+    expect(await page.evaluate(() => /** @type {any} */ (window).LANGUE.code)).toBe("fr");
+  });
+
+  test("le service de second plan range l'administration à part", async ({ page, context }) => {
+    await prepare(page);
+    /* Les demandes que le service fait lui-même échappent à la page : elles
+       se refusent au contexte, pour que l'essai ne doive rien au réseau. */
+    await context.route("**/api/**", (r) => r.fulfill({ status: 204, body: "" }));
+    // le plan public inscrit le service, qui vaut ensuite pour tout le domaine
+    await page.goto(PLAN);
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.goto("/plan-admin");
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+    const rangee = (chemin) => page.evaluate(async (c) => {
+      const r = await caches.match(c);
+      return r ? (await r.text()).includes('data-role="admin"') : null;
+    }, chemin);
+    // rangée sous son propre chemin, jamais sous celui du plan public
+    await expect.poll(() => rangee("/plan-admin")).toBe(true);
+    expect(await rangee("/plan")).not.toBe(true);
+  });
+});
