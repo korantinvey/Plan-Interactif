@@ -3,14 +3,7 @@
 Trouvés par les agents en déplaçant le code ; aucun n'a été corrigé pendant la
 découpe, qui devait garder le comportement à l'identique. Repris ensuite, un
 par un : chaque défaut reproduit d'abord, corrigé au plus juste, puis rejoué.
-Ce qui reste ouvert est en tête ; le reste garde la trace de ce qu'on a trouvé.
-
-## Encore ouvert
-
-14. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
-    dictionnaire d'une page par les premières lignes de déclaration d'un
-    fichier source ; une ligne banale partagée y verse un dictionnaire entier
-    à tort. À reprendre seule.
+Tous sont maintenant réglés ; la liste garde la trace de ce qu'on a trouvé.
 
 ## Corrigés
 
@@ -49,6 +42,10 @@ Ce qui reste ouvert est en tête ; le reste garde la trace de ce qu'on a trouvé
    tête, d'un bouton ou d'elle-même quand la forme choisie ou déplacée passe
    dessous (`modules/edition.mjs` `replieOutils`) ; la déplacer ne ferait que
    couvrir le panneau des calques.
+14. **Heuristique `signaturesDe`** (`outils/traductions.js`) — une ligne
+    banale que d'autres sources portaient aussi versait un dictionnaire entier
+    dans une page sans le module (celui du rapport dans la console, et
+    l'inverse) : seules comptent les lignes propres au morceau.
 17. **Commentaires périmés** — renvois aux fichiers soudés devenus modules,
     dans les sources des pages. Restent, hors des pages : `supabase/functions/`
     (`plan-public/index.ts`, `mesure/index.ts`, `sync-evenement/index.ts`,
