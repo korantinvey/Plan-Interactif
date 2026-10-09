@@ -87,6 +87,11 @@ import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFi
   videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visible, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
+import { view, changeVue, svg } from "./vue.mjs";
+import { nomDeLaZone } from "./noms-zones.mjs";
+import { brancheIndex, indexeConferences } from "./index-salon.mjs";
+import { brancheTonDeLaBarre } from "./ton-barre.mjs";
+import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -156,6 +161,11 @@ Object.assign(globalThis, {
   videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visible, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes,
+  changeVue, svg,
+  nomDeLaZone,
+  brancheIndex, indexeConferences,
+  brancheTonDeLaBarre,
+  brancheDemarrage, chargeFond,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -221,3 +231,8 @@ Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "index
 /* Le retrait du plan levé d'un clic hors du résultat : les gestes le lisent
    par accesseur ; seuls `oublieRetrait` et `reposeRetrait` le changent. */
 Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, "reposeRetrait"));
+
+/* La vue du plan : les gestes la remplacent sans cesse, le cadrage sur un
+   trajet aussi. Le code soudé la lit par accesseur ; il la remplace par sa
+   porte (`vue.mjs` `changeVue`), jamais par affectation. */
+Object.defineProperties(globalThis, vivants({ view: () => view }, "changeVue"));

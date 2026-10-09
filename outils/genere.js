@@ -261,7 +261,7 @@ const SLUG_DEFAUT = "smcl-2026";
  * sert aujourd'hui ; le plan, lui, est demandé sous la version qu'on avait la
  * dernière fois — pari qui se gagne presque toujours, un plan ouvert aux
  * visiteurs ne changeant qu'une fois par jour. Gagné, il sort du cache du
- * navigateur sans toucher le réseau ; perdu, `_admin2.html` le redemande sous
+ * navigateur sans toucher le réseau ; perdu, `modules/demarrage.mjs` le redemande sous
  * la bonne version.
  *
  * Réservé à la page publique : l'administration doit d'abord présenter sa

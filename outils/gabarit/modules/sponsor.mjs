@@ -312,7 +312,7 @@ export function ouvreSponsor(s, horsDemarrage){
 /**
  * Surveille l'échéance, et le plan qu'on attend derrière.
  *
- * Rappelée par `_admin2.html` quand le plan est dessiné : sans ce rappel, le
+ * Rappelée par `demarrage.mjs` quand le plan est dessiné : sans ce rappel, le
  * générique attendrait son butoir pour s'apercevoir que ce qu'il couvrait est
  * arrivé.
  */

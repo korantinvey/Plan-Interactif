@@ -23,6 +23,9 @@ import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
+import { rangeConferences } from "./index-salon.mjs";
+import { annonce } from "./demarrage.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
    loin dans le script — les réglages (`CONF`, que le changement de salon
@@ -32,30 +35,24 @@ import { cleAjout, rechAjout } from "./emplacements.mjs";
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {() => any[]} typesZone les types d'une zone, `TYPES_ZONE`
  * @property {(z: any) => any} typeZone
- * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
- * @property {() => void} nomsAnglaisDesZones
  * @property {() => void} libelles
  * @property {() => void} liste
  * @property {() => void} cartouchePoi
  * @property {() => void} majPaletteGeo
  * @property {(o: any, depuis: any) => void} ouvre
- * @property {() => void} rangeConferences
  */
 /** @type {PageFicheZone} */
 let soude;
 const reglages = () => soude.conf();
 const typesZone = () => soude.typesZone();
 const typeZone = (z) => soude.typeZone(z);
-const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 const enregistreConf = () => soude.enregistreConf();
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const cartouchePoi = () => soude.cartouchePoi();
 const majPaletteGeo = () => soude.majPaletteGeo();
 const ouvre = (o, depuis) => soude.ouvre(o, depuis);
-const rangeConferences = () => soude.rangeConferences();
 
 /**
  * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`),

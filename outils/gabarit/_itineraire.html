@@ -20,12 +20,10 @@ brancheItineraire({
   finInstant: (c) => finInstant(c),
 });
 
-/* Le tiroir : la vue se confie par un lecteur et sa porte, puisque les gestes
-   la remplacent et que le trajet la recadre. Ses écoutes se posent ici, au
-   rang qu'elles tenaient parmi celles du plan. */
+/* Le tiroir : la vue, il l'importe de `modules/vue.mjs`. Ses écoutes se
+   posent ici, au rang qu'elles tenaient parmi celles du plan. */
 brancheTiroirItineraire({
-  vue: () => view, changeVue: v => { view = v; }, poseVue,
-  cadrePlan, masque, masqueDroite, masqueHaut, svg, reduit: REDUIT, etroit: ETROIT,
+  reduit: REDUIT, etroit: ETROIT,
   changePlan, ferme, fermeParcours, formeParId,
   /* Désigner l'endroit d'un code affiché n'est qu'à l'exploitant
      (`modules/affiche-ici.mjs`) : la page publique ne l'a pas. */

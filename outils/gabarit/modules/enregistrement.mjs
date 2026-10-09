@@ -21,8 +21,7 @@
    jamais — la page publique n'a ni session ni bouton, et n'appelle ce qu'il
    expose que sous garde `typeof`. Ce que le code soudé tient encore — le
    mode administrateur, les réglages et leur enregistrement, les calques
-   dessinés et leurs relevés, l'annonce dans la liste, le panneau des
-   calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
+   dessinés et leurs relevés, le panneau des calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
    appelle à la place que ce code y tenait : les écouteurs de la page s'y
    posent au même rang qu'avant.
    ============================================================ */
@@ -32,6 +31,7 @@ import { API } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
+import { annonce } from "./demarrage.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce que les chargements
    remplacent — le mode, les réglages (`CONF`), les calques et leurs deux
@@ -48,7 +48,6 @@ import { ecranAcces } from "./acces-admin.mjs";
  * @property {(id: string, cles: string[]) => void} notePubliees
  * @property {(id: string, oui: boolean) => void} marqueAttente
  * @property {(source: Record<string, any>) => Record<string, any>} reglagesDuSalon
- * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
  * @property {() => void} enregistreDessins
  * @property {() => void} appliqueApparence
@@ -66,7 +65,6 @@ const marqueAttente = (id, oui) => soude.marqueAttente(id, oui);
 /** @param {Record<string, any>} source */
 const reglagesDuSalon = (source) => soude.reglagesDuSalon(source);
 /** @param {string} txt @param {boolean} [erreur] */
-const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 
 /* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
    session — page publique, page à données figées — où rien ne part tout seul. */

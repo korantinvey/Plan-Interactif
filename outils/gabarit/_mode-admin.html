@@ -28,7 +28,6 @@
    par un appel différé, lu au moment d'ouvrir le mode. */
 brancheBandeAdmin({
   ouvreReglages, monte: () => MONTE, dessineDessins, construitPanneau: () => construitPanneau(),
-  poseTonDeLaBarre,
 });
 /* @fin-admin */
 
@@ -37,8 +36,8 @@ brancheBandeAdmin({
    confie par un détour. */
 brancheFicheZone({
   conf: () => CONF, typesZone: () => TYPES_ZONE, typeZone: (z) => typeZone(z),
-  annonce, enregistreConf, nomsAnglaisDesZones,
-  libelles, liste, cartouchePoi, majPaletteGeo, ouvre, rangeConferences,
+  enregistreConf,
+  libelles, liste, cartouchePoi, majPaletteGeo, ouvre,
 });
 /* @fin-admin */
 

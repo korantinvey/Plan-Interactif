@@ -2,7 +2,6 @@
    d'une conférence. La recherche, ses critères et la liste sont dans
    `recherche.js`. */
 module.exports = {
-  "Administration — {salon}": "Admin — {salon}",
   "{n} pavillons": "{n} halls",
   "{n} pavillon": "{n} hall",
   "Stand": "Stand",

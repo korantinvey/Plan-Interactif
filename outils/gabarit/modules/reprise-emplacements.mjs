@@ -39,6 +39,7 @@ import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSourc
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 
 /**
  * Ce que le code soudé confie au branchement. La vue et le plan s'importent
@@ -54,7 +55,6 @@ import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
  * @property {() => void} dessineDists
  * @property {(z: any) => string} baliseZone
  * @property {(s: any) => string} baliseStand
- * @property {() => void} nomsAnglaisDesZones
  * @property {(o: any, depuis: any) => void} ouvre
  * @property {() => void} ferme
  * @property {(cle: string) => boolean} optionActive
@@ -81,7 +81,6 @@ const oublieDists = () => soude.oublieDists();
 const dessineDists = () => soude.dessineDists();
 const baliseZone = (/** @type {any} */ z) => soude.baliseZone(z);
 const baliseStand = (/** @type {any} */ s) => soude.baliseStand(s);
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const ouvre = (/** @type {any} */ o, /** @type {any} */ depuis) => soude.ouvre(o, depuis);
 const ferme = () => soude.ferme();
 const optionActive = (/** @type {string} */ cle) => soude.optionActive(cle);

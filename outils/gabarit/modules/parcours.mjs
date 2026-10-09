@@ -353,7 +353,7 @@ function calqueMarques(){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "marques";
     // au-dessus des couches, sous le trajet et les poignées d'édition ; le
-    // plan est le `svg` du code soudé (`_js.html`), relu par son identifiant
+    // plan est le `svg` de `vue.mjs`, relu par son identifiant
     const svg = $("plan");
     svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
   }

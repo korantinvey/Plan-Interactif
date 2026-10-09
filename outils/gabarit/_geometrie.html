@@ -3,7 +3,7 @@
    branchement
 
    Les retouches de forme et les emplacements ajoutés, tels que le visiteur
-   les reçoit, vivent dans `modules/emplacements.mjs` : `indexe` (`_js.html`)
+   les reçoit, vivent dans `modules/emplacements.mjs` : `indexe` (`index-salon.mjs`)
    les verse dans le pavillon avant que rien ne soit dessiné. L'outil qui les
    écrit — le cadenas des couches, la palette, les poignées, le tracé d'un
    ajout — vit dans `modules/reprise-emplacements.mjs`, que seul
@@ -15,14 +15,14 @@
    détours. La vue, l'outil l'importe de `modules/vue.mjs`.
    ============================================================ */
 brancheEmplacements({
-  conf: () => CONF, nomSurLePlan: (soc) => nomSurLePlan(soc), nomsAnglaisDesZones,
+  conf: () => CONF, nomSurLePlan: (soc) => nomSurLePlan(soc),
 });
 
 /* @admin — la reprise et l'ajout d'un emplacement, outil de l'exploitant */
 brancheRepriseEmplacements({
   conf: () => CONF, confDe: conf, calqueActif: () => calqueActif,
   enregistreConf, construitPanneau, libelles, oublieDists, dessineDists, baliseZone, baliseStand,
-  nomsAnglaisDesZones, ouvre, ferme, optionActive,
+  ouvre, ferme, optionActive,
   pictoVerrou: (f) => pictoVerrou(f), activeCalque: (id) => activeCalque(id),
   remplitListeSocietes: () => remplitListeSocietes(), societeSaisie: (t) => societeSaisie(t),
   etiquetteSociete: (o, soc) => etiquetteSociete(o, soc), apercu: (d) => apercu(d),

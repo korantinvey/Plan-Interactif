@@ -8,22 +8,21 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Ce qu'il n'importe pas — le mode administrateur à
-   activer, le chargement du plan — lui est confié par `brancheAcces`, que le
+   activer — lui est confié par `brancheAcces`, que le
    code soudé appelle à la place que ce code tenait (`_auth-plan.html`, versé
    par `genere.js` dans la seule page d'administration). Le profil du compte,
    qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
+import { charge } from "./demarrage.mjs";
 
 /* Ce que le code soudé confie encore : l'activation du mode administrateur
    (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel importe ce
-   module — l'importer d'ici les bouclerait), et le chargement du plan
-   (`_admin2.html`). */
+   module — l'importer d'ici les bouclerait). Le chargement du plan, lui,
+   s'importe (`demarrage.mjs`). */
 /** @type {() => void} */
 let activeAdmin;
-/** @type {() => any} */
-let charge;
 
 /* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
    « Admin » aux réglages — la base, elle, ne distingue pas les deux profils
@@ -68,7 +67,7 @@ async function sessionValide(cfg, session){
 
 /**
  * La fenêtre d'accès. Le plan la rouvre aussi quand la base refuse une
- * session périmée (`_admin2.html`, sous garde `typeof` : la page publique,
+ * session périmée (`demarrage.mjs`, sous garde `typeof` : la page publique,
  * qui ne la reçoit pas, n'a rien à rouvrir ; `enregistrement.mjs`, qui
  * l'importe).
  *
@@ -216,11 +215,10 @@ function poseCompte(){
  * les écoutes du menu du compte s'y posent au même rang qu'avant parmi celles
  * du plan, et la vérification de la session part au même moment.
  *
- * @param {{ activeAdmin: typeof activeAdmin, charge: typeof charge }} b
+ * @param {{ activeAdmin: typeof activeAdmin }} b
  */
 export function brancheAcces(b){
   activeAdmin = b.activeAdmin;
-  charge = b.charge;
 
   /* Un clic ailleurs, ou Échap, referme le panneau : rien d'autre ne dirait
      comment s'en défaire une fois ouvert au-dessus du plan. */

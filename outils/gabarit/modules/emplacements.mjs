@@ -29,7 +29,7 @@
 
    Ce module tient ce que le visiteur en reçoit : les retouches et les
    emplacements ajoutés, versés dans le pavillon au chargement (`indexe`, dans
-   `_js.html`), et le mode en cours, que le rendu par la carte graphique lit
+   `index-salon.mjs`), et le mode en cours, que le rendu par la carte graphique lit
    (faux hors de l'administration). L'outil qui les écrit — le cadenas des
    couches, la palette, les poignées, le tracé d'un ajout — est d'exploitant :
    il vit dans `modules/reprise-emplacements.mjs`, que seul `plan-admin.mjs`
@@ -41,6 +41,7 @@
 import { DATA } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteGeo } from "./forme.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 
 /* Ce que le code soudé confie au branchement. Les réglages (`CONF`, que le
    changement de salon remplace) se lisent à l'instant ; le nom d'une société
@@ -49,13 +50,11 @@ import { arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteGeo } from "./form
  * @typedef {object} PageEmplacements
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(soc: any) => string} nomSurLePlan
- * @property {() => void} nomsAnglaisDesZones
  */
 /** @type {PageEmplacements} */
 let soude;
 const reglages = () => soude.conf();
 const nomSurLePlan = (soc) => soude.nomSurLePlan(soc);
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 
 /**
  * Appelé par le code soudé à la place que ce code tenait (`_geometrie.html`),
