@@ -34,6 +34,9 @@ import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants } from "./aimants.mjs";
 import { voletOrdre, brancheReglageFiche } from "./reglage-fiche.mjs";
+import { CALAGE, bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
+  calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage } from "./batiments.mjs";
+import { vivants } from "./vivant.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -58,4 +61,11 @@ Object.assign(globalThis, {
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants,
   voletOrdre, brancheReglageFiche,
+  bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
+  calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
 });
+
+/* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
+   l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
+   poignée qui se mesure en pixels. */
+Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));

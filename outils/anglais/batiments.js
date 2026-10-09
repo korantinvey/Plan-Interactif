@@ -1,5 +1,10 @@
-/* `outils/gabarit/_batiments.html` — les bâtiments de la bibliothèque : la
-   fenêtre de choix, le calage et sa reprise, la mention de la source. */
+/* `outils/gabarit/modules/batiments.mjs` — les bâtiments de la bibliothèque,
+   geste d'exploitant : la fenêtre de choix, le calage et sa reprise.
+
+   Le bandeau du calage est balisé dans `_head.html`, en tranche `@admin` ; ses
+   phrases se rangent ici avec le geste qu'elles servent. Dans le dictionnaire
+   de `_batiments.html`, elles partiraient avec le plan public : la mention
+   d'OpenStreetMap, restée soudée, suffit à l'y faire reconnaître. */
 module.exports = {
   "Bâtiments de la bibliothèque": "Library buildings",
   "Lieu": "Venue",
