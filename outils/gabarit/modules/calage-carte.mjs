@@ -9,7 +9,7 @@
    cours de réglage par un lecteur confié au branchement.
 
    Ce que le code soudé tient encore — les réglages et leur enregistrement,
-   le panneau des calques, la vue et ses gestes — lui est confié par
+   le panneau des calques — lui est confié par
    `brancheCalageCarte`, que `_environs.html` appelle à la place que ce code y
    tenait : les boutons de la palette s'y branchent au même rang qu'avant. Les
    identifiants de base des pavillons, et l'oubli du plan public par le
@@ -27,12 +27,13 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
   confieCalageEnCours } from "./environs.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
+import { saisitPlan } from "./gestes.mjs";
 
 /* Ce que le code soudé confie au branchement : les réglages (`CONF`, que le
    changement de salon remplace, et `conf`, qui en ouvre une entrée) et leur
    enregistrement, le panneau des calques et ce qui dit s'il est là
-   (`ADMIN`, `MONTE`), et la main qui tient le plan. Ce qui change se lit à
-   l'instant. La vue, elle, s'importe de `vue.mjs`. */
+   (`ADMIN`, `MONTE`). Ce qui change se lit à l'instant. La vue, elle,
+   s'importe de `vue.mjs`, et la main qui tient le plan de `gestes.mjs`. */
 /**
  * @typedef {object} PageCalage
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
@@ -41,7 +42,6 @@ import { vue, svg, versPlan, poseVue } from "./vue.mjs";
  * @property {() => void} construitPanneau
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
  * @property {() => boolean} monte le plan monté, `MONTE`
- * @property {(tenu: boolean) => void} saisitPlan
  */
 /** @type {PageCalage} */
 let soude;
@@ -409,7 +409,7 @@ export function cartePointerDown(e){
     a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
   };
   svg.setPointerCapture(e.pointerId);
-  soude.saisitPlan(true);
+  saisitPlan(true);
   return true;
 }
 
@@ -435,7 +435,7 @@ export function cartePointerMove(e){
 export function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
-  soude.saisitPlan(false);
+  saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   return true;
 }

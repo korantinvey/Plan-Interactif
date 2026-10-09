@@ -99,6 +99,8 @@ import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, aperc
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
 import { branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
   oublieChoixPoi } from "./points-interet.mjs";
+import { drag, pince, brancheGestes } from "./gestes.mjs";
+import { brancheTiroirs } from "./tiroirs.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -180,6 +182,8 @@ Object.assign(globalThis, {
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
   branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
   oublieChoixPoi,
+  brancheGestes,
+  brancheTiroirs,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -262,3 +266,7 @@ Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDe
 Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, "poseCalqueActif"));
 Object.defineProperties(globalThis, vivants({ outil: () => outil }, "poseOutil"));
 Object.defineProperties(globalThis, vivants({ enCours: () => enCours }, "poseEbauche"));
+/* Le glissé et le pincement en cours : la carte graphique les lit par
+   accesseur, pour taire son survol pendant un geste. Seules les écoutes que
+   pose `brancheGestes` les changent. */
+Object.defineProperties(globalThis, vivants({ drag: () => drag, pince: () => pince }, "brancheGestes"));

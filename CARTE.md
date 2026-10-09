@@ -111,7 +111,7 @@ Fonctions :
 
 - l.1 · Export par exposant — le branchement
 
-### `_fiche.html` — 33 l.
+### `_fiche.html` — 31 l.
 
 - l.3 · 7. Sélection et fiche
 
@@ -119,19 +119,9 @@ Fonctions :
 
 - l.1 · 11 octies. Reprendre à la main la géométrie d'un emplacement — le
 
-### `_gestes.html` — 954 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_gestes.html` — 44 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.4 · 8. Interactions du plan
-- l.454 · Ce que les tiroirs lisent d'un geste
-- l.500 · Le tiroir de la liste — écrans étroits
-- l.726 · Les tiroirs menés par la hauteur — écrans étroits
-
-Fonctions :
-
-`milieu` 24 · `commencePince` 30 · `suitPince` 44 · `plieLesBandes` 97 · `saisitPlan` 111
-`cibleElargie` 197 · `planifieFiltre` 410 · `traceurDeGeste` 478 · `cranVoisin` 497
-`retraitBas` 523 · `mesureTiroir` 537 · `montreTiroir` 540 · `hisseTiroir` 544
-`tiroirCrante` 753
+- l.4 · 8. Interactions du plan — le branchement
 
 ### `_head.html` — 628 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -286,7 +276,7 @@ Fonctions :
 
 - l.2 · Rapport d'utilisation — le branchement
 
-### `_recherche.html` — 32 l.
+### `_recherche.html` — 30 l.
 
 - l.3 · 5. Recherche et secteurs — le branchement
 
@@ -834,10 +824,10 @@ Fonctions :
 
 Fonctions :
 
-`decoupeStand` 48 · `formeParId` 49 · `montePlan` 50 · `marqueStandsDessines` 51
-`libelles` 52 · `coexChoisit` 53 · `nomDeLaZone` 54 · `poseDistsFiche` 55
-`fermeParcours` 56 · `brancheParcours` 57 · `baisseTiroir` 59 · `anime` 80 · `noeud` 104
-`canalPlan` 114 · `rangSociete` 122 · `select` 131 · `centre` 156 · `brancheActesFiche` 167
+`decoupeStand` 50 · `formeParId` 51 · `montePlan` 52 · `marqueStandsDessines` 53
+`libelles` 54 · `coexChoisit` 55 · `nomDeLaZone` 56 · `poseDistsFiche` 57
+`fermeParcours` 58 · `brancheParcours` 59 · `anime` 80 · `noeud` 104 · `canalPlan` 114
+`rangSociete` 122 · `select` 131 · `centre` 156 · `brancheActesFiche` 167
 `centreEtBaisseLaFiche` 183 · `centrePoint` 201 · `programme` 230 · `produits` 279
 `ficheProduit` 307 · `ficheConf` 377 · `adresseVignette` 534 · `poseAppuiTactile` 551
 `ecarteClicFantome` 554 · `nomSociete` 563 · `societes` 576 · `choisitExposant` 587
@@ -869,6 +859,26 @@ Fonctions :
 Éléments :
 
 `#fuseaux`
+
+### `modules/gestes-admin.mjs` — 178 l. → plan-admin
+
+- l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
+
+Fonctions :
+
+`formeSel` 44 · `appui` 49 · `suit` 63 · `leve` 72 · `annuleGeste` 83 · `clavier` 89
+`echap` 134 · `apresEchap` 152 · `entree` 159 · `brancheGestesAdmin` 169
+
+### `modules/gestes.mjs` — 444 l. → plan, plan-admin
+
+- l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
+- l.62 · 8. Interactions du plan
+
+Fonctions :
+
+`poseGestesAdmin` 60 · `milieu` 86 · `commencePince` 92 · `suitPince` 107
+`plieLesBandes` 160 · `saisitPlan` 174 · `cibleElargie` 211 · `planifieFiltre` 254
+`brancheGestes` 268
 
 ### `modules/habillage.mjs` — 250 l. → plan, plan-admin
 
@@ -1167,11 +1177,11 @@ Fonctions :
 `choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
 `libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
 
-### `modules/plan-admin.mjs` — 120 l. → plan-admin
+### `modules/plan-admin.mjs` — 122 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 264 l. → plan, plan-admin
+### `modules/plan.mjs` — 272 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1251,27 +1261,27 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
-### `modules/recherche.mjs` — 1170 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1166 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`ferme` 63 · `ficheConf` 66 · `adresseVignette` 67 · `montreTiroir` 68 · `mesureTiroir` 69
-`hisseTiroir` 70 · `poseToutAuParcours` 71 · `dessineDists` 72 · `libelles` 73
-`largeur` 74 · `marquesListe` 75 · `porteDist` 76 · `standPorte` 77 · `nomDeLaZone` 78
-`reperesCherchables` 79 · `vaAuRepere` 80 · `appliqueSecteurs` 90 · `filtreTheme` 107
-`themeFiltrable` 187 · `ordreCriteres` 203 · `clesCriteres` 226 · `libelleCritere` 233
-`valeursCritere` 252 · `texteCriteres` 265 · `texteAnglaisPerso` 281 · `indexeCriteres` 295
-`refaitCriteres` 329 · `dansCriteres` 336 · `critereActif` 344 · `basculeCritere` 346
-`videCriteres` 355 · `majVideQ` 364 · `videRecherche` 377 · `nCriteres` 392
-`majCriteres` 407 · `remplitCriteres` 474 · `basculeCriteres` 613 · `ouvreCriteres` 618
-`fermeCriteres` 634 · `filtre` 651 · `reposeRetrait` 671 · `critParSociete` 675
-`cherchable` 685 · `visible` 692 · `releveHotes` 713 · `visibleSurPlan` 721
-`visibleSociete` 732 · `marqueRetrait` 748 · `appliqueFiltre` 766 · `oublieRetrait` 782
-`reprendRecherche` 791 · `rangSorte` 804 · `codeCase` 826 · `caseNumero` 843
-`sousLigne` 863 · `liste` 877 · `marqueChoisie` 1005 · `prechargeMarque` 1031
-`prechargeLesVignettes` 1088 · `chargeUnLot` 1134 · `brancheRecherche` 1161
+`ferme` 62 · `ficheConf` 65 · `adresseVignette` 66 · `poseToutAuParcours` 67
+`dessineDists` 68 · `libelles` 69 · `largeur` 70 · `marquesListe` 71 · `porteDist` 72
+`standPorte` 73 · `nomDeLaZone` 74 · `reperesCherchables` 75 · `vaAuRepere` 76
+`appliqueSecteurs` 86 · `filtreTheme` 103 · `themeFiltrable` 183 · `ordreCriteres` 199
+`clesCriteres` 222 · `libelleCritere` 229 · `valeursCritere` 248 · `texteCriteres` 261
+`texteAnglaisPerso` 277 · `indexeCriteres` 291 · `refaitCriteres` 325 · `dansCriteres` 332
+`critereActif` 340 · `basculeCritere` 342 · `videCriteres` 351 · `majVideQ` 360
+`videRecherche` 373 · `nCriteres` 388 · `majCriteres` 403 · `remplitCriteres` 470
+`basculeCriteres` 609 · `ouvreCriteres` 614 · `fermeCriteres` 630 · `filtre` 647
+`reposeRetrait` 667 · `critParSociete` 671 · `cherchable` 681 · `visible` 688
+`releveHotes` 709 · `visibleSurPlan` 717 · `visibleSociete` 728 · `marqueRetrait` 744
+`appliqueFiltre` 762 · `oublieRetrait` 778 · `reprendRecherche` 787 · `rangSorte` 800
+`codeCase` 822 · `caseNumero` 839 · `sousLigne` 859 · `liste` 873 · `marqueChoisie` 1001
+`prechargeMarque` 1027 · `prechargeLesVignettes` 1084 · `chargeUnLot` 1130
+`brancheRecherche` 1157
 
 ### `modules/reglage-application.mjs` — 327 l. → plan-admin
 
@@ -1530,6 +1540,19 @@ Fonctions :
 `brancheParcours` 216 · `rafraichitParcours` 229 · `rangParcours` 259
 `remplitParcours` 279 · `ouvreParcours` 368 · `fermeParcours` 380 · `videLeParcours` 391
 `brancheTiroirParcours` 423
+
+### `modules/tiroirs.mjs` — 524 l. → plan, plan-admin
+
+- l.1 · Les tiroirs des écrans étroits — la liste, et ceux que la hauteur mène
+- l.28 · Ce que les tiroirs lisent d'un geste
+- l.74 · Le tiroir de la liste — écrans étroits
+- l.300 · Les tiroirs menés par la hauteur — écrans étroits
+
+Fonctions :
+
+`fermeCriteres` 26 · `traceurDeGeste` 52 · `cranVoisin` 71 · `retraitBas` 97
+`mesureTiroir` 110 · `montreTiroir` 113 · `hisseTiroir` 117 · `tiroirListe` 124
+`tiroirCrante` 327 · `brancheTiroirs` 509
 
 ### `modules/trace.mjs` — 178 l. → plan, plan-admin
 
