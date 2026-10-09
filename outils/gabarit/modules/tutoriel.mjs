@@ -38,6 +38,7 @@
 
 import { $ } from "./dom.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
+import { svg } from "./vue.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
 import { SLUG, BORNE } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
@@ -50,13 +51,11 @@ import { SEJOUR, JOURNEE, vueJournee as VUE_JOURNEE, joursAVenir } from "./journ
    se lance qu'une fois la page démarrée, bien après le branchement. */
 /** @type {Record<string, any>} */
 let soude = {};
-/* Trois valeurs qui ne changent plus une fois la page ouverte : la page où
-   l'on est (`_recherche.html` `PLAN_ADMIN`), le mouvement réduit
-   (`_fiche.html` `REDUIT`) et le dessin du plan (`_js.html` `svg`). */
+/* Deux valeurs qui ne changent plus une fois la page ouverte : la page où
+   l'on est (`_recherche.html` `PLAN_ADMIN`) et le mouvement réduit
+   (`_fiche.html` `REDUIT`). Le dessin du plan s'importe de `vue.mjs`. */
 let PLAN_ADMIN = false;
 let REDUIT = false;
-/** @type {any} */
-let svg = null;
 
 /**
  * Le branchement, appelé par `_tutoriel.html` à la place de la visite.
@@ -68,7 +67,7 @@ let svg = null;
  *
  * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
  *   centre: Function, ferme: Function, fermeParcours: Function,
- *   fermeItineraire: Function, etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
+ *   fermeItineraire: Function, etroit: Function, planAdmin: boolean, reduit: boolean,
  *   route: () => any, attente: () => any, iti: () => any, visee: () => any, eteintVisee: Function,
  *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
@@ -77,7 +76,6 @@ export function brancheTutoriel(b){
   soude = b;
   PLAN_ADMIN = b.planAdmin;
   REDUIT = b.reduit;
-  svg = b.svg;
 }
 
 const conf = (c) => soude.conf(c);
@@ -743,7 +741,7 @@ const pxTuto = (v) => Math.round(v * 100) / 100 + "px";
  * ce SVG, y gardaient leur place d'avant le recentrage, et la bulle s'écartait
  * d'un endroit où ils n'étaient plus — pour se poser parfois sur eux. Leur
  * place se calcule donc d'après la vue, comme celle de la forme d'où la fiche
- * s'ouvre (`_vue.html` `rectVisee`).
+ * s'ouvre (`vue.mjs` `rectVisee`).
  */
 function boiteTuto(el){
   if (!el || !el.isConnected) return null;

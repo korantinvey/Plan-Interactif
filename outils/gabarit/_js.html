@@ -22,7 +22,10 @@ const svg = $("plan");
 /* Les données du plan et leurs index, l'état de la vue (`state`) et le
    pavillon courant (`P`) : `modules/donnees.mjs`. On les lit ici par leur nom,
    comme avant ; on les remplace par `poseDonnees({ … })`, et par là seulement. */
-let view, emp;
+/* La vue : le cadrage sur un trajet (`_itineraire.html`) la remplace encore
+   en direct, elle reste donc ici, confiée à `modules/vue.mjs` par `_vue.html`.
+   L'emprise du pavillon, elle, vit dans le module (`poseEmprise`). */
+let view;
 
 /* ============================================================
    1. Index global — la recherche porte sur tous les pavillons

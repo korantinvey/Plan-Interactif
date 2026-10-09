@@ -199,7 +199,7 @@ function montePlan(){
   const p = P();
   $("zones").innerHTML = p.zones.map(baliseZone).join("");
   $("stands").innerHTML = p.stands.map(baliseStand).join("");
-  emp = p.emprise;
+  poseEmprise(p.emprise);
   // les tracés relevés valaient pour les stands du pavillon qu'on quitte
   oublieDists();
   calqueActif = null;
@@ -595,7 +595,7 @@ function libelles(){
   /* Retriés en plein geste — la main a marqué une pause —, les libellés sont
      encore sur le calque du zoom. On le repeint à la vue du moment : les noms
      qui viennent de devenir lisibles naîtraient sinon déjà étirés. */
-  if (libPeints) peintLibelles(vueEcrite);
+  repeintLibelles();
   l.innerHTML = out;
   /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
      non ici : un calque posé par-dessus celui des textes recouvrirait sinon le

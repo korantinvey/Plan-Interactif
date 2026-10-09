@@ -20,18 +20,18 @@ import { ADMIN } from "./mode-admin.mjs";
 import { GL, libelleSousWebgl } from "./webgl.mjs";
 import { cleLibelle, PLACE_LIBELLES, libSel, poseModeLibelles, poseLibelleChoisi, empreinteLibelle,
   placementLibelle } from "./libelle-place.mjs";
+import { svg, versPlan } from "./vue.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
    loin dans le script — les réglages (`CONF`, que le changement de salon
    remplace), le calque de dessin ouvert, la couche reprise — se lit à
-   l'instant. */
+   l'instant. Le plan et le passage de l'écran au plan s'importent de
+   `vue.mjs`. */
 /**
  * @typedef {object} PagePlacementLibelles
- * @property {any} svg le plan
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {() => void} enregistreConf
  * @property {() => void} libelles
- * @property {(clientX: number, clientY: number) => number[]} versPlan
  * @property {() => any} calqueActif le calque de dessin ouvert, `calqueActif`
  * @property {(id: any) => void} activeCalque
  * @property {() => any} sorteGeo la couche dont on reprend les formes, `SORTE_GEO`
@@ -145,15 +145,15 @@ export function libellePointerDown(e){
   e.preventDefault();
   choisitLibelle(o.id);
   const r = placementLibelle(o);
-  glisseLib = { o: o, depart: soude.versPlan(e.clientX, e.clientY),
+  glisseLib = { o: o, depart: versPlan(e.clientX, e.clientY),
                 dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
-  try { soude.svg.setPointerCapture(e.pointerId); } catch (err) {}
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
 
 export function libellePointerMove(e){
   if (!glisseLib) return false;
-  const p = soude.versPlan(e.clientX, e.clientY);
+  const p = versPlan(e.clientX, e.clientY);
   const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
   const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
   posePlacement(glisseLib.o, n => { n.dx = dx; n.dy = dy; });
@@ -163,7 +163,7 @@ export function libellePointerMove(e){
 export function libellePointerUp(e){
   if (!glisseLib) return false;
   glisseLib = null;
-  try { if (soude.svg.hasPointerCapture(e.pointerId)) soude.svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   enregistreConf();
   return true;
 }

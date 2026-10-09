@@ -36,18 +36,17 @@ import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, mo
 import { ficheZone } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
+import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 
 /**
- * Ce que le code soudé confie au branchement.
+ * Ce que le code soudé confie au branchement. La vue et le plan s'importent
+ * de `vue.mjs`.
  * @typedef {object} PageRepriseEmplacements
- * @property {any} svg le plan
- * @property {() => any} vue la vue du moment, `view`
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
  * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => void} enregistreConf
  * @property {() => void} construitPanneau
- * @property {() => DOMRect} cadrePlan
  * @property {() => void} libelles
  * @property {() => void} oublieDists
  * @property {() => void} dessineDists
@@ -67,22 +66,17 @@ import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSourc
  * @property {(o: any, soc: any) => string} etiquetteSociete
  * @property {(d: string | null) => void} apercu
  * @property {(d: string | null) => void} apercuGuide
- * @property {(clientX: number, clientY: number) => number[]} versPlan
  * @property {(p: number[], pts: number[][]) => boolean} fermeIci
  * @property {(f: any) => string} cheminForme
  * @property {() => string} nouvelId
  */
 /** @type {PageRepriseEmplacements} */
 let soude;
-/** @type {any} */
-let svg = null;
-const vue = () => soude.vue();
 const reglages = () => soude.conf();
 const conf = (/** @type {string} */ cle) => soude.confDe(cle);
 const calqueActif = () => soude.calqueActif();
 const enregistreConf = () => soude.enregistreConf();
 const construitPanneau = () => soude.construitPanneau();
-const cadrePlan = () => soude.cadrePlan();
 const libelles = () => soude.libelles();
 const oublieDists = () => soude.oublieDists();
 const dessineDists = () => soude.dessineDists();
@@ -102,7 +96,6 @@ const societeSaisie = (/** @type {string} */ texte) => soude.societeSaisie(texte
 const etiquetteSociete = (/** @type {any} */ o, /** @type {any} */ soc) => soude.etiquetteSociete(o, soc);
 const apercu = (/** @type {string | null} */ d) => soude.apercu(d);
 const apercuGuide = (/** @type {string | null} */ d) => soude.apercuGuide(d);
-const versPlan = (/** @type {number} */ x, /** @type {number} */ y) => soude.versPlan(x, y);
 const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => soude.fermeIci(p, pts);
 const cheminForme = (/** @type {any} */ f) => soude.cheminForme(f);
 const nouvelId = () => soude.nouvelId();
@@ -779,7 +772,6 @@ export function geometriePointerUp(e){
  */
 export function brancheRepriseEmplacements(page){
   soude = page;
-  svg = page.svg;
   if ($("geoFerme")) $("geoFerme").onclick = () => modeGeometrie(null);
   if ($("geoOrigine")) $("geoOrigine").onclick = geometrieOrigine;
   if ($("geoLargeur")) $("geoLargeur").oninput = appliqueDimensionGeo;

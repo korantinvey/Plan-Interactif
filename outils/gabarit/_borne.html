@@ -5,14 +5,12 @@
    son « Vous êtes ici » et sa remise à zéro. Elle se branche ici, à la place
    que son code tenait : ses écoutes s'y posent au même rang qu'avant, et ce
    que le code soudé tient encore lui est confié — la visée de l'itinéraire
-   (`_itineraire.html`), qu'elle lit et qu'elle arme, la vue, et les tiroirs
-   qu'elle referme en repartant au repos.
+   (`_itineraire.html`), qu'elle lit et qu'elle arme, et les tiroirs qu'elle
+   referme en repartant au repos. La vue, elle l'importe de `modules/vue.mjs`.
    ============================================================ */
 brancheBorne({
   visee: () => visee,
   vise: (v) => { visee = v; },
-  vue: () => view,
-  svg,
   bandeauVisee, changePlan, fermeItineraire, effaceItineraire, ferme, fermeParcours,
-  videLeParcours, videRecherche, formeParId, versPlan, cadrePlan, fit,
+  videLeParcours, videRecherche, formeParId,
 });

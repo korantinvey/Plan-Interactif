@@ -67,6 +67,9 @@ import { appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee } from
 import { ADMIN, retireAdmin } from "./mode-admin.mjs";
 import { PLACE_LIBELLES, libSel, brancheLibellePlace, placementLibelle } from "./libelle-place.mjs";
 import { SORTE_GEO, brancheEmplacements, appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
+import { brancheVue, emp, poseEmprise, vise, cadrePlan, figeTextes, appliqueVue, repeintLibelles,
+  rafraichitVue, poseVue, masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom,
+  versPlan } from "./vue.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -114,6 +117,8 @@ Object.assign(globalThis, {
   retireAdmin,
   brancheLibellePlace, placementLibelle,
   brancheEmplacements, appliqueAjouts, appliqueGeometries,
+  brancheVue, poseEmprise, cadrePlan, figeTextes, appliqueVue, repeintLibelles, rafraichitVue, poseVue,
+  masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom, versPlan,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -158,3 +163,9 @@ Object.defineProperties(globalThis, vivants({ libSel: () => libSel }, "choisitLi
    l'outil de l'exploitant le change (`reprise-emplacements.mjs`), hors de
    quoi il reste vide. */
 Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "modeGeometrie"));
+
+/* L'emprise du pavillon, que le montage du plan remplace (`poseEmprise`), et
+   la vue visée par un trajet en cours, que seul `glisseVers` pose : les gestes
+   et la fiche les lisent par accesseur. */
+Object.defineProperties(globalThis, vivants({ emp: () => emp }, "poseEmprise"));
+Object.defineProperties(globalThis, vivants({ vise: () => vise }, "glisseVers"));

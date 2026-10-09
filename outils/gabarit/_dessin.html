@@ -553,12 +553,7 @@ function peintCalque(cal){
   if (g) g.style.color = cal.couleur || "var(--accent)";
 }
 
-/* --- conversion écran → repère du plan --- */
-function versPlan(clientX, clientY){
-  const r = cadrePlan();
-  return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
-           +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
-}
+/* La conversion écran → repère du plan, `versPlan` : `modules/vue.mjs`. */
 
 function apercu(d){
   let el = $("apercu");

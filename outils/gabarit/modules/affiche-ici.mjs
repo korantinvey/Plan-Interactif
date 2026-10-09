@@ -20,6 +20,7 @@ import { qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { calquesDe, pointObjet, pointRepere } from "./itineraire.mjs";
 import { lieuNomme, pointLibre } from "./borne.mjs";
 import { ICI_LIBRE } from "./ici.mjs";
+import { versPlan } from "./vue.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée est
    un lecteur, avec sa porte : sa variable vit dans `_itineraire.html`. */
@@ -33,7 +34,6 @@ const ferme = () => soude.ferme();
 const fermeItineraire = () => soude.fermeItineraire();
 const fermeParcours = () => soude.fermeParcours();
 const formeParId = (id) => soude.formeParId(id);
-const versPlan = (x, y) => soude.versPlan(x, y);
 const largeur = (txt, police) => soude.largeur(txt, police);
 const racine = document.documentElement;
 
@@ -396,7 +396,6 @@ export function boutonCodeIci(){
  *
  * @param {{ visee: () => any, vise: (v: any) => void, bandeauVisee: Function,
  *   finVisee: Function, ferme: Function, fermeItineraire: Function,
- *   fermeParcours: Function, formeParId: Function, versPlan: Function,
- *   largeur: Function }} b
+ *   fermeParcours: Function, formeParId: Function, largeur: Function }} b
  */
 export function brancheAfficheIci(b){ soude = b; }
