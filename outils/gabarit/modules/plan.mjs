@@ -67,6 +67,9 @@ import { appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee } from
 import { ADMIN, retireAdmin } from "./mode-admin.mjs";
 import { PLACE_LIBELLES, libSel, brancheLibellePlace, placementLibelle } from "./libelle-place.mjs";
 import { SORTE_GEO, brancheEmplacements, appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
+import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
+  bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
+  brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -114,6 +117,9 @@ Object.assign(globalThis, {
   retireAdmin,
   brancheLibellePlace, placementLibelle,
   brancheEmplacements, appliqueAjouts, appliqueGeometries,
+  ITI, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
+  bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
+  brancheTiroirItineraire,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -158,3 +164,8 @@ Object.defineProperties(globalThis, vivants({ libSel: () => libSel }, "choisitLi
    l'outil de l'exploitant le change (`reprise-emplacements.mjs`), hors de
    quoi il reste vide. */
 Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "modeGeometrie"));
+
+/* La visée de l'itinéraire en cours, ou rien : la borne la lit encore par le
+   code soudé, qui la lui confie. Elle ne change que par sa porte
+   (`poseVisee`), par laquelle la borne l'arme pour elle. */
+Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee"));

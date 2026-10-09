@@ -45,6 +45,7 @@ import { branchePile, remplitPanneau } from "./pile.mjs";
 import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
   pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
   brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
+import { poseNappe, rafraichitApercu, brancheNappe } from "./nappe.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -79,6 +80,7 @@ Object.assign(globalThis, {
   lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
   pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
   brancheRepriseEmplacements,
+  poseNappe, rafraichitApercu, brancheNappe,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et

@@ -3,18 +3,15 @@
 
    La visite vit dans `modules/tutoriel.mjs`. Elle se branche ici, à la place
    que son code tenait : ce que le code soudé tient encore — les réglages, la
-   fiche, les tiroirs, le trajet demandé — lui est confié, l'état qui change
-   à chaque geste par un lecteur, lu au moment de la visite. La journée
-   calculée, elle, est un module (`journee.mjs`) : la visite l'importe.
+   fiche, les tiroirs — lui est confié, l'état qui change à chaque geste par
+   un lecteur, lu au moment de la visite. La journée calculée et le trajet
+   demandé, eux, sont des modules (`journee.mjs`, `tiroir-itineraire.mjs`) :
+   la visite les importe.
    ============================================================ */
 brancheTutoriel({
   conf, optionActive, montre, changePlan, centre,
-  ferme, fermeParcours, fermeItineraire, etroit: ETROIT,
+  ferme, fermeParcours, etroit: ETROIT,
   planAdmin: PLAN_ADMIN, reduit: REDUIT, svg,
-  route: () => ROUTE, attente: () => attente, iti: () => ITI, visee: () => visee,
-  /* La visée s'éteint comme l'ouverture de l'itinéraire l'éteint, sans passer
-     par « finVisee », qui rouvrirait le tiroir qu'on referme. */
-  eteintVisee: () => { visee = null; bandeauVisee(); },
   iciActif: () => ICI_ACTIF,
   dessinEnCours: () => PLACE_LIBELLES || enCours || formeSel || calqueActif,
 });

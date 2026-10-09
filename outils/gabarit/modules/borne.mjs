@@ -46,7 +46,8 @@ import { pointSaisi, candidats, pointRepere } from "./itineraire.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée et la
    vue sont des lecteurs, et la visée a sa porte : l'une et l'autre changent
-   sans cesse, et la variable de la visée vit dans `_itineraire.html`. */
+   sans cesse. La visée vit dans `tiroir-itineraire.mjs`, qui importe ce
+   module pour le départ de la borne : elle ne peut s'importer d'ici. */
 /** @type {Record<string, any>} */
 let soude = {};
 
