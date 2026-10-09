@@ -799,7 +799,7 @@ Fonctions :
 `sauvegardeCourante` 542 · `telechargeSauvegarde` 564 · `appliqueSauvegarde` 587
 `litSauvegarde` 621 · `brancheSauvegarde` 643
 
-### `modules/environs.mjs` — 783 l. → plan, plan-admin
+### `modules/environs.mjs` — 795 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -808,10 +808,10 @@ Fonctions :
 `brancheEnvirons` 60 · `calageEnCours` 68 · `confieCalageEnCours` 70 · `styleSobre` 143
 `forceCarte` 237 · `calagePose` 255 · `calageCourant` 267 · `fondCourant` 270 · `recul` 275
 `adresseTuile` 280 · `tuilesDeLaVue` 290 · `chargeMapLibre` 355 · `vueGL` 386
-`styleDuFond` 407 · `guetteLaCarte` 435 · `poseCarteGL` 446 · `diagnostiqueGL` 532
-`relanceCarteGL` 552 · `videCarteGL` 564 · `dessineFondCarte` 589 · `cleMasqueCarte` 694
-`masqueCarte` 695 · `formesMasquantes` 704 · `contourDuHall` 726 · `cheminDuHall` 733
-`poseMasqueCarte` 751 · `ditCarte` 766 · `refaitFondCarte` 776
+`styleDuFond` 407 · `guetteLaCarte` 435 · `poseCarteGL` 446 · `diagnostiqueGL` 536
+`relanceCarteGL` 556 · `videCarteGL` 568 · `dessineFondCarte` 593 · `cleMasqueCarte` 706
+`masqueCarte` 707 · `formesMasquantes` 716 · `contourDuHall` 738 · `cheminDuHall` 745
+`poseMasqueCarte` 763 · `ditCarte` 778 · `refaitFondCarte` 788
 
 ### `modules/essai-rappel.mjs` — 69 l. → plan-admin
 
