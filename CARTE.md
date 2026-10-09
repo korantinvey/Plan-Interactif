@@ -80,17 +80,9 @@ Fonctions :
 `ajouteBatiments` 395 · `boutonRecale` 479 · `pictoRecale` 488 · `calageRelu` 505
 `rouvreCalage` 531 · `mentionOsm` 555
 
-### `_borne.html` — 371 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_borne.html` — 18 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.1 · 11 quinquies. La borne interactive — un plan qui sait où il est
-
-Fonctions :
-
-`pointBorne` 62 · `borneRetenue` 70 · `retientBorne` 76 · `oublieBorne` 79 · `lieuBorne` 98
-`lieuNomme` 117 · `pointLibre` 122 · `poseDepartImpose` 135 · `poseLaBorne` 146
-`remetLeDepart` 165 · `poseBorneIci` 179 · `armeLaPose` 188 · `montreBandeauBorne` 204
-`ecritDepartBorne` 218 · `rayonBorne` 232 · `dessineBorne` 237 · `rafraichitBorne` 253
-`rempliBorne` 258 · `relanceRepos` 287 · `reposeLaBorne` 294 · `demarreBorne` 330
+- l.1 · 11 quinquies. La borne interactive — le branchement
 
 ### `_branche-mesure.html` — 10 l.
 
@@ -261,19 +253,19 @@ Fonctions :
 `ajoutPointerUp` 798 · `geometriePointerDown` 818 · `accrocheGeo` 849
 `geometriePointerMove` 851 · `geometriePointerUp` 902
 
-### `_gestes.html` — 951 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_gestes.html` — 952 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.4 · 8. Interactions du plan
-- l.451 · Ce que les tiroirs lisent d'un geste
-- l.497 · Le tiroir de la liste — écrans étroits
-- l.723 · Les tiroirs menés par la hauteur — écrans étroits
+- l.452 · Ce que les tiroirs lisent d'un geste
+- l.498 · Le tiroir de la liste — écrans étroits
+- l.724 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
 `milieu` 24 · `commencePince` 30 · `suitPince` 44 · `plieLesBandes` 97 · `saisitPlan` 111
-`cibleElargie` 197 · `planifieFiltre` 407 · `traceurDeGeste` 475 · `cranVoisin` 494
-`retraitBas` 520 · `mesureTiroir` 534 · `montreTiroir` 537 · `hisseTiroir` 541
-`tiroirCrante` 750
+`cibleElargie` 197 · `planifieFiltre` 408 · `traceurDeGeste` 476 · `cranVoisin` 495
+`retraitBas` 521 · `mesureTiroir` 535 · `montreTiroir` 538 · `hisseTiroir` 542
+`tiroirCrante` 751
 
 ### `_head.html` — 628 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -324,18 +316,9 @@ Fonctions :
 
 `#reessaie`
 
-### `_ici.html` — 573 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_ici.html` — 20 l. → plan-admin.html
 
-- l.1 · 11 septies. « Vous êtes ici » — le code affiché dans le hall
-
-Fonctions :
-
-`prefixePlan` 83 · `coteIci` 95 · `nomCodeIci` 111 · `codeIci` 130 · `litCodeIci` 145
-`lienIci` 165 · `poseIci` 191 · `retireIci` 218 · `oublieIciDeLAdresse` 248
-`montreBandeauIci` 264 · `demarreIci` 298 · `pointTouche` 324 · `codeIciAuPoint` 336
-`armeCodeIci` 342 · `afficheIci` 364 · `ligneAffiche` 404 · `nomFichierIci` 413
-`ouvreCodeIci` 428 · `boutonsCodeIci` 480 · `telechargeAfficheIci` 505
-`imprimeAfficheIci` 523 · `boutonCodeIci` 552
+- l.1 · 11 septies. « Vous êtes ici » — le branchement
 
 ### `_index.html` — 45 l. → index.html
 
@@ -576,17 +559,9 @@ Fonctions :
 
 ### `_styles-plan.css` — 1600 l. → plan-admin.html, plan-smcl.html, plan.html
 
-### `_suggestion.html` — 685 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_suggestion.html` — 21 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
-
-Fonctions :
-
-`reglageSugg` 57 · `seuilSugg` 59 · `presentationsSugg` 83 · `presenteSugg` 89
-`critereSugg` 94 · `indexSugg` 106 · `valeursSugg` 131 · `suggestionCourante` 150
-`exposantPropose` 186 · `nomValeurSugg` 204 · `phraseSuggestion` 225 · `carteSuggestion` 253
-`poseSuggestion` 302 · `fenetreSuggestion` 316 · `relevePalmares` 356 · `etiquetteSugg` 376
-`voletSuggestion` 386
+- l.1 · 15. La suggestion — le branchement
 
 ### `_sw.js` — 562 l.
 
@@ -660,6 +635,20 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
+### `modules/affiche-ici.mjs` — 402 l. → plan-admin
+
+- l.1 · « Vous êtes ici » — l'affiche à coller, côté exploitant
+
+Fonctions :
+
+`visee` 28 · `vise` 29 · `bandeauVisee` 30 · `finVisee` 31 · `ferme` 32
+`fermeItineraire` 33 · `fermeParcours` 34 · `formeParId` 35 · `versPlan` 36 · `largeur` 37
+`prefixePlan` 58 · `coteIci` 70 · `nomCodeIci` 86 · `codeIci` 105 · `lienIci` 123
+`pointTouche` 150 · `codeIciAuPoint` 162 · `armeCodeIci` 168 · `afficheIci` 190
+`ligneAffiche` 230 · `nomFichierIci` 239 · `ouvreCodeIci` 254 · `boutonsCodeIci` 306
+`telechargeAfficheIci` 331 · `imprimeAfficheIci` 349 · `boutonCodeIci` 378
+`brancheAfficheIci` 402
+
 ### `modules/appel-fonction.mjs` — 61 l. → console
 
 - l.1 · L'appel des fonctions du projet, depuis la console
@@ -683,6 +672,22 @@ Fonctions :
 Fonctions :
 
 `brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
+
+### `modules/borne.mjs` — 430 l. → plan, plan-admin
+
+- l.1 · La borne interactive — un plan qui sait où il est
+
+Fonctions :
+
+`visee` 53 · `vise` 54 · `vue` 55 · `bandeauVisee` 56 · `changePlan` 57
+`fermeItineraire` 58 · `effaceItineraire` 59 · `ferme` 60 · `fermeParcours` 61
+`videLeParcours` 62 · `videRecherche` 63 · `formeParId` 64 · `versPlan` 65 · `cadrePlan` 66
+`fit` 67 · `pointBorne` 97 · `poseLieuBorne` 102 · `borneRetenue` 110 · `retientBorne` 116
+`oublieBorne` 119 · `lieuBorne` 138 · `lieuNomme` 157 · `pointLibre` 162
+`poseDepartImpose` 175 · `poseLaBorne` 186 · `remetLeDepart` 205 · `poseBorneIci` 219
+`armeLaPose` 228 · `montreBandeauBorne` 244 · `ecritDepartBorne` 258 · `rayonBorne` 268
+`dessineBorne` 273 · `rafraichitBorne` 289 · `rempliBorne` 294 · `relanceRepos` 323
+`reposeLaBorne` 330 · `demarreBorne` 366 · `brancheBorne` 415
 
 ### `modules/calage-carte.mjs` — 828 l. → plan-admin
 
@@ -855,6 +860,15 @@ Fonctions :
 
 `#fuseaux`
 
+### `modules/ici.mjs` — 253 l. → plan, plan-admin
+
+- l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
+
+Fonctions :
+
+`relance` 61 · `litCodeIci` 92 · `poseIci` 115 · `retireIci` 142 · `oublieIciDeLAdresse` 172
+`montreBandeauIci` 188 · `demarreIci` 222 · `brancheIci` 244
+
 ### `modules/icone-app.mjs` — 126 l. → plan-admin
 
 - l.1 · L'icône de l'application, fabriquée depuis un logo déposé
@@ -991,11 +1005,11 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 43 l. → plan-admin
+### `modules/plan-admin.mjs` — 47 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 121 l. → plan, plan-admin
+### `modules/plan.mjs` — 135 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1066,6 +1080,17 @@ Fonctions :
 
 `brancheReglageSponsor` 32 · `blocSponsor` 75
 
+### `modules/reglage-suggestion.mjs` — 428 l. → plan-admin
+
+- l.1 · La suggestion — le volet de l'exploitant
+
+Fonctions :
+
+`conf` 23 · `clesCriteres` 24 · `valeursCritere` 25 · `libelleCritere` 26 · `champZone` 27
+`enregistreConf` 28 · `glisseFenetre` 29 · `rafraichitParcours` 30 · `indexSugg` 47
+`valeursSugg` 72 · `relevePalmares` 90 · `etiquetteSugg` 110 · `voletSuggestion` 120
+`brancheReglageSuggestion` 428
+
 ### `modules/salon.mjs` — 43 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
@@ -1092,6 +1117,19 @@ Fonctions :
 `cleSponsor` 185 · `sponsorEnCache` 188 · `retientSponsor` 203 · `ouvreSponsor` 228
 `suitSponsor` 321 · `resteSponsor` 346 · `fermeSponsor` 352 · `accueilleSponsor` 368
 `brancheSponsor` 402
+
+### `modules/suggestion.mjs` — 331 l. → plan, plan-admin
+
+- l.1 · La suggestion — un exposant de plus, pour compléter la visite
+
+Fonctions :
+
+`conf` 41 · `clesCriteres` 42 · `valeursCritere` 43 · `libelleCritere` 44
+`suggestionOfferte` 45 · `select` 46 · `remplitParcours` 47 · `brancheParcours` 48
+`reglageSugg` 77 · `seuilSugg` 79 · `presentationsSugg` 103 · `presenteSugg` 109
+`critereSugg` 114 · `suggestionCourante` 131 · `exposantPropose` 167 · `nomValeurSugg` 185
+`phraseSuggestion` 206 · `carteSuggestion` 234 · `poseSuggestion` 283
+`fenetreSuggestion` 297 · `brancheSuggestion` 331
 
 ### `modules/sur.mjs` — 190 l. → plan, plan-admin
 

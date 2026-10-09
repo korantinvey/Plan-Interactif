@@ -25,6 +25,8 @@ import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, ra
 import { essaieRappelReel } from "./essai-rappel.mjs";
 import { caseInstallation, brancheReglageInstallation } from "./reglage-installation.mjs";
 import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
+import { codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci } from "./affiche-ici.mjs";
+import { NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -40,4 +42,6 @@ Object.assign(globalThis, {
   essaieRappelReel,
   caseInstallation, brancheReglageInstallation,
   ecranAcces, brancheAcces,
+  codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci,
+  NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion,
 });

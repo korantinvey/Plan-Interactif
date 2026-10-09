@@ -650,7 +650,7 @@ function visePoint(pt){
      (voir « _ici.html ») — et c'est par ici que passe le clavier, là où le
      doigt est tranché plus tôt, dans la chaîne des appuis sur le plan. */
   if (visee === "borne") return poseLaBorne(pt);
-  if (visee === "ici") return ouvreCodeIci(pt);
+  if (visee === "ici" && typeof ouvreCodeIci === "function") return ouvreCodeIci(pt);
   const r = visee;
   ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
