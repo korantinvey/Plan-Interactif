@@ -7,7 +7,7 @@
    Sortie de `_admin1.html`, avec les règles qui ne font que la relire et que
    le plan public lit aussi : les options prises par le salon, la version
    anglaise, ce que la recherche remonte ; et son rangement sur le poste
-   (`enregistreConf`), sorti de `_ordre-fiche.html`, que l'administration
+   (`enregistreConf`), sorti du réglage de la fiche, que l'administration
    prolonge d'un envoi en base. Le code soudé lit CONF et sa clé de
    rangement par accesseur, et ne les remplace que par `ouvreConf` ; il se
    branche par `brancheConfiguration`, à la place que ce code tenait, pour

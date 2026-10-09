@@ -77,8 +77,10 @@ const racine = document.documentElement;
 export let geoSel = null;       // l'emplacement dont on reprend la forme
 /** @type {any} */
 let glisseGeo = null;    // le geste en cours
+/** Une forme d'emplacement est-elle tenue ? L'envoi au repos attend qu'on la lâche. */
+export const geoGlisse = () => Boolean(glisseGeo);
 
-/** Le geste abandonné : le pointeur annulé ne relâchera rien (`_gestes.html`). */
+/** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheGeo(){
   glisseGeo = null;
 }

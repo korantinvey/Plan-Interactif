@@ -9,8 +9,9 @@
    qui permet à chacun de l'importer, y compris ceux que les libellés
    importent à leur tour.
 
-   Le changement de langue vide les mesures gardées (`_gestes.html`) : la
-   table lui est confiée telle quelle, et n'est jamais remplacée.
+   Le changement de langue vide les mesures gardées (`gestes.mjs`
+   `brancheLangue`) : il importe la table telle quelle, qui n'est jamais
+   remplacée.
    ============================================================ */
 import { esc } from "./texte.mjs";
 

@@ -51,7 +51,7 @@ export function montre(type, cle){
    N'y figure que le corps ; le numéro de stand et la pastille des nouveaux
    venus tiennent dans l'en-tête, les conférences ont leur propre volet, et
    rien de tout cela ne se déplace — le volet qui propose de le remanier,
-   « voletOrdre » de « _admin1.html », le dit à l'exploitant. */
+   « voletOrdre » de « reglage-fiche.mjs », le dit à l'exploitant. */
 const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];

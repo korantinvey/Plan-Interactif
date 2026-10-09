@@ -451,15 +451,6 @@ function voletPlan(hote){
 }
 
 /**
- * Ce que les visiteurs voient sur le plan : les commandes, les secteurs, les
- * fenêtres qui s'ouvrent d'elles-mêmes.
- *
- * Réservé au profil administrateur. Ces cases changent la façon dont le plan
- * se comporte, d'un salon à l'autre, bien plus que ce qu'il montre d'un
- * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
- * que de quoi retirer une commande qu'on lui a vendue.
- */
-/**
  * Les stands partagés, dans leur onglet à eux.
  *
  * Leurs deux cases vivaient au milieu de « Admin », sous condition : sur un

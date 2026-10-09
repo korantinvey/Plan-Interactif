@@ -209,7 +209,7 @@ export function remplitPanneau(){
     };
 
     /* couleur — peinte à chaque événement, retenue une fois le glissement
-       fini : voir « La rafale du sélecteur de couleur » dans `_admin1.html`. */
+       fini : voir « La rafale du sélecteur de couleur » dans `nuancier.mjs`. */
     const cc = d.querySelector(".cc");
     cc.value = (x.t === "dessin" ? x.ref.couleur : c.couleur) || defautCouleur(x);
     suitNuancier(cc,

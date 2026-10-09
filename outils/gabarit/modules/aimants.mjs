@@ -12,9 +12,10 @@
    l'embarque, `plan.mjs` jamais.
 
    L'outil de dessin lui-même — la forme choisie, le calque actif, l'image
-   qu'on s'apprête à poser, l'historique, l'enregistrement — reste dans
-   `_dessin.html` et `_edition.html`, encore soudés. `_aimants.html` le
-   confie par `brancheAimants`, à la place que ce code y tenait ; ce qui
+   qu'on s'apprête à poser, l'historique, l'enregistrement — vit dans ses
+   propres modules (`outil-dessin.mjs`, `edition.mjs`, `dessin.mjs`,
+   `calques-dessin.mjs`, `forme-choisie.mjs`). `_aimants.html` le lui
+   confie encore par `brancheAimants`, à la place que ce code y tenait ; ce qui
    change d'un geste à l'autre se confie par un lecteur, jamais par sa
    valeur du moment.
    ============================================================ */

@@ -54,6 +54,15 @@ import { relance } from "./tiroir-itineraire.mjs";
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
 
+/**
+ * Ce que les visiteurs voient sur le plan : les commandes, les secteurs, les
+ * fenêtres qui s'ouvrent d'elles-mêmes.
+ *
+ * Réservé au profil administrateur. Ces cases changent la façon dont le plan
+ * se comporte, d'un salon à l'autre, bien plus que ce qu'il montre d'un
+ * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
+ * que de quoi retirer une commande qu'on lui a vendue.
+ */
 export function voletAdmin(hote){
   const p = document.createElement("p");
   p.textContent = "Ce que les visiteurs voient sur le plan. " +
@@ -198,9 +207,9 @@ export function voletAdmin(hote){
      celles-ci, chacun sous son intertitre. La barre du haut sur un téléphone
      d'abord — c'est la mise en page de l'écran, et elle commande ce que les
      réglages du dessous ont pour cadre —, puis ce que porte l'application
-     installée (`_application.html`), du même ordre que l'invitation à
+     installée (`reglage-application.mjs`), du même ordre que l'invitation à
      l'installer cochée plus haut, et enfin le générique du démarrage
-     (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+     (`reglage-sponsor.mjs`), le plus gros de l'onglet, qui le ferme. */
   blocBarre(hote);
   blocApplication(hote);
   blocSponsor(hote);

@@ -369,6 +369,8 @@ function rafraichitCarte(){
 
 let CALAGE_MODE = "";
 let _glisseCalage = null;
+/** La carte est-elle tenue sous la main ? L'envoi au repos attend qu'on la lâche. */
+export const carteGlissee = () => Boolean(_glisseCalage);
 
 /** Arme un mode, et le dit au document : le curseur en dépend, et c'est la
  *  seule chose qui annonce que le plan ne répondra pas comme d'habitude. */

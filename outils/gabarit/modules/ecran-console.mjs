@@ -261,11 +261,9 @@ export function brancheConsole() {
     b.disabled = true;
     b.classList.add("occupe");
     try {
-      const avant = PLANS;
       poseEvenements({ PLANS: {} });
       await charge();
       signale("Données rechargées.");
-      void avant;
     } catch (e) {
       signale(e.message, true);
     } finally {

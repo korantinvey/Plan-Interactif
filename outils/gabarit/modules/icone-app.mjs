@@ -3,7 +3,7 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Il ne sait rien du salon — un fichier en entrée, deux
-   images en sortie —, `_application.html` les enregistre.
+   images en sortie —, `reglage-application.mjs` les enregistre.
    ============================================================ */
 import { litImage } from "./depot-image.mjs";
 

@@ -6,6 +6,9 @@ module.exports = {
   "≥ {distance}": "≥ {distance}",
   "Touchez le plan à l'endroit où cette borne est posée.":
     "Touch the map where this kiosk stands.",
+  // la même visée, quand l'exploitant place un code « Vous êtes ici »
+  "Touchez le plan à l'endroit où ce code sera affiché.":
+    "Tap the map where this code will be displayed.",
   "Choisissez votre destination : le trajet part de cette borne.":
     "Choose where you are going: the route starts from this kiosk.",
   "Aucun stand, zone ni repère ne porte ce nom.": "No stand, area or landmark has this name.",

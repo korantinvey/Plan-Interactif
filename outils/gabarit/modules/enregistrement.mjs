@@ -27,7 +27,9 @@
    `apparence.mjs`, `ordre-trace.mjs`), comme les calques dessinés et leurs
    deux relevés (`calques-dessin.mjs`) et l'annonce dans la liste
    (`demarrage.mjs`) ; seul l'enregistrement des dessins, que l'outil de
-   dessin tient et qui importe ce module-ci, se confie. Le rangement des
+   dessin tient et qui importe ce module-ci, se confie — comme ce qui dit
+   qu'un geste est en cours, que les gestes de l'exploitant lui donnent
+   (`gestes-admin.mjs`, `confieGesteEnCours`). Le rangement des
    réglages, lui, reçoit d'ici son envoi en base (`confiePublication`).
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -69,6 +71,18 @@ export const REPOS = 1200;
 /* Après un échec — réseau coupé, service en panne — on retente de loin en
    loin plutôt que d'insister : le travail est sur le poste, il attend. */
 const REPOS_ECHEC = 20000;
+
+/* Le repos compte depuis la dernière modification, pas depuis la fin du
+   geste : un déplacement repris dans la seconde, puis tenu, voyait l'envoi
+   du précédent partir sous la main — avec la forme à mi-chemin. Un geste en
+   cours fait donc attendre l'envoi, qu'on regarde de près pour repartir dès
+   qu'il est lâché, puis laisser le repos s'écouler. */
+const GUET = 150;
+let gesteEnCours = () => false;
+/** Ce qui dit qu'un geste est en cours, que les gestes de l'exploitant
+ *  (`gestes-admin.mjs`) confient en se branchant : ils connaissent tous les
+ *  outils, dont plusieurs importent ce module. */
+export function confieGesteEnCours(/** @type {() => boolean} */ f){ gesteEnCours = f; }
 
 /* Le relais garde le plan public dix minutes, et sert encore l'ancienne copie
    le temps de refaire la nouvelle : la base avait la configuration, les
@@ -235,21 +249,31 @@ export function rattrapeRetard(){
   if (enRetard()) programmeEnvoi(REPOS); else majAttente();
 }
 
-/** L'envoi programmé, quand son temps de repos est écoulé. */
-function envoie(){
+/** L'envoi programmé, quand son temps de repos est écoulé. `force` passe outre
+ *  un geste en cours : la page qui part n'attendra pas qu'on le lâche. */
+function envoie(/** @type {boolean} */ force){
   if (minuteur) clearTimeout(minuteur);
   minuteur = null;
   if (!autoDispo()) return;
   // un envoi est déjà en cours : il reprendra la main en finissant
   if (publication){ rejoue = true; return; }
+  if (force !== true && gesteEnCours()){ minuteur = setTimeout(apresGeste, GUET); return; }
   if (enRetard()) pousseConfiguration(true);
   else majAttente();
+}
+
+/** Le geste qui retenait l'envoi est-il lâché ? Alors le repos recommence. */
+function apresGeste(){
+  minuteur = null;
+  if (gesteEnCours()) minuteur = setTimeout(apresGeste, GUET);
+  // l'échec qu'on retentait reste dit par le bouton pendant ce repos
+  else programmeEnvoi(REPOS, etatEnvoi);
 }
 
 /* Un onglet qu'on ferme ne laisse pas le temps de repos s'écouler : ce qui
    attendait part tout de suite. Le navigateur n'en garantit pas l'arrivée —
    d'où la copie sur le poste, et le rattrapage au chargement suivant. */
-const presse = () => { if (minuteur) envoie(); };
+const presse = () => { if (minuteur) envoie(true); };
 
 /**
  * Le branchement, appelé par le code soudé à la place que ce code y tenait
@@ -358,7 +382,15 @@ export async function pousseConfiguration(auto){
   ditEtat("envoi");
 
   try {
-    const parKlipso = await identifiants(acces);
+    /* Ce qui part est relevé ici, avant la première attente du réseau, comme
+       `cible` : un geste commencé pendant l'envoi changerait sinon ce qu'il
+       écrit, et la base recevrait une forme ou un libellé à mi-chemin. Les
+       formes se copient en surface — un geste remplace leurs points, il ne
+       les retouche pas en place ; les images restent partagées. */
+    const releve = Object.fromEntries((DATA.plans || []).map(p => [p.id, {
+      marque: ATTENTE[p.id],
+      liste: (DESSINS[p.id] || []).map(c => ({ ...c, formes: (c.formes || []).map(f => ({ ...f })) })),
+    }]));
     const reglages = reglagesSeuls();
     /* Ce que ce poste a changé depuis son chargement, et ce qu'il a retiré.
        Renvoyer tout le bloc effaçait en silence ce qu'un autre administrateur
@@ -378,6 +410,7 @@ export async function pousseConfiguration(auto){
     const retirees = Object.keys(REGLAGES_CHARGES).filter(k => !(k in reglages));
     const posees = Object.fromEntries(
       Object.entries(changees).map(([k, texte]) => [k, JSON.parse(texte)]));
+    const parKlipso = await identifiants(acces);
 
     /* Les blocs que la base tient à l'instant, pour tous les pavillons d'un
        coup : un envoi par couleur changée ne doit pas coûter une lecture par
@@ -425,11 +458,10 @@ export async function pousseConfiguration(auto){
       /* Les dessins d'un pavillon qui n'a pas bougé sont déjà en base : les
          réécrire à chaque couleur changée ferait passer des mégaoctets pour
          rien. Le clic, lui, les réécrit tous — c'est ce qu'on lui demande. */
-      if (!auto || enAttente(p.id)){
-        /* La marque du pavillon, telle qu'elle est en commençant : on ne
-           l'effacera que si le geste suivant ne l'a pas relevée entre-temps. */
-        const marque = ATTENTE[p.id];
-        const liste = DESSINS[p.id] || [];
+      /* La marque du pavillon, telle qu'elle était en commençant : on ne
+         l'effacera que si le geste suivant ne l'a pas relevée entre-temps. */
+      const { marque, liste } = releve[p.id];
+      if (!auto || marque){
         if (liste.length){
           await base(acces, "calque_dessin?on_conflict=plan_id,cle", {
             method: "POST",

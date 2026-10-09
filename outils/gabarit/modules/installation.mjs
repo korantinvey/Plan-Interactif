@@ -168,7 +168,7 @@ const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" 
  * Le manifeste porte déjà les deux : la page y nomme le salon, le relais va
  * chercher son nom, ses icônes et l'écrit — « Plan SMCL by Event2Map », ou ce
  * que le salon a choisi (`outils/pwa.js`, `src/index.mjs`,
- * `_application.html`). iOS, lui, ne lit pas le manifeste pour l'écran
+ * `reglage-application.mjs`). iOS, lui, ne lit pas le manifeste pour l'écran
  * d'accueil : il prend `apple-mobile-web-app-title` et `apple-touch-icon`, des
  * balises écrites avec la page, donc avant que le salon soit connu — l'icône
  * se posait sous « Plan », et sous la marque du produit, quel que soit le
