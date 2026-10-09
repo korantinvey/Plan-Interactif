@@ -35,7 +35,7 @@ Ce qui reste ouvert est en tête ; le reste garde la trace de ce qu'on a trouvé
     (`modules/demarrage.mjs` `recadreListePosee`).
 11. **Ordre des calques après un renommage** par le bouton « Valider » : il y
     ramène, comme la touche Entrée (`modules/outil-dessin.mjs` `demandeNom`) ;
-    pour « Annuler », voir plus haut.
+    « Annuler » y ramène aussi.
 13. **Consigne de visée du code « Vous êtes ici »** traduite avec le tiroir qui
     l'affiche (`outils/anglais/tiroir-itineraire.js`).
 15. **`initialesDe` recopiée** — une seule copie dans `modules/session.mjs`.
@@ -49,7 +49,6 @@ Ce qui reste ouvert est en tête ; le reste garde la trace de ce qu'on a trouvé
    tête, d'un bouton ou d'elle-même quand la forme choisie ou déplacée passe
    dessous (`modules/edition.mjs` `replieOutils`) ; la déplacer ne ferait que
    couvrir le panneau des calques.
-11. **« Annuler » un renommage** ramène aussi à l'ordre des calques.
 17. **Commentaires périmés** — renvois aux fichiers soudés devenus modules,
     dans les sources des pages. Restent, hors des pages : `supabase/functions/`
     (`plan-public/index.ts`, `mesure/index.ts`, `sync-evenement/index.ts`,
