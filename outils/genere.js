@@ -214,8 +214,11 @@ function page(contenu, options) {
        est resté bordé de gris. C'est ici que cela se décide. */
     '<meta name="viewport" content="width=device-width, initial-scale=1' +
       (pleinEcran ? ", viewport-fit=cover" : "") + '">\n' +
-    langue(contenu, salon) +
+    /* L'amorce passe devant la langue : celle-ci peut être un fichier à part,
+       que le navigateur attend avant de lire la suite — les demandes du plan
+       partiraient sinon après lui. Elle n'a besoin de rien qu'il pose. */
     (tete || "") +
+    langue(contenu, salon) +
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
@@ -351,14 +354,22 @@ const styleDuPlan = tpl.match(STYLE_PLAN);
 if (!styleDuPlan) throw new Error("feuille du plan introuvable dans le gabarit");
 const FEUILLE_PLAN = epureStyle(styleDuPlan[1]);
 const VERSIONS = "versions/";
-const NOM_FEUILLE = VERSIONS + "plan." +
-  crypto.createHash("sha256").update(FEUILLE_PLAN).digest("hex").slice(0, 10) + ".css";
-fs.mkdirSync(W + VERSIONS, { recursive: true });
-// les feuilles d'avant ne servent plus à aucune page : elles ne s'empilent pas
-for (const f of fs.readdirSync(W + VERSIONS)) {
-  if (VERSIONS + f !== NOM_FEUILLE) fs.unlinkSync(W + VERSIONS + f);
+// ce qu'une construction d'avant y a laissé ne sert plus à aucune page
+fs.rmSync(W + VERSIONS, { recursive: true, force: true });
+fs.mkdirSync(W + VERSIONS);
+/** Ce qui est posé sous `versions/` par cette construction. */
+const VERSIONNES = [];
+/** Pose un fichier sous un nom qui porte son empreinte, et rend ce nom. */
+function poseVersion(radical, extension, contenu) {
+  const nom = VERSIONS + radical + "." +
+    crypto.createHash("sha256").update(contenu).digest("hex").slice(0, 10) + extension;
+  if (!VERSIONNES.includes(nom)) {
+    fs.writeFileSync(W + nom, contenu);
+    VERSIONNES.push(nom);
+  }
+  return nom;
 }
-fs.writeFileSync(W + NOM_FEUILLE, FEUILLE_PLAN);
+const NOM_FEUILLE = poseVersion("plan", ".css", FEUILLE_PLAN);
 const lieFeuille = (t) =>
   t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
 /* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
@@ -366,20 +377,43 @@ const lieFeuille = (t) =>
 fs.writeFileSync(W + "_headers",
   "/" + VERSIONS + "*\n  Cache-Control: public, max-age=31536000, immutable\n");
 
+/* Les scripts du plan, servis à part de même.
+
+   Le script des modules pèse les quatre cinquièmes de la page, et le moteur de
+   langue avec son dictionnaire presque tout le reste : la moindre retouche les
+   faisait retélécharger entiers. Ils sortent après la construction de la page,
+   et non avant — le dictionnaire se choisit d'après les modules que la page
+   embarque, qu'il lit dans leur script en ligne. Chacun reste à sa place et
+   garde son rang : un script à part, sans `defer` ni `async`, s'exécute là où
+   il est posé, comme avant. Le script des modules garde ses réglages
+   (`data-api`, `data-slug`) : `modules/salon.mjs` les lit sur
+   `document.currentScript`, qui le désigne encore. */
+const MODULES_EN_LIGNE = /<script (data-modules="(plan|plan-admin)"[^>]*)>([\s\S]*?)<\/script>/;
+const LANGUE_EN_LIGNE = /<script>(\nwindow\.traduit = String;[\s\S]*?)<\/script>/;
+function sortScripts(html) {
+  const m = html.match(MODULES_EN_LIGNE), l = html.match(LANGUE_EN_LIGNE);
+  if (!m || !l) throw new Error("script des modules ou de la langue introuvable");
+  const modulesJs = poseVersion(m[2], ".js", m[3]);
+  const langueJs = poseVersion("langue", ".js", l[1]);
+  return html
+    .replace(MODULES_EN_LIGNE, () => '<script ' + m[1] + ' src="/' + modulesJs + '"></script>')
+    .replace(LANGUE_EN_LIGNE, () => '<script src="/' + langueJs + '"></script>');
+}
+
 /* --- page publique : le mode administration n'est jamais activé --- */
-fs.writeFileSync(W + "plan.html",
+fs.writeFileSync(W + "plan.html", sortScripts(
   page(lieFeuille(connecte(tplPublic)).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
        { tete: PRECHARGE, application: true, pleinEcran: true,
-         salon: SLUG_DEFAUT }));
+         salon: SLUG_DEFAUT })));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
    n'en a que faire, elle ne part qu'avec l'administration. */
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
-fs.writeFileSync(W + "plan-admin.html",
+fs.writeFileSync(W + "plan-admin.html", sortScripts(
   page(lieFeuille(connecte(tplAdmin)).replace("/*__PORTE_ADMIN__*/", auth)
                     .replace("/*__LIEUX__*/null", () => LIEUX),
-       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }));
+       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT })));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
@@ -466,7 +500,7 @@ fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
 const FABRIQUEES = [
   "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
-  "config.js", "console.css", NOM_FEUILLE, "_headers", "manifeste.webmanifest",
+  "config.js", "console.css", ...VERSIONNES, "_headers", "manifeste.webmanifest",
   "icone.svg", "icone-onglet.svg",
   "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
 ];
@@ -498,11 +532,14 @@ fs.writeFileSync(W + "sw.js",
 
 for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
   const s = fs.readFileSync(W + f, "utf8");
+  // les scripts qu'elle charge à part comptent pour ce qu'elle porte
+  const avecScripts = s + [...s.matchAll(/<script [^>]*src="\/(versions\/[^"]+)"/g)]
+    .map((m) => fs.readFileSync(W + m[1], "utf8")).join("\n");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
     // c'est la présence du module d'accès qui compte, pas une simple mention :
     // le chargeur en cite le nom pour rouvrir l'écran sur session expirée
-    "· admin " + (s.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"),
+    "· admin " + (avecScripts.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"),
     // une seule page doit s'installer : le relire ici évite de le découvrir
     // sur un téléphone, un mois plus tard
     (s.indexOf('rel="manifest"') > 0 ? "· application" : ""));

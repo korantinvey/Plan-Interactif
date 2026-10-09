@@ -73,6 +73,10 @@ function scriptsDe(html){
   const re = /<script([^>]*)>([\s\S]*?)<\/script>/g;
   let m;
   while ((m = re.exec(html))){
+    /* Un script que la page charge sous un nom à empreinte est son propre
+       code, sorti de la page pour se garder en cache : il se juge avec elle. */
+    const aPart = /\bsrc="\/(versions\/[^"]+\.js)"/.exec(m[1] || "");
+    if (aPart){ l.push(fs.readFileSync(path.join(WEB, aPart[1]), "utf8")); continue; }
     if (aIgnorer(m[1] || "") || !m[2].trim()) continue;
     l.push(m[2]);
   }
