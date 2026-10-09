@@ -52,6 +52,18 @@ d'autre : `outils/modules.js` relit cette liste, et la construction, la
 relecture ESLint et les types en tirent ce que la page trouve sans le déclarer
 — les types avec la signature réelle de chaque nom, par `typeof import(…)`.
 
+**Tout développement futur suit cette logique.** Le code neuf naît dans un
+module, jamais dans un `_*.html` : une fonction ajoutée au code soudé est une
+fonction de plus à sortir un jour. Une fonctionnalité qui touche un domaine
+encore soudé y prend ce qu'il lui faut par une fonction de branchement, ou
+l'occasion sert à sortir d'abord ce domaine. `outils/soude.js` (`npm run
+soude`, chaîné dans `npm run verifie` et la CI) tient ce sens : les fonctions
+soudées d'aujourd'hui sont au stock `outils/soude-acceptes.json`, un nom neuf
+fait échouer — sauf `brancheXxx`, qui naît justement d'une sortie —, et le
+stock baisse de lui-même à chaque sortie, à valider avec elle. Retoucher une
+fonction soudée existante reste permis ; une exception vraiment nécessaire
+s'inscrit à la main au stock, visible dans le diff.
+
 Les gestes qui vont avec :
 
 - **Sortir du code vers un module** : le déplacer avec ses commentaires,
@@ -223,6 +235,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Le code des pages se relit **tel que la page l'assemble**, jamais module par module (l'espace de noms est unique), et chaque remarque revient au module et à sa ligne ; un nom inutilisé ou inconnu ne compte que s'il l'est dans toutes les pages qui portent le module |
 | `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`. Un **cliquet** dont le stock est **vide** (`outils/types-acceptes.json`) : toute remarque échoue. On la corrige, ou l'on précise le type par `@type` là où le code le sait mieux que TypeScript ; `$` et les recherches par sélecteur rendent un élément sans type précis, à préciser ainsi |
 | `outils/gabarit/modules/` | les modules sortis du code soudé, réunis par esbuild — points d'entrée `plan.mjs`, `plan-admin.mjs`, `console.mjs` et `rapport.mjs` ; assemblage, liste exposée et provenance de chaque nom dans `outils/modules.js` |
+| `outils/soude.js` | le cliquet du code soudé — aucune fonction neuve dans un `_*.html` hors `brancheXxx` ; stock `outils/soude-acceptes.json`, qui ne fait que baisser. Chaîné dans `npm run verifie` ; seul, `npm run soude` |
 | `outils/appels.js` | les fonctions appelées que rien ne déclare — le défaut que la soudure des modules en un seul espace de noms rend possible et que la syntaxe ne voit pas. Chaîné dans `npm run verifie` ; seul, `npm run appels` |
 
 ## Chercher sans tout ouvrir

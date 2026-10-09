@@ -51,6 +51,16 @@ try {
   process.exit(1);
 }
 
+/* Et le sens du mouvement : le code sort du code soudé vers les modules, et
+   aucune fonction neuve n'y entre. Le stock qui baisse est réécrit au passage,
+   à valider avec le reste. */
+try {
+  process.stdout.write(lance("soude.js"));
+} catch (e) {
+  console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
+  process.exit(1);
+}
+
 /* La version anglaise se contrôle au même geste : une phrase affichée sans sa
    traduction resterait en français sous les yeux de qui a demandé l'anglais,
    et rien d'autre ne le verrait. */
