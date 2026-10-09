@@ -395,9 +395,17 @@ fs.writeFileSync(W + "rapport.html",
 /* --- poser son mot de passe ---
    Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul
    bagage le jeton d'un lien reçu par courriel. Un écran de connexion y serait
-   un contresens. */
+   un contresens. Son code est un module : le script de son point d'entrée se
+   pose devant le seul script de la page, qui le branche. */
+function poseModulesSeuls(t, entree) {
+  const marque = "\n<script>\n";
+  if (t.split(marque).length !== 2) throw new Error(entree + " : script de la page introuvable, ou en double");
+  const script = scriptDesModules(entree);
+  return t.replace(marque, () => "\n" + script + "<script>\n");
+}
 fs.writeFileSync(W + "motdepasse.html",
-  page(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8"), { deuxThemes: true }));
+  page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8"), "motdepasse"),
+       { deuxThemes: true }));
 
 /* --- la page que le service rend quand le réseau manque --- */
 fs.writeFileSync(W + "hors-ligne.html",

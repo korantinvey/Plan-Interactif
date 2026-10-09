@@ -18,12 +18,13 @@
 
    S'y ajoute ce qui ne tient qu'à eux : le salon ouvert (`courant`), l'écriture
    d'un salon à la base (`majEvenement`) et la lecture de ses pavillons
-   (`chargePlans`). L'appel à la base vit dans le socle, que le rapport partage
-   — il est confié par la console (`brancheEvenements`, `_console-js.html`).
+   (`chargePlans`). L'appel à la base vient du socle, que le rapport partage
+   (`socle-console.mjs`).
 
    Le rapport a son propre salon choisi (`rapport-utilisation.mjs`) : ce
    module n'est importé que par la console.
    ============================================================ */
+import { rest } from "./socle-console.mjs";
 
 /** Les salons que la base rend au compte, le dernier modifié en tête. */
 export let EVTS = [];
@@ -49,16 +50,6 @@ export function poseEvenements(valeurs) {
   }
 }
 
-/** @type {{ rest: (chemin: string, options?: RequestInit) => Promise<any> }} */
-let _console = {
-  rest: async () => null,
-};
-
-/** Ce que la console confie aux salons : l'appel à la base, voir `_console`. */
-export function brancheEvenements(branche) {
-  _console = branche;
-}
-
 export const slugifie = (t) => String(t).toLowerCase().normalize("NFD")
   .replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/g, "-")
   .replace(/^-|-$/g, "").slice(0, 40);
@@ -66,12 +57,12 @@ export const slugifie = (t) => String(t).toLowerCase().normalize("NFD")
 export const courant = () => EVTS.find((e) => e.id === selection);
 
 export async function chargePlans(id) {
-  PLANS[id] = await _console.rest("plan?evenement_id=eq." + id +
+  PLANS[id] = await rest("plan?evenement_id=eq." + id +
     "&select=id,id_klipso,libelle,hall,publie,nb_stands,nb_zones&order=libelle.asc");
 }
 
 export async function majEvenement(id, champs) {
-  await _console.rest("evenement?id=eq." + id, {
+  await rest("evenement?id=eq." + id, {
     method: "PATCH",
     headers: { "Prefer": "return=minimal" },
     body: JSON.stringify({ ...champs, modifie_le: new Date().toISOString() }),

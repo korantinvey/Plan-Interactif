@@ -10,12 +10,13 @@
 
    Le salon ouvert, ses pavillons et son écriture viennent de
    `evenements.mjs` ; la provenance, la fiche détail, le fuseau, la
-   synchronisation et l'icône de l'onglet, de leurs modules. Ce qu'il ne peut
-   pas importer lui est confié par la console (`brancheFiche`,
-   `_console-js.html`) : la session, lue au moment de dessiner, les briques
-   et la fenêtre du socle, la barre d'état, l'appel à la base, l'adresse des
-   pages, et ce que la console redessine après une écriture — tout l'écran, la
-   liste des salons, l'adresse.
+   synchronisation et l'icône de l'onglet, de leurs modules ; la session, lue
+   au moment de dessiner, les briques et la fenêtre, la barre d'état, l'appel
+   à la base et l'adresse des pages, du socle (`socle-console.mjs`,
+   `fenetre-console.mjs`). Ce que la console redessine après une écriture —
+   tout l'écran, la liste des salons, l'adresse — lui est confié par l'écran
+   de la console (`brancheFiche`, `ecran-console.mjs`), qui l'importe :
+   l'importer ici bouclerait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { reduitIcone } from "./icone-onglet.mjs";
@@ -26,29 +27,15 @@ import { PLANS, courant, majEvenement, slugifie } from "./evenements.mjs";
 import { DOMAINES, FOURNISSEURS_CONF, fournisseurUtilise, source, resumeProvenance,
   ouvreProvenance } from "./provenance.mjs";
 import { resumeFiche, ouvreFiche } from "./fiche-detail.mjs";
+import { ouvreModale } from "./fenetre-console.mjs";
+import { SESSION, bloc, grille, signale, rest, BASE_PAGES } from "./socle-console.mjs";
 
 /** @type {{
- *   session: () => any,
- *   bloc: (titre: string, note?: string) => HTMLElement,
- *   grille: () => HTMLElement,
- *   signale: (txt: string, erreur?: boolean) => void,
- *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
- *   ouvreModale: (titre: string, remplit: (corps: HTMLElement) => void,
- *     boutons: Array<{ libelle: string, genre?: string, action?: () => any }>,
- *     apres?: () => void) => void,
- *   basePages: string,
  *   dessine: () => void,
  *   dessineChoix: () => void,
  *   majAdresse: () => void,
  * }} */
 let _console = {
-  session: () => null,
-  bloc: () => document.createElement("div"),
-  grille: () => document.createElement("div"),
-  signale: () => {},
-  rest: async () => null,
-  ouvreModale: () => {},
-  basePages: "",
   dessine: () => {},
   dessineChoix: () => {},
   majAdresse: () => {},
@@ -84,7 +71,7 @@ function champ(cle, libelle, aide, attrs) {
         await majEvenement(e.id, { [cle]: e[cle] });
         if (cle === "nom") _console.dessineChoix();
         if (cle === "slug") { i.value = e.slug; majIntegration(); _console.majAdresse(); }
-      } catch (err) { _console.signale(err.message, true); }
+      } catch (err) { signale(err.message, true); }
     }, 500);
   };
   return l;
@@ -155,7 +142,7 @@ function champFavicon() {
       // l'écran doit montrer ce que la base tient, pas ce qu'on a tenté
       e.favicon = avant;
       peint();
-      _console.signale(err.message, true);
+      signale(err.message, true);
     }
   };
 
@@ -189,7 +176,7 @@ function champFavicon() {
 export function dessineFiche() {
   const e = courant();
   const f = $("fiche");
-  if (!_console.session()) { f.innerHTML = '<div class="vide">Connectez-vous pour accéder aux événements.</div>'; return; }
+  if (!SESSION) { f.innerHTML = '<div class="vide">Connectez-vous pour accéder aux événements.</div>'; return; }
   if (!e) {
     /* Un organisateur sans salon n'a rien à créer et rien à choisir : lui
        proposer « Nouveau » l'enverrait contre un refus de la base. Ce qui lui
@@ -203,8 +190,8 @@ export function dessineFiche() {
   }
   f.innerHTML = "";
 
-  const b1 = _console.bloc("Identité");
-  const g1 = _console.grille();
+  const b1 = bloc("Identité");
+  const g1 = grille();
   g1.appendChild(champ("nom", "Nom de l'événement"));
   g1.appendChild(champ("slug", "Identifiant d'URL", "Sert d'adresse publique du plan."));
   g1.appendChild(champFavicon());
@@ -215,7 +202,7 @@ export function dessineFiche() {
   /* D'où viennent les données, ce qu'on en montre, et à quelle fraîcheur : la
      synchronisation tenait un bloc à elle pour une liste déroulante et un
      bouton, et la question qu'elle répond est celle des lignes voisines. */
-  const bd = _console.bloc("Données");
+  const bd = bloc("Données");
   bd.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
     ouvreProvenance));
   bd.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
@@ -227,7 +214,7 @@ export function dessineFiche() {
   rythme.onchange = async (ev) => {
     e.rythme_min = +(/** @type {HTMLSelectElement} */ (ev.target)).value;
     try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
-    catch (err) { _console.signale(err.message, true); }
+    catch (err) { signale(err.message, true); }
   };
   const bsync = document.createElement("button");
   bsync.className = "btn petit";
@@ -242,7 +229,7 @@ export function dessineFiche() {
   /* --- pavillons --- */
   const plans = PLANS[e.id] || [];
   const publies = plans.filter((p) => p.publie).length;
-  const b3 = _console.bloc("Pavillons", plans.length
+  const b3 = bloc("Pavillons", plans.length
     ? plans.length + " pavillon" + (plans.length > 1 ? "s" : "") + " · " +
       publies + " publié" + (publies > 1 ? "s" : "")
     : "");
@@ -271,13 +258,13 @@ export function dessineFiche() {
       tr.querySelector("input").onchange = async (ev) => {
         p.publie = ev.target.checked;
         try {
-          await _console.rest("plan?id=eq." + p.id, {
+          await rest("plan?id=eq." + p.id, {
             method: "PATCH",
             headers: { "Prefer": "return=minimal" },
             body: JSON.stringify({ publie: p.publie }),
           });
           _console.dessine();
-        } catch (err) { _console.signale(err.message, true); }
+        } catch (err) { signale(err.message, true); }
       };
       tb.appendChild(tr);
     });
@@ -285,7 +272,7 @@ export function dessineFiche() {
   }
   f.appendChild(b3);
 
-  const b4 = _console.bloc("Intégration");
+  const b4 = bloc("Intégration");
   const astuce = document.createElement("p");
   astuce.className = "astuce";
   /* Le rapport sépare les portes d'accès : le dire ici, où l'on décide de
@@ -374,7 +361,7 @@ function champCle(cle, libelle, aide, forme, exemple) {
       const v = i.value.trim();
       if (v) e.cles[cle] = v; else delete e.cles[cle];
       try { await majEvenement(e.id, { cles: e.cles }); }
-      catch (err) { _console.signale(err.message, true); }
+      catch (err) { signale(err.message, true); }
     }, 500);
   };
   return l;
@@ -386,7 +373,7 @@ function champCle(cle, libelle, aide, forme, exemple) {
  * s'en serve ne produirait rien, et c'est le genre d'oubli qu'on ne voit pas.
  */
 export function ouvreSources(apres) {
-  _console.ouvreModale("Sources de données", (corps) => {
+  ouvreModale("Sources de données", (corps) => {
     const e = courant();
     const barre = document.createElement("div");
     barre.className = "onglets";
@@ -402,7 +389,7 @@ export function ouvreSources(apres) {
 
       const pan = document.createElement("div");
       pan.hidden = i > 0;
-      const g = _console.grille();
+      const g = grille();
       f.champs.forEach((c) => {
         g.appendChild(c.dansCles
           ? champCle(c.dansCles, c.libelle, c.aide, c.forme, c.exemple)
@@ -433,7 +420,7 @@ export function ouvreSources(apres) {
 function majIntegration() {
   const e = courant(), t = $("fragment");
   if (!e || !t) return;
-  t.value = '<iframe src="' + _console.basePages + 'plan?plan=' + (e.slug || "evenement") +
+  t.value = '<iframe src="' + BASE_PAGES + 'plan?plan=' + (e.slug || "evenement") +
     '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"></iframe>';
 }
 

@@ -14,37 +14,17 @@
 
    Le module tient aussi le profil du compte connecté (`MOI`) : la console le
    lit pour savoir ce qu'elle propose, et l'oublie en fin de session par
-   `poseComptes({ MOI: null })`. Ce qu'il ne peut pas importer lui est confié
-   par la console (`brancheComptes`, `_console-js.html`) : la fenêtre du socle
-   et sa grille, l'appel à la base, l'identifiant du compte connecté et la page
-   du mot de passe. Les salons à affecter viennent de `evenements.mjs`, relus
-   à chaque ouverture puisque le chargement les remplace.
+   `poseComptes({ MOI: null })`. La fenêtre du socle et sa grille, l'appel à
+   la base, l'identifiant du compte connecté et la page du mot de passe
+   viennent du socle de la console (`fenetre-console.mjs`,
+   `socle-console.mjs`). Les salons à affecter viennent de `evenements.mjs`,
+   relus à chaque ouverture puisque le chargement les remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fonction } from "./appel-fonction.mjs";
 import { EVTS } from "./evenements.mjs";
-
-/** @type {{
- *   ouvreModale: (titre: string, remplit: (corps: HTMLElement) => void,
- *     boutons: Array<{ libelle: string, genre?: string, action?: () => any }>,
- *     apres?: () => void) => void,
- *   grille: () => HTMLElement,
- *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
- *   idCompte: () => (string | null),
- *   pageMdp: string,
- * }} */
-let _console = {
-  ouvreModale: () => {},
-  grille: () => document.createElement("div"),
-  rest: async () => null,
-  idCompte: () => null,
-  pageMdp: "",
-};
-
-/** Ce que la console confie aux comptes : voir `_console`. */
-export function brancheComptes(branche) {
-  _console = branche;
-}
+import { ouvreModale } from "./fenetre-console.mjs";
+import { grille, rest, idCompte, PAGE_MDP } from "./socle-console.mjs";
 
 /**
  * La porte du profil connecté : le code soudé le lit par son nom, et le
@@ -67,17 +47,17 @@ let COMPTES = [];
 /** Le rôle du compte connecté. Il décide de ce que la console propose ; ce
  *  qu'elle obtient, c'est la base qui le décide. */
 export async function litMonProfil() {
-  const id = _console.idCompte();
+  const id = idCompte();
   MOI = null;
   if (!id) return;
-  const r = await _console.rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
+  const r = await rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
   MOI = (Array.isArray(r) ? r[0] : null) || null;
 }
 
 const NOM_ROLE = { admin: "Administrateur", organisateur: "Organisateur" };
 
 /** L'adresse où retomber après avoir cliqué le lien reçu par courriel. */
-const RETOUR_MDP = () => _console.pageMdp;
+const RETOUR_MDP = () => PAGE_MDP;
 
 async function litComptes() {
   const r = await fonction("comptes", { action: "liste" });
@@ -198,7 +178,7 @@ export function ouvreComptes(message) {
     ligneMessage(corps, "comptesMsg", mot);
   }
 
-  _console.ouvreModale("Comptes et accès", (corps) => {
+  ouvreModale("Comptes et accès", (corps) => {
     hote = corps;
     rendu(corps);
     litComptes()
@@ -302,7 +282,7 @@ function ouvreFicheCompte(c) {
                    action: () => { enregistre(); return false; } });
   }
 
-  _console.ouvreModale(neuf ? "Inviter quelqu'un" : "Modifier le compte", (corps) => {
+  ouvreModale(neuf ? "Inviter quelqu'un" : "Modifier le compte", (corps) => {
     const cadre = document.createElement("div");
     cadre.className = "cadre compte";
 
@@ -314,7 +294,7 @@ function ouvreFicheCompte(c) {
       cadre.appendChild(aide);
     }
 
-    const g = _console.grille();
+    const g = grille();
     const lMail = document.createElement("label");
     lMail.innerHTML = "<span>Adresse e-mail</span><input type='email'>";
     cMail = lMail.querySelector("input");

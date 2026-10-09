@@ -10,38 +10,18 @@
 
    Ce que le réglage écrit et affiche vient de `correspondance.mjs`, le
    fournisseur retenu de `provenance.mjs`, le salon ouvert et son écriture de
-   `evenements.mjs`. Ce qu'il ne peut pas importer lui est confié par la
-   console (`brancheFicheDetail`, `_console-js.html`) : la fenêtre du socle,
-   les deux fenêtres de saisie qu'on en tire, ce qui garde la place d'une
-   fenêtre qui se redessine, et la barre d'état.
+   `evenements.mjs`. La fenêtre du socle, les deux fenêtres de saisie qu'on en
+   tire, ce qui garde la place d'une fenêtre qui se redessine, et la barre
+   d'état viennent du socle de la console (`fenetre-console.mjs`,
+   `socle-console.mjs`).
    ============================================================ */
 import { separeValeurs } from "./texte.mjs";
 import { DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
   ACCORDS, aplani, autreFace } from "./correspondance.mjs";
 import { courant, majEvenement, slugifie } from "./evenements.mjs";
 import { FOURNISSEURS, SOURCES_NOM, source, sourceNom } from "./provenance.mjs";
-
-/** @type {{
- *   ouvreModale: (titre: string, remplit: (corps: HTMLElement) => void,
- *     boutons: Array<{ libelle: string, genre?: string, action?: () => any }>,
- *     apres?: () => void) => void,
- *   demande: (titre: string, libelle: string, valeur: string, suite: (v: string) => any) => void,
- *   confirme: (titre: string, message: string, libelleOui: string, action: () => any) => void,
- *   gardeLaPlace: (redessine: () => void) => () => void,
- *   signale: (txt: string, erreur?: boolean) => void,
- * }} */
-let _console = {
-  ouvreModale: () => {},
-  demande: () => {},
-  confirme: () => {},
-  gardeLaPlace: (redessine) => redessine,
-  signale: () => {},
-};
-
-/** Ce que la console confie à la fiche détail : voir `_console`. */
-export function brancheFicheDetail(branche) {
-  _console = branche;
-}
+import { ouvreModale, demande, confirme, gardeLaPlace } from "./fenetre-console.mjs";
+import { signale } from "./socle-console.mjs";
 
 /* ============================================================
    Contenu de la fiche détail
@@ -320,7 +300,7 @@ function caseFiche(type, cle, libelle, aide, apres) {
     if (apres) apres(i.checked);
     try { await majEvenement(e.id, { fiche: e.fiche }); }
     catch (err) {
-      _console.signale(err.message, true);
+      signale(err.message, true);
       i.checked = !i.checked;
       if (apres) apres(i.checked);
     }
@@ -365,7 +345,7 @@ async function ecritFiche(e, part) {
   const avant = e.fiche;
   e.fiche = { ...(e.fiche || {}), ...part };
   try { await majEvenement(e.id, { fiche: e.fiche }); }
-  catch (err) { e.fiche = avant; _console.signale(err.message, true); }
+  catch (err) { e.fiche = avant; signale(err.message, true); }
 }
 
 /**
@@ -405,7 +385,7 @@ function clePerso(e, libelle) {
 /** Crée un champ propre à ce salon, puis redessine la fenêtre. */
 function ajouteChampPerso(redessine) {
   const e = courant();
-  _console.demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
+  demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
     "", async (libelle) => {
       const perso = champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]);
       await ecritFiche(e, { perso });
@@ -447,7 +427,7 @@ function renommeChampPerso(cle, redessine) {
     await ecritFiche(e, { perso });
     redessine();
   };
-  _console.ouvreModale("Renommer le champ", (corps) => {
+  ouvreModale("Renommer le champ", (corps) => {
     fr = champ(corps, "Intitulé en français", actuel.libelle, "fr");
     en = champ(corps, "Intitulé en anglais", actuel.libelle_en, "en");
     const aide = document.createElement("p");
@@ -472,7 +452,7 @@ function renommeChampPerso(cle, redessine) {
 function retireChampPerso(cle, libelle, redessine) {
   const e = courant();
   const cible = PREFIXE_PERSO + cle;
-  _console.confirme("Retirer « " + libelle + " » ?",
+  confirme("Retirer « " + libelle + " » ?",
     "Le champ, son origine et son réglage de recherche sont effacés. Les " +
     "valeurs déjà synchronisées disparaîtront de la fiche à la prochaine " +
     "synchronisation.", "Retirer", async () => {
@@ -517,7 +497,7 @@ function retireChampPerso(cle, libelle, redessine) {
       if (touche) {
         e.correspondances = corr;
         try { await majEvenement(e.id, { correspondances: corr }); }
-        catch (err) { _console.signale(err.message, true); }
+        catch (err) { signale(err.message, true); }
       }
       redessine();
     });
@@ -539,9 +519,9 @@ function lignesPerso(e, redessine) {
     critere: true,
     outils: [
       { titre: "Renommer", texte: "\u270E",
-        action: () => renommeChampPerso(c.cle, _console.gardeLaPlace(redessine)) },
+        action: () => renommeChampPerso(c.cle, gardeLaPlace(redessine)) },
       { titre: "Retirer", texte: "\u00D7", genre: "danger",
-        action: () => retireChampPerso(c.cle, c.libelle, _console.gardeLaPlace(redessine)) },
+        action: () => retireChampPerso(c.cle, c.libelle, gardeLaPlace(redessine)) },
     ],
   }));
 }
@@ -594,7 +574,7 @@ export function ouvreFiche(apres) {
      que la fiche n'affiche de toute façon pas. */
   const lignes = () => LIGNES_FICHE.filter((l) => !l.source || l.source === src);
 
-  _console.ouvreModale("Fiche détail", (corps) => {
+  ouvreModale("Fiche détail", (corps) => {
     /* Sans source d'exposants, il n'y a pas de champ d'origine à associer : le
        tableau n'aurait qu'une colonne vide, et la liste de cases suffit. */
     if (!mappable) {
@@ -656,7 +636,7 @@ export function ouvreFiche(apres) {
             b.type = "button";
             b.className = "btn petit";
             b.textContent = "Ajouter un champ";
-            b.onclick = () => ajouteChampPerso(_console.gardeLaPlace(redessine));
+            b.onclick = () => ajouteChampPerso(gardeLaPlace(redessine));
             pied.appendChild(b);
             if (!perso.length) {
               const p = document.createElement("span");
@@ -763,7 +743,7 @@ function cadreCategories(src) {
     corr[src] = part;
     e2.correspondances = corr;
     try { await majEvenement(e2.id, { correspondances: corr }); }
-    catch (err) { e2.correspondances = avant; _console.signale(err.message, true); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
   };
 
   catalogue.forEach((c) => {
@@ -920,7 +900,7 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
           e2.sources = avant;
           choixSrc.value = sourceNom(e2);
           pose();
-          _console.signale(err.message, true);
+          signale(err.message, true);
         }
       };
     } else if (l.cible) {
@@ -1140,7 +1120,7 @@ function champOrigine(src, cible, apres, ouiNon, sansChamp) {
     corr[src] = { ...(corr[src] || {}), ...part };
     e2.correspondances = corr;
     try { await majEvenement(e2.id, { correspondances: corr }); }
-    catch (err) { e2.correspondances = avant; _console.signale(err.message, true); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
   };
 
   sel.onchange = () => {
