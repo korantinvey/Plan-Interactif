@@ -12,8 +12,8 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. `_gestes.html` le branche dans une tranche `@admin`,
-   juste après les gestes du plan, et lui confie la forme dessinée choisie,
-   que l'outil d'édition tient encore dans le code soudé.
+   juste après les gestes du plan. La forme dessinée choisie, il l'importe
+   (`forme-choisie.mjs`), et la lit telle qu'elle est à l'instant.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ADMIN } from "./mode-admin.mjs";
@@ -32,16 +32,7 @@ import { annule, refais, dessinPointerDown, dessinPointerMove, dessinPointerUp, 
 import { choisitForme, supprimeForme } from "./edition.mjs";
 import { dupliqueForme, pousseForme } from "./aimants.mjs";
 import { codeIciAuPoint } from "./affiche-ici.mjs";
-
-/* Ce que le code soudé confie au branchement : la forme dessinée choisie,
-   que l'édition remplace à chaque choix — lue à l'instant. */
-/**
- * @typedef {object} PageGestesAdmin
- * @property {() => any} formeSel la forme dessinée choisie, `formeSel`
- */
-/** @type {PageGestesAdmin} */
-let soude;
-const formeSel = () => soude.formeSel();
+import { formeSel } from "./forme-choisie.mjs";
 
 /* Le doigt posé. Caler la carte passe avant tout : tant qu'un mode est armé,
    la main saisit le fond et non le plan — c'est le seul geste que la palette
@@ -93,9 +84,9 @@ function clavier(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
     if (t === "y" || (t === "z" && e.shiftKey)){ e.preventDefault(); refais(); return true; }
     /* Répéter plutôt que redessiner : c'est ainsi qu'une rangée de stands
        identiques se déroule, la copie prenant la place de la sélection. */
-    if (t === "d" && formeSel()){ e.preventDefault(); dupliqueForme(); return true; }
+    if (t === "d" && formeSel){ e.preventDefault(); dupliqueForme(); return true; }
   }
-  if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel()){
+  if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
     e.preventDefault(); supprimeForme(); return true;
   }
   /* Le clavier ajuste au quart de mètre ce que la main pose approximativement,
@@ -119,7 +110,7 @@ function clavier(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
   }
   /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
      voisine, le clavier lui donne l'allée qui les sépare. */
-  if (ADMIN && formeSel() && !saisie && e.key.indexOf("Arrow") === 0){
+  if (ADMIN && formeSel && !saisie && e.key.indexOf("Arrow") === 0){
     e.preventDefault();
     const pas = e.shiftKey ? 1 : .25;
     pousseForme(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
@@ -142,7 +133,7 @@ function echap(){
   if (SORTE_GEO && geoSel){ choisitGeo(null); return true; }
   if (SORTE_GEO){ modeGeometrie(null); return true; }
   if (enCours){ termineTrace(false); return true; }
-  if (formeSel()){ choisitForme(null); return true; }
+  if (formeSel){ choisitForme(null); return true; }
   if (calqueActif){ activeCalque(calqueActif); return true; }
   return false;
 }
@@ -163,11 +154,8 @@ function entree(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
 
 /**
  * Insère les gestes de l'exploitant dans la chaîne du plan.
- *
- * @param {PageGestesAdmin} page
  */
-export function brancheGestesAdmin(page){
-  soude = page;
+export function brancheGestesAdmin(){
   poseGestesAdmin({
     appui, suit, leve, annule: annuleGeste,
     /* Désigner l'endroit d'un code « Vous êtes ici » : geste d'exploitant, que

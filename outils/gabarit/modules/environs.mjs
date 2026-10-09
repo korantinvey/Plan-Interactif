@@ -27,34 +27,34 @@
    Ce module porte ce que le visiteur reçoit : le fond lui-même, en tuiles ou
    en vectoriel, et le trou sous le pavillon. Le calage — le poser, le tourner,
    l'enregistrer — est un geste d'exploitant, et vit dans `calage-carte.mjs`,
-   que seul `plan-admin.mjs` embarque. Ce que le code soudé tient encore — la
-   vue, les réglages, les calques de dessin — lui est confié par
+   que seul `plan-admin.mjs` embarque. La vue et son cadre, qu'il ne peut
+   importer sans boucler (`vue.mjs` l'importe), lui sont confiés par
    `brancheEnvirons`, que `_environs.html` appelle à la place que ce code y
-   tenait.
+   tenait ; les réglages, les calques de dessin et le tracé d'une forme
+   s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { DEG, versTerre, PX_TUILE, TOUR_MERCATOR, pixelsMercator, echelleDesTuiles, niveauDesTuiles }
   from "./terre.mjs";
+import { CONF } from "./configuration.mjs";
+import { mesCalques } from "./calques-dessin.mjs";
+import { cheminForme } from "./chemin-forme.mjs";
 
-/* Ce que le code soudé tient encore, et confie au branchement : la vue
-   (`view`, que chaque geste remplace), son cadre à l'écran, les réglages
-   (`CONF`, remplacés en changeant de salon), les calques de dessin du
-   pavillon et le tracé d'une forme (`_dessin.html`). Des lecteurs, non des
-   valeurs : il faut lire celles du moment. Rien ne sert avant le branchement
-   — le plan n'a pas encore de vue —, d'où des lecteurs vides en attendant. */
+/* Ce que le code soudé confie au branchement : la vue (`view`, que chaque
+   geste remplace) et son cadre à l'écran, par des lecteurs — il faut lire
+   ceux du moment. Rien ne sert avant le branchement — le plan n'a pas encore
+   de vue —, d'où des lecteurs vides en attendant. Les réglages (`CONF`,
+   remplacés en changeant de salon), importés, se lisent tels qu'ils sont à
+   l'instant. */
 /**
  * @typedef {object} PageEnvirons
  * @property {() => any} vue la vue du moment, `view`
  * @property {() => DOMRect} cadrePlan
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {() => any[]} mesCalques les calques de dessin du pavillon courant
- * @property {(f: any) => string} cheminForme
  */
 /** @type {PageEnvirons} */
-let soude = { vue: () => undefined, cadrePlan: () => new DOMRect(), conf: () => ({}),
-  mesCalques: () => [], cheminForme: () => "" };
+let soude = { vue: () => undefined, cadrePlan: () => new DOMRect() };
 
 /** Le branchement, appelé par `_environs.html` à la place de ce code. */
 export function brancheEnvirons(b){ soude = b; }
@@ -704,7 +704,7 @@ export function dessineFondCarte(){
    ------------------------------------------------------------ */
 
 export const cleMasqueCarte = (id) => "_masqueCarte:" + id;
-export const masqueCarte = (c) => !!c && !!(soude.conf()[cleMasqueCarte(c.id)] || {}).masque;
+export const masqueCarte = (c) => !!c && !!(CONF[cleMasqueCarte(c.id)] || {}).masque;
 
 
 /* Les sortes de formes qui percent : celles qui ont une surface. Un trait, un
@@ -715,7 +715,7 @@ const SORTES_MASQUE = { rect: 1, poly: 1, stand: 1 };
  *  ne se voit pas non plus, et le trou trahirait sa présence. */
 function formesMasquantes(){
   const l = [];
-  for (const c of soude.mesCalques()){
+  for (const c of mesCalques()){
     if (c.visible === false || !masqueCarte(c)) continue;
     for (const f of (c.formes || []))
       if (SORTES_MASQUE[f.t] && f.pts && f.pts.length > 1) l.push(f);
@@ -767,7 +767,7 @@ export function poseMasqueCarte(){
      n'a pas chargé — ou qu'on vient de retirer — gardait un grand aplat clair
      posé sur rien, au milieu du plan. */
   const trous = !fondCourant() ? ""
-    : cheminDuHall() + formesMasquantes().map(soude.cheminForme).join("");
+    : cheminDuHall() + formesMasquantes().map(cheminForme).join("");
   if (trous === _masquePose) return;
   _masquePose = trous;
   el.setAttribute("d", trous);

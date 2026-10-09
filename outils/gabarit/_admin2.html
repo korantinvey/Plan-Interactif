@@ -8,13 +8,11 @@
    tenait : la page démarre une fois tout le reste déclaré, et l'écoute du
    redimensionnement se pose au même rang qu'avant.
 
-   Lui est confié l'ordre des calques, que le code soudé tient encore — par des détours lus
-   à l'appel, comme ailleurs dans ce script. Et ce qui n'est qu'à
-   l'administration — l'enregistrement, la fenêtre d'accès —, sous la garde
-   `typeof` qu'il avait : le visiteur ne l'a pas.
+   Lui est confié ce qui n'est qu'à l'administration — l'enregistrement, la
+   fenêtre d'accès —, sous la garde `typeof` qu'il avait : le visiteur ne
+   l'a pas. L'ordre des calques, il l'importe.
    ============================================================ */
 brancheDemarrage({
-  ordonneDom: () => ordonneDom(),
   majAttente: () => { if (typeof majAttente === "function") majAttente(); },
   rattrapeRetard: () => { if (typeof rattrapeRetard === "function") rattrapeRetard(); },
   ecranAcces: typeof ecranAcces === "function" ? ecranAcces : null,

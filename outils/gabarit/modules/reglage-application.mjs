@@ -42,23 +42,11 @@ import { DATA } from "./donnees.mjs";
 import { reduitIconeApp } from "./icone-app.mjs";
 import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { oublieCache, REPOS } from "./enregistrement.mjs";
-
 /* L'oubli du cache du relais et le temps de repos de la configuration
-   viennent de `enregistrement.mjs`, module d'administration lui aussi. Le
-   branchement confie le champ intitulé des volets (`modules/fiche-zone.mjs`
-   `champZone`). */
-/** @type {(hote: HTMLElement, titre: string, dedans: any, aide?: string) => any} */
-let champZone;
-
-/**
- * Le branchement du réglage, appelé par le code soudé à la place que ce code y
- * tenait (`_application.html`), dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {{ champZone: typeof champZone }} b
- */
-export function brancheReglageApplication(b){
-  champZone = b.champZone;
-}
+   viennent de `enregistrement.mjs`, module d'administration lui aussi ; le
+   champ intitulé des volets, de `fiche-zone.mjs` : il n'a rien à recevoir du
+   code soudé. */
+import { champZone } from "./fiche-zone.mjs";
 
 /* Un nom d'application tient en une ligne — le relais le borne pareil, et les
    systèmes coupent bien avant. */

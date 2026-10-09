@@ -14,10 +14,10 @@
    Les libellés se branchent ici, au tout début du script, à la place que
    l'écoute des polices tenait : elle passe ainsi avant celle du rendu WebGL,
    qui repeint à la même arrivée en relisant les libellés, et les trouve déjà
-   retaillés. Leur sont confiés, par des détours lus au moment de l'appel, la
-   boîte d'une forme (`_edition.html`), qui se déclare plus loin, et le dessin
-   des calques (`modules/dessin.mjs`, `modules/points-interet.mjs`), qui
-   importe ce que les libellés importent.
+   retaillés. Leur est confié, par des détours lus au moment de l'appel, le
+   dessin des calques (`modules/dessin.mjs`, `modules/points-interet.mjs`),
+   qui importe ce que les libellés importent ; la boîte d'une forme, ils
+   l'importent (`modules/forme-choisie.mjs`).
    ============================================================ */
 brancheLibelles({
   dessineDessins: () => dessineDessins(),
@@ -27,7 +27,6 @@ brancheLibelles({
   rafraichitFleches: () => rafraichitFleches(),
   societeDeForme: (f) => societeDeForme(f),
   nomSurLePlan: (soc) => nomSurLePlan(soc),
-  boite: (f) => boite(f),
 });
 
 /* Le montage d'un pavillon. Ce qui n'existe
@@ -37,7 +36,6 @@ brancheLibelles({
 brancheRendu({
   dessineDessins: () => dessineDessins(),
   rafraichitApercu: () => { if (typeof rafraichitApercu === "function") rafraichitApercu(); },
-  construitPanneau: () => construitPanneau(),
   oublieCalageEnCours: () => { if (typeof oublieCalageEnCours === "function") oublieCalageEnCours(); },
   chargeFond: (i) => chargeFond(i),
   /* @admin — la reprise d'un emplacement, l'historique de l'éditeur, la boîte à outils */

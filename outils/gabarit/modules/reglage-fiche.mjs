@@ -9,10 +9,9 @@
    d'où ce module les importe avec les libellés des champs.
 
    L'aperçu s'importe de `apercus.mjs`, la fiche ouverte derrière la fenêtre
-   de `fiche.mjs`. Le préfixe des champs propres au salon et le modèle retenu
-   sont encore soudés, l'écriture de la colonne vient de `fiche-zone.mjs` :
-   `_ordre-fiche.html` les confie par `brancheReglageFiche`, à la place que ce
-   code tenait.
+   de `fiche.mjs`, le préfixe des champs propres au salon de `recherche.mjs`,
+   le modèle retenu de `modeles.mjs` et l'écriture de la colonne de
+   `fiche-zone.mjs` : il n'a plus rien à recevoir du code soudé.
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
@@ -21,10 +20,8 @@ import { PREFIXE_PERSO } from "./recherche.mjs";
 import { montre, libelleCorps, ordreCorps, groupesFiche, montreIntitule } from "./corps-fiche.mjs";
 import { ouvre } from "./fiche.mjs";
 import { coexChoisit } from "./libelles.mjs";
-
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-let modeleRetenu;
-let ecritColonneEvenement;
+import { modeleRetenu } from "./modeles.mjs";
+import { ecritColonneEvenement } from "./fiche-zone.mjs";
 
 /* ------------------------------------------------------------------
    Ce que la fiche montre, dans quel ordre, et sous quels titres
@@ -648,14 +645,4 @@ export function voletOrdre(hote){
   litReglage();
   rendu();
   dit("");
-}
-
-/**
- * Le branchement, appelé par `_ordre-fiche.html` dans la tranche
- * d'administration qui portait ce code.
- *
- * @param {{ modeleRetenu: Function, ecritColonneEvenement: Function }} b
- */
-export function brancheReglageFiche(b){
-  ({ modeleRetenu, ecritColonneEvenement } = b);
 }

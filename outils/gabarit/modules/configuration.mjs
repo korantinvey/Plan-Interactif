@@ -6,7 +6,9 @@
 
    Sortie de `_admin1.html`, avec les règles qui ne font que la relire et que
    le plan public lit aussi : les options prises par le salon, la version
-   anglaise, ce que la recherche remonte. Le code soudé lit CONF et sa clé de
+   anglaise, ce que la recherche remonte ; et son rangement sur le poste
+   (`enregistreConf`), sorti de `_ordre-fiche.html`, que l'administration
+   prolonge d'un envoi en base. Le code soudé lit CONF et sa clé de
    rangement par accesseur, et ne les remplace que par `ouvreConf` ; il se
    branche par `brancheConfiguration`, à la place que ce code tenait, pour
    confier ce que le module ne peut pas importer — les secteurs de la
@@ -90,6 +92,25 @@ export function reglagesDuSalon(source){
   return sortie;
 }
 
+/* L'envoi en base n'est qu'à l'administration (`enregistrement.mjs`), qu'un
+   module public ne peut importer : il ouvre cette porte en se chargeant, et
+   le visiteur n'a rien derrière. */
+let publie = () => {};
+
+/** La porte de l'envoi, que `enregistrement.mjs` ouvre en se chargeant.
+ *  @param {() => void} f */
+export function confiePublication(f){
+  publie = f;
+}
+
+/** Les réglages d'apparence se posent sur le poste, puis montent en base
+ *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
+export const enregistreConf = () => {
+  try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+  // l'envoi est d'administration (`modules/enregistrement.mjs`)
+  publie();
+};
+
 /** @returns {Record<string, any>} */
 export const conf = (/** @type {string} */ c) => (CONF[c] = CONF[c] || {});
 export const jeton = (/** @type {string} */ n) =>
@@ -98,8 +119,8 @@ export const sousCle = (/** @type {string} */ cle, /** @type {string} */ id) => 
 
 /** Une option est-elle ouverte à ce salon ? Oui par défaut : un réglage absent
  *  ne doit rien retirer à un salon déjà en place. Les options elles-mêmes —
- *  leur liste, ce qui se refait quand on en ferme une — restent dans
- *  `_admin1.html` (`OPTIONS`). */
+ *  leur liste, ce qui se refait quand on en ferme une — sont dans
+ *  `options.mjs` (`OPTIONS`). */
 export const optionActive = (/** @type {string} */ cle) => conf("_options")[cle] !== false;
 
 /* Les deux options que d'autres modules interrogent portent un nom, plutôt que

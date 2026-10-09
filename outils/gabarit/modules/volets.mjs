@@ -13,12 +13,14 @@
    concentration, dates et heures, distinctions, couleur, modèles et polices —
    sont des modules que le plan public embarque aussi (`configuration.mjs`,
    `apparence.mjs`, `habillage.mjs`, `modeles.mjs`, `polices-plan.mjs`,
-   `seuil.mjs`, `horaires.mjs`) : ils s'importent, comme le nuancier. Ce que
-   le code soudé tient encore — les options vendues à part, les distinctions —
-   lui est confié par `brancheVolets`, à la place que ce code tenait
-   (`_volets.html`). Les secteurs, la liste et le filtre de la recherche
+   `seuil.mjs`, `horaires.mjs`) : ils s'importent, comme le nuancier, les
+   options vendues à part (`options.mjs`) et l'enregistrement de la
+   configuration. Les secteurs, la liste et le filtre de la recherche
    s'importent (`secteurs.mjs`, `recherche.mjs`), comme ce que la fiche montre
-   (`corps-fiche.mjs`).
+   (`corps-fiche.mjs`), le mode administrateur, le cadre d'un champ
+   (`fiche-zone.mjs`), le panneau des calques (`ordre-trace.mjs`) et le
+   trajet à refaire (`tiroir-itineraire.mjs`) : il n'a plus rien à recevoir
+   du code soudé.
    ============================================================ */
 import { DATA, CONFERENCES, parId } from "./donnees.mjs";
 import { fermeModale } from "./fenetre.mjs";
@@ -29,7 +31,7 @@ import { blocApplication } from "./reglage-application.mjs";
 import { blocSponsor } from "./reglage-sponsor.mjs";
 import { contenuApercu, apercuDuo } from "./apercus.mjs";
 import { blocRappel } from "./reglage-rappel.mjs";
-import { conf, jeton, optionActive, appliqueLangue } from "./configuration.mjs";
+import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, MARQUES_DIST, modeDist, couleurDist, appliqueDists, modeBarre, appliqueBarre,
   appliqueModele } from "./habillage.mjs";
@@ -43,32 +45,14 @@ import { SECTEURS } from "./secteurs.mjs";
 import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { DISTINCTIONS, ETOILE_DIST } from "./distinctions.mjs";
+import { OPTIONS, appliqueOptions } from "./options.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { champZone } from "./fiche-zone.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { relance } from "./tiroir-itineraire.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-// l'envoi de la configuration, et l'état de l'administration
-let enregistreConf;
-let admin;
-// les options vendues à part, restées soudées (`_admin1.html`)
-let OPTIONS;
-let appliqueOptions;
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
-// ce que la fenêtre des réglages et le reste de l'administration tiennent
-let champZone;
-let construitPanneau;
-let relance;
-
-/**
- * Le branchement des volets, appelé par le code soudé à la place que ce code
- * y tenait (`_volets.html`), dans la tranche que le visiteur ne reçoit pas.
- *
- * L'envoi de la configuration et l'état de l'administration n'y sont déclarés
- * que plus bas : ils viennent par des détours, lus à l'usage.
- */
-export function brancheVolets(b){
-  ({ enregistreConf, admin, OPTIONS, appliqueOptions,
-    champZone, construitPanneau, relance } = b);
-}
 
 export function voletAdmin(hote){
   const p = document.createElement("p");
@@ -91,7 +75,7 @@ export function voletAdmin(hote){
       conf(cmd.cle).visible = e.target.checked;
       enregistreConf(); appliqueCommandes();
       // la couleur du parcours vit dans la pile : elle suit le réglage
-      if (admin()) construitPanneau();
+      if (ADMIN) construitPanneau();
       majTuto();
     };
     bloc.appendChild(l);
@@ -111,7 +95,7 @@ export function voletAdmin(hote){
       conf("_secteurs").visible = e.target.checked;
       enregistreConf(); appliqueSecteurs(); appliqueFiltre();
       // les couleurs des secteurs vivent dans la pile : elles suivent
-      if (admin()) construitPanneau();
+      if (ADMIN) construitPanneau();
     };
     bloc.appendChild(l);
   }

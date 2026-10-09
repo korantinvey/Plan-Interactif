@@ -7,15 +7,12 @@
    désignent, les stands dessinés à la main, leur nom et leur sélection.
    `plan.mjs` embarque ce module.
 
-   Ce que le code soudé tient encore lui est confié par `brancheDessin`, que
-   `_dessin.html` appelle en tête : la forme choisie dans l'éditeur par un
-   lecteur — l'éditeur la remplace sans cesse —, ce qui se déclare dans
-   d'autres morceaux du script (la boîte d'une forme, l'ordre des couches, la
-   mention de la source, la mesure d'un texte, le libellé d'un emplacement)
-   par des appels différés. La fiche, la recherche, les secteurs et l'écran
-   s'importent : ce module se tient au-dessus d'eux, et la fiche se fait donc
-   confier par le code soudé ce qu'elle lui emprunte (`decoupeStand`,
-   `marqueStandsDessines`).
+   Il n'a plus rien à recevoir du code soudé : la forme choisie dans
+   l'éditeur et sa boîte (`forme-choisie.mjs`), l'ordre des couches
+   (`ordre-trace.mjs`), la fiche, la recherche, les secteurs et l'écran
+   s'importent ; la mention de la source, qu'il est seul à refaire, vit ici.
+   Ce module se tient au-dessus de la fiche et des libellés, qui se font donc
+   confier ce qu'ils lui empruntent (`decoupeStand`, `marqueStandsDessines`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -37,26 +34,25 @@ import { coloreSecteurs } from "./secteurs.mjs";
 import { societes } from "./fiche.mjs";
 import { largeur } from "./texte-plan.mjs";
 import { libelleEmplacement } from "./libelles.mjs";
+import { formeSel, boite } from "./forme-choisie.mjs";
+import { ordonneDom } from "./ordre-trace.mjs";
 
-/**
- * Ce que le code soudé confie au branchement.
- * @typedef {object} PageDessin
- * @property {() => any} formeSel la forme choisie dans l'éditeur, `formeSel`
- * @property {(f: any) => number[]} boite
- * @property {() => void} ordonneDom
- * @property {() => void} mentionOsm
- */
-/** @type {PageDessin} */
-let soude;
-const formeSel = () => soude.formeSel();
-const boite = (/** @type {any} */ f) => soude.boite(f);
-const ordonneDom = () => soude.ordonneDom();
-const mentionOsm = () => soude.mentionOsm();
+/* ------------------------------------------------------------
+   La mention de la source
 
-/** Le branchement : `_dessin.html` l'appelle en tête.
- *  @param {PageDessin} page */
-export function brancheDessin(page){
-  soude = page;
+   La licence d'OpenStreetMap demande qu'on la cite partout où ses données se
+   montrent, et donc sur le plan public : la mention paraît dès qu'un calque
+   visible porte un contour qui en vient, et s'efface avec lui.
+
+   D'où le `f.osm` en propre, et non `refForme` : un contour relevé à la main
+   sur un plan coté ne doit rien à OpenStreetMap, et le citer à tort dirait
+   d'une donnée qu'elle vient d'ailleurs que de là où elle vient.
+   ------------------------------------------------------------ */
+function mentionOsm(){
+  const m = $("mentionOsm");
+  if (!m || !DATA) return;
+  m.hidden = !mesCalques().some(c => c.visible !== false &&
+    (c.formes || []).some(f => f.osm));
 }
 
 /* --- la pointe des flèches ---
@@ -153,9 +149,9 @@ function traceForme(f){
     : f.t === "stand"
     ? traceStandDessine(f)
     : f.t === "texte"
-    ? '<g class="forme' + (f.id === formeSel() ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
+    ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
       '" font-size="' + (f.taille || 2) + '"' + rotationTexte(f) + '>' + esc(f.txt) + '</text></g>'
-    : '<g class="forme' + (f.id === formeSel() ? " pick" : "") + '" data-f="' + f.id +
+    : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
       '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
       marqueFleche(f) + '</g>';
 }
@@ -307,7 +303,7 @@ function traceRepere(f){
       (plaque ? "" : ';--encre-poi:' + encreRepere(fond)) + '"' : "";
   const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
                (anneau ? " anneau" : "") +
-               (f.id === formeSel() ? " pick" : "") +
+               (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
                '" tabindex="0" role="button" aria-label="' +
                esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
@@ -515,7 +511,7 @@ function traceImage(f){
      doit continuer de demander laquelle on vient voir, plutôt que de trancher
      pour le titulaire au nom d'un choix que personne n'a fait. */
   const rang = Number.isInteger(f.soc) ? ' data-soc="' + f.soc + '"' : "";
-  return '<g class="forme' + (f.id === formeSel() ? " pick" : "") + (l ? " lie" : "") +
+  return '<g class="forme' + (f.id === formeSel ? " pick" : "") + (l ? " lie" : "") +
     '" data-f="' + f.id + '"' +
     (l ? ' data-id="' + esc(l.o.id) + '"' + rang +
          ' aria-label="' + esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
@@ -536,7 +532,7 @@ function traceStandDessine(f){
   const l = societeDeForme(f);
   const sel = l && l.o.id === state.sel && l.i === state.selSoc;
   const nom = l ? nomSurLePlan(l.soc) : "";
-  return '<g class="forme sdes' + (f.id === formeSel() ? " pick" : "") +
+  return '<g class="forme sdes' + (f.id === formeSel ? " pick" : "") +
     (l ? " lie" : "") + (sel ? " sel" : "") + '" data-f="' + f.id + '"' +
     (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
          '" tabindex="0" role="button" aria-label="' +

@@ -21,15 +21,17 @@
    du plan : elle vit ici, se remplace par `poseEmprise`, et le code soudé la
    lit par accesseur.
 
-   Ce que la vue appelle et qui reste soudé, ou n'existe pas partout — les
-   noms, les poignées de l'éditeur, les pastilles de l'itinéraire, les
-   pointes de flèche, le point de la borne, le calage d'un hall — lui est
-   confié au même branchement, sous la garde qu'il avait.
+   Ce que la vue appelle et qu'elle ne peut importer sans boucler, ou qui
+   n'existe pas partout — les noms, les poignées de l'éditeur, les pastilles
+   de l'itinéraire, les pointes de flèche, le point de la borne, le calage
+   d'un hall — lui est confié au même branchement, sous la garde qu'il avait.
+   L'ordre des calques, elle l'importe (`ordre-trace.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { recul, dessineFondCarte } from "./environs.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
+import { ordonneDom } from "./ordre-trace.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -44,7 +46,6 @@ export const vue = () => view;
 export const changeVue = (/** @type {any} */ v) => { view = v; };
 const enEdition = () => soude.enEdition();
 const libelles = () => soude.libelles();
-const ordonneDom = () => soude.ordonneDom();
 
 /** Le SVG du plan. */
 /** @type {any} */

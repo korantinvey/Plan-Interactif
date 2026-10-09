@@ -4,11 +4,12 @@
    Sortie de `_admin1.html`. Le plan public la pose à chaque chargement et à
    chaque changement de pavillon (`appliqueApparence`), et l'exploitant y
    revient à chaque couleur ou case de la pile (`pile.mjs`) et des volets
-   (`volets.mjs`). Ce que le code soudé tient encore — les options et leur
-   liste (`_admin1.html` `appliqueOptions`), les tiroirs du parcours et de
-   l'itinéraire qu'on referme — lui est confié par `brancheApparence`, à la
-   place que ce code tenait. Les secteurs s'importent de `recherche.mjs`, les
-   marques des distinctions de `distinctions.mjs`.
+   (`volets.mjs`). Ce qu'il ne peut importer sans boucler — les options et
+   leur liste (`options.mjs` `appliqueOptions`), le tiroir du parcours qu'on
+   referme (`tiroir-parcours.mjs`), qui importent tous deux ce module-ci — lui
+   est confié par `brancheApparence`, à la place que ce code tenait. Les
+   secteurs s'importent de `recherche.mjs`, les marques des distinctions de
+   `distinctions.mjs`, le tiroir de l'itinéraire de `tiroir-itineraire.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -18,6 +19,7 @@ import { marqueParcours } from "./parcours.mjs";
 import { appliqueAccent, appliqueFond, appliqueDists, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { appliqueSecteurs } from "./recherche.mjs";
 import { dessineDists } from "./distinctions.mjs";
+import { fermeItineraire } from "./tiroir-itineraire.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le plan ne
    s'habille qu'à l'arrivée des données, bien après le branchement. */
@@ -26,10 +28,8 @@ let soude = {};
 
 /**
  * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
- * L'itinéraire vient par un détour, lu au moment de refermer son tiroir.
  *
- * @param {{ appliqueOptions: () => void,
- *   fermeParcours: () => void, fermeItineraire: () => void }} b
+ * @param {{ appliqueOptions: () => void, fermeParcours: () => void }} b
  */
 export function brancheApparence(b){
   soude = b;
@@ -187,5 +187,5 @@ export function appliqueCommandes(){
   // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
   // bouton pour se refermer
   if (conf("_parcours").visible === false) soude.fermeParcours();
-  if (conf("_itineraire").visible === false) soude.fermeItineraire();
+  if (conf("_itineraire").visible === false) fermeItineraire();
 }

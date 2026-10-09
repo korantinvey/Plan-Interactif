@@ -8,10 +8,12 @@
    le visiteur voit — vit dans `environs.mjs`, qui lit d'ici le calage en
    cours de réglage par un lecteur confié au branchement.
 
-   Ce que le code soudé tient encore — les réglages et leur enregistrement,
-   le panneau des calques — lui est confié par
-   `brancheCalageCarte`, que `_environs.html` appelle à la place que ce code y
-   tenait : les boutons de la palette s'y branchent au même rang qu'avant. Les
+   Il n'a rien à recevoir du code soudé : la main qui tient le plan
+   s'importe des gestes (`gestes.mjs`), les réglages et leur enregistrement,
+   le panneau des calques et le mode administrateur de leurs modules. Il se
+   branche par `brancheCalageCarte`, que `_environs.html` appelle à la place
+   que ce code y tenait : les boutons de la palette s'y branchent au même rang
+   qu'avant. Les
    identifiants de base des pavillons, et l'oubli du plan public par le
    relais, viennent de `enregistrement.mjs`, module d'administration lui aussi.
    ============================================================ */
@@ -28,24 +30,16 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
 import { MONTE } from "./rendu.mjs";
+import { CONF, conf, enregistreConf } from "./configuration.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { ADMIN } from "./mode-admin.mjs";
 import { saisitPlan } from "./gestes.mjs";
 
-/* Ce que le code soudé confie au branchement : les réglages (`CONF`, que le
-   changement de salon remplace, et `conf`, qui en ouvre une entrée) et leur
-   enregistrement, le panneau des calques et ce qui dit s'il est là
-   (`ADMIN`). Ce qui change se lit à l'instant. La vue, elle, s'importe de
-   `vue.mjs`, le plan monté de `rendu.mjs`, et la main qui tient le plan de
-   `gestes.mjs`. */
-/**
- * @typedef {object} PageCalage
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
- * @property {() => void} enregistreConf
- * @property {() => void} construitPanneau
- * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- */
-/** @type {PageCalage} */
-let soude;
+/* Les réglages (`CONF`, que le changement de salon remplace, et `conf`, qui
+   en ouvre une entrée) et leur enregistrement, le panneau des calques et ce
+   qui dit s'il est là (`ADMIN`) s'importent, et se lisent tels qu'ils sont à
+   l'instant. La vue s'importe de `vue.mjs`, le plan monté de `rendu.mjs`, et
+   la main qui tient le plan de `gestes.mjs`. */
 
 const racine = document.documentElement;
 
@@ -90,11 +84,11 @@ function centrePavillon(){
 
 export function basculeMasqueCarte(c){
   const cle = cleMasqueCarte(c.id);
-  if (masqueCarte(c)) delete soude.conf()[cle];
-  else soude.confDe(cle).masque = true;
-  soude.enregistreConf();
+  if (masqueCarte(c)) delete CONF[cle];
+  else conf(cle).masque = true;
+  enregistreConf();
   poseMasqueCarte();
-  soude.construitPanneau();
+  construitPanneau();
 }
 
 /** Le bouton du panneau. Il ne paraît qu'avec une carte dessous : sans elle il
@@ -343,7 +337,7 @@ function litCoordonnees(txt){
 /** Le fond refait et la vue rendue : tout réglage passe par là. */
 function rafraichitCarte(){
   refaitFondCarte();
-  if (soude.estAdmin() && MONTE) soude.construitPanneau();
+  if (ADMIN && MONTE) construitPanneau();
 }
 
 /* ------------------------------------------------------------
@@ -670,11 +664,8 @@ function fermeCalage(){
 
 /**
  * Le branchement, appelé par `_environs.html` à la place de ce code.
- *
- * @param {PageCalage} page
  */
-export function brancheCalageCarte(page){
-  soude = page;
+export function brancheCalageCarte(){
   /* Le fond lit ici le calage qu'on règle : celui-là seul l'emporte sur le
      calage enregistré du pavillon. */
   confieCalageEnCours(() => ENV_CAL);

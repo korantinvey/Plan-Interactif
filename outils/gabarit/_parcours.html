@@ -8,13 +8,7 @@
    le lot versé, le tiroir, son vidage — dans `modules/tiroir-parcours.mjs`.
    Le tiroir se branche ici, à la place que son code tenait : il y branche la
    liste sur l'écran et les rappels, puis y pose ses écoutes au même rang
-   qu'avant ; ce que le code soudé tient encore lui est confié — la
-   configuration et le filtre de la recherche par des détours, lus à l'appel.
-   La fiche, que le tiroir importe (`modules/fiche.mjs`), n'en fait plus
-   partie.
+   qu'avant. Il n'en reçoit plus rien : la fiche, la configuration et le
+   filtre de la recherche, il les importe.
    ============================================================ */
-brancheTiroirParcours({
-  conf: (cle) => conf(cle),
-  filtre: () => filtre(),
-  visible: (o) => visible(o),
-});
+brancheTiroirParcours();

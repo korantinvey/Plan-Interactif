@@ -9,12 +9,14 @@
    Il se branche dans `_rendu.html`, à la place que son code tenait. Ce que le
    code soudé tient encore lui est confié par des détours, lus au moment de
    monter : le dessin des calques (`dessin.mjs`, qui importe la fiche que ce
-   module importe), le fond d'un pavillon (`_admin2.html`), le panneau des calques (`_pile.html`), et ce
-   que seule l'administration connaît — la nappe de la grille, le calage de la
+   module importe), le fond d'un pavillon (`demarrage.mjs`, qui importe ce
+   module-ci), et ce que seule l'administration connaît — la nappe de la grille, le calage de la
    carte — sous la garde qu'il avait. La reprise d'un emplacement,
    l'historique de l'éditeur et la boîte à outils, que le visiteur ne reçoit
    pas, restent dans une tranche du branchement : la page publique n'en
-   confie rien, et le montage n'a rien à oublier.
+   confie rien, et le montage n'a rien à oublier. Le panneau des calques
+   s'importe de `ordre-trace.mjs`, qui n'en remplit le contenu que chez
+   l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
    `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : le code soudé le
@@ -34,6 +36,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
 import { ferme } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le premier
    montage attend les données, bien après le branchement. */
@@ -126,7 +129,7 @@ export function montePlan(){
   // la nappe de la grille n'est qu'à l'exploitant (`modules/nappe.mjs`)
   soude.rafraichitApercu();
   MONTE = true;
-  if (ADMIN) soude.construitPanneau();
+  if (ADMIN) construitPanneau();
   onglets();
 }
 

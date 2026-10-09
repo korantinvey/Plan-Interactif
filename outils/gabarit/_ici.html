@@ -4,16 +4,12 @@
    Le code affiché dans le hall vit en deux modules : ce que le visiteur reçoit
    — relire l'adresse, poser le point, le rappel du bas de l'écran — dans
    `modules/ici.mjs` ; l'affiche que l'exploitant produit, dans
-   `modules/affiche-ici.mjs`, que seul `plan-admin.mjs` embarque. Ils se
-   branchent ici, à la place que leur code tenait : le bouton du rappel s'y
-   branche au même moment qu'avant, et ce que le code soudé tient encore leur
-   est confié — le trajet demandé, le dessin. Le tiroir de l'itinéraire
-   (`tiroir-itineraire.mjs`) importe `ici.mjs` pour son rappel : le trajet
-   demandé passe donc par ici, quand l'affiche, que le tiroir n'importe pas,
-   lit la visée chez lui.
+   `modules/affiche-ici.mjs`, que seul `plan-admin.mjs` embarque. Le premier
+   se branche ici, à la place que son code tenait : le bouton du rappel s'y
+   branche au même moment qu'avant, et le trajet demandé lui est confié — le
+   tiroir de l'itinéraire (`tiroir-itineraire.mjs`) importe `ici.mjs` pour son
+   rappel, qui ne peut l'importer en retour. L'affiche, que le tiroir
+   n'importe pas, n'a plus de branchement : la visée, le dessin, elle les
+   importe.
    ============================================================ */
 brancheIci({ iti: () => ITI, relance });
-
-/* @admin — l'affiche à coller, que seul l'exploitant produit */
-brancheAfficheIci({ formeParId });
-/* @fin-admin */

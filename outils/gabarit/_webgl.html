@@ -9,36 +9,15 @@
    Les noms, qui suivent les règles des libellés du SVG — tailles, seuils,
    placement à la main, stands dessinés —, se préparent avec eux dans
    `modules/libelles.mjs` (`libellesWebgl`), qui importe le rendu et ne peut
-   donc lui être importé : il lui est confié ici. Reste ici ce qu'il ne peut
-   pas importer et qui tient au plan plus qu'au dessin : savoir si l'on édite,
-   qui lit le calque ouvert de l'outil de dessin.
+   donc lui être importé : il lui est confié ici, comme ce qui dit si l'on
+   édite (`modules/edition-en-cours.mjs`), qui lit le calque ouvert de l'outil
+   de dessin.
    ============================================================ */
 
-/* ------------------------------------------------------------
-   L'édition.
-
-   Le SVG est le modèle, jamais ce qu'on voit : tout ce qui s'affiche passe
-   par la carte graphique, le calque qu'on dessine comme le reste. Montrer le
-   calque ouvert en SVG par-dessus aurait fait deux rendus à tenir d'accord —
-   et le calque passait devant tout, quel que soit son rang dans la pile.
-
-   Ce que les outils attrapent — une poignée, une forme du calque ouvert, un
-   libellé qu'on place — se demande aussi à la carte graphique, comme le clic
-   d'un visiteur : elle rend l'élément du SVG qu'elle a peint, et l'éditeur
-   le reçoit comme il recevait la cible du navigateur. Le SVG n'a donc jamais
-   à suivre la vue, pas plus en édition qu'ailleurs.
-
-   Une forme décorative ne s'attrape que sur le calque ouvert : ailleurs elle
-   laisse passer le clic vers le stand qu'elle recouvre, comme en SVG où les
-   calques de dessin ne reçoivent pas le pointeur.
-   ------------------------------------------------------------ */
-const enEdition = () => GL.actif && ADMIN &&
-  (Boolean(calqueActif) || PLACE_LIBELLES || Boolean(SORTE_GEO));
-
-/* La vue, le placement à la main et les gestes changent sans cesse : ils se
-   confient par une fonction qui les lit au moment voulu. */
+/* La vue et les gestes changent sans cesse : ils se confient par une fonction
+   qui les lit au moment voulu. Le placement à la main, le module l'importe. */
 brancheWebgl({
   svg, vue: () => view, cadrePlan, appliqueVue, libelles, enEdition,
-  placeLibelles: () => PLACE_LIBELLES, drag: () => drag, pince: () => pince,
+  drag: () => drag, pince: () => pince,
   libellesWebgl,
 });

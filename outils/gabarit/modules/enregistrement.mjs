@@ -19,14 +19,16 @@
 
    Un geste d'exploitant : `plan-admin.mjs` embarque ce module, `plan.mjs`
    jamais — la page publique n'a ni session ni bouton, et n'appelle ce qu'il
-   expose que sous garde `typeof`. Ce que le code soudé tient encore — le
-   mode administrateur, les réglages et leur enregistrement, le panneau des
-   calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
-   appelle à la place que ce code y tenait : les écouteurs de la page s'y
-   posent au même rang qu'avant. Les calques dessinés et leurs deux relevés
-   s'importent (`calques-dessin.mjs`), l'annonce dans la liste aussi
-   (`demarrage.mjs`) ; leur enregistrement, que l'outil de dessin tient et
-   qui importe ce module-ci, se confie.
+   expose que sous garde `typeof`. Il se branche par `brancheEnregistrement`,
+   que `_pousse.html` appelle à la place que ce code y tenait : les écouteurs
+   de la page s'y posent au même rang qu'avant. Le mode administrateur, les
+   réglages et leur rangement sur le poste, l'apparence et le panneau des
+   calques s'importent (`mode-admin.mjs`, `configuration.mjs`,
+   `apparence.mjs`, `ordre-trace.mjs`), comme les calques dessinés et leurs
+   deux relevés (`calques-dessin.mjs`) et l'annonce dans la liste
+   (`demarrage.mjs`) ; seul l'enregistrement des dessins, que l'outil de
+   dessin tient et qui importe ce module-ci, se confie. Le rangement des
+   réglages, lui, reçoit d'ici son envoi en base (`confiePublication`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
@@ -37,26 +39,22 @@ import { ecranAcces } from "./acces-admin.mjs";
 import { annonce } from "./demarrage.mjs";
 import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, confiePublication } from "./configuration.mjs";
+import { appliqueApparence } from "./apparence.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce que les chargements
-   remplacent — le mode, les réglages (`CONF`) — se lit à l'instant, par un
-   lecteur : l'envoi en relit certains après chaque `await`. Les calques et
-   leurs deux relevés (`DESSINS`, `ATTENTE`, `PUBLIES`), importés, se lisent
-   eux aussi tels qu'ils sont à l'instant. */
+/* Ce que le code soudé confie au branchement : l'enregistrement des dessins.
+   Ce que les chargements remplacent — le mode, les réglages (`CONF`) —, importé,
+   se lit tel qu'il est à l'instant : l'envoi en relit certains après chaque
+   `await`. Les calques et leurs deux relevés (`DESSINS`, `ATTENTE`,
+   `PUBLIES`) de même. */
 /**
  * @typedef {object} PageEnregistrement
- * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(source: Record<string, any>) => Record<string, any>} reglagesDuSalon
- * @property {() => void} enregistreConf
  * @property {() => void} enregistreDessins
- * @property {() => void} appliqueApparence
- * @property {() => void} construitPanneau
  */
 /** @type {PageEnregistrement} */
 let soude;
-/** @param {Record<string, any>} source */
-const reglagesDuSalon = (source) => soude.reglagesDuSalon(source);
 /** @param {string} txt @param {boolean} [erreur] */
 
 /* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
@@ -101,7 +99,7 @@ let revisionEnvoyee = 0;
 /** L'enregistrement automatique demande l'administration, un plan chargé et une
  *  session : la page publique et celle à données figées n'ont ni la première ni
  *  la dernière, et l'identité est vérifiée avant que le plan arrive. */
-const autoDispo = () => soude.estAdmin() && !!DATA?.plans?.length && !!accesBase();
+const autoDispo = () => ADMIN && !!DATA?.plans?.length && !!accesBase();
 
 /** Reste-t-il quelque chose qui ne soit que sur ce poste ? */
 const enRetard = () => revision !== revisionEnvoyee ||
@@ -171,7 +169,7 @@ function ditAlerte(etat){
      pas — « autoDispo » est faux — et le bouton se contente de proposer une
      poussée manuelle qui échouera. C'est le même piège que l'échec, en plus
      silencieux encore, et il ne se dit qu'en présence d'un travail à perdre. */
-  if (soude.estAdmin() && etat === "manuel" && enRetard()){
+  if (ADMIN && etat === "manuel" && enRetard()){
     z.hidden = false;
     z.dataset.genre = "echec";
     txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
@@ -224,6 +222,12 @@ export function programmePublication(){
   revision++;
   programmeEnvoi(REPOS);
 }
+
+/* Le rangement des réglages sur le poste (`configuration.mjs`
+   `enregistreConf`) est public, et ne peut importer ce module : il en reçoit
+   l'envoi dès que la page d'administration le charge, avant tout le code
+   soudé — comme lorsqu'il le cherchait sous garde `typeof`. */
+confiePublication(programmePublication);
 
 /** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
  *  de lui-même, sans attendre qu'on pense à cliquer. */
@@ -295,7 +299,7 @@ export async function identifiants(acces){
  *  par pavillon, et sans ceux d'un salon voisin, qui n'ont rien à faire dans
  *  son enregistrement — c'est par là qu'ils s'y installaient. */
 function reglagesSeuls(){
-  return reglagesDuSalon(soude.conf());
+  return reglagesDuSalon(CONF);
 }
 
 /* Ce que la base disait des réglages quand la page les a chargés, clé par clé
@@ -412,7 +416,7 @@ export async function pousseConfiguration(auto){
         headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify([{
           plan_id: planId,
-          pile: soude.conf()["_pile:" + p.id] || [],
+          pile: CONF["_pile:" + p.id] || [],
           reglages: bloc,
           modifie_le: new Date().toISOString(),
         }]),
@@ -536,7 +540,7 @@ function sauvegardeCourante(){
     pavillons[p.id] = {
       libelle: p.libelle || "",
       dessins: DESSINS[p.id] || [],
-      pile: soude.conf()["_pile:" + p.id] || [],
+      pile: CONF["_pile:" + p.id] || [],
     };
   });
   return {
@@ -588,17 +592,17 @@ function appliqueSauvegarde(s){
          La marque le dit au chargement suivant, le temps que l'envoi aboutisse. */
       marqueAttente(id, true);
     }
-    if (Array.isArray(v.pile)) soude.conf()["_pile:" + id] = v.pile;
+    if (Array.isArray(v.pile)) CONF["_pile:" + id] = v.pile;
     pavillons++;
   });
-  if (s.reglages) Object.assign(soude.conf(), reglagesDuSalon(s.reglages));
-  soude.enregistreConf();
+  if (s.reglages) Object.assign(CONF, reglagesDuSalon(s.reglages));
+  enregistreConf();
   // range les dessins sur le poste, oublie les relevés qui en dépendent, et
   // programme l'envoi — le même geste que pour un trait tracé à la main
   soude.enregistreDessins();
-  soude.appliqueApparence();
+  appliqueApparence();
   dessineDessins();
-  soude.construitPanneau();
+  construitPanneau();
   annonce("Sauvegarde restaurée : " + pavillons +
     " pavillon" + (pavillons > 1 ? "s" : "") +
     (calques ? ", " + calques + " calque" + (calques > 1 ? "s" : "") + " de dessin" : "") +

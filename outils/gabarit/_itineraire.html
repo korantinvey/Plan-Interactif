@@ -4,12 +4,15 @@
    Le calcul — grille de marche, recherche du chemin, faces, passages d'un
    plan à l'autre — vit dans `modules/itineraire.mjs` ; le tiroir, la visée et
    le trait tracé, dans `modules/tiroir-itineraire.mjs` ; la nappe de la
-   grille, que seul l'exploitant voit, dans `modules/nappe.mjs`. Ils se
-   branchent ici, à la place que leur code tenait dans ce script, et reçoivent
-   ce que le code soudé tient encore : les réglages, les calques de dessin, et
-   ce que le parcours et la journée savent des conférences ; la vue, les
-   volets et les tiroirs du plan. Ce que le dessin sait des formes et des
-   repères, le calcul l'importe.
+   grille, que seul l'exploitant voit, dans `modules/nappe.mjs`, qui importe
+   tout ce qu'il lui faut. Les deux premiers se branchent ici, à la place que
+   leur code tenait dans ce script, et reçoivent ce qu'ils ne peuvent
+   importer : le calcul, éprouvé seul hors de la page, les réglages, les
+   calques de dessin, et ce que le parcours et la journée savent des
+   conférences ; le tiroir, le passage d'un pavillon à l'autre, la fiche et
+   le parcours qu'il referme. Ce que le dessin sait des formes et des
+   repères, le calcul l'importe ; le tiroir, la vue et la forme d'un repère
+   dessiné.
    ============================================================ */
 brancheItineraire({
   conf: () => CONF,
@@ -23,12 +26,8 @@ brancheItineraire({
 /* Le tiroir : la vue, il l'importe de `modules/vue.mjs`. Ses écoutes se
    posent ici, au rang qu'elles tenaient parmi celles du plan. */
 brancheTiroirItineraire({
-  changePlan, ferme, fermeParcours, formeParId,
+  changePlan, ferme, fermeParcours,
   /* Désigner l'endroit d'un code affiché n'est qu'à l'exploitant
      (`modules/affiche-ici.mjs`) : la page publique ne l'a pas. */
   ouvreCodeIci: typeof ouvreCodeIci === "function" ? ouvreCodeIci : null,
 });
-
-/* @admin — la nappe de la grille de marche, outil de mise au point */
-brancheNappe({ jeton, svg });
-/* @fin-admin */

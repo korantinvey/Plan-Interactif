@@ -13,17 +13,18 @@
    l'outil les remplace par leurs portes. Leur tracé sur le plan vit dans
    `modules/dessin.mjs`.
 
-   Ce que le code soudé tient encore lui est confié par `brancheOutilDessin`,
-   que `_dessin.html` appelle à la place que ce code tenait : la forme choisie
-   dans l'éditeur par un lecteur et sa porte, ce qui se déclare dans d'autres
-   morceaux du script par des appels différés. Les boutons et les champs de la
-   boîte à outils, le dépôt d'une image sur le plan et son collage s'y
-   branchent, au rang qu'ils tenaient parmi les écouteurs de la page.
+   Il se branche par `brancheOutilDessin`, que `_dessin.html` appelle à la
+   place que ce code tenait : les boutons et les champs de la boîte à outils,
+   le dépôt d'une image sur le plan et son collage s'y branchent, au rang
+   qu'ils tenaient parmi les écouteurs de la page. Il n'a plus rien à en
+   recevoir : la forme choisie dans l'éditeur et sa porte s'importent de
+   `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
+   rangement des réglages de `configuration.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { P } from "./donnees.mjs";
-import { CONF, conf, optionActive } from "./configuration.mjs";
+import { CONF, conf, optionActive, enregistreConf } from "./configuration.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
@@ -49,23 +50,10 @@ import { TYPES_REPERE, MODES_TRANSPORT, estTransport, couleurLigne, couleurEcrit
 import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_REPERE, nomSurLePlan,
   societeDeForme, societesDuPlan } from "./dessin.mjs";
 import { oublieReperes } from "./points-interet.mjs";
+import { formeSel, poseFormeSel, formeParId } from "./forme-choisie.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { confieApresOption } from "./options.mjs";
 
-/**
- * Ce que le code soudé confie au branchement.
- * @typedef {object} PageOutilDessin
- * @property {() => any} formeSel la forme choisie dans l'éditeur, `formeSel`
- * @property {(id: any) => void} poseFormeSel
- * @property {(id: any) => any} formeParId
- * @property {() => void} construitPanneau
- * @property {() => void} enregistreConf
- */
-/** @type {PageOutilDessin} */
-let soude;
-const formeSel = () => soude.formeSel();
-const poseFormeSel = (/** @type {any} */ id) => soude.poseFormeSel(id);
-const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
-const construitPanneau = () => soude.construitPanneau();
-const enregistreConf = () => soude.enregistreConf();
 
 export const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
@@ -138,7 +126,7 @@ function restaure(source, autre){
      quatre poignées affichés sur place, le panneau « Élément » ouvert sur elle.
      Les commandes qui en dépendent ne faisaient alors plus rien, `formeParId`
      ne rendant plus rien — un refus muet. */
-  if (formeSel() && !formeParId(formeSel())) poseFormeSel(null);
+  if (formeSel && !formeParId(formeSel)) poseFormeSel(null);
   clotSalve();
   enregistreDessins(); dessineDessins(); dessinePoignees();
   if (ADMIN){ construitPanneau(); majElement(); }
@@ -590,7 +578,7 @@ export function termineTrace(valider){
 
 function aide(){
   if (!$("outilsAide")) return;
-  const t = { main: formeSel() ? "Glissez pour déplacer, les carrés pour redimensionner."
+  const t = { main: formeSel ? "Glissez pour déplacer, les carrés pour redimensionner."
                              : "Cliquez une forme de ce calque pour la modifier.",
               rect: "Cliquez-glissez pour tracer un rectangle.",
               poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
@@ -614,11 +602,22 @@ function aide(){
 
 /* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
    stands garde son bouton dans la palette, grisé, et c'est ici que le clic
-   retombe sur la sélection (voir « OPTIONS » de « _admin1.html »). L'image,
+   retombe sur la sélection (voir « OPTIONS » de « options.mjs »). L'image,
    elle, n'est pas une option — c'en est une de la rattacher à un exposant, et
    c'est son champ qui se grise. */
 const OPTION_OUTIL = { stand: "dessinStand" };
 const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
+
+/* Ce que ces deux options refont quand l'exploitant les ferme, l'outil le sait
+   seul : il le leur confie dès que la page d'administration le charge
+   (`options.mjs`). L'outil qu'on ferme ne s'est jamais tenu en main hors de
+   l'administration, et le champ image ne se pose qu'outil en main. */
+// l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
+confieApresOption("dessinStand", () => { if (outil === "stand") choisitOutil("main"); });
+/* Le gris du champ vient de la feuille de style, mais sa prise au clavier
+   et sa liste de choix se posent en JS, et seulement l'outil en main : on
+   repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
+confieApresOption("imageStand", () => { if (outil === "image") poseChampImage(); });
 
 /* --- suppression au clic en mode sélection --- */
 export function choisitOutil(o){
@@ -866,10 +865,8 @@ export function renommeCalque(c, apres){
  * Le branchement : `_dessin.html` l'appelle à la place que ce code tenait. Les
  * boutons et les champs de la boîte à outils s'y branchent, comme le dépôt et
  * le collage d'une image, dans l'ordre où le code soudé les posait.
- * @param {PageOutilDessin} page
  */
-export function brancheOutilDessin(page){
-  soude = page;
+export function brancheOutilDessin(){
 
   $("fichierImage").onchange = e => { importeImage(e.target.files[0]); e.target.value = ""; };
   $("choisirImage").onclick = () => $("fichierImage").click();
@@ -953,7 +950,7 @@ export function brancheOutilDessin(page){
      calques. Le retour en arrière tient le geste entier — on mémorise au premier
      événement, pas à chacun. */
   suitNuancier($("elemCouleur"), (v) => {
-    const cible = formeSel() && formeParId(formeSel());
+    const cible = formeSel && formeParId(formeSel);
     if (!cible || !estTransport(cible.f)) return;
     if (!couleurEnCours){ memorise(); couleurEnCours = true; }
     const c = couleurEcrite(cible.f.mode, cible.f.ligne, v, cible.c);
