@@ -1445,15 +1445,15 @@ Fonctions :
 `seuilGere` 74 · `seuilImpose` 75 · `seuilParSurface` 76 · `regleSeuil` 81
 `aireDuStand` 99 · `seuilConcentration` 135 · `phraseSeuil` 158
 
-### `modules/socle-console.mjs` — 382 l. → console, rapport
+### `modules/socle-console.mjs` — 386 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
 `poseSession` 41 · `entetes` 64 · `renouvelle` 73 · `appel` 92 · `rest` 107
-`ecranConfig` 126 · `ecranConnexion` 155 · `deconnecte` 220 · `signale` 235 · `bloc` 259
-`grille` 277 · `idCompte` 294 · `themeSombre` 303 · `brancheSocle` 319
+`ecranConfig` 126 · `ecranConnexion` 158 · `deconnecte` 224 · `signale` 239 · `bloc` 263
+`grille` 281 · `idCompte` 298 · `themeSombre` 307 · `brancheSocle` 323
 
 ### `modules/sponsor.mjs` — 400 l. → plan, plan-admin
 

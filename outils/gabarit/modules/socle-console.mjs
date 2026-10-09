@@ -148,6 +148,9 @@ export function ecranConfig() {
     poseSession({ CFG: { url: u, anonKey: k } });
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();
+    /* La connexion a pris la place de cette fenêtre : la fermer maintenant,
+       ce serait fermer celle qu'on vient d'ouvrir. */
+    return false;
   } }]);
 }
 
@@ -172,7 +175,8 @@ export function ecranConnexion(message) {
     info.style.marginTop = "-4px";
     info.textContent = "Projet : " + (CFG?.url || "non configuré");
     corps.appendChild(info);
-  }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+  }, [// la configuration prend la place : on ne referme pas ce qu'on vient d'ouvrir
+      { libelle: "Changer de projet", action: () => { ecranConfig(); return false; } },
       { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
