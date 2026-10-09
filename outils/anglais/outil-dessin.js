@@ -1,41 +1,10 @@
-/* `outils/gabarit/_dessin.html` — les calques de dessin : les types de repères
-   et de zones, la boîte à outils, les aides qui accompagnent chaque outil. */
+/* `outils/gabarit/modules/outil-dessin.mjs` — l'outil de dessin de
+   l'exploitant : la boîte à outils, les aides qui accompagnent chaque outil,
+   les images posées, le rôle d'un calque et son nom. */
 module.exports = {
   "Mémoire du navigateur pleine : allégez ou supprimez une image.": "Browser storage is full: shrink or delete an image.",
   "Rien à annuler.": "Nothing to undo.",
 
-  // ce qu'un repère est
-  "Sans pictogramme": "No icon",
-  "Accessibilité": "Accessibility",
-  "Accueil": "Reception",
-  "Ascenseur": "Lift",
-  "Café": "Café",
-  "Distributeur": "Cash machine",
-  "Entrée": "Entrance",
-  "Entrée/Sortie": "Entrance/Exit",
-  "Escalator": "Escalator",
-  "Escalier": "Stairs",
-  "Information": "Information",
-  "Parking": "Car park",
-  "Restauration": "Food & drink",
-  "Salle de réunion": "Meeting room",
-  "Secours": "First aid",
-  "Sortie": "Exit",
-  "Transports en commun": "Public transport",
-  "Vestiaire": "Cloakroom",
-  "WC": "Toilets",
-  /* La nature qui, au cartouche, tient lieu de tous les arrêts. Plus courte
-     que le type dont elle vient : c'est une pastille, et elle en côtoie dix. */
-  "Transports": "Transport",
-  // le mode d'un arrêt, et le nom que sa ligne lui donne
-  "Bus": "Bus",
-  "Métro": "Metro",
-  "Tram": "Tram",
-  "Métro {ligne}": "Metro {ligne}",
-  // ce qu'une zone est
-  "Sans type": "No type",
-
-  "Mène à": "Leads to",
   "Images": "Images",
   "Image posée au centre de la vue. Glissez sur le plan pour en poser une autre.":
     "Image placed in the centre of the view. Drag on the map to place another one.",

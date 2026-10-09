@@ -34,27 +34,25 @@
    couches, la palette, les poignées, le tracé d'un ajout — est d'exploitant :
    il vit dans `modules/reprise-emplacements.mjs`, que seul `plan-admin.mjs`
    embarque, et pose le mode par la porte d'ici. Ce que le code soudé tient
-   encore — les réglages, le nom d'une société sur le plan, les noms anglais
-   des zones — lui est confié par `brancheEmplacements`, que `_geometrie.html`
-   appelle à la place que ce code y tenait.
+   encore — les réglages, les noms anglais des zones — lui est confié par
+   `brancheEmplacements`, que `_geometrie.html` appelle à la place que ce code
+   y tenait ; le nom d'une société sur le plan s'importe de `dessin.mjs`.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteGeo } from "./forme.mjs";
+import { nomSurLePlan } from "./dessin.mjs";
 
 /* Ce que le code soudé confie au branchement. Les réglages (`CONF`, que le
-   changement de salon remplace) se lisent à l'instant ; le nom d'une société
-   se déclare dans `_dessin.html`, et se confie par un détour. */
+   changement de salon remplace) se lisent à l'instant. */
 /**
  * @typedef {object} PageEmplacements
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(soc: any) => string} nomSurLePlan
  * @property {() => void} nomsAnglaisDesZones
  */
 /** @type {PageEmplacements} */
 let soude;
 const reglages = () => soude.conf();
-const nomSurLePlan = (soc) => soude.nomSurLePlan(soc);
 const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 
 /**

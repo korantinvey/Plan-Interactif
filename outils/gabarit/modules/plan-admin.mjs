@@ -52,6 +52,10 @@ import { poseNappe, rafraichitApercu, brancheNappe } from "./nappe.mjs";
 import { brancheOrdreCalques } from "./ordre-calques.mjs";
 import { brancheNuancier, suitNuancier } from "./nuancier.mjs";
 import { brancheReglageRecherche } from "./reglage-recherche.mjs";
+import { enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTrace, fermeIci, ajouteForme,
+  poseChampImage, remplitListeSocietes, societeSaisie, imageEnAttente, dessinPointerDown, dessinPointerMove,
+  dessinPointerUp, termineTrace, choisitOutil, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin }
+  from "./outil-dessin.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -93,6 +97,9 @@ Object.assign(globalThis, {
   brancheOrdreCalques,
   brancheNuancier, suitNuancier,
   brancheReglageRecherche,
+  enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTrace, fermeIci, ajouteForme,
+  poseChampImage, remplitListeSocietes, societeSaisie, dessinPointerDown, dessinPointerMove,
+  dessinPointerUp, termineTrace, choisitOutil, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
@@ -110,3 +117,6 @@ Object.defineProperties(globalThis, vivants({ traceAjout: () => traceAjout }, "f
    forme et l'efface en la lâchant. Le dessin le lit par accesseur, pour garder
    les points d'accrochage d'un geste qui sort du plan. */
 Object.defineProperties(globalThis, vivants({ geste: () => geste }, "editionPointerDown"));
+/* L'image qu'on s'apprête à poser, ou rien : seul son import la remplace. Les
+   aimants la lisent par accesseur, pour garder ses proportions au tracé. */
+Object.defineProperties(globalThis, vivants({ imageEnAttente: () => imageEnAttente }, "importeImage"));
