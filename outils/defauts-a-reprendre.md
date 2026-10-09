@@ -47,10 +47,11 @@ Tous sont maintenant réglés ; la liste garde la trace de ce qu'on a trouvé.
     dans une page sans le module (celui du rapport dans la console, et
     l'inverse) : seules comptent les lignes propres au morceau.
 17. **Commentaires périmés** — renvois aux fichiers soudés devenus modules,
-    dans les sources des pages. Restent, hors des pages : `supabase/functions/`
-    (`plan-public/index.ts`, `mesure/index.ts`, `sync-evenement/index.ts`,
-    `_partage/vignette.ts` — laissés pour ne pas redéployer une fonction pour
-    un commentaire), `src/index.mjs`, `README.md`.
+    dans les sources des pages, puis dans `src/index.mjs`, `README.md` et
+    `CLAUDE.md`. Restent ceux de `supabase/functions/` (`plan-public/index.ts`,
+    `mesure/index.ts`, `sync-evenement/index.ts`, `_partage/vignette.ts`) :
+    laissés pour ne pas redéployer une fonction pour un commentaire — à
+    reprendre avec la prochaine retouche de chacune.
 
 ## Sans défaut
 
