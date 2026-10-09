@@ -46,7 +46,9 @@
    l'affiche — vit dans `modules/affiche-ici.mjs`, que seul `plan-admin.mjs`
    embarque. Le visiteur ne reçoit que ce qui relit l'adresse et tient le
    rappel du bas de l'écran ; `_ici.html` lui confie le tiroir de
-   l'itinéraire (`ITI`, `relance`), encore soudé, par `brancheIci`.
+   l'itinéraire (`ITI`, `relance`) par `brancheIci` : ce tiroir est un module
+   (`tiroir-itineraire.mjs`), mais qui importe celui-ci pour son rappel, et ne
+   peut donc être importé en retour.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";

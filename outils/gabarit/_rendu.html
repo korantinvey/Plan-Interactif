@@ -224,7 +224,8 @@ function montePlan(){
   dessineItineraire();
   // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
   dessineBorne();
-  rafraichitApercu();
+  // la nappe de la grille n'est qu'à l'exploitant (`modules/nappe.mjs`)
+  if (typeof rafraichitApercu === "function") rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();

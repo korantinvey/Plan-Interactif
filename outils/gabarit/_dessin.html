@@ -2512,7 +2512,7 @@ $("roleIti").onchange = e => {
   relance();
 };
 
-$("voirNappe").onchange = e => { voirNappe = e.target.checked; rafraichitApercu(); };
+$("voirNappe").onchange = e => { poseNappe(e.target.checked); rafraichitApercu(); };
 
 function creeCalque(){
   demandeNom("Nouveau calque", "Calque " + (mesCalques().length + 1), nom => {

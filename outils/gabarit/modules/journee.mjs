@@ -18,10 +18,11 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { mesure } from "./mesure.mjs";
 import { annoncePlan, litLaCharge, brancheCharge } from "./charge-annoncee.mjs";
 import { PLACES, oublieMatrice, calculeSejour, apercuRepartition, brancheSejour } from "./sejour.mjs";
+import { ITI, TRACE, poseTrace, dessineItineraire, cadreItineraire } from "./tiroir-itineraire.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Le tracé de
-   l'itinéraire (`_itineraire.html` `TRACE`) est réaffecté là-bas comme ici :
-   on le lit par une fonction, et on le pose par une autre. */
+   l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté là-bas comme
+   ici : on le lit tel qu'il est à l'instant, et on le pose par sa porte. */
 /** @type {Record<string, any>} */
 let soude = {};
 
@@ -37,10 +38,7 @@ const rangParcours = (hote, r) => soude.rangParcours(hote, r);
 const rafraichitParcours = () => soude.rafraichitParcours();
 const changePlan = (i) => soude.changePlan(i);
 // le trait de l'itinéraire, que la journée reprend pour elle
-const trace = () => soude.trace();
-const poseTrace = (t) => soude.poseTrace(t);
-const dessineItineraire = () => soude.dessineItineraire();
-const cadreItineraire = () => soude.cadreItineraire();
+const trace = () => TRACE;
 
 /**
  * Le parcours dit ce qu'on veut voir. Il ne dit ni quel jour, ni dans quel
@@ -1239,16 +1237,14 @@ function refaitSejour(cleAffichee, fige){
  * @param {{ datesSalon: () => any[], horairesSalon: (jour: string) => any,
  *   lueHeure: (s: string) => number | null, minutesVisite: () => number,
  *   seuilGere: () => boolean, seuilImpose: () => boolean, seuilConcentration: (o: any) => number,
- *   iti: () => { pmr: boolean }, select: Function, ficheConf: Function, basculeParcours: Function,
- *   rangParcours: Function, rafraichitParcours: Function, changePlan: Function,
- *   trace: () => any, poseTrace: (t: any) => void, dessineItineraire: Function,
- *   cadreItineraire: Function }} b
+ *   select: Function, ficheConf: Function, basculeParcours: Function,
+ *   rangParcours: Function, rafraichitParcours: Function, changePlan: Function }} b
  */
 export function brancheJournee(b){
   soude = b;
   brancheSejour({ minutesVisite: b.minutesVisite, horairesSalon: b.horairesSalon,
                   seuilConcentration: b.seuilConcentration, seuilImpose: b.seuilImpose,
-                  iti: b.iti });
+                  iti: () => ITI });
 
   /* La charge annoncée — `charge-annoncee.mjs`. Le réglage du salon lui vient
      du code soudé ; le parcours et la visite calculée sont réaffectés, l'un

@@ -45,6 +45,8 @@ import { ouvreModale } from "./fenetre.mjs";
 import { resteSponsor } from "./sponsor.mjs";
 import { ecritDistance, ecritDuree } from "./itineraire.mjs";
 import { SEJOUR, JOURNEE, vueJournee as VUE_JOURNEE, joursAVenir } from "./journee.mjs";
+import { ITI, ROUTE, attente as attenteIti, visee as viseeIti, poseVisee, bandeauVisee, fermeItineraire }
+  from "./tiroir-itineraire.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
    se lance qu'une fois la page démarrée, bien après le branchement. */
@@ -68,8 +70,7 @@ let svg = null;
  *
  * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
  *   centre: Function, ferme: Function, fermeParcours: Function,
- *   fermeItineraire: Function, etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
- *   route: () => any, attente: () => any, iti: () => any, visee: () => any, eteintVisee: Function,
+ *   etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
  *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
  */
@@ -87,15 +88,16 @@ const changePlan = (i) => soude.changePlan(i);
 const centre = (o) => soude.centre(o);
 const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
-const fermeItineraire = () => soude.fermeItineraire();
 const ETROIT = () => soude.etroit();
-/* Le trajet demandé (`_itineraire.html` `ROUTE`, `attente`, `ITI`), la visée
-   en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire l'éteint. */
-const route = () => soude.route();
-const attente = () => soude.attente();
-const iti = () => soude.iti();
-const visee = () => soude.visee();
-const eteintVisee = () => soude.eteintVisee();
+/* Le trajet demandé (`tiroir-itineraire.mjs` `ROUTE`, `attente`, `ITI`), la
+   visée en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire
+   l'éteint — sans passer par « finVisee », qui rouvrirait le tiroir qu'on
+   referme. */
+const route = () => ROUTE;
+const attente = () => attenteIti;
+const iti = () => ITI;
+const visee = () => viseeIti;
+const eteintVisee = () => { poseVisee(null); bandeauVisee(); };
 // la journée calculée et ce que le tiroir montre (`journee.mjs`)
 const journee = () => JOURNEE;
 const vueJournee = () => VUE_JOURNEE;
@@ -160,8 +162,9 @@ const tutoFicheOuverte = () => tutoOuvert("detail") && $("voile").classList.cont
 const tutoFiche = () => tutoFicheOuverte() && state.sel ? parId.get(state.sel) || null : null;
 
 const tutoParcours = () => conf("_parcours").visible !== false;
-/* Sans « Path2D », l'itinéraire est retiré de la page (voir la fin de
-   « _itineraire.html ») : la visite n'a rien à en montrer. */
+/* Sans « Path2D », l'itinéraire est retiré de la page (voir
+   « tiroir-itineraire.mjs » `brancheTiroirItineraire`) : la visite n'a rien
+   à en montrer. */
 const tutoItineraire = () =>
   conf("_itineraire").visible !== false && typeof Path2D !== "undefined";
 /* La journée organisée est une option du plan : le salon qui ne l'a pas prise
