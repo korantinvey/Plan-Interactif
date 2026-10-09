@@ -28,6 +28,8 @@ import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
 import { codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci } from "./affiche-ici.mjs";
 import { NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel } from "./tutoriel.mjs";
+import { majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
+  pousseConfiguration, brancheSauvegarde, brancheEnregistrement } from "./enregistrement.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -46,4 +48,6 @@ Object.assign(globalThis, {
   codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci,
   NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion,
   reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel,
+  majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
+  pousseConfiguration, brancheSauvegarde, brancheEnregistrement,
 });

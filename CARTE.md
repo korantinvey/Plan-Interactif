@@ -33,15 +33,15 @@ Fonctions :
 `policePrete` 1401 · `policeDesNoms` 1419 · `posePoliceLibelles` 1448
 `appliqueModele` 1480 · `habilleModale` 1524
 
-### `_admin2.html` — 272 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 274 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 67 · `entetesApi` 90 · `chargeFond` 114 · `panneDuChargement` 161
-`CLE_VERSION` 171 · `versionRetenue` 172 · `retientVersion` 175 · `demandePlan` 199
-`charge` 223
+`demarre` 8 · `annonce` 69 · `entetesApi` 92 · `chargeFond` 116 · `panneDuChargement` 163
+`CLE_VERSION` 173 · `versionRetenue` 174 · `retientVersion` 177 · `demandePlan` 201
+`charge` 225
 
 ### `_aimants.html` — 488 l. → plan-admin.html
 
@@ -149,7 +149,7 @@ Fonctions :
 
 - l.666 · Page de rapport
 
-### `_dessin.html` — 2559 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2560 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -157,34 +157,34 @@ Fonctions :
 
 `enAttente` 42 · `litRange` 69 · `ouvreDessins` 81 · `reprendCommun` 106
 `notePubliees` 132 · `rangeDessins` 150 · `dejaPubliee` 155 · `marqueAttente` 161
-`mesCalques` 169 · `enregistreDessins` 171 · `instantane` 215 · `clotSalve` 226
-`memorise` 227 · `restaure` 238 · `annule` 254 · `refais` 266 · `trouveCalque` 269
-`nouvelId` 270 · `cheminArrondi` 288 · `estCadre` 331 · `cheminForme` 333 · `styleTrait` 353
-`longueurFleche` 379 · `cheminFleche` 393 · `marqueFleche` 422 · `rafraichitFleches` 433
-`poseTrait` 450 · `traceForme` 461 · `rotationTexte` 480 · `dessineDessins` 485
-`redessineForme` 526 · `peintCalque` 550 · `versPlan` 556 · `apercu` 562 · `apercuGuide` 574
-`toleranceTrace` 599 · `aimanteContour` 604 · `rayonContour` 607 · `redresseTrace` 626
-`traceGuide` 660 · `fermeIci` 667 · `ajouteForme` 674 · `pictoDe` 802
-`nomTypeRepereFr` 858 · `nomTypeRepere` 860 · `typeZone` 890 · `pictoForme` 897
-`estPorte` 917 · `ouvreEntrant` 918 · `ouvreSortant` 919 · `modeDit` 959 · `lettreMode` 961
-`estTransport` 965 · `modeTransport` 968 · `glypheRepere` 980 · `cleLigne` 1017
-`ligneAffichee` 1028 · `couleurLigne` 1036 · `couleurRepere` 1042 · `encreRepere` 1048
-`nomLigneFr` 1062 · `libelleDoffice` 1070 · `couleurEcrite` 1077 · `traceRepere` 1096
-`nomSurLePlan` 1230 · `etiquetteSociete` 1241 · `seRattache` 1269 · `societeDeForme` 1281
-`societesDuPlan` 1293 · `poseChampImage` 1315 · `remplitListeSocietes` 1322
-`societeSaisie` 1330 · `traceImage` 1358 · `traceStandDessine` 1383
-`texteStandDessine` 1407 · `poseLibellesDessines` 1425 · `decoupeStand` 1446
-`marqueStandsDessines` 1461 · `rafraichitStandsDessines` 1476 · `oublieReperes` 1506
-`reperesCherchables` 1508 · `vaAuRepere` 1552 · `clePoi` 1595 · `pastillePoi` 1604
-`cartouchePoi` 1608 · `ouvrePoi` 1727 · `mesureCartouche` 1800 · `pharePoi` 1816
-`phareRepere` 1820 · `phareZone` 1822 · `eclairePoi` 1828 · `oublieChoixPoi` 1861
-`signale` 1870 · `calquePourImage` 1885 · `lienImageSaisi` 1913 · `formeImage` 1925
-`poseImage` 1934 · `ditImagePosee` 1956 · `importeImage` 1964 · `dessinPointerDown` 2015
-`dessinPointerMove` 2100 · `dessinPointerUp` 2138 · `termineTrace` 2179 · `aide` 2191
-`outilOffert` 2221 · `choisitOutil` 2224 · `enchaineStand` 2255 · `optionsModes` 2285
-`proposeCouleurLigne` 2296 · `montreTransport` 2307 · `activeCalque` 2373 · `cleVerrou` 2431
-`verrouille` 2432 · `basculeVerrou` 2434 · `pictoVerrou` 2451 · `montreRoleIti` 2485
-`creeCalque` 2516 · `demandeNom` 2529 · `renommeCalque` 2548
+`mesCalques` 170 · `enregistreDessins` 172 · `instantane` 216 · `clotSalve` 227
+`memorise` 228 · `restaure` 239 · `annule` 255 · `refais` 267 · `trouveCalque` 270
+`nouvelId` 271 · `cheminArrondi` 289 · `estCadre` 332 · `cheminForme` 334 · `styleTrait` 354
+`longueurFleche` 380 · `cheminFleche` 394 · `marqueFleche` 423 · `rafraichitFleches` 434
+`poseTrait` 451 · `traceForme` 462 · `rotationTexte` 481 · `dessineDessins` 486
+`redessineForme` 527 · `peintCalque` 551 · `versPlan` 557 · `apercu` 563 · `apercuGuide` 575
+`toleranceTrace` 600 · `aimanteContour` 605 · `rayonContour` 608 · `redresseTrace` 627
+`traceGuide` 661 · `fermeIci` 668 · `ajouteForme` 675 · `pictoDe` 803
+`nomTypeRepereFr` 859 · `nomTypeRepere` 861 · `typeZone` 891 · `pictoForme` 898
+`estPorte` 918 · `ouvreEntrant` 919 · `ouvreSortant` 920 · `modeDit` 960 · `lettreMode` 962
+`estTransport` 966 · `modeTransport` 969 · `glypheRepere` 981 · `cleLigne` 1018
+`ligneAffichee` 1029 · `couleurLigne` 1037 · `couleurRepere` 1043 · `encreRepere` 1049
+`nomLigneFr` 1063 · `libelleDoffice` 1071 · `couleurEcrite` 1078 · `traceRepere` 1097
+`nomSurLePlan` 1231 · `etiquetteSociete` 1242 · `seRattache` 1270 · `societeDeForme` 1282
+`societesDuPlan` 1294 · `poseChampImage` 1316 · `remplitListeSocietes` 1323
+`societeSaisie` 1331 · `traceImage` 1359 · `traceStandDessine` 1384
+`texteStandDessine` 1408 · `poseLibellesDessines` 1426 · `decoupeStand` 1447
+`marqueStandsDessines` 1462 · `rafraichitStandsDessines` 1477 · `oublieReperes` 1507
+`reperesCherchables` 1509 · `vaAuRepere` 1553 · `clePoi` 1596 · `pastillePoi` 1605
+`cartouchePoi` 1609 · `ouvrePoi` 1728 · `mesureCartouche` 1801 · `pharePoi` 1817
+`phareRepere` 1821 · `phareZone` 1823 · `eclairePoi` 1829 · `oublieChoixPoi` 1862
+`signale` 1871 · `calquePourImage` 1886 · `lienImageSaisi` 1914 · `formeImage` 1926
+`poseImage` 1935 · `ditImagePosee` 1957 · `importeImage` 1965 · `dessinPointerDown` 2016
+`dessinPointerMove` 2101 · `dessinPointerUp` 2139 · `termineTrace` 2180 · `aide` 2192
+`outilOffert` 2222 · `choisitOutil` 2225 · `enchaineStand` 2256 · `optionsModes` 2286
+`proposeCouleurLigne` 2297 · `montreTransport` 2308 · `activeCalque` 2374 · `cleVerrou` 2432
+`verrouille` 2433 · `basculeVerrou` 2435 · `pictoVerrou` 2452 · `montreRoleIti` 2486
+`creeCalque` 2517 · `demandeNom` 2530 · `renommeCalque` 2549
 
 Éléments :
 
@@ -365,15 +365,15 @@ Fonctions :
 `perimeJournee` 1242 · `oublieSejour` 1257 · `ouvreOrganisation` 1272 · `essaieSejour` 1652
 `lanceSejour` 1682 · `refaitSejour` 1721
 
-### `_js.html` — 540 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 543 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.27 · 1. Index global — la recherche porte sur tous les pavillons
 
 Fonctions :
 
 `nomDeLaZone` 44 · `nomsAnglaisDesZones` 46 · `texteProduits` 59 · `indexe` 63
-`chronoConf` 302 · `confsDuPlan` 307 · `indexeConferences` 325 · `rangeConferences` 403
-`poseFavicon` 450 · `poseLogoSalon` 476 · `poseTonDeLaBarre` 513
+`chronoConf` 305 · `confsDuPlan` 310 · `indexeConferences` 328 · `rangeConferences` 406
+`poseFavicon` 453 · `poseLogoSalon` 479 · `poseTonDeLaBarre` 516
 
 Éléments :
 
@@ -428,11 +428,11 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_ordre-fiche.html` — 662 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_ordre-fiche.html` — 663 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Fonctions :
 
-`clesFiche` 25 · `voletOrdre` 42 · `enregistreConf` 630 · `ecarte` 644 · `joli` 659
+`clesFiche` 25 · `voletOrdre` 42 · `enregistreConf` 630 · `ecarte` 645 · `joli` 660
 
 ### `_parcours.html` — 399 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -467,19 +467,9 @@ Fonctions :
 `sectionSelection` 362 · `sectionFond` 418 · `ligneCouleur` 476 · `rangSecteur` 496
 `rangSous` 509 · `defautCouleur` 531
 
-### `_pousse.html` — 591 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pousse.html` — 23 l. → plan-admin.html
 
-- l.1 · Enregistrer la configuration
-- l.461 · La sauvegarde emportée
-
-Fonctions :
-
-`autoDispo` 63 · `enRetard` 66 · `etatCourant` 79 · `majAttente` 90 · `compteRescapes` 104
-`ditAlerte` 117 · `ditEtat` 161 · `programmeEnvoi` 168 · `programmePublication` 182
-`rattrapeRetard` 189 · `envoie` 194 · `presse` 207 · `identifiants` 229
-`reglagesSeuls` 244 · `noteReglagesCharges` 255 · `oublieCache` 269
-`pousseConfiguration` 288 · `sauvegardeCourante` 481 · `telechargeSauvegarde` 503
-`appliqueSauvegarde` 526 · `litSauvegarde` 560 · `brancheSauvegarde` 582
+- l.1 · Enregistrer la configuration — le branchement
 
 ### `_rappels.html` — 17 l.
 
@@ -606,15 +596,15 @@ Fonctions :
 
 `enEdition` 33 · `emplacementWebgl` 61 · `libellesWebgl` 109
 
-### `modules/acces-admin.mjs` — 246 l. → plan-admin
+### `modules/acces-admin.mjs` — 247 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
 Fonctions :
 
 `litLocal` 29 · `configuration` 34 · `normaliseUrlA` 38 · `sessionValide` 54
-`ecranAcces` 71 · `contenuDuJeton` 162 · `mailDuJeton` 163 · `litProfilA` 174
-`initialesDe` 187 · `poseCompte` 194 · `brancheAcces` 221
+`ecranAcces` 72 · `contenuDuJeton` 163 · `mailDuJeton` 164 · `litProfilA` 175
+`initialesDe` 188 · `poseCompte` 195 · `brancheAcces` 222
 
 Éléments :
 
@@ -782,6 +772,22 @@ Fonctions :
 Fonctions :
 
 `poseDonnees` 50 · `P` 84
+
+### `modules/enregistrement.mjs` — 651 l. → plan-admin
+
+- l.1 · Enregistrer la configuration
+- l.522 · La sauvegarde emportée
+
+Fonctions :
+
+`enAttente` 61 · `notePubliees` 63 · `marqueAttente` 65 · `reglagesDuSalon` 67
+`annonce` 69 · `autoDispo` 113 · `enRetard` 116 · `etatCourant` 129 · `majAttente` 140
+`compteRescapes` 154 · `ditAlerte` 167 · `ditEtat` 211 · `programmeEnvoi` 218
+`programmePublication` 232 · `rattrapeRetard` 239 · `envoie` 244 · `presse` 257
+`brancheEnregistrement` 267 · `identifiants` 291 · `reglagesSeuls` 306
+`noteReglagesCharges` 317 · `oublieCache` 331 · `pousseConfiguration` 350
+`sauvegardeCourante` 542 · `telechargeSauvegarde` 564 · `appliqueSauvegarde` 587
+`litSauvegarde` 621 · `brancheSauvegarde` 643
 
 ### `modules/environs.mjs` — 783 l. → plan, plan-admin
 
@@ -990,7 +996,7 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 49 l. → plan-admin
+### `modules/plan-admin.mjs` — 53 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
@@ -1040,14 +1046,14 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
-### `modules/reglage-application.mjs` — 331 l. → plan-admin
+### `modules/reglage-application.mjs` — 327 l. → plan-admin
 
 - l.1 · L'application installée — son icône et son nom, le réglage de l'exploitant
 
 Fonctions :
 
-`brancheReglageApplication` 61 · `nomAppDefaut` 84 · `ecritApplication` 99
-`blocApplication` 140
+`brancheReglageApplication` 59 · `nomAppDefaut` 80 · `ecritApplication` 95
+`blocApplication` 136
 
 ### `modules/reglage-installation.mjs` — 71 l. → plan-admin
 

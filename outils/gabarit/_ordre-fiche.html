@@ -629,7 +629,8 @@ function voletOrdre(hote){
  *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
-  programmePublication();
+  // l'envoi est d'administration (`modules/enregistrement.mjs`)
+  if (typeof programmePublication === "function") programmePublication();
 };
 
 /**

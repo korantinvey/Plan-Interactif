@@ -1,5 +1,6 @@
-/* `outils/gabarit/_pousse.html` — l'enregistrement de la configuration, son
-   état dans la barre, l'alerte quand il échoue, la sauvegarde emportée. */
+/* `outils/gabarit/modules/enregistrement.mjs` — l'enregistrement de la
+   configuration, son état dans la barre, l'alerte quand il échoue, la
+   sauvegarde emportée. */
 module.exports = {
   "Pousser la configuration": "Publish configuration",
   "Enregistrement…": "Saving…",

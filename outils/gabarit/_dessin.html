@@ -161,7 +161,8 @@ const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
 function marqueAttente(id, oui){
   if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
   try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
-  majAttente();
+  // le bouton qui le dit est d'administration (`modules/enregistrement.mjs`)
+  if (typeof majAttente === "function") majAttente();
 }
 
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris

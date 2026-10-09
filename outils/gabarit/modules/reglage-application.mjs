@@ -41,27 +41,23 @@ import { accesBase, base } from "./session.mjs";
 import { DATA } from "./donnees.mjs";
 import { reduitIconeApp } from "./icone-app.mjs";
 import { appDuSalon, iconeDeLApplication } from "./application.mjs";
+import { oublieCache, REPOS } from "./enregistrement.mjs";
 
-/* Ce que le code soudé tient encore, et que le branchement confie : le champ
-   intitulé des volets (`_mode-admin.html`), l'oubli du cache du relais et le
-   temps de repos de la configuration (`_pousse.html`). */
+/* L'oubli du cache du relais et le temps de repos de la configuration
+   viennent de `enregistrement.mjs`, module d'administration lui aussi. Ce que
+   le code soudé tient encore, le branchement le confie : le champ intitulé
+   des volets (`_mode-admin.html`). */
 /** @type {(hote: HTMLElement, titre: string, dedans: any, aide?: string) => any} */
 let champZone;
-/** @type {(acces: any) => void} */
-let oublieCache;
-/** @type {number} */
-let REPOS;
 
 /**
  * Le branchement du réglage, appelé par le code soudé à la place que ce code y
  * tenait (`_application.html`), dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ champZone: typeof champZone, oublieCache: typeof oublieCache, repos: number }} b
+ * @param {{ champZone: typeof champZone }} b
  */
 export function brancheReglageApplication(b){
   champZone = b.champZone;
-  oublieCache = b.oublieCache;
-  REPOS = b.repos;
 }
 
 /* Un nom d'application tient en une ligne — le relais le borne pareil, et les

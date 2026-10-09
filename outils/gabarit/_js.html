@@ -207,7 +207,10 @@ function indexe(d){
         const rescapes = (DESSINS[p.id] || [])
           .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
         DESSINS[p.id] = deLaBase.concat(rescapes);
-        if (rescapes.length){ marqueAttente(p.id, true); compteRescapes(rescapes.length); }
+        if (rescapes.length){
+          marqueAttente(p.id, true);
+          if (typeof compteRescapes === "function") compteRescapes(rescapes.length);
+        }
       } else {
         DESSINS[p.id] = deLaBase;
       }
@@ -223,7 +226,7 @@ function indexe(d){
      poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
      resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
      repart au prochain envoi — ce navigateur est le seul endroit où il est. */
-  if (ADMIN) noteReglagesCharges(reglagesEnBase);
+  if (ADMIN && typeof noteReglagesCharges === "function") noteReglagesCharges(reglagesEnBase);
 
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de

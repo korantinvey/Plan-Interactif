@@ -19,12 +19,14 @@ function demarre(d){
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,
      puis s'estomper. Sans ce rappel il attendrait son butoir. */
   suitSponsor();
-  // le plan chargé, le bouton peut dire où en est l'enregistrement
-  majAttente();
+  /* Le plan chargé, le bouton peut dire où en est l'enregistrement — en
+     administration seulement : le visiteur n'a ni bouton ni envoi
+     (`modules/enregistrement.mjs`). */
+  if (typeof majAttente === "function") majAttente();
   /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
      trop vite, réseau coupé — repart de lui-même : c'est la seule occasion de
      le rattraper, personne ne viendra cliquer pour lui. */
-  rattrapeRetard();
+  if (typeof rattrapeRetard === "function") rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
