@@ -32,7 +32,7 @@ import { vivants } from "./vivant.mjs";
 import { activeAdmin } from "./bande-admin.mjs";
 import { ficheZone, basculeAffichageZone, brancheFicheZone }
   from "./fiche-zone.mjs";
-import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+import { lacheLibelle, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
 import { glisseFenetre, ouvreReglages } from "./reglages.mjs";
 import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
@@ -47,12 +47,13 @@ import { enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTr
   remplitListeSocietes, societeSaisie, imageEnAttente, dessinPointerDown, dessinPointerMove,
   dessinPointerUp, termineTrace, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin }
   from "./outil-dessin.mjs";
-import { formeParId, boite } from "./forme-choisie.mjs";
+import { formeSel, formeParId, boite } from "./forme-choisie.mjs";
 /* Le panneau des calques : le code soudé ne l'appelle plus par son nom, et
    aucun autre module ne l'importe. Chargé ici, il confie son contenu à
    l'ordre de tracé (`ordre-trace.mjs` `construitPanneau`), et sa fenêtre de
    réorganisation vient avec lui. */
 import "./pile.mjs";
+import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -74,7 +75,7 @@ Object.assign(globalThis, {
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
   activeAdmin,
   ficheZone, basculeAffichageZone, brancheFicheZone,
-  lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+  lacheLibelle, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles,
   glisseFenetre, ouvreReglages,
   lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
@@ -89,6 +90,7 @@ Object.assign(globalThis, {
   remplitListeSocietes, societeSaisie, dessinPointerDown, dessinPointerMove,
   dessinPointerUp, termineTrace, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin,
   formeParId, boite,
+  brancheGestesAdmin,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
@@ -109,3 +111,7 @@ Object.defineProperties(globalThis, vivants({ geste: () => geste }, "editionPoin
 /* L'image qu'on s'apprête à poser, ou rien : seul son import la remplace. Les
    aimants la lisent par accesseur, pour garder ses proportions au tracé. */
 Object.defineProperties(globalThis, vivants({ imageEnAttente: () => imageEnAttente }, "importeImage"));
+/* La forme choisie dans l'éditeur, ou rien : les aimants, que le code soudé
+   branche, la lisent par accesseur ; seul l'outil de l'exploitant la change,
+   par sa porte (`forme-choisie.mjs` `poseFormeSel`). */
+Object.defineProperties(globalThis, vivants({ formeSel: () => formeSel }, "poseFormeSel"));

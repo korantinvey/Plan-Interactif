@@ -12,14 +12,15 @@
    Sortis de `_recherche.html` (§ 5) : les critères et leur panneau, le
    retrait du plan, la liste et ses vignettes. Les secteurs vivent dans
    `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. L'écran et ce
-   que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`). La fiche
+   que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`), et les
+   tiroirs (`tiroirs.mjs`). La fiche
    et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
    module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
    bouclerait. Le dessin des noms et des distinctions (`libelles.mjs`,
    `distinctions.mjs`) l'importe, et ne peut donc pas l'être ; la mesure du
-   texte, elle, s'importe (`texte-plan.mjs`). Ce que le code soudé tient
-   encore — la fiche et la sélection, les tiroirs, le dessin des noms et des
-   distinctions, les repères, le parcours — lui est confié par
+   texte, elle, s'importe (`texte-plan.mjs`).
+   Ce que le code soudé tient encore — la fiche et la sélection, le dessin des
+   noms et des distinctions, les repères, le parcours — lui est confié par
    `brancheRecherche`, que `_recherche.html` appelle à la place que ce code
    tenait : l'écoute de la liste s'y pose, au même rang qu'avant. Ce qui se
    déclare plus loin dans le code soudé, ou change sans cesse, vient par des
@@ -39,6 +40,7 @@ import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
+import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
 import { largeur } from "./texte-plan.mjs";
 
 /**
@@ -48,9 +50,6 @@ import { largeur } from "./texte-plan.mjs";
  * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
  * @property {(id: any, canal?: string) => void} ficheConf
  * @property {(cle: any) => string} adresseVignette
- * @property {() => void} montreTiroir
- * @property {() => void} mesureTiroir
- * @property {() => void} hisseTiroir
  * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
  * @property {() => void} dessineDists
  * @property {() => void} libelles
@@ -67,9 +66,6 @@ const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @ty
   /** @type {number} */ iSoc) => soude.select(id, recentrer, canal, iSoc);
 const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => soude.ficheConf(id, canal);
 const adresseVignette = (/** @type {any} */ cle) => soude.adresseVignette(cle);
-const montreTiroir = () => soude.montreTiroir();
-const mesureTiroir = () => soude.mesureTiroir();
-const hisseTiroir = () => soude.hisseTiroir();
 const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => soude.poseToutAuParcours(hote);
 const dessineDists = () => soude.dessineDists();
 const libelles = () => soude.libelles();

@@ -11,15 +11,15 @@
    Il se branche dans `_fiche.html`, à la place que son code tenait : les
    écoutes de la fiche s'y posent au même rang qu'avant parmi celles du plan,
    et ce que le code soudé tient encore lui est confié — le montage du plan,
-   les découpages dessinés, les tiroirs et le parcours, et, en administration
+   les découpages dessinés et le parcours, et, en administration
    seulement, les deux gestes de l'exploitant sur une zone. La liste, les
-   thématiques et les vignettes s'importent de `recherche.mjs`, le nom d'une
-   zone de `noms-zones.mjs`, la forme d'un repère dessiné de
-   `forme-choisie.mjs` ; le tiroir du parcours, qui importe la fiche, lui est
-   confié.
+   thématiques et les vignettes s'importent de `recherche.mjs`, les tiroirs
+   de `tiroirs.mjs`, le nom d'une zone de `noms-zones.mjs`, la forme d'un
+   repère dessiné de `forme-choisie.mjs` ; le tiroir du parcours, qui importe
+   la fiche, lui est confié.
 
-   Le dernier appui — tactile ou non — est écrit par les gestes, restés
-   soudés : il vit ici, se remplace par `poseAppuiTactile`, et le code soudé
+   Le dernier appui — tactile ou non — est écrit par les gestes
+   (`gestes.mjs`) : il vit ici, se remplace par `poseAppuiTactile`, et le code soudé
    le lit par accesseur.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -44,6 +44,7 @@ import { libelles, coexChoisit } from "./libelles.mjs";
 import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
+import { baisseTiroir } from "./tiroirs.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Ce qui est
    déclaré plus bas dans le script — les gestes, le dessin, le parcours — l'est
@@ -56,8 +57,6 @@ const marqueStandsDessines = () => soude.marqueStandsDessines();
 const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
 const fermeParcours = () => soude.fermeParcours();
 const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => soude.brancheParcours(hote, canal);
-/** Les tiroirs qu'un geste sait baisser, tenus par `_gestes.html`. */
-const baisseTiroir = () => soude.baisseTiroir();
 
 /* ============================================================
    7. Sélection et fiche
@@ -183,7 +182,7 @@ export function brancheActesFiche(go, itin){
  */
 function centreEtBaisseLaFiche(cadre){
   const fiche = $("detail");
-  const baisse = baisseTiroir().detail;
+  const baisse = baisseTiroir.detail;
   if (!fiche || !baisse || !baisse()){ cadre(); return; }
   let fait = false;
   const fini = () => { if (fait) return; fait = true; cadre(); };

@@ -8,11 +8,12 @@
    le visiteur voit — vit dans `environs.mjs`, qui lit d'ici le calage en
    cours de réglage par un lecteur confié au branchement.
 
-   Ce que le code soudé tient encore — la main qui tient le plan, dans ses
-   gestes — lui est confié par `brancheCalageCarte`, que `_environs.html`
-   appelle à la place que ce code y tenait : les boutons de la palette s'y
-   branchent au même rang qu'avant. Les réglages et leur enregistrement, le
-   panneau des calques et le mode administrateur s'importent. Les
+   Il n'a rien à recevoir du code soudé : la main qui tient le plan
+   s'importe des gestes (`gestes.mjs`), les réglages et leur enregistrement,
+   le panneau des calques et le mode administrateur de leurs modules. Il se
+   branche par `brancheCalageCarte`, que `_environs.html` appelle à la place
+   que ce code y tenait : les boutons de la palette s'y branchent au même rang
+   qu'avant. Les
    identifiants de base des pavillons, et l'oubli du plan public par le
    relais, viennent de `enregistrement.mjs`, module d'administration lui aussi.
    ============================================================ */
@@ -32,19 +33,13 @@ import { MONTE } from "./rendu.mjs";
 import { CONF, conf, enregistreConf } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { ADMIN } from "./mode-admin.mjs";
+import { saisitPlan } from "./gestes.mjs";
 
-/* Ce que le code soudé confie au branchement : la main qui tient le plan,
-   dans les gestes (`_gestes.html`). Les réglages (`CONF`, que le changement
-   de salon remplace, et `conf`, qui en ouvre une entrée) et leur
-   enregistrement, le panneau des calques et ce qui dit s'il est là (`ADMIN`)
-   s'importent, et se lisent tels qu'ils sont à l'instant. La vue s'importe de
-   `vue.mjs`, et le plan monté de `rendu.mjs`. */
-/**
- * @typedef {object} PageCalage
- * @property {(tenu: boolean) => void} saisitPlan
- */
-/** @type {PageCalage} */
-let soude;
+/* Les réglages (`CONF`, que le changement de salon remplace, et `conf`, qui
+   en ouvre une entrée) et leur enregistrement, le panneau des calques et ce
+   qui dit s'il est là (`ADMIN`) s'importent, et se lisent tels qu'ils sont à
+   l'instant. La vue s'importe de `vue.mjs`, le plan monté de `rendu.mjs`, et
+   la main qui tient le plan de `gestes.mjs`. */
 
 const racine = document.documentElement;
 
@@ -409,7 +404,7 @@ export function cartePointerDown(e){
     a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
   };
   svg.setPointerCapture(e.pointerId);
-  soude.saisitPlan(true);
+  saisitPlan(true);
   return true;
 }
 
@@ -435,7 +430,7 @@ export function cartePointerMove(e){
 export function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
-  soude.saisitPlan(false);
+  saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
@@ -669,11 +664,8 @@ function fermeCalage(){
 
 /**
  * Le branchement, appelé par `_environs.html` à la place de ce code.
- *
- * @param {PageCalage} page
  */
-export function brancheCalageCarte(page){
-  soude = page;
+export function brancheCalageCarte(){
   /* Le fond lit ici le calage qu'on règle : celui-là seul l'emporte sur le
      calage enregistré du pavillon. */
   confieCalageEnCours(() => ENV_CAL);

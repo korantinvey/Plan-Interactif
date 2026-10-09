@@ -59,8 +59,8 @@ import { brancheSuggestion } from "./suggestion.mjs";
 import { TUTO, proposeTutoriel } from "./tutoriel.mjs";
 import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
-import { ADMIN, retireAdmin } from "./mode-admin.mjs";
-import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
+import { retireAdmin } from "./mode-admin.mjs";
+import { libSel, placementLibelle } from "./libelle-place.mjs";
 import { SORTE_GEO, appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
 import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
   bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
@@ -81,11 +81,10 @@ import { SECTEURS, brancheSecteurs, indexeSecteurs, coloreSecteurs } from "./sec
 import { brancheBandes, majFondus } from "./bandes.mjs";
 import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
   libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
-  videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visibleSurPlan,
+  videRecherche, basculeCriteres, fermeCriteres, retraitLeve, reposeRetrait, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
 import { view, changeVue, svg } from "./vue.mjs";
-import { nomDeLaZone } from "./noms-zones.mjs";
 import { brancheIndex } from "./index-salon.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
@@ -99,16 +98,17 @@ import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
 import { DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
   refaitDistsFiche } from "./distinctions.mjs";
 import { MONTE, brancheRendu, montePlan, changePlan } from "./rendu.mjs";
-import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif, outil, enCours }
+import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif, outil }
   from "./calques-dessin.mjs";
 import { estCadre } from "./chemin-forme.mjs";
 import { rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
 import { oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
   oublieChoixPoi } from "./points-interet.mjs";
-import { formeSel } from "./forme-choisie.mjs";
 import { appliqueOptions } from "./options.mjs";
 import { enEdition } from "./edition-en-cours.mjs";
+import { drag, pince, brancheGestes, brancheLangue } from "./gestes.mjs";
+import { brancheTiroirs } from "./tiroirs.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -172,11 +172,10 @@ Object.assign(globalThis, {
   brancheBandes, majFondus,
   brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
   libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
-  videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visibleSurPlan,
+  videRecherche, basculeCriteres, fermeCriteres, reposeRetrait, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes,
   changeVue, svg,
-  nomDeLaZone,
   brancheIndex,
   brancheTonDeLaBarre,
   brancheDemarrage, chargeFond,
@@ -199,6 +198,8 @@ Object.assign(globalThis, {
   oublieChoixPoi,
   appliqueOptions,
   enEdition,
+  brancheGestes, brancheLangue,
+  brancheTiroirs,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -214,16 +215,9 @@ Object.defineProperties(globalThis, vivants({
    rappels la lisent par accesseur, pour ne pas passer devant elle. */
 Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));
 
-/* Le mode administration est-il ouvert ? Tout le plan le lit, public compris,
-   souvent pour se taire hors de l'administration ; seule son ouverture le
-   pose (`bande-admin.mjs` `activeAdmin`), et la page publique ne l'a pas. */
-Object.defineProperties(globalThis, vivants({ ADMIN: () => ADMIN }, "activeAdmin"));
-
-/* Le placement des libellés à la main, et le libellé qu'on retouche : le
-   dessin des noms les lit par accesseur ; seul l'outil de l'exploitant les
-   change (`placement-libelles.mjs`), hors de quoi ils restent faux et vides. */
-Object.defineProperties(globalThis, vivants({ PLACE_LIBELLES: () => PLACE_LIBELLES },
-  "modePlacementLibelles"));
+/* Le libellé qu'on retouche : le dessin des noms le lit par accesseur ; seul
+   l'outil de l'exploitant le change (`placement-libelles.mjs`), hors de quoi
+   il reste vide. */
 Object.defineProperties(globalThis, vivants({ libSel: () => libSel }, "choisitLibelle"));
 
 /* La couche dont l'exploitant reprend les formes, ou rien : le rendu par la
@@ -279,14 +273,12 @@ Object.defineProperties(globalThis, vivants({ MONTE: () => MONTE }, "montePlan")
    accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
    `ouvreDessins`). On change ce qu'ils contiennent, jamais l'objet lui-même. */
 Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDessins"));
-/* Le calque ouvert au dessin, l'outil tenu et le tracé en cours : la carte
-   graphique, la visite guidée et les gestes les lisent par accesseur ; seul
-   l'outil de l'exploitant les change, par leurs portes, et le montage d'un
-   pavillon referme le calque. */
+/* Le calque ouvert au dessin et l'outil tenu : le code soudé les lit par
+   accesseur ; seul l'outil de l'exploitant les change, par leurs portes, et
+   le montage d'un pavillon referme le calque. */
 Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, "poseCalqueActif"));
 Object.defineProperties(globalThis, vivants({ outil: () => outil }, "poseOutil"));
-Object.defineProperties(globalThis, vivants({ enCours: () => enCours }, "poseEbauche"));
-/* La forme choisie dans l'éditeur, ou rien : les gestes au clavier la lisent
-   par accesseur ; seul l'outil de l'exploitant la change, par sa porte
-   (`forme-choisie.mjs` `poseFormeSel`), hors de quoi elle reste vide. */
-Object.defineProperties(globalThis, vivants({ formeSel: () => formeSel }, "poseFormeSel"));
+/* Le glissé et le pincement en cours : la carte graphique les lit par
+   accesseur, pour taire son survol pendant un geste. Seules les écoutes que
+   pose `brancheGestes` les changent. */
+Object.defineProperties(globalThis, vivants({ drag: () => drag, pince: () => pince }, "brancheGestes"));
