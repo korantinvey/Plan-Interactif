@@ -1242,7 +1242,7 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/tutoriel.mjs` — 998 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1010 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
@@ -1257,8 +1257,8 @@ Fonctions :
 `tutoJournee` 168 · `zoneDuTuto` 176 · `insecable` 193 · `phraseTrajetTuto` 199
 `chapitresTuto` 459 · `proposeTutoriel` 479 · `lanceTutoriel` 537 · `quitteTutoriel` 624
 `chapitreTuto` 635 · `battementTuto` 644 · `finTuto` 662 · `afficheTuto` 679 · `pxTuto` 734
-`boiteTuto` 747 · `repereTuto` 762 · `rameneTuto` 795 · `placeTuto` 833 · `voileTuto` 915
-`rafaleTuto` 932 · `marqueZoneTuto` 952 · `marqueLibelleTuto` 987
+`boiteTuto` 747 · `repereTuto` 762 · `rameneTuto` 795 · `placeTuto` 833 · `voileTuto` 927
+`rafaleTuto` 944 · `marqueZoneTuto` 964 · `marqueLibelleTuto` 999
 
 Éléments :
 
