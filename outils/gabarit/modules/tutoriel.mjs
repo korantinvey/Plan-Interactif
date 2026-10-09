@@ -37,6 +37,7 @@
  */
 
 import { $ } from "./dom.mjs";
+import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
 import { SLUG, BORNE } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
@@ -732,11 +733,22 @@ function afficheTuto(e, ch){
  */
 const pxTuto = (v) => Math.round(v * 100) / 100 + "px";
 
-/** La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place. */
+/**
+ * La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place.
+ *
+ * Celle que le visiteur voit. Sous la carte graphique, le plan qu'on regarde
+ * est un dessin, et le SVG qu'il relit reste caché, figé dans la vue où le
+ * dessin a pris la main : la zone désignée et le trajet tracé, qui vivent dans
+ * ce SVG, y gardaient leur place d'avant le recentrage, et la bulle s'écartait
+ * d'un endroit où ils n'étaient plus — pour se poser parfois sur eux. Leur
+ * place se calcule donc d'après la vue, comme celle de la forme d'où la fiche
+ * s'ouvre (`_vue.html` `rectVisee`).
+ */
 function boiteTuto(el){
   if (!el || !el.isConnected) return null;
-  const r = el.getBoundingClientRect();
-  return r.width > 0 && r.height > 0 ? r : null;
+  const r = GL.actif && svg && el !== svg && svg.contains(el)
+    ? rectEcranWebgl(el) : el.getBoundingClientRect();
+  return r && r.width > 0 && r.height > 0 ? r : null;
 }
 
 /**
