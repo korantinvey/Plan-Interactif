@@ -9,9 +9,8 @@
 brancheReglageFiche({
   PREFIXE_PERSO, clesPortees, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
   apercuFiche, modeleRetenu, contenuApercu, ouvre, coexChoisit,
-  /* Déclarée plus bas, dans `_mode-admin.html` : on la confie par un détour,
-     lu au moment d'écrire, et non par sa valeur, qui n'existe pas encore ici. */
-  ecritColonneEvenement: (colonne, secours, change) => ecritColonneEvenement(colonne, secours, change),
+  // l'écriture d'une colonne de l'événement vient de `modules/fiche-zone.mjs`
+  ecritColonneEvenement,
 });
 /* @fin-admin */
 

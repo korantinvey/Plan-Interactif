@@ -64,6 +64,8 @@ import { brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetre
 import { TUTO, TUTO_DELAI, proposeTutoriel, brancheTutoriel } from "./tutoriel.mjs";
 import { finInstant } from "./sejour.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee } from "./journee.mjs";
+import { ADMIN, retireAdmin } from "./mode-admin.mjs";
+import { PLACE_LIBELLES, libSel, brancheLibellePlace, placementLibelle } from "./libelle-place.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -108,6 +110,8 @@ Object.assign(globalThis, {
   TUTO_DELAI, proposeTutoriel, brancheTutoriel,
   finInstant,
   appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee,
+  retireAdmin,
+  brancheLibellePlace, placementLibelle,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -134,3 +138,15 @@ Object.defineProperties(globalThis, vivants({ ICI_ACTIF: () => ICI_ACTIF }, "pos
    l'efface en la quittant. L'invitation à installer et la proposition des
    rappels la lisent par accesseur, pour ne pas passer devant elle. */
 Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));
+
+/* Le mode administration est-il ouvert ? Tout le plan le lit, public compris,
+   souvent pour se taire hors de l'administration ; seule son ouverture le
+   pose (`bande-admin.mjs` `activeAdmin`), et la page publique ne l'a pas. */
+Object.defineProperties(globalThis, vivants({ ADMIN: () => ADMIN }, "activeAdmin"));
+
+/* Le placement des libellés à la main, et le libellé qu'on retouche : le
+   dessin des noms les lit par accesseur ; seul l'outil de l'exploitant les
+   change (`placement-libelles.mjs`), hors de quoi ils restent faux et vides. */
+Object.defineProperties(globalThis, vivants({ PLACE_LIBELLES: () => PLACE_LIBELLES },
+  "modePlacementLibelles"));
+Object.defineProperties(globalThis, vivants({ libSel: () => libSel }, "choisitLibelle"));

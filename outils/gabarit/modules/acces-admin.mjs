@@ -7,24 +7,29 @@
    emploie aussi.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais. Ce qu'il ne peut pas importer — le mode administrateur à
-   activer, le chargement du plan, le profil du compte que lisent les
-   réglages — lui est confié par `brancheAcces`, que le code soudé appelle à
-   la place que ce code tenait (`_auth-plan.html`, versé par `genere.js` dans
-   la seule page d'administration).
+   le reçoit jamais. Ce qu'il n'importe pas — le mode administrateur à
+   activer, le chargement du plan — lui est confié par `brancheAcces`, que le
+   code soudé appelle à la place que ce code tenait (`_auth-plan.html`, versé
+   par `genere.js` dans la seule page d'administration). Le profil du compte,
+   qu'il lit, est à lui : les réglages le lisent par accesseur.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton } from "./session.mjs";
 
-/* Ce que le code soudé tient encore : l'activation du mode administrateur
-   (`_mode-admin.html`), le chargement du plan (`_admin2.html`), et le profil
-   du compte, `PROFIL_ADMIN`, qui y reste déclaré et que les réglages lisent. */
+/* Ce que le code soudé confie encore : l'activation du mode administrateur
+   (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel importe ce
+   module — l'importer d'ici les bouclerait), et le chargement du plan
+   (`_admin2.html`). */
 /** @type {() => void} */
 let activeAdmin;
 /** @type {() => any} */
 let charge;
-/** @type {(admin: boolean) => void} */
-let poseProfil;
+
+/* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
+   « Admin » aux réglages — la base, elle, ne distingue pas les deux profils
+   sur un salon affecté. Posé ici, où on le lit ; les réglages le lisent par
+   accesseur (`plan-admin.mjs`). */
+export let PROFIL_ADMIN = false;
 
 function litLocal(cle){
   try { return JSON.parse(localStorage.getItem(cle) || "null"); } catch (e) { return null; }
@@ -180,8 +185,8 @@ async function litProfilA(cfg, session){
       headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + session.access_token },
     });
     const j = r.ok ? await r.json() : [];
-    poseProfil(Array.isArray(j) && j[0]?.role === "admin");
-  } catch (e) { poseProfil(false); }
+    PROFIL_ADMIN = Array.isArray(j) && j[0]?.role === "admin";
+  } catch (e) { PROFIL_ADMIN = false; }
 }
 
 /** « jeanne.martin@… » donne « JM » ; à défaut, les deux premières lettres. */
@@ -216,13 +221,11 @@ function poseCompte(){
  * les écoutes du menu du compte s'y posent au même rang qu'avant parmi celles
  * du plan, et la vérification de la session part au même moment.
  *
- * @param {{ activeAdmin: typeof activeAdmin, charge: typeof charge,
- *           poseProfil: typeof poseProfil }} b
+ * @param {{ activeAdmin: typeof activeAdmin, charge: typeof charge }} b
  */
 export function brancheAcces(b){
   activeAdmin = b.activeAdmin;
   charge = b.charge;
-  poseProfil = b.poseProfil;
 
   /* Un clic ailleurs, ou Échap, referme le panneau : rien d'autre ne dirait
      comment s'en défaire une fois ouvert au-dessus du plan. */

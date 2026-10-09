@@ -51,7 +51,7 @@ Fonctions :
 
 - l.1 · 19. L'application installée — son icône et son nom
 
-### `_auth-plan.html` — 13 l. → plan-admin.html
+### `_auth-plan.html` — 15 l.
 
 - l.2 · Accès à l'administration du plan — le branchement
 
@@ -179,7 +179,7 @@ Fonctions :
 
 - l.1 · Export par exposant — le branchement
 
-### `_fiche.html` — 1326 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_fiche.html` — 1328 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.3 · 7. Sélection et fiche
 
@@ -192,7 +192,7 @@ Fonctions :
 `corpsRange` 343 · `programme` 358 · `produits` 407 · `ficheProduit` 435 · `ficheConf` 505
 `pictoRS` 685 · `adresseVignette` 709 · `ecarteClicFantome` 727 · `nomSociete` 736
 `societes` 749 · `choisitExposant` 760 · `poseMarque` 798 · `montreMarque` 858
-`poseCode` 881 · `rangeMarque` 922 · `ouvre` 985 · `ferme` 1297 · `onglet` 1315
+`poseCode` 881 · `rangeMarque` 922 · `ouvre` 985 · `ferme` 1299 · `onglet` 1317
 
 Éléments :
 
@@ -218,19 +218,19 @@ Fonctions :
 `ajoutPointerUp` 798 · `geometriePointerDown` 818 · `accrocheGeo` 849
 `geometriePointerMove` 851 · `geometriePointerUp` 902
 
-### `_gestes.html` — 952 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_gestes.html` — 954 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.4 · 8. Interactions du plan
-- l.452 · Ce que les tiroirs lisent d'un geste
-- l.498 · Le tiroir de la liste — écrans étroits
-- l.724 · Les tiroirs menés par la hauteur — écrans étroits
+- l.454 · Ce que les tiroirs lisent d'un geste
+- l.500 · Le tiroir de la liste — écrans étroits
+- l.726 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
 `milieu` 24 · `commencePince` 30 · `suitPince` 44 · `plieLesBandes` 97 · `saisitPlan` 111
-`cibleElargie` 197 · `planifieFiltre` 408 · `traceurDeGeste` 476 · `cranVoisin` 495
-`retraitBas` 521 · `mesureTiroir` 535 · `montreTiroir` 538 · `hisseTiroir` 542
-`tiroirCrante` 751
+`cibleElargie` 197 · `planifieFiltre` 410 · `traceurDeGeste` 478 · `cranVoisin` 497
+`retraitBas` 523 · `mesureTiroir` 537 · `montreTiroir` 540 · `hisseTiroir` 544
+`tiroirCrante` 753
 
 ### `_head.html` — 628 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -344,28 +344,9 @@ Fonctions :
 
 `deplaceVers` 19 · `versExtremite` 31 · `remplitOrdre` 39 · `ouvreOrdre` 109
 
-### `_mode-admin.html` — 1106 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mode-admin.html` — 52 l. → plan-admin.html
 
-- l.3 · 10. Mode administration
-- l.114 · La fiche d'une zone organisateur
-- l.834 · Masquer une zone organisateur
-- l.931 · Placer un libellé à la main
-
-Fonctions :
-
-`retireAdmin` 20 · `activeAdmin` 34 · `champZone` 140 · `champsZone` 165 · `champSalles` 257
-`nomDeZone` 309 · `cadreLogo` 335 · `champLogo` 407 · `editeurRiche` 445
-`memeFicheZone` 602 · `suitFicheZone` 609 · `verseFicheZone` 617 · `ficheZone` 643
-`enregistreZone` 668 · `enregistreZoneAjoutee` 781 · `basculeAffichageZone` 845
-`marqueZonesMasquees` 873 · `ecritColonnesEvenement` 893 · `ecritColonneEvenement` 927
-`cleLibelle` 952 · `empreinteLibelle` 968 · `placementLibelle` 976 · `posePlacement` 987
-`libelleAutomatique` 1004 · `modePlacementLibelles` 1013 · `majPaletteLibelle` 1032
-`choisitLibelle` 1049 · `pousseLibelle` 1056 · `libellePointerDown` 1064
-`libellePointerMove` 1080 · `libellePointerUp` 1089
-
-Éléments :
-
-`#sauveConf` · `#restaureConf` · `#fichierConf`
+- l.3 · 10. Mode administration — le branchement
 
 ### `_motdepasse.html` — 254 l. → motdepasse.html
 
@@ -381,11 +362,11 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_ordre-fiche.html` — 53 l. → plan-admin.html
+### `_ordre-fiche.html` — 52 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Fonctions :
 
-`enregistreConf` 20 · `ecarte` 35 · `joli` 50
+`enregistreConf` 19 · `ecarte` 34 · `joli` 49
 
 ### `_parcours.html` — 399 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -542,15 +523,15 @@ Fonctions :
 
 `enEdition` 33 · `emplacementWebgl` 61 · `libellesWebgl` 109
 
-### `modules/acces-admin.mjs` — 247 l. → plan-admin
+### `modules/acces-admin.mjs` — 250 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
 Fonctions :
 
-`litLocal` 29 · `configuration` 34 · `normaliseUrlA` 38 · `sessionValide` 54
-`ecranAcces` 72 · `contenuDuJeton` 163 · `mailDuJeton` 164 · `litProfilA` 175
-`initialesDe` 188 · `poseCompte` 195 · `brancheAcces` 222
+`litLocal` 34 · `configuration` 39 · `normaliseUrlA` 43 · `sessionValide` 59
+`ecranAcces` 77 · `contenuDuJeton` 168 · `mailDuJeton` 169 · `litProfilA` 180
+`initialesDe` 193 · `poseCompte` 200 · `brancheAcces` 226
 
 Éléments :
 
@@ -612,6 +593,18 @@ Fonctions :
 
 `brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
 
+### `modules/bande-admin.mjs` — 120 l. → plan-admin
+
+- l.1 · 10. Mode administration — son ouverture, et la bande de l'outil
+
+Fonctions :
+
+`brancheBandeAdmin` 40 · `activeAdmin` 45
+
+Éléments :
+
+`#sauveConf` · `#restaureConf` · `#fichierConf`
+
 ### `modules/batiments.mjs` — 624 l. → plan-admin
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
@@ -663,20 +656,20 @@ Fonctions :
 `tourneCalage` 484 · `construitCalage` 490 · `ouvreCalage` 655 · `fermeCalage` 665
 `brancheCalageCarte` 678 · `voletEnvirons` 704
 
-### `modules/chaleur.mjs` — 674 l. → plan-admin
+### `modules/chaleur.mjs` — 675 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.455 · Remise à zéro des compteurs
+- l.456 · Remise à zéro des compteurs
 
 Fonctions :
 
-`nbChal` 56 · `tonChaleur` 75 · `niveauChaleur` 97 · `valeurChaleur` 100
-`chargeChaleur` 113 · `coloreChaleur` 159 · `cartoucheChaleur` 194
-`mesureCartoucheChaleur` 258 · `replieChaleur` 264 · `ecritEtatChaleur` 275
-`dessineEchelleChaleur` 283 · `dessineTopChaleur` 303 · `phraseChaleur` 345
-`rafraichitChaleur` 370 · `montreChaleur` 404 · `rangChaleur` 437 · `aplati` 477
-`voletMesure` 482 · `evenementCourant` 508 · `ouvreRemiseAZero` 527 · `lanceRemiseAZero` 619
-`brancheChaleur` 666
+`nbChal` 57 · `tonChaleur` 76 · `niveauChaleur` 98 · `valeurChaleur` 101
+`chargeChaleur` 114 · `coloreChaleur` 160 · `cartoucheChaleur` 195
+`mesureCartoucheChaleur` 259 · `replieChaleur` 265 · `ecritEtatChaleur` 276
+`dessineEchelleChaleur` 284 · `dessineTopChaleur` 304 · `phraseChaleur` 346
+`rafraichitChaleur` 371 · `montreChaleur` 405 · `rangChaleur` 438 · `aplati` 478
+`voletMesure` 483 · `evenementCourant` 509 · `ouvreRemiseAZero` 528 · `lanceRemiseAZero` 620
+`brancheChaleur` 667
 
 Éléments :
 
@@ -857,6 +850,23 @@ Fonctions :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
+### `modules/fiche-zone.mjs` — 886 l. → plan-admin
+
+- l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
+- l.73 · La fiche d'une zone organisateur
+- l.792 · Masquer une zone organisateur
+
+Fonctions :
+
+`reglages` 48 · `typesZone` 49 · `typeZone` 50 · `cleAjout` 51 · `annonce` 52
+`enregistreConf` 53 · `nomsAnglaisDesZones` 54 · `rechAjout` 55 · `libelles` 56 · `liste` 57
+`cartouchePoi` 58 · `majPaletteGeo` 59 · `ouvre` 60 · `rangeConferences` 61
+`brancheFicheZone` 69 · `champZone` 99 · `champsZone` 124 · `champSalles` 216
+`nomDeZone` 268 · `cadreLogo` 294 · `champLogo` 366 · `editeurRiche` 404
+`memeFicheZone` 561 · `suitFicheZone` 568 · `verseFicheZone` 576 · `ficheZone` 602
+`enregistreZone` 627 · `enregistreZoneAjoutee` 740 · `basculeAffichageZone` 803
+`marqueZonesMasquees` 831 · `ecritColonnesEvenement` 851 · `ecritColonneEvenement` 885
+
 ### `modules/forme.mjs` — 154 l. → plan, plan-admin
 
 - l.1 · La forme d'un emplacement — anneaux, tracé, empreinte, ancrage du nom
@@ -968,6 +978,15 @@ Fonctions :
 `montreLeJour` 732 · `perimeJournee` 747 · `oublieSejour` 762 · `ouvreOrganisation` 777
 `essaieSejour` 1157 · `lanceSejour` 1187 · `refaitSejour` 1226 · `brancheJournee` 1247
 
+### `modules/libelle-place.mjs` — 91 l. → plan, plan-admin
+
+- l.1 · Placer un libellé à la main — ce que le plan public en reçoit
+
+Fonctions :
+
+`brancheLibellePlace` 50 · `cleLibelle` 54 · `poseModeLibelles` 63 · `poseLibelleChoisi` 68
+`empreinteLibelle` 80 · `placementLibelle` 88
+
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
 - l.1 · Le parcours écrit dans un lien, et relu
@@ -998,6 +1017,14 @@ Fonctions :
 `envoieMesures` 434 · `mesure` 471 · `brancheLesEnvois` 486 · `effaceJetonsVisiteur` 541
 `refuseMesure` 559 · `ouvreConfidentialite` 586 · `brancheLaNotice` 637
 `brancheMesure` 651
+
+### `modules/mode-admin.mjs` — 40 l. → plan, plan-admin
+
+- l.1 · 10. Mode administration — ce que le plan public en sait
+
+Fonctions :
+
+`ouvreModeAdmin` 21 · `retireAdmin` 30
 
 ### `modules/notifications.mjs` — 89 l. → plan, plan-admin
 
@@ -1041,11 +1068,22 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 73 l. → plan-admin
+### `modules/placement-libelles.mjs` — 189 l. → plan-admin
+
+- l.1 · Placer un libellé à la main — l'outil de l'exploitant
+
+Fonctions :
+
+`reglages` 42 · `enregistreConf` 43 · `libelles` 44 · `lacheLibelle` 51 · `posePlacement` 60
+`libelleAutomatique` 78 · `modePlacementLibelles` 87 · `majPaletteLibelle` 106
+`choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
+`libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
+
+### `modules/plan-admin.mjs` — 89 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 136 l. → plan, plan-admin
+### `modules/plan.mjs` — 152 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
