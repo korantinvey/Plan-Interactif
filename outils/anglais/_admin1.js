@@ -1,8 +1,8 @@
-/* `outils/gabarit/_admin1.html` — la fenêtre « Réglages du plan » et ses
-   onglets, et les mots que la fiche d'une zone partage avec eux. */
+/* `outils/gabarit/_admin1.html` — les réglages que le plan relit, les onglets
+   « Recherche » et « Admin » qui les écrivent, et les mots que la fenêtre
+   « Réglages du plan » (`reglages.js`) et la fiche d'une zone partagent avec
+   eux. */
 module.exports = {
-  // l'onglet du fond de carte, dans les réglages du plan
-  "Environs": "Surroundings",
   // les commandes du plan
   "Afficher les icônes de zoom": "Show the zoom buttons",
   "Afficher l'échelle": "Show the scale",
@@ -68,88 +68,31 @@ module.exports = {
   "Nu": "Bare",
   "Ni cadre ni libellés : la hiérarchie typographique seule.": "No frames, no labels: typographic hierarchy alone.",
 
-  // l'aperçu des modèles, sur une fiche d'exemple — les noms propres et
-  // l'adresse d'un exposant imaginaire restent ce qu'ils sont
-  "Ateliers Ligneron": "Ateliers Ligneron",
-  "Ligneron & Fils SARL": "Ligneron & Fils SARL",
-  "8 rue de la Filature": "8 rue de la Filature",
-  "44000 Nantes": "44000 Nantes",
-  "France": "France",
-  "Atelier du Marais": "Atelier du Marais",
-  "Bois & Compagnie": "Bois & Compagnie",
-  "Duchêne Agencement": "Duchêne Agencement",
-  "Fonderie de l'Ouest": "Fonderie de l'Ouest",
-  "Granit Armor": "Granit Armor",
-  "Habitat Lumière": "Habitat Lumière",
-  "Menuiseries Rocher": "Menuiseries Rocher",
+  /* Les mots de la fiche d'exemple des aperçus (`apercus.js`) que les données
+     d'un salon portent aussi — un pavillon, une thématique, un type de
+     conférence : le plan public les traduisait par ce fichier, et doit
+     continuer de le faire. */
   "Pavillon 2": "Hall 2",
   "Aménagement & second œuvre": "Fit-out & finishing works",
-  "Menuiserie;Agencement de boutique": "Joinery;Shop fitting",
-  "Réemploi;Bois de pays": "Reuse;Local timber",
   "Menuiserie": "Joinery",
   "Agencement de boutique": "Shop fitting",
   "Réemploi": "Reuse",
   "Bois de pays": "Local timber",
-  "Valeur d'exemple": "Sample value",
-  "Le bois de pays dans la commande publique": "Local timber in public procurement",
   "Table ronde": "Round table",
-  "Agencer une boutique en réemploi": "Fitting out a shop with reused materials",
   "Démonstration": "Demonstration",
 
-  // la fenêtre et ses onglets
-  "Plan": "Map",
-  "Recherche": "Search",
-  "Admin": "Admin",
-  "Fiche Stand": "Stand details",
-  "Apparence": "Appearance",
-  "Zones": "Areas",
-  "PMR": "Accessibility",
-  "Co-Exposants": "Co-exhibitors",
-
-  // l'onglet « Zones »
-  "Ce que le visiteur lit sur une zone organisateur. La source n'en donne que le contour et parfois un nom : le reste s'écrit ici, et paraît sans attendre la prochaine synchronisation.":
-    "What visitors read about an organiser area. The source only gives its outline and sometimes a name: the rest is written here, and shows up without waiting for the next synchronisation.",
+  // les mots de l'onglet « Zones » que d'autres réglages emploient aussi — la
+  // fenêtre, ses onglets et ses volets vivent dans `reglages.js`, ses aperçus
+  // dans `apercus.js`
   "fiche": "details",
-  "traversée": "walk-through",
-  "masquée": "hidden",
   "Logo": "Logo",
-  "L'image déposée sur la zone, dans l'en-tête de sa fiche.": "The image uploaded for the area, at the top of its details.",
-  "Ce qu'on trouve dans la zone, ses horaires, ses conditions d'accès. Elle ne paraît que sur les zones où elle est remplie.":
-    "What you find in the area, its opening hours, how to get in. It only appears on areas where it has been filled in.",
-  "La page où en savoir plus, saisie avec la description.": "The page to find out more, entered with the description.",
-  "Le programme tenu dans la zone, par ordre chronologique.": "The programme held in the area, in chronological order.",
   "Ce que la fiche montre": "What the details show",
-  "Les champs qu'une fiche de zone déroule, pour toutes les zones à la fois. Un champ décoché reste écrit : il cesse de paraître, et revient tel quel en le recochant.":
-    "The fields an area's details show, for all areas at once. An unticked field stays written: it stops appearing, and comes back as it was when ticked again.",
-  "Ces cases s'enregistrent dès qu'on les coche.": "These boxes are saved as soon as they are ticked.",
   "Enregistré.": "Saved.",
   "Échec : {raison}": "Failed: {raison}",
   "retirée du plan public": "removed from the public map",
-  "Ce que vous écrivez est enregistré en quittant la fiche.": "What you write is saved when you leave these details.",
 
-  // l'onglet « Plan »
-  "Ce qui règle la journée d'un visiteur. Publiez la configuration pour que le changement parvienne aux visiteurs.":
-    "What shapes a visitor's day. Publish the configuration for the change to reach visitors.",
-
-  // l'onglet « Co-Exposants »
-  "Les sociétés hébergées sur le stand d'un autre exposant. Publiez la configuration pour que le changement parvienne aux visiteurs.":
-    "Companies hosted on another exhibitor's stand. Publish the configuration for the change to reach visitors.",
-  "Aucun stand partagé sur ce salon pour l'instant. Les co-exposants se rattachent à leur hôte par la synchronisation : dans la console, désignez le champ « Rattachement des co-exposants » — celui où une fiche porte le numéro du stand qui l'accueille —, puis synchronisez.":
-    "No shared stand at this show yet. Co-exhibitors are linked to their host by the synchronisation: in the console, choose the “Co-exhibitor link” field — the one where a record holds the number of the stand hosting it —, then synchronise.",
-  "{n} co-exposants sur {m} stands partagés.": "{n} co-exhibitors on {m} shared stands.",
-  "{n} co-exposants sur un stand partagé.": "{n} co-exhibitors on one shared stand.",
-  "Un co-exposant sur {m} stands partagés.": "One co-exhibitor on {m} shared stands.",
-  "Un co-exposant sur un stand partagé.": "One co-exhibitor on one shared stand.",
-  "Compter les co-exposants sur le plan": "Count co-exhibitors on the map",
-  "Une pastille à côté du numéro du stand dit combien de sociétés il héberge, en plus de son titulaire.":
-    "A badge next to the stand number shows how many companies it hosts, besides its holder.",
-  "Afficher la liste des co-exposants au clic sur le stand": "Show the list of co-exhibitors when the stand is clicked",
-  "Toucher un stand partagé propose d'abord de choisir la société. Décochée, le stand mène droit à son titulaire ; les sociétés hébergées restent dans la liste des exposants.":
-    "Tapping a shared stand first asks which company to open. Unticked, the stand leads straight to its holder; hosted companies stay in the exhibitor list.",
+  // les dates et les heures du salon, dans l'onglet « Plan »
   "min": "min",
-  "Temps de visite par stand": "Visiting time per stand",
-  "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce qui décide combien de stands tiennent entre deux conférences.":
-    "Used to plan a visitor's day from their visit plan: it decides how many stands fit between two conferences.",
   "Du": "From",
   "au": "to",
   "Ouverture": "Opening",
@@ -255,25 +198,6 @@ module.exports = {
   // la visite guidée, dans l'onglet « Admin » — le reste vit dans `tutoriel.js`
   "Essayer": "Try it",
 
-  /* L'essai d'un vrai rappel, à côté de l'aperçu de la fenêtre. */
-  "Essayer un vrai rappel": "Send a real reminder",
-  "Envoi…": "Sending…",
-  "Posé. La notification doit arriver dans la minute qui suit.":
-    "Sent. The notification should arrive within the next minute.",
-  "Les notifications n'ont pas été autorisées sur ce navigateur.":
-    "Notifications were not allowed in this browser.",
-  "Ouvrez d'abord votre plan public une fois sur ce navigateur : c'est lui qui installe le service qui reçoit les notifications.":
-    "Open your public map once in this browser first: it is what installs the worker that receives notifications.",
-  "Le salon n'est pas publié : le serveur refuse d'enregistrer un rappel.":
-    "The show is not published: the server refuses to store a reminder.",
-  "Ce navigateur ne sait pas recevoir de notifications. Sur iPhone, il faut avoir ajouté le plan à l'écran d'accueil.":
-    "This browser cannot receive notifications. On iPhone, the map must have been added to the home screen.",
-  /* Le rappel avant une conférence : ce que l'exploitant offre, et à quelle
-     avance. */
-  "Rappeler les conférences retenues": "Remind about picked conferences",
-  "Prévenir avant le début": "Warn before the start",
-  "Le visiteur qui a retenu une conférence peut demander à en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à la conférence.":
-    "A visitor who picked a conference can ask to be reminded of it, with the map closed. They have to allow it, and on iPhone to have added the map to their home screen \u2014 otherwise nothing is offered. The times and titles they picked are then kept on our servers until the conference.",
   /* Les options du plan, dans l'onglet « Admin » : ce que le salon a pris, et
      ce que fermer une option retire. */
   "Dessin des stands": "Drawing stands",
@@ -294,8 +218,6 @@ module.exports = {
   /* Les deux endroits qui disent que l'option est fermée : la sorte
      « Conférences » de la recherche, et le rappel qui n'a plus d'heure. */
   "Le programme de conférences n'est pas pris sur ce salon.": "The conference programme is not taken on this show.",
-  "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas d'horaire à rappeler.":
-    "The conference programme is not taken on this show: there is no time to remind anyone of.",
 
   // les marques, une planche par surface
   "Point d'angle": "Corner dot",

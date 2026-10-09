@@ -14,76 +14,66 @@ import "./plan.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { brancheReglageApplication } from "./reglage-application.mjs";
 import { brancheReglageSponsor } from "./reglage-sponsor.mjs";
-import { coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur }
-  from "./chaleur.mjs";
+import { coloreChaleur, rangChaleur, evenementCourant, brancheChaleur } from "./chaleur.mjs";
 import { ROLES_ITI, cleRoleIti, nomRoleIti, lienEcrits, ecritLiens,
   annuaireLiaisons } from "./itineraire.mjs";
 import { brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
-  cartePointerMove, cartePointerUp, voletEnvirons } from "./calage-carte.mjs";
-import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, rappelsOfferts,
-  proposeRappels } from "./rappels.mjs";
-import { essaieRappelReel } from "./essai-rappel.mjs";
+  cartePointerMove, cartePointerUp } from "./calage-carte.mjs";
 import { brancheReglageInstallation } from "./reglage-installation.mjs";
 import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
 import { codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci } from "./affiche-ici.mjs";
-import { NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion } from "./reglage-suggestion.mjs";
+import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
   pousseConfiguration, brancheSauvegarde, brancheEnregistrement } from "./enregistrement.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants } from "./aimants.mjs";
-import { voletOrdre, brancheReglageFiche } from "./reglage-fiche.mjs";
+import { brancheReglageFiche } from "./reglage-fiche.mjs";
 import { CALAGE, bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
-import { voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
-  voletApparence, brancheVolets } from "./volets.mjs";
+import { brancheVolets } from "./volets.mjs";
 import { activeAdmin, brancheBandeAdmin } from "./bande-admin.mjs";
-import { champZone, champsZone, cadreLogo, suitFicheZone, verseFicheZone, ficheZone, basculeAffichageZone,
-  ecritColonneEvenement, brancheFicheZone } from "./fiche-zone.mjs";
+import { champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEvenement, brancheFicheZone }
+  from "./fiche-zone.mjs";
 import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
-import { PROFIL_ADMIN } from "./acces-admin.mjs";
+import { brancheApercus } from "./apercus.mjs";
+import { brancheReglageRappel } from "./reglage-rappel.mjs";
+import { glisseFenetre, ouvreReglages, brancheReglages } from "./reglages.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
   brancheReglageApplication,
   brancheReglageSponsor,
-  coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur,
+  coloreChaleur, rangChaleur, evenementCourant, brancheChaleur,
   ROLES_ITI, cleRoleIti, nomRoleIti, lienEcrits, ecritLiens,
   annuaireLiaisons,
   brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
-  cartePointerMove, cartePointerUp, voletEnvirons,
-  RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, rappelsOfferts,
-  proposeRappels,
-  essaieRappelReel,
+  cartePointerMove, cartePointerUp,
   brancheReglageInstallation,
   ecranAcces, brancheAcces,
   codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci,
-  NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion,
+  brancheReglageSuggestion,
   majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
   pousseConfiguration, brancheSauvegarde, brancheEnregistrement,
   ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants,
-  voletOrdre, brancheReglageFiche,
+  brancheReglageFiche,
   bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
-  voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
-  voletApparence, brancheVolets,
+  brancheVolets,
   activeAdmin, brancheBandeAdmin,
-  champZone, champsZone, cadreLogo, suitFicheZone, verseFicheZone, ficheZone, basculeAffichageZone,
-  ecritColonneEvenement, brancheFicheZone,
+  champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEvenement, brancheFicheZone,
   lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles,
+  brancheApercus,
+  brancheReglageRappel,
+  glisseFenetre, ouvreReglages, brancheReglages,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
    l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
    poignée qui se mesure en pixels. */
 Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
-
-/* Le profil du compte, « admin » ou non : le module le pose en lisant le
-   compte à l'ouverture de la session. Les réglages le lisent par accesseur,
-   pour ouvrir ou non les onglets que seul l'administrateur reçoit. */
-Object.defineProperties(globalThis, vivants({ PROFIL_ADMIN: () => PROFIL_ADMIN }, "litProfilA"));
