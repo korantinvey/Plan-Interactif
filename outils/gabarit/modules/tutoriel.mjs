@@ -37,6 +37,7 @@
  */
 
 import { $ } from "./dom.mjs";
+import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
 import { SLUG, BORNE } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
@@ -733,11 +734,22 @@ function afficheTuto(e, ch){
  */
 const pxTuto = (v) => Math.round(v * 100) / 100 + "px";
 
-/** La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place. */
+/**
+ * La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place.
+ *
+ * Celle que le visiteur voit. Sous la carte graphique, le plan qu'on regarde
+ * est un dessin, et le SVG qu'il relit reste caché, figé dans la vue où le
+ * dessin a pris la main : la zone désignée et le trajet tracé, qui vivent dans
+ * ce SVG, y gardaient leur place d'avant le recentrage, et la bulle s'écartait
+ * d'un endroit où ils n'étaient plus — pour se poser parfois sur eux. Leur
+ * place se calcule donc d'après la vue, comme celle de la forme d'où la fiche
+ * s'ouvre (`_vue.html` `rectVisee`).
+ */
 function boiteTuto(el){
   if (!el || !el.isConnected) return null;
-  const r = el.getBoundingClientRect();
-  return r.width > 0 && r.height > 0 ? r : null;
+  const r = GL.actif && svg && el !== svg && svg.contains(el)
+    ? rectEcranWebgl(el) : el.getBoundingClientRect();
+  return r && r.width > 0 && r.height > 0 ? r : null;
 }
 
 /**
@@ -813,7 +825,7 @@ function rameneTuto(el){
  * se paie.
  *
  * Sur un téléphone la bulle prend la largeur : il ne reste que le haut et le
- * bas, et c'est entre les deux qu'on tranche.
+ * bas, ou le dessous de ce qu'on désigne, et c'est entre eux qu'on tranche.
  *
  * `force` vaut pour une consigne nouvelle. Hors de là, la bulle ne bouge que
  * pour libérer nettement la vue : un plan qu'on fait glisser sous elle l'aurait
@@ -857,6 +869,11 @@ function placeTuto(force){
     const vis = boiteTuto($("viseur"));
     if (vis) places.push([x, vis.bottom + 8]);
     places.push([x, s.bottom - h - bord]);
+    /* Et juste sous ce qu'on désigne. Les pictos du plan se rangent au bord
+       droit, sous la bande du salon : la place du haut les recouvrait, et
+       celle du bas parlait d'un bouton à l'autre bout de l'écran. Venue après
+       les autres, cette place ne l'emporte que si elle fait mieux. */
+    if (cible) places.push([x, cible.bottom + 8]);
   } else {
     if (cible) places.push([cible.right - w, cible.bottom + 14], [cible.left, cible.bottom + 14],
                            [cible.right - w, cible.top - h - 14], [cible.left - w - 14, cible.top]);
@@ -868,11 +885,18 @@ function placeTuto(force){
   const loin = (x, y) => !cible ? 0
     : (Math.max(0, cible.left - (x + w), x - cible.right) +
        Math.max(0, cible.top - (y + h), y - cible.bottom)) * 25;
+  /* Ce qu'on désigne ne se cache jamais, pas même d'un coin. Son poids seul
+     n'y suffisait pas : sur un téléphone, couvrir le bout d'un picto coûtait
+     moins que s'en éloigner, et le toucher demandé tombait sur la bulle — sa
+     croix quittait la visite. Une place qui le recouvre passe donc après
+     toutes celles qui le laissent libre. */
+  const cache = (x, y) => !!cible && x < cible.right && x + w > cible.left &&
+    y < cible.bottom && y + h > cible.top;
   const cout = (x, y) => evite.reduce((t, { r, poids }) => {
     const dx = Math.min(x + w, r.right) - Math.max(x, r.left);
     const dy = Math.min(y + h, r.bottom) - Math.max(y, r.top);
     return dx > 0 && dy > 0 ? t + dx * dy * poids : t;
-  }, loin(x, y));
+  }, loin(x, y) + (cache(x, y) ? 1e9 : 0));
   let choix = null, mieux = Infinity;
   places.forEach(p => {
     const x = Math.round(Math.max(s.left + bord, Math.min(s.right - w - bord, p[0])));
