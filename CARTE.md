@@ -61,19 +61,9 @@ Fonctions :
 
 - l.1 · 19. L'application installée — son icône et son nom
 
-### `_auth-plan.html` — 204 l. → plan-admin.html
+### `_auth-plan.html` — 13 l. → plan-admin.html
 
-- l.2 · Accès à l'administration du plan
-
-Fonctions :
-
-`litLocal` 10 · `configuration` 15 · `normaliseUrlA` 19 · `sessionValide` 35
-`ecranAcces` 45 · `contenuDuJeton` 131 · `mailDuJeton` 138 · `litProfilA` 149
-`initialesDe` 162 · `poseCompte` 169
-
-Éléments :
-
-`#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
+- l.2 · Accès à l'administration du plan — le branchement
 
 ### `_batiments.html` — 560 l. → plan-admin.html
 
@@ -519,19 +509,9 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 444 l. → rapport.html
+### `_rapport-js.html` — 16 l.
 
-- l.2 · Rapport d'utilisation
-
-Fonctions :
-
-`courant` 52 · `chargeEvenements` 57 · `joursPeriode` 75 · `chargeRapport` 77 · `chiffre` 88
-`barres` 107 · `portes` 147 · `jours` 198 · `dessineRapport` 219 · `dessineBarre` 372
-`rafraichit` 395 · `videEcran` 414 · `demarre` 430
-
-Éléments :
-
-`#lienPublic`
+- l.2 · Rapport d'utilisation — le branchement
 
 ### `_recherche.html` — 1270 l.
 
@@ -665,6 +645,20 @@ Fonctions :
 Fonctions :
 
 `enEdition` 33 · `emplacementWebgl` 61 · `libellesWebgl` 109
+
+### `modules/acces-admin.mjs` — 246 l. → plan-admin
+
+- l.1 · Accès à l'administration du plan
+
+Fonctions :
+
+`litLocal` 29 · `configuration` 34 · `normaliseUrlA` 38 · `sessionValide` 54
+`ecranAcces` 71 · `contenuDuJeton` 162 · `mailDuJeton` 163 · `litProfilA` 174
+`initialesDe` 187 · `poseCompte` 194 · `brancheAcces` 221
+
+Éléments :
+
+`#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
 ### `modules/appel-fonction.mjs` — 61 l. → console
 
@@ -997,7 +991,7 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 41 l. → plan-admin
+### `modules/plan-admin.mjs` — 43 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
@@ -1028,7 +1022,22 @@ Fonctions :
 `retientInviteRappel` 426 · `fenetreRappel` 461 · `proposeRappels` 494
 `reprendRappels` 537
 
-### `modules/rapport.mjs` — 20 l. → rapport
+### `modules/rapport-utilisation.mjs` — 485 l. → rapport
+
+- l.1 · Rapport d'utilisation
+
+Fonctions :
+
+`courant` 80 · `chargeEvenements` 85 · `joursPeriode` 103 · `chargeRapport` 105
+`chiffre` 116 · `barres` 135 · `portes` 175 · `jours` 226 · `dessineRapport` 247
+`dessineBarre` 400 · `rafraichit` 423 · `videEcran` 442 · `demarre` 448
+`brancheRapport` 470
+
+Éléments :
+
+`#lienPublic`
+
+### `modules/rapport.mjs` — 33 l. → rapport
 
 - l.1 · Point d'entrée du rapport
 
@@ -1138,7 +1147,7 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/vivant.mjs` — 36 l. → plan, plan-admin, console
+### `modules/vivant.mjs` — 36 l. → plan, plan-admin, console, rapport
 
 - l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
 
