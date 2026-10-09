@@ -44,6 +44,33 @@ const rattrapeRetard = () => soude.rattrapeRetard();
    Démarrage : données figées si elles sont dans la page, sinon appel
    à l'API. Une panne du réseau doit se voir, pas laisser un écran vide.
    ------------------------------------------------------------------ */
+/**
+ * Le premier cadrage, refait une fois le tiroir de la liste arrivé.
+ *
+ * Sur un téléphone, le cadrage retire du plan ce que le tiroir en cache, et le
+ * mesure à sa position du moment : au chargement, il est encore en train de
+ * glisser, puis la liste remplie lui donne sa hauteur et il glisse encore. Le
+ * premier cadrage variait donc de quelques pixels d'un chargement à l'autre,
+ * selon l'image où il tombait, et ne valait pour aucun. On le refait quand le
+ * tiroir s'est posé — sauf si la vue a bougé entre-temps : un geste, ou une
+ * fiche ouverte par un lien reçu, ont alors le dernier mot.
+ */
+function recadreListePosee(){
+  const avant = JSON.stringify(view);
+  let attendu = false;
+  const attend = () => {
+    if (JSON.stringify(view) !== avant) return;
+    const tiroir = $("side");
+    const glisse = tiroir ? tiroir.getAnimations()
+      .filter(a => !(a instanceof CSSAnimation) && a.playState === "running") : [];
+    if (glisse.length){
+      attendu = true;
+      Promise.all(glisse.map(a => a.finished.catch(() => {}))).then(attend);
+    } else if (attendu) fit();
+  };
+  attend();
+}
+
 function demarre(/** @type {any} */ d){
   indexe(d);
   /* Le générique du sponsor avant le plan, et non après : ce qu'il couvre,
@@ -55,6 +82,7 @@ function demarre(/** @type {any} */ d){
   montePlan();
   fit();
   liste();
+  recadreListePosee();
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,
      puis s'estomper. Sans ce rappel il attendrait son butoir. */
   suitSponsor();

@@ -102,6 +102,18 @@ const TUTO_RAFALE = 650;
 /* Ce qui défile dans les tiroirs et les fenêtres. */
 const TUTO_DEFILE = ".detail-bd, .pCorps, .iCorps, .mcorps";
 
+/* Les tiroirs qui glissent quand une consigne change : la fiche, le parcours,
+   l'itinéraire, et la liste sur un téléphone. */
+const TUTO_TIROIRS = ["detail", "parcours", "itineraire", "side"];
+
+/* Ce qui fait encore glisser un tiroir : sa transition sur un téléphone, et
+   sur un écran large l'étirement de la fiche depuis la forme touchée
+   (`fiche.mjs` `anime`). Une animation sans fin n'est pas un glissement. */
+const glissements = () => TUTO_TIROIRS.flatMap(id => {
+  const t = $(id);
+  return t ? t.getAnimations().filter(a => !(a instanceof CSSAnimation) && a.playState === "running") : [];
+});
+
 /* La visite en cours, ou rien. */
 export let TUTO = null;
 
@@ -693,7 +705,27 @@ function afficheTuto(e, ch){
   $("tutoSuite").textContent = suite;
   if (nouvelle && TUTO.cible) rameneTuto(TUTO.cible);
   repereTuto();
+  /* Une consigne qui arrive pendant qu'un tiroir glisse — la fiche qui s'ouvre
+     au toucher de la zone — mesurait un tiroir à mi-course : la bulle se
+     posait d'après lui, puis un pouls la déplaçait ou non selon l'instant où
+     il tombait, et sa place finale changeait d'une fois à l'autre. Elle se
+     pose donc tout de suite, puis une seconde fois, d'office, quand le tiroir
+     est arrivé ; entre les deux, le pouls la laisse où elle est. */
+  if (nouvelle){ TUTO.arrivee = false; attendsTiroirs(cle); }
   placeTuto(nouvelle);
+}
+
+/** La bulle reposée d'office une fois les tiroirs arrivés, si la consigne n'a pas changé entre-temps. */
+function attendsTiroirs(cle){
+  const encours = glissements();
+  if (!TUTO || TUTO.cle !== cle) return;
+  if (!encours.length){
+    if (TUTO.arrivee){ TUTO.arrivee = false; placeTuto(true); }
+    return;
+  }
+  TUTO.arrivee = true;
+  // une animation interrompue arrive aussi : celle qui la remplace se relit
+  Promise.all(encours.map(a => a.finished.catch(() => {}))).then(() => attendsTiroirs(cle));
 }
 
 /* ------------------------------------------------------------
@@ -882,7 +914,7 @@ function placeTuto(force){
     if (c < mieux){ mieux = c; choix = [x, y]; }
   });
   if (!choix) return;   // aucune place à proposer : la bulle reste où elle est
-  if (!force && TUTO.pos && mieux >= cout(TUTO.pos[0], TUTO.pos[1]) * .7) return;
+  if (!force && TUTO.pos && (TUTO.arrivee || mieux >= cout(TUTO.pos[0], TUTO.pos[1]) * .7)) return;
   if (TUTO.pos && TUTO.pos[0] === choix[0] && TUTO.pos[1] === choix[1]) return;
   /* À la première pose, la bulle paraît à sa place : glisser depuis le coin de
      l'écran lui aurait fait traverser la page. */
@@ -953,9 +985,13 @@ function marqueZoneTuto(z){
     if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
   });
   if (!vue){ if (g) g.remove(); return; }
-  // la forme se réécrit avec le pavillon : sa marque se repose à chaque pouls
+  /* La forme se réécrit avec le pavillon : sa marque se repose à chaque pouls —
+     mais seulement si elle l'a perdue. Reposer une classe déjà là réécrit
+     quand même l'attribut, et le guet de la carte graphique y voit un
+     changement : tout le plan se redessinait quatre fois par seconde, une
+     image toutes les quatre secondes sous un rendu logiciel. */
   const forme = $("zones").querySelector('g[data-id="' + CSS.escape(z.id) + '"]');
-  if (forme) forme.classList.add("tutoCible");
+  if (forme && !forme.classList.contains("tutoCible")) forme.classList.add("tutoCible");
   if (g && g.dataset.id === z.id) return;
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");

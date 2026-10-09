@@ -18,6 +18,27 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Sur un téléphone, le premier cadrage mesurait le tiroir de la liste en
+     train de glisser : il variait de quelques pixels d'un chargement à
+     l'autre, et ne valait pour aucun. Une fois tout posé, il doit être celui
+     que la page referait d'elle-même — c'est ce que fait un « resize ». */
+  test("le premier cadrage vaut pour la liste posée @telephone", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await page.waitForFunction(() => document.getElementById("side").getAnimations().length === 0);
+    // l'écart, en pixels d'écran : il en faisait une quinzaine
+    const ecart = await page.evaluate(() => {
+      const g = /** @type {any} */ (globalThis);
+      const avant = g.view;
+      dispatchEvent(new Event("resize"));
+      const pixel = g.view.w / document.getElementById("plan").getBoundingClientRect().width;
+      return Math.max(...["x", "y", "w", "h"].map((k) => Math.abs(g.view[k] - avant[k]) / pixel));
+    });
+    expect(ecart).toBeLessThan(1);
+    expect(erreurs).toEqual([]);
+  });
+
   test("la recherche resserre la liste, et la rend quand on l'efface", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);

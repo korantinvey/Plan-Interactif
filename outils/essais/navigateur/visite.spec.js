@@ -148,6 +148,23 @@ test.describe("la visite guidée", () => {
         expect(avant.zone).not.toBeNull();
         expect(recouvre(avant.bulle, avant.zone)).toBe(0);
 
+        /* Au repos, le plan ne se réécrit pas. La marque de la zone se
+           reposait à chaque pouls de la visite, et la carte graphique, qui
+           guette le SVG, redessinait tout le plan quatre fois par seconde. */
+        const auCalme = await page.evaluate(() => new Promise((fini) => {
+          let ecritures = 0, peintures = 0;
+          const guet = new MutationObserver((n) => { ecritures += n.length; });
+          guet.observe(document.getElementById("plan"), { subtree: true, childList: true, attributes: true });
+          const pose = GL.actif && GL.deck.setProps;
+          if (pose) GL.deck.setProps = (p) => { if (p.layers) peintures++; return pose.call(GL.deck, p); };
+          setTimeout(() => {
+            guet.disconnect();
+            if (pose) GL.deck.setProps = pose;
+            fini({ ecritures, peintures });
+          }, 1500);
+        }));
+        expect(auCalme).toEqual({ ecritures: 0, peintures: 0 });
+
         /* Le visiteur fait glisser le plan, et amène la zone sous la bulle :
            elle doit s'en écarter. Sous la carte graphique, la zone ne bouge
            pas dans le SVG caché — c'est ce que la bulle lisait. */
