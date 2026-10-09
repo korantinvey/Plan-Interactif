@@ -393,39 +393,20 @@ Fonctions :
 `poseGardeInstallation` 685 · `remplitInvitation` 708 · `ouvreInvitation` 738
 `ouvreRappel` 817 · `ouvreRetrouve` 879 · `caseInstallation` 902
 
-### `_itineraire.html` — 3373 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 800 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
+- l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`sommets` 104 · `enveloppe` 124 · `oublieGrilles` 167 · `calquesDe` 172 · `reperesDe` 177
-`zoneTraversee` 257 · `zonesDuTerrain` 266 · `cleRoleIti` 269 · `roleIti` 270
-`nomRoleIti` 271 · `estCirculation` 274 · `formesRole` 299 · `anglePlan` 331
-`dansGrille` 370 · `horsGrille` 371 · `grille` 381 · `distanceAuMur` 570 · `cretes` 613
-`nappePrincipale` 631 · `celluleDe` 666 · `caseDe` 670 · `centreCase` 675 · `empriseDe` 718
-`accrocheDepuis` 780 · `versLeMilieu` 853 · `accroche` 888 · `Tas` 903 · `travail` 947
-`cherche` 970 · `distancesDepuis` 1037 · `distancesMulti` 1051 · `regleFoule` 1123
-`ecarteFoule` 1140 · `heureAuSalon` 1144 · `sallesEnMouvement` 1153 · `foule` 1196
-`bilanFoule` 1284 · `reduit` 1313 · `guidageAllees` 1376 · `recentre` 1432 · `passable` 1517
-`lisse` 1551 · `longueur` 1578 · `longueurDehors` 1594 · `nettoie` 1636 · `oublieFaces` 1683
-`facesLibres` 1685 · `amorce` 1782 · `faceDeSortie` 1817 · `raccordTient` 1863
-`accesDe` 1893 · `couplesAcces` 1945 · `troncon` 1978 · `pointObjet` 2023
-`pointRepere` 2030 · `candidats` 2039 · `pointSaisi` 2073 · `portesDe` 2091
-`versPorte` 2098 · `typeLiaison` 2159 · `nomRepere` 2167 · `oublieLiaisons` 2185
-`lienEcrits` 2197 · `ecritLiens` 2206 · `annuaireLiaisons` 2211 · `liensDe` 2243
-`coutLiaison` 2263 · `passagePraticable` 2270 · `passagesDe` 2278 · `sortiesDe` 2288
-`plansRelies` 2296 · `balayage` 2320 · `distanceDepuis` 2338 · `cheminLiaisons` 2365
-`routeParLiaisons` 2451 · `routeEntre` 2489 · `calculeRoute` 2529 · `couleurNappe` 2555
-`rafraichitApercu` 2561 · `marchesIci` 2604 · `rayonBout` 2609 · `arreteTracage` 2642
-`mesureMarches` 2649 · `coupeMarche` 2664 · `distancesDesArrets` 2680
-`peintItineraire` 2692 · `lanceTracage` 2743 · `dessineItineraire` 2768
-`rafraichitBouts` 2790 · `cadreItineraire` 2813 · `champIti` 2837 · `ecritDistance` 2841
-`ecritDuree` 2849 · `fermeSugg` 2854 · `montreSugg` 2861 · `choisitPoint` 2895
-`valideSaisie` 2904 · `effaceItineraire` 2916 · `relance` 2943 · `phraseLiaison` 2994
-`montreResultat` 3008 · `bandeauVisee` 3150 · `armeVisee` 3173 · `finVisee` 3191
-`viseItineraire` 3207 · `visePoi` 3213 · `visePoint` 3219 · `ouvreItineraire` 3251
-`fermeItineraire` 3279 · `versItineraire` 3289 · `versItineraireDe` 3292
+`calculeRoute` 36 · `couleurNappe` 62 · `rafraichitApercu` 68 · `marchesIci` 111
+`rayonBout` 116 · `arreteTracage` 149 · `peintItineraire` 155 · `lanceTracage` 206
+`dessineItineraire` 231 · `rafraichitBouts` 253 · `cadreItineraire` 276 · `champIti` 300
+`fermeSugg` 304 · `montreSugg` 311 · `choisitPoint` 345 · `valideSaisie` 354
+`effaceItineraire` 366 · `relance` 393 · `montreResultat` 435 · `bandeauVisee` 577
+`armeVisee` 600 · `finVisee` 618 · `viseItineraire` 634 · `visePoi` 640 · `visePoint` 646
+`ouvreItineraire` 678 · `fermeItineraire` 706 · `versItineraire` 716
+`versItineraireDe` 719
 
 ### `_journee.html` — 1741 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -897,6 +878,34 @@ Fonctions :
 
 `reduitIcone` 30
 
+### `modules/itineraire.mjs` — 2650 l. → plan, plan-admin
+
+- l.1 · L'itinéraire — le calcul d'un trajet d'un point du salon à un autre
+
+Fonctions :
+
+`brancheItineraire` 39 · `conf` 41 · `cheminForme` 42 · `pictoForme` 43 · `nomTypeRepere` 44
+`estPorte` 45 · `ouvreEntrant` 46 · `ouvreSortant` 47 · `instantConf` 48 · `finInstant` 49
+`sommets` 151 · `enveloppe` 171 · `oublieGrilles` 214 · `calquesDe` 219 · `reperesDe` 227
+`zoneTraversee` 307 · `zonesDuTerrain` 316 · `cleRoleIti` 319 · `roleIti` 320
+`nomRoleIti` 321 · `estCirculation` 324 · `formesRole` 349 · `anglePlan` 381
+`dansGrille` 420 · `horsGrille` 421 · `grille` 431 · `distanceAuMur` 620 · `cretes` 663
+`nappePrincipale` 681 · `celluleDe` 716 · `caseDe` 720 · `centreCase` 725 · `empriseDe` 768
+`accrocheDepuis` 830 · `versLeMilieu` 903 · `accroche` 938 · `Tas` 953 · `travail` 997
+`cherche` 1020 · `distancesDepuis` 1087 · `distancesMulti` 1101 · `regleFoule` 1173
+`ecarteFoule` 1190 · `heureAuSalon` 1194 · `sallesEnMouvement` 1203 · `foule` 1246
+`bilanFoule` 1334 · `reduit` 1363 · `guidageAllees` 1426 · `recentre` 1482 · `passable` 1567
+`lisse` 1601 · `longueur` 1628 · `longueurDehors` 1644 · `nettoie` 1686 · `oublieFaces` 1733
+`facesLibres` 1735 · `amorce` 1832 · `faceDeSortie` 1867 · `raccordTient` 1913
+`accesDe` 1943 · `couplesAcces` 1995 · `troncon` 2028 · `pointObjet` 2073
+`pointRepere` 2080 · `candidats` 2089 · `pointSaisi` 2123 · `portesDe` 2135
+`versPorte` 2142 · `typeLiaison` 2203 · `nomRepere` 2211 · `oublieLiaisons` 2229
+`lienEcrits` 2241 · `ecritLiens` 2250 · `annuaireLiaisons` 2255 · `liensDe` 2287
+`coutLiaison` 2307 · `passagePraticable` 2314 · `passagesDe` 2322 · `sortiesDe` 2332
+`plansRelies` 2340 · `balayage` 2364 · `distanceDepuis` 2382 · `cheminLiaisons` 2409
+`routeParLiaisons` 2495 · `routeEntre` 2533 · `mesureMarches` 2571 · `coupeMarche` 2586
+`distancesDesArrets` 2602 · `ecritDistance` 2616 · `ecritDuree` 2624 · `phraseLiaison` 2638
+
 ### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
@@ -938,11 +947,11 @@ Fonctions :
 `poseLissage` 84 · `peineDeCharge` 105 · `ecartDesJours` 191 · `poidsDesJours` 221
 `chargeDuJour` 244 · `rangeSejour` 253 · `trancheDe` 803 · `dilatationPour` 858
 
-### `modules/plan-admin.mjs` — 25 l. → plan-admin
+### `modules/plan-admin.mjs` — 29 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 82 l. → plan, plan-admin
+### `modules/plan.mjs` — 91 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
