@@ -20,10 +20,9 @@
    l'écran (`_console-js.html`) — et le démarrage de la page. Il ne reçoit
    donc que ce qu'il y appelle : les branchements, ce que le socle rappelle
    (`demarre`, `videEcran`), ce que l'export lit (`courant`, `selection`), et
-   de quoi choisir le premier écran (`CFG`, `SESSION`, `ecranConfig`,
-   `ecranConnexion`).
+   de quoi ouvrir le premier écran (`premierEcran`).
    ============================================================ */
-import { CFG, SESSION, brancheSocle, ecranConfig, ecranConnexion } from "./socle-console.mjs";
+import { brancheSocle, premierEcran } from "./socle-console.mjs";
 import { brancheExport } from "./export.mjs";
 import { vivants } from "./vivant.mjs";
 import { selection, courant } from "./evenements.mjs";
@@ -32,7 +31,7 @@ import { brancheConsole, demarre, videEcran } from "./ecran-console.mjs";
 Object.assign(globalThis, {
   brancheExport,
   courant,
-  brancheSocle, ecranConfig, ecranConnexion,
+  brancheSocle, premierEcran,
   brancheConsole, demarre, videEcran,
 });
 
@@ -40,8 +39,3 @@ Object.assign(globalThis, {
    au choix dans la liste, à la création et au rechargement : l'export le lit
    par son nom au moment du clic, toujours à jour. */
 Object.defineProperties(globalThis, vivants({ selection: () => selection }, "poseEvenements"));
-
-/* Le projet et la session sont des états du socle, qu'il est seul à
-   remplacer — à la configuration, à la connexion, au renouvellement du jeton,
-   à la déconnexion : le démarrage de la page les lit par leur nom. */
-Object.defineProperties(globalThis, vivants({ CFG: () => CFG, SESSION: () => SESSION }, "poseSession"));

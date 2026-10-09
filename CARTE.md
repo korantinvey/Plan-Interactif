@@ -63,7 +63,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 19 l.
+### `_console-js.html` — 17 l.
 
 - l.2 · La console multi-événements — le branchement, et le démarrage
 
@@ -226,7 +226,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 16 l.
+### `_rapport-js.html` — 14 l.
 
 - l.2 · Rapport d'utilisation — le branchement
 
@@ -516,7 +516,7 @@ Fonctions :
 `conf` 115 · `jeton` 116 · `sousCle` 118 · `optionActive` 124 · `programmeOffert` 129
 `suggestionOfferte` 130 · `langueOfferte` 150 · `appliqueLangue` 152 · `chercheSorte` 157
 
-### `modules/console.mjs` — 47 l. → console
+### `modules/console.mjs` — 41 l. → console
 
 - l.1 · Point d'entrée de la console
 
@@ -1266,7 +1266,7 @@ Fonctions :
 
 `#lienPublic`
 
-### `modules/rapport.mjs` — 35 l. → rapport
+### `modules/rapport.mjs` — 31 l. → rapport
 
 - l.1 · Point d'entrée du rapport
 
@@ -1445,7 +1445,7 @@ Fonctions :
 `seuilGere` 74 · `seuilImpose` 75 · `seuilParSurface` 76 · `regleSeuil` 81
 `aireDuStand` 99 · `seuilConcentration` 135 · `phraseSeuil` 158
 
-### `modules/socle-console.mjs` — 386 l. → console, rapport
+### `modules/socle-console.mjs` — 404 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
@@ -1453,7 +1453,7 @@ Fonctions :
 
 `poseSession` 41 · `entetes` 64 · `renouvelle` 73 · `appel` 92 · `rest` 107
 `ecranConfig` 126 · `ecranConnexion` 158 · `deconnecte` 224 · `signale` 239 · `bloc` 263
-`grille` 281 · `idCompte` 298 · `themeSombre` 307 · `brancheSocle` 323
+`grille` 281 · `idCompte` 298 · `themeSombre` 307 · `premierEcran` 325 · `brancheSocle` 340
 
 ### `modules/sponsor.mjs` — 400 l. → plan, plan-admin
 

@@ -225,6 +225,25 @@ test.describe("les autres pages", () => {
     expect(erreurs).toEqual([]);
   });
 
+  // la redirection n'arrête pas le script : la console chargeait pendant qu'elle partait
+  test("la console renvoie un jeton de mot de passe sans rien charger", async ({ page }) => {
+    await prepare(page);
+    const appels = [];
+    await page.addInitScript(() => {
+      localStorage.setItem("console-config", JSON.stringify({ url: "https://base.essai", anonKey: "anon" }));
+      localStorage.setItem("console-session", JSON.stringify({ access_token: "a.b.c" }));
+    });
+    await page.route("https://base.essai/**", (r) => { appels.push(r.request().url()); return r.fulfill({ json: [] }); });
+    // la page d'arrivée tarde : c'est pendant ce temps que la console chargeait
+    await page.route("**/motdepasse*", async (r) => {
+      await new Promise((f) => setTimeout(f, 800));
+      await r.fulfill({ contentType: "text/html", body: "<p>mot de passe</p>" });
+    });
+    await page.goto("/admin-plans.html#access_token=x&type=recovery");
+    await expect(page).toHaveURL(/\/motdepasse#access_token=x&type=recovery$/);
+    expect(appels).toEqual([]);
+  });
+
   test("l'administration d'un plan demande d'abord qui l'on est", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto("/plan-admin.html?plan=smcl-2026");

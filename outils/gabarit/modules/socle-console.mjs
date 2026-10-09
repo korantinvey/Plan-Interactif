@@ -312,6 +312,23 @@ const themeSombre = () => {
 /* ------------------------------------------------------------------
    Le branchement
    ------------------------------------------------------------------ */
+/* La page part vers celle du mot de passe. `location.replace` n'arrête pas le
+   script : sans cette marque, la page commençait à charger pendant la
+   redirection — le profil, les salons partaient ou non selon le moment, avec
+   une session qui n'était peut-être pas celle qu'on apportait. */
+let enPartance = false;
+
+/**
+ * Le premier écran : la configuration du projet, la connexion, ou la page
+ * elle-même. Rien, si la page est déjà en train de partir.
+ */
+export function premierEcran() {
+  if (enPartance) return;
+  if (!CFG) ecranConfig();
+  else if (!SESSION) ecranConnexion();
+  else _page.demarre();
+}
+
 /**
  * Ce que la page confie au socle, et ce que le socle faisait au chargement,
  * dans l'ordre où il le faisait : relire le projet et la session, poser la
@@ -352,6 +369,7 @@ export function brancheSocle(page) {
     const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
       (type === "recovery" || type === "invite" || type === "signup");
     if (jeton || h.get("error_description") || q.get("error_description")) {
+      enPartance = true;
       location.replace(PAGE_MDP + location.search + location.hash);
     }
   })();
