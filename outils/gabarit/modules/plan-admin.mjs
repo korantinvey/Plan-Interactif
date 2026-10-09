@@ -33,6 +33,7 @@ import { majAttente, compteRescapes, programmePublication, rattrapeRetard, noteR
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants } from "./aimants.mjs";
+import { voletOrdre, brancheReglageFiche } from "./reglage-fiche.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -56,4 +57,5 @@ Object.assign(globalThis, {
   ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants,
+  voletOrdre, brancheReglageFiche,
 });
