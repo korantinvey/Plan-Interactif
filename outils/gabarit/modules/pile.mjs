@@ -13,14 +13,14 @@
    `ordonneDom` restent dans `_pile.html`, au code soudé.
 
    Ce que le code soudé tient encore — les réglages et leur enregistrement,
-   les calques de dessin et leur outil, la reprise des emplacements, le
-   placement des libellés, les secteurs, la fenêtre de réorganisation — lui
-   est confié par `branchePile`, que `_pile.html` appelle à la place que ce
-   code y tenait. Ce qui change sans cesse — les calques dessinés (`DESSINS`,
-   relus à chaque changement de salon), le calque actif, le mode de travail en
-   cours, les secteurs, le mode administrateur — par des lecteurs. Les modules
-   d'administration déjà sortis — la bibliothèque des bâtiments, le calage de
-   la carte, la carte de chaleur — s'importent.
+   les calques de dessin et leur outil, le placement des libellés, les
+   secteurs, la fenêtre de réorganisation — lui est confié par `branchePile`,
+   que `_pile.html` appelle à la place que ce code y tenait. Ce qui change sans
+   cesse — les calques dessinés (`DESSINS`, relus à chaque changement de
+   salon), le calque actif, le mode de travail en cours, les secteurs, le mode
+   administrateur — par des lecteurs. Les modules d'administration déjà
+   sortis — la bibliothèque des bâtiments, le calage de la carte, la carte de
+   chaleur, la reprise des emplacements — s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -31,6 +31,8 @@ import { roleIti, nomRoleIti } from "./itineraire.mjs";
 import { rangChaleur } from "./chaleur.mjs";
 import { bibliothequeDispo, ouvreBibliotheque, boutonRecale, rouvreCalage } from "./batiments.mjs";
 import { boutonMasqueCarte, basculeMasqueCarte } from "./calage-carte.mjs";
+import { SORTE_GEO } from "./emplacements.mjs";
+import { geoVerrouille, basculeVerrouGeo, boutonVerrouGeo, modeGeometrie } from "./reprise-emplacements.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
@@ -39,7 +41,6 @@ import { boutonMasqueCarte, basculeMasqueCarte } from "./calage-carte.mjs";
  * @property {() => any} dessins les calques dessinés, par pavillon, `DESSINS`
  * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => boolean} placeLibelles le placement des libellés en cours, `PLACE_LIBELLES`
- * @property {() => string | null} sorteGeo la couche dont on reprend les formes, `SORTE_GEO`
  * @property {() => Map<string, any>} secteurs les secteurs du salon, `SECTEURS`
  * @property {() => { k: string, t: string, nom: string, ref: any }[]} entrees
  * @property {(cle: string) => any} conf
@@ -68,10 +69,6 @@ import { boutonMasqueCarte, basculeMasqueCarte } from "./calage-carte.mjs";
  * @property {(id: any) => void} activeCalque
  * @property {() => void} memorise
  * @property {(on: boolean) => void} modePlacementLibelles
- * @property {(sorte: string) => boolean} geoVerrouille
- * @property {(sorte: string) => void} basculeVerrouGeo
- * @property {(sorte: string) => string} boutonVerrouGeo
- * @property {(sorte: string | null) => void} modeGeometrie
  * @property {() => void} ouvreOrdre
  */
 /** @type {PagePile} */
@@ -80,7 +77,6 @@ const estAdmin = () => soude.estAdmin();
 const dessins = () => soude.dessins();
 const calqueActif = () => soude.calqueActif();
 const placeLibelles = () => soude.placeLibelles();
-const sorteGeo = () => soude.sorteGeo();
 const secteurs = () => soude.secteurs();
 const entrees = () => soude.entrees();
 const conf = (/** @type {string} */ cle) => soude.conf(cle);
@@ -110,10 +106,6 @@ const pictoVerrou = (/** @type {boolean} */ ferme) => soude.pictoVerrou(ferme);
 const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
 const memorise = () => soude.memorise();
 const modePlacementLibelles = (/** @type {boolean} */ on) => soude.modePlacementLibelles(on);
-const geoVerrouille = (/** @type {string} */ sorte) => soude.geoVerrouille(sorte);
-const basculeVerrouGeo = (/** @type {string} */ sorte) => soude.basculeVerrouGeo(sorte);
-const boutonVerrouGeo = (/** @type {string} */ sorte) => soude.boutonVerrouGeo(sorte);
-const modeGeometrie = (/** @type {string | null} */ sorte) => soude.modeGeometrie(sorte);
 const ouvreOrdre = () => soude.ouvreOrdre();
 
 /** Le branchement : `_pile.html` l'appelle à la place que ce code y tenait.
@@ -221,7 +213,7 @@ export function remplitPanneau(){
     const c = x.t === "dessin" ? x.ref : conf(x.t === "fond" ? x.k.slice(5) : x.k);
     const coche = c.visible === false ? "" : " checked";
     /* Les deux couches que la source dessine — emplacements et zones — se
-       reprennent à la main, forme par forme (`_geometrie.html`). Leur cadenas
+       reprennent à la main, forme par forme (`reprise-emplacements.mjs`). Leur cadenas
        est fermé d'avance : on ne touche pas à la géométrie d'un salon en
        passant régler une couleur. */
     const sorte = x.k === "data:stands" ? "stands" : x.k === "data:zones" ? "zones" : null;
@@ -358,12 +350,12 @@ export function remplitPanneau(){
       const ferme = geoVerrouille(sorte);
       d.querySelector(".vgeo").onclick = ev => { ev.stopPropagation(); basculeVerrouGeo(sorte); };
       const cr = d.querySelector(".rgeo");
-      cr.setAttribute("aria-pressed", sorteGeo() === sorte);
+      cr.setAttribute("aria-pressed", SORTE_GEO === sorte);
       cr.disabled = ferme;
       if (ferme) cr.title = "Couche verrouillée : ouvrez son cadenas pour reprendre ou ajouter une forme.";
       cr.onclick = ev => {
         ev.stopPropagation();
-        modeGeometrie(sorteGeo() === sorte ? null : sorte);
+        modeGeometrie(SORTE_GEO === sorte ? null : sorte);
       };
     }
 

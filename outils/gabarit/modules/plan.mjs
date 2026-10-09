@@ -66,6 +66,7 @@ import { finInstant } from "./sejour.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee } from "./journee.mjs";
 import { ADMIN, retireAdmin } from "./mode-admin.mjs";
 import { PLACE_LIBELLES, libSel, brancheLibellePlace, placementLibelle } from "./libelle-place.mjs";
+import { SORTE_GEO, brancheEmplacements, appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -112,6 +113,7 @@ Object.assign(globalThis, {
   appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee,
   retireAdmin,
   brancheLibellePlace, placementLibelle,
+  brancheEmplacements, appliqueAjouts, appliqueGeometries,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -150,3 +152,9 @@ Object.defineProperties(globalThis, vivants({ ADMIN: () => ADMIN }, "activeAdmin
 Object.defineProperties(globalThis, vivants({ PLACE_LIBELLES: () => PLACE_LIBELLES },
   "modePlacementLibelles"));
 Object.defineProperties(globalThis, vivants({ libSel: () => libSel }, "choisitLibelle"));
+
+/* La couche dont l'exploitant reprend les formes, ou rien : le rendu par la
+   carte graphique le lit par accesseur pour savoir si l'on édite ; seul
+   l'outil de l'exploitant le change (`reprise-emplacements.mjs`), hors de
+   quoi il reste vide. */
+Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "modeGeometrie"));

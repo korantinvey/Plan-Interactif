@@ -7,8 +7,8 @@
    connaît qu'une. `outils/essais/forme.js` vérifie qu'elles tombent d'accord.
 
    Rien de la page ici : des tracés et des points en entrée, des nombres en
-   sortie. `_geometrie.html` s'en sert pour éditer, et pour poser ce qu'on a
-   retouché.
+   sortie. `reprise-emplacements.mjs` s'en sert pour éditer, et
+   `emplacements.mjs` pour poser ce qu'on a retouché.
    ============================================================ */
 
 export const arrondiGeo = (n) => Math.round(n * 100) / 100;

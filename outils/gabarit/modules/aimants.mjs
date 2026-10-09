@@ -122,7 +122,7 @@ function pointsAimants(pts){
  * Les sommets des emplacements et des zones du pavillon.
  *
  * Ils ne bougent qu'à la synchronisation, ou sous la main de l'exploitant qui
- * reprend une forme (`_geometrie.html`) — auquel cas le relevé s'oublie à la
+ * reprend une forme (`reprise-emplacements.mjs`) — auquel cas le relevé s'oublie à la
  * fin du geste. On le refait donc une fois par pavillon, et pas davantage.
  *
  * `sauf` écarte un emplacement du relevé : celui qu'on est en train de
