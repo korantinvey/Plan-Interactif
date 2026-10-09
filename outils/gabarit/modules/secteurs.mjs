@@ -2,7 +2,7 @@
    Les secteurs du salon, et la teinte de chacun sur le plan
 
    Sortis de `_recherche.html` (§ 5) : l'index des secteurs, refait à chaque
-   chargement (`indexeSecteurs`, que `_js.html` `indexe` appelle), la couleur
+   chargement (`indexeSecteurs`, que `index-salon.mjs` `indexe` appelle), la couleur
    que le plan et le sélecteur montrent, la pastille qu'une puce de critère
    porte, et la teinte posée sur les stands. Le code soudé lit `SECTEURS` par
    accesseur ; seul `indexeSecteurs` le remplace.

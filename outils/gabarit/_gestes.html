@@ -50,11 +50,11 @@ function suitPince(){
   const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
-  view = {
+  changeVue({
     x: pince.ancre[0] - (m.x - r.left) / r.width * nw,
     y: pince.ancre[1] - (m.y - r.top) / r.height * nh,
     w: nw, h: nh,
-  };
+  });
   rafraichitVue();
 }
 

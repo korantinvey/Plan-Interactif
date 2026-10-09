@@ -87,13 +87,18 @@ import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFi
   videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visible, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
+import { view, changeVue, svg } from "./vue.mjs";
+import { nomDeLaZone } from "./noms-zones.mjs";
+import { brancheIndex, indexeConferences } from "./index-salon.mjs";
+import { brancheTonDeLaBarre } from "./ton-barre.mjs";
+import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
 import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
   adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
-import { brancheCalquesDessin, DESSINS, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee,
-  marqueAttente, mesCalques, calqueActif, outil, enCours, poseCalqueActif } from "./calques-dessin.mjs";
+import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif, outil, enCours, poseCalqueActif }
+  from "./calques-dessin.mjs";
 import { estCadre, cheminForme } from "./chemin-forme.mjs";
 import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
@@ -168,12 +173,17 @@ Object.assign(globalThis, {
   videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visible, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes,
+  changeVue, svg,
+  nomDeLaZone,
+  brancheIndex, indexeConferences,
+  brancheTonDeLaBarre,
+  brancheDemarrage, chargeFond,
   REDUIT, ETROIT,
   montre, brancheCorpsFiche,
   anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
   adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche,
-  brancheCalquesDessin, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee, marqueAttente,
+  brancheCalquesDessin,
   mesCalques, poseCalqueActif,
   estCadre, cheminForme,
   brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
@@ -245,6 +255,12 @@ Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "index
 /* Le retrait du plan levé d'un clic hors du résultat : les gestes le lisent
    par accesseur ; seuls `oublieRetrait` et `reposeRetrait` le changent. */
 Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, "reposeRetrait"));
+
+/* La vue du plan : les gestes la remplacent sans cesse, le cadrage sur un
+   trajet aussi. Le code soudé la lit par accesseur ; il la remplace par sa
+   porte (`vue.mjs` `changeVue`), jamais par affectation. */
+Object.defineProperties(globalThis, vivants({ view: () => view }, "changeVue"));
+
 /* Le dernier appui était-il tactile ? Les gestes le posent à chaque doigt
    (`poseAppuiTactile`) et le relisent par accesseur ; la fiche s'en sert pour
    écarter le clic fantôme qui suit un appui. */

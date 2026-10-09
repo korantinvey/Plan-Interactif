@@ -34,6 +34,7 @@ import { conf, chercheSorte } from "./configuration.mjs";
 import { P_CODE } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
+import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
 
@@ -54,7 +55,6 @@ import { montre } from "./corps-fiche.mjs";
  * @property {(porte: (d: any) => boolean) => { avant: string, apres: string, sous: string }} marquesListe
  * @property {(x: any, d: any) => boolean} porteDist
  * @property {(o: any, d: any) => boolean} standPorte
- * @property {(z: any) => string} nomDeLaZone
  * @property {() => any[]} reperesCherchables
  * @property {(id: any, p: number) => void} vaAuRepere
  */
@@ -75,7 +75,6 @@ const largeur = (/** @type {string} */ txt, /** @type {any} */ police) => soude.
 const marquesListe = (/** @type {(d: any) => boolean} */ porte) => soude.marquesListe(porte);
 const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => soude.porteDist(x, d);
 const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => soude.standPorte(o, d);
-const nomDeLaZone = (/** @type {any} */ z) => soude.nomDeLaZone(z);
 const reperesCherchables = () => soude.reperesCherchables();
 const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => soude.vaAuRepere(id, p);
 

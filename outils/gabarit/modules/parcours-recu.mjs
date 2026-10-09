@@ -12,7 +12,7 @@
    importés l'un l'autre.
 
    Il se branche dans `_partage.html`, qui lui confie la configuration du
-   salon par un détour ; `_admin2.html` `demarre` l'appelle une fois les
+   salon par un détour ; `demarrage.mjs` `demarre` l'appelle une fois les
    données indexées.
    ============================================================ */
 import { parId, CONFS } from "./donnees.mjs";
