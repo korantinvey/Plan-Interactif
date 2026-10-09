@@ -16,8 +16,15 @@ export const API = reglages.api || "";
    est le chemin que son application installée ouvre, et le seul qu'elle ait le
    droit d'ouvrir — c'est ce qui sépare les salons les uns des autres, une
    portée de manifeste ne connaissant que des chemins (`outils/pwa.js`,
-   `src/index.mjs`). Faute des deux, le salon que la construction a posé. */
-const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
+   `src/index.mjs`). Faute des deux, le salon que la construction a posé.
+
+   Deux pages de `web/` ont un nom de cette forme, et Cloudflare sert chacune à
+   son adresse nue, sans `.html` : `/plan-admin` et `/plan-smcl`. Elles ne
+   nomment aucun salon — l'administration se prenait pour le salon « admin »,
+   l'allait chercher, et l'écrivait dans ses affiches. Le relais leur cède
+   d'ailleurs ces deux chemins (`src/index.mjs` `pageDuSalon`) ; le même
+   motif, dans `_langue.js` et `_sw.js`, les écarte pareil. */
+const CHEMIN_SALON = /^\/plan-(?!(?:admin|smcl)$)([a-z0-9][a-z0-9-]{0,63})$/;
 export const SLUG = new URLSearchParams(location.search).get("plan") ||
   (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
   reglages.slug || "";
