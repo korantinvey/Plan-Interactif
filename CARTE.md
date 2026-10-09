@@ -614,7 +614,7 @@ Fonctions :
 
 `brancheDuplication` 21 · `dupliquer` 25
 
-### `modules/ecran-console.mjs` — 296 l. → console
+### `modules/ecran-console.mjs` — 294 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
