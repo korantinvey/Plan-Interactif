@@ -21,6 +21,7 @@
     "fep26": "node outils/essais/fep26.js",
     "charge": "node outils/essais/charge.js",
     "appels": "node outils/appels.js",
+    "soude": "node outils/soude.js",
     "navigateur": "playwright test",
     "lint": "node outils/relecture.js",
     "types": "node outils/types.js"
