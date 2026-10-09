@@ -840,7 +840,7 @@ async function ecritColonnesEvenement(travaux){
   if (!acces) throw new Error("session absente, reconnectez-vous");
 
   const colonnes = travaux.map(t => t.colonne).join(",");
-  /* Les deux appels passent par `base` (_pousse.html), qui échange le jeton
+  /* Les deux appels passent par `base` (`session.mjs`), qui échange le jeton
      d'avance et refait l'appel sur un refus de jeton. Un jeton Supabase vit une
      heure, et cette page peut rester ouverte une matinée sans qu'aucun geste ne
      le renouvelle : la description d'une zone tapée à 10 h 30 partait alors

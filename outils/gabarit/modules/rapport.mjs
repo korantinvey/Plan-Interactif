@@ -12,9 +12,9 @@
    (l'appel à la base, la session, la barre d'état, la brique d'un bloc,
    l'adresse des pages). Ne sont confiés au code soudé que les branchements,
    ce que le socle rappelle (`demarre`, `videEcran`), ce que l'export lit, et
-   de quoi choisir le premier écran.
+   de quoi ouvrir le premier écran (`premierEcran`).
    ============================================================ */
-import { CFG, SESSION, brancheSocle, ecranConfig, ecranConnexion } from "./socle-console.mjs";
+import { brancheSocle, premierEcran } from "./socle-console.mjs";
 import { brancheExport } from "./export.mjs";
 import { vivants } from "./vivant.mjs";
 import { selection, courant, demarre, videEcran, brancheRapport } from "./rapport-utilisation.mjs";
@@ -22,14 +22,10 @@ import { selection, courant, demarre, videEcran, brancheRapport } from "./rappor
 Object.assign(globalThis, {
   brancheExport,
   courant, demarre, videEcran, brancheRapport,
-  brancheSocle, ecranConfig, ecranConnexion,
+  brancheSocle, premierEcran,
 });
 /* Le salon lu, que l'export demande au moment du clic (`_export.html`) : un
    accesseur, la valeur changeant à chaque choix dans la barre. Le code soudé
    ne l'écrit jamais — le module seul le remplace, par les commandes que
    `brancheRapport` pose. */
 Object.defineProperties(globalThis, vivants({ selection: () => selection }, "brancheRapport"));
-
-/* Le projet et la session sont des états du socle, qu'il est seul à
-   remplacer : le démarrage de la page les lit par leur nom. */
-Object.defineProperties(globalThis, vivants({ CFG: () => CFG, SESSION: () => SESSION }, "poseSession"));

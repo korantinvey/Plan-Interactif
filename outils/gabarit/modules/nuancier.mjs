@@ -17,7 +17,7 @@
 
    Sortie de `_admin1.html` : seul l'exploitant tient un nuancier — la pile
    des calques (`pile.mjs`), les volets (`volets.mjs`), le dessin
-   (`_dessin.html`). Ce module n'est embarqué que par `plan-admin.mjs`, et
+   (`outil-dessin.mjs`). Ce module n'est embarqué que par `plan-admin.mjs`, et
    ses écoutes de page quittée se posent par `brancheNuancier`, à la place
    que ce code tenait.
    ============================================================ */

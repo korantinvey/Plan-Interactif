@@ -200,7 +200,7 @@ export let outil = "main";
 export let enCours = null;       // tracé en construction
 
 /* Leurs portes. Le calque ouvert change par l'outil de l'exploitant, et se
-   referme au montage d'un pavillon (`_rendu.html` `montePlan`) ; l'outil et
+   referme au montage d'un pavillon (`rendu.mjs` `montePlan`) ; l'outil et
    le tracé ne changent que par l'outil de dessin (`modules/outil-dessin.mjs`). */
 export function poseCalqueActif(/** @type {any} */ id){ calqueActif = id; }
 export function poseOutil(/** @type {string} */ o){ outil = o; }

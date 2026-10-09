@@ -148,6 +148,9 @@ export function ecranConfig() {
     poseSession({ CFG: { url: u, anonKey: k } });
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();
+    /* La connexion a pris la place de cette fenêtre : la fermer maintenant,
+       ce serait fermer celle qu'on vient d'ouvrir. */
+    return false;
   } }]);
 }
 
@@ -172,7 +175,8 @@ export function ecranConnexion(message) {
     info.style.marginTop = "-4px";
     info.textContent = "Projet : " + (CFG?.url || "non configuré");
     corps.appendChild(info);
-  }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+  }, [// la configuration prend la place : on ne referme pas ce qu'on vient d'ouvrir
+      { libelle: "Changer de projet", action: () => { ecranConfig(); return false; } },
       { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
@@ -308,6 +312,23 @@ const themeSombre = () => {
 /* ------------------------------------------------------------------
    Le branchement
    ------------------------------------------------------------------ */
+/* La page part vers celle du mot de passe. `location.replace` n'arrête pas le
+   script : sans cette marque, la page commençait à charger pendant la
+   redirection — le profil, les salons partaient ou non selon le moment, avec
+   une session qui n'était peut-être pas celle qu'on apportait. */
+let enPartance = false;
+
+/**
+ * Le premier écran : la configuration du projet, la connexion, ou la page
+ * elle-même. Rien, si la page est déjà en train de partir.
+ */
+export function premierEcran() {
+  if (enPartance) return;
+  if (!CFG) ecranConfig();
+  else if (!SESSION) ecranConnexion();
+  else _page.demarre();
+}
+
 /**
  * Ce que la page confie au socle, et ce que le socle faisait au chargement,
  * dans l'ordre où il le faisait : relire le projet et la session, poser la
@@ -348,6 +369,7 @@ export function brancheSocle(page) {
     const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
       (type === "recovery" || type === "invite" || type === "signup");
     if (jeton || h.get("error_description") || q.get("error_description")) {
+      enPartance = true;
       location.replace(PAGE_MDP + location.search + location.hash);
     }
   })();

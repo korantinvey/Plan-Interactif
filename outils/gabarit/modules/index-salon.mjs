@@ -305,7 +305,7 @@ const confsDuPlan = (p) => programmeOffert() ? (p.conferences || []) : [];
  *
  * À part de l'indexation pour deux raisons. La première est que cela se refait
  * sans recharger : le programme de conférences est une option du plan
- * (« OPTIONS » de « _admin1.html »), et la fermer comme la rouvrir change tout
+ * (« OPTIONS » de « options.mjs »), et la fermer comme la rouvrir change tout
  * ce qui en découle — la recherche, le programme d'une zone, les conférences
  * d'un exposant, le tiroir du parcours, la journée organisée, les rappels.
  * L'instantané, lui, continue de les porter : fermer l'option n'efface rien,

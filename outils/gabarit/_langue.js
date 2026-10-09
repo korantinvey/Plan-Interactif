@@ -87,7 +87,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     try {
       salon = new URLSearchParams(location.search).get("plan") ||
         (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
-        /* Le troisième lieu où `_js.html` `SLUG` va le chercher, que la
+        /* Le troisième lieu où `modules/salon.mjs` `SLUG` va le chercher, que la
            construction pose ici faute de pouvoir le demander au script qui le
            porte : le moteur tourne avant lui. Sans cela `/plan` nu, qui est
            bien une adresse publique, écrivait sous une clé sans salon ce que

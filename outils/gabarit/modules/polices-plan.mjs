@@ -16,7 +16,7 @@ import { CONF } from "./configuration.mjs";
 import { modeleRetenu } from "./modeles.mjs";
 
 /* Ce que le code soudé confie : le plan monté ou non (`rendu.mjs` `MONTE`),
-   par un lecteur, et ce qui se retrace — les dessins (`_dessin.html`), les
+   par un lecteur, et ce qui se retrace — les dessins (`dessin.mjs`), les
    libellés (`libelles.mjs`), la liste (`recherche.mjs`). Les deux modules
    importent celui-ci pour la police des noms et des numéros, et le montage
    (`rendu.mjs`) l'embarque en chemin : aucun ne peut s'importer d'ici. */

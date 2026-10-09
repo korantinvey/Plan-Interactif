@@ -605,8 +605,10 @@ function ouvreRemiseAZero(){
 
     setTimeout(() => saisie.focus(), 60);
   }, [
-    // revenir d'où l'on vient : la fenêtre des réglages a été remplacée
-    { libelle: "Annuler", action: () => ouvreReglages(NOM_VOLET_MESURE) },
+    /* Revenir d'où l'on vient : la fenêtre des réglages a été remplacée. Sans
+       « ferme: false », la fermeture qui suit l'action emportait la fenêtre
+       qu'elle venait de rouvrir, et il ne restait que le plan. */
+    { libelle: "Annuler", ferme: false, action: () => ouvreReglages(NOM_VOLET_MESURE) },
     { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
   ], "outil");
 

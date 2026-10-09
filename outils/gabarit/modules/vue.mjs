@@ -422,7 +422,7 @@ export function fit(){
    L'interpolation porte sur les quatre nombres à la fois et reste linéaire :
    le point visé se retrouve alors exactement sous le curseur à chaque image
    du trajet, et non seulement à l'arrivée. */
-/* La vue visée, que le code soudé lit par accesseur (`_fiche.html`
+/* La vue visée, que la fiche importe (`fiche.mjs`
    `centrePoint`) ; seul le trajet la pose, par `glisseVers`. */
 /** @type {any} */
 export let vise = null;

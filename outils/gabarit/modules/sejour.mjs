@@ -15,9 +15,9 @@ import { PAS_GRILLE, ALLURE, ALLURE_PMR, grille, accroche, distancesDepuis, poin
 import { GENRES_RESSOURCE, poidsDesJours, rangeSejour } from "./ordonnanceur.mjs";
 import { CHARGE, chargeSuivie, chargeCellule, dilatationDuJour } from "./charge-annoncee.mjs";
 
-/* Ce que le code soudé tient encore, et rien avant qu'il l'ait confié : un
+/* Ce que `journee.mjs` lui confie, et rien avant qu'il l'ait fait : un
    calcul lancé trop tôt doit échouer bruyamment plutôt que de rendre une
-   visite fausse. Les réglages du salon (`_admin1.html`) et le mode accessible
+   visite fausse. Les réglages du salon (`horaires.mjs`, `seuil.mjs`) et le mode accessible
    de l'itinéraire (`tiroir-itineraire.mjs` `ITI`), lu par une fonction que
    `journee.mjs` confie : l'importer d'ici tirerait le tiroir et la page dans
    l'essai qui éprouve ce calcul seul, sous Node. */
