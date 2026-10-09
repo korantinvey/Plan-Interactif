@@ -1,6 +1,7 @@
 /* `outils/gabarit/_console-js.html` — la console multi-événements : la fiche
-   d'un salon, ses sources, le contenu de la fiche détail, la synchronisation,
-   les comptes. */
+   d'un salon, ses sources, le contenu de la fiche détail. Le fuseau horaire,
+   la synchronisation et les comptes ont leurs modules, et leur dictionnaire :
+   `fuseau.js`, `synchronisation.js`, `comptes.js`. */
 module.exports = {
   // le rythme de rafraîchissement
   "Manuel uniquement": "Manual only",
@@ -22,23 +23,6 @@ module.exports = {
   "Elle paraît dans l'onglet du plan public comme dans celui de l'administration, à côté du nom du salon. Réduite puis enregistrée avec l'événement, elle part avec le plan sans dépendre d'un fichier hébergé ailleurs. Un carré se reconnaît mieux à seize pixels qu'un logo en longueur. Glissez-la sur la vignette, ou choisissez-la.":
     "It appears in the browser tab of the public map and of the admin map, next to the show's name. Reduced and saved with the event, it travels with the map without depending on a file hosted elsewhere. A square is easier to recognise at sixteen pixels than a wide logo. Drag it onto the thumbnail, or choose it.",
   "Retrait…": "Removing…",
-  "Fuseau horaire": "Time zone",
-  "Choisi ici, il l'emporte sur la synchronisation.": "Chosen here, it overrides the synchronisation.",
-  // les deux phrases se suivent dans la même aide, et se traduisent aussi une à une
-  "Choisi ici, il l'emporte sur la synchronisation. Videz le champ pour revenir à {fuseau}, donné par Eventmaker.":
-    "Chosen here, it overrides the synchronisation. Clear the field to go back to {fuseau}, given by Eventmaker.",
-  "Choisi ici, il l'emporte sur la synchronisation. Videz le champ pour revenir à {fuseau}, le défaut.":
-    "Chosen here, it overrides the synchronisation. Clear the field to go back to {fuseau}, the default.",
-  "Videz le champ pour revenir à {fuseau}, donné par Eventmaker.": "Clear the field to go back to {fuseau}, given by Eventmaker.",
-  "Videz le champ pour revenir à {fuseau}, le défaut.": "Clear the field to go back to {fuseau}, the default.",
-  "Donné par Eventmaker à la synchronisation. Choisissez-en un autre pour l'écarter.":
-    "Given by Eventmaker during synchronisation. Choose another one to override it.",
-  "Par défaut : aucune source n'en donne. Réglez-le si le salon se tient ailleurs.":
-    "Default: no source provides one. Set it if the show takes place elsewhere.",
-  "Il date les jours du rapport et l'heure du plan.": "It sets the days in the report and the time on the map.",
-  "« {saisie} » n'est pas un fuseau connu : choisissez-le dans la liste.": "“{saisie}” is not a known time zone: choose it from the list.",
-  "modification refusée": "change refused",
-  "La base ne connaît pas « {fuseau} » : c'est {retenu} qui reste retenu.": "The database does not know “{fuseau}”: {retenu} stays in place.",
   "Connectez-vous pour accéder aux événements.": "Sign in to access the events.",
   "Aucun salon pour l'instant.": "No shows yet.",
   "Créez-en un avec « Nouveau ».": "Create one with “New”.",
@@ -260,55 +244,12 @@ module.exports = {
   "Dernière erreur : {erreur}": "Last error: {erreur}",
   "Dernière : {date}": "Last: {date}",
   "Jamais synchronisé.": "Never synchronised.",
-  "Synchronisation — {salon}": "Synchronisation — {salon}",
-  "salon": "show",
-  "Synchronisation en cours…": "Synchronisation in progress…",
-  "Synchronisation interrompue avant la fin.": "Synchronisation stopped before the end.",
-  "{n} pavillons, {n2} emplacements, {n3} appariés.": "{n} halls, {n2} stands, {n3} matched.",
-  "{n} pavillon, {n2} emplacements, {n3} appariés.": "{n} hall, {n2} stands, {n3} matched.",
-  "{n} pavillons, {n2} emplacements.": "{n} halls, {n2} stands.",
-  "{n} pavillon, {n2} emplacements.": "{n} hall, {n2} stands.",
-  "Nomenclature en codes : {raison}": "Categories left as codes: {raison}",
-  "{n} libellés de nomenclature.": "{n} category labels.",
   "Nom de la copie": "Name of the copy",
   "{salon} — copie": "{salon} — copy",
   "Nouvel événement": "New event",
   "Création…": "Creating…",
   "Événement créé.": "Event created.",
   "Données rechargées.": "Data reloaded.",
-
-  // les comptes
-  "Administrateur": "Administrator",
-  "Organisateur": "Organiser",
-  "Tous les salons, y compris ceux créés plus tard.": "All shows, including those created later.",
-  "Aucun salon à affecter pour l'instant.": "No shows to assign yet.",
-  "En attente": "Pending",
-  "Vous": "You",
-  "Nom": "Surname",
-  "Prénom": "First name",
-  "E-mail": "Email",
-  "Profil": "Role",
-  "Aucun compte.": "No accounts.",
-  "Inviter quelqu'un": "Invite someone",
-  "Compte enregistré.": "Account saved.",
-  "Adresse incomplète.": "Incomplete address.",
-  "Envoi de l'invitation…": "Sending the invitation…",
-  "Invitation envoyée à {adresse}.": "Invitation sent to {adresse}.",
-  "Envoi…": "Sending…",
-  "Lien envoyé à {adresse}.": "Link sent to {adresse}.",
-  "Cliquez à nouveau sur « Supprimer » pour confirmer.": "Click “Delete” again to confirm.",
-  "Suppression…": "Deleting…",
-  "Compte supprimé.": "Account deleted.",
-  "Retour": "Back",
-  "Envoyer l'invitation": "Send the invitation",
-  "Envoyer un lien de mot de passe": "Send a password link",
-  "Enregistrer": "Save",
-  "Modifier le compte": "Edit account",
-  "Le compte est créé sans mot de passe : l'invité en reçoit un lien par courriel, et le choisit lui-même.":
-    "The account is created without a password: the invitee receives a link by email and chooses it themselves.",
-  "L'adresse ne se change pas : c'est elle qui ouvre la session.": "The address cannot be changed: it is what signs the account in.",
-  "Vous ne pouvez pas retirer votre propre rôle.": "You cannot remove your own role.",
-  "Salons": "Shows",
   "Chargement impossible : {raison}": "Could not load: {raison}",
   /* Les catégories d'invités qui portent les exposants. */
   "Catégories d'invités": "Guest categories",
@@ -328,12 +269,6 @@ module.exports = {
     "records in this category carry a stand number",
   "aucune fiche de cette catégorie ne portait de numéro de stand":
     "no record in this category carried a stand number",
-  "{n} logos préparés pour les fiches.": "{n} logos prepared for the cards.",
-  "Préparation des logos : {n} sur {t}…": "Preparing logos: {n} of {t}…",
-  "{n} logos préparés, {r} illisibles chez leur source.":
-    "{n} logos prepared, {r} unreadable at their source.",
-  "Préparation des logos impossible : {e}": "Cannot prepare logos: {e}",
-  "Aucun logo à préparer sur ce salon.": "No logos to prepare for this event.",
   // la ligne « Adhérent syndicat » du mapping des champs
   "Adhérent syndicat": "Trade body member",
   "Marque l'exposant membre du syndicat du salon. Le champ porte rarement un oui : cochez sous lui celles de ses valeurs qui comptent pour une adhésion. Ce que le plan en montre se règle depuis l'engrenage du plan, onglet « Adhérents ».":
