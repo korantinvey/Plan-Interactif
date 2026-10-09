@@ -8,36 +8,31 @@
    importent.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais. Ce que la fiche et la recherche tiennent encore dans le
-   code soudé — l'ordre et les libellés des champs, leur rangement en
-   sections, les pictos des réseaux sociaux, ce que la fiche montre, le code
-   d'une case de la liste — lui est confié par `brancheApercus`, que
-   `_reglages.html` appelle à la place que ce code y tenait.
+   le reçoit jamais. L'ordre et les libellés des champs, leur rangement en
+   sections, les pictos des réseaux sociaux et ce que la fiche montre
+   s'importent de `corps-fiche.mjs`, la règle même que la fiche applique. Ce
+   que la recherche tient encore dans le code soudé — le préfixe des champs
+   propres au salon, le code d'une case de la liste — lui est confié par
+   `brancheApercus`, que `_reglages.html` appelle à la place que ce code y
+   tenait.
    ============================================================ */
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
 import { DATA } from "./donnees.mjs";
+import { montre, libelleCorps, ordreCorps, corpsRange, PICTO_RS, pictoRS } from "./corps-fiche.mjs";
 
 /* Ce que le code soudé confie au branchement. Tout y est déclaré avant lui
-   (`_recherche.html`, `_fiche.html`) et ne change plus : on le prend tel quel. */
+   (`_recherche.html`) et ne change plus : on le prend tel quel. */
 let PREFIXE_PERSO;
 let codeCase;
-let ordreCorps;
-let libelleCorps;
-let montre;
-let corpsRange;
-let PICTO_RS;
-let pictoRS;
 
 /**
  * Le branchement des aperçus, appelé par le code soudé à la place que ce code
  * y tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ PREFIXE_PERSO: string, codeCase: Function, ordreCorps: Function,
- *   libelleCorps: Function, montre: Function, corpsRange: Function,
- *   PICTO_RS: Record<string, any>, pictoRS: Function }} b
+ * @param {{ PREFIXE_PERSO: string, codeCase: Function }} b
  */
 export function brancheApercus(b){
-  ({ PREFIXE_PERSO, codeCase, ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS } = b);
+  ({ PREFIXE_PERSO, codeCase } = b);
 }
 
 /* ------------------------------------------------------------------

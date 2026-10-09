@@ -23,6 +23,7 @@ import { ICI_LIBRE } from "./ici.mjs";
 import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire }
   from "./tiroir-itineraire.mjs";
 import { versPlan } from "./vue.mjs";
+import { ferme } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée, elle,
    vient du tiroir de l'itinéraire : on la lit telle qu'elle est à l'instant,
@@ -31,7 +32,6 @@ import { versPlan } from "./vue.mjs";
 let soude = {};
 const visee = () => viseeIti;
 const vise = (v) => poseVisee(v);
-const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
 const formeParId = (id) => soude.formeParId(id);
 const largeur = (txt, police) => soude.largeur(txt, police);
@@ -394,7 +394,6 @@ export function boutonCodeIci(){
 /**
  * Le branchement, appelé par `_ici.html` dans sa tranche d'administration.
  *
- * @param {{ ferme: Function, fermeParcours: Function, formeParId: Function,
- *   largeur: Function }} b
+ * @param {{ fermeParcours: Function, formeParId: Function, largeur: Function }} b
  */
 export function brancheAfficheIci(b){ soude = b; }

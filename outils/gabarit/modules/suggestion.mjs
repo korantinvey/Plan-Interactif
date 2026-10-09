@@ -32,10 +32,12 @@ import { COLLATION } from "./texte.mjs";
 import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { PARCOURS, boutonParcours, dansParcours } from "./parcours.mjs";
+import { select } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
    configuration (`_admin1.html` `conf`), les critères de la recherche
-   (`_recherche.html`), l'option vendue, la fiche et le tiroir du parcours. */
+   (`_recherche.html`), l'option vendue et le tiroir du parcours. La fiche
+   s'importe de `fiche.mjs`. */
 /** @type {Record<string, any>} */
 let soude = {};
 const conf = (c) => soude.conf(c);
@@ -43,7 +45,6 @@ const clesCriteres = () => soude.clesCriteres();
 const valeursCritere = (o, cle) => soude.valeursCritere(o, cle);
 const libelleCritere = (cle) => soude.libelleCritere(cle);
 const suggestionOfferte = () => soude.suggestionOfferte();
-const select = (...a) => soude.select(...a);
 const remplitParcours = () => soude.remplitParcours();
 const brancheParcours = (hote, canal) => soude.brancheParcours(hote, canal);
 
@@ -326,6 +327,6 @@ export function fenetreSuggestion(){
  *
  * @param {{ conf: (c: string) => any, clesCriteres: Function, valeursCritere: Function,
  *   libelleCritere: Function, OUI_NON: Record<string, boolean>, suggestionOfferte: Function,
- *   select: Function, remplitParcours: Function, brancheParcours: Function }} b
+ *   remplitParcours: Function, brancheParcours: Function }} b
  */
 export function brancheSuggestion(b){ soude = b; }

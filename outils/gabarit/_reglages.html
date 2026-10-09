@@ -12,9 +12,7 @@
    La tranche ouverte ici couvre aussi `_volets.html`, et se ferme dans
    `_ordre-fiche.html`. */
 /* @admin — la fenêtre des réglages, ses aperçus et ses volets */
-brancheApercus({
-  PREFIXE_PERSO, codeCase, ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS,
-});
+brancheApercus({ PREFIXE_PERSO, codeCase });
 brancheReglageRappel({ programmeOffert, enregistreConf: () => enregistreConf() });
 brancheReglages({
   conf, enregistreConf: () => enregistreConf(), REDUIT, voletRecherche, suggestionOfferte,

@@ -12,8 +12,8 @@
    Ce que le code soudé tient encore lui est confié. La vue elle-même par un
    lecteur et un écrivain — le cadrage sur un trajet (`_itineraire.html`) la
    remplace encore en direct. Ce qui est déclaré plus loin dans ce script
-   (`enEdition`, `ETROIT`, `REDUIT`) par des lecteurs, qui ne le lisent qu'à
-   l'appel. Ce qui n'existe pas partout — les poignées de l'éditeur, les
+   (`enEdition`) par un lecteur, qui ne le lit qu'à l'appel ; l'écran, lui,
+   s'importe de `modules/ecran.mjs`. Ce qui n'existe pas partout — les poignées de l'éditeur, les
    pastilles de l'itinéraire, les pointes de flèche, le point de la borne —
    sous la garde qu'il avait ; et le calage d'un hall, que seule
    l'administration connaît, dans sa tranche.
@@ -23,8 +23,6 @@ brancheVue({
   vue: () => view,
   changeVue: (v) => { view = v; },
   enEdition: () => enEdition(),
-  etroit: () => ETROIT(),
-  reduit: () => REDUIT,
   libelles, ordonneDom,
   dessinePoignees: () => { if (typeof dessinePoignees === "function") dessinePoignees(); },
   dessinePoigneesGeo: () => { if (typeof dessinePoigneesGeo === "function") dessinePoigneesGeo(); },

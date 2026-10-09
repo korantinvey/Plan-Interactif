@@ -28,6 +28,7 @@
 import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { recul, dessineFondCarte } from "./environs.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -40,7 +41,6 @@ export const changeVue = (/** @type {any} */ v) => soude.changeVue(v);
 const enEdition = () => soude.enEdition();
 const libelles = () => soude.libelles();
 const ordonneDom = () => soude.ordonneDom();
-const ETROIT = () => soude.etroit();
 
 /** Le SVG du plan, confié au branchement. */
 /** @type {any} */
@@ -474,7 +474,7 @@ function glisseVersVise(){
  * trajet qui serait en cours.
  */
 export function glisseVers(/** @type {any} */ but){
-  if (soude.reduit()){ changeVue(but); poseVue(); return; }
+  if (REDUIT){ changeVue(but); poseVue(); return; }
   vise = but;
   /* Le trajet change l'échelle — un cran de molette, un centrage qui
      rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */

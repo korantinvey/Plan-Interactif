@@ -73,6 +73,11 @@ import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItiner
 import { brancheVue, emp, poseEmprise, vise, cadrePlan, figeTextes, appliqueVue, repeintLibelles,
   rafraichitVue, poseVue, masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom,
   versPlan } from "./vue.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
+import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
+import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -125,6 +130,11 @@ Object.assign(globalThis, {
   brancheTiroirItineraire,
   brancheVue, poseEmprise, cadrePlan, figeTextes, appliqueVue, repeintLibelles, rafraichitVue, poseVue,
   masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom, versPlan,
+  REDUIT, ETROIT,
+  montre, brancheCorpsFiche,
+  anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -179,3 +189,8 @@ Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee")
    et la fiche les lisent par accesseur. */
 Object.defineProperties(globalThis, vivants({ emp: () => emp }, "poseEmprise"));
 Object.defineProperties(globalThis, vivants({ vise: () => vise }, "glisseVers"));
+/* Le dernier appui était-il tactile ? Les gestes le posent à chaque doigt
+   (`poseAppuiTactile`) et le relisent par accesseur ; la fiche s'en sert pour
+   écarter le clic fantôme qui suit un appui. */
+Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernierAppuiTactile },
+  "poseAppuiTactile"));
