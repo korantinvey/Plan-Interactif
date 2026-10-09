@@ -30,9 +30,10 @@ import { accesBase, base } from "./session.mjs";
 import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 
-/* Ce que le code soudé tient encore : la sélection d'un stand
-   (`_fiche.html`), la fenêtre des réglages (`_reglages.html`), et le mode
-   administrateur, lu à l'instant (`_mode-admin.html` `ADMIN`). */
+/* Ce que le branchement confie : la sélection d'un stand (`_fiche.html`) et
+   la fenêtre des réglages (`_reglages.html`), que le code soudé tient
+   encore, et le mode administrateur, lu à l'instant (`modules/mode-admin.mjs`
+   `ADMIN`). */
 /** @type {(id: string, recentrer?: boolean) => void} */
 let select;
 /** @type {(ouvrir?: string) => void} */
