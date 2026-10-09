@@ -64,6 +64,7 @@ import { brancheBorne, pointBorne, poseLaBorne, poseBorneIci, montreBandeauBorne
 import { ICI_ACTIF, brancheIci, montreBandeauIci, demarreIci } from "./ici.mjs";
 import { brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
+import { TUTO, TUTO_DELAI, proposeTutoriel, brancheTutoriel } from "./tutoriel.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -107,6 +108,7 @@ Object.assign(globalThis, {
   dessineBorne, rafraichitBorne, demarreBorne,
   brancheIci, montreBandeauIci, demarreIci,
   brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion,
+  TUTO_DELAI, proposeTutoriel, brancheTutoriel,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -133,3 +135,8 @@ Object.defineProperties(globalThis, vivants({
    céder la place ; seul le module le change, en posant le point ou en
    l'éteignant (`poseIci`, `retireIci`). */
 Object.defineProperties(globalThis, vivants({ ICI_ACTIF: () => ICI_ACTIF }, "poseIci"));
+
+/* La visite guidée en cours, ou rien : le module la pose en la lançant et
+   l'efface en la quittant. L'invitation à installer et la proposition des
+   rappels la lisent par accesseur, pour ne pas passer devant elle. */
+Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));

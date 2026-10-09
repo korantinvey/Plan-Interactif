@@ -27,6 +27,7 @@ import { caseInstallation, brancheReglageInstallation } from "./reglage-installa
 import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
 import { codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci } from "./affiche-ici.mjs";
 import { NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion } from "./reglage-suggestion.mjs";
+import { reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel } from "./tutoriel.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -44,4 +45,5 @@ Object.assign(globalThis, {
   ecranAcces, brancheAcces,
   codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci,
   NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion,
+  reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel,
 });
