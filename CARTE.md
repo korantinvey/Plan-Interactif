@@ -446,25 +446,21 @@ Fonctions :
 `viseItineraire` 3207 · `visePoi` 3213 · `visePoint` 3219 · `ouvreItineraire` 3251
 `fermeItineraire` 3279 · `versItineraire` 3289 · `versItineraireDe` 3292
 
-### `_journee.html` — 2763 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 1741 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
 Fonctions :
 
-`peineDeCharge` 134 · `finInstant` 201 · `joursSalon` 210 · `joursAVenir` 239
-`joursDefaut` 257 · `confsParJour` 267 · `pointConf` 284 · `departsProposes` 303
-`matriceJournee` 336 · `ecartDesJours` 469 · `poidsDesJours` 499 · `chargeDuJour` 522
-`rangeSejour` 531 · `derouleJournee` 1085 · `prepareSejour` 1229 · `calculeSejour` 1431
-`apercuRepartition` 1465 · `rangJournee` 1479 · `lienJournee` 1491 · `boutonJour` 1514
-`arretJournee` 1527 · `remplitOnglets` 1574 · `jourDuStand` 1603 · `ouvreChoixJour` 1615
-`figeLaVisite` 1672 · `placeSurJour` 1681 · `rendAuPlan` 1689 · `retireDuSejour` 1695
-`remplitJournee` 1705 · `ecritApercu` 1918 · `appliqueVueParcours` 1948
-`traceJournee` 1990 · `montreLeJour` 1999 · `perimeJournee` 2014 · `oublieSejour` 2029
-`ouvreOrganisation` 2044 · `essaieSejour` 2424 · `lanceSejour` 2454 · `refaitSejour` 2493
-`trancheDe` 2526 · `chargeSuivie` 2546 · `etapesDuSejour` 2552 · `annoncePlan` 2579
-`celluleUtile` 2615 · `dilatationPour` 2678 · `dilatationDuJour` 2694 · `litLaCharge` 2731
-`chargeCellule` 2751
+`finInstant` 107 · `joursSalon` 116 · `joursAVenir` 145 · `joursDefaut` 163
+`confsParJour` 173 · `pointConf` 190 · `departsProposes` 209 · `matriceJournee` 242
+`derouleJournee` 313 · `prepareSejour` 457 · `calculeSejour` 659 · `apercuRepartition` 693
+`rangJournee` 707 · `lienJournee` 719 · `boutonJour` 742 · `arretJournee` 755
+`remplitOnglets` 802 · `jourDuStand` 831 · `ouvreChoixJour` 843 · `figeLaVisite` 900
+`placeSurJour` 909 · `rendAuPlan` 917 · `retireDuSejour` 923 · `remplitJournee` 933
+`ecritApercu` 1146 · `appliqueVueParcours` 1176 · `traceJournee` 1218 · `montreLeJour` 1227
+`perimeJournee` 1242 · `oublieSejour` 1257 · `ouvreOrganisation` 1272 · `essaieSejour` 1652
+`lanceSejour` 1682 · `refaitSejour` 1721
 
 ### `_js.html` — 540 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -792,6 +788,16 @@ Fonctions :
 
 `brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
 
+### `modules/charge-annoncee.mjs` — 228 l. → plan, plan-admin
+
+- l.1 · La charge annoncée — ce que les autres journées ont déjà posé
+
+Fonctions :
+
+`seuilConcentration` 24 · `identifiantParcours` 26 · `parcours` 28 · `sejour` 30
+`brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
+`celluleUtile` 149 · `dilatationDuJour` 166 · `litLaCharge` 203 · `chargeCellule` 223
+
 ### `modules/classeur.mjs` — 235 l. → console, rapport
 
 - l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
@@ -922,11 +928,20 @@ Fonctions :
 `poussePossible` 19 · `iOSsansInstallation` 24 · `adresseDuRappel` 30 · `heureVue` 54
 `empreinteDebut` 55 · `octetsDeCle` 59 · `abonnementCourant` 67 · `abonne` 76
 
+### `modules/ordonnanceur.mjs` — 866 l. → plan, plan-admin
+
+- l.1 · L'ordonnanceur de la journée organisée
+
+Fonctions :
+
+`poseLissage` 84 · `peineDeCharge` 105 · `ecartDesJours` 191 · `poidsDesJours` 221
+`chargeDuJour` 244 · `rangeSejour` 253 · `trancheDe` 803 · `dilatationPour` 858
+
 ### `modules/plan-admin.mjs` — 19 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 66 l. → plan, plan-admin
+### `modules/plan.mjs` — 76 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
