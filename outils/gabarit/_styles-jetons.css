@@ -171,7 +171,7 @@ button{cursor:pointer;background:none;border:none}
    que de rogner ce qu'elle porte.
 
    « --ton-barre » est la couleur dont le système peint la sienne, et c'est
-   `poseTonDeLaBarre` (_js.html) qui la lui donne : la surface de la barre,
+   `poseTonDeLaBarre` (modules/ton-barre.mjs) qui la lui donne : la surface de la barre,
    telle que le modèle du salon l'a redéfinie. Deux modèles y échappent et se
    nomment plus bas — leur fond ne vient pas de leur surface.
 

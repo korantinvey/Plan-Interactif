@@ -9,9 +9,8 @@
    de l'écran au plan. Elle se branche ici, à la place que son code tenait :
    ses écoutes du cadre et de la barre s'y posent au même rang qu'avant.
 
-   Ce que le code soudé tient encore lui est confié. La vue elle-même par un
-   lecteur et un écrivain — le cadrage sur un trajet (`_itineraire.html`) la
-   remplace encore en direct. Ce qui est déclaré plus loin dans ce script
+   La vue elle-même et le SVG du plan sont au module. Ce que le code soudé
+   tient encore lui est confié : ce qui est déclaré plus loin dans ce script
    (`enEdition`) par un lecteur, qui ne le lit qu'à l'appel ; l'écran, lui,
    s'importe de `modules/ecran.mjs`. Ce qui n'existe pas partout — les poignées de l'éditeur, les
    pastilles de l'itinéraire, les pointes de flèche, le point de la borne —
@@ -19,9 +18,6 @@
    l'administration connaît, dans sa tranche.
    ============================================================ */
 brancheVue({
-  svg,
-  vue: () => view,
-  changeVue: (v) => { view = v; },
   enEdition: () => enEdition(),
   libelles, ordonneDom,
   dessinePoignees: () => { if (typeof dessinePoignees === "function") dessinePoignees(); },

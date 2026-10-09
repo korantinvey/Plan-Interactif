@@ -16,6 +16,7 @@ import { $ } from "./dom.mjs";
 import { ADMIN, ouvreModeAdmin } from "./mode-admin.mjs";
 import { boutonCodeIci } from "./affiche-ici.mjs";
 import { majAttente, pousseConfiguration, brancheSauvegarde } from "./enregistrement.mjs";
+import { poseTonDeLaBarre } from "./ton-barre.mjs";
 
 /* Ce que le code soudé confie au branchement. Le plan monté se lit à
    l'instant : `montePlan` le pose bien après le chargement du script. */
@@ -25,7 +26,6 @@ import { majAttente, pousseConfiguration, brancheSauvegarde } from "./enregistre
  * @property {() => boolean} monte le plan est-il monté, `MONTE`
  * @property {() => void} dessineDessins
  * @property {() => void} construitPanneau
- * @property {() => void} poseTonDeLaBarre
  */
 /** @type {PageBandeAdmin} */
 let soude;
@@ -116,5 +116,5 @@ export function activeAdmin(){
   majAttente();
   /* La nuit de la marque touche désormais le haut de l'écran : c'est elle que
      la barre du système prolonge, et non plus le bandeau du salon. */
-  soude.poseTonDeLaBarre();
+  poseTonDeLaBarre();
 }

@@ -24,6 +24,9 @@ import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
+import { rangeConferences } from "./index-salon.mjs";
+import { annonce } from "./demarrage.mjs";
 import { ouvre } from "./fiche.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./points-interet.mjs";
@@ -33,24 +36,18 @@ import { cartouchePoi } from "./points-interet.mjs";
 /**
  * @typedef {object} PageFicheZone
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
- * @property {() => void} nomsAnglaisDesZones
  * @property {() => void} libelles
  * @property {() => void} liste
  * @property {() => void} majPaletteGeo
- * @property {() => void} rangeConferences
  */
 /** @type {PageFicheZone} */
 let soude;
 const reglages = () => soude.conf();
-const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 const enregistreConf = () => soude.enregistreConf();
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const majPaletteGeo = () => soude.majPaletteGeo();
-const rangeConferences = () => soude.rangeConferences();
 
 /**
  * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`),
