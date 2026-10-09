@@ -58,7 +58,7 @@ import { ouvreModale, poseAvantFermeture, poseApresFermeture } from "./fenetre.m
 
 /* Ce que le code soudé tient encore, et que le branchement confie : la
    configuration du salon (`_admin1.html`), la visite guidée en cours
-   (`modules/tutoriel.mjs`, relayée par le code soudé), le tiroir du parcours à rafraîchir (`_parcours.html`),
+   (`modules/tutoriel.mjs`, relayée par le code soudé), le tiroir du parcours à rafraîchir (`tiroir-parcours.mjs`, qui importe ce module-ci),
    et le retour aux réglages après un aperçu (`_installation.html`). La visite
    guidée change à chaque chapitre : elle se confie par un lecteur, non par sa
    valeur du moment. */

@@ -49,6 +49,7 @@ import { dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete,
   appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
   editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition, geste } from "./edition.mjs";
 import { poseNappe, rafraichitApercu, brancheNappe } from "./nappe.mjs";
+import { brancheOrdreCalques } from "./ordre-calques.mjs";
 import { brancheNuancier, suitNuancier } from "./nuancier.mjs";
 import { brancheReglageRecherche } from "./reglage-recherche.mjs";
 
@@ -89,6 +90,7 @@ Object.assign(globalThis, {
   appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
   editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition,
   poseNappe, rafraichitApercu, brancheNappe,
+  brancheOrdreCalques,
   brancheNuancier, suitNuancier,
   brancheReglageRecherche,
 });

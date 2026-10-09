@@ -24,8 +24,10 @@
    Ce module porte ce que le visiteur reçoit : la proposition, sa carte, sa
    fenêtre. Le volet « Suggestion » des réglages et le relevé du classement
    vivent dans `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs`
-   embarque. Les critères de la recherche, la fiche et le tiroir du parcours
-   sont encore soudés : `_suggestion.html` les confie par `brancheSuggestion`.
+   embarque. Les critères de la recherche et la fiche sont encore soudés :
+   `_suggestion.html` les confie par `brancheSuggestion`. Le tiroir du
+   parcours aussi, bien que module (`tiroir-parcours.mjs`) : il importe
+   celui-ci pour y poser la proposition, et ne peut donc s'importer d'ici.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { COLLATION } from "./texte.mjs";

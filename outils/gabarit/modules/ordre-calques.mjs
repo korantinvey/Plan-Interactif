@@ -1,0 +1,150 @@
+/* ============================================================
+   L'ordre des calques — la fenêtre de l'exploitant
+
+   La liste de tous les calques d'un pavillon, du premier plan vers
+   l'arrière, qu'on réordonne en les glissant ou d'un bouton. Administration
+   seule : `plan-admin.mjs` l'embarque, et le panneau des calques
+   (`pile.mjs`) l'importe pour son bouton « Réorganiser ».
+
+   Il se branche dans `_modales.html`, dans sa tranche d'administration, à la
+   place que son code tenait : l'ordre de la pile et le panneau qu'il refait
+   sont encore au code soudé (`_pile.html`), les verrous et le renommage au
+   dessin (`_dessin.html`), la configuration à `_admin1.html` — confiée par
+   des détours, lus à l'appel.
+   ============================================================ */
+import { $ } from "./dom.mjs";
+import { ouvreModale } from "./fenetre.mjs";
+
+/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
+/** @type {Record<string, any>} */
+let soude = {};
+const pile = () => soude.pile();
+const clePile = () => soude.clePile();
+const CONF = () => soude.CONF();
+const enregistreConf = () => soude.enregistreConf();
+const ordonneDom = () => soude.ordonneDom();
+const construitPanneau = () => soude.construitPanneau();
+const verrouille = (c) => soude.verrouille(c);
+const pictoVerrou = (ferme) => soude.pictoVerrou(ferme);
+const renommeCalque = (c, apres) => soude.renommeCalque(c, apres);
+
+/* ------------------------------------------------------------
+   Réorganisation : le premier rang de la liste est le calque le
+   plus en avant, comme dans n'importe quel gestionnaire de calques.
+   ------------------------------------------------------------ */
+const GENRE = { fond: "plan", data: "données", dessin: "dessin" };
+let tireK = null;
+
+function deplaceVers(k, cible, apres){
+  const liste = pile().map(x => x.k);
+  const i = liste.indexOf(k);
+  if (i < 0) return;
+  liste.splice(i, 1);
+  let j = liste.indexOf(cible);
+  if (j < 0) j = liste.length - 1;
+  liste.splice(apres ? j + 1 : j, 0, k);
+  CONF()[clePile()] = liste;
+  enregistreConf();
+  ordonneDom(); construitPanneau(); remplitOrdre();
+}
+function versExtremite(k, devant){
+  const liste = pile().map(x => x.k).filter(x => x !== k);
+  devant ? liste.push(k) : liste.unshift(k);   // fin de tableau = premier plan
+  CONF()[clePile()] = liste;
+  enregistreConf();
+  ordonneDom(); construitPanneau(); remplitOrdre();
+}
+
+function remplitOrdre(hote){
+  const ul = hote || $("mCorps").querySelector(".ordre");
+  if (!ul) return;
+  ul.innerHTML = "";
+  // affichage du premier plan vers l'arrière-plan
+  pile().slice().reverse().forEach(x => {
+    const li = document.createElement("li");
+    li.draggable = true;
+    li.dataset.k = x.k;
+    li.innerHTML = '<span class="poignee" aria-hidden="true">&#8942;&#8942;</span>' +
+      '<span class="nom"></span>' +
+      '<span class="bouts">' +
+      // seul un calque de dessin nous appartient : les autres portent le nom
+      // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      /* Verrouillé, il ne se renomme pas non plus : le cadenas prend la place
+         du crayon, et dit d'un coup d'œil lesquels sont protégés — c'est ici,
+         la liste complète sous les yeux, qu'on s'en aperçoit le mieux. Le rang,
+         lui, reste libre : il ne touche pas au dessin, et se reprend d'un
+         geste. */
+      (x.t === "dessin"
+        ? (verrouille(x.ref)
+            ? '<span class="verrou" title="Calque verrouillé : ouvrez son cadenas dans la pile pour le renommer">' +
+              pictoVerrou(true) + '</span>'
+            : '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>') : "") +
+      '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
+      '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
+    const nom = li.querySelector(".nom");
+    nom.textContent = x.nom;
+    const g = document.createElement("span");
+    g.className = "genre"; g.textContent = GENRE[x.t];
+    nom.appendChild(g);
+
+    li.querySelectorAll(".bouts button[data-h]").forEach(b =>
+      b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === "1"); });
+    const cr = li.querySelector("[data-ren]");
+    if (cr){
+      cr.onclick = ev => {
+        ev.stopPropagation();
+        // la fenêtre de renommage remplace celle-ci, puis on revient
+        renommeCalque(x.ref, () => ouvreOrdre());
+      };
+    }
+
+    li.ondragstart = ev => { tireK = x.k; li.classList.add("drag");
+                             ev.dataTransfer.effectAllowed = "move";
+                             try { ev.dataTransfer.setData("text/plain", x.k); } catch (e) {} };
+    li.ondragend = () => { tireK = null; li.classList.remove("drag");
+                           ul.querySelectorAll("li").forEach(n => n.classList.remove("avant", "apres")); };
+    li.ondragover = ev => {
+      if (!tireK || tireK === x.k) return;
+      ev.preventDefault();
+      const r = li.getBoundingClientRect();
+      const bas = ev.clientY > r.top + r.height / 2;
+      li.classList.toggle("apres", bas);
+      li.classList.toggle("avant", !bas);
+    };
+    li.ondragleave = () => li.classList.remove("avant", "apres");
+    li.ondrop = ev => {
+      if (!tireK || tireK === x.k) return;
+      ev.preventDefault();
+      const r = li.getBoundingClientRect();
+      const bas = ev.clientY > r.top + r.height / 2;
+      // la liste est inversée : « en dessous » à l'écran = plus en arrière
+      deplaceVers(tireK, x.k, !bas);
+      tireK = null;
+    };
+    ul.appendChild(li);
+  });
+}
+
+export function ouvreOrdre(){
+  ouvreModale("Ordre des calques", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Glissez pour réordonner. Le premier de la liste est au premier plan.";
+    const ul = document.createElement("ul");
+    ul.className = "ordre";
+    corps.appendChild(p); corps.appendChild(ul);
+    remplitOrdre(ul);
+  }, [{ libelle: "Terminé" }], "outil");
+}
+
+/* ------------------------------------------------------------
+   Le branchement
+   ------------------------------------------------------------ */
+/**
+ * Appelé par `_modales.html`, dans sa tranche d'administration.
+ *
+ * @param {{ pile: () => any[], clePile: () => string, CONF: () => any,
+ *   enregistreConf: () => void, ordonneDom: () => void, construitPanneau: () => void,
+ *   verrouille: (c: any) => boolean, pictoVerrou: (ferme: boolean) => string,
+ *   renommeCalque: (c: any, apres: () => void) => void }} b
+ */
+export function brancheOrdreCalques(b){ soude = b; }

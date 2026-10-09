@@ -22,7 +22,9 @@ import { ITI, TRACE, poseTrace, dessineItineraire, cadreItineraire } from "./tir
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Le tracé de
    l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté là-bas comme
-   ici : on le lit tel qu'il est à l'instant, et on le pose par sa porte. */
+   ici : on le lit tel qu'il est à l'instant, et on le pose par sa porte. Le
+   tiroir du parcours (`tiroir-parcours.mjs`) importe ce module pour y poser
+   la journée : il ne peut s'importer d'ici, et se confie aussi. */
 /** @type {Record<string, any>} */
 let soude = {};
 

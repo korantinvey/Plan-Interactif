@@ -1,7 +1,6 @@
 /* `outils/gabarit/modules/partage.mjs` — partager son parcours par un lien ou
-   un code, et en garder une copie ; puis l'accueil d'un parcours reçu, resté
-   dans `_partage.html` et rangé ici pour la raison que dit
-   `outils/anglais/parcours.js`. */
+   un code, et en garder une copie. L'accueil d'un parcours reçu est dans
+   `parcours-recu.js`. */
 module.exports = {
   "Faites photographier ce code : le plan s'ouvrira sur le même parcours.":
     "Have this code scanned: the map will open on the same visit plan.",
@@ -14,18 +13,6 @@ module.exports = {
   "Échec de la copie": "Copy failed",
   "Partager…": "Share…",
   "voici les stands et les conférences que j'ai retenus.": "here are the stands and conferences I picked.",
-
-  /* `_partage.html` : le parcours reçu. */
-  "Parcours partagé": "Shared visit plan",
-  "Tout ce que ce lien propose est déjà dans votre parcours.": "Everything this link offers is already in your visit plan.",
-  "Ce lien ne désigne rien de ce salon : il vient sans doute d'une autre édition, ou les stands qu'il retenait ont été démontés depuis.":
-    "This link points to nothing in this show: it probably comes from another edition, or the stands it listed have been taken down since.",
-  "Un parcours partagé": "A shared visit plan",
-  "Le parcours qui vous a été partagé contient {contenu}.": "The visit plan shared with you contains {contenu}.",
-  "et {n} de plus": "and {n} more",
-  "Remplacer le mien": "Replace mine",
-  "Ajouter au mien": "Add to mine",
-  "Charger ce parcours": "Load this visit plan",
 
   /* La copie qu'on se garde. « Keep » plutôt que « save » : ce qui se passe
      n'est pas un enregistrement quelque part, c'est une liste qu'on emporte
