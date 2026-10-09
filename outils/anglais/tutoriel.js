@@ -1,4 +1,4 @@
-/* `outils/gabarit/_tutoriel.html` — la visite guidée du premier démarrage : la
+/* `outils/gabarit/modules/tutoriel.mjs` — la visite guidée du premier démarrage : la
    fenêtre qui la propose, et la bulle qui dit quoi toucher. */
 module.exports = {
   // la fenêtre qui la propose

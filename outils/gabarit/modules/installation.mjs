@@ -91,7 +91,7 @@ import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture } from
 
 /* Ce que le code soudé tient encore, et que le branchement confie : la
    configuration du salon (`_admin1.html`), la visite guidée — en cours, et le
-   délai de sa proposition (`_tutoriel.html`) —, la liste à copier avant
+   délai de sa proposition (`modules/tutoriel.mjs`, relayés par le code soudé) —, la liste à copier avant
    d'installer (`_partage.html`), et le retour aux réglages après un aperçu
    (`_installation.html`). La visite guidée est déclarée plus bas que le
    branchement, et change à chaque chapitre : elle se confie par des lecteurs. */

@@ -22,7 +22,7 @@ module.exports = [
   // affichés seuls — la phrase entière a sa clé dans `_suggestion.js`
   "du secteur", "de la ville", "du pays", "de la nomenclature", "de la thématique",
 
-  // `_tutoriel.html` : un morceau de la transformation CSS qui étire le voile
+  // `modules/tutoriel.mjs` : un morceau de la transformation CSS qui étire le voile
   "px) scale(",
   // `_ici.html` : un morceau de la transformation SVG qui porte le damier du
   // code à sa place sur l'affiche

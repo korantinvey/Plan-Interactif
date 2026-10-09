@@ -32,7 +32,7 @@
    borne se remet à zéro toutes les quatre-vingt-dix secondes ; un téléphone à
    qui l'on ferait cela passerait pour cassé. Seule la visite guidée cède la
    place, et pour la raison inverse : arriver par un code dit pourquoi on est
-   là, et « Première visite ? » passerait devant (voir `_tutoriel.html`).
+   là, et « Première visite ? » passerait devant (voir `modules/tutoriel.mjs`).
 
    **Cela s'éteint.** Le visiteur avance, et le point cesse d'être vrai au bout
    de quelques allées. Le rappel au bas de l'écran porte donc « Désactiver »,

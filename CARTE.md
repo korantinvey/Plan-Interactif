@@ -571,24 +571,9 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 905 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 20 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.1 · 17. La visite guidée — le tour du plan, geste par geste
-
-Fonctions :
-
-`reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
-`tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
-`tutoJournee` 86 · `zoneDuTuto` 94 · `insecable` 111 · `phraseTrajetTuto` 117
-`chapitresTuto` 377 · `proposeTutoriel` 397 · `lanceTutoriel` 455 · `quitteTutoriel` 542
-`chapitreTuto` 553 · `battementTuto` 562 · `finTuto` 580 · `afficheTuto` 597 · `pxTuto` 652
-`boiteTuto` 655 · `repereTuto` 669 · `rameneTuto` 702 · `placeTuto` 740 · `voileTuto` 822
-`rafaleTuto` 839 · `marqueZoneTuto` 859 · `marqueLibelleTuto` 894
-
-Éléments :
-
-`#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
-`#tutoSuite`
+- l.1 · 17. La visite guidée — le branchement
 
 ### `_volets.html` — 1165 l. → plan-admin.html
 
@@ -1005,11 +990,11 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 47 l. → plan-admin
+### `modules/plan-admin.mjs` — 49 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 135 l. → plan, plan-admin
+### `modules/plan.mjs` — 142 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1184,6 +1169,29 @@ Fonctions :
 
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
+
+### `modules/tutoriel.mjs` — 986 l. → plan, plan-admin
+
+- l.1 · La visite guidée — le tour du plan, geste par geste
+
+Fonctions :
+
+`brancheTutoriel` 73 · `conf` 80 · `optionActive` 81 · `montre` 82 · `changePlan` 83
+`centre` 84 · `joursAVenir` 85 · `ferme` 86 · `fermeParcours` 87 · `fermeItineraire` 88
+`ETROIT` 89 · `route` 92 · `attente` 93 · `iti` 94 · `visee` 95 · `eteintVisee` 96
+`journee` 98 · `vueJournee` 99 · `sejour` 100 · `iciActif` 102 · `dessinEnCours` 105
+`reglageTuto` 133 · `tutoPropose` 142 · `cleTuto` 146 · `tutoOuvert` 148 · `tutoModale` 149
+`tutoFicheOuverte` 155 · `tutoFiche` 158 · `tutoParcours` 160 · `tutoItineraire` 163
+`tutoJournee` 167 · `zoneDuTuto` 175 · `insecable` 192 · `phraseTrajetTuto` 198
+`chapitresTuto` 458 · `proposeTutoriel` 478 · `lanceTutoriel` 536 · `quitteTutoriel` 623
+`chapitreTuto` 634 · `battementTuto` 643 · `finTuto` 661 · `afficheTuto` 678 · `pxTuto` 733
+`boiteTuto` 736 · `repereTuto` 750 · `rameneTuto` 783 · `placeTuto` 821 · `voileTuto` 903
+`rafaleTuto` 920 · `marqueZoneTuto` 940 · `marqueLibelleTuto` 975
+
+Éléments :
+
+`#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
+`#tutoSuite`
 
 ### `modules/vivant.mjs` — 36 l. → plan, plan-admin, console, rapport
 
