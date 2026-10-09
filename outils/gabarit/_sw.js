@@ -79,8 +79,9 @@ const LOTS_GARDES = 24;
    leurs stands. Les feuilles `.css` du même dossier ne portent pas d'empreinte :
    elles suivent la règle commune. */
 const POLICES = /^\/polices\/[^/]+\.woff2$/;
-/* La bibliothèque du dessin WebGL porte de même sa version dans son nom. */
-const BIBLIOTHEQUES = /^\/bibliotheques\/[^/]+\.js$/;
+/* La bibliothèque du dessin WebGL porte de même sa version dans son nom, et
+   la feuille du plan son empreinte (`outils/genere.js` `NOM_FEUILLE`). */
+const BIBLIOTHEQUES = /^\/(bibliotheques|versions)\/[^/]+\.(js|css)$/;
 
 /* Les fournisseurs du fond de carte, et eux seuls. Liste close comme les
    vocabulaires du reste du projet : ce service ne garde d'une autre origine
