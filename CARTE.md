@@ -19,7 +19,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 12. Démarrage — le branchement
 
-### `_aimants.html` — 23 l. → plan-admin.html
+### `_aimants.html` — 22 l.
 
 - l.3 · 11 quater. Dessiner juste — le branchement
 
@@ -63,7 +63,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 19 l.
+### `_console-js.html` — 17 l.
 
 - l.2 · La console multi-événements — le branchement, et le démarrage
 
@@ -226,7 +226,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 16 l.
+### `_rapport-js.html` — 14 l.
 
 - l.2 · Rapport d'utilisation — le branchement
 
@@ -312,23 +312,23 @@ Fonctions :
 
 `brancheAiguillage` 21
 
-### `modules/aimants.mjs` — 534 l. → plan-admin
+### `modules/aimants.mjs` — 535 l. → plan-admin
 
 - l.1 · Dessiner juste — cote, aimants, répétition
 
 Fonctions :
 
-`vue` 31 · `imageEnAttente` 32 · `formeSel` 33 · `calqueActif` 34 · `cadrePlan` 35
-`mesCalques` 36 · `estCadre` 37 · `boite` 38 · `toleranceTrace` 39 · `apercuGuide` 40
-`formeParId` 41 · `ajouteForme` 42 · `choisitForme` 46 · `signale` 47 · `memorise` 48
-`enregistreDessins` 49 · `redessineForme` 50 · `dessinePoignees` 51 · `brancheAimants` 56
-`ecritMetres` 63 · `coteCadre` 67 · `montreCote` 79 · `aimantsActifs` 107 · `axesDe` 111
-`pointsAimants` 116 · `oublieAimantsDuPlan` 136 · `aimantsDuPlan` 138 · `pasAimant` 171
-`cale` 179 · `sousLeGeste` 184 · `cranGrille` 195 · `oublieAimants` 212
-`aimantsDessines` 214 · `coinsGeste` 240 · `montreAimants` 262 · `meilleurSommet` 327
-`croixAimant` 341 · `correction` 365 · `aimante` 406 · `retientTaille` 420
-`reprendTaille` 434 · `dupliqueForme` 455 · `pousseForme` 480 · `ecritDimensions` 497
-`appliqueDimension` 516
+`vue` 32 · `imageEnAttente` 33 · `formeSel` 34 · `calqueActif` 35 · `cadrePlan` 36
+`mesCalques` 37 · `estCadre` 38 · `boite` 39 · `toleranceTrace` 40 · `apercuGuide` 41
+`formeParId` 42 · `ajouteForme` 43 · `choisitForme` 47 · `signale` 48 · `memorise` 49
+`enregistreDessins` 50 · `redessineForme` 51 · `dessinePoignees` 52 · `brancheAimants` 57
+`ecritMetres` 64 · `coteCadre` 68 · `montreCote` 80 · `aimantsActifs` 108 · `axesDe` 112
+`pointsAimants` 117 · `oublieAimantsDuPlan` 137 · `aimantsDuPlan` 139 · `pasAimant` 172
+`cale` 180 · `sousLeGeste` 185 · `cranGrille` 196 · `oublieAimants` 213
+`aimantsDessines` 215 · `coinsGeste` 241 · `montreAimants` 263 · `meilleurSommet` 328
+`croixAimant` 342 · `correction` 366 · `aimante` 407 · `retientTaille` 421
+`reprendTaille` 435 · `dupliqueForme` 456 · `pousseForme` 481 · `ecritDimensions` 498
+`appliqueDimension` 517
 
 ### `modules/apercus.mjs` — 327 l. → plan-admin
 
@@ -450,7 +450,7 @@ Fonctions :
 `dejaPubliee` 181 · `marqueAttente` 187 · `mesCalques` 196 · `poseCalqueActif` 205
 `poseOutil` 206 · `poseEbauche` 210 · `trouveCalque` 212 · `nouvelId` 213
 
-### `modules/chaleur.mjs` — 670 l. → plan-admin
+### `modules/chaleur.mjs` — 672 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.454 · Remise à zéro des compteurs
@@ -462,8 +462,8 @@ Fonctions :
 `mesureCartoucheChaleur` 257 · `replieChaleur` 263 · `ecritEtatChaleur` 274
 `dessineEchelleChaleur` 282 · `dessineTopChaleur` 302 · `phraseChaleur` 344
 `rafraichitChaleur` 369 · `montreChaleur` 403 · `rangChaleur` 436 · `aplati` 476
-`voletMesure` 481 · `evenementCourant` 507 · `ouvreRemiseAZero` 526 · `lanceRemiseAZero` 618
-`brancheChaleur` 664
+`voletMesure` 481 · `evenementCourant` 507 · `ouvreRemiseAZero` 526 · `lanceRemiseAZero` 620
+`brancheChaleur` 666
 
 Éléments :
 
@@ -516,7 +516,7 @@ Fonctions :
 `conf` 115 · `jeton` 116 · `sousCle` 118 · `optionActive` 124 · `programmeOffert` 129
 `suggestionOfferte` 130 · `langueOfferte` 150 · `appliqueLangue` 152 · `chercheSorte` 157
 
-### `modules/console.mjs` — 47 l. → console
+### `modules/console.mjs` — 41 l. → console
 
 - l.1 · Point d'entrée de la console
 
@@ -614,7 +614,7 @@ Fonctions :
 
 `brancheDuplication` 21 · `dupliquer` 25
 
-### `modules/ecran-console.mjs` — 296 l. → console
+### `modules/ecran-console.mjs` — 294 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
@@ -1112,7 +1112,7 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 989 l. → plan-admin
+### `modules/outil-dessin.mjs` — 993 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
@@ -1128,7 +1128,7 @@ Fonctions :
 `choisitOutil` 623 · `enchaineStand` 654 · `optionsModes` 666 · `proposeCouleurLigne` 676
 `montreTransport` 687 · `activeCalque` 696 · `cleVerrou` 754 · `verrouille` 755
 `basculeVerrou` 757 · `pictoVerrou` 774 · `montreRoleIti` 808 · `creeCalque` 821
-`demandeNom` 834 · `renommeCalque` 853 · `brancheOutilDessin` 869
+`demandeNom` 834 · `renommeCalque` 857 · `brancheOutilDessin` 873
 
 ### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
 
@@ -1266,7 +1266,7 @@ Fonctions :
 
 `#lienPublic`
 
-### `modules/rapport.mjs` — 35 l. → rapport
+### `modules/rapport.mjs` — 31 l. → rapport
 
 - l.1 · Point d'entrée du rapport
 
@@ -1348,14 +1348,14 @@ Fonctions :
 `glisseFenetre` 31 · `indexSugg` 48 · `valeursSugg` 73 · `relevePalmares` 91
 `etiquetteSugg` 111 · `voletSuggestion` 121 · `brancheReglageSuggestion` 427
 
-### `modules/reglages.mjs` — 539 l. → plan-admin
+### `modules/reglages.mjs` — 530 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
 `glisseFenetre` 93 · `ouvreReglages` 105 · `voletZones` 233 · `champsFicheZone` 335
-`ficheZoneEnPlace` 405 · `voletPlan` 423 · `voletCoexposants` 471
+`ficheZoneEnPlace` 405 · `voletPlan` 423 · `voletCoexposants` 462
 
 ### `modules/rendu.mjs` — 166 l. → plan, plan-admin
 
@@ -1445,15 +1445,15 @@ Fonctions :
 `seuilGere` 74 · `seuilImpose` 75 · `seuilParSurface` 76 · `regleSeuil` 81
 `aireDuStand` 99 · `seuilConcentration` 135 · `phraseSeuil` 158
 
-### `modules/socle-console.mjs` — 382 l. → console, rapport
+### `modules/socle-console.mjs` — 404 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
 `poseSession` 41 · `entetes` 64 · `renouvelle` 73 · `appel` 92 · `rest` 107
-`ecranConfig` 126 · `ecranConnexion` 155 · `deconnecte` 220 · `signale` 235 · `bloc` 259
-`grille` 277 · `idCompte` 294 · `themeSombre` 303 · `brancheSocle` 319
+`ecranConfig` 126 · `ecranConnexion` 158 · `deconnecte` 224 · `signale` 239 · `bloc` 263
+`grille` 281 · `idCompte` 298 · `themeSombre` 307 · `premierEcran` 325 · `brancheSocle` 340
 
 ### `modules/sponsor.mjs` — 400 l. → plan, plan-admin
 
@@ -1514,16 +1514,16 @@ Fonctions :
 `pixelsMercator` 87 · `latitudeDePixel` 96 · `echelleDesTuiles` 116 · `niveauDesTuiles` 128
 `aireDuContour` 138 · `centreDuContour` 147 · `axeDuContour` 160
 
-### `modules/texte-plan.mjs` — 110 l. → plan, plan-admin
+### `modules/texte-plan.mjs` — 111 l. → plan, plan-admin
 
 - l.1 · Le texte sur le plan — sa mesure, sa coupe en lignes, sa place
-- l.17 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.101 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.18 · 2. Mesure de texte — largeur réelle dans la police de rendu
+- l.102 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`mesureTexte` 25 · `largeur` 30 · `remesureTextes` 55 · `decoupe` 70 · `habille` 83
-`lignesSvg` 94 · `ancre` 109 · `place` 110
+`mesureTexte` 26 · `largeur` 31 · `remesureTextes` 56 · `decoupe` 71 · `habille` 84
+`lignesSvg` 95 · `ancre` 110 · `place` 111
 
 ### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
 
@@ -1619,17 +1619,17 @@ Fonctions :
 
 `vivants` 25
 
-### `modules/volets.mjs` — 1218 l. → plan-admin
+### `modules/volets.mjs` — 1227 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
 Fonctions :
 
-`secteurs` 55 · `voletAdmin` 57 · `blocOptions` 222 · `blocLangues` 269 · `blocBarre` 343
-`blocHoraires` 401 · `voletParcours` 543 · `sallesSituees` 678 · `voletPmr` 694
-`nomDuTon` 785 · `svgVignette` 794 · `barreVignette` 796 · `vignetteDistPlan` 800
-`vignetteDistListe` 813 · `vignetteDistFiche` 827 · `salonDitSes` 847 · `coinPris` 854
-`voletDist` 877 · `voletApparence` 1042
+`secteurs` 55 · `voletAdmin` 66 · `blocOptions` 231 · `blocLangues` 278 · `blocBarre` 352
+`blocHoraires` 410 · `voletParcours` 552 · `sallesSituees` 687 · `voletPmr` 703
+`nomDuTon` 794 · `svgVignette` 803 · `barreVignette` 805 · `vignetteDistPlan` 809
+`vignetteDistListe` 822 · `vignetteDistFiche` 836 · `salonDitSes` 856 · `coinPris` 863
+`voletDist` 886 · `voletApparence` 1051
 
 ### `modules/vue.mjs` — 573 l. → plan, plan-admin
 
