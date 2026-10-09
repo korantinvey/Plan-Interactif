@@ -42,6 +42,7 @@ import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
 import { SECTEURS } from "./secteurs.mjs";
 import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
 import { montre } from "./corps-fiche.mjs";
+import { DISTINCTIONS, ETOILE_DIST } from "./distinctions.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 // l'envoi de la configuration, et l'état de l'administration
@@ -50,9 +51,6 @@ let admin;
 // les options vendues à part, restées soudées (`_admin1.html`)
 let OPTIONS;
 let appliqueOptions;
-// les distinctions (`_rendu.html`)
-let DISTINCTIONS;
-let ETOILE_DIST;
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
 // ce que la fenêtre des réglages et le reste de l'administration tiennent
@@ -68,7 +66,7 @@ let relance;
  * que plus bas : ils viennent par des détours, lus à l'usage.
  */
 export function brancheVolets(b){
-  ({ enregistreConf, admin, OPTIONS, appliqueOptions, DISTINCTIONS, ETOILE_DIST,
+  ({ enregistreConf, admin, OPTIONS, appliqueOptions,
     champZone, construitPanneau, relance } = b);
 }
 

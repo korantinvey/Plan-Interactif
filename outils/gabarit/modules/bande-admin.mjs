@@ -8,22 +8,23 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Ce que le code soudé tient encore — la fenêtre des
-   réglages, le plan monté ou non, les calques de dessin et leur panneau, le
-   ton de la barre du système — lui est confié par `brancheBandeAdmin`, que
+   réglages, les calques de dessin et leur panneau, le ton de la barre du
+   système — lui est confié par `brancheBandeAdmin`, que
    `_mode-admin.html` appelle à la place que ce code y tenait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ADMIN, ouvreModeAdmin } from "./mode-admin.mjs";
 import { boutonCodeIci } from "./affiche-ici.mjs";
 import { majAttente, pousseConfiguration, brancheSauvegarde } from "./enregistrement.mjs";
+import { MONTE } from "./rendu.mjs";
 import { poseTonDeLaBarre } from "./ton-barre.mjs";
 
-/* Ce que le code soudé confie au branchement. Le plan monté se lit à
-   l'instant : `montePlan` le pose bien après le chargement du script. */
+/* Ce que le code soudé confie au branchement. Le plan monté, lui, s'importe
+   (`rendu.mjs` `MONTE`) : `montePlan` le pose bien après le chargement du
+   script, et on le lit à l'instant. */
 /**
  * @typedef {object} PageBandeAdmin
  * @property {(ouvrir?: string) => void} ouvreReglages
- * @property {() => boolean} monte le plan est-il monté, `MONTE`
  * @property {() => void} dessineDessins
  * @property {() => void} construitPanneau
  */
@@ -112,7 +113,7 @@ export function activeAdmin(){
      alors pas été construit — montePlan() n'en bâtit qu'en administration —
      et les dessins ne sont pas cliquables. C'est à cela que sert ce drapeau,
      qui jusqu'ici ne servait à rien. */
-  if (soude.monte()){ soude.dessineDessins(); soude.construitPanneau(); }
+  if (MONTE){ soude.dessineDessins(); soude.construitPanneau(); }
   majAttente();
   /* La nuit de la marque touche désormais le haut de l'écran : c'est elle que
      la barre du système prolonge, et non plus le bandeau du salon. */

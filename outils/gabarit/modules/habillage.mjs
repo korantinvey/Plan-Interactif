@@ -5,10 +5,11 @@
    Sorti de `_admin1.html`. Le plan public le pose à chaque chargement, par
    `appliqueApparence` (`apparence.mjs`) ; l'exploitant le règle dans les
    volets de la fenêtre des réglages (`volets.mjs`). La couleur que le
-   système peint derrière l'heure s'importe (`ton-barre.mjs`). Ce que le code
-   soudé tient encore — les distinctions et leurs marques sur le plan et sur
-   la fiche (`_rendu.html`) — lui est confié par `brancheHabillage`, à la
-   place que ce code tenait.
+   système peint derrière l'heure s'importe (`ton-barre.mjs`). Les
+   distinctions et leurs marques sur le plan et sur la fiche
+   (`distinctions.mjs`) lui sont confiées par `brancheHabillage`, à la place
+   que ce code tenait, parce qu'elles importent ce module pour leur mode et
+   leur teinte, et ne peuvent donc s'importer d'ici.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";

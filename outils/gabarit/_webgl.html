@@ -6,10 +6,12 @@
    ce script : la bibliothèque se demande au même moment qu'avant parmi le
    reste du plan.
 
-   Restent ici ce qu'il ne peut pas importer et qui tient au plan plus qu'au
-   dessin : savoir si l'on édite, et préparer les noms, qui suivent les règles
-   des libellés du SVG (`_rendu.html`) — tailles, seuils, placement à la main,
-   stands dessinés. Le module les reçoit au branchement.
+   Les noms, qui suivent les règles des libellés du SVG — tailles, seuils,
+   placement à la main, stands dessinés —, se préparent avec eux dans
+   `modules/libelles.mjs` (`libellesWebgl`), qui importe le rendu et ne peut
+   donc lui être importé : il lui est confié ici. Reste ici ce qu'il ne peut
+   pas importer et qui tient au plan plus qu'au dessin : savoir si l'on édite,
+   qui lit le calque ouvert de l'outil de dessin.
    ============================================================ */
 
 /* ------------------------------------------------------------
@@ -40,126 +42,3 @@ brancheWebgl({
   placeLibelles: () => PLACE_LIBELLES, drag: () => drag, pince: () => pince,
   libellesWebgl,
 });
-
-/* ------------------------------------------------------------
-   Les noms.
-
-   Le SVG écrit ceux que la vue du moment rend lisibles, et les réécrit à
-   chaque arrêt. Ici chaque nom est préparé une fois, avec l'intervalle de
-   zoom où il se lit ; la carte graphique les montre ou les tait à chaque
-   image, sans rien recalculer. Mêmes seuils, même empilement du nom et du
-   numéro que « libelleEmplacement » : l'enseigne seule tant que son numéro
-   serait illisible, les deux dès qu'il le devient.
-   ------------------------------------------------------------ */
-const LOIN = 99;
-
-/**
- * Le nom et le numéro d'un emplacement, avec les intervalles de zoom où chacun
- * se lit. Mêmes mesures que « libelleEmplacement » et « ligneCode » : c'est
- * aussi ce qu'écrit un stand dessiné, qui n'a simplement pas de pastille.
- */
-function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
-  const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
-  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-  const fn = nom ? nom.f * k : 0;
-  const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-  const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
-  const c = sel ? " sel" : "";
-  // les seuils de « libelleEmplacement », dits en zoom : 2^zoom pixels par mètre
-  const seuil = t => tout ? -LOIN : Math.log2(t);
-  const zN = nom ? seuil(4.5 / fn) : LOIN;
-  const zC1 = fc ? seuil(5 / fc) : LOIN, zC0 = fc ? seuil(6 / fc) : LOIN;
-  /* La pastille des sociétés hébergées ne dépend pas du zoom — ses mesures
-     sont en corps du numéro — mais seulement de la place : on la décide une
-     fois, comme « ligneCode » le fait à chaque écriture. */
-  const n = pastilles && fc && coexComptes() ? (s.coex || []).length : 0;
-  let past = null;
-  if (n){
-    const compte = "+" + n, wCode = largeur(s.code, P_CODE) * fc, ecart = fc * .42;
-    const wPast = largeur(compte, P_CODE) * fc + fc * .68;
-    if (wCode + ecart + wPast <= w * .9 * k) past = { compte, wCode, ecart, wPast };
-  }
-  const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
-  const pose = (lignes, f, x, y, cls, z0, z1) =>
-    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick, lbl: s.id });
-  const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
-  for (let i = 0; i + 1 < bornes.length; i++){
-    const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
-    const nomLisible = nom && zm >= zN;
-    const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
-    if (!nomLisible && !codeLisible) continue;
-    const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0, hCode = codeLisible ? fc * 1.25 : 0;
-    const haut = xy[1] - (hNom + hCode) / 2;
-    if (nomLisible) pose(nom.lignes, fn, xy[0], haut + hNom / 2, "nm" + c, z0, z1);
-    if (!codeLisible) continue;
-    // le numéro a sa ligne de base à 0,92 corps sous le nom ; son milieu, un tiers plus haut
-    const milieu = haut + hNom + fc * .59;
-    if (!past){ pose([s.code], fc, xy[0], milieu, "cd" + c, z0, z1); continue; }
-    const g = xy[0] - (past.wCode + past.ecart + past.wPast) / 2;
-    const xp = g + past.wCode + past.ecart, hp = fc * 1.16;
-    // le milieu de la pastille : sa boîte part à 0,84 corps au-dessus de la ligne de base
-    const yp = haut + hNom + fc * (.92 - .84 + .58);
-    pose([s.code], fc, g + past.wCode / 2, milieu, "cd" + c, z0, z1);
-    pose([past.compte], fc, xp + past.wPast / 2, milieu, "coexN" + c, z0, z1);
-    pastilles.push({ path: [[xp + hp / 2, yp], [xp + Math.max(past.wPast - hp / 2, hp / 2 + .001), yp]],
-      largeur: hp, cls: "coexPast" + c, z0, z1 });
-  }
-}
-
-function libellesWebgl(){
-  if (!GL.actif) return;
-  // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
-  if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
-  const p = P(), items = [], pastilles = [], dessines = new Map();
-  for (const z of p.zones){
-    const sel = z.id === state.sel;
-    if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
-    const pz = place(z), reg = placementLibelle(z);
-    const a = habille(nomDeLaZone(z), pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
-    if (!a) continue;
-    const f = a.f * facteurLibelle(reg), xy = decaleLibelle(ancre(z), reg);
-    items.push({ text: a.lignes.join("\n"), position: xy, taille: f,
-      cls: "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : "") + (phareZone(z) ? " phare" : ""),
-      z0: sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), z1: LOIN,
-      pick: Boolean(PLACE_LIBELLES && z.id === libSel), lbl: z.id });
-  }
-  const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
-  for (const s of p.stands){
-    const sel = s.id === state.sel && !decoupe;
-    if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
-    const ps = place(s), reg = placementLibelle(s);
-    emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
-  }
-  /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
-     calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
-     nom qu'il porte. Il se peint donc juste après le calque qui les tient. */
-  const couches = $("couches");
-  for (const cal of mesCalques()){
-    if (cal.visible === false) continue;
-    for (const f of cal.formes){
-      if (f.t !== "stand") continue;
-      const g = couches.querySelector('.sdes[data-f="' + CSS.escape(f.id) + '"]');
-      const dcal = g && g.closest(".dcal"), l = societeDeForme(f);
-      if (!dcal || !l) continue;
-      const nom = nomSurLePlan(l.soc);
-      const sel = l.o.id === state.sel && l.i === state.selSoc;
-      if ((!nom && !l.o.code) || (!sel && !visibleSociete(l.o, l.i))) continue;
-      const b = boite(f);
-      if (!dessines.has(dcal)) dessines.set(dcal, []);
-      emplacementWebgl({ nom, code: l.o.code }, [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2],
-        b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
-    }
-  }
-  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
-  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
-    "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
-  if (cle === GL.cleLibelles) return;
-  GL.cleLibelles = cle;
-  GL.libelles = items.filter(d => !d.cls.endsWith(" phare"));
-  GL.libellesPhare = items.filter(d => d.cls.endsWith(" phare"));
-  GL.pastilles = pastilles;
-  GL.dessines = dessines;
-  GL.versionLibelles = (GL.versionLibelles || 0) + 1;
-  GL.couchesLibelles = null;
-  planifieWebgl();
-}

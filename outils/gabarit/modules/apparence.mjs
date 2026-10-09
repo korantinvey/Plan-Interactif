@@ -5,10 +5,10 @@
    chaque changement de pavillon (`appliqueApparence`), et l'exploitant y
    revient à chaque couleur ou case de la pile (`pile.mjs`) et des volets
    (`volets.mjs`). Ce que le code soudé tient encore — les options et leur
-   liste (`_admin1.html` `appliqueOptions`), les marques des distinctions
-   (`_rendu.html`), les tiroirs du parcours et de l'itinéraire qu'on referme —
-   lui est confié par `brancheApparence`, à la place que ce code tenait. Les
-   secteurs s'importent de `recherche.mjs`.
+   liste (`_admin1.html` `appliqueOptions`), les tiroirs du parcours et de
+   l'itinéraire qu'on referme — lui est confié par `brancheApparence`, à la
+   place que ce code tenait. Les secteurs s'importent de `recherche.mjs`, les
+   marques des distinctions de `distinctions.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -17,6 +17,7 @@ import { CONF, conf, sousCle, appliqueLangue } from "./configuration.mjs";
 import { marqueParcours } from "./parcours.mjs";
 import { appliqueAccent, appliqueFond, appliqueDists, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { appliqueSecteurs } from "./recherche.mjs";
+import { dessineDists } from "./distinctions.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le plan ne
    s'habille qu'à l'arrivée des données, bien après le branchement. */
@@ -27,7 +28,7 @@ let soude = {};
  * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
  * L'itinéraire vient par un détour, lu au moment de refermer son tiroir.
  *
- * @param {{ appliqueOptions: () => void, dessineDists: () => void,
+ * @param {{ appliqueOptions: () => void,
  *   fermeParcours: () => void, fermeItineraire: () => void }} b
  */
 export function brancheApparence(b){
@@ -70,7 +71,7 @@ export function styleDataGroupe(nom, on){
   if (nom === "stands" || nom === "zones") marqueParcours();
   /* Les marques des nouveaux venus non plus : la couche éteinte, elles
      resteraient seules au-dessus d'un hall vide. */
-  if (nom === "stands") soude.dessineDists();
+  if (nom === "stands") dessineDists();
 }
 
 export function appliqueCouleursData(){

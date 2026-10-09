@@ -21,17 +21,17 @@ import { GL, libelleSousWebgl } from "./webgl.mjs";
 import { cleLibelle, PLACE_LIBELLES, libSel, poseModeLibelles, poseLibelleChoisi, empreinteLibelle,
   placementLibelle } from "./libelle-place.mjs";
 import { svg, versPlan } from "./vue.mjs";
+import { libelles } from "./libelles.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
    loin dans le script — les réglages (`CONF`, que le changement de salon
    remplace), le calque de dessin ouvert, la couche reprise — se lit à
    l'instant. Le plan et le passage de l'écran au plan s'importent de
-   `vue.mjs`. */
+   `vue.mjs`, le dessin des noms de `libelles.mjs`. */
 /**
  * @typedef {object} PagePlacementLibelles
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {() => void} enregistreConf
- * @property {() => void} libelles
  * @property {() => any} calqueActif le calque de dessin ouvert, `calqueActif`
  * @property {(id: any) => void} activeCalque
  * @property {() => any} sorteGeo la couche dont on reprend les formes, `SORTE_GEO`
@@ -41,7 +41,6 @@ import { svg, versPlan } from "./vue.mjs";
 let soude;
 const reglages = () => soude.conf();
 const enregistreConf = () => soude.enregistreConf();
-const libelles = () => soude.libelles();
 const racine = document.documentElement;
 
 /** @type {any} */

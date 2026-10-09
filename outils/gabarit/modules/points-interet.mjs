@@ -29,19 +29,17 @@ import { DESSINS, mesCalques } from "./calques-dessin.mjs";
 import { PICTOS, nomTypeRepere, typeZone, pictoForme, glypheRepere, pastillePoi } from "./reperes.mjs";
 import { poseCode, poseMarque, onglet, brancheActesFiche, centrePoint, ecarteClicFantome, anime } from "./fiche.mjs";
 import { majFondus } from "./bandes.mjs";
+import { changePlan } from "./rendu.mjs";
+import { poseDistsFiche } from "./distinctions.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
  * @typedef {object} PagePointsInteret
  * @property {(id: any) => any} formeParId
- * @property {(i: number) => void} changePlan
- * @property {(soc: any) => void} poseDistsFiche
  */
 /** @type {PagePointsInteret} */
 let soude;
 const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
-const changePlan = (/** @type {number} */ i) => soude.changePlan(i);
-const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
 
 /** Le branchement : `_dessin.html` l'appelle en tête.
  *  @param {PagePointsInteret} page */
