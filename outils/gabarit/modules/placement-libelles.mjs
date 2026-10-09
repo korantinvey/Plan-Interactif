@@ -7,12 +7,12 @@
    module pose l'état par ses portes.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais. Ce que le code soudé tient encore — les réglages et leur
-   enregistrement, le dessin des noms, l'outil de dessin et la reprise d'un
-   emplacement avec lesquels il se dispute le glisser, la vue — lui est confié
-   par `branchePlacementLibelles`, que `_mode-admin.html` appelle à la place
-   que ce code y tenait : les commandes de la palette s'y branchent au même
-   rang qu'avant.
+   le reçoit jamais. L'outil de dessin et la reprise d'un emplacement, avec
+   lesquels il se dispute le glisser et qui importent ce module, lui sont
+   confiés par `branchePlacementLibelles`, que `_mode-admin.html` appelle à la
+   place que ce code y tenait : les commandes de la palette s'y branchent au
+   même rang qu'avant. Les réglages et leur enregistrement, le calque ouvert,
+   la couche reprise, le dessin des noms et la vue s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { parId } from "./donnees.mjs";
@@ -22,25 +22,23 @@ import { cleLibelle, PLACE_LIBELLES, libSel, poseModeLibelles, poseLibelleChoisi
   placementLibelle } from "./libelle-place.mjs";
 import { svg, versPlan } from "./vue.mjs";
 import { libelles } from "./libelles.mjs";
+import { CONF, enregistreConf } from "./configuration.mjs";
+import { calqueActif } from "./calques-dessin.mjs";
+import { SORTE_GEO } from "./emplacements.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
-   loin dans le script — les réglages (`CONF`, que le changement de salon
-   remplace), le calque de dessin ouvert, la couche reprise — se lit à
-   l'instant. Le plan et le passage de l'écran au plan s'importent de
-   `vue.mjs`, le dessin des noms de `libelles.mjs`. */
+/* Ce que le code soudé confie au branchement : l'outil de dessin et la
+   reprise d'un emplacement, qui importent ce module. Les réglages (`CONF`,
+   que le changement de salon remplace), le calque de dessin ouvert et la
+   couche reprise, importés, se lisent tels qu'ils sont à l'instant. Le plan
+   et le passage de l'écran au plan s'importent de `vue.mjs`, le dessin des
+   noms de `libelles.mjs`. */
 /**
  * @typedef {object} PagePlacementLibelles
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {() => void} enregistreConf
- * @property {() => any} calqueActif le calque de dessin ouvert, `calqueActif`
  * @property {(id: any) => void} activeCalque
- * @property {() => any} sorteGeo la couche dont on reprend les formes, `SORTE_GEO`
  * @property {(sorte: any) => void} modeGeometrie
  */
 /** @type {PagePlacementLibelles} */
 let soude;
-const reglages = () => soude.conf();
-const enregistreConf = () => soude.enregistreConf();
 const racine = document.documentElement;
 
 /** @type {any} */
@@ -57,7 +55,6 @@ export function lacheLibelle(){
  * soixante fois par seconde. C'est la fin du geste qui enregistre.
  */
 function posePlacement(o, change){
-  const CONF = reglages();
   const r = placementLibelle(o);
   const n = { dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, k: r && r.k > 0 ? r.k : 1,
               e: empreinteLibelle(o) };
@@ -77,7 +74,7 @@ function posePlacement(o, change){
 function libelleAutomatique(){
   const o = libSel && parId.get(libSel);
   if (!o) return;
-  delete reglages()[cleLibelle(o.id)];
+  delete CONF[cleLibelle(o.id)];
   enregistreConf();
   libelles();
   majPaletteLibelle();
@@ -89,8 +86,8 @@ export function modePlacementLibelles(on){
   /* Le placement, le dessin et la reprise d'une géométrie se disputeraient le
      glisser : entrer dans l'un referme les autres, plutôt que de laisser trois
      gestes viser le même pointeur. */
-  if (PLACE_LIBELLES && soude.calqueActif()) soude.activeCalque(soude.calqueActif());
-  if (PLACE_LIBELLES && soude.sorteGeo()) soude.modeGeometrie(null);
+  if (PLACE_LIBELLES && calqueActif) soude.activeCalque(calqueActif);
+  if (PLACE_LIBELLES && SORTE_GEO) soude.modeGeometrie(null);
   if (!PLACE_LIBELLES){ poseLibelleChoisi(null); glisseLib = null; }
   /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
      touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se

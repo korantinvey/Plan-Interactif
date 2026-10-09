@@ -27,12 +27,13 @@
    Ce module ne voit du plan que ce que le code soudé lui confie au
    branchement (`brancheWebgl`, dans `_webgl.html`) : le SVG, la vue, ses
    gestes, l'édition en cours, et la préparation des noms, qui tient aux
-   règles des libellés et reste là-bas. Ce qu'il lit du SVG passe par
-   `trace.mjs`.
+   règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
+   placement des libellés à la main s'importe (`libelle-place.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
+import { PLACE_LIBELLES } from "./libelle-place.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer : le code soudé le
    lui confie au branchement. Rien de cela ne sert avant — le dessin ne monte
@@ -45,14 +46,13 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
  * @property {() => void} appliqueVue
  * @property {() => void} libelles
  * @property {() => boolean} enEdition
- * @property {() => boolean} placeLibelles le placement des libellés à la main, `PLACE_LIBELLES`
  * @property {() => any} drag le glissé en cours
  * @property {() => any} pince le pincement en cours
  * @property {() => void} libellesWebgl
  */
 /** @type {PageWebgl} */
 let _page = { vue: () => null, cadrePlan: () => new DOMRect(), appliqueVue: () => {}, libelles: () => {},
-  enEdition: () => false, placeLibelles: () => false, drag: () => null, pince: () => null,
+  enEdition: () => false, drag: () => null, pince: () => null,
   libellesWebgl: () => {} };
 /** Le plan en SVG, caché : le modèle que ce rendu relit. @type {any} */
 let svg = null;
@@ -1043,7 +1043,7 @@ function groupesNoms(cle, liste){
 function couchesNoms(prefixe, groupes){
   let i = 0;
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: _page.placeLibelles(), sousPixel: g.sp,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }
@@ -1129,7 +1129,7 @@ function poseSurvolWebgl(el){
  *  en cours, qui écrit le sien sur elle, garde la main. */
 function poseCurseurWebgl(o){
   let c = "";
-  if (o && _page.placeLibelles() && o.lbl) c = "move";
+  if (o && PLACE_LIBELLES && o.lbl) c = "move";
   else if (o && o.prise) c = getComputedStyle(o.prise).cursor;
   else if (o && o.el) c = "pointer";
   if (c === "auto" || c === "default") c = "";
@@ -1247,7 +1247,7 @@ function couchesPhareNoms(){
   const pas = Math.round(p * 60);
   let i = 0;
   return groupesNoms("phare", GL.libellesPhare).flatMap(g => couchesTexte("phare-noms-" + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: _page.placeLibelles(),
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES,
       getColor: d => { const c = (GL.modeles.get(d.cls) || g.mo).couleur;
         return [0, 1, 2].map(k => Math.round(c[k] + (poi[k] - c[k]) * p)).concat(c[3]); },
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));

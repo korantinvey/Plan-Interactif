@@ -9,14 +9,12 @@
 
    Il se branche ici, à la place que son code tenait dans ce script : les
    écouteurs de la page (onglet masqué, page quittée) s'y posent au même rang
-   qu'avant. Ce que le code soudé tient encore lui est confié — le mode et les
-   réglages par des lecteurs, puisque le chargement d'un salon les remplace.
-   Les calques de dessin, il les importe.
+   qu'avant. Lui est confié l'enregistrement des dessins, que l'outil de
+   dessin tient (`modules/outil-dessin.mjs`, qui importe celui-ci) ; le mode,
+   les réglages, l'apparence, le panneau et les calques de dessin, il les
+   importe.
    ============================================================ */
 
 /* @admin — l'enregistrement de la configuration, geste d'exploitant */
-brancheEnregistrement({
-  estAdmin: () => ADMIN, conf: () => CONF, reglagesDuSalon,
-  enregistreConf, enregistreDessins, appliqueApparence, construitPanneau,
-});
+brancheEnregistrement({ enregistreDessins });
 /* @fin-admin */

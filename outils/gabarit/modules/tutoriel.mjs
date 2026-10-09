@@ -3,10 +3,9 @@
 
    La visite lit la page entière : les tiroirs, la fiche, le trajet demandé,
    la journée calculée. Ce qui vit déjà dans un module — les données du salon,
-   le parcours, la fenêtre commune, le générique, l'écriture d'une distance —
-   s'importe ; ce que le code soudé tient encore lui est confié par
-   `brancheTutoriel`, que `_tutoriel.html` appelle à la place que ce code
-   tenait dans la page.
+   le parcours, la fenêtre commune, le générique, l'écriture d'une distance,
+   les réglages, le code « Vous êtes ici », l'état de l'éditeur — s'importe :
+   il n'a plus rien à recevoir du code soudé.
 
    Le visiteur la reçoit : `plan.mjs` l'embarque. Le réglage et l'essai depuis
    la fenêtre des réglages ne servent qu'à l'exploitant, et seul
@@ -53,32 +52,17 @@ import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { centre, ferme } from "./fiche.mjs";
 import { changePlan } from "./rendu.mjs";
+import { conf, optionActive } from "./configuration.mjs";
+import { ICI_ACTIF } from "./ici.mjs";
+import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { calqueActif, enCours } from "./calques-dessin.mjs";
+import { formeSel } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
-   se lance qu'une fois la page démarrée, bien après le branchement. */
-/** @type {Record<string, any>} */
-let soude = {};
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
-   `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. */
-
-/**
- * Le branchement, appelé par `_tutoriel.html` à la place de la visite.
- *
- * L'état de l'itinéraire, du code « Vous êtes ici » et de l'éditeur se
- * confie par des lecteurs, non par des valeurs : le code soudé le remplace à
- * chaque geste, et la visite doit lire celui du moment. Celui de la journée
- * s'importe de `journee.mjs`, qui le tient.
- *
- * @param {{ conf: Function, optionActive: Function,
- *   iciActif: () => boolean,
- *   dessinEnCours: () => any }} b
- */
-export function brancheTutoriel(b){
-  soude = b;
-}
-
-const conf = (c) => soude.conf(c);
-const optionActive = (cle) => soude.optionActive(cle);
+   `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
+   l'itinéraire, du code « Vous êtes ici », de l'éditeur et de la journée se
+   lit tel qu'il est à l'instant : les gestes le remplacent sans cesse, et la
+   visite doit lire celui du moment. */
 /* Le trajet demandé (`tiroir-itineraire.mjs` `ROUTE`, `attente`, `ITI`), la
    visée en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire
    l'éteint — sans passer par « finVisee », qui rouvrirait le tiroir qu'on
@@ -92,11 +76,11 @@ const eteintVisee = () => { poseVisee(null); bandeauVisee(); };
 const journee = () => JOURNEE;
 const vueJournee = () => VUE_JOURNEE;
 const sejour = () => SEJOUR;
-// un code « Vous êtes ici » vient de poser le visiteur sur le plan (`_ici.html`)
-const iciActif = () => soude.iciActif();
+// un code « Vous êtes ici » vient de poser le visiteur sur le plan (`ici.mjs`)
+const iciActif = () => ICI_ACTIF;
 /* Un geste d'exploitant en cours — libellé qu'on place, trait qu'on trace,
    forme qu'on reprend, calque qu'on édite —, qu'Échap doit pouvoir défaire. */
-const dessinEnCours = () => soude.dessinEnCours();
+const dessinEnCours = () => PLACE_LIBELLES || enCours || formeSel || calqueActif;
 
 const racine = document.documentElement;
 

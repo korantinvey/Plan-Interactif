@@ -6,25 +6,16 @@
    seule : `plan-admin.mjs` l'embarque, et le panneau des calques
    (`pile.mjs`) l'importe pour son bouton « Réorganiser ».
 
-   Il se branche dans `_modales.html`, dans sa tranche d'administration, à la
-   place que son code tenait : l'ordre de la pile et le panneau qu'il refait
-   sont encore au code soudé (`_pile.html`), la configuration à
-   `_admin1.html` — confiée par des détours, lus à l'appel. Les verrous et le
-   renommage d'un calque s'importent de l'outil de dessin (`outil-dessin.mjs`).
+   Il n'a rien à recevoir du code soudé : l'ordre de la pile et le panneau
+   qu'il refait s'importent de `ordre-trace.mjs`, la configuration et son
+   enregistrement de `configuration.mjs`, les verrous et le renommage d'un
+   calque de l'outil de dessin (`outil-dessin.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { verrouille, pictoVerrou, renommeCalque } from "./outil-dessin.mjs";
-
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-const pile = () => soude.pile();
-const clePile = () => soude.clePile();
-const CONF = () => soude.CONF();
-const enregistreConf = () => soude.enregistreConf();
-const ordonneDom = () => soude.ordonneDom();
-const construitPanneau = () => soude.construitPanneau();
+import { CONF, enregistreConf } from "./configuration.mjs";
+import { clePile, pile, ordonneDom, construitPanneau } from "./ordre-trace.mjs";
 
 /* ------------------------------------------------------------
    Réorganisation : le premier rang de la liste est le calque le
@@ -41,14 +32,14 @@ function deplaceVers(k, cible, apres){
   let j = liste.indexOf(cible);
   if (j < 0) j = liste.length - 1;
   liste.splice(apres ? j + 1 : j, 0, k);
-  CONF()[clePile()] = liste;
+  CONF[clePile()] = liste;
   enregistreConf();
   ordonneDom(); construitPanneau(); remplitOrdre();
 }
 function versExtremite(k, devant){
   const liste = pile().map(x => x.k).filter(x => x !== k);
   devant ? liste.push(k) : liste.unshift(k);   // fin de tableau = premier plan
-  CONF()[clePile()] = liste;
+  CONF[clePile()] = liste;
   enregistreConf();
   ordonneDom(); construitPanneau(); remplitOrdre();
 }
@@ -133,14 +124,3 @@ export function ouvreOrdre(){
     remplitOrdre(ul);
   }, [{ libelle: "Terminé" }], "outil");
 }
-
-/* ------------------------------------------------------------
-   Le branchement
-   ------------------------------------------------------------ */
-/**
- * Appelé par `_modales.html`, dans sa tranche d'administration.
- *
- * @param {{ pile: () => any[], clePile: () => string, CONF: () => any,
- *   enregistreConf: () => void, ordonneDom: () => void, construitPanneau: () => void }} b
- */
-export function brancheOrdreCalques(b){ soude = b; }

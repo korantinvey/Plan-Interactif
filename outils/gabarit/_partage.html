@@ -4,10 +4,9 @@
    Le lien qui porte le parcours, la fenêtre de partage, la copie qu'on se
    garde et la question qui la précède vivent dans `modules/partage.mjs`, le
    codage du lien dans `modules/lien-parcours.mjs`, l'accueil d'un parcours
-   reçu dans `modules/parcours-recu.mjs`. Ils se branchent ici, à la place que
-   leur code tenait — le bouton du partage s'y branche au même moment qu'avant
-   —, et reçoivent la configuration du salon, que le code soudé tient encore,
-   par un détour lu à l'appel.
+   reçu dans `modules/parcours-recu.mjs`. Le partage se branche ici, à la
+   place que son code tenait : le bouton s'y branche au même moment qu'avant.
+   La configuration du salon, les deux l'importent : l'accueil d'un parcours
+   reçu n'a plus de branchement.
    ============================================================ */
-branchePartage({ conf: (cle) => conf(cle) });
-brancheParcoursRecu({ conf: (cle) => conf(cle) });
+branchePartage();

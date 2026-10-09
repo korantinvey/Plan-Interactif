@@ -24,10 +24,10 @@
    Ce module porte ce que le visiteur reçoit : la proposition, sa carte, sa
    fenêtre. Le volet « Suggestion » des réglages et le relevé du classement
    vivent dans `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs`
-   embarque. La fiche est encore soudée : `_suggestion.html` la confie par
-   `brancheSuggestion` ; les critères de la recherche s'importent de
-   `recherche.mjs`. Le tiroir du
-   parcours aussi, bien que module (`tiroir-parcours.mjs`) : il importe
+   embarque. La fiche, la configuration et l'option vendue s'importent
+   (`fiche.mjs`, `configuration.mjs`), les critères de la recherche de
+   `recherche.mjs`. Le tiroir du parcours est confié par `brancheSuggestion`,
+   bien que module (`tiroir-parcours.mjs`) : il importe
    celui-ci pour y poser la proposition, et ne peut donc s'importer d'ici.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -37,14 +37,12 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { PARCOURS, boutonParcours, dansParcours } from "./parcours.mjs";
 import { OUI_NON, clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
 import { select } from "./fiche.mjs";
+import { conf, suggestionOfferte } from "./configuration.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
-   configuration (`_admin1.html` `conf`), l'option vendue et le tiroir du
-   parcours. La fiche s'importe de `fiche.mjs`. */
+/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le tiroir du
+   parcours. La fiche, la configuration et l'option vendue s'importent. */
 /** @type {Record<string, any>} */
 let soude = {};
-const conf = (c) => soude.conf(c);
-const suggestionOfferte = () => soude.suggestionOfferte();
 const remplitParcours = () => soude.remplitParcours();
 const brancheParcours = (hote, canal) => soude.brancheParcours(hote, canal);
 
@@ -325,7 +323,6 @@ export function fenetreSuggestion(){
 /**
  * Le branchement, appelé par `_suggestion.html` à la place que ce code tenait.
  *
- * @param {{ conf: (c: string) => any, suggestionOfferte: Function,
- *   remplitParcours: Function, brancheParcours: Function }} b
+ * @param {{ remplitParcours: Function, brancheParcours: Function }} b
  */
 export function brancheSuggestion(b){ soude = b; }

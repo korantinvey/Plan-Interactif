@@ -8,17 +8,13 @@
 import { fermeModale } from "./fenetre.mjs";
 import { MENTIONS_SPONSOR, MARQUE_SPONSOR, SPONSOR_MIN, SPONSOR_MAX, reglageSponsor,
   secondesSponsor, modeSponsor, sponsorRetenu, ouvreSponsor, fermeSponsor } from "./sponsor.mjs";
+import { champZone, cadreLogo } from "./fiche-zone.mjs";
+import { enregistreConf } from "./configuration.mjs";
 
-/* Ce que le branchement confie : le champ intitulé et le cadre de dépôt d'un
-   logo (`modules/fiche-zone.mjs`), et ce que le code soudé tient encore —
-   l'envoi de la configuration (`_ordre-fiche.html`), et le glissement de la
-   fenêtre des réglages (`_reglages.html`). */
-/** @type {(hote: HTMLElement, titre: string, dedans: any, aide?: string) => any} */
-let champZone;
-/** @type {(depart: any, pose: (src: any) => void) => { cadre: HTMLElement }} */
-let cadreLogo;
-/** @type {() => void} */
-let enregistreConf;
+/* Ce que le branchement confie : le glissement de la fenêtre des réglages
+   (`reglages.mjs`), qui importe ce module et ne peut donc s'importer d'ici.
+   Le champ intitulé, le cadre de dépôt d'un logo et l'enregistrement de la
+   configuration s'importent. */
 /** @type {(change: () => void) => void} */
 let glisseFenetre;
 
@@ -26,13 +22,9 @@ let glisseFenetre;
  * Le branchement du réglage, appelé par le code soudé à la place que ce code y
  * tenait (`_sponsor.html`), dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ champZone: typeof champZone, cadreLogo: typeof cadreLogo,
- *           enregistreConf: typeof enregistreConf, glisseFenetre: typeof glisseFenetre }} b
+ * @param {{ glisseFenetre: typeof glisseFenetre }} b
  */
 export function brancheReglageSponsor(b){
-  champZone = b.champZone;
-  cadreLogo = b.cadreLogo;
-  enregistreConf = b.enregistreConf;
   glisseFenetre = b.glisseFenetre;
 }
 

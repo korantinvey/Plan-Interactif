@@ -6,23 +6,18 @@
    voit. Le visiteur ne la reçoit pas : seul `plan-admin.mjs` embarque ce
    module, et le plan public n'appelle `rafraichitApercu` qu'après `typeof`.
 
-   Il se branche dans la tranche d'administration de `_itineraire.html`, à la
-   place que son code tenait ; ce que le code soudé tient encore lui est
-   confié — la lecture des jetons de couleur, et le plan où la nappe se pose.
-   La case qui la montre (`_dessin.html`) passe par sa porte, `poseNappe`.
+   Il n'a rien à recevoir du code soudé : la lecture des jetons de couleur
+   (`configuration.mjs`) et le plan où la nappe se pose (`vue.mjs`)
+   s'importent. La case qui la montre (`outil-dessin.mjs`) passe par sa
+   porte, `poseNappe`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { PAS_GRILLE, grille } from "./itineraire.mjs";
 import { ITI } from "./tiroir-itineraire.mjs";
-
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-/** @type {any} */
-let svg = null;
-const jeton = (n) => soude.jeton(n);
+import { jeton } from "./configuration.mjs";
+import { svg } from "./vue.mjs";
 
 /* ------------------------------------------------------------
    Voir ce qui est praticable
@@ -78,15 +73,4 @@ export function rafraichitApercu(){
   el.setAttribute("preserveAspectRatio", "none");
   el.setAttribute("href", cv.toDataURL());
   if (!vieux) svg.insertBefore(el, svg.querySelector("#itin, #apercu, #poignees"));
-}
-
-/**
- * Le branchement, appelé par `_itineraire.html` dans sa tranche
- * d'administration.
- *
- * @param {{ jeton: (n: string) => string, svg: Element }} b
- */
-export function brancheNappe(b){
-  soude = b;
-  svg = b.svg;
 }

@@ -2,9 +2,10 @@
    11 ter. Organiser sa visite — la question posée, et le tiroir
 
    Sorti de `_journee.html`, où il se branche encore (`brancheJournee`) : le
-   parcours, le tracé de l'itinéraire et les réglages du salon vivent
-   toujours dans le code soudé, qui les lui confie à la place que ce code y
-   tenait ; la fiche s'importe de `fiche.mjs`. Le calcul — répartir, ordonner, dérouler — est dans
+   tiroir du parcours, qui importe ce module, lui est confié à la place que
+   ce code y tenait ; la fiche, les dates et les heures du salon et le seuil
+   de concentration s'importent (`fiche.mjs`, `horaires.mjs`, `seuil.mjs`),
+   le tracé de l'itinéraire aussi, par sa porte. Le calcul — répartir, ordonner, dérouler — est dans
    `sejour.mjs`, que ce module branche à son tour.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -21,6 +22,8 @@ import { PLACES, oublieMatrice, calculeSejour, apercuRepartition, brancheSejour 
 import { ITI, TRACE, poseTrace, dessineItineraire, cadreItineraire } from "./tiroir-itineraire.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { changePlan } from "./rendu.mjs";
+import { datesSalon, horairesSalon, lueHeure, minutesVisite } from "./horaires.mjs";
+import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Le tracé de
    l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté là-bas comme
@@ -30,10 +33,6 @@ import { changePlan } from "./rendu.mjs";
 /** @type {Record<string, any>} */
 let soude = {};
 
-// les jours et les heures du salon, tels que l'exploitant les a saisis (`_admin1.html`)
-const datesSalon = () => soude.datesSalon();
-const horairesSalon = (jour) => soude.horairesSalon(jour);
-const lueHeure = (s) => soude.lueHeure(s);
 // le parcours, que ce tiroir refait ; la fiche s'importe de `fiche.mjs`, le passage
 // d'un pavillon à l'autre de `rendu.mjs`
 const basculeParcours = (...a) => soude.basculeParcours(...a);
@@ -1236,22 +1235,18 @@ function refaitSejour(cleAffichee, fige){
  * calcul (`sejour.mjs`) et la charge annoncée (`charge-annoncee.mjs`), puis
  * pose les écoutes du tiroir — dans cet ordre, qui était celui de la page.
  *
- * @param {{ datesSalon: () => any[], horairesSalon: (jour: string) => any,
- *   lueHeure: (s: string) => number | null, minutesVisite: () => number,
- *   seuilGere: () => boolean, seuilImpose: () => boolean, seuilConcentration: (o: any) => number,
- *   basculeParcours: Function,
+ * @param {{ basculeParcours: Function,
  *   rangParcours: Function, rafraichitParcours: Function }} b
  */
 export function brancheJournee(b){
   soude = b;
-  brancheSejour({ minutesVisite: b.minutesVisite, horairesSalon: b.horairesSalon,
-                  seuilConcentration: b.seuilConcentration, seuilImpose: b.seuilImpose,
+  brancheSejour({ minutesVisite, horairesSalon, seuilConcentration, seuilImpose,
                   iti: () => ITI });
 
   /* La charge annoncée — `charge-annoncee.mjs`. Le réglage du salon lui vient
-     du code soudé ; le parcours et la visite calculée sont réaffectés, l'un
+     d'ici, qui l'importe (`seuil.mjs`) ; le parcours et la visite calculée sont réaffectés, l'un
      dans son module, l'autre ici : elle les lit par une fonction. */
-  brancheCharge({ seuilGere: b.seuilGere, seuilConcentration: b.seuilConcentration,
+  brancheCharge({ seuilGere, seuilConcentration,
                   identifiantParcours, parcours: () => PARCOURS, sejour: () => SEJOUR });
 
   /* ------------------------------------------------------------

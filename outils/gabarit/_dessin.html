@@ -16,12 +16,13 @@
    images posées, l'annulation, le verrou et le rôle d'un calque — dans
    `modules/outil-dessin.mjs`, que seul `plan-admin.mjs` embarque.
 
-   Ils se branchent ici, à la place que leur code tenait. Ce que le code
-   soudé tient encore leur est confié : la forme choisie dans l'éditeur
-   (`_edition.html`) par un lecteur et sa porte — l'éditeur la remplace sans
-   cesse —, et ce qui se déclare dans d'autres morceaux du script par des
-   appels différés, lus au moment du geste. La fiche, la recherche, les
-   secteurs et l'écran, sortis eux aussi, les modules les importent.
+   Ceux qui ont encore un branchement l'ont ici, à la place que leur code
+   tenait : les calques reçoivent le bouton qui dit l'attente ; l'outil de
+   l'exploitant ne reçoit rien, mais ses boutons et ses champs s'y posent au
+   même rang qu'avant. Le dessin et les points d'intérêt n'en ont plus : la
+   forme choisie dans l'éditeur et sa boîte (`modules/forme-choisie.mjs`),
+   l'ordre des couches (`modules/ordre-trace.mjs`), la fiche, la recherche,
+   les secteurs et l'écran, ils les importent.
    ============================================================ */
 
 /* Le bouton qui dit l'attente est d'administration (`modules/enregistrement.mjs`) :
@@ -30,23 +31,6 @@ brancheCalquesDessin({
   majAttente: () => { if (typeof majAttente === "function") majAttente(); },
 });
 
-brancheDessin({
-  formeSel: () => formeSel,
-  boite: (f) => boite(f),
-  ordonneDom: () => ordonneDom(),
-  mentionOsm: () => mentionOsm(),
-});
-
-branchePointsInteret({
-  formeParId: (id) => formeParId(id),
-});
-
 /* @admin — l'outil de dessin de l'exploitant, ses boutons et ses champs */
-brancheOutilDessin({
-  formeSel: () => formeSel,
-  poseFormeSel: (id) => { formeSel = id; },
-  formeParId: (id) => formeParId(id),
-  construitPanneau: () => construitPanneau(),
-  enregistreConf: () => enregistreConf(),
-});
+brancheOutilDessin();
 /* @fin-admin */

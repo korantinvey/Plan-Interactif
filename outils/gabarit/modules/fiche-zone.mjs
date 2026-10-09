@@ -9,11 +9,13 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
-   qu'en administration (`_fiche.html`). Ce que le code soudé tient encore —
-   la configuration, l'index de recherche — lui est confié par
-   `brancheFicheZone`, que `_mode-admin.html` appelle à la place que ce code y
-   tenait. Les types de zone, le cartouche des points d'intérêt et le dessin
-   des noms s'importent (`reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
+   qu'en administration (`_fiche.html`). La palette de la reprise d'un
+   emplacement (`reprise-emplacements.mjs`), qui importe ce module, lui est
+   confiée par `brancheFicheZone`, que `_mode-admin.html` appelle à la place
+   que ce code y tenait. La configuration et son enregistrement, la liste de
+   la recherche, les types de zone, le cartouche des points d'intérêt et le
+   dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,
+   `reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -31,21 +33,18 @@ import { ouvre } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./points-interet.mjs";
+import { CONF, enregistreConf } from "./configuration.mjs";
+import { liste } from "./recherche.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce qui change — les réglages
-   (`CONF`, que le changement de salon remplace) — se lit à l'instant. */
+/* Ce que le code soudé confie au branchement. Les réglages (`CONF`, que le
+   changement de salon remplace), importés, se lisent tels qu'ils sont à
+   l'instant. */
 /**
  * @typedef {object} PageFicheZone
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {() => void} enregistreConf
- * @property {() => void} liste
  * @property {() => void} majPaletteGeo
  */
 /** @type {PageFicheZone} */
 let soude;
-const reglages = () => soude.conf();
-const enregistreConf = () => soude.enregistreConf();
-const liste = () => soude.liste();
 const majPaletteGeo = () => soude.majPaletteGeo();
 
 /**
@@ -726,7 +725,7 @@ async function enregistreZone(o, v, depart){
  * publication, avec le reste de l'apparence.
  */
 async function enregistreZoneAjoutee(o, v, depart){
-  const r = reglages()[cleAjout(o.id)];
+  const r = CONF[cleAjout(o.id)];
   if (!r) return;
   const fiche = {
     nom_en: String(v.libelleEn || "").trim(),
@@ -791,7 +790,7 @@ async function enregistreZoneAjoutee(o, v, depart){
 export async function basculeAffichageZone(o){
   const masquer = !o.masquee;
   // une zone ajoutée à la main se masque dans son entrée, comme sa fiche
-  const r = o.ajout && reglages()[cleAjout(o.id)];
+  const r = o.ajout && CONF[cleAjout(o.id)];
   if (r){
     if (masquer) r.masquee = true; else delete r.masquee;
     o.masquee = masquer || undefined;

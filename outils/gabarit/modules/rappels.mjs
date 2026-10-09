@@ -54,21 +54,21 @@ import { PARCOURS, instantConf } from "./parcours.mjs";
 import { instantMural } from "./temps.mjs";
 import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
   abonnementCourant, abonne } from "./notifications.mjs";
-import { ouvreModale, poseAvantFermeture, poseApresFermeture } from "./fenetre.mjs";
+import { ouvreModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages } from "./fenetre.mjs";
+import { conf } from "./configuration.mjs";
 
-/* Ce que le code soudé tient encore, et que le branchement confie : la
-   configuration du salon (`_admin1.html`), la visite guidée en cours
-   (`modules/tutoriel.mjs`, relayée par le code soudé), le tiroir du parcours à rafraîchir (`tiroir-parcours.mjs`, qui importe ce module-ci),
-   et le retour aux réglages après un aperçu (`_installation.html`). La visite
-   guidée change à chaque chapitre : elle se confie par un lecteur, non par sa
-   valeur du moment. */
+/* Ce que le branchement confie, et que ce module ne peut importer sans
+   boucler : la visite guidée en cours (`tutoriel.mjs`) et le tiroir du
+   parcours à rafraîchir (`tiroir-parcours.mjs`), qui importent ce module-ci.
+   La visite guidée change à chaque chapitre : elle se confie par un lecteur,
+   non par sa valeur du moment. La configuration du salon
+   (`configuration.mjs`) et le retour aux réglages après un aperçu
+   (`fenetre.mjs`) s'importent. */
 /**
- * @typedef {{ conf: (cle: string) => any, tuto: () => any, rafraichitParcours: () => void,
- *             retourAuxReglages: (marque: string) => void }} BranchementRappels
+ * @typedef {{ tuto: () => any, rafraichitParcours: () => void }} BranchementRappels
  */
 /** @type {BranchementRappels} */
 let soude;
-const conf = (/** @type {string} */ c) => soude.conf(c);
 const tuto = () => soude.tuto();
 
 /**
@@ -523,7 +523,7 @@ export function proposeRappels(apercu){
 
   /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
      précédente avait laissé en train de se faire. */
-  poseAvantFermeture(apercu ? () => soude.retourAuxReglages("rappel") : retientInviteRappel);
+  poseAvantFermeture(apercu ? () => retourAuxReglages("rappel") : retientInviteRappel);
 }
 
 /**

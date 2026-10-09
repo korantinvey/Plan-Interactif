@@ -30,6 +30,7 @@ const ENTREES = {
   console: "console.mjs",       // la console
   rapport: "rapport.mjs",       // le rapport, même socle que la console sans ses outils
   motdepasse: "motdepasse.mjs", // poser son mot de passe, sans socle ni session
+  accueil: "accueil.mjs",       // la racine, qui aiguille vers la console ou un plan
 };
 
 const lisEntree = (entree) => acorn.parse(

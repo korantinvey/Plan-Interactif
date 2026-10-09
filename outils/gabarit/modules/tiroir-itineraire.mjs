@@ -27,6 +27,7 @@ import { pointBorne, poseLaBorne, montreBandeauBorne, ecritDepartBorne } from ".
 import { montreBandeauIci } from "./ici.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg } from "./vue.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
+import { formeParId } from "./forme-choisie.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, elle,
    s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
@@ -36,7 +37,6 @@ let soude = {};
 const changePlan = (i) => soude.changePlan(i);
 const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
-const formeParId = (id) => soude.formeParId(id);
 const racine = document.documentElement;
 
 /* ------------------------------------------------------------
@@ -717,7 +717,7 @@ export function versItineraireDe(pt){
  *
  * @param {{
  *   changePlan: Function, ferme: Function, fermeParcours: Function,
- *   formeParId: Function, ouvreCodeIci: Function | null }} b
+ *   ouvreCodeIci: Function | null }} b
  */
 export function brancheTiroirItineraire(b){
   soude = b;

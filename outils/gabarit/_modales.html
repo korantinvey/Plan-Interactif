@@ -1,24 +1,16 @@
 
 /* ============================================================
-   Fenêtres modales — le branchement, et la réorganisation des calques
+   Fenêtres modales — le branchement
 
    La fenêtre commune vit dans `modules/fenetre.mjs`. Elle se branche ici, à la
-   place que son code tenait dans ce script, et reçoit l'habillage du modèle
-   retenu, que le code soudé tient encore.
+   place que son code tenait dans ce script : la croix, le voile et « Échap »
+   s'y posent au même rang qu'avant. L'habillage du modèle retenu, elle
+   l'importe (`modules/modeles.mjs`).
 
    La fenêtre d'ordre des calques vit dans `modules/ordre-calques.mjs`, que
-   seul `plan-admin.mjs` embarque ; elle se branche ici aussi, et reçoit
-   l'ordre de la pile et le panneau qu'elle refait — la configuration par des
-   détours, lus à l'appel. Les verrous et le renommage des calques, elle les
-   importe de l'outil de dessin.
+   seul `plan-admin.mjs` embarque et que le panneau des calques importe :
+   l'ordre de la pile, le panneau qu'elle refait, la configuration, les
+   verrous et le renommage des calques, elle les importe à son tour, et n'a
+   plus rien à recevoir d'ici.
    ============================================================ */
-brancheFenetre({ habille: habilleModale });
-
-/* @admin — la fenêtre d'ordre des calques */
-brancheOrdreCalques({
-  pile, clePile,
-  CONF: () => CONF,
-  enregistreConf: () => enregistreConf(),
-  ordonneDom, construitPanneau,
-});
-/* @fin-admin */
+brancheFenetre();

@@ -8,11 +8,10 @@
    lit. Les garder côte à côte, c'est ce qui les tient d'accord.
 
    Il se branche dans `_rendu.html`, à la place que l'écoute des polices y
-   tenait — au tout début du script du plan, avant celle du rendu WebGL. Ce
-   que le code soudé tient encore lui est confié par un détour, lu au moment
-   de l'appel : la boîte d'une forme (`_edition.html`). La vue, les calques
-   de dessin et le nom d'une zone dans la langue du moment s'importent
-   (`vue.mjs`, `calques-dessin.mjs`, `noms-zones.mjs`) ;
+   tenait — au tout début du script du plan, avant celle du rendu WebGL. La
+   vue, les calques de dessin, la boîte d'une forme et le nom d'une zone dans
+   la langue du moment s'importent (`vue.mjs`, `calques-dessin.mjs`,
+   `forme-choisie.mjs`, `noms-zones.mjs`) ;
    le dessin des stands et des repères (`dessin.mjs`, `points-interet.mjs`)
    ne le peut pas — il importe la fiche, qui importe ce module — et vient
    donc lui aussi par des détours.
@@ -34,6 +33,7 @@ import { rafraichitBorne } from "./borne.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
+import { boite } from "./forme-choisie.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -45,7 +45,6 @@ const phareZone = (/** @type {any} */ o) => soude.phareZone(o);
 const rafraichitFleches = () => soude.rafraichitFleches();
 const societeDeForme = (/** @type {any} */ f) => soude.societeDeForme(f);
 const nomSurLePlan = (/** @type {any} */ soc) => soude.nomSurLePlan(soc);
-const boite = (/** @type {any} */ f) => soude.boite(f);
 
 /**
  * Le branchement, appelé par `_rendu.html` à la place que l'écoute des
