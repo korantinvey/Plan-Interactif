@@ -1112,7 +1112,7 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 989 l. → plan-admin
+### `modules/outil-dessin.mjs` — 993 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
@@ -1128,7 +1128,7 @@ Fonctions :
 `choisitOutil` 623 · `enchaineStand` 654 · `optionsModes` 666 · `proposeCouleurLigne` 676
 `montreTransport` 687 · `activeCalque` 696 · `cleVerrou` 754 · `verrouille` 755
 `basculeVerrou` 757 · `pictoVerrou` 774 · `montreRoleIti` 808 · `creeCalque` 821
-`demandeNom` 834 · `renommeCalque` 853 · `brancheOutilDessin` 869
+`demandeNom` 834 · `renommeCalque` 857 · `brancheOutilDessin` 873
 
 ### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
 

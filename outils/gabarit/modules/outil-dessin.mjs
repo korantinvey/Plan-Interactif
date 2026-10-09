@@ -845,7 +845,11 @@ function demandeNom(titre, valeur, suite){
     };
   }, [
     { libelle: "Annuler" },
-    { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
+    /* Le bouton passe par le même chemin que la touche Entrée : fermer, puis
+       donner le nom. Dans l'autre ordre, une suite qui rouvre une fenêtre —
+       l'ordre des calques, d'où l'on était venu renommer — la voyait
+       refermée aussitôt par le pied. */
+    { libelle: "Valider", ferme: false, action: () => valide() },
   ], "outil");
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }

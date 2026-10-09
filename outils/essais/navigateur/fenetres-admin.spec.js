@@ -57,4 +57,27 @@ test.describe("les fenêtres qui ramènent d'où l'on vient", () => {
     await expect(page.locator(".ongReg button[aria-pressed=true]")).toHaveText("Statistiques");
     expect(erreurs).toEqual([]);
   });
+
+  for (const geste of ["Valider", "Entrée"]) {
+    test("un calque renommé depuis l'ordre des calques y ramène (" + geste + ")", async ({ page }) => {
+      const erreurs = await ouvreAdmin(page);
+      await page.locator("#btnLayers").click();
+      await page.locator("#pile button.ajout", { hasText: "Nouveau calque" }).click();
+      await page.locator("#mPied button", { hasText: "Valider" }).click();
+      await expect(fenetre(page)).not.toHaveClass(/\bopen\b/);
+
+      await page.locator("#pile button.reorg").click();
+      await page.locator("#mCorps .ordre button.crayon").first().click();
+      await expect(page.locator("#mTitre")).toHaveText("Renommer le calque");
+      const champ = page.locator("#mCorps input.nomcalque");
+      await champ.fill("Signalétique");
+      if (geste === "Entrée") await champ.press("Enter");
+      else await page.locator("#mPied button", { hasText: "Valider" }).click();
+
+      await expect(fenetre(page)).toHaveClass(/\bopen\b/);
+      await expect(page.locator("#mTitre")).toHaveText("Ordre des calques");
+      await expect(page.locator("#mCorps .ordre .nom", { hasText: "Signalétique" })).toHaveCount(1);
+      expect(erreurs).toEqual([]);
+    });
+  }
 });
