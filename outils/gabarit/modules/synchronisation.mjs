@@ -8,29 +8,28 @@
    fonctions vient de `modules/appel-fonction.mjs`, le recadrage des logos de
    `modules/marque.mjs` — celui du plan.
 
-   Ce que le module ne peut pas importer lui est confié par la console
-   (`brancheSynchronisation`, `_console-js.html`) : les pavillons qu'elle tient
-   en mémoire, relus à chaque lancement puisque le rechargement les remplace,
-   le fournisseur retenu par domaine, la barre d'état, le rechargement de la
-   console une fois la synchronisation finie, et le flux qui la raconte
-   (`fluxFonction`), resté dans la console.
+   Les pavillons que la console tient en mémoire viennent de
+   `evenements.mjs`, relus à chaque lancement puisque le rechargement les
+   remplace, et le fournisseur retenu par domaine de `provenance.mjs`. Ce que
+   le module ne peut pas importer lui est confié par la console
+   (`brancheSynchronisation`, `_console-js.html`) : la barre d'état, le
+   rechargement de la console une fois la synchronisation finie, et le flux
+   qui la raconte (`fluxFonction`), resté dans la console.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fenetreAvancement, suitAuServeur } from "./avancement.mjs";
 import { fonction } from "./appel-fonction.mjs";
 import { vignetteDeLogo } from "./marque.mjs";
+import { PLANS } from "./evenements.mjs";
+import { source } from "./provenance.mjs";
 
 /** @type {{
- *   plans: () => Record<string, any[]>,
- *   source: (e: any, dom: string) => string,
  *   signale: (txt: string, erreur?: boolean) => void,
  *   charge: () => Promise<void>,
  *   fluxFonction: (nom: string, corps: any, surLigne: (o: any) => void,
  *     trace?: (o: any) => void) => Promise<any>,
  * }} */
 let _console = {
-  plans: () => ({}),
-  source: () => "klipso",
   signale: () => {},
   charge: async () => {},
   fluxFonction: async () => null,
@@ -57,16 +56,16 @@ export function brancheSynchronisation(branche) {
  */
 function etapesPressenties(e) {
   const emplacements =
-    (_console.plans()[e.id] || []).reduce((a, p) => a + (p.nb_stands || 0), 0) || 300;
-  const stands = _console.source(e, "stands"), conf = _console.source(e, "conferences");
+    (PLANS[e.id] || []).reduce((a, p) => a + (p.nb_stands || 0), 0) || 300;
+  const stands = source(e, "stands"), conf = source(e, "conferences");
   return [
     { cle: "exposants", libelle: "Exposants", source: stands,
       poids: stands === "eventmaker" ? emplacements : 20 },
     { cle: "conferences", libelle: "Conférences", source: conf,
       poids: conf === "eventmaker" ? Math.round(emplacements / 4) : 0 },
-    { cle: "produits", libelle: "Produits", source: _console.source(e, "produits"),
-      poids: _console.source(e, "produits") === "eventmaker" ? Math.round(emplacements / 20) : 0 },
-    { cle: "plan", libelle: "Plan", source: _console.source(e, "plan"), poids: emplacements },
+    { cle: "produits", libelle: "Produits", source: source(e, "produits"),
+      poids: source(e, "produits") === "eventmaker" ? Math.round(emplacements / 20) : 0 },
+    { cle: "plan", libelle: "Plan", source: source(e, "plan"), poids: emplacements },
   ];
 }
 

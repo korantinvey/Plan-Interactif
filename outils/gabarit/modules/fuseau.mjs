@@ -7,19 +7,19 @@
    tranche — un déclencheur calcule `fuseau` depuis les deux autres — et le
    champ relit ce qu'elle a retenu plutôt que de le deviner.
 
-   Ce que le module ne peut pas importer lui est confié par la console
-   (`brancheFuseau`, `_console-js.html`) : le salon ouvert, lu au moment où la
-   fiche se dessine, l'appel à la base et la barre d'état.
+   Le salon ouvert vient de `evenements.mjs`, lu au moment où la fiche se
+   dessine. Ce que le module ne peut pas importer lui est confié par la
+   console (`brancheFuseau`, `_console-js.html`) : l'appel à la base et la
+   barre d'état.
    ============================================================ */
 import { esc } from "./texte.mjs";
+import { courant } from "./evenements.mjs";
 
 /** @type {{
- *   courant: () => any,
  *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
  *   signale: (txt: string, erreur?: boolean) => void,
  * }} */
 let _console = {
-  courant: () => null,
   rest: async () => null,
   signale: () => {},
 };
@@ -52,7 +52,7 @@ function fuseauConnu(nom, connus) {
 }
 
 export function champFuseau() {
-  const e = _console.courant();
+  const e = courant();
   const l = document.createElement("label");
   l.innerHTML = '<span>Fuseau horaire</span>' +
     '<input list="fuseaux" spellcheck="false" autocomplete="off">' +
