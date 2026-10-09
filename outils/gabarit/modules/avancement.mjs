@@ -3,9 +3,9 @@
 
    Une synchronisation dure, et se raconte pendant qu'elle dure : la fenêtre
    suit les étapes que le serveur annonce, et le relevé de secours va lire à la
-   base où il en est quand le flux ne passe pas. L'appel lui-même — le flux, la
-   session, le refus — reste à la console (`_console-js.html` `fluxFonction`,
-   `synchronise`), qui les relie.
+   base où il en est quand le flux ne passe pas. L'appel lui-même — le flux et
+   le refus — vit dans `modules/appel-fonction.mjs`, la session au socle de la
+   console, et `modules/synchronisation.mjs` (`synchronise`) les relie.
 
    Ce que le module ne peut pas importer lui est confié par la console
    (`brancheAvancement`) : la fenêtre du socle, qui n'est pas celle du plan

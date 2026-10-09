@@ -64,4 +64,6 @@ module.exports = [
   // erreurs de programmation, levées quand le code écrit un état par la mauvaise
   // porte — pour la console du développeur, jamais pour le visiteur
   "» n'est pas une donnée du plan", "» n'est pas un état du parcours", " se remplace par ",
+  // `modules/comptes.mjs` : la même erreur, pour la porte du profil connecté
+  "» n'est pas un état du profil connecté",
 ];
