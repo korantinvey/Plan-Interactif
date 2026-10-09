@@ -1,4 +1,4 @@
-/* `outils/gabarit/_rapport-js.html` — le rapport d'utilisation d'un salon. */
+/* `outils/gabarit/modules/rapport-utilisation.mjs` — le rapport d'utilisation d'un salon. */
 module.exports = {
   "{n} derniers jours": "Last {n} days",
   "Depuis le début": "Since the start",

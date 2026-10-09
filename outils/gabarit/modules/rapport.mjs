@@ -6,15 +6,28 @@
    règles que `plan.mjs` pour ce qui est confié au code soudé. L'export du
    classeur est le même module que celui de la console, branché par le même
    `_export.html` : les deux boutons rendent le même fichier.
+
+   L'écran lui-même est un module, `rapport-utilisation.mjs` : il importe ce
+   qu'il prend à l'export (canaux, formatage, l'export lui-même), que le code
+   soudé n'appelle donc plus. Ne lui sont confiés que le branchement, ce que
+   le socle rappelle (`demarre`, `videEcran`) et ce que l'export lit.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { esc, separeValeurs } from "./texte.mjs";
+import { separeValeurs } from "./texte.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON }
   from "./session.mjs";
-import { nb, CANAUX_STAND, AUTRE, exporteExposants, brancheExport } from "./export.mjs";
+import { brancheExport } from "./export.mjs";
+import { vivants } from "./vivant.mjs";
+import { selection, courant, demarre, videEcran, brancheRapport } from "./rapport-utilisation.mjs";
 
 Object.assign(globalThis, {
-  $, esc, separeValeurs,
+  $, separeValeurs,
   CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON,
-  nb, CANAUX_STAND, AUTRE, exporteExposants, brancheExport,
+  brancheExport,
+  courant, demarre, videEcran, brancheRapport,
 });
+/* Le salon lu, que l'export demande au moment du clic (`_export.html`) : un
+   accesseur, la valeur changeant à chaque choix dans la barre. Le code soudé
+   ne l'écrit jamais — le module seul le remplace, par les commandes que
+   `brancheRapport` pose. */
+Object.defineProperties(globalThis, vivants({ selection: () => selection }, "brancheRapport"));

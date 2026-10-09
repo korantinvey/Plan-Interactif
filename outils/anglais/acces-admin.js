@@ -1,5 +1,5 @@
-/* `outils/gabarit/_auth-plan.html` — l'écran d'accès à l'administration d'un
-   plan, et le menu du compte connecté. */
+/* `outils/gabarit/modules/acces-admin.mjs` — l'écran d'accès à l'administration
+   d'un plan, et le menu du compte connecté. */
 module.exports = {
   "Administration du plan": "Map administration",
   "Adresse du projet": "Project URL",
