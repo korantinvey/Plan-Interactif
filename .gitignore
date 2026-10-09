@@ -20,6 +20,9 @@ outils/*.json
 # Le cliquet des types : ce que `npm run types` accepte encore. Il fait foi
 # en intégration, il ne se régénère donc pas de lui-même.
 !outils/types-acceptes.json
+# Le cliquet de la soudure : ce que `npm run soudure` accepte encore. Même
+# raison : il fait foi en intégration, qui refuse qu'il ait bougé.
+!outils/soudure-acceptee.json
 supabase/.temp/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont

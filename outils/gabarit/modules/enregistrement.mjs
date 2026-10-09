@@ -189,8 +189,7 @@ function ditAlerte(etat){
     txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
     act.textContent = "Se reconnecter";
     act.onclick = () => {
-      if (typeof ecranAcces === "function") ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
-      else location.reload();
+      ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
     };
     return;
   }

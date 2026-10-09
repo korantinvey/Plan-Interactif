@@ -51,6 +51,14 @@ jobs:
       - name: Types (cliquet de outils/types-acceptes.json)
         run: npm run types
 
+      # Un nom de plus confié au code soudé échoue ; un recul resserre le
+      # cliquet, et ce resserrement doit être validé avec lui, sans quoi le
+      # nom retiré pourrait revenir sans que rien ne le dise.
+      - name: Soudure (cliquet de outils/soudure-acceptee.json)
+        run: |
+          npm run soudure
+          git diff --exit-code outils/soudure-acceptee.json
+
       - name: Moteur de la journée organisée
         run: npm run essais
 

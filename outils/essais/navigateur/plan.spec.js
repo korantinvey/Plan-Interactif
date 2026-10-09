@@ -151,8 +151,8 @@ test.describe("ce qui vient d'ailleurs", () => {
     await page.goto(PLAN);
     await attendLaListe(page);
     const r = await page.evaluate(() => {
-      // ce que le module confie à la page (`modules/plan.mjs`)
-      const { adresseSure, imageSure, adresseImage } = /** @type {any} */ (globalThis);
+      // ce que les modules confient aux essais (`modules/plan.mjs` `__essais`)
+      const { adresseSure, imageSure, adresseImage } = /** @type {any} */ (globalThis).__essais;
       return {
         refusees: ["javascript:alert(1)", " JaVaScRiPt:alert(1)", "java\u0000script:alert(1)",
           "data:text/html,<script>alert(1)</script>", "vbscript:x", "ftp://x.fr", "@compte"]
@@ -207,7 +207,7 @@ test.describe("ce qui vient d'ailleurs", () => {
     await page.goto(PLAN);
     await attendLaListe(page);
     const r = await page.evaluate(() => {
-      const { assainitRiche } = /** @type {any} */ (globalThis);
+      const { assainitRiche } = /** @type {any} */ (globalThis).__essais;
       const piege = "window.__piege = 1";
       const entrees = [
         "<p>Bonjour <b>gras</b> <i>it</i></p>",
@@ -312,8 +312,8 @@ test.describe("le salon que nomme l'adresse", () => {
    *  attendre le plan, que la démonstration met longtemps à dessiner. */
   const salonDe = async (page, adresse) => {
     await page.goto(adresse, { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => typeof /** @type {any} */ (window).SLUG === "string");
-    return page.evaluate(() => /** @type {any} */ (window).SLUG);
+    await page.waitForFunction(() => typeof /** @type {any} */ (window).__essais?.SLUG === "string");
+    return page.evaluate(() => /** @type {any} */ (window).__essais.SLUG);
   };
 
   test("l'administration à son adresse nue n'est pas un salon", async ({ page }) => {

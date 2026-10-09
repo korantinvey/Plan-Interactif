@@ -29,7 +29,7 @@ import { branchePlacementLibelles } from "./placement-libelles.mjs";
 import { glisseFenetre, ouvreReglages } from "./reglages.mjs";
 import { modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo, brancheRepriseEmplacements }
   from "./reprise-emplacements.mjs";
-import { dessinePoignees, choisitForme, brancheEdition, geste } from "./edition.mjs";
+import { dessinePoignees, choisitForme, brancheEdition } from "./edition.mjs";
 import { rafraichitApercu } from "./nappe.mjs";
 import { brancheNuancier } from "./nuancier.mjs";
 import { enregistreDessins, HIST, REFAIRE, memorise, toleranceTrace, fermeIci, ajouteForme,
@@ -77,10 +77,6 @@ Object.assign(globalThis, {
    poignée qui se mesure en pixels. */
 Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
 
-/* Le geste d'édition en cours, ou rien : le module le pose en saisissant une
-   forme et l'efface en la lâchant. Le dessin le lit par accesseur, pour garder
-   les points d'accrochage d'un geste qui sort du plan. */
-Object.defineProperties(globalThis, vivants({ geste: () => geste }, "editionPointerDown"));
 /* L'image qu'on s'apprête à poser, ou rien : seul son import la remplace. Les
    aimants la lisent par accesseur, pour garder ses proportions au tracé. */
 Object.defineProperties(globalThis, vivants({ imageEnAttente: () => imageEnAttente }, "importeImage"));

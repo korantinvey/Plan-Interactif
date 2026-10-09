@@ -667,20 +667,20 @@ Fonctions :
 `cleAjout` 179 · `anneauxValides` 190 · `rechAjout` 195 · `objetAjoute` 204 · `poseLien` 223
 `appliqueAjouts` 250
 
-### `modules/enregistrement.mjs` — 678 l. → plan-admin
+### `modules/enregistrement.mjs` — 677 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.549 · La sauvegarde emportée
+- l.548 · La sauvegarde emportée
 
 Fonctions :
 
 `gesteEnCours` 81 · `confieGesteEnCours` 85 · `autoDispo` 116 · `enRetard` 119
 `etatCourant` 132 · `majAttente` 143 · `compteRescapes` 157 · `ditAlerte` 170
-`ditEtat` 214 · `programmeEnvoi` 221 · `programmePublication` 235 · `rattrapeRetard` 248
-`envoie` 254 · `apresGeste` 266 · `presse` 276 · `brancheEnregistrement` 286
-`identifiants` 310 · `reglagesSeuls` 325 · `noteReglagesCharges` 336 · `oublieCache` 350
-`pousseConfiguration` 369 · `sauvegardeCourante` 569 · `telechargeSauvegarde` 591
-`appliqueSauvegarde` 614 · `litSauvegarde` 648 · `brancheSauvegarde` 670
+`ditEtat` 213 · `programmeEnvoi` 220 · `programmePublication` 234 · `rattrapeRetard` 247
+`envoie` 253 · `apresGeste` 265 · `presse` 275 · `brancheEnregistrement` 285
+`identifiants` 309 · `reglagesSeuls` 324 · `noteReglagesCharges` 335 · `oublieCache` 349
+`pousseConfiguration` 368 · `sauvegardeCourante` 568 · `telechargeSauvegarde` 590
+`appliqueSauvegarde` 613 · `litSauvegarde` 647 · `brancheSauvegarde` 669
 
 ### `modules/environs.mjs` — 795 l. → plan, plan-admin
 
@@ -1188,11 +1188,11 @@ Fonctions :
 `pousseLibelle` 128 · `libellePointerDown` 136 · `libellePointerMove` 152
 `libellePointerUp` 161 · `branchePlacementLibelles` 176
 
-### `modules/plan-admin.mjs` — 90 l. → plan-admin
+### `modules/plan-admin.mjs` — 86 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 189 l. → plan, plan-admin
+### `modules/plan.mjs` — 190 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1428,7 +1428,7 @@ Fonctions :
 `matriceJournee` 119 · `derouleJournee` 190 · `prepareSejour` 334 · `calculeSejour` 536
 `apercuRepartition` 570
 
-### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 

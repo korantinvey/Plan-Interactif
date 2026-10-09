@@ -148,4 +148,4 @@ function entreesDe(module) {
   });
 }
 
-module.exports = { MODULES, ENTREES, exposes, origines, assemble, entreesDe };
+module.exports = { MODULES, ENTREES, reprises, exposes, origines, assemble, entreesDe };

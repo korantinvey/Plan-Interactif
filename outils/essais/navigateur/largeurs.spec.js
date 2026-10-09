@@ -13,10 +13,11 @@
  * mesure fraîche, et les libellés être ceux qu'un tracé neuf écrirait — en
  * SVG comme en WebGL, qui les relit.
  */
-/* Ce que l'essai lit dans la page : le cache des mesures, les polices et le
-   tracé des libellés, déclarés au niveau du script soudé — visibles par leur
-   nom depuis `page.evaluate`, mais pas tous comme propriétés de `window`. */
-/* global _lg, P_NOM, P_CODE, largeur, libelles, GL */
+/* Ce que l'essai lit dans la page : le tracé des libellés, que le code soudé
+   appelle et trouve donc par son nom ; le cache des mesures, les polices et le
+   rendu, que les modules ne confient qu'aux essais (`modules/plan.mjs`
+   `__essais`). */
+/* global libelles */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, DONNEES } = require("./aide.js");
 
@@ -73,6 +74,7 @@ for (const [nom, adresse, conf] of [
     await page.waitForTimeout(500);
 
     const bilan = await page.evaluate((stands) => {
+      const { _lg, largeur, GL, P_NOM, P_CODE } = /** @type {any} */ (globalThis).__essais;
       const c = document.createElement("canvas").getContext("2d");
       const frais = (txt, police) => {
         c.font = police[0] + " 100px " + police[1];

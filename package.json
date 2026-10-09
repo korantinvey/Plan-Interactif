@@ -23,7 +23,8 @@
     "appels": "node outils/appels.js",
     "navigateur": "playwright test",
     "lint": "node outils/relecture.js",
-    "types": "node outils/types.js"
+    "types": "node outils/types.js",
+    "soudure": "node outils/soudure.js"
   },
   "type": "commonjs",
   "private": true,

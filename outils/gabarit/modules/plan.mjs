@@ -13,12 +13,10 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { vivants } from "./vivant.mjs";
-import { P } from "./donnees.mjs";
 import { SLUG } from "./salon.mjs";
-import { base } from "./session.mjs";
 import { brancheFenetre } from "./fenetre.mjs";
-import { lien, adresseSure, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
-import { mesure, brancheMesure } from "./mesure.mjs";
+import { adresseSure, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
+import { brancheMesure } from "./mesure.mjs";
 import { brancheSponsor } from "./sponsor.mjs";
 import { brancheItineraire } from "./itineraire.mjs";
 import { instantConf } from "./parcours.mjs";
@@ -52,7 +50,7 @@ import { brancheIndex } from "./index-salon.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
 import { brancheCorpsFiche } from "./corps-fiche.mjs";
-import { select, centre, ficheConf, adresseVignette, ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
+import { select, ficheConf, adresseVignette, ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
 import { DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
@@ -70,18 +68,13 @@ import { drag, pince, brancheGestes, brancheLangue } from "./gestes.mjs";
 import { brancheTiroirs } from "./tiroirs.mjs";
 
 Object.assign(globalThis, {
-  P,
   $,
-  SLUG,
-  base,
   brancheFenetre,
-  lien, adresseSure, adresseImage, imageSure, assainitRiche,
-  mesure, brancheMesure,
+  brancheMesure,
   brancheSponsor,
   brancheItineraire,
   instantConf,
-  GL, brancheWebgl,
-  rectEcranWebgl,
+  brancheWebgl,
   brancheEnvirons,
   brancheRappels,
   brancheInstallation,
@@ -114,10 +107,9 @@ Object.assign(globalThis, {
   brancheTonDeLaBarre,
   brancheDemarrage, chargeFond,
   brancheCorpsFiche,
-  select, centre, ficheConf,
+  select, ficheConf,
   adresseVignette,
-  ouvre, ferme, onglet, brancheFiche,
-  _lg, largeur,
+  ferme, brancheFiche,
   brancheLibelles, libelles, libellesWebgl,
   DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
   refaitDistsFiche,
@@ -155,12 +147,6 @@ Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee")
    jamais l'objet lui-même. */
 Object.defineProperties(globalThis, vivants({ CONF: () => CONF }, "ouvreConf"));
 
-/* La graisse et la police des libellés du plan, que les mesures relisent à
-   chaque tracé : seul le choix d'un modèle ou d'une police les remplace
-   (`polices-plan.mjs` `posePoliceLibelles`). */
-Object.defineProperties(globalThis, vivants({ P_NOM: () => P_NOM, P_CODE: () => P_CODE },
-  "posePoliceLibelles"));
-
 /* Les secteurs du salon, que l'index refait à chaque chargement : le code
    soudé les lit par accesseur ; seul `indexeSecteurs` les remplace. */
 Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "indexeSecteurs"));
@@ -187,3 +173,18 @@ Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, 
    accesseur, pour taire son survol pendant un geste. Seules les écoutes que
    pose `brancheGestes` les changent. */
 Object.defineProperties(globalThis, vivants({ drag: () => drag, pince: () => pince }, "brancheGestes"));
+
+/* Ce que les essais du navigateur lisent dans la page, et que le code soudé
+   n'appelle pas : les règles de `sur.mjs` éprouvées sur des entrées hostiles,
+   le salon que l'adresse nomme, les mesures du texte et le rendu par la carte
+   graphique. Rangé à part de la liste exposée, pour que celle-ci ne compte
+   que ce qui soude encore la page (`outils/soudure.js`) ; écrit comme une
+   affectation, que `outils/modules.js` ne relit pas. La graisse et la police
+   des libellés se remplacent au choix d'un modèle : elles se lisent donc par
+   un accesseur, qui rend celles du moment. */
+globalThis.__essais = {
+  SLUG, GL, rectEcranWebgl, _lg, largeur,
+  adresseSure, adresseImage, imageSure, assainitRiche,
+  get P_NOM(){ return P_NOM; },
+  get P_CODE(){ return P_CODE; },
+};

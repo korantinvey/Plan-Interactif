@@ -124,7 +124,7 @@ export function voletAdmin(hote){
       conf("_guidage").allees = e.target.checked;
       enregistreConf();
       // le trait affiché a été calculé avec l'autre réglage : il se refait
-      if (typeof relance === "function") relance();
+      relance();
     };
     bloc.appendChild(l);
   }
@@ -744,7 +744,7 @@ export function voletPmr(hote){
       conf("_foule")[k] = v;
       enregistreConf();
       // le trait affiché a été calculé avec l'ancien chiffre : il se refait
-      if (typeof relance === "function") relance();
+      relance();
     };
     n.onblur = () => { n.value = regleFoule(k); };
     chiffres.appendChild(d);
@@ -770,7 +770,7 @@ export function voletPmr(hote){
     conf("_foule").visible = e.target.checked;
     enregistreConf();
     maj();
-    if (typeof relance === "function") relance();
+    relance();
   };
   maj();
 }

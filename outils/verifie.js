@@ -28,7 +28,8 @@ try {
   lance("genere.js");
   lance("carte.js");
 } catch (e) {
-  console.error("La construction a échoué :\n" + (e.stdout || e.message).toString());
+  console.error("La construction a échoué :\n" + (e.stdout || "").toString() +
+    (e.stderr || e.message).toString());
   process.exit(1);
 }
 
@@ -64,7 +65,10 @@ try {
 /* La relecture par ESLint, puis le cliquet des types : ce qu'un développeur
    attend d'un dépôt, et ce qui voit une variable morte ou un appel faux là où
    la syntaxe et `appels.js` ne regardent pas. */
-for (const script of ["relecture.js", "types.js"]) {
+/* Et le cliquet de la soudure : un nom de plus confié au code soudé, ou une
+   garde `typeof` de plus, échoue ici ; un recul resserre
+   `outils/soudure-acceptee.json`, à valider comme `CARTE.md`. */
+for (const script of ["relecture.js", "types.js", "soudure.js"]) {
   try {
     lance(script);
   } catch (e) {
@@ -75,7 +79,8 @@ for (const script of ["relecture.js", "types.js"]) {
 
 let bouge = "";
 try {
-  bouge = execFileSync("git", ["status", "--porcelain", "CARTE.md"], { cwd: racine })
+  bouge = execFileSync("git", ["status", "--porcelain", "CARTE.md", "outils/soudure-acceptee.json"],
+    { cwd: racine })
     .toString().trim();
 } catch (e) {
   console.log("Construction faite. (git indisponible : comparaison impossible)");
@@ -83,11 +88,11 @@ try {
 }
 
 if (!bouge) {
-  console.log("Tout est en ordre : pages construites et contrôlées, `CARTE.md` à jour.");
+  console.log("Tout est en ordre : pages construites et contrôlées, `CARTE.md` et le cliquet de la soudure à jour.");
   process.exit(0);
 }
 
-console.error("`CARTE.md` était en retard sur ses sources :\n");
+console.error("`CARTE.md` ou le cliquet de la soudure était en retard sur ses sources :\n");
 console.error(bouge);
 console.error("\nIl vient d'être refait. Relisez le diff, puis validez-le.");
 process.exit(1);

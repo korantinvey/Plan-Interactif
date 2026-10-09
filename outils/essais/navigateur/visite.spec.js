@@ -6,9 +6,10 @@
  * ici on la veut, et seule l'invitation à installer reste écartée — elle
  * passerait devant la proposition.
  */
-/* Ce que l'essai lit dans la page : la visite en cours et le rendu du plan,
-   visibles par leur nom depuis `page.evaluate`. */
-/* global TUTO, GL, rectEcranWebgl */
+/* Ce que l'essai lit dans la page : la visite en cours, visible par son nom
+   depuis `page.evaluate`, et le rendu du plan, que les modules ne confient
+   qu'aux essais (`modules/plan.mjs` `__essais`). */
+/* global TUTO */
 const { test, expect } = require("@playwright/test");
 const { prepare, DONNEES } = require("./aide.js");
 
@@ -62,6 +63,7 @@ async function commenceLaVisite(page, { adresse = PLAN, donnees = null } = {}) {
  * posée de l'extérieur attend la sienne.
  */
 const auRepos = (page) => page.evaluate(() => new Promise((fini) => {
+  const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
   const boite = (r) => r && { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
   const lis = () => {
     const z = document.getElementById("tutoZone");
@@ -111,6 +113,7 @@ async function cacheLElement(page, selecteur) {
 
 /** Un point du plan au centre d'un stand, que rien ne recouvre à l'écran. */
 const standLibre = (page) => page.evaluate(() => {
+  const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
   const st = document.getElementById("stage").getBoundingClientRect();
   for (const n of document.querySelectorAll("#stands g[data-id], svg g.stand[data-id]")) {
     const r = GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect();
@@ -141,7 +144,7 @@ test.describe("la visite guidée", () => {
           { polling: 250, timeout: 60_000 });
         if (!rendu) {
           // c'est la carte graphique qu'on éprouve : sans elle, l'essai ne dirait rien
-          test.skip(!(await page.evaluate(() => GL.actif)), "pas de WebGL2 dans ce navigateur");
+          test.skip(!(await page.evaluate(() => /** @type {any} */ (globalThis).__essais.GL.actif)), "pas de WebGL2 dans ce navigateur");
         }
         // la zone est amenée sous les yeux, et la bulle posée à côté
         const avant = await auRepos(page);
@@ -152,6 +155,7 @@ test.describe("la visite guidée", () => {
            reposait à chaque pouls de la visite, et la carte graphique, qui
            guette le SVG, redessinait tout le plan quatre fois par seconde. */
         const auCalme = await page.evaluate(() => new Promise((fini) => {
+          const { GL } = /** @type {any} */ (globalThis).__essais;
           let ecritures = 0, peintures = 0;
           const guet = new MutationObserver((n) => { ecritures += n.length; });
           guet.observe(document.getElementById("plan"), { subtree: true, childList: true, attributes: true });
