@@ -610,7 +610,7 @@ function blocOrdreCriteres(hote){
     e.textContent = origine(cle);
     d.appendChild(e);
 
-    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
+    /** @type {[string, number, number][]} */ ([["Monter", -1, 0], ["Descendre", 1, 1]]).forEach(([titre, pas, sens]) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "outil fleche";
@@ -635,7 +635,7 @@ function blocOrdreCriteres(hote){
       d.classList.remove("tire");
       tire = null;
       const avant = JSON.stringify(cles);
-      cles = [...liste.children].map(el => el.dataset.cle);
+      cles = /** @type {HTMLElement[]} */ ([...liste.children]).map(el => el.dataset.cle);
       // un glissé qui n'a rien déplacé n'a rien à enregistrer
       if (JSON.stringify(cles) === avant) return;
       rendu();
@@ -794,7 +794,7 @@ function aireDuStand(o){
  * C'est une donnée de la configuration, et **rien dans le moteur ne la modifie
  * jamais**. Ce que l'ordonnanceur manipule, quand il lui faut desserrer la
  * mesure, est un seuil *effectif* qu'il calcule chez lui le temps d'un
- * rangement — voir `seuilEffectif` dans `_journee.html`. Les deux ne se
+ * rangement — voir `seuilEffectif` dans `modules/ordonnanceur.mjs`. Les deux ne se
  * confondent pas : celui-ci se règle et s'affiche, celui-là ne sort pas du
  * calcul.
  */

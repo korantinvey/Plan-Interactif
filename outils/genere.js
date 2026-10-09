@@ -299,35 +299,43 @@ const PRECHARGE = [
 const tpl = fs.readFileSync(D + "/tpl-multi.html", "utf8");
 const auth = fs.readFileSync(D + "/gabarit/_auth-plan.html", "utf8");
 
-/** Branche la page sur l'API plutôt que sur des données figées. */
+/** Branche la page sur l'API plutôt que sur des données figées. Les réglages
+ *  se posent sur le script des modules : c'est `modules/salon.mjs` qui les lit. */
 function connecte(t) {
-  const marque = '<script>\n/* Sans viewport';
-  if (t.indexOf(marque) < 0) throw new Error("balise de script introuvable");
+  const marque = /<script data-modules="(plan|plan-admin)">/g;
+  if ((t.match(marque) || []).length !== 1) throw new Error("script des modules introuvable, ou en double");
   return t
     .replace('<script id="data" type="application/json">/*__DATA__*/</script>',
              '<script id="data" type="application/json"></script>')
-    .replace(marque, '<script data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">\n/* Sans viewport');
+    .replace(marque, (m, entree) =>
+      '<script data-modules="' + entree + '" data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">');
 }
 
 /* Les modules (`outils/gabarit/modules/`) passent avant le code soudé, qui
    trouve leurs noms dans l'objet global : leur script se pose devant le sien.
    Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
-const scriptDesModules = (entree) => "<script>\n" + modules.assemble(entree) + "</script>\n";
-const MODULES_PLAN = scriptDesModules("plan");
-function poseModulesDuPlan(t) {
+const scriptDesModules = (entree) =>
+  '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
+function poseModulesDuPlan(t, entree) {
   const marque = "<script>\n/* Sans viewport";
   if (t.split(marque).length !== 2) throw new Error("script du plan introuvable, ou en double");
-  return t.replace(marque, () => MODULES_PLAN + marque);
+  const script = scriptDesModules(entree);
+  return t.replace(marque, () => script + marque);
 }
 /* Le gabarit sous ses deux formes : entier pour l'administration, amputé de
-   ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). */
-const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl));
-const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl));
+   ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). Les
+   modules suivent la même partition : l'administration reçoit le point
+   d'entrée qui reprend celui du plan et y ajoute les siens. */
+const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl), "plan-admin");
+const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl), "plan");
 /* Une tranche retirée dont un nom reste cité ailleurs ne casse rien ici : elle
    casse chez le visiteur, au moment où ce code-là s'exécute. On le refuse donc
-   avant d'écrire la moindre page. Les données et la porte n'y changent rien :
-   le gabarit seul suffit à juger. */
-reserve.verifie(tplAdmin, tplPublic, "Le plan public");
+   avant d'écrire la moindre page. Un nom que seul le point d'entrée de
+   l'administration expose est retiré au même titre. Les données et la porte
+   n'y changent rien : le gabarit seul suffit à juger. */
+const publics = new Set(modules.exposes("plan"));
+reserve.verifie(tplAdmin, tplPublic, "Le plan public",
+  modules.exposes("plan-admin").filter((n) => !publics.has(n)));
 
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
@@ -366,25 +374,22 @@ fs.writeFileSync(W + "index.html",
    Chacun n'écrit ensuite que ce qui lui est propre. */
 const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
 
-/* Un module écrit pour le plan, qui assemble tout son code en un seul script :
-   il n'a donc pas de balises à lui, et la console — qui juxtapose des modules
-   qui en portent — les lui prête. */
-const enScript = (f) =>
-  "<script>\n" + fs.readFileSync(D + "/gabarit/" + f, "utf8") + "\n</script>\n";
-const assemble = (tete, ...corps) =>
-  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules("console") + socle +
+/* Chaque écran reçoit le script de son point d'entrée, avant le socle. */
+const assemble = (entree, tete, ...corps) =>
+  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules(entree) + socle +
   corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
 
-/* Les deux écrans exportent le même classeur : le module d'écriture puis celui
-   de l'export passent avant, et c'est la page qui ferme le script. */
-/* La console fabrique les vignettes des logos : elle emprunte au plan la règle
-   de recadrage, pour qu'une vignette soit cadrée comme la page l'aurait fait. */
+/* Les deux écrans exportent le même classeur : l'écriture et l'export sont des
+   modules (`modules/classeur.mjs`, `modules/export.mjs`), branchés par
+   `_export.html` avant l'écran, et c'est la page qui ferme le script. La console
+   fabrique en plus les vignettes des logos, avec la règle de recadrage du plan
+   (`modules/marque.mjs`) : une vignette est cadrée comme la page l'aurait fait. */
 fs.writeFileSync(W + "admin-plans.html",
-  page(assemble("_console-head.html", "_classeur.html", "_export.html", "_console-js.html") +
-    enScript("_marque.html"), { deuxThemes: true }));
+  page(assemble("console", "_console-head.html", "_export.html", "_console-js.html"),
+       { deuxThemes: true }));
 
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html"),
+  page(assemble("rapport", "_rapport-head.html", "_export.html", "_rapport-js.html"),
        { deuxThemes: true }));
 
 /* --- poser son mot de passe ---

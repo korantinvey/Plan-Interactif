@@ -13,7 +13,9 @@
  * **population synthétique** tirée d'hypothèses écrites, pour comparer deux
  * moteurs sur exactement les mêmes gens.
  */
-const O = require("./ordonnanceur.js");
+/* Le moteur tel que la page le reçoit : un module ES, que Node sait charger
+   par `require` depuis sa version 22.12 (`.nvmrc`). */
+const O = require("../gabarit/modules/ordonnanceur.mjs");
 const { rangeSejour, trancheDe, peineDeCharge } = O;
 
 /* ------------------------------------------------------------------

@@ -158,8 +158,9 @@ function coloreSecteurs(){
      teinte. Elle suit donc ici : c'est le seul point que traversent tous les
      chemins qui rebâtissent les stands — changement de pavillon, arrivée du
      fond, rafraîchissement des découpages dessinés. Elle ne fait rien tant
-     qu'on ne l'a pas ouverte, ce qui n'arrive qu'en administration. */
-  coloreChaleur();
+     qu'on ne l'a pas ouverte, ce qui n'arrive qu'en administration — la seule
+     page qui la reçoive (`modules/chaleur.mjs`, par `plan-admin.mjs`). */
+  if (typeof coloreChaleur === "function") coloreChaleur();
 }
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le

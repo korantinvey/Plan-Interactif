@@ -120,6 +120,77 @@ test.describe("le plan de démonstration", () => {
   });
 });
 
+/* Les règles de `modules/sur.mjs`, éprouvées sur ce qu'un visiteur ne devrait
+   jamais recevoir. Elles ne dépendent de rien du plan : on les appelle telles
+   que la page les tient, puis on pose leur sortie dans le document pour
+   vérifier que rien ne s'y exécute. */
+test.describe("ce qui vient d'ailleurs", () => {
+  test("les adresses et les logos ne gardent que ce qui ne s'exécute pas", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const r = await page.evaluate(() => {
+      // ce que le module confie à la page (`modules/plan.mjs`)
+      const { adresseSure, imageSure, adresseImage } = /** @type {any} */ (globalThis);
+      return {
+        refusees: ["javascript:alert(1)", " JaVaScRiPt:alert(1)", "java\u0000script:alert(1)",
+          "data:text/html,<script>alert(1)</script>", "vbscript:x", "ftp://x.fr", "@compte"]
+          .map((v) => adresseSure(v)),
+        gardees: ["https://exemple.fr", "exemple.fr/page", "mailto:a@b.fr", "tel:+33100000000"]
+          .map((v) => adresseSure(v)),
+        images: ["data:image/svg+xml;base64,PHN2Zz4=", "https://x.fr/logo.png", "javascript:alert(1)",
+          "data:image/png;base64,iVBORw0KGgo="].map((v) => imageSure(v)),
+        logos: ["javascript:alert(1)", "data:image/png;base64,AAAA", "https://x.fr/l.png"]
+          .map((v) => adresseImage(v)),
+      };
+    });
+    expect(r.refusees).toEqual(["", "", "", "", "", "", ""]);
+    expect(r.gardees).toEqual(["https://exemple.fr", "https://exemple.fr/page", "mailto:a@b.fr",
+      "tel:+33100000000"]);
+    expect(r.images).toEqual(["", "", "", "data:image/png;base64,iVBORw0KGgo="]);
+    expect(r.logos).toEqual(["", "", "https://x.fr/l.png"]);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("une description ne garde que sa mise en forme", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const r = await page.evaluate(() => {
+      const { assainitRiche } = /** @type {any} */ (globalThis);
+      const piege = "window.__piege = 1";
+      const entrees = [
+        "<p>Bonjour <b>gras</b> <i>it</i></p>",
+        "<script>" + piege + "</script>texte",
+        "<img src=x onerror=\"" + piege + "\">après",
+        "<a href=\"javascript:" + piege + "\">lien</a>",
+        "<a href=\"exemple.fr\" onclick=\"" + piege + "\">site</a>",
+        "<svg><script>" + piege + "</script><style>*{}</style>t</svg>",
+        "<iframe srcdoc=\"<script>" + piege + "</script>\"></iframe>ok",
+        "<div>un<ul><li>a</li></ul>deux</div>",
+      ];
+      const sorties = entrees.map((h) => assainitRiche(h));
+      // posées dans la page, comme la fiche le fait : rien ne doit s'y lancer
+      const hote = document.createElement("div");
+      hote.innerHTML = sorties.join("");
+      document.body.appendChild(hote);
+      return { sorties, balises: [...new Set([...hote.querySelectorAll("*")].map((e) => e.tagName))].sort(),
+        attributs: [...new Set([...hote.querySelectorAll("*")].flatMap((e) => e.getAttributeNames()))].sort() };
+    });
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => /** @type {any} */ (window).__piege)).toBeUndefined();
+    expect(r.balises).toEqual(["A", "EM", "LI", "P", "STRONG", "UL"]);
+    expect(r.attributs).toEqual(["href", "rel", "target"]);
+    expect(r.sorties[0]).toBe("<p>Bonjour <strong>gras</strong> <em>it</em></p>");
+    expect(r.sorties[3]).toBe("<p>lien</p>");
+    expect(r.sorties[4]).toBe('<p><a href="https://exemple.fr" target="_blank" rel="noopener">site</a></p>');
+    // le texte d'un script, même glissé dans un SVG, n'est pas du texte
+    expect(r.sorties.join("")).not.toContain("__piege");
+    expect(r.sorties[7]).toBe("<p>un</p><ul><li>a</li></ul><p>deux</p>");
+    expect(erreurs).toEqual([]);
+  });
+});
+
 test.describe("les autres pages", () => {
   for (const [nom, adresse] of [
     ["l'accueil", "/index.html"],
@@ -142,5 +213,70 @@ test.describe("les autres pages", () => {
     await page.goto("/plan-admin.html?plan=smcl-2026");
     await page.waitForLoadState("networkidle");
     expect(erreurs).toEqual([]);
+  });
+});
+
+/* `/plan-<salon>` est l'adresse que l'application d'un salon ouvre. Deux pages
+   de `web/` commencent pareil, et Cloudflare sert chacune à son adresse nue :
+   `/plan-admin`, `/plan-smcl`. Elles ne nomment aucun salon — l'administration
+   prenait « admin » pour le sien, et le partait chercher, l'annonçait, le
+   rangeait. */
+test.describe("le salon que nomme l'adresse", () => {
+  /** Le salon que la page s'est donné, une fois ses modules chargés — sans
+   *  attendre le plan, que la démonstration met longtemps à dessiner. */
+  const salonDe = async (page, adresse) => {
+    await page.goto(adresse, { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => typeof /** @type {any} */ (window).SLUG === "string");
+    return page.evaluate(() => /** @type {any} */ (window).SLUG);
+  };
+
+  test("l'administration à son adresse nue n'est pas un salon", async ({ page }) => {
+    const erreurs = await prepare(page);
+    // faute de `?plan=`, le salon que la construction a posé, comme à `/plan-admin.html`
+    expect(await salonDe(page, "/plan-admin")).toBe(await salonDe(page, "/plan-admin.html"));
+    expect(await salonDe(page, "/plan-admin")).toBe("smcl-2026");
+    expect(await salonDe(page, "/plan-admin?plan=fep27")).toBe("fep27");
+    expect(erreurs).toEqual([]);
+  });
+
+  test("la démonstration à son adresse nue n'est pas un salon", async ({ page }) => {
+    await prepare(page);
+    // aucun salon, comme à `/plan-smcl.html` : ses données sont dans la page
+    expect(await salonDe(page, "/plan-smcl")).toBe("");
+  });
+
+  test("l'adresse d'un salon le nomme toujours", async ({ page }) => {
+    await prepare(page);
+    expect(await salonDe(page, "/plan-fep27")).toBe("fep27");
+    expect(await salonDe(page, "/plan-admins")).toBe("admins");
+    expect(await salonDe(page, "/plan-smcl-2026")).toBe("smcl-2026");
+  });
+
+  test("l'anglais fermé par l'exploitant le reste à l'adresse nue", async ({ page }) => {
+    await prepare(page);
+    /* Ce que l'administration de ce salon a appris de lui : le français seul.
+       La clé nomme le salon ; lue sous « admin », elle ne disait plus rien. */
+    await page.addInitScript(() => localStorage.setItem("plan-langues:admin@smcl-2026", "fr"));
+    await page.goto("/plan-admin?lang=en");
+    expect(await page.evaluate(() => /** @type {any} */ (window).LANGUE.code)).toBe("fr");
+  });
+
+  test("le service de second plan range l'administration à part", async ({ page, context }) => {
+    await prepare(page);
+    /* Les demandes que le service fait lui-même échappent à la page : elles
+       se refusent au contexte, pour que l'essai ne doive rien au réseau. */
+    await context.route("**/api/**", (r) => r.fulfill({ status: 204, body: "" }));
+    // le plan public inscrit le service, qui vaut ensuite pour tout le domaine
+    await page.goto(PLAN);
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.goto("/plan-admin");
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+    const rangee = (chemin) => page.evaluate(async (c) => {
+      const r = await caches.match(c);
+      return r ? (await r.text()).includes('data-role="admin"') : null;
+    }, chemin);
+    // rangée sous son propre chemin, jamais sous celui du plan public
+    await expect.poll(() => rangee("/plan-admin")).toBe(true);
+    expect(await rangee("/plan")).not.toBe(true);
   });
 });

@@ -228,7 +228,7 @@ svg.addEventListener("pointerup", e => {
   if (libellePointerUp(e)) return;
   if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
-  if (calagePointerUp(e)) return;
+  if (calagePointerUp()) return;
   /* @fin-admin */
   const d = drag; drag = null; saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -250,8 +250,9 @@ svg.addEventListener("pointerup", e => {
   if (poseBorneIci(d.x, d.y, cible)) return;
   /* Désigner l'endroit d'un code « Vous êtes ici » se tranche au même rang, et
      pour la même raison : l'endroit compte même là où il n'y a rien, et ce
-     n'est pas une fiche qu'on ouvre (voir « _ici.html »). */
-  if (codeIciAuPoint(d.x, d.y, cible)) return;
+     n'est pas une fiche qu'on ouvre (voir « _ici.html »). Geste d'exploitant,
+     que seule l'administration embarque : le plan public n'en a pas. */
+  if (typeof codeIciAuPoint === "function" && codeIciAuPoint(d.x, d.y, cible)) return;
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (cible){
@@ -303,7 +304,7 @@ svg.addEventListener("keydown", e => {
   }
 });
 document.addEventListener("keydown", e => {
-  const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  const saisie = /^(INPUT|TEXTAREA)$/.test(/** @type {HTMLElement} */ (e.target).tagName);
   /* @admin — les raccourcis et les flèches de l'éditeur */
   if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
     const t = e.key.toLowerCase();

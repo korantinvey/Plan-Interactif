@@ -156,7 +156,7 @@ jobs:
 
             Une phrase affichée s'ajoute avec sa traduction dans
             `outils/anglais/<module>.js`. Un effet visuel ajouté au plan en CSS
-            se rejoue dans `_webgl.html`, sans quoi il ne se voit qu'en rendu
+            se rejoue dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en rendu
             SVG. `npm run verifie` relève la traduction manquante, pas la
             parité des deux rendus : celle-là, c'est toi qui la tiens.
 

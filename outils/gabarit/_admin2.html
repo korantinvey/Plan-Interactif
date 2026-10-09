@@ -19,12 +19,14 @@ function demarre(d){
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,
      puis s'estomper. Sans ce rappel il attendrait son butoir. */
   suitSponsor();
-  // le plan chargé, le bouton peut dire où en est l'enregistrement
-  majAttente();
+  /* Le plan chargé, le bouton peut dire où en est l'enregistrement — en
+     administration seulement : le visiteur n'a ni bouton ni envoi
+     (`modules/enregistrement.mjs`). */
+  if (typeof majAttente === "function") majAttente();
   /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
      trop vite, réseau coupé — repart de lui-même : c'est la seule occasion de
      le rattraper, personne ne viendra cliquer pour lui. */
-  rattrapeRetard();
+  if (typeof rattrapeRetard === "function") rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
@@ -88,6 +90,7 @@ function annonce(txt, erreur){
  * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
  */
 function entetesApi(){
+  /** @type {Record<string, string>} */
   const e = {};
   if (document.documentElement.dataset.role !== "admin") return e;
   try {
@@ -257,12 +260,6 @@ else if (!API) annonce("Aucune source de données configurée.", true);
 // en administration, on attend la session : sans elle les brouillons sont invisibles
 else if (document.documentElement.dataset.role === "admin") annonce("Vérification de l'identité…");
 else charge();
-
-// les mesures de texte dépendent des polices : on retrace une fois chargées
-// les polices peuvent arriver avant les données : on ne retrace que si
-// quelque chose est déjà affiché
-if (document.fonts && document.fonts.ready)
-  document.fonts.ready.then(() => { if (DATA && view){ _lg.clear(); libelles(); } });
 
 addEventListener("resize", () => { if (DATA && view) fit(); });
 

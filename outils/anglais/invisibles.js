@@ -22,7 +22,7 @@ module.exports = [
   // affichés seuls — la phrase entière a sa clé dans `_suggestion.js`
   "du secteur", "de la ville", "du pays", "de la nomenclature", "de la thématique",
 
-  // `_tutoriel.html` : un morceau de la transformation CSS qui étire le voile
+  // `modules/tutoriel.mjs` : un morceau de la transformation CSS qui étire le voile
   "px) scale(",
   // `_ici.html` : un morceau de la transformation SVG qui porte le damier du
   // code à sa place sur l'affiche
@@ -44,12 +44,12 @@ module.exports = [
   "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
   "LissageSdf",
 
-  // `_rappels.html` : le motif de deux pannes internes, porté par une
+  // `modules/notifications.mjs` : le motif de deux pannes internes, porté par une
   // exception que la page rattrape sans jamais l'afficher — ce que le visiteur
   // lit alors est « Le rappel n'a pas pu être posé », qui a sa clé
   "clé indisponible", "clé absente",
 
-  // `_installation.html` : deux morceaux de l'adresse `intent://` qui réveille
+  // `modules/installation.mjs` : deux morceaux de l'adresse `intent://` qui réveille
   // l'application installée — des noms qu'Android lit, et que rien n'affiche
   ";action=android.intent.action.VIEW",
   ";category=android.intent.category.BROWSABLE;end",
@@ -60,4 +60,12 @@ module.exports = [
   // `_admin1.html` : les suffixes des jetons de teinte d'une distinction,
   // « --d-neuf-doux » et « --d-neuf-ink », composés nom par nom
   "-doux", "-ink",
+  // `modules/donnees.mjs`, `modules/parcours.mjs`, `modules/vivant.mjs` : des
+  // erreurs de programmation, levées quand le code écrit un état par la mauvaise
+  // porte — pour la console du développeur, jamais pour le visiteur
+  "» n'est pas une donnée du plan", "» n'est pas un état du parcours", " se remplace par ",
+  // `modules/comptes.mjs` : la même erreur, pour la porte du profil connecté
+  "» n'est pas un état du profil connecté",
+  // `modules/evenements.mjs` : la même erreur, pour la porte des salons de la console
+  "» n'est ni EVTS, ni selection, ni PLANS",
 ];

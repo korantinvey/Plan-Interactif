@@ -1,0 +1,327 @@
+/* ============================================================
+   L'application installée — son icône et son nom, le réglage de l'exploitant
+
+   Le plan public s'ajoute à l'écran d'accueil comme une application
+   (`_installation.html`), et l'icône qui s'y posait était celle du produit :
+   la même pour tous les salons. Deux plans installés côte à côte ne se
+   distinguaient plus, et l'organisateur n'y reconnaissait pas le sien.
+
+   Il dépose donc son logo d'ici, et écrit le nom qui paraîtra dessous. Rien de
+   déposé, rien d'écrit : c'est l'icône et le nom du produit, comme avant —
+   « Plan SMCL by Event2Map », composé par le relais (`src/index.mjs`).
+
+   Trois choses valent d'être sues avant d'y toucher.
+
+   **Cela ne passe pas par la configuration.** Les réglages voisins de l'onglet
+   « Admin » vivent dans `CONF` et partent avec la publication ; ceux-ci sont
+   trois colonnes de l'événement, écrites sur-le-champ. La raison qui décide
+   est le poids : une icône de cinq cents pixels rangée dans la configuration
+   voyagerait avec le plan jusqu'à chaque visiteur, pour n'être lue qu'à
+   l'installation. S'y ajoute que le manifeste, qui la lit, est demandé avant
+   que la page ait rien reçu — il ne saurait pas la chercher dans une
+   configuration servie pavillon par pavillon.
+
+   **Un fichier, deux images.** Android ne pose pas l'icône telle quelle : il la
+   rogne à la forme du système, cercle ou goutte selon l'appareil. Le dépôt
+   fabrique donc les deux versions du même logo — l'une au bord de son carré,
+   l'autre rentrée dans la zone sûre sur un fond opaque — et l'exploitant ne
+   choisit qu'un fichier. L'aperçu montre les deux, parce que personne ne
+   devine ce qu'un rognage laisse.
+
+   **Le choix se lit dans ce qui est déposé.** Il n'y a pas de mode à côté de
+   l'icône : un logo déposé, c'est le logo du salon ; retiré, c'est celui du
+   produit. Un mode aurait pu contredire l'image — « logo du salon » sans logo,
+   logo qu'un mode ignore — et il aurait fallu trancher.
+
+   Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
+   le reçoit jamais. Ce que le plan public en sait — l'adresse de l'icône, le
+   nom choisi — est dans `application.mjs`.
+   ============================================================ */
+import { accesBase, base } from "./session.mjs";
+import { DATA } from "./donnees.mjs";
+import { reduitIconeApp } from "./icone-app.mjs";
+import { appDuSalon, iconeDeLApplication } from "./application.mjs";
+import { oublieCache, REPOS } from "./enregistrement.mjs";
+
+/* L'oubli du cache du relais et le temps de repos de la configuration
+   viennent de `enregistrement.mjs`, module d'administration lui aussi. Ce que
+   le code soudé tient encore, le branchement le confie : le champ intitulé
+   des volets (`_mode-admin.html`). */
+/** @type {(hote: HTMLElement, titre: string, dedans: any, aide?: string) => any} */
+let champZone;
+
+/**
+ * Le branchement du réglage, appelé par le code soudé à la place que ce code y
+ * tenait (`_application.html`), dans une tranche que le visiteur ne reçoit pas.
+ *
+ * @param {{ champZone: typeof champZone }} b
+ */
+export function brancheReglageApplication(b){
+  champZone = b.champZone;
+}
+
+/* Un nom d'application tient en une ligne — le relais le borne pareil, et les
+   systèmes coupent bien avant. */
+const NOM_APP_MAX = 64;
+
+/* La marque telle que le relais la pose dans le nom de l'application
+   (`src/index.mjs` `MARQUE`). Le champ n'en donne qu'un exemple — mais un
+   exemple faux serait un mensonge sur ce qui partira faute d'y écrire. */
+const MARQUE_NOM_APP = "Event2Map";
+
+/**
+ * Le nom que l'écran d'accueil portera faute d'un autre.
+ *
+ * Écrit ici comme le relais l'écrit, et pour la même raison qu'il l'écrit là :
+ * c'est le salon qu'on cherche du regard sous une icône, et la marque signe.
+ * Il ne sert qu'à montrer — le champ le donne en exemple, jamais en valeur, et
+ * ce qui part en base reste vide tant que l'exploitant n'a rien écrit.
+ */
+const nomAppDefaut = () =>
+  "Plan " + (String((DATA && DATA.evenement) || "").trim() || "du salon") +
+  " by " + MARQUE_NOM_APP;
+
+/**
+ * Écrit en base ce que porte l'application, et le relit.
+ *
+ * Relu et non supposé : l'empreinte de l'icône est calculée par la base, et
+ * c'est elle qui fait l'adresse où le relais la sert. La supposer aurait
+ * demandé de calculer un md5 dans la page, pour une vérité qui vit ailleurs.
+ *
+ * Puis le relais est prié d'oublier ce qu'il garde de ce salon : sans quoi le
+ * manifeste continuerait de nommer et d'habiller l'application comme avant,
+ * jusqu'à un jour plus tard.
+ */
+async function ecritApplication(champs){
+  const acces = accesBase();
+  if (!acces) throw new Error("session absente : reconnectez-vous pour enregistrer");
+  const lignes = await base(acces,
+    "evenement?slug=eq." + encodeURIComponent(DATA.slug) +
+    "&select=nom_app,icone_app_version",
+    {
+      method: "PATCH",
+      headers: { "Prefer": "return=representation" },
+      body: JSON.stringify({ ...champs, modifie_le: new Date().toISOString() }),
+    });
+  const ligne = (lignes || [])[0];
+  if (!ligne) throw new Error("événement introuvable");
+  DATA.app = { nom: ligne.nom_app || null, icone: ligne.icone_app_version || null };
+  oublieCache(acces);
+}
+
+const CHOIX_ICONE_APP = [
+  { sien: false,
+    titre: "L'icône Event2Map",
+    resume: "Celle du produit, la même pour tous les salons. Rien à déposer." },
+  { sien: true,
+    titre: "Le logo du salon",
+    resume: "Déposé ici, il remplace l'icône du produit sur l'écran d'accueil." },
+];
+
+/**
+ * Où l'on choisit l'icône et le nom de l'application, et où on les regarde
+ * avant de les poser chez les visiteurs.
+ *
+ * Dans l'onglet « Admin », donc réservé au profil administrateur, comme le
+ * générique du démarrage qui le suit : c'est la même sorte de réglage — ce que
+ * le plan dit de qui le fournit, et ce qu'un organisateur n'a pas à défaire
+ * lui-même.
+ *
+ * L'aperçu n'est pas un ornement. Une icône d'écran d'accueil est rognée par
+ * le système — en carré arrondi, en cercle —, et un logo en longueur y perd
+ * ses bords sans que rien ne l'ait annoncé. Les deux formes sont donc montrées
+ * côte à côte. Et jamais vides : faute de logo déposé, elles montrent celle du
+ * produit, qui est bien ce que le visiteur aura.
+ */
+export function blocApplication(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "Sur l'écran d'accueil";
+  tete.querySelector(".d").textContent = "Le plan s'installe comme une " +
+    "application : l'icône qui se pose sur l'écran d'accueil du visiteur, et " +
+    "le nom écrit dessous. Les deux se lisent au moment de l'installation — " +
+    "un changement vaut pour qui installera ensuite, et rejoint les autres au " +
+    "lancement suivant. Enregistrés d'eux-mêmes, sans attendre la publication.";
+  hote.appendChild(tete);
+
+  const corps = document.createElement("div");
+  corps.className = "voletSpons";
+
+  const choix = document.createElement("div");
+  choix.className = "choixDem";
+  hote.appendChild(choix);
+
+  /* Les deux images que le dépôt vient de fabriquer, pour ne pas redemander au
+     relais ce qu'on a sous la main. La base fait foi dès le chargement
+     suivant, et c'est elle qu'on relit alors. */
+  let vu = null;
+  /* Le choix montré : celui que la base tient, et qu'un clic déplace. Le volet
+     de dépôt s'ouvre donc parfois sur un choix qui n'a pas encore d'image —
+     c'est justement là qu'on en dépose une. */
+  let veutSien = Boolean(appDuSalon().icone);
+
+  const boutons = CHOIX_ICONE_APP.map(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dem";
+    b.innerHTML = '<span class="v"></span><span class="x">' +
+      '<span class="t"></span><span class="d"></span></span>' +
+      '<span class="coche">✓</span>';
+    b.querySelector(".t").textContent = c.titre;
+    b.querySelector(".d").textContent = c.resume;
+    /* L'icône du produit se montre dans son propre bouton : c'est elle qu'on
+       choisit, et personne ne sait de mémoire à quoi elle ressemble. L'autre
+       montrera le logo déposé, dans l'aperçu. */
+    if (c.sien) b.querySelector(".v").remove();
+    else b.querySelector(".v").innerHTML = '<img src="icone.svg" alt="" width="40" height="40">';
+    b.onclick = () => pose(c.sien);
+    choix.appendChild(b);
+    return { b: b, c: c };
+  });
+
+  hote.appendChild(corps);
+
+  /* L'aperçu : les deux formes qu'un système donne à une icône d'écran
+     d'accueil, chacune sous son intitulé. `peint` y met les images. */
+  const apercu = document.createElement("div");
+  apercu.className = "appApercu";
+  apercu.innerHTML = ["carre", "rond"].map(f =>
+    '<span class="appVue"><span class="appIcone app' + f +
+    '"><img alt=""></span><span class="appDit"></span></span>').join("");
+  const formes = [...apercu.querySelectorAll(".appVue")];
+  formes[0].querySelector(".appDit").textContent = "Écran d'accueil";
+  formes[1].querySelector(".appDit").textContent = "Rognée par Android";
+
+  const cadre = document.createElement("div");
+  /* Le cadre d'un logo de zone, à la vignette près : celle-ci montre deux
+     formes et leurs intitulés, et ne tient pas dans la boîte d'une image. */
+  cadre.className = "logoZ appCadre";
+  cadre.innerHTML = '<div class="vue"></div><div class="actes">' +
+    '<button type="button"></button>' +
+    '<span class="ditZ"></span></div>' +
+    '<input type="file" accept="image/*" hidden>';
+  const vue = cadre.querySelector(".vue");
+  const choisir = cadre.querySelector("button");
+  const dit = cadre.querySelector(".ditZ");
+  const fichier = cadre.querySelector("input");
+  vue.appendChild(apercu);
+
+  /* Le poids annoncé est celui des deux data-URI, non celui du fichier
+     d'origine : c'est ce qui part en base, et il pèse un tiers de plus —
+     quatre caractères de base64 pour trois octets, d'où le diviseur. */
+  const peint = (mot) => {
+    const sien = vu ? vu.icone : iconeDeLApplication(false);
+    const rogne = vu ? vu.masque : iconeDeLApplication(true);
+    /* L'aperçu ne reste jamais vide : sans logo déposé, il montre l'icône du
+       produit, qui est bel et bien celle que le visiteur aura. */
+    formes[0].querySelector("img").src = sien || "icone.svg";
+    formes[1].querySelector("img").src = rogne || "icone-masque-512.png";
+    choisir.textContent = sien ? "Remplacer…" : "Choisir un fichier…";
+    dit.dataset.mal = "false";
+    if (mot !== undefined) dit.textContent = mot;
+    else dit.textContent = sien ? "" : "Aucun logo déposé.";
+  };
+
+  const echoue = (err) => {
+    dit.textContent = "Échec : " + err.message;
+    dit.dataset.mal = "true";
+  };
+
+  /* Le logo s'enregistre au choix, et non à la sortie de la fenêtre comme
+     celui d'une zone : un volet de réglages n'a pas de bouton
+     « Enregistrer », chaque retouche y part d'elle-même. */
+  const garde = (paire) => {
+    peint(paire ? "Enregistrement…" : "Retrait…");
+    ecritApplication(paire
+      ? { icone_app: paire.icone, icone_app_masque: paire.masque }
+      : { icone_app: null, icone_app_masque: null })
+      .then(() => {
+        vu = paire;
+        /* Le choix suit ce que la base tient, et non ce qu'on a cliqué : un
+           enregistrement refusé laisse le volet sur l'icône qui est encore
+           celle du salon. */
+        veutSien = Boolean(paire);
+        if (paire) peint(Math.round((paire.icone.length + paire.masque.length) / 1365) + " Ko");
+        else peint();   // « Aucun logo déposé. », qui est redevenu vrai
+        suit();
+      })
+      .catch(err => { peint(); echoue(err); });
+  };
+
+  const prend = (f) => {
+    if (!f) return;
+    peint("Lecture…");
+    reduitIconeApp(f).then(garde).catch(err => { peint(); echoue(err); });
+  };
+
+  choisir.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
+  vue.addEventListener("dragover", e => { e.preventDefault(); vue.dataset.survol = "1"; });
+  vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
+  vue.addEventListener("drop", e => {
+    e.preventDefault();
+    delete vue.dataset.survol;
+    prend(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+
+  champZone(corps, "Logo du salon", cadre,
+    "Ramené à un carré de cinq cent douze pixels, puis enregistré avec " +
+    "l'événement : il ne part pas avec le plan — seule l'installation le " +
+    "demande. Une seconde version est fabriquée pour Android, qui rogne " +
+    "l'icône à la forme du système : le logo y est rentré dans la zone sûre, " +
+    "sur un fond tiré du logo lui-même. Glissez-le sur l'aperçu, ou " +
+    "choisissez-le. Un logo carré tient mieux qu'un logo en longueur, qui " +
+    "sera réduit pour tenir dans le rond. Revenir à l'icône du produit le " +
+    "retire : il n'est gardé nulle part en réserve.");
+
+  const pose = (sien) => {
+    if (sien === veutSien) return;
+    /* Revenir à l'icône du produit, c'est retirer celle du salon : il n'y a pas
+       de réserve où la garder, et deux vérités s'y contrediraient. Le choix
+       n'est alors pas posé ici mais au retour du retrait — c'est la base qui
+       dit ce que le volet montre. */
+    if (!sien && (vu || appDuSalon().icone)){ garde(null); return; }
+    veutSien = sien;
+    suit();
+  };
+
+  const nom = champZone(hote, "Nom de l'application", document.createElement("input"),
+    "Écrit sous l'icône de l'écran d'accueil, et dans la fenêtre qui propose " +
+    "l'installation. Laissez vide pour le nom composé du salon et de la " +
+    "marque. La place est d'une douzaine de signes : au-delà, le système " +
+    "coupe — c'est le salon qu'on y cherche, pas une phrase.");
+  nom.type = "text";
+  nom.value = appDuSalon().nom || "";
+  nom.placeholder = nomAppDefaut();
+  const ditNom = document.createElement("span");
+  ditNom.className = "ditZ ditNomApp";
+  nom.parentNode.appendChild(ditNom);
+
+  /* Le nom part après un temps de repos, comme la configuration : écrire en
+     base à chaque frappe ferait une requête par lettre, et un champ vidé le
+     temps de le retaper aurait enregistré le vide au passage. */
+  let minuteurNom = null;
+  nom.oninput = () => {
+    clearTimeout(minuteurNom);
+    ditNom.dataset.mal = "false";
+    ditNom.textContent = "Enregistrement…";
+    minuteurNom = setTimeout(() => {
+      const ecrit = nom.value.trim().slice(0, NOM_APP_MAX);
+      ecritApplication({ nom_app: ecrit || null })
+        .then(() => { ditNom.textContent = ecrit ? "Enregistré." : "Nom par défaut."; })
+        .catch(err => {
+          ditNom.textContent = "Échec : " + err.message;
+          ditNom.dataset.mal = "true";
+        });
+    }, REPOS);
+  };
+
+  const suit = () => {
+    boutons.forEach(({ b, c }) => b.setAttribute("aria-pressed", String(c.sien === veutSien)));
+    corps.hidden = !veutSien;
+  };
+
+  peint();
+  suit();
+}

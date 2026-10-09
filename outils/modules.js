@@ -25,29 +25,62 @@ const MODULES = path.join(__dirname, "gabarit", "modules");
 
 /** Les points d'entrée, par famille de pages. */
 const ENTREES = {
-  plan: "plan.mjs",       // plan public, démonstration, administration
-  console: "console.mjs", // console et rapport, qui partagent leur socle
+  plan: "plan.mjs",             // plan public et démonstration
+  "plan-admin": "plan-admin.mjs", // l'administration : le plan, et ce que le visiteur ne reçoit pas
+  console: "console.mjs",       // la console
+  rapport: "rapport.mjs",       // le rapport, même socle que la console sans ses outils
 };
+
+const lisEntree = (entree) => acorn.parse(
+  fs.readFileSync(path.join(MODULES, ENTREES[entree]), "utf8"),
+  { ecmaVersion: "latest", sourceType: "module" });
+
+/* Un point d'entrée qui en importe un autre sans rien nommer
+   (`import "./plan.mjs"`) le reprend en entier : ses noms exposés compris.
+   C'est ainsi que l'administration a le plan, plus ce qui n'est qu'à elle,
+   dans un seul script — deux scripts auraient chacun leur exemplaire des
+   modules partagés, et deux états qui divergent. */
+function reprises(entree) {
+  return lisEntree(entree).body
+    .filter((n) => n.type === "ImportDeclaration" && !n.specifiers.length)
+    .map((n) => Object.keys(ENTREES).find((e) => "./" + ENTREES[e] === n.source.value))
+    .filter(Boolean);
+}
 
 /**
  * Les noms qu'un point d'entrée confie au code soudé, dans l'ordre où il les
- * écrit. On les lit dans l'arbre du module : l'appel `Object.assign` sur
- * `globalThis`, et les clés de son objet littéral — rien d'autre n'est admis,
- * pour que la liste reste lisible par un outil comme par un humain.
+ * écrit. On les lit dans l'arbre du module, sous deux formes et deux seules :
+ *
+ * - `Object.assign(globalThis, { … })`, pour ce qui ne change pas — une
+ *   fonction, une constante, un objet qu'on modifie sans le remplacer ;
+ * - `Object.defineProperties(globalThis, vivants({ NOM: () => NOM, … }))`,
+ *   pour un état que le module réaffecte (`DATA`) : le code soudé le lit par
+ *   un accesseur, et lit donc toujours la valeur du moment.
+ *
+ * Dans les deux cas, les clés d'un objet littéral et rien d'autre, pour que la
+ * liste reste lisible par un outil comme par un humain.
  */
+function objetExpose(e) {
+  if (!e || e.type !== "CallExpression" || e.callee.type !== "MemberExpression" ||
+      e.callee.object.name !== "Object" || !e.arguments[0] || e.arguments[0].name !== "globalThis")
+    return null;
+  if (e.callee.property.name === "assign") return { forme: "Object.assign", o: e.arguments[1] };
+  if (e.callee.property.name !== "defineProperties") return null;
+  const v = e.arguments[1];
+  if (!v || v.type !== "CallExpression" || v.callee.name !== "vivants")
+    throw new Error("Object.defineProperties(globalThis, …) attend vivants({ … })");
+  return { forme: "vivants", o: v.arguments[0] };
+}
+
 function exposes(entree) {
-  const fichier = path.join(MODULES, ENTREES[entree]);
-  const ast = acorn.parse(fs.readFileSync(fichier, "utf8"),
-    { ecmaVersion: "latest", sourceType: "module" });
-  const noms = [];
+  const ast = lisEntree(entree);
+  const noms = reprises(entree).flatMap(exposes);
   for (const n of ast.body) {
-    const e = n.type === "ExpressionStatement" && n.expression;
-    if (!e || e.type !== "CallExpression" || e.callee.type !== "MemberExpression" ||
-        e.callee.object.name !== "Object" || e.callee.property.name !== "assign" ||
-        !e.arguments[0] || e.arguments[0].name !== "globalThis") continue;
-    const o = e.arguments[1];
+    const trouve = n.type === "ExpressionStatement" && objetExpose(n.expression);
+    if (!trouve) continue;
+    const o = trouve.o;
     if (!o || o.type !== "ObjectExpression")
-      throw new Error(ENTREES[entree] + " : Object.assign(globalThis, …) attend un objet littéral");
+      throw new Error(ENTREES[entree] + " : " + trouve.forme + " attend un objet littéral");
     for (const p of o.properties) {
       if (p.type !== "Property" || p.computed || p.key.type !== "Identifier")
         throw new Error(ENTREES[entree] + " : seules des clés nommées s'exposent au code soudé");
@@ -63,9 +96,9 @@ function exposes(entree) {
  * chaque nom plutôt qu'un `any` — c'est tout l'intérêt d'un module.
  */
 function origines(entree) {
-  const ast = acorn.parse(fs.readFileSync(path.join(MODULES, ENTREES[entree]), "utf8"),
-    { ecmaVersion: "latest", sourceType: "module" });
-  const de = new Map();
+  const ast = lisEntree(entree);
+  const herites = new Map(reprises(entree).flatMap(origines).map((o) => [o.nom, o]));
+  const de = new Map(herites);
   for (const n of ast.body) {
     if (n.type !== "ImportDeclaration") continue;
     const source = path.join(MODULES, n.source.value);

@@ -16,63 +16,12 @@ if (!document.querySelector('meta[name="viewport"]')){
    (`outils/gabarit/modules/`), posés avant ce script : voir `plan.mjs`. */
 const svg = $("plan");
 
-/* Deux origines possibles pour les données : figées dans la page, ou
-   servies par l'API. La page est la même, seul le démarrage diffère. */
-const API = document.currentScript?.dataset.api || "";
-/* Le salon se nomme de deux façons, et la page ne préfère pas l'une à l'autre :
-   `?plan=` est ce qu'on imprime, qu'on partage et qu'on scanne ; `/plan-<salon>`
-   est le chemin que son application installée ouvre, et le seul qu'elle ait le
-   droit d'ouvrir — c'est ce qui sépare les salons les uns des autres, une
-   portée de manifeste ne connaissant que des chemins (`outils/pwa.js`,
-   `src/index.mjs`). Faute des deux, le salon que la construction a posé. */
-const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
-const SLUG = new URLSearchParams(location.search).get("plan") ||
-  (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
-  document.currentScript?.dataset.slug || "";
+/* `API`, `SLUG` et les chemins d'un salon viennent eux aussi des modules :
+   `salon.mjs`, qui lit les réglages de la construction et l'adresse. */
 
-/** L'adresse d'un salon, celle que son application ouvre. */
-const cheminDuSalon = (slug) => "/plan-" + slug;
-
-/**
- * Le chemin d'où ce plan se donne à quelqu'un d'autre.
- *
- * Deux adresses ne se partagent pas. Celle de l'administration, qui réclame une
- * session que le visiteur d'en face n'a pas. Et celle qu'une application
- * installée ouvre : elle est le territoire d'un salon, et un lien qui la porte
- * n'ouvrirait chez l'autre qu'une adresse de plus à retenir. L'une et l'autre
- * renvoient au plan public, où le salon se nomme dans le paramètre.
- */
-const cheminPartageable = (chemin) =>
-  chemin.replace(/plan-admin(\.html)?$/, "plan$1").replace(CHEMIN_SALON, "/plan");
-
-let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
-/* Les sociétés hébergées sur le stand d'un autre. Elles n'ont ni forme ni
-   identifiant — c'est le stand de leur hôte qu'on va voir — et ne peuvent donc
-   pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
-   recherche seule consulte. */
-let HEBERGES = [];
-/* Le programme entier, dédoublonné, tel que la recherche le balaie. Une
-   conférence n'est ni une forme ni un emplacement : elle n'entre pas dans
-   « TOUS » et se cherche depuis sa propre liste, comme les hébergées. */
-let CONFERENCES = [];
-/* Les mêmes, retrouvables par le couple qui les désigne — le stand qui les
-   héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
-   n'a pas à balayer la liste pour savoir si le filtre les retient. */
-let PAR_HEBERGE = new Map();
-/* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
-   rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
-   par objet, c'est la même chose en mille fois moins.
-
-   `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
-   titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
-   courants tous les rangs d'un même stand. */
-const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0,
-                /* Les critères retenus : une clé de champ, les valeurs cochées.
-                   Un critère sans valeur cochée n'existe pas — il sort de la
-                   table plutôt que d'y rester comme un filtre qui ne filtre
-                   rien. */
-                crit: new Map() };
-const P = () => DATA.plans[state.plan];
+/* Les données du plan et leurs index, l'état de la vue (`state`) et le
+   pavillon courant (`P`) : `modules/donnees.mjs`. On les lit ici par leur nom,
+   comme avant ; on les remplace par `poseDonnees({ … })`, et par là seulement. */
 let view, emp;
 
 /* ============================================================
@@ -112,7 +61,7 @@ const texteProduits = (l) => (l || [])
   .join(" ").toLowerCase();
 
 function indexe(d){
-  DATA = d;
+  poseDonnees({ DATA: d });
   DATA.plans.forEach((p, i) => {
     p.i = i;
     p.court = String(p.libelle).replace(/^Pavillons*/i, "");
@@ -258,7 +207,10 @@ function indexe(d){
         const rescapes = (DESSINS[p.id] || [])
           .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
         DESSINS[p.id] = deLaBase.concat(rescapes);
-        if (rescapes.length){ marqueAttente(p.id, true); compteRescapes(rescapes.length); }
+        if (rescapes.length){
+          marqueAttente(p.id, true);
+          if (typeof compteRescapes === "function") compteRescapes(rescapes.length);
+        }
       } else {
         DESSINS[p.id] = deLaBase;
       }
@@ -274,7 +226,7 @@ function indexe(d){
      poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
      resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
      repart au prochain envoi — ce navigateur est le seul endroit où il est. */
-  if (ADMIN) noteReglagesCharges(reglagesEnBase);
+  if (ADMIN && typeof noteReglagesCharges === "function") noteReglagesCharges(reglagesEnBase);
 
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de
@@ -307,12 +259,11 @@ function indexe(d){
      reste dans l'index, pour que la reprise de forme le retrouve, mais pas
      dans ce qu'on cherche et qu'on compte — l'exposant y est déjà. */
   const formes = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
-  TOUS = formes.filter(o => !o.lien);
-  parId = new Map(formes.map(o => [o.id, o]));
+  poseDonnees({ TOUS: formes.filter(o => !o.lien), parId: new Map(formes.map(o => [o.id, o])) });
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
      qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
      propre que son nom et son rang, par lequel la fiche la retrouvera. */
-  HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
+  poseDonnees({ HEBERGES: DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => {
       /* Une hébergée répond pour elle-même : ses thématiques, sa ville, ses
          rubriques, ses champs propres sont les siens et non ceux de son hôte,
@@ -330,8 +281,8 @@ function indexe(d){
       // son catalogue est à elle, comme ses thématiques et ses rubriques
       h.rechProd = texteProduits(x.produits);
       return h;
-    })));
-  PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
+    }))) });
+  poseDonnees({ PAR_HEBERGE: new Map(HEBERGES.map(x => [x.id + "#" + x.i, x])) });
   indexeCriteres();
   indexeConferences();
 
@@ -393,7 +344,7 @@ function indexeConferences(){
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
      que là où l'on se trouve. L'index des conférences est donc global, comme
      celui des stands. */
-  CONFS = new Map();
+  poseDonnees({ CONFS: new Map() });
   DATA.plans.forEach((p, i) => confsDuPlan(p).forEach(c => {
     c.kind = "conf"; c.p = i;
     CONFS.set(String(c.id), c);
@@ -402,7 +353,7 @@ function indexeConferences(){
      chacun n'y cite que les exposants qu'il héberge : leur liste complète se
      recompose ici, sinon la fiche n'afficherait que ceux du dernier pavillon
      lu. */
-  EXPOSANTS = new Map();
+  poseDonnees({ EXPOSANTS: new Map() });
   DATA.plans.forEach(p => confsDuPlan(p).forEach(c => {
     const k = String(c.id);
     if (!EXPOSANTS.has(k)) EXPOSANTS.set(k, []);
@@ -418,7 +369,7 @@ function indexeConferences(){
      la fiche montre doit se retrouver en le tapant. Leur fonction en est
      exclue, comme la présentation : « directeur général » ferait répondre la
      moitié du programme, et un paragraphe entier tout le reste. */
-  CONFERENCES = [...CONFS.values()];
+  poseDonnees({ CONFERENCES: [...CONFS.values()] });
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
     const dits = [...(c.intervenants || []), ...(c.animateurs || [])]

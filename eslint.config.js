@@ -27,7 +27,7 @@ const GLOBALES_PAGE = {
   // posés sur `window` par le moteur de langue, `_langue.js`
   LANGUE: "readonly",
   traduit: "readonly",
-  // deck.gl, chargé à la demande depuis `web/bibliotheques/` par `_webgl.html`
+  // deck.gl, chargé à la demande depuis `web/bibliotheques/` par `modules/webgl.mjs`
   deck: "readonly",
   // la place du dictionnaire anglais dans `_langue.js`, que `genere.js` remplit
   __DICTIONNAIRE__: "readonly",
@@ -39,6 +39,9 @@ module.exports = [
   {
     ignores: [
       "web/**", "node_modules/**", "supabase/**", ".wrangler/**",
+      // les copies de travail que Claude Code ouvre à côté du dépôt : chacune est
+      // un dépôt entier, relu chez elle et non deux fois depuis celui-ci
+      ".claude/**",
       "outils/tpl-multi.html", "outils/chk.js", "outils/brut/**", "outils/svg/**",
       "simulations/**", "test-results/**", "playwright-report/**",
       // relus par `outils/relecture.js`, tels que la page les assemble
@@ -59,10 +62,16 @@ module.exports = [
     rules: REGLES,
   },
   /* Les modules du gabarit : de vrais modules, relus seuls. Ce qu'ils
-     confient au code soudé, la relecture des pages le tient pour déclaré. */
+     confient au code soudé, la relecture des pages le tient pour déclaré.
+     Le moteur de langue, lui, est posé avant tout script de la page : un
+     module peut s'en servir pour ce qui quitte la page traduit. deck.gl
+     arrive plus tard, chargée à la demande : le rendu par la carte graphique
+     (`webgl.mjs`) ne la lit qu'une fois là. */
   {
     files: ["outils/gabarit/modules/**/*.mjs"],
-    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: globals.browser },
+    languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: {
+      ...globals.browser, LANGUE: GLOBALES_PAGE.LANGUE, traduit: GLOBALES_PAGE.traduit,
+      deck: GLOBALES_PAGE.deck } },
     rules: REGLES,
   },
   {

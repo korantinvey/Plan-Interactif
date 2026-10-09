@@ -381,7 +381,7 @@ function blocHoraires(hote){
     const a = lueDate(h().debut), b = lueDate(h().fin);
     const dit = a && b && b < a
       ? "Le dernier jour précède le premier : corrigez les dates pour régler les heures."
-      : a && b && (b - a) / 864e5 >= JOURS_SALON_MAX
+      : a && b && (b.getTime() - a.getTime()) / 864e5 >= JOURS_SALON_MAX
       ? "Plus de " + JOURS_SALON_MAX + " jours entre ces deux dates : seuls les " +
         JOURS_SALON_MAX + " premiers sont proposés. Vérifiez l'année."
       : datesSalon().some(j => horairesSalon(j.cle).incoherent)
@@ -1065,7 +1065,7 @@ function voletApparence(hote){
     b.type = "button";
     b.innerHTML = '<span></span><span class="n"></span>';
     b.firstChild.textContent = g.nom;
-    b.lastChild.textContent = POLICES_NOMS.filter(q => q.genre === g.cle).length;
+    b.lastChild.textContent = String(POLICES_NOMS.filter(q => q.genre === g.cle).length);
     b.onclick = () => montreGenre(g.cle);
     blocPolice.querySelector(".genresPol").appendChild(b);
     return { b, g };

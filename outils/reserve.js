@@ -51,7 +51,7 @@ function equilibre(lignes, debut) {
 }
 
 /** Découpe le texte : `garde` dit si l'intérieur des tranches reste. */
-function decoupe(texte, garde) {
+function decoupe(texte, garde, enBlanc = false) {
   const sortie = [];
   let ouverte = 0;
   let tranche = [];
@@ -62,15 +62,18 @@ function decoupe(texte, garde) {
         " dans celle de la l." + ouverte + " : elles ne s'emboîtent pas");
       ouverte = i + 1;
       tranche = [l];
+      if (enBlanc) sortie.push("");
       return;
     }
     if (FIN.test(l)) {
       if (!ouverte) throw new Error("@fin-admin l." + (i + 1) + " sans @admin");
       equilibre(tranche, ouverte);
       ouverte = 0;
+      if (enBlanc) sortie.push("");
       return;
     }
     if (!ouverte || garde) sortie.push(l);
+    else if (enBlanc) sortie.push("");
   });
   if (ouverte) throw new Error("tranche @admin de la l." + ouverte + " jamais refermée");
   return sortie.join("\n");
@@ -78,6 +81,10 @@ function decoupe(texte, garde) {
 
 const pourLAdmin = (texte) => decoupe(texte, true);
 const pourLePublic = (texte) => decoupe(texte, false);
+/* La même découpe, chaque ligne retirée laissée en blanc : la relecture et
+   les types relisent ainsi la page publique telle qu'elle est livrée, et une
+   remarque y garde le numéro de ligne de sa source. */
+const pourLePublicEnBlanc = (texte) => decoupe(texte, false, true);
 
 /* Le JavaScript d'une page, ses scripts mis bout à bout. Ceux qui viennent
    d'un fichier ou portent des données n'en font pas partie. */
@@ -121,11 +128,20 @@ function identifiants(html) {
  * Un nom gardé par `typeof nom` est voulu : c'est l'idiome du dépôt pour
  * s'adresser à un module qu'une page peut ne pas avoir.
  */
-function cite(admin, publique) {
+/**
+ * Les noms que l'administration a et que la page publique n'a pas : déclarés
+ * au premier niveau d'une tranche, ou — `enPlus` — exposés par les seuls
+ * modules de l'administration. Les deux textes sont du JavaScript.
+ */
+function retiresDe(jsA, jsP, enPlus = []) {
+  const gardes = hautNiveau(jsP);
+  return [...new Set([...hautNiveau(jsA), ...enPlus])].filter((n) => !gardes.has(n));
+}
+
+function cite(admin, publique, enPlus = []) {
   const jsA = sansTexte(scripts(admin));
   const jsP = sansTexte(scripts(publique));
-  const gardes = hautNiveau(jsP);
-  const retires = [...hautNiveau(jsA)].filter((n) => !gardes.has(n));
+  const retires = retiresDe(jsA, jsP, enPlus);
 
   const optionnels = new Set();
   let m;
@@ -168,11 +184,11 @@ function cite(admin, publique) {
 }
 
 /** Lève une erreur nommant ce que la page publique cite encore. */
-function verifie(admin, publique, nom) {
-  const f = cite(admin, publique);
+function verifie(admin, publique, nom, enPlus) {
+  const f = cite(admin, publique, enPlus);
   if (f.length)
     throw new Error(nom + " cite ce qui ne lui est plus livré :\n  " +
       f.join("\n  ") + "\nÉlargissez la tranche @admin, ou sortez-en ce nom.");
 }
 
-module.exports = { pourLAdmin, pourLePublic, verifie, cite };
+module.exports = { pourLAdmin, pourLePublic, pourLePublicEnBlanc, verifie, cite, retiresDe };

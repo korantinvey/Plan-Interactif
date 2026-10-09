@@ -8,6 +8,9 @@
 const clePile = () => "_pile:" + P().id;
 
 function entrees(){
+  /* `ref` change de nature avec `t` : le fond, le nom de la couche de données,
+     le calque de dessin. */
+  /** @type {{ k: string, t: string, nom: string, ref: any }[]} */
   const e = [];
   P().fond.forEach(f => e.push({ k: "fond:" + f.cle, t: "fond", nom: f.nom, ref: f }));
   e.push({ k: "data:zones",  t: "data", nom: "Zones organisateur", ref: "zones" });
