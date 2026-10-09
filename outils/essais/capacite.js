@@ -9,10 +9,12 @@
  * retiré du parcours de quelqu'un, ou que la courbe ne départage plus un
  * détour d'une attente.
  *
- * Le module est extrait du gabarit à la volée — voir `ordonnanceur.js` — plutôt
- * que recopié : un essai qui juge une copie ne juge rien.
+ * Le moteur est importé de `modules/ordonnanceur.mjs`, celui-là même que la
+ * page embarque, plutôt que recopié : un essai qui juge une copie ne juge rien.
  */
-const O = require("./ordonnanceur.js");
+/* Le moteur tel que la page le reçoit : un module ES, que Node sait charger
+   par `require` depuis sa version 22.12 (`.nvmrc`). */
+const O = require("../gabarit/modules/ordonnanceur.mjs");
 const { rangeSejour, trancheDe, peineDeCharge } = O;
 
 const TV = 20, ALLURE = 1.2, OUV = 600, FERM = 1140;

@@ -36,6 +36,9 @@ import { JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jou
 import { QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure }
   from "./mesure.mjs";
+import { GENRES_RESSOURCE, poidsDesJours, rangeSejour } from "./ordonnanceur.mjs";
+import { CHARGE, chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, chargeCellule, brancheCharge }
+  from "./charge-annoncee.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -55,6 +58,8 @@ Object.assign(globalThis, {
   minutesDe, ecritHeure, ecritMinutes, instantMural,
   QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg,
   mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure,
+  GENRES_RESSOURCE, poidsDesJours, rangeSejour,
+  chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, chargeCellule, brancheCharge,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -64,3 +69,8 @@ Object.defineProperties(globalThis, vivants({
   EXPOSANTS: () => EXPOSANTS, HEBERGES: () => HEBERGES, CONFERENCES: () => CONFERENCES,
   PAR_HEBERGE: () => PAR_HEBERGE,
 }));
+
+/* La charge que les autres journées ont annoncée, remplacée à chaque lecture :
+   la préparation du séjour la lit par accesseur. Seul le module l'écrit, par
+   `litLaCharge`. */
+Object.defineProperties(globalThis, vivants({ CHARGE: () => CHARGE }, "litLaCharge"));
