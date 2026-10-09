@@ -5,11 +5,12 @@
    `plan-admin.mjs` embarque ; ils se branchent ici, à la place que leur code
    tenait, et ce que le code soudé tient encore leur est confié : les règles
    que le plan public lit aussi (`_admin1.html`), les distinctions, la liste et
-   les secteurs de la recherche, les aperçus et le rappel de la fenêtre des
-   réglages. L'envoi de la configuration (`_ordre-fiche.html`) et l'état de
-   l'administration (`_mode-admin.html`) ne sont déclarés que plus bas : on les
-   confie par un détour, lu au moment de s'en servir, et les secteurs, que la
-   recherche remplace à chaque chargement, par un lecteur. */
+   les secteurs de la recherche. Les aperçus de la fenêtre des réglages et le
+   bloc du rappel, sortis du code soudé, s'importent. L'envoi de la
+   configuration (`_ordre-fiche.html`) et l'état de l'administration
+   (`_mode-admin.html`) ne sont déclarés que plus bas : on les confie par un
+   détour, lu au moment de s'en servir, et les secteurs, que la recherche
+   remplace à chaque chargement, par un lecteur. */
 brancheVolets({
   conf,
   enregistreConf: () => enregistreConf(),
@@ -23,6 +24,6 @@ brancheVolets({
   GENRES_POLICE, POLICES_NOMS, feuillePolice, policeDuModele, policeChoisie, posePoliceLibelles,
   secteurs: () => SECTEURS,
   appliqueSecteurs, appliqueFiltre, liste,
-  blocRappel, contenuApercu, apercuDuo, champZone, construitPanneau, relance,
+  champZone, construitPanneau, relance,
 });
 

@@ -344,7 +344,7 @@ Fonctions :
 
 `deplaceVers` 19 · `versExtremite` 31 · `remplitOrdre` 39 · `ouvreOrdre` 109
 
-### `_mode-admin.html` — 52 l. → plan-admin.html
+### `_mode-admin.html` — 53 l. → plan-admin.html
 
 - l.3 · 10. Mode administration — le branchement
 
@@ -387,19 +387,15 @@ Fonctions :
 
 `accueilleParcoursPartage` 33 · `adoptePartage` 111 · `parcoursACopier` 127
 
-### `_pile.html` — 536 l. → plan-admin.html
+### `_pile.html` — 80 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
-- l.50 · Panneau : deux sections, chacune rangée par nom
-- l.346 · Repères
-- l.398 · Fond du plan
+- l.50 · Le panneau des calques — le branchement
 
 Fonctions :
 
-`clePile` 8 · `entrees` 10 · `pile` 24 · `groupe` 36 · `ordonneDom` 44 · `nature` 68
-`boutonAjout` 75 · `boutonVerrou` 95 · `intertitre` 103 · `construitPanneau` 111
-`sectionSelection` 362 · `sectionFond` 418 · `ligneCouleur` 476 · `rangSecteur` 496
-`rangSous` 509 · `defautCouleur` 531
+`clePile` 8 · `entrees` 10 · `pile` 24 · `groupe` 36 · `ordonneDom` 44
+`construitPanneau` 76
 
 ### `_pousse.html` — 23 l. → plan-admin.html
 
@@ -440,15 +436,7 @@ Fonctions :
 `codeCase` 935 · `caseNumero` 952 · `sousLigne` 972 · `liste` 986 · `marqueChoisie` 1114
 `prechargeMarque` 1140 · `prechargeLesVignettes` 1197 · `chargeUnLot` 1243
 
-### `_reglages.html` — 927 l. → plan-admin.html
-
-Fonctions :
-
-`texteCorps` 66 · `clesPortees` 91 · `standApercu` 111 · `lignesApercu` 135
-`contenuApercu` 165 · `apercuFiche` 202 · `apercuListe` 280 · `apercuDuo` 302
-`glisseFenetre` 336 · `ouvreReglages` 348 · `voletZones` 476 · `champsFicheZone` 578
-`ficheZoneEnPlace` 648 · `voletPlan` 666 · `blocRappel` 714 · `ditEssaiRappel` 825
-`voletCoexposants` 859
+### `_reglages.html` — 23 l. → plan-admin.html
 
 ### `_rendu.html` — 662 l.
 
@@ -500,7 +488,7 @@ Fonctions :
 
 - l.1 · 17. La visite guidée — le branchement
 
-### `_volets.html` — 28 l. → plan-admin.html
+### `_volets.html` — 29 l. → plan-admin.html
 
 ### `_vue.html` — 479 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -568,6 +556,16 @@ Fonctions :
 `croixAimant` 338 · `correction` 362 · `aimante` 403 · `retientTaille` 417
 `reprendTaille` 431 · `dupliqueForme` 452 · `pousseForme` 477 · `ecritDimensions` 494
 `appliqueDimension` 513
+
+### `modules/apercus.mjs` — 347 l. → plan-admin
+
+- l.1 · Les aperçus de la fenêtre des réglages — l'exploitant seul
+
+Fonctions :
+
+`brancheApercus` 39 · `texteCorps` 105 · `clesPortees` 130 · `standApercu` 150
+`lignesApercu` 174 · `contenuApercu` 204 · `apercuFiche` 241 · `apercuListe` 319
+`apercuDuo` 341
 
 ### `modules/appel-fonction.mjs` — 61 l. → console
 
@@ -1068,6 +1066,28 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
+### `modules/pile.mjs` — 608 l. → plan-admin
+
+- l.1 · Le panneau des calques
+- l.125 · Panneau : deux sections, chacune rangée par nom
+- l.419 · Repères
+- l.471 · Fond du plan
+
+Fonctions :
+
+`estAdmin` 79 · `dessins` 80 · `calqueActif` 81 · `placeLibelles` 82 · `sorteGeo` 83
+`secteurs` 84 · `entrees` 85 · `conf` 86 · `enregistreConf` 87 · `jeton` 88 · `sousCle` 89
+`sousCalques` 90 · `joli` 91 · `styleFond` 92 · `styleDataGroupe` 93 · `styleData` 94
+`appliqueCouleursData` 95 · `appliqueFond` 96 · `suitNuancier` 97 · `secteursMontres` 99
+`couleurSecteur` 100 · `peintSecteur` 101 · `mesCalques` 102 · `creeCalque` 103
+`enregistreDessins` 104 · `dessineDessins` 105 · `peintCalque` 106 · `verrouille` 107
+`basculeVerrou` 108 · `pictoVerrou` 109 · `activeCalque` 110 · `memorise` 111
+`modePlacementLibelles` 112 · `geoVerrouille` 113 · `basculeVerrouGeo` 114
+`boutonVerrouGeo` 115 · `modeGeometrie` 116 · `ouvreOrdre` 117 · `branchePile` 121
+`nature` 143 · `boutonAjout` 150 · `boutonVerrou` 170 · `intertitre` 178
+`remplitPanneau` 187 · `sectionSelection` 435 · `sectionFond` 491 · `ligneCouleur` 549
+`rangSecteur` 569 · `rangSous` 582 · `defautCouleur` 604
+
 ### `modules/placement-libelles.mjs` — 189 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
@@ -1079,7 +1099,7 @@ Fonctions :
 `choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
 `libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
 
-### `modules/plan-admin.mjs` — 89 l. → plan-admin
+### `modules/plan-admin.mjs` — 81 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
@@ -1148,13 +1168,13 @@ Fonctions :
 `brancheReglageApplication` 59 · `nomAppDefaut` 80 · `ecritApplication` 95
 `blocApplication` 136
 
-### `modules/reglage-fiche.mjs` — 669 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 668 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
 Fonctions :
 
-`clesFiche` 54 · `voletOrdre` 71 · `brancheReglageFiche` 666
+`clesFiche` 53 · `voletOrdre` 70 · `brancheReglageFiche` 665
 
 ### `modules/reglage-installation.mjs` — 71 l. → plan-admin
 
@@ -1163,6 +1183,14 @@ Fonctions :
 Fonctions :
 
 `brancheReglageInstallation` 22 · `caseInstallation` 34
+
+### `modules/reglage-rappel.mjs` — 173 l. → plan-admin
+
+- l.1 · Le rappel avant une conférence, dans l'onglet « Admin » des réglages
+
+Fonctions :
+
+`brancheReglageRappel` 26 · `blocRappel` 48 · `ditEssaiRappel` 159
 
 ### `modules/reglage-sponsor.mjs` — 232 l. → plan-admin
 
@@ -1182,6 +1210,15 @@ Fonctions :
 `enregistreConf` 28 · `glisseFenetre` 29 · `rafraichitParcours` 30 · `indexSugg` 47
 `valeursSugg` 72 · `relevePalmares` 90 · `etiquetteSugg` 110 · `voletSuggestion` 120
 `brancheReglageSuggestion` 428
+
+### `modules/reglages.mjs` — 542 l. → plan-admin
+
+- l.1 · La fenêtre des réglages du plan — l'exploitant seul
+
+Fonctions :
+
+`brancheReglages` 66 · `glisseFenetre` 96 · `ouvreReglages` 108 · `voletZones` 236
+`champsFicheZone` 338 · `ficheZoneEnPlace` 408 · `voletPlan` 426 · `voletCoexposants` 474
 
 ### `modules/salon.mjs` — 50 l. → plan, plan-admin
 

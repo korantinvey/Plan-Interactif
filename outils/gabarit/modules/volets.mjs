@@ -2,10 +2,11 @@
    Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
    l'exploitant seul
 
-   Des onglets de la fenêtre des réglages que `_reglages.html` ouvre : ce
+   Des onglets de la fenêtre des réglages que `reglages.mjs` ouvre : ce
    module n'est embarqué que par `plan-admin.mjs`, le visiteur ne le reçoit
-   jamais. La fenêtre elle-même, ses autres volets et ses aperçus restent
-   soudés (`_reglages.html`) ; les dates et les heures du salon, posées dans
+   jamais. La fenêtre elle-même et ses autres volets sont dans `reglages.mjs`,
+   ses aperçus dans `apercus.mjs`, le bloc du rappel dans
+   `reglage-rappel.mjs` ; les dates et les heures du salon, posées dans
    l'onglet « Plan », sont ici avec le reste de ce que cette suite portait.
 
    Les règles que ces volets écrivent — options, langues, barre, seuil de
@@ -21,6 +22,8 @@ import { tutoPropose, reglageTuto, chapitresTuto, lanceTutoriel } from "./tutori
 import { caseInstallation } from "./reglage-installation.mjs";
 import { blocApplication } from "./reglage-application.mjs";
 import { blocSponsor } from "./reglage-sponsor.mjs";
+import { contenuApercu, apercuDuo } from "./apercus.mjs";
+import { blocRappel } from "./reglage-rappel.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 // la configuration, son envoi, et l'état de l'administration
@@ -75,9 +78,6 @@ let appliqueSecteurs;
 let appliqueFiltre;
 let liste;
 // ce que la fenêtre des réglages et le reste de l'administration tiennent
-let blocRappel;
-let contenuApercu;
-let apercuDuo;
 let champZone;
 let construitPanneau;
 let relance;
@@ -97,7 +97,7 @@ export function brancheVolets(b){
     MARQUES_DIST, modeDist, couleurDist, appliqueDists, montre, jeton, suitNuancier, REPOS_NUANCIER,
     appliqueAccent, MODELES, modeleRetenu, appliqueModele, GENRES_POLICE, POLICES_NOMS, feuillePolice,
     policeDuModele, policeChoisie, posePoliceLibelles, secteurs, appliqueSecteurs, appliqueFiltre, liste,
-    blocRappel, contenuApercu, apercuDuo, champZone, construitPanneau, relance } = b);
+    champZone, construitPanneau, relance } = b);
 }
 
 export function voletAdmin(hote){
