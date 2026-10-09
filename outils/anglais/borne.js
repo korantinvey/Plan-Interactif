@@ -1,4 +1,4 @@
-/* `outils/gabarit/_borne.html` — la borne interactive : ce qu'elle dit d'elle
+/* `outils/gabarit/modules/borne.mjs` — la borne interactive : ce qu'elle dit d'elle
    et de l'endroit où elle est posée. */
 module.exports = {
   "Vous êtes ici": "You are here",

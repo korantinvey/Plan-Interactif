@@ -1,21 +1,7 @@
-/* `outils/gabarit/_suggestion.html` — la suggestion d'un exposant de plus : la
-   carte que lit le visiteur, et le volet « Suggestion » des réglages. */
+/* `outils/gabarit/modules/reglage-suggestion.mjs` — le volet « Suggestion »
+   des réglages, que seule l'administration reçoit. */
 module.exports = {
   "Suggestion": "Suggestion",
-
-  // ce que lit le visiteur
-  "Vous avez ajouté {n} exposants {motif} à votre liste.": "You have added {n} exhibitors {motif} to your list.",
-  "du secteur « {valeur} »": "from the “{valeur}” sector",
-  "de la ville « {valeur} »": "from “{valeur}”",
-  "du pays « {valeur} »": "from “{valeur}”",
-  "de la nomenclature « {valeur} »": "in the “{valeur}” category",
-  "de la thématique « {valeur} »": "with the theme “{valeur}”",
-  "marqués « {valeur} »": "marked “{valeur}”",
-  "Vous pourriez être intéressé par l'exposant {nom}.": "You might be interested in {nom}.",
-  "Pour compléter votre visite": "To round off your visit",
-  "Ne plus me proposer celui-ci": "Don't suggest this one again",
-  "Non merci": "No thanks",
-  "Voir sur le plan": "See on map",
 
   // le volet des réglages
   "session absente, reconnectez-vous": "no session, please sign in again",

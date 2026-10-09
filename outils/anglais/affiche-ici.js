@@ -1,13 +1,7 @@
-/* `outils/gabarit/_ici.html` — le code affiché dans le hall : ce que le
-   visiteur lit en arrivant par là, et ce que l'exploitant lit en le produisant. */
+/* `outils/gabarit/modules/affiche-ici.mjs` — le code affiché dans le hall,
+   côté exploitant : ce qu'il lit en le produisant, et l'affiche qu'il imprime.
+   « Vous êtes ici » se traduit déjà pour la borne — la clé vit dans `borne.js`. */
 module.exports = {
-  /* Côté visiteur : le rappel du bas de l'écran. « Vous êtes ici » se traduit
-     déjà pour la borne, qui pose le même point — la clé vit dans `_borne.js`. */
-  "Ce code désigne un endroit que ce plan ne connaît plus.":
-    "This code points to a place this map no longer knows.",
-  "Désactiver": "Turn off",
-  "Fermer": "Close",
-
   /* Côté exploitant : la visée, puis la fenêtre du code. */
   "Touchez le plan à l'endroit où ce code sera affiché.":
     "Tap the map where this code will be displayed.",

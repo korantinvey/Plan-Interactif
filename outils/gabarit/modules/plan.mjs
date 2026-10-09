@@ -59,6 +59,11 @@ import { brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte } from "./env
 import { brancheRappels, synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
 import { brancheInstallation, nommeApplication, accueilleInvitation } from "./installation.mjs";
+import { brancheBorne, pointBorne, poseLaBorne, poseBorneIci, montreBandeauBorne, ecritDepartBorne,
+  dessineBorne, rafraichitBorne, demarreBorne } from "./borne.mjs";
+import { ICI_ACTIF, brancheIci, montreBandeauIci, demarreIci } from "./ici.mjs";
+import { brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
+  from "./suggestion.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -98,6 +103,10 @@ Object.assign(globalThis, {
   brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte,
   brancheRappels, synchroniseRappels, reprendRappels, poseRappels, fenetreRappel,
   brancheInstallation, nommeApplication, accueilleInvitation,
+  brancheBorne, pointBorne, poseLaBorne, poseBorneIci, montreBandeauBorne, ecritDepartBorne,
+  dessineBorne, rafraichitBorne, demarreBorne,
+  brancheIci, montreBandeauIci, demarreIci,
+  brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -119,3 +128,8 @@ Object.defineProperties(globalThis, vivants({ CHARGE: () => CHARGE }, "litLaChar
 Object.defineProperties(globalThis, vivants({
   PARCOURS: () => PARCOURS,
 }, "poseParcours"));
+
+/* Le code affiché dans le hall est-il en cours ? La visite guidée le lit pour
+   céder la place ; seul le module le change, en posant le point ou en
+   l'éteignant (`poseIci`, `retireIci`). */
+Object.defineProperties(globalThis, vivants({ ICI_ACTIF: () => ICI_ACTIF }, "poseIci"));
