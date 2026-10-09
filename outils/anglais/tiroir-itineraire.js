@@ -1,6 +1,6 @@
-/* `outils/gabarit/_itineraire.html` — l'itinéraire d'un point du salon à un
-   autre : le tiroir, la visée, et ce que le bilan du trajet en dit. Le calcul
-   et ses phrases sont dans `itineraire.js`. */
+/* `outils/gabarit/modules/tiroir-itineraire.mjs` — l'itinéraire d'un point du
+   salon à un autre : le tiroir, la visée, et ce que le bilan du trajet en dit.
+   Le calcul et ses phrases sont dans `itineraire.js`. */
 module.exports = {
   // le tiroir ; la distance d'un trajet coupé se dit au moins égale
   "≥ {distance}": "≥ {distance}",

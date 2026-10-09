@@ -40,6 +40,9 @@ const toleranceTrace = () => soude.toleranceTrace();
 const apercuGuide = (d) => soude.apercuGuide(d);
 const formeParId = (id) => soude.formeParId(id);
 const ajouteForme = (f) => soude.ajouteForme(f);
+/* Le choix d'une forme et ses poignées vivent dans `edition.mjs`, qui importe
+   ce module-ci pour accrocher ses gestes : les importer en retour bouclerait.
+   Ils restent donc confiés par `_aimants.html`, comme le reste du dessin. */
 const choisitForme = (id) => soude.choisitForme(id);
 const signale = (id) => soude.signale(id);
 const memorise = () => soude.memorise();
@@ -122,7 +125,7 @@ function pointsAimants(pts){
  * Les sommets des emplacements et des zones du pavillon.
  *
  * Ils ne bougent qu'à la synchronisation, ou sous la main de l'exploitant qui
- * reprend une forme (`_geometrie.html`) — auquel cas le relevé s'oublie à la
+ * reprend une forme (`reprise-emplacements.mjs`) — auquel cas le relevé s'oublie à la
  * fin du geste. On le refait donc une fois par pavillon, et pas davantage.
  *
  * `sauf` écarte un emplacement du relevé : celui qu'on est en train de

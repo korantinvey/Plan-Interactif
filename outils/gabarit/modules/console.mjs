@@ -1,75 +1,47 @@
 /* ============================================================
    Point d'entrée de la console
 
-   Mêmes règles que `plan.mjs` : le socle commun (`_console-base.html`) et ce
-   qui le suit restent un script classique, auquel ces noms sont confiés par
-   l'objet global. Ce sont les mêmes fonctions que celles du plan, et non plus
-   des copies : un échappement corrigé ici l'est sur toutes les pages, et une
-   vignette de logo se recadre selon la règle même du plan.
+   Mêmes règles que `plan.mjs` : ce qui reste du code soudé est un script
+   classique, auquel ces noms sont confiés par l'objet global.
 
-   Le reste est sorti de la console elle-même, morceau par morceau : l'export
-   (partagé avec le rapport), le vocabulaire de la correspondance des champs,
-   la fenêtre d'avancement d'une synchronisation, l'icône de l'onglet, l'appel
-   des fonctions du projet, le fuseau horaire, la synchronisation et les
-   vignettes des logos, les comptes ; puis les salons eux-mêmes — la liste,
-   celui qu'on regarde, leurs pavillons (`evenements.mjs`) —, et ce qui ne
-   tenait qu'à eux : la fiche d'un salon, sa provenance, la fiche détail, la
-   duplication. Ce qu'ils ne peuvent pas importer — la fenêtre du socle,
-   l'appel à la base, ce que la console redessine — leur est confié par le
-   code soudé (`brancheExport`, `brancheAvancement`, `brancheFonctions`,
-   `brancheFuseau`, `brancheSynchronisation`, `brancheComptes`,
-   `brancheEvenements`, `brancheProvenance`, `brancheFicheDetail`,
-   `brancheDuplication`, `brancheFiche`), à la place que leur code tenait.
+   La console en est sortie morceau par morceau : l'export (partagé avec le
+   rapport), le vocabulaire de la correspondance des champs, la fenêtre
+   d'avancement d'une synchronisation, l'icône de l'onglet, l'appel des
+   fonctions du projet, le fuseau horaire, la synchronisation et les
+   vignettes des logos, les comptes ; puis les salons eux-mêmes
+   (`evenements.mjs`) et ce qui ne tenait qu'à eux — la fiche d'un salon, sa
+   provenance, la fiche détail, la duplication ; enfin le socle commun avec
+   le rapport (`socle-console.mjs`, `fenetre-console.mjs`) et l'écran de la
+   console (`ecran-console.mjs`). Chacun importe ce qu'il appelle : ils ne
+   se confient plus entre eux que ce qui bouclerait.
+
+   Le code soudé ne garde que des branchements, à la place que leur code
+   tenait — le socle (`_console-base.html`), l'export (`_export.html`),
+   l'écran (`_console-js.html`) — et le démarrage de la page. Il ne reçoit
+   donc que ce qu'il y appelle : les branchements, ce que le socle rappelle
+   (`demarre`, `videEcran`), ce que l'export lit (`courant`, `selection`), et
+   de quoi choisir le premier écran (`CFG`, `SESSION`, `ecranConfig`,
+   `ecranConnexion`).
    ============================================================ */
-import { $ } from "./dom.mjs";
-import { esc, separeValeurs } from "./texte.mjs";
-import { CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON }
-  from "./session.mjs";
-import { exporteExposants, brancheExport } from "./export.mjs";
-import { DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
-  ACCORDS, aplani, autreFace } from "./correspondance.mjs";
-import { brancheAvancement } from "./avancement.mjs";
-import { reduitIcone } from "./icone-onglet.mjs";
-import { brancheFonctions, refus } from "./appel-fonction.mjs";
-import { brancheFuseau, champFuseau } from "./fuseau.mjs";
-import { brancheSynchronisation, synchronise } from "./synchronisation.mjs";
-import { MOI, poseComptes, brancheComptes, litMonProfil, ouvreComptes } from "./comptes.mjs";
+import { CFG, SESSION, brancheSocle, ecranConfig, ecranConnexion } from "./socle-console.mjs";
+import { brancheExport } from "./export.mjs";
 import { vivants } from "./vivant.mjs";
-import { EVTS, selection, PLANS, poseEvenements, brancheEvenements, slugifie, courant,
-  chargePlans, majEvenement } from "./evenements.mjs";
-import { brancheProvenance } from "./provenance.mjs";
-import { brancheFicheDetail } from "./fiche-detail.mjs";
-import { brancheDuplication, dupliquer } from "./duplication.mjs";
-import { brancheFiche, dessineFiche, ouvreSources } from "./fiche-evenement.mjs";
+import { selection, courant } from "./evenements.mjs";
+import { brancheConsole, demarre, videEcran } from "./ecran-console.mjs";
 
 Object.assign(globalThis, {
-  $, esc, separeValeurs,
-  CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON,
-  exporteExposants, brancheExport,
-  DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
-  ACCORDS, aplani, autreFace,
-  brancheAvancement,
-  reduitIcone,
-  brancheFonctions, refus,
-  brancheFuseau, champFuseau,
-  brancheSynchronisation, synchronise,
-  poseComptes, brancheComptes, litMonProfil, ouvreComptes,
-  poseEvenements, brancheEvenements, slugifie, courant, chargePlans, majEvenement,
-  brancheProvenance,
-  brancheFicheDetail,
-  brancheDuplication, dupliquer,
-  brancheFiche, dessineFiche, ouvreSources,
+  brancheExport,
+  courant,
+  brancheSocle, ecranConfig, ecranConnexion,
+  brancheConsole, demarre, videEcran,
 });
 
-/* Le profil du compte connecté est un état du module des comptes, remplacé à
-   chaque chargement : le code soudé le lit par son nom, toujours à jour, et
-   l'oublie par `poseComptes`. */
-Object.defineProperties(globalThis, vivants({ MOI: () => MOI }, "poseComptes"));
+/* Le salon ouvert est un état du module des salons, remplacé au chargement,
+   au choix dans la liste, à la création et au rechargement : l'export le lit
+   par son nom au moment du clic, toujours à jour. */
+Object.defineProperties(globalThis, vivants({ selection: () => selection }, "poseEvenements"));
 
-/* Les salons, celui qu'on regarde et leurs pavillons sont des états du module
-   des salons, remplacés au chargement, au choix dans la liste, à la création
-   et au rechargement : le code soudé les lit par leur nom, toujours à jour, et
-   les remplace par `poseEvenements`. */
-Object.defineProperties(globalThis, vivants({
-  EVTS: () => EVTS, selection: () => selection, PLANS: () => PLANS,
-}, "poseEvenements"));
+/* Le projet et la session sont des états du socle, qu'il est seul à
+   remplacer — à la configuration, à la connexion, au renouvellement du jeton,
+   à la déconnexion : le démarrage de la page les lit par leur nom. */
+Object.defineProperties(globalThis, vivants({ CFG: () => CFG, SESSION: () => SESSION }, "poseSession"));

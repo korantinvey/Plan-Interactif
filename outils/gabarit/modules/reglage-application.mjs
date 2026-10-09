@@ -44,9 +44,9 @@ import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { oublieCache, REPOS } from "./enregistrement.mjs";
 
 /* L'oubli du cache du relais et le temps de repos de la configuration
-   viennent de `enregistrement.mjs`, module d'administration lui aussi. Ce que
-   le code soudé tient encore, le branchement le confie : le champ intitulé
-   des volets (`_mode-admin.html`). */
+   viennent de `enregistrement.mjs`, module d'administration lui aussi. Le
+   branchement confie le champ intitulé des volets (`modules/fiche-zone.mjs`
+   `champZone`). */
 /** @type {(hote: HTMLElement, titre: string, dedans: any, aide?: string) => any} */
 let champZone;
 

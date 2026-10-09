@@ -47,7 +47,7 @@ const EQUILIBRE = 4;
    ordre, et rien de plus : le plan ne connaît pas la fréquentation réelle du
    stand, et ne prétend pas la connaître. Ce que l'ordonnanceur en retient est
    donc un prix, payé dans la seule monnaie qu'il connaisse — le mètre, celle
-   de `TRANSFERT_M` (`_journee.html`) qui chiffre déjà un changement de pavillon.
+   de `TRANSFERT_M` (`sejour.mjs`) qui chiffre déjà un changement de pavillon.
 
    Les points ci-dessous se lisent « à tel taux d'occupation, tel détour vaut
    encore la peine d'être fait pour l'éviter », et la peine s'interpole entre

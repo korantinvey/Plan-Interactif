@@ -7,24 +7,23 @@
    ce réglage — `ordreCorps`, `groupesFiche`, `montreIntitule`, restés dans
    `_fiche.html` parce que la fiche publique les appelle à chaque ouverture.
 
-   L'aperçu, les libellés des champs, la fiche ouverte derrière la fenêtre et
-   l'écriture de la colonne sont encore soudés : `_ordre-fiche.html` les
-   confie par `brancheReglageFiche`, à la place que ce code tenait.
+   L'aperçu s'importe de `apercus.mjs`. Les libellés des champs et la fiche
+   ouverte derrière la fenêtre sont encore soudés, l'écriture de la colonne
+   vient de `fiche-zone.mjs` : `_ordre-fiche.html` les confie par
+   `brancheReglageFiche`, à la place que ce code tenait.
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
+import { clesPortees, apercuFiche, contenuApercu } from "./apercus.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 let PREFIXE_PERSO;
-let clesPortees;
 let ordreCorps;
 let libelleCorps;
 let montre;
 let groupesFiche;
 let montreIntitule;
-let apercuFiche;
 let modeleRetenu;
-let contenuApercu;
 let ecritColonneEvenement;
 let ouvre;
 let coexChoisit;
@@ -657,13 +656,13 @@ export function voletOrdre(hote){
  * Le branchement, appelé par `_ordre-fiche.html` dans la tranche
  * d'administration qui portait ce code.
  *
- * @param {{ PREFIXE_PERSO: string, clesPortees: Function, ordreCorps: Function,
+ * @param {{ PREFIXE_PERSO: string, ordreCorps: Function,
  *   libelleCorps: Function, montre: Function, groupesFiche: Function,
- *   montreIntitule: Function, apercuFiche: Function, modeleRetenu: Function,
- *   contenuApercu: Function, ecritColonneEvenement: Function, ouvre: Function,
+ *   montreIntitule: Function, modeleRetenu: Function,
+ *   ecritColonneEvenement: Function, ouvre: Function,
  *   coexChoisit: Function }} b
  */
 export function brancheReglageFiche(b){
-  ({ PREFIXE_PERSO, clesPortees, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
-     apercuFiche, modeleRetenu, contenuApercu, ecritColonneEvenement, ouvre, coexChoisit } = b);
+  ({ PREFIXE_PERSO, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
+     modeleRetenu, ecritColonneEvenement, ouvre, coexChoisit } = b);
 }

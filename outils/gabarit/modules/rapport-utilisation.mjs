@@ -9,30 +9,19 @@
    pour les compter ici reviendrait à télécharger un salon entier.
 
    L'écran vit ici, son état compris, et seul `rapport.mjs` l'embarque. Ce
-   qu'un module ne peut pas importer — l'appel à la base, la session, la barre
-   d'état, la brique d'un bloc, l'adresse des pages — appartient au socle
-   (`_console-base.html`), qui le lui confie par `brancheRapport`, à la place
-   que ce code tenait (`_rapport-js.html`). En retour, le socle appelle
-   `demarre` après la connexion et `videEcran` à la déconnexion, et l'export
+   que le socle tient — l'appel à la base, la session, la barre d'état, la
+   brique d'un bloc, l'adresse des pages — vient de `socle-console.mjs`, que
+   la console importe aussi ; la session y est un état, lu à l'instant : la
+   connexion et la déconnexion la remplacent sous les yeux de la page. Les
+   commandes de la barre se posent par `brancheRapport`, à la place que ce
+   code tenait (`_rapport-js.html`). En retour, le socle appelle `demarre`
+   après la connexion et `videEcran` à la déconnexion, et l'export
    (`_export.html`) lit `selection` et `courant` au moment du clic.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { nb, CANAUX_STAND, AUTRE, exporteExposants } from "./export.mjs";
-
-/* Ce que le socle tient, confié par `brancheRapport`. La session se lit à
-   l'instant : la connexion et la déconnexion la remplacent sous les yeux de
-   la page. */
-/** @type {(chemin: string, options?: RequestInit) => Promise<any>} */
-let rest;
-/** @type {() => any} */
-let session;
-/** @type {(txt: string, erreur?: boolean) => void} */
-let signale;
-/** @type {(titre: string, note?: string) => HTMLDivElement} */
-let bloc;
-/** @type {string} */
-let BASE_PAGES;
+import { rest, SESSION, signale, bloc, BASE_PAGES } from "./socle-console.mjs";
 
 const CLE_EVT = "rapport-evenement";
 
@@ -247,7 +236,7 @@ function jours(hote, liste) {
 function dessineRapport() {
   const f = $("rapport");
   f.innerHTML = "";
-  if (!session()) { f.innerHTML = '<div class="vide">Connectez-vous pour lire le rapport.</div>'; return; }
+  if (!SESSION) { f.innerHTML = '<div class="vide">Connectez-vous pour lire le rapport.</div>'; return; }
   if (!EVTS.length) {
     f.innerHTML = '<div class="vide">Aucun événement.<br>Créez-en un depuis la console.</div>';
     return;
@@ -413,7 +402,7 @@ function dessineBarre() {
       '<option value="' + x[0] + '">' + x[1] + '</option>').join("");
   }
   p.value = periode;
-  $("btnExcel").disabled = !(session() && selection);
+  $("btnExcel").disabled = !(SESSION && selection);
 }
 
 /* ------------------------------------------------------------------
@@ -460,19 +449,11 @@ export async function demarre() {
    Le branchement
    ------------------------------------------------------------------ */
 /**
- * Ce que le socle confie au rapport, appelé par le code soudé à la place que
- * ce code tenait (`_rapport-js.html`). Les commandes de la barre s'y
- * branchent, au même rang qu'avant parmi le reste de la page.
- *
- * @param {{ rest: typeof rest, session: typeof session, signale: typeof signale,
- *           bloc: typeof bloc, BASE_PAGES: string }} b
+ * Les commandes de la barre, appelé par le code soudé à la place que ce code
+ * tenait (`_rapport-js.html`) : elles s'y branchent au même rang qu'avant
+ * parmi le reste de la page.
  */
-export function brancheRapport(b) {
-  rest = b.rest;
-  session = b.session;
-  signale = b.signale;
-  bloc = b.bloc;
-  BASE_PAGES = b.BASE_PAGES;
+export function brancheRapport() {
   $("choixEvt").onchange = (e) => {
     selection = e.target.value;
     try { localStorage.setItem(CLE_EVT, selection); } catch (err) {}

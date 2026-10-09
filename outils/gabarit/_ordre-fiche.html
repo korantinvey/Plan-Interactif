@@ -4,14 +4,13 @@
    Le volet lui-même vit dans `modules/reglage-fiche.mjs`, que seul
    `plan-admin.mjs` embarque ; il se branche ici, à la place que son code
    tenait, et ce que le code soudé tient encore lui est confié : les libellés
-   et l'ordre des champs de la fiche, l'aperçu des réglages, la fiche ouverte
-   derrière la fenêtre. */
+   et l'ordre des champs de la fiche, la fiche ouverte derrière la fenêtre.
+   L'aperçu des réglages, sorti du code soudé, s'importe. */
 brancheReglageFiche({
-  PREFIXE_PERSO, clesPortees, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
-  apercuFiche, modeleRetenu, contenuApercu, ouvre, coexChoisit,
-  /* Déclarée plus bas, dans `_mode-admin.html` : on la confie par un détour,
-     lu au moment d'écrire, et non par sa valeur, qui n'existe pas encore ici. */
-  ecritColonneEvenement: (colonne, secours, change) => ecritColonneEvenement(colonne, secours, change),
+  PREFIXE_PERSO, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
+  modeleRetenu, ouvre, coexChoisit,
+  // l'écriture d'une colonne de l'événement vient de `modules/fiche-zone.mjs`
+  ecritColonneEvenement,
 });
 /* @fin-admin */
 

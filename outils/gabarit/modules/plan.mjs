@@ -36,9 +36,6 @@ import { JOURS, MOIS, momentLocal, jourLong, jourCourt, dateDeCle, jourBref, jou
 import { QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure }
   from "./mesure.mjs";
-import { GENRES_RESSOURCE, poidsDesJours, rangeSejour } from "./ordonnanceur.mjs";
-import { CHARGE, chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, chargeCellule, brancheCharge }
-  from "./charge-annoncee.mjs";
 import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { sponsorRetenu, ouvreSponsor, suitSponsor, resteSponsor, fermeSponsor, accueilleSponsor,
   brancheSponsor } from "./sponsor.mjs";
@@ -65,6 +62,14 @@ import { ICI_ACTIF, brancheIci, montreBandeauIci, demarreIci } from "./ici.mjs";
 import { brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
 import { TUTO, TUTO_DELAI, proposeTutoriel, brancheTutoriel } from "./tutoriel.mjs";
+import { finInstant } from "./sejour.mjs";
+import { appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee } from "./journee.mjs";
+import { ADMIN, retireAdmin } from "./mode-admin.mjs";
+import { PLACE_LIBELLES, libSel, brancheLibellePlace, placementLibelle } from "./libelle-place.mjs";
+import { SORTE_GEO, brancheEmplacements, appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
+import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
+  bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
+  brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -84,8 +89,6 @@ Object.assign(globalThis, {
   minutesDe, ecritHeure, ecritMinutes, instantMural,
   QR_VERSION_LISIBLE, qrTrame, qrChemin, qrSvg,
   mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure,
-  GENRES_RESSOURCE, poidsDesJours, rangeSejour,
-  chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, chargeCellule, brancheCharge,
   appDuSalon, iconeDeLApplication,
   sponsorRetenu, ouvreSponsor, suitSponsor, resteSponsor, fermeSponsor, accueilleSponsor,
   brancheSponsor,
@@ -109,6 +112,14 @@ Object.assign(globalThis, {
   brancheIci, montreBandeauIci, demarreIci,
   brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion,
   TUTO_DELAI, proposeTutoriel, brancheTutoriel,
+  finInstant,
+  appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee,
+  retireAdmin,
+  brancheLibellePlace, placementLibelle,
+  brancheEmplacements, appliqueAjouts, appliqueGeometries,
+  ITI, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
+  bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
+  brancheTiroirItineraire,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -118,11 +129,6 @@ Object.defineProperties(globalThis, vivants({
   EXPOSANTS: () => EXPOSANTS, HEBERGES: () => HEBERGES, CONFERENCES: () => CONFERENCES,
   PAR_HEBERGE: () => PAR_HEBERGE,
 }));
-
-/* La charge que les autres journées ont annoncée, remplacée à chaque lecture :
-   la préparation du séjour la lit par accesseur. Seul le module l'écrit, par
-   `litLaCharge`. */
-Object.defineProperties(globalThis, vivants({ CHARGE: () => CHARGE }, "litLaCharge"));
 
 /* La liste du visiteur, que le module remplace au chargement, au vidage, et
    quand un parcours reçu prend sa place : le code soudé la lit par accesseur,
@@ -140,3 +146,26 @@ Object.defineProperties(globalThis, vivants({ ICI_ACTIF: () => ICI_ACTIF }, "pos
    l'efface en la quittant. L'invitation à installer et la proposition des
    rappels la lisent par accesseur, pour ne pas passer devant elle. */
 Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));
+
+/* Le mode administration est-il ouvert ? Tout le plan le lit, public compris,
+   souvent pour se taire hors de l'administration ; seule son ouverture le
+   pose (`bande-admin.mjs` `activeAdmin`), et la page publique ne l'a pas. */
+Object.defineProperties(globalThis, vivants({ ADMIN: () => ADMIN }, "activeAdmin"));
+
+/* Le placement des libellés à la main, et le libellé qu'on retouche : le
+   dessin des noms les lit par accesseur ; seul l'outil de l'exploitant les
+   change (`placement-libelles.mjs`), hors de quoi ils restent faux et vides. */
+Object.defineProperties(globalThis, vivants({ PLACE_LIBELLES: () => PLACE_LIBELLES },
+  "modePlacementLibelles"));
+Object.defineProperties(globalThis, vivants({ libSel: () => libSel }, "choisitLibelle"));
+
+/* La couche dont l'exploitant reprend les formes, ou rien : le rendu par la
+   carte graphique le lit par accesseur pour savoir si l'on édite ; seul
+   l'outil de l'exploitant le change (`reprise-emplacements.mjs`), hors de
+   quoi il reste vide. */
+Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "modeGeometrie"));
+
+/* La visée de l'itinéraire en cours, ou rien : la borne la lit encore par le
+   code soudé, qui la lui confie. Elle ne change que par sa porte
+   (`poseVisee`), par laquelle la borne l'arme pour elle. */
+Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee"));

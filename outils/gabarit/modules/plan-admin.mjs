@@ -12,60 +12,95 @@
    ============================================================ */
 import "./plan.mjs";
 import { reduitLogo } from "./depot-image.mjs";
-import { blocApplication, brancheReglageApplication } from "./reglage-application.mjs";
-import { blocSponsor, brancheReglageSponsor } from "./reglage-sponsor.mjs";
-import { coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur }
-  from "./chaleur.mjs";
-import { ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcrits, ecritLiens,
+import { brancheReglageApplication } from "./reglage-application.mjs";
+import { brancheReglageSponsor } from "./reglage-sponsor.mjs";
+import { coloreChaleur, rangChaleur, evenementCourant, brancheChaleur } from "./chaleur.mjs";
+import { ROLES_ITI, cleRoleIti, nomRoleIti, lienEcrits, ecritLiens,
   annuaireLiaisons } from "./itineraire.mjs";
 import { brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
-  cartePointerMove, cartePointerUp, voletEnvirons } from "./calage-carte.mjs";
-import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, rappelsOfferts,
-  proposeRappels } from "./rappels.mjs";
-import { essaieRappelReel } from "./essai-rappel.mjs";
-import { caseInstallation, brancheReglageInstallation } from "./reglage-installation.mjs";
+  cartePointerMove, cartePointerUp } from "./calage-carte.mjs";
+import { brancheReglageInstallation } from "./reglage-installation.mjs";
 import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
 import { codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci } from "./affiche-ici.mjs";
-import { NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion } from "./reglage-suggestion.mjs";
-import { reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel } from "./tutoriel.mjs";
+import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
   pousseConfiguration, brancheSauvegarde, brancheEnregistrement } from "./enregistrement.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants } from "./aimants.mjs";
-import { voletOrdre, brancheReglageFiche } from "./reglage-fiche.mjs";
+import { brancheReglageFiche } from "./reglage-fiche.mjs";
 import { CALAGE, bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
+import { brancheVolets } from "./volets.mjs";
+import { activeAdmin, brancheBandeAdmin } from "./bande-admin.mjs";
+import { champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEvenement, brancheFicheZone }
+  from "./fiche-zone.mjs";
+import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+  libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
+import { brancheApercus } from "./apercus.mjs";
+import { brancheReglageRappel } from "./reglage-rappel.mjs";
+import { glisseFenetre, ouvreReglages, brancheReglages } from "./reglages.mjs";
+import { branchePile, remplitPanneau } from "./pile.mjs";
+import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
+  pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
+  brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
+import { dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
+  appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
+  editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition, geste } from "./edition.mjs";
+import { poseNappe, rafraichitApercu, brancheNappe } from "./nappe.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
-  blocApplication, brancheReglageApplication,
-  blocSponsor, brancheReglageSponsor,
-  coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur,
-  ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcrits, ecritLiens,
+  brancheReglageApplication,
+  brancheReglageSponsor,
+  coloreChaleur, rangChaleur, evenementCourant, brancheChaleur,
+  ROLES_ITI, cleRoleIti, nomRoleIti, lienEcrits, ecritLiens,
   annuaireLiaisons,
   brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
-  cartePointerMove, cartePointerUp, voletEnvirons,
-  RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, rappelsOfferts,
-  proposeRappels,
-  essaieRappelReel,
-  caseInstallation, brancheReglageInstallation,
+  cartePointerMove, cartePointerUp,
+  brancheReglageInstallation,
   ecranAcces, brancheAcces,
   codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci,
-  NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion,
-  reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel,
+  brancheReglageSuggestion,
   majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
   pousseConfiguration, brancheSauvegarde, brancheEnregistrement,
   ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
   correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
   appliqueDimension, brancheAimants,
-  voletOrdre, brancheReglageFiche,
+  brancheReglageFiche,
   bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
+  brancheVolets,
+  activeAdmin, brancheBandeAdmin,
+  champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEvenement, brancheFicheZone,
+  lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+  libellePointerUp, branchePlacementLibelles,
+  branchePile, remplitPanneau,
+  brancheApercus,
+  brancheReglageRappel,
+  glisseFenetre, ouvreReglages, brancheReglages,
+  lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
+  pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
+  brancheRepriseEmplacements,
+  dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
+  appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
+  editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition,
+  poseNappe, rafraichitApercu, brancheNappe,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
    l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
    poignée qui se mesure en pixels. */
 Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
+
+/* L'emplacement dont on reprend la forme, l'outil d'ajout pris et le tracé en
+   cours : les gestes et le clavier les lisent par accesseur ; seul l'outil
+   les change, en choisissant une forme ou un outil, ou en fermant un tracé. */
+Object.defineProperties(globalThis, vivants({ geoSel: () => geoSel }, "choisitGeo"));
+Object.defineProperties(globalThis, vivants({ outilGeo: () => outilGeo }, "choisitOutilGeo"));
+Object.defineProperties(globalThis, vivants({ traceAjout: () => traceAjout }, "fermeAjout"));
+/* Le geste d'édition en cours, ou rien : le module le pose en saisissant une
+   forme et l'efface en la lâchant. Le dessin le lit par accesseur, pour garder
+   les points d'accrochage d'un geste qui sort du plan. */
+Object.defineProperties(globalThis, vivants({ geste: () => geste }, "editionPointerDown"));

@@ -28,7 +28,7 @@ module.exports = [
   // code à sa place sur l'affiche
   ") scale(",
 
-  // `_console-js.html` : le paramètre que le lien de la console ajoute à
+  // `modules/ecran-console.mjs` : le paramètre que le lien de la console ajoute à
   // l'adresse du plan pour l'ouvrir en borne — une adresse ne se traduit pas
   "&borne",
 

@@ -8,30 +8,13 @@
    le règle (`ouvreProvenance`). La fiche du salon, la fiche détail et la
    synchronisation l'importent.
 
-   Ce qu'il ne peut pas importer lui est confié par la console
-   (`brancheProvenance`, `_console-js.html`) : la fenêtre du socle, sa grille
-   et la barre d'état. Le salon ouvert et son écriture viennent de
-   `evenements.mjs`.
+   La fenêtre du socle, sa grille et la barre d'état viennent du socle de la
+   console (`fenetre-console.mjs`, `socle-console.mjs`). Le salon ouvert et
+   son écriture viennent de `evenements.mjs`.
    ============================================================ */
 import { courant, majEvenement } from "./evenements.mjs";
-
-/** @type {{
- *   ouvreModale: (titre: string, remplit: (corps: HTMLElement) => void,
- *     boutons: Array<{ libelle: string, genre?: string, action?: () => any }>,
- *     apres?: () => void) => void,
- *   grille: () => HTMLElement,
- *   signale: (txt: string, erreur?: boolean) => void,
- * }} */
-let _console = {
-  ouvreModale: () => {},
-  grille: () => document.createElement("div"),
-  signale: () => {},
-};
-
-/** Ce que la console confie à la provenance : voir `_console`. */
-export function brancheProvenance(branche) {
-  _console = branche;
-}
+import { ouvreModale } from "./fenetre-console.mjs";
+import { grille, signale } from "./socle-console.mjs";
 
 /* ============================================================
    Provenance des données
@@ -131,7 +114,7 @@ function ligneSource(dom, libelle, offerts, aide) {
     e.sources = { ...(e.sources || {}) };
     e.sources[dom] = { fournisseur: ev.target.value };
     try { await majEvenement(e.id, { sources: e.sources }); }
-    catch (err) { _console.signale(err.message, true); }
+    catch (err) { signale(err.message, true); }
   };
   return l;
 }
@@ -160,9 +143,9 @@ export function resumeProvenance(e) {
 }
 
 export function ouvreProvenance(apres) {
-  _console.ouvreModale("Provenance des données", (corps) => {
+  ouvreModale("Provenance des données", (corps) => {
     const e = courant();
-    const g = _console.grille();
+    const g = grille();
     DOMAINES.forEach(([dom, lib, offerts, aide]) => {
       const l = ligneSource(dom, lib, offerts, aide);
       if (source(e, dom) === "aucun") l.classList.add("source-inerte");

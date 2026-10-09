@@ -37,12 +37,16 @@
  */
 
 import { $ } from "./dom.mjs";
+import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
 import { SLUG, BORNE } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { resteSponsor } from "./sponsor.mjs";
 import { ecritDistance, ecritDuree } from "./itineraire.mjs";
+import { SEJOUR, JOURNEE, vueJournee as VUE_JOURNEE, joursAVenir } from "./journee.mjs";
+import { ITI, ROUTE, attente as attenteIti, visee as viseeIti, poseVisee, bandeauVisee, fermeItineraire }
+  from "./tiroir-itineraire.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
    se lance qu'une fois la page démarrée, bien après le branchement. */
@@ -59,15 +63,15 @@ let svg = null;
 /**
  * Le branchement, appelé par `_tutoriel.html` à la place de la visite.
  *
- * L'état de l'itinéraire, de la journée, du code « Vous êtes ici » et de
- * l'éditeur se confie par des lecteurs, non par des valeurs : le code soudé
- * le remplace à chaque geste, et la visite doit lire celui du moment.
+ * L'état de l'itinéraire, du code « Vous êtes ici » et de l'éditeur se
+ * confie par des lecteurs, non par des valeurs : le code soudé le remplace à
+ * chaque geste, et la visite doit lire celui du moment. Celui de la journée
+ * s'importe de `journee.mjs`, qui le tient.
  *
  * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
- *   centre: Function, joursAVenir: Function, ferme: Function, fermeParcours: Function,
- *   fermeItineraire: Function, etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
- *   route: () => any, attente: () => any, iti: () => any, visee: () => any, eteintVisee: Function,
- *   journee: () => any, vueJournee: () => boolean, sejour: () => any, iciActif: () => boolean,
+ *   centre: Function, ferme: Function, fermeParcours: Function,
+ *   etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
+ *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
  */
 export function brancheTutoriel(b){
@@ -82,22 +86,22 @@ const optionActive = (cle) => soude.optionActive(cle);
 const montre = (type, cle) => soude.montre(type, cle);
 const changePlan = (i) => soude.changePlan(i);
 const centre = (o) => soude.centre(o);
-const joursAVenir = () => soude.joursAVenir();
 const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
-const fermeItineraire = () => soude.fermeItineraire();
 const ETROIT = () => soude.etroit();
-/* Le trajet demandé (`_itineraire.html` `ROUTE`, `attente`, `ITI`), la visée
-   en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire l'éteint. */
-const route = () => soude.route();
-const attente = () => soude.attente();
-const iti = () => soude.iti();
-const visee = () => soude.visee();
-const eteintVisee = () => soude.eteintVisee();
-// la journée calculée et ce que le tiroir montre (`_journee.html`)
-const journee = () => soude.journee();
-const vueJournee = () => soude.vueJournee();
-const sejour = () => soude.sejour();
+/* Le trajet demandé (`tiroir-itineraire.mjs` `ROUTE`, `attente`, `ITI`), la
+   visée en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire
+   l'éteint — sans passer par « finVisee », qui rouvrirait le tiroir qu'on
+   referme. */
+const route = () => ROUTE;
+const attente = () => attenteIti;
+const iti = () => ITI;
+const visee = () => viseeIti;
+const eteintVisee = () => { poseVisee(null); bandeauVisee(); };
+// la journée calculée et ce que le tiroir montre (`journee.mjs`)
+const journee = () => JOURNEE;
+const vueJournee = () => VUE_JOURNEE;
+const sejour = () => SEJOUR;
 // un code « Vous êtes ici » vient de poser le visiteur sur le plan (`_ici.html`)
 const iciActif = () => soude.iciActif();
 /* Un geste d'exploitant en cours — libellé qu'on place, trait qu'on trace,
@@ -158,8 +162,9 @@ const tutoFicheOuverte = () => tutoOuvert("detail") && $("voile").classList.cont
 const tutoFiche = () => tutoFicheOuverte() && state.sel ? parId.get(state.sel) || null : null;
 
 const tutoParcours = () => conf("_parcours").visible !== false;
-/* Sans « Path2D », l'itinéraire est retiré de la page (voir la fin de
-   « _itineraire.html ») : la visite n'a rien à en montrer. */
+/* Sans « Path2D », l'itinéraire est retiré de la page (voir
+   « tiroir-itineraire.mjs » `brancheTiroirItineraire`) : la visite n'a rien
+   à en montrer. */
 const tutoItineraire = () =>
   conf("_itineraire").visible !== false && typeof Path2D !== "undefined";
 /* La journée organisée est une option du plan : le salon qui ne l'a pas prise
@@ -732,11 +737,22 @@ function afficheTuto(e, ch){
  */
 const pxTuto = (v) => Math.round(v * 100) / 100 + "px";
 
-/** La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place. */
+/**
+ * La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place.
+ *
+ * Celle que le visiteur voit. Sous la carte graphique, le plan qu'on regarde
+ * est un dessin, et le SVG qu'il relit reste caché, figé dans la vue où le
+ * dessin a pris la main : la zone désignée et le trajet tracé, qui vivent dans
+ * ce SVG, y gardaient leur place d'avant le recentrage, et la bulle s'écartait
+ * d'un endroit où ils n'étaient plus — pour se poser parfois sur eux. Leur
+ * place se calcule donc d'après la vue, comme celle de la forme d'où la fiche
+ * s'ouvre (`_vue.html` `rectVisee`).
+ */
 function boiteTuto(el){
   if (!el || !el.isConnected) return null;
-  const r = el.getBoundingClientRect();
-  return r.width > 0 && r.height > 0 ? r : null;
+  const r = GL.actif && svg && el !== svg && svg.contains(el)
+    ? rectEcranWebgl(el) : el.getBoundingClientRect();
+  return r && r.width > 0 && r.height > 0 ? r : null;
 }
 
 /**
@@ -812,7 +828,7 @@ function rameneTuto(el){
  * se paie.
  *
  * Sur un téléphone la bulle prend la largeur : il ne reste que le haut et le
- * bas, et c'est entre les deux qu'on tranche.
+ * bas, ou le dessous de ce qu'on désigne, et c'est entre eux qu'on tranche.
  *
  * `force` vaut pour une consigne nouvelle. Hors de là, la bulle ne bouge que
  * pour libérer nettement la vue : un plan qu'on fait glisser sous elle l'aurait
@@ -856,6 +872,11 @@ function placeTuto(force){
     const vis = boiteTuto($("viseur"));
     if (vis) places.push([x, vis.bottom + 8]);
     places.push([x, s.bottom - h - bord]);
+    /* Et juste sous ce qu'on désigne. Les pictos du plan se rangent au bord
+       droit, sous la bande du salon : la place du haut les recouvrait, et
+       celle du bas parlait d'un bouton à l'autre bout de l'écran. Venue après
+       les autres, cette place ne l'emporte que si elle fait mieux. */
+    if (cible) places.push([x, cible.bottom + 8]);
   } else {
     if (cible) places.push([cible.right - w, cible.bottom + 14], [cible.left, cible.bottom + 14],
                            [cible.right - w, cible.top - h - 14], [cible.left - w - 14, cible.top]);
@@ -867,11 +888,18 @@ function placeTuto(force){
   const loin = (x, y) => !cible ? 0
     : (Math.max(0, cible.left - (x + w), x - cible.right) +
        Math.max(0, cible.top - (y + h), y - cible.bottom)) * 25;
+  /* Ce qu'on désigne ne se cache jamais, pas même d'un coin. Son poids seul
+     n'y suffisait pas : sur un téléphone, couvrir le bout d'un picto coûtait
+     moins que s'en éloigner, et le toucher demandé tombait sur la bulle — sa
+     croix quittait la visite. Une place qui le recouvre passe donc après
+     toutes celles qui le laissent libre. */
+  const cache = (x, y) => !!cible && x < cible.right && x + w > cible.left &&
+    y < cible.bottom && y + h > cible.top;
   const cout = (x, y) => evite.reduce((t, { r, poids }) => {
     const dx = Math.min(x + w, r.right) - Math.max(x, r.left);
     const dy = Math.min(y + h, r.bottom) - Math.max(y, r.top);
     return dx > 0 && dy > 0 ? t + dx * dy * poids : t;
-  }, loin(x, y));
+  }, loin(x, y) + (cache(x, y) ? 1e9 : 0));
   let choix = null, mieux = Infinity;
   places.forEach(p => {
     const x = Math.round(Math.max(s.left + bord, Math.min(s.right - w - bord, p[0])));

@@ -1,25 +1,20 @@
 /* ============================================================
    Dupliquer un salon — l'édition suivante, sans ce qui n'est qu'à celle-ci
 
-   Le bouton « Dupliquer l'événement » de la barre aboutit ici. Ce que le
-   module ne peut pas importer lui est confié par la console
-   (`brancheDuplication`, `_console-js.html`) : la fenêtre de saisie du
-   socle, l'appel à la base, le rechargement de la console une fois la copie
-   créée, et la barre d'état.
+   Le bouton « Dupliquer l'événement » de la barre aboutit ici. La fenêtre de
+   saisie, l'appel à la base et la barre d'état viennent du socle de la
+   console (`fenetre-console.mjs`, `socle-console.mjs`). Le rechargement de la
+   console une fois la copie créée lui est confié par l'écran de la console
+   (`brancheDuplication`, `ecran-console.mjs`), qui l'importe : l'importer ici
+   bouclerait.
    ============================================================ */
 import { slugifie } from "./evenements.mjs";
+import { demande } from "./fenetre-console.mjs";
+import { rest, signale } from "./socle-console.mjs";
 
-/** @type {{
- *   demande: (titre: string, libelle: string, valeur: string, suite: (v: string) => any) => void,
- *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
- *   charge: () => Promise<void>,
- *   signale: (txt: string, erreur?: boolean) => void,
- * }} */
+/** @type {{ charge: () => Promise<void> }} */
 let _console = {
-  demande: () => {},
-  rest: async () => null,
   charge: async () => {},
-  signale: () => {},
 };
 
 /** Ce que la console confie à la duplication : voir `_console`. */
@@ -28,12 +23,12 @@ export function brancheDuplication(branche) {
 }
 
 export function dupliquer(e) {
-  _console.demande("Dupliquer l'événement", "Nom de la copie", e.nom + " — copie", async (nom) => {
+  demande("Dupliquer l'événement", "Nom de la copie", e.nom + " — copie", async (nom) => {
     try {
       // l'édition suivante a ses propres identifiants Klipso : on ne recopie
       // ni l'identifiant d'événement, ni les pavillons. Le fuseau choisi, si :
       // l'édition suivante se tient d'ordinaire au même endroit
-      await _console.rest("evenement", {
+      await rest("evenement", {
         method: "POST",
         headers: { "Prefer": "return=representation" },
         body: JSON.stringify({
@@ -43,6 +38,6 @@ export function dupliquer(e) {
         }),
       });
       await _console.charge();
-    } catch (err) { _console.signale(err.message, true); }
+    } catch (err) { signale(err.message, true); }
   });
 }

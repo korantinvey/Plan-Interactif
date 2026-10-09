@@ -1,6 +1,7 @@
-/* `outils/gabarit/_geometrie.html` — la reprise à la main de la géométrie
-   d'un stand ou d'une zone organisateur : le cadenas de la couche, et ce que
-   la palette dit du geste. */
+/* `outils/gabarit/modules/reprise-emplacements.mjs` — la reprise à la main
+   de la géométrie d'un stand ou d'une zone organisateur, et l'ajout d'un
+   emplacement que la source n'a pas : le cadenas de la couche, et ce que la
+   palette dit du geste. */
 module.exports = {
   "Déverrouiller : la géométrie pourra être reprise": "Unlock: shapes can then be reworked",
   "Verrouiller : la géométrie ne se reprend plus": "Lock: shapes can no longer be reworked",
