@@ -266,7 +266,7 @@ let _gestes = [], _envoiDiffere = null;
 
    Un paquet qui n'aboutit pas est donc rangé sur l'appareil, et repart de
    lui-même : au retour du réseau, ou à la prochaine ouverture du plan. C'est le
-   geste de `rattrapeRetard` (`_pousse.html`), et pour la même raison — personne
+   geste de `rattrapeRetard` (`enregistrement.mjs`), et pour la même raison — personne
    ne viendra cliquer à la place du visiteur.
 
    Il emporte le temps qu'il a attendu, sans quoi une matinée sans réseau

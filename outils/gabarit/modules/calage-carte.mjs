@@ -9,10 +9,11 @@
    cours de réglage par un lecteur confié au branchement.
 
    Ce que le code soudé tient encore — les réglages et leur enregistrement,
-   le panneau des calques, la vue et ses gestes, les identifiants de base des
-   pavillons — lui est confié par `brancheCalageCarte`, que `_environs.html`
-   appelle à la place que ce code y tenait : les boutons de la palette s'y
-   branchent au même rang qu'avant.
+   le panneau des calques, la vue et ses gestes — lui est confié par
+   `brancheCalageCarte`, que `_environs.html` appelle à la place que ce code y
+   tenait : les boutons de la palette s'y branchent au même rang qu'avant. Les
+   identifiants de base des pavillons, et l'oubli du plan public par le
+   relais, viennent de `enregistrement.mjs`, module d'administration lui aussi.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, P } from "./donnees.mjs";
@@ -24,12 +25,13 @@ import { DEG, versTerre, versLePlan, reancre, aireDuContour, centreDuContour, ax
 import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCarteGL, dessineFondCarte,
   cleMasqueCarte, masqueCarte, contourDuHall, poseMasqueCarte, refaitFondCarte,
   confieCalageEnCours } from "./environs.mjs";
+import { identifiants, oublieCache } from "./enregistrement.mjs";
 
 /* Ce que le code soudé confie au branchement : les réglages (`CONF`, que le
    changement de salon remplace, et `conf`, qui en ouvre une entrée) et leur
    enregistrement, le panneau des calques et ce qui dit s'il est là
-   (`ADMIN`, `MONTE`), la vue (`view`) et ses gestes, et les identifiants de
-   base des pavillons (`_pousse.html`). Ce qui change se lit à l'instant. */
+   (`ADMIN`, `MONTE`), la vue (`view`) et ses gestes. Ce qui change se lit à
+   l'instant. */
 /**
  * @typedef {object} PageCalage
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
@@ -42,8 +44,6 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
  * @property {any} svg le plan
  * @property {(clientX: number, clientY: number) => number[]} versPlan
  * @property {(tenu: boolean) => void} saisitPlan
- * @property {(acces: any) => Promise<Record<string, any>>} identifiants
- * @property {(acces: any) => void} oublieCache
  * @property {() => void} poseVue
  */
 /** @type {PageCalage} */
@@ -284,13 +284,13 @@ async function enregistreCalage(cal){
   if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
   /* La page ne connaît les pavillons que par leur identifiant Klipso ;
      `identifiants` donne celui de la base, qui seul s'écrit. */
-  const planId = (await soude.identifiants(acces))[P().id];
+  const planId = (await identifiants(acces))[P().id];
   if (!planId) throw new Error("ce pavillon n'est pas encore en base : enregistrez la configuration d'abord.");
   await base(acces, "plan?id=eq." + planId, {
     method: "PATCH", body: JSON.stringify({ calage: cal }),
   }).catch(e => { throw manqueCalage(e); });
   P().calage = cal;
-  soude.oublieCache(acces);
+  oublieCache(acces);
 }
 
 /** Le calage déjà enregistré, s'il y en a un. Sans rattrapage : l'appelant
@@ -299,7 +299,7 @@ async function enregistreCalage(cal){
 async function calageEnregistre(){
   const acces = accesBase();
   if (!acces) return null;
-  const planId = (await soude.identifiants(acces))[P().id];
+  const planId = (await identifiants(acces))[P().id];
   if (!planId) return null;
   const l = await base(acces, "plan?select=calage&id=eq." + planId);
   return l && l.length ? l[0].calage : null;

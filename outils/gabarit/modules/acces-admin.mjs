@@ -63,8 +63,9 @@ async function sessionValide(cfg, session){
 
 /**
  * La fenêtre d'accès. Le plan la rouvre aussi quand la base refuse une
- * session périmée (`_admin2.html`, `_pousse.html`, sous garde `typeof` : la
- * page publique, qui ne la reçoit pas, n'a rien à rouvrir).
+ * session périmée (`_admin2.html`, sous garde `typeof` : la page publique,
+ * qui ne la reçoit pas, n'a rien à rouvrir ; `enregistrement.mjs`, qui
+ * l'importe).
  *
  * @param {string} [message]
  */
