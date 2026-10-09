@@ -1325,23 +1325,23 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/tutoriel.mjs` — 987 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1011 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
-`brancheTutoriel` 75 · `conf` 82 · `optionActive` 83 · `montre` 84 · `changePlan` 85
-`centre` 86 · `ferme` 87 · `fermeParcours` 88 · `fermeItineraire` 89 · `ETROIT` 90
-`route` 93 · `attente` 94 · `iti` 95 · `visee` 96 · `eteintVisee` 97 · `journee` 99
-`vueJournee` 100 · `sejour` 101 · `iciActif` 103 · `dessinEnCours` 106 · `reglageTuto` 134
-`tutoPropose` 143 · `cleTuto` 147 · `tutoOuvert` 149 · `tutoModale` 150
-`tutoFicheOuverte` 156 · `tutoFiche` 159 · `tutoParcours` 161 · `tutoItineraire` 164
-`tutoJournee` 168 · `zoneDuTuto` 176 · `insecable` 193 · `phraseTrajetTuto` 199
-`chapitresTuto` 459 · `proposeTutoriel` 479 · `lanceTutoriel` 537 · `quitteTutoriel` 624
-`chapitreTuto` 635 · `battementTuto` 644 · `finTuto` 662 · `afficheTuto` 679 · `pxTuto` 734
-`boiteTuto` 737 · `repereTuto` 751 · `rameneTuto` 784 · `placeTuto` 822 · `voileTuto` 904
-`rafaleTuto` 921 · `marqueZoneTuto` 941 · `marqueLibelleTuto` 976
+`brancheTutoriel` 76 · `conf` 83 · `optionActive` 84 · `montre` 85 · `changePlan` 86
+`centre` 87 · `ferme` 88 · `fermeParcours` 89 · `fermeItineraire` 90 · `ETROIT` 91
+`route` 94 · `attente` 95 · `iti` 96 · `visee` 97 · `eteintVisee` 98 · `journee` 100
+`vueJournee` 101 · `sejour` 102 · `iciActif` 104 · `dessinEnCours` 107 · `reglageTuto` 135
+`tutoPropose` 144 · `cleTuto` 148 · `tutoOuvert` 150 · `tutoModale` 151
+`tutoFicheOuverte` 157 · `tutoFiche` 160 · `tutoParcours` 162 · `tutoItineraire` 165
+`tutoJournee` 169 · `zoneDuTuto` 177 · `insecable` 194 · `phraseTrajetTuto` 200
+`chapitresTuto` 460 · `proposeTutoriel` 480 · `lanceTutoriel` 538 · `quitteTutoriel` 625
+`chapitreTuto` 636 · `battementTuto` 645 · `finTuto` 663 · `afficheTuto` 680 · `pxTuto` 735
+`boiteTuto` 748 · `repereTuto` 763 · `rameneTuto` 796 · `placeTuto` 834 · `voileTuto` 928
+`rafaleTuto` 945 · `marqueZoneTuto` 965 · `marqueLibelleTuto` 1000
 
 Éléments :
 
