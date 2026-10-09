@@ -65,13 +65,19 @@ const pages = fs.readdirSync(WEB).filter((f) => f.endsWith(".html")).sort();
    des fichiers, et lus par personne parce qu'ils ne sont pas des pages. Or le
    service, lui, s'installe et survit à la visite : une faute de syntaxe y
    coûte plus cher qu'ailleurs. */
-const scripts = fs.readdirSync(WEB).filter((f) => f.endsWith(".js")).sort();
+const scripts = fs.readdirSync(WEB).filter((f) => f.endsWith(".js")).sort()
+  /* Et ceux que les pages du plan chargent sous un nom à empreinte : le script
+     des modules, le moteur de langue. */
+  .concat(fs.existsSync(path.join(WEB, "versions"))
+    ? fs.readdirSync(path.join(WEB, "versions")).filter((f) => f.endsWith(".js")).sort()
+        .map((f) => path.join("versions", f))
+    : []);
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "controle-"));
 let controles = 0;
 const fautes = [];
 
 for (const script of scripts) {
-  const fichier = path.join(temp, script.replace(/\./g, "_") + ".mjs");
+  const fichier = path.join(temp, script.replace(/[./]/g, "_") + ".mjs");
   fs.copyFileSync(path.join(WEB, script), fichier);
   try {
     execFileSync(process.execPath, ["--check", fichier], { stdio: "pipe" });
