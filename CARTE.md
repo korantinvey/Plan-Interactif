@@ -57,14 +57,9 @@ Fonctions :
 `reprendTaille` 387 · `dupliqueForme` 408 · `pousseForme` 433 · `ecritDimensions` 450
 `appliqueDimension` 469
 
-### `_application.html` — 327 l. → plan-admin.html
+### `_application.html` — 13 l.
 
 - l.1 · 19. L'application installée — son icône et son nom
-
-Fonctions :
-
-`adresseIconeApp` 57 · `appDuSalon` 65 · `iconeDeLApplication` 68 · `nomAppDefaut` 79
-`ecritApplication` 94 · `blocApplication` 135
 
 ### `_auth-plan.html` — 204 l. → plan-admin.html
 
@@ -111,23 +106,9 @@ Fonctions :
 
 - l.1 · 13. Mesure d'utilisation — le branchement
 
-### `_chaleur.html` — 638 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 13 l.
 
-- l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.435 · Remise à zéro des compteurs
-
-Fonctions :
-
-`nbChal` 32 · `tonChaleur` 51 · `niveauChaleur` 73 · `valeurChaleur` 76 · `chargeChaleur` 89
-`coloreChaleur` 135 · `cartoucheChaleur` 170 · `mesureCartoucheChaleur` 234
-`replieChaleur` 240 · `ecritEtatChaleur` 251 · `dessineEchelleChaleur` 259
-`dessineTopChaleur` 279 · `phraseChaleur` 321 · `rafraichitChaleur` 346
-`montreChaleur` 380 · `rangChaleur` 416 · `aplati` 457 · `voletMesure` 462
-`evenementCourant` 488 · `ouvreRemiseAZero` 507 · `lanceRemiseAZero` 599
-
-Éléments :
-
-`#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
+- l.1 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 
 ### `_config.js` — 15 l. → config.js
 
@@ -621,7 +602,7 @@ Fonctions :
 
 `#lienPublic`
 
-### `_recherche.html` — 1269 l.
+### `_recherche.html` — 1270 l.
 
 - l.3 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 
@@ -629,17 +610,17 @@ Fonctions :
 
 `indexeSecteurs` 24 · `secteursMontres` 37 · `couleurConf` 41 · `couleurSecteur` 50
 `BANDES` 71 · `majFondus` 79 · `pastilleSecteur` 117 · `coloreSecteurs` 130
-`peintSecteur` 181 · `appliqueSecteurs` 194 · `filtreTheme` 211 · `themeFiltrable` 291
-`ordreCriteres` 311 · `clesCriteres` 334 · `libelleCritere` 341 · `valeursCritere` 360
-`texteCriteres` 373 · `texteAnglaisPerso` 389 · `indexeCriteres` 403 · `refaitCriteres` 437
-`dansCriteres` 444 · `critereActif` 452 · `basculeCritere` 454 · `videCriteres` 463
-`majVideQ` 472 · `videRecherche` 485 · `nCriteres` 500 · `majCriteres` 515
-`remplitCriteres` 582 · `basculeCriteres` 721 · `ouvreCriteres` 726 · `fermeCriteres` 742
-`filtre` 759 · `reposeRetrait` 779 · `critParSociete` 783 · `cherchable` 793 · `visible` 800
-`releveHotes` 821 · `visibleSurPlan` 829 · `visibleSociete` 840 · `marqueRetrait` 856
-`appliqueFiltre` 874 · `oublieRetrait` 890 · `reprendRecherche` 899 · `rangSorte` 912
-`codeCase` 934 · `caseNumero` 951 · `sousLigne` 971 · `liste` 985 · `marqueChoisie` 1113
-`prechargeMarque` 1139 · `prechargeLesVignettes` 1196 · `chargeUnLot` 1242
+`peintSecteur` 182 · `appliqueSecteurs` 195 · `filtreTheme` 212 · `themeFiltrable` 292
+`ordreCriteres` 312 · `clesCriteres` 335 · `libelleCritere` 342 · `valeursCritere` 361
+`texteCriteres` 374 · `texteAnglaisPerso` 390 · `indexeCriteres` 404 · `refaitCriteres` 438
+`dansCriteres` 445 · `critereActif` 453 · `basculeCritere` 455 · `videCriteres` 464
+`majVideQ` 473 · `videRecherche` 486 · `nCriteres` 501 · `majCriteres` 516
+`remplitCriteres` 583 · `basculeCriteres` 722 · `ouvreCriteres` 727 · `fermeCriteres` 743
+`filtre` 760 · `reposeRetrait` 780 · `critParSociete` 784 · `cherchable` 794 · `visible` 801
+`releveHotes` 822 · `visibleSurPlan` 830 · `visibleSociete` 841 · `marqueRetrait` 857
+`appliqueFiltre` 875 · `oublieRetrait` 891 · `reprendRecherche` 900 · `rangSorte` 913
+`codeCase` 935 · `caseNumero` 952 · `sousLigne` 972 · `liste` 986 · `marqueChoisie` 1114
+`prechargeMarque` 1140 · `prechargeLesVignettes` 1197 · `chargeUnLot` 1243
 
 ### `_reglages.html` — 927 l. → plan-admin.html
 
@@ -668,16 +649,9 @@ Fonctions :
 `ancre` 492 · `place` 493 · `libelles` 495 · `decaleLibelle` 582 · `facteurLibelle` 583
 `libelleForce` 584 · `libelleZone` 587 · `libelleEmplacement` 606
 
-### `_sponsor.html` — 572 l. → plan-admin.html
+### `_sponsor.html` — 14 l. → plan-admin.html
 
 - l.1 · 18. Le sponsor — un logo le temps du chargement
-
-Fonctions :
-
-`reglageSponsor` 96 · `secondesSponsor` 99 · `modeSponsor` 112 · `sponsorRetenu` 131
-`cleSponsor` 162 · `sponsorEnCache` 165 · `retientSponsor` 180 · `ouvreSponsor` 205
-`suitSponsor` 298 · `resteSponsor` 323 · `fermeSponsor` 329 · `accueilleSponsor` 345
-`blocSponsor` 414
 
 ### `_styles-divers.css` — 315 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -780,6 +754,14 @@ Fonctions :
 `majAnimationWebgl` 1540 · `animeWebgl` 1548 · `objetSous` 1571 · `cibleWebgl` 1578
 `priseWebgl` 1585 · `libelleSousWebgl` 1590 · `rectEcranWebgl` 1595
 
+### `modules/application.mjs` — 37 l. → plan, plan-admin
+
+- l.1 · L'application installée — ce que le plan public en sait
+
+Fonctions :
+
+`adresseIconeApp` 26 · `appDuSalon` 34 · `iconeDeLApplication` 37
+
 ### `modules/avancement.mjs` — 432 l. → console
 
 - l.1 · L'avancement d'une synchronisation — la fenêtre, et son secours
@@ -787,6 +769,25 @@ Fonctions :
 Fonctions :
 
 `brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
+
+### `modules/chaleur.mjs` — 674 l. → plan-admin
+
+- l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
+- l.455 · Remise à zéro des compteurs
+
+Fonctions :
+
+`nbChal` 56 · `tonChaleur` 75 · `niveauChaleur` 97 · `valeurChaleur` 100
+`chargeChaleur` 113 · `coloreChaleur` 159 · `cartoucheChaleur` 194
+`mesureCartoucheChaleur` 258 · `replieChaleur` 264 · `ecritEtatChaleur` 275
+`dessineEchelleChaleur` 283 · `dessineTopChaleur` 303 · `phraseChaleur` 345
+`rafraichitChaleur` 370 · `montreChaleur` 404 · `rangChaleur` 437 · `aplati` 477
+`voletMesure` 482 · `evenementCourant` 508 · `ouvreRemiseAZero` 527 · `lanceRemiseAZero` 619
+`brancheChaleur` 666
+
+Éléments :
+
+`#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
 ### `modules/charge-annoncee.mjs` — 228 l. → plan, plan-admin
 
@@ -937,11 +938,11 @@ Fonctions :
 `poseLissage` 84 · `peineDeCharge` 105 · `ecartDesJours` 191 · `poidsDesJours` 221
 `chargeDuJour` 244 · `rangeSejour` 253 · `trancheDe` 803 · `dilatationPour` 858
 
-### `modules/plan-admin.mjs` — 19 l. → plan-admin
+### `modules/plan-admin.mjs` — 25 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 76 l. → plan, plan-admin
+### `modules/plan.mjs` — 82 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -958,6 +959,23 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
+### `modules/reglage-application.mjs` — 331 l. → plan-admin
+
+- l.1 · L'application installée — son icône et son nom, le réglage de l'exploitant
+
+Fonctions :
+
+`brancheReglageApplication` 61 · `nomAppDefaut` 84 · `ecritApplication` 99
+`blocApplication` 140
+
+### `modules/reglage-sponsor.mjs` — 232 l. → plan-admin
+
+- l.1 · Le générique du démarrage, réglé par l'exploitant
+
+Fonctions :
+
+`brancheReglageSponsor` 32 · `blocSponsor` 75
+
 ### `modules/salon.mjs` — 43 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
@@ -973,6 +991,17 @@ Fonctions :
 Fonctions :
 
 `accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
+
+### `modules/sponsor.mjs` — 410 l. → plan, plan-admin
+
+- l.1 · Le sponsor — un logo le temps du chargement
+
+Fonctions :
+
+`reglageSponsor` 119 · `secondesSponsor` 122 · `modeSponsor` 135 · `sponsorRetenu` 154
+`cleSponsor` 185 · `sponsorEnCache` 188 · `retientSponsor` 203 · `ouvreSponsor` 228
+`suitSponsor` 321 · `resteSponsor` 346 · `fermeSponsor` 352 · `accueilleSponsor` 368
+`brancheSponsor` 402
 
 ### `modules/sur.mjs` — 190 l. → plan, plan-admin
 
