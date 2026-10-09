@@ -33,11 +33,11 @@ brancheBandeAdmin({
 /* @fin-admin */
 
 /* @admin — la fiche d'une zone, qu'on ne remplit qu'en administration */
-/* Les types de zone et la clé d'un emplacement ajouté se déclarent plus loin,
-   dans `_dessin.html` et `_geometrie.html` : on les confie par un détour. */
+/* Les types de zone se déclarent plus loin, dans `_dessin.html` : on les
+   confie par un détour. */
 brancheFicheZone({
   conf: () => CONF, typesZone: () => TYPES_ZONE, typeZone: (z) => typeZone(z),
-  cleAjout: (id) => cleAjout(id), annonce, enregistreConf, nomsAnglaisDesZones, rechAjout,
+  annonce, enregistreConf, nomsAnglaisDesZones,
   libelles, liste, cartouchePoi, majPaletteGeo, ouvre, rangeConferences,
 });
 /* @fin-admin */

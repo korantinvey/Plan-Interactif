@@ -270,10 +270,10 @@ svg.addEventListener("pointerup", e => {
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
-  /* @admin — le libellé qu'on glissait à la main */
+  /* @admin — le libellé qu'on glissait à la main, la forme qu'on reprenait */
   lacheLibelle();
+  lacheGeo();
   /* @fin-admin */
-  glisseGeo = null;
   drag = null;
   saisitPlan(false);
 });

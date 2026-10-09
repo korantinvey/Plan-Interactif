@@ -22,6 +22,7 @@ import { adresseSure, imageSure, assainitRiche } from "./sur.mjs";
 import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
+import { cleAjout, rechAjout } from "./emplacements.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
    loin dans le script — les réglages (`CONF`, que le changement de salon
@@ -31,11 +32,9 @@ import { reduitLogo } from "./depot-image.mjs";
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {() => any[]} typesZone les types d'une zone, `TYPES_ZONE`
  * @property {(z: any) => any} typeZone
- * @property {(id: string) => string} cleAjout
  * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
  * @property {() => void} nomsAnglaisDesZones
- * @property {(o: any) => void} rechAjout
  * @property {() => void} libelles
  * @property {() => void} liste
  * @property {() => void} cartouchePoi
@@ -48,11 +47,9 @@ let soude;
 const reglages = () => soude.conf();
 const typesZone = () => soude.typesZone();
 const typeZone = (z) => soude.typeZone(z);
-const cleAjout = (id) => soude.cleAjout(id);
 const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 const enregistreConf = () => soude.enregistreConf();
 const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
-const rechAjout = (o) => soude.rechAjout(o);
 const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const cartouchePoi = () => soude.cartouchePoi();
@@ -734,7 +731,7 @@ async function enregistreZone(o, v, depart){
  *
  * Les colonnes de l'événement ne valent que pour les zones de la source : le
  * serveur ne les applique qu'à celles-là. Celle-ci garde donc tout dans son
- * entrée de configuration (`_geometrie.html`), et part aux visiteurs à la
+ * entrée de configuration (`emplacements.mjs`), et part aux visiteurs à la
  * publication, avec le reste de l'apparence.
  */
 async function enregistreZoneAjoutee(o, v, depart){

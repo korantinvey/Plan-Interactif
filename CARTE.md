@@ -198,25 +198,9 @@ Fonctions :
 
 `#dGo` · `#dItin`
 
-### `_geometrie.html` — 933 l. → plan-admin.html
+### `_geometrie.html` — 32 l. → plan-admin.html
 
-- l.2 · 11 octies. Reprendre à la main la géométrie d'un emplacement
-
-Fonctions :
-
-`cleGeo` 30 · `geometrieSource` 49 · `reposeSource` 58 · `poseGeometrie` 67
-`retoucheGeo` 81 · `elargitEmprise` 94 · `appliqueGeometries` 115 · `cleVerrouGeo` 145
-`geoVerrouille` 146 · `basculeVerrouGeo` 148 · `boutonVerrouGeo` 163 · `modeGeometrie` 174
-`objetGeoSous` 201 · `groupeGeo` 211 · `choisitGeo` 219 · `cadreGeo` 234 · `prisesGeo` 254
-`curseurGeo` 266 · `dessinePoigneesGeo` 269 · `ecritDimensionsGeo` 297 · `nomSorteGeo` 309
-`majPaletteGeo` 311 · `finGesteGeo` 350 · `enregistreGeo` 368 · `geometrieOrigine` 382
-`retraceGeo` 397 · `pousseGeometrie` 408 · `appliqueDimensionGeo` 425 · `cleAjout` 464
-`anneauxValides` 478 · `rechAjout` 483 · `objetAjoute` 492 · `poseLien` 511
-`appliqueAjouts` 538 · `enregistreAjout` 574 · `ajouteEmplacement` 589 · `renommeAjout` 617
-`lieAjout` 649 · `ecritInfosAjout` 678 · `supprimeAjout` 705 · `choisitOutilGeo` 734
-`aideAjout` 741 · `fermeAjout` 751 · `ajoutPointerDown` 760 · `ajoutPointerMove` 776
-`ajoutPointerUp` 798 · `geometriePointerDown` 818 · `accrocheGeo` 849
-`geometriePointerMove` 851 · `geometriePointerUp` 902
+- l.1 · 11 octies. Reprendre à la main la géométrie d'un emplacement — le
 
 ### `_gestes.html` — 954 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -755,6 +739,18 @@ Fonctions :
 
 `brancheDuplication` 26 · `dupliquer` 30
 
+### `modules/emplacements.mjs` — 302 l. → plan, plan-admin
+
+- l.1 · Reprendre à la main la géométrie d'un emplacement — ce que le plan
+
+Fonctions :
+
+`reglages` 56 · `nomSurLePlan` 57 · `nomsAnglaisDesZones` 58 · `brancheEmplacements` 66
+`cleGeo` 70 · `poseSorteGeo` 79 · `geometrieSource` 92 · `reposeSource` 101
+`poseGeometrie` 110 · `retoucheGeo` 124 · `elargitEmprise` 137 · `appliqueGeometries` 158
+`cleAjout` 199 · `anneauxValides` 210 · `rechAjout` 215 · `objetAjoute` 224 · `poseLien` 243
+`appliqueAjouts` 270
+
 ### `modules/enregistrement.mjs` — 651 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
@@ -848,22 +844,22 @@ Fonctions :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `modules/fiche-zone.mjs` — 886 l. → plan-admin
+### `modules/fiche-zone.mjs` — 883 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
-- l.73 · La fiche d'une zone organisateur
-- l.792 · Masquer une zone organisateur
+- l.70 · La fiche d'une zone organisateur
+- l.789 · Masquer une zone organisateur
 
 Fonctions :
 
-`reglages` 48 · `typesZone` 49 · `typeZone` 50 · `cleAjout` 51 · `annonce` 52
-`enregistreConf` 53 · `nomsAnglaisDesZones` 54 · `rechAjout` 55 · `libelles` 56 · `liste` 57
-`cartouchePoi` 58 · `majPaletteGeo` 59 · `ouvre` 60 · `rangeConferences` 61
-`brancheFicheZone` 69 · `champZone` 99 · `champsZone` 124 · `champSalles` 216
-`nomDeZone` 268 · `cadreLogo` 294 · `champLogo` 366 · `editeurRiche` 404
-`memeFicheZone` 561 · `suitFicheZone` 568 · `verseFicheZone` 576 · `ficheZone` 602
-`enregistreZone` 627 · `enregistreZoneAjoutee` 740 · `basculeAffichageZone` 803
-`marqueZonesMasquees` 831 · `ecritColonnesEvenement` 851 · `ecritColonneEvenement` 885
+`reglages` 47 · `typesZone` 48 · `typeZone` 49 · `annonce` 50 · `enregistreConf` 51
+`nomsAnglaisDesZones` 52 · `libelles` 53 · `liste` 54 · `cartouchePoi` 55
+`majPaletteGeo` 56 · `ouvre` 57 · `rangeConferences` 58 · `brancheFicheZone` 66
+`champZone` 96 · `champsZone` 121 · `champSalles` 213 · `nomDeZone` 265 · `cadreLogo` 291
+`champLogo` 363 · `editeurRiche` 401 · `memeFicheZone` 558 · `suitFicheZone` 565
+`verseFicheZone` 573 · `ficheZone` 599 · `enregistreZone` 624 · `enregistreZoneAjoutee` 737
+`basculeAffichageZone` 800 · `marqueZonesMasquees` 828 · `ecritColonnesEvenement` 848
+`ecritColonneEvenement` 882
 
 ### `modules/forme.mjs` — 154 l. → plan, plan-admin
 
@@ -1066,27 +1062,26 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/pile.mjs` — 608 l. → plan-admin
+### `modules/pile.mjs` — 600 l. → plan-admin
 
 - l.1 · Le panneau des calques
-- l.125 · Panneau : deux sections, chacune rangée par nom
-- l.419 · Repères
-- l.471 · Fond du plan
+- l.117 · Panneau : deux sections, chacune rangée par nom
+- l.411 · Repères
+- l.463 · Fond du plan
 
 Fonctions :
 
-`estAdmin` 79 · `dessins` 80 · `calqueActif` 81 · `placeLibelles` 82 · `sorteGeo` 83
-`secteurs` 84 · `entrees` 85 · `conf` 86 · `enregistreConf` 87 · `jeton` 88 · `sousCle` 89
-`sousCalques` 90 · `joli` 91 · `styleFond` 92 · `styleDataGroupe` 93 · `styleData` 94
-`appliqueCouleursData` 95 · `appliqueFond` 96 · `suitNuancier` 97 · `secteursMontres` 99
-`couleurSecteur` 100 · `peintSecteur` 101 · `mesCalques` 102 · `creeCalque` 103
-`enregistreDessins` 104 · `dessineDessins` 105 · `peintCalque` 106 · `verrouille` 107
-`basculeVerrou` 108 · `pictoVerrou` 109 · `activeCalque` 110 · `memorise` 111
-`modePlacementLibelles` 112 · `geoVerrouille` 113 · `basculeVerrouGeo` 114
-`boutonVerrouGeo` 115 · `modeGeometrie` 116 · `ouvreOrdre` 117 · `branchePile` 121
-`nature` 143 · `boutonAjout` 150 · `boutonVerrou` 170 · `intertitre` 178
-`remplitPanneau` 187 · `sectionSelection` 435 · `sectionFond` 491 · `ligneCouleur` 549
-`rangSecteur` 569 · `rangSous` 582 · `defautCouleur` 604
+`estAdmin` 76 · `dessins` 77 · `calqueActif` 78 · `placeLibelles` 79 · `secteurs` 80
+`entrees` 81 · `conf` 82 · `enregistreConf` 83 · `jeton` 84 · `sousCle` 85
+`sousCalques` 86 · `joli` 87 · `styleFond` 88 · `styleDataGroupe` 89 · `styleData` 90
+`appliqueCouleursData` 91 · `appliqueFond` 92 · `suitNuancier` 93 · `secteursMontres` 95
+`couleurSecteur` 96 · `peintSecteur` 97 · `mesCalques` 98 · `creeCalque` 99
+`enregistreDessins` 100 · `dessineDessins` 101 · `peintCalque` 102 · `verrouille` 103
+`basculeVerrou` 104 · `pictoVerrou` 105 · `activeCalque` 106 · `memorise` 107
+`modePlacementLibelles` 108 · `ouvreOrdre` 109 · `branchePile` 113 · `nature` 135
+`boutonAjout` 142 · `boutonVerrou` 162 · `intertitre` 170 · `remplitPanneau` 179
+`sectionSelection` 427 · `sectionFond` 483 · `ligneCouleur` 541 · `rangSecteur` 561
+`rangSous` 574 · `defautCouleur` 596
 
 ### `modules/placement-libelles.mjs` — 189 l. → plan-admin
 
@@ -1099,11 +1094,11 @@ Fonctions :
 `choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
 `libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
 
-### `modules/plan-admin.mjs` — 81 l. → plan-admin
+### `modules/plan-admin.mjs` — 94 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 152 l. → plan, plan-admin
+### `modules/plan.mjs` — 160 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1219,6 +1214,31 @@ Fonctions :
 
 `brancheReglages` 66 · `glisseFenetre` 96 · `ouvreReglages` 108 · `voletZones` 236
 `champsFicheZone` 338 · `ficheZoneEnPlace` 408 · `voletPlan` 426 · `voletCoexposants` 474
+
+### `modules/reprise-emplacements.mjs` — 800 l. → plan-admin
+
+- l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
+
+Fonctions :
+
+`vue` 79 · `reglages` 80 · `conf` 81 · `calqueActif` 82 · `enregistreConf` 83
+`construitPanneau` 84 · `cadrePlan` 85 · `libelles` 86 · `oublieDists` 87
+`dessineDists` 88 · `baliseZone` 89 · `baliseStand` 90 · `appliqueSecteurs` 91
+`marqueRetrait` 92 · `liste` 93 · `nomsAnglaisDesZones` 94 · `ouvre` 95 · `ferme` 96
+`optionActive` 97 · `pictoVerrou` 98 · `activeCalque` 99 · `remplitListeSocietes` 100
+`societeSaisie` 101 · `etiquetteSociete` 102 · `apercu` 103 · `apercuGuide` 104
+`versPlan` 105 · `fermeIci` 106 · `cheminForme` 107 · `nouvelId` 108 · `lacheGeo` 119
+`cleVerrouGeo` 139 · `geoVerrouille` 140 · `basculeVerrouGeo` 142 · `boutonVerrouGeo` 157
+`modeGeometrie` 168 · `objetGeoSous` 195 · `groupeGeo` 205 · `choisitGeo` 213
+`cadreGeo` 228 · `prisesGeo` 248 · `curseurGeo` 260 · `dessinePoigneesGeo` 263
+`ecritDimensionsGeo` 291 · `nomSorteGeo` 303 · `majPaletteGeo` 305 · `finGesteGeo` 344
+`enregistreGeo` 362 · `geometrieOrigine` 376 · `retraceGeo` 391 · `pousseGeometrie` 402
+`appliqueDimensionGeo` 419 · `enregistreAjout` 434 · `ajouteEmplacement` 449
+`renommeAjout` 477 · `lieAjout` 509 · `ecritInfosAjout` 538 · `supprimeAjout` 565
+`choisitOutilGeo` 594 · `aideAjout` 601 · `fermeAjout` 611 · `ajoutPointerDown` 620
+`ajoutPointerMove` 636 · `ajoutPointerUp` 658 · `geometriePointerDown` 678
+`accrocheGeo` 709 · `geometriePointerMove` 711 · `geometriePointerUp` 762
+`brancheRepriseEmplacements` 780
 
 ### `modules/salon.mjs` — 50 l. → plan, plan-admin
 
