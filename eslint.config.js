@@ -39,6 +39,9 @@ module.exports = [
   {
     ignores: [
       "web/**", "node_modules/**", "supabase/**", ".wrangler/**",
+      // les copies de travail que Claude Code ouvre à côté du dépôt : chacune est
+      // un dépôt entier, relu chez elle et non deux fois depuis celui-ci
+      ".claude/**",
       "outils/tpl-multi.html", "outils/chk.js", "outils/brut/**", "outils/svg/**",
       "simulations/**", "test-results/**", "playwright-report/**",
       // relus par `outils/relecture.js`, tels que la page les assemble
