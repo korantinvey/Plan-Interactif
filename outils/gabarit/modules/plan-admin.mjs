@@ -48,6 +48,7 @@ import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, dess
 import { dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
   appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
   editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition, geste } from "./edition.mjs";
+import { poseNappe, rafraichitApercu, brancheNappe } from "./nappe.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -85,6 +86,7 @@ Object.assign(globalThis, {
   dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
   appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
   editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition,
+  poseNappe, rafraichitApercu, brancheNappe,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et

@@ -63,7 +63,7 @@ Fonctions :
 
 `mentionOsm` 39
 
-### `_borne.html` — 18 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_borne.html` — 20 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. La borne interactive — le branchement
 
@@ -248,7 +248,7 @@ Fonctions :
 
 `#reessaie`
 
-### `_ici.html` — 20 l. → plan-admin.html
+### `_ici.html` — 19 l.
 
 - l.1 · 11 septies. « Vous êtes ici » — le branchement
 
@@ -266,22 +266,11 @@ Fonctions :
 
 `retourAuxReglages` 33
 
-### `_itineraire.html` — 800 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 37 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
 
-Fonctions :
-
-`calculeRoute` 36 · `couleurNappe` 62 · `rafraichitApercu` 68 · `marchesIci` 111
-`rayonBout` 116 · `arreteTracage` 149 · `peintItineraire` 155 · `lanceTracage` 206
-`dessineItineraire` 231 · `rafraichitBouts` 253 · `cadreItineraire` 276 · `champIti` 300
-`fermeSugg` 304 · `montreSugg` 311 · `choisitPoint` 345 · `valideSaisie` 354
-`effaceItineraire` 366 · `relance` 393 · `montreResultat` 435 · `bandeauVisee` 577
-`armeVisee` 600 · `finVisee` 618 · `viseItineraire` 634 · `visePoi` 640 · `visePoint` 646
-`ouvreItineraire` 678 · `fermeItineraire` 706 · `versItineraire` 716
-`versItineraireDe` 719
-
-### `_journee.html` — 18 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 17 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite — le branchement
 
@@ -400,23 +389,23 @@ Fonctions :
 
 ### `_reglages.html` — 23 l. → plan-admin.html
 
-### `_rendu.html` — 662 l.
+### `_rendu.html` — 663 l.
 
 - l.3 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.146 · 3. Rendu du pavillon courant
-- l.521 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.522 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
 `mesureTexte` 11 · `largeur` 16 · `remesureTextes` 40 · `decoupe` 66 · `habille` 79
 `lignesSvg` 90 · `coexComptes` 107 · `coexChoisit` 108 · `ligneCode` 124
 `monteHabillage` 152 · `baliseZone` 181 · `baliseStand` 191 · `montePlan` 198
-`onglets` 233 · `changePlan` 255 · `texteDist` 302 · `texteCourtDist` 307 · `porteDist` 311
-`standPorte` 315 · `calqueDists` 324 · `traceDist` 355 · `oublieDists` 388
-`modesDuPlan` 392 · `releveDists` 394 · `dessineDists` 423 · `marquesListe` 449
-`poseDistsFiche` 479 · `refaitDistsFiche` 519 · `ancre` 529 · `place` 530 · `libelles` 532
-`decaleLibelle` 619 · `facteurLibelle` 620 · `libelleForce` 621 · `libelleZone` 624
-`libelleEmplacement` 643
+`onglets` 234 · `changePlan` 256 · `texteDist` 303 · `texteCourtDist` 308 · `porteDist` 312
+`standPorte` 316 · `calqueDists` 325 · `traceDist` 356 · `oublieDists` 389
+`modesDuPlan` 393 · `releveDists` 395 · `dessineDists` 424 · `marquesListe` 450
+`poseDistsFiche` 480 · `refaitDistsFiche` 520 · `ancre` 530 · `place` 531 · `libelles` 533
+`decaleLibelle` 620 · `facteurLibelle` 621 · `libelleForce` 622 · `libelleZone` 625
+`libelleEmplacement` 644
 
 ### `_sponsor.html` — 14 l. → plan-admin.html
 
@@ -446,7 +435,7 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 20 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 17 l.
 
 - l.1 · 17. La visite guidée — le branchement
 
@@ -487,19 +476,18 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `modules/affiche-ici.mjs` — 402 l. → plan-admin
+### `modules/affiche-ici.mjs` — 400 l. → plan-admin
 
 - l.1 · « Vous êtes ici » — l'affiche à coller, côté exploitant
 
 Fonctions :
 
-`visee` 28 · `vise` 29 · `bandeauVisee` 30 · `finVisee` 31 · `ferme` 32
-`fermeItineraire` 33 · `fermeParcours` 34 · `formeParId` 35 · `versPlan` 36 · `largeur` 37
-`prefixePlan` 58 · `coteIci` 70 · `nomCodeIci` 86 · `codeIci` 105 · `lienIci` 123
-`pointTouche` 150 · `codeIciAuPoint` 162 · `armeCodeIci` 168 · `afficheIci` 190
-`ligneAffiche` 230 · `nomFichierIci` 239 · `ouvreCodeIci` 254 · `boutonsCodeIci` 306
-`telechargeAfficheIci` 331 · `imprimeAfficheIci` 349 · `boutonCodeIci` 378
-`brancheAfficheIci` 402
+`visee` 31 · `vise` 32 · `ferme` 33 · `fermeParcours` 34 · `formeParId` 35 · `versPlan` 36
+`largeur` 37 · `prefixePlan` 58 · `coteIci` 70 · `nomCodeIci` 86 · `codeIci` 105
+`lienIci` 123 · `pointTouche` 150 · `codeIciAuPoint` 162 · `armeCodeIci` 168
+`afficheIci` 190 · `ligneAffiche` 230 · `nomFichierIci` 239 · `ouvreCodeIci` 254
+`boutonsCodeIci` 306 · `telechargeAfficheIci` 331 · `imprimeAfficheIci` 349
+`boutonCodeIci` 378 · `brancheAfficheIci` 400
 
 ### `modules/aimants.mjs` — 534 l. → plan-admin
 
@@ -584,21 +572,21 @@ Fonctions :
 `ajouteBatiments` 466 · `brancheBatiments` 518 · `boutonRecale` 562 · `pictoRecale` 571
 `calageRelu` 588 · `rouvreCalage` 614
 
-### `modules/borne.mjs` — 430 l. → plan, plan-admin
+### `modules/borne.mjs` — 431 l. → plan, plan-admin
 
 - l.1 · La borne interactive — un plan qui sait où il est
 
 Fonctions :
 
-`visee` 53 · `vise` 54 · `vue` 55 · `bandeauVisee` 56 · `changePlan` 57
-`fermeItineraire` 58 · `effaceItineraire` 59 · `ferme` 60 · `fermeParcours` 61
-`videLeParcours` 62 · `videRecherche` 63 · `formeParId` 64 · `versPlan` 65 · `cadrePlan` 66
-`fit` 67 · `pointBorne` 97 · `poseLieuBorne` 102 · `borneRetenue` 110 · `retientBorne` 116
-`oublieBorne` 119 · `lieuBorne` 138 · `lieuNomme` 157 · `pointLibre` 162
-`poseDepartImpose` 175 · `poseLaBorne` 186 · `remetLeDepart` 205 · `poseBorneIci` 219
-`armeLaPose` 228 · `montreBandeauBorne` 244 · `ecritDepartBorne` 258 · `rayonBorne` 268
-`dessineBorne` 273 · `rafraichitBorne` 289 · `rempliBorne` 294 · `relanceRepos` 323
-`reposeLaBorne` 330 · `demarreBorne` 366 · `brancheBorne` 415
+`visee` 54 · `vise` 55 · `vue` 56 · `bandeauVisee` 57 · `changePlan` 58
+`fermeItineraire` 59 · `effaceItineraire` 60 · `ferme` 61 · `fermeParcours` 62
+`videLeParcours` 63 · `videRecherche` 64 · `formeParId` 65 · `versPlan` 66 · `cadrePlan` 67
+`fit` 68 · `pointBorne` 98 · `poseLieuBorne` 103 · `borneRetenue` 111 · `retientBorne` 117
+`oublieBorne` 120 · `lieuBorne` 139 · `lieuNomme` 158 · `pointLibre` 163
+`poseDepartImpose` 176 · `poseLaBorne` 187 · `remetLeDepart` 206 · `poseBorneIci` 220
+`armeLaPose` 229 · `montreBandeauBorne` 245 · `ecritDepartBorne` 259 · `rayonBorne` 269
+`dessineBorne` 274 · `rafraichitBorne` 290 · `rempliBorne` 295 · `relanceRepos` 324
+`reposeLaBorne` 331 · `demarreBorne` 367 · `brancheBorne` 416
 
 ### `modules/calage-carte.mjs` — 828 l. → plan-admin
 
@@ -897,14 +885,14 @@ Fonctions :
 
 `#fuseaux`
 
-### `modules/ici.mjs` — 253 l. → plan, plan-admin
+### `modules/ici.mjs` — 255 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
 
 Fonctions :
 
-`relance` 61 · `litCodeIci` 92 · `poseIci` 115 · `retireIci` 142 · `oublieIciDeLAdresse` 172
-`montreBandeauIci` 188 · `demarreIci` 222 · `brancheIci` 244
+`relance` 63 · `litCodeIci` 94 · `poseIci` 117 · `retireIci` 144 · `oublieIciDeLAdresse` 174
+`montreBandeauIci` 190 · `demarreIci` 224 · `brancheIci` 246
 
 ### `modules/icone-app.mjs` — 126 l. → plan-admin
 
@@ -969,22 +957,21 @@ Fonctions :
 `routeParLiaisons` 2495 · `routeEntre` 2533 · `mesureMarches` 2571 · `coupeMarche` 2586
 `distancesDesArrets` 2602 · `ecritDistance` 2616 · `ecritDuree` 2624 · `phraseLiaison` 2638
 
-### `modules/journee.mjs` — 1265 l. → plan, plan-admin
+### `modules/journee.mjs` — 1261 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
 
 Fonctions :
 
-`datesSalon` 29 · `horairesSalon` 30 · `lueHeure` 31 · `select` 33 · `ficheConf` 34
-`basculeParcours` 35 · `rangParcours` 36 · `rafraichitParcours` 37 · `changePlan` 38
-`trace` 40 · `poseTrace` 41 · `dessineItineraire` 42 · `cadreItineraire` 43
-`joursSalon` 108 · `joursAVenir` 137 · `joursDefaut` 155 · `confsParJour` 165
-`departsProposes` 190 · `rangJournee` 212 · `lienJournee` 224 · `boutonJour` 247
-`arretJournee` 260 · `remplitOnglets` 307 · `jourDuStand` 336 · `ouvreChoixJour` 348
-`figeLaVisite` 405 · `placeSurJour` 414 · `rendAuPlan` 422 · `retireDuSejour` 428
-`remplitJournee` 438 · `ecritApercu` 651 · `appliqueVueParcours` 681 · `traceJournee` 723
-`montreLeJour` 732 · `perimeJournee` 747 · `oublieSejour` 762 · `ouvreOrganisation` 777
-`essaieSejour` 1157 · `lanceSejour` 1187 · `refaitSejour` 1226 · `brancheJournee` 1247
+`datesSalon` 30 · `horairesSalon` 31 · `lueHeure` 32 · `select` 34 · `ficheConf` 35
+`basculeParcours` 36 · `rangParcours` 37 · `rafraichitParcours` 38 · `changePlan` 39
+`trace` 41 · `joursSalon` 106 · `joursAVenir` 135 · `joursDefaut` 153 · `confsParJour` 163
+`departsProposes` 188 · `rangJournee` 210 · `lienJournee` 222 · `boutonJour` 245
+`arretJournee` 258 · `remplitOnglets` 305 · `jourDuStand` 334 · `ouvreChoixJour` 346
+`figeLaVisite` 403 · `placeSurJour` 412 · `rendAuPlan` 420 · `retireDuSejour` 426
+`remplitJournee` 436 · `ecritApercu` 649 · `appliqueVueParcours` 679 · `traceJournee` 721
+`montreLeJour` 730 · `perimeJournee` 745 · `oublieSejour` 760 · `ouvreOrganisation` 775
+`essaieSejour` 1155 · `lanceSejour` 1185 · `refaitSejour` 1224 · `brancheJournee` 1243
 
 ### `modules/libelle-place.mjs` — 91 l. → plan, plan-admin
 
@@ -1046,6 +1033,14 @@ Fonctions :
 ### `modules/motdepasse.mjs` — 14 l. → motdepasse
 
 - l.1 · Point d'entrée de la page du mot de passe
+
+### `modules/nappe.mjs` — 92 l. → plan-admin
+
+- l.1 · Itinéraire — la nappe de la grille de marche
+
+Fonctions :
+
+`jeton` 25 · `poseNappe` 45 · `couleurNappe` 47 · `rafraichitApercu` 53 · `brancheNappe` 89
 
 ### `modules/notifications.mjs` — 89 l. → plan, plan-admin
 
@@ -1121,11 +1116,11 @@ Fonctions :
 `choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
 `libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
 
-### `modules/plan-admin.mjs` — 104 l. → plan-admin
+### `modules/plan-admin.mjs` — 106 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 160 l. → plan, plan-admin
+### `modules/plan.mjs` — 171 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1275,16 +1270,16 @@ Fonctions :
 
 `cheminDuSalon` 33 · `cheminPartageable` 44
 
-### `modules/sejour.mjs` — 578 l. → plan, plan-admin
+### `modules/sejour.mjs` — 579 l. → plan, plan-admin
 
 - l.1 · La préparation du séjour — répartir les stands, puis dérouler les jours
 
 Fonctions :
 
-`brancheSejour` 34 · `minutesVisite` 36 · `horairesSalon` 37 · `seuilConcentration` 38
-`seuilImpose` 39 · `oublieMatrice` 86 · `finInstant` 91 · `pointConf` 99
-`matriceJournee` 118 · `derouleJournee` 189 · `prepareSejour` 333 · `calculeSejour` 535
-`apercuRepartition` 569
+`brancheSejour` 35 · `minutesVisite` 37 · `horairesSalon` 38 · `seuilConcentration` 39
+`seuilImpose` 40 · `oublieMatrice` 87 · `finInstant` 92 · `pointConf` 100
+`matriceJournee` 119 · `derouleJournee` 190 · `prepareSejour` 334 · `calculeSejour` 536
+`apercuRepartition` 570
 
 ### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
 
@@ -1374,6 +1369,23 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
+### `modules/tiroir-itineraire.mjs` — 810 l. → plan, plan-admin
+
+- l.1 · Itinéraire — le tiroir, la visée et le tracé
+
+Fonctions :
+
+`vue` 38 · `changeVue` 39 · `poseVue` 40 · `cadrePlan` 41 · `masque` 42 · `masqueDroite` 43
+`masqueHaut` 44 · `ETROIT` 45 · `changePlan` 46 · `ferme` 47 · `fermeParcours` 48
+`formeParId` 49 · `calculeRoute` 67 · `poseTrace` 90 · `marchesIci` 92 · `rayonBout` 97
+`arreteTracage` 130 · `peintItineraire` 136 · `lanceTracage` 187 · `dessineItineraire` 212
+`rafraichitBouts` 234 · `cadreItineraire` 257 · `champIti` 281 · `fermeSugg` 285
+`montreSugg` 292 · `choisitPoint` 326 · `valideSaisie` 335 · `effaceItineraire` 347
+`relance` 375 · `montreResultat` 417 · `poseVisee` 561 · `bandeauVisee` 563
+`armeVisee` 586 · `finVisee` 604 · `viseItineraire` 620 · `visePoi` 626 · `visePoint` 632
+`ouvreItineraire` 661 · `fermeItineraire` 689 · `versItineraire` 699
+`versItineraireDe` 702 · `brancheTiroirItineraire` 734
+
 ### `modules/trace.mjs` — 178 l. → plan, plan-admin
 
 - l.1 · Le SVG relu en nombres : transformations, tracés, couleurs
@@ -1383,23 +1395,23 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/tutoriel.mjs` — 1011 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1014 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
-`brancheTutoriel` 76 · `conf` 83 · `optionActive` 84 · `montre` 85 · `changePlan` 86
-`centre` 87 · `ferme` 88 · `fermeParcours` 89 · `fermeItineraire` 90 · `ETROIT` 91
-`route` 94 · `attente` 95 · `iti` 96 · `visee` 97 · `eteintVisee` 98 · `journee` 100
-`vueJournee` 101 · `sejour` 102 · `iciActif` 104 · `dessinEnCours` 107 · `reglageTuto` 135
-`tutoPropose` 144 · `cleTuto` 148 · `tutoOuvert` 150 · `tutoModale` 151
-`tutoFicheOuverte` 157 · `tutoFiche` 160 · `tutoParcours` 162 · `tutoItineraire` 165
-`tutoJournee` 169 · `zoneDuTuto` 177 · `insecable` 194 · `phraseTrajetTuto` 200
-`chapitresTuto` 460 · `proposeTutoriel` 480 · `lanceTutoriel` 538 · `quitteTutoriel` 625
-`chapitreTuto` 636 · `battementTuto` 645 · `finTuto` 663 · `afficheTuto` 680 · `pxTuto` 735
-`boiteTuto` 748 · `repereTuto` 763 · `rameneTuto` 796 · `placeTuto` 834 · `voileTuto` 928
-`rafaleTuto` 945 · `marqueZoneTuto` 965 · `marqueLibelleTuto` 1000
+`brancheTutoriel` 77 · `conf` 84 · `optionActive` 85 · `montre` 86 · `changePlan` 87
+`centre` 88 · `ferme` 89 · `fermeParcours` 90 · `ETROIT` 91 · `route` 96 · `attente` 97
+`iti` 98 · `visee` 99 · `eteintVisee` 100 · `journee` 102 · `vueJournee` 103 · `sejour` 104
+`iciActif` 106 · `dessinEnCours` 109 · `reglageTuto` 137 · `tutoPropose` 146 · `cleTuto` 150
+`tutoOuvert` 152 · `tutoModale` 153 · `tutoFicheOuverte` 159 · `tutoFiche` 162
+`tutoParcours` 164 · `tutoItineraire` 168 · `tutoJournee` 172 · `zoneDuTuto` 180
+`insecable` 197 · `phraseTrajetTuto` 203 · `chapitresTuto` 463 · `proposeTutoriel` 483
+`lanceTutoriel` 541 · `quitteTutoriel` 628 · `chapitreTuto` 639 · `battementTuto` 648
+`finTuto` 666 · `afficheTuto` 683 · `pxTuto` 738 · `boiteTuto` 751 · `repereTuto` 766
+`rameneTuto` 799 · `placeTuto` 837 · `voileTuto` 931 · `rafaleTuto` 948
+`marqueZoneTuto` 968 · `marqueLibelleTuto` 1003
 
 Éléments :
 

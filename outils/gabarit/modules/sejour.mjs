@@ -18,8 +18,9 @@ import { CHARGE, chargeSuivie, chargeCellule, dilatationDuJour } from "./charge-
 /* Ce que le code soudé tient encore, et rien avant qu'il l'ait confié : un
    calcul lancé trop tôt doit échouer bruyamment plutôt que de rendre une
    visite fausse. Les réglages du salon (`_admin1.html`) et le mode accessible
-   de l'itinéraire (`_itineraire.html` `ITI`, réaffecté là-bas : on le lit par
-   une fonction). */
+   de l'itinéraire (`tiroir-itineraire.mjs` `ITI`), lu par une fonction que
+   `journee.mjs` confie : l'importer d'ici tirerait le tiroir et la page dans
+   l'essai qui éprouve ce calcul seul, sous Node. */
 /** @type {Record<string, any>} */
 let soude = {};
 

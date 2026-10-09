@@ -39,6 +39,13 @@ découpe, qui devait garder le comportement à l'identique. À reprendre à la f
 
 ## Code et outils
 
+14. **Phrase publique dans un dictionnaire d'exploitant** : « Touchez le plan à
+    l'endroit où ce code sera affiché. » est affichée par `bandeauVisee`
+    (`modules/tiroir-itineraire.mjs`, public) mais traduite dans
+    `outils/anglais/affiche-ici.js` ; la page publique ne la reçoit que parce
+    qu'elle trouve la phrase dans son propre code.
+
+
 10. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
    dictionnaire d'une page par les premières lignes de déclaration d'un
    fichier source ; une ligne banale partagée y verse un dictionnaire entier
