@@ -110,30 +110,12 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2212 l. → admin-plans.html
-
-- l.483 · Provenance des données
-- l.622 · Contenu de la fiche détail
+### `_console-js.html` — 410 l. → admin-plans.html
 
 Fonctions :
 
-`fluxFonction` 25 · `slugifie` 99 · `courant` 103 · `charge` 105 · `chargePlans` 120
-`majEvenement` 125 · `selonAdresse` 145 · `majAdresse` 153 · `majBarre` 168
-`dessineChoix` 210 · `champ` 230 · `champFavicon` 273 · `dessineFiche` 359
-`fournisseurUtilise` 547 · `sourceNom` 557 · `source` 561 · `champCle` 566
-`ligneSource` 601 · `paraitSurFiche` 759 · `origineConferences` 765 · `origineProduits` 772
-`resumeProvenance` 837 · `resumeFiche` 858 · `caseFiche` 903 · `cibleEn` 951
-`champsPersos` 953 · `criteres` 959 · `ecritFiche` 962 · `caseCritere` 977 · `clePerso` 996
-`ajouteChampPerso` 1004 · `renommeChampPerso` 1022 · `retireChampPerso` 1070
-`lignesPerso` 1131 · `ligneOutil` 1152 · `ligneReglage` 1168 · `ouvreProvenance` 1180
-`ouvreSources` 1203 · `cadreFiche` 1255 · `ouvreFiche` 1285 · `cadreCategories` 1425
-`sousTitre` 1504 · `tableauChamps` 1519 · `champOrigine` 1745 · `majLiens` 2013
-`majIntegration` 2050 · `majMsgSync` 2057 · `dupliquer` 2081 · `videEcran` 2180
-`dessine` 2185 · `demarre` 2200
-
-Éléments :
-
-`#msgSync` · `#fragment` · `#btnCopier`
+`fluxFonction` 26 · `charge` 100 · `selonAdresse` 127 · `majAdresse` 135 · `majBarre` 150
+`dessineChoix` 192 · `majLiens` 245 · `videEcran` 378 · `dessine` 383 · `demarre` 398
 
 ### `_console.css` — 725 l. → console.css
 
@@ -736,7 +718,7 @@ Fonctions :
 `litComptes` 82 · `ligneMessage` 91 · `casesSalons` 101 · `ouvreComptes` 131
 `ouvreFicheCompte` 223
 
-### `modules/console.mjs` — 52 l. → console
+### `modules/console.mjs` — 75 l. → console
 
 - l.1 · Point d'entrée de la console
 
@@ -781,6 +763,14 @@ Fonctions :
 
 `poseDonnees` 50 · `P` 84
 
+### `modules/duplication.mjs` — 48 l. → console
+
+- l.1 · Dupliquer un salon — l'édition suivante, sans ce qui n'est qu'à celle-ci
+
+Fonctions :
+
+`brancheDuplication` 26 · `dupliquer` 30
+
 ### `modules/enregistrement.mjs` — 651 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
@@ -819,6 +809,15 @@ Fonctions :
 
 `essaieRappelReel` 37
 
+### `modules/evenements.mjs` — 79 l. → console
+
+- l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
+
+Fonctions :
+
+`poseEvenements` 41 · `brancheEvenements` 58 · `slugifie` 62 · `courant` 66
+`chargePlans` 68 · `majEvenement` 73
+
 ### `modules/export.mjs` — 232 l. → console, rapport
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
@@ -836,6 +835,34 @@ Fonctions :
 
 `_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
 `ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 93
+
+### `modules/fiche-detail.mjs` — 1311 l. → console
+
+- l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
+- l.46 · Contenu de la fiche détail
+
+Fonctions :
+
+`brancheFicheDetail` 42 · `paraitSurFiche` 183 · `origineConferences` 189
+`origineProduits` 196 · `resumeFiche` 260 · `caseFiche` 305 · `cibleEn` 353
+`champsPersos` 355 · `criteres` 361 · `ecritFiche` 364 · `caseCritere` 379 · `clePerso` 398
+`ajouteChampPerso` 406 · `renommeChampPerso` 424 · `retireChampPerso` 472
+`lignesPerso` 533 · `cadreFiche` 556 · `ouvreFiche` 586 · `cadreCategories` 726
+`sousTitre` 805 · `tableauChamps` 820 · `champOrigine` 1046
+
+### `modules/fiche-evenement.mjs` — 450 l. → console
+
+- l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
+
+Fonctions :
+
+`brancheFiche` 58 · `champ` 69 · `champFavicon` 112 · `dessineFiche` 189 · `ligneOutil` 319
+`ligneReglage` 335 · `champCle` 349 · `ouvreSources` 388 · `majIntegration` 433
+`majMsgSync` 440
+
+Éléments :
+
+`#msgSync` · `#fragment` · `#btnCopier`
 
 ### `modules/forme.mjs` — 154 l. → plan, plan-admin
 
@@ -1012,6 +1039,16 @@ Fonctions :
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
+### `modules/provenance.mjs` — 178 l. → console
+
+- l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
+- l.36 · Provenance des données
+
+Fonctions :
+
+`brancheProvenance` 32 · `fournisseurUtilise` 100 · `sourceNom` 110 · `source` 114
+`ligneSource` 118 · `resumeProvenance` 141 · `ouvreProvenance` 162
+
 ### `modules/qr.mjs` — 315 l. → plan, plan-admin
 
 - l.1 · Le code QR, sans bibliothèque
@@ -1147,14 +1184,14 @@ Fonctions :
 `lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
 `assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
 
-### `modules/synchronisation.mjs` — 230 l. → console
+### `modules/synchronisation.mjs` — 229 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
-`brancheSynchronisation` 40 · `etapesPressenties` 58 · `synchronise` 73
-`fabriqueLesVignettes` 170 · `envoieVignettes` 223
+`brancheSynchronisation` 39 · `etapesPressenties` 57 · `synchronise` 72
+`fabriqueLesVignettes` 169 · `envoieVignettes` 222
 
 ### `modules/temps.mjs` — 129 l. → plan, plan-admin
 
