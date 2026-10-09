@@ -16,10 +16,14 @@ import { blocApplication, brancheReglageApplication } from "./reglage-applicatio
 import { blocSponsor, brancheReglageSponsor } from "./reglage-sponsor.mjs";
 import { coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur }
   from "./chaleur.mjs";
+import { ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcrits, ecritLiens,
+  annuaireLiaisons } from "./itineraire.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
   blocApplication, brancheReglageApplication,
   blocSponsor, brancheReglageSponsor,
   coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur,
+  ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcrits, ecritLiens,
+  annuaireLiaisons,
 });
