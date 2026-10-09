@@ -20,16 +20,16 @@
    compté.
    ============================================================ */
 import { classeurXl, enregistreFichier } from "./classeur.mjs";
+import { signale, rest } from "./socle-console.mjs";
 
 /* Ce que l'export tient de la page qui l'ouvre, et qu'un module ne peut pas
-   importer : le salon choisi, la ligne de ce salon, la barre où l'on parle et
-   l'appel à la base. La console et le rapport l'ont chacun à leur façon, et le
-   confient ici par `brancheExport` (`_export.html`). Lus au moment du clic,
-   jamais avant : le salon choisi change sous les yeux de la page. */
-/** @type {{ selection: () => (string|null), courant: () => any,
- *           signale: (txt: string, erreur?: boolean) => void,
- *           rest: (chemin: string, options?: RequestInit) => Promise<any> }} */
-let _page = { selection: () => null, courant: () => null, signale: () => {}, rest: async () => null };
+   importer : le salon choisi et la ligne de ce salon. La console et le
+   rapport l'ont chacun à leur façon, et le confient ici par `brancheExport`
+   (`_export.html`). Lus au moment du clic, jamais avant : le salon choisi
+   change sous les yeux de la page. La barre où l'on parle et l'appel à la
+   base sont ceux du socle, que les deux partagent (`socle-console.mjs`). */
+/** @type {{ selection: () => (string|null), courant: () => any }} */
+let _page = { selection: () => null, courant: () => null };
 
 export const nb = (n) => Number(n || 0).toLocaleString("fr-FR");
 
@@ -186,9 +186,9 @@ export async function exporteExposants(bouton, jours) {
   if (bouton) { bouton.disabled = true; bouton.textContent = "Préparation…"; }
   /* Dit tout de suite, car le menu d'où part souvent ce clic se referme
      aussitôt : sans cela rien ne bougerait à l'écran pendant l'appel. */
-  _page.signale("Préparation du classeur…");
+  signale("Préparation du classeur…");
   try {
-    const r = await _page.rest("rpc/audience_cibles", {
+    const r = await rest("rpc/audience_cibles", {
       method: "POST",
       body: JSON.stringify({
         p_evenement: _page.selection(),
@@ -201,7 +201,7 @@ export async function exporteExposants(bouton, jours) {
     /* Aucun exposant n'est un renseignement, pas une panne : le salon n'a
        jamais été synchronisé, et c'est ce qu'il faut dire. */
     if (!lignes.length) {
-      _page.signale("Aucun exposant à exporter : ce salon n'a pas encore été synchronisé.", true);
+      signale("Aucun exposant à exporter : ce salon n'a pas encore été synchronisé.", true);
       return;
     }
     /* `v_depuis` est nul tant qu'aucune présence n'a été enregistrée — un
@@ -216,10 +216,10 @@ export async function exporteExposants(bouton, jours) {
         lignes.map((r2) => cols.map((c) => c.lit(r2)))),
       nomFichierExport(e, jours));
     const s = lignes.length > 1 ? "s" : "";
-    _page.signale(nb(lignes.length) + " exposant" + s + " exporté" + s +
+    signale(nb(lignes.length) + " exposant" + s + " exporté" + s +
             " (" + libellePeriode(jours) + ").");
   } catch (err) {
-    _page.signale(err.message, true);
+    signale(err.message, true);
   } finally {
     _export = false;
     if (bouton) { bouton.disabled = false; bouton.textContent = libelle; }

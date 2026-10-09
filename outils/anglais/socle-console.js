@@ -1,5 +1,7 @@
-/* `outils/gabarit/_console-base.html` — le socle de la console et du rapport :
-   les appels, les fenêtres, l'accès au projet et la connexion. */
+/* `outils/gabarit/modules/socle-console.mjs` — le socle de la console et du
+   rapport : les appels, l'accès au projet, la connexion, le thème. La fenêtre
+   (`fenetre-console.mjs`) n'a pas de phrase à elle : « Annuler » et
+   « Valider » sont déjà au dictionnaire du plan. */
 module.exports = {
   "Non autorisé.": "Not authorised.",
   "Erreur {code}": "Error {code}",

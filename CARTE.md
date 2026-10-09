@@ -77,17 +77,9 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 434 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 21 l. → admin-plans.html, rapport.html
 
-- l.10 · Socle commun de la console et du rapport — accès au projet
-
-Fonctions :
-
-`entetes` 37 · `renouvelle` 46 · `appel` 62 · `rest` 73 · `verseModale` 103
-`ouvreModale` 109 · `verrouilleModale` 132 · `fermeModale` 134 · `gardeLaPlace` 157
-`demande` 162 · `confirme` 184 · `ecranConfig` 195 · `ecranConnexion` 223 · `deconnecte` 286
-`signale` 297 · `bloc` 318 · `grille` 336 · `idCompte` 380 · `themeSombre` 390
-`initialesDe` 410
+- l.10 · Socle commun de la console et du rapport — le branchement
 
 Éléments :
 
@@ -103,12 +95,9 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 410 l. → admin-plans.html
+### `_console-js.html` — 19 l.
 
-Fonctions :
-
-`fluxFonction` 26 · `charge` 100 · `selonAdresse` 127 · `majAdresse` 135 · `majBarre` 150
-`dessineChoix` 192 · `majLiens` 245 · `videEcran` 378 · `dessine` 383 · `demarre` 398
+- l.2 · La console multi-événements — le branchement, et le démarrage
 
 ### `_console.css` — 725 l. → console.css
 
@@ -175,7 +164,7 @@ Fonctions :
 
 - l.1 · 16. Les environs — le branchement
 
-### `_export.html` — 12 l. → admin-plans.html, rapport.html
+### `_export.html` — 12 l.
 
 - l.1 · Export par exposant — le branchement
 
@@ -348,14 +337,9 @@ Fonctions :
 
 - l.3 · 10. Mode administration — le branchement
 
-### `_motdepasse.html` — 254 l. → motdepasse.html
+### `_motdepasse.html` — 69 l. → motdepasse.html
 
-- l.61 · Poser un mot de passe
-
-Fonctions :
-
-`$` 82 · `CFG` 84 · `dit` 92 · `fragment` 98 · `garde` 105 · `lit` 109 · `demandeLien` 182
-`ouvreSaisie` 191
+- l.61 · Poser un mot de passe — le branchement
 
 Éléments :
 
@@ -511,7 +495,7 @@ Fonctions :
 
 `enEdition` 33 · `emplacementWebgl` 61 · `libellesWebgl` 109
 
-### `modules/acces-admin.mjs` — 250 l. → plan-admin
+### `modules/acces-admin.mjs` — 245 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
@@ -519,7 +503,7 @@ Fonctions :
 
 `litLocal` 34 · `configuration` 39 · `normaliseUrlA` 43 · `sessionValide` 59
 `ecranAcces` 77 · `contenuDuJeton` 168 · `mailDuJeton` 169 · `litProfilA` 180
-`initialesDe` 193 · `poseCompte` 200 · `brancheAcces` 226
+`poseCompte` 195 · `brancheAcces` 221
 
 Éléments :
 
@@ -567,13 +551,13 @@ Fonctions :
 `lignesApercu` 174 · `contenuApercu` 204 · `apercuFiche` 241 · `apercuListe` 319
 `apercuDuo` 341
 
-### `modules/appel-fonction.mjs` — 61 l. → console
+### `modules/appel-fonction.mjs` — 121 l. → console
 
 - l.1 · L'appel des fonctions du projet, depuis la console
 
 Fonctions :
 
-`brancheFonctions` 30 · `refus` 43 · `fonction` 54
+`refus` 27 · `fonction` 38 · `fluxFonction` 60
 
 ### `modules/application.mjs` — 37 l. → plan, plan-admin
 
@@ -583,13 +567,13 @@ Fonctions :
 
 `adresseIconeApp` 26 · `appDuSalon` 34 · `iconeDeLApplication` 37
 
-### `modules/avancement.mjs` — 432 l. → console
+### `modules/avancement.mjs` — 416 l. → console
 
 - l.1 · L'avancement d'une synchronisation — la fenêtre, et son secours
 
 Fonctions :
 
-`brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
+`fenetreAvancement` 44 · `suitAuServeur` 376
 
 ### `modules/bande-admin.mjs` — 120 l. → plan-admin
 
@@ -692,17 +676,16 @@ Fonctions :
 `CRC_TABLE` 30 · `crc32` 40 · `archiveZip` 55 · `texteXml` 111 · `colonneXl` 114
 `XL_PARTS` 125 · `feuilleXl` 179 · `classeurXl` 215 · `enregistreFichier` 226
 
-### `modules/comptes.mjs` — 374 l. → console
+### `modules/comptes.mjs` — 354 l. → console
 
 - l.1 · Comptes et accès — l'annuaire, et la fiche d'une personne
 
 Fonctions :
 
-`brancheComptes` 45 · `poseComptes` 55 · `litMonProfil` 69 · `RETOUR_MDP` 80
-`litComptes` 82 · `ligneMessage` 91 · `casesSalons` 101 · `ouvreComptes` 131
-`ouvreFicheCompte` 223
+`poseComptes` 35 · `litMonProfil` 49 · `RETOUR_MDP` 60 · `litComptes` 62 · `ligneMessage` 71
+`casesSalons` 81 · `ouvreComptes` 111 · `ouvreFicheCompte` 203
 
-### `modules/console.mjs` — 75 l. → console
+### `modules/console.mjs` — 47 l. → console
 
 - l.1 · Point d'entrée de la console
 
@@ -731,7 +714,7 @@ Fonctions :
 
 `litImage` 16 · `reduitLogo` 57
 
-### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport
+### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
 
 - l.1 · Le document : ce que tout le code demande à la page
 
@@ -747,13 +730,22 @@ Fonctions :
 
 `poseDonnees` 50 · `P` 84
 
-### `modules/duplication.mjs` — 48 l. → console
+### `modules/duplication.mjs` — 43 l. → console
 
 - l.1 · Dupliquer un salon — l'édition suivante, sans ce qui n'est qu'à celle-ci
 
 Fonctions :
 
-`brancheDuplication` 26 · `dupliquer` 30
+`brancheDuplication` 21 · `dupliquer` 25
+
+### `modules/ecran-console.mjs` — 296 l. → console
+
+- l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
+
+Fonctions :
+
+`charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 129
+`majLiens` 146 · `videEcran` 187 · `dessine` 192 · `demarre` 207 · `brancheConsole` 225
 
 ### `modules/enregistrement.mjs` — 651 l. → plan-admin
 
@@ -793,14 +785,13 @@ Fonctions :
 
 `essaieRappelReel` 37
 
-### `modules/evenements.mjs` — 79 l. → console
+### `modules/evenements.mjs` — 70 l. → console
 
 - l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
 
 Fonctions :
 
-`poseEvenements` 41 · `brancheEvenements` 58 · `slugifie` 62 · `courant` 66
-`chargePlans` 68 · `majEvenement` 73
+`poseEvenements` 42 · `slugifie` 53 · `courant` 57 · `chargePlans` 59 · `majEvenement` 64
 
 ### `modules/export.mjs` — 232 l. → console, rapport
 
@@ -811,6 +802,15 @@ Fonctions :
 `nb` 34 · `colonnesExport` 118 · `libellePeriode` 150 · `nomFichierExport` 156
 `nomFeuilleExport` 166 · `exporteExposants` 182 · `brancheExport` 230
 
+### `modules/fenetre-console.mjs` — 144 l. → console, rapport
+
+- l.1 · La fenêtre de la console et du rapport
+
+Fonctions :
+
+`verseModale` 31 · `ouvreModale` 43 · `verrouilleModale` 67 · `fermeModale` 69
+`poseFenetre` 77 · `gardeLaPlace` 99 · `demande` 110 · `confirme` 138
+
 ### `modules/fenetre.mjs` — 110 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
@@ -820,29 +820,28 @@ Fonctions :
 `_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
 `ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 94
 
-### `modules/fiche-detail.mjs` — 1311 l. → console
+### `modules/fiche-detail.mjs` — 1291 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
-- l.46 · Contenu de la fiche détail
+- l.26 · Contenu de la fiche détail
 
 Fonctions :
 
-`brancheFicheDetail` 42 · `paraitSurFiche` 183 · `origineConferences` 189
-`origineProduits` 196 · `resumeFiche` 260 · `caseFiche` 305 · `cibleEn` 353
-`champsPersos` 355 · `criteres` 361 · `ecritFiche` 364 · `caseCritere` 379 · `clePerso` 398
-`ajouteChampPerso` 406 · `renommeChampPerso` 424 · `retireChampPerso` 472
-`lignesPerso` 533 · `cadreFiche` 556 · `ouvreFiche` 586 · `cadreCategories` 726
-`sousTitre` 805 · `tableauChamps` 820 · `champOrigine` 1046
+`paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 240
+`caseFiche` 285 · `cibleEn` 333 · `champsPersos` 335 · `criteres` 341 · `ecritFiche` 344
+`caseCritere` 359 · `clePerso` 378 · `ajouteChampPerso` 386 · `renommeChampPerso` 404
+`retireChampPerso` 452 · `lignesPerso` 513 · `cadreFiche` 536 · `ouvreFiche` 566
+`cadreCategories` 706 · `sousTitre` 785 · `tableauChamps` 800 · `champOrigine` 1026
 
-### `modules/fiche-evenement.mjs` — 450 l. → console
+### `modules/fiche-evenement.mjs` — 437 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 58 · `champ` 69 · `champFavicon` 112 · `dessineFiche` 189 · `ligneOutil` 319
-`ligneReglage` 335 · `champCle` 349 · `ouvreSources` 388 · `majIntegration` 433
-`majMsgSync` 440
+`brancheFiche` 45 · `champ` 56 · `champFavicon` 99 · `dessineFiche` 176 · `ligneOutil` 306
+`ligneReglage` 322 · `champCle` 336 · `ouvreSources` 375 · `majIntegration` 420
+`majMsgSync` 427
 
 Éléments :
 
@@ -875,13 +874,13 @@ Fonctions :
 `dansAnneau` 80 · `distSegmentGeo` 91 · `distBordGeo` 100 · `poleGeo` 110 · `porteeGeo` 129
 `boiteGeo` 137
 
-### `modules/fuseau.mjs` — 115 l. → console
+### `modules/fuseau.mjs` — 101 l. → console
 
 - l.1 · Fuseau horaire du salon — le champ de la console
 
 Fonctions :
 
-`brancheFuseau` 28 · `fuseauConnu` 42 · `champFuseau` 54
+`fuseauConnu` 28 · `champFuseau` 40
 
 Éléments :
 
@@ -1024,6 +1023,19 @@ Fonctions :
 
 `ouvreModeAdmin` 21 · `retireAdmin` 30
 
+### `modules/mot-de-passe.mjs` — 208 l. → motdepasse
+
+- l.1 · Poser un mot de passe
+
+Fonctions :
+
+`dit` 29 · `fragment` 35 · `garde` 42 · `lit` 46 · `demandeLien` 58 · `ouvreSaisie` 67
+`brancheMotDePasse` 84
+
+### `modules/motdepasse.mjs` — 14 l. → motdepasse
+
+- l.1 · Point d'entrée de la page du mot de passe
+
 ### `modules/notifications.mjs` — 89 l. → plan, plan-admin
 
 - l.1 · Les notifications — ce que l'appareil sait recevoir, et l'abonnement
@@ -1107,15 +1119,15 @@ Fonctions :
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/provenance.mjs` — 178 l. → console
+### `modules/provenance.mjs` — 161 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
-- l.36 · Provenance des données
+- l.19 · Provenance des données
 
 Fonctions :
 
-`brancheProvenance` 32 · `fournisseurUtilise` 100 · `sourceNom` 110 · `source` 114
-`ligneSource` 118 · `resumeProvenance` 141 · `ouvreProvenance` 162
+`fournisseurUtilise` 83 · `sourceNom` 93 · `source` 97 · `ligneSource` 101
+`resumeProvenance` 124 · `ouvreProvenance` 145
 
 ### `modules/qr.mjs` — 315 l. → plan, plan-admin
 
@@ -1140,22 +1152,22 @@ Fonctions :
 `retientInviteRappel` 426 · `fenetreRappel` 461 · `proposeRappels` 494
 `reprendRappels` 537
 
-### `modules/rapport-utilisation.mjs` — 485 l. → rapport
+### `modules/rapport-utilisation.mjs` — 466 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 80 · `chargeEvenements` 85 · `joursPeriode` 103 · `chargeRapport` 105
-`chiffre` 116 · `barres` 135 · `portes` 175 · `jours` 226 · `dessineRapport` 247
-`dessineBarre` 400 · `rafraichit` 423 · `videEcran` 442 · `demarre` 448
-`brancheRapport` 470
+`courant` 69 · `chargeEvenements` 74 · `joursPeriode` 92 · `chargeRapport` 94
+`chiffre` 105 · `barres` 124 · `portes` 164 · `jours` 215 · `dessineRapport` 236
+`dessineBarre` 389 · `rafraichit` 412 · `videEcran` 431 · `demarre` 437
+`brancheRapport` 456
 
 Éléments :
 
 `#lienPublic`
 
-### `modules/rapport.mjs` — 33 l. → rapport
+### `modules/rapport.mjs` — 35 l. → rapport
 
 - l.1 · Point d'entrée du rapport
 
@@ -1239,13 +1251,24 @@ Fonctions :
 `matriceJournee` 118 · `derouleJournee` 189 · `prepareSejour` 333 · `calculeSejour` 535
 `apercuRepartition` 569
 
-### `modules/session.mjs` — 133 l. → plan, plan-admin, console, rapport
+### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
 Fonctions :
 
 `accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
+`initialesDe` 142
+
+### `modules/socle-console.mjs` — 382 l. → console, rapport
+
+- l.1 · Socle commun de la console et du rapport — accès au projet
+
+Fonctions :
+
+`poseSession` 41 · `entetes` 64 · `renouvelle` 73 · `appel` 92 · `rest` 107
+`ecranConfig` 126 · `ecranConnexion` 155 · `deconnecte` 220 · `signale` 235 · `bloc` 259
+`grille` 277 · `idCompte` 294 · `themeSombre` 303 · `brancheSocle` 319
 
 ### `modules/sponsor.mjs` — 410 l. → plan, plan-admin
 
@@ -1280,14 +1303,14 @@ Fonctions :
 `lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
 `assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
 
-### `modules/synchronisation.mjs` — 229 l. → console
+### `modules/synchronisation.mjs` — 224 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
-`brancheSynchronisation` 39 · `etapesPressenties` 57 · `synchronise` 72
-`fabriqueLesVignettes` 169 · `envoieVignettes` 222
+`brancheSynchronisation` 34 · `etapesPressenties` 52 · `synchronise` 67
+`fabriqueLesVignettes` 164 · `envoieVignettes` 217
 
 ### `modules/temps.mjs` — 129 l. → plan, plan-admin
 
