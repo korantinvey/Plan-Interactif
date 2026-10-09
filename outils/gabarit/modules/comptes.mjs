@@ -16,11 +16,13 @@
    lit pour savoir ce qu'elle propose, et l'oublie en fin de session par
    `poseComptes({ MOI: null })`. Ce qu'il ne peut pas importer lui est confié
    par la console (`brancheComptes`, `_console-js.html`) : la fenêtre du socle
-   et sa grille, l'appel à la base, l'identifiant du compte connecté, la page
-   du mot de passe et les salons à affecter.
+   et sa grille, l'appel à la base, l'identifiant du compte connecté et la page
+   du mot de passe. Les salons à affecter viennent de `evenements.mjs`, relus
+   à chaque ouverture puisque le chargement les remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fonction } from "./appel-fonction.mjs";
+import { EVTS } from "./evenements.mjs";
 
 /** @type {{
  *   ouvreModale: (titre: string, remplit: (corps: HTMLElement) => void,
@@ -30,7 +32,6 @@ import { fonction } from "./appel-fonction.mjs";
  *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
  *   idCompte: () => (string | null),
  *   pageMdp: string,
- *   evts: () => any[],
  * }} */
 let _console = {
   ouvreModale: () => {},
@@ -38,7 +39,6 @@ let _console = {
   rest: async () => null,
   idCompte: () => null,
   pageMdp: "",
-  evts: () => [],
 };
 
 /** Ce que la console confie aux comptes : voir `_console`. */
@@ -108,8 +108,8 @@ function casesSalons(role, choisis) {
     zone.appendChild(p);
   };
   if (role === "admin") { note("Tous les salons, y compris ceux créés plus tard."); return zone; }
-  if (!_console.evts().length) { note("Aucun salon à affecter pour l'instant."); return zone; }
-  _console.evts().forEach((e) => {
+  if (!EVTS.length) { note("Aucun salon à affecter pour l'instant."); return zone; }
+  EVTS.forEach((e) => {
     const l = document.createElement("label");
     l.className = "puce";
     l.innerHTML = "<input type='checkbox'><span></span>";

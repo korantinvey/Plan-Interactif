@@ -66,4 +66,6 @@ module.exports = [
   "» n'est pas une donnée du plan", "» n'est pas un état du parcours", " se remplace par ",
   // `modules/comptes.mjs` : la même erreur, pour la porte du profil connecté
   "» n'est pas un état du profil connecté",
+  // `modules/evenements.mjs` : la même erreur, pour la porte des salons de la console
+  "» n'est ni EVTS, ni selection, ni PLANS",
 ];

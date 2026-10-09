@@ -10,7 +10,7 @@
    l'intitulé d'un champ, les deux faces d'un oui/non.
 
    Il ne touche ni à la page ni au salon ouvert : la liste déroulante, qui les
-   lit, reste dans la console (`_console-js.html` `champOrigine`).
+   lit, vit dans la fiche détail (`fiche-detail.mjs` `champOrigine`).
    ============================================================ */
 
 /* Deux valeurs qui ne sont pas des noms de champ : « rien de réglé », qui
