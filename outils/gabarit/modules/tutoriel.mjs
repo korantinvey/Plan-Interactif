@@ -39,7 +39,7 @@
 import { $ } from "./dom.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
-import { SLUG, BORNE } from "./salon.mjs";
+import { SLUG, BORNE, PLAN_ADMIN } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { resteSponsor } from "./sponsor.mjs";
@@ -53,10 +53,9 @@ import { svg } from "./vue.mjs";
    se lance qu'une fois la page démarrée, bien après le branchement. */
 /** @type {Record<string, any>} */
 let soude = {};
-/* Deux valeurs qui ne changent plus une fois la page ouverte : la page où
-   l'on est (`_recherche.html` `PLAN_ADMIN`) et le mouvement réduit
-   (`_fiche.html` `REDUIT`). Le dessin du plan s'importe de `vue.mjs`. */
-let PLAN_ADMIN = false;
+/* Une valeur qui ne change plus une fois la page ouverte : le mouvement
+   réduit (`_fiche.html` `REDUIT`). La page où l'on est (`PLAN_ADMIN`)
+   s'importe de `salon.mjs`, le dessin du plan de `vue.mjs`. */
 let REDUIT = false;
 
 /**
@@ -69,13 +68,12 @@ let REDUIT = false;
  *
  * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
  *   centre: Function, ferme: Function, fermeParcours: Function,
- *   etroit: Function, planAdmin: boolean, reduit: boolean,
+ *   etroit: Function, reduit: boolean,
  *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
  */
 export function brancheTutoriel(b){
   soude = b;
-  PLAN_ADMIN = b.planAdmin;
   REDUIT = b.reduit;
 }
 

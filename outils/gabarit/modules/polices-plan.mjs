@@ -17,7 +17,8 @@ import { modeleRetenu } from "./modeles.mjs";
 
 /* Ce que le code soudé confie : le plan monté ou non (`_rendu.html` `MONTE`),
    par un lecteur, et ce qui se retrace — les dessins (`_dessin.html`), les
-   libellés (`_rendu.html`), la liste (`_recherche.html`). */
+   libellés (`_rendu.html`), la liste (`recherche.mjs`, qui importe ce module
+   pour la police des numéros, et ne peut donc s'importer d'ici). */
 /** @type {Record<string, any>} */
 let soude = { monte: () => false };
 

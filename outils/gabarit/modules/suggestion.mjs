@@ -24,24 +24,23 @@
    Ce module porte ce que le visiteur reçoit : la proposition, sa carte, sa
    fenêtre. Le volet « Suggestion » des réglages et le relevé du classement
    vivent dans `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs`
-   embarque. Les critères de la recherche, la fiche et le tiroir du parcours
-   sont encore soudés : `_suggestion.html` les confie par `brancheSuggestion`.
+   embarque. La fiche et le tiroir du parcours sont encore soudés :
+   `_suggestion.html` les confie par `brancheSuggestion`. Les critères de la
+   recherche s'importent de `recherche.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { COLLATION } from "./texte.mjs";
 import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { PARCOURS, boutonParcours, dansParcours } from "./parcours.mjs";
+import { OUI_NON, clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
-   configuration (`_admin1.html` `conf`), les critères de la recherche
-   (`_recherche.html`), l'option vendue, la fiche et le tiroir du parcours. */
+   configuration (`_admin1.html` `conf`), l'option vendue, la fiche et le
+   tiroir du parcours. */
 /** @type {Record<string, any>} */
 let soude = {};
 const conf = (c) => soude.conf(c);
-const clesCriteres = () => soude.clesCriteres();
-const valeursCritere = (o, cle) => soude.valeursCritere(o, cle);
-const libelleCritere = (cle) => soude.libelleCritere(cle);
 const suggestionOfferte = () => soude.suggestionOfferte();
 const select = (...a) => soude.select(...a);
 const remplitParcours = () => soude.remplitParcours();
@@ -182,7 +181,7 @@ function exposantPropose(cle, v){
 
 /** « Agroalimentaire », ou l'intitulé du champ quand la valeur ne dit rien
  *  d'elle-même : un oui/non ne se coche que sous le nom de sa question. */
-export const nomValeurSugg = (cle, v) => soude.OUI_NON[cle] ? libelleCritere(cle) : v;
+export const nomValeurSugg = (cle, v) => OUI_NON[cle] ? libelleCritere(cle) : v;
 
 /* Comment se nomme ce que plusieurs exposants ont en commun.
    Les critères que le plan connaît d'avance ont leur article — « du secteur »,
@@ -324,8 +323,7 @@ export function fenetreSuggestion(){
 /**
  * Le branchement, appelé par `_suggestion.html` à la place que ce code tenait.
  *
- * @param {{ conf: (c: string) => any, clesCriteres: Function, valeursCritere: Function,
- *   libelleCritere: Function, OUI_NON: Record<string, boolean>, suggestionOfferte: Function,
+ * @param {{ conf: (c: string) => any, suggestionOfferte: Function,
  *   select: Function, remplitParcours: Function, brancheParcours: Function }} b
  */
 export function brancheSuggestion(b){ soude = b; }
