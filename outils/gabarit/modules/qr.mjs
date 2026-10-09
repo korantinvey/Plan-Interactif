@@ -14,7 +14,7 @@
    version : le gain n'aurait pas été visible, la tolérance perdue, si.
 
    Rien du plan n'entre ici : des octets en entrée, un damier en sortie. Le
-   parcours partagé (`_partage.html`) et l'affiche « Vous êtes ici »
+   parcours partagé (`modules/partage.mjs`) et l'affiche « Vous êtes ici »
    (`_ici.html`) s'en servent.
    ============================================================ */
 import { esc } from "./texte.mjs";

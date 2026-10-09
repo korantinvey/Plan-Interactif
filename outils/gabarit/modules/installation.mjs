@@ -86,18 +86,19 @@ import { DATA } from "./donnees.mjs";
 import { supportMesure } from "./mesure.mjs";
 import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { resteSponsor } from "./sponsor.mjs";
-import { demandeGardeParcours } from "./partage.mjs";
+import { demandeGardeParcours, parcoursACopier } from "./partage.mjs";
 import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture } from "./fenetre.mjs";
 
 /* Ce que le code soudé tient encore, et que le branchement confie : la
    configuration du salon (`_admin1.html`), la visite guidée — en cours, et le
-   délai de sa proposition (`modules/tutoriel.mjs`, relayés par le code soudé) —, la liste à copier avant
-   d'installer (`_partage.html`), et le retour aux réglages après un aperçu
-   (`_installation.html`). La visite guidée est déclarée plus bas que le
-   branchement, et change à chaque chapitre : elle se confie par des lecteurs. */
+   délai de sa proposition (`modules/tutoriel.mjs`, relayés par le code soudé) —, et le retour aux
+   réglages après un aperçu (`_installation.html`). La visite guidée est
+   déclarée plus bas que le branchement, et change à chaque chapitre : elle se
+   confie par des lecteurs. La liste à copier avant d'installer, elle,
+   s'importe de `partage.mjs` (`parcoursACopier`). */
 /**
  * @typedef {{ conf: (cle: string) => any, tuto: () => any, tutoDelai: () => number,
- *             parcoursACopier: () => boolean, retourAuxReglages: (marque: string) => void
+ *             retourAuxReglages: (marque: string) => void
  *           }} BranchementInstallation
  */
 /** @type {BranchementInstallation} */
@@ -793,7 +794,7 @@ export function ouvreInvitation(facon, apercu){
        partage le stockage du navigateur, et la liste suit toute seule. Et
        jamais en aperçu, où la fenêtre est montrée à l'organisateur pour ce
        qu'elle est, et non pour être suivie. */
-    if (!apercu && facon === "partage" && soude.parcoursACopier())
+    if (!apercu && facon === "partage" && parcoursACopier())
       poseGardeInstallation(corps, () => { reponse = "copie"; },
                             () => ouvreInvitation(facon, apercu));
   }, [{ libelle: "Plus tard" }, accepte], "installe");
@@ -860,7 +861,7 @@ export function ouvreRappel(facon, apercu){
     /* Passer à l'icône, c'est changer de stockage : la liste composée dans cet
        onglet reste dans cet onglet. La suggestion ne paraît que sur iOS, où
        c'est justement vrai (`faconRappel`). */
-    if (!apercu && !ouvre && soude.parcoursACopier())
+    if (!apercu && !ouvre && parcoursACopier())
       poseGardeInstallation(corps, () => { demandee = true; },
                             () => ouvreRappel(facon, apercu));
   }, [

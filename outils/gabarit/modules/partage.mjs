@@ -20,9 +20,13 @@
    seul plafond, et il se voit — la fenêtre le dit et s'en tient au lien.
 
    Le codage du lien est à part, sans rien du navigateur
-   (`modules/lien-parcours.mjs`). L'accueil d'un parcours reçu reste au code
-   soudé (`_partage.html`) : il lit la configuration du salon et verse dans le
-   tiroir, qui n'en sont pas sortis.
+   (`modules/lien-parcours.mjs`). L'accueil d'un parcours reçu aussi
+   (`modules/parcours-recu.mjs`) : il verse dans le tiroir, qui importe ce
+   module-ci pour la note de la copie à garder.
+
+   Le module se branche dans `_partage.html`, à la place que son bouton y
+   tenait, et reçoit la configuration du salon, que le code soudé tient
+   encore.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { SLUG, cheminPartageable, BORNE } from "./salon.mjs";
@@ -32,6 +36,12 @@ import { QR_VERSION_LISIBLE, qrTrame, qrSvg } from "./qr.mjs";
 import { DATA } from "./donnees.mjs";
 import { PARCOURS, tientLeStockage } from "./parcours.mjs";
 import { codeParcours } from "./lien-parcours.mjs";
+
+/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
+   configuration (`_admin1.html` `conf`), par un détour lu à l'appel. */
+/** @type {Record<string, any>} */
+let soude = {};
+const conf = (c) => soude.conf(c);
 
 /**
  * L'adresse du plan, telle qu'un autre appareil doit la recevoir.
@@ -195,9 +205,15 @@ function boutonsPartage(lien, compte){
    d'en garder une copie, c'est proposer d'emporter un travail inachevé. La copie
    ne vaut qu'une journée composée, et le pied de la liste l'attend là.
 
-   Savoir s'il y a une liste à copier (`parcoursACopier`) reste au code soudé,
-   dans `_partage.html` : la réponse dépend de la configuration du salon.
+   Savoir s'il y a une liste à copier (`parcoursACopier`) précède l'une et
+   l'autre : la réponse dépend de la configuration du salon.
    ------------------------------------------------------------ */
+/** Y a-t-il une liste, et un visiteur à qui la rendre ? Une borne interactive
+ *  se remet à zéro pour le suivant : elle n'a personne à qui garder quoi que
+ *  ce soit. */
+export const parcoursACopier = () => !BORNE && conf("_parcours").visible !== false &&
+  !!(PARCOURS.stands.length + PARCOURS.confs.length);
+
 /**
  * La fenêtre.
  *
@@ -268,4 +284,18 @@ export function poseGardeParcours(hote){
   b.onclick = () => demandeGardeParcours();
   bloc.appendChild(b);
   hote.appendChild(bloc);
+}
+
+/* ------------------------------------------------------------
+   Le branchement
+   ------------------------------------------------------------ */
+/**
+ * Appelé par `_partage.html` à la place que ce code tenait : le bouton du
+ * tiroir s'y branche au même moment qu'avant.
+ *
+ * @param {{ conf: (cle: string) => any }} b
+ */
+export function branchePartage(b){
+  soude = b;
+  $("btnPartage").onclick = ouvrePartageParcours;
 }

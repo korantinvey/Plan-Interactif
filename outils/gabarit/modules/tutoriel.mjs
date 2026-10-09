@@ -47,6 +47,7 @@ import { ecritDistance, ecritDuree } from "./itineraire.mjs";
 import { SEJOUR, JOURNEE, vueJournee as VUE_JOURNEE, joursAVenir } from "./journee.mjs";
 import { ITI, ROUTE, attente as attenteIti, visee as viseeIti, poseVisee, bandeauVisee, fermeItineraire }
   from "./tiroir-itineraire.mjs";
+import { fermeParcours } from "./tiroir-parcours.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
    se lance qu'une fois la page démarrée, bien après le branchement. */
@@ -69,7 +70,7 @@ let svg = null;
  * s'importe de `journee.mjs`, qui le tient.
  *
  * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
- *   centre: Function, ferme: Function, fermeParcours: Function,
+ *   centre: Function, ferme: Function,
  *   etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
  *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
@@ -87,7 +88,6 @@ const montre = (type, cle) => soude.montre(type, cle);
 const changePlan = (i) => soude.changePlan(i);
 const centre = (o) => soude.centre(o);
 const ferme = () => soude.ferme();
-const fermeParcours = () => soude.fermeParcours();
 const ETROIT = () => soude.etroit();
 /* Le trajet demandé (`tiroir-itineraire.mjs` `ROUTE`, `attente`, `ITI`), la
    visée en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire

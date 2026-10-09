@@ -6,9 +6,10 @@
    le pourquoi de la fonction, sont dans `modules/suggestion.mjs` ; ce module-ci
    n'est embarqué que par `plan-admin.mjs`.
 
-   Les critères de la recherche, l'enregistrement de la configuration, la
-   fenêtre des réglages et le tiroir du parcours sont encore soudés :
-   `_suggestion.html` les confie par `brancheReglageSuggestion`.
+   Les critères de la recherche, l'enregistrement de la configuration et la
+   fenêtre des réglages sont encore soudés : `_suggestion.html` les confie par
+   `brancheReglageSuggestion`. Le tiroir du parcours, qu'un réglage changé
+   refait, s'importe (`tiroir-parcours.mjs`).
    ============================================================ */
 import { esc, COLLATION } from "./texte.mjs";
 import { TOUS, parId } from "./donnees.mjs";
@@ -16,6 +17,7 @@ import { accesBase, base } from "./session.mjs";
 import { evenementCourant } from "./chaleur.mjs";
 import { SUGG_SEUIL_MIN, SUGG_SEUIL_MAX, reglageSugg, seuilSugg, PRESENTATIONS_SUGG, presentationsSugg,
   critereSugg, nomValeurSugg } from "./suggestion.mjs";
+import { rafraichitParcours } from "./tiroir-parcours.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -27,7 +29,6 @@ const libelleCritere = (cle) => soude.libelleCritere(cle);
 const champZone = (hote, titre, dedans, aide) => soude.champZone(hote, titre, dedans, aide);
 const enregistreConf = () => soude.enregistreConf();
 const glisseFenetre = (change) => soude.glisseFenetre(change);
-const rafraichitParcours = () => soude.rafraichitParcours();
 
 export const NOM_VOLET_SUGGESTION = "Suggestion";
 
@@ -423,6 +424,6 @@ export function voletSuggestion(hote){
  *
  * @param {{ conf: (c: string) => any, clesCriteres: Function, valeursCritere: Function,
  *   libelleCritere: Function, champZone: Function, enregistreConf: Function,
- *   glisseFenetre: Function, rafraichitParcours: Function }} b
+ *   glisseFenetre: Function }} b
  */
 export function brancheReglageSuggestion(b){ soude = b; }
