@@ -418,11 +418,11 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_ordre-fiche.html` — 663 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_ordre-fiche.html` — 53 l. → plan-admin.html
 
 Fonctions :
 
-`clesFiche` 25 · `voletOrdre` 42 · `enregistreConf` 630 · `ecarte` 645 · `joli` 660
+`enregistreConf` 20 · `ecarte` 35 · `joli` 50
 
 ### `_parcours.html` — 399 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -1004,7 +1004,7 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 59 l. → plan-admin
+### `modules/plan-admin.mjs` — 61 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
@@ -1062,6 +1062,14 @@ Fonctions :
 
 `brancheReglageApplication` 59 · `nomAppDefaut` 80 · `ecritApplication` 95
 `blocApplication` 136
+
+### `modules/reglage-fiche.mjs` — 669 l. → plan-admin
+
+- l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
+
+Fonctions :
+
+`clesFiche` 54 · `voletOrdre` 71 · `brancheReglageFiche` 666
 
 ### `modules/reglage-installation.mjs` — 71 l. → plan-admin
 
