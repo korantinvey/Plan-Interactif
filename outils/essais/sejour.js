@@ -272,8 +272,6 @@ function pavillon(i, nom, n){
   const CONF = {};
   I.brancheItineraire({
     conf: () => CONF, dessins: () => ({}),
-    cheminForme: (f) => f.d, pictoForme: () => "", nomTypeRepere: () => "",
-    estPorte: () => false, ouvreEntrant: () => false, ouvreSortant: () => false,
     instantConf: Pa.instantConf, finInstant: S.finInstant,
   });
   S.brancheSejour({

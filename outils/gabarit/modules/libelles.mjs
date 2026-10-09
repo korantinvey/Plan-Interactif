@@ -10,13 +10,15 @@
    Il se branche dans `_rendu.html`, à la place que l'écoute des polices y
    tenait — au tout début du script du plan, avant celle du rendu WebGL. Ce
    que le code soudé tient encore lui est confié : la vue par un lecteur, et
-   par des détours, lus au moment de l'appel, ce qui se déclare plus loin
-   dans le script — les stands dessinés et les repères (`_dessin.html`,
-   `_edition.html`), le nom d'une zone dans la langue du moment
-   (`_js.html`).
+   par des détours, lus au moment de l'appel, la boîte d'une forme
+   (`_edition.html`) et le nom d'une zone dans la langue du moment
+   (`_js.html`). Les calques de dessin s'importent (`calques-dessin.mjs`) ;
+   le dessin des stands et des repères (`dessin.mjs`, `points-interet.mjs`)
+   ne le peut pas — il importe la fiche, qui importe ce module — et vient
+   donc lui aussi par des détours.
 
-   La carte graphique (`webgl.mjs`) et la vue (`vue.mjs`) le reçoivent par
-   leur branchement, et ne l'importent pas : il les importe.
+   La carte graphique (`webgl.mjs`) et la vue (`vue.mjs`), qu'il importe, le
+   reçoivent par leur branchement ; le dessin (`dessin.mjs`), lui, l'importe.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -30,6 +32,7 @@ import { cadrePlan, repeintLibelles } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete, liste } from "./recherche.mjs";
 import { rafraichitBorne } from "./borne.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
+import { mesCalques } from "./calques-dessin.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -41,7 +44,6 @@ const poseLibellesDessines = (/** @type {number} */ pxParM) => soude.poseLibelle
 const phareZone = (/** @type {any} */ o) => soude.phareZone(o);
 const nomDeLaZone = (/** @type {any} */ z) => soude.nomDeLaZone(z);
 const rafraichitFleches = () => soude.rafraichitFleches();
-const mesCalques = () => soude.mesCalques();
 const societeDeForme = (/** @type {any} */ f) => soude.societeDeForme(f);
 const nomSurLePlan = (/** @type {any} */ soc) => soude.nomSurLePlan(soc);
 const boite = (/** @type {any} */ f) => soude.boite(f);

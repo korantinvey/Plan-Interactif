@@ -12,16 +12,14 @@
    son plan comme sur celui de l'exploitant : `clePile`, `entrees`, `pile` et
    `ordonneDom` restent dans `_pile.html`, au code soudé.
 
-   Ce que le code soudé tient encore — l'enregistrement des réglages, les
-   calques de dessin et leur outil, le placement des libellés — lui est confié
-   par `branchePile`, que `_pile.html` appelle à la place que ce code y
-   tenait. Ce qui change sans cesse — les calques dessinés (`DESSINS`, relus à
-   chaque changement de salon), le calque actif, le mode de travail en cours,
-   le mode administrateur — par des lecteurs. Les modules d'administration
-   déjà sortis — la bibliothèque des bâtiments, le calage de la carte, la
-   carte de chaleur, la reprise des emplacements, la fenêtre de
-   réorganisation —, comme la configuration, l'apparence des calques et les
-   secteurs, s'importent.
+   Ce que le code soudé tient encore — l'enregistrement des réglages, le
+   placement des libellés — lui est confié par `branchePile`, que `_pile.html`
+   appelle à la place que ce code y tenait. Ce qui change sans cesse — le mode
+   de travail en cours, le mode administrateur — par des lecteurs. Les modules
+   déjà sortis — les calques de dessin et leur outil, la bibliothèque des
+   bâtiments, le calage de la carte, la carte de chaleur, la reprise des
+   emplacements, la fenêtre de réorganisation —, comme la configuration,
+   l'apparence des calques et les secteurs, s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -40,50 +38,30 @@ import { appliqueFond } from "./habillage.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { ouvreOrdre } from "./ordre-calques.mjs";
 import { SECTEURS, secteursMontres, couleurSecteur, peintSecteur } from "./secteurs.mjs";
+import { DESSINS, calqueActif, mesCalques } from "./calques-dessin.mjs";
+import { dessineDessins, peintCalque } from "./dessin.mjs";
+import { creeCalque, enregistreDessins, verrouille, basculeVerrou, pictoVerrou, activeCalque, memorise }
+  from "./outil-dessin.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
  * @typedef {object} PagePile
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => any} dessins les calques dessinés, par pavillon, `DESSINS`
- * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => boolean} placeLibelles le placement des libellés en cours, `PLACE_LIBELLES`
  * @property {() => { k: string, t: string, nom: string, ref: any }[]} entrees
  * @property {() => void} enregistreConf
  * @property {(id: any) => string} joli
- * @property {() => any[]} mesCalques
- * @property {() => void} creeCalque
- * @property {() => void} enregistreDessins
- * @property {() => void} dessineDessins
- * @property {(cal: any) => void} peintCalque
- * @property {(c: any) => boolean} verrouille
- * @property {(c: any) => void} basculeVerrou
- * @property {(ferme: boolean) => string} pictoVerrou
- * @property {(id: any) => void} activeCalque
- * @property {() => void} memorise
  * @property {(on: boolean) => void} modePlacementLibelles
  */
 /** @type {PagePile} */
 let soude;
 const estAdmin = () => soude.estAdmin();
-const dessins = () => soude.dessins();
-const calqueActif = () => soude.calqueActif();
 const placeLibelles = () => soude.placeLibelles();
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
 const entrees = () => soude.entrees();
 const enregistreConf = () => soude.enregistreConf();
 const joli = (/** @type {any} */ id) => soude.joli(id);
-const mesCalques = () => soude.mesCalques();
-const creeCalque = () => soude.creeCalque();
-const enregistreDessins = () => soude.enregistreDessins();
-const dessineDessins = () => soude.dessineDessins();
-const peintCalque = (/** @type {any} */ cal) => soude.peintCalque(cal);
-const verrouille = (/** @type {any} */ c) => soude.verrouille(c);
-const basculeVerrou = (/** @type {any} */ c) => soude.basculeVerrou(c);
-const pictoVerrou = (/** @type {boolean} */ ferme) => soude.pictoVerrou(ferme);
-const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
-const memorise = () => soude.memorise();
 const modePlacementLibelles = (/** @type {boolean} */ on) => soude.modePlacementLibelles(on);
 
 /** Le branchement : `_pile.html` l'appelle à la place que ce code y tenait.
@@ -185,7 +163,7 @@ export function remplitPanneau(){
     }
     const d = document.createElement("div");
     d.className = "calq" + (x.t === "dessin" ? " perso" : "") +
-                  (x.t === "dessin" && x.ref.id === calqueActif() ? " actif" : "");
+                  (x.t === "dessin" && x.ref.id === calqueActif ? " actif" : "");
     if (x.t === "dessin") d.dataset.dcal = x.ref.id;
 
     const c = x.t === "dessin" ? x.ref : conf(x.t === "fond" ? x.k.slice(5) : x.k);
@@ -279,7 +257,7 @@ export function remplitPanneau(){
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
-      cr.setAttribute("aria-pressed", x.ref.id === calqueActif());
+      cr.setAttribute("aria-pressed", x.ref.id === calqueActif);
       cr.onclick = ev => { ev.stopPropagation(); activeCalque(x.ref.id); };
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
@@ -299,8 +277,8 @@ export function remplitPanneau(){
           " seront définitivement perdus.",
           "Supprimer", () => {
             memorise();
-            dessins()[P().id] = mesCalques().filter(y => y.id !== x.ref.id);
-            if (calqueActif() === x.ref.id) activeCalque(null);
+            DESSINS[P().id] = mesCalques().filter(y => y.id !== x.ref.id);
+            if (calqueActif === x.ref.id) activeCalque(null);
             enregistreDessins(); dessineDessins(); remplitPanneau();
           });
       };

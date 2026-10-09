@@ -93,10 +93,17 @@ import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centr
   adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
-import { brancheLibelles, libelles, libelleEmplacement, libellesWebgl } from "./libelles.mjs";
+import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
 import { DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
   refaitDistsFiche } from "./distinctions.mjs";
 import { MONTE, brancheRendu, monteHabillage, montePlan, changePlan } from "./rendu.mjs";
+import { brancheCalquesDessin, DESSINS, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee,
+  marqueAttente, mesCalques, calqueActif, outil, enCours } from "./calques-dessin.mjs";
+import { estCadre, cheminForme } from "./chemin-forme.mjs";
+import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
+  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
+import { branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
+  oublieChoixPoi } from "./points-interet.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -172,10 +179,17 @@ Object.assign(globalThis, {
   adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche,
   _lg, largeur,
-  brancheLibelles, libelles, libelleEmplacement, libellesWebgl,
+  brancheLibelles, libelles, libellesWebgl,
   DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
   refaitDistsFiche,
   brancheRendu, monteHabillage, montePlan, changePlan,
+  brancheCalquesDessin, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee, marqueAttente,
+  mesCalques,
+  estCadre, cheminForme,
+  brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
+  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
+  branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
+  oublieChoixPoi,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -250,3 +264,15 @@ Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernier
    attendent qu'il le soit ; seul le montage le pose (`rendu.mjs`
    `montePlan`). */
 Object.defineProperties(globalThis, vivants({ MONTE: () => MONTE }, "montePlan"));
+
+/* Les calques de dessin du salon ouvert : le chargement les lit par
+   accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
+   `ouvreDessins`). On change ce qu'ils contiennent, jamais l'objet lui-même. */
+Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDessins"));
+/* Le calque ouvert au dessin, l'outil tenu et le tracé en cours : la carte
+   graphique, la visite guidée et les gestes les lisent par accesseur ; seul
+   l'outil de l'exploitant les change, par leurs portes, et le montage d'un
+   pavillon referme le calque. */
+Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, "poseCalqueActif"));
+Object.defineProperties(globalThis, vivants({ outil: () => outil }, "poseOutil"));
+Object.defineProperties(globalThis, vivants({ enCours: () => enCours }, "poseEbauche"));

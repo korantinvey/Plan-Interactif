@@ -11,16 +11,17 @@
    La forme choisie elle-même (`formeSel`), sa recherche (`formeParId`) et sa
    boîte (`boite`) restent dans `_edition.html` : le plan public les lit — le
    rendu des calques marque la forme choisie, la fiche et l'itinéraire
-   retrouvent un repère par son identifiant —, et `_dessin.html` la relâche à
-   plusieurs endroits. Le module la lit donc par un lecteur, et la change par
+   retrouvent un repère par son identifiant —, et l'outil de dessin
+   (`outil-dessin.mjs`) la relâche à plusieurs endroits. Le module la lit donc par un lecteur, et la change par
    la porte que le code soudé lui confie (`poseFormeSel`).
 
-   Le reste de l'outil de dessin — le calque actif, l'outil tenu,
-   l'historique, l'enregistrement, le tracé — reste soudé lui aussi. La vue,
-   elle, s'importe de `vue.mjs`.
-   `_edition.html` le confie par `brancheEdition`, à la place que ce code y
-   tenait ; ce qui change d'un geste à l'autre se confie par un lecteur,
-   jamais par sa valeur du moment.
+   Le calque actif et l'outil tenu (`calques-dessin.mjs`), le tracé des
+   formes (`chemin-forme.mjs`, `dessin.mjs`), ce qu'un repère et un arrêt sont
+   (`reperes.mjs`) et la vue (`vue.mjs`) s'importent. L'historique,
+   l'enregistrement et les champs de la boîte à outils vivent dans
+   `outil-dessin.mjs`, qui importe ce module-ci : ils lui sont confiés, comme
+   la forme choisie, par `brancheEdition`, que `_edition.html` appelle à la
+   place que ce code y tenait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -32,56 +33,34 @@ import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liens
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
 import { vue, cadrePlan, versPlan, svg } from "./vue.mjs";
+import { calqueActif, outil } from "./calques-dessin.mjs";
+import { estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
+import { TYPES_REPERE, MODES_TRANSPORT, pictoForme, nomTypeRepere, estTransport, modeTransport, couleurRepere,
+  couleurLigne, couleurEcrite, libelleDoffice } from "./reperes.mjs";
+import { dessineDessins, redessineForme, apercuGuide, seRattache, societeDeForme, etiquetteSociete }
+  from "./dessin.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La forme
-   choisie, l'outil tenu et le calque actif sont des lecteurs : les gestes et
-   la boîte à outils les remplacent sans cesse. */
+   choisie est un lecteur : les gestes et la boîte à outils la remplacent sans
+   cesse. */
 /** @type {Record<string, any>} */
 let soude = {};
 
 const formeSel = () => soude.formeSel();
 const poseFormeSel = (id) => soude.poseFormeSel(id);
-const outil = () => soude.outil();
-const calqueActif = () => soude.calqueActif();
 const formeParId = (id) => soude.formeParId(id);
 const boite = (f) => soude.boite(f);
-const estCadre = (f) => soude.estCadre(f);
 const memorise = (salve) => soude.memorise(salve);
 const enregistreDessins = () => soude.enregistreDessins();
-const dessineDessins = () => soude.dessineDessins();
-const redessineForme = (f) => soude.redessineForme(f);
-const apercuGuide = (d) => soude.apercuGuide(d);
-const pictoForme = (f) => soude.pictoForme(f);
-const nomTypeRepere = (v) => soude.nomTypeRepere(v);
-const estTransport = (f) => soude.estTransport(f);
-const modeTransport = (f) => soude.modeTransport(f);
 const optionsModes = () => soude.optionsModes();
-const couleurRepere = (f) => soude.couleurRepere(f);
-const couleurLigne = (mode, ligne) => soude.couleurLigne(mode, ligne);
-const couleurEcrite = (mode, ligne, choisie, calque) => soude.couleurEcrite(mode, ligne, choisie, calque);
-const libelleDoffice = (type, mode, ligne) => soude.libelleDoffice(type, mode, ligne);
-const seRattache = (f) => soude.seRattache(f);
-const societeDeForme = (f) => soude.societeDeForme(f);
-const etiquetteSociete = (o, soc) => soude.etiquetteSociete(o, soc);
 const societeSaisie = (txt) => soude.societeSaisie(txt);
 const remplitListeSocietes = () => soude.remplitListeSocietes();
-/* Trois tables que le dessin pose une fois pour toutes et ne remplace jamais :
-   leur valeur se confie donc telle quelle. */
-/** @type {number} */
-let EPAISSEUR_TRAIT;
-/** @type {Array<{ v: string, nom: string }>} */
-let TYPES_REPERE;
-/** @type {Array<{ v: string }>} */
-let MODES_TRANSPORT;
 
 /** Ce que le code soudé confie au module, appelé par `_edition.html` à la
  *  place que ce code tenait dans le script du plan. Rien ne s'y exécute au
  *  chargement : il n'y a qu'à retenir ce qui est confié. */
 export function brancheEdition(page){
   soude = page;
-  EPAISSEUR_TRAIT = page.EPAISSEUR_TRAIT;
-  TYPES_REPERE = page.TYPES_REPERE;
-  MODES_TRANSPORT = page.MODES_TRANSPORT;
 }
 
 /** Le geste en cours — déplacer, tirer une poignée, tourner un texte —, ou
@@ -113,7 +92,7 @@ export function dessinePoignees(){
     svg.appendChild(g);
   }
   const cible = formeSel() && formeParId(formeSel());
-  if (!cible || !ADMIN || outil() !== "main" || !calqueActif()){ g.innerHTML = ""; return; }
+  if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
   const f = cible.f;
   const r = cadrePlan();
   const t = Math.max(.15, vue().w / (r.width || 1) * 5);   // demi-côté, en mètres
@@ -187,7 +166,7 @@ export function majElement(){
   const z = $("elemSel");
   if (!z) return;
   const cible = formeSel() && formeParId(formeSel());
-  if (!cible || outil() !== "main"){ z.hidden = true; return; }
+  if (!cible || outil !== "main"){ z.hidden = true; return; }
   z.hidden = false;
   const f = cible.f;
   const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
@@ -566,7 +545,7 @@ export function supprimeForme(){
 
 /* --- gestes d'édition ; renvoient true si l'événement est consommé --- */
 export function editionPointerDown(e){
-  if (!ADMIN || outil() !== "main") return false;
+  if (!ADMIN || outil !== "main") return false;
   const p = versPlan(e.clientX, e.clientY);
 
   // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
@@ -601,7 +580,7 @@ export function editionPointerDown(e){
   if (g){
     const id = g.dataset.f;
     const cible = formeParId(id);
-    const sienne = cible && cible.c.id === calqueActif();
+    const sienne = cible && cible.c.id === calqueActif;
 
     /* Seul le calque ouvert par l'exploitant se laisse retoucher. Une forme
        d'un autre calque n'est ni sélectionnée ni déplacée : trop de dessins

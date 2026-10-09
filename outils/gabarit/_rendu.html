@@ -15,8 +15,9 @@
    l'écoute des polices tenait : elle passe ainsi avant celle du rendu WebGL,
    qui repeint à la même arrivée en relisant les libellés, et les trouve déjà
    retaillés. Ce que le code soudé tient encore leur est confié — la vue par
-   un lecteur, ce qui se déclare plus loin dans le script par des détours, lus
-   au moment de l'appel.
+   un lecteur ; par des détours, lus au moment de l'appel, ce qui se déclare
+   plus loin dans le script, et le dessin des calques (`modules/dessin.mjs`,
+   `modules/points-interet.mjs`), qui importe ce que les libellés importent.
    ============================================================ */
 brancheLibelles({
   vue: () => view,
@@ -25,20 +26,17 @@ brancheLibelles({
   decoupeStand: (id, iSoc) => decoupeStand(id, iSoc),
   poseLibellesDessines: (pxParM) => poseLibellesDessines(pxParM),
   phareZone: (o) => phareZone(o),
-  rafraichitFleches: () => { if (typeof rafraichitFleches === "function") rafraichitFleches(); },
-  mesCalques: () => mesCalques(),
+  rafraichitFleches: () => rafraichitFleches(),
   societeDeForme: (f) => societeDeForme(f),
   nomSurLePlan: (soc) => nomSurLePlan(soc),
   boite: (f) => boite(f),
 });
 
-/* Le montage d'un pavillon. Le calque ouvert, que les outils de dessin
-   changent sans cesse, ne s'oublie que par sa porte, ici ; ce qui n'existe
+/* Le montage d'un pavillon. Ce qui n'existe
    pas partout — la nappe de la grille, le calage de la carte — sous la garde
    qu'il avait ; la reprise d'un emplacement, l'historique de l'éditeur et la
    boîte à outils dans leur tranche, que le visiteur ne reçoit pas. */
 brancheRendu({
-  oublieCalqueActif: () => { calqueActif = null; },
   dessineDessins: () => dessineDessins(),
   rafraichitApercu: () => { if (typeof rafraichitApercu === "function") rafraichitApercu(); },
   construitPanneau: () => construitPanneau(),

@@ -39,6 +39,7 @@ import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
 import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES } from "./recherche.mjs";
 import { libelles, coexChoisit } from "./libelles.mjs";
+import { typeZone } from "./reperes.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Ce qui est
    déclaré plus bas dans le script — les gestes, le dessin, le parcours — l'est
@@ -49,7 +50,6 @@ const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => soude.d
 const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
 const montePlan = () => soude.montePlan();
 const marqueStandsDessines = () => soude.marqueStandsDessines();
-const typeZone = (/** @type {any} */ z) => soude.typeZone(z);
 const nomDeLaZone = (/** @type {any} */ z) => soude.nomDeLaZone(z);
 const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
 const fermeParcours = () => soude.fermeParcours();

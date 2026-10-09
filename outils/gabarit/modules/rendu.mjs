@@ -8,15 +8,17 @@
 
    Il se branche dans `_rendu.html`, à la place que son code tenait. Ce que le
    code soudé tient encore lui est confié par des détours, lus au moment de
-   monter : les calques de dessin et le calque ouvert (`_dessin.html`), le fond
-   d'un pavillon (`_admin2.html`), le panneau des calques (`_pile.html`), et ce
+   monter : le dessin des calques (`dessin.mjs`, qui importe la fiche que ce
+   module importe), le fond d'un pavillon (`_admin2.html`), le panneau des calques (`_pile.html`), et ce
    que seule l'administration connaît — la nappe de la grille, le calage de la
    carte — sous la garde qu'il avait. La reprise d'un emplacement,
    l'historique de l'éditeur et la boîte à outils, que le visiteur ne reçoit
    pas, restent dans une tranche du branchement : la page publique n'en
    confie rien, et le montage n'a rien à oublier.
 
-   Le drapeau `MONTE` ne change qu'ici : le code soudé le lit par accesseur.
+   Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
+   `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : le code soudé le
+   lit par accesseur.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -31,6 +33,7 @@ import { dessineBorne } from "./borne.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
 import { ferme } from "./fiche.mjs";
+import { poseCalqueActif } from "./calques-dessin.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le premier
    montage attend les données, bien après le branchement. */
@@ -102,7 +105,7 @@ export function montePlan(){
   poseEmprise(p.emprise);
   // les tracés relevés valaient pour les stands du pavillon qu'on quitte
   oublieDists();
-  soude.oublieCalqueActif();
+  poseCalqueActif(null);
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter ; la
      boîte à outils n'existe qu'en administration. La page publique ne confie
