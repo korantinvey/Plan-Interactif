@@ -30,6 +30,9 @@ import { NOM_VOLET_SUGGESTION, voletSuggestion, brancheReglageSuggestion } from 
 import { reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel } from "./tutoriel.mjs";
 import { majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
   pousseConfiguration, brancheSauvegarde, brancheEnregistrement } from "./enregistrement.mjs";
+import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
+  correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
+  appliqueDimension, brancheAimants } from "./aimants.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -50,4 +53,7 @@ Object.assign(globalThis, {
   reglageTuto, tutoPropose, chapitresTuto, lanceTutoriel,
   majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
   pousseConfiguration, brancheSauvegarde, brancheEnregistrement,
+  ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
+  correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
+  appliqueDimension, brancheAimants,
 });
