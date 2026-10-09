@@ -344,7 +344,7 @@ Fonctions :
 
 `#data`
 
-### `_langue.js` — 794 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
+### `_langue.js` — 798 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -518,7 +518,7 @@ Fonctions :
 
 - l.1 · 15. La suggestion — le branchement
 
-### `_sw.js` — 562 l.
+### `_sw.js` — 566 l.
 
 Fonctions :
 
@@ -970,13 +970,13 @@ Fonctions :
 `routeParLiaisons` 2495 · `routeEntre` 2533 · `mesureMarches` 2571 · `coupeMarche` 2586
 `distancesDesArrets` 2602 · `ecritDistance` 2616 · `ecritDuree` 2624 · `phraseLiaison` 2638
 
-### `modules/lien-parcours.mjs` — 92 l. → plan, plan-admin
+### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
 - l.1 · Le parcours écrit dans un lien, et relu
 
 Fonctions :
 
-`codeIdParcours` 40 · `codeParcours` 58 · `champParcours` 70 · `litCodeParcours` 77
+`codeIdParcours` 45 · `codeParcours` 63 · `champParcours` 75 · `litCodeParcours` 82
 
 ### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
@@ -1147,13 +1147,13 @@ Fonctions :
 `valeursSugg` 72 · `relevePalmares` 90 · `etiquetteSugg` 110 · `voletSuggestion` 120
 `brancheReglageSuggestion` 428
 
-### `modules/salon.mjs` — 43 l. → plan, plan-admin
+### `modules/salon.mjs` — 50 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
 
 Fonctions :
 
-`cheminDuSalon` 26 · `cheminPartageable` 37
+`cheminDuSalon` 33 · `cheminPartageable` 44
 
 ### `modules/session.mjs` — 133 l. → plan, plan-admin, console, rapport
 
