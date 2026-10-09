@@ -54,10 +54,11 @@ function releve() {
 
 const vus = releve();
 
+/* Un stock absent ne se recrée pas de lui-même : il accepterait tout ce qui
+   est là, fonctions neuves comprises, et le cliquet ne tiendrait plus rien. */
 if (!fs.existsSync(ACCEPTES)) {
-  fs.writeFileSync(ACCEPTES, JSON.stringify([...vus.keys()].sort(), null, 1) + "\n");
-  console.log(`Stock inscrit : ${vus.size} fonctions soudées.`);
-  process.exit(0);
+  console.error("`outils/soude-acceptes.json` manque : reprenez-le de `main`.");
+  process.exit(1);
 }
 
 const stock = new Set(JSON.parse(fs.readFileSync(ACCEPTES, "utf8")));
