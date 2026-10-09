@@ -1,10 +1,11 @@
 /* ============================================================
    La charge annoncée — ce que les autres journées ont déjà posé
 
-   Sortie de `_journee.html`, où elle se branche encore (`brancheCharge`) :
-   le réglage du salon, le parcours et la visite calculée vivent toujours
-   dans le code soudé, qui les lui confie à la place qu'elle y tenait. Le
-   calcul qu'elle nourrit, lui, est dans `ordonnanceur.mjs`.
+   Sortie de `_journee.html`. Elle se branche par `brancheCharge`, que
+   `journee.mjs` appelle en se branchant lui-même, à la place qu'elle tenait :
+   le réglage du salon vient du code soudé, le parcours et la visite calculée
+   des modules qui les tiennent. Le calcul qu'elle nourrit, lui, est dans
+   `ordonnanceur.mjs`.
    ============================================================ */
 import { API, SLUG, BORNE } from "./salon.mjs";
 import { mesureOuverte } from "./mesure.mjs";
@@ -13,10 +14,10 @@ import { jourISO } from "./temps.mjs";
 import { SEUIL_PEINE, TRANCHES_JOUR, TRANCHES_MINI, trancheDe, dilatationPour }
   from "./ordonnanceur.mjs";
 
-/* Ce que le code soudé confie, et qu'un module ne peut pas importer : le
-   réglage de la concentration (`_admin1.html`), l'identifiant du parcours et
-   le parcours lui-même (`_parcours.html`), la visite calculée
-   (`_journee.html`). Les deux derniers sont réaffectés là-bas : on les lit
+/* Ce qu'on lui confie : le réglage de la concentration (`_admin1.html`, code
+   soudé), l'identifiant du parcours et le parcours lui-même (`parcours.mjs`),
+   la visite calculée (`journee.mjs`, qui importe ce module : l'importer en
+   retour bouclerait). Les deux derniers sont réaffectés là-bas : on les lit
    donc par une fonction, qui rend la valeur du moment. */
 /** @type {(() => boolean) | null} */
 let seuilGere = null;
@@ -30,7 +31,8 @@ let parcours = () => ({ stands: [] });
 let sejour = () => null;
 
 /**
- * Le branchement, appelé par `_journee.html` à la place que ce code y tenait.
+ * Le branchement, appelé par `journee.mjs` à la place que ce code tenait
+ * dans `_journee.html`.
  *
  * @param {{ seuilGere: () => boolean, seuilConcentration: (o: any) => number,
  *           identifiantParcours: () => string, parcours: () => { stands: string[] },

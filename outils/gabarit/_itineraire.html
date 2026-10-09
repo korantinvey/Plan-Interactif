@@ -12,8 +12,8 @@ brancheItineraire({
   dessins: () => (typeof DESSINS === "object" ? DESSINS : undefined),
   cheminForme, pictoForme, nomTypeRepere, estPorte, ouvreEntrant, ouvreSortant,
   instantConf,
-  /* Déclarée plus bas, dans `_journee.html` : on la confie par un détour, lu
-     au moment du calcul, et non par sa valeur, qui n'existe pas encore ici. */
+  /* Exposée par `modules/sejour.mjs` : on la confie par un détour, lu au
+     moment du calcul, comme lorsqu'elle était déclarée plus bas. */
   finInstant: (c) => finInstant(c),
 });
 

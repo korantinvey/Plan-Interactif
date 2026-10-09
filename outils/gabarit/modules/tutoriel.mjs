@@ -43,6 +43,7 @@ import { PARCOURS, dansParcours } from "./parcours.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { resteSponsor } from "./sponsor.mjs";
 import { ecritDistance, ecritDuree } from "./itineraire.mjs";
+import { SEJOUR, JOURNEE, vueJournee as VUE_JOURNEE, joursAVenir } from "./journee.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
    se lance qu'une fois la page démarrée, bien après le branchement. */
@@ -59,15 +60,16 @@ let svg = null;
 /**
  * Le branchement, appelé par `_tutoriel.html` à la place de la visite.
  *
- * L'état de l'itinéraire, de la journée, du code « Vous êtes ici » et de
- * l'éditeur se confie par des lecteurs, non par des valeurs : le code soudé
- * le remplace à chaque geste, et la visite doit lire celui du moment.
+ * L'état de l'itinéraire, du code « Vous êtes ici » et de l'éditeur se
+ * confie par des lecteurs, non par des valeurs : le code soudé le remplace à
+ * chaque geste, et la visite doit lire celui du moment. Celui de la journée
+ * s'importe de `journee.mjs`, qui le tient.
  *
  * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
- *   centre: Function, joursAVenir: Function, ferme: Function, fermeParcours: Function,
+ *   centre: Function, ferme: Function, fermeParcours: Function,
  *   fermeItineraire: Function, etroit: Function, planAdmin: boolean, reduit: boolean, svg: any,
  *   route: () => any, attente: () => any, iti: () => any, visee: () => any, eteintVisee: Function,
- *   journee: () => any, vueJournee: () => boolean, sejour: () => any, iciActif: () => boolean,
+ *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
  */
 export function brancheTutoriel(b){
@@ -82,7 +84,6 @@ const optionActive = (cle) => soude.optionActive(cle);
 const montre = (type, cle) => soude.montre(type, cle);
 const changePlan = (i) => soude.changePlan(i);
 const centre = (o) => soude.centre(o);
-const joursAVenir = () => soude.joursAVenir();
 const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
 const fermeItineraire = () => soude.fermeItineraire();
@@ -94,10 +95,10 @@ const attente = () => soude.attente();
 const iti = () => soude.iti();
 const visee = () => soude.visee();
 const eteintVisee = () => soude.eteintVisee();
-// la journée calculée et ce que le tiroir montre (`_journee.html`)
-const journee = () => soude.journee();
-const vueJournee = () => soude.vueJournee();
-const sejour = () => soude.sejour();
+// la journée calculée et ce que le tiroir montre (`journee.mjs`)
+const journee = () => JOURNEE;
+const vueJournee = () => VUE_JOURNEE;
+const sejour = () => SEJOUR;
 // un code « Vous êtes ici » vient de poser le visiteur sur le plan (`_ici.html`)
 const iciActif = () => soude.iciActif();
 /* Un geste d'exploitant en cours — libellé qu'on place, trait qu'on trace,

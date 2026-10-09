@@ -1,4 +1,4 @@
-/* `outils/gabarit/_journee.html` — « Organiser ma journée » : la question posée
+/* `outils/gabarit/modules/journee.mjs` — « Organiser ma journée » : la question posée
    avant le calcul, puis la journée rangée heure par heure.
 
    Les heures arrivent écrites « 09h30 » et les durées « 1 h 30 min » : les
