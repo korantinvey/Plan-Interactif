@@ -18,6 +18,8 @@ import { coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCou
   from "./chaleur.mjs";
 import { ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcrits, ecritLiens,
   annuaireLiaisons } from "./itineraire.mjs";
+import { brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
+  cartePointerMove, cartePointerUp, voletEnvirons } from "./calage-carte.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -26,4 +28,6 @@ Object.assign(globalThis, {
   coloreChaleur, rangChaleur, NOM_VOLET_MESURE, voletMesure, evenementCourant, brancheChaleur,
   ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcrits, ecritLiens,
   annuaireLiaisons,
+  brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
+  cartePointerMove, cartePointerUp, voletEnvirons,
 });
