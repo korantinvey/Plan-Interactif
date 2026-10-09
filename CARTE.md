@@ -493,33 +493,24 @@ Fonctions :
 
 `clesFiche` 25 · `voletOrdre` 42 · `enregistreConf` 630 · `ecarte` 644 · `joli` 659
 
-### `_parcours.html` — 755 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 399 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
-`cleParcours` 63 · `identifiantParcours` 100 · `casierParcours` 108 · `dansParcours` 109
-`jourParcours` 112 · `attenduDepuisTropLongtemps` 117 · `trieParcours` 128
-`chargeParcours` 138 · `parcoursAEcrire` 172 · `enregistreParcours` 188
-`tientLeStockage` 217 · `basculeParcours` 238 · `verseAuParcours` 283
-`plurielParcours` 309 · `contenuParcours` 318 · `retenusPourParcours` 344
-`ajouteToutAuParcours` 369 · `poseToutAuParcours` 392 · `signetParcours` 418
-`boutonParcours` 424 · `rafraichitMarque` 429 · `brancheParcours` 442 · `calqueMarques` 474
-`dessineMarques` 490 · `marqueParcours` 520 · `rafraichitParcours` 534 · `instantConf` 565
-`cleTemps` 569 · `nomDeStand` 579 · `rangParcours` 581 · `groupeParcours` 601
-`remplitParcours` 610 · `ouvreParcours` 699 · `fermeParcours` 711 · `videLeParcours` 727
+`basculeParcours` 28 · `verseAuParcours` 73 · `retenusPourParcours` 119
+`ajouteToutAuParcours` 144 · `poseToutAuParcours` 167 · `brancheParcours` 191
+`rafraichitParcours` 204 · `rangParcours` 234 · `remplitParcours` 254 · `ouvreParcours` 343
+`fermeParcours` 355 · `videLeParcours` 371
 
-### `_partage.html` — 453 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 128 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
 Fonctions :
 
-`codeIdParcours` 54 · `codeParcours` 72 · `champParcours` 84 · `litCodeParcours` 91
-`lienParcours` 117 · `ouvrePartageParcours` 133 · `boutonsPartage` 189
-`accueilleParcoursPartage` 267 · `adoptePartage` 345 · `parcoursACopier` 380
-`ouvreGardeParcours` 395 · `demandeGardeParcours` 425 · `poseGardeParcours` 438
+`accueilleParcoursPartage` 33 · `adoptePartage` 111 · `parcoursACopier` 127
 
 ### `_pile.html` — 536 l. → plan-admin.html
 
@@ -906,6 +897,14 @@ Fonctions :
 `routeParLiaisons` 2495 · `routeEntre` 2533 · `mesureMarches` 2571 · `coupeMarche` 2586
 `distancesDesArrets` 2602 · `ecritDistance` 2616 · `ecritDuree` 2624 · `phraseLiaison` 2638
 
+### `modules/lien-parcours.mjs` — 92 l. → plan, plan-admin
+
+- l.1 · Le parcours écrit dans un lien, et relu
+
+Fonctions :
+
+`codeIdParcours` 40 · `codeParcours` 58 · `champParcours` 70 · `litCodeParcours` 77
+
 ### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
@@ -947,11 +946,35 @@ Fonctions :
 `poseLissage` 84 · `peineDeCharge` 105 · `ecartDesJours` 191 · `poidsDesJours` 221
 `chargeDuJour` 244 · `rangeSejour` 253 · `trancheDe` 803 · `dilatationPour` 858
 
+### `modules/parcours.mjs` — 437 l. → plan, plan-admin
+
+- l.1 · Le parcours de visite : la liste, son stockage, sa marque
+
+Fonctions :
+
+`_rafraichit` 23 · `_reprendRappels` 24 · `_synchroniseRappels` 25 · `poseParcours` 85
+`brancheListeParcours` 103 · `cleParcours` 116 · `identifiantParcours` 153
+`casierParcours` 161 · `dansParcours` 162 · `jourParcours` 165
+`attenduDepuisTropLongtemps` 170 · `trieParcours` 181 · `chargeParcours` 191
+`parcoursAEcrire` 225 · `enregistreParcours` 241 · `tientLeStockage` 270
+`plurielParcours` 284 · `contenuParcours` 293 · `signetParcours` 304 · `boutonParcours` 310
+`rafraichitMarque` 315 · `calqueMarques` 348 · `dessineMarques` 366 · `marqueParcours` 396
+`instantConf` 414 · `cleTemps` 418 · `nomDeStand` 428 · `groupeParcours` 430
+
+### `modules/partage.mjs` — 271 l. → plan, plan-admin
+
+- l.1 · Partager son parcours, et en garder une copie
+
+Fonctions :
+
+`lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
+`ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
+
 ### `modules/plan-admin.mjs` — 29 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 91 l. → plan, plan-admin
+### `modules/plan.mjs` — 110 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
