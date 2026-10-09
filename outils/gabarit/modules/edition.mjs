@@ -1,0 +1,722 @@
+/* ============================================================
+   Édition des formes existantes
+   En mode Sélection : un clic choisit, un glisser déplace, les poignées
+   redimensionnent ou déplacent les sommets. Les poignées sont recalculées
+   à chaque changement de vue pour garder une taille constante à l'écran.
+   ============================================================
+   Rien de tout cela ne sert au visiteur : c'est l'outil de dessin de
+   l'exploitant. Un module de l'administration, donc — `plan-admin.mjs`
+   l'embarque, `plan.mjs` jamais.
+
+   La forme choisie elle-même (`formeSel`), sa recherche (`formeParId`) et sa
+   boîte (`boite`) restent dans `_edition.html` : le plan public les lit — le
+   rendu des calques marque la forme choisie, la fiche et l'itinéraire
+   retrouvent un repère par son identifiant —, et `_dessin.html` la relâche à
+   plusieurs endroits. Le module la lit donc par un lecteur, et la change par
+   la porte que le code soudé lui confie (`poseFormeSel`).
+
+   Le reste de l'outil de dessin — le calque actif, l'outil tenu, la vue,
+   l'historique, l'enregistrement, le tracé — reste soudé lui aussi.
+   `_edition.html` le confie par `brancheEdition`, à la place que ce code y
+   tenait ; ce qui change d'un geste à l'autre se confie par un lecteur,
+   jamais par sa valeur du moment.
+   ============================================================ */
+import { $ } from "./dom.mjs";
+import { P } from "./donnees.mjs";
+import { esc, COLLATION } from "./texte.mjs";
+import { ecritMinutes } from "./temps.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { GL, priseWebgl } from "./webgl.mjs";
+import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
+import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
+  ecritDimensions } from "./aimants.mjs";
+
+/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, la
+   forme choisie, l'outil tenu et le calque actif sont des lecteurs : les
+   gestes et la boîte à outils les remplacent sans cesse. */
+/** @type {Record<string, any>} */
+let soude = {};
+/** Le plan, que les poignées habitent et dont les gestes capturent le pointeur.
+ *  @type {SVGSVGElement} */
+let svg;
+
+const vue = () => soude.vue();
+const formeSel = () => soude.formeSel();
+const poseFormeSel = (id) => soude.poseFormeSel(id);
+const outil = () => soude.outil();
+const calqueActif = () => soude.calqueActif();
+const cadrePlan = () => soude.cadrePlan();
+const formeParId = (id) => soude.formeParId(id);
+const boite = (f) => soude.boite(f);
+const estCadre = (f) => soude.estCadre(f);
+const memorise = (salve) => soude.memorise(salve);
+const enregistreDessins = () => soude.enregistreDessins();
+const dessineDessins = () => soude.dessineDessins();
+const redessineForme = (f) => soude.redessineForme(f);
+const versPlan = (x, y) => soude.versPlan(x, y);
+const apercuGuide = (d) => soude.apercuGuide(d);
+const pictoForme = (f) => soude.pictoForme(f);
+const nomTypeRepere = (v) => soude.nomTypeRepere(v);
+const estTransport = (f) => soude.estTransport(f);
+const modeTransport = (f) => soude.modeTransport(f);
+const optionsModes = () => soude.optionsModes();
+const couleurRepere = (f) => soude.couleurRepere(f);
+const couleurLigne = (mode, ligne) => soude.couleurLigne(mode, ligne);
+const couleurEcrite = (mode, ligne, choisie, calque) => soude.couleurEcrite(mode, ligne, choisie, calque);
+const libelleDoffice = (type, mode, ligne) => soude.libelleDoffice(type, mode, ligne);
+const seRattache = (f) => soude.seRattache(f);
+const societeDeForme = (f) => soude.societeDeForme(f);
+const etiquetteSociete = (o, soc) => soude.etiquetteSociete(o, soc);
+const societeSaisie = (txt) => soude.societeSaisie(txt);
+const remplitListeSocietes = () => soude.remplitListeSocietes();
+/* Trois tables que le dessin pose une fois pour toutes et ne remplace jamais :
+   leur valeur se confie donc telle quelle. */
+/** @type {number} */
+let EPAISSEUR_TRAIT;
+/** @type {Array<{ v: string, nom: string }>} */
+let TYPES_REPERE;
+/** @type {Array<{ v: string }>} */
+let MODES_TRANSPORT;
+
+/** Ce que le code soudé confie au module, appelé par `_edition.html` à la
+ *  place que ce code tenait dans le script du plan. Rien ne s'y exécute au
+ *  chargement : il n'y a qu'à retenir ce qui est confié. */
+export function brancheEdition(page){
+  soude = page;
+  svg = page.svg;
+  EPAISSEUR_TRAIT = page.EPAISSEUR_TRAIT;
+  TYPES_REPERE = page.TYPES_REPERE;
+  MODES_TRANSPORT = page.MODES_TRANSPORT;
+}
+
+/** Le geste en cours — déplacer, tirer une poignée, tourner un texte —, ou
+ *  rien. Le dessin le lit pour ne pas effacer les points d'accrochage d'un
+ *  geste qui sort du plan : il lui est exposé en accesseur (`plan-admin.mjs`). */
+export let geste = null;
+
+/* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
+   sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
+function curseurPoignee(f, i){
+  if (estCadre(f)) return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
+  return "move";
+}
+
+function poignees(f){
+  if (estCadre(f)){
+    const b = boite(f);
+    return [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+  }
+  if (f.t === "texte") return [f.pts[0]];
+  return f.pts;
+}
+
+export function dessinePoignees(){
+  let g = $("poignees");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "poignees";
+    svg.appendChild(g);
+  }
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || !ADMIN || outil() !== "main" || !calqueActif()){ g.innerHTML = ""; return; }
+  const f = cible.f;
+  const r = cadrePlan();
+  const t = Math.max(.15, vue().w / (r.width || 1) * 5);   // demi-côté, en mètres
+  const b = boite(f);
+  const marge = t;
+  const pgns = poignees(f).map((p, i) =>
+      '<rect class="pgn" data-i="' + i + '" style="cursor:' + curseurPoignee(f, i) + '"' +
+      ' x="' + (p[0] - t) + '" y="' + (p[1] - t) +
+      '" width="' + (2 * t) + '" height="' + (2 * t) + '"/>').join("");
+  if (f.t === "texte"){ g.innerHTML = cadreTexte(f, t) + pgns; return; }
+  g.innerHTML =
+    '<rect class="cadreSel" x="' + (b[0] - marge) + '" y="' + (b[1] - marge) +
+    '" width="' + (b[2] - b[0] + 2 * marge) + '" height="' + (b[3] - b[1] + 2 * marge) + '"/>' +
+    pgns;
+}
+
+/**
+ * Le cadre d'un texte, tourné avec lui, et la poignée qui le fait pivoter.
+ *
+ * Un texte n'a qu'un point ; son étendue se lit sur le nœud tracé, avant sa
+ * rotation — `getBBox` la donne dans le repère du texte, que le SVG soit
+ * affiché ou seulement relu par le WebGL. La poignée prolonge la ligne du
+ * texte à droite, à hauteur de ses lettres : c'est là que la main la cherche,
+ * et la tirer autour du point d'ancrage couche le texte dans la direction où
+ * on l'emmène.
+ */
+function cadreTexte(f, t){
+  const n = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text');
+  let bb = null;
+  try { bb = n && n.getBBox(); } catch (e) {}
+  const x = f.pts[0][0], y = f.pts[0][1], taille = f.taille || 2;
+  if (!bb || !(bb.width > 0))
+    bb = { x: x - taille * f.txt.length * .28, y: y - taille * .8, width: taille * f.txt.length * .56, height: taille };
+  const tourne = ' transform="rotate(' + (+f.rot || 0) + " " + x + " " + y + ')"';
+  const d = bb.x + bb.width + t, h = poigneeRotation(f, t);
+  return '<g' + tourne + '>' +
+    '<rect class="cadreSel" x="' + (bb.x - t) + '" y="' + (bb.y - t) +
+    '" width="' + (bb.width + 2 * t) + '" height="' + (bb.height + 2 * t) + '"/>' +
+    '<line class="cadreSel" x1="' + d + '" y1="' + h[1] + '" x2="' + (h[0] - t) + '" y2="' + h[1] + '"/>' +
+    '<circle class="pgn rot" data-i="rot" style="cursor:grab" cx="' + h[0] + '" cy="' + h[1] +
+    '" r="' + (1.2 * t) + '"/></g>';
+}
+
+/** La place de la poignée de rotation dans le repère du texte, avant qu'il
+ *  tourne : le geste en tire l'angle qu'elle fait déjà avec le point
+ *  d'ancrage, pour que le texte ne saute pas au premier mouvement. */
+function poigneeRotation(f, t){
+  const n = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text');
+  let bb = null;
+  try { bb = n && n.getBBox(); } catch (e) {}
+  const taille = f.taille || 2;
+  const droite = bb && bb.width > 0 ? bb.x + bb.width : f.pts[0][0] + taille * f.txt.length * .28;
+  return [droite + 5 * t, f.pts[0][1] - taille * .33];
+}
+
+/** Un angle ramené entre −180 et 180 degrés. */
+const angleBorne = a => +((((a + 180) % 360) + 360) % 360 - 180).toFixed(1);
+
+export function choisitForme(id){
+  poseFormeSel(id);
+  // on bascule la classe plutôt que de tout retracer : inutile de réanalyser
+  // les images à chaque changement de sélection
+  $("couches").querySelectorAll(".dcal .forme")
+    .forEach(g => g.classList.toggle("pick", g.dataset.f === id));
+  dessinePoignees();
+  majElement();
+}
+
+/* --- panneau de la forme choisie --- */
+export function majElement(){
+  const z = $("elemSel");
+  if (!z) return;
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || outil() !== "main"){ z.hidden = true; return; }
+  z.hidden = false;
+  const f = cible.f;
+  const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
+                 texte: "Texte", image: "Image", repere: "Repère",
+                 stand: "Stand dessiné" };
+  $("elemType").textContent = NOMS[f.t] || f.t;
+  /* La largeur et la hauteur en toutes lettres : c'est là qu'on rattrape un
+     cadre tracé à peu près, et qu'on en obtient deux fois le même. */
+  ecritDimensions(f);
+  // un repère porte lui aussi un libellé et une taille
+  const estTexte = f.t === "texte" || f.t === "repere";
+  $("elemTexte").hidden = !estTexte;
+  $("elemTailleBloc").hidden = !estTexte;
+  if (estTexte){
+    $("elemTexte").value = f.txt || "";
+    $("elemTaille").value = f.taille || 2;
+  }
+  /* L'orientation ne vaut que pour un texte libre : le libellé d'un repère
+     accompagne un pictogramme qui, lui, reste droit. */
+  $("elemRotationBloc").hidden = f.t !== "texte";
+  if (f.t === "texte") $("elemRotation").value = +f.rot || 0;
+
+  /* L'arrondi se règle après coup, et sur n'importe quel tracé : un contour
+     posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
+     se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
+     calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne" ||
+                        f.t === "stand";
+  const br = $("elemRayonBloc");
+  if (br){
+    br.hidden = !arrondissable;
+    if (arrondissable) $("elemRayon").value = f.r || 0;
+  }
+
+  /* Une ligne posée se relit : un trait fin fait une limite, un trait épais
+     fait un mur, le pointillé un passage qui n'en est pas tout à fait un, et
+     la flèche le sens dans lequel on le prend. Cela se juge sur le plan, une
+     fois le tracé en place. */
+  const bt = $("elemTraitReg");
+  if (bt){
+    bt.hidden = f.t !== "ligne";
+    if (f.t === "ligne"){
+      $("elemEpaisseur").value = String(f.ep > 0 ? f.ep : EPAISSEUR_TRAIT);
+      $("elemStyle").value = f.pointille ? "pointille" : "plein";
+      if ($("elemFleche")) $("elemFleche").value = f.fleche || "";
+    }
+  }
+
+  /* Le type d'un repère se change après coup : une porte mal typée ne se voit
+     qu'en essayant un trajet, et il serait absurde de la redessiner pour
+     cela. Un repère d'avant la séparation du type et du libellé n'en porte
+     pas : la liste s'ouvre sur celui que son libellé laisse deviner, et le
+     choix s'écrit dès qu'on y touche. */
+  const cp = $("elemPicto");
+  if (cp){
+    const estRepere = f.t === "repere";
+    cp.hidden = !estRepere;
+    if (estRepere){
+      if (!cp.options.length)
+        cp.innerHTML = TYPES_REPERE
+          .map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+      cp.value = pictoForme(f) || "";
+    }
+  }
+
+  /* Le mode et la ligne d'un arrêt se reprennent comme son type : un 12 écrit
+     13 se corrige sans redessiner la pastille. La couleur montre celle de la
+     ligne — celle de la signalétique, ou celle qu'on a posée à sa place — et à
+     défaut celle du calque, qui est ce que la pastille porte alors. */
+  const ba = $("elemTransport");
+  if (ba){
+    const arret = f.t === "repere" && estTransport(f);
+    ba.hidden = !arret;
+    if (arret){
+      if (!$("elemMode").options.length) $("elemMode").innerHTML = optionsModes();
+      $("elemMode").value = (modeTransport(f) || MODES_TRANSPORT[0]).v;
+      $("elemLigne").value = f.ligne || "";
+      $("elemCouleur").value = couleurRepere(f) || cible.c.couleur || "#2F49D1";
+    }
+  }
+
+  majLiens(f.t === "repere" ? f : null);
+
+  /* Le rattachement, pour les deux formes qui en ont un. Un stand dessiné
+     désigne une société et non un emplacement — c'est tout l'objet du
+     découpage, deux enseignes se partageant le même numéro ; une image désigne
+     la même chose pour la même raison, le logo d'une hébergée se posant sur sa
+     part du stand. Un seul champ les sert donc, et une image rattachée après
+     coup atteint les hébergées comme le reste. */
+  const cs = $("elemSoc");
+  if (cs){
+    const rattachable = seRattache(f);
+    cs.hidden = !rattachable;
+    if (rattachable){
+      remplitListeSocietes();
+      const l = societeDeForme(f);
+      cs.value = l ? etiquetteSociete(l.o, l.soc) : "";
+    }
+  }
+}
+
+/* ------------------------------------------------------------
+   Ce qu'un passage rejoint
+   ------------------------------------------------------------ */
+/**
+ * Les passages qu'un repère peut rejoindre.
+ *
+ * Ceux des autres plans, et eux seuls : relier deux escaliers du même hall ne
+ * décrirait rien qu'une allée ne dise déjà, et deux portes d'un même pavillon
+ * feraient un raccourci que personne ne peut emprunter. Ce qui reste est
+ * exactement ce dont on a besoin — le palier à l'étage, la porte d'en face.
+ *
+ * Un repère en relie autant qu'il en dessert : la liste reste ouverte tant
+ * qu'il demeure des passages à joindre, parce qu'un escalier de
+ * rez-de-chaussée monte au premier comme au second.
+ */
+function candidatsLiaison(f){
+  const an = annuaireLiaisons();
+  const deja = an.vers.get(f.id) || new Map();
+  const ici = P().id;
+  const out = [];
+  an.par.forEach((o, id) => {
+    if (id === f.id || deja.has(id) || o.p.id === ici) return;
+    out.push(o);
+  });
+  return out.sort((a, b) => a.p.i - b.p.i ||
+    COLLATION.compare(nomRepere(a.f), nomRepere(b.f)));
+}
+
+/**
+ * Écrire une liaison sur les deux repères qu'elle joint.
+ *
+ * Un passage n'a pas de sens : on descend l'escalier qu'on a monté. Il
+ * s'écrit donc des deux côtés, et le second vit dans un autre plan — hors de
+ * l'historique d'annulation, qui ne connaît que le plan ouvert. Le calcul lit
+ * de toute façon l'union des deux écritures : une annulation qui ne défait
+ * qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
+ */
+function ecritDesDeuxCotes(idAutre, change){
+  const cible = formeSel() && formeParId(formeSel());
+  const autre = annuaireLiaisons().par.get(idAutre);
+  if (!cible || !autre || !typeLiaison(cible.f)) return;
+  memorise();
+  ecritLiens(cible.f, change(lienEcrits(cible.f), idAutre));
+  ecritLiens(autre.f, change(lienEcrits(autre.f), cible.f.id));
+  enregistreDessins();
+  majElement();
+}
+
+/** Poser ou retirer un passage. */
+export function changeLien(idAutre, ajoute){
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const reste = l.filter(x => x.id !== id);
+    if (ajoute) reste.push({ id: id, min: null });
+    return reste;
+  });
+}
+
+/**
+ * Fixer le temps d'un passage, ou le rendre à celui de son type.
+ *
+ * Il se règle par couple, et non par repère : le même escalier met une minute
+ * au premier étage et davantage au second, et c'est bien deux passages
+ * distincts qu'on a déclarés. Le champ vide n'est pas zéro — c'est « le temps
+ * ordinaire de ce type de passage », celui qu'affiche son invite.
+ */
+function changeDureeLien(idAutre, txt){
+  const brut = String(txt == null ? "" : txt).trim();
+  const v = brut === "" ? null : Math.max(0, Math.min(120, Math.round(+brut) || 0));
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const x = l.find(y => y.id === id);
+    if (x) x.min = v; else l.push({ id: id, min: v });
+    return l;
+  });
+}
+
+/**
+ * Le panneau des passages du repère choisi.
+ *
+ * Il n'apparaît que pour ce qui est un passage — une porte, un escalier, un
+ * escalator, un ascenseur. Sur un WC il n'aurait rien à relier, et proposer
+ * de le faire inviterait à des trajets qui traversent les murs.
+ */
+function majLiens(f){
+  const z = $("elemLiens");
+  if (!z) return;
+  const t = f && typeLiaison(f);
+  z.hidden = !t;
+  if (!t) return;
+
+  const liste = $("elemLiensListe");
+  liste.innerHTML = "";
+  const liens = liensDe(f);
+  liens.forEach(x => {
+    const d = document.createElement("div");
+    d.className = "lien";
+    d.innerHTML = '<span></span><input class="lienMin" type="number" min="0" max="120" ' +
+      'step="1" title="Temps de passage, en minutes"><b>min</b>' +
+      '<button class="btnSup" title="Retirer ce passage">&times;</button>';
+    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomRepere(x.o.f) +
+      (x.o.visible ? "" : " (calque masqué)");
+    const ch = d.querySelector(".lienMin");
+    ch.value = x.min == null ? "" : x.min;
+    ch.placeholder = t.min;
+    ch.onchange = () => changeDureeLien(x.o.f.id, ch.value);
+    d.querySelector("button").onclick = () => changeLien(x.o.f.id, false);
+    liste.appendChild(d);
+  });
+
+  const sel = $("elemLienAjout");
+  const dispo = candidatsLiaison(f);
+  sel.innerHTML = '<option value="">' +
+    (dispo.length ? "Relier à…" : "Aucun autre passage sur les autres plans") + "</option>" +
+    dispo.map(o => '<option value="' + esc(o.f.id) + '">' + esc(o.p.libelle) + " · " +
+      esc(nomRepere(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
+  sel.disabled = !dispo.length;
+
+  $("elemLienAide").textContent = liens.length
+    ? "Un trajet qui arrive ici continue de l'autre côté. Le temps de chaque " +
+      "passage s'ajoute à celui de la marche ; laissé vide, il vaut " +
+      ecritMinutes(t.min) + "."
+    : "Reliez ce " + t.nom + " à ce qu'il dessert sur les autres plans — un escalier " +
+      "monte souvent à deux étages, et chacun est un passage — et les itinéraires " +
+      "enchaîneront les plans au lieu de s'arrêter là.";
+}
+
+/**
+ * Rattacher une forme à une société, ou l'en détacher.
+ *
+ * Détachée, elle reste sur le plan — elle a été tracée ou déposée, on ne
+ * l'efface pas dans le dos de qui vient de mal saisir un nom — mais elle
+ * n'ouvre plus rien. Un stand dessiné perd du même coup son libellé : le plan
+ * dit ainsi qu'il attend encore son exposant. Une image, elle, redevient
+ * simplement ce qu'elle montre.
+ */
+export function appliqueSociete(){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || !seRattache(cible.f)) return;
+  const ch = $("elemSoc");
+  const l = societeSaisie(ch.value);
+  memorise();
+  if (l){
+    cible.f.stand = l.o.id; cible.f.soc = l.i;
+    ch.value = etiquetteSociete(l.o, l.soc);
+  } else {
+    delete cible.f.stand; delete cible.f.soc;
+    ch.value = "";
+  }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+export function appliqueTexte(salve){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
+  memorise(salve);
+  cible.f.txt = $("elemTexte").value;
+  cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+/** L'orientation d'un texte, en degrés, ramenée entre −180 et 180 : 270 et
+ *  −90 couchent le texte de la même façon, et une seule écriture évite qu'un
+ *  tour complet ne s'accumule au fil des clics. Droit, il n'écrit rien. */
+export function appliqueRotation(salve){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || cible.f.t !== "texte") return;
+  const v = parseFloat($("elemRotation").value);
+  if (!isFinite(v)) return;
+  memorise(salve);
+  const a = angleBorne(v);
+  if (a) cible.f.rot = a; else delete cible.f.rot;
+  /* L'angle se règle flèche tenue, comme l'arrondi : rien d'autre ne bouge
+     que le texte et le cadre qui tourne avec lui. */
+  enregistreDessins(); redessineForme(cible.f); dessinePoignees();
+}
+
+/** L'arrondi des coins de la forme choisie. */
+export function appliqueRayon(){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible) return;
+  memorise();
+  cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
+  // l'arrondi se règle au compte-gouttes, flèche tenue : rien d'autre ne bouge
+  enregistreDessins(); redessineForme(cible.f);
+}
+
+/** L'épaisseur, le style et la pointe du trait de la ligne choisie. Le trait
+ *  ordinaire ne s'écrit pas : la forme revient alors à l'allure de son calque.
+ *  Une flèche se pose et se retire après coup — on s'aperçoit qu'une allée est
+ *  à sens unique en regardant le plan, rarement en la traçant. */
+export function appliqueTrait(){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || cible.f.t !== "ligne") return;
+  memorise();
+  const ep = parseFloat($("elemEpaisseur").value);
+  if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) cible.f.ep = ep;
+  else delete cible.f.ep;
+  if ($("elemStyle").value === "pointille") cible.f.pointille = true;
+  else delete cible.f.pointille;
+  const fl = $("elemFleche");
+  if (fl && fl.value) cible.f.fleche = fl.value;
+  else delete cible.f.fleche;
+  enregistreDessins(); dessineDessins();
+}
+
+/**
+ * Ce qu'un arrêt dessert : son mode, sa ligne, et la couleur que la ligne lui
+ * donne.
+ *
+ * Le libellé posé d'office suit la ligne tant que personne ne l'a réécrit : un
+ * « Métro 12 » corrigé en 4 s'appelle « Métro 4 », et n'oblige pas à reprendre
+ * son nom à la main. Celui qu'un exploitant a écrit — « Métro 12, sortie
+ * Nord » — ne bouge pas.
+ *
+ * La couleur, elle, ne se lit dans le nuancier que si la ligne n'a pas bougé :
+ * changer de ligne c'est en prendre la couleur, et non garder par inadvertance
+ * celle de la précédente.
+ */
+export function appliqueTransport(salve){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || !estTransport(cible.f)) return;
+  const f = cible.f;
+  const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
+  const memeLigne = mode === f.mode && ligne === String(f.ligne || "");
+  const choisie = memeLigne ? $("elemCouleur").value : couleurLigne(mode, ligne);
+  memorise(salve);
+  if (f.txt === libelleDoffice(pictoForme(f), f.mode, f.ligne))
+    f.txt = libelleDoffice(pictoForme(f), mode, ligne);
+  f.mode = mode;
+  if (ligne) f.ligne = ligne; else delete f.ligne;
+  const c = couleurEcrite(mode, ligne, choisie, cible.c);
+  if (c) f.couleur = c; else delete f.couleur;
+  enregistreDessins();
+  /* Le libellé a pu suivre, et la couleur avec lui : le panneau se relit, comme
+     après tout changement de ce qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
+}
+
+/** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
+ *  vaut comme passage d'un plan à l'autre — une porte, un escalier, un
+ *  ascenseur. Le terrain, lui, ne bouge pas : un repère ne barre rien. */
+export function appliquePicto(){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible || cible.f.t !== "repere") return;
+  memorise();
+  const avant = pictoForme(cible.f);
+  cible.f.picto = $("elemPicto").value;
+  /* Devenir un arrêt sans mode laisserait le pictogramme générique sous un
+     panneau qui en propose trois : on pose le premier, celui que le panneau
+     montre déjà. */
+  if (estTransport(cible.f) && !modeTransport(cible.f))
+    cible.f.mode = MODES_TRANSPORT[0].v;
+  /* Le libellé posé d'office suit le type : un repère nommé « WC » faute
+     d'avoir été nommé ne reste pas « WC » en devenant un ascenseur. Celui
+     qu'on a écrit à la main, lui, ne bouge pas. */
+  if (cible.f.txt === libelleDoffice(avant, cible.f.mode, cible.f.ligne))
+    cible.f.txt = libelleDoffice(cible.f.picto, cible.f.mode, cible.f.ligne);
+  /* Un repère qui cesse d'être un passage garde ses liaisons écrites : elles
+     ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
+     ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */
+  enregistreDessins();
+  /* Devenir un escalier, ou cesser de l'être, ouvre ou ferme le panneau des
+     passages : le panneau se relit donc, comme après tout changement de ce
+     qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
+}
+
+export function supprimeForme(){
+  const cible = formeSel() && formeParId(formeSel());
+  if (!cible) return;
+  memorise();
+  cible.c.formes = cible.c.formes.filter(x => x.id !== formeSel());
+  poseFormeSel(null);
+  enregistreDessins(); dessineDessins(); dessinePoignees(); majElement();
+}
+
+/* --- gestes d'édition ; renvoient true si l'événement est consommé --- */
+export function editionPointerDown(e){
+  if (!ADMIN || outil() !== "main") return false;
+  const p = versPlan(e.clientX, e.clientY);
+
+  // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
+  const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
+  if (pgn && formeSel() && pgn.dataset.i === "rot"){
+    const cible = formeParId(formeSel());
+    if (cible && cible.f.t === "texte"){
+      memorise();
+      const f = cible.f, c = f.pts[0];
+      const r = cadrePlan();
+      const h = poigneeRotation(f, Math.max(.15, vue().w / (r.width || 1) * 5));
+      geste = { type: "rotation", f: f,
+                cale: Math.atan2(h[1] - c[1], h[0] - c[0]) * 180 / Math.PI };
+      svg.style.cursor = "grabbing";
+      try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+      return true;
+    }
+  }
+  if (pgn && formeSel()){
+    const cible = formeParId(formeSel());
+    if (cible){
+      memorise();
+      geste = { type: "poignee", i: +pgn.dataset.i, depart: p,
+                pts: cible.f.pts.map(q => q.slice()), f: cible.f };
+      svg.style.cursor = curseurPoignee(cible.f, geste.i);
+      try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+      return true;
+    }
+  }
+
+  const g = GL.actif ? priseWebgl(e.clientX, e.clientY, ".dcal .forme") : e.target.closest(".dcal .forme");
+  if (g){
+    const id = g.dataset.f;
+    const cible = formeParId(id);
+    const sienne = cible && cible.c.id === calqueActif();
+
+    /* Seul le calque ouvert par l'exploitant se laisse retoucher. Une forme
+       d'un autre calque n'est ni sélectionnée ni déplacée : trop de dessins
+       partaient à la dérive sur un clic destiné à la vue. Pour la reprendre,
+       il faut ouvrir son calque depuis le panneau. Une image liée à un stand
+       reste l'exception : elle ouvre sa fiche, comme pour un visiteur ; le
+       reste laisse passer le geste vers le plan, qui se déplace. */
+    if (!sienne) return false;
+
+    if (id !== formeSel()) choisitForme(id);
+    if (cible){
+      memorise();
+      geste = { type: "deplace", depart: p, pts: cible.f.pts.map(q => q.slice()), f: cible.f };
+      svg.style.cursor = "move";
+      try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    return true;
+  }
+
+  if (formeSel()){ choisitForme(null); return true; }
+  return false;    // rien sous le pointeur : on laisse le déplacement de la vue
+}
+
+export function editionPointerMove(e){
+  if (!geste) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  if (geste.type === "rotation"){ tourneTexte(geste, p, e); return true; }
+  let dx = p[0] - geste.depart[0], dy = p[1] - geste.depart[1];
+  const f = geste.f;
+  // une forme ne s'accroche pas à elle-même : elle ne bougerait plus
+  const acc = { alt: e.altKey, sauf: f.id };
+
+  if (geste.type === "deplace"){
+    /* Le déplacement s'accroche par ses quatre coins, et retient la plus
+       petite correction : glisser un stand contre son voisin le range par
+       celui de ses bords qui arrive le premier. */
+    const c = correction(coinsGeste(geste.pts, estCadre(f)).map(q => [q[0] + dx, q[1] + dy]), acc);
+    dx += c[0]; dy += c[1];
+    f.pts = geste.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
+  } else if (estCadre(f)){
+    // la poignée opposée reste fixe ; l'image garde ses proportions
+    const b = [Math.min(geste.pts[0][0], geste.pts[1][0]), Math.min(geste.pts[0][1], geste.pts[1][1]),
+               Math.max(geste.pts[0][0], geste.pts[1][0]), Math.max(geste.pts[0][1], geste.pts[1][1])];
+    const coins = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+    const fixe = coins[(geste.i + 2) % 4];
+    let mx = coins[geste.i][0] + dx, my = coins[geste.i][1] + dy;
+    if (f.t === "image" && f.pts.length === 2){
+      /* Seule la largeur s'accroche : la hauteur est commandée par les
+         proportions de l'image, et un aimant qui la tirerait les casserait. */
+      acc.axes = "x";
+      mx += correction([[mx, my]], acc)[0];
+      const ratio = (b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
+      const l = Math.abs(mx - fixe[0]);
+      my = fixe[1] + Math.sign(my - fixe[1] || 1) * (l / ratio);
+    } else {
+      const c = correction([[mx, my]], acc);
+      mx += c[0]; my += c[1];
+    }
+    f.pts = [[+Math.min(fixe[0], mx).toFixed(2), +Math.min(fixe[1], my).toFixed(2)],
+             [+Math.max(fixe[0], mx).toFixed(2), +Math.max(fixe[1], my).toFixed(2)]];
+  } else {
+    const q = geste.pts.map(x => x.slice());
+    q[geste.i] = aimante([+(q[geste.i][0] + dx).toFixed(2), +(q[geste.i][1] + dy).toFixed(2)], acc);
+    f.pts = q;
+  }
+  /* Refaire le plan entier à chaque mouvement laissait la forme traîner une
+     demi-seconde derrière le pointeur : seule celle qu'on tire a changé. */
+  redessineForme(f); dessinePoignees();
+  /* La cote et les champs suivent le geste : c'est en le retenant qu'on
+     s'arrête sur douze mètres, pas en le vérifiant après coup. */
+  if (estCadre(f)){
+    const b = boite(f);
+    montreCote(coteCadre([b[0], b[1]], [b[2], b[3]]), [b[2], b[3]]);
+  }
+  ecritDimensions(f);
+  return true;
+}
+
+/**
+ * Le texte suit la poignée autour de son point d'ancrage.
+ *
+ * Maj tenue, il avance par quinzièmes de demi-tour ; sinon au degré, mais
+ * l'horizontale et la verticale le retiennent à quatre degrés près — un texte
+ * qu'on voulait droit et qu'on lâche à 1,5° se lit penché sans qu'on voie
+ * pourquoi. Alt lâche cette retenue, comme il lâche les aimants.
+ */
+function tourneTexte(g, p, e){
+  const f = g.f, c = f.pts[0];
+  if (Math.hypot(p[0] - c[0], p[1] - c[1]) < 1e-3) return;
+  let a = Math.atan2(p[1] - c[1], p[0] - c[0]) * 180 / Math.PI - g.cale;
+  if (e.shiftKey) a = Math.round(a / 15) * 15;
+  else {
+    a = Math.round(a);
+    const droit = Math.round(a / 90) * 90;
+    if (!e.altKey && Math.abs(a - droit) <= 4) a = droit;
+  }
+  a = angleBorne(a);
+  if (a) f.rot = a; else delete f.rot;
+  redessineForme(f); dessinePoignees();
+  if ($("elemRotation")) $("elemRotation").value = a;
+}
+
+export function editionPointerUp(e){
+  if (!geste) return false;
+  const f = geste.f;
+  geste = null;
+  svg.style.cursor = "";
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  apercuGuide(null); montreCote(null); montreAimants(null);
+  retientTaille(f);
+  enregistreDessins();
+  return true;
+}
