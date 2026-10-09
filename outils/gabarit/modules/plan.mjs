@@ -73,6 +73,15 @@ import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItiner
 import { brancheVue, emp, poseEmprise, vise, cadrePlan, figeTextes, appliqueVue, repeintLibelles,
   rafraichitVue, poseVue, masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom,
   versPlan } from "./vue.mjs";
+import { CONF, CLE_CONF, brancheConfiguration, salonRange, ouvreConf, reglagesDuSalon, conf, jeton,
+  optionActive, programmeOffert, suggestionOfferte, chercheSorte } from "./configuration.mjs";
+import { trio } from "./couleurs.mjs";
+import { brancheApparence, appliqueApparence } from "./apparence.mjs";
+import { brancheHabillage, modeDist, couleurDist } from "./habillage.mjs";
+import { modeleRetenu, habilleModale } from "./modeles.mjs";
+import { P_NOM, P_CODE, branchePolices, posePoliceLibelles } from "./polices-plan.mjs";
+import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
+import { minutesVisite, lueHeure, datesSalon, horairesSalon } from "./horaires.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -125,6 +134,15 @@ Object.assign(globalThis, {
   brancheTiroirItineraire,
   brancheVue, poseEmprise, cadrePlan, figeTextes, appliqueVue, repeintLibelles, rafraichitVue, poseVue,
   masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom, versPlan,
+  brancheConfiguration, salonRange, ouvreConf, reglagesDuSalon, conf, jeton,
+  optionActive, programmeOffert, suggestionOfferte, chercheSorte,
+  trio,
+  brancheApparence, appliqueApparence,
+  brancheHabillage, modeDist, couleurDist,
+  modeleRetenu, habilleModale,
+  branchePolices, posePoliceLibelles,
+  seuilGere, seuilImpose, seuilConcentration,
+  minutesVisite, lueHeure, datesSalon, horairesSalon,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -179,3 +197,14 @@ Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee")
    et la fiche les lisent par accesseur. */
 Object.defineProperties(globalThis, vivants({ emp: () => emp }, "poseEmprise"));
 Object.defineProperties(globalThis, vivants({ vise: () => vise }, "glisseVers"));
+/* La configuration du salon ouvert, et la clé sous laquelle le poste la
+   range : tout le plan les lit, à chaque réglage ; seule l'ouverture d'un
+   salon les remplace (`configuration.mjs` `ouvreConf`). On change ce qu'elle
+   contient, jamais l'objet lui-même. */
+Object.defineProperties(globalThis, vivants({ CONF: () => CONF, CLE_CONF: () => CLE_CONF }, "ouvreConf"));
+
+/* La graisse et la police des libellés du plan, que les mesures relisent à
+   chaque tracé : seul le choix d'un modèle ou d'une police les remplace
+   (`polices-plan.mjs` `posePoliceLibelles`). */
+Object.defineProperties(globalThis, vivants({ P_NOM: () => P_NOM, P_CODE: () => P_CODE },
+  "posePoliceLibelles"));

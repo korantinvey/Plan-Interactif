@@ -1,0 +1,26 @@
+/* `outils/gabarit/modules/modeles.mjs` — les modèles d'habillage du plan. */
+module.exports = {
+  // les modèles d'habillage
+  "Sobre": "Plain",
+  "Le rendu d'origine : un seul rythme, de la liste à la fiche.": "The original look: one rhythm, from the list to the details.",
+  "Grille": "Grid",
+  "Encre pleine, numéro en filigrane, filets francs jusque dans la liste.": "Solid ink, watermarked number, crisp rules right down the list.",
+  "Console": "Console",
+  "Chasse fixe et invites de commande, sur un phosphore à la couleur du salon.": "Monospace type and command prompts, on a phosphor glow in the show's colour.",
+  "Billet": "Ticket",
+  "Bandeau d'accent sur la recherche, numéros comptables, lignes perforées.": "Accent band on the search, ledger numbers, perforated lines.",
+  "Magazine": "Magazine",
+  "Serif à fort contraste et italiques : le catalogue et son sommaire.": "High-contrast serif and italics: the catalogue and its contents page.",
+  "Brut": "Raw",
+  "Trait épais, ombre dure, aplat franc. Papier et noir, sans rien emprunter au salon.": "Thick lines, hard shadows, flat colour. Paper and black, borrowing nothing from the show.",
+  "Verre": "Glass",
+  "Un bloc de la couleur du salon, champs et lignes en carreaux translucides.": "A block in the show's colour, with fields and rows as translucent panes.",
+  "Kraft": "Kraft",
+  "Carton et machine à écrire, « nouvel exposant » tamponné de travers.": "Cardboard and typewriter, with “new exhibitor” stamped askew.",
+  "Signalétique": "Signage",
+  "Aplat, flèche et capitales : un stand se lit comme une direction de hall.": "Flat colour, arrows and capitals: a stand reads like a hall sign.",
+  "Chronologie": "Timeline",
+  "Le programme en ligne de temps, et la liste égrenée le long du même rail.": "The programme as a timeline, and the list strung along the same rail.",
+  "Nu": "Bare",
+  "Ni cadre ni libellés : la hiérarchie typographique seule.": "No frames, no labels: typographic hierarchy alone.",
+};
