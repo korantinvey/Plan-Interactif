@@ -11,6 +11,8 @@ module.exports = {
   "Copier le lien": "Copy link",
   "Copié": "Copied",
   "Échec de la copie": "Copy failed",
+  "Cette page ne nous laisse pas copier pour vous : le lien est sélectionné, copiez-le puis collez-le où vous voulez.":
+    "This page won't let us copy for you: the link is selected, copy it and paste it wherever you like.",
   "Partager…": "Share…",
   "voici les stands et les conférences que j'ai retenus.": "here are the stands and conferences I picked.",
 

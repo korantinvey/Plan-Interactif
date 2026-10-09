@@ -753,15 +753,15 @@ Fonctions :
 `retireChampPerso` 452 · `lignesPerso` 513 · `cadreFiche` 536 · `ouvreFiche` 566
 `cadreCategories` 706 · `sousTitre` 785 · `tableauChamps` 800 · `champOrigine` 1026
 
-### `modules/fiche-evenement.mjs` — 437 l. → console
+### `modules/fiche-evenement.mjs` — 444 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
 `brancheFiche` 45 · `champ` 56 · `champFavicon` 99 · `dessineFiche` 176 · `ligneOutil` 306
-`ligneReglage` 322 · `champCle` 336 · `ouvreSources` 375 · `majIntegration` 420
-`majMsgSync` 427
+`ligneReglage` 322 · `champCle` 336 · `ouvreSources` 375 · `majIntegration` 426
+`majMsgSync` 434
 
 Éléments :
 
@@ -1154,15 +1154,15 @@ Fonctions :
 `rafraichitMarque` 317 · `calqueMarques` 350 · `dessineMarques` 368 · `marqueParcours` 398
 `instantConf` 416 · `cleTemps` 420 · `nomDeStand` 430 · `groupeParcours` 432
 
-### `modules/partage.mjs` — 292 l. → plan, plan-admin
+### `modules/partage.mjs` — 351 l. → plan, plan-admin
 
 - l.1 · Partager son parcours, et en garder une copie
 
 Fonctions :
 
-`lienParcours` 49 · `ouvrePartageParcours` 65 · `boutonsPartage` 121 · `parcoursACopier` 208
-`ouvreGardeParcours` 223 · `demandeGardeParcours` 253 · `poseGardeParcours` 266
-`branchePartage` 290
+`lienParcours` 49 · `ouvrePartageParcours` 65 · `boutonsPartage` 121 · `copieLien` 195
+`champDuLien` 211 · `aCopierALaMain` 222 · `parcoursACopier` 267 · `ouvreGardeParcours` 282
+`demandeGardeParcours` 312 · `poseGardeParcours` 325 · `branchePartage` 349
 
 ### `modules/pile.mjs` — 549 l. → plan-admin
 

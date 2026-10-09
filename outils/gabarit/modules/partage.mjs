@@ -30,7 +30,7 @@
 import { $ } from "./dom.mjs";
 import { SLUG, cheminPartageable, BORNE } from "./salon.mjs";
 import { mesure } from "./mesure.mjs";
-import { ouvreModale, poseApresFermeture } from "./fenetre.mjs";
+import { ouvreModale, fermeModale, poseApresFermeture } from "./fenetre.mjs";
 import { QR_VERSION_LISIBLE, qrTrame, qrSvg } from "./qr.mjs";
 import { DATA } from "./donnees.mjs";
 import { PARCOURS, tientLeStockage } from "./parcours.mjs";
@@ -145,19 +145,19 @@ function boutonsPartage(lien, compte){
          réécrit : c'est donc à sa traduction qu'on le compare. */
       bCopie = bCopie ||
         [...$("mPied").children].find(x => x.textContent === traduit("Copier le lien"));
-      navigator.clipboard?.writeText(lien).then(
+      copieLien(lien).then(
         () => { if (bCopie){ bCopie.textContent = "Copié";
                              setTimeout(() => bCopie.textContent = "Copier le lien", 1700); } },
-        () => { if (bCopie) bCopie.textContent = "Échec de la copie"; });
+        () => { if (bCopie) bCopie.textContent = "Échec de la copie"; aCopierALaMain(); });
     },
   };
   const boutons = [{ libelle: "Fermer" }, copie];
   if (partageable) boutons.push({
-    libelle: "Partager…", genre: "accent",
-    /* Refuser la feuille de partage n'est pas une panne : on la referme, et la
-       fenêtre reste ouverte derrière — d'où le silence sur le rejet. Le geste
-       est compté avant, parce qu'un envoi abandonné à mi-chemin ne se distingue
-       pas d'un envoi réussi : la feuille ne dit pas où le lien est parti. */
+    libelle: "Partager…", genre: "accent", ferme: false,
+    /* Le geste est compté avant, parce qu'un envoi abandonné à mi-chemin ne se
+       distingue pas d'un envoi réussi : la feuille ne dit pas où le lien est
+       parti. La fenêtre ne se ferme qu'une fois le lien remis à la feuille :
+       c'est elle qui porte le repli quand la feuille est refusée. */
     action: () => {
       envoi();
       /* La feuille de partage est au système, hors de la page : la version
@@ -167,10 +167,69 @@ function boutonsPartage(lien, compte){
         text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
               traduit("voici les stands et les conférences que j'ai retenus."),
         url: lien,
-      }).catch(() => {});
+      }).then(() => fermeModale(), (e) => {
+        /* Refermer la feuille sans rien choisir n'est pas une panne : la
+           fenêtre reste là, et rien ne se dit. Tout autre refus vient de plus
+           haut — un cadre que le site hôte n'a pas autorisé à partager, une vue
+           web d'application qui n'en a pas le moyen. La feuille existe, mais
+           ne s'ouvrira jamais : on passe au lien copié, plutôt que de laisser
+           un bouton qui ne répond plus. */
+        if (e && e.name === "AbortError") return;
+        copie.action();
+      });
     },
   });
   return boutons;
+}
+
+/**
+ * Mettre le lien dans le presse-papiers, par la voie qui marche ici.
+ *
+ * L'API du presse-papiers d'abord. Elle manque hors d'une adresse sûre, et se
+ * refuse dans un cadre que la page hôte n'a pas autorisé à écrire — le cas
+ * d'un plan embarqué dans le site d'un salon, ou dans une application. Reste
+ * alors la vieille commande de copie, sur le champ du lien que la fenêtre
+ * montre : dépréciée, mais tenue par tous les navigateurs, et permise à un
+ * cadre pour peu qu'elle suive un geste du visiteur.
+ */
+function copieLien(lien){
+  const ancienne = () => {
+    const champ = champDuLien();
+    if (!champ) return Promise.reject();
+    champ.focus();
+    champ.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    return ok ? Promise.resolve() : Promise.reject();
+  };
+  return navigator.clipboard
+    ? navigator.clipboard.writeText(lien).catch(ancienne)
+    : ancienne();
+}
+
+/** Le champ qui montre le lien, dans la fenêtre ouverte. */
+const champDuLien = () =>
+  /** @type {HTMLTextAreaElement | null} */ ($("mCorps").querySelector(".qrLien"));
+
+/**
+ * Le dernier recours : le lien sélectionné, et la phrase qui dit quoi en faire.
+ *
+ * Quand ni la feuille de partage ni le presse-papiers ne sont permis, la page
+ * ne peut plus rien pour le visiteur — sinon lui tendre le lien prêt à copier
+ * de ses doigts. Le dire vaut mieux qu'un bouton muet : sans cette phrase, le
+ * visiteur conclut que le partage ne marche pas, et c'est tout ce qu'il retient.
+ */
+function aCopierALaMain(){
+  const champ = champDuLien();
+  if (!champ) return;
+  champ.focus();
+  champ.select();
+  if (champ.nextElementSibling?.classList.contains("qrRefus")) return;
+  const p = document.createElement("p");
+  p.className = "qrNote qrRefus";
+  p.textContent = "Cette page ne nous laisse pas copier pour vous : le lien " +
+    "est sélectionné, copiez-le puis collez-le où vous voulez.";
+  champ.after(p);
 }
 
 /* ------------------------------------------------------------

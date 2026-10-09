@@ -417,11 +417,18 @@ export function ouvreSources(apres) {
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
 
+/* `allow` délègue au cadre ce qu'un navigateur refuse par défaut à une page
+   logée dans une autre : la feuille de partage du système et l'écriture dans le
+   presse-papiers, sans quoi « Partager mon parcours » n'a plus que son code QR ;
+   la caméra, pour lire le code d'un autre visiteur sans quitter le site. Le
+   fragment déjà collé chez un salon ne bouge pas : le plan s'en passe, en
+   retombant sur le lien à copier à la main (`modules/partage.mjs`). */
 function majIntegration() {
   const e = courant(), t = $("fragment");
   if (!e || !t) return;
   t.value = '<iframe src="' + BASE_PAGES + 'plan?plan=' + (e.slug || "evenement") +
-    '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"></iframe>';
+    '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"' +
+    ' allow="web-share; clipboard-write; camera"></iframe>';
 }
 
 function majMsgSync(e) {
