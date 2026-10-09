@@ -9,11 +9,16 @@
    `reglage-rappel.mjs` ; les dates et les heures du salon, posées dans
    l'onglet « Plan », sont ici avec le reste de ce que cette suite portait.
 
-   Les règles que ces volets écrivent — options, langues, barre, seuil de
-   concentration, distinctions, couleur, modèles et polices — restent dans
-   `_admin1.html` : le plan public les lit à chaque chargement. Le code soudé
-   les confie par `brancheVolets`, à la place que ce code tenait
-   (`_volets.html`).
+   Les règles que ces volets écrivent — commandes, langues, barre, seuil de
+   concentration, dates et heures, distinctions, couleur, modèles et polices —
+   sont des modules que le plan public embarque aussi (`configuration.mjs`,
+   `apparence.mjs`, `habillage.mjs`, `modeles.mjs`, `polices-plan.mjs`,
+   `seuil.mjs`, `horaires.mjs`) : ils s'importent, comme le nuancier. Ce que
+   le code soudé tient encore — les options vendues à part, les distinctions —
+   lui est confié par `brancheVolets`, à la place que ce code tenait
+   (`_volets.html`). Les secteurs, la liste et le filtre de la recherche
+   s'importent (`secteurs.mjs`, `recherche.mjs`), comme ce que la fiche montre
+   (`corps-fiche.mjs`).
    ============================================================ */
 import { DATA, CONFERENCES, parId } from "./donnees.mjs";
 import { fermeModale } from "./fenetre.mjs";
@@ -24,59 +29,32 @@ import { blocApplication } from "./reglage-application.mjs";
 import { blocSponsor } from "./reglage-sponsor.mjs";
 import { contenuApercu, apercuDuo } from "./apercus.mjs";
 import { blocRappel } from "./reglage-rappel.mjs";
+import { conf, jeton, optionActive, appliqueLangue } from "./configuration.mjs";
+import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
+import { appliqueAccent, MARQUES_DIST, modeDist, couleurDist, appliqueDists, modeBarre, appliqueBarre,
+  appliqueModele } from "./habillage.mjs";
+import { MODELES, modeleRetenu } from "./modeles.mjs";
+import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
+  from "./polices-plan.mjs";
+import { REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil } from "./seuil.mjs";
+import { JOURS_SALON_MAX, lueHeure, lueDate, datesSalon, horairesSalon } from "./horaires.mjs";
+import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
+import { SECTEURS } from "./secteurs.mjs";
+import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
+import { montre } from "./corps-fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-// la configuration, son envoi, et l'état de l'administration
-let conf;
+// l'envoi de la configuration, et l'état de l'administration
 let enregistreConf;
 let admin;
-// les commandes, les options, les langues et la barre (`_admin1.html`)
-let COMMANDES;
-let appliqueCommandes;
+// les options vendues à part, restées soudées (`_admin1.html`)
 let OPTIONS;
-let optionActive;
 let appliqueOptions;
-let appliqueLangue;
-let modeBarre;
-let appliqueBarre;
-// les dates et les heures du salon (`_admin1.html`)
-let lueDate;
-let lueHeure;
-let JOURS_SALON_MAX;
-let datesSalon;
-let horairesSalon;
-// le seuil de concentration (`_admin1.html`)
-let REGLAGES_SEUIL;
-let seuilGere;
-let regleSeuil;
-let phraseSeuil;
-// les distinctions (`_rendu.html`, `_admin1.html`) et la fiche (`_fiche.html`)
+// les distinctions (`_rendu.html`)
 let DISTINCTIONS;
 let ETOILE_DIST;
-let MARQUES_DIST;
-let modeDist;
-let couleurDist;
-let appliqueDists;
-let montre;
-// la couleur, les modèles et les polices (`_admin1.html`)
-let jeton;
-let suitNuancier;
-let REPOS_NUANCIER;
-let appliqueAccent;
-let MODELES;
-let modeleRetenu;
-let appliqueModele;
-let GENRES_POLICE;
-let POLICES_NOMS;
-let feuillePolice;
-let policeDuModele;
-let policeChoisie;
-let posePoliceLibelles;
-// les secteurs, la liste et le filtre (`_recherche.html`)
-let secteurs;
-let appliqueSecteurs;
-let appliqueFiltre;
-let liste;
+// les secteurs du salon, que l'index remplace à chaque chargement
+const secteurs = () => SECTEURS;
 // ce que la fenêtre des réglages et le reste de l'administration tiennent
 let champZone;
 let construitPanneau;
@@ -87,16 +65,10 @@ let relance;
  * y tenait (`_volets.html`), dans la tranche que le visiteur ne reçoit pas.
  *
  * L'envoi de la configuration et l'état de l'administration n'y sont déclarés
- * que plus bas : ils viennent par des détours, lus à l'usage. Les secteurs,
- * que la recherche remplace à chaque chargement, viennent par un lecteur.
+ * que plus bas : ils viennent par des détours, lus à l'usage.
  */
 export function brancheVolets(b){
-  ({ conf, enregistreConf, admin, COMMANDES, appliqueCommandes, OPTIONS, optionActive, appliqueOptions,
-    appliqueLangue, modeBarre, appliqueBarre, lueDate, lueHeure, JOURS_SALON_MAX, datesSalon,
-    horairesSalon, REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil, DISTINCTIONS, ETOILE_DIST,
-    MARQUES_DIST, modeDist, couleurDist, appliqueDists, montre, jeton, suitNuancier, REPOS_NUANCIER,
-    appliqueAccent, MODELES, modeleRetenu, appliqueModele, GENRES_POLICE, POLICES_NOMS, feuillePolice,
-    policeDuModele, policeChoisie, posePoliceLibelles, secteurs, appliqueSecteurs, appliqueFiltre, liste,
+  ({ enregistreConf, admin, OPTIONS, appliqueOptions, DISTINCTIONS, ETOILE_DIST,
     champZone, construitPanneau, relance } = b);
 }
 

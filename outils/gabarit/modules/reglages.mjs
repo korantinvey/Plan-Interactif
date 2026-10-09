@@ -10,11 +10,13 @@
    `fiche-zone.mjs`.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais. Ce que le code soudé tient encore — la configuration et
-   son envoi, le volet « Recherche », les distinctions, la durée d'une visite,
-   ce que la fiche montre et la fiche elle-même, le dessin des noms — lui est
-   confié par `brancheReglages`, que `_reglages.html` appelle à la place que
-   ce code y tenait.
+   le reçoit jamais. La configuration, les options du salon, la durée d'une
+   visite et le volet « Recherche » s'importent de leurs modules
+   (`configuration.mjs`, `horaires.mjs`, `seuil.mjs`, `reglage-recherche.mjs`).
+   Ce que le code soudé tient encore — l'envoi de la configuration, les
+   distinctions, ce que la fiche montre et la fiche elle-même, le dessin des
+   noms — lui est confié par `brancheReglages`, que `_reglages.html` appelle à
+   la place que ce code y tenait.
 
    La fenêtre se rouvre depuis le code soudé (`retourAuxReglages`), la bande
    de l'outil et la remise à zéro des compteurs, et le pas d'une hauteur à
@@ -32,24 +34,21 @@ import { voletOrdre } from "./reglage-fiche.mjs";
 import { NOM_VOLET_SUGGESTION, voletSuggestion } from "./reglage-suggestion.mjs";
 import { voletEnvirons } from "./calage-carte.mjs";
 import { NOM_VOLET_MESURE, voletMesure } from "./chaleur.mjs";
+import { conf, optionActive, suggestionOfferte } from "./configuration.mjs";
+import { VISITE_MIN, VISITE_MAX, minutesVisite } from "./horaires.mjs";
+import { NOM_VOLET_PARCOURS } from "./seuil.mjs";
+import { voletRecherche } from "./reglage-recherche.mjs";
+import { REDUIT } from "./ecran.mjs";
+import { montre } from "./corps-fiche.mjs";
+import { ouvre } from "./fiche.mjs";
 
 /* Ce que le code soudé confie au branchement. Tout y est déclaré avant lui
-   (`_admin1.html`, `_rendu.html`, `_fiche.html`) et se prend tel quel, sauf
-   l'envoi de la configuration, déclaré plus bas (`_ordre-fiche.html`) : il
-   vient par un détour, lu au moment de s'en servir. */
-let conf;
+   (`_rendu.html`) et se prend tel quel, sauf l'envoi de la configuration,
+   déclaré plus bas (`_ordre-fiche.html`) : il vient par un détour, lu au
+   moment de s'en servir. L'écran, ce que la fiche montre et la fiche
+   s'importent (`ecran.mjs`, `corps-fiche.mjs`, `fiche.mjs`). */
 let enregistreConf;
-let REDUIT;
-let voletRecherche;
-let suggestionOfferte;
-let optionActive;
-let NOM_VOLET_PARCOURS;
 let DISTINCTIONS;
-let VISITE_MIN;
-let VISITE_MAX;
-let minutesVisite;
-let montre;
-let ouvre;
 let libelles;
 
 /**
@@ -57,15 +56,10 @@ let libelles;
  * code y tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit
  * pas.
  *
- * @param {{ conf: (c: string) => any, enregistreConf: () => void, REDUIT: boolean,
- *   voletRecherche: (hote: HTMLElement) => void, suggestionOfferte: () => boolean,
- *   optionActive: (cle: string) => boolean, NOM_VOLET_PARCOURS: string, DISTINCTIONS: any[],
- *   VISITE_MIN: number, VISITE_MAX: number, minutesVisite: () => number,
- *   montre: (type: string, cle: string) => boolean, ouvre: Function, libelles: () => void }} b
+ * @param {{ enregistreConf: () => void, DISTINCTIONS: any[], libelles: () => void }} b
  */
 export function brancheReglages(b){
-  ({ conf, enregistreConf, REDUIT, voletRecherche, suggestionOfferte, optionActive, NOM_VOLET_PARCOURS,
-    DISTINCTIONS, VISITE_MIN, VISITE_MAX, minutesVisite, montre, ouvre, libelles } = b);
+  ({ enregistreConf, DISTINCTIONS, libelles } = b);
 }
 
 /**

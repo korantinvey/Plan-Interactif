@@ -17,11 +17,11 @@
 import { COLLATION } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { clesPortees, apercuFiche, contenuApercu } from "./apercus.mjs";
+import { PREFIXE_PERSO } from "./recherche.mjs";
 import { montre, libelleCorps, ordreCorps, groupesFiche, montreIntitule } from "./corps-fiche.mjs";
 import { ouvre } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-let PREFIXE_PERSO;
 let modeleRetenu;
 let ecritColonneEvenement;
 let coexChoisit;
@@ -654,9 +654,9 @@ export function voletOrdre(hote){
  * Le branchement, appelé par `_ordre-fiche.html` dans la tranche
  * d'administration qui portait ce code.
  *
- * @param {{ PREFIXE_PERSO: string, modeleRetenu: Function,
- *   ecritColonneEvenement: Function, coexChoisit: Function }} b
+ * @param {{ modeleRetenu: Function, ecritColonneEvenement: Function,
+ *   coexChoisit: Function }} b
  */
 export function brancheReglageFiche(b){
-  ({ PREFIXE_PERSO, modeleRetenu, ecritColonneEvenement, coexChoisit } = b);
+  ({ modeleRetenu, ecritColonneEvenement, coexChoisit } = b);
 }

@@ -11,9 +11,10 @@
    Il se branche dans `_fiche.html`, à la place que son code tenait : les
    écoutes de la fiche s'y posent au même rang qu'avant parmi celles du plan,
    et ce que le code soudé tient encore lui est confié — le montage du plan,
-   la liste et la recherche, les découpages dessinés, les tiroirs et le
-   parcours, et, en administration seulement, les deux gestes de
-   l'exploitant sur une zone.
+   les découpages dessinés, les tiroirs et le parcours, et, en administration
+   seulement, les deux gestes de l'exploitant sur une zone. La liste, les
+   thématiques et les vignettes s'importent de `recherche.mjs` ; le tiroir du
+   parcours, qui importe la fiche, lui est confié.
 
    Le dernier appui — tactile ou non — est écrit par les gestes, restés
    soudés : il vit ici, se remplace par `poseAppuiTactile`, et le code soudé
@@ -36,6 +37,7 @@ import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, gliss
 import { fermeItineraire, versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
+import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES } from "./recherche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Ce qui est
    déclaré plus bas dans le script — les gestes, le dessin, le parcours — l'est
@@ -46,23 +48,15 @@ const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => soude.d
 const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
 const montePlan = () => soude.montePlan();
 const marqueStandsDessines = () => soude.marqueStandsDessines();
-const liste = () => soude.liste();
-const marqueChoisie = () => soude.marqueChoisie();
 const libelles = () => soude.libelles();
 const coexChoisit = () => soude.coexChoisit();
 const typeZone = (/** @type {any} */ z) => soude.typeZone(z);
 const nomDeLaZone = (/** @type {any} */ z) => soude.nomDeLaZone(z);
 const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
-const themeFiltrable = (/** @type {any} */ n) => soude.themeFiltrable(n);
-const filtreTheme = (/** @type {any} */ n) => soude.filtreTheme(n);
 const fermeParcours = () => soude.fermeParcours();
 const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => soude.brancheParcours(hote, canal);
 /** Les tiroirs qu'un geste sait baisser, tenus par `_gestes.html`. */
 const baisseTiroir = () => soude.baisseTiroir();
-/** Les vignettes de logos déjà reçues par lot, tenues par `_recherche.html`. */
-const VIGNETTES = () => soude.vignettes();
-/** Le préfixe des champs propres au salon, `perso:` — tenu par `_recherche.html`. */
-let PREFIXE_PERSO = "";
 
 /* ============================================================
    7. Sélection et fiche
@@ -541,7 +535,7 @@ export const adresseVignette = (cle) =>
   /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
      rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
      encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
-  VIGNETTES().get(cle) ||
+  VIGNETTES.get(cle) ||
   (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
     ? API + "?vignette=" + cle
     : "");
@@ -1159,7 +1153,6 @@ export function onglet(n){
  */
 export function brancheFiche(b){
   soude = b;
-  PREFIXE_PERSO = b.PREFIXE_PERSO;
   /* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
      suit : une marque rangée sous le numéro à l'étroit remonte à côté du nom au
      large. Une image seule à mesurer, on ne diffère pas. */

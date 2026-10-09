@@ -8,7 +8,6 @@
    règles du corps de la fiche et la fiche ouverte derrière la fenêtre, sortis
    du code soudé, s'importent. */
 brancheReglageFiche({
-  PREFIXE_PERSO,
   modeleRetenu, coexChoisit,
   // l'écriture d'une colonne de l'événement vient de `modules/fiche-zone.mjs`
   ecritColonneEvenement,
@@ -21,29 +20,6 @@ const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
   // l'envoi est d'administration (`modules/enregistrement.mjs`)
   if (typeof programmePublication === "function") programmePublication();
-};
-
-/**
- * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
- * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
- * reste lisible dessus, quel que soit le ton choisi.
- *
- * Le sens ne se devine pas à la clarté seule : un bleu franc et un orange sont
- * tous deux à mi-hauteur, et pourtant l'un gagne à s'éclaircir quand l'autre
- * gagne à s'assombrir. On calcule les deux et on garde le meilleur.
- */
-const ecarte = (hex) => {
-  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
-  if (!m) return hex;
-  const n = parseInt(m[1], 16), v = [n >> 16 & 255, n >> 8 & 255, n & 255];
-  /* 0,7 plutôt qu'une demi-teinte : le liseré borde l'aplat, mais le numéro du
-     stand s'écrit dessus dans la même couleur, et un rapport de contraste de
-     trois pour un ne se lit pas en petit. */
-  const vers = (but) => v.map(c => Math.round(c + (but - c) * 0.7));
-  const base = luminance(v) + 0.05;
-  const contraste = (w) => { const a = luminance(w) + 0.05; return a > base ? a / base : base / a; };
-  const sombre = vers(0), clair = vers(255);
-  return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
 };
 
 /** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */

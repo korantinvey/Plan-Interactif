@@ -7,7 +7,7 @@
    écrit, et l'aller-retour se mesure mieux qu'il ne se relit.
 
    La fenêtre de partage et l'accueil d'un parcours reçu s'en servent
-   (`modules/partage.mjs`, `_partage.html`).
+   (`modules/partage.mjs`, `modules/parcours-recu.mjs`).
    ============================================================ */
 
 /**

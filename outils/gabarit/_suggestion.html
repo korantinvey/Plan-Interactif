@@ -5,17 +5,21 @@
    le volet « Suggestion » des réglages et le relevé du classement, dans
    `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs` embarque. Ils
    se branchent ici, à la place que leur code tenait, et ce que le code soudé
-   tient encore leur est confié : la configuration, les critères de la
-   recherche, le tiroir du parcours et la fenêtre des réglages.
+   tient encore leur est confié : la configuration et la fenêtre des
+   réglages ; les critères de la recherche s'importent de
+   `modules/recherche.mjs`, la fiche de `modules/fiche.mjs`. Le tiroir du
+   parcours est un module (`tiroir-parcours.mjs`), mais qui importe la
+   suggestion pour la poser dans son tiroir : elle ne peut l'importer en
+   retour, et le reçoit donc d'ici — le volet de l'exploitant, lui, l'importe.
    ============================================================ */
 brancheSuggestion({
-  conf, clesCriteres, valeursCritere, libelleCritere, OUI_NON, suggestionOfferte,
+  conf, suggestionOfferte,
   remplitParcours, brancheParcours,
 });
 
 /* @admin — le réglage de la suggestion */
 brancheReglageSuggestion({
-  conf, clesCriteres, valeursCritere, libelleCritere, champZone, enregistreConf,
-  glisseFenetre, rafraichitParcours,
+  conf, champZone, enregistreConf,
+  glisseFenetre,
 });
 /* @fin-admin */

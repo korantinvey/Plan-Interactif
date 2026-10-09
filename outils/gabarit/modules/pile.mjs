@@ -12,15 +12,16 @@
    son plan comme sur celui de l'exploitant : `clePile`, `entrees`, `pile` et
    `ordonneDom` restent dans `_pile.html`, au code soudé.
 
-   Ce que le code soudé tient encore — les réglages et leur enregistrement,
-   les calques de dessin et leur outil, le placement des libellés, les
-   secteurs, la fenêtre de réorganisation — lui est confié par `branchePile`,
-   que `_pile.html` appelle à la place que ce code y tenait. Ce qui change sans
-   cesse — les calques dessinés (`DESSINS`, relus à chaque changement de
-   salon), le calque actif, le mode de travail en cours, les secteurs, le mode
-   administrateur — par des lecteurs. Les modules d'administration déjà
-   sortis — la bibliothèque des bâtiments, le calage de la carte, la carte de
-   chaleur, la reprise des emplacements — s'importent.
+   Ce que le code soudé tient encore — l'enregistrement des réglages, les
+   calques de dessin et leur outil, le placement des libellés — lui est confié
+   par `branchePile`, que `_pile.html` appelle à la place que ce code y
+   tenait. Ce qui change sans cesse — les calques dessinés (`DESSINS`, relus à
+   chaque changement de salon), le calque actif, le mode de travail en cours,
+   le mode administrateur — par des lecteurs. Les modules d'administration
+   déjà sortis — la bibliothèque des bâtiments, le calage de la carte, la
+   carte de chaleur, la reprise des emplacements, la fenêtre de
+   réorganisation —, comme la configuration, l'apparence des calques et les
+   secteurs, s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -33,6 +34,12 @@ import { bibliothequeDispo, ouvreBibliotheque, boutonRecale, rouvreCalage } from
 import { boutonMasqueCarte, basculeMasqueCarte } from "./calage-carte.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
 import { geoVerrouille, basculeVerrouGeo, boutonVerrouGeo, modeGeometrie } from "./reprise-emplacements.mjs";
+import { conf, jeton, sousCle } from "./configuration.mjs";
+import { sousCalques, styleFond, styleDataGroupe, styleData, appliqueCouleursData } from "./apparence.mjs";
+import { appliqueFond } from "./habillage.mjs";
+import { suitNuancier } from "./nuancier.mjs";
+import { ouvreOrdre } from "./ordre-calques.mjs";
+import { SECTEURS, secteursMontres, couleurSecteur, peintSecteur } from "./secteurs.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
@@ -41,23 +48,9 @@ import { geoVerrouille, basculeVerrouGeo, boutonVerrouGeo, modeGeometrie } from 
  * @property {() => any} dessins les calques dessinés, par pavillon, `DESSINS`
  * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => boolean} placeLibelles le placement des libellés en cours, `PLACE_LIBELLES`
- * @property {() => Map<string, any>} secteurs les secteurs du salon, `SECTEURS`
  * @property {() => { k: string, t: string, nom: string, ref: any }[]} entrees
- * @property {(cle: string) => any} conf
  * @property {() => void} enregistreConf
- * @property {(n: string) => string} jeton
- * @property {(cle: string, id: string) => string} sousCle
- * @property {(cle: string) => any[]} sousCalques
  * @property {(id: any) => string} joli
- * @property {(cle: string) => void} styleFond
- * @property {(nom: string, on: boolean) => void} styleDataGroupe
- * @property {(cle: string) => void} styleData
- * @property {() => void} appliqueCouleursData
- * @property {() => void} appliqueFond
- * @property {(input: HTMLInputElement, peint: (v: string) => void, retient: () => void) => void} suitNuancier
- * @property {() => boolean} secteursMontres
- * @property {(nom: string) => string} couleurSecteur
- * @property {(nom: string) => void} peintSecteur
  * @property {() => any[]} mesCalques
  * @property {() => void} creeCalque
  * @property {() => void} enregistreDessins
@@ -69,7 +62,6 @@ import { geoVerrouille, basculeVerrouGeo, boutonVerrouGeo, modeGeometrie } from 
  * @property {(id: any) => void} activeCalque
  * @property {() => void} memorise
  * @property {(on: boolean) => void} modePlacementLibelles
- * @property {() => void} ouvreOrdre
  */
 /** @type {PagePile} */
 let soude;
@@ -77,24 +69,11 @@ const estAdmin = () => soude.estAdmin();
 const dessins = () => soude.dessins();
 const calqueActif = () => soude.calqueActif();
 const placeLibelles = () => soude.placeLibelles();
-const secteurs = () => soude.secteurs();
+// les secteurs du salon, que l'index remplace à chaque chargement
+const secteurs = () => SECTEURS;
 const entrees = () => soude.entrees();
-const conf = (/** @type {string} */ cle) => soude.conf(cle);
 const enregistreConf = () => soude.enregistreConf();
-const jeton = (/** @type {string} */ n) => soude.jeton(n);
-const sousCle = (/** @type {string} */ cle, /** @type {string} */ id) => soude.sousCle(cle, id);
-const sousCalques = (/** @type {string} */ cle) => soude.sousCalques(cle);
 const joli = (/** @type {any} */ id) => soude.joli(id);
-const styleFond = (/** @type {string} */ cle) => soude.styleFond(cle);
-const styleDataGroupe = (/** @type {string} */ nom, /** @type {boolean} */ on) => soude.styleDataGroupe(nom, on);
-const styleData = (/** @type {string} */ cle) => soude.styleData(cle);
-const appliqueCouleursData = () => soude.appliqueCouleursData();
-const appliqueFond = () => soude.appliqueFond();
-const suitNuancier = (/** @type {HTMLInputElement} */ input, /** @type {(v: string) => void} */ peint,
-  /** @type {() => void} */ retient) => soude.suitNuancier(input, peint, retient);
-const secteursMontres = () => soude.secteursMontres();
-const couleurSecteur = (/** @type {string} */ nom) => soude.couleurSecteur(nom);
-const peintSecteur = (/** @type {string} */ nom) => soude.peintSecteur(nom);
 const mesCalques = () => soude.mesCalques();
 const creeCalque = () => soude.creeCalque();
 const enregistreDessins = () => soude.enregistreDessins();
@@ -106,7 +85,6 @@ const pictoVerrou = (/** @type {boolean} */ ferme) => soude.pictoVerrou(ferme);
 const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
 const memorise = () => soude.memorise();
 const modePlacementLibelles = (/** @type {boolean} */ on) => soude.modePlacementLibelles(on);
-const ouvreOrdre = () => soude.ouvreOrdre();
 
 /** Le branchement : `_pile.html` l'appelle à la place que ce code y tenait.
  *  @param {PagePile} page */

@@ -3,27 +3,18 @@
 
    Les volets eux-mêmes vivent dans `modules/volets.mjs`, que seul
    `plan-admin.mjs` embarque ; ils se branchent ici, à la place que leur code
-   tenait, et ce que le code soudé tient encore leur est confié : les règles
-   que le plan public lit aussi (`_admin1.html`), les distinctions, la liste et
-   les secteurs de la recherche. Les aperçus de la fenêtre des réglages et le
-   bloc du rappel, sortis du code soudé, s'importent. L'envoi de la
-   configuration (`_ordre-fiche.html`) et l'état de l'administration
-   (`_mode-admin.html`) ne sont déclarés que plus bas : on les confie par un
-   détour, lu au moment de s'en servir, et les secteurs, que la recherche
-   remplace à chaque chargement, par un lecteur. */
+   tenait, et ce que le code soudé tient encore leur est confié : les options
+   vendues à part (`_admin1.html`), les distinctions. Les règles que le plan
+   public lit aussi, les aperçus de la fenêtre des réglages, le bloc du rappel,
+   la liste et les secteurs de la recherche, ce que la fiche montre, sortis
+   du code soudé, s'importent. L'envoi de la configuration (`_ordre-fiche.html`) et l'état
+   de l'administration (`_mode-admin.html`) ne sont déclarés que plus bas : on
+   les confie par un détour, lu au moment de s'en servir. */
 brancheVolets({
-  conf,
   enregistreConf: () => enregistreConf(),
   admin: () => ADMIN,
-  COMMANDES, appliqueCommandes, OPTIONS, optionActive, appliqueOptions, appliqueLangue,
-  modeBarre, appliqueBarre,
-  lueDate, lueHeure, JOURS_SALON_MAX, datesSalon, horairesSalon,
-  REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil,
-  DISTINCTIONS, ETOILE_DIST, MARQUES_DIST, modeDist, couleurDist, appliqueDists, montre,
-  jeton, suitNuancier, REPOS_NUANCIER, appliqueAccent, MODELES, modeleRetenu, appliqueModele,
-  GENRES_POLICE, POLICES_NOMS, feuillePolice, policeDuModele, policeChoisie, posePoliceLibelles,
-  secteurs: () => SECTEURS,
-  appliqueSecteurs, appliqueFiltre, liste,
+  OPTIONS, appliqueOptions,
+  DISTINCTIONS, ETOILE_DIST,
   champZone, construitPanneau, relance,
 });
 
