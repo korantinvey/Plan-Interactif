@@ -27,7 +27,7 @@
 /* `construitPanneau` se déclare plus loin, dans `_pile.html` : elle se confie
    par un appel différé, lu au moment d'ouvrir le mode. */
 brancheBandeAdmin({
-  ouvreReglages, monte: () => MONTE, dessineDessins, construitPanneau: () => construitPanneau(),
+  ouvreReglages, dessineDessins, construitPanneau: () => construitPanneau(),
 });
 /* @fin-admin */
 
@@ -35,16 +35,16 @@ brancheBandeAdmin({
 brancheFicheZone({
   conf: () => CONF,
   enregistreConf,
-  libelles, liste, majPaletteGeo,
+  liste, majPaletteGeo,
 });
 /* @fin-admin */
 
 /* Le placement réglé à la main, que le dessin des noms relit chez le visiteur. */
-brancheLibellePlace({ conf: () => CONF, ancre, place });
+brancheLibellePlace({ conf: () => CONF });
 
 /* @admin — le placement des libellés à la main */
 branchePlacementLibelles({
-  conf: () => CONF, enregistreConf, libelles,
+  conf: () => CONF, enregistreConf,
   calqueActif: () => calqueActif, activeCalque, sorteGeo: () => SORTE_GEO, modeGeometrie,
 });
 /* @fin-admin */

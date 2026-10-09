@@ -27,12 +27,13 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
   confieCalageEnCours } from "./environs.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
+import { MONTE } from "./rendu.mjs";
 
 /* Ce que le code soudé confie au branchement : les réglages (`CONF`, que le
    changement de salon remplace, et `conf`, qui en ouvre une entrée) et leur
    enregistrement, le panneau des calques et ce qui dit s'il est là
-   (`ADMIN`, `MONTE`), et la main qui tient le plan. Ce qui change se lit à
-   l'instant. La vue, elle, s'importe de `vue.mjs`. */
+   (`ADMIN`), et la main qui tient le plan. Ce qui change se lit à l'instant.
+   La vue, elle, s'importe de `vue.mjs`, et le plan monté de `rendu.mjs`. */
 /**
  * @typedef {object} PageCalage
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
@@ -40,7 +41,6 @@ import { vue, svg, versPlan, poseVue } from "./vue.mjs";
  * @property {() => void} enregistreConf
  * @property {() => void} construitPanneau
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => boolean} monte le plan monté, `MONTE`
  * @property {(tenu: boolean) => void} saisitPlan
  */
 /** @type {PageCalage} */
@@ -342,7 +342,7 @@ function litCoordonnees(txt){
 /** Le fond refait et la vue rendue : tout réglage passe par là. */
 function rafraichitCarte(){
   refaitFondCarte();
-  if (soude.estAdmin() && soude.monte()) soude.construitPanneau();
+  if (soude.estAdmin() && MONTE) soude.construitPanneau();
 }
 
 /* ------------------------------------------------------------

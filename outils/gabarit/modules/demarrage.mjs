@@ -8,11 +8,12 @@
    qu'il le soit — la borne, le code du hall, un parcours ou une conférence
    reçus par lien, la visite guidée, l'invitation à installer.
 
-   Ce que le code soudé tient encore — le montage du plan et de son habillage
-   (`_rendu.html`), l'ordre des calques (`_pile.html`) — lui est confié par
+   Ce que le code soudé tient encore — l'ordre des calques (`_pile.html`) —
+   lui est confié par
    `brancheDemarrage`, que `_admin2.html` appelle à la place que ce code
    tenait, au bout du script : c'est là que la page démarre, une fois tout le
-   reste déclaré. La fiche, il l'importe (`fiche.mjs`). Ce qui
+   reste déclaré. La fiche et le montage du plan, il les importe (`fiche.mjs`,
+   `rendu.mjs`). Ce qui
    n'existe qu'en administration (`modules/enregistrement.mjs`,
    `modules/acces-admin.mjs`) reste sous la garde `typeof` qu'il avait.
    ============================================================ */
@@ -30,12 +31,11 @@ import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { select, ficheConf } from "./fiche.mjs";
+import { montePlan, monteHabillage } from "./rendu.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
 let soude = {};
-const montePlan = () => soude.montePlan();
-const monteHabillage = () => soude.monteHabillage();
 const ordonneDom = () => soude.ordonneDom();
 /* L'administration seule les a : le branchement les garde par `typeof`. */
 const majAttente = () => soude.majAttente();
@@ -299,7 +299,7 @@ export function charge(){
  * ce code tenait : la page démarre ici, et l'écoute du redimensionnement s'y
  * pose au même rang qu'avant parmi celles du plan — après celles de la vue.
  *
- * @param {{ montePlan: Function, monteHabillage: Function, ordonneDom: Function,
+ * @param {{ ordonneDom: Function,
  *   majAttente: () => void, rattrapeRetard: () => void,
  *   ecranAcces: ((message: string) => void) | null }} b
  */

@@ -15,9 +15,11 @@
    que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`). La fiche
    et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
    module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
-   bouclerait. Ce que le code soudé tient encore — la fiche et la sélection,
-   les tiroirs, le dessin des
-   noms et des distinctions, les repères, le parcours — lui est confié par
+   bouclerait. Le dessin des noms et des distinctions (`libelles.mjs`,
+   `distinctions.mjs`) l'importe, et ne peut donc pas l'être ; la mesure du
+   texte, elle, s'importe (`texte-plan.mjs`). Ce que le code soudé tient
+   encore — la fiche et la sélection, les tiroirs, le dessin des noms et des
+   distinctions, les repères, le parcours — lui est confié par
    `brancheRecherche`, que `_recherche.html` appelle à la place que ce code
    tenait : l'écoute de la liste s'y pose, au même rang qu'avant. Ce qui se
    déclare plus loin dans le code soudé, ou change sans cesse, vient par des
@@ -37,6 +39,7 @@ import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
+import { largeur } from "./texte-plan.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
@@ -51,7 +54,6 @@ import { montre } from "./corps-fiche.mjs";
  * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
  * @property {() => void} dessineDists
  * @property {() => void} libelles
- * @property {(txt: string, police: any) => number} largeur
  * @property {(porte: (d: any) => boolean) => { avant: string, apres: string, sous: string }} marquesListe
  * @property {(x: any, d: any) => boolean} porteDist
  * @property {(o: any, d: any) => boolean} standPorte
@@ -71,7 +73,6 @@ const hisseTiroir = () => soude.hisseTiroir();
 const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => soude.poseToutAuParcours(hote);
 const dessineDists = () => soude.dessineDists();
 const libelles = () => soude.libelles();
-const largeur = (/** @type {string} */ txt, /** @type {any} */ police) => soude.largeur(txt, police);
 const marquesListe = (/** @type {(d: any) => boolean} */ porte) => soude.marquesListe(porte);
 const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => soude.porteDist(x, d);
 const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => soude.standPorte(o, d);

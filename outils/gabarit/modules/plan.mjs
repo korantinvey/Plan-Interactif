@@ -97,7 +97,12 @@ import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
 import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
   adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
-import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif, outil, enCours, poseCalqueActif }
+import { _lg, largeur } from "./texte-plan.mjs";
+import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
+import { DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
+  refaitDistsFiche } from "./distinctions.mjs";
+import { MONTE, brancheRendu, montePlan, changePlan } from "./rendu.mjs";
+import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif, outil, enCours }
   from "./calques-dessin.mjs";
 import { estCadre, cheminForme } from "./chemin-forme.mjs";
 import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
@@ -183,8 +188,13 @@ Object.assign(globalThis, {
   anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
   adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche,
+  _lg, largeur,
+  brancheLibelles, libelles, libellesWebgl,
+  DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
+  refaitDistsFiche,
+  brancheRendu, montePlan, changePlan,
   brancheCalquesDessin,
-  mesCalques, poseCalqueActif,
+  mesCalques,
   estCadre, cheminForme,
   brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
@@ -266,6 +276,10 @@ Object.defineProperties(globalThis, vivants({ view: () => view }, "changeVue"));
    écarter le clic fantôme qui suit un appui. */
 Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernierAppuiTactile },
   "poseAppuiTactile"));
+/* Le pavillon est-il monté ? Le panneau des calques et la police des noms
+   attendent qu'il le soit ; seul le montage le pose (`rendu.mjs`
+   `montePlan`). */
+Object.defineProperties(globalThis, vivants({ MONTE: () => MONTE }, "montePlan"));
 
 /* Les calques de dessin du salon ouvert : le chargement les lit par
    accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
