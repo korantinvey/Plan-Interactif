@@ -38,28 +38,28 @@ import { conf, optionActive, suggestionOfferte } from "./configuration.mjs";
 import { VISITE_MIN, VISITE_MAX, minutesVisite } from "./horaires.mjs";
 import { NOM_VOLET_PARCOURS } from "./seuil.mjs";
 import { voletRecherche } from "./reglage-recherche.mjs";
+import { REDUIT } from "./ecran.mjs";
+import { montre } from "./corps-fiche.mjs";
+import { ouvre } from "./fiche.mjs";
+import { DISTINCTIONS } from "./distinctions.mjs";
+import { libelles } from "./libelles.mjs";
 
-/* Ce que le code soudé confie au branchement. Tout y est déclaré avant lui
-   (`_rendu.html`, `_fiche.html`) et se prend tel quel, sauf l'envoi de la
-   configuration, déclaré plus bas (`_ordre-fiche.html`) : il vient par un
-   détour, lu au moment de s'en servir. */
+/* Ce que le code soudé confie au branchement : l'envoi de la configuration,
+   déclaré plus bas (`_ordre-fiche.html`), qui vient par un détour, lu au
+   moment de s'en servir. L'écran, ce que la fiche montre, la fiche, les
+   distinctions et le dessin des noms s'importent (`ecran.mjs`,
+   `corps-fiche.mjs`, `fiche.mjs`, `distinctions.mjs`, `libelles.mjs`). */
 let enregistreConf;
-let REDUIT;
-let DISTINCTIONS;
-let montre;
-let ouvre;
-let libelles;
 
 /**
  * Le branchement de la fenêtre, appelé par le code soudé à la place que ce
  * code y tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit
  * pas.
  *
- * @param {{ enregistreConf: () => void, REDUIT: boolean, DISTINCTIONS: any[],
- *   montre: (type: string, cle: string) => boolean, ouvre: Function, libelles: () => void }} b
+ * @param {{ enregistreConf: () => void }} b
  */
 export function brancheReglages(b){
-  ({ enregistreConf, REDUIT, DISTINCTIONS, montre, ouvre, libelles } = b);
+  ({ enregistreConf } = b);
 }
 
 /**

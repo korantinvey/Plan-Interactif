@@ -9,15 +9,14 @@
 
    Il se branche ici, à la place que son code tenait dans ce script : les
    écouteurs de la page (onglet masqué, page quittée) s'y posent au même rang
-   qu'avant. Ce que le code soudé tient encore lui est confié — le mode, les
-   réglages et les calques par des lecteurs, puisque le chargement d'un salon
-   les remplace.
+   qu'avant. Ce que le code soudé tient encore lui est confié — le mode et les
+   réglages par des lecteurs, puisque le chargement d'un salon les remplace.
+   Les calques de dessin, il les importe.
    ============================================================ */
 
 /* @admin — l'enregistrement de la configuration, geste d'exploitant */
 brancheEnregistrement({
-  estAdmin: () => ADMIN, conf: () => CONF, dessins: () => DESSINS, attente: () => ATTENTE,
-  publies: () => PUBLIES, enAttente, notePubliees, marqueAttente, reglagesDuSalon, annonce,
-  enregistreConf, enregistreDessins, appliqueApparence, dessineDessins, construitPanneau,
+  estAdmin: () => ADMIN, conf: () => CONF, reglagesDuSalon,
+  enregistreConf, enregistreDessins, appliqueApparence, construitPanneau,
 });
 /* @fin-admin */

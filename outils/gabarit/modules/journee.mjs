@@ -1,10 +1,10 @@
 /* ============================================================
    11 ter. Organiser sa visite — la question posée, et le tiroir
 
-   Sorti de `_journee.html`, où il se branche encore (`brancheJournee`) : la
-   fiche, le parcours, le tracé de l'itinéraire et les réglages du salon
-   vivent toujours dans le code soudé, qui les lui confie à la place que ce
-   code y tenait. Le calcul — répartir, ordonner, dérouler — est dans
+   Sorti de `_journee.html`, où il se branche encore (`brancheJournee`) : le
+   parcours, le tracé de l'itinéraire et les réglages du salon vivent
+   toujours dans le code soudé, qui les lui confie à la place que ce code y
+   tenait ; la fiche s'importe de `fiche.mjs`. Le calcul — répartir, ordonner, dérouler — est dans
    `sejour.mjs`, que ce module branche à son tour.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -19,10 +19,14 @@ import { mesure } from "./mesure.mjs";
 import { annoncePlan, litLaCharge, brancheCharge } from "./charge-annoncee.mjs";
 import { PLACES, oublieMatrice, calculeSejour, apercuRepartition, brancheSejour } from "./sejour.mjs";
 import { ITI, TRACE, poseTrace, dessineItineraire, cadreItineraire } from "./tiroir-itineraire.mjs";
+import { select, ficheConf } from "./fiche.mjs";
+import { changePlan } from "./rendu.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Le tracé de
    l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté là-bas comme
-   ici : on le lit tel qu'il est à l'instant, et on le pose par sa porte. */
+   ici : on le lit tel qu'il est à l'instant, et on le pose par sa porte. Le
+   tiroir du parcours (`tiroir-parcours.mjs`) importe ce module pour y poser
+   la journée : il ne peut s'importer d'ici, et se confie aussi. */
 /** @type {Record<string, any>} */
 let soude = {};
 
@@ -30,13 +34,11 @@ let soude = {};
 const datesSalon = () => soude.datesSalon();
 const horairesSalon = (jour) => soude.horairesSalon(jour);
 const lueHeure = (s) => soude.lueHeure(s);
-// la fiche, le parcours et le plan, que ce tiroir ouvre ou refait
-const select = (...a) => soude.select(...a);
-const ficheConf = (id, canal) => soude.ficheConf(id, canal);
+// le parcours, que ce tiroir refait ; la fiche s'importe de `fiche.mjs`, le passage
+// d'un pavillon à l'autre de `rendu.mjs`
 const basculeParcours = (...a) => soude.basculeParcours(...a);
 const rangParcours = (hote, r) => soude.rangParcours(hote, r);
 const rafraichitParcours = () => soude.rafraichitParcours();
-const changePlan = (i) => soude.changePlan(i);
 // le trait de l'itinéraire, que la journée reprend pour elle
 const trace = () => TRACE;
 
@@ -1237,8 +1239,8 @@ function refaitSejour(cleAffichee, fige){
  * @param {{ datesSalon: () => any[], horairesSalon: (jour: string) => any,
  *   lueHeure: (s: string) => number | null, minutesVisite: () => number,
  *   seuilGere: () => boolean, seuilImpose: () => boolean, seuilConcentration: (o: any) => number,
- *   select: Function, ficheConf: Function, basculeParcours: Function,
- *   rangParcours: Function, rafraichitParcours: Function, changePlan: Function }} b
+ *   basculeParcours: Function,
+ *   rangParcours: Function, rafraichitParcours: Function }} b
  */
 export function brancheJournee(b){
   soude = b;

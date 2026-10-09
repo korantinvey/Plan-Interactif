@@ -7,17 +7,16 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { imageSure, adresseSure } from "./sur.mjs";
-import { SLUG } from "./salon.mjs";
+import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 import { DATA } from "./donnees.mjs";
 import { vue } from "./vue.mjs";
 
 /* Ce que le code soudé tient encore, et que le branchement confie : la
-   configuration du plan (`_admin1.html` `conf`) et la page où l'on est
-   (`_recherche.html` `PLAN_ADMIN`). La vue dessinée, lue à l'instant,
+   configuration du plan (`_admin1.html` `conf`). La page où l'on est
+   (`PLAN_ADMIN`) s'importe de `salon.mjs`. La vue dessinée, lue à l'instant,
    s'importe de `vue.mjs`. */
 /** @type {(cle: string) => any} */
 let conf;
-let PLAN_ADMIN = false;
 /**
  * Un salon se vend aussi par son plan. L'organisateur qui propose à un
  * partenaire « le plan interactif du salon » lui promet l'écran que tous les
@@ -313,7 +312,7 @@ export function ouvreSponsor(s, horsDemarrage){
 /**
  * Surveille l'échéance, et le plan qu'on attend derrière.
  *
- * Rappelée par `_admin2.html` quand le plan est dessiné : sans ce rappel, le
+ * Rappelée par `demarrage.mjs` quand le plan est dessiné : sans ce rappel, le
  * générique attendrait son butoir pour s'apercevoir que ce qu'il couvrait est
  * arrivé.
  */
@@ -396,11 +395,10 @@ export function accueilleSponsor(){
  * y tenait (`_sponsor.html`) : c'est là qu'il paraît au premier trait de la
  * page, au même rang qu'avant parmi ce que le plan pose sur la scène.
  *
- * @param {{ conf: typeof conf, planAdmin: boolean }} b
+ * @param {{ conf: typeof conf }} b
  */
 export function brancheSponsor(b){
   conf = b.conf;
-  PLAN_ADMIN = b.planAdmin;
   /* Le générique, au premier trait de la page : avant les données, avant le plan,
      avant tout ce qu'il est censé couvrir. Il ne peut donc montrer que ce qu'une
      visite précédente a laissé sur l'appareil — voir le cache, plus haut. */

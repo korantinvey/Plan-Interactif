@@ -1,4 +1,5 @@
-/* `outils/gabarit/_modales.html` — la confirmation, et l'ordre des calques. */
+/* `outils/gabarit/modules/ordre-calques.mjs` — la fenêtre d'ordre des calques,
+   que seule l'administration reçoit. */
 module.exports = {
   "plan": "base map",
   "données": "data",

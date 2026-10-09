@@ -4,14 +4,14 @@
    La question posée, l'état de la visite et le tiroir vivent dans
    `modules/journee.mjs` ; le calcul — répartir, ordonner, dérouler — dans
    `modules/sejour.mjs`. Ils se branchent ici, à la place que leur code
-   tenait : ce que le code soudé tient encore — les réglages du salon, la
-   fiche, le parcours — leur est confié, l'état qui change à chaque geste par
+   tenait : ce que le code soudé tient encore — les réglages du salon, le
+   parcours — leur est confié, l'état qui change à chaque geste par
    un lecteur, lu au moment du calcul. Le trajet demandé et le tracé de
-   l'itinéraire sont un module (`tiroir-itineraire.mjs`) : la journée les
-   importe.
+   l'itinéraire sont un module (`tiroir-itineraire.mjs`), la fiche aussi
+   (`fiche.mjs`) : la journée les importe.
    ============================================================ */
 brancheJournee({
   datesSalon, horairesSalon, lueHeure, minutesVisite,
   seuilGere, seuilImpose, seuilConcentration,
-  select, ficheConf, basculeParcours, rangParcours, rafraichitParcours, changePlan,
+  basculeParcours, rangParcours, rafraichitParcours,
 });

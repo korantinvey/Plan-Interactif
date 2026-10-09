@@ -7,25 +7,22 @@
    grille, que seul l'exploitant voit, dans `modules/nappe.mjs`. Ils se
    branchent ici, à la place que leur code tenait dans ce script, et reçoivent
    ce que le code soudé tient encore : les réglages, les calques de dessin, et
-   ce que le dessin, le parcours et la journée savent des formes, des repères
-   et des conférences ; la vue, les volets et les tiroirs du plan.
+   ce que le parcours et la journée savent des conférences ; la vue, les
+   volets et les tiroirs du plan. Ce que le dessin sait des formes et des
+   repères, le calcul l'importe.
    ============================================================ */
 brancheItineraire({
   conf: () => CONF,
   dessins: () => (typeof DESSINS === "object" ? DESSINS : undefined),
-  cheminForme, pictoForme, nomTypeRepere, estPorte, ouvreEntrant, ouvreSortant,
   instantConf,
   /* Exposée par `modules/sejour.mjs` : on la confie par un détour, lu au
      moment du calcul, comme lorsqu'elle était déclarée plus bas. */
   finInstant: (c) => finInstant(c),
 });
 
-/* Le tiroir : la vue se confie par un lecteur et sa porte, puisque les gestes
-   la remplacent et que le trajet la recadre. Ses écoutes se posent ici, au
-   rang qu'elles tenaient parmi celles du plan. */
+/* Le tiroir : la vue, il l'importe de `modules/vue.mjs`. Ses écoutes se
+   posent ici, au rang qu'elles tenaient parmi celles du plan. */
 brancheTiroirItineraire({
-  vue: () => view, changeVue: v => { view = v; }, poseVue,
-  cadrePlan, masque, masqueDroite, masqueHaut, svg, reduit: REDUIT, etroit: ETROIT,
   changePlan, ferme, fermeParcours, formeParId,
   /* Désigner l'endroit d'un code affiché n'est qu'à l'exploitant
      (`modules/affiche-ici.mjs`) : la page publique ne l'a pas. */

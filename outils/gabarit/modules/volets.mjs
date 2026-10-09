@@ -14,9 +14,11 @@
    sont des modules que le plan public embarque aussi (`configuration.mjs`,
    `apparence.mjs`, `habillage.mjs`, `modeles.mjs`, `polices-plan.mjs`,
    `seuil.mjs`, `horaires.mjs`) : ils s'importent, comme le nuancier. Ce que
-   le code soudé tient encore — les options vendues à part, les distinctions,
-   la fiche, les secteurs et la liste — lui est confié par `brancheVolets`, à
-   la place que ce code tenait (`_volets.html`).
+   le code soudé tient encore — les options vendues à part, les distinctions —
+   lui est confié par `brancheVolets`, à la place que ce code tenait
+   (`_volets.html`). Les secteurs, la liste et le filtre de la recherche
+   s'importent (`secteurs.mjs`, `recherche.mjs`), comme ce que la fiche montre
+   (`corps-fiche.mjs`).
    ============================================================ */
 import { DATA, CONFERENCES, parId } from "./donnees.mjs";
 import { fermeModale } from "./fenetre.mjs";
@@ -37,6 +39,10 @@ import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePoli
 import { REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil } from "./seuil.mjs";
 import { JOURS_SALON_MAX, lueHeure, lueDate, datesSalon, horairesSalon } from "./horaires.mjs";
 import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
+import { SECTEURS } from "./secteurs.mjs";
+import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
+import { montre } from "./corps-fiche.mjs";
+import { DISTINCTIONS, ETOILE_DIST } from "./distinctions.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 // l'envoi de la configuration, et l'état de l'administration
@@ -45,15 +51,8 @@ let admin;
 // les options vendues à part, restées soudées (`_admin1.html`)
 let OPTIONS;
 let appliqueOptions;
-// les distinctions (`_rendu.html`) et la fiche (`_fiche.html`)
-let DISTINCTIONS;
-let ETOILE_DIST;
-let montre;
-// les secteurs, la liste et le filtre (`_recherche.html`)
-let secteurs;
-let appliqueSecteurs;
-let appliqueFiltre;
-let liste;
+// les secteurs du salon, que l'index remplace à chaque chargement
+const secteurs = () => SECTEURS;
 // ce que la fenêtre des réglages et le reste de l'administration tiennent
 let champZone;
 let construitPanneau;
@@ -64,12 +63,11 @@ let relance;
  * y tenait (`_volets.html`), dans la tranche que le visiteur ne reçoit pas.
  *
  * L'envoi de la configuration et l'état de l'administration n'y sont déclarés
- * que plus bas : ils viennent par des détours, lus à l'usage. Les secteurs,
- * que la recherche remplace à chaque chargement, viennent par un lecteur.
+ * que plus bas : ils viennent par des détours, lus à l'usage.
  */
 export function brancheVolets(b){
-  ({ enregistreConf, admin, OPTIONS, appliqueOptions, DISTINCTIONS, ETOILE_DIST, montre, secteurs,
-    appliqueSecteurs, appliqueFiltre, liste, champZone, construitPanneau, relance } = b);
+  ({ enregistreConf, admin, OPTIONS, appliqueOptions,
+    champZone, construitPanneau, relance } = b);
 }
 
 export function voletAdmin(hote){

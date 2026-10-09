@@ -3,12 +3,12 @@
 
    Le volet lui-même vit dans `modules/reglage-fiche.mjs`, que seul
    `plan-admin.mjs` embarque ; il se branche ici, à la place que son code
-   tenait, et ce que le code soudé tient encore lui est confié : les libellés
-   et l'ordre des champs de la fiche, la fiche ouverte derrière la fenêtre.
-   L'aperçu des réglages, sorti du code soudé, s'importe. */
+   tenait, et ce que le code soudé tient encore lui est confié : le préfixe
+   des champs propres au salon, le modèle retenu. L'aperçu des réglages, les
+   règles du corps de la fiche et la fiche ouverte derrière la fenêtre, sortis
+   du code soudé, s'importent. */
 brancheReglageFiche({
-  PREFIXE_PERSO, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
-  modeleRetenu, ouvre, coexChoisit,
+  modeleRetenu,
   // l'écriture d'une colonne de l'événement vient de `modules/fiche-zone.mjs`
   ecritColonneEvenement,
 });

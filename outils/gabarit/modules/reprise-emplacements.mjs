@@ -14,12 +14,16 @@
    pourquoi.
 
    Ce que le code soudé tient encore — les réglages et leur enregistrement, la
-   vue, le panneau des calques, le dessin des noms et des distinctions, la
-   recherche et la liste, la fiche, l'outil de dessin — lui est confié par
+   vue, le panneau des calques, le dessin des noms et des distinctions,
+   l'outil de dessin — lui est confié par
    `brancheRepriseEmplacements`, que `_geometrie.html` appelle à la place que
    ce code y tenait. Ce qui change sans cesse — les réglages (`CONF`, que le
-   changement de salon remplace), la vue, le calque de dessin ouvert — par des
-   lecteurs ; ce qui se déclare dans `_dessin.html` par des détours.
+   changement de salon remplace), la vue — par des lecteurs. Le calque de
+   dessin ouvert et le tracé d'une forme s'importent (`calques-dessin.mjs`,
+   `chemin-forme.mjs`, `dessin.mjs`) ; ce que l'outil de dessin tient
+   (`outil-dessin.mjs`, qui importe ce module-ci) se confie par des détours.
+   La recherche et la liste s'importent de `recherche.mjs`, la fiche de
+   `fiche.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, parId, poseDonnees, state, P } from "./donnees.mjs";
@@ -37,68 +41,44 @@ import { ficheZone } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
+import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
+import { ouvre, ferme } from "./fiche.mjs";
+import { libelles } from "./libelles.mjs";
+import { oublieDists, dessineDists } from "./distinctions.mjs";
+import { baliseZone, baliseStand } from "./rendu.mjs";
+import { calqueActif, nouvelId } from "./calques-dessin.mjs";
+import { cheminForme } from "./chemin-forme.mjs";
+import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
 
 /**
  * Ce que le code soudé confie au branchement. La vue et le plan s'importent
- * de `vue.mjs`.
+ * de `vue.mjs`, le dessin des noms, les distinctions et le balisage d'un
+ * emplacement de `libelles.mjs`, `distinctions.mjs` et `rendu.mjs`.
  * @typedef {object} PageRepriseEmplacements
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
- * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => void} enregistreConf
  * @property {() => void} construitPanneau
- * @property {() => void} libelles
- * @property {() => void} oublieDists
- * @property {() => void} dessineDists
- * @property {(z: any) => string} baliseZone
- * @property {(s: any) => string} baliseStand
- * @property {() => void} appliqueSecteurs
- * @property {() => void} marqueRetrait
- * @property {() => void} liste
- * @property {() => void} nomsAnglaisDesZones
- * @property {(o: any, depuis: any) => void} ouvre
- * @property {() => void} ferme
  * @property {(cle: string) => boolean} optionActive
  * @property {(ferme: boolean) => string} pictoVerrou
  * @property {(id: any) => void} activeCalque
  * @property {() => void} remplitListeSocietes
  * @property {(texte: string) => any} societeSaisie
- * @property {(o: any, soc: any) => string} etiquetteSociete
- * @property {(d: string | null) => void} apercu
- * @property {(d: string | null) => void} apercuGuide
  * @property {(p: number[], pts: number[][]) => boolean} fermeIci
- * @property {(f: any) => string} cheminForme
- * @property {() => string} nouvelId
  */
 /** @type {PageRepriseEmplacements} */
 let soude;
 const reglages = () => soude.conf();
 const conf = (/** @type {string} */ cle) => soude.confDe(cle);
-const calqueActif = () => soude.calqueActif();
 const enregistreConf = () => soude.enregistreConf();
 const construitPanneau = () => soude.construitPanneau();
-const libelles = () => soude.libelles();
-const oublieDists = () => soude.oublieDists();
-const dessineDists = () => soude.dessineDists();
-const baliseZone = (/** @type {any} */ z) => soude.baliseZone(z);
-const baliseStand = (/** @type {any} */ s) => soude.baliseStand(s);
-const appliqueSecteurs = () => soude.appliqueSecteurs();
-const marqueRetrait = () => soude.marqueRetrait();
-const liste = () => soude.liste();
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
-const ouvre = (/** @type {any} */ o, /** @type {any} */ depuis) => soude.ouvre(o, depuis);
-const ferme = () => soude.ferme();
 const optionActive = (/** @type {string} */ cle) => soude.optionActive(cle);
 const pictoVerrou = (/** @type {boolean} */ f) => soude.pictoVerrou(f);
 const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
 const remplitListeSocietes = () => soude.remplitListeSocietes();
 const societeSaisie = (/** @type {string} */ texte) => soude.societeSaisie(texte);
-const etiquetteSociete = (/** @type {any} */ o, /** @type {any} */ soc) => soude.etiquetteSociete(o, soc);
-const apercu = (/** @type {string | null} */ d) => soude.apercu(d);
-const apercuGuide = (/** @type {string | null} */ d) => soude.apercuGuide(d);
 const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => soude.fermeIci(p, pts);
-const cheminForme = (/** @type {any} */ f) => soude.cheminForme(f);
-const nouvelId = () => soude.nouvelId();
 const racine = document.documentElement;
 
 /* Le choix et le geste sont transitoires, comme le mode : ils ne se
@@ -167,7 +147,7 @@ export function modeGeometrie(sorte){
      disputeraient le glisser : entrer dans l'un referme les autres, plutôt
      que de laisser trois gestes viser le même pointeur. */
   if (SORTE_GEO){
-    if (calqueActif()) activeCalque(calqueActif());
+    if (calqueActif) activeCalque(calqueActif);
     if (PLACE_LIBELLES) modePlacementLibelles(false);
   }
   /* Passer d'une couche à l'autre ne garde pas le choix : ses poignées

@@ -39,7 +39,7 @@
 import { $ } from "./dom.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
-import { SLUG, BORNE } from "./salon.mjs";
+import { SLUG, BORNE, PLAN_ADMIN } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { resteSponsor } from "./sponsor.mjs";
@@ -47,17 +47,19 @@ import { ecritDistance, ecritDuree } from "./itineraire.mjs";
 import { SEJOUR, JOURNEE, vueJournee as VUE_JOURNEE, joursAVenir } from "./journee.mjs";
 import { ITI, ROUTE, attente as attenteIti, visee as viseeIti, poseVisee, bandeauVisee, fermeItineraire }
   from "./tiroir-itineraire.mjs";
+import { fermeParcours } from "./tiroir-parcours.mjs";
 import { svg } from "./vue.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
+import { montre } from "./corps-fiche.mjs";
+import { centre, ferme } from "./fiche.mjs";
+import { changePlan } from "./rendu.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
    se lance qu'une fois la page démarrée, bien après le branchement. */
 /** @type {Record<string, any>} */
 let soude = {};
-/* Deux valeurs qui ne changent plus une fois la page ouverte : la page où
-   l'on est (`_recherche.html` `PLAN_ADMIN`) et le mouvement réduit
-   (`_fiche.html` `REDUIT`). Le dessin du plan s'importe de `vue.mjs`. */
-let PLAN_ADMIN = false;
-let REDUIT = false;
+/* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
+   `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. */
 
 /**
  * Le branchement, appelé par `_tutoriel.html` à la place de la visite.
@@ -67,26 +69,16 @@ let REDUIT = false;
  * chaque geste, et la visite doit lire celui du moment. Celui de la journée
  * s'importe de `journee.mjs`, qui le tient.
  *
- * @param {{ conf: Function, optionActive: Function, montre: Function, changePlan: Function,
- *   centre: Function, ferme: Function, fermeParcours: Function,
- *   etroit: Function, planAdmin: boolean, reduit: boolean,
+ * @param {{ conf: Function, optionActive: Function,
  *   iciActif: () => boolean,
  *   dessinEnCours: () => any }} b
  */
 export function brancheTutoriel(b){
   soude = b;
-  PLAN_ADMIN = b.planAdmin;
-  REDUIT = b.reduit;
 }
 
 const conf = (c) => soude.conf(c);
 const optionActive = (cle) => soude.optionActive(cle);
-const montre = (type, cle) => soude.montre(type, cle);
-const changePlan = (i) => soude.changePlan(i);
-const centre = (o) => soude.centre(o);
-const ferme = () => soude.ferme();
-const fermeParcours = () => soude.fermeParcours();
-const ETROIT = () => soude.etroit();
 /* Le trajet demandé (`tiroir-itineraire.mjs` `ROUTE`, `attente`, `ITI`), la
    visée en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire
    l'éteint — sans passer par « finVisee », qui rouvrirait le tiroir qu'on

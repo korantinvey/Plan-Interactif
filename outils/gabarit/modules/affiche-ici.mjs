@@ -8,8 +8,10 @@
    `plan-admin.mjs` : le visiteur n'a ni affiche à produire, ni endroit à
    désigner.
 
-   La visée de l'itinéraire, le dessin et le tiroir sont encore soudés :
-   `_ici.html` les confie par `brancheAfficheIci`.
+   Le dessin est encore soudé : `_ici.html` le confie par
+   `brancheAfficheIci`. La visée de l'itinéraire et les tiroirs qu'on
+   referme pour viser s'importent (`tiroir-itineraire.mjs`,
+   `tiroir-parcours.mjs`), comme la mesure du texte (`texte-plan.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -22,7 +24,10 @@ import { lieuNomme, pointLibre } from "./borne.mjs";
 import { ICI_LIBRE } from "./ici.mjs";
 import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire }
   from "./tiroir-itineraire.mjs";
+import { fermeParcours } from "./tiroir-parcours.mjs";
 import { versPlan } from "./vue.mjs";
+import { ferme } from "./fiche.mjs";
+import { largeur } from "./texte-plan.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée, elle,
    vient du tiroir de l'itinéraire : on la lit telle qu'elle est à l'instant,
@@ -31,10 +36,7 @@ import { versPlan } from "./vue.mjs";
 let soude = {};
 const visee = () => viseeIti;
 const vise = (v) => poseVisee(v);
-const ferme = () => soude.ferme();
-const fermeParcours = () => soude.fermeParcours();
 const formeParId = (id) => soude.formeParId(id);
-const largeur = (txt, police) => soude.largeur(txt, police);
 const racine = document.documentElement;
 
 /* Combien de caractères de l'identifiant du pavillon partent dans l'adresse.
@@ -394,7 +396,6 @@ export function boutonCodeIci(){
 /**
  * Le branchement, appelé par `_ici.html` dans sa tranche d'administration.
  *
- * @param {{ ferme: Function, fermeParcours: Function, formeParId: Function,
- *   largeur: Function }} b
+ * @param {{ formeParId: Function }} b
  */
 export function brancheAfficheIci(b){ soude = b; }

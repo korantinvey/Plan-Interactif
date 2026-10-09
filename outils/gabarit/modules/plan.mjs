@@ -18,11 +18,11 @@ import { marquePrete, recadreMarque } from "./marque.mjs";
 import { vivants } from "./vivant.mjs";
 import { DATA, TOUS, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, PAR_HEBERGE, poseDonnees, state, P }
   from "./donnees.mjs";
-import { API, SLUG, cheminDuSalon, cheminPartageable, BORNE } from "./salon.mjs";
+import { API, SLUG, cheminDuSalon, cheminPartageable } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
   abonnementCourant, abonne } from "./notifications.mjs";
-import { ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre }
+import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture, brancheFenetre }
   from "./fenetre.mjs";
 import { lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche }
   from "./sur.mjs";
@@ -44,32 +44,30 @@ import { brancheItineraire, PAS_GRILLE, ALLURE, ALLURE_PMR, sommets, oublieGrill
   pointSaisi, portesDe, typeLiaison, nomRepere, oublieLiaisons, sortiesDe, plansRelies, routeEntre,
   mesureMarches, coupeMarche, distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, liensDe }
   from "./itineraire.mjs";
-import { PARCOURS, poseParcours, brancheListeParcours, identifiantParcours, casierParcours, dansParcours,
-  chargeParcours, enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET,
-  signetParcours, boutonParcours, rafraichitMarque, dessineMarques, marqueParcours, instantConf, cleTemps,
-  nomDeStand, groupeParcours } from "./parcours.mjs";
-import { CLE_LIEN_PARCOURS, litCodeParcours } from "./lien-parcours.mjs";
-import { ouvrePartageParcours, demandeGardeParcours, poseGardeParcours } from "./partage.mjs";
+import { identifiantParcours, chargeParcours, signetParcours, boutonParcours, dessineMarques, marqueParcours,
+  instantConf } from "./parcours.mjs";
+import { demandeGardeParcours, branchePartage } from "./partage.mjs";
 import { RENDU_WEBGL, GL, brancheWebgl, monteWebgl, vueWebgl, majEditionWebgl, planifieWebgl,
   poseModelesLibelles, cibleWebgl, priseWebgl, libelleSousWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte } from "./environs.mjs";
-import { brancheRappels, synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
-  from "./rappels.mjs";
+import { brancheRappels } from "./rappels.mjs";
 import { brancheInstallation, nommeApplication, accueilleInvitation } from "./installation.mjs";
 import { brancheBorne, pointBorne, poseLaBorne, poseBorneIci, montreBandeauBorne, ecritDepartBorne,
   dessineBorne, rafraichitBorne, demarreBorne } from "./borne.mjs";
 import { ICI_ACTIF, brancheIci, montreBandeauIci, demarreIci } from "./ici.mjs";
-import { brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
-  from "./suggestion.mjs";
+import { brancheSuggestion } from "./suggestion.mjs";
 import { TUTO, TUTO_DELAI, proposeTutoriel, brancheTutoriel } from "./tutoriel.mjs";
 import { finInstant } from "./sejour.mjs";
-import { appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee } from "./journee.mjs";
+import { brancheJournee } from "./journee.mjs";
 import { ADMIN, retireAdmin } from "./mode-admin.mjs";
 import { PLACE_LIBELLES, libSel, brancheLibellePlace, placementLibelle } from "./libelle-place.mjs";
 import { SORTE_GEO, brancheEmplacements, appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
 import { ITI, visee, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
   bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
   brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
+  remplitParcours, fermeParcours, videLeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
+import { accueilleParcoursPartage, brancheParcoursRecu } from "./parcours-recu.mjs";
 import { brancheVue, emp, poseEmprise, vise, cadrePlan, figeTextes, appliqueVue, repeintLibelles,
   rafraichitVue, poseVue, masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom,
   versPlan } from "./vue.mjs";
@@ -82,17 +80,46 @@ import { modeleRetenu, habilleModale } from "./modeles.mjs";
 import { P_NOM, P_CODE, branchePolices, posePoliceLibelles } from "./polices-plan.mjs";
 import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
 import { minutesVisite, lueHeure, datesSalon, horairesSalon } from "./horaires.mjs";
+import { SECTEURS, brancheSecteurs, indexeSecteurs, coloreSecteurs } from "./secteurs.mjs";
+import { brancheBandes, majFondus } from "./bandes.mjs";
+import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
+  libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
+  videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visible, visibleSurPlan,
+  visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
+  VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
+import { view, changeVue, svg } from "./vue.mjs";
+import { nomDeLaZone } from "./noms-zones.mjs";
+import { brancheIndex, indexeConferences } from "./index-salon.mjs";
+import { brancheTonDeLaBarre } from "./ton-barre.mjs";
+import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
+import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
+import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
+import { _lg, largeur } from "./texte-plan.mjs";
+import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
+import { DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
+  refaitDistsFiche } from "./distinctions.mjs";
+import { MONTE, brancheRendu, montePlan, changePlan } from "./rendu.mjs";
+import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif, outil, enCours }
+  from "./calques-dessin.mjs";
+import { estCadre, cheminForme } from "./chemin-forme.mjs";
+import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
+  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
+import { branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
+  oublieChoixPoi } from "./points-interet.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
   $, esc, separeValeurs, COLLATION,
   hslHex, rgbHex, hexa, luminance,
   marquePrete, recadreMarque,
-  API, SLUG, cheminDuSalon, cheminPartageable, BORNE,
+  API, SLUG, cheminDuSalon, cheminPartageable,
   accesBase, base,
   RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
   abonnementCourant, abonne,
-  ouvreModale, fermeModale, confirme, poseAvantFermeture, poseApresFermeture, brancheFenetre,
+  ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture, brancheFenetre,
   lien, adresseWeb, adresseSure, IMAGE_SURE, adresseImage, imageSure, assainitRiche,
   arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteAnneaux, boiteGeo,
   DEG, metresParDegre, versTerre, versLePlan, reancre, PX_TUILE, TOUR_MERCATOR, pixelsMercator,
@@ -108,30 +135,31 @@ Object.assign(globalThis, {
   anglePlan, grille, accroche, distancesDepuis, heureAuSalon, pointObjet, pointRepere, candidats,
   pointSaisi, portesDe, typeLiaison, nomRepere, oublieLiaisons, sortiesDe, plansRelies, routeEntre,
   mesureMarches, coupeMarche, distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, liensDe,
-  poseParcours, brancheListeParcours, identifiantParcours, casierParcours, dansParcours,
-  chargeParcours, enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET,
-  signetParcours, boutonParcours, rafraichitMarque, dessineMarques, marqueParcours, instantConf, cleTemps,
-  nomDeStand, groupeParcours,
-  CLE_LIEN_PARCOURS, litCodeParcours,
-  ouvrePartageParcours, demandeGardeParcours, poseGardeParcours,
+  identifiantParcours, chargeParcours, signetParcours, boutonParcours, dessineMarques, marqueParcours,
+  instantConf,
+  demandeGardeParcours,
   RENDU_WEBGL, GL, brancheWebgl, monteWebgl, vueWebgl, majEditionWebgl, planifieWebgl,
   poseModelesLibelles, cibleWebgl, priseWebgl, libelleSousWebgl, rectEcranWebgl,
   brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte,
-  brancheRappels, synchroniseRappels, reprendRappels, poseRappels, fenetreRappel,
+  brancheRappels,
   brancheInstallation, nommeApplication, accueilleInvitation,
   brancheBorne, pointBorne, poseLaBorne, poseBorneIci, montreBandeauBorne, ecritDepartBorne,
   dessineBorne, rafraichitBorne, demarreBorne,
   brancheIci, montreBandeauIci, demarreIci,
-  brancheSuggestion, SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion,
+  brancheSuggestion,
   TUTO_DELAI, proposeTutoriel, brancheTutoriel,
   finInstant,
-  appliqueVueParcours, perimeJournee, oublieSejour, brancheJournee,
+  brancheJournee,
   retireAdmin,
   brancheLibellePlace, placementLibelle,
   brancheEmplacements, appliqueAjouts, appliqueGeometries,
   ITI, poseVisee, dessineItineraire, rafraichitBouts, effaceItineraire, relance,
   bandeauVisee, finVisee, viseItineraire, visePoi, fermeItineraire, versItineraire, versItineraireDe,
   brancheTiroirItineraire,
+  basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
+  remplitParcours, fermeParcours, videLeParcours, brancheTiroirParcours,
+  accueilleParcoursPartage, brancheParcoursRecu,
+  branchePartage,
   brancheVue, poseEmprise, cadrePlan, figeTextes, appliqueVue, repeintLibelles, rafraichitVue, poseVue,
   masqueHaut, masque, masqueDroite, fit, stoppeZoom, glisseVers, rectVisee, zoom, versPlan,
   brancheConfiguration, salonRange, ouvreConf, reglagesDuSalon, conf, jeton,
@@ -143,6 +171,35 @@ Object.assign(globalThis, {
   branchePolices, posePoliceLibelles,
   seuilGere, seuilImpose, seuilConcentration,
   minutesVisite, lueHeure, datesSalon, horairesSalon,
+  brancheSecteurs, indexeSecteurs, coloreSecteurs,
+  brancheBandes, majFondus,
+  brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
+  libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
+  videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visible, visibleSurPlan,
+  visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
+  VIGNETTES, prechargeLesVignettes,
+  changeVue, svg,
+  nomDeLaZone,
+  brancheIndex, indexeConferences,
+  brancheTonDeLaBarre,
+  brancheDemarrage, chargeFond,
+  REDUIT, ETROIT,
+  montre, brancheCorpsFiche,
+  anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche,
+  _lg, largeur,
+  brancheLibelles, libelles, libellesWebgl,
+  DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
+  refaitDistsFiche,
+  brancheRendu, montePlan, changePlan,
+  brancheCalquesDessin,
+  mesCalques,
+  estCadre, cheminForme,
+  brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
+  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
+  branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
+  oublieChoixPoi,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -152,13 +209,6 @@ Object.defineProperties(globalThis, vivants({
   EXPOSANTS: () => EXPOSANTS, HEBERGES: () => HEBERGES, CONFERENCES: () => CONFERENCES,
   PAR_HEBERGE: () => PAR_HEBERGE,
 }));
-
-/* La liste du visiteur, que le module remplace au chargement, au vidage, et
-   quand un parcours reçu prend sa place : le code soudé la lit par accesseur,
-   et la remplace par `poseParcours`. */
-Object.defineProperties(globalThis, vivants({
-  PARCOURS: () => PARCOURS,
-}, "poseParcours"));
 
 /* Le code affiché dans le hall est-il en cours ? La visite guidée le lit pour
    céder la place ; seul le module le change, en posant le point ou en
@@ -208,3 +258,37 @@ Object.defineProperties(globalThis, vivants({ CONF: () => CONF, CLE_CONF: () => 
    (`polices-plan.mjs` `posePoliceLibelles`). */
 Object.defineProperties(globalThis, vivants({ P_NOM: () => P_NOM, P_CODE: () => P_CODE },
   "posePoliceLibelles"));
+
+/* Les secteurs du salon, que l'index refait à chaque chargement : le code
+   soudé les lit par accesseur ; seul `indexeSecteurs` les remplace. */
+Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "indexeSecteurs"));
+/* Le retrait du plan levé d'un clic hors du résultat : les gestes le lisent
+   par accesseur ; seuls `oublieRetrait` et `reposeRetrait` le changent. */
+Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, "reposeRetrait"));
+
+/* La vue du plan : les gestes la remplacent sans cesse, le cadrage sur un
+   trajet aussi. Le code soudé la lit par accesseur ; il la remplace par sa
+   porte (`vue.mjs` `changeVue`), jamais par affectation. */
+Object.defineProperties(globalThis, vivants({ view: () => view }, "changeVue"));
+
+/* Le dernier appui était-il tactile ? Les gestes le posent à chaque doigt
+   (`poseAppuiTactile`) et le relisent par accesseur ; la fiche s'en sert pour
+   écarter le clic fantôme qui suit un appui. */
+Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernierAppuiTactile },
+  "poseAppuiTactile"));
+/* Le pavillon est-il monté ? Le panneau des calques et la police des noms
+   attendent qu'il le soit ; seul le montage le pose (`rendu.mjs`
+   `montePlan`). */
+Object.defineProperties(globalThis, vivants({ MONTE: () => MONTE }, "montePlan"));
+
+/* Les calques de dessin du salon ouvert : le chargement les lit par
+   accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
+   `ouvreDessins`). On change ce qu'ils contiennent, jamais l'objet lui-même. */
+Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDessins"));
+/* Le calque ouvert au dessin, l'outil tenu et le tracé en cours : la carte
+   graphique, la visite guidée et les gestes les lisent par accesseur ; seul
+   l'outil de l'exploitant les change, par leurs portes, et le montage d'un
+   pavillon referme le calque. */
+Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, "poseCalqueActif"));
+Object.defineProperties(globalThis, vivants({ outil: () => outil }, "poseOutil"));
+Object.defineProperties(globalThis, vivants({ enCours: () => enCours }, "poseEbauche"));

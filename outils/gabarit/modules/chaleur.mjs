@@ -20,8 +20,9 @@
    pas davantage, une zone n'est pas un exposant.
 
    Un module de l'administration, donc : `plan-admin.mjs` l'embarque, le
-   visiteur ne le reçoit jamais. Ce qu'il ne peut pas importer — la sélection
-   d'un stand, la fenêtre des réglages, le mode administrateur — lui est confié
+   visiteur ne le reçoit jamais. La sélection d'un stand s'importe de
+   `fiche.mjs`. Ce qu'il ne peut pas importer — la fenêtre des réglages, le
+   mode administrateur — lui est confié
    par `brancheChaleur`, que le code soudé appelle à la place que ce code y
    tenait (`_chaleur.html`).
    ============================================================ */
@@ -29,13 +30,11 @@ import { $ } from "./dom.mjs";
 import { accesBase, base } from "./session.mjs";
 import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
+import { select } from "./fiche.mjs";
 
-/* Ce que le branchement confie : la sélection d'un stand (`_fiche.html`) et
-   la fenêtre des réglages (`_reglages.html`), que le code soudé tient
-   encore, et le mode administrateur, lu à l'instant (`modules/mode-admin.mjs`
-   `ADMIN`). */
-/** @type {(id: string, recentrer?: boolean) => void} */
-let select;
+/* Ce que le branchement confie : la fenêtre des réglages (`_reglages.html`),
+   que le code soudé tient encore, et le mode administrateur, lu à l'instant
+   (`modules/mode-admin.mjs` `ADMIN`). */
 /** @type {(ouvrir?: string) => void} */
 let ouvreReglages;
 /** @type {() => boolean} */
@@ -661,11 +660,9 @@ async function lanceRemiseAZero(){
  * Le branchement de la carte, appelé par le code soudé à la place que ce code
  * y tenait (`_chaleur.html`), dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ select: typeof select, ouvreReglages: typeof ouvreReglages,
- *           estAdmin: typeof estAdmin }} b
+ * @param {{ ouvreReglages: typeof ouvreReglages, estAdmin: typeof estAdmin }} b
  */
 export function brancheChaleur(b){
-  select = b.select;
   ouvreReglages = b.ouvreReglages;
   estAdmin = b.estAdmin;
   /* La hauteur disponible change avec la fenêtre, et le cartouche se replie
