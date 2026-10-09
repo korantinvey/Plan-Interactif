@@ -519,15 +519,7 @@ Fonctions :
 
 - l.1 · 17. La visite guidée — le branchement
 
-### `_volets.html` — 1165 l. → plan-admin.html
-
-Fonctions :
-
-`voletAdmin` 4 · `blocOptions` 169 · `blocLangues` 216 · `blocBarre` 290
-`blocHoraires` 348 · `voletParcours` 490 · `sallesSituees` 625 · `voletPmr` 641
-`nomDuTon` 732 · `svgVignette` 741 · `barreVignette` 743 · `vignetteDistPlan` 747
-`vignetteDistListe` 760 · `vignetteDistFiche` 774 · `salonDitSes` 794 · `coinPris` 801
-`voletDist` 824 · `voletApparence` 989
+### `_volets.html` — 28 l. → plan-admin.html
 
 ### `_vue.html` — 479 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -1049,7 +1041,7 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 71 l. → plan-admin
+### `modules/plan-admin.mjs` — 73 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
@@ -1288,6 +1280,18 @@ Fonctions :
 Fonctions :
 
 `vivants` 25
+
+### `modules/volets.mjs` — 1264 l. → plan-admin
+
+- l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
+
+Fonctions :
+
+`brancheVolets` 93 · `voletAdmin` 103 · `blocOptions` 268 · `blocLangues` 315
+`blocBarre` 389 · `blocHoraires` 447 · `voletParcours` 589 · `sallesSituees` 724
+`voletPmr` 740 · `nomDuTon` 831 · `svgVignette` 840 · `barreVignette` 842
+`vignetteDistPlan` 846 · `vignetteDistListe` 859 · `vignetteDistFiche` 873
+`salonDitSes` 893 · `coinPris` 900 · `voletDist` 923 · `voletApparence` 1088
 
 ### `modules/webgl.mjs` — 1354 l. → plan, plan-admin
 
