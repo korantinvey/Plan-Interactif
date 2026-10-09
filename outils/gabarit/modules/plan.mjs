@@ -42,6 +42,11 @@ import { CHARGE, chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, charg
 import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { sponsorRetenu, ouvreSponsor, suitSponsor, resteSponsor, fermeSponsor, accueilleSponsor,
   brancheSponsor } from "./sponsor.mjs";
+import { brancheItineraire, PAS_GRILLE, ALLURE, ALLURE_PMR, sommets, oublieGrilles, calquesDe, roleIti,
+  anglePlan, grille, accroche, distancesDepuis, heureAuSalon, pointObjet, pointRepere, candidats,
+  pointSaisi, portesDe, typeLiaison, nomRepere, oublieLiaisons, sortiesDe, plansRelies, routeEntre,
+  mesureMarches, coupeMarche, distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, liensDe }
+  from "./itineraire.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -66,6 +71,10 @@ Object.assign(globalThis, {
   appDuSalon, iconeDeLApplication,
   sponsorRetenu, ouvreSponsor, suitSponsor, resteSponsor, fermeSponsor, accueilleSponsor,
   brancheSponsor,
+  brancheItineraire, PAS_GRILLE, ALLURE, ALLURE_PMR, sommets, oublieGrilles, calquesDe, roleIti,
+  anglePlan, grille, accroche, distancesDepuis, heureAuSalon, pointObjet, pointRepere, candidats,
+  pointSaisi, portesDe, typeLiaison, nomRepere, oublieLiaisons, sortiesDe, plansRelies, routeEntre,
+  mesureMarches, coupeMarche, distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, liensDe,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
