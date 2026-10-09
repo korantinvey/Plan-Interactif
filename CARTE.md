@@ -450,7 +450,7 @@ Fonctions :
 `dejaPubliee` 181 · `marqueAttente` 187 · `mesCalques` 196 · `poseCalqueActif` 205
 `poseOutil` 206 · `poseEbauche` 210 · `trouveCalque` 212 · `nouvelId` 213
 
-### `modules/chaleur.mjs` — 670 l. → plan-admin
+### `modules/chaleur.mjs` — 672 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.454 · Remise à zéro des compteurs
@@ -462,8 +462,8 @@ Fonctions :
 `mesureCartoucheChaleur` 257 · `replieChaleur` 263 · `ecritEtatChaleur` 274
 `dessineEchelleChaleur` 282 · `dessineTopChaleur` 302 · `phraseChaleur` 344
 `rafraichitChaleur` 369 · `montreChaleur` 403 · `rangChaleur` 436 · `aplati` 476
-`voletMesure` 481 · `evenementCourant` 507 · `ouvreRemiseAZero` 526 · `lanceRemiseAZero` 618
-`brancheChaleur` 664
+`voletMesure` 481 · `evenementCourant` 507 · `ouvreRemiseAZero` 526 · `lanceRemiseAZero` 620
+`brancheChaleur` 666
 
 Éléments :
 
