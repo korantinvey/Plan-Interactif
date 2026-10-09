@@ -1,11 +1,11 @@
 /* ============================================================
    Les notifications — ce que l'appareil sait recevoir, et l'abonnement
 
-   Le rappel avant une conférence (`_rappels.html`) passe par le Web Push : un
+   Le rappel avant une conférence (`rappels.mjs`) passe par le Web Push : un
    service de second plan inscrit, un abonnement chiffré avec la clé publique
    du serveur, une adresse que la notification rouvrira. Tout cela tient à
    l'appareil et au serveur, rien au plan : le choix des conférences, le
-   réglage du délai et la fenêtre qui le propose restent au code soudé.
+   réglage du délai et la fenêtre qui le propose sont dans `rappels.mjs`.
    ============================================================ */
 import { API } from "./salon.mjs";
 import { supportMesure } from "./mesure.mjs";

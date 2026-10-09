@@ -357,23 +357,13 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 939 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 41 l. → plan-admin.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 98 · `invitationVoulue` 99 · `auDoigt` 129 · `nommeApplication` 165
-`reponsesInstallation` 183 · `retientInstallation` 188 · `jourInstallation` 197
-`invitationEcartee` 200 · `refuseInstallation` 206 · `faconInstallation` 234
-`appliInstallee` 257 · `verifieApplication` 279 · `connaitLApplication` 289
-`adresseApplication` 302 · `lanceApplication` 322 · `faconRappel` 355 · `rappelEcarte` 363
-`refuseRappel` 369 · `relanceInvitation` 387 · `gesteInstallation` 392 · `doigtPose` 396
-`doigtLeve` 397 · `vueInstallation` 400 · `accueilleInvitation` 409
-`invitationRetenue` 435 · `suitLesGestes` 456 · `finInvitation` 464 · `rouvreInvitation` 486
-`essaieInvitation` 506 · `teteInvitation` 635 · `retourAuxReglages` 656
-`poseGardeInstallation` 685 · `remplitInvitation` 708 · `ouvreInvitation` 738
-`ouvreRappel` 817 · `ouvreRetrouve` 879 · `caseInstallation` 902
+`retourAuxReglages` 33
 
 ### `_itineraire.html` — 800 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -522,18 +512,9 @@ Fonctions :
 `pousseConfiguration` 288 · `sauvegardeCourante` 481 · `telechargeSauvegarde` 503
 `appliqueSauvegarde` 526 · `litSauvegarde` 560 · `brancheSauvegarde` 582
 
-### `_rappels.html` — 573 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 17 l.
 
 - l.1 · 11 sexies. Le rappel avant une conférence
-
-Fonctions :
-
-`reglageRappel` 63 · `rappelsVoulus` 64 · `minutesRappel` 65 · `cleRappels` 79
-`chargeRappels` 82 · `retientRappels` 86 · `rappelsOfferts` 97 · `instantAbsolu` 127
-`confsARappeler` 135 · `rappelsDuParcours` 152 · `synchroniseRappels` 190
-`eteintRappels` 213 · `allumeRappels` 228 · `aideRappel` 245 · `poseRappels` 261
-`cleInviteRappel` 382 · `inviteRappelFaite` 385 · `retientInviteRappel` 390
-`fenetreRappel` 425 · `proposeRappels` 458 · `essaieRappelReel` 520 · `reprendRappels` 562
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
@@ -818,6 +799,14 @@ Fonctions :
 `masqueCarte` 695 · `formesMasquantes` 704 · `contourDuHall` 726 · `cheminDuHall` 733
 `poseMasqueCarte` 751 · `ditCarte` 766 · `refaitFondCarte` 776
 
+### `modules/essai-rappel.mjs` — 69 l. → plan-admin
+
+- l.1 · L'essai d'un vrai rappel, depuis les réglages
+
+Fonctions :
+
+`essaieRappelReel` 37
+
 ### `modules/export.mjs` — 232 l. → console, rapport
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
@@ -861,6 +850,25 @@ Fonctions :
 Fonctions :
 
 `reduitIcone` 30
+
+### `modules/installation.mjs` — 913 l. → plan, plan-admin
+
+- l.1 · L'invitation à installer le plan
+
+Fonctions :
+
+`conf` 105 · `reglageInstallation` 125 · `invitationVoulue` 126 · `auDoigt` 156
+`nommeApplication` 192 · `reponsesInstallation` 210 · `retientInstallation` 215
+`jourInstallation` 224 · `invitationEcartee` 227 · `refuseInstallation` 233
+`faconInstallation` 261 · `appliInstallee` 284 · `verifieApplication` 306
+`connaitLApplication` 316 · `adresseApplication` 329 · `lanceApplication` 349
+`faconRappel` 382 · `rappelEcarte` 390 · `refuseRappel` 396 · `relanceInvitation` 414
+`gesteInstallation` 419 · `doigtPose` 423 · `doigtLeve` 424 · `vueInstallation` 427
+`accueilleInvitation` 436 · `invitationRetenue` 462 · `suitLesGestes` 483
+`finInvitation` 491 · `rouvreInvitation` 513 · `essaieInvitation` 533
+`brancheInstallation` 578 · `teteInvitation` 673 · `retourAuxReglages` 688
+`poseGardeInstallation` 709 · `remplitInvitation` 732 · `ouvreInvitation` 762
+`ouvreRappel` 841 · `ouvreRetrouve` 903
 
 ### `modules/itineraire.mjs` — 2650 l. → plan, plan-admin
 
@@ -963,11 +971,11 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 33 l. → plan-admin
+### `modules/plan-admin.mjs` — 41 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 116 l. → plan, plan-admin
+### `modules/plan.mjs` — 121 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -979,6 +987,20 @@ Fonctions :
 
 `qrMotsBruts` 36 · `qrMotsUtiles` 45 · `qrMul` 56 · `qrGenerateur` 59 · `qrReste` 70
 `qrAlignements` 81 · `qrTrame` 97 · `qrChemin` 286 · `qrSvg` 308
+
+### `modules/rappels.mjs` — 548 l. → plan, plan-admin
+
+- l.1 · Le rappel avant une conférence
+
+Fonctions :
+
+`conf` 71 · `tuto` 72 · `brancheRappels` 80 · `reglageRappel` 99 · `rappelsVoulus` 100
+`minutesRappel` 101 · `cleRappels` 115 · `chargeRappels` 118 · `retientRappels` 122
+`rappelsOfferts` 133 · `instantAbsolu` 163 · `confsARappeler` 171 · `rappelsDuParcours` 188
+`synchroniseRappels` 226 · `eteintRappels` 249 · `allumeRappels` 264 · `aideRappel` 281
+`poseRappels` 297 · `cleInviteRappel` 418 · `inviteRappelFaite` 421
+`retientInviteRappel` 426 · `fenetreRappel` 461 · `proposeRappels` 494
+`reprendRappels` 537
 
 ### `modules/rapport.mjs` — 20 l. → rapport
 
@@ -992,6 +1014,14 @@ Fonctions :
 
 `brancheReglageApplication` 61 · `nomAppDefaut` 84 · `ecritApplication` 99
 `blocApplication` 140
+
+### `modules/reglage-installation.mjs` — 71 l. → plan-admin
+
+- l.1 · La case de l'invitation à installer, dans l'onglet « Admin » des réglages
+
+Fonctions :
+
+`brancheReglageInstallation` 22 · `caseInstallation` 34
 
 ### `modules/reglage-sponsor.mjs` — 232 l. → plan-admin
 

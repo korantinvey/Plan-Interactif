@@ -1,5 +1,6 @@
-/* `outils/gabarit/_installation.html` — l'invitation à installer le plan : la
-   fenêtre que lit le visiteur, et sa case dans l'onglet « Admin » des réglages.
+/* `outils/gabarit/modules/installation.mjs` — l'invitation à installer le
+   plan : la fenêtre que lit le visiteur. Sa case, dans l'onglet « Admin » des
+   réglages, est dans `reglage-installation.js`.
    Les intitulés des gestes sont ceux que les systèmes affichent en anglais :
    on les cherche des yeux, ils doivent être les mêmes. */
 module.exports = {
@@ -53,11 +54,4 @@ module.exports = {
   "L'application aura sa propre mémoire : le parcours de visite que vous avez commencé ici n'y sera pas. Gardez-en une copie, vous l'y ouvrirez d'un lien.":
     "The app will have a memory of its own: the visit plan you started here will not be in it. Keep a copy, and you will open it there from a link.",
   "Garder mon parcours": "Keep my visit plan",
-
-  // la case des réglages
-  "Inviter les visiteurs à installer le plan": "Invite visitors to install the map",
-  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu de l'invitation :":
-    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Another reminds visitors who already have the app, ten seconds in. At most once a day each, and never again after two refusals. Preview of the invitation:",
-  ". Du rappel :": ". Of the reminder:",
-  "Android": "Android",
 };
