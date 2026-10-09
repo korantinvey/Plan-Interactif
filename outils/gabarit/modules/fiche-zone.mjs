@@ -10,8 +10,8 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
    qu'en administration (`_fiche.html`). Ce que le code soudé tient encore —
-   la configuration, les types de zone, l'index de recherche, le plan à
-   redessiner, la fiche ouverte — lui est confié par `brancheFicheZone`, que
+   la configuration, les types de zone, l'index de recherche, le cartouche —
+   lui est confié par `brancheFicheZone`, que
    `_mode-admin.html` appelle à la place que ce code y tenait.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -24,6 +24,7 @@ import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
 import { ouvre } from "./fiche.mjs";
+import { libelles } from "./libelles.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
    loin dans le script — les réglages (`CONF`, que le changement de salon
@@ -36,7 +37,6 @@ import { ouvre } from "./fiche.mjs";
  * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
  * @property {() => void} nomsAnglaisDesZones
- * @property {() => void} libelles
  * @property {() => void} liste
  * @property {() => void} cartouchePoi
  * @property {() => void} majPaletteGeo
@@ -50,7 +50,6 @@ const typeZone = (z) => soude.typeZone(z);
 const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 const enregistreConf = () => soude.enregistreConf();
 const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
-const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const cartouchePoi = () => soude.cartouchePoi();
 const majPaletteGeo = () => soude.majPaletteGeo();

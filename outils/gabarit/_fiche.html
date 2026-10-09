@@ -8,9 +8,10 @@
    intitulés, dans `modules/corps-fiche.mjs` ; la sélection, la fiche et ses
    fenêtres — conférence, produit, choix d'une société sur un stand partagé —
    dans `modules/fiche.mjs`. Ils se branchent ici, à la place que leur code
-   tenait dans ce script, et reçoivent ce que le code soudé tient encore : le
-   montage du plan et ses libellés, les découpages dessinés, les tiroirs et le
-   parcours ; et, pour le corps de la fiche, le préfixe et le libellé des
+   tenait dans ce script, et reçoivent ce que le code soudé tient encore, ou
+   ce qui les importe : le montage du plan et les marques des distinctions
+   (`modules/rendu.mjs`, `modules/distinctions.mjs`), les découpages dessinés,
+   les tiroirs et le parcours ; et, pour le corps de la fiche, le préfixe et le libellé des
    champs propres au salon (`modules/recherche.mjs`, qui importe
    `corps-fiche.mjs` et ne peut donc être importé par lui).
    ============================================================ */
@@ -21,7 +22,7 @@ brancheCorpsFiche({ PREFIXE_PERSO, libelleCritere });
    parmi celles du plan. Ce qui est déclaré plus bas dans le script se confie
    par un détour, lu au moment de l'appel. */
 brancheFiche({
-  montePlan, libelles, coexChoisit, poseDistsFiche, nomDeLaZone,
+  montePlan, poseDistsFiche, nomDeLaZone,
   decoupeStand, marqueStandsDessines, formeParId,
   typeZone: (z) => typeZone(z),
   baisseTiroir: () => baisseTiroir,

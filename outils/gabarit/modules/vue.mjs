@@ -49,7 +49,7 @@ export let svg = null;
 /** L'emprise du pavillon, posée au montage du plan. */
 /** @type {any} */
 export let emp;
-/** La porte de l'emprise : `_rendu.html` `montePlan` la remplace à chaque pavillon. */
+/** La porte de l'emprise : `rendu.mjs` `montePlan` la remplace à chaque pavillon. */
 export function poseEmprise(/** @type {any} */ e){ emp = e; }
 
 /* ============================================================
@@ -143,7 +143,7 @@ function peintLibelles(/** @type {any} */ v){
 }
 
 /** Le calque des libellés repeint à la vue écrite, s'ils y sont — pour
- *  `_rendu.html` `libelles`, qui les retrie en plein geste. */
+ *  `libelles.mjs` `libelles`, qui les retrie en plein geste. */
 export function repeintLibelles(){
   if (libPeints) peintLibelles(vueEcrite);
 }

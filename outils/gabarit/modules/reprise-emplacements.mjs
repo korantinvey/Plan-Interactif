@@ -41,21 +41,20 @@ import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSourc
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
 import { ouvre, ferme } from "./fiche.mjs";
+import { libelles } from "./libelles.mjs";
+import { oublieDists, dessineDists } from "./distinctions.mjs";
+import { baliseZone, baliseStand } from "./rendu.mjs";
 
 /**
  * Ce que le code soudé confie au branchement. La vue et le plan s'importent
- * de `vue.mjs`.
+ * de `vue.mjs`, le dessin des noms, les distinctions et le balisage d'un
+ * emplacement de `libelles.mjs`, `distinctions.mjs` et `rendu.mjs`.
  * @typedef {object} PageRepriseEmplacements
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
  * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => void} enregistreConf
  * @property {() => void} construitPanneau
- * @property {() => void} libelles
- * @property {() => void} oublieDists
- * @property {() => void} dessineDists
- * @property {(z: any) => string} baliseZone
- * @property {(s: any) => string} baliseStand
  * @property {() => void} nomsAnglaisDesZones
  * @property {(cle: string) => boolean} optionActive
  * @property {(ferme: boolean) => string} pictoVerrou
@@ -76,11 +75,6 @@ const conf = (/** @type {string} */ cle) => soude.confDe(cle);
 const calqueActif = () => soude.calqueActif();
 const enregistreConf = () => soude.enregistreConf();
 const construitPanneau = () => soude.construitPanneau();
-const libelles = () => soude.libelles();
-const oublieDists = () => soude.oublieDists();
-const dessineDists = () => soude.dessineDists();
-const baliseZone = (/** @type {any} */ z) => soude.baliseZone(z);
-const baliseStand = (/** @type {any} */ s) => soude.baliseStand(s);
 const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const optionActive = (/** @type {string} */ cle) => soude.optionActive(cle);
 const pictoVerrou = (/** @type {boolean} */ f) => soude.pictoVerrou(f);
