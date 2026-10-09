@@ -27,18 +27,17 @@ function boite(f){
 /* @admin — les poignées, le panneau « Élément » et les gestes d'édition */
 
 /* L'outil de dessin reste soudé : il est confié au module ici, à la place que
-   ce code tenait. La vue, la forme choisie, l'outil tenu et le calque actif
-   par des lecteurs — les gestes et la boîte à outils les remplacent sans
-   cesse —, et la forme choisie se change par sa porte. */
+   ce code tenait. La forme choisie, l'outil tenu et le calque actif par des
+   lecteurs — les gestes et la boîte à outils les remplacent sans cesse —, et
+   la forme choisie se change par sa porte. La vue, le module l'importe. */
 brancheEdition({
-  vue: () => view,
   formeSel: () => formeSel,
   poseFormeSel: (id) => { formeSel = id; },
   outil: () => outil,
   calqueActif: () => calqueActif,
-  svg, EPAISSEUR_TRAIT, TYPES_REPERE, MODES_TRANSPORT,
-  cadrePlan, formeParId, boite, estCadre, memorise, enregistreDessins, dessineDessins, redessineForme,
-  versPlan, apercuGuide, pictoForme, nomTypeRepere, estTransport, modeTransport, optionsModes,
+  EPAISSEUR_TRAIT, TYPES_REPERE, MODES_TRANSPORT,
+  formeParId, boite, estCadre, memorise, enregistreDessins, dessineDessins, redessineForme,
+  apercuGuide, pictoForme, nomTypeRepere, estTransport, modeTransport, optionsModes,
   couleurRepere, couleurLigne, couleurEcrite, libelleDoffice, seRattache, societeDeForme,
   etiquetteSociete, societeSaisie, remplitListeSocietes,
 });

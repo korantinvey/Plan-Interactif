@@ -9,15 +9,14 @@ import { $ } from "./dom.mjs";
 import { imageSure, adresseSure } from "./sur.mjs";
 import { SLUG } from "./salon.mjs";
 import { DATA } from "./donnees.mjs";
+import { vue } from "./vue.mjs";
 
 /* Ce que le code soudé tient encore, et que le branchement confie : la
-   configuration du plan (`_admin1.html` `conf`), la vue dessinée
-   (`_js.html` `view`, lue à l'instant) et la page où l'on est
-   (`_recherche.html` `PLAN_ADMIN`). */
+   configuration du plan (`_admin1.html` `conf`) et la page où l'on est
+   (`_recherche.html` `PLAN_ADMIN`). La vue dessinée, lue à l'instant,
+   s'importe de `vue.mjs`. */
 /** @type {(cle: string) => any} */
 let conf;
-/** @type {() => any} */
-let vue;
 let PLAN_ADMIN = false;
 /**
  * Un salon se vend aussi par son plan. L'organisateur qui propose à un
@@ -397,11 +396,10 @@ export function accueilleSponsor(){
  * y tenait (`_sponsor.html`) : c'est là qu'il paraît au premier trait de la
  * page, au même rang qu'avant parmi ce que le plan pose sur la scène.
  *
- * @param {{ conf: typeof conf, vue: typeof vue, planAdmin: boolean }} b
+ * @param {{ conf: typeof conf, planAdmin: boolean }} b
  */
 export function brancheSponsor(b){
   conf = b.conf;
-  vue = b.vue;
   PLAN_ADMIN = b.planAdmin;
   /* Le générique, au premier trait de la page : avant les données, avant le plan,
      avant tout ce qu'il est censé couvrir. Il ne peut donc montrer que ce qu'une

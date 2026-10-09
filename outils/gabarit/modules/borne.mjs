@@ -31,10 +31,10 @@
    peut donc pas être retenu, et chaque remise à zéro vaut une visite de plus —
    voir `_mesure.html`.
 
-   La borne touche au tiroir de l'itinéraire, à sa visée, à la vue et aux
-   tiroirs du plan, encore soudés : `_borne.html` les lui confie par
-   `brancheBorne`, à la place que ce code tenait, et c'est là que ses écoutes
-   se posent, au même rang qu'avant parmi celles du plan.
+   La borne touche au tiroir de l'itinéraire, à sa visée et aux tiroirs du
+   plan, encore soudés : `_borne.html` les lui confie par `brancheBorne`, à la
+   place que ce code tenait, et c'est là que ses écoutes se posent, au même
+   rang qu'avant parmi celles du plan. La vue, elle, s'importe de `vue.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, state, P } from "./donnees.mjs";
@@ -43,17 +43,16 @@ import { fermeModale } from "./fenetre.mjs";
 import { renouvelleVisiteur } from "./mesure.mjs";
 import { sponsorRetenu, ouvreSponsor } from "./sponsor.mjs";
 import { pointSaisi, candidats, pointRepere } from "./itineraire.mjs";
+import { vue, svg, versPlan, cadrePlan, fit } from "./vue.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée et la
-   vue sont des lecteurs, et la visée a sa porte : l'une et l'autre changent
-   sans cesse. La visée vit dans `tiroir-itineraire.mjs`, qui importe ce
+/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée est
+   un lecteur, et elle a sa porte : elle change sans cesse. Elle vit dans `tiroir-itineraire.mjs`, qui importe ce
    module pour le départ de la borne : elle ne peut s'importer d'ici. */
 /** @type {Record<string, any>} */
 let soude = {};
 
 const visee = () => soude.visee();
 const vise = (v) => soude.vise(v);
-const vue = () => soude.vue();
 const bandeauVisee = () => soude.bandeauVisee();
 const changePlan = (i) => soude.changePlan(i);
 const fermeItineraire = () => soude.fermeItineraire();
@@ -63,9 +62,6 @@ const fermeParcours = () => soude.fermeParcours();
 const videLeParcours = () => soude.videLeParcours();
 const videRecherche = () => soude.videRecherche();
 const formeParId = (id) => soude.formeParId(id);
-const versPlan = (x, y) => soude.versPlan(x, y);
-const cadrePlan = () => soude.cadrePlan();
-const fit = () => soude.fit();
 const racine = document.documentElement;
 
 /* La position est gardée sous le nom du salon : le même écran peut servir
@@ -281,7 +277,7 @@ export function dessineBorne(){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "borneIci";
     // sous le trait de l'itinéraire, qui part justement d'ici
-    soude.svg.insertBefore(g, soude.svg.querySelector("#itin, #apercu, #poignees"));
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
   }
   rempliBorne(g);
 }
@@ -407,11 +403,10 @@ export function demarreBorne(){
  * borne s'y posent au même rang qu'avant parmi celles du plan — la bascule de
  * langue, le bouton de pose, et les gestes qui relancent le repos.
  *
- * @param {{ visee: () => any, vise: (v: any) => void, vue: () => any, svg: Element,
+ * @param {{ visee: () => any, vise: (v: any) => void,
  *   bandeauVisee: Function, changePlan: Function, fermeItineraire: Function,
  *   effaceItineraire: Function, ferme: Function, fermeParcours: Function,
- *   videLeParcours: Function, videRecherche: Function, formeParId: Function,
- *   versPlan: Function, cadrePlan: Function, fit: Function }} b
+ *   videLeParcours: Function, videRecherche: Function, formeParId: Function }} b
  */
 export function brancheBorne(b){
   soude = b;

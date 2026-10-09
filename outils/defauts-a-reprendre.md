@@ -36,6 +36,9 @@ découpe, qui devait garder le comportement à l'identique. À reprendre à la f
 9. **Console : jeton de mot de passe arrivé par erreur** — pendant la
    redirection vers la page du mot de passe, la console commence quand même à
    charger ; `GET profil` et `GET evenement` partent ou non selon le moment.
+10. **Cadrage initial sur téléphone** : `fit` varie de quelques pixels d'un
+    chargement à l'autre, sans doute selon le moment où la barre et le tiroir
+    sont mesurés.
 
 ## Code et outils
 
