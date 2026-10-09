@@ -8,12 +8,13 @@
 
    Il se branche dans `_modales.html`, dans sa tranche d'administration, à la
    place que son code tenait : l'ordre de la pile et le panneau qu'il refait
-   sont encore au code soudé (`_pile.html`), les verrous et le renommage au
-   dessin (`_dessin.html`), la configuration à `_admin1.html` — confiée par
-   des détours, lus à l'appel.
+   sont encore au code soudé (`_pile.html`), la configuration à
+   `_admin1.html` — confiée par des détours, lus à l'appel. Les verrous et le
+   renommage d'un calque s'importent de l'outil de dessin (`outil-dessin.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ouvreModale } from "./fenetre.mjs";
+import { verrouille, pictoVerrou, renommeCalque } from "./outil-dessin.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -24,9 +25,6 @@ const CONF = () => soude.CONF();
 const enregistreConf = () => soude.enregistreConf();
 const ordonneDom = () => soude.ordonneDom();
 const construitPanneau = () => soude.construitPanneau();
-const verrouille = (c) => soude.verrouille(c);
-const pictoVerrou = (ferme) => soude.pictoVerrou(ferme);
-const renommeCalque = (c, apres) => soude.renommeCalque(c, apres);
 
 /* ------------------------------------------------------------
    Réorganisation : le premier rang de la liste est le calque le
@@ -143,8 +141,6 @@ export function ouvreOrdre(){
  * Appelé par `_modales.html`, dans sa tranche d'administration.
  *
  * @param {{ pile: () => any[], clePile: () => string, CONF: () => any,
- *   enregistreConf: () => void, ordonneDom: () => void, construitPanneau: () => void,
- *   verrouille: (c: any) => boolean, pictoVerrou: (ferme: boolean) => string,
- *   renommeCalque: (c: any, apres: () => void) => void }} b
+ *   enregistreConf: () => void, ordonneDom: () => void, construitPanneau: () => void }} b
  */
 export function brancheOrdreCalques(b){ soude = b; }

@@ -7,16 +7,17 @@
    l'onglet. Ce que le plan public relit du réglage — une sorte remonte-t-elle
    (`chercheSorte`) — est dans `configuration.mjs`.
 
-   Ce que le code soudé tient encore — la fiche (`_fiche.html` `montre`), les
-   repères (`_dessin.html`), l'envoi de la configuration (`_ordre-fiche.html`,
-   déclaré plus bas, donc par un détour) — lui est confié par
-   `brancheReglageRecherche`, à la place que ce code tenait. Les critères et
-   la liste s'importent de `recherche.mjs`.
+   Ce que le code soudé tient encore — les repères (`_dessin.html`), l'envoi
+   de la configuration (`_ordre-fiche.html`, déclaré plus bas, donc par un
+   détour) — lui est confié par `brancheReglageRecherche`, à la place que ce
+   code tenait. Les critères et la liste s'importent de `recherche.mjs`, ce
+   que la fiche montre de `corps-fiche.mjs`.
    ============================================================ */
 import { DATA, TOUS, CONFERENCES } from "./donnees.mjs";
 import { conf, programmeOffert, chercheSorte } from "./configuration.mjs";
 import { CLE_SECTEUR, PREFIXE_PERSO, clesCriteres, refaitCriteres, libelleCritere, liste }
   from "./recherche.mjs";
+import { montre } from "./corps-fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : l'onglet ne
    s'ouvre que sur un geste de l'exploitant. */
@@ -27,14 +28,12 @@ let soude = {};
  * Le branchement, appelé par `_admin1.html` à la place que ce code tenait,
  * dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ montre: (type: string, cle: string) => boolean, reperesCherchables: () => any[],
- *   enregistreConf: () => void }} b
+ * @param {{ reperesCherchables: () => any[], enregistreConf: () => void }} b
  */
 export function brancheReglageRecherche(b){
   soude = b;
 }
 
-const montre = (/** @type {string} */ type, /** @type {string} */ cle) => soude.montre(type, cle);
 const reperesCherchables = () => soude.reperesCherchables();
 const enregistreConf = () => soude.enregistreConf();
 

@@ -8,38 +8,17 @@
    importent.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais. Ce que la fiche et la recherche tiennent encore dans le
-   code soudé — l'ordre et les libellés des champs, leur rangement en
-   sections, les pictos des réseaux sociaux, ce que la fiche montre, le code
-   d'une case de la liste — lui est confié par `brancheApercus`, que
-   `_reglages.html` appelle à la place que ce code y tenait.
+   le reçoit jamais. L'ordre et les libellés des champs, leur rangement en
+   sections, les pictos des réseaux sociaux et ce que la fiche montre
+   s'importent de `corps-fiche.mjs`, la règle même que la fiche applique ; le
+   préfixe des champs propres au salon et le code d'une case de la liste, de
+   `recherche.mjs`. Il n'a plus rien à se faire confier, et donc plus de
+   branchement.
    ============================================================ */
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
 import { DATA } from "./donnees.mjs";
 import { PREFIXE_PERSO, codeCase } from "./recherche.mjs";
-
-/* Ce que le code soudé confie au branchement. Tout y est déclaré avant lui
-   (`_fiche.html`) et ne change plus : on le prend tel quel. Le préfixe des
-   champs propres au salon et la case du numéro s'importent de
-   `recherche.mjs`. */
-let ordreCorps;
-let libelleCorps;
-let montre;
-let corpsRange;
-let PICTO_RS;
-let pictoRS;
-
-/**
- * Le branchement des aperçus, appelé par le code soudé à la place que ce code
- * y tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {{ ordreCorps: Function,
- *   libelleCorps: Function, montre: Function, corpsRange: Function,
- *   PICTO_RS: Record<string, any>, pictoRS: Function }} b
- */
-export function brancheApercus(b){
-  ({ ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS } = b);
-}
+import { montre, libelleCorps, ordreCorps, corpsRange, PICTO_RS, pictoRS } from "./corps-fiche.mjs";
 
 /* ------------------------------------------------------------------
    L'exposant des aperçus

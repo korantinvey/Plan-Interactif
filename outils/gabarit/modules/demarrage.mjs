@@ -9,10 +9,10 @@
    reçus par lien, la visite guidée, l'invitation à installer.
 
    Ce que le code soudé tient encore — le montage du plan et de son habillage
-   (`_rendu.html`), l'ordre des calques (`_pile.html`), la fiche
-   (`_fiche.html`) — lui est confié par `brancheDemarrage`, que
-   `_admin2.html` appelle à la place que ce code tenait, au bout du script :
-   c'est là que la page démarre, une fois tout le reste déclaré. Ce qui
+   (`_rendu.html`), l'ordre des calques (`_pile.html`) — lui est confié par
+   `brancheDemarrage`, que `_admin2.html` appelle à la place que ce code
+   tenait, au bout du script : c'est là que la page démarre, une fois tout le
+   reste déclaré. La fiche, il l'importe (`fiche.mjs`). Ce qui
    n'existe qu'en administration (`modules/enregistrement.mjs`,
    `modules/acces-admin.mjs`) reste sous la garde `typeof` qu'il avait.
    ============================================================ */
@@ -29,6 +29,7 @@ import { accueilleParcoursPartage } from "./parcours-recu.mjs";
 import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { appliqueApparence } from "./apparence.mjs";
+import { select, ficheConf } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
@@ -36,9 +37,6 @@ let soude = {};
 const montePlan = () => soude.montePlan();
 const monteHabillage = () => soude.monteHabillage();
 const ordonneDom = () => soude.ordonneDom();
-const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal) =>
-  soude.select(id, recentrer, canal);
-const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => soude.ficheConf(id, canal);
 /* L'administration seule les a : le branchement les garde par `typeof`. */
 const majAttente = () => soude.majAttente();
 const rattrapeRetard = () => soude.rattrapeRetard();
@@ -302,7 +300,7 @@ export function charge(){
  * pose au même rang qu'avant parmi celles du plan — après celles de la vue.
  *
  * @param {{ montePlan: Function, monteHabillage: Function, ordonneDom: Function,
- *   select: Function, ficheConf: Function, majAttente: () => void, rattrapeRetard: () => void,
+ *   majAttente: () => void, rattrapeRetard: () => void,
  *   ecranAcces: ((message: string) => void) | null }} b
  */
 export function brancheDemarrage(b){

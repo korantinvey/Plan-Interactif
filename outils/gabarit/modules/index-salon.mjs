@@ -7,13 +7,12 @@
    s'indexe à part, parce qu'il se refait sans recharger quand l'exploitant
    ouvre ou ferme l'option, ou rattache une salle à une zone.
 
-   Ce que le code soudé tient encore — les calques dessinés (`_dessin.html`),
-   leur file d'attente et ce que la base en a confirmé — lui est confié par
-   `brancheIndex`, que `_js.html` appelle à la place que ce code tenait : par
-   des détours lus à l'appel, puisque tout cela est déclaré plus loin dans le
-   script, et les calques par un lecteur, puisque leur ouverture les remplace.
-   Ce qui n'existe qu'en administration (`modules/enregistrement.mjs`) reste
-   sous la garde `typeof` qu'il avait.
+   Les calques dessinés, leur file d'attente et ce que la base en a confirmé
+   s'importent (`calques-dessin.mjs`), comme l'oubli des repères
+   (`points-interet.mjs`). Ce qui n'existe qu'en administration
+   (`modules/enregistrement.mjs`) lui est confié par `brancheIndex`, que
+   `_js.html` appelle à la place que ce code tenait, sous la garde `typeof`
+   qu'il avait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, poseDonnees } from "./donnees.mjs";
@@ -30,23 +29,17 @@ import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
 import { nommeApplication } from "./installation.mjs";
 import { chargeParcours } from "./parcours.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
+import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubliees, rangeDessins }
+  from "./calques-dessin.mjs";
+import { oublieReperes } from "./points-interet.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
 let soude = {};
-const ouvreDessins = (/** @type {any} */ d) => soude.ouvreDessins(d);
-const enAttente = (/** @type {any} */ id) => soude.enAttente(id);
-const dejaPubliee = (/** @type {any} */ id, /** @type {any} */ cle) => soude.dejaPubliee(id, cle);
-const marqueAttente = (/** @type {any} */ id, /** @type {boolean} */ oui) => soude.marqueAttente(id, oui);
-const notePubliees = (/** @type {any} */ id, /** @type {any[]} */ cles) => soude.notePubliees(id, cles);
-const rangeDessins = () => soude.rangeDessins();
-const oublieReperes = () => soude.oublieReperes();
 /* L'administration seule les a (`enregistrement.mjs`) : le branchement les
    garde par `typeof`. */
 const compteRescapes = (/** @type {number} */ n) => soude.compteRescapes(n);
 const noteReglagesCharges = (/** @type {any} */ enBase) => soude.noteReglagesCharges(enBase);
-/** Les calques dessinés du salon ouvert, que leur ouverture remplace. */
-const dessins = () => soude.dessins();
 
 /* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
    thématiques — tout ce que sa fenêtre montre en propre. Sa présentation reste
@@ -188,11 +181,11 @@ export function indexe(/** @type {any} */ d){
            ne revient pas. Dans l'autre sens non plus : un calque que la base
            nous avait rendu et qu'elle n'a plus a été supprimé depuis un autre
            poste, et le travail en attente à côté ne le ressuscite pas. */
-        const locaux = (dessins()[p.id] || []).filter(c =>
+        const locaux = (DESSINS[p.id] || []).filter(c =>
           deLaBase.some(b => b.id === c.id) || !dejaPubliee(p.id, c.id));
         const ailleurs = deLaBase.filter(b =>
           !locaux.some(c => c.id === b.id) && !dejaPubliee(p.id, b.id));
-        dessins()[p.id] = locaux.concat(ailleurs);
+        DESSINS[p.id] = locaux.concat(ailleurs);
       } else if (ADMIN){
         /* Rien en attente, et pourtant des calques d'ici que la base n'a jamais
            confirmés : un enregistrement a échoué sans se faire entendre — une
@@ -201,15 +194,15 @@ export function indexe(/** @type {any} */ d){
            effacer : ce navigateur est le seul endroit où ils existent encore.
            Ceux que la base a connus puis perdus, eux, ont bien été supprimés
            ailleurs, et s'oublient. */
-        const rescapes = (dessins()[p.id] || [])
+        const rescapes = (DESSINS[p.id] || [])
           .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
-        dessins()[p.id] = deLaBase.concat(rescapes);
+        DESSINS[p.id] = deLaBase.concat(rescapes);
         if (rescapes.length){
           marqueAttente(p.id, true);
           compteRescapes(rescapes.length);
         }
       } else {
-        dessins()[p.id] = deLaBase;
+        DESSINS[p.id] = deLaBase;
       }
       if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
@@ -484,9 +477,7 @@ function poseLogoSalon(src){
 /**
  * Le branchement, appelé par `_js.html` à la place que ce code tenait.
  *
- * @param {{ ouvreDessins: Function, enAttente: Function, dejaPubliee: Function,
- *   marqueAttente: Function, notePubliees: Function, rangeDessins: Function,
- *   oublieReperes: Function, dessins: () => any, compteRescapes: (n: number) => void,
+ * @param {{ compteRescapes: (n: number) => void,
  *   noteReglagesCharges: (enBase: any) => void }} b
  */
 export function brancheIndex(b){

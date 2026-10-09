@@ -33,21 +33,10 @@ if (!document.querySelector('meta[name="viewport"]')){
    est dans `modules/noms-zones.mjs`, la couleur de la barre du système dans
    `modules/ton-barre.mjs`.
 
-   Lui sont confiés les calques dessinés, que `_dessin.html` tient encore :
-   leur ouverture, leur file d'attente et ce que la base en a confirmé, par
-   des détours lus à l'appel — tout cela est déclaré plus loin dans ce script
-   —, et les calques eux-mêmes par un lecteur, puisque leur ouverture les
-   remplace.
+   Les calques dessinés, il les importe (`modules/calques-dessin.mjs`). Ne
+   lui est confié que ce qui n'est qu'à l'administration.
    ============================================================ */
 brancheIndex({
-  ouvreDessins: (d) => ouvreDessins(d),
-  enAttente: (id) => enAttente(id),
-  dejaPubliee: (id, cle) => dejaPubliee(id, cle),
-  marqueAttente: (id, oui) => marqueAttente(id, oui),
-  notePubliees: (id, cles) => notePubliees(id, cles),
-  rangeDessins: () => rangeDessins(),
-  oublieReperes: () => oublieReperes(),
-  dessins: () => DESSINS,
   /* L'enregistrement n'est qu'à l'administration (`modules/enregistrement.mjs`) :
      le visiteur ne l'a pas, on ne l'appelle que si la page l'a reçu. */
   compteRescapes: (n) => { if (typeof compteRescapes === "function") compteRescapes(n); },

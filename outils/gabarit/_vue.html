@@ -11,16 +11,14 @@
 
    La vue elle-même et le SVG du plan sont au module. Ce que le code soudé
    tient encore lui est confié : ce qui est déclaré plus loin dans ce script
-   (`enEdition`, `ETROIT`, `REDUIT`) par des lecteurs, qui ne le lisent qu'à
-   l'appel. Ce qui n'existe pas partout — les poignées de l'éditeur, les
+   (`enEdition`) par un lecteur, qui ne le lit qu'à l'appel ; l'écran, lui,
+   s'importe de `modules/ecran.mjs`. Ce qui n'existe pas partout — les poignées de l'éditeur, les
    pastilles de l'itinéraire, les pointes de flèche, le point de la borne —
    sous la garde qu'il avait ; et le calage d'un hall, que seule
    l'administration connaît, dans sa tranche.
    ============================================================ */
 brancheVue({
   enEdition: () => enEdition(),
-  etroit: () => ETROIT(),
-  reduit: () => REDUIT,
   libelles, ordonneDom,
   dessinePoignees: () => { if (typeof dessinePoignees === "function") dessinePoignees(); },
   dessinePoigneesGeo: () => { if (typeof dessinePoigneesGeo === "function") dessinePoigneesGeo(); },

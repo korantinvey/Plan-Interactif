@@ -11,8 +11,12 @@
 
    Sortis de `_recherche.html` (§ 5) : les critères et leur panneau, le
    retrait du plan, la liste et ses vignettes. Les secteurs vivent dans
-   `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. Ce que le code
-   soudé tient encore — la fiche et la sélection, les tiroirs, le dessin des
+   `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. L'écran et ce
+   que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`). La fiche
+   et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
+   module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
+   bouclerait. Ce que le code soudé tient encore — la fiche et la sélection,
+   les tiroirs, le dessin des
    noms et des distinctions, les repères, le parcours — lui est confié par
    `brancheRecherche`, que `_recherche.html` appelle à la place que ce code
    tenait : l'écoute de la liste s'y pose, au même rang qu'avant. Ce qui se
@@ -31,15 +35,15 @@ import { P_CODE } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
+import { ETROIT } from "./ecran.mjs";
+import { montre } from "./corps-fiche.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
  * @typedef {object} PageRecherche
- * @property {() => void} ferme referme la fiche (`_fiche.html`)
- * @property {() => boolean} etroit l'écran est-il étroit, `ETROIT`
+ * @property {() => void} ferme referme la fiche (`fiche.mjs`)
  * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
  * @property {(id: any, canal?: string) => void} ficheConf
- * @property {(type: string, cle: string) => boolean} montre
  * @property {(cle: any) => string} adresseVignette
  * @property {() => void} montreTiroir
  * @property {() => void} mesureTiroir
@@ -57,11 +61,9 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 /** @type {PageRecherche} */
 let soude;
 const ferme = () => soude.ferme();
-const ETROIT = () => soude.etroit();
 const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal,
   /** @type {number} */ iSoc) => soude.select(id, recentrer, canal, iSoc);
 const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => soude.ficheConf(id, canal);
-const montre = (/** @type {string} */ type, /** @type {string} */ cle) => soude.montre(type, cle);
 const adresseVignette = (/** @type {any} */ cle) => soude.adresseVignette(cle);
 const montreTiroir = () => soude.montreTiroir();
 const mesureTiroir = () => soude.mesureTiroir();

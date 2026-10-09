@@ -20,10 +20,13 @@
    Un geste d'exploitant : `plan-admin.mjs` embarque ce module, `plan.mjs`
    jamais — la page publique n'a ni session ni bouton, et n'appelle ce qu'il
    expose que sous garde `typeof`. Ce que le code soudé tient encore — le
-   mode administrateur, les réglages et leur enregistrement, les calques
-   dessinés et leurs relevés, le panneau des calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
+   mode administrateur, les réglages et leur enregistrement, le panneau des
+   calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
    appelle à la place que ce code y tenait : les écouteurs de la page s'y
-   posent au même rang qu'avant.
+   posent au même rang qu'avant. Les calques dessinés et leurs deux relevés
+   s'importent (`calques-dessin.mjs`), l'annonce dans la liste aussi
+   (`demarrage.mjs`) ; leur enregistrement, que l'outil de dessin tient et
+   qui importe ce module-ci, se confie.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
@@ -32,36 +35,26 @@ import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
 import { annonce } from "./demarrage.mjs";
+import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente } from "./calques-dessin.mjs";
+import { dessineDessins } from "./dessin.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce que les chargements
-   remplacent — le mode, les réglages (`CONF`), les calques et leurs deux
-   relevés (`DESSINS`, `ATTENTE`, `PUBLIES`) — se lit à l'instant, par un
-   lecteur : l'envoi en relit certains après chaque `await`. */
+   remplacent — le mode, les réglages (`CONF`) — se lit à l'instant, par un
+   lecteur : l'envoi en relit certains après chaque `await`. Les calques et
+   leurs deux relevés (`DESSINS`, `ATTENTE`, `PUBLIES`), importés, se lisent
+   eux aussi tels qu'ils sont à l'instant. */
 /**
  * @typedef {object} PageEnregistrement
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {() => any} dessins les calques dessinés par pavillon, `DESSINS`
- * @property {() => any} attente les marques d'attente par pavillon, `ATTENTE`
- * @property {() => any} publies les clés vues en base par pavillon, `PUBLIES`
- * @property {(id: string) => boolean} enAttente
- * @property {(id: string, cles: string[]) => void} notePubliees
- * @property {(id: string, oui: boolean) => void} marqueAttente
  * @property {(source: Record<string, any>) => Record<string, any>} reglagesDuSalon
  * @property {() => void} enregistreConf
  * @property {() => void} enregistreDessins
  * @property {() => void} appliqueApparence
- * @property {() => void} dessineDessins
  * @property {() => void} construitPanneau
  */
 /** @type {PageEnregistrement} */
 let soude;
-/** @param {string} id */
-const enAttente = (id) => soude.enAttente(id);
-/** @param {string} id @param {string[]} cles */
-const notePubliees = (id, cles) => soude.notePubliees(id, cles);
-/** @param {string} id @param {boolean} oui */
-const marqueAttente = (id, oui) => soude.marqueAttente(id, oui);
 /** @param {Record<string, any>} source */
 const reglagesDuSalon = (source) => soude.reglagesDuSalon(source);
 /** @param {string} txt @param {boolean} [erreur] */
@@ -431,8 +424,8 @@ export async function pousseConfiguration(auto){
       if (!auto || enAttente(p.id)){
         /* La marque du pavillon, telle qu'elle est en commençant : on ne
            l'effacera que si le geste suivant ne l'a pas relevée entre-temps. */
-        const marque = soude.attente()[p.id];
-        const liste = soude.dessins()[p.id] || [];
+        const marque = ATTENTE[p.id];
+        const liste = DESSINS[p.id] || [];
         if (liste.length){
           await base(acces, "calque_dessin?on_conflict=plan_id,cle", {
             method: "POST",
@@ -455,7 +448,7 @@ export async function pousseConfiguration(auto){
            plus là ; un poste qui ne connaît rien n'efface rien. Et après avoir
            écrit, jamais avant : un échec en cours de route laisse l'ancienne
            version en place plutôt qu'un plan vide. */
-        const partis = (soude.publies()[p.id] || [])
+        const partis = (PUBLIES[p.id] || [])
           .filter(cle => !liste.some(c => c.id === cle))
           .map(cle => '"' + String(cle).replace(/"/g, "") + '"');
         if (partis.length){
@@ -474,7 +467,7 @@ export async function pousseConfiguration(auto){
            pavillon par pavillon — un échec à mi-parcours laisse marqués ceux
            qui n'y sont pas encore passés. Et seulement si rien n'a été tracé
            pendant l'envoi : ce trait-là n'existe nulle part ailleurs. */
-        if (soude.attente()[p.id] === marque) marqueAttente(p.id, false);
+        if (ATTENTE[p.id] === marque) marqueAttente(p.id, false);
       }
     }
 
@@ -542,7 +535,7 @@ function sauvegardeCourante(){
   (DATA?.plans || []).forEach(p => {
     pavillons[p.id] = {
       libelle: p.libelle || "",
-      dessins: soude.dessins()[p.id] || [],
+      dessins: DESSINS[p.id] || [],
       pile: soude.conf()["_pile:" + p.id] || [],
     };
   });
@@ -589,8 +582,8 @@ function appliqueSauvegarde(s){
     if (!connus.has(id)){ ignores++; return; }
     const v = s.pavillons[id] || {};
     if (Array.isArray(v.dessins)){
-      soude.dessins()[id] = v.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
-      calques += soude.dessins()[id].length;
+      DESSINS[id] = v.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      calques += DESSINS[id].length;
       /* Le fichier l'emporte sur la base : c'est ce qu'on vient de demander.
          La marque le dit au chargement suivant, le temps que l'envoi aboutisse. */
       marqueAttente(id, true);
@@ -604,7 +597,7 @@ function appliqueSauvegarde(s){
   // programme l'envoi — le même geste que pour un trait tracé à la main
   soude.enregistreDessins();
   soude.appliqueApparence();
-  soude.dessineDessins();
+  dessineDessins();
   soude.construitPanneau();
   annonce("Sauvegarde restaurée : " + pavillons +
     " pavillon" + (pavillons > 1 ? "s" : "") +

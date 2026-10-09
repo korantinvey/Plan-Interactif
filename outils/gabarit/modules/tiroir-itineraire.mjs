@@ -26,15 +26,13 @@ import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarch
 import { pointBorne, poseLaBorne, montreBandeauBorne, ecritDepartBorne } from "./borne.mjs";
 import { montreBandeauIci } from "./ici.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg } from "./vue.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, elle,
    s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
    cesse, et le trajet la recadre. */
 /** @type {Record<string, any>} */
 let soude = {};
-let REDUIT = false;
-
-const ETROIT = () => soude.etroit();
 const changePlan = (i) => soude.changePlan(i);
 const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
@@ -717,13 +715,12 @@ export function versItineraireDe(pt){
  * se posent au même rang qu'avant parmi celles du plan — celle de la touche
  * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit.
  *
- * @param {{ reduit: boolean, etroit: () => boolean,
+ * @param {{
  *   changePlan: Function, ferme: Function, fermeParcours: Function,
  *   formeParId: Function, ouvreCodeIci: Function | null }} b
  */
 export function brancheTiroirItineraire(b){
   soude = b;
-  REDUIT = b.reduit;
 
   try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 

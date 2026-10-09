@@ -8,8 +8,9 @@
 
    La fenêtre d'ordre des calques vit dans `modules/ordre-calques.mjs`, que
    seul `plan-admin.mjs` embarque ; elle se branche ici aussi, et reçoit
-   l'ordre de la pile, le panneau qu'elle refait, les verrous et le renommage
-   des calques — la configuration par des détours, lus à l'appel.
+   l'ordre de la pile et le panneau qu'elle refait — la configuration par des
+   détours, lus à l'appel. Les verrous et le renommage des calques, elle les
+   importe de l'outil de dessin.
    ============================================================ */
 brancheFenetre({ habille: habilleModale });
 
@@ -18,6 +19,6 @@ brancheOrdreCalques({
   pile, clePile,
   CONF: () => CONF,
   enregistreConf: () => enregistreConf(),
-  ordonneDom, construitPanneau, verrouille, pictoVerrou, renommeCalque,
+  ordonneDom, construitPanneau,
 });
 /* @fin-admin */

@@ -116,7 +116,7 @@ const saisitPlan = (tenu) => {
 };
 
 svg.addEventListener("pointerdown", e => {
-  dernierAppuiTactile = e.pointerType === "touch" || e.pointerType === "pen";
+  poseAppuiTactile(e.pointerType === "touch" || e.pointerType === "pen");
   // la main posée l'emporte sur la molette : un glissement qui finissait sa
   // course tirerait la vue sous le doigt qui vient de la saisir
   stoppeZoom();

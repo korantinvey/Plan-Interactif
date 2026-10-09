@@ -15,7 +15,7 @@
    Il se branche dans `_parcours.html`, à la place que son code tenait : ses
    écoutes s'y posent au même rang qu'avant parmi celles du plan, et ce que le
    code soudé tient encore lui est confié — la configuration, le filtre de la
-   recherche, la fiche.
+   recherche. La fiche s'importe de `fiche.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, HEBERGES, CONFERENCES, parId, CONFS } from "./donnees.mjs";
@@ -30,19 +30,16 @@ import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion } from "
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel } from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
 import { fermeItineraire } from "./tiroir-itineraire.mjs";
+import { select, ficheConf, ferme } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
    configuration (`_admin1.html` `conf`) et le filtre de la recherche
-   (`_recherche.html`) par des détours, lus à l'appel ; la fiche
-   (`_fiche.html`). */
+   (`_recherche.html`) par des détours, lus à l'appel. */
 /** @type {Record<string, any>} */
 let soude = {};
 const conf = (c) => soude.conf(c);
 const filtre = () => soude.filtre();
 const visible = (o) => soude.visible(o);
-const select = (...a) => soude.select(...a);
-const ficheConf = (id, canal) => soude.ficheConf(id, canal);
-const ferme = () => soude.ferme();
 const racine = document.documentElement;
 
 /**
@@ -421,8 +418,7 @@ export function videLeParcours(){
  * touche « Échap » comprise, dont l'ordre parmi les autres décide qui la
  * reçoit.
  *
- * @param {{ conf: (cle: string) => any, filtre: () => boolean, visible: (o: any) => boolean,
- *   select: Function, ficheConf: Function, ferme: Function }} b
+ * @param {{ conf: (cle: string) => any, filtre: () => boolean, visible: (o: any) => boolean }} b
  */
 export function brancheTiroirParcours(b){
   soude = b;
