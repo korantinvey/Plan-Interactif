@@ -55,20 +55,13 @@ Fonctions :
 
 - l.2 · Accès à l'administration du plan — le branchement
 
-### `_batiments.html` — 560 l. → plan-admin.html
+### `_batiments.html` — 44 l. → plan-admin.html
 
-- l.2 · 11 quinquies. Bâtiments de la bibliothèque
+- l.2 · 11 quinquies. Bâtiments de la bibliothèque — le branchement
 
 Fonctions :
 
-`CLE_CALAGE` 27 · `bibliothequeDispo` 28 · `refBatiment` 45 · `refForme` 49
-`marqueBatiment` 52 · `batimentsPoses` 55 · `estBatiment` 62 · `hallsPoses` 65
-`lieuDuCalque` 71 · `poseCalage` 77 · `ouvreBibliotheque` 86 · `vueDuLieu` 182
-`lanceCalage` 222 · `effaceLeTempsDuCalage` 250 · `cadreCalage` 269 · `finCalage` 282
-`pivoteCalage` 293 · `degresCalage` 309 · `dessineCalage` 314 · `calagePointerDown` 337
-`calagePointerMove` 350 · `calagePointerUp` 366 · `reposeBatiment` 379
-`ajouteBatiments` 395 · `boutonRecale` 479 · `pictoRecale` 488 · `calageRelu` 505
-`rouvreCalage` 531 · `mentionOsm` 555
+`mentionOsm` 39
 
 ### `_borne.html` — 18 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -638,6 +631,25 @@ Fonctions :
 
 `brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
 
+### `modules/batiments.mjs` — 624 l. → plan-admin
+
+- l.1 · 11 quinquies. Bâtiments de la bibliothèque
+
+Fonctions :
+
+`reglages` 68 · `confDe` 69 · `estAdmin` 70 · `vue` 71 · `changeVue` 72 · `poseVue` 73
+`cadrePlan` 74 · `masque` 75 · `versPlan` 76 · `mesCalques` 77 · `activeCalque` 78
+`memorise` 79 · `nouvelId` 80 · `cleVerrou` 81 · `pile` 82 · `clePile` 83
+`enregistreConf` 84 · `enregistreDessins` 85 · `dessineDessins` 86 · `construitPanneau` 87
+`CLE_CALAGE` 98 · `bibliothequeDispo` 99 · `refBatiment` 116 · `refForme` 120
+`marqueBatiment` 123 · `batimentsPoses` 126 · `estBatiment` 133 · `hallsPoses` 136
+`lieuDuCalque` 142 · `poseCalage` 148 · `ouvreBibliotheque` 157 · `vueDuLieu` 253
+`lanceCalage` 293 · `effaceLeTempsDuCalage` 321 · `cadreCalage` 340 · `finCalage` 353
+`pivoteCalage` 364 · `degresCalage` 380 · `dessineCalage` 385 · `calagePointerDown` 408
+`calagePointerMove` 421 · `calagePointerUp` 437 · `reposeBatiment` 450
+`ajouteBatiments` 466 · `brancheBatiments` 518 · `boutonRecale` 562 · `pictoRecale` 571
+`calageRelu` 588 · `rouvreCalage` 614
+
 ### `modules/borne.mjs` — 430 l. → plan, plan-admin
 
 - l.1 · La borne interactive — un plan qui sait où il est
@@ -1031,7 +1043,7 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 61 l. → plan-admin
+### `modules/plan-admin.mjs` — 71 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
