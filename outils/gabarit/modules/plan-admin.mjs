@@ -44,6 +44,7 @@ import { champZone, champsZone, cadreLogo, suitFicheZone, verseFicheZone, ficheZ
 import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
 import { PROFIL_ADMIN } from "./acces-admin.mjs";
+import { branchePile, remplitPanneau } from "./pile.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -76,6 +77,7 @@ Object.assign(globalThis, {
   ecritColonneEvenement, brancheFicheZone,
   lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles,
+  branchePile, remplitPanneau,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
