@@ -138,34 +138,30 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2812 l. → admin-plans.html
+### `_console-js.html` — 2212 l. → admin-plans.html
 
-- l.589 · Provenance des données
-- l.728 · Contenu de la fiche détail
+- l.483 · Provenance des données
+- l.622 · Contenu de la fiche détail
 
 Fonctions :
 
-`refus` 18 · `fluxFonction` 37 · `fonction` 106 · `slugifie` 120 · `courant` 124
-`charge` 126 · `chargePlans` 141 · `majEvenement` 146 · `selonAdresse` 166
-`majAdresse` 174 · `majBarre` 189 · `dessineChoix` 231 · `champ` 251 · `champFavicon` 294
-`fuseauConnu` 390 · `champFuseau` 402 · `dessineFiche` 465 · `fournisseurUtilise` 653
-`sourceNom` 663 · `source` 667 · `champCle` 672 · `ligneSource` 707 · `paraitSurFiche` 865
-`origineConferences` 871 · `origineProduits` 878 · `resumeProvenance` 943
-`resumeFiche` 964 · `caseFiche` 1009 · `cibleEn` 1057 · `champsPersos` 1059
-`criteres` 1065 · `ecritFiche` 1068 · `caseCritere` 1083 · `clePerso` 1102
-`ajouteChampPerso` 1110 · `renommeChampPerso` 1128 · `retireChampPerso` 1176
-`lignesPerso` 1237 · `ligneOutil` 1258 · `ligneReglage` 1274 · `ouvreProvenance` 1286
-`ouvreSources` 1309 · `cadreFiche` 1361 · `ouvreFiche` 1391 · `cadreCategories` 1531
-`sousTitre` 1610 · `tableauChamps` 1625 · `champOrigine` 1851 · `majLiens` 2119
-`majIntegration` 2156 · `majMsgSync` 2163 · `etapesPressenties` 2193 · `synchronise` 2208
-`fabriqueLesVignettes` 2305 · `envoieVignettes` 2358 · `dupliquer` 2367
-`litMonProfil` 2467 · `RETOUR_MDP` 2478 · `litComptes` 2480 · `ligneMessage` 2489
-`casesSalons` 2499 · `ouvreComptes` 2529 · `ouvreFicheCompte` 2621 · `videEcran` 2780
-`dessine` 2785 · `demarre` 2800
+`fluxFonction` 25 · `slugifie` 99 · `courant` 103 · `charge` 105 · `chargePlans` 120
+`majEvenement` 125 · `selonAdresse` 145 · `majAdresse` 153 · `majBarre` 168
+`dessineChoix` 210 · `champ` 230 · `champFavicon` 273 · `dessineFiche` 359
+`fournisseurUtilise` 547 · `sourceNom` 557 · `source` 561 · `champCle` 566
+`ligneSource` 601 · `paraitSurFiche` 759 · `origineConferences` 765 · `origineProduits` 772
+`resumeProvenance` 837 · `resumeFiche` 858 · `caseFiche` 903 · `cibleEn` 951
+`champsPersos` 953 · `criteres` 959 · `ecritFiche` 962 · `caseCritere` 977 · `clePerso` 996
+`ajouteChampPerso` 1004 · `renommeChampPerso` 1022 · `retireChampPerso` 1070
+`lignesPerso` 1131 · `ligneOutil` 1152 · `ligneReglage` 1168 · `ouvreProvenance` 1180
+`ouvreSources` 1203 · `cadreFiche` 1255 · `ouvreFiche` 1285 · `cadreCategories` 1425
+`sousTitre` 1504 · `tableauChamps` 1519 · `champOrigine` 1745 · `majLiens` 2013
+`majIntegration` 2050 · `majMsgSync` 2057 · `dupliquer` 2081 · `videEcran` 2180
+`dessine` 2185 · `demarre` 2200
 
 Éléments :
 
-`#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
+`#msgSync` · `#fragment` · `#btnCopier`
 
 ### `_console.css` — 725 l. → console.css
 
@@ -670,6 +666,14 @@ Fonctions :
 
 `enEdition` 33 · `emplacementWebgl` 61 · `libellesWebgl` 109
 
+### `modules/appel-fonction.mjs` — 61 l. → console
+
+- l.1 · L'appel des fonctions du projet, depuis la console
+
+Fonctions :
+
+`brancheFonctions` 30 · `refus` 43 · `fonction` 54
+
 ### `modules/application.mjs` — 37 l. → plan, plan-admin
 
 - l.1 · L'application installée — ce que le plan public en sait
@@ -740,7 +744,17 @@ Fonctions :
 `CRC_TABLE` 30 · `crc32` 40 · `archiveZip` 55 · `texteXml` 111 · `colonneXl` 114
 `XL_PARTS` 125 · `feuilleXl` 179 · `classeurXl` 215 · `enregistreFichier` 226
 
-### `modules/console.mjs` — 37 l. → console
+### `modules/comptes.mjs` — 374 l. → console
+
+- l.1 · Comptes et accès — l'annuaire, et la fiche d'une personne
+
+Fonctions :
+
+`brancheComptes` 45 · `poseComptes` 55 · `litMonProfil` 69 · `RETOUR_MDP` 80
+`litComptes` 82 · `ligneMessage` 91 · `casesSalons` 101 · `ouvreComptes` 131
+`ouvreFicheCompte` 223
+
+### `modules/console.mjs` — 52 l. → console
 
 - l.1 · Point d'entrée de la console
 
@@ -834,6 +848,18 @@ Fonctions :
 `arrondiGeo` 14 · `empreinteGeo` 25 · `anneauxGeo` 45 · `traceGeo` 58 · `boiteAnneaux` 62
 `dansAnneau` 80 · `distSegmentGeo` 91 · `distBordGeo` 100 · `poleGeo` 110 · `porteeGeo` 129
 `boiteGeo` 137
+
+### `modules/fuseau.mjs` — 115 l. → console
+
+- l.1 · Fuseau horaire du salon — le champ de la console
+
+Fonctions :
+
+`brancheFuseau` 28 · `fuseauConnu` 42 · `champFuseau` 54
+
+Éléments :
+
+`#fuseaux`
 
 ### `modules/icone-app.mjs` — 126 l. → plan-admin
 
@@ -1067,6 +1093,15 @@ Fonctions :
 `lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
 `assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
 
+### `modules/synchronisation.mjs` — 230 l. → console
+
+- l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
+
+Fonctions :
+
+`brancheSynchronisation` 40 · `etapesPressenties` 58 · `synchronise` 73
+`fabriqueLesVignettes` 170 · `envoieVignettes` 223
+
 ### `modules/temps.mjs` — 129 l. → plan, plan-admin
 
 - l.1 · Les dates et les heures du salon
@@ -1103,7 +1138,7 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/vivant.mjs` — 36 l. → plan, plan-admin
+### `modules/vivant.mjs` — 36 l. → plan, plan-admin, console
 
 - l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
 
