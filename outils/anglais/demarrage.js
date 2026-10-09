@@ -1,5 +1,5 @@
-/* `outils/gabarit/_admin2.html` — le démarrage de la page, et ce qu'elle dit
-   quand le plan n'arrive pas. */
+/* `outils/gabarit/modules/demarrage.mjs` — le démarrage de la page, et ce
+   qu'elle dit quand le plan n'arrive pas. */
 module.exports = {
   "Indisponible": "Unavailable",
   "Chargement…": "Loading…",

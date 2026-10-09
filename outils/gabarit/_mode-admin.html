@@ -28,15 +28,14 @@
    par un appel différé, lu au moment d'ouvrir le mode. */
 brancheBandeAdmin({
   ouvreReglages, dessineDessins, construitPanneau: () => construitPanneau(),
-  poseTonDeLaBarre,
 });
 /* @fin-admin */
 
 /* @admin — la fiche d'une zone, qu'on ne remplit qu'en administration */
 brancheFicheZone({
   conf: () => CONF,
-  annonce, enregistreConf, nomsAnglaisDesZones,
-  liste, majPaletteGeo, rangeConferences,
+  enregistreConf,
+  liste, majPaletteGeo,
 });
 /* @fin-admin */
 

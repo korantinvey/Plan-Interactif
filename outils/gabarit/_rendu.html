@@ -14,14 +14,12 @@
    Les libellés se branchent ici, au tout début du script, à la place que
    l'écoute des polices tenait : elle passe ainsi avant celle du rendu WebGL,
    qui repeint à la même arrivée en relisant les libellés, et les trouve déjà
-   retaillés. Ce que le code soudé tient encore leur est confié — la vue par
-   un lecteur ; par des détours, lus au moment de l'appel, ce qui se déclare
-   plus loin dans le script, et le dessin des calques (`modules/dessin.mjs`,
-   `modules/points-interet.mjs`), qui importe ce que les libellés importent.
+   retaillés. Leur sont confiés, par des détours lus au moment de l'appel, la
+   boîte d'une forme (`_edition.html`), qui se déclare plus loin, et le dessin
+   des calques (`modules/dessin.mjs`, `modules/points-interet.mjs`), qui
+   importe ce que les libellés importent.
    ============================================================ */
 brancheLibelles({
-  vue: () => view,
-  nomDeLaZone: (z) => nomDeLaZone(z),
   dessineDessins: () => dessineDessins(),
   decoupeStand: (id, iSoc) => decoupeStand(id, iSoc),
   poseLibellesDessines: (pxParM) => poseLibellesDessines(pxParM),

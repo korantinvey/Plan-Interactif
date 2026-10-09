@@ -4,19 +4,19 @@
 
    Sorti de `_admin1.html`. Le plan public le pose à chaque chargement, par
    `appliqueApparence` (`apparence.mjs`) ; l'exploitant le règle dans les
-   volets de la fenêtre des réglages (`volets.mjs`). Ce que le code soudé
-   tient encore — la couleur que le système peint derrière l'heure
-   (`_js.html` `poseTonDeLaBarre`) — lui est confié par `brancheHabillage`,
-   à la place que ce code tenait ; les distinctions et leurs marques sur le
-   plan et sur la fiche (`distinctions.mjs`) aussi, parce qu'elles importent
-   ce module pour leur mode et leur teinte, et ne peuvent donc s'importer
-   d'ici.
+   volets de la fenêtre des réglages (`volets.mjs`). La couleur que le
+   système peint derrière l'heure s'importe (`ton-barre.mjs`). Les
+   distinctions et leurs marques sur le plan et sur la fiche
+   (`distinctions.mjs`) lui sont confiées par `brancheHabillage`, à la place
+   que ce code tenait, parce qu'elles importent ce module pour leur mode et
+   leur teinte, et ne peuvent donc s'importer d'ici.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
 import { CLE_CONF, conf } from "./configuration.mjs";
 import { MODELES, modeleRetenu, habilleModale } from "./modeles.mjs";
 import { posePoliceLibelles } from "./polices-plan.mjs";
+import { poseTonDeLaBarre } from "./ton-barre.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le plan ne
    s'habille qu'à l'arrivée des données, bien après le branchement. */
@@ -28,7 +28,7 @@ const racine = document.documentElement;
 /**
  * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
  *
- * @param {{ poseTonDeLaBarre: () => void, distinctions: any[], dessineDists: () => void,
+ * @param {{ distinctions: any[], dessineDists: () => void,
  *   refaitDistsFiche: () => void }} b
  */
 export function brancheHabillage(b){
@@ -74,7 +74,7 @@ export function appliqueAccent(){
   const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
   if (!base){
     noms.forEach(n => racine.style.removeProperty(n));
-    soude.poseTonDeLaBarre();
+    poseTonDeLaBarre();
     return;
   }
   const pose = (n, v) => racine.style.setProperty(n, v);
@@ -88,7 +88,7 @@ export function appliqueAccent(){
   /* Deux modèles peignent leur bandeau de l'accent, trois autres en tirent
      leur surface : la barre du système, qui prolonge ce bandeau derrière
      l'heure, change avec lui. */
-  soude.poseTonDeLaBarre();
+  poseTonDeLaBarre();
 }
 
 /**
@@ -218,7 +218,7 @@ export function appliqueBarre(){
   /* Ce n'est plus la même couleur qui touche la barre du système : la surface
      de la bande quand elle est là, le fond du plan quand il monte jusqu'en
      haut. */
-  soude.poseTonDeLaBarre();
+  poseTonDeLaBarre();
 }
 
 /**
@@ -248,5 +248,5 @@ export function appliqueModele(){
   posePoliceLibelles(cle);
   /* Le bandeau vient de changer de fond : la barre du système, qui le
      prolonge derrière l'heure, change avec lui. */
-  soude.poseTonDeLaBarre();
+  poseTonDeLaBarre();
 }

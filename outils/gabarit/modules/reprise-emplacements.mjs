@@ -42,6 +42,7 @@ import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSourc
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { ouvre, ferme } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { oublieDists, dessineDists } from "./distinctions.mjs";
@@ -59,7 +60,6 @@ import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
  * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
  * @property {() => void} enregistreConf
  * @property {() => void} construitPanneau
- * @property {() => void} nomsAnglaisDesZones
  * @property {(cle: string) => boolean} optionActive
  * @property {(ferme: boolean) => string} pictoVerrou
  * @property {(id: any) => void} activeCalque
@@ -73,7 +73,6 @@ const reglages = () => soude.conf();
 const conf = (/** @type {string} */ cle) => soude.confDe(cle);
 const enregistreConf = () => soude.enregistreConf();
 const construitPanneau = () => soude.construitPanneau();
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const optionActive = (/** @type {string} */ cle) => soude.optionActive(cle);
 const pictoVerrou = (/** @type {boolean} */ f) => soude.pictoVerrou(f);
 const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);

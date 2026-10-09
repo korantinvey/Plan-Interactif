@@ -9,10 +9,10 @@
 
    Il se branche dans `_rendu.html`, à la place que l'écoute des polices y
    tenait — au tout début du script du plan, avant celle du rendu WebGL. Ce
-   que le code soudé tient encore lui est confié : la vue par un lecteur, et
-   par des détours, lus au moment de l'appel, la boîte d'une forme
-   (`_edition.html`) et le nom d'une zone dans la langue du moment
-   (`_js.html`). Les calques de dessin s'importent (`calques-dessin.mjs`) ;
+   que le code soudé tient encore lui est confié par un détour, lu au moment
+   de l'appel : la boîte d'une forme (`_edition.html`). La vue, les calques
+   de dessin et le nom d'une zone dans la langue du moment s'importent
+   (`vue.mjs`, `calques-dessin.mjs`, `noms-zones.mjs`) ;
    le dessin des stands et des repères (`dessin.mjs`, `points-interet.mjs`)
    ne le peut pas — il importe la fiche, qui importe ce module — et vient
    donc lui aussi par des détours.
@@ -28,21 +28,20 @@ import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { largeur, remesureTextes, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles } from "./webgl.mjs";
-import { cadrePlan, repeintLibelles } from "./vue.mjs";
+import { view, cadrePlan, repeintLibelles } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete, liste } from "./recherche.mjs";
 import { rafraichitBorne } from "./borne.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
+import { nomDeLaZone } from "./noms-zones.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
 let soude = {};
-const vue = () => soude.vue();
 const dessineDessins = () => soude.dessineDessins();
 const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => soude.decoupeStand(id, iSoc);
 const poseLibellesDessines = (/** @type {number} */ pxParM) => soude.poseLibellesDessines(pxParM);
 const phareZone = (/** @type {any} */ o) => soude.phareZone(o);
-const nomDeLaZone = (/** @type {any} */ z) => soude.nomDeLaZone(z);
 const rafraichitFleches = () => soude.rafraichitFleches();
 const societeDeForme = (/** @type {any} */ f) => soude.societeDeForme(f);
 const nomSurLePlan = (/** @type {any} */ soc) => soude.nomSurLePlan(soc);
@@ -61,7 +60,7 @@ export function brancheLibelles(b){
      l'une a changé. */
   if (document.fonts && document.fonts.addEventListener)
     document.fonts.addEventListener("loadingdone", () => {
-      if (!remesureTextes() || !DATA || !vue()) return;
+      if (!remesureTextes() || !DATA || !view) return;
       // les repères et les stands dessinés portent leur nom dans leur forme, la
       // liste taille la case du numéro sur la même mesure
       dessineDessins(); libelles(); liste();
@@ -137,7 +136,6 @@ export function libelles(){
     rafraichitBorne();
     return;
   }
-  const view = vue();
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;

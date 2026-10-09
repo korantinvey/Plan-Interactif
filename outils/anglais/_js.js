@@ -2,7 +2,6 @@
    sont dans `recherche.js` ; la fiche d'un stand, d'une zone ou d'une
    conférence dans `fiche.js` et `corps-fiche.js`. */
 module.exports = {
-  "Administration — {salon}": "Admin — {salon}",
   "{n} pavillons": "{n} halls",
   "{n} pavillon": "{n} hall",
   "Stand": "Stand",
