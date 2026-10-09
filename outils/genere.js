@@ -365,9 +365,6 @@ fs.writeFileSync(W + "config.js",
 fs.writeFileSync(W + "console.css",
   epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8")));
 
-/* --- page d'accueil : la racine ne doit pas répondre 404 --- */
-fs.writeFileSync(W + "index.html",
-  page(fs.readFileSync(D + "/gabarit/_index.html", "utf8")));
 
 /* --- la console et le rapport ---
    Ils partagent leur socle : accès au projet, fenêtres, connexion, thème.
@@ -406,6 +403,12 @@ function poseModulesSeuls(t, entree) {
 fs.writeFileSync(W + "motdepasse.html",
   page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8"), "motdepasse"),
        { deuxThemes: true }));
+
+/* --- page d'accueil : la racine ne doit pas répondre 404 ---
+   Elle ne fait qu'aiguiller, comme la page du mot de passe sans socle : le
+   script de son point d'entrée se pose devant celui de la page. */
+fs.writeFileSync(W + "index.html",
+  page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_index.html", "utf8"), "accueil")));
 
 /* --- la page que le service rend quand le réseau manque --- */
 fs.writeFileSync(W + "hors-ligne.html",

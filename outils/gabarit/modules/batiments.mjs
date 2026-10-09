@@ -20,15 +20,17 @@
 
    Des gestes d'exploitant, que le visiteur ne reçoit pas : `plan-admin.mjs`
    embarque ce module, `plan.mjs` jamais. La mention d'OpenStreetMap, elle,
-   paraît sur le plan public : elle reste dans `_batiments.html`, à côté des
-   calques de dessin dont elle dépend.
+   paraît sur le plan public : elle vit dans `dessin.mjs`, avec les calques de
+   dessin dont elle dépend.
 
    Ce que le code soudé tient encore — la bibliothèque des lieux, que la
-   construction verse dans sa page, les réglages et leur enregistrement, le
-   panneau des calques — lui est confié par `brancheBatiments`, que
-   `_batiments.html` appelle à la place que ce code y tenait. La vue et ses
-   gestes s'importent de `vue.mjs`, les calques de dessin, leur historique et
-   leur verrou de `calques-dessin.mjs`, `dessin.mjs` et `outil-dessin.mjs`.
+   construction verse dans sa page — lui est confié par `brancheBatiments`,
+   que `_batiments.html` appelle à la place que ce code y tenait. Les
+   réglages et leur enregistrement s'importent de `configuration.mjs`, le mode
+   administrateur de `mode-admin.mjs`, l'ordre de la pile et son panneau de
+   `ordre-trace.mjs`, la vue et ses gestes de `vue.mjs`, les calques de
+   dessin, leur historique et leur verrou de `calques-dessin.mjs`,
+   `dessin.mjs` et `outil-dessin.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -38,30 +40,18 @@ import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg } from "./vue
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { activeCalque, memorise, cleVerrou, enregistreDessins } from "./outil-dessin.mjs";
+import { CONF, conf, enregistreConf } from "./configuration.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { pile, clePile, construitPanneau } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce qui change — les réglages
-   (`CONF`, que le changement de salon remplace), le mode administrateur
-   (`ADMIN`) — se lit à l'instant. La vue, elle, s'importe de `vue.mjs`. */
+/* Ce que le code soudé confie au branchement : la bibliothèque des lieux.
+   Ce qui change — les réglages (`CONF`, que le changement de salon
+   remplace), le mode administrateur (`ADMIN`) —, importé, se lit tel qu'il
+   est à l'instant. */
 /**
  * @typedef {object} PageBatiments
  * @property {any} lieux la bibliothèque des lieux, `LIEUX` — `null` hors de l'administration
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
- * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => any[]} pile
- * @property {() => string} clePile
- * @property {() => void} enregistreConf
- * @property {() => void} construitPanneau
  */
-/** @type {PageBatiments} */
-let soude;
-const reglages = () => soude.conf();
-const confDe = (cle) => soude.confDe(cle);
-const estAdmin = () => soude.estAdmin();
-const pile = () => soude.pile();
-const clePile = () => soude.clePile();
-const enregistreConf = () => soude.enregistreConf();
-const construitPanneau = () => soude.construitPanneau();
 const racine = document.documentElement;
 
 /* Réservée à l'administration : la construction ne la verse que dans
@@ -71,7 +61,7 @@ const racine = document.documentElement;
 let LIEUX = null;
 
 const CLE_CALAGE = () => "_calage:" + P().id;
-export const bibliothequeDispo = () => estAdmin() && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.length);
+export const bibliothequeDispo = () => ADMIN && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.length);
 
 /* Le gris des murs, plutôt que l'accent des calques neufs : un contour de
    bâtiment est un fond, il ne doit pas passer devant les stands. */
@@ -131,7 +121,7 @@ function poseCalage(t, p){
    ------------------------------------------------------------ */
 export function ouvreBibliotheque(){
   if (!bibliothequeDispo()) return;
-  const cale = reglages()[CLE_CALAGE()];
+  const cale = CONF[CLE_CALAGE()];
   let lieu = LIEUX.lieux.find(l => cale && l.cle === cale.lieu) || LIEUX.lieux[0];
   const choisis = new Set();
   let recaler = false;
@@ -205,7 +195,7 @@ export function ouvreBibliotheque(){
   }, [
     { libelle: "Annuler" },
     { libelle: "Placer sur le plan", ferme: false, action: () => {
-        const t = reglages()[CLE_CALAGE()];
+        const t = CONF[CLE_CALAGE()];
         const cale = !!t && t.lieu === lieu.cle;
         const reprise = cale && recaler;
         /* Reprendre le calage emmène les halls déjà posés : ils partagent le
@@ -462,7 +452,7 @@ function ajouteBatiments(lieu, halls, t){
   neufs.forEach(c => {
     mesCalques().push(c);
     // un mur ne se déplace pas d'un geste distrait
-    confDe(cleVerrou(c.id)).verrou = true;
+    conf(cleVerrou(c.id)).verrou = true;
   });
   /* Tout au fond de la pile, derrière les stands : sans rang retenu, un
      calque neuf passe devant tout le reste. Seuls les environs, le plan de
@@ -474,9 +464,9 @@ function ajouteBatiments(lieu, halls, t){
     let i = 0;
     while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
     liste.splice(i, 0, ...cles);
-    reglages()[clePile()] = liste;
+    CONF[clePile()] = liste;
   }
-  reglages()[CLE_CALAGE()] = { lieu: lieu.cle, a: +t.a.toFixed(6), x: +t.x.toFixed(2), y: +t.y.toFixed(2) };
+  CONF[CLE_CALAGE()] = { lieu: lieu.cle, a: +t.a.toFixed(6), x: +t.x.toFixed(2), y: +t.y.toFixed(2) };
   enregistreConf();
   enregistreDessins();
   dessineDessins();
@@ -491,7 +481,6 @@ function ajouteBatiments(lieu, halls, t){
  * @param {PageBatiments} page
  */
 export function brancheBatiments(page){
-  soude = page;
   LIEUX = page.lieux;
   $("calageValide").onclick = () => {
     const c = CALAGE;
@@ -589,7 +578,7 @@ export function rouvreCalage(c){
   if (!bibliothequeDispo()) return;
   const lieu = lieuDuCalque(c);
   if (!lieu) return;
-  const cale = reglages()[CLE_CALAGE()];
+  const cale = CONF[CLE_CALAGE()];
   const t = calageRelu(lieu, c) ||
             (cale && cale.lieu === lieu.cle ? cale : null);
   const halls = hallsPoses(lieu);

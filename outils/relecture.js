@@ -90,6 +90,7 @@ const FAMILLE = {
   "admin-plans.html": "console",
   "rapport.html": "rapport",
   "motdepasse.html": "motdepasse",
+  "index.html": "accueil",
 };
 const globalesDesModules = (page) => FAMILLE[page]
   ? Object.fromEntries(modules.exposes(FAMILLE[page]).map((n) => [n, "readonly"])) : {};

@@ -33,36 +33,19 @@
    (faux hors de l'administration). L'outil qui les écrit — le cadenas des
    couches, la palette, les poignées, le tracé d'un ajout — est d'exploitant :
    il vit dans `modules/reprise-emplacements.mjs`, que seul `plan-admin.mjs`
-   embarque, et pose le mode par la porte d'ici. Ce que le code soudé tient
-   encore — les réglages, les noms anglais des zones — lui est confié par
-   `brancheEmplacements`, que `_geometrie.html` appelle à la place que ce code
-   y tenait ; le nom d'une société sur le plan s'importe de `dessin.mjs`.
+   embarque, et pose le mode par la porte d'ici. Les réglages, les noms
+   anglais des zones et le nom d'une société sur le plan s'importent
+   (`configuration.mjs`, `noms-zones.mjs`, `dessin.mjs`) : il n'a rien à
+   recevoir du code soudé.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteGeo } from "./forme.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { nomSurLePlan } from "./dessin.mjs";
-
-/* Ce que le code soudé confie au branchement. Les réglages (`CONF`, que le
-   changement de salon remplace) se lisent à l'instant. */
-/**
- * @typedef {object} PageEmplacements
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- */
-/** @type {PageEmplacements} */
-let soude;
-const reglages = () => soude.conf();
-
-/**
- * Appelé par le code soudé à la place que ce code tenait (`_geometrie.html`),
- * avant que la première donnée ne soit indexée.
- *
- * @param {PageEmplacements} page
- */
-export function brancheEmplacements(page){
-  soude = page;
-}
+/* Les réglages (`CONF`, que le changement de salon remplace), lus tels qu'ils
+   sont à l'instant. */
+import { CONF } from "./configuration.mjs";
 
 export const cleGeo = (id) => "_geo:" + id;
 
@@ -119,7 +102,7 @@ export function poseGeometrie(o, anneaux){
 
 /** La retouche retenue, si elle décrit encore ce que la source sert. */
 function retoucheGeo(o){
-  const r = reglages()[cleGeo(o.id)];
+  const r = CONF[cleGeo(o.id)];
   return r && Array.isArray(r.p) && r.p.length &&
          r.e === empreinteGeo(geometrieSource(o)) ? r : null;
 }
@@ -158,7 +141,7 @@ export function appliqueGeometries(){
     /* Une zone masquée reprise à la main l'est aussi pour le trajet du
        visiteur, qui n'en a que la forme : c'est la reprise qui doit valoir. */
     for (const o of p.stands.concat(p.zones, p.zonesCachees || [])){
-      if (!reglages()[cleGeo(o.id)]) continue;
+      if (!CONF[cleGeo(o.id)]) continue;
       // `retoucheGeo` relève la géométrie servie avant d'y toucher : c'est
       // elle que l'empreinte décrit, et c'est encore elle qui est en place
       const r = retoucheGeo(o);
@@ -277,9 +260,9 @@ export function appliqueAjouts(){
   // l'index n'est pas encore bâti : les emplacements de la source, relevés ici
   const source = new Map(DATA.plans.flatMap(p => p.stands).map(s => [String(s.id), s]));
   const hotes = (id) => source.get(id);
-  Object.keys(reglages()).forEach(k => {
+  Object.keys(CONF).forEach(k => {
     if (k.indexOf(PREFIXE_AJOUT) !== 0) return;
-    const r = reglages()[k];
+    const r = CONF[k];
     const i = r ? rang.get(String(r.plan)) : undefined;
     if (i === undefined || !SORTES_AJOUT[r.sorte] || !anneauxValides(r.p)) return;
     const o = objetAjoute(k.slice(PREFIXE_AJOUT.length), r, i, hotes);

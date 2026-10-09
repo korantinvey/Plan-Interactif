@@ -14,16 +14,16 @@
    `modules/gestes-admin.mjs`, que seule l'administration embarque.
 
    Ils se branchent ici, à la place que leur code tenait : leurs écoutes s'y
-   posent au même rang qu'avant. Ce que le code soudé tient encore leur est
-   confié — la forme dessinée choisie (`_edition.html`), déclarée plus loin,
-   par un lecteur ; et aux tiroirs, le panneau des critères, que la
-   recherche, qui les importe, ne peut leur fournir par import. L'écoute de
+   posent au même rang qu'avant. Ce qu'ils ne peuvent importer leur est
+   confié : aux tiroirs, le panneau des critères, que la recherche, qui les
+   importe, ne peut leur fournir par import. La forme dessinée choisie, les
+   gestes de l'exploitant l'importent (`modules/forme-choisie.mjs`). L'écoute de
    la langue, qui refait ce que le plan a mesuré dans la langue d'avant, se
    pose en dernier, comme avant (`modules/gestes.mjs` `brancheLangue`).
    ============================================================ */
 brancheGestes();
 /* @admin — les gestes de l'exploitant prennent leur rang dans la chaîne */
-brancheGestesAdmin({ formeSel: () => formeSel });
+brancheGestesAdmin();
 /* @fin-admin */
 brancheTiroirs({ fermeCriteres });
 

@@ -11,21 +11,16 @@
    `partage.mjs` pour la note de la copie à garder : réunis, ils se seraient
    importés l'un l'autre.
 
-   Il se branche dans `_partage.html`, qui lui confie la configuration du
-   salon par un détour ; `demarrage.mjs` `demarre` l'appelle une fois les
-   données indexées.
+   La configuration du salon, il l'importe (`configuration.mjs`) : il n'a
+   rien à recevoir du code soudé ; `demarrage.mjs` `demarre` l'appelle une
+   fois les données indexées.
    ============================================================ */
 import { parId, CONFS } from "./donnees.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { PARCOURS, dansParcours, contenuParcours, nomDeStand } from "./parcours.mjs";
 import { CLE_LIEN_PARCOURS, litCodeParcours } from "./lien-parcours.mjs";
 import { verseAuParcours } from "./tiroir-parcours.mjs";
-
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
-   configuration (`_admin1.html` `conf`), par un détour lu à l'appel. */
-/** @type {Record<string, any>} */
-let soude = {};
-const conf = (c) => soude.conf(c);
+import { conf } from "./configuration.mjs";
 
 /* ------------------------------------------------------------
    Le parcours reçu
@@ -131,13 +126,3 @@ export function accueilleParcoursPartage(){
 function adoptePartage(stands, confs, remplace){
   verseAuParcours(stands, confs, CANAL_PARTAGE, remplace);
 }
-
-/* ------------------------------------------------------------
-   Le branchement
-   ------------------------------------------------------------ */
-/**
- * Appelé par `_partage.html` à la place que ce code tenait.
- *
- * @param {{ conf: (cle: string) => any }} b
- */
-export function brancheParcoursRecu(b){ soude = b; }

@@ -1,13 +1,27 @@
-
 /* ============================================================
-   Pile des calques
+   Pile des calques — l'ordre de tracé
    Habillage Klipso, zones, stands, textes et calques de dessin vivent dans
    un seul empilement : n'importe lequel peut se glisser entre deux autres.
    L'ordre de la liste est l'ordre de tracé — le premier est derrière.
-   ============================================================ */
-const clePile = () => "_pile:" + P().id;
 
-function entrees(){
+   Le visiteur le reçoit : les couches s'empilent sur son plan comme sur
+   celui de l'exploitant, d'où `plan.mjs`. Le panneau qui les règle
+   (`pile.mjs`) et la fenêtre qui les réordonne (`ordre-calques.mjs`) sont
+   d'exploitant, et l'importent.
+
+   Le panneau lui-même n'est qu'à l'administration : le plan public appelle
+   `construitPanneau` sans s'en servir. Il garde donc ici sa signature, et
+   l'administration son contenu, que `pile.mjs` lui confie en se chargeant
+   (`confiePanneau`).
+   ============================================================ */
+import { $ } from "./dom.mjs";
+import { P } from "./donnees.mjs";
+import { CONF } from "./configuration.mjs";
+import { mesCalques } from "./calques-dessin.mjs";
+
+export const clePile = () => "_pile:" + P().id;
+
+export function entrees(){
   /* `ref` change de nature avec `t` : le fond, le nom de la couche de données,
      le calque de dessin. */
   /** @type {{ k: string, t: string, nom: string, ref: any }[]} */
@@ -21,7 +35,7 @@ function entrees(){
 }
 
 /* ordre effectif : celui qui a été choisi, complété par les nouveautés */
-function pile(){
+export function pile(){
   const enregistre = CONF[clePile()];
   const e = entrees();
   const defaut = e.map(x => x.k);
@@ -41,36 +55,24 @@ function groupe(k){
 }
 
 /* déplacer les nœuds plutôt que tout reconstruire : réordonner est instantané */
-function ordonneDom(){
+export function ordonneDom(){
   const c = $("couches");
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
 }
 
-/* @admin — le panneau des calques, que le visiteur ne reçoit pas */
-/* ============================================================
-   Le panneau des calques — le branchement
+/* Le panneau des calques : rien chez le visiteur, ce que `pile.mjs` confie
+   chez l'exploitant. */
+let remplit = () => {};
 
-   Le panneau lui-même — montrer, masquer, recolorer chaque couche, les
-   cadenas et les crayons, les repères et le fond du plan — vit dans
-   `modules/pile.mjs`, que seul `plan-admin.mjs` embarque : le visiteur ne le
-   reçoit pas. Ce que le code soudé tient encore lui est confié ici, à la
-   place que ce code y tenait : ce qui change sans cesse par des lecteurs —
-   le placement des libellés s'allume et s'éteint, les secteurs se refont
-   avec les données. La reprise des formes et les calques de dessin, sortis
-   eux aussi, s'importent.
-   ============================================================ */
-branchePile({
-  estAdmin: () => ADMIN,
-  placeLibelles: () => PLACE_LIBELLES,
-  entrees, enregistreConf, joli,
-  modePlacementLibelles,
-});
-/* @fin-admin */
+/** La porte du panneau, que `pile.mjs` ouvre en se chargeant : un module
+ *  public ne peut importer celui de l'exploitant.
+ *  @param {() => void} f */
+export function confiePanneau(f){
+  remplit = f;
+}
 
 /* Le plan public l'appelle sans s'en servir : il garde sa signature, et
    l'administration son contenu, dans `modules/pile.mjs`. */
-function construitPanneau(){
-  /* @admin — le panneau des calques, que la page publique vide */
-  remplitPanneau();
-  /* @fin-admin */
+export function construitPanneau(){
+  remplit();
 }

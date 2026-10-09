@@ -9,18 +9,14 @@
 
    Tous deux se branchent ici, à la place que leur code tenait dans ce
    script : les boutons de la palette de calage s'y branchent au même rang
-   qu'avant. Ce que le code soudé tient encore leur est confié — la vue et
-   les réglages par des lecteurs, puisque les gestes et le changement de
-   salon les remplacent.
+   qu'avant. Le fond ne peut importer la vue, dont le module l'importe : elle
+   lui est confiée par un lecteur — les gestes la remplacent. Les réglages,
+   les calques de dessin, le panneau des calques et la main qui tient le plan
+   (`modules/gestes.mjs`), ils les importent.
    ============================================================ */
 
-brancheEnvirons({
-  vue: () => view, cadrePlan, conf: () => CONF, mesCalques, cheminForme,
-});
+brancheEnvirons({ vue: () => view, cadrePlan });
 
 /* @admin — le calage de la carte, geste d'exploitant */
-brancheCalageCarte({
-  conf: () => CONF, confDe: conf, enregistreConf, construitPanneau,
-  estAdmin: () => ADMIN,
-});
+brancheCalageCarte();
 /* @fin-admin */

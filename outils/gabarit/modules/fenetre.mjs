@@ -2,10 +2,9 @@
    La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
    ============================================================ */
 import { $ } from "./dom.mjs";
-
-/* L'habillage du modèle retenu, que le code soudé tient (`habilleModale`) :
-   il le confie au branchement. Sans lui, la fenêtre reste nue. */
-let _habille = () => {};
+/* L'habillage du modèle retenu (`habilleModale`), que la fenêtre reprend à
+   chaque ouverture. */
+import { habilleModale } from "./modeles.mjs";
 
 /* Ce qu'une fenêtre laisse en train de se faire.
  *
@@ -17,6 +16,26 @@ let _habille = () => {};
 let avantFermeture = null;
 /** Le crochet de sortie de la fenêtre en cours, posé par qui la remplit. */
 export const poseAvantFermeture = (f) => { avantFermeture = f; };
+
+/* Le retour aux réglages après un aperçu. Deux réglages en ouvrent un — la
+   fenêtre qui invite à installer, celle qui propose les rappels —, que le
+   visiteur reçoit aussi (`installation.mjs`, `rappels.mjs`) ; mais seule
+   l'administration connaît la fenêtre des réglages (`reglages.mjs`), qu'un
+   module public ne peut importer : elle ouvre cette porte en se chargeant.
+   Chez le visiteur, aucun aperçu ne s'ouvre, et rien n'est derrière. */
+/** @type {(marque: string) => void} */
+let retour = () => {};
+
+/** La porte du retour aux réglages, que `reglages.mjs` ouvre en se chargeant.
+ *  @param {(marque: string) => void} f */
+export function confieRetourAuxReglages(f){
+  retour = f;
+}
+
+/** Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
+ *  qui l'a ouvert — l'invitation à installer, le rappel des conférences.
+ *  @param {string} marque */
+export const retourAuxReglages = (marque) => retour(marque);
 
 function verseModale(){
   const f = avantFermeture;
@@ -49,7 +68,7 @@ export function ouvreModale(titre, remplitCorps, boutons, genre){
   else delete $("modale").dataset.genre;
   /* L'habillage se pose ici plutôt qu'une fois pour toutes : il dépend du
      genre, que chaque fenêtre apporte en s'ouvrant. */
-  _habille();
+  habilleModale();
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplitCorps($("mCorps"));
@@ -91,8 +110,7 @@ export function confirme(titre, message, libelleOui, action){
  * aussi la fiche et les tiroirs : la fenêtre ouverte le prend avant eux, à la
  * capture, quel que soit ce rang.
  */
-export function brancheFenetre({ habille }){
-  _habille = habille;
+export function brancheFenetre(){
   $("mFermer").onclick = fermeModale;
   $("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
   /* La fenêtre est devant tout : « Échap » est à elle, et à elle seule. Les

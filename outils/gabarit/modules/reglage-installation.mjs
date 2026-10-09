@@ -7,21 +7,8 @@
    ============================================================ */
 import { reglageInstallation, invitationVoulue, ouvreInvitation, ouvreRappel }
   from "./installation.mjs";
-
-/* L'envoi de la configuration, que le code soudé tient encore
-   (`_ordre-fiche.html`) et que le branchement confie. */
-/** @type {() => void} */
-let enregistreConf;
-
-/**
- * Le branchement du réglage, appelé par le code soudé à la place que ce code y
- * tenait (`_installation.html`), dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {{ enregistreConf: typeof enregistreConf }} b
- */
-export function brancheReglageInstallation(b){
-  enregistreConf = b.enregistreConf;
-}
+// l'enregistrement de la configuration : il n'a rien à recevoir du code soudé
+import { enregistreConf } from "./configuration.mjs";
 
 /**
  * La case, dans l'onglet « Admin » des réglages : une fenêtre de plus, c'est

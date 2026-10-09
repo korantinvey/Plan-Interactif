@@ -24,30 +24,14 @@
    l'administration). L'outil qui les change — le mode, la palette, le geste —
    est d'exploitant : il vit dans `modules/placement-libelles.mjs`, que seul
    `plan-admin.mjs` embarque, et pose l'état par les portes d'ici. Le code
-   soudé lit le mode et le libellé retouché par accesseur (`plan.mjs`) ; les
-   réglages lui sont confiés par `brancheLibellePlace`, que
-   `_mode-admin.html` appelle à la place que ce code y tenait. Ce qui situe
-   un nom sur sa forme s'importe (`texte-plan.mjs`).
+   soudé lit le mode et le libellé retouché par accesseur (`plan.mjs`). Les
+   réglages (`configuration.mjs`) et ce qui situe un nom sur sa forme
+   (`texte-plan.mjs`) s'importent.
    ============================================================ */
 import { ancre, place } from "./texte-plan.mjs";
-
-/* Ce que le code soudé confie : les réglages (`CONF`, que le changement de
-   salon remplace), lus à l'instant. */
-/**
- * @typedef {object} PageLibellePlace
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- */
-/** @type {PageLibellePlace} */
-let soude;
-
-/**
- * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`).
- *
- * @param {PageLibellePlace} page
- */
-export function brancheLibellePlace(page){
-  soude = page;
-}
+/* Les réglages (`CONF`, que le changement de salon remplace), lus tels qu'ils
+   sont à l'instant. */
+import { CONF } from "./configuration.mjs";
 
 export const cleLibelle = (id) => "_lab:" + id;
 
@@ -84,6 +68,6 @@ export function empreinteLibelle(o){
 
 /** Le placement réglé à la main, s'il décrit encore ce qui est sur le plan. */
 export function placementLibelle(o){
-  const r = soude.conf()[cleLibelle(o.id)];
+  const r = CONF[cleLibelle(o.id)];
   return r && r.e === empreinteLibelle(o) ? r : null;
 }

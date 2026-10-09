@@ -31,14 +31,13 @@ import { accesBase, base } from "./session.mjs";
 import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { select } from "./fiche.mjs";
+import { ADMIN } from "./mode-admin.mjs";
 
-/* Ce que le branchement confie : la fenêtre des réglages (`_reglages.html`),
-   que le code soudé tient encore, et le mode administrateur, lu à l'instant
+/* Ce que le branchement confie : la fenêtre des réglages (`reglages.mjs`),
+   qui importe ce module. Le mode administrateur s'importe, lu à l'instant
    (`modules/mode-admin.mjs` `ADMIN`). */
 /** @type {(ouvrir?: string) => void} */
 let ouvreReglages;
-/** @type {() => boolean} */
-let estAdmin;
 
 const racine = document.documentElement;
 
@@ -402,7 +401,7 @@ async function rafraichitChaleur(){
  * « coloreChaleur » que s'il existe.
  */
 function montreChaleur(v){
-  if (v && !estAdmin()) return;
+  if (v && !ADMIN) return;
   if (v === chalOuvert) return;
   chalOuvert = v;
   /* La case du panneau n'est pas toujours celle qu'on vient de cocher : le
@@ -660,11 +659,10 @@ async function lanceRemiseAZero(){
  * Le branchement de la carte, appelé par le code soudé à la place que ce code
  * y tenait (`_chaleur.html`), dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ ouvreReglages: typeof ouvreReglages, estAdmin: typeof estAdmin }} b
+ * @param {{ ouvreReglages: typeof ouvreReglages }} b
  */
 export function brancheChaleur(b){
   ouvreReglages = b.ouvreReglages;
-  estAdmin = b.estAdmin;
   /* La hauteur disponible change avec la fenêtre, et le cartouche se replie
      tout seul sur ce qui reste : la pile doit suivre. Posé ici, au même rang
      qu'avant parmi les écouteurs du plan. */
