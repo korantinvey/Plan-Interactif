@@ -32,3 +32,42 @@ export const luminance = (v) => [0.2126, 0.7152, 0.0722].reduce((a, poids, i) =>
   const s = v[i] / 255;
   return a + poids * (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
 }, 0);
+
+/** Les trois composantes d'une couleur écrite « #rrggbb ». */
+export const trio = (/** @type {any} */ hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255];
+};
+
+/** Deux couleurs mêlées, `t` disant combien on va de la première vers la
+ *  seconde. Sert à décliner l'accent sans demander cinq teintes à
+ *  l'exploitant : il en choisit une, le reste s'en déduit. */
+export const melange = (/** @type {string} */ a, /** @type {string} */ b, /** @type {number} */ t) => {
+  const x = trio(a), y = trio(b);
+  return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
+};
+
+/**
+ * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
+ * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
+ * reste lisible dessus, quel que soit le ton choisi.
+ *
+ * Le sens ne se devine pas à la clarté seule : un bleu franc et un orange sont
+ * tous deux à mi-hauteur, et pourtant l'un gagne à s'éclaircir quand l'autre
+ * gagne à s'assombrir. On calcule les deux et on garde le meilleur.
+ */
+export const ecarte = (/** @type {string} */ hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16), v = [n >> 16 & 255, n >> 8 & 255, n & 255];
+  /* 0,7 plutôt qu'une demi-teinte : le liseré borde l'aplat, mais le numéro du
+     stand s'écrit dessus dans la même couleur, et un rapport de contraste de
+     trois pour un ne se lit pas en petit. */
+  const vers = (/** @type {number} */ but) => v.map(c => Math.round(c + (but - c) * 0.7));
+  const base = luminance(v) + 0.05;
+  const contraste = (/** @type {number[]} */ w) => { const a = luminance(w) + 0.05; return a > base ? a / base : base / a; };
+  const sombre = vers(0), clair = vers(255);
+  return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
+};

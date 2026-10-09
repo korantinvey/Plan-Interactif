@@ -11,27 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1533 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 144 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.2 · 9. Apparence des calques
+- l.1 · 9. Apparence des calques — le branchement
 
 Fonctions :
 
-`salonRange` 17 · `cleConf` 19 · `ouvreConf` 23 · `reglagesDuSalon` 42 · `conf` 63
-`jeton` 64 · `sousCle` 65 · `styleFond` 67 · `sousCalques` 88 · `styleDataGroupe` 110
-`appliqueCouleursData` 119 · `styleData` 151 · `appliqueApparence` 157
-`appliqueCommandes` 222 · `optionActive` 332 · `programmeOffert` 337
-`suggestionOfferte` 338 · `appliqueOptions` 340 · `langueOfferte` 364 · `appliqueLangue` 366
-`catalogueTenu` 371 · `chercheSorte` 441 · `voletRecherche` 444 · `blocOrdreCriteres` 505
-`minutesVisite` 676 · `seuilGere` 740 · `seuilImpose` 741 · `seuilParSurface` 742
-`regleSeuil` 747 · `aireDuStand` 765 · `seuilConcentration` 801 · `phraseSeuil` 824
-`lueHeure` 869 · `lueDate` 873 · `datesSalon` 880 · `horairesSalon` 894
-`presseNuanciers` 933 · `suitNuancier` 949 · `trio` 977 · `melange` 987
-`appliqueAccent` 1001 · `appliqueFond` 1035 · `modeDist` 1082 · `couleurDist` 1094
-`appliqueDists` 1116 · `modeBarre` 1146 · `appliqueBarre` 1148 · `modeleRetenu` 1188
-`policeChoisie` 1344 · `policeDuModele` 1349 · `feuillePolice` 1359 · `chargePolice` 1381
-`policePrete` 1401 · `policeDesNoms` 1419 · `posePoliceLibelles` 1448
-`appliqueModele` 1480 · `habilleModale` 1524
+`appliqueOptions` 130
 
 ### `_admin2.html` — 268 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -313,11 +299,11 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_ordre-fiche.html` — 52 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_ordre-fiche.html` — 29 l. → plan-admin.html
 
 Fonctions :
 
-`enregistreConf` 19 · `ecarte` 34 · `joli` 49
+`enregistreConf` 19 · `joli` 26
 
 ### `_parcours.html` — 399 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -338,7 +324,7 @@ Fonctions :
 
 `accueilleParcoursPartage` 33 · `adoptePartage` 111 · `parcoursACopier` 127
 
-### `_pile.html` — 80 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 79 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.50 · Le panneau des calques — le branchement
@@ -346,7 +332,7 @@ Fonctions :
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 24 · `groupe` 36 · `ordonneDom` 44
-`construitPanneau` 76
+`construitPanneau` 75
 
 ### `_pousse.html` — 23 l. → plan-admin.html
 
@@ -387,25 +373,25 @@ Fonctions :
 `codeCase` 935 · `caseNumero` 952 · `sousLigne` 972 · `liste` 986 · `marqueChoisie` 1114
 `prechargeMarque` 1140 · `prechargeLesVignettes` 1197 · `chargeUnLot` 1243
 
-### `_reglages.html` — 23 l. → plan-admin.html
+### `_reglages.html` — 21 l. → plan-admin.html
 
-### `_rendu.html` — 663 l.
+### `_rendu.html` — 659 l.
 
 - l.3 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.146 · 3. Rendu du pavillon courant
-- l.522 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.142 · 3. Rendu du pavillon courant
+- l.518 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`mesureTexte` 11 · `largeur` 16 · `remesureTextes` 40 · `decoupe` 66 · `habille` 79
-`lignesSvg` 90 · `coexComptes` 107 · `coexChoisit` 108 · `ligneCode` 124
-`monteHabillage` 152 · `baliseZone` 181 · `baliseStand` 191 · `montePlan` 198
-`onglets` 234 · `changePlan` 256 · `texteDist` 303 · `texteCourtDist` 308 · `porteDist` 312
-`standPorte` 316 · `calqueDists` 325 · `traceDist` 356 · `oublieDists` 389
-`modesDuPlan` 393 · `releveDists` 395 · `dessineDists` 424 · `marquesListe` 450
-`poseDistsFiche` 480 · `refaitDistsFiche` 520 · `ancre` 530 · `place` 531 · `libelles` 533
-`decaleLibelle` 620 · `facteurLibelle` 621 · `libelleForce` 622 · `libelleZone` 625
-`libelleEmplacement` 644
+`mesureTexte` 11 · `largeur` 16 · `remesureTextes` 40 · `decoupe` 62 · `habille` 75
+`lignesSvg` 86 · `coexComptes` 103 · `coexChoisit` 104 · `ligneCode` 120
+`monteHabillage` 148 · `baliseZone` 177 · `baliseStand` 187 · `montePlan` 194
+`onglets` 230 · `changePlan` 252 · `texteDist` 299 · `texteCourtDist` 304 · `porteDist` 308
+`standPorte` 312 · `calqueDists` 321 · `traceDist` 352 · `oublieDists` 385
+`modesDuPlan` 389 · `releveDists` 391 · `dessineDists` 420 · `marquesListe` 446
+`poseDistsFiche` 476 · `refaitDistsFiche` 516 · `ancre` 526 · `place` 527 · `libelles` 529
+`decaleLibelle` 616 · `facteurLibelle` 617 · `libelleForce` 618 · `libelleZone` 621
+`libelleEmplacement` 640
 
 ### `_sponsor.html` — 14 l. → plan-admin.html
 
@@ -439,7 +425,7 @@ Fonctions :
 
 - l.1 · 17. La visite guidée — le branchement
 
-### `_volets.html` — 29 l. → plan-admin.html
+### `_volets.html` — 23 l.
 
 ### `_vue.html` — 37 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -507,6 +493,16 @@ Fonctions :
 `brancheApercus` 39 · `texteCorps` 105 · `clesPortees` 130 · `standApercu` 150
 `lignesApercu` 174 · `contenuApercu` 204 · `apercuFiche` 241 · `apercuListe` 319
 `apercuDuo` 341
+
+### `modules/apparence.mjs` — 189 l. → plan, plan-admin
+
+- l.1 · L'apparence des calques, et les commandes posées sur le plan
+
+Fonctions :
+
+`brancheApparence` 32 · `styleFond` 38 · `sousCalques` 59 · `styleDataGroupe` 66
+`appliqueCouleursData` 75 · `styleData` 107 · `appliqueApparence` 113
+`appliqueCommandes` 178
 
 ### `modules/appel-fonction.mjs` — 121 l. → console
 
@@ -641,6 +637,17 @@ Fonctions :
 `poseComptes` 35 · `litMonProfil` 49 · `RETOUR_MDP` 60 · `litComptes` 62 · `ligneMessage` 71
 `casesSalons` 81 · `ouvreComptes` 111 · `ouvreFicheCompte` 203
 
+### `modules/configuration.mjs` — 139 l. → plan, plan-admin
+
+- l.1 · La configuration du plan — ce que l'exploitant a réglé
+
+Fonctions :
+
+`secteurs` 22 · `brancheConfiguration` 30 · `salonRange` 46 · `cleConf` 48 · `ouvreConf` 52
+`reglagesDuSalon` 73 · `conf` 96 · `jeton` 97 · `sousCle` 99 · `optionActive` 105
+`programmeOffert` 110 · `suggestionOfferte` 111 · `langueOfferte` 131 · `appliqueLangue` 133
+`chercheSorte` 138
+
 ### `modules/console.mjs` — 47 l. → console
 
 - l.1 · Point d'entrée de la console
@@ -654,13 +661,14 @@ Fonctions :
 `encode` 27 · `decode` 29 · `correspondance` 34 · `sansPrefixe` 37 · `courte` 38
 `intitule` 53 · `intituleSuite` 65 · `aplani` 87 · `memeStyle` 97 · `autreFace` 115
 
-### `modules/couleurs.mjs` — 34 l. → plan, plan-admin
+### `modules/couleurs.mjs` — 73 l. → plan, plan-admin
 
 - l.1 · Les couleurs : d'une notation à l'autre, et ce que l'œil en perçoit
 
 Fonctions :
 
-`hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31
+`hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
+`ecarte` 61
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -874,6 +882,24 @@ Fonctions :
 
 `#fuseaux`
 
+### `modules/habillage.mjs` — 250 l. → plan, plan-admin
+
+- l.1 · L'habillage du plan — couleur principale, fond, distinctions, barre du
+
+Fonctions :
+
+`brancheHabillage` 32 · `appliqueAccent` 67 · `appliqueFond` 101 · `modeDist` 148
+`couleurDist` 160 · `appliqueDists` 182 · `modeBarre` 212 · `appliqueBarre` 214
+`appliqueModele` 237
+
+### `modules/horaires.mjs` — 89 l. → plan, plan-admin
+
+- l.1 · La journée du salon — ses dates, ses heures, le temps passé sur un stand
+
+Fonctions :
+
+`minutesVisite` 28 · `lueHeure` 55 · `lueDate` 59 · `datesSalon` 66 · `horairesSalon` 80
+
 ### `modules/ici.mjs` — 255 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
@@ -1010,6 +1036,14 @@ Fonctions :
 
 `ouvreModeAdmin` 21 · `retireAdmin` 30
 
+### `modules/modeles.mjs` — 88 l. → plan, plan-admin
+
+- l.1 · Les modèles d'habillage du plan
+
+Fonctions :
+
+`modeleRetenu` 46 · `habilleModale` 80
+
 ### `modules/mot-de-passe.mjs` — 208 l. → motdepasse
 
 - l.1 · Poser un mot de passe
@@ -1039,6 +1073,14 @@ Fonctions :
 
 `poussePossible` 19 · `iOSsansInstallation` 24 · `adresseDuRappel` 30 · `heureVue` 54
 `empreinteDebut` 55 · `octetsDeCle` 59 · `abonnementCourant` 67 · `abonne` 76
+
+### `modules/nuancier.mjs` — 72 l. → plan-admin
+
+- l.1 · La rafale du sélecteur de couleur — l'exploitant seul
+
+Fonctions :
+
+`presseNuanciers` 35 · `brancheNuancier` 39 · `suitNuancier` 56
 
 ### `modules/ordonnanceur.mjs` — 866 l. → plan, plan-admin
 
@@ -1073,26 +1115,23 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/pile.mjs` — 600 l. → plan-admin
+### `modules/pile.mjs` — 584 l. → plan-admin
 
 - l.1 · Le panneau des calques
-- l.117 · Panneau : deux sections, chacune rangée par nom
-- l.411 · Repères
-- l.463 · Fond du plan
+- l.101 · Panneau : deux sections, chacune rangée par nom
+- l.395 · Repères
+- l.447 · Fond du plan
 
 Fonctions :
 
-`estAdmin` 76 · `dessins` 77 · `calqueActif` 78 · `placeLibelles` 79 · `secteurs` 80
-`entrees` 81 · `conf` 82 · `enregistreConf` 83 · `jeton` 84 · `sousCle` 85
-`sousCalques` 86 · `joli` 87 · `styleFond` 88 · `styleDataGroupe` 89 · `styleData` 90
-`appliqueCouleursData` 91 · `appliqueFond` 92 · `suitNuancier` 93 · `secteursMontres` 95
-`couleurSecteur` 96 · `peintSecteur` 97 · `mesCalques` 98 · `creeCalque` 99
-`enregistreDessins` 100 · `dessineDessins` 101 · `peintCalque` 102 · `verrouille` 103
-`basculeVerrou` 104 · `pictoVerrou` 105 · `activeCalque` 106 · `memorise` 107
-`modePlacementLibelles` 108 · `ouvreOrdre` 109 · `branchePile` 113 · `nature` 135
-`boutonAjout` 142 · `boutonVerrou` 162 · `intertitre` 170 · `remplitPanneau` 179
-`sectionSelection` 427 · `sectionFond` 483 · `ligneCouleur` 541 · `rangSecteur` 561
-`rangSous` 574 · `defautCouleur` 596
+`estAdmin` 71 · `dessins` 72 · `calqueActif` 73 · `placeLibelles` 74 · `secteurs` 75
+`entrees` 76 · `enregistreConf` 77 · `joli` 78 · `secteursMontres` 79 · `couleurSecteur` 80
+`peintSecteur` 81 · `mesCalques` 82 · `creeCalque` 83 · `enregistreDessins` 84
+`dessineDessins` 85 · `peintCalque` 86 · `verrouille` 87 · `basculeVerrou` 88
+`pictoVerrou` 89 · `activeCalque` 90 · `memorise` 91 · `modePlacementLibelles` 92
+`ouvreOrdre` 93 · `branchePile` 97 · `nature` 119 · `boutonAjout` 126 · `boutonVerrou` 146
+`intertitre` 154 · `remplitPanneau` 163 · `sectionSelection` 411 · `sectionFond` 467
+`ligneCouleur` 525 · `rangSecteur` 545 · `rangSous` 558 · `defautCouleur` 580
 
 ### `modules/placement-libelles.mjs` — 189 l. → plan-admin
 
@@ -1105,13 +1144,22 @@ Fonctions :
 `choisitLibelle` 123 · `pousseLibelle` 130 · `libellePointerDown` 138
 `libellePointerMove` 154 · `libellePointerUp` 163 · `branchePlacementLibelles` 178
 
-### `modules/plan-admin.mjs` — 106 l. → plan-admin
+### `modules/plan-admin.mjs` — 110 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 181 l. → plan, plan-admin
+### `modules/plan.mjs` — 210 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
+
+### `modules/polices-plan.mjs` — 315 l. → plan, plan-admin
+
+- l.1 · La police des noms sur le plan — celle du modèle, ou une autre de la liste
+
+Fonctions :
+
+`branchePolices` 30 · `policeChoisie` 196 · `policeDuModele` 201 · `feuillePolice` 211
+`chargePolice` 233 · `policePrete` 253 · `policeDesNoms` 271 · `posePoliceLibelles` 300
 
 ### `modules/provenance.mjs` — 161 l. → console
 
@@ -1190,13 +1238,23 @@ Fonctions :
 
 `brancheReglageInstallation` 22 · `caseInstallation` 34
 
-### `modules/reglage-rappel.mjs` — 173 l. → plan-admin
+### `modules/reglage-rappel.mjs` — 172 l. → plan-admin
 
 - l.1 · Le rappel avant une conférence, dans l'onglet « Admin » des réglages
 
 Fonctions :
 
-`brancheReglageRappel` 26 · `blocRappel` 48 · `ditEssaiRappel` 159
+`brancheReglageRappel` 25 · `blocRappel` 47 · `ditEssaiRappel` 158
+
+### `modules/reglage-recherche.mjs` — 335 l. → plan-admin
+
+- l.1 · L'onglet « Recherche » des réglages — l'exploitant seul
+
+Fonctions :
+
+`brancheReglageRecherche` 36 · `montre` 41 · `reperesCherchables` 42 · `enregistreConf` 43
+`clesCriteres` 44 · `refaitCriteres` 45 · `libelleCritere` 46 · `catalogueTenu` 51
+`voletRecherche` 120 · `blocOrdreCriteres` 181
 
 ### `modules/reglage-sponsor.mjs` — 232 l. → plan-admin
 
@@ -1217,14 +1275,14 @@ Fonctions :
 `valeursSugg` 72 · `relevePalmares` 90 · `etiquetteSugg` 110 · `voletSuggestion` 120
 `brancheReglageSuggestion` 428
 
-### `modules/reglages.mjs` — 542 l. → plan-admin
+### `modules/reglages.mjs` — 536 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`brancheReglages` 66 · `glisseFenetre` 96 · `ouvreReglages` 108 · `voletZones` 236
-`champsFicheZone` 338 · `ficheZoneEnPlace` 408 · `voletPlan` 426 · `voletCoexposants` 474
+`brancheReglages` 61 · `glisseFenetre` 90 · `ouvreReglages` 102 · `voletZones` 230
+`champsFicheZone` 332 · `ficheZoneEnPlace` 402 · `voletPlan` 420 · `voletCoexposants` 468
 
 ### `modules/reprise-emplacements.mjs` — 792 l. → plan-admin
 
@@ -1277,6 +1335,15 @@ Fonctions :
 
 `accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
 `initialesDe` 142
+
+### `modules/seuil.mjs` — 179 l. → plan, plan-admin
+
+- l.1 · Le parcours intelligent — le seuil de concentration
+
+Fonctions :
+
+`seuilGere` 74 · `seuilImpose` 75 · `seuilParSurface` 76 · `regleSeuil` 81
+`aireDuStand` 99 · `seuilConcentration` 135 · `phraseSeuil` 158
 
 ### `modules/socle-console.mjs` — 382 l. → console, rapport
 
@@ -1414,17 +1481,17 @@ Fonctions :
 
 `vivants` 25
 
-### `modules/volets.mjs` — 1264 l. → plan-admin
+### `modules/volets.mjs` — 1236 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
 Fonctions :
 
-`brancheVolets` 93 · `voletAdmin` 103 · `blocOptions` 268 · `blocLangues` 315
-`blocBarre` 389 · `blocHoraires` 447 · `voletParcours` 589 · `sallesSituees` 724
-`voletPmr` 740 · `nomDuTon` 831 · `svgVignette` 840 · `barreVignette` 842
-`vignetteDistPlan` 846 · `vignetteDistListe` 859 · `vignetteDistFiche` 873
-`salonDitSes` 893 · `coinPris` 900 · `voletDist` 923 · `voletApparence` 1088
+`brancheVolets` 70 · `voletAdmin` 75 · `blocOptions` 240 · `blocLangues` 287
+`blocBarre` 361 · `blocHoraires` 419 · `voletParcours` 561 · `sallesSituees` 696
+`voletPmr` 712 · `nomDuTon` 803 · `svgVignette` 812 · `barreVignette` 814
+`vignetteDistPlan` 818 · `vignetteDistListe` 831 · `vignetteDistFiche` 845
+`salonDitSes` 865 · `coinPris` 872 · `voletDist` 895 · `voletApparence` 1060
 
 ### `modules/vue.mjs` — 569 l. → plan, plan-admin
 
