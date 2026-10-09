@@ -261,12 +261,6 @@ else if (!API) annonce("Aucune source de données configurée.", true);
 else if (document.documentElement.dataset.role === "admin") annonce("Vérification de l'identité…");
 else charge();
 
-// les mesures de texte dépendent des polices : on retrace une fois chargées
-// les polices peuvent arriver avant les données : on ne retrace que si
-// quelque chose est déjà affiché
-if (document.fonts && document.fonts.ready)
-  document.fonts.ready.then(() => { if (DATA && view){ _lg.clear(); libelles(); } });
-
 addEventListener("resize", () => { if (DATA && view) fit(); });
 
 
