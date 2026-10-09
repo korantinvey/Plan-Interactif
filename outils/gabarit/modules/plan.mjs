@@ -87,6 +87,11 @@ import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFi
   videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visible, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
+import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
+import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -156,6 +161,11 @@ Object.assign(globalThis, {
   videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visible, visibleSurPlan,
   visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
   VIGNETTES, prechargeLesVignettes,
+  REDUIT, ETROIT,
+  montre, brancheCorpsFiche,
+  anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -221,3 +231,8 @@ Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "index
 /* Le retrait du plan levé d'un clic hors du résultat : les gestes le lisent
    par accesseur ; seuls `oublieRetrait` et `reposeRetrait` le changent. */
 Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, "reposeRetrait"));
+/* Le dernier appui était-il tactile ? Les gestes le posent à chaque doigt
+   (`poseAppuiTactile`) et le relisent par accesseur ; la fiche s'en sert pour
+   écarter le clic fantôme qui suit un appui. */
+Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernierAppuiTactile },
+  "poseAppuiTactile"));

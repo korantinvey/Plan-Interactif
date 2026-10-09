@@ -38,7 +38,6 @@ import { champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEven
   from "./fiche-zone.mjs";
 import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
-import { brancheApercus } from "./apercus.mjs";
 import { brancheReglageRappel } from "./reglage-rappel.mjs";
 import { glisseFenetre, ouvreReglages, brancheReglages } from "./reglages.mjs";
 import { branchePile, remplitPanneau } from "./pile.mjs";
@@ -80,7 +79,6 @@ Object.assign(globalThis, {
   lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
   libellePointerUp, branchePlacementLibelles,
   branchePile, remplitPanneau,
-  brancheApercus,
   brancheReglageRappel,
   glisseFenetre, ouvreReglages, brancheReglages,
   lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,

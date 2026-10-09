@@ -36,15 +36,15 @@ import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { PARCOURS, boutonParcours, dansParcours } from "./parcours.mjs";
 import { OUI_NON, clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
+import { select } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
-   configuration (`_admin1.html` `conf`), l'option vendue, la fiche et le
-   tiroir du parcours. */
+   configuration (`_admin1.html` `conf`), l'option vendue et le tiroir du
+   parcours. La fiche s'importe de `fiche.mjs`. */
 /** @type {Record<string, any>} */
 let soude = {};
 const conf = (c) => soude.conf(c);
 const suggestionOfferte = () => soude.suggestionOfferte();
-const select = (...a) => soude.select(...a);
 const remplitParcours = () => soude.remplitParcours();
 const brancheParcours = (hote, canal) => soude.brancheParcours(hote, canal);
 
@@ -326,6 +326,6 @@ export function fenetreSuggestion(){
  * Le branchement, appelé par `_suggestion.html` à la place que ce code tenait.
  *
  * @param {{ conf: (c: string) => any, suggestionOfferte: Function,
- *   select: Function, remplitParcours: Function, brancheParcours: Function }} b
+ *   remplitParcours: Function, brancheParcours: Function }} b
  */
 export function brancheSuggestion(b){ soude = b; }

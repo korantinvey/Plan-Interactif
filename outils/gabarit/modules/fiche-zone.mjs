@@ -23,6 +23,7 @@ import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
+import { ouvre } from "./fiche.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
    loin dans le script — les réglages (`CONF`, que le changement de salon
@@ -39,7 +40,6 @@ import { cleAjout, rechAjout } from "./emplacements.mjs";
  * @property {() => void} liste
  * @property {() => void} cartouchePoi
  * @property {() => void} majPaletteGeo
- * @property {(o: any, depuis: any) => void} ouvre
  * @property {() => void} rangeConferences
  */
 /** @type {PageFicheZone} */
@@ -54,7 +54,6 @@ const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const cartouchePoi = () => soude.cartouchePoi();
 const majPaletteGeo = () => soude.majPaletteGeo();
-const ouvre = (o, depuis) => soude.ouvre(o, depuis);
 const rangeConferences = () => soude.rangeConferences();
 
 /**
