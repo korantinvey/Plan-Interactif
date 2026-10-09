@@ -4,28 +4,26 @@
    Ce que la fiche d'un stand montre, dans quel ordre, sous quels titres : la
    réserve, la fiche en cours de rangement, l'aperçu. Ce module n'est embarqué
    que par `plan-admin.mjs` ; le visiteur ne reçoit que ce que la fiche lit de
-   ce réglage — `ordreCorps`, `groupesFiche`, `montreIntitule`, restés dans
-   `_fiche.html` parce que la fiche publique les appelle à chaque ouverture.
+   ce réglage — `ordreCorps`, `groupesFiche`, `montreIntitule`, dans
+   `corps-fiche.mjs`, que la fiche publique appelle à chaque ouverture, et
+   d'où ce module les importe avec les libellés des champs.
 
-   L'aperçu s'importe de `apercus.mjs`. Les libellés des champs et la fiche
-   ouverte derrière la fenêtre sont encore soudés, l'écriture de la colonne
-   vient de `fiche-zone.mjs` : `_ordre-fiche.html` les confie par
-   `brancheReglageFiche`, à la place que ce code tenait.
+   L'aperçu s'importe de `apercus.mjs`, la fiche ouverte derrière la fenêtre
+   de `fiche.mjs`. Le préfixe des champs propres au salon et le modèle retenu
+   sont encore soudés, l'écriture de la colonne vient de `fiche-zone.mjs` :
+   `_ordre-fiche.html` les confie par `brancheReglageFiche`, à la place que ce
+   code tenait.
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { clesPortees, apercuFiche, contenuApercu } from "./apercus.mjs";
+import { PREFIXE_PERSO } from "./recherche.mjs";
+import { montre, libelleCorps, ordreCorps, groupesFiche, montreIntitule } from "./corps-fiche.mjs";
+import { ouvre } from "./fiche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-let PREFIXE_PERSO;
-let ordreCorps;
-let libelleCorps;
-let montre;
-let groupesFiche;
-let montreIntitule;
 let modeleRetenu;
 let ecritColonneEvenement;
-let ouvre;
 let coexChoisit;
 
 /* ------------------------------------------------------------------
@@ -656,13 +654,9 @@ export function voletOrdre(hote){
  * Le branchement, appelé par `_ordre-fiche.html` dans la tranche
  * d'administration qui portait ce code.
  *
- * @param {{ PREFIXE_PERSO: string, ordreCorps: Function,
- *   libelleCorps: Function, montre: Function, groupesFiche: Function,
- *   montreIntitule: Function, modeleRetenu: Function,
- *   ecritColonneEvenement: Function, ouvre: Function,
+ * @param {{ modeleRetenu: Function, ecritColonneEvenement: Function,
  *   coexChoisit: Function }} b
  */
 export function brancheReglageFiche(b){
-  ({ PREFIXE_PERSO, ordreCorps, libelleCorps, montre, groupesFiche, montreIntitule,
-     modeleRetenu, ecritColonneEvenement, ouvre, coexChoisit } = b);
+  ({ modeleRetenu, ecritColonneEvenement, coexChoisit } = b);
 }

@@ -24,6 +24,7 @@ import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
+import { ouvre } from "./fiche.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./points-interet.mjs";
 
@@ -38,7 +39,6 @@ import { cartouchePoi } from "./points-interet.mjs";
  * @property {() => void} libelles
  * @property {() => void} liste
  * @property {() => void} majPaletteGeo
- * @property {(o: any, depuis: any) => void} ouvre
  * @property {() => void} rangeConferences
  */
 /** @type {PageFicheZone} */
@@ -50,7 +50,6 @@ const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const majPaletteGeo = () => soude.majPaletteGeo();
-const ouvre = (o, depuis) => soude.ouvre(o, depuis);
 const rangeConferences = () => soude.rangeConferences();
 
 /**

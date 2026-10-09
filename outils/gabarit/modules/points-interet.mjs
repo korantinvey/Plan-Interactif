@@ -10,8 +10,11 @@
    Ce que le code soudé tient encore lui est confié par
    `branchePointsInteret`, que `_dessin.html` appelle en tête : la forme d'un
    identifiant (`formeParId`), le passage à un autre pavillon (`changePlan`),
-   le bord estompé du cartouche, et ce que la fiche des stands prête à celle
-   d'un repère — par des appels différés, lus au moment du geste.
+   les distinctions de la fiche (`poseDistsFiche`) — par des appels différés,
+   lus au moment du geste. Ce que la fiche des stands prête à celle d'un
+   repère s'importe de `fiche.mjs`, le bord estompé du cartouche de
+   `bandes.mjs` ; la recherche, qui relit les repères, se les fait donc
+   confier par le code soudé.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -24,36 +27,21 @@ import { fermeParcours } from "./tiroir-parcours.mjs";
 import { fermeItineraire, versItineraireDe } from "./tiroir-itineraire.mjs";
 import { DESSINS, mesCalques } from "./calques-dessin.mjs";
 import { PICTOS, nomTypeRepere, typeZone, pictoForme, glypheRepere, pastillePoi } from "./reperes.mjs";
+import { poseCode, poseMarque, onglet, brancheActesFiche, centrePoint, ecarteClicFantome, anime } from "./fiche.mjs";
+import { majFondus } from "./bandes.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
  * @typedef {object} PagePointsInteret
  * @property {(id: any) => any} formeParId
  * @property {(i: number) => void} changePlan
- * @property {() => void} majFondus
- * @property {(...a: any[]) => void} poseCode
- * @property {(blason: any) => void} poseMarque
  * @property {(soc: any) => void} poseDistsFiche
- * @property {(n: string) => void} onglet
- * @property {(go: Function, itin: Function) => void} brancheActesFiche
- * @property {(xy: any) => void} centrePoint
- * @property {() => void} ecarteClicFantome
- * @property {(mesure: Function, sens: number) => void} anime
  */
 /** @type {PagePointsInteret} */
 let soude;
 const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
 const changePlan = (/** @type {number} */ i) => soude.changePlan(i);
-const majFondus = () => soude.majFondus();
-const poseCode = (/** @type {any[]} */ ...a) => soude.poseCode(...a);
-const poseMarque = (/** @type {any} */ blason) => soude.poseMarque(blason);
 const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
-const onglet = (/** @type {string} */ n) => soude.onglet(n);
-const brancheActesFiche = (/** @type {Function} */ go, /** @type {Function} */ itin) =>
-  soude.brancheActesFiche(go, itin);
-const centrePoint = (/** @type {any} */ xy) => soude.centrePoint(xy);
-const ecarteClicFantome = () => soude.ecarteClicFantome();
-const anime = (/** @type {Function} */ mesure, /** @type {number} */ sens) => soude.anime(mesure, sens);
 
 /** Le branchement : `_dessin.html` l'appelle en tête.
  *  @param {PagePointsInteret} page */

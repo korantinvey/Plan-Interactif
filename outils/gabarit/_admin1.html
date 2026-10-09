@@ -22,9 +22,9 @@
    conférences, et l'outil de l'exploitant s'y lit dans des tranches que le
    visiteur ne reçoit pas.
    ============================================================ */
-brancheConfiguration({ secteurs: () => SECTEURS, planAdmin: PLAN_ADMIN });
+brancheConfiguration({ secteurs: () => SECTEURS });
 brancheApparence({
-  appliqueOptions, appliqueSecteurs, dessineDists, fermeParcours,
+  appliqueOptions, dessineDists, fermeParcours,
   fermeItineraire: () => fermeItineraire(),
 });
 
@@ -135,8 +135,7 @@ function appliqueOptions(){
 
 /* @admin — l'onglet « Recherche » et le nuancier, que seule l'administration ouvre */
 brancheReglageRecherche({
-  montre, reperesCherchables, enregistreConf: () => enregistreConf(), liste, clesCriteres,
-  refaitCriteres, libelleCritere, CLE_SECTEUR, PREFIXE_PERSO,
+  reperesCherchables, enregistreConf: () => enregistreConf(),
 });
 brancheNuancier();
 /* @fin-admin */

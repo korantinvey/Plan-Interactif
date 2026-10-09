@@ -12,7 +12,10 @@
    lecteur — l'éditeur la remplace sans cesse —, ce qui se déclare dans
    d'autres morceaux du script (la boîte d'une forme, l'ordre des couches, la
    mention de la source, la mesure d'un texte, le libellé d'un emplacement)
-   par des appels différés, comme ce qui vient de la recherche et de la fiche.
+   par des appels différés. La fiche, la recherche, les secteurs et l'écran
+   s'importent : ce module se tient au-dessus d'eux, et la fiche se fait donc
+   confier par le code soudé ce qu'elle lui emprunte (`decoupeStand`,
+   `marqueStandsDessines`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -28,33 +31,29 @@ import { cheminForme, styleTrait, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { PICTOS, pictoForme, nomTypeRepere, modeDit, estTransport, glypheRepere, ligneAffichee,
   couleurRepere, encreRepere } from "./reperes.mjs";
 import { cartouchePoi, phareRepere } from "./points-interet.mjs";
+import { REDUIT } from "./ecran.mjs";
+import { visibleSociete } from "./recherche.mjs";
+import { coloreSecteurs } from "./secteurs.mjs";
+import { societes } from "./fiche.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
  * @typedef {object} PageDessin
  * @property {() => any} formeSel la forme choisie dans l'éditeur, `formeSel`
- * @property {() => boolean} reduit le mouvement réduit, `REDUIT`
  * @property {(f: any) => number[]} boite
  * @property {() => void} ordonneDom
  * @property {() => void} mentionOsm
  * @property {(txt: string, police: any) => number} largeur
  * @property {(...a: any[]) => string} libelleEmplacement
- * @property {(o: any, i: number) => boolean} visibleSociete
- * @property {() => void} coloreSecteurs
- * @property {(o: any) => any[]} societes
  */
 /** @type {PageDessin} */
 let soude;
 const formeSel = () => soude.formeSel();
-const REDUIT = () => soude.reduit();
 const boite = (/** @type {any} */ f) => soude.boite(f);
 const ordonneDom = () => soude.ordonneDom();
 const mentionOsm = () => soude.mentionOsm();
 const largeur = (/** @type {string} */ txt, /** @type {any} */ police) => soude.largeur(txt, police);
 const libelleEmplacement = (/** @type {any[]} */ ...a) => soude.libelleEmplacement(...a);
-const visibleSociete = (/** @type {any} */ o, /** @type {number} */ i) => soude.visibleSociete(o, i);
-const coloreSecteurs = () => soude.coloreSecteurs();
-const societes = (/** @type {any} */ o) => soude.societes(o);
 
 /** Le branchement : `_dessin.html` l'appelle en tête.
  *  @param {PageDessin} page */
@@ -645,7 +644,7 @@ function rafraichitStandsDessines(){
    cherche, et on croit qu'il reste un bouton à valider. */
 export function signale(id){
   const g = $("couches").querySelector('.forme[data-f="' + CSS.escape(id) + '"]');
-  if (!g || REDUIT()) return;
+  if (!g || REDUIT) return;
   g.classList.add("neuve");
   setTimeout(() => g.classList.remove("neuve"), 1300);
 }

@@ -80,10 +80,21 @@ import { modeleRetenu, habilleModale } from "./modeles.mjs";
 import { P_NOM, P_CODE, branchePolices, posePoliceLibelles } from "./polices-plan.mjs";
 import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
 import { minutesVisite, lueHeure, datesSalon, horairesSalon } from "./horaires.mjs";
+import { SECTEURS, brancheSecteurs, indexeSecteurs, coloreSecteurs } from "./secteurs.mjs";
+import { brancheBandes, majFondus } from "./bandes.mjs";
+import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
+  libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
+  videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visible, visibleSurPlan,
+  visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
+  VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
+import { REDUIT, ETROIT } from "./ecran.mjs";
+import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
+import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
 import { brancheCalquesDessin, DESSINS, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee,
   marqueAttente, mesCalques, calqueActif, outil, enCours, poseCalqueActif } from "./calques-dessin.mjs";
 import { estCadre, cheminForme } from "./chemin-forme.mjs";
-import { typeZone } from "./reperes.mjs";
 import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
 import { branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
@@ -150,10 +161,21 @@ Object.assign(globalThis, {
   branchePolices, posePoliceLibelles,
   seuilGere, seuilImpose, seuilConcentration,
   minutesVisite, lueHeure, datesSalon, horairesSalon,
+  brancheSecteurs, indexeSecteurs, coloreSecteurs,
+  brancheBandes, majFondus,
+  brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
+  libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
+  videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visible, visibleSurPlan,
+  visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
+  VIGNETTES, prechargeLesVignettes,
+  REDUIT, ETROIT,
+  montre, brancheCorpsFiche,
+  anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
+  adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
+  ouvre, ferme, onglet, brancheFiche,
   brancheCalquesDessin, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee, marqueAttente,
   mesCalques, poseCalqueActif,
   estCadre, cheminForme,
-  typeZone,
   brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
   branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
@@ -216,6 +238,18 @@ Object.defineProperties(globalThis, vivants({ CONF: () => CONF, CLE_CONF: () => 
    (`polices-plan.mjs` `posePoliceLibelles`). */
 Object.defineProperties(globalThis, vivants({ P_NOM: () => P_NOM, P_CODE: () => P_CODE },
   "posePoliceLibelles"));
+
+/* Les secteurs du salon, que l'index refait à chaque chargement : le code
+   soudé les lit par accesseur ; seul `indexeSecteurs` les remplace. */
+Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "indexeSecteurs"));
+/* Le retrait du plan levé d'un clic hors du résultat : les gestes le lisent
+   par accesseur ; seuls `oublieRetrait` et `reposeRetrait` le changent. */
+Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, "reposeRetrait"));
+/* Le dernier appui était-il tactile ? Les gestes le posent à chaque doigt
+   (`poseAppuiTactile`) et le relisent par accesseur ; la fiche s'en sert pour
+   écarter le clic fantôme qui suit un appui. */
+Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernierAppuiTactile },
+  "poseAppuiTactile"));
 
 /* Les calques de dessin du salon ouvert : le chargement les lit par
    accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`

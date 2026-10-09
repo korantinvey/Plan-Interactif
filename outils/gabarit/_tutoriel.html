@@ -5,13 +5,12 @@
    que son code tenait : ce que le code soudé tient encore — les réglages, la
    fiche, les tiroirs — lui est confié, l'état qui change à chaque geste par
    un lecteur, lu au moment de la visite. La journée calculée, le trajet
-   demandé et le tiroir du parcours, eux, sont des modules (`journee.mjs`,
-   `tiroir-itineraire.mjs`, `tiroir-parcours.mjs`) : la visite les importe.
+   demandé, le tiroir du parcours, la fiche et l'écran, eux, sont des modules
+   (`journee.mjs`, `tiroir-itineraire.mjs`, `tiroir-parcours.mjs`,
+   `fiche.mjs`, `ecran.mjs`) : la visite les importe.
    ============================================================ */
 brancheTutoriel({
-  conf, optionActive, montre, changePlan, centre,
-  ferme, etroit: ETROIT,
-  planAdmin: PLAN_ADMIN, reduit: REDUIT,
+  conf, optionActive, changePlan,
   iciActif: () => ICI_ACTIF,
   dessinEnCours: () => PLACE_LIBELLES || enCours || formeSel || calqueActif,
 });

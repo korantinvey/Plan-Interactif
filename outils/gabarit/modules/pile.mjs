@@ -13,13 +13,13 @@
    `ordonneDom` restent dans `_pile.html`, au code soudé.
 
    Ce que le code soudé tient encore — l'enregistrement des réglages, le
-   placement des libellés, les secteurs — lui est confié par `branchePile`,
-   que `_pile.html` appelle à la place que ce code y tenait. Ce qui change sans
-   cesse — le mode de travail en cours, les secteurs, le mode administrateur —
-   par des lecteurs. Les modules déjà sortis — les calques de dessin et leur
-   outil, la bibliothèque des bâtiments, le calage de la carte, la carte de
-   chaleur, la reprise des emplacements, la fenêtre de réorganisation —, comme
-   la configuration et l'apparence des calques, s'importent.
+   placement des libellés — lui est confié par `branchePile`, que `_pile.html`
+   appelle à la place que ce code y tenait. Ce qui change sans cesse — le mode
+   de travail en cours, le mode administrateur — par des lecteurs. Les modules
+   déjà sortis — les calques de dessin et leur outil, la bibliothèque des
+   bâtiments, le calage de la carte, la carte de chaleur, la reprise des
+   emplacements, la fenêtre de réorganisation —, comme la configuration,
+   l'apparence des calques et les secteurs, s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -37,6 +37,7 @@ import { sousCalques, styleFond, styleDataGroupe, styleData, appliqueCouleursDat
 import { appliqueFond } from "./habillage.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { ouvreOrdre } from "./ordre-calques.mjs";
+import { SECTEURS, secteursMontres, couleurSecteur, peintSecteur } from "./secteurs.mjs";
 import { DESSINS, calqueActif, mesCalques } from "./calques-dessin.mjs";
 import { dessineDessins, peintCalque } from "./dessin.mjs";
 import { creeCalque, enregistreDessins, verrouille, basculeVerrou, pictoVerrou, activeCalque, memorise }
@@ -47,26 +48,20 @@ import { creeCalque, enregistreDessins, verrouille, basculeVerrou, pictoVerrou, 
  * @typedef {object} PagePile
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
  * @property {() => boolean} placeLibelles le placement des libellés en cours, `PLACE_LIBELLES`
- * @property {() => Map<string, any>} secteurs les secteurs du salon, `SECTEURS`
  * @property {() => { k: string, t: string, nom: string, ref: any }[]} entrees
  * @property {() => void} enregistreConf
  * @property {(id: any) => string} joli
- * @property {() => boolean} secteursMontres
- * @property {(nom: string) => string} couleurSecteur
- * @property {(nom: string) => void} peintSecteur
  * @property {(on: boolean) => void} modePlacementLibelles
  */
 /** @type {PagePile} */
 let soude;
 const estAdmin = () => soude.estAdmin();
 const placeLibelles = () => soude.placeLibelles();
-const secteurs = () => soude.secteurs();
+// les secteurs du salon, que l'index remplace à chaque chargement
+const secteurs = () => SECTEURS;
 const entrees = () => soude.entrees();
 const enregistreConf = () => soude.enregistreConf();
 const joli = (/** @type {any} */ id) => soude.joli(id);
-const secteursMontres = () => soude.secteursMontres();
-const couleurSecteur = (/** @type {string} */ nom) => soude.couleurSecteur(nom);
-const peintSecteur = (/** @type {string} */ nom) => soude.peintSecteur(nom);
 const modePlacementLibelles = (/** @type {boolean} */ on) => soude.modePlacementLibelles(on);
 
 /** Le branchement : `_pile.html` l'appelle à la place que ce code y tenait.

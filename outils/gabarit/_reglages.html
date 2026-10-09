@@ -1,10 +1,10 @@
 /* La fenêtre des réglages : aperçus, onglets, volets Zones, Plan, Co-exposants.
    Suite de `_admin1.html`, dans le même script.
 
-   La fenêtre et ses volets vivent dans `modules/reglages.mjs`, les aperçus
-   dans `modules/apercus.mjs`, le bloc du rappel dans
-   `modules/reglage-rappel.mjs` — trois modules que seul `plan-admin.mjs`
-   embarque. Ils se branchent ici, à la place que leur code tenait, et ce que
+   La fenêtre et ses volets vivent dans `modules/reglages.mjs`, le bloc du
+   rappel dans `modules/reglage-rappel.mjs` — deux modules que seul
+   `plan-admin.mjs` embarque, comme les aperçus (`modules/apercus.mjs`), qui
+   importent tout ce qu'il leur faut. Les deux premiers se branchent ici, à la place que leur code tenait, et ce que
    le code soudé tient encore leur est confié. L'envoi de la configuration
    (`_ordre-fiche.html`) n'est déclaré que plus bas : il vient par un détour,
    lu au moment de s'en servir.
@@ -12,10 +12,7 @@
    La tranche ouverte ici couvre aussi `_volets.html`, et se ferme dans
    `_ordre-fiche.html`. */
 /* @admin — la fenêtre des réglages, ses aperçus et ses volets */
-brancheApercus({
-  PREFIXE_PERSO, codeCase, ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS,
-});
 brancheReglageRappel({ enregistreConf: () => enregistreConf() });
 brancheReglages({
-  enregistreConf: () => enregistreConf(), REDUIT, DISTINCTIONS, montre, ouvre, libelles,
+  enregistreConf: () => enregistreConf(), DISTINCTIONS, libelles,
 });

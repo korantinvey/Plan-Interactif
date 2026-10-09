@@ -14,14 +14,16 @@
    pourquoi.
 
    Ce que le code soudé tient encore — les réglages et leur enregistrement, la
-   vue, le panneau des calques, le dessin des noms et des distinctions, la
-   recherche et la liste, la fiche, l'outil de dessin — lui est confié par
+   vue, le panneau des calques, le dessin des noms et des distinctions,
+   l'outil de dessin — lui est confié par
    `brancheRepriseEmplacements`, que `_geometrie.html` appelle à la place que
    ce code y tenait. Ce qui change sans cesse — les réglages (`CONF`, que le
    changement de salon remplace), la vue — par des lecteurs. Le calque de
    dessin ouvert et le tracé d'une forme s'importent (`calques-dessin.mjs`,
    `chemin-forme.mjs`, `dessin.mjs`) ; ce que l'outil de dessin tient
    (`outil-dessin.mjs`, qui importe ce module-ci) se confie par des détours.
+   La recherche et la liste s'importent de `recherche.mjs`, la fiche de
+   `fiche.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, parId, poseDonnees, state, P } from "./donnees.mjs";
@@ -39,6 +41,8 @@ import { ficheZone } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
+import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
+import { ouvre, ferme } from "./fiche.mjs";
 import { calqueActif, nouvelId } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
@@ -56,12 +60,7 @@ import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
  * @property {() => void} dessineDists
  * @property {(z: any) => string} baliseZone
  * @property {(s: any) => string} baliseStand
- * @property {() => void} appliqueSecteurs
- * @property {() => void} marqueRetrait
- * @property {() => void} liste
  * @property {() => void} nomsAnglaisDesZones
- * @property {(o: any, depuis: any) => void} ouvre
- * @property {() => void} ferme
  * @property {(cle: string) => boolean} optionActive
  * @property {(ferme: boolean) => string} pictoVerrou
  * @property {(id: any) => void} activeCalque
@@ -80,12 +79,7 @@ const oublieDists = () => soude.oublieDists();
 const dessineDists = () => soude.dessineDists();
 const baliseZone = (/** @type {any} */ z) => soude.baliseZone(z);
 const baliseStand = (/** @type {any} */ s) => soude.baliseStand(s);
-const appliqueSecteurs = () => soude.appliqueSecteurs();
-const marqueRetrait = () => soude.marqueRetrait();
-const liste = () => soude.liste();
 const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
-const ouvre = (/** @type {any} */ o, /** @type {any} */ depuis) => soude.ouvre(o, depuis);
-const ferme = () => soude.ferme();
 const optionActive = (/** @type {string} */ cle) => soude.optionActive(cle);
 const pictoVerrou = (/** @type {boolean} */ f) => soude.pictoVerrou(f);
 const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
