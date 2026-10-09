@@ -43,19 +43,9 @@ Fonctions :
 `CLE_VERSION` 173 · `versionRetenue` 174 · `retientVersion` 177 · `demandePlan` 201
 `charge` 225
 
-### `_aimants.html` — 488 l. → plan-admin.html
+### `_aimants.html` — 23 l. → plan-admin.html
 
-- l.3 · 11 quater. Dessiner juste — cote, aimants, répétition
-
-Fonctions :
-
-`ecritMetres` 16 · `coteCadre` 20 · `montreCote` 32 · `aimantsActifs` 60 · `axesDe` 64
-`pointsAimants` 69 · `oublieAimantsDuPlan` 89 · `aimantsDuPlan` 91 · `pasAimant` 124
-`cale` 132 · `sousLeGeste` 137 · `cranGrille` 148 · `oublieAimants` 165
-`aimantsDessines` 167 · `coinsGeste` 193 · `montreAimants` 215 · `meilleurSommet` 280
-`croixAimant` 294 · `correction` 318 · `aimante` 359 · `retientTaille` 373
-`reprendTaille` 387 · `dupliqueForme` 408 · `pousseForme` 433 · `ecritDimensions` 450
-`appliqueDimension` 469
+- l.3 · 11 quater. Dessiner juste — le branchement
 
 ### `_application.html` — 13 l.
 
@@ -624,6 +614,24 @@ Fonctions :
 `telechargeAfficheIci` 331 · `imprimeAfficheIci` 349 · `boutonCodeIci` 378
 `brancheAfficheIci` 402
 
+### `modules/aimants.mjs` — 531 l. → plan-admin
+
+- l.1 · Dessiner juste — cote, aimants, répétition
+
+Fonctions :
+
+`vue` 31 · `imageEnAttente` 32 · `formeSel` 33 · `calqueActif` 34 · `cadrePlan` 35
+`mesCalques` 36 · `estCadre` 37 · `boite` 38 · `toleranceTrace` 39 · `apercuGuide` 40
+`formeParId` 41 · `ajouteForme` 42 · `choisitForme` 43 · `signale` 44 · `memorise` 45
+`enregistreDessins` 46 · `redessineForme` 47 · `dessinePoignees` 48 · `brancheAimants` 53
+`ecritMetres` 60 · `coteCadre` 64 · `montreCote` 76 · `aimantsActifs` 104 · `axesDe` 108
+`pointsAimants` 113 · `oublieAimantsDuPlan` 133 · `aimantsDuPlan` 135 · `pasAimant` 168
+`cale` 176 · `sousLeGeste` 181 · `cranGrille` 192 · `oublieAimants` 209
+`aimantsDessines` 211 · `coinsGeste` 237 · `montreAimants` 259 · `meilleurSommet` 324
+`croixAimant` 338 · `correction` 362 · `aimante` 403 · `retientTaille` 417
+`reprendTaille` 431 · `dupliqueForme` 452 · `pousseForme` 477 · `ecritDimensions` 494
+`appliqueDimension` 513
+
 ### `modules/appel-fonction.mjs` — 61 l. → console
 
 - l.1 · L'appel des fonctions du projet, depuis la console
@@ -996,7 +1004,7 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 53 l. → plan-admin
+### `modules/plan-admin.mjs` — 59 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
