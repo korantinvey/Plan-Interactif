@@ -618,6 +618,11 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   box-shadow:var(--shadow);padding:12px 14px;width:264px;
   max-height:calc(100% - 24px);overflow-y:auto}
 .outils.open{display:flex}
+/* Repliée sur sa tête, elle rend le coin du plan qu'elle couvrait — sans quoi
+   ce qui s'y trouve ne se choisit ni ne se trace : le clic tombe sur elle.
+   `!important` parce que chaque mode montre ses champs par l'identifiant, plus
+   fort qu'une classe. */
+.outils.replie > :not(.outilsTete){display:none !important}
 /* La palette de calage partage l'allure de celle du dessin — et sa place : les
    deux ne servent jamais en même temps, ouvrir l'une ferme l'autre. Elle
    s'affiche par `hidden`, non par une classe : rien d'autre ne la commande. */

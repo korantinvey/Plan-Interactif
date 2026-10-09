@@ -41,7 +41,7 @@ import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aiman
   retientTaille, reprendTaille, appliqueDimension } from "./aimants.mjs";
 import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
-  editionPointerMove, editionPointerUp } from "./edition.mjs";
+  editionPointerMove, editionPointerUp, replieOutils } from "./edition.mjs";
 import { DESSINS, cleDessins, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
   enCours, poseCalqueActif, poseOutil, poseEbauche } from "./calques-dessin.mjs";
 import { cheminForme, estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
@@ -831,7 +831,7 @@ export function creeCalque(){
 }
 
 /* saisie du nom dans une fenêtre : plus visible qu'un double-clic */
-function demandeNom(titre, valeur, suite){
+function demandeNom(titre, valeur, suite, abandon){
   let champ;
   ouvreModale(titre, corps => {
     champ = document.createElement("input");
@@ -844,7 +844,9 @@ function demandeNom(titre, valeur, suite){
       if (e.key === "Enter"){ e.preventDefault(); valide(); }
     };
   }, [
-    { libelle: "Annuler" },
+    /* Renoncer ramène aussi d'où l'on venait : l'ordre des calques, quand
+       c'est lui qui a demandé le nom. Fermer d'abord, pour la même raison. */
+    { libelle: "Annuler", ferme: false, action: () => { fermeModale(); if (abandon) abandon(); } },
     /* Le bouton passe par le même chemin que la touche Entrée : fermer, puis
        donner le nom. Dans l'autre ordre, une suite qui rouvre une fenêtre —
        l'ordre des calques, d'où l'on était venu renommer — la voyait
@@ -862,7 +864,7 @@ export function renommeCalque(c, apres){
     construitPanneau();
     if (calqueActif === c.id) $("outilsCalque").textContent = "Dessin · " + c.nom;
     if (apres) apres();
-  });
+  }, apres);
 }
 
 /**
@@ -902,6 +904,7 @@ export function brancheOutilDessin(){
   if ($("aimantPas")) $("aimantPas").onchange = () => montreAimants(null);
   if ($("aimants")) $("aimants").onchange = () => montreAimants(null);
   $("fermeOutils").onclick = () => { if (calqueActif) activeCalque(calqueActif); };
+  $("replieOutils").onclick = () => replieOutils(!$("outils").classList.contains("replie"));
   $("renommeOutils").onclick = () => {
     const c = trouveCalque(calqueActif);
     if (c) renommeCalque(c);

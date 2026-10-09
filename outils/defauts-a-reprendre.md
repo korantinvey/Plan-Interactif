@@ -12,23 +12,6 @@ Ce qui reste ouvert est en tête ; le reste garde la trace de ce qu'on a trouvé
     fichier source ; une ligne banale partagée y verse un dictionnaire entier
     à tort. À reprendre seule.
 
-### En attente d'une décision de comportement
-
-3. **Onglet « Recherche » en français** dans la fenêtre des réglages en
-   anglais. Ne se reproduit pas sur `plans.json` : l'onglet dit « Search »
-   partout. Seul cas trouvé : un exposant nommé « Recherche » — `_langue.js`
-   protège les noms d'exposants (`PROTEGES`) dans toute la page, l'onglet
-   compris. À trancher : borner cette protection aux contenus de données, ou
-   l'accepter.
-5. **Clic sur un texte libre**, et 6. **rectangle tracé après avoir décoché les
-   aimants** : le code n'y est pour rien — le texte se choisit, le rectangle
-   se trace, en SVG comme en WebGL. Ce qui prenait le geste, c'est la boîte à
-   outils flottante `#outils`, posée sur l'endroit visé. À trancher : la
-   déplacer ou la réduire quand elle couvre ce qu'on édite.
-11. **« Annuler » un renommage depuis l'ordre des calques** ne ramène pas à la
-    fenêtre d'ordre (« Valider » et Entrée, eux, y ramènent désormais). Le
-    commentaire « puis on revient » se lit dans les deux sens.
-
 ## Corrigés
 
 1. **Publication au repos en plein geste** — le repos se comptait depuis la
@@ -58,6 +41,15 @@ Ce qui reste ouvert est en tête ; le reste garde la trace de ce qu'on a trouvé
 15. **`initialesDe` recopiée** — une seule copie dans `modules/session.mjs`.
 16. **`btnRecharger`** — le bouton sert ; seule une copie des pavillons que rien
     ne relisait, dans son gestionnaire de la console, était morte.
+3. **Onglet « Recherche » resté en français** quand un exposant porte ce nom :
+   la protection des noms ne vaut plus dans ce que la page dit en son nom —
+   onglets des réglages, titre et boutons d'une fenêtre, bande
+   d'administration, palettes (`_langue.js` `INTERFACE`).
+5. / 6. **Boîte à outils posée sur ce qu'on édite** : elle se replie sur sa
+   tête, d'un bouton ou d'elle-même quand la forme choisie ou déplacée passe
+   dessous (`modules/edition.mjs` `replieOutils`) ; la déplacer ne ferait que
+   couvrir le panneau des calques.
+11. **« Annuler » un renommage** ramène aussi à l'ordre des calques.
 17. **Commentaires périmés** — renvois aux fichiers soudés devenus modules,
     dans les sources des pages. Restent, hors des pages : `supabase/functions/`
     (`plan-public/index.ts`, `mesure/index.ts`, `sync-evenement/index.ts`,

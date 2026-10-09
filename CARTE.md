@@ -101,7 +101,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.4 · 8. Interactions du plan — le branchement
 
-### `_head.html` — 628 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -118,8 +118,8 @@ l'endroit où l'on corrige quoi que ce soit.
 `#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel`
 `#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
 `#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
-`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
-`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#outilsCalque` · `#renommeOutils` · `#replieOutils` · `#fermeOutils` · `#roleIti`
+`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
 `#texteADessiner` · `#repereType` · `#repereTransport` · `#repereMode` · `#repereLigne`
 `#repereCouleur` · `#repereTexte` · `#imageSoc` · `#standSoc` · `#listeSoc`
@@ -182,7 +182,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#data`
 
-### `_langue.js` — 798 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
+### `_langue.js` — 810 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -252,7 +252,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 601 l. → plan-admin.html, plan-smcl.html, plan.html
 
-### `_styles-plan.css` — 1600 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-plan.css` — 1605 l. → plan-admin.html, plan-smcl.html, plan.html
 
 ### `_suggestion.html` — 19 l.
 
@@ -640,7 +640,7 @@ Fonctions :
 
 `enEdition` 35
 
-### `modules/edition.mjs` — 692 l. → plan-admin
+### `modules/edition.mjs` — 721 l. → plan-admin
 
 - l.1 · Édition des formes existantes
 
@@ -649,12 +649,12 @@ Fonctions :
 `memorise` 49 · `enregistreDessins` 50 · `optionsModes` 51 · `societeSaisie` 52
 `remplitListeSocietes` 53 · `brancheEdition` 58 · `curseurPoignee` 69 · `poignees` 74
 `dessinePoignees` 83 · `cadreTexte` 118 · `poigneeRotation` 138 · `angleBorne` 148
-`choisitForme` 150 · `majElement` 161 · `candidatsLiaison` 282 · `ecritDesDeuxCotes` 304
-`changeLien` 316 · `changeDureeLien` 332 · `majLiens` 349 · `appliqueSociete` 401
-`appliqueTexte` 417 · `appliqueRotation` 429 · `appliqueRayon` 443 · `appliqueTrait` 456
-`appliqueTransport` 484 · `appliquePicto` 507 · `supprimeForme` 533
-`editionPointerDown` 543 · `editionPointerMove` 603 · `tourneTexte` 666
-`editionPointerUp` 682
+`choisitForme` 150 · `replieOutils` 165 · `degageOutils` 180 · `majElement` 189
+`candidatsLiaison` 310 · `ecritDesDeuxCotes` 332 · `changeLien` 344 · `changeDureeLien` 360
+`majLiens` 377 · `appliqueSociete` 429 · `appliqueTexte` 445 · `appliqueRotation` 457
+`appliqueRayon` 471 · `appliqueTrait` 484 · `appliqueTransport` 512 · `appliquePicto` 535
+`supprimeForme` 561 · `editionPointerDown` 571 · `editionPointerMove` 631
+`tourneTexte` 694 · `editionPointerUp` 710
 
 ### `modules/emplacements.mjs` — 282 l. → plan, plan-admin
 
@@ -1113,7 +1113,7 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 993 l. → plan-admin
+### `modules/outil-dessin.mjs` — 996 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
@@ -1129,7 +1129,7 @@ Fonctions :
 `choisitOutil` 623 · `enchaineStand` 654 · `optionsModes` 666 · `proposeCouleurLigne` 676
 `montreTransport` 687 · `activeCalque` 696 · `cleVerrou` 754 · `verrouille` 755
 `basculeVerrou` 757 · `pictoVerrou` 774 · `montreRoleIti` 808 · `creeCalque` 821
-`demandeNom` 834 · `renommeCalque` 857 · `brancheOutilDessin` 873
+`demandeNom` 834 · `renommeCalque` 859 · `brancheOutilDessin` 875
 
 ### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
 

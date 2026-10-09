@@ -155,6 +155,34 @@ export function choisitForme(id){
     .forEach(g => g.classList.toggle("pick", g.dataset.f === id));
   dessinePoignees();
   majElement();
+  degageOutils();
+}
+
+/**
+ * La boîte à outils repliée sur sa tête, ou rendue.
+ * @param {boolean} oui
+ */
+export function replieOutils(oui){
+  const o = $("outils"), b = $("replieOutils");
+  if (!o) return;
+  o.classList.toggle("replie", oui);
+  if (!b) return;
+  b.setAttribute("aria-expanded", String(!oui));
+  b.title = oui ? "Déplier" : "Replier";
+  b.setAttribute("aria-label", oui ? "Déplier la boîte à outils" : "Replier la boîte à outils");
+  b.innerHTML = oui ? "&#43;" : "&#8211;";
+}
+
+/* La boîte flotte sur le coin du plan : une forme qu'on y choisit, qu'on y
+   amène, passait dessous, et le clic suivant tombait sur la boîte. Elle se
+   replie alors d'elle-même ; on la rend d'un clic. Ses côtés sont pris par le
+   panneau des calques à droite : la déplacer ne ferait que couvrir autre chose. */
+function degageOutils(){
+  const o = $("outils"), g = $("poignees");
+  if (!o || !g || !o.classList.contains("open") || o.classList.contains("replie")) return;
+  const a = o.getBoundingClientRect(), b = g.getBoundingClientRect();
+  if (!b.width && !b.height) return;
+  if (b.left < a.right && b.right > a.left && b.top < a.bottom && b.bottom > a.top) replieOutils(true);
 }
 
 /* --- panneau de la forme choisie --- */
@@ -688,5 +716,6 @@ export function editionPointerUp(e){
   apercuGuide(null); montreCote(null); montreAimants(null);
   retientTaille(f);
   enregistreDessins();
+  degageOutils();
   return true;
 }
