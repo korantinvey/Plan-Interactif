@@ -1187,11 +1187,11 @@ Fonctions :
 `pousseLibelle` 126 · `libellePointerDown` 134 · `libellePointerMove` 150
 `libellePointerUp` 159 · `branchePlacementLibelles` 174
 
-### `modules/plan-admin.mjs` — 117 l. → plan-admin
+### `modules/plan-admin.mjs` — 90 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 284 l. → plan, plan-admin
+### `modules/plan.mjs` — 189 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
