@@ -2,7 +2,7 @@
    Le code QR, sans bibliothèque
 
    Une bibliothèque de plus pour une fonction de plus : le dépôt écrit déjà ses
-   propres fichiers Excel (`_classeur.html`) pour ne pas en dépendre, et un
+   propres fichiers Excel (`modules/classeur.mjs`) pour ne pas en dépendre, et un
    encodeur QR tient en moins de place qu'un classeur — la norme est fixée
    depuis 2006 et ne bougera pas.
 

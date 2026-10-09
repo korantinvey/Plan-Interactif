@@ -379,16 +379,17 @@ const assemble = (entree, tete, ...corps) =>
   fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules(entree) + socle +
   corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
 
-/* Les deux écrans exportent le même classeur : le module d'écriture puis celui
-   de l'export passent avant, et c'est la page qui ferme le script. La console
+/* Les deux écrans exportent le même classeur : l'écriture et l'export sont des
+   modules (`modules/classeur.mjs`, `modules/export.mjs`), branchés par
+   `_export.html` avant l'écran, et c'est la page qui ferme le script. La console
    fabrique en plus les vignettes des logos, avec la règle de recadrage du plan
    (`modules/marque.mjs`) : une vignette est cadrée comme la page l'aurait fait. */
 fs.writeFileSync(W + "admin-plans.html",
-  page(assemble("console", "_console-head.html", "_classeur.html", "_export.html", "_console-js.html"),
+  page(assemble("console", "_console-head.html", "_export.html", "_console-js.html"),
        { deuxThemes: true }));
 
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("rapport", "_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html"),
+  page(assemble("rapport", "_rapport-head.html", "_export.html", "_rapport-js.html"),
        { deuxThemes: true }));
 
 /* --- poser son mot de passe ---
