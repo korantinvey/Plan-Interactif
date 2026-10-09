@@ -42,6 +42,9 @@ import { brancheApercus } from "./apercus.mjs";
 import { brancheReglageRappel } from "./reglage-rappel.mjs";
 import { glisseFenetre, ouvreReglages, brancheReglages } from "./reglages.mjs";
 import { branchePile, remplitPanneau } from "./pile.mjs";
+import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
+  pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
+  brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -73,9 +76,19 @@ Object.assign(globalThis, {
   brancheApercus,
   brancheReglageRappel,
   glisseFenetre, ouvreReglages, brancheReglages,
+  lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
+  pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
+  brancheRepriseEmplacements,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
    l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
    poignée qui se mesure en pixels. */
 Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
+
+/* L'emplacement dont on reprend la forme, l'outil d'ajout pris et le tracé en
+   cours : les gestes et le clavier les lisent par accesseur ; seul l'outil
+   les change, en choisissant une forme ou un outil, ou en fermant un tracé. */
+Object.defineProperties(globalThis, vivants({ geoSel: () => geoSel }, "choisitGeo"));
+Object.defineProperties(globalThis, vivants({ outilGeo: () => outilGeo }, "choisitOutilGeo"));
+Object.defineProperties(globalThis, vivants({ traceAjout: () => traceAjout }, "fermeAjout"));

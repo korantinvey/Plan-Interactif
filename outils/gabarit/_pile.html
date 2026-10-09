@@ -55,19 +55,19 @@ function ordonneDom(){
    `modules/pile.mjs`, que seul `plan-admin.mjs` embarque : le visiteur ne le
    reçoit pas. Ce que le code soudé tient encore lui est confié ici, à la
    place que ce code y tenait : ce qui change sans cesse par des lecteurs —
-   `DESSINS` se relit au changement de salon, le calque actif, le placement
-   des libellés et la reprise des formes s'allument et s'éteignent, les
-   secteurs se refont avec les données.
+   `DESSINS` se relit au changement de salon, le calque actif et le placement
+   des libellés s'allument et s'éteignent, les secteurs se refont avec les
+   données. La reprise des formes, sortie elle aussi, s'importe.
    ============================================================ */
 branchePile({
   estAdmin: () => ADMIN, dessins: () => DESSINS, calqueActif: () => calqueActif,
-  placeLibelles: () => PLACE_LIBELLES, sorteGeo: () => SORTE_GEO, secteurs: () => SECTEURS,
+  placeLibelles: () => PLACE_LIBELLES, secteurs: () => SECTEURS,
   entrees, conf, enregistreConf, jeton, sousCle, sousCalques, joli,
   styleFond, styleDataGroupe, styleData, appliqueCouleursData, appliqueFond, suitNuancier,
   secteursMontres, couleurSecteur, peintSecteur,
   mesCalques, creeCalque, enregistreDessins, dessineDessins, peintCalque, verrouille, basculeVerrou,
   pictoVerrou, activeCalque, memorise, modePlacementLibelles,
-  geoVerrouille, basculeVerrouGeo, boutonVerrouGeo, modeGeometrie, ouvreOrdre,
+  ouvreOrdre,
 });
 /* @fin-admin */
 
