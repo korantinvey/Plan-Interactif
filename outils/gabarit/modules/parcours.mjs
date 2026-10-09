@@ -3,13 +3,12 @@
 
    Ce que le visiteur retient — des stands, des conférences —, rangé dans son
    navigateur et relu à chaque visite. Le module tient la liste et ce qui
-   l'écrit ; le tiroir qui la montre, et le geste qui la change, restent au
-   code soudé (`_parcours.html`) : ils touchent la fiche, la recherche, la
-   journée organisée, la suggestion et les rappels, qui n'en sont pas sortis.
+   l'écrit ; le tiroir qui la montre, et le geste qui la change, vivent dans
+   `tiroir-parcours.mjs`, qui importe ce module-ci.
 
    La liste se remplace par `poseParcours({ … })`, comme les données du plan
-   par `poseDonnees` : le code soudé la lit par accesseur (`vivant.mjs`), et
-   un module l'importe.
+   par `poseDonnees` : un module l'importe. Le code soudé ne la lit plus —
+   tout ce qui la touchait en est sorti —, et elle n'est donc plus exposée.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -18,8 +17,10 @@ import { jetonMesure } from "./mesure.mjs";
 import { momentLocal } from "./temps.mjs";
 import { DATA, parId, CONFS } from "./donnees.mjs";
 
-/* Ce que la liste fait faire au reste du plan, qui n'est pas encore module :
-   le code soudé le confie au branchement (`brancheListeParcours`). */
+/* Ce que la liste fait faire au reste du plan — le tiroir qui la montre, les
+   rappels qui en dépendent —, que ce module ne peut importer : tous deux
+   l'importent. Le tiroir le lui confie en se branchant
+   (`brancheListeParcours`). */
 let _rafraichit = () => {};
 let _reprendRappels = () => {};
 let _synchroniseRappels = () => {};
@@ -94,8 +95,9 @@ export function poseParcours(valeurs){
 
 /**
  * Brancher la liste sur ce qu'elle fait bouger ailleurs : l'écran qui la
- * montre, et les rappels qui en dépendent. Appelé par le code soudé à la place
- * que la liste y tenait (`_parcours.html`).
+ * montre, et les rappels qui en dépendent. Appelé par le tiroir
+ * (`tiroir-parcours.mjs` `brancheTiroirParcours`), à la place que la liste
+ * tenait en tête de `_parcours.html`.
  *
  * @param {{ rafraichit: () => void, reprendRappels: () => void,
  *           synchroniseRappels: () => void }} branchements

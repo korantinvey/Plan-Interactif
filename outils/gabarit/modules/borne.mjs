@@ -46,8 +46,11 @@ import { pointSaisi, candidats, pointRepere } from "./itineraire.mjs";
 import { vue, svg, versPlan, cadrePlan, fit } from "./vue.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée est
-   un lecteur, et elle a sa porte : elle change sans cesse. Elle vit dans `tiroir-itineraire.mjs`, qui importe ce
-   module pour le départ de la borne : elle ne peut s'importer d'ici. */
+   un lecteur, et elle a sa porte : elle change sans cesse. Elle vit dans
+   `tiroir-itineraire.mjs`, qui importe ce module pour le départ de la borne :
+   elle ne peut s'importer d'ici. Le tiroir du parcours non plus
+   (`tiroir-parcours.mjs`), qui importe le tiroir de l'itinéraire et la
+   journée, lesquels importent ce module. */
 /** @type {Record<string, any>} */
 let soude = {};
 

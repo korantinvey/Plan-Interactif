@@ -13,15 +13,15 @@
    `ordonneDom` restent dans `_pile.html`, au code soudé.
 
    Ce que le code soudé tient encore — l'enregistrement des réglages, les
-   calques de dessin et leur outil, le placement des libellés, les secteurs,
-   la fenêtre de réorganisation — lui est confié par `branchePile`,
+   calques de dessin et leur outil, le placement des libellés, les secteurs —
+   lui est confié par `branchePile`,
    que `_pile.html` appelle à la place que ce code y tenait. Ce qui change sans
    cesse — les calques dessinés (`DESSINS`, relus à chaque changement de
    salon), le calque actif, le mode de travail en cours, les secteurs, le mode
    administrateur — par des lecteurs. Les modules d'administration déjà
    sortis — la bibliothèque des bâtiments, le calage de la carte, la carte de
-   chaleur, la reprise des emplacements —, comme la configuration et
-   l'apparence des calques, s'importent.
+   chaleur, la reprise des emplacements, la fenêtre de réorganisation —, comme
+   la configuration et l'apparence des calques, s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -38,6 +38,7 @@ import { conf, jeton, sousCle } from "./configuration.mjs";
 import { sousCalques, styleFond, styleDataGroupe, styleData, appliqueCouleursData } from "./apparence.mjs";
 import { appliqueFond } from "./habillage.mjs";
 import { suitNuancier } from "./nuancier.mjs";
+import { ouvreOrdre } from "./ordre-calques.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
@@ -64,7 +65,6 @@ import { suitNuancier } from "./nuancier.mjs";
  * @property {(id: any) => void} activeCalque
  * @property {() => void} memorise
  * @property {(on: boolean) => void} modePlacementLibelles
- * @property {() => void} ouvreOrdre
  */
 /** @type {PagePile} */
 let soude;
@@ -90,7 +90,6 @@ const pictoVerrou = (/** @type {boolean} */ ferme) => soude.pictoVerrou(ferme);
 const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
 const memorise = () => soude.memorise();
 const modePlacementLibelles = (/** @type {boolean} */ on) => soude.modePlacementLibelles(on);
-const ouvreOrdre = () => soude.ouvreOrdre();
 
 /** Le branchement : `_pile.html` l'appelle à la place que ce code y tenait.
  *  @param {PagePile} page */

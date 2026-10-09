@@ -39,23 +39,26 @@ découpe, qui devait garder le comportement à l'identique. À reprendre à la f
 10. **Cadrage initial sur téléphone** : `fit` varie de quelques pixels d'un
     chargement à l'autre, sans doute selon le moment où la barre et le tiroir
     sont mesurés.
+11. **Fenêtre d'ordre des calques après un renommage** : elle n'est pas
+    rouverte, malgré le commentaire (« puis on revient ») ; la fenêtre de
+    renommage, en se refermant, emporte sans doute celle rouverte entre-temps.
 
 ## Code et outils
 
-11. **Phrase publique dans un dictionnaire d'exploitant** : « Touchez le plan à
+12. **Phrase publique dans un dictionnaire d'exploitant** : « Touchez le plan à
     l'endroit où ce code sera affiché. » est affichée par `bandeauVisee`
     (`modules/tiroir-itineraire.mjs`, public) mais traduite dans
     `outils/anglais/affiche-ici.js` ; la page publique ne la reçoit que parce
     qu'elle trouve la phrase dans son propre code.
 
 
-12. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
+13. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
    dictionnaire d'une page par les premières lignes de déclaration d'un
    fichier source ; une ligne banale partagée y verse un dictionnaire entier
    à tort. À reprendre seule, une fois la découpe finie.
-13. ~~`initialesDe` recopiée~~ — réglé par la sortie de la console : une seule copie dans `modules/session.mjs`.
-14. **`btnRecharger`** : code mort.
-15. **Commentaires périmés** :
+14. ~~`initialesDe` recopiée~~ — réglé par la sortie de la console : une seule copie dans `modules/session.mjs`.
+15. **`btnRecharger`** : code mort.
+16. **Commentaires périmés** :
     - celui d'`ecritColonnesEvenement` attribue `base` à `_pousse.html` ;
       elle vit dans `modules/session.mjs` ;
     - un commentaire orphelin décrivant `voletAdmin` se trouve avant
