@@ -29,6 +29,7 @@ const ENTREES = {
   "plan-admin": "plan-admin.mjs", // l'administration : le plan, et ce que le visiteur ne reçoit pas
   console: "console.mjs",       // la console
   rapport: "rapport.mjs",       // le rapport, même socle que la console sans ses outils
+  motdepasse: "motdepasse.mjs", // poser son mot de passe, sans socle ni session
 };
 
 const lisEntree = (entree) => acorn.parse(

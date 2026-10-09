@@ -14,7 +14,7 @@
    qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { CLE_CFG, CLE_SESSION, contenuJeton } from "./session.mjs";
+import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
 
 /* Ce que le code soudé confie encore : l'activation du mode administrateur
    (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel importe ce
@@ -189,13 +189,8 @@ async function litProfilA(cfg, session){
   } catch (e) { PROFIL_ADMIN = false; }
 }
 
-/** « jeanne.martin@… » donne « JM » ; à défaut, les deux premières lettres. */
-function initialesDe(mail){
-  const local = String(mail || "").split("@")[0];
-  const mots = local.split(/[.\-_+]+/).filter(Boolean);
-  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
-  return (local.slice(0, 2) || "··").toUpperCase();
-}
+/* Les initiales de l'adresse — « jeanne.martin@… » donne « JM » — suivent la
+   règle de la console : `session.mjs` `initialesDe`. */
 
 function poseCompte(){
   const menu = $("menuCompte");

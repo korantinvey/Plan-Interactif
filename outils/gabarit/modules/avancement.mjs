@@ -7,28 +7,12 @@
    le refus — vit dans `modules/appel-fonction.mjs`, la session au socle de la
    console, et `modules/synchronisation.mjs` (`synchronise`) les relie.
 
-   Ce que le module ne peut pas importer lui est confié par la console
-   (`brancheAvancement`) : la fenêtre du socle, qui n'est pas celle du plan
-   (`modules/fenetre.mjs`), et l'appel à la base, porteur de la session.
+   La fenêtre est celle du socle (`modules/fenetre-console.mjs`), qui n'est
+   pas celle du plan (`modules/fenetre.mjs`), et l'appel à la base, porteur de
+   la session, celui de `modules/socle-console.mjs` : le module les importe.
    ============================================================ */
-
-/** @type {{
- *   ouvreModale: (titre: string, remplit: (corps: HTMLElement) => void,
- *     boutons: Array<{ libelle: string, genre?: string, action?: () => any }>,
- *     apres?: () => void) => void,
- *   verrouilleModale: (oui: boolean) => void,
- *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
- * }} */
-let _console = {
-  ouvreModale: () => {},
-  verrouilleModale: () => {},
-  rest: async () => null,
-};
-
-/** Ce que la console confie à la fenêtre et au relevé : voir `_console`. */
-export function brancheAvancement(branche) {
-  _console = branche;
-}
+import { ouvreModale, verrouilleModale } from "./fenetre-console.mjs";
+import { rest } from "./socle-console.mjs";
 
 /**
  * La fenêtre qui rend compte d'une synchronisation.
@@ -123,7 +107,7 @@ export function fenetreAvancement(titre, etiquette) {
     setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
   }
 
-  _console.ouvreModale(titre, (c) => {
+  ouvreModale(titre, (c) => {
     const d = document.createElement("div");
     d.className = "sync";
     d.innerHTML =
@@ -161,7 +145,7 @@ export function fenetreAvancement(titre, etiquette) {
     { libelle: "Journal", action: () => { telechargeJournal(); return false; } },
     { libelle: "Fermer", genre: "primaire" },
   ], () => { vivante = false; clearInterval(horloge); });
-  _console.verrouilleModale(true);
+  verrouilleModale(true);
 
   // Les étapes qui ont un segment : celles que la synchronisation reprend.
   const vues = () => etapes.filter((e) => e.poids > 0);
@@ -329,7 +313,7 @@ export function fenetreAvancement(titre, etiquette) {
     fini(message, issue) {
       // ne déverrouiller que si c'est toujours cette fenêtre-ci qui est ouverte :
       // une autre a pu prendre sa place pendant que la synchronisation tournait
-      if (vivante) _console.verrouilleModale(false);
+      if (vivante) verrouilleModale(false);
       clearInterval(horloge);
       if (chrono) chrono.textContent = duree(performance.now() - t0);
       trace({ evt: "fin", issue: issue || "ok", message });
@@ -400,7 +384,7 @@ export function suitAuServeur(id, jeton, applique, vue) {
        sinon la fenêtre muette pour tout le reste. */
     if (vivant && Date.now() - dernierSigne >= RELEVE_SILENCE) {
       try {
-        const r = await _console.rest("evenement?id=eq." + id + "&select=sync_avancement");
+        const r = await rest("evenement?id=eq." + id + "&select=sync_avancement");
         const etat = r?.[0]?.sync_avancement;
         if (vivant && etat && etat.jeton === jeton) {
           const lignes = etat.lignes || [];

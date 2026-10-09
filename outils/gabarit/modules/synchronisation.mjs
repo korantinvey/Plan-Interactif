@@ -10,29 +10,24 @@
 
    Les pavillons que la console tient en mémoire viennent de
    `evenements.mjs`, relus à chaque lancement puisque le rechargement les
-   remplace, et le fournisseur retenu par domaine de `provenance.mjs`. Ce que
-   le module ne peut pas importer lui est confié par la console
-   (`brancheSynchronisation`, `_console-js.html`) : la barre d'état, le
-   rechargement de la console une fois la synchronisation finie, et le flux
-   qui la raconte (`fluxFonction`), resté dans la console.
+   remplace, et le fournisseur retenu par domaine de `provenance.mjs` ; le
+   flux qui la raconte (`fluxFonction`) de `appel-fonction.mjs`, la barre
+   d'état du socle (`socle-console.mjs`). Le rechargement de la console une
+   fois la synchronisation finie lui est confié par l'écran de la console
+   (`brancheSynchronisation`, `ecran-console.mjs`), qui l'importe : l'importer
+   ici bouclerait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fenetreAvancement, suitAuServeur } from "./avancement.mjs";
-import { fonction } from "./appel-fonction.mjs";
+import { fonction, fluxFonction } from "./appel-fonction.mjs";
 import { vignetteDeLogo } from "./marque.mjs";
 import { PLANS } from "./evenements.mjs";
 import { source } from "./provenance.mjs";
+import { signale } from "./socle-console.mjs";
 
-/** @type {{
- *   signale: (txt: string, erreur?: boolean) => void,
- *   charge: () => Promise<void>,
- *   fluxFonction: (nom: string, corps: any, surLigne: (o: any) => void,
- *     trace?: (o: any) => void) => Promise<any>,
- * }} */
+/** @type {{ charge: () => Promise<void> }} */
 let _console = {
-  signale: () => {},
   charge: async () => {},
-  fluxFonction: async () => null,
 };
 
 /** Ce que la console confie à la synchronisation : voir `_console`. */
@@ -99,9 +94,9 @@ export async function synchronise(e) {
     if (o.evt === "troncon" || o.evt === "reponse") releve.signeDeVie();
     vue.trace(o);
   };
-  _console.signale("Synchronisation en cours…");
+  signale("Synchronisation en cours…");
   try {
-    const j = await _console.fluxFonction("sync-evenement", { evenementId: e.id, jeton },
+    const j = await fluxFonction("sync-evenement", { evenementId: e.id, jeton },
       suit, trace);
     if (!j) throw new Error("Synchronisation interrompue avant la fin.");
     const pav = j.pavillons || [];
@@ -123,7 +118,7 @@ export async function synchronise(e) {
     const mot = pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
       total + " emplacements" + app + "." + suite;
     vue.fini(mot, n.erreur ? "alerte" : "ok");
-    _console.signale(mot, !!n.erreur);
+    signale(mot, !!n.erreur);
     await _console.charge();
     /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
        elles ne font pas partie du plan, rien ne les attend, et leur fabrication
@@ -135,7 +130,7 @@ export async function synchronise(e) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
     if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });
     vue.fini(err.message, "echec");
-    _console.signale(err.message, true);
+    signale(err.message, true);
   } finally {
     releve.arrete();
     if ($("btnSync")) $("btnSync").disabled = false;
@@ -176,7 +171,7 @@ async function fabriqueLesVignettes(e) {
       /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
          qui ne commence jamais sans rien annoncer laisse chercher du mauvais
          côté. */
-      _console.signale(traduit("Préparation des logos impossible : {e}")
+      signale(traduit("Préparation des logos impossible : {e}")
         .replace("{e}", err.message), true);
       return;
     }
@@ -191,12 +186,12 @@ async function fabriqueLesVignettes(e) {
       if (paquet.length >= PAQUET_VIGNETTES) {
         faites += await envoieVignettes(e, paquet);
         paquet.length = 0;
-        _console.signale(traduit("Préparation des logos : {n} sur {t}…")
+        signale(traduit("Préparation des logos : {n} sur {t}…")
           .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
       }
     }
     if (paquet.length) faites += await envoieVignettes(e, paquet);
-    _console.signale(traduit("Préparation des logos : {n} sur {t}…")
+    signale(traduit("Préparation des logos : {n} sur {t}…")
       .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
   }
 
@@ -205,7 +200,7 @@ async function fabriqueLesVignettes(e) {
      désigné dans la correspondance, et pas une fiche n'en porte — et le taire
      laisse chercher du côté de la fabrication ce qui se règle du côté des
      sources. */
-  if (!total) { _console.signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
+  if (!total) { signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
   if (!faites && !refusees) return;
   /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
      un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
@@ -214,7 +209,7 @@ async function fabriqueLesVignettes(e) {
     ? traduit("{n} logos préparés, {r} illisibles chez leur source.")
       .replace("{n}", String(faites)).replace("{r}", String(refusees))
     : traduit("{n} logos préparés pour les fiches.").replace("{n}", String(faites));
-  _console.signale(mot);
+  signale(mot);
 }
 
 /** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son

@@ -8,26 +8,12 @@
    champ relit ce qu'elle a retenu plutôt que de le deviner.
 
    Le salon ouvert vient de `evenements.mjs`, lu au moment où la fiche se
-   dessine. Ce que le module ne peut pas importer lui est confié par la
-   console (`brancheFuseau`, `_console-js.html`) : l'appel à la base et la
-   barre d'état.
+   dessine ; l'appel à la base et la barre d'état, du socle de la console
+   (`socle-console.mjs`).
    ============================================================ */
 import { esc } from "./texte.mjs";
 import { courant } from "./evenements.mjs";
-
-/** @type {{
- *   rest: (chemin: string, options?: RequestInit) => Promise<any>,
- *   signale: (txt: string, erreur?: boolean) => void,
- * }} */
-let _console = {
-  rest: async () => null,
-  signale: () => {},
-};
-
-/** Ce que la console confie au champ : voir `_console`. */
-export function brancheFuseau(branche) {
-  _console = branche;
-}
+import { rest, signale } from "./socle-console.mjs";
 
 const FUSEAU_DEFAUT = "Europe/Paris";
 
@@ -90,7 +76,7 @@ export function champFuseau() {
       return;
     }
     try {
-      const [r] = await _console.rest("evenement?id=eq." + e.id +
+      const [r] = await rest("evenement?id=eq." + e.id +
         "&select=fuseau,fuseau_source,fuseau_choisi", {
         method: "PATCH",
         headers: { "Prefer": "return=representation" },
@@ -106,7 +92,7 @@ export function champFuseau() {
         : undefined);
     } catch (err) {
       peint();
-      _console.signale(err.message, true);
+      signale(err.message, true);
     }
   };
 

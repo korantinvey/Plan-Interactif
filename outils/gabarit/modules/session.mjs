@@ -131,3 +131,17 @@ export async function base(acces, chemin, options = {}){
   if (!r.ok) throw new Error("HTTP " + r.status + " · " + txt.slice(0, 160));
   return txt ? JSON.parse(txt) : null;
 }
+
+/**
+ * Les initiales de l'adresse : « jeanne.martin@… » donne « JM », « contact@… »
+ * donne « CO ». Le profil porte bien un nom, mais il arrive après le premier
+ * dessin de la barre, et parfois pas du tout — l'adresse, elle, est dans le
+ * jeton qu'on tient déjà. La console et le plan d'administration en tenaient
+ * chacun une copie : la règle est la même, elle est ici une fois.
+ */
+export function initialesDe(mail){
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "··").toUpperCase();
+}
