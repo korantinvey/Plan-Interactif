@@ -15,6 +15,10 @@ const PLAN = "/plan?plan=smcl-2026";
 const fenetre = (page) => page.locator("#modale");
 
 test.describe("« Échap » sur une fenêtre ouverte", () => {
+  /* Chaque essai charge le plan entier, ouvre un tiroir puis une fenêtre :
+     le délai ordinaire y passe presque tout entier sur une machine lente. */
+  test.slow();
+
   test("ferme la fenêtre de partage, et laisse le tiroir du parcours", async ({ page }) => {
     const erreurs = await prepare(page);
     /* Un parcours d'un stand, posé comme le plan l'aurait gardé : vide, le

@@ -34,6 +34,8 @@ for (const [nom, adresse, conf] of [
   ["en WebGL, modèle et police au choix", PLAN, KRAFT],
 ]) {
   test("une police arrivée après la mesure retaille les libellés " + nom, async ({ page }) => {
+    // le plan entier se charge, polices retenues exprès : le délai ordinaire n'y suffit pas toujours
+    test.slow();
     const erreurs = await prepare(page);
     if (conf) await page.addInitScript((c) => localStorage.setItem("plan-conf:smcl-2026", c), JSON.stringify(conf));
     // chaque fichier de police se fait attendre : le plan a le temps de mesurer sans lui
@@ -61,10 +63,13 @@ for (const [nom, adresse, conf] of [
     await page.goto(adresse);
     await attendLaListe(page);
     await expect.poll(() => page.evaluate(() => document.fonts.status), { timeout: 60_000 }).toBe("loaded");
-    // les polices des libellés ont bien attendu le tracé : sinon l'essai ne prouve rien
+    /* Les polices des libellés ont bien attendu le tracé : sinon l'essai ne
+       prouve rien. Attendues, et non relevées d'un coup : celles d'un modèle
+       peuvent arriver juste après que `document.fonts` s'est dit chargé. */
     const attendues = conf ? ["Courier Prime", "Anton"] : ["IBM Plex Mono"];
-    expect(await page.evaluate((familles) => familles.every((n) =>
-      [...document.fonts].some((f) => f.family.includes(n) && f.status === "loaded")), attendues)).toBe(true);
+    await expect.poll(() => page.evaluate((familles) => familles.every((n) =>
+      [...document.fonts].some((f) => f.family.includes(n) && f.status === "loaded")), attendues),
+    { timeout: 30_000 }).toBe(true);
     await page.waitForTimeout(500);
 
     const bilan = await page.evaluate((stands) => {
