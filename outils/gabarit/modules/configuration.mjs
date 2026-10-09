@@ -10,26 +10,24 @@
    rangement par accesseur, et ne les remplace que par `ouvreConf` ; il se
    branche par `brancheConfiguration`, à la place que ce code tenait, pour
    confier ce que le module ne peut pas importer — les secteurs de la
-   recherche et la page où l'on est.
+   recherche, dont le module (`secteurs.mjs`) lit lui-même la configuration.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
-import { SLUG } from "./salon.mjs";
+import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
 /* Ce que le code soudé confie : les secteurs, que la recherche refait à
-   chaque chargement (`_recherche.html` `SECTEURS`), par un lecteur ; la page
-   où l'on est (`_recherche.html` `PLAN_ADMIN`), qui ne change plus. */
+   chaque chargement (`secteurs.mjs` `SECTEURS`), par un lecteur — le module
+   qui les tient importe celui-ci, et ne peut donc s'importer d'ici. */
 /** @type {() => Map<string, any>} */
 let secteurs = () => new Map();
-let PLAN_ADMIN = false;
 
 /**
  * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
  *
- * @param {{ secteurs: () => Map<string, any>, planAdmin: boolean }} b
+ * @param {{ secteurs: () => Map<string, any> }} b
  */
 export function brancheConfiguration(b){
   secteurs = b.secteurs;
-  PLAN_ADMIN = b.planAdmin;
 }
 
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };

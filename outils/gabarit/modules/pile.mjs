@@ -13,15 +13,15 @@
    `ordonneDom` restent dans `_pile.html`, au code soudé.
 
    Ce que le code soudé tient encore — l'enregistrement des réglages, les
-   calques de dessin et leur outil, le placement des libellés, les secteurs —
-   lui est confié par `branchePile`,
-   que `_pile.html` appelle à la place que ce code y tenait. Ce qui change sans
-   cesse — les calques dessinés (`DESSINS`, relus à chaque changement de
-   salon), le calque actif, le mode de travail en cours, les secteurs, le mode
-   administrateur — par des lecteurs. Les modules d'administration déjà
-   sortis — la bibliothèque des bâtiments, le calage de la carte, la carte de
-   chaleur, la reprise des emplacements, la fenêtre de réorganisation —, comme
-   la configuration et l'apparence des calques, s'importent.
+   calques de dessin et leur outil, le placement des libellés — lui est confié
+   par `branchePile`, que `_pile.html` appelle à la place que ce code y
+   tenait. Ce qui change sans cesse — les calques dessinés (`DESSINS`, relus à
+   chaque changement de salon), le calque actif, le mode de travail en cours,
+   le mode administrateur — par des lecteurs. Les modules d'administration
+   déjà sortis — la bibliothèque des bâtiments, le calage de la carte, la
+   carte de chaleur, la reprise des emplacements, la fenêtre de
+   réorganisation —, comme la configuration, l'apparence des calques et les
+   secteurs, s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -39,6 +39,7 @@ import { sousCalques, styleFond, styleDataGroupe, styleData, appliqueCouleursDat
 import { appliqueFond } from "./habillage.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { ouvreOrdre } from "./ordre-calques.mjs";
+import { SECTEURS, secteursMontres, couleurSecteur, peintSecteur } from "./secteurs.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
@@ -47,13 +48,9 @@ import { ouvreOrdre } from "./ordre-calques.mjs";
  * @property {() => any} dessins les calques dessinés, par pavillon, `DESSINS`
  * @property {() => any} calqueActif l'identifiant du calque en cours d'édition, `calqueActif`
  * @property {() => boolean} placeLibelles le placement des libellés en cours, `PLACE_LIBELLES`
- * @property {() => Map<string, any>} secteurs les secteurs du salon, `SECTEURS`
  * @property {() => { k: string, t: string, nom: string, ref: any }[]} entrees
  * @property {() => void} enregistreConf
  * @property {(id: any) => string} joli
- * @property {() => boolean} secteursMontres
- * @property {(nom: string) => string} couleurSecteur
- * @property {(nom: string) => void} peintSecteur
  * @property {() => any[]} mesCalques
  * @property {() => void} creeCalque
  * @property {() => void} enregistreDessins
@@ -72,13 +69,11 @@ const estAdmin = () => soude.estAdmin();
 const dessins = () => soude.dessins();
 const calqueActif = () => soude.calqueActif();
 const placeLibelles = () => soude.placeLibelles();
-const secteurs = () => soude.secteurs();
+// les secteurs du salon, que l'index remplace à chaque chargement
+const secteurs = () => SECTEURS;
 const entrees = () => soude.entrees();
 const enregistreConf = () => soude.enregistreConf();
 const joli = (/** @type {any} */ id) => soude.joli(id);
-const secteursMontres = () => soude.secteursMontres();
-const couleurSecteur = (/** @type {string} */ nom) => soude.couleurSecteur(nom);
-const peintSecteur = (/** @type {string} */ nom) => soude.peintSecteur(nom);
 const mesCalques = () => soude.mesCalques();
 const creeCalque = () => soude.creeCalque();
 const enregistreDessins = () => soude.enregistreDessins();

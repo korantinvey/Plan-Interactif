@@ -48,3 +48,7 @@ export const cheminPartageable = (chemin) =>
    passent. L'adresse le dit (`?borne`, avec ou sans valeur) ; ce que la valeur
    nomme, `_borne.html` le lit. */
 export const BORNE = new URLSearchParams(location.search).get("borne") !== null;
+
+/* Sur le plan d'administration, un critère encore vide se montre et s'explique ;
+   sur le plan public, il n'existe pas. */
+export const PLAN_ADMIN = document.documentElement.dataset.role === "admin";

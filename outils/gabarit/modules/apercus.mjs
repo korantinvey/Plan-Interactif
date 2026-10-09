@@ -16,11 +16,12 @@
    ============================================================ */
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
 import { DATA } from "./donnees.mjs";
+import { PREFIXE_PERSO, codeCase } from "./recherche.mjs";
 
 /* Ce que le code soudé confie au branchement. Tout y est déclaré avant lui
-   (`_recherche.html`, `_fiche.html`) et ne change plus : on le prend tel quel. */
-let PREFIXE_PERSO;
-let codeCase;
+   (`_fiche.html`) et ne change plus : on le prend tel quel. Le préfixe des
+   champs propres au salon et la case du numéro s'importent de
+   `recherche.mjs`. */
 let ordreCorps;
 let libelleCorps;
 let montre;
@@ -32,12 +33,12 @@ let pictoRS;
  * Le branchement des aperçus, appelé par le code soudé à la place que ce code
  * y tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit pas.
  *
- * @param {{ PREFIXE_PERSO: string, codeCase: Function, ordreCorps: Function,
+ * @param {{ ordreCorps: Function,
  *   libelleCorps: Function, montre: Function, corpsRange: Function,
  *   PICTO_RS: Record<string, any>, pictoRS: Function }} b
  */
 export function brancheApercus(b){
-  ({ PREFIXE_PERSO, codeCase, ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS } = b);
+  ({ ordreCorps, libelleCorps, montre, corpsRange, PICTO_RS, pictoRS } = b);
 }
 
 /* ------------------------------------------------------------------

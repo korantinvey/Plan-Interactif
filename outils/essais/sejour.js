@@ -190,11 +190,14 @@ class Contexte {
 
 /* Le reste de ce qu'une page fournit, et que les modules lisent au chargement :
    ni réglage de construction, ni salon dans l'adresse — donc ni API, ni mesure,
-   ni charge annoncée. Tout autre élément qu'un canevas serait une surprise. */
+   ni charge annoncée — et une racine sans rôle, donc le plan public
+   (`salon.mjs` `PLAN_ADMIN`). Tout autre élément qu'un canevas serait une
+   surprise. */
 Object.assign(globalThis, {
   Path2D,
   document: {
     currentScript: null,
+    documentElement: { dataset: {} },
     createElement: (t) => { if (t === "canvas") return new Toile(); throw new Error("élément " + t); },
   },
   location: { search: "", pathname: "/plan" },

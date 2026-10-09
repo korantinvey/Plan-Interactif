@@ -18,14 +18,12 @@ import { evenementCourant } from "./chaleur.mjs";
 import { SUGG_SEUIL_MIN, SUGG_SEUIL_MAX, reglageSugg, seuilSugg, PRESENTATIONS_SUGG, presentationsSugg,
   critereSugg, nomValeurSugg } from "./suggestion.mjs";
 import { rafraichitParcours } from "./tiroir-parcours.mjs";
+import { clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 /** @type {Record<string, any>} */
 let soude = {};
 const conf = (c) => soude.conf(c);
-const clesCriteres = () => soude.clesCriteres();
-const valeursCritere = (o, cle) => soude.valeursCritere(o, cle);
-const libelleCritere = (cle) => soude.libelleCritere(cle);
 const champZone = (hote, titre, dedans, aide) => soude.champZone(hote, titre, dedans, aide);
 const enregistreConf = () => soude.enregistreConf();
 const glisseFenetre = (change) => soude.glisseFenetre(change);
@@ -422,8 +420,7 @@ export function voletSuggestion(hote){
  * Le branchement, appelé par `_suggestion.html` dans sa tranche
  * d'administration.
  *
- * @param {{ conf: (c: string) => any, clesCriteres: Function, valeursCritere: Function,
- *   libelleCritere: Function, champZone: Function, enregistreConf: Function,
+ * @param {{ conf: (c: string) => any, champZone: Function, enregistreConf: Function,
  *   glisseFenetre: Function }} b
  */
 export function brancheReglageSuggestion(b){ soude = b; }
