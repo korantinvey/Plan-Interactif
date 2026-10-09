@@ -54,6 +54,16 @@ const PAS_LECTURE = 150;
    jsQR coûte en proportion de la surface. */
 const LARGEUR_LUE = 640;
 
+/* Les serveurs d'Event2Map, outre celui qui sert cette page : la production,
+   et les prévisualisations de branche, `<branche>-plan-interactif…`. Un
+   domaine propre ajouté au déploiement s'ajoute ici, sans quoi les codes faits
+   depuis lui ne se liraient que sur lui. */
+const HOTES_EVENT2MAP = /^(?:[a-z0-9-]+-)?plan-interactif\.interactiveplan\.workers\.dev$/;
+
+/* Les pages d'où un parcours se partage : le plan public, celui d'un salon
+   installé (`/plan-<salon>`), la démonstration. */
+const PAGE_DU_PLAN = /^\/plan(?:-[a-z0-9-]+)?(?:\.html)?$/;
+
 /** Le plan peut-il lire un code ? Une caméra à demander, et un visiteur à qui
  *  garder ce qu'il lit — une borne se remet à zéro pour le suivant. */
 const lecteurOffert = () => !BORNE && !!navigator.mediaDevices?.getUserMedia;
@@ -124,6 +134,12 @@ async function decodeur(){
  * Le parcours qu'un texte lu porte, sous la forme du fragment — ou ce qui
  * empêche de le prendre.
  *
+ * Seul un lien vers un plan Event2Map est pris. Un code QR peut porter
+ * n'importe quoi — l'adresse d'un exposant, un billet, une carte de visite —
+ * et le lecteur ne saurait qu'en faire : il ne suit aucun lien, il ne lit
+ * que nos parcours. Le serveur se reconnaît (celui de cette page, ou l'un des
+ * nôtres), la page aussi, et le fragment doit être un parcours.
+ *
  * Le salon se compare quand le lien le nomme : un parcours d'un autre salon
  * se verrait sinon accueilli par « rien de ce salon », qui laisse croire à
  * une panne. Les identifiants, eux, se confrontent plus loin au salon ouvert,
@@ -133,16 +149,18 @@ async function decodeur(){
  * @returns {{ brut: string } | { refus: string }}
  */
 function litParcours(texte){
-  let brut = "", salon = "";
-  try {
-    const u = new URL(texte);
-    brut = u.hash.replace(/^#/, "");
-    salon = u.searchParams.get("plan") || "";
-  } catch (e) {
-    brut = texte.trim();
-  }
+  /** @type {URL} */
+  let u;
+  try { u = new URL(texte.trim()); }
+  catch (e) { return { refus: "Ce code ne vient pas d'un plan Event2Map." }; }
+  const notre = u.origin === location.origin ||
+    (u.protocol === "https:" && HOTES_EVENT2MAP.test(u.hostname));
+  if (!notre || !PAGE_DU_PLAN.test(u.pathname))
+    return { refus: "Ce code ne vient pas d'un plan Event2Map." };
+  const brut = u.hash.replace(/^#/, "");
+  const salon = u.searchParams.get("plan") || "";
   if (brut.indexOf(CLE_LIEN_PARCOURS) !== 0)
-    return { refus: "Ce code n'est pas un parcours de visite." };
+    return { refus: "Ce code mène à un plan, mais ne porte pas de parcours." };
   if (salon && SLUG && salon !== SLUG)
     return { refus: "Ce parcours a été préparé pour un autre salon." };
   return { brut };
@@ -233,8 +251,9 @@ function ouvreLecteur(){
           proposeParcoursRecu(r.brut);
           return;
         }
-        /* On continue de chercher : le code d'à côté — une affiche, un
-           billet — passe souvent dans le champ avant le bon. */
+        /* Un code étranger ne fait rien : on le dit, et l'on continue de
+           chercher — le code d'à côté, une affiche, un billet, passe souvent
+           dans le champ avant le bon. */
         if (r.refus !== dernierRefus){ dernierRefus = r.refus; dit(r.refus, true); }
       }
       setTimeout(tour, PAS_LECTURE);

@@ -75,6 +75,27 @@ test.describe("le lecteur de code", () => {
     await ctx.close();
   });
 
+  /* Un code QR peut porter n'importe quoi. Le lecteur ne suit aucun lien : ce
+     qui ne mène pas à un plan Event2Map se dit, et rien ne s'ouvre. Le code
+     est fait par l'encodeur même du plan. */
+  test("écarte un code qui ne vient pas d'un plan Event2Map", async ({ page }) => {
+    // le module traduit son étiquette par le moteur de la page, absent de Node
+    globalThis.traduit = globalThis.traduit || ((t) => t);
+    const { qrTrame, qrSvg } = await import("../../gabarit/modules/qr.mjs");
+    const lien = "https://exemple.org/plan?plan=smcl-2026#parcours=2&s=p0-0d40ba66";
+    const svg = qrSvg(qrTrame(Array.from(new TextEncoder().encode(lien))))
+      .replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+    const erreurs = await prepare(page);
+    await cameraQuiFilme(page, svg);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await page.click("#btnParcours");
+    await page.click("#btnScanner");
+    await expect(page.locator("#mCorps .lecteurEtat.refus")).toHaveText("Ce code ne vient pas d'un plan Event2Map.", { timeout: 20_000 });
+    await expect(page.locator("#mTitre")).toHaveText("Scanner un parcours");
+    expect(erreurs).toEqual([]);
+  });
+
   test("dit le refus de la caméra au lieu de rester muet", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.addInitScript(() => {

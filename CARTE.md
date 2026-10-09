@@ -964,14 +964,14 @@ Fonctions :
 `montreLeJour` 731 · `perimeJournee` 746 · `oublieSejour` 761 · `ouvreOrganisation` 776
 `essaieSejour` 1156 · `lanceSejour` 1186 · `refaitSejour` 1225 · `brancheJournee` 1241
 
-### `modules/lecteur-qr.mjs` — 271 l. → plan, plan-admin
+### `modules/lecteur-qr.mjs` — 290 l. → plan, plan-admin
 
 - l.1 · Lire le code d'un parcours avec la caméra du plan
 
 Fonctions :
 
-`lecteurOffert` 59 · `chargeJsQR` 68 · `decodeur` 87 · `litParcours` 135
-`ouvreLecteur` 154 · `brancheLecteur` 266
+`lecteurOffert` 69 · `chargeJsQR` 78 · `decodeur` 97 · `litParcours` 151
+`ouvreLecteur` 172 · `brancheLecteur` 285
 
 ### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
 
