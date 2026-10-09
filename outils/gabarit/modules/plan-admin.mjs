@@ -55,6 +55,7 @@ import { enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTr
   poseChampImage, remplitListeSocietes, societeSaisie, imageEnAttente, dessinPointerDown, dessinPointerMove,
   dessinPointerUp, termineTrace, choisitOutil, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin }
   from "./outil-dessin.mjs";
+import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -98,6 +99,7 @@ Object.assign(globalThis, {
   enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTrace, fermeIci, ajouteForme,
   poseChampImage, remplitListeSocietes, societeSaisie, dessinPointerDown, dessinPointerMove,
   dessinPointerUp, termineTrace, choisitOutil, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin,
+  brancheGestesAdmin,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et

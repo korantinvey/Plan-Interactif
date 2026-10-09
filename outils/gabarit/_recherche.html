@@ -9,9 +9,9 @@
    Ils se branchent ici, à la place que leur code tenait : leurs écoutes s'y
    posent au même rang qu'avant, et ce que le code soudé tient encore leur est
    confié. La fiche (`modules/fiche.mjs`), qui embarque la recherche, ne peut
-   être importée par elle ; les tiroirs et le parcours ne sont déclarés que
-   plus bas, ou se remplacent : ils viennent par des détours, lus au moment de
-   s'en servir. L'écran et ce que la fiche montre, eux, s'importent. La carte de chaleur n'est que d'administration
+   être importée par elle ; le parcours n'est déclaré que plus bas, ou se
+   remplace : il vient par des détours, lus au moment de s'en servir. L'écran,
+   les tiroirs et ce que la fiche montre, eux, s'importent. La carte de chaleur n'est que d'administration
    (`modules/chaleur.mjs`, par `plan-admin.mjs`) : on ne l'appelle que si la
    page l'a reçue.
    ============================================================ */
@@ -24,8 +24,6 @@ brancheRecherche({
   select: (id, recentrer, canal, iSoc) => select(id, recentrer, canal, iSoc),
   ficheConf: (id, canal) => ficheConf(id, canal),
   adresseVignette: (cle) => adresseVignette(cle),
-  montreTiroir: () => montreTiroir(), mesureTiroir: () => mesureTiroir(),
-  hisseTiroir: () => hisseTiroir(),
   poseToutAuParcours: (hote) => poseToutAuParcours(hote),
   dessineDists, libelles, marquesListe, porteDist, standPorte,
   reperesCherchables, vaAuRepere,
