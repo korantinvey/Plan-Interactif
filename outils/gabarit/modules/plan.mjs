@@ -56,6 +56,9 @@ import { ouvrePartageParcours, demandeGardeParcours, poseGardeParcours } from ".
 import { RENDU_WEBGL, GL, brancheWebgl, monteWebgl, vueWebgl, majEditionWebgl, planifieWebgl,
   poseModelesLibelles, cibleWebgl, priseWebgl, libelleSousWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte } from "./environs.mjs";
+import { brancheRappels, synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
+  from "./rappels.mjs";
+import { brancheInstallation, nommeApplication, accueilleInvitation } from "./installation.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -93,6 +96,8 @@ Object.assign(globalThis, {
   RENDU_WEBGL, GL, brancheWebgl, monteWebgl, vueWebgl, majEditionWebgl, planifieWebgl,
   poseModelesLibelles, cibleWebgl, priseWebgl, libelleSousWebgl, rectEcranWebgl,
   brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte,
+  brancheRappels, synchroniseRappels, reprendRappels, poseRappels, fenetreRappel,
+  brancheInstallation, nommeApplication, accueilleInvitation,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code

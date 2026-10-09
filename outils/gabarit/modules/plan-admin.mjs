@@ -20,6 +20,10 @@ import { ROLES_ITI, cleRoleIti, nomRoleIti, REGLAGES_FOULE, regleFoule, lienEcri
   annuaireLiaisons } from "./itineraire.mjs";
 import { brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
   cartePointerMove, cartePointerUp, voletEnvirons } from "./calage-carte.mjs";
+import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, rappelsOfferts,
+  proposeRappels } from "./rappels.mjs";
+import { essaieRappelReel } from "./essai-rappel.mjs";
+import { caseInstallation, brancheReglageInstallation } from "./reglage-installation.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -30,4 +34,8 @@ Object.assign(globalThis, {
   annuaireLiaisons,
   brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
   cartePointerMove, cartePointerUp, voletEnvirons,
+  RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, rappelsOfferts,
+  proposeRappels,
+  essaieRappelReel,
+  caseInstallation, brancheReglageInstallation,
 });

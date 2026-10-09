@@ -1,5 +1,7 @@
-/* `outils/gabarit/_rappels.html` — le rappel avant une conférence :
+/* `outils/gabarit/modules/rappels.mjs` — le rappel avant une conférence :
    l'interrupteur du tiroir, et le texte de la notification elle-même.
+   L'essai que l'exploitant pose depuis les réglages est dans
+   `essai-rappel.js`.
 
    Ce module est le seul dont des phrases quittent la page : la notification est
    composée ici, puis confiée au serveur qui la postera telle quelle. Elle doit
@@ -31,10 +33,6 @@ module.exports = {
     "The conferences you picked start in less than {n} min: too late for those. The reminder will hold for the next ones.",
   "Vos conférences retenues sont passées. Le rappel vaudra pour les prochaines que vous ajouterez.":
     "The conferences you picked are over. The reminder will hold for the next ones you add.",
-
-  /* L'essai posé depuis les réglages : ce que la notification écrira. */
-  "Essai — le rappel fonctionne": "Test — reminders are working",
-  "Ce message vient de votre plan.": "This message comes from your map.",
 
   /* Ce qui empêche, et ce qu'on peut y faire. */
   "Pour être prévenu avant vos conférences, ajoutez le plan à votre écran d'accueil : sur iPhone, les notifications n'existent que là.":
