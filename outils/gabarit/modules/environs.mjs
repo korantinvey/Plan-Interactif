@@ -593,7 +593,12 @@ export function dessineFondCarte(){
   const credit = $("creditCarte");
   const view = soude.vue();
   if (!cal || !fond || !view){
-    if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    /* Le groupe lui-même dit s'il porte des tuiles, et non l'empreinte :
+       `refaitFondCarte` l'oublie pour forcer une réécriture, et la carte qu'on
+       venait de retirer gardait alors ses tuiles et leur matrice. */
+    if (hote.firstChild || hote.hasAttribute("transform")){
+      hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
+    }
     videCarteGL();
     _calagePose = "";
     if (credit) credit.hidden = true;
@@ -615,7 +620,10 @@ export function dessineFondCarte(){
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
   if (fond.style || fond.objet){
-    if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    // le groupe, et non l'empreinte, pour la même raison qu'au retrait
+    if (hote.firstChild || hote.hasAttribute("transform")){
+      hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
+    }
     poseCarteGL(cal, fond);
     return;
   }
