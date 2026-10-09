@@ -228,27 +228,9 @@ Fonctions :
 
 ### `_entete.html` — 6 l.
 
-### `_environs.html` — 1494 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 27 l. → plan-admin.html
 
-- l.1 · 16. Les environs — le pavillon dans son quartier
-
-Fonctions :
-
-`emprisePavillon` 47 · `centrePavillon` 62 · `styleSobre` 138 · `forceCarte` 232
-`calagePose` 250 · `calageCourant` 262 · `fondCourant` 265 · `recul` 270
-`adresseTuile` 275 · `tuilesDeLaVue` 285 · `chargeMapLibre` 350 · `vueGL` 381
-`styleDuFond` 401 · `guetteLaCarte` 429 · `poseCarteGL` 440 · `diagnostiqueGL` 526
-`relanceCarteGL` 546 · `videCarteGL` 558 · `dessineFondCarte` 583 · `cleMasqueCarte` 687
-`masqueCarte` 688 · `basculeMasqueCarte` 690 · `boutonMasqueCarte` 701 · `pictoMasque` 712
-`formesMasquantes` 724 · `contourDuHall` 746 · `cheminDuHall` 753 · `poseMasqueCarte` 771
-`carreDeTerrain` 805 · `chercheBatiments` 821 · `empriseDesObjets` 849
-`batimentsCandidats` 867 · `caleSurBatiment` 888 · `retientLeHall` 914 · `manqueCalage` 936
-`enregistreCalage` 945 · `calageEnregistre` 962 · `oublieCalageEnCours` 983
-`litCoordonnees` 995 · `rafraichitCarte` 1009 · `armeCalage` 1051 · `pivotCalage` 1062
-`glisseCarte` 1066 · `cartePointerDown` 1073 · `cartePointerMove` 1087
-`cartePointerUp` 1106 · `ditCalage` 1114 · `ditCarte` 1123 · `majCalage` 1131
-`appliqueCalage` 1153 · `tourneCalage` 1160 · `construitCalage` 1166 · `ouvreCalage` 1331
-`fermeCalage` 1342 · `voletEnvirons` 1370
+- l.1 · 16. Les environs — le branchement
 
 ### `_export.html` — 12 l. → admin-plans.html, rapport.html
 
@@ -723,6 +705,22 @@ Fonctions :
 
 `brancheAvancement` 29 · `fenetreAvancement` 60 · `suitAuServeur` 392
 
+### `modules/calage-carte.mjs` — 828 l. → plan-admin
+
+- l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
+
+Fonctions :
+
+`emprisePavillon` 73 · `centrePavillon` 88 · `basculeMasqueCarte` 93
+`boutonMasqueCarte` 104 · `pictoMasque` 115 · `carreDeTerrain` 142 · `chercheBatiments` 158
+`empriseDesObjets` 186 · `batimentsCandidats` 204 · `caleSurBatiment` 225
+`retientLeHall` 251 · `manqueCalage` 273 · `enregistreCalage` 282 · `calageEnregistre` 299
+`oublieCalageEnCours` 320 · `litCoordonnees` 332 · `rafraichitCarte` 346 · `armeCalage` 383
+`pivotCalage` 394 · `glisseCarte` 398 · `cartePointerDown` 405 · `cartePointerMove` 419
+`cartePointerUp` 438 · `ditCalage` 446 · `majCalage` 455 · `appliqueCalage` 477
+`tourneCalage` 484 · `construitCalage` 490 · `ouvreCalage` 655 · `fermeCalage` 665
+`brancheCalageCarte` 678 · `voletEnvirons` 704
+
 ### `modules/chaleur.mjs` — 674 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
@@ -805,6 +803,20 @@ Fonctions :
 Fonctions :
 
 `poseDonnees` 50 · `P` 84
+
+### `modules/environs.mjs` — 783 l. → plan, plan-admin
+
+- l.1 · 16. Les environs — le pavillon dans son quartier
+
+Fonctions :
+
+`brancheEnvirons` 60 · `calageEnCours` 68 · `confieCalageEnCours` 70 · `styleSobre` 143
+`forceCarte` 237 · `calagePose` 255 · `calageCourant` 267 · `fondCourant` 270 · `recul` 275
+`adresseTuile` 280 · `tuilesDeLaVue` 290 · `chargeMapLibre` 355 · `vueGL` 386
+`styleDuFond` 407 · `guetteLaCarte` 435 · `poseCarteGL` 446 · `diagnostiqueGL` 532
+`relanceCarteGL` 552 · `videCarteGL` 564 · `dessineFondCarte` 589 · `cleMasqueCarte` 694
+`masqueCarte` 695 · `formesMasquantes` 704 · `contourDuHall` 726 · `cheminDuHall` 733
+`poseMasqueCarte` 751 · `ditCarte` 766 · `refaitFondCarte` 776
 
 ### `modules/export.mjs` — 232 l. → console, rapport
 
@@ -951,11 +963,11 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 29 l. → plan-admin
+### `modules/plan-admin.mjs` — 33 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 114 l. → plan, plan-admin
+### `modules/plan.mjs` — 116 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 

@@ -55,6 +55,7 @@ import { CLE_LIEN_PARCOURS, litCodeParcours } from "./lien-parcours.mjs";
 import { ouvrePartageParcours, demandeGardeParcours, poseGardeParcours } from "./partage.mjs";
 import { RENDU_WEBGL, GL, brancheWebgl, monteWebgl, vueWebgl, majEditionWebgl, planifieWebgl,
   poseModelesLibelles, cibleWebgl, priseWebgl, libelleSousWebgl, rectEcranWebgl } from "./webgl.mjs";
+import { brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte } from "./environs.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -91,6 +92,7 @@ Object.assign(globalThis, {
   ouvrePartageParcours, demandeGardeParcours, poseGardeParcours,
   RENDU_WEBGL, GL, brancheWebgl, monteWebgl, vueWebgl, majEditionWebgl, planifieWebgl,
   poseModelesLibelles, cibleWebgl, priseWebgl, libelleSousWebgl, rectEcranWebgl,
+  brancheEnvirons, recul, dessineFondCarte, poseMasqueCarte,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
