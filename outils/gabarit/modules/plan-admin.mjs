@@ -42,6 +42,9 @@ import { brancheApercus } from "./apercus.mjs";
 import { brancheReglageRappel } from "./reglage-rappel.mjs";
 import { glisseFenetre, ouvreReglages, brancheReglages } from "./reglages.mjs";
 import { branchePile, remplitPanneau } from "./pile.mjs";
+import { dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
+  appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
+  editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition, geste } from "./edition.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -73,9 +76,17 @@ Object.assign(globalThis, {
   brancheApercus,
   brancheReglageRappel,
   glisseFenetre, ouvreReglages, brancheReglages,
+  dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
+  appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
+  editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
    l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
    poignée qui se mesure en pixels. */
 Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
+
+/* Le geste d'édition en cours, ou rien : le module le pose en saisissant une
+   forme et l'efface en la lâchant. Le dessin le lit par accesseur, pour garder
+   les points d'accrochage d'un geste qui sort du plan. */
+Object.defineProperties(globalThis, vivants({ geste: () => geste }, "editionPointerDown"));

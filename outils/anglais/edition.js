@@ -1,5 +1,5 @@
-/* `outils/gabarit/_edition.html` — la forme choisie dans un calque de dessin,
-   et les passages qu'un repère relie aux autres plans. */
+/* `outils/gabarit/modules/edition.mjs` — la forme choisie dans un calque de
+   dessin, et les passages qu'un repère relie aux autres plans. */
 module.exports = {
   "Polygone": "Polygon",
   "Ligne": "Line",
