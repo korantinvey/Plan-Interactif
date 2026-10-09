@@ -10,8 +10,8 @@
    dans `modules/fiche.mjs`. Ils se branchent ici, à la place que leur code
    tenait dans ce script, et reçoivent ce que le code soudé tient encore, ou
    ce qui les importe : le montage du plan et les marques des distinctions
-   (`modules/rendu.mjs`, `modules/distinctions.mjs`), les découpages dessinés,
-   les tiroirs et le parcours ; et, pour le corps de la fiche, le préfixe et le libellé des
+   (`modules/rendu.mjs`, `modules/distinctions.mjs`), les découpages dessinés
+   et le parcours ; et, pour le corps de la fiche, le préfixe et le libellé des
    champs propres au salon (`modules/recherche.mjs`, qui importe
    `corps-fiche.mjs` et ne peut donc être importé par lui).
    ============================================================ */
@@ -24,7 +24,6 @@ brancheCorpsFiche({ PREFIXE_PERSO, libelleCritere });
 brancheFiche({
   montePlan, poseDistsFiche, nomDeLaZone,
   decoupeStand, marqueStandsDessines, formeParId,
-  baisseTiroir: () => baisseTiroir,
   fermeParcours: () => fermeParcours(),
   brancheParcours: (hote, canal) => brancheParcours(hote, canal),
   /* @admin — la reprendre, la retirer du plan public : gestes d'exploitant */

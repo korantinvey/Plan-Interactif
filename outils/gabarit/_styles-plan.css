@@ -274,7 +274,7 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    par une classe : « cursor » s'hérite, et une règle qui en dépend fait
    remettre en cause le style des sept mille nœuds du plan — cent cinquante
    millisecondes, à chaque doigt posé et à chaque doigt levé. La même valeur
-   écrite en ligne n'en coûte aucune. Voir « saisitPlan », _js.html. */
+   écrite en ligne n'en coûte aucune. Voir « saisitPlan », modules/gestes.mjs. */
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent du gris de trait du plan, qui les tient en retrait. */
