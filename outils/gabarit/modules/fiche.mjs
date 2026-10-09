@@ -38,6 +38,7 @@ import { fermeItineraire, versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
 import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES } from "./recherche.mjs";
+import { typeZone } from "./reperes.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Ce qui est
    déclaré plus bas dans le script — les gestes, le dessin, le parcours — l'est
@@ -50,7 +51,6 @@ const montePlan = () => soude.montePlan();
 const marqueStandsDessines = () => soude.marqueStandsDessines();
 const libelles = () => soude.libelles();
 const coexChoisit = () => soude.coexChoisit();
-const typeZone = (/** @type {any} */ z) => soude.typeZone(z);
 const nomDeLaZone = (/** @type {any} */ z) => soude.nomDeLaZone(z);
 const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
 const fermeParcours = () => soude.fermeParcours();

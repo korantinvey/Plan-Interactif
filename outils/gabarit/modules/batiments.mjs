@@ -24,16 +24,20 @@
    calques de dessin dont elle dépend.
 
    Ce que le code soudé tient encore — la bibliothèque des lieux, que la
-   construction verse dans sa page, les calques de dessin et leur historique,
-   les réglages et leur enregistrement, le panneau des calques — lui est
-   confié par `brancheBatiments`, que `_batiments.html` appelle à la place que
-   ce code y tenait. La vue et ses gestes s'importent de `vue.mjs`.
+   construction verse dans sa page, les réglages et leur enregistrement, le
+   panneau des calques — lui est confié par `brancheBatiments`, que
+   `_batiments.html` appelle à la place que ce code y tenait. La vue et ses
+   gestes s'importent de `vue.mjs`, les calques de dessin, leur historique et
+   leur verrou de `calques-dessin.mjs`, `dessin.mjs` et `outil-dessin.mjs`.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, priseWebgl } from "./webgl.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg } from "./vue.mjs";
+import { mesCalques, nouvelId } from "./calques-dessin.mjs";
+import { dessineDessins } from "./dessin.mjs";
+import { activeCalque, memorise, cleVerrou, enregistreDessins } from "./outil-dessin.mjs";
 
 /* Ce que le code soudé confie au branchement. Ce qui change — les réglages
    (`CONF`, que le changement de salon remplace), le mode administrateur
@@ -44,16 +48,9 @@ import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg } from "./vue
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => any[]} mesCalques
- * @property {(id: any) => void} activeCalque
- * @property {() => void} memorise
- * @property {() => string} nouvelId
- * @property {(id: string) => string} cleVerrou
  * @property {() => any[]} pile
  * @property {() => string} clePile
  * @property {() => void} enregistreConf
- * @property {() => void} enregistreDessins
- * @property {() => void} dessineDessins
  * @property {() => void} construitPanneau
  */
 /** @type {PageBatiments} */
@@ -61,16 +58,9 @@ let soude;
 const reglages = () => soude.conf();
 const confDe = (cle) => soude.confDe(cle);
 const estAdmin = () => soude.estAdmin();
-const mesCalques = () => soude.mesCalques();
-const activeCalque = (id) => soude.activeCalque(id);
-const memorise = () => soude.memorise();
-const nouvelId = () => soude.nouvelId();
-const cleVerrou = (id) => soude.cleVerrou(id);
 const pile = () => soude.pile();
 const clePile = () => soude.clePile();
 const enregistreConf = () => soude.enregistreConf();
-const enregistreDessins = () => soude.enregistreDessins();
-const dessineDessins = () => soude.dessineDessins();
 const construitPanneau = () => soude.construitPanneau();
 const racine = document.documentElement;
 

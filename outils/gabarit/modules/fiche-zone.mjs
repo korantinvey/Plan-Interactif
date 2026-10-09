@@ -10,9 +10,10 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
    qu'en administration (`_fiche.html`). Ce que le code soudé tient encore —
-   la configuration, les types de zone, l'index de recherche, le plan à
-   redessiner, la fiche ouverte — lui est confié par `brancheFicheZone`, que
-   `_mode-admin.html` appelle à la place que ce code y tenait.
+   la configuration, l'index de recherche, le plan à redessiner, la fiche
+   ouverte — lui est confié par `brancheFicheZone`, que `_mode-admin.html`
+   appelle à la place que ce code y tenait. Les types de zone et le cartouche
+   des points d'intérêt s'importent (`reperes.mjs`, `points-interet.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -24,35 +25,30 @@ import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
 import { ouvre } from "./fiche.mjs";
+import { TYPES_ZONE, typeZone } from "./reperes.mjs";
+import { cartouchePoi } from "./points-interet.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce qui change ou se déclare plus
-   loin dans le script — les réglages (`CONF`, que le changement de salon
-   remplace), les types de zone — se lit à l'instant. */
+/* Ce que le code soudé confie au branchement. Ce qui change — les réglages
+   (`CONF`, que le changement de salon remplace) — se lit à l'instant. */
 /**
  * @typedef {object} PageFicheZone
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {() => any[]} typesZone les types d'une zone, `TYPES_ZONE`
- * @property {(z: any) => any} typeZone
  * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
  * @property {() => void} nomsAnglaisDesZones
  * @property {() => void} libelles
  * @property {() => void} liste
- * @property {() => void} cartouchePoi
  * @property {() => void} majPaletteGeo
  * @property {() => void} rangeConferences
  */
 /** @type {PageFicheZone} */
 let soude;
 const reglages = () => soude.conf();
-const typesZone = () => soude.typesZone();
-const typeZone = (z) => soude.typeZone(z);
 const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 const enregistreConf = () => soude.enregistreConf();
 const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
 const libelles = () => soude.libelles();
 const liste = () => soude.liste();
-const cartouchePoi = () => soude.cartouchePoi();
 const majPaletteGeo = () => soude.majPaletteGeo();
 const rangeConferences = () => soude.rangeConferences();
 
@@ -144,7 +140,7 @@ export function champsZone(hote, o){
     "Ouvre l'entrée correspondante dans le cartouche des points d'intérêt, au " +
     "bas du plan : le visiteur y retrouve d'un geste toutes les zones du même " +
     "type. Sans type, la zone reste sur le plan comme aujourd'hui.");
-  type.innerHTML = typesZone().map(t =>
+  type.innerHTML = TYPES_ZONE.map(t =>
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
 
@@ -630,7 +626,7 @@ async function enregistreZone(o, v, depart){
   const nomEn = String(v.libelleEn || "").trim();
   const descriptionEn = String(v.descriptionEn || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
-  const genre = typesZone().some(t => t.v && t.v === v.type) ? v.type : "";
+  const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
@@ -738,7 +734,7 @@ async function enregistreZoneAjoutee(o, v, depart){
   if (!r) return;
   const fiche = {
     nom_en: String(v.libelleEn || "").trim(),
-    type: typesZone().some(t => t.v && t.v === v.type) ? v.type : "",
+    type: TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "",
     description: String(v.description || ""),
     description_en: String(v.descriptionEn || ""),
     lien: adresseSure(v.lien),

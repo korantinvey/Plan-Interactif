@@ -92,6 +92,13 @@ import { montre, brancheCorpsFiche } from "./corps-fiche.mjs";
 import { anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
   adresseVignette, dernierAppuiTactile, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche } from "./fiche.mjs";
+import { brancheCalquesDessin, DESSINS, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee,
+  marqueAttente, mesCalques, calqueActif, outil, enCours, poseCalqueActif } from "./calques-dessin.mjs";
+import { estCadre, cheminForme } from "./chemin-forme.mjs";
+import { brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
+  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
+import { branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
+  oublieChoixPoi } from "./points-interet.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -166,6 +173,13 @@ Object.assign(globalThis, {
   anime, canalPlan, rangSociete, select, centre, brancheActesFiche, centrePoint, ficheConf,
   adresseVignette, poseAppuiTactile, ecarteClicFantome, societes, poseMarque, poseCode,
   ouvre, ferme, onglet, brancheFiche,
+  brancheCalquesDessin, enAttente, ouvreDessins, notePubliees, rangeDessins, dejaPubliee, marqueAttente,
+  mesCalques, poseCalqueActif,
+  estCadre, cheminForme,
+  brancheDessin, rafraichitFleches, dessineDessins, redessineForme, apercu, apercuGuide, nomSurLePlan,
+  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
+  branchePointsInteret, oublieReperes, reperesCherchables, vaAuRepere, ouvrePoi, phareZone,
+  oublieChoixPoi,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -236,3 +250,15 @@ Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, 
    écarter le clic fantôme qui suit un appui. */
 Object.defineProperties(globalThis, vivants({ dernierAppuiTactile: () => dernierAppuiTactile },
   "poseAppuiTactile"));
+
+/* Les calques de dessin du salon ouvert : le chargement les lit par
+   accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
+   `ouvreDessins`). On change ce qu'ils contiennent, jamais l'objet lui-même. */
+Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDessins"));
+/* Le calque ouvert au dessin, l'outil tenu et le tracé en cours : la carte
+   graphique, la visite guidée et les gestes les lisent par accesseur ; seul
+   l'outil de l'exploitant les change, par leurs portes, et le montage d'un
+   pavillon referme le calque. */
+Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, "poseCalqueActif"));
+Object.defineProperties(globalThis, vivants({ outil: () => outil }, "poseOutil"));
+Object.defineProperties(globalThis, vivants({ enCours: () => enCours }, "poseEbauche"));
