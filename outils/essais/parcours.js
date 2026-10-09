@@ -33,6 +33,9 @@ const pareil = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     ["les signes de l'adresse", { stands: ["a&b", "c=d", "e#f", "g?h", "i/j", "k+l", "m%20n"], confs: ["~", "1~2~3"] }],
     ["des espaces et des accents", { stands: ["Hall été", " devant "], confs: ["Conférence d'ouverture"] }],
     ["des signes d'autres écritures", { stands: ["中文", "Ω≈ç", "Ελλάδα"], confs: ["日本語"] }],
+    /* Hors du plan de base d'Unicode, un signe tient sur deux moitiés : codées
+       chacune à part, elles revenaient en « � ». */
+    ["un émoji, hors du plan de base", { stands: ["🎪", "stand-🎪-7", "𝔸.b"], confs: ["🎤 ouverture"] }],
     ["un long parcours", { stands: Array.from({ length: 300 }, (_, i) => "s" + i), confs: Array.from({ length: 80 }, (_, i) => "conf-" + i) }],
   ];
   for (const [nom, p] of CAS){
@@ -63,6 +66,10 @@ const pareil = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     "une section vide ne s'écrit pas", L.codeParcours({ stands: ["12", "A-3"], confs: [] }));
   dit(L.codeParcours({ stands: ["7.1"], confs: ["é"] }) === "parcours=2&s=7%2E1&c=%C3%A9",
     "le point et l'accent, échappés octet par octet", L.codeParcours({ stands: ["7.1"], confs: ["é"] }));
+  dit(L.codeParcours({ stands: ["🎪"], confs: [] }) === "parcours=2&s=%F0%9F%8E%AA",
+    "un émoji, en ses quatre octets UTF-8 comme tout autre signe", L.codeParcours({ stands: ["🎪"], confs: [] }));
+  dit(L.codeParcours({ stands: ["a\uD83Cb"], confs: [] }) === "parcours=2&s=a%EF%BF%BDb",
+    "une moitié d'émoji isolée, en « � » comme avant", L.codeParcours({ stands: ["a\uD83Cb"], confs: [] }));
   dit(L.codeParcours({ stands: [], confs: [] }).indexOf(L.CLE_LIEN_PARCOURS) === 0,
     "le fragment commence par la clé que l'accueil cherche");
 
@@ -85,19 +92,6 @@ const pareil = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     const lu = L.litCodeParcours(frag);
     dit(pareil(lu, attendu), nom, JSON.stringify(lu));
   }
-
-  console.log("\n=== 5. Ce que le codage ne sait pas faire — consigné, non compté ===");
-  /* Un signe hors du plan de base d'Unicode — un émoji — se code en deux
-     moitiés, que l'expression de `codeIdParcours` (sans drapeau « u ») traite
-     chacune à part : chaque moitié seule n'est pas un caractère, et devient
-     « � ». Les identifiants de Klipso et d'Eventmaker n'en portent pas ; le
-     défaut est consigné ici, tel qu'il est, plutôt que corrigé en passant. Le
-     jour où il l'est, cette ligne le dira, et le cas rejoindra la section 1. */
-  const astral = { stands: ["🎪"], confs: [] };
-  const relu = L.litCodeParcours(L.codeParcours(astral));
-  console.log("  connu  un émoji dans un identifiant   → " +
-    (pareil(relu, astral) ? "revient désormais tel quel : déplacez le cas en section 1"
-                          : JSON.stringify(relu)));
 
   console.log(ko ? "\n" + ko + " échec(s)." : "\nTout passe.");
   process.exit(ko ? 1 : 0);

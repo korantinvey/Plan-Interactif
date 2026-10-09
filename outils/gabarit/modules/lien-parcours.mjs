@@ -36,8 +36,13 @@ const FORMAT_PARTAGE = "2";
  * désigne jamais qu'une chose, et cesse simplement d'exister quand le stand
  * s'en va : `chargeParcours` sait déjà écarter ce que les données ne
  * connaissent plus.
+ *
+ * Le drapeau « u » fait lire l'identifiant signe par signe et non par moitié :
+ * sans lui, un émoji, qui tient sur deux moitiés, était codé moitié par
+ * moitié, et chacune, qui n'est pas un caractère, revenait en « � ». Pour tout
+ * autre signe, le code écrit reste le même.
  */
-const codeIdParcours = id => String(id).replace(/[^A-Za-z0-9_-]/g, c =>
+const codeIdParcours = id => String(id).replace(/[^A-Za-z0-9_-]/gu, c =>
   Array.from(new TextEncoder().encode(c),
              o => "%" + o.toString(16).toUpperCase().padStart(2, "0")).join(""));
 
