@@ -406,19 +406,15 @@ Fonctions :
 
 `accueilleParcoursPartage` 33 · `adoptePartage` 111 · `parcoursACopier` 127
 
-### `_pile.html` — 536 l. → plan-admin.html
+### `_pile.html` — 80 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
-- l.50 · Panneau : deux sections, chacune rangée par nom
-- l.346 · Repères
-- l.398 · Fond du plan
+- l.50 · Le panneau des calques — le branchement
 
 Fonctions :
 
-`clePile` 8 · `entrees` 10 · `pile` 24 · `groupe` 36 · `ordonneDom` 44 · `nature` 68
-`boutonAjout` 75 · `boutonVerrou` 95 · `intertitre` 103 · `construitPanneau` 111
-`sectionSelection` 362 · `sectionFond` 418 · `ligneCouleur` 476 · `rangSecteur` 496
-`rangSous` 509 · `defautCouleur` 531
+`clePile` 8 · `entrees` 10 · `pile` 24 · `groupe` 36 · `ordonneDom` 44
+`construitPanneau` 76
 
 ### `_pousse.html` — 23 l. → plan-admin.html
 
@@ -1049,7 +1045,29 @@ Fonctions :
 `lienParcours` 45 · `ouvrePartageParcours` 61 · `boutonsPartage` 117
 `ouvreGardeParcours` 213 · `demandeGardeParcours` 243 · `poseGardeParcours` 256
 
-### `modules/plan-admin.mjs` — 71 l. → plan-admin
+### `modules/pile.mjs` — 608 l. → plan-admin
+
+- l.1 · Le panneau des calques
+- l.125 · Panneau : deux sections, chacune rangée par nom
+- l.419 · Repères
+- l.471 · Fond du plan
+
+Fonctions :
+
+`estAdmin` 79 · `dessins` 80 · `calqueActif` 81 · `placeLibelles` 82 · `sorteGeo` 83
+`secteurs` 84 · `entrees` 85 · `conf` 86 · `enregistreConf` 87 · `jeton` 88 · `sousCle` 89
+`sousCalques` 90 · `joli` 91 · `styleFond` 92 · `styleDataGroupe` 93 · `styleData` 94
+`appliqueCouleursData` 95 · `appliqueFond` 96 · `suitNuancier` 97 · `secteursMontres` 99
+`couleurSecteur` 100 · `peintSecteur` 101 · `mesCalques` 102 · `creeCalque` 103
+`enregistreDessins` 104 · `dessineDessins` 105 · `peintCalque` 106 · `verrouille` 107
+`basculeVerrou` 108 · `pictoVerrou` 109 · `activeCalque` 110 · `memorise` 111
+`modePlacementLibelles` 112 · `geoVerrouille` 113 · `basculeVerrouGeo` 114
+`boutonVerrouGeo` 115 · `modeGeometrie` 116 · `ouvreOrdre` 117 · `branchePile` 121
+`nature` 143 · `boutonAjout` 150 · `boutonVerrou` 170 · `intertitre` 178
+`remplitPanneau` 187 · `sectionSelection` 435 · `sectionFond` 491 · `ligneCouleur` 549
+`rangSecteur` 569 · `rangSous` 582 · `defautCouleur` 604
+
+### `modules/plan-admin.mjs` — 73 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 

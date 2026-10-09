@@ -37,6 +37,7 @@ import { voletOrdre, brancheReglageFiche } from "./reglage-fiche.mjs";
 import { CALAGE, bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
+import { branchePile, remplitPanneau } from "./pile.mjs";
 
 Object.assign(globalThis, {
   reduitLogo,
@@ -63,6 +64,7 @@ Object.assign(globalThis, {
   voletOrdre, brancheReglageFiche,
   bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
   calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
+  branchePile, remplitPanneau,
 });
 
 /* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et

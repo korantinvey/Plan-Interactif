@@ -1,45 +1,8 @@
-/* `outils/gabarit/_pile.html` — le panneau des calques : la pile, les
-   couleurs de ce qui n'est pas un calque, le fond du plan. */
+/* `outils/gabarit/_pile.html` — la pile des calques : le nom des couches que
+   le salon fournit, que l'ordre de tracé connaît sur le plan public aussi. Le
+   panneau qui les règle a son dictionnaire, `pile.js`. */
 module.exports = {
   "Zones organisateur": "Organiser areas",
   "Stands": "Stands",
   "Textes": "Labels",
-  "Issus du salon": "From the show",
-  "Ajoutés à la main": "Added by hand",
-  "+ Nouveau calque de dessin": "+ New drawing layer",
-  "+ Bâtiment de la bibliothèque…": "+ Building from the library…",
-  "Déverrouiller le calque": "Unlock layer",
-  "Verrouiller le calque : ni dessin, ni suppression": "Lock layer: no drawing, no deleting",
-  "⇅ Réorganiser les calques": "⇅ Reorder layers",
-  "Contour seul ou surface remplie": "Outline only or filled",
-  "Placer les libellés à la main": "Place labels by hand",
-  "Reprendre ou ajouter des formes à la main": "Reshape or add shapes by hand",
-  "Couche verrouillée : ouvrez son cadenas pour reprendre ou ajouter une forme.":
-    "Locked layer: open its padlock to reshape or add a shape.",
-  "Dessiner sur ce calque": "Draw on this layer",
-  "Supprimer le calque": "Delete layer",
-  "Ce calque compte dans les itinéraires, même masqué.": "This layer counts for routes, even when hidden.",
-  "Calque verrouillé : ouvrez son cadenas pour y dessiner.": "Locked layer: open its padlock to draw on it.",
-  "Cliquez pour dessiner dessus": "Click to draw on it",
-  "Calque verrouillé": "Locked layer",
-  "Supprimer le calque ?": "Delete layer?",
-  "« {calque} » et ses {n} formes seront définitivement perdus.": "“{calque}” and its {n} shapes will be permanently lost.",
-  "« {calque} » et sa forme seront définitivement perdus.": "“{calque}” and its shape will be permanently lost.",
-  "« {calque} » et son contenu seront définitivement perdus.": "“{calque}” and its content will be permanently lost.",
-  "Supprimer": "Delete",
-  "Textes des stands": "Stand labels",
-  "Textes des zones": "Area labels",
-  "Repères": "Landmarks",
-  "Élément sélectionné": "Selected item",
-  "Points d'intérêt": "Points of interest",
-  "Blanc": "White",
-  "Ivoire": "Ivory",
-  "Coquille": "Eggshell",
-  "Gris perle": "Pearl grey",
-  "Vert d'eau": "Pale green",
-  "Bleu pâle": "Pale blue",
-  "Sable": "Sand",
-  "Fond du plan": "Map background",
-  "Couleur d'origine": "Original colour",
-  "Couleur libre": "Custom colour",
 };
