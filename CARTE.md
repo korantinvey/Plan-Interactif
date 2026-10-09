@@ -242,29 +242,29 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 18. Le sponsor — un logo le temps du chargement
 
-### `_styles-divers.css` — 315 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-divers.css` — 315 l. → plan-smcl.html
 
-### `_styles-jetons.css` — 270 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-jetons.css` — 270 l. → plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1556 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-modeles-parcours.css` — 1556 l. → plan-smcl.html
 
-### `_styles-modeles.css` — 830 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
-### `_styles-parcours.css` — 601 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-parcours.css` — 601 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1605 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_styles-plan.css` — 1605 l. → plan-smcl.html
 
 ### `_suggestion.html` — 19 l.
 
 - l.1 · 15. La suggestion — le branchement
 
-### `_sw.js` — 566 l.
+### `_sw.js` — 567 l.
 
 Fonctions :
 
-`estUneTuile` 121 · `range` 147 · `oublieLesVersionsDAvant` 173 · `dabordCache` 194
-`borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
-`tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
+`estUneTuile` 122 · `range` 148 · `oublieLesVersionsDAvant` 174 · `dabordCache` 195
+`borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
+`tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
 
 ### `_vue.html` — 33 l. → plan-admin.html, plan-smcl.html, plan.html
 

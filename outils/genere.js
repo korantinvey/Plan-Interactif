@@ -337,9 +337,38 @@ const publics = new Set(modules.exposes("plan"));
 reserve.verifie(tplAdmin, tplPublic, "Le plan public",
   modules.exposes("plan-admin").filter((n) => !publics.has(n)));
 
+/* La feuille du plan, servie à part.
+
+   Posée dans la page, elle repartait avec elle à chaque mise en ligne : une
+   ligne de code changée, et chaque visiteur retéléchargeait ses deux cents
+   kilo-octets de styles. À part, sous un nom qui porte son empreinte, elle ne
+   change jamais sous une même adresse : le navigateur la garde (`_headers`),
+   le service de second plan aussi, et le plan public et l'administration se la
+   partagent. La démonstration la garde en elle : publiée seule, elle n'a pas
+   de fichier voisin. */
+const STYLE_PLAN = /<style>\n(\/\* Les styles du plan, première feuille[\s\S]*?)<\/style>\n/;
+const styleDuPlan = tpl.match(STYLE_PLAN);
+if (!styleDuPlan) throw new Error("feuille du plan introuvable dans le gabarit");
+const FEUILLE_PLAN = epureStyle(styleDuPlan[1]);
+const VERSIONS = "versions/";
+const NOM_FEUILLE = VERSIONS + "plan." +
+  crypto.createHash("sha256").update(FEUILLE_PLAN).digest("hex").slice(0, 10) + ".css";
+fs.mkdirSync(W + VERSIONS, { recursive: true });
+// les feuilles d'avant ne servent plus à aucune page : elles ne s'empilent pas
+for (const f of fs.readdirSync(W + VERSIONS)) {
+  if (VERSIONS + f !== NOM_FEUILLE) fs.unlinkSync(W + VERSIONS + f);
+}
+fs.writeFileSync(W + NOM_FEUILLE, FEUILLE_PLAN);
+const lieFeuille = (t) =>
+  t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
+/* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
+   pages, elles, gardent la règle de Cloudflare — revalider à chaque fois. */
+fs.writeFileSync(W + "_headers",
+  "/" + VERSIONS + "*\n  Cache-Control: public, max-age=31536000, immutable\n");
+
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
-  page(connecte(tplPublic).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+  page(lieFeuille(connecte(tplPublic)).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
        { tete: PRECHARGE, application: true, pleinEcran: true,
          salon: SLUG_DEFAUT }));
 
@@ -348,7 +377,7 @@ fs.writeFileSync(W + "plan.html",
    n'en a que faire, elle ne part qu'avec l'administration. */
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
 fs.writeFileSync(W + "plan-admin.html",
-  page(connecte(tplAdmin).replace("/*__PORTE_ADMIN__*/", auth)
+  page(lieFeuille(connecte(tplAdmin)).replace("/*__PORTE_ADMIN__*/", auth)
                     .replace("/*__LIEUX__*/null", () => LIEUX),
        { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }));
 
@@ -437,7 +466,7 @@ fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
 const FABRIQUEES = [
   "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
-  "config.js", "console.css", "manifeste.webmanifest",
+  "config.js", "console.css", NOM_FEUILLE, "_headers", "manifeste.webmanifest",
   "icone.svg", "icone-onglet.svg",
   "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
 ];
@@ -486,7 +515,7 @@ console.log("sw.js".padEnd(18), "version " + version);
    referait partir l'adresse de chaque visiteur, et rien d'autre ne le dirait. */
 const CHEZ_GOOGLE = /fonts\.(googleapis|gstatic)\.com/;
 const fautives = FABRIQUEES.concat("sw.js")
-  .filter((f) => /\.(html|js)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
+  .filter((f) => /\.(html|js|css)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
 if (fautives.length) {
   console.error("\nPolices demandées à Google dans : " + fautives.join(", ") + ".\n" +
     "Déclarez la famille dans `outils/polices.js` (ou dans `POLICES_NOMS` pour une police\n" +
