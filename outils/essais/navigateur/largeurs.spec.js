@@ -46,7 +46,11 @@ for (const [nom, adresse, conf] of [
        `document.fonts.ready` déjà tenu. */
     await page.route("**/api/plan?**", async (r) => {
       if (new URL(r.request().url()).searchParams.get("entete")) return r.fallback();
-      for (let i = 0; i < 300; i++) {
+      /* Bornée en temps, non en tours : sur une machine chargée, chaque
+         lecture dans la page s'allonge, et trois cents tours retenaient les
+         données plus longtemps que l'essai ne les attend. */
+      const limite = Date.now() + 15_000;
+      while (Date.now() < limite) {
         const pret = await page.evaluate(() => document.readyState === "complete" &&
           document.fonts.status === "loaded").catch(() => false);
         if (pret) break;

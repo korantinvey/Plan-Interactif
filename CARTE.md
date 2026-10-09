@@ -33,7 +33,7 @@ Fonctions :
 `policePrete` 1401 · `policeDesNoms` 1419 · `posePoliceLibelles` 1448
 `appliqueModele` 1480 · `habilleModale` 1524
 
-### `_admin2.html` — 274 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 268 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
@@ -481,22 +481,23 @@ Fonctions :
 `ficheZoneEnPlace` 648 · `voletPlan` 666 · `blocRappel` 714 · `ditEssaiRappel` 825
 `voletCoexposants` 859
 
-### `_rendu.html` — 625 l.
+### `_rendu.html` — 662 l.
 
 - l.3 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.109 · 3. Rendu du pavillon courant
-- l.484 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.146 · 3. Rendu du pavillon courant
+- l.521 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`largeur` 8 · `decoupe` 29 · `habille` 42 · `lignesSvg` 53 · `coexComptes` 70
-`coexChoisit` 71 · `ligneCode` 87 · `monteHabillage` 115 · `baliseZone` 144
-`baliseStand` 154 · `montePlan` 161 · `onglets` 196 · `changePlan` 218 · `texteDist` 265
-`texteCourtDist` 270 · `porteDist` 274 · `standPorte` 278 · `calqueDists` 287
-`traceDist` 318 · `oublieDists` 351 · `modesDuPlan` 355 · `releveDists` 357
-`dessineDists` 386 · `marquesListe` 412 · `poseDistsFiche` 442 · `refaitDistsFiche` 482
-`ancre` 492 · `place` 493 · `libelles` 495 · `decaleLibelle` 582 · `facteurLibelle` 583
-`libelleForce` 584 · `libelleZone` 587 · `libelleEmplacement` 606
+`mesureTexte` 11 · `largeur` 16 · `remesureTextes` 40 · `decoupe` 66 · `habille` 79
+`lignesSvg` 90 · `coexComptes` 107 · `coexChoisit` 108 · `ligneCode` 124
+`monteHabillage` 152 · `baliseZone` 181 · `baliseStand` 191 · `montePlan` 198
+`onglets` 233 · `changePlan` 255 · `texteDist` 302 · `texteCourtDist` 307 · `porteDist` 311
+`standPorte` 315 · `calqueDists` 324 · `traceDist` 355 · `oublieDists` 388
+`modesDuPlan` 392 · `releveDists` 394 · `dessineDists` 423 · `marquesListe` 449
+`poseDistsFiche` 479 · `refaitDistsFiche` 519 · `ancre` 529 · `place` 530 · `libelles` 532
+`decaleLibelle` 619 · `facteurLibelle` 620 · `libelleForce` 621 · `libelleZone` 624
+`libelleEmplacement` 643
 
 ### `_sponsor.html` — 14 l. → plan-admin.html
 
@@ -839,14 +840,14 @@ Fonctions :
 `nb` 34 · `colonnesExport` 118 · `libellePeriode` 150 · `nomFichierExport` 156
 `nomFeuilleExport` 166 · `exporteExposants` 182 · `brancheExport` 230
 
-### `modules/fenetre.mjs` — 100 l. → plan, plan-admin
+### `modules/fenetre.mjs` — 110 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
 Fonctions :
 
 `_habille` 8 · `poseAvantFermeture` 19 · `verseModale` 21 · `poseApresFermeture` 36
-`ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 93
+`ouvreModale` 46 · `fermeModale` 66 · `confirme` 76 · `brancheFenetre` 94
 
 ### `modules/fiche-detail.mjs` — 1311 l. → console
 
