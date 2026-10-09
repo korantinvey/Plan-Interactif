@@ -44,6 +44,7 @@ import { renouvelleVisiteur } from "./mesure.mjs";
 import { sponsorRetenu, ouvreSponsor } from "./sponsor.mjs";
 import { pointSaisi, candidats, pointRepere } from "./itineraire.mjs";
 import { vue, svg, versPlan, cadrePlan, fit } from "./vue.mjs";
+import { videRecherche } from "./recherche.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée est
    un lecteur, et elle a sa porte : elle change sans cesse. Elle vit dans
@@ -63,7 +64,6 @@ const effaceItineraire = () => soude.effaceItineraire();
 const ferme = () => soude.ferme();
 const fermeParcours = () => soude.fermeParcours();
 const videLeParcours = () => soude.videLeParcours();
-const videRecherche = () => soude.videRecherche();
 const formeParId = (id) => soude.formeParId(id);
 const racine = document.documentElement;
 
@@ -409,7 +409,7 @@ export function demarreBorne(){
  * @param {{ visee: () => any, vise: (v: any) => void,
  *   bandeauVisee: Function, changePlan: Function, fermeItineraire: Function,
  *   effaceItineraire: Function, ferme: Function, fermeParcours: Function,
- *   videLeParcours: Function, videRecherche: Function, formeParId: Function }} b
+ *   videLeParcours: Function, formeParId: Function }} b
  */
 export function brancheBorne(b){
   soude = b;

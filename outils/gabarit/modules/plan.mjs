@@ -80,6 +80,13 @@ import { modeleRetenu, habilleModale } from "./modeles.mjs";
 import { P_NOM, P_CODE, branchePolices, posePoliceLibelles } from "./polices-plan.mjs";
 import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
 import { minutesVisite, lueHeure, datesSalon, horairesSalon } from "./horaires.mjs";
+import { SECTEURS, brancheSecteurs, indexeSecteurs, coloreSecteurs } from "./secteurs.mjs";
+import { brancheBandes, majFondus } from "./bandes.mjs";
+import { brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
+  libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
+  videRecherche, basculeCriteres, fermeCriteres, filtre, retraitLeve, reposeRetrait, visible, visibleSurPlan,
+  visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
+  VIGNETTES, prechargeLesVignettes } from "./recherche.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -142,6 +149,13 @@ Object.assign(globalThis, {
   branchePolices, posePoliceLibelles,
   seuilGere, seuilImpose, seuilConcentration,
   minutesVisite, lueHeure, datesSalon, horairesSalon,
+  brancheSecteurs, indexeSecteurs, coloreSecteurs,
+  brancheBandes, majFondus,
+  brancheRecherche, appliqueSecteurs, filtreTheme, PREFIXE_PERSO, themeFiltrable, clesCriteres,
+  libelleCritere, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, videCriteres, majVideQ,
+  videRecherche, basculeCriteres, fermeCriteres, filtre, reposeRetrait, visible, visibleSurPlan,
+  visibleSociete, marqueRetrait, appliqueFiltre, oublieRetrait, reprendRecherche, liste, marqueChoisie,
+  VIGNETTES, prechargeLesVignettes,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
@@ -200,3 +214,10 @@ Object.defineProperties(globalThis, vivants({ CONF: () => CONF, CLE_CONF: () => 
    (`polices-plan.mjs` `posePoliceLibelles`). */
 Object.defineProperties(globalThis, vivants({ P_NOM: () => P_NOM, P_CODE: () => P_CODE },
   "posePoliceLibelles"));
+
+/* Les secteurs du salon, que l'index refait à chaque chargement : le code
+   soudé les lit par accesseur ; seul `indexeSecteurs` les remplace. */
+Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "indexeSecteurs"));
+/* Le retrait du plan levé d'un clic hors du résultat : les gestes le lisent
+   par accesseur ; seuls `oublieRetrait` et `reposeRetrait` le changent. */
+Object.defineProperties(globalThis, vivants({ retraitLeve: () => retraitLeve }, "reposeRetrait"));
