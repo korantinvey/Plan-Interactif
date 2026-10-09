@@ -39,6 +39,9 @@ import { mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, 
 import { GENRES_RESSOURCE, poidsDesJours, rangeSejour } from "./ordonnanceur.mjs";
 import { CHARGE, chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, chargeCellule, brancheCharge }
   from "./charge-annoncee.mjs";
+import { appDuSalon, iconeDeLApplication } from "./application.mjs";
+import { sponsorRetenu, ouvreSponsor, suitSponsor, resteSponsor, fermeSponsor, accueilleSponsor,
+  brancheSponsor } from "./sponsor.mjs";
 
 Object.assign(globalThis, {
   poseDonnees, state, P,
@@ -60,6 +63,9 @@ Object.assign(globalThis, {
   mesure, mesureOuverte, jetonMesure, supportMesure, renouvelleVisiteur, brancheMesure,
   GENRES_RESSOURCE, poidsDesJours, rangeSejour,
   chargeSuivie, annoncePlan, dilatationDuJour, litLaCharge, chargeCellule, brancheCharge,
+  appDuSalon, iconeDeLApplication,
+  sponsorRetenu, ouvreSponsor, suitSponsor, resteSponsor, fermeSponsor, accueilleSponsor,
+  brancheSponsor,
 });
 
 /* Les données du plan, que le module remplace à chaque chargement : le code
