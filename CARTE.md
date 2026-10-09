@@ -314,21 +314,9 @@ Fonctions :
 `ouvreItineraire` 678 · `fermeItineraire` 706 · `versItineraire` 716
 `versItineraireDe` 719
 
-### `_journee.html` — 1741 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 18 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.1 · 11 ter. Organiser sa visite
-
-Fonctions :
-
-`finInstant` 107 · `joursSalon` 116 · `joursAVenir` 145 · `joursDefaut` 163
-`confsParJour` 173 · `pointConf` 190 · `departsProposes` 209 · `matriceJournee` 242
-`derouleJournee` 313 · `prepareSejour` 457 · `calculeSejour` 659 · `apercuRepartition` 693
-`rangJournee` 707 · `lienJournee` 719 · `boutonJour` 742 · `arretJournee` 755
-`remplitOnglets` 802 · `jourDuStand` 831 · `ouvreChoixJour` 843 · `figeLaVisite` 900
-`placeSurJour` 909 · `rendAuPlan` 917 · `retireDuSejour` 923 · `remplitJournee` 933
-`ecritApercu` 1146 · `appliqueVueParcours` 1176 · `traceJournee` 1218 · `montreLeJour` 1227
-`perimeJournee` 1242 · `oublieSejour` 1257 · `ouvreOrganisation` 1272 · `essaieSejour` 1652
-`lanceSejour` 1682 · `refaitSejour` 1721
+- l.1 · 11 ter. Organiser sa visite — le branchement
 
 ### `_js.html` — 543 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -702,15 +690,15 @@ Fonctions :
 
 `#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
-### `modules/charge-annoncee.mjs` — 228 l. → plan, plan-admin
+### `modules/charge-annoncee.mjs` — 230 l. → plan, plan-admin
 
 - l.1 · La charge annoncée — ce que les autres journées ont déjà posé
 
 Fonctions :
 
-`seuilConcentration` 24 · `identifiantParcours` 26 · `parcours` 28 · `sejour` 30
-`brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
-`celluleUtile` 149 · `dilatationDuJour` 166 · `litLaCharge` 203 · `chargeCellule` 223
+`seuilConcentration` 25 · `identifiantParcours` 27 · `parcours` 29 · `sejour` 31
+`brancheCharge` 41 · `chargeSuivie` 81 · `etapesDuSejour` 87 · `annoncePlan` 115
+`celluleUtile` 151 · `dilatationDuJour` 168 · `litLaCharge` 205 · `chargeCellule` 225
 
 ### `modules/classeur.mjs` — 235 l. → console, rapport
 
@@ -971,6 +959,23 @@ Fonctions :
 `routeParLiaisons` 2495 · `routeEntre` 2533 · `mesureMarches` 2571 · `coupeMarche` 2586
 `distancesDesArrets` 2602 · `ecritDistance` 2616 · `ecritDuree` 2624 · `phraseLiaison` 2638
 
+### `modules/journee.mjs` — 1265 l. → plan, plan-admin
+
+- l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
+
+Fonctions :
+
+`datesSalon` 29 · `horairesSalon` 30 · `lueHeure` 31 · `select` 33 · `ficheConf` 34
+`basculeParcours` 35 · `rangParcours` 36 · `rafraichitParcours` 37 · `changePlan` 38
+`trace` 40 · `poseTrace` 41 · `dessineItineraire` 42 · `cadreItineraire` 43
+`joursSalon` 108 · `joursAVenir` 137 · `joursDefaut` 155 · `confsParJour` 165
+`departsProposes` 190 · `rangJournee` 212 · `lienJournee` 224 · `boutonJour` 247
+`arretJournee` 260 · `remplitOnglets` 307 · `jourDuStand` 336 · `ouvreChoixJour` 348
+`figeLaVisite` 405 · `placeSurJour` 414 · `rendAuPlan` 422 · `retireDuSejour` 428
+`remplitJournee` 438 · `ecritApercu` 651 · `appliqueVueParcours` 681 · `traceJournee` 723
+`montreLeJour` 732 · `perimeJournee` 747 · `oublieSejour` 762 · `ouvreOrganisation` 777
+`essaieSejour` 1157 · `lanceSejour` 1187 · `refaitSejour` 1226 · `brancheJournee` 1247
+
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
 - l.1 · Le parcours écrit dans un lien, et relu
@@ -1048,7 +1053,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 142 l. → plan, plan-admin
+### `modules/plan.mjs` — 136 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1156,6 +1161,17 @@ Fonctions :
 
 `cheminDuSalon` 33 · `cheminPartageable` 44
 
+### `modules/sejour.mjs` — 578 l. → plan, plan-admin
+
+- l.1 · La préparation du séjour — répartir les stands, puis dérouler les jours
+
+Fonctions :
+
+`brancheSejour` 34 · `minutesVisite` 36 · `horairesSalon` 37 · `seuilConcentration` 38
+`seuilImpose` 39 · `oublieMatrice` 86 · `finInstant` 91 · `pointConf` 99
+`matriceJournee` 118 · `derouleJournee` 189 · `prepareSejour` 333 · `calculeSejour` 535
+`apercuRepartition` 569
+
 ### `modules/session.mjs` — 133 l. → plan, plan-admin, console, rapport
 
 - l.1 · La session de l'exploitant, et l'appel à la base
@@ -1242,23 +1258,23 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/tutoriel.mjs` — 986 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 987 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
-`brancheTutoriel` 73 · `conf` 80 · `optionActive` 81 · `montre` 82 · `changePlan` 83
-`centre` 84 · `joursAVenir` 85 · `ferme` 86 · `fermeParcours` 87 · `fermeItineraire` 88
-`ETROIT` 89 · `route` 92 · `attente` 93 · `iti` 94 · `visee` 95 · `eteintVisee` 96
-`journee` 98 · `vueJournee` 99 · `sejour` 100 · `iciActif` 102 · `dessinEnCours` 105
-`reglageTuto` 133 · `tutoPropose` 142 · `cleTuto` 146 · `tutoOuvert` 148 · `tutoModale` 149
-`tutoFicheOuverte` 155 · `tutoFiche` 158 · `tutoParcours` 160 · `tutoItineraire` 163
-`tutoJournee` 167 · `zoneDuTuto` 175 · `insecable` 192 · `phraseTrajetTuto` 198
-`chapitresTuto` 458 · `proposeTutoriel` 478 · `lanceTutoriel` 536 · `quitteTutoriel` 623
-`chapitreTuto` 634 · `battementTuto` 643 · `finTuto` 661 · `afficheTuto` 678 · `pxTuto` 733
-`boiteTuto` 736 · `repereTuto` 750 · `rameneTuto` 783 · `placeTuto` 821 · `voileTuto` 903
-`rafaleTuto` 920 · `marqueZoneTuto` 940 · `marqueLibelleTuto` 975
+`brancheTutoriel` 75 · `conf` 82 · `optionActive` 83 · `montre` 84 · `changePlan` 85
+`centre` 86 · `ferme` 87 · `fermeParcours` 88 · `fermeItineraire` 89 · `ETROIT` 90
+`route` 93 · `attente` 94 · `iti` 95 · `visee` 96 · `eteintVisee` 97 · `journee` 99
+`vueJournee` 100 · `sejour` 101 · `iciActif` 103 · `dessinEnCours` 106 · `reglageTuto` 134
+`tutoPropose` 143 · `cleTuto` 147 · `tutoOuvert` 149 · `tutoModale` 150
+`tutoFicheOuverte` 156 · `tutoFiche` 159 · `tutoParcours` 161 · `tutoItineraire` 164
+`tutoJournee` 168 · `zoneDuTuto` 176 · `insecable` 193 · `phraseTrajetTuto` 199
+`chapitresTuto` 459 · `proposeTutoriel` 479 · `lanceTutoriel` 537 · `quitteTutoriel` 624
+`chapitreTuto` 635 · `battementTuto` 644 · `finTuto` 662 · `afficheTuto` 679 · `pxTuto` 734
+`boiteTuto` 737 · `repereTuto` 751 · `rameneTuto` 784 · `placeTuto` 822 · `voileTuto` 904
+`rafaleTuto` 921 · `marqueZoneTuto` 941 · `marqueLibelleTuto` 976
 
 Éléments :
 
