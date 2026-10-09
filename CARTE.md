@@ -548,15 +548,16 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 314 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 342 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`majAttente` 40 · `rattrapeRetard` 41 · `demarre` 47 · `annonce` 108 · `entetesApi` 131
-`chargeFond` 155 · `panneDuChargement` 202 · `CLE_VERSION` 212 · `versionRetenue` 213
-`retientVersion` 216 · `demandePlan` 240 · `charge` 264 · `brancheDemarrage` 304
+`majAttente` 40 · `rattrapeRetard` 41 · `recadreListePosee` 58 · `demarre` 74
+`annonce` 136 · `entetesApi` 159 · `chargeFond` 183 · `panneDuChargement` 230
+`CLE_VERSION` 240 · `versionRetenue` 241 · `retientVersion` 244 · `demandePlan` 268
+`charge` 292 · `brancheDemarrage` 332
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -1590,21 +1591,22 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/tutoriel.mjs` — 988 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1024 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
 `route` 70 · `attente` 71 · `iti` 72 · `visee` 73 · `eteintVisee` 74 · `journee` 76
-`vueJournee` 77 · `sejour` 78 · `iciActif` 80 · `dessinEnCours` 83 · `reglageTuto` 111
-`tutoPropose` 120 · `cleTuto` 124 · `tutoOuvert` 126 · `tutoModale` 127
-`tutoFicheOuverte` 133 · `tutoFiche` 136 · `tutoParcours` 138 · `tutoItineraire` 142
-`tutoJournee` 146 · `zoneDuTuto` 154 · `insecable` 171 · `phraseTrajetTuto` 177
-`chapitresTuto` 437 · `proposeTutoriel` 457 · `lanceTutoriel` 515 · `quitteTutoriel` 602
-`chapitreTuto` 613 · `battementTuto` 622 · `finTuto` 640 · `afficheTuto` 657 · `pxTuto` 712
-`boiteTuto` 725 · `repereTuto` 740 · `rameneTuto` 773 · `placeTuto` 811 · `voileTuto` 905
-`rafaleTuto` 922 · `marqueZoneTuto` 942 · `marqueLibelleTuto` 977
+`vueJournee` 77 · `sejour` 78 · `iciActif` 80 · `dessinEnCours` 83 · `glissements` 112
+`reglageTuto` 123 · `tutoPropose` 132 · `cleTuto` 136 · `tutoOuvert` 138 · `tutoModale` 139
+`tutoFicheOuverte` 145 · `tutoFiche` 148 · `tutoParcours` 150 · `tutoItineraire` 154
+`tutoJournee` 158 · `zoneDuTuto` 166 · `insecable` 183 · `phraseTrajetTuto` 189
+`chapitresTuto` 449 · `proposeTutoriel` 469 · `lanceTutoriel` 527 · `quitteTutoriel` 614
+`chapitreTuto` 625 · `battementTuto` 634 · `finTuto` 652 · `afficheTuto` 669
+`attendsTiroirs` 719 · `pxTuto` 744 · `boiteTuto` 757 · `repereTuto` 772 · `rameneTuto` 805
+`placeTuto` 843 · `voileTuto` 937 · `rafaleTuto` 954 · `marqueZoneTuto` 974
+`marqueLibelleTuto` 1013
 
 Éléments :
 
