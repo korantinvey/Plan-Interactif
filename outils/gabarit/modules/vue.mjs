@@ -8,13 +8,14 @@
    calcule et ce qui l'applique, pour qu'un module puisse l'importer au lieu
    de se la faire confier.
 
-   La vue elle-même (`view`) reste déclarée dans le code soudé : le tiroir de
-   l'itinéraire la remplace encore par affectation directe (`_itineraire.html`,
-   le cadrage sur le trajet), ce qu'un accesseur refuserait. Elle se lit donc
-   ici par un lecteur et se remplace par un écrivain, que `_vue.html` confie
-   par `brancheVue` — `vue()` et `changeVue(v)`, que les modules importent. Le
-   jour où plus personne ne l'affecte en direct, elle vient ici sans que ceux
-   qui l'importent changent.
+   La vue elle-même (`view`) vit ici. Les gestes la remplacent sans cesse, le
+   cadrage sur un trajet aussi : elle se remplace par sa porte, `changeVue(v)`,
+   et le code soudé la lit par accesseur — une affectation directe y lève une
+   erreur qui nomme la porte. Les modules l'importent, ou la lisent par
+   `vue()`.
+
+   Le SVG du plan (`svg`) aussi : il est dans la page avant que les modules ne
+   s'exécutent, et ne se remplace jamais.
 
    L'emprise du pavillon (`emp`), elle, n'était remplacée que par le montage
    du plan : elle vit ici, se remplace par `poseEmprise`, et le code soudé la
@@ -34,22 +35,25 @@ import { REDUIT, ETROIT } from "./ecran.mjs";
 /** @type {Record<string, any>} */
 let soude = {};
 
-/** La vue du moment, `view` — `{ x, y, w, h }` en mètres, ou rien avant le premier plan. */
-export const vue = () => soude.vue();
+/** La vue du moment — `{ x, y, w, h }` en mètres, ou rien avant le premier plan. */
+/** @type {any} */
+export let view;
+/** La vue du moment, lue à l'instant. */
+export const vue = () => view;
 /** Remplace la vue, sans l'appliquer : c'est `poseVue` ou `rafraichitVue` qui l'écrivent. */
-export const changeVue = (/** @type {any} */ v) => soude.changeVue(v);
+export const changeVue = (/** @type {any} */ v) => { view = v; };
 const enEdition = () => soude.enEdition();
 const libelles = () => soude.libelles();
 const ordonneDom = () => soude.ordonneDom();
 
-/** Le SVG du plan, confié au branchement. */
+/** Le SVG du plan. */
 /** @type {any} */
-export let svg = null;
+export const svg = $("plan");
 
 /** L'emprise du pavillon, posée au montage du plan. */
 /** @type {any} */
 export let emp;
-/** La porte de l'emprise : `_rendu.html` `montePlan` la remplace à chaque pavillon. */
+/** La porte de l'emprise : `rendu.mjs` `montePlan` la remplace à chaque pavillon. */
 export function poseEmprise(/** @type {any} */ e){ emp = e; }
 
 /* ============================================================
@@ -143,7 +147,7 @@ function peintLibelles(/** @type {any} */ v){
 }
 
 /** Le calque des libellés repeint à la vue écrite, s'ils y sont — pour
- *  `_rendu.html` `libelles`, qui les retrie en plein geste. */
+ *  `libelles.mjs` `libelles`, qui les retrie en plein geste. */
 export function repeintLibelles(){
   if (libPeints) peintLibelles(vueEcrite);
 }
@@ -550,13 +554,12 @@ export function versPlan(/** @type {number} */ clientX, /** @type {number} */ cl
 /**
  * Le branchement, appelé par `_vue.html` à la place que ce code tenait : les
  * écoutes du cadre et de la barre s'y posent au même rang qu'avant parmi
- * celles du plan — avant le recadrage que `_admin2.html` pose sur « resize ».
+ * celles du plan — avant le recadrage que `demarrage.mjs` pose sur « resize ».
  *
  * @param {Record<string, any>} b
  */
 export function brancheVue(b){
   soude = b;
-  svg = b.svg;
   calqueLib = $("calqueLibelles");
   svgLib = calqueLib.firstElementChild;
   addEventListener("resize", oublieCadre);

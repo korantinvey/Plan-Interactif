@@ -17,7 +17,9 @@
    posent au même rang qu'avant. Ce que le code soudé tient encore leur est
    confié — la forme dessinée choisie (`_edition.html`), déclarée plus loin,
    par un lecteur ; et aux tiroirs, le panneau des critères, que la
-   recherche, qui les importe, ne peut leur fournir par import.
+   recherche, qui les importe, ne peut leur fournir par import. L'écoute de
+   la langue, qui refait ce que le plan a mesuré dans la langue d'avant, se
+   pose en dernier, comme avant (`modules/gestes.mjs` `brancheLangue`).
    ============================================================ */
 brancheGestes();
 /* @admin — les gestes de l'exploitant prennent leur rang dans la chaîne */
@@ -25,20 +27,6 @@ brancheGestesAdmin({ formeSel: () => formeSel });
 /* @fin-admin */
 brancheTiroirs({ fermeCriteres });
 
-/* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
-   l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
-   dans la langue d'avant : les libellés taillés à leur largeur, les repères
-   dessinés autour de leur nom, ceux que la recherche balaie. */
-addEventListener("langue", () => {
-  if (!DATA || !view) return;
-  oublieReperes();
-  _lg.clear();
-  dessineDessins();
-  libelles();
-  liste();
-  // la fiche ouverte sur une zone porte son nom dans la langue d'avant
-  const o = state.sel && parId.get(state.sel);
-  if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
-});
+brancheLangue();
 
 </script>

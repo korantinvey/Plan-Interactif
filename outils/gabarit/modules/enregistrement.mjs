@@ -20,13 +20,13 @@
    Un geste d'exploitant : `plan-admin.mjs` embarque ce module, `plan.mjs`
    jamais — la page publique n'a ni session ni bouton, et n'appelle ce qu'il
    expose que sous garde `typeof`. Ce que le code soudé tient encore — le
-   mode administrateur, les réglages et leur enregistrement, l'annonce dans
-   la liste, le panneau des calques — lui est confié par
-   `brancheEnregistrement`, que `_pousse.html` appelle à la place que ce code
-   y tenait : les écouteurs de la page s'y posent au même rang qu'avant. Les
-   calques dessinés et leurs deux relevés s'importent
-   (`calques-dessin.mjs`) ; leur enregistrement, que l'outil de dessin tient
-   et qui importe ce module-ci, se confie aussi.
+   mode administrateur, les réglages et leur enregistrement, le panneau des
+   calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
+   appelle à la place que ce code y tenait : les écouteurs de la page s'y
+   posent au même rang qu'avant. Les calques dessinés et leurs deux relevés
+   s'importent (`calques-dessin.mjs`), l'annonce dans la liste aussi
+   (`demarrage.mjs`) ; leur enregistrement, que l'outil de dessin tient et
+   qui importe ce module-ci, se confie.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
@@ -34,6 +34,7 @@ import { API } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
+import { annonce } from "./demarrage.mjs";
 import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
 
@@ -47,7 +48,6 @@ import { dessineDessins } from "./dessin.mjs";
  * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
  * @property {(source: Record<string, any>) => Record<string, any>} reglagesDuSalon
- * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
  * @property {() => void} enregistreDessins
  * @property {() => void} appliqueApparence
@@ -58,7 +58,6 @@ let soude;
 /** @param {Record<string, any>} source */
 const reglagesDuSalon = (source) => soude.reglagesDuSalon(source);
 /** @param {string} txt @param {boolean} [erreur] */
-const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 
 /* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
    session — page publique, page à données figées — où rien ne part tout seul. */

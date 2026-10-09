@@ -10,10 +10,10 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
    qu'en administration (`_fiche.html`). Ce que le code soudé tient encore —
-   la configuration, l'index de recherche, le plan à redessiner, la fiche
-   ouverte — lui est confié par `brancheFicheZone`, que `_mode-admin.html`
-   appelle à la place que ce code y tenait. Les types de zone et le cartouche
-   des points d'intérêt s'importent (`reperes.mjs`, `points-interet.mjs`).
+   la configuration, l'index de recherche — lui est confié par
+   `brancheFicheZone`, que `_mode-admin.html` appelle à la place que ce code y
+   tenait. Les types de zone, le cartouche des points d'intérêt et le dessin
+   des noms s'importent (`reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -24,7 +24,11 @@ import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { cleAjout, rechAjout } from "./emplacements.mjs";
+import { nomsAnglaisDesZones } from "./noms-zones.mjs";
+import { rangeConferences } from "./index-salon.mjs";
+import { annonce } from "./demarrage.mjs";
 import { ouvre } from "./fiche.mjs";
+import { libelles } from "./libelles.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./points-interet.mjs";
 
@@ -33,24 +37,16 @@ import { cartouchePoi } from "./points-interet.mjs";
 /**
  * @typedef {object} PageFicheZone
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(txt: string, erreur?: boolean) => void} annonce
  * @property {() => void} enregistreConf
- * @property {() => void} nomsAnglaisDesZones
- * @property {() => void} libelles
  * @property {() => void} liste
  * @property {() => void} majPaletteGeo
- * @property {() => void} rangeConferences
  */
 /** @type {PageFicheZone} */
 let soude;
 const reglages = () => soude.conf();
-const annonce = (txt, erreur) => soude.annonce(txt, erreur);
 const enregistreConf = () => soude.enregistreConf();
-const nomsAnglaisDesZones = () => soude.nomsAnglaisDesZones();
-const libelles = () => soude.libelles();
 const liste = () => soude.liste();
 const majPaletteGeo = () => soude.majPaletteGeo();
-const rangeConferences = () => soude.rangeConferences();
 
 /**
  * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`),

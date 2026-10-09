@@ -35,6 +35,8 @@ import { REDUIT } from "./ecran.mjs";
 import { visibleSociete } from "./recherche.mjs";
 import { coloreSecteurs } from "./secteurs.mjs";
 import { societes } from "./fiche.mjs";
+import { largeur } from "./texte-plan.mjs";
+import { libelleEmplacement } from "./libelles.mjs";
 
 /**
  * Ce que le code soudé confie au branchement.
@@ -43,8 +45,6 @@ import { societes } from "./fiche.mjs";
  * @property {(f: any) => number[]} boite
  * @property {() => void} ordonneDom
  * @property {() => void} mentionOsm
- * @property {(txt: string, police: any) => number} largeur
- * @property {(...a: any[]) => string} libelleEmplacement
  */
 /** @type {PageDessin} */
 let soude;
@@ -52,8 +52,6 @@ const formeSel = () => soude.formeSel();
 const boite = (/** @type {any} */ f) => soude.boite(f);
 const ordonneDom = () => soude.ordonneDom();
 const mentionOsm = () => soude.mentionOsm();
-const largeur = (/** @type {string} */ txt, /** @type {any} */ police) => soude.largeur(txt, police);
-const libelleEmplacement = (/** @type {any[]} */ ...a) => soude.libelleEmplacement(...a);
 
 /** Le branchement : `_dessin.html` l'appelle en tête.
  *  @param {PageDessin} page */

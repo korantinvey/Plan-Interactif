@@ -15,23 +15,31 @@
 
    Ses écoutes se posent par `brancheGestes`, que `_gestes.html` appelle à la
    place que ce code y tenait : elles gardent leur rang parmi celles du plan.
-   Tout ce qu'il appelle s'importe ; la vue se lit par `vue()` et se remplace
+   Tout ce qu'il appelle s'importe ; la vue se lit par `view` et se remplace
    par `changeVue`, comme partout ailleurs.
+
+   L'écoute de la langue y est aussi, parce qu'elle se posait au même endroit
+   (`brancheLangue`) : elle refait ce que le plan a mesuré dans la langue
+   d'avant.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { state } from "./donnees.mjs";
+import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
 import { GL, cibleWebgl } from "./webgl.mjs";
-import { svg, vue, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit }
+import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit }
   from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
-  fermeCriteres, majVideQ, videRecherche, reprendRecherche } from "./recherche.mjs";
+  fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
 import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
-import { oublieChoixPoi, ouvrePoi } from "./points-interet.mjs";
+import { oublieChoixPoi, ouvrePoi, oublieReperes } from "./points-interet.mjs";
 import { poseBorneIci } from "./borne.mjs";
 import { visePoi, viseItineraire, finVisee } from "./tiroir-itineraire.mjs";
+import { _lg } from "./texte-plan.mjs";
+import { dessineDessins } from "./dessin.mjs";
+import { libelles } from "./libelles.mjs";
+import { nomDeLaZone } from "./noms-zones.mjs";
 
 /* Ce que l'administration insère dans la chaîne, et rien sur la page
    publique : chaque maillon y répond « je n'ai rien pris », et la chaîne
@@ -92,7 +100,6 @@ const milieu = () => {
 function commencePince(){
   const m = milieu();
   const r = cadrePlan();
-  const view = vue();
   pince = {
     d: Math.max(1, m.d),
     w: view.w, h: view.h,
@@ -283,7 +290,7 @@ export function brancheGestes(){
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —
        dans cet ordre (`modules/gestes-admin.mjs`). */
     if (admin.appui(e)) return;
-    drag = { x: e.clientX, y: e.clientY, vx: vue().x, vy: vue().y, bouge: false,
+    drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
              // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
              cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
                              : e.target.closest("[data-id],[data-poi]") };
@@ -294,8 +301,7 @@ export function brancheGestes(){
     if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
     if (admin.suit(e)) return;
     if (!drag) return;
-    const view = vue();
-    const r = cadrePlan(), k = view.w / r.width;
+      const r = cadrePlan(), k = view.w / r.width;
     const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
     if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLesBandes(true); }
     view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
@@ -441,4 +447,22 @@ export function brancheGestes(){
      par tabulation. */
   ["pointerdown", "focusin"].forEach(t =>
     $("side").addEventListener(t, reprendRecherche));
+}
+
+/* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
+   l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
+   dans la langue d'avant : les libellés taillés à leur largeur, les repères
+   dessinés autour de leur nom, ceux que la recherche balaie. */
+export function brancheLangue(){
+  addEventListener("langue", () => {
+    if (!DATA || !view) return;
+    oublieReperes();
+    _lg.clear();
+    dessineDessins();
+    libelles();
+    liste();
+    // la fiche ouverte sur une zone porte son nom dans la langue d'avant
+    const o = state.sel && parId.get(state.sel);
+    if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
+  });
 }

@@ -20,11 +20,11 @@ import { clesPortees, apercuFiche, contenuApercu } from "./apercus.mjs";
 import { PREFIXE_PERSO } from "./recherche.mjs";
 import { montre, libelleCorps, ordreCorps, groupesFiche, montreIntitule } from "./corps-fiche.mjs";
 import { ouvre } from "./fiche.mjs";
+import { coexChoisit } from "./libelles.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
 let modeleRetenu;
 let ecritColonneEvenement;
-let coexChoisit;
 
 /* ------------------------------------------------------------------
    Ce que la fiche montre, dans quel ordre, et sous quels titres
@@ -654,9 +654,8 @@ export function voletOrdre(hote){
  * Le branchement, appelé par `_ordre-fiche.html` dans la tranche
  * d'administration qui portait ce code.
  *
- * @param {{ modeleRetenu: Function, ecritColonneEvenement: Function,
- *   coexChoisit: Function }} b
+ * @param {{ modeleRetenu: Function, ecritColonneEvenement: Function }} b
  */
 export function brancheReglageFiche(b){
-  ({ modeleRetenu, ecritColonneEvenement, coexChoisit } = b);
+  ({ modeleRetenu, ecritColonneEvenement } = b);
 }

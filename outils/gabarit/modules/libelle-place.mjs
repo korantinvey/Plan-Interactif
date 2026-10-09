@@ -25,19 +25,17 @@
    est d'exploitant : il vit dans `modules/placement-libelles.mjs`, que seul
    `plan-admin.mjs` embarque, et pose l'état par les portes d'ici. Le code
    soudé lit le mode et le libellé retouché par accesseur (`plan.mjs`) ; les
-   réglages et ce qui situe un nom sur sa forme lui sont confiés par
-   `brancheLibellePlace`, que `_mode-admin.html` appelle à la place que ce
-   code y tenait.
+   réglages lui sont confiés par `brancheLibellePlace`, que
+   `_mode-admin.html` appelle à la place que ce code y tenait. Ce qui situe
+   un nom sur sa forme s'importe (`texte-plan.mjs`).
    ============================================================ */
+import { ancre, place } from "./texte-plan.mjs";
 
 /* Ce que le code soudé confie : les réglages (`CONF`, que le changement de
-   salon remplace), lus à l'instant, et l'ancrage d'un nom et la place dont il
-   dispose (`_rendu.html`). */
+   salon remplace), lus à l'instant. */
 /**
  * @typedef {object} PageLibellePlace
  * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(o: any) => any} ancre
- * @property {(o: any) => any} place
  */
 /** @type {PageLibellePlace} */
 let soude;
@@ -78,7 +76,7 @@ export function poseLibelleChoisi(id){
  * autre chose n'a pas de raison de tenir à la même taille au même endroit.
  */
 export function empreinteLibelle(o){
-  const a = soude.ancre(o) || [0, 0], p = soude.place(o) || [0, 0];
+  const a = ancre(o) || [0, 0], p = place(o) || [0, 0];
   return [o.nom || "", o.code || "",
           (+a[0]).toFixed(2), (+a[1]).toFixed(2),
           (+p[0]).toFixed(2), (+p[1]).toFixed(2)].join("|");

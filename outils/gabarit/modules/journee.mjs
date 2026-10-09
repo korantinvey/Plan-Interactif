@@ -20,6 +20,7 @@ import { annoncePlan, litLaCharge, brancheCharge } from "./charge-annoncee.mjs";
 import { PLACES, oublieMatrice, calculeSejour, apercuRepartition, brancheSejour } from "./sejour.mjs";
 import { ITI, TRACE, poseTrace, dessineItineraire, cadreItineraire } from "./tiroir-itineraire.mjs";
 import { select, ficheConf } from "./fiche.mjs";
+import { changePlan } from "./rendu.mjs";
 
 /* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Le tracé de
    l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté là-bas comme
@@ -33,11 +34,11 @@ let soude = {};
 const datesSalon = () => soude.datesSalon();
 const horairesSalon = (jour) => soude.horairesSalon(jour);
 const lueHeure = (s) => soude.lueHeure(s);
-// le parcours et le plan, que ce tiroir refait ; la fiche s'importe de `fiche.mjs`
+// le parcours, que ce tiroir refait ; la fiche s'importe de `fiche.mjs`, le passage
+// d'un pavillon à l'autre de `rendu.mjs`
 const basculeParcours = (...a) => soude.basculeParcours(...a);
 const rangParcours = (hote, r) => soude.rangParcours(hote, r);
 const rafraichitParcours = () => soude.rafraichitParcours();
-const changePlan = (i) => soude.changePlan(i);
 // le trait de l'itinéraire, que la journée reprend pour elle
 const trace = () => TRACE;
 
@@ -1239,7 +1240,7 @@ function refaitSejour(cleAffichee, fige){
  *   lueHeure: (s: string) => number | null, minutesVisite: () => number,
  *   seuilGere: () => boolean, seuilImpose: () => boolean, seuilConcentration: (o: any) => number,
  *   basculeParcours: Function,
- *   rangParcours: Function, rafraichitParcours: Function, changePlan: Function }} b
+ *   rangParcours: Function, rafraichitParcours: Function }} b
  */
 export function brancheJournee(b){
   soude = b;
