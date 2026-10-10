@@ -466,9 +466,10 @@ function poseCsp(html) {
     .map(([, , code]) => "'sha256-" + crypto.createHash("sha256").update(code).digest("base64") + "'");
   const politique = [
     "default-src 'self'",
-    /* deck.gl compile un petit décodeur en WebAssembly : la permission ne
-       vaut que pour lui, jamais pour `eval` ni `new Function`. */
-    "script-src 'self' 'wasm-unsafe-eval' " + MAPLIBRE + "js " + empreintes.join(" "),
+    /* Ni `eval`, ni WebAssembly : la bibliothèque entière de deck.gl
+       compilait un décodeur, que sa version réduite au plan n'embarque plus
+       (`outils/deck.js`), et MapLibre n'en a pas. */
+    "script-src 'self' " + MAPLIBRE + "js " + empreintes.join(" "),
     "style-src 'self' 'unsafe-inline' " + MAPLIBRE + "css",
     "img-src 'self' https: data: blob:",
     "font-src 'self' data:",
