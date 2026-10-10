@@ -5,15 +5,16 @@
    ce qui se repose dessus quand ses groupes viennent d'être réécrits —, les
    onglets des pavillons et le passage de l'un à l'autre.
 
-   Il n'a pas de branchement. Ce qu'il appelle chez des modules qui
-   l'importent lui est confié en se chargeant (`confieAuRendu`), et lu au
-   moment de monter : le dessin des calques (`dessin.mjs`, qui importe la
-   fiche que ce module importe), le fond d'un pavillon (`demarrage.mjs`, qui
-   importe ce module-ci), et ce que seule l'administration connaît — la nappe
-   de la grille, le calage de la carte, l'éditeur à remettre au repos
-   (emplacement repris, historique, boîte à outils). La page publique n'en
-   confie rien : les défauts restent sans effet, et le montage n'a rien à
-   oublier. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
+   Il n'a pas de branchement. Le dessin des calques, le tracé de
+   l'itinéraire, la liste et le fond d'un pavillon, il les importe ou les
+   tient ; la fiche, il la referme par le registre des tiroirs exclusifs
+   (`tiroirs-exclusifs.mjs` `fermeTiroir`), sans l'importer — elle et le
+   tiroir de l'itinéraire l'importent, pour monter un pavillon ou y passer.
+   Seul ce que l'administration connaît lui est confié en se chargeant
+   (`confieAuRendu`) — la nappe de la grille, le calage de la carte,
+   l'éditeur à remettre au repos (emplacement repris, historique, boîte à
+   outils) ; la page publique n'en confie rien, et les défauts restent sans
+   effet. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
    remplit le contenu que chez l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
@@ -30,11 +31,11 @@ import { oublieDists } from "./distinctions.mjs";
 import { marqueRetrait, liste } from "./recherche.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { marqueParcours } from "./parcours.mjs";
-import { dessineItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { dessineItineraire } from "./trace-itineraire.mjs";
+import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { dessineBorne } from "./vous-etes-ici.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
-import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
@@ -208,7 +209,7 @@ export function changePlan(i){
   state.plan = i;
   /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
   prete.oublieCalageEnCours();
-  ferme();
+  fermeTiroir("fiche");
   montePlan(); fit(); liste();
   chargeFond(i);
 }
@@ -217,13 +218,3 @@ export function changePlan(i){
    charge, par un lecteur : elle ne retrace rien avant le premier montage, et
    ne peut importer ce module, qui l'atteint en chemin. */
 confieAuxPolices({ monte: () => MONTE });
-
-/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant de quoi monter le pavillon de ce qu'elle choisit,
-   quand il n'est pas celui qu'on regarde. */
-confieALaFiche({ montePlan });
-
-/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant le passage d'un pavillon à l'autre,
-   quand le trajet ou la visée mène ailleurs. */
-confieAuTiroirItineraire({ changePlan });

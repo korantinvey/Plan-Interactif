@@ -50,6 +50,7 @@ import { baisseTiroir } from "./tiroirs.mjs";
 import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
+import { montePlan } from "./rendu.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
@@ -62,7 +63,6 @@ import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
  * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
  * comme la pastille sans écoute.
  * @typedef {object} PageFiche
- * @property {() => void} montePlan
  * @property {(hote: any, canal: any) => void} brancheParcours
  * @property {((o: any) => void) | null} ficheZone
  * @property {((o: any) => void) | null} basculeAffichageZone
@@ -73,7 +73,6 @@ const prete = /** @type {any} */ ({ ficheZone: null, basculeAffichageZone: null 
 /** La porte des modules qui prêtent à la fiche ce qu'elle appelle.
  *  @param {Partial<PageFiche>} o */
 export function confieALaFiche(o){ Object.assign(prete, o); }
-const montePlan = () => prete.montePlan();
 const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================
@@ -1182,4 +1181,4 @@ confieALaRecherche({ select, ficheConf, adresseVignette });
 
 /* La fiche est l'un des trois tiroirs qui se partagent la bande : ouvrir le
    parcours ou l'itinéraire la referme, si elle est ouverte. */
-inscritTiroirExclusif("fiche", () => { if ($("detail").classList.contains("open")) ferme(); });
+inscritTiroirExclusif("fiche", ferme, () => $("detail").classList.contains("open"));

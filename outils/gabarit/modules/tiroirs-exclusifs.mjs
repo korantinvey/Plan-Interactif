@@ -15,17 +15,35 @@
 /** @typedef {"fiche" | "parcours" | "itineraire"} TiroirExclusif */
 /** @type {TiroirExclusif[]} */
 const ORDRE_EXCLUSIFS = ["fiche", "parcours", "itineraire"];
-/** @type {Map<TiroirExclusif, () => void>} */
+/** @type {Map<TiroirExclusif, { ferme: () => void, estOuvert: () => boolean }>} */
 const FERMETURES = new Map();
 
-/** @param {TiroirExclusif} nom @param {() => void} ferme ne fait rien s'il est déjà fermé */
-export function inscritTiroirExclusif(nom, ferme){ FERMETURES.set(nom, ferme); }
+/**
+ * Inscrire un tiroir. `estOuvert` ne sert qu'à celui dont la fermeture fait
+ * autre chose que se refermer — la fiche, qui rend aussi la sélection : ses
+ * voisins ne la ferment que si elle est ouverte, alors que le passage d'un
+ * pavillon à l'autre la ferme toujours (`fermeTiroir`).
+ * @param {TiroirExclusif} nom
+ * @param {() => void} ferme
+ * @param {() => boolean} [estOuvert]
+ */
+export function inscritTiroirExclusif(nom, ferme, estOuvert = () => true){
+  FERMETURES.set(nom, { ferme, estOuvert });
+}
+
+/** Referme un tiroir par son nom, quoi qu'il en soit — le passage d'un pavillon à
+ *  l'autre referme la fiche (`rendu.mjs` `changePlan`) sans importer la fiche.
+ *  @param {TiroirExclusif} nom */
+export function fermeTiroir(nom){
+  const t = FERMETURES.get(nom);
+  if (t) t.ferme();
+}
 
 /** Referme les deux autres, appelé par celui qui s'ouvre.
  *  @param {TiroirExclusif} moi */
 export function fermeLesAutresTiroirs(moi){
   for (const nom of ORDRE_EXCLUSIFS){
-    const ferme = nom !== moi && FERMETURES.get(nom);
-    if (ferme) ferme();
+    const t = nom !== moi && FERMETURES.get(nom);
+    if (t && t.estOuvert()) t.ferme();
   }
 }

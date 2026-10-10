@@ -31,7 +31,7 @@ import { phareZone } from "./cartouche-poi.mjs";
 import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce }
   from "./nom-emplacement.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
-import { rafraichitBouts } from "./tiroir-itineraire.mjs";
+import { rafraichitBouts } from "./trace-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { boite } from "./forme-choisie.mjs";

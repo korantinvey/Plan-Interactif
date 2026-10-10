@@ -5,20 +5,21 @@
    chaque changement de pavillon (`appliqueApparence`), et l'exploitant y
    revient à chaque couleur ou case de la pile (`pile.mjs`) et des volets
    (`volets.mjs`). Les options prises par le salon s'importent
-   (`options.mjs` `appliqueOptions`), le tiroir du parcours qu'on referme de
-   `parcours.mjs`. Les
-   secteurs s'importent de `recherche.mjs`, les marques des distinctions de
-   `distinctions.mjs`, le tiroir de l'itinéraire de `tiroir-itineraire.mjs`.
+   (`options.mjs` `appliqueOptions`), les secteurs de `recherche.mjs`, les
+   marques des distinctions de `distinctions.mjs`. Le parcours et
+   l'itinéraire, qu'on referme quand l'exploitant retire leur commande, se
+   referment par le registre des tiroirs exclusifs (`tiroirs-exclusifs.mjs`
+   `fermeTiroir`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { trio, luminance, ecarte } from "./couleurs.mjs";
 import { CONF, conf, sousCle, appliqueLangue } from "./configuration.mjs";
-import { marqueParcours, fermeParcours } from "./parcours.mjs";
+import { marqueParcours } from "./parcours.mjs";
 import { appliqueAccent, appliqueFond, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { appliqueSecteurs } from "./recherche.mjs";
 import { dessineDists, appliqueDists } from "./distinctions.mjs";
-import { fermeItineraire } from "./tiroir-itineraire.mjs";
+import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { appliqueOptions } from "./options.mjs";
 
 const racine = document.documentElement;
@@ -172,6 +173,6 @@ export function appliqueCommandes(){
   });
   // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
   // bouton pour se refermer
-  if (conf("_parcours").visible === false) fermeParcours();
-  if (conf("_itineraire").visible === false) fermeItineraire();
+  if (conf("_parcours").visible === false) fermeTiroir("parcours");
+  if (conf("_itineraire").visible === false) fermeTiroir("itineraire");
 }
