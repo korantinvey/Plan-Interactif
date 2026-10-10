@@ -70,13 +70,13 @@
  *
  * Les icônes déclarées plus bas suivent la même règle que le nom : elles ne
  * valent que par défaut. Un salon qui a déposé son logo depuis l'onglet
- * « Admin » du plan (`_application.html`) voit le relais remplacer cette liste
+ * « Admin » du plan (`modules/reglage-application.mjs`) voit le relais remplacer cette liste
  * par des adresses qu'il sert de la base — celles d'ici restent la marque du
  * produit, pour tous les salons qui n'ont rien déposé.
  *
  * iOS fait exception, et se corrige ailleurs : il ne lit pas le manifeste pour
  * l'écran d'accueil mais `apple-mobile-web-app-title` et `apple-touch-icon`,
- * écrits ici même, avant que le salon soit connu. `_installation.html`
+ * écrits ici même, avant que le salon soit connu. `modules/installation.mjs`
  * `nommeApplication` les reprend dès les données arrivées — les balises sont
  * relues au moment de l'ajout.
  */
@@ -244,7 +244,7 @@ const application = (slugDefaut) => [
   '  const lienManifeste = document.querySelector(\'link[rel="manifest"]\');',
   "  /* Le salon se lit là où il se trouve : dans le paramètre qu'on imprime et",
   "     qu'on partage, ou dans le chemin que l'application installée ouvre. La",
-  "     même règle que `_js.html` `SLUG`, réécrite ici faute de pouvoir la lui",
+  "     même règle que `modules/salon.mjs` `SLUG`, réécrite ici faute de pouvoir la lui",
   "     emprunter — ce bloc-ci tourne avant que rien d'autre ne soit là. */",
   '  const chemin = location.pathname.match(/^\\/plan-([a-z0-9][a-z0-9-]{0,63})$/);',
   '  const salon = new URLSearchParams(location.search).get("plan") ||',

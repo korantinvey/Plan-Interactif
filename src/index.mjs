@@ -452,7 +452,7 @@ const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
  * La page d'un salon, servie à son adresse à lui.
  *
  * C'est le même fichier qu'à `/plan` — la page y lit son salon dans le chemin
- * plutôt que dans le paramètre (`_js.html` `SLUG`). Rien n'est fabriqué par
+ * plutôt que dans le paramètre (`modules/salon.mjs` `SLUG`). Rien n'est fabriqué par
  * salon, ni ici ni dans `web/`.
  *
  * Ce chemin-ci n'arrive jusqu'au script que faute de fichier à ce nom : une
@@ -517,7 +517,7 @@ async function appDuSalon(slug, env, ctx) {
  * Deux entrées pour deux façons de poser une icône : telle quelle, et rognée à
  * la forme du système par Android — l'image de la seconde garde ses bords
  * libres, sans quoi le rognage y mange le logo. Elles sortent du même fichier
- * déposé (`_application.html`), et la base en tient les deux versions.
+ * déposé (`modules/reglage-application.mjs`), et la base en tient les deux versions.
  *
  * Une seule taille déclarée, et c'est la vraie : cinq cent douze pixels, ce
  * qu'un système demande au plus et bien au-delà du minimum qui rend une page
@@ -564,7 +564,7 @@ function iconesDuSalon(slug, empreinte) {
  * c'est lui qu'on cherche du regard, et la marque en signature. Il ne sert
  * qu'à défaut : un salon qui a écrit le nom de son application le porte tel
  * quel, et un salon qui a déposé son logo remplace du même coup les icônes du
- * produit (`_application.html`).
+ * produit (`modules/reglage-application.mjs`).
  *
  * Un fichier de `web/` est servi avant que ce script ne tourne : sans le
  * `run_worker_first` de `wrangler.jsonc`, ce chemin-ci ne viendrait jamais
@@ -607,7 +607,7 @@ async function manifeste(requete, env, ctx) {
   }
   /* L'application se nomme elle-même dans `related_applications`, et c'est ce
      qui permet à la page de savoir, plus tard, qu'elle est installée
-     (`outils/pwa.js`, `_installation.html`). Encore faut-il qu'elle s'y nomme
+     (`outils/pwa.js`, `modules/installation.mjs`). Encore faut-il qu'elle s'y nomme
      par l'adresse exacte de ce manifeste-ci : le navigateur retient
      l'application sous l'adresse d'où elle a été posée, paramètres compris, et
      l'adresse nue du fichier construit ne désigne alors aucune application

@@ -9,19 +9,18 @@
    l'embarque, `plan.mjs` jamais.
 
    La forme choisie elle-même (`formeSel`), sa recherche (`formeParId`) et sa
-   boîte (`boite`) restent dans `_edition.html` : le plan public les lit — le
-   rendu des calques marque la forme choisie, la fiche et l'itinéraire
-   retrouvent un repère par son identifiant —, et l'outil de dessin
-   (`outil-dessin.mjs`) la relâche à plusieurs endroits. Le module la lit donc par un lecteur, et la change par
-   la porte que le code soudé lui confie (`poseFormeSel`).
+   boîte (`boite`) vivent dans `forme-choisie.mjs`, que le plan public reçoit :
+   le rendu des calques marque la forme choisie, la fiche et l'itinéraire
+   retrouvent un repère par son identifiant, et l'outil de dessin
+   (`outil-dessin.mjs`) la relâche à plusieurs endroits. Le module l'importe,
+   et la change par sa porte (`poseFormeSel`).
 
    Le calque actif et l'outil tenu (`calques-dessin.mjs`), le tracé des
    formes (`chemin-forme.mjs`, `dessin.mjs`), ce qu'un repère et un arrêt sont
    (`reperes.mjs`) et la vue (`vue.mjs`) s'importent. L'historique,
    l'enregistrement et les champs de la boîte à outils vivent dans
-   `outil-dessin.mjs`, qui importe ce module-ci : ils lui sont confiés, comme
-   la forme choisie, par `brancheEdition`, que `_edition.html` appelle à la
-   place que ce code y tenait.
+   `outil-dessin.mjs`, qui importe ce module-ci : il les lui confie par
+   `confieAEdition` en se chargeant. Rien ne passe plus par le code soudé.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -32,36 +31,43 @@ import { GL, priseWebgl } from "./webgl.mjs";
 import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
-import { vue, cadrePlan, versPlan, svg } from "./vue.mjs";
+import { vue, cadrePlan, versPlan, svg, confieALaVue } from "./vue.mjs";
 import { calqueActif, outil } from "./calques-dessin.mjs";
 import { estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { TYPES_REPERE, MODES_TRANSPORT, pictoForme, nomTypeRepere, estTransport, modeTransport, couleurRepere,
   couleurLigne, couleurEcrite, libelleDoffice } from "./reperes.mjs";
 import { dessineDessins, redessineForme, apercuGuide, seRattache, societeDeForme, etiquetteSociete }
   from "./dessin.mjs";
+import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La forme
-   choisie est un lecteur : les gestes et la boîte à outils la remplacent sans
-   cesse. */
-/** @type {Record<string, any>} */
-let soude = {};
+/**
+ * Ce que l'outil de dessin tient et confie au module en se chargeant
+ * (`outil-dessin.mjs`, qui importe celui-ci et ne peut donc pas en être
+ * importé). Les défauts ne font rien : aucun geste d'édition ne part avant
+ * que la page d'administration ait chargé l'outil.
+ *
+ * @typedef {object} PreteEdition
+ * @property {typeof import("./outil-dessin.mjs").memorise} memorise
+ * @property {typeof import("./outil-dessin.mjs").enregistreDessins} enregistreDessins
+ * @property {typeof import("./outil-dessin.mjs").optionsModes} optionsModes
+ * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
+ * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
+ */
+/** @type {PreteEdition} */
+const prete = {
+  memorise: () => {}, enregistreDessins: () => {}, optionsModes: () => "",
+  societeSaisie: () => null, remplitListeSocietes: () => {},
+};
 
-const formeSel = () => soude.formeSel();
-const poseFormeSel = (id) => soude.poseFormeSel(id);
-const formeParId = (id) => soude.formeParId(id);
-const boite = (f) => soude.boite(f);
-const memorise = (salve) => soude.memorise(salve);
-const enregistreDessins = () => soude.enregistreDessins();
-const optionsModes = () => soude.optionsModes();
-const societeSaisie = (txt) => soude.societeSaisie(txt);
-const remplitListeSocietes = () => soude.remplitListeSocietes();
+const memorise = (/** @type {string} */ salve) => prete.memorise(salve);
+const enregistreDessins = () => prete.enregistreDessins();
+const optionsModes = () => prete.optionsModes();
+const societeSaisie = (/** @type {string} */ txt) => prete.societeSaisie(txt);
+const remplitListeSocietes = () => prete.remplitListeSocietes();
 
-/** Ce que le code soudé confie au module, appelé par `_edition.html` à la
- *  place que ce code tenait dans le script du plan. Rien ne s'y exécute au
- *  chargement : il n'y a qu'à retenir ce qui est confié. */
-export function brancheEdition(page){
-  soude = page;
-}
+/** La porte par laquelle l'outil de dessin confie ce qu'il tient.
+ *  @param {Partial<PreteEdition>} o */
+export function confieAEdition(o){ Object.assign(prete, o); }
 
 /** Le geste en cours — déplacer, tirer une poignée, tourner un texte —, ou
  *  rien. Le dessin le lit pour ne pas effacer les points d'accrochage d'un
@@ -91,7 +97,7 @@ export function dessinePoignees(){
     g.id = "poignees";
     svg.appendChild(g);
   }
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
   const f = cible.f;
   const r = cadrePlan();
@@ -159,13 +165,41 @@ export function choisitForme(id){
     .forEach(g => g.classList.toggle("pick", g.dataset.f === id));
   dessinePoignees();
   majElement();
+  degageOutils();
+}
+
+/**
+ * La boîte à outils repliée sur sa tête, ou rendue.
+ * @param {boolean} oui
+ */
+export function replieOutils(oui){
+  const o = $("outils"), b = $("replieOutils");
+  if (!o) return;
+  o.classList.toggle("replie", oui);
+  if (!b) return;
+  b.setAttribute("aria-expanded", String(!oui));
+  b.title = oui ? "Déplier" : "Replier";
+  b.setAttribute("aria-label", oui ? "Déplier la boîte à outils" : "Replier la boîte à outils");
+  b.innerHTML = oui ? "&#43;" : "&#8211;";
+}
+
+/* La boîte flotte sur le coin du plan : une forme qu'on y choisit, qu'on y
+   amène, passait dessous, et le clic suivant tombait sur la boîte. Elle se
+   replie alors d'elle-même ; on la rend d'un clic. Ses côtés sont pris par le
+   panneau des calques à droite : la déplacer ne ferait que couvrir autre chose. */
+function degageOutils(){
+  const o = $("outils"), g = $("poignees");
+  if (!o || !g || !o.classList.contains("open") || o.classList.contains("replie")) return;
+  const a = o.getBoundingClientRect(), b = g.getBoundingClientRect();
+  if (!b.width && !b.height) return;
+  if (b.left < a.right && b.right > a.left && b.top < a.bottom && b.bottom > a.top) replieOutils(true);
 }
 
 /* --- panneau de la forme choisie --- */
 export function majElement(){
   const z = $("elemSel");
   if (!z) return;
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || outil !== "main"){ z.hidden = true; return; }
   z.hidden = false;
   const f = cible.f;
@@ -306,7 +340,7 @@ function candidatsLiaison(f){
  * qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
  */
 function ecritDesDeuxCotes(idAutre, change){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   const autre = annuaireLiaisons().par.get(idAutre);
   if (!cible || !autre || !typeLiaison(cible.f)) return;
   memorise();
@@ -403,7 +437,7 @@ function majLiens(f){
  * simplement ce qu'elle montre.
  */
 export function appliqueSociete(){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || !seRattache(cible.f)) return;
   const ch = $("elemSoc");
   const l = societeSaisie(ch.value);
@@ -419,7 +453,7 @@ export function appliqueSociete(){
 }
 
 export function appliqueTexte(salve){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
   memorise(salve);
   cible.f.txt = $("elemTexte").value;
@@ -431,7 +465,7 @@ export function appliqueTexte(salve){
  *  −90 couchent le texte de la même façon, et une seule écriture évite qu'un
  *  tour complet ne s'accumule au fil des clics. Droit, il n'écrit rien. */
 export function appliqueRotation(salve){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "texte") return;
   const v = parseFloat($("elemRotation").value);
   if (!isFinite(v)) return;
@@ -445,7 +479,7 @@ export function appliqueRotation(salve){
 
 /** L'arrondi des coins de la forme choisie. */
 export function appliqueRayon(){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible) return;
   memorise();
   cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
@@ -458,7 +492,7 @@ export function appliqueRayon(){
  *  Une flèche se pose et se retire après coup — on s'aperçoit qu'une allée est
  *  à sens unique en regardant le plan, rarement en la traçant. */
 export function appliqueTrait(){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "ligne") return;
   memorise();
   const ep = parseFloat($("elemEpaisseur").value);
@@ -486,7 +520,7 @@ export function appliqueTrait(){
  * celle de la précédente.
  */
 export function appliqueTransport(salve){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || !estTransport(cible.f)) return;
   const f = cible.f;
   const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
@@ -509,7 +543,7 @@ export function appliqueTransport(salve){
  *  vaut comme passage d'un plan à l'autre — une porte, un escalier, un
  *  ascenseur. Le terrain, lui, ne bouge pas : un repère ne barre rien. */
 export function appliquePicto(){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "repere") return;
   memorise();
   const avant = pictoForme(cible.f);
@@ -535,10 +569,10 @@ export function appliquePicto(){
 }
 
 export function supprimeForme(){
-  const cible = formeSel() && formeParId(formeSel());
+  const cible = formeSel && formeParId(formeSel);
   if (!cible) return;
   memorise();
-  cible.c.formes = cible.c.formes.filter(x => x.id !== formeSel());
+  cible.c.formes = cible.c.formes.filter(x => x.id !== formeSel);
   poseFormeSel(null);
   enregistreDessins(); dessineDessins(); dessinePoignees(); majElement();
 }
@@ -550,8 +584,8 @@ export function editionPointerDown(e){
 
   // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
   const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
-  if (pgn && formeSel() && pgn.dataset.i === "rot"){
-    const cible = formeParId(formeSel());
+  if (pgn && formeSel && pgn.dataset.i === "rot"){
+    const cible = formeParId(formeSel);
     if (cible && cible.f.t === "texte"){
       memorise();
       const f = cible.f, c = f.pts[0];
@@ -564,8 +598,8 @@ export function editionPointerDown(e){
       return true;
     }
   }
-  if (pgn && formeSel()){
-    const cible = formeParId(formeSel());
+  if (pgn && formeSel){
+    const cible = formeParId(formeSel);
     if (cible){
       memorise();
       geste = { type: "poignee", i: +pgn.dataset.i, depart: p,
@@ -590,7 +624,7 @@ export function editionPointerDown(e){
        reste laisse passer le geste vers le plan, qui se déplace. */
     if (!sienne) return false;
 
-    if (id !== formeSel()) choisitForme(id);
+    if (id !== formeSel) choisitForme(id);
     if (cible){
       memorise();
       geste = { type: "deplace", depart: p, pts: cible.f.pts.map(q => q.slice()), f: cible.f };
@@ -600,7 +634,7 @@ export function editionPointerDown(e){
     return true;
   }
 
-  if (formeSel()){ choisitForme(null); return true; }
+  if (formeSel){ choisitForme(null); return true; }
   return false;    // rien sous le pointeur : on laisse le déplacement de la vue
 }
 
@@ -692,5 +726,12 @@ export function editionPointerUp(e){
   apercuGuide(null); montreCote(null); montreAimants(null);
   retientTaille(f);
   enregistreDessins();
+  degageOutils();
   return true;
 }
+
+/* Les poignées de la forme choisie gardent leur taille à l'écran : la vue,
+   que ce module importe, les refait à chaque changement de vue — il les lui
+   confie en se chargeant. La page publique, qui n'embarque pas l'éditeur,
+   n'a pas de poignées à refaire. */
+confieALaVue({ dessinePoignees });

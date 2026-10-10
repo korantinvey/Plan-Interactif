@@ -1,36 +1,29 @@
 /* ============================================================
-   9. Apparence des calques — le branchement
+   Les options du plan — ce que le salon a pris
 
-   Les réglages vivent dans CONF, partagés par les trois pavillons :
-   changer la couleur du bâtiment une fois vaut pour tous.
+   La liste des options vendues à part, la classe que chacune pose sur la page
+   quand elle est fermée, et ce qu'elle refait sur-le-champ. Le visiteur la
+   reçoit — les classes retirent ce que son salon n'a pas pris —, d'où
+   `plan.mjs` ; la case qui les ouvre et les ferme est dans l'onglet
+   « Admin » (`volets.mjs`), d'exploitant.
 
-   La configuration et les règles qui la relisent vivent dans des modules :
-   CONF, sa clé et ce que le plan public en lit (`modules/configuration.mjs`),
-   l'apparence des calques et les commandes (`apparence.mjs`), la couleur, le
-   fond, les distinctions, la barre et le modèle (`habillage.mjs`,
-   `modeles.mjs`), la police des noms (`polices-plan.mjs`), le seuil de
-   concentration (`seuil.mjs`), les dates et les heures du salon
-   (`horaires.mjs`) ; et pour l'exploitant seul, l'onglet « Recherche »
-   (`reglage-recherche.mjs`) et la rafale du nuancier (`nuancier.mjs`). Ils se
-   branchent ici, à la place que leur code tenait : ce que le code soudé
-   tient encore leur est confié, ce qui change sans cesse par un lecteur.
-   L'itinéraire et l'envoi de la configuration ne sont déclarés que plus bas,
-   ou ailleurs : ils viennent par un détour, lu au moment de s'en servir.
+   Ce qu'une option refait en se fermant touche au parcours, à l'index des
+   conférences et à la liste, qui s'importent. Deux d'entre elles touchent
+   aussi à l'outil de dessin, que le visiteur ne reçoit pas : l'outil
+   (`outil-dessin.mjs`) leur confie lui-même ce qu'elles refont, par
+   `confieApresOption`.
 
-   Restent ici les options vendues à part (`OPTIONS`) : ce que chacune refait
-   quand on la ferme touche au dessin, au parcours et à l'index des
-   conférences, et l'outil de l'exploitant s'y lit dans des tranches que le
-   visiteur ne reçoit pas.
+   Sorti de `_admin1.html`. L'apparence des calques (`apparence.mjs`), que le
+   tiroir du parcours importe, ne peut importer ce module : celui-ci lui
+   confie `appliqueOptions` en se chargeant (`confieALApparence`).
    ============================================================ */
-brancheConfiguration({ secteurs: () => SECTEURS });
-brancheApparence({
-  appliqueOptions, fermeParcours,
-  fermeItineraire: () => fermeItineraire(),
-});
+import { optionActive } from "./configuration.mjs";
+import { rafraichitParcours } from "./tiroir-parcours.mjs";
+import { indexeConferences } from "./index-salon.mjs";
+import { liste } from "./recherche.mjs";
+import { confieALApparence } from "./apparence.mjs";
 
 const racine = document.documentElement;
-
-brancheHabillage({ distinctions: DISTINCTIONS, dessineDists, refaitDistsFiche });
 
 /**
  * Les options du plan.
@@ -65,18 +58,17 @@ brancheHabillage({ distinctions: DISTINCTIONS, dessineDists, refaitDistsFiche })
  *
  * « classe » marque celles qui se ferment par la feuille de style — un bouton
  * de la boîte à outils, celui du tiroir du parcours ; « apres » dit ce qui se
- * refait sur-le-champ pour les autres.
+ * refait sur-le-champ pour les autres. Celui des deux options de l'outil de
+ * dessin, l'outil le leur confie (`confieApresOption`).
+ *
+ * @type {{ cle: string, classe?: string, libelle: string, aide: string, apres?: () => void }[]}
  */
-const OPTIONS = [
+export const OPTIONS = [
   { cle: "dessinStand", classe: "sans-dessin-stand",
     libelle: "Dessin des stands",
     aide: "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il " +
       "héberge, sur sa part d'un emplacement. Fermée, l'outil reste dans la boîte " +
       "à outils, grisé ; les découpages déjà tracés restent sur le plan.",
-    /* @admin — l'outil qu'on ferme ne s'est jamais tenu en main hors de l'administration */
-    // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
-    apres: () => { if (outil === "stand") choisitOutil("main"); },
-    /* @fin-admin */
   },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
@@ -86,12 +78,6 @@ const OPTIONS = [
       "l'image : fermée, l'outil image reste et les images se posent comme " +
       "n'importe quel dessin, mais le champ qui nomme l'exposant est grisé et " +
       "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
-    /* @admin — le champ image ne se pose qu'outil en main */
-    /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
-       et sa liste de choix se posent en JS, et seulement l'outil en main : on
-       repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
-    apres: () => { if (outil === "image") poseChampImage(); },
-    /* @fin-admin */
   },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
@@ -127,17 +113,26 @@ const OPTIONS = [
     apres: () => rafraichitParcours() },
 ];
 
-function appliqueOptions(){
+export function appliqueOptions(){
   OPTIONS.forEach(o => {
     if (o.classe) racine.classList.toggle(o.classe, !optionActive(o.cle));
   });
 }
 
-/* @admin — l'onglet « Recherche » et le nuancier, que seule l'administration ouvre */
-brancheReglageRecherche({
-  reperesCherchables, enregistreConf: () => enregistreConf(),
-});
-brancheNuancier();
-/* @fin-admin */
+/**
+ * La porte de ce qu'une option refait en se fermant, quand c'est l'outil de
+ * l'exploitant qui le sait : `outil-dessin.mjs` l'ouvre en se chargeant, et la
+ * page publique, qui n'a pas l'outil, n'a rien derrière.
+ *
+ * @param {string} cle
+ * @param {() => void} apres
+ */
+export function confieApresOption(cle, apres){
+  const o = OPTIONS.find(x => x.cle === cle);
+  if (o) o.apres = apres;
+}
 
-branchePolices({ monte: () => MONTE, dessineDessins, libelles, liste });
+/* Les options, confiées à l'apparence dès que ce module se charge : elle les
+   repose avec le reste de l'habillage, et ne peut importer ce module, qui
+   l'atteint par le tiroir du parcours. */
+confieALApparence({ appliqueOptions });

@@ -1,49 +1,6 @@
+<!-- Les données du plan : figées dans la démonstration, à la place de
+     `__DATA__` ; vides ailleurs, où la page les demande à l'API. Le script
+     des modules se pose juste après (`outils/genere.js`
+     `poseModulesDuPlan`) : il n'y a plus de script soudé, et la suite des
+     branchements vit dans `modules/lancement.mjs`. -->
 <script id="data" type="application/json">/*__DATA__*/</script>
-<script>
-/* Sans viewport, un mobile rend la page dans un viewport virtuel de 980 px :
-   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. Les
-   pages construites en portent une, posée par `outils/genere.js` avec ou sans
-   le `viewport-fit` qui les étend sous les barres du système : ce repli-ci ne
-   sert donc qu'au gabarit ouvert tel quel, et il demande la même chose. */
-if (!document.querySelector('meta[name="viewport"]')){
-  const mv = document.createElement("meta");
-  mv.name = "viewport";
-  mv.content = "width=device-width, initial-scale=1, viewport-fit=cover";
-  document.head.appendChild(mv);
-}
-
-/* `$`, `esc` et les autres utilitaires du socle viennent des modules
-   (`outils/gabarit/modules/`), posés avant ce script : voir `plan.mjs`. Le
-   SVG du plan (`svg`) et la vue (`view`) aussi : `modules/vue.mjs`, où la vue
-   se remplace par sa porte, `changeVue`.
-
-   `API`, `SLUG` et les chemins d'un salon viennent eux aussi des modules :
-   `salon.mjs`, qui lit les réglages de la construction et l'adresse.
-
-   Les données du plan et leurs index, l'état de la vue (`state`) et le
-   pavillon courant (`P`) : `modules/donnees.mjs`. On les lit ici par leur nom,
-   comme avant ; on les remplace par `poseDonnees({ … })`, et par là seulement. */
-
-/* ============================================================
-   1. Index global — le branchement
-
-   L'index du salon vit dans `modules/index-salon.mjs` : ses données posées,
-   ce qu'on y cherche, ses réglages et ses calques ouverts, le programme des
-   conférences, l'onglet nommé. Le nom d'une zone dans la langue de la page
-   est dans `modules/noms-zones.mjs`, la couleur de la barre du système dans
-   `modules/ton-barre.mjs`.
-
-   Les calques dessinés, il les importe (`modules/calques-dessin.mjs`). Ne
-   lui est confié que ce qui n'est qu'à l'administration.
-   ============================================================ */
-brancheIndex({
-  /* L'enregistrement n'est qu'à l'administration (`modules/enregistrement.mjs`) :
-     le visiteur ne l'a pas, on ne l'appelle que si la page l'a reçu. */
-  compteRescapes: (n) => { if (typeof compteRescapes === "function") compteRescapes(n); },
-  noteReglagesCharges: (enBase) => {
-    if (typeof noteReglagesCharges === "function") noteReglagesCharges(enBase);
-  },
-});
-/* Et l'écoute de la largeur, qui refait la couleur de la barre du système
-   quand le seuil du téléphone est franchi : posée ici, au rang qu'elle tenait. */
-brancheTonDeLaBarre();

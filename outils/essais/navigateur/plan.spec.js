@@ -18,6 +18,27 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Sur un téléphone, le premier cadrage mesurait le tiroir de la liste en
+     train de glisser : il variait de quelques pixels d'un chargement à
+     l'autre, et ne valait pour aucun. Une fois tout posé, il doit être celui
+     que la page referait d'elle-même — c'est ce que fait un « resize ». */
+  test("le premier cadrage vaut pour la liste posée @telephone", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await page.waitForFunction(() => document.getElementById("side").getAnimations().length === 0);
+    // l'écart, en pixels d'écran : il en faisait une quinzaine
+    const ecart = await page.evaluate(() => {
+      const g = /** @type {any} */ (globalThis).__essais;
+      const avant = g.view;
+      dispatchEvent(new Event("resize"));
+      const pixel = g.view.w / document.getElementById("plan").getBoundingClientRect().width;
+      return Math.max(...["x", "y", "w", "h"].map((k) => Math.abs(g.view[k] - avant[k]) / pixel));
+    });
+    expect(ecart).toBeLessThan(1);
+    expect(erreurs).toEqual([]);
+  });
+
   test("la recherche resserre la liste, et la rend quand on l'efface", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);
@@ -130,8 +151,8 @@ test.describe("ce qui vient d'ailleurs", () => {
     await page.goto(PLAN);
     await attendLaListe(page);
     const r = await page.evaluate(() => {
-      // ce que le module confie à la page (`modules/plan.mjs`)
-      const { adresseSure, imageSure, adresseImage } = /** @type {any} */ (globalThis);
+      // ce que les modules confient aux essais (`modules/plan.mjs` `__essais`)
+      const { adresseSure, imageSure, adresseImage } = /** @type {any} */ (globalThis).__essais;
       return {
         refusees: ["javascript:alert(1)", " JaVaScRiPt:alert(1)", "java\u0000script:alert(1)",
           "data:text/html,<script>alert(1)</script>", "vbscript:x", "ftp://x.fr", "@compte"]
@@ -152,12 +173,41 @@ test.describe("ce qui vient d'ailleurs", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Le dernier rempart : si une injection passait les règles de
+     `modules/sur.mjs`, la politique de sécurité de la page (`outils/genere.js`
+     `poseCsp`) refuse encore de l'exécuter — et la page, elle, n'en viole
+     aucune en se chargeant. */
+  test("un script injecté ne s'exécute pas, et la page n'enfreint pas sa politique", async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = /** @type {any} */ (window);
+      w.__violations = [];
+      document.addEventListener("securitypolicyviolation",
+        (e) => w.__violations.push(e.violatedDirective + " " + (e.blockedURI || "en ligne")));
+    });
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    expect(await page.evaluate(() => /** @type {any} */ (window).__violations)).toEqual([]);
+    const r = await page.evaluate(async () => {
+      const w = /** @type {any} */ (window);
+      w.__pirate = 0;
+      const s = document.createElement("script");
+      s.textContent = "window.__pirate = 1";
+      document.body.appendChild(s);
+      await new Promise((ok) => setTimeout(ok, 200));
+      return { pirate: w.__pirate, violations: w.__violations.length };
+    });
+    expect(r).toEqual({ pirate: 0, violations: 1 });
+    // le refus est annoncé dans la console : c'est lui, et lui seul
+    expect(erreurs.filter((e) => !/Content Security Policy/.test(e))).toEqual([]);
+  });
+
   test("une description ne garde que sa mise en forme", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);
     await attendLaListe(page);
     const r = await page.evaluate(() => {
-      const { assainitRiche } = /** @type {any} */ (globalThis);
+      const { assainitRiche } = /** @type {any} */ (globalThis).__essais;
       const piege = "window.__piege = 1";
       const entrees = [
         "<p>Bonjour <b>gras</b> <i>it</i></p>",
@@ -208,6 +258,42 @@ test.describe("les autres pages", () => {
     });
   }
 
+  /* Chacune de ces deux fenêtres ouvre l'autre à sa place : la fermeture qui
+     suit un bouton emportait celle qu'il venait d'ouvrir, et il ne restait
+     aucune fenêtre. */
+  test("la console passe de la connexion au projet, et retour", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto("/admin-plans.html");
+    const titre = page.locator("#mTitre"), pied = page.locator("#mPied button");
+    await expect(titre).toHaveText("Connexion");
+    await pied.filter({ hasText: "Changer de projet" }).click();
+    await expect(page.locator("#modale")).toHaveClass(/\bopen\b/);
+    await expect(titre).toHaveText("Connexion au projet");
+    await pied.filter({ hasText: "Valider" }).click();
+    await expect(page.locator("#modale")).toHaveClass(/\bopen\b/);
+    await expect(titre).toHaveText("Connexion");
+    expect(erreurs).toEqual([]);
+  });
+
+  // la redirection n'arrête pas le script : la console chargeait pendant qu'elle partait
+  test("la console renvoie un jeton de mot de passe sans rien charger", async ({ page }) => {
+    await prepare(page);
+    const appels = [];
+    await page.addInitScript(() => {
+      localStorage.setItem("console-config", JSON.stringify({ url: "https://base.essai", anonKey: "anon" }));
+      localStorage.setItem("console-session", JSON.stringify({ access_token: "a.b.c" }));
+    });
+    await page.route("https://base.essai/**", (r) => { appels.push(r.request().url()); return r.fulfill({ json: [] }); });
+    // la page d'arrivée tarde : c'est pendant ce temps que la console chargeait
+    await page.route("**/motdepasse*", async (r) => {
+      await new Promise((f) => setTimeout(f, 800));
+      await r.fulfill({ contentType: "text/html", body: "<p>mot de passe</p>" });
+    });
+    await page.goto("/admin-plans.html#access_token=x&type=recovery");
+    await expect(page).toHaveURL(/\/motdepasse#access_token=x&type=recovery$/);
+    expect(appels).toEqual([]);
+  });
+
   test("l'administration d'un plan demande d'abord qui l'on est", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto("/plan-admin.html?plan=smcl-2026");
@@ -226,8 +312,8 @@ test.describe("le salon que nomme l'adresse", () => {
    *  attendre le plan, que la démonstration met longtemps à dessiner. */
   const salonDe = async (page, adresse) => {
     await page.goto(adresse, { waitUntil: "domcontentloaded" });
-    await page.waitForFunction(() => typeof /** @type {any} */ (window).SLUG === "string");
-    return page.evaluate(() => /** @type {any} */ (window).SLUG);
+    await page.waitForFunction(() => typeof /** @type {any} */ (window).__essais?.SLUG === "string");
+    return page.evaluate(() => /** @type {any} */ (window).__essais.SLUG);
   };
 
   test("l'administration à son adresse nue n'est pas un salon", async ({ page }) => {

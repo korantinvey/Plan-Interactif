@@ -14,8 +14,8 @@ import { jourISO } from "./temps.mjs";
 import { SEUIL_PEINE, TRANCHES_JOUR, TRANCHES_MINI, trancheDe, dilatationPour }
   from "./ordonnanceur.mjs";
 
-/* Ce qu'on lui confie : le réglage de la concentration (`_admin1.html`, code
-   soudé), l'identifiant du parcours et le parcours lui-même (`parcours.mjs`),
+/* Ce qu'on lui confie : le réglage de la concentration (`seuil.mjs`, que
+   `journee.mjs` importe), l'identifiant du parcours et le parcours lui-même (`parcours.mjs`),
    la visite calculée (`journee.mjs`, qui importe ce module : l'importer en
    retour bouclerait). Les deux derniers sont réaffectés là-bas : on les lit
    donc par une fonction, qui rend la valeur du moment. */
@@ -80,7 +80,7 @@ let _reposPlan = null;
  *  tourner : le réglage du salon, et le consentement du visiteur. */
 export const chargeSuivie = () =>
   typeof seuilGere === "function" && seuilGere() &&
-  typeof mesureOuverte === "function" && mesureOuverte() &&
+  mesureOuverte() &&
   !!SLUG && !BORNE;
 
 /** Le séjour, réduit à ce qu'il annonce : un stand, un jour, une demi-heure. */
@@ -109,7 +109,7 @@ function etapesDuSejour(){
  *
  * Une panne ne se rattrape pas, à la différence des mesures : un plan raté
  * sera réannoncé au prochain calcul, et un plan périmé ne vaut rien. La file
- * de `_mesure.html` porte des gestes déjà faits ; ici on porte une intention,
+ * de `mesure.mjs` porte des gestes déjà faits ; ici on porte une intention,
  * qui n'a pas à survivre à la journée qu'elle décrit.
  */
 export function annoncePlan(){

@@ -12,18 +12,23 @@
    Sortis de `_recherche.html` (§ 5) : les critères et leur panneau, le
    retrait du plan, la liste et ses vignettes. Les secteurs vivent dans
    `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. L'écran et ce
-   que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`). La fiche
+   que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`), et les
+   tiroirs (`tiroirs.mjs`). La fiche
    et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
    module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
    bouclerait. Le dessin des noms et des distinctions (`libelles.mjs`,
    `distinctions.mjs`) l'importe, et ne peut donc pas l'être ; la mesure du
-   texte, elle, s'importe (`texte-plan.mjs`). Ce que le code soudé tient
-   encore — la fiche et la sélection, les tiroirs, le dessin des noms et des
-   distinctions, les repères, le parcours — lui est confié par
+   texte, elle, s'importe (`texte-plan.mjs`).
+   Ce que le code soudé tient encore — la fiche et la sélection, le dessin des
+   noms et des distinctions, les repères, le parcours — lui est confié par
    `brancheRecherche`, que `_recherche.html` appelle à la place que ce code
    tenait : l'écoute de la liste s'y pose, au même rang qu'avant. Ce qui se
    déclare plus loin dans le code soudé, ou change sans cesse, vient par des
    détours, lus au moment de s'en servir.
+
+   En retour, ce module confie en se chargeant ce que deux modules qu'il
+   importe lui empruntent : le panneau des critères aux tiroirs
+   (`confieAuxTiroirs`), la liste à la police des noms (`confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
@@ -33,24 +38,28 @@ import { JOURS, momentLocal } from "./temps.mjs";
 import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
 import { conf, chercheSorte } from "./configuration.mjs";
-import { P_CODE } from "./polices-plan.mjs";
+import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
-import { montre } from "./corps-fiche.mjs";
+import { montre, PREFIXE_PERSO, confieAuCorpsDeFiche } from "./corps-fiche.mjs";
+import { montreTiroir, mesureTiroir, hisseTiroir, confieAuxTiroirs } from "./tiroirs.mjs";
 import { largeur } from "./texte-plan.mjs";
 
 /**
- * Ce que le code soudé confie au branchement.
+ * Ce que la recherche emprunte aux modules qui l'importent : la fiche qu'une
+ * ligne ouvre (`fiche.mjs`), le parcours où l'on verse ce qu'elle retient
+ * (`tiroir-parcours.mjs`), les distinctions qu'elle marque (`distinctions.mjs`),
+ * les libellés qu'elle refait (`libelles.mjs`), les repères qu'elle remonte
+ * (`points-interet.mjs`). Tous l'importent, et elle ne peut donc les importer
+ * en retour : chacun lui confie ce qu'elle en appelle au chargement de son
+ * module, par `confieALaRecherche` — jamais par le code soudé.
  * @typedef {object} PageRecherche
  * @property {() => void} ferme referme la fiche (`fiche.mjs`)
  * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
  * @property {(id: any, canal?: string) => void} ficheConf
  * @property {(cle: any) => string} adresseVignette
- * @property {() => void} montreTiroir
- * @property {() => void} mesureTiroir
- * @property {() => void} hisseTiroir
  * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
  * @property {() => void} dessineDists
  * @property {() => void} libelles
@@ -61,23 +70,24 @@ import { largeur } from "./texte-plan.mjs";
  * @property {(id: any, p: number) => void} vaAuRepere
  */
 /** @type {PageRecherche} */
-let soude;
-const ferme = () => soude.ferme();
+const prete = /** @type {any} */ ({});
+
+/** La porte des modules qui prêtent à la recherche ce qu'elle appelle.
+ *  @param {Partial<PageRecherche>} o */
+export function confieALaRecherche(o){ Object.assign(prete, o); }
+const ferme = () => prete.ferme();
 const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal,
-  /** @type {number} */ iSoc) => soude.select(id, recentrer, canal, iSoc);
-const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => soude.ficheConf(id, canal);
-const adresseVignette = (/** @type {any} */ cle) => soude.adresseVignette(cle);
-const montreTiroir = () => soude.montreTiroir();
-const mesureTiroir = () => soude.mesureTiroir();
-const hisseTiroir = () => soude.hisseTiroir();
-const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => soude.poseToutAuParcours(hote);
-const dessineDists = () => soude.dessineDists();
-const libelles = () => soude.libelles();
-const marquesListe = (/** @type {(d: any) => boolean} */ porte) => soude.marquesListe(porte);
-const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => soude.porteDist(x, d);
-const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => soude.standPorte(o, d);
-const reperesCherchables = () => soude.reperesCherchables();
-const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => soude.vaAuRepere(id, p);
+  /** @type {number} */ iSoc) => prete.select(id, recentrer, canal, iSoc);
+const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.ficheConf(id, canal);
+const adresseVignette = (/** @type {any} */ cle) => prete.adresseVignette(cle);
+const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
+const dessineDists = () => prete.dessineDists();
+const libelles = () => prete.libelles();
+const marquesListe = (/** @type {(d: any) => boolean} */ porte) => prete.marquesListe(porte);
+const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => prete.porteDist(x, d);
+const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => prete.standPorte(o, d);
+const reperesCherchables = () => prete.reperesCherchables();
+const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => prete.vaAuRepere(id, p);
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
@@ -139,7 +149,10 @@ export function filtreTheme(n){
    téléphone n'aurait plus de plan : les critères tiennent derrière un seul
    bouton, et ce qui est retenu se relit d'un coup d'œil sous la recherche.
    ------------------------------------------------------------ */
-export const PREFIXE_PERSO = "perso:";
+/* Le préfixe des champs propres au salon est tenu par `corps-fiche.mjs`, que
+   ce module importe et qui ne peut l'importer en retour ; il se reprend
+   d'ici pour qui l'y a toujours pris. */
+export { PREFIXE_PERSO };
 
 /* Ce qu'un critère lit sur une fiche. Les champs propres au salon vivent dans
    « perso » ; les autres sont posés à plat, chacun sous le nom que la
@@ -1153,13 +1166,11 @@ function chargeUnLot(lot){
 
 /**
  * Le branchement, appelé par `_recherche.html` à la place que ce code tenait :
- * ce que le code soudé tient encore est confié, et l'écoute de la liste posée
- * au même rang qu'avant.
- *
- * @param {PageRecherche} page
+ * l'écoute de la liste s'y pose au même rang qu'avant. Ce que la recherche
+ * appelle ailleurs lui est confié par les modules eux-mêmes
+ * (`confieALaRecherche`).
  */
-export function brancheRecherche(page){
-  soude = page;
+export function brancheRecherche(){
   /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
      frappe, et aucune ne garderait le sien. */
   $("list").addEventListener("pointerdown", e => {
@@ -1168,3 +1179,18 @@ export function brancheRecherche(page){
       prechargeMarque(b.dataset.id, Number(b.dataset.soc));
   });
 }
+
+/* La liste, confiée à la police des noms dès que ce module se charge : sa
+   case du numéro se taille sur la police des numéros, que ce module importe —
+   elle ne peut donc l'importer en retour. */
+confieAuxPolices({ liste });
+
+/* Le panneau des critères, confié aux tiroirs dès que ce module se charge :
+   un tiroir redescendu le referme, et ne peut importer ce module, qui
+   l'importe pour se montrer et se hisser. */
+confieAuxTiroirs({ fermeCriteres });
+
+/* Le corps de la fiche, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant le libellé d'un champ propre au
+   salon, qu'il écrit en intitulé. */
+confieAuCorpsDeFiche({ libelleCritere });

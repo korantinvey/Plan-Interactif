@@ -2,7 +2,7 @@
    L'essai d'un vrai rappel, depuis les réglages
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais — seul le volet des réglages (`_reglages.html`
+   le reçoit jamais — seul le volet des réglages (`reglage-rappel.mjs`
    `blocRappel`) offre l'essai. Le rappel lui-même, ce que le visiteur voit,
    est dans `rappels.mjs`.
    ============================================================ */

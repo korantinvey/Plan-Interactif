@@ -1,120 +1,69 @@
 /* ============================================================
    Point d'entrée de la page d'administration du plan
 
-   Le plan entier d'abord — `plan.mjs`, repris tel quel, ses noms exposés
-   compris —, puis ce que le visiteur ne reçoit pas. Un seul script pour la
-   page : deux auraient chacun leur exemplaire des modules partagés, et la
-   fenêtre commune, par exemple, deux états qui divergent.
+   Le plan entier d'abord — `plan.mjs`, repris tel quel —, puis ce que le
+   visiteur ne reçoit pas. Un seul script pour la page : deux auraient chacun
+   leur exemplaire des modules partagés, et la fenêtre commune, par exemple,
+   deux états qui divergent.
 
-   Un nom exposé ici et non dans `plan.mjs` n'existe pas dans la page
-   publique : la construction refuse qu'elle le cite (`outils/reserve.js`),
-   comme un nom sorti d'une tranche `@admin`.
+   Le plan public lance la suite des branchements depuis son point d'entrée ;
+   ici, c'est ce point d'entrée qui lance, une fois les modules de
+   l'exploitant chargés : leurs branchements prennent, dans la suite de
+   `lancement.mjs`, les rangs que leurs tranches `@admin` tenaient dans le
+   script soudé d'avant (`confieLancementAdmin`).
    ============================================================ */
 import "./plan.mjs";
-import { reduitLogo } from "./depot-image.mjs";
-import { brancheReglageApplication } from "./reglage-application.mjs";
-import { brancheReglageSponsor } from "./reglage-sponsor.mjs";
-import { coloreChaleur, rangChaleur, evenementCourant, brancheChaleur } from "./chaleur.mjs";
-import { ROLES_ITI, cleRoleIti, nomRoleIti, lienEcrits, ecritLiens,
-  annuaireLiaisons } from "./itineraire.mjs";
-import { brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
-  cartePointerMove, cartePointerUp } from "./calage-carte.mjs";
-import { brancheReglageInstallation } from "./reglage-installation.mjs";
-import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
-import { codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci } from "./affiche-ici.mjs";
-import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
-import { majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
-  pousseConfiguration, brancheSauvegarde, brancheEnregistrement } from "./enregistrement.mjs";
-import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
-  correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
-  appliqueDimension, brancheAimants } from "./aimants.mjs";
-import { brancheReglageFiche } from "./reglage-fiche.mjs";
-import { CALAGE, bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
-  calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage } from "./batiments.mjs";
-import { vivants } from "./vivant.mjs";
-import { brancheVolets } from "./volets.mjs";
-import { activeAdmin, brancheBandeAdmin } from "./bande-admin.mjs";
-import { champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEvenement, brancheFicheZone }
-  from "./fiche-zone.mjs";
-import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
-  libellePointerUp, branchePlacementLibelles } from "./placement-libelles.mjs";
-import { brancheReglageRappel } from "./reglage-rappel.mjs";
-import { glisseFenetre, ouvreReglages, brancheReglages } from "./reglages.mjs";
-import { branchePile, remplitPanneau } from "./pile.mjs";
-import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
-  pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
-  brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
-import { dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
-  appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
-  editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition, geste } from "./edition.mjs";
-import { poseNappe, rafraichitApercu, brancheNappe } from "./nappe.mjs";
-import { brancheOrdreCalques } from "./ordre-calques.mjs";
-import { brancheNuancier, suitNuancier } from "./nuancier.mjs";
-import { brancheReglageRecherche } from "./reglage-recherche.mjs";
-import { enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTrace, fermeIci, ajouteForme,
-  poseChampImage, remplitListeSocietes, societeSaisie, imageEnAttente, dessinPointerDown, dessinPointerMove,
-  dessinPointerUp, termineTrace, choisitOutil, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin }
-  from "./outil-dessin.mjs";
+import { confieLancementAdmin, lancePlan } from "./lancement.mjs";
+import { brancheChaleur } from "./chaleur.mjs";
+import { brancheCalageCarte } from "./calage-carte.mjs";
+import { brancheAcces } from "./acces-admin.mjs";
+import "./affiche-ici.mjs";
+import { brancheEnregistrement } from "./enregistrement.mjs";
+import { brancheBatiments } from "./batiments.mjs";
+/* L'ouverture du mode et la bande de l'outil : rien d'autre ne l'importe.
+   Chargée ici, elle confie l'ouverture du mode à la porte authentifiée
+   (`acces-admin.mjs` `confieALAcces`). */
+import "./bande-admin.mjs";
+import { branchePlacementLibelles } from "./placement-libelles.mjs";
+import { brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
+import { brancheNuancier } from "./nuancier.mjs";
+/* L'outil de dessin confie en se chargeant aux aimants ce qu'ils lisent
+   (`brancheAimants`) : ils ne s'importent donc plus d'ici. */
+import { brancheOutilDessin } from "./outil-dessin.mjs";
+/* Le panneau des calques : aucun autre module ne l'importe. Chargé ici, il
+   confie son contenu à l'ordre de tracé (`ordre-trace.mjs`
+   `construitPanneau`), et sa fenêtre de réorganisation vient avec lui. */
+import "./pile.mjs";
+import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
-Object.assign(globalThis, {
-  reduitLogo,
-  brancheReglageApplication,
-  brancheReglageSponsor,
-  coloreChaleur, rangChaleur, evenementCourant, brancheChaleur,
-  ROLES_ITI, cleRoleIti, nomRoleIti, lienEcrits, ecritLiens,
-  annuaireLiaisons,
-  brancheCalageCarte, basculeMasqueCarte, boutonMasqueCarte, oublieCalageEnCours, cartePointerDown,
-  cartePointerMove, cartePointerUp,
-  brancheReglageInstallation,
-  ecranAcces, brancheAcces,
-  codeIciAuPoint, ouvreCodeIci, boutonCodeIci, brancheAfficheIci,
-  brancheReglageSuggestion,
-  majAttente, compteRescapes, programmePublication, rattrapeRetard, noteReglagesCharges,
-  pousseConfiguration, brancheSauvegarde, brancheEnregistrement,
-  ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, oublieAimants, coinsGeste, montreAimants,
-  correction, aimante, DERNIERE, retientTaille, reprendTaille, dupliqueForme, pousseForme, ecritDimensions,
-  appliqueDimension, brancheAimants,
-  brancheReglageFiche,
-  bibliothequeDispo, ouvreBibliotheque, dessineCalage, calagePointerDown, calagePointerMove,
-  calagePointerUp, brancheBatiments, boutonRecale, rouvreCalage,
-  brancheVolets,
-  activeAdmin, brancheBandeAdmin,
-  champZone, cadreLogo, ficheZone, basculeAffichageZone, ecritColonneEvenement, brancheFicheZone,
-  lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
-  libellePointerUp, branchePlacementLibelles,
-  branchePile, remplitPanneau,
-  brancheReglageRappel,
-  glisseFenetre, ouvreReglages, brancheReglages,
-  lacheGeo, modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
-  pousseGeometrie, choisitOutilGeo, fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp,
-  brancheRepriseEmplacements,
-  dessinePoignees, choisitForme, majElement, changeLien, appliqueSociete, appliqueTexte,
-  appliqueRotation, appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme,
-  editionPointerDown, editionPointerMove, editionPointerUp, brancheEdition,
-  poseNappe, rafraichitApercu, brancheNappe,
-  brancheOrdreCalques,
-  brancheNuancier, suitNuancier,
-  brancheReglageRecherche,
-  enregistreDessins, HIST, REFAIRE, memorise, annule, refais, toleranceTrace, fermeIci, ajouteForme,
-  poseChampImage, remplitListeSocietes, societeSaisie, dessinPointerDown, dessinPointerMove,
-  dessinPointerUp, termineTrace, choisitOutil, optionsModes, activeCalque, pictoVerrou, brancheOutilDessin,
+/* La bibliothèque des halls de lieux connus, que la construction verse dans
+   cette page seule, en données (`genere.js`, `outils/lieux.json`). Lue au
+   lancement : la balise précède le script des modules. */
+function lieux(){
+  const el = document.getElementById("lieux");
+  try { return el ? JSON.parse(el.textContent) : null; } catch (e) { return null; }
+}
+
+confieLancementAdmin({
+  // les gestes de l'exploitant prennent leur rang dans la chaîne des appuis
+  apresLesGestes: () => brancheGestesAdmin(),
+  /* le nuancier, le placement des libellés, l'outil de dessin, la reprise et
+     l'ajout d'emplacements, les halls d'un lieu connu, l'enregistrement de la
+     configuration — dans l'ordre de leurs morceaux d'avant */
+  apresLHabillage: () => {
+    brancheNuancier();
+    branchePlacementLibelles();
+    brancheOutilDessin();
+    brancheRepriseEmplacements();
+    brancheBatiments({ lieux: lieux() });
+    brancheEnregistrement();
+  },
+  // la carte de chaleur et la remise à zéro, puis le calage de la carte
+  apresLaMesure: () => {
+    brancheChaleur();
+    brancheCalageCarte();
+  },
+  // la fenêtre d'accès et le menu du compte, une fois la page démarrée
+  apresLeDemarrage: () => brancheAcces(),
 });
-
-/* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
-   l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
-   poignée qui se mesure en pixels. */
-Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
-
-/* L'emplacement dont on reprend la forme, l'outil d'ajout pris et le tracé en
-   cours : les gestes et le clavier les lisent par accesseur ; seul l'outil
-   les change, en choisissant une forme ou un outil, ou en fermant un tracé. */
-Object.defineProperties(globalThis, vivants({ geoSel: () => geoSel }, "choisitGeo"));
-Object.defineProperties(globalThis, vivants({ outilGeo: () => outilGeo }, "choisitOutilGeo"));
-Object.defineProperties(globalThis, vivants({ traceAjout: () => traceAjout }, "fermeAjout"));
-/* Le geste d'édition en cours, ou rien : le module le pose en saisissant une
-   forme et l'efface en la lâchant. Le dessin le lit par accesseur, pour garder
-   les points d'accrochage d'un geste qui sort du plan. */
-Object.defineProperties(globalThis, vivants({ geste: () => geste }, "editionPointerDown"));
-/* L'image qu'on s'apprête à poser, ou rien : seul son import la remplace. Les
-   aimants la lisent par accesseur, pour garder ses proportions au tracé. */
-Object.defineProperties(globalThis, vivants({ imageEnAttente: () => imageEnAttente }, "importeImage"));
+lancePlan();

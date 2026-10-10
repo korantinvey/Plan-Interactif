@@ -28,24 +28,13 @@ try {
   lance("genere.js");
   lance("carte.js");
 } catch (e) {
-  console.error("La construction a échoué :\n" + (e.stdout || e.message).toString());
+  console.error("La construction a échoué :\n" + (e.stdout || "").toString() +
+    (e.stderr || e.message).toString());
   process.exit(1);
 }
 
 try {
   lance("controle.js");
-} catch (e) {
-  console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
-  process.exit(1);
-}
-
-/* Et les noms, au même geste. La syntaxe ne résout rien : une fonction appelée
-   après avoir été renommée dans le module d'à côté passe les deux contrôles
-   précédents sans un mot, et casse au premier clic. Les modules du plan étant
-   soudés dans un espace de noms unique, un renommage traverse des fichiers que
-   rien ne relie — c'est arrivé, et c'est pour cela que ceci existe. */
-try {
-  lance("appels.js");
 } catch (e) {
   console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
   process.exit(1);
@@ -62,8 +51,8 @@ try {
 }
 
 /* La relecture par ESLint, puis le cliquet des types : ce qu'un développeur
-   attend d'un dépôt, et ce qui voit une variable morte ou un appel faux là où
-   la syntaxe et `appels.js` ne regardent pas. */
+   attend d'un dépôt, et ce qui voit une variable morte, un nom que rien ne
+   déclare ou un appel faux là où la syntaxe ne regarde pas. */
 for (const script of ["relecture.js", "types.js"]) {
   try {
     lance(script);
@@ -75,7 +64,8 @@ for (const script of ["relecture.js", "types.js"]) {
 
 let bouge = "";
 try {
-  bouge = execFileSync("git", ["status", "--porcelain", "CARTE.md"], { cwd: racine })
+  bouge = execFileSync("git", ["status", "--porcelain", "CARTE.md"],
+    { cwd: racine })
     .toString().trim();
 } catch (e) {
   console.log("Construction faite. (git indisponible : comparaison impossible)");

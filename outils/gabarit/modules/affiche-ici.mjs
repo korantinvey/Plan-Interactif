@@ -8,10 +8,10 @@
    `plan-admin.mjs` : le visiteur n'a ni affiche à produire, ni endroit à
    désigner.
 
-   Le dessin est encore soudé : `_ici.html` le confie par
-   `brancheAfficheIci`. La visée de l'itinéraire et les tiroirs qu'on
-   referme pour viser s'importent (`tiroir-itineraire.mjs`,
-   `tiroir-parcours.mjs`), comme la mesure du texte (`texte-plan.mjs`).
+   Il n'a rien à recevoir du code soudé : la forme d'un repère dessiné
+   (`forme-choisie.mjs`), la visée de l'itinéraire et les tiroirs qu'on
+   referme pour viser (`tiroir-itineraire.mjs`, `tiroir-parcours.mjs`), la
+   mesure du texte (`texte-plan.mjs`) s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -22,21 +22,18 @@ import { qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { calquesDe, pointObjet, pointRepere } from "./itineraire.mjs";
 import { lieuNomme, pointLibre } from "./borne.mjs";
 import { ICI_LIBRE } from "./ici.mjs";
-import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire }
+import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire, confieVisee }
   from "./tiroir-itineraire.mjs";
 import { fermeParcours } from "./tiroir-parcours.mjs";
 import { versPlan } from "./vue.mjs";
 import { ferme } from "./fiche.mjs";
 import { largeur } from "./texte-plan.mjs";
+import { formeParId } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée, elle,
-   vient du tiroir de l'itinéraire : on la lit telle qu'elle est à l'instant,
-   et on l'arme par sa porte. */
-/** @type {Record<string, any>} */
-let soude = {};
+/* La visée vient du tiroir de l'itinéraire : on la lit telle qu'elle est à
+   l'instant, et on l'arme par sa porte. */
 const visee = () => viseeIti;
 const vise = (v) => poseVisee(v);
-const formeParId = (id) => soude.formeParId(id);
 const racine = document.documentElement;
 
 /* Combien de caractères de l'identifiant du pavillon partent dans l'adresse.
@@ -373,7 +370,7 @@ function imprimeAfficheIci(pt, trame){
  * Le bouton de la bande de l'outil.
  *
  * Il vit là plutôt que dans les réglages du salon : ce n'est pas une
- * configuration qui part chez tous les visiteurs (voir `_pousse.html`), c'est
+ * configuration qui part chez tous les visiteurs (voir `enregistrement.mjs`), c'est
  * un geste qu'on refait à chaque affiche, et qui demande le plan sous les
  * yeux.
  */
@@ -393,9 +390,8 @@ export function boutonCodeIci(){
   return b;
 }
 
-/**
- * Le branchement, appelé par `_ici.html` dans sa tranche d'administration.
- *
- * @param {{ formeParId: Function }} b
- */
-export function brancheAfficheIci(b){ soude = b; }
+/* La visée « ici » est à ce module : le point désigné au clavier, que le
+   tiroir de l'itinéraire reçoit, lui revient par cette porte, ouverte au
+   chargement — la page publique, qui n'embarque pas ce module, n'a donc pas
+   cette visée du tout. */
+confieVisee("ici", ouvreCodeIci);

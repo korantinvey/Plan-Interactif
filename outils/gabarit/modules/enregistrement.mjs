@@ -19,14 +19,19 @@
 
    Un geste d'exploitant : `plan-admin.mjs` embarque ce module, `plan.mjs`
    jamais — la page publique n'a ni session ni bouton, et n'appelle ce qu'il
-   expose que sous garde `typeof`. Ce que le code soudé tient encore — le
-   mode administrateur, les réglages et leur enregistrement, le panneau des
-   calques — lui est confié par `brancheEnregistrement`, que `_pousse.html`
-   appelle à la place que ce code y tenait : les écouteurs de la page s'y
-   posent au même rang qu'avant. Les calques dessinés et leurs deux relevés
-   s'importent (`calques-dessin.mjs`), l'annonce dans la liste aussi
-   (`demarrage.mjs`) ; leur enregistrement, que l'outil de dessin tient et
-   qui importe ce module-ci, se confie.
+   expose que sous garde `typeof`. Il se branche par `brancheEnregistrement`,
+   que `_pousse.html` appelle à la place que ce code y tenait : les écouteurs
+   de la page s'y posent au même rang qu'avant. Le mode administrateur, les
+   réglages et leur rangement sur le poste, l'apparence et le panneau des
+   calques s'importent (`mode-admin.mjs`, `configuration.mjs`,
+   `apparence.mjs`, `ordre-trace.mjs`), comme les calques dessinés et leurs
+   deux relevés (`calques-dessin.mjs`) et l'annonce dans la liste
+   (`demarrage.mjs`) ; seul l'enregistrement des dessins, que l'outil de
+   dessin tient et qui importe ce module-ci, se confie — l'outil le donne en
+   se chargeant (`confieAEnregistrement`) —, comme ce qui dit
+   qu'un geste est en cours, que les gestes de l'exploitant lui donnent
+   (`gestes-admin.mjs`, `confieGesteEnCours`). Le rangement des
+   réglages, lui, reçoit d'ici son envoi en base (`confiePublication`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
@@ -34,29 +39,32 @@ import { API } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
-import { annonce } from "./demarrage.mjs";
-import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente } from "./calques-dessin.mjs";
+import { annonce, confieAuDemarrage } from "./demarrage.mjs";
+import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente,
+  confieAuxCalques } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, confiePublication } from "./configuration.mjs";
+import { appliqueApparence } from "./apparence.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { confieALIndex } from "./index-salon.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce que les chargements
-   remplacent — le mode, les réglages (`CONF`) — se lit à l'instant, par un
-   lecteur : l'envoi en relit certains après chaque `await`. Les calques et
-   leurs deux relevés (`DESSINS`, `ATTENTE`, `PUBLIES`), importés, se lisent
-   eux aussi tels qu'ils sont à l'instant. */
+/* Ce que l'outil de dessin confie en se chargeant : l'enregistrement des
+   dessins. Ce que les chargements remplacent — le mode, les réglages (`CONF`) —,
+   importé, se lit tel qu'il est à l'instant : l'envoi en relit certains après
+   chaque `await`. Les calques et leurs deux relevés (`DESSINS`, `ATTENTE`,
+   `PUBLIES`) de même. */
 /**
- * @typedef {object} PageEnregistrement
- * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(source: Record<string, any>) => Record<string, any>} reglagesDuSalon
- * @property {() => void} enregistreConf
+ * @typedef {object} PreteEnregistrement
  * @property {() => void} enregistreDessins
- * @property {() => void} appliqueApparence
- * @property {() => void} construitPanneau
  */
-/** @type {PageEnregistrement} */
-let soude;
-/** @param {Record<string, any>} source */
-const reglagesDuSalon = (source) => soude.reglagesDuSalon(source);
+/** @type {PreteEnregistrement} */
+const prete = { enregistreDessins: () => {} };
+
+/** La porte par laquelle l'outil de dessin (`outil-dessin.mjs`, qui importe
+ *  ce module) confie ce qu'il tient.
+ *  @param {Partial<PreteEnregistrement>} o */
+export function confieAEnregistrement(o){ Object.assign(prete, o); }
 /** @param {string} txt @param {boolean} [erreur] */
 
 /* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
@@ -71,6 +79,18 @@ export const REPOS = 1200;
 /* Après un échec — réseau coupé, service en panne — on retente de loin en
    loin plutôt que d'insister : le travail est sur le poste, il attend. */
 const REPOS_ECHEC = 20000;
+
+/* Le repos compte depuis la dernière modification, pas depuis la fin du
+   geste : un déplacement repris dans la seconde, puis tenu, voyait l'envoi
+   du précédent partir sous la main — avec la forme à mi-chemin. Un geste en
+   cours fait donc attendre l'envoi, qu'on regarde de près pour repartir dès
+   qu'il est lâché, puis laisser le repos s'écouler. */
+const GUET = 150;
+let gesteEnCours = () => false;
+/** Ce qui dit qu'un geste est en cours, que les gestes de l'exploitant
+ *  (`gestes-admin.mjs`) confient en se branchant : ils connaissent tous les
+ *  outils, dont plusieurs importent ce module. */
+export function confieGesteEnCours(/** @type {() => boolean} */ f){ gesteEnCours = f; }
 
 /* Le relais garde le plan public dix minutes, et sert encore l'ancienne copie
    le temps de refaire la nouvelle : la base avait la configuration, les
@@ -101,7 +121,7 @@ let revisionEnvoyee = 0;
 /** L'enregistrement automatique demande l'administration, un plan chargé et une
  *  session : la page publique et celle à données figées n'ont ni la première ni
  *  la dernière, et l'identité est vérifiée avant que le plan arrive. */
-const autoDispo = () => soude.estAdmin() && !!DATA?.plans?.length && !!accesBase();
+const autoDispo = () => ADMIN && !!DATA?.plans?.length && !!accesBase();
 
 /** Reste-t-il quelque chose qui ne soit que sur ce poste ? */
 const enRetard = () => revision !== revisionEnvoyee ||
@@ -171,14 +191,13 @@ function ditAlerte(etat){
      pas — « autoDispo » est faux — et le bouton se contente de proposer une
      poussée manuelle qui échouera. C'est le même piège que l'échec, en plus
      silencieux encore, et il ne se dit qu'en présence d'un travail à perdre. */
-  if (soude.estAdmin() && etat === "manuel" && enRetard()){
+  if (ADMIN && etat === "manuel" && enRetard()){
     z.hidden = false;
     z.dataset.genre = "echec";
     txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
     act.textContent = "Se reconnecter";
     act.onclick = () => {
-      if (typeof ecranAcces === "function") ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
-      else location.reload();
+      ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
     };
     return;
   }
@@ -225,38 +244,51 @@ export function programmePublication(){
   programmeEnvoi(REPOS);
 }
 
+/* Le rangement des réglages sur le poste (`configuration.mjs`
+   `enregistreConf`) est public, et ne peut importer ce module : il en reçoit
+   l'envoi dès que la page d'administration le charge, avant tout le code
+   soudé — comme lorsqu'il le cherchait sous garde `typeof`. */
+confiePublication(programmePublication);
+
 /** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
  *  de lui-même, sans attendre qu'on pense à cliquer. */
 export function rattrapeRetard(){
   if (enRetard()) programmeEnvoi(REPOS); else majAttente();
 }
 
-/** L'envoi programmé, quand son temps de repos est écoulé. */
-function envoie(){
+/** L'envoi programmé, quand son temps de repos est écoulé. `force` passe outre
+ *  un geste en cours : la page qui part n'attendra pas qu'on le lâche. */
+function envoie(/** @type {boolean} */ force){
   if (minuteur) clearTimeout(minuteur);
   minuteur = null;
   if (!autoDispo()) return;
   // un envoi est déjà en cours : il reprendra la main en finissant
   if (publication){ rejoue = true; return; }
+  if (force !== true && gesteEnCours()){ minuteur = setTimeout(apresGeste, GUET); return; }
   if (enRetard()) pousseConfiguration(true);
   else majAttente();
+}
+
+/** Le geste qui retenait l'envoi est-il lâché ? Alors le repos recommence. */
+function apresGeste(){
+  minuteur = null;
+  if (gesteEnCours()) minuteur = setTimeout(apresGeste, GUET);
+  // l'échec qu'on retentait reste dit par le bouton pendant ce repos
+  else programmeEnvoi(REPOS, etatEnvoi);
 }
 
 /* Un onglet qu'on ferme ne laisse pas le temps de repos s'écouler : ce qui
    attendait part tout de suite. Le navigateur n'en garantit pas l'arrivée —
    d'où la copie sur le poste, et le rattrapage au chargement suivant. */
-const presse = () => { if (minuteur) envoie(); };
+const presse = () => { if (minuteur) envoie(true); };
 
 /**
  * Le branchement, appelé par le code soudé à la place que ce code y tenait
  * (`_pousse.html`), dans une tranche que le visiteur ne reçoit pas. Les
  * écouteurs de la page s'y posent, et non au chargement du module : ils
  * gardent ainsi leur rang parmi ceux du plan.
- *
- * @param {PageEnregistrement} s
  */
-export function brancheEnregistrement(s){
-  soude = s;
+export function brancheEnregistrement(){
   /* Sur le document, où l'événement naît : écouté sur la fenêtre, il n'y arrivait
      que par remontée, et un onglet masqué trop tôt n'aurait rien envoyé. */
   document.addEventListener("visibilitychange", () => {
@@ -295,7 +327,7 @@ export async function identifiants(acces){
  *  par pavillon, et sans ceux d'un salon voisin, qui n'ont rien à faire dans
  *  son enregistrement — c'est par là qu'ils s'y installaient. */
 function reglagesSeuls(){
-  return reglagesDuSalon(soude.conf());
+  return reglagesDuSalon(CONF);
 }
 
 /* Ce que la base disait des réglages quand la page les a chargés, clé par clé
@@ -354,7 +386,15 @@ export async function pousseConfiguration(auto){
   ditEtat("envoi");
 
   try {
-    const parKlipso = await identifiants(acces);
+    /* Ce qui part est relevé ici, avant la première attente du réseau, comme
+       `cible` : un geste commencé pendant l'envoi changerait sinon ce qu'il
+       écrit, et la base recevrait une forme ou un libellé à mi-chemin. Les
+       formes se copient en surface — un geste remplace leurs points, il ne
+       les retouche pas en place ; les images restent partagées. */
+    const releve = Object.fromEntries((DATA.plans || []).map(p => [p.id, {
+      marque: ATTENTE[p.id],
+      liste: (DESSINS[p.id] || []).map(c => ({ ...c, formes: (c.formes || []).map(f => ({ ...f })) })),
+    }]));
     const reglages = reglagesSeuls();
     /* Ce que ce poste a changé depuis son chargement, et ce qu'il a retiré.
        Renvoyer tout le bloc effaçait en silence ce qu'un autre administrateur
@@ -374,6 +414,7 @@ export async function pousseConfiguration(auto){
     const retirees = Object.keys(REGLAGES_CHARGES).filter(k => !(k in reglages));
     const posees = Object.fromEntries(
       Object.entries(changees).map(([k, texte]) => [k, JSON.parse(texte)]));
+    const parKlipso = await identifiants(acces);
 
     /* Les blocs que la base tient à l'instant, pour tous les pavillons d'un
        coup : un envoi par couleur changée ne doit pas coûter une lecture par
@@ -412,7 +453,7 @@ export async function pousseConfiguration(auto){
         headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify([{
           plan_id: planId,
-          pile: soude.conf()["_pile:" + p.id] || [],
+          pile: CONF["_pile:" + p.id] || [],
           reglages: bloc,
           modifie_le: new Date().toISOString(),
         }]),
@@ -421,11 +462,10 @@ export async function pousseConfiguration(auto){
       /* Les dessins d'un pavillon qui n'a pas bougé sont déjà en base : les
          réécrire à chaque couleur changée ferait passer des mégaoctets pour
          rien. Le clic, lui, les réécrit tous — c'est ce qu'on lui demande. */
-      if (!auto || enAttente(p.id)){
-        /* La marque du pavillon, telle qu'elle est en commençant : on ne
-           l'effacera que si le geste suivant ne l'a pas relevée entre-temps. */
-        const marque = ATTENTE[p.id];
-        const liste = DESSINS[p.id] || [];
+      /* La marque du pavillon, telle qu'elle était en commençant : on ne
+         l'effacera que si le geste suivant ne l'a pas relevée entre-temps. */
+      const { marque, liste } = releve[p.id];
+      if (!auto || marque){
         if (liste.length){
           await base(acces, "calque_dessin?on_conflict=plan_id,cle", {
             method: "POST",
@@ -536,7 +576,7 @@ function sauvegardeCourante(){
     pavillons[p.id] = {
       libelle: p.libelle || "",
       dessins: DESSINS[p.id] || [],
-      pile: soude.conf()["_pile:" + p.id] || [],
+      pile: CONF["_pile:" + p.id] || [],
     };
   });
   return {
@@ -588,17 +628,17 @@ function appliqueSauvegarde(s){
          La marque le dit au chargement suivant, le temps que l'envoi aboutisse. */
       marqueAttente(id, true);
     }
-    if (Array.isArray(v.pile)) soude.conf()["_pile:" + id] = v.pile;
+    if (Array.isArray(v.pile)) CONF["_pile:" + id] = v.pile;
     pavillons++;
   });
-  if (s.reglages) Object.assign(soude.conf(), reglagesDuSalon(s.reglages));
-  soude.enregistreConf();
+  if (s.reglages) Object.assign(CONF, reglagesDuSalon(s.reglages));
+  enregistreConf();
   // range les dessins sur le poste, oublie les relevés qui en dépendent, et
   // programme l'envoi — le même geste que pour un trait tracé à la main
-  soude.enregistreDessins();
-  soude.appliqueApparence();
+  prete.enregistreDessins();
+  appliqueApparence();
   dessineDessins();
-  soude.construitPanneau();
+  construitPanneau();
   annonce("Sauvegarde restaurée : " + pavillons +
     " pavillon" + (pavillons > 1 ? "s" : "") +
     (calques ? ", " + calques + " calque" + (calques > 1 ? "s" : "") + " de dessin" : "") +
@@ -640,3 +680,12 @@ export function brancheSauvegarde(){
   r.onclick = () => { f.value = ""; f.click(); };
   f.onchange = () => { if (f.files && f.files[0]) litSauvegarde(f.files[0]); };
 }
+
+/* Les calques de dessin, le démarrage et l'index du salon, que la page
+   publique porte aussi, appellent l'enregistrement sans pouvoir l'importer :
+   il n'est qu'à l'administration. Il leur confie donc en se chargeant ce
+   qu'ils en appellent — l'état du bouton, le rattrapage d'un envoi en retard,
+   les calques rescapés, les réglages tels qu'ils sont arrivés. */
+confieAuxCalques({ majAttente });
+confieAuDemarrage({ majAttente, rattrapeRetard });
+confieALIndex({ compteRescapes, noteReglagesCharges });

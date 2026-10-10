@@ -598,18 +598,37 @@ const presente = (corpus) => (fr) =>
  * morceaux trop dispersés pour que la lecture des chaînes les reconnaisse.
  *
  * Le module se reconnaît à ses lignes de déclaration — `function x(`,
- * `const X = ` — ou, pour un module de balisage, à ses identifiants.
+ * `const X = ` — ou, pour un module de balisage, à ses identifiants. Une ligne
+ * que porte aussi une autre source ne dit rien : `const erreurs = []`, un
+ * identifiant repris d'une page à l'autre versaient un dictionnaire entier dans
+ * une page qui n'avait pas le module — celui du rapport dans la console, et
+ * l'inverse. Seules comptent donc les lignes propres au module ; toutes, et
+ * non les premières, puisqu'une tranche `@admin` peut retirer celles-là.
  */
 const _signatures = new Map();
+let _lignesParSource = null;
+function lignesParSource() {
+  if (_lignesParSource) return _lignesParSource;
+  _lignesParSource = new Map();
+  const modules = path.join(GABARIT, "modules");
+  const fichiers = fs.readdirSync(GABARIT).filter((f) => /\.(html|css|js)$/.test(f))
+    .map((f) => path.join(GABARIT, f))
+    .concat(fs.readdirSync(modules).filter((f) => f.endsWith(".mjs")).map((f) => path.join(modules, f)));
+  for (const f of fichiers) {
+    _lignesParSource.set(f, new Set(fs.readFileSync(f, "utf8").split("\n").map((l) => l.trim())));
+  }
+  return _lignesParSource;
+}
 function signaturesDe(fichierDico) {
   if (_signatures.has(fichierDico)) return _signatures.get(fichierDico);
   const module = path.join(GABARIT, fichierDico.replace(/\.js$/, ".html"));
   let sig = [];
   if (fs.existsSync(module)) {
+    const autres = [...lignesParSource()].filter(([f]) => f !== module).map(([, l]) => l);
     sig = fs.readFileSync(module, "utf8").split("\n").map((l) => l.trim())
       .filter((l) => l.length >= 18 && (/^(async\s+)?function\s+[\w$]+\s*\(|^(const|let)\s+[\w$]+\s*=/.test(l) ||
         /\sid="[\w-]+"/.test(l)))
-      .slice(0, 12);
+      .filter((l) => !autres.some((a) => a.has(l)));
   }
   _signatures.set(fichierDico, sig);
   return sig;

@@ -13,9 +13,11 @@
    reçoivent du code soudé, qui le tient de `plan.mjs`.
 
    Il se branche dans `_parcours.html`, à la place que son code tenait : ses
-   écoutes s'y posent au même rang qu'avant parmi celles du plan, et ce que le
-   code soudé tient encore lui est confié — la configuration, le filtre de la
-   recherche. La fiche s'importe de `fiche.mjs`.
+   écoutes s'y posent au même rang qu'avant parmi celles du plan. La fiche,
+   la configuration et le filtre de la recherche s'importent (`fiche.mjs`,
+   `configuration.mjs`, `recherche.mjs`) : il n'a rien à recevoir du code
+   soudé. L'apparence, qui le referme quand l'exploitant retire le parcours,
+   le reçoit de lui en se chargeant (`confieALApparence`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, HEBERGES, CONFERENCES, parId, CONFS } from "./donnees.mjs";
@@ -26,20 +28,16 @@ import { PARCOURS, poseParcours, brancheListeParcours, casierParcours, dansParco
   enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET, rafraichitMarque,
   marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
-import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion } from "./suggestion.mjs";
-import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel } from "./rappels.mjs";
-import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
-import { fermeItineraire } from "./tiroir-itineraire.mjs";
-import { select, ficheConf, ferme } from "./fiche.mjs";
-
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
-   configuration (`_admin1.html` `conf`) et le filtre de la recherche
-   (`_recherche.html`) par des détours, lus à l'appel. */
-/** @type {Record<string, any>} */
-let soude = {};
-const conf = (c) => soude.conf(c);
-const filtre = () => soude.filtre();
-const visible = (o) => soude.visible(o);
+import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion, confieALaSuggestion }
+  from "./suggestion.mjs";
+import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel, confieAuxRappels }
+  from "./rappels.mjs";
+import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
+import { fermeItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { select, ficheConf, ferme, confieALaFiche } from "./fiche.mjs";
+import { conf } from "./configuration.mjs";
+import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
+import { confieALApparence } from "./apparence.mjs";
 const racine = document.documentElement;
 
 /**
@@ -417,11 +415,8 @@ export function videLeParcours(){
  * tiroir se posent au même rang qu'avant parmi celles du plan — celle de la
  * touche « Échap » comprise, dont l'ordre parmi les autres décide qui la
  * reçoit.
- *
- * @param {{ conf: (cle: string) => any, filtre: () => boolean, visible: (o: any) => boolean }} b
  */
-export function brancheTiroirParcours(b){
-  soude = b;
+export function brancheTiroirParcours(){
 
   brancheListeParcours({
     rafraichit: () => rafraichitParcours(),
@@ -444,3 +439,31 @@ export function brancheTiroirParcours(b){
     if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
   });
 }
+
+/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (le bouton qui verse au parcours tout ce qu'elle a retenu). */
+confieALaRecherche({ poseToutAuParcours });
+
+/* Le tiroir, confié à l'apparence dès que ce module se charge : elle le
+   referme quand l'exploitant retire le parcours, et ne peut importer ce
+   module, qui l'atteint par la journée et le montage du plan. */
+confieALApparence({ fermeParcours });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant le tiroir qu'elle referme et le bouton « au
+   parcours » qu'elle pose dans ses actions. */
+confieALaFiche({ fermeParcours, brancheParcours });
+
+/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant de quoi refermer le parcours quand
+   il s'ouvre. */
+confieAuTiroirItineraire({ fermeParcours });
+
+/* La journée, la suggestion et les rappels, que ce module importe pour les
+   poser dans son tiroir, ne peuvent l'importer en retour : il leur confie en
+   se chargeant ce qu'ils en appellent — le parcours qu'on bascule, rangé et
+   refait pour la journée ; le tiroir refait et le bouton « au parcours » pour
+   la suggestion ; le tiroir rafraîchi quand les rappels s'allument. */
+confieALaJournee({ basculeParcours, rangParcours, rafraichitParcours });
+confieALaSuggestion({ remplitParcours, brancheParcours });
+confieAuxRappels({ rafraichitParcours });

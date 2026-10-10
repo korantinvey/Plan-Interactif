@@ -8,18 +8,20 @@
    qu'il le soit — la borne, le code du hall, un parcours ou une conférence
    reçus par lien, la visite guidée, l'invitation à installer.
 
-   Ce que le code soudé tient encore — l'ordre des calques (`_pile.html`) —
-   lui est confié par
-   `brancheDemarrage`, que `_admin2.html` appelle à la place que ce code
-   tenait, au bout du script : c'est là que la page démarre, une fois tout le
-   reste déclaré. La fiche et le montage du plan, il les importe (`fiche.mjs`,
-   `rendu.mjs`). Ce qui
-   n'existe qu'en administration (`modules/enregistrement.mjs`,
-   `modules/acces-admin.mjs`) reste sous la garde `typeof` qu'il avait.
+   Il se branche par `brancheDemarrage`, que `_admin2.html` appelle à la
+   place que ce code tenait, au bout du script : c'est là que la page
+   démarre, une fois tout le reste déclaré. La fiche, le montage du plan et
+   l'ordre des calques, il les importe (`fiche.mjs`, `rendu.mjs`,
+   `ordre-trace.mjs`). Hors de l'administration, il retire en dernier les
+   commandes de l'exploitant (`mode-admin.mjs` `retireAdmin`) : la page
+   publique n'a plus à le demander. Ce qui n'existe qu'en administration
+   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) lui est confié,
+   sous la garde `typeof` qu'il avait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
-import { API, SLUG } from "./salon.mjs";
+import { API, SLUG, PLAN_ADMIN } from "./salon.mjs";
+import { retireAdmin } from "./mode-admin.mjs";
 import { indexe } from "./index-salon.mjs";
 import { accueilleSponsor, suitSponsor, fermeSponsor } from "./sponsor.mjs";
 import { view, fit } from "./vue.mjs";
@@ -31,20 +33,60 @@ import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { select, ficheConf } from "./fiche.mjs";
-import { montePlan, monteHabillage } from "./rendu.mjs";
+import { montePlan, monteHabillage, confieAuRendu } from "./rendu.mjs";
+import { ordonneDom } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-const ordonneDom = () => soude.ordonneDom();
-/* L'administration seule les a : le branchement les garde par `typeof`. */
-const majAttente = () => soude.majAttente();
-const rattrapeRetard = () => soude.rattrapeRetard();
+/* Ce que l'administration seule a — l'état du bouton d'enregistrement et le
+   rattrapage d'un envoi en retard (`enregistrement.mjs`), la fenêtre d'accès
+   (`acces-admin.mjs`) — et que ces modules confient au démarrage en se
+   chargeant. La page publique ne les embarque pas : rien n'est appelé, et
+   une session refusée n'ouvre pas de fenêtre qu'elle n'a pas. */
+/**
+ * @typedef {object} PageDemarrage
+ * @property {() => void} majAttente
+ * @property {() => void} rattrapeRetard
+ * @property {((message: string) => void) | null} ecranAcces
+ */
+/** @type {PageDemarrage} */
+const prete = { majAttente: () => {}, rattrapeRetard: () => {}, ecranAcces: null };
+
+/** La porte de ce que l'administration confie au démarrage.
+ *  @param {Partial<PageDemarrage>} o */
+export function confieAuDemarrage(o){ Object.assign(prete, o); }
+const majAttente = () => prete.majAttente();
+const rattrapeRetard = () => prete.rattrapeRetard();
 
 /* ------------------------------------------------------------------
    Démarrage : données figées si elles sont dans la page, sinon appel
    à l'API. Une panne du réseau doit se voir, pas laisser un écran vide.
    ------------------------------------------------------------------ */
+/**
+ * Le premier cadrage, refait une fois le tiroir de la liste arrivé.
+ *
+ * Sur un téléphone, le cadrage retire du plan ce que le tiroir en cache, et le
+ * mesure à sa position du moment : au chargement, il est encore en train de
+ * glisser, puis la liste remplie lui donne sa hauteur et il glisse encore. Le
+ * premier cadrage variait donc de quelques pixels d'un chargement à l'autre,
+ * selon l'image où il tombait, et ne valait pour aucun. On le refait quand le
+ * tiroir s'est posé — sauf si la vue a bougé entre-temps : un geste, ou une
+ * fiche ouverte par un lien reçu, ont alors le dernier mot.
+ */
+function recadreListePosee(){
+  const avant = JSON.stringify(view);
+  let attendu = false;
+  const attend = () => {
+    if (JSON.stringify(view) !== avant) return;
+    const tiroir = $("side");
+    const glisse = tiroir ? tiroir.getAnimations()
+      .filter(a => !(a instanceof CSSAnimation) && a.playState === "running") : [];
+    if (glisse.length){
+      attendu = true;
+      Promise.all(glisse.map(a => a.finished.catch(() => {}))).then(attend);
+    } else if (attendu) fit();
+  };
+  attend();
+}
+
 function demarre(/** @type {any} */ d){
   indexe(d);
   /* Le générique du sponsor avant le plan, et non après : ce qu'il couvre,
@@ -56,6 +98,7 @@ function demarre(/** @type {any} */ d){
   montePlan();
   fit();
   liste();
+  recadreListePosee();
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,
      puis s'estomper. Sans ce rappel il attendrait son butoir. */
   suitSponsor();
@@ -279,9 +322,9 @@ export function charge(){
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que
       // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
-      if (r.status === 401 && soude.ecranAcces){
+      if (r.status === 401 && prete.ecranAcces){
         try { localStorage.removeItem("console-session"); } catch (e) {}
-        soude.ecranAcces("Session expirée, reconnectez-vous.");
+        prete.ecranAcces("Session expirée, reconnectez-vous.");
         return Promise.reject(new Error("Session expirée."));
       }
       return r.ok ? r.json()
@@ -298,13 +341,8 @@ export function charge(){
  * Le branchement, appelé par `_admin2.html` au bout du script, à la place que
  * ce code tenait : la page démarre ici, et l'écoute du redimensionnement s'y
  * pose au même rang qu'avant parmi celles du plan — après celles de la vue.
- *
- * @param {{ ordonneDom: Function,
- *   majAttente: () => void, rattrapeRetard: () => void,
- *   ecranAcces: ((message: string) => void) | null }} b
  */
-export function brancheDemarrage(b){
-  soude = b;
+export function brancheDemarrage(){
   const fige = document.getElementById("data").textContent.trim();
   if (fige && fige.indexOf("__DATA__") < 0) demarre(JSON.parse(fige));
   else if (!API) annonce("Aucune source de données configurée.", true);
@@ -313,4 +351,15 @@ export function brancheDemarrage(b){
   else charge();
 
   addEventListener("resize", () => { if (DATA && view) fit(); });
+
+  /* Hors de l'administration — le plan public, la démonstration —, les
+     commandes de l'exploitant quittent le document. En dernier, comme
+     lorsque la construction posait l'appel au bout du script : le démarrage
+     et le montage y touchent encore. L'administration, elle, attend la
+     session, que son propre code pose à cette place (`_auth-plan.html`). */
+  if (!PLAN_ADMIN) retireAdmin();
 }
+
+/* Le fond d'un pavillon se charge après coup, au passage d'un pavillon à
+   l'autre : le rendu, que ce module importe, le reçoit d'ici en se chargeant. */
+confieAuRendu({ chargeFond });

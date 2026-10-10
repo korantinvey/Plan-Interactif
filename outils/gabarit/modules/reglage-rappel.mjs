@@ -9,22 +9,9 @@
 import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, proposeRappels }
   from "./rappels.mjs";
 import { essaieRappelReel } from "./essai-rappel.mjs";
-import { programmeOffert } from "./configuration.mjs";
-
-/* Ce que le code soudé confie au branchement : l'envoi de la configuration
-   (`_ordre-fiche.html`). L'option du programme s'importe. */
-/** @type {() => void} */
-let enregistreConf;
-
-/**
- * Le branchement du réglage, appelé par le code soudé à la place que ce code y
- * tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {{ enregistreConf: typeof enregistreConf }} b
- */
-export function brancheReglageRappel(b){
-  ({ enregistreConf } = b);
-}
+/* L'option du programme et l'enregistrement de la configuration
+   s'importent : il n'a rien à recevoir du code soudé. */
+import { programmeOffert, enregistreConf } from "./configuration.mjs";
 
 /**
  * Le rappel avant une conférence.

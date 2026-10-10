@@ -87,7 +87,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     try {
       salon = new URLSearchParams(location.search).get("plan") ||
         (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
-        /* Le troisième lieu où `_js.html` `SLUG` va le chercher, que la
+        /* Le troisième lieu où `modules/salon.mjs` `SLUG` va le chercher, que la
            construction pose ici faute de pouvoir le demander au script qui le
            porte : le moteur tourne avant lui. Sans cela `/plan` nu, qui est
            bien une adresse publique, écrivait sous une clé sans salon ce que
@@ -150,6 +150,14 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      dictionnaire ou du calendrier — « Mars », « Accueil », « Café ». Elle doit
      rester telle que l'exposant l'a écrite, seule ou citée dans une phrase. */
   const PROTEGES = new Set();
+  /* Là où la page ne parle qu'en son nom — les onglets des réglages, le titre
+     et les boutons d'une fenêtre, la bande d'administration, les palettes de
+     l'outil —, aucun nom d'exposant ne s'affiche : la protection n'y a rien à
+     garder, et y retenait un onglet en français dès qu'une enseigne s'appelait
+     « Recherche » ou « Parcours ». */
+  const INTERFACE = ".ongReg,#mTitre,#mPied,.bandeAdmin,#outils,#panel";
+  let sansProtection = false;
+  const interfaceDe = (el) => PROTEGES.size > 0 && Boolean(el && el.closest(INTERFACE));
   /* Les traductions qui viennent des données et non du dictionnaire : le
      libellé anglais qu'un exploitant a donné à une zone, celui qu'une source
      tient pour une catégorie. Rangées par origine, pour qu'une origine se
@@ -287,7 +295,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
    *   "entiere"   la chaîne d'un seul tenant — une clé, un modèle, une date.
    */
   function cherche(t, profondeur, mode) {
-    if (PROTEGES.size && PROTEGES.has(t.toLowerCase())) return null;
+    if (!sansProtection && PROTEGES.size && PROTEGES.has(t.toLowerCase())) return null;
     for (const table of DONNEES.values()) {
       const v = table.get(t);
       if (v !== undefined) return v;
@@ -407,13 +415,17 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   const FIN_DE_PHRASE = /[.!?\u2026\u00BB)]\s+(?=[A-Z0-9\u00C0-\u00D6\u00D8-\u00DE\u00AB])/g;
 
   /** La traduction d'un texte tel qu'il est dans la page, blancs d'autour gardés. */
-  function traduitBrut(brut) {
+  function traduitBrut(brut, interfaceDeLaPage) {
     if (!brut || !LETTRE.test(brut) && !/\d[\u00A0\u202F ]\d|\d,\d/.test(brut)) return null;
-    let v = MEMO.get(brut);
+    // la même phrase se traduit autrement hors de la protection : clé à part
+    const cle = interfaceDeLaPage ? "\u0001" + brut : brut;
+    let v = MEMO.get(cle);
     if (v !== undefined) return v;
     prepare();
     const t = normalise(brut);
-    let en = t ? cherche(t, 0) : null;
+    sansProtection = Boolean(interfaceDeLaPage);
+    let en;
+    try { en = t ? cherche(t, 0) : null; } finally { sansProtection = false; }
     /* Un nom resté tel quel dans une phrase traduite garde ses guillemets
        français : « Oui », « Vrai » au milieu d'une phrase anglaise. */
     if (en !== null) en = en.replace(/\u00AB\s*/g, "“").replace(/\s*\u00BB/g, "”");
@@ -422,7 +434,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     const avant = en !== null && /^[:;!?]/.test(en) ? "" : brut.match(/^\s*/)[0];
     v = en === null ? null : avant + en + brut.match(/\s*$/)[0];
     if (MEMO.size > 4000) MEMO.clear();
-    MEMO.set(brut, v);
+    MEMO.set(cle, v);
     return v;
   }
 
@@ -455,7 +467,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     const v = n.nodeValue;
     const memo = TEXTES.get(n);
     if (memo && memo.en === v) return;
-    const en = traduitBrut(v);
+    const en = traduitBrut(v, interfaceDe(n.parentElement));
     if (en === null || en === v) {
       if (memo) TEXTES.delete(n);
       if (MANQUES && en === null) releveManque(v, n.parentElement);
@@ -471,7 +483,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     if (v === null) return;
     let memo = ATTRS.get(el);
     if (memo && memo[nom] && memo[nom].en === v) return;
-    const en = traduitBrut(v);
+    const en = traduitBrut(v, interfaceDe(el));
     if (en === null || en === v) {
       if (memo) delete memo[nom];
       if (MANQUES && en === null) releveManque(v, el, nom);

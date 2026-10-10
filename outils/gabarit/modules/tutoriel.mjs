@@ -3,10 +3,9 @@
 
    La visite lit la page entière : les tiroirs, la fiche, le trajet demandé,
    la journée calculée. Ce qui vit déjà dans un module — les données du salon,
-   le parcours, la fenêtre commune, le générique, l'écriture d'une distance —
-   s'importe ; ce que le code soudé tient encore lui est confié par
-   `brancheTutoriel`, que `_tutoriel.html` appelle à la place que ce code
-   tenait dans la page.
+   le parcours, la fenêtre commune, le générique, l'écriture d'une distance,
+   les réglages, le code « Vous êtes ici », l'état de l'éditeur — s'importe :
+   il n'a plus rien à recevoir du code soudé.
 
    Le visiteur la reçoit : `plan.mjs` l'embarque. Le réglage et l'essai depuis
    la fenêtre des réglages ne servent qu'à l'exploitant, et seul
@@ -53,32 +52,18 @@ import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { centre, ferme } from "./fiche.mjs";
 import { changePlan } from "./rendu.mjs";
+import { conf, optionActive } from "./configuration.mjs";
+import { ICI_ACTIF } from "./ici.mjs";
+import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { calqueActif, enCours } from "./calques-dessin.mjs";
+import { formeSel } from "./forme-choisie.mjs";
+import { confieAuxRappels } from "./rappels.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la visite ne
-   se lance qu'une fois la page démarrée, bien après le branchement. */
-/** @type {Record<string, any>} */
-let soude = {};
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
-   `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. */
-
-/**
- * Le branchement, appelé par `_tutoriel.html` à la place de la visite.
- *
- * L'état de l'itinéraire, du code « Vous êtes ici » et de l'éditeur se
- * confie par des lecteurs, non par des valeurs : le code soudé le remplace à
- * chaque geste, et la visite doit lire celui du moment. Celui de la journée
- * s'importe de `journee.mjs`, qui le tient.
- *
- * @param {{ conf: Function, optionActive: Function,
- *   iciActif: () => boolean,
- *   dessinEnCours: () => any }} b
- */
-export function brancheTutoriel(b){
-  soude = b;
-}
-
-const conf = (c) => soude.conf(c);
-const optionActive = (cle) => soude.optionActive(cle);
+   `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
+   l'itinéraire, du code « Vous êtes ici », de l'éditeur et de la journée se
+   lit tel qu'il est à l'instant : les gestes le remplacent sans cesse, et la
+   visite doit lire celui du moment. */
 /* Le trajet demandé (`tiroir-itineraire.mjs` `ROUTE`, `attente`, `ITI`), la
    visée en cours (`visee`), qu'on éteint comme l'ouverture de l'itinéraire
    l'éteint — sans passer par « finVisee », qui rouvrirait le tiroir qu'on
@@ -92,11 +77,11 @@ const eteintVisee = () => { poseVisee(null); bandeauVisee(); };
 const journee = () => JOURNEE;
 const vueJournee = () => VUE_JOURNEE;
 const sejour = () => SEJOUR;
-// un code « Vous êtes ici » vient de poser le visiteur sur le plan (`_ici.html`)
-const iciActif = () => soude.iciActif();
+// un code « Vous êtes ici » vient de poser le visiteur sur le plan (`ici.mjs`)
+const iciActif = () => ICI_ACTIF;
 /* Un geste d'exploitant en cours — libellé qu'on place, trait qu'on trace,
    forme qu'on reprend, calque qu'on édite —, qu'Échap doit pouvoir défaire. */
-const dessinEnCours = () => soude.dessinEnCours();
+const dessinEnCours = () => PLACE_LIBELLES || enCours || formeSel || calqueActif;
 
 const racine = document.documentElement;
 
@@ -117,6 +102,18 @@ const TUTO_RAFALE = 650;
 
 /* Ce qui défile dans les tiroirs et les fenêtres. */
 const TUTO_DEFILE = ".detail-bd, .pCorps, .iCorps, .mcorps";
+
+/* Les tiroirs qui glissent quand une consigne change : la fiche, le parcours,
+   l'itinéraire, et la liste sur un téléphone. */
+const TUTO_TIROIRS = ["detail", "parcours", "itineraire", "side"];
+
+/* Ce qui fait encore glisser un tiroir : sa transition sur un téléphone, et
+   sur un écran large l'étirement de la fiche depuis la forme touchée
+   (`fiche.mjs` `anime`). Une animation sans fin n'est pas un glissement. */
+const glissements = () => TUTO_TIROIRS.flatMap(id => {
+  const t = $(id);
+  return t ? t.getAnimations().filter(a => !(a instanceof CSSAnimation) && a.playState === "running") : [];
+});
 
 /* La visite en cours, ou rien. */
 export let TUTO = null;
@@ -709,7 +706,27 @@ function afficheTuto(e, ch){
   $("tutoSuite").textContent = suite;
   if (nouvelle && TUTO.cible) rameneTuto(TUTO.cible);
   repereTuto();
+  /* Une consigne qui arrive pendant qu'un tiroir glisse — la fiche qui s'ouvre
+     au toucher de la zone — mesurait un tiroir à mi-course : la bulle se
+     posait d'après lui, puis un pouls la déplaçait ou non selon l'instant où
+     il tombait, et sa place finale changeait d'une fois à l'autre. Elle se
+     pose donc tout de suite, puis une seconde fois, d'office, quand le tiroir
+     est arrivé ; entre les deux, le pouls la laisse où elle est. */
+  if (nouvelle){ TUTO.arrivee = false; attendsTiroirs(cle); }
   placeTuto(nouvelle);
+}
+
+/** La bulle reposée d'office une fois les tiroirs arrivés, si la consigne n'a pas changé entre-temps. */
+function attendsTiroirs(cle){
+  const encours = glissements();
+  if (!TUTO || TUTO.cle !== cle) return;
+  if (!encours.length){
+    if (TUTO.arrivee){ TUTO.arrivee = false; placeTuto(true); }
+    return;
+  }
+  TUTO.arrivee = true;
+  // une animation interrompue arrive aussi : celle qui la remplace se relit
+  Promise.all(encours.map(a => a.finished.catch(() => {}))).then(() => attendsTiroirs(cle));
 }
 
 /* ------------------------------------------------------------
@@ -898,7 +915,7 @@ function placeTuto(force){
     if (c < mieux){ mieux = c; choix = [x, y]; }
   });
   if (!choix) return;   // aucune place à proposer : la bulle reste où elle est
-  if (!force && TUTO.pos && mieux >= cout(TUTO.pos[0], TUTO.pos[1]) * .7) return;
+  if (!force && TUTO.pos && (TUTO.arrivee || mieux >= cout(TUTO.pos[0], TUTO.pos[1]) * .7)) return;
   if (TUTO.pos && TUTO.pos[0] === choix[0] && TUTO.pos[1] === choix[1]) return;
   /* À la première pose, la bulle paraît à sa place : glisser depuis le coin de
      l'écran lui aurait fait traverser la page. */
@@ -969,9 +986,13 @@ function marqueZoneTuto(z){
     if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
   });
   if (!vue){ if (g) g.remove(); return; }
-  // la forme se réécrit avec le pavillon : sa marque se repose à chaque pouls
+  /* La forme se réécrit avec le pavillon : sa marque se repose à chaque pouls —
+     mais seulement si elle l'a perdue. Reposer une classe déjà là réécrit
+     quand même l'attribut, et le guet de la carte graphique y voit un
+     changement : tout le plan se redessinait quatre fois par seconde, une
+     image toutes les quatre secondes sous un rendu logiciel. */
   const forme = $("zones").querySelector('g[data-id="' + CSS.escape(z.id) + '"]');
-  if (forme) forme.classList.add("tutoCible");
+  if (forme && !forme.classList.contains("tutoCible")) forme.classList.add("tutoCible");
   if (g && g.dataset.id === z.id) return;
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -1002,3 +1023,9 @@ function marqueLibelleTuto(id){
   TUTO.guet = new MutationObserver(pose);
   TUTO.guet.observe($("labels"), { childList: true });
 }
+
+/* Les rappels, que ce module atteint par le tiroir du parcours, ne peuvent
+   l'importer en retour : il leur confie en se chargeant de quoi lire la
+   visite guidée en cours, pour ne pas passer devant elle. Elle change à
+   chaque chapitre : il la confie par un lecteur, non par sa valeur. */
+confieAuxRappels({ tuto: () => TUTO });

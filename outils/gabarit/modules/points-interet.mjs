@@ -7,14 +7,15 @@
    les retrouve à la frappe, et toucher l'un d'eux ouvre sa fiche. Le visiteur
    reçoit tout : `plan.mjs` embarque ce module.
 
-   Ce que le code soudé tient encore lui est confié par
-   `branchePointsInteret`, que `_dessin.html` appelle en tête : la forme d'un
-   identifiant (`formeParId`), le passage à un autre pavillon (`changePlan`),
-   les distinctions de la fiche (`poseDistsFiche`) — par des appels différés,
-   lus au moment du geste. Ce que la fiche des stands prête à celle d'un
-   repère s'importe de `fiche.mjs`, le bord estompé du cartouche de
-   `bandes.mjs` ; la recherche, qui relit les repères, se les fait donc
-   confier par le code soudé.
+   Il n'a rien à recevoir du code soudé : la forme d'un identifiant
+   (`forme-choisie.mjs` `formeParId`), le passage à un autre pavillon
+   (`rendu.mjs` `changePlan`), les distinctions de la fiche
+   (`distinctions.mjs` `poseDistsFiche`), ce que la fiche des stands prête à
+   celle d'un repère (`fiche.mjs`) et le bord estompé du cartouche
+   (`bandes.mjs`) s'importent ; la recherche, qui relit les repères, se les
+   fait donc confier par le code soudé. Les libellés, qui marquent la zone
+   mise en avant, reçoivent `phareZone` par la porte que ce module ouvre en
+   se chargeant (`confieAuxLibelles`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -31,21 +32,9 @@ import { poseCode, poseMarque, onglet, brancheActesFiche, centrePoint, ecarteCli
 import { majFondus } from "./bandes.mjs";
 import { changePlan } from "./rendu.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
-
-/**
- * Ce que le code soudé confie au branchement.
- * @typedef {object} PagePointsInteret
- * @property {(id: any) => any} formeParId
- */
-/** @type {PagePointsInteret} */
-let soude;
-const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
-
-/** Le branchement : `_dessin.html` l'appelle en tête.
- *  @param {PagePointsInteret} page */
-export function branchePointsInteret(page){
-  soude = page;
-}
+import { formeParId } from "./forme-choisie.mjs";
+import { confieALaRecherche } from "./recherche.mjs";
+import { confieAuxLibelles } from "./libelles.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -416,3 +405,12 @@ export function oublieChoixPoi(cible){
   poiChoisi = null;
   cartouchePoi();
 }
+
+/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (les repères qu'elle remonte parmi les exposants, et le chemin vers l'un d'eux). */
+confieALaRecherche({ reperesCherchables, vaAuRepere });
+
+/* La mise en avant d'une zone, confiée aux libellés dès que ce module se
+   charge : ils la marquent sur le nom de la zone, et ne peuvent importer ce
+   module, qui les atteint par la fiche. */
+confieAuxLibelles({ phareZone });

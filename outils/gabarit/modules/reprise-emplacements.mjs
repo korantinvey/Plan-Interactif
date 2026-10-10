@@ -13,15 +13,17 @@
    (`poseSorteGeo`) — vit dans `modules/emplacements.mjs`, qui en dit le
    pourquoi.
 
-   Ce que le code soudé tient encore — les réglages et leur enregistrement, la
-   vue, le panneau des calques, le dessin des noms et des distinctions,
-   l'outil de dessin — lui est confié par
-   `brancheRepriseEmplacements`, que `_geometrie.html` appelle à la place que
-   ce code y tenait. Ce qui change sans cesse — les réglages (`CONF`, que le
-   changement de salon remplace), la vue — par des lecteurs. Le calque de
-   dessin ouvert et le tracé d'une forme s'importent (`calques-dessin.mjs`,
-   `chemin-forme.mjs`, `dessin.mjs`) ; ce que l'outil de dessin tient
-   (`outil-dessin.mjs`, qui importe ce module-ci) se confie par des détours.
+   Il se branche par `brancheRepriseEmplacements`, que `_geometrie.html`
+   appelle à la place que ce code y tenait, pour y poser les écoutes de sa
+   palette. Ce que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
+   ce module-ci) lui est confié par l'outil en se chargeant
+   (`confieALaReprise`). À son tour, il confie en se chargeant ce qu'il tient
+   à la fiche d'une zone et au placement des libellés, qu'il importe.
+   Les réglages et leur enregistrement (`configuration.mjs`, `CONF` lu tel
+   qu'il est à l'instant), la vue, le panneau des calques (`ordre-trace.mjs`),
+   le dessin des noms et des distinctions, le calque de dessin ouvert et le
+   tracé d'une forme s'importent (`calques-dessin.mjs`, `chemin-forme.mjs`,
+   `dessin.mjs`).
    La recherche et la liste s'importent de `recherche.mjs`, la fiche de
    `fiche.mjs`.
    ============================================================ */
@@ -34,13 +36,13 @@ import { GL, cibleWebgl, priseWebgl } from "./webgl.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques } from "./parcours.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles } from "./placement-libelles.mjs";
+import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, montreAimants, correction,
   aimante } from "./aimants.mjs";
-import { ficheZone } from "./fiche-zone.mjs";
+import { ficheZone, confieALaFicheZone } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
-import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
+import { svg, vue, cadrePlan, versPlan, confieALaVue } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { ouvre, ferme } from "./fiche.mjs";
@@ -50,35 +52,33 @@ import { baliseZone, baliseStand } from "./rendu.mjs";
 import { calqueActif, nouvelId } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
+import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
 
 /**
- * Ce que le code soudé confie au branchement. La vue et le plan s'importent
- * de `vue.mjs`, le dessin des noms, les distinctions et le balisage d'un
- * emplacement de `libelles.mjs`, `distinctions.mjs` et `rendu.mjs`.
- * @typedef {object} PageRepriseEmplacements
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
- * @property {() => void} enregistreConf
- * @property {() => void} construitPanneau
- * @property {(cle: string) => boolean} optionActive
- * @property {(ferme: boolean) => string} pictoVerrou
- * @property {(id: any) => void} activeCalque
- * @property {() => void} remplitListeSocietes
- * @property {(texte: string) => any} societeSaisie
- * @property {(p: number[], pts: number[][]) => boolean} fermeIci
+ * Ce que l'outil de dessin tient et confie au module en se chargeant
+ * (`outil-dessin.mjs`, qui importe ce module-ci). Les défauts ne font rien :
+ * l'outil se charge avec la page d'administration, avant tout geste.
+ * @typedef {object} PreteReprise
+ * @property {typeof import("./outil-dessin.mjs").pictoVerrou} pictoVerrou
+ * @property {typeof import("./outil-dessin.mjs").activeCalque} activeCalque
+ * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
+ * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
+ * @property {typeof import("./outil-dessin.mjs").fermeIci} fermeIci
  */
-/** @type {PageRepriseEmplacements} */
-let soude;
-const reglages = () => soude.conf();
-const conf = (/** @type {string} */ cle) => soude.confDe(cle);
-const enregistreConf = () => soude.enregistreConf();
-const construitPanneau = () => soude.construitPanneau();
-const optionActive = (/** @type {string} */ cle) => soude.optionActive(cle);
-const pictoVerrou = (/** @type {boolean} */ f) => soude.pictoVerrou(f);
-const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
-const remplitListeSocietes = () => soude.remplitListeSocietes();
-const societeSaisie = (/** @type {string} */ texte) => soude.societeSaisie(texte);
-const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => soude.fermeIci(p, pts);
+/** @type {PreteReprise} */
+const prete = {
+  pictoVerrou: () => "", activeCalque: () => {}, remplitListeSocietes: () => {},
+  societeSaisie: () => null, fermeIci: () => false,
+};
+/** La porte par laquelle l'outil de dessin confie ce qu'il tient.
+ *  @param {Partial<PreteReprise>} o */
+export function confieALaReprise(o){ Object.assign(prete, o); }
+const pictoVerrou = (/** @type {boolean} */ f) => prete.pictoVerrou(f);
+const activeCalque = (/** @type {any} */ id) => prete.activeCalque(id);
+const remplitListeSocietes = () => prete.remplitListeSocietes();
+const societeSaisie = (/** @type {string} */ texte) => prete.societeSaisie(texte);
+const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => prete.fermeIci(p, pts);
 const racine = document.documentElement;
 
 /* Le choix et le geste sont transitoires, comme le mode : ils ne se
@@ -87,8 +87,10 @@ const racine = document.documentElement;
 export let geoSel = null;       // l'emplacement dont on reprend la forme
 /** @type {any} */
 let glisseGeo = null;    // le geste en cours
+/** Une forme d'emplacement est-elle tenue ? L'envoi au repos attend qu'on la lâche. */
+export const geoGlisse = () => Boolean(glisseGeo);
 
-/** Le geste abandonné : le pointeur annulé ne relâchera rien (`_gestes.html`). */
+/** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheGeo(){
   glisseGeo = null;
 }
@@ -110,13 +112,13 @@ export let traceAjout = null;   // la forme en cours de tracé
    plutôt que d'écrire « non ». L'état ordinaire ne laisse rien derrière lui.
    ------------------------------------------------------------ */
 const cleVerrouGeo = (sorte) => "_verrouGeo:" + sorte;
-export const geoVerrouille = (sorte) => !(reglages()[cleVerrouGeo(sorte)] || {}).ouvert;
+export const geoVerrouille = (sorte) => !(CONF[cleVerrouGeo(sorte)] || {}).ouvert;
 
 export function basculeVerrouGeo(sorte){
   const cle = cleVerrouGeo(sorte);
   if (geoVerrouille(sorte)) conf(cle).ouvert = true;
   else {
-    delete reglages()[cle];
+    delete CONF[cle];
     // on referme parfois la couche qu'on vient de reprendre : le mode se
     // ferme avec elle, plutôt que de rester armé sur ce qu'on protège
     if (SORTE_GEO === sorte) modeGeometrie(null);
@@ -284,7 +286,7 @@ export function majPaletteGeo(){
   $("geoNom").textContent = o
     ? (o.nom || o.code || (o.kind === "zone" ? "Zone sans nom" : "Stand"))
     : nomSorteGeo(SORTE_GEO);
-  $("geoOrigine").disabled = !(o && reglages()[cleGeo(o.id)]);
+  $("geoOrigine").disabled = !(o && CONF[cleGeo(o.id)]);
   // un emplacement ajouté n'a pas d'origine où revenir : il se supprime
   $("geoOrigine").hidden = Boolean(o && o.ajout);
   $("geoSupprime").hidden = !(o && o.ajout);
@@ -298,7 +300,7 @@ export function majPaletteGeo(){
     : !o
     ? (SORTE_GEO === "zones" ? "Cliquez une zone pour reprendre sa forme, ou ajoutez-en une."
                              : "Cliquez un emplacement pour reprendre sa forme, ou ajoutez-en un.")
-    : (reglages()[cleGeo(o.id)]
+    : (CONF[cleGeo(o.id)]
         ? "Glissez la forme ou ses poignées, ou ajustez-la aux flèches du clavier."
         : "Glissez la forme pour la déplacer, ou ses poignées pour la redimensionner. " +
           "Elle s'accroche aux emplacements voisins — Alt pour relâcher.");
@@ -338,8 +340,8 @@ function enregistreGeo(o){
   const src = geometrieSource(o);
   /* Une forme revenue sur celle de la source n'est pas une retouche : elle
      sort de la configuration plutôt que d'y peser et d'y vieillir. */
-  if (traceGeo(a) === traceGeo(src.a)) delete reglages()[cleGeo(o.id)];
-  else reglages()[cleGeo(o.id)] = { e: empreinteGeo(src), p: a };
+  if (traceGeo(a) === traceGeo(src.a)) delete CONF[cleGeo(o.id)];
+  else CONF[cleGeo(o.id)] = { e: empreinteGeo(src), p: a };
   enregistreConf();
   finGesteGeo(o);
   majPaletteGeo();
@@ -351,7 +353,7 @@ function geometrieOrigine(){
   if (!o) return;
   reposeSource(o);
   retraceGeo(o);
-  delete reglages()[cleGeo(o.id)];
+  delete CONF[cleGeo(o.id)];
   enregistreConf();
   finGesteGeo(o);
   dessinePoigneesGeo();
@@ -405,7 +407,7 @@ function appliqueDimensionGeo(){
 
 /** Retenir la forme d'un emplacement ajouté, là où il vit. */
 function enregistreAjout(o){
-  const r = reglages()[cleAjout(o.id)];
+  const r = CONF[cleAjout(o.id)];
   if (r) r.p = anneauxGeo(o.d);
   enregistreConf();
   finGesteGeo(o);
@@ -424,7 +426,7 @@ function ajouteEmplacement(anneaux){
   if (!sorte || !anneauxValides(anneaux)) return;
   const id = "ajout-" + nouvelId();
   const r = { plan: P().id, sorte: sorte, p: anneaux };
-  reglages()[cleAjout(id)] = r;
+  CONF[cleAjout(id)] = r;
   enregistreConf();
   const o = objetAjoute(id, r, state.plan, (h) => parId.get(h));
   P()[sorte].push(o);
@@ -449,7 +451,7 @@ function ajouteEmplacement(anneaux){
 /** Le numéro ou le nom d'un emplacement ajouté, tel qu'on le tape. */
 function renommeAjout(champ, valeur){
   const o = geoSel && parId.get(geoSel);
-  const r = o && o.ajout && reglages()[cleAjout(o.id)];
+  const r = o && o.ajout && CONF[cleAjout(o.id)];
   if (!r) return;
   const v = String(valeur || "").trim();
   if (v) r[champ] = v; else delete r[champ];
@@ -481,7 +483,7 @@ function renommeAjout(champ, valeur){
  */
 function lieAjout(texte){
   const o = geoSel && parId.get(geoSel);
-  const r = o && o.ajout && o.kind === "stand" && reglages()[cleAjout(o.id)];
+  const r = o && o.ajout && o.kind === "stand" && CONF[cleAjout(o.id)];
   if (!r) return;
   const v = String(texte || "").trim();
   const l = v ? societeSaisie(v) : null;
@@ -521,7 +523,7 @@ function ecritInfosAjout(o){
   /* Le lien se vend avec le dessin des stands : sans l'option, le champ se
      ferme comme celui du calque de dessin, et ce qui est déjà lié le reste. */
   $("geoSoc").disabled = !optionActive("dessinStand");
-  const r = reglages()[cleAjout(o.id)] || {};
+  const r = CONF[cleAjout(o.id)] || {};
   const met = (id, v) => { const c = $(id); if (c.value !== v && document.activeElement !== c) c.value = v; };
   met("geoCode", String(r.code || (o.lien ? "" : o.code) || ""));
   $("geoCode").placeholder = o.lien ? String(o.code || "B42") : "B42";
@@ -545,7 +547,7 @@ function supprimeAjout(){
         : zone ? "Cette zone sera retirée du plan, pour tous les visiteurs une fois publié."
                : "Ce stand sera retiré du plan, pour tous les visiteurs une fois publié.",
     "Supprimer", () => {
-      delete reglages()[cleAjout(o.id)];
+      delete CONF[cleAjout(o.id)];
       enregistreConf();
       const p = DATA.plans[o.p];
       const sorte = o.kind === "zone" ? "zones" : "stands";
@@ -747,11 +749,8 @@ export function geometriePointerUp(e){
 /**
  * Le branchement : `_geometrie.html` l'appelle à la place que ce code y tenait.
  * La palette reçoit ici ses écoutes, à leur rang parmi celles du plan.
- *
- * @param {PageRepriseEmplacements} page
  */
-export function brancheRepriseEmplacements(page){
-  soude = page;
+export function brancheRepriseEmplacements(){
   if ($("geoFerme")) $("geoFerme").onclick = () => modeGeometrie(null);
   if ($("geoOrigine")) $("geoOrigine").onclick = geometrieOrigine;
   if ($("geoLargeur")) $("geoLargeur").oninput = appliqueDimensionGeo;
@@ -770,3 +769,14 @@ export function brancheRepriseEmplacements(page){
     if (o && o.ajout && o.kind === "zone") ficheZone(o);
   };
 }
+
+/* Les poignées d'un emplacement repris gardent leur taille à l'écran : la
+   vue, que ce module importe, les refait à chaque changement de vue — il les
+   lui confie en se chargeant ; la page publique ne les a pas. */
+confieALaVue({ dessinePoigneesGeo });
+
+/* La fiche d'une zone et le placement des libellés sont importés par ce
+   module : ils ne peuvent l'importer en retour. Il leur confie donc, dès que
+   la page d'administration le charge, ce qu'ils lui empruntent. */
+confieALaFicheZone({ majPaletteGeo });
+confieAuPlacementLibelles({ modeGeometrie });

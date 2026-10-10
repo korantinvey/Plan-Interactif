@@ -13,34 +13,41 @@
    l'outil les remplace par leurs portes. Leur tracé sur le plan vit dans
    `modules/dessin.mjs`.
 
-   Ce que le code soudé tient encore lui est confié par `brancheOutilDessin`,
-   que `_dessin.html` appelle à la place que ce code tenait : la forme choisie
-   dans l'éditeur par un lecteur et sa porte, ce qui se déclare dans d'autres
-   morceaux du script par des appels différés. Les boutons et les champs de la
-   boîte à outils, le dépôt d'une image sur le plan et son collage s'y
-   branchent, au rang qu'ils tenaient parmi les écouteurs de la page.
+   Il se branche par `brancheOutilDessin`, que `_dessin.html` appelle à la
+   place que ce code tenait : les boutons et les champs de la boîte à outils,
+   le dépôt d'une image sur le plan et son collage s'y branchent, au rang
+   qu'ils tenaient parmi les écouteurs de la page. Il n'a plus rien à en
+   recevoir : la forme choisie dans l'éditeur et sa porte s'importent de
+   `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
+   rangement des réglages de `configuration.mjs`.
+
+   À l'inverse, ce qu'il tient et que d'autres modules d'exploitant
+   empruntent — l'éditeur, l'enregistrement, la reprise d'un emplacement, le
+   placement des libellés —, il le leur confie en se chargeant, au bas du
+   module : il les importe, et ils ne pourraient l'importer sans boucle. Les
+   aimants aussi, qui ne l'importent pas pour s'éprouver seuls dans Node.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { P } from "./donnees.mjs";
-import { CONF, conf, optionActive } from "./configuration.mjs";
+import { CONF, conf, optionActive, enregistreConf } from "./configuration.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { oublieGrilles, oublieLiaisons, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
-import { programmePublication } from "./enregistrement.mjs";
+import { programmePublication, confieAEnregistrement } from "./enregistrement.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles } from "./placement-libelles.mjs";
+import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { modeGeometrie } from "./reprise-emplacements.mjs";
+import { modeGeometrie, choisitGeo, confieALaReprise } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aimante, DERNIERE,
-  retientTaille, reprendTaille, appliqueDimension } from "./aimants.mjs";
-import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
+  retientTaille, reprendTaille, appliqueDimension, brancheAimants } from "./aimants.mjs";
+import { confieAEdition, geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
-  editionPointerMove, editionPointerUp } from "./edition.mjs";
+  editionPointerMove, editionPointerUp, replieOutils, choisitForme } from "./edition.mjs";
 import { DESSINS, cleDessins, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
   enCours, poseCalqueActif, poseOutil, poseEbauche } from "./calques-dessin.mjs";
 import { cheminForme, estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
@@ -49,23 +56,11 @@ import { TYPES_REPERE, MODES_TRANSPORT, estTransport, couleurLigne, couleurEcrit
 import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_REPERE, nomSurLePlan,
   societeDeForme, societesDuPlan } from "./dessin.mjs";
 import { oublieReperes } from "./points-interet.mjs";
+import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { confieApresOption } from "./options.mjs";
+import { confieAuRendu } from "./rendu.mjs";
 
-/**
- * Ce que le code soudé confie au branchement.
- * @typedef {object} PageOutilDessin
- * @property {() => any} formeSel la forme choisie dans l'éditeur, `formeSel`
- * @property {(id: any) => void} poseFormeSel
- * @property {(id: any) => any} formeParId
- * @property {() => void} construitPanneau
- * @property {() => void} enregistreConf
- */
-/** @type {PageOutilDessin} */
-let soude;
-const formeSel = () => soude.formeSel();
-const poseFormeSel = (/** @type {any} */ id) => soude.poseFormeSel(id);
-const formeParId = (/** @type {any} */ id) => soude.formeParId(id);
-const construitPanneau = () => soude.construitPanneau();
-const enregistreConf = () => soude.enregistreConf();
 
 export const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
@@ -100,7 +95,7 @@ export const enregistreDessins = () => {
    ligne d'un arrêt, les passages posés. L'instantané pris juste avant portait
    donc le même objet, déjà modifié, et Ctrl+Z retraçait le plan sans rien
    défaire : seuls l'ajout et la suppression, qui touchent le tableau,
-   s'annulaient vraiment. `_batiments.html` `reposeBatiment` contourne ce piège
+   s'annulaient vraiment. `batiments.mjs` `reposeBatiment` contourne ce piège
    depuis longtemps en refabriquant ses formes ; il valait mieux le fermer.
    Les points, eux, sont toujours remplacés par un tableau neuf, jamais écrits
    en place : en copier la liste suffit, et `src` d'une image reste partagé. */
@@ -138,7 +133,7 @@ function restaure(source, autre){
      quatre poignées affichés sur place, le panneau « Élément » ouvert sur elle.
      Les commandes qui en dépendent ne faisaient alors plus rien, `formeParId`
      ne rendant plus rien — un refus muet. */
-  if (formeSel() && !formeParId(formeSel())) poseFormeSel(null);
+  if (formeSel && !formeParId(formeSel)) poseFormeSel(null);
   clotSalve();
   enregistreDessins(); dessineDessins(); dessinePoignees();
   if (ADMIN){ construitPanneau(); majElement(); }
@@ -590,7 +585,7 @@ export function termineTrace(valider){
 
 function aide(){
   if (!$("outilsAide")) return;
-  const t = { main: formeSel() ? "Glissez pour déplacer, les carrés pour redimensionner."
+  const t = { main: formeSel ? "Glissez pour déplacer, les carrés pour redimensionner."
                              : "Cliquez une forme de ce calque pour la modifier.",
               rect: "Cliquez-glissez pour tracer un rectangle.",
               poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
@@ -614,11 +609,22 @@ function aide(){
 
 /* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
    stands garde son bouton dans la palette, grisé, et c'est ici que le clic
-   retombe sur la sélection (voir « OPTIONS » de « _admin1.html »). L'image,
+   retombe sur la sélection (voir « OPTIONS » de « options.mjs »). L'image,
    elle, n'est pas une option — c'en est une de la rattacher à un exposant, et
    c'est son champ qui se grise. */
 const OPTION_OUTIL = { stand: "dessinStand" };
 const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
+
+/* Ce que ces deux options refont quand l'exploitant les ferme, l'outil le sait
+   seul : il le leur confie dès que la page d'administration le charge
+   (`options.mjs`). L'outil qu'on ferme ne s'est jamais tenu en main hors de
+   l'administration, et le champ image ne se pose qu'outil en main. */
+// l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
+confieApresOption("dessinStand", () => { if (outil === "stand") choisitOutil("main"); });
+/* Le gris du champ vient de la feuille de style, mais sa prise au clavier
+   et sa liste de choix se posent en JS, et seulement l'outil en main : on
+   repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
+confieApresOption("imageStand", () => { if (outil === "image") poseChampImage(); });
 
 /* --- suppression au clic en mode sélection --- */
 export function choisitOutil(o){
@@ -832,7 +838,7 @@ export function creeCalque(){
 }
 
 /* saisie du nom dans une fenêtre : plus visible qu'un double-clic */
-function demandeNom(titre, valeur, suite){
+function demandeNom(titre, valeur, suite, abandon){
   let champ;
   ouvreModale(titre, corps => {
     champ = document.createElement("input");
@@ -845,8 +851,14 @@ function demandeNom(titre, valeur, suite){
       if (e.key === "Enter"){ e.preventDefault(); valide(); }
     };
   }, [
-    { libelle: "Annuler" },
-    { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
+    /* Renoncer ramène aussi d'où l'on venait : l'ordre des calques, quand
+       c'est lui qui a demandé le nom. Fermer d'abord, pour la même raison. */
+    { libelle: "Annuler", ferme: false, action: () => { fermeModale(); if (abandon) abandon(); } },
+    /* Le bouton passe par le même chemin que la touche Entrée : fermer, puis
+       donner le nom. Dans l'autre ordre, une suite qui rouvre une fenêtre —
+       l'ordre des calques, d'où l'on était venu renommer — la voyait
+       refermée aussitôt par le pied. */
+    { libelle: "Valider", ferme: false, action: () => valide() },
   ], "outil");
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
@@ -859,17 +871,15 @@ export function renommeCalque(c, apres){
     construitPanneau();
     if (calqueActif === c.id) $("outilsCalque").textContent = "Dessin · " + c.nom;
     if (apres) apres();
-  });
+  }, apres);
 }
 
 /**
  * Le branchement : `_dessin.html` l'appelle à la place que ce code tenait. Les
  * boutons et les champs de la boîte à outils s'y branchent, comme le dépôt et
  * le collage d'une image, dans l'ordre où le code soudé les posait.
- * @param {PageOutilDessin} page
  */
-export function brancheOutilDessin(page){
-  soude = page;
+export function brancheOutilDessin(){
 
   $("fichierImage").onchange = e => { importeImage(e.target.files[0]); e.target.value = ""; };
   $("choisirImage").onclick = () => $("fichierImage").click();
@@ -901,6 +911,7 @@ export function brancheOutilDessin(page){
   if ($("aimantPas")) $("aimantPas").onchange = () => montreAimants(null);
   if ($("aimants")) $("aimants").onchange = () => montreAimants(null);
   $("fermeOutils").onclick = () => { if (calqueActif) activeCalque(calqueActif); };
+  $("replieOutils").onclick = () => replieOutils(!$("outils").classList.contains("replie"));
   $("renommeOutils").onclick = () => {
     const c = trouveCalque(calqueActif);
     if (c) renommeCalque(c);
@@ -953,7 +964,7 @@ export function brancheOutilDessin(page){
      calques. Le retour en arrière tient le geste entier — on mémorise au premier
      événement, pas à chacun. */
   suitNuancier($("elemCouleur"), (v) => {
-    const cible = formeSel() && formeParId(formeSel());
+    const cible = formeSel && formeParId(formeSel);
     if (!cible || !estTransport(cible.f)) return;
     if (!couleurEnCours){ memorise(); couleurEnCours = true; }
     const c = couleurEcrite(cible.f.mode, cible.f.ligne, v, cible.c);
@@ -990,3 +1001,39 @@ export function brancheOutilDessin(page){
 
   $("voirNappe").onchange = e => { poseNappe(e.target.checked); rafraichitApercu(); };
 }
+
+/* Le montage d'un pavillon réécrit ses groupes : l'emplacement qu'on
+   reprenait n'existe plus, l'historique de l'éditeur valait pour l'autre
+   pavillon, et la boîte à outils se replie. Le rendu, que la page publique
+   porte aussi, reçoit d'ici en se chargeant de quoi tout remettre au repos ;
+   la page publique, qui n'a ni éditeur ni outils, n'en a pas besoin. */
+confieAuRendu({ oublieEdition: () => {
+  if (SORTE_GEO) choisitGeo(null);
+  HIST.length = REFAIRE.length = 0;
+  const o = $("outils");
+  if (o) o.classList.remove("open");
+} });
+
+/* Ces quatre modules sont importés par celui-ci : ils ne peuvent l'importer
+   en retour. Il leur confie donc ce qu'il tient dès que la page
+   d'administration le charge — avant tout geste, et sans que le code soudé
+   ait à s'en mêler. */
+confieAEdition({ memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes });
+confieAEnregistrement({ enregistreDessins });
+confieALaReprise({ pictoVerrou, activeCalque, remplitListeSocietes, societeSaisie, fermeIci });
+confieAuPlacementLibelles({ activeCalque });
+
+/* Les aimants s'éprouvent seuls dans Node (`outils/essais/aimants.js`) : ils
+   n'importent pas l'outil de dessin, on le leur confie. Ce module les importe
+   déjà, et tient ou importe tout ce qu'ils lisent ; c'est donc lui qui le leur
+   confie en se chargeant, au lieu du code soudé. Rien n'y sert avant le
+   premier geste de l'exploitant. Ce qui change d'un geste à l'autre se confie
+   par un lecteur, jamais par sa valeur du moment. */
+brancheAimants({
+  vue: () => vue(),
+  imageEnAttente: () => imageEnAttente,
+  formeSel: () => formeSel,
+  calqueActif: () => calqueActif,
+  svg, cadrePlan, mesCalques, estCadre, boite, toleranceTrace, apercuGuide, formeParId,
+  ajouteForme, choisitForme, signale, memorise, enregistreDessins, redessineForme, dessinePoignees,
+});

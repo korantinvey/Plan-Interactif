@@ -9,14 +9,15 @@
    (`_console-base.html`), que tout le reste appelait sans le dire. Il vit ici,
    et les modules de la console l'importent : l'appel à la base, la barre
    d'état, les briques d'affichage, l'adresse des pages et la session ne leur
-   sont plus confiés par le code soudé. Le projet et la session (`CFG`,
-   `SESSION`) sont des états de ce module, qu'il est seul à remplacer
-   (`poseSession`) ; le code soudé les lit par accesseur.
+   sont plus confiés par le code soudé, qui n'existe plus. Le projet et la
+   session (`CFG`, `SESSION`) sont des états de ce module, qu'il est seul à
+   remplacer (`poseSession`).
 
    Ce qu'il ne peut pas importer — ce que chaque page fait après la connexion
    (`demarre`) et à la déconnexion (`videEcran`) — lui est confié par
-   `brancheSocle`, que `_console-base.html` appelle à la place que ce code
-   tenait : ce qui s'exécutait au chargement s'y exécute, au même rang.
+   `brancheSocle`, que le point d'entrée de chaque page (`console.mjs`,
+   `rapport.mjs`) appelle en premier : ce qui s'exécutait au chargement s'y
+   exécute, au même rang.
    ============================================================ */
 /* Les casiers du projet et de la session, la lecture d'un jeton et son
    échange sont communs avec le plan : `modules/session.mjs`. */
@@ -148,6 +149,9 @@ export function ecranConfig() {
     poseSession({ CFG: { url: u, anonKey: k } });
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();
+    /* La connexion a pris la place de cette fenêtre : la fermer maintenant,
+       ce serait fermer celle qu'on vient d'ouvrir. */
+    return false;
   } }]);
 }
 
@@ -172,7 +176,8 @@ export function ecranConnexion(message) {
     info.style.marginTop = "-4px";
     info.textContent = "Projet : " + (CFG?.url || "non configuré");
     corps.appendChild(info);
-  }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+  }, [// la configuration prend la place : on ne referme pas ce qu'on vient d'ouvrir
+      { libelle: "Changer de projet", action: () => { ecranConfig(); return false; } },
       { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
@@ -308,6 +313,23 @@ const themeSombre = () => {
 /* ------------------------------------------------------------------
    Le branchement
    ------------------------------------------------------------------ */
+/* La page part vers celle du mot de passe. `location.replace` n'arrête pas le
+   script : sans cette marque, la page commençait à charger pendant la
+   redirection — le profil, les salons partaient ou non selon le moment, avec
+   une session qui n'était peut-être pas celle qu'on apportait. */
+let enPartance = false;
+
+/**
+ * Le premier écran : la configuration du projet, la connexion, ou la page
+ * elle-même. Rien, si la page est déjà en train de partir.
+ */
+export function premierEcran() {
+  if (enPartance) return;
+  if (!CFG) ecranConfig();
+  else if (!SESSION) ecranConnexion();
+  else _page.demarre();
+}
+
 /**
  * Ce que la page confie au socle, et ce que le socle faisait au chargement,
  * dans l'ordre où il le faisait : relire le projet et la session, poser la
@@ -348,6 +370,7 @@ export function brancheSocle(page) {
     const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
       (type === "recovery" || type === "invite" || type === "signup");
     if (jeton || h.get("error_description") || q.get("error_description")) {
+      enPartance = true;
       location.replace(PAGE_MDP + location.search + location.hash);
     }
   })();

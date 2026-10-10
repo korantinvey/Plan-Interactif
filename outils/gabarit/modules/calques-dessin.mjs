@@ -19,17 +19,16 @@
 import { P } from "./donnees.mjs";
 import { salonRange } from "./configuration.mjs";
 
-/* Ce que le code soudé confie : rien avant qu'il l'ait fait, et un bouton
-   absent de la page publique. */
+/* L'état du bouton d'enregistrement, que seule l'administration a
+   (`enregistrement.mjs`) : elle le confie en se chargeant ; la page publique
+   n'a pas de bouton, et rien n'est appelé. */
 /** @type {{ majAttente: () => void }} */
-let soude = { majAttente: () => {} };
-const majAttente = () => soude.majAttente();
+const prete = { majAttente: () => {} };
+const majAttente = () => prete.majAttente();
 
-/** Le branchement : `_dessin.html` l'appelle en tête.
- *  @param {{ majAttente: () => void }} page */
-export function brancheCalquesDessin(page){
-  soude = page;
-}
+/** La porte de l'enregistrement, ouvert au chargement de son module.
+ *  @param {{ majAttente: () => void }} o */
+export function confieAuxCalques(o){ Object.assign(prete, o); }
 
 /* Un rangement par salon, et non plus un seul pour tous — la même règle que
    pour les réglages, et un dégât de plus.
@@ -200,7 +199,7 @@ export let outil = "main";
 export let enCours = null;       // tracé en construction
 
 /* Leurs portes. Le calque ouvert change par l'outil de l'exploitant, et se
-   referme au montage d'un pavillon (`_rendu.html` `montePlan`) ; l'outil et
+   referme au montage d'un pavillon (`rendu.mjs` `montePlan`) ; l'outil et
    le tracé ne changent que par l'outil de dessin (`modules/outil-dessin.mjs`). */
 export function poseCalqueActif(/** @type {any} */ id){ calqueActif = id; }
 export function poseOutil(/** @type {string} */ o){ outil = o; }

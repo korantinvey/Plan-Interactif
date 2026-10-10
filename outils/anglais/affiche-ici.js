@@ -2,9 +2,9 @@
    côté exploitant : ce qu'il lit en le produisant, et l'affiche qu'il imprime.
    « Vous êtes ici » se traduit déjà pour la borne — la clé vit dans `borne.js`. */
 module.exports = {
-  /* Côté exploitant : la visée, puis la fenêtre du code. */
-  "Touchez le plan à l'endroit où ce code sera affiché.":
-    "Tap the map where this code will be displayed.",
+  /* Côté exploitant : la fenêtre du code. La consigne de la visée est
+     affichée par le tiroir de l'itinéraire, public : elle vit dans
+     `tiroir-itineraire.js`. */
   "Produire un code « Vous êtes ici »": "Create a “You are here” code",
   "Code « Vous êtes ici »": "“You are here” code",
   "Affichez ce code à cet endroit du salon : celui qui le photographie ouvre le plan déjà situé, et ses itinéraires partent d'ici.":

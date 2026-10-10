@@ -9,16 +9,19 @@
    Il se branche dans `_rendu.html`, à la place que son code tenait. Ce que le
    code soudé tient encore lui est confié par des détours, lus au moment de
    monter : le dessin des calques (`dessin.mjs`, qui importe la fiche que ce
-   module importe), le fond d'un pavillon (`_admin2.html`), le panneau des calques (`_pile.html`), et ce
-   que seule l'administration connaît — la nappe de la grille, le calage de la
+   module importe), le fond d'un pavillon (`demarrage.mjs`, qui importe ce
+   module-ci), et ce que seule l'administration connaît — la nappe de la grille, le calage de la
    carte — sous la garde qu'il avait. La reprise d'un emplacement,
    l'historique de l'éditeur et la boîte à outils, que le visiteur ne reçoit
    pas, restent dans une tranche du branchement : la page publique n'en
-   confie rien, et le montage n'a rien à oublier.
+   confie rien, et le montage n'a rien à oublier. Le panneau des calques
+   s'importe de `ordre-trace.mjs`, qui n'en remplit le contenu que chez
+   l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
-   `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : le code soudé le
-   lit par accesseur.
+   `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : la police des
+   noms, qui ne peut importer ce module, le lit par un lecteur que celui-ci
+   lui confie en se chargeant (`confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -28,26 +31,37 @@ import { oublieDists } from "./distinctions.mjs";
 import { marqueRetrait, liste } from "./recherche.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { marqueParcours } from "./parcours.mjs";
-import { dessineItineraire } from "./tiroir-itineraire.mjs";
-import { dessineBorne } from "./borne.mjs";
+import { dessineItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { dessineBorne } from "./vous-etes-ici.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
-import { ferme } from "./fiche.mjs";
+import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { confieAuxPolices } from "./polices-plan.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le premier
-   montage attend les données, bien après le branchement. */
-/** @type {Record<string, any>} */
-let soude = {};
-
+/* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
+   confient en se chargeant (`confieAuRendu`) : le dessin des calques
+   (`dessin.mjs`), le fond d'un pavillon chargé après coup (`demarrage.mjs`),
+   et ce que seule l'administration a — la nappe de la grille (`nappe.mjs`),
+   le calage de la carte en cours (`calage-carte.mjs`), l'éditeur à remettre
+   au repos (`outil-dessin.mjs`). La page publique n'embarque pas ces
+   derniers : ils restent sans effet. */
 /**
- * Le branchement, appelé par `_rendu.html` à la place que ce code tenait.
- *
- * @param {Record<string, any>} b
+ * @typedef {object} PageRendu
+ * @property {() => void} dessineDessins
+ * @property {(i: number) => void} chargeFond
+ * @property {() => void} rafraichitApercu
+ * @property {() => void} oublieCalageEnCours
+ * @property {(() => void) | null} oublieEdition
  */
-export function brancheRendu(b){
-  soude = b;
-}
+/** @type {PageRendu} */
+const prete = { dessineDessins: () => {}, chargeFond: () => {}, rafraichitApercu: () => {},
+  oublieCalageEnCours: () => {}, oublieEdition: null };
+
+/** La porte des modules qui confient au montage ce qu'il appelle.
+ *  @param {Partial<PageRendu>} o */
+export function confieAuRendu(o){ Object.assign(prete, o); }
 
 /* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
    ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
@@ -108,11 +122,11 @@ export function montePlan(){
   poseCalqueActif(null);
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter ; la
-     boîte à outils n'existe qu'en administration. La page publique ne confie
-     rien de cela : elle n'a ni éditeur, ni outils. */
-  if (soude.oublieEdition) soude.oublieEdition();
+     boîte à outils n'existe qu'en administration. La page publique n'a rien
+     de cela : ni éditeur, ni outils. */
+  if (prete.oublieEdition) prete.oublieEdition();
   monteHabillage();
-  soude.dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  prete.dessineDessins();          // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
   // est à reposer dessus, sans quoi le pavillon paraît entier
   marqueRetrait();
@@ -124,9 +138,9 @@ export function montePlan(){
   // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
   dessineBorne();
   // la nappe de la grille n'est qu'à l'exploitant (`modules/nappe.mjs`)
-  soude.rafraichitApercu();
+  prete.rafraichitApercu();
   MONTE = true;
-  if (ADMIN) soude.construitPanneau();
+  if (ADMIN) construitPanneau();
   onglets();
 }
 
@@ -156,8 +170,23 @@ export function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
   /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
-  soude.oublieCalageEnCours();
+  prete.oublieCalageEnCours();
   ferme();
   montePlan(); fit(); liste();
-  soude.chargeFond(i);
+  prete.chargeFond(i);
 }
+
+/* Le pavillon monté ou non, confié à la police des noms dès que ce module se
+   charge, par un lecteur : elle ne retrace rien avant le premier montage, et
+   ne peut importer ce module, qui l'atteint en chemin. */
+confieAuxPolices({ monte: () => MONTE });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant de quoi monter le pavillon de ce qu'elle choisit,
+   quand il n'est pas celui qu'on regarde. */
+confieALaFiche({ montePlan });
+
+/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant le passage d'un pavillon à l'autre,
+   quand le trajet ou la visée mène ailleurs. */
+confieAuTiroirItineraire({ changePlan });

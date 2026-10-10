@@ -1,18 +1,19 @@
 /* ============================================================
-   13 bis. Le plan peint par la carte graphique — le branchement
+   L'édition en cours — le plan est-il sous un outil de l'exploitant ?
 
-   Le rendu vit dans `modules/webgl.mjs`, et ce qu'il relit du SVG dans
-   `modules/trace.mjs`. Il se branche ici, à la place que son code tenait dans
-   ce script : la bibliothèque se demande au même moment qu'avant parmi le
-   reste du plan.
-
-   Les noms, qui suivent les règles des libellés du SVG — tailles, seuils,
-   placement à la main, stands dessinés —, se préparent avec eux dans
-   `modules/libelles.mjs` (`libellesWebgl`), qui importe le rendu et ne peut
-   donc lui être importé : il lui est confié ici. Reste ici ce qu'il ne peut
-   pas importer et qui tient au plan plus qu'au dessin : savoir si l'on édite,
-   qui lit le calque ouvert de l'outil de dessin.
+   Le rendu par la carte graphique (`webgl.mjs`) et la vue (`vue.mjs`) le
+   demandent, mais ne peuvent l'importer : ce qu'il lit — le calque ouvert, le
+   placement des libellés, la couche reprise — vit dans des modules qui
+   importent l'un ou l'autre. Il vit donc ici, et le code soudé le leur
+   confie (`_webgl.html`, `_vue.html`). Le visiteur le reçoit, d'où
+   `plan.mjs` : hors de l'administration, il est toujours faux.
    ============================================================ */
+import { GL, confieAuWebgl } from "./webgl.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { calqueActif } from "./calques-dessin.mjs";
+import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { SORTE_GEO } from "./emplacements.mjs";
+import { confieALaVue } from "./vue.mjs";
 
 /* ------------------------------------------------------------
    L'édition.
@@ -32,13 +33,10 @@
    laisse passer le clic vers le stand qu'elle recouvre, comme en SVG où les
    calques de dessin ne reçoivent pas le pointeur.
    ------------------------------------------------------------ */
-const enEdition = () => GL.actif && ADMIN &&
+export const enEdition = () => GL.actif && ADMIN &&
   (Boolean(calqueActif) || PLACE_LIBELLES || Boolean(SORTE_GEO));
 
-/* La vue, le placement à la main et les gestes changent sans cesse : ils se
-   confient par une fonction qui les lit au moment voulu. */
-brancheWebgl({
-  svg, vue: () => view, cadrePlan, appliqueVue, libelles, enEdition,
-  placeLibelles: () => PLACE_LIBELLES, drag: () => drag, pince: () => pince,
-  libellesWebgl,
-});
+/* La vue et le rendu par la carte graphique demandent si l'on édite, et ne
+   peuvent importer ce module : il le leur confie en se chargeant. */
+confieALaVue({ enEdition });
+confieAuWebgl({ enEdition });

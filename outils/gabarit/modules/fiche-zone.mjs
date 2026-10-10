@@ -9,11 +9,13 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
-   qu'en administration (`_fiche.html`). Ce que le code soudé tient encore —
-   la configuration, l'index de recherche — lui est confié par
-   `brancheFicheZone`, que `_mode-admin.html` appelle à la place que ce code y
-   tenait. Les types de zone, le cartouche des points d'intérêt et le dessin
-   des noms s'importent (`reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
+   qu'en administration (`_fiche.html`). La palette de la reprise d'un
+   emplacement (`reprise-emplacements.mjs`), qui importe ce module, lui est
+   confiée par la reprise en se chargeant (`confieALaFicheZone`) : il n'a
+   plus de branchement. La configuration et son enregistrement, la liste de
+   la recherche, les types de zone, le cartouche des points d'intérêt et le
+   dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,
+   `reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -27,36 +29,28 @@ import { cleAjout, rechAjout } from "./emplacements.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { rangeConferences } from "./index-salon.mjs";
 import { annonce } from "./demarrage.mjs";
-import { ouvre } from "./fiche.mjs";
+import { ouvre, confieALaFiche } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./points-interet.mjs";
+import { CONF, enregistreConf } from "./configuration.mjs";
+import { liste } from "./recherche.mjs";
 
-/* Ce que le code soudé confie au branchement. Ce qui change — les réglages
-   (`CONF`, que le changement de salon remplace) — se lit à l'instant. */
+/* Ce que la reprise d'un emplacement, qui importe ce module, lui confie en se
+   chargeant. Les réglages (`CONF`, que le changement de salon remplace),
+   importés, se lisent tels qu'ils sont à l'instant. */
 /**
- * @typedef {object} PageFicheZone
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {() => void} enregistreConf
- * @property {() => void} liste
+ * @typedef {object} PreteFicheZone
  * @property {() => void} majPaletteGeo
  */
-/** @type {PageFicheZone} */
-let soude;
-const reglages = () => soude.conf();
-const enregistreConf = () => soude.enregistreConf();
-const liste = () => soude.liste();
-const majPaletteGeo = () => soude.majPaletteGeo();
+/** @type {PreteFicheZone} */
+const prete = { majPaletteGeo: () => {} };
+const majPaletteGeo = () => prete.majPaletteGeo();
 
-/**
- * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`),
- * dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {PageFicheZone} page
- */
-export function brancheFicheZone(page){
-  soude = page;
-}
+/** La porte par laquelle la reprise d'un emplacement (`reprise-emplacements.mjs`)
+ *  confie sa palette.
+ *  @param {Partial<PreteFicheZone>} o */
+export function confieALaFicheZone(o){ Object.assign(prete, o); }
 
 /* ============================================================
    La fiche d'une zone organisateur
@@ -726,7 +720,7 @@ async function enregistreZone(o, v, depart){
  * publication, avec le reste de l'apparence.
  */
 async function enregistreZoneAjoutee(o, v, depart){
-  const r = reglages()[cleAjout(o.id)];
+  const r = CONF[cleAjout(o.id)];
   if (!r) return;
   const fiche = {
     nom_en: String(v.libelleEn || "").trim(),
@@ -791,7 +785,7 @@ async function enregistreZoneAjoutee(o, v, depart){
 export async function basculeAffichageZone(o){
   const masquer = !o.masquee;
   // une zone ajoutée à la main se masque dans son entrée, comme sa fiche
-  const r = o.ajout && reglages()[cleAjout(o.id)];
+  const r = o.ajout && CONF[cleAjout(o.id)];
   if (r){
     if (masquer) r.masquee = true; else delete r.masquee;
     o.masquee = masquer || undefined;
@@ -841,7 +835,7 @@ async function ecritColonnesEvenement(travaux){
   if (!acces) throw new Error("session absente, reconnectez-vous");
 
   const colonnes = travaux.map(t => t.colonne).join(",");
-  /* Les deux appels passent par `base` (_pousse.html), qui échange le jeton
+  /* Les deux appels passent par `base` (`session.mjs`), qui échange le jeton
      d'avance et refait l'appel sur un refus de jeton. Un jeton Supabase vit une
      heure, et cette page peut rester ouverte une matinée sans qu'aucun geste ne
      le renouvelle : la description d'une zone tapée à 10 h 30 partait alors
@@ -872,3 +866,9 @@ async function ecritColonnesEvenement(travaux){
 /** La même chose pour une seule colonne, qui est le cas courant. */
 export const ecritColonneEvenement = (colonne, secours, change) =>
   ecritColonnesEvenement([{ colonne, secours, change }]).then(t => t[colonne]);
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant les deux gestes de l'exploitant sur une zone — la
+   reprendre, la retirer du plan public. Seule l'administration embarque ce
+   module : la page publique n'a ni l'un ni l'autre. */
+confieALaFiche({ ficheZone, basculeAffichageZone });

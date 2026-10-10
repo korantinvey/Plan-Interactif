@@ -13,12 +13,14 @@
    concentration, dates et heures, distinctions, couleur, modèles et polices —
    sont des modules que le plan public embarque aussi (`configuration.mjs`,
    `apparence.mjs`, `habillage.mjs`, `modeles.mjs`, `polices-plan.mjs`,
-   `seuil.mjs`, `horaires.mjs`) : ils s'importent, comme le nuancier. Ce que
-   le code soudé tient encore — les options vendues à part, les distinctions —
-   lui est confié par `brancheVolets`, à la place que ce code tenait
-   (`_volets.html`). Les secteurs, la liste et le filtre de la recherche
+   `seuil.mjs`, `horaires.mjs`) : ils s'importent, comme le nuancier, les
+   options vendues à part (`options.mjs`) et l'enregistrement de la
+   configuration. Les secteurs, la liste et le filtre de la recherche
    s'importent (`secteurs.mjs`, `recherche.mjs`), comme ce que la fiche montre
-   (`corps-fiche.mjs`).
+   (`corps-fiche.mjs`), le mode administrateur, le cadre d'un champ
+   (`fiche-zone.mjs`), le panneau des calques (`ordre-trace.mjs`) et le
+   trajet à refaire (`tiroir-itineraire.mjs`) : il n'a plus rien à recevoir
+   du code soudé.
    ============================================================ */
 import { DATA, CONFERENCES, parId } from "./donnees.mjs";
 import { fermeModale } from "./fenetre.mjs";
@@ -29,7 +31,7 @@ import { blocApplication } from "./reglage-application.mjs";
 import { blocSponsor } from "./reglage-sponsor.mjs";
 import { contenuApercu, apercuDuo } from "./apercus.mjs";
 import { blocRappel } from "./reglage-rappel.mjs";
-import { conf, jeton, optionActive, appliqueLangue } from "./configuration.mjs";
+import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, MARQUES_DIST, modeDist, couleurDist, appliqueDists, modeBarre, appliqueBarre,
   appliqueModele } from "./habillage.mjs";
@@ -43,33 +45,24 @@ import { SECTEURS } from "./secteurs.mjs";
 import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { DISTINCTIONS, ETOILE_DIST } from "./distinctions.mjs";
+import { OPTIONS, appliqueOptions } from "./options.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { champZone } from "./fiche-zone.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { relance } from "./tiroir-itineraire.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-// l'envoi de la configuration, et l'état de l'administration
-let enregistreConf;
-let admin;
-// les options vendues à part, restées soudées (`_admin1.html`)
-let OPTIONS;
-let appliqueOptions;
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
-// ce que la fenêtre des réglages et le reste de l'administration tiennent
-let champZone;
-let construitPanneau;
-let relance;
 
 /**
- * Le branchement des volets, appelé par le code soudé à la place que ce code
- * y tenait (`_volets.html`), dans la tranche que le visiteur ne reçoit pas.
+ * Ce que les visiteurs voient sur le plan : les commandes, les secteurs, les
+ * fenêtres qui s'ouvrent d'elles-mêmes.
  *
- * L'envoi de la configuration et l'état de l'administration n'y sont déclarés
- * que plus bas : ils viennent par des détours, lus à l'usage.
+ * Réservé au profil administrateur. Ces cases changent la façon dont le plan
+ * se comporte, d'un salon à l'autre, bien plus que ce qu'il montre d'un
+ * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
+ * que de quoi retirer une commande qu'on lui a vendue.
  */
-export function brancheVolets(b){
-  ({ enregistreConf, admin, OPTIONS, appliqueOptions,
-    champZone, construitPanneau, relance } = b);
-}
-
 export function voletAdmin(hote){
   const p = document.createElement("p");
   p.textContent = "Ce que les visiteurs voient sur le plan. " +
@@ -91,7 +84,7 @@ export function voletAdmin(hote){
       conf(cmd.cle).visible = e.target.checked;
       enregistreConf(); appliqueCommandes();
       // la couleur du parcours vit dans la pile : elle suit le réglage
-      if (admin()) construitPanneau();
+      if (ADMIN) construitPanneau();
       majTuto();
     };
     bloc.appendChild(l);
@@ -111,7 +104,7 @@ export function voletAdmin(hote){
       conf("_secteurs").visible = e.target.checked;
       enregistreConf(); appliqueSecteurs(); appliqueFiltre();
       // les couleurs des secteurs vivent dans la pile : elles suivent
-      if (admin()) construitPanneau();
+      if (ADMIN) construitPanneau();
     };
     bloc.appendChild(l);
   }
@@ -131,7 +124,7 @@ export function voletAdmin(hote){
       conf("_guidage").allees = e.target.checked;
       enregistreConf();
       // le trait affiché a été calculé avec l'autre réglage : il se refait
-      if (typeof relance === "function") relance();
+      relance();
     };
     bloc.appendChild(l);
   }
@@ -214,9 +207,9 @@ export function voletAdmin(hote){
      celles-ci, chacun sous son intertitre. La barre du haut sur un téléphone
      d'abord — c'est la mise en page de l'écran, et elle commande ce que les
      réglages du dessous ont pour cadre —, puis ce que porte l'application
-     installée (`_application.html`), du même ordre que l'invitation à
+     installée (`reglage-application.mjs`), du même ordre que l'invitation à
      l'installer cochée plus haut, et enfin le générique du démarrage
-     (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+     (`reglage-sponsor.mjs`), le plus gros de l'onglet, qui le ferme. */
   blocBarre(hote);
   blocApplication(hote);
   blocSponsor(hote);
@@ -751,7 +744,7 @@ export function voletPmr(hote){
       conf("_foule")[k] = v;
       enregistreConf();
       // le trait affiché a été calculé avec l'ancien chiffre : il se refait
-      if (typeof relance === "function") relance();
+      relance();
     };
     n.onblur = () => { n.value = regleFoule(k); };
     chiffres.appendChild(d);
@@ -777,7 +770,7 @@ export function voletPmr(hote){
     conf("_foule").visible = e.target.checked;
     enregistreConf();
     maj();
-    if (typeof relance === "function") relance();
+    relance();
   };
   maj();
 }

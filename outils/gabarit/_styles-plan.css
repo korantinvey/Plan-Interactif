@@ -274,7 +274,7 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    par une classe : « cursor » s'hérite, et une règle qui en dépend fait
    remettre en cause le style des sept mille nœuds du plan — cent cinquante
    millisecondes, à chaque doigt posé et à chaque doigt levé. La même valeur
-   écrite en ligne n'en coûte aucune. Voir « saisitPlan », _js.html. */
+   écrite en ligne n'en coûte aucune. Voir « saisitPlan », modules/gestes.mjs. */
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent du gris de trait du plan, qui les tient en retrait. */
@@ -618,6 +618,11 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   box-shadow:var(--shadow);padding:12px 14px;width:264px;
   max-height:calc(100% - 24px);overflow-y:auto}
 .outils.open{display:flex}
+/* Repliée sur sa tête, elle rend le coin du plan qu'elle couvrait — sans quoi
+   ce qui s'y trouve ne se choisit ni ne se trace : le clic tombe sur elle.
+   `!important` parce que chaque mode montre ses champs par l'identifiant, plus
+   fort qu'une classe. */
+.outils.replie > :not(.outilsTete){display:none !important}
 /* La palette de calage partage l'allure de celle du dessin — et sa place : les
    deux ne servent jamais en même temps, ouvrir l'une ferme l'autre. Elle
    s'affiche par `hidden`, non par une classe : rien d'autre ne la commande. */
@@ -662,7 +667,7 @@ html.cale-tourne #plan{cursor:crosshair}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
    plutôt que de laisser les derniers déborder de la palette. Ils sont neuf
    quel que soit le salon — celui qui n'a pas pris le dessin des stands garde
-   son bouton, grisé (voir « OPTIONS » de « _admin1.html »), la grille n'a donc
+   son bouton, grisé (voir « OPTIONS » de « modules/options.mjs »), la grille n'a donc
    jamais de trou à combler. */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
@@ -671,7 +676,7 @@ html.cale-tourne #plan{cursor:crosshair}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 /* Une option non prise grise sa commande au lieu de la retirer : l'exploitant
    voit ce qu'il n'a pas pris, et l'organisateur ce qui se prend. Le clic ne
-   fait rien de son côté — `_dessin.html` `outilOffert` retombe sur la
+   fait rien de son côté — `modules/outil-dessin.mjs` `outilOffert` retombe sur la
    sélection. Ce qui est vendu se montre, donc, mais seulement à qui peut
    l'acheter : le visiteur, lui, ne voit toujours rien (voir `#btnJournee`). */
 html.sans-dessin-stand .outilsBtns button[data-o="stand"],
@@ -744,7 +749,7 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]:hover{
 .outils.mode-image #imageSoc{display:block}
 /* Grisé plutôt que retiré, comme l'outil de stand plus haut. Le gris est tout
    ce que la feuille de style peut faire : elle ne retire pas du parcours au
-   clavier, et « pointer-events » non plus. C'est `_dessin.html`
+   clavier, et « pointer-events » non plus. C'est `modules/outil-dessin.mjs`
    `poseChampImage` qui pose « disabled », d'où le gris propre au champ
    désactivé par-dessus celui-ci. */
 html.sans-image-stand .outils #imageSoc{

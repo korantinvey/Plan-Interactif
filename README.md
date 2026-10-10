@@ -512,7 +512,7 @@ donc qu'au moment où il demande justement que sa liste tienne.
 d'accueil y a son propre stockage, séparé de celui de Safari : suivre
 l'invitation à installer, c'est perdre la liste composée dans l'onglet. C'est le
 seul endroit où la perte est certaine, et la fenêtre d'installation le dit
-maintenant, avec le geste qui l'évite (`_installation.html`,
+maintenant, avec le geste qui l'évite (`modules/installation.mjs`,
 `poseGardeInstallation`).
 
 **Le plan ne s'ampute plus lui-même.** Une liste filtrée sur ce que les données
@@ -528,7 +528,7 @@ si le visiteur vide sa liste.
 
 **Et, contre tout le reste, la copie qu'on se garde.** Le lien de partage porte
 déjà le parcours entier dans son fragment, sans serveur ni compte
-(`_partage.html`) ; il sait donc se donner à soi-même. Posé dans une
+(`modules/lien-parcours.mjs`) ; il sait donc se donner à soi-même. Posé dans une
 conversation, un courrier ou une note, il ne dépend plus de rien de ce que le
 navigateur garde : il rouvre la liste le jour du salon, sur un autre téléphone,
 dans l'application fraîchement installée, ou après un nettoyage. Deux portes y
@@ -676,7 +676,7 @@ l'exploitant tienne d'un côté et pas de l'autre.
 
 La console, elle, garde les deux et suit l'appareil : on y travaille la journée
 durant, devant un écran qu'on ne quitte pas. C'est le seul endroit du dépôt où
-la nuit subsiste — `_console.css` pour les tons, `_console-base.html` pour le
+la nuit subsiste — `_console.css` pour les tons, `modules/socle-console.mjs` pour le
 bouton. La barre du navigateur suit la même partition : une couleur pour les
 pages du plan, deux pour la console (`outils/pwa.js`, option `deuxThemes` de
 `page()` dans `outils/genere.js`).
@@ -1813,7 +1813,7 @@ seul.
 
 Une exception, iOS : il ne lit pas le manifeste pour l'écran d'accueil mais la
 balise `apple-mobile-web-app-title`, écrite avec la page. `nommeApplication`
-(`_installation.html`) la corrige dès les données arrivées — elle n'est relue
+(`modules/installation.mjs`) la corrige dès les données arrivées — elle n'est relue
 qu'au moment de l'ajout. L'onglet et son icône, eux, prennent le nom du salon
 au même instant.
 
@@ -2302,7 +2302,7 @@ système remplit une à une.
 |---|---|
 | des statistiques anonymes, pour le seul organisateur | ni adresse IP ni agent utilisateur, envoyés ou enregistrés ; les exposants ne reçoivent que des totaux |
 | aucun suivi d'un site ou d'un salon à l'autre | un jeton tiré au hasard, rangé sous `plan-visiteur:<slug>` |
-| treize mois de vie au plus pour le traceur, sans que les visites les prolongent | l'échéance est écrite à côté du jeton, et un autre est tiré à son terme (`MESURE_VIE_MOIS`, `_mesure.html`) |
+| treize mois de vie au plus pour le traceur, sans que les visites les prolongent | l'échéance est écrite à côté du jeton, et un autre est tiré à son terme (`MESURE_VIE_MOIS`, `modules/mesure.mjs`) |
 | vingt-cinq mois au plus pour ce qu'il a permis de recueillir | `purge_presences()` efface les jetons de `visiteur_cible` et `visiteur_jour` à 400 jours, chaque nuit |
 | l'information du visiteur, et le moyen de refuser | la notice « Confidentialité », au pied de la liste, et sa case « Ne pas mesurer mes visites » |
 
@@ -2566,9 +2566,10 @@ en anglais depuis la console, en renommant le champ (`fiche.perso[].libelle_en`)
 données : les noms d'exposants, la nomenclature et les secteurs de Klipso, les
 titres et descriptions des conférences d'Eventmaker, les libellés que
 l'exploitant a saisis. Ils arrivent en français de leur source, et s'affichent
-tels quels. Les noms d'exposants sont de plus protégés : `_js.html` les confie
-au moteur (`LANGUE.protege`), qui n'y touche jamais — ni seuls, ni cités dans
-une phrase — même quand une enseigne tombe sur un mot du dictionnaire ou du
+tels quels. Les noms d'exposants sont de plus protégés : `modules/index-salon.mjs` les
+confie au moteur (`LANGUE.protege`), qui n'y touche jamais — ni seuls, ni cités
+dans une phrase, sauf là où la page parle en son nom (onglets, titre et boutons
+d'une fenêtre : `_langue.js` `INTERFACE`) — même quand une enseigne tombe sur un mot du dictionnaire ou du
 calendrier. Le manifeste de l'application installée reste lui aussi en
 français — et le nom qu'il porte est celui du salon, qui ne se traduit pas
 davantage.
@@ -2610,7 +2611,7 @@ champ d'exposant de l'outil Image (`sans-image-stand`), le bouton de la journée
 (`sans-journee`). Le code refuse ensuite ce que la feuille de style a caché,
 plutôt que de s'y fier : une valeur restée dans un champ invisible ne relie
 rien. Le programme, lui, n'est pas une commande qu'on masque mais un index
-qu'on refait — `indexeConferences()` de `_js.html` le relit à chaque bascule, et
+qu'on refait — `indexeConferences()` de `modules/index-salon.mjs` le relit à chaque bascule, et
 la recherche, les fiches, le tiroir du parcours, la journée et les rappels
 suivent d'eux-mêmes, n'ayant plus rien à lire.
 
@@ -2918,7 +2919,7 @@ npm run polices      # télécharge les familles des modèles et celles au choix
 
 Deux listes. Les familles des **modèles**, en tête de `outils/polices.js`, sont
 déclarées dans toutes les pages. Les polices **au choix** pour les noms du plan
-se lisent dans `POLICES_NOMS` (`_admin1.html`) — l'onglet qui les propose reste
+se lisent dans `POLICES_NOMS` (`modules/polices-plan.mjs`) — l'onglet qui les propose reste
 la seule liste — et ne se chargent qu'une fois choisies, par leur feuille
 `web/polices/<famille>.css`.
 

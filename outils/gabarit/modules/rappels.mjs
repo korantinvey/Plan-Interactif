@@ -1,7 +1,9 @@
 /* ============================================================
    Le rappel avant une conférence
 
-   Sorti de `_rappels.html`, qui ne garde que son branchement. L'abonnement et
+   Sorti de `_rappels.html`, qui n'a plus rien à lui confier : la visite
+   guidée et le tiroir du parcours se confient en se chargeant
+   (`confieAuxRappels`). L'abonnement et
    ce que l'appareil sait recevoir sont dans `notifications.mjs` ; l'essai
    d'un vrai rappel depuis les réglages, qui ne sert qu'à l'exploitant, dans
    `essai-rappel.mjs`, que seul `plan-admin.mjs` embarque.
@@ -54,30 +56,27 @@ import { PARCOURS, instantConf } from "./parcours.mjs";
 import { instantMural } from "./temps.mjs";
 import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empreinteDebut,
   abonnementCourant, abonne } from "./notifications.mjs";
-import { ouvreModale, poseAvantFermeture, poseApresFermeture } from "./fenetre.mjs";
+import { ouvreModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages } from "./fenetre.mjs";
+import { conf } from "./configuration.mjs";
 
-/* Ce que le code soudé tient encore, et que le branchement confie : la
-   configuration du salon (`_admin1.html`), la visite guidée en cours
-   (`modules/tutoriel.mjs`, relayée par le code soudé), le tiroir du parcours à rafraîchir (`tiroir-parcours.mjs`, qui importe ce module-ci),
-   et le retour aux réglages après un aperçu (`_installation.html`). La visite
-   guidée change à chaque chapitre : elle se confie par un lecteur, non par sa
-   valeur du moment. */
+/* Ce que ce module ne peut importer sans boucler : la visite guidée en cours
+   (`tutoriel.mjs`) et le tiroir du parcours à rafraîchir
+   (`tiroir-parcours.mjs`), qui l'atteignent. Chacun le lui confie au
+   chargement de son module, par `confieAuxRappels` — jamais le code soudé.
+   La visite guidée change à chaque chapitre : elle se confie par un lecteur,
+   non par sa valeur du moment. La configuration du salon
+   (`configuration.mjs`) et le retour aux réglages après un aperçu
+   (`fenetre.mjs`) s'importent. */
 /**
- * @typedef {{ conf: (cle: string) => any, tuto: () => any, rafraichitParcours: () => void,
- *             retourAuxReglages: (marque: string) => void }} BranchementRappels
+ * @typedef {{ tuto: () => any, rafraichitParcours: () => void }} PageRappels
  */
-/** @type {BranchementRappels} */
-let soude;
-const conf = (/** @type {string} */ c) => soude.conf(c);
-const tuto = () => soude.tuto();
+/** @type {PageRappels} */
+const prete = { tuto: () => null, rafraichitParcours: () => {} };
 
-/**
- * Le branchement, appelé par le code soudé à la place que ce code y tenait
- * (`_rappels.html`).
- *
- * @param {BranchementRappels} b
- */
-export function brancheRappels(b){ soude = b; }
+/** La porte des modules qui prêtent aux rappels ce qu'ils appellent.
+ *  @param {Partial<PageRappels>} o */
+export function confieAuxRappels(o){ Object.assign(prete, o); }
+const tuto = () => prete.tuto();
 
 /* ------------------------------------------------------------
    Le réglage du salon
@@ -517,13 +516,13 @@ export function proposeRappels(apercu){
          Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
          sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
          allumé. On rafraîchit donc, et on se tait. */
-      allumeRappels().then(() => soude.rafraichitParcours(), () => {});
+      allumeRappels().then(() => prete.rafraichitParcours(), () => {});
     } },
   ]);
 
   /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
      précédente avait laissé en train de se faire. */
-  poseAvantFermeture(apercu ? () => soude.retourAuxReglages("rappel") : retientInviteRappel);
+  poseAvantFermeture(apercu ? () => retourAuxReglages("rappel") : retientInviteRappel);
 }
 
 /**

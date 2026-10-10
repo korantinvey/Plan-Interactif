@@ -45,22 +45,18 @@
    Ce que l'exploitant fait de son côté — désigner l'endroit, produire
    l'affiche — vit dans `modules/affiche-ici.mjs`, que seul `plan-admin.mjs`
    embarque. Le visiteur ne reçoit que ce qui relit l'adresse et tient le
-   rappel du bas de l'écran ; `_ici.html` lui confie le tiroir de
-   l'itinéraire (`ITI`, `relance`) par `brancheIci` : ce tiroir est un module
-   (`tiroir-itineraire.mjs`), mais qui importe celui-ci pour son rappel, et ne
-   peut donc être importé en retour.
+   rappel du bas de l'écran. Le départ imposé et son point, partagés avec la
+   borne, vivent dans `vous-etes-ici.mjs` ; le tiroir de l'itinéraire, ce
+   module l'importe, et lui confie son rappel pour qu'il cède la place au
+   bandeau de la visée (`suitLaVisee`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
 import { BORNE } from "./salon.mjs";
-import { LIEU_BORNE, poseLieuBorne, lieuBorne, lieuNomme, poseDepartImpose, ecritDepartBorne,
-  dessineBorne } from "./borne.mjs";
+import { lieuBorne, lieuNomme, poseDepartImpose } from "./borne.mjs";
+import { LIEU_BORNE, poseLieuBorne, ecritDepartBorne, dessineBorne } from "./vous-etes-ici.mjs";
+import { ITI, relance, suitLaVisee } from "./tiroir-itineraire.mjs";
 
-/* Ce que le code soudé confie : le trajet demandé, lu à l'instant, et sa
-   relance. */
-/** @type {Record<string, any>} */
-let soude = {};
-const relance = () => soude.relance();
 const racine = document.documentElement;
 
 /* Ce que l'adresse dit, tel quel. Lu au chargement et non à la demande : le
@@ -160,7 +156,7 @@ function retireIci(){
     c.setAttribute("aria-expanded", "false");
     c.setAttribute("aria-controls", "iSugg");
   }
-  soude.iti().a = null;
+  ITI.a = null;
   dessineBorne();
   montreBandeauIci();
   relance();
@@ -240,12 +236,8 @@ export function demarreIci(){
 /**
  * Appelé par `_ici.html` à la place que ce code tenait : le bouton du rappel
  * s'y branche au même moment qu'avant.
- *
- * @param {{ iti: () => any, relance: Function }} b
  */
-export function brancheIci(b){
-  soude = b;
-
+export function brancheIci(){
   const _iciStop = $("iciStop");
   if (_iciStop) _iciStop.onclick = () => {
     if (!ICI_PERDU) return retireIci();
@@ -253,3 +245,8 @@ export function brancheIci(b){
     montreBandeauIci();
   };
 }
+
+/* Le rappel occupe au bas de l'écran la place du bandeau de la visée : il la
+   lui cède le temps d'un geste, et le tiroir, qui tient la visée, l'en
+   prévient. */
+suitLaVisee(montreBandeauIci);

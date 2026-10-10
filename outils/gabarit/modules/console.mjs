@@ -1,8 +1,5 @@
 /* ============================================================
-   Point d'entrée de la console
-
-   Mêmes règles que `plan.mjs` : ce qui reste du code soudé est un script
-   classique, auquel ces noms sont confiés par l'objet global.
+   Point d'entrée de la console — et son démarrage
 
    La console en est sortie morceau par morceau : l'export (partagé avec le
    rapport), le vocabulaire de la correspondance des champs, la fenêtre
@@ -15,33 +12,33 @@
    console (`ecran-console.mjs`). Chacun importe ce qu'il appelle : ils ne
    se confient plus entre eux que ce qui bouclerait.
 
-   Le code soudé ne garde que des branchements, à la place que leur code
-   tenait — le socle (`_console-base.html`), l'export (`_export.html`),
-   l'écran (`_console-js.html`) — et le démarrage de la page. Il ne reçoit
-   donc que ce qu'il y appelle : les branchements, ce que le socle rappelle
-   (`demarre`, `videEcran`), ce que l'export lit (`courant`, `selection`), et
-   de quoi choisir le premier écran (`CFG`, `SESSION`, `ecranConfig`,
-   `ecranConnexion`).
+   Il n'y a plus de code soudé : la page n'avait gardé qu'un script de
+   branchements, et ils se font ici, dans l'ordre où il les faisait. Le
+   script de ce point d'entrée est posé après tout le balisage
+   (`genere.js` `poseModulesSeuls`), là où se tenait l'autre : ce que chaque
+   branchement pose au chargement trouve la page entière, comme avant. Rien
+   n'est donc plus confié à l'objet global.
    ============================================================ */
-import { CFG, SESSION, brancheSocle, ecranConfig, ecranConnexion } from "./socle-console.mjs";
+import { brancheSocle, premierEcran } from "./socle-console.mjs";
 import { brancheExport } from "./export.mjs";
-import { vivants } from "./vivant.mjs";
 import { selection, courant } from "./evenements.mjs";
 import { brancheConsole, demarre, videEcran } from "./ecran-console.mjs";
 
-Object.assign(globalThis, {
-  brancheExport,
-  courant,
-  brancheSocle, ecranConfig, ecranConnexion,
-  brancheConsole, demarre, videEcran,
-});
+/* Le socle d'abord, en tête : ce qu'il faisait au chargement — relire le
+   projet et la session, poser la fenêtre, le thème, le menu du compte — se
+   fait avant tout le reste. Il reçoit ce que la console fait après la
+   connexion et à la déconnexion, qu'il ne peut importer : il sert aussi le
+   rapport. */
+brancheSocle({ demarre, videEcran });
 
-/* Le salon ouvert est un état du module des salons, remplacé au chargement,
-   au choix dans la liste, à la création et au rechargement : l'export le lit
-   par son nom au moment du clic, toujours à jour. */
-Object.defineProperties(globalThis, vivants({ selection: () => selection }, "poseEvenements"));
+/* L'export, partagé avec le rapport, lit au moment du clic le salon ouvert et
+   sa ligne, que chaque écran tient à sa façon. Le salon ouvert est un état du
+   module des salons, remplacé au choix dans la liste, à la création et au
+   rechargement : la liaison importée le suit. */
+brancheExport({ selection: () => selection, courant: () => courant() });
 
-/* Le projet et la session sont des états du socle, qu'il est seul à
-   remplacer — à la configuration, à la connexion, au renouvellement du jeton,
-   à la déconnexion : le démarrage de la page les lit par leur nom. */
-Object.defineProperties(globalThis, vivants({ CFG: () => CFG, SESSION: () => SESSION }, "poseSession"));
+/* L'écran : les modules qui le rappellent reçoivent de quoi le faire, et les
+   commandes de la barre se posent. */
+brancheConsole();
+
+premierEcran();

@@ -10,16 +10,17 @@
 
    L'ordre de tracé, lui, sert aussi au visiteur — les couches s'empilent sur
    son plan comme sur celui de l'exploitant : `clePile`, `entrees`, `pile` et
-   `ordonneDom` restent dans `_pile.html`, au code soudé.
+   `ordonneDom` vivent dans `ordre-trace.mjs`, que `plan.mjs` embarque, et
+   s'importent. Le panneau lui confie en retour son contenu : le plan public
+   appelle `construitPanneau` sans rien en recevoir.
 
-   Ce que le code soudé tient encore — l'enregistrement des réglages, le
-   placement des libellés — lui est confié par `branchePile`, que `_pile.html`
-   appelle à la place que ce code y tenait. Ce qui change sans cesse — le mode
-   de travail en cours, le mode administrateur — par des lecteurs. Les modules
-   déjà sortis — les calques de dessin et leur outil, la bibliothèque des
+   Il n'a plus rien à recevoir du code soudé : le mode administrateur, le
+   placement des libellés et l'outil qui le règle, l'enregistrement des
+   réglages, les calques de dessin et leur outil, la bibliothèque des
    bâtiments, le calage de la carte, la carte de chaleur, la reprise des
-   emplacements, la fenêtre de réorganisation —, comme la configuration,
-   l'apparence des calques et les secteurs, s'importent.
+   emplacements, la fenêtre de réorganisation, la configuration, l'apparence
+   des calques et les secteurs s'importent — ce qui change sans cesse, le
+   mode et le placement en cours, tel qu'il est à l'instant.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -42,33 +43,24 @@ import { DESSINS, calqueActif, mesCalques } from "./calques-dessin.mjs";
 import { dessineDessins, peintCalque } from "./dessin.mjs";
 import { creeCalque, enregistreDessins, verrouille, basculeVerrou, pictoVerrou, activeCalque, memorise }
   from "./outil-dessin.mjs";
+import { entrees, confiePanneau } from "./ordre-trace.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { modePlacementLibelles } from "./placement-libelles.mjs";
+import { enregistreConf } from "./configuration.mjs";
 
-/**
- * Ce que le code soudé confie au branchement.
- * @typedef {object} PagePile
- * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {() => boolean} placeLibelles le placement des libellés en cours, `PLACE_LIBELLES`
- * @property {() => { k: string, t: string, nom: string, ref: any }[]} entrees
- * @property {() => void} enregistreConf
- * @property {(id: any) => string} joli
- * @property {(on: boolean) => void} modePlacementLibelles
- */
-/** @type {PagePile} */
-let soude;
-const estAdmin = () => soude.estAdmin();
-const placeLibelles = () => soude.placeLibelles();
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
-const entrees = () => soude.entrees();
-const enregistreConf = () => soude.enregistreConf();
-const joli = (/** @type {any} */ id) => soude.joli(id);
-const modePlacementLibelles = (/** @type {boolean} */ on) => soude.modePlacementLibelles(on);
 
-/** Le branchement : `_pile.html` l'appelle à la place que ce code y tenait.
- *  @param {PagePile} page */
-export function branchePile(page){
-  soude = page;
-}
+/** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */
+const joli = (/** @type {any} */ id) => String(id)
+  .replace(/^[0-9]+-/, "").replace(/[_-]+/g, " ").toLowerCase()
+  .replace(/^./, (c) => c.toUpperCase());
+
+/* Le contenu de `construitPanneau`, confié à l'ordre de tracé dès que la page
+   d'administration charge ce module : avant tout le code soudé, comme quand
+   la fonction y portait elle-même son corps. */
+confiePanneau(remplitPanneau);
 
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom
@@ -130,8 +122,9 @@ function intertitre(hote, cle){
   hote.appendChild(t);
 }
 
-/* Ce que `construitPanneau` faisait : le code soudé garde son nom — le plan
-   public l'appelle sans s'en servir —, et ne fait plus qu'appeler celui-ci. */
+/* Ce que `construitPanneau` faisait : l'ordre de tracé garde son nom — le
+   plan public l'appelle sans s'en servir —, et ne fait plus qu'appeler
+   celui-ci (`ordre-trace.mjs`). */
 export function remplitPanneau(){
   const hote = $("pile");
   hote.innerHTML = "";
@@ -216,7 +209,7 @@ export function remplitPanneau(){
     };
 
     /* couleur — peinte à chaque événement, retenue une fois le glissement
-       fini : voir « La rafale du sélecteur de couleur » dans `_admin1.html`. */
+       fini : voir « La rafale du sélecteur de couleur » dans `nuancier.mjs`. */
     const cc = d.querySelector(".cc");
     cc.value = (x.t === "dessin" ? x.ref.couleur : c.couleur) || defautCouleur(x);
     suitNuancier(cc,
@@ -292,8 +285,8 @@ export function remplitPanneau(){
        travail, qui ne se retient pas d'une visite à l'autre. */
     if (x.k === "data:labels"){
       const cr = d.querySelector(".rlib");
-      cr.setAttribute("aria-pressed", placeLibelles());
-      cr.onclick = ev => { ev.stopPropagation(); modePlacementLibelles(!placeLibelles()); };
+      cr.setAttribute("aria-pressed", PLACE_LIBELLES);
+      cr.onclick = ev => { ev.stopPropagation(); modePlacementLibelles(!PLACE_LIBELLES); };
     }
 
     /* Le crayon des emplacements ouvre la reprise de leur géométrie, comme
@@ -335,7 +328,7 @@ export function remplitPanneau(){
        vingt lignes sur un salon qui sectorise finement, et l'interrupteur s'y
        perdait — sur SIMI il tombait hors de l'écran, à croire qu'il manquait.
        Une commande ne se range pas au bout d'une liste de couleurs. */
-    if (x.k === "data:stands" && estAdmin()) rangChaleur(hote);
+    if (x.k === "data:stands" && ADMIN) rangChaleur(hote);
     /* Les couleurs des secteurs se règlent au même endroit : c'est la même
        couche qu'elles repeignent, et il n'y a pas de couche par secteur. Elles
        ne paraissent que si le salon sectorise et que le plan les montre — sans

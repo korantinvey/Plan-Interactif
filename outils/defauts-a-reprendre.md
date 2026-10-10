@@ -1,70 +1,62 @@
 # Défauts d'avant, relevés pendant la sortie en modules
 
 Trouvés par les agents en déplaçant le code ; aucun n'a été corrigé pendant la
-découpe, qui devait garder le comportement à l'identique. À reprendre à la fin.
+découpe, qui devait garder le comportement à l'identique. Repris ensuite, un
+par un : chaque défaut reproduit d'abord, corrigé au plus juste, puis rejoué.
+Tous sont maintenant réglés ; la liste garde la trace de ce qu'on a trouvé.
 
-## Comportement visible
+## Corrigés
 
-1. **Publication au repos en plein geste** — l'envoi automatique de la
-   configuration (`modules/enregistrement.mjs` `programmePublication`) peut
-   partir pendant qu'un geste de dessin est en cours.
-2. **Remise à zéro des compteurs : « Annuler »** appelle
-   `ouvreReglages("Statistiques")` puis `fermeModale()` referme aussitôt la
-   fenêtre rouverte : on ne revient jamais sur l'onglet Statistiques, malgré
-   le commentaire (`modules/chaleur.mjs` / `modules/reglages.mjs`).
-3. **Onglet « Recherche » en français** dans la fenêtre des réglages en
-   anglais, alors que l'entrée « Recherche » → « Search » existe.
-4. **Volet Co-Exposants** : `(DATA?.plans || []).flatMap(...)` traite
-   `plans` comme un tableau ; si c'est un objet indexé (les autres morceaux le
-   parcourent par `Object.values`), l'onglet dit toujours « aucun stand
-   partagé ». À vérifier sur de vraies données.
-5. **Clic sur un texte libre** : il ne le sélectionne pas (SVG et WebGL) ; le
-   clic est intercepté avant `editionPointerDown`, sans doute par un libellé
-   du plan posé dessus.
-6. **Rectangle tracé juste après avoir décoché les aimants** : rien n'est
-   produit (outil de tracé de `_dessin.html`).
-7. **Visite guidée, étape de la zone** : le rendu WebGL redessine le plan en
-   continu ; très lent en rendu logiciel, non vérifié sur un vrai téléphone.
-   La bulle se pose aussi pendant qu'un tiroir glisse, d'où des places qui
-   varient selon le moment.
+1. **Publication au repos en plein geste** — le repos se comptait depuis la
+   dernière modification, non depuis la fin du geste ; un envoi déjà parti
+   relisait aussi les dessins après ses appels réseau. L'envoi attend que le
+   geste soit lâché (`modules/enregistrement.mjs`, `confieGesteEnCours` donné
+   par `modules/gestes-admin.mjs`) et relève ce qu'il écrit avant le réseau.
+2. **Remise à zéro : « Annuler »** ramène sur l'onglet Statistiques
+   (`modules/chaleur.mjs`, `ferme: false`).
+7. **Visite guidée, étape de la zone** — chaque pouls reposait la classe
+   `tutoCible`, et le WebGL redessinait tout le plan ; la bulle se posait
+   contre la fiche en plein mouvement. Classe posée une fois, bulle reposée
+   quand les tiroirs ont fini (`modules/tutoriel.mjs`).
+8. **Console : deux boutons refermaient la fenêtre qu'ils ouvraient** —
+   « Changer de projet » et « Valider » rendent `false`
+   (`modules/socle-console.mjs`).
+9. **Console : jeton de mot de passe** — la page qui part ne charge plus rien ;
+   le socle choisit le premier écran (`premierEcran`).
+10. **Cadrage initial sur téléphone** — `fit` mesurait le tiroir de la liste en
+    train de glisser ; un recadrage une fois la liste posée
+    (`modules/demarrage.mjs` `recadreListePosee`).
+11. **Ordre des calques après un renommage** par le bouton « Valider » : il y
+    ramène, comme la touche Entrée (`modules/outil-dessin.mjs` `demandeNom`) ;
+    « Annuler » y ramène aussi.
+13. **Consigne de visée du code « Vous êtes ici »** traduite avec le tiroir qui
+    l'affiche (`outils/anglais/tiroir-itineraire.js`).
+15. **`initialesDe` recopiée** — une seule copie dans `modules/session.mjs`.
+16. **`btnRecharger`** — le bouton sert ; seule une copie des pavillons que rien
+    ne relisait, dans son gestionnaire de la console, était morte.
+3. **Onglet « Recherche » resté en français** quand un exposant porte ce nom :
+   la protection des noms ne vaut plus dans ce que la page dit en son nom —
+   onglets des réglages, titre et boutons d'une fenêtre, bande
+   d'administration, palettes (`_langue.js` `INTERFACE`).
+5. / 6. **Boîte à outils posée sur ce qu'on édite** : elle se replie sur sa
+   tête, d'un bouton ou d'elle-même quand la forme choisie ou déplacée passe
+   dessous (`modules/edition.mjs` `replieOutils`) ; la déplacer ne ferait que
+   couvrir le panneau des calques.
+14. **Heuristique `signaturesDe`** (`outils/traductions.js`) — une ligne
+    banale que d'autres sources portaient aussi versait un dictionnaire entier
+    dans une page sans le module (celui du rapport dans la console, et
+    l'inverse) : seules comptent les lignes propres au morceau.
+17. **Commentaires périmés** — renvois aux fichiers soudés devenus modules,
+    dans les sources des pages, puis dans `src/index.mjs`, `README.md` et
+    `CLAUDE.md`. Restent ceux de `supabase/functions/` (`plan-public/index.ts`,
+    `mesure/index.ts`, `sync-evenement/index.ts`, `_partage/vignette.ts`) :
+    laissés pour ne pas redéployer une fonction pour un commentaire — à
+    reprendre avec la prochaine retouche de chacune.
 
-8. **Console : deux boutons referment la fenêtre qu'ils viennent d'ouvrir**
-   (`ouvreModale`) — « Changer de projet » dans la fenêtre de connexion appelle
-   `ecranConfig()` sans rendre `false`, et `fermeModale()` referme aussitôt la
-   fenêtre de configuration : il ne reste aucune fenêtre. « Valider » dans la
-   configuration ouvre la connexion, refermée de la même façon.
-9. **Console : jeton de mot de passe arrivé par erreur** — pendant la
-   redirection vers la page du mot de passe, la console commence quand même à
-   charger ; `GET profil` et `GET evenement` partent ou non selon le moment.
-10. **Cadrage initial sur téléphone** : `fit` varie de quelques pixels d'un
-    chargement à l'autre, sans doute selon le moment où la barre et le tiroir
-    sont mesurés.
-11. **Fenêtre d'ordre des calques après un renommage** : elle n'est pas
-    rouverte, malgré le commentaire (« puis on revient ») ; la fenêtre de
-    renommage, en se refermant, emporte sans doute celle rouverte entre-temps.
-12. **Image liée à un exposant, en WebGL** : un clic sur l'image n'ouvre pas
-    la fiche de l'exposant en rendu WebGL (par défaut), alors qu'il l'ouvre en
-    `?rendu=svg` — avant comme après la sortie du dessin.
+## Sans défaut
 
-## Code et outils
-
-13. **Phrase publique dans un dictionnaire d'exploitant** : « Touchez le plan à
-    l'endroit où ce code sera affiché. » est affichée par `bandeauVisee`
-    (`modules/tiroir-itineraire.mjs`, public) mais traduite dans
-    `outils/anglais/affiche-ici.js` ; la page publique ne la reçoit que parce
-    qu'elle trouve la phrase dans son propre code.
-
-
-14. **Heuristique `signaturesDe`** (`outils/traductions.js`) : reconnaît le
-   dictionnaire d'une page par les premières lignes de déclaration d'un
-   fichier source ; une ligne banale partagée y verse un dictionnaire entier
-   à tort. À reprendre seule, une fois la découpe finie.
-15. ~~`initialesDe` recopiée~~ — réglé par la sortie de la console : une seule copie dans `modules/session.mjs`.
-16. **`btnRecharger`** : code mort.
-17. **Commentaires périmés** :
-    - celui d'`ecritColonnesEvenement` attribue `base` à `_pousse.html` ;
-      elle vit dans `modules/session.mjs` ;
-    - un commentaire orphelin décrivant `voletAdmin` se trouve avant
-      `voletCoexposants` (`modules/reglages.mjs`) ;
-    - `supabase/functions/plan-public/index.ts` (vers la ligne 924) cite
-      encore `_geometrie.html` (laissé pour ne pas redéployer une fonction).
+4. **Volet Co-Exposants** : `DATA.plans` est bien un tableau partout ; avec des
+   co-exposants, le volet les compte.
+12. **Image liée à un exposant, en WebGL** : l'essai d'origine portait un PNG
+    corrompu, que la couche d'image de deck.gl ne charge pas. Une image valide
+    — et l'outil réencode toujours celles qu'on pose — ouvre la fiche.

@@ -27,7 +27,7 @@ import { ouvreModale } from "./fenetre-console.mjs";
 import { grille, rest, idCompte, PAGE_MDP } from "./socle-console.mjs";
 
 /**
- * La porte du profil connecté : le code soudé le lit par son nom, et le
+ * La porte du profil connecté : les modules l'importent, et l'écran le
  * remplace par ici — `poseComptes({ MOI: null })` en fin de session.
  *
  * @param {{ MOI?: any }} valeurs

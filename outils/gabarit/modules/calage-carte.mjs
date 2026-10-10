@@ -8,10 +8,12 @@
    le visiteur voit — vit dans `environs.mjs`, qui lit d'ici le calage en
    cours de réglage par un lecteur confié au branchement.
 
-   Ce que le code soudé tient encore — les réglages et leur enregistrement,
-   le panneau des calques, la vue et ses gestes — lui est confié par
-   `brancheCalageCarte`, que `_environs.html` appelle à la place que ce code y
-   tenait : les boutons de la palette s'y branchent au même rang qu'avant. Les
+   Il n'a rien à recevoir du code soudé : la main qui tient le plan
+   s'importe des gestes (`gestes.mjs`), les réglages et leur enregistrement,
+   le panneau des calques et le mode administrateur de leurs modules. Il se
+   branche par `brancheCalageCarte`, que `_environs.html` appelle à la place
+   que ce code y tenait : les boutons de la palette s'y branchent au même rang
+   qu'avant. Les
    identifiants de base des pavillons, et l'oubli du plan public par le
    relais, viennent de `enregistrement.mjs`, module d'administration lui aussi.
    ============================================================ */
@@ -27,24 +29,17 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
   confieCalageEnCours } from "./environs.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
-import { MONTE } from "./rendu.mjs";
+import { MONTE, confieAuRendu } from "./rendu.mjs";
+import { CONF, conf, enregistreConf } from "./configuration.mjs";
+import { construitPanneau } from "./ordre-trace.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { saisitPlan } from "./gestes.mjs";
 
-/* Ce que le code soudé confie au branchement : les réglages (`CONF`, que le
-   changement de salon remplace, et `conf`, qui en ouvre une entrée) et leur
-   enregistrement, le panneau des calques et ce qui dit s'il est là
-   (`ADMIN`), et la main qui tient le plan. Ce qui change se lit à l'instant.
-   La vue, elle, s'importe de `vue.mjs`, et le plan monté de `rendu.mjs`. */
-/**
- * @typedef {object} PageCalage
- * @property {() => Record<string, any>} conf les réglages du moment, `CONF`
- * @property {(cle: string) => any} confDe une entrée des réglages, ouverte au besoin, `conf`
- * @property {() => void} enregistreConf
- * @property {() => void} construitPanneau
- * @property {() => boolean} estAdmin le mode administrateur, `ADMIN`
- * @property {(tenu: boolean) => void} saisitPlan
- */
-/** @type {PageCalage} */
-let soude;
+/* Les réglages (`CONF`, que le changement de salon remplace, et `conf`, qui
+   en ouvre une entrée) et leur enregistrement, le panneau des calques et ce
+   qui dit s'il est là (`ADMIN`) s'importent, et se lisent tels qu'ils sont à
+   l'instant. La vue s'importe de `vue.mjs`, le plan monté de `rendu.mjs`, et
+   la main qui tient le plan de `gestes.mjs`. */
 
 const racine = document.documentElement;
 
@@ -89,11 +84,11 @@ function centrePavillon(){
 
 export function basculeMasqueCarte(c){
   const cle = cleMasqueCarte(c.id);
-  if (masqueCarte(c)) delete soude.conf()[cle];
-  else soude.confDe(cle).masque = true;
-  soude.enregistreConf();
+  if (masqueCarte(c)) delete CONF[cle];
+  else conf(cle).masque = true;
+  enregistreConf();
   poseMasqueCarte();
-  soude.construitPanneau();
+  construitPanneau();
 }
 
 /** Le bouton du panneau. Il ne paraît qu'avec une carte dessous : sans elle il
@@ -342,7 +337,7 @@ function litCoordonnees(txt){
 /** Le fond refait et la vue rendue : tout réglage passe par là. */
 function rafraichitCarte(){
   refaitFondCarte();
-  if (soude.estAdmin() && MONTE) soude.construitPanneau();
+  if (ADMIN && MONTE) construitPanneau();
 }
 
 /* ------------------------------------------------------------
@@ -374,6 +369,8 @@ function rafraichitCarte(){
 
 let CALAGE_MODE = "";
 let _glisseCalage = null;
+/** La carte est-elle tenue sous la main ? L'envoi au repos attend qu'on la lâche. */
+export const carteGlissee = () => Boolean(_glisseCalage);
 
 /** Arme un mode, et le dit au document : le curseur en dépend, et c'est la
  *  seule chose qui annonce que le plan ne répondra pas comme d'habitude. */
@@ -409,7 +406,7 @@ export function cartePointerDown(e){
     a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
   };
   svg.setPointerCapture(e.pointerId);
-  soude.saisitPlan(true);
+  saisitPlan(true);
   return true;
 }
 
@@ -435,7 +432,7 @@ export function cartePointerMove(e){
 export function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
-  soude.saisitPlan(false);
+  saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
@@ -669,11 +666,8 @@ function fermeCalage(){
 
 /**
  * Le branchement, appelé par `_environs.html` à la place de ce code.
- *
- * @param {PageCalage} page
  */
-export function brancheCalageCarte(page){
-  soude = page;
+export function brancheCalageCarte(){
   /* Le fond lit ici le calage qu'on règle : celui-là seul l'emporte sur le
      calage enregistré du pavillon. */
   confieCalageEnCours(() => ENV_CAL);
@@ -823,3 +817,8 @@ export function voletEnvirons(hote){
     maj();
   }).catch(() => {});
 }
+
+/* Le calage qu'on règle appartient au pavillon qu'on quitte : le passage
+   d'un pavillon à l'autre (`rendu.mjs` `changePlan`) l'oublie, et reçoit
+   d'ici en se chargeant de quoi le faire. */
+confieAuRendu({ oublieCalageEnCours });

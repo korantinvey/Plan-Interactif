@@ -6,10 +6,12 @@
    le pourquoi de la fonction, sont dans `modules/suggestion.mjs` ; ce module-ci
    n'est embarqué que par `plan-admin.mjs`.
 
-   Les critères de la recherche, l'enregistrement de la configuration et la
-   fenêtre des réglages sont encore soudés : `_suggestion.html` les confie par
-   `brancheReglageSuggestion`. Le tiroir du parcours, qu'un réglage changé
-   refait, s'importe (`tiroir-parcours.mjs`).
+   La fenêtre des réglages, qui importe ce module, lui confie son glissement
+   en se chargeant, par `confieAuReglageSuggestion`. Les
+   critères de la recherche, la configuration et son enregistrement, le champ
+   intitulé et le tiroir du parcours, qu'un réglage changé refait,
+   s'importent (`recherche.mjs`, `configuration.mjs`, `fiche-zone.mjs`,
+   `tiroir-parcours.mjs`).
    ============================================================ */
 import { esc, COLLATION } from "./texte.mjs";
 import { TOUS, parId } from "./donnees.mjs";
@@ -19,14 +21,23 @@ import { SUGG_SEUIL_MIN, SUGG_SEUIL_MAX, reglageSugg, seuilSugg, PRESENTATIONS_S
   critereSugg, nomValeurSugg } from "./suggestion.mjs";
 import { rafraichitParcours } from "./tiroir-parcours.mjs";
 import { clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
+import { conf, enregistreConf } from "./configuration.mjs";
+import { champZone } from "./fiche-zone.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-const conf = (c) => soude.conf(c);
-const champZone = (hote, titre, dedans, aide) => soude.champZone(hote, titre, dedans, aide);
-const enregistreConf = () => soude.enregistreConf();
-const glisseFenetre = (change) => soude.glisseFenetre(change);
+/**
+ * Ce que le volet emprunte à la fenêtre des réglages (`reglages.mjs`), qui
+ * l'importe : le glissement d'une hauteur à l'autre. Elle le lui confie au
+ * chargement de son module, par `confieAuReglageSuggestion` — jamais le code
+ * soudé.
+ * @typedef {{ glisseFenetre: (change: () => void) => void }} PageReglageSuggestion
+ */
+/** @type {PageReglageSuggestion} */
+const prete = { glisseFenetre: (change) => change() };
+
+/** La porte de la fenêtre des réglages, qui prête au volet ce qu'il appelle.
+ *  @param {Partial<PageReglageSuggestion>} o */
+export function confieAuReglageSuggestion(o){ Object.assign(prete, o); }
+const glisseFenetre = (/** @type {() => void} */ change) => prete.glisseFenetre(change);
 
 export const NOM_VOLET_SUGGESTION = "Suggestion";
 
@@ -415,12 +426,3 @@ export function voletSuggestion(hote){
 
   dessine();
 }
-
-/**
- * Le branchement, appelé par `_suggestion.html` dans sa tranche
- * d'administration.
- *
- * @param {{ conf: (c: string) => any, champZone: Function, enregistreConf: Function,
- *   glisseFenetre: Function }} b
- */
-export function brancheReglageSuggestion(b){ soude = b; }

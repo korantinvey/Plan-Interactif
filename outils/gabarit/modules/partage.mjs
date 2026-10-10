@@ -25,8 +25,7 @@
    module-ci pour la note de la copie à garder.
 
    Le module se branche dans `_partage.html`, à la place que son bouton y
-   tenait, et reçoit la configuration du salon, que le code soudé tient
-   encore.
+   tenait. La configuration du salon, il l'importe (`configuration.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { SLUG, cheminPartageable, BORNE } from "./salon.mjs";
@@ -36,12 +35,7 @@ import { QR_VERSION_LISIBLE, qrTrame, qrSvg } from "./qr.mjs";
 import { DATA } from "./donnees.mjs";
 import { PARCOURS, tientLeStockage } from "./parcours.mjs";
 import { codeParcours } from "./lien-parcours.mjs";
-
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : la
-   configuration (`_admin1.html` `conf`), par un détour lu à l'appel. */
-/** @type {Record<string, any>} */
-let soude = {};
-const conf = (c) => soude.conf(c);
+import { conf } from "./configuration.mjs";
 
 /**
  * L'adresse du plan, telle qu'un autre appareil doit la recevoir.
@@ -292,10 +286,7 @@ export function poseGardeParcours(hote){
 /**
  * Appelé par `_partage.html` à la place que ce code tenait : le bouton du
  * tiroir s'y branche au même moment qu'avant.
- *
- * @param {{ conf: (cle: string) => any }} b
  */
-export function branchePartage(b){
-  soude = b;
+export function branchePartage(){
   $("btnPartage").onclick = ouvrePartageParcours;
 }

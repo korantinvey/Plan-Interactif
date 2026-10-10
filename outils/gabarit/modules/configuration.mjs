@@ -6,28 +6,37 @@
 
    Sortie de `_admin1.html`, avec les règles qui ne font que la relire et que
    le plan public lit aussi : les options prises par le salon, la version
-   anglaise, ce que la recherche remonte. Le code soudé lit CONF et sa clé de
-   rangement par accesseur, et ne les remplace que par `ouvreConf` ; il se
-   branche par `brancheConfiguration`, à la place que ce code tenait, pour
-   confier ce que le module ne peut pas importer — les secteurs de la
-   recherche, dont le module (`secteurs.mjs`) lit lui-même la configuration.
+   anglaise, ce que la recherche remonte ; et son rangement sur le poste
+   (`enregistreConf`), sorti du réglage de la fiche, que l'administration
+   prolonge d'un envoi en base. Le code soudé lit CONF et sa clé de
+   rangement par accesseur, et ne les remplace que par `ouvreConf`. Les
+   secteurs de la recherche, que ce module ne peut importer — leur module
+   (`secteurs.mjs`) lit lui-même la configuration —, lui sont confiés par la
+   porte `confieALaConfiguration`, que `secteurs.mjs` ouvre en se chargeant.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
-/* Ce que le code soudé confie : les secteurs, que la recherche refait à
-   chaque chargement (`secteurs.mjs` `SECTEURS`), par un lecteur — le module
-   qui les tient importe celui-ci, et ne peut donc s'importer d'ici. */
-/** @type {() => Map<string, any>} */
-let secteurs = () => new Map();
+/* Ce qui est confié : les secteurs, que la recherche refait à chaque
+   chargement (`secteurs.mjs` `SECTEURS`), par un lecteur — le module qui les
+   tient importe celui-ci, et ne peut donc s'importer d'ici. Rien avant qu'il
+   les ait confiés : pas un secteur. */
+/**
+ * @typedef {object} PreteConfiguration
+ * @property {() => Map<string, any>} secteurs les secteurs du salon, lus à l'instant
+ */
+/** @type {PreteConfiguration} */
+const prete = { secteurs: () => new Map() };
+const secteurs = () => prete.secteurs();
 
 /**
- * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
+ * La porte des secteurs, que `secteurs.mjs` ouvre en se chargeant — avant tout
+ * le code soudé, comme le branchement qu'elle remplace.
  *
- * @param {{ secteurs: () => Map<string, any> }} b
+ * @param {Partial<PreteConfiguration>} o
  */
-export function brancheConfiguration(b){
-  secteurs = b.secteurs;
+export function confieALaConfiguration(o){
+  Object.assign(prete, o);
 }
 
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
@@ -90,6 +99,25 @@ export function reglagesDuSalon(source){
   return sortie;
 }
 
+/* L'envoi en base n'est qu'à l'administration (`enregistrement.mjs`), qu'un
+   module public ne peut importer : il ouvre cette porte en se chargeant, et
+   le visiteur n'a rien derrière. */
+let publie = () => {};
+
+/** La porte de l'envoi, que `enregistrement.mjs` ouvre en se chargeant.
+ *  @param {() => void} f */
+export function confiePublication(f){
+  publie = f;
+}
+
+/** Les réglages d'apparence se posent sur le poste, puis montent en base
+ *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
+export const enregistreConf = () => {
+  try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+  // l'envoi est d'administration (`modules/enregistrement.mjs`)
+  publie();
+};
+
 /** @returns {Record<string, any>} */
 export const conf = (/** @type {string} */ c) => (CONF[c] = CONF[c] || {});
 export const jeton = (/** @type {string} */ n) =>
@@ -98,8 +126,8 @@ export const sousCle = (/** @type {string} */ cle, /** @type {string} */ id) => 
 
 /** Une option est-elle ouverte à ce salon ? Oui par défaut : un réglage absent
  *  ne doit rien retirer à un salon déjà en place. Les options elles-mêmes —
- *  leur liste, ce qui se refait quand on en ferme une — restent dans
- *  `_admin1.html` (`OPTIONS`). */
+ *  leur liste, ce qui se refait quand on en ferme une — sont dans
+ *  `options.mjs` (`OPTIONS`). */
 export const optionActive = (/** @type {string} */ cle) => conf("_options")[cle] !== false;
 
 /* Les deux options que d'autres modules interrogent portent un nom, plutôt que

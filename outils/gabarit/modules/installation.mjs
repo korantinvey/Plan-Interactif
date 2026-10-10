@@ -87,23 +87,17 @@ import { supportMesure } from "./mesure.mjs";
 import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { resteSponsor } from "./sponsor.mjs";
 import { demandeGardeParcours, parcoursACopier } from "./partage.mjs";
-import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture } from "./fenetre.mjs";
+import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages }
+  from "./fenetre.mjs";
+import { conf } from "./configuration.mjs";
+import { TUTO, TUTO_DELAI } from "./tutoriel.mjs";
 
-/* Ce que le code soudé tient encore, et que le branchement confie : la
-   configuration du salon (`_admin1.html`), la visite guidée — en cours, et le
-   délai de sa proposition (`modules/tutoriel.mjs`, relayés par le code soudé) —, et le retour aux
-   réglages après un aperçu (`_installation.html`). La visite guidée est
-   déclarée plus bas que le branchement, et change à chaque chapitre : elle se
-   confie par des lecteurs. La liste à copier avant d'installer, elle,
-   s'importe de `partage.mjs` (`parcoursACopier`). */
-/**
- * @typedef {{ conf: (cle: string) => any, tuto: () => any, tutoDelai: () => number,
- *             retourAuxReglages: (marque: string) => void
- *           }} BranchementInstallation
- */
-/** @type {BranchementInstallation} */
-let soude;
-const conf = (/** @type {string} */ c) => soude.conf(c);
+/* Il n'a plus rien à recevoir du code soudé : la configuration du salon
+   (`configuration.mjs`), la visite guidée — en cours, telle qu'elle est à
+   l'instant, et le délai de sa proposition (`tutoriel.mjs`) —, la liste à
+   copier avant d'installer (`partage.mjs` `parcoursACopier`) s'importent,
+   comme le retour aux réglages après un aperçu (`fenetre.mjs`), dont
+   l'administration seule tient le contenu. */
 
 /* Le plan affiché, un instant pour qu'il se peigne : une fenêtre ouverte dans
    la même image que lui se poserait sur un écran encore vide, et le visiteur
@@ -174,7 +168,7 @@ const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" 
  * Le manifeste porte déjà les deux : la page y nomme le salon, le relais va
  * chercher son nom, ses icônes et l'écrit — « Plan SMCL by Event2Map », ou ce
  * que le salon a choisi (`outils/pwa.js`, `src/index.mjs`,
- * `_application.html`). iOS, lui, ne lit pas le manifeste pour l'écran
+ * `reglage-application.mjs`). iOS, lui, ne lit pas le manifeste pour l'écran
  * d'accueil : il prend `apple-mobile-web-app-title` et `apple-touch-icon`, des
  * balises écrites avec la page, donc avant que le salon soit connu — l'icône
  * se posait sous « Plan », et sous la marque du produit, quel que soit le
@@ -448,7 +442,7 @@ export function accueilleInvitation(){
      se regrette qu'une fois le plan sous les yeux. */
   relanceInvitation(appliInstallee()
     ? RAPPEL_DELAI + resteSponsor()
-    : soude.tutoDelai() + INSTALL_ACCUEIL + resteSponsor());
+    : TUTO_DELAI + INSTALL_ACCUEIL + resteSponsor());
 }
 
 /**
@@ -467,7 +461,7 @@ function invitationRetenue(){
      borne remise au repos. */
   if (resteSponsor()) return true;
   // une visite guidée en cours est un geste en train de se faire, sur toute sa durée
-  if (soude.tuto()) return true;
+  if (TUTO) return true;
   if (["detail", "parcours", "itineraire"].some(id => {
     const t = $(id);
     return t && t.classList.contains("open");
@@ -573,11 +567,8 @@ function essaieInvitation(){
  * (`_installation.html`). Ce qui s'y faisait au chargement — les écouteurs du
  * navigateur, la question posée au système, le suivi des gestes — s'y fait
  * encore, au même rang parmi le reste du plan.
- *
- * @param {BranchementInstallation} b
  */
-export function brancheInstallation(b){
-  soude = b;
+export function brancheInstallation(){
   if (INSTALL_POSSIBLE){
     addEventListener("beforeinstallprompt", e => {
       /* Le plan est installable : c'est donc qu'il n'est pas installé. Un
@@ -684,9 +675,6 @@ function teteInvitation(corps, sousTitre){
   corps.appendChild(tete);
 }
 
-/* Le retour aux réglages après un aperçu reste au code soudé, qui seul
-   connaît la fenêtre des réglages (`_installation.html`). */
-const retourAuxReglages = (/** @type {string} */ marque) => soude.retourAuxReglages(marque);
 
 /**
  * Ce que l'installation fait perdre sur iOS, et le geste qui l'évite.

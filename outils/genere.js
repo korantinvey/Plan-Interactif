@@ -214,8 +214,11 @@ function page(contenu, options) {
        est resté bordé de gris. C'est ici que cela se décide. */
     '<meta name="viewport" content="width=device-width, initial-scale=1' +
       (pleinEcran ? ", viewport-fit=cover" : "") + '">\n' +
-    langue(contenu, salon) +
+    /* L'amorce passe devant la langue : celle-ci peut être un fichier à part,
+       que le navigateur attend avant de lire la suite — les demandes du plan
+       partiraient sinon après lui. Elle n'a besoin de rien qu'il pose. */
     (tete || "") +
+    langue(contenu, salon) +
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
@@ -270,7 +273,7 @@ const SLUG_DEFAUT = "smcl-2026";
 const PRECHARGE = [
   "<script>",
   "{",
-  /* Le salon se lit là où il se trouve, comme dans `_js.html` `SLUG` et dans
+  /* Le salon se lit là où il se trouve, comme dans `modules/salon.mjs` `SLUG` et dans
      `outils/pwa.js` : le paramètre qu'on partage, ou le chemin que
      l'application installée ouvre. Ce chemin-là est le seul qu'elle ouvre —
      elle n'a pas de `?plan=` —, si bien qu'un préchargement qui l'ignorait
@@ -297,7 +300,6 @@ const PRECHARGE = [
 ].join("\n");
 
 const tpl = fs.readFileSync(D + "/tpl-multi.html", "utf8");
-const auth = fs.readFileSync(D + "/gabarit/_auth-plan.html", "utf8");
 
 /** Branche la page sur l'API plutôt que sur des données figées. Les réglages
  *  se posent sur le script des modules : c'est `modules/salon.mjs` qui les lit. */
@@ -311,16 +313,25 @@ function connecte(t) {
       '<script data-modules="' + entree + '" data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">');
 }
 
-/* Les modules (`outils/gabarit/modules/`) passent avant le code soudé, qui
-   trouve leurs noms dans l'objet global : leur script se pose devant le sien.
-   Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
+/* Le script d'un point d'entrée (`outils/gabarit/modules/`), posé en ligne ;
+   la page le sort ensuite dans un fichier nommé par son empreinte. */
+/* La marque du produit y entre par `define` (`MARQUE_PRODUIT`), et non par
+   `marques` après coup : dans un script minifié, une substitution décalerait
+   la carte de correspondance. */
+const DEFINIS = { MARQUE_PRODUIT: JSON.stringify(uneLigne(icones.svgPage())) };
 const scriptDesModules = (entree) =>
-  '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
+  '<script data-modules="' + entree + '">\n' + modules.assemble(entree, DEFINIS) + "</script>\n";
+/* Le script des modules se pose après tout le balisage et les données : la
+   suite des branchements qu'il lance (`modules/lancement.mjs`) trouve ainsi
+   le document entier déjà lu. Un script resté en ligne après les données
+   s'exécuterait après les modules, hors de son rang : on le refuse. */
+const DONNEES = '<script id="data" type="application/json">/*__DATA__*/</script>';
 function poseModulesDuPlan(t, entree) {
-  const marque = "<script>\n/* Sans viewport";
-  if (t.split(marque).length !== 2) throw new Error("script du plan introuvable, ou en double");
-  const script = scriptDesModules(entree);
-  return t.replace(marque, () => script + marque);
+  if (t.split(DONNEES).length !== 2) throw new Error("données du plan introuvables, ou en double");
+  const [avant, apres] = t.split(DONNEES);
+  if (/<script\b(?![^>]*\bsrc=)/.test(apres))
+    throw new Error("un script reste après les données du plan : son code doit vivre dans un module");
+  return avant + DONNEES + scriptDesModules(entree) + apres;
 }
 /* Le gabarit sous ses deux formes : entier pour l'administration, amputé de
    ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). Les
@@ -328,34 +339,162 @@ function poseModulesDuPlan(t, entree) {
    d'entrée qui reprend celui du plan et y ajoute les siens. */
 const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl), "plan-admin");
 const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl), "plan");
-/* Une tranche retirée dont un nom reste cité ailleurs ne casse rien ici : elle
-   casse chez le visiteur, au moment où ce code-là s'exécute. On le refuse donc
-   avant d'écrire la moindre page. Un nom que seul le point d'entrée de
-   l'administration expose est retiré au même titre. Les données et la porte
-   n'y changent rien : le gabarit seul suffit à juger. */
-const publics = new Set(modules.exposes("plan"));
-reserve.verifie(tplAdmin, tplPublic, "Le plan public",
-  modules.exposes("plan-admin").filter((n) => !publics.has(n)));
+/* Un élément retiré du balisage public que le script public irait encore
+   chercher ne casse rien ici : il casse chez le visiteur, au moment où ce
+   code-là s'exécute. On le refuse donc avant d'écrire la moindre page. */
+reserve.verifie(tplAdmin, tplPublic, "Le plan public");
+
+/* La feuille du plan, servie à part.
+
+   Posée dans la page, elle repartait avec elle à chaque mise en ligne : une
+   ligne de code changée, et chaque visiteur retéléchargeait ses deux cents
+   kilo-octets de styles. À part, sous un nom qui porte son empreinte, elle ne
+   change jamais sous une même adresse : le navigateur la garde (`_headers`),
+   le service de second plan aussi, et le plan public et l'administration se la
+   partagent. La démonstration la garde en elle : publiée seule, elle n'a pas
+   de fichier voisin. */
+const STYLE_PLAN = /<style>\n(\/\* Les styles du plan, première feuille[\s\S]*?)<\/style>\n/;
+const styleDuPlan = tpl.match(STYLE_PLAN);
+if (!styleDuPlan) throw new Error("feuille du plan introuvable dans le gabarit");
+const FEUILLE_PLAN = epureStyle(styleDuPlan[1]);
+const VERSIONS = "versions/";
+// ce qu'une construction d'avant y a laissé ne sert plus à aucune page
+fs.rmSync(W + VERSIONS, { recursive: true, force: true });
+fs.mkdirSync(W + VERSIONS);
+/** Ce qui est posé sous `versions/` par cette construction. */
+const VERSIONNES = [];
+/** Pose un fichier sous un nom qui porte son empreinte, et rend ce nom.
+ *  `queue` ajoute au fichier ce qui dépend de ce nom même, hors de l'empreinte. */
+function poseVersion(radical, extension, contenu, queue = () => "") {
+  const nom = VERSIONS + radical + "." +
+    crypto.createHash("sha256").update(contenu).digest("hex").slice(0, 10) + extension;
+  if (!VERSIONNES.includes(nom)) {
+    fs.writeFileSync(W + nom, contenu + queue(nom));
+    VERSIONNES.push(nom);
+  }
+  return nom;
+}
+const NOM_FEUILLE = poseVersion("plan", ".css", FEUILLE_PLAN);
+const lieFeuille = (t) =>
+  t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
+/* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
+   pages, elles, gardent la règle de Cloudflare — revalider à chaque fois. */
+fs.writeFileSync(W + "_headers",
+  "/" + VERSIONS + "*\n  Cache-Control: public, max-age=31536000, immutable\n");
+
+/* Les scripts du plan, servis à part de même.
+
+   Le script des modules pèse les quatre cinquièmes de la page, et le moteur de
+   langue avec son dictionnaire presque tout le reste : la moindre retouche les
+   faisait retélécharger entiers. Ils sortent après la construction de la page,
+   et non avant — le dictionnaire se choisit d'après les modules que la page
+   embarque, qu'il lit dans leur script en ligne. Chacun reste à sa place et
+   garde son rang : un script à part, sans `defer` ni `async`, s'exécute là où
+   il est posé, comme avant. Le script des modules garde ses réglages
+   (`data-api`, `data-slug`) : `modules/salon.mjs` les lit sur
+   `document.currentScript`, qui le désigne encore. */
+const MODULES_EN_LIGNE = /<script (data-modules="(plan|plan-admin)"[^>]*)>([\s\S]*?)<\/script>/;
+const LANGUE_EN_LIGNE = /<script>(\nwindow\.traduit = String;[\s\S]*?)<\/script>/;
+/* Un script minifié part avec sa carte (`modules.js` `assemble`), posée à
+   côté de lui sous son nom suivi de `.map`, et qu'il désigne en dernière
+   ligne. La carte décrit le code tel qu'esbuild l'a rendu : si l'épuration de
+   la page y avait touché, elle mentirait — on le refuse plutôt. */
+function poseModules(entree, code) {
+  if (process.env.PLAN_LISIBLE !== "1" && ["plan", "plan-admin"].includes(entree) &&
+      !modules.carteDe(code))
+    throw new Error(entree + " : le script minifié a changé depuis esbuild, sa carte ne vaudrait plus");
+  const carte = modules.carteDe(code);
+  if (!carte) return poseVersion(entree, ".js", code);
+  return poseVersion(entree, ".js", code.trim(), (nom) => {
+    fs.writeFileSync(W + nom + ".map", carte);
+    return "\n//# sourceMappingURL=" + path.basename(nom) + ".map\n";
+  });
+}
+function sortScripts(html) {
+  const m = html.match(MODULES_EN_LIGNE), l = html.match(LANGUE_EN_LIGNE);
+  if (!m || !l) throw new Error("script des modules ou de la langue introuvable");
+  const modulesJs = poseModules(m[2], m[3]);
+  const langueJs = poseVersion("langue", ".js", l[1]);
+  return html
+    .replace(MODULES_EN_LIGNE, () => '<script ' + m[1] + ' src="/' + modulesJs + '"></script>')
+    .replace(LANGUE_EN_LIGNE, () => '<script src="/' + langueJs + '"></script>');
+}
+
+/* La politique de sécurité des pages du plan.
+
+   Ce qu'elle garde, c'est le script : une description d'exposant, un nom de
+   zone, un logo viennent d'ailleurs, et `modules/sur.mjs` les relit avant de
+   les poser ; si une injection passait quand même, elle ne pourrait rien
+   exécuter. N'est permis que ce que la page sert elle-même, MapLibre à son
+   adresse exacte, et les quelques scripts restés en ligne, chacun par son
+   empreinte — calculée ici, sur ce qui part vraiment. Le reste est large à
+   dessein : les logos et les tuiles viennent de partout (`img-src https:`),
+   l'administration parle au projet Supabase que la console lui a donné
+   (`connect-src https:`), et les styles posés par le code exigent
+   `'unsafe-inline'`. MapLibre lance ses travaux depuis des `blob:`.
+
+   Posée en balise et non en en-tête : la page se sert telle quelle par les
+   fichiers statiques comme par le relais (`/plan-<salon>`), et la balise la
+   suit partout. Elle vient juste après le jeu de caractères, avant tout script
+   — elle ne protège que ce qui la suit. */
+const MAPLIBRE = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.";
+const EN_LIGNE = /<script((?:(?!\bsrc=)[^>])*)>([\s\S]*?)<\/script>/g;
+function poseCsp(html) {
+  const empreintes = [...html.matchAll(EN_LIGNE)]
+    .filter(([, attributs, code]) => code.trim() && !/type="application\/json"/.test(attributs))
+    .map(([, , code]) => "'sha256-" + crypto.createHash("sha256").update(code).digest("base64") + "'");
+  const politique = [
+    "default-src 'self'",
+    /* deck.gl compile un petit décodeur en WebAssembly : la permission ne
+       vaut que pour lui, jamais pour `eval` ni `new Function`. */
+    "script-src 'self' 'wasm-unsafe-eval' " + MAPLIBRE + "js " + empreintes.join(" "),
+    "style-src 'self' 'unsafe-inline' " + MAPLIBRE + "css",
+    "img-src 'self' https: data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' https: data: blob:",
+    "worker-src 'self' blob:",
+    "child-src 'self' blob:",
+    "media-src 'self' https: data: blob:",
+    "frame-src 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+  const charset = '<meta charset="utf-8">\n';
+  if (html.split(charset).length !== 2) throw new Error("jeu de caractères introuvable, ou en double");
+  return html.replace(charset, () => charset +
+    '<meta http-equiv="Content-Security-Policy" content="' + politique + '">\n');
+}
 
 /* --- page publique : le mode administration n'est jamais activé --- */
-fs.writeFileSync(W + "plan.html",
-  page(connecte(tplPublic).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+fs.writeFileSync(W + "plan.html", poseCsp(sortScripts(
+  page(lieFeuille(connecte(tplPublic)),
        { tete: PRECHARGE, application: true, pleinEcran: true,
-         salon: SLUG_DEFAUT }));
+         salon: SLUG_DEFAUT }))));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
    n'en a que faire, elle ne part qu'avec l'administration. */
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
-fs.writeFileSync(W + "plan-admin.html",
-  page(connecte(tplAdmin).replace("/*__PORTE_ADMIN__*/", auth)
-                    .replace("/*__LIEUX__*/null", () => LIEUX),
-       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }));
+/* Versée en données, devant celles du plan : le point d'entrée de
+   l'administration la lit au lancement (`plan-admin.mjs` `lieux`). La balise
+   d'ouverture des données ne change pas, alors que leur contenu, lui, est vidé
+   sur une page branchée sur l'API (`connecte`) : c'est donc elle qu'on vise,
+   et la construction s'arrête si elle manque plutôt que de livrer une
+   administration sans bibliothèque. */
+const OUVRE_DONNEES = '<script id="data" type="application/json">';
+function poseLieux(t) {
+  if (t.split(OUVRE_DONNEES).length !== 2) throw new Error("données du plan introuvables pour y poser les lieux");
+  return t.replace(OUVRE_DONNEES, () =>
+    '<script id="lieux" type="application/json">' + LIEUX + "</script>\n" + OUVRE_DONNEES);
+}
+fs.writeFileSync(W + "plan-admin.html", poseCsp(sortScripts(
+  page(poseLieux(lieFeuille(connecte(tplAdmin))),
+       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }))));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
-  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
-                .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8")),
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
@@ -365,47 +504,52 @@ fs.writeFileSync(W + "config.js",
 fs.writeFileSync(W + "console.css",
   epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8")));
 
-/* --- page d'accueil : la racine ne doit pas répondre 404 --- */
-fs.writeFileSync(W + "index.html",
-  page(fs.readFileSync(D + "/gabarit/_index.html", "utf8")));
 
 /* --- la console et le rapport ---
    Ils partagent leur socle : accès au projet, fenêtres, connexion, thème.
    Chacun n'écrit ensuite que ce qui lui est propre. */
 const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
 
-/* Chaque écran reçoit le script de son point d'entrée, avant le socle. */
-const assemble = (entree, tete, ...corps) =>
-  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules(entree) + socle +
-  corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
+/* Une page dont tout le code est un module. Le script de son point d'entrée se
+   pose après tout le balisage, là où se tenait le script de la page, qui n'en
+   gardait que les branchements : il les fait lui-même, et ce qu'ils posaient
+   au chargement trouve donc la page entière, comme avant. Un script en ligne
+   resté dans la source s'exécuterait avant lui, hors de son rang : on le
+   refuse plutôt que de le servir. */
+function poseModulesSeuls(t, entree) {
+  if (/<script\b(?![^>]*\bsrc=)[^>]*>/.test(t))
+    throw new Error(entree + " : un script reste dans la page, son code doit vivre dans un module");
+  return t + scriptDesModules(entree);
+}
+
+/* Chaque écran : son en-tête, le balisage du socle, puis le script de son
+   point d'entrée, qui branche le socle, l'export et l'écran, dans cet ordre. */
+const assemble = (entree, tete) =>
+  poseModulesSeuls(fs.readFileSync(D + "/gabarit/" + tete, "utf8") + socle, entree);
 
 /* Les deux écrans exportent le même classeur : l'écriture et l'export sont des
-   modules (`modules/classeur.mjs`, `modules/export.mjs`), branchés par
-   `_export.html` avant l'écran, et c'est la page qui ferme le script. La console
-   fabrique en plus les vignettes des logos, avec la règle de recadrage du plan
-   (`modules/marque.mjs`) : une vignette est cadrée comme la page l'aurait fait. */
+   modules (`modules/classeur.mjs`, `modules/export.mjs`), que chaque point
+   d'entrée branche avant l'écran. La console fabrique en plus les vignettes
+   des logos, avec la règle de recadrage du plan (`modules/marque.mjs`) : une
+   vignette est cadrée comme la page l'aurait fait. */
 fs.writeFileSync(W + "admin-plans.html",
-  page(assemble("console", "_console-head.html", "_export.html", "_console-js.html"),
-       { deuxThemes: true }));
+  page(assemble("console", "_console-head.html"), { deuxThemes: true }));
 
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("rapport", "_rapport-head.html", "_export.html", "_rapport-js.html"),
-       { deuxThemes: true }));
+  page(assemble("rapport", "_rapport-head.html"), { deuxThemes: true }));
 
 /* --- poser son mot de passe ---
    Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul
    bagage le jeton d'un lien reçu par courriel. Un écran de connexion y serait
-   un contresens. Son code est un module : le script de son point d'entrée se
-   pose devant le seul script de la page, qui le branche. */
-function poseModulesSeuls(t, entree) {
-  const marque = "\n<script>\n";
-  if (t.split(marque).length !== 2) throw new Error(entree + " : script de la page introuvable, ou en double");
-  const script = scriptDesModules(entree);
-  return t.replace(marque, () => "\n" + script + "<script>\n");
-}
+   un contresens. */
 fs.writeFileSync(W + "motdepasse.html",
   page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8"), "motdepasse"),
        { deuxThemes: true }));
+
+/* --- page d'accueil : la racine ne doit pas répondre 404 ---
+   Elle ne fait qu'aiguiller, comme la page du mot de passe sans socle. */
+fs.writeFileSync(W + "index.html",
+  page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_index.html", "utf8"), "accueil")));
 
 /* --- la page que le service rend quand le réseau manque --- */
 fs.writeFileSync(W + "hors-ligne.html",
@@ -434,7 +578,7 @@ fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
 const FABRIQUEES = [
   "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
-  "config.js", "console.css", "manifeste.webmanifest",
+  "config.js", "console.css", ...VERSIONNES, "_headers", "manifeste.webmanifest",
   "icone.svg", "icone-onglet.svg",
   "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
 ];
@@ -468,9 +612,9 @@ for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
   const s = fs.readFileSync(W + f, "utf8");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
-    // c'est la présence du module d'accès qui compte, pas une simple mention :
-    // le chargeur en cite le nom pour rouvrir l'écran sur session expirée
-    "· admin " + (s.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"),
+    // c'est le script de l'administration qui compte, pas une simple mention :
+    // ses noms de fonction ne survivent pas à la minification
+    "· admin " + (/<script [^>]*src="\/versions\/plan-admin\./.test(s) ? "authentifié" : "retiré"),
     // une seule page doit s'installer : le relire ici évite de le découvrir
     // sur un téléphone, un mois plus tard
     (s.indexOf('rel="manifest"') > 0 ? "· application" : ""));
@@ -483,7 +627,7 @@ console.log("sw.js".padEnd(18), "version " + version);
    referait partir l'adresse de chaque visiteur, et rien d'autre ne le dirait. */
 const CHEZ_GOOGLE = /fonts\.(googleapis|gstatic)\.com/;
 const fautives = FABRIQUEES.concat("sw.js")
-  .filter((f) => /\.(html|js)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
+  .filter((f) => /\.(html|js|css)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
 if (fautives.length) {
   console.error("\nPolices demandées à Google dans : " + fautives.join(", ") + ".\n" +
     "Déclarez la famille dans `outils/polices.js` (ou dans `POLICES_NOMS` pour une police\n" +

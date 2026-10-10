@@ -10,13 +10,10 @@ import { imageSure, adresseSure } from "./sur.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 import { DATA } from "./donnees.mjs";
 import { vue } from "./vue.mjs";
-
-/* Ce que le code soudé tient encore, et que le branchement confie : la
-   configuration du plan (`_admin1.html` `conf`). La page où l'on est
-   (`PLAN_ADMIN`) s'importe de `salon.mjs`. La vue dessinée, lue à l'instant,
-   s'importe de `vue.mjs`. */
-/** @type {(cle: string) => any} */
-let conf;
+/* La configuration du plan s'importe de `configuration.mjs`, la page où l'on
+   est (`PLAN_ADMIN`) de `salon.mjs`, la vue dessinée, lue à l'instant, de
+   `vue.mjs` : il n'a rien à recevoir du code soudé. */
+import { conf } from "./configuration.mjs";
 /**
  * Un salon se vend aussi par son plan. L'organisateur qui propose à un
  * partenaire « le plan interactif du salon » lui promet l'écran que tous les
@@ -108,11 +105,9 @@ const MODES_SPONSOR = ["", "marque", "sponsor"];
    elle ne le déguise pas non plus : elle passe, elle dit « powered by », et
    elle cède la place au hall.
 
-   Entre accents graves, et non entre apostrophes : esbuild réécrit une chaîne
-   simple entre guillemets droits, et la marque qui prend sa place en porte
-   dans chacun de ses attributs. Un gabarit sans substitution, il le laisse
-   tel quel. */
-export const MARQUE_SPONSOR = `<!--__MARQUE__-->`;
+   `MARQUE_PRODUIT` est le dessin d'`outils/icones.js`, que la construction
+   définit pour esbuild (`genere.js` `scriptDesModules`). */
+export const MARQUE_SPONSOR = MARQUE_PRODUIT;
 
 export const reglageSponsor = () => conf("_sponsor");
 
@@ -394,11 +389,8 @@ export function accueilleSponsor(){
  * Le branchement du générique, appelé par le code soudé à la place que ce code
  * y tenait (`_sponsor.html`) : c'est là qu'il paraît au premier trait de la
  * page, au même rang qu'avant parmi ce que le plan pose sur la scène.
- *
- * @param {{ conf: typeof conf }} b
  */
-export function brancheSponsor(b){
-  conf = b.conf;
+export function brancheSponsor(){
   /* Le générique, au premier trait de la page : avant les données, avant le plan,
      avant tout ce qu'il est censé couvrir. Il ne peut donc montrer que ce qu'une
      visite précédente a laissé sur l'appareil — voir le cache, plus haut. */

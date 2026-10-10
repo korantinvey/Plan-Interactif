@@ -1073,7 +1073,7 @@
      recalculé au doigt posé puis au doigt levé, et la saccade avec.
 
      Le cadrage, lui, sait ce qu'elle couvre — voir `masqueHaut` dans
-     `_js.html` : sans quoi le stand qu'on vient d'ouvrir se posait derrière
+     `modules/vue.mjs` : sans quoi le stand qu'on vient d'ouvrir se posait derrière
      elle.
 
      Pas en administration : la bande de l'outil tient le premier rang, et
@@ -1102,7 +1102,7 @@
      de l'écran, et plus rien de ce qui reste ne lui prend une ligne.
 
      L'élément, lui, reste : il garde son rang, sa transition et son pli, et
-     c'est sa hauteur que `mesureBarre` et `masqueHaut` lisent (`_js.html`).
+     c'est sa hauteur que `mesureBarre` et `masqueHaut` lisent (`modules/vue.mjs`).
      Vide, elle ne vaut plus que le retrait du système — ce qui s'ancre en haut
      de la scène remonte d'autant sans qu'aucune de leurs règles l'apprenne.
      ------------------------------------------------------------ */
@@ -1165,7 +1165,7 @@
      Un plan sans bande ne dit plus le nom du salon, et tous les salons n'en
      veulent pas ainsi — celui d'un lieu qu'on ne connaît pas se nomme. La bande
      revient donc sur demande, réglée dans l'onglet « Admin » (`blocBarre`,
-     `_admin1.html`), et rognée de tout ce qui pouvait l'être : trente-huit
+     `modules/volets.mjs`), et rognée de tout ce qui pouvait l'être : trente-huit
      points au lieu de quarante-six, des boutons de vingt-sept, un titre d'un
      point et demi plus bas. Deux lignes de nom y tiennent encore — c'est la
      règle qui protège le nom, et elle ne se paie que sur un nom long.
@@ -1265,7 +1265,7 @@
      salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
      bande de recherche en occupe le bas. Il remonte au doigt levé, à son cran
      d'avant — celui-ci est écrit dans son attribut, que le pli ne touche pas
-     (voir `plieLesBandes`, _js.html). Écrite après les crans, la règle
+     (voir `plieLesBandes`, modules/gestes.mjs). Écrite après les crans, la règle
      l'emporte sur eux le temps qu'elle dure. */
   .side.pliee{transform:translateY(100%)}
 

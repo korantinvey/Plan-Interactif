@@ -12,29 +12,31 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. La configuration, les options du salon, la durée d'une
    visite et le volet « Recherche » s'importent de leurs modules
-   (`configuration.mjs`, `horaires.mjs`, `seuil.mjs`, `reglage-recherche.mjs`).
-   Ce que le code soudé tient encore — l'envoi de la configuration, les
-   distinctions, ce que la fiche montre et la fiche elle-même, le dessin des
-   noms — lui est confié par `brancheReglages`, que `_reglages.html` appelle à
-   la place que ce code y tenait.
+   (`configuration.mjs`, `horaires.mjs`, `seuil.mjs`, `reglage-recherche.mjs`),
+   comme l'enregistrement de la configuration, les distinctions, ce que la
+   fiche montre et la fiche elle-même, le dessin des noms : il n'a plus rien
+   à recevoir du code soudé.
 
-   La fenêtre se rouvre depuis le code soudé (`retourAuxReglages`), la bande
-   de l'outil et la remise à zéro des compteurs, et le pas d'une hauteur à
-   l'autre (`glisseFenetre`) sert aussi aux volets du générique et de la
-   suggestion : les deux restent exposés.
+   La fenêtre se rouvre après un aperçu (`retourAuxReglages`, dont il confie
+   le contenu à `fenetre.mjs`), depuis la bande de l'outil et la remise
+   à zéro des compteurs (`chaleur.mjs`, à qui il la confie en se chargeant) ;
+   le pas d'une hauteur à l'autre (`glisseFenetre`) sert aussi aux volets du
+   générique, à qui il le confie de même, et de la suggestion.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, parId, state, CONFERENCES } from "./donnees.mjs";
-import { ouvreModale } from "./fenetre.mjs";
+import { ouvreModale, confieRetourAuxReglages } from "./fenetre.mjs";
 import { PROFIL_ADMIN } from "./acces-admin.mjs";
 import { champsZone, suitFicheZone, verseFicheZone, ecritColonneEvenement } from "./fiche-zone.mjs";
 import { voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
   voletApparence } from "./volets.mjs";
 import { voletOrdre } from "./reglage-fiche.mjs";
-import { NOM_VOLET_SUGGESTION, voletSuggestion } from "./reglage-suggestion.mjs";
+import { NOM_VOLET_SUGGESTION, voletSuggestion, confieAuReglageSuggestion }
+  from "./reglage-suggestion.mjs";
 import { voletEnvirons } from "./calage-carte.mjs";
-import { NOM_VOLET_MESURE, voletMesure } from "./chaleur.mjs";
-import { conf, optionActive, suggestionOfferte } from "./configuration.mjs";
+import { NOM_VOLET_MESURE, voletMesure, confieALaChaleur } from "./chaleur.mjs";
+import { confieAuReglageSponsor } from "./reglage-sponsor.mjs";
+import { conf, optionActive, suggestionOfferte, enregistreConf } from "./configuration.mjs";
 import { VISITE_MIN, VISITE_MAX, minutesVisite } from "./horaires.mjs";
 import { NOM_VOLET_PARCOURS } from "./seuil.mjs";
 import { voletRecherche } from "./reglage-recherche.mjs";
@@ -44,23 +46,26 @@ import { ouvre } from "./fiche.mjs";
 import { DISTINCTIONS } from "./distinctions.mjs";
 import { libelles } from "./libelles.mjs";
 
-/* Ce que le code soudé confie au branchement : l'envoi de la configuration,
-   déclaré plus bas (`_ordre-fiche.html`), qui vient par un détour, lu au
-   moment de s'en servir. L'écran, ce que la fiche montre, la fiche, les
-   distinctions et le dessin des noms s'importent (`ecran.mjs`,
-   `corps-fiche.mjs`, `fiche.mjs`, `distinctions.mjs`, `libelles.mjs`). */
-let enregistreConf;
+/* Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
+   qui l'a ouvert. Un temps plus tard, et non dans le crochet : la fenêtre
+   achève de se fermer après lui, et refermerait les réglages rouverts
+   sur-le-champ.
 
-/**
- * Le branchement de la fenêtre, appelé par le code soudé à la place que ce
- * code y tenait (`_reglages.html`), dans une tranche que le visiteur ne reçoit
- * pas.
- *
- * @param {{ enregistreConf: () => void }} b
- */
-export function brancheReglages(b){
-  ({ enregistreConf } = b);
-}
+   La marque dit quelle case a ouvert l'aperçu : deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences, et ils se ressemblent
+   assez pour qu'on revienne au mauvais si on ne le nomme pas.
+
+   Le retour est public de nom — l'invitation et le rappel, que le visiteur
+   reçoit, l'appellent (`fenetre.mjs` `retourAuxReglages`) —, et
+   d'administration de contenu : ce module le confie à la fenêtre commune dès
+   que la page d'administration le charge, avant tout le code soudé. */
+confieRetourAuxReglages((marque) => {
+  queueMicrotask(() => {
+    ouvreReglages("Admin");
+    const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
+    if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
+  });
+});
 
 /**
  * Réglages généraux du plan.
@@ -448,15 +453,6 @@ function voletPlan(hote){
 }
 
 /**
- * Ce que les visiteurs voient sur le plan : les commandes, les secteurs, les
- * fenêtres qui s'ouvrent d'elles-mêmes.
- *
- * Réservé au profil administrateur. Ces cases changent la façon dont le plan
- * se comporte, d'un salon à l'autre, bien plus que ce qu'il montre d'un
- * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
- * que de quoi retirer une commande qu'on lui a vendue.
- */
-/**
  * Les stands partagés, dans leur onglet à eux.
  *
  * Leurs deux cases vivaient au milieu de « Admin », sous condition : sur un
@@ -534,3 +530,14 @@ function voletCoexposants(hote){
     bloc.appendChild(aide);
   });
 }
+
+/* La carte de chaleur et le réglage du générique sont importés par ce module :
+   ils ne peuvent l'importer en retour. Il leur confie donc, dès que la page
+   d'administration le charge, de quoi rouvrir la fenêtre et la faire glisser. */
+confieALaChaleur({ ouvreReglages });
+confieAuReglageSponsor({ glisseFenetre });
+
+/* Le volet « Suggestion », que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant le glissement de la fenêtre d'une
+   hauteur à l'autre quand un réglage la redessine. */
+confieAuReglageSuggestion({ glisseFenetre });
