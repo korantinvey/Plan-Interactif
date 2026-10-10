@@ -6,25 +6,12 @@
    La recherche, la liste et le panneau des critères vivent dans
    `modules/recherche.mjs`, les secteurs et leur teinte dans
    `modules/secteurs.mjs`, les bandes qui défilent dans `modules/bandes.mjs`.
-   Ils se branchent ici, à la place que leur code tenait : leurs écoutes s'y
-   posent au même rang qu'avant, et ce que le code soudé tient encore leur est
-   confié. La fiche (`modules/fiche.mjs`), qui embarque la recherche, ne peut
-   être importée par elle ; le parcours n'est déclaré que plus bas, ou se
-   remplace : il vient par des détours, lus au moment de s'en servir. L'écran,
-   les tiroirs et ce que la fiche montre, eux, s'importent. La carte de chaleur n'est que d'administration
-   (`modules/chaleur.mjs`, par `plan-admin.mjs`) : on ne l'appelle que si la
-   page l'a reçue.
+   Ils se branchent ici, à la place que leur code tenait, et seules leurs
+   écoutes s'y posent, au même rang qu'avant. Ce que la recherche appelle
+   ailleurs — la fiche, le parcours, les distinctions, les libellés, les
+   repères —, chacun de ces modules, qui l'importe, le lui confie en se
+   chargeant (`confieALaRecherche`) ; la carte de chaleur, qui n'est que
+   d'administration, se confie de même aux secteurs (`confieChaleur`).
    ============================================================ */
 brancheBandes();
-brancheSecteurs({
-  coloreChaleur: () => { if (typeof coloreChaleur === "function") coloreChaleur(); },
-});
-brancheRecherche({
-  ferme: () => ferme(),
-  select: (id, recentrer, canal, iSoc) => select(id, recentrer, canal, iSoc),
-  ficheConf: (id, canal) => ficheConf(id, canal),
-  adresseVignette: (cle) => adresseVignette(cle),
-  poseToutAuParcours: (hote) => poseToutAuParcours(hote),
-  dessineDists, libelles, marquesListe, porteDist, standPorte,
-  reperesCherchables, vaAuRepere,
-});
+brancheRecherche();

@@ -44,7 +44,13 @@ import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
 import { largeur } from "./texte-plan.mjs";
 
 /**
- * Ce que le code soudé confie au branchement.
+ * Ce que la recherche emprunte aux modules qui l'importent : la fiche qu'une
+ * ligne ouvre (`fiche.mjs`), le parcours où l'on verse ce qu'elle retient
+ * (`tiroir-parcours.mjs`), les distinctions qu'elle marque (`distinctions.mjs`),
+ * les libellés qu'elle refait (`libelles.mjs`), les repères qu'elle remonte
+ * (`points-interet.mjs`). Tous l'importent, et elle ne peut donc les importer
+ * en retour : chacun lui confie ce qu'elle en appelle au chargement de son
+ * module, par `confieALaRecherche` — jamais par le code soudé.
  * @typedef {object} PageRecherche
  * @property {() => void} ferme referme la fiche (`fiche.mjs`)
  * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
@@ -60,20 +66,24 @@ import { largeur } from "./texte-plan.mjs";
  * @property {(id: any, p: number) => void} vaAuRepere
  */
 /** @type {PageRecherche} */
-let soude;
-const ferme = () => soude.ferme();
+const prete = /** @type {any} */ ({});
+
+/** La porte des modules qui prêtent à la recherche ce qu'elle appelle.
+ *  @param {Partial<PageRecherche>} o */
+export function confieALaRecherche(o){ Object.assign(prete, o); }
+const ferme = () => prete.ferme();
 const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal,
-  /** @type {number} */ iSoc) => soude.select(id, recentrer, canal, iSoc);
-const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => soude.ficheConf(id, canal);
-const adresseVignette = (/** @type {any} */ cle) => soude.adresseVignette(cle);
-const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => soude.poseToutAuParcours(hote);
-const dessineDists = () => soude.dessineDists();
-const libelles = () => soude.libelles();
-const marquesListe = (/** @type {(d: any) => boolean} */ porte) => soude.marquesListe(porte);
-const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => soude.porteDist(x, d);
-const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => soude.standPorte(o, d);
-const reperesCherchables = () => soude.reperesCherchables();
-const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => soude.vaAuRepere(id, p);
+  /** @type {number} */ iSoc) => prete.select(id, recentrer, canal, iSoc);
+const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.ficheConf(id, canal);
+const adresseVignette = (/** @type {any} */ cle) => prete.adresseVignette(cle);
+const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
+const dessineDists = () => prete.dessineDists();
+const libelles = () => prete.libelles();
+const marquesListe = (/** @type {(d: any) => boolean} */ porte) => prete.marquesListe(porte);
+const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => prete.porteDist(x, d);
+const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => prete.standPorte(o, d);
+const reperesCherchables = () => prete.reperesCherchables();
+const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => prete.vaAuRepere(id, p);
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
@@ -1149,13 +1159,11 @@ function chargeUnLot(lot){
 
 /**
  * Le branchement, appelé par `_recherche.html` à la place que ce code tenait :
- * ce que le code soudé tient encore est confié, et l'écoute de la liste posée
- * au même rang qu'avant.
- *
- * @param {PageRecherche} page
+ * l'écoute de la liste s'y pose au même rang qu'avant. Ce que la recherche
+ * appelle ailleurs lui est confié par les modules eux-mêmes
+ * (`confieALaRecherche`).
  */
-export function brancheRecherche(page){
-  soude = page;
+export function brancheRecherche(){
   /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
      frappe, et aucune ne garderait le sien. */
   $("list").addEventListener("pointerdown", e => {

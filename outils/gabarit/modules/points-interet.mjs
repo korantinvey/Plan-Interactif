@@ -31,6 +31,7 @@ import { majFondus } from "./bandes.mjs";
 import { changePlan } from "./rendu.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
 import { formeParId } from "./forme-choisie.mjs";
+import { confieALaRecherche } from "./recherche.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -401,3 +402,7 @@ export function oublieChoixPoi(cible){
   poiChoisi = null;
   cartouchePoi();
 }
+
+/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (les repères qu'elle remonte parmi les exposants, et le chemin vers l'un d'eux). */
+confieALaRecherche({ reperesCherchables, vaAuRepere });

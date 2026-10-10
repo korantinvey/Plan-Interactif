@@ -39,7 +39,8 @@ import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, gliss
 import { fermeItineraire, versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
-import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES } from "./recherche.mjs";
+import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES, confieALaRecherche }
+  from "./recherche.mjs";
 import { libelles, coexChoisit } from "./libelles.mjs";
 import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
@@ -1165,3 +1166,7 @@ export function brancheFiche(b){
   $("closeDetail").onclick = ferme;
   $("voile").onclick = ferme;
 }
+
+/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (une ligne ouvre la fiche d'un stand ou d'une conférence, la referme, et montre la vignette d'un logo). */
+confieALaRecherche({ select, ferme, ficheConf, adresseVignette });

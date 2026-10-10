@@ -230,7 +230,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.2 · Rapport d'utilisation — le branchement
 
-### `_recherche.html` — 30 l.
+### `_recherche.html` — 17 l.
 
 - l.3 · 5. Recherche et secteurs — le branchement
 
@@ -446,20 +446,20 @@ Fonctions :
 `dejaPubliee` 181 · `marqueAttente` 187 · `mesCalques` 196 · `poseCalqueActif` 205
 `poseOutil` 206 · `poseEbauche` 210 · `trouveCalque` 212 · `nouvelId` 213
 
-### `modules/chaleur.mjs` — 672 l. → plan-admin
+### `modules/chaleur.mjs` — 678 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.454 · Remise à zéro des compteurs
+- l.455 · Remise à zéro des compteurs
 
 Fonctions :
 
-`nbChal` 55 · `tonChaleur` 74 · `niveauChaleur` 96 · `valeurChaleur` 99
-`chargeChaleur` 112 · `coloreChaleur` 158 · `cartoucheChaleur` 193
-`mesureCartoucheChaleur` 257 · `replieChaleur` 263 · `ecritEtatChaleur` 274
-`dessineEchelleChaleur` 282 · `dessineTopChaleur` 302 · `phraseChaleur` 344
-`rafraichitChaleur` 369 · `montreChaleur` 403 · `rangChaleur` 436 · `aplati` 476
-`voletMesure` 481 · `evenementCourant` 507 · `ouvreRemiseAZero` 526 · `lanceRemiseAZero` 620
-`brancheChaleur` 666
+`nbChal` 56 · `tonChaleur` 75 · `niveauChaleur` 97 · `valeurChaleur` 100
+`chargeChaleur` 113 · `coloreChaleur` 159 · `cartoucheChaleur` 194
+`mesureCartoucheChaleur` 258 · `replieChaleur` 264 · `ecritEtatChaleur` 275
+`dessineEchelleChaleur` 283 · `dessineTopChaleur` 303 · `phraseChaleur` 345
+`rafraichitChaleur` 370 · `montreChaleur` 404 · `rangChaleur` 437 · `aplati` 477
+`voletMesure` 482 · `evenementCourant` 508 · `ouvreRemiseAZero` 527 · `lanceRemiseAZero` 621
+`brancheChaleur` 667
 
 Éléments :
 
@@ -577,15 +577,15 @@ Fonctions :
 `texteStandDessine` 555 · `poseLibellesDessines` 574 · `decoupeStand` 595
 `marqueStandsDessines` 610 · `rafraichitStandsDessines` 625 · `signale` 639
 
-### `modules/distinctions.mjs` — 269 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 276 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 52 · `texteCourtDist` 57 · `porteDist` 61 · `standPorte` 65 · `calqueDists` 74
-`traceDist` 105 · `oublieDists` 138 · `modesDuPlan` 142 · `releveDists` 144
-`dessineDists` 173 · `marquesListe` 199 · `poseDistsFiche` 229 · `refaitDistsFiche` 269
+`texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 75
+`traceDist` 106 · `oublieDists` 139 · `modesDuPlan` 143 · `releveDists` 145
+`dessineDists` 174 · `marquesListe` 200 · `poseDistsFiche` 230 · `refaitDistsFiche` 270
 
 ### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
 
@@ -777,21 +777,21 @@ Fonctions :
 `enregistreZone` 614 · `enregistreZoneAjoutee` 727 · `basculeAffichageZone` 790
 `marqueZonesMasquees` 818 · `ecritColonnesEvenement` 838 · `ecritColonneEvenement` 872
 
-### `modules/fiche.mjs` — 1167 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1172 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.61 · 7. Sélection et fiche
+- l.62 · 7. Sélection et fiche
 
 Fonctions :
 
-`decoupeStand` 54 · `montePlan` 55 · `marqueStandsDessines` 56 · `poseDistsFiche` 57
-`fermeParcours` 58 · `brancheParcours` 59 · `anime` 80 · `noeud` 104 · `canalPlan` 114
-`rangSociete` 122 · `select` 131 · `centre` 156 · `brancheActesFiche` 167
-`centreEtBaisseLaFiche` 183 · `centrePoint` 201 · `programme` 230 · `produits` 279
-`ficheProduit` 307 · `ficheConf` 377 · `adresseVignette` 534 · `poseAppuiTactile` 551
-`ecarteClicFantome` 554 · `nomSociete` 563 · `societes` 576 · `choisitExposant` 587
-`poseMarque` 625 · `montreMarque` 685 · `poseCode` 708 · `rangeMarque` 749 · `ouvre` 805
-`ferme` 1119 · `onglet` 1137 · `brancheFiche` 1154
+`decoupeStand` 55 · `montePlan` 56 · `marqueStandsDessines` 57 · `poseDistsFiche` 58
+`fermeParcours` 59 · `brancheParcours` 60 · `anime` 81 · `noeud` 105 · `canalPlan` 115
+`rangSociete` 123 · `select` 132 · `centre` 157 · `brancheActesFiche` 168
+`centreEtBaisseLaFiche` 184 · `centrePoint` 202 · `programme` 231 · `produits` 280
+`ficheProduit` 308 · `ficheConf` 378 · `adresseVignette` 535 · `poseAppuiTactile` 552
+`ecarteClicFantome` 555 · `nomSociete` 564 · `societes` 577 · `choisitExposant` 588
+`poseMarque` 626 · `montreMarque` 686 · `poseCode` 709 · `rangeMarque` 750 · `ouvre` 806
+`ferme` 1120 · `onglet` 1138 · `brancheFiche` 1155
 
 Éléments :
 
@@ -969,7 +969,7 @@ Fonctions :
 `cleLibelle` 36 · `poseModeLibelles` 45 · `poseLibelleChoisi` 50 · `empreinteLibelle` 62
 `placementLibelle` 70
 
-### `modules/libelles.mjs` — 377 l. → plan, plan-admin
+### `modules/libelles.mjs` — 381 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.118 · 4. Libellés — le nom de l'exposant prime sur le numéro
@@ -1188,19 +1188,19 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 185 l. → plan, plan-admin
+### `modules/plan.mjs` — 182 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/points-interet.mjs` — 403 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 408 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt — le cartouche, la recherche, la fiche d'un repère
 
 Fonctions :
 
-`oublieReperes` 54 · `reperesCherchables` 56 · `vaAuRepere` 100 · `clePoi` 143
-`cartouchePoi` 145 · `ouvrePoi` 264 · `mesureCartouche` 337 · `pharePoi` 353
-`phareRepere` 357 · `phareZone` 359 · `eclairePoi` 365 · `oublieChoixPoi` 398
+`oublieReperes` 55 · `reperesCherchables` 57 · `vaAuRepere` 101 · `clePoi` 144
+`cartouchePoi` 146 · `ouvrePoi` 265 · `mesureCartouche` 338 · `pharePoi` 354
+`phareRepere` 358 · `phareZone` 360 · `eclairePoi` 366 · `oublieChoixPoi` 399
 
 Éléments :
 
@@ -1267,26 +1267,27 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
-### `modules/recherche.mjs` — 1166 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1174 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`ferme` 64 · `ficheConf` 67 · `adresseVignette` 68 · `poseToutAuParcours` 69
-`dessineDists` 70 · `libelles` 71 · `marquesListe` 72 · `porteDist` 73 · `standPorte` 74
-`reperesCherchables` 75 · `vaAuRepere` 76 · `appliqueSecteurs` 86 · `filtreTheme` 103
-`themeFiltrable` 183 · `ordreCriteres` 199 · `clesCriteres` 222 · `libelleCritere` 229
-`valeursCritere` 248 · `texteCriteres` 261 · `texteAnglaisPerso` 277 · `indexeCriteres` 291
-`refaitCriteres` 325 · `dansCriteres` 332 · `critereActif` 340 · `basculeCritere` 342
-`videCriteres` 351 · `majVideQ` 360 · `videRecherche` 373 · `nCriteres` 388
-`majCriteres` 403 · `remplitCriteres` 470 · `basculeCriteres` 609 · `ouvreCriteres` 614
-`fermeCriteres` 630 · `filtre` 647 · `reposeRetrait` 667 · `critParSociete` 671
-`cherchable` 681 · `visible` 688 · `releveHotes` 709 · `visibleSurPlan` 717
-`visibleSociete` 728 · `marqueRetrait` 744 · `appliqueFiltre` 762 · `oublieRetrait` 778
-`reprendRecherche` 787 · `rangSorte` 800 · `codeCase` 822 · `caseNumero` 839
-`sousLigne` 859 · `liste` 873 · `marqueChoisie` 1001 · `prechargeMarque` 1027
-`prechargeLesVignettes` 1084 · `chargeUnLot` 1130 · `brancheRecherche` 1157
+`confieALaRecherche` 73 · `ferme` 74 · `ficheConf` 77 · `adresseVignette` 78
+`poseToutAuParcours` 79 · `dessineDists` 80 · `libelles` 81 · `marquesListe` 82
+`porteDist` 83 · `standPorte` 84 · `reperesCherchables` 85 · `vaAuRepere` 86
+`appliqueSecteurs` 96 · `filtreTheme` 113 · `themeFiltrable` 193 · `ordreCriteres` 209
+`clesCriteres` 232 · `libelleCritere` 239 · `valeursCritere` 258 · `texteCriteres` 271
+`texteAnglaisPerso` 287 · `indexeCriteres` 301 · `refaitCriteres` 335 · `dansCriteres` 342
+`critereActif` 350 · `basculeCritere` 352 · `videCriteres` 361 · `majVideQ` 370
+`videRecherche` 383 · `nCriteres` 398 · `majCriteres` 413 · `remplitCriteres` 480
+`basculeCriteres` 619 · `ouvreCriteres` 624 · `fermeCriteres` 640 · `filtre` 657
+`reposeRetrait` 677 · `critParSociete` 681 · `cherchable` 691 · `visible` 698
+`releveHotes` 719 · `visibleSurPlan` 727 · `visibleSociete` 738 · `marqueRetrait` 754
+`appliqueFiltre` 772 · `oublieRetrait` 788 · `reprendRecherche` 797 · `rangSorte` 810
+`codeCase` 832 · `caseNumero` 849 · `sousLigne` 869 · `liste` 883 · `marqueChoisie` 1011
+`prechargeMarque` 1037 · `prechargeLesVignettes` 1094 · `chargeUnLot` 1140
+`brancheRecherche` 1166
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1403,15 +1404,15 @@ Fonctions :
 
 `cheminDuSalon` 33 · `cheminPartageable` 44
 
-### `modules/secteurs.mjs` — 150 l. → plan, plan-admin
+### `modules/secteurs.mjs` — 145 l. → plan, plan-admin
 
 - l.1 · Les secteurs du salon, et la teinte de chacun sur le plan
 
 Fonctions :
 
-`coloreChaleur` 21 · `brancheSecteurs` 28 · `indexeSecteurs` 42 · `secteursMontres` 55
-`couleurConf` 59 · `couleurSecteur` 68 · `pastilleSecteur` 82 · `coloreSecteurs` 95
-`peintSecteur` 140
+`coloreChaleur` 21 · `confieChaleur` 25 · `indexeSecteurs` 37 · `secteursMontres` 50
+`couleurConf` 54 · `couleurSecteur` 63 · `pastilleSecteur` 77 · `coloreSecteurs` 90
+`peintSecteur` 135
 
 ### `modules/sejour.mjs` — 579 l. → plan, plan-admin
 
@@ -1546,7 +1547,7 @@ Fonctions :
 `ouvreItineraire` 669 · `fermeItineraire` 697 · `versItineraire` 707
 `versItineraireDe` 710 · `brancheTiroirItineraire` 738
 
-### `modules/tiroir-parcours.mjs` — 437 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 441 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 

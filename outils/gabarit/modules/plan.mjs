@@ -35,14 +35,14 @@ import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
 import { rafraichitBouts, brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
-import { basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
+import { basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue, cadrePlan, appliqueVue } from "./vue.mjs";
 import { CONF, brancheConfiguration } from "./configuration.mjs";
 import { brancheApparence } from "./apparence.mjs";
 import { brancheHabillage } from "./habillage.mjs";
 import { P_NOM, P_CODE, branchePolices } from "./polices-plan.mjs";
-import { SECTEURS, brancheSecteurs } from "./secteurs.mjs";
+import { SECTEURS } from "./secteurs.mjs";
 import { brancheBandes } from "./bandes.mjs";
 import { brancheRecherche, PREFIXE_PERSO, libelleCritere, fermeCriteres, liste } from "./recherche.mjs";
 import { view, svg } from "./vue.mjs";
@@ -50,10 +50,10 @@ import { brancheIndex } from "./index-salon.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
 import { brancheCorpsFiche } from "./corps-fiche.mjs";
-import { select, ficheConf, adresseVignette, ferme, brancheFiche } from "./fiche.mjs";
+import { ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
-import { DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
+import { DISTINCTIONS, dessineDists, poseDistsFiche,
   refaitDistsFiche } from "./distinctions.mjs";
 import { MONTE, brancheRendu, montePlan, changePlan } from "./rendu.mjs";
 import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif }
@@ -61,7 +61,7 @@ import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif }
 import { estCadre } from "./chemin-forme.mjs";
 import { rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan, societeDeForme,
   poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
-import { reperesCherchables, vaAuRepere, phareZone } from "./points-interet.mjs";
+import { phareZone } from "./points-interet.mjs";
 import { appliqueOptions } from "./options.mjs";
 import { enEdition } from "./edition-en-cours.mjs";
 import { drag, pince, brancheGestes, brancheLangue } from "./gestes.mjs";
@@ -87,7 +87,7 @@ Object.assign(globalThis, {
   retireAdmin,
   rafraichitBouts,
   brancheTiroirItineraire,
-  basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
+  basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours,
   branchePartage,
   brancheVue, cadrePlan, appliqueVue,
@@ -95,7 +95,6 @@ Object.assign(globalThis, {
   brancheApparence,
   brancheHabillage,
   branchePolices,
-  brancheSecteurs,
   brancheBandes,
   brancheRecherche, PREFIXE_PERSO,
   libelleCritere,
@@ -106,11 +105,9 @@ Object.assign(globalThis, {
   brancheTonDeLaBarre,
   brancheDemarrage, chargeFond,
   brancheCorpsFiche,
-  select, ficheConf,
-  adresseVignette,
   ferme, brancheFiche,
   brancheLibelles, libelles, libellesWebgl,
-  DISTINCTIONS, porteDist, standPorte, dessineDists, marquesListe, poseDistsFiche,
+  DISTINCTIONS, dessineDists, poseDistsFiche,
   refaitDistsFiche,
   brancheRendu, montePlan, changePlan,
   brancheCalquesDessin,
@@ -118,7 +115,7 @@ Object.assign(globalThis, {
   estCadre,
   rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan,
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
-  reperesCherchables, vaAuRepere, phareZone,
+  phareZone,
   appliqueOptions,
   enEdition,
   brancheGestes, brancheLangue,

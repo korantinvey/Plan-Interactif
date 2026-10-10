@@ -33,7 +33,7 @@ import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs"
 import { fermeItineraire } from "./tiroir-itineraire.mjs";
 import { select, ficheConf, ferme } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
-import { filtre, visible } from "./recherche.mjs";
+import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
 const racine = document.documentElement;
 
 /**
@@ -435,3 +435,7 @@ export function brancheTiroirParcours(){
     if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
   });
 }
+
+/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (le bouton qui verse au parcours tout ce qu'elle a retenu). */
+confieALaRecherche({ poseToutAuParcours });

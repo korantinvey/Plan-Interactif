@@ -32,6 +32,7 @@ import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
+import { confieChaleur } from "./secteurs.mjs";
 
 /* Ce que le branchement confie : la fenêtre des réglages (`reglages.mjs`),
    qui importe ce module. Le mode administrateur s'importe, lu à l'instant
@@ -670,3 +671,8 @@ export function brancheChaleur(b){
      qu'avant parmi les écouteurs du plan. */
   addEventListener("resize", mesureCartoucheChaleur);
 }
+
+/* La teinte des secteurs (`secteurs.mjs`) appelle la carte quand elle repeint
+   les stands : ce module la lui confie en se chargeant, et la page publique,
+   qui ne l'embarque pas, n'a pas de carte à appeler. */
+confieChaleur(coloreChaleur);

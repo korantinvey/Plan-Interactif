@@ -12,7 +12,7 @@
    ============================================================ */
 import "./plan.mjs";
 import { brancheReglageSponsor } from "./reglage-sponsor.mjs";
-import { coloreChaleur, brancheChaleur } from "./chaleur.mjs";
+import { brancheChaleur } from "./chaleur.mjs";
 import { brancheCalageCarte, oublieCalageEnCours } from "./calage-carte.mjs";
 import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
 import "./affiche-ici.mjs";
@@ -45,7 +45,7 @@ import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
 Object.assign(globalThis, {
   brancheReglageSponsor,
-  coloreChaleur, brancheChaleur,
+  brancheChaleur,
   brancheCalageCarte, oublieCalageEnCours,
   ecranAcces, brancheAcces,
   brancheReglageSuggestion,

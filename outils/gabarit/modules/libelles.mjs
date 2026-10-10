@@ -28,7 +28,7 @@ import { largeur, remesureTextes, habille, lignesSvg, ancre, place } from "./tex
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles } from "./webgl.mjs";
 import { view, cadrePlan, repeintLibelles } from "./vue.mjs";
-import { visibleSurPlan, visibleSociete, liste } from "./recherche.mjs";
+import { visibleSurPlan, visibleSociete, liste, confieALaRecherche } from "./recherche.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
@@ -375,3 +375,7 @@ export function libellesWebgl(){
   GL.couchesLibelles = null;
   planifieWebgl();
 }
+
+/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (les noms à refaire quand le filtre change ce qui paraît). */
+confieALaRecherche({ libelles });

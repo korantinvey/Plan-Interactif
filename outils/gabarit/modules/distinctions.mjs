@@ -27,6 +27,7 @@ import { montre } from "./corps-fiche.mjs";
 import { societes } from "./fiche.mjs";
 import { modeDist, couleurDist } from "./habillage.mjs";
 import { svg } from "./vue.mjs";
+import { confieALaRecherche } from "./recherche.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -267,3 +268,9 @@ export function poseDistsFiche(soc){
 
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
 export const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
+
+/* La recherche, que ce module atteint par la fiche, ne peut l'importer en
+   retour : il lui confie en se chargeant ce qu'elle en appelle (les marques
+   d'une ligne de la liste, le filtre « porte cette distinction », le dessin
+   des distinctions sur le plan quand ce qui paraît change). */
+confieALaRecherche({ dessineDists, marquesListe, porteDist, standPorte });
