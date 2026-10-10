@@ -387,14 +387,18 @@ const NOM_FEUILLE = poseVersion("plan", ".css", FEUILLE_PLAN);
    lui pour paraître (`modules/webgl.mjs`, `gl-attente`). Or rien ne le
    demandait avant que le script des modules, posé au bas de la page, se soit
    exécuté : les deux se téléchargeaient l'un après l'autre. Annoncé ici, il
-   part avec la feuille de style. Nom et intégrité sont lus dans le module
+   part avec la feuille de style — en priorité basse : mesuré en 3G, annoncé
+   à la priorité ordinaire, il prenait son débit à la feuille (+0,8 s avant
+   le premier trait) et au script (+1,5 s avant la liste) pour un plan dessiné
+   0,5 s plus tôt. Sous HTTP/2, la priorité basse ne lui laisse que le débit
+   dont les deux autres n'ont pas l'usage. Nom et intégrité sont lus dans le module
    même, pour qu'une bibliothèque refaite (`npm run deck`) ne laisse pas la
    page en annoncer une autre — qui partirait pour rien, et en double. */
 const DECK = fs.readFileSync(D + "/gabarit/modules/webgl.mjs", "utf8")
   .match(/const DECK_WEBGL = \{\s*src: "([^"]+)",\s*integrite: "([^"]+)"/);
 if (!DECK) throw new Error("DECK_WEBGL introuvable dans modules/webgl.mjs");
 if (!fs.existsSync(W + DECK[1])) throw new Error("deck.gl absent : " + DECK[1]);
-const ANNONCE_DECK = '<link rel="preload" as="script" href="/' + DECK[1] +
+const ANNONCE_DECK = '<link rel="preload" as="script" fetchpriority="low" href="/' + DECK[1] +
   '" integrity="' + DECK[2] + '">\n';
 const lieFeuille = (t) =>
   t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n' + ANNONCE_DECK);
