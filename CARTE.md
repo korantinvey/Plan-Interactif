@@ -655,20 +655,19 @@ Fonctions :
 `enregistreZone` 610 · `enregistreZoneAjoutee` 723 · `basculeAffichageZone` 786
 `marqueZonesMasquees` 814 · `ecritColonnesEvenement` 834 · `ecritColonneEvenement` 868
 
-### `modules/fiche.mjs` — 1157 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1154 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.76 · 7. Sélection et fiche
+- l.73 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 73 · `brancheParcours` 74 · `anime` 95 · `noeud` 119 · `canalPlan` 129
-`rangSociete` 137 · `select` 146 · `centre` 171 · `brancheActesFiche` 182
-`centreEtBaisseLaFiche` 198 · `centrePoint` 216 · `programme` 245 · `produits` 294
-`ficheProduit` 322 · `ficheConf` 392 · `poseAppuiTactile` 545 · `ecarteClicFantome` 548
-`nomSociete` 557 · `choisitExposant` 571 · `poseMarque` 609 · `montreMarque` 669
-`poseCode` 692 · `rangeMarque` 733 · `ouvre` 789 · `ferme` 1105 · `onglet` 1123
-`brancheFiche` 1141
+`confieALaFiche` 71 · `anime` 92 · `noeud` 116 · `canalPlan` 126 · `rangSociete` 134
+`select` 143 · `centre` 168 · `brancheActesFiche` 179 · `centreEtBaisseLaFiche` 195
+`centrePoint` 213 · `programme` 242 · `produits` 291 · `ficheProduit` 319 · `ficheConf` 389
+`poseAppuiTactile` 542 · `ecarteClicFantome` 545 · `nomSociete` 554 · `choisitExposant` 568
+`poseMarque` 606 · `montreMarque` 666 · `poseCode` 689 · `rangeMarque` 730 · `ouvre` 786
+`ferme` 1102 · `onglet` 1120 · `brancheFiche` 1138
 
 Éléments :
 
@@ -845,8 +844,8 @@ Fonctions :
 
 Fonctions :
 
-`confieALaJournee` 49 · `basculeParcours` 50 · `rangParcours` 51 · `rafraichitParcours` 52
-`trace` 54 · `joursSalon` 119 · `joursAVenir` 148 · `joursDefaut` 166 · `confsParJour` 176
+`confieALaJournee` 50 · `rangParcours` 51 · `rafraichitParcours` 52 · `trace` 54
+`joursSalon` 119 · `joursAVenir` 148 · `joursDefaut` 166 · `confsParJour` 176
 `departsProposes` 201 · `rangJournee` 223 · `lienJournee` 235 · `boutonJour` 258
 `arretJournee` 271 · `remplitOnglets` 318 · `jourDuStand` 347 · `ouvreChoixJour` 359
 `figeLaVisite` 416 · `placeSurJour` 425 · `rendAuPlan` 433 · `retireDuSejour` 439
@@ -1064,7 +1063,7 @@ Fonctions :
 
 `accueilleParcoursPartage` 48 · `adoptePartage` 126
 
-### `modules/parcours.mjs` — 456 l. → plan, plan-admin
+### `modules/parcours.mjs` — 510 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -1078,7 +1077,8 @@ Fonctions :
 `plurielParcours` 287 · `contenuParcours` 296 · `signetParcours` 307 · `boutonParcours` 313
 `rafraichitMarque` 318 · `calqueMarques` 351 · `dessineMarques` 369 · `marqueParcours` 399
 `instantConf` 417 · `cleTemps` 421 · `nomDeStand` 431 · `groupeParcours` 433
-`fermeParcours` 447
+`fermeParcours` 447 · `apresBascule` 466 · `suitLeParcours` 468 · `basculeParcours` 478
+`brancheParcours` 502
 
 ### `modules/partage.mjs` — 293 l. → plan, plan-admin
 
@@ -1478,16 +1478,16 @@ Fonctions :
 `ouvreItineraire` 484 · `fermeItineraire` 511 · `versItineraire` 521
 `versItineraireDe` 524 · `brancheTiroirItineraire` 551
 
-### `modules/tiroir-parcours.mjs` — 470 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 442 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`basculeParcours` 54 · `verseAuParcours` 99 · `retenusPourParcours` 145
-`ajouteToutAuParcours` 170 · `poseToutAuParcours` 193 · `brancheParcours` 217
-`rafraichitParcours` 230 · `rangParcours` 260 · `remplitParcours` 280 · `ouvreParcours` 369
-`videLeParcours` 385 · `brancheTiroirParcours` 415
+`verseAuParcours` 63 · `retenusPourParcours` 109 · `ajouteToutAuParcours` 134
+`poseToutAuParcours` 157 · `rafraichitParcours` 180 · `rangParcours` 210
+`remplitParcours` 230 · `ouvreParcours` 319 · `videLeParcours` 335
+`brancheTiroirParcours` 365
 
 ### `modules/tiroirs-exclusifs.mjs` — 49 l. → plan, plan-admin
 

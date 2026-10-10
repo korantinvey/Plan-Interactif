@@ -12,7 +12,7 @@
    appelle au rang que son code tenait : les écoutes de la fiche s'y posent
    au même rang qu'avant parmi celles du plan.
    Ce qu'elle emprunte aux modules qui l'importent — le montage du plan, les
-   découpages dessinés, les distinctions, le bouton « au parcours », et, en
+   découpages dessinés, les distinctions, et, en
    administration seulement, les deux gestes de l'exploitant sur une zone —
    chacun le lui confie en se chargeant, par `confieALaFiche`. La liste, les
    thématiques et les vignettes s'importent de `recherche.mjs`, les tiroirs
@@ -31,7 +31,7 @@ import { lien, adresseWeb, adresseImage, imageSure, assainitRiche } from "./sur.
 import { JOURS, MOIS, momentLocal, jourLong } from "./temps.mjs";
 import { mesure } from "./mesure.mjs";
 import { recadreMarque } from "./marque.mjs";
-import { signetParcours, boutonParcours, dessineMarques } from "./parcours.mjs";
+import { signetParcours, boutonParcours, dessineMarques, brancheParcours } from "./parcours.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
@@ -52,8 +52,7 @@ import { montePlan } from "./rendu.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
- * (`rendu.mjs`), le bouton « au parcours »
- * (`tiroir-parcours.mjs`), et, en administration seulement, les deux gestes
+ * (`rendu.mjs`), et, en administration seulement, les deux gestes
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
  * lui confie ce qu'elle en appelle au chargement de son module, par
@@ -61,7 +60,6 @@ import { montePlan } from "./rendu.mjs";
  * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
  * comme la pastille sans écoute.
  * @typedef {object} PageFiche
- * @property {(hote: any, canal: any) => void} brancheParcours
  * @property {((o: any) => void) | null} ficheZone
  * @property {((o: any) => void) | null} basculeAffichageZone
  */
@@ -71,7 +69,6 @@ const prete = /** @type {any} */ ({ ficheZone: null, basculeAffichageZone: null 
 /** La porte des modules qui prêtent à la fiche ce qu'elle appelle.
  *  @param {Partial<PageFiche>} o */
 export function confieALaFiche(o){ Object.assign(prete, o); }
-const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================
    7. Sélection et fiche

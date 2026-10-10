@@ -8,8 +8,10 @@
    des rappels (`rappels.mjs`), la journée organisée (`journee.mjs`), la note
    de la copie à garder (`partage.mjs`) — et les importe.
 
-   Ces voisins le rappellent à leur tour — rafraîchir, rendre un rang,
-   basculer un signet —, mais ne peuvent l'importer sans boucle. La
+   Ces voisins le rappellent à leur tour — rafraîchir, rendre un rang —,
+   mais ne peuvent l'importer sans boucle. Le signet basculé, lui, vit avec
+   la liste (`parcours.mjs` `basculeParcours`) et annonce au tiroir ce qui
+   vient de changer (`suitLeParcours`, au bas du module). La
    suggestion et les rappels, qu'il est seul à appeler, reçoivent ce qu'il
    leur faut en argument (`TIROIR_SUGG`, `fenetreRappel`) ; la journée, dont
    les boutons le rappellent plus tard, par sa porte (`confieALaJournee`, au
@@ -28,60 +30,22 @@ import { DATA, TOUS, HEBERGES, CONFERENCES, parId, CONFS } from "./donnees.mjs";
 import { ouvreModale, confirme } from "./fenetre.mjs";
 import { mesure } from "./mesure.mjs";
 import { momentLocal, jourCourt } from "./temps.mjs";
-import { PARCOURS, poseParcours, brancheListeParcours, casierParcours, dansParcours,
+import { PARCOURS, poseParcours, brancheListeParcours, dansParcours,
   enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET, rafraichitMarque,
-  marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours, fermeParcours } from "./parcours.mjs";
+  marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours, fermeParcours,
+  basculeParcours, brancheParcours, suitLeParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
 import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
-import { select, ficheConf, confieALaFiche } from "./fiche.mjs";
+import { select, ficheConf } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
 import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
 import { confieApresOption } from "./options.mjs";
 const racine = document.documentElement;
 
-/**
- * Retenir un rang, ou le retirer.
- *
- * `canal` dit d'où vient le geste, et ne sert qu'à la mesure : un ajout venu
- * d'une proposition ne se compte pas comme un ajout qu'on est allé chercher
- * soi-même — c'est même le seul chiffre qui dise si proposer sert à quelque
- * chose. Absent, le geste compte comme avant, sans provenance.
- */
-export function basculeParcours(genre, id, canal){
-  const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
-  // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
-  if (i < 0) l.push(k); else l.splice(i, 1);
-  enregistreParcours();
-  rafraichitParcours();
-  /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
-     visiteur en train de composer sa journée, et le total des gestes les
-     compte tous les deux.
-
-     Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
-     visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
-     retiré » ne veut rien dire. */
-  mesure("parcours", canal || "", i < 0 ? k : "",
-         genre === "conf" ? "fiche_conf" : "fiche_stand");
-  /* Un ajout peut faire basculer la proposition au premier plan : c'est ici
-     qu'on le sait, et nulle part ailleurs — le chargement d'une liste retenue
-     lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
-     par une fenêtre qu'il n'a pas demandée n'est pas la même chose. */
-  if (i < 0 && genre === "stand") fenetreSuggestion(TIROIR_SUGG);
-  /* Et, pour une conférence, la proposition du rappel : c'est le premier
-     horaire retenu qui donne au réveil quelque chose à faire, et celui qui
-     vient de le retenir est le seul à qui la question se pose. Un lot versé n'y
-     passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
-     vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
-  if (i < 0 && genre === "conf") fenetreRappel(rafraichitParcours);
-  /* Et, dès qu'il y a quelque chose à perdre, le geste qui l'en empêche : le
-     navigateur prié de tenir. La copie ne s'invite pas ici — une liste qu'on
-     est en train de composer n'a pas encore de quoi valoir un lien gardé. */
-  if (i < 0) tientLeStockage();
-}
 
 /**
  * Verser un lot de rangs dans la liste.
@@ -209,20 +173,6 @@ export function poseToutAuParcours(hote){
   };
 }
 
-/* ------------------------------------------------------------
-   La marque, partout la même
-   ------------------------------------------------------------ */
-/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. `canal` suit
- *  jusqu'à la mesure, pour les fragments qu'on n'est pas allé chercher. */
-export function brancheParcours(hote, canal){
-  hote.querySelectorAll("[data-mg]").forEach(el => {
-    rafraichitMarque(el);
-    el.onclick = ev => {
-      ev.stopPropagation();
-      basculeParcours(el.dataset.mg, el.dataset.mi, canal);
-    };
-  });
-}
 
 /* ------------------------------------------------------------
    Ce que le parcours change à l'écran
@@ -444,10 +394,11 @@ confieALaRecherche({ poseToutAuParcours });
    confie en se chargeant le bouton « au parcours » qu'elle pose dans ses
    actions. Refermer le tiroir, elle l'importe de `parcours.mjs`, comme le
    tiroir de l'itinéraire et l'apparence. */
-confieALaFiche({ brancheParcours });
 
-/* Refermer le tiroir vit dans `parcours.mjs` ; il s'importe d'ici comme avant. */
-export { fermeParcours };
+
+/* Refermer le tiroir et basculer un signet vivent dans `parcours.mjs` ; ils
+   s'importent d'ici comme avant. */
+export { fermeParcours, basculeParcours, brancheParcours };
 
 /** Ce que la carte de la suggestion appelle chez ce tiroir, qui la pose :
  *  le tiroir refait, et le bouton « au parcours ». */
@@ -455,10 +406,10 @@ const TIROIR_SUGG = { remplit: remplitParcours, branche: brancheParcours };
 
 /* La journée, que ce module importe pour la poser dans son tiroir, ne peut
    l'importer en retour : il lui confie en se chargeant ce qu'elle en appelle
-   — le parcours qu'on bascule, rangé et refait. La suggestion et les rappels,
+   — un rang du parcours, et le tiroir refait. La suggestion et les rappels,
    que ce module seul appelle, reçoivent le leur à chaque appel
    (`TIROIR_SUGG`, `fenetreRappel`). */
-confieALaJournee({ basculeParcours, rangParcours, rafraichitParcours });
+confieALaJournee({ rangParcours, rafraichitParcours });
 
 /* Deux options du salon rouvrent ou ferment un bouton de ce tiroir : la
    journée organisée, la suggestion. Ce que chacune refait en changeant, ce
@@ -468,3 +419,24 @@ confieALaJournee({ basculeParcours, rangParcours, rafraichitParcours });
    style seule le laissait prendre au clavier. */
 confieApresOption("journee", () => rafraichitParcours());
 confieApresOption("suggestion", () => rafraichitParcours());
+
+/* Ce que le tiroir refait quand la liste change d'un signet : lui-même, et
+   les deux propositions qu'un ajout peut faire naître. Le geste — ajouter ou
+   retirer, enregistrer, compter — vit avec la liste (`parcours.mjs`
+   `basculeParcours`), que la fiche et la journée importent ; il annonce ici
+   ce qui vient de changer.
+
+   Un ajout peut faire basculer la proposition au premier plan : c'est ici
+   qu'on le sait, et nulle part ailleurs — le chargement d'une liste retenue
+   lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
+   par une fenêtre qu'il n'a pas demandée n'est pas la même chose. Et, pour
+   une conférence, la proposition du rappel : c'est le premier horaire retenu
+   qui donne au réveil quelque chose à faire, et celui qui vient de le retenir
+   est le seul à qui la question se pose. Un lot versé n'y passe pas
+   davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on vient de
+   recevoir porte déjà l'interrupteur, en tête de ses conférences. */
+suitLeParcours((genre, ajout) => {
+  rafraichitParcours();
+  if (ajout && genre === "stand") fenetreSuggestion(TIROIR_SUGG);
+  if (ajout && genre === "conf") fenetreRappel(rafraichitParcours);
+});

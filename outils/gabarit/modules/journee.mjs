@@ -13,7 +13,8 @@
 import { $ } from "./dom.mjs";
 import { DATA, CONFS, state } from "./donnees.mjs";
 import { jourCourt, dateDeCle, jourBref, minutesDe, ecritHeure, ecritMinutes } from "./temps.mjs";
-import { PARCOURS, identifiantParcours, plurielParcours, contenuParcours, instantConf, nomDeStand }
+import { PARCOURS, identifiantParcours, plurielParcours, contenuParcours, instantConf, nomDeStand,
+  basculeParcours }
   from "./parcours.mjs";
 import { heureAuSalon, pointRepere, portesDe, ecritDistance, phraseLiaison } from "./itineraire.mjs";
 import { pointBorne } from "./vous-etes-ici.mjs";
@@ -35,19 +36,18 @@ import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
  * Ce que la journée emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
  * qui importe ce module pour y poser la journée : il ne peut s'importer
  * d'ici, et lui confie au chargement de son module, par `confieALaJournee`,
- * de quoi refaire le parcours. La fiche s'importe de
+ * de quoi refaire le parcours. Le signet basculé s'importe de la liste
+ * (`parcours.mjs` `basculeParcours`), la fiche de
  * `fiche.mjs`, le passage d'un pavillon à l'autre de `rendu.mjs`.
- * @typedef {{ basculeParcours: (...a: any[]) => any,
- *   rangParcours: (hote: any, r: any) => any,
+ * @typedef {{ rangParcours: (hote: any, r: any) => any,
  *   rafraichitParcours: () => void }} PageJournee
  */
 /** @type {PageJournee} */
-const prete = { basculeParcours: () => {}, rangParcours: () => {}, rafraichitParcours: () => {} };
+const prete = { rangParcours: () => {}, rafraichitParcours: () => {} };
 
 /** La porte du tiroir du parcours, qui prête à la journée ce qu'elle appelle.
  *  @param {Partial<PageJournee>} o */
 export function confieALaJournee(o){ Object.assign(prete, o); }
-const basculeParcours = (...a) => prete.basculeParcours(...a);
 const rangParcours = (hote, r) => prete.rangParcours(hote, r);
 const rafraichitParcours = () => prete.rafraichitParcours();
 // le trait de l'itinéraire, que la journée reprend pour elle
