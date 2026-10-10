@@ -17,6 +17,7 @@
    identifiants de base des pavillons, et l'oubli du plan public par le
    relais, viennent de `enregistrement.mjs`, module d'administration lui aussi.
    ============================================================ */
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { accesBase, base } from "./session.mjs";
@@ -26,10 +27,10 @@ import { DEG, versTerre, versLePlan, reancre, aireDuContour, centreDuContour, ax
   from "./terre.mjs";
 import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCarteGL, dessineFondCarte,
   cleMasqueCarte, masqueCarte, contourDuHall, poseMasqueCarte, refaitFondCarte,
-  confieCalageEnCours } from "./environs.mjs";
+  CALAGE_EN_COURS as ENV_CAL, poseCalageEnCours } from "./environs.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
-import { MONTE, confieAuRendu } from "./rendu.mjs";
+import { MONTE, PAVILLON_QUITTE } from "./rendu.mjs";
 import { CONF, conf, enregistreConf } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { ADMIN } from "./mode-admin.mjs";
@@ -217,7 +218,7 @@ function batimentsCandidats(elements, cal, p){
 function caleSurBatiment(cand, p){
   const e = empriseDesObjets(p);
   const centre = [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2];
-  ENV_CAL = reancre(ENV_CAL, centre);
+  poseCalageEnCours(reancre(ENV_CAL, centre));
   const avant = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
   ENV_CAL.angle += anglePlan(p) - axeDuContour(avant);
   const apres = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
@@ -301,8 +302,8 @@ async function calageEnregistre(){
    Le volet des réglages
    ------------------------------------------------------------ */
 
-/* Le calage en cours de réglage, et les bâtiments auxquels s'accrocher. */
-let ENV_CAL = null;
+/* Les bâtiments auxquels s'accrocher. Le calage en cours de réglage, lui,
+   vit dans `environs.mjs`, qui le dessine : on l'écrit par sa porte. */
 let ENV_BATIS = [];
 let ENV_BATI = 0;
 
@@ -310,7 +311,7 @@ let ENV_BATI = 0;
  *  le garder en changeant d'onglet poserait sa carte sous le suivant. Appelé
  *  par `changePlan`. */
 export function oublieCalageEnCours(){
-  ENV_CAL = null; ENV_BATIS = []; ENV_BATI = 0;
+  poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
 }
 
 /**
@@ -369,8 +370,8 @@ function rafraichitCarte(){
 
 let CALAGE_MODE = "";
 let _glisseCalage = null;
-/** La carte est-elle tenue sous la main ? L'envoi au repos attend qu'on la lâche. */
-export const carteGlissee = () => Boolean(_glisseCalage);
+// la carte tenue sous la main : l'envoi au repos attend qu'on la lâche
+inscritGesteTenu(() => _glisseCalage);
 
 /** Arme un mode, et le dit au document : le curseur en dépend, et c'est la
  *  seule chose qui annonce que le plan ne répondra pas comme d'habitude. */
@@ -418,7 +419,7 @@ export function cartePointerMove(e){
        un point et on le fait tourner, ce que la main sait faire sans y penser.
        Le ré-ancrage à chaque image tient le pivot immobile. */
     const a = Math.atan2(p[1] - _glisseCalage.pivot[1], p[0] - _glisseCalage.pivot[0]);
-    ENV_CAL = reancre(ENV_CAL, _glisseCalage.pivot);
+    poseCalageEnCours(reancre(ENV_CAL, _glisseCalage.pivot));
     ENV_CAL.angle = _glisseCalage.angle0 + (a - _glisseCalage.a0);
   } else {
     ENV_CAL.x += p[0] - _glisseCalage.p[0];
@@ -476,7 +477,7 @@ function appliqueCalage(){
 /** Tourner autour du point qu'on regarde, et non autour d'une origine à sept
  *  kilomètres — sans quoi la carte fuit l'écran au premier degré. */
 function tourneCalage(a){
-  ENV_CAL = reancre(ENV_CAL, centrePavillon());
+  poseCalageEnCours(reancre(ENV_CAL, centrePavillon()));
   ENV_CAL.angle = a;
   appliqueCalage();
 }
@@ -669,9 +670,6 @@ function fermeCalage(){
  * `apresLaMesure` du lancement (`lancement.mjs`).
  */
 export function brancheCalageCarte(){
-  /* Le fond lit ici le calage qu'on règle : celui-là seul l'emporte sur le
-     calage enregistré du pavillon. */
-  confieCalageEnCours(() => ENV_CAL);
   /** Branchements de la palette. Faits une fois, au chargement : ces trois
    *  éléments sont dans le balisage, et non construits à l'ouverture. */
   if ($("calageFerme")) $("calageFerme").onclick = fermeCalage;
@@ -756,7 +754,7 @@ export function voletEnvirons(hote){
     if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
     const centre = centrePavillon();
     const fond = ENV_CAL && ENV_CAL.fond ? ENV_CAL.fond : "plan";
-    ENV_CAL = { lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0, fond: fond };
+    poseCalageEnCours({ lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0, fond: fond });
     const bbox = carreDeTerrain(ENV_CAL, TERRAIN_BATIS);
     if (!bbox) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
     bSitue.disabled = true;
@@ -791,7 +789,7 @@ export function voletEnvirons(hote){
     dit("Retrait…");
     try {
       await enregistreCalage(null);
-      ENV_CAL = null; ENV_BATIS = []; ENV_BATI = 0;
+      poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
       champ.value = "";
       fermeCalage();
       rafraichitCarte();
@@ -807,19 +805,19 @@ export function voletEnvirons(hote){
   const pose = calageCourant();
   if (pose){
     champ.value = pose.lat.toFixed(6) + ", " + pose.lon.toFixed(6);
-    ENV_CAL = Object.assign({}, pose);
+    poseCalageEnCours(Object.assign({}, pose));
   }
   maj();
   calageEnregistre().then(cal => {
     if (!cal || ENV_CAL) return;
     champ.value = cal.lat.toFixed(6) + ", " + cal.lon.toFixed(6);
-    ENV_CAL = cal;
+    poseCalageEnCours(cal);
     rafraichitCarte();
     maj();
   }).catch(() => {});
 }
 
 /* Le calage qu'on règle appartient au pavillon qu'on quitte : le passage
-   d'un pavillon à l'autre (`rendu.mjs` `changePlan`) l'oublie, et reçoit
-   d'ici en se chargeant de quoi le faire. */
-confieAuRendu({ oublieCalageEnCours });
+   d'un pavillon à l'autre (`rendu.mjs` `changePlan`) l'annonce, et on
+   l'oublie. */
+PAVILLON_QUITTE.suis(oublieCalageEnCours);

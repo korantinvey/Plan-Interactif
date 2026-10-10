@@ -21,8 +21,8 @@ import "./affiche-ici.mjs";
 import { brancheEnregistrement } from "./enregistrement.mjs";
 import { brancheBatiments } from "./batiments.mjs";
 /* L'ouverture du mode et la bande de l'outil : rien d'autre ne l'importe.
-   Chargée ici, elle confie l'ouverture du mode à la porte authentifiée
-   (`acces-admin.mjs` `confieALAcces`). */
+   Chargée ici, elle écoute l'accès accordé par la porte authentifiée
+   (`acces-admin.mjs` `ACCES_ACCORDE`). */
 import "./bande-admin.mjs";
 import { branchePlacementLibelles } from "./placement-libelles.mjs";
 import { brancheRepriseEmplacements } from "./reprise-emplacements.mjs";

@@ -10,8 +10,8 @@ Tous sont maintenant réglés ; la liste garde la trace de ce qu'on a trouvé.
 1. **Publication au repos en plein geste** — le repos se comptait depuis la
    dernière modification, non depuis la fin du geste ; un envoi déjà parti
    relisait aussi les dessins après ses appels réseau. L'envoi attend que le
-   geste soit lâché (`modules/enregistrement.mjs`, `confieGesteEnCours` donné
-   par `modules/gestes-admin.mjs`) et relève ce qu'il écrit avant le réseau.
+   geste soit lâché (`modules/enregistrement.mjs`, qui lit le registre
+   `modules/geste-tenu.mjs`, où chaque outil s'inscrit) et relève ce qu'il écrit avant le réseau.
 2. **Remise à zéro : « Annuler »** ramène sur l'onglet Statistiques
    (`modules/chaleur.mjs`, `ferme: false`).
 7. **Visite guidée, étape de la zone** — chaque pouls reposait la classe

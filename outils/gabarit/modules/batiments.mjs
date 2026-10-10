@@ -32,6 +32,7 @@
    dessin, leur historique et leur verrou de `calques-dessin.mjs`,
    `dessin.mjs` et `outil-dessin.mjs`.
    ============================================================ */
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
@@ -255,8 +256,8 @@ function vueDuLieu(lieu, choisis, poses, bascule){
    ------------------------------------------------------------ */
 export let CALAGE = null;
 let gesteCalage = null;
-/** Un hall qu'on cale est-il tenu ? L'envoi au repos attend qu'on le lâche. */
-export const halleGlissee = () => Boolean(gesteCalage);
+// un hall qu'on cale, tenu : l'envoi au repos attend qu'on le lâche
+inscritGesteTenu(() => gesteCalage);
 
 function lanceCalage(lieu, halls, depart){
   activeCalque(null);

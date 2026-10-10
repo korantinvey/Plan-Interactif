@@ -13,7 +13,7 @@
    sans boucle, reçoit de lui l'ouverture du mode en se chargeant.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { confieALAcces } from "./acces-admin.mjs";
+import { ACCES_ACCORDE } from "./acces-admin.mjs";
 import { ADMIN, ouvreModeAdmin } from "./mode-admin.mjs";
 import { boutonCodeIci } from "./affiche-ici.mjs";
 import { majAttente, pousseConfiguration, brancheSauvegarde } from "./enregistrement.mjs";
@@ -107,6 +107,7 @@ export function activeAdmin(){
 
 /* La porte authentifiée (`acces-admin.mjs`) est importée, par
    l'enregistrement, avant ce module : elle ne peut l'importer sans boucle.
-   L'ouverture du mode lui est donc confiée dès que la page d'administration
-   charge celui-ci, bien avant que la session soit vérifiée. */
-confieALAcces({ activeAdmin });
+   Elle annonce l'accès accordé, et on l'écoute dès que la page
+   d'administration charge ce module, bien avant que la session soit
+   vérifiée. */
+ACCES_ACCORDE.suis(activeAdmin);

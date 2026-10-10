@@ -15,6 +15,7 @@
    de la palette s'y branchent à leur rang. Les réglages et leur
    enregistrement, le dessin des noms et la vue s'importent.
    ============================================================ */
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { parId } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
@@ -34,8 +35,8 @@ const racine = document.documentElement;
 
 /** @type {any} */
 let glisseLib = null;   // le geste en cours
-/** Un libellé est-il tenu sous le doigt ? L'envoi au repos attend qu'on le lâche. */
-export const libelleGlisse = () => Boolean(glisseLib);
+// un libellé tenu sous le doigt : l'envoi au repos attend qu'on le lâche
+inscritGesteTenu(() => glisseLib);
 
 /** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheLibelle(){

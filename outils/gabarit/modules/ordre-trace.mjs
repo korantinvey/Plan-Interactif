@@ -10,11 +10,12 @@
    d'exploitant, et l'importent.
 
    Le panneau lui-même n'est qu'à l'administration : le plan public appelle
-   `construitPanneau` sans s'en servir. Il garde donc ici sa signature, et
-   l'administration son contenu, que `pile.mjs` lui confie en se chargeant
-   (`confiePanneau`).
+   `construitPanneau` sans s'en servir. Il garde donc ici sa signature, qui
+   annonce que le panneau est à refaire (`PANNEAU_A_REFAIRE`) ; `pile.mjs`,
+   chez l'exploitant seul, l'écoute et le remplit.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
@@ -60,19 +61,12 @@ export function ordonneDom(){
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
 }
 
-/* Le panneau des calques : rien chez le visiteur, ce que `pile.mjs` confie
-   chez l'exploitant. */
-let remplit = () => {};
-
-/** La porte du panneau, que `pile.mjs` ouvre en se chargeant : un module
- *  public ne peut importer celui de l'exploitant.
- *  @param {() => void} f */
-export function confiePanneau(f){
-  remplit = f;
-}
+/** Le panneau des calques est à refaire : `pile.mjs` l'écoute chez
+ *  l'exploitant ; chez le visiteur personne. */
+export const PANNEAU_A_REFAIRE = creeAnnonce();
 
 /* Le plan public l'appelle sans s'en servir : il garde sa signature, et
    l'administration son contenu, dans `modules/pile.mjs`. */
 export function construitPanneau(){
-  remplit();
+  PANNEAU_A_REFAIRE.dis();
 }

@@ -21,17 +21,16 @@ import { ADMIN } from "./mode-admin.mjs";
 import { PLACE_LIBELLES, libSel } from "./libelle-place.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
 import { enCours, calqueActif } from "./calques-dessin.mjs";
-import { poseGestesAdmin, drag, pince } from "./gestes.mjs";
-import { cartePointerDown, cartePointerMove, cartePointerUp, carteGlissee } from "./calage-carte.mjs";
+import { poseGestesAdmin } from "./gestes.mjs";
+import { cartePointerDown, cartePointerMove, cartePointerUp } from "./calage-carte.mjs";
 import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
-  libellePointerUp, libelleGlisse } from "./placement-libelles.mjs";
+  libellePointerUp } from "./placement-libelles.mjs";
 import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, pousseGeometrie, choisitOutilGeo,
-  fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp, geoGlisse } from "./reprise-emplacements.mjs";
-import { calagePointerDown, calagePointerMove, calagePointerUp, halleGlissee } from "./batiments.mjs";
+  fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp } from "./reprise-emplacements.mjs";
+import { calagePointerDown, calagePointerMove, calagePointerUp } from "./batiments.mjs";
 import { annule, refais, dessinPointerDown, dessinPointerMove, dessinPointerUp, termineTrace, activeCalque }
   from "./outil-dessin.mjs";
-import { choisitForme, supprimeForme, geste } from "./edition.mjs";
-import { confieGesteEnCours } from "./enregistrement.mjs";
+import { choisitForme, supprimeForme } from "./edition.mjs";
 import { dupliqueForme, pousseForme } from "./aimants.mjs";
 import { codeIciAuPoint } from "./affiche-ici.mjs";
 import { formeSel } from "./forme-choisie.mjs";
@@ -154,20 +153,10 @@ function entree(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
   if (e.key === "Enter" && !saisie && traceAjout){ e.preventDefault(); fermeAjout(true); }
 }
 
-/* Un geste encore en cours : la main tient le plan, une forme, une poignée,
-   un libellé, la carte ou un hall qu'on cale — ou un tracé commencé attend
-   son sommet suivant. L'envoi au repos ne doit pas partir là-dessus : il
-   publierait une forme à mi-chemin, que les visiteurs verraient le temps du
-   geste suivant. Ce module connaît tous les outils ; c'est donc lui qui le
-   dit à l'enregistrement, qui ne peut importer la plupart d'entre eux. */
-const gesteEnCours = () => Boolean(drag || pince || geste || enCours || traceAjout) ||
-  libelleGlisse() || geoGlisse() || carteGlissee() || halleGlissee();
-
 /**
  * Insère les gestes de l'exploitant dans la chaîne du plan.
  */
 export function brancheGestesAdmin(){
-  confieGesteEnCours(gesteEnCours);
   poseGestesAdmin({
     appui, suit, leve, annule: annuleGeste,
     /* Désigner l'endroit d'un code « Vous êtes ici » : geste d'exploitant, que

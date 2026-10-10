@@ -12,6 +12,7 @@
    seul `ouvreConf` les remplace. Les secteurs du salon, il les lit parmi les
    index de `donnees.mjs`.
    ============================================================ */
+import { creeAnnonce } from "./annonce.mjs";
 import { DATA, SECTEURS } from "./donnees.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
@@ -75,23 +76,15 @@ export function reglagesDuSalon(source){
   return sortie;
 }
 
-/* L'envoi en base n'est qu'à l'administration (`enregistrement.mjs`), qu'un
-   module public ne peut importer : il ouvre cette porte en se chargeant, et
-   le visiteur n'a rien derrière. */
-let publie = () => {};
-
-/** La porte de l'envoi, que `enregistrement.mjs` ouvre en se chargeant.
- *  @param {() => void} f */
-export function confiePublication(f){
-  publie = f;
-}
+/** La configuration vient d'être écrite sur le poste. L'envoi en base n'est
+ *  qu'à l'administration (`enregistrement.mjs`), seule à l'écouter. */
+export const CONF_ECRITE = creeAnnonce();
 
 /** Les réglages d'apparence se posent sur le poste, puis montent en base
  *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 export const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
-  // l'envoi est d'administration (`modules/enregistrement.mjs`)
-  publie();
+  CONF_ECRITE.dis();
 };
 
 /** @returns {Record<string, any>} */

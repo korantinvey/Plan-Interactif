@@ -21,6 +21,7 @@
    l'enregistrement et les champs de la boîte à outils, que l'outil de dessin
    partage avec ce module (`socle-dessin.mjs`).
    ============================================================ */
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { esc, COLLATION } from "./texte.mjs";
@@ -47,6 +48,8 @@ import { memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeS
  *  d'un geste qui sort du plan, et les gestes de l'exploitant pour savoir où
  *  ils en sont : tous deux l'importent (`outil-dessin.mjs`, `gestes-admin.mjs`). */
 export let geste = null;
+// une forme ou une poignée tenue : l'envoi au repos attend qu'on la lâche
+inscritGesteTenu(() => geste);
 
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
    sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
