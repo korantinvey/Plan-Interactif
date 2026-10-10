@@ -84,17 +84,41 @@ Les gestes qui vont avec :
 - **Une fonction s'importe.** Une fonction recopiée dans deux pages — c'était
   le cas de `$`, `esc`, `separeValeurs` — devient un seul module importé deux
   fois. Ce qui ne sert qu'au module n'est pas exporté.
-- **Une boucle d'imports se défait par un module neutre ou par une porte.**
-  Un état que deux modules se disputent sort dans un module qu'ils importent
-  tous deux — le départ imposé, dans `vous-etes-ici.mjs`, a rendu la borne
-  libre d'importer les tiroirs. Une fonction qu'un module de base appelle
-  chez un module qui l'importe lui est confiée par ce dernier **en se
-  chargeant**, par une porte du module de base, sur un objet typé aux
-  défauts sans effet : `confieALaVue`, `confieAuWebgl`,
-  `confieAuRendu`, `confieALaFiche`, `confieVisee`… La porte s'ouvre au
-  chargement, donc avant tout appel. Pour savoir si un module peut en
-  importer un autre, regardez si le second atteint déjà le premier ; le
-  graphe des imports doit rester sans boucle.
+- **Une boucle d'imports se défait d'abord par un module neutre.** Presque
+  toutes venaient de données ou de dessin rangés dans un module d'interface :
+  la question posée sortie de la liste (`filtre.mjs`), le cartouche des
+  repères sorti de leur fiche (`cartouche-poi.mjs`), le tracé d'un trajet
+  sorti de son tiroir (`trace-itineraire.mjs`), le signet et le lot du
+  parcours sortis du tiroir vers la liste (`parcours.mjs`). Un état que deux
+  modules se disputent sort de même dans un module qu'ils importent tous
+  deux — le départ imposé, dans `vous-etes-ici.mjs`, a rendu la borne libre
+  d'importer les tiroirs. Une règle que plusieurs modules appliquaient chacun
+  pour soi devient un **registre** où ils s'inscrivent : un seul tiroir à la
+  fois (`tiroirs-exclusifs.mjs`), un seul mode d'édition à la fois
+  (`modes-edition.mjs`). Un module de base qui doit dire à ceux qui
+  l'importent ce qui vient de changer l'**annonce**, et ils s'y inscrivent
+  (`parcours.mjs` `suitLeParcours`).
+- **Une porte, en dernier recours, et avec sa raison.** Une fonction qu'un
+  module de base appelle chez un module qui l'importe lui est confiée par ce
+  dernier **en se chargeant**, par une porte du module de base nommée
+  `confie…`, sur un objet typé aux défauts sans effet ; elle s'ouvre au
+  chargement, donc avant tout appel. C'est par les portes que le code se
+  ressouderait : il y en eut trente-huit, il en reste dix-neuf, chacune
+  inscrite avec son genre et sa raison dans `outils/portes-acceptees.json`.
+  Quatre genres seulement : la **partition** public / administration (le
+  public appelle ce que seule l'administration embarque — la plupart), le
+  **rendu** (ce que chaque image d'un geste rappelle dans un ordre fixe :
+  `confieALaVue`, `confieAuWebgl`, `confieAuxPolices`), le **registre** (des
+  modules y inscrivent une réaction : `confieApresOption`, `confieVisee`),
+  et l'**administration** entre elle (trois inversions entre l'accès,
+  l'enregistrement, les gestes et la reprise). `npm run portes`, que
+  `npm run verifie` et l'intégration lancent, fait échouer une porte
+  absente de la liste comme une porte de la liste qui n'existe plus, et
+  **toute boucle d'imports**, qu'il nomme module par module : esbuild en
+  accepte une sans rien dire, et l'ordre de chargement devient celui du
+  hasard. Avant d'inscrire une porte, cherchez le module neutre ; pour
+  savoir si un module peut en importer un autre, regardez si le second
+  atteint déjà le premier.
 - **Un module que plus rien n'importe mais qui s'inscrit doit rester
   chargé** : le point d'entrée l'importe sans nom, avec un commentaire
   (`import "./edition-en-cours.mjs";`, `import "./options.mjs";`).
@@ -108,10 +132,11 @@ Les gestes qui vont avec :
   construction, ce que lisent les essais.
 - **Ce que seuls les essais lisent** va dans `globalThis.__essais`
   (`plan.mjs`).
-- `npm run verifie`, `npm run lint` et `npm run types` relisent les modules :
-  ESLint comme des modules, TypeScript depuis les points d'entrée, la
-  traduction comme toute source affichée, `CARTE.md` avec les points d'entrée
-  qui les embarquent.
+- `npm run verifie`, `npm run lint`, `npm run types` et `npm run portes`
+  relisent les modules : ESLint comme des modules, TypeScript depuis les
+  points d'entrée, la traduction comme toute source affichée, `CARTE.md`
+  avec les points d'entrée qui les embarquent, et le graphe des imports avec
+  ses portes.
 
 ## Ce que le visiteur ne reçoit pas
 
@@ -247,6 +272,7 @@ exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du c
 | `outils/essais/` | les essais hors page — `npm run essais` (les douze cas du moteur, puis `terre.js` : le calage sur la Terre, éprouvé seul ; puis `forme.js` : la forme d'un emplacement, calculée à l'identique par la page et par la synchronisation ; puis `temps.js` : l'instant d'une heure du salon, changements d'heure compris ; puis `itineraire.js` : la grille de marche, éprouvée sur des halls dessinés case par case — longueur d'un chemin connu, ouverture d'une cloison, absence de chemin, accroche à l'allée, trait nettoyé ; puis `parcours.js` : le parcours écrit dans un lien et relu, sur des identifiants qui portent points, accents et signes d'adresse ; puis `aimants.js` : l'accroche des aimants, la grille, la cote et la duplication de l'outil de dessin, mesurées sur des formes connues ; puis `sejour.js` : la préparation du séjour sur deux halls dessinés, avec un canevas prêté à Node — matrice des distances, conférences à l'heure du programme, fermeture, forfait d'un changement de pavillon, exposant placé à la main) et `npm run fep26` (salon synthétique) ; l'ordonnanceur est importé de `modules/ordonnanceur.mjs` — le code même que la page reçoit —, jamais recopié |
 | `outils/essais/navigateur/` | le plan dans Chromium par Playwright — `npm run navigateur` : ouvert, cherché, lu en fiche, en anglais, sur téléphone ; et les règles de `modules/sur.mjs` éprouvées sur des entrées hostiles. Ce qu'un essai lit dans la page, il le prend à `__essais` (`modules/plan.mjs`). Les données viennent de `outils/plans.json`, interceptées (`aide.js` `prepare`) : un essai ne doit rien au réseau. Une phrase de l'interface citée par un essai change avec lui. `PLAN_ADRESSE=https://<branche>-plan-interactif.interactiveplan.workers.dev npm run navigateur` éprouve un déploiement plutôt que le serveur local |
 | `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Les modules et les outils se relisent par la voie ordinaire (`eslint.config.js`), qui interdit aussi à un module d'écrire sur l'objet global ; `relecture.js` relit les scripts que la page porte hors des modules — configuration, moteur de langue — tels qu'elle les assemble, et ramène chaque remarque au fichier et à sa ligne |
+| `outils/portes.js` | les portes et les boucles d'imports — `npm run portes`, lancé par `npm run verifie` et l'intégration. Un **cliquet** : les portes `confie…` acceptées sont dans `outils/portes-acceptees.json`, chacune avec son module, son genre (`partition`, `rendu`, `registre`, `administration`) et sa raison ; une porte nouvelle, une porte disparue ou une boucle d'imports échouent, et la boucle est nommée module par module. Les modules sont lus par acorn : un import cité en commentaire ne compte pas |
 | `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`, depuis les points d'entrée des modules, dont il suit les imports comme esbuild. Un **cliquet** dont le stock est **vide** (`outils/types-acceptes.json`) : toute remarque échoue. On la corrige, ou l'on précise le type par `@type` là où le code le sait mieux que TypeScript ; `$` et les recherches par sélecteur rendent un élément sans type précis, à préciser ainsi |
 | `outils/gabarit/modules/` | tout le JavaScript des pages, réuni par esbuild — points d'entrée `plan.mjs`, `plan-admin.mjs`, `console.mjs`, `rapport.mjs`, `motdepasse.mjs` et `accueil.mjs`, assemblés par `outils/modules.js` |
 
@@ -402,7 +428,7 @@ version de prévisualisation pour toute autre branche, à l'adresse
 `<branche>-plan-interactif.interactiveplan.workers.dev`. Il construit sous Node
 22, fixé par `.nvmrc` : son image passe sinon à Node 24 d'elle-même. Toute
 poussée lance aussi `pages.yml` (construction, syntaxe, anglais, index) et
-`essais.yml` (relecture, types, moteur, navigateur).
+`essais.yml` (relecture, types, portes, moteur, navigateur).
 
 Conséquence à garder en tête : **une migration poussée sur `main` part en
 production**. Les migrations sont rejouables et jamais réécrites : une

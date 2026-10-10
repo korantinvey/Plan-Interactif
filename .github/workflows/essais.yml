@@ -48,6 +48,9 @@ jobs:
       - name: Types (cliquet de outils/types-acceptes.json)
         run: npm run types
 
+      - name: Portes et boucles d'imports (cliquet de outils/portes-acceptees.json)
+        run: npm run portes
+
       - name: Moteur de la journée organisée
         run: npm run essais
 
