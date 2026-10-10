@@ -29,7 +29,7 @@ import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
-import { fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
+import { brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue, cadrePlan } from "./vue.mjs";
 import { CONF } from "./configuration.mjs";
 import { brancheHabillage } from "./habillage.mjs";
@@ -39,7 +39,7 @@ import { brancheRecherche } from "./recherche.mjs";
 import { view, svg } from "./vue.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage } from "./demarrage.mjs";
-import { ferme, brancheFiche } from "./fiche.mjs";
+import { brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles } from "./libelles.mjs";
 /* Les options vendues à part ne sont plus importées par personne dans la
@@ -47,10 +47,9 @@ import { brancheLibelles, libelles } from "./libelles.mjs";
    (`confieALApparence`), qui les repose avec le reste de l'habillage. Il faut
    donc les charger, et c'est d'ici. */
 import "./options.mjs";
-import { changePlan } from "./rendu.mjs";
 import { DESSINS, mesCalques, calqueActif } from "./calques-dessin.mjs";
 import { estCadre } from "./chemin-forme.mjs";
-import { redessineForme, apercuGuide, decoupeStand, signale } from "./dessin.mjs";
+import { redessineForme, apercuGuide, signale } from "./dessin.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
@@ -73,7 +72,7 @@ Object.assign(globalThis, {
   brancheJournee,
   retireAdmin,
   brancheTiroirItineraire,
-  fermeParcours, brancheTiroirParcours,
+  brancheTiroirParcours,
   branchePartage,
   brancheVue, cadrePlan,
   brancheHabillage,
@@ -82,8 +81,8 @@ Object.assign(globalThis, {
   svg,
   brancheTonDeLaBarre,
   brancheDemarrage,
-  ferme, brancheFiche,
-  brancheLibelles, changePlan, mesCalques, estCadre, redessineForme, apercuGuide, decoupeStand, signale,
+  brancheFiche,
+  brancheLibelles, mesCalques, estCadre, redessineForme, apercuGuide, signale,
   brancheGestes, brancheLangue,
   brancheTiroirs,
 });

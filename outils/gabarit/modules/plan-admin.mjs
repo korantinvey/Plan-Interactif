@@ -26,7 +26,6 @@ import { vivants } from "./vivant.mjs";
    `confieALAcces`). */
 import "./bande-admin.mjs";
 import { branchePlacementLibelles } from "./placement-libelles.mjs";
-import { glisseFenetre } from "./reglages.mjs";
 import { brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
 import { dessinePoignees, choisitForme } from "./edition.mjs";
 import { brancheNuancier } from "./nuancier.mjs";
@@ -47,7 +46,6 @@ Object.assign(globalThis, {
   brancheAimants,
   brancheBatiments,
   branchePlacementLibelles,
-  glisseFenetre,
   brancheRepriseEmplacements,
   dessinePoignees, choisitForme,
   brancheNuancier,

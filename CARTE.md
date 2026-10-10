@@ -75,10 +75,6 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.2 · 11. Calques de dessin — le branchement
 
-### `_edition.html` — 19 l.
-
-- l.1 · Édition des formes existantes
-
 ### `_entete.html` — 6 l.
 
 ### `_environs.html` — 21 l.
@@ -215,10 +211,6 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · Enregistrer la configuration — le branchement
 
-### `_rappels.html` — 12 l.
-
-- l.1 · 11 sexies. Le rappel avant une conférence
-
 ### `_rapport-head.html` — 32 l. → rapport.html
 
 Éléments :
@@ -253,10 +245,6 @@ l'endroit où l'on corrige quoi que ce soit.
 ### `_styles-parcours.css` — 601 l. → plan-smcl.html
 
 ### `_styles-plan.css` — 1605 l. → plan-smcl.html
-
-### `_suggestion.html` — 13 l.
-
-- l.1 · 15. La suggestion
 
 ### `_sw.js` — 567 l.
 
@@ -1186,11 +1174,11 @@ Fonctions :
 `choisitLibelle` 126 · `pousseLibelle` 133 · `libellePointerDown` 141
 `libellePointerMove` 157 · `libellePointerUp` 166 · `branchePlacementLibelles` 179
 
-### `modules/plan-admin.mjs` — 67 l. → plan-admin
+### `modules/plan-admin.mjs` — 65 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 127 l. → plan, plan-admin
+### `modules/plan.mjs` — 126 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
