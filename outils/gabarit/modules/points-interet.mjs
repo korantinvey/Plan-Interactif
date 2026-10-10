@@ -31,7 +31,6 @@ import { poseDistsFiche } from "./distinctions.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { reperesCherchables, oublieReperes, cartouchePoi, phareRepere, phareZone, oublieChoixPoi }
   from "./cartouche-poi.mjs";
-import { confieALaRecherche } from "./recherche.mjs";
 
 
 /**
@@ -136,10 +135,6 @@ export function ouvrePoi(id, depuis, recentrer){
 }
 
 
-/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant le chemin vers un repère qu'elle remonte. Les
-   repères eux-mêmes, elle les lit dans `cartouche-poi.mjs`. */
-confieALaRecherche({ vaAuRepere });
 
 /* Le cartouche, la mise en avant et le relevé des repères vivent dans
    `cartouche-poi.mjs`, que le dessin et les noms lisent sans atteindre la

@@ -26,7 +26,6 @@
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs } from "./texte.mjs";
 import { DATA, parId, CONFS, EXPOSANTS, state, P, societes } from "./donnees.mjs";
-import { API } from "./salon.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { lien, adresseWeb, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
 import { JOURS, MOIS, momentLocal, jourLong } from "./temps.mjs";
@@ -40,8 +39,7 @@ import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, gliss
 import { versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
-import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES, confieALaRecherche }
-  from "./recherche.mjs";
+import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, adresseVignette } from "./recherche.mjs";
 import { libelles, coexChoisit } from "./libelles.mjs";
 import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
@@ -535,27 +533,6 @@ export function ficheConf(id, canal){
    `modules/sur.mjs`. */
 
 
-/**
- * L'adresse d'une vignette fabriquée à la synchronisation.
- *
- * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
- * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
- * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
- * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
- * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
- * analyser ici.
- *
- * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
- * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
- */
-export const adresseVignette = (cle) =>
-  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
-     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
-     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
-  VIGNETTES.get(cle) ||
-  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
-    ? API + "?vignette=" + cle
-    : "");
 
 /* Un appui tactile produit, quelque trois cents millisecondes plus tard, un
    clic de compatibilité aux mêmes coordonnées. La fiche venant d'apparaître
@@ -1174,10 +1151,6 @@ export function brancheFiche(){
   $("closeDetail").onclick = ferme;
   $("voile").onclick = ferme;
 }
-
-/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant ce qu'elle en appelle (une ligne ouvre la fiche d'un stand ou d'une conférence, et montre la vignette d'un logo). */
-confieALaRecherche({ select, ficheConf, adresseVignette });
 
 /* La fiche est l'un des trois tiroirs qui se partagent la bande : ouvrir le
    parcours ou l'itinéraire la referme, si elle est ouverte. */

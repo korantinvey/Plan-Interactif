@@ -13,17 +13,17 @@
    vignettes. Les secteurs vivent dans
    `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. L'écran et ce
    que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`), et les
-   tiroirs (`tiroirs.mjs`). La fiche
-   et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
-   module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
-   bouclerait. Le dessin des noms, des calques et des distinctions, le
+   tiroirs (`tiroirs.mjs`). La fiche et la sélection (`fiche.mjs`) ne le
+   peuvent pas : la fiche importe ce module pour la liste et ses vignettes.
+   Le dessin des noms, des calques et des distinctions, le
    filtre et la mesure du texte s'importent (`libelles.mjs`, `dessin.mjs`,
    `distinctions.mjs`, `filtre.mjs`, `texte-plan.mjs`).
-   Ce qu'il ne peut importer — la fiche et la sélection, les repères, le
-   parcours — lui est confié par ces modules en se chargeant
-   (`confieALaRecherche`), et lu au moment de s'en servir. `brancheRecherche`,
-   que `lancement.mjs` appelle à son rang, y pose l'écoute de la liste et
-   celle des polices arrivées.
+   Ce qu'ouvre une ligne — la fiche d'un stand, d'une conférence, d'un
+   repère — `ligne-liste.mjs` le fait, au-dessus de la fiche ; seul le bouton
+   qui verse au parcours ce que la recherche retient lui est confié par le
+   tiroir du parcours (`confieALaRecherche`). `brancheRecherche`, que
+   `lancement.mjs` appelle à son rang, y pose l'écoute de la liste et celle
+   des polices arrivées.
 
    En retour, ce module confie en se chargeant ce qu'un module qu'il importe
    lui emprunte : la liste à la police des noms (`confieAuxPolices`). Le
@@ -56,18 +56,12 @@ import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 
 /**
- * Ce que la recherche emprunte aux modules qui l'importent : la fiche qu'une
- * ligne ouvre (`fiche.mjs`), le parcours où l'on verse ce qu'elle retient
- * (`tiroir-parcours.mjs`), les libellés qu'elle refait (`libelles.mjs`), les repères qu'elle remonte
- * (`points-interet.mjs`). Tous l'importent, et elle ne peut donc les importer
- * en retour : chacun lui confie ce qu'elle en appelle au chargement de son
- * module, par `confieALaRecherche`.
+ * Ce que la recherche emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
+ * qui l'importe : le bouton qui verse au parcours tout ce qu'elle retient, au
+ * pied du panneau des critères. Il le lui confie au chargement, par
+ * `confieALaRecherche`. Ce qu'ouvre une ligne, `ligne-liste.mjs` le fait.
  * @typedef {object} PageRecherche
- * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
- * @property {(id: any, canal?: string) => void} ficheConf
- * @property {(cle: any) => string} adresseVignette
  * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
- * @property {(id: any, p: number) => void} vaAuRepere
  */
 /** @type {PageRecherche} */
 const prete = /** @type {any} */ ({});
@@ -75,12 +69,29 @@ const prete = /** @type {any} */ ({});
 /** La porte des modules qui prêtent à la recherche ce qu'elle appelle.
  *  @param {Partial<PageRecherche>} o */
 export function confieALaRecherche(o){ Object.assign(prete, o); }
-const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal,
-  /** @type {number} */ iSoc) => prete.select(id, recentrer, canal, iSoc);
-const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.ficheConf(id, canal);
-const adresseVignette = (/** @type {any} */ cle) => prete.adresseVignette(cle);
 const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
-const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => prete.vaAuRepere(id, p);
+
+/**
+ * L'adresse d'une vignette fabriquée à la synchronisation.
+ *
+ * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
+ * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
+ * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
+ * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
+ * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
+ * analyser ici.
+ *
+ * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
+ * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
+ */
+export const adresseVignette = (cle) =>
+  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
+     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
+     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
+  VIGNETTES.get(cle) ||
+  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
+    ? API + "?vignette=" + cle
+    : "");
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
@@ -815,22 +826,9 @@ export function liste(){
         : "Aucun résultat dans ce pavillon.") + '</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
      recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon.
-
-     Un rang part avec l'identifiant, et la fiche s'ouvre droit sur la société
-     du rang cliqué : la liste vient de la nommer, redemander laquelle on veut
-     serait une question dont on a déjà la réponse.
-
-     Une conférence n'est pas un emplacement : `select` ne saurait pas la
-     cadrer, et c'est sa fiche qu'on ouvre — d'où elle offre de situer sa
-     salle sur le plan. */
-  box.querySelectorAll(".row").forEach(b => b.onclick = () => {
-    if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
-    // un repère s'ouvre sur son plan, et depuis sa pastille : ce n'est pas un
-    // emplacement, et « select » n'aurait rien à cadrer
-    if (b.dataset.sorte === "poi"){ vaAuRepere(b.dataset.id, +b.dataset.p); return; }
-    select(b.dataset.id, true, parSociete ? "recherche" : "liste",
-           Number(b.dataset.soc));
-  });
+     Ce qu'ouvre un clic sur une ligne, `ligne-liste.mjs` le fait : il importe
+     la fiche et les repères, que ce module ne peut importer. */
+  box.dataset.canal = parSociete ? "recherche" : "liste";
 }
 
 /**

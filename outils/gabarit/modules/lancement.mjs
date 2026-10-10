@@ -31,6 +31,7 @@ import { brancheErreurs } from "./erreurs.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheBandes } from "./bandes.mjs";
 import { brancheRecherche } from "./recherche.mjs";
+import { brancheLignesListe } from "./ligne-liste.mjs";
 import { brancheVue } from "./vue.mjs";
 import { brancheFiche } from "./fiche.mjs";
 import { brancheGestes, brancheLangue } from "./gestes.mjs";
@@ -91,6 +92,8 @@ export function lancePlan(){
   // recherche et secteurs ; la recherche pose aussi l'écoute des polices, avant celle du rendu WebGL
   brancheBandes();
   brancheRecherche();
+  // ce qu'ouvre une ligne de la liste : avant le repli des tiroirs
+  brancheLignesListe();
   // la vue, avant le recadrage que le démarrage pose sur « resize »
   brancheVue();
   // la fiche

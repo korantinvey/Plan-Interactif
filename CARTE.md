@@ -655,20 +655,20 @@ Fonctions :
 `enregistreZone` 610 · `enregistreZoneAjoutee` 723 · `basculeAffichageZone` 786
 `marqueZonesMasquees` 814 · `ecritColonnesEvenement` 834 · `ecritColonneEvenement` 868
 
-### `modules/fiche.mjs` — 1184 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1157 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.78 · 7. Sélection et fiche
+- l.76 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 75 · `brancheParcours` 76 · `anime` 97 · `noeud` 121 · `canalPlan` 131
-`rangSociete` 139 · `select` 148 · `centre` 173 · `brancheActesFiche` 184
-`centreEtBaisseLaFiche` 200 · `centrePoint` 218 · `programme` 247 · `produits` 296
-`ficheProduit` 324 · `ficheConf` 394 · `adresseVignette` 551 · `poseAppuiTactile` 568
-`ecarteClicFantome` 571 · `nomSociete` 580 · `choisitExposant` 594 · `poseMarque` 632
-`montreMarque` 692 · `poseCode` 715 · `rangeMarque` 756 · `ouvre` 812 · `ferme` 1128
-`onglet` 1146 · `brancheFiche` 1164
+`confieALaFiche` 73 · `brancheParcours` 74 · `anime` 95 · `noeud` 119 · `canalPlan` 129
+`rangSociete` 137 · `select` 146 · `centre` 171 · `brancheActesFiche` 182
+`centreEtBaisseLaFiche` 198 · `centrePoint` 216 · `programme` 245 · `produits` 294
+`ficheProduit` 322 · `ficheConf` 392 · `poseAppuiTactile` 545 · `ecarteClicFantome` 548
+`nomSociete` 557 · `choisitExposant` 571 · `poseMarque` 609 · `montreMarque` 669
+`poseCode` 692 · `rangeMarque` 733 · `ouvre` 789 · `ferme` 1105 · `onglet` 1123
+`brancheFiche` 1141
 
 Éléments :
 
@@ -854,13 +854,13 @@ Fonctions :
 `montreLeJour` 743 · `perimeJournee` 758 · `oublieSejour` 773 · `ouvreOrganisation` 788
 `essaieSejour` 1168 · `lanceSejour` 1198 · `refaitSejour` 1237 · `brancheJournee` 1253
 
-### `modules/lancement.mjs` — 123 l. → plan, plan-admin
+### `modules/lancement.mjs` — 126 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`confieLancementAdmin` 69 · `lancePlan` 72
+`confieLancementAdmin` 70 · `lancePlan` 73
 
 ### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
 
@@ -887,6 +887,14 @@ Fonctions :
 Fonctions :
 
 `codeIdParcours` 45 · `codeParcours` 63 · `champParcours` 75 · `litCodeParcours` 82
+
+### `modules/ligne-liste.mjs` — 37 l. → plan, plan-admin
+
+- l.1 · Ce qu'ouvre une ligne de la liste
+
+Fonctions :
+
+`brancheLignesListe` 19
 
 ### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
 
@@ -1118,13 +1126,13 @@ Fonctions :
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/points-interet.mjs` — 147 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 142 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt — la fiche d'un repère, et le chemin vers lui
 
 Fonctions :
 
-`vaAuRepere` 52 · `ouvrePoi` 75
+`vaAuRepere` 51 · `ouvrePoi` 74
 
 Éléments :
 
@@ -1190,22 +1198,22 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport — et son démarrage
 
-### `modules/recherche.mjs` — 1030 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1028 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`confieALaRecherche` 77 · `ficheConf` 80 · `adresseVignette` 81 · `poseToutAuParcours` 82
-`vaAuRepere` 83 · `appliqueSecteurs` 93 · `filtreTheme` 111 · `themeFiltrable` 168
-`ordreCriteres` 184 · `clesCriteres` 207 · `texteCriteres` 220 · `texteAnglaisPerso` 236
-`indexeCriteres` 250 · `refaitCriteres` 284 · `critereActif` 291 · `basculeCritere` 293
-`videCriteres` 302 · `majVideQ` 311 · `videRecherche` 324 · `nCriteres` 339
-`majCriteres` 348 · `remplitCriteres` 415 · `basculeCriteres` 554 · `ouvreCriteres` 559
-`marqueRetrait` 593 · `appliqueFiltre` 611 · `oublieRetrait` 627 · `reprendRecherche` 636
-`rangSorte` 649 · `codeCase` 671 · `caseNumero` 688 · `sousLigne` 708 · `liste` 722
-`marqueChoisie` 850 · `prechargeMarque` 876 · `prechargeLesVignettes` 933
-`chargeUnLot` 979 · `brancheRecherche` 1005
+`confieALaRecherche` 71 · `poseToutAuParcours` 72 · `adresseVignette` 87
+`appliqueSecteurs` 104 · `filtreTheme` 122 · `themeFiltrable` 179 · `ordreCriteres` 195
+`clesCriteres` 218 · `texteCriteres` 231 · `texteAnglaisPerso` 247 · `indexeCriteres` 261
+`refaitCriteres` 295 · `critereActif` 302 · `basculeCritere` 304 · `videCriteres` 313
+`majVideQ` 322 · `videRecherche` 335 · `nCriteres` 350 · `majCriteres` 359
+`remplitCriteres` 426 · `basculeCriteres` 565 · `ouvreCriteres` 570 · `marqueRetrait` 604
+`appliqueFiltre` 622 · `oublieRetrait` 638 · `reprendRecherche` 647 · `rangSorte` 660
+`codeCase` 682 · `caseNumero` 699 · `sousLigne` 719 · `liste` 733 · `marqueChoisie` 848
+`prechargeMarque` 874 · `prechargeLesVignettes` 931 · `chargeUnLot` 977
+`brancheRecherche` 1003
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
