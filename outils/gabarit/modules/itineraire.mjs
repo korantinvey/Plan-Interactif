@@ -4,19 +4,19 @@
    La grille de marche d'un pavillon, la recherche du chemin, le trait qu'on
    en tire, les faces par lesquelles on entre dans un emplacement, les
    passages d'un plan à l'autre : tout ce qui calcule. Le tiroir, la visée et
-   le tracé animé restent dans `_itineraire.html`, qui l'appelle.
+   le tracé animé vivent dans `tiroir-itineraire.mjs`, qui l'appelle.
 
-   Le calcul lit encore ce que le code soudé tient — les réglages (`CONF`),
-   les calques de dessin (`DESSINS`), et ce que le parcours et la journée
-   savent des conférences : `_itineraire.html` le lui confie par
-   `brancheItineraire`, à la place que ce code tenait dans la page. Les
-   calques se confient plutôt qu'ils ne s'importent : leur module lit
-   l'adresse de la page, ce que les essais menés dans Node n'ont pas. Le
+   Le calcul lit les réglages (`CONF`), les calques de dessin (`DESSINS`), et
+   ce que le parcours et la journée savent des conférences, sans les
+   importer : `tiroir-itineraire.mjs` les lui confie en se chargeant, par
+   `brancheItineraire`. Ils se confient plutôt qu'ils ne s'importent : leurs
+   modules lisent la page et son adresse, ce que les essais menés dans Node
+   n'ont pas. Le
    tracé d'une forme et ce qu'un repère est, des lectures pures, s'importent
    (`chemin-forme.mjs`, `reperes.mjs`).
 
-   Quelques fonctions de la grille sont exportées sans être confiées au code
-   soudé, qui n'en a pas l'usage : `outils/essais/itineraire.js` les éprouve
+   Quelques fonctions de la grille sont exportées sans que la page en ait
+   l'usage : `outils/essais/itineraire.js` les éprouve
    seules, sur des halls dessinés case par case.
    ============================================================ */
 import { DATA, TOUS, parId } from "./donnees.mjs";
@@ -25,17 +25,17 @@ import { momentLocal, minutesDe, ecritMinutes } from "./temps.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { pictoForme, nomTypeRepere, estPorte, ouvreEntrant, ouvreSortant } from "./reperes.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : un appel
+/* Ce que `tiroir-itineraire.mjs` confie, et rien avant qu'il l'ait fait : un appel
    arrivé trop tôt doit échouer bruyamment plutôt que de rendre un trajet faux. */
 /** @type {Record<string, any>} */
 let soude = {};
 
 /**
- * Le branchement, appelé par `_itineraire.html` à la place du calcul.
+ * Le branchement, appelé par `tiroir-itineraire.mjs` en se chargeant (et
+ * par les essais dans Node).
  *
- * `conf` et `dessins` sont des lecteurs, non des valeurs : le code soudé
- * remplace l'un et l'autre en changeant de salon, et le calcul doit lire
- * ceux du moment.
+ * `conf` et `dessins` sont des lecteurs, non des valeurs : l'ouverture d'un
+ * salon remplace l'un et l'autre, et le calcul doit lire ceux du moment.
  *
  * @param {{ conf: () => any, dessins: () => any, instantConf: Function, finInstant: Function }} b
  */

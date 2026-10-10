@@ -15,13 +15,9 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 9. Apparence des calques — le branchement
 
-### `_admin2.html` — 20 l.
+### `_admin2.html` — 22 l.
 
 - l.1 · 12. Démarrage — le branchement
-
-### `_aimants.html` — 22 l.
-
-- l.3 · 11 quater. Dessiner juste — le branchement
 
 ### `_auth-plan.html` — 14 l.
 
@@ -150,7 +146,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 16. L'invitation à installer le plan
 
-### `_itineraire.html` — 30 l.
+### `_itineraire.html` — 22 l.
 
 - l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
 
@@ -515,16 +511,16 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 355 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 365 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`confieAuDemarrage` 52 · `majAttente` 53 · `rattrapeRetard` 54 · `recadreListePosee` 71
-`demarre` 87 · `annonce` 149 · `entetesApi` 172 · `chargeFond` 196 · `panneDuChargement` 243
-`CLE_VERSION` 253 · `versionRetenue` 254 · `retientVersion` 257 · `demandePlan` 281
-`charge` 305 · `brancheDemarrage` 342
+`confieAuDemarrage` 55 · `majAttente` 56 · `rattrapeRetard` 57 · `recadreListePosee` 74
+`demarre` 90 · `annonce` 152 · `entetesApi` 175 · `chargeFond` 199 · `panneDuChargement` 246
+`CLE_VERSION` 256 · `versionRetenue` 257 · `retientVersion` 260 · `demandePlan` 284
+`charge` 308 · `brancheDemarrage` 345
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -985,13 +981,13 @@ Fonctions :
 `refuseMesure` 559 · `ouvreConfidentialite` 586 · `brancheLaNotice` 637
 `brancheMesure` 651
 
-### `modules/mode-admin.mjs` — 40 l. → plan, plan-admin
+### `modules/mode-admin.mjs` — 41 l. → plan, plan-admin
 
 - l.1 · 10. Mode administration — ce que le plan public en sait
 
 Fonctions :
 
-`ouvreModeAdmin` 21 · `retireAdmin` 30
+`ouvreModeAdmin` 22 · `retireAdmin` 31
 
 ### `modules/modeles.mjs` — 88 l. → plan, plan-admin
 
@@ -1081,23 +1077,23 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 1023 l. → plan-admin
+### `modules/outil-dessin.mjs` — 1039 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
 Fonctions :
 
-`enregistreDessins` 64 · `instantane` 102 · `clotSalve` 113 · `memorise` 114
-`restaure` 125 · `annule` 141 · `refais` 153 · `poseTrait` 158 · `toleranceTrace` 179
-`aimanteContour` 184 · `rayonContour` 187 · `redresseTrace` 206 · `traceGuide` 240
-`fermeIci` 247 · `ajouteForme` 252 · `poseChampImage` 269 · `remplitListeSocietes` 276
-`societeSaisie` 284 · `calquePourImage` 300 · `lienImageSaisi` 328 · `formeImage` 340
-`poseImage` 349 · `ditImagePosee` 372 · `importeImage` 380 · `dessinPointerDown` 409
-`dessinPointerMove` 494 · `dessinPointerUp` 532 · `termineTrace` 573 · `aide` 585
-`outilOffert` 615 · `choisitOutil` 629 · `enchaineStand` 660 · `optionsModes` 672
-`proposeCouleurLigne` 682 · `montreTransport` 693 · `activeCalque` 702 · `cleVerrou` 760
-`verrouille` 761 · `basculeVerrou` 763 · `pictoVerrou` 780 · `montreRoleIti` 814
-`creeCalque` 827 · `demandeNom` 840 · `renommeCalque` 865 · `brancheOutilDessin` 881
+`enregistreDessins` 65 · `instantane` 103 · `clotSalve` 114 · `memorise` 115
+`restaure` 126 · `annule` 142 · `refais` 154 · `poseTrait` 159 · `toleranceTrace` 180
+`aimanteContour` 185 · `rayonContour` 188 · `redresseTrace` 207 · `traceGuide` 241
+`fermeIci` 248 · `ajouteForme` 253 · `poseChampImage` 270 · `remplitListeSocietes` 277
+`societeSaisie` 285 · `calquePourImage` 301 · `lienImageSaisi` 329 · `formeImage` 341
+`poseImage` 350 · `ditImagePosee` 373 · `importeImage` 381 · `dessinPointerDown` 410
+`dessinPointerMove` 495 · `dessinPointerUp` 533 · `termineTrace` 574 · `aide` 586
+`outilOffert` 616 · `choisitOutil` 630 · `enchaineStand` 661 · `optionsModes` 673
+`proposeCouleurLigne` 683 · `montreTransport` 694 · `activeCalque` 703 · `cleVerrou` 761
+`verrouille` 762 · `basculeVerrou` 764 · `pictoVerrou` 781 · `montreRoleIti` 815
+`creeCalque` 828 · `demandeNom` 841 · `renommeCalque` 866 · `brancheOutilDessin` 882
 
 ### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
 
@@ -1156,11 +1152,11 @@ Fonctions :
 `choisitLibelle` 126 · `pousseLibelle` 133 · `libellePointerDown` 141
 `libellePointerMove` 157 · `libellePointerUp` 166 · `branchePlacementLibelles` 179
 
-### `modules/plan-admin.mjs` — 65 l. → plan-admin
+### `modules/plan-admin.mjs` — 50 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 126 l. → plan, plan-admin
+### `modules/plan.mjs` — 94 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1504,22 +1500,22 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
-### `modules/tiroir-itineraire.mjs` — 832 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 849 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`confieAuTiroirItineraire` 57 · `changePlan` 58 · `ferme` 59 · `fermeParcours` 60
-`calculeRoute` 78 · `poseTrace` 101 · `marchesIci` 103 · `rayonBout` 108
-`arreteTracage` 141 · `peintItineraire` 147 · `lanceTracage` 198 · `dessineItineraire` 223
-`rafraichitBouts` 245 · `cadreItineraire` 268 · `champIti` 292 · `fermeSugg` 296
-`montreSugg` 303 · `choisitPoint` 337 · `valideSaisie` 346 · `effaceItineraire` 358
-`relance` 386 · `montreResultat` 428 · `poseVisee` 572 · `confieVisee` 585
-`suitLaVisee` 587 · `bandeauVisee` 589 · `armeVisee` 611 · `finVisee` 629
-`viseItineraire` 645 · `visePoi` 651 · `visePoint` 657 · `ouvreItineraire` 685
-`fermeItineraire` 713 · `versItineraire` 723 · `versItineraireDe` 726
-`brancheTiroirItineraire` 754
+`confieAuTiroirItineraire` 66 · `changePlan` 67 · `ferme` 68 · `fermeParcours` 69
+`calculeRoute` 87 · `poseTrace` 110 · `marchesIci` 112 · `rayonBout` 117
+`arreteTracage` 150 · `peintItineraire` 156 · `lanceTracage` 207 · `dessineItineraire` 232
+`rafraichitBouts` 254 · `cadreItineraire` 277 · `champIti` 301 · `fermeSugg` 305
+`montreSugg` 312 · `choisitPoint` 346 · `valideSaisie` 355 · `effaceItineraire` 367
+`relance` 395 · `montreResultat` 437 · `poseVisee` 581 · `confieVisee` 594
+`suitLaVisee` 596 · `bandeauVisee` 598 · `armeVisee` 620 · `finVisee` 638
+`viseItineraire` 654 · `visePoi` 660 · `visePoint` 666 · `ouvreItineraire` 694
+`fermeItineraire` 722 · `versItineraire` 732 · `versItineraireDe` 735
+`brancheTiroirItineraire` 763
 
 ### `modules/tiroir-parcours.mjs` — 469 l. → plan, plan-admin
 
@@ -1584,7 +1580,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `modules/vivant.mjs` — 36 l. → plan, plan-admin
+### `modules/vivant.mjs` — 36 l.
 
 - l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
 

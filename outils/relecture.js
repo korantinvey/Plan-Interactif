@@ -58,13 +58,11 @@ const PAGES = {
      l'accès de l'exploitant, posé à la fin du script. Relire celui-là relit
      donc les deux. */
   "plan-admin.html": [...TETE, ...BOUTS.map((b) => html(b, lisBout(b))), js("_auth-plan.html")],
-  /* Le plan public : les mêmes modules sans leurs tranches `@admin`, et à la
-     place de l'accès ce que `genere.js` pose en fin de script. Relu à part,
-     sans quoi `retireAdmin`, qu'il est seul à appeler, passerait pour inutile ;
-     et relu tel qu'il est livré, sans quoi un appel d'administration y
-     chercherait un nom que seule l'administration reçoit. */
-  "plan.html": [...TETE, ...BOUTS.map((b, i) => html(b, BOUTS_PUBLICS[i])),
-    { fichier: "../genere.js", js: true, texte: "retireAdmin();" }],
+  /* Le plan public : les mêmes modules sans leurs tranches `@admin`, et sans
+     l'accès de l'exploitant. Relu à part et tel qu'il est livré, sans quoi un
+     appel d'administration y chercherait un nom que seule l'administration
+     reçoit. */
+  "plan.html": [...TETE, ...BOUTS.map((b, i) => html(b, BOUTS_PUBLICS[i]))],
   /* Les écrans de l'exploitant n'ont plus de code soudé : tout leur code est
      dans leur point d'entrée, relu comme module. Restent leur balisage et les
      scripts qui les ouvrent. */

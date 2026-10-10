@@ -25,12 +25,21 @@
    `vous-etes-ici.mjs`, et ce qu'ils font d'une visée qui les regarde, ou d'un
    bandeau qui doit céder la place, ils le lui confient en se chargeant
    (`confieVisee`, `suitLaVisee`).
+
+   Le calcul, lui, n'importe ni les réglages, ni les calques, ni ce que le
+   parcours et la journée savent des conférences : il s'éprouve seul dans
+   Node. Ce module, qui le mène et peut tout importer, les lui confie en se
+   chargeant (`brancheItineraire`, au bas du module).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { mesure } from "./mesure.mjs";
 import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarches, coupeMarche,
-  distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison } from "./itineraire.mjs";
+  distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, brancheItineraire } from "./itineraire.mjs";
+import { CONF } from "./configuration.mjs";
+import { DESSINS } from "./calques-dessin.mjs";
+import { instantConf } from "./parcours.mjs";
+import { finInstant } from "./sejour.mjs";
 import { pointBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg,
   confieALaVue } from "./vue.mjs";
@@ -830,3 +839,11 @@ export function brancheTiroirItineraire(){
    module importe, les refait à chaque changement de vue — il les lui confie
    en se chargeant. */
 confieALaVue({ rafraichitBouts });
+
+/* Le calcul s'éprouve seul dans Node (`outils/essais/itineraire.js`,
+   `sejour.js`), où l'essai lui prête réglages et calques : il ne les importe
+   pas. Ce module, qui le mène et que la page publique embarque, les lui
+   confie en se chargeant — avant tout trajet demandé. Les réglages et les
+   calques se remplacent en changeant de salon : ils se confient par des
+   lecteurs, qui rendent ceux du moment. */
+brancheItineraire({ conf: () => CONF, dessins: () => DESSINS, instantConf, finInstant });

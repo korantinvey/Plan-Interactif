@@ -29,7 +29,7 @@ test.describe("le plan public", () => {
     await page.waitForFunction(() => document.getElementById("side").getAnimations().length === 0);
     // l'écart, en pixels d'écran : il en faisait une quinzaine
     const ecart = await page.evaluate(() => {
-      const g = /** @type {any} */ (globalThis);
+      const g = /** @type {any} */ (globalThis).__essais;
       const avant = g.view;
       dispatchEvent(new Event("resize"));
       const pixel = g.view.w / document.getElementById("plan").getBoundingClientRect().width;

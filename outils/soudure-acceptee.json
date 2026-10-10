@@ -1,9 +1,6 @@
 {
  "exposes": {
   "plan": [
-   "CONF",
-   "DESSINS",
-   "apercuGuide",
    "brancheBandes",
    "brancheBorne",
    "brancheDemarrage",
@@ -13,7 +10,6 @@
    "brancheHabillage",
    "brancheIci",
    "brancheInstallation",
-   "brancheItineraire",
    "brancheJournee",
    "brancheLangue",
    "brancheLibelles",
@@ -26,24 +22,10 @@
    "brancheTiroirs",
    "brancheTonDeLaBarre",
    "brancheVue",
-   "brancheWebgl",
-   "cadrePlan",
-   "calqueActif",
-   "estCadre",
-   "finInstant",
-   "instantConf",
-   "mesCalques",
-   "redessineForme",
-   "retireAdmin",
-   "signale",
-   "svg",
-   "view"
+   "brancheWebgl"
   ],
   "plan-admin": [
-   "ajouteForme",
-   "boite",
    "brancheAcces",
-   "brancheAimants",
    "brancheBatiments",
    "brancheCalageCarte",
    "brancheChaleur",
@@ -52,15 +34,7 @@
    "brancheNuancier",
    "brancheOutilDessin",
    "branchePlacementLibelles",
-   "brancheRepriseEmplacements",
-   "choisitForme",
-   "dessinePoignees",
-   "enregistreDessins",
-   "formeParId",
-   "formeSel",
-   "imageEnAttente",
-   "memorise",
-   "toleranceTrace"
+   "brancheRepriseEmplacements"
   ],
   "console": [],
   "rapport": [],

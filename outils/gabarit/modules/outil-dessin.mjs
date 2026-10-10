@@ -24,7 +24,8 @@
    À l'inverse, ce qu'il tient et que d'autres modules d'exploitant
    empruntent — l'éditeur, l'enregistrement, la reprise d'un emplacement, le
    placement des libellés —, il le leur confie en se chargeant, au bas du
-   module : il les importe, et ils ne pourraient l'importer sans boucle.
+   module : il les importe, et ils ne pourraient l'importer sans boucle. Les
+   aimants aussi, qui ne l'importent pas pour s'éprouver seuls dans Node.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -43,10 +44,10 @@ import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-li
 import { SORTE_GEO } from "./emplacements.mjs";
 import { modeGeometrie, choisitGeo, confieALaReprise } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aimante, DERNIERE,
-  retientTaille, reprendTaille, appliqueDimension } from "./aimants.mjs";
+  retientTaille, reprendTaille, appliqueDimension, brancheAimants } from "./aimants.mjs";
 import { confieAEdition, geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
-  editionPointerMove, editionPointerUp, replieOutils } from "./edition.mjs";
+  editionPointerMove, editionPointerUp, replieOutils, choisitForme } from "./edition.mjs";
 import { DESSINS, cleDessins, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
   enCours, poseCalqueActif, poseOutil, poseEbauche } from "./calques-dessin.mjs";
 import { cheminForme, estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
@@ -55,7 +56,7 @@ import { TYPES_REPERE, MODES_TRANSPORT, estTransport, couleurLigne, couleurEcrit
 import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_REPERE, nomSurLePlan,
   societeDeForme, societesDuPlan } from "./dessin.mjs";
 import { oublieReperes } from "./points-interet.mjs";
-import { formeSel, poseFormeSel, formeParId } from "./forme-choisie.mjs";
+import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieApresOption } from "./options.mjs";
 import { confieAuRendu } from "./rendu.mjs";
@@ -1021,3 +1022,18 @@ confieAEdition({ memorise, enregistreDessins, optionsModes, societeSaisie, rempl
 confieAEnregistrement({ enregistreDessins });
 confieALaReprise({ pictoVerrou, activeCalque, remplitListeSocietes, societeSaisie, fermeIci });
 confieAuPlacementLibelles({ activeCalque });
+
+/* Les aimants s'éprouvent seuls dans Node (`outils/essais/aimants.js`) : ils
+   n'importent pas l'outil de dessin, on le leur confie. Ce module les importe
+   déjà, et tient ou importe tout ce qu'ils lisent ; c'est donc lui qui le leur
+   confie en se chargeant, au lieu du code soudé. Rien n'y sert avant le
+   premier geste de l'exploitant. Ce qui change d'un geste à l'autre se confie
+   par un lecteur, jamais par sa valeur du moment. */
+brancheAimants({
+  vue: () => vue(),
+  imageEnAttente: () => imageEnAttente,
+  formeSel: () => formeSel,
+  calqueActif: () => calqueActif,
+  svg, cadrePlan, mesCalques, estCadre, boite, toleranceTrace, apercuGuide, formeParId,
+  ajouteForme, choisitForme, signale, memorise, enregistreDessins, redessineForme, dessinePoignees,
+});

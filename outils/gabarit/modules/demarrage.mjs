@@ -12,13 +12,16 @@
    place que ce code tenait, au bout du script : c'est là que la page
    démarre, une fois tout le reste déclaré. La fiche, le montage du plan et
    l'ordre des calques, il les importe (`fiche.mjs`, `rendu.mjs`,
-   `ordre-trace.mjs`). Ce qui n'existe qu'en administration
+   `ordre-trace.mjs`). Hors de l'administration, il retire en dernier les
+   commandes de l'exploitant (`mode-admin.mjs` `retireAdmin`) : la page
+   publique n'a plus à le demander. Ce qui n'existe qu'en administration
    (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) lui est confié,
    sous la garde `typeof` qu'il avait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
-import { API, SLUG } from "./salon.mjs";
+import { API, SLUG, PLAN_ADMIN } from "./salon.mjs";
+import { retireAdmin } from "./mode-admin.mjs";
 import { indexe } from "./index-salon.mjs";
 import { accueilleSponsor, suitSponsor, fermeSponsor } from "./sponsor.mjs";
 import { view, fit } from "./vue.mjs";
@@ -348,6 +351,13 @@ export function brancheDemarrage(){
   else charge();
 
   addEventListener("resize", () => { if (DATA && view) fit(); });
+
+  /* Hors de l'administration — le plan public, la démonstration —, les
+     commandes de l'exploitant quittent le document. En dernier, comme
+     lorsque la construction posait l'appel au bout du script : le démarrage
+     et le montage y touchent encore. L'administration, elle, attend la
+     session, que son propre code pose à cette place (`_auth-plan.html`). */
+  if (!PLAN_ADMIN) retireAdmin();
 }
 
 /* Le fond d'un pavillon se charge après coup, au passage d'un pavillon à
