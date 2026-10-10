@@ -545,3 +545,34 @@ export function verseAuParcours(stands, confs, canal, remplace){
   apresBascule("lot", true);
   tientLeStockage();
 }
+
+/* ------------------------------------------------------------
+   Un rang de la liste, et le tiroir à refaire
+   ------------------------------------------------------------ */
+/* Le rang est la brique que le tiroir et la journée organisée posent tous
+   deux : il vit avec la liste, que la journée importe, plutôt que dans le
+   tiroir, qui importe la journée. Rien ne touche la page au chargement. */
+export function rangParcours(hote, r){
+  const d = document.createElement("div");
+  d.className = "pRang";
+  d.innerHTML = '<button type="button" class="pOuvre">' +
+    (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
+              : '<span class="pt"></span><span class="ps"></span>') +
+    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
+    'aria-label="Retirer du parcours">&times;</button>';
+  d.querySelector(".pt").textContent = r.titre;
+  d.querySelector(".ps").textContent = r.detail || "";
+  if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
+  d.querySelector(".pOuvre").onclick = r.ouvre;
+  d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
+  hote.appendChild(d);
+  /* Le rang est rendu : la visite organisée y glisse un bouton de plus — celui
+     qui change l'exposant de jour — et ne veut pas réécrire la vignette pour
+     autant. */
+  return d;
+}
+
+/** Le tiroir à refaire sur la liste telle qu'elle est — la journée, quand
+ *  elle rend la place au parcours. Rien n'a changé : ni suggestion ni rappel
+ *  à proposer. */
+export function refaitParcours(){ apresBascule("vue", false); }

@@ -8,16 +8,15 @@
    des rappels (`rappels.mjs`), la journée organisée (`journee.mjs`), la note
    de la copie à garder (`partage.mjs`) — et les importe.
 
-   Ces voisins le rappellent à leur tour — rafraîchir, rendre un rang —,
-   mais ne peuvent l'importer sans boucle. Le signet basculé et le lot versé,
-   eux, vivent avec la liste (`parcours.mjs` `basculeParcours`,
-   `verseAuParcours`) et annoncent au tiroir ce qui vient de changer
-   (`suitLeParcours`, au bas du module) ; le bouton qui prend tout ce que la
-   recherche retient vit à part (`tout-au-parcours.mjs`). La
-   suggestion et les rappels, qu'il est seul à appeler, reçoivent ce qu'il
-   leur faut en argument (`TIROIR_SUGG`, `fenetreRappel`) ; la journée, dont
-   les boutons le rappellent plus tard, par sa porte (`confieALaJournee`, au
-   bas du module).
+   Ces voisins ne peuvent l'importer sans boucle. Ce qu'ils en voulaient vit
+   donc avec la liste (`parcours.mjs`) : le signet basculé, le lot versé, le
+   rang qu'on rend, et l'ordre de refaire le tiroir (`basculeParcours`,
+   `verseAuParcours`, `rangParcours`, `refaitParcours`) ; la liste annonce au
+   tiroir ce qui vient de changer (`suitLeParcours`, au bas du module). Le
+   bouton qui prend tout ce que la recherche retient vit à part
+   (`tout-au-parcours.mjs`). La suggestion et les rappels, qu'il est seul à
+   appeler, reçoivent ce qu'il leur faut en argument (`TIROIR_SUGG`,
+   `fenetreRappel`).
 
    Il se branche par `brancheTiroirParcours`, que `lancement.mjs` `lancePlan`
    appelle à son rang : ses écoutes s'y posent parmi celles du plan. La fiche,
@@ -31,13 +30,15 @@ import { fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { DATA, parId, CONFS } from "./donnees.mjs";
 import { confirme } from "./fenetre.mjs";
 import { momentLocal, jourCourt } from "./temps.mjs";
-import { PARCOURS, poseParcours, brancheListeParcours, enregistreParcours, plurielParcours, rafraichitMarque, marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours, fermeParcours, basculeParcours, brancheParcours, suitLeParcours } from "./parcours.mjs";
+import { PARCOURS, poseParcours, brancheListeParcours, enregistreParcours, plurielParcours,
+  rafraichitMarque, marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours,
+  fermeParcours, basculeParcours, brancheParcours, suitLeParcours, rangParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
 import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
-import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
+import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { confieApresOption } from "./options.mjs";
 const racine = document.documentElement;
@@ -76,26 +77,6 @@ export function rafraichitParcours(){
 /* ------------------------------------------------------------
    Le tiroir
    ------------------------------------------------------------ */
-export function rangParcours(hote, r){
-  const d = document.createElement("div");
-  d.className = "pRang";
-  d.innerHTML = '<button type="button" class="pOuvre">' +
-    (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
-              : '<span class="pt"></span><span class="ps"></span>') +
-    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
-    'aria-label="Retirer du parcours">&times;</button>';
-  d.querySelector(".pt").textContent = r.titre;
-  d.querySelector(".ps").textContent = r.detail || "";
-  if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
-  d.querySelector(".pOuvre").onclick = r.ouvre;
-  d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
-  hote.appendChild(d);
-  /* Le rang est rendu : la visite organisée y glisse un bouton de plus — celui
-     qui change l'exposant de jour — et ne veut pas réécrire la vignette pour
-     autant. */
-  return d;
-}
-
 export function remplitParcours(){
   const hote = $("pCorps");
   hote.innerHTML = "";
@@ -266,18 +247,11 @@ export function brancheTiroirParcours(){
 
 /* Refermer le tiroir et basculer un signet vivent dans `parcours.mjs` ; ils
    s'importent d'ici comme avant. */
-export { fermeParcours, basculeParcours, brancheParcours };
+export { fermeParcours, basculeParcours, brancheParcours, rangParcours };
 
 /** Ce que la carte de la suggestion appelle chez ce tiroir, qui la pose :
  *  le tiroir refait, et le bouton « au parcours ». */
 const TIROIR_SUGG = { remplit: remplitParcours, branche: brancheParcours };
-
-/* La journée, que ce module importe pour la poser dans son tiroir, ne peut
-   l'importer en retour : il lui confie en se chargeant ce qu'elle en appelle
-   — un rang du parcours, et le tiroir refait. La suggestion et les rappels,
-   que ce module seul appelle, reçoivent le leur à chaque appel
-   (`TIROIR_SUGG`, `fenetreRappel`). */
-confieALaJournee({ rangParcours, rafraichitParcours });
 
 /* Deux options du salon rouvrent ou ferment un bouton de ce tiroir : la
    journée organisée, la suggestion. Ce que chacune refait en changeant, ce

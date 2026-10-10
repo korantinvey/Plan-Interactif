@@ -838,20 +838,19 @@ Fonctions :
 `routeParLiaisons` 2492 · `routeEntre` 2530 · `mesureMarches` 2568 · `coupeMarche` 2583
 `distancesDesArrets` 2599 · `ecritDistance` 2613 · `ecritDuree` 2621 · `phraseLiaison` 2635
 
-### `modules/journee.mjs` — 1269 l. → plan, plan-admin
+### `modules/journee.mjs` — 1252 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
 
 Fonctions :
 
-`confieALaJournee` 50 · `rangParcours` 51 · `rafraichitParcours` 52 · `trace` 54
-`joursSalon` 119 · `joursAVenir` 148 · `joursDefaut` 166 · `confsParJour` 176
-`departsProposes` 201 · `rangJournee` 223 · `lienJournee` 235 · `boutonJour` 258
-`arretJournee` 271 · `remplitOnglets` 318 · `jourDuStand` 347 · `ouvreChoixJour` 359
-`figeLaVisite` 416 · `placeSurJour` 425 · `rendAuPlan` 433 · `retireDuSejour` 439
-`remplitJournee` 449 · `ecritApercu` 662 · `appliqueVueParcours` 692 · `traceJournee` 734
-`montreLeJour` 743 · `perimeJournee` 758 · `oublieSejour` 773 · `ouvreOrganisation` 788
-`essaieSejour` 1168 · `lanceSejour` 1198 · `refaitSejour` 1237 · `brancheJournee` 1253
+`trace` 38 · `joursSalon` 103 · `joursAVenir` 132 · `joursDefaut` 150 · `confsParJour` 160
+`departsProposes` 185 · `rangJournee` 207 · `lienJournee` 219 · `boutonJour` 242
+`arretJournee` 255 · `remplitOnglets` 302 · `jourDuStand` 331 · `ouvreChoixJour` 343
+`figeLaVisite` 400 · `placeSurJour` 409 · `rendAuPlan` 417 · `retireDuSejour` 423
+`remplitJournee` 433 · `ecritApercu` 646 · `appliqueVueParcours` 676 · `traceJournee` 718
+`montreLeJour` 727 · `perimeJournee` 742 · `oublieSejour` 757 · `ouvreOrganisation` 772
+`essaieSejour` 1152 · `lanceSejour` 1182 · `refaitSejour` 1221 · `brancheJournee` 1236
 
 ### `modules/lancement.mjs` — 126 l. → plan, plan-admin
 
@@ -1063,7 +1062,7 @@ Fonctions :
 
 `accueilleParcoursPartage` 45 · `adoptePartage` 123
 
-### `modules/parcours.mjs` — 547 l. → plan, plan-admin
+### `modules/parcours.mjs` — 578 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -1078,7 +1077,7 @@ Fonctions :
 `rafraichitMarque` 318 · `calqueMarques` 351 · `dessineMarques` 369 · `marqueParcours` 399
 `instantConf` 417 · `cleTemps` 421 · `nomDeStand` 431 · `groupeParcours` 433
 `fermeParcours` 447 · `apresBascule` 467 · `suitLeParcours` 469 · `basculeParcours` 479
-`brancheParcours` 503 · `verseAuParcours` 526
+`brancheParcours` 503 · `verseAuParcours` 526 · `rangParcours` 555 · `refaitParcours` 578
 
 ### `modules/partage.mjs` — 293 l. → plan, plan-admin
 
@@ -1477,14 +1476,14 @@ Fonctions :
 `ouvreItineraire` 484 · `fermeItineraire` 511 · `versItineraire` 521
 `versItineraireDe` 524 · `brancheTiroirItineraire` 551
 
-### `modules/tiroir-parcours.mjs` — 312 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 286 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`rafraichitParcours` 49 · `rangParcours` 79 · `remplitParcours` 99 · `ouvreParcours` 188
-`videLeParcours` 204 · `brancheTiroirParcours` 234
+`rafraichitParcours` 50 · `remplitParcours` 80 · `ouvreParcours` 169 · `videLeParcours` 185
+`brancheTiroirParcours` 215
 
 ### `modules/tiroirs-exclusifs.mjs` — 49 l. → plan, plan-admin
 

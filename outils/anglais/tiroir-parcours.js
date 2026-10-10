@@ -2,7 +2,6 @@
    vidage. Le signet et le compte d'un lot sont dans `parcours.js`, le bouton
    qui prend tout ce que la recherche retient dans `tout-au-parcours.js`. */
 module.exports = {
-  "Retirer du parcours": "Remove from visit plan",
   "rien pour l'instant": "nothing yet",
   "Ouvrez la fiche d'un exposant, ou le programme d'une zone, et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet appareil, et vous pourrez en garder une copie pour le jour du salon.":
     "Open an exhibitor's details, or an area's programme, and tap the bookmark to add it here. Your visit plan stays on this device, and you will be able to keep a copy of it for the day of the show.",

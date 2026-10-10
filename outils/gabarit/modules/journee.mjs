@@ -2,9 +2,8 @@
    11 ter. Organiser sa visite — la question posée, et le tiroir
 
    Il se branche par `brancheJournee`, que le lancement (`lancement.mjs`)
-   appelle sans rien lui passer, pour poser ses écoutes à leur rang : le
-   tiroir du parcours,
-   qui importe ce module, se confie en se chargeant (`confieALaJournee`) ; la
+   appelle sans rien lui passer, pour poser ses écoutes à leur rang : ce
+   qu'elle demande au parcours vit avec la liste (`parcours.mjs`) ; la
    fiche, les dates et les heures du salon et le seuil de concentration
    s'importent (`fiche.mjs`, `horaires.mjs`, `seuil.mjs`), le tracé de
    l'itinéraire aussi, par sa porte. Le calcul — répartir, ordonner, dérouler — est dans
@@ -14,7 +13,7 @@ import { $ } from "./dom.mjs";
 import { DATA, CONFS, state } from "./donnees.mjs";
 import { jourCourt, dateDeCle, jourBref, minutesDe, ecritHeure, ecritMinutes } from "./temps.mjs";
 import { PARCOURS, identifiantParcours, plurielParcours, contenuParcours, instantConf, nomDeStand,
-  basculeParcours }
+  basculeParcours, rangParcours, refaitParcours }
   from "./parcours.mjs";
 import { heureAuSalon, pointRepere, portesDe, ecritDistance, phraseLiaison } from "./itineraire.mjs";
 import { pointBorne } from "./vous-etes-ici.mjs";
@@ -32,24 +31,9 @@ import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
 /* Le tracé de l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté
    là-bas comme ici : on le lit tel qu'il est à l'instant, et on le pose par
    sa porte. */
-/**
- * Ce que la journée emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
- * qui importe ce module pour y poser la journée : il ne peut s'importer
- * d'ici, et lui confie au chargement de son module, par `confieALaJournee`,
- * de quoi refaire le parcours. Le signet basculé s'importe de la liste
- * (`parcours.mjs` `basculeParcours`), la fiche de
- * `fiche.mjs`, le passage d'un pavillon à l'autre de `rendu.mjs`.
- * @typedef {{ rangParcours: (hote: any, r: any) => any,
- *   rafraichitParcours: () => void }} PageJournee
- */
-/** @type {PageJournee} */
-const prete = { rangParcours: () => {}, rafraichitParcours: () => {} };
-
-/** La porte du tiroir du parcours, qui prête à la journée ce qu'elle appelle.
- *  @param {Partial<PageJournee>} o */
-export function confieALaJournee(o){ Object.assign(prete, o); }
-const rangParcours = (hote, r) => prete.rangParcours(hote, r);
-const rafraichitParcours = () => prete.rafraichitParcours();
+/* Le tiroir du parcours importe ce module pour y poser la journée : ce
+   qu'elle lui demande — un rang, le signet basculé, le tiroir refait — vit
+   donc avec la liste (`parcours.mjs`), qu'elle importe. */
 // le trait de l'itinéraire, que la journée reprend pour elle
 const trace = () => TRACE;
 
@@ -717,7 +701,7 @@ export function appliqueVueParcours(){
     remplitJournee();
     traceJournee();
   } else {
-    rafraichitParcours();
+    refaitParcours();
   }
 }
 
@@ -1247,8 +1231,7 @@ function refaitSejour(cleAffichee, fige){
  * tenait : il branche le
  * calcul (`sejour.mjs`) et la charge annoncée (`charge-annoncee.mjs`), puis
  * pose les écoutes du tiroir — dans cet ordre, qui était celui de la page.
- * Il ne reçoit plus rien : le tiroir du parcours se confie par
- * `confieALaJournee`.
+ * Il ne reçoit rien.
  */
 export function brancheJournee(){
   brancheSejour({ minutesVisite, horairesSalon, seuilConcentration, seuilImpose,
