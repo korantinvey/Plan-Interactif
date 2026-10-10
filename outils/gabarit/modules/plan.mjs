@@ -11,7 +11,6 @@
    les types la tiennent pour déclarée, la construction la pose avant le
    script du plan. On n'y met donc qu'un objet littéral de noms.
    ============================================================ */
-import { $ } from "./dom.mjs";
 import { vivants } from "./vivant.mjs";
 import { SLUG } from "./salon.mjs";
 import { brancheFenetre } from "./fenetre.mjs";
@@ -31,7 +30,6 @@ import { TUTO } from "./tutoriel.mjs";
 import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
-import { SORTE_GEO } from "./emplacements.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
@@ -44,17 +42,16 @@ import { SECTEURS } from "./secteurs.mjs";
 import { brancheBandes } from "./bandes.mjs";
 import { brancheRecherche, PREFIXE_PERSO, libelleCritere, fermeCriteres, liste } from "./recherche.mjs";
 import { view, svg } from "./vue.mjs";
-import { brancheIndex } from "./index-salon.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
-import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
+import { brancheDemarrage } from "./demarrage.mjs";
 import { brancheCorpsFiche } from "./corps-fiche.mjs";
 import { ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles } from "./libelles.mjs";
 import { DISTINCTIONS, dessineDists, poseDistsFiche,
   refaitDistsFiche } from "./distinctions.mjs";
-import { MONTE, brancheRendu, montePlan, changePlan } from "./rendu.mjs";
-import { brancheCalquesDessin, DESSINS, mesCalques, calqueActif }
+import { MONTE, montePlan, changePlan } from "./rendu.mjs";
+import { DESSINS, mesCalques, calqueActif }
   from "./calques-dessin.mjs";
 import { estCadre } from "./chemin-forme.mjs";
 import { rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan, societeDeForme,
@@ -70,7 +67,6 @@ import { brancheGestes, brancheLangue } from "./gestes.mjs";
 import { brancheTiroirs } from "./tiroirs.mjs";
 
 Object.assign(globalThis, {
-  $,
   brancheFenetre,
   brancheMesure,
   brancheSponsor,
@@ -99,15 +95,12 @@ Object.assign(globalThis, {
   fermeCriteres,
   liste,
   svg,
-  brancheIndex,
   brancheTonDeLaBarre,
-  brancheDemarrage, chargeFond,
-  brancheCorpsFiche,
+  brancheDemarrage, brancheCorpsFiche,
   ferme, brancheFiche,
   brancheLibelles, libelles, DISTINCTIONS, dessineDists, poseDistsFiche,
   refaitDistsFiche,
-  brancheRendu, montePlan, changePlan,
-  brancheCalquesDessin,
+  montePlan, changePlan,
   mesCalques,
   estCadre,
   rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan,
@@ -122,12 +115,6 @@ Object.assign(globalThis, {
    l'efface en la quittant. La proposition des rappels la lit par accesseur,
    confiée par le code soudé, pour ne pas passer devant elle. */
 Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));
-
-/* La couche dont l'exploitant reprend les formes, ou rien : le rendu par la
-   carte graphique le lit par accesseur pour savoir si l'on édite ; seul
-   l'outil de l'exploitant le change (`reprise-emplacements.mjs`), hors de
-   quoi il reste vide. */
-Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "modeGeometrie"));
 
 /* La configuration du salon ouvert : le code soudé la lit encore, pour la
    confier au calcul de l'itinéraire ; seule l'ouverture d'un salon la

@@ -8,15 +8,12 @@
    tenait : la page démarre une fois tout le reste déclaré, et l'écoute du
    redimensionnement se pose au même rang qu'avant.
 
-   Lui est confié ce qui n'est qu'à l'administration — l'enregistrement, la
-   fenêtre d'accès —, sous la garde `typeof` qu'il avait : le visiteur ne
-   l'a pas. L'ordre des calques, il l'importe.
+   Ce qui n'est qu'à l'administration — l'enregistrement, la fenêtre
+   d'accès —, ses modules le lui confient en se chargeant
+   (`confieAuDemarrage`) : le visiteur ne l'a pas. L'ordre des calques, il
+   l'importe.
    ============================================================ */
-brancheDemarrage({
-  majAttente: () => { if (typeof majAttente === "function") majAttente(); },
-  rattrapeRetard: () => { if (typeof rattrapeRetard === "function") rattrapeRetard(); },
-  ecranAcces: typeof ecranAcces === "function" ? ecranAcces : null,
-});
+brancheDemarrage();
 
 
 /*__PORTE_ADMIN__*/

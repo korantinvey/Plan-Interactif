@@ -33,17 +33,11 @@ if (!document.querySelector('meta[name="viewport"]')){
    est dans `modules/noms-zones.mjs`, la couleur de la barre du système dans
    `modules/ton-barre.mjs`.
 
-   Les calques dessinés, il les importe (`modules/calques-dessin.mjs`). Ne
-   lui est confié que ce qui n'est qu'à l'administration.
+   Il n'a plus de branchement : les calques dessinés, il les importe
+   (`modules/calques-dessin.mjs`), et ce qui n'est qu'à l'administration,
+   `modules/enregistrement.mjs` le lui confie en se chargeant
+   (`confieALIndex`).
    ============================================================ */
-brancheIndex({
-  /* L'enregistrement n'est qu'à l'administration (`modules/enregistrement.mjs`) :
-     le visiteur ne l'a pas, on ne l'appelle que si la page l'a reçu. */
-  compteRescapes: (n) => { if (typeof compteRescapes === "function") compteRescapes(n); },
-  noteReglagesCharges: (enBase) => {
-    if (typeof noteReglagesCharges === "function") noteReglagesCharges(enBase);
-  },
-});
 /* Et l'écoute de la largeur, qui refait la couleur de la barre du système
    quand le seuil du téléphone est franchi : posée ici, au rang qu'elle tenait. */
 brancheTonDeLaBarre();

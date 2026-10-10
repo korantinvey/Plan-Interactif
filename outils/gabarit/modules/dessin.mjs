@@ -36,6 +36,7 @@ import { largeur } from "./texte-plan.mjs";
 import { libelleEmplacement } from "./libelles.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
+import { confieAuRendu } from "./rendu.mjs";
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -647,3 +648,8 @@ export function signale(id){
    module importe, la refait à chaque changement de vue — il la lui confie en
    se chargeant. */
 confieALaVue({ rafraichitFleches });
+
+/* Le montage d'un pavillon recrée les calques de dessin : le rendu, que ce
+   module atteint, ne peut l'importer, et reçoit d'ici en se chargeant de quoi
+   les dessiner. */
+confieAuRendu({ dessineDessins });

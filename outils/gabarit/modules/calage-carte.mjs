@@ -29,7 +29,7 @@ import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCart
   confieCalageEnCours } from "./environs.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
-import { MONTE } from "./rendu.mjs";
+import { MONTE, confieAuRendu } from "./rendu.mjs";
 import { CONF, conf, enregistreConf } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { ADMIN } from "./mode-admin.mjs";
@@ -817,3 +817,8 @@ export function voletEnvirons(hote){
     maj();
   }).catch(() => {});
 }
+
+/* Le calage qu'on règle appartient au pavillon qu'on quitte : le passage
+   d'un pavillon à l'autre (`rendu.mjs` `changePlan`) l'oublie, et reçoit
+   d'ici en se chargeant de quoi le faire. */
+confieAuRendu({ oublieCalageEnCours });

@@ -15,7 +15,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
-import { charge } from "./demarrage.mjs";
+import { charge, confieAuDemarrage } from "./demarrage.mjs";
 
 /* Ce que le code soudé confie encore : l'activation du mode administrateur
    (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel importe ce
@@ -241,3 +241,7 @@ export function brancheAcces(b){
     else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
   })();
 }
+
+/* Une session refusée au chargement rouvre la fenêtre d'accès : le
+   démarrage, que ce module importe, la reçoit d'ici en se chargeant. */
+confieAuDemarrage({ ecranAcces });

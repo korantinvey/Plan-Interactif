@@ -36,7 +36,7 @@ import { suitNuancier } from "./nuancier.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { modePlacementLibelles } from "./placement-libelles.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { modeGeometrie } from "./reprise-emplacements.mjs";
+import { modeGeometrie, choisitGeo } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aimante, DERNIERE,
   retientTaille, reprendTaille, appliqueDimension } from "./aimants.mjs";
 import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
@@ -53,6 +53,7 @@ import { oublieReperes } from "./points-interet.mjs";
 import { formeSel, poseFormeSel, formeParId } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieApresOption } from "./options.mjs";
+import { confieAuRendu } from "./rendu.mjs";
 
 
 export const enregistreDessins = () => {
@@ -994,3 +995,15 @@ export function brancheOutilDessin(){
 
   $("voirNappe").onchange = e => { poseNappe(e.target.checked); rafraichitApercu(); };
 }
+
+/* Le montage d'un pavillon réécrit ses groupes : l'emplacement qu'on
+   reprenait n'existe plus, l'historique de l'éditeur valait pour l'autre
+   pavillon, et la boîte à outils se replie. Le rendu, que la page publique
+   porte aussi, reçoit d'ici en se chargeant de quoi tout remettre au repos ;
+   la page publique, qui n'a ni éditeur ni outils, n'en a pas besoin. */
+confieAuRendu({ oublieEdition: () => {
+  if (SORTE_GEO) choisitGeo(null);
+  HIST.length = REFAIRE.length = 0;
+  const o = $("outils");
+  if (o) o.classList.remove("open");
+} });

@@ -17,7 +17,10 @@
    retaillés. Leur est confié, par des détours lus au moment de l'appel, le
    dessin des calques (`modules/dessin.mjs`, `modules/points-interet.mjs`),
    qui importe ce que les libellés importent ; la boîte d'une forme, ils
-   l'importent (`modules/forme-choisie.mjs`).
+   l'importent (`modules/forme-choisie.mjs`). Le montage d'un pavillon n'a
+   plus de branchement : ce qu'il appelle ailleurs — le dessin des calques,
+   le fond chargé après coup, et ce que seule l'administration a —, chaque
+   module le lui confie en se chargeant (`modules/rendu.mjs` `confieAuRendu`).
    ============================================================ */
 brancheLibelles({
   dessineDessins: () => dessineDessins(),
@@ -27,22 +30,4 @@ brancheLibelles({
   rafraichitFleches: () => rafraichitFleches(),
   societeDeForme: (f) => societeDeForme(f),
   nomSurLePlan: (soc) => nomSurLePlan(soc),
-});
-
-/* Le montage d'un pavillon. Ce qui n'existe
-   pas partout — la nappe de la grille, le calage de la carte — sous la garde
-   qu'il avait ; la reprise d'un emplacement, l'historique de l'éditeur et la
-   boîte à outils dans leur tranche, que le visiteur ne reçoit pas. */
-brancheRendu({
-  dessineDessins: () => dessineDessins(),
-  rafraichitApercu: () => { if (typeof rafraichitApercu === "function") rafraichitApercu(); },
-  oublieCalageEnCours: () => { if (typeof oublieCalageEnCours === "function") oublieCalageEnCours(); },
-  chargeFond: (i) => chargeFond(i),
-  /* @admin — la reprise d'un emplacement, l'historique de l'éditeur, la boîte à outils */
-  oublieEdition: () => {
-    if (SORTE_GEO) choisitGeo(null);
-    HIST.length = REFAIRE.length = 0;
-    { const o = $("outils"); if (o) o.classList.remove("open"); }
-  },
-  /* @fin-admin */
 });

@@ -38,19 +38,28 @@ import { ferme } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le premier
-   montage attend les données, bien après le branchement. */
-/** @type {Record<string, any>} */
-let soude = {};
-
+/* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
+   confient en se chargeant (`confieAuRendu`) : le dessin des calques
+   (`dessin.mjs`), le fond d'un pavillon chargé après coup (`demarrage.mjs`),
+   et ce que seule l'administration a — la nappe de la grille (`nappe.mjs`),
+   le calage de la carte en cours (`calage-carte.mjs`), l'éditeur à remettre
+   au repos (`outil-dessin.mjs`). La page publique n'embarque pas ces
+   derniers : ils restent sans effet. */
 /**
- * Le branchement, appelé par `_rendu.html` à la place que ce code tenait.
- *
- * @param {Record<string, any>} b
+ * @typedef {object} PageRendu
+ * @property {() => void} dessineDessins
+ * @property {(i: number) => void} chargeFond
+ * @property {() => void} rafraichitApercu
+ * @property {() => void} oublieCalageEnCours
+ * @property {(() => void) | null} oublieEdition
  */
-export function brancheRendu(b){
-  soude = b;
-}
+/** @type {PageRendu} */
+const prete = { dessineDessins: () => {}, chargeFond: () => {}, rafraichitApercu: () => {},
+  oublieCalageEnCours: () => {}, oublieEdition: null };
+
+/** La porte des modules qui confient au montage ce qu'il appelle.
+ *  @param {Partial<PageRendu>} o */
+export function confieAuRendu(o){ Object.assign(prete, o); }
 
 /* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
    ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
@@ -111,11 +120,11 @@ export function montePlan(){
   poseCalqueActif(null);
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter ; la
-     boîte à outils n'existe qu'en administration. La page publique ne confie
-     rien de cela : elle n'a ni éditeur, ni outils. */
-  if (soude.oublieEdition) soude.oublieEdition();
+     boîte à outils n'existe qu'en administration. La page publique n'a rien
+     de cela : ni éditeur, ni outils. */
+  if (prete.oublieEdition) prete.oublieEdition();
   monteHabillage();
-  soude.dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  prete.dessineDessins();          // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
   // est à reposer dessus, sans quoi le pavillon paraît entier
   marqueRetrait();
@@ -127,7 +136,7 @@ export function montePlan(){
   // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
   dessineBorne();
   // la nappe de la grille n'est qu'à l'exploitant (`modules/nappe.mjs`)
-  soude.rafraichitApercu();
+  prete.rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -159,8 +168,8 @@ export function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
   /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
-  soude.oublieCalageEnCours();
+  prete.oublieCalageEnCours();
   ferme();
   montePlan(); fit(); liste();
-  soude.chargeFond(i);
+  prete.chargeFond(i);
 }

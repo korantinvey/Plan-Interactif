@@ -16,20 +16,15 @@
    images posées, l'annulation, le verrou et le rôle d'un calque — dans
    `modules/outil-dessin.mjs`, que seul `plan-admin.mjs` embarque.
 
-   Ceux qui ont encore un branchement l'ont ici, à la place que leur code
-   tenait : les calques reçoivent le bouton qui dit l'attente ; l'outil de
-   l'exploitant ne reçoit rien, mais ses boutons et ses champs s'y posent au
-   même rang qu'avant. Le dessin et les points d'intérêt n'en ont plus : la
+   L'outil de l'exploitant a encore un branchement, ici, à la place que son
+   code tenait : il ne reçoit rien, mais ses boutons et ses champs s'y posent
+   au même rang qu'avant. Les calques n'en ont plus : le bouton qui dit
+   l'attente, d'administration, leur est confié par `modules/enregistrement.mjs`
+   en se chargeant (`confieAuxCalques`). Le dessin et les points d'intérêt n'en ont plus : la
    forme choisie dans l'éditeur et sa boîte (`modules/forme-choisie.mjs`),
    l'ordre des couches (`modules/ordre-trace.mjs`), la fiche, la recherche,
    les secteurs et l'écran, ils les importent.
    ============================================================ */
-
-/* Le bouton qui dit l'attente est d'administration (`modules/enregistrement.mjs`) :
-   la page publique ne l'a pas. */
-brancheCalquesDessin({
-  majAttente: () => { if (typeof majAttente === "function") majAttente(); },
-});
 
 /* @admin — l'outil de dessin de l'exploitant, ses boutons et ses champs */
 brancheOutilDessin();

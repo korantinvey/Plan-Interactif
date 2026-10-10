@@ -33,13 +33,22 @@ import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubli
   from "./calques-dessin.mjs";
 import { oublieReperes } from "./points-interet.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-/* L'administration seule les a (`enregistrement.mjs`) : le branchement les
-   garde par `typeof`. */
-const compteRescapes = (/** @type {number} */ n) => soude.compteRescapes(n);
-const noteReglagesCharges = (/** @type {any} */ enBase) => soude.noteReglagesCharges(enBase);
+/* Ce que l'administration seule a (`enregistrement.mjs`), qui le confie à
+   l'index en se chargeant : la page publique ne l'embarque pas, et rien
+   n'est appelé. */
+/**
+ * @typedef {object} PageIndex
+ * @property {(n: number) => void} compteRescapes
+ * @property {(enBase: any) => void} noteReglagesCharges
+ */
+/** @type {PageIndex} */
+const prete = { compteRescapes: () => {}, noteReglagesCharges: () => {} };
+
+/** La porte de l'enregistrement, ouvert au chargement de son module.
+ *  @param {Partial<PageIndex>} o */
+export function confieALIndex(o){ Object.assign(prete, o); }
+const compteRescapes = (/** @type {number} */ n) => prete.compteRescapes(n);
+const noteReglagesCharges = (/** @type {any} */ enBase) => prete.noteReglagesCharges(enBase);
 
 /* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
    thématiques — tout ce que sa fenêtre montre en propre. Sa présentation reste
@@ -472,14 +481,4 @@ function poseLogoSalon(src){
   const img = imageSure(src);
   el.hidden = !img;
   if (img) el.src = img;
-}
-
-/**
- * Le branchement, appelé par `_js.html` à la place que ce code tenait.
- *
- * @param {{ compteRescapes: (n: number) => void,
- *   noteReglagesCharges: (enBase: any) => void }} b
- */
-export function brancheIndex(b){
-  soude = b;
 }

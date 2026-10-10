@@ -38,13 +38,15 @@ import { API } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
-import { annonce } from "./demarrage.mjs";
-import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente } from "./calques-dessin.mjs";
+import { annonce, confieAuDemarrage } from "./demarrage.mjs";
+import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente,
+  confieAuxCalques } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { CONF, reglagesDuSalon, enregistreConf, confiePublication } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
+import { confieALIndex } from "./index-salon.mjs";
 
 /* Ce que le code soudé confie au branchement : l'enregistrement des dessins.
    Ce que les chargements remplacent — le mode, les réglages (`CONF`) —, importé,
@@ -675,3 +677,12 @@ export function brancheSauvegarde(){
   r.onclick = () => { f.value = ""; f.click(); };
   f.onchange = () => { if (f.files && f.files[0]) litSauvegarde(f.files[0]); };
 }
+
+/* Les calques de dessin, le démarrage et l'index du salon, que la page
+   publique porte aussi, appellent l'enregistrement sans pouvoir l'importer :
+   il n'est qu'à l'administration. Il leur confie donc en se chargeant ce
+   qu'ils en appellent — l'état du bouton, le rattrapage d'un envoi en retard,
+   les calques rescapés, les réglages tels qu'ils sont arrivés. */
+confieAuxCalques({ majAttente });
+confieAuDemarrage({ majAttente, rattrapeRetard });
+confieALIndex({ compteRescapes, noteReglagesCharges });

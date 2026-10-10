@@ -30,15 +30,28 @@ import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { select, ficheConf } from "./fiche.mjs";
-import { montePlan, monteHabillage } from "./rendu.mjs";
+import { montePlan, monteHabillage, confieAuRendu } from "./rendu.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-/* L'administration seule les a : le branchement les garde par `typeof`. */
-const majAttente = () => soude.majAttente();
-const rattrapeRetard = () => soude.rattrapeRetard();
+/* Ce que l'administration seule a — l'état du bouton d'enregistrement et le
+   rattrapage d'un envoi en retard (`enregistrement.mjs`), la fenêtre d'accès
+   (`acces-admin.mjs`) — et que ces modules confient au démarrage en se
+   chargeant. La page publique ne les embarque pas : rien n'est appelé, et
+   une session refusée n'ouvre pas de fenêtre qu'elle n'a pas. */
+/**
+ * @typedef {object} PageDemarrage
+ * @property {() => void} majAttente
+ * @property {() => void} rattrapeRetard
+ * @property {((message: string) => void) | null} ecranAcces
+ */
+/** @type {PageDemarrage} */
+const prete = { majAttente: () => {}, rattrapeRetard: () => {}, ecranAcces: null };
+
+/** La porte de ce que l'administration confie au démarrage.
+ *  @param {Partial<PageDemarrage>} o */
+export function confieAuDemarrage(o){ Object.assign(prete, o); }
+const majAttente = () => prete.majAttente();
+const rattrapeRetard = () => prete.rattrapeRetard();
 
 /* ------------------------------------------------------------------
    Démarrage : données figées si elles sont dans la page, sinon appel
@@ -306,9 +319,9 @@ export function charge(){
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que
       // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
-      if (r.status === 401 && soude.ecranAcces){
+      if (r.status === 401 && prete.ecranAcces){
         try { localStorage.removeItem("console-session"); } catch (e) {}
-        soude.ecranAcces("Session expirée, reconnectez-vous.");
+        prete.ecranAcces("Session expirée, reconnectez-vous.");
         return Promise.reject(new Error("Session expirée."));
       }
       return r.ok ? r.json()
@@ -325,12 +338,8 @@ export function charge(){
  * Le branchement, appelé par `_admin2.html` au bout du script, à la place que
  * ce code tenait : la page démarre ici, et l'écoute du redimensionnement s'y
  * pose au même rang qu'avant parmi celles du plan — après celles de la vue.
- *
- * @param {{ majAttente: () => void, rattrapeRetard: () => void,
- *   ecranAcces: ((message: string) => void) | null }} b
  */
-export function brancheDemarrage(b){
-  soude = b;
+export function brancheDemarrage(){
   const fige = document.getElementById("data").textContent.trim();
   if (fige && fige.indexOf("__DATA__") < 0) demarre(JSON.parse(fige));
   else if (!API) annonce("Aucune source de données configurée.", true);
@@ -340,3 +349,7 @@ export function brancheDemarrage(b){
 
   addEventListener("resize", () => { if (DATA && view) fit(); });
 }
+
+/* Le fond d'un pavillon se charge après coup, au passage d'un pavillon à
+   l'autre : le rendu, que ce module importe, le reçoit d'ici en se chargeant. */
+confieAuRendu({ chargeFond });
