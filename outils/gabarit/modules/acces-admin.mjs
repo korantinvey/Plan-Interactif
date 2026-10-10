@@ -8,21 +8,30 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Ce qu'il n'importe pas — le mode administrateur à
-   activer — lui est confié par `brancheAcces`, que le
-   code soudé appelle à la place que ce code tenait (`_auth-plan.html`, versé
-   par `genere.js` dans la seule page d'administration). Le profil du compte,
+   activer — lui est confié par la bande de l'outil en se chargeant
+   (`confieALAcces`). Il se branche par `brancheAcces`, que le code soudé
+   appelle à la place que ce code tenait (`_auth-plan.html`, versé par
+   `genere.js` dans la seule page d'administration). Le profil du compte,
    qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
 import { charge, confieAuDemarrage } from "./demarrage.mjs";
 
-/* Ce que le code soudé confie encore : l'activation du mode administrateur
-   (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel importe ce
-   module — l'importer d'ici les bouclerait). Le chargement du plan, lui,
-   s'importe (`demarrage.mjs`). */
-/** @type {() => void} */
-let activeAdmin;
+/* Ce que la bande de l'outil confie en se chargeant : l'activation du mode
+   administrateur (`modules/bande-admin.mjs`, qui importe l'enregistrement,
+   lequel importe ce module — l'importer d'ici les bouclerait). Le chargement
+   du plan, lui, s'importe (`demarrage.mjs`). */
+/**
+ * @typedef {object} PreteAcces
+ * @property {typeof import("./bande-admin.mjs").activeAdmin} activeAdmin
+ */
+/** @type {PreteAcces} */
+const prete = { activeAdmin: () => {} };
+const activeAdmin = () => prete.activeAdmin();
+/** La porte par laquelle la bande de l'outil confie l'ouverture du mode.
+ *  @param {Partial<PreteAcces>} o */
+export function confieALAcces(o){ Object.assign(prete, o); }
 
 /* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
    « Admin » aux réglages — la base, elle, ne distingue pas les deux profils
@@ -214,11 +223,8 @@ function poseCompte(){
  * Appelé par le code soudé à la place que ce code tenait (`_auth-plan.html`) :
  * les écoutes du menu du compte s'y posent au même rang qu'avant parmi celles
  * du plan, et la vérification de la session part au même moment.
- *
- * @param {{ activeAdmin: typeof activeAdmin }} b
  */
-export function brancheAcces(b){
-  activeAdmin = b.activeAdmin;
+export function brancheAcces(){
 
   /* Un clic ailleurs, ou Échap, referme le panneau : rien d'autre ne dirait
      comment s'en défaire une fois ouvert au-dessus du plan. */

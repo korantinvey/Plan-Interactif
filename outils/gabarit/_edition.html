@@ -10,14 +10,10 @@
    choisie et les deux lectures que le plan public partage avec lui — sa
    recherche par identifiant, sa boîte — vivent dans
    `modules/forme-choisie.mjs`, que les deux importent.
-   ============================================================ */
-/* @admin — les poignées, le panneau « Élément » et les gestes d'édition */
 
-/* L'outil de dessin (`modules/outil-dessin.mjs`) importe ce module : ce que le
-   geste lui emprunte — l'historique, l'enregistrement, les champs qui nomment
-   un exposant — lui est donc confié ici, à la place que ce code tenait. Le
-   reste, le module l'importe. */
-brancheEdition({
-  memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes,
-});
-/* @fin-admin */
+   Il n'a plus de branchement : ce que le geste emprunte à l'outil de dessin
+   — l'historique, l'enregistrement, les champs qui nomment un exposant —,
+   l'outil le lui confie en se chargeant (`outil-dessin.mjs`, qui l'importe ;
+   porte `confieAEdition`). Ce morceau ne garde que sa place dans l'ordre du
+   script, et ce qu'il en dit.
+   ============================================================ */

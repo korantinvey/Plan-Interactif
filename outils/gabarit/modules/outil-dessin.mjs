@@ -20,6 +20,11 @@
    recevoir : la forme choisie dans l'éditeur et sa porte s'importent de
    `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
    rangement des réglages de `configuration.mjs`.
+
+   À l'inverse, ce qu'il tient et que d'autres modules d'exploitant
+   empruntent — l'éditeur, l'enregistrement, la reprise d'un emplacement, le
+   placement des libellés —, il le leur confie en se chargeant, au bas du
+   module : il les importe, et ils ne pourraient l'importer sans boucle.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -31,15 +36,15 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { oublieGrilles, oublieLiaisons, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
-import { programmePublication } from "./enregistrement.mjs";
+import { programmePublication, confieAEnregistrement } from "./enregistrement.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles } from "./placement-libelles.mjs";
+import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { modeGeometrie, choisitGeo } from "./reprise-emplacements.mjs";
+import { modeGeometrie, choisitGeo, confieALaReprise } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aimante, DERNIERE,
   retientTaille, reprendTaille, appliqueDimension } from "./aimants.mjs";
-import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
+import { confieAEdition, geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
   editionPointerMove, editionPointerUp, replieOutils } from "./edition.mjs";
 import { DESSINS, cleDessins, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
@@ -1007,3 +1012,12 @@ confieAuRendu({ oublieEdition: () => {
   const o = $("outils");
   if (o) o.classList.remove("open");
 } });
+
+/* Ces quatre modules sont importés par celui-ci : ils ne peuvent l'importer
+   en retour. Il leur confie donc ce qu'il tient dès que la page
+   d'administration le charge — avant tout geste, et sans que le code soudé
+   ait à s'en mêler. */
+confieAEdition({ memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes });
+confieAEnregistrement({ enregistreDessins });
+confieALaReprise({ pictoVerrou, activeCalque, remplitListeSocietes, societeSaisie, fermeIci });
+confieAuPlacementLibelles({ activeCalque });

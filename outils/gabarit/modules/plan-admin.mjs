@@ -11,7 +11,6 @@
    comme un nom sorti d'une tranche `@admin`.
    ============================================================ */
 import "./plan.mjs";
-import { brancheReglageSponsor } from "./reglage-sponsor.mjs";
 import { brancheChaleur } from "./chaleur.mjs";
 import { brancheCalageCarte } from "./calage-carte.mjs";
 import { brancheAcces } from "./acces-admin.mjs";
@@ -22,17 +21,18 @@ import { brancheEnregistrement }
 import { brancheAimants } from "./aimants.mjs";
 import { brancheBatiments } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
-import { activeAdmin } from "./bande-admin.mjs";
-import { ficheZone, basculeAffichageZone, brancheFicheZone }
-  from "./fiche-zone.mjs";
+/* L'ouverture du mode et la bande de l'outil : le code soudé ne l'appelle plus
+   par son nom, et seul ce point d'entrée la charge. Chargée ici, elle confie
+   l'ouverture du mode à la porte authentifiée (`acces-admin.mjs`
+   `confieALAcces`). */
+import "./bande-admin.mjs";
+import { ficheZone, basculeAffichageZone } from "./fiche-zone.mjs";
 import { branchePlacementLibelles } from "./placement-libelles.mjs";
-import { glisseFenetre, ouvreReglages } from "./reglages.mjs";
-import { modeGeometrie, majPaletteGeo, brancheRepriseEmplacements }
-  from "./reprise-emplacements.mjs";
-import { dessinePoignees, choisitForme, brancheEdition } from "./edition.mjs";
+import { glisseFenetre } from "./reglages.mjs";
+import { brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
+import { dessinePoignees, choisitForme } from "./edition.mjs";
 import { brancheNuancier } from "./nuancier.mjs";
-import { enregistreDessins, memorise, toleranceTrace, fermeIci, ajouteForme,
-  remplitListeSocietes, societeSaisie, imageEnAttente, optionsModes, activeCalque, pictoVerrou,
+import { enregistreDessins, memorise, toleranceTrace, ajouteForme, imageEnAttente,
   brancheOutilDessin } from "./outil-dessin.mjs";
 import { formeSel, formeParId, boite } from "./forme-choisie.mjs";
 /* Le panneau des calques : le code soudé ne l'appelle plus par son nom, et
@@ -43,25 +43,20 @@ import "./pile.mjs";
 import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
 Object.assign(globalThis, {
-  brancheReglageSponsor,
   brancheChaleur,
   brancheCalageCarte, brancheAcces,
   brancheReglageSuggestion,
   brancheEnregistrement,
   brancheAimants,
   brancheBatiments,
-  activeAdmin,
-  ficheZone, basculeAffichageZone, brancheFicheZone,
+  ficheZone, basculeAffichageZone,
   branchePlacementLibelles,
-  glisseFenetre, ouvreReglages,
-  modeGeometrie, majPaletteGeo,
+  glisseFenetre,
   brancheRepriseEmplacements,
   dessinePoignees, choisitForme,
-  brancheEdition,
   brancheNuancier,
-  enregistreDessins, memorise, toleranceTrace, fermeIci, ajouteForme,
-  remplitListeSocietes, societeSaisie,
-  optionsModes, activeCalque, pictoVerrou, brancheOutilDessin,
+  enregistreDessins, memorise, toleranceTrace, ajouteForme,
+  brancheOutilDessin,
   formeParId, boite,
   brancheGestesAdmin,
 });

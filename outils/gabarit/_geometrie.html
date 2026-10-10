@@ -9,18 +9,15 @@
    ajout — vit dans `modules/reprise-emplacements.mjs`, que seul
    `plan-admin.mjs` embarque.
 
-   La reprise se branche ici, à la place que son code y tenait : lui est
-   confié ce que l'outil de dessin tient (`modules/outil-dessin.mjs`, qui
-   importe la reprise), par des détours. Les réglages et leur
+   La reprise se branche ici, à la place que son code y tenait, pour y poser
+   les écoutes de sa palette. Ce que l'outil de dessin tient
+   (`modules/outil-dessin.mjs`, qui importe la reprise), l'outil le lui
+   confie en se chargeant (`confieALaReprise`). Les réglages et leur
    enregistrement, la vue, le calque ouvert, le panneau des calques, le tracé
    d'une forme et le nom d'une société, les modules les importent — ce que le
    visiteur reçoit n'a donc plus de branchement.
    ============================================================ */
 
 /* @admin — la reprise et l'ajout d'un emplacement, outil de l'exploitant */
-brancheRepriseEmplacements({
-  pictoVerrou: (f) => pictoVerrou(f), activeCalque: (id) => activeCalque(id),
-  remplitListeSocietes: () => remplitListeSocietes(), societeSaisie: (t) => societeSaisie(t),
-  fermeIci: (p, pts) => fermeIci(p, pts),
-});
+brancheRepriseEmplacements();
 /* @fin-admin */

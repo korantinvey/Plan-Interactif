@@ -18,17 +18,13 @@
    le visiteur reçoit de ce dernier — le placement relu au dessin des noms —
    est dans `modules/libelle-place.mjs`.
 
-   Ceux qui ont encore à recevoir se branchent ici, à la place que leur code
-   tenait : ce qu'ils ne peuvent importer sans boucler — la reprise d'un
-   emplacement, l'outil de dessin, qui les importent — leur est confié. La
-   bande de l'outil et le placement relu au dessin des noms importent tout :
-   ils n'ont plus de branchement.
+   Ce qu'ils ne peuvent importer sans boucler — la palette de la reprise d'un
+   emplacement, le calque ouvert par l'outil de dessin, qui les importent —,
+   ces deux-là le leur confient en se chargeant. La fiche d'une zone n'a donc
+   plus de branchement ; le placement des libellés se branche encore ici, à la
+   place que son code tenait, pour y poser les écoutes de sa palette.
    ============================================================ */
 
-/* @admin — la fiche d'une zone, qu'on ne remplit qu'en administration */
-brancheFicheZone({ majPaletteGeo });
-/* @fin-admin */
-
 /* @admin — le placement des libellés à la main */
-branchePlacementLibelles({ activeCalque, modeGeometrie });
+branchePlacementLibelles();
 /* @fin-admin */

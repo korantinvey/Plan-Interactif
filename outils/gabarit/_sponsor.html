@@ -2,15 +2,12 @@
    18. Le sponsor — un logo le temps du chargement
 
    Le générique vit dans `modules/sponsor.mjs`, son réglage d'exploitant dans
-   `modules/reglage-sponsor.mjs`, que seul `plan-admin.mjs` embarque. Ils se
-   branchent ici, à la place que leur code tenait : le générique y paraît au
+   `modules/reglage-sponsor.mjs`, que seul `plan-admin.mjs` embarque. Le
+   générique se branche ici, à la place que son code tenait : il y paraît au
    premier trait de la page, au même rang qu'avant parmi ce que le plan pose
    sur la scène. La configuration, le champ intitulé, le cadre d'un logo et
-   l'enregistrement, ils les importent ; le réglage reçoit d'ici le
-   glissement de la fenêtre des réglages, qui l'importe.
+   l'enregistrement, ils les importent ; le réglage reçoit le glissement de
+   la fenêtre des réglages de celle-ci, qui l'importe et le lui confie en se
+   chargeant : il n'a plus de branchement.
    ============================================================ */
 brancheSponsor();
-
-/* @admin — le réglage du générique, dans l'onglet « Admin » */
-brancheReglageSponsor({ glisseFenetre });
-/* @fin-admin */

@@ -11,8 +11,8 @@
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
    qu'en administration (`_fiche.html`). La palette de la reprise d'un
    emplacement (`reprise-emplacements.mjs`), qui importe ce module, lui est
-   confiée par `brancheFicheZone`, que `_mode-admin.html` appelle à la place
-   que ce code y tenait. La configuration et son enregistrement, la liste de
+   confiée par la reprise en se chargeant (`confieALaFicheZone`) : il n'a
+   plus de branchement. La configuration et son enregistrement, la liste de
    la recherche, les types de zone, le cartouche des points d'intérêt et le
    dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,
    `reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
@@ -36,26 +36,21 @@ import { cartouchePoi } from "./points-interet.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { liste } from "./recherche.mjs";
 
-/* Ce que le code soudé confie au branchement. Les réglages (`CONF`, que le
-   changement de salon remplace), importés, se lisent tels qu'ils sont à
-   l'instant. */
+/* Ce que la reprise d'un emplacement, qui importe ce module, lui confie en se
+   chargeant. Les réglages (`CONF`, que le changement de salon remplace),
+   importés, se lisent tels qu'ils sont à l'instant. */
 /**
- * @typedef {object} PageFicheZone
+ * @typedef {object} PreteFicheZone
  * @property {() => void} majPaletteGeo
  */
-/** @type {PageFicheZone} */
-let soude;
-const majPaletteGeo = () => soude.majPaletteGeo();
+/** @type {PreteFicheZone} */
+const prete = { majPaletteGeo: () => {} };
+const majPaletteGeo = () => prete.majPaletteGeo();
 
-/**
- * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`),
- * dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {PageFicheZone} page
- */
-export function brancheFicheZone(page){
-  soude = page;
-}
+/** La porte par laquelle la reprise d'un emplacement (`reprise-emplacements.mjs`)
+ *  confie sa palette.
+ *  @param {Partial<PreteFicheZone>} o */
+export function confieALaFicheZone(o){ Object.assign(prete, o); }
 
 /* ============================================================
    La fiche d'une zone organisateur

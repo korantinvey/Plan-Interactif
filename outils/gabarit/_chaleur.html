@@ -4,10 +4,11 @@
    Une lecture d'exploitant, qui vit dans `modules/chaleur.mjs` : seul
    `plan-admin.mjs` l'embarque, le visiteur ne la reçoit pas. Elle se branche
    ici, à la place que son code tenait — son écoute du redimensionnement s'y
-   pose au même rang qu'avant —, et la fenêtre des réglages, qui l'importe,
-   lui est confiée. Le mode administrateur, elle l'importe.
+   pose au même rang qu'avant. La fenêtre des réglages, qui l'importe, lui
+   confie en se chargeant de quoi la rouvrir ; le mode administrateur, elle
+   l'importe.
    ============================================================ */
 
 /* @admin — la carte de chaleur et la remise à zéro des compteurs */
-brancheChaleur({ ouvreReglages });
+brancheChaleur();
 /* @fin-admin */

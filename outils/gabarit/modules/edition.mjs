@@ -19,9 +19,8 @@
    formes (`chemin-forme.mjs`, `dessin.mjs`), ce qu'un repère et un arrêt sont
    (`reperes.mjs`) et la vue (`vue.mjs`) s'importent. L'historique,
    l'enregistrement et les champs de la boîte à outils vivent dans
-   `outil-dessin.mjs`, qui importe ce module-ci : ils lui sont confiés par
-   `brancheEdition`, que `_edition.html` appelle à la place que ce code y
-   tenait.
+   `outil-dessin.mjs`, qui importe ce module-ci : il les lui confie par
+   `confieAEdition` en se chargeant. Rien ne passe plus par le code soudé.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -41,23 +40,34 @@ import { dessineDessins, redessineForme, apercuGuide, seRattache, societeDeForme
   from "./dessin.mjs";
 import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : ce que
-   l'outil de dessin tient, qui importe ce module-ci. */
-/** @type {Record<string, any>} */
-let soude = {};
+/**
+ * Ce que l'outil de dessin tient et confie au module en se chargeant
+ * (`outil-dessin.mjs`, qui importe celui-ci et ne peut donc pas en être
+ * importé). Les défauts ne font rien : aucun geste d'édition ne part avant
+ * que la page d'administration ait chargé l'outil.
+ *
+ * @typedef {object} PreteEdition
+ * @property {typeof import("./outil-dessin.mjs").memorise} memorise
+ * @property {typeof import("./outil-dessin.mjs").enregistreDessins} enregistreDessins
+ * @property {typeof import("./outil-dessin.mjs").optionsModes} optionsModes
+ * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
+ * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
+ */
+/** @type {PreteEdition} */
+const prete = {
+  memorise: () => {}, enregistreDessins: () => {}, optionsModes: () => "",
+  societeSaisie: () => null, remplitListeSocietes: () => {},
+};
 
-const memorise = (salve) => soude.memorise(salve);
-const enregistreDessins = () => soude.enregistreDessins();
-const optionsModes = () => soude.optionsModes();
-const societeSaisie = (txt) => soude.societeSaisie(txt);
-const remplitListeSocietes = () => soude.remplitListeSocietes();
+const memorise = (/** @type {string} */ salve) => prete.memorise(salve);
+const enregistreDessins = () => prete.enregistreDessins();
+const optionsModes = () => prete.optionsModes();
+const societeSaisie = (/** @type {string} */ txt) => prete.societeSaisie(txt);
+const remplitListeSocietes = () => prete.remplitListeSocietes();
 
-/** Ce que le code soudé confie au module, appelé par `_edition.html` à la
- *  place que ce code tenait dans le script du plan. Rien ne s'y exécute au
- *  chargement : il n'y a qu'à retenir ce qui est confié. */
-export function brancheEdition(page){
-  soude = page;
-}
+/** La porte par laquelle l'outil de dessin confie ce qu'il tient.
+ *  @param {Partial<PreteEdition>} o */
+export function confieAEdition(o){ Object.assign(prete, o); }
 
 /** Le geste en cours — déplacer, tirer une poignée, tourner un texte —, ou
  *  rien. Le dessin le lit pour ne pas effacer les points d'accrochage d'un

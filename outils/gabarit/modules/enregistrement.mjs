@@ -27,7 +27,8 @@
    `apparence.mjs`, `ordre-trace.mjs`), comme les calques dessinés et leurs
    deux relevés (`calques-dessin.mjs`) et l'annonce dans la liste
    (`demarrage.mjs`) ; seul l'enregistrement des dessins, que l'outil de
-   dessin tient et qui importe ce module-ci, se confie — comme ce qui dit
+   dessin tient et qui importe ce module-ci, se confie — l'outil le donne en
+   se chargeant (`confieAEnregistrement`) —, comme ce qui dit
    qu'un geste est en cours, que les gestes de l'exploitant lui donnent
    (`gestes-admin.mjs`, `confieGesteEnCours`). Le rangement des
    réglages, lui, reçoit d'ici son envoi en base (`confiePublication`).
@@ -48,17 +49,22 @@ import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieALIndex } from "./index-salon.mjs";
 
-/* Ce que le code soudé confie au branchement : l'enregistrement des dessins.
-   Ce que les chargements remplacent — le mode, les réglages (`CONF`) —, importé,
-   se lit tel qu'il est à l'instant : l'envoi en relit certains après chaque
-   `await`. Les calques et leurs deux relevés (`DESSINS`, `ATTENTE`,
+/* Ce que l'outil de dessin confie en se chargeant : l'enregistrement des
+   dessins. Ce que les chargements remplacent — le mode, les réglages (`CONF`) —,
+   importé, se lit tel qu'il est à l'instant : l'envoi en relit certains après
+   chaque `await`. Les calques et leurs deux relevés (`DESSINS`, `ATTENTE`,
    `PUBLIES`) de même. */
 /**
- * @typedef {object} PageEnregistrement
+ * @typedef {object} PreteEnregistrement
  * @property {() => void} enregistreDessins
  */
-/** @type {PageEnregistrement} */
-let soude;
+/** @type {PreteEnregistrement} */
+const prete = { enregistreDessins: () => {} };
+
+/** La porte par laquelle l'outil de dessin (`outil-dessin.mjs`, qui importe
+ *  ce module) confie ce qu'il tient.
+ *  @param {Partial<PreteEnregistrement>} o */
+export function confieAEnregistrement(o){ Object.assign(prete, o); }
 /** @param {string} txt @param {boolean} [erreur] */
 
 /* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
@@ -281,11 +287,8 @@ const presse = () => { if (minuteur) envoie(true); };
  * (`_pousse.html`), dans une tranche que le visiteur ne reçoit pas. Les
  * écouteurs de la page s'y posent, et non au chargement du module : ils
  * gardent ainsi leur rang parmi ceux du plan.
- *
- * @param {PageEnregistrement} s
  */
-export function brancheEnregistrement(s){
-  soude = s;
+export function brancheEnregistrement(){
   /* Sur le document, où l'événement naît : écouté sur la fenêtre, il n'y arrivait
      que par remontée, et un onglet masqué trop tôt n'aurait rien envoyé. */
   document.addEventListener("visibilitychange", () => {
@@ -632,7 +635,7 @@ function appliqueSauvegarde(s){
   enregistreConf();
   // range les dessins sur le poste, oublie les relevés qui en dépendent, et
   // programme l'envoi — le même geste que pour un trait tracé à la main
-  soude.enregistreDessins();
+  prete.enregistreDessins();
   appliqueApparence();
   dessineDessins();
   construitPanneau();

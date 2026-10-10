@@ -21,10 +21,11 @@
 
    Un module de l'administration, donc : `plan-admin.mjs` l'embarque, le
    visiteur ne le reçoit jamais. La sélection d'un stand s'importe de
-   `fiche.mjs`. Ce qu'il ne peut pas importer — la fenêtre des réglages, le
-   mode administrateur — lui est confié
-   par `brancheChaleur`, que le code soudé appelle à la place que ce code y
-   tenait (`_chaleur.html`).
+   `fiche.mjs`, le mode administrateur de `mode-admin.mjs`. La fenêtre des
+   réglages, qui l'importe, lui confie en se chargeant de quoi s'ouvrir
+   (`confieALaChaleur`). Il se branche par `brancheChaleur`, que le code soudé
+   appelle à la place que ce code y tenait (`_chaleur.html`), pour y poser son
+   écoute du redimensionnement.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { accesBase, base } from "./session.mjs";
@@ -34,11 +35,19 @@ import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { confieChaleur } from "./secteurs.mjs";
 
-/* Ce que le branchement confie : la fenêtre des réglages (`reglages.mjs`),
-   qui importe ce module. Le mode administrateur s'importe, lu à l'instant
+/* Ce que la fenêtre des réglages (`reglages.mjs`), qui importe ce module, lui
+   confie en se chargeant. Le mode administrateur s'importe, lu à l'instant
    (`modules/mode-admin.mjs` `ADMIN`). */
-/** @type {(ouvrir?: string) => void} */
-let ouvreReglages;
+/**
+ * @typedef {object} PreteChaleur
+ * @property {typeof import("./reglages.mjs").ouvreReglages} ouvreReglages
+ */
+/** @type {PreteChaleur} */
+const prete = { ouvreReglages: () => {} };
+const ouvreReglages = (/** @type {string} */ ouvrir) => prete.ouvreReglages(ouvrir);
+/** La porte par laquelle la fenêtre des réglages confie de quoi la rouvrir.
+ *  @param {Partial<PreteChaleur>} o */
+export function confieALaChaleur(o){ Object.assign(prete, o); }
 
 const racine = document.documentElement;
 
@@ -661,11 +670,8 @@ async function lanceRemiseAZero(){
 /**
  * Le branchement de la carte, appelé par le code soudé à la place que ce code
  * y tenait (`_chaleur.html`), dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {{ ouvreReglages: typeof ouvreReglages }} b
  */
-export function brancheChaleur(b){
-  ouvreReglages = b.ouvreReglages;
+export function brancheChaleur(){
   /* La hauteur disponible change avec la fenêtre, et le cartouche se replie
      tout seul sur ce qui reste : la pile doit suivre. Posé ici, au même rang
      qu'avant parmi les écouteurs du plan. */

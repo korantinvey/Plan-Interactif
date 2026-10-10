@@ -14,8 +14,11 @@
    pourquoi.
 
    Il se branche par `brancheRepriseEmplacements`, que `_geometrie.html`
-   appelle à la place que ce code y tenait : ce que l'outil de dessin tient
-   (`outil-dessin.mjs`, qui importe ce module-ci) s'y confie par des détours.
+   appelle à la place que ce code y tenait, pour y poser les écoutes de sa
+   palette. Ce que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
+   ce module-ci) lui est confié par l'outil en se chargeant
+   (`confieALaReprise`). À son tour, il confie en se chargeant ce qu'il tient
+   à la fiche d'une zone et au placement des libellés, qu'il importe.
    Les réglages et leur enregistrement (`configuration.mjs`, `CONF` lu tel
    qu'il est à l'instant), la vue, le panneau des calques (`ordre-trace.mjs`),
    le dessin des noms et des distinctions, le calque de dessin ouvert et le
@@ -33,10 +36,10 @@ import { GL, cibleWebgl, priseWebgl } from "./webgl.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques } from "./parcours.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles } from "./placement-libelles.mjs";
+import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, montreAimants, correction,
   aimante } from "./aimants.mjs";
-import { ficheZone } from "./fiche-zone.mjs";
+import { ficheZone, confieALaFicheZone } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan, confieALaVue } from "./vue.mjs";
@@ -53,22 +56,29 @@ import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 
 /**
- * Ce que le code soudé confie au branchement : ce que tient l'outil de
- * dessin, qui importe ce module.
- * @typedef {object} PageRepriseEmplacements
- * @property {(ferme: boolean) => string} pictoVerrou
- * @property {(id: any) => void} activeCalque
- * @property {() => void} remplitListeSocietes
- * @property {(texte: string) => any} societeSaisie
- * @property {(p: number[], pts: number[][]) => boolean} fermeIci
+ * Ce que l'outil de dessin tient et confie au module en se chargeant
+ * (`outil-dessin.mjs`, qui importe ce module-ci). Les défauts ne font rien :
+ * l'outil se charge avec la page d'administration, avant tout geste.
+ * @typedef {object} PreteReprise
+ * @property {typeof import("./outil-dessin.mjs").pictoVerrou} pictoVerrou
+ * @property {typeof import("./outil-dessin.mjs").activeCalque} activeCalque
+ * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
+ * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
+ * @property {typeof import("./outil-dessin.mjs").fermeIci} fermeIci
  */
-/** @type {PageRepriseEmplacements} */
-let soude;
-const pictoVerrou = (/** @type {boolean} */ f) => soude.pictoVerrou(f);
-const activeCalque = (/** @type {any} */ id) => soude.activeCalque(id);
-const remplitListeSocietes = () => soude.remplitListeSocietes();
-const societeSaisie = (/** @type {string} */ texte) => soude.societeSaisie(texte);
-const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => soude.fermeIci(p, pts);
+/** @type {PreteReprise} */
+const prete = {
+  pictoVerrou: () => "", activeCalque: () => {}, remplitListeSocietes: () => {},
+  societeSaisie: () => null, fermeIci: () => false,
+};
+/** La porte par laquelle l'outil de dessin confie ce qu'il tient.
+ *  @param {Partial<PreteReprise>} o */
+export function confieALaReprise(o){ Object.assign(prete, o); }
+const pictoVerrou = (/** @type {boolean} */ f) => prete.pictoVerrou(f);
+const activeCalque = (/** @type {any} */ id) => prete.activeCalque(id);
+const remplitListeSocietes = () => prete.remplitListeSocietes();
+const societeSaisie = (/** @type {string} */ texte) => prete.societeSaisie(texte);
+const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => prete.fermeIci(p, pts);
 const racine = document.documentElement;
 
 /* Le choix et le geste sont transitoires, comme le mode : ils ne se
@@ -739,11 +749,8 @@ export function geometriePointerUp(e){
 /**
  * Le branchement : `_geometrie.html` l'appelle à la place que ce code y tenait.
  * La palette reçoit ici ses écoutes, à leur rang parmi celles du plan.
- *
- * @param {PageRepriseEmplacements} page
  */
-export function brancheRepriseEmplacements(page){
-  soude = page;
+export function brancheRepriseEmplacements(){
   if ($("geoFerme")) $("geoFerme").onclick = () => modeGeometrie(null);
   if ($("geoOrigine")) $("geoOrigine").onclick = geometrieOrigine;
   if ($("geoLargeur")) $("geoLargeur").oninput = appliqueDimensionGeo;
@@ -767,3 +774,9 @@ export function brancheRepriseEmplacements(page){
    vue, que ce module importe, les refait à chaque changement de vue — il les
    lui confie en se chargeant ; la page publique ne les a pas. */
 confieALaVue({ dessinePoigneesGeo });
+
+/* La fiche d'une zone et le placement des libellés sont importés par ce
+   module : ils ne peuvent l'importer en retour. Il leur confie donc, dès que
+   la page d'administration le charge, ce qu'ils lui empruntent. */
+confieALaFicheZone({ majPaletteGeo });
+confieAuPlacementLibelles({ modeGeometrie });
