@@ -77,12 +77,16 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    Servie par le site lui-même, comme les polices : un réseau tiers aurait
    reçu l'adresse de chaque visiteur, et sa panne privait le plan du dessin.
    Le nom du fichier porte la version — il ne change jamais sous une même
-   adresse, et le service hors ligne le garde tel quel. Pour en changer :
-   poser dans `web/bibliotheques/` le `dist.min.js` du paquet npm `deck.gl`,
-   sous le nom de sa version, et reporter son empreinte ici. */
+   adresse, et le service hors ligne le garde tel quel.
+
+   Réduite aux classes que ce module emprunte à `deck` : la bibliothèque
+   entière pesait 470 Ko compressés, celle-ci 213. Elle se refait par
+   `npm run deck` (`outils/deck.js`), qui dit le nom et l'empreinte à
+   reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
+   ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11.min.js",
-  integrite: "sha384-n9TufhIL8BMsQ8I/frAQGFsg2D/50T9gjWMitdG+F1HtTxSz62ol4tnA1nXOoeun",
+  src: "bibliotheques/deck.gl-9.3.11-plan.min.js",
+  integrite: "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
 };
 export const GL = {
   charge: false, actif: false, deck: null,
