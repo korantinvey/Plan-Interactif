@@ -134,15 +134,15 @@ Fonctions :
 `borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
 `tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
 
-### `modules/acces-admin.mjs` — 253 l. → plan-admin
+### `modules/acces-admin.mjs` — 251 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
 Fonctions :
 
 `activeAdmin` 31 · `confieALAcces` 34 · `litLocal` 42 · `configuration` 47
-`normaliseUrlA` 51 · `sessionValide` 67 · `ecranAcces` 85 · `contenuDuJeton` 176
-`mailDuJeton` 177 · `litProfilA` 188 · `poseCompte` 203 · `brancheAcces` 227
+`normaliseUrlA` 51 · `sessionValide` 67 · `ecranAcces` 85 · `contenuDuJeton` 174
+`mailDuJeton` 175 · `litProfilA` 186 · `poseCompte` 201 · `brancheAcces` 225
 
 Éléments :
 
@@ -1327,16 +1327,16 @@ Fonctions :
 `ecranConfig` 127 · `ecranConnexion` 159 · `deconnecte` 225 · `signale` 240 · `bloc` 264
 `grille` 282 · `idCompte` 299 · `themeSombre` 308 · `premierEcran` 326 · `brancheSocle` 341
 
-### `modules/sponsor.mjs` — 400 l. → plan, plan-admin
+### `modules/sponsor.mjs` — 398 l. → plan, plan-admin
 
 - l.1 · Le sponsor — un logo le temps du chargement
 
 Fonctions :
 
-`reglageSponsor` 114 · `secondesSponsor` 117 · `modeSponsor` 130 · `sponsorRetenu` 149
-`cleSponsor` 180 · `sponsorEnCache` 183 · `retientSponsor` 198 · `ouvreSponsor` 223
-`suitSponsor` 316 · `resteSponsor` 341 · `fermeSponsor` 347 · `accueilleSponsor` 363
-`brancheSponsor` 395
+`reglageSponsor` 112 · `secondesSponsor` 115 · `modeSponsor` 128 · `sponsorRetenu` 147
+`cleSponsor` 178 · `sponsorEnCache` 181 · `retientSponsor` 196 · `ouvreSponsor` 221
+`suitSponsor` 314 · `resteSponsor` 339 · `fermeSponsor` 345 · `accueilleSponsor` 361
+`brancheSponsor` 393
 
 ### `modules/suggestion.mjs` — 334 l. → plan, plan-admin
 

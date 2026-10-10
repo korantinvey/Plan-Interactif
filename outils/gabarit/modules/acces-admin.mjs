@@ -90,12 +90,10 @@ export function ecranAcces(message){
   voile.innerHTML =
     '<div class="mfen" role="dialog" aria-modal="true">' +
     /* La marque, ici et nulle part ailleurs sur cette page : derrière la
-       fenêtre, le plan est déjà celui du salon.
-       Entre accents graves, et non entre apostrophes : esbuild réécrit une
-       chaîne simple entre guillemets droits, et la marque qui prend sa place
-       en porte dans chacun de ses attributs. Un gabarit sans substitution, il
-       le laisse tel quel. */
-    `<header class="teteMarque"><span class="marqueE2M"><!--__MARQUE__--></span>` +
+       fenêtre, le plan est déjà celui du salon. `MARQUE_PRODUIT` est le
+       dessin d'`outils/icones.js`, que la construction définit pour esbuild
+       (`genere.js` `scriptDesModules`). */
+    '<header class="teteMarque"><span class="marqueE2M">' + MARQUE_PRODUIT + '</span>' +
     '<h2>Administration du plan</h2></header>' +
     '<div class="mcorps">' +
     '<p class="astuce" id="accesMsg"></p>' +

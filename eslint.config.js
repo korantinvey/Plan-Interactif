@@ -78,7 +78,9 @@ module.exports = [
     files: ["outils/gabarit/modules/**/*.mjs"],
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: {
       ...globals.browser, LANGUE: GLOBALES_PAGE.LANGUE, traduit: GLOBALES_PAGE.traduit,
-      deck: GLOBALES_PAGE.deck } },
+      deck: GLOBALES_PAGE.deck,
+      // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
+      MARQUE_PRODUIT: "readonly" } },
     rules: { ...REGLES, "no-restricted-syntax": ["error",
       { selector: "CallExpression[callee.object.name='Object'][arguments.0.name=/^(globalThis|window|self)$/]",
         message: "Rien ne se pose sur l'objet global : importez, ou confiez par une porte." },

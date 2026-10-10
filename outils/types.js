@@ -36,6 +36,8 @@ const DECLARATIONS = [
   "declare function traduit(phrase: string): string;",
   "declare var deck: any;",
   "declare var __DICTIONNAIRE__: any;",
+  // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
+  "declare const MARQUE_PRODUIT: string;",
   /* Un élément cherché par sélecteur, rendu sans type précis — la règle de
      `$` (`modules/dom.mjs`), pour la même raison : la bibliothèque rend un
      `Element` nu, sans `dataset`, `value` ni `onclick`, et chaque recherche

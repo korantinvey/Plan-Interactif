@@ -315,8 +315,12 @@ function connecte(t) {
 
 /* Le script d'un point d'entrée (`outils/gabarit/modules/`), posé en ligne ;
    la page le sort ensuite dans un fichier nommé par son empreinte. */
+/* La marque du produit y entre par `define` (`MARQUE_PRODUIT`), et non par
+   `marques` après coup : dans un script minifié, une substitution décalerait
+   la carte de correspondance. */
+const DEFINIS = { MARQUE_PRODUIT: JSON.stringify(uneLigne(icones.svgPage())) };
 const scriptDesModules = (entree) =>
-  '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
+  '<script data-modules="' + entree + '">\n' + modules.assemble(entree, DEFINIS) + "</script>\n";
 /* Le script des modules se pose après tout le balisage et les données : la
    suite des branchements qu'il lance (`modules/lancement.mjs`) trouve ainsi
    le document entier déjà lu. Un script resté en ligne après les données
@@ -359,12 +363,13 @@ fs.rmSync(W + VERSIONS, { recursive: true, force: true });
 fs.mkdirSync(W + VERSIONS);
 /** Ce qui est posé sous `versions/` par cette construction. */
 const VERSIONNES = [];
-/** Pose un fichier sous un nom qui porte son empreinte, et rend ce nom. */
-function poseVersion(radical, extension, contenu) {
+/** Pose un fichier sous un nom qui porte son empreinte, et rend ce nom.
+ *  `queue` ajoute au fichier ce qui dépend de ce nom même, hors de l'empreinte. */
+function poseVersion(radical, extension, contenu, queue = () => "") {
   const nom = VERSIONS + radical + "." +
     crypto.createHash("sha256").update(contenu).digest("hex").slice(0, 10) + extension;
   if (!VERSIONNES.includes(nom)) {
-    fs.writeFileSync(W + nom, contenu);
+    fs.writeFileSync(W + nom, contenu + queue(nom));
     VERSIONNES.push(nom);
   }
   return nom;
@@ -390,10 +395,25 @@ fs.writeFileSync(W + "_headers",
    `document.currentScript`, qui le désigne encore. */
 const MODULES_EN_LIGNE = /<script (data-modules="(plan|plan-admin)"[^>]*)>([\s\S]*?)<\/script>/;
 const LANGUE_EN_LIGNE = /<script>(\nwindow\.traduit = String;[\s\S]*?)<\/script>/;
+/* Un script minifié part avec sa carte (`modules.js` `assemble`), posée à
+   côté de lui sous son nom suivi de `.map`, et qu'il désigne en dernière
+   ligne. La carte décrit le code tel qu'esbuild l'a rendu : si l'épuration de
+   la page y avait touché, elle mentirait — on le refuse plutôt. */
+function poseModules(entree, code) {
+  if (process.env.PLAN_LISIBLE !== "1" && ["plan", "plan-admin"].includes(entree) &&
+      !modules.carteDe(code))
+    throw new Error(entree + " : le script minifié a changé depuis esbuild, sa carte ne vaudrait plus");
+  const carte = modules.carteDe(code);
+  if (!carte) return poseVersion(entree, ".js", code);
+  return poseVersion(entree, ".js", code.trim(), (nom) => {
+    fs.writeFileSync(W + nom + ".map", carte);
+    return "\n//# sourceMappingURL=" + path.basename(nom) + ".map\n";
+  });
+}
 function sortScripts(html) {
   const m = html.match(MODULES_EN_LIGNE), l = html.match(LANGUE_EN_LIGNE);
   if (!m || !l) throw new Error("script des modules ou de la langue introuvable");
-  const modulesJs = poseVersion(m[2], ".js", m[3]);
+  const modulesJs = poseModules(m[2], m[3]);
   const langueJs = poseVersion("langue", ".js", l[1]);
   return html
     .replace(MODULES_EN_LIGNE, () => '<script ' + m[1] + ' src="/' + modulesJs + '"></script>')
@@ -590,14 +610,11 @@ fs.writeFileSync(W + "sw.js",
 
 for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
   const s = fs.readFileSync(W + f, "utf8");
-  // les scripts qu'elle charge à part comptent pour ce qu'elle porte
-  const avecScripts = s + [...s.matchAll(/<script [^>]*src="\/(versions\/[^"]+)"/g)]
-    .map((m) => fs.readFileSync(W + m[1], "utf8")).join("\n");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
-    // c'est la présence du module d'accès qui compte, pas une simple mention :
-    // le chargeur en cite le nom pour rouvrir l'écran sur session expirée
-    "· admin " + (avecScripts.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"),
+    // c'est le script de l'administration qui compte, pas une simple mention :
+    // ses noms de fonction ne survivent pas à la minification
+    "· admin " + (/<script [^>]*src="\/versions\/plan-admin\./.test(s) ? "authentifié" : "retiré"),
     // une seule page doit s'installer : le relire ici évite de le découvrir
     // sur un téléphone, un mois plus tard
     (s.indexOf('rel="manifest"') > 0 ? "· application" : ""));
