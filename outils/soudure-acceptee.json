@@ -3,7 +3,6 @@
   "plan": [
    "CONF",
    "DESSINS",
-   "apercuGuide",
    "brancheBandes",
    "brancheBorne",
    "brancheDemarrage",
@@ -27,23 +26,12 @@
    "brancheTonDeLaBarre",
    "brancheVue",
    "brancheWebgl",
-   "cadrePlan",
-   "calqueActif",
-   "estCadre",
    "finInstant",
    "instantConf",
-   "mesCalques",
-   "redessineForme",
-   "retireAdmin",
-   "signale",
-   "svg",
-   "view"
+   "retireAdmin"
   ],
   "plan-admin": [
-   "ajouteForme",
-   "boite",
    "brancheAcces",
-   "brancheAimants",
    "brancheBatiments",
    "brancheCalageCarte",
    "brancheChaleur",
@@ -52,15 +40,7 @@
    "brancheNuancier",
    "brancheOutilDessin",
    "branchePlacementLibelles",
-   "brancheRepriseEmplacements",
-   "choisitForme",
-   "dessinePoignees",
-   "enregistreDessins",
-   "formeParId",
-   "formeSel",
-   "imageEnAttente",
-   "memorise",
-   "toleranceTrace"
+   "brancheRepriseEmplacements"
   ],
   "console": [
    "brancheConsole",

@@ -19,10 +19,6 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 12. Démarrage — le branchement
 
-### `_aimants.html` — 22 l.
-
-- l.3 · 11 quater. Dessiner juste — le branchement
-
 ### `_auth-plan.html` — 14 l.
 
 - l.2 · Accès à l'administration du plan — le branchement
@@ -1099,23 +1095,23 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 1023 l. → plan-admin
+### `modules/outil-dessin.mjs` — 1039 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
 Fonctions :
 
-`enregistreDessins` 64 · `instantane` 102 · `clotSalve` 113 · `memorise` 114
-`restaure` 125 · `annule` 141 · `refais` 153 · `poseTrait` 158 · `toleranceTrace` 179
-`aimanteContour` 184 · `rayonContour` 187 · `redresseTrace` 206 · `traceGuide` 240
-`fermeIci` 247 · `ajouteForme` 252 · `poseChampImage` 269 · `remplitListeSocietes` 276
-`societeSaisie` 284 · `calquePourImage` 300 · `lienImageSaisi` 328 · `formeImage` 340
-`poseImage` 349 · `ditImagePosee` 372 · `importeImage` 380 · `dessinPointerDown` 409
-`dessinPointerMove` 494 · `dessinPointerUp` 532 · `termineTrace` 573 · `aide` 585
-`outilOffert` 615 · `choisitOutil` 629 · `enchaineStand` 660 · `optionsModes` 672
-`proposeCouleurLigne` 682 · `montreTransport` 693 · `activeCalque` 702 · `cleVerrou` 760
-`verrouille` 761 · `basculeVerrou` 763 · `pictoVerrou` 780 · `montreRoleIti` 814
-`creeCalque` 827 · `demandeNom` 840 · `renommeCalque` 865 · `brancheOutilDessin` 881
+`enregistreDessins` 65 · `instantane` 103 · `clotSalve` 114 · `memorise` 115
+`restaure` 126 · `annule` 142 · `refais` 154 · `poseTrait` 159 · `toleranceTrace` 180
+`aimanteContour` 185 · `rayonContour` 188 · `redresseTrace` 207 · `traceGuide` 241
+`fermeIci` 248 · `ajouteForme` 253 · `poseChampImage` 270 · `remplitListeSocietes` 277
+`societeSaisie` 285 · `calquePourImage` 301 · `lienImageSaisi` 329 · `formeImage` 341
+`poseImage` 350 · `ditImagePosee` 373 · `importeImage` 381 · `dessinPointerDown` 410
+`dessinPointerMove` 495 · `dessinPointerUp` 533 · `termineTrace` 574 · `aide` 586
+`outilOffert` 616 · `choisitOutil` 630 · `enchaineStand` 661 · `optionsModes` 673
+`proposeCouleurLigne` 683 · `montreTransport` 694 · `activeCalque` 703 · `cleVerrou` 761
+`verrouille` 762 · `basculeVerrou` 764 · `pictoVerrou` 781 · `montreRoleIti` 815
+`creeCalque` 828 · `demandeNom` 841 · `renommeCalque` 866 · `brancheOutilDessin` 882
 
 ### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
 
@@ -1174,11 +1170,11 @@ Fonctions :
 `choisitLibelle` 126 · `pousseLibelle` 133 · `libellePointerDown` 141
 `libellePointerMove` 157 · `libellePointerUp` 166 · `branchePlacementLibelles` 179
 
-### `modules/plan-admin.mjs` — 65 l. → plan-admin
+### `modules/plan-admin.mjs` — 50 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 126 l. → plan, plan-admin
+### `modules/plan.mjs` — 116 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
