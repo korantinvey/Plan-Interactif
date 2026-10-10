@@ -12,7 +12,7 @@
    appelle au rang que son code tenait : les écoutes de la fiche s'y posent
    au même rang qu'avant parmi celles du plan.
    Ce qu'elle emprunte aux modules qui l'importent — le montage du plan, les
-   découpages dessinés, les distinctions, le tiroir du parcours, et, en
+   découpages dessinés, les distinctions, le bouton « au parcours », et, en
    administration seulement, les deux gestes de l'exploitant sur une zone —
    chacun le lui confie en se chargeant, par `confieALaFiche`. La liste, les
    thématiques et les vignettes s'importent de `recherche.mjs`, les tiroirs
@@ -32,7 +32,7 @@ import { lien, adresseWeb, adresseImage, imageSure, assainitRiche } from "./sur.
 import { JOURS, MOIS, momentLocal, jourLong } from "./temps.mjs";
 import { mesure } from "./mesure.mjs";
 import { recadreMarque } from "./marque.mjs";
-import { signetParcours, boutonParcours, dessineMarques } from "./parcours.mjs";
+import { signetParcours, boutonParcours, dessineMarques, fermeParcours } from "./parcours.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
@@ -51,7 +51,7 @@ import { baisseTiroir } from "./tiroirs.mjs";
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
  * (`rendu.mjs`), les découpages dessinés (`dessin.mjs`), les marques des
- * distinctions (`distinctions.mjs`), le tiroir du parcours
+ * distinctions (`distinctions.mjs`), le bouton « au parcours »
  * (`tiroir-parcours.mjs`), et, en administration seulement, les deux gestes
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
@@ -64,7 +64,6 @@ import { baisseTiroir } from "./tiroirs.mjs";
  * @property {() => void} montePlan
  * @property {() => void} marqueStandsDessines
  * @property {(soc: any) => void} poseDistsFiche
- * @property {() => void} fermeParcours
  * @property {(hote: any, canal: any) => void} brancheParcours
  * @property {((o: any) => void) | null} ficheZone
  * @property {((o: any) => void) | null} basculeAffichageZone
@@ -79,7 +78,6 @@ const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.d
 const montePlan = () => prete.montePlan();
 const marqueStandsDessines = () => prete.marqueStandsDessines();
 const poseDistsFiche = (/** @type {any} */ soc) => prete.poseDistsFiche(soc);
-const fermeParcours = () => prete.fermeParcours();
 const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================

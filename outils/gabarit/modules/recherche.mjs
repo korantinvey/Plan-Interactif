@@ -25,9 +25,10 @@
    servir. `brancheRecherche`, que `lancement.mjs` appelle à son rang, n'y
    pose plus que l'écoute de la liste.
 
-   En retour, ce module confie en se chargeant ce que deux modules qu'il
-   importe lui empruntent : le panneau des critères aux tiroirs
-   (`confieAuxTiroirs`), la liste à la police des noms (`confieAuxPolices`).
+   En retour, ce module confie en se chargeant ce qu'un module qu'il importe
+   lui emprunte : la liste à la police des noms (`confieAuxPolices`). Le
+   panneau des critères se replie par `panneau-criteres.mjs`, que les tiroirs
+   importent aussi.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
@@ -43,7 +44,8 @@ import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre, PREFIXE_PERSO, confieAuCorpsDeFiche } from "./corps-fiche.mjs";
-import { montreTiroir, mesureTiroir, hisseTiroir, confieAuxTiroirs } from "./tiroirs.mjs";
+import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
+import { fermeCriteres, poseRelecturePanneau, relisPanneauCrit } from "./panneau-criteres.mjs";
 import { largeur } from "./texte-plan.mjs";
 
 /**
@@ -403,12 +405,6 @@ export function videRecherche(){
 /** Le nombre de valeurs retenues, tous critères confondus. */
 const nCriteres = () => [...state.crit.values()].reduce((a, l) => a + l.size, 0);
 
-/* Ce que le panneau des critères, quand il est déplié, doit relire : une valeur
-   peut tomber ailleurs que sous ses puces — une puce retirée de la bande des
-   retenus, « Tout effacer » à son pied. Posé par le remplissage, oublié à la
-   fermeture ; refermé, le panneau n'a plus rien à relire. */
-let majPanneauCrit = null;
-
 /**
  * La barre : le bouton qui déplie les critères, et ce qui est retenu.
  *
@@ -433,7 +429,7 @@ function majCriteres(){
 
   /* Le panneau déplié se relit ici, quelle que soit la main qui a touché au
      critère : la sienne, une puce de la bande, « Tout effacer ». */
-  if (majPanneauCrit) majPanneauCrit();
+  relisPanneauCrit();
 
   barre.hidden = !n;
   barre.innerHTML = "";
@@ -612,12 +608,12 @@ function remplitCriteres(){
   /* Relire plutôt que réécrire : réécrit, le panneau perdrait le groupe qu'on
      vient de déplier, le tamis qu'on vient de taper et l'endroit où l'on en
      était dans deux cents valeurs. */
-  majPanneauCrit = () => {
+  poseRelecturePanneau(() => {
     corps.querySelectorAll(".puce-crit").forEach(b =>
       b.setAttribute("aria-pressed", String(critereActif(b.dataset.cle, b.dataset.val))));
     rappels.forEach(f => f());
     dis();
-  };
+  });
 }
 
 /** Le bouton est la même prise à l'aller et au retour : il déplie ce qu'il a
@@ -640,23 +636,9 @@ function ouvreCriteres(){
   hisseTiroir();
 }
 
-/** Replié, le panneau rend sa place à la liste. Ce qui est retenu continue de
- *  se dire sous la recherche : les puces de la bande, elles, ne se replient
- *  pas — sans quoi on ne saurait plus pourquoi la liste est si courte. */
-export function fermeCriteres(){
-  const pan = $("panCrit");
-  if (!pan || pan.hidden) return;
-  /* Replié, le panneau emporte avec lui le bouton qu'on venait d'actionner, et
-     le clavier se retrouverait au début de la page. La main revient donc à la
-     prise, d'où elle pourra redéplier. */
-  const dedans = pan.contains(document.activeElement);
-  pan.hidden = true;
-  majPanneauCrit = null;
-  $("critCorps").innerHTML = "";
-  $("critPied").innerHTML = "";
-  $("btnFiltres").setAttribute("aria-expanded", "false");
-  if (dedans) $("btnFiltres").focus();
-}
+/* Le replier, et le relire déplié, vivent dans `panneau-criteres.mjs`, que
+   les tiroirs importent aussi ; il s'importe d'ici comme avant. */
+export { fermeCriteres };
 
 /** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
  *  cumulent, aucun ne prime. */
@@ -1183,11 +1165,6 @@ export function brancheRecherche(){
    case du numéro se taille sur la police des numéros, que ce module importe —
    elle ne peut donc l'importer en retour. */
 confieAuxPolices({ liste });
-
-/* Le panneau des critères, confié aux tiroirs dès que ce module se charge :
-   un tiroir redescendu le referme, et ne peut importer ce module, qui
-   l'importe pour se montrer et se hisser. */
-confieAuxTiroirs({ fermeCriteres });
 
 /* Le corps de la fiche, que ce module importe, ne peut l'importer en
    retour : il lui confie en se chargeant le libellé d'un champ propre au

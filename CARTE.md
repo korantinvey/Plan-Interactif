@@ -199,15 +199,15 @@ Fonctions :
 `texteCorps` 85 · `clesPortees` 110 · `standApercu` 130 · `lignesApercu` 154
 `contenuApercu` 184 · `apercuFiche` 221 · `apercuListe` 299 · `apercuDuo` 321
 
-### `modules/apparence.mjs` — 199 l. → plan, plan-admin
+### `modules/apparence.mjs` — 197 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
 Fonctions :
 
-`confieALApparence` 42 · `styleFond` 48 · `sousCalques` 69 · `styleDataGroupe` 76
-`appliqueCouleursData` 85 · `styleData` 117 · `appliqueApparence` 123
-`appliqueCommandes` 188
+`confieALApparence` 40 · `styleFond` 46 · `sousCalques` 67 · `styleDataGroupe` 74
+`appliqueCouleursData` 83 · `styleData` 115 · `appliqueApparence` 121
+`appliqueCommandes` 186
 
 ### `modules/appel-fonction.mjs` — 120 l. → console
 
@@ -497,21 +497,20 @@ Fonctions :
 
 `enEdition` 37
 
-### `modules/edition.mjs` — 738 l. → plan-admin
+### `modules/edition.mjs` — 711 l. → plan-admin
 
 - l.1 · Édition des formes existantes
 
 Fonctions :
 
-`memorise` 62 · `enregistreDessins` 63 · `optionsModes` 64 · `societeSaisie` 65
-`remplitListeSocietes` 66 · `confieAEdition` 70 · `curseurPoignee` 80 · `poignees` 85
-`dessinePoignees` 94 · `cadreTexte` 129 · `poigneeRotation` 149 · `angleBorne` 159
-`choisitForme` 161 · `replieOutils` 176 · `degageOutils` 191 · `majElement` 200
-`candidatsLiaison` 321 · `ecritDesDeuxCotes` 343 · `changeLien` 355 · `changeDureeLien` 371
-`majLiens` 388 · `appliqueSociete` 440 · `appliqueTexte` 456 · `appliqueRotation` 468
-`appliqueRayon` 482 · `appliqueTrait` 495 · `appliqueTransport` 523 · `appliquePicto` 546
-`supprimeForme` 572 · `editionPointerDown` 582 · `editionPointerMove` 642
-`tourneTexte` 705 · `editionPointerUp` 721
+`curseurPoignee` 53 · `poignees` 58 · `dessinePoignees` 67 · `cadreTexte` 102
+`poigneeRotation` 122 · `angleBorne` 132 · `choisitForme` 134 · `replieOutils` 149
+`degageOutils` 164 · `majElement` 173 · `candidatsLiaison` 294 · `ecritDesDeuxCotes` 316
+`changeLien` 328 · `changeDureeLien` 344 · `majLiens` 361 · `appliqueSociete` 413
+`appliqueTexte` 429 · `appliqueRotation` 441 · `appliqueRayon` 455 · `appliqueTrait` 468
+`appliqueTransport` 496 · `appliquePicto` 519 · `supprimeForme` 545
+`editionPointerDown` 555 · `editionPointerMove` 615 · `tourneTexte` 678
+`editionPointerUp` 694
 
 ### `modules/emplacements.mjs` — 282 l. → plan, plan-admin
 
@@ -540,19 +539,19 @@ Fonctions :
 `sauvegardeCourante` 575 · `telechargeSauvegarde` 597 · `appliqueSauvegarde` 620
 `litSauvegarde` 654 · `brancheSauvegarde` 676
 
-### `modules/environs.mjs` — 796 l. → plan, plan-admin
+### `modules/environs.mjs` — 777 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`confieAuxEnvirons` 61 · `calageEnCours` 69 · `confieCalageEnCours` 71 · `styleSobre` 144
-`forceCarte` 238 · `calagePose` 256 · `calageCourant` 268 · `fondCourant` 271 · `recul` 276
-`adresseTuile` 281 · `tuilesDeLaVue` 291 · `chargeMapLibre` 356 · `vueGL` 387
-`styleDuFond` 408 · `guetteLaCarte` 436 · `poseCarteGL` 447 · `diagnostiqueGL` 537
-`relanceCarteGL` 557 · `videCarteGL` 569 · `dessineFondCarte` 594 · `cleMasqueCarte` 707
-`masqueCarte` 708 · `formesMasquantes` 717 · `contourDuHall` 739 · `cheminDuHall` 746
-`poseMasqueCarte` 764 · `ditCarte` 779 · `refaitFondCarte` 789
+`calageEnCours` 50 · `confieCalageEnCours` 52 · `styleSobre` 125 · `forceCarte` 219
+`calagePose` 237 · `calageCourant` 249 · `fondCourant` 252 · `recul` 257
+`adresseTuile` 262 · `tuilesDeLaVue` 272 · `chargeMapLibre` 337 · `vueGL` 368
+`styleDuFond` 389 · `guetteLaCarte` 417 · `poseCarteGL` 428 · `diagnostiqueGL` 518
+`relanceCarteGL` 538 · `videCarteGL` 550 · `dessineFondCarte` 575 · `cleMasqueCarte` 688
+`masqueCarte` 689 · `formesMasquantes` 698 · `contourDuHall` 720 · `cheminDuHall` 727
+`poseMasqueCarte` 745 · `ditCarte` 760 · `refaitFondCarte` 770
 
 ### `modules/erreurs.mjs` — 95 l. → plan, plan-admin
 
@@ -647,21 +646,21 @@ Fonctions :
 `enregistreZone` 610 · `enregistreZoneAjoutee` 723 · `basculeAffichageZone` 786
 `marqueZonesMasquees` 814 · `ecritColonnesEvenement` 834 · `ecritColonneEvenement` 868
 
-### `modules/fiche.mjs` — 1202 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1200 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.85 · 7. Sélection et fiche
+- l.83 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 77 · `decoupeStand` 78 · `montePlan` 79 · `marqueStandsDessines` 80
-`poseDistsFiche` 81 · `fermeParcours` 82 · `brancheParcours` 83 · `anime` 104 · `noeud` 128
-`canalPlan` 138 · `rangSociete` 146 · `select` 155 · `centre` 180 · `brancheActesFiche` 191
-`centreEtBaisseLaFiche` 207 · `centrePoint` 225 · `programme` 254 · `produits` 303
-`ficheProduit` 331 · `ficheConf` 401 · `adresseVignette` 558 · `poseAppuiTactile` 575
-`ecarteClicFantome` 578 · `nomSociete` 587 · `societes` 600 · `choisitExposant` 611
-`poseMarque` 649 · `montreMarque` 709 · `poseCode` 732 · `rangeMarque` 773 · `ouvre` 829
-`ferme` 1145 · `onglet` 1163 · `brancheFiche` 1181
+`confieALaFiche` 76 · `decoupeStand` 77 · `montePlan` 78 · `marqueStandsDessines` 79
+`poseDistsFiche` 80 · `brancheParcours` 81 · `anime` 102 · `noeud` 126 · `canalPlan` 136
+`rangSociete` 144 · `select` 153 · `centre` 178 · `brancheActesFiche` 189
+`centreEtBaisseLaFiche` 205 · `centrePoint` 223 · `programme` 252 · `produits` 301
+`ficheProduit` 329 · `ficheConf` 399 · `adresseVignette` 556 · `poseAppuiTactile` 573
+`ecarteClicFantome` 576 · `nomSociete` 585 · `societes` 598 · `choisitExposant` 609
+`poseMarque` 647 · `montreMarque` 707 · `poseCode` 730 · `rangeMarque` 771 · `ouvre` 827
+`ferme` 1143 · `onglet` 1161 · `brancheFiche` 1179
 
 Éléments :
 
@@ -716,6 +715,14 @@ Fonctions :
 `poseGestesAdmin` 69 · `milieu` 95 · `commencePince` 101 · `suitPince` 115
 `plieLesBandes` 168 · `saisitPlan` 182 · `cibleElargie` 219 · `planifieFiltre` 262
 `brancheGestes` 276 · `brancheLangue` 457
+
+### `modules/glisse-fenetre.mjs` — 36 l. → plan-admin
+
+- l.1 · Le pas d'une hauteur à l'autre, dans la fenêtre des réglages
+
+Fonctions :
+
+`glisseFenetre` 27
 
 ### `modules/habillage.mjs` — 267 l. → plan, plan-admin
 
@@ -987,23 +994,29 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 1038 l. → plan-admin
+### `modules/outil-dessin.mjs` — 949 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
 Fonctions :
 
-`enregistreDessins` 65 · `instantane` 103 · `clotSalve` 114 · `memorise` 115
-`restaure` 126 · `annule` 142 · `refais` 154 · `poseTrait` 159 · `toleranceTrace` 180
-`aimanteContour` 185 · `rayonContour` 188 · `redresseTrace` 207 · `traceGuide` 241
-`fermeIci` 248 · `ajouteForme` 253 · `poseChampImage` 270 · `remplitListeSocietes` 277
-`societeSaisie` 285 · `calquePourImage` 301 · `lienImageSaisi` 329 · `formeImage` 341
-`poseImage` 350 · `ditImagePosee` 373 · `importeImage` 381 · `dessinPointerDown` 410
-`dessinPointerMove` 495 · `dessinPointerUp` 533 · `termineTrace` 574 · `aide` 586
-`outilOffert` 616 · `choisitOutil` 630 · `enchaineStand` 661 · `optionsModes` 673
-`proposeCouleurLigne` 683 · `montreTransport` 694 · `activeCalque` 703 · `cleVerrou` 761
-`verrouille` 762 · `basculeVerrou` 764 · `pictoVerrou` 781 · `montreRoleIti` 815
-`creeCalque` 828 · `demandeNom` 841 · `renommeCalque` 866 · `brancheOutilDessin` 882
+`restaure` 75 · `annule` 91 · `refais` 103 · `poseTrait` 108 · `aimanteContour` 129
+`rayonContour` 132 · `redresseTrace` 151 · `traceGuide` 185 · `ajouteForme` 192
+`poseChampImage` 209 · `calquePourImage` 224 · `lienImageSaisi` 252 · `formeImage` 264
+`poseImage` 273 · `ditImagePosee` 296 · `importeImage` 304 · `dessinPointerDown` 333
+`dessinPointerMove` 418 · `dessinPointerUp` 456 · `termineTrace` 497 · `aide` 509
+`outilOffert` 539 · `choisitOutil` 553 · `enchaineStand` 584 · `proposeCouleurLigne` 602
+`montreTransport` 613 · `activeCalque` 622 · `cleVerrou` 680 · `verrouille` 681
+`basculeVerrou` 683 · `montreRoleIti` 726 · `creeCalque` 739 · `demandeNom` 752
+`renommeCalque` 777 · `brancheOutilDessin` 793
+
+### `modules/panneau-criteres.mjs` — 41 l. → plan, plan-admin
+
+- l.1 · Le panneau des critères déplié — sa relecture, et le replier
+
+Fonctions :
+
+`poseRelecturePanneau` 20 · `relisPanneauCrit` 23 · `fermeCriteres` 28
 
 ### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
 
@@ -1013,7 +1026,7 @@ Fonctions :
 
 `accueilleParcoursPartage` 48 · `adoptePartage` 126
 
-### `modules/parcours.mjs` — 439 l. → plan, plan-admin
+### `modules/parcours.mjs` — 451 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -1027,6 +1040,7 @@ Fonctions :
 `plurielParcours` 286 · `contenuParcours` 295 · `signetParcours` 306 · `boutonParcours` 312
 `rafraichitMarque` 317 · `calqueMarques` 350 · `dessineMarques` 368 · `marqueParcours` 398
 `instantConf` 416 · `cleTemps` 420 · `nomDeStand` 430 · `groupeParcours` 432
+`fermeParcours` 446
 
 ### `modules/partage.mjs` — 293 l. → plan, plan-admin
 
@@ -1149,27 +1163,27 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport — et son démarrage
 
-### `modules/recherche.mjs` — 1195 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1172 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`confieALaRecherche` 76 · `ferme` 77 · `ficheConf` 80 · `adresseVignette` 81
-`poseToutAuParcours` 82 · `dessineDists` 83 · `libelles` 84 · `marquesListe` 85
-`porteDist` 86 · `standPorte` 87 · `reperesCherchables` 88 · `vaAuRepere` 89
-`appliqueSecteurs` 99 · `filtreTheme` 116 · `themeFiltrable` 199 · `ordreCriteres` 215
-`clesCriteres` 238 · `libelleCritere` 245 · `valeursCritere` 264 · `texteCriteres` 277
-`texteAnglaisPerso` 293 · `indexeCriteres` 307 · `refaitCriteres` 341 · `dansCriteres` 348
-`critereActif` 356 · `basculeCritere` 358 · `videCriteres` 367 · `majVideQ` 376
-`videRecherche` 389 · `nCriteres` 404 · `majCriteres` 419 · `remplitCriteres` 486
-`basculeCriteres` 625 · `ouvreCriteres` 630 · `fermeCriteres` 646 · `filtre` 663
-`reposeRetrait` 683 · `critParSociete` 687 · `cherchable` 697 · `visible` 704
-`releveHotes` 725 · `visibleSurPlan` 733 · `visibleSociete` 744 · `marqueRetrait` 760
-`appliqueFiltre` 778 · `oublieRetrait` 794 · `reprendRecherche` 803 · `rangSorte` 816
-`codeCase` 838 · `caseNumero` 855 · `sousLigne` 875 · `liste` 889 · `marqueChoisie` 1017
-`prechargeMarque` 1043 · `prechargeLesVignettes` 1100 · `chargeUnLot` 1146
-`brancheRecherche` 1172
+`confieALaRecherche` 78 · `ferme` 79 · `ficheConf` 82 · `adresseVignette` 83
+`poseToutAuParcours` 84 · `dessineDists` 85 · `libelles` 86 · `marquesListe` 87
+`porteDist` 88 · `standPorte` 89 · `reperesCherchables` 90 · `vaAuRepere` 91
+`appliqueSecteurs` 101 · `filtreTheme` 118 · `themeFiltrable` 201 · `ordreCriteres` 217
+`clesCriteres` 240 · `libelleCritere` 247 · `valeursCritere` 266 · `texteCriteres` 279
+`texteAnglaisPerso` 295 · `indexeCriteres` 309 · `refaitCriteres` 343 · `dansCriteres` 350
+`critereActif` 358 · `basculeCritere` 360 · `videCriteres` 369 · `majVideQ` 378
+`videRecherche` 391 · `nCriteres` 406 · `majCriteres` 415 · `remplitCriteres` 482
+`basculeCriteres` 621 · `ouvreCriteres` 626 · `filtre` 645 · `reposeRetrait` 665
+`critParSociete` 669 · `cherchable` 679 · `visible` 686 · `releveHotes` 707
+`visibleSurPlan` 715 · `visibleSociete` 726 · `marqueRetrait` 742 · `appliqueFiltre` 760
+`oublieRetrait` 776 · `reprendRecherche` 785 · `rangSorte` 798 · `codeCase` 820
+`caseNumero` 837 · `sousLigne` 857 · `liste` 871 · `marqueChoisie` 999
+`prechargeMarque` 1025 · `prechargeLesVignettes` 1082 · `chargeUnLot` 1128
+`brancheRecherche` 1154
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1211,31 +1225,31 @@ Fonctions :
 
 `catalogueTenu` 25 · `voletRecherche` 94 · `blocOrdreCriteres` 155
 
-### `modules/reglage-sponsor.mjs` — 223 l. → plan-admin
+### `modules/reglage-sponsor.mjs` — 208 l. → plan-admin
 
 - l.1 · Le générique du démarrage, réglé par l'exploitant
 
 Fonctions :
 
-`glisseFenetre` 24 · `confieAuReglageSponsor` 28 · `blocSponsor` 66
+`blocSponsor` 51
 
-### `modules/reglage-suggestion.mjs` — 428 l. → plan-admin
+### `modules/reglage-suggestion.mjs` — 413 l. → plan-admin
 
 - l.1 · La suggestion — le volet de l'exploitant
 
 Fonctions :
 
-`confieAuReglageSuggestion` 39 · `glisseFenetre` 40 · `indexSugg` 57 · `valeursSugg` 82
-`relevePalmares` 100 · `etiquetteSugg` 120 · `voletSuggestion` 130
+`indexSugg` 42 · `valeursSugg` 67 · `relevePalmares` 85 · `etiquetteSugg` 105
+`voletSuggestion` 115
 
-### `modules/reglages.mjs` — 544 l. → plan-admin
+### `modules/reglages.mjs` — 513 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`glisseFenetre` 96 · `ouvreReglages` 108 · `voletZones` 236 · `champsFicheZone` 338
-`ficheZoneEnPlace` 408 · `voletPlan` 426 · `voletCoexposants` 465
+`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 383
+`voletPlan` 401 · `voletCoexposants` 440
 
 ### `modules/rendu.mjs` — 190 l. → plan, plan-admin
 
@@ -1259,24 +1273,24 @@ Fonctions :
 `encreRepere` 376 · `nomLigneFr` 390 · `libelleDoffice` 398 · `couleurEcrite` 405
 `pastillePoi` 419
 
-### `modules/reprise-emplacements.mjs` — 783 l. → plan-admin
+### `modules/reprise-emplacements.mjs` — 774 l. → plan-admin
 
 - l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
 
 Fonctions :
 
-`confieALaReprise` 76 · `pictoVerrou` 77 · `activeCalque` 78 · `remplitListeSocietes` 79
-`societeSaisie` 80 · `fermeIci` 81 · `geoGlisse` 91 · `lacheGeo` 94 · `cleVerrouGeo` 114
-`geoVerrouille` 115 · `basculeVerrouGeo` 117 · `boutonVerrouGeo` 132 · `modeGeometrie` 143
-`objetGeoSous` 170 · `groupeGeo` 180 · `choisitGeo` 188 · `cadreGeo` 203 · `prisesGeo` 223
-`curseurGeo` 235 · `dessinePoigneesGeo` 238 · `ecritDimensionsGeo` 266 · `nomSorteGeo` 278
-`majPaletteGeo` 280 · `finGesteGeo` 319 · `enregistreGeo` 337 · `geometrieOrigine` 351
-`retraceGeo` 366 · `pousseGeometrie` 377 · `appliqueDimensionGeo` 394
-`enregistreAjout` 409 · `ajouteEmplacement` 424 · `renommeAjout` 452 · `lieAjout` 484
-`ecritInfosAjout` 513 · `supprimeAjout` 540 · `choisitOutilGeo` 569 · `aideAjout` 576
-`fermeAjout` 586 · `ajoutPointerDown` 595 · `ajoutPointerMove` 611 · `ajoutPointerUp` 633
-`geometriePointerDown` 653 · `accrocheGeo` 684 · `geometriePointerMove` 686
-`geometriePointerUp` 737 · `brancheRepriseEmplacements` 754
+`confieALaReprise` 71 · `activeCalque` 72 · `geoGlisse` 82 · `lacheGeo` 85
+`cleVerrouGeo` 105 · `geoVerrouille` 106 · `basculeVerrouGeo` 108 · `boutonVerrouGeo` 123
+`modeGeometrie` 134 · `objetGeoSous` 161 · `groupeGeo` 171 · `choisitGeo` 179
+`cadreGeo` 194 · `prisesGeo` 214 · `curseurGeo` 226 · `dessinePoigneesGeo` 229
+`ecritDimensionsGeo` 257 · `nomSorteGeo` 269 · `majPaletteGeo` 271 · `finGesteGeo` 310
+`enregistreGeo` 328 · `geometrieOrigine` 342 · `retraceGeo` 357 · `pousseGeometrie` 368
+`appliqueDimensionGeo` 385 · `enregistreAjout` 400 · `ajouteEmplacement` 415
+`renommeAjout` 443 · `lieAjout` 475 · `ecritInfosAjout` 504 · `supprimeAjout` 531
+`choisitOutilGeo` 560 · `aideAjout` 567 · `fermeAjout` 577 · `ajoutPointerDown` 586
+`ajoutPointerMove` 602 · `ajoutPointerUp` 624 · `geometriePointerDown` 644
+`accrocheGeo` 675 · `geometriePointerMove` 677 · `geometriePointerUp` 728
+`brancheRepriseEmplacements` 745
 
 ### `modules/salon.mjs` — 54 l. → plan, plan-admin
 
@@ -1334,6 +1348,16 @@ Fonctions :
 `poseSession` 40 · `entetes` 63 · `renouvelle` 72 · `appel` 91 · `rest` 106
 `ecranConfig` 125 · `ecranConnexion` 157 · `deconnecte` 223 · `signale` 238 · `bloc` 262
 `grille` 280 · `idCompte` 297 · `themeSombre` 306 · `premierEcran` 324 · `brancheSocle` 339
+
+### `modules/socle-dessin.mjs` — 134 l. → plan-admin
+
+- l.1 · Le socle de l'outil de dessin — ce que l'outil, l'éditeur et la reprise
+
+Fonctions :
+
+`enregistreDessins` 31 · `instantane` 69 · `clotSalve` 80 · `memorise` 81
+`toleranceTrace` 94 · `fermeIci` 100 · `remplitListeSocietes` 105 · `societeSaisie` 113
+`optionsModes` 124 · `pictoVerrou` 130
 
 ### `modules/sponsor.mjs` — 398 l. → plan, plan-admin
 
@@ -1414,46 +1438,45 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
-### `modules/tiroir-itineraire.mjs` — 849 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 847 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`confieAuTiroirItineraire` 66 · `changePlan` 67 · `ferme` 68 · `fermeParcours` 69
-`calculeRoute` 87 · `poseTrace` 110 · `marchesIci` 112 · `rayonBout` 117
-`arreteTracage` 150 · `peintItineraire` 156 · `lanceTracage` 207 · `dessineItineraire` 232
-`rafraichitBouts` 254 · `cadreItineraire` 277 · `champIti` 301 · `fermeSugg` 305
-`montreSugg` 312 · `choisitPoint` 346 · `valideSaisie` 355 · `effaceItineraire` 367
-`relance` 395 · `montreResultat` 437 · `poseVisee` 581 · `confieVisee` 594
-`suitLaVisee` 596 · `bandeauVisee` 598 · `armeVisee` 620 · `finVisee` 638
-`viseItineraire` 654 · `visePoi` 660 · `visePoint` 666 · `ouvreItineraire` 694
-`fermeItineraire` 722 · `versItineraire` 732 · `versItineraireDe` 735
-`brancheTiroirItineraire` 763
+`confieAuTiroirItineraire` 65 · `changePlan` 66 · `ferme` 67 · `calculeRoute` 85
+`poseTrace` 108 · `marchesIci` 110 · `rayonBout` 115 · `arreteTracage` 148
+`peintItineraire` 154 · `lanceTracage` 205 · `dessineItineraire` 230 · `rafraichitBouts` 252
+`cadreItineraire` 275 · `champIti` 299 · `fermeSugg` 303 · `montreSugg` 310
+`choisitPoint` 344 · `valideSaisie` 353 · `effaceItineraire` 365 · `relance` 393
+`montreResultat` 435 · `poseVisee` 579 · `confieVisee` 592 · `suitLaVisee` 594
+`bandeauVisee` 596 · `armeVisee` 618 · `finVisee` 636 · `viseItineraire` 652 · `visePoi` 658
+`visePoint` 664 · `ouvreItineraire` 692 · `fermeItineraire` 720 · `versItineraire` 730
+`versItineraireDe` 733 · `brancheTiroirItineraire` 761
 
-### `modules/tiroir-parcours.mjs` — 470 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 457 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`basculeParcours` 52 · `verseAuParcours` 97 · `retenusPourParcours` 143
-`ajouteToutAuParcours` 168 · `poseToutAuParcours` 191 · `brancheParcours` 215
-`rafraichitParcours` 228 · `rangParcours` 258 · `remplitParcours` 278 · `ouvreParcours` 367
-`fermeParcours` 379 · `videLeParcours` 390 · `brancheTiroirParcours` 420
+`basculeParcours` 51 · `verseAuParcours` 96 · `retenusPourParcours` 142
+`ajouteToutAuParcours` 167 · `poseToutAuParcours` 190 · `brancheParcours` 214
+`rafraichitParcours` 227 · `rangParcours` 257 · `remplitParcours` 277 · `ouvreParcours` 366
+`videLeParcours` 383 · `brancheTiroirParcours` 413
 
-### `modules/tiroirs.mjs` — 533 l. → plan, plan-admin
+### `modules/tiroirs.mjs` — 514 l. → plan, plan-admin
 
 - l.1 · Les tiroirs des écrans étroits — la liste, et ceux que la hauteur mène
-- l.40 · Ce que les tiroirs lisent d'un geste
-- l.86 · Le tiroir de la liste — écrans étroits
-- l.312 · Les tiroirs menés par la hauteur — écrans étroits
+- l.21 · Ce que les tiroirs lisent d'un geste
+- l.67 · Le tiroir de la liste — écrans étroits
+- l.293 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
-`fermeCriteres` 28 · `confieAuxTiroirs` 36 · `traceurDeGeste` 64 · `cranVoisin` 83
-`retraitBas` 109 · `mesureTiroir` 122 · `montreTiroir` 125 · `hisseTiroir` 129
-`tiroirListe` 136 · `tiroirCrante` 339 · `brancheTiroirs` 519
+`traceurDeGeste` 45 · `cranVoisin` 64 · `retraitBas` 90 · `mesureTiroir` 103
+`montreTiroir` 106 · `hisseTiroir` 110 · `tiroirListe` 117 · `tiroirCrante` 320
+`brancheTiroirs` 500
 
 ### `modules/ton-barre.mjs` — 76 l. → plan, plan-admin
 
@@ -1515,44 +1538,52 @@ Fonctions :
 `pointBorne` 27 · `poseLieuBorne` 32 · `ecritDepartBorne` 42 · `rayonBorne` 52
 `dessineBorne` 57 · `rafraichitBorne` 73 · `rempliBorne` 78
 
-### `modules/vue.mjs` — 602 l. → plan, plan-admin
+### `modules/vue-etat.mjs` — 36 l. → plan, plan-admin
 
-- l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
-- l.86 · 6. Vue
+- l.1 · L'état de la vue — la vue du moment, le SVG du plan, son cadre à l'écran
 
 Fonctions :
 
-`confieALaVue` 64 · `vue` 70 · `changeVue` 72 · `enEdition` 73 · `libelles` 74
-`poseEmprise` 84 · `cadrePlan` 103 · `oublieCadre` 104 · `figeTextes` 118 · `rendTextes` 126
-`cadrage` 165 · `peintLibelles` 170 · `repeintLibelles` 178 · `detacheLibelles` 182
-`rattacheLibelles` 194 · `etireLibelles` 212 · `appliqueVue` 220 · `libellesDeLaVue` 286
-`rafraichitVue` 294 · `poseVue` 308 · `mesureBarre` 337 · `masqueHaut` 365 · `masque` 372
-`masqueDroite` 409 · `fit` 420 · `stoppeZoom` 458 · `glisseVersVise` 464 · `glisseVers` 507
-`rectVisee` 529 · `zoom` 549 · `echelle` 563 · `versPlan` 575 · `brancheVue` 586
+`vue` 16 · `changeVue` 18 · `cadrePlan` 35 · `oublieCadre` 36
 
-### `modules/webgl.mjs` — 1360 l. → plan, plan-admin
+### `modules/vue.mjs` — 586 l. → plan, plan-admin
+
+- l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
+- l.81 · 6. Vue
+
+Fonctions :
+
+`confieALaVue` 66 · `enEdition` 72 · `libelles` 73 · `poseEmprise` 79 · `figeTextes` 103
+`rendTextes` 111 · `cadrage` 150 · `peintLibelles` 155 · `repeintLibelles` 163
+`detacheLibelles` 167 · `rattacheLibelles` 179 · `etireLibelles` 197 · `appliqueVue` 205
+`libellesDeLaVue` 271 · `rafraichitVue` 279 · `poseVue` 293 · `mesureBarre` 322
+`masqueHaut` 350 · `masque` 357 · `masqueDroite` 394 · `fit` 405 · `stoppeZoom` 443
+`glisseVersVise` 449 · `glisseVers` 492 · `rectVisee` 514 · `zoom` 534 · `echelle` 548
+`versPlan` 560 · `brancheVue` 571
+
+### `modules/webgl.mjs` — 1354 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`confieAuWebgl` 65 · `chargeWebgl` 98 · `brancheWebgl` 123 · `monteWebgl` 130
-`poseToileWebgl` 231 · `guetteContexteWebgl` 237 · `contextePerduWebgl` 247
-`verifieContexteWebgl` 254 · `perdContexteWebgl` 263 · `remonteWebgl` 284 · `vueDeck` 301
-`vueWebgl` 310 · `blocDe` 319 · `majEditionWebgl` 332 · `cleBloc` 344 · `planifieWebgl` 370
-`toutRepeindreWebgl` 374 · `blocsDansLOrdre` 381 · `repeintWebgl` 386 · `assembleWebgl` 410
-`constTexte` 444 · `jeuDeCaracteres` 640 · `sousPixelOffert` 694 · `couchesPetites` 699
-`couchesTexte` 709 · `accVide` 744 · `convertitBloc` 745 · `accDe` 761 · `parcoursGl` 768
-`formeGl` 804 · `texteGl` 840 · `imageGl` 863 · `partage` 895 · `designeGl` 901
-`couchesDeBloc` 903 · `modelesLibellesHtml` 983 · `poseModelesLibelles` 993
-`lisModelesLibelles` 999 · `groupesNoms` 1032 · `couchesNoms` 1049 · `couchesPastilles` 1060
-`couchesLibellesWebgl` 1075 · `couchesDessineesWebgl` 1082 · `stage` 1103
-`brancheSurvolWebgl` 1107 · `poseSurvolWebgl` 1127 · `poseCurseurWebgl` 1136
-`poseFocusWebgl` 1145 · `aplatsDe` 1152 · `coucheSurvol` 1155 · `coucheFocus` 1164
-`couchesPhare` 1191 · `lueurDe` 1207 · `opacitePhare` 1245 · `echellePhare` 1246
-`couchesPhareNoms` 1249 · `palierDefile` 1274 · `phaseComete` 1276 · `animeCouche` 1279
-`majAnimationWebgl` 1296 · `animeWebgl` 1304 · `objetSous` 1327 · `cibleWebgl` 1334
-`priseWebgl` 1341 · `libelleSousWebgl` 1346 · `rectEcranWebgl` 1351
+`confieAuWebgl` 63 · `chargeWebgl` 92 · `brancheWebgl` 117 · `monteWebgl` 124
+`poseToileWebgl` 225 · `guetteContexteWebgl` 231 · `contextePerduWebgl` 241
+`verifieContexteWebgl` 248 · `perdContexteWebgl` 257 · `remonteWebgl` 278 · `vueDeck` 295
+`vueWebgl` 304 · `blocDe` 313 · `majEditionWebgl` 326 · `cleBloc` 338 · `planifieWebgl` 364
+`toutRepeindreWebgl` 368 · `blocsDansLOrdre` 375 · `repeintWebgl` 380 · `assembleWebgl` 404
+`constTexte` 438 · `jeuDeCaracteres` 634 · `sousPixelOffert` 688 · `couchesPetites` 693
+`couchesTexte` 703 · `accVide` 738 · `convertitBloc` 739 · `accDe` 755 · `parcoursGl` 762
+`formeGl` 798 · `texteGl` 834 · `imageGl` 857 · `partage` 889 · `designeGl` 895
+`couchesDeBloc` 897 · `modelesLibellesHtml` 977 · `poseModelesLibelles` 987
+`lisModelesLibelles` 993 · `groupesNoms` 1026 · `couchesNoms` 1043 · `couchesPastilles` 1054
+`couchesLibellesWebgl` 1069 · `couchesDessineesWebgl` 1076 · `stage` 1097
+`brancheSurvolWebgl` 1101 · `poseSurvolWebgl` 1121 · `poseCurseurWebgl` 1130
+`poseFocusWebgl` 1139 · `aplatsDe` 1146 · `coucheSurvol` 1149 · `coucheFocus` 1158
+`couchesPhare` 1185 · `lueurDe` 1201 · `opacitePhare` 1239 · `echellePhare` 1240
+`couchesPhareNoms` 1243 · `palierDefile` 1268 · `phaseComete` 1270 · `animeCouche` 1273
+`majAnimationWebgl` 1290 · `animeWebgl` 1298 · `objetSous` 1321 · `cibleWebgl` 1328
+`priseWebgl` 1335 · `libelleSousWebgl` 1340 · `rectEcranWebgl` 1345
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 

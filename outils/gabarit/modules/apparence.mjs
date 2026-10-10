@@ -5,10 +5,10 @@
    chaque changement de pavillon (`appliqueApparence`), et l'exploitant y
    revient à chaque couleur ou case de la pile (`pile.mjs`) et des volets
    (`volets.mjs`). Ce qu'il ne peut importer sans boucler — les options et
-   leur liste (`options.mjs` `appliqueOptions`), le tiroir du parcours qu'on
-   referme (`tiroir-parcours.mjs`), qui importent tous deux ce module-ci — lui
-   est confié par la porte `confieALApparence`, que chacun ouvre en se
-   chargeant. Les
+   leur liste (`options.mjs` `appliqueOptions`), qui importent ce module-ci —
+   lui est confié par la porte `confieALApparence`, que les options ouvrent
+   en se chargeant. Le tiroir du parcours qu'on referme s'importe de
+   `parcours.mjs`. Les
    secteurs s'importent de `recherche.mjs`, les marques des distinctions de
    `distinctions.mjs`, le tiroir de l'itinéraire de `tiroir-itineraire.mjs`.
    ============================================================ */
@@ -16,7 +16,7 @@ import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { trio, luminance, ecarte } from "./couleurs.mjs";
 import { CONF, conf, sousCle, appliqueLangue } from "./configuration.mjs";
-import { marqueParcours } from "./parcours.mjs";
+import { marqueParcours, fermeParcours } from "./parcours.mjs";
 import { appliqueAccent, appliqueFond, appliqueDists, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { appliqueSecteurs } from "./recherche.mjs";
 import { dessineDists } from "./distinctions.mjs";
@@ -27,15 +27,13 @@ import { fermeItineraire } from "./tiroir-itineraire.mjs";
 /**
  * @typedef {object} PreteApparence
  * @property {() => void} appliqueOptions les options prises par le salon (`options.mjs`)
- * @property {() => void} fermeParcours referme le tiroir du parcours (`tiroir-parcours.mjs`)
  */
 /** @type {PreteApparence} */
-const prete = { appliqueOptions: () => {}, fermeParcours: () => {} };
+const prete = { appliqueOptions: () => {} };
 
 /**
  * La porte de ce que l'apparence ne peut importer sans boucler : `options.mjs`
- * et `tiroir-parcours.mjs` l'ouvrent en se chargeant, donc avant le lancement
- * de la page et tout appel.
+ * l'ouvre en se chargeant, donc avant le lancement de la page et tout appel.
  *
  * @param {Partial<PreteApparence>} o
  */
@@ -194,6 +192,6 @@ export function appliqueCommandes(){
   });
   // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
   // bouton pour se refermer
-  if (conf("_parcours").visible === false) prete.fermeParcours();
+  if (conf("_parcours").visible === false) fermeParcours();
   if (conf("_itineraire").visible === false) fermeItineraire();
 }

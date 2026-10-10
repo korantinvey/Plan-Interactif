@@ -38,7 +38,7 @@ import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarch
   distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, brancheItineraire } from "./itineraire.mjs";
 import { CONF } from "./configuration.mjs";
 import { DESSINS } from "./calques-dessin.mjs";
-import { instantConf } from "./parcours.mjs";
+import { instantConf, fermeParcours } from "./parcours.mjs";
 import { finInstant } from "./sejour.mjs";
 import { pointBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg,
@@ -48,25 +48,23 @@ import { formeParId } from "./forme-choisie.mjs";
 
 /**
  * Ce que le tiroir emprunte aux modules qui l'importent : le passage d'un
- * pavillon à l'autre (`rendu.mjs`), la fiche (`fiche.mjs`) et le tiroir du
- * parcours (`tiroir-parcours.mjs`), qu'il referme en s'ouvrant. Tous trois
- * l'importent : il ne peut les importer en retour, et chacun lui confie ce
- * qu'il en appelle au chargement de son module, par
- * `confieAuTiroirItineraire`. La vue, elle,
+ * pavillon à l'autre (`rendu.mjs`) et la fiche (`fiche.mjs`), qu'il referme
+ * en s'ouvrant. Tous deux l'importent : il ne peut les importer en retour, et
+ * chacun lui confie ce qu'il en appelle au chargement de son module, par
+ * `confieAuTiroirItineraire`. Le tiroir du parcours, qu'il referme aussi,
+ * s'importe de `parcours.mjs`. La vue, elle,
  * s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
  * cesse, et le trajet la recadre.
- * @typedef {{ changePlan: (i: number) => void, ferme: () => void,
- *   fermeParcours: () => void }} PageTiroirItineraire
+ * @typedef {{ changePlan: (i: number) => void, ferme: () => void }} PageTiroirItineraire
  */
 /** @type {PageTiroirItineraire} */
-const prete = { changePlan: () => {}, ferme: () => {}, fermeParcours: () => {} };
+const prete = { changePlan: () => {}, ferme: () => {} };
 
 /** La porte des modules qui prêtent au tiroir ce qu'il appelle.
  *  @param {Partial<PageTiroirItineraire>} o */
 export function confieAuTiroirItineraire(o){ Object.assign(prete, o); }
 const changePlan = (/** @type {number} */ i) => prete.changePlan(i);
 const ferme = () => prete.ferme();
-const fermeParcours = () => prete.fermeParcours();
 const racine = document.documentElement;
 
 /* ------------------------------------------------------------

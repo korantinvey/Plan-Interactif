@@ -437,3 +437,15 @@ export function groupeParcours(hote, titre){
   hote.appendChild(g);
   return g;
 }
+
+/* Refermer le tiroir du parcours. Il s'ouvre par `tiroir-parcours.mjs`, qui
+   le remplit ; il se referme ici, parce que la fiche, le tiroir de
+   l'itinéraire et l'apparence le referment aussi et que ce module-ci, sous
+   eux trois, s'importe sans boucle — rangé dans le tiroir, le geste devait
+   leur être confié au chargement. */
+export function fermeParcours(){
+  const t = $("parcours");
+  if (!t || !t.classList.contains("open")) return;
+  t.classList.remove("open");
+  $("btnParcours").setAttribute("aria-pressed", "false");
+}

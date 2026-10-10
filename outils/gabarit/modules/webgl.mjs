@@ -24,24 +24,23 @@
    appareils qui ne l'ont pas. `?rendu=svg` le force, pour comparer ou pour
    écarter le dessin le temps d'un dépannage.
 
-   Ce module ne voit du plan que ce que les modules qui l'importent lui
-   confient en se chargeant (`confieAuWebgl`) : le SVG, la vue, ses
-   gestes, l'édition en cours, et la préparation des noms, qui tient aux
-   règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
+   Ce module lit la vue, le SVG et son cadre dans `vue-etat.mjs` ; le reste,
+   les modules qui l'importent le lui confient en se chargeant
+   (`confieAuWebgl`) : l'application de la vue, les gestes, l'édition en
+   cours, et la préparation des noms, qui tient aux règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
    placement des libellés à la main s'importe (`libelle-place.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
    la bibliothèque arrivée, et celle-ci n'est demandée qu'au branchement. */
 /**
  * @typedef {object} PageWebgl
- * @property {() => any} vue la vue du moment, `view`, que le plan remplace à chaque geste
- * @property {() => DOMRect} cadrePlan
  * @property {() => void} appliqueVue
  * @property {() => void} libelles
  * @property {() => boolean} enEdition
@@ -50,23 +49,18 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
  * @property {() => void} libellesWebgl
  */
 /** @type {PageWebgl} */
-const _page = { vue: () => null, cadrePlan: () => new DOMRect(), appliqueVue: () => {}, libelles: () => {},
+const _page = { appliqueVue: () => {}, libelles: () => {},
   enEdition: () => false, drag: () => null, pince: () => null,
   libellesWebgl: () => {} };
-/** Le plan en SVG, caché : le modèle que ce rendu relit. @type {any} */
-let svg = null;
-
-/* Ce que ce rendu lit chez les modules qui l'importent — la vue et le SVG
-   (`vue.mjs`), les noms (`libelles.mjs`), l'édition en cours
+/* Ce que ce rendu appelle chez les modules qui l'importent — l'application
+   de la vue (`vue.mjs`), les noms (`libelles.mjs`), l'édition en cours
    (`edition-en-cours.mjs`), le glissé et le pincement (`gestes.mjs`). Il ne
    peut les importer : chacun l'importe. Chacun le lui confie donc au
-   chargement de son module, avant que rien ne se dessine.
-   @param {Partial<PageWebgl> & { svg?: any }} o */
-export function confieAuWebgl(o){
-  const { svg: plan, ...reste } = o;
-  if (plan) svg = plan;
-  Object.assign(_page, reste);
-}
+   chargement de son module, avant que rien ne se dessine. La vue du moment,
+   le SVG — le modèle, caché, que ce rendu relit — et son cadre, il les lit
+   dans `vue-etat.mjs`.
+   @param {Partial<PageWebgl>} o */
+export function confieAuWebgl(o){ Object.assign(_page, o); }
 
 export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !== "svg";
 /* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
@@ -128,7 +122,7 @@ export function brancheWebgl(){
  *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
  *  posée. */
 export function monteWebgl(){
-  if (GL.actif || !GL.charge || !window.deck || !_page.vue()) return;
+  if (GL.actif || !GL.charge || !window.deck || !vueDuPlan()) return;
   /* Après une perte de contexte, c'est « remonteWebgl » qui dit quand : la
      vue repasse par ici à chaque geste, et remonterait le dessin sur-le-champ
      — sur la mémoire qui vient justement de manquer. */
@@ -299,7 +293,7 @@ function remonteWebgl(){
 /** La vue du plan, dite comme la bibliothèque l'attend : un centre et une
  *  puissance de deux. Même règle que la « viewBox » — « meet », centrée. */
 function vueDeck(){
-  const r = _page.cadrePlan(), view = _page.vue();
+  const r = cadrePlan(), view = vueDuPlan();
   const s = Math.min((r.width || 1) / view.w, (r.height || 1) / view.h);
   return { target: [view.x + view.w / 2, view.y + view.h / 2, 0], zoom: Math.log2(s) };
 }
@@ -1325,7 +1319,7 @@ function animeWebgl(now){
 /** Ce qui est sous un point de l'écran : l'élément qui ouvre une fiche, celui
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
-  const r = _page.cadrePlan();
+  const r = cadrePlan();
   const o = GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 });
   if (!o) return null;
   const d = o.object || {}, p = (o.layer && o.layer.props) || {};
@@ -1351,7 +1345,7 @@ export function libelleSousWebgl(x, y){
 export function rectEcranWebgl(n, v){
   let b;
   try { b = n.getBBox(); } catch (e) { return null; }
-  const r = _page.cadrePlan(), vue = v || _page.vue();
+  const r = cadrePlan(), vue = v || vueDuPlan();
   const s = Math.min(r.width / vue.w, r.height / vue.h);
   const ox = (r.width - vue.w * s) / 2, oy = (r.height - vue.h * s) / 2;
   const left = r.left + (b.x - vue.x) * s + ox, top = r.top + (b.y - vue.y) * s + oy;

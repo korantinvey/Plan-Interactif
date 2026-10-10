@@ -27,10 +27,9 @@
    Ce module porte ce que le visiteur reçoit : le fond lui-même, en tuiles ou
    en vectoriel, et le trou sous le pavillon. Le calage — le poser, le tourner,
    l'enregistrer — est un geste d'exploitant, et vit dans `calage-carte.mjs`,
-   que seul `plan-admin.mjs` embarque. La vue et son cadre, qu'il ne peut
-   importer sans boucler (`vue.mjs` l'importe), la vue les lui confie en se
-   chargeant (`confieAuxEnvirons`) ; les réglages, les calques de dessin et
-   le tracé d'une forme s'importent.
+   que seul `plan-admin.mjs` embarque. La vue et son cadre s'importent de
+   `vue-etat.mjs` — et non de `vue.mjs`, qui importe ce module —, comme les
+   réglages, les calques de dessin et le tracé d'une forme.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -40,25 +39,7 @@ import { DEG, versTerre, PX_TUILE, TOUR_MERCATOR, pixelsMercator, echelleDesTuil
 import { CONF } from "./configuration.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
-
-/* Ce que la vue, qui importe ce module, lui confie en se chargeant : la vue
-   (`view`, que chaque geste remplace) et son cadre à l'écran, par des
-   lecteurs — il faut lire ceux du moment. Avant le premier plan il n'y a pas
-   de vue, d'où des lecteurs vides en attendant. Les réglages (`CONF`,
-   remplacés en changeant de salon), importés, se lisent tels qu'ils sont à
-   l'instant. */
-/**
- * @typedef {object} PageEnvirons
- * @property {() => any} vue la vue du moment, `view`
- * @property {() => DOMRect} cadrePlan
- */
-/** @type {PageEnvirons} */
-const soude = { vue: () => undefined, cadrePlan: () => new DOMRect() };
-
-/** La porte de la vue, qui importe ce module et le lui confie en se chargeant
- *  (`vue.mjs`) : la vue du moment et le cadre du plan.
- *  @param {Partial<PageEnvirons>} o */
-export function confieAuxEnvirons(o){ Object.assign(soude, o); }
+import { vue, cadrePlan } from "./vue-etat.mjs";
 
 const racine = document.documentElement;
 
@@ -385,8 +366,8 @@ function chargeMapLibre(){
  * 512 pixels au niveau zéro — d'où le 78 271 et non le 156 543 des tuiles.
  */
 function vueGL(cal){
-  const view = soude.vue();
-  const r = soude.cadrePlan();
+  const view = vue();
+  const r = cadrePlan();
   const mParPx = view.w / (r.width || 1);
   return {
     center: versTerre([view.x + view.w / 2, view.y + view.h / 2], cal),
@@ -596,7 +577,7 @@ export function dessineFondCarte(){
   if (!hote) return;
   const cal = calageCourant(), fond = fondCourant();
   const credit = $("creditCarte");
-  const view = soude.vue();
+  const view = vue();
   if (!cal || !fond || !view){
     /* Le groupe lui-même dit s'il porte des tuiles, et non l'empreinte :
        `refaitFondCarte` l'oublie pour forcer une réécriture, et la carte qu'on
@@ -633,7 +614,7 @@ export function dessineFondCarte(){
     return;
   }
   videCarteGL();
-  const r = soude.cadrePlan();
+  const r = cadrePlan();
   const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
 
   /* Le groupe suit toujours : la position de l'ancre, la rotation vers le

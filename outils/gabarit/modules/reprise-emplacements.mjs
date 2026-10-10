@@ -15,9 +15,10 @@
 
    Il se branche par `brancheRepriseEmplacements`, que `plan-admin.mjs` pose
    dans un emplacement du lancement (`lancement.mjs`), pour y poser les
-   écoutes de sa palette à leur rang. Ce que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
-   ce module-ci) lui est confié par l'outil en se chargeant
-   (`confieALaReprise`). À son tour, il confie en se chargeant ce qu'il tient
+   écoutes de sa palette à leur rang. Le calque qu'on ouvre, que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
+   ce module-ci), lui est confié par l'outil en se chargeant
+   (`confieALaReprise`) ; le cadenas, la liste des sociétés et la fermeture
+   d'un contour s'importent du socle qu'ils partagent (`socle-dessin.mjs`). À son tour, il confie en se chargeant ce qu'il tient
    à la fiche d'une zone et au placement des libellés, qu'il importe.
    Les réglages et leur enregistrement (`configuration.mjs`, `CONF` lu tel
    qu'il est à l'instant), la vue, le panneau des calques (`ordre-trace.mjs`),
@@ -54,31 +55,21 @@ import { cheminForme } from "./chemin-forme.mjs";
 import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
 import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
+import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
 
 /**
  * Ce que l'outil de dessin tient et confie au module en se chargeant
  * (`outil-dessin.mjs`, qui importe ce module-ci). Les défauts ne font rien :
  * l'outil se charge avec la page d'administration, avant tout geste.
  * @typedef {object} PreteReprise
- * @property {typeof import("./outil-dessin.mjs").pictoVerrou} pictoVerrou
  * @property {typeof import("./outil-dessin.mjs").activeCalque} activeCalque
- * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
- * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
- * @property {typeof import("./outil-dessin.mjs").fermeIci} fermeIci
  */
 /** @type {PreteReprise} */
-const prete = {
-  pictoVerrou: () => "", activeCalque: () => {}, remplitListeSocietes: () => {},
-  societeSaisie: () => null, fermeIci: () => false,
-};
+const prete = { activeCalque: () => {} };
 /** La porte par laquelle l'outil de dessin confie ce qu'il tient.
  *  @param {Partial<PreteReprise>} o */
 export function confieALaReprise(o){ Object.assign(prete, o); }
-const pictoVerrou = (/** @type {boolean} */ f) => prete.pictoVerrou(f);
 const activeCalque = (/** @type {any} */ id) => prete.activeCalque(id);
-const remplitListeSocietes = () => prete.remplitListeSocietes();
-const societeSaisie = (/** @type {string} */ texte) => prete.societeSaisie(texte);
-const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => prete.fermeIci(p, pts);
 const racine = document.documentElement;
 
 /* Le choix et le geste sont transitoires, comme le mode : ils ne se
