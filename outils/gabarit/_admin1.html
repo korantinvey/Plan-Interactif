@@ -12,23 +12,20 @@
    concentration (`seuil.mjs`), les dates et les heures du salon
    (`horaires.mjs`) ; et pour l'exploitant seul, l'onglet « Recherche »
    (`reglage-recherche.mjs`), qui importe tout ce qu'il lui faut, et la rafale
-   du nuancier (`nuancier.mjs`). Ceux qui ont encore à recevoir se branchent
-   ici, à la place que leur code tenait : ce qu'ils ne peuvent importer sans
-   boucler leur est confié, ce qui change sans cesse par un lecteur.
+   du nuancier (`nuancier.mjs`).
 
-   Les options vendues à part (`OPTIONS`) vivent dans `modules/options.mjs` :
-   l'apparence, que le tiroir du parcours importe, ne peut l'importer, et
-   reçoit d'ici `appliqueOptions` — comme le tiroir du parcours qu'elle
-   referme. Le tiroir de l'itinéraire, elle l'importe.
+   Plus rien ne leur est confié d'ici : ce qu'un module ne peut importer sans
+   boucler — les secteurs pour la configuration, les options et le tiroir du
+   parcours pour l'apparence, les distinctions pour l'habillage, ce qui se
+   retrace pour la police des noms — lui est confié par le module qui le
+   tient, en se chargeant (`confieALaConfiguration`, `confieALApparence`,
+   `confieALHabillage`, `confieAuxPolices`). Ne restent ici que les
+   branchements qui posent quelque chose à leur rang : la barre du salon au
+   premier trait, et les écoutes de page quittée du nuancier.
    ============================================================ */
-brancheConfiguration({ secteurs: () => SECTEURS });
-brancheApparence({ appliqueOptions, fermeParcours });
-
-brancheHabillage({ distinctions: DISTINCTIONS, dessineDists, refaitDistsFiche });
+brancheHabillage();
 
 /* @admin — le nuancier, que seule l'administration tient */
 /* Ses écoutes de page quittée se posent ici, devant celles de l'enregistrement. */
 brancheNuancier();
 /* @fin-admin */
-
-branchePolices({ monte: () => MONTE, dessineDessins, libelles, liste });

@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 34 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 31 l.
 
 - l.1 · 9. Apparence des calques — le branchement
 
@@ -97,7 +97,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 11 octies. Reprendre à la main la géométrie d'un emplacement — le
 
-### `_gestes.html` — 32 l.
+### `_gestes.html` — 33 l.
 
 - l.4 · 8. Interactions du plan — le branchement
 
@@ -234,7 +234,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.3 · 5. Recherche et secteurs — le branchement
 
-### `_rendu.html` — 33 l.
+### `_rendu.html` — 26 l.
 
 - l.3 · 2 à 4. Le plan à l'écran — le branchement
 
@@ -339,15 +339,15 @@ Fonctions :
 `texteCorps` 85 · `clesPortees` 110 · `standApercu` 130 · `lignesApercu` 154
 `contenuApercu` 184 · `apercuFiche` 221 · `apercuListe` 299 · `apercuDuo` 321
 
-### `modules/apparence.mjs` — 191 l. → plan, plan-admin
+### `modules/apparence.mjs` — 199 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
 Fonctions :
 
-`brancheApparence` 34 · `styleFond` 40 · `sousCalques` 61 · `styleDataGroupe` 68
-`appliqueCouleursData` 77 · `styleData` 109 · `appliqueApparence` 115
-`appliqueCommandes` 180
+`confieALApparence` 42 · `styleFond` 48 · `sousCalques` 69 · `styleDataGroupe` 76
+`appliqueCouleursData` 85 · `styleData` 117 · `appliqueApparence` 123
+`appliqueCommandes` 188
 
 ### `modules/appel-fonction.mjs` — 121 l. → console
 
@@ -501,16 +501,17 @@ Fonctions :
 `poseComptes` 35 · `litMonProfil` 49 · `RETOUR_MDP` 60 · `litComptes` 62 · `ligneMessage` 71
 `casesSalons` 81 · `ouvreComptes` 111 · `ouvreFicheCompte` 203
 
-### `modules/configuration.mjs` — 158 l. → plan, plan-admin
+### `modules/configuration.mjs` — 165 l. → plan, plan-admin
 
 - l.1 · La configuration du plan — ce que l'exploitant a réglé
 
 Fonctions :
 
-`secteurs` 24 · `brancheConfiguration` 31 · `salonRange` 46 · `cleConf` 48 · `ouvreConf` 52
-`reglagesDuSalon` 73 · `publie` 98 · `confiePublication` 102 · `enregistreConf` 108
-`conf` 115 · `jeton` 116 · `sousCle` 118 · `optionActive` 124 · `programmeOffert` 129
-`suggestionOfferte` 130 · `langueOfferte` 150 · `appliqueLangue` 152 · `chercheSorte` 157
+`secteurs` 30 · `confieALaConfiguration` 38 · `salonRange` 53 · `cleConf` 55
+`ouvreConf` 59 · `reglagesDuSalon` 80 · `publie` 105 · `confiePublication` 109
+`enregistreConf` 115 · `conf` 122 · `jeton` 123 · `sousCle` 125 · `optionActive` 131
+`programmeOffert` 136 · `suggestionOfferte` 137 · `langueOfferte` 157 · `appliqueLangue` 159
+`chercheSorte` 164
 
 ### `modules/console.mjs` — 41 l. → console
 
@@ -563,29 +564,29 @@ Fonctions :
 
 `litImage` 16 · `reduitLogo` 57
 
-### `modules/dessin.mjs` — 655 l. → plan, plan-admin
+### `modules/dessin.mjs` — 665 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — le tracé sur le plan
 
 Fonctions :
 
-`mentionOsm` 52 · `longueurFleche` 75 · `cheminFleche` 90 · `marqueFleche` 119
-`rafraichitFleches` 130 · `traceForme` 145 · `rotationTexte` 164 · `dessineDessins` 169
-`redessineForme` 210 · `peintCalque` 234 · `apercu` 241 · `apercuGuide` 253
-`traceRepere` 276 · `nomSurLePlan` 410 · `etiquetteSociete` 421 · `seRattache` 449
-`societeDeForme` 461 · `societesDuPlan` 473 · `traceImage` 507 · `traceStandDessine` 532
-`texteStandDessine` 556 · `poseLibellesDessines` 575 · `decoupeStand` 596
-`marqueStandsDessines` 611 · `rafraichitStandsDessines` 626 · `signale` 640
+`mentionOsm` 54 · `longueurFleche` 77 · `cheminFleche` 92 · `marqueFleche` 121
+`rafraichitFleches` 132 · `traceForme` 147 · `rotationTexte` 166 · `dessineDessins` 171
+`redessineForme` 212 · `peintCalque` 236 · `apercu` 243 · `apercuGuide` 255
+`traceRepere` 278 · `nomSurLePlan` 412 · `etiquetteSociete` 423 · `seRattache` 451
+`societeDeForme` 463 · `societesDuPlan` 475 · `traceImage` 509 · `traceStandDessine` 534
+`texteStandDessine` 558 · `poseLibellesDessines` 577 · `decoupeStand` 598
+`marqueStandsDessines` 613 · `rafraichitStandsDessines` 628 · `signale` 642
 
-### `modules/distinctions.mjs` — 276 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 282 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 75
-`traceDist` 106 · `oublieDists` 139 · `modesDuPlan` 143 · `releveDists` 145
-`dessineDists` 174 · `marquesListe` 200 · `poseDistsFiche` 230 · `refaitDistsFiche` 270
+`texteDist` 54 · `texteCourtDist` 59 · `porteDist` 63 · `standPorte` 67 · `calqueDists` 76
+`traceDist` 107 · `oublieDists` 140 · `modesDuPlan` 144 · `releveDists` 146
+`dessineDists` 175 · `marquesListe` 201 · `poseDistsFiche` 231 · `refaitDistsFiche` 271
 
 ### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
 
@@ -847,15 +848,15 @@ Fonctions :
 `plieLesBandes` 167 · `saisitPlan` 181 · `cibleElargie` 218 · `planifieFiltre` 261
 `brancheGestes` 275 · `brancheLangue` 456
 
-### `modules/habillage.mjs` — 252 l. → plan, plan-admin
+### `modules/habillage.mjs` — 266 l. → plan, plan-admin
 
 - l.1 · L'habillage du plan — couleur principale, fond, distinctions, barre du
 
 Fonctions :
 
-`brancheHabillage` 34 · `appliqueAccent` 69 · `appliqueFond` 103 · `modeDist` 150
-`couleurDist` 162 · `appliqueDists` 184 · `modeBarre` 214 · `appliqueBarre` 216
-`appliqueModele` 239
+`confieALHabillage` 40 · `brancheHabillage` 50 · `appliqueAccent` 83 · `appliqueFond` 117
+`modeDist` 164 · `couleurDist` 176 · `appliqueDists` 198 · `modeBarre` 228
+`appliqueBarre` 230 · `appliqueModele` 253
 
 ### `modules/horaires.mjs` — 89 l. → plan, plan-admin
 
@@ -969,18 +970,18 @@ Fonctions :
 `cleLibelle` 36 · `poseModeLibelles` 45 · `poseLibelleChoisi` 50 · `empreinteLibelle` 62
 `placementLibelle` 70
 
-### `modules/libelles.mjs` — 387 l. → plan, plan-admin
+### `modules/libelles.mjs` — 417 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.118 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.143 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`dessineDessins` 41 · `decoupeStand` 42 · `poseLibellesDessines` 43 · `phareZone` 44
-`rafraichitFleches` 45 · `societeDeForme` 46 · `nomSurLePlan` 47 · `brancheLibelles` 55
-`coexComptes` 79 · `coexChoisit` 80 · `ligneCode` 96 · `libelles` 125 · `decaleLibelle` 212
-`facteurLibelle` 213 · `libelleForce` 214 · `libelleZone` 217 · `libelleEmplacement` 236
-`emplacementWebgl` 273 · `libellesWebgl` 321
+`dessineDessins` 58 · `decoupeStand` 59 · `poseLibellesDessines` 60 · `phareZone` 61
+`rafraichitFleches` 62 · `societeDeForme` 63 · `nomSurLePlan` 64 · `confieAuxLibelles` 73
+`brancheLibelles` 81 · `coexComptes` 104 · `coexChoisit` 105 · `ligneCode` 121
+`libelles` 150 · `decaleLibelle` 237 · `facteurLibelle` 238 · `libelleForce` 239
+`libelleZone` 242 · `libelleEmplacement` 261 · `emplacementWebgl` 298 · `libellesWebgl` 346
 
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
@@ -1075,13 +1076,13 @@ Fonctions :
 
 `presseNuanciers` 35 · `brancheNuancier` 39 · `suitNuancier` 56
 
-### `modules/options.mjs` — 132 l. → plan, plan-admin
+### `modules/options.mjs` — 138 l. → plan, plan-admin
 
 - l.1 · Les options du plan — ce que le salon a pris
 
 Fonctions :
 
-`appliqueOptions` 115 · `confieApresOption` 129
+`appliqueOptions` 116 · `confieApresOption` 130
 
 ### `modules/ordonnanceur.mjs` — 866 l. → plan, plan-admin
 
@@ -1188,32 +1189,32 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 161 l. → plan, plan-admin
+### `modules/plan.mjs` — 145 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/points-interet.mjs` — 408 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 416 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt — le cartouche, la recherche, la fiche d'un repère
 
 Fonctions :
 
-`oublieReperes` 55 · `reperesCherchables` 57 · `vaAuRepere` 101 · `clePoi` 144
-`cartouchePoi` 146 · `ouvrePoi` 265 · `mesureCartouche` 338 · `pharePoi` 354
-`phareRepere` 358 · `phareZone` 360 · `eclairePoi` 366 · `oublieChoixPoi` 399
+`oublieReperes` 58 · `reperesCherchables` 60 · `vaAuRepere` 104 · `clePoi` 147
+`cartouchePoi` 149 · `ouvrePoi` 268 · `mesureCartouche` 341 · `pharePoi` 357
+`phareRepere` 361 · `phareZone` 363 · `eclairePoi` 369 · `oublieChoixPoi` 402
 
 Éléments :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `modules/polices-plan.mjs` — 317 l. → plan, plan-admin
+### `modules/polices-plan.mjs` — 328 l. → plan, plan-admin
 
 - l.1 · La police des noms sur le plan — celle du modèle, ou une autre de la liste
 
 Fonctions :
 
-`branchePolices` 32 · `policeChoisie` 198 · `policeDuModele` 203 · `feuillePolice` 213
-`chargePolice` 235 · `policePrete` 255 · `policeDesNoms` 273 · `posePoliceLibelles` 302
+`confieAuxPolices` 43 · `policeChoisie` 209 · `policeDuModele` 214 · `feuillePolice` 224
+`chargePolice` 246 · `policePrete` 266 · `policeDesNoms` 284 · `posePoliceLibelles` 313
 
 ### `modules/provenance.mjs` — 161 l. → console
 
@@ -1267,27 +1268,27 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
-### `modules/recherche.mjs` — 1174 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1188 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`confieALaRecherche` 73 · `ferme` 74 · `ficheConf` 77 · `adresseVignette` 78
-`poseToutAuParcours` 79 · `dessineDists` 80 · `libelles` 81 · `marquesListe` 82
-`porteDist` 83 · `standPorte` 84 · `reperesCherchables` 85 · `vaAuRepere` 86
-`appliqueSecteurs` 96 · `filtreTheme` 113 · `themeFiltrable` 193 · `ordreCriteres` 209
-`clesCriteres` 232 · `libelleCritere` 239 · `valeursCritere` 258 · `texteCriteres` 271
-`texteAnglaisPerso` 287 · `indexeCriteres` 301 · `refaitCriteres` 335 · `dansCriteres` 342
-`critereActif` 350 · `basculeCritere` 352 · `videCriteres` 361 · `majVideQ` 370
-`videRecherche` 383 · `nCriteres` 398 · `majCriteres` 413 · `remplitCriteres` 480
-`basculeCriteres` 619 · `ouvreCriteres` 624 · `fermeCriteres` 640 · `filtre` 657
-`reposeRetrait` 677 · `critParSociete` 681 · `cherchable` 691 · `visible` 698
-`releveHotes` 719 · `visibleSurPlan` 727 · `visibleSociete` 738 · `marqueRetrait` 754
-`appliqueFiltre` 772 · `oublieRetrait` 788 · `reprendRecherche` 797 · `rangSorte` 810
-`codeCase` 832 · `caseNumero` 849 · `sousLigne` 869 · `liste` 883 · `marqueChoisie` 1011
-`prechargeMarque` 1037 · `prechargeLesVignettes` 1094 · `chargeUnLot` 1140
-`brancheRecherche` 1166
+`confieALaRecherche` 77 · `ferme` 78 · `ficheConf` 81 · `adresseVignette` 82
+`poseToutAuParcours` 83 · `dessineDists` 84 · `libelles` 85 · `marquesListe` 86
+`porteDist` 87 · `standPorte` 88 · `reperesCherchables` 89 · `vaAuRepere` 90
+`appliqueSecteurs` 100 · `filtreTheme` 117 · `themeFiltrable` 197 · `ordreCriteres` 213
+`clesCriteres` 236 · `libelleCritere` 243 · `valeursCritere` 262 · `texteCriteres` 275
+`texteAnglaisPerso` 291 · `indexeCriteres` 305 · `refaitCriteres` 339 · `dansCriteres` 346
+`critereActif` 354 · `basculeCritere` 356 · `videCriteres` 365 · `majVideQ` 374
+`videRecherche` 387 · `nCriteres` 402 · `majCriteres` 417 · `remplitCriteres` 484
+`basculeCriteres` 623 · `ouvreCriteres` 628 · `fermeCriteres` 644 · `filtre` 661
+`reposeRetrait` 681 · `critParSociete` 685 · `cherchable` 695 · `visible` 702
+`releveHotes` 723 · `visibleSurPlan` 731 · `visibleSociete` 742 · `marqueRetrait` 758
+`appliqueFiltre` 776 · `oublieRetrait` 792 · `reprendRecherche` 801 · `rangSorte` 814
+`codeCase` 836 · `caseNumero` 853 · `sousLigne` 873 · `liste` 887 · `marqueChoisie` 1015
+`prechargeMarque` 1041 · `prechargeLesVignettes` 1098 · `chargeUnLot` 1144
+`brancheRecherche` 1170
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1355,14 +1356,14 @@ Fonctions :
 `glisseFenetre` 93 · `ouvreReglages` 105 · `voletZones` 233 · `champsFicheZone` 335
 `ficheZoneEnPlace` 405 · `voletPlan` 423 · `voletCoexposants` 462
 
-### `modules/rendu.mjs` — 175 l. → plan, plan-admin
+### `modules/rendu.mjs` — 182 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
 Fonctions :
 
-`confieAuRendu` 62 · `monteHabillage` 67 · `baliseZone` 96 · `baliseStand` 106
-`montePlan` 113 · `onglets` 145 · `changePlan` 167
+`confieAuRendu` 64 · `monteHabillage` 69 · `baliseZone` 98 · `baliseStand` 108
+`montePlan` 115 · `onglets` 147 · `changePlan` 169
 
 ### `modules/reperes.mjs` — 421 l. → plan, plan-admin
 
@@ -1404,15 +1405,15 @@ Fonctions :
 
 `cheminDuSalon` 33 · `cheminPartageable` 44
 
-### `modules/secteurs.mjs` — 145 l. → plan, plan-admin
+### `modules/secteurs.mjs` — 152 l. → plan, plan-admin
 
 - l.1 · Les secteurs du salon, et la teinte de chacun sur le plan
 
 Fonctions :
 
-`coloreChaleur` 21 · `confieChaleur` 25 · `indexeSecteurs` 37 · `secteursMontres` 50
-`couleurConf` 54 · `couleurSecteur` 63 · `pastilleSecteur` 77 · `coloreSecteurs` 90
-`peintSecteur` 135
+`coloreChaleur` 22 · `confieChaleur` 26 · `indexeSecteurs` 38 · `secteursMontres` 51
+`couleurConf` 55 · `couleurSecteur` 64 · `pastilleSecteur` 78 · `coloreSecteurs` 91
+`peintSecteur` 136
 
 ### `modules/sejour.mjs` — 579 l. → plan, plan-admin
 
@@ -1547,29 +1548,29 @@ Fonctions :
 `ouvreItineraire` 670 · `fermeItineraire` 698 · `versItineraire` 708
 `versItineraireDe` 711 · `brancheTiroirItineraire` 739
 
-### `modules/tiroir-parcours.mjs` — 441 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 448 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`basculeParcours` 47 · `verseAuParcours` 92 · `retenusPourParcours` 138
-`ajouteToutAuParcours` 163 · `poseToutAuParcours` 186 · `brancheParcours` 210
-`rafraichitParcours` 223 · `rangParcours` 253 · `remplitParcours` 273 · `ouvreParcours` 362
-`fermeParcours` 374 · `videLeParcours` 385 · `brancheTiroirParcours` 415
+`basculeParcours` 49 · `verseAuParcours` 94 · `retenusPourParcours` 140
+`ajouteToutAuParcours` 165 · `poseToutAuParcours` 188 · `brancheParcours` 212
+`rafraichitParcours` 225 · `rangParcours` 255 · `remplitParcours` 275 · `ouvreParcours` 364
+`fermeParcours` 376 · `videLeParcours` 387 · `brancheTiroirParcours` 417
 
-### `modules/tiroirs.mjs` — 524 l. → plan, plan-admin
+### `modules/tiroirs.mjs` — 532 l. → plan, plan-admin
 
 - l.1 · Les tiroirs des écrans étroits — la liste, et ceux que la hauteur mène
-- l.28 · Ce que les tiroirs lisent d'un geste
-- l.74 · Le tiroir de la liste — écrans étroits
-- l.300 · Les tiroirs menés par la hauteur — écrans étroits
+- l.39 · Ce que les tiroirs lisent d'un geste
+- l.85 · Le tiroir de la liste — écrans étroits
+- l.311 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
-`fermeCriteres` 26 · `traceurDeGeste` 52 · `cranVoisin` 71 · `retraitBas` 97
-`mesureTiroir` 110 · `montreTiroir` 113 · `hisseTiroir` 117 · `tiroirListe` 124
-`tiroirCrante` 327 · `brancheTiroirs` 509
+`fermeCriteres` 27 · `confieAuxTiroirs` 35 · `traceurDeGeste` 63 · `cranVoisin` 82
+`retraitBas` 108 · `mesureTiroir` 121 · `montreTiroir` 124 · `hisseTiroir` 128
+`tiroirListe` 135 · `tiroirCrante` 338 · `brancheTiroirs` 518
 
 ### `modules/ton-barre.mjs` — 76 l. → plan, plan-admin
 

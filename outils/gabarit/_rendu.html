@@ -14,20 +14,13 @@
    Les libellés se branchent ici, au tout début du script, à la place que
    l'écoute des polices tenait : elle passe ainsi avant celle du rendu WebGL,
    qui repeint à la même arrivée en relisant les libellés, et les trouve déjà
-   retaillés. Leur est confié, par des détours lus au moment de l'appel, le
-   dessin des calques (`modules/dessin.mjs`, `modules/points-interet.mjs`),
-   qui importe ce que les libellés importent ; la boîte d'une forme, ils
-   l'importent (`modules/forme-choisie.mjs`). Le montage d'un pavillon n'a
-   plus de branchement : ce qu'il appelle ailleurs — le dessin des calques,
-   le fond chargé après coup, et ce que seule l'administration a —, chaque
-   module le lui confie en se chargeant (`modules/rendu.mjs` `confieAuRendu`).
+   retaillés. Le dessin des calques et des repères (`modules/dessin.mjs`,
+   `modules/points-interet.mjs`), qui importe ce que les libellés importent,
+   leur est confié par ces modules en se chargeant (`confieAuxLibelles`) ; la
+   boîte d'une forme, ils l'importent (`modules/forme-choisie.mjs`). Le
+   montage d'un pavillon n'a plus de branchement : ce qu'il appelle ailleurs —
+   le dessin des calques, le fond chargé après coup, et ce que seule
+   l'administration a —, chaque module le lui confie en se chargeant
+   (`modules/rendu.mjs` `confieAuRendu`).
    ============================================================ */
-brancheLibelles({
-  dessineDessins: () => dessineDessins(),
-  decoupeStand: (id, iSoc) => decoupeStand(id, iSoc),
-  poseLibellesDessines: (pxParM) => poseLibellesDessines(pxParM),
-  phareZone: (o) => phareZone(o),
-  rafraichitFleches: () => rafraichitFleches(),
-  societeDeForme: (f) => societeDeForme(f),
-  nomSurLePlan: (soc) => nomSurLePlan(soc),
-});
+brancheLibelles();

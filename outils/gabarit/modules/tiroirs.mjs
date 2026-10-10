@@ -11,19 +11,30 @@
    Ses écoutes se posent par `brancheTiroirs`, que `_gestes.html` appelle à la
    place que ce code y tenait : elles gardent leur rang parmi celles du plan.
    La recherche, qui importe ce module, ne peut être importée par lui : le
-   panneau des critères qu'un tiroir redescendu referme lui est confié.
+   panneau des critères qu'un tiroir redescendu referme lui est confié par la
+   porte `confieAuxTiroirs`, que la recherche ouvre en se chargeant.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ETROIT } from "./ecran.mjs";
 
-/* Ce que le code soudé confie au branchement. */
+/* Ce que la recherche confie en se chargeant, avant tout geste. */
 /**
- * @typedef {object} PageTiroirs
+ * @typedef {object} PreteTiroirs
  * @property {() => void} fermeCriteres replie le panneau des critères (`modules/recherche.mjs`)
  */
-/** @type {PageTiroirs} */
-let soude;
-const fermeCriteres = () => soude.fermeCriteres();
+/** @type {PreteTiroirs} */
+const prete = { fermeCriteres: () => {} };
+const fermeCriteres = () => prete.fermeCriteres();
+
+/**
+ * La porte du panneau des critères, que `recherche.mjs` ouvre en se chargeant
+ * — avant tout le code soudé, comme le branchement qui le recevait.
+ *
+ * @param {Partial<PreteTiroirs>} o
+ */
+export function confieAuxTiroirs(o){
+  Object.assign(prete, o);
+}
 
 /* ============================================================
    Ce que les tiroirs lisent d'un geste
@@ -503,11 +514,8 @@ function tiroirCrante({ panneau, prise, cle, demi }){
  * Pose les écoutes des tiroirs, au rang qu'elles tenaient parmi celles du
  * plan : la bande rendue au système d'abord, puis la liste, puis les trois
  * tiroirs menés par la hauteur.
- *
- * @param {PageTiroirs} page
  */
-export function brancheTiroirs(page){
-  soude = page;
+export function brancheTiroirs(){
   addEventListener("resize", () => { _retraitBas = null; });
 
   tiroirListe();

@@ -16,7 +16,8 @@
    écoutes s'y posent au même rang qu'avant parmi celles du plan. La fiche,
    la configuration et le filtre de la recherche s'importent (`fiche.mjs`,
    `configuration.mjs`, `recherche.mjs`) : il n'a rien à recevoir du code
-   soudé.
+   soudé. L'apparence, qui le referme quand l'exploitant retire le parcours,
+   le reçoit de lui en se chargeant (`confieALApparence`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, HEBERGES, CONFERENCES, parId, CONFS } from "./donnees.mjs";
@@ -34,6 +35,7 @@ import { fermeItineraire } from "./tiroir-itineraire.mjs";
 import { select, ficheConf, ferme } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
 import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
+import { confieALApparence } from "./apparence.mjs";
 const racine = document.documentElement;
 
 /**
@@ -439,3 +441,8 @@ export function brancheTiroirParcours(){
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant ce qu'elle en appelle (le bouton qui verse au parcours tout ce qu'elle a retenu). */
 confieALaRecherche({ poseToutAuParcours });
+
+/* Le tiroir, confié à l'apparence dès que ce module se charge : elle le
+   referme quand l'exploitant retire le parcours, et ne peut importer ce
+   module, qui l'atteint par la journée et le montage du plan. */
+confieALApparence({ fermeParcours });

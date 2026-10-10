@@ -34,13 +34,11 @@ import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue, cadrePlan } from "./vue.mjs";
-import { CONF, brancheConfiguration } from "./configuration.mjs";
-import { brancheApparence } from "./apparence.mjs";
+import { CONF } from "./configuration.mjs";
 import { brancheHabillage } from "./habillage.mjs";
-import { P_NOM, P_CODE, branchePolices } from "./polices-plan.mjs";
-import { SECTEURS } from "./secteurs.mjs";
+import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { brancheBandes } from "./bandes.mjs";
-import { brancheRecherche, PREFIXE_PERSO, libelleCritere, fermeCriteres, liste } from "./recherche.mjs";
+import { brancheRecherche, PREFIXE_PERSO, libelleCritere } from "./recherche.mjs";
 import { view, svg } from "./vue.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage } from "./demarrage.mjs";
@@ -48,16 +46,17 @@ import { brancheCorpsFiche } from "./corps-fiche.mjs";
 import { ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles } from "./libelles.mjs";
-import { DISTINCTIONS, dessineDists, poseDistsFiche,
-  refaitDistsFiche } from "./distinctions.mjs";
-import { MONTE, montePlan, changePlan } from "./rendu.mjs";
+import { poseDistsFiche } from "./distinctions.mjs";
+import { montePlan, changePlan } from "./rendu.mjs";
 import { DESSINS, mesCalques, calqueActif }
   from "./calques-dessin.mjs";
 import { estCadre } from "./chemin-forme.mjs";
-import { rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan, societeDeForme,
-  poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
-import { phareZone } from "./points-interet.mjs";
-import { appliqueOptions } from "./options.mjs";
+import { redessineForme, apercuGuide, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
+/* Les options vendues à part ne sont plus importées par personne dans la
+   page publique : elles se confient à l'apparence en se chargeant
+   (`confieALApparence`), qui les repose avec le reste de l'habillage. Il faut
+   donc les charger, et c'est d'ici. */
+import "./options.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
@@ -85,28 +84,21 @@ Object.assign(globalThis, {
   basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours,
   branchePartage,
-  brancheVue, cadrePlan, brancheConfiguration,
-  brancheApparence,
+  brancheVue, cadrePlan,
   brancheHabillage,
-  branchePolices,
   brancheBandes,
   brancheRecherche, PREFIXE_PERSO,
   libelleCritere,
-  fermeCriteres,
-  liste,
   svg,
   brancheTonDeLaBarre,
   brancheDemarrage, brancheCorpsFiche,
   ferme, brancheFiche,
-  brancheLibelles, libelles, DISTINCTIONS, dessineDists, poseDistsFiche,
-  refaitDistsFiche,
+  brancheLibelles, poseDistsFiche,
   montePlan, changePlan,
   mesCalques,
   estCadre,
-  rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan,
-  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
-  phareZone,
-  appliqueOptions,
+  redessineForme, apercuGuide,
+  decoupeStand, marqueStandsDessines, signale,
   brancheGestes, brancheLangue,
   brancheTiroirs,
 });
@@ -122,19 +114,10 @@ Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel
    jamais l'objet lui-même. */
 Object.defineProperties(globalThis, vivants({ CONF: () => CONF }, "ouvreConf"));
 
-/* Les secteurs du salon, que l'index refait à chaque chargement : le code
-   soudé les lit par accesseur ; seul `indexeSecteurs` les remplace. */
-Object.defineProperties(globalThis, vivants({ SECTEURS: () => SECTEURS }, "indexeSecteurs"));
-
 /* La vue du plan : les gestes la remplacent sans cesse, le cadrage sur un
    trajet aussi. Le code soudé la lit par accesseur ; il la remplace par sa
    porte (`vue.mjs` `changeVue`), jamais par affectation. */
 Object.defineProperties(globalThis, vivants({ view: () => view }, "changeVue"));
-
-/* Le pavillon est-il monté ? Le panneau des calques et la police des noms
-   attendent qu'il le soit ; seul le montage le pose (`rendu.mjs`
-   `montePlan`). */
-Object.defineProperties(globalThis, vivants({ MONTE: () => MONTE }, "montePlan"));
 
 /* Les calques de dessin du salon ouvert : le chargement les lit par
    accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
@@ -147,14 +130,15 @@ Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, 
 
 /* Ce que les essais du navigateur lisent dans la page, et que le code soudé
    n'appelle pas : les règles de `sur.mjs` éprouvées sur des entrées hostiles,
-   le salon que l'adresse nomme, les mesures du texte et le rendu par la carte
-   graphique. Rangé à part de la liste exposée, pour que celle-ci ne compte
-   que ce qui soude encore la page (`outils/soudure.js`) ; écrit comme une
-   affectation, que `outils/modules.js` ne relit pas. La graisse et la police
-   des libellés se remplacent au choix d'un modèle : elles se lisent donc par
-   un accesseur, qui rend celles du moment. */
+   le salon que l'adresse nomme, les mesures du texte, le rendu par la carte
+   graphique et les libellés qu'on réécrit sur des mesures neuves. Rangé à
+   part de la liste exposée, pour que celle-ci ne compte que ce qui soude
+   encore la page (`outils/soudure.js`) ; écrit comme une affectation, que
+   `outils/modules.js` ne relit pas. La graisse et la police des libellés se
+   remplacent au choix d'un modèle : elles se lisent donc par un accesseur,
+   qui rend celles du moment. */
 globalThis.__essais = {
-  SLUG, GL, rectEcranWebgl, _lg, largeur,
+  SLUG, GL, rectEcranWebgl, _lg, largeur, libelles,
   adresseSure, adresseImage, imageSure, assainitRiche,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
