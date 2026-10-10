@@ -658,17 +658,17 @@ Fonctions :
 ### `modules/fiche.mjs` — 1185 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.78 · 7. Sélection et fiche
+- l.79 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 74 · `montePlan` 75 · `brancheParcours` 76 · `anime` 97 · `noeud` 121
-`canalPlan` 131 · `rangSociete` 139 · `select` 148 · `centre` 173 · `brancheActesFiche` 184
-`centreEtBaisseLaFiche` 200 · `centrePoint` 218 · `programme` 247 · `produits` 296
-`ficheProduit` 324 · `ficheConf` 394 · `adresseVignette` 551 · `poseAppuiTactile` 568
-`ecarteClicFantome` 571 · `nomSociete` 580 · `choisitExposant` 594 · `poseMarque` 632
-`montreMarque` 692 · `poseCode` 715 · `rangeMarque` 756 · `ouvre` 812 · `ferme` 1128
-`onglet` 1146 · `brancheFiche` 1164
+`confieALaFiche` 75 · `montePlan` 76 · `brancheParcours` 77 · `anime` 98 · `noeud` 122
+`canalPlan` 132 · `rangSociete` 140 · `select` 149 · `centre` 174 · `brancheActesFiche` 185
+`centreEtBaisseLaFiche` 201 · `centrePoint` 219 · `programme` 248 · `produits` 297
+`ficheProduit` 325 · `ficheConf` 395 · `adresseVignette` 552 · `poseAppuiTactile` 569
+`ecarteClicFantome` 572 · `nomSociete` 581 · `choisitExposant` 595 · `poseMarque` 633
+`montreMarque` 693 · `poseCode` 716 · `rangeMarque` 757 · `ouvre` 813 · `ferme` 1129
+`onglet` 1147 · `brancheFiche` 1165
 
 Éléments :
 
@@ -1056,21 +1056,21 @@ Fonctions :
 
 `accueilleParcoursPartage` 48 · `adoptePartage` 126
 
-### `modules/parcours.mjs` — 451 l. → plan, plan-admin
+### `modules/parcours.mjs` — 456 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
 Fonctions :
 
-`_rafraichit` 24 · `_reprendRappels` 25 · `_synchroniseRappels` 26 · `poseParcours` 87
-`brancheListeParcours` 105 · `cleParcours` 118 · `identifiantParcours` 155
-`casierParcours` 163 · `dansParcours` 164 · `jourParcours` 167
-`attenduDepuisTropLongtemps` 172 · `trieParcours` 183 · `chargeParcours` 193
-`parcoursAEcrire` 227 · `enregistreParcours` 243 · `tientLeStockage` 272
-`plurielParcours` 286 · `contenuParcours` 295 · `signetParcours` 306 · `boutonParcours` 312
-`rafraichitMarque` 317 · `calqueMarques` 350 · `dessineMarques` 368 · `marqueParcours` 398
-`instantConf` 416 · `cleTemps` 420 · `nomDeStand` 430 · `groupeParcours` 432
-`fermeParcours` 446
+`_rafraichit` 25 · `_reprendRappels` 26 · `_synchroniseRappels` 27 · `poseParcours` 88
+`brancheListeParcours` 106 · `cleParcours` 119 · `identifiantParcours` 156
+`casierParcours` 164 · `dansParcours` 165 · `jourParcours` 168
+`attenduDepuisTropLongtemps` 173 · `trieParcours` 184 · `chargeParcours` 194
+`parcoursAEcrire` 228 · `enregistreParcours` 244 · `tientLeStockage` 273
+`plurielParcours` 287 · `contenuParcours` 296 · `signetParcours` 307 · `boutonParcours` 313
+`rafraichitMarque` 318 · `calqueMarques` 351 · `dessineMarques` 369 · `marqueParcours` 399
+`instantConf` 417 · `cleTemps` 421 · `nomDeStand` 431 · `groupeParcours` 433
+`fermeParcours` 447
 
 ### `modules/partage.mjs` — 293 l. → plan, plan-admin
 
@@ -1190,22 +1190,22 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport — et son démarrage
 
-### `modules/recherche.mjs` — 1031 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1030 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`confieALaRecherche` 78 · `ferme` 79 · `ficheConf` 82 · `adresseVignette` 83
-`poseToutAuParcours` 84 · `vaAuRepere` 85 · `appliqueSecteurs` 95 · `filtreTheme` 112
-`themeFiltrable` 169 · `ordreCriteres` 185 · `clesCriteres` 208 · `texteCriteres` 221
-`texteAnglaisPerso` 237 · `indexeCriteres` 251 · `refaitCriteres` 285 · `critereActif` 292
-`basculeCritere` 294 · `videCriteres` 303 · `majVideQ` 312 · `videRecherche` 325
-`nCriteres` 340 · `majCriteres` 349 · `remplitCriteres` 416 · `basculeCriteres` 555
-`ouvreCriteres` 560 · `marqueRetrait` 594 · `appliqueFiltre` 612 · `oublieRetrait` 628
-`reprendRecherche` 637 · `rangSorte` 650 · `codeCase` 672 · `caseNumero` 689
-`sousLigne` 709 · `liste` 723 · `marqueChoisie` 851 · `prechargeMarque` 877
-`prechargeLesVignettes` 934 · `chargeUnLot` 980 · `brancheRecherche` 1006
+`confieALaRecherche` 77 · `ficheConf` 80 · `adresseVignette` 81 · `poseToutAuParcours` 82
+`vaAuRepere` 83 · `appliqueSecteurs` 93 · `filtreTheme` 111 · `themeFiltrable` 168
+`ordreCriteres` 184 · `clesCriteres` 207 · `texteCriteres` 220 · `texteAnglaisPerso` 236
+`indexeCriteres` 250 · `refaitCriteres` 284 · `critereActif` 291 · `basculeCritere` 293
+`videCriteres` 302 · `majVideQ` 311 · `videRecherche` 324 · `nCriteres` 339
+`majCriteres` 348 · `remplitCriteres` 415 · `basculeCriteres` 554 · `ouvreCriteres` 559
+`marqueRetrait` 593 · `appliqueFiltre` 611 · `oublieRetrait` 627 · `reprendRecherche` 636
+`rangSorte` 649 · `codeCase` 671 · `caseNumero` 688 · `sousLigne` 708 · `liste` 722
+`marqueChoisie` 850 · `prechargeMarque` 876 · `prechargeLesVignettes` 933
+`chargeUnLot` 979 · `brancheRecherche` 1005
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1457,23 +1457,23 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
-### `modules/tiroir-itineraire.mjs` — 847 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 849 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`confieAuTiroirItineraire` 65 · `changePlan` 66 · `ferme` 67 · `calculeRoute` 85
-`poseTrace` 108 · `marchesIci` 110 · `rayonBout` 115 · `arreteTracage` 148
-`peintItineraire` 154 · `lanceTracage` 205 · `dessineItineraire` 230 · `rafraichitBouts` 252
-`cadreItineraire` 275 · `champIti` 299 · `fermeSugg` 303 · `montreSugg` 310
-`choisitPoint` 344 · `valideSaisie` 353 · `effaceItineraire` 365 · `relance` 393
-`montreResultat` 435 · `poseVisee` 579 · `confieVisee` 592 · `suitLaVisee` 594
-`bandeauVisee` 596 · `armeVisee` 618 · `finVisee` 636 · `viseItineraire` 652 · `visePoi` 658
-`visePoint` 664 · `ouvreItineraire` 692 · `fermeItineraire` 720 · `versItineraire` 730
-`versItineraireDe` 733 · `brancheTiroirItineraire` 761
+`confieAuTiroirItineraire` 65 · `changePlan` 66 · `calculeRoute` 84 · `poseTrace` 107
+`marchesIci` 109 · `rayonBout` 114 · `arreteTracage` 147 · `peintItineraire` 153
+`lanceTracage` 204 · `dessineItineraire` 229 · `rafraichitBouts` 251 · `cadreItineraire` 274
+`champIti` 298 · `fermeSugg` 302 · `montreSugg` 309 · `choisitPoint` 343
+`valideSaisie` 352 · `effaceItineraire` 364 · `relance` 392 · `montreResultat` 434
+`poseVisee` 578 · `confieVisee` 591 · `suitLaVisee` 593 · `bandeauVisee` 595
+`armeVisee` 617 · `finVisee` 635 · `viseItineraire` 651 · `visePoi` 657 · `visePoint` 663
+`ouvreItineraire` 691 · `fermeItineraire` 718 · `versItineraire` 728
+`versItineraireDe` 731 · `brancheTiroirItineraire` 759
 
-### `modules/tiroir-parcours.mjs` — 471 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 470 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
@@ -1482,7 +1482,15 @@ Fonctions :
 `basculeParcours` 54 · `verseAuParcours` 99 · `retenusPourParcours` 145
 `ajouteToutAuParcours` 170 · `poseToutAuParcours` 193 · `brancheParcours` 217
 `rafraichitParcours` 230 · `rangParcours` 260 · `remplitParcours` 280 · `ouvreParcours` 369
-`videLeParcours` 386 · `brancheTiroirParcours` 416
+`videLeParcours` 385 · `brancheTiroirParcours` 415
+
+### `modules/tiroirs-exclusifs.mjs` — 31 l. → plan, plan-admin
+
+- l.1 · Un seul des trois à la fois — la fiche, le parcours, l'itinéraire
+
+Fonctions :
+
+`inscritTiroirExclusif` 22 · `fermeLesAutresTiroirs` 26
 
 ### `modules/tiroirs.mjs` — 514 l. → plan, plan-admin
 

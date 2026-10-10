@@ -11,6 +11,7 @@
    (`tiroir-parcours.mjs`) la remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { inscritTiroirExclusif } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
 import { SLUG } from "./salon.mjs";
 import { jetonMesure } from "./mesure.mjs";
@@ -449,3 +450,7 @@ export function fermeParcours(){
   t.classList.remove("open");
   $("btnParcours").setAttribute("aria-pressed", "false");
 }
+
+/* Le parcours est l'un des trois tiroirs qui se partagent la bande : ouvrir
+   la fiche ou l'itinéraire le referme, s'il est ouvert. */
+inscritTiroirExclusif("parcours", fermeParcours);

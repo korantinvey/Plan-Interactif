@@ -23,6 +23,7 @@
    tiroir de l'itinéraire importent aussi.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { DATA, TOUS, HEBERGES, CONFERENCES, parId, CONFS } from "./donnees.mjs";
 import { ouvreModale, confirme } from "./fenetre.mjs";
 import { mesure } from "./mesure.mjs";
@@ -36,8 +37,7 @@ import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
-import { fermeItineraire } from "./tiroir-itineraire.mjs";
-import { select, ficheConf, ferme, confieALaFiche } from "./fiche.mjs";
+import { select, ficheConf, confieALaFiche } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
 import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
 import { confieApresOption } from "./options.mjs";
@@ -369,8 +369,7 @@ export function remplitParcours(){
 function ouvreParcours(){
   // la fiche et l'itinéraire occupent la même bande : ils cèdent la place
   // plutôt que de s'y superposer
-  if ($("detail").classList.contains("open")) ferme();
-  fermeItineraire();
+  fermeLesAutresTiroirs("parcours");
   remplitParcours();
   /* Le tiroir se rouvre sur ce qu'on y regardait : consulter une fiche depuis
      la journée organisée ne doit pas la faire disparaître. */

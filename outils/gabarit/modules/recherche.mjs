@@ -63,7 +63,6 @@ import { view } from "./vue.mjs";
  * en retour : chacun lui confie ce qu'elle en appelle au chargement de son
  * module, par `confieALaRecherche`.
  * @typedef {object} PageRecherche
- * @property {() => void} ferme referme la fiche (`fiche.mjs`)
  * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
  * @property {(id: any, canal?: string) => void} ficheConf
  * @property {(cle: any) => string} adresseVignette
@@ -76,7 +75,6 @@ const prete = /** @type {any} */ ({});
 /** La porte des modules qui prêtent à la recherche ce qu'elle appelle.
  *  @param {Partial<PageRecherche>} o */
 export function confieALaRecherche(o){ Object.assign(prete, o); }
-const ferme = () => prete.ferme();
 const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal,
   /** @type {number} */ iSoc) => prete.select(id, recentrer, canal, iSoc);
 const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.ficheConf(id, canal);
@@ -109,14 +107,15 @@ export function appliqueSecteurs(){
  * On repart à neuf : mot-clé et autres critères effacés, sinon la liste
  * répondrait à une question qu'on ne pose plus, et paraîtrait vide sans raison.
  */
-export function filtreTheme(n){
+/** @param {string} n @param {() => void} fermeLaFiche la fiche d'où vient le lien, qui le passe */
+export function filtreTheme(n, fermeLaFiche){
   if (!themeFiltrable(n)) return;
   state.crit.clear();
   state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
   majVideQ();
-  ferme();
+  fermeLaFiche();
   majCriteres();
   reposeRetrait();
   appliqueFiltre();

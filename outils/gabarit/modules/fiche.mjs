@@ -32,12 +32,12 @@ import { lien, adresseWeb, adresseImage, imageSure, assainitRiche } from "./sur.
 import { JOURS, MOIS, momentLocal, jourLong } from "./temps.mjs";
 import { mesure } from "./mesure.mjs";
 import { recadreMarque } from "./marque.mjs";
-import { signetParcours, boutonParcours, dessineMarques, fermeParcours } from "./parcours.mjs";
+import { signetParcours, boutonParcours, dessineMarques } from "./parcours.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
   from "./vue.mjs";
-import { fermeItineraire, versItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
 import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES, confieALaRecherche }
@@ -47,6 +47,7 @@ import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { baisseTiroir } from "./tiroirs.mjs";
+import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
 
@@ -827,7 +828,7 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
   const soc = iS >= 0 ? heberges[iS] : o;
   // la fiche, le parcours et l'itinéraire se partagent la même bande, à
   // droite comme en bas
-  fermeParcours(); fermeItineraire();
+  fermeLesAutresTiroirs("fiche");
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
   /* « Zone organisateur » n'apprenait rien : la forme et la couleur le disent.
@@ -1076,7 +1077,7 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
      qui la partagent : c'est le chemin qu'on prend quand on a trouvé à peu
      près ce qu'on cherchait, et qu'on veut voir le reste. */
   $("dBody").querySelectorAll(".theme").forEach(b =>
-    b.onclick = () => filtreTheme(b.dataset.t));
+    b.onclick = () => filtreTheme(b.dataset.t, ferme));
   // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
   brancheActesFiche(() => centre(o), () => versItineraire(o));
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
@@ -1176,10 +1177,9 @@ export function brancheFiche(){
 }
 
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant ce qu'elle en appelle (une ligne ouvre la fiche d'un stand ou d'une conférence, la referme, et montre la vignette d'un logo). */
-confieALaRecherche({ select, ferme, ficheConf, adresseVignette });
+   confie en se chargeant ce qu'elle en appelle (une ligne ouvre la fiche d'un stand ou d'une conférence, et montre la vignette d'un logo). */
+confieALaRecherche({ select, ficheConf, adresseVignette });
 
-/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant de quoi refermer la fiche quand il
-   s'ouvre. */
-confieAuTiroirItineraire({ ferme });
+/* La fiche est l'un des trois tiroirs qui se partagent la bande : ouvrir le
+   parcours ou l'itinéraire la referme, si elle est ouverte. */
+inscritTiroirExclusif("fiche", () => { if ($("detail").classList.contains("open")) ferme(); });

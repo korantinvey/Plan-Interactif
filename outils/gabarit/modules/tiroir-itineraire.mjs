@@ -32,13 +32,14 @@
    chargeant (`brancheItineraire`, au bas du module).
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { mesure } from "./mesure.mjs";
 import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarches, coupeMarche,
   distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, brancheItineraire } from "./itineraire.mjs";
 import { CONF } from "./configuration.mjs";
 import { DESSINS } from "./calques-dessin.mjs";
-import { instantConf, fermeParcours } from "./parcours.mjs";
+import { instantConf } from "./parcours.mjs";
 import { finInstant } from "./sejour.mjs";
 import { pointBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg,
@@ -47,24 +48,22 @@ import { REDUIT, ETROIT } from "./ecran.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 
 /**
- * Ce que le tiroir emprunte aux modules qui l'importent : le passage d'un
- * pavillon à l'autre (`rendu.mjs`) et la fiche (`fiche.mjs`), qu'il referme
- * en s'ouvrant. Tous deux l'importent : il ne peut les importer en retour, et
- * chacun lui confie ce qu'il en appelle au chargement de son module, par
- * `confieAuTiroirItineraire`. Le tiroir du parcours, qu'il referme aussi,
- * s'importe de `parcours.mjs`. La vue, elle,
+ * Ce que le tiroir emprunte au rendu, qui l'importe : le passage d'un
+ * pavillon à l'autre (`rendu.mjs`), confié au chargement par
+ * `confieAuTiroirItineraire`. La fiche et le parcours, qu'il referme en
+ * s'ouvrant, se referment par le registre des tiroirs exclusifs
+ * (`tiroirs.mjs`). La vue, elle,
  * s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
  * cesse, et le trajet la recadre.
- * @typedef {{ changePlan: (i: number) => void, ferme: () => void }} PageTiroirItineraire
+ * @typedef {{ changePlan: (i: number) => void }} PageTiroirItineraire
  */
 /** @type {PageTiroirItineraire} */
-const prete = { changePlan: () => {}, ferme: () => {} };
+const prete = { changePlan: () => {} };
 
 /** La porte des modules qui prêtent au tiroir ce qu'il appelle.
  *  @param {Partial<PageTiroirItineraire>} o */
 export function confieAuTiroirItineraire(o){ Object.assign(prete, o); }
 const changePlan = (/** @type {number} */ i) => prete.changePlan(i);
-const ferme = () => prete.ferme();
 const racine = document.documentElement;
 
 /* ------------------------------------------------------------
@@ -691,8 +690,7 @@ function visePoint(pt){
  */
 function ouvreItineraire(arme = true){
   // fiche, parcours et itinéraire se partagent la même bande
-  if ($("detail").classList.contains("open")) ferme();
-  fermeParcours();
+  fermeLesAutresTiroirs("itineraire");
   /* Une ouverture repart de zéro : la visée en cours s'éteint ici, et les
      lignes du bas la réarment sur le premier champ vide. On ne passe pas par
      finVisee(), qui rouvrirait ce tiroir déjà en train de s'ouvrir. */
@@ -845,3 +843,7 @@ confieALaVue({ rafraichitBouts });
    calques se remplacent en changeant de salon : ils se confient par des
    lecteurs, qui rendent ceux du moment. */
 brancheItineraire({ conf: () => CONF, dessins: () => DESSINS, instantConf, finInstant });
+
+/* L'itinéraire est l'un des trois tiroirs qui se partagent la bande : ouvrir
+   la fiche ou le parcours le referme, s'il est ouvert. */
+inscritTiroirExclusif("itineraire", fermeItineraire);

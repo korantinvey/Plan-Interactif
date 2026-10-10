@@ -76,6 +76,31 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* La fiche, le parcours et l'itinéraire se partagent la même bande : en
+     ouvrir un referme les deux autres (`modules/tiroirs-exclusifs.mjs`
+     `fermeLesAutresTiroirs`), par quelque bouton qu'on y vienne. */
+  test("la fiche, le parcours et l'itinéraire ne s'ouvrent qu'un à la fois", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN + "&rendu=svg");
+    const lignes = await attendLaListe(page);
+    const ouvert = (id) => page.locator("#" + id);
+    await lignes.first().click();
+    await expect(ouvert("detail")).toHaveClass(/\bopen\b/);
+
+    await page.click("#btnParcours");
+    await expect(ouvert("parcours")).toHaveClass(/\bopen\b/);
+    await expect(ouvert("detail")).not.toHaveClass(/\bopen\b/);
+
+    await page.click("#btnItineraire");
+    await expect(ouvert("itineraire")).toHaveClass(/\bopen\b/);
+    await expect(ouvert("parcours")).not.toHaveClass(/\bopen\b/);
+
+    await lignes.first().click();
+    await expect(ouvert("detail")).toHaveClass(/\bopen\b/);
+    await expect(ouvert("itineraire")).not.toHaveClass(/\bopen\b/);
+    expect(erreurs).toEqual([]);
+  });
+
   test("les onglets passent d'un pavillon à l'autre", async ({ page }) => {
     test.skip(DONNEES.plans.length < 2, "un seul pavillon dans les données");
     const erreurs = await prepare(page);

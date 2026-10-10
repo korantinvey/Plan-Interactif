@@ -17,13 +17,13 @@
    (`confieALaRecherche`).
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
 import { P } from "./donnees.mjs";
 import { rectVisee } from "./vue.mjs";
 import { ecritMinutes } from "./temps.mjs";
 import { nomRepere, typeLiaison, liensDe, pointRepere } from "./itineraire.mjs";
-import { fermeParcours } from "./tiroir-parcours.mjs";
-import { fermeItineraire, versItineraireDe } from "./tiroir-itineraire.mjs";
+import { versItineraireDe } from "./tiroir-itineraire.mjs";
 import { nomTypeRepere, pictoForme } from "./reperes.mjs";
 import { poseCode, poseMarque, onglet, brancheActesFiche, centrePoint, ecarteClicFantome, anime } from "./fiche.mjs";
 import { changePlan } from "./rendu.mjs";
@@ -76,7 +76,7 @@ export function ouvrePoi(id, depuis, recentrer){
   const cible = formeParId(id);
   if (!cible || cible.f.t !== "repere") return;
   const f = cible.f, p = P();
-  fermeParcours(); fermeItineraire();
+  fermeLesAutresTiroirs("fiche");
 
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   const noeudPoi = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
