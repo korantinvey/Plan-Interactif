@@ -19,9 +19,9 @@
    filtre et la mesure du texte s'importent (`libelles.mjs`, `dessin.mjs`,
    `distinctions.mjs`, `filtre.mjs`, `texte-plan.mjs`).
    Ce qu'ouvre une ligne — la fiche d'un stand, d'une conférence, d'un
-   repère — `ligne-liste.mjs` le fait, au-dessus de la fiche ; seul le bouton
-   qui verse au parcours ce que la recherche retient lui est confié par le
-   tiroir du parcours (`confieALaRecherche`). `brancheRecherche`, que
+   repère — `ligne-liste.mjs` le fait, au-dessus de la fiche ; le bouton qui
+   verse au parcours ce que la recherche retient s'importe
+   (`tout-au-parcours.mjs`). `brancheRecherche`, que
    `lancement.mjs` appelle à son rang, y pose l'écoute de la liste et celle
    des polices arrivées.
 
@@ -54,22 +54,8 @@ import { largeur, remesureTextes } from "./texte-plan.mjs";
 import { libelles } from "./libelles.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
+import { poseToutAuParcours } from "./tout-au-parcours.mjs";
 
-/**
- * Ce que la recherche emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
- * qui l'importe : le bouton qui verse au parcours tout ce qu'elle retient, au
- * pied du panneau des critères. Il le lui confie au chargement, par
- * `confieALaRecherche`. Ce qu'ouvre une ligne, `ligne-liste.mjs` le fait.
- * @typedef {object} PageRecherche
- * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
- */
-/** @type {PageRecherche} */
-const prete = /** @type {any} */ ({});
-
-/** La porte des modules qui prêtent à la recherche ce qu'elle appelle.
- *  @param {Partial<PageRecherche>} o */
-export function confieALaRecherche(o){ Object.assign(prete, o); }
-const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
 
 /**
  * L'adresse d'une vignette fabriquée à la synchronisation.
@@ -996,9 +982,7 @@ function chargeUnLot(lot){
 
 /**
  * Le branchement, appelé par `lancement.mjs` `lancePlan` à son rang :
- * l'écoute de la liste s'y pose. Ce que la recherche
- * appelle ailleurs lui est confié par les modules eux-mêmes
- * (`confieALaRecherche`).
+ * l'écoute de la liste s'y pose.
  */
 export function brancheRecherche(){
   /* Une police arrivée après la mesure la rendait fausse : les mesures gardées

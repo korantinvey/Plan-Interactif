@@ -458,13 +458,14 @@ inscritTiroirExclusif("parcours", fermeParcours);
 /* ------------------------------------------------------------
    La marque, partout la même — et le geste qu'elle porte
    ------------------------------------------------------------ */
-/* Ce que le tiroir du parcours refait quand un signet change la liste : il
-   s'y inscrit en se chargeant (`tiroir-parcours.mjs`). Le geste vit ici, avec
-   la liste, pour que la fiche et la journée l'importent sans passer par le
-   tiroir, qui les importe. */
-/** @type {(genre: string, ajout: boolean) => void} */
+/* Ce que le tiroir du parcours refait quand un signet ou un lot change la
+   liste : il s'y inscrit en se chargeant (`tiroir-parcours.mjs`). Le geste
+   vit ici, avec la liste, pour que la fiche, la journée, la recherche et le
+   parcours reçu l'importent sans passer par le tiroir, qui les importe.
+   `quoi` vaut "stand" ou "conf" pour un signet, "lot" pour un lot versé. */
+/** @type {(quoi: string, ajout: boolean) => void} */
 let apresBascule = () => {};
-/** @param {(genre: string, ajout: boolean) => void} f */
+/** @param {(quoi: string, ajout: boolean) => void} f */
 export function suitLeParcours(f){ apresBascule = f; }
 
 /**
@@ -507,4 +508,40 @@ export function brancheParcours(hote, canal){
       basculeParcours(el.dataset.mg, el.dataset.mi, canal);
     };
   });
+}
+
+/**
+ * Verser un lot de rangs dans la liste.
+ *
+ * Les ajouts se comptent un à un, comme s'ils avaient été faits signet par
+ * signet : c'est bien un visiteur de plus qui a ce stand à son programme, et
+ * l'exposant a raison de le voir dans ses chiffres. Le canal dit d'où le lot
+ * vient — un parcours reçu, une recherche prise en bloc — et permet de faire la
+ * part des uns et des autres.
+ *
+ * La suggestion ne s'invite pas ici, à la différence d'un signet posé à la
+ * main : un lot qui vient d'allonger la liste de vingt exposants n'appelle pas
+ * une fenêtre qui en propose un vingt et unième.
+ */
+export function verseAuParcours(stands, confs, canal, remplace){
+  /* La réserve part avec la liste, comme au vidage : elle s'écrit dans le
+     stockage avec elle, et un rang mis de côté en juin reparaissait dans la
+     liste reçue en septembre le jour où les données le reconnaissaient à
+     nouveau — alors qu'on avait demandé un remplacement. */
+  if (remplace)
+    poseParcours({ PARCOURS: { stands: [], confs: [] },
+                   MIS_DE_COTE: { stands: [], confs: [] } });
+  stands.forEach(id => {
+    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
+    mesure("parcours", canal, id, "fiche_stand");
+  });
+  confs.forEach(id => {
+    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
+    mesure("parcours", canal, id, "fiche_conf");
+  });
+  enregistreParcours();
+  /* Le tiroir se refait et s'ouvre sur ce qui vient d'arriver : sans cela le
+     visiteur n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
+  apresBascule("lot", true);
+  tientLeStockage();
 }

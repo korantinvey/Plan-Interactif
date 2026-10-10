@@ -1055,15 +1055,15 @@ Fonctions :
 
 `poseRelecturePanneau` 20 · `relisPanneauCrit` 23 · `fermeCriteres` 28
 
-### `modules/parcours-recu.mjs` — 128 l. → plan, plan-admin
+### `modules/parcours-recu.mjs` — 125 l. → plan, plan-admin
 
 - l.1 · Le parcours reçu
 
 Fonctions :
 
-`accueilleParcoursPartage` 48 · `adoptePartage` 126
+`accueilleParcoursPartage` 45 · `adoptePartage` 123
 
-### `modules/parcours.mjs` — 510 l. → plan, plan-admin
+### `modules/parcours.mjs` — 547 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -1077,8 +1077,8 @@ Fonctions :
 `plurielParcours` 287 · `contenuParcours` 296 · `signetParcours` 307 · `boutonParcours` 313
 `rafraichitMarque` 318 · `calqueMarques` 351 · `dessineMarques` 369 · `marqueParcours` 399
 `instantConf` 417 · `cleTemps` 421 · `nomDeStand` 431 · `groupeParcours` 433
-`fermeParcours` 447 · `apresBascule` 466 · `suitLeParcours` 468 · `basculeParcours` 478
-`brancheParcours` 502
+`fermeParcours` 447 · `apresBascule` 467 · `suitLeParcours` 469 · `basculeParcours` 479
+`brancheParcours` 503 · `verseAuParcours` 526
 
 ### `modules/partage.mjs` — 293 l. → plan, plan-admin
 
@@ -1126,13 +1126,13 @@ Fonctions :
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/points-interet.mjs` — 142 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 140 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt — la fiche d'un repère, et le chemin vers lui
 
 Fonctions :
 
-`vaAuRepere` 51 · `ouvrePoi` 74
+`vaAuRepere` 49 · `ouvrePoi` 72
 
 Éléments :
 
@@ -1198,22 +1198,21 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport — et son démarrage
 
-### `modules/recherche.mjs` — 1028 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1012 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`confieALaRecherche` 71 · `poseToutAuParcours` 72 · `adresseVignette` 87
-`appliqueSecteurs` 104 · `filtreTheme` 122 · `themeFiltrable` 179 · `ordreCriteres` 195
-`clesCriteres` 218 · `texteCriteres` 231 · `texteAnglaisPerso` 247 · `indexeCriteres` 261
-`refaitCriteres` 295 · `critereActif` 302 · `basculeCritere` 304 · `videCriteres` 313
-`majVideQ` 322 · `videRecherche` 335 · `nCriteres` 350 · `majCriteres` 359
-`remplitCriteres` 426 · `basculeCriteres` 565 · `ouvreCriteres` 570 · `marqueRetrait` 604
-`appliqueFiltre` 622 · `oublieRetrait` 638 · `reprendRecherche` 647 · `rangSorte` 660
-`codeCase` 682 · `caseNumero` 699 · `sousLigne` 719 · `liste` 733 · `marqueChoisie` 848
-`prechargeMarque` 874 · `prechargeLesVignettes` 931 · `chargeUnLot` 977
-`brancheRecherche` 1003
+`adresseVignette` 73 · `appliqueSecteurs` 90 · `filtreTheme` 108 · `themeFiltrable` 165
+`ordreCriteres` 181 · `clesCriteres` 204 · `texteCriteres` 217 · `texteAnglaisPerso` 233
+`indexeCriteres` 247 · `refaitCriteres` 281 · `critereActif` 288 · `basculeCritere` 290
+`videCriteres` 299 · `majVideQ` 308 · `videRecherche` 321 · `nCriteres` 336
+`majCriteres` 345 · `remplitCriteres` 412 · `basculeCriteres` 551 · `ouvreCriteres` 556
+`marqueRetrait` 590 · `appliqueFiltre` 608 · `oublieRetrait` 624 · `reprendRecherche` 633
+`rangSorte` 646 · `codeCase` 668 · `caseNumero` 685 · `sousLigne` 705 · `liste` 719
+`marqueChoisie` 834 · `prechargeMarque` 860 · `prechargeLesVignettes` 917
+`chargeUnLot` 963 · `brancheRecherche` 987
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1478,16 +1477,14 @@ Fonctions :
 `ouvreItineraire` 484 · `fermeItineraire` 511 · `versItineraire` 521
 `versItineraireDe` 524 · `brancheTiroirItineraire` 551
 
-### `modules/tiroir-parcours.mjs` — 442 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 312 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`verseAuParcours` 63 · `retenusPourParcours` 109 · `ajouteToutAuParcours` 134
-`poseToutAuParcours` 157 · `rafraichitParcours` 180 · `rangParcours` 210
-`remplitParcours` 230 · `ouvreParcours` 319 · `videLeParcours` 335
-`brancheTiroirParcours` 365
+`rafraichitParcours` 49 · `rangParcours` 79 · `remplitParcours` 99 · `ouvreParcours` 188
+`videLeParcours` 204 · `brancheTiroirParcours` 234
 
 ### `modules/tiroirs-exclusifs.mjs` — 49 l. → plan, plan-admin
 
@@ -1517,6 +1514,14 @@ Fonctions :
 Fonctions :
 
 `poseTonDeLaBarre` 41 · `brancheTonDeLaBarre` 74
+
+### `modules/tout-au-parcours.mjs` — 100 l. → plan, plan-admin
+
+- l.1 · Tout ce que la recherche a retenu, versé d'un coup au parcours
+
+Fonctions :
+
+`retenusPourParcours` 35 · `ajouteToutAuParcours` 60 · `poseToutAuParcours` 83
 
 ### `modules/trace-itineraire.mjs` — 225 l. → plan, plan-admin
 

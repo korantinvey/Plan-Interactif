@@ -12,9 +12,7 @@
    (`forme-choisie.mjs` `formeParId`), le passage à un autre pavillon
    (`rendu.mjs` `changePlan`), les distinctions de la fiche
    (`distinctions.mjs` `poseDistsFiche`) et ce que la fiche des stands prête
-   à celle d'un repère (`fiche.mjs`) s'importent ; la recherche, que ce
-   module importe, reçoit de lui en se chargeant le chemin vers un repère
-   (`confieALaRecherche`).
+   à celle d'un repère (`fiche.mjs`) s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";

@@ -9,9 +9,11 @@
    de la copie à garder (`partage.mjs`) — et les importe.
 
    Ces voisins le rappellent à leur tour — rafraîchir, rendre un rang —,
-   mais ne peuvent l'importer sans boucle. Le signet basculé, lui, vit avec
-   la liste (`parcours.mjs` `basculeParcours`) et annonce au tiroir ce qui
-   vient de changer (`suitLeParcours`, au bas du module). La
+   mais ne peuvent l'importer sans boucle. Le signet basculé et le lot versé,
+   eux, vivent avec la liste (`parcours.mjs` `basculeParcours`,
+   `verseAuParcours`) et annoncent au tiroir ce qui vient de changer
+   (`suitLeParcours`, au bas du module) ; le bouton qui prend tout ce que la
+   recherche retient vit à part (`tout-au-parcours.mjs`). La
    suggestion et les rappels, qu'il est seul à appeler, reçoivent ce qu'il
    leur faut en argument (`TIROIR_SUGG`, `fenetreRappel`) ; la journée, dont
    les boutons le rappellent plus tard, par sa porte (`confieALaJournee`, au
@@ -26,14 +28,10 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
-import { DATA, TOUS, HEBERGES, CONFERENCES, parId, CONFS } from "./donnees.mjs";
-import { ouvreModale, confirme } from "./fenetre.mjs";
-import { mesure } from "./mesure.mjs";
+import { DATA, parId, CONFS } from "./donnees.mjs";
+import { confirme } from "./fenetre.mjs";
 import { momentLocal, jourCourt } from "./temps.mjs";
-import { PARCOURS, poseParcours, brancheListeParcours, dansParcours,
-  enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET, rafraichitMarque,
-  marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours, fermeParcours,
-  basculeParcours, brancheParcours, suitLeParcours } from "./parcours.mjs";
+import { PARCOURS, poseParcours, brancheListeParcours, enregistreParcours, plurielParcours, rafraichitMarque, marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours, fermeParcours, basculeParcours, brancheParcours, suitLeParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
 import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
@@ -41,137 +39,8 @@ import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
 import { select, ficheConf } from "./fiche.mjs";
-import { conf } from "./configuration.mjs";
-import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
 import { confieApresOption } from "./options.mjs";
 const racine = document.documentElement;
-
-
-/**
- * Verser un lot de rangs dans la liste.
- *
- * Les ajouts se comptent un à un, comme s'ils avaient été faits signet par
- * signet : c'est bien un visiteur de plus qui a ce stand à son programme, et
- * l'exposant a raison de le voir dans ses chiffres. Le canal dit d'où le lot
- * vient — un parcours reçu, une recherche prise en bloc — et permet de faire la
- * part des uns et des autres.
- *
- * La suggestion ne s'invite pas ici, à la différence d'un signet posé à la
- * main : un lot qui vient d'allonger la liste de vingt exposants n'appelle pas
- * une fenêtre qui en propose un vingt et unième.
- */
-export function verseAuParcours(stands, confs, canal, remplace){
-  /* La réserve part avec la liste, comme au vidage : elle s'écrit dans le
-     stockage avec elle, et un rang mis de côté en juin reparaissait dans la
-     liste reçue en septembre le jour où les données le reconnaissaient à
-     nouveau — alors qu'on avait demandé un remplacement. */
-  if (remplace)
-    poseParcours({ PARCOURS: { stands: [], confs: [] },
-                   MIS_DE_COTE: { stands: [], confs: [] } });
-  stands.forEach(id => {
-    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
-    mesure("parcours", canal, id, "fiche_stand");
-  });
-  confs.forEach(id => {
-    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
-    mesure("parcours", canal, id, "fiche_conf");
-  });
-  enregistreParcours();
-  rafraichitParcours();
-  tientLeStockage();
-  /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
-     n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
-  ouvreParcours();
-}
-
-/* ------------------------------------------------------------
-   Tout ce que la recherche a retenu
-   ------------------------------------------------------------ */
-/* D'où viennent les rangs pris en bloc. Le canal existait déjà pour les fiches
-   ouvertes depuis la liste des résultats : un ajout venu de là raconte la même
-   chose, et n'avait pas besoin d'un mot de plus au vocabulaire mesuré. */
-const CANAL_RECHERCHE = "recherche";
-
-/**
- * Ce que le filtre retient, et qui n'est pas déjà dans la liste.
- *
- * Le périmètre est celui de la colonne des résultats, aux deux sortes près
- * qu'un parcours ne sait pas porter : une zone ne s'y retient que par les
- * conférences qu'elle abrite, et un repère n'est pas un rendez-vous. Une
- * société hébergée, elle, y entre sous l'emplacement où on la trouvera — c'est
- * déjà ce que fait le signet de sa fiche, et deux hébergées d'un même stand
- * n'ont donc qu'un rang à elles deux.
- *
- * Sans mot-clé ni critère, il n'y a pas de filtre à reprendre : le salon entier
- * n'est pas un parcours de visite, et la fonction ne rend rien plutôt que de le
- * proposer.
- */
-function retenusPourParcours(){
-  if (!DATA || !filtre()) return { stands: [], confs: [] };
-  const vus = new Set(), stands = [];
-  TOUS.concat(HEBERGES).forEach(o => {
-    if (o.kind === "zone" || !visible(o)) return;
-    const id = String(o.id);
-    if (vus.has(id)) return;
-    vus.add(id);
-    if (!dansParcours("stand", id)) stands.push(id);
-  });
-  /* Une conférence ne répond qu'au mot-clé — les critères décrivent une société
-     et n'ont rien à lui opposer —, ce dont « visible » se charge déjà. */
-  const confs = CONFERENCES.filter(c => visible(c) && !dansParcours("conf", c.id))
-    .map(c => String(c.id));
-  return { stands: stands, confs: confs };
-}
-
-/**
- * La fenêtre qui demande avant de verser.
- *
- * Un parcours composé signet par signet ne se voit pas doubler de vingt rangs
- * sans qu'on l'ait dit : le compte est annoncé avant. « Annuler » referme, et
- * l'on retrouve derrière le panneau des critères tel qu'on l'avait laissé — il
- * est déplié dans la colonne, cette fenêtre-ci ne lui a jamais pris sa place.
- */
-function ajouteToutAuParcours(){
-  const r = retenusPourParcours();
-  if (!r.stands.length && !r.confs.length) return;
-  ouvreModale("Ajouter à mon parcours", corps => {
-    const p = document.createElement("p");
-    p.textContent = "Ajouter " + contenuParcours(r.stands.length, r.confs.length) +
-      " à votre parcours de visite ?";
-    corps.appendChild(p);
-  }, [
-    { libelle: "Annuler" },
-    { libelle: "Ajouter", genre: "accent",
-      action: () => verseAuParcours(r.stands, r.confs, CANAL_RECHERCHE, false) },
-  ]);
-}
-
-/**
- * Le bouton qui prend tout, posé au pied d'un panneau de recherche.
- *
- * Rend de quoi le remettre à jour : ce qu'il propose change à chaque critère
- * coché, et le panneau qui le porte ne se réécrit pas pour autant. Il ne paraît
- * qu'une fois la recherche commencée, et s'éteint quand tout ce qu'elle retient
- * est déjà retenu — en le disant, faute de quoi on le croirait en panne.
- */
-export function poseToutAuParcours(hote){
-  if (conf("_parcours").visible === false) return () => {};
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "btn parc tout-parc";
-  b.innerHTML = SIGNET + '<span class="l"></span>';
-  b.onclick = () => ajouteToutAuParcours();
-  hote.appendChild(b);
-  return () => {
-    const r = retenusPourParcours();
-    const reste = r.stands.length + r.confs.length;
-    b.hidden = !filtre();
-    b.disabled = !reste;
-    b.querySelector(".l").textContent = reste
-      ? "Ajouter tout à mon parcours"
-      : "Déjà dans votre parcours";
-  };
-}
 
 
 /* ------------------------------------------------------------
@@ -388,7 +257,6 @@ export function brancheTiroirParcours(){
 
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant ce qu'elle en appelle (le bouton qui verse au parcours tout ce qu'elle a retenu). */
-confieALaRecherche({ poseToutAuParcours });
 
 /* La fiche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant le bouton « au parcours » qu'elle pose dans ses
@@ -435,8 +303,10 @@ confieApresOption("suggestion", () => rafraichitParcours());
    est le seul à qui la question se pose. Un lot versé n'y passe pas
    davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on vient de
    recevoir porte déjà l'interrupteur, en tête de ses conférences. */
-suitLeParcours((genre, ajout) => {
+suitLeParcours((quoi, ajout) => {
   rafraichitParcours();
-  if (ajout && genre === "stand") fenetreSuggestion(TIROIR_SUGG);
-  if (ajout && genre === "conf") fenetreRappel(rafraichitParcours);
+  // un lot ouvre le tiroir sur ce qu'il vient d'y verser
+  if (quoi === "lot"){ ouvreParcours(); return; }
+  if (ajout && quoi === "stand") fenetreSuggestion(TIROIR_SUGG);
+  if (ajout && quoi === "conf") fenetreRappel(rafraichitParcours);
 });

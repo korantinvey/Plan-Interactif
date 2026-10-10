@@ -54,6 +54,28 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Le bouton du pied du panneau verse au parcours tout ce que la recherche
+     retient, et le tiroir s'ouvre dessus : le lot passe par la liste
+     (`parcours.mjs` `verseAuParcours`), qui l'annonce au tiroir. Si l'annonce
+     se perd, le compteur bouge et le tiroir reste fermé. */
+  test("tout ce que la recherche retient se verse au parcours, qui s'ouvre dessus", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    const lignes = await attendLaListe(page);
+    const numero = (await lignes.first().innerText()).trim().split(/\s+/)[0];
+    await page.fill("#q", numero);
+    await page.locator("#btnFiltres").evaluate((b) => /** @type {HTMLElement} */ (b).click());
+    const tout = page.locator(".tout-parc");
+    await expect(tout).toBeEnabled();
+    await tout.click();
+    const modale = page.locator("#modale");
+    await expect(modale).toContainText("à votre parcours de visite");
+    await modale.getByRole("button", { name: "Ajouter", exact: true }).click();
+    await expect(page.locator("#parcours")).toHaveClass(/open/);
+    await expect(page.locator("#nParcours")).not.toHaveText("0");
+    expect(erreurs).toEqual([]);
+  });
+
   test("une ligne de la liste ouvre la fiche de son exposant @telephone", async ({ page }) => {
     const erreurs = await prepare(page);
     /* En SVG : ce qu'on éprouve est le chemin de la liste à la fiche, non le
