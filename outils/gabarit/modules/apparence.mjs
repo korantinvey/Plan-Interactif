@@ -15,9 +15,9 @@ import { P } from "./donnees.mjs";
 import { trio, luminance, ecarte } from "./couleurs.mjs";
 import { CONF, conf, sousCle, appliqueLangue } from "./configuration.mjs";
 import { marqueParcours, fermeParcours } from "./parcours.mjs";
-import { appliqueAccent, appliqueFond, appliqueDists, appliqueBarre, appliqueModele } from "./habillage.mjs";
+import { appliqueAccent, appliqueFond, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { appliqueSecteurs } from "./recherche.mjs";
-import { dessineDists } from "./distinctions.mjs";
+import { dessineDists, appliqueDists } from "./distinctions.mjs";
 import { fermeItineraire } from "./tiroir-itineraire.mjs";
 import { appliqueOptions } from "./options.mjs";
 

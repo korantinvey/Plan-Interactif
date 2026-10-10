@@ -436,15 +436,16 @@ Fonctions :
 `texteStandDessine` 558 · `poseLibellesDessines` 577 · `decoupeStand` 598
 `marqueStandsDessines` 613 · `rafraichitStandsDessines` 628 · `signale` 642
 
-### `modules/distinctions.mjs` — 288 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 378 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 55 · `texteCourtDist` 60 · `porteDist` 64 · `standPorte` 68 · `calqueDists` 77
-`traceDist` 108 · `oublieDists` 141 · `modesDuPlan` 145 · `releveDists` 147
-`dessineDists` 176 · `marquesListe` 202 · `poseDistsFiche` 232 · `refaitDistsFiche` 272
+`texteDist` 56 · `texteCourtDist` 61 · `porteDist` 65 · `standPorte` 69 · `calqueDists` 78
+`traceDist` 109 · `oublieDists` 142 · `modesDuPlan` 146 · `releveDists` 148
+`dessineDists` 177 · `marquesListe` 203 · `poseDistsFiche` 233 · `refaitDistsFiche` 273
+`modeDist` 324 · `couleurDist` 336 · `appliqueDists` 358
 
 ### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
 
@@ -722,15 +723,14 @@ Fonctions :
 
 `glisseFenetre` 27
 
-### `modules/habillage.mjs` — 267 l. → plan, plan-admin
+### `modules/habillage.mjs` — 152 l. → plan, plan-admin
 
-- l.1 · L'habillage du plan — couleur principale, fond, distinctions, barre du
+- l.1 · L'habillage du plan — couleur principale, fond, barre du salon, modèle
 
 Fonctions :
 
-`confieALHabillage` 41 · `brancheHabillage` 51 · `appliqueAccent` 84 · `appliqueFond` 118
-`modeDist` 165 · `couleurDist` 177 · `appliqueDists` 199 · `modeBarre` 229
-`appliqueBarre` 231 · `appliqueModele` 254
+`brancheHabillage` 27 · `appliqueAccent` 60 · `appliqueFond` 94 · `modeBarre` 114
+`appliqueBarre` 116 · `appliqueModele` 139
 
 ### `modules/horaires.mjs` — 89 l. → plan, plan-admin
 
