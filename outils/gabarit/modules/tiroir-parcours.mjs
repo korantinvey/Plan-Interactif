@@ -27,9 +27,11 @@ import { PARCOURS, poseParcours, brancheListeParcours, casierParcours, dansParco
   enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET, rafraichitMarque,
   marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
-import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion } from "./suggestion.mjs";
-import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel } from "./rappels.mjs";
-import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
+import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion, confieALaSuggestion }
+  from "./suggestion.mjs";
+import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel, confieAuxRappels }
+  from "./rappels.mjs";
+import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
 import { fermeItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { select, ficheConf, ferme, confieALaFiche } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
@@ -449,3 +451,12 @@ confieALaFiche({ fermeParcours, brancheParcours });
    retour : il lui confie en se chargeant de quoi refermer le parcours quand
    il s'ouvre. */
 confieAuTiroirItineraire({ fermeParcours });
+
+/* La journée, la suggestion et les rappels, que ce module importe pour les
+   poser dans son tiroir, ne peuvent l'importer en retour : il leur confie en
+   se chargeant ce qu'ils en appellent — le parcours qu'on bascule, rangé et
+   refait pour la journée ; le tiroir refait et le bouton « au parcours » pour
+   la suggestion ; le tiroir rafraîchi quand les rappels s'allument. */
+confieALaJournee({ basculeParcours, rangParcours, rafraichitParcours });
+confieALaSuggestion({ remplitParcours, brancheParcours });
+confieAuxRappels({ rafraichitParcours });

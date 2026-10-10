@@ -1,19 +1,13 @@
 /* ============================================================
-   15. La suggestion — le branchement
+   15. La suggestion
 
    La proposition que le visiteur reçoit vit dans `modules/suggestion.mjs` ;
    le volet « Suggestion » des réglages et le relevé du classement, dans
-   `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs` embarque. Ils
-   se branchent ici, à la place que leur code tenait, et ce qu'ils ne peuvent
-   importer leur est confié : la fenêtre des réglages, qui importe le volet ;
-   la configuration, les critères de la recherche et la fiche, ils les
-   importent. Le tiroir du
-   parcours est un module (`tiroir-parcours.mjs`), mais qui importe la
-   suggestion pour la poser dans son tiroir : elle ne peut l'importer en
-   retour, et le reçoit donc d'ici — le volet de l'exploitant, lui, l'importe.
+   `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs` embarque. Le
+   code soudé ne leur confie plus rien : ce qu'ils empruntent à des modules
+   qui les importent leur est confié par ces modules en se chargeant — le
+   tiroir du parcours à la proposition (`confieALaSuggestion`), le glissement
+   de la fenêtre des réglages au volet (`confieAuReglageSuggestion`) ; la
+   configuration, les critères de la recherche et la fiche, ils les
+   importent. Rien ne se branche donc plus ici.
    ============================================================ */
-brancheSuggestion({ remplitParcours, brancheParcours });
-
-/* @admin — le réglage de la suggestion */
-brancheReglageSuggestion({ glisseFenetre });
-/* @fin-admin */

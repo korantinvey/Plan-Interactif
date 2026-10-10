@@ -31,7 +31,8 @@ import { champsZone, suitFicheZone, verseFicheZone, ecritColonneEvenement } from
 import { voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
   voletApparence } from "./volets.mjs";
 import { voletOrdre } from "./reglage-fiche.mjs";
-import { NOM_VOLET_SUGGESTION, voletSuggestion } from "./reglage-suggestion.mjs";
+import { NOM_VOLET_SUGGESTION, voletSuggestion, confieAuReglageSuggestion }
+  from "./reglage-suggestion.mjs";
 import { voletEnvirons } from "./calage-carte.mjs";
 import { NOM_VOLET_MESURE, voletMesure } from "./chaleur.mjs";
 import { conf, optionActive, suggestionOfferte, enregistreConf } from "./configuration.mjs";
@@ -528,3 +529,8 @@ function voletCoexposants(hote){
     bloc.appendChild(aide);
   });
 }
+
+/* Le volet « Suggestion », que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant le glissement de la fenêtre d'une
+   hauteur à l'autre quand un réglage la redessine. */
+confieAuReglageSuggestion({ glisseFenetre });

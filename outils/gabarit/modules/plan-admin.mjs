@@ -16,7 +16,6 @@ import { brancheChaleur } from "./chaleur.mjs";
 import { brancheCalageCarte } from "./calage-carte.mjs";
 import { brancheAcces } from "./acces-admin.mjs";
 import "./affiche-ici.mjs";
-import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { brancheEnregistrement }
   from "./enregistrement.mjs";
 import { brancheAimants } from "./aimants.mjs";
@@ -46,7 +45,6 @@ Object.assign(globalThis, {
   brancheReglageSponsor,
   brancheChaleur,
   brancheCalageCarte, brancheAcces,
-  brancheReglageSuggestion,
   brancheEnregistrement,
   brancheAimants,
   brancheBatiments,

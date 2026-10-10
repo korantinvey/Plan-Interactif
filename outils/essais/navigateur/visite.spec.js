@@ -6,10 +6,10 @@
  * ici on la veut, et seule l'invitation à installer reste écartée — elle
  * passerait devant la proposition.
  */
-/* Ce que l'essai lit dans la page : la visite en cours, visible par son nom
-   depuis `page.evaluate`, et le rendu du plan, que les modules ne confient
-   qu'aux essais (`modules/plan.mjs` `__essais`). */
-/* global TUTO */
+/* Ce que l'essai lit dans la page : la visite en cours et le rendu du plan,
+   que les modules ne confient qu'aux essais (`modules/plan.mjs` `__essais`).
+   La visite change à chaque chapitre : `__essais.TUTO` est un accesseur, relu
+   à chaque fois. */
 const { test, expect } = require("@playwright/test");
 const { prepare, DONNEES } = require("./aide.js");
 
@@ -63,10 +63,12 @@ async function commenceLaVisite(page, { adresse = PLAN, donnees = null } = {}) {
  * posée de l'extérieur attend la sienne.
  */
 const auRepos = (page) => page.evaluate(() => new Promise((fini) => {
-  const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
+  const essais = /** @type {any} */ (globalThis).__essais;
+  const { GL, rectEcranWebgl } = essais;
   const boite = (r) => r && { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
   const lis = () => {
     const z = document.getElementById("tutoZone");
+    const TUTO = essais.TUTO;
     return { cle: TUTO && TUTO.cle, pos: TUTO && TUTO.pos,
       zone: boite(z && (GL.actif ? rectEcranWebgl(z) : z.getBoundingClientRect())),
       bulle: boite(document.getElementById("tuto").getBoundingClientRect()) };
@@ -89,7 +91,10 @@ const recouvre = (a, b) =>
   Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
 
 /** L'étape en cours, `chapitre:étape`. */
-const etape = (page) => page.evaluate(() => (TUTO ? TUTO.cle : null));
+const etape = (page) => page.evaluate(() => {
+  const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
+  return TUTO ? TUTO.cle : null;
+});
 
 /**
  * Ce que la bulle cache d'un élément de la page, une fois arrivée à sa place —
@@ -98,6 +103,7 @@ const etape = (page) => page.evaluate(() => (TUTO ? TUTO.cle : null));
 async function cacheLElement(page, selecteur) {
   await page.waitForFunction(() => {
     const r = document.getElementById("tuto").getBoundingClientRect();
+    const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
     return !!TUTO && !!TUTO.pos && Math.round(r.left) === TUTO.pos[0] &&
            Math.round(r.top) === TUTO.pos[1];
   }, null, { polling: 100 });
@@ -140,7 +146,10 @@ test.describe("la visite guidée", () => {
         // deux ou trois images par seconde sous la carte graphique logicielle
         if (!rendu) test.slow();
         const erreurs = await commenceLaVisite(page, { adresse: PLAN + rendu, donnees: avecUnProgramme() });
-        await page.waitForFunction(() => TUTO && TUTO.cle === "zones:zone", null,
+        await page.waitForFunction(() => {
+          const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
+          return TUTO && TUTO.cle === "zones:zone";
+        }, null,
           { polling: 250, timeout: 60_000 });
         if (!rendu) {
           // c'est la carte graphique qu'on éprouve : sans elle, l'essai ne dirait rien

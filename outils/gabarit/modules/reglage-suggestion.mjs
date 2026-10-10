@@ -7,7 +7,7 @@
    n'est embarqué que par `plan-admin.mjs`.
 
    La fenêtre des réglages, qui importe ce module, lui confie son glissement
-   par `brancheReglageSuggestion`, que `_suggestion.html` appelle. Les
+   en se chargeant, par `confieAuReglageSuggestion`. Les
    critères de la recherche, la configuration et son enregistrement, le champ
    intitulé et le tiroir du parcours, qu'un réglage changé refait,
    s'importent (`recherche.mjs`, `configuration.mjs`, `fiche-zone.mjs`,
@@ -24,11 +24,20 @@ import { clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
 import { conf, enregistreConf } from "./configuration.mjs";
 import { champZone } from "./fiche-zone.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le
-   glissement de la fenêtre des réglages, qui importe ce module. */
-/** @type {Record<string, any>} */
-let soude = {};
-const glisseFenetre = (change) => soude.glisseFenetre(change);
+/**
+ * Ce que le volet emprunte à la fenêtre des réglages (`reglages.mjs`), qui
+ * l'importe : le glissement d'une hauteur à l'autre. Elle le lui confie au
+ * chargement de son module, par `confieAuReglageSuggestion` — jamais le code
+ * soudé.
+ * @typedef {{ glisseFenetre: (change: () => void) => void }} PageReglageSuggestion
+ */
+/** @type {PageReglageSuggestion} */
+const prete = { glisseFenetre: (change) => change() };
+
+/** La porte de la fenêtre des réglages, qui prête au volet ce qu'il appelle.
+ *  @param {Partial<PageReglageSuggestion>} o */
+export function confieAuReglageSuggestion(o){ Object.assign(prete, o); }
+const glisseFenetre = (/** @type {() => void} */ change) => prete.glisseFenetre(change);
 
 export const NOM_VOLET_SUGGESTION = "Suggestion";
 
@@ -417,11 +426,3 @@ export function voletSuggestion(hote){
 
   dessine();
 }
-
-/**
- * Le branchement, appelé par `_suggestion.html` dans sa tranche
- * d'administration.
- *
- * @param {{ glisseFenetre: Function }} b
- */
-export function brancheReglageSuggestion(b){ soude = b; }

@@ -21,18 +21,15 @@ import { brancheItineraire } from "./itineraire.mjs";
 import { instantConf } from "./parcours.mjs";
 import { branchePartage } from "./partage.mjs";
 import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
-import { brancheRappels } from "./rappels.mjs";
 import { brancheInstallation } from "./installation.mjs";
 import { brancheBorne } from "./borne.mjs";
 import { brancheIci } from "./ici.mjs";
-import { brancheSuggestion } from "./suggestion.mjs";
 import { TUTO } from "./tutoriel.mjs";
 import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
-import { basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
-  remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
+import { fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue, cadrePlan } from "./vue.mjs";
 import { CONF, brancheConfiguration } from "./configuration.mjs";
 import { brancheApparence } from "./apparence.mjs";
@@ -72,17 +69,14 @@ Object.assign(globalThis, {
   brancheItineraire,
   instantConf,
   brancheWebgl,
-  brancheRappels,
   brancheInstallation,
   brancheBorne,
   brancheIci,
-  brancheSuggestion,
   finInstant,
   brancheJournee,
   retireAdmin,
   brancheTiroirItineraire,
-  basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
-  remplitParcours, fermeParcours, brancheTiroirParcours,
+  fermeParcours, brancheTiroirParcours,
   branchePartage,
   brancheVue, cadrePlan, brancheConfiguration,
   brancheApparence,
@@ -108,11 +102,6 @@ Object.assign(globalThis, {
   brancheGestes, brancheLangue,
   brancheTiroirs,
 });
-
-/* La visite guidée en cours, ou rien : le module la pose en la lançant et
-   l'efface en la quittant. La proposition des rappels la lit par accesseur,
-   confiée par le code soudé, pour ne pas passer devant elle. */
-Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));
 
 /* La configuration du salon ouvert : le code soudé la lit encore, pour la
    confier au calcul de l'itinéraire ; seule l'ouverture d'un salon la
@@ -150,10 +139,12 @@ Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, 
    que ce qui soude encore la page (`outils/soudure.js`) ; écrit comme une
    affectation, que `outils/modules.js` ne relit pas. La graisse et la police
    des libellés se remplacent au choix d'un modèle : elles se lisent donc par
-   un accesseur, qui rend celles du moment. */
+   un accesseur, qui rend celles du moment ; la visite guidée en cours aussi,
+   que le module pose en la lançant et efface en la quittant. */
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, _lg, largeur,
   adresseSure, adresseImage, imageSure, assainitRiche,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
+  get TUTO(){ return TUTO; },
 };
