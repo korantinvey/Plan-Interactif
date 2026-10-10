@@ -22,8 +22,7 @@
    "brancheTiroirs",
    "brancheTonDeLaBarre",
    "brancheVue",
-   "brancheWebgl",
-   "retireAdmin"
+   "brancheWebgl"
   ],
   "plan-admin": [
    "brancheAcces",

@@ -448,7 +448,7 @@ function poseCsp(html) {
 
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html", poseCsp(sortScripts(
-  page(lieFeuille(connecte(tplPublic)).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+  page(lieFeuille(connecte(tplPublic)),
        { tete: PRECHARGE, application: true, pleinEcran: true,
          salon: SLUG_DEFAUT }))));
 
@@ -463,8 +463,7 @@ fs.writeFileSync(W + "plan-admin.html", poseCsp(sortScripts(
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
-  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
-                .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8")),
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */

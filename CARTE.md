@@ -15,7 +15,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 9. Apparence des calques — le branchement
 
-### `_admin2.html` — 20 l.
+### `_admin2.html` — 22 l.
 
 - l.1 · 12. Démarrage — le branchement
 
@@ -529,16 +529,16 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 355 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 365 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`confieAuDemarrage` 52 · `majAttente` 53 · `rattrapeRetard` 54 · `recadreListePosee` 71
-`demarre` 87 · `annonce` 149 · `entetesApi` 172 · `chargeFond` 196 · `panneDuChargement` 243
-`CLE_VERSION` 253 · `versionRetenue` 254 · `retientVersion` 257 · `demandePlan` 281
-`charge` 305 · `brancheDemarrage` 342
+`confieAuDemarrage` 55 · `majAttente` 56 · `rattrapeRetard` 57 · `recadreListePosee` 74
+`demarre` 90 · `annonce` 152 · `entetesApi` 175 · `chargeFond` 199 · `panneDuChargement` 246
+`CLE_VERSION` 256 · `versionRetenue` 257 · `retientVersion` 260 · `demandePlan` 284
+`charge` 308 · `brancheDemarrage` 345
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -999,13 +999,13 @@ Fonctions :
 `refuseMesure` 559 · `ouvreConfidentialite` 586 · `brancheLaNotice` 637
 `brancheMesure` 651
 
-### `modules/mode-admin.mjs` — 40 l. → plan, plan-admin
+### `modules/mode-admin.mjs` — 41 l. → plan, plan-admin
 
 - l.1 · 10. Mode administration — ce que le plan public en sait
 
 Fonctions :
 
-`ouvreModeAdmin` 21 · `retireAdmin` 30
+`ouvreModeAdmin` 22 · `retireAdmin` 31
 
 ### `modules/modeles.mjs` — 88 l. → plan, plan-admin
 
@@ -1174,7 +1174,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 96 l. → plan, plan-admin
+### `modules/plan.mjs` — 94 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 

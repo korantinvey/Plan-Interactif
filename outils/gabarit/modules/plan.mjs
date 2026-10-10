@@ -23,7 +23,6 @@ import { brancheBorne } from "./borne.mjs";
 import { brancheIci } from "./ici.mjs";
 import { TUTO } from "./tutoriel.mjs";
 import { brancheJournee } from "./journee.mjs";
-import { retireAdmin } from "./mode-admin.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue } from "./vue.mjs";
@@ -59,7 +58,6 @@ Object.assign(globalThis, {
   brancheBorne,
   brancheIci,
   brancheJournee,
-  retireAdmin,
   brancheTiroirItineraire,
   brancheTiroirParcours,
   branchePartage,
