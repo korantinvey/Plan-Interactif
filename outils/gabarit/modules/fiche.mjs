@@ -25,7 +25,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs } from "./texte.mjs";
-import { DATA, parId, CONFS, EXPOSANTS, state, P } from "./donnees.mjs";
+import { DATA, parId, CONFS, EXPOSANTS, state, P, societes } from "./donnees.mjs";
 import { API } from "./salon.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { lien, adresseWeb, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
@@ -47,11 +47,11 @@ import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { baisseTiroir } from "./tiroirs.mjs";
+import { poseDistsFiche } from "./distinctions.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
- * (`rendu.mjs`), les découpages dessinés (`dessin.mjs`), les marques des
- * distinctions (`distinctions.mjs`), le bouton « au parcours »
+ * (`rendu.mjs`), les découpages dessinés (`dessin.mjs`), le bouton « au parcours »
  * (`tiroir-parcours.mjs`), et, en administration seulement, les deux gestes
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
@@ -63,7 +63,6 @@ import { baisseTiroir } from "./tiroirs.mjs";
  * @property {(id: any, iSoc?: any) => any} decoupeStand
  * @property {() => void} montePlan
  * @property {() => void} marqueStandsDessines
- * @property {(soc: any) => void} poseDistsFiche
  * @property {(hote: any, canal: any) => void} brancheParcours
  * @property {((o: any) => void) | null} ficheZone
  * @property {((o: any) => void) | null} basculeAffichageZone
@@ -77,7 +76,6 @@ export function confieALaFiche(o){ Object.assign(prete, o); }
 const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.decoupeStand(id, iSoc);
 const montePlan = () => prete.montePlan();
 const marqueStandsDessines = () => prete.marqueStandsDessines();
-const poseDistsFiche = (/** @type {any} */ soc) => prete.poseDistsFiche(soc);
 const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================
@@ -584,20 +582,10 @@ export function ecarteClicFantome(){
 /** Le nom sous lequel une société se présente sur un stand. */
 const nomSociete = (x) => x.nom || x.plan || "Sans nom";
 
-/**
- * Les sociétés d'un stand, celle qui le loue en tête.
- *
- * Elle est le stand lui-même : c'est son dossier qui l'a désignée à la
- * synchronisation, et ses champs sont posés à plat sur lui. Les autres vivent
- * dans « coex », dans l'ordre où la source les a rendues.
- *
- * Le rang les distingue, la liste ne le dit pas : qui loue et qui est hébergé
- * relève du contrat entre l'organisateur et ses exposants. Un visiteur cherche
- * une enseigne, pas sa place dans un bail.
- */
-export function societes(o){
-  return [{ soc: o, i: -1 }].concat((o.coex || []).map((x, i) => ({ soc: x, i: i })));
-}
+/* Les sociétés d'un stand se lisent dans les données (`donnees.mjs`
+   `societes`) : le dessin et les distinctions les lisent aussi, et
+   n'importent plus la fiche pour cela. Elles s'importent d'ici comme avant. */
+export { societes };
 
 /**
  * Le choix, quand plusieurs sociétés se partagent un stand.

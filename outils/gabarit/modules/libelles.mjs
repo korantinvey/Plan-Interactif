@@ -29,7 +29,8 @@ import { largeur, remesureTextes, habille, lignesSvg, ancre, place } from "./tex
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
 import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
-import { visibleSurPlan, visibleSociete, liste, confieALaRecherche } from "./recherche.mjs";
+import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
+import { liste, confieALaRecherche } from "./recherche.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";

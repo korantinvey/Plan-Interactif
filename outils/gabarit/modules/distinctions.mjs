@@ -16,21 +16,18 @@
 
    Il n'a rien à recevoir : tout ce qu'il lit s'importe. Le mode et la
    teinte de chaque marque se règlent ici aussi (§ Les distinctions — ce que
-   le plan en montre), et l'apparence les pose par `appliqueDists`. La liste
-   (`recherche.mjs`) et la fiche (`fiche.mjs`), qui l'atteignent déjà par
-   leurs imports et ne pourraient l'importer sans boucle, reçoivent ses
-   marques par leurs portes, que ce module ouvre en se chargeant
-   (`confieALaRecherche`, `confieALaFiche`).
+   le plan en montre), et l'apparence les pose par `appliqueDists`. Il ne
+   dépend ni de la liste ni de la fiche — les sociétés d'un stand se lisent
+   dans les données (`donnees.mjs` `societes`) — et toutes deux l'importent
+   (`recherche.mjs`, `fiche.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
-import { DATA, parId, state } from "./donnees.mjs";
+import { DATA, parId, state, societes } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { societes, confieALaFiche } from "./fiche.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
 import { svg } from "./vue.mjs";
-import { confieALaRecherche } from "./recherche.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -272,11 +269,6 @@ export function poseDistsFiche(soc){
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
 export const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
 
-/* La recherche, que ce module atteint par la fiche, ne peut l'importer en
-   retour : il lui confie en se chargeant ce qu'elle en appelle (les marques
-   d'une ligne de la liste, le filtre « porte cette distinction », le dessin
-   des distinctions sur le plan quand ce qui paraît change). */
-confieALaRecherche({ dessineDists, marquesListe, porteDist, standPorte });
 
 /* ------------------------------------------------------------
    Les distinctions — ce que le plan en montre
@@ -372,7 +364,3 @@ export function appliqueDists(){
   refaitDistsFiche();
 }
 
-/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant de quoi marquer les distinctions de la société
-   qu'elle ouvre. */
-confieALaFiche({ poseDistsFiche });

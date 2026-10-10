@@ -18,7 +18,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
-import { DATA, parId, state, P } from "./donnees.mjs";
+import { DATA, parId, state, P, societes } from "./donnees.mjs";
 import { optionActive } from "./configuration.mjs";
 import { svg, vue, cadrePlan, confieALaVue } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
@@ -31,9 +31,9 @@ import { PICTOS, pictoForme, nomTypeRepere, modeDit, estTransport, glypheRepere,
   couleurRepere, encreRepere } from "./reperes.mjs";
 import { cartouchePoi, phareRepere } from "./points-interet.mjs";
 import { REDUIT } from "./ecran.mjs";
-import { visibleSociete } from "./recherche.mjs";
+import { visibleSociete } from "./filtre.mjs";
 import { coloreSecteurs } from "./secteurs.mjs";
-import { societes, confieALaFiche } from "./fiche.mjs";
+import { confieALaFiche } from "./fiche.mjs";
 import { largeur } from "./texte-plan.mjs";
 import { libelleEmplacement, confieAuxLibelles } from "./libelles.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";

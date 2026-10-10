@@ -68,6 +68,22 @@ export function poseDonnees(valeurs){
   }
 }
 
+/**
+ * Les sociétés d'un stand, celle qui le loue en tête. Une lecture des données,
+ * que la fiche, le dessin et les distinctions font tous trois.
+ *
+ * Elle est le stand lui-même : c'est son dossier qui l'a désignée à la
+ * synchronisation, et ses champs sont posés à plat sur lui. Les autres vivent
+ * dans « coex », dans l'ordre où la source les a rendues.
+ *
+ * Le rang les distingue, la liste ne le dit pas : qui loue et qui est hébergé
+ * relève du contrat entre l'organisateur et ses exposants. Un visiteur cherche
+ * une enseigne, pas sa place dans un bail.
+ */
+export function societes(o){
+  return [{ soc: o, i: -1 }].concat((o.coex || []).map((x, i) => ({ soc: x, i: i })));
+}
+
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
    par objet, c'est la même chose en mille fois moins.
