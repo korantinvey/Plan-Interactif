@@ -9,9 +9,10 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
-   qu'en administration (`_fiche.html`). La palette de la reprise d'un
-   emplacement (`reprise-emplacements.mjs`), qui importe ce module, lui est
-   confiée par la reprise en se chargeant (`confieALaFicheZone`) : il n'a
+   qu'en administration (`fiche.mjs`, `ADMIN`), et leurs gestes, ce module
+   les confie à la fiche en se chargeant (`confieALaFiche`). La palette de
+   la reprise d'un emplacement (`reprise-emplacements.mjs`), qui importe ce
+   module, lui est confiée par la reprise en se chargeant (`confieALaFicheZone`) : il n'a
    plus de branchement. La configuration et son enregistrement, la liste de
    la recherche, les types de zone, le cartouche des points d'intérêt et le
    dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,

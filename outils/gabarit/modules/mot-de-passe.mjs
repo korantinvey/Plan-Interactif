@@ -14,9 +14,9 @@
    requête sous forme de jeton à vérifier (`?token_hash=…&type=…`). On accepte
    les deux plutôt que de dépendre d'un réglage de projet.
 
-   C'était tout le script de la page (`_motdepasse.html`), qui tenait sa propre
-   copie de `$` et écrivait en toutes lettres les casiers de la console : il
-   les importe désormais de `dom.mjs` et de `session.mjs`, comme la console et
+   Ce script vivait autrefois dans le balisage de la page (`_motdepasse.html`),
+   avec sa propre copie de `$` et les casiers de la console écrits en toutes
+   lettres : il les importe désormais de `dom.mjs` et de `session.mjs`, comme la console et
    le plan. Son point d'entrée (`motdepasse.mjs`) le branche, posé après le
    balisage là où se tenait ce code : ce qu'il faisait au chargement s'y fait
    au même rang.

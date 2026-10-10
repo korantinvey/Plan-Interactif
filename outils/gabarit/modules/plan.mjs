@@ -2,10 +2,9 @@
    Point d'entrée des trois pages du plan — public, démonstration,
    administration
 
-   Le plan n'a plus de code soudé : ses morceaux sont des modules, et la suite
-   des branchements que le script soudé appelait encore vit dans
-   `lancement.mjs`. Ce point d'entrée n'expose donc plus rien sur l'objet
-   global : il charge le plan, et le lance.
+   Le plan est fait de modules, et la suite de leurs branchements vit dans
+   `lancement.mjs`. Ce point d'entrée n'expose rien sur l'objet global, hors
+   de ce que lisent les essais : il charge le plan, et le lance.
 
    L'administration reprend ce point d'entrée en entier (`plan-admin.mjs`,
    `import "./plan.mjs"`) avant d'y ajouter ses modules : c'est elle qui
@@ -35,8 +34,8 @@ import "./edition-en-cours.mjs";
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,
    les mesures du texte, le rendu par la carte graphique et les libellés qu'on
-   réécrit sur des mesures neuves. Écrit comme une affectation, que
-   `outils/modules.js` ne relit pas. La graisse et la police des libellés se
+   réécrit sur des mesures neuves. Seuls les essais lisent `__essais`. La
+   graisse et la police des libellés se
    remplacent au choix d'un modèle : elles se lisent donc par un accesseur,
    qui rend celles du moment ; la visite guidée en cours aussi, que le module
    pose en la lançant et efface en la quittant, et la vue du plan, que les

@@ -5,11 +5,11 @@
    la journée calculée. Ce qui vit déjà dans un module — les données du salon,
    le parcours, la fenêtre commune, le générique, l'écriture d'une distance,
    les réglages, le code « Vous êtes ici », l'état de l'éditeur — s'importe :
-   il n'a plus rien à recevoir du code soudé.
+   il n'a rien à se faire confier.
 
    Le visiteur la reçoit : `plan.mjs` l'embarque. Le réglage et l'essai depuis
-   la fenêtre des réglages ne servent qu'à l'exploitant, et seul
-   `plan-admin.mjs` en expose les noms.
+   la fenêtre des réglages ne servent qu'à l'exploitant : seul `volets.mjs`,
+   que `plan-admin.mjs` embarque, en importe les noms.
    ============================================================ */
 /**
  * Un visiteur ouvre le plan et voit un hall : cinq cents stands et une barre
@@ -388,7 +388,7 @@ const CHAPITRES_TUTO = [
     titre: "Ma journée",
     resume: "votre parcours mis en ordre, avec les heures",
     /* Organiser sa journée, c'est calculer ses trajets : sans le moteur de
-       l'itinéraire, le bouton n'est pas là (voir « _head.html »). Ni sans
+       l'itinéraire, le bouton n'est pas là (voir `_styles-parcours.css`, « sans-itineraire »). Ni sans
        l'option, qui le retire de son côté. */
     actif: () => tutoParcours() && tutoItineraire() && tutoJournee(),
     debut(m){ m.journee = journee(); },
@@ -475,7 +475,7 @@ export function proposeTutoriel(){
   /* Celui qui vient de photographier un code affiché dans le hall sait lui
      aussi pourquoi il est là : il est debout au milieu d'une allée, et ce
      qu'il cherche des yeux est le point qu'on vient de poser sous la fenêtre
-     (`_ici.html`). C'est le cas du lien vers un stand, à ceci près que rien
+     (`ici.mjs`). C'est le cas du lien vers un stand, à ceci près que rien
      ne s'ouvre pour le dire — les lignes plus bas n'ont donc pas de tiroir à
      voir. Comme pour lui, la chance n'est pas consommée : on n'écrit rien, et
      la visite guidée se proposera à l'ouverture suivante. */
@@ -518,7 +518,7 @@ export function proposeTutoriel(){
       { libelle: "Commencer", genre: "accent", action: () => setTimeout(lanceTutoriel, 0) },
     ]);
   /* Après le générique du sponsor s'il y en a un : la fenêtre passe devant
-     tout, et se serait posée sur le logo (`_sponsor.html`). */
+     tout, et se serait posée sur le logo (`sponsor.mjs`). */
   }, TUTO_DELAI + resteSponsor());
 }
 
@@ -870,7 +870,7 @@ function placeTuto(force){
   /* La scène, et non la fenêtre : la page descend maintenant sous les barres
      du système, et une bulle posée au ras du bord aurait eu son bouton sous la
      poignée de gestes. La scène, elle, s'arrête là où le système reprend la
-     main — c'est la grille qui lui rend cette bande (`_head.html` « .app »). */
+     main — c'est la grille qui lui rend cette bande (`_styles-jetons.css` « .app »). */
   const s = $("stage").getBoundingClientRect();
   const places = [];
   if (ETROIT()){

@@ -1,14 +1,13 @@
 /* ============================================================
    Les libellés du plan — le nom de l'exposant prime sur le numéro
 
-   Sorti de `_rendu.html` (§ 4, et la ligne du numéro du § 2) et de
-   `_webgl.html` (la préparation des noms pour la carte graphique) : les deux
-   écrivent les mêmes noms, aux mêmes seuils, l'un en SVG à chaque arrêt de la
+   Deux dessins des noms vivent ici, le SVG et la préparation pour la carte
+   graphique (`webgl.mjs`) : les deux écrivent les mêmes noms, aux mêmes seuils, l'un en SVG à chaque arrêt de la
    vue, l'autre une fois pour toutes avec l'intervalle de zoom où chacun se
    lit. Les garder côte à côte, c'est ce qui les tient d'accord.
 
-   Il se branche dans `_rendu.html`, à la place que l'écoute des polices y
-   tenait — au tout début du script du plan, avant celle du rendu WebGL. La
+   Il se branche par `brancheLibelles`, que le lancement (`lancement.mjs`)
+   appelle parmi les premiers — avant l'écoute du rendu WebGL. La
    vue, les calques de dessin, la boîte d'une forme et le nom d'une zone dans
    la langue du moment s'importent (`vue.mjs`, `calques-dessin.mjs`,
    `forme-choisie.mjs`, `noms-zones.mjs`) ;
@@ -65,8 +64,8 @@ const nomSurLePlan = (/** @type {any} */ soc) => prete.nomSurLePlan(soc);
 
 /**
  * La porte du dessin des calques et des repères, que `dessin.mjs` et
- * `points-interet.mjs` ouvrent en se chargeant — avant tout le code soudé,
- * comme le branchement qui les recevait.
+ * `points-interet.mjs` ouvrent en se chargeant — donc avant que le
+ * lancement ne pose le moindre branchement.
  *
  * @param {Partial<PreteLibelles>} o
  */
@@ -75,8 +74,8 @@ export function confieAuxLibelles(o){
 }
 
 /**
- * Le branchement, appelé par `_rendu.html` à la place que l'écoute des
- * polices y tenait : elle s'y pose à son rang.
+ * Le branchement, appelé par le lancement (`lancement.mjs` `lancePlan`) au
+ * rang que l'écoute des polices tenait : elle s'y pose à son rang.
  */
 export function brancheLibelles(){
   /* Une police arrivée après la mesure la rendait fausse : les mesures gardées

@@ -219,7 +219,7 @@ const CLE_VISITEUR = "plan-visiteur:" + SLUG;
  * passer des centaines dans la journée, et un jeton gardé sur elle les
  * compterait tous pour un seul — l'écran le plus utilisé du salon aurait
  * alors l'audience d'une personne. Elle tire donc un jeton neuf à chaque
- * ouverture, et un de plus à chaque remise à zéro (voir `_borne.html`), et le
+ * ouverture, et un de plus à chaque remise à zéro (voir `borne.mjs`), et le
  * paquet dit au serveur qu'il n'est pas retenu : le rapport compte ces
  * visiteurs comme les autres, mais sait qu'il les recompte peut-être, plutôt
  * que de gonfler une audience en silence. C'est déjà la situation d'un cadre
@@ -481,8 +481,8 @@ export function mesure(genre, canal, cible, objet){
 }
 
 /* La visite comptée et les envois de fin de page : au branchement, et non à
-   l'évaluation du module — ils partaient à cette place-là du script soudé, et
-   les écouteurs de fermeture gardent ainsi leur rang parmi ceux du plan. */
+   l'évaluation du module — le lancement les pose au rang qu'ils tenaient dans
+   le script d'avant, et les écouteurs de fermeture gardent ainsi leur rang parmi ceux du plan. */
 function brancheLesEnvois(){
   if (!MESURE_ACTIVE) return;
   /* Une visite par session d'onglet. Rouvrir le plan après l'avoir fermé en
@@ -632,8 +632,8 @@ function ouvreConfidentialite(){
   }, [{ libelle: "Fermer" }]);
 }
 
-/* Ce que la page fait au branchement, à la place que le module tenait dans le
-   script soudé : le lien « Confidentialité » posé au pied de la liste. */
+/* Ce que la page fait au branchement, au rang que le lancement lui donne : le
+   lien « Confidentialité » posé au pied de la liste. */
 function brancheLaNotice(){
   if (!MESURE_ACTIVE) return;
   // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un
@@ -644,8 +644,8 @@ function brancheLaNotice(){
 }
 
 /**
- * Le branchement de la mesure, appelé par le script soudé à la place que ce
- * module y tenait (`_branche-mesure.html`) : la visite se compte et la notice
+ * Le branchement de la mesure, appelé par le lancement (`lancement.mjs`
+ * `lancePlan`) au rang que ce code tenait : la visite se compte et la notice
  * se pose au même rang qu'avant parmi les écouteurs du plan.
  */
 export function brancheMesure(){

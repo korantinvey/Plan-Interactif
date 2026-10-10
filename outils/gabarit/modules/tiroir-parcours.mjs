@@ -9,14 +9,15 @@
    de la copie à garder (`partage.mjs`) — et les importe.
 
    Ces voisins le rappellent à leur tour — rafraîchir, rendre un rang,
-   basculer un signet —, mais ne peuvent l'importer sans boucle : ils le
-   reçoivent du code soudé, qui le tient de `plan.mjs`.
+   basculer un signet —, mais ne peuvent l'importer sans boucle : il le leur
+   confie en se chargeant, par leurs portes (`confieALaJournee`,
+   `confieALaSuggestion`, `confieAuxRappels`, au bas du module).
 
-   Il se branche dans `_parcours.html`, à la place que son code tenait : ses
-   écoutes s'y posent au même rang qu'avant parmi celles du plan. La fiche,
+   Il se branche par `brancheTiroirParcours`, que `lancement.mjs` `lancePlan`
+   appelle à son rang : ses écoutes s'y posent parmi celles du plan. La fiche,
    la configuration et le filtre de la recherche s'importent (`fiche.mjs`,
-   `configuration.mjs`, `recherche.mjs`) : il n'a rien à recevoir du code
-   soudé. L'apparence, qui le referme quand l'exploitant retire le parcours,
+   `configuration.mjs`, `recherche.mjs`) : il n'a rien à se faire confier.
+   L'apparence, qui le referme quand l'exploitant retire le parcours,
    le reçoit de lui en se chargeant (`confieALApparence`).
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -233,7 +234,7 @@ export function rafraichitParcours(){
      liste servira. Même geste quand le salon n'a pas pris l'option : elle se
      voit pour être prise, et l'éteindre ferme aussi le clavier, que la feuille
      de style seule laissait passer. Le visiteur, lui, ne voit rien
-     (`_head.html`, « sans-journee »). */
+     (`_styles-parcours.css`, « sans-journee »). */
   const org = $("btnJournee");
   if (org) org.disabled = n === 0 || racine.classList.contains("sans-journee");
   /* Et de même le partage : une liste vide se partage techniquement — le lien
@@ -409,10 +410,10 @@ export function videLeParcours(){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_parcours.html` à la place que ce code tenait. La liste se
+ * Appelé par `lancement.mjs` `lancePlan` à son rang. La liste se
  * branche d'abord sur l'écran qu'elle rafraîchit et les rappels qu'elle
- * entraîne, comme elle le faisait en tête du morceau ; puis les écoutes du
- * tiroir se posent au même rang qu'avant parmi celles du plan — celle de la
+ * entraîne ; puis les écoutes du tiroir se posent à leur place parmi celles
+ * du plan — celle de la
  * touche « Échap » comprise, dont l'ordre parmi les autres décide qui la
  * reçoit.
  */

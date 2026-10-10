@@ -28,8 +28,8 @@
    (`fiche.mjs`, `configuration.mjs`), les critères de la recherche de
    `recherche.mjs`. Le tiroir du parcours (`tiroir-parcours.mjs`) importe
    celui-ci pour y poser la proposition, et ne peut donc s'importer d'ici :
-   il se confie en se chargeant, par `confieALaSuggestion`. Le code soudé ne
-   branche plus rien ici.
+   il se confie en se chargeant, par `confieALaSuggestion`. Le module n'a pas
+   de branchement.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { COLLATION } from "./texte.mjs";
@@ -44,7 +44,7 @@ import { conf, suggestionOfferte } from "./configuration.mjs";
  * Ce que la suggestion emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
  * qui l'importe pour la poser dans son tiroir : il lui confie au chargement
  * de son module, par `confieALaSuggestion`, de quoi refaire le tiroir et
- * poser le bouton « au parcours » — jamais le code soudé. La fiche, la
+ * poser le bouton « au parcours ». La fiche, la
  * configuration et l'option vendue s'importent.
  * @typedef {{ remplitParcours: () => void,
  *   brancheParcours: (hote: any, canal: any) => void }} PageSuggestion

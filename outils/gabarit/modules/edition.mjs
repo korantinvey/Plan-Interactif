@@ -20,7 +20,7 @@
    (`reperes.mjs`) et la vue (`vue.mjs`) s'importent. L'historique,
    l'enregistrement et les champs de la boîte à outils vivent dans
    `outil-dessin.mjs`, qui importe ce module-ci : il les lui confie par
-   `confieAEdition` en se chargeant. Rien ne passe plus par le code soudé.
+   `confieAEdition` en se chargeant.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -70,8 +70,9 @@ const remplitListeSocietes = () => prete.remplitListeSocietes();
 export function confieAEdition(o){ Object.assign(prete, o); }
 
 /** Le geste en cours — déplacer, tirer une poignée, tourner un texte —, ou
- *  rien. Le dessin le lit pour ne pas effacer les points d'accrochage d'un
- *  geste qui sort du plan : il lui est exposé en accesseur (`plan-admin.mjs`). */
+ *  rien. L'outil de dessin le lit pour ne pas effacer les points d'accrochage
+ *  d'un geste qui sort du plan, et les gestes de l'exploitant pour savoir où
+ *  ils en sont : tous deux l'importent (`outil-dessin.mjs`, `gestes-admin.mjs`). */
 export let geste = null;
 
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins

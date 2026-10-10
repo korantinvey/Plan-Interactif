@@ -7,7 +7,7 @@
    ============================================================ */
 import { reglageInstallation, invitationVoulue, ouvreInvitation, ouvreRappel }
   from "./installation.mjs";
-// l'enregistrement de la configuration : il n'a rien à recevoir du code soudé
+// l'enregistrement de la configuration s'importe : rien ne lui est confié
 import { enregistreConf } from "./configuration.mjs";
 
 /**

@@ -14,7 +14,7 @@
    s'importent. Le panneau lui confie en retour son contenu : le plan public
    appelle `construitPanneau` sans rien en recevoir.
 
-   Il n'a plus rien à recevoir du code soudé : le mode administrateur, le
+   Rien ne lui est confié : le mode administrateur, le
    placement des libellés et l'outil qui le règle, l'enregistrement des
    réglages, les calques de dessin et leur outil, la bibliothèque des
    bâtiments, le calage de la carte, la carte de chaleur, la reprise des
@@ -58,8 +58,8 @@ const joli = (/** @type {any} */ id) => String(id)
   .replace(/^./, (c) => c.toUpperCase());
 
 /* Le contenu de `construitPanneau`, confié à l'ordre de tracé dès que la page
-   d'administration charge ce module : avant tout le code soudé, comme quand
-   la fonction y portait elle-même son corps. */
+   d'administration charge ce module : avant le lancement, donc avant tout
+   appel. */
 confiePanneau(remplitPanneau);
 
 /* ============================================================

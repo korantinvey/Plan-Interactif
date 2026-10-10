@@ -1,9 +1,9 @@
 /* ============================================================
    Le texte sur le plan — sa mesure, sa coupe en lignes, sa place
 
-   Sorti de `_rendu.html` (§ 2 et tête du § 4). Tout ce qui écrit sur le plan
+   Tout ce qui écrit sur le plan
    s'en sert : les libellés des stands et des zones (`libelles.mjs`), les
-   repères et les stands dessinés à la main (`_dessin.html`), la case du
+   repères et les stands dessinés à la main (`dessin.mjs`), la case du
    numéro dans la liste (`recherche.mjs`), l'affiche du hall
    (`affiche-ici.mjs`). Il ne dépend de rien d'autre que du canevas : c'est ce
    qui permet à chacun de l'importer, y compris ceux que les libellés

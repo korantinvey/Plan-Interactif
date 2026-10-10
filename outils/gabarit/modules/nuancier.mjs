@@ -15,11 +15,10 @@
    attend qu'elle s'arrête. Rien ne part en base pour autant — la publication
    reste un geste à part.
 
-   Sortie de `_admin1.html` : seul l'exploitant tient un nuancier — la pile
-   des calques (`pile.mjs`), les volets (`volets.mjs`), le dessin
-   (`outil-dessin.mjs`). Ce module n'est embarqué que par `plan-admin.mjs`, et
-   ses écoutes de page quittée se posent par `brancheNuancier`, à la place
-   que ce code tenait.
+   Seul l'exploitant tient un nuancier — la pile des calques (`pile.mjs`),
+   les volets (`volets.mjs`), le dessin (`outil-dessin.mjs`). Ce module n'est
+   embarqué que par `plan-admin.mjs`, et ses écoutes de page quittée se posent
+   par `brancheNuancier`, à son rang dans le lancement.
    ============================================================ */
 
 /** Le temps d'immobilité, en millisecondes, au bout duquel la couleur est
@@ -29,13 +28,15 @@ export const REPOS_NUANCIER = 200;
 
 /* Deux dixièmes de seconde suffisent à fermer un onglet : ce qui attend encore
    est noté ici, et part avant que la page ne s'en aille. Aux deux moments que
-   `_pousse.html` guette, et avant lui — ce module le précède, donc la couleur
-   est écrite quand il presse l'envoi. */
+   l'enregistrement (`enregistrement.mjs`) guette, et avant lui — ce module se
+   branche le premier, donc la couleur est écrite quand il presse l'envoi. */
 const NUANCIERS_EN_ATTENTE = new Set();
 const presseNuanciers = () => NUANCIERS_EN_ATTENTE.forEach(fixe => fixe());
 
-/** Le branchement, appelé par `_admin1.html` à la place que ce code tenait :
- *  les écoutes y gardent leur rang, devant celles de `_pousse.html`. */
+/** Le branchement, appelé par `plan-admin.mjs` dans l'emplacement que le
+ *  lancement lui ouvre après l'habillage (`lancement.mjs`
+ *  `confieLancementAdmin`) : les écoutes y passent devant celles de
+ *  l'enregistrement (`brancheEnregistrement`). */
 export function brancheNuancier(){
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") presseNuanciers();

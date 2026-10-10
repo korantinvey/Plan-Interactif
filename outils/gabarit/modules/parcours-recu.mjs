@@ -11,9 +11,9 @@
    `partage.mjs` pour la note de la copie à garder : réunis, ils se seraient
    importés l'un l'autre.
 
-   La configuration du salon, il l'importe (`configuration.mjs`) : il n'a
-   rien à recevoir du code soudé ; `demarrage.mjs` `demarre` l'appelle une
-   fois les données indexées.
+   La configuration du salon, il l'importe (`configuration.mjs`) : rien ne
+   lui est confié ; `demarrage.mjs` `demarre` l'appelle une fois les données
+   indexées.
    ============================================================ */
 import { parId, CONFS } from "./donnees.mjs";
 import { ouvreModale } from "./fenetre.mjs";

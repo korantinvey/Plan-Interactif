@@ -23,9 +23,9 @@
    paraît sur le plan public : elle vit dans `dessin.mjs`, avec les calques de
    dessin dont elle dépend.
 
-   Ce que le code soudé tient encore — la bibliothèque des lieux, que la
-   construction verse dans sa page — lui est confié par `brancheBatiments`,
-   que `_batiments.html` appelle à la place que ce code y tenait. Les
+   La bibliothèque des lieux, que la construction verse dans sa page en
+   données, lui est confiée par `brancheBatiments`, que `plan-admin.mjs`
+   appelle dans un emplacement du lancement (`apresLHabillage`). Les
    réglages et leur enregistrement s'importent de `configuration.mjs`, le mode
    administrateur de `mode-admin.mjs`, l'ordre de la pile et son panneau de
    `ordre-trace.mjs`, la vue et ses gestes de `vue.mjs`, les calques de
@@ -44,7 +44,8 @@ import { CONF, conf, enregistreConf } from "./configuration.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { pile, clePile, construitPanneau } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie au branchement : la bibliothèque des lieux.
+/* Ce que `plan-admin.mjs` confie au branchement : la bibliothèque des lieux,
+   lue dans sa balise de données.
    Ce qui change — les réglages (`CONF`, que le changement de salon
    remplace), le mode administrateur (`ADMIN`) —, importé, se lit tel qu'il
    est à l'instant. */
@@ -55,7 +56,7 @@ import { pile, clePile, construitPanneau } from "./ordre-trace.mjs";
 const racine = document.documentElement;
 
 /* Réservée à l'administration : la construction ne la verse que dans
-   `plan-admin.html`, et `_batiments.html` la confie au branchement. Ailleurs,
+   `plan-admin.html`, et `plan-admin.mjs` la confie au branchement. Ailleurs,
    le bouton qui l'ouvre ne paraît pas. */
 /** @type {any} */
 let LIEUX = null;
@@ -476,9 +477,10 @@ function ajouteBatiments(lieu, halls, t){
 }
 
 /**
- * Le branchement, appelé par `_batiments.html` à la place de ce code : les
- * boutons du bandeau de calage et la touche « Échap » s'y branchent au même
- * rang qu'avant parmi les écouteurs de la page.
+ * Le branchement, appelé par `plan-admin.mjs` dans l'emplacement
+ * `apresLHabillage` du lancement : les boutons du bandeau de calage et la
+ * touche « Échap » s'y branchent au rang qu'ils tenaient dans le script
+ * d'avant parmi les écouteurs de la page.
  *
  * @param {PageBatiments} page
  */

@@ -6,7 +6,7 @@
    seule : `plan-admin.mjs` l'embarque, et le panneau des calques
    (`pile.mjs`) l'importe pour son bouton « Réorganiser ».
 
-   Il n'a rien à recevoir du code soudé : l'ordre de la pile et le panneau
+   Rien ne lui est confié : l'ordre de la pile et le panneau
    qu'il refait s'importent de `ordre-trace.mjs`, la configuration et son
    enregistrement de `configuration.mjs`, les verrous et le renommage d'un
    calque de l'outil de dessin (`outil-dessin.mjs`).

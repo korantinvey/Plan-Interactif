@@ -9,22 +9,21 @@
    de se la faire confier.
 
    La vue elle-même (`view`) vit ici. Les gestes la remplacent sans cesse, le
-   cadrage sur un trajet aussi : elle se remplace par sa porte, `changeVue(v)`,
-   et le code soudé la lit par accesseur — une affectation directe y lève une
-   erreur qui nomme la porte. Les modules l'importent, ou la lisent par
-   `vue()`.
+   cadrage sur un trajet aussi : elle se remplace par sa porte, `changeVue(v)`.
+   Les modules l'importent, ou la lisent par `vue()` ; seuls les essais la
+   lisent encore dans la page, par un accesseur de `__essais` (`plan.mjs`).
 
    Le SVG du plan (`svg`) aussi : il est dans la page avant que les modules ne
    s'exécutent, et ne se remplace jamais.
 
    L'emprise du pavillon (`emp`), elle, n'était remplacée que par le montage
-   du plan : elle vit ici, se remplace par `poseEmprise`, et le code soudé la
-   lit par accesseur.
+   du plan : elle vit ici, se remplace par `poseEmprise`, et s'importe.
 
    Ce que la vue appelle et qu'elle ne peut importer sans boucler, ou qui
    n'existe pas partout — les noms, les poignées de l'éditeur, les pastilles
    de l'itinéraire, les pointes de flèche, le point de la borne, le calage
-   d'un hall — lui est confié au même branchement, sous la garde qu'il avait.
+   d'un hall — lui est confié par les modules qui le tiennent, en se chargeant
+   (`confieALaVue`).
    L'ordre des calques, elle l'importe (`ordre-trace.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -580,8 +579,8 @@ export function versPlan(/** @type {number} */ clientX, /** @type {number} */ cl
 }
 
 /**
- * Le branchement, appelé par `_vue.html` à la place que ce code tenait : les
- * écoutes du cadre et de la barre s'y posent au même rang qu'avant parmi
+ * Le branchement, appelé par `lancement.mjs` `lancePlan` à son rang : les
+ * écoutes du cadre et de la barre s'y posent à leur place parmi
  * celles du plan — avant le recadrage que `demarrage.mjs` pose sur « resize ».
  */
 export function brancheVue(){

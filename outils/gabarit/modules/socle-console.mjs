@@ -5,11 +5,9 @@
    projet sont demandées au premier lancement puis conservées sur le poste :
    elles n'ont pas à vivre dans le dépôt, et changent selon l'environnement.
 
-   Le socle a longtemps été le haut du script de la console et du rapport
-   (`_console-base.html`), que tout le reste appelait sans le dire. Il vit ici,
-   et les modules de la console l'importent : l'appel à la base, la barre
-   d'état, les briques d'affichage, l'adresse des pages et la session ne leur
-   sont plus confiés par le code soudé, qui n'existe plus. Le projet et la
+   Les modules de la console et du rapport l'importent : l'appel à la base, la
+   barre d'état, les briques d'affichage, l'adresse des pages et la session
+   viennent d'ici, dits par leurs imports. Le projet et la
    session (`CFG`, `SESSION`) sont des états de ce module, qu'il est seul à
    remplacer (`poseSession`).
 

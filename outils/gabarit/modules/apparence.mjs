@@ -1,7 +1,7 @@
 /* ============================================================
    L'apparence des calques, et les commandes posées sur le plan
 
-   Sortie de `_admin1.html`. Le plan public la pose à chaque chargement et à
+   Le plan public la pose à chaque chargement et à
    chaque changement de pavillon (`appliqueApparence`), et l'exploitant y
    revient à chaque couleur ou case de la pile (`pile.mjs`) et des volets
    (`volets.mjs`). Ce qu'il ne peut importer sans boucler — les options et
@@ -34,8 +34,8 @@ const prete = { appliqueOptions: () => {}, fermeParcours: () => {} };
 
 /**
  * La porte de ce que l'apparence ne peut importer sans boucler : `options.mjs`
- * et `tiroir-parcours.mjs` l'ouvrent en se chargeant, avant tout le code
- * soudé, comme le branchement qu'elle remplace.
+ * et `tiroir-parcours.mjs` l'ouvrent en se chargeant, donc avant le lancement
+ * de la page et tout appel.
  *
  * @param {Partial<PreteApparence>} o
  */

@@ -1,11 +1,11 @@
 /* ============================================================
    La police des noms sur le plan — celle du modèle, ou une autre de la liste
 
-   Sortie de `_admin1.html`. Le plan public la pose à chaque chargement, et
+   Le plan public la pose à chaque chargement, et
    l'onglet « Apparence » de l'exploitant (`volets.mjs`) y choisit. La
    graisse et la police dans lesquelles le plan écrit ses libellés, `P_NOM`
-   et `P_CODE`, vivent ici : le code soudé les lit par accesseur pour mesurer
-   ses noms, et seul `posePoliceLibelles` les remplace. Ce qu'il faut retracer
+   et `P_CODE`, vivent ici : les modules qui mesurent les noms les importent,
+   et seul `posePoliceLibelles` les remplace. Ce qu'il faut retracer
    quand elles changent — les dessins, les libellés, la liste — et le plan
    monté ou non lui sont confiés par la porte `confieAuxPolices`, que chacun
    de ces modules ouvre en se chargeant.
@@ -36,7 +36,7 @@ const prete = { monte: () => false, dessineDessins: () => {}, libelles: () => {}
 /**
  * La porte de ce qui se retrace quand la police change, que `rendu.mjs`,
  * `dessin.mjs`, `libelles.mjs` et `recherche.mjs` ouvrent en se chargeant —
- * avant tout le code soudé, comme le branchement qu'elle remplace.
+ * donc avant le lancement de la page.
  *
  * @param {Partial<PretePolices>} o
  */

@@ -21,7 +21,7 @@ import { lien, adresseWeb } from "./sur.mjs";
 /**
  * Ce que le corps de la fiche emprunte à la recherche (`recherche.mjs`), qui
  * l'importe : le libellé d'un champ propre au salon. Elle le lui confie au
- * chargement de son module — jamais le code soudé.
+ * chargement de son module.
  * @typedef {{ libelleCritere: (cle: string) => string }} PageCorpsFiche
  */
 /** @type {PageCorpsFiche} */

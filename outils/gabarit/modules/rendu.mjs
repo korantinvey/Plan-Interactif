@@ -1,22 +1,20 @@
 /* ============================================================
    3. Rendu du pavillon courant
 
-   Sorti de `_rendu.html` : le montage d'un pavillon — l'habillage, les zones
-   et les stands, et tout ce qui se repose dessus quand ses groupes viennent
-   d'être réécrits —, les onglets des pavillons et le passage de l'un à
-   l'autre.
+   Le montage d'un pavillon — l'habillage, les zones et les stands, et tout
+   ce qui se repose dessus quand ses groupes viennent d'être réécrits —, les
+   onglets des pavillons et le passage de l'un à l'autre.
 
-   Il se branche dans `_rendu.html`, à la place que son code tenait. Ce que le
-   code soudé tient encore lui est confié par des détours, lus au moment de
-   monter : le dessin des calques (`dessin.mjs`, qui importe la fiche que ce
-   module importe), le fond d'un pavillon (`demarrage.mjs`, qui importe ce
-   module-ci), et ce que seule l'administration connaît — la nappe de la grille, le calage de la
-   carte — sous la garde qu'il avait. La reprise d'un emplacement,
-   l'historique de l'éditeur et la boîte à outils, que le visiteur ne reçoit
-   pas, restent dans une tranche du branchement : la page publique n'en
-   confie rien, et le montage n'a rien à oublier. Le panneau des calques
-   s'importe de `ordre-trace.mjs`, qui n'en remplit le contenu que chez
-   l'exploitant.
+   Il n'a pas de branchement. Ce qu'il appelle chez des modules qui
+   l'importent lui est confié en se chargeant (`confieAuRendu`), et lu au
+   moment de monter : le dessin des calques (`dessin.mjs`, qui importe la
+   fiche que ce module importe), le fond d'un pavillon (`demarrage.mjs`, qui
+   importe ce module-ci), et ce que seule l'administration connaît — la nappe
+   de la grille, le calage de la carte, l'éditeur à remettre au repos
+   (emplacement repris, historique, boîte à outils). La page publique n'en
+   confie rien : les défauts restent sans effet, et le montage n'a rien à
+   oublier. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
+   remplit le contenu que chez l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
    `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : la police des

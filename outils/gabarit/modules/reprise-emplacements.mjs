@@ -13,9 +13,9 @@
    (`poseSorteGeo`) — vit dans `modules/emplacements.mjs`, qui en dit le
    pourquoi.
 
-   Il se branche par `brancheRepriseEmplacements`, que `_geometrie.html`
-   appelle à la place que ce code y tenait, pour y poser les écoutes de sa
-   palette. Ce que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
+   Il se branche par `brancheRepriseEmplacements`, que `plan-admin.mjs` pose
+   dans un emplacement du lancement (`lancement.mjs`), pour y poser les
+   écoutes de sa palette à leur rang. Ce que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
    ce module-ci) lui est confié par l'outil en se chargeant
    (`confieALaReprise`). À son tour, il confie en se chargeant ce qu'il tient
    à la fiche d'une zone et au placement des libellés, qu'il importe.
@@ -747,7 +747,8 @@ export function geometriePointerUp(e){
 }
 
 /**
- * Le branchement : `_geometrie.html` l'appelle à la place que ce code y tenait.
+ * Le branchement, appelé dans un emplacement du lancement que
+ * `plan-admin.mjs` remplit (`confieLancementAdmin`).
  * La palette reçoit ici ses écoutes, à leur rang parmi celles du plan.
  */
 export function brancheRepriseEmplacements(){

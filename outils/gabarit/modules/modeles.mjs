@@ -1,9 +1,9 @@
 /* ============================================================
    Les modèles d'habillage du plan
 
-   Sortis de `_admin1.html`. Le plan public les lit à chaque chargement : le
+   Le plan public les lit à chaque chargement : le
    modèle retenu habille la fiche, les tiroirs, la liste, le bandeau et la
-   fenêtre commune. Ils ne demandent rien au code soudé — la configuration
+   fenêtre commune. Ils n'ont rien à se faire confier — la configuration
    s'importe. Leur pose sur l'écran est dans `habillage.mjs`
    (`appliqueModele`), la police qu'ils donnent aux noms dans
    `polices-plan.mjs`.

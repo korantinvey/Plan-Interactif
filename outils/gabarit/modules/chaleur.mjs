@@ -23,8 +23,8 @@
    visiteur ne le reçoit jamais. La sélection d'un stand s'importe de
    `fiche.mjs`, le mode administrateur de `mode-admin.mjs`. La fenêtre des
    réglages, qui l'importe, lui confie en se chargeant de quoi s'ouvrir
-   (`confieALaChaleur`). Il se branche par `brancheChaleur`, que le code soudé
-   appelle à la place que ce code y tenait (`_chaleur.html`), pour y poser son
+   (`confieALaChaleur`). Il se branche par `brancheChaleur`, que `plan-admin.mjs`
+   appelle dans l'emplacement `apresLaMesure` du lancement, pour y poser son
    écoute du redimensionnement.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -668,8 +668,9 @@ async function lanceRemiseAZero(){
 }
 
 /**
- * Le branchement de la carte, appelé par le code soudé à la place que ce code
- * y tenait (`_chaleur.html`), dans une tranche que le visiteur ne reçoit pas.
+ * Le branchement de la carte, appelé par `plan-admin.mjs` dans l'emplacement
+ * `apresLaMesure` du lancement : la page publique, qui n'embarque pas ce
+ * module, ne le pose pas.
  */
 export function brancheChaleur(){
   /* La hauteur disponible change avec la fenêtre, et le cartouche se replie

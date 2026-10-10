@@ -36,7 +36,7 @@
    embarque, et pose le mode par la porte d'ici. Les réglages, les noms
    anglais des zones et le nom d'une société sur le plan s'importent
    (`configuration.mjs`, `noms-zones.mjs`, `dessin.mjs`) : il n'a rien à
-   recevoir du code soudé.
+   se faire confier.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";

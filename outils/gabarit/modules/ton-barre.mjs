@@ -1,7 +1,7 @@
 /* ============================================================
    La couleur de la barre du système
 
-   Sortie de l'index du salon (`_js.html`), où elle n'avait que sa place : la
+   Un module à elle, plutôt qu'une place dans l'index du salon : la
    bande du salon la redemande à chaque modèle et à chaque accent
    (`habillage.mjs`), la bande d'administration en s'ouvrant
    (`bande-admin.mjs`). Elle ne dépend que de la page, et se laisse importer
@@ -63,12 +63,12 @@ export function poseTonDeLaBarre(){
 }
 
 /**
- * Appelé par `_js.html` à la place que l'écoute tenait, pour qu'elle se pose
- * au même rang parmi celles de la page.
+ * Appelé par `lancement.mjs` `lancePlan` en tête de suite, pour que l'écoute
+ * se pose à son rang parmi celles de la page.
  *
  * Le ton ne dépend pas que du modèle : il dépend aussi de la largeur. Sur un
  * téléphone la bande du salon n'est plus une bande, et c'est le fond du plan
- * qui touche la barre du système (voir `_head.html`, « max-width:900px »). Une
+ * qui touche la barre du système (voir `_styles-modeles-parcours.css`, « max-width:900px »). Une
  * tablette qu'on tourne franchit ce seuil sans rien changer d'autre.
  */
 export function brancheTonDeLaBarre(){

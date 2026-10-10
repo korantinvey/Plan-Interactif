@@ -7,8 +7,8 @@
    `tiroir-parcours.mjs`, qui importe ce module-ci.
 
    La liste se remplace par `poseParcours({ … })`, comme les données du plan
-   par `poseDonnees` : un module l'importe. Le code soudé ne la lit plus —
-   tout ce qui la touchait en est sorti —, et elle n'est donc plus exposée.
+   par `poseDonnees` : un module l'importe, et seul le tiroir
+   (`tiroir-parcours.mjs`) la remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -68,7 +68,7 @@ export let PARCOURS = { stands: [], confs: [] };
  * alors réécrite au premier signet touché, et les conférences retenues pour le
  * mois suivant partaient pour de bon.
  *
- * C'est l'ornière des dessins non publiés, décrite dans `_dessin.html` : « il
+ * C'est l'ornière des dessins non publiés, décrite dans `calques-dessin.mjs` : « il
  * ne se perdait pas : il devenait invisible, puis l'enregistrement suivant
  * l'effaçait pour de bon ». On la contourne de la même façon — ce qu'on ne
  * comprend plus est mis de côté, daté, et réécrit avec le reste, à la place
@@ -77,7 +77,8 @@ export let PARCOURS = { stands: [], confs: [] };
 let MIS_DE_COTE = { stands: [], confs: [] };
 
 /**
- * Remplacer la liste, ou sa réserve — le code soudé vide et remplace par ici.
+ * Remplacer la liste, ou sa réserve — le tiroir (`tiroir-parcours.mjs`) vide
+ * et remplace par ici.
  * Un nom inconnu lève une erreur, comme pour les données du plan.
  *
  * @param {{ PARCOURS?: { stands: string[], confs: string[] },
@@ -96,8 +97,7 @@ export function poseParcours(valeurs){
 /**
  * Brancher la liste sur ce qu'elle fait bouger ailleurs : l'écran qui la
  * montre, et les rappels qui en dépendent. Appelé par le tiroir
- * (`tiroir-parcours.mjs` `brancheTiroirParcours`), à la place que la liste
- * tenait en tête de `_parcours.html`.
+ * (`tiroir-parcours.mjs` `brancheTiroirParcours`), avant ses propres écoutes.
  *
  * @param {{ rafraichit: () => void, reprendRappels: () => void,
  *           synchroniseRappels: () => void }} branchements

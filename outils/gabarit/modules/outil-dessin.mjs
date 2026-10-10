@@ -13,11 +13,11 @@
    l'outil les remplace par leurs portes. Leur tracé sur le plan vit dans
    `modules/dessin.mjs`.
 
-   Il se branche par `brancheOutilDessin`, que `_dessin.html` appelle à la
-   place que ce code tenait : les boutons et les champs de la boîte à outils,
-   le dépôt d'une image sur le plan et son collage s'y branchent, au rang
-   qu'ils tenaient parmi les écouteurs de la page. Il n'a plus rien à en
-   recevoir : la forme choisie dans l'éditeur et sa porte s'importent de
+   Il se branche par `brancheOutilDessin`, que `plan-admin.mjs` appelle dans
+   l'emplacement que le lancement lui ouvre après l'habillage : les boutons
+   et les champs de la boîte à outils, le dépôt d'une image sur le plan et son
+   collage s'y branchent, à leur rang parmi les écouteurs de la page. Rien ne
+   lui est confié : la forme choisie dans l'éditeur et sa porte s'importent de
    `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
    rangement des réglages de `configuration.mjs`.
 
@@ -875,9 +875,9 @@ export function renommeCalque(c, apres){
 }
 
 /**
- * Le branchement : `_dessin.html` l'appelle à la place que ce code tenait. Les
- * boutons et les champs de la boîte à outils s'y branchent, comme le dépôt et
- * le collage d'une image, dans l'ordre où le code soudé les posait.
+ * Le branchement, appelé par `plan-admin.mjs` à son rang dans le lancement
+ * (`lancement.mjs` `confieLancementAdmin`). Les boutons et les champs de la
+ * boîte à outils s'y branchent, comme le dépôt et le collage d'une image.
  */
 export function brancheOutilDessin(){
 
@@ -1016,8 +1016,7 @@ confieAuRendu({ oublieEdition: () => {
 
 /* Ces quatre modules sont importés par celui-ci : ils ne peuvent l'importer
    en retour. Il leur confie donc ce qu'il tient dès que la page
-   d'administration le charge — avant tout geste, et sans que le code soudé
-   ait à s'en mêler. */
+   d'administration le charge — avant tout geste. */
 confieAEdition({ memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes });
 confieAEnregistrement({ enregistreDessins });
 confieALaReprise({ pictoVerrou, activeCalque, remplitListeSocietes, societeSaisie, fermeIci });
@@ -1026,7 +1025,7 @@ confieAuPlacementLibelles({ activeCalque });
 /* Les aimants s'éprouvent seuls dans Node (`outils/essais/aimants.js`) : ils
    n'importent pas l'outil de dessin, on le leur confie. Ce module les importe
    déjà, et tient ou importe tout ce qu'ils lisent ; c'est donc lui qui le leur
-   confie en se chargeant, au lieu du code soudé. Rien n'y sert avant le
+   confie en se chargeant. Rien n'y sert avant le
    premier geste de l'exploitant. Ce qui change d'un geste à l'autre se confie
    par un lecteur, jamais par sa valeur du moment. */
 brancheAimants({

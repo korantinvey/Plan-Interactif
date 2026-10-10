@@ -11,7 +11,7 @@
    L'aperçu s'importe de `apercus.mjs`, la fiche ouverte derrière la fenêtre
    de `fiche.mjs`, le préfixe des champs propres au salon de `recherche.mjs`,
    le modèle retenu de `modeles.mjs` et l'écriture de la colonne de
-   `fiche-zone.mjs` : il n'a plus rien à recevoir du code soudé.
+   `fiche-zone.mjs` : rien ne lui est confié.
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";

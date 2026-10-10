@@ -10,11 +10,12 @@
    calage de la carte, le placement d'un libellé, la reprise d'un emplacement,
    le calage d'un hall, le dessin — ne sont pas ici : `modules/gestes-admin.mjs`,
    que seul `plan-admin.mjs` embarque, les insère dans la chaîne par
-   `poseGestesAdmin`, à la place que leur tranche `@admin` y tenait. Faute de
-   quoi la chaîne les saute, comme la page publique les sautait.
+   `poseGestesAdmin`, au rang qu'ils tenaient dans le script d'avant. Faute
+   de quoi la chaîne les saute : c'est le cas de la page publique.
 
-   Ses écoutes se posent par `brancheGestes`, que `_gestes.html` appelle à la
-   place que ce code y tenait : elles gardent leur rang parmi celles du plan.
+   Ses écoutes se posent par `brancheGestes`, que le lancement
+   (`lancement.mjs`) appelle au rang que ce code tenait : elles gardent leur
+   rang parmi celles du plan.
    Tout ce qu'il appelle s'importe ; la vue se lit par `view` et se remplace
    par `changeVue`, comme partout ailleurs.
 
@@ -43,7 +44,7 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 
 /* Ce que l'administration insère dans la chaîne, et rien sur la page
    publique : chaque maillon y répond « je n'ai rien pris », et la chaîne
-   continue comme si la tranche avait été retirée. */
+   continue comme si l'outil n'existait pas. */
 /**
  * @typedef {object} GestesAdmin
  * @property {(e: PointerEvent) => boolean} appui le doigt posé, pris par un outil de l'exploitant
@@ -331,11 +332,11 @@ export function brancheGestes(){
     oublieRetrait(cible);
     /* Poser une borne prend le clic avant tout le reste : ce n'est ni une fiche
        qu'on ouvre ni un bout de trajet qu'on désigne, et l'endroit compte même
-       là où il n'y a rien (voir « _borne.html »). */
+       là où il n'y a rien (voir « borne.mjs »). */
     if (poseBorneIci(d.x, d.y, cible)) return;
     /* Désigner l'endroit d'un code « Vous êtes ici » se tranche au même rang, et
        pour la même raison : l'endroit compte même là où il n'y a rien, et ce
-       n'est pas une fiche qu'on ouvre (voir « _ici.html »). Geste d'exploitant,
+       n'est pas une fiche qu'on ouvre (voir « affiche-ici.mjs »). Geste d'exploitant,
        que seule l'administration embarque : le plan public n'en a pas. */
     if (admin.codeIci(d.x, d.y, cible)) return;
     /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un

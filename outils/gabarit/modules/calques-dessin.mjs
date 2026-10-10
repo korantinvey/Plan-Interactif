@@ -12,9 +12,9 @@
    Les calques, la marque d'attente et les clés publiées sont remplacés à
    l'ouverture d'un salon (`ouvreDessins`) ; le calque ouvert, l'outil et le
    tracé, par leurs portes (`poseCalqueActif`, `poseOutil`, `poseEbauche`) :
-   le code soudé les lit par accesseur, et ne les affecte plus. Le bouton qui
-   dit l'attente est d'administration : il est confié par
-   `brancheCalquesDessin`, que `_dessin.html` appelle en tête.
+   les modules qui les lisent les importent, et seules ces portes les
+   affectent. Le bouton qui dit l'attente est d'administration : son état est
+   confié par `enregistrement.mjs` en se chargeant (`confieAuxCalques`).
    ============================================================ */
 import { P } from "./donnees.mjs";
 import { salonRange } from "./configuration.mjs";

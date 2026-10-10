@@ -24,8 +24,9 @@
    (`modules/parcours-recu.mjs`) : il verse dans le tiroir, qui importe ce
    module-ci pour la note de la copie à garder.
 
-   Le module se branche dans `_partage.html`, à la place que son bouton y
-   tenait. La configuration du salon, il l'importe (`configuration.mjs`).
+   Le module se branche par `branchePartage`, à son rang dans le lancement
+   (`lancement.mjs`). La configuration du salon, il l'importe
+   (`configuration.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { SLUG, cheminPartageable, BORNE } from "./salon.mjs";
@@ -218,7 +219,7 @@ export const parcoursACopier = () => !BORNE && conf("_parcours").visible !== fal
  *
  * `apres` rend la main à la fenêtre d'où l'on vient : l'installation propose
  * cette copie au milieu de ses gestes, et le visiteur doit retrouver la liste
- * des gestes là où il l'avait laissée (`_modales.html`).
+ * des gestes là où il l'avait laissée (`installation.mjs`).
  */
 function ouvreGardeParcours(apres){
   const lien = lienParcours();
@@ -284,8 +285,8 @@ export function poseGardeParcours(hote){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_partage.html` à la place que ce code tenait : le bouton du
- * tiroir s'y branche au même moment qu'avant.
+ * Appelé par `lancement.mjs` `lancePlan`, entre le tiroir du parcours et
+ * celui de l'itinéraire : le bouton du tiroir s'y branche à son rang.
  */
 export function branchePartage(){
   $("btnPartage").onclick = ouvrePartageParcours;

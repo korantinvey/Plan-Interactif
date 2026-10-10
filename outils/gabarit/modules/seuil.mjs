@@ -1,14 +1,14 @@
 /* ============================================================
    Le parcours intelligent — le seuil de concentration
 
-   Sorti de `_admin1.html`. Ce que le réglage `_capacite` donne pour chaque
+   Ce que le réglage `_capacite` donne pour chaque
    stand, et ce qu'il donne sur tout le salon : la journée organisée le lit
    (`journee.mjs`, `sejour.mjs`, `charge-annoncee.mjs`, chez le visiteur
    comme chez l'exploitant), l'onglet « Parcours intelligent » l'écrit
-   (`volets.mjs`). Il ne demande rien au code soudé : la configuration, les
+   (`volets.mjs`). Il n'a rien à se faire confier : la configuration, les
    données du salon, le contour d'un emplacement et son aire s'importent.
-   `phraseSeuil` et le nom de l'onglet ne servent qu'à l'exploitant, et ne
-   sont exposés que par `plan-admin.mjs`.
+   `phraseSeuil` et le nom de l'onglet ne servent qu'à l'exploitant : seuls
+   `volets.mjs` et `reglages.mjs`, de l'administration, les importent.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
