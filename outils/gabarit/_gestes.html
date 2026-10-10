@@ -14,10 +14,11 @@
    `modules/gestes-admin.mjs`, que seule l'administration embarque.
 
    Ils se branchent ici, à la place que leur code tenait : leurs écoutes s'y
-   posent au même rang qu'avant. Ce qu'ils ne peuvent importer leur est
-   confié : aux tiroirs, le panneau des critères, que la recherche, qui les
-   importe, ne peut leur fournir par import. La forme dessinée choisie, les
-   gestes de l'exploitant l'importent (`modules/forme-choisie.mjs`). L'écoute de
+   posent au même rang qu'avant. Rien ne leur est plus confié d'ici : le
+   panneau des critères, que la recherche ne peut fournir par import aux
+   tiroirs qu'elle importe, elle le leur confie en se chargeant
+   (`confieAuxTiroirs`). La forme dessinée choisie, les gestes de
+   l'exploitant l'importent (`modules/forme-choisie.mjs`). L'écoute de
    la langue, qui refait ce que le plan a mesuré dans la langue d'avant, se
    pose en dernier, comme avant (`modules/gestes.mjs` `brancheLangue`).
    ============================================================ */
@@ -25,7 +26,7 @@ brancheGestes();
 /* @admin — les gestes de l'exploitant prennent leur rang dans la chaîne */
 brancheGestesAdmin();
 /* @fin-admin */
-brancheTiroirs({ fermeCriteres });
+brancheTiroirs();
 
 brancheLangue();
 

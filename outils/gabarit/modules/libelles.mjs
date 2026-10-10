@@ -13,8 +13,10 @@
    la langue du moment s'importent (`vue.mjs`, `calques-dessin.mjs`,
    `forme-choisie.mjs`, `noms-zones.mjs`) ;
    le dessin des stands et des repères (`dessin.mjs`, `points-interet.mjs`)
-   ne le peut pas — il importe la fiche, qui importe ce module — et vient
-   donc lui aussi par des détours.
+   ne le peut pas — il importe la fiche, qui importe ce module — et lui est
+   donc confié par la porte `confieAuxLibelles`, que chacun ouvre en se
+   chargeant : des appels directs, puisque les libellés se réécrivent pendant
+   les gestes.
 
    La carte graphique (`webgl.mjs`) et la vue (`vue.mjs`), qu'il importe, le
    reçoivent par leur branchement ; le dessin (`dessin.mjs`), lui, l'importe.
@@ -23,7 +25,7 @@ import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
-import { P_NOM, P_CODE } from "./polices-plan.mjs";
+import { P_NOM, P_CODE, confieAuxPolices } from "./polices-plan.mjs";
 import { largeur, remesureTextes, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
@@ -35,25 +37,48 @@ import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { boite } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-const dessineDessins = () => soude.dessineDessins();
-const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => soude.decoupeStand(id, iSoc);
-const poseLibellesDessines = (/** @type {number} */ pxParM) => soude.poseLibellesDessines(pxParM);
-const phareZone = (/** @type {any} */ o) => soude.phareZone(o);
-const rafraichitFleches = () => soude.rafraichitFleches();
-const societeDeForme = (/** @type {any} */ f) => soude.societeDeForme(f);
-const nomSurLePlan = (/** @type {any} */ soc) => soude.nomSurLePlan(soc);
+/* Ce qui est confié, et rien avant : le premier tracé attend les données,
+   bien après le chargement du dessin et des repères. */
+/**
+ * @typedef {object} PreteLibelles
+ * @property {() => void} dessineDessins retrace les calques de dessin (`dessin.mjs`)
+ * @property {(id: any, iSoc: any) => any} decoupeStand le stand choisi est-il un stand dessiné ?
+ * @property {(pxParM: number) => void} poseLibellesDessines écrit le nom des stands dessinés
+ * @property {(o: any) => boolean} phareZone la zone est-elle mise en avant ? (`points-interet.mjs`)
+ * @property {() => void} rafraichitFleches repose les pointes de flèche
+ * @property {(f: any) => any} societeDeForme l'exposant que porte une forme dessinée
+ * @property {(soc: any) => string} nomSurLePlan le nom qu'un exposant porte sur le plan
+ */
+/** @type {PreteLibelles} */
+const prete = {
+  dessineDessins: () => {}, decoupeStand: () => null, poseLibellesDessines: () => {},
+  phareZone: () => false, rafraichitFleches: () => {}, societeDeForme: () => null,
+  nomSurLePlan: () => "",
+};
+const dessineDessins = () => prete.dessineDessins();
+const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.decoupeStand(id, iSoc);
+const poseLibellesDessines = (/** @type {number} */ pxParM) => prete.poseLibellesDessines(pxParM);
+const phareZone = (/** @type {any} */ o) => prete.phareZone(o);
+const rafraichitFleches = () => prete.rafraichitFleches();
+const societeDeForme = (/** @type {any} */ f) => prete.societeDeForme(f);
+const nomSurLePlan = (/** @type {any} */ soc) => prete.nomSurLePlan(soc);
+
+/**
+ * La porte du dessin des calques et des repères, que `dessin.mjs` et
+ * `points-interet.mjs` ouvrent en se chargeant — avant tout le code soudé,
+ * comme le branchement qui les recevait.
+ *
+ * @param {Partial<PreteLibelles>} o
+ */
+export function confieAuxLibelles(o){
+  Object.assign(prete, o);
+}
 
 /**
  * Le branchement, appelé par `_rendu.html` à la place que l'écoute des
- * polices y tenait.
- *
- * @param {Record<string, any>} b
+ * polices y tenait : elle s'y pose à son rang.
  */
-export function brancheLibelles(b){
-  soude = b;
+export function brancheLibelles(){
   /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
      se refont (`texte-plan.mjs` `remesureTextes`), et le plan se retrace si
      l'une a changé. */
@@ -385,3 +410,8 @@ confieALaRecherche({ libelles });
    les écrit — les deux rendus suivent ainsi les mêmes règles. */
 confieALaVue({ libelles });
 confieAuWebgl({ libelles, libellesWebgl });
+
+/* Les libellés, confiés à la police des noms dès que ce module se charge :
+   elle les fait réécrire quand elle change, et ne peut importer ce module, qui
+   l'importe pour mesurer ses noms. */
+confieAuxPolices({ libelles });

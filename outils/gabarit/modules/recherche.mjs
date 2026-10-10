@@ -25,6 +25,10 @@
    tenait : l'écoute de la liste s'y pose, au même rang qu'avant. Ce qui se
    déclare plus loin dans le code soudé, ou change sans cesse, vient par des
    détours, lus au moment de s'en servir.
+
+   En retour, ce module confie en se chargeant ce que deux modules qu'il
+   importe lui empruntent : le panneau des critères aux tiroirs
+   (`confieAuxTiroirs`), la liste à la police des noms (`confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
@@ -34,13 +38,13 @@ import { JOURS, momentLocal } from "./temps.mjs";
 import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
 import { conf, chercheSorte } from "./configuration.mjs";
-import { P_CODE } from "./polices-plan.mjs";
+import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
+import { montreTiroir, mesureTiroir, hisseTiroir, confieAuxTiroirs } from "./tiroirs.mjs";
 import { largeur } from "./texte-plan.mjs";
 
 /**
@@ -1172,3 +1176,13 @@ export function brancheRecherche(){
       prechargeMarque(b.dataset.id, Number(b.dataset.soc));
   });
 }
+
+/* La liste, confiée à la police des noms dès que ce module se charge : sa
+   case du numéro se taille sur la police des numéros, que ce module importe —
+   elle ne peut donc l'importer en retour. */
+confieAuxPolices({ liste });
+
+/* Le panneau des critères, confié aux tiroirs dès que ce module se charge :
+   un tiroir redescendu le referme, et ne peut importer ce module, qui
+   l'importe pour se montrer et se hisser. */
+confieAuxTiroirs({ fermeCriteres });

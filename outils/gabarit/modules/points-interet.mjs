@@ -13,7 +13,9 @@
    (`distinctions.mjs` `poseDistsFiche`), ce que la fiche des stands prête à
    celle d'un repère (`fiche.mjs`) et le bord estompé du cartouche
    (`bandes.mjs`) s'importent ; la recherche, qui relit les repères, se les
-   fait donc confier par le code soudé.
+   fait donc confier par le code soudé. Les libellés, qui marquent la zone
+   mise en avant, reçoivent `phareZone` par la porte que ce module ouvre en
+   se chargeant (`confieAuxLibelles`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -32,6 +34,7 @@ import { changePlan } from "./rendu.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { confieALaRecherche } from "./recherche.mjs";
+import { confieAuxLibelles } from "./libelles.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -406,3 +409,8 @@ export function oublieChoixPoi(cible){
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant ce qu'elle en appelle (les repères qu'elle remonte parmi les exposants, et le chemin vers l'un d'eux). */
 confieALaRecherche({ reperesCherchables, vaAuRepere });
+
+/* La mise en avant d'une zone, confiée aux libellés dès que ce module se
+   charge : ils la marquent sur le nom de la zone, et ne peuvent importer ce
+   module, qui les atteint par la fiche. */
+confieAuxLibelles({ phareZone });

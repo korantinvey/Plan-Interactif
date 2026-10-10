@@ -19,8 +19,9 @@
    l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
-   `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : le code soudé le
-   lit par accesseur.
+   `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : la police des
+   noms, qui ne peut importer ce module, le lit par un lecteur que celui-ci
+   lui confie en se chargeant (`confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -37,6 +38,7 @@ import { majFondus } from "./bandes.mjs";
 import { ferme } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
+import { confieAuxPolices } from "./polices-plan.mjs";
 
 /* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
    confient en se chargeant (`confieAuRendu`) : le dessin des calques
@@ -173,3 +175,8 @@ export function changePlan(i){
   montePlan(); fit(); liste();
   prete.chargeFond(i);
 }
+
+/* Le pavillon monté ou non, confié à la police des noms dès que ce module se
+   charge, par un lecteur : elle ne retrace rien avant le premier montage, et
+   ne peut importer ce module, qui l'atteint en chemin. */
+confieAuxPolices({ monte: () => MONTE });
