@@ -34,6 +34,7 @@ import { recul, dessineFondCarte } from "./environs.mjs";
 import { svg, vue, changeVue, cadrePlan, oublieCadre } from "./vue-etat.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
+import { facteurTrait } from "./chemin-forme.mjs";
 
 /* Ce que la vue rappelle chez les modules qui l'importent — ce qui dit si
    l'on édite, les noms, et ce qui garde sa taille à l'écran quel que soit le
@@ -202,6 +203,21 @@ function etireLibelles(){
     ((libPeints.y - vueEcrite.y) * b.s + b.y - a.y * k) + "px) scale(" + k + ")";
 }
 
+/* Le trait des calques de dessin s'amincit quand on recule
+   (`chemin-forme.mjs` `facteurTrait`). Le SVG le lit dans une variable de
+   « #couches » : la changer fait recalculer le style de tous les calques,
+   d'où l'arrondi au centième, qui la laisse en paix dès que le trait a
+   toute son épaisseur. La carte graphique, elle, n'en a pas besoin : elle
+   compte ce trait en mètres, bornés, et le zoom le règle seul. */
+let facteurPose = 1;
+function poseFacteurTrait(/** @type {any} */ view){
+  const f = Math.round(facteurTrait((cadrePlan().width || 1) / view.w) * 100) / 100;
+  if (f === facteurPose) return;
+  facteurPose = f;
+  const c = $("couches");
+  if (c) c.style.setProperty("--trait-f", String(f));
+}
+
 export const appliqueVue = () => {
   /* Le fond de carte, avant toute chose : il ne dépend que de la vue, et le
      chemin du rendu par la carte graphique sort plus bas sans passer par la
@@ -222,6 +238,7 @@ export const appliqueVue = () => {
   const view = vue();
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
+  poseFacteurTrait(view);
   if (libPeints) etireLibelles();
   prete.dessinePoignees();
   prete.dessinePoigneesGeo();

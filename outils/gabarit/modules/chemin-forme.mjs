@@ -81,19 +81,44 @@ export function cheminForme(f){
   return cheminArrondi(f.pts, f.r || 0, f.t !== "ligne");
 }
 /* --- épaisseur et style du trait ---
-   Le trait des calques ne grossit pas avec le zoom : son épaisseur se compte
-   en pixels d'écran, et l'espacement des points avec elle. Rien n'est écrit
-   tant que la forme ne demande rien — la feuille de style garde alors la main,
-   et le pointillé qui signale un rôle d'itinéraire pendant l'édition reste
-   lisible sur les tracés qu'on n'a pas réglés. */
-export const EPAISSEUR_TRAIT = 2;
+   L'épaisseur réglée d'un trait se compte en pixels d'écran, et l'espacement
+   des points avec elle : un trait compté en mètres deviendrait un ruban dès
+   qu'on zoome sur une allée. Mais tenue à l'identique en vue d'ensemble, elle
+   écrasait le plan — le contour d'un hall, trois pixels sur un pavillon
+   entier ramené à la largeur d'un téléphone, mangeait les stands du bord.
 
+   Le trait s'amincit donc avec le plan quand on recule : il garde son
+   épaisseur tant qu'un mètre tient au moins `TRAIT_PLEIN` pixels, la perd en
+   proportion en deçà, et ne descend pas sous `TRAIT_PLANCHER` de ce qu'il
+   vaut — un trait plus fin ne se verrait plus. Le facteur est le même pour
+   les deux rendus : le SVG le lit dans la variable `--trait-f`, que la vue
+   pose sur `#couches` (`facteurTrait`), la carte graphique le rejoue en
+   mètres, bornée par les mêmes deux limites (`webgl.mjs`, couches
+   « traits-z »). Les tracés concernés portent la classe `trait`. */
+export const EPAISSEUR_TRAIT = 2;
+/** Pixels par mètre à partir desquels le trait a toute son épaisseur. */
+export const TRAIT_PLEIN = 8;
+/** Part de son épaisseur sous laquelle un trait ne s'amincit plus. */
+export const TRAIT_PLANCHER = .3;
+
+/** Le facteur d'épaisseur pour un plan vu à tant de pixels par mètre. */
+export function facteurTrait(pxParMetre){
+  if (!(pxParMetre > 0)) return 1;
+  return Math.max(TRAIT_PLANCHER, Math.min(1, pxParMetre / TRAIT_PLEIN));
+}
+
+/** Une longueur d'écran qui suit le facteur du trait. */
+export const pxTrait = (n) => "calc(var(--trait-f,1) * " + +n.toFixed(2) + "px)";
+
+/* Rien n'est écrit tant que la forme ne demande rien — la feuille de style
+   garde alors la main, et le pointillé qui signale un rôle d'itinéraire
+   pendant l'édition reste lisible sur les tracés qu'on n'a pas réglés. */
 export function styleTrait(f){
   const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
   const css = [];
-  if (ep !== EPAISSEUR_TRAIT) css.push("stroke-width:" + ep);
+  if (ep !== EPAISSEUR_TRAIT) css.push("stroke-width:" + pxTrait(ep));
   /* Des points ronds plutôt que des tirets : les bouts arrondis du trait les
      dessinent d'eux-mêmes dès que la portion tracée est quasi nulle. */
-  if (f.pointille) css.push("stroke-dasharray:.01 " + +(ep * 2.2).toFixed(2));
-  return css.length ? ' style="' + css.join(";") + '"' : "";
+  if (f.pointille) css.push("stroke-dasharray:.01px " + pxTrait(ep * 2.2));
+  return ' class="trait"' + (css.length ? ' style="' + css.join(";") + '"' : "");
 }
