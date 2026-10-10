@@ -2,40 +2,25 @@
    Point d'entrée des trois pages du plan — public, démonstration,
    administration
 
-   Le code du plan est encore soudé en un seul script classique, qui ne sait
-   pas importer. Ce que les modules lui fournissent lui est donc confié par
-   l'objet global, le temps qu'il devienne module à son tour : chaque nom qui
-   quitte cette liste est un nom que le code soudé n'utilise plus.
+   Le plan n'a plus de code soudé : ses morceaux sont des modules, et la suite
+   des branchements que le script soudé appelait encore vit dans
+   `lancement.mjs`. Ce point d'entrée n'expose donc plus rien sur l'objet
+   global : il charge le plan, et le lance.
 
-   La liste est relue par les outils (`outils/modules.js`) : la relecture et
-   les types la tiennent pour déclarée, la construction la pose avant le
-   script du plan. On n'y met donc qu'un objet littéral de noms.
+   L'administration reprend ce point d'entrée en entier (`plan-admin.mjs`,
+   `import "./plan.mjs"`) avant d'y ajouter ses modules : c'est elle qui
+   lance alors, une fois ses étapes posées. La page publique et la
+   démonstration lancent d'ici.
    ============================================================ */
-import { SLUG } from "./salon.mjs";
-import { brancheFenetre } from "./fenetre.mjs";
+import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 import { adresseSure, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
-import { brancheMesure } from "./mesure.mjs";
-import { brancheSponsor } from "./sponsor.mjs";
-import { branchePartage } from "./partage.mjs";
-import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
-import { brancheInstallation } from "./installation.mjs";
-import { brancheBorne } from "./borne.mjs";
-import { brancheIci } from "./ici.mjs";
+import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { TUTO } from "./tutoriel.mjs";
-import { brancheJournee } from "./journee.mjs";
-import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
-import { brancheTiroirParcours } from "./tiroir-parcours.mjs";
-import { brancheVue } from "./vue.mjs";
-import { brancheHabillage } from "./habillage.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
-import { brancheBandes } from "./bandes.mjs";
-import { brancheRecherche } from "./recherche.mjs";
 import { view } from "./vue.mjs";
-import { brancheTonDeLaBarre } from "./ton-barre.mjs";
-import { brancheDemarrage } from "./demarrage.mjs";
-import { brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
-import { brancheLibelles, libelles } from "./libelles.mjs";
+import { libelles } from "./libelles.mjs";
+import { lancePlan } from "./lancement.mjs";
 /* Les options vendues à part ne sont plus importées par personne dans la
    page publique : elles se confient à l'apparence en se chargeant
    (`confieALApparence`), qui les repose avec le reste de l'habillage. Il faut
@@ -46,39 +31,11 @@ import "./options.mjs";
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
    chargé, et c'est d'ici. */
 import "./edition-en-cours.mjs";
-import { brancheGestes, brancheLangue } from "./gestes.mjs";
-import { brancheTiroirs } from "./tiroirs.mjs";
 
-Object.assign(globalThis, {
-  brancheFenetre,
-  brancheMesure,
-  brancheSponsor,
-  brancheWebgl,
-  brancheInstallation,
-  brancheBorne,
-  brancheIci,
-  brancheJournee,
-  brancheTiroirItineraire,
-  brancheTiroirParcours,
-  branchePartage,
-  brancheVue,
-  brancheHabillage,
-  brancheBandes,
-  brancheRecherche,
-  brancheTonDeLaBarre,
-  brancheDemarrage,
-  brancheFiche,
-  brancheLibelles,
-  brancheGestes, brancheLangue,
-  brancheTiroirs,
-});
-
-/* Ce que les essais du navigateur lisent dans la page, et que le code soudé
-   n'appelle pas : les règles de `sur.mjs` éprouvées sur des entrées hostiles,
-   le salon que l'adresse nomme, les mesures du texte, le rendu par la carte
-   graphique et les libellés qu'on réécrit sur des mesures neuves. Rangé à
-   part de la liste exposée, pour que celle-ci ne compte que ce qui soude
-   encore la page (`outils/soudure.js`) ; écrit comme une affectation, que
+/* Ce que les essais du navigateur lisent dans la page : les règles de
+   `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,
+   les mesures du texte, le rendu par la carte graphique et les libellés qu'on
+   réécrit sur des mesures neuves. Écrit comme une affectation, que
    `outils/modules.js` ne relit pas. La graisse et la police des libellés se
    remplacent au choix d'un modèle : elles se lisent donc par un accesseur,
    qui rend celles du moment ; la visite guidée en cours aussi, que le module
@@ -92,3 +49,7 @@ globalThis.__essais = {
   get TUTO(){ return TUTO; },
   get view(){ return view; },
 };
+
+/* La page publique et la démonstration lancent d'ici ; l'administration
+   lance depuis son propre point d'entrée, ses étapes posées. */
+if (!PLAN_ADMIN) lancePlan();

@@ -54,10 +54,9 @@ const BOUTS_PUBLICS = (() => {
 })();
 
 const PAGES = {
-  /* Le plan d'administration contient le plan public : mêmes modules, plus
-     l'accès de l'exploitant, posé à la fin du script. Relire celui-là relit
-     donc les deux. */
-  "plan-admin.html": [...TETE, ...BOUTS.map((b) => html(b, lisBout(b))), js("_auth-plan.html")],
+  /* Le plan d'administration contient le plan public : même balisage, mêmes
+     modules, plus ceux de l'exploitant. Relire celui-là relit donc les deux. */
+  "plan-admin.html": [...TETE, ...BOUTS.map((b) => html(b, lisBout(b)))],
   /* Le plan public : les mêmes modules sans leurs tranches `@admin`, et sans
      l'accès de l'exploitant. Relu à part et tel qu'il est livré, sans quoi un
      appel d'administration y chercherait un nom que seule l'administration

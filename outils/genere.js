@@ -300,7 +300,6 @@ const PRECHARGE = [
 ].join("\n");
 
 const tpl = fs.readFileSync(D + "/tpl-multi.html", "utf8");
-const auth = fs.readFileSync(D + "/gabarit/_auth-plan.html", "utf8");
 
 /** Branche la page sur l'API plutôt que sur des données figées. Les réglages
  *  se posent sur le script des modules : c'est `modules/salon.mjs` qui les lit. */
@@ -319,11 +318,18 @@ function connecte(t) {
    Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
 const scriptDesModules = (entree) =>
   '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
+/* Le plan n'a plus de code soudé : le script des modules se pose après tout
+   le balisage et les données, là où commençait le script soudé d'avant, et
+   la suite des branchements qu'il lance (`modules/lancement.mjs`) s'exécute
+   donc au même instant. Un script resté en ligne après les données
+   s'exécuterait après les modules, hors de son rang : on le refuse. */
+const DONNEES = '<script id="data" type="application/json">/*__DATA__*/</script>';
 function poseModulesDuPlan(t, entree) {
-  const marque = "<script>\n/* Sans viewport";
-  if (t.split(marque).length !== 2) throw new Error("script du plan introuvable, ou en double");
-  const script = scriptDesModules(entree);
-  return t.replace(marque, () => script + marque);
+  if (t.split(DONNEES).length !== 2) throw new Error("données du plan introuvables, ou en double");
+  const [avant, apres] = t.split(DONNEES);
+  if (/<script\b(?![^>]*\bsrc=)/.test(apres))
+    throw new Error("un script reste après les données du plan : son code doit vivre dans un module");
+  return avant + DONNEES + scriptDesModules(entree) + apres;
 }
 /* Le gabarit sous ses deux formes : entier pour l'administration, amputé de
    ses tranches `@admin` pour le visiteur (voir `outils/reserve.js`). Les
@@ -456,9 +462,20 @@ fs.writeFileSync(W + "plan.html", poseCsp(sortScripts(
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
    n'en a que faire, elle ne part qu'avec l'administration. */
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
+/* Versée en données, devant celles du plan : le point d'entrée de
+   l'administration la lit au lancement (`plan-admin.mjs` `lieux`). La balise
+   d'ouverture des données ne change pas, alors que leur contenu, lui, est vidé
+   sur une page branchée sur l'API (`connecte`) : c'est donc elle qu'on vise,
+   et la construction s'arrête si elle manque plutôt que de livrer une
+   administration sans bibliothèque. */
+const OUVRE_DONNEES = '<script id="data" type="application/json">';
+function poseLieux(t) {
+  if (t.split(OUVRE_DONNEES).length !== 2) throw new Error("données du plan introuvables pour y poser les lieux");
+  return t.replace(OUVRE_DONNEES, () =>
+    '<script id="lieux" type="application/json">' + LIEUX + "</script>\n" + OUVRE_DONNEES);
+}
 fs.writeFileSync(W + "plan-admin.html", poseCsp(sortScripts(
-  page(lieFeuille(connecte(tplAdmin)).replace("/*__PORTE_ADMIN__*/", auth)
-                    .replace("/*__LIEUX__*/null", () => LIEUX),
+  page(poseLieux(lieFeuille(connecte(tplAdmin))),
        { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }))));
 
 /* --- démonstration à données figées, publiable en artefact --- */

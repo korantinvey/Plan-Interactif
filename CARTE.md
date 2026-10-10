@@ -11,34 +11,6 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 31 l.
-
-- l.1 · 9. Apparence des calques — le branchement
-
-### `_admin2.html` — 22 l.
-
-- l.1 · 12. Démarrage — le branchement
-
-### `_auth-plan.html` — 14 l.
-
-- l.2 · Accès à l'administration du plan — le branchement
-
-### `_batiments.html` — 20 l.
-
-- l.2 · 11 quinquies. Bâtiments de la bibliothèque — le branchement
-
-### `_borne.html` — 11 l.
-
-- l.1 · 11 quinquies. La borne interactive — le branchement
-
-### `_branche-mesure.html` — 10 l.
-
-- l.1 · 13. Mesure d'utilisation — le branchement
-
-### `_chaleur.html` — 14 l.
-
-- l.1 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-
 ### `_config.js` — 15 l. → config.js
 
 ### `_console-base.html` — 11 l. → admin-plans.html, rapport.html
@@ -61,27 +33,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.666 · Page de rapport
 
-### `_dessin.html` — 31 l.
-
-- l.2 · 11. Calques de dessin — le branchement
-
 ### `_entete.html` — 6 l.
-
-### `_environs.html` — 21 l.
-
-- l.1 · 16. Les environs — le branchement
-
-### `_fiche.html` — 21 l.
-
-- l.3 · 7. Sélection et fiche
-
-### `_geometrie.html` — 23 l.
-
-- l.1 · 11 octies. Reprendre à la main la géométrie d'un emplacement — le
-
-### `_gestes.html` — 33 l.
-
-- l.4 · 8. Interactions du plan — le branchement
 
 ### `_head.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -132,31 +84,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#reessaie`
 
-### `_ici.html` — 14 l.
-
-- l.1 · 11 septies. « Vous êtes ici » — le branchement
-
 ### `_index.html` — 17 l. → index.html
 
 Éléments :
 
 `#secours`
 
-### `_installation.html` — 15 l.
-
-- l.1 · 16. L'invitation à installer le plan
-
-### `_itineraire.html` — 22 l.
-
-- l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
-
-### `_journee.html` — 14 l.
-
-- l.1 · 11 ter. Organiser sa visite — le branchement
-
-### `_js.html` — 43 l.
-
-- l.27 · 1. Index global — le branchement
+### `_js.html` — 6 l.
 
 Éléments :
 
@@ -166,14 +100,6 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
-### `_modales.html` — 16 l.
-
-- l.2 · Fenêtres modales — le branchement
-
-### `_mode-admin.html` — 30 l.
-
-- l.3 · 10. Mode administration — le branchement
-
 ### `_motdepasse.html` — 59 l. → motdepasse.html
 
 Éléments :
@@ -181,36 +107,12 @@ l'endroit où l'on corrige quoi que ce soit.
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 14 l.
-
-- l.2 · 11 bis. Parcours de visite — le branchement
-
-### `_partage.html` — 12 l.
-
-- l.1 · 11 quinquies. Partager son parcours — le branchement
-
-### `_pousse.html` — 20 l.
-
-- l.1 · Enregistrer la configuration — le branchement
-
 ### `_rapport-head.html` — 32 l. → rapport.html
 
 Éléments :
 
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
-
-### `_recherche.html` — 17 l.
-
-- l.3 · 5. Recherche et secteurs — le branchement
-
-### `_rendu.html` — 26 l.
-
-- l.3 · 2 à 4. Le plan à l'écran — le branchement
-
-### `_sponsor.html` — 13 l.
-
-- l.1 · 18. Le sponsor — un logo le temps du chargement
 
 ### `_styles-divers.css` — 315 l. → plan-smcl.html
 
@@ -231,14 +133,6 @@ Fonctions :
 `estUneTuile` 122 · `range` 148 · `oublieLesVersionsDAvant` 174 · `dabordCache` 195
 `borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
 `tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
-
-### `_vue.html` — 19 l.
-
-- l.3 · 6. Vue — le branchement
-
-### `_webgl.html` — 15 l.
-
-- l.1 · 13 bis. Le plan peint par la carte graphique — le branchement
 
 ### `modules/acces-admin.mjs` — 253 l. → plan-admin
 
@@ -928,6 +822,14 @@ Fonctions :
 `montreLeJour` 741 · `perimeJournee` 756 · `oublieSejour` 771 · `ouvreOrganisation` 786
 `essaieSejour` 1166 · `lanceSejour` 1196 · `refaitSejour` 1235 · `brancheJournee` 1250
 
+### `modules/lancement.mjs` — 121 l. → plan, plan-admin
+
+- l.1 · Le lancement du plan — ce que le script soudé faisait encore
+
+Fonctions :
+
+`confieLancementAdmin` 69 · `lancePlan` 72
+
 ### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
 
 - l.1 · Placer un libellé à la main — ce que le plan public en reçoit
@@ -1152,11 +1054,15 @@ Fonctions :
 `choisitLibelle` 126 · `pousseLibelle` 133 · `libellePointerDown` 141
 `libellePointerMove` 157 · `libellePointerUp` 166 · `branchePlacementLibelles` 179
 
-### `modules/plan-admin.mjs` — 50 l. → plan-admin
+### `modules/plan-admin.mjs` — 69 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 94 l. → plan, plan-admin
+Fonctions :
+
+`lieux` 42
+
+### `modules/plan.mjs` — 55 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 

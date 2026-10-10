@@ -73,10 +73,7 @@ const RETIRES_DU_PUBLIC = (() => {
   // découpé avant d'être réduit au code : les bornes sont des commentaires
   const gabarit = BOUTS.map((b) => lisBout(b)).join("\n");
   const publics = new Set(modules.exposes("plan"));
-  /* L'accès de l'exploitant (`_auth-plan.html`) n'est posé que dans
-     l'administration : ce qu'il déclare manque aussi au visiteur. */
-  const acces = fs.readFileSync(path.join(__dirname, "gabarit", "_auth-plan.html"), "utf8");
-  return reserve.retiresDe(sansTexte(gabarit + "\n" + acces), sansTexte(reserve.pourLePublic(gabarit)),
+  return reserve.retiresDe(sansTexte(gabarit), sansTexte(reserve.pourLePublic(gabarit)),
     modules.exposes("plan-admin").filter((n) => !publics.has(n)));
 })();
 const declarationsRetirees = (page) => page !== "plan.html" ? "" :
