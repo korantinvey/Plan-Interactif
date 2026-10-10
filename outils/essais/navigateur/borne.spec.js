@@ -63,9 +63,13 @@ test.describe("la borne", () => {
   });
 
   test("au repos, elle referme ce que le visiteur a laissé", async ({ page }) => {
+    /* L'horloge simulée et la carte graphique logicielle se partagent mal un
+       navigateur chargé : on éprouve la remise à zéro, pas le rendu, et le
+       plan se dessine donc en SVG, avec le délai des essais lents. */
+    test.slow();
     const erreurs = await prepare(page);
     await page.clock.install();
-    await page.goto(PLAN + "&borne=" + encodeURIComponent(STAND.code));
+    await page.goto(PLAN + "&rendu=svg&borne=" + encodeURIComponent(STAND.code));
     const lignes = await attendLaListe(page);
     await page.fill("#q", STAND.code);
     await lignes.first().click();
