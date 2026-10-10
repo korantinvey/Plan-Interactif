@@ -1,10 +1,9 @@
 /* ============================================================
    La charge annoncée — ce que les autres journées ont déjà posé
 
-   Sortie de `_journee.html`. Elle se branche par `brancheCharge`, que
-   `journee.mjs` appelle en se branchant lui-même, à la place qu'elle tenait :
-   le réglage du salon vient du code soudé, le parcours et la visite calculée
-   des modules qui les tiennent. Le calcul qu'elle nourrit, lui, est dans
+   Elle se branche par `brancheCharge`, que `journee.mjs` appelle en se
+   branchant lui-même, et qui lui confie ce qu'elle lit : le réglage du salon
+   (`seuil.mjs`), le parcours et la visite calculée, tenus par leurs modules. Le calcul qu'elle nourrit, lui, est dans
    `ordonnanceur.mjs`.
    ============================================================ */
 import { API, SLUG, BORNE } from "./salon.mjs";
@@ -31,8 +30,7 @@ let parcours = () => ({ stands: [] });
 let sejour = () => null;
 
 /**
- * Le branchement, appelé par `journee.mjs` à la place que ce code tenait
- * dans `_journee.html`.
+ * Le branchement, appelé par `journee.mjs` `brancheJournee`.
  *
  * @param {{ seuilGere: () => boolean, seuilConcentration: (o: any) => number,
  *           identifiantParcours: () => string, parcours: () => { stands: string[] },

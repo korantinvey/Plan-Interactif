@@ -10,8 +10,7 @@
 
    La forme choisie se remplace sans cesse — un clic, la boîte à outils, un
    calque qu'on ferme — : elle ne change que par sa porte (`poseFormeSel`).
-   Le code soudé, qui la lit encore (les gestes au clavier), la lit par
-   accesseur.
+   Qui la lit l'importe, et la trouve telle qu'elle est à l'instant.
    ============================================================ */
 import { mesCalques } from "./calques-dessin.mjs";
 

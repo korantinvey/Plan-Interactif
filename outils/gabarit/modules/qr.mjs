@@ -15,7 +15,7 @@
 
    Rien du plan n'entre ici : des octets en entrée, un damier en sortie. Le
    parcours partagé (`modules/partage.mjs`) et l'affiche « Vous êtes ici »
-   (`_ici.html`) s'en servent.
+   (`modules/affiche-ici.mjs`) s'en servent.
    ============================================================ */
 import { esc } from "./texte.mjs";
 
@@ -302,7 +302,7 @@ export function qrChemin(m){
  * Le même damier, en une image à poser dans la page.
  *
  * L'étiquette se dit à l'appel : le code du parcours et celui d'un endroit du
- * salon (voir `_ici.html`) n'ouvrent pas la même chose, et c'est la seule
+ * salon (voir `affiche-ici.mjs`) n'ouvrent pas la même chose, et c'est la seule
  * phrase qu'un lecteur d'écran aura de l'un ou de l'autre.
  */
 export function qrSvg(m, etiquette){

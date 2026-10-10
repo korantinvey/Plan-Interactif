@@ -8,12 +8,12 @@
    le visiteur voit — vit dans `environs.mjs`, qui lit d'ici le calage en
    cours de réglage par un lecteur confié au branchement.
 
-   Il n'a rien à recevoir du code soudé : la main qui tient le plan
-   s'importe des gestes (`gestes.mjs`), les réglages et leur enregistrement,
-   le panneau des calques et le mode administrateur de leurs modules. Il se
-   branche par `brancheCalageCarte`, que `_environs.html` appelle à la place
-   que ce code y tenait : les boutons de la palette s'y branchent au même rang
-   qu'avant. Les
+   Il n'a rien à recevoir : la main qui tient le plan s'importe des gestes
+   (`gestes.mjs`), les réglages et leur enregistrement, le panneau des calques
+   et le mode administrateur de leurs modules. Il se branche par
+   `brancheCalageCarte`, que `plan-admin.mjs` appelle dans l'emplacement
+   `apresLaMesure` du lancement : les boutons de la palette s'y branchent au
+   rang qu'ils tenaient dans le script d'avant. Les
    identifiants de base des pavillons, et l'oubli du plan public par le
    relais, viennent de `enregistrement.mjs`, module d'administration lui aussi.
    ============================================================ */
@@ -665,7 +665,8 @@ function fermeCalage(){
 }
 
 /**
- * Le branchement, appelé par `_environs.html` à la place de ce code.
+ * Le branchement, appelé par `plan-admin.mjs` dans l'emplacement
+ * `apresLaMesure` du lancement (`lancement.mjs`).
  */
 export function brancheCalageCarte(){
   /* Le fond lit ici le calage qu'on règle : celui-là seul l'emporte sur le

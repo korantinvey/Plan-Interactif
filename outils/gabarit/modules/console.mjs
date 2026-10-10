@@ -12,12 +12,10 @@
    console (`ecran-console.mjs`). Chacun importe ce qu'il appelle : ils ne
    se confient plus entre eux que ce qui bouclerait.
 
-   Il n'y a plus de code soudé : la page n'avait gardé qu'un script de
-   branchements, et ils se font ici, dans l'ordre où il les faisait. Le
+   Les branchements se font ici, dans l'ordre du script de page d'avant. Le
    script de ce point d'entrée est posé après tout le balisage
-   (`genere.js` `poseModulesSeuls`), là où se tenait l'autre : ce que chaque
-   branchement pose au chargement trouve la page entière, comme avant. Rien
-   n'est donc plus confié à l'objet global.
+   (`genere.js` `poseModulesSeuls`) : ce que chaque branchement pose au
+   chargement trouve la page entière. Rien n'est confié à l'objet global.
    ============================================================ */
 import { brancheSocle, premierEcran } from "./socle-console.mjs";
 import { brancheExport } from "./export.mjs";

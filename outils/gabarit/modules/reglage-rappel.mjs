@@ -10,7 +10,7 @@ import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, pr
   from "./rappels.mjs";
 import { essaieRappelReel } from "./essai-rappel.mjs";
 /* L'option du programme et l'enregistrement de la configuration
-   s'importent : il n'a rien à recevoir du code soudé. */
+   s'importent : rien ne lui est confié. */
 import { programmeOffert, enregistreConf } from "./configuration.mjs";
 
 /**

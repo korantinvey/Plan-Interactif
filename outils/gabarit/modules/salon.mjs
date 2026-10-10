@@ -46,7 +46,7 @@ export const cheminPartageable = (chemin) =>
 
 /* Une borne interactive : un écran posé dans le hall, que des visiteurs se
    passent. L'adresse le dit (`?borne`, avec ou sans valeur) ; ce que la valeur
-   nomme, `_borne.html` le lit. */
+   nomme, `borne.mjs` le lit. */
 export const BORNE = new URLSearchParams(location.search).get("borne") !== null;
 
 /* Sur le plan d'administration, un critère encore vide se montre et s'explique ;

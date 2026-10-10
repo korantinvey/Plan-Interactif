@@ -19,8 +19,8 @@
    s'importent (`secteurs.mjs`, `recherche.mjs`), comme ce que la fiche montre
    (`corps-fiche.mjs`), le mode administrateur, le cadre d'un champ
    (`fiche-zone.mjs`), le panneau des calques (`ordre-trace.mjs`) et le
-   trajet à refaire (`tiroir-itineraire.mjs`) : il n'a plus rien à recevoir
-   du code soudé.
+   trajet à refaire (`tiroir-itineraire.mjs`) : il n'a rien à se faire
+   confier.
    ============================================================ */
 import { DATA, CONFERENCES, parId } from "./donnees.mjs";
 import { fermeModale } from "./fenetre.mjs";
@@ -130,7 +130,7 @@ export function voletAdmin(hote){
   }
 
   /* L'invitation à installer le plan est une fenêtre de plus sous les yeux du
-     visiteur : elle se règle avec ce qu'il voit (`_installation.html`). */
+     visiteur : elle se règle avec ce qu'il voit (`installation.mjs`). */
   caseInstallation(bloc);
 
   /* La visite guidée se propose d'elle-même à la première ouverture. C'est une

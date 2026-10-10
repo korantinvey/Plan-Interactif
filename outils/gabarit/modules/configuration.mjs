@@ -4,12 +4,12 @@
    Les réglages vivent dans CONF, partagés par les trois pavillons :
    changer la couleur du bâtiment une fois vaut pour tous.
 
-   Sortie de `_admin1.html`, avec les règles qui ne font que la relire et que
-   le plan public lit aussi : les options prises par le salon, la version
+   Avec eux, les règles qui ne font que les relire et que le plan public lit
+   aussi : les options prises par le salon, la version
    anglaise, ce que la recherche remonte ; et son rangement sur le poste
    (`enregistreConf`), sorti du réglage de la fiche, que l'administration
-   prolonge d'un envoi en base. Le code soudé lit CONF et sa clé de
-   rangement par accesseur, et ne les remplace que par `ouvreConf`. Les
+   prolonge d'un envoi en base. CONF et sa clé de rangement s'importent, et
+   seul `ouvreConf` les remplace. Les
    secteurs de la recherche, que ce module ne peut importer — leur module
    (`secteurs.mjs`) lit lui-même la configuration —, lui sont confiés par la
    porte `confieALaConfiguration`, que `secteurs.mjs` ouvre en se chargeant.
@@ -30,8 +30,8 @@ const prete = { secteurs: () => new Map() };
 const secteurs = () => prete.secteurs();
 
 /**
- * La porte des secteurs, que `secteurs.mjs` ouvre en se chargeant — avant tout
- * le code soudé, comme le branchement qu'elle remplace.
+ * La porte des secteurs, que `secteurs.mjs` ouvre en se chargeant — donc
+ * avant le lancement de la page et tout appel.
  *
  * @param {Partial<PreteConfiguration>} o
  */

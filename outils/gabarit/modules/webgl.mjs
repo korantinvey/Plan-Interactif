@@ -24,8 +24,8 @@
    appareils qui ne l'ont pas. `?rendu=svg` le force, pour comparer ou pour
    écarter le dessin le temps d'un dépannage.
 
-   Ce module ne voit du plan que ce que le code soudé lui confie au
-   branchement (`brancheWebgl`, dans `_webgl.html`) : le SVG, la vue, ses
+   Ce module ne voit du plan que ce que les modules qui l'importent lui
+   confient en se chargeant (`confieAuWebgl`) : le SVG, la vue, ses
    gestes, l'édition en cours, et la préparation des noms, qui tient aux
    règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
    placement des libellés à la main s'importe (`libelle-place.mjs`).
@@ -35,10 +35,9 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 
-/* Ce que le module demande au plan sans pouvoir l'importer : le code soudé le
-   lui confie au branchement. Rien de cela ne sert avant — le dessin ne monte
-   qu'une fois la bibliothèque arrivée, et celle-ci n'est demandée qu'au
-   branchement. */
+/* Ce que le module demande au plan sans pouvoir l'importer, confié par la
+   porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
+   la bibliothèque arrivée, et celle-ci n'est demandée qu'au branchement. */
 /**
  * @typedef {object} PageWebgl
  * @property {() => any} vue la vue du moment, `view`, que le plan remplace à chaque geste
@@ -117,9 +116,9 @@ function chargeWebgl(){
 }
 
 /**
- * Brancher le rendu sur le plan, à la place que son code tenait dans le
- * script soudé : la bibliothèque n'est demandée qu'ici, au même moment
- * qu'avant parmi le reste du plan.
+ * Brancher le rendu sur le plan, appelé par `lancement.mjs` `lancePlan` à son
+ * rang : la bibliothèque n'est demandée qu'ici, au même moment qu'avant
+ * parmi le reste du plan.
  */
 export function brancheWebgl(){
   chargeWebgl();

@@ -356,7 +356,13 @@ reserve.verifie(tplAdmin, tplPublic, "Le plan public");
 const STYLE_PLAN = /<style>\n(\/\* Les styles du plan, première feuille[\s\S]*?)<\/style>\n/;
 const styleDuPlan = tpl.match(STYLE_PLAN);
 if (!styleDuPlan) throw new Error("feuille du plan introuvable dans le gabarit");
-const FEUILLE_PLAN = epureStyle(styleDuPlan[1]);
+/* Minifiée, sauf `PLAN_LISIBLE=1`, comme le script du plan (`modules.js`) :
+   elle part chez chaque visiteur. Le gain est mince — un vingtième, les
+   commentaires étant déjà partis — mais il ne coûte rien : une feuille ne
+   remonte pas d'erreur qu'il faudrait relire à sa ligne. */
+const minifieStyle = (css) => process.env.PLAN_LISIBLE === "1" ? css :
+  require("esbuild").transformSync(css, { loader: "css", minify: true, logLevel: "silent" }).code;
+const FEUILLE_PLAN = minifieStyle(epureStyle(styleDuPlan[1]));
 const VERSIONS = "versions/";
 // ce qu'une construction d'avant y a laissé ne sert plus à aucune page
 fs.rmSync(W + VERSIONS, { recursive: true, force: true });
@@ -502,7 +508,7 @@ fs.writeFileSync(W + "config.js",
   epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
 fs.writeFileSync(W + "console.css",
-  epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8")));
+  minifieStyle(epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8"))));
 
 
 /* --- la console et le rapport ---

@@ -2,7 +2,7 @@
    L'habillage du plan — couleur principale, fond, distinctions, barre du
    salon, modèle
 
-   Sorti de `_admin1.html`. Le plan public le pose à chaque chargement, par
+   Le plan public le pose à chaque chargement, par
    `appliqueApparence` (`apparence.mjs`) ; l'exploitant le règle dans les
    volets de la fenêtre des réglages (`volets.mjs`). La couleur que le
    système peint derrière l'heure s'importe (`ton-barre.mjs`). Les
@@ -11,7 +11,8 @@
    qu'elles ouvrent en se chargeant, parce qu'elles importent ce module pour
    leur mode et leur teinte, et ne peuvent donc s'importer d'ici.
    `brancheHabillage`, sans rien recevoir, pose au premier trait la barre que
-   la visite précédente a laissée, à la place que ce code tenait.
+   la visite précédente a laissée, au rang que le lancement lui donne
+   (`lancement.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
@@ -33,7 +34,7 @@ const prete = { distinctions: [], dessineDists: () => {}, refaitDistsFiche: () =
 
 /**
  * La porte des distinctions, que `distinctions.mjs` ouvre en se chargeant —
- * avant tout le code soudé, comme le branchement qui les recevait.
+ * donc avant que le lancement ne pose le moindre branchement.
  *
  * @param {Partial<PreteHabillage>} o
  */
@@ -44,8 +45,8 @@ export function confieALHabillage(o){
 const racine = document.documentElement;
 
 /**
- * Le branchement, appelé par `_admin1.html` à la place que ce code tenait :
- * la barre du salon s'y pose au premier trait.
+ * Le branchement, appelé par le lancement (`lancement.mjs` `lancePlan`) au
+ * rang que ce code tenait : la barre du salon s'y pose au premier trait.
  */
 export function brancheHabillage(){
   /* La barre du salon sur un téléphone : avec bande, ou sans.

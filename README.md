@@ -2267,6 +2267,12 @@ La page ne mesure rien dans deux cas : la version à données figées
 l'on mesurerait l'exploitant en train de préparer son salon. Un événement en
 brouillon n'est pas mesuré non plus : la fonction refuse ce qui n'est pas publié.
 
+Les **erreurs des pages** suivent leur propre chemin (`modules/erreurs.mjs`,
+`/api/erreur`, table `erreur_page`) et n'en disent pas davantage : un message
+d'erreur, l'endroit du code, un compte par salon et par jour — ni jeton, ni
+adresse de la page, ni rien qui s'écrive sur l'appareil. Elles ne partent pas
+chez qui a refusé la mesure, et s'effacent au bout de quatre-vingt-dix jours.
+
 Les gestes partent **par paquets** — vingt, ou trente secondes d'inactivité, ou
 le départ de la page via `sendBeacon`, qui survit à la fermeture de l'onglet.
 Trente secondes et non quatre : à quatre, chaque fiche ouverte partait dans son

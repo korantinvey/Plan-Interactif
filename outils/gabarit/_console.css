@@ -723,3 +723,12 @@ table.comptes tr[data-actif="non"] td:first-child{box-shadow:inset 2px 0 var(--a
 .jour-bat:hover .b{opacity:1}
 .jour-bat .d{font-size:10px;color:var(--ink-3);text-align:center;white-space:nowrap;
   font-variant-numeric:tabular-nums}
+/* Les erreurs des pages : le compte à gauche, qui dit laquelle presse ; le
+   message, puis l'endroit du code, en petit — c'est lui qu'on recopie. */
+.erreurs{display:flex;flex-direction:column;gap:2px}
+.erreur{display:grid;grid-template-columns:4.5em 1fr;column-gap:12px;padding:7px 0;
+  border-top:1px solid var(--line)}
+.erreur:first-child{border-top:0}
+.erreur .n{grid-row:span 2;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.erreur .m{overflow-wrap:anywhere}
+.erreur .o{font-size:12px;color:var(--ink-3);font-family:ui-monospace,monospace;overflow-wrap:anywhere}

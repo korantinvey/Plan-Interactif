@@ -9,9 +9,9 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Ce qu'il n'importe pas — le mode administrateur à
    activer — lui est confié par la bande de l'outil en se chargeant
-   (`confieALAcces`). Il se branche par `brancheAcces`, que le code soudé
-   appelle à la place que ce code tenait (`_auth-plan.html`, versé par
-   `genere.js` dans la seule page d'administration). Le profil du compte,
+   (`confieALAcces`). Il se branche par `brancheAcces`, que `plan-admin.mjs`
+   place dans le dernier emplacement du lancement (`apresLeDemarrage`, après
+   `brancheDemarrage`). Le profil du compte,
    qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -76,9 +76,9 @@ async function sessionValide(cfg, session){
 
 /**
  * La fenêtre d'accès. Le plan la rouvre aussi quand la base refuse une
- * session périmée (`demarrage.mjs`, sous garde `typeof` : la page publique,
- * qui ne la reçoit pas, n'a rien à rouvrir ; `enregistrement.mjs`, qui
- * l'importe).
+ * session périmée : le démarrage, à qui ce module la confie en se chargeant
+ * (`confieAuDemarrage` — la page publique, qui ne la reçoit pas, n'a rien à
+ * rouvrir), et `enregistrement.mjs`, qui l'importe.
  *
  * @param {string} [message]
  */
@@ -218,9 +218,10 @@ function poseCompte(){
    Le branchement
    ------------------------------------------------------------------ */
 /**
- * Appelé par le code soudé à la place que ce code tenait (`_auth-plan.html`) :
- * les écoutes du menu du compte s'y posent au même rang qu'avant parmi celles
- * du plan, et la vérification de la session part au même moment.
+ * Appelé par `lancement.mjs` `lancePlan` dans son dernier emplacement
+ * (`apresLeDemarrage`, rempli par `plan-admin.mjs`), au rang qu'il tenait dans
+ * le script d'avant : les écoutes du menu du compte s'y posent après celles du
+ * plan, et la vérification de la session part au même moment.
  */
 export function brancheAcces(){
 

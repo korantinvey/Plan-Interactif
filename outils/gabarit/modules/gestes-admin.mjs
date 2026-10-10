@@ -7,12 +7,13 @@
    (`reprise-emplacements.mjs`), le calage d'un hall (`batiments.mjs`), le
    dessin (`outil-dessin.mjs`). Ce module ne dit que leur ordre, et celui des
    touches de l'éditeur : il les insère dans la chaîne des appuis et du clavier
-   de `modules/gestes.mjs` par `poseGestesAdmin`, à la place que leur tranche
-   `@admin` y tenait.
+   de `modules/gestes.mjs` par `poseGestesAdmin`, au rang qu'ils tenaient
+   dans le script d'avant.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
-   le reçoit jamais. `_gestes.html` le branche dans une tranche `@admin`,
-   juste après les gestes du plan. La forme dessinée choisie, il l'importe
+   le reçoit jamais. Il se branche par `brancheGestesAdmin`, que
+   `plan-admin.mjs` place dans le premier emplacement du lancement
+   (`lancement.mjs`, `apresLesGestes`), juste après les gestes du plan. La forme dessinée choisie, il l'importe
    (`forme-choisie.mjs`), et la lit telle qu'elle est à l'instant.
    ============================================================ */
 import { $ } from "./dom.mjs";

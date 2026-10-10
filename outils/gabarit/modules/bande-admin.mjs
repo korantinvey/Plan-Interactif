@@ -9,7 +9,7 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. La fenêtre des réglages, les calques de dessin et leur
    panneau, le ton de la barre du système s'importent : il n'a rien à
-   recevoir du code soudé. La porte authentifiée, qui ne peut l'importer
+   recevoir de personne. La porte authentifiée, qui ne peut l'importer
    sans boucle, reçoit de lui l'ouverture du mode en se chargeant.
    ============================================================ */
 import { $ } from "./dom.mjs";

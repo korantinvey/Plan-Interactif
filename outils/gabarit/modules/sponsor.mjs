@@ -12,7 +12,7 @@ import { DATA } from "./donnees.mjs";
 import { vue } from "./vue.mjs";
 /* La configuration du plan s'importe de `configuration.mjs`, la page où l'on
    est (`PLAN_ADMIN`) de `salon.mjs`, la vue dessinée, lue à l'instant, de
-   `vue.mjs` : il n'a rien à recevoir du code soudé. */
+   `vue.mjs` : il n'a rien à se faire confier. */
 import { conf } from "./configuration.mjs";
 /**
  * Un salon se vend aussi par son plan. L'organisateur qui propose à un
@@ -74,7 +74,7 @@ const SPONSOR_MINI = 1200;
    fût-ce un plan à moitié dessiné, vaut mieux qu'un logo qui ne part plus. */
 const SPONSOR_BUTOIR = 12000;
 
-/* L'estompe, accordée à la transition de « .sponsor » dans `_head.html` : la
+/* L'estompe, accordée à la transition de « .sponsor » dans `_styles-divers.css` : la
    boîte se retire une fois qu'elle a fini. On ne s'en remet pas à
    « transitionend », qui ne vient pas si l'onglet passe en arrière-plan
    pendant ce temps — le minuteur, lui, vient toujours. */
@@ -386,9 +386,9 @@ export function accueilleSponsor(){
 }
 
 /**
- * Le branchement du générique, appelé par le code soudé à la place que ce code
- * y tenait (`_sponsor.html`) : c'est là qu'il paraît au premier trait de la
- * page, au même rang qu'avant parmi ce que le plan pose sur la scène.
+ * Le branchement du générique, appelé par `lancement.mjs` `lancePlan` à son
+ * rang : c'est là qu'il paraît au premier trait de la page, juste avant le
+ * démarrage, parmi ce que le plan pose sur la scène.
  */
 export function brancheSponsor(){
   /* Le générique, au premier trait de la page : avant les données, avant le plan,

@@ -4,10 +4,9 @@
    Ce que la console montre autour de la fiche : la liste des salons dans la
    barre du haut, l'état du salon ouvert et ce qu'elle en commande, ses liens
    vers le plan, la création, le rechargement, et le dessin de tout l'écran
-   (`dessine`) après le chargement (`charge`). C'était la fin du script de la
-   console (`_console-js.html`), qui appelait tout le reste sans le dire.
+   (`dessine`) après le chargement (`charge`).
 
-   Tout ce qu'il appelle est désormais un module, qu'il importe : les salons
+   Tout ce qu'il appelle est un module, qu'il importe : les salons
    (`evenements.mjs`), le socle et sa fenêtre (`socle-console.mjs`,
    `fenetre-console.mjs`), la fiche, la synchronisation, la duplication, les
    comptes, l'export. Trois d'entre eux le rappellent en retour — la fiche
@@ -217,10 +216,10 @@ export async function demarre() {
    Le branchement
    ------------------------------------------------------------------ */
 /**
- * Appelé par le point d'entrée (`console.mjs`) à la place que ce code
- * tenait : les modules qui rappellent l'écran reçoivent ce
- * qu'ils ne peuvent importer, et les commandes de la barre du haut se
- * posent, au même rang qu'avant parmi le reste de la page.
+ * Appelé par le point d'entrée (`console.mjs`), après le socle et l'export :
+ * les modules qui rappellent l'écran reçoivent ce qu'ils ne peuvent
+ * importer, et les commandes de la barre du haut se posent au rang qu'elles
+ * tenaient dans le script d'avant parmi le reste de la page.
  */
 export function brancheConsole() {
   /* La fiche du salon ouvert redessine, après une écriture, tout l'écran, la

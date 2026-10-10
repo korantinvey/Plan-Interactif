@@ -8,8 +8,9 @@
    cadrage du plan sur ce qu'on lit. Ce que la fiche montre, et dans quel
    ordre, vient de `corps-fiche.mjs`.
 
-   Il se branche dans `_fiche.html`, à la place que son code tenait : les
-   écoutes de la fiche s'y posent au même rang qu'avant parmi celles du plan.
+   Il se branche par `brancheFiche`, que le lancement (`lancement.mjs`)
+   appelle au rang que son code tenait : les écoutes de la fiche s'y posent
+   au même rang qu'avant parmi celles du plan.
    Ce qu'elle emprunte aux modules qui l'importent — le montage du plan, les
    découpages dessinés, les distinctions, le tiroir du parcours, et, en
    administration seulement, les deux gestes de l'exploitant sur une zone —
@@ -19,8 +20,8 @@
    repère dessiné de `forme-choisie.mjs`.
 
    Le dernier appui — tactile ou non — est écrit par les gestes
-   (`gestes.mjs`) : il vit ici, se remplace par `poseAppuiTactile`, et le code soudé
-   le lit par accesseur.
+   (`gestes.mjs`) : il vit ici, se remplace par `poseAppuiTactile`, et les
+   gestes, qui l'importent, le relisent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs } from "./texte.mjs";
@@ -55,7 +56,7 @@ import { baisseTiroir } from "./tiroirs.mjs";
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
  * lui confie ce qu'elle en appelle au chargement de son module, par
- * `confieALaFiche` — jamais par le code soudé. La page publique n'embarque
+ * `confieALaFiche`. La page publique n'embarque
  * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
  * comme la pastille sans écoute.
  * @typedef {object} PageFiche
@@ -1170,7 +1171,8 @@ export function onglet(n){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_fiche.html` à la place que ce code tenait : les écoutes de la
+ * Appelé par le lancement (`lancement.mjs` `lancePlan`) au rang que ce code
+ * tenait : les écoutes de la
  * fiche — le rangement de sa marque au redimensionnement, ses onglets, sa
  * croix et le voile — se posent au même rang qu'avant parmi celles du plan.
  * Il ne reçoit plus rien : ce que la fiche emprunte lui est confié par

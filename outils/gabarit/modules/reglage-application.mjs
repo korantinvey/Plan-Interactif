@@ -2,7 +2,7 @@
    L'application installée — son icône et son nom, le réglage de l'exploitant
 
    Le plan public s'ajoute à l'écran d'accueil comme une application
-   (`_installation.html`), et l'icône qui s'y posait était celle du produit :
+   (`installation.mjs`), et l'icône qui s'y posait était celle du produit :
    la même pour tous les salons. Deux plans installés côte à côte ne se
    distinguaient plus, et l'organisateur n'y reconnaissait pas le sien.
 
@@ -44,8 +44,8 @@ import { appDuSalon, iconeDeLApplication } from "./application.mjs";
 import { oublieCache, REPOS } from "./enregistrement.mjs";
 /* L'oubli du cache du relais et le temps de repos de la configuration
    viennent de `enregistrement.mjs`, module d'administration lui aussi ; le
-   champ intitulé des volets, de `fiche-zone.mjs` : il n'a rien à recevoir du
-   code soudé. */
+   champ intitulé des volets, de `fiche-zone.mjs` : rien ne lui est
+   confié. */
 import { champZone } from "./fiche-zone.mjs";
 
 /* Un nom d'application tient en une ligne — le relais le borne pareil, et les

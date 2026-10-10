@@ -2,7 +2,7 @@
    L'application installée — ce que le plan public en sait
 
    Le plan public s'ajoute à l'écran d'accueil comme une application
-   (`_installation.html`), et l'icône qui s'y posait était celle du produit :
+   (`installation.mjs`), et l'icône qui s'y posait était celle du produit :
    la même pour tous les salons. L'organisateur dépose donc la sienne et écrit
    le nom qui paraîtra dessous — le réglage vit dans `reglage-application.mjs`,
    que seule l'administration reçoit.

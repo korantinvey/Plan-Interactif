@@ -1,11 +1,11 @@
 /* ============================================================
    La journée du salon — ses dates, ses heures, le temps passé sur un stand
 
-   Sortie de `_admin1.html`. Ce que l'exploitant dit du déroulé du salon, et
+   Ce que l'exploitant dit du déroulé du salon, et
    que la journée organisée relit chez le visiteur (`journee.mjs`,
    `sejour.mjs`) : l'onglet « Plan » l'écrit (`volets.mjs`, `reglages.mjs`).
-   Il ne demande rien au code soudé : la configuration et l'écriture d'un
-   jour s'importent.
+   Il n'a rien à se faire confier : la configuration et l'écriture d'un jour
+   s'importent.
    ============================================================ */
 import { CONF } from "./configuration.mjs";
 import { jourCourt } from "./temps.mjs";

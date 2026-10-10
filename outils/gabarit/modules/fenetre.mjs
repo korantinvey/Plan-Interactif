@@ -104,9 +104,9 @@ export function confirme(titre, message, libelleOui, action){
 }
 
 /**
- * Le branchement de la fenêtre, appelé par le script soudé à la place que ce
- * module y tenait (`_modales.html`) : la croix, le voile et « Échap » s'y
- * posent au même rang qu'avant parmi les écouteurs du plan. « Échap » ferme
+ * Le branchement de la fenêtre, appelé par le lancement (`lancement.mjs`
+ * `lancePlan`) au rang que ce code tenait dans le script d'avant : la croix,
+ * le voile et « Échap » s'y posent au même rang parmi les écouteurs du plan. « Échap » ferme
  * aussi la fiche et les tiroirs : la fenêtre ouverte le prend avant eux, à la
  * capture, quel que soit ce rang.
  */

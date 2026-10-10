@@ -10,9 +10,10 @@
    le reçoit jamais. L'outil de dessin et la reprise d'un emplacement, avec
    lesquels il se dispute le glisser et qui importent ce module, lui confient
    en se chargeant ce qu'il leur emprunte (`confieAuPlacementLibelles`). Il se
-   branche par `branchePlacementLibelles`, que `_mode-admin.html` appelle à la
-   place que ce code y tenait : les commandes de la palette s'y branchent au
-   même rang qu'avant. Les réglages et leur enregistrement, le calque ouvert,
+   branche par `branchePlacementLibelles`, que `plan-admin.mjs` appelle dans
+   l'emplacement que le lancement lui ouvre après l'habillage : les commandes
+   de la palette s'y branchent à leur rang. Les réglages et leur
+   enregistrement, le calque ouvert,
    la couche reprise, le dessin des noms et la vue s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -172,9 +173,9 @@ export function libellePointerUp(e){
 }
 
 /**
- * Appelé par le code soudé à la place que ce code tenait (`_mode-admin.html`),
- * dans une tranche que le visiteur ne reçoit pas : les commandes de la palette
- * s'y branchent au même rang qu'avant.
+ * Appelé par `plan-admin.mjs`, dans un emplacement du lancement que la page
+ * publique laisse vide : les commandes de la palette s'y branchent à leur
+ * rang, entre le nuancier et l'outil de dessin.
  */
 export function branchePlacementLibelles(){
   if ($("libFerme")) $("libFerme").onclick = () => modePlacementLibelles(false);

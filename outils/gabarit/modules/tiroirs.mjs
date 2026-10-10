@@ -8,8 +8,9 @@
    donne — se montrer, se hisser, se mesurer, descendre —, que la recherche et
    la fiche importent.
 
-   Ses écoutes se posent par `brancheTiroirs`, que `_gestes.html` appelle à la
-   place que ce code y tenait : elles gardent leur rang parmi celles du plan.
+   Ses écoutes se posent par `brancheTiroirs`, que `lancement.mjs` `lancePlan`
+   appelle juste après les gestes : elles gardent leur rang parmi celles du
+   plan.
    La recherche, qui importe ce module, ne peut être importée par lui : le
    panneau des critères qu'un tiroir redescendu referme lui est confié par la
    porte `confieAuxTiroirs`, que la recherche ouvre en se chargeant.
@@ -28,7 +29,7 @@ const fermeCriteres = () => prete.fermeCriteres();
 
 /**
  * La porte du panneau des critères, que `recherche.mjs` ouvre en se chargeant
- * — avant tout le code soudé, comme le branchement qui le recevait.
+ * — donc avant que la page ne se lance, et avant tout geste.
  *
  * @param {Partial<PreteTiroirs>} o
  */

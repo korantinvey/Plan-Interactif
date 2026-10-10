@@ -23,9 +23,9 @@
    placement réglé, le mode et le libellé retouché (faux et vide hors de
    l'administration). L'outil qui les change — le mode, la palette, le geste —
    est d'exploitant : il vit dans `modules/placement-libelles.mjs`, que seul
-   `plan-admin.mjs` embarque, et pose l'état par les portes d'ici. Le code
-   soudé lit le mode et le libellé retouché par accesseur (`plan.mjs`). Les
-   réglages (`configuration.mjs`) et ce qui situe un nom sur sa forme
+   `plan-admin.mjs` embarque, et pose l'état par les portes d'ici. Qui lit
+   le mode et le libellé retouché les importe, et les trouve tels qu'ils
+   sont à l'instant. Les réglages (`configuration.mjs`) et ce qui situe un nom sur sa forme
    (`texte-plan.mjs`) s'importent.
    ============================================================ */
 import { ancre, place } from "./texte-plan.mjs";

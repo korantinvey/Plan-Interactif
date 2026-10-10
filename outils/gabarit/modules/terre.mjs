@@ -5,8 +5,8 @@
    Terre (`lon`, `lat`, `x`, `y`) et vers où pointe l'axe des X (`angle`). Ce
    module fait les passages entre le plan, la Terre et la pyramide de tuiles
    Web Mercator, et mesure les contours qu'OpenStreetMap renvoie. Il ne sait
-   rien de la page : `_environs.html` en tire la carte qu'il pose sous le
-   pavillon et le hall qu'il y cherche.
+   rien de la page : `environs.mjs` en tire la carte qu'il pose sous le
+   pavillon, `calage-carte.mjs` le hall qu'il y cherche.
    ============================================================ */
 
 export const DEG = Math.PI / 180;

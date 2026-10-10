@@ -9,8 +9,8 @@
 
    Ce départ vivait dans la borne, et tout ce qui le lisait l'importait : le
    tiroir de l'itinéraire, la journée, le rendu, les libellés. La borne, en
-   retour, ne pouvait importer aucun d'eux — c'eût été une boucle —, et le code
-   soudé devait lui confier la visée, les tiroirs à refermer et le passage d'un
+   retour, ne pouvait importer aucun d'eux — c'eût été une boucle —, et il
+   fallait lui confier la visée, les tiroirs à refermer et le passage d'un
    pavillon à l'autre. Sorti ici, dans un module qui n'importe que les données
    et la vue, le départ se lit sans passer par la borne, et la borne importe
    ce dont elle a besoin.

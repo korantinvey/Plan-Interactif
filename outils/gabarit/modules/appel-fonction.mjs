@@ -6,8 +6,7 @@
    logos, la synchronisation. Leur appel vit ici, avec ce qu'il faut dire d'un
    refus et le flux d'une fonction qui rend compte au fil de l'eau
    (`fluxFonction`), pour que les modules qui les appellent
-   (`comptes.mjs`, `synchronisation.mjs`) l'importent au lieu de l'attendre
-   du code soudé.
+   (`comptes.mjs`, `synchronisation.mjs`) l'importent.
 
    Ce qui porte la session vient du socle (`socle-console.mjs`) : l'adresse
    du projet, qu'on peut changer en cours de route — elle se lit donc au

@@ -14,8 +14,8 @@
    visite et le volet « Recherche » s'importent de leurs modules
    (`configuration.mjs`, `horaires.mjs`, `seuil.mjs`, `reglage-recherche.mjs`),
    comme l'enregistrement de la configuration, les distinctions, ce que la
-   fiche montre et la fiche elle-même, le dessin des noms : il n'a plus rien
-   à recevoir du code soudé.
+   fiche montre et la fiche elle-même, le dessin des noms : il n'a rien à se
+   faire confier.
 
    La fenêtre se rouvre après un aperçu (`retourAuxReglages`, dont il confie
    le contenu à `fenetre.mjs`), depuis la bande de l'outil et la remise
@@ -58,7 +58,8 @@ import { libelles } from "./libelles.mjs";
    Le retour est public de nom — l'invitation et le rappel, que le visiteur
    reçoit, l'appellent (`fenetre.mjs` `retourAuxReglages`) —, et
    d'administration de contenu : ce module le confie à la fenêtre commune dès
-   que la page d'administration le charge, avant tout le code soudé. */
+   que la page d'administration le charge, avant que `plan-admin.mjs` ne
+   lance le plan. */
 confieRetourAuxReglages((marque) => {
   queueMicrotask(() => {
     ouvreReglages("Admin");

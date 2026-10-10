@@ -18,10 +18,12 @@
    rattrape un envoi qui a échoué.
 
    Un geste d'exploitant : `plan-admin.mjs` embarque ce module, `plan.mjs`
-   jamais — la page publique n'a ni session ni bouton, et n'appelle ce qu'il
-   expose que sous garde `typeof`. Il se branche par `brancheEnregistrement`,
-   que `_pousse.html` appelle à la place que ce code y tenait : les écouteurs
-   de la page s'y posent au même rang qu'avant. Le mode administrateur, les
+   jamais — la page publique n'a ni session ni bouton ; ce qu'elle en appelle,
+   il le lui confie en se chargeant, par des portes aux défauts sans effet
+   (voir en fin de module). Il se branche par `brancheEnregistrement`, que
+   `plan-admin.mjs` place dans la suite du lancement (`lancement.mjs`) au
+   rang que ce code tenait : les écouteurs de la page s'y posent au même rang
+   qu'avant. Le mode administrateur, les
    réglages et leur rangement sur le poste, l'apparence et le panneau des
    calques s'importent (`mode-admin.mjs`, `configuration.mjs`,
    `apparence.mjs`, `ordre-trace.mjs`), comme les calques dessinés et leurs
@@ -246,8 +248,8 @@ export function programmePublication(){
 
 /* Le rangement des réglages sur le poste (`configuration.mjs`
    `enregistreConf`) est public, et ne peut importer ce module : il en reçoit
-   l'envoi dès que la page d'administration le charge, avant tout le code
-   soudé — comme lorsqu'il le cherchait sous garde `typeof`. */
+   l'envoi dès que la page d'administration le charge, avant que le lancement
+   ne pose le moindre branchement. */
 confiePublication(programmePublication);
 
 /** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
@@ -283,8 +285,8 @@ function apresGeste(){
 const presse = () => { if (minuteur) envoie(true); };
 
 /**
- * Le branchement, appelé par le code soudé à la place que ce code y tenait
- * (`_pousse.html`), dans une tranche que le visiteur ne reçoit pas. Les
+ * Le branchement, appelé par le lancement dans un emplacement que seule
+ * l'administration remplit (`plan-admin.mjs`, `apresLHabillage`). Les
  * écouteurs de la page s'y posent, et non au chargement du module : ils
  * gardent ainsi leur rang parmi ceux du plan.
  */

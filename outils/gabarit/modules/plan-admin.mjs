@@ -9,8 +9,8 @@
    Le plan public lance la suite des branchements depuis son point d'entrée ;
    ici, c'est ce point d'entrée qui lance, une fois les modules de
    l'exploitant chargés : leurs branchements prennent, dans la suite de
-   `lancement.mjs`, les rangs que leurs tranches `@admin` tenaient dans le
-   script soudé d'avant (`confieLancementAdmin`).
+   `lancement.mjs`, les quatre emplacements que la page publique laisse vides
+   (`confieLancementAdmin`).
    ============================================================ */
 import "./plan.mjs";
 import { confieLancementAdmin, lancePlan } from "./lancement.mjs";
@@ -49,7 +49,7 @@ confieLancementAdmin({
   apresLesGestes: () => brancheGestesAdmin(),
   /* le nuancier, le placement des libellés, l'outil de dessin, la reprise et
      l'ajout d'emplacements, les halls d'un lieu connu, l'enregistrement de la
-     configuration — dans l'ordre de leurs morceaux d'avant */
+     configuration — dans cet ordre, qui est celui de leurs écoutes */
   apresLHabillage: () => {
     brancheNuancier();
     branchePlacementLibelles();

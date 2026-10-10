@@ -10,9 +10,9 @@
    Les calques dessinés, leur file d'attente et ce que la base en a confirmé
    s'importent (`calques-dessin.mjs`), comme l'oubli des repères
    (`points-interet.mjs`). Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`) lui est confié par `brancheIndex`, que
-   `_js.html` appelle à la place que ce code tenait, sous la garde `typeof`
-   qu'il avait.
+   (`modules/enregistrement.mjs`) lui est confié par ce module en se
+   chargeant, par la porte `confieALIndex` ; la page publique garde les
+   défauts sans effet.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, poseDonnees } from "./donnees.mjs";

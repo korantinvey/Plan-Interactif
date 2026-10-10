@@ -1,9 +1,8 @@
 /* ============================================================
    Le rappel avant une conférence
 
-   Sorti de `_rappels.html`, qui n'a plus rien à lui confier : la visite
-   guidée et le tiroir du parcours se confient en se chargeant
-   (`confieAuxRappels`). L'abonnement et
+   La visite guidée et le tiroir du parcours, qui l'importent, lui confient
+   ce qu'il leur emprunte en se chargeant (`confieAuxRappels`). L'abonnement et
    ce que l'appareil sait recevoir sont dans `notifications.mjs` ; l'essai
    d'un vrai rappel depuis les réglages, qui ne sert qu'à l'exploitant, dans
    `essai-rappel.mjs`, que seul `plan-admin.mjs` embarque.
@@ -62,7 +61,7 @@ import { conf } from "./configuration.mjs";
 /* Ce que ce module ne peut importer sans boucler : la visite guidée en cours
    (`tutoriel.mjs`) et le tiroir du parcours à rafraîchir
    (`tiroir-parcours.mjs`), qui l'atteignent. Chacun le lui confie au
-   chargement de son module, par `confieAuxRappels` — jamais le code soudé.
+   chargement de son module, par `confieAuxRappels`.
    La visite guidée change à chaque chapitre : elle se confie par un lecteur,
    non par sa valeur du moment. La configuration du salon
    (`configuration.mjs`) et le retour aux réglages après un aperçu
