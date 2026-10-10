@@ -5,15 +5,16 @@
    ce qui se repose dessus quand ses groupes viennent d'être réécrits —, les
    onglets des pavillons et le passage de l'un à l'autre.
 
-   Il n'a pas de branchement. Ce qu'il appelle chez des modules qui
-   l'importent lui est confié en se chargeant (`confieAuRendu`), et lu au
-   moment de monter : le dessin des calques (`dessin.mjs`, qui importe la
-   fiche que ce module importe), le fond d'un pavillon (`demarrage.mjs`, qui
-   importe ce module-ci), et ce que seule l'administration connaît — la nappe
-   de la grille, le calage de la carte, l'éditeur à remettre au repos
-   (emplacement repris, historique, boîte à outils). La page publique n'en
-   confie rien : les défauts restent sans effet, et le montage n'a rien à
-   oublier. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
+   Il n'a pas de branchement. Le dessin des calques, le tracé de
+   l'itinéraire, la liste et le fond d'un pavillon, il les importe ou les
+   tient ; la fiche, il la referme par le registre des tiroirs exclusifs
+   (`tiroirs-exclusifs.mjs` `fermeTiroir`), sans l'importer — elle et le
+   tiroir de l'itinéraire l'importent, pour monter un pavillon ou y passer.
+   Seul ce que l'administration connaît lui est confié en se chargeant
+   (`confieAuRendu`) — la nappe de la grille, le calage de la carte,
+   l'éditeur à remettre au repos (emplacement repris, historique, boîte à
+   outils) ; la page publique n'en confie rien, et les défauts restent sans
+   effet. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
    remplit le contenu que chez l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
@@ -24,37 +25,36 @@
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, state, P } from "./donnees.mjs";
+import { API, SLUG, entetesApi } from "./salon.mjs";
 import { poseEmprise, fit } from "./vue.mjs";
 import { oublieDists } from "./distinctions.mjs";
 import { marqueRetrait, liste } from "./recherche.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { marqueParcours } from "./parcours.mjs";
-import { dessineItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { dessineItineraire } from "./trace-itineraire.mjs";
+import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { dessineBorne } from "./vous-etes-ici.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
-import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
-import { construitPanneau } from "./ordre-trace.mjs";
+import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
+import { dessineDessins } from "./dessin.mjs";
 
 /* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
-   confient en se chargeant (`confieAuRendu`) : le dessin des calques
-   (`dessin.mjs`), le fond d'un pavillon chargé après coup (`demarrage.mjs`),
-   et ce que seule l'administration a — la nappe de la grille (`nappe.mjs`),
+   confient en se chargeant (`confieAuRendu`) : ce que seule
+   l'administration a — la nappe de la grille (`nappe.mjs`),
    le calage de la carte en cours (`calage-carte.mjs`), l'éditeur à remettre
    au repos (`outil-dessin.mjs`). La page publique n'embarque pas ces
    derniers : ils restent sans effet. */
 /**
  * @typedef {object} PageRendu
- * @property {() => void} dessineDessins
- * @property {(i: number) => void} chargeFond
  * @property {() => void} rafraichitApercu
  * @property {() => void} oublieCalageEnCours
  * @property {(() => void) | null} oublieEdition
  */
 /** @type {PageRendu} */
-const prete = { dessineDessins: () => {}, chargeFond: () => {}, rafraichitApercu: () => {},
+const prete = { rafraichitApercu: () => {},
   oublieCalageEnCours: () => {}, oublieEdition: null };
 
 /** La porte des modules qui confient au montage ce qu'il appelle.
@@ -124,7 +124,7 @@ export function montePlan(){
      de cela : ni éditeur, ni outils. */
   if (prete.oublieEdition) prete.oublieEdition();
   monteHabillage();
-  prete.dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  dessineDessins();                // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
   // est à reposer dessus, sans quoi le pavillon paraît entier
   marqueRetrait();
@@ -164,27 +164,57 @@ function onglets(){
   majFondus();
 }
 
+/**
+ * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
+ * décoratif. On le charge après coup, une seule fois par pavillon, et on
+ * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte une
+ * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
+ * le redemande que lorsque le dessin servi n'est plus le même.
+ */
+const _fonds = new Map();
+export function chargeFond(/** @type {number} */ i){
+  const p = DATA?.plans?.[i];
+  if (!p || !API) return Promise.resolve();
+  if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
+  if (_fonds.has(p.id)) return _fonds.get(p.id);
+
+  /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
+     l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
+     seul à recevoir un fond découpé — ce que l'apparence en montre. Tant
+     qu'elle ne bouge pas, il n'y a rien à retélécharger ; dès qu'elle bouge,
+     le navigateur ne peut pas resservir l'ancien. Un salon servi par une
+     version antérieure du service n'en porte pas : on retombe alors sur
+     l'horodatage de synchronisation, qui était la règle jusqu'ici. */
+  const q = API + "?slug=" + encodeURIComponent(SLUG) +
+            "&fond=" + encodeURIComponent(p.id) +
+            "&v=" + encodeURIComponent(p.versionFond || DATA.genereLe || "0");
+  const promesse = fetch(q, { headers: entetesApi() })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(d => {
+      const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
+      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
+      // le pavillon a pu changer pendant le chargement
+      if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
+    })
+    .catch(e => {
+      _fonds.delete(p.id);          // une panne réseau ne doit pas être définitive
+      console.warn("Fond de plan indisponible :", e.message);
+    });
+  _fonds.set(p.id, promesse);
+  return promesse;
+}
+
 export function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
   /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
   prete.oublieCalageEnCours();
-  ferme();
+  fermeTiroir("fiche");
   montePlan(); fit(); liste();
-  prete.chargeFond(i);
+  chargeFond(i);
 }
 
 /* Le pavillon monté ou non, confié à la police des noms dès que ce module se
    charge, par un lecteur : elle ne retrace rien avant le premier montage, et
    ne peut importer ce module, qui l'atteint en chemin. */
 confieAuxPolices({ monte: () => MONTE });
-
-/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant de quoi monter le pavillon de ce qu'elle choisit,
-   quand il n'est pas celui qu'on regarde. */
-confieALaFiche({ montePlan });
-
-/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant le passage d'un pavillon à l'autre,
-   quand le trajet ou la visée mène ailleurs. */
-confieAuTiroirItineraire({ changePlan });

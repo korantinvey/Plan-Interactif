@@ -148,3 +148,36 @@ test.describe("la boîte à outils du dessin", () => {
     expect(erreurs).toEqual([]);
   });
 });
+
+/* Dessiner sur un calque, placer un libellé, reprendre un emplacement : trois
+   gestes qui viseraient le même pointeur. Ouvrir l'un referme les deux autres
+   (`modules/modes-edition.mjs`), par quelque crayon qu'on y entre. */
+test.describe("un seul mode d'édition à la fois", () => {
+  test("le dessin, les libellés et la reprise se referment l'un l'autre", async ({ page }) => {
+    const erreurs = await ouvreAdmin(page, "&rendu=svg");
+    const racine = page.locator("html");
+    const outils = page.locator("#outils");
+    await page.locator("#btnLayers").click();
+    await page.locator("#pile button.ajout", { hasText: "Nouveau calque" }).click();
+    await page.locator("#mPied button", { hasText: "Valider" }).click();
+    await expect(outils).toHaveClass(/\bopen\b/);
+
+    // les libellés referment le dessin
+    await page.locator("#pile .rlib").click();
+    await expect(racine).toHaveClass(/\bmode-libelles\b/);
+    await expect(outils).not.toHaveClass(/\bopen\b/);
+
+    // la reprise des stands, cadenas ouvert, referme les libellés
+    const reprise = page.locator('#pile .rgeo[data-geo="stands"]');
+    await reprise.locator("xpath=preceding-sibling::button[contains(@class,'vgeo')][1]").click();
+    await page.locator('#pile .rgeo[data-geo="stands"]').click();
+    await expect(racine).toHaveClass(/\bmode-geo-stands\b/);
+    await expect(racine).not.toHaveClass(/\bmode-libelles\b/);
+
+    // et le crayon du calque referme la reprise
+    await page.locator('#pile button.ren[title="Dessiner sur ce calque"]').first().click();
+    await expect(outils).toHaveClass(/\bopen\b/);
+    await expect(racine).not.toHaveClass(/\bmode-geo-stands\b/);
+    expect(erreurs).toEqual([]);
+  });
+});

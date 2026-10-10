@@ -10,22 +10,7 @@ import { MENTIONS_SPONSOR, MARQUE_SPONSOR, SPONSOR_MIN, SPONSOR_MAX, reglageSpon
   secondesSponsor, modeSponsor, sponsorRetenu, ouvreSponsor, fermeSponsor } from "./sponsor.mjs";
 import { champZone, cadreLogo } from "./fiche-zone.mjs";
 import { enregistreConf } from "./configuration.mjs";
-
-/* Ce que la fenêtre des réglages (`reglages.mjs`), qui importe ce module et
-   ne peut donc s'importer d'ici, lui confie en se chargeant : son
-   glissement. Le champ intitulé, le cadre de dépôt d'un logo et
-   l'enregistrement de la configuration s'importent. */
-/**
- * @typedef {object} PreteReglageSponsor
- * @property {typeof import("./reglages.mjs").glisseFenetre} glisseFenetre
- */
-/** @type {PreteReglageSponsor} */
-const prete = { glisseFenetre: (change) => change() };
-const glisseFenetre = (/** @type {() => void} */ change) => prete.glisseFenetre(change);
-
-/** La porte par laquelle la fenêtre des réglages confie son glissement.
- *  @param {Partial<PreteReglageSponsor>} o */
-export function confieAuReglageSponsor(o){ Object.assign(prete, o); }
+import { glisseFenetre } from "./glisse-fenetre.mjs";
 
 /* ------------------------------------------------------------
    Le générique dans l'onglet « Admin » des réglages

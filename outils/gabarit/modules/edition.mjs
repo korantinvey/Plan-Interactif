@@ -17,10 +17,9 @@
 
    Le calque actif et l'outil tenu (`calques-dessin.mjs`), le tracé des
    formes (`chemin-forme.mjs`, `dessin.mjs`), ce qu'un repère et un arrêt sont
-   (`reperes.mjs`) et la vue (`vue.mjs`) s'importent. L'historique,
-   l'enregistrement et les champs de la boîte à outils vivent dans
-   `outil-dessin.mjs`, qui importe ce module-ci : il les lui confie par
-   `confieAEdition` en se chargeant.
+   (`reperes.mjs`) et la vue (`vue.mjs`) s'importent, comme l'historique,
+   l'enregistrement et les champs de la boîte à outils, que l'outil de dessin
+   partage avec ce module (`socle-dessin.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
@@ -39,35 +38,9 @@ import { TYPES_REPERE, MODES_TRANSPORT, pictoForme, nomTypeRepere, estTransport,
 import { dessineDessins, redessineForme, apercuGuide, seRattache, societeDeForme, etiquetteSociete }
   from "./dessin.mjs";
 import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
+import { memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes }
+  from "./socle-dessin.mjs";
 
-/**
- * Ce que l'outil de dessin tient et confie au module en se chargeant
- * (`outil-dessin.mjs`, qui importe celui-ci et ne peut donc pas en être
- * importé). Les défauts ne font rien : aucun geste d'édition ne part avant
- * que la page d'administration ait chargé l'outil.
- *
- * @typedef {object} PreteEdition
- * @property {typeof import("./outil-dessin.mjs").memorise} memorise
- * @property {typeof import("./outil-dessin.mjs").enregistreDessins} enregistreDessins
- * @property {typeof import("./outil-dessin.mjs").optionsModes} optionsModes
- * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
- * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
- */
-/** @type {PreteEdition} */
-const prete = {
-  memorise: () => {}, enregistreDessins: () => {}, optionsModes: () => "",
-  societeSaisie: () => null, remplitListeSocietes: () => {},
-};
-
-const memorise = (/** @type {string} */ salve) => prete.memorise(salve);
-const enregistreDessins = () => prete.enregistreDessins();
-const optionsModes = () => prete.optionsModes();
-const societeSaisie = (/** @type {string} */ txt) => prete.societeSaisie(txt);
-const remplitListeSocietes = () => prete.remplitListeSocietes();
-
-/** La porte par laquelle l'outil de dessin confie ce qu'il tient.
- *  @param {Partial<PreteEdition>} o */
-export function confieAEdition(o){ Object.assign(prete, o); }
 
 /** Le geste en cours — déplacer, tirer une poignée, tourner un texte —, ou
  *  rien. L'outil de dessin le lit pour ne pas effacer les points d'accrochage

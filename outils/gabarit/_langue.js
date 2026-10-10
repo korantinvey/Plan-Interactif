@@ -41,8 +41,17 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   const LANGUES = ["fr", "en"];
   /* Le dictionnaire voyage en texte et ne se lit qu'au premier besoin : un
      visiteur qui reste en français n'a pas à payer l'analyse de centaines
-     d'entrées qu'il ne lira jamais. */
-  const SOURCE = __DICTIONNAIRE__;
+     d'entrées qu'il ne lira jamais.
+
+     Sur les pages du plan, il ne voyage même pas : il pèse le plus gros de ce
+     script, et la plupart des visiteurs lisent le français. La construction
+     le sort alors dans un fichier à part (`genere.js` `sortScripts`), que
+     `DICO_A_PART` nomme et que `SOURCE` attend, nul : il ne se charge que si
+     l'anglais est demandé — avant le corps de la page s'il l'est dès
+     l'ouverture, à la demande sinon (`chargeDico`). La démonstration, publiée
+     seule, et les écrans de l'exploitant le gardent en eux. */
+  let SOURCE = __DICTIONNAIRE__;
+  const DICO_A_PART = "";
   const racine = document.documentElement;
 
   /* ------------------------------------------------------------------
@@ -166,12 +175,35 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      salon l'emporte sur la traduction générale d'un mot. */
   const DONNEES = new Map();   // origine → Map : phrase → traduction
 
+  let SOURCE_VERSEE = false;
   function prepare() {
-    if (EXACT) return;
-    EXACT = new Map();
-    MODELES = { debut: new Map(), fin: new Map(), libres: [] };
-    PLURIELS = new Map();
-    ajouteEntrees(typeof SOURCE === "string" ? JSON.parse(SOURCE) : SOURCE);
+    if (!EXACT) {
+      EXACT = new Map();
+      MODELES = { debut: new Map(), fin: new Map(), libres: [] };
+      PLURIELS = new Map();
+    }
+    // le dictionnaire à part arrive après coup : il se verse alors, une fois
+    if (!SOURCE_VERSEE && SOURCE != null) {
+      SOURCE_VERSEE = true;
+      ajouteEntrees(typeof SOURCE === "string" ? JSON.parse(SOURCE) : SOURCE);
+    }
+  }
+
+  /* Le dictionnaire à part, demandé une fois. Il se déclare en arrivant
+     (`__dicoArrive`), le fichier n'étant qu'un appel : un script ajouté au
+     document ne rend rien d'autre. Un échec — hors réseau, sans copie gardée —
+     laisse la page en français, et la demande suivante réessaie. */
+  let dicoEnRoute = null;
+  function chargeDico() {
+    if (SOURCE != null || !DICO_A_PART) return Promise.resolve();
+    if (!dicoEnRoute) dicoEnRoute = new Promise((ok, ko) => {
+      window.__dicoArrive = (d) => { SOURCE = d; ok(); };
+      const s = document.createElement("script");
+      s.src = DICO_A_PART;
+      s.onerror = () => { dicoEnRoute = null; ko(); };
+      document.head.appendChild(s);
+    });
+    return dicoEnRoute;
   }
 
   function ajouteEntrees(table) {
@@ -640,6 +672,11 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      Passer de l'une à l'autre
      ------------------------------------------------------------------ */
   function applique(langue, premiere) {
+    // l'anglais attend son dictionnaire ; la page reste en français d'ici là
+    if (langue === "en" && SOURCE == null && DICO_A_PART) {
+      chargeDico().then(() => applique(langue, premiere), () => {});
+      return;
+    }
     courante = langue;
     racine.lang = langue;
     if (langue === "en") {
@@ -806,5 +843,22 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   };
   window.traduit = window.LANGUE.traduit;
 
-  applique(courante, true);
+  /* L'anglais demandé dès l'ouverture, dictionnaire à part : il doit être là
+     avant que le navigateur ne lise le corps de la page, sans quoi celle-ci
+     paraîtrait en français puis changerait sous les yeux. Ce script est posé
+     en tête et s'exécute pendant la lecture du document : la balise qu'il y
+     écrit se charge et s'exécute avant la suite, et c'est en arrivant que le
+     dictionnaire lance l'anglais. Si elle n'arrive pas, la demande ordinaire
+     prend le relais une fois le document lu. */
+  if (courante === "en" && SOURCE == null && DICO_A_PART && document.readyState === "loading") {
+    window.__dicoArrive = (d) => { SOURCE = d; applique("en", true); };
+    // en deux morceaux : ce moteur est aussi écrit en ligne dans des pages, où
+    // la balise de fin en toutes lettres fermerait le script qui la porte
+    document.write('<script src="' + DICO_A_PART + '"></' + 'script>');
+    document.addEventListener("DOMContentLoaded", () => {
+      if (SOURCE == null) applique("en", false);
+    }, { once: true });
+  } else {
+    applique(courante, true);
+  }
 })();

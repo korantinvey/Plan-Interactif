@@ -33,8 +33,7 @@ import { contenuApercu, apercuDuo } from "./apercus.mjs";
 import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
-import { appliqueAccent, MARQUES_DIST, modeDist, couleurDist, appliqueDists, modeBarre, appliqueBarre,
-  appliqueModele } from "./habillage.mjs";
+import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -44,7 +43,8 @@ import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
 import { SECTEURS } from "./secteurs.mjs";
 import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { DISTINCTIONS, ETOILE_DIST } from "./distinctions.mjs";
+import { DISTINCTIONS, ETOILE_DIST, MARQUES_DIST, modeDist, couleurDist, appliqueDists }
+  from "./distinctions.mjs";
 import { OPTIONS, appliqueOptions } from "./options.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { champZone } from "./fiche-zone.mjs";

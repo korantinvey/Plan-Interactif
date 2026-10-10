@@ -11,9 +11,10 @@
    (`tiroir-parcours.mjs`) la remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { inscritTiroirExclusif } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
 import { SLUG } from "./salon.mjs";
-import { jetonMesure } from "./mesure.mjs";
+import { jetonMesure, mesure } from "./mesure.mjs";
 import { momentLocal } from "./temps.mjs";
 import { DATA, parId, CONFS } from "./donnees.mjs";
 
@@ -437,3 +438,141 @@ export function groupeParcours(hote, titre){
   hote.appendChild(g);
   return g;
 }
+
+/* Refermer le tiroir du parcours. Il s'ouvre par `tiroir-parcours.mjs`, qui
+   le remplit ; il se referme ici, parce que la fiche, le tiroir de
+   l'itinéraire et l'apparence le referment aussi et que ce module-ci, sous
+   eux trois, s'importe sans boucle — rangé dans le tiroir, le geste devait
+   leur être confié au chargement. */
+export function fermeParcours(){
+  const t = $("parcours");
+  if (!t || !t.classList.contains("open")) return;
+  t.classList.remove("open");
+  $("btnParcours").setAttribute("aria-pressed", "false");
+}
+
+/* Le parcours est l'un des trois tiroirs qui se partagent la bande : ouvrir
+   la fiche ou l'itinéraire le referme, s'il est ouvert. */
+inscritTiroirExclusif("parcours", fermeParcours);
+
+/* ------------------------------------------------------------
+   La marque, partout la même — et le geste qu'elle porte
+   ------------------------------------------------------------ */
+/* Ce que le tiroir du parcours refait quand un signet ou un lot change la
+   liste : il s'y inscrit en se chargeant (`tiroir-parcours.mjs`). Le geste
+   vit ici, avec la liste, pour que la fiche, la journée, la recherche et le
+   parcours reçu l'importent sans passer par le tiroir, qui les importe.
+   `quoi` vaut "stand" ou "conf" pour un signet, "lot" pour un lot versé. */
+/** @type {(quoi: string, ajout: boolean) => void} */
+let apresBascule = () => {};
+/** @param {(quoi: string, ajout: boolean) => void} f */
+export function suitLeParcours(f){ apresBascule = f; }
+
+/**
+ * Retenir un rang, ou le retirer.
+ *
+ * `canal` dit d'où vient le geste, et ne sert qu'à la mesure : un ajout venu
+ * d'une proposition ne se compte pas comme un ajout qu'on est allé chercher
+ * soi-même — c'est même le seul chiffre qui dise si proposer sert à quelque
+ * chose. Absent, le geste compte comme avant, sans provenance.
+ */
+export function basculeParcours(genre, id, canal){
+  const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
+  // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
+  if (i < 0) l.push(k); else l.splice(i, 1);
+  enregistreParcours();
+  /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
+     visiteur en train de composer sa journée, et le total des gestes les
+     compte tous les deux.
+
+     Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
+     visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
+     retiré » ne veut rien dire. */
+  mesure("parcours", canal || "", i < 0 ? k : "",
+         genre === "conf" ? "fiche_conf" : "fiche_stand");
+  // le tiroir se refait, et propose ce qu'un ajout fait naître
+  apresBascule(genre, i < 0);
+  /* Et, dès qu'il y a quelque chose à perdre, le geste qui l'en empêche : le
+     navigateur prié de tenir. La copie ne s'invite pas ici — une liste qu'on
+     est en train de composer n'a pas encore de quoi valoir un lien gardé. */
+  if (i < 0) tientLeStockage();
+}
+
+/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. `canal` suit
+ *  jusqu'à la mesure, pour les fragments qu'on n'est pas allé chercher. */
+export function brancheParcours(hote, canal){
+  hote.querySelectorAll("[data-mg]").forEach(el => {
+    rafraichitMarque(el);
+    el.onclick = ev => {
+      ev.stopPropagation();
+      basculeParcours(el.dataset.mg, el.dataset.mi, canal);
+    };
+  });
+}
+
+/**
+ * Verser un lot de rangs dans la liste.
+ *
+ * Les ajouts se comptent un à un, comme s'ils avaient été faits signet par
+ * signet : c'est bien un visiteur de plus qui a ce stand à son programme, et
+ * l'exposant a raison de le voir dans ses chiffres. Le canal dit d'où le lot
+ * vient — un parcours reçu, une recherche prise en bloc — et permet de faire la
+ * part des uns et des autres.
+ *
+ * La suggestion ne s'invite pas ici, à la différence d'un signet posé à la
+ * main : un lot qui vient d'allonger la liste de vingt exposants n'appelle pas
+ * une fenêtre qui en propose un vingt et unième.
+ */
+export function verseAuParcours(stands, confs, canal, remplace){
+  /* La réserve part avec la liste, comme au vidage : elle s'écrit dans le
+     stockage avec elle, et un rang mis de côté en juin reparaissait dans la
+     liste reçue en septembre le jour où les données le reconnaissaient à
+     nouveau — alors qu'on avait demandé un remplacement. */
+  if (remplace)
+    poseParcours({ PARCOURS: { stands: [], confs: [] },
+                   MIS_DE_COTE: { stands: [], confs: [] } });
+  stands.forEach(id => {
+    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
+    mesure("parcours", canal, id, "fiche_stand");
+  });
+  confs.forEach(id => {
+    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
+    mesure("parcours", canal, id, "fiche_conf");
+  });
+  enregistreParcours();
+  /* Le tiroir se refait et s'ouvre sur ce qui vient d'arriver : sans cela le
+     visiteur n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
+  apresBascule("lot", true);
+  tientLeStockage();
+}
+
+/* ------------------------------------------------------------
+   Un rang de la liste, et le tiroir à refaire
+   ------------------------------------------------------------ */
+/* Le rang est la brique que le tiroir et la journée organisée posent tous
+   deux : il vit avec la liste, que la journée importe, plutôt que dans le
+   tiroir, qui importe la journée. Rien ne touche la page au chargement. */
+export function rangParcours(hote, r){
+  const d = document.createElement("div");
+  d.className = "pRang";
+  d.innerHTML = '<button type="button" class="pOuvre">' +
+    (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
+              : '<span class="pt"></span><span class="ps"></span>') +
+    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
+    'aria-label="Retirer du parcours">&times;</button>';
+  d.querySelector(".pt").textContent = r.titre;
+  d.querySelector(".ps").textContent = r.detail || "";
+  if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
+  d.querySelector(".pOuvre").onclick = r.ouvre;
+  d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
+  hote.appendChild(d);
+  /* Le rang est rendu : la visite organisée y glisse un bouton de plus — celui
+     qui change l'exposant de jour — et ne veut pas réécrire la vignette pour
+     autant. */
+  return d;
+}
+
+/** Le tiroir à refaire sur la liste telle qu'elle est — la journée, quand
+ *  elle rend la place au parcours. Rien n'a changé : ni suggestion ni rappel
+ *  à proposer. */
+export function refaitParcours(){ apresBascule("vue", false); }

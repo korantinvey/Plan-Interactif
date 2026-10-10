@@ -8,13 +8,14 @@
    calcule et ce qui l'applique, pour qu'un module puisse l'importer au lieu
    de se la faire confier.
 
-   La vue elle-même (`view`) vit ici. Les gestes la remplacent sans cesse, le
-   cadrage sur un trajet aussi : elle se remplace par sa porte, `changeVue(v)`.
-   Les modules l'importent, ou la lisent par `vue()` ; seuls les essais la
-   lisent encore dans la page, par un accesseur de `__essais` (`plan.mjs`).
-
-   Le SVG du plan (`svg`) aussi : il est dans la page avant que les modules ne
-   s'exécutent, et ne se remplace jamais.
+   La vue elle-même (`view`), le SVG du plan (`svg`) et son cadre à l'écran
+   (`cadrePlan`) vivent dans `vue-etat.mjs`, que le fond de carte et la carte
+   graphique importent aussi, et ce module les réexporte. Les gestes
+   remplacent la vue sans cesse, le cadrage sur un trajet aussi : elle se
+   remplace par sa porte, `changeVue(v)`. Les modules l'importent, ou la lisent
+   par `vue()` ; seuls les essais la lisent encore dans la page, par un
+   accesseur de `__essais` (`plan.mjs`). Le SVG est dans la page avant que les
+   modules ne s'exécutent, et ne se remplace jamais.
 
    L'emprise du pavillon (`emp`), elle, n'était remplacée que par le montage
    du plan : elle vit ici, se remplace par `poseEmprise`, et s'importe.
@@ -29,7 +30,8 @@
 import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, confieAuWebgl }
   from "./webgl.mjs";
-import { recul, dessineFondCarte, confieAuxEnvirons } from "./environs.mjs";
+import { recul, dessineFondCarte } from "./environs.mjs";
+import { svg, vue, changeVue, cadrePlan, oublieCadre } from "./vue-etat.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 
@@ -63,19 +65,12 @@ const prete = {
  *  @param {Partial<PageVue>} o */
 export function confieALaVue(o){ Object.assign(prete, o); }
 
-/** La vue du moment — `{ x, y, w, h }` en mètres, ou rien avant le premier plan. */
-/** @type {any} */
-export let view;
-/** La vue du moment, lue à l'instant. */
-export const vue = () => view;
-/** Remplace la vue, sans l'appliquer : c'est `poseVue` ou `rafraichitVue` qui l'écrivent. */
-export const changeVue = (/** @type {any} */ v) => { view = v; };
+/* La vue, le SVG et le cadre vivent dans `vue-etat.mjs`, que le fond de carte
+   et la carte graphique importent aussi ; les autres modules les importent
+   d'ici, comme avant. */
+export { view, vue, changeVue, svg, cadrePlan } from "./vue-etat.mjs";
 const enEdition = () => prete.enEdition();
 const libelles = () => prete.libelles();
-
-/** Le SVG du plan. */
-/** @type {any} */
-export const svg = $("plan");
 
 /** L'emprise du pavillon, posée au montage du plan. */
 /** @type {any} */
@@ -86,22 +81,12 @@ export function poseEmprise(/** @type {any} */ e){ emp = e; }
 /* ============================================================
    6. Vue
    ============================================================ */
-/* Mesurer le cadre force le navigateur à remettre en page tout le SVG — sept
-   mille éléments — et on le mesurait juste après avoir posé la « viewBox »,
-   qui vient précisément de tout salir : quatre-vingt-cinq millisecondes, à
-   chaque image, pour lire une largeur qui n'avait pas bougé. Car le cadre ne
-   dépend pas de la « viewBox » : c'est le CSS qui le pose.
-
-   On le mesure donc une fois, et on l'oublie quand la mise en page change.
-   Un « ResizeObserver » couvre tout ce qui peut le changer, d'où qu'il vienne,
-   sans rien mesurer lui-même ; le « resize » de la fenêtre s'y ajoute parce
-   qu'il se déclenche avant lui, et que le recadrage qui l'écoute mesurerait
-   sinon l'ancien cadre. */
-/** @type {DOMRect | null} */
-let _cadre = null;
-/** @returns {DOMRect} */
-export const cadrePlan = () => _cadre || (_cadre = svg.getBoundingClientRect());
-const oublieCadre = () => { _cadre = null; };
+/* Le cadre du plan se mesure une fois (`vue-etat.mjs` `cadrePlan`) et
+   s'oublie quand la mise en page change. Un « ResizeObserver » couvre tout ce
+   qui peut le changer, d'où qu'il vienne, sans rien mesurer lui-même ; le
+   « resize » de la fenêtre s'y ajoute parce qu'il se déclenche avant lui, et
+   que le recadrage qui l'écoute mesurerait sinon l'ancien cadre (voir
+   `brancheVue`). */
 
 /* Pendant un changement d'échelle, le plan se passe de ses textes : eux seuls
    coûtent quatre-vingts des quatre-vingt-huit millisecondes que réclame la
@@ -598,5 +583,4 @@ export function brancheVue(){
 /* Le rendu par la carte graphique et le fond de carte, que ce module importe,
    lisent la vue et ne peuvent l'importer : elle la leur confie en se
    chargeant — par des lecteurs, puisque chaque geste la remplace. */
-confieAuWebgl({ svg, vue, cadrePlan, appliqueVue });
-confieAuxEnvirons({ vue, cadrePlan });
+confieAuWebgl({ appliqueVue });

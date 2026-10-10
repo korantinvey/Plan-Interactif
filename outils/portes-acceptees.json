@@ -1,0 +1,97 @@
+{
+  "confieAuDemarrage": {
+    "module": "demarrage.mjs",
+    "genre": "partition",
+    "raison": "le démarrage, public, rappelle l'enregistrement et l'écran d'accès, que seule l'administration embarque"
+  },
+  "confieAuRendu": {
+    "module": "rendu.mjs",
+    "genre": "partition",
+    "raison": "le montage d'un pavillon remet au repos la nappe, le calage et l'éditeur, outils de l'exploitant"
+  },
+  "confieALIndex": {
+    "module": "index-salon.mjs",
+    "genre": "partition",
+    "raison": "l'index du salon relève les calques rescapés et les réglages chargés pour l'enregistrement, d'administration"
+  },
+  "confieAuxCalques": {
+    "module": "calques-dessin.mjs",
+    "genre": "partition",
+    "raison": "les calques, publics, signalent un envoi en attente au bouton de l'enregistrement, d'administration"
+  },
+  "confiePublication": {
+    "module": "configuration.mjs",
+    "genre": "partition",
+    "raison": "la configuration s'écrit sur le poste partout ; l'envoi en base n'existe qu'en administration"
+  },
+  "confiePanneau": {
+    "module": "ordre-trace.mjs",
+    "genre": "partition",
+    "raison": "l'ordre de tracé, public, appelle le panneau des calques, que seule l'administration remplit"
+  },
+  "confieRetourAuxReglages": {
+    "module": "fenetre.mjs",
+    "genre": "partition",
+    "raison": "une fenêtre publique peut rendre la main aux réglages après un aperçu ; les réglages sont d'administration"
+  },
+  "confieChaleur": {
+    "module": "secteurs.mjs",
+    "genre": "partition",
+    "raison": "la teinte des secteurs, publique, laisse la place à la carte de chaleur, d'administration"
+  },
+  "confieCalageEnCours": {
+    "module": "environs.mjs",
+    "genre": "partition",
+    "raison": "le fond de carte, public, dessine le calage qu'on est en train de poser, d'administration"
+  },
+  "confieLancementAdmin": {
+    "module": "lancement.mjs",
+    "genre": "partition",
+    "raison": "les branchements de l'exploitant prennent leur rang dans le lancement public, dont l'ordre est le comportement"
+  },
+  "confieALaFiche": {
+    "module": "fiche.mjs",
+    "genre": "partition",
+    "raison": "la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration"
+  },
+  "confieALaVue": {
+    "module": "vue.mjs",
+    "genre": "rendu",
+    "raison": "chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage"
+  },
+  "confieAuWebgl": {
+    "module": "webgl.mjs",
+    "genre": "rendu",
+    "raison": "la carte graphique lit la vue, les gestes et les noms de modules qui l'importent pour la monter"
+  },
+  "confieAuxPolices": {
+    "module": "polices-plan.mjs",
+    "genre": "rendu",
+    "raison": "une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices"
+  },
+  "confieApresOption": {
+    "module": "options.mjs",
+    "genre": "registre",
+    "raison": "chaque module que touche une option vendue à part y inscrit ce qu'il refait quand elle change"
+  },
+  "confieVisee": {
+    "module": "tiroir-itineraire.mjs",
+    "genre": "registre",
+    "raison": "la borne et le code « Vous êtes ici » y inscrivent leur propre visée ; la page publique n'a pas la seconde"
+  },
+  "confieALAcces": {
+    "module": "acces-admin.mjs",
+    "genre": "administration",
+    "raison": "l'accès ouvre la bande d'administration, qui importe l'enregistrement, qui rouvre l'accès sur une session refusée"
+  },
+  "confieALaFicheZone": {
+    "module": "fiche-zone.mjs",
+    "genre": "administration",
+    "raison": "une zone ajoutée enregistrée refait la palette de la reprise, qui ouvre elle-même la fiche de la zone"
+  },
+  "confieGesteEnCours": {
+    "module": "enregistrement.mjs",
+    "genre": "administration",
+    "raison": "l'envoi attend la fin d'un geste ; seuls les gestes de l'exploitant savent qu'un geste dure, et ils importent l'enregistrement"
+  }
+}

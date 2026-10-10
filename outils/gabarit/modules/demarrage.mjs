@@ -21,7 +21,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
-import { API, SLUG, PLAN_ADMIN } from "./salon.mjs";
+import { API, SLUG, PLAN_ADMIN, entetesApi } from "./salon.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { indexe } from "./index-salon.mjs";
 import { accueilleSponsor, suitSponsor, fermeSponsor } from "./sponsor.mjs";
@@ -32,10 +32,8 @@ import { demarreIci } from "./ici.mjs";
 import { accueilleParcoursPartage } from "./parcours-recu.mjs";
 import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
-import { appliqueApparence } from "./apparence.mjs";
 import { select, ficheConf } from "./fiche.mjs";
-import { montePlan, monteHabillage, confieAuRendu } from "./rendu.mjs";
-import { ordonneDom } from "./ordre-trace.mjs";
+import { montePlan, chargeFond } from "./rendu.mjs";
 
 /* Ce que l'administration seule a — l'état du bouton d'enregistrement et le
    rattrapage d'un envoi en retard (`enregistrement.mjs`), la fenêtre d'accès
@@ -168,66 +166,7 @@ export function annonce(/** @type {string} */ txt, /** @type {boolean=} */ erreu
   }
 }
 
-/**
- * En-têtes de l'appel. En administration on présente sa session : c'est elle
- * qui donne accès aux événements encore en brouillon. Ils sont lus à chaque
- * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
- */
-function entetesApi(){
-  /** @type {Record<string, string>} */
-  const e = {};
-  if (document.documentElement.dataset.role !== "admin") return e;
-  try {
-    const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
-                || window.PLAN_CONFIG || null;
-    const ses = JSON.parse(localStorage.getItem("console-session") || "null");
-    if (cfg?.anonKey && ses?.access_token){
-      e["apikey"] = cfg.anonKey;
-      e["Authorization"] = "Bearer " + ses.access_token;
-    }
-  } catch (err) {}
-  return e;
-}
 
-/**
- * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
- * décoratif. On le charge après coup, une seule fois par pavillon, et on
- * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte une
- * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
- * le redemande que lorsque le dessin servi n'est plus le même.
- */
-const _fonds = new Map();
-export function chargeFond(/** @type {number} */ i){
-  const p = DATA?.plans?.[i];
-  if (!p || !API) return Promise.resolve();
-  if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
-  if (_fonds.has(p.id)) return _fonds.get(p.id);
-
-  /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
-     l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
-     seul à recevoir un fond découpé — ce que l'apparence en montre. Tant
-     qu'elle ne bouge pas, il n'y a rien à retélécharger ; dès qu'elle bouge,
-     le navigateur ne peut pas resservir l'ancien. Un salon servi par une
-     version antérieure du service n'en porte pas : on retombe alors sur
-     l'horodatage de synchronisation, qui était la règle jusqu'ici. */
-  const q = API + "?slug=" + encodeURIComponent(SLUG) +
-            "&fond=" + encodeURIComponent(p.id) +
-            "&v=" + encodeURIComponent(p.versionFond || DATA.genereLe || "0");
-  const promesse = fetch(q, { headers: entetesApi() })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
-    .then(d => {
-      const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
-      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
-      // le pavillon a pu changer pendant le chargement
-      if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
-    })
-    .catch(e => {
-      _fonds.delete(p.id);          // une panne réseau ne doit pas être définitive
-      console.warn("Fond de plan indisponible :", e.message);
-    });
-  _fonds.set(p.id, promesse);
-  return promesse;
-}
 
 /**
  * Ce qu'on dit d'un chargement qui n'aboutit pas.
@@ -362,6 +301,3 @@ export function brancheDemarrage(){
   if (!PLAN_ADMIN) retireAdmin();
 }
 
-/* Le fond d'un pavillon se charge après coup, au passage d'un pavillon à
-   l'autre : le rendu, que ce module importe, le reçoit d'ici en se chargeant. */
-confieAuRendu({ chargeFond });

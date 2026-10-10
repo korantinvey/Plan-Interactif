@@ -54,6 +54,28 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Le bouton du pied du panneau verse au parcours tout ce que la recherche
+     retient, et le tiroir s'ouvre dessus : le lot passe par la liste
+     (`parcours.mjs` `verseAuParcours`), qui l'annonce au tiroir. Si l'annonce
+     se perd, le compteur bouge et le tiroir reste fermé. */
+  test("tout ce que la recherche retient se verse au parcours, qui s'ouvre dessus", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN);
+    const lignes = await attendLaListe(page);
+    const numero = (await lignes.first().innerText()).trim().split(/\s+/)[0];
+    await page.fill("#q", numero);
+    await page.locator("#btnFiltres").evaluate((b) => /** @type {HTMLElement} */ (b).click());
+    const tout = page.locator(".tout-parc");
+    await expect(tout).toBeEnabled();
+    await tout.click();
+    const modale = page.locator("#modale");
+    await expect(modale).toContainText("à votre parcours de visite");
+    await modale.getByRole("button", { name: "Ajouter", exact: true }).click();
+    await expect(page.locator("#parcours")).toHaveClass(/open/);
+    await expect(page.locator("#nParcours")).not.toHaveText("0");
+    expect(erreurs).toEqual([]);
+  });
+
   test("une ligne de la liste ouvre la fiche de son exposant @telephone", async ({ page }) => {
     const erreurs = await prepare(page);
     /* En SVG : ce qu'on éprouve est le chemin de la liste à la fiche, non le
@@ -76,6 +98,31 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* La fiche, le parcours et l'itinéraire se partagent la même bande : en
+     ouvrir un referme les deux autres (`modules/tiroirs-exclusifs.mjs`
+     `fermeLesAutresTiroirs`), par quelque bouton qu'on y vienne. */
+  test("la fiche, le parcours et l'itinéraire ne s'ouvrent qu'un à la fois", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN + "&rendu=svg");
+    const lignes = await attendLaListe(page);
+    const ouvert = (id) => page.locator("#" + id);
+    await lignes.first().click();
+    await expect(ouvert("detail")).toHaveClass(/\bopen\b/);
+
+    await page.click("#btnParcours");
+    await expect(ouvert("parcours")).toHaveClass(/\bopen\b/);
+    await expect(ouvert("detail")).not.toHaveClass(/\bopen\b/);
+
+    await page.click("#btnItineraire");
+    await expect(ouvert("itineraire")).toHaveClass(/\bopen\b/);
+    await expect(ouvert("parcours")).not.toHaveClass(/\bopen\b/);
+
+    await lignes.first().click();
+    await expect(ouvert("detail")).toHaveClass(/\bopen\b/);
+    await expect(ouvert("itineraire")).not.toHaveClass(/\bopen\b/);
+    expect(erreurs).toEqual([]);
+  });
+
   test("les onglets passent d'un pavillon à l'autre", async ({ page }) => {
     test.skip(DONNEES.plans.length < 2, "un seul pavillon dans les données");
     const erreurs = await prepare(page);
@@ -92,9 +139,34 @@ test.describe("le plan public", () => {
 
   test("s'ouvre en anglais par l'adresse", async ({ page }) => {
     const erreurs = await prepare(page);
+    /* Le dictionnaire est à part (`_langue.js` `chargeDico`) : il doit être là
+       avant que le corps de la page ne soit lu, sans quoi elle paraîtrait en
+       français puis changerait sous les yeux. On relève donc ce que dit la
+       page au moment même où le document vient d'être lu. */
+    await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => {
+      window.__auDebut = /** @type {HTMLInputElement} */ (document.getElementById("q")).placeholder;
+    }));
     await page.goto(PLAN + "&lang=en");
     await attendLaListe(page);
     await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exhibitor, stand…");
+    expect(await page.evaluate(() => window.__auDebut)).toBe("Exhibitor, stand…");
+    expect(erreurs).toEqual([]);
+  });
+
+  test("en français, le dictionnaire anglais ne se charge pas ; le drapeau le demande une fois", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const dicos = [];
+    page.on("request", (r) => { if (/\/versions\/anglais\.[0-9a-f]+\.js$/.test(r.url())) dicos.push(r.url()); });
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    expect(dicos).toEqual([]);
+    await page.click("#btnLangue");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exhibitor, stand…");
+    await page.click("#btnLangue");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exposant, stand…");
+    await page.click("#btnLangue");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exhibitor, stand…");
+    expect(dicos).toHaveLength(1);
     expect(erreurs).toEqual([]);
   });
 

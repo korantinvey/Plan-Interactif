@@ -49,7 +49,8 @@ const DECLARATIONS = [
      ce qu'une bibliothèque chargée à la demande y pose (`maplibregl`), et ce
      que des navigateurs offrent sans que la norme le dise : chaque usage le
      teste avant de s'en servir. */
-  "interface Window { PLAN_CONFIG?: any; __plan?: Promise<Response> | null;",
+  // `__dicoArrive` : l'appel par lequel le dictionnaire anglais à part se déclare (`_langue.js`)
+  "interface Window { PLAN_CONFIG?: any; __plan?: Promise<Response> | null; __dicoArrive?: (d: any) => void;",
   "  __entete?: Promise<any> | null; maplibregl?: any; clipboardData?: DataTransfer; }",
   "interface Navigator { connection?: any; getInstalledRelatedApps?: () => Promise<any[]>; }",
   "interface ParentNode {",

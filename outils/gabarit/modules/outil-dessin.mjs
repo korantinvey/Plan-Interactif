@@ -21,11 +21,14 @@
    `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
    rangement des réglages de `configuration.mjs`.
 
-   À l'inverse, ce qu'il tient et que d'autres modules d'exploitant
-   empruntent — l'éditeur, l'enregistrement, la reprise d'un emplacement, le
-   placement des libellés —, il le leur confie en se chargeant, au bas du
-   module : il les importe, et ils ne pourraient l'importer sans boucle. Les
-   aimants aussi, qui ne l'importent pas pour s'éprouver seuls dans Node.
+   Ce qu'il partage avec l'éditeur et la reprise d'un emplacement —
+   l'historique, l'enregistrement, la liste des sociétés, les modes de
+   transport, le cadenas — vit dans `socle-dessin.mjs`, qu'ils importent tous
+   trois. La reprise et le placement des libellés, avec lesquels il se
+   dispute le glisser, se referment par le registre des modes d'édition
+   (`modes-edition.mjs`), où il inscrit sa propre sortie. Les aimants, qui ne
+   l'importent pas pour s'éprouver seuls dans Node, reçoivent de lui en se
+   chargeant ce qu'ils lisent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -34,95 +37,39 @@ import { CONF, conf, optionActive, enregistreConf } from "./configuration.mjs";
 import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
-import { oublieGrilles, oublieLiaisons, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs";
+import { oublieGrilles, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
-import { programmePublication, confieAEnregistrement } from "./enregistrement.mjs";
 import { suitNuancier } from "./nuancier.mjs";
-import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
+import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { modeGeometrie, choisitGeo, confieALaReprise } from "./reprise-emplacements.mjs";
-import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aimante, DERNIERE,
+import { choisitGeo } from "./reprise-emplacements.mjs";
+import { ecritMetres, coteCadre, montreCote, montreAimants, aimante, DERNIERE,
   retientTaille, reprendTaille, appliqueDimension, brancheAimants } from "./aimants.mjs";
-import { confieAEdition, geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
+import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
   editionPointerMove, editionPointerUp, replieOutils, choisitForme } from "./edition.mjs";
-import { DESSINS, cleDessins, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
+import { DESSINS, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
   enCours, poseCalqueActif, poseOutil, poseEbauche } from "./calques-dessin.mjs";
 import { cheminForme, estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
-import { TYPES_REPERE, MODES_TRANSPORT, estTransport, couleurLigne, couleurEcrite, libelleDoffice }
+import { TYPES_REPERE, estTransport, couleurLigne, couleurEcrite, libelleDoffice }
   from "./reperes.mjs";
 import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_REPERE, nomSurLePlan,
-  societeDeForme, societesDuPlan } from "./dessin.mjs";
-import { oublieReperes } from "./points-interet.mjs";
+  societeDeForme } from "./dessin.mjs";
 import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieApresOption } from "./options.mjs";
 import { confieAuRendu } from "./rendu.mjs";
+import { enregistreDessins, HIST, REFAIRE, instantane, clotSalve, memorise, toleranceTrace, fermeIci,
+  remplitListeSocietes, societeSaisie, optionsModes, pictoVerrou } from "./socle-dessin.mjs";
+
+/* L'historique, l'enregistrement, la liste des sociétés, les modes de
+   transport et le cadenas vivent dans `socle-dessin.mjs`, que l'éditeur et la
+   reprise importent aussi ; ils s'importent d'ici comme avant. */
+export { enregistreDessins, memorise, pictoVerrou };
 
 
-export const enregistreDessins = () => {
-  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
-     la grille de marche qui les ignore n'a plus cours, et l'annuaire des
-     passages non plus. On attend la fin du geste — dessiner en referait une à
-     chaque image, ce qui serait insoutenable. */
-  oublieGrilles();
-  oublieLiaisons();
-  // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
-  oublieAimants();
-  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
-  oublieReperes();
-  rafraichitApercu();
-  /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
-     dès la première forme tracée, et non au moment où l'on pense à publier. */
-  marqueAttente(P().id, true);
-  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); }
-  catch (e) {
-    // les images sont encodées dans le document : le quota se remplit vite
-    if ($("outilsAide")) $("outilsAide").textContent =
-      "Mémoire du navigateur pleine : allégez ou supprimez une image.";
-  }
-  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
-     c'est justement quand son quota déborde que la base doit avoir le dessin. */
-  programmePublication();
-};
 
-/* Historique des dessins. L'instantané copie les calques, leurs tableaux de
-   formes, et chaque forme — sans quoi il ne gardait rien de ce qui se retouche
-   sur place. Car tous les gestes d'édition écrivent *dans* la forme : le
-   glissement, la poignée tirée, l'arrondi, le libellé, la taille au clavier, la
-   ligne d'un arrêt, les passages posés. L'instantané pris juste avant portait
-   donc le même objet, déjà modifié, et Ctrl+Z retraçait le plan sans rien
-   défaire : seuls l'ajout et la suppression, qui touchent le tableau,
-   s'annulaient vraiment. `batiments.mjs` `reposeBatiment` contourne ce piège
-   depuis longtemps en refabriquant ses formes ; il valait mieux le fermer.
-   Les points, eux, sont toujours remplacés par un tableau neuf, jamais écrits
-   en place : en copier la liste suffit, et `src` d'une image reste partagé. */
-export const HIST = [], REFAIRE = [];
-const instantane = () => mesCalques().map(c => Object.assign({}, c, {
-  formes: c.formes.map(f => Object.assign({}, f,
-    f.pts ? { pts: f.pts.slice() } : null)),
-}));
-/* Une salve ne mémorise qu'à son premier événement. Un champ de saisie en
-   envoie un par frappe, et chacun mémorisait un état : les cinquante
-   emplacements se remplissaient de variantes du même mot, et les gestes d'avant
-   en étaient chassés. La salve se referme quand on quitte le champ, ou dès
-   qu'autre chose se mémorise — c'est ce que fait déjà le nuancier avec son
-   drapeau `couleurEnCours`. */
-let salveEnCours = "";
-const clotSalve = () => { salveEnCours = ""; };
-export function memorise(salve){
-  if (salve){
-    if (salveEnCours === salve) return;
-    salveEnCours = salve;
-  } else {
-    salveEnCours = "";
-  }
-  HIST.push(instantane());
-  if (HIST.length > 50) HIST.shift();
-  REFAIRE.length = 0;
-}
 function restaure(source, autre){
   if (!source.length) return false;
   autre.push(instantane());
@@ -176,11 +123,6 @@ function poseTrait(f){
    les suit pas.
    ------------------------------------------------------------ */
 
-/** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
-export function toleranceTrace(){
-  const r = cadrePlan();
-  return r.width ? vue().w / r.width * 12 : .3;
-}
 
 const aimanteContour = () =>
   !$("contourAimant") || $("contourAimant").checked;
@@ -244,11 +186,6 @@ function traceGuide(g, p){
   apercuGuide("M" + q[0] + " " + q[1] + "L" + p[0] + " " + p[1]);
 }
 
-/** Le contour se referme quand on revient sur son premier sommet. */
-export function fermeIci(p, pts){
-  if (pts.length < 3) return false;
-  return Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]) < toleranceTrace() * 1.5;
-}
 
 export function ajouteForme(f){
   const c = trouveCalque(calqueActif);
@@ -274,22 +211,6 @@ export function poseChampImage(){
   if (offert) remplitListeSocietes();
 }
 
-export function remplitListeSocietes(){
-  const l = $("listeSoc");
-  if (!l) return;
-  l.innerHTML = societesDuPlan()
-    .map(x => '<option value="' + esc(x.etiquette) + '">').join("");
-}
-
-/** Retrouve la société désignée par ce qui a été saisi. */
-export function societeSaisie(txt){
-  const v = String(txt || "").trim().toLowerCase();
-  if (!v) return null;
-  const l = societesDuPlan();
-  return l.find(x => x.etiquette.toLowerCase() === v)
-      || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
-      || null;
-}
 
 /* --- import d'image ---
    L'image est réduite et convertie en data-URI : une page publiée ne peut
@@ -668,10 +589,6 @@ function enchaineStand(f){
   if (ch){ ch.focus(); ch.select(); }
 }
 
-/** Les modes de transport, pour les deux listes qui les proposent — celle de
- *  la boîte à outils et celle du panneau d'édition. */
-export const optionsModes = () => MODES_TRANSPORT
-  .map(m => '<option value="' + esc(m.v) + '">' + esc(m.nom) + '</option>').join("");
 
 /* La couleur d'une ligne connue s'impose dès que la ligne est écrite : c'est
    celle de la signalétique, et personne n'a à la retrouver. Celle qu'on a
@@ -709,14 +626,10 @@ export function activeCalque(id){
   const vise = trouveCalque(id);
   if (vise && verrouille(vise)) return;
   poseCalqueActif(calqueActif === id ? null : id);
-  /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
-     peuvent pas être allumés ensemble : leurs glissers viseraient le même
-     pointeur. Entrer dans le placement des libellés referme déjà le dessin ;
-     l'inverse manquait, et le crayon des textes serait resté allumé pour un
-     mode qu'on venait de quitter. */
-  if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
-  // et la reprise d'une géométrie, qui vise le même pointeur
-  if (calqueActif && SORTE_GEO) modeGeometrie(null);
+  /* Les crayons du panneau — celui d'un calque, celui des textes, ceux de la
+     reprise — ne peuvent pas être allumés ensemble : leurs glissers
+     viseraient le même pointeur (`modes-edition.mjs`). */
+  if (calqueActif) quitteLesAutres("dessin");
   poseFormeSel(null);
   termineTrace(false);
   montreAimants(null);
@@ -775,14 +688,6 @@ export function basculeVerrou(c){
   construitPanneau();
 }
 
-/** Le dessin du cadenas. Fermé, l'anse retombe sur le boîtier ; ouvert, elle
- *  se relève d'un côté — à douze pixels, c'est la seule différence qui se
- *  voie encore, là où deux teintes du même tracé se confondraient. */
-export const pictoVerrou = (ferme) =>
-  '<svg class="pictoVerrou" viewBox="0 0 12 12" aria-hidden="true">' +
-  '<rect x="2.3" y="5.4" width="7.4" height="5.2" rx="1.1"/>' +
-  '<path d="' + (ferme ? "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0v1.6"
-                       : "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0") + '"/></svg>';
 
 /* ------------------------------------------------------------
    Le rôle du calque dans les itinéraires
@@ -1014,13 +919,9 @@ confieAuRendu({ oublieEdition: () => {
   if (o) o.classList.remove("open");
 } });
 
-/* Ces quatre modules sont importés par celui-ci : ils ne peuvent l'importer
-   en retour. Il leur confie donc ce qu'il tient dès que la page
-   d'administration le charge — avant tout geste. */
-confieAEdition({ memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes });
-confieAEnregistrement({ enregistreDessins });
-confieALaReprise({ pictoVerrou, activeCalque, remplitListeSocietes, societeSaisie, fermeIci });
-confieAuPlacementLibelles({ activeCalque });
+/* Le dessin est l'un des trois modes d'édition exclusifs : ouvrir les deux
+   autres le referme, s'il est ouvert. */
+inscritMode("dessin", () => { if (calqueActif) activeCalque(calqueActif); });
 
 /* Les aimants s'éprouvent seuls dans Node (`outils/essais/aimants.js`) : ils
    n'importent pas l'outil de dessin, on le leur confie. Ce module les importe

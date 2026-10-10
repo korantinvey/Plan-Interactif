@@ -1,15 +1,12 @@
 /* ============================================================
-   L'habillage du plan — couleur principale, fond, distinctions, barre du
-   salon, modèle
+   L'habillage du plan — couleur principale, fond, barre du salon, modèle
 
    Le plan public le pose à chaque chargement, par
    `appliqueApparence` (`apparence.mjs`) ; l'exploitant le règle dans les
    volets de la fenêtre des réglages (`volets.mjs`). La couleur que le
-   système peint derrière l'heure s'importe (`ton-barre.mjs`). Les
-   distinctions et leurs marques sur le plan et sur la fiche
-   (`distinctions.mjs`) lui sont confiées par la porte `confieALHabillage`,
-   qu'elles ouvrent en se chargeant, parce qu'elles importent ce module pour
-   leur mode et leur teinte, et ne peuvent donc s'importer d'ici.
+   système peint derrière l'heure s'importe (`ton-barre.mjs`). Ce qu'on fait
+   voir des distinctions — marque par surface, teinte — vit avec elles
+   (`distinctions.mjs`).
    `brancheHabillage`, sans rien recevoir, pose au premier trait la barre que
    la visite précédente a laissée, au rang que le lancement lui donne
    (`lancement.mjs`).
@@ -20,27 +17,6 @@ import { CLE_CONF, conf } from "./configuration.mjs";
 import { MODELES, modeleRetenu, habilleModale } from "./modeles.mjs";
 import { posePoliceLibelles } from "./polices-plan.mjs";
 import { poseTonDeLaBarre } from "./ton-barre.mjs";
-
-/* Ce qui est confié, et rien avant : le plan ne s'habille qu'à l'arrivée des
-   données, bien après le chargement des distinctions. */
-/**
- * @typedef {object} PreteHabillage
- * @property {any[]} distinctions les distinctions et leurs clés (`distinctions.mjs` `DISTINCTIONS`)
- * @property {() => void} dessineDists retrace leurs marques sur le plan
- * @property {() => void} refaitDistsFiche repose celles de la fiche ouverte
- */
-/** @type {PreteHabillage} */
-const prete = { distinctions: [], dessineDists: () => {}, refaitDistsFiche: () => {} };
-
-/**
- * La porte des distinctions, que `distinctions.mjs` ouvre en se chargeant —
- * donc avant que le lancement ne pose le moindre branchement.
- *
- * @param {Partial<PreteHabillage>} o
- */
-export function confieALHabillage(o){
-  Object.assign(prete, o);
-}
 
 const racine = document.documentElement;
 
@@ -121,97 +97,6 @@ export function appliqueFond(){
   else racine.style.removeProperty("--c-fond");
 }
 
-/* ------------------------------------------------------------
-   Les distinctions — ce que le plan en montre
-
-   Deux champs viennent de la synchronisation : le nouvel exposant, et
-   l'adhérent du syndicat du salon. Ce qu'on en fait voir se règle ici, un
-   onglet chacun et la même mécanique pour les deux.
-
-   Trois questions par distinction plutôt qu'une, parce que la même marque ne
-   tient pas aux trois endroits : un mot se lit sur une fiche qu'on ouvre, pas
-   sur un stand qu'on survole — où le rendu WebGL ne rejoue que des formes.
-
-   Les défauts ne changent rien aux salons déjà en ligne : la fiche garde la
-   pastille qu'elle portait, le plan et la liste restent nus tant que
-   l'exploitant n'a pas choisi.
-   ------------------------------------------------------------ */
-
-export const MARQUES_DIST = {
-  plan: [
-    { cle: "aucun",  nom: "Aucune" },
-    { cle: "point",  nom: "Point d'angle" },
-    { cle: "corne",  nom: "Coin corné" },
-    { cle: "etoile", nom: "Étincelle" },
-    { cle: "lisere", nom: "Liseré" },
-  ],
-  liste: [
-    { cle: "aucun",     nom: "Aucune" },
-    { cle: "point",     nom: "Point devant le nom" },
-    { cle: "cartouche", nom: "Cartouche" },
-    { cle: "sousligne", nom: "Mention sous le nom" },
-  ],
-  fiche: [
-    { cle: "aucun",    nom: "Aucune" },
-    { cle: "pastille", nom: "Pastille" },
-    { cle: "corne",    nom: "Coin corné" },
-    { cle: "bandeau",  nom: "Bandeau" },
-  ],
-};
-const DIST_DEFAUT = { plan: "aucun", liste: "aucun", fiche: "pastille" };
-
-/** La marque retenue pour une surface. Une valeur inconnue — un réglage d'une
- *  version qui proposait autre chose — retombe sur le défaut. */
-export function modeDist(d, surface){
-  const v = conf(d.reglage)[surface];
-  return MARQUES_DIST[surface].some(m => m.cle === v) ? v : DIST_DEFAUT[surface];
-}
-
-/** La teinte des marques d'une distinction, ou rien — auquel cas la feuille de
- *  style reprend la main, et avec elle l'accent du salon.
- *
- *  Une seule pour les trois surfaces d'une distinction : ce sont trois façons
- *  de dire la même chose, et trois teintes en auraient fait trois distinctions.
- *  Une par distinction en revanche, et c'est tout le sujet : deux marques de la
- *  même couleur sur un stand ne se distinguent plus l'une de l'autre. */
-export const couleurDist = (d) => {
-  const v = conf(d.reglage).couleur;
-  return trio(v) ? v : "";
-};
-
-/**
- * Les teintes des distinctions, posées en jetons sur la racine.
- *
- * Trois par distinction : sa teinte, l'aplat doux de la pastille et l'encre
- * qui se lit dessus. La pastille se peint des deux, comme l'accent dont elle
- * les tenait — une teinte choisie doit rendre les deux, sans quoi le mot
- * disparaîtrait sur son propre fond.
- *
- * En haut plutôt que sur chaque marque : une couleur changée repeint alors les
- * neuf cents lignes de la liste sans qu'on les réécrive, et la classe de la
- * distinction va chercher les siens (voir `_head.html`, « .d-neuf »).
- *
- * Le plan, lui, ne se déduit d'aucun jeton : ses marques sont des formes à
- * tracer, et « dessineDists » les refait. La tête de la fiche ouverte non plus,
- * depuis qu'elles sont deux : c'est le script qui décide laquelle occupe le
- * coin, et « refaitDistsFiche » la repose.
- */
-export function appliqueDists(){
-  prete.distinctions.forEach(d => {
-    const v = couleurDist(d);
-    const n = "--d-" + d.cle;
-    if (v){
-      racine.style.setProperty(n, v);
-      racine.style.setProperty(n + "-doux", melange(v, "#FFFFFF", 0.86));
-      racine.style.setProperty(n + "-ink",
-        luminance(trio(v)) > 0.42 ? "#0E1113" : "#FFFFFF");
-    } else {
-      [n, n + "-doux", n + "-ink"].forEach(x => racine.style.removeProperty(x));
-    }
-  });
-  prete.dessineDists();
-  prete.refaitDistsFiche();
-}
 
 /**
  * Avec bande, ou sans : ce que la barre du salon devient sur un téléphone.

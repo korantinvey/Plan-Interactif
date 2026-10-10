@@ -20,6 +20,9 @@ outils/*.json
 # Le cliquet des types : ce que `npm run types` accepte encore. Il fait foi
 # en intégration, il ne se régénère donc pas de lui-même.
 !outils/types-acceptes.json
+# Le cliquet des portes : celles que `npm run portes` accepte, avec leur
+# raison. Même chose : il fait foi en intégration.
+!outils/portes-acceptees.json
 supabase/.temp/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont

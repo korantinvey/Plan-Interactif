@@ -12,7 +12,7 @@
    appelle au rang que son code tenait : les écoutes de la fiche s'y posent
    au même rang qu'avant parmi celles du plan.
    Ce qu'elle emprunte aux modules qui l'importent — le montage du plan, les
-   découpages dessinés, les distinctions, le tiroir du parcours, et, en
+   découpages dessinés, les distinctions, et, en
    administration seulement, les deux gestes de l'exploitant sur une zone —
    chacun le lui confie en se chargeant, par `confieALaFiche`. La liste, les
    thématiques et les vignettes s'importent de `recherche.mjs`, les tiroirs
@@ -25,34 +25,34 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs } from "./texte.mjs";
-import { DATA, parId, CONFS, EXPOSANTS, state, P } from "./donnees.mjs";
-import { API } from "./salon.mjs";
+import { DATA, parId, CONFS, EXPOSANTS, state, P, societes } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { lien, adresseWeb, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
 import { JOURS, MOIS, momentLocal, jourLong } from "./temps.mjs";
 import { mesure } from "./mesure.mjs";
 import { recadreMarque } from "./marque.mjs";
-import { signetParcours, boutonParcours, dessineMarques } from "./parcours.mjs";
+import { signetParcours, boutonParcours, dessineMarques, brancheParcours } from "./parcours.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
   from "./vue.mjs";
-import { fermeItineraire, versItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
-import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES, confieALaRecherche }
-  from "./recherche.mjs";
+import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, adresseVignette } from "./recherche.mjs";
 import { libelles, coexChoisit } from "./libelles.mjs";
 import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { baisseTiroir } from "./tiroirs.mjs";
+import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
+import { poseDistsFiche } from "./distinctions.mjs";
+import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
+import { montePlan } from "./rendu.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
- * (`rendu.mjs`), les découpages dessinés (`dessin.mjs`), les marques des
- * distinctions (`distinctions.mjs`), le tiroir du parcours
- * (`tiroir-parcours.mjs`), et, en administration seulement, les deux gestes
+ * (`rendu.mjs`), et, en administration seulement, les deux gestes
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
  * lui confie ce qu'elle en appelle au chargement de son module, par
@@ -60,12 +60,6 @@ import { baisseTiroir } from "./tiroirs.mjs";
  * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
  * comme la pastille sans écoute.
  * @typedef {object} PageFiche
- * @property {(id: any, iSoc?: any) => any} decoupeStand
- * @property {() => void} montePlan
- * @property {() => void} marqueStandsDessines
- * @property {(soc: any) => void} poseDistsFiche
- * @property {() => void} fermeParcours
- * @property {(hote: any, canal: any) => void} brancheParcours
  * @property {((o: any) => void) | null} ficheZone
  * @property {((o: any) => void) | null} basculeAffichageZone
  */
@@ -75,12 +69,6 @@ const prete = /** @type {any} */ ({ ficheZone: null, basculeAffichageZone: null 
 /** La porte des modules qui prêtent à la fiche ce qu'elle appelle.
  *  @param {Partial<PageFiche>} o */
 export function confieALaFiche(o){ Object.assign(prete, o); }
-const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.decoupeStand(id, iSoc);
-const montePlan = () => prete.montePlan();
-const marqueStandsDessines = () => prete.marqueStandsDessines();
-const poseDistsFiche = (/** @type {any} */ soc) => prete.poseDistsFiche(soc);
-const fermeParcours = () => prete.fermeParcours();
-const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================
    7. Sélection et fiche
@@ -542,27 +530,6 @@ export function ficheConf(id, canal){
    `modules/sur.mjs`. */
 
 
-/**
- * L'adresse d'une vignette fabriquée à la synchronisation.
- *
- * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
- * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
- * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
- * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
- * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
- * analyser ici.
- *
- * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
- * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
- */
-export const adresseVignette = (cle) =>
-  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
-     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
-     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
-  VIGNETTES.get(cle) ||
-  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
-    ? API + "?vignette=" + cle
-    : "");
 
 /* Un appui tactile produit, quelque trois cents millisecondes plus tard, un
    clic de compatibilité aux mêmes coordonnées. La fiche venant d'apparaître
@@ -586,20 +553,10 @@ export function ecarteClicFantome(){
 /** Le nom sous lequel une société se présente sur un stand. */
 const nomSociete = (x) => x.nom || x.plan || "Sans nom";
 
-/**
- * Les sociétés d'un stand, celle qui le loue en tête.
- *
- * Elle est le stand lui-même : c'est son dossier qui l'a désignée à la
- * synchronisation, et ses champs sont posés à plat sur lui. Les autres vivent
- * dans « coex », dans l'ordre où la source les a rendues.
- *
- * Le rang les distingue, la liste ne le dit pas : qui loue et qui est hébergé
- * relève du contrat entre l'organisateur et ses exposants. Un visiteur cherche
- * une enseigne, pas sa place dans un bail.
- */
-export function societes(o){
-  return [{ soc: o, i: -1 }].concat((o.coex || []).map((x, i) => ({ soc: x, i: i })));
-}
+/* Les sociétés d'un stand se lisent dans les données (`donnees.mjs`
+   `societes`) : le dessin et les distinctions les lisent aussi, et
+   n'importent plus la fiche pour cela. Elles s'importent d'ici comme avant. */
+export { societes };
 
 /**
  * Le choix, quand plusieurs sociétés se partagent un stand.
@@ -844,7 +801,7 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
   const soc = iS >= 0 ? heberges[iS] : o;
   // la fiche, le parcours et l'itinéraire se partagent la même bande, à
   // droite comme en bas
-  fermeParcours(); fermeItineraire();
+  fermeLesAutresTiroirs("fiche");
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
   /* « Zone organisateur » n'apprenait rien : la forme et la couleur le disent.
@@ -1093,7 +1050,7 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
      qui la partagent : c'est le chemin qu'on prend quand on a trouvé à peu
      près ce qu'on cherchait, et qu'on veut voir le reste. */
   $("dBody").querySelectorAll(".theme").forEach(b =>
-    b.onclick = () => filtreTheme(b.dataset.t));
+    b.onclick = () => filtreTheme(b.dataset.t, ferme));
   // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
   brancheActesFiche(() => centre(o), () => versItineraire(o));
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
@@ -1192,11 +1149,6 @@ export function brancheFiche(){
   $("voile").onclick = ferme;
 }
 
-/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant ce qu'elle en appelle (une ligne ouvre la fiche d'un stand ou d'une conférence, la referme, et montre la vignette d'un logo). */
-confieALaRecherche({ select, ferme, ficheConf, adresseVignette });
-
-/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant de quoi refermer la fiche quand il
-   s'ouvre. */
-confieAuTiroirItineraire({ ferme });
+/* La fiche est l'un des trois tiroirs qui se partagent la bande : ouvrir le
+   parcours ou l'itinéraire la referme, si elle est ouverte. */
+inscritTiroirExclusif("fiche", ferme, () => $("detail").classList.contains("open"));
