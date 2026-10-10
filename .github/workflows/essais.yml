@@ -2,7 +2,7 @@
 #
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
-# la relecture ESLint, le cliquet des types, les
+# la relecture ESLint, le cliquet des types, le typage des fonctions Supabase, les
 # douze cas du moteur de la journée organisée,
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
@@ -67,3 +67,22 @@ jobs:
           name: traces-du-navigateur
           path: test-results/
           retention-days: 7
+
+  # Le typage des fonctions Supabase ne tournait que dans `Supabase`, donc sur
+  # `main` seule, au moment de déployer : une branche pouvait arriver verte avec
+  # une fonction qui ne type pas, et l'on ne l'apprenait qu'une fois fusionnée.
+  # Le voici sur chaque branche, à part des essais : il n'a besoin ni des pages
+  # construites ni des dépendances npm, et tourne pendant qu'eux s'installent.
+  fonctions:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Typage des fonctions Supabase
+        run: npm run typage
