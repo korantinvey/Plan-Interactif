@@ -10,6 +10,8 @@
  * autre instance sans reconstruire les pages.
  */
 window.PLAN_CONFIG = {
-  url: "https://jylkfskotuafptaxujao.supabase.co",
-  anonKey: "sb_publishable_N5rJYe35-Kcaw70ZoTJRaQ_lvVVc_5F",
+  /* Versées par `genere.js` depuis `outils/projet.js`, seul endroit qui les
+     écrit : la production, ou le projet de recette pour une prévisualisation. */
+  url: "__URL_PROJET__",
+  anonKey: "__CLE_PROJET__",
 };

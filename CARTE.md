@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_config.js` — 15 l. → config.js
+### `_config.js` — 17 l.
 
 ### `_console-base.html` — 11 l. → admin-plans.html, rapport.html
 
@@ -1757,8 +1757,8 @@ Fonctions :
 
 ## Le reste
 
-- `src/index.mjs` — 1049 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 106 · `amontPour` 115 · `cleDe` 123 · `cleDeLot` 129 · `condense` 136 `cleVersion` 160 · `rangeLaVersion` 163 · `ditVersion` 171 · `meta` 180 · `gardable` 196 `range` 202 · `rafraichit` 209 · `entete` 244 · `oublie` 286 · `rappels` 372 · `cleApp` 417 `cheminDuSalon` 448 · `pageDuSalon` 465 · `appDuSalon` 489 · `iconesDuSalon` 535 `manifeste` 575 · `iconeApp` 664 · `mesure` 708 · `carteDuScript` 796 · `lieuDe` 809 `erreur` 823 · `planDeVisite` 863 · `chargePrevue` 901
+- `src/index.mjs` — 1104 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

@@ -33,10 +33,12 @@
  */
 /* Écrit par la construction, jamais versionné : sans lui, pas de déploiement
    (voir `outils/genere.js`). */
-import { VERSION_DES_PAGES } from "./pages.mjs";
+import { VERSION_DES_PAGES, PROJET, APERCU } from "./pages.mjs";
 import { lisCarte, source } from "./carte.mjs";
 
-const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
+/* Le projet vient de la construction (`outils/projet.js`), seul endroit qui
+   l'écrit : la production, ou la recette pour une prévisualisation. */
+const BASE = PROJET.url + "/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
 const RAPPELS = BASE + "rappels";
@@ -46,6 +48,50 @@ const PLAN_DE_VISITE = BASE + "plan-de-visite";
    changement de projet n'ait qu'un seul endroit à changer. */
 const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
 const PARAMS = ["slug", "fond", "v", "vignette", "vignettes"];
+
+/* L'adresse d'une prévisualisation : `<branche>-plan-interactif.<compte>.workers.dev`,
+   ou le préfixe d'une version à la place de la branche. La production n'en a
+   pas devant le nom du Worker. */
+const ADRESSE_APERCU = /^[a-z0-9-]+-plan-interactif\.[a-z0-9-]+\.workers\.dev$/;
+
+/**
+ * Ce Worker tourne-t-il en prévisualisation ?
+ *
+ * Cloudflare sert chaque branche poussée sous sa propre adresse, mais avec les
+ * liaisons de la production : le même stockage KV, la même base. Sans ce
+ * contrôle, une branche en essai rangeait ses réponses dans le cache que lisent
+ * les visiteurs — sous des clés que rien ne distinguait —, en dépensait le
+ * quota d'écritures quotidien, et comptait les clics de qui la mettait au point
+ * dans l'audience des salons.
+ *
+ * Deux témoins, l'un ou l'autre suffit : la construction, qui sait quelle
+ * branche elle construit (`outils/projet.js`), et l'adresse de la requête, si
+ * jamais la construction ne l'a pas su.
+ */
+const enApercu = (url) => APERCU || ADRESSE_APERCU.test(url.hostname);
+
+/**
+ * Le stockage qu'on peut lire et écrire ici.
+ *
+ * En production, `CACHE`. En prévisualisation, celui de la production est
+ * interdit : seul un espace à part, `CACHE_APERCU`, déclaré dans
+ * `wrangler.jsonc`, peut servir ; sans lui, on travaille sans cache — ce que ce
+ * fichier sait faire partout (voir l'en-tête).
+ */
+const cacheDe = (env, url) => (enApercu(url) ? env.CACHE_APERCU : env.CACHE) || null;
+
+/* Les écritures que le Worker relaie de lui-même — mesures, erreurs, plans de
+   visite — ne partent pas d'une prévisualisation vers la production : elles y
+   fausseraient l'audience, les erreurs d'une version que personne d'autre ne
+   reçoit, et la charge annoncée d'où les visiteurs tirent leur journée. Vers un
+   projet de recette, si. */
+const ecritEnProduction = (url) => enApercu(url) && PROJET.nom === "production";
+
+/** Une écriture acquittée sans être relayée, et qui le dit. */
+const ecartee = (cors) => new Response(null, {
+  status: 204,
+  headers: { ...cors, "Cache-Control": "no-store", "X-Apercu": "ecarte" },
+});
 
 /* Un slug nomme un salon : des minuscules, des chiffres, des traits. Le
    contrôle n'est pas décoratif — la clé de cache se construit avec. */
@@ -245,8 +291,9 @@ async function entete(url, env, ctx) {
   const slug = url.searchParams.get("slug") || "";
   if (!SLUG.test(slug)) return dit({ erreur: "Paramètre slug absent ou invalide." }, 400);
 
-  if (env.CACHE) {
-    const v = await env.CACHE.get(cleVersion(slug)).catch(() => null);
+  const cache = cacheDe(env, url);
+  if (cache) {
+    const v = await cache.get(cleVersion(slug)).catch(() => null);
     if (v) return ditVersion(v);
   }
 
@@ -256,9 +303,9 @@ async function entete(url, env, ctx) {
     return dit({ erreur: "Plan indisponible." }, rep ? rep.status : 502);
   }
   const neuve = rep.headers.get("X-Version");
-  if (gardable(env.CACHE, rep) && neuve) {
-    ctx.waitUntil(range(env.CACHE, cleDe(amont), rep, rep.body, false));
-    ctx.waitUntil(rangeLaVersion(env.CACHE, slug, neuve));
+  if (gardable(cache, rep) && neuve) {
+    ctx.waitUntil(range(cache, cleDe(amont), rep, rep.body, false));
+    ctx.waitUntil(rangeLaVersion(cache, slug, neuve));
   } else {
     // rien à ranger : le corps ne doit pas rester en attente d'un lecteur
     rep.body?.cancel().catch(() => {});
@@ -287,7 +334,8 @@ async function oublie(requete, env) {
   if (requete.method !== "POST") {
     return new Response("Méthode non permise", { status: 405 });
   }
-  const slug = new URL(requete.url).searchParams.get("slug") || "";
+  const url = new URL(requete.url);
+  const slug = url.searchParams.get("slug") || "";
   if (!SLUG.test(slug)) return dit({ erreur: "Paramètre slug absent ou invalide." }, 400);
 
   const jeton = requete.headers.get("Authorization");
@@ -297,18 +345,21 @@ async function oublie(requete, env) {
     .catch(() => null);
   if (!qui || !qui.ok) return dit({ erreur: "Session refusée." }, 401);
 
-  if (env.CACHE) {
+  /* Une prévisualisation n'oublie que ce qu'elle garde elle-même : enregistrer
+     depuis elle ne touche plus au cache de la production. */
+  const cache = cacheDe(env, url);
+  if (cache) {
     /* Le plan, et ce que porte l'application installée : renommer un salon dans
        la console, y déposer une icône doivent se voir au même moment que le
        reste. */
     await Promise.all([
-      env.CACHE.delete(cleDe(amontPour(new URLSearchParams({ slug })))),
-      env.CACHE.delete(cleApp(slug)),
+      cache.delete(cleDe(amontPour(new URLSearchParams({ slug })))),
+      cache.delete(cleApp(slug)),
       /* Et la version : c'est elle que les pages interrogent, et la garder
          reviendrait à leur dire que rien n'a changé. Les plans rangés sous une
          version révolue restent, sans dommage — plus personne ne les demande,
          et ils s'effacent d'eux-mêmes. */
-      env.CACHE.delete(cleVersion(slug)),
+      cache.delete(cleVersion(slug)),
     ]).catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
   }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
@@ -486,10 +537,10 @@ const pageDuSalon = (requete, env) =>
  * le cache ne doit pas retenir l'absence, et un slug inventé n'y écrit donc
  * rien.
  */
-async function appDuSalon(slug, env, ctx) {
+async function appDuSalon(slug, cache, ctx) {
   const cle = cleApp(slug);
-  if (env.CACHE) {
-    const garde = await env.CACHE.get(cle, { type: "json" }).catch(() => null);
+  if (cache) {
+    const garde = await cache.get(cle, { type: "json" }).catch(() => null);
     if (garde && garde.nom) return garde;
   }
   const rep = await fetch(AMONT + "?slug=" + encodeURIComponent(slug) + "&app=1")
@@ -506,8 +557,8 @@ async function appDuSalon(slug, env, ctx) {
     choisi: String(corps?.app ?? "").trim().slice(0, NOM_MAX),
     icone: EMPREINTE.test(empreinte) ? empreinte : "",
   };
-  if (env.CACHE) {
-    ctx.waitUntil(env.CACHE.put(cle, JSON.stringify(app), { expirationTtl: TTL_APP })
+  if (cache) {
+    ctx.waitUntil(cache.put(cle, JSON.stringify(app), { expirationTtl: TTL_APP })
       .catch(() => {}));
   }
   return app;
@@ -598,7 +649,8 @@ async function manifeste(requete, env, ctx) {
      cache, et part en amont. Muet sur un salon qu'on ne sait pas nommer, le
      manifeste garde le nom et les icônes du produit — mieux vaut une
      application mal nommée qu'une application qui ne s'installe pas. */
-  const app = SLUG.test(salon) ? await appDuSalon(salon, env, ctx) : null;
+  const app = SLUG.test(salon)
+    ? await appDuSalon(salon, cacheDe(env, new URL(requete.url)), ctx) : null;
   if (app) {
     contenu.name = app.choisi || "Plan " + app.nom + " by " + MARQUE;
     /* Ce que le système écrit sous l'icône : le salon seul, faute de mieux —
@@ -703,7 +755,7 @@ async function iconeApp(url) {
 const PORTE_MESURES = BASE.replace("/functions/v1/", "/rest/v1/rpc/") + "mesure_publique";
 /* La clé « publishable » : faite pour circuler, c'est celle de `config.js`.
    Ce qui protège la base, ce sont ses droits, pas le secret de cette clé. */
-const CLE_PUBLIQUE = "sb_publishable_N5rJYe35-Kcaw70ZoTJRaQ_lvVVc_5F";
+const CLE_PUBLIQUE = PROJET.cle;
 
 async function mesure(requete) {
   if (requete.method === "OPTIONS") {
@@ -716,6 +768,7 @@ async function mesure(requete) {
   if (corps.length > MESURE_MAX) {
     return new Response(null, { status: 413, headers: CORS_MESURE });
   }
+  if (ecritEnProduction(new URL(requete.url))) return ecartee(CORS_MESURE);
   const repond = (status, erreur) => new Response(
     erreur ? JSON.stringify({ erreur }) : null,
     { status, headers: { ...CORS_MESURE, "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -831,6 +884,7 @@ async function erreur(requete, env) {
   if (!paquet || typeof paquet !== "object" || !Array.isArray(paquet.erreurs)) {
     return new Response(null, { status: 400 });
   }
+  if (ecritEnProduction(new URL(requete.url))) return ecartee({});
   const erreurs = await Promise.all(paquet.erreurs.slice(0, 5).map(async (e) => ({
     message: String((e && e.message) || "").slice(0, 300),
     lieu: e && typeof e === "object" ? await lieuDe(e, env, requete.url) : "",
@@ -871,6 +925,7 @@ async function planDeVisite(requete) {
   if (corps.length > PLAN_MAX) {
     return new Response(null, { status: 413, headers: CORS_MESURE });
   }
+  if (ecritEnProduction(new URL(requete.url))) return ecartee(CORS_MESURE);
   const reponse = await fetch(PLAN_DE_VISITE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -980,7 +1035,7 @@ export default {
     }
 
     const jeton = requete.headers.get("Authorization");
-    const cache = jeton ? null : env.CACHE;      // une identité contourne le cache
+    const cache = jeton ? null : cacheDe(env, url);   // une identité contourne le cache
     // la clé ne retient que les paramètres attendus : deux adresses qui ne
     // diffèrent que par un paramètre parasite partagent la même entrée
     const cle = amont.searchParams.get("vignettes")

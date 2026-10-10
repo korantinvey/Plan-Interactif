@@ -6,7 +6,11 @@ const pwa = require("./pwa.js");
 const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
 const modules = require("./modules.js");
+const { projetDeLaConstruction } = require("./projet.js");
 const D = __dirname;
+/* Le projet Supabase de cette construction, et si elle part en
+   prévisualisation : voir `outils/projet.js`. */
+const PROJET = projetDeLaConstruction();
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
 /* Les pages passent par le Worker, qui relaie et met en cache (src/index.js).
@@ -520,8 +524,11 @@ fs.writeFileSync(W + "plan-smcl.html",
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
-fs.writeFileSync(W + "config.js",
-  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")));
+const CONFIG = fs.readFileSync(D + "/gabarit/_config.js", "utf8")
+  .replace("__URL_PROJET__", () => PROJET.url)
+  .replace("__CLE_PROJET__", () => PROJET.cle);
+if (/__[A-Z_]+_PROJET__/.test(CONFIG)) throw new Error("config.js : projet non versé");
+fs.writeFileSync(W + "config.js", epureScript(CONFIG));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
 fs.writeFileSync(W + "console.css",
   minifieStyle(epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8"))));
@@ -625,7 +632,12 @@ const version = empreinte.digest("hex").slice(0, 12);
    blanche. `/api/pages` la dit, pour savoir ce qui est en ligne. */
 fs.writeFileSync(path.join(D, "..", "src", "pages.mjs"),
   "// Écrit par outils/genere.js — ne pas modifier, ne pas versionner.\n" +
-  "export const VERSION_DES_PAGES = " + JSON.stringify(version) + ";\n");
+  "export const VERSION_DES_PAGES = " + JSON.stringify(version) + ";\n" +
+  /* Le projet que relaie le Worker, et s'il tourne en prévisualisation : il
+     se tient alors à l'écart du cache et des écritures de la production. */
+  "export const PROJET = " + JSON.stringify({ url: PROJET.url, cle: PROJET.cle, nom: PROJET.nom }) + ";\n" +
+  "export const APERCU = " + JSON.stringify(PROJET.apercu) + ";\n");
+if (PROJET.apercu) console.log("  construction de prévisualisation — projet « " + PROJET.nom + " »");
 
 fs.writeFileSync(W + "sw.js",
   epureScript(fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version)));
