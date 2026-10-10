@@ -41,22 +41,14 @@ import { select } from "./fiche.mjs";
 import { conf, suggestionOfferte } from "./configuration.mjs";
 
 /**
- * Ce que la suggestion emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
- * qui l'importe pour la poser dans son tiroir : il lui confie au chargement
- * de son module, par `confieALaSuggestion`, de quoi refaire le tiroir et
- * poser le bouton « au parcours ». La fiche, la
- * configuration et l'option vendue s'importent.
- * @typedef {{ remplitParcours: () => void,
- *   brancheParcours: (hote: any, canal: any) => void }} PageSuggestion
+ * Ce que la carte emprunte au tiroir du parcours (`tiroir-parcours.mjs`), qui
+ * l'importe pour la poser : de quoi refaire le tiroir et poser le bouton « au
+ * parcours ». Il ne l'appelle que de là — le tiroir qu'il remplit, l'ajout
+ * qui peut faire atteindre le seuil —, et le lui passe donc à chaque appel.
+ * La fiche, la configuration et l'option vendue s'importent.
+ * @typedef {{ remplit: () => void,
+ *   branche: (hote: any, canal: any) => void }} TiroirDuParcours
  */
-/** @type {PageSuggestion} */
-const prete = { remplitParcours: () => {}, brancheParcours: () => {} };
-
-/** La porte du tiroir du parcours, qui prête à la suggestion ce qu'elle appelle.
- *  @param {Partial<PageSuggestion>} o */
-export function confieALaSuggestion(o){ Object.assign(prete, o); }
-const remplitParcours = () => prete.remplitParcours();
-const brancheParcours = (hote, canal) => prete.brancheParcours(hote, canal);
 
 
 /* Trois exposants du même critère : deux sont une coïncidence, quatre une
@@ -242,7 +234,8 @@ function phraseSuggestion(s){
  * la fenêtre, redit une ligne plus bas — et sa croix avec, la fenêtre ayant
  * déjà la sienne et son « Non merci ».
  */
-function carteSuggestion(s, ferme){
+/** @param {any} s @param {(() => void) | null} ferme @param {TiroirDuParcours} tiroir */
+function carteSuggestion(s, ferme, tiroir){
   const o = s.o;
   const d = document.createElement("div");
   d.className = "pSugg";
@@ -269,15 +262,15 @@ function carteSuggestion(s, ferme){
   const croix = d.querySelector(".sEcarte");
   if (croix) croix.onclick = () => {
     SUGG_ECARTES.add(String(o.id));
-    remplitParcours();
+    tiroir.remplit();
   };
   // le bouton vit comme les signets : il ajoute, il compte, et il se retourne
-  brancheParcours(d, CANAL_SUGG);
+  tiroir.branche(d, CANAL_SUGG);
   /* La fenêtre s'est ouverte pour cette proposition-là : acceptée, elle n'a
      plus rien à dire, et « Non merci » sous un exposant qu'on vient de retenir
      se lirait de travers. Le tiroir fait de même à sa façon — la carte y cède
      la place au rang, ou à la proposition suivante. Branché après
-     `brancheParcours` pour passer après la bascule, et non avant elle. */
+     le bouton du tiroir pour passer après la bascule, et non avant elle. */
   if (ferme) d.querySelector(".parc").addEventListener("click", () => {
     if (dansParcours("stand", o.id)) ferme();
   });
@@ -291,10 +284,11 @@ function carteSuggestion(s, ferme){
  * fenêtre ne veut pas la même carte redite dans le parcours, où elle
  * reviendrait attendre le visiteur qui l'a refermée d'un « Non merci ».
  */
-export function poseSuggestion(hote){
+/** @param {HTMLElement} hote @param {TiroirDuParcours} tiroir */
+export function poseSuggestion(hote, tiroir){
   if (!presenteSugg("tiroir")) return;
   const s = suggestionCourante();
-  if (s) hote.appendChild(carteSuggestion(s, null));
+  if (s) hote.appendChild(carteSuggestion(s, null, tiroir));
 }
 
 /**
@@ -305,7 +299,8 @@ export function poseSuggestion(hote){
  * lors d'une visite précédente n'en est pas un — accueillir le visiteur par une
  * fenêtre qu'il n'a pas demandée serait autre chose que compléter sa visite.
  */
-export function fenetreSuggestion(){
+/** @param {TiroirDuParcours} tiroir */
+export function fenetreSuggestion(tiroir){
   if (!presenteSugg("fenetre")) return;
   /* Une fenêtre déjà ouverte a été demandée, elle : la remplacer par une
      proposition que personne n'attendait ferait perdre ce qu'on y faisait —
@@ -327,7 +322,7 @@ export function fenetreSuggestion(){
      l'autre chemin, celui qu'on prend quand on veut d'abord regarder. Deux
      boutons pleins auraient laissé la proposition sans réponse évidente. */
   ouvreModale("Pour compléter votre visite", corps => {
-    corps.appendChild(carteSuggestion(s, fermeModale));
+    corps.appendChild(carteSuggestion(s, fermeModale, tiroir));
   }, [{ libelle: "Non merci" },
       { libelle: "Voir sur le plan",
         action: () => select(s.o.id, true, CANAL_SUGG) }], "sugg");

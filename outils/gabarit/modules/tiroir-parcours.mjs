@@ -9,9 +9,11 @@
    de la copie à garder (`partage.mjs`) — et les importe.
 
    Ces voisins le rappellent à leur tour — rafraîchir, rendre un rang,
-   basculer un signet —, mais ne peuvent l'importer sans boucle : il le leur
-   confie en se chargeant, par leurs portes (`confieALaJournee`,
-   `confieALaSuggestion`, `confieAuxRappels`, au bas du module).
+   basculer un signet —, mais ne peuvent l'importer sans boucle. La
+   suggestion et les rappels, qu'il est seul à appeler, reçoivent ce qu'il
+   leur faut en argument (`TIROIR_SUGG`, `fenetreRappel`) ; la journée, dont
+   les boutons le rappellent plus tard, par sa porte (`confieALaJournee`, au
+   bas du module).
 
    Il se branche par `brancheTiroirParcours`, que `lancement.mjs` `lancePlan`
    appelle à son rang : ses écoutes s'y posent parmi celles du plan. La fiche,
@@ -29,9 +31,9 @@ import { PARCOURS, poseParcours, brancheListeParcours, casierParcours, dansParco
   enregistreParcours, tientLeStockage, plurielParcours, contenuParcours, SIGNET, rafraichitMarque,
   marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours, fermeParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
-import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion, confieALaSuggestion }
+import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
-import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel, confieAuxRappels }
+import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, confieALaJournee } from "./journee.mjs";
 import { fermeItineraire } from "./tiroir-itineraire.mjs";
@@ -68,13 +70,13 @@ export function basculeParcours(genre, id, canal){
      qu'on le sait, et nulle part ailleurs — le chargement d'une liste retenue
      lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
      par une fenêtre qu'il n'a pas demandée n'est pas la même chose. */
-  if (i < 0 && genre === "stand") fenetreSuggestion();
+  if (i < 0 && genre === "stand") fenetreSuggestion(TIROIR_SUGG);
   /* Et, pour une conférence, la proposition du rappel : c'est le premier
      horaire retenu qui donne au réveil quelque chose à faire, et celui qui
      vient de le retenir est le seul à qui la question se pose. Un lot versé n'y
      passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
      vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
-  if (i < 0 && genre === "conf") fenetreRappel();
+  if (i < 0 && genre === "conf") fenetreRappel(rafraichitParcours);
   /* Et, dès qu'il y a quelque chose à perdre, le geste qui l'en empêche : le
      navigateur prié de tenir. La copie ne s'invite pas ici — une liste qu'on
      est en train de composer n'a pas encore de quoi valoir un lien gardé. */
@@ -313,7 +315,7 @@ export function remplitParcours(){
      voir ce qu'il y a après ce qu'il a lui-même retenu. En tête elle se voit,
      et sa première phrase dit d'où elle vient : elle ne se prend pas pour un
      rang du parcours. */
-  poseSuggestion(hote);
+  poseSuggestion(hote, TIROIR_SUGG);
 
   /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
      le reste de la journée se range. */
@@ -448,14 +450,16 @@ confieALaFiche({ brancheParcours });
 /* Refermer le tiroir vit dans `parcours.mjs` ; il s'importe d'ici comme avant. */
 export { fermeParcours };
 
-/* La journée, la suggestion et les rappels, que ce module importe pour les
-   poser dans son tiroir, ne peuvent l'importer en retour : il leur confie en
-   se chargeant ce qu'ils en appellent — le parcours qu'on bascule, rangé et
-   refait pour la journée ; le tiroir refait et le bouton « au parcours » pour
-   la suggestion ; le tiroir rafraîchi quand les rappels s'allument. */
+/** Ce que la carte de la suggestion appelle chez ce tiroir, qui la pose :
+ *  le tiroir refait, et le bouton « au parcours ». */
+const TIROIR_SUGG = { remplit: remplitParcours, branche: brancheParcours };
+
+/* La journée, que ce module importe pour la poser dans son tiroir, ne peut
+   l'importer en retour : il lui confie en se chargeant ce qu'elle en appelle
+   — le parcours qu'on bascule, rangé et refait. La suggestion et les rappels,
+   que ce module seul appelle, reçoivent le leur à chaque appel
+   (`TIROIR_SUGG`, `fenetreRappel`). */
 confieALaJournee({ basculeParcours, rangParcours, rafraichitParcours });
-confieALaSuggestion({ remplitParcours, brancheParcours });
-confieAuxRappels({ rafraichitParcours });
 
 /* Deux options du salon rouvrent ou ferment un bouton de ce tiroir : la
    journée organisée, la suggestion. Ce que chacune refait en changeant, ce

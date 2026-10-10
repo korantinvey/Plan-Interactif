@@ -89,7 +89,8 @@ import { demandeGardeParcours, parcoursACopier } from "./partage.mjs";
 import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages }
   from "./fenetre.mjs";
 import { conf } from "./configuration.mjs";
-import { TUTO, TUTO_DELAI } from "./tutoriel.mjs";
+import { TUTO_DELAI } from "./tutoriel.mjs";
+import { TUTO } from "./visite-guidee.mjs";
 
 /* Il n'a rien à se faire confier : la configuration du salon
    (`configuration.mjs`), la visite guidée — en cours, telle qu'elle est à

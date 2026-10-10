@@ -775,23 +775,23 @@ Fonctions :
 `indexe` 64 · `chronoConf` 306 · `confsDuPlan` 311 · `indexeConferences` 329
 `rangeConferences` 407 · `poseFavicon` 454 · `poseLogoSalon` 480
 
-### `modules/installation.mjs` — 901 l. → plan, plan-admin
+### `modules/installation.mjs` — 902 l. → plan, plan-admin
 
 - l.1 · L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 119 · `invitationVoulue` 120 · `auDoigt` 150 · `nommeApplication` 186
-`reponsesInstallation` 204 · `retientInstallation` 209 · `jourInstallation` 218
-`invitationEcartee` 221 · `refuseInstallation` 227 · `faconInstallation` 255
-`appliInstallee` 278 · `verifieApplication` 300 · `connaitLApplication` 310
-`adresseApplication` 323 · `lanceApplication` 343 · `faconRappel` 376 · `rappelEcarte` 384
-`refuseRappel` 390 · `relanceInvitation` 408 · `gesteInstallation` 413 · `doigtPose` 417
-`doigtLeve` 418 · `vueInstallation` 421 · `accueilleInvitation` 430
-`invitationRetenue` 456 · `suitLesGestes` 477 · `finInvitation` 485 · `rouvreInvitation` 507
-`essaieInvitation` 527 · `brancheInstallation` 570 · `teteInvitation` 664
-`poseGardeInstallation` 697 · `remplitInvitation` 720 · `ouvreInvitation` 750
-`ouvreRappel` 829 · `ouvreRetrouve` 891
+`reglageInstallation` 120 · `invitationVoulue` 121 · `auDoigt` 151 · `nommeApplication` 187
+`reponsesInstallation` 205 · `retientInstallation` 210 · `jourInstallation` 219
+`invitationEcartee` 222 · `refuseInstallation` 228 · `faconInstallation` 256
+`appliInstallee` 279 · `verifieApplication` 301 · `connaitLApplication` 311
+`adresseApplication` 324 · `lanceApplication` 344 · `faconRappel` 377 · `rappelEcarte` 385
+`refuseRappel` 391 · `relanceInvitation` 409 · `gesteInstallation` 414 · `doigtPose` 418
+`doigtLeve` 419 · `vueInstallation` 422 · `accueilleInvitation` 431
+`invitationRetenue` 457 · `suitLesGestes` 478 · `finInvitation` 486 · `rouvreInvitation` 508
+`essaieInvitation` 528 · `brancheInstallation` 571 · `teteInvitation` 665
+`poseGardeInstallation` 698 · `remplitInvitation` 721 · `ouvreInvitation` 751
+`ouvreRappel` 830 · `ouvreRetrouve` 892
 
 ### `modules/itineraire.mjs` — 2647 l. → plan, plan-admin
 
@@ -1136,19 +1136,18 @@ Fonctions :
 `qrMotsBruts` 36 · `qrMotsUtiles` 45 · `qrMul` 56 · `qrGenerateur` 59 · `qrReste` 70
 `qrAlignements` 81 · `qrTrame` 97 · `qrChemin` 286 · `qrSvg` 308
 
-### `modules/rappels.mjs` — 546 l. → plan, plan-admin
+### `modules/rappels.mjs` — 540 l. → plan, plan-admin
 
 - l.1 · Le rappel avant une conférence
 
 Fonctions :
 
-`confieAuxRappels` 77 · `tuto` 78 · `reglageRappel` 97 · `rappelsVoulus` 98
-`minutesRappel` 99 · `cleRappels` 113 · `chargeRappels` 116 · `retientRappels` 120
-`rappelsOfferts` 131 · `instantAbsolu` 161 · `confsARappeler` 169 · `rappelsDuParcours` 186
-`synchroniseRappels` 224 · `eteintRappels` 247 · `allumeRappels` 262 · `aideRappel` 279
-`poseRappels` 295 · `cleInviteRappel` 416 · `inviteRappelFaite` 419
-`retientInviteRappel` 424 · `fenetreRappel` 459 · `proposeRappels` 492
-`reprendRappels` 535
+`reglageRappel` 87 · `rappelsVoulus` 88 · `minutesRappel` 89 · `cleRappels` 103
+`chargeRappels` 106 · `retientRappels` 110 · `rappelsOfferts` 121 · `instantAbsolu` 151
+`confsARappeler` 159 · `rappelsDuParcours` 176 · `synchroniseRappels` 214
+`eteintRappels` 237 · `allumeRappels` 252 · `aideRappel` 269 · `poseRappels` 285
+`cleInviteRappel` 406 · `inviteRappelFaite` 409 · `retientInviteRappel` 414
+`fenetreRappel` 450 · `proposeRappels` 486 · `reprendRappels` 529
 
 ### `modules/rapport-utilisation.mjs` — 504 l. → rapport
 
@@ -1373,17 +1372,16 @@ Fonctions :
 `suitSponsor` 314 · `resteSponsor` 339 · `fermeSponsor` 345 · `accueilleSponsor` 361
 `brancheSponsor` 393
 
-### `modules/suggestion.mjs` — 334 l. → plan, plan-admin
+### `modules/suggestion.mjs` — 329 l. → plan, plan-admin
 
 - l.1 · La suggestion — un exposant de plus, pour compléter la visite
 
 Fonctions :
 
-`confieALaSuggestion` 57 · `remplitParcours` 58 · `brancheParcours` 59 · `reglageSugg` 88
-`seuilSugg` 90 · `presentationsSugg` 114 · `presenteSugg` 120 · `critereSugg` 125
-`suggestionCourante` 142 · `exposantPropose` 178 · `nomValeurSugg` 196
-`phraseSuggestion` 217 · `carteSuggestion` 245 · `poseSuggestion` 294
-`fenetreSuggestion` 308
+`reglageSugg` 80 · `seuilSugg` 82 · `presentationsSugg` 106 · `presenteSugg` 112
+`critereSugg` 117 · `suggestionCourante` 134 · `exposantPropose` 170 · `nomValeurSugg` 188
+`phraseSuggestion` 209 · `carteSuggestion` 238 · `poseSuggestion` 288
+`fenetreSuggestion` 303
 
 ### `modules/sur.mjs` — 190 l. → plan, plan-admin
 
@@ -1457,16 +1455,16 @@ Fonctions :
 `visePoint` 664 · `ouvreItineraire` 692 · `fermeItineraire` 720 · `versItineraire` 730
 `versItineraireDe` 733 · `brancheTiroirItineraire` 761
 
-### `modules/tiroir-parcours.mjs` — 467 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 471 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`basculeParcours` 52 · `verseAuParcours` 97 · `retenusPourParcours` 143
-`ajouteToutAuParcours` 168 · `poseToutAuParcours` 191 · `brancheParcours` 215
-`rafraichitParcours` 228 · `rangParcours` 258 · `remplitParcours` 278 · `ouvreParcours` 367
-`videLeParcours` 384 · `brancheTiroirParcours` 414
+`basculeParcours` 54 · `verseAuParcours` 99 · `retenusPourParcours` 145
+`ajouteToutAuParcours` 170 · `poseToutAuParcours` 193 · `brancheParcours` 217
+`rafraichitParcours` 230 · `rangParcours` 260 · `remplitParcours` 280 · `ouvreParcours` 369
+`videLeParcours` 386 · `brancheTiroirParcours` 416
 
 ### `modules/tiroirs.mjs` — 514 l. → plan, plan-admin
 
@@ -1498,7 +1496,7 @@ Fonctions :
 `mulM` 14 · `appM` 17 · `echelleM` 18 · `lisTransform` 20 · `lisTrace` 42 · `lisPoints` 112
 `num` 118 · `anneau` 120 · `rectArrondi` 126 · `avecTrous` 139 · `couleurGl` 165
 
-### `modules/tutoriel.mjs` — 1031 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1032 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
@@ -1506,19 +1504,27 @@ Fonctions :
 
 `route` 71 · `attente` 72 · `iti` 73 · `visee` 74 · `eteintVisee` 75 · `journee` 77
 `vueJournee` 78 · `sejour` 79 · `iciActif` 81 · `dessinEnCours` 84 · `glissements` 113
-`reglageTuto` 124 · `tutoPropose` 133 · `cleTuto` 137 · `tutoOuvert` 139 · `tutoModale` 140
-`tutoFicheOuverte` 146 · `tutoFiche` 149 · `tutoParcours` 151 · `tutoItineraire` 155
-`tutoJournee` 159 · `zoneDuTuto` 167 · `insecable` 184 · `phraseTrajetTuto` 190
-`chapitresTuto` 450 · `proposeTutoriel` 470 · `lanceTutoriel` 528 · `quitteTutoriel` 615
-`chapitreTuto` 626 · `battementTuto` 635 · `finTuto` 653 · `afficheTuto` 670
-`attendsTiroirs` 720 · `pxTuto` 745 · `boiteTuto` 758 · `repereTuto` 773 · `rameneTuto` 806
-`placeTuto` 844 · `voileTuto` 938 · `rafaleTuto` 955 · `marqueZoneTuto` 975
-`marqueLibelleTuto` 1014
+`reglageTuto` 125 · `tutoPropose` 134 · `cleTuto` 138 · `tutoOuvert` 140 · `tutoModale` 141
+`tutoFicheOuverte` 147 · `tutoFiche` 150 · `tutoParcours` 152 · `tutoItineraire` 156
+`tutoJournee` 160 · `zoneDuTuto` 168 · `insecable` 185 · `phraseTrajetTuto` 191
+`chapitresTuto` 451 · `proposeTutoriel` 471 · `lanceTutoriel` 529 · `quitteTutoriel` 616
+`chapitreTuto` 627 · `battementTuto` 636 · `finTuto` 654 · `afficheTuto` 671
+`attendsTiroirs` 721 · `pxTuto` 746 · `boiteTuto` 759 · `repereTuto` 774 · `rameneTuto` 807
+`placeTuto` 845 · `voileTuto` 939 · `rafaleTuto` 956 · `marqueZoneTuto` 976
+`marqueLibelleTuto` 1015
 
 Éléments :
 
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
+
+### `modules/visite-guidee.mjs` — 17 l. → plan, plan-admin
+
+- l.1 · La visite guidée en cours — ou rien
+
+Fonctions :
+
+`poseTuto` 17
 
 ### `modules/volets.mjs` — 1227 l. → plan-admin
 

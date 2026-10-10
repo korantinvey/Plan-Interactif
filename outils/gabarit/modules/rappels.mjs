@@ -1,8 +1,9 @@
 /* ============================================================
    Le rappel avant une conférence
 
-   La visite guidée et le tiroir du parcours, qui l'importent, lui confient
-   ce qu'il leur emprunte en se chargeant (`confieAuxRappels`). L'abonnement et
+   La visite guidée en cours se lit dans `visite-guidee.mjs` ; le tiroir du
+   parcours, seul à proposer les rappels, passe en les proposant de quoi se
+   rafraîchir (`fenetreRappel`). L'abonnement et
    ce que l'appareil sait recevoir sont dans `notifications.mjs` ; l'essai
    d'un vrai rappel depuis les réglages, qui ne sert qu'à l'exploitant, dans
    `essai-rappel.mjs`, que seul `plan-admin.mjs` embarque.
@@ -57,25 +58,14 @@ import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empr
   abonnementCourant, abonne } from "./notifications.mjs";
 import { ouvreModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages } from "./fenetre.mjs";
 import { conf } from "./configuration.mjs";
+import { TUTO } from "./visite-guidee.mjs";
 
-/* Ce que ce module ne peut importer sans boucler : la visite guidée en cours
-   (`tutoriel.mjs`) et le tiroir du parcours à rafraîchir
-   (`tiroir-parcours.mjs`), qui l'atteignent. Chacun le lui confie au
-   chargement de son module, par `confieAuxRappels`.
-   La visite guidée change à chaque chapitre : elle se confie par un lecteur,
-   non par sa valeur du moment. La configuration du salon
-   (`configuration.mjs`) et le retour aux réglages après un aperçu
-   (`fenetre.mjs`) s'importent. */
-/**
- * @typedef {{ tuto: () => any, rafraichitParcours: () => void }} PageRappels
- */
-/** @type {PageRappels} */
-const prete = { tuto: () => null, rafraichitParcours: () => {} };
-
-/** La porte des modules qui prêtent aux rappels ce qu'ils appellent.
- *  @param {Partial<PageRappels>} o */
-export function confieAuxRappels(o){ Object.assign(prete, o); }
-const tuto = () => prete.tuto();
+/* La visite guidée en cours se lit dans `visite-guidee.mjs` — la visite
+   elle-même (`tutoriel.mjs`) atteint ce module par le tiroir du parcours, et
+   ne pourrait être importée d'ici. Le tiroir à rafraîchir quand les rappels
+   s'allument, c'est lui qui le passe, puisqu'il est seul à proposer les
+   rappels (`fenetreRappel`). La configuration du salon (`configuration.mjs`)
+   et le retour aux réglages après un aperçu (`fenetre.mjs`) s'importent. */
 
 /* ------------------------------------------------------------
    Le réglage du salon
@@ -456,16 +446,19 @@ function retientInviteRappel(){
  * qu'on ajoutera ensuite. C'est aussi ce qui rend la chose vérifiable sur un
  * salon dont le programme est passé, où rien ne se montrait plus.
  */
-export function fenetreRappel(){
-  if (inviteRappelFaite() || tuto()) return;
+/** @param {() => void} rafraichitParcours le tiroir qui la propose, à refaire une fois allumés */
+export function fenetreRappel(rafraichitParcours){
+  if (inviteRappelFaite() || TUTO) return;
   if (!rappelsOfferts() || !poussePossible()) return;
   if (RAPPELS_ACTIFS || Notification.permission === "denied") return;
   /* Une fenêtre ouverte a été demandée — la fiche de la conférence qu'on vient
      justement de retenir, le plus souvent. On ne la remplace pas : la
      proposition attend qu'elle se referme, et repasse alors par ici, ses
      conditions relues. */
-  if ($("modale").classList.contains("open")){ poseApresFermeture(fenetreRappel); return; }
-  proposeRappels();
+  if ($("modale").classList.contains("open")){
+    poseApresFermeture(() => fenetreRappel(rafraichitParcours)); return;
+  }
+  proposeRappels(false, rafraichitParcours);
 }
 
 /**
@@ -489,7 +482,8 @@ export function fenetreRappel(){
  * L'aperçu ne retient donc pas la réponse, n'abonne personne, et ramène aux
  * réglages d'où l'on vient.
  */
-export function proposeRappels(apercu){
+/** @param {boolean} [apercu] @param {() => void} [rafraichitParcours] */
+export function proposeRappels(apercu, rafraichitParcours = () => {}){
   const n = minutesRappel();
   ouvreModale("Pour ne pas la manquer", corps => {
     const p = document.createElement("p");
@@ -515,7 +509,7 @@ export function proposeRappels(apercu){
          Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
          sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
          allumé. On rafraîchit donc, et on se tait. */
-      allumeRappels().then(() => prete.rafraichitParcours(), () => {});
+      allumeRappels().then(() => rafraichitParcours(), () => {});
     } },
   ]);
 
