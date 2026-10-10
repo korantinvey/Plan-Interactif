@@ -912,6 +912,14 @@ Fonctions :
 
 `modeleRetenu` 46 · `habilleModale` 80
 
+### `modules/modes-edition.mjs` — 46 l. → plan-admin
+
+- l.1 · Les trois modes d'édition — un seul à la fois
+
+Fonctions :
+
+`inscritMode` 35 · `quitteLesAutres` 41
+
 ### `modules/mot-de-passe.mjs` — 210 l. → motdepasse
 
 - l.1 · Poser un mot de passe
@@ -992,21 +1000,21 @@ Fonctions :
 `clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
 `confiePanneau` 70 · `construitPanneau` 76
 
-### `modules/outil-dessin.mjs` — 947 l. → plan-admin
+### `modules/outil-dessin.mjs` — 939 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
 Fonctions :
 
-`restaure` 74 · `annule` 90 · `refais` 102 · `poseTrait` 107 · `aimanteContour` 128
-`rayonContour` 131 · `redresseTrace` 150 · `traceGuide` 184 · `ajouteForme` 191
-`poseChampImage` 208 · `calquePourImage` 223 · `lienImageSaisi` 251 · `formeImage` 263
-`poseImage` 272 · `ditImagePosee` 295 · `importeImage` 303 · `dessinPointerDown` 332
-`dessinPointerMove` 417 · `dessinPointerUp` 455 · `termineTrace` 496 · `aide` 508
-`outilOffert` 538 · `choisitOutil` 552 · `enchaineStand` 583 · `proposeCouleurLigne` 601
-`montreTransport` 612 · `activeCalque` 621 · `cleVerrou` 679 · `verrouille` 680
-`basculeVerrou` 682 · `montreRoleIti` 725 · `creeCalque` 738 · `demandeNom` 751
-`renommeCalque` 776 · `brancheOutilDessin` 792
+`restaure` 73 · `annule` 89 · `refais` 101 · `poseTrait` 106 · `aimanteContour` 127
+`rayonContour` 130 · `redresseTrace` 149 · `traceGuide` 183 · `ajouteForme` 190
+`poseChampImage` 207 · `calquePourImage` 222 · `lienImageSaisi` 250 · `formeImage` 262
+`poseImage` 271 · `ditImagePosee` 294 · `importeImage` 302 · `dessinPointerDown` 331
+`dessinPointerMove` 416 · `dessinPointerUp` 454 · `termineTrace` 495 · `aide` 507
+`outilOffert` 537 · `choisitOutil` 551 · `enchaineStand` 582 · `proposeCouleurLigne` 600
+`montreTransport` 611 · `activeCalque` 620 · `cleVerrou` 674 · `verrouille` 675
+`basculeVerrou` 677 · `montreRoleIti` 720 · `creeCalque` 733 · `demandeNom` 746
+`renommeCalque` 771 · `brancheOutilDessin` 787
 
 ### `modules/panneau-criteres.mjs` — 41 l. → plan, plan-admin
 
@@ -1063,16 +1071,16 @@ Fonctions :
 `intertitre` 118 · `remplitPanneau` 128 · `sectionSelection` 376 · `sectionFond` 432
 `ligneCouleur` 490 · `rangSecteur` 510 · `rangSous` 523 · `defautCouleur` 545
 
-### `modules/placement-libelles.mjs` — 190 l. → plan-admin
+### `modules/placement-libelles.mjs` — 177 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
-`confieAuPlacementLibelles` 47 · `libelleGlisse` 53 · `lacheLibelle` 56 · `posePlacement` 65
-`libelleAutomatique` 82 · `modePlacementLibelles` 91 · `majPaletteLibelle` 110
-`choisitLibelle` 127 · `pousseLibelle` 134 · `libellePointerDown` 142
-`libellePointerMove` 158 · `libellePointerUp` 167 · `branchePlacementLibelles` 180
+`libelleGlisse` 38 · `lacheLibelle` 41 · `posePlacement` 50 · `libelleAutomatique` 67
+`modePlacementLibelles` 76 · `majPaletteLibelle` 93 · `choisitLibelle` 110
+`pousseLibelle` 117 · `libellePointerDown` 125 · `libellePointerMove` 141
+`libellePointerUp` 150 · `branchePlacementLibelles` 163
 
 ### `modules/plan-admin.mjs` — 69 l. → plan-admin
 
@@ -1270,24 +1278,23 @@ Fonctions :
 `encreRepere` 376 · `nomLigneFr` 390 · `libelleDoffice` 398 · `couleurEcrite` 405
 `pastillePoi` 419
 
-### `modules/reprise-emplacements.mjs` — 774 l. → plan-admin
+### `modules/reprise-emplacements.mjs` — 762 l. → plan-admin
 
 - l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
 
 Fonctions :
 
-`confieALaReprise` 71 · `activeCalque` 72 · `geoGlisse` 82 · `lacheGeo` 85
-`cleVerrouGeo` 105 · `geoVerrouille` 106 · `basculeVerrouGeo` 108 · `boutonVerrouGeo` 123
-`modeGeometrie` 134 · `objetGeoSous` 161 · `groupeGeo` 171 · `choisitGeo` 179
-`cadreGeo` 194 · `prisesGeo` 214 · `curseurGeo` 226 · `dessinePoigneesGeo` 229
-`ecritDimensionsGeo` 257 · `nomSorteGeo` 269 · `majPaletteGeo` 271 · `finGesteGeo` 310
-`enregistreGeo` 328 · `geometrieOrigine` 342 · `retraceGeo` 357 · `pousseGeometrie` 368
-`appliqueDimensionGeo` 385 · `enregistreAjout` 400 · `ajouteEmplacement` 415
-`renommeAjout` 443 · `lieAjout` 475 · `ecritInfosAjout` 504 · `supprimeAjout` 531
-`choisitOutilGeo` 560 · `aideAjout` 567 · `fermeAjout` 577 · `ajoutPointerDown` 586
-`ajoutPointerMove` 602 · `ajoutPointerUp` 624 · `geometriePointerDown` 644
-`accrocheGeo` 675 · `geometriePointerMove` 677 · `geometriePointerUp` 728
-`brancheRepriseEmplacements` 745
+`geoGlisse` 70 · `lacheGeo` 73 · `cleVerrouGeo` 93 · `geoVerrouille` 94
+`basculeVerrouGeo` 96 · `boutonVerrouGeo` 111 · `modeGeometrie` 122 · `objetGeoSous` 146
+`groupeGeo` 156 · `choisitGeo` 164 · `cadreGeo` 179 · `prisesGeo` 199 · `curseurGeo` 211
+`dessinePoigneesGeo` 214 · `ecritDimensionsGeo` 242 · `nomSorteGeo` 254
+`majPaletteGeo` 256 · `finGesteGeo` 295 · `enregistreGeo` 313 · `geometrieOrigine` 327
+`retraceGeo` 342 · `pousseGeometrie` 353 · `appliqueDimensionGeo` 370
+`enregistreAjout` 385 · `ajouteEmplacement` 400 · `renommeAjout` 428 · `lieAjout` 460
+`ecritInfosAjout` 489 · `supprimeAjout` 516 · `choisitOutilGeo` 545 · `aideAjout` 552
+`fermeAjout` 562 · `ajoutPointerDown` 571 · `ajoutPointerMove` 587 · `ajoutPointerUp` 609
+`geometriePointerDown` 629 · `accrocheGeo` 660 · `geometriePointerMove` 662
+`geometriePointerUp` 713 · `brancheRepriseEmplacements` 730
 
 ### `modules/salon.mjs` — 54 l. → plan, plan-admin
 

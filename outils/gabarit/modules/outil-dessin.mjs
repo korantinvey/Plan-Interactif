@@ -24,11 +24,11 @@
    Ce qu'il partage avec l'éditeur et la reprise d'un emplacement —
    l'historique, l'enregistrement, la liste des sociétés, les modes de
    transport, le cadenas — vit dans `socle-dessin.mjs`, qu'ils importent tous
-   trois. Ce qui reste à lui et que d'autres modules d'exploitant empruntent
-   — l'enregistrement, la reprise, le placement des libellés —, il le leur
-   confie en se chargeant, au bas du module : il les importe, et ils ne
-   pourraient l'importer sans boucle. Les
-   aimants aussi, qui ne l'importent pas pour s'éprouver seuls dans Node.
+   trois. La reprise et le placement des libellés, avec lesquels il se
+   dispute le glisser, se referment par le registre des modes d'édition
+   (`modes-edition.mjs`), où il inscrit sa propre sortie. Les aimants, qui ne
+   l'importent pas pour s'éprouver seuls dans Node, reçoivent de lui en se
+   chargeant ce qu'ils lisent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -41,10 +41,9 @@ import { oublieGrilles, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs"
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
 import { suitNuancier } from "./nuancier.mjs";
-import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
+import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { modeGeometrie, choisitGeo, confieALaReprise } from "./reprise-emplacements.mjs";
+import { choisitGeo } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, montreAimants, aimante, DERNIERE,
   retientTaille, reprendTaille, appliqueDimension, brancheAimants } from "./aimants.mjs";
 import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
@@ -627,14 +626,10 @@ export function activeCalque(id){
   const vise = trouveCalque(id);
   if (vise && verrouille(vise)) return;
   poseCalqueActif(calqueActif === id ? null : id);
-  /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
-     peuvent pas être allumés ensemble : leurs glissers viseraient le même
-     pointeur. Entrer dans le placement des libellés referme déjà le dessin ;
-     l'inverse manquait, et le crayon des textes serait resté allumé pour un
-     mode qu'on venait de quitter. */
-  if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
-  // et la reprise d'une géométrie, qui vise le même pointeur
-  if (calqueActif && SORTE_GEO) modeGeometrie(null);
+  /* Les crayons du panneau — celui d'un calque, celui des textes, ceux de la
+     reprise — ne peuvent pas être allumés ensemble : leurs glissers
+     viseraient le même pointeur (`modes-edition.mjs`). */
+  if (calqueActif) quitteLesAutres("dessin");
   poseFormeSel(null);
   termineTrace(false);
   montreAimants(null);
@@ -924,12 +919,9 @@ confieAuRendu({ oublieEdition: () => {
   if (o) o.classList.remove("open");
 } });
 
-/* Ces deux modules sont importés par celui-ci : ils ne peuvent l'importer
-   en retour. Il leur confie donc ce qu'il tient dès que la page
-   d'administration le charge — avant tout geste. Ce que l'éditeur et la
-   reprise partageaient avec lui s'importe de `socle-dessin.mjs`. */
-confieALaReprise({ activeCalque });
-confieAuPlacementLibelles({ activeCalque });
+/* Le dessin est l'un des trois modes d'édition exclusifs : ouvrir les deux
+   autres le referme, s'il est ouvert. */
+inscritMode("dessin", () => { if (calqueActif) activeCalque(calqueActif); });
 
 /* Les aimants s'éprouvent seuls dans Node (`outils/essais/aimants.js`) : ils
    n'importent pas l'outil de dessin, on le leur confie. Ce module les importe
