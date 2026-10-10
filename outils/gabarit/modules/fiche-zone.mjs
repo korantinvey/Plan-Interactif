@@ -29,7 +29,7 @@ import { cleAjout, rechAjout } from "./emplacements.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { rangeConferences } from "./index-salon.mjs";
 import { annonce } from "./demarrage.mjs";
-import { ouvre } from "./fiche.mjs";
+import { ouvre, confieALaFiche } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./points-interet.mjs";
@@ -871,3 +871,9 @@ async function ecritColonnesEvenement(travaux){
 /** La même chose pour une seule colonne, qui est le cas courant. */
 export const ecritColonneEvenement = (colonne, secours, change) =>
   ecritColonnesEvenement([{ colonne, secours, change }]).then(t => t[colonne]);
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant les deux gestes de l'exploitant sur une zone — la
+   reprendre, la retirer du plan public. Seule l'administration embarque ce
+   module : la page publique n'a ni l'un ni l'autre. */
+confieALaFiche({ ficheZone, basculeAffichageZone });

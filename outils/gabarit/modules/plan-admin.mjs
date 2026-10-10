@@ -23,7 +23,7 @@ import { brancheAimants } from "./aimants.mjs";
 import { brancheBatiments } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
 import { activeAdmin } from "./bande-admin.mjs";
-import { ficheZone, basculeAffichageZone, brancheFicheZone }
+import { brancheFicheZone }
   from "./fiche-zone.mjs";
 import { branchePlacementLibelles } from "./placement-libelles.mjs";
 import { glisseFenetre, ouvreReglages } from "./reglages.mjs";
@@ -51,7 +51,7 @@ Object.assign(globalThis, {
   brancheAimants,
   brancheBatiments,
   activeAdmin,
-  ficheZone, basculeAffichageZone, brancheFicheZone,
+  brancheFicheZone,
   branchePlacementLibelles,
   glisseFenetre, ouvreReglages,
   modeGeometrie, majPaletteGeo,

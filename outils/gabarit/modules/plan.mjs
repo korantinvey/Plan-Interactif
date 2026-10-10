@@ -40,22 +40,21 @@ import { brancheHabillage } from "./habillage.mjs";
 import { P_NOM, P_CODE, branchePolices } from "./polices-plan.mjs";
 import { SECTEURS } from "./secteurs.mjs";
 import { brancheBandes } from "./bandes.mjs";
-import { brancheRecherche, PREFIXE_PERSO, libelleCritere, fermeCriteres, liste } from "./recherche.mjs";
+import { brancheRecherche, fermeCriteres, liste } from "./recherche.mjs";
 import { view, svg } from "./vue.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage } from "./demarrage.mjs";
-import { brancheCorpsFiche } from "./corps-fiche.mjs";
 import { ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles } from "./libelles.mjs";
-import { DISTINCTIONS, dessineDists, poseDistsFiche,
+import { DISTINCTIONS, dessineDists,
   refaitDistsFiche } from "./distinctions.mjs";
-import { MONTE, montePlan, changePlan } from "./rendu.mjs";
+import { MONTE, changePlan } from "./rendu.mjs";
 import { DESSINS, mesCalques, calqueActif }
   from "./calques-dessin.mjs";
 import { estCadre } from "./chemin-forme.mjs";
 import { rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan, societeDeForme,
-  poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
+  poseLibellesDessines, decoupeStand, signale } from "./dessin.mjs";
 import { phareZone } from "./points-interet.mjs";
 import { appliqueOptions } from "./options.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
@@ -90,21 +89,20 @@ Object.assign(globalThis, {
   brancheHabillage,
   branchePolices,
   brancheBandes,
-  brancheRecherche, PREFIXE_PERSO,
-  libelleCritere,
+  brancheRecherche,
   fermeCriteres,
   liste,
   svg,
   brancheTonDeLaBarre,
-  brancheDemarrage, brancheCorpsFiche,
+  brancheDemarrage,
   ferme, brancheFiche,
-  brancheLibelles, libelles, DISTINCTIONS, dessineDists, poseDistsFiche,
+  brancheLibelles, libelles, DISTINCTIONS, dessineDists,
   refaitDistsFiche,
-  montePlan, changePlan,
+  changePlan,
   mesCalques,
   estCadre,
   rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurLePlan,
-  societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
+  societeDeForme, poseLibellesDessines, decoupeStand, signale,
   phareZone,
   appliqueOptions,
   brancheGestes, brancheLangue,

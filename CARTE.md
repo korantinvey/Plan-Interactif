@@ -89,7 +89,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · Export par exposant — le branchement
 
-### `_fiche.html` — 34 l.
+### `_fiche.html` — 21 l.
 
 - l.3 · 7. Sélection et fiche
 
@@ -516,15 +516,15 @@ Fonctions :
 
 - l.1 · Point d'entrée de la console
 
-### `modules/corps-fiche.mjs` — 271 l. → plan, plan-admin
+### `modules/corps-fiche.mjs` — 267 l. → plan, plan-admin
 
 - l.1 · Le corps de la fiche — ce qu'elle montre, dans quel ordre, sous quels
 
 Fonctions :
 
-`libelleCritere` 22 · `montre` 43 · `libelleCorps` 75 · `ordreCorps` 92 · `groupesFiche` 124
-`montreIntitule` 137 · `valeurCorps` 157 · `champCorps` 170 · `groupeCorps` 182
-`corpsRange` 195 · `pictoRS` 246 · `brancheCorpsFiche` 268
+`confieAuCorpsDeFiche` 32 · `libelleCritere` 33 · `montre` 54 · `libelleCorps` 86
+`ordreCorps` 103 · `groupesFiche` 135 · `montreIntitule` 148 · `valeurCorps` 168
+`champCorps` 181 · `groupeCorps` 193 · `corpsRange` 206 · `pictoRS` 257
 
 ### `modules/correspondance.mjs` — 122 l. → console
 
@@ -563,7 +563,7 @@ Fonctions :
 
 `litImage` 16 · `reduitLogo` 57
 
-### `modules/dessin.mjs` — 655 l. → plan, plan-admin
+### `modules/dessin.mjs` — 660 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — le tracé sur le plan
 
@@ -577,7 +577,7 @@ Fonctions :
 `texteStandDessine` 556 · `poseLibellesDessines` 575 · `decoupeStand` 596
 `marqueStandsDessines` 611 · `rafraichitStandsDessines` 626 · `signale` 640
 
-### `modules/distinctions.mjs` — 276 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 281 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
@@ -763,7 +763,7 @@ Fonctions :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `modules/fiche-zone.mjs` — 873 l. → plan-admin
+### `modules/fiche-zone.mjs` — 879 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.60 · La fiche d'une zone organisateur
@@ -777,21 +777,21 @@ Fonctions :
 `enregistreZone` 614 · `enregistreZoneAjoutee` 727 · `basculeAffichageZone` 790
 `marqueZonesMasquees` 818 · `ecritColonnesEvenement` 838 · `ecritColonneEvenement` 872
 
-### `modules/fiche.mjs` — 1172 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1195 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.62 · 7. Sélection et fiche
+- l.84 · 7. Sélection et fiche
 
 Fonctions :
 
-`decoupeStand` 55 · `montePlan` 56 · `marqueStandsDessines` 57 · `poseDistsFiche` 58
-`fermeParcours` 59 · `brancheParcours` 60 · `anime` 81 · `noeud` 105 · `canalPlan` 115
-`rangSociete` 123 · `select` 132 · `centre` 157 · `brancheActesFiche` 168
-`centreEtBaisseLaFiche` 184 · `centrePoint` 202 · `programme` 231 · `produits` 280
-`ficheProduit` 308 · `ficheConf` 378 · `adresseVignette` 535 · `poseAppuiTactile` 552
-`ecarteClicFantome` 555 · `nomSociete` 564 · `societes` 577 · `choisitExposant` 588
-`poseMarque` 626 · `montreMarque` 686 · `poseCode` 709 · `rangeMarque` 750 · `ouvre` 806
-`ferme` 1120 · `onglet` 1138 · `brancheFiche` 1155
+`confieALaFiche` 76 · `decoupeStand` 77 · `montePlan` 78 · `marqueStandsDessines` 79
+`poseDistsFiche` 80 · `fermeParcours` 81 · `brancheParcours` 82 · `anime` 103 · `noeud` 127
+`canalPlan` 137 · `rangSociete` 145 · `select` 154 · `centre` 179 · `brancheActesFiche` 190
+`centreEtBaisseLaFiche` 206 · `centrePoint` 224 · `programme` 253 · `produits` 302
+`ficheProduit` 330 · `ficheConf` 400 · `adresseVignette` 557 · `poseAppuiTactile` 574
+`ecarteClicFantome` 577 · `nomSociete` 586 · `societes` 599 · `choisitExposant` 610
+`poseMarque` 648 · `montreMarque` 708 · `poseCode` 731 · `rangeMarque` 772 · `ouvre` 828
+`ferme` 1144 · `onglet` 1162 · `brancheFiche` 1179
 
 Éléments :
 
@@ -1188,7 +1188,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 161 l. → plan, plan-admin
+### `modules/plan.mjs` — 159 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1267,7 +1267,7 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport
 
-### `modules/recherche.mjs` — 1174 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1182 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
@@ -1276,18 +1276,18 @@ Fonctions :
 `confieALaRecherche` 73 · `ferme` 74 · `ficheConf` 77 · `adresseVignette` 78
 `poseToutAuParcours` 79 · `dessineDists` 80 · `libelles` 81 · `marquesListe` 82
 `porteDist` 83 · `standPorte` 84 · `reperesCherchables` 85 · `vaAuRepere` 86
-`appliqueSecteurs` 96 · `filtreTheme` 113 · `themeFiltrable` 193 · `ordreCriteres` 209
-`clesCriteres` 232 · `libelleCritere` 239 · `valeursCritere` 258 · `texteCriteres` 271
-`texteAnglaisPerso` 287 · `indexeCriteres` 301 · `refaitCriteres` 335 · `dansCriteres` 342
-`critereActif` 350 · `basculeCritere` 352 · `videCriteres` 361 · `majVideQ` 370
-`videRecherche` 383 · `nCriteres` 398 · `majCriteres` 413 · `remplitCriteres` 480
-`basculeCriteres` 619 · `ouvreCriteres` 624 · `fermeCriteres` 640 · `filtre` 657
-`reposeRetrait` 677 · `critParSociete` 681 · `cherchable` 691 · `visible` 698
-`releveHotes` 719 · `visibleSurPlan` 727 · `visibleSociete` 738 · `marqueRetrait` 754
-`appliqueFiltre` 772 · `oublieRetrait` 788 · `reprendRecherche` 797 · `rangSorte` 810
-`codeCase` 832 · `caseNumero` 849 · `sousLigne` 869 · `liste` 883 · `marqueChoisie` 1011
-`prechargeMarque` 1037 · `prechargeLesVignettes` 1094 · `chargeUnLot` 1140
-`brancheRecherche` 1166
+`appliqueSecteurs` 96 · `filtreTheme` 113 · `themeFiltrable` 196 · `ordreCriteres` 212
+`clesCriteres` 235 · `libelleCritere` 242 · `valeursCritere` 261 · `texteCriteres` 274
+`texteAnglaisPerso` 290 · `indexeCriteres` 304 · `refaitCriteres` 338 · `dansCriteres` 345
+`critereActif` 353 · `basculeCritere` 355 · `videCriteres` 364 · `majVideQ` 373
+`videRecherche` 386 · `nCriteres` 401 · `majCriteres` 416 · `remplitCriteres` 483
+`basculeCriteres` 622 · `ouvreCriteres` 627 · `fermeCriteres` 643 · `filtre` 660
+`reposeRetrait` 680 · `critParSociete` 684 · `cherchable` 694 · `visible` 701
+`releveHotes` 722 · `visibleSurPlan` 730 · `visibleSociete` 741 · `marqueRetrait` 757
+`appliqueFiltre` 775 · `oublieRetrait` 791 · `reprendRecherche` 800 · `rangSorte` 813
+`codeCase` 835 · `caseNumero` 852 · `sousLigne` 872 · `liste` 886 · `marqueChoisie` 1014
+`prechargeMarque` 1040 · `prechargeLesVignettes` 1097 · `chargeUnLot` 1143
+`brancheRecherche` 1169
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1355,7 +1355,7 @@ Fonctions :
 `glisseFenetre` 93 · `ouvreReglages` 105 · `voletZones` 233 · `champsFicheZone` 335
 `ficheZoneEnPlace` 405 · `voletPlan` 423 · `voletCoexposants` 462
 
-### `modules/rendu.mjs` — 175 l. → plan, plan-admin
+### `modules/rendu.mjs` — 180 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
@@ -1547,7 +1547,7 @@ Fonctions :
 `ouvreItineraire` 670 · `fermeItineraire` 698 · `versItineraire` 708
 `versItineraireDe` 711 · `brancheTiroirItineraire` 739
 
-### `modules/tiroir-parcours.mjs` — 441 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 446 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 

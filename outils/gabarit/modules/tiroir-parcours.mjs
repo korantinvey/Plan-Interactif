@@ -31,7 +31,7 @@ import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion } from "
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel } from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
 import { fermeItineraire } from "./tiroir-itineraire.mjs";
-import { select, ficheConf, ferme } from "./fiche.mjs";
+import { select, ficheConf, ferme, confieALaFiche } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
 import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
 const racine = document.documentElement;
@@ -439,3 +439,8 @@ export function brancheTiroirParcours(){
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant ce qu'elle en appelle (le bouton qui verse au parcours tout ce qu'elle a retenu). */
 confieALaRecherche({ poseToutAuParcours });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant le tiroir qu'elle referme et le bouton « au
+   parcours » qu'elle pose dans ses actions. */
+confieALaFiche({ fermeParcours, brancheParcours });

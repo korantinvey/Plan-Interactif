@@ -24,7 +24,7 @@ import { esc } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { societes } from "./fiche.mjs";
+import { societes, confieALaFiche } from "./fiche.mjs";
 import { modeDist, couleurDist } from "./habillage.mjs";
 import { svg } from "./vue.mjs";
 import { confieALaRecherche } from "./recherche.mjs";
@@ -274,3 +274,8 @@ export const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
    d'une ligne de la liste, le filtre « porte cette distinction », le dessin
    des distinctions sur le plan quand ce qui paraît change). */
 confieALaRecherche({ dessineDists, marquesListe, porteDist, standPorte });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant de quoi marquer les distinctions de la société
+   qu'elle ouvre. */
+confieALaFiche({ poseDistsFiche });

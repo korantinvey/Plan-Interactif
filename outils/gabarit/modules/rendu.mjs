@@ -34,7 +34,7 @@ import { dessineItineraire } from "./tiroir-itineraire.mjs";
 import { dessineBorne } from "./vous-etes-ici.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
-import { ferme } from "./fiche.mjs";
+import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 
@@ -173,3 +173,8 @@ export function changePlan(i){
   montePlan(); fit(); liste();
   prete.chargeFond(i);
 }
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant de quoi monter le pavillon de ce qu'elle choisit,
+   quand il n'est pas celui qu'on regarde. */
+confieALaFiche({ montePlan });

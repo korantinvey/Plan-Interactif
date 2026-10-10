@@ -7,28 +7,15 @@
    `modules/ecran.mjs` ; ce que la fiche montre, dans quel ordre et sous quels
    intitulés, dans `modules/corps-fiche.mjs` ; la sélection, la fiche et ses
    fenêtres — conférence, produit, choix d'une société sur un stand partagé —
-   dans `modules/fiche.mjs`. Ils se branchent ici, à la place que leur code
-   tenait dans ce script, et reçoivent ce que le code soudé tient encore, ou
-   ce qui les importe : le montage du plan et les marques des distinctions
-   (`modules/rendu.mjs`, `modules/distinctions.mjs`), les découpages dessinés
-   et le parcours ; le nom d'une zone et la forme d'un repère dessiné, ils les
-   importent. Et, pour le corps de la fiche, le préfixe et le libellé des
-   champs propres au salon (`modules/recherche.mjs`, qui importe
-   `corps-fiche.mjs` et ne peut donc être importé par lui).
+   dans `modules/fiche.mjs`. Le code soudé ne leur confie plus rien : ce
+   qu'ils empruntent aux modules qui les importent — le montage du plan, les
+   découpages dessinés, les distinctions, le tiroir du parcours, les gestes
+   de l'exploitant sur une zone, le libellé des champs propres au salon —,
+   chacun de ces modules le leur confie en se chargeant (`confieALaFiche`,
+   `confieAuCorpsDeFiche`).
    ============================================================ */
-brancheCorpsFiche({ PREFIXE_PERSO, libelleCritere });
 
 /* Les écoutes de la fiche — le rangement de sa marque au redimensionnement,
    ses onglets, sa croix, le voile — se posent ici, au rang qu'elles tenaient
-   parmi celles du plan. Ce qui est déclaré plus bas dans le script se confie
-   par un détour, lu au moment de l'appel. */
-brancheFiche({
-  montePlan, poseDistsFiche,
-  decoupeStand, marqueStandsDessines,
-  fermeParcours: () => fermeParcours(),
-  brancheParcours: (hote, canal) => brancheParcours(hote, canal),
-  /* @admin — la reprendre, la retirer du plan public : gestes d'exploitant */
-  ficheZone: (o) => ficheZone(o),
-  basculeAffichageZone: (o) => basculeAffichageZone(o),
-  /* @fin-admin */
-});
+   parmi celles du plan. */
+brancheFiche();

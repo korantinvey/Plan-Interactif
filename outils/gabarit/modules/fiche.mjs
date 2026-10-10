@@ -9,14 +9,14 @@
    ordre, vient de `corps-fiche.mjs`.
 
    Il se branche dans `_fiche.html`, à la place que son code tenait : les
-   écoutes de la fiche s'y posent au même rang qu'avant parmi celles du plan,
-   et ce que le code soudé tient encore lui est confié — le montage du plan,
-   les découpages dessinés et le parcours, et, en administration
-   seulement, les deux gestes de l'exploitant sur une zone. La liste, les
+   écoutes de la fiche s'y posent au même rang qu'avant parmi celles du plan.
+   Ce qu'elle emprunte aux modules qui l'importent — le montage du plan, les
+   découpages dessinés, les distinctions, le tiroir du parcours, et, en
+   administration seulement, les deux gestes de l'exploitant sur une zone —
+   chacun le lui confie en se chargeant, par `confieALaFiche`. La liste, les
    thématiques et les vignettes s'importent de `recherche.mjs`, les tiroirs
    de `tiroirs.mjs`, le nom d'une zone de `noms-zones.mjs`, la forme d'un
-   repère dessiné de `forme-choisie.mjs` ; le tiroir du parcours, qui importe
-   la fiche, lui est confié.
+   repère dessiné de `forme-choisie.mjs`.
 
    Le dernier appui — tactile ou non — est écrit par les gestes
    (`gestes.mjs`) : il vit ici, se remplace par `poseAppuiTactile`, et le code soudé
@@ -47,17 +47,39 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { baisseTiroir } from "./tiroirs.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. Ce qui est
-   déclaré plus bas dans le script — les gestes, le dessin, le parcours — l'est
-   par un détour, lu au moment de l'appel. */
-/** @type {Record<string, any>} */
-let soude = {};
-const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => soude.decoupeStand(id, iSoc);
-const montePlan = () => soude.montePlan();
-const marqueStandsDessines = () => soude.marqueStandsDessines();
-const poseDistsFiche = (/** @type {any} */ soc) => soude.poseDistsFiche(soc);
-const fermeParcours = () => soude.fermeParcours();
-const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => soude.brancheParcours(hote, canal);
+/**
+ * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
+ * (`rendu.mjs`), les découpages dessinés (`dessin.mjs`), les marques des
+ * distinctions (`distinctions.mjs`), le tiroir du parcours
+ * (`tiroir-parcours.mjs`), et, en administration seulement, les deux gestes
+ * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
+ * importent qui l'importe : elle ne peut les importer en retour, et chacun
+ * lui confie ce qu'elle en appelle au chargement de son module, par
+ * `confieALaFiche` — jamais par le code soudé. La page publique n'embarque
+ * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
+ * comme la pastille sans écoute.
+ * @typedef {object} PageFiche
+ * @property {(id: any, iSoc?: any) => any} decoupeStand
+ * @property {() => void} montePlan
+ * @property {() => void} marqueStandsDessines
+ * @property {(soc: any) => void} poseDistsFiche
+ * @property {() => void} fermeParcours
+ * @property {(hote: any, canal: any) => void} brancheParcours
+ * @property {((o: any) => void) | null} ficheZone
+ * @property {((o: any) => void) | null} basculeAffichageZone
+ */
+/** @type {PageFiche} */
+const prete = /** @type {any} */ ({ ficheZone: null, basculeAffichageZone: null });
+
+/** La porte des modules qui prêtent à la fiche ce qu'elle appelle.
+ *  @param {Partial<PageFiche>} o */
+export function confieALaFiche(o){ Object.assign(prete, o); }
+const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.decoupeStand(id, iSoc);
+const montePlan = () => prete.montePlan();
+const marqueStandsDessines = () => prete.marqueStandsDessines();
+const poseDistsFiche = (/** @type {any} */ soc) => prete.poseDistsFiche(soc);
+const fermeParcours = () => prete.fermeParcours();
+const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================
    7. Sélection et fiche
@@ -1079,7 +1101,8 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
     cr.hidden = !(ADMIN && zone);
     /* Le crayon ne paraît qu'en administration : seule sa page confie le
        geste (`fiche-zone.mjs`), la page publique ne l'a pas. */
-    if (soude.ficheZone) cr.onclick = () => soude.ficheZone(o);
+    const ficheZone = prete.ficheZone;
+    if (ficheZone) cr.onclick = () => ficheZone(o);
   }
   /* Une zone technique — réserve, quai de livraison — n'apprend rien au
      visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
@@ -1097,7 +1120,8 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
         : "Remettre cette zone sur le plan public";
       /* La pastille ne paraît qu'en administration : seule sa page confie le
          geste (`fiche-zone.mjs`), la page publique ne l'a pas. */
-      if (soude.basculeAffichageZone) vis.onclick = () => soude.basculeAffichageZone(o);
+      const bascule = prete.basculeAffichageZone;
+      if (bascule) vis.onclick = () => bascule(o);
     }
   }
   /* La marque se range une fois l'en-tête entièrement écrit : c'est la largeur
@@ -1149,11 +1173,10 @@ export function onglet(n){
  * Appelé par `_fiche.html` à la place que ce code tenait : les écoutes de la
  * fiche — le rangement de sa marque au redimensionnement, ses onglets, sa
  * croix et le voile — se posent au même rang qu'avant parmi celles du plan.
- *
- * @param {Record<string, any>} b
+ * Il ne reçoit plus rien : ce que la fiche emprunte lui est confié par
+ * `confieALaFiche`.
  */
-export function brancheFiche(b){
-  soude = b;
+export function brancheFiche(){
   /* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
      suit : une marque rangée sous le numéro à l'étroit remonte à côté du nom au
      large. Une image seule à mesurer, on ne diffère pas. */
