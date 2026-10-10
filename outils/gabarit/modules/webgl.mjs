@@ -35,6 +35,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
+import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -739,7 +740,7 @@ function couchesTexte(id, items, famille, graisse, extra){
    ------------------------------------------------------------ */
 /** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
-const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map(), prises });
+const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises });
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
   // racine — celles d'une forme dessinée comme celles d'un emplacement repris
@@ -819,7 +820,13 @@ function formeGl(el, cs, m, op, traces, acc){
   const sw = parseFloat(cs.strokeWidth);
   if (trait && sw > 0){
     const fixe = cs.vectorEffect === "non-scaling-stroke";
-    const largeur = fixe ? sw : sw * echelleM(m);
+    /* Le trait d'une forme dessinée s'amincit quand on recule : la feuille de
+       style l'a multiplié par le facteur de la vue où le SVG a été posé, on
+       retrouve donc l'épaisseur réglée, que les couches « traits-z » bornent
+       elles-mêmes au fil du zoom (`chemin-forme.mjs` `facteurTrait`). */
+    const amincit = fixe && el.classList.contains("trait");
+    const largeur = amincit ? Math.round(sw / (parseFloat(cs.getPropertyValue("--trait-f")) || 1) * 100) / 100
+      : fixe ? sw : sw * echelleM(m);
     const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
       ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
@@ -829,7 +836,7 @@ function formeGl(el, cs, m, op, traces, acc){
       if (t.pts.length < 2) continue;
       const path = t.pts.map(p => appM(m, p));
       if (t.ferme) path.push(path[0]);
-      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
+      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
         prise: el.closest(PRISES) });
     }
   }
@@ -945,6 +952,25 @@ function couchesDeBloc(acc, cle){
         extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
         tirets: bouge ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
     }
+  });
+  /* Les traits qui s'amincissent : comptés en mètres, à la largeur que le
+     SVG leur donnerait à « TRAIT_PLEIN » pixels par mètre, et bornés par
+     leur épaisseur réglée et son plancher. Les bornes tiennent à la couche,
+     non au trait : une couche par épaisseur, et un plan n'en compte que
+     quelques-unes. */
+  partage(acc.traitsZ, acc.prises, repondus).forEach((liste, k) => {
+    const parEpaisseur = new Map();
+    for (const d of liste){
+      if (!parEpaisseur.has(d.largeur)) parEpaisseur.set(d.largeur, []);
+      parEpaisseur.get(d.largeur).push(d);
+    }
+    let n = 0;
+    for (const [ep, l] of parEpaisseur)
+      out.push(new L.PathLayer({ id: cle + "-traits-z-" + k + "-" + (n++), data: l, pickable: k === 0,
+        getPath: d => d.path, getColor: d => d.couleur, getWidth: ep / TRAIT_PLEIN, widthUnits: "common",
+        widthMinPixels: ep * TRAIT_PLANCHER, widthMaxPixels: ep,
+        jointRounded: true, capRounded: false, extensions: constTexte().traits,
+        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2 }));
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
@@ -1188,7 +1214,8 @@ function coucheFocus(couches){
    ------------------------------------------------------------ */
 function couchesPhare(el, sous, cle){
   const couches = couchesDeBloc(sous, cle);
-  const pts = sous.pleins.flatMap(d => d.polygon[0]).concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path));
+  const pts = sous.pleins.flatMap(d => d.polygon[0]).concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path),
+    ...sous.traitsZ.map(d => d.path));
   if (!pts.length) return couches;
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of pts){ x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }

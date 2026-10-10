@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 601 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1605 l. → plan-smcl.html
+### `_styles-plan.css` — 1608 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -344,13 +344,14 @@ Fonctions :
 `brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
 `celluleUtile` 149 · `dilatationDuJour` 166 · `litLaCharge` 203 · `chargeCellule` 223
 
-### `modules/chemin-forme.mjs` — 99 l. → plan, plan-admin
+### `modules/chemin-forme.mjs` — 124 l. → plan, plan-admin
 
 - l.1 · Le tracé d'une forme dessinée
 
 Fonctions :
 
-`cheminArrondi` 26 · `estCadre` 69 · `cheminForme` 71 · `styleTrait` 91
+`cheminArrondi` 26 · `estCadre` 69 · `cheminForme` 71 · `facteurTrait` 105 · `pxTrait` 111
+`styleTrait` 116
 
 ### `modules/classeur.mjs` — 235 l. → console, rapport
 
@@ -1600,44 +1601,44 @@ Fonctions :
 
 `vue` 16 · `changeVue` 18 · `cadrePlan` 35 · `oublieCadre` 36
 
-### `modules/vue.mjs` — 586 l. → plan, plan-admin
+### `modules/vue.mjs` — 603 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
-- l.81 · 6. Vue
+- l.82 · 6. Vue
 
 Fonctions :
 
-`confieALaVue` 66 · `enEdition` 72 · `libelles` 73 · `poseEmprise` 79 · `figeTextes` 103
-`rendTextes` 111 · `cadrage` 150 · `peintLibelles` 155 · `repeintLibelles` 163
-`detacheLibelles` 167 · `rattacheLibelles` 179 · `etireLibelles` 197 · `appliqueVue` 205
-`libellesDeLaVue` 271 · `rafraichitVue` 279 · `poseVue` 293 · `mesureBarre` 322
-`masqueHaut` 350 · `masque` 357 · `masqueDroite` 394 · `fit` 405 · `stoppeZoom` 443
-`glisseVersVise` 449 · `glisseVers` 492 · `rectVisee` 514 · `zoom` 534 · `echelle` 548
-`versPlan` 560 · `brancheVue` 571
+`confieALaVue` 67 · `enEdition` 73 · `libelles` 74 · `poseEmprise` 80 · `figeTextes` 104
+`rendTextes` 112 · `cadrage` 151 · `peintLibelles` 156 · `repeintLibelles` 164
+`detacheLibelles` 168 · `rattacheLibelles` 180 · `etireLibelles` 198
+`poseFacteurTrait` 213 · `appliqueVue` 221 · `libellesDeLaVue` 288 · `rafraichitVue` 296
+`poseVue` 310 · `mesureBarre` 339 · `masqueHaut` 367 · `masque` 374 · `masqueDroite` 411
+`fit` 422 · `stoppeZoom` 460 · `glisseVersVise` 466 · `glisseVers` 509 · `rectVisee` 531
+`zoom` 551 · `echelle` 565 · `versPlan` 577 · `brancheVue` 588
 
-### `modules/webgl.mjs` — 1358 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1385 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`confieAuWebgl` 63 · `chargeWebgl` 96 · `brancheWebgl` 121 · `monteWebgl` 128
-`poseToileWebgl` 229 · `guetteContexteWebgl` 235 · `contextePerduWebgl` 245
-`verifieContexteWebgl` 252 · `perdContexteWebgl` 261 · `remonteWebgl` 282 · `vueDeck` 299
-`vueWebgl` 308 · `blocDe` 317 · `majEditionWebgl` 330 · `cleBloc` 342 · `planifieWebgl` 368
-`toutRepeindreWebgl` 372 · `blocsDansLOrdre` 379 · `repeintWebgl` 384 · `assembleWebgl` 408
-`constTexte` 442 · `jeuDeCaracteres` 638 · `sousPixelOffert` 692 · `couchesPetites` 697
-`couchesTexte` 707 · `accVide` 742 · `convertitBloc` 743 · `accDe` 759 · `parcoursGl` 766
-`formeGl` 802 · `texteGl` 838 · `imageGl` 861 · `partage` 893 · `designeGl` 899
-`couchesDeBloc` 901 · `modelesLibellesHtml` 981 · `poseModelesLibelles` 991
-`lisModelesLibelles` 997 · `groupesNoms` 1030 · `couchesNoms` 1047 · `couchesPastilles` 1058
-`couchesLibellesWebgl` 1073 · `couchesDessineesWebgl` 1080 · `stage` 1101
-`brancheSurvolWebgl` 1105 · `poseSurvolWebgl` 1125 · `poseCurseurWebgl` 1134
-`poseFocusWebgl` 1143 · `aplatsDe` 1150 · `coucheSurvol` 1153 · `coucheFocus` 1162
-`couchesPhare` 1189 · `lueurDe` 1205 · `opacitePhare` 1243 · `echellePhare` 1244
-`couchesPhareNoms` 1247 · `palierDefile` 1272 · `phaseComete` 1274 · `animeCouche` 1277
-`majAnimationWebgl` 1294 · `animeWebgl` 1302 · `objetSous` 1325 · `cibleWebgl` 1332
-`priseWebgl` 1339 · `libelleSousWebgl` 1344 · `rectEcranWebgl` 1349
+`confieAuWebgl` 64 · `chargeWebgl` 97 · `brancheWebgl` 122 · `monteWebgl` 129
+`poseToileWebgl` 230 · `guetteContexteWebgl` 236 · `contextePerduWebgl` 246
+`verifieContexteWebgl` 253 · `perdContexteWebgl` 262 · `remonteWebgl` 283 · `vueDeck` 300
+`vueWebgl` 309 · `blocDe` 318 · `majEditionWebgl` 331 · `cleBloc` 343 · `planifieWebgl` 369
+`toutRepeindreWebgl` 373 · `blocsDansLOrdre` 380 · `repeintWebgl` 385 · `assembleWebgl` 409
+`constTexte` 443 · `jeuDeCaracteres` 639 · `sousPixelOffert` 693 · `couchesPetites` 698
+`couchesTexte` 708 · `accVide` 743 · `convertitBloc` 744 · `accDe` 760 · `parcoursGl` 767
+`formeGl` 803 · `texteGl` 845 · `imageGl` 868 · `partage` 900 · `designeGl` 906
+`couchesDeBloc` 908 · `modelesLibellesHtml` 1007 · `poseModelesLibelles` 1017
+`lisModelesLibelles` 1023 · `groupesNoms` 1056 · `couchesNoms` 1073
+`couchesPastilles` 1084 · `couchesLibellesWebgl` 1099 · `couchesDessineesWebgl` 1106
+`stage` 1127 · `brancheSurvolWebgl` 1131 · `poseSurvolWebgl` 1151 · `poseCurseurWebgl` 1160
+`poseFocusWebgl` 1169 · `aplatsDe` 1176 · `coucheSurvol` 1179 · `coucheFocus` 1188
+`couchesPhare` 1215 · `lueurDe` 1232 · `opacitePhare` 1270 · `echellePhare` 1271
+`couchesPhareNoms` 1274 · `palierDefile` 1299 · `phaseComete` 1301 · `animeCouche` 1304
+`majAnimationWebgl` 1321 · `animeWebgl` 1329 · `objetSous` 1352 · `cibleWebgl` 1359
+`priseWebgl` 1366 · `libelleSousWebgl` 1371 · `rectEcranWebgl` 1376
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 

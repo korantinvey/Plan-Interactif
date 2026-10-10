@@ -533,6 +533,9 @@ html.mode-geo-zones #zones g.geopick path{stroke:var(--accent);stroke-width:2.5}
 .dcal{pointer-events:none}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-linejoin:round;stroke-linecap:round}
+/* Le trait d'une forme s'amincit quand on recule (`chemin-forme.mjs`
+   `facteurTrait`) ; le facteur est posé par la vue sur « #couches ». */
+.dcal path.trait{stroke-width:calc(var(--trait-f,1) * 2px)}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
 .dcal text{fill:currentColor;text-anchor:middle;
   font-family:var(--police-lab-nom,var(--sans));
