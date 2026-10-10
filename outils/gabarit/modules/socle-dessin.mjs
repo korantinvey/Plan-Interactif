@@ -3,7 +3,7 @@
    des emplacements partagent
 
    L'historique (`memorise`, `HIST`, `REFAIRE`), l'enregistrement des calques
-   sur le poste et en base, la tolérance de la main et la fermeture d'un
+   (réexporté d'`enregistrement.mjs`), la tolérance de la main et la fermeture d'un
    contour, la liste des sociétés qu'on rattache à une forme, les modes de
    transport et le dessin du cadenas.
 
@@ -17,42 +17,16 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
-import { P } from "./donnees.mjs";
 import { vue, cadrePlan } from "./vue-etat.mjs";
-import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
-import { rafraichitApercu } from "./nappe.mjs";
-import { programmePublication } from "./enregistrement.mjs";
-import { oublieAimants } from "./aimants.mjs";
-import { oublieReperes } from "./points-interet.mjs";
-import { DESSINS, cleDessins, marqueAttente, mesCalques } from "./calques-dessin.mjs";
+import { enregistreDessins } from "./enregistrement.mjs";
+import { mesCalques } from "./calques-dessin.mjs";
 import { nomSurLePlan, societesDuPlan } from "./dessin.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 
-export const enregistreDessins = () => {
-  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
-     la grille de marche qui les ignore n'a plus cours, et l'annuaire des
-     passages non plus. On attend la fin du geste — dessiner en referait une à
-     chaque image, ce qui serait insoutenable. */
-  oublieGrilles();
-  oublieLiaisons();
-  // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
-  oublieAimants();
-  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
-  oublieReperes();
-  rafraichitApercu();
-  /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
-     dès la première forme tracée, et non au moment où l'on pense à publier. */
-  marqueAttente(P().id, true);
-  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); }
-  catch (e) {
-    // les images sont encodées dans le document : le quota se remplit vite
-    if ($("outilsAide")) $("outilsAide").textContent =
-      "Mémoire du navigateur pleine : allégez ou supprimez une image.";
-  }
-  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
-     c'est justement quand son quota déborde que la base doit avoir le dessin. */
-  programmePublication();
-};
+/* Ranger les dessins sur le poste et programmer leur envoi vit dans
+   `enregistrement.mjs`, à qui c'est le métier ; il s'importe d'ici comme
+   avant. */
+export { enregistreDessins };
 
 /* Historique des dessins. L'instantané copie les calques, leurs tableaux de
    formes, et chaque forme — sans quoi il ne gardait rien de ce qui se retouche

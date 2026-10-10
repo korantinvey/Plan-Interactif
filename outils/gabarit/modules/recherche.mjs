@@ -43,7 +43,7 @@ import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
-import { montre, PREFIXE_PERSO, confieAuCorpsDeFiche } from "./corps-fiche.mjs";
+import { montre, PREFIXE_PERSO, libelleCritere } from "./corps-fiche.mjs";
 import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
 import { fermeCriteres, poseRelecturePanneau, relisPanneauCrit } from "./panneau-criteres.mjs";
 import { largeur } from "./texte-plan.mjs";
@@ -170,11 +170,6 @@ const LECTURE_CRITERE = {
   adherent: o => o.adh ? ["Oui"] : [],
 };
 export const OUI_NON = { nouveau: true, adherent: true };
-const LIBELLE_CRITERE = {
-  secteur: "Secteur", ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
-  thematiques: "Thématiques", nouveau: "Nouvel exposant",
-  adherent: "Adhérent syndicat",
-};
 /* Thématiques et secteurs ont eu chacun leur bande de puces sous la recherche.
    Elles prenaient la place de deux lignes de résultats — un salon range parfois
    trente thématiques — et rangeaient à part des filtres qui font le même
@@ -243,13 +238,9 @@ export function clesCriteres(){
   return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
 }
 
-/** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
-export function libelleCritere(cle){
-  if (cle.indexOf(PREFIXE_PERSO) !== 0) return LIBELLE_CRITERE[cle] || cle;
-  const c = ((DATA && DATA.fiche && DATA.fiche.perso) || [])
-    .find(x => x && PREFIXE_PERSO + x.cle === cle);
-  return (c && c.libelle) || cle.slice(PREFIXE_PERSO.length);
-}
+/* L'intitulé d'un critère vit dans `corps-fiche.mjs`, qui l'écrit aussi en
+   tête des champs propres au salon ; il s'importe d'ici comme avant. */
+export { libelleCritere };
 
 /**
  * Les valeurs d'une fiche pour un critère, toujours une liste de textes.
@@ -1166,7 +1157,3 @@ export function brancheRecherche(){
    elle ne peut donc l'importer en retour. */
 confieAuxPolices({ liste });
 
-/* Le corps de la fiche, que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant le libellé d'un champ propre au
-   salon, qu'il écrit en intitulé. */
-confieAuCorpsDeFiche({ libelleCritere });

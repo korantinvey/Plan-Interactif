@@ -19,7 +19,7 @@
 
    La fenêtre se rouvre après un aperçu (`retourAuxReglages`, dont il confie
    le contenu à `fenetre.mjs`), depuis la bande de l'outil et la remise
-   à zéro des compteurs (`chaleur.mjs`, à qui il la confie en se chargeant) ;
+   à zéro des compteurs (`chaleur.mjs`, à qui il la passe en appelant son volet) ;
    le pas d'une hauteur à l'autre s'importe de `glisse-fenetre.mjs`, comme
    le font les volets du générique et de la suggestion.
    ============================================================ */
@@ -34,7 +34,7 @@ import { voletOrdre } from "./reglage-fiche.mjs";
 import { NOM_VOLET_SUGGESTION, voletSuggestion }
   from "./reglage-suggestion.mjs";
 import { voletEnvirons } from "./calage-carte.mjs";
-import { NOM_VOLET_MESURE, voletMesure, confieALaChaleur } from "./chaleur.mjs";
+import { NOM_VOLET_MESURE, voletMesure } from "./chaleur.mjs";
 import { conf, optionActive, suggestionOfferte, enregistreConf } from "./configuration.mjs";
 import { VISITE_MIN, VISITE_MAX, minutesVisite } from "./horaires.mjs";
 import { NOM_VOLET_PARCOURS } from "./seuil.mjs";
@@ -179,7 +179,7 @@ export function ouvreReglages(ouvrir){
     /* La mesure a son volet à elle, et en dernier. Elle ne parle ni de ce que
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
-    voletMesure(volet(NOM_VOLET_MESURE));
+    voletMesure(volet(NOM_VOLET_MESURE), ouvreReglages);
     /* « Admin » après tout le reste : l'organisateur ne le voit pas, et les
        onglets qu'il partage avec l'administrateur gardent ainsi la même place
        sous les yeux de l'un et de l'autre. */
@@ -506,8 +506,3 @@ function voletCoexposants(hote){
     bloc.appendChild(aide);
   });
 }
-
-/* La carte de chaleur est importée par ce module : elle ne peut l'importer
-   en retour. Il lui confie donc, dès que la page d'administration le charge,
-   de quoi rouvrir la fenêtre. */
-confieALaChaleur({ ouvreReglages });

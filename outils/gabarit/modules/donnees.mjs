@@ -36,6 +36,12 @@ export let CONFERENCES = [];
    héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
    n'a pas à balayer la liste pour savoir si le filtre les retient. */
 export let PAR_HEBERGE = new Map();
+/* Les secteurs du salon, chacun avec sa teinte sur la roue — calculés par
+   `secteurs.mjs` `indexeSecteurs`, qui les pose ici avec les autres index :
+   la configuration les relit pour reconnaître une clé de secteur, et le
+   module des secteurs, qui la lit, ne pouvait lui être importé. */
+/** @type {Map<string, number>} */
+export let SECTEURS = new Map();
 
 /**
  * Remplacer une ou plusieurs de ces valeurs. Un nom inconnu lève une erreur :
@@ -43,7 +49,7 @@ export let PAR_HEBERGE = new Map();
  *
  * @param {{ DATA?: any, TOUS?: any[], parId?: Map<any, any>, CONFS?: Map<string, any>,
  *           EXPOSANTS?: Map<string, any[]>, HEBERGES?: any[], CONFERENCES?: any[],
- *           PAR_HEBERGE?: Map<string, any> }} valeurs
+ *           PAR_HEBERGE?: Map<string, any>, SECTEURS?: Map<string, number> }} valeurs
  */
 export function poseDonnees(valeurs){
   for (const [nom, v] of Object.entries(valeurs)){
@@ -56,6 +62,7 @@ export function poseDonnees(valeurs){
       case "HEBERGES": HEBERGES = v; break;
       case "CONFERENCES": CONFERENCES = v; break;
       case "PAR_HEBERGE": PAR_HEBERGE = v; break;
+      case "SECTEURS": SECTEURS = v; break;
       default: throw new Error("poseDonnees : « " + nom + " » n'est pas une donnée du plan");
     }
   }

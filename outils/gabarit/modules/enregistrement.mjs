@@ -28,22 +28,26 @@
    calques s'importent (`mode-admin.mjs`, `configuration.mjs`,
    `apparence.mjs`, `ordre-trace.mjs`), comme les calques dessinés et leurs
    deux relevés (`calques-dessin.mjs`) et l'annonce dans la liste
-   (`demarrage.mjs`) ; seul l'enregistrement des dessins, que l'outil de
-   dessin tient et qui importe ce module-ci, se confie — l'outil le donne en
-   se chargeant (`confieAEnregistrement`) —, comme ce qui dit
-   qu'un geste est en cours, que les gestes de l'exploitant lui donnent
-   (`gestes-admin.mjs`, `confieGesteEnCours`). Le rangement des
+   (`demarrage.mjs`). L'enregistrement des dessins vit ici
+   (`enregistreDessins`), et l'outil de dessin le reprend par son socle ;
+   seul se confie ce qui dit qu'un geste est en cours, que les gestes de
+   l'exploitant, qui l'atteignent tous, lui donnent (`gestes-admin.mjs`,
+   `confieGesteEnCours`). Le rangement des
    réglages, lui, reçoit d'ici son envoi en base (`confiePublication`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { DATA } from "./donnees.mjs";
+import { DATA, P } from "./donnees.mjs";
 import { API } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
 import { annonce, confieAuDemarrage } from "./demarrage.mjs";
 import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente,
-  confieAuxCalques } from "./calques-dessin.mjs";
+  confieAuxCalques, cleDessins } from "./calques-dessin.mjs";
+import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
+import { rafraichitApercu } from "./nappe.mjs";
+import { oublieAimants } from "./aimants.mjs";
+import { oublieReperes } from "./points-interet.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { CONF, reglagesDuSalon, enregistreConf, confiePublication } from "./configuration.mjs";
@@ -51,22 +55,41 @@ import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieALIndex } from "./index-salon.mjs";
 
-/* Ce que l'outil de dessin confie en se chargeant : l'enregistrement des
-   dessins. Ce que les chargements remplacent — le mode, les réglages (`CONF`) —,
+/* Ce que les chargements remplacent — le mode, les réglages (`CONF`) —,
    importé, se lit tel qu'il est à l'instant : l'envoi en relit certains après
    chaque `await`. Les calques et leurs deux relevés (`DESSINS`, `ATTENTE`,
    `PUBLIES`) de même. */
-/**
- * @typedef {object} PreteEnregistrement
- * @property {() => void} enregistreDessins
- */
-/** @type {PreteEnregistrement} */
-const prete = { enregistreDessins: () => {} };
 
-/** La porte par laquelle l'outil de dessin (`outil-dessin.mjs`, qui importe
- *  ce module) confie ce qu'il tient.
- *  @param {Partial<PreteEnregistrement>} o */
-export function confieAEnregistrement(o){ Object.assign(prete, o); }
+/* Ranger les dessins sur le poste, oublier ce qui en dépend, et programmer
+   l'envoi : le geste de chaque trait tracé, que l'outil de dessin, l'éditeur
+   et la reprise appellent (par `socle-dessin.mjs`), et que la sauvegarde
+   restaurée refait ici. */
+export const enregistreDessins = () => {
+  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
+     la grille de marche qui les ignore n'a plus cours, et l'annuaire des
+     passages non plus. On attend la fin du geste — dessiner en referait une à
+     chaque image, ce qui serait insoutenable. */
+  oublieGrilles();
+  oublieLiaisons();
+  // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
+  oublieAimants();
+  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
+  oublieReperes();
+  rafraichitApercu();
+  /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
+     dès la première forme tracée, et non au moment où l'on pense à publier. */
+  marqueAttente(P().id, true);
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); }
+  catch (e) {
+    // les images sont encodées dans le document : le quota se remplit vite
+    if ($("outilsAide")) $("outilsAide").textContent =
+      "Mémoire du navigateur pleine : allégez ou supprimez une image.";
+  }
+  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
+     c'est justement quand son quota déborde que la base doit avoir le dessin. */
+  programmePublication();
+};
+
 /** @param {string} txt @param {boolean} [erreur] */
 
 /* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
@@ -637,7 +660,7 @@ function appliqueSauvegarde(s){
   enregistreConf();
   // range les dessins sur le poste, oublie les relevés qui en dépendent, et
   // programme l'envoi — le même geste que pour un trait tracé à la main
-  prete.enregistreDessins();
+  enregistreDessins();
   appliqueApparence();
   dessineDessins();
   construitPanneau();

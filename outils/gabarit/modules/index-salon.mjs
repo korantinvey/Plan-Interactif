@@ -20,7 +20,7 @@ import { imageSure } from "./sur.mjs";
 import { CONF, ouvreConf, reglagesDuSalon, programmeOffert } from "./configuration.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { indexeSecteurs } from "./secteurs.mjs";
-import { clesCriteres, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres }
+import { clesCriteres, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, liste }
   from "./recherche.mjs";
 import { appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
 import { posePoliceLibelles } from "./polices-plan.mjs";
@@ -28,6 +28,8 @@ import { modeleRetenu } from "./modeles.mjs";
 import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
 import { nommeApplication } from "./installation.mjs";
 import { chargeParcours } from "./parcours.mjs";
+import { rafraichitParcours } from "./tiroir-parcours.mjs";
+import { confieApresOption } from "./options.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubliees, rangeDessins }
   from "./calques-dessin.mjs";
@@ -482,3 +484,11 @@ function poseLogoSalon(src){
   el.hidden = !img;
   if (img) el.src = img;
 }
+
+/* Le programme n'est pas une commande qu'on masque : c'est un index qu'on
+   refait, celui de ce module, et tout ce qui le lit part de là. La liste
+   affichée derrière la fenêtre est peut-être un résultat de recherche, et le
+   tiroir du parcours peut être ouvert : les deux obéissent sur-le-champ. Ce
+   module le confie à la liste des options en se chargeant
+   (`confieApresOption`). */
+confieApresOption("programme", () => { indexeConferences(); liste(); rafraichitParcours(); });

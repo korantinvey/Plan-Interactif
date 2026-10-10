@@ -22,8 +22,8 @@
    Un module de l'administration, donc : `plan-admin.mjs` l'embarque, le
    visiteur ne le reçoit jamais. La sélection d'un stand s'importe de
    `fiche.mjs`, le mode administrateur de `mode-admin.mjs`. La fenêtre des
-   réglages, qui l'importe, lui confie en se chargeant de quoi s'ouvrir
-   (`confieALaChaleur`). Il se branche par `brancheChaleur`, que `plan-admin.mjs`
+   réglages, qui l'importe, lui passe de quoi se rouvrir en appelant son
+   volet (`voletMesure`). Il se branche par `brancheChaleur`, que `plan-admin.mjs`
    appelle dans l'emplacement `apresLaMesure` du lancement, pour y poser son
    écoute du redimensionnement.
    ============================================================ */
@@ -34,20 +34,6 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { confieChaleur } from "./secteurs.mjs";
-
-/* Ce que la fenêtre des réglages (`reglages.mjs`), qui importe ce module, lui
-   confie en se chargeant. Le mode administrateur s'importe, lu à l'instant
-   (`modules/mode-admin.mjs` `ADMIN`). */
-/**
- * @typedef {object} PreteChaleur
- * @property {typeof import("./reglages.mjs").ouvreReglages} ouvreReglages
- */
-/** @type {PreteChaleur} */
-const prete = { ouvreReglages: () => {} };
-const ouvreReglages = (/** @type {string} */ ouvrir) => prete.ouvreReglages(ouvrir);
-/** La porte par laquelle la fenêtre des réglages confie de quoi la rouvrir.
- *  @param {Partial<PreteChaleur>} o */
-export function confieALaChaleur(o){ Object.assign(prete, o); }
 
 const racine = document.documentElement;
 
@@ -487,8 +473,12 @@ const aplati = (t) => String(t || "").trim().toLowerCase()
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 /** Le volet « Statistiques » des réglages : ce que comptent les compteurs,
- *  et le seul chemin pour les effacer. */
-export function voletMesure(hote){
+ *  et le seul chemin pour les effacer. La fenêtre des réglages, qui l'appelle,
+ *  dit comment la rouvrir — la confirmation la remplace, et « Annuler » y
+ *  ramène : ce module ne peut l'importer, elle l'importe.
+ *  @param {HTMLElement} hote
+ *  @param {(volet: string) => void} rouvre */
+export function voletMesure(hote, rouvre){
   const p = document.createElement("p");
   p.textContent = "Le plan compte ce qu'on en fait : visites, recherches, " +
     "itinéraires, et les fiches ouvertes stand par stand. Ces chiffres " +
@@ -508,7 +498,7 @@ export function voletMesure(hote){
   b.type = "button";
   b.className = "btn danger";
   b.textContent = "Réinitialiser les compteurs…";
-  b.onclick = ouvreRemiseAZero;
+  b.onclick = () => ouvreRemiseAZero(rouvre);
   acts.appendChild(b);
   hote.appendChild(acts);
 }
@@ -533,7 +523,8 @@ export async function evenementCourant(acces){
  * cela met un nombre sur ce qu'on s'apprête à perdre, et cela prouve au
  * passage que la base répond, plutôt que de le découvrir après avoir tapé.
  */
-function ouvreRemiseAZero(){
+/** @param {(volet: string) => void} rouvre */
+function ouvreRemiseAZero(rouvre){
   let tally = null;
 
   ouvreModale("Réinitialiser les compteurs", corps => {
@@ -618,7 +609,7 @@ function ouvreRemiseAZero(){
     /* Revenir d'où l'on vient : la fenêtre des réglages a été remplacée. Sans
        « ferme: false », la fermeture qui suit l'action emportait la fenêtre
        qu'elle venait de rouvrir, et il ne restait que le plan. */
-    { libelle: "Annuler", ferme: false, action: () => ouvreReglages(NOM_VOLET_MESURE) },
+    { libelle: "Annuler", ferme: false, action: () => rouvre(NOM_VOLET_MESURE) },
     { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
   ], "outil");
 

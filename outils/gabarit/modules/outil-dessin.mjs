@@ -40,7 +40,6 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { oublieGrilles, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
-import { confieAEnregistrement } from "./enregistrement.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
@@ -925,11 +924,10 @@ confieAuRendu({ oublieEdition: () => {
   if (o) o.classList.remove("open");
 } });
 
-/* Ces trois modules sont importés par celui-ci : ils ne peuvent l'importer
+/* Ces deux modules sont importés par celui-ci : ils ne peuvent l'importer
    en retour. Il leur confie donc ce qu'il tient dès que la page
    d'administration le charge — avant tout geste. Ce que l'éditeur et la
    reprise partageaient avec lui s'importe de `socle-dessin.mjs`. */
-confieAEnregistrement({ enregistreDessins });
 confieALaReprise({ activeCalque });
 confieAuPlacementLibelles({ activeCalque });
 

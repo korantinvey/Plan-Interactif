@@ -20,11 +20,6 @@ import { view } from "./vue.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { libelles } from "./libelles.mjs";
 import { lancePlan } from "./lancement.mjs";
-/* Les options vendues à part ne sont plus importées par personne dans la
-   page publique : elles se confient à l'apparence en se chargeant
-   (`confieALApparence`), qui les repose avec le reste de l'habillage. Il faut
-   donc les charger, et c'est d'ici. */
-import "./options.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être

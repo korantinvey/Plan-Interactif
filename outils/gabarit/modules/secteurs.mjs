@@ -5,8 +5,8 @@
    chargement (`indexeSecteurs`, que `index-salon.mjs` `indexe` appelle), la couleur
    que le plan et le sélecteur montrent, la pastille qu'une puce de critère
    porte, et la teinte posée sur les stands. Seul `indexeSecteurs` remplace
-   `SECTEURS` ; la configuration, qui ne peut l'importer, le reçoit par un
-   lecteur, confié au chargement (`confieALaConfiguration`).
+   `SECTEURS`, qu'il range avec les autres index du salon (`donnees.mjs`) :
+   la configuration l'y lit.
 
    La carte de chaleur se pose sur les mêmes formes et suit la teinte ; elle
    n'est que d'administration (`modules/chaleur.mjs`, par `plan-admin.mjs`),
@@ -15,8 +15,8 @@
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
 import { hslHex } from "./couleurs.mjs";
-import { DATA, parId } from "./donnees.mjs";
-import { conf, jeton, confieALaConfiguration } from "./configuration.mjs";
+import { DATA, parId, SECTEURS, poseDonnees } from "./donnees.mjs";
+import { conf, jeton } from "./configuration.mjs";
 
 /* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
@@ -33,13 +33,15 @@ export function confieChaleur(f){ coloreChaleur = f; }
    L'ordre est celui des noms, jamais celui des stands : le même secteur garde
    sa couleur d'un pavillon à l'autre, et d'une synchronisation à la suivante. */
 const TEINTES = [212, 28, 145, 340, 262, 42, 190, 8, 100, 310, 172, 62];
-export let SECTEURS = new Map();
-
 export function indexeSecteurs(){
   const noms = [...new Set(DATA.plans.flatMap(p => p.stands.map(s => s.sect)))]
     .filter(Boolean).sort(COLLATION.compare);
-  SECTEURS = new Map(noms.map((n, i) => [n, TEINTES[i % TEINTES.length]]));
+  poseDonnees({ SECTEURS: new Map(noms.map((n, i) => [n, TEINTES[i % TEINTES.length]])) });
 }
+
+/* L'index lui-même vit avec les autres, dans `donnees.mjs` ; il s'importe
+   d'ici comme avant. */
+export { SECTEURS };
 
 /**
  * Les secteurs se montrent-ils ?
@@ -144,9 +146,3 @@ export function peintSecteur(nom){
       else g.style.removeProperty("--sect-c");
     });
 }
-
-/* Les secteurs, confiés à la configuration dès que ce module se charge : elle
-   les relit pour savoir si une clé nomme un secteur, et ne peut importer ce
-   module, qui l'importe. Par un lecteur, puisque l'index les remplace à chaque
-   chargement. */
-confieALaConfiguration({ secteurs: () => SECTEURS });

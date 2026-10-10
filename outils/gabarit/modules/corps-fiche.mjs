@@ -9,30 +9,34 @@
    (`montreIntitule`, `libelleCorps`) et le rangement qui en sort
    (`corpsRange`) ; avec eux les pictos des réseaux sociaux.
 
-   Le préfixe des champs propres au salon vit ici, et la recherche le reprend ;
-   leur libellé, qu'elle tient, elle le confie en se chargeant
-   (`confieAuCorpsDeFiche`) : elle importe ce module et ne peut être importée
-   par lui.
+   Le préfixe des champs propres au salon vit ici, avec l'intitulé d'un
+   critère (`libelleCritere`) : la recherche, qui importe ce module, les
+   reprend d'ici.
    ============================================================ */
 import { esc } from "./texte.mjs";
 import { DATA } from "./donnees.mjs";
 import { lien, adresseWeb } from "./sur.mjs";
 
-/**
- * Ce que le corps de la fiche emprunte à la recherche (`recherche.mjs`), qui
- * l'importe : le libellé d'un champ propre au salon. Elle le lui confie au
- * chargement de son module.
- * @typedef {{ libelleCritere: (cle: string) => string }} PageCorpsFiche
- */
-/** @type {PageCorpsFiche} */
-const prete = { libelleCritere: (cle) => cle };
-
-/** La porte de la recherche, qui prête au corps de la fiche ce qu'il appelle.
- *  @param {Partial<PageCorpsFiche>} o */
-export function confieAuCorpsDeFiche(o){ Object.assign(prete, o); }
-const libelleCritere = (/** @type {string} */ cle) => prete.libelleCritere(cle);
 /** Le préfixe des champs propres au salon, que la recherche reprend d'ici. */
 export const PREFIXE_PERSO = "perso:";
+
+/* L'intitulé d'un critère de la recherche — celui du salon pour un champ qu'il
+   s'est ajouté. Il vit ici, et non dans la recherche qui le montre surtout,
+   parce que la fiche l'écrit aussi en tête de ces champs et que la recherche
+   importe ce module : elle le reprend d'ici. */
+const LIBELLE_CRITERE = {
+  secteur: "Secteur", ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
+  thematiques: "Thématiques", nouveau: "Nouvel exposant",
+  adherent: "Adhérent syndicat",
+};
+
+/** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
+export function libelleCritere(cle){
+  if (cle.indexOf(PREFIXE_PERSO) !== 0) return LIBELLE_CRITERE[cle] || cle;
+  const c = ((DATA && DATA.fiche && DATA.fiche.perso) || [])
+    .find(x => x && PREFIXE_PERSO + x.cle === cle);
+  return (c && c.libelle) || cle.slice(PREFIXE_PERSO.length);
+}
 
 /* Les champs qui se taisent tant qu'on ne les a pas demandés — l'inverse de la
    règle générale, et pour la raison qui la fonde. Un champ absent du réglage

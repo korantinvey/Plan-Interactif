@@ -74,7 +74,11 @@ const dit = (ok, q, d) => {
     ] });
     const c = parti[0] && parti[0].corps;
     dit(r.status === 204 && !!c && /erreur_publique$/.test(parti[0].url), "le Worker passe l'erreur à la porte de la base");
-    dit(c && c.p_erreurs[0].lieu === "modules/donnees.mjs:59", "et la ramène à son module",
+    /* La ligne attendue se lit dans la source : elle bouge avec le module, et
+       c'est la correspondance qu'on éprouve, non un numéro retenu. */
+    const source = fs.readFileSync(path.join(__dirname, "..", "gabarit", "modules", "donnees.mjs"), "utf8")
+      .split("\n").findIndex((x) => x.includes("n'est pas une donnée du plan")) + 1;
+    dit(c && c.p_erreurs[0].lieu === "modules/donnees.mjs:" + source, "et la ramène à son module",
       c && c.p_erreurs[0].lieu);
     dit(c && c.p_erreurs[1].lieu === "inconnu.js:3:7", "un fichier sans carte garde sa position", c && c.p_erreurs[1].lieu);
     dit(c && !JSON.stringify(c).includes("jeton"), "rien d'autre que le message et l'endroit ne part");
