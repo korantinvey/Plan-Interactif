@@ -43,13 +43,13 @@ import { vue, cadrePlan } from "./vue-etat.mjs";
 
 const racine = document.documentElement;
 
-/* Le calage qu'un exploitant est en train de régler, que seule
-   l'administration connaît : `calage-carte.mjs` le tient, et le confie ici par
-   un lecteur. Chez le visiteur il n'y en a jamais. */
-/** @type {() => any} */
-let calageEnCours = () => null;
-/** @param {() => any} lecteur */
-export function confieCalageEnCours(lecteur){ calageEnCours = lecteur; }
+/* Le calage qu'un exploitant est en train de régler. Il vit ici, où on le
+   dessine, et `calage-carte.mjs` — administration seule — l'écrit par sa
+   porte : un état, non une fonction prêtée. Chez le visiteur il reste nul. */
+/** @type {any} */
+export let CALAGE_EN_COURS = null;
+/** @param {any} c */
+export function poseCalageEnCours(c){ CALAGE_EN_COURS = c; }
 
 /* ------------------------------------------------------------
    Le fond de carte
@@ -246,7 +246,7 @@ export function calagePose(){
 
 /** Le calage qui vaut à cet instant : celui qu'on règle s'il y en a un, celui
  *  du pavillon sinon. Le visiteur n'a jamais que le second. */
-export const calageCourant = () => calageEnCours() || calagePose();
+export const calageCourant = () => CALAGE_EN_COURS || calagePose();
 
 /** Le fond retenu, s'il en est un de connu. */
 export const fondCourant = () => {

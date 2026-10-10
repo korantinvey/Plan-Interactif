@@ -10,11 +10,12 @@
    Les calques dessinés, leur file d'attente et ce que la base en a confirmé
    s'importent (`calques-dessin.mjs`), comme l'oubli des repères
    (`points-interet.mjs`). Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`) lui est confié par ce module en se
-   chargeant, par la porte `confieALIndex` ; la page publique garde les
-   défauts sans effet.
+   (`modules/enregistrement.mjs`) suit ses deux annonces
+   (`RESCAPES_TROUVES`, `REGLAGES_RECUS`) ; chez le visiteur personne
+   n'écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { DATA, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, poseDonnees } from "./donnees.mjs";
 import { imageSure } from "./sur.mjs";
 import { CONF, ouvreConf, reglagesDuSalon, programmeOffert } from "./configuration.mjs";
@@ -35,22 +36,14 @@ import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubli
   from "./calques-dessin.mjs";
 import { oublieReperes } from "./cartouche-poi.mjs";
 
-/* Ce que l'administration seule a (`enregistrement.mjs`), qui le confie à
-   l'index en se chargeant : la page publique ne l'embarque pas, et rien
-   n'est appelé. */
-/**
- * @typedef {object} PageIndex
- * @property {(n: number) => void} compteRescapes
- * @property {(enBase: any) => void} noteReglagesCharges
- */
-/** @type {PageIndex} */
-const prete = { compteRescapes: () => {}, noteReglagesCharges: () => {} };
-
-/** La porte de l'enregistrement, ouvert au chargement de son module.
- *  @param {Partial<PageIndex>} o */
-export function confieALIndex(o){ Object.assign(prete, o); }
-const compteRescapes = (/** @type {number} */ n) => prete.compteRescapes(n);
-const noteReglagesCharges = (/** @type {any} */ enBase) => prete.noteReglagesCharges(enBase);
+/* Ce que l'index annonce, et que seul l'enregistrement écoute
+   (`enregistrement.mjs`). */
+/** Des calques que ce poste seul connaît ont été repris : combien.
+ *  @type {import("./annonce.mjs").Annonce<[number]>} */
+export const RESCAPES_TROUVES = creeAnnonce();
+/** Les réglages tels que la base les a rendus.
+ *  @type {import("./annonce.mjs").Annonce<[any]>} */
+export const REGLAGES_RECUS = creeAnnonce();
 
 /* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
    thématiques — tout ce que sa fenêtre montre en propre. Sa présentation reste
@@ -210,7 +203,7 @@ export function indexe(/** @type {any} */ d){
         DESSINS[p.id] = deLaBase.concat(rescapes);
         if (rescapes.length){
           marqueAttente(p.id, true);
-          compteRescapes(rescapes.length);
+          RESCAPES_TROUVES.dis(rescapes.length);
         }
       } else {
         DESSINS[p.id] = deLaBase;
@@ -227,7 +220,7 @@ export function indexe(/** @type {any} */ d){
      poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
      resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
      repart au prochain envoi — ce navigateur est le seul endroit où il est. */
-  if (ADMIN) noteReglagesCharges(reglagesEnBase);
+  if (ADMIN) REGLAGES_RECUS.dis(reglagesEnBase);
 
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de

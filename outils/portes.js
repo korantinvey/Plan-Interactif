@@ -21,7 +21,10 @@
  * le module neutre qui défait la boucle (`CLAUDE.md`, « Les modules »).
  *
  * Une porte se reconnaît à son nom, `confie…`, exporté : c'est la convention
- * du dépôt, et ce qui la rend cherchable. Les registres où plusieurs modules
+ * du dépôt, et ce qui la rend cherchable. Une **annonce** (`annonce.mjs`
+ * `creeAnnonce`) n'en est pas une : le module qui l'exporte dit un fait sans
+ * savoir qui l'écoute, plutôt que d'appeler une fonction qu'on lui prête.
+ * Elles sont comptées à part, sans liste à tenir. Les registres où plusieurs modules
  * s'inscrivent (`inscritMode`, `inscritTiroirExclusif`, `suitLeParcours`)
  * portent un autre nom parce qu'ils sont une autre chose : une règle commune,
  * non une fonction qu'un seul module prête à un seul autre.
@@ -32,14 +35,14 @@ const acorn = require("acorn");
 
 const DOSSIER = path.join(__dirname, "gabarit", "modules");
 const ACCEPTEES = path.join(__dirname, "portes-acceptees.json");
-const GENRES = ["partition", "rendu", "registre", "administration"];
+const GENRES = ["partition", "rendu", "registre"];
 
 /** Les imports et les portes d'un module, lus par acorn plutôt que par une
  *  expression : un import cité dans un commentaire ne compte pas. */
 function lis(fichier){
   const source = fs.readFileSync(path.join(DOSSIER, fichier), "utf8");
   const arbre = acorn.parse(source, { ecmaVersion: "latest", sourceType: "module", locations: true });
-  const imports = [], portes = [];
+  const imports = [], portes = [], annonces = [];
   for (const n of arbre.body){
     const src = n.source && n.source.value;
     if (src && src.startsWith("./")) imports.push(src.slice(2));
@@ -50,8 +53,12 @@ function lis(fichier){
       : [];
     noms.filter(nom => /^confie[A-Z]/.test(nom))
       .forEach(nom => portes.push({ nom, ligne: n.loc.start.line }));
+    if (d.type === "VariableDeclaration")
+      d.declarations.filter(v => v.init && v.init.type === "CallExpression" &&
+          v.init.callee.name === "creeAnnonce")
+        .forEach(v => annonces.push(v.id.name));
   }
-  return { imports, portes };
+  return { imports, portes, annonces };
 }
 
 const fichiers = fs.readdirSync(DOSSIER).filter(f => f.endsWith(".mjs")).sort();
@@ -117,4 +124,10 @@ if (fautes.length){
 }
 const parGenre = GENRES.map(g => Object.values(acceptees).filter(a => a.genre === g).length + " " + g)
   .join(", ");
+/* Les annonces ne sont pas un cliquet : un module public en ouvre une quand il
+   a un fait à dire, sans qu'on ait à la justifier. Elles sont seulement dites,
+   pour qu'elles restent visibles — une annonce que plus personne ne suit se
+   voit ici avant de se perdre. */
+const annonces = [...lu].flatMap(([f, { annonces }]) => annonces.map(a => `${a} (${f})`));
 console.log(`Portes : ${trouvees.size} (${parGenre}), aucune boucle d'imports entre ${fichiers.length} modules.`);
+console.log(`Annonces : ${annonces.length} — ${annonces.join(", ")}.`);

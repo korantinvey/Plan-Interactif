@@ -43,7 +43,7 @@ import { DESSINS, calqueActif, mesCalques } from "./calques-dessin.mjs";
 import { dessineDessins, peintCalque } from "./dessin.mjs";
 import { creeCalque, enregistreDessins, verrouille, basculeVerrou, pictoVerrou, activeCalque, memorise }
   from "./outil-dessin.mjs";
-import { entrees, confiePanneau } from "./ordre-trace.mjs";
+import { entrees, PANNEAU_A_REFAIRE } from "./ordre-trace.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { modePlacementLibelles } from "./placement-libelles.mjs";
@@ -57,10 +57,10 @@ const joli = (/** @type {any} */ id) => String(id)
   .replace(/^[0-9]+-/, "").replace(/[_-]+/g, " ").toLowerCase()
   .replace(/^./, (c) => c.toUpperCase());
 
-/* Le contenu de `construitPanneau`, confié à l'ordre de tracé dès que la page
-   d'administration charge ce module : avant le lancement, donc avant tout
-   appel. */
-confiePanneau(remplitPanneau);
+/* Le contenu de `construitPanneau` : l'ordre de tracé annonce le panneau à
+   refaire, et on l'écoute dès que la page d'administration charge ce module —
+   avant le lancement, donc avant toute annonce. */
+PANNEAU_A_REFAIRE.suis(remplitPanneau);
 
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom

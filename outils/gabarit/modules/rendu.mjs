@@ -10,11 +10,10 @@
    tient ; la fiche, il la referme par le registre des tiroirs exclusifs
    (`tiroirs-exclusifs.mjs` `fermeTiroir`), sans l'importer — elle et le
    tiroir de l'itinéraire l'importent, pour monter un pavillon ou y passer.
-   Seul ce que l'administration connaît lui est confié en se chargeant
-   (`confieAuRendu`) — la nappe de la grille, le calage de la carte,
-   l'éditeur à remettre au repos (emplacement repris, historique, boîte à
-   outils) ; la page publique n'en confie rien, et les défauts restent sans
-   effet. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
+   Ce que l'administration y rattache — la nappe de la grille, le calage de
+   la carte, l'éditeur à remettre au repos (emplacement repris, historique,
+   boîte à outils) — suit ses trois annonces (`MONTAGE_COMMENCE`,
+   `PAVILLON_MONTE`, `PAVILLON_QUITTE`) ; chez le visiteur personne n'écoute. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
    remplit le contenu que chez l'exploitant.
 
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
@@ -23,6 +22,7 @@
    lui confie en se chargeant (`confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, state, P } from "./donnees.mjs";
 import { API, SLUG, entetesApi } from "./salon.mjs";
@@ -41,25 +41,15 @@ import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
 
-/* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
-   confient en se chargeant (`confieAuRendu`) : ce que seule
-   l'administration a — la nappe de la grille (`nappe.mjs`),
-   le calage de la carte en cours (`calage-carte.mjs`), l'éditeur à remettre
-   au repos (`outil-dessin.mjs`). La page publique n'embarque pas ces
-   derniers : ils restent sans effet. */
-/**
- * @typedef {object} PageRendu
- * @property {() => void} rafraichitApercu
- * @property {() => void} oublieCalageEnCours
- * @property {(() => void) | null} oublieEdition
- */
-/** @type {PageRendu} */
-const prete = { rafraichitApercu: () => {},
-  oublieCalageEnCours: () => {}, oublieEdition: null };
-
-/** La porte des modules qui confient au montage ce qu'il appelle.
- *  @param {Partial<PageRendu>} o */
-export function confieAuRendu(o){ Object.assign(prete, o); }
+/* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
+   remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
+   calage de la carte en cours (`calage-carte.mjs`). */
+/** Les groupes du pavillon vont être réécrits. */
+export const MONTAGE_COMMENCE = creeAnnonce();
+/** Le pavillon est dessiné, juste avant de se dire monté. */
+export const PAVILLON_MONTE = creeAnnonce();
+/** On quitte un pavillon pour un autre. */
+export const PAVILLON_QUITTE = creeAnnonce();
 
 /* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
    ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
@@ -122,7 +112,7 @@ export function montePlan(){
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter ; la
      boîte à outils n'existe qu'en administration. La page publique n'a rien
      de cela : ni éditeur, ni outils. */
-  if (prete.oublieEdition) prete.oublieEdition();
+  MONTAGE_COMMENCE.dis();
   monteHabillage();
   dessineDessins();                // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
@@ -136,7 +126,7 @@ export function montePlan(){
   // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
   dessineBorne();
   // la nappe de la grille n'est qu'à l'exploitant (`modules/nappe.mjs`)
-  prete.rafraichitApercu();
+  PAVILLON_MONTE.dis();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -208,7 +198,7 @@ export function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
   /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
-  prete.oublieCalageEnCours();
+  PAVILLON_QUITTE.dis();
   fermeTiroir("fiche");
   montePlan(); fit(); liste();
   chargeFond(i);

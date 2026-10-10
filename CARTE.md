@@ -134,15 +134,15 @@ Fonctions :
 `borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
 `tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
 
-### `modules/acces-admin.mjs` — 252 l. → plan-admin
+### `modules/acces-admin.mjs` — 244 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
 Fonctions :
 
-`activeAdmin` 31 · `confieALAcces` 34 · `litLocal` 42 · `configuration` 47
-`normaliseUrlA` 51 · `sessionValide` 67 · `ecranAcces` 85 · `contenuDuJeton` 174
-`mailDuJeton` 175 · `litProfilA` 186 · `poseCompte` 201 · `brancheAcces` 226
+`litLocal` 34 · `configuration` 39 · `normaliseUrlA` 43 · `sessionValide` 59
+`ecranAcces` 77 · `contenuDuJeton` 166 · `mailDuJeton` 167 · `litProfilA` 178
+`poseCompte` 193 · `brancheAcces` 218
 
 Éléments :
 
@@ -190,6 +190,14 @@ Fonctions :
 `reprendTaille` 435 · `dupliqueForme` 456 · `pousseForme` 481 · `ecritDimensions` 498
 `appliqueDimension` 517
 
+### `modules/annonce.mjs` — 45 l. → plan, plan-admin
+
+- l.1 · Une annonce — dire ce qui vient de se passer, sans savoir qui écoute
+
+Fonctions :
+
+`creeAnnonce` 37
+
 ### `modules/apercus.mjs` — 327 l. → plan-admin
 
 - l.1 · Les aperçus de la fenêtre des réglages — l'exploitant seul
@@ -232,7 +240,7 @@ Fonctions :
 
 `fenetreAvancement` 44 · `suitAuServeur` 376
 
-### `modules/bande-admin.mjs` — 112 l. → plan-admin
+### `modules/bande-admin.mjs` — 113 l. → plan-admin
 
 - l.1 · 10. Mode administration — son ouverture, et la bande de l'outil
 
@@ -252,20 +260,20 @@ Fonctions :
 
 `BANDES` 27 · `majFondus` 35 · `brancheBandes` 49
 
-### `modules/batiments.mjs` — 596 l. → plan-admin
+### `modules/batiments.mjs` — 597 l. → plan-admin
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
-`CLE_CALAGE` 64 · `bibliothequeDispo` 65 · `refBatiment` 82 · `refForme` 86
-`marqueBatiment` 89 · `batimentsPoses` 92 · `estBatiment` 99 · `hallsPoses` 102
-`lieuDuCalque` 108 · `poseCalage` 114 · `ouvreBibliotheque` 123 · `vueDuLieu` 219
-`halleGlissee` 259 · `lanceCalage` 261 · `effaceLeTempsDuCalage` 289 · `cadreCalage` 308
-`finCalage` 321 · `pivoteCalage` 332 · `degresCalage` 348 · `dessineCalage` 353
-`calagePointerDown` 376 · `calagePointerMove` 389 · `calagePointerUp` 405
-`reposeBatiment` 418 · `ajouteBatiments` 434 · `brancheBatiments` 487 · `boutonRecale` 529
-`pictoRecale` 538 · `calageRelu` 555 · `rouvreCalage` 581
+`CLE_CALAGE` 65 · `bibliothequeDispo` 66 · `refBatiment` 83 · `refForme` 87
+`marqueBatiment` 90 · `batimentsPoses` 93 · `estBatiment` 100 · `hallsPoses` 103
+`lieuDuCalque` 109 · `poseCalage` 115 · `ouvreBibliotheque` 124 · `vueDuLieu` 220
+`lanceCalage` 262 · `effaceLeTempsDuCalage` 290 · `cadreCalage` 309 · `finCalage` 322
+`pivoteCalage` 333 · `degresCalage` 349 · `dessineCalage` 354 · `calagePointerDown` 377
+`calagePointerMove` 390 · `calagePointerUp` 406 · `reposeBatiment` 419
+`ajouteBatiments` 435 · `brancheBatiments` 488 · `boutonRecale` 530 · `pictoRecale` 539
+`calageRelu` 556 · `rouvreCalage` 582
 
 ### `modules/borne.mjs` — 351 l. → plan, plan-admin
 
@@ -278,32 +286,32 @@ Fonctions :
 `poseBorneIci` 198 · `armeLaPose` 207 · `montreBandeauBorne` 223 · `relanceRepos` 245
 `reposeLaBorne` 252 · `demarreBorne` 288 · `brancheBorne` 331
 
-### `modules/calage-carte.mjs` — 825 l. → plan-admin
+### `modules/calage-carte.mjs` — 823 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
 Fonctions :
 
-`emprisePavillon` 65 · `centrePavillon` 80 · `basculeMasqueCarte` 85
-`boutonMasqueCarte` 96 · `pictoMasque` 107 · `carreDeTerrain` 134 · `chercheBatiments` 150
-`empriseDesObjets` 178 · `batimentsCandidats` 196 · `caleSurBatiment` 217
-`retientLeHall` 243 · `manqueCalage` 265 · `enregistreCalage` 274 · `calageEnregistre` 291
-`oublieCalageEnCours` 312 · `litCoordonnees` 324 · `rafraichitCarte` 338
-`carteGlissee` 373 · `armeCalage` 377 · `pivotCalage` 388 · `glisseCarte` 392
-`cartePointerDown` 399 · `cartePointerMove` 413 · `cartePointerUp` 432 · `ditCalage` 440
-`majCalage` 449 · `appliqueCalage` 471 · `tourneCalage` 478 · `construitCalage` 484
-`ouvreCalage` 649 · `fermeCalage` 659 · `brancheCalageCarte` 671 · `voletEnvirons` 696
+`emprisePavillon` 66 · `centrePavillon` 81 · `basculeMasqueCarte` 86
+`boutonMasqueCarte` 97 · `pictoMasque` 108 · `carreDeTerrain` 135 · `chercheBatiments` 151
+`empriseDesObjets` 179 · `batimentsCandidats` 197 · `caleSurBatiment` 218
+`retientLeHall` 244 · `manqueCalage` 266 · `enregistreCalage` 275 · `calageEnregistre` 292
+`oublieCalageEnCours` 313 · `litCoordonnees` 325 · `rafraichitCarte` 339 · `armeCalage` 378
+`pivotCalage` 389 · `glisseCarte` 393 · `cartePointerDown` 400 · `cartePointerMove` 414
+`cartePointerUp` 433 · `ditCalage` 441 · `majCalage` 450 · `appliqueCalage` 472
+`tourneCalage` 479 · `construitCalage` 485 · `ouvreCalage` 650 · `fermeCalage` 660
+`brancheCalageCarte` 672 · `voletEnvirons` 694
 
-### `modules/calques-dessin.mjs` — 212 l. → plan, plan-admin
+### `modules/calques-dessin.mjs` — 209 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — ce que le poste en garde
 
 Fonctions :
 
-`majAttente` 27 · `confieAuxCalques` 31 · `enAttente` 67 · `litRange` 94
-`ouvreDessins` 106 · `reprendCommun` 131 · `notePubliees` 157 · `rangeDessins` 175
-`dejaPubliee` 180 · `marqueAttente` 186 · `mesCalques` 195 · `poseCalqueActif` 204
-`poseOutil` 205 · `poseEbauche` 209 · `trouveCalque` 211 · `nouvelId` 212
+`enAttente` 63 · `litRange` 90 · `ouvreDessins` 102 · `reprendCommun` 127
+`notePubliees` 153 · `rangeDessins` 171 · `dejaPubliee` 176 · `marqueAttente` 182
+`mesCalques` 190 · `poseCalqueActif` 201 · `poseOutil` 202 · `poseEbauche` 206
+`trouveCalque` 208 · `nouvelId` 209
 
 ### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
 
@@ -370,16 +378,15 @@ Fonctions :
 `poseComptes` 35 · `litMonProfil` 49 · `RETOUR_MDP` 60 · `litComptes` 62 · `ligneMessage` 71
 `casesSalons` 81 · `ouvreComptes` 111 · `ouvreFicheCompte` 203
 
-### `modules/configuration.mjs` — 141 l. → plan, plan-admin
+### `modules/configuration.mjs` — 134 l. → plan, plan-admin
 
 - l.1 · La configuration du plan — ce que l'exploitant a réglé
 
 Fonctions :
 
-`salonRange` 29 · `cleConf` 31 · `ouvreConf` 35 · `reglagesDuSalon` 56 · `publie` 81
-`confiePublication` 85 · `enregistreConf` 91 · `conf` 98 · `jeton` 99 · `sousCle` 101
-`optionActive` 107 · `programmeOffert` 112 · `suggestionOfferte` 113 · `langueOfferte` 133
-`appliqueLangue` 135 · `chercheSorte` 140
+`salonRange` 30 · `cleConf` 32 · `ouvreConf` 36 · `reglagesDuSalon` 57 · `enregistreConf` 85
+`conf` 91 · `jeton` 92 · `sousCle` 94 · `optionActive` 100 · `programmeOffert` 105
+`suggestionOfferte` 106 · `langueOfferte` 126 · `appliqueLangue` 128 · `chercheSorte` 133
 
 ### `modules/console.mjs` — 42 l. → console
 
@@ -413,16 +420,15 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 303 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 290 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`confieAuDemarrage` 54 · `majAttente` 55 · `rattrapeRetard` 56 · `recadreListePosee` 73
-`demarre` 89 · `annonce` 151 · `panneDuChargement` 186 · `CLE_VERSION` 196
-`versionRetenue` 197 · `retientVersion` 200 · `demandePlan` 224 · `charge` 248
-`brancheDemarrage` 285
+`recadreListePosee` 64 · `demarre` 80 · `annonce` 138 · `panneDuChargement` 173
+`CLE_VERSION` 183 · `versionRetenue` 184 · `retientVersion` 187 · `demandePlan` 211
+`charge` 235 · `brancheDemarrage` 272
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -506,20 +512,20 @@ Fonctions :
 
 `enEdition` 37
 
-### `modules/edition.mjs` — 711 l. → plan-admin
+### `modules/edition.mjs` — 714 l. → plan-admin
 
 - l.1 · Édition des formes existantes
 
 Fonctions :
 
-`curseurPoignee` 53 · `poignees` 58 · `dessinePoignees` 67 · `cadreTexte` 102
-`poigneeRotation` 122 · `angleBorne` 132 · `choisitForme` 134 · `replieOutils` 149
-`degageOutils` 164 · `majElement` 173 · `candidatsLiaison` 294 · `ecritDesDeuxCotes` 316
-`changeLien` 328 · `changeDureeLien` 344 · `majLiens` 361 · `appliqueSociete` 413
-`appliqueTexte` 429 · `appliqueRotation` 441 · `appliqueRayon` 455 · `appliqueTrait` 468
-`appliqueTransport` 496 · `appliquePicto` 519 · `supprimeForme` 545
-`editionPointerDown` 555 · `editionPointerMove` 615 · `tourneTexte` 678
-`editionPointerUp` 694
+`curseurPoignee` 56 · `poignees` 61 · `dessinePoignees` 70 · `cadreTexte` 105
+`poigneeRotation` 125 · `angleBorne` 135 · `choisitForme` 137 · `replieOutils` 152
+`degageOutils` 167 · `majElement` 176 · `candidatsLiaison` 297 · `ecritDesDeuxCotes` 319
+`changeLien` 331 · `changeDureeLien` 347 · `majLiens` 364 · `appliqueSociete` 416
+`appliqueTexte` 432 · `appliqueRotation` 444 · `appliqueRayon` 458 · `appliqueTrait` 471
+`appliqueTransport` 499 · `appliquePicto` 522 · `supprimeForme` 548
+`editionPointerDown` 558 · `editionPointerMove` 618 · `tourneTexte` 681
+`editionPointerUp` 697
 
 ### `modules/emplacements.mjs` — 282 l. → plan, plan-admin
 
@@ -532,21 +538,20 @@ Fonctions :
 `cleAjout` 179 · `anneauxValides` 190 · `rechAjout` 195 · `objetAjoute` 204 · `poseLien` 223
 `appliqueAjouts` 250
 
-### `modules/enregistrement.mjs` — 716 l. → plan-admin
+### `modules/enregistrement.mjs` — 713 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.578 · La sauvegarde emportée
+- l.574 · La sauvegarde emportée
 
 Fonctions :
 
-`enregistreDessins` 67 · `gesteEnCours` 114 · `confieGesteEnCours` 118 · `autoDispo` 149
-`enRetard` 152 · `etatCourant` 165 · `majAttente` 176 · `compteRescapes` 190
-`ditAlerte` 203 · `ditEtat` 246 · `programmeEnvoi` 253 · `programmePublication` 267
-`rattrapeRetard` 280 · `envoie` 286 · `apresGeste` 298 · `presse` 308
-`brancheEnregistrement` 316 · `identifiants` 339 · `reglagesSeuls` 354
-`noteReglagesCharges` 365 · `oublieCache` 379 · `pousseConfiguration` 398
-`sauvegardeCourante` 598 · `telechargeSauvegarde` 620 · `appliqueSauvegarde` 643
-`litSauvegarde` 677 · `brancheSauvegarde` 699
+`enregistreDessins` 68 · `autoDispo` 145 · `enRetard` 148 · `etatCourant` 161
+`majAttente` 172 · `compteRescapes` 186 · `ditAlerte` 199 · `ditEtat` 242
+`programmeEnvoi` 249 · `programmePublication` 263 · `rattrapeRetard` 276 · `envoie` 282
+`apresGeste` 294 · `presse` 304 · `brancheEnregistrement` 312 · `identifiants` 335
+`reglagesSeuls` 350 · `noteReglagesCharges` 361 · `oublieCache` 375
+`pousseConfiguration` 394 · `sauvegardeCourante` 594 · `telechargeSauvegarde` 616
+`appliqueSauvegarde` 639 · `litSauvegarde` 673 · `brancheSauvegarde` 695
 
 ### `modules/environs.mjs` — 777 l. → plan, plan-admin
 
@@ -554,13 +559,13 @@ Fonctions :
 
 Fonctions :
 
-`calageEnCours` 50 · `confieCalageEnCours` 52 · `styleSobre` 125 · `forceCarte` 219
-`calagePose` 237 · `calageCourant` 249 · `fondCourant` 252 · `recul` 257
-`adresseTuile` 262 · `tuilesDeLaVue` 272 · `chargeMapLibre` 337 · `vueGL` 368
-`styleDuFond` 389 · `guetteLaCarte` 417 · `poseCarteGL` 428 · `diagnostiqueGL` 518
-`relanceCarteGL` 538 · `videCarteGL` 550 · `dessineFondCarte` 575 · `cleMasqueCarte` 688
-`masqueCarte` 689 · `formesMasquantes` 698 · `contourDuHall` 720 · `cheminDuHall` 727
-`poseMasqueCarte` 745 · `ditCarte` 760 · `refaitFondCarte` 770
+`poseCalageEnCours` 52 · `styleSobre` 125 · `forceCarte` 219 · `calagePose` 237
+`calageCourant` 249 · `fondCourant` 252 · `recul` 257 · `adresseTuile` 262
+`tuilesDeLaVue` 272 · `chargeMapLibre` 337 · `vueGL` 368 · `styleDuFond` 389
+`guetteLaCarte` 417 · `poseCarteGL` 428 · `diagnostiqueGL` 518 · `relanceCarteGL` 538
+`videCarteGL` 550 · `dessineFondCarte` 575 · `cleMasqueCarte` 688 · `masqueCarte` 689
+`formesMasquantes` 698 · `contourDuHall` 720 · `cheminDuHall` 727 · `poseMasqueCarte` 745
+`ditCarte` 760 · `refaitFondCarte` 770
 
 ### `modules/erreurs.mjs` — 95 l. → plan, plan-admin
 
@@ -604,15 +609,15 @@ Fonctions :
 `verseModale` 30 · `ouvreModale` 42 · `verrouilleModale` 66 · `fermeModale` 68
 `poseFenetre` 76 · `gardeLaPlace` 98 · `demande` 109 · `confirme` 137
 
-### `modules/fenetre.mjs` — 128 l. → plan, plan-admin
+### `modules/fenetre.mjs` — 124 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
 Fonctions :
 
-`poseAvantFermeture` 18 · `retour` 27 · `confieRetourAuxReglages` 31
-`retourAuxReglages` 38 · `verseModale` 40 · `poseApresFermeture` 55 · `ouvreModale` 65
-`fermeModale` 85 · `confirme` 95 · `brancheFenetre` 113
+`poseAvantFermeture` 19 · `retourAuxReglages` 34 · `verseModale` 36
+`poseApresFermeture` 51 · `ouvreModale` 61 · `fermeModale` 81 · `confirme` 91
+`brancheFenetre` 109
 
 ### `modules/fiche-detail.mjs` — 1291 l. → console
 
@@ -641,19 +646,19 @@ Fonctions :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `modules/fiche-zone.mjs` — 875 l. → plan-admin
+### `modules/fiche-zone.mjs` — 867 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
-- l.56 · La fiche d'une zone organisateur
-- l.775 · Masquer une zone organisateur
+- l.48 · La fiche d'une zone organisateur
+- l.767 · Masquer une zone organisateur
 
 Fonctions :
 
-`majPaletteGeo` 49 · `confieALaFicheZone` 54 · `champZone` 82 · `champsZone` 107
-`champSalles` 199 · `nomDeZone` 251 · `cadreLogo` 277 · `champLogo` 349 · `editeurRiche` 387
-`memeFicheZone` 544 · `suitFicheZone` 551 · `verseFicheZone` 559 · `ficheZone` 585
-`enregistreZone` 610 · `enregistreZoneAjoutee` 723 · `basculeAffichageZone` 786
-`marqueZonesMasquees` 814 · `ecritColonnesEvenement` 834 · `ecritColonneEvenement` 868
+`champZone` 74 · `champsZone` 99 · `champSalles` 191 · `nomDeZone` 243 · `cadreLogo` 269
+`champLogo` 341 · `editeurRiche` 379 · `memeFicheZone` 536 · `suitFicheZone` 543
+`verseFicheZone` 551 · `ficheZone` 577 · `enregistreZone` 602 · `enregistreZoneAjoutee` 715
+`basculeAffichageZone` 778 · `marqueZonesMasquees` 806 · `ecritColonnesEvenement` 826
+`ecritColonneEvenement` 860
 
 ### `modules/fiche.mjs` — 1154 l. → plan, plan-admin
 
@@ -713,25 +718,33 @@ Fonctions :
 
 `#fuseaux`
 
-### `modules/gestes-admin.mjs` — 178 l. → plan-admin
+### `modules/geste-tenu.mjs` — 28 l. → plan, plan-admin
+
+- l.1 · Un geste tenu — ce qui retient l'envoi au repos
+
+Fonctions :
+
+`inscritGesteTenu` 25 · `unGesteTenu` 28
+
+### `modules/gestes-admin.mjs` — 167 l. → plan-admin
 
 - l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
 
 Fonctions :
 
-`appui` 42 · `suit` 56 · `leve` 65 · `annuleGeste` 76 · `clavier` 82 · `echap` 127
-`apresEchap` 145 · `entree` 152 · `gesteEnCours` 163 · `brancheGestesAdmin` 169
+`appui` 41 · `suit` 55 · `leve` 64 · `annuleGeste` 75 · `clavier` 81 · `echap` 126
+`apresEchap` 144 · `entree` 151 · `brancheGestesAdmin` 159
 
-### `modules/gestes.mjs` — 474 l. → plan, plan-admin
+### `modules/gestes.mjs` — 477 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
-- l.71 · 8. Interactions du plan
+- l.72 · 8. Interactions du plan
 
 Fonctions :
 
-`poseGestesAdmin` 69 · `milieu` 95 · `commencePince` 101 · `suitPince` 115
-`plieLesBandes` 168 · `saisitPlan` 182 · `cibleElargie` 219 · `planifieFiltre` 262
-`brancheGestes` 276 · `brancheLangue` 457
+`poseGestesAdmin` 70 · `milieu` 98 · `commencePince` 104 · `suitPince` 118
+`plieLesBandes` 171 · `saisitPlan` 185 · `cibleElargie` 222 · `planifieFiltre` 265
+`brancheGestes` 279 · `brancheLangue` 460
 
 ### `modules/glisse-fenetre.mjs` — 36 l. → plan-admin
 
@@ -783,15 +796,14 @@ Fonctions :
 
 `reduitIcone` 30
 
-### `modules/index-salon.mjs` — 494 l. → plan, plan-admin
+### `modules/index-salon.mjs` — 487 l. → plan, plan-admin
 
 - l.1 · 1. L'index du salon — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`confieALIndex` 51 · `compteRescapes` 52 · `noteReglagesCharges` 53 · `texteProduits` 60
-`indexe` 64 · `chronoConf` 306 · `confsDuPlan` 311 · `indexeConferences` 329
-`rangeConferences` 407 · `poseFavicon` 454 · `poseLogoSalon` 480
+`texteProduits` 53 · `indexe` 57 · `chronoConf` 299 · `confsDuPlan` 304
+`indexeConferences` 322 · `rangeConferences` 400 · `poseFavicon` 447 · `poseLogoSalon` 473
 
 ### `modules/installation.mjs` — 902 l. → plan, plan-admin
 
@@ -954,7 +966,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page du mot de passe — et son démarrage
 
-### `modules/nappe.mjs` — 83 l. → plan-admin
+### `modules/nappe.mjs` — 82 l. → plan-admin
 
 - l.1 · Itinéraire — la nappe de la grille de marche
 
@@ -1021,16 +1033,16 @@ Fonctions :
 
 `deplaceVers` 27 · `versExtremite` 39 · `remplitOrdre` 47 · `ouvreOrdre` 117
 
-### `modules/ordre-trace.mjs` — 78 l. → plan, plan-admin
+### `modules/ordre-trace.mjs` — 72 l. → plan, plan-admin
 
 - l.1 · Pile des calques — l'ordre de tracé
 
 Fonctions :
 
-`clePile` 22 · `entrees` 24 · `pile` 38 · `groupe` 50 · `ordonneDom` 58 · `remplit` 65
-`confiePanneau` 70 · `construitPanneau` 76
+`clePile` 23 · `entrees` 25 · `pile` 39 · `groupe` 51 · `ordonneDom` 59
+`construitPanneau` 70
 
-### `modules/outil-dessin.mjs` — 939 l. → plan-admin
+### `modules/outil-dessin.mjs` — 938 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
@@ -1102,16 +1114,16 @@ Fonctions :
 `intertitre` 118 · `remplitPanneau` 128 · `sectionSelection` 376 · `sectionFond` 432
 `ligneCouleur` 490 · `rangSecteur` 510 · `rangSous` 523 · `defautCouleur` 545
 
-### `modules/placement-libelles.mjs` — 177 l. → plan-admin
+### `modules/placement-libelles.mjs` — 178 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
-`libelleGlisse` 38 · `lacheLibelle` 41 · `posePlacement` 50 · `libelleAutomatique` 67
-`modePlacementLibelles` 76 · `majPaletteLibelle` 93 · `choisitLibelle` 110
-`pousseLibelle` 117 · `libellePointerDown` 125 · `libellePointerMove` 141
-`libellePointerUp` 150 · `branchePlacementLibelles` 163
+`lacheLibelle` 42 · `posePlacement` 51 · `libelleAutomatique` 68
+`modePlacementLibelles` 77 · `majPaletteLibelle` 94 · `choisitLibelle` 111
+`pousseLibelle` 118 · `libellePointerDown` 126 · `libellePointerMove` 142
+`libellePointerUp` 151 · `branchePlacementLibelles` 164
 
 ### `modules/plan-admin.mjs` — 69 l. → plan-admin
 
@@ -1279,14 +1291,14 @@ Fonctions :
 `ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 383
 `voletPlan` 401 · `voletCoexposants` 440
 
-### `modules/rendu.mjs` — 220 l. → plan, plan-admin
+### `modules/rendu.mjs` — 210 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
 Fonctions :
 
-`confieAuRendu` 62 · `monteHabillage` 67 · `baliseZone` 96 · `baliseStand` 106
-`montePlan` 113 · `onglets` 145 · `chargeFond` 175 · `changePlan` 207
+`monteHabillage` 57 · `baliseZone` 86 · `baliseStand` 96 · `montePlan` 103 · `onglets` 135
+`chargeFond` 165 · `changePlan` 197
 
 ### `modules/reperes.mjs` — 421 l. → plan, plan-admin
 
@@ -1301,23 +1313,23 @@ Fonctions :
 `encreRepere` 376 · `nomLigneFr` 390 · `libelleDoffice` 398 · `couleurEcrite` 405
 `pastillePoi` 419
 
-### `modules/reprise-emplacements.mjs` — 762 l. → plan-admin
+### `modules/reprise-emplacements.mjs` — 763 l. → plan-admin
 
 - l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
 
 Fonctions :
 
-`geoGlisse` 70 · `lacheGeo` 73 · `cleVerrouGeo` 93 · `geoVerrouille` 94
-`basculeVerrouGeo` 96 · `boutonVerrouGeo` 111 · `modeGeometrie` 122 · `objetGeoSous` 146
-`groupeGeo` 156 · `choisitGeo` 164 · `cadreGeo` 179 · `prisesGeo` 199 · `curseurGeo` 211
-`dessinePoigneesGeo` 214 · `ecritDimensionsGeo` 242 · `nomSorteGeo` 254
-`majPaletteGeo` 256 · `finGesteGeo` 295 · `enregistreGeo` 313 · `geometrieOrigine` 327
-`retraceGeo` 342 · `pousseGeometrie` 353 · `appliqueDimensionGeo` 370
-`enregistreAjout` 385 · `ajouteEmplacement` 400 · `renommeAjout` 428 · `lieAjout` 460
-`ecritInfosAjout` 489 · `supprimeAjout` 516 · `choisitOutilGeo` 545 · `aideAjout` 552
-`fermeAjout` 562 · `ajoutPointerDown` 571 · `ajoutPointerMove` 587 · `ajoutPointerUp` 609
-`geometriePointerDown` 629 · `accrocheGeo` 660 · `geometriePointerMove` 662
-`geometriePointerUp` 713 · `brancheRepriseEmplacements` 730
+`lacheGeo` 75 · `cleVerrouGeo` 95 · `geoVerrouille` 96 · `basculeVerrouGeo` 98
+`boutonVerrouGeo` 113 · `modeGeometrie` 124 · `objetGeoSous` 148 · `groupeGeo` 158
+`choisitGeo` 166 · `cadreGeo` 181 · `prisesGeo` 201 · `curseurGeo` 213
+`dessinePoigneesGeo` 216 · `ecritDimensionsGeo` 244 · `nomSorteGeo` 256
+`majPaletteGeo` 258 · `finGesteGeo` 297 · `enregistreGeo` 315 · `geometrieOrigine` 329
+`retraceGeo` 344 · `pousseGeometrie` 355 · `appliqueDimensionGeo` 372
+`enregistreAjout` 387 · `ajouteEmplacement` 402 · `renommeAjout` 430 · `lieAjout` 462
+`ecritInfosAjout` 491 · `supprimeAjout` 518 · `choisitOutilGeo` 547 · `aideAjout` 554
+`fermeAjout` 564 · `ajoutPointerDown` 573 · `ajoutPointerMove` 589 · `ajoutPointerUp` 611
+`geometriePointerDown` 631 · `accrocheGeo` 662 · `geometriePointerMove` 664
+`geometriePointerUp` 715 · `brancheRepriseEmplacements` 732
 
 ### `modules/salon.mjs` — 75 l. → plan, plan-admin
 

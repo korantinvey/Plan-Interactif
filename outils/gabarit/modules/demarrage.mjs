@@ -15,11 +15,12 @@
    `ordre-trace.mjs`). Hors de l'administration, il retire en dernier les
    commandes de l'exploitant (`mode-admin.mjs` `retireAdmin`) : la page
    publique n'a plus à le demander. Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) lui est confié
-   par ces modules en se chargeant (`confieAuDemarrage`), sur des défauts
-   sans effet.
+   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) suit ses deux
+   annonces (`PLAN_DEMARRE`, `SESSION_REFUSEE`) ; chez le visiteur personne
+   n'écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
 import { API, SLUG, PLAN_ADMIN, entetesApi } from "./salon.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
@@ -35,25 +36,15 @@ import { accueilleInvitation } from "./installation.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { montePlan, chargeFond } from "./rendu.mjs";
 
-/* Ce que l'administration seule a — l'état du bouton d'enregistrement et le
-   rattrapage d'un envoi en retard (`enregistrement.mjs`), la fenêtre d'accès
-   (`acces-admin.mjs`) — et que ces modules confient au démarrage en se
-   chargeant. La page publique ne les embarque pas : rien n'est appelé, et
-   une session refusée n'ouvre pas de fenêtre qu'elle n'a pas. */
-/**
- * @typedef {object} PageDemarrage
- * @property {() => void} majAttente
- * @property {() => void} rattrapeRetard
- * @property {((message: string) => void) | null} ecranAcces
- */
-/** @type {PageDemarrage} */
-const prete = { majAttente: () => {}, rattrapeRetard: () => {}, ecranAcces: null };
-
-/** La porte de ce que l'administration confie au démarrage.
- *  @param {Partial<PageDemarrage>} o */
-export function confieAuDemarrage(o){ Object.assign(prete, o); }
-const majAttente = () => prete.majAttente();
-const rattrapeRetard = () => prete.rattrapeRetard();
+/* Ce que le démarrage annonce, et que seule l'administration écoute : le
+   bouton d'enregistrement et le rattrapage d'un envoi en retard
+   (`enregistrement.mjs`), la fenêtre d'accès (`acces-admin.mjs`). */
+/** Le plan est dessiné et manipulable. */
+export const PLAN_DEMARRE = creeAnnonce();
+/** La base a refusé la session : le message à dire. Personne ne l'écoute chez
+ *  le visiteur, qui garde alors l'erreur ordinaire.
+ *  @type {import("./annonce.mjs").Annonce<[string]>} */
+export const SESSION_REFUSEE = creeAnnonce();
 
 /* ------------------------------------------------------------------
    Démarrage : données figées si elles sont dans la page, sinon appel
@@ -101,14 +92,10 @@ function demarre(/** @type {any} */ d){
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,
      puis s'estomper. Sans ce rappel il attendrait son butoir. */
   suitSponsor();
-  /* Le plan chargé, le bouton peut dire où en est l'enregistrement — en
-     administration seulement : le visiteur n'a ni bouton ni envoi
-     (`modules/enregistrement.mjs`). */
-  majAttente();
-  /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
-     trop vite, réseau coupé — repart de lui-même : c'est la seule occasion de
-     le rattraper, personne ne viendra cliquer pour lui. */
-  rattrapeRetard();
+  /* Le plan chargé, le bouton peut dire où en est l'enregistrement, et ce
+     qu'une session précédente n'a pas réussi à enregistrer repart de
+     lui-même — en administration seulement (`modules/enregistrement.mjs`). */
+  PLAN_DEMARRE.dis();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
@@ -262,9 +249,9 @@ export function charge(){
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que
       // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
-      if (r.status === 401 && prete.ecranAcces){
+      if (r.status === 401 && SESSION_REFUSEE.suivie()){
         try { localStorage.removeItem("console-session"); } catch (e) {}
-        prete.ecranAcces("Session expirée, reconnectez-vous.");
+        SESSION_REFUSEE.dis("Session expirée, reconnectez-vous.");
         return Promise.reject(new Error("Session expirée."));
       }
       return r.ok ? r.json()
