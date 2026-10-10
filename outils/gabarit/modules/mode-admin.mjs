@@ -7,10 +7,11 @@
 
    Ce module tient l'état — `ADMIN`, que tout le plan lit, public compris,
    souvent pour se taire hors de l'administration — et le retrait des
-   commandes que `genere.js` pose dans la page publique. L'ouverture du mode,
+   commandes, que le démarrage fait en dernier hors de l'administration
+   (`demarrage.mjs` `brancheDemarrage`). L'ouverture du mode,
    elle, est d'exploitant : elle vit dans `modules/bande-admin.mjs`, que seul
    `plan-admin.mjs` embarque, et c'est elle seule qui pose l'état, par sa porte
-   `ouvreModeAdmin`. Le code soudé le lit par accesseur (`plan.mjs`).
+   `ouvreModeAdmin`. Les modules l'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 

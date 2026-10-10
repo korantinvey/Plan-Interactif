@@ -80,7 +80,7 @@ let _reposPlan = null;
  *  tourner : le réglage du salon, et le consentement du visiteur. */
 export const chargeSuivie = () =>
   typeof seuilGere === "function" && seuilGere() &&
-  typeof mesureOuverte === "function" && mesureOuverte() &&
+  mesureOuverte() &&
   !!SLUG && !BORNE;
 
 /** Le séjour, réduit à ce qu'il annonce : un stand, un jour, une demi-heure. */

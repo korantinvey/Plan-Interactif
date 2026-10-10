@@ -6,8 +6,9 @@
    graisse et la police dans lesquelles le plan écrit ses libellés, `P_NOM`
    et `P_CODE`, vivent ici : le code soudé les lit par accesseur pour mesurer
    ses noms, et seul `posePoliceLibelles` les remplace. Ce qu'il faut retracer
-   quand elles changent — les dessins, les libellés, la liste — lui est
-   confié par `branchePolices`, à la place que ce code tenait.
+   quand elles changent — les dessins, les libellés, la liste — et le plan
+   monté ou non lui sont confiés par la porte `confieAuxPolices`, que chacun
+   de ces modules ouvre en se chargeant.
 
    `npm run polices` et la construction relisent `POLICES_NOMS` dans ce
    fichier, sous sa forme exacte (`policesAuChoix`, dans outils/polices.js).
@@ -15,22 +16,32 @@
 import { CONF } from "./configuration.mjs";
 import { modeleRetenu } from "./modeles.mjs";
 
-/* Ce que le code soudé confie : le plan monté ou non (`rendu.mjs` `MONTE`),
-   par un lecteur, et ce qui se retrace — les dessins (`dessin.mjs`), les
-   libellés (`libelles.mjs`), la liste (`recherche.mjs`). Les deux modules
-   importent celui-ci pour la police des noms et des numéros, et le montage
-   (`rendu.mjs`) l'embarque en chemin : aucun ne peut s'importer d'ici. */
-/** @type {Record<string, any>} */
-let soude = { monte: () => false };
+/* Ce qui est confié : le plan monté ou non (`rendu.mjs` `MONTE`), par un
+   lecteur, et ce qui se retrace — les dessins (`dessin.mjs`), les libellés
+   (`libelles.mjs`), la liste (`recherche.mjs`). Les trois derniers importent
+   ce module pour la police des noms et des numéros, et le montage
+   (`rendu.mjs`) l'embarque en chemin : aucun ne peut s'importer d'ici. Chacun
+   ouvre donc la porte en se chargeant ; avant, le plan n'est pas monté, et
+   rien ne se retrace. */
+/**
+ * @typedef {object} PretePolices
+ * @property {() => boolean} monte le pavillon est-il monté ?
+ * @property {() => void} dessineDessins retrace les calques de dessin
+ * @property {() => void} libelles réécrit les libellés du plan
+ * @property {() => void} liste refait la liste des exposants
+ */
+/** @type {PretePolices} */
+const prete = { monte: () => false, dessineDessins: () => {}, libelles: () => {}, liste: () => {} };
 
 /**
- * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
+ * La porte de ce qui se retrace quand la police change, que `rendu.mjs`,
+ * `dessin.mjs`, `libelles.mjs` et `recherche.mjs` ouvrent en se chargeant —
+ * avant tout le code soudé, comme le branchement qu'elle remplace.
  *
- * @param {{ monte: () => boolean, dessineDessins: () => void, libelles: () => void,
- *   liste: () => void }} b
+ * @param {Partial<PretePolices>} o
  */
-export function branchePolices(b){
-  soude = b;
+export function confieAuxPolices(o){
+  Object.assign(prete, o);
 }
 
 const racine = document.documentElement;
@@ -309,9 +320,9 @@ export function posePoliceLibelles(cle){
   racine.style.setProperty("--graisse-lab-nom", nom[0]);
   racine.style.setProperty("--police-lab-code", p.code[1]);
   racine.style.setProperty("--graisse-lab-code", p.code[0]);
-  if (!soude.monte() || !(changeNom || changeCode)) return;
+  if (!prete.monte() || !(changeNom || changeCode)) return;
   // les repères et les stands tracés à la main portent leur libellé dans leur
   // propre forme : ils se retracent, ils ne se restylent pas
-  soude.dessineDessins(); soude.libelles();
-  if (changeCode) soude.liste();
+  prete.dessineDessins(); prete.libelles();
+  if (changeCode) prete.liste();
 }

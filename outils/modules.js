@@ -1,24 +1,25 @@
 /**
- * Les modules du gabarit, et ce qu'ils confient au code soudé.
+ * Les modules du gabarit, et le script que chaque page en reçoit.
  *
- * Le code des pages a longtemps été un seul script par page, fait de modules
- * mis bout à bout dans un espace de noms unique (`assemble.js`). Il en sort
- * peu à peu, vers `outils/gabarit/modules/`, en vrais modules qui disent ce
- * qu'ils exportent et ce qu'ils importent. esbuild les réunit, par point
- * d'entrée, en un script posé avant le code soudé.
+ * Tout le JavaScript des pages vit dans `outils/gabarit/modules/`, en vrais
+ * modules qui disent ce qu'ils exportent et ce qu'ils importent. esbuild les
+ * réunit, par point d'entrée, en un script posé après le balisage de la page.
  *
- * Le code soudé ne sait pas importer : chaque point d'entrée lui confie ses
- * noms par `Object.assign(globalThis, { … })`. Cette liste est relue ici, et
- * nulle part recopiée : la construction, la relecture ESLint et les types en
- * tirent ce que les pages trouvent sans le déclarer.
+ * Le plan public et l'administration reçoivent un script **minifié** : c'est
+ * ce que chaque visiteur télécharge, et la minification en retire plus d'un
+ * cinquième, compressé compris. Il vient avec sa carte de correspondance
+ * (`.map`), qui ramène chaque position au module et à la ligne d'origine : la
+ * console du navigateur montre `modules/fiche.mjs:132`, non une colonne d'une
+ * ligne de trois cent mille caractères. La carte ne porte pas les sources
+ * (`sourcesContent`) — les commentaires du gabarit n'atteignent toujours pas
+ * le visiteur —, seulement les noms des fichiers et des variables.
  *
- * Le script produit n'est ni minifié ni renommé : une erreur remontée d'une
- * page doit désigner une ligne qu'on lit. Ses commentaires partent avec ceux
- * de la page (`genere.js` `epure`).
+ * `PLAN_LISIBLE=1 npm run construire` rend le script tel qu'il était : ni
+ * minifié ni renommé, commentaires retirés avec ceux de la page (`genere.js`
+ * `epure`). Les écrans de l'exploitant, qu'aucun visiteur ne charge, le
+ * restent toujours.
  */
-const fs = require("fs");
 const path = require("path");
-const acorn = require("acorn");
 const esbuild = require("esbuild");
 
 const MODULES = path.join(__dirname, "gabarit", "modules");
@@ -33,88 +34,22 @@ const ENTREES = {
   accueil: "accueil.mjs",       // la racine, qui aiguille vers la console ou un plan
 };
 
-const lisEntree = (entree) => acorn.parse(
-  fs.readFileSync(path.join(MODULES, ENTREES[entree]), "utf8"),
-  { ecmaVersion: "latest", sourceType: "module" });
+/** Les points d'entrée dont le script est minifié, sauf `PLAN_LISIBLE=1`. */
+const MINIFIES = process.env.PLAN_LISIBLE === "1" ? [] : ["plan", "plan-admin"];
 
-/* Un point d'entrée qui en importe un autre sans rien nommer
-   (`import "./plan.mjs"`) le reprend en entier : ses noms exposés compris.
-   C'est ainsi que l'administration a le plan, plus ce qui n'est qu'à elle,
-   dans un seul script — deux scripts auraient chacun leur exemplaire des
-   modules partagés, et deux états qui divergent. */
-function reprises(entree) {
-  return lisEntree(entree).body
-    .filter((n) => n.type === "ImportDeclaration" && !n.specifiers.length)
-    .map((n) => Object.keys(ENTREES).find((e) => "./" + ENTREES[e] === n.source.value))
-    .filter(Boolean);
-}
+/* La carte de chaque script minifié, retrouvée par son code au moment où la
+   construction le sort de la page (`genere.js` `sortScripts`). */
+const CARTES = new Map();
 
 /**
- * Les noms qu'un point d'entrée confie au code soudé, dans l'ordre où il les
- * écrit. On les lit dans l'arbre du module, sous deux formes et deux seules :
- *
- * - `Object.assign(globalThis, { … })`, pour ce qui ne change pas — une
- *   fonction, une constante, un objet qu'on modifie sans le remplacer ;
- * - `Object.defineProperties(globalThis, vivants({ NOM: () => NOM, … }))`,
- *   pour un état que le module réaffecte (`DATA`) : le code soudé le lit par
- *   un accesseur, et lit donc toujours la valeur du moment.
- *
- * Dans les deux cas, les clés d'un objet littéral et rien d'autre, pour que la
- * liste reste lisible par un outil comme par un humain.
+ * Le script d'un point d'entrée, prêt à poser dans une page. Ce que la
+ * construction y verse passe par `define`, qu'esbuild remplace en lisant les
+ * modules : une substitution faite après coup, dans un script minifié tenant
+ * sur une ligne, décalerait toutes les colonnes qui la suivent, et la carte
+ * mentirait.
  */
-function objetExpose(e) {
-  if (!e || e.type !== "CallExpression" || e.callee.type !== "MemberExpression" ||
-      e.callee.object.name !== "Object" || !e.arguments[0] || e.arguments[0].name !== "globalThis")
-    return null;
-  if (e.callee.property.name === "assign") return { forme: "Object.assign", o: e.arguments[1] };
-  if (e.callee.property.name !== "defineProperties") return null;
-  const v = e.arguments[1];
-  if (!v || v.type !== "CallExpression" || v.callee.name !== "vivants")
-    throw new Error("Object.defineProperties(globalThis, …) attend vivants({ … })");
-  return { forme: "vivants", o: v.arguments[0] };
-}
-
-function exposes(entree) {
-  const ast = lisEntree(entree);
-  const noms = reprises(entree).flatMap(exposes);
-  for (const n of ast.body) {
-    const trouve = n.type === "ExpressionStatement" && objetExpose(n.expression);
-    if (!trouve) continue;
-    const o = trouve.o;
-    if (!o || o.type !== "ObjectExpression")
-      throw new Error(ENTREES[entree] + " : " + trouve.forme + " attend un objet littéral");
-    for (const p of o.properties) {
-      if (p.type !== "Property" || p.computed || p.key.type !== "Identifier")
-        throw new Error(ENTREES[entree] + " : seules des clés nommées s'exposent au code soudé");
-      noms.push(p.key.name);
-    }
-  }
-  return noms;
-}
-
-/**
- * D'où vient chaque nom exposé : le module qui l'exporte, lu dans les
- * `import` du point d'entrée. Les types en tirent la signature exacte de
- * chaque nom plutôt qu'un `any` — c'est tout l'intérêt d'un module.
- */
-function origines(entree) {
-  const ast = lisEntree(entree);
-  const herites = new Map(reprises(entree).flatMap(origines).map((o) => [o.nom, o]));
-  const de = new Map(herites);
-  for (const n of ast.body) {
-    if (n.type !== "ImportDeclaration") continue;
-    const source = path.join(MODULES, n.source.value);
-    for (const s of n.specifiers)
-      if (s.type === "ImportSpecifier") de.set(s.local.name, { source, exporte: s.imported.name });
-  }
-  return exposes(entree).map((nom) => {
-    if (!de.has(nom)) throw new Error(ENTREES[entree] + " : « " + nom + " » est exposé sans être importé");
-    return { nom, ...de.get(nom) };
-  });
-}
-
-/** Le script d'un point d'entrée, prêt à poser dans une page. */
-function assemble(entree) {
+function assemble(entree, define = {}) {
+  const minifie = MINIFIES.includes(entree);
   const r = esbuild.buildSync({
     entryPoints: [path.join(MODULES, ENTREES[entree])],
     bundle: true,
@@ -124,9 +59,30 @@ function assemble(entree) {
     charset: "utf8",
     legalComments: "none",
     logLevel: "silent",
+    minify: minifie,
+    // une adresse de rangement fictive, pour que la carte nomme les modules
+    // depuis la racine du site : `../../outils/gabarit/modules/fiche.mjs`
+    outfile: path.join(MODULES, "..", "..", "..", "web", "versions", entree + ".js"),
+    sourcemap: minifie ? "external" : false,
+    sourcesContent: false,
+    metafile: minifie,
+    define,
   });
-  return r.outputFiles[0].text;
+  const code = r.outputFiles.find((f) => f.path.endsWith(".js")).text;
+  if (!minifie) return code;
+  CARTES.set(code.trim(), r.outputFiles.find((f) => f.path.endsWith(".map")).text);
+  /* Le dictionnaire anglais se choisit d'après les modules qu'une page
+     embarque, qu'il repère au chemin qu'esbuild écrit devant chacun
+     (`traductions.js` `repereModule`) — et que la minification efface. On
+     les écrit donc à la suite du code, où ils ne décalent rien ; l'épuration
+     de la page les retire ensuite avec les autres commentaires. */
+  const reperes = Object.keys(r.metafile.inputs).filter((f) => f.endsWith(".mjs"))
+    .map((f) => "// " + path.relative(path.join(MODULES, "..", "..", ".."), path.resolve(f)).split(path.sep).join("/"));
+  return code + reperes.join("\n") + "\n";
 }
+
+/** La carte d'un script minifié, d'après son code ; `undefined` s'il ne l'est pas. */
+const carteDe = (code) => CARTES.get(code.trim());
 
 /**
  * Les points d'entrée qui embarquent un module (`modules/texte.mjs`), lus dans
@@ -148,4 +104,4 @@ function entreesDe(module) {
   });
 }
 
-module.exports = { MODULES, ENTREES, exposes, origines, assemble, entreesDe };
+module.exports = { MODULES, ENTREES, assemble, carteDe, entreesDe };

@@ -7,7 +7,8 @@
    (`volets.mjs`). Ce qu'il ne peut importer sans boucler — les options et
    leur liste (`options.mjs` `appliqueOptions`), le tiroir du parcours qu'on
    referme (`tiroir-parcours.mjs`), qui importent tous deux ce module-ci — lui
-   est confié par `brancheApparence`, à la place que ce code tenait. Les
+   est confié par la porte `confieALApparence`, que chacun ouvre en se
+   chargeant. Les
    secteurs s'importent de `recherche.mjs`, les marques des distinctions de
    `distinctions.mjs`, le tiroir de l'itinéraire de `tiroir-itineraire.mjs`.
    ============================================================ */
@@ -21,18 +22,25 @@ import { appliqueSecteurs } from "./recherche.mjs";
 import { dessineDists } from "./distinctions.mjs";
 import { fermeItineraire } from "./tiroir-itineraire.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le plan ne
-   s'habille qu'à l'arrivée des données, bien après le branchement. */
-/** @type {Record<string, any>} */
-let soude = {};
+/* Ce qui est confié, et rien avant : le plan ne s'habille qu'à l'arrivée des
+   données, bien après le chargement des modules qui l'ouvrent. */
+/**
+ * @typedef {object} PreteApparence
+ * @property {() => void} appliqueOptions les options prises par le salon (`options.mjs`)
+ * @property {() => void} fermeParcours referme le tiroir du parcours (`tiroir-parcours.mjs`)
+ */
+/** @type {PreteApparence} */
+const prete = { appliqueOptions: () => {}, fermeParcours: () => {} };
 
 /**
- * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
+ * La porte de ce que l'apparence ne peut importer sans boucler : `options.mjs`
+ * et `tiroir-parcours.mjs` l'ouvrent en se chargeant, avant tout le code
+ * soudé, comme le branchement qu'elle remplace.
  *
- * @param {{ appliqueOptions: () => void, fermeParcours: () => void }} b
+ * @param {Partial<PreteApparence>} o
  */
-export function brancheApparence(b){
-  soude = b;
+export function confieALApparence(o){
+  Object.assign(prete, o);
 }
 
 const racine = document.documentElement;
@@ -129,7 +137,7 @@ export function appliqueApparence(){
                             conf(k).visible === false));
   appliqueCouleursData();
   appliqueCommandes();
-  soude.appliqueOptions();
+  prete.appliqueOptions();
   appliqueLangue();
   appliqueSecteurs();
   appliqueAccent();
@@ -186,6 +194,6 @@ export function appliqueCommandes(){
   });
   // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
   // bouton pour se refermer
-  if (conf("_parcours").visible === false) soude.fermeParcours();
+  if (conf("_parcours").visible === false) prete.fermeParcours();
   if (conf("_itineraire").visible === false) fermeItineraire();
 }

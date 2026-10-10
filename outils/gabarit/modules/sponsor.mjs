@@ -105,11 +105,9 @@ const MODES_SPONSOR = ["", "marque", "sponsor"];
    elle ne le déguise pas non plus : elle passe, elle dit « powered by », et
    elle cède la place au hall.
 
-   Entre accents graves, et non entre apostrophes : esbuild réécrit une chaîne
-   simple entre guillemets droits, et la marque qui prend sa place en porte
-   dans chacun de ses attributs. Un gabarit sans substitution, il le laisse
-   tel quel. */
-export const MARQUE_SPONSOR = `<!--__MARQUE__-->`;
+   `MARQUE_PRODUIT` est le dessin d'`outils/icones.js`, que la construction
+   définit pour esbuild (`genere.js` `scriptDesModules`). */
+export const MARQUE_SPONSOR = MARQUE_PRODUIT;
 
 export const reglageSponsor = () => conf("_sponsor");
 

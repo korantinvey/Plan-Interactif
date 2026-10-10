@@ -28,14 +28,41 @@
    L'ordre des calques, elle l'importe (`ordre-trace.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl } from "./webgl.mjs";
-import { recul, dessineFondCarte } from "./environs.mjs";
+import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, confieAuWebgl }
+  from "./webgl.mjs";
+import { recul, dessineFondCarte, confieAuxEnvirons } from "./environs.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
+/* Ce que la vue rappelle chez les modules qui l'importent — ce qui dit si
+   l'on édite, les noms, et ce qui garde sa taille à l'écran quel que soit le
+   zoom : poignées de l'éditeur, pastilles de l'itinéraire, pointes de flèche,
+   point de la borne, poignée du calage d'un hall. Elle ne peut les importer :
+   chacun l'importe. Chacun le lui confie donc au chargement de son module
+   (`confieALaVue`), et ce que la page n'embarque pas — l'éditeur, la reprise
+   des emplacements, le calage, tous d'administration — reste sans effet.
+   Les appels restent là où ils étaient, et dans le même ordre : c'est le
+   chemin de chaque image pendant un geste. */
+/**
+ * @typedef {object} PageVue
+ * @property {() => boolean} enEdition
+ * @property {() => void} libelles
+ * @property {() => void} dessinePoignees
+ * @property {() => void} dessinePoigneesGeo
+ * @property {() => void} rafraichitBouts
+ * @property {() => void} rafraichitFleches
+ * @property {() => void} rafraichitBorne
+ * @property {(() => void) | null} calage
+ */
+/** @type {PageVue} */
+const prete = {
+  enEdition: () => false, libelles: () => {}, dessinePoignees: () => {}, dessinePoigneesGeo: () => {},
+  rafraichitBouts: () => {}, rafraichitFleches: () => {}, rafraichitBorne: () => {}, calage: null,
+};
+
+/** La porte des modules qui confient à la vue ce qu'elle rappelle.
+ *  @param {Partial<PageVue>} o */
+export function confieALaVue(o){ Object.assign(prete, o); }
 
 /** La vue du moment — `{ x, y, w, h }` en mètres, ou rien avant le premier plan. */
 /** @type {any} */
@@ -44,8 +71,8 @@ export let view;
 export const vue = () => view;
 /** Remplace la vue, sans l'appliquer : c'est `poseVue` ou `rafraichitVue` qui l'écrivent. */
 export const changeVue = (/** @type {any} */ v) => { view = v; };
-const enEdition = () => soude.enEdition();
-const libelles = () => soude.libelles();
+const enEdition = () => prete.enEdition();
+const libelles = () => prete.libelles();
 
 /** Le SVG du plan. */
 /** @type {any} */
@@ -203,8 +230,8 @@ export const appliqueVue = () => {
     vueWebgl();
     majEditionWebgl();
     // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
-    if (enEdition()) soude.dessinePoignees();
-    if (enEdition()) soude.dessinePoigneesGeo();
+    if (enEdition()) prete.dessinePoignees();
+    if (enEdition()) prete.dessinePoigneesGeo();
     // tant que la première image n'est pas dessinée, le SVG montre le plan et suit la vue
     if (GL.pret) return;
   }
@@ -212,14 +239,14 @@ export const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   if (libPeints) etireLibelles();
-  soude.dessinePoignees();
-  soude.dessinePoigneesGeo();
+  prete.dessinePoignees();
+  prete.dessinePoigneesGeo();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
-  soude.rafraichitBouts();
+  prete.rafraichitBouts();
   // et la pointe des lignes fléchées, pas davantage
-  soude.rafraichitFleches();
+  prete.rafraichitFleches();
   // le point de la borne, pas davantage non plus
-  soude.rafraichitBorne();
+  prete.rafraichitBorne();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
@@ -259,9 +286,9 @@ let imageDemandee = null, libellesEnAttente = null;
  */
 function libellesDeLaVue(){
   if (!GL.actif){ libelles(); return; }
-  soude.rafraichitBouts();
-  soude.rafraichitFleches();
-  soude.rafraichitBorne();
+  prete.rafraichitBouts();
+  prete.rafraichitFleches();
+  prete.rafraichitBorne();
 }
 
 /** Pendant un geste : le strict nécessaire, une fois par image. */
@@ -271,7 +298,7 @@ export function rafraichitVue(){
       imageDemandee = null;
       appliqueVue(); echelle();
       // la poignée du calage se mesure en pixels : elle suit la vue
-      if (soude.calage) soude.calage();
+      if (prete.calage) prete.calage();
     });
   }
   clearTimeout(libellesEnAttente);
@@ -284,7 +311,7 @@ export function poseVue(){
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libellesDeLaVue();
-  if (soude.calage) soude.calage();
+  if (prete.calage) prete.calage();
 }
 
 /**
@@ -556,11 +583,8 @@ export function versPlan(/** @type {number} */ clientX, /** @type {number} */ cl
  * Le branchement, appelé par `_vue.html` à la place que ce code tenait : les
  * écoutes du cadre et de la barre s'y posent au même rang qu'avant parmi
  * celles du plan — avant le recadrage que `demarrage.mjs` pose sur « resize ».
- *
- * @param {Record<string, any>} b
  */
-export function brancheVue(b){
-  soude = b;
+export function brancheVue(){
   calqueLib = $("calqueLibelles");
   svgLib = calqueLib.firstElementChild;
   addEventListener("resize", oublieCadre);
@@ -571,3 +595,9 @@ export function brancheVue(b){
   if (window.ResizeObserver && $("bandeau"))
     new ResizeObserver(mesureBarre).observe($("bandeau"));
 }
+
+/* Le rendu par la carte graphique et le fond de carte, que ce module importe,
+   lisent la vue et ne peuvent l'importer : elle la leur confie en se
+   chargeant — par des lecteurs, puisque chaque geste la remplace. */
+confieAuWebgl({ svg, vue, cadrePlan, appliqueVue });
+confieAuxEnvirons({ vue, cadrePlan });

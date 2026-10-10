@@ -1,3 +1,7 @@
+<!-- Le balisage commun de la console et du rapport : la fenêtre du socle
+     (`modules/fenetre-console.mjs`). Le script de chaque point d'entrée se
+     pose juste après (`genere.js` `poseModulesSeuls`) : il n'y a plus de code
+     soudé, et le socle trouve la fenêtre en se branchant. -->
 <div class="modale" id="modale">
   <div class="mfen" role="dialog" aria-modal="true">
     <header><h3 id="mTitre"></h3><button id="mFermer" aria-label="Fermer">&times;</button></header>
@@ -5,17 +9,3 @@
     <footer id="mPied"></footer>
   </div>
 </div>
-
-<script>
-/* ============================================================
-   Socle commun de la console et du rapport — le branchement
-
-   L'accès au projet, les appels, la fenêtre, la connexion, la barre d'état,
-   les briques d'affichage, le thème et le menu du compte vivent dans
-   `modules/socle-console.mjs` et `modules/fenetre-console.mjs`, que la console
-   et le rapport embarquent tous deux. Le socle se branche ici, en tête du
-   script, à la place que son code tenait : ce qu'il faisait au chargement s'y
-   fait au même rang. Il reçoit ce que chaque page fait après la connexion
-   (`demarre`) et à la déconnexion (`videEcran`) : chacune définit les siens.
-   ============================================================ */
-brancheSocle({ demarre, videEcran });

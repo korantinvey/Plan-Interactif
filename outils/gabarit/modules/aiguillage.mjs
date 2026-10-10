@@ -2,8 +2,8 @@
    L'aiguillage de la racine — où mène l'adresse nue
 
    La page d'accueil n'a rien à montrer : elle renvoie ailleurs, et seul son
-   lien de secours se voit le temps de la redirection. Sortie de `_index.html`,
-   qui la branche à la place que son code tenait, après le balisage.
+   lien de secours se voit le temps de la redirection. Sortie de `_index.html` ;
+   son point d'entrée (`accueil.mjs`) la branche, posé après le balisage.
    ============================================================ */
 
 /**

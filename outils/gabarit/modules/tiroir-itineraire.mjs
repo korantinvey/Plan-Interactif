@@ -8,35 +8,65 @@
    nappe de la grille, outil de l'exploitant, est à part (`nappe.mjs`).
 
    Il se branche dans `_itineraire.html`, à la place que son code tenait :
-   ses écoutes s'y posent au même rang qu'avant parmi celles du plan, et ce
-   que le code soudé tient encore lui est confié — la vue, qu'il lit et qu'il
-   recadre, les volets qu'il mesure, la fiche et le parcours qu'il referme.
+   ses écoutes s'y posent au même rang qu'avant parmi celles du plan, sans
+   rien recevoir. La vue, qu'il lit et qu'il recadre, et les volets qu'il
+   mesure, il les importe ; le passage d'un pavillon à l'autre, la fiche et
+   le parcours qu'il referme, les modules qui les tiennent l'importent, et
+   les lui confient en se chargeant (`confieAuTiroirItineraire`).
 
    Le trajet demandé ne se remplace jamais, il se modifie : `ITI` s'importe
    tel quel. Le tracé et la visée, eux, sont réaffectés par d'autres — la
    journée organisée prend le trait (`poseTrace`), la borne et l'affiche du
    code arment la visée (`poseVisee`) — et s'importent donc comme des états
    vivants.
+
+   La borne et le code affiché dans le hall importent ce module, et lui ne les
+   importe pas : ce qu'il leur doit — le départ qu'ils imposent — vit dans
+   `vous-etes-ici.mjs`, et ce qu'ils font d'une visée qui les regarde, ou d'un
+   bandeau qui doit céder la place, ils le lui confient en se chargeant
+   (`confieVisee`, `suitLaVisee`).
+
+   Le calcul, lui, n'importe ni les réglages, ni les calques, ni ce que le
+   parcours et la journée savent des conférences : il s'éprouve seul dans
+   Node. Ce module, qui le mène et peut tout importer, les lui confie en se
+   chargeant (`brancheItineraire`, au bas du module).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { mesure } from "./mesure.mjs";
 import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarches, coupeMarche,
-  distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison } from "./itineraire.mjs";
-import { pointBorne, poseLaBorne, montreBandeauBorne, ecritDepartBorne } from "./borne.mjs";
-import { montreBandeauIci } from "./ici.mjs";
-import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg } from "./vue.mjs";
+  distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison, brancheItineraire } from "./itineraire.mjs";
+import { CONF } from "./configuration.mjs";
+import { DESSINS } from "./calques-dessin.mjs";
+import { instantConf } from "./parcours.mjs";
+import { finInstant } from "./sejour.mjs";
+import { pointBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
+import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg,
+  confieALaVue } from "./vue.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, elle,
-   s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
-   cesse, et le trajet la recadre. */
-/** @type {Record<string, any>} */
-let soude = {};
-const changePlan = (i) => soude.changePlan(i);
-const ferme = () => soude.ferme();
-const fermeParcours = () => soude.fermeParcours();
+/**
+ * Ce que le tiroir emprunte aux modules qui l'importent : le passage d'un
+ * pavillon à l'autre (`rendu.mjs`), la fiche (`fiche.mjs`) et le tiroir du
+ * parcours (`tiroir-parcours.mjs`), qu'il referme en s'ouvrant. Tous trois
+ * l'importent : il ne peut les importer en retour, et chacun lui confie ce
+ * qu'il en appelle au chargement de son module, par
+ * `confieAuTiroirItineraire` — jamais par le code soudé. La vue, elle,
+ * s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
+ * cesse, et le trajet la recadre.
+ * @typedef {{ changePlan: (i: number) => void, ferme: () => void,
+ *   fermeParcours: () => void }} PageTiroirItineraire
+ */
+/** @type {PageTiroirItineraire} */
+const prete = { changePlan: () => {}, ferme: () => {}, fermeParcours: () => {} };
+
+/** La porte des modules qui prêtent au tiroir ce qu'il appelle.
+ *  @param {Partial<PageTiroirItineraire>} o */
+export function confieAuTiroirItineraire(o){ Object.assign(prete, o); }
+const changePlan = (/** @type {number} */ i) => prete.changePlan(i);
+const ferme = () => prete.ferme();
+const fermeParcours = () => prete.fermeParcours();
 const racine = document.documentElement;
 
 /* ------------------------------------------------------------
@@ -550,6 +580,21 @@ export let visee = null;
  *  la visite guidée l'éteint. */
 export function poseVisee(v){ visee = v; }
 
+/* Une visée qui n'est pas un bout de trajet — poser la borne, désigner
+   l'endroit d'un code — appartient au module qui l'arme : il dit ici ce que
+   devient le point désigné. Et les bandeaux qui occupent la même place que
+   celui de la visée lui sont confiés de même, pour céder le passage. Les deux
+   s'inscrivent au chargement de leur module. */
+/** @type {Record<string, (pt: any) => any>} */
+const VISEES = {};
+/** @type {Array<() => void>} */
+const SUIVENT_LA_VISEE = [];
+
+/** @param {string} genre @param {(pt: any) => any} f */
+export function confieVisee(genre, f){ VISEES[genre] = f; }
+/** @param {() => void} f */
+export function suitLaVisee(f){ SUIVENT_LA_VISEE.push(f); }
+
 export function bandeauVisee(){
   const b = $("viseur");
   if (b){
@@ -566,11 +611,10 @@ export function bandeauVisee(){
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
   $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
   /* Le bandeau d'une borne à poser s'efface le temps du geste : c'est le même
-     état, dit deux fois, et deux bandeaux ne se lisent plus. */
-  montreBandeauBorne();
-  /* Le rappel du code affiché, lui, occupe la même place au bas de l'écran :
-     il cède le passage plutôt que de se superposer (voir `_ici.html`). */
-  montreBandeauIci();
+     état, dit deux fois, et deux bandeaux ne se lisent plus. Le rappel du code
+     affiché, lui, occupe la même place au bas de l'écran : il cède le passage
+     plutôt que de se superposer (`borne.mjs`, `ici.mjs`). */
+  SUIVENT_LA_VISEE.forEach(f => f());
 }
 
 function armeVisee(r){
@@ -625,8 +669,7 @@ function visePoint(pt){
      ailleurs (voir « _borne.html »). Désigner l'endroit d'un code non plus
      (voir « _ici.html ») — et c'est par ici que passe le clavier, là où le
      doigt est tranché plus tôt, dans la chaîne des appuis sur le plan. */
-  if (visee === "borne") return poseLaBorne(pt);
-  if (visee === "ici" && soude.ouvreCodeIci) return soude.ouvreCodeIci(pt);
+  if (VISEES[visee]) return VISEES[visee](pt);
   const r = visee;
   ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
@@ -713,14 +756,11 @@ export function versItineraireDe(pt){
  * Appelé par `_itineraire.html` à la place que ce code tenait : le choix
  * d'accessibilité retenu se relit, puis les écoutes du tiroir et de la visée
  * se posent au même rang qu'avant parmi celles du plan — celle de la touche
- * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit.
- *
- * @param {{
- *   changePlan: Function, ferme: Function, fermeParcours: Function,
- *   ouvreCodeIci: Function | null }} b
+ * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit. Il
+ * ne reçoit plus rien : ce que le tiroir emprunte lui est confié par
+ * `confieAuTiroirItineraire`.
  */
-export function brancheTiroirItineraire(b){
-  soude = b;
+export function brancheTiroirItineraire(){
 
   try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
@@ -794,3 +834,16 @@ export function brancheTiroirItineraire(b){
     if ($("iSugg").hidden) fermeItineraire();
   });
 }
+
+/* Les pastilles du trajet gardent leur taille à l'écran : la vue, que ce
+   module importe, les refait à chaque changement de vue — il les lui confie
+   en se chargeant. */
+confieALaVue({ rafraichitBouts });
+
+/* Le calcul s'éprouve seul dans Node (`outils/essais/itineraire.js`,
+   `sejour.js`), où l'essai lui prête réglages et calques : il ne les importe
+   pas. Ce module, qui le mène et que la page publique embarque, les lui
+   confie en se chargeant — avant tout trajet demandé. Les réglages et les
+   calques se remplacent en changeant de salon : ils se confient par des
+   lecteurs, qui rendent ceux du moment. */
+brancheItineraire({ conf: () => CONF, dessins: () => DESSINS, instantConf, finInstant });

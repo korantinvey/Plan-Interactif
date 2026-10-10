@@ -20,6 +20,12 @@
    recevoir : la forme choisie dans l'éditeur et sa porte s'importent de
    `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
    rangement des réglages de `configuration.mjs`.
+
+   À l'inverse, ce qu'il tient et que d'autres modules d'exploitant
+   empruntent — l'éditeur, l'enregistrement, la reprise d'un emplacement, le
+   placement des libellés —, il le leur confie en se chargeant, au bas du
+   module : il les importe, et ils ne pourraient l'importer sans boucle. Les
+   aimants aussi, qui ne l'importent pas pour s'éprouver seuls dans Node.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -31,17 +37,17 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { oublieGrilles, oublieLiaisons, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
-import { programmePublication } from "./enregistrement.mjs";
+import { programmePublication, confieAEnregistrement } from "./enregistrement.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles } from "./placement-libelles.mjs";
+import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { modeGeometrie } from "./reprise-emplacements.mjs";
+import { modeGeometrie, choisitGeo, confieALaReprise } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimants, montreAimants, aimante, DERNIERE,
-  retientTaille, reprendTaille, appliqueDimension } from "./aimants.mjs";
-import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
+  retientTaille, reprendTaille, appliqueDimension, brancheAimants } from "./aimants.mjs";
+import { confieAEdition, geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
-  editionPointerMove, editionPointerUp, replieOutils } from "./edition.mjs";
+  editionPointerMove, editionPointerUp, replieOutils, choisitForme } from "./edition.mjs";
 import { DESSINS, cleDessins, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
   enCours, poseCalqueActif, poseOutil, poseEbauche } from "./calques-dessin.mjs";
 import { cheminForme, estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
@@ -50,9 +56,10 @@ import { TYPES_REPERE, MODES_TRANSPORT, estTransport, couleurLigne, couleurEcrit
 import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_REPERE, nomSurLePlan,
   societeDeForme, societesDuPlan } from "./dessin.mjs";
 import { oublieReperes } from "./points-interet.mjs";
-import { formeSel, poseFormeSel, formeParId } from "./forme-choisie.mjs";
+import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieApresOption } from "./options.mjs";
+import { confieAuRendu } from "./rendu.mjs";
 
 
 export const enregistreDessins = () => {
@@ -994,3 +1001,39 @@ export function brancheOutilDessin(){
 
   $("voirNappe").onchange = e => { poseNappe(e.target.checked); rafraichitApercu(); };
 }
+
+/* Le montage d'un pavillon réécrit ses groupes : l'emplacement qu'on
+   reprenait n'existe plus, l'historique de l'éditeur valait pour l'autre
+   pavillon, et la boîte à outils se replie. Le rendu, que la page publique
+   porte aussi, reçoit d'ici en se chargeant de quoi tout remettre au repos ;
+   la page publique, qui n'a ni éditeur ni outils, n'en a pas besoin. */
+confieAuRendu({ oublieEdition: () => {
+  if (SORTE_GEO) choisitGeo(null);
+  HIST.length = REFAIRE.length = 0;
+  const o = $("outils");
+  if (o) o.classList.remove("open");
+} });
+
+/* Ces quatre modules sont importés par celui-ci : ils ne peuvent l'importer
+   en retour. Il leur confie donc ce qu'il tient dès que la page
+   d'administration le charge — avant tout geste, et sans que le code soudé
+   ait à s'en mêler. */
+confieAEdition({ memorise, enregistreDessins, optionsModes, societeSaisie, remplitListeSocietes });
+confieAEnregistrement({ enregistreDessins });
+confieALaReprise({ pictoVerrou, activeCalque, remplitListeSocietes, societeSaisie, fermeIci });
+confieAuPlacementLibelles({ activeCalque });
+
+/* Les aimants s'éprouvent seuls dans Node (`outils/essais/aimants.js`) : ils
+   n'importent pas l'outil de dessin, on le leur confie. Ce module les importe
+   déjà, et tient ou importe tout ce qu'ils lisent ; c'est donc lui qui le leur
+   confie en se chargeant, au lieu du code soudé. Rien n'y sert avant le
+   premier geste de l'exploitant. Ce qui change d'un geste à l'autre se confie
+   par un lecteur, jamais par sa valeur du moment. */
+brancheAimants({
+  vue: () => vue(),
+  imageEnAttente: () => imageEnAttente,
+  formeSel: () => formeSel,
+  calqueActif: () => calqueActif,
+  svg, cadrePlan, mesCalques, estCadre, boite, toleranceTrace, apercuGuide, formeParId,
+  ajouteForme, choisitForme, signale, memorise, enregistreDessins, redessineForme, dessinePoignees,
+});

@@ -3,8 +3,10 @@
  *
  * TypeScript lit le JavaScript tel quel (`checkJs`), sans qu'on récrive rien :
  * il déduit les types de l'usage, et des quelques annotations JSDoc qu'on lui
- * donne. Il relit, comme `relecture.js`, chaque page telle qu'elle s'assemble,
- * et ramène chaque remarque au module et à la ligne qui la portent.
+ * donne. Il part des points d'entrée des modules et suit leurs imports, comme
+ * esbuild ; il relit aussi, comme `relecture.js`, les scripts que chaque page
+ * porte hors des modules, et ramène chaque remarque au fichier et à la ligne
+ * qui la portent.
  *
  * Le code n'a jamais été écrit pour lui : il en relève quelques centaines de
  * remarques, presque toutes des éléments du DOM qu'il ne sait pas plus précis
@@ -22,11 +24,8 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const ts = require("typescript");
-const { compose, PAGES, FAMILLE } = require("./relecture.js");
+const { compose, PAGES } = require("./relecture.js");
 const modules = require("./modules.js");
-const reserve = require("./reserve.js");
-const { BOUTS, lisBout } = require("./assemble.js");
-const { sansTexte } = require("./appels.js");
 
 const ACCEPTES = path.join(__dirname, "types-acceptes.json");
 
@@ -37,6 +36,8 @@ const DECLARATIONS = [
   "declare function traduit(phrase: string): string;",
   "declare var deck: any;",
   "declare var __DICTIONNAIRE__: any;",
+  // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
+  "declare const MARQUE_PRODUIT: string;",
   /* Un élément cherché par sélecteur, rendu sans type précis — la règle de
      `$` (`modules/dom.mjs`), pour la même raison : la bibliothèque rend un
      `Element` nu, sans `dataset`, `value` ni `onclick`, et chaque recherche
@@ -57,31 +58,6 @@ const DECLARATIONS = [
   "}",
 ].join("\n");
 
-/* Ce que les modules confient à une page, avec le type de leur définition
-   même : `typeof import(…)`, et non un `any` recopié ici. Une signature changée
-   dans un module se vérifie ainsi aussitôt dans tout le code soudé qui l'appelle. */
-const declarationsDesModules = (page) => !FAMILLE[page] ? "" :
-  modules.origines(FAMILLE[page]).map((o) =>
-    "declare var " + o.nom + ": typeof import(" + JSON.stringify(o.source) + ")." + o.exporte + ";"
-  ).join("\n");
-
-/* La page publique n'a pas ce que l'administration seule reçoit, et ne s'y
-   adresse que par `typeof nom === "function"` — la construction refuse tout
-   autre appel (`outils/reserve.js`). Ces noms y sont donc déclarés sans type :
-   leur signature se vérifie dans la page d'administration, qui les a. */
-const RETIRES_DU_PUBLIC = (() => {
-  // découpé avant d'être réduit au code : les bornes sont des commentaires
-  const gabarit = BOUTS.map((b) => lisBout(b)).join("\n");
-  const publics = new Set(modules.exposes("plan"));
-  /* L'accès de l'exploitant (`_auth-plan.html`) n'est posé que dans
-     l'administration : ce qu'il déclare manque aussi au visiteur. */
-  const acces = fs.readFileSync(path.join(__dirname, "gabarit", "_auth-plan.html"), "utf8");
-  return reserve.retiresDe(sansTexte(gabarit + "\n" + acces), sansTexte(reserve.pourLePublic(gabarit)),
-    modules.exposes("plan-admin").filter((n) => !publics.has(n)));
-})();
-const declarationsRetirees = (page) => page !== "plan.html" ? "" :
-  RETIRES_DU_PUBLIC.map((n) => "declare var " + n + ": any;").join("\n");
-
 const OPTIONS = {
   // les modules se résolvent comme esbuild les résout : par leur chemin, extension comprise
   module: ts.ModuleKind.ESNext,
@@ -95,14 +71,19 @@ const OPTIONS = {
   types: [],
 };
 
+/* Les points d'entrée, une seule fois pour toutes les pages : un module
+   partagé se vérifie ainsi une fois, et l'administration, qui reprend le plan
+   public en entier, couvre ce que le visiteur reçoit. */
+const ENTREES = Object.values(modules.ENTREES).map((f) => path.join(modules.MODULES, f));
+
 function verifiePage(page, dossier) {
   const { texte, table } = compose(PAGES[page]);
   const fichier = path.join(dossier, page.replace(/\.html$/, ".js"));
   const decl = path.join(dossier, "globales.d.ts");
   fs.writeFileSync(fichier, texte);
-  fs.writeFileSync(decl, DECLARATIONS + "\n" + declarationsDesModules(page) + "\n" +
-    declarationsRetirees(page));
-  const programme = ts.createProgram([fichier, decl], OPTIONS);
+  fs.writeFileSync(decl, DECLARATIONS);
+  const racines = [fichier, decl, ...(page === Object.keys(PAGES)[0] ? ENTREES : [])];
+  const programme = ts.createProgram(racines, OPTIONS);
   return ts.getPreEmitDiagnostics(programme)
     .filter((d) => d.file && (path.resolve(d.file.fileName) === path.resolve(fichier) ||
       path.resolve(d.file.fileName).startsWith(modules.MODULES + path.sep)))

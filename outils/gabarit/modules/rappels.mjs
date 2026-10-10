@@ -1,7 +1,9 @@
 /* ============================================================
    Le rappel avant une conférence
 
-   Sorti de `_rappels.html`, qui ne garde que son branchement. L'abonnement et
+   Sorti de `_rappels.html`, qui n'a plus rien à lui confier : la visite
+   guidée et le tiroir du parcours se confient en se chargeant
+   (`confieAuxRappels`). L'abonnement et
    ce que l'appareil sait recevoir sont dans `notifications.mjs` ; l'essai
    d'un vrai rappel depuis les réglages, qui ne sert qu'à l'exploitant, dans
    `essai-rappel.mjs`, que seul `plan-admin.mjs` embarque.
@@ -57,27 +59,24 @@ import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empr
 import { ouvreModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages } from "./fenetre.mjs";
 import { conf } from "./configuration.mjs";
 
-/* Ce que le branchement confie, et que ce module ne peut importer sans
-   boucler : la visite guidée en cours (`tutoriel.mjs`) et le tiroir du
-   parcours à rafraîchir (`tiroir-parcours.mjs`), qui importent ce module-ci.
+/* Ce que ce module ne peut importer sans boucler : la visite guidée en cours
+   (`tutoriel.mjs`) et le tiroir du parcours à rafraîchir
+   (`tiroir-parcours.mjs`), qui l'atteignent. Chacun le lui confie au
+   chargement de son module, par `confieAuxRappels` — jamais le code soudé.
    La visite guidée change à chaque chapitre : elle se confie par un lecteur,
    non par sa valeur du moment. La configuration du salon
    (`configuration.mjs`) et le retour aux réglages après un aperçu
    (`fenetre.mjs`) s'importent. */
 /**
- * @typedef {{ tuto: () => any, rafraichitParcours: () => void }} BranchementRappels
+ * @typedef {{ tuto: () => any, rafraichitParcours: () => void }} PageRappels
  */
-/** @type {BranchementRappels} */
-let soude;
-const tuto = () => soude.tuto();
+/** @type {PageRappels} */
+const prete = { tuto: () => null, rafraichitParcours: () => {} };
 
-/**
- * Le branchement, appelé par le code soudé à la place que ce code y tenait
- * (`_rappels.html`).
- *
- * @param {BranchementRappels} b
- */
-export function brancheRappels(b){ soude = b; }
+/** La porte des modules qui prêtent aux rappels ce qu'ils appellent.
+ *  @param {Partial<PageRappels>} o */
+export function confieAuxRappels(o){ Object.assign(prete, o); }
+const tuto = () => prete.tuto();
 
 /* ------------------------------------------------------------
    Le réglage du salon
@@ -517,7 +516,7 @@ export function proposeRappels(apercu){
          Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
          sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
          allumé. On rafraîchit donc, et on se tait. */
-      allumeRappels().then(() => soude.rafraichitParcours(), () => {});
+      allumeRappels().then(() => prete.rafraichitParcours(), () => {});
     } },
   ]);
 

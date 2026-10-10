@@ -12,17 +12,19 @@
    (`ordre-trace.mjs`), la fiche, la recherche, les secteurs et l'écran
    s'importent ; la mention de la source, qu'il est seul à refaire, vit ici.
    Ce module se tient au-dessus de la fiche et des libellés, qui se font donc
-   confier ce qu'ils lui empruntent (`decoupeStand`, `marqueStandsDessines`).
+   confier ce qu'ils lui empruntent (`decoupeStand`, `marqueStandsDessines`) :
+   les libellés et la police des noms le reçoivent par les portes que ce
+   module ouvre en se chargeant (`confieAuxLibelles`, `confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { optionActive } from "./configuration.mjs";
-import { svg, vue, cadrePlan } from "./vue.mjs";
+import { svg, vue, cadrePlan, confieALaVue } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
-import { P_NOM } from "./polices-plan.mjs";
+import { P_NOM, confieAuxPolices } from "./polices-plan.mjs";
 import { mesCalques, calqueActif } from "./calques-dessin.mjs";
 import { cheminForme, styleTrait, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { PICTOS, pictoForme, nomTypeRepere, modeDit, estTransport, glypheRepere, ligneAffichee,
@@ -31,11 +33,12 @@ import { cartouchePoi, phareRepere } from "./points-interet.mjs";
 import { REDUIT } from "./ecran.mjs";
 import { visibleSociete } from "./recherche.mjs";
 import { coloreSecteurs } from "./secteurs.mjs";
-import { societes } from "./fiche.mjs";
+import { societes, confieALaFiche } from "./fiche.mjs";
 import { largeur } from "./texte-plan.mjs";
-import { libelleEmplacement } from "./libelles.mjs";
+import { libelleEmplacement, confieAuxLibelles } from "./libelles.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
+import { confieAuRendu } from "./rendu.mjs";
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -642,3 +645,26 @@ export function signale(id){
   g.classList.add("neuve");
   setTimeout(() => g.classList.remove("neuve"), 1300);
 }
+
+/* La pointe d'une ligne fléchée garde sa taille à l'écran : la vue, que ce
+   module importe, la refait à chaque changement de vue — il la lui confie en
+   se chargeant. */
+confieALaVue({ rafraichitFleches });
+
+/* Le montage d'un pavillon recrée les calques de dessin : le rendu, que ce
+   module atteint, ne peut l'importer, et reçoit d'ici en se chargeant de quoi
+   les dessiner. */
+confieAuRendu({ dessineDessins });
+
+/* Le dessin des calques, confié dès que ce module se charge aux deux modules
+   qui le rappellent sans pouvoir l'importer : la police des noms, que ce
+   module importe pour écrire les siens, et les libellés, qu'il atteint par la
+   fiche. Des appels directs : les libellés se réécrivent pendant les gestes. */
+confieAuxPolices({ dessineDessins });
+confieAuxLibelles({ dessineDessins, decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme,
+  nomSurLePlan });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (la découpe d'un stand
+   dessiné, et la marque des stands dessinés quand la sélection change). */
+confieALaFiche({ decoupeStand, marqueStandsDessines });

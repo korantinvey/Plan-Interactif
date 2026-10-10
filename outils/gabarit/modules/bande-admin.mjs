@@ -9,9 +9,11 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. La fenêtre des réglages, les calques de dessin et leur
    panneau, le ton de la barre du système s'importent : il n'a rien à
-   recevoir du code soudé.
+   recevoir du code soudé. La porte authentifiée, qui ne peut l'importer
+   sans boucle, reçoit de lui l'ouverture du mode en se chargeant.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { confieALAcces } from "./acces-admin.mjs";
 import { ADMIN, ouvreModeAdmin } from "./mode-admin.mjs";
 import { boutonCodeIci } from "./affiche-ici.mjs";
 import { majAttente, pousseConfiguration, brancheSauvegarde } from "./enregistrement.mjs";
@@ -102,3 +104,9 @@ export function activeAdmin(){
      la barre du système prolonge, et non plus le bandeau du salon. */
   poseTonDeLaBarre();
 }
+
+/* La porte authentifiée (`acces-admin.mjs`) est importée, par
+   l'enregistrement, avant ce module : elle ne peut l'importer sans boucle.
+   L'ouverture du mode lui est donc confiée dès que la page d'administration
+   charge celui-ci, bien avant que la session soit vérifiée. */
+confieALAcces({ activeAdmin });

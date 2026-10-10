@@ -16,17 +16,19 @@
 
    Il n'a besoin de rien du code soudé : tout ce qu'il lit s'importe. Le mode
    et la teinte de chaque marque viennent de l'habillage (`habillage.mjs`), et
-   la liste (`recherche.mjs`), la fiche (`fiche.mjs`) et l'habillage, qu'il
-   importe ou qui l'importent en chemin, le reçoivent par leur branchement.
+   la liste (`recherche.mjs`) et la fiche (`fiche.mjs`), qu'il importe ou qui
+   l'importent en chemin, le reçoivent par leur branchement ; l'habillage, par
+   la porte que ce module ouvre en se chargeant (`confieALHabillage`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { societes } from "./fiche.mjs";
-import { modeDist, couleurDist } from "./habillage.mjs";
+import { societes, confieALaFiche } from "./fiche.mjs";
+import { modeDist, couleurDist, confieALHabillage } from "./habillage.mjs";
 import { svg } from "./vue.mjs";
+import { confieALaRecherche } from "./recherche.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -267,3 +269,19 @@ export function poseDistsFiche(soc){
 
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
 export const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
+
+/* La recherche, que ce module atteint par la fiche, ne peut l'importer en
+   retour : il lui confie en se chargeant ce qu'elle en appelle (les marques
+   d'une ligne de la liste, le filtre « porte cette distinction », le dessin
+   des distinctions sur le plan quand ce qui paraît change). */
+confieALaRecherche({ dessineDists, marquesListe, porteDist, standPorte });
+
+/* Les distinctions, confiées à l'habillage dès que ce module se charge : il
+   pose leurs teintes et redemande leurs marques, et ne peut importer ce
+   module, qui l'importe pour leur mode et leur couleur. */
+confieALHabillage({ distinctions: DISTINCTIONS, dessineDists, refaitDistsFiche });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant de quoi marquer les distinctions de la société
+   qu'elle ouvre. */
+confieALaFiche({ poseDistsFiche });

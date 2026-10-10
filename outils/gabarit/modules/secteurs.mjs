@@ -4,30 +4,26 @@
    Sortis de `_recherche.html` (§ 5) : l'index des secteurs, refait à chaque
    chargement (`indexeSecteurs`, que `index-salon.mjs` `indexe` appelle), la couleur
    que le plan et le sélecteur montrent, la pastille qu'une puce de critère
-   porte, et la teinte posée sur les stands. Le code soudé lit `SECTEURS` par
-   accesseur ; seul `indexeSecteurs` le remplace.
+   porte, et la teinte posée sur les stands. Seul `indexeSecteurs` remplace
+   `SECTEURS` ; la configuration, qui ne peut l'importer, le reçoit par un
+   lecteur, confié au chargement (`confieALaConfiguration`).
 
    La carte de chaleur se pose sur les mêmes formes et suit la teinte ; elle
-   n'est que d'administration (`modules/chaleur.mjs`, par `plan-admin.mjs`) :
-   `_recherche.html` la confie par `brancheSecteurs`, sous garde `typeof`.
+   n'est que d'administration (`modules/chaleur.mjs`, par `plan-admin.mjs`),
+   qui la confie à ce module en se chargeant (`confieChaleur`) : la page
+   publique, qui ne l'embarque pas, garde la teinte seule.
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
 import { hslHex } from "./couleurs.mjs";
 import { DATA, parId } from "./donnees.mjs";
-import { conf, jeton } from "./configuration.mjs";
+import { conf, jeton, confieALaConfiguration } from "./configuration.mjs";
 
-/* Ce que le code soudé confie : la carte de chaleur, qu'il n'appelle que si
-   la page l'a reçue. Rien avant le branchement. */
+/* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
 
-/**
- * Le branchement, appelé par `_recherche.html` à la place que ce code tenait.
- *
- * @param {{ coloreChaleur: () => void }} b
- */
-export function brancheSecteurs(b){
-  coloreChaleur = b.coloreChaleur;
-}
+/** La porte de la carte de chaleur, que `chaleur.mjs` ouvre en se chargeant.
+ *  @param {() => void} f */
+export function confieChaleur(f){ coloreChaleur = f; }
 
 /* Les secteurs, et la teinte de chacun.
 
@@ -148,3 +144,9 @@ export function peintSecteur(nom){
       else g.style.removeProperty("--sect-c");
     });
 }
+
+/* Les secteurs, confiés à la configuration dès que ce module se charge : elle
+   les relit pour savoir si une clé nomme un secteur, et ne peut importer ce
+   module, qui l'importe. Par un lecteur, puisque l'index les remplace à chaque
+   chargement. */
+confieALaConfiguration({ secteurs: () => SECTEURS });

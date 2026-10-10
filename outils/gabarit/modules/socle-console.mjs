@@ -9,14 +9,15 @@
    (`_console-base.html`), que tout le reste appelait sans le dire. Il vit ici,
    et les modules de la console l'importent : l'appel à la base, la barre
    d'état, les briques d'affichage, l'adresse des pages et la session ne leur
-   sont plus confiés par le code soudé. Le projet et la session (`CFG`,
-   `SESSION`) sont des états de ce module, qu'il est seul à remplacer
-   (`poseSession`) ; le code soudé les lit par accesseur.
+   sont plus confiés par le code soudé, qui n'existe plus. Le projet et la
+   session (`CFG`, `SESSION`) sont des états de ce module, qu'il est seul à
+   remplacer (`poseSession`).
 
    Ce qu'il ne peut pas importer — ce que chaque page fait après la connexion
    (`demarre`) et à la déconnexion (`videEcran`) — lui est confié par
-   `brancheSocle`, que `_console-base.html` appelle à la place que ce code
-   tenait : ce qui s'exécutait au chargement s'y exécute, au même rang.
+   `brancheSocle`, que le point d'entrée de chaque page (`console.mjs`,
+   `rapport.mjs`) appelle en premier : ce qui s'exécutait au chargement s'y
+   exécute, au même rang.
    ============================================================ */
 /* Les casiers du projet et de la session, la lecture d'un jeton et son
    échange sont communs avec le plan : `modules/session.mjs`. */

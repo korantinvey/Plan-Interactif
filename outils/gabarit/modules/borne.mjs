@@ -31,10 +31,12 @@
    peut donc pas être retenu, et chaque remise à zéro vaut une visite de plus —
    voir `mesure.mjs`.
 
-   La borne touche au tiroir de l'itinéraire, à sa visée et aux tiroirs du
-   plan, encore soudés : `_borne.html` les lui confie par `brancheBorne`, à la
-   place que ce code tenait, et c'est là que ses écoutes se posent, au même
-   rang qu'avant parmi celles du plan. La vue, elle, s'importe de `vue.mjs`.
+   Le départ qu'elle impose, et le point qui le montre, vivent à part
+   (`vous-etes-ici.mjs`) : le code affiché dans le hall les partage, et tout
+   ce qui les lit — l'itinéraire, la journée, le rendu — n'a plus à importer
+   la borne. Elle importe donc elle-même la visée, les tiroirs qu'elle
+   referme et le passage d'un pavillon à l'autre ; `_borne.html` n'y pose plus
+   que ses écoutes, au même rang qu'avant parmi celles du plan.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, state, P } from "./donnees.mjs";
@@ -43,28 +45,16 @@ import { fermeModale } from "./fenetre.mjs";
 import { renouvelleVisiteur } from "./mesure.mjs";
 import { sponsorRetenu, ouvreSponsor } from "./sponsor.mjs";
 import { pointSaisi, candidats, pointRepere } from "./itineraire.mjs";
-import { vue, svg, versPlan, cadrePlan, fit } from "./vue.mjs";
+import { vue, versPlan, fit } from "./vue.mjs";
 import { videRecherche } from "./recherche.mjs";
 import { formeParId } from "./forme-choisie.mjs";
+import { LIEU_BORNE, poseLieuBorne, dessineBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
+import { visee, poseVisee, bandeauVisee, fermeItineraire, effaceItineraire, confieVisee, suitLaVisee }
+  from "./tiroir-itineraire.mjs";
+import { ferme } from "./fiche.mjs";
+import { fermeParcours, videLeParcours } from "./tiroir-parcours.mjs";
+import { changePlan } from "./rendu.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La visée est
-   un lecteur, et elle a sa porte : elle change sans cesse. Elle vit dans
-   `tiroir-itineraire.mjs`, qui importe ce module pour le départ de la borne :
-   elle ne peut s'importer d'ici. Le tiroir du parcours non plus
-   (`tiroir-parcours.mjs`), qui importe le tiroir de l'itinéraire et la
-   journée, lesquels importent ce module. */
-/** @type {Record<string, any>} */
-let soude = {};
-
-const visee = () => soude.visee();
-const vise = (v) => soude.vise(v);
-const bandeauVisee = () => soude.bandeauVisee();
-const changePlan = (i) => soude.changePlan(i);
-const fermeItineraire = () => soude.fermeItineraire();
-const effaceItineraire = () => soude.effaceItineraire();
-const ferme = () => soude.ferme();
-const fermeParcours = () => soude.fermeParcours();
-const videLeParcours = () => soude.videLeParcours();
 const racine = document.documentElement;
 
 /* La position est gardée sous le nom du salon : le même écran peut servir
@@ -88,18 +78,6 @@ const _borneMot = (_borneDite || "").trim();
    appareil dont le navigateur vide son stockage chaque nuit — rien à retenir,
    donc rien à perdre. */
 const BORNE_LIEU_DIT = BORNE && _borneMot.toLowerCase() !== BORNE_POSER ? _borneMot : "";
-
-/* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
-   elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
-export let LIEU_BORNE = null;
-
-/** Le départ imposé, lu par l'itinéraire et par l'organisation de la journée. */
-export function pointBorne(){ return LIEU_BORNE; }
-
-/** La porte du départ imposé, pour le code affiché dans le hall
- *  (`modules/ici.mjs`), qui l'éteint : une variable importée ne se réaffecte
- *  pas d'ailleurs que de son module. */
-export function poseLieuBorne(lieu){ LIEU_BORNE = lieu; }
 
 /* ------------------------------------------------------------
    Ce que l'appareil retient
@@ -173,8 +151,8 @@ export function pointLibre(xy){ return lieuBorne(state.plan, xy, ""); }
  * sépare tient dans ce qui appelle — l'un enregistre sa position, l'autre non.
  */
 export function poseDepartImpose(pt){
-  LIEU_BORNE = lieuBorne(pt.p, pt.xy, pt.genre === "borne" ? pt.lieu : pt.nom);
-  vise(null);
+  poseLieuBorne(lieuBorne(pt.p, pt.xy, pt.genre === "borne" ? pt.lieu : pt.nom));
+  poseVisee(null);
   bandeauVisee();
   if (state.plan !== LIEU_BORNE.p) changePlan(LIEU_BORNE.p);
   dessineBorne();
@@ -204,7 +182,7 @@ export function poseLaBorne(pt){
  */
 function remetLeDepart(){
   effaceItineraire();
-  vise(null);
+  poseVisee(null);
   bandeauVisee();
 }
 
@@ -217,7 +195,7 @@ function remetLeDepart(){
  * et non ce qui se trouvait dessous.
  */
 export function poseBorneIci(clientX, clientY, cible){
-  if (visee() !== "borne") return false;
+  if (visee !== "borne") return false;
   const id = cible && !cible.dataset.id ? cible.dataset.poi : null;
   const rep = id ? formeParId(id) : null;
   return poseLaBorne(rep && rep.f.t === "repere" ? pointRepere(rep.f, P())
@@ -229,7 +207,7 @@ function armeLaPose(){
   ferme();
   fermeItineraire();
   fermeParcours();
-  vise("borne");
+  poseVisee("borne");
   bandeauVisee();
 }
 
@@ -244,64 +222,7 @@ function armeLaPose(){
 export function montreBandeauBorne(){
   const b = $("bornePose");
   if (!b) return;
-  b.hidden = !BORNE || !!LIEU_BORNE || visee() === "borne";
-}
-
-/* ------------------------------------------------------------
-   Le départ, dans le tiroir
-   ------------------------------------------------------------ */
-/**
- * Le moteur de langue ne traduit pas la valeur d'un champ de saisie — elle
- * vient du code ici, et non des données : on la réécrit donc soi-même, et
- * encore après une bascule de langue.
- */
-export function ecritDepartBorne(){
-  if (!LIEU_BORNE) return;
-  const c = $("iDepart");
-  if (c){ c.value = traduit(LIEU_BORNE.nom); c.title = LIEU_BORNE.detail; }
-}
-
-/* ------------------------------------------------------------
-   « Vous êtes ici »
-   ------------------------------------------------------------ */
-/** Rayon du point, constant à l'écran, donc exprimé en mètres d'après le zoom. */
-function rayonBorne(){
-  const r = cadrePlan();
-  return Math.max(.4, vue().w / (r.width || 1) * 7);
-}
-
-export function dessineBorne(){
-  let g = $("borneIci");
-  if (!LIEU_BORNE || !DATA || !vue() || LIEU_BORNE.p !== state.plan){
-    if (g) g.remove();
-    return;
-  }
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "borneIci";
-    // sous le trait de l'itinéraire, qui part justement d'ici
-    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
-  }
-  rempliBorne(g);
-}
-
-/** Le zoom change : le point garde sa taille à l'écran, pas celle du plan. */
-export function rafraichitBorne(){
-  const g = $("borneIci");
-  if (g && LIEU_BORNE && vue()) rempliBorne(g);
-}
-
-function rempliBorne(g){
-  const r = rayonBorne(), x = LIEU_BORNE.xy[0], y = LIEU_BORNE.xy[1];
-  g.innerHTML = '<title></title>' +
-    '<circle class="bOnde" cx="' + x + '" cy="' + y + '" r="' + (r * 2.6).toFixed(2) + '"/>' +
-    '<circle class="bPoint" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(2) + '"/>' +
-    '<text class="bNom" x="' + x + '" y="' + (y - r * 3.4).toFixed(2) +
-    '" font-size="' + (r * 2).toFixed(2) + '"></text>';
-  /* Le titre et le nom passent par « textContent » : le moteur de langue les
-     traduit là où il ne traduirait pas une valeur d'attribut construite. */
-  g.querySelector("title").textContent = LIEU_BORNE.nom;
-  g.querySelector(".bNom").textContent = LIEU_BORNE.nom;
+  b.hidden = !BORNE || !!LIEU_BORNE || visee === "borne";
 }
 
 /* ------------------------------------------------------------
@@ -386,7 +307,7 @@ export function demarreBorne(){
     const garde = borneRetenue();
     const i = garde ? DATA.plans.findIndex(p => p.id === garde.plan) : -1;
     if (i >= 0){
-      LIEU_BORNE = lieuBorne(i, garde.xy, garde.lieu);
+      poseLieuBorne(lieuBorne(i, garde.xy, garde.lieu));
       if (state.plan !== i) changePlan(i);
       dessineBorne();
       remetLeDepart();
@@ -405,15 +326,8 @@ export function demarreBorne(){
  * Appelé par `_borne.html` à la place que ce code tenait : les écoutes de la
  * borne s'y posent au même rang qu'avant parmi celles du plan — la bascule de
  * langue, le bouton de pose, et les gestes qui relancent le repos.
- *
- * @param {{ visee: () => any, vise: (v: any) => void,
- *   bandeauVisee: Function, changePlan: Function, fermeItineraire: Function,
- *   effaceItineraire: Function, ferme: Function, fermeParcours: Function,
- *   videLeParcours: Function }} b
  */
-export function brancheBorne(b){
-  soude = b;
-
+export function brancheBorne(){
   document.addEventListener("click", e => {
     const cible = /** @type {HTMLElement} */ (e.target);
     if (cible.closest && cible.closest("[data-langue]")) setTimeout(ecritDepartBorne, 0);
@@ -427,3 +341,10 @@ export function brancheBorne(b){
       addEventListener(n, relanceRepos, { passive: true, capture: true }));
   }
 }
+
+/* La visée « borne » et le bandeau de pose appartiennent à ce module, mais le
+   tiroir de l'itinéraire, qui tient la visée, ne peut plus l'importer — c'est
+   lui que la borne importe. Elle lui confie donc l'un et l'autre en se
+   chargeant, avant que rien ne vise ni ne s'affiche. */
+confieVisee("borne", poseLaBorne);
+suitLaVisee(montreBandeauBorne);

@@ -11,22 +11,21 @@ import { MENTIONS_SPONSOR, MARQUE_SPONSOR, SPONSOR_MIN, SPONSOR_MAX, reglageSpon
 import { champZone, cadreLogo } from "./fiche-zone.mjs";
 import { enregistreConf } from "./configuration.mjs";
 
-/* Ce que le branchement confie : le glissement de la fenêtre des réglages
-   (`reglages.mjs`), qui importe ce module et ne peut donc s'importer d'ici.
-   Le champ intitulé, le cadre de dépôt d'un logo et l'enregistrement de la
-   configuration s'importent. */
-/** @type {(change: () => void) => void} */
-let glisseFenetre;
-
+/* Ce que la fenêtre des réglages (`reglages.mjs`), qui importe ce module et
+   ne peut donc s'importer d'ici, lui confie en se chargeant : son
+   glissement. Le champ intitulé, le cadre de dépôt d'un logo et
+   l'enregistrement de la configuration s'importent. */
 /**
- * Le branchement du réglage, appelé par le code soudé à la place que ce code y
- * tenait (`_sponsor.html`), dans une tranche que le visiteur ne reçoit pas.
- *
- * @param {{ glisseFenetre: typeof glisseFenetre }} b
+ * @typedef {object} PreteReglageSponsor
+ * @property {typeof import("./reglages.mjs").glisseFenetre} glisseFenetre
  */
-export function brancheReglageSponsor(b){
-  glisseFenetre = b.glisseFenetre;
-}
+/** @type {PreteReglageSponsor} */
+const prete = { glisseFenetre: (change) => change() };
+const glisseFenetre = (/** @type {() => void} */ change) => prete.glisseFenetre(change);
+
+/** La porte par laquelle la fenêtre des réglages confie son glissement.
+ *  @param {Partial<PreteReglageSponsor>} o */
+export function confieAuReglageSponsor(o){ Object.assign(prete, o); }
 
 /* ------------------------------------------------------------
    Le générique dans l'onglet « Admin » des réglages

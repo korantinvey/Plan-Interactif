@@ -24,8 +24,9 @@ import { signale, rest } from "./socle-console.mjs";
 
 /* Ce que l'export tient de la page qui l'ouvre, et qu'un module ne peut pas
    importer : le salon choisi et la ligne de ce salon. La console et le
-   rapport l'ont chacun à leur façon, et le confient ici par `brancheExport`
-   (`_export.html`). Lus au moment du clic, jamais avant : le salon choisi
+   rapport l'ont chacun à leur façon, et le confient ici par `brancheExport`,
+   que leur point d'entrée appelle (`console.mjs`, `rapport.mjs`). Lus au
+   moment du clic, jamais avant : le salon choisi
    change sous les yeux de la page. La barre où l'on parle et l'appel à la
    base sont ceux du socle, que les deux partagent (`socle-console.mjs`). */
 /** @type {{ selection: () => (string|null), courant: () => any }} */

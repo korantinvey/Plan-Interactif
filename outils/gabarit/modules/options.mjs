@@ -14,13 +14,14 @@
    `confieApresOption`.
 
    Sorti de `_admin1.html`. L'apparence des calques (`apparence.mjs`), que le
-   tiroir du parcours importe, ne peut importer ce module : `_admin1.html`
-   lui confie `appliqueOptions`.
+   tiroir du parcours importe, ne peut importer ce module : celui-ci lui
+   confie `appliqueOptions` en se chargeant (`confieALApparence`).
    ============================================================ */
 import { optionActive } from "./configuration.mjs";
 import { rafraichitParcours } from "./tiroir-parcours.mjs";
 import { indexeConferences } from "./index-salon.mjs";
 import { liste } from "./recherche.mjs";
+import { confieALApparence } from "./apparence.mjs";
 
 const racine = document.documentElement;
 
@@ -130,3 +131,8 @@ export function confieApresOption(cle, apres){
   const o = OPTIONS.find(x => x.cle === cle);
   if (o) o.apres = apres;
 }
+
+/* Les options, confiées à l'apparence dès que ce module se charge : elle les
+   repose avec le reste de l'habillage, et ne peut importer ce module, qui
+   l'atteint par le tiroir du parcours. */
+confieALApparence({ appliqueOptions });

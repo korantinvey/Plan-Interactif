@@ -61,18 +61,33 @@ module.exports = [
       globals: { ...globals.serviceworker, AbortSignal: "readonly" } },
     rules: REGLES,
   },
-  /* Les modules du gabarit : de vrais modules, relus seuls. Ce qu'ils
-     confient au code soudé, la relecture des pages le tient pour déclaré.
-     Le moteur de langue, lui, est posé avant tout script de la page : un
-     module peut s'en servir pour ce qui quitte la page traduit. deck.gl
-     arrive plus tard, chargée à la demande : le rendu par la carte graphique
-     (`webgl.mjs`) ne la lit qu'une fois là. */
+  /* Les modules du gabarit : de vrais modules, relus seuls. Le moteur de
+     langue est posé avant tout script de la page : un module peut s'en
+     servir pour ce qui quitte la page traduit. deck.gl arrive plus tard,
+     chargée à la demande : le rendu par la carte graphique (`webgl.mjs`) ne
+     la lit qu'une fois là.
+
+     Et rien ne se pose sur l'objet global : c'est ainsi que le code des
+     pages s'était soudé en un seul espace de noms, chacun appelant les
+     fonctions de tous sans le dire. Un nom passe d'un module à l'autre par
+     `import`, ou par une porte (`confieALaVue`…) quand l'import bouclerait.
+     Les noms en `__` font exception : l'amorce que la construction pose
+     avant les scripts (`__plan`, `__entete`, que le démarrage consomme) et
+     ce que les essais lisent dans la page (`__essais`, `plan.mjs`). */
   {
     files: ["outils/gabarit/modules/**/*.mjs"],
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: {
       ...globals.browser, LANGUE: GLOBALES_PAGE.LANGUE, traduit: GLOBALES_PAGE.traduit,
-      deck: GLOBALES_PAGE.deck } },
-    rules: REGLES,
+      deck: GLOBALES_PAGE.deck,
+      // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
+      MARQUE_PRODUIT: "readonly" } },
+    rules: { ...REGLES, "no-restricted-syntax": ["error",
+      { selector: "CallExpression[callee.object.name='Object'][arguments.0.name=/^(globalThis|window|self)$/]",
+        message: "Rien ne se pose sur l'objet global : importez, ou confiez par une porte." },
+      { selector: "AssignmentExpression[left.object.name=/^(globalThis|window|self)$/]" +
+          ":not([left.property.name=/^__/])",
+        message: "Rien ne se pose sur l'objet global : importez, ou confiez par une porte." },
+    ] },
   },
   {
     // le service de second plan : un script à part, dans son propre monde

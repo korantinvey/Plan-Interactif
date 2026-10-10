@@ -8,11 +8,12 @@
    confie (`_webgl.html`, `_vue.html`). Le visiteur le reçoit, d'où
    `plan.mjs` : hors de l'administration, il est toujours faux.
    ============================================================ */
-import { GL } from "./webgl.mjs";
+import { GL, confieAuWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { calqueActif } from "./calques-dessin.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
+import { confieALaVue } from "./vue.mjs";
 
 /* ------------------------------------------------------------
    L'édition.
@@ -34,3 +35,8 @@ import { SORTE_GEO } from "./emplacements.mjs";
    ------------------------------------------------------------ */
 export const enEdition = () => GL.actif && ADMIN &&
   (Boolean(calqueActif) || PLACE_LIBELLES || Boolean(SORTE_GEO));
+
+/* La vue et le rendu par la carte graphique demandent si l'on édite, et ne
+   peuvent importer ce module : il le leur confie en se chargeant. */
+confieALaVue({ enEdition });
+confieAuWebgl({ enEdition });

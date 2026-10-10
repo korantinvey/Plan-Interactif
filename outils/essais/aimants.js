@@ -8,9 +8,9 @@
  * donc un pavillon connu au centimètre, des formes dessinées à côté, et l'on
  * mesure où chaque geste atterrit.
  *
- * L'outil de dessin reste soudé : ce que le module lui demande — la vue, la
- * tolérance de la main, la boîte d'une forme, l'enregistrement — est confié
- * ici par `brancheAimants`, comme `_aimants.html` le fait dans la page. Le
+ * Le module n'importe pas l'outil de dessin : ce qu'il lui demande — la vue,
+ * la tolérance de la main, la boîte d'une forme, l'enregistrement — est confié
+ * ici par `brancheAimants`, comme `outil-dessin.mjs` le fait dans la page. Le
  * document se réduit aux quelques éléments que le module lit ou pose.
  *
  *   node outils/essais/aimants.js     (chaîné dans `npm run essais`)

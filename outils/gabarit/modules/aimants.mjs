@@ -14,16 +14,16 @@
    L'outil de dessin lui-même — la forme choisie, le calque actif, l'image
    qu'on s'apprête à poser, l'historique, l'enregistrement — vit dans ses
    propres modules (`outil-dessin.mjs`, `edition.mjs`, `dessin.mjs`,
-   `calques-dessin.mjs`, `forme-choisie.mjs`). `_aimants.html` le lui
-   confie encore par `brancheAimants`, à la place que ce code y tenait ; ce qui
-   change d'un geste à l'autre se confie par un lecteur, jamais par sa
-   valeur du moment.
+   `calques-dessin.mjs`, `forme-choisie.mjs`). Ce module ne les importe pas,
+   pour s'éprouver seul dans Node (`outils/essais/aimants.js`) : `outil-dessin.mjs`
+   les lui confie en se chargeant, par `brancheAimants` ; ce qui change d'un
+   geste à l'autre se confie par un lecteur, jamais par sa valeur du moment.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { sommets } from "./itineraire.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, la
+/* Ce que l'outil de dessin confie, et rien avant qu'il l'ait fait. La vue, la
    forme choisie, le calque actif et l'image en attente sont des lecteurs :
    les gestes et la boîte à outils les remplacent sans cesse. */
 /** @type {Record<string, any>} */
@@ -43,7 +43,7 @@ const formeParId = (id) => soude.formeParId(id);
 const ajouteForme = (f) => soude.ajouteForme(f);
 /* Le choix d'une forme et ses poignées vivent dans `edition.mjs`, qui importe
    ce module-ci pour accrocher ses gestes : les importer en retour bouclerait.
-   Ils restent donc confiés par `_aimants.html`, comme le reste du dessin. */
+   Ils restent donc confiés par `outil-dessin.mjs`, comme le reste du dessin. */
 const choisitForme = (id) => soude.choisitForme(id);
 const signale = (id) => soude.signale(id);
 const memorise = () => soude.memorise();
@@ -51,9 +51,9 @@ const enregistreDessins = () => soude.enregistreDessins();
 const redessineForme = (f) => soude.redessineForme(f);
 const dessinePoignees = () => soude.dessinePoignees();
 
-/** Ce que le code soudé confie au module, appelé par `_aimants.html` à la
- *  place que ce code tenait dans le script du plan. Rien ne s'y exécute au
- *  chargement : il n'y a qu'à retenir ce qui est confié. */
+/** Ce que l'outil de dessin confie au module, appelé par `outil-dessin.mjs`
+ *  en se chargeant (et par l'essai dans Node). Rien ne s'y exécute : il n'y a
+ *  qu'à retenir ce qui est confié. */
 export function brancheAimants(page){
   soude = page;
 }

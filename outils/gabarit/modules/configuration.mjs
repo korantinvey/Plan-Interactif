@@ -9,27 +9,34 @@
    anglaise, ce que la recherche remonte ; et son rangement sur le poste
    (`enregistreConf`), sorti du réglage de la fiche, que l'administration
    prolonge d'un envoi en base. Le code soudé lit CONF et sa clé de
-   rangement par accesseur, et ne les remplace que par `ouvreConf` ; il se
-   branche par `brancheConfiguration`, à la place que ce code tenait, pour
-   confier ce que le module ne peut pas importer — les secteurs de la
-   recherche, dont le module (`secteurs.mjs`) lit lui-même la configuration.
+   rangement par accesseur, et ne les remplace que par `ouvreConf`. Les
+   secteurs de la recherche, que ce module ne peut importer — leur module
+   (`secteurs.mjs`) lit lui-même la configuration —, lui sont confiés par la
+   porte `confieALaConfiguration`, que `secteurs.mjs` ouvre en se chargeant.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
-/* Ce que le code soudé confie : les secteurs, que la recherche refait à
-   chaque chargement (`secteurs.mjs` `SECTEURS`), par un lecteur — le module
-   qui les tient importe celui-ci, et ne peut donc s'importer d'ici. */
-/** @type {() => Map<string, any>} */
-let secteurs = () => new Map();
+/* Ce qui est confié : les secteurs, que la recherche refait à chaque
+   chargement (`secteurs.mjs` `SECTEURS`), par un lecteur — le module qui les
+   tient importe celui-ci, et ne peut donc s'importer d'ici. Rien avant qu'il
+   les ait confiés : pas un secteur. */
+/**
+ * @typedef {object} PreteConfiguration
+ * @property {() => Map<string, any>} secteurs les secteurs du salon, lus à l'instant
+ */
+/** @type {PreteConfiguration} */
+const prete = { secteurs: () => new Map() };
+const secteurs = () => prete.secteurs();
 
 /**
- * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
+ * La porte des secteurs, que `secteurs.mjs` ouvre en se chargeant — avant tout
+ * le code soudé, comme le branchement qu'elle remplace.
  *
- * @param {{ secteurs: () => Map<string, any> }} b
+ * @param {Partial<PreteConfiguration>} o
  */
-export function brancheConfiguration(b){
-  secteurs = b.secteurs;
+export function confieALaConfiguration(o){
+  Object.assign(prete, o);
 }
 
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };

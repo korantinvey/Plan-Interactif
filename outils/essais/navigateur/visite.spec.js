@@ -7,8 +7,9 @@
  * passerait devant la proposition.
  */
 /* Ce que l'essai lit dans la page : la visite en cours et le rendu du plan,
-   visibles par leur nom depuis `page.evaluate`. */
-/* global TUTO, GL, rectEcranWebgl */
+   que les modules ne confient qu'aux essais (`modules/plan.mjs` `__essais`).
+   La visite change à chaque chapitre : `__essais.TUTO` est un accesseur, relu
+   à chaque fois. */
 const { test, expect } = require("@playwright/test");
 const { prepare, DONNEES } = require("./aide.js");
 
@@ -62,9 +63,12 @@ async function commenceLaVisite(page, { adresse = PLAN, donnees = null } = {}) {
  * posée de l'extérieur attend la sienne.
  */
 const auRepos = (page) => page.evaluate(() => new Promise((fini) => {
+  const essais = /** @type {any} */ (globalThis).__essais;
+  const { GL, rectEcranWebgl } = essais;
   const boite = (r) => r && { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
   const lis = () => {
     const z = document.getElementById("tutoZone");
+    const TUTO = essais.TUTO;
     return { cle: TUTO && TUTO.cle, pos: TUTO && TUTO.pos,
       zone: boite(z && (GL.actif ? rectEcranWebgl(z) : z.getBoundingClientRect())),
       bulle: boite(document.getElementById("tuto").getBoundingClientRect()) };
@@ -87,7 +91,10 @@ const recouvre = (a, b) =>
   Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
 
 /** L'étape en cours, `chapitre:étape`. */
-const etape = (page) => page.evaluate(() => (TUTO ? TUTO.cle : null));
+const etape = (page) => page.evaluate(() => {
+  const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
+  return TUTO ? TUTO.cle : null;
+});
 
 /**
  * Ce que la bulle cache d'un élément de la page, une fois arrivée à sa place —
@@ -96,6 +103,7 @@ const etape = (page) => page.evaluate(() => (TUTO ? TUTO.cle : null));
 async function cacheLElement(page, selecteur) {
   await page.waitForFunction(() => {
     const r = document.getElementById("tuto").getBoundingClientRect();
+    const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
     return !!TUTO && !!TUTO.pos && Math.round(r.left) === TUTO.pos[0] &&
            Math.round(r.top) === TUTO.pos[1];
   }, null, { polling: 100 });
@@ -111,6 +119,7 @@ async function cacheLElement(page, selecteur) {
 
 /** Un point du plan au centre d'un stand, que rien ne recouvre à l'écran. */
 const standLibre = (page) => page.evaluate(() => {
+  const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
   const st = document.getElementById("stage").getBoundingClientRect();
   for (const n of document.querySelectorAll("#stands g[data-id], svg g.stand[data-id]")) {
     const r = GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect();
@@ -137,11 +146,14 @@ test.describe("la visite guidée", () => {
         // deux ou trois images par seconde sous la carte graphique logicielle
         if (!rendu) test.slow();
         const erreurs = await commenceLaVisite(page, { adresse: PLAN + rendu, donnees: avecUnProgramme() });
-        await page.waitForFunction(() => TUTO && TUTO.cle === "zones:zone", null,
+        await page.waitForFunction(() => {
+          const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
+          return TUTO && TUTO.cle === "zones:zone";
+        }, null,
           { polling: 250, timeout: 60_000 });
         if (!rendu) {
           // c'est la carte graphique qu'on éprouve : sans elle, l'essai ne dirait rien
-          test.skip(!(await page.evaluate(() => GL.actif)), "pas de WebGL2 dans ce navigateur");
+          test.skip(!(await page.evaluate(() => /** @type {any} */ (globalThis).__essais.GL.actif)), "pas de WebGL2 dans ce navigateur");
         }
         // la zone est amenée sous les yeux, et la bulle posée à côté
         const avant = await auRepos(page);
@@ -152,6 +164,7 @@ test.describe("la visite guidée", () => {
            reposait à chaque pouls de la visite, et la carte graphique, qui
            guette le SVG, redessinait tout le plan quatre fois par seconde. */
         const auCalme = await page.evaluate(() => new Promise((fini) => {
+          const { GL } = /** @type {any} */ (globalThis).__essais;
           let ecritures = 0, peintures = 0;
           const guet = new MutationObserver((n) => { ecritures += n.length; });
           guet.observe(document.getElementById("plan"), { subtree: true, childList: true, attributes: true });

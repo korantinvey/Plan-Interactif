@@ -9,12 +9,12 @@
    rechargement.
 
    Ils vivent désormais dans ce module, comme les données du plan dans
-   `donnees.mjs`. Le code soudé les lit toujours par leur nom — le point
-   d'entrée les lui pose en accesseurs (`vivant.mjs`) — et les remplace par
-   `poseEvenements({ … })`, une seule porte. Un module, lui, les importe :
-   c'est ce qui a permis à la fiche du salon, à sa provenance, à la fiche
-   détail et à la duplication de quitter le code soudé, et au fuseau, aux
-   comptes et à la synchronisation de ne plus se les faire confier.
+   `donnees.mjs`, remplacés par `poseEvenements({ … })`, une seule porte.
+   Les modules les importent : c'est ce qui a permis à la fiche du salon, à sa
+   provenance, à la fiche détail et à la duplication de quitter le code
+   soudé, et au fuseau, aux comptes et à la synchronisation de ne plus se les
+   faire confier. Le point d'entrée confie à l'export le salon ouvert par la
+   liaison qu'il importe, toujours à jour.
 
    S'y ajoute ce qui ne tient qu'à eux : le salon ouvert (`courant`), l'écriture
    d'un salon à la base (`majEvenement`) et la lecture de ses pavillons

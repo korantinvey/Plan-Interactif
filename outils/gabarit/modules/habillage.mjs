@@ -7,9 +7,11 @@
    volets de la fenêtre des réglages (`volets.mjs`). La couleur que le
    système peint derrière l'heure s'importe (`ton-barre.mjs`). Les
    distinctions et leurs marques sur le plan et sur la fiche
-   (`distinctions.mjs`) lui sont confiées par `brancheHabillage`, à la place
-   que ce code tenait, parce qu'elles importent ce module pour leur mode et
-   leur teinte, et ne peuvent donc s'importer d'ici.
+   (`distinctions.mjs`) lui sont confiées par la porte `confieALHabillage`,
+   qu'elles ouvrent en se chargeant, parce qu'elles importent ce module pour
+   leur mode et leur teinte, et ne peuvent donc s'importer d'ici.
+   `brancheHabillage`, sans rien recevoir, pose au premier trait la barre que
+   la visite précédente a laissée, à la place que ce code tenait.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
@@ -18,22 +20,34 @@ import { MODELES, modeleRetenu, habilleModale } from "./modeles.mjs";
 import { posePoliceLibelles } from "./polices-plan.mjs";
 import { poseTonDeLaBarre } from "./ton-barre.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le plan ne
-   s'habille qu'à l'arrivée des données, bien après le branchement. */
-/** @type {Record<string, any>} */
-let soude = {};
+/* Ce qui est confié, et rien avant : le plan ne s'habille qu'à l'arrivée des
+   données, bien après le chargement des distinctions. */
+/**
+ * @typedef {object} PreteHabillage
+ * @property {any[]} distinctions les distinctions et leurs clés (`distinctions.mjs` `DISTINCTIONS`)
+ * @property {() => void} dessineDists retrace leurs marques sur le plan
+ * @property {() => void} refaitDistsFiche repose celles de la fiche ouverte
+ */
+/** @type {PreteHabillage} */
+const prete = { distinctions: [], dessineDists: () => {}, refaitDistsFiche: () => {} };
+
+/**
+ * La porte des distinctions, que `distinctions.mjs` ouvre en se chargeant —
+ * avant tout le code soudé, comme le branchement qui les recevait.
+ *
+ * @param {Partial<PreteHabillage>} o
+ */
+export function confieALHabillage(o){
+  Object.assign(prete, o);
+}
 
 const racine = document.documentElement;
 
 /**
- * Le branchement, appelé par `_admin1.html` à la place que ce code tenait.
- *
- * @param {{ distinctions: any[], dessineDists: () => void,
- *   refaitDistsFiche: () => void }} b
+ * Le branchement, appelé par `_admin1.html` à la place que ce code tenait :
+ * la barre du salon s'y pose au premier trait.
  */
-export function brancheHabillage(b){
-  soude = b;
-
+export function brancheHabillage(){
   /* La barre du salon sur un téléphone : avec bande, ou sans.
 
      Le choix se pose ici, au premier trait de la page, sur ce que la visite
@@ -182,7 +196,7 @@ export const couleurDist = (d) => {
  * coin, et « refaitDistsFiche » la repose.
  */
 export function appliqueDists(){
-  soude.distinctions.forEach(d => {
+  prete.distinctions.forEach(d => {
     const v = couleurDist(d);
     const n = "--d-" + d.cle;
     if (v){
@@ -194,8 +208,8 @@ export function appliqueDists(){
       [n, n + "-doux", n + "-ink"].forEach(x => racine.style.removeProperty(x));
     }
   });
-  soude.dessineDists();
-  soude.refaitDistsFiche();
+  prete.dessineDists();
+  prete.refaitDistsFiche();
 }
 
 /**

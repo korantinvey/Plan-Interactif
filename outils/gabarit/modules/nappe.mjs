@@ -18,6 +18,7 @@ import { PAS_GRILLE, grille } from "./itineraire.mjs";
 import { ITI } from "./tiroir-itineraire.mjs";
 import { jeton } from "./configuration.mjs";
 import { svg } from "./vue.mjs";
+import { confieAuRendu } from "./rendu.mjs";
 
 /* ------------------------------------------------------------
    Voir ce qui est praticable
@@ -74,3 +75,7 @@ export function rafraichitApercu(){
   el.setAttribute("href", cv.toDataURL());
   if (!vieux) svg.insertBefore(el, svg.querySelector("#itin, #apercu, #poignees"));
 }
+
+/* La nappe se refait au montage d'un pavillon : le rendu, que la page
+   publique porte aussi, la reçoit d'ici en se chargeant. */
+confieAuRendu({ rafraichitApercu });
