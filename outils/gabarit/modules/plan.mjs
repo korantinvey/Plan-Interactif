@@ -21,42 +21,36 @@ import { brancheItineraire } from "./itineraire.mjs";
 import { instantConf } from "./parcours.mjs";
 import { branchePartage } from "./partage.mjs";
 import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
-import { brancheRappels } from "./rappels.mjs";
 import { brancheInstallation } from "./installation.mjs";
 import { brancheBorne } from "./borne.mjs";
 import { brancheIci } from "./ici.mjs";
-import { brancheSuggestion } from "./suggestion.mjs";
 import { TUTO } from "./tutoriel.mjs";
 import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
-import { basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
-  remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
+import { fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue, cadrePlan } from "./vue.mjs";
 import { CONF } from "./configuration.mjs";
 import { brancheHabillage } from "./habillage.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { brancheBandes } from "./bandes.mjs";
-import { brancheRecherche, PREFIXE_PERSO, libelleCritere } from "./recherche.mjs";
+import { brancheRecherche } from "./recherche.mjs";
 import { view, svg } from "./vue.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheDemarrage } from "./demarrage.mjs";
-import { brancheCorpsFiche } from "./corps-fiche.mjs";
 import { ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { brancheLibelles, libelles } from "./libelles.mjs";
-import { poseDistsFiche } from "./distinctions.mjs";
-import { montePlan, changePlan } from "./rendu.mjs";
-import { DESSINS, mesCalques, calqueActif }
-  from "./calques-dessin.mjs";
-import { estCadre } from "./chemin-forme.mjs";
-import { redessineForme, apercuGuide, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
 /* Les options vendues à part ne sont plus importées par personne dans la
    page publique : elles se confient à l'apparence en se chargeant
    (`confieALApparence`), qui les repose avec le reste de l'habillage. Il faut
    donc les charger, et c'est d'ici. */
 import "./options.mjs";
+import { changePlan } from "./rendu.mjs";
+import { DESSINS, mesCalques, calqueActif } from "./calques-dessin.mjs";
+import { estCadre } from "./chemin-forme.mjs";
+import { redessineForme, apercuGuide, decoupeStand, signale } from "./dessin.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
@@ -72,41 +66,27 @@ Object.assign(globalThis, {
   brancheItineraire,
   instantConf,
   brancheWebgl,
-  brancheRappels,
   brancheInstallation,
   brancheBorne,
   brancheIci,
-  brancheSuggestion,
   finInstant,
   brancheJournee,
   retireAdmin,
   brancheTiroirItineraire,
-  basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
-  remplitParcours, fermeParcours, brancheTiroirParcours,
+  fermeParcours, brancheTiroirParcours,
   branchePartage,
   brancheVue, cadrePlan,
   brancheHabillage,
   brancheBandes,
-  brancheRecherche, PREFIXE_PERSO,
-  libelleCritere,
+  brancheRecherche,
   svg,
   brancheTonDeLaBarre,
-  brancheDemarrage, brancheCorpsFiche,
+  brancheDemarrage,
   ferme, brancheFiche,
-  brancheLibelles, poseDistsFiche,
-  montePlan, changePlan,
-  mesCalques,
-  estCadre,
-  redessineForme, apercuGuide,
-  decoupeStand, marqueStandsDessines, signale,
+  brancheLibelles, changePlan, mesCalques, estCadre, redessineForme, apercuGuide, decoupeStand, signale,
   brancheGestes, brancheLangue,
   brancheTiroirs,
 });
-
-/* La visite guidée en cours, ou rien : le module la pose en la lançant et
-   l'efface en la quittant. La proposition des rappels la lit par accesseur,
-   confiée par le code soudé, pour ne pas passer devant elle. */
-Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel"));
 
 /* La configuration du salon ouvert : le code soudé la lit encore, pour la
    confier au calcul de l'itinéraire ; seule l'ouverture d'un salon la
@@ -136,10 +116,12 @@ Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, 
    encore la page (`outils/soudure.js`) ; écrit comme une affectation, que
    `outils/modules.js` ne relit pas. La graisse et la police des libellés se
    remplacent au choix d'un modèle : elles se lisent donc par un accesseur,
-   qui rend celles du moment. */
+   qui rend celles du moment ; la visite guidée en cours aussi, que le module
+   pose en la lançant et efface en la quittant. */
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, _lg, largeur, libelles,
   adresseSure, adresseImage, imageSure, assainitRiche,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
+  get TUTO(){ return TUTO; },
 };

@@ -33,7 +33,7 @@ import { cartouchePoi, phareRepere } from "./points-interet.mjs";
 import { REDUIT } from "./ecran.mjs";
 import { visibleSociete } from "./recherche.mjs";
 import { coloreSecteurs } from "./secteurs.mjs";
-import { societes } from "./fiche.mjs";
+import { societes, confieALaFiche } from "./fiche.mjs";
 import { largeur } from "./texte-plan.mjs";
 import { libelleEmplacement, confieAuxLibelles } from "./libelles.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";
@@ -663,3 +663,8 @@ confieAuRendu({ dessineDessins });
 confieAuxPolices({ dessineDessins });
 confieAuxLibelles({ dessineDessins, decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme,
   nomSurLePlan });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant ce qu'elle en appelle (la découpe d'un stand
+   dessiné, et la marque des stands dessinés quand la sélection change). */
+confieALaFiche({ decoupeStand, marqueStandsDessines });

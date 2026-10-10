@@ -26,9 +26,10 @@
    vivent dans `modules/reglage-suggestion.mjs`, que seul `plan-admin.mjs`
    embarque. La fiche, la configuration et l'option vendue s'importent
    (`fiche.mjs`, `configuration.mjs`), les critères de la recherche de
-   `recherche.mjs`. Le tiroir du parcours est confié par `brancheSuggestion`,
-   bien que module (`tiroir-parcours.mjs`) : il importe
-   celui-ci pour y poser la proposition, et ne peut donc s'importer d'ici.
+   `recherche.mjs`. Le tiroir du parcours (`tiroir-parcours.mjs`) importe
+   celui-ci pour y poser la proposition, et ne peut donc s'importer d'ici :
+   il se confie en se chargeant, par `confieALaSuggestion`. Le code soudé ne
+   branche plus rien ici.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { COLLATION } from "./texte.mjs";
@@ -39,12 +40,23 @@ import { OUI_NON, clesCriteres, valeursCritere, libelleCritere } from "./recherc
 import { select } from "./fiche.mjs";
 import { conf, suggestionOfferte } from "./configuration.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait : le tiroir du
-   parcours. La fiche, la configuration et l'option vendue s'importent. */
-/** @type {Record<string, any>} */
-let soude = {};
-const remplitParcours = () => soude.remplitParcours();
-const brancheParcours = (hote, canal) => soude.brancheParcours(hote, canal);
+/**
+ * Ce que la suggestion emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
+ * qui l'importe pour la poser dans son tiroir : il lui confie au chargement
+ * de son module, par `confieALaSuggestion`, de quoi refaire le tiroir et
+ * poser le bouton « au parcours » — jamais le code soudé. La fiche, la
+ * configuration et l'option vendue s'importent.
+ * @typedef {{ remplitParcours: () => void,
+ *   brancheParcours: (hote: any, canal: any) => void }} PageSuggestion
+ */
+/** @type {PageSuggestion} */
+const prete = { remplitParcours: () => {}, brancheParcours: () => {} };
+
+/** La porte du tiroir du parcours, qui prête à la suggestion ce qu'elle appelle.
+ *  @param {Partial<PageSuggestion>} o */
+export function confieALaSuggestion(o){ Object.assign(prete, o); }
+const remplitParcours = () => prete.remplitParcours();
+const brancheParcours = (hote, canal) => prete.brancheParcours(hote, canal);
 
 
 /* Trois exposants du même critère : deux sont une coïncidence, quatre une
@@ -320,9 +332,3 @@ export function fenetreSuggestion(){
       { libelle: "Voir sur le plan",
         action: () => select(s.o.id, true, CANAL_SUGG) }], "sugg");
 }
-/**
- * Le branchement, appelé par `_suggestion.html` à la place que ce code tenait.
- *
- * @param {{ remplitParcours: Function, brancheParcours: Function }} b
- */
-export function brancheSuggestion(b){ soude = b; }

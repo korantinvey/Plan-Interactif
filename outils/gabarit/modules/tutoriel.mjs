@@ -57,6 +57,7 @@ import { ICI_ACTIF } from "./ici.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { calqueActif, enCours } from "./calques-dessin.mjs";
 import { formeSel } from "./forme-choisie.mjs";
+import { confieAuxRappels } from "./rappels.mjs";
 
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
    `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
@@ -1022,3 +1023,9 @@ function marqueLibelleTuto(id){
   TUTO.guet = new MutationObserver(pose);
   TUTO.guet.observe($("labels"), { childList: true });
 }
+
+/* Les rappels, que ce module atteint par le tiroir du parcours, ne peuvent
+   l'importer en retour : il leur confie en se chargeant de quoi lire la
+   visite guidée en cours, pour ne pas passer devant elle. Elle change à
+   chaque chapitre : il la confie par un lecteur, non par sa valeur. */
+confieAuxRappels({ tuto: () => TUTO });

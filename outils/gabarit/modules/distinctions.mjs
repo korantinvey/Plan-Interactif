@@ -25,7 +25,7 @@ import { esc } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { societes } from "./fiche.mjs";
+import { societes, confieALaFiche } from "./fiche.mjs";
 import { modeDist, couleurDist, confieALHabillage } from "./habillage.mjs";
 import { svg } from "./vue.mjs";
 import { confieALaRecherche } from "./recherche.mjs";
@@ -280,3 +280,8 @@ confieALaRecherche({ dessineDists, marquesListe, porteDist, standPorte });
    pose leurs teintes et redemande leurs marques, et ne peut importer ce
    module, qui l'importe pour leur mode et leur couleur. */
 confieALHabillage({ distinctions: DISTINCTIONS, dessineDists, refaitDistsFiche });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant de quoi marquer les distinctions de la société
+   qu'elle ouvre. */
+confieALaFiche({ poseDistsFiche });

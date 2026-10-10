@@ -31,11 +31,11 @@ import { oublieDists } from "./distinctions.mjs";
 import { marqueRetrait, liste } from "./recherche.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { marqueParcours } from "./parcours.mjs";
-import { dessineItineraire } from "./tiroir-itineraire.mjs";
+import { dessineItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { dessineBorne } from "./vous-etes-ici.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
-import { ferme } from "./fiche.mjs";
+import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
@@ -180,3 +180,13 @@ export function changePlan(i){
    charge, par un lecteur : elle ne retrace rien avant le premier montage, et
    ne peut importer ce module, qui l'atteint en chemin. */
 confieAuxPolices({ monte: () => MONTE });
+
+/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
+   confie en se chargeant de quoi monter le pavillon de ce qu'elle choisit,
+   quand il n'est pas celui qu'on regarde. */
+confieALaFiche({ montePlan });
+
+/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant le passage d'un pavillon à l'autre,
+   quand le trajet ou la visée mène ailleurs. */
+confieAuTiroirItineraire({ changePlan });

@@ -43,7 +43,7 @@ import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
-import { montre } from "./corps-fiche.mjs";
+import { montre, PREFIXE_PERSO, confieAuCorpsDeFiche } from "./corps-fiche.mjs";
 import { montreTiroir, mesureTiroir, hisseTiroir, confieAuxTiroirs } from "./tiroirs.mjs";
 import { largeur } from "./texte-plan.mjs";
 
@@ -149,7 +149,10 @@ export function filtreTheme(n){
    téléphone n'aurait plus de plan : les critères tiennent derrière un seul
    bouton, et ce qui est retenu se relit d'un coup d'œil sous la recherche.
    ------------------------------------------------------------ */
-export const PREFIXE_PERSO = "perso:";
+/* Le préfixe des champs propres au salon est tenu par `corps-fiche.mjs`, que
+   ce module importe et qui ne peut l'importer en retour ; il se reprend
+   d'ici pour qui l'y a toujours pris. */
+export { PREFIXE_PERSO };
 
 /* Ce qu'un critère lit sur une fiche. Les champs propres au salon vivent dans
    « perso » ; les autres sont posés à plat, chacun sous le nom que la
@@ -1186,3 +1189,8 @@ confieAuxPolices({ liste });
    un tiroir redescendu le referme, et ne peut importer ce module, qui
    l'importe pour se montrer et se hisser. */
 confieAuxTiroirs({ fermeCriteres });
+
+/* Le corps de la fiche, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant le libellé d'un champ propre au
+   salon, qu'il écrit en intitulé. */
+confieAuCorpsDeFiche({ libelleCritere });

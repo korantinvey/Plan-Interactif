@@ -9,19 +9,30 @@
    (`montreIntitule`, `libelleCorps`) et le rangement qui en sort
    (`corpsRange`) ; avec eux les pictos des réseaux sociaux.
 
-   Le préfixe des champs propres au salon et leur libellé tiennent encore à la
-   recherche, restée soudée : `_fiche.html` les confie par `brancheCorpsFiche`.
+   Le préfixe des champs propres au salon vit ici, et la recherche le reprend ;
+   leur libellé, qu'elle tient, elle le confie en se chargeant
+   (`confieAuCorpsDeFiche`) : elle importe ce module et ne peut être importée
+   par lui.
    ============================================================ */
 import { esc } from "./texte.mjs";
 import { DATA } from "./donnees.mjs";
 import { lien, adresseWeb } from "./sur.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. */
-/** @type {Record<string, any>} */
-let soude = {};
-const libelleCritere = (/** @type {string} */ cle) => soude.libelleCritere(cle);
-/** Le préfixe des champs propres au salon, `perso:` — tenu par `_recherche.html`. */
-let PREFIXE_PERSO = "";
+/**
+ * Ce que le corps de la fiche emprunte à la recherche (`recherche.mjs`), qui
+ * l'importe : le libellé d'un champ propre au salon. Elle le lui confie au
+ * chargement de son module — jamais le code soudé.
+ * @typedef {{ libelleCritere: (cle: string) => string }} PageCorpsFiche
+ */
+/** @type {PageCorpsFiche} */
+const prete = { libelleCritere: (cle) => cle };
+
+/** La porte de la recherche, qui prête au corps de la fiche ce qu'il appelle.
+ *  @param {Partial<PageCorpsFiche>} o */
+export function confieAuCorpsDeFiche(o){ Object.assign(prete, o); }
+const libelleCritere = (/** @type {string} */ cle) => prete.libelleCritere(cle);
+/** Le préfixe des champs propres au salon, que la recherche reprend d'ici. */
+export const PREFIXE_PERSO = "perso:";
 
 /* Les champs qui se taisent tant qu'on ne les a pas demandés — l'inverse de la
    règle générale, et pour la raison qui la fonde. Un champ absent du réglage
@@ -254,18 +265,3 @@ export function pictoRS(cle, v){
     '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTO_RS[cle] + '</svg></a></span>'];
 }
 
-
-/* ------------------------------------------------------------------
-   Le branchement
-   ------------------------------------------------------------------ */
-/**
- * Appelé par `_fiche.html` à la place que ce code tenait : la recherche, plus
- * haut dans le script, a déjà posé le préfixe des champs propres au salon et
- * déclaré leur libellé.
- *
- * @param {{ PREFIXE_PERSO: string, libelleCritere: (cle: string) => string }} b
- */
-export function brancheCorpsFiche(b){
-  soude = b;
-  PREFIXE_PERSO = b.PREFIXE_PERSO;
-}

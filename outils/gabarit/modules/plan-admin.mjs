@@ -15,7 +15,6 @@ import { brancheChaleur } from "./chaleur.mjs";
 import { brancheCalageCarte } from "./calage-carte.mjs";
 import { brancheAcces } from "./acces-admin.mjs";
 import "./affiche-ici.mjs";
-import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { brancheEnregistrement }
   from "./enregistrement.mjs";
 import { brancheAimants } from "./aimants.mjs";
@@ -26,7 +25,6 @@ import { vivants } from "./vivant.mjs";
    l'ouverture du mode à la porte authentifiée (`acces-admin.mjs`
    `confieALAcces`). */
 import "./bande-admin.mjs";
-import { ficheZone, basculeAffichageZone } from "./fiche-zone.mjs";
 import { branchePlacementLibelles } from "./placement-libelles.mjs";
 import { glisseFenetre } from "./reglages.mjs";
 import { brancheRepriseEmplacements } from "./reprise-emplacements.mjs";
@@ -45,11 +43,9 @@ import { brancheGestesAdmin } from "./gestes-admin.mjs";
 Object.assign(globalThis, {
   brancheChaleur,
   brancheCalageCarte, brancheAcces,
-  brancheReglageSuggestion,
   brancheEnregistrement,
   brancheAimants,
   brancheBatiments,
-  ficheZone, basculeAffichageZone,
   branchePlacementLibelles,
   glisseFenetre,
   brancheRepriseEmplacements,
