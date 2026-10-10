@@ -5,24 +5,16 @@
    plan à l'autre — vit dans `modules/itineraire.mjs` ; le tiroir, la visée et
    le trait tracé, dans `modules/tiroir-itineraire.mjs` ; la nappe de la
    grille, que seul l'exploitant voit, dans `modules/nappe.mjs`, qui importe
-   tout ce qu'il lui faut. Les deux premiers se branchent ici, à la place que
-   leur code tenait dans ce script, et reçoivent ce qu'ils ne peuvent
-   importer : le calcul, éprouvé seul hors de la page, les réglages, les
-   calques de dessin, et ce que le parcours et la journée savent des
-   conférences. Le tiroir ne reçoit plus rien : le passage d'un pavillon à
-   l'autre, la fiche et le parcours qu'il referme, les modules qui les
-   tiennent le lui confient en se chargeant. Ce que le dessin sait des
-   formes et des repères, le calcul l'importe ; le tiroir, la vue et la
-   forme d'un repère dessiné.
+   tout ce qu'il lui faut. Seul le tiroir se branche encore ici, pour poser
+   ses écoutes au rang que son code tenait dans ce script ; il ne reçoit
+   rien. Le calcul, éprouvé seul hors de la page, n'importe ni les réglages,
+   ni les calques de dessin, ni ce que le parcours et la journée savent des
+   conférences : le tiroir les lui confie en se chargeant
+   (`brancheItineraire`). Le passage d'un pavillon à l'autre, la fiche et le
+   parcours qu'il referme, les modules qui les tiennent les confient de même
+   au tiroir. Ce que le dessin sait des formes et des repères, le calcul
+   l'importe ; le tiroir, la vue et la forme d'un repère dessiné.
    ============================================================ */
-brancheItineraire({
-  conf: () => CONF,
-  dessins: () => (typeof DESSINS === "object" ? DESSINS : undefined),
-  instantConf,
-  /* Exposée par `modules/sejour.mjs` : on la confie par un détour, lu au
-     moment du calcul, comme lorsqu'elle était déclarée plus bas. */
-  finInstant: (c) => finInstant(c),
-});
 
 /* Le tiroir : la vue, il l'importe de `modules/vue.mjs`, et le reste lui est
    confié par ses modules (`confieAuTiroirItineraire`). Ses écoutes se

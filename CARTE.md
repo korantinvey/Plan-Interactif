@@ -158,7 +158,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 16. L'invitation à installer le plan
 
-### `_itineraire.html` — 30 l.
+### `_itineraire.html` — 22 l.
 
 - l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
 
@@ -1174,7 +1174,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 116 l. → plan, plan-admin
+### `modules/plan.mjs` — 96 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1518,22 +1518,22 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
-### `modules/tiroir-itineraire.mjs` — 832 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 849 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`confieAuTiroirItineraire` 57 · `changePlan` 58 · `ferme` 59 · `fermeParcours` 60
-`calculeRoute` 78 · `poseTrace` 101 · `marchesIci` 103 · `rayonBout` 108
-`arreteTracage` 141 · `peintItineraire` 147 · `lanceTracage` 198 · `dessineItineraire` 223
-`rafraichitBouts` 245 · `cadreItineraire` 268 · `champIti` 292 · `fermeSugg` 296
-`montreSugg` 303 · `choisitPoint` 337 · `valideSaisie` 346 · `effaceItineraire` 358
-`relance` 386 · `montreResultat` 428 · `poseVisee` 572 · `confieVisee` 585
-`suitLaVisee` 587 · `bandeauVisee` 589 · `armeVisee` 611 · `finVisee` 629
-`viseItineraire` 645 · `visePoi` 651 · `visePoint` 657 · `ouvreItineraire` 685
-`fermeItineraire` 713 · `versItineraire` 723 · `versItineraireDe` 726
-`brancheTiroirItineraire` 754
+`confieAuTiroirItineraire` 66 · `changePlan` 67 · `ferme` 68 · `fermeParcours` 69
+`calculeRoute` 87 · `poseTrace` 110 · `marchesIci` 112 · `rayonBout` 117
+`arreteTracage` 150 · `peintItineraire` 156 · `lanceTracage` 207 · `dessineItineraire` 232
+`rafraichitBouts` 254 · `cadreItineraire` 277 · `champIti` 301 · `fermeSugg` 305
+`montreSugg` 312 · `choisitPoint` 346 · `valideSaisie` 355 · `effaceItineraire` 367
+`relance` 395 · `montreResultat` 437 · `poseVisee` 581 · `confieVisee` 594
+`suitLaVisee` 596 · `bandeauVisee` 598 · `armeVisee` 620 · `finVisee` 638
+`viseItineraire` 654 · `visePoi` 660 · `visePoint` 666 · `ouvreItineraire` 694
+`fermeItineraire` 722 · `versItineraire` 732 · `versItineraireDe` 735
+`brancheTiroirItineraire` 763
 
 ### `modules/tiroir-parcours.mjs` — 469 l. → plan, plan-admin
 
@@ -1598,7 +1598,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `modules/vivant.mjs` — 36 l. → plan, plan-admin, console, rapport
+### `modules/vivant.mjs` — 36 l. → console, rapport
 
 - l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
 

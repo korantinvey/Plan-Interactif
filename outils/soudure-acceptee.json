@@ -1,8 +1,6 @@
 {
  "exposes": {
   "plan": [
-   "CONF",
-   "DESSINS",
    "brancheBandes",
    "brancheBorne",
    "brancheDemarrage",
@@ -12,7 +10,6 @@
    "brancheHabillage",
    "brancheIci",
    "brancheInstallation",
-   "brancheItineraire",
    "brancheJournee",
    "brancheLangue",
    "brancheLibelles",
@@ -26,8 +23,6 @@
    "brancheTonDeLaBarre",
    "brancheVue",
    "brancheWebgl",
-   "finInstant",
-   "instantConf",
    "retireAdmin"
   ],
   "plan-admin": [

@@ -11,27 +11,22 @@
    les types la tiennent pour déclarée, la construction la pose avant le
    script du plan. On n'y met donc qu'un objet littéral de noms.
    ============================================================ */
-import { vivants } from "./vivant.mjs";
 import { SLUG } from "./salon.mjs";
 import { brancheFenetre } from "./fenetre.mjs";
 import { adresseSure, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
 import { brancheMesure } from "./mesure.mjs";
 import { brancheSponsor } from "./sponsor.mjs";
-import { brancheItineraire } from "./itineraire.mjs";
-import { instantConf } from "./parcours.mjs";
 import { branchePartage } from "./partage.mjs";
 import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { brancheInstallation } from "./installation.mjs";
 import { brancheBorne } from "./borne.mjs";
 import { brancheIci } from "./ici.mjs";
 import { TUTO } from "./tutoriel.mjs";
-import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue } from "./vue.mjs";
-import { CONF } from "./configuration.mjs";
 import { brancheHabillage } from "./habillage.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { brancheBandes } from "./bandes.mjs";
@@ -47,7 +42,6 @@ import { brancheLibelles, libelles } from "./libelles.mjs";
    (`confieALApparence`), qui les repose avec le reste de l'habillage. Il faut
    donc les charger, et c'est d'ici. */
 import "./options.mjs";
-import { DESSINS } from "./calques-dessin.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
@@ -60,13 +54,10 @@ Object.assign(globalThis, {
   brancheFenetre,
   brancheMesure,
   brancheSponsor,
-  brancheItineraire,
-  instantConf,
   brancheWebgl,
   brancheInstallation,
   brancheBorne,
   brancheIci,
-  finInstant,
   brancheJournee,
   retireAdmin,
   brancheTiroirItineraire,
@@ -83,17 +74,6 @@ Object.assign(globalThis, {
   brancheGestes, brancheLangue,
   brancheTiroirs,
 });
-
-/* La configuration du salon ouvert : le code soudé la lit encore, pour la
-   confier au calcul de l'itinéraire ; seule l'ouverture d'un salon la
-   remplace (`configuration.mjs` `ouvreConf`). On change ce qu'elle contient,
-   jamais l'objet lui-même. */
-Object.defineProperties(globalThis, vivants({ CONF: () => CONF }, "ouvreConf"));
-
-/* Les calques de dessin du salon ouvert : le chargement les lit par
-   accesseur ; seule l'ouverture d'un salon les remplace (`calques-dessin.mjs`
-   `ouvreDessins`). On change ce qu'ils contiennent, jamais l'objet lui-même. */
-Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDessins"));
 
 /* Ce que les essais du navigateur lisent dans la page, et que le code soudé
    n'appelle pas : les règles de `sur.mjs` éprouvées sur des entrées hostiles,
