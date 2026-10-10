@@ -416,11 +416,26 @@ function poseModules(entree, code) {
     return "\n//# sourceMappingURL=" + path.basename(nom) + ".map\n";
   });
 }
+/* Le dictionnaire anglais hors du moteur : il en pesait les trois quarts, et
+   la plupart des visiteurs lisent le français. Il part dans son propre
+   fichier, que le moteur ne charge qu'à la demande de l'anglais
+   (`_langue.js` `chargeDico`) ; le moteur n'en garde que l'adresse. La
+   construction s'arrête si l'un des deux repères manque : un moteur qui
+   n'attendrait pas son dictionnaire resterait en français sans un mot. */
+const SOURCE_EN_LIGNE = /let SOURCE = ("(?:[^"\\]|\\.)*");/;
+const DICO_VIDE = 'const DICO_A_PART = "";';
+function sortDictionnaire(moteur) {
+  const d = moteur.match(SOURCE_EN_LIGNE);
+  if (!d || moteur.split(DICO_VIDE).length !== 2) throw new Error("dictionnaire du moteur de langue introuvable");
+  const dico = poseVersion("anglais", ".js", "window.__dicoArrive && window.__dicoArrive(" + d[1] + ");\n");
+  return moteur.replace(SOURCE_EN_LIGNE, () => "let SOURCE = null;")
+               .replace(DICO_VIDE, () => 'const DICO_A_PART = "/' + dico + '";');
+}
 function sortScripts(html) {
   const m = html.match(MODULES_EN_LIGNE), l = html.match(LANGUE_EN_LIGNE);
   if (!m || !l) throw new Error("script des modules ou de la langue introuvable");
   const modulesJs = poseModules(m[2], m[3]);
-  const langueJs = poseVersion("langue", ".js", l[1]);
+  const langueJs = poseVersion("langue", ".js", sortDictionnaire(l[1]));
   return html
     .replace(MODULES_EN_LIGNE, () => '<script ' + m[1] + ' src="/' + modulesJs + '"></script>')
     .replace(LANGUE_EN_LIGNE, () => '<script src="/' + langueJs + '"></script>');

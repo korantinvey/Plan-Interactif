@@ -92,9 +92,34 @@ test.describe("le plan public", () => {
 
   test("s'ouvre en anglais par l'adresse", async ({ page }) => {
     const erreurs = await prepare(page);
+    /* Le dictionnaire est à part (`_langue.js` `chargeDico`) : il doit être là
+       avant que le corps de la page ne soit lu, sans quoi elle paraîtrait en
+       français puis changerait sous les yeux. On relève donc ce que dit la
+       page au moment même où le document vient d'être lu. */
+    await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => {
+      window.__auDebut = /** @type {HTMLInputElement} */ (document.getElementById("q")).placeholder;
+    }));
     await page.goto(PLAN + "&lang=en");
     await attendLaListe(page);
     await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exhibitor, stand…");
+    expect(await page.evaluate(() => window.__auDebut)).toBe("Exhibitor, stand…");
+    expect(erreurs).toEqual([]);
+  });
+
+  test("en français, le dictionnaire anglais ne se charge pas ; le drapeau le demande une fois", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const dicos = [];
+    page.on("request", (r) => { if (/\/versions\/anglais\.[0-9a-f]+\.js$/.test(r.url())) dicos.push(r.url()); });
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    expect(dicos).toEqual([]);
+    await page.click("#btnLangue");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exhibitor, stand…");
+    await page.click("#btnLangue");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exposant, stand…");
+    await page.click("#btnLangue");
+    await expect(page.locator("#q")).toHaveAttribute("placeholder", "Exhibitor, stand…");
+    expect(dicos).toHaveLength(1);
     expect(erreurs).toEqual([]);
   });
 
