@@ -24,7 +24,8 @@
  * l'administration n'atteignait les visiteurs qu'au bout du délai de fraîcheur.
  *
  * Le même chemin sert aux mesures d'utilisation, en sens inverse : la page
- * pousse ses gestes, le Worker les passe à la fonction, sans rien garder.
+ * pousse ses gestes, le Worker les passe à la fonction, sans rien garder. Et
+ * aux erreurs des pages, que le Worker ramène à leur module avant de les écrire.
  *
  * Reste un dernier détour, sans rapport avec le cache : le manifeste de
  * l'application installée, complété ici du salon d'où l'on installe — son nom,
@@ -33,6 +34,7 @@
 /* Écrit par la construction, jamais versionné : sans lui, pas de déploiement
    (voir `outils/genere.js`). */
 import { VERSION_DES_PAGES } from "./pages.mjs";
+import { lisCarte, source } from "./carte.mjs";
 
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
@@ -769,6 +771,86 @@ async function mesure(requete) {
 }
 
 /**
+ * Relais des erreurs des pages (`modules/erreurs.mjs`).
+ *
+ * La page dit où son script a planté, en position minifiée : « plan.<…>.js,
+ * ligne 1, colonne 182 345 ». C'est ici, et non dans la console qui les
+ * lira, que cette position redevient un module et une ligne : chaque
+ * construction efface les scripts et les cartes d'avant, si bien que la carte
+ * d'une erreur n'existe que tant que sa version est en ligne — c'est-à-dire
+ * maintenant. Elle se lit dans les fichiers servis (`env.ASSETS`), une fois
+ * par version et par instance du Worker.
+ *
+ * Même origine que la page, et rien d'autre : une erreur ne se signale que de
+ * nos propres pages. Ce qui s'écrit est borné par la porte SQL
+ * (`erreur_publique`) ; le Worker n'y ajoute que la lecture de la carte et le
+ * numéro de la construction en ligne. Rien sur le visiteur — ni jeton, ni
+ * adresse, ni agent utilisateur — ne part vers la base.
+ */
+const PORTE_ERREURS = BASE.replace("/functions/v1/", "/rest/v1/rpc/") + "erreur_publique";
+const ERREUR_MAX = 8192;
+/* Le script d'une page du plan, tel qu'il est servi : seul lui a une carte. */
+const SCRIPT_DU_PLAN = /^\/versions\/(plan|plan-admin)\.[0-9a-f]{10}\.js$/;
+const CARTES = new Map();
+
+async function carteDuScript(chemin, env, origine) {
+  if (!CARTES.has(chemin)) {
+    CARTES.set(chemin, (async () => {
+      const r = await env.ASSETS.fetch(new Request(new URL(chemin + ".map", origine).toString()));
+      return r.ok ? lisCarte(await r.json()) : null;
+    })().catch(() => null));
+    // une instance vit longtemps : on n'y garde que les cartes du moment
+    if (CARTES.size > 4) CARTES.delete(CARTES.keys().next().value);
+  }
+  return CARTES.get(chemin);
+}
+
+/** L'endroit d'une erreur : module et ligne si la carte le dit, sinon le fichier servi. */
+async function lieuDe(e, env, origine) {
+  let chemin = "";
+  try { chemin = new URL(String(e.fichier || ""), "https://pages").pathname; } catch { /* illisible */ }
+  const ligne = Math.trunc(Number(e.ligne)), colonne = Math.trunc(Number(e.colonne));
+  if (!chemin) return "";
+  if (SCRIPT_DU_PLAN.test(chemin) && ligne > 0 && colonne > 0) {
+    const carte = await carteDuScript(chemin, env, origine);
+    // la colonne d'un navigateur se compte de un, celle d'une carte de zéro
+    const s = carte && source(carte, ligne, colonne - 1);
+    if (s) return s.fichier + ":" + s.ligne;
+  }
+  return chemin.replace(/^\//, "") + (ligne > 0 ? ":" + ligne + (colonne > 0 ? ":" + colonne : "") : "");
+}
+
+async function erreur(requete, env) {
+  if (requete.method !== "POST") return new Response("Méthode non permise", { status: 405 });
+  const origine = requete.headers.get("Origin");
+  if (origine && origine !== new URL(requete.url).origin) return new Response(null, { status: 403 });
+  const corps = await requete.text();
+  if (corps.length > ERREUR_MAX) return new Response(null, { status: 413 });
+  let paquet;
+  try { paquet = JSON.parse(corps); } catch { paquet = null; }
+  if (!paquet || typeof paquet !== "object" || !Array.isArray(paquet.erreurs)) {
+    return new Response(null, { status: 400 });
+  }
+  const erreurs = await Promise.all(paquet.erreurs.slice(0, 5).map(async (e) => ({
+    message: String((e && e.message) || "").slice(0, 300),
+    lieu: e && typeof e === "object" ? await lieuDe(e, env, requete.url) : "",
+  })));
+  await fetch(PORTE_ERREURS, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: CLE_PUBLIQUE },
+    body: JSON.stringify({
+      p_slug: String(paquet.slug ?? ""),
+      p_page: paquet.page === "admin" ? "admin" : "plan",
+      p_version: VERSION_DES_PAGES,
+      p_erreurs: erreurs,
+    }),
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
+  // la page n'attend rien : une erreur qui ne s'écrit pas ne se réessaie pas
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}
+
+/**
  * Relais des plans de visite : un aller simple, sans identité et sans cache.
  *
  * Le même chemin que la mesure, et la même absence de cache — mais pas le même
@@ -859,6 +941,8 @@ export default {
        répond en outre à toute origine, pour les portes qui ne sont pas servies
        d'ici : voir `mesure` plus haut. */
     if (url.pathname === "/api/mesure") return mesure(requete);
+    /* Les erreurs des pages : même origine, et seulement elle. */
+    if (url.pathname === "/api/erreur") return erreur(requete, env);
     /* Le plan de visite annoncé, et la charge qu'il fait : même chemin, même
        origine, et deux verbes. Le premier écrit sans rien rendre, le second
        rend sans rien écrire. */

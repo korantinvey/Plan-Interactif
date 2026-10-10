@@ -29,7 +29,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console.css` — 725 l. → console.css
+### `_console.css` — 734 l. → console.css
 
 - l.666 · Page de rapport
 
@@ -554,6 +554,14 @@ Fonctions :
 `masqueCarte` 708 · `formesMasquantes` 717 · `contourDuHall` 739 · `cheminDuHall` 746
 `poseMasqueCarte` 764 · `ditCarte` 779 · `refaitFondCarte` 789
 
+### `modules/erreurs.mjs` — 95 l. → plan, plan-admin
+
+- l.1 · Les erreurs de la page, signalées
+
+Fonctions :
+
+`denous` 38 · `lieuDansLaPile` 46 · `envoie` 52 · `signale` 64 · `brancheErreurs` 79
+
 ### `modules/essai-rappel.mjs` — 69 l. → plan-admin
 
 - l.1 · L'essai d'un vrai rappel, depuis les réglages
@@ -822,13 +830,13 @@ Fonctions :
 `montreLeJour` 741 · `perimeJournee` 756 · `oublieSejour` 771 · `ouvreOrganisation` 786
 `essaieSejour` 1166 · `lanceSejour` 1196 · `refaitSejour` 1235 · `brancheJournee` 1250
 
-### `modules/lancement.mjs` — 121 l. → plan, plan-admin
+### `modules/lancement.mjs` — 126 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`confieLancementAdmin` 69 · `lancePlan` 72
+`confieLancementAdmin` 70 · `lancePlan` 73
 
 ### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
 
@@ -1122,16 +1130,16 @@ Fonctions :
 `retientInviteRappel` 425 · `fenetreRappel` 460 · `proposeRappels` 493
 `reprendRappels` 536
 
-### `modules/rapport-utilisation.mjs` — 467 l. → rapport
+### `modules/rapport-utilisation.mjs` — 504 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
 `courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
-`chiffre` 106 · `barres` 125 · `portes` 165 · `jours` 216 · `dessineRapport` 237
-`dessineBarre` 390 · `rafraichit` 413 · `videEcran` 432 · `demarre` 438
-`brancheRapport` 457
+`erreurs` 108 · `chiffre` 131 · `barres` 150 · `portes` 190 · `jours` 241
+`dessineRapport` 262 · `dessineBarre` 427 · `rafraichit` 450 · `videEcran` 469
+`demarre` 475 · `brancheRapport` 494
 
 Éléments :
 
@@ -1660,11 +1668,12 @@ Fonctions :
 - `20260921145417_le_calage_de_la_carte_par_pavillon.sql` — plan
 - `20260922144359_la_charge_prevue_des_stands.sql` — plan_de_visite, compteur, fn enregistre_mesures, fn pose_plan_de_visite, fn charge_prevue, fn purge_presences, fn reinitialise_compteurs, fn rapport_utilisation
 - `20261008172816_la_porte_publique_des_mesures.sql` — fn mesure_publique
+- `20261010121534_les_erreurs_des_pages_du_plan.sql` — erreur_page, fn erreur_publique, fn erreurs_du_salon, fn purge_erreurs
 
 ## Le reste
 
-- `src/index.mjs` — 965 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 104 · `amontPour` 113 · `cleDe` 121 · `cleDeLot` 127 · `condense` 134 `cleVersion` 158 · `rangeLaVersion` 161 · `ditVersion` 169 · `meta` 178 · `gardable` 194 `range` 200 · `rafraichit` 207 · `entete` 242 · `oublie` 284 · `rappels` 370 · `cleApp` 415 `cheminDuSalon` 446 · `pageDuSalon` 463 · `appDuSalon` 487 · `iconesDuSalon` 533 `manifeste` 573 · `iconeApp` 662 · `mesure` 706 · `planDeVisite` 781 · `chargePrevue` 819
+- `src/index.mjs` — 1049 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 106 · `amontPour` 115 · `cleDe` 123 · `cleDeLot` 129 · `condense` 136 `cleVersion` 160 · `rangeLaVersion` 163 · `ditVersion` 171 · `meta` 180 · `gardable` 196 `range` 202 · `rafraichit` 209 · `entete` 244 · `oublie` 286 · `rappels` 372 · `cleApp` 417 `cheminDuSalon` 448 · `pageDuSalon` 465 · `appDuSalon` 489 · `iconesDuSalon` 535 `manifeste` 575 · `iconeApp` 664 · `mesure` 708 · `carteDuScript` 796 · `lieuDe` 809 `erreur` 823 · `planDeVisite` 863 · `chargePrevue` 901
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

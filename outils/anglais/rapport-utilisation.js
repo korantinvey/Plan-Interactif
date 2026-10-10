@@ -64,4 +64,11 @@ module.exports = {
   "Mesure ouverte depuis le {date}.": "Measured since {date}.",
   "Visites par jour, dans le fuseau du salon ({fuseau}). Mesure ouverte depuis le {date}.":
     "Visits per day, in the show's time zone ({fuseau}). Measured since {date}.",
+  "Erreurs des pages": "Page errors",
+  "Aucune erreur signalée sur la période.": "No error reported over the period.",
+  "endroit inconnu": "unknown location",
+  "administration": "admin",
+  "plan public": "public map",
+  "Ce que les pages du salon ont rencontré en route, et combien de fois, avec l'endroit du code. Rien n'y dit qui l'a rencontré. Gardées quatre-vingt-dix jours.":
+    "What the show's pages ran into, and how often, with the place in the code. Nothing here says who ran into it. Kept for ninety days.",
 };
