@@ -15,7 +15,7 @@ import { brancheReglageSponsor } from "./reglage-sponsor.mjs";
 import { coloreChaleur, brancheChaleur } from "./chaleur.mjs";
 import { brancheCalageCarte, oublieCalageEnCours } from "./calage-carte.mjs";
 import { ecranAcces, brancheAcces } from "./acces-admin.mjs";
-import { ouvreCodeIci } from "./affiche-ici.mjs";
+import "./affiche-ici.mjs";
 import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { majAttente, compteRescapes, rattrapeRetard, noteReglagesCharges, brancheEnregistrement }
   from "./enregistrement.mjs";
@@ -48,7 +48,6 @@ Object.assign(globalThis, {
   coloreChaleur, brancheChaleur,
   brancheCalageCarte, oublieCalageEnCours,
   ecranAcces, brancheAcces,
-  ouvreCodeIci,
   brancheReglageSuggestion,
   majAttente, compteRescapes, rattrapeRetard, noteReglagesCharges,
   brancheEnregistrement,

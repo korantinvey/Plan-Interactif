@@ -14,7 +14,7 @@ import { jourCourt, dateDeCle, jourBref, minutesDe, ecritHeure, ecritMinutes } f
 import { PARCOURS, identifiantParcours, plurielParcours, contenuParcours, instantConf, nomDeStand }
   from "./parcours.mjs";
 import { heureAuSalon, pointRepere, portesDe, ecritDistance, phraseLiaison } from "./itineraire.mjs";
-import { pointBorne } from "./borne.mjs";
+import { pointBorne } from "./vous-etes-ici.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { mesure } from "./mesure.mjs";
 import { annoncePlan, litLaCharge, brancheCharge } from "./charge-annoncee.mjs";

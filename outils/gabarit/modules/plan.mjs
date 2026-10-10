@@ -25,7 +25,8 @@ import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
 import { brancheEnvirons } from "./environs.mjs";
 import { brancheRappels } from "./rappels.mjs";
 import { brancheInstallation } from "./installation.mjs";
-import { brancheBorne, rafraichitBorne } from "./borne.mjs";
+import { brancheBorne } from "./borne.mjs";
+import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { brancheIci } from "./ici.mjs";
 import { brancheSuggestion } from "./suggestion.mjs";
 import { TUTO } from "./tutoriel.mjs";
@@ -33,12 +34,11 @@ import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { ITI, visee, poseVisee, rafraichitBouts, effaceItineraire, relance, bandeauVisee, fermeItineraire,
-  brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { rafraichitBouts, brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
-  remplitParcours, fermeParcours, videLeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
+  remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { brancheVue, cadrePlan, appliqueVue } from "./vue.mjs";
-import { CONF, brancheConfiguration, conf } from "./configuration.mjs";
+import { CONF, brancheConfiguration } from "./configuration.mjs";
 import { brancheApparence } from "./apparence.mjs";
 import { brancheHabillage } from "./habillage.mjs";
 import { P_NOM, P_CODE, branchePolices } from "./polices-plan.mjs";
@@ -85,14 +85,13 @@ Object.assign(globalThis, {
   finInstant,
   brancheJournee,
   retireAdmin,
-  ITI, poseVisee, rafraichitBouts, effaceItineraire, relance,
-  bandeauVisee, fermeItineraire,
+  rafraichitBouts,
   brancheTiroirItineraire,
   basculeParcours, poseToutAuParcours, brancheParcours, rafraichitParcours, rangParcours,
-  remplitParcours, fermeParcours, videLeParcours, brancheTiroirParcours,
+  remplitParcours, fermeParcours, brancheTiroirParcours,
   branchePartage,
   brancheVue, cadrePlan, appliqueVue,
-  brancheConfiguration, conf,
+  brancheConfiguration,
   brancheApparence,
   brancheHabillage,
   branchePolices,
@@ -137,10 +136,6 @@ Object.defineProperties(globalThis, vivants({ TUTO: () => TUTO }, "lanceTutoriel
    quoi il reste vide. */
 Object.defineProperties(globalThis, vivants({ SORTE_GEO: () => SORTE_GEO }, "modeGeometrie"));
 
-/* La visée de l'itinéraire en cours, ou rien : la borne la lit encore par le
-   code soudé, qui la lui confie. Elle ne change que par sa porte
-   (`poseVisee`), par laquelle la borne l'arme pour elle. */
-Object.defineProperties(globalThis, vivants({ visee: () => visee }, "poseVisee"));
 /* La configuration du salon ouvert : le code soudé la lit encore, pour la
    confier au calcul de l'itinéraire ; seule l'ouverture d'un salon la
    remplace (`configuration.mjs` `ouvreConf`). On change ce qu'elle contient,

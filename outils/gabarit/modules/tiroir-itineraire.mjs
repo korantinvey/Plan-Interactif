@@ -17,14 +17,19 @@
    journée organisée prend le trait (`poseTrace`), la borne et l'affiche du
    code arment la visée (`poseVisee`) — et s'importent donc comme des états
    vivants.
+
+   La borne et le code affiché dans le hall importent ce module, et lui ne les
+   importe pas : ce qu'il leur doit — le départ qu'ils imposent — vit dans
+   `vous-etes-ici.mjs`, et ce qu'ils font d'une visée qui les regarde, ou d'un
+   bandeau qui doit céder la place, ils le lui confient en se chargeant
+   (`confieVisee`, `suitLaVisee`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { mesure } from "./mesure.mjs";
 import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarches, coupeMarche,
   distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison } from "./itineraire.mjs";
-import { pointBorne, poseLaBorne, montreBandeauBorne, ecritDepartBorne } from "./borne.mjs";
-import { montreBandeauIci } from "./ici.mjs";
+import { pointBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg } from "./vue.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { formeParId } from "./forme-choisie.mjs";
@@ -550,6 +555,21 @@ export let visee = null;
  *  la visite guidée l'éteint. */
 export function poseVisee(v){ visee = v; }
 
+/* Une visée qui n'est pas un bout de trajet — poser la borne, désigner
+   l'endroit d'un code — appartient au module qui l'arme : il dit ici ce que
+   devient le point désigné. Et les bandeaux qui occupent la même place que
+   celui de la visée lui sont confiés de même, pour céder le passage. Les deux
+   s'inscrivent au chargement de leur module. */
+/** @type {Record<string, (pt: any) => any>} */
+const VISEES = {};
+/** @type {Array<() => void>} */
+const SUIVENT_LA_VISEE = [];
+
+/** @param {string} genre @param {(pt: any) => any} f */
+export function confieVisee(genre, f){ VISEES[genre] = f; }
+/** @param {() => void} f */
+export function suitLaVisee(f){ SUIVENT_LA_VISEE.push(f); }
+
 export function bandeauVisee(){
   const b = $("viseur");
   if (b){
@@ -566,11 +586,10 @@ export function bandeauVisee(){
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
   $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
   /* Le bandeau d'une borne à poser s'efface le temps du geste : c'est le même
-     état, dit deux fois, et deux bandeaux ne se lisent plus. */
-  montreBandeauBorne();
-  /* Le rappel du code affiché, lui, occupe la même place au bas de l'écran :
-     il cède le passage plutôt que de se superposer (voir `_ici.html`). */
-  montreBandeauIci();
+     état, dit deux fois, et deux bandeaux ne se lisent plus. Le rappel du code
+     affiché, lui, occupe la même place au bas de l'écran : il cède le passage
+     plutôt que de se superposer (`borne.mjs`, `ici.mjs`). */
+  SUIVENT_LA_VISEE.forEach(f => f());
 }
 
 function armeVisee(r){
@@ -625,8 +644,7 @@ function visePoint(pt){
      ailleurs (voir « _borne.html »). Désigner l'endroit d'un code non plus
      (voir « _ici.html ») — et c'est par ici que passe le clavier, là où le
      doigt est tranché plus tôt, dans la chaîne des appuis sur le plan. */
-  if (visee === "borne") return poseLaBorne(pt);
-  if (visee === "ici" && soude.ouvreCodeIci) return soude.ouvreCodeIci(pt);
+  if (VISEES[visee]) return VISEES[visee](pt);
   const r = visee;
   ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
@@ -715,9 +733,7 @@ export function versItineraireDe(pt){
  * se posent au même rang qu'avant parmi celles du plan — celle de la touche
  * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit.
  *
- * @param {{
- *   changePlan: Function, ferme: Function, fermeParcours: Function,
- *   ouvreCodeIci: Function | null }} b
+ * @param {{ changePlan: Function, ferme: Function, fermeParcours: Function }} b
  */
 export function brancheTiroirItineraire(b){
   soude = b;

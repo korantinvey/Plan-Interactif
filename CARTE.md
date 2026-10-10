@@ -31,7 +31,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.2 · 11 quinquies. Bâtiments de la bibliothèque — le branchement
 
-### `_borne.html` — 19 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_borne.html` — 11 l.
 
 - l.1 · 11 quinquies. La borne interactive — le branchement
 
@@ -150,7 +150,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#reessaie`
 
-### `_ici.html` — 15 l.
+### `_ici.html` — 14 l.
 
 - l.1 · 11 septies. « Vous êtes ici » — le branchement
 
@@ -166,7 +166,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 16. L'invitation à installer le plan
 
-### `_itineraire.html` — 33 l.
+### `_itineraire.html` — 28 l.
 
 - l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
 
@@ -292,7 +292,7 @@ Fonctions :
 
 - l.1 · Point d'entrée de la page d'accueil — la racine
 
-### `modules/affiche-ici.mjs` — 391 l. → plan-admin
+### `modules/affiche-ici.mjs` — 397 l. → plan-admin
 
 - l.1 · « Vous êtes ici » — l'affiche à coller, côté exploitant
 
@@ -408,20 +408,16 @@ Fonctions :
 `reposeBatiment` 417 · `ajouteBatiments` 433 · `brancheBatiments` 485 · `boutonRecale` 527
 `pictoRecale` 536 · `calageRelu` 553 · `rouvreCalage` 579
 
-### `modules/borne.mjs` — 429 l. → plan, plan-admin
+### `modules/borne.mjs` — 350 l. → plan, plan-admin
 
 - l.1 · La borne interactive — un plan qui sait où il est
 
 Fonctions :
 
-`visee` 59 · `vise` 60 · `bandeauVisee` 61 · `changePlan` 62 · `fermeItineraire` 63
-`effaceItineraire` 64 · `ferme` 65 · `fermeParcours` 66 · `videLeParcours` 67
-`pointBorne` 97 · `poseLieuBorne` 102 · `borneRetenue` 110 · `retientBorne` 116
-`oublieBorne` 119 · `lieuBorne` 138 · `lieuNomme` 157 · `pointLibre` 162
-`poseDepartImpose` 175 · `poseLaBorne` 186 · `remetLeDepart` 205 · `poseBorneIci` 219
-`armeLaPose` 228 · `montreBandeauBorne` 244 · `ecritDepartBorne` 258 · `rayonBorne` 268
-`dessineBorne` 273 · `rafraichitBorne` 289 · `rempliBorne` 294 · `relanceRepos` 323
-`reposeLaBorne` 330 · `demarreBorne` 366 · `brancheBorne` 414
+`borneRetenue` 88 · `retientBorne` 94 · `oublieBorne` 97 · `lieuBorne` 116 · `lieuNomme` 135
+`pointLibre` 140 · `poseDepartImpose` 153 · `poseLaBorne` 164 · `remetLeDepart` 183
+`poseBorneIci` 197 · `armeLaPose` 206 · `montreBandeauBorne` 222 · `relanceRepos` 244
+`reposeLaBorne` 251 · `demarreBorne` 287 · `brancheBorne` 330
 
 ### `modules/calage-carte.mjs` — 819 l. → plan-admin
 
@@ -869,14 +865,14 @@ Fonctions :
 
 `minutesVisite` 28 · `lueHeure` 55 · `lueDate` 59 · `datesSalon` 66 · `horairesSalon` 80
 
-### `modules/ici.mjs` — 255 l. → plan, plan-admin
+### `modules/ici.mjs` — 252 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
 
 Fonctions :
 
-`relance` 63 · `litCodeIci` 94 · `poseIci` 117 · `retireIci` 144 · `oublieIciDeLAdresse` 174
-`montreBandeauIci` 190 · `demarreIci` 224 · `brancheIci` 246
+`litCodeIci` 90 · `poseIci` 113 · `retireIci` 140 · `oublieIciDeLAdresse` 170
+`montreBandeauIci` 186 · `demarreIci` 220 · `brancheIci` 240
 
 ### `modules/icone-app.mjs` — 126 l. → plan-admin
 
@@ -1188,11 +1184,11 @@ Fonctions :
 `pousseLibelle` 128 · `libellePointerDown` 136 · `libellePointerMove` 152
 `libellePointerUp` 161 · `branchePlacementLibelles` 176
 
-### `modules/plan-admin.mjs` — 86 l. → plan-admin
+### `modules/plan-admin.mjs` — 85 l. → plan-admin
 
 - l.1 · Point d'entrée de la page d'administration du plan
 
-### `modules/plan.mjs` — 190 l. → plan, plan-admin
+### `modules/plan.mjs` — 185 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -1534,21 +1530,21 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
-### `modules/tiroir-itineraire.mjs` — 796 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 812 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`changePlan` 37 · `ferme` 38 · `fermeParcours` 39 · `calculeRoute` 57 · `poseTrace` 80
-`marchesIci` 82 · `rayonBout` 87 · `arreteTracage` 120 · `peintItineraire` 126
-`lanceTracage` 177 · `dessineItineraire` 202 · `rafraichitBouts` 224 · `cadreItineraire` 247
-`champIti` 271 · `fermeSugg` 275 · `montreSugg` 282 · `choisitPoint` 316
-`valideSaisie` 325 · `effaceItineraire` 337 · `relance` 365 · `montreResultat` 407
-`poseVisee` 551 · `bandeauVisee` 553 · `armeVisee` 576 · `finVisee` 594
-`viseItineraire` 610 · `visePoi` 616 · `visePoint` 622 · `ouvreItineraire` 651
-`fermeItineraire` 679 · `versItineraire` 689 · `versItineraireDe` 692
-`brancheTiroirItineraire` 722
+`changePlan` 42 · `ferme` 43 · `fermeParcours` 44 · `calculeRoute` 62 · `poseTrace` 85
+`marchesIci` 87 · `rayonBout` 92 · `arreteTracage` 125 · `peintItineraire` 131
+`lanceTracage` 182 · `dessineItineraire` 207 · `rafraichitBouts` 229 · `cadreItineraire` 252
+`champIti` 276 · `fermeSugg` 280 · `montreSugg` 287 · `choisitPoint` 321
+`valideSaisie` 330 · `effaceItineraire` 342 · `relance` 370 · `montreResultat` 412
+`poseVisee` 556 · `confieVisee` 569 · `suitLaVisee` 571 · `bandeauVisee` 573
+`armeVisee` 595 · `finVisee` 613 · `viseItineraire` 629 · `visePoi` 635 · `visePoint` 641
+`ouvreItineraire` 669 · `fermeItineraire` 697 · `versItineraire` 707
+`versItineraireDe` 710 · `brancheTiroirItineraire` 738
 
 ### `modules/tiroir-parcours.mjs` — 437 l. → plan, plan-admin
 
@@ -1632,6 +1628,15 @@ Fonctions :
 `nomDuTon` 794 · `svgVignette` 803 · `barreVignette` 805 · `vignetteDistPlan` 809
 `vignetteDistListe` 822 · `vignetteDistFiche` 836 · `salonDitSes` 856 · `coinPris` 863
 `voletDist` 886 · `voletApparence` 1051
+
+### `modules/vous-etes-ici.mjs` — 89 l. → plan, plan-admin
+
+- l.1 · « Vous êtes ici » — le départ imposé, et son point sur le plan
+
+Fonctions :
+
+`pointBorne` 27 · `poseLieuBorne` 32 · `ecritDepartBorne` 42 · `rayonBorne` 52
+`dessineBorne` 57 · `rafraichitBorne` 73 · `rempliBorne` 78
 
 ### `modules/vue.mjs` — 573 l. → plan, plan-admin
 

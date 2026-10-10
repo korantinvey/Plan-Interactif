@@ -29,7 +29,7 @@ import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles } from "./webgl.mjs";
 import { view, cadrePlan, repeintLibelles } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete, liste } from "./recherche.mjs";
-import { rafraichitBorne } from "./borne.mjs";
+import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";

@@ -25,9 +25,4 @@ brancheItineraire({
 
 /* Le tiroir : la vue, il l'importe de `modules/vue.mjs`. Ses écoutes se
    posent ici, au rang qu'elles tenaient parmi celles du plan. */
-brancheTiroirItineraire({
-  changePlan, ferme, fermeParcours,
-  /* Désigner l'endroit d'un code affiché n'est qu'à l'exploitant
-     (`modules/affiche-ici.mjs`) : la page publique ne l'a pas. */
-  ouvreCodeIci: typeof ouvreCodeIci === "function" ? ouvreCodeIci : null,
-});
+brancheTiroirItineraire({ changePlan, ferme, fermeParcours });

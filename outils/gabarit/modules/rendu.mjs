@@ -31,7 +31,7 @@ import { marqueRetrait, liste } from "./recherche.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { marqueParcours } from "./parcours.mjs";
 import { dessineItineraire } from "./tiroir-itineraire.mjs";
-import { dessineBorne } from "./borne.mjs";
+import { dessineBorne } from "./vous-etes-ici.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
 import { ferme } from "./fiche.mjs";
