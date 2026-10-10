@@ -6,7 +6,9 @@
 const http = require("http"), https = require("https"), fs = require("fs");
 const path = require("path");
 const DIR = path.join(__dirname, "..", "web") + path.sep;
-const AMONT = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
+/* Le projet que vise la construction (`outils/projet.js`) : la production chez
+   soi, sauf `PLAN_PROJET=recette`. */
+const AMONT = require("./projet.js").projetDeLaConstruction().url + "/functions/v1/plan-public";
 /* La forme d'un nom de salon, la même qu'au relais : elle sert à reconnaître
    l'adresse propre à un salon comme à contrôler ce qu'on relaie. */
 const SALON = /^[a-z0-9][a-z0-9-]{0,63}$/;

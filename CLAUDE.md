@@ -4,6 +4,15 @@ Plans de salon interactifs alimentés par Klipso (API GAIA), avec une console
 d'administration multi-événements. Le `README.md` décrit le système et son
 déploiement ; ce fichier ne retient que ce qui se paie cher quand on l'ignore.
 
+**Ce fichier dit les règles ; `CARTE.md` dit où sont les choses.** La carte est
+produite à chaque construction : pour chaque module, ses sections, ses
+fonctions avec leur ligne, les éléments qu'il désigne, ce qu'il importe, qui
+l'importe, et ses portes. Ce que ce guide en recopiait en prose a vieilli plus
+vite qu'on ne le corrigeait — près d'un commit sur deux le retouchait. Il ne
+nomme donc plus, par intention, que le module par où entrer, et chaque module
+dit en tête ce qu'il fait et pourquoi. `npm run guide` vérifie que tout fichier
+et toute fonction cités ici existent encore.
+
 ## La chaîne de fabrication
 
 Les pages de `web/` ne sont pas écrites à la main : elles sont **assemblées**
@@ -15,15 +24,12 @@ contrôles, chacun chez soi par `npm run construire`. Seuls `web/polices/` et
 ```
 outils/gabarit/*.html, *.css → outils/tpl-multi.html → web/*.html
 outils/gabarit/modules/*.mjs  → esbuild, un script par point d'entrée → posé dans web/*.html
-outils/gabarit/_styles-*.css                  → web/versions/plan.<empreinte>.css (plan public et
-                                                administration ; la démonstration la garde en elle)
-script des modules et moteur de langue de chaque page du plan
-                                              → web/versions/<entrée|langue>.<empreinte>.js, chargés
-                                                à leur place, sans `defer` (`genere.js` `sortScripts`)
-dictionnaire anglais de chaque page du plan   → web/versions/anglais.<empreinte>.js, chargé par le
-                                                moteur seulement quand l'anglais est demandé
+outils/gabarit/_styles-*.css                  → web/versions/plan.<empreinte>.css
+script des modules et moteur de langue        → web/versions/<entrée|langue>.<empreinte>.js
+dictionnaire anglais de chaque page du plan   → web/versions/anglais.<empreinte>.js, chargé à la demande
 outils/gabarit/_console.css                   → web/console.css
 outils/gabarit/_sw.js + outils/pwa.js         → web/sw.js, manifeste, icônes
+outils/projet.js                              → web/config.js, src/pages.mjs (projet Supabase)
 outils/gabarit/** + supabase/**               → CARTE.md
 ```
 
@@ -37,129 +43,74 @@ npm run construire   # construit web/ pour essayer chez soi (npm run essai)
 npm run verifie      # construit, contrôle tout, et dit si CARTE.md était en retard
 ```
 
-`CARTE.md`, lui, reste versionné — on le lit sans rien construire. Lancez
+`CARTE.md` reste versionné — on le lit sans rien construire. Lancez
 `npm run verifie` avant de valider : il le refait et signale s'il bougeait.
 
 ## Les modules
 
-Le code des pages a longtemps été un seul script par page : des morceaux mis
-bout à bout dans un espace de noms unique (`outils/gabarit/_*.html`), où
-chacun appelait les fonctions de tous les autres sans le dire — le « code
-soudé ». Il n'en reste plus rien : tout le JavaScript vit dans de vrais
-modules, `outils/gabarit/modules/*.mjs`, qui disent ce qu'ils importent et ce
-qu'ils exportent ; le gabarit n'est plus que du balisage (`_head.html`, et la
-balise des données dans `_js.html`). esbuild (dépendance de développement,
-version épinglée) les réunit par point d'entrée — `plan.mjs` pour le plan
-public et la démonstration, `plan-admin.mjs` pour l'administration,
-`console.mjs` et `rapport.mjs` pour les deux écrans de l'exploitant,
-`motdepasse.mjs` pour la page du mot de passe, `accueil.mjs` pour la racine —
-en un script par page. Celui du plan public et de l'administration est
-**minifié**, avec sa carte de correspondance posée à côté de lui
-(`versions/<entrée>.<empreinte>.js.map`) : la console du navigateur ramène
-alors chaque erreur au module et à la ligne d'origine. La carte ne porte pas
-les sources, que le visiteur ne reçoit toujours pas. `PLAN_LISIBLE=1 npm run
-construire` rend un script ni minifié ni renommé, pour lire la page telle
-quelle ; les écrans de l'exploitant le restent toujours (`outils/modules.js`
-`MINIFIES`). Ce que la construction verse dans le code passe par `define`
-(`genere.js` `DEFINIS`, la marque du produit `MARQUE_PRODUIT`), jamais par
-une substitution après coup, qui décalerait la carte. Ce script est posé après tout le balisage et les données
-(`genere.js` `poseModulesDuPlan`, `poseModulesSeuls`), et la construction
-refuse un script resté en ligne après eux.
+Tout le JavaScript vit dans `outils/gabarit/modules/*.mjs` ; le gabarit n'est
+plus que du balisage (`_head.html`, et la balise des données dans `_js.html`).
+esbuild (version épinglée) les réunit par point d'entrée : `plan.mjs` (plan
+public et démonstration), `plan-admin.mjs` (administration), `console.mjs`,
+`rapport.mjs`, `motdepasse.mjs`, `accueil.mjs`. Le script du plan public et de
+l'administration est minifié, avec sa carte de correspondance à côté (sans les
+sources) ; `PLAN_LISIBLE=1 npm run construire` le rend lisible. Ce que la
+construction verse dans le code passe par `define` (`genere.js` `DEFINIS`),
+jamais par une substitution après coup, qui décalerait la carte.
 
-**Le lancement du plan, et son ordre.** Ce que le script soudé faisait en
-dernier — appeler, morceau après morceau, les branchements qui posent les
-écoutes de chaque domaine — vit dans `modules/lancement.mjs` `lancePlan`,
-dans l'ordre exact d'avant. **L'ordre est le comportement** : « Échap »
-referme la fenêtre avant le tiroir parce que l'une s'écoute avant l'autre ;
-un branchement ne change de rang qu'en sachant ce qu'il déplace. Ce que seule
-l'administration a s'intercale aux rangs que tenaient ses tranches : quatre
-emplacements que `plan-admin.mjs` remplit avant de lancer
-(`confieLancementAdmin`). C'est pourquoi chaque point d'entrée lance
-lui-même, à la fin de son chargement : `plan.mjs` pour la page publique et la
-démonstration, `plan-admin.mjs` — qui reprend d'abord tout `plan.mjs` — pour
-l'administration.
+Ce code a longtemps été un seul script par page, des morceaux mis bout à bout
+où chacun appelait les fonctions de tous les autres — le « code soudé ». Les
+gestes qui l'empêchent de revenir :
 
-Les gestes qui vont avec :
-
-- **Une fonction s'importe.** Une fonction recopiée dans deux pages — c'était
-  le cas de `$`, `esc`, `separeValeurs` — devient un seul module importé deux
-  fois. Ce qui ne sert qu'au module n'est pas exporté.
-- **Une boucle d'imports se défait d'abord par un module neutre.** Presque
-  toutes venaient de données ou de dessin rangés dans un module d'interface :
-  la question posée sortie de la liste (`filtre.mjs`), le cartouche des
-  repères sorti de leur fiche (`cartouche-poi.mjs`), le tracé d'un trajet
-  sorti de son tiroir (`trace-itineraire.mjs`), le signet et le lot du
-  parcours sortis du tiroir vers la liste (`parcours.mjs`). Un état que deux
-  modules se disputent sort de même dans un module qu'ils importent tous
-  deux — le départ imposé, dans `vous-etes-ici.mjs`, a rendu la borne libre
-  d'importer les tiroirs. Une règle que plusieurs modules appliquaient chacun
-  pour soi devient un **registre** où ils s'inscrivent : un seul tiroir à la
-  fois (`tiroirs-exclusifs.mjs`), un seul mode d'édition à la fois
-  (`modes-edition.mjs`). Un module de base qui doit dire à ceux qui
-  l'importent ce qui vient de changer l'**annonce**, et ils s'y inscrivent
-  (`parcours.mjs` `suitLeParcours`).
+- **Une fonction s'importe.** Une fonction recopiée dans deux pages devient un
+  seul module importé deux fois. Ce qui ne sert qu'au module n'est pas exporté.
+- **Une boucle d'imports se défait d'abord par un module neutre** : la donnée
+  ou le dessin rangés dans un module d'interface en sortent (`filtre.mjs`,
+  `cartouche-poi.mjs`, `trace-itineraire.mjs`). Une règle que plusieurs
+  modules appliquaient chacun pour soi devient un **registre** où ils
+  s'inscrivent (`tiroirs-exclusifs.mjs`, `modes-edition.mjs`). Un module de base
+  qui doit dire ce qui vient de changer l'**annonce**, et les autres s'y
+  inscrivent (`parcours.mjs` `suitLeParcours`).
 - **Une porte, en dernier recours, et avec sa raison.** Une fonction qu'un
   module de base appelle chez un module qui l'importe lui est confiée par ce
-  dernier **en se chargeant**, par une porte du module de base nommée
-  `confie…`, sur un objet typé aux défauts sans effet ; elle s'ouvre au
-  chargement, donc avant tout appel. C'est par les portes que le code se
-  ressouderait : il y en eut trente-huit, il en reste dix-neuf, chacune
-  inscrite avec son genre et sa raison dans `outils/portes-acceptees.json`.
-  Quatre genres seulement : la **partition** public / administration (le
-  public appelle ce que seule l'administration embarque — la plupart), le
-  **rendu** (ce que chaque image d'un geste rappelle dans un ordre fixe :
-  `confieALaVue`, `confieAuWebgl`, `confieAuxPolices`), le **registre** (des
-  modules y inscrivent une réaction : `confieApresOption`, `confieVisee`),
-  et l'**administration** entre elle (trois inversions entre l'accès,
-  l'enregistrement, les gestes et la reprise). `npm run portes`, que
-  `npm run verifie` et l'intégration lancent, fait échouer une porte
-  absente de la liste comme une porte de la liste qui n'existe plus, et
-  **toute boucle d'imports**, qu'il nomme module par module : esbuild en
-  accepte une sans rien dire, et l'ordre de chargement devient celui du
-  hasard. Avant d'inscrire une porte, cherchez le module neutre ; pour
-  savoir si un module peut en importer un autre, regardez si le second
-  atteint déjà le premier.
-- **Un module que plus rien n'importe mais qui s'inscrit doit rester
-  chargé** : le point d'entrée l'importe sans nom, avec un commentaire
-  (`import "./edition-en-cours.mjs";`, `import "./options.mjs";`).
-- **Un module qui s'éprouve seul dans Node reçoit ses dépendances** au lieu
-  de les importer — `aimants.mjs`, `itineraire.mjs` : c'est le module qui les
-  tient qui les lui confie au chargement (`outil-dessin.mjs`,
-  `tiroir-itineraire.mjs`), comme les essais le font dans Node.
-- **Rien ne s'expose sur l'objet global.** C'est ainsi que le code s'était
-  soudé ; ESLint refuse désormais qu'un module y écrive (`eslint.config.js`,
-  `no-restricted-syntax`), hors des noms en `__` — l'amorce que pose la
-  construction, ce que lisent les essais.
-- **Ce que seuls les essais lisent** va dans `globalThis.__essais`
-  (`plan.mjs`).
-- `npm run verifie`, `npm run lint`, `npm run types` et `npm run portes`
-  relisent les modules : ESLint comme des modules, TypeScript depuis les
-  points d'entrée, la traduction comme toute source affichée, `CARTE.md`
-  avec les points d'entrée qui les embarquent, et le graphe des imports avec
-  ses portes.
+  dernier en se chargeant, par une porte `confie…` aux défauts sans effet.
+  Chacune est inscrite avec son genre et sa raison dans
+  `outils/portes-acceptees.json` — `partition` (le public appelle ce que seule
+  l'administration embarque), `rendu`, `registre`, `administration`.
+  `npm run portes` fait échouer une porte absente de la liste, une porte de la
+  liste qui n'existe plus, et **toute boucle d'imports**, nommée module par
+  module : esbuild en accepte une sans rien dire, et l'ordre de chargement
+  devient celui du hasard. Pour savoir si un module peut en importer un autre,
+  regardez dans `CARTE.md` si le second atteint déjà le premier.
+- **Un module que plus rien n'importe mais qui s'inscrit reste chargé** : le
+  point d'entrée l'importe sans nom, avec un commentaire
+  (`import "./edition-en-cours.mjs";`).
+- **Un module qui s'éprouve seul dans Node reçoit ses dépendances** au lieu de
+  les importer (`aimants.mjs`, `itineraire.mjs`, `sejour.mjs`) ; c'est le
+  module qui les tient qui les lui confie, comme les essais le font.
+- **Rien ne s'expose sur l'objet global.** ESLint refuse qu'un module y écrive
+  (`eslint.config.js`), hors des noms en `__`. Ce que seuls les essais lisent va
+  dans `globalThis.__essais` (`plan.mjs`).
+
+**Le lancement, et son ordre.** `modules/lancement.mjs` `lancePlan` pose les
+écoutes de chaque domaine dans un ordre fixe, et **l'ordre est le
+comportement** : « Échap » referme la fenêtre avant le tiroir parce que l'une
+s'écoute avant l'autre. Un branchement ne change de rang qu'en sachant ce qu'il
+déplace. L'administration remplit quatre emplacements avant de lancer
+(`confieLancementAdmin`) ; chaque point d'entrée lance lui-même, à la fin de
+son chargement.
 
 ## Ce que le visiteur ne reçoit pas
 
-Le plan public et l'administration partagent leurs modules et leur
-balisage ; ce qui ne sert qu'à l'exploitant n'atteint pas le visiteur, par
-deux partitions.
-
 **Le JavaScript, par le point d'entrée.** `plan-admin.mjs` reprend `plan.mjs`
-en entier (`import "./plan.mjs"`) et y ajoute les modules de l'exploitant —
-un seul script par page, sans quoi deux exemplaires d'un module partagé
-auraient deux états. Le geste qui va avec : **un module d'exploitant
-s'importe dans `plan-admin.mjs`, jamais dans `plan.mjs`**, et ses
-branchements prennent place dans les emplacements du lancement. Ce que la
-page publique appelle chez l'administration lui est confié par le module
-d'exploitant en se chargeant, par une porte du module public aux défauts
-sans effet (`confieAuRendu`, `confieAuDemarrage`, `confieALIndex`,
-`confieAuxCalques`) ; une fonction que le public appelle sans s'en servir
-garde son nom dans un module public et reçoit son contenu ainsi —
-`construitPanneau` (`ordre-trace.mjs`, contenu par `pile.mjs`),
-`retourAuxReglages` (`fenetre.mjs`, contenu par `reglages.mjs`).
+en entier et y ajoute les modules de l'exploitant — un seul script par page,
+sans quoi deux exemplaires d'un module partagé auraient deux états. **Un module
+d'exploitant s'importe dans `plan-admin.mjs`, jamais dans `plan.mjs`** ; ce que
+la page publique appelle chez lui lui est confié par une porte de genre
+`partition`.
 
-**Le balisage, par des tranches.** Dans `_head.html`, ce qui ne sert qu'à
-l'administration est borné :
+**Le balisage, par des tranches** de `_head.html`, bornées sur des lignes
+entières :
 
 ```
 <!-- @admin — pourquoi -->
@@ -167,300 +118,231 @@ l'administration est borné :
 <!-- @fin-admin -->
 ```
 
-`plan.html` et `plan-smcl.html` perdent ces tranches entières ;
-`plan-admin.html` ne perd que les lignes des marqueurs. Le geste qui va
-avec : **un volet, une fenêtre, un bouton d'exploitant s'écrit dans une
-tranche**. `outils/reserve.js` fait échouer la construction si la page
-publique cite encore un `$("id")` qu'on lui a retiré, et le nomme. Une
-tranche se borne sur des lignes entières. La relecture et les types relisent
-`plan.html` tel qu'il est livré, tranches retirées.
-
-La feuille de style n'a pas encore de tranche, faute de pouvoir prouver
-qu'une règle ne sert plus au visiteur.
+`plan.html` et `plan-smcl.html` perdent ces tranches entières ; `plan-admin.html`
+ne perd que les marqueurs. **Un volet, une fenêtre, un bouton d'exploitant
+s'écrit dans une tranche.** `outils/reserve.js` fait échouer la construction si
+la page publique cite encore un `$("id")` qu'on lui a retiré. La feuille de
+style n'a pas encore de tranche, faute de pouvoir prouver qu'une règle ne sert
+plus au visiteur.
 
 ## Ne jamais modifier directement
 
 Les sorties de la construction — `web/` hors `polices/` et `bibliotheques/`,
-`outils/tpl-multi.html`, `CARTE.md` — et toute migration déjà sur `main`.
-`.claude/hooks/garde.js` refuse ces écritures dans une session Claude Code et
-nomme la source à corriger ; la règle vaut aussi hors de lui, pour une retouche
-à la main ou le workflow `correctif.yml`.
+`outils/tpl-multi.html`, `CARTE.md`, `src/pages.mjs` — et toute migration déjà
+sur `main`. `.claude/hooks/garde.js` refuse ces écritures dans une session
+Claude Code et nomme la source à corriger ; la règle vaut aussi hors de lui.
 
 ## Plusieurs sessions en parallèle
 
-Deux conversations ouvertes sur le même dépôt se heurtaient à deux endroits.
-Les deux sont désamorcés, chacun avec un geste qui l'accompagne.
+**Après toute fusion ou rebasage, `npm run construire`.** `CARTE.md` est marqué
+`merge=ours` : git garde la version en place au lieu de mélanger deux index, et
+la construction la refait depuis les sources fusionnées. Le workflow `Pages` le
+rattrape sinon — un commit plus tard, à tirer avant la poussée suivante.
 
-**Les fichiers fabriqués ne se fusionnent plus.** Les pages ne sont plus
-versionnées du tout : deux branches ne se disputent plus mille lignes de page
-recopiées. Reste `CARTE.md`, marqué `merge=ours` dans `.gitattributes` : git
-garde la version en place au lieu de mélanger deux index. Le geste qui va avec :
-**après toute fusion ou rebasage, `npm run construire`**, qui refait l'index
-depuis les sources fusionnées. `npm run verifie` le signale, le workflow `Pages`
-le rattrape — un commit plus tard, à tirer avant la poussée suivante.
-
-**Les migrations sont horodatées à la seconde**, non plus numérotées à la
-suite : `npm run migration -- "Titre"` produit `AAAAMMJJHHMMSS_titre.sql`.
-Deviner « le numéro suivant » revenait à le prendre en même temps que l'autre
-session, puis à renommer un fichier peut-être déjà appliqué en production. Une
-migration **appliquée** ne se renomme jamais : elle est enregistrée sous son
-ancien nom, et rejouerait sous le nouveau.
-
-L'horodatage a son revers, et il se paie à la fusion. Une branche qui vit
-plusieurs jours porte une migration datée du jour où on l'a créée ; `main` en
-reçoit d'autres pendant ce temps, plus récentes, et déjà appliquées. `supabase
-db push` refuse alors d'en insérer une avant la dernière posée — le déploiement
-échoue après la fusion, sur `main`, quand il est trop tard pour le voir venir.
-**Avant de fusionner une branche qui a vieilli, comparez votre migration à la
-dernière de `main`** : si elle lui est antérieure, réhorodatez-la. C'est sans
-risque tant qu'elle n'a jamais été appliquée — et le savoir se lit dans le
-journal du déploiement, qui la nomme.
+**Les migrations sont horodatées à la seconde** : `npm run migration -- "Titre"`
+produit `<horodatage>_titre.sql`, à la seconde. Une migration **appliquée** ne se renomme
+jamais : elle rejouerait sous le nouveau nom. **Avant de fusionner une branche
+qui a vieilli, comparez sa migration à la dernière de `main`** : `supabase db
+push` refuse d'en insérer une avant la dernière posée, et l'échec n'arrive
+qu'après la fusion. Réhorodatez-la tant qu'elle n'a jamais été appliquée — le
+journal du déploiement le dit.
 
 **Jamais de poussée forcée** — le garde la refuse : le workflow `Pages` a pu
-commiter l'index sur la branche, et `--force` effacerait ce commit. `git pull --rebase`.
+commiter l'index sur la branche. `git pull --rebase`.
 
 ## Données figées
 
 `web/plan-smcl.html` embarque ses données au lieu d'appeler l'API : c'est la
-version de démonstration, publiable en artefact (une page publiée ne peut
-appeler aucune API externe). Sa source est `outils/plans.json`, **versionnée**
-— sans elle la construction échoue sur un clone neuf, et elle ne se régénère
-qu'avec une clé Klipso. Les mêmes données sont déjà dans la page publiée : la
-versionner n'expose rien de plus.
-
-Les polices suivent la même règle : `web/polices/` et `outils/polices.json` sont
-versionnés et ne se régénèrent qu'avec le réseau (`npm run polices`). Aucune
-page ne doit les demander à Google — chaque visiteur lui transmettrait son
-adresse IP, et la mesure du plan tient justement à ne rien laisser fuir sans
-consentement. `npm run construire` échoue si une page le fait.
+démonstration, publiable en artefact. Sa source, `outils/plans.json`, est
+**versionnée** — sans elle la construction échoue sur un clone neuf, et elle ne
+se régénère qu'avec une clé Klipso. De même `web/polices/`,
+`outils/polices.json` (`npm run polices`) et `outils/lieux.json`
+(`npm run lieux`), qui ne se refont qu'avec le réseau. **Aucune page ne demande
+ses polices à Google** — chaque visiteur lui transmettrait son adresse IP ;
+`npm run construire` échoue si une page le fait.
 
 ## La version anglaise
 
-Toute page existe en français et en anglais ; le bouton à drapeau passe de
-l'une à l'autre sans recharger, `?lang=en` l'impose par l'adresse. Le code
-reste écrit en français : `_langue.js`, posé en tête de chaque page, traduit ce
-qu'elle affiche en cherchant chaque phrase dans `outils/anglais/`. Les modules
-n'appellent donc aucune fonction de traduction — sauf pour ce qui quitte la
-page (export tableur, feuille de partage) ou ce que le code mesure et compare :
+Toute page existe en français et en anglais ; le drapeau passe de l'une à
+l'autre sans recharger, `?lang=en` l'impose. Le code reste en français :
+`_langue.js` traduit ce que la page affiche en cherchant chaque phrase dans
+`outils/anglais/`. Les modules n'appellent donc aucune fonction de traduction —
+sauf pour ce qui quitte la page (export, partage) ou ce que le code compare :
 là, `traduit("…")`.
 
-Le geste qui va avec : **une phrase affichée s'ajoute avec sa traduction**,
-dans `outils/anglais/<module>.js`. `npm run verifie` refuse une chaîne visible
-qui n'en a pas, et nomme le fichier et la ligne. Une phrase composée —
-`n + " exposants retenus"` — se traduit par un modèle : `"{n} exposants
-retenus": "{n} exhibitors match"`. Ce que le serveur écrit et que la page
-affiche tel quel va dans `serveur.js` ; une chaîne que le contrôle croit
-visible à tort, dans `invisibles.js`.
+**Une phrase affichée s'ajoute avec sa traduction**, dans
+`outils/anglais/<module>.js` ; `npm run verifie` refuse une chaîne visible qui
+n'en a pas, et nomme le fichier et la ligne. Une phrase composée se traduit par
+un modèle : `"{n} exposants retenus": "{n} exhibitors match"`. Ce que le serveur
+écrit va dans `serveur.js` ; une chaîne que le contrôle croit visible à tort,
+dans `invisibles.js`.
 
-Deux pièges. Un code qui relit le texte d'un bouton pour savoir où il en est
-lira l'anglais : comparez à `traduit("…")`, ou mieux à un état. Et le contrôle
-lit les sources, pas l'écran : `?lang=en&manques` relève dans le navigateur ce
-qui reste en français (`LANGUE.manques()`). Ce qui y reste est une donnée —
-exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du code.
+Deux pièges. Un code qui relit le texte d'un bouton lira l'anglais : comparez à
+`traduit("…")`, ou mieux à un état. Et le contrôle lit les sources, pas
+l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en français.
 
 ## Où vit quoi
 
 | | |
 |---|---|
-| `outils/gabarit/` | la source des pages |
-| `web/` | les pages construites, servies par Cloudflare — non versionnées, sauf `polices/` et `bibliotheques/` |
+| `outils/gabarit/` | la source des pages ; `modules/` tout le JavaScript |
+| `web/` | les pages construites — non versionnées, sauf `polices/` et `bibliotheques/` |
+| `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan`, mesures, erreurs, manifeste |
+| `outils/projet.js` | le projet Supabase des pages et du Worker, production ou recette |
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
-| `supabase/functions/` | synchronisation Klipso et API publique |
-| `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
-| `.github/workflows/` | reconstruction des pages, déploiement Supabase, sauvegarde et écriture des correctifs |
+| `supabase/functions/` | synchronisation Klipso, API publique, rappels, comptes ; `_partage/` le commun |
+| `.github/workflows/` | construction, essais, déploiement Supabase, sauvegarde, correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
-| `outils/essais/` | les essais hors page — `npm run essais` (les douze cas du moteur, puis `terre.js` : le calage sur la Terre, éprouvé seul ; puis `forme.js` : la forme d'un emplacement, calculée à l'identique par la page et par la synchronisation ; puis `temps.js` : l'instant d'une heure du salon, changements d'heure compris ; puis `itineraire.js` : la grille de marche, éprouvée sur des halls dessinés case par case — longueur d'un chemin connu, ouverture d'une cloison, absence de chemin, accroche à l'allée, trait nettoyé ; puis `parcours.js` : le parcours écrit dans un lien et relu, sur des identifiants qui portent points, accents et signes d'adresse ; puis `aimants.js` : l'accroche des aimants, la grille, la cote et la duplication de l'outil de dessin, mesurées sur des formes connues ; puis `sejour.js` : la préparation du séjour sur deux halls dessinés, avec un canevas prêté à Node — matrice des distances, conférences à l'heure du programme, fermeture, forfait d'un changement de pavillon, exposant placé à la main) et `npm run fep26` (salon synthétique) ; l'ordonnanceur est importé de `modules/ordonnanceur.mjs` — le code même que la page reçoit —, jamais recopié |
-| `outils/essais/navigateur/` | le plan dans Chromium par Playwright — `npm run navigateur` : ouvert, cherché, lu en fiche, en anglais, sur téléphone ; et les règles de `modules/sur.mjs` éprouvées sur des entrées hostiles. Ce qu'un essai lit dans la page, il le prend à `__essais` (`modules/plan.mjs`). Les données viennent de `outils/plans.json`, interceptées (`aide.js` `prepare`) : un essai ne doit rien au réseau. Une phrase de l'interface citée par un essai change avec lui. `PLAN_ADRESSE=https://<branche>-plan-interactif.interactiveplan.workers.dev npm run navigateur` éprouve un déploiement plutôt que le serveur local |
-| `outils/relecture.js`, `eslint.config.js` | la relecture ESLint — `npm run lint`. Les modules et les outils se relisent par la voie ordinaire (`eslint.config.js`), qui interdit aussi à un module d'écrire sur l'objet global ; `relecture.js` relit les scripts que la page porte hors des modules — configuration, moteur de langue — tels qu'elle les assemble, et ramène chaque remarque au fichier et à sa ligne |
-| `outils/portes.js` | les portes et les boucles d'imports — `npm run portes`, lancé par `npm run verifie` et l'intégration. Un **cliquet** : les portes `confie…` acceptées sont dans `outils/portes-acceptees.json`, chacune avec son module, son genre (`partition`, `rendu`, `registre`, `administration`) et sa raison ; une porte nouvelle, une porte disparue ou une boucle d'imports échouent, et la boucle est nommée module par module. Les modules sont lus par acorn : un import cité en commentaire ne compte pas |
-| `outils/types.js` | les types par TypeScript (`checkJs`, sans rien récrire) — `npm run types`, depuis les points d'entrée des modules, dont il suit les imports comme esbuild. Un **cliquet** dont le stock est **vide** (`outils/types-acceptes.json`) : toute remarque échoue. On la corrige, ou l'on précise le type par `@type` là où le code le sait mieux que TypeScript ; `$` et les recherches par sélecteur rendent un élément sans type précis, à préciser ainsi |
-| `outils/gabarit/modules/` | tout le JavaScript des pages, réuni par esbuild — points d'entrée `plan.mjs`, `plan-admin.mjs`, `console.mjs`, `rapport.mjs`, `motdepasse.mjs` et `accueil.mjs`, assemblés par `outils/modules.js` |
+| `outils/essais/` | essais hors page — `npm run essais` ; l'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
+| `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
+| `outils/relecture.js`, `types.js`, `portes.js`, `guide.js` | ESLint, TypeScript (cliquet au stock vide), portes et boucles, ce guide — tous lancés par `npm run verifie` |
 
 ## Chercher sans tout ouvrir
 
-Le dépôt est petit, et pourtant coûteux à lire en aveugle : `web/` recopie
-`outils/gabarit/` en quatre exemplaires, si bien qu'une recherche de « calque »
-remontait 444 lignes dont 400 étaient la même chose recopiée. Trois choses
-règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
+- **`CARTE.md` d'abord** — souvent le seul fichier à lire avant d'aller droit à
+  la bonne ligne. Il ne peut pas mentir : `npm run verifie` le vérifie.
+- **`.ignore`** retire de la recherche `web/`, `tpl-multi.html` et `plans.json`,
+  fabriqués ou figés.
+- **Aucun module ne dépasse 3400 lignes**, un seul passe 2500 (`itineraire.mjs`).
+  On y entre par tranche (`sed -n '531,700p'`), jamais en entier.
+- **L'en-tête d'un module** dit ce qu'il fait, comment il se branche et ce qu'on
+  lui confie.
 
-- **`CARTE.md`** est l'index des sources : pour chaque module, ses sections, ses
-  fonctions et ses identifiants, **avec les numéros de ligne**. Il est produit
-  par `npm run construire` et vérifié par `npm run verifie` — il ne peut donc
-  pas mentir. C'est le premier fichier à lire, et souvent le seul avant d'aller
-  droit au bon endroit.
-- **`.ignore`** retire de la recherche plein texte `web/`, `tpl-multi.html` et
-  `plans.json` : ils sont fabriqués ou figés, on n'y corrige rien. Ils restent
-  lisibles en les nommant, quand il faut vraiment vérifier une page construite.
-- **Aucun module ne dépasse 3400 lignes**, et un seul passe 2500 —
-  `modules/itineraire.mjs`. On y
-  entre par tranche (`sed -n '531,700p'`), jamais en entier : `CARTE.md` donne
-  la tranche. Le gabarit du plan n'est plus que du balisage : `_head.html`
-  (l'écran) et `_js.html` (la balise des données), que `outils/assemble.js`
-  réunit avec les six feuilles de style.
+### Par intention : le module où entrer
 
-### Ce qu'on veut toucher, et où
+Un chemin `modules/…` se lit sous `outils/gabarit/`. Ce qu'il importe, qui
+l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 
-| intention | où |
+| intention | entrer par |
 |---|---|
-| données du salon et leurs index — `DATA`, `TOUS`, `parId`, `CONFS`, `EXPOSANTS`, `HEBERGES`, `CONFERENCES`, `PAR_HEBERGE` —, l'état de la vue `state`, le pavillon courant `P` | `modules/donnees.mjs` ; posés par `modules/index-salon.mjs` `indexe` au travers de `poseDonnees`, seule porte d'écriture ; importés par les modules, qui seuls les lisent |
-| recherche, index des exposants, liste | index `modules/index-salon.mjs` (ligne « index du salon » ci-dessous) ; la question posée et ce qu'elle retient — un modèle sans écran — dans `modules/filtre.mjs` (`filtre`, `visible`, `visibleSurPlan`, `visibleSociete`, lecture des critères `valeursCritere`, `dansCriteres`, `LECTURE_CRITERE`, `CLE_SECTEUR`, le retrait levé `retraitLeve`, changé par `leveRetrait` et `reposeRetrait` seuls), lu par la liste, le dessin et les noms sans que ces deux-là importent la liste ; la recherche et la liste dans le module `modules/recherche.mjs` (`appliqueFiltre`, `marqueRetrait`, `oublieRetrait`, `liste`, `marqueChoisie`, vignettes préchargées `prechargeLesVignettes`, `VIGNETTES`), qui réexporte le filtre ; branché par `modules/lancement.mjs` (`brancheRecherche`) (§ 5), qui n'y pose plus que l'écoute de la liste ; ce qu'ouvre une ligne — la fiche d'un stand, d'une conférence, d'un repère — dans `modules/ligne-liste.mjs` (`brancheLignesListe`, posé par `modules/lancement.mjs` juste après la recherche, avant le repli des tiroirs), au-dessus de la fiche et des repères qu'il importe ; le bouton qui verse au parcours ce qu'elle retient s'importe de `modules/tout-au-parcours.mjs` ; les distinctions, les noms et le dessin, elle les importe ; l'écran et `montre` s'importent ; anglais `outils/anglais/recherche.js` ; secteurs et leur teinte sur le plan dans `modules/secteurs.mjs` (`SECTEURS` remplacé par `indexeSecteurs` seul, appelé par `modules/index-salon.mjs` `indexe` ; `couleurSecteur`, `pastilleSecteur`, `coloreSecteurs`, `peintSecteur`), sans branchement — la carte de chaleur, d'administration, lui est confiée par `modules/chaleur.mjs` en se chargeant (`confieChaleur`) |
-| panneau des critères déplié sous la recherche | `modules/recherche.mjs` `remplitCriteres`, `ouvreCriteres`, `fermeCriteres`, relecture par `majCriteres` ; page où l'on est `modules/salon.mjs` `PLAN_ADMIN` (critère vide montré à l'exploitant seul) ; balisage `_head.html` `#panCrit`, styles `_styles-plan.css` `.pan-crit` |
-| ordre des filtres dans ce panneau | réglage `modules/reglage-recherche.mjs` `blocOrdreCriteres` (onglet « Recherche », au bas de `voletRecherche`), clé `_crit.ordre` de la configuration ; application `modules/recherche.mjs` `ordreCriteres`, relue par `clesCriteres`, panneau refait par `refaitCriteres` — importés par `reglage-recherche.mjs` ; styles `_styles-modeles-parcours.css` `.ordreCrit`, empruntés au rangement de la fiche |
-| sortes d'éléments que la recherche remonte | module `modules/reglage-recherche.mjs` `voletRecherche`, `SORTES_RECHERCHE` — administration seule, par `plan-admin.mjs`, importé par `reglages.mjs` ; sans branchement : les repères, l'enregistrement de la configuration, les critères et la liste, `montre`, il les importe (`modules/points-interet.mjs`, `modules/configuration.mjs`, `modules/recherche.mjs`, `modules/corps-fiche.mjs`) ; anglais `outils/anglais/reglage-recherche.js` ; ce que le plan public en relit `modules/configuration.mjs` `chercheSorte`, porte dans `modules/recherche.mjs` `visible` ; repères cherchables dans `modules/points-interet.mjs` `reperesCherchables` |
-| rendu du plan, libellés, zoom, sélection, fiche | montage d'un pavillon, ses onglets et le passage de l'un à l'autre `modules/rendu.mjs` (`montePlan`, `monteHabillage`, `changePlan`, fond d'un pavillon chargé après coup `chargeFond`, balisage `baliseZone`, `baliseStand` ; `MONTE` posé par `montePlan` seul, lu par la police des noms au travers d'un lecteur qu'il lui confie), sans branchement — ce que le montage appelle ailleurs lui est confié en se chargeant (`confieAuRendu`), d'administration seule : la nappe (`modules/nappe.mjs`), le calage en cours (`modules/calage-carte.mjs`), l'éditeur remis au repos — emplacement repris, historique, boîte à outils — (`modules/outil-dessin.mjs`) ; calque ouvert refermé par sa porte `poseCalqueActif`, importé par `modules/demarrage.mjs` ; libellés `modules/libelles.mjs` (`libelles`, et pour la carte graphique `libellesWebgl`), sans branchement — l'écoute des polices arrivées, qui refait les noms et la liste, est posée par `modules/recherche.mjs` `brancheRecherche`, qui les importe tous deux ; le dessin des calques (`modules/dessin.mjs`) et la mise en avant d'une zone (`modules/cartouche-poi.mjs`), il les importe ; ce qu'un emplacement écrit — nom, numéro, pastille des hébergés, placement réglé à la main (`libelleEmplacement`, `coexComptes`, `coexChoisit`) — dans `modules/nom-emplacement.mjs`, que le dessin des stands à la main écrit à l'identique ; la boîte d'une forme, il l'importe ; mesure, coupe en lignes et place d'un nom `modules/texte-plan.mjs` (`largeur`, `habille`, `lignesSvg`, `ancre`, `place`, `remesureTextes`, mesures gardées `_lg`) ; distinctions d'un exposant sur le plan, la liste et la fiche `modules/distinctions.mjs` (`DISTINCTIONS`, `dessineDists`, `marquesListe`, `poseDistsFiche`, `refaitDistsFiche`, et leur réglage — marque par surface `MARQUES_DIST`, `modeDist`, teinte `couleurDist`, `appliqueDists`), anglais `outils/anglais/distinctions.js` ; recherche, fiche, vue, carte graphique, habillage et police des noms, que ces modules importent, les reçoivent par leur branchement ; zoom et vue `modules/vue.mjs` (ligne ci-dessous) ; sélection et fiche `modules/fiche.mjs` (ligne ci-dessous) ; gestes `modules/gestes.mjs` (ligne plus bas) |
-| sélection d'un objet du plan, fiche d'un stand ou d'une zone, choix d'une société sur un stand partagé, fiches d'une conférence et d'un produit, cadrage sur ce qu'on lit | module `modules/fiche.mjs` (par `plan.mjs`) : sélection `select`, `ferme`, nœud allumé `noeud`, canal de mesure `canalPlan`, rang désigné `rangSociete`, fiche `ouvre`, onglets `onglet`, en-tête `poseCode`, `poseMarque`, `rangeMarque`, sociétés d'un stand `societes` (lues dans `modules/donnees.mjs`, d'où le dessin et les distinctions les prennent aussi), `choisitExposant`, programme `programme`, `ficheConf`, catalogue `produits`, `ficheProduit`, actions `brancheActesFiche`, cadrage `centre`, `centrePoint`, étirement `anime`, clic fantôme `ecarteClicFantome` après un appui tactile (`dernierAppuiTactile`, posé par `modules/gestes.mjs` au travers de `poseAppuiTactile`) ; branché par `modules/lancement.mjs` (`brancheFiche`), qui ne fait plus qu'y poser les écoutes de la fiche à leur rang ; ce qu'elle emprunte aux modules qui l'importent, chacun le lui confie en se chargeant, par sa porte `confieALaFiche` — les deux gestes de l'exploitant sur une zone (`modules/fiche-zone.mjs`, administration seule : la page publique ne les a pas) ; le nom d'une zone, la forme d'un repère dessiné et le bouton « au parcours » (`modules/parcours.mjs` `brancheParcours`), elle les importe ; la liste, les thématiques et les vignettes importées de `modules/recherche.mjs`, l'ordre de descendre la fiche (`baisseTiroir`) de `modules/tiroirs.mjs` ; importé par `journee.mjs`, `suggestion.mjs`, `tutoriel.mjs`, `chaleur.mjs`, `fiche-zone.mjs`, `reglage-fiche.mjs`, `reglages.mjs`, `reprise-emplacements.mjs`, `affiche-ici.mjs`, `tiroir-parcours.mjs` — la fiche, le parcours et l'itinéraire se referment l'un l'autre par le registre des tiroirs exclusifs (`modules/tiroirs-exclusifs.mjs`) ; la vignette d'un logo `adresseVignette` vient de `modules/recherche.mjs`, avec les vignettes préchargées — la borne importe la fiche ; écran étroit `ETROIT` et mouvement réduit `REDUIT` dans `modules/ecran.mjs`, importés par la vue, la fiche, la recherche, le tiroir de l'itinéraire, la visite guidée et la fenêtre des réglages ; anglais `outils/anglais/fiche.js` |
-| logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `modules/fiche.mjs` `poseMarque`, `rangeMarque` ; recadrage par le module `modules/marque.mjs` `recadreMarque` (le plan) et `vignetteDeLogo` (les vignettes que la console fabrique, à la même règle) |
-| dessin WebGL du plan (rendu par défaut, `?rendu=svg` pour l'écarter) | module `modules/webgl.mjs` — bibliothèque deck.gl réduite aux classes qu'il emprunte, refaite par `npm run deck` (`outils/deck.js`, réseau requis), qui donne le nom et l'empreinte à reporter dans `DECK_WEBGL` — une classe de plus employée s'ajoute d'abord à `CLASSES` ; il relit le SVG caché : un effet visuel ajouté au plan en CSS (animation, filtre) doit y être rejoué, sans quoi il ne se voit qu'en SVG ; chargement de la bibliothèque `DECK_WEBGL` (dans `web/bibliotheques/`), montée `monteWebgl`, perte de contexte `perdContexteWebgl`, couches `convertitBloc`, `couchesDeBloc`, `couchesTexte`, shaders `constTexte`, survol, phares et comète, désignation `cibleWebgl`, `priseWebgl`, `libelleSousWebgl`, `rectEcranWebgl` ; ce qu'il lit du SVG — matrices `mulM`, `appM`, `lisTransform`, tracés `lisTrace`, `lisPoints`, trous `avecTrous`, couleurs `couleurGl` — dans `modules/trace.mjs` ; branché par `modules/lancement.mjs` (`brancheWebgl`), qui n'y demande plus que la bibliothèque ; ce qu'il lit et ne peut importer lui est confié en se chargeant par les modules qui l'importent (`confieAuWebgl`) — `appliqueVue` par `modules/vue.mjs`, le glissé et le pincement par `modules/gestes.mjs`, `enEdition` par `modules/edition-en-cours.mjs` (il lit le calque ouvert, la couche reprise et le placement des libellés ; plus rien ne l'importe, `plan.mjs` le charge pour qu'il s'inscrive), la préparation des noms `libellesWebgl`, avec les règles des libellés du SVG, par `modules/libelles.mjs` |
-| ce que la fiche montre, ordre des champs, sections, intitulés | réglage `modules/reglage-fiche.mjs` `voletOrdre` (réserve à gauche, fiche au milieu, aperçu à droite) — administration seule, par `plan-admin.mjs` ; sans branchement : le modèle retenu (`modules/modeles.mjs`) et l'écriture de la colonne (`modules/fiche-zone.mjs`), il les importe ; préfixe des champs propres au salon importé de `modules/recherche.mjs`, qui le reprend de `modules/corps-fiche.mjs` ; aperçu importé de `modules/apercus.mjs` (`contenuApercu`, `apercuFiche`, `clesPortees`), fiche ouverte derrière la fenêtre de `modules/fiche.mjs` `ouvre` ; anglais `outils/anglais/reglage-fiche.js` ; règles du corps — ce qui paraît `montre`, ordre `ordreCorps`, sections `groupesFiche`, intitulés `montreIntitule`, `libelleCorps`, rangement `corpsRange`, `champCorps`, pictos `PICTO_RS`, `pictoRS` — dans `modules/corps-fiche.mjs` (par `plan.mjs`), importées par la fiche, l'aperçu, le réglage, la recherche, la fenêtre des réglages et les volets, sans branchement : le préfixe des champs propres `PREFIXE_PERSO` et l'intitulé d'un critère `libelleCritere` (table `LIBELLE_CRITERE`) y vivent, repris par `modules/recherche.mjs`, anglais `outils/anglais/corps-fiche.js` ; migrations `groupes_de_champs`, `intitules_des_champs` |
-| tiroirs du bas sur écran étroit — liste, fiche, parcours, itinéraire | module `modules/tiroirs.mjs` (par `plan.mjs`) : lecture d'un geste `traceurDeGeste`, `GESTE_SEUIL`, `GESTE_VIF`, `cranVoisin`, bande rendue au système `retraitBas`, § Le tiroir de la liste (`tiroirListe`), § Les tiroirs menés par la hauteur (`tiroirCrante`, un appel par tiroir), ordres venus d'ailleurs `montreTiroir`, `mesureTiroir`, `hisseTiroir` (importés par `modules/recherche.mjs`) et `baisseTiroir` (importé par `modules/fiche.mjs`) ; écoutes posées par `brancheTiroirs`, à son rang dans `modules/lancement.mjs` ; `fermeCriteres` importé de `modules/panneau-criteres.mjs`, qui tient aussi la relecture du panneau déplié (`poseRelecturePanneau`, `relisPanneauCrit`) — à part de la recherche, qui importe ce module et ne peut être importée par lui ; crans et prise dans `_styles-plan.css` et `_styles-parcours.css` `.side`, `.detail`, `.parcours`, `.itineraire`, `.poignee` ; la liste cède la bande aux trois autres par `cede` ; un seul des trois — fiche, parcours, itinéraire — ouvert à la fois, par le registre `modules/tiroirs-exclusifs.mjs` — `inscritTiroirExclusif`, `fermeLesAutresTiroirs`, ordre de fermeture `ORDRE_EXCLUSIFS`, sans aucun import pour que le parcours reste chargeable dans Node —, où chacun inscrit sa fermeture et que chaque ouverture appelle |
-| gestes sur le plan — glisser, pincer, molette, appui qui ouvre une fiche, appui élargi au doigt, clavier ; commandes de la recherche et du zoom | module `modules/gestes.mjs` (par `plan.mjs`) : chaîne des appuis posée par `brancheGestes` (`pointerdown`, `pointermove`, `pointerup`, `pointercancel`, molette, clavier du plan et de la page), pincement `commencePince`, `suitPince`, cible élargie `cibleElargie`, bandes `plieLesBandes`, `saisitPlan` (importé par `calage-carte.mjs`), frappe différée `planifieFiltre` ; glissé et pincement en cours `drag`, `pince`, confiés par des lecteurs au rendu par la carte graphique (`confieAuWebgl`) ; **l'ordre des priorités est le comportement** : pincement, puis les outils de l'exploitant, puis le glisser et l'appui du visiteur. Les outils de l'exploitant s'y insèrent par `poseGestesAdmin`, depuis `modules/gestes-admin.mjs` (administration seule, par `plan-admin.mjs`) : appui `appui` dans l'ordre calage de la carte, libellé, emplacement repris, hall calé, dessin ; geste annulé `annuleGeste` ; code « Vous êtes ici » `codeIci` ; touches de l'éditeur `clavier`, `echap`, `apresEchap`, `entree` ; branché par `modules/lancement.mjs` (`brancheGestesAdmin`) en tranche `@admin`, sans rien lui confier (`formeSel` importé de `modules/forme-choisie.mjs`) ; l'écoute `langue`, qui refait ce que le plan a mesuré dans la langue d'avant, y est aussi (`brancheLangue`, posée juste après dans `modules/lancement.mjs`) |
-| couleurs, visibilité et réglages des calques | la configuration `CONF` et sa clé de rangement `CLE_CONF` (remplacées par `ouvreConf` seul), `conf`, `jeton`, `reglagesDuSalon`, et l'écriture sur le poste `enregistreConf` — dont l'envoi en base, d'administration, arrive par la porte `confiePublication`, que `modules/enregistrement.mjs` ouvre en se chargeant — dans le module `modules/configuration.mjs`, sans branchement (`SECTEURS` lu parmi les index de `modules/donnees.mjs`, où `modules/secteurs.mjs` `indexeSecteurs` le pose ; `PLAN_ADMIN` importé de `salon.mjs`) ; mots partagés des réglages `outils/anglais/configuration.js` ; visibilité et couleurs des calques et des couches de données, commandes posées sur le plan et leur application d'ensemble (`styleFond`, `appliqueCouleursData`, `COMMANDES`, `appliqueApparence`) dans `modules/apparence.mjs`, sans branchement (`appliqueOptions`, le tiroir de l'itinéraire et `fermeParcours`, il les importe) ; anglais `outils/anglais/apparence.js` ; fenêtre des réglages, ses onglets et les volets Plan, Zones et Co-Exposants dans le module `modules/reglages.mjs` (`ouvreReglages` ; administration seule, par `plan-admin.mjs`) ; le pas d'une hauteur à l'autre `glisseFenetre` dans `modules/glisse-fenetre.mjs`, que la fenêtre et les volets du générique et de la suggestion importent, qui importe les autres volets de leurs modules, sans branchement — l'enregistrement de la configuration, les distinctions, `libelles`, l'écran, `montre` et la fiche s'importent ; il confie le contenu du retour aux réglages après un aperçu (`modules/fenetre.mjs` `retourAuxReglages`) en se chargeant ; la configuration, les options, la durée d'une visite et le volet « Recherche » s'importent ; anglais `outils/anglais/reglages.js` ; aperçus des habillages (liste et fiche d'exemple, relevé des champs que le salon renseigne) `modules/apercus.mjs`, sans branchement — il importe tout ce qu'il lit, de `modules/corps-fiche.mjs` et `modules/recherche.mjs` —, anglais `outils/anglais/apercus.js` ; volets Admin, Parcours intelligent, PMR, Distinctions et Apparence, et dates et heures du salon `blocHoraires`, dans le module `modules/volets.mjs` (administration seule, par `plan-admin.mjs`), sans branchement — les options vendues à part (`modules/options.mjs`), les distinctions, les règles que le plan public lit aussi, aperçus, bloc du rappel, liste et secteurs de la recherche, ce que la fiche montre, l'enregistrement de la configuration, `ADMIN`, le champ intitulé, le panneau des calques et le trajet à refaire, il les importe ; anglais `outils/anglais/volets.js` |
-| co-exposants sur le plan — pastille du nombre, choix de la société au clic | onglet « Co-Exposants » des réglages, `modules/reglages.mjs` `voletCoexposants` (profil administrateur), clés `_coexNombre` et `_coexChoix`, lues par `modules/libelles.mjs` `coexComptes` et `coexChoisit` ; rattachement à l'hôte par la synchronisation, cible `coexposant` de `_partage/champs.ts`, réglée dans la console (`modules/fiche-detail.mjs` `LIGNES_RATTACHEMENT`, « Rattachement des co-exposants ») |
-| lenteur d'un nuancier, couleur qui traîne derrière la souris | module `modules/nuancier.mjs` `suitNuancier`, `REPOS_NUANCIER` — administration seule, par `plan-admin.mjs`, importé par `pile.mjs` et `volets.mjs` ; écoutes de page quittée posées par `brancheNuancier`, à son rang dans `modules/lancement.mjs`, devant celles de l'enregistrement ; peintures ciblées `modules/dessin.mjs` `peintCalque`, `modules/secteurs.mjs` `peintSecteur` |
-| police des noms sur le plan, celle d'un modèle ou une autre de la liste | module `modules/polices-plan.mjs` — `POLICES_LIBELLE`, `POLICES_NOMS` (relue sous sa forme exacte par `npm run polices` et la construction, `outils/polices.js` `policesAuChoix`) et ses genres `GENRES_POLICE`, `posePoliceLibelles`, la graisse et la police des libellés `P_NOM`, `P_CODE` (importées par les modules, remplacées par `posePoliceLibelles` seul ; les essais les lisent par `__essais`) ; sans branchement : `MONTE` par un lecteur et ce qui se retrace lui sont confiés en se chargeant, par la porte `confieAuxPolices`, par `modules/rendu.mjs`, `modules/dessin.mjs`, `modules/libelles.mjs` et `modules/recherche.mjs` ; les modèles `modules/modeles.mjs` `MODELES`, `modeleRetenu`, posés par `modules/habillage.mjs` `appliqueModele` ; anglais `outils/anglais/polices-plan.js`, `modeles.js` ; vignettes et filtres dans `modules/volets.mjs` `voletApparence` ; clé `_fiche.police` |
-| fiche d'une zone, salles de conférence qu'elle abrite, masquage d'une zone | module `modules/fiche-zone.mjs` — administration seule, par `plan-admin.mjs` : formulaire `champsZone`, `champSalles`, éditeur de la description `editeurRiche`, fiche suivie et versée à la sortie `suitFicheZone`, `verseFicheZone` (la fenêtre `ficheZone`, l'onglet « Zones » `modules/reglages.mjs` `ficheZoneEnPlace`), enregistrement `enregistreZone`, masquage `basculeAffichageZone` (pastille de la fiche `modules/fiche.mjs`, que ce module lui confie en se chargeant par `confieALaFiche`), écriture d'une colonne de l'événement `ecritColonneEvenement` (reprise par `reglages.mjs` et `reglage-fiche.mjs`) ; champ intitulé `champZone`, repris par les autres réglages ; sans branchement : la palette de la reprise (`majPaletteGeo`), la reprise la lui confie en se chargeant (`confieALaFicheZone` ; elle importe le module) — `CONF`, l'enregistrement, la liste, les types de zone et le cartouche, il les importe (`modules/configuration.mjs`, `modules/recherche.mjs`, `modules/reperes.mjs`, `modules/points-interet.mjs`) ; anglais `outils/anglais/fiche-zone.js` ; colonne `salles` ; libellé et description anglais `nom_en`, `description_en` dans `zones_fiches`, affichés par `modules/noms-zones.mjs` `nomDeLaZone` (relevés pour le moteur de langue par `nomsAnglaisDesZones`) |
-| démarrage de la page, appel API, panne réseau | module `modules/demarrage.mjs` (par `plan.mjs`) — démarrage `demarre` (index, plan monté et cadré, borne, code du hall, parcours ou conférence reçus par lien, visite guidée, invitation à installer, vignettes), appel `charge` (session présentée en administration, sans cache ni entête), version retenue et entête `demandePlan`, en-têtes de l'appel `entetesApi` (`modules/salon.mjs`), message de chargement et de panne `annonce`, `panneDuChargement` ; importé par `acces-admin.mjs` (`charge`), `enregistrement.mjs` et `fiche-zone.mjs` (`annonce`) ; branché en fin de suite par `modules/lancement.mjs` (`brancheDemarrage`), qui lance la page (données figées, sinon appel, sinon attente de la session) et pose l'écoute du redimensionnement à son rang ; importe la fiche (`select`, `ficheConf` de `modules/fiche.mjs`) ; le montage du plan et de l'habillage, l'ordre des calques, il les importe ; ce qui n'est qu'à l'administration lui est confié en se chargeant (`confieAuDemarrage`) — `majAttente` et `rattrapeRetard` par `modules/enregistrement.mjs`, `ecranAcces` par `modules/acces-admin.mjs` ; anglais `outils/anglais/demarrage.js` |
-| index du salon — données posées, ce qu'on cherche, réglages et calques ouverts, conférences par zone et par exposant, onglet nommé, icône et logo du salon | module `modules/index-salon.mjs` (par `plan.mjs`) : `indexe` (appelé par `demarrage.mjs`), `indexeConferences` (relancé quand l'option du programme change, `modules/options.mjs`), `rangeConferences` (importé par `fiche-zone.mjs`), `poseFavicon`, `poseLogoSalon` ; importe les calques dessinés, leur file d'attente et leurs relevés de `modules/calques-dessin.mjs`, l'oubli des repères de `modules/points-interet.mjs` ; sans branchement — ce qui n'est qu'à l'administration (`compteRescapes`, `noteReglagesCharges`) lui est confié par `modules/enregistrement.mjs` en se chargeant (`confieALIndex`) ; nom d'une zone dans la langue de la page `modules/noms-zones.mjs` (`nomDeLaZone`, `nomsAnglaisDesZones`, importés par la recherche, les emplacements, leur reprise et la fiche d'une zone) ; anglais `outils/anglais/index-salon.js` |
-| tracé des calques de dessin | ce que le visiteur reçoit, par `plan.mjs` : les calques et leurs trois rangements sur le poste — `DESSINS`, marque d'attente `ATTENTE`, clés publiées `PUBLIES`, remplacés par `ouvreDessins` —, le calque ouvert `calqueActif`, l'outil tenu `outil` et le tracé en cours `enCours` (portes `poseCalqueActif`, `poseOutil`, `poseEbauche`) dans `modules/calques-dessin.mjs` ; le chemin d'une forme et le style de son trait (`cheminForme`, `estCadre`, `EPAISSEUR_TRAIT`, `styleTrait`), calculs purs, dans `modules/chemin-forme.mjs` ; le dessin des calques sur le plan — `dessineDessins`, `redessineForme` (une seule forme, pour les gestes), `peintCalque`, pointes de flèche `rafraichitFleches`, `traceRepere`, images, stands dessinés, `decoupeStand`, aperçu d'un tracé `apercu`, `apercuGuide` — et la mention de la source `mentionOsm`, dans `modules/dessin.mjs`, sans branchement (forme choisie et sa boîte de `forme-choisie.mjs`, ordre des couches de `ordre-trace.mjs`, la fiche, la recherche et l'écran de `fiche.mjs`, `recherche.mjs`, `secteurs.mjs`, `ecran.mjs`) ; l'outil de l'exploitant — boîte à outils, gestes `dessinPointerDown` et ses deux suivants, `choisitOutil`, `outilOffert`, `activeCalque`, annulation `annule`, `refais`, `creeCalque`, `renommeCalque`, rôle d'un calque `montreRoleIti` — dans `modules/outil-dessin.mjs`, administration seule, par `plan-admin.mjs` — ce qu'il partage avec l'éditeur et la reprise des emplacements, historique `memorise` (`HIST`, `REFAIRE`), enregistrement `enregistreDessins` (repris de `modules/enregistrement.mjs`), tolérance `toleranceTrace` et `fermeIci`, sociétés `remplitListeSocietes` et `societeSaisie`, `optionsModes`, `pictoVerrou`, dans `modules/socle-dessin.mjs`, que les trois importent et que l'outil réexporte ; un seul des trois modes d'édition ouvert à la fois — dessin, libellés, reprise —, par le registre `modules/modes-edition.mjs` (`inscritMode`, `quitteLesAutres`, ordre de fermeture `ORDRE`) —, branché par `modules/lancement.mjs` (`brancheOutilDessin`), où se posent les écoutes de la boîte à outils — la forme choisie et sa porte, le panneau des calques, l'enregistrement, il les importe, et il confie aux deux options de l'outil (`modules/options.mjs` `confieApresOption`) ce qu'elles refont en se fermant ; anglais `outils/anglais/outil-dessin.js` |
-| arrêt de transport — mode, ligne, couleur de la signalétique | `modules/reperes.mjs` § Les transports en commun (`MODES_TRANSPORT`, `COULEURS_LIGNE`, `couleurRepere`, `ligneAffichee`), type `TYPES_REPERE` « transport » et nature de zone `TYPES_ZONE` — lectures pures, importées par le dessin, l'itinéraire, l'éditeur et la fiche d'une zone ; anglais `outils/anglais/reperes.js` ; pose d'un arrêt `modules/outil-dessin.mjs` `dessinPointerDown`, couleur proposée `proposeCouleurLigne` ; champs `_head.html` `#repereTransport` et `#elemTransport`, reprise `modules/edition.mjs` `appliqueTransport` ; une seule pastille au cartouche pour tous, `pastillePoi` et `PICTOS_TRANSPORT` (`modules/reperes.mjs`), cartouche, mise en avant et relevé des repères cherchables dans `modules/cartouche-poi.mjs` (`cartouchePoi`, `eclairePoi`, `phareRepere`, `phareZone`, `oublieChoixPoi`, `reperesCherchables`, `oublieReperes`) — sans écran, lu par le dessin, les noms et la recherche sans qu'ils atteignent la fiche ; fiche d'un repère et chemin vers lui dans `modules/points-interet.mjs` (`ouvrePoi`, `vaAuRepere`), qui réexporte le cartouche, sans branchement — la forme choisie, la fiche, le rendu et les tiroirs, il les importe ; anglais `outils/anglais/points-interet.js` ; plaque à barres du tram — champ clair, deux barres à la couleur de la ligne — drapeau `plaque` de `MODES_TRANSPORT`, tracée par `modules/dessin.mjs` `traceRepere`, styles `_styles-plan.css` `.repere.plaque` et `.barres` |
-| halls d'un lieu connu, calage — le poser, le reprendre —, mention de la source | pose et calage dans le module `modules/batiments.mjs` — administration seule, par `plan-admin.mjs` ; branché par `modules/lancement.mjs` (`brancheBatiments`), qui lui confie la bibliothèque `LIEUX`, que la construction verse dans la page — les réglages, l'ordre de la pile (`modules/ordre-trace.mjs`), les calques de dessin, leur historique et leur verrou s'importent (`modules/calques-dessin.mjs`, `modules/outil-dessin.mjs`) ; la vue importée de `modules/vue.mjs` (`changeVue` pour la remplacer) ; calage en cours `CALAGE`, dont la poignée est confiée à la vue en se chargeant (`confieALaVue`) ; ce qui identifie un hall et dit d'où vient son contour `refBatiment`, `refForme`, `marqueBatiment` (privés au module) ; reprise d'un calage validé § Reprendre le calage, `rouvreCalage`, `calageRelu`, bouton `boutonRecale` posé sur la ligne du calque par `modules/pile.mjs` ; la mention de la source, que le visiteur reçoit, vit dans `modules/dessin.mjs` `mentionOsm`, qui teste `osm` en propre — un contour saisi ne devant rien à OpenStreetMap ; anglais `outils/anglais/batiments.js` ; bibliothèque `outils/lieux.js` → `outils/lieux.json`, versée par `genere.js` dans `plan-admin.html` seul |
-| ajouter un lieu à la bibliothèque — relevé dans OSM, ou saisi sur un plan coté | `outils/lieux.js` `LIEUX` ; `lieuOsm` pour des identifiants OSM, `lieuSaisi` pour des contours en mètres relevés à la main (`source` obligatoire), les deux jamais dans un même lieu ; `npm run lieux` refait tout, `npm run lieux -- <clé>` ce lieu seul et garde les autres — le seul moyen d'ajouter un lieu saisi sans réseau |
-| image posée sur le plan et liée à un exposant — clic sur le logo, fiche de l'enseigne | tracé `modules/dessin.mjs` `traceImage` ; pose `modules/outil-dessin.mjs` `lienImageSaisi`, `formeImage`, `importeImage`, `ditImagePosee`, image en attente `imageEnAttente` (confiée aux aimants par un lecteur) ; champ `#imageSoc` de la boîte à outils ; rattachement après coup `modules/edition.mjs` `appliqueSociete` (champ `#elemSoc`, partagé avec le stand dessiné) ; sortes concernées `FORMES_RATTACHEES`, porte de l'option `seRattache` (`modules/dessin.mjs`) ; canal de mesure `image` par `modules/fiche.mjs` `canalPlan` |
-| verrouiller un calque de dessin | `modules/outil-dessin.mjs` § Le verrou d'un calque (`verrouille`, `basculeVerrou`, `pictoVerrou`, clé `_verrou:<id>`), cadenas posé par `modules/pile.mjs` `boutonVerrou` |
-| choisir, déplacer, redimensionner, tourner une forme existante — poignées, panneau « Élément », passages d'un repère vers les autres plans | module `modules/edition.mjs` — administration seule, par `plan-admin.mjs` : choix `choisitForme`, poignées `dessinePoignees` (cadre et poignée de rotation d'un texte), panneau `majElement`, reprise des champs `appliqueTexte`, `appliqueRotation`, `appliqueRayon`, `appliqueTrait`, `appliquePicto`, `appliqueTransport`, `appliqueSociete`, `supprimeForme`, passages `changeLien` ; gestes `editionPointerDown`, `editionPointerMove`, `editionPointerUp`, appelés par `modules/outil-dessin.mjs` `dessinPointerDown` et ses deux suivants ; geste en cours `geste`, importé par qui le lit ; sans branchement : l'historique, l'enregistrement et les champs qui nomment un exposant, partagés avec l'outil, il les importe de `modules/socle-dessin.mjs` ; la forme choisie `formeSel` (changée par la porte `poseFormeSel`), `formeParId` et `boite`, que le plan public lit aussi, dans `modules/forme-choisie.mjs` (par `plan.mjs`), importés par l'éditeur, l'outil, le dessin, la fiche, les points d'intérêt, les libellés, les tiroirs de l'itinéraire, la borne, l'affiche du code, la visite guidée et les gestes de l'exploitant ; le geste ne refait que la forme tirée, par `modules/dessin.mjs` `redessineForme` — `dessineDessins` refait tous les calques et remesure le cartouche, trop lourd pour une rafale de `pointermove` ; anglais `outils/anglais/edition.js` |
-| forme d'un emplacement — anneaux et tracé, empreinte, ancrage du nom et place libre autour | `modules/forme.mjs` (`anneauxGeo`, `traceGeo`, `empreinteGeo`, `boiteAnneaux`, `boiteGeo`) — la même règle que `supabase/functions/_partage/geometrie.ts` `boite`, vérifiée par `outils/essais/forme.js` : **qui change l'un change l'autre** |
-| reprendre à la main la forme d'un stand ou d'une zone venue de la source | ce que le visiteur reçoit — réglage `_geo:<id>` gardé tant que l'empreinte du tracé source ne bouge pas, posé par `appliqueGeometries` depuis `modules/index-salon.mjs` `indexe` — dans le module `modules/emplacements.mjs` (par `plan.mjs`), avec le mode en cours `SORTE_GEO` (lu en accesseur, posé par `poseSorteGeo`) ; l'outil — cadenas `geoVerrouille`, `basculeVerrouGeo`, `boutonVerrouGeo`, mode `modeGeometrie`, choix `choisitGeo` (`geoSel` importé par les gestes), poignées `dessinePoigneesGeo`, palette `majPaletteGeo`, geste `geometriePointerDown`/`Move`/`Up`, pointeur annulé `lacheGeo` — dans `modules/reprise-emplacements.mjs`, administration seule (par `plan-admin.mjs`) ; crayon et cadenas (fermé d'avance) posés par `modules/pile.mjs`, qui les importe, sur les couches `data:stands` et `data:zones` ; l'outil branché par `modules/lancement.mjs` (`brancheRepriseEmplacements`) en tranche `@admin`, qui n'y pose plus que les écoutes de la palette — le cadenas, les sociétés et la fermeture d'un contour, il les importe de `modules/socle-dessin.mjs` ; le dessin et le placement des libellés se referment par le registre des modes d'édition (`modules/modes-edition.mjs`, `inscritMode`, `quitteLesAutres`), où il inscrit sa sortie ; il confie à son tour sa palette à la fiche d'une zone ; les réglages, le panneau des calques, il les importe ; ce que le visiteur reçoit n'a plus de branchement ; anglais `outils/anglais/reprise-emplacements.js` |
-| ajouter à la main un stand sur la couche Stands, une zone sur la couche Zones organisateur — gardés à travers les synchronisations | `modules/reprise-emplacements.mjs` — outils rectangle et polygone de la palette `#geoReg` (`choisitOutilGeo` et `outilGeo`, tracé en cours `traceAjout` fermé par `fermeAjout`, tous deux importés par les gestes, `ajouteEmplacement`), numéro et nom `renommeAjout`, retrait `supprimeAjout` ; lien d'un stand ajouté à un exposant — champ `#geoSoc`, `lieAjout`, `poseLien` (clés `stand` et `soc` de l'entrée, comme un stand dessiné) : son groupe porte l'exposant en `data-id`/`data-soc` et lui-même en `data-aj`, relu par `objetGeoSous` et `groupeGeo`, trouvé par `modules/dessin.mjs` `decoupeStand` ; lié, il sort de `TOUS` et de la liste ; une entrée de configuration par élément, clé `_ajout:<id>` (`cleAjout`), versée dans le pavillon par `modules/emplacements.mjs` `appliqueAjouts` depuis `modules/index-salon.mjs` `indexe` — le visiteur la reçoit (`objetAjoute`, `poseLien`, `rechAjout`, importés par l'outil et par `modules/fiche-zone.mjs`) ; balisage partagé avec la source `modules/rendu.mjs` `baliseStand`, `baliseZone` ; fiche et masquage d'une zone ajoutée rangés dans son entrée, `modules/fiche-zone.mjs` `enregistreZoneAjoutee` — le serveur n'applique les colonnes de l'événement qu'aux zones de l'instantané ; ses salles de conférence restent dans la colonne `salles`, et `plan-public/` compte les zones ajoutées dans `zonesDuPlan` en relisant les clés `_ajout:` de la configuration du pavillon |
-| cote, aimants, grille des stands, taille exacte, duplication | module `modules/aimants.mjs` — administration seule, importé par `modules/outil-dessin.mjs` et `modules/edition.mjs` : cote `ecritMetres`, `coteCadre`, `montreCote` ; accroche `correction`, `aimante`, `coinsGeste`, points montrés `montreAimants`, relevés oubliés par `oublieAimants` (formes dessinées) et `oublieAimantsDuPlan` (emplacements) ; taille reposée `DERNIERE`, `retientTaille`, `reprendTaille` ; `dupliqueForme`, `pousseForme`, taille au clavier `ecritDimensions`, `appliqueDimension` ; branché par `modules/outil-dessin.mjs`, qui l'importe et lui confie en se chargeant (`brancheAimants`) ce qu'il tient — historique, enregistrement, tolérance, image en attente — et ce qu'il importe : la forme choisie (`modules/forme-choisie.mjs`), la vue, le calque actif, le dessin — vue, forme choisie, calque actif et image en attente par des lecteurs : il pourrait les importer, mais il s'éprouve seul dans Node, et ces modules veulent la page ; l'essai `outils/essais/aimants.js` les lui confie de même —, et de même `choisitForme` et `dessinePoignees`, que `modules/edition.mjs` porte mais qu'il ne peut importer : `edition.mjs` l'importe déjà ; éprouvé par `outils/essais/aimants.js`, chaîné dans `npm run essais` |
-| ordre des calques, pile, couleur du fond du plan | l'ordre de tracé, que le visiteur reçoit aussi, dans le module `modules/ordre-trace.mjs` (`clePile`, `entrees`, `pile`, `ordonneDom`, et `construitPanneau`, que le plan public appelle sans s'en servir : son contenu, `modules/pile.mjs` le lui confie en se chargeant, par `confiePanneau`), importé par le panneau, la fenêtre de réorganisation, le montage du plan, la vue, le démarrage, le dessin et tout ce qui refait le panneau ; le panneau des calques — visibilité, couleur, trait ou aplat, cadenas et crayons, secteurs, repères `sectionSelection`, fond du plan `sectionFond` (`FONDS`) — dans le module `modules/pile.mjs` `remplitPanneau`, administration seule, chargé par `plan-admin.mjs` (`import "./pile.mjs"`), sans branchement — le nom lisible d'un sous-calque `joli` y vit, les réglages, la reprise des formes, le placement des libellés, `PLACE_LIBELLES`, `SORTE_GEO` et `ADMIN` s'importent ; secteurs importés de `modules/secteurs.mjs`, calques de dessin et leur outil de `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; boutons de `batiments.mjs`, `calage-carte.mjs` et `chaleur.mjs` importés ; fenêtre de réorganisation `modules/ordre-calques.mjs` `ouvreOrdre`, importée par `pile.mjs` (administration seule, par `plan-admin.mjs`), sans branchement — l'ordre de la pile et `construitPanneau` (`modules/ordre-trace.mjs`), `CONF` et `enregistreConf`, les verrous et `renommeCalque` (`modules/outil-dessin.mjs`), il les importe ; anglais `outils/anglais/ordre-calques.js` ; anglais `outils/anglais/pile.js`, le nom des couches du salon à `ordre-trace.js` |
-| vue du plan — cadre, cadrage, zoom et son trajet, libellés détachés le temps d'un geste, part du plan que cachent la barre, le tiroir et les volets, passage de l'écran au plan | module `modules/vue.mjs` (par `plan.mjs`) : cadre mesuré une fois `cadrePlan`, application `appliqueVue`, `rafraichitVue` (pendant un geste), `poseVue` (à la fin, ou pour un saut), textes figés `figeTextes`, calque des libellés `repeintLibelles` (relu par `modules/libelles.mjs` `libelles`), barre `mesureBarre`, masques `masque`, `masqueHaut`, `masqueDroite`, cadrage `fit`, trajet `glisseVers`, `stoppeZoom`, crans `zoom`, place visée `rectVisee`, règle d'échelle, écran → plan `versPlan` ; **les modules l'importent** (`vue`, `changeVue`, `svg`, et le reste) au lieu de se la faire confier — sauf `webgl.mjs` et `environs.mjs`, que la vue importe elle-même : ils lisent la vue, le SVG et le cadre dans `modules/vue-etat.mjs`, et `webgl.mjs` reçoit `appliqueVue` par `confieAuWebgl` —, et `aimants.mjs`, éprouvé seul dans Node ; la vue `view`, le SVG `svg` et le cadre `cadrePlan` vivent dans `modules/vue-etat.mjs`, que `vue.mjs` réexporte : les modules la remplacent par sa porte `changeVue`, et seuls les essais la lisent encore dans la page, par `__essais` ; l'emprise `emp` vit dans le module, remplacée par `poseEmprise` (`modules/rendu.mjs` `montePlan`), et la vue visée `vise` aussi, posée par `glisseVers` — tous deux importés par les modules qui les lisent ; branché par `modules/lancement.mjs` (`brancheVue`), qui n'y pose plus que ses écoutes ; ce qu'elle rappelle à chaque changement de vue lui est confié par les modules qui l'importent, en se chargeant (`confieALaVue`, défauts sans effet) — `enEdition` (`modules/edition-en-cours.mjs`), `libelles`, les poignées (`modules/edition.mjs`, `modules/reprise-emplacements.mjs`), les pastilles de l'itinéraire (`modules/tiroir-itineraire.mjs`), les pointes de flèche (`modules/dessin.mjs`), le point de la borne (`modules/vous-etes-ici.mjs`) et le calage d'un hall (`modules/batiments.mjs`) ; les appels restent à leur place dans `appliqueVue`, dans le même ordre — c'est le chemin de chaque image d'un geste |
-| fond de carte sous le pavillon, calage du plan sur la Terre | ce que le visiteur reçoit — fonds `CARTES`, tuiles `tuilesDeLaVue`, `dessineFondCarte` — dans le module `modules/environs.mjs` (par `plan.mjs`) ; le calage — le poser, s'accrocher au bâtiment d'OpenStreetMap, l'enregistrer, le volet « Environs » `voletEnvirons` et sa palette — dans `modules/calage-carte.mjs`, administration seule (par `plan-admin.mjs`), qui confie le réglage en cours au fond par `confieCalageEnCours` ; le fond sans branchement — la vue et son cadre importés de `modules/vue-etat.mjs` —, le calage branché par `modules/lancement.mjs` (`brancheCalageCarte`), en tranche `@admin` ; groupe `#fondCarte` posé par `modules/vue.mjs` `appliqueVue`, limite de recul `modules/environs.mjs` `recul` ; **un calage par pavillon**, colonne `plan.calage` lue par `environs.mjs` `calagePose` et écrite par `calage-carte.mjs` `enregistreCalage` (identifiant de base par `modules/enregistrement.mjs` `identifiants`), oubli du réglage en cours à `modules/rendu.mjs` `changePlan` ; migrations `calage_du_plan_sur_la_terre` puis `le_calage_de_la_carte_par_pavillon` |
-| passages entre le plan, la Terre et les tuiles — degré en mètres sur l'ellipsoïde, Mercator, ré-ancrage, aire, centre et axe d'un contour | `modules/terre.mjs` (`metresParDegre`, `versTerre`, `versLePlan`, `reancre`, `pixelsMercator`, `latitudeDePixel`, `echelleDesTuiles`, `niveauDesTuiles`, `aireDuContour`, `centreDuContour`, `axeDuContour`) ; l'angle se compte de l'est vers le nord ; éprouvé par `outils/essais/terre.js` |
-| placer et tourner la carte à la main | `modules/calage-carte.mjs` § Placer à la main (`cartePointerDown`, `cartePointerMove`, `cartePointerUp`), inséré dans la chaîne des gestes de `modules/gestes.mjs` par `modules/gestes-admin.mjs` |
-| rendu vectoriel du fond, libellés droits sur un plan tourné | `modules/environs.mjs` § Le rendu vectoriel — MapLibre chargé à la demande, toile `#fondCarteGL` |
-| vider le hall sous la carte | `modules/environs.mjs` § Le trou sous le pavillon (`poseMasqueCarte`) — contour gelé par `calage-carte.mjs` `retientLeHall`, aplat `#trouDuFond`, bouton par calque `calage-carte.mjs` `boutonMasqueCarte`, posé par `modules/pile.mjs` |
-| session de l'exploitant — casiers du projet et de la session, jeton lu, échangé avant de partir ou après un refus, appel à la base | `modules/session.mjs` (`accesBase`, `base`, `contenuJeton`, `resteJeton`, `echangeSession`, `CLE_CFG`, `CLE_SESSION`, initiales du compte `initialesDe`) : **un seul échange pour la console et le plan**, qui n'en tenaient chacun qu'une copie ; la console et le rapport tiennent leur session (`SESSION`, `CFG`, remplacés par `poseSession`, lus en accesseurs par le démarrage de la page) et leurs appels (`appel`, `rest`) dans `modules/socle-console.mjs`, que leurs modules importent |
-| enregistrer la configuration pour tous | module `modules/enregistrement.mjs` — envoi automatique au repos `programmePublication` (`REPOS`, `REPOS_ECHEC`), rattrapage au chargement `rattrapeRetard`, envoi `pousseConfiguration` (ne réécrit que les clés changées depuis `noteReglagesCharges`), identifiants de base des pavillons `identifiants`, oubli du plan public par le relais `oublieCache`, état du bouton `majAttente` et alerte `ditAlerte`, calques rescapés `compteRescapes`, sauvegarde emportée `brancheSauvegarde` ; administration seule, par `plan-admin.mjs` — `calage-carte.mjs` et `reglage-application.mjs` en importent `identifiants`, `oublieCache`, `REPOS` ; branché par `modules/lancement.mjs` (`brancheEnregistrement`) (écouteurs de page quittée posés à leur rang), sans rien lui confier — `ADMIN`, `CONF`, l'apparence et le panneau, il les importe ; l'enregistrement des dessins `enregistreDessins` y vit, repris par `modules/socle-dessin.mjs` ; il ouvre en se chargeant la porte de l'envoi (`modules/configuration.mjs` `confiePublication`), que `enregistreConf` emprunte ; `DESSINS`, `ATTENTE`, `PUBLIES` importés de `modules/calques-dessin.mjs` ; ce que la page publique en appelle, il le confie en se chargeant aux modules publics qui l'appellent — `majAttente` aux calques (`confieAuxCalques`), `majAttente` et `rattrapeRetard` au démarrage (`confieAuDemarrage`), `compteRescapes` et `noteReglagesCharges` à l'index (`confieALIndex`) ; anglais `outils/anglais/enregistrement.js` |
-| parcours de visite | la liste, son stockage et ses marques sur le plan `modules/parcours.mjs` (`PARCOURS`, remplacé par `poseParcours`, importé et non plus exposé ; `chargeParcours`, `enregistreParcours`, `dansParcours`, `signetParcours`, `boutonParcours`, `marqueParcours`, `dessineMarques`, `nomDeStand`, `cleTemps`, le signet qu'on bascule `basculeParcours`, `brancheParcours`, importés par la fiche et la journée, le lot versé `verseAuParcours`, importé par le parcours reçu et le bouton qui prend tout, le rang d'une liste `rangParcours` et le tiroir à refaire `refaitParcours`, importés par la journée), branchée par le tiroir (`brancheListeParcours`) ; le signet et le lot annoncent ce qui vient de changer au tiroir, qui s'y inscrit en se chargeant (`suitLeParcours`) pour se refaire, proposer la suggestion ou le rappel, ou s'ouvrir sur un lot ; le tiroir dans `modules/tiroir-parcours.mjs` (`rafraichitParcours`, `remplitParcours`, `ouvreParcours`, `videLeParcours` ; `fermeParcours` vit dans `modules/parcours.mjs`, d'où l'importent la fiche, le tiroir de l'itinéraire et l'apparence, et le tiroir le réexporte), par `plan.mjs`, branché par `modules/lancement.mjs` (`brancheTiroirParcours`) (écoutes posées à leur rang ; `conf`, le filtre de la recherche et la fiche s'importent) ; il importe la suggestion, les rappels, la journée, la note de la copie, la fiche et le tiroir de l'itinéraire, qui ne peuvent donc l'importer en retour : la suggestion et les rappels, qu'il est seul à appeler, reçoivent ce qu'il leur faut en argument (`TIROIR_SUGG` passé à `poseSuggestion` et `fenetreSuggestion`, `rafraichitParcours` à `fenetreRappel`)  — `tutoriel.mjs`, `affiche-ici.mjs` et `reglage-suggestion.mjs` l'importent ; anglais `outils/anglais/parcours.js`, `tiroir-parcours.js` |
-| partager son parcours — lien, code à photographier, parcours reçu | codage du lien, pur `modules/lien-parcours.mjs` (`codeParcours`, `litCodeParcours`, `CLE_LIEN_PARCOURS`), éprouvé par `outils/essais/parcours.js` ; lien, fenêtre et boutons `modules/partage.mjs` (`lienParcours`, `ouvrePartageParcours`, `boutonsPartage`), branché par `modules/lancement.mjs` (`branchePartage`) (bouton `#btnPartage` ; `conf` importé) ; accueil d'un parcours reçu `modules/parcours-recu.mjs` (`accueilleParcoursPartage`, `adoptePartage`), qui verse dans la liste par `modules/parcours.mjs` `verseAuParcours` ; sans branchement (`conf` importé), appelé par `modules/demarrage.mjs` `demarre` ; anglais `outils/anglais/partage.js`, `parcours-recu.js` |
-| garder un parcours préparé longtemps à l'avance — copie emportée, rang mis de côté, stockage persistant | `modules/partage.mjs` § La copie qu'on se garde (`ouvreGardeParcours`, `demandeGardeParcours`, `poseGardeParcours`), et la question qui la précède `parcoursACopier`, importée par `installation.mjs` ; `modules/parcours.mjs` `MIS_DE_COTE`, `trieParcours`, `parcoursAEcrire`, `QUARANTAINE_JOURS`, `tientLeStockage` ; ce que l'application installée d'iOS ne reprend pas `modules/installation.mjs` `poseGardeInstallation` ; note `_styles-parcours.css` `.pGarde` |
-| ajouter d'un coup tout ce que la recherche retient | module `modules/tout-au-parcours.mjs` (`poseToutAuParcours`, ce que le filtre retient `retenusPourParcours`), importé par `modules/recherche.mjs` `remplitCriteres`, qui pose le bouton au pied du panneau ; le lot passe par `modules/parcours.mjs` `verseAuParcours`, qui annonce au tiroir de s'ouvrir dessus ; anglais `outils/anglais/tout-au-parcours.js` |
-| rappel avant une conférence retenue — notification, délai, abonnement | `modules/rappels.mjs` (réglage `reglageRappel`, `minutesRappel`, `rappelsOfferts` ; ce qui part au serveur `rappelsDuParcours`, `synchroniseRappels`, repris au chargement par `reprendRappels`), sans branchement : la visite guidée en cours, il la lit dans `modules/visite-guidee.mjs` ; `rafraichitParcours`, le tiroir du parcours le lui passe en proposant les rappels (`fenetreRappel`, `proposeRappels`) — `conf` et `retourAuxReglages` (`modules/fenetre.mjs`), il les importe ; ce que l'appareil sait recevoir et l'abonnement lui-même `modules/notifications.mjs` (`poussePossible`, `iOSsansInstallation`, `abonne`, `abonnementCourant`, `RAPPELS_API`, `adresseDuRappel`, `empreinteDebut` — la même chaîne que la base refait par `empreinte_debut`) ; instant de la conférence `modules/temps.mjs` `instantMural`, éprouvé par `outils/essais/temps.js` ; interrupteur `poseRappels`, posé dans le tiroir par `modules/tiroir-parcours.mjs` `remplitParcours`, réglage `modules/reglage-rappel.mjs` `blocRappel` (onglet « Admin », profil administrateur, à côté de l'invitation à installer ; posé par `modules/volets.mjs` `voletAdmin`, sans branchement, anglais `outils/anglais/reglage-rappel.js`) ; fenêtre qui le propose à la première conférence retenue `fenetreRappel`, `proposeRappels`, appelée par `modules/tiroir-parcours.mjs` `basculeParcours`, reportée par `modules/fenetre.mjs` `poseApresFermeture`, aperçu depuis les réglages par `proposeRappels(true)` et `modules/fenetre.mjs` `retourAuxReglages("rappel")`, essai réel par `modules/essai-rappel.mjs` `essaieRappelReel` (administration seule, importé par `reglage-rappel.mjs`) et `modules/reglage-rappel.mjs` `ditEssaiRappel` ; réception `_sw.js` § Les rappels de conférence ; relais `src/index.mjs` `rappels` (`/api/rappels`), serveur `supabase/functions/rappels/`, chiffrement `_partage/push.ts`, migration `rappel_avant_une_conference` (tâche `pg_cron` à la minute) ; secrets `VAPID_*` |
-| catalogue d'un exposant — produits sur sa fiche, onglet « Produits » | relevé `supabase/functions/_partage/eventmaker.ts` `produits()` (`ProduitEm`), étape `sync-evenement/` domaine `produits`, pose sur le stand et sur les hébergés (`hebergee`) ; retrait `plan-public/` `CHAMPS_FICHE` ; rendu `modules/fiche.mjs` `produits`, `ficheProduit`, `produitsOuverts`, troisième position de `onglet` ; balisage `_head.html` `#dOngProd`, styles `_styles-plan.css` volet `.cProd`, vignettes `.prods` ; réglage console `modules/fiche-detail.mjs` `origineProduits` ; note `outils/eventmaker-produits.md` |
-| suggestion d'un exposant de plus, onglet « Suggestion » | ce que le visiteur reçoit — proposition, carte du tiroir, fenêtre au seuil — `modules/suggestion.mjs` (`suggestionCourante`, `poseSuggestion`, `fenetreSuggestion`, refus `SUGG_ECARTES` et `SUGG_MONTREES` vidés par `modules/tiroir-parcours.mjs` `videLeParcours`) ; volet des réglages et relevé du classement `modules/reglage-suggestion.mjs` (`voletSuggestion`, `NOM_VOLET_SUGGESTION`, `relevePalmares` ; administration seule, par `plan-admin.mjs`) ; sans branchement : le tiroir du parcours, qui l'appelle seul, lui passe de quoi se refaire à chaque appel (`poseSuggestion`, `fenetreSuggestion`) — le glissement de la fenêtre (`modules/glisse-fenetre.mjs`), `conf`, l'option, le champ intitulé, l'enregistrement, la fiche et les critères s'importent ; canal de mesure `suggestion`, migration `canal_de_mesure` ; anglais `outils/anglais/suggestion.js`, `reglage-suggestion.js` |
-| itinéraire d'un point du salon à un autre | calcul dans le module `modules/itineraire.mjs` — grille de marche `grille` (rôles des calques `roleIti`, zones traversables), recherche `cherche` et balayages `distancesDepuis`, accroche à l'allée `accroche`, abords des salles en mouvement `foule`, trait `reduit`, `recentre`, `lisse`, `nettoie`, faces et amorces, tronçon `troncon`, points désignables `pointObjet`, `pointRepere`, `candidats`, passages d'un plan à l'autre `annuaireLiaisons`, `routeEntre`, et ce que le trajet dit `ecritDistance`, `ecritDuree`, `phraseLiaison` ; branché par `modules/tiroir-itineraire.mjs` en se chargeant (`brancheItineraire`), qui lui confie `CONF`, `DESSINS` (que les essais dans Node lui prêtent aussi) et ce que le parcours et la journée savent des conférences (`instantConf`, `finInstant`) — le tracé d'une forme et ce qu'un repère est, il les importe (`modules/chemin-forme.mjs`, `modules/reperes.mjs`) ; le tiroir (`ITI`, importé tel quel, `calculeRoute`, `relance`, `montreResultat`, suggestions `montreSugg`), la visée (`visee`, porte `poseVisee` ; visées d'autres modules `confieVisee`, bandeaux qui lui cèdent la place `suitLaVisee` ; `bandeauVisee`, `armeVisee`, `finVisee`, `viseItineraire`, `visePoi`, `visePoint`) dans `modules/tiroir-itineraire.mjs`, et le tracé animé (`TRACE`, porte `poseTrace` ; `dessineItineraire`, `lanceTracage`, `peintItineraire`, `rafraichitBouts`, `cadreItineraire`) dans `modules/trace-itineraire.mjs` — du rendu, que le montage d'un pavillon redessine sans importer le tiroir, qui le réexporte —, le tiroir branché par `modules/lancement.mjs` (`brancheTiroirItineraire`), qui n'y pose plus que ses écoutes, à leur rang (la vue et sa porte `changeVue`, les volets mesurés, il les importe ; le passage d'un pavillon à l'autre, il l'importe de `modules/rendu.mjs` ; la fiche et le parcours qu'il referme, par le registre des tiroirs exclusifs de `modules/tiroirs-exclusifs.mjs`), importé par `journee.mjs`, `tutoriel.mjs`, `affiche-ici.mjs`, `borne.mjs` et `ici.mjs` — il n'importe ni l'une ni l'autre : leur départ, il le lit dans `modules/vous-etes-ici.mjs` ; la nappe de la grille de marche dans `modules/nappe.mjs` (`rafraichitApercu`, porte `poseNappe` de la case `#voirNappe`), administration seule, chargé par `outil-dessin.mjs`, sans branchement (jetons et SVG importés ; `rafraichitApercu` confié au montage d'un pavillon par `confieAuRendu`) ; noms de l'exploitant (rôles, réglages de foule, écriture des liaisons) exposés par `plan-admin.mjs` seul ; anglais `outils/anglais/itineraire.js` et `tiroir-itineraire.js` ; essai `outils/essais/itineraire.js` |
-| mode borne interactive — `?borne`, position de l'écran, remise à zéro | `modules/borne.mjs` — position retenue `borneRetenue`, lieu dicté par l'adresse `BORNE_LIEU_DIT`, pose `poseLaBorne`, `poseBorneIci`, `poseDepartImpose`, remise à zéro `reposeLaBorne` ; la visée, les tiroirs qu'elle referme (`ferme`, `fermeParcours`, `fermeItineraire`, `videLeParcours`) et `changePlan`, elle les importe ; sa visée « borne » et son bandeau de pose confiés au tiroir de l'itinéraire en se chargeant (`confieVisee`, `suitLaVisee`) ; branché par `modules/lancement.mjs` (`brancheBorne`), qui n'y pose plus que ses écoutes ; le départ imposé et son point, partagés avec le code affiché dans le hall, dans `modules/vous-etes-ici.mjs` (`LIEU_BORNE`, porte `poseLieuBorne`, `pointBorne` — lu par `modules/tiroir-itineraire.mjs` et `modules/journee.mjs` —, `ecritDepartBorne`, « Vous êtes ici » `dessineBorne`, posé par `modules/rendu.mjs` `montePlan`, `rafraichitBorne`) ; anglais `outils/anglais/borne.js` ; essai `outils/essais/navigateur/borne.spec.js` |
-| code QR « Vous êtes ici » — affiche du hall, plan localisé, désactivation | côté visiteur `modules/ici.mjs` (`?ici=` relu par `litCodeIci`, `poseIci`, désactivation `retireIci`, rappel `montreBandeauIci`, `ICI_ACTIF`, importé par la visite guidée) ; côté exploitant `modules/affiche-ici.mjs` (`codeIci`, `lienIci`, `ouvreCodeIci`, `afficheIci`, `boutonCodeIci` ; administration seule, par `plan-admin.mjs`) ; `brancheIci` branché par `modules/lancement.mjs`, sans rien lui confier (le trajet `ITI` et `relance` importés de `modules/tiroir-itineraire.mjs`, le rappel confié à la visée par `suitLaVisee`) ; l'affiche sans branchement (la forme d'un repère importée de `modules/forme-choisie.mjs`) ; départ imposé partagé avec la borne par `modules/borne.mjs` `poseDepartImpose`, éteint par la porte `poseLieuBorne` de `modules/vous-etes-ici.mjs`, tracé du damier `modules/qr.mjs` `qrChemin` ; visée `ici` dans `modules/tiroir-itineraire.mjs` `bandeauVisee`, `visePoint` (lue et armée par `affiche-ici.mjs`, qui l'importe et lui confie `ouvreCodeIci` en se chargeant, par `confieVisee` — la page publique n'a donc pas cette visée) et la chaîne des appuis de `modules/gestes.mjs` (maillon `codeIci`, posé par `modules/gestes-admin.mjs`) ; bouton posé par `modules/bande-admin.mjs` `activeAdmin` ; rappel `_styles-parcours.css` `.iciRappel`, affiche imprimée `_styles-modeles-parcours.css` `#afficheQr` |
-| ordre de visite, conférences, horaires | la question posée (`ouvreOrganisation`, jours `joursSalon`, `joursAVenir`, refus `REFUS`, départs `departsProposes`), l'état de la visite (`SEJOUR`, `JOURNEE`, `vueJournee`, importés tels quels par `tutoriel.mjs`) et le tiroir (`appliqueVueParcours`, `remplitJournee`, `ouvreChoixJour`, `perimeJournee`, `oublieSejour`) dans le module `modules/journee.mjs`, branché par `modules/lancement.mjs` (`brancheJournee`), sans argument, pour poser ses écoutes à leur rang — ce qu'elle demande au parcours (un rang, le signet basculé, le tiroir refait), elle l'importe de `modules/parcours.mjs` ; il importe lui-même les horaires du salon et le seuil, qu'il confie au calcul, éprouvé seul (`modules/horaires.mjs` : `datesSalon`, `horairesSalon`, `lueHeure`, `minutesVisite`, que le plan public embarque et que `volets.mjs` et `reglages.mjs` importent), la fiche et le parcours ; le trait de l'itinéraire (`TRACE`, porte `poseTrace`) et le trajet demandé (`ITI`) importés de `modules/tiroir-itineraire.mjs` ; la préparation du séjour (`prepareSejour`, `matriceJournee`, `derouleJournee`, `calculeSejour`, `apercuRepartition`, retouches `PLACES`, matrice gardée `oublieMatrice`) dans `modules/sejour.mjs`, branché par `journee.mjs` (`brancheSejour`), éprouvé seul par `outils/essais/sejour.js` ; anglais `outils/anglais/journee.js` ; le rangement lui-même — répartition sur les jours, ordre de visite, poids des jours — `modules/ordonnanceur.mjs` `rangeSejour`, `poidsDesJours`, importé tel quel par les essais |
-| seuil de concentration d'un stand, journée organisée qui s'étale | **ce n'est pas une capacité** — le compteur ne voit que les journées organisées depuis le plan, jamais la fréquentation du salon ; le seuil dit à partir de combien des nôtres le moteur cherche un autre ordre. Trois notions distinctes : `modules/seuil.mjs` `seuilConcentration` (configuration, que le moteur ne modifie jamais), **charge annoncée**, et `modules/ordonnanceur.mjs` `seuilEffectif` (interne au calcul) ; réglage `modules/volets.mjs` `voletParcours` (onglet « Parcours intelligent ») et ses règles dans le module `modules/seuil.mjs`, que le plan public embarque (`REGLAGES_SEUIL` — `parDix`, `plancher`, `plafond`, `nombre` —, `seuilGere`, `seuilImpose`, `seuilParSurface`, `regleSeuil`, `phraseSeuil` — exposé par `plan-admin.mjs` seul —, surface par `aireDuStand` ; anglais `outils/anglais/seuil.js`) ; **clé de configuration `_capacite` gardée telle quelle** — déjà écrite chez les salons en production, la renommer perdrait leur réglage ; **un prix, jamais un refus** — dans `modules/ordonnanceur.mjs` : courbe `PEINE_CHARGE`, `PEINE_MAX`, `SEUIL_PEINE`, `peineDeCharge`, entrée dans le calcul par `coutCreneau` seul (`peineCreneau`, `peineCandidat`, `peineDecalee`), le visiteur se comptant parmi ceux qu'il gêne ; ce qui se remplit est une **ressource** `GENRES_RESSOURCE`, `RESSOURCES` (`modules/sejour.mjs` `prepareSejour` ; stands seuls, la forme est prête pour zone, allée, liaison) ; charge lue autour de l'heure et non dans sa case `chargeAutourDe`, `LISSAGE_CHARGE`, `DUREE_VISITE` ; ordres essayés exhaustivement là où ça paie `permuteCongestion`, `PERMUTE_MAX` ; dilatation progressive et plafonnée `DILATATION`, `dilatationPour` (`TRANCHES_MINI`), lue par jour `modules/charge-annoncee.mjs` `dilatationDuJour` ; annonce et lecture `modules/charge-annoncee.mjs` (`annoncePlan`, `litLaCharge`, `chargeCellule`, `celluleUtile`, `CHARGE` lue par accesseur), branchée par `brancheCharge`, que `modules/journee.mjs` appelle en se branchant, et qui lui confie réglage, parcours et visite calculée, tranches `modules/ordonnanceur.mjs` `trancheDe` ; identifiant du parcours `modules/parcours.mjs` `identifiantParcours` ; serveur `supabase/functions/plan-de-visite/`, relais `src/index.mjs` `planDeVisite` et `chargePrevue` (`/api/plan-de-visite`, `/api/charge`), migration `la_charge_prevue_des_stands` ; essais `outils/essais/` — `npm run essais` (douze cas, puis `sejour.js`), `npm run fep26` (salon synthétique, cinq taux d'adoption, cinq tirages) |
-| visite guidée du premier démarrage | module `modules/tutoriel.mjs` — chapitres `CHAPITRES_TUTO`, proposition `proposeTutoriel` (une fois par salon et par appareil, clé `plan-tutoriel:<salon>`), visite `lanceTutoriel`, `battementTuto`, bulle `afficheTuto`, placement `placeTuto`, voile `voileTuto`, zone désignée `marqueZoneTuto` ; le visiteur la reçoit par `plan.mjs`, la visite en cours `TUTO` dans `modules/visite-guidee.mjs` (porte `poseTuto`, réexportée par la visite guidée), lue par les essais en accesseur de `__essais`, par `modules/installation.mjs` et par les rappels ; réglage et essai importés par `modules/volets.mjs` seul, administration (`reglageTuto`, `tutoPropose`, `chapitresTuto`, `lanceTutoriel`) ; sans branchement : les réglages, la fiche, les tiroirs, le code « Vous êtes ici » et l'état de l'éditeur (`modules/forme-choisie.mjs`, `modules/calques-dessin.mjs`, `modules/libelle-place.mjs`) comme celui de la journée (`journee.mjs`), elle les importe ; proposée par `modules/demarrage.mjs` `demarre`, après le générique (`resteSponsor`) ; case et « Essayer » dans `modules/volets.mjs` `voletAdmin` ; styles `_styles-divers.css` § La visite guidée ; anglais `outils/anglais/tutoriel.js` |
-| options vendues à part — dessin des stands, images sur un stand, journée organisée, programme de conférences, recommandation sponsorisée | `modules/options.mjs` `OPTIONS` et `appliqueOptions` (par `plan.mjs`) — un module de base, qui ne dépend que de la configuration : ce qu'une option refait en se fermant, le module qu'elle touche le lui confie en se chargeant (`confieApresOption`) — `modules/tiroir-parcours.mjs` pour la journée et la suggestion, `modules/index-salon.mjs` pour le programme, `modules/outil-dessin.mjs` pour les deux options de l'outil ; `appliqueOptions` importé par `modules/apparence.mjs` ; anglais `outils/anglais/options.js` ; lues par `modules/configuration.mjs` `optionActive`, `programmeOffert`, `suggestionOfferte` ; `modules/volets.mjs` `blocOptions` (onglet « Admin », profil administrateur) ; ce qui se ferme par la feuille de style sous `html.sans-dessin-stand` (bouton de l'outil), `sans-image-stand` (champ `#imageSoc`, l'outil image restant) et `sans-journee` dans `_styles-plan.css` et `_styles-parcours.css`, le code refusant ensuite par `outilOffert` et `seRattache` ; le programme se refait par `modules/index-salon.mjs` `indexeConferences` (clé `_options`) |
-| logo au démarrage, le temps du chargement — rien, la marque, un sponsor | module `modules/sponsor.mjs` (`MODES_SPONSOR`, `modeSponsor`) — posé au premier trait d'après le cache `plan-sponsor:<slug>` par `brancheSponsor`, que `modules/lancement.mjs` appelle à sa place (`conf` importé de `modules/configuration.mjs`, `PLAN_ADMIN` de `modules/salon.mjs`), corrigé par `accueilleSponsor` dans `modules/demarrage.mjs` `demarre`, rendu par `suitSponsor` ; réglage `_sponsor` et bloc `blocSponsor` (`CHOIX_SPONSOR`) dans `modules/reglage-sponsor.mjs` (administration seule, par `plan-admin.mjs` ; sans branchement : `glisseFenetre` importé de `modules/glisse-fenetre.mjs`), posé au bas de `modules/volets.mjs` `voletAdmin`, donc réservé au profil administrateur ; marque du produit par `MARQUE_SPONSOR`, qui vaut `MARQUE_PRODUIT`, défini pour esbuild par `genere.js` `DEFINIS` ; styles `_styles-divers.css` § Le générique du sponsor et § Le générique du démarrage ; rejoué par `modules/borne.mjs` `reposeLaBorne` ; `resteSponsor` fait attendre `modules/tutoriel.mjs` et `modules/installation.mjs` |
-| comptage d'usage | module `modules/mesure.mjs`, branché à sa place par `modules/lancement.mjs` (`brancheMesure`) ; le nom du salon lu dans `modules/donnees.mjs` ; relais `src/index.mjs` `mesure`, qui écrit **sans fonction intermédiaire** par la porte SQL `mesure_publique` (migration `la_porte_publique_des_mesures`, ouverte à `anon` : c'est elle qui borne le paquet) puis `enregistre_mesures` (migration `compteurs`) ; `supabase/functions/mesure/` n'est plus que le repli — porte absente ou en panne. Essai de charge `npm run charge` (`outils/essais/charge.js`, `--mesures-seules` pour ce seul chemin) |
-| erreurs des pages — ce qu'un visiteur ou un exploitant a rencontré, remonté et compté | la page `modules/erreurs.mjs` (`brancheErreurs`, en tête de `modules/lancement.mjs`) : erreurs du script et promesses rejetées, de notre script seul (`versions/`), cinq au plus par chargement, rien chez qui a refusé la mesure, rien du visiteur ; relais `src/index.mjs` `erreur` (`/api/erreur`, même origine seule), qui ramène la position minifiée au module et à la ligne par la carte du script (`src/carte.mjs`, éprouvé par `outils/essais/carte.js`, chaîné dans `npm run essais`) — à la réception, la carte d'une version disparaissant avec elle ; porte SQL `erreur_publique` et table `erreur_page`, comptées par salon, jour et erreur, plafond de deux cents distinctes par jour, purge à quatre-vingt-dix jours (migration `les_erreurs_des_pages_du_plan`) ; lues par le rapport d'utilisation, `modules/rapport-utilisation.mjs` `erreurs` (fn `erreurs_du_salon`) ; essai `outils/essais/navigateur/erreurs.spec.js` |
-| mesure faite sans réseau, renvoyée à la reconnexion | `modules/mesure.mjs` § La file, `pousseLaFile`, `beaconne` ; recul porté par le paquet, borné par `mesure_publique` et la migration `les_mesures_qui_ont_attendu_le_reseau` |
-| mesure sans bandeau : notice « Confidentialité », refus, vie du jeton, purge | `modules/mesure.mjs` § La notice, et le refus, `MESURE_VIE_MOIS` ; lien `_head.html` `#btnConfidentialite` ; `purge_presences` chaque nuit, migration `conservation_des_jetons` ; README « Sans bandeau de consentement » |
-| polices des pages | modèles en tête de `outils/polices.js`, polices au choix relues dans `modules/polices-plan.mjs` `POLICES_NOMS` ; puis `npm run polices` → `web/polices/` ; déclarées par `genere.js` `feuillePolices` à la place de `<!--__POLICES__-->`, les polices au choix chargées par `feuillePolice` |
-| page d'accueil — la racine, qui mène à la console, à un plan ou à la page du mot de passe | point d'entrée `modules/accueil.mjs` (`ENTREES.accueil` dans `outils/modules.js`), aiguillage `modules/aiguillage.mjs` `brancheAiguillage`, branché par le point d'entrée lui-même, sans code soudé : son script est posé après tout le balisage de `_index.html` par `outils/genere.js` `poseModulesSeuls`, comme pour la page du mot de passe, la console et le rapport ; anglais `outils/anglais/_index.js` (le balisage) |
-| porte d'accès au plan — navigateur, cadre, écran d'accueil, application | `modules/mesure.mjs` `supportMesure` ; rendu `modules/rapport-utilisation.mjs` `portes` ; migration `support_d_acces_au_plan` |
-| visiteurs uniques par stand, par canal, par geste | table `visiteur_cible` et fn `audience_cibles` (clés `v_…`), migration `les_visiteurs_uniques_par_stand` ; colonnes `modules/export.mjs` `COL_TETE_V`, `COL_PIED_V` ; cartouche `modules/chaleur.mjs` `phraseChaleur` |
-| carte de chaleur du plan | module `modules/chaleur.mjs` — administration seule, par `plan-admin.mjs` ; branché par `modules/lancement.mjs` (`brancheChaleur`), qui n'y pose que l'écoute du redimensionnement (la fenêtre des réglages, qui l'importe, lui passe `ouvreReglages` en appelant `voletMesure` ; `ADMIN` importé), appelé par `modules/secteurs.mjs` `coloreSecteurs`, à qui il confie `coloreChaleur` en se chargeant (`confieChaleur`) — la page publique, qui ne l'embarque pas, n'a pas de carte ; migration `audience` |
-| remise à zéro des compteurs | `modules/chaleur.mjs` § Remise à zéro (`voletMesure`, `evenementCourant`, repris par `modules/reglage-suggestion.mjs`), `modules/reglages.mjs` `ouvreReglages`, migration `remise_a_zero` |
-| thème du plan — un seul, le clair ; pas de mode sombre ni de suivi de l'appareil | jetons `_styles-jetons.css` `:root` ; la nuit ne vit plus que dans la console, `_console.css` et `modules/socle-console.mjs` (bouton `btnTheme`, clé `console-theme`) ; barre du navigateur `outils/pwa.js` `BARRE_CLAIRE` / `BARRE_DEUX_THEMES`, choisie par l'option `deuxThemes` de `outils/genere.js` `page()` |
-| plan d'un bord à l'autre de l'écran — à la place de l'heure et de la poignée de gestes | `display` du manifeste dans `outils/pwa.js`, qui dit aussi ce que coûte chacune des deux voies (bande noire au lancement, ou bandeau du navigateur à chaque demande faite par la page) ; retraits rendus sous `@media (display-mode: fullscreen)` dans `_styles-jetons.css` ; option `pleinEcran` de `outils/genere.js` `page()` (`viewport-fit=cover`) ; jetons `--sys-*` de `_styles-jetons.css` `:root`, repris par `.app`, `.topbar`, `.bandeAdmin`, les tiroirs et `modules/tutoriel.mjs` `placeTuto` ; couleur dont le système peint sa barre `modules/ton-barre.mjs` `poseTonDeLaBarre` (importée par `habillage.mjs` et `bande-admin.mjs`, l'écoute de la largeur posée par `brancheTonDeLaBarre`, en tête de `modules/lancement.mjs`), jeton `--ton-barre` posé par `.topbar` et par les modèles qui peignent le bandeau |
-| les deux bandes qui s'effacent pendant qu'on manipule le plan — celle du salon, celle de la recherche | sur écran étroit la barre se pose par-dessus la scène, qui prend toute la hauteur : `_styles-modeles-parcours.css` `.topbar` (rangs superposés) et `.side`, toutes deux par la classe `.pliee` ; pliées par `modules/gestes.mjs` `plieLesBandes` au glissement et au pincement, rendues par `saisitPlan` ; hauteur mesurée par `modules/vue.mjs` `mesureBarre` (jeton `--barre`), et ce qu'elle couvre du plan par `masqueHaut`, relu par `fit`, `cadreSur` et le cadrage de `modules/tiroir-itineraire.mjs` (`cadreItineraire`) |
-| barre du salon sur un téléphone — bande retirée, pictos à la verticale au bord droit en légère transparence | `_styles-modeles-parcours.css` § « max-width:900px », les règles `html:not(.mode-admin):not(.barre-bande) .topbar` : fond et titre retirés, `.tools` posée hors du flux à droite, jetons du modèle rendus à la page par `inherit`, onglets des pavillons en pastille ; ton de la barre du système repris au fond du plan (`modules/ton-barre.mjs` `poseTonDeLaBarre`, relancé au franchissement du seuil) |
-| choisir entre ce plan sans bande et un bandeau réduit | `modules/habillage.mjs` `modeBarre`, `appliqueBarre`, avec la couleur principale et le fond (`appliqueAccent`, `appliqueFond`), branché par `modules/lancement.mjs` (`brancheHabillage`), qui ne fait plus qu'y poser la barre au premier trait — `poseTonDeLaBarre` s'importe ; ce qu'on fait voir des distinctions (`MARQUES_DIST`, `modeDist`, `couleurDist`, `appliqueDists`) vit avec elles dans `modules/distinctions.mjs` ; anglais `outils/anglais/habillage.js` ; `modules/volets.mjs` `CHOIX_BARRE`, bloc `blocBarre` (onglet « Admin », profil administrateur) ; réglage `_barre`, classe `barre-bande` posée dès le premier trait d'après le cache `plan-conf:<salon>`, par `brancheHabillage` à la place qu'elle tenait ; règles du bandeau réduit `_styles-modeles-parcours.css` § « L'autre choix », logo du salon à côté du nom `modules/index-salon.mjs` `poseLogoSalon` (l'icône d'onglet, `#logoSalon`) |
-| onglets des pavillons qui débordent — fondu du bord, flèche qui avance | `_styles-plan.css` `.halls-bande` (cadre `.bande`, barre `.defile`), flèche empruntée à `.poi` ; marquage `modules/bandes.mjs` `majFondus`, rappelé par `modules/rendu.mjs` `onglets`, écoutes posées par `brancheBandes` (`modules/lancement.mjs`) |
-| styles et structure de l'écran du plan | balisage `_head.html` ; styles en six feuilles, dans l'ordre de `outils/assemble.js` : `_styles-jetons.css` (jetons, bande d'administration), `_styles-plan.css` (écran du plan), `_styles-modeles.css` (modèles de fiche, liste, bandeau), `_styles-parcours.css` (parcours, journée, itinéraire, borne), `_styles-modeles-parcours.css` (modèles appliqués à ceux-ci, écran étroit), `_styles-divers.css` (alerte, visite guidée, générique) ; en-tête `_entete.html` |
-| console multi-événements | l'écran — barre du haut, choix du salon, liens, création, rechargement, chargement `charge`, dessin `dessine`, `demarre`, `videEcran` — dans `modules/ecran-console.mjs`, branché par `brancheConsole` ; le socle commun avec le rapport — accès au projet, `appel`, `rest`, connexion `ecranConfig`, `ecranConnexion`, `deconnecte`, barre d'état `signale`, briques `bloc`, `grille`, `BASE_PAGES`, `PAGE_MDP`, `idCompte`, thème, menu du compte, renvoi d'un jeton de mot de passe égaré — dans `modules/socle-console.mjs`, sa fenêtre (`ouvreModale`, `fermeModale`, `verrouilleModale`, `gardeLaPlace`, `demande`, `confirme`) dans `modules/fenetre-console.mjs`, branchés par `brancheSocle` (qui reçoit `demarre` et `videEcran` de chaque page), dont `_console-base.html` ne garde que le balisage de la fenêtre ; tous importés par les modules de la console ; point d'entrée `modules/console.mjs`, **sans code soudé** : il branche lui-même le socle, l'export et l'écran, dans cet ordre, puis ouvre le premier écran (`premierEcran`), et n'expose rien — son script est posé après tout le balisage par `outils/genere.js` `poseModulesSeuls`, qui refuse un script en ligne resté dans la page ; anglais `outils/anglais/ecran-console.js`, `socle-console.js` |
-| salons de la console — la liste `EVTS`, le salon ouvert `selection`, les pavillons `PLANS` | `modules/evenements.mjs` ; remplacés par `poseEvenements`, seule porte d'écriture, importés par les modules (fiche, provenance, fiche détail, fuseau, comptes, synchronisation) ; avec eux `courant`, `slugifie`, l'écriture d'un salon `majEvenement` et la lecture de ses pavillons `chargePlans`, par l'appel à la base de `modules/socle-console.mjs` ; le rapport a son propre salon choisi, dans `modules/rapport-utilisation.mjs` |
-| fiche d'un salon dans la console — nom, identifiant, icône, rythme, pavillons, intégration ; fenêtre « Sources de données » | `modules/fiche-evenement.mjs` `dessineFiche`, `champ`, `champFavicon`, `ouvreSources`, `champCle`, `majMsgSync`, `majIntegration` ; session, briques, fenêtre, barre d'état, appel à la base et `BASE_PAGES` importés du socle ; ce que la console redessine — `dessine`, `dessineChoix`, `majAdresse` — confié par `modules/ecran-console.mjs` `brancheConsole` (`brancheFiche`) ; anglais `outils/anglais/fiche-evenement.js` |
-| provenance des données d'un salon — domaines, fournisseurs, source retenue | `modules/provenance.mjs` (`DOMAINES`, `FOURNISSEURS`, `FOURNISSEURS_CONF`, `source`, `sourceNom`, `fournisseurUtilise`, `resumeProvenance`, fenêtre `ouvreProvenance`), fenêtre, grille et barre d'état importées du socle ; anglais `outils/anglais/provenance.js` |
-| fiche détail d'un salon — ce qu'elle montre, cadres, catégories d'invités Eventmaker, champs propres au salon | `modules/fiche-detail.mjs` `ouvreFiche`, `resumeFiche`, `LIGNES_FICHE`, `cadreCategories`, `lignesPerso`, `renommeChampPerso`, `retireChampPerso` ; fenêtre, `demande`, `confirme`, `gardeLaPlace` importés de `modules/fenetre-console.mjs`, barre d'état du socle ; anglais `outils/anglais/fiche-detail.js` |
-| dupliquer un salon | `modules/duplication.mjs` `dupliquer` ; `demande`, appel à la base et barre d'état importés du socle, `charge` confié par `modules/ecran-console.mjs` `brancheConsole` (`brancheDuplication`) |
-| appel d'une fonction du projet depuis la console, ce que vaut son refus | `modules/appel-fonction.mjs` (`fonction`, `refus`, et le flux d'une fonction qui rend compte au fil de l'eau `fluxFonction`) ; adresse du projet lue à l'appel, `appel` et `deconnecte` importés de `modules/socle-console.mjs` ; importé par `comptes.mjs` et `synchronisation.mjs` |
-| fuseau horaire d'un salon, réglé dans la fiche de la console | `modules/fuseau.mjs` `champFuseau` (et sa lecture `fuseauConnu`), salon ouvert importé de `modules/evenements.mjs`, appel à la base et barre d'état du socle ; anglais `outils/anglais/fuseau.js` |
-| correspondance des champs d'origine — liste déroulante d'une cible, suite de champs, valeurs qui valent oui | `modules/fiche-detail.mjs` `champOrigine`, `tableauChamps` ; ce que le réglage écrit et affiche `modules/correspondance.mjs` (`DEFAUT_CHAMP`, `AUCUN_CHAMP`, `encode`, `decode`, `correspondance`, `intitule`, `intituleSuite`, `autreFace`) ; accords reconnus `ACCORDS`, recopie de `_partage/champs.ts` : **qui change l'un change l'autre** |
-| icône d'onglet des pages du plan | `modules/fiche-evenement.mjs` `champFavicon`, image réduite par `modules/icone-onglet.mjs` `reduitIcone`, posée par `modules/index-salon.mjs` `poseFavicon`, migration `icone_d_onglet_du_salon` |
-| rapport d'utilisation | module `modules/rapport-utilisation.mjs` — l'écran entier, son état compris (`selection`, période, rapport chargé), périodes `PERIODES`, canaux d'une conférence `CANAUX_CONF`, portes `SUPPORTS`, rendu `dessineRapport`, `chiffre`, `barres`, `portes`, `jours` ; point d'entrée `rapport.mjs`, sans code soudé comme celui de la console : il confie `demarre` et `videEcran` au socle, `selection` et `courant` à l'export, pose les commandes de la barre (`brancheRapport`) et ouvre le premier écran ; l'appel à la base, la session, la barre d'état, `bloc` et `BASE_PAGES` importés de `modules/socle-console.mjs` ; styles `_console.css` ; anglais `outils/anglais/rapport-utilisation.js` |
-| export tableur des exposants | `modules/export.mjs` `exporteExposants` (console **et** rapport, par `console.mjs` et `rapport.mjs`), branché par chaque point d'entrée (`brancheExport`), qui lui confie le salon choisi, que chaque écran tient à sa façon — la barre d'état et l'appel à la base viennent du socle ; écriture `.xlsx` dans `modules/classeur.mjs` (`classeurXl`, `enregistreFichier`) ; canaux `CANAUX_STAND`, `AUTRE` et `nb` importés par `modules/rapport-utilisation.mjs` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
-| accès administrateur d'un plan | module `modules/acces-admin.mjs` — fenêtre d'accès `ecranAcces` (rouverte par le démarrage sur une session refusée, qui la reçoit de ce module en se chargeant (`confieAuDemarrage`), importée par `modules/enregistrement.mjs`), profil du compte `litProfilA`, qui pose `PROFIL_ADMIN` (état du module, importé par `modules/reglages.mjs`), menu du compte `poseCompte` ; casiers et lecture du jeton repris de `modules/session.mjs` ; administration seule, par `plan-admin.mjs` ; branché par `modules/lancement.mjs` après le démarrage, dans l'emplacement que `plan-admin.mjs` remplit (`brancheAcces`), sans rien lui confier : `activeAdmin`, que le module ne peut importer sans boucler sur `enregistrement.mjs`, `modules/bande-admin.mjs` le lui confie en se chargeant (`confieALAcces`) ; le chargement `charge`, il l'importe de `modules/demarrage.mjs` ; anglais `outils/anglais/acces-admin.js` |
-| utilitaires communs — élément par identifiant `$`, échappement `esc`, valeurs d'un champ à choix `separeValeurs`, tri des noms `COLLATION`, conversions de couleur — `trio`, `melange`, `ecarte` compris | modules `dom.mjs`, `texte.mjs`, `couleurs.mjs` dans `outils/gabarit/modules/`, servis au plan par `plan.mjs`, importés par les modules de la console et de la page du mot de passe |
-| ce qui vient d'ailleurs, relu avant d'être affiché — adresse saisie, logo d'une société ou d'une zone, description écrite dans l'éditeur | `modules/sur.mjs` `adresseSure` (page, courriel, numéro, rien d'autre), `adresseWeb` et `lien` (réseaux sociaux saisis à la main), `adresseImage`, `imageSure` et `IMAGE_SURE` (pas de SVG), `assainitRiche` (on ne garde que les balises reconnues) |
-| heure d'une conférence dans le fuseau du salon, jours et heures écrits — « samedi 14 mars », « mar. 21 », « 09h30 », « 1 h 15 min » | `modules/temps.mjs` `momentLocal` (les deux formes d'Eventmaker), `dateDeCle`, `jourLong`, `jourCourt`, `jourBref`, `jourISO`, `minutesDe`, `ecritHeure`, `ecritMinutes` ; noms `JOURS`, `MOIS` en français, traduits par la page |
-| code QR — l'encodeur, le damier, la taille au-delà de laquelle il ne se lit plus | `modules/qr.mjs` `qrTrame`, `qrChemin`, `qrSvg`, `QR_VERSION_LISIBLE` ; employé par `modules/partage.mjs` `ouvrePartageParcours` et `modules/affiche-ici.mjs` |
-| fenêtre commune par-dessus le plan — ouvrir, confirmer, fermer par la croix, le voile ou « Échap » | `modules/fenetre.mjs` `ouvreModale`, `fermeModale`, `confirme` ; ce qu'une fenêtre laisse en train de se faire `poseAvantFermeture`, ce qui attend que la place se libère `poseApresFermeture` ; branchée à sa place parmi les écouteurs par `modules/lancement.mjs` (`brancheFenetre`) ; l'habillage du modèle `modules/modeles.mjs` `habilleModale`, elle l'importe ; le retour aux réglages après un aperçu `retourAuxReglages`, dont `modules/reglages.mjs` confie le contenu par `confieRetourAuxReglages` ; ordre des calques, dans la même fenêtre, `modules/ordre-calques.mjs`, sans branchement |
-| ce que la page sait d'elle-même — API, salon (`SLUG`), chemins partageables, borne (`BORNE`), administration (`PLAN_ADMIN`) | `modules/salon.mjs`, qui lit les réglages que `genere.js` `connecte` pose sur le script des modules (`data-api`, `data-slug`) ; ce que la valeur de `?borne` nomme reste à `modules/borne.mjs` |
-| retirer du plan public ce qui ne sert qu'à l'administration | le JavaScript par le point d'entrée (`plan-admin.mjs` seul importe les modules de l'exploitant) ; le balisage par les tranches `@admin` … `@fin-admin` de `_head.html`, découpées et contrôlées par `outils/reserve.js`, appliquées par `outils/genere.js` (`tplAdmin`, `tplPublic`) ; les commandes de l'exploitant restées dans le balisage, retirées du document au démarrage par `modules/mode-admin.mjs` `retireAdmin` (`modules/demarrage.mjs` `brancheDemarrage`, hors de l'administration) |
-| consultation hors ligne, ce que le navigateur garde | fichiers nommés par leur empreinte dans `web/versions/` (`outils/genere.js` `poseVersion` ; contrôlés par `controle.js` avec la page qui les charge), gardés un an par `web/_headers` et d'abord pris au cache par `_sw.js` ; `_sw.js`, page de secours `_hors-ligne.html` ; fond de carte gardé par `tuileDeCarte` (tuiles, cache durable) et `fondDeCarte` (MapLibre, styles) — fournisseurs `FONDS_DE_CARTE`, bornes `borneLesLots` et `borneLesTuiles` |
-| installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `application()` pour le seul plan public ; nom, icônes et adresse de départ par salon dans `src/index.mjs` `manifeste`, `appDuSalon` (`MARQUE`), qui les tient de `plan-public?slug=…&app=1` (`TTL_APP`, réponse non gardée en amont) ; nom et icône sur l'écran d'accueil d'iOS par `modules/installation.mjs` `nommeApplication` |
-| une application par salon, qui n'ouvre que le sien — portée du manifeste | adresse `/plan-<salon>` : `src/index.mjs` `cheminDuSalon`, `CHEMIN_SALON`, `pageDuSalon`, écrite dans `start_url`, `scope` et `id` par `manifeste` ; lue par `modules/salon.mjs` `SLUG` et par le bloc en tête de `outils/pwa.js` `application()` ; ramenée au plan public pour ce qui se partage par `modules/salon.mjs` `cheminPartageable` (`modules/partage.mjs` `lienParcours`, `modules/affiche-ici.mjs` `lienIci`) ; visée par `modules/installation.mjs` `adresseApplication` (`intent://`) ; clé du cache hors ligne ramenée à `/plan` dans `_sw.js` `navigation` |
-| logo d'une zone ou du sponsor déposé par l'exploitant — lecture du fichier, paliers de réduction, poids permis | `modules/depot-image.mjs` `litImage` (lecture et refus communs, repris par `icone-app.mjs`), `reduitLogo`, `PALIERS_LOGO`, `POIDS_LOGO` ; administration seule, par `plan-admin.mjs` ; cadre de dépôt `modules/fiche-zone.mjs` `cadreLogo` |
-| icône et nom de l'application d'un salon — déposer un logo, ou garder celui du produit | ce que le visiteur en reçoit `modules/application.mjs` (`appDuSalon`, `iconeDeLApplication`) ; réglage `modules/reglage-application.mjs` (`blocApplication`, posé dans `modules/volets.mjs` `voletAdmin` ; administration seule, sans branchement : le champ intitulé s'importe de `modules/fiche-zone.mjs`) ; deux images d'un fichier par `modules/icone-app.mjs` `reduitIconeApp` (administration seule, par `plan-admin.mjs`), fond du masque par `fondPourIconeApp` ; colonnes `icone_app`, `icone_app_masque`, `nom_app` et empreinte calculée `icone_app_version`, migration `l_icone_et_le_nom_de_l_application_installee` ; servies par `plan-public` (`?icone=1`) et relayées par `src/index.mjs` `iconeApp` (`/api/icone`) |
-| commentaires retirés des pages servies — le gabarit garde les siens | `outils/genere.js` `epure` (scripts situés par acorn puis découpés sans réimpression, styles et balisage par `epureStyle`, `epureBalisage`) ; appliqué par `page()` et à `sw.js`, `config.js`, `console.css`. Un commentaire n'atteint donc jamais le visiteur — y nommer une personne reste à éviter : le dépôt, lui, le garde |
-| politique de sécurité (CSP) des pages du plan — ce qui peut s'exécuter, d'où viennent images et appels | `outils/genere.js` `poseCsp`, balise posée après le jeu de caractères de `plan.html` et `plan-admin.html` : scripts du site, MapLibre à son adresse exacte (`MAPLIBRE`), scripts restés en ligne **par leur empreinte, recalculée à chaque construction** — un script ajouté en ligne est donc permis sans rien écrire, un script injecté ne l'est jamais ; ni `eval` ni WebAssembly — la permission `'wasm-unsafe-eval'` est tombée avec la bibliothèque entière de deck.gl ; essai `outils/essais/navigateur/plan.spec.js` « un script injecté ne s'exécute pas ». Une ressource d'une origine neuve (police, script tiers) s'ajoute là, sans quoi la page la refuse et les essais échouent sur l'erreur de console. La démonstration (`plan-smcl.html`) et les pages de la console n'en ont pas encore |
-| quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
-| fenêtre qui invite le visiteur à installer le plan | `modules/installation.mjs` — moment `essaieInvitation` (amorcé par `accueilleInvitation`, que lance `modules/demarrage.mjs` `demarre`), façon par navigateur `faconInstallation`, fenêtre `ouvreInvitation` ; écouteurs du navigateur posés au chargement par `brancheInstallation`, que `modules/lancement.mjs` appelle à sa place (sans rien lui confier : `conf`, la visite guidée `TUTO`, `retourAuxReglages` — `modules/fenetre.mjs`, dont l'administration confie le contenu — et `parcoursACopier` s'importent) ; case `caseInstallation` dans `modules/reglage-installation.mjs` (administration seule, importé par `modules/volets.mjs` ; sans branchement), posée par `modules/volets.mjs` `voletAdmin`. Ne jamais y écrire `rel="manifest"` entre guillemets : la construction y reconnaît la page installable |
-| rappel au visiteur qui a l'application et lit le navigateur | `modules/installation.mjs` § L'application déjà posée sur l'appareil — ce que le rappel peut proposer ici `faconRappel` (« ouvrir » sur Android, « suggerer » sur iOS, où rien ne dit qu'elle est là), `appliInstallee`, démenti du système `verifieApplication`, ouverture `lanceApplication` (`intent://`) ; fenêtre `ouvreRappel` dans ses deux formes et son repli `ouvreRetrouve`, aiguillées par `essaieInvitation` ; délai `RAPPEL_DELAI` ; `related_applications` du manifeste dans `outils/pwa.js`, adressé par `src/index.mjs` `manifeste` |
-| icône de l'application | `outils/icones.js` — un dessin, six sorties |
-| marque du produit dans une page | `outils/icones.js` `svgPage` (fond nuit) et `svgPageNu` (sans fond), injectées par `genere.js` à la place de `<!--__MARQUE__-->` dans le balisage, et dans les modules par la constante `MARQUE_PRODUIT` (`DEFINIS`) ; jetons `--m-nuit`, `--m-cyan`, `--m-rose` dans `_styles-jetons.css` |
-| libellé placé à la main — mode, glisser, clavier, taille, retour à l'automatique | ce que le visiteur reçoit `modules/libelle-place.mjs` (`placementLibelle`, empreinte `empreinteLibelle`, clé `_lab:<id>` de la configuration ; mode `PLACE_LIBELLES` et libellé retouché `libSel`, importés par `modules/libelles.mjs`, posés par les portes `poseModeLibelles`, `poseLibelleChoisi`), sans branchement (`CONF` importé) ; l'outil `modules/placement-libelles.mjs` — administration seule, par `plan-admin.mjs` : `modePlacementLibelles`, palette `majPaletteLibelle` (balisage `_head.html` `#libReg`), gestes `libellePointerDown`, `libellePointerMove`, `libellePointerUp`, abandon `lacheLibelle` (`modules/gestes-admin.mjs`), pas du clavier `pousseLibelle` ; branché par `modules/lancement.mjs` (`branchePlacementLibelles`), qui n'y pose que les écoutes de la palette — le dessin et la reprise, avec lesquels il se dispute le glisser, se referment par le registre des modes d'édition (`modules/modes-edition.mjs`), où il inscrit sa sortie ; `CONF`, il l'importe ; anglais `outils/anglais/placement-libelles.js` |
-| bande d'administration — marque, calques, réglages, compte, enregistrement | balisage `_head.html`, styles `_styles-jetons.css` `.bandeAdmin`, garnie par `modules/bande-admin.mjs` `activeAdmin` (administration seule, chargée sans nom par `plan-admin.mjs`, qui ne l'expose plus ; sans branchement : les réglages, le dessin et le panneau s'importent ; elle confie `activeAdmin` à `modules/acces-admin.mjs` en se chargeant), retirée du public par `modules/mode-admin.mjs` `retireAdmin`, que `modules/demarrage.mjs` `brancheDemarrage` appelle en dernier hors de l'administration (`PLAN_ADMIN` faux) — qui tient aussi l'état `ADMIN`, importé par tout le plan et posé par la seule ouverture du mode, porte `ouvreModeAdmin` ; gris de l'outil sous `html.mode-admin`, `_styles-plan.css` |
-| comptes, profils, salons affectés | `modules/comptes.mjs` — annuaire `ouvreComptes`, fiche d'une personne `ouvreFicheCompte`, profil connecté `MOI` (importé par l'écran et la fiche du salon, oublié par `poseComptes`) et sa lecture `litMonProfil` ; fenêtre, grille, appel à la base, `idCompte` et `PAGE_MDP` importés du socle, salons importés de `modules/evenements.mjs` ; anglais `outils/anglais/comptes.js` ; `supabase/functions/comptes/`, migration `comptes` |
-| invitation, mot de passe oublié | balisage `_motdepasse.html`, code `modules/mot-de-passe.mjs` `brancheMotDePasse`, branché par le point d'entrée `motdepasse.mjs` lui-même, posé après le balisage (`genere.js` `poseModulesSeuls`), qui prend `$` et les casiers de la console à `dom.mjs` et `session.mjs` ; anglais `outils/anglais/_motdepasse.js`, `mot-de-passe.js` |
-| anglais des listes de valeurs (secteurs, nomenclature, champs à choix) | relevé par `sync-evenement` (`Gaia.codificationLangues`, `Eventmaker.listesEnAnglais`), colonne `libelles_en`, servi par `plan-public` sous `anglais`, posé par `modules/index-salon.mjs` `indexe` ; intitulé anglais des champs propres `modules/fiche-detail.mjs` `renommeChampPerso` |
-| anglais d'un champ propre au salon — texte libre, seconde origine | `_partage/champs.ts` `SUFFIXE_EN`, `cibleEn`, versées dans `cibles` ; lecture `_partage/eventmaker.ts` `perso(g, m, suffixe)` et `sync-evenement/` `champsDuSalonEn`, clé `perso_en` du stand ; retrait conjoint `plan-public/` `ampute` ; réglage console `modules/fiche-detail.mjs` `lignesPerso` et le second `champOrigine` de `tableauChamps` (styles `_console.css` `.origine-en`) ; fiche `modules/fiche.mjs` `ouvre`, § les champs que ce salon s'est ajoutés (deux versions marquées `data-lg`), recherche `modules/recherche.mjs` `texteAnglaisPerso` |
-| version anglaise, bascule FR/EN | moteur `_langue.js`, dictionnaire `outils/anglais/`, contrôle et choix par page `outils/traductions.js`, injection `outils/genere.js` `langue` ; sur les pages du plan, le dictionnaire part dans son propre fichier (`genere.js` `sortDictionnaire`), que le moteur ne charge que pour l'anglais — écrit dans le document avant le corps quand l'anglais est demandé à l'ouverture, demandé au drapeau sinon (`_langue.js` `chargeDico`, `__dicoArrive`) ; la démonstration et les écrans de l'exploitant le gardent en eux |
-| fermer la version anglaise d'un salon — plan public, administration | `modules/configuration.mjs` `langueOfferte`, `appliqueLangue`, `modules/volets.mjs` `blocLangues` (onglet « Admin », profil administrateur), réglage `_langues` ; `_langue.js` `offre`, `cleDesLangues` et son cache `plan-langues:` |
-| synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
-| fenêtre d'avancement d'une synchronisation, flux retenu en chemin | fenêtre `modules/avancement.mjs` `fenetreAvancement` (fenêtre, son verrou et appel à la base importés du socle) ; lecture du flux `modules/appel-fonction.mjs` `fluxFonction`, menée par `modules/synchronisation.mjs` `synchronise` (étapes pressenties `etapesPressenties`, puis vignettes des logos `fabriqueLesVignettes` par paquets `PAQUET_VIGNETTES`), `charge` confié par `modules/ecran-console.mjs` `brancheConsole` (`brancheSynchronisation`), pavillons et `source` importés de `modules/evenements.mjs` et `modules/provenance.mjs` ; secours qui relit l'avancement à la base `modules/avancement.mjs` `suitAuServeur`, déposé par `sync-evenement/` `garde` et `depose` dans la colonne `sync_avancement`, migration `l_avancement_d_une_synchronisation` |
-| API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
-| faire écrire un correctif — `@claude …` sous une issue ou une pull request, ou l'onglet « Actions » | `.github/workflows/correctif.yml` ; il édite, valide et laisse la tâche pousser sur `claude/correctif-<run>` puis ouvrir la pull request — aucun outil de poussée ne lui est accordé, et la destination est écrite dans le workflow, jamais choisie par le modèle |
-| fraîcheur du plan chez le visiteur — version, entête, publication immédiate | empreinte `_partage/version.ts` `versionDuPlan` (posée en en-tête `X-Version`), entête `src/index.mjs` `entete` (`?entete=1`, clé `ver2:`, gardée un jour), demande `modules/demarrage.mjs` `demandePlan`, amorce `outils/genere.js` `PRECHARGE` |
+| données du salon (`DATA`, `TOUS`, `parId`…), état de la vue `state`, pavillon `P` | `modules/donnees.mjs`, posées par `modules/index-salon.mjs` `indexe` au travers de `poseDonnees`, seule porte d'écriture |
+| démarrage, appel de l'API, panne réseau, version du plan | `modules/demarrage.mjs` (`demarre`, `charge`, `demandePlan`) |
+| recherche, liste, panneau des critères | `modules/recherche.mjs` ; la question posée, sans écran, `modules/filtre.mjs` ; ce qu'ouvre une ligne `modules/ligne-liste.mjs` |
+| sortes cherchées, ordre des critères (réglages) | `modules/reglage-recherche.mjs` |
+| montage d'un pavillon, onglets, passage de l'un à l'autre | `modules/rendu.mjs` (`montePlan`, `changePlan`) |
+| libellés, nom d'un emplacement, mesure du texte | `modules/libelles.mjs`, `modules/nom-emplacement.mjs`, `modules/texte-plan.mjs` |
+| sélection, fiche d'un stand, d'une conférence, d'un produit | `modules/fiche.mjs` (`select`, `ouvre`, `ferme`) ; ce qu'elle montre `modules/corps-fiche.mjs` ; logo `modules/marque.mjs` |
+| réglage de la fiche (champs, sections, intitulés) | `modules/reglage-fiche.mjs` `voletOrdre`, aperçus `modules/apercus.mjs` |
+| vue, zoom, cadrage, passage écran → plan | `modules/vue.mjs` ; l'état seul `modules/vue-etat.mjs` (`changeVue`) |
+| gestes — glisser, pincer, molette, clavier | `modules/gestes.mjs` `brancheGestes` ; ceux de l'exploitant `modules/gestes-admin.mjs` |
+| tiroirs du bas sur écran étroit | `modules/tiroirs.mjs` ; un seul ouvert à la fois `modules/tiroirs-exclusifs.mjs` |
+| dessin WebGL | `modules/webgl.mjs` ; lecture du SVG `modules/trace.mjs` ; bibliothèque `npm run deck` |
+| configuration (`CONF`, `conf`, `enregistreConf`), options vendues à part | `modules/configuration.mjs`, `modules/options.mjs` |
+| apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
+| fenêtre des réglages et ses volets | `modules/reglages.mjs` `ouvreReglages`, `modules/volets.mjs` |
+| enregistrement pour tous, publication, oubli du cache | `modules/enregistrement.mjs` |
+| calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` |
+| choisir, déplacer, tourner une forme | `modules/edition.mjs` ; forme choisie `modules/forme-choisie.mjs` |
+| cote, aimants, grille, duplication | `modules/aimants.mjs` |
+| reprendre ou ajouter un stand, une zone | `modules/emplacements.mjs` (ce que le visiteur reçoit), `modules/reprise-emplacements.mjs` (l'outil) |
+| fiche d'une zone, salles, masquage | `modules/fiche-zone.mjs` ; nom d'une zone `modules/noms-zones.mjs` |
+| repères, transports en commun | `modules/reperes.mjs`, `modules/cartouche-poi.mjs`, `modules/points-interet.mjs` |
+| libellé placé à la main | `modules/libelle-place.mjs`, `modules/placement-libelles.mjs` |
+| ordre et panneau des calques, fond du plan | `modules/ordre-trace.mjs`, `modules/pile.mjs`, `modules/ordre-calques.mjs` |
+| halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/lieux.js` (`lieuOsm`, `lieuSaisi`) |
+| fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` |
+| secteurs, distinctions, polices des noms | `modules/secteurs.mjs`, `modules/distinctions.mjs`, `modules/polices-plan.mjs` |
+| parcours, partage, copie gardée | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs` |
+| journée organisée, séjour, ordonnanceur | `modules/journee.mjs`, `modules/sejour.mjs`, `modules/ordonnanceur.mjs` |
+| seuil de concentration, charge annoncée | `modules/seuil.mjs`, `modules/charge-annoncee.mjs`, `modules/ordonnanceur.mjs` |
+| itinéraire | calcul `modules/itineraire.mjs`, tiroir et visée `modules/tiroir-itineraire.mjs`, tracé `modules/trace-itineraire.mjs` |
+| borne, code « Vous êtes ici » | `modules/borne.mjs`, `modules/vous-etes-ici.mjs`, `modules/ici.mjs`, `modules/affiche-ici.mjs` |
+| rappels de conférence | `modules/rappels.mjs`, `modules/notifications.mjs` ; serveur `supabase/functions/rappels/` |
+| suggestion, visite guidée, générique du sponsor | `modules/suggestion.mjs`, `modules/tutoriel.mjs`, `modules/sponsor.mjs` |
+| installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/index.mjs` `manifeste` |
+| mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/index.mjs` `mesure`, `erreur` |
+| carte de chaleur, remise à zéro | `modules/chaleur.mjs` |
+| accès administrateur, session, bande d'administration | `modules/acces-admin.mjs`, `modules/session.mjs`, `modules/bande-admin.mjs`, `modules/mode-admin.mjs` |
+| console multi-événements | `modules/console.mjs`, `modules/ecran-console.mjs`, socle `modules/socle-console.mjs` |
+| fiche d'un salon, provenance, correspondance des champs | `modules/fiche-evenement.mjs`, `modules/provenance.mjs`, `modules/fiche-detail.mjs`, `modules/correspondance.mjs` |
+| synchronisation et son avancement | `supabase/functions/sync-evenement/`, `modules/synchronisation.mjs`, `modules/avancement.mjs` |
+| rapport d'utilisation, export tableur | `modules/rapport-utilisation.mjs`, `modules/export.mjs` |
+| comptes, mot de passe | `modules/comptes.mjs`, `modules/mot-de-passe.mjs` |
+| utilitaires — `$`, `esc`, couleurs, heures, QR | `modules/dom.mjs`, `modules/texte.mjs`, `modules/couleurs.mjs`, `modules/temps.mjs`, `modules/qr.mjs` |
+| ce qui vient d'ailleurs, relu avant d'être affiché | `modules/sur.mjs` |
+| fenêtre commune par-dessus le plan | `modules/fenetre.mjs` |
+| ce que la page sait d'elle-même — API, salon, borne, administration | `modules/salon.mjs` |
+| API publique du plan, cache, fraîcheur | `supabase/functions/plan-public/`, `src/index.mjs` |
+| politique de sécurité, commentaires retirés | `outils/genere.js` `poseCsp`, `epure` |
+| hors ligne | `outils/gabarit/_sw.js` |
+| faire écrire un correctif depuis GitHub | `.github/workflows/correctif.yml` |
+
+## Pièges
+
+Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
+
+- **Deux règles tenues en deux langages — qui change l'un change l'autre.** La
+  forme d'un emplacement : `modules/forme.mjs` et `_partage/geometrie.ts`
+  (`outils/essais/forme.js`). Les accords des champs : `modules/correspondance.mjs`
+  `ACCORDS` et `_partage/champs.ts`. L'empreinte d'une conférence :
+  `modules/notifications.mjs` `empreinteDebut` et la fonction SQL `empreinte_debut`.
+- **Le seuil de concentration n'est pas une capacité** : le compteur ne voit
+  que les journées organisées depuis le plan. C'est un prix, jamais un refus
+  (`modules/ordonnanceur.mjs` `peineDeCharge`). La clé de configuration
+  `_capacite` garde son nom : la renommer perdrait le réglage des salons en
+  production.
+- **Les gestes ont un ordre de priorité** — pincement, outils de l'exploitant,
+  puis glisser et appui du visiteur (`modules/gestes.mjs`) — et ce que
+  `modules/vue.mjs` `appliqueVue` rappelle à chaque image d'un geste aussi. Pendant un
+  geste, on ne refait que la forme tirée (`modules/dessin.mjs` `redessineForme`) :
+  `dessineDessins` est trop lourd pour une rafale de `pointermove`.
+- **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
+  dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
+- **Une ressource d'une origine neuve** (police, script tiers) s'ajoute à
+  `outils/genere.js` `poseCsp`, sans quoi la page la refuse et les essais
+  échouent sur l'erreur de console. Un script en ligne y est permis par son
+  empreinte, recalculée à chaque construction.
+- **N'écrivez jamais `rel="manifest"` entre guillemets** dans
+  `modules/installation.mjs` : la construction y reconnaît la page installable.
+- **Un plan n'a qu'un calage sur la Terre par pavillon**, colonne `plan.calage`.
+- **Une zone ajoutée à la main** range sa fiche dans son entrée `_ajout:<id>` :
+  le serveur n'applique les colonnes de l'événement qu'aux zones de
+  l'instantané (`modules/fiche-zone.mjs` `enregistreZoneAjoutee`).
+- **Le thème du plan est le clair, seul** ; la nuit ne vit que dans la console.
 
 ## Déploiement
 
 Rien ne se déploie à la main. Une poussée sur `main` applique les migrations et
-redéploie les fonctions (`supabase.yml`) ; Cloudflare suit le dépôt de son côté,
-construit les pages et déploie le Worker — en production pour `main`, en
-version de prévisualisation pour toute autre branche, à l'adresse
-`<branche>-plan-interactif.interactiveplan.workers.dev`. Il construit sous Node
-22, fixé par `.nvmrc` : son image passe sinon à Node 24 d'elle-même. Toute
-poussée lance aussi `pages.yml` (construction, syntaxe, anglais, index) et
-`essais.yml` (relecture, types, portes, moteur, navigateur).
+redéploie les fonctions (`supabase.yml`) ; Cloudflare suit le dépôt, construit
+les pages et déploie le Worker — en production pour `main`, en
+prévisualisation pour toute autre branche, à
+`<branche>-plan-interactif.interactiveplan.workers.dev`. Il construit sous
+Node 22, fixé par `.nvmrc`. Toute poussée lance aussi `pages.yml` et
+`essais.yml`.
 
-Conséquence à garder en tête : **une migration poussée sur `main` part en
-production**. Les migrations sont rejouables et jamais réécrites : une
-correction est une migration de plus.
+**Une migration poussée sur `main` part en production.** Les migrations sont
+rejouables et jamais réécrites : une correction est une migration de plus.
+
+**Une prévisualisation se tient à l'écart de la production**, dont elle partage
+pourtant les liaisons. La construction sait quelle branche elle construit
+(`WORKERS_CI_BRANCH`, `outils/projet.js`) ; le Worker, qui se reconnaît aussi à
+son adresse, n'y lit ni n'écrit le cache `CACHE` des visiteurs — seulement
+`CACHE_APERCU` s'il est déclaré — et n'y relaie ni mesures, ni erreurs, ni
+plans de visite (`src/index.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`,
+éprouvés par `outils/essais/apercu.js`). **Mais l'administration ouverte en
+prévisualisation écrit toujours dans la base de production** : c'est la page
+qui lui parle, avec la session de l'exploitant. Seul un projet de recette l'en
+séparera — il se branche en remplissant `PROJETS.recette`.
 
 ## Secrets
 
 Aucune clé dans le dépôt. `.env` est exclu ; les clés serveur vivent dans les
 secrets Supabase (`npx supabase secrets set …`). La clé `service_role` et la
-clé Klipso ne doivent jamais atteindre une page ni un commit.
+clé Klipso ne doivent jamais atteindre une page ni un commit. La clé
+« publishable » de `outils/projet.js` est faite pour circuler.
 
 Toute nouvelle adresse de déploiement doit être ajoutée à
-`ORIGINES_AUTORISEES`, sans quoi les fonctions refusent ses appels. Une
-exception : `mesure` accepte toutes les origines — un cadre ou une coque qu'on
-n'a pas prévue doit pouvoir compter sans qu'on tienne une liste, et CORS n'y
-gardait rien qu'un `curl` n'ignore.
+`ORIGINES_AUTORISEES`, sans quoi les fonctions refusent ses appels — sauf
+`mesure`, ouverte à toutes les origines.
 
 ## Tenir au courant pendant le travail
 
-Un long silence ne se lit pas comme du travail en cours, il se lit comme une
-panne. Donc, pendant la réflexion comme pendant la construction, un point
-d'avancement **toutes les deux minutes environ** : une ou deux phrases disant
-ce qui vient d'être fait et ce qui se fait maintenant. Même sans résultat neuf
-— « toujours dans la relecture de `modules/fiche.mjs`, rien de concluant pour l'instant »
-vaut mieux que rien, parce que c'est justement l'information qui manque.
-
-Ces points ne remplacent pas la liste d'étapes, tenue à jour à mesure qu'elles
-se terminent : ils s'y ajoutent.
-
-Et **un travail long s'annonce avant d'être lancé** — une construction, une
-batterie de tests, une synchronisation, une mesure. Le dire coûte une ligne ;
-le laisser découvrir coûte toute l'attente.
+Un long silence se lit comme une panne. Pendant la réflexion comme pendant la
+construction, un point d'avancement **toutes les deux minutes environ** : une
+ou deux phrases sur ce qui vient d'être fait et ce qui se fait maintenant, même
+sans résultat neuf. Ils s'ajoutent à la liste d'étapes, tenue à jour. Et **un
+travail long s'annonce avant d'être lancé** — construction, essais,
+synchronisation, mesure.
 
 ## Conventions
 

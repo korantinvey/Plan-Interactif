@@ -54,8 +54,8 @@ try {
    qu'un développeur attend d'un dépôt, ce qui voit une variable morte, un nom
    que rien ne déclare ou un appel faux là où la syntaxe ne regarde pas — et
    une boucle d'imports ou une porte ouverte sans raison, par où le code se
-   ressouderait. */
-for (const script of ["relecture.js", "types.js", "portes.js"]) {
+   ressouderait. Et le guide, qui ne doit citer que ce qui existe encore. */
+for (const script of ["relecture.js", "types.js", "portes.js", "guide.js"]) {
   try {
     lance(script);
   } catch (e) {
