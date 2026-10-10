@@ -33,7 +33,7 @@ import { annonce } from "./demarrage.mjs";
 import { ouvre, confieALaFiche } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
-import { cartouchePoi } from "./points-interet.mjs";
+import { cartouchePoi } from "./cartouche-poi.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { liste } from "./recherche.mjs";
 

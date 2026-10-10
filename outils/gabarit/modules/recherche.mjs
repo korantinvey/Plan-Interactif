@@ -45,6 +45,7 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre, PREFIXE_PERSO, libelleCritere } from "./corps-fiche.mjs";
 import { dessineDists, marquesListe, porteDist, standPorte } from "./distinctions.mjs";
+import { reperesCherchables } from "./cartouche-poi.mjs";
 import { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRetrait, leveRetrait,
   valeursCritere, CLE_SECTEUR, critParSociete, releveHotes } from "./filtre.mjs";
 import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
@@ -65,7 +66,6 @@ import { largeur } from "./texte-plan.mjs";
  * @property {(cle: any) => string} adresseVignette
  * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
  * @property {() => void} libelles
- * @property {() => any[]} reperesCherchables
  * @property {(id: any, p: number) => void} vaAuRepere
  */
 /** @type {PageRecherche} */
@@ -81,7 +81,6 @@ const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.
 const adresseVignette = (/** @type {any} */ cle) => prete.adresseVignette(cle);
 const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
 const libelles = () => prete.libelles();
-const reperesCherchables = () => prete.reperesCherchables();
 const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => prete.vaAuRepere(id, p);
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le

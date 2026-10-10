@@ -30,6 +30,7 @@ import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
 import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
+import { phareZone } from "./cartouche-poi.mjs";
 import { liste, confieALaRecherche } from "./recherche.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
@@ -44,7 +45,6 @@ import { boite } from "./forme-choisie.mjs";
  * @property {() => void} dessineDessins retrace les calques de dessin (`dessin.mjs`)
  * @property {(id: any, iSoc: any) => any} decoupeStand le stand choisi est-il un stand dessiné ?
  * @property {(pxParM: number) => void} poseLibellesDessines écrit le nom des stands dessinés
- * @property {(o: any) => boolean} phareZone la zone est-elle mise en avant ? (`points-interet.mjs`)
  * @property {() => void} rafraichitFleches repose les pointes de flèche
  * @property {(f: any) => any} societeDeForme l'exposant que porte une forme dessinée
  * @property {(soc: any) => string} nomSurLePlan le nom qu'un exposant porte sur le plan
@@ -52,13 +52,12 @@ import { boite } from "./forme-choisie.mjs";
 /** @type {PreteLibelles} */
 const prete = {
   dessineDessins: () => {}, decoupeStand: () => null, poseLibellesDessines: () => {},
-  phareZone: () => false, rafraichitFleches: () => {}, societeDeForme: () => null,
+  rafraichitFleches: () => {}, societeDeForme: () => null,
   nomSurLePlan: () => "",
 };
 const dessineDessins = () => prete.dessineDessins();
 const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.decoupeStand(id, iSoc);
 const poseLibellesDessines = (/** @type {number} */ pxParM) => prete.poseLibellesDessines(pxParM);
-const phareZone = (/** @type {any} */ o) => prete.phareZone(o);
 const rafraichitFleches = () => prete.rafraichitFleches();
 const societeDeForme = (/** @type {any} */ f) => prete.societeDeForme(f);
 const nomSurLePlan = (/** @type {any} */ soc) => prete.nomSurLePlan(soc);

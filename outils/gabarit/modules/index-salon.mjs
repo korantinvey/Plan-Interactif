@@ -33,7 +33,7 @@ import { confieApresOption } from "./options.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubliees, rangeDessins }
   from "./calques-dessin.mjs";
-import { oublieReperes } from "./points-interet.mjs";
+import { oublieReperes } from "./cartouche-poi.mjs";
 
 /* Ce que l'administration seule a (`enregistrement.mjs`), qui le confie à
    l'index en se chargeant : la page publique ne l'embarque pas, et rien

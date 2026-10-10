@@ -17,7 +17,7 @@ import { conf, programmeOffert, chercheSorte, enregistreConf } from "./configura
 import { CLE_SECTEUR, PREFIXE_PERSO, clesCriteres, refaitCriteres, libelleCritere, liste }
   from "./recherche.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { reperesCherchables } from "./points-interet.mjs";
+import { reperesCherchables } from "./cartouche-poi.mjs";
 
 /* Ce salon tient-il un catalogue ? Les produits suivent la société et non le
    pavillon : c'est sur les stands, et sur les enseignes qu'ils hébergent,

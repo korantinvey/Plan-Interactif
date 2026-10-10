@@ -37,24 +37,24 @@ import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
+import { dessineDessins } from "./dessin.mjs";
 
 /* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
-   confient en se chargeant (`confieAuRendu`) : le dessin des calques
-   (`dessin.mjs`), le fond d'un pavillon chargé après coup (`demarrage.mjs`),
+   confient en se chargeant (`confieAuRendu`) : le fond d'un pavillon chargé
+   après coup (`demarrage.mjs`),
    et ce que seule l'administration a — la nappe de la grille (`nappe.mjs`),
    le calage de la carte en cours (`calage-carte.mjs`), l'éditeur à remettre
    au repos (`outil-dessin.mjs`). La page publique n'embarque pas ces
    derniers : ils restent sans effet. */
 /**
  * @typedef {object} PageRendu
- * @property {() => void} dessineDessins
  * @property {(i: number) => void} chargeFond
  * @property {() => void} rafraichitApercu
  * @property {() => void} oublieCalageEnCours
  * @property {(() => void) | null} oublieEdition
  */
 /** @type {PageRendu} */
-const prete = { dessineDessins: () => {}, chargeFond: () => {}, rafraichitApercu: () => {},
+const prete = { chargeFond: () => {}, rafraichitApercu: () => {},
   oublieCalageEnCours: () => {}, oublieEdition: null };
 
 /** La porte des modules qui confient au montage ce qu'il appelle.
@@ -124,7 +124,7 @@ export function montePlan(){
      de cela : ni éditeur, ni outils. */
   if (prete.oublieEdition) prete.oublieEdition();
   monteHabillage();
-  prete.dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  dessineDessins();                // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
   // est à reposer dessus, sans quoi le pavillon paraît entier
   marqueRetrait();

@@ -48,10 +48,11 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { baisseTiroir } from "./tiroirs.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
+import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
- * (`rendu.mjs`), les découpages dessinés (`dessin.mjs`), le bouton « au parcours »
+ * (`rendu.mjs`), le bouton « au parcours »
  * (`tiroir-parcours.mjs`), et, en administration seulement, les deux gestes
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
@@ -60,9 +61,7 @@ import { poseDistsFiche } from "./distinctions.mjs";
  * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
  * comme la pastille sans écoute.
  * @typedef {object} PageFiche
- * @property {(id: any, iSoc?: any) => any} decoupeStand
  * @property {() => void} montePlan
- * @property {() => void} marqueStandsDessines
  * @property {(hote: any, canal: any) => void} brancheParcours
  * @property {((o: any) => void) | null} ficheZone
  * @property {((o: any) => void) | null} basculeAffichageZone
@@ -73,9 +72,7 @@ const prete = /** @type {any} */ ({ ficheZone: null, basculeAffichageZone: null 
 /** La porte des modules qui prêtent à la fiche ce qu'elle appelle.
  *  @param {Partial<PageFiche>} o */
 export function confieALaFiche(o){ Object.assign(prete, o); }
-const decoupeStand = (/** @type {any} */ id, /** @type {any} */ iSoc) => prete.decoupeStand(id, iSoc);
 const montePlan = () => prete.montePlan();
-const marqueStandsDessines = () => prete.marqueStandsDessines();
 const brancheParcours = (/** @type {any} */ hote, /** @type {any} */ canal) => prete.brancheParcours(hote, canal);
 
 /* ============================================================

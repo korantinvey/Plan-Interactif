@@ -47,7 +47,7 @@ import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente,
 import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
 import { rafraichitApercu } from "./nappe.mjs";
 import { oublieAimants } from "./aimants.mjs";
-import { oublieReperes } from "./points-interet.mjs";
+import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { CONF, reglagesDuSalon, enregistreConf, confiePublication } from "./configuration.mjs";

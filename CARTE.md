@@ -305,6 +305,16 @@ Fonctions :
 `dejaPubliee` 180 · `marqueAttente` 186 · `mesCalques` 195 · `poseCalqueActif` 204
 `poseOutil` 205 · `poseEbauche` 209 · `trouveCalque` 211 · `nouvelId` 212
 
+### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
+
+- l.1 · Les points d'intérêt sur le plan — le cartouche, la mise en avant, le
+
+Fonctions :
+
+`oublieReperes` 45 · `reperesCherchables` 47 · `clePoi` 113 · `cartouchePoi` 115
+`mesureCartouche` 228 · `pharePoi` 244 · `phareRepere` 248 · `phareZone` 250
+`eclairePoi` 256 · `oublieChoixPoi` 289
+
 ### `modules/chaleur.mjs` — 676 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
@@ -422,19 +432,19 @@ Fonctions :
 
 `litImage` 16 · `reduitLogo` 57
 
-### `modules/dessin.mjs` — 670 l. → plan, plan-admin
+### `modules/dessin.mjs` — 658 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — le tracé sur le plan
 
 Fonctions :
 
-`mentionOsm` 54 · `longueurFleche` 77 · `cheminFleche` 92 · `marqueFleche` 121
-`rafraichitFleches` 132 · `traceForme` 147 · `rotationTexte` 166 · `dessineDessins` 171
-`redessineForme` 212 · `peintCalque` 236 · `apercu` 243 · `apercuGuide` 255
-`traceRepere` 278 · `nomSurLePlan` 412 · `etiquetteSociete` 423 · `seRattache` 451
-`societeDeForme` 463 · `societesDuPlan` 475 · `traceImage` 509 · `traceStandDessine` 534
-`texteStandDessine` 558 · `poseLibellesDessines` 577 · `decoupeStand` 598
-`marqueStandsDessines` 613 · `rafraichitStandsDessines` 628 · `signale` 642
+`mentionOsm` 52 · `longueurFleche` 75 · `cheminFleche` 90 · `marqueFleche` 119
+`rafraichitFleches` 130 · `traceForme` 145 · `rotationTexte` 164 · `dessineDessins` 169
+`redessineForme` 210 · `peintCalque` 234 · `apercu` 241 · `apercuGuide` 253
+`traceRepere` 276 · `nomSurLePlan` 410 · `etiquetteSociete` 421 · `seRattache` 449
+`societeDeForme` 461 · `societesDuPlan` 473 · `traceImage` 507 · `traceStandDessine` 532
+`texteStandDessine` 556 · `poseLibellesDessines` 575 · `decoupeStand` 596
+`marqueStandsDessines` 611 · `rafraichitStandsDessines` 626 · `signale` 640
 
 ### `modules/distinctions.mjs` — 366 l. → plan, plan-admin
 
@@ -645,20 +655,20 @@ Fonctions :
 `enregistreZone` 610 · `enregistreZoneAjoutee` 723 · `basculeAffichageZone` 786
 `marqueZonesMasquees` 814 · `ecritColonnesEvenement` 834 · `ecritColonneEvenement` 868
 
-### `modules/fiche.mjs` — 1188 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1185 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.81 · 7. Sélection et fiche
+- l.78 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 75 · `decoupeStand` 76 · `montePlan` 77 · `marqueStandsDessines` 78
-`brancheParcours` 79 · `anime` 100 · `noeud` 124 · `canalPlan` 134 · `rangSociete` 142
-`select` 151 · `centre` 176 · `brancheActesFiche` 187 · `centreEtBaisseLaFiche` 203
-`centrePoint` 221 · `programme` 250 · `produits` 299 · `ficheProduit` 327 · `ficheConf` 397
-`adresseVignette` 554 · `poseAppuiTactile` 571 · `ecarteClicFantome` 574 · `nomSociete` 583
-`choisitExposant` 597 · `poseMarque` 635 · `montreMarque` 695 · `poseCode` 718
-`rangeMarque` 759 · `ouvre` 815 · `ferme` 1131 · `onglet` 1149 · `brancheFiche` 1167
+`confieALaFiche` 74 · `montePlan` 75 · `brancheParcours` 76 · `anime` 97 · `noeud` 121
+`canalPlan` 131 · `rangSociete` 139 · `select` 148 · `centre` 173 · `brancheActesFiche` 184
+`centreEtBaisseLaFiche` 200 · `centrePoint` 218 · `programme` 247 · `produits` 296
+`ficheProduit` 324 · `ficheConf` 394 · `adresseVignette` 551 · `poseAppuiTactile` 568
+`ecarteClicFantome` 571 · `nomSociete` 580 · `choisitExposant` 594 · `poseMarque` 632
+`montreMarque` 692 · `poseCode` 715 · `rangeMarque` 756 · `ouvre` 812 · `ferme` 1128
+`onglet` 1146 · `brancheFiche` 1164
 
 Éléments :
 
@@ -861,18 +871,18 @@ Fonctions :
 `cleLibelle` 36 · `poseModeLibelles` 45 · `poseLibelleChoisi` 50 · `empreinteLibelle` 62
 `placementLibelle` 70
 
-### `modules/libelles.mjs` — 417 l. → plan, plan-admin
+### `modules/libelles.mjs` — 416 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.143 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.142 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`dessineDessins` 58 · `decoupeStand` 59 · `poseLibellesDessines` 60 · `phareZone` 61
-`rafraichitFleches` 62 · `societeDeForme` 63 · `nomSurLePlan` 64 · `confieAuxLibelles` 73
-`brancheLibelles` 81 · `coexComptes` 104 · `coexChoisit` 105 · `ligneCode` 121
-`libelles` 150 · `decaleLibelle` 237 · `facteurLibelle` 238 · `libelleForce` 239
-`libelleZone` 242 · `libelleEmplacement` 261 · `emplacementWebgl` 298 · `libellesWebgl` 346
+`dessineDessins` 58 · `decoupeStand` 59 · `poseLibellesDessines` 60 · `rafraichitFleches` 61
+`societeDeForme` 62 · `nomSurLePlan` 63 · `confieAuxLibelles` 72 · `brancheLibelles` 80
+`coexComptes` 103 · `coexChoisit` 104 · `ligneCode` 120 · `libelles` 149
+`decaleLibelle` 236 · `facteurLibelle` 237 · `libelleForce` 238 · `libelleZone` 241
+`libelleEmplacement` 260 · `emplacementWebgl` 297 · `libellesWebgl` 345
 
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
@@ -1103,15 +1113,13 @@ Fonctions :
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/points-interet.mjs` — 417 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 149 l. → plan, plan-admin
 
-- l.1 · Les points d'intérêt — le cartouche, la recherche, la fiche d'un repère
+- l.1 · Les points d'intérêt — la fiche d'un repère, et le chemin vers lui
 
 Fonctions :
 
-`oublieReperes` 59 · `reperesCherchables` 61 · `vaAuRepere` 105 · `clePoi` 148
-`cartouchePoi` 150 · `ouvrePoi` 269 · `mesureCartouche` 342 · `pharePoi` 358
-`phareRepere` 362 · `phareZone` 364 · `eclairePoi` 370 · `oublieChoixPoi` 403
+`vaAuRepere` 54 · `ouvrePoi` 77
 
 Éléments :
 
@@ -1177,23 +1185,23 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport — et son démarrage
 
-### `modules/recherche.mjs` — 1020 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1019 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
 `confieALaRecherche` 76 · `ferme` 77 · `ficheConf` 80 · `adresseVignette` 81
-`poseToutAuParcours` 82 · `libelles` 83 · `reperesCherchables` 84 · `vaAuRepere` 85
-`appliqueSecteurs` 95 · `filtreTheme` 112 · `themeFiltrable` 169 · `ordreCriteres` 185
-`clesCriteres` 208 · `texteCriteres` 221 · `texteAnglaisPerso` 237 · `indexeCriteres` 251
-`refaitCriteres` 285 · `critereActif` 292 · `basculeCritere` 294 · `videCriteres` 303
-`majVideQ` 312 · `videRecherche` 325 · `nCriteres` 340 · `majCriteres` 349
-`remplitCriteres` 416 · `basculeCriteres` 555 · `ouvreCriteres` 560 · `marqueRetrait` 594
-`appliqueFiltre` 612 · `oublieRetrait` 628 · `reprendRecherche` 637 · `rangSorte` 650
-`codeCase` 672 · `caseNumero` 689 · `sousLigne` 709 · `liste` 723 · `marqueChoisie` 851
-`prechargeMarque` 877 · `prechargeLesVignettes` 934 · `chargeUnLot` 980
-`brancheRecherche` 1006
+`poseToutAuParcours` 82 · `libelles` 83 · `vaAuRepere` 84 · `appliqueSecteurs` 94
+`filtreTheme` 111 · `themeFiltrable` 168 · `ordreCriteres` 184 · `clesCriteres` 207
+`texteCriteres` 220 · `texteAnglaisPerso` 236 · `indexeCriteres` 250 · `refaitCriteres` 284
+`critereActif` 291 · `basculeCritere` 293 · `videCriteres` 302 · `majVideQ` 311
+`videRecherche` 324 · `nCriteres` 339 · `majCriteres` 348 · `remplitCriteres` 415
+`basculeCriteres` 554 · `ouvreCriteres` 559 · `marqueRetrait` 593 · `appliqueFiltre` 611
+`oublieRetrait` 627 · `reprendRecherche` 636 · `rangSorte` 649 · `codeCase` 671
+`caseNumero` 688 · `sousLigne` 708 · `liste` 722 · `marqueChoisie` 850
+`prechargeMarque` 876 · `prechargeLesVignettes` 933 · `chargeUnLot` 979
+`brancheRecherche` 1005
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
