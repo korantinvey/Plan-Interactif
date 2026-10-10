@@ -80,7 +80,7 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan.min.js",
+  src: "bibliotheques/deck.gl-9.3.11-plan-b4ce2dbc.min.js",
   integrite: "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
 };
 export const GL = {

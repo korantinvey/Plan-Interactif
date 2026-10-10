@@ -381,12 +381,36 @@ function poseVersion(radical, extension, contenu, queue = () => "") {
   return nom;
 }
 const NOM_FEUILLE = poseVersion("plan", ".css", FEUILLE_PLAN);
+/* deck.gl, annoncé dès la tête de la page.
+
+   C'est le plus lourd de ce que reçoit le visiteur, et le plan attend après
+   lui pour paraître (`modules/webgl.mjs`, `gl-attente`). Or rien ne le
+   demandait avant que le script des modules, posé au bas de la page, se soit
+   exécuté : les deux se téléchargeaient l'un après l'autre. Annoncé ici, il
+   part avec la feuille de style — en priorité basse : mesuré en 3G, annoncé
+   à la priorité ordinaire, il prenait son débit à la feuille (+0,8 s avant
+   le premier trait) et au script (+1,5 s avant la liste) pour un plan dessiné
+   0,5 s plus tôt. Sous HTTP/2, la priorité basse ne lui laisse que le débit
+   dont les deux autres n'ont pas l'usage. Nom et intégrité sont lus dans le module
+   même, pour qu'une bibliothèque refaite (`npm run deck`) ne laisse pas la
+   page en annoncer une autre — qui partirait pour rien, et en double. */
+const DECK = fs.readFileSync(D + "/gabarit/modules/webgl.mjs", "utf8")
+  .match(/const DECK_WEBGL = \{\s*src: "([^"]+)",\s*integrite: "([^"]+)"/);
+if (!DECK) throw new Error("DECK_WEBGL introuvable dans modules/webgl.mjs");
+if (!fs.existsSync(W + DECK[1])) throw new Error("deck.gl absent : " + DECK[1]);
+const ANNONCE_DECK = '<link rel="preload" as="script" fetchpriority="low" href="/' + DECK[1] +
+  '" integrity="' + DECK[2] + '">\n';
 const lieFeuille = (t) =>
-  t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
+  t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n' + ANNONCE_DECK);
 /* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
-   pages, elles, gardent la règle de Cloudflare — revalider à chaque fois. */
+   pages, elles, gardent la règle de Cloudflare — revalider à chaque fois.
+   deck.gl et les polices aussi portent la leur dans leur nom (`outils/deck.js`,
+   `outils/polices.js`) ; laissés à cette règle-là, ils coûtaient au visiteur
+   qui revient une demande au serveur chacun. Des polices, seuls les fichiers :
+   leurs feuilles, `polices/<famille>.css`, gardent un nom fixe. */
+const UN_AN = "\n  Cache-Control: public, max-age=31536000, immutable\n";
 fs.writeFileSync(W + "_headers",
-  "/" + VERSIONS + "*\n  Cache-Control: public, max-age=31536000, immutable\n");
+  ["/" + VERSIONS + "*", "/bibliotheques/*", "/polices/*.woff2"].map((m) => m + UN_AN).join(""));
 
 /* Les scripts du plan, servis à part de même.
 
