@@ -24,7 +24,8 @@
     "navigateur": "playwright test",
     "lint": "node outils/relecture.js",
     "types": "node outils/types.js",
-    "portes": "node outils/portes.js"
+    "portes": "node outils/portes.js",
+    "guide": "node outils/guide.js"
   },
   "type": "commonjs",
   "private": true,
