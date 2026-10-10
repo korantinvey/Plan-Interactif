@@ -313,15 +313,13 @@ function connecte(t) {
       '<script data-modules="' + entree + '" data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">');
 }
 
-/* Les modules (`outils/gabarit/modules/`) passent avant le code soudé, qui
-   trouve leurs noms dans l'objet global : leur script se pose devant le sien.
-   Après la découpe des tranches `@admin`, qui ne porte que sur le code soudé. */
+/* Le script d'un point d'entrée (`outils/gabarit/modules/`), posé en ligne ;
+   la page le sort ensuite dans un fichier nommé par son empreinte. */
 const scriptDesModules = (entree) =>
   '<script data-modules="' + entree + '">\n' + modules.assemble(entree) + "</script>\n";
-/* Le plan n'a plus de code soudé : le script des modules se pose après tout
-   le balisage et les données, là où commençait le script soudé d'avant, et
-   la suite des branchements qu'il lance (`modules/lancement.mjs`) s'exécute
-   donc au même instant. Un script resté en ligne après les données
+/* Le script des modules se pose après tout le balisage et les données : la
+   suite des branchements qu'il lance (`modules/lancement.mjs`) trouve ainsi
+   le document entier déjà lu. Un script resté en ligne après les données
    s'exécuterait après les modules, hors de son rang : on le refuse. */
 const DONNEES = '<script id="data" type="application/json">/*__DATA__*/</script>';
 function poseModulesDuPlan(t, entree) {
@@ -337,14 +335,10 @@ function poseModulesDuPlan(t, entree) {
    d'entrée qui reprend celui du plan et y ajoute les siens. */
 const tplAdmin = poseModulesDuPlan(reserve.pourLAdmin(tpl), "plan-admin");
 const tplPublic = poseModulesDuPlan(reserve.pourLePublic(tpl), "plan");
-/* Une tranche retirée dont un nom reste cité ailleurs ne casse rien ici : elle
-   casse chez le visiteur, au moment où ce code-là s'exécute. On le refuse donc
-   avant d'écrire la moindre page. Un nom que seul le point d'entrée de
-   l'administration expose est retiré au même titre. Les données et la porte
-   n'y changent rien : le gabarit seul suffit à juger. */
-const publics = new Set(modules.exposes("plan"));
-reserve.verifie(tplAdmin, tplPublic, "Le plan public",
-  modules.exposes("plan-admin").filter((n) => !publics.has(n)));
+/* Un élément retiré du balisage public que le script public irait encore
+   chercher ne casse rien ici : il casse chez le visiteur, au moment où ce
+   code-là s'exécute. On le refuse donc avant d'écrire la moindre page. */
+reserve.verifie(tplAdmin, tplPublic, "Le plan public");
 
 /* La feuille du plan, servie à part.
 

@@ -456,13 +456,13 @@ Fonctions :
 
 `$` 10
 
-### `modules/donnees.mjs` — 84 l. → plan, plan-admin
+### `modules/donnees.mjs` — 82 l. → plan, plan-admin
 
 - l.1 · Les données du plan, leurs index, et ce que la vue regarde
 
 Fonctions :
 
-`poseDonnees` 50 · `P` 84
+`poseDonnees` 48 · `P` 82
 
 ### `modules/duplication.mjs` — 43 l. → console
 
@@ -1485,14 +1485,6 @@ Fonctions :
 
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
-
-### `modules/vivant.mjs` — 36 l.
-
-- l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
-
-Fonctions :
-
-`vivants` 25
 
 ### `modules/volets.mjs` — 1227 l. → plan-admin
 

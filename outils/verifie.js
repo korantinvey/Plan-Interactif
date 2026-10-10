@@ -40,18 +40,6 @@ try {
   process.exit(1);
 }
 
-/* Et les noms, au même geste. La syntaxe ne résout rien : une fonction appelée
-   après avoir été renommée dans le module d'à côté passe les deux contrôles
-   précédents sans un mot, et casse au premier clic. Les modules du plan étant
-   soudés dans un espace de noms unique, un renommage traverse des fichiers que
-   rien ne relie — c'est arrivé, et c'est pour cela que ceci existe. */
-try {
-  lance("appels.js");
-} catch (e) {
-  console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
-  process.exit(1);
-}
-
 /* La version anglaise se contrôle au même geste : une phrase affichée sans sa
    traduction resterait en français sous les yeux de qui a demandé l'anglais,
    et rien d'autre ne le verrait. */
@@ -63,12 +51,9 @@ try {
 }
 
 /* La relecture par ESLint, puis le cliquet des types : ce qu'un développeur
-   attend d'un dépôt, et ce qui voit une variable morte ou un appel faux là où
-   la syntaxe et `appels.js` ne regardent pas. */
-/* Et le cliquet de la soudure : un nom de plus confié au code soudé, ou une
-   garde `typeof` de plus, échoue ici ; un recul resserre
-   `outils/soudure-acceptee.json`, à valider comme `CARTE.md`. */
-for (const script of ["relecture.js", "types.js", "soudure.js"]) {
+   attend d'un dépôt, et ce qui voit une variable morte, un nom que rien ne
+   déclare ou un appel faux là où la syntaxe ne regarde pas. */
+for (const script of ["relecture.js", "types.js"]) {
   try {
     lance(script);
   } catch (e) {
@@ -79,7 +64,7 @@ for (const script of ["relecture.js", "types.js", "soudure.js"]) {
 
 let bouge = "";
 try {
-  bouge = execFileSync("git", ["status", "--porcelain", "CARTE.md", "outils/soudure-acceptee.json"],
+  bouge = execFileSync("git", ["status", "--porcelain", "CARTE.md"],
     { cwd: racine })
     .toString().trim();
 } catch (e) {
@@ -88,11 +73,11 @@ try {
 }
 
 if (!bouge) {
-  console.log("Tout est en ordre : pages construites et contrôlées, `CARTE.md` et le cliquet de la soudure à jour.");
+  console.log("Tout est en ordre : pages construites et contrôlées, `CARTE.md` à jour.");
   process.exit(0);
 }
 
-console.error("`CARTE.md` ou le cliquet de la soudure était en retard sur ses sources :\n");
+console.error("`CARTE.md` était en retard sur ses sources :\n");
 console.error(bouge);
 console.error("\nIl vient d'être refait. Relisez le diff, puis validez-le.");
 process.exit(1);

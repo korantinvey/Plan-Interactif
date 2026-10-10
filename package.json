@@ -20,11 +20,9 @@
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
     "charge": "node outils/essais/charge.js",
-    "appels": "node outils/appels.js",
     "navigateur": "playwright test",
     "lint": "node outils/relecture.js",
-    "types": "node outils/types.js",
-    "soudure": "node outils/soudure.js"
+    "types": "node outils/types.js"
   },
   "type": "commonjs",
   "private": true,

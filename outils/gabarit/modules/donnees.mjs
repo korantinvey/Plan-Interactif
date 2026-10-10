@@ -4,14 +4,12 @@
    Un salon arrive de l'API (ou de la page, pour la démonstration) : `indexe`
    le pose ici, puis en tire les index que tout le plan consulte — les formes,
    l'objet derrière chaque identifiant, les hébergées, le programme. Ces noms
-   ont longtemps été des variables du code soudé, que chaque morceau lisait et
-   que deux d'entre eux réaffectaient.
+   ont longtemps été des variables d'un script unique, que chaque morceau
+   lisait et que deux d'entre eux réaffectaient.
 
-   Ils vivent désormais dans ce module. Le code soudé les lit toujours par leur
-   nom — le point d'entrée les lui pose en accesseurs (`vivant.mjs`) —, et les
-   remplace par `poseDonnees({ … })`, une seule porte qu'on retrouve d'un coup
-   d'œil. Un module, lui, les importe : c'est ce qui permet aux domaines qui
-   en dépendent de quitter le code soudé à leur tour.
+   Ils vivent désormais dans ce module : on les importe pour les lire, et on
+   les remplace par `poseDonnees({ … })`, une seule porte qu'on retrouve d'un
+   coup d'œil.
    ============================================================ */
 
 /** Le salon tel que l'API le sert : `evenement`, `plans`, `fuseau`… */

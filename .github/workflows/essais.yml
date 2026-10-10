@@ -2,7 +2,7 @@
 #
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
-# les appels sans déclaration, la relecture ESLint, le cliquet des types, les
+# la relecture ESLint, le cliquet des types, les
 # douze cas du moteur de la journée organisée,
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
@@ -42,22 +42,11 @@ jobs:
       - name: Construire les pages
         run: npm run construire
 
-      - name: Appels sans déclaration
-        run: npm run appels
-
       - name: Relecture par ESLint
         run: npm run lint
 
       - name: Types (cliquet de outils/types-acceptes.json)
         run: npm run types
-
-      # Un nom de plus confié au code soudé échoue ; un recul resserre le
-      # cliquet, et ce resserrement doit être validé avec lui, sans quoi le
-      # nom retiré pourrait revenir sans que rien ne le dise.
-      - name: Soudure (cliquet de outils/soudure-acceptee.json)
-        run: |
-          npm run soudure
-          git diff --exit-code outils/soudure-acceptee.json
 
       - name: Moteur de la journée organisée
         run: npm run essais
