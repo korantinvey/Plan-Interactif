@@ -30,8 +30,6 @@ supabase/.temp/
 # qu'un fichier à faire vivre.
 deno.lock
 
-outils/chk.js
-
 # Les pages fabriquées : Cloudflare les construit au déploiement
 # (`wrangler.jsonc` `build`), la CI pour ses essais, chacun chez soi par
 # `npm run construire`. Les versionner faisait d'une ligne de gabarit mille

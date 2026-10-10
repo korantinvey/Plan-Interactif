@@ -30,7 +30,7 @@ socle — `_console-base.html`, entouré de `_console-head.html` et
 l'autre — et partagent `_console.css`.
 
 ```bash
-node assemble.js   # gabarit/ → tpl-multi.html, et chk.js pour node --check
+node assemble.js   # gabarit/ → tpl-multi.html
 node genere.js     # tpl-multi.html + gabarit/ → web/
 ```
 
