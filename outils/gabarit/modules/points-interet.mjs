@@ -7,13 +7,14 @@
    les retrouve à la frappe, et toucher l'un d'eux ouvre sa fiche. Le visiteur
    reçoit tout : `plan.mjs` embarque ce module.
 
-   Il n'a rien à recevoir du code soudé : la forme d'un identifiant
+   Rien ne lui est confié : la forme d'un identifiant
    (`forme-choisie.mjs` `formeParId`), le passage à un autre pavillon
    (`rendu.mjs` `changePlan`), les distinctions de la fiche
    (`distinctions.mjs` `poseDistsFiche`), ce que la fiche des stands prête à
    celle d'un repère (`fiche.mjs`) et le bord estompé du cartouche
-   (`bandes.mjs`) s'importent ; la recherche, qui relit les repères, se les
-   fait donc confier par le code soudé. Les libellés, qui marquent la zone
+   (`bandes.mjs`) s'importent ; la recherche, qui relit les repères et que
+   ce module importe, les reçoit de lui en se chargeant
+   (`confieALaRecherche`). Les libellés, qui marquent la zone
    mise en avant, reçoivent `phareZone` par la porte que ce module ouvre en
    se chargeant (`confieAuxLibelles`).
    ============================================================ */

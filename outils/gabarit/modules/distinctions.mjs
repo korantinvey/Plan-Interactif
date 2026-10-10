@@ -1,7 +1,7 @@
 /* ============================================================
    Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
-   Sorti de `_rendu.html`. Un salon qui distingue certains de ses exposants le
+   Un salon qui distingue certains de ses exposants le
    dit par un champ que la synchronisation pose sur la fiche. Ce qu'on en
    montre se règle surface par surface, depuis les onglets « Nouveaux » et
    « Adhérents » des réglages : la marque qui se lit bien sur une fiche qu'on
@@ -14,11 +14,12 @@
    ajouter une troisième ne doit être qu'une ligne de plus — et le rang, qui
    décide du coin où la marque se pose pour que deux ne se recouvrent pas.
 
-   Il n'a besoin de rien du code soudé : tout ce qu'il lit s'importe. Le mode
-   et la teinte de chaque marque viennent de l'habillage (`habillage.mjs`), et
-   la liste (`recherche.mjs`) et la fiche (`fiche.mjs`), qu'il importe ou qui
-   l'importent en chemin, le reçoivent par leur branchement ; l'habillage, par
-   la porte que ce module ouvre en se chargeant (`confieALHabillage`).
+   Il n'a rien à recevoir : tout ce qu'il lit s'importe. Le mode et la
+   teinte de chaque marque viennent de l'habillage (`habillage.mjs`) ; la
+   liste (`recherche.mjs`), la fiche (`fiche.mjs`) et l'habillage, qui
+   l'atteignent déjà par leurs imports et ne pourraient l'importer sans
+   boucle, reçoivent ses marques par leurs portes, que ce module ouvre en se
+   chargeant (`confieALaRecherche`, `confieALaFiche`, `confieALHabillage`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";

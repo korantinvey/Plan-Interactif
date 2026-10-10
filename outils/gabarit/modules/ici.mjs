@@ -2,7 +2,7 @@
    « Vous êtes ici » — le code affiché dans le hall, côté visiteur
 
    Le plan pose à tout le monde la même question — « d'où partez-vous ? » — et
-   `_borne.html` a réglé le cas de l'écran vissé à l'entrée, qui ne bouge pas
+   `borne.mjs` a réglé le cas de l'écran vissé à l'entrée, qui ne bouge pas
    de la journée. Reste le visiteur, avec son téléphone, sous la même charpente
    métallique où le GPS ne situe rien. Lui non plus ne sait pas nommer l'allée
    où il se tient, et la seule chose que le salon puisse lui dire, c'est : là
@@ -25,8 +25,8 @@
    (voir `_sw.js`). C'est le même parti pris que le partage de parcours, pour
    les mêmes raisons.
 
-   **Ce n'est pas une borne.** Le mode réutilise le départ imposé de
-   `_borne.html` — c'est le même besoin, et l'itinéraire n'a qu'une question à
+   **Ce n'est pas une borne.** Le mode réutilise le départ imposé de la
+   borne (`borne.mjs` `poseDepartImpose`) — c'est le même besoin, et l'itinéraire n'a qu'une question à
    poser — mais rien du reste : un téléphone n'est pas un écran public, il
    garde son jeton de mesure, son parcours et son invitation à installer. Une
    borne se remet à zéro toutes les quatre-vingt-dix secondes ; un téléphone à
@@ -234,8 +234,8 @@ export function demarreIci(){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_ici.html` à la place que ce code tenait : le bouton du rappel
- * s'y branche au même moment qu'avant.
+ * Appelé par le lancement (`lancement.mjs` `lancePlan`) au rang que ce code
+ * tenait : le bouton du rappel s'y branche au même moment qu'avant.
  */
 export function brancheIci(){
   const _iciStop = $("iciStop");

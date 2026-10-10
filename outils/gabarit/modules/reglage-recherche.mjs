@@ -2,12 +2,12 @@
    L'onglet « Recherche » des réglages — l'exploitant seul
 
    Ce que le champ de recherche a le droit de remonter, et l'ordre des
-   filtres du panneau des critères. Sorti de `_admin1.html` : ce module n'est
+   filtres du panneau des critères. Ce module n'est
    embarqué que par `plan-admin.mjs`, et `reglages.mjs` l'importe pour ouvrir
    l'onglet. Ce que le plan public relit du réglage — une sorte remonte-t-elle
    (`chercheSorte`) — est dans `configuration.mjs`.
 
-   Il n'a rien à recevoir du code soudé : les repères s'importent de
+   Il n'a rien à se faire confier : les repères s'importent de
    `points-interet.mjs`, l'enregistrement de la configuration de
    `configuration.mjs`, les critères et la liste de `recherche.mjs`, ce que la
    fiche montre de `corps-fiche.mjs`.

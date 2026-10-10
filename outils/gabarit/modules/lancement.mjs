@@ -27,6 +27,7 @@
    l'administration reprend tout le plan public avant d'y ajouter ses modules,
    et la suite doit attendre qu'ils soient là.
    ============================================================ */
+import { brancheErreurs } from "./erreurs.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
 import { brancheLibelles } from "./libelles.mjs";
 import { brancheBandes } from "./bandes.mjs";
@@ -82,6 +83,10 @@ export function lancePlan(){
     mv.content = "width=device-width, initial-scale=1, viewport-fit=cover";
     document.head.appendChild(mv);
   }
+  /* Les erreurs signalées, en premier : elles couvrent ainsi tout ce qui suit.
+     Un rang que le script d'avant n'avait pas — ses écoutes ne reçoivent que
+     des erreurs, que nulle autre n'écoute. */
+  brancheErreurs();
   // la couleur de la barre du système, refaite au franchissement du seuil du téléphone
   brancheTonDeLaBarre();
   // le plan à l'écran : l'écoute des polices passe avant celle du rendu WebGL

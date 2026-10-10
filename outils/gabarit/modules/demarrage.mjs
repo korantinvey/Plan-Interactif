@@ -8,15 +8,16 @@
    qu'il le soit — la borne, le code du hall, un parcours ou une conférence
    reçus par lien, la visite guidée, l'invitation à installer.
 
-   Il se branche par `brancheDemarrage`, que `_admin2.html` appelle à la
-   place que ce code tenait, au bout du script : c'est là que la page
-   démarre, une fois tout le reste déclaré. La fiche, le montage du plan et
+   Il se branche par `brancheDemarrage`, que `lancement.mjs` `lancePlan`
+   appelle en dernier, comme au bout du script d'avant : c'est là que la page
+   démarre, une fois tout le reste posé. La fiche, le montage du plan et
    l'ordre des calques, il les importe (`fiche.mjs`, `rendu.mjs`,
    `ordre-trace.mjs`). Hors de l'administration, il retire en dernier les
    commandes de l'exploitant (`mode-admin.mjs` `retireAdmin`) : la page
    publique n'a plus à le demander. Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) lui est confié,
-   sous la garde `typeof` qu'il avait.
+   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) lui est confié
+   par ces modules en se chargeant (`confieAuDemarrage`), sur des défauts
+   sans effet.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
@@ -93,7 +94,7 @@ function demarre(/** @type {any} */ d){
      c'est justement le temps que le plan met à se dessiner. Il sait déjà être
      là depuis l'ouverture de la page, posé d'après ce que l'appareil garde du
      salon ; cet appel-là lui apprend ce que les données en disent vraiment
-     (`_sponsor.html`). */
+     (`sponsor.mjs`). */
   accueilleSponsor();
   montePlan();
   fit();
@@ -117,7 +118,7 @@ function demarre(/** @type {any} */ d){
   demarreBorne();
   /* Puis le code affiché dans le hall, si l'adresse en porte un : même besoin,
      et le même empressement — « J'y vais » depuis une fiche ouverte par un lien
-     reçu doit déjà savoir d'où l'on part (voir `_ici.html`). */
+     reçu doit déjà savoir d'où l'on part (voir `ici.mjs`). */
   demarreIci();
   /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
      pour laquelle cette page vient d'être ouverte, et il retire son fragment
@@ -338,9 +339,9 @@ export function charge(){
 }
 
 /**
- * Le branchement, appelé par `_admin2.html` au bout du script, à la place que
- * ce code tenait : la page démarre ici, et l'écoute du redimensionnement s'y
- * pose au même rang qu'avant parmi celles du plan — après celles de la vue.
+ * Le branchement, appelé en dernier par `lancement.mjs` `lancePlan` : la page
+ * démarre ici, et l'écoute du redimensionnement s'y pose au rang qu'elle
+ * tenait dans le script d'avant — après celles de la vue.
  */
 export function brancheDemarrage(){
   const fige = document.getElementById("data").textContent.trim();
@@ -356,7 +357,8 @@ export function brancheDemarrage(){
      commandes de l'exploitant quittent le document. En dernier, comme
      lorsque la construction posait l'appel au bout du script : le démarrage
      et le montage y touchent encore. L'administration, elle, attend la
-     session, que son propre code pose à cette place (`_auth-plan.html`). */
+     session, que `acces-admin.mjs` `brancheAcces` vérifie juste après
+     (`plan-admin.mjs`, emplacement `apresLeDemarrage`). */
   if (!PLAN_ADMIN) retireAdmin();
 }
 

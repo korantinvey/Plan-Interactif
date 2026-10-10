@@ -56,7 +56,13 @@ test.describe("le plan public", () => {
 
   test("une ligne de la liste ouvre la fiche de son exposant @telephone", async ({ page }) => {
     const erreurs = await prepare(page);
-    await page.goto(PLAN);
+    /* En SVG : ce qu'on éprouve est le chemin de la liste à la fiche, non le
+       dessin. Sur une machine d'intégration sans carte graphique, WebGL est
+       rendu par le processeur, et le cadrage qui suit le clic y coûtait une
+       quinzaine de secondes — l'essai frôlait son délai et le passait dès
+       qu'un voisin chargeait la machine. En SVG, il tient en trois. Le rendu
+       WebGL a ses propres essais (« s'ouvre sans erreur », `largeurs.spec.js`). */
+    await page.goto(PLAN + "&rendu=svg");
     const lignes = await attendLaListe(page);
     const texte = (await lignes.first().innerText()).trim().split("\n");
     const nom = texte.find((l) => l.length > 3 && !/^\w?\d/.test(l)) || texte[0];

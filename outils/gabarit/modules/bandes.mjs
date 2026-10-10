@@ -1,12 +1,12 @@
 /* ============================================================
    Les bandes qui défilent — fondu du bord, flèche qui avance
 
-   Sorties de `_recherche.html` (§ 5) : la bande des critères retenus, le
-   cartouche des points d'intérêt et les onglets des pavillons marquent le bord
-   par lequel il leur reste quelque chose (`majFondus`, que le rendu et le
-   dessin rappellent). Les écoutes se posent par `brancheBandes`, que
-   `_recherche.html` appelle à la place que ce code tenait : au même rang
-   qu'avant parmi celles du plan.
+   La bande des critères retenus, le cartouche des points d'intérêt et les
+   onglets des pavillons marquent le bord par lequel il leur reste quelque
+   chose (`majFondus`, que le rendu, la recherche et les repères rappellent). Les écoutes se
+   posent par `brancheBandes`, que `lancement.mjs` `lancePlan` appelle juste
+   avant la recherche : au rang qu'elles tenaient dans le script d'avant
+   parmi celles du plan.
    ============================================================ */
 
 /* Les bandes qui défilent, et ce qui le fait voir.

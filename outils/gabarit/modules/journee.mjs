@@ -1,8 +1,9 @@
 /* ============================================================
    11 ter. Organiser sa visite — la question posée, et le tiroir
 
-   Sorti de `_journee.html`, où il se branche encore (`brancheJournee`), sans
-   rien recevoir, pour poser ses écoutes à leur rang : le tiroir du parcours,
+   Il se branche par `brancheJournee`, que le lancement (`lancement.mjs`)
+   appelle sans rien lui passer, pour poser ses écoutes à leur rang : le
+   tiroir du parcours,
    qui importe ce module, se confie en se chargeant (`confieALaJournee`) ; la
    fiche, les dates et les heures du salon et le seuil de concentration
    s'importent (`fiche.mjs`, `horaires.mjs`, `seuil.mjs`), le tracé de
@@ -33,7 +34,7 @@ import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
  * Ce que la journée emprunte au tiroir du parcours (`tiroir-parcours.mjs`),
  * qui importe ce module pour y poser la journée : il ne peut s'importer
  * d'ici, et lui confie au chargement de son module, par `confieALaJournee`,
- * de quoi refaire le parcours — jamais le code soudé. La fiche s'importe de
+ * de quoi refaire le parcours. La fiche s'importe de
  * `fiche.mjs`, le passage d'un pavillon à l'autre de `rendu.mjs`.
  * @typedef {{ basculeParcours: (...a: any[]) => any,
  *   rangParcours: (hote: any, r: any) => any,
@@ -1241,7 +1242,8 @@ function refaitSejour(cleAffichee, fige){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_journee.html` à la place que ce code y tenait : il branche le
+ * Appelé par le lancement (`lancement.mjs` `lancePlan`) au rang que ce code
+ * tenait : il branche le
  * calcul (`sejour.mjs`) et la charge annoncée (`charge-annoncee.mjs`), puis
  * pose les écoutes du tiroir — dans cet ordre, qui était celui de la page.
  * Il ne reçoit plus rien : le tiroir du parcours se confie par

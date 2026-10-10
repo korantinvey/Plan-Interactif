@@ -13,7 +13,7 @@
    (`outil-dessin.mjs`) leur confie lui-même ce qu'elles refont, par
    `confieApresOption`.
 
-   Sorti de `_admin1.html`. L'apparence des calques (`apparence.mjs`), que le
+   L'apparence des calques (`apparence.mjs`), que le
    tiroir du parcours importe, ne peut importer ce module : celui-ci lui
    confie `appliqueOptions` en se chargeant (`confieALApparence`).
    ============================================================ */

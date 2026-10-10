@@ -1,9 +1,8 @@
 /* ============================================================
    L'invitation à installer le plan
 
-   Sorti de `_installation.html`, qui ne garde que son branchement et le
-   retour aux réglages après un aperçu. La case de l'exploitant est dans
-   `reglage-installation.mjs`, que seul `plan-admin.mjs` embarque.
+   La case de l'exploitant est dans `reglage-installation.mjs`, que seul
+   `plan-admin.mjs` embarque.
 
    Le plan public s'installe : ajouté à l'écran d'accueil, il s'ouvre d'un
    geste, en plein écran, et se consulte sans réseau une fois ouvert
@@ -92,7 +91,7 @@ import { ouvreModale, fermeModale, poseAvantFermeture, poseApresFermeture, retou
 import { conf } from "./configuration.mjs";
 import { TUTO, TUTO_DELAI } from "./tutoriel.mjs";
 
-/* Il n'a plus rien à recevoir du code soudé : la configuration du salon
+/* Il n'a rien à se faire confier : la configuration du salon
    (`configuration.mjs`), la visite guidée — en cours, telle qu'elle est à
    l'instant, et le délai de sa proposition (`tutoriel.mjs`) —, la liste à
    copier avant d'installer (`partage.mjs` `parcoursACopier`) s'importent,
@@ -434,7 +433,7 @@ export function accueilleInvitation(){
      attend qu'il se libère. Passer la seconde ne coûte à l'invitation qu'un
      instant ; passer la première aurait coûté la visite guidée. */
   /* Et après le générique du sponsor, pour la même raison qu'elle : ce qui se
-     pose sur le logo le fait payer pour l'écran d'un autre (`_sponsor.html`). */
+     pose sur le logo le fait payer pour l'écran d'un autre (`sponsor.mjs`). */
   if (installFini) return;
   installAccueil = performance.now() + resteSponsor();
   /* Le rappel de l'application installée prend son temps à lui : il n'a rien à
@@ -563,8 +562,8 @@ function essaieInvitation(){
 }
 
 /**
- * Le branchement, appelé par le code soudé à la place que ce code y tenait
- * (`_installation.html`). Ce qui s'y faisait au chargement — les écouteurs du
+ * Le branchement, appelé par le lancement (`lancement.mjs` `lancePlan`) au
+ * rang que ce code tenait. Ce qui s'y faisait au chargement — les écouteurs du
  * navigateur, la question posée au système, le suivi des gestes — s'y fait
  * encore, au même rang parmi le reste du plan.
  */
@@ -710,7 +709,7 @@ function poseGardeInstallation(corps, repond, revient){
   b.onclick = () => {
     repond();
     /* La fenêtre de la copie attend que celle-ci ait libéré la place, et
-       rouvre celle-ci en partant (`_modales.html`). */
+       rouvre celle-ci en partant (`fenetre.mjs` `poseApresFermeture`). */
     poseApresFermeture(() => demandeGardeParcours(revient));
     fermeModale();
   };
@@ -871,7 +870,7 @@ export function ouvreRappel(facon, apercu){
     if (apercu){
       /* La fenêtre de repli prend la place de celle-ci, une fois qu'elle l'a
          libérée : ouverte plus tôt, elle la trouverait encore occupée
-         (`_modales.html`). */
+         (`fenetre.mjs` `poseApresFermeture`). */
       if (demandee && ouvre) poseApresFermeture(() => ouvreRetrouve(true));
       else retourAuxReglages("installation");
       return;

@@ -1,7 +1,7 @@
 /* ============================================================
    La préparation du séjour — répartir les stands, puis dérouler les jours
 
-   Sortie de `_journee.html`. Elle ne touche pas l'écran : elle reçoit des
+   Elle ne touche pas l'écran : elle reçoit des
    jours, une heure d'arrivée, un départ, et rend un déroulé par jour — d'où
    un essai qui la mesure seule, dans Node (`outils/essais/sejour.js`). Le
    rangement lui-même est dans `ordonnanceur.mjs`, la charge annoncée dans
@@ -25,8 +25,8 @@ import { CHARGE, chargeSuivie, chargeCellule, dilatationDuJour } from "./charge-
 let soude = {};
 
 /**
- * Le branchement, appelé par `journee.mjs` en se branchant lui-même, à la
- * place que ce code tenait dans `_journee.html`.
+ * Le branchement, appelé par `journee.mjs` en se branchant lui-même
+ * (`brancheJournee`).
  *
  * @param {{ minutesVisite: () => number, horairesSalon: (jour: string) => any,
  *   seuilConcentration: (o: any) => number, seuilImpose: () => boolean,

@@ -27,8 +27,8 @@ import { champZone } from "./fiche-zone.mjs";
 /**
  * Ce que le volet emprunte à la fenêtre des réglages (`reglages.mjs`), qui
  * l'importe : le glissement d'une hauteur à l'autre. Elle le lui confie au
- * chargement de son module, par `confieAuReglageSuggestion` — jamais le code
- * soudé.
+ * chargement de son module, par `confieAuReglageSuggestion` : le volet ne
+ * peut l'importer, il est importé par elle.
  * @typedef {{ glisseFenetre: (change: () => void) => void }} PageReglageSuggestion
  */
 /** @type {PageReglageSuggestion} */

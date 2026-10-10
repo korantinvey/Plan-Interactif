@@ -6,12 +6,11 @@
    chargées. Le calcul ne lit rien de la page : on lui donne les créneaux, les
    distances et ce qu'il sait de la charge, il rend un ordre.
 
-   C'est pour cela qu'il est sorti de `_journee.html`, avant tout ce qui
-   l'entoure. Les essais (`npm run essais`, `npm run fep26`) le découpaient
-   jusqu'ici du gabarit par ancres de texte : ils importent désormais ce
-   module, c'est-à-dire exactement le code que la page reçoit. Ce qui prépare
-   le séjour — la matrice des distances, les créneaux, le déroulé — reste
-   dans le gabarit, lié qu'il est à l'itinéraire et au parcours.
+   C'est pour cela qu'il vit seul dans son module : les essais (`npm run
+   essais`, `npm run fep26`) l'importent, c'est-à-dire exactement le code que
+   la page reçoit. Ce qui prépare le séjour — la matrice des distances, les
+   créneaux, le déroulé — est à part, dans `sejour.mjs`, lié qu'il est à
+   l'itinéraire et au parcours.
    ============================================================ */
 
 /**

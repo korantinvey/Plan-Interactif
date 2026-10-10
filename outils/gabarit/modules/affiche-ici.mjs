@@ -8,7 +8,7 @@
    `plan-admin.mjs` : le visiteur n'a ni affiche à produire, ni endroit à
    désigner.
 
-   Il n'a rien à recevoir du code soudé : la forme d'un repère dessiné
+   Il n'a rien à recevoir : la forme d'un repère dessiné
    (`forme-choisie.mjs`), la visée de l'itinéraire et les tiroirs qu'on
    referme pour viser (`tiroir-itineraire.mjs`, `tiroir-parcours.mjs`), la
    mesure du texte (`texte-plan.mjs`) s'importent.
@@ -50,7 +50,7 @@ const ICI_PREFIXE = 8;
  * Son rang aurait tenu en un caractère, et c'est précisément ce qu'il ne faut
  * pas : une synchronisation qui ajoute un hall décale les rangs, et l'affiche
  * collée la veille désignerait le pavillon d'à côté — la même raison qui fait
- * qu'une borne retient un identifiant (voir `_borne.html`). L'identifiant
+ * qu'une borne retient un identifiant (voir `borne.mjs`). L'identifiant
  * entier, lui, fait trente-six caractères, que le code QR paierait d'une
  * version de plus et d'autant de portée en moins.
  */

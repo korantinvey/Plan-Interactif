@@ -155,8 +155,8 @@ const LIGNES_FICHE = [
    qu'un nom de hall — « SMCL26_P71 ». S'afficher de lui-même le publierait
    d'un coup sur tous les salons déjà en ligne.
 
-   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de « _js.html »,
-   qui décide de ce que le visiteur reçoit : les deux se suivent. */
+   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de
+   « corps-fiche.mjs », qui décide de ce que le visiteur reçoit : les deux se suivent. */
 const FICHE_MASQUEE_PAR_DEFAUT = { hall: true };
 
 /** Un champ paraît-il sur la fiche, réglage ou défaut ? */

@@ -35,8 +35,9 @@
    (`vous-etes-ici.mjs`) : le code affiché dans le hall les partage, et tout
    ce qui les lit — l'itinéraire, la journée, le rendu — n'a plus à importer
    la borne. Elle importe donc elle-même la visée, les tiroirs qu'elle
-   referme et le passage d'un pavillon à l'autre ; `_borne.html` n'y pose plus
-   que ses écoutes, au même rang qu'avant parmi celles du plan.
+   referme et le passage d'un pavillon à l'autre ; son branchement n'y pose
+   plus que ses écoutes, au rang que `lancement.mjs` lui garde parmi celles du
+   plan.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, state, P } from "./donnees.mjs";
@@ -146,7 +147,7 @@ export function pointLibre(xy){ return lieuBorne(state.plan, xy, ""); }
  * et c'est très bien — le pavillon suffit à dire où l'on est.
  *
  * Ce qui suit vaut pour une borne comme pour le code affiché dans le hall
- * (`_ici.html`) : le départ cesse d'être une question, le plan se porte sur le
+ * (`ici.mjs`) : le départ cesse d'être une question, le plan se porte sur le
  * bon pavillon, le point paraît, et le tiroir reprend ce départ-là. Ce qui les
  * sépare tient dans ce qui appelle — l'un enregistre sa position, l'autre non.
  */
@@ -268,7 +269,7 @@ function reposeLaBorne(){
   /* Et c'est son démarrage à lui : l'écran qu'il trouve en arrivant est le
      premier du plan, comme au chargement d'une page. Le générique du sponsor y
      a donc la même place — sans chargement à couvrir cette fois, il compte ses
-     secondes depuis maintenant (`_sponsor.html`). */
+     secondes depuis maintenant (`sponsor.mjs`). */
   ouvreSponsor(sponsorRetenu(), true);
 }
 
@@ -323,9 +324,9 @@ export function demarreBorne(){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_borne.html` à la place que ce code tenait : les écoutes de la
- * borne s'y posent au même rang qu'avant parmi celles du plan — la bascule de
- * langue, le bouton de pose, et les gestes qui relancent le repos.
+ * Appelé par `lancement.mjs` `lancePlan`, au rang qu'il tenait dans le script
+ * d'avant : les écoutes de la borne s'y posent parmi celles du plan — la
+ * bascule de langue, le bouton de pose, et les gestes qui relancent le repos.
  */
 export function brancheBorne(){
   document.addEventListener("click", e => {

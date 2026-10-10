@@ -11,10 +11,9 @@
    (l'appel à la base, la session, la barre d'état, la brique d'un bloc,
    l'adresse des pages).
 
-   Il n'y a plus de code soudé : les branchements que la page gardait se font
-   ici, dans l'ordre où elle les faisait, et le script de ce point d'entrée
-   est posé après tout le balisage (`genere.js` `poseModulesSeuls`), là où se
-   tenait le sien. Rien n'est donc plus confié à l'objet global.
+   Les branchements de la page se font ici, dans leur ordre, et le script de
+   ce point d'entrée est posé après tout le balisage (`genere.js`
+   `poseModulesSeuls`). Rien n'est confié à l'objet global.
    ============================================================ */
 import { brancheSocle, premierEcran } from "./socle-console.mjs";
 import { brancheExport } from "./export.mjs";

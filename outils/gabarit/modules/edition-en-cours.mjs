@@ -4,9 +4,10 @@
    Le rendu par la carte graphique (`webgl.mjs`) et la vue (`vue.mjs`) le
    demandent, mais ne peuvent l'importer : ce qu'il lit — le calque ouvert, le
    placement des libellés, la couche reprise — vit dans des modules qui
-   importent l'un ou l'autre. Il vit donc ici, et le code soudé le leur
-   confie (`_webgl.html`, `_vue.html`). Le visiteur le reçoit, d'où
-   `plan.mjs` : hors de l'administration, il est toujours faux.
+   importent l'un ou l'autre. Il vit donc ici, et le leur confie en se
+   chargeant (`confieAuWebgl`, `confieALaVue`). Plus rien ne l'importe :
+   `plan.mjs` le charge sans nom pour qu'il s'inscrive, et le visiteur le
+   reçoit donc — hors de l'administration, il est toujours faux.
    ============================================================ */
 import { GL, confieAuWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";

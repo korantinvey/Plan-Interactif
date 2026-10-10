@@ -9,8 +9,8 @@
    mot-clé ni sans. Sur le plan, rien ne change : elles gardent leur libellé,
    leur fiche et leur programme.
 
-   Sortis de `_recherche.html` (§ 5) : les critères et leur panneau, le
-   retrait du plan, la liste et ses vignettes. Les secteurs vivent dans
+   Ici : les critères et leur panneau, le retrait du plan, la liste et ses
+   vignettes. Les secteurs vivent dans
    `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. L'écran et ce
    que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`), et les
    tiroirs (`tiroirs.mjs`). La fiche
@@ -19,12 +19,11 @@
    bouclerait. Le dessin des noms et des distinctions (`libelles.mjs`,
    `distinctions.mjs`) l'importe, et ne peut donc pas l'être ; la mesure du
    texte, elle, s'importe (`texte-plan.mjs`).
-   Ce que le code soudé tient encore — la fiche et la sélection, le dessin des
-   noms et des distinctions, les repères, le parcours — lui est confié par
-   `brancheRecherche`, que `_recherche.html` appelle à la place que ce code
-   tenait : l'écoute de la liste s'y pose, au même rang qu'avant. Ce qui se
-   déclare plus loin dans le code soudé, ou change sans cesse, vient par des
-   détours, lus au moment de s'en servir.
+   Ce qu'il ne peut importer — la fiche et la sélection, le dessin des noms
+   et des distinctions, les repères, le parcours — lui est confié par ces
+   modules en se chargeant (`confieALaRecherche`), et lu au moment de s'en
+   servir. `brancheRecherche`, que `lancement.mjs` appelle à son rang, n'y
+   pose plus que l'écoute de la liste.
 
    En retour, ce module confie en se chargeant ce que deux modules qu'il
    importe lui empruntent : le panneau des critères aux tiroirs
@@ -54,7 +53,7 @@ import { largeur } from "./texte-plan.mjs";
  * les libellés qu'elle refait (`libelles.mjs`), les repères qu'elle remonte
  * (`points-interet.mjs`). Tous l'importent, et elle ne peut donc les importer
  * en retour : chacun lui confie ce qu'elle en appelle au chargement de son
- * module, par `confieALaRecherche` — jamais par le code soudé.
+ * module, par `confieALaRecherche`.
  * @typedef {object} PageRecherche
  * @property {() => void} ferme referme la fiche (`fiche.mjs`)
  * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
@@ -1165,8 +1164,8 @@ function chargeUnLot(lot){
 }
 
 /**
- * Le branchement, appelé par `_recherche.html` à la place que ce code tenait :
- * l'écoute de la liste s'y pose au même rang qu'avant. Ce que la recherche
+ * Le branchement, appelé par `lancement.mjs` `lancePlan` à son rang :
+ * l'écoute de la liste s'y pose. Ce que la recherche
  * appelle ailleurs lui est confié par les modules eux-mêmes
  * (`confieALaRecherche`).
  */

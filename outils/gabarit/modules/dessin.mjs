@@ -7,7 +7,7 @@
    désignent, les stands dessinés à la main, leur nom et leur sélection.
    `plan.mjs` embarque ce module.
 
-   Il n'a plus rien à recevoir du code soudé : la forme choisie dans
+   Il n'a rien à recevoir : la forme choisie dans
    l'éditeur et sa boîte (`forme-choisie.mjs`), l'ordre des couches
    (`ordre-trace.mjs`), la fiche, la recherche, les secteurs et l'écran
    s'importent ; la mention de la source, qu'il est seul à refaire, vit ici.

@@ -4,9 +4,11 @@
    L'outil de mise au point de l'exploitant : la grille du calcul
    (`itineraire.mjs` `grille`), peinte sous le plan telle que le calcul la
    voit. Le visiteur ne la reçoit pas : seul `plan-admin.mjs` embarque ce
-   module, et le plan public n'appelle `rafraichitApercu` qu'après `typeof`.
+   module. Le montage d'un pavillon (`rendu.mjs`) refait la nappe sans
+   l'importer : ce module lui confie `rafraichitApercu` en se chargeant
+   (`confieAuRendu`), et la page publique garde le défaut sans effet.
 
-   Il n'a rien à recevoir du code soudé : la lecture des jetons de couleur
+   La lecture des jetons de couleur
    (`configuration.mjs`) et le plan où la nappe se pose (`vue.mjs`)
    s'importent. La case qui la montre (`outil-dessin.mjs`) passe par sa
    porte, `poseNappe`.

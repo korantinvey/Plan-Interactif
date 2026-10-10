@@ -7,9 +7,9 @@
    dit, la visée qui le désigne sur le plan, et le trait qui s'y trace. La
    nappe de la grille, outil de l'exploitant, est à part (`nappe.mjs`).
 
-   Il se branche dans `_itineraire.html`, à la place que son code tenait :
-   ses écoutes s'y posent au même rang qu'avant parmi celles du plan, sans
-   rien recevoir. La vue, qu'il lit et qu'il recadre, et les volets qu'il
+   Il se branche par `brancheTiroirItineraire`, que `lancement.mjs`
+   `lancePlan` appelle à son rang : ses écoutes s'y posent parmi celles du
+   plan, sans rien recevoir. La vue, qu'il lit et qu'il recadre, et les volets qu'il
    mesure, il les importe ; le passage d'un pavillon à l'autre, la fiche et
    le parcours qu'il referme, les modules qui les tiennent l'importent, et
    les lui confient en se chargeant (`confieAuTiroirItineraire`).
@@ -52,7 +52,7 @@ import { formeParId } from "./forme-choisie.mjs";
  * parcours (`tiroir-parcours.mjs`), qu'il referme en s'ouvrant. Tous trois
  * l'importent : il ne peut les importer en retour, et chacun lui confie ce
  * qu'il en appelle au chargement de son module, par
- * `confieAuTiroirItineraire` — jamais par le code soudé. La vue, elle,
+ * `confieAuTiroirItineraire`. La vue, elle,
  * s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
  * cesse, et le trajet la recadre.
  * @typedef {{ changePlan: (i: number) => void, ferme: () => void,
@@ -449,7 +449,7 @@ function montreResultat(etat){
   if (!ITI.a || !ITI.b){
     badge.textContent = "à définir";
     /* « iIntro » : la seule note que l'écran étroit peut taire — les invites
-       des deux champs disent la même chose (voir « _head.html »). */
+       des deux champs disent la même chose (voir `_styles-modeles-parcours.css`). */
     dit("iNote iIntro", pointBorne()
       ? "Choisissez votre destination : le trajet part de cette borne."
       : "Choisissez un départ et une arrivée. Sans localisation, c'est " +
@@ -619,7 +619,7 @@ export function bandeauVisee(){
 
 function armeVisee(r){
   /* Une borne sait d'où elle part : sa cible de départ est retirée du tiroir
-     (voir « _borne.html »), et ce garde-fou vaut pour le clavier. */
+     (voir « borne.mjs »), et ce garde-fou vaut pour le clavier. */
   if (r === "a" && pointBorne()) return;
   /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
      est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
@@ -666,8 +666,8 @@ export function visePoi(id){
 function visePoint(pt){
   if (!visee) return false;
   /* Poser une borne n'est pas désigner un bout de trajet : le point part
-     ailleurs (voir « _borne.html »). Désigner l'endroit d'un code non plus
-     (voir « _ici.html ») — et c'est par ici que passe le clavier, là où le
+     ailleurs (voir « borne.mjs »). Désigner l'endroit d'un code non plus
+     (voir « affiche-ici.mjs ») — et c'est par ici que passe le clavier, là où le
      doigt est tranché plus tôt, dans la chaîne des appuis sur le plan. */
   if (VISEES[visee]) return VISEES[visee](pt);
   const r = visee;
@@ -753,9 +753,9 @@ export function versItineraireDe(pt){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `_itineraire.html` à la place que ce code tenait : le choix
+ * Appelé par `lancement.mjs` `lancePlan` à son rang : le choix
  * d'accessibilité retenu se relit, puis les écoutes du tiroir et de la visée
- * se posent au même rang qu'avant parmi celles du plan — celle de la touche
+ * se posent à leur place parmi celles du plan — celle de la touche
  * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit. Il
  * ne reçoit plus rien : ce que le tiroir emprunte lui est confié par
  * `confieAuTiroirItineraire`.

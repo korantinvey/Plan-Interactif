@@ -26,7 +26,7 @@ import { rest, SESSION, signale, bloc, BASE_PAGES } from "./socle-console.mjs";
 
 const CLE_EVT = "rapport-evenement";
 
-let EVTS = [], RAPPORT = null, periode = "30";
+let EVTS = [], RAPPORT = null, ERREURS = null, periode = "30";
 /* Le salon lu. L'export le lit au moment du clic, par la liaison que
    `rapport.mjs` importe et lui confie ; seul ce module le remplace. */
 export let selection = null;
@@ -94,10 +94,35 @@ const joursPeriode = () => periode === "tout" ? null : Number(periode);
 
 async function chargeRapport() {
   if (!selection) { RAPPORT = null; return; }
-  RAPPORT = await rest("rpc/rapport_utilisation", {
-    method: "POST",
-    body: JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() }),
-  });
+  const corps = JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() });
+  /* Les erreurs à part : une base qui n'a pas encore reçu leur migration ne
+     doit pas priver l'organisateur de son rapport. */
+  [RAPPORT, ERREURS] = await Promise.all([
+    rest("rpc/rapport_utilisation", { method: "POST", body: corps }),
+    rest("rpc/erreurs_du_salon", { method: "POST", body: corps }).catch(() => null),
+  ]);
+}
+
+/* Les erreurs que les pages du salon ont signalées (`modules/erreurs.mjs`),
+   les plus fréquentes d'abord. Le message vient d'une page : il s'échappe. */
+function erreurs(hote, liste) {
+  if (!liste.length) {
+    const v = document.createElement("p");
+    v.className = "astuce";
+    v.textContent = "Aucune erreur signalée sur la période.";
+    hote.appendChild(v);
+    return;
+  }
+  const t = document.createElement("div");
+  t.className = "erreurs";
+  t.innerHTML = liste.map((e) =>
+    '<div class="erreur"><span class="n">' + esc(nb(e.nombre)) + '</span>' +
+    '<span class="m">' + esc(e.message) + '</span>' +
+    '<span class="o">' + esc(e.lieu || "endroit inconnu") + " · " +
+    (e.page === "admin" ? "administration" : "plan public") + " · " +
+    esc(new Date(e.derniere).toLocaleDateString("fr-FR", { dateStyle: "medium" })) +
+    '</span></div>').join("");
+  hote.appendChild(t);
 }
 
 /* ------------------------------------------------------------------
@@ -385,6 +410,18 @@ function dessineRapport() {
       { dateStyle: "long", timeZone: r.fuseau || "UTC" }) + ".";
   b5.appendChild(a5);
   f.appendChild(b5);
+
+  if (ERREURS) {
+    const b6 = bloc("Erreurs des pages");
+    erreurs(b6, ERREURS);
+    const a6 = document.createElement("p");
+    a6.className = "astuce";
+    a6.style.marginTop = "10px";
+    a6.textContent = "Ce que les pages du salon ont rencontré en route, et combien de fois, " +
+      "avec l'endroit du code. Rien n'y dit qui l'a rencontré. Gardées quatre-vingt-dix jours.";
+    b6.appendChild(a6);
+    f.appendChild(b6);
+  }
 }
 
 function dessineBarre() {
