@@ -9,12 +9,12 @@
 
    Il n'a rien à recevoir : la forme choisie dans
    l'éditeur et sa boîte (`forme-choisie.mjs`), l'ordre des couches
-   (`ordre-trace.mjs`), la fiche, la recherche, les secteurs et l'écran
-   s'importent ; la mention de la source, qu'il est seul à refaire, vit ici.
-   Ce module se tient au-dessus de la fiche et des libellés, qui se font donc
-   confier ce qu'ils lui empruntent (`decoupeStand`, `marqueStandsDessines`) :
-   les libellés et la police des noms le reçoivent par les portes que ce
-   module ouvre en se chargeant (`confieAuxLibelles`, `confieAuxPolices`).
+   (`ordre-trace.mjs`), le filtre, le cartouche des repères, ce qu'un
+   emplacement écrit, les secteurs et l'écran s'importent ; la mention de la
+   source, qu'il est seul à refaire, vit ici. Il ne dépend ni de la fiche ni
+   de la liste ni des libellés, qui l'importent tous trois ; seule la police
+   des noms, qu'il importe, reçoit de lui en se chargeant de quoi le retracer
+   (`confieAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -34,7 +34,7 @@ import { REDUIT } from "./ecran.mjs";
 import { visibleSociete } from "./filtre.mjs";
 import { coloreSecteurs } from "./secteurs.mjs";
 import { largeur } from "./texte-plan.mjs";
-import { libelleEmplacement, confieAuxLibelles } from "./libelles.mjs";
+import { libelleEmplacement } from "./nom-emplacement.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 
@@ -649,10 +649,7 @@ export function signale(id){
    se chargeant. */
 confieALaVue({ rafraichitFleches });
 
-/* Le dessin des calques, confié dès que ce module se charge aux deux modules
-   qui le rappellent sans pouvoir l'importer : la police des noms, que ce
-   module importe pour écrire les siens, et les libellés, qu'il atteint par la
-   fiche. Des appels directs : les libellés se réécrivent pendant les gestes. */
+/* Le dessin des calques, confié dès que ce module se charge à la police des
+   noms, qui le rappelle sans pouvoir l'importer : ce module l'importe pour
+   écrire les siens. Les libellés, eux, l'importent. */
 confieAuxPolices({ dessineDessins });
-confieAuxLibelles({ dessineDessins, decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme,
-  nomSurLePlan });

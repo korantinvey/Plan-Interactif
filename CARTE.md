@@ -432,7 +432,7 @@ Fonctions :
 
 `litImage` 16 · `reduitLogo` 57
 
-### `modules/dessin.mjs` — 658 l. → plan, plan-admin
+### `modules/dessin.mjs` — 655 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — le tracé sur le plan
 
@@ -871,18 +871,15 @@ Fonctions :
 `cleLibelle` 36 · `poseModeLibelles` 45 · `poseLibelleChoisi` 50 · `empreinteLibelle` 62
 `placementLibelle` 70
 
-### `modules/libelles.mjs` — 416 l. → plan, plan-admin
+### `modules/libelles.mjs` — 297 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.142 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.66 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`dessineDessins` 58 · `decoupeStand` 59 · `poseLibellesDessines` 60 · `rafraichitFleches` 61
-`societeDeForme` 62 · `nomSurLePlan` 63 · `confieAuxLibelles` 72 · `brancheLibelles` 80
-`coexComptes` 103 · `coexChoisit` 104 · `ligneCode` 120 · `libelles` 149
-`decaleLibelle` 236 · `facteurLibelle` 237 · `libelleForce` 238 · `libelleZone` 241
-`libelleEmplacement` 260 · `emplacementWebgl` 297 · `libellesWebgl` 345
+`brancheLibelles` 46 · `libelles` 73 · `libelleZone` 150 · `emplacementWebgl` 178
+`libellesWebgl` 226
 
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
@@ -959,6 +956,15 @@ Fonctions :
 Fonctions :
 
 `poseNappe` 43 · `couleurNappe` 45 · `rafraichitApercu` 51
+
+### `modules/nom-emplacement.mjs` — 114 l. → plan, plan-admin
+
+- l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
+
+Fonctions :
+
+`coexComptes` 32 · `coexChoisit` 33 · `ligneCode` 49 · `decaleLibelle` 83
+`facteurLibelle` 84 · `libelleForce` 85 · `libelleEmplacement` 96
 
 ### `modules/noms-zones.mjs` — 36 l. → plan, plan-admin
 
@@ -1113,13 +1119,13 @@ Fonctions :
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
-### `modules/points-interet.mjs` — 149 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 147 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt — la fiche d'un repère, et le chemin vers lui
 
 Fonctions :
 
-`vaAuRepere` 54 · `ouvrePoi` 77
+`vaAuRepere` 52 · `ouvrePoi` 75
 
 Éléments :
 

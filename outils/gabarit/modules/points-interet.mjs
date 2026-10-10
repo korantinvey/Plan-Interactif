@@ -5,18 +5,16 @@
    connaître de nom : le vestiaire, le parking, les toilettes. Le cartouche
    du bas les récapitule et met en avant une famille d'un geste, la recherche
    les retrouve à la frappe, et toucher l'un d'eux ouvre sa fiche. Le visiteur
-   reçoit tout : `plan.mjs` embarque ce module.
+   reçoit tout : `plan.mjs` embarque ce module. Le cartouche et la mise en
+   avant, que le plan lit, vivent dans `cartouche-poi.mjs`.
 
    Rien ne lui est confié : la forme d'un identifiant
    (`forme-choisie.mjs` `formeParId`), le passage à un autre pavillon
    (`rendu.mjs` `changePlan`), les distinctions de la fiche
-   (`distinctions.mjs` `poseDistsFiche`), ce que la fiche des stands prête à
-   celle d'un repère (`fiche.mjs`) et le bord estompé du cartouche
-   (`bandes.mjs`) s'importent ; la recherche, qui relit les repères et que
-   ce module importe, les reçoit de lui en se chargeant
-   (`confieALaRecherche`). Les libellés, qui marquent la zone
-   mise en avant, reçoivent `phareZone` par la porte que ce module ouvre en
-   se chargeant (`confieAuxLibelles`).
+   (`distinctions.mjs` `poseDistsFiche`) et ce que la fiche des stands prête
+   à celle d'un repère (`fiche.mjs`) s'importent ; la recherche, que ce
+   module importe, reçoit de lui en se chargeant le chemin vers un repère
+   (`confieALaRecherche`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
