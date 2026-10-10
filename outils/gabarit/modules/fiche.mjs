@@ -36,7 +36,7 @@ import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
   from "./vue.mjs";
-import { fermeItineraire, versItineraire } from "./tiroir-itineraire.mjs";
+import { fermeItineraire, versItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
 import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, VIGNETTES, confieALaRecherche }
@@ -1193,3 +1193,8 @@ export function brancheFiche(){
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant ce qu'elle en appelle (une ligne ouvre la fiche d'un stand ou d'une conférence, la referme, et montre la vignette d'un logo). */
 confieALaRecherche({ select, ferme, ficheConf, adresseVignette });
+
+/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant de quoi refermer la fiche quand il
+   s'ouvre. */
+confieAuTiroirItineraire({ ferme });

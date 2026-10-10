@@ -9,10 +9,11 @@
    leur code tenait dans ce script, et reçoivent ce qu'ils ne peuvent
    importer : le calcul, éprouvé seul hors de la page, les réglages, les
    calques de dessin, et ce que le parcours et la journée savent des
-   conférences ; le tiroir, le passage d'un pavillon à l'autre, la fiche et
-   le parcours qu'il referme. Ce que le dessin sait des formes et des
-   repères, le calcul l'importe ; le tiroir, la vue et la forme d'un repère
-   dessiné.
+   conférences. Le tiroir ne reçoit plus rien : le passage d'un pavillon à
+   l'autre, la fiche et le parcours qu'il referme, les modules qui les
+   tiennent le lui confient en se chargeant. Ce que le dessin sait des
+   formes et des repères, le calcul l'importe ; le tiroir, la vue et la
+   forme d'un repère dessiné.
    ============================================================ */
 brancheItineraire({
   conf: () => CONF,
@@ -23,6 +24,7 @@ brancheItineraire({
   finInstant: (c) => finInstant(c),
 });
 
-/* Le tiroir : la vue, il l'importe de `modules/vue.mjs`. Ses écoutes se
+/* Le tiroir : la vue, il l'importe de `modules/vue.mjs`, et le reste lui est
+   confié par ses modules (`confieAuTiroirItineraire`). Ses écoutes se
    posent ici, au rang qu'elles tenaient parmi celles du plan. */
-brancheTiroirItineraire({ changePlan, ferme, fermeParcours });
+brancheTiroirItineraire();

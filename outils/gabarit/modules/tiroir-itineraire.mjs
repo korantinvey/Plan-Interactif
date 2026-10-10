@@ -8,9 +8,11 @@
    nappe de la grille, outil de l'exploitant, est à part (`nappe.mjs`).
 
    Il se branche dans `_itineraire.html`, à la place que son code tenait :
-   ses écoutes s'y posent au même rang qu'avant parmi celles du plan, et ce
-   que le code soudé tient encore lui est confié — la vue, qu'il lit et qu'il
-   recadre, les volets qu'il mesure, la fiche et le parcours qu'il referme.
+   ses écoutes s'y posent au même rang qu'avant parmi celles du plan, sans
+   rien recevoir. La vue, qu'il lit et qu'il recadre, et les volets qu'il
+   mesure, il les importe ; le passage d'un pavillon à l'autre, la fiche et
+   le parcours qu'il referme, les modules qui les tiennent l'importent, et
+   les lui confient en se chargeant (`confieAuTiroirItineraire`).
 
    Le trajet demandé ne se remplace jamais, il se modifie : `ITI` s'importe
    tel quel. Le tracé et la visée, eux, sont réaffectés par d'autres — la
@@ -35,14 +37,27 @@ import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, s
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 
-/* Ce que le code soudé confie, et rien avant qu'il l'ait fait. La vue, elle,
-   s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
-   cesse, et le trajet la recadre. */
-/** @type {Record<string, any>} */
-let soude = {};
-const changePlan = (i) => soude.changePlan(i);
-const ferme = () => soude.ferme();
-const fermeParcours = () => soude.fermeParcours();
+/**
+ * Ce que le tiroir emprunte aux modules qui l'importent : le passage d'un
+ * pavillon à l'autre (`rendu.mjs`), la fiche (`fiche.mjs`) et le tiroir du
+ * parcours (`tiroir-parcours.mjs`), qu'il referme en s'ouvrant. Tous trois
+ * l'importent : il ne peut les importer en retour, et chacun lui confie ce
+ * qu'il en appelle au chargement de son module, par
+ * `confieAuTiroirItineraire` — jamais par le code soudé. La vue, elle,
+ * s'importe de `vue.mjs`, sa porte comprise : les gestes la remplacent sans
+ * cesse, et le trajet la recadre.
+ * @typedef {{ changePlan: (i: number) => void, ferme: () => void,
+ *   fermeParcours: () => void }} PageTiroirItineraire
+ */
+/** @type {PageTiroirItineraire} */
+const prete = { changePlan: () => {}, ferme: () => {}, fermeParcours: () => {} };
+
+/** La porte des modules qui prêtent au tiroir ce qu'il appelle.
+ *  @param {Partial<PageTiroirItineraire>} o */
+export function confieAuTiroirItineraire(o){ Object.assign(prete, o); }
+const changePlan = (/** @type {number} */ i) => prete.changePlan(i);
+const ferme = () => prete.ferme();
+const fermeParcours = () => prete.fermeParcours();
 const racine = document.documentElement;
 
 /* ------------------------------------------------------------
@@ -732,12 +747,11 @@ export function versItineraireDe(pt){
  * Appelé par `_itineraire.html` à la place que ce code tenait : le choix
  * d'accessibilité retenu se relit, puis les écoutes du tiroir et de la visée
  * se posent au même rang qu'avant parmi celles du plan — celle de la touche
- * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit.
- *
- * @param {{ changePlan: Function, ferme: Function, fermeParcours: Function }} b
+ * « Échap » comprise, dont l'ordre parmi les autres décide qui la reçoit. Il
+ * ne reçoit plus rien : ce que le tiroir emprunte lui est confié par
+ * `confieAuTiroirItineraire`.
  */
-export function brancheTiroirItineraire(b){
-  soude = b;
+export function brancheTiroirItineraire(){
 
   try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 

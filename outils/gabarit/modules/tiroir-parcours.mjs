@@ -30,7 +30,7 @@ import { poseGardeParcours } from "./partage.mjs";
 import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion } from "./suggestion.mjs";
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel } from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
-import { fermeItineraire } from "./tiroir-itineraire.mjs";
+import { fermeItineraire, confieAuTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { select, ficheConf, ferme, confieALaFiche } from "./fiche.mjs";
 import { conf } from "./configuration.mjs";
 import { filtre, visible, confieALaRecherche } from "./recherche.mjs";
@@ -444,3 +444,8 @@ confieALaRecherche({ poseToutAuParcours });
    confie en se chargeant le tiroir qu'elle referme et le bouton « au
    parcours » qu'elle pose dans ses actions. */
 confieALaFiche({ fermeParcours, brancheParcours });
+
+/* Le tiroir de l'itinéraire, que ce module importe, ne peut l'importer en
+   retour : il lui confie en se chargeant de quoi refermer le parcours quand
+   il s'ouvre. */
+confieAuTiroirItineraire({ fermeParcours });

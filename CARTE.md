@@ -166,7 +166,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 16. L'invitation à installer le plan
 
-### `_itineraire.html` — 28 l.
+### `_itineraire.html` — 30 l.
 
 - l.1 · 11 ter. Itinéraire — le tiroir, la visée et le tracé
 
@@ -777,7 +777,7 @@ Fonctions :
 `enregistreZone` 614 · `enregistreZoneAjoutee` 727 · `basculeAffichageZone` 790
 `marqueZonesMasquees` 818 · `ecritColonnesEvenement` 838 · `ecritColonneEvenement` 872
 
-### `modules/fiche.mjs` — 1195 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1200 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.84 · 7. Sélection et fiche
@@ -1355,7 +1355,7 @@ Fonctions :
 `glisseFenetre` 93 · `ouvreReglages` 105 · `voletZones` 233 · `champsFicheZone` 335
 `ficheZoneEnPlace` 405 · `voletPlan` 423 · `voletCoexposants` 462
 
-### `modules/rendu.mjs` — 180 l. → plan, plan-admin
+### `modules/rendu.mjs` — 185 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
@@ -1531,23 +1531,24 @@ Fonctions :
 
 `esc` 6 · `separeValeurs` 17
 
-### `modules/tiroir-itineraire.mjs` — 818 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 832 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir, la visée et le tracé
 
 Fonctions :
 
-`changePlan` 43 · `ferme` 44 · `fermeParcours` 45 · `calculeRoute` 63 · `poseTrace` 86
-`marchesIci` 88 · `rayonBout` 93 · `arreteTracage` 126 · `peintItineraire` 132
-`lanceTracage` 183 · `dessineItineraire` 208 · `rafraichitBouts` 230 · `cadreItineraire` 253
-`champIti` 277 · `fermeSugg` 281 · `montreSugg` 288 · `choisitPoint` 322
-`valideSaisie` 331 · `effaceItineraire` 343 · `relance` 371 · `montreResultat` 413
-`poseVisee` 557 · `confieVisee` 570 · `suitLaVisee` 572 · `bandeauVisee` 574
-`armeVisee` 596 · `finVisee` 614 · `viseItineraire` 630 · `visePoi` 636 · `visePoint` 642
-`ouvreItineraire` 670 · `fermeItineraire` 698 · `versItineraire` 708
-`versItineraireDe` 711 · `brancheTiroirItineraire` 739
+`confieAuTiroirItineraire` 57 · `changePlan` 58 · `ferme` 59 · `fermeParcours` 60
+`calculeRoute` 78 · `poseTrace` 101 · `marchesIci` 103 · `rayonBout` 108
+`arreteTracage` 141 · `peintItineraire` 147 · `lanceTracage` 198 · `dessineItineraire` 223
+`rafraichitBouts` 245 · `cadreItineraire` 268 · `champIti` 292 · `fermeSugg` 296
+`montreSugg` 303 · `choisitPoint` 337 · `valideSaisie` 346 · `effaceItineraire` 358
+`relance` 386 · `montreResultat` 428 · `poseVisee` 572 · `confieVisee` 585
+`suitLaVisee` 587 · `bandeauVisee` 589 · `armeVisee` 611 · `finVisee` 629
+`viseItineraire` 645 · `visePoi` 651 · `visePoint` 657 · `ouvreItineraire` 685
+`fermeItineraire` 713 · `versItineraire` 723 · `versItineraireDe` 726
+`brancheTiroirItineraire` 754
 
-### `modules/tiroir-parcours.mjs` — 446 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 451 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
