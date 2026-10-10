@@ -15,21 +15,19 @@
    décide du coin où la marque se pose pour que deux ne se recouvrent pas.
 
    Il n'a rien à recevoir : tout ce qu'il lit s'importe. Le mode et la
-   teinte de chaque marque viennent de l'habillage (`habillage.mjs`) ; la
-   liste (`recherche.mjs`), la fiche (`fiche.mjs`) et l'habillage, qui
-   l'atteignent déjà par leurs imports et ne pourraient l'importer sans
-   boucle, reçoivent ses marques par leurs portes, que ce module ouvre en se
-   chargeant (`confieALaRecherche`, `confieALaFiche`, `confieALHabillage`).
+   teinte de chaque marque se règlent ici aussi (§ Les distinctions — ce que
+   le plan en montre), et l'apparence les pose par `appliqueDists`. Il ne
+   dépend ni de la liste ni de la fiche — les sociétés d'un stand se lisent
+   dans les données (`donnees.mjs` `societes`) — et toutes deux l'importent
+   (`recherche.mjs`, `fiche.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
-import { DATA, parId, state } from "./donnees.mjs";
+import { DATA, parId, state, societes } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
-import { societes, confieALaFiche } from "./fiche.mjs";
-import { modeDist, couleurDist, confieALHabillage } from "./habillage.mjs";
+import { trio, melange, luminance } from "./couleurs.mjs";
 import { svg } from "./vue.mjs";
-import { confieALaRecherche } from "./recherche.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -271,18 +269,98 @@ export function poseDistsFiche(soc){
 /** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
 export const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
 
-/* La recherche, que ce module atteint par la fiche, ne peut l'importer en
-   retour : il lui confie en se chargeant ce qu'elle en appelle (les marques
-   d'une ligne de la liste, le filtre « porte cette distinction », le dessin
-   des distinctions sur le plan quand ce qui paraît change). */
-confieALaRecherche({ dessineDists, marquesListe, porteDist, standPorte });
 
-/* Les distinctions, confiées à l'habillage dès que ce module se charge : il
-   pose leurs teintes et redemande leurs marques, et ne peut importer ce
-   module, qui l'importe pour leur mode et leur couleur. */
-confieALHabillage({ distinctions: DISTINCTIONS, dessineDists, refaitDistsFiche });
+/* ------------------------------------------------------------
+   Les distinctions — ce que le plan en montre
 
-/* La fiche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant de quoi marquer les distinctions de la société
-   qu'elle ouvre. */
-confieALaFiche({ poseDistsFiche });
+   Deux champs viennent de la synchronisation : le nouvel exposant, et
+   l'adhérent du syndicat du salon. Ce qu'on en fait voir se règle ici, un
+   onglet chacun et la même mécanique pour les deux.
+
+   Trois questions par distinction plutôt qu'une, parce que la même marque ne
+   tient pas aux trois endroits : un mot se lit sur une fiche qu'on ouvre, pas
+   sur un stand qu'on survole — où le rendu WebGL ne rejoue que des formes.
+
+   Les défauts ne changent rien aux salons déjà en ligne : la fiche garde la
+   pastille qu'elle portait, le plan et la liste restent nus tant que
+   l'exploitant n'a pas choisi.
+   ------------------------------------------------------------ */
+
+const racine = document.documentElement;
+
+export const MARQUES_DIST = {
+  plan: [
+    { cle: "aucun",  nom: "Aucune" },
+    { cle: "point",  nom: "Point d'angle" },
+    { cle: "corne",  nom: "Coin corné" },
+    { cle: "etoile", nom: "Étincelle" },
+    { cle: "lisere", nom: "Liseré" },
+  ],
+  liste: [
+    { cle: "aucun",     nom: "Aucune" },
+    { cle: "point",     nom: "Point devant le nom" },
+    { cle: "cartouche", nom: "Cartouche" },
+    { cle: "sousligne", nom: "Mention sous le nom" },
+  ],
+  fiche: [
+    { cle: "aucun",    nom: "Aucune" },
+    { cle: "pastille", nom: "Pastille" },
+    { cle: "corne",    nom: "Coin corné" },
+    { cle: "bandeau",  nom: "Bandeau" },
+  ],
+};
+const DIST_DEFAUT = { plan: "aucun", liste: "aucun", fiche: "pastille" };
+
+/** La marque retenue pour une surface. Une valeur inconnue — un réglage d'une
+ *  version qui proposait autre chose — retombe sur le défaut. */
+export function modeDist(d, surface){
+  const v = conf(d.reglage)[surface];
+  return MARQUES_DIST[surface].some(m => m.cle === v) ? v : DIST_DEFAUT[surface];
+}
+
+/** La teinte des marques d'une distinction, ou rien — auquel cas la feuille de
+ *  style reprend la main, et avec elle l'accent du salon.
+ *
+ *  Une seule pour les trois surfaces d'une distinction : ce sont trois façons
+ *  de dire la même chose, et trois teintes en auraient fait trois distinctions.
+ *  Une par distinction en revanche, et c'est tout le sujet : deux marques de la
+ *  même couleur sur un stand ne se distinguent plus l'une de l'autre. */
+export const couleurDist = (d) => {
+  const v = conf(d.reglage).couleur;
+  return trio(v) ? v : "";
+};
+
+/**
+ * Les teintes des distinctions, posées en jetons sur la racine.
+ *
+ * Trois par distinction : sa teinte, l'aplat doux de la pastille et l'encre
+ * qui se lit dessus. La pastille se peint des deux, comme l'accent dont elle
+ * les tenait — une teinte choisie doit rendre les deux, sans quoi le mot
+ * disparaîtrait sur son propre fond.
+ *
+ * En haut plutôt que sur chaque marque : une couleur changée repeint alors les
+ * neuf cents lignes de la liste sans qu'on les réécrive, et la classe de la
+ * distinction va chercher les siens (voir `_head.html`, « .d-neuf »).
+ *
+ * Le plan, lui, ne se déduit d'aucun jeton : ses marques sont des formes à
+ * tracer, et « dessineDists » les refait. La tête de la fiche ouverte non plus,
+ * depuis qu'elles sont deux : c'est le script qui décide laquelle occupe le
+ * coin, et « refaitDistsFiche » la repose.
+ */
+export function appliqueDists(){
+  DISTINCTIONS.forEach(d => {
+    const v = couleurDist(d);
+    const n = "--d-" + d.cle;
+    if (v){
+      racine.style.setProperty(n, v);
+      racine.style.setProperty(n + "-doux", melange(v, "#FFFFFF", 0.86));
+      racine.style.setProperty(n + "-ink",
+        luminance(trio(v)) > 0.42 ? "#0E1113" : "#FFFFFF");
+    } else {
+      [n, n + "-doux", n + "-ink"].forEach(x => racine.style.removeProperty(x));
+    }
+  });
+  dessineDists();
+  refaitDistsFiche();
+}
+

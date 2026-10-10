@@ -11,31 +11,12 @@
    Ses écoutes se posent par `brancheTiroirs`, que `lancement.mjs` `lancePlan`
    appelle juste après les gestes : elles gardent leur rang parmi celles du
    plan.
-   La recherche, qui importe ce module, ne peut être importée par lui : le
-   panneau des critères qu'un tiroir redescendu referme lui est confié par la
-   porte `confieAuxTiroirs`, que la recherche ouvre en se chargeant.
+   Le panneau des critères qu'un tiroir redescendu referme s'importe de
+   `panneau-criteres.mjs` — et non de la recherche, qui importe ce module.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ETROIT } from "./ecran.mjs";
-
-/* Ce que la recherche confie en se chargeant, avant tout geste. */
-/**
- * @typedef {object} PreteTiroirs
- * @property {() => void} fermeCriteres replie le panneau des critères (`modules/recherche.mjs`)
- */
-/** @type {PreteTiroirs} */
-const prete = { fermeCriteres: () => {} };
-const fermeCriteres = () => prete.fermeCriteres();
-
-/**
- * La porte du panneau des critères, que `recherche.mjs` ouvre en se chargeant
- * — donc avant que la page ne se lance, et avant tout geste.
- *
- * @param {Partial<PreteTiroirs>} o
- */
-export function confieAuxTiroirs(o){
-  Object.assign(prete, o);
-}
+import { fermeCriteres } from "./panneau-criteres.mjs";
 
 /* ============================================================
    Ce que les tiroirs lisent d'un geste

@@ -9,35 +9,11 @@
    anglaise, ce que la recherche remonte ; et son rangement sur le poste
    (`enregistreConf`), sorti du réglage de la fiche, que l'administration
    prolonge d'un envoi en base. CONF et sa clé de rangement s'importent, et
-   seul `ouvreConf` les remplace. Les
-   secteurs de la recherche, que ce module ne peut importer — leur module
-   (`secteurs.mjs`) lit lui-même la configuration —, lui sont confiés par la
-   porte `confieALaConfiguration`, que `secteurs.mjs` ouvre en se chargeant.
+   seul `ouvreConf` les remplace. Les secteurs du salon, il les lit parmi les
+   index de `donnees.mjs`.
    ============================================================ */
-import { DATA } from "./donnees.mjs";
+import { DATA, SECTEURS } from "./donnees.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
-
-/* Ce qui est confié : les secteurs, que la recherche refait à chaque
-   chargement (`secteurs.mjs` `SECTEURS`), par un lecteur — le module qui les
-   tient importe celui-ci, et ne peut donc s'importer d'ici. Rien avant qu'il
-   les ait confiés : pas un secteur. */
-/**
- * @typedef {object} PreteConfiguration
- * @property {() => Map<string, any>} secteurs les secteurs du salon, lus à l'instant
- */
-/** @type {PreteConfiguration} */
-const prete = { secteurs: () => new Map() };
-const secteurs = () => prete.secteurs();
-
-/**
- * La porte des secteurs, que `secteurs.mjs` ouvre en se chargeant — donc
- * avant le lancement de la page et tout appel.
- *
- * @param {Partial<PreteConfiguration>} o
- */
-export function confieALaConfiguration(o){
-  Object.assign(prete, o);
-}
 
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
 /** @type {Record<string, any>} */
@@ -89,7 +65,7 @@ export function reglagesDuSalon(source){
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */
-    const dUnSecteur = k.indexOf("secteur:") === 0 && secteurs().has(k.slice(8));
+    const dUnSecteur = k.indexOf("secteur:") === 0 && SECTEURS.has(k.slice(8));
     /* « calque/sous-calque », mais l'un comme l'autre peut porter une barre
        oblique : on retient la clé dès qu'une de ses têtes nomme un calque. */
     const dUnCalque = calques.has(k) ||

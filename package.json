@@ -23,7 +23,8 @@
     "charge": "node outils/essais/charge.js",
     "navigateur": "playwright test",
     "lint": "node outils/relecture.js",
-    "types": "node outils/types.js"
+    "types": "node outils/types.js",
+    "portes": "node outils/portes.js"
   },
   "type": "commonjs",
   "private": true,

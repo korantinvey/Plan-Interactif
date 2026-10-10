@@ -6,10 +6,8 @@
    liste. Le lien lui-même, la fenêtre de partage et la copie qu'on se garde
    vivent dans `partage.mjs`, le codage dans `lien-parcours.mjs`.
 
-   À part de `partage.mjs`, parce que ce qui est accepté se verse dans le
-   tiroir (`tiroir-parcours.mjs` `verseAuParcours`), qui importe lui-même
-   `partage.mjs` pour la note de la copie à garder : réunis, ils se seraient
-   importés l'un l'autre.
+   Ce qui est accepté se verse dans la liste (`parcours.mjs`
+   `verseAuParcours`), qui annonce au tiroir de s'ouvrir dessus.
 
    La configuration du salon, il l'importe (`configuration.mjs`) : rien ne
    lui est confié ; `demarrage.mjs` `demarre` l'appelle une fois les données
@@ -17,9 +15,8 @@
    ============================================================ */
 import { parId, CONFS } from "./donnees.mjs";
 import { ouvreModale } from "./fenetre.mjs";
-import { PARCOURS, dansParcours, contenuParcours, nomDeStand } from "./parcours.mjs";
+import { PARCOURS, dansParcours, contenuParcours, nomDeStand, verseAuParcours } from "./parcours.mjs";
 import { CLE_LIEN_PARCOURS, litCodeParcours } from "./lien-parcours.mjs";
-import { verseAuParcours } from "./tiroir-parcours.mjs";
 import { conf } from "./configuration.mjs";
 
 /* ------------------------------------------------------------

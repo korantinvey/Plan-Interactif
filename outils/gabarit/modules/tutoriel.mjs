@@ -57,7 +57,7 @@ import { ICI_ACTIF } from "./ici.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { calqueActif, enCours } from "./calques-dessin.mjs";
 import { formeSel } from "./forme-choisie.mjs";
-import { confieAuxRappels } from "./rappels.mjs";
+import { TUTO, poseTuto } from "./visite-guidee.mjs";
 
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
    `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
@@ -115,8 +115,9 @@ const glissements = () => TUTO_TIROIRS.flatMap(id => {
   return t ? t.getAnimations().filter(a => !(a instanceof CSSAnimation) && a.playState === "running") : [];
 });
 
-/* La visite en cours, ou rien. */
-export let TUTO = null;
+/* La visite en cours, ou rien : elle vit dans `visite-guidee.mjs`, que les
+   rappels lisent aussi, et s'importe d'ici comme avant. */
+export { TUTO };
 
 /* ------------------------------------------------------------
    Le réglage, et la première ouverture
@@ -586,7 +587,7 @@ export function lanceTutoriel(){
         dessinEnCours()) return;
     quitteTutoriel();
   };
-  TUTO = {
+  poseTuto({
     chapitres: chapitres, i: -1, m: {}, cle: "", texte: "", suite: "",
     cible: null, pos: null, raf: 0, rafale: 0,
     pouls: setInterval(battementTuto, TUTO_POULS),
@@ -595,7 +596,7 @@ export function lanceTutoriel(){
               ["keydown", echap, true],
               ["transitionrun", rafaleTuto, true], ["scroll", rafaleTuto, true],
               ["resize", recadre, false]]),
-  };
+  });
   TUTO.ecoutes.forEach(([t, f, c]) => addEventListener(t, f, c));
 
   $("tutoQuitte").onclick = quitteTutoriel;
@@ -620,7 +621,7 @@ function quitteTutoriel(){
   ["tuto", "tutoRepere", "tutoZone", "tutoVoile"].forEach(id => { const e = $(id); if (e) e.remove(); });
   racine.classList.remove("tuto-retrait");
   if (TUTO.guet) TUTO.guet.disconnect();
-  TUTO = null;
+  poseTuto(null);
 }
 
 function chapitreTuto(i){
@@ -1028,4 +1029,4 @@ function marqueLibelleTuto(id){
    l'importer en retour : il leur confie en se chargeant de quoi lire la
    visite guidée en cours, pour ne pas passer devant elle. Elle change à
    chaque chapitre : il la confie par un lecteur, non par sa valeur. */
-confieAuxRappels({ tuto: () => TUTO });
+

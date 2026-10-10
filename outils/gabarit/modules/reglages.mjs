@@ -19,9 +19,9 @@
 
    La fenêtre se rouvre après un aperçu (`retourAuxReglages`, dont il confie
    le contenu à `fenetre.mjs`), depuis la bande de l'outil et la remise
-   à zéro des compteurs (`chaleur.mjs`, à qui il la confie en se chargeant) ;
-   le pas d'une hauteur à l'autre (`glisseFenetre`) sert aussi aux volets du
-   générique, à qui il le confie de même, et de la suggestion.
+   à zéro des compteurs (`chaleur.mjs`, à qui il la passe en appelant son volet) ;
+   le pas d'une hauteur à l'autre s'importe de `glisse-fenetre.mjs`, comme
+   le font les volets du générique et de la suggestion.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, parId, state, CONFERENCES } from "./donnees.mjs";
@@ -31,16 +31,15 @@ import { champsZone, suitFicheZone, verseFicheZone, ecritColonneEvenement } from
 import { voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
   voletApparence } from "./volets.mjs";
 import { voletOrdre } from "./reglage-fiche.mjs";
-import { NOM_VOLET_SUGGESTION, voletSuggestion, confieAuReglageSuggestion }
+import { NOM_VOLET_SUGGESTION, voletSuggestion }
   from "./reglage-suggestion.mjs";
 import { voletEnvirons } from "./calage-carte.mjs";
-import { NOM_VOLET_MESURE, voletMesure, confieALaChaleur } from "./chaleur.mjs";
-import { confieAuReglageSponsor } from "./reglage-sponsor.mjs";
+import { NOM_VOLET_MESURE, voletMesure } from "./chaleur.mjs";
 import { conf, optionActive, suggestionOfferte, enregistreConf } from "./configuration.mjs";
 import { VISITE_MIN, VISITE_MAX, minutesVisite } from "./horaires.mjs";
 import { NOM_VOLET_PARCOURS } from "./seuil.mjs";
 import { voletRecherche } from "./reglage-recherche.mjs";
-import { REDUIT } from "./ecran.mjs";
+import { glisseFenetre } from "./glisse-fenetre.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { ouvre } from "./fiche.mjs";
 import { DISTINCTIONS } from "./distinctions.mjs";
@@ -79,30 +78,6 @@ confieRetourAuxReglages((marque) => {
  * une planche d'aperçus — empilé sous le premier, il l'aurait poussé hors de
  * l'écran.
  */
-/**
- * Passer d'un volet à l'autre sans que la fenêtre saute.
- *
- * Les volets n'ont pas la même hauteur — trois cases d'un côté, une planche
- * d'aperçus de l'autre — et la fenêtre en changeait d'un coup. Son haut est
- * déjà tenu par la feuille de style, qui l'accroche en haut plutôt que de la
- * centrer ; reste sa hauteur, qui se rend d'un pas à l'autre au lieu d'y
- * sauter.
- *
- * Les deux hauteurs se mesurent de part et d'autre du changement — « auto » ne
- * s'interpole pas, il faut donc deux nombres — et l'animation est posée sur la
- * fenêtre elle-même : le corps défile déjà pour son compte, il absorbe sans
- * broncher d'être quelques dizaines de pixels trop court le temps du geste.
- */
-export function glisseFenetre(change){
-  const fen = $("modale").querySelector(".mfen");
-  if (!fen || REDUIT){ change(); return; }
-  const avant = fen.offsetHeight;
-  change();
-  const apres = fen.offsetHeight;
-  if (avant === apres) return;
-  fen.animate([{ height: avant + "px" }, { height: apres + "px" }],
-              { duration: 190, easing: "ease-out" });
-}
 
 
 export function ouvreReglages(ouvrir){
@@ -204,7 +179,7 @@ export function ouvreReglages(ouvrir){
     /* La mesure a son volet à elle, et en dernier. Elle ne parle ni de ce que
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
-    voletMesure(volet(NOM_VOLET_MESURE));
+    voletMesure(volet(NOM_VOLET_MESURE), ouvreReglages);
     /* « Admin » après tout le reste : l'organisateur ne le voit pas, et les
        onglets qu'il partage avec l'administrateur gardent ainsi la même place
        sous les yeux de l'un et de l'autre. */
@@ -531,14 +506,3 @@ function voletCoexposants(hote){
     bloc.appendChild(aide);
   });
 }
-
-/* La carte de chaleur et le réglage du générique sont importés par ce module :
-   ils ne peuvent l'importer en retour. Il leur confie donc, dès que la page
-   d'administration le charge, de quoi rouvrir la fenêtre et la faire glisser. */
-confieALaChaleur({ ouvreReglages });
-confieAuReglageSponsor({ glisseFenetre });
-
-/* Le volet « Suggestion », que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant le glissement de la fenêtre d'une
-   hauteur à l'autre quand un réglage la redessine. */
-confieAuReglageSuggestion({ glisseFenetre });

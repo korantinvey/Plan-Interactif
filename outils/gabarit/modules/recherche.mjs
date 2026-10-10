@@ -13,80 +13,71 @@
    vignettes. Les secteurs vivent dans
    `secteurs.mjs`, les bandes qui défilent dans `bandes.mjs`. L'écran et ce
    que la fiche montre s'importent (`ecran.mjs`, `corps-fiche.mjs`), et les
-   tiroirs (`tiroirs.mjs`). La fiche
-   et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
-   module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
-   bouclerait. Le dessin des noms et des distinctions (`libelles.mjs`,
-   `distinctions.mjs`) l'importe, et ne peut donc pas l'être ; la mesure du
-   texte, elle, s'importe (`texte-plan.mjs`).
-   Ce qu'il ne peut importer — la fiche et la sélection, le dessin des noms
-   et des distinctions, les repères, le parcours — lui est confié par ces
-   modules en se chargeant (`confieALaRecherche`), et lu au moment de s'en
-   servir. `brancheRecherche`, que `lancement.mjs` appelle à son rang, n'y
-   pose plus que l'écoute de la liste.
+   tiroirs (`tiroirs.mjs`). La fiche et la sélection (`fiche.mjs`) ne le
+   peuvent pas : la fiche importe ce module pour la liste et ses vignettes.
+   Le dessin des noms, des calques et des distinctions, le
+   filtre et la mesure du texte s'importent (`libelles.mjs`, `dessin.mjs`,
+   `distinctions.mjs`, `filtre.mjs`, `texte-plan.mjs`).
+   Ce qu'ouvre une ligne — la fiche d'un stand, d'une conférence, d'un
+   repère — `ligne-liste.mjs` le fait, au-dessus de la fiche ; le bouton qui
+   verse au parcours ce que la recherche retient s'importe
+   (`tout-au-parcours.mjs`). `brancheRecherche`, que
+   `lancement.mjs` appelle à son rang, y pose l'écoute de la liste et celle
+   des polices arrivées.
 
-   En retour, ce module confie en se chargeant ce que deux modules qu'il
-   importe lui empruntent : le panneau des critères aux tiroirs
-   (`confieAuxTiroirs`), la liste à la police des noms (`confieAuxPolices`).
+   En retour, ce module confie en se chargeant ce qu'un module qu'il importe
+   lui emprunte : la liste à la police des noms (`confieAuxPolices`). Le
+   panneau des critères se replie par `panneau-criteres.mjs`, que les tiroirs
+   importent aussi.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc, separeValeurs, COLLATION } from "./texte.mjs";
-import { DATA, TOUS, parId, HEBERGES, CONFERENCES, PAR_HEBERGE, state, P } from "./donnees.mjs";
+import { DATA, TOUS, parId, HEBERGES, CONFERENCES, state, P } from "./donnees.mjs";
 import { API, PLAN_ADMIN } from "./salon.mjs";
 import { JOURS, momentLocal } from "./temps.mjs";
 import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
-import { conf, chercheSorte } from "./configuration.mjs";
+import { conf } from "./configuration.mjs";
 import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
-import { montre, PREFIXE_PERSO, confieAuCorpsDeFiche } from "./corps-fiche.mjs";
-import { montreTiroir, mesureTiroir, hisseTiroir, confieAuxTiroirs } from "./tiroirs.mjs";
-import { largeur } from "./texte-plan.mjs";
+import { montre, PREFIXE_PERSO, libelleCritere } from "./corps-fiche.mjs";
+import { dessineDists, marquesListe, porteDist, standPorte } from "./distinctions.mjs";
+import { reperesCherchables } from "./cartouche-poi.mjs";
+import { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRetrait, leveRetrait,
+  valeursCritere, CLE_SECTEUR, critParSociete, releveHotes } from "./filtre.mjs";
+import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
+import { fermeCriteres, poseRelecturePanneau, relisPanneauCrit } from "./panneau-criteres.mjs";
+import { largeur, remesureTextes } from "./texte-plan.mjs";
+import { libelles } from "./libelles.mjs";
+import { dessineDessins } from "./dessin.mjs";
+import { view } from "./vue.mjs";
+import { poseToutAuParcours } from "./tout-au-parcours.mjs";
+
 
 /**
- * Ce que la recherche emprunte aux modules qui l'importent : la fiche qu'une
- * ligne ouvre (`fiche.mjs`), le parcours où l'on verse ce qu'elle retient
- * (`tiroir-parcours.mjs`), les distinctions qu'elle marque (`distinctions.mjs`),
- * les libellés qu'elle refait (`libelles.mjs`), les repères qu'elle remonte
- * (`points-interet.mjs`). Tous l'importent, et elle ne peut donc les importer
- * en retour : chacun lui confie ce qu'elle en appelle au chargement de son
- * module, par `confieALaRecherche`.
- * @typedef {object} PageRecherche
- * @property {() => void} ferme referme la fiche (`fiche.mjs`)
- * @property {(id: any, recentrer?: boolean, canal?: string, iSoc?: number) => void} select
- * @property {(id: any, canal?: string) => void} ficheConf
- * @property {(cle: any) => string} adresseVignette
- * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
- * @property {() => void} dessineDists
- * @property {() => void} libelles
- * @property {(porte: (d: any) => boolean) => { avant: string, apres: string, sous: string }} marquesListe
- * @property {(x: any, d: any) => boolean} porteDist
- * @property {(o: any, d: any) => boolean} standPorte
- * @property {() => any[]} reperesCherchables
- * @property {(id: any, p: number) => void} vaAuRepere
+ * L'adresse d'une vignette fabriquée à la synchronisation.
+ *
+ * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
+ * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
+ * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
+ * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
+ * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
+ * analyser ici.
+ *
+ * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
+ * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
  */
-/** @type {PageRecherche} */
-const prete = /** @type {any} */ ({});
-
-/** La porte des modules qui prêtent à la recherche ce qu'elle appelle.
- *  @param {Partial<PageRecherche>} o */
-export function confieALaRecherche(o){ Object.assign(prete, o); }
-const ferme = () => prete.ferme();
-const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @type {string} */ canal,
-  /** @type {number} */ iSoc) => prete.select(id, recentrer, canal, iSoc);
-const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.ficheConf(id, canal);
-const adresseVignette = (/** @type {any} */ cle) => prete.adresseVignette(cle);
-const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
-const dessineDists = () => prete.dessineDists();
-const libelles = () => prete.libelles();
-const marquesListe = (/** @type {(d: any) => boolean} */ porte) => prete.marquesListe(porte);
-const porteDist = (/** @type {any} */ x, /** @type {any} */ d) => prete.porteDist(x, d);
-const standPorte = (/** @type {any} */ o, /** @type {any} */ d) => prete.standPorte(o, d);
-const reperesCherchables = () => prete.reperesCherchables();
-const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => prete.vaAuRepere(id, p);
+export const adresseVignette = (cle) =>
+  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
+     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
+     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
+  VIGNETTES.get(cle) ||
+  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
+    ? API + "?vignette=" + cle
+    : "");
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
@@ -113,14 +104,15 @@ export function appliqueSecteurs(){
  * On repart à neuf : mot-clé et autres critères effacés, sinon la liste
  * répondrait à une question qu'on ne pose plus, et paraîtrait vide sans raison.
  */
-export function filtreTheme(n){
+/** @param {string} n @param {() => void} fermeLaFiche la fiche d'où vient le lien, qui le passe */
+export function filtreTheme(n, fermeLaFiche){
   if (!themeFiltrable(n)) return;
   state.crit.clear();
   state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
   majVideQ();
-  ferme();
+  fermeLaFiche();
   majCriteres();
   reposeRetrait();
   appliqueFiltre();
@@ -153,26 +145,7 @@ export function filtreTheme(n){
    d'ici pour qui l'y a toujours pris. */
 export { PREFIXE_PERSO };
 
-/* Ce qu'un critère lit sur une fiche. Les champs propres au salon vivent dans
-   « perso » ; les autres sont posés à plat, chacun sous le nom que la
-   synchronisation lui donne — ce ne sont pas les mêmes que les cibles de la
-   console, d'où cette table. */
-const LECTURE_CRITERE = {
-  secteur: o => [o.sect],
-  ville: o => [o.ville],
-  pays: o => [o.pays],
-  nomenclature: o => o.nomencl,
-  thematiques: o => o.themes,
-  // un oui/non n'a qu'une valeur à cocher : le champ lui-même
-  nouveau: o => o.neuf ? ["Oui"] : [],
-  adherent: o => o.adh ? ["Oui"] : [],
-};
 export const OUI_NON = { nouveau: true, adherent: true };
-const LIBELLE_CRITERE = {
-  secteur: "Secteur", ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
-  thematiques: "Thématiques", nouveau: "Nouvel exposant",
-  adherent: "Adhérent syndicat",
-};
 /* Thématiques et secteurs ont eu chacun leur bande de puces sous la recherche.
    Elles prenaient la place de deux lignes de résultats — un salon range parfois
    trente thématiques — et rangeaient à part des filtres qui font le même
@@ -185,13 +158,6 @@ const LIBELLE_CRITERE = {
    Une cible absente de cette table ne rend aucune valeur, donc aucun critère —
    un réglage ancien qui la désignerait encore reste sans effet. */
 const CLE_THEMES = "thematiques";
-export const CLE_SECTEUR = "secteur";
-
-/* Le secteur décrit l'emplacement, pas la société qui l'occupe : le retenir ne
-   fait donc pas paraître les sociétés hébergées, qui n'en ont pas en propre —
-   elles empruntent celui de leur hôte, et la liste dirait deux fois le même
-   emplacement. C'est ce qui le sépare de tous les autres critères. */
-const CRITERES_EMPLACEMENT = new Set([CLE_SECTEUR]);
 
 /** Une thématique lue sur une fiche mène-t-elle quelque part ? Seulement si
  *  l'exploitant a fait des thématiques un critère, et si celle-ci en est une
@@ -241,36 +207,10 @@ export function clesCriteres(){
   return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
 }
 
-/** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
-export function libelleCritere(cle){
-  if (cle.indexOf(PREFIXE_PERSO) !== 0) return LIBELLE_CRITERE[cle] || cle;
-  const c = ((DATA && DATA.fiche && DATA.fiche.perso) || [])
-    .find(x => x && PREFIXE_PERSO + x.cle === cle);
-  return (c && c.libelle) || cle.slice(PREFIXE_PERSO.length);
-}
+/* L'intitulé d'un critère vit dans `corps-fiche.mjs`, qui l'écrit aussi en
+   tête des champs propres au salon ; il s'importe d'ici comme avant. */
+export { libelleCritere };
 
-/**
- * Les valeurs d'une fiche pour un critère, toujours une liste de textes.
- *
- * Un champ à choix multiple ne descend pas en liste : la source joint ses
- * valeurs par un point-virgule — « Devenir master-franchisé;Adhérent FFF ».
- * Prise telle quelle, la chaîne entière ferait une valeur à part, et un
- * exposant qui en porte deux ne se retrouverait avec personne : il y aurait
- * autant de valeurs à cocher que de combinaisons. On les sépare donc ici
- * aussi, et pas seulement à la synchronisation — les fiches déjà relevées
- * portent encore la chaîne entière, et n'attendent pas le prochain passage
- * pour se laisser filtrer.
- */
-export function valeursCritere(o, cle){
-  const brut = cle.indexOf(PREFIXE_PERSO) === 0
-    ? (o.perso || {})[cle.slice(PREFIXE_PERSO.length)]
-    : (LECTURE_CRITERE[cle] ? LECTURE_CRITERE[cle](o) : null);
-  if (brut === null || brut === undefined || brut === "") return [];
-  /* Une liste peut porter des trous — une société hébergée sans ville en a un
-     là où les autres ont la leur — et « undefined » deviendrait une valeur à
-     cocher si on la traduisait en texte avant de l'écarter. */
-  return separeValeurs(brut);
-}
 
 
 /** Tout ce qu'une fiche porte de critères, pour la recherche plein texte. */
@@ -344,14 +284,6 @@ export function refaitCriteres(){
   if (pan && !pan.hidden) remplitCriteres();
 }
 
-/** Ce que la liste retient d'un critère : une valeur cochée suffit. */
-function dansCriteres(o){
-  for (const [cle, choisies] of state.crit){
-    const v = valeursCritere(o, cle);
-    if (!v.some(x => choisies.has(x))) return false;
-  }
-  return true;
-}
 
 const critereActif = (cle, v) => state.crit.has(cle) && state.crit.get(cle).has(v);
 
@@ -403,12 +335,6 @@ export function videRecherche(){
 /** Le nombre de valeurs retenues, tous critères confondus. */
 const nCriteres = () => [...state.crit.values()].reduce((a, l) => a + l.size, 0);
 
-/* Ce que le panneau des critères, quand il est déplié, doit relire : une valeur
-   peut tomber ailleurs que sous ses puces — une puce retirée de la bande des
-   retenus, « Tout effacer » à son pied. Posé par le remplissage, oublié à la
-   fermeture ; refermé, le panneau n'a plus rien à relire. */
-let majPanneauCrit = null;
-
 /**
  * La barre : le bouton qui déplie les critères, et ce qui est retenu.
  *
@@ -433,7 +359,7 @@ function majCriteres(){
 
   /* Le panneau déplié se relit ici, quelle que soit la main qui a touché au
      critère : la sienne, une puce de la bande, « Tout effacer ». */
-  if (majPanneauCrit) majPanneauCrit();
+  relisPanneauCrit();
 
   barre.hidden = !n;
   barre.innerHTML = "";
@@ -612,12 +538,12 @@ function remplitCriteres(){
   /* Relire plutôt que réécrire : réécrit, le panneau perdrait le groupe qu'on
      vient de déplier, le tamis qu'on vient de taper et l'endroit où l'on en
      était dans deux cents valeurs. */
-  majPanneauCrit = () => {
+  poseRelecturePanneau(() => {
     corps.querySelectorAll(".puce-crit").forEach(b =>
       b.setAttribute("aria-pressed", String(critereActif(b.dataset.cle, b.dataset.val))));
     rappels.forEach(f => f());
     dis();
-  };
+  });
 }
 
 /** Le bouton est la même prise à l'aller et au retour : il déplie ce qu'il a
@@ -640,113 +566,17 @@ function ouvreCriteres(){
   hisseTiroir();
 }
 
-/** Replié, le panneau rend sa place à la liste. Ce qui est retenu continue de
- *  se dire sous la recherche : les puces de la bande, elles, ne se replient
- *  pas — sans quoi on ne saurait plus pourquoi la liste est si courte. */
-export function fermeCriteres(){
-  const pan = $("panCrit");
-  if (!pan || pan.hidden) return;
-  /* Replié, le panneau emporte avec lui le bouton qu'on venait d'actionner, et
-     le clavier se retrouverait au début de la page. La main revient donc à la
-     prise, d'où elle pourra redéplier. */
-  const dedans = pan.contains(document.activeElement);
-  pan.hidden = true;
-  majPanneauCrit = null;
-  $("critCorps").innerHTML = "";
-  $("critPied").innerHTML = "";
-  $("btnFiltres").setAttribute("aria-expanded", "false");
-  if (dedans) $("btnFiltres").focus();
-}
+/* Le replier, et le relire déplié, vivent dans `panneau-criteres.mjs`, que
+   les tiroirs importent aussi ; il s'importe d'ici comme avant. */
+export { fermeCriteres };
 
-/** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
- *  cumulent, aucun ne prime. */
-export const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 
-/* Le retrait du plan, et le geste qui l'en sort.
-
-   Chercher éteint sur le plan ce qui ne répond pas : la liste et le plan sont
-   les deux faces du même résultat. Mais on se sert du plan pendant qu'on
-   cherche — pour situer ce qu'on a trouvé, et pour regarder ce qu'il y a
-   autour. Ce voisin-là était éteint, et l'ouvrir laissait le hall délavé
-   autour de sa fiche : on ne voyait plus l'endroit qu'on venait justement
-   d'ouvrir.
-
-   Un clic sur ce que la recherche n'a pas retenu lève donc le retrait. Le
-   mot-clé, les critères et la liste ne bougent pas : c'est le plan qu'on
-   reprend, pas la question qu'on retire — et revenir au menu de recherche la
-   repose. */
-export let retraitLeve = false;
-
-/** Reposer le retrait. Les fonctions qui changent le filtre l'appellent avant
- *  de le réappliquer : une question qu'on modifie est une question qu'on
- *  repose. */
-export const reposeRetrait = () => { retraitLeve = false; };
-
-/* Un critère qui parle de la société fait paraître les hébergées ; le secteur,
-   qui parle de l'emplacement, non. */
-const critParSociete = () =>
-  [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
-
-/* Sous quel réglage de l'onglet « Recherche » chaque sorte se range. Une
-   hébergée suit les stands : c'est un exposant comme un autre, et l'exploitant
-   qui montre les stands ne s'attend pas à devoir cocher les deux. */
-const SORTE_RECHERCHE = { stand: "stands", coex: "stands", zone: "zones",
-                          conf: "conferences", poi: "poi" };
-
-/** L'exploitant laisse-t-il la recherche remonter cet objet ? */
-const cherchable = (o) => chercheSorte(SORTE_RECHERCHE[o.kind] || "stands");
-
-/* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
-   décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
-   d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
-   cases cochées ; c'est l'effet voulu, et non un oubli à rattraper : qui filtre
-   par « gamme de produits » cherche des exposants. */
-export function visible(o){
-  if (!filtre()) return true;
-  /* Ce que l'exploitant a retiré de la recherche ne répond pas — ni dans la
-     liste, ni sur le plan, qui n'est que l'autre face du même résultat. Le
-     sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
-     pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
-  if (!cherchable(o)) return false;
-  /* Le catalogue n'est pas une sorte d'objet mais un texte de plus sur une
-     société : un produit ne se trouve qu'en retenant le stand qui le présente,
-     et c'est bien ce qu'on cherche en tapant son nom. D'où ce second rang,
-     interrogé après l'autre et seulement s'il le faut. */
-  return dansCriteres(o) &&
-    (!state.qn || (o.rech || "").includes(state.qn) ||
-     (chercheSorte("produits") && (o.rechProd || "").includes(state.qn)));
-}
-
-/* Les stands qu'une société hébergée éclaire. Le plan doit rester allumé sur
-   le stand où l'on va la trouver, alors qu'il porte le nom d'un autre : c'est
-   le seul endroit où une enseigne répond pour son hôte. Le relevé se refait à
-   chaque changement de filtre, et non à chaque stand dessiné. */
-let HOTES = new Set();
-const releveHotes = () => {
-  HOTES = new Set(HEBERGES.filter(visible).map(x => x.id));
-};
-
-/**
- * Ce que le plan garde allumé : ce que la liste retient, plus les stands qui
- * hébergent une société retenue.
- */
-export function visibleSurPlan(o){
-  if (retraitLeve) return true;
-  return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
-}
-
-/**
- * Ce qu'un stand dessiné suit : le filtre de la société qu'il désigne, et non
- * celui de l'emplacement. Une hébergée écartée par un critère doit s'éteindre
- * quand bien même son hôte reste allumé — c'est justement pour la distinguer
- * de lui qu'on l'a dessinée.
- */
-export function visibleSociete(o, i){
-  if (retraitLeve) return true;
-  if (!(i >= 0)) return visibleSurPlan(o);
-  const h = PAR_HEBERGE.get(o.id + "#" + i);
-  return h ? visible(h) : visibleSurPlan(o);
-}
+/* La question posée et ce qu'elle retient — le mot-clé et les critères, le
+   retrait levé, ce que la liste et le plan gardent — vivent dans
+   `filtre.mjs` : le dessin et les noms les lisent sans passer par la liste.
+   Ils s'importent d'ici comme avant. */
+export { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRetrait,
+  valeursCritere, CLE_SECTEUR };
 
 /**
  * Le retrait posé sur ce qui est dessiné.
@@ -794,7 +624,7 @@ export function appliqueFiltre(){
 export function oublieRetrait(cible){
   if (retraitLeve || !filtre() || !cible) return;
   if (!cible.classList.contains("dim")) return;
-  retraitLeve = true;
+  leveRetrait();
   appliqueFiltre();
 }
 
@@ -982,22 +812,9 @@ export function liste(){
         : "Aucun résultat dans ce pavillon.") + '</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
      recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon.
-
-     Un rang part avec l'identifiant, et la fiche s'ouvre droit sur la société
-     du rang cliqué : la liste vient de la nommer, redemander laquelle on veut
-     serait une question dont on a déjà la réponse.
-
-     Une conférence n'est pas un emplacement : `select` ne saurait pas la
-     cadrer, et c'est sa fiche qu'on ouvre — d'où elle offre de situer sa
-     salle sur le plan. */
-  box.querySelectorAll(".row").forEach(b => b.onclick = () => {
-    if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
-    // un repère s'ouvre sur son plan, et depuis sa pastille : ce n'est pas un
-    // emplacement, et « select » n'aurait rien à cadrer
-    if (b.dataset.sorte === "poi"){ vaAuRepere(b.dataset.id, +b.dataset.p); return; }
-    select(b.dataset.id, true, parSociete ? "recherche" : "liste",
-           Number(b.dataset.soc));
-  });
+     Ce qu'ouvre un clic sur une ligne, `ligne-liste.mjs` le fait : il importe
+     la fiche et les repères, que ce module ne peut importer. */
+  box.dataset.canal = parSociete ? "recherche" : "liste";
 }
 
 /**
@@ -1165,11 +982,20 @@ function chargeUnLot(lot){
 
 /**
  * Le branchement, appelé par `lancement.mjs` `lancePlan` à son rang :
- * l'écoute de la liste s'y pose. Ce que la recherche
- * appelle ailleurs lui est confié par les modules eux-mêmes
- * (`confieALaRecherche`).
+ * l'écoute de la liste s'y pose.
  */
 export function brancheRecherche(){
+  /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
+     se refont (`texte-plan.mjs` `remesureTextes`), et le plan se retrace si
+     l'une a changé — les repères et les stands dessinés portent leur nom dans
+     leur forme, et la liste taille la case du numéro sur la même mesure.
+     Posée ici, et non dans les libellés, parce que ce module les importe tous
+     deux ; elle passe toujours avant celle du rendu WebGL. */
+  if (document.fonts && document.fonts.addEventListener)
+    document.fonts.addEventListener("loadingdone", () => {
+      if (!remesureTextes() || !DATA || !view) return;
+      dessineDessins(); libelles(); liste();
+    });
   /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
      frappe, et aucune ne garderait le sien. */
   $("list").addEventListener("pointerdown", e => {
@@ -1184,12 +1010,3 @@ export function brancheRecherche(){
    elle ne peut donc l'importer en retour. */
 confieAuxPolices({ liste });
 
-/* Le panneau des critères, confié aux tiroirs dès que ce module se charge :
-   un tiroir redescendu le referme, et ne peut importer ce module, qui
-   l'importe pour se montrer et se hisser. */
-confieAuxTiroirs({ fermeCriteres });
-
-/* Le corps de la fiche, que ce module importe, ne peut l'importer en
-   retour : il lui confie en se chargeant le libellé d'un champ propre au
-   salon, qu'il écrit en intitulé. */
-confieAuCorpsDeFiche({ libelleCritere });

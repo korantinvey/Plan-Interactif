@@ -52,3 +52,24 @@ export const BORNE = new URLSearchParams(location.search).get("borne") !== null;
 /* Sur le plan d'administration, un critère encore vide se montre et s'explique ;
    sur le plan public, il n'existe pas. */
 export const PLAN_ADMIN = document.documentElement.dataset.role === "admin";
+
+/**
+ * En-têtes de l'appel. En administration on présente sa session : c'est elle
+ * qui donne accès aux événements encore en brouillon. Ils sont lus à chaque
+ * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
+ */
+export function entetesApi(){
+  /** @type {Record<string, string>} */
+  const e = {};
+  if (document.documentElement.dataset.role !== "admin") return e;
+  try {
+    const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
+                || window.PLAN_CONFIG || null;
+    const ses = JSON.parse(localStorage.getItem("console-session") || "null");
+    if (cfg?.anonKey && ses?.access_token){
+      e["apikey"] = cfg.anonKey;
+      e["Authorization"] = "Bearer " + ses.access_token;
+    }
+  } catch (err) {}
+  return e;
+}

@@ -1,7 +1,8 @@
 /* `outils/gabarit/modules/parcours.mjs` — le parcours de visite : le signet et
-   ce qu'il dit, le compte d'un lot. Le geste et le tiroir sont dans
+   ce qu'il dit, le compte d'un lot, un rang de la liste. Le tiroir est dans
    `tiroir-parcours.js`. */
 module.exports = {
+  "Retirer du parcours": "Remove from visit plan",
   "Retirer de mon parcours": "Remove from my visit plan",
   "Ajouter à mon parcours": "Add to my visit plan",
   "Dans mon parcours": "In my visit plan",

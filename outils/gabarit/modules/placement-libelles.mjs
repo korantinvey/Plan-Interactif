@@ -8,13 +8,12 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. L'outil de dessin et la reprise d'un emplacement, avec
-   lesquels il se dispute le glisser et qui importent ce module, lui confient
-   en se chargeant ce qu'il leur emprunte (`confieAuPlacementLibelles`). Il se
+   lesquels il se dispute le glisser, se referment par le registre des modes
+   d'édition (`modes-edition.mjs`), où il inscrit sa propre sortie. Il se
    branche par `branchePlacementLibelles`, que `plan-admin.mjs` appelle dans
    l'emplacement que le lancement lui ouvre après l'habillage : les commandes
    de la palette s'y branchent à leur rang. Les réglages et leur
-   enregistrement, le calque ouvert,
-   la couche reprise, le dessin des noms et la vue s'importent.
+   enregistrement, le dessin des noms et la vue s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { parId } from "./donnees.mjs";
@@ -25,26 +24,12 @@ import { cleLibelle, PLACE_LIBELLES, libSel, poseModeLibelles, poseLibelleChoisi
 import { svg, versPlan } from "./vue.mjs";
 import { libelles } from "./libelles.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
-import { calqueActif } from "./calques-dessin.mjs";
-import { SORTE_GEO } from "./emplacements.mjs";
+import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
 
-/* Ce que l'outil de dessin et la reprise d'un emplacement, qui importent ce
-   module, lui confient en se chargeant. Les réglages (`CONF`, que le
-   changement de salon remplace), le calque de dessin ouvert et la couche
-   reprise, importés, se lisent tels qu'ils sont à l'instant. Le plan et le
-   passage de l'écran au plan s'importent de `vue.mjs`, le dessin des noms de
-   `libelles.mjs`. */
-/**
- * @typedef {object} PretePlacementLibelles
- * @property {typeof import("./outil-dessin.mjs").activeCalque} activeCalque
- * @property {typeof import("./reprise-emplacements.mjs").modeGeometrie} modeGeometrie
- */
-/** @type {PretePlacementLibelles} */
-const prete = { activeCalque: () => {}, modeGeometrie: () => {} };
-/** La porte par laquelle l'outil de dessin (`activeCalque`) et la reprise
- *  d'un emplacement (`modeGeometrie`) confient chacun ce qu'ils tiennent.
- *  @param {Partial<PretePlacementLibelles>} o */
-export function confieAuPlacementLibelles(o){ Object.assign(prete, o); }
+/* Les réglages (`CONF`, que le changement de salon remplace), le calque de
+   dessin ouvert et la couche reprise, importés, se lisent tels qu'ils sont à
+   l'instant. Le plan et le passage de l'écran au plan s'importent de
+   `vue.mjs`, le dessin des noms de `libelles.mjs`. */
 const racine = document.documentElement;
 
 /** @type {any} */
@@ -92,10 +77,8 @@ export function modePlacementLibelles(on){
   poseModeLibelles(!!on && ADMIN);
   racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
   /* Le placement, le dessin et la reprise d'une géométrie se disputeraient le
-     glisser : entrer dans l'un referme les autres, plutôt que de laisser trois
-     gestes viser le même pointeur. */
-  if (PLACE_LIBELLES && calqueActif) prete.activeCalque(calqueActif);
-  if (PLACE_LIBELLES && SORTE_GEO) prete.modeGeometrie(null);
+     glisser : entrer dans l'un referme les autres (`modes-edition.mjs`). */
+  if (PLACE_LIBELLES) quitteLesAutres("libelles");
   if (!PLACE_LIBELLES){ poseLibelleChoisi(null); glisseLib = null; }
   /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
      touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se
@@ -188,3 +171,7 @@ export function branchePlacementLibelles(){
     $("libTaille").onchange = enregistreConf;
   }
 }
+
+/* Le placement est l'un des trois modes d'édition exclusifs : ouvrir les deux
+   autres le referme, s'il est ouvert. */
+inscritMode("libelles", () => { if (PLACE_LIBELLES) modePlacementLibelles(false); });

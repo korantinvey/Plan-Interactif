@@ -49,9 +49,9 @@ export function largeur(txt, police){
    La comparaison épargne le tracé aux polices qui ne touchent pas le plan —
    celle d'une fiche, d'une fenêtre.
 
-   L'écoute elle-même se pose au branchement des libellés (`libelles.mjs`
-   `brancheLibelles`), au tout début du script du plan : elle passe ainsi
-   avant celle du rendu WebGL, qui repeint à la même arrivée en relisant les
+   L'écoute elle-même se pose au branchement de la recherche (`recherche.mjs`
+   `brancheRecherche`), qui refait les noms et la liste, parmi les premiers
+   du lancement : elle passe ainsi avant celle du rendu WebGL, qui repeint à la même arrivée en relisant les
    libellés, et les trouve déjà retaillés. */
 export function remesureTextes(){
   let change = false;

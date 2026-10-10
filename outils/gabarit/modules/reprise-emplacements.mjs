@@ -15,10 +15,13 @@
 
    Il se branche par `brancheRepriseEmplacements`, que `plan-admin.mjs` pose
    dans un emplacement du lancement (`lancement.mjs`), pour y poser les
-   écoutes de sa palette à leur rang. Ce que l'outil de dessin tient (`outil-dessin.mjs`, qui importe
-   ce module-ci) lui est confié par l'outil en se chargeant
-   (`confieALaReprise`). À son tour, il confie en se chargeant ce qu'il tient
-   à la fiche d'une zone et au placement des libellés, qu'il importe.
+   écoutes de sa palette à leur rang. Le cadenas, la liste des sociétés et
+   la fermeture d'un contour s'importent du socle qu'il partage avec l'outil
+   de dessin (`socle-dessin.mjs`) ; le dessin et le placement des libellés,
+   avec lesquels il se dispute le glisser, se referment par le registre des
+   modes d'édition (`modes-edition.mjs`), où il inscrit sa propre sortie. Il
+   confie en se chargeant sa palette à la fiche d'une zone, qu'il importe
+   (`confieALaFicheZone`).
    Les réglages et leur enregistrement (`configuration.mjs`, `CONF` lu tel
    qu'il est à l'instant), la vue, le panneau des calques (`ordre-trace.mjs`),
    le dessin des noms et des distinctions, le calque de dessin ouvert et le
@@ -35,8 +38,6 @@ import { anneauxGeo, traceGeo, empreinteGeo, boiteAnneaux, arrondiGeo } from "./
 import { GL, cibleWebgl, priseWebgl } from "./webgl.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques } from "./parcours.mjs";
-import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { modePlacementLibelles, confieAuPlacementLibelles } from "./placement-libelles.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, montreAimants, correction,
   aimante } from "./aimants.mjs";
 import { ficheZone, confieALaFicheZone } from "./fiche-zone.mjs";
@@ -49,36 +50,14 @@ import { ouvre, ferme } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { oublieDists, dessineDists } from "./distinctions.mjs";
 import { baliseZone, baliseStand } from "./rendu.mjs";
-import { calqueActif, nouvelId } from "./calques-dessin.mjs";
+import { nouvelId } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
 import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
+import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
+import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
 
-/**
- * Ce que l'outil de dessin tient et confie au module en se chargeant
- * (`outil-dessin.mjs`, qui importe ce module-ci). Les défauts ne font rien :
- * l'outil se charge avec la page d'administration, avant tout geste.
- * @typedef {object} PreteReprise
- * @property {typeof import("./outil-dessin.mjs").pictoVerrou} pictoVerrou
- * @property {typeof import("./outil-dessin.mjs").activeCalque} activeCalque
- * @property {typeof import("./outil-dessin.mjs").remplitListeSocietes} remplitListeSocietes
- * @property {typeof import("./outil-dessin.mjs").societeSaisie} societeSaisie
- * @property {typeof import("./outil-dessin.mjs").fermeIci} fermeIci
- */
-/** @type {PreteReprise} */
-const prete = {
-  pictoVerrou: () => "", activeCalque: () => {}, remplitListeSocietes: () => {},
-  societeSaisie: () => null, fermeIci: () => false,
-};
-/** La porte par laquelle l'outil de dessin confie ce qu'il tient.
- *  @param {Partial<PreteReprise>} o */
-export function confieALaReprise(o){ Object.assign(prete, o); }
-const pictoVerrou = (/** @type {boolean} */ f) => prete.pictoVerrou(f);
-const activeCalque = (/** @type {any} */ id) => prete.activeCalque(id);
-const remplitListeSocietes = () => prete.remplitListeSocietes();
-const societeSaisie = (/** @type {string} */ texte) => prete.societeSaisie(texte);
-const fermeIci = (/** @type {number[]} */ p, /** @type {number[][]} */ pts) => prete.fermeIci(p, pts);
 const racine = document.documentElement;
 
 /* Le choix et le geste sont transitoires, comme le mode : ils ne se
@@ -146,12 +125,9 @@ export function modeGeometrie(sorte){
   racine.classList.toggle("mode-geo-stands", SORTE_GEO === "stands");
   racine.classList.toggle("mode-geo-zones", SORTE_GEO === "zones");
   /* Le dessin, le placement des libellés et la reprise d'une forme se
-     disputeraient le glisser : entrer dans l'un referme les autres, plutôt
-     que de laisser trois gestes viser le même pointeur. */
-  if (SORTE_GEO){
-    if (calqueActif) activeCalque(calqueActif);
-    if (PLACE_LIBELLES) modePlacementLibelles(false);
-  }
+     disputeraient le glisser : entrer dans l'un referme les autres
+     (`modes-edition.mjs`). */
+  if (SORTE_GEO) quitteLesAutres("reprise");
   /* Passer d'une couche à l'autre ne garde pas le choix : ses poignées
      seraient restées sur un stand alors qu'on reprend les zones. */
   if (SORTE_GEO === "stands" && SORTE_GEO !== avant) remplitListeSocietes();
@@ -780,4 +756,7 @@ confieALaVue({ dessinePoigneesGeo });
    module : ils ne peuvent l'importer en retour. Il leur confie donc, dès que
    la page d'administration le charge, ce qu'ils lui empruntent. */
 confieALaFicheZone({ majPaletteGeo });
-confieAuPlacementLibelles({ modeGeometrie });
+
+/* La reprise est l'un des trois modes d'édition exclusifs : ouvrir les deux
+   autres la referme, si elle est ouverte. */
+inscritMode("reprise", () => { if (SORTE_GEO) modeGeometrie(null); });

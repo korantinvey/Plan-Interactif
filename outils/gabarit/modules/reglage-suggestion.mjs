@@ -6,8 +6,7 @@
    le pourquoi de la fonction, sont dans `modules/suggestion.mjs` ; ce module-ci
    n'est embarqué que par `plan-admin.mjs`.
 
-   La fenêtre des réglages, qui importe ce module, lui confie son glissement
-   en se chargeant, par `confieAuReglageSuggestion`. Les
+   Le glissement de la fenêtre s'importe de `glisse-fenetre.mjs`, comme les
    critères de la recherche, la configuration et son enregistrement, le champ
    intitulé et le tiroir du parcours, qu'un réglage changé refait,
    s'importent (`recherche.mjs`, `configuration.mjs`, `fiche-zone.mjs`,
@@ -23,21 +22,7 @@ import { rafraichitParcours } from "./tiroir-parcours.mjs";
 import { clesCriteres, valeursCritere, libelleCritere } from "./recherche.mjs";
 import { conf, enregistreConf } from "./configuration.mjs";
 import { champZone } from "./fiche-zone.mjs";
-
-/**
- * Ce que le volet emprunte à la fenêtre des réglages (`reglages.mjs`), qui
- * l'importe : le glissement d'une hauteur à l'autre. Elle le lui confie au
- * chargement de son module, par `confieAuReglageSuggestion` : le volet ne
- * peut l'importer, il est importé par elle.
- * @typedef {{ glisseFenetre: (change: () => void) => void }} PageReglageSuggestion
- */
-/** @type {PageReglageSuggestion} */
-const prete = { glisseFenetre: (change) => change() };
-
-/** La porte de la fenêtre des réglages, qui prête au volet ce qu'il appelle.
- *  @param {Partial<PageReglageSuggestion>} o */
-export function confieAuReglageSuggestion(o){ Object.assign(prete, o); }
-const glisseFenetre = (/** @type {() => void} */ change) => prete.glisseFenetre(change);
+import { glisseFenetre } from "./glisse-fenetre.mjs";
 
 export const NOM_VOLET_SUGGESTION = "Suggestion";
 
