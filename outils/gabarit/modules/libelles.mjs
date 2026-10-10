@@ -6,8 +6,9 @@
    vue, l'autre une fois pour toutes avec l'intervalle de zoom où chacun se
    lit. Les garder côte à côte, c'est ce qui les tient d'accord.
 
-   Il se branche par `brancheLibelles`, que le lancement (`lancement.mjs`)
-   appelle parmi les premiers — avant l'écoute du rendu WebGL. La
+   Il n'a pas de branchement : l'écoute des polices arrivées, qui le refait
+   avec la liste, est posée par la recherche (`recherche.mjs`
+   `brancheRecherche`), qui les importe tous deux. La
    vue, les calques de dessin, la boîte d'une forme et le nom d'une zone dans
    la langue du moment s'importent (`vue.mjs`, `calques-dessin.mjs`,
    `forme-choisie.mjs`, `noms-zones.mjs`), comme le dessin des stands et des
@@ -19,9 +20,9 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
-import { DATA, parId, state, P } from "./donnees.mjs";
+import { parId, state, P } from "./donnees.mjs";
 import { P_NOM, P_CODE, confieAuxPolices } from "./polices-plan.mjs";
-import { largeur, remesureTextes, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
+import { largeur, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
 import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
@@ -29,32 +30,14 @@ import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
 import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce }
   from "./nom-emplacement.mjs";
-import { liste, confieALaRecherche } from "./recherche.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { boite } from "./forme-choisie.mjs";
-import { dessineDessins, decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme,
-  nomSurLePlan } from "./dessin.mjs";
+import { decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme, nomSurLePlan } from "./dessin.mjs";
 
 
-/**
- * Le branchement, appelé par le lancement (`lancement.mjs` `lancePlan`) au
- * rang que l'écoute des polices tenait : elle s'y pose à son rang.
- */
-export function brancheLibelles(){
-  /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
-     se refont (`texte-plan.mjs` `remesureTextes`), et le plan se retrace si
-     l'une a changé. */
-  if (document.fonts && document.fonts.addEventListener)
-    document.fonts.addEventListener("loadingdone", () => {
-      if (!remesureTextes() || !DATA || !view) return;
-      // les repères et les stands dessinés portent leur nom dans leur forme, la
-      // liste taille la case du numéro sur la même mesure
-      dessineDessins(); libelles(); liste();
-    });
-}
 
 
 /* Ce qu'un emplacement écrit sur le plan — son nom, son numéro, la pastille
@@ -280,10 +263,6 @@ export function libellesWebgl(){
   GL.couchesLibelles = null;
   planifieWebgl();
 }
-
-/* La recherche, que ce module importe, ne peut l'importer en retour : il lui
-   confie en se chargeant ce qu'elle en appelle (les noms à refaire quand le filtre change ce qui paraît). */
-confieALaRecherche({ libelles });
 
 /* La vue et le rendu par la carte graphique, que ce module importe, refont
    les noms et ne peuvent l'importer : il leur confie en se chargeant ce qui

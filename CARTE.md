@@ -413,16 +413,16 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 367 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 303 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`confieAuDemarrage` 56 · `majAttente` 57 · `rattrapeRetard` 58 · `recadreListePosee` 75
-`demarre` 91 · `annonce` 153 · `entetesApi` 176 · `chargeFond` 200 · `panneDuChargement` 247
-`CLE_VERSION` 257 · `versionRetenue` 258 · `retientVersion` 261 · `demandePlan` 285
-`charge` 309 · `brancheDemarrage` 346
+`confieAuDemarrage` 54 · `majAttente` 55 · `rattrapeRetard` 56 · `recadreListePosee` 73
+`demarre` 89 · `annonce` 151 · `panneDuChargement` 186 · `CLE_VERSION` 196
+`versionRetenue` 197 · `retientVersion` 200 · `demandePlan` 224 · `charge` 248
+`brancheDemarrage` 285
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -854,13 +854,13 @@ Fonctions :
 `montreLeJour` 742 · `perimeJournee` 757 · `oublieSejour` 772 · `ouvreOrganisation` 787
 `essaieSejour` 1167 · `lanceSejour` 1197 · `refaitSejour` 1236 · `brancheJournee` 1252
 
-### `modules/lancement.mjs` — 126 l. → plan, plan-admin
+### `modules/lancement.mjs` — 123 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`confieLancementAdmin` 70 · `lancePlan` 73
+`confieLancementAdmin` 69 · `lancePlan` 72
 
 ### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
 
@@ -871,15 +871,14 @@ Fonctions :
 `cleLibelle` 36 · `poseModeLibelles` 45 · `poseLibelleChoisi` 50 · `empreinteLibelle` 62
 `placementLibelle` 70
 
-### `modules/libelles.mjs` — 297 l. → plan, plan-admin
+### `modules/libelles.mjs` — 276 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.66 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.49 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`brancheLibelles` 46 · `libelles` 73 · `libelleZone` 150 · `emplacementWebgl` 178
-`libellesWebgl` 226
+`libelles` 56 · `libelleZone` 133 · `emplacementWebgl` 161 · `libellesWebgl` 209
 
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
@@ -1191,23 +1190,22 @@ Fonctions :
 
 - l.1 · Point d'entrée du rapport — et son démarrage
 
-### `modules/recherche.mjs` — 1019 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1031 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`confieALaRecherche` 76 · `ferme` 77 · `ficheConf` 80 · `adresseVignette` 81
-`poseToutAuParcours` 82 · `libelles` 83 · `vaAuRepere` 84 · `appliqueSecteurs` 94
-`filtreTheme` 111 · `themeFiltrable` 168 · `ordreCriteres` 184 · `clesCriteres` 207
-`texteCriteres` 220 · `texteAnglaisPerso` 236 · `indexeCriteres` 250 · `refaitCriteres` 284
-`critereActif` 291 · `basculeCritere` 293 · `videCriteres` 302 · `majVideQ` 311
-`videRecherche` 324 · `nCriteres` 339 · `majCriteres` 348 · `remplitCriteres` 415
-`basculeCriteres` 554 · `ouvreCriteres` 559 · `marqueRetrait` 593 · `appliqueFiltre` 611
-`oublieRetrait` 627 · `reprendRecherche` 636 · `rangSorte` 649 · `codeCase` 671
-`caseNumero` 688 · `sousLigne` 708 · `liste` 722 · `marqueChoisie` 850
-`prechargeMarque` 876 · `prechargeLesVignettes` 933 · `chargeUnLot` 979
-`brancheRecherche` 1005
+`confieALaRecherche` 78 · `ferme` 79 · `ficheConf` 82 · `adresseVignette` 83
+`poseToutAuParcours` 84 · `vaAuRepere` 85 · `appliqueSecteurs` 95 · `filtreTheme` 112
+`themeFiltrable` 169 · `ordreCriteres` 185 · `clesCriteres` 208 · `texteCriteres` 221
+`texteAnglaisPerso` 237 · `indexeCriteres` 251 · `refaitCriteres` 285 · `critereActif` 292
+`basculeCritere` 294 · `videCriteres` 303 · `majVideQ` 312 · `videRecherche` 325
+`nCriteres` 340 · `majCriteres` 349 · `remplitCriteres` 416 · `basculeCriteres` 555
+`ouvreCriteres` 560 · `marqueRetrait` 594 · `appliqueFiltre` 612 · `oublieRetrait` 628
+`reprendRecherche` 637 · `rangSorte` 650 · `codeCase` 672 · `caseNumero` 689
+`sousLigne` 709 · `liste` 723 · `marqueChoisie` 851 · `prechargeMarque` 877
+`prechargeLesVignettes` 934 · `chargeUnLot` 980 · `brancheRecherche` 1006
 
 ### `modules/reglage-application.mjs` — 315 l. → plan-admin
 
@@ -1275,14 +1273,14 @@ Fonctions :
 `ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 383
 `voletPlan` 401 · `voletCoexposants` 440
 
-### `modules/rendu.mjs` — 190 l. → plan, plan-admin
+### `modules/rendu.mjs` — 229 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
 Fonctions :
 
-`confieAuRendu` 62 · `monteHabillage` 67 · `baliseZone` 96 · `baliseStand` 106
-`montePlan` 113 · `onglets` 145 · `changePlan` 167
+`confieAuRendu` 61 · `monteHabillage` 66 · `baliseZone` 95 · `baliseStand` 105
+`montePlan` 112 · `onglets` 144 · `chargeFond` 174 · `changePlan` 206
 
 ### `modules/reperes.mjs` — 421 l. → plan, plan-admin
 
@@ -1315,13 +1313,13 @@ Fonctions :
 `geometriePointerDown` 629 · `accrocheGeo` 660 · `geometriePointerMove` 662
 `geometriePointerUp` 713 · `brancheRepriseEmplacements` 730
 
-### `modules/salon.mjs` — 54 l. → plan, plan-admin
+### `modules/salon.mjs` — 75 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
 
 Fonctions :
 
-`cheminDuSalon` 33 · `cheminPartageable` 44
+`cheminDuSalon` 33 · `cheminPartageable` 44 · `entetesApi` 61
 
 ### `modules/secteurs.mjs` — 148 l. → plan, plan-admin
 

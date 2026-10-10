@@ -16,14 +16,14 @@
    tiroirs (`tiroirs.mjs`). La fiche
    et la sélection (`fiche.mjs`) ne le peuvent pas : la fiche embarque ce
    module, par le tiroir de l'itinéraire et la borne, et l'importer en retour
-   bouclerait. Le dessin des noms et des distinctions (`libelles.mjs`,
-   `distinctions.mjs`) l'importe, et ne peut donc pas l'être ; la mesure du
-   texte, elle, s'importe (`texte-plan.mjs`).
-   Ce qu'il ne peut importer — la fiche et la sélection, le dessin des noms
-   et des distinctions, les repères, le parcours — lui est confié par ces
-   modules en se chargeant (`confieALaRecherche`), et lu au moment de s'en
-   servir. `brancheRecherche`, que `lancement.mjs` appelle à son rang, n'y
-   pose plus que l'écoute de la liste.
+   bouclerait. Le dessin des noms, des calques et des distinctions, le
+   filtre et la mesure du texte s'importent (`libelles.mjs`, `dessin.mjs`,
+   `distinctions.mjs`, `filtre.mjs`, `texte-plan.mjs`).
+   Ce qu'il ne peut importer — la fiche et la sélection, les repères, le
+   parcours — lui est confié par ces modules en se chargeant
+   (`confieALaRecherche`), et lu au moment de s'en servir. `brancheRecherche`,
+   que `lancement.mjs` appelle à son rang, y pose l'écoute de la liste et
+   celle des polices arrivées.
 
    En retour, ce module confie en se chargeant ce qu'un module qu'il importe
    lui emprunte : la liste à la police des noms (`confieAuxPolices`). Le
@@ -50,7 +50,10 @@ import { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRet
   valeursCritere, CLE_SECTEUR, critParSociete, releveHotes } from "./filtre.mjs";
 import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
 import { fermeCriteres, poseRelecturePanneau, relisPanneauCrit } from "./panneau-criteres.mjs";
-import { largeur } from "./texte-plan.mjs";
+import { largeur, remesureTextes } from "./texte-plan.mjs";
+import { libelles } from "./libelles.mjs";
+import { dessineDessins } from "./dessin.mjs";
+import { view } from "./vue.mjs";
 
 /**
  * Ce que la recherche emprunte aux modules qui l'importent : la fiche qu'une
@@ -65,7 +68,6 @@ import { largeur } from "./texte-plan.mjs";
  * @property {(id: any, canal?: string) => void} ficheConf
  * @property {(cle: any) => string} adresseVignette
  * @property {(hote: HTMLElement) => () => void} poseToutAuParcours
- * @property {() => void} libelles
  * @property {(id: any, p: number) => void} vaAuRepere
  */
 /** @type {PageRecherche} */
@@ -80,7 +82,6 @@ const select = (/** @type {any} */ id, /** @type {boolean} */ recentrer, /** @ty
 const ficheConf = (/** @type {any} */ id, /** @type {string} */ canal) => prete.ficheConf(id, canal);
 const adresseVignette = (/** @type {any} */ cle) => prete.adresseVignette(cle);
 const poseToutAuParcours = (/** @type {HTMLElement} */ hote) => prete.poseToutAuParcours(hote);
-const libelles = () => prete.libelles();
 const vaAuRepere = (/** @type {any} */ id, /** @type {number} */ p) => prete.vaAuRepere(id, p);
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
@@ -1003,6 +1004,17 @@ function chargeUnLot(lot){
  * (`confieALaRecherche`).
  */
 export function brancheRecherche(){
+  /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
+     se refont (`texte-plan.mjs` `remesureTextes`), et le plan se retrace si
+     l'une a changé — les repères et les stands dessinés portent leur nom dans
+     leur forme, et la liste taille la case du numéro sur la même mesure.
+     Posée ici, et non dans les libellés, parce que ce module les importe tous
+     deux ; elle passe toujours avant celle du rendu WebGL. */
+  if (document.fonts && document.fonts.addEventListener)
+    document.fonts.addEventListener("loadingdone", () => {
+      if (!remesureTextes() || !DATA || !view) return;
+      dessineDessins(); libelles(); liste();
+    });
   /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
      frappe, et aucune ne garderait le sien. */
   $("list").addEventListener("pointerdown", e => {

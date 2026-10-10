@@ -29,7 +29,6 @@
    ============================================================ */
 import { brancheErreurs } from "./erreurs.mjs";
 import { brancheTonDeLaBarre } from "./ton-barre.mjs";
-import { brancheLibelles } from "./libelles.mjs";
 import { brancheBandes } from "./bandes.mjs";
 import { brancheRecherche } from "./recherche.mjs";
 import { brancheVue } from "./vue.mjs";
@@ -89,9 +88,7 @@ export function lancePlan(){
   brancheErreurs();
   // la couleur de la barre du système, refaite au franchissement du seuil du téléphone
   brancheTonDeLaBarre();
-  // le plan à l'écran : l'écoute des polices passe avant celle du rendu WebGL
-  brancheLibelles();
-  // recherche et secteurs
+  // recherche et secteurs ; la recherche pose aussi l'écoute des polices, avant celle du rendu WebGL
   brancheBandes();
   brancheRecherche();
   // la vue, avant le recadrage que le démarrage pose sur « resize »

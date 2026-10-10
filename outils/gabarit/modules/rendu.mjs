@@ -24,6 +24,7 @@
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, state, P } from "./donnees.mjs";
+import { API, SLUG, entetesApi } from "./salon.mjs";
 import { poseEmprise, fit } from "./vue.mjs";
 import { oublieDists } from "./distinctions.mjs";
 import { marqueRetrait, liste } from "./recherche.mjs";
@@ -35,26 +36,24 @@ import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
 import { ferme, confieALaFiche } from "./fiche.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
-import { construitPanneau } from "./ordre-trace.mjs";
+import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
 
 /* Ce que le montage appelle chez des modules qui l'importent, et qu'ils lui
-   confient en se chargeant (`confieAuRendu`) : le fond d'un pavillon chargé
-   après coup (`demarrage.mjs`),
-   et ce que seule l'administration a — la nappe de la grille (`nappe.mjs`),
+   confient en se chargeant (`confieAuRendu`) : ce que seule
+   l'administration a — la nappe de la grille (`nappe.mjs`),
    le calage de la carte en cours (`calage-carte.mjs`), l'éditeur à remettre
    au repos (`outil-dessin.mjs`). La page publique n'embarque pas ces
    derniers : ils restent sans effet. */
 /**
  * @typedef {object} PageRendu
- * @property {(i: number) => void} chargeFond
  * @property {() => void} rafraichitApercu
  * @property {() => void} oublieCalageEnCours
  * @property {(() => void) | null} oublieEdition
  */
 /** @type {PageRendu} */
-const prete = { chargeFond: () => {}, rafraichitApercu: () => {},
+const prete = { rafraichitApercu: () => {},
   oublieCalageEnCours: () => {}, oublieEdition: null };
 
 /** La porte des modules qui confient au montage ce qu'il appelle.
@@ -164,6 +163,46 @@ function onglets(){
   majFondus();
 }
 
+/**
+ * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
+ * décoratif. On le charge après coup, une seule fois par pavillon, et on
+ * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte une
+ * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
+ * le redemande que lorsque le dessin servi n'est plus le même.
+ */
+const _fonds = new Map();
+export function chargeFond(/** @type {number} */ i){
+  const p = DATA?.plans?.[i];
+  if (!p || !API) return Promise.resolve();
+  if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
+  if (_fonds.has(p.id)) return _fonds.get(p.id);
+
+  /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
+     l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
+     seul à recevoir un fond découpé — ce que l'apparence en montre. Tant
+     qu'elle ne bouge pas, il n'y a rien à retélécharger ; dès qu'elle bouge,
+     le navigateur ne peut pas resservir l'ancien. Un salon servi par une
+     version antérieure du service n'en porte pas : on retombe alors sur
+     l'horodatage de synchronisation, qui était la règle jusqu'ici. */
+  const q = API + "?slug=" + encodeURIComponent(SLUG) +
+            "&fond=" + encodeURIComponent(p.id) +
+            "&v=" + encodeURIComponent(p.versionFond || DATA.genereLe || "0");
+  const promesse = fetch(q, { headers: entetesApi() })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(d => {
+      const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
+      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
+      // le pavillon a pu changer pendant le chargement
+      if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
+    })
+    .catch(e => {
+      _fonds.delete(p.id);          // une panne réseau ne doit pas être définitive
+      console.warn("Fond de plan indisponible :", e.message);
+    });
+  _fonds.set(p.id, promesse);
+  return promesse;
+}
+
 export function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
@@ -171,7 +210,7 @@ export function changePlan(i){
   prete.oublieCalageEnCours();
   ferme();
   montePlan(); fit(); liste();
-  prete.chargeFond(i);
+  chargeFond(i);
 }
 
 /* Le pavillon monté ou non, confié à la police des noms dès que ce module se
