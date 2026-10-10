@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_config.js` — 17 l.
+### `_config.js` — 19 l. → config.js
 
 ### `_console-base.html` — 11 l. → admin-plans.html, rapport.html
 
