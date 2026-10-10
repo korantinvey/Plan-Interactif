@@ -20,14 +20,14 @@ import { brancheReglageSuggestion } from "./reglage-suggestion.mjs";
 import { majAttente, compteRescapes, rattrapeRetard, noteReglagesCharges, brancheEnregistrement }
   from "./enregistrement.mjs";
 import { brancheAimants } from "./aimants.mjs";
-import { CALAGE, dessineCalage, brancheBatiments } from "./batiments.mjs";
+import { brancheBatiments } from "./batiments.mjs";
 import { vivants } from "./vivant.mjs";
 import { activeAdmin } from "./bande-admin.mjs";
 import { ficheZone, basculeAffichageZone, brancheFicheZone }
   from "./fiche-zone.mjs";
 import { branchePlacementLibelles } from "./placement-libelles.mjs";
 import { glisseFenetre, ouvreReglages } from "./reglages.mjs";
-import { modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo, brancheRepriseEmplacements }
+import { modeGeometrie, choisitGeo, majPaletteGeo, brancheRepriseEmplacements }
   from "./reprise-emplacements.mjs";
 import { dessinePoignees, choisitForme, brancheEdition } from "./edition.mjs";
 import { rafraichitApercu } from "./nappe.mjs";
@@ -52,13 +52,12 @@ Object.assign(globalThis, {
   majAttente, compteRescapes, rattrapeRetard, noteReglagesCharges,
   brancheEnregistrement,
   brancheAimants,
-  dessineCalage,
   brancheBatiments,
   activeAdmin,
   ficheZone, basculeAffichageZone, brancheFicheZone,
   branchePlacementLibelles,
   glisseFenetre, ouvreReglages,
-  modeGeometrie, choisitGeo, dessinePoigneesGeo, majPaletteGeo,
+  modeGeometrie, choisitGeo, majPaletteGeo,
   brancheRepriseEmplacements,
   dessinePoignees, choisitForme,
   brancheEdition,
@@ -71,10 +70,6 @@ Object.assign(globalThis, {
   brancheGestesAdmin,
 });
 
-/* Le calage d'un hall en cours, ou rien : le module le pose en le lançant et
-   l'efface en le quittant. La vue le lit par accesseur, pour redessiner la
-   poignée qui se mesure en pixels. */
-Object.defineProperties(globalThis, vivants({ CALAGE: () => CALAGE }, "ouvreBibliotheque"));
 
 /* L'image qu'on s'apprête à poser, ou rien : seul son import la remplace. Les
    aimants la lisent par accesseur, pour garder ses proportions au tracé. */

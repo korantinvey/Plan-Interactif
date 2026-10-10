@@ -28,10 +28,9 @@
    en vectoriel, et le trou sous le pavillon. Le calage — le poser, le tourner,
    l'enregistrer — est un geste d'exploitant, et vit dans `calage-carte.mjs`,
    que seul `plan-admin.mjs` embarque. La vue et son cadre, qu'il ne peut
-   importer sans boucler (`vue.mjs` l'importe), lui sont confiés par
-   `brancheEnvirons`, que `_environs.html` appelle à la place que ce code y
-   tenait ; les réglages, les calques de dessin et le tracé d'une forme
-   s'importent.
+   importer sans boucler (`vue.mjs` l'importe), la vue les lui confie en se
+   chargeant (`confieAuxEnvirons`) ; les réglages, les calques de dessin et
+   le tracé d'une forme s'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -42,10 +41,10 @@ import { CONF } from "./configuration.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 
-/* Ce que le code soudé confie au branchement : la vue (`view`, que chaque
-   geste remplace) et son cadre à l'écran, par des lecteurs — il faut lire
-   ceux du moment. Rien ne sert avant le branchement — le plan n'a pas encore
-   de vue —, d'où des lecteurs vides en attendant. Les réglages (`CONF`,
+/* Ce que la vue, qui importe ce module, lui confie en se chargeant : la vue
+   (`view`, que chaque geste remplace) et son cadre à l'écran, par des
+   lecteurs — il faut lire ceux du moment. Avant le premier plan il n'y a pas
+   de vue, d'où des lecteurs vides en attendant. Les réglages (`CONF`,
    remplacés en changeant de salon), importés, se lisent tels qu'ils sont à
    l'instant. */
 /**
@@ -54,10 +53,12 @@ import { cheminForme } from "./chemin-forme.mjs";
  * @property {() => DOMRect} cadrePlan
  */
 /** @type {PageEnvirons} */
-let soude = { vue: () => undefined, cadrePlan: () => new DOMRect() };
+const soude = { vue: () => undefined, cadrePlan: () => new DOMRect() };
 
-/** Le branchement, appelé par `_environs.html` à la place de ce code. */
-export function brancheEnvirons(b){ soude = b; }
+/** La porte de la vue, qui importe ce module et le lui confie en se chargeant
+ *  (`vue.mjs`) : la vue du moment et le cadre du plan.
+ *  @param {Partial<PageEnvirons>} o */
+export function confieAuxEnvirons(o){ Object.assign(soude, o); }
 
 const racine = document.documentElement;
 

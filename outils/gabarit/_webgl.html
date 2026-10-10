@@ -6,18 +6,10 @@
    ce script : la bibliothèque se demande au même moment qu'avant parmi le
    reste du plan.
 
-   Les noms, qui suivent les règles des libellés du SVG — tailles, seuils,
-   placement à la main, stands dessinés —, se préparent avec eux dans
-   `modules/libelles.mjs` (`libellesWebgl`), qui importe le rendu et ne peut
-   donc lui être importé : il lui est confié ici, comme ce qui dit si l'on
-   édite (`modules/edition-en-cours.mjs`), qui lit le calque ouvert de l'outil
-   de dessin.
+   Ce qu'il lit et ne peut importer — la vue et le SVG, les noms préparés
+   avec les règles des libellés du SVG (`libellesWebgl`), ce qui dit si l'on
+   édite, le glissé et le pincement en cours —, les modules qui l'importent
+   le lui confient en se chargeant (`confieAuWebgl`) : `modules/vue.mjs`,
+   `modules/libelles.mjs`, `modules/edition-en-cours.mjs`, `modules/gestes.mjs`.
    ============================================================ */
-
-/* La vue et les gestes changent sans cesse : ils se confient par une fonction
-   qui les lit au moment voulu. Le placement à la main, le module l'importe. */
-brancheWebgl({
-  svg, vue: () => view, cadrePlan, appliqueVue, libelles, enEdition,
-  drag: () => drag, pince: () => pince,
-  libellesWebgl,
-});
+brancheWebgl();

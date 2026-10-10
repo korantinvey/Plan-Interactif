@@ -18,7 +18,7 @@ import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { optionActive } from "./configuration.mjs";
-import { svg, vue, cadrePlan } from "./vue.mjs";
+import { svg, vue, cadrePlan, confieALaVue } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
@@ -642,3 +642,8 @@ export function signale(id){
   g.classList.add("neuve");
   setTimeout(() => g.classList.remove("neuve"), 1300);
 }
+
+/* La pointe d'une ligne fléchée garde sa taille à l'écran : la vue, que ce
+   module importe, la refait à chaque changement de vue — il la lui confie en
+   se chargeant. */
+confieALaVue({ rafraichitFleches });

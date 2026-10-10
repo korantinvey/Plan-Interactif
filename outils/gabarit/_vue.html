@@ -9,25 +9,11 @@
    de l'écran au plan. Elle se branche ici, à la place que son code tenait :
    ses écoutes du cadre et de la barre s'y posent au même rang qu'avant.
 
-   La vue elle-même et le SVG du plan sont au module. Ce qu'elle ne peut
-   importer sans boucler lui est confié : ce qui dit si l'on édite
-   (`modules/edition-en-cours.mjs`, qui lit la couche reprise, dont le module
-   importe la vue) et les noms ; l'écran et l'ordre des calques, eux,
-   s'importent de `modules/ecran.mjs` et `modules/ordre-trace.mjs`. Ce qui
-   n'existe pas partout — les poignées de l'éditeur, les
-   pastilles de l'itinéraire, les pointes de flèche, le point de la borne —
-   sous la garde qu'il avait ; et le calage d'un hall, que seule
-   l'administration connaît, dans sa tranche.
+   La vue elle-même et le SVG du plan sont au module. Ce qu'elle rappelle à
+   chaque changement de vue — ce qui dit si l'on édite, les noms, les
+   poignées de l'éditeur, les pastilles de l'itinéraire, les pointes de
+   flèche, le point de la borne, la poignée du calage d'un hall —, chacun de
+   ces modules, qui l'importe, le lui confie en se chargeant (`confieALaVue`) ;
+   ce que la page publique n'embarque pas reste sans effet.
    ============================================================ */
-brancheVue({
-  enEdition,
-  libelles,
-  dessinePoignees: () => { if (typeof dessinePoignees === "function") dessinePoignees(); },
-  dessinePoigneesGeo: () => { if (typeof dessinePoigneesGeo === "function") dessinePoigneesGeo(); },
-  rafraichitBouts: () => { if (typeof rafraichitBouts === "function") rafraichitBouts(); },
-  rafraichitFleches: () => { if (typeof rafraichitFleches === "function") rafraichitFleches(); },
-  rafraichitBorne: () => { if (typeof rafraichitBorne === "function") rafraichitBorne(); },
-  /* @admin — le calage d'un hall : la poignée se mesure en pixels, elle suit la vue */
-  calage: () => { if (CALAGE) dessineCalage(); },
-  /* @fin-admin */
-});
+brancheVue();

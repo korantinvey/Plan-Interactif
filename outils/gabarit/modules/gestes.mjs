@@ -27,7 +27,7 @@ import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
-import { GL, cibleWebgl } from "./webgl.mjs";
+import { GL, cibleWebgl, confieAuWebgl } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit }
   from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
@@ -466,3 +466,8 @@ export function brancheLangue(){
     if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
   });
 }
+
+/* Le rendu par la carte graphique tait son survol pendant un geste, et ne
+   peut importer ce module : il lui confie en se chargeant le glissé et le
+   pincement en cours, par des lecteurs — ils changent à chaque appui. */
+confieAuWebgl({ drag: () => drag, pince: () => pince });

@@ -7,15 +7,14 @@
    vit dans `modules/calage-carte.mjs`, que seul `plan-admin.mjs` embarque :
    le visiteur ne le reçoit pas.
 
-   Tous deux se branchent ici, à la place que leur code tenait dans ce
-   script : les boutons de la palette de calage s'y branchent au même rang
-   qu'avant. Le fond ne peut importer la vue, dont le module l'importe : elle
-   lui est confiée par un lecteur — les gestes la remplacent. Les réglages,
+   Le calage se branche ici, à la place que son code tenait dans ce script :
+   les boutons de sa palette s'y branchent au même rang qu'avant. Le fond n'a
+   plus de branchement : il ne peut importer la vue, dont le module
+   l'importe, et c'est elle qui la lui confie en se chargeant. Les réglages,
    les calques de dessin, le panneau des calques et la main qui tient le plan
    (`modules/gestes.mjs`), ils les importent.
    ============================================================ */
 
-brancheEnvirons({ vue: () => view, cadrePlan });
 
 /* @admin — le calage de la carte, geste d'exploitant */
 brancheCalageCarte();

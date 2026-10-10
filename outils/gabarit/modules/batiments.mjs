@@ -36,7 +36,7 @@ import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, priseWebgl } from "./webgl.mjs";
-import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg } from "./vue.mjs";
+import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, confieALaVue } from "./vue.mjs";
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { activeCalque, memorise, cleVerrou, enregistreDessins } from "./outil-dessin.mjs";
@@ -587,3 +587,8 @@ export function rouvreCalage(c){
   if (!t || !halls.length) return;
   lanceCalage(lieu, halls, t);
 }
+
+/* La poignée du calage d'un hall se mesure en pixels : la vue, que ce module
+   importe, la refait pendant le geste et à sa fin — il la lui confie en se
+   chargeant, et elle ne se dessine que pendant un calage. */
+confieALaVue({ calage: () => { if (CALAGE) dessineCalage(); } });

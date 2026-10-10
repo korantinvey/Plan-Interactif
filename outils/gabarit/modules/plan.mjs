@@ -22,11 +22,9 @@ import { brancheItineraire } from "./itineraire.mjs";
 import { instantConf } from "./parcours.mjs";
 import { branchePartage } from "./partage.mjs";
 import { GL, brancheWebgl, rectEcranWebgl } from "./webgl.mjs";
-import { brancheEnvirons } from "./environs.mjs";
 import { brancheRappels } from "./rappels.mjs";
 import { brancheInstallation } from "./installation.mjs";
 import { brancheBorne } from "./borne.mjs";
-import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { brancheIci } from "./ici.mjs";
 import { brancheSuggestion } from "./suggestion.mjs";
 import { TUTO } from "./tutoriel.mjs";
@@ -34,10 +32,10 @@ import { finInstant } from "./sejour.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { rafraichitBouts, brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
+import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours } from "./tiroir-parcours.mjs";
-import { brancheVue, cadrePlan, appliqueVue } from "./vue.mjs";
+import { brancheVue, cadrePlan } from "./vue.mjs";
 import { CONF, brancheConfiguration } from "./configuration.mjs";
 import { brancheApparence } from "./apparence.mjs";
 import { brancheHabillage } from "./habillage.mjs";
@@ -52,7 +50,7 @@ import { brancheDemarrage, chargeFond } from "./demarrage.mjs";
 import { brancheCorpsFiche } from "./corps-fiche.mjs";
 import { ferme, brancheFiche } from "./fiche.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
-import { brancheLibelles, libelles, libellesWebgl } from "./libelles.mjs";
+import { brancheLibelles, libelles } from "./libelles.mjs";
 import { DISTINCTIONS, dessineDists, poseDistsFiche,
   refaitDistsFiche } from "./distinctions.mjs";
 import { MONTE, brancheRendu, montePlan, changePlan } from "./rendu.mjs";
@@ -63,8 +61,12 @@ import { rafraichitFleches, dessineDessins, redessineForme, apercuGuide, nomSurL
   poseLibellesDessines, decoupeStand, marqueStandsDessines, signale } from "./dessin.mjs";
 import { phareZone } from "./points-interet.mjs";
 import { appliqueOptions } from "./options.mjs";
-import { enEdition } from "./edition-en-cours.mjs";
-import { drag, pince, brancheGestes, brancheLangue } from "./gestes.mjs";
+/* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
+   rendu par la carte graphique le reçoivent de ce module, qui le leur confie
+   en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
+   chargé, et c'est d'ici. */
+import "./edition-en-cours.mjs";
+import { brancheGestes, brancheLangue } from "./gestes.mjs";
 import { brancheTiroirs } from "./tiroirs.mjs";
 
 Object.assign(globalThis, {
@@ -75,23 +77,19 @@ Object.assign(globalThis, {
   brancheItineraire,
   instantConf,
   brancheWebgl,
-  brancheEnvirons,
   brancheRappels,
   brancheInstallation,
   brancheBorne,
-  rafraichitBorne,
   brancheIci,
   brancheSuggestion,
   finInstant,
   brancheJournee,
   retireAdmin,
-  rafraichitBouts,
   brancheTiroirItineraire,
   basculeParcours, brancheParcours, rafraichitParcours, rangParcours,
   remplitParcours, fermeParcours, brancheTiroirParcours,
   branchePartage,
-  brancheVue, cadrePlan, appliqueVue,
-  brancheConfiguration,
+  brancheVue, cadrePlan, brancheConfiguration,
   brancheApparence,
   brancheHabillage,
   branchePolices,
@@ -106,8 +104,7 @@ Object.assign(globalThis, {
   brancheDemarrage, chargeFond,
   brancheCorpsFiche,
   ferme, brancheFiche,
-  brancheLibelles, libelles, libellesWebgl,
-  DISTINCTIONS, dessineDists, poseDistsFiche,
+  brancheLibelles, libelles, DISTINCTIONS, dessineDists, poseDistsFiche,
   refaitDistsFiche,
   brancheRendu, montePlan, changePlan,
   brancheCalquesDessin,
@@ -117,7 +114,6 @@ Object.assign(globalThis, {
   societeDeForme, poseLibellesDessines, decoupeStand, marqueStandsDessines, signale,
   phareZone,
   appliqueOptions,
-  enEdition,
   brancheGestes, brancheLangue,
   brancheTiroirs,
 });
@@ -161,10 +157,6 @@ Object.defineProperties(globalThis, vivants({ DESSINS: () => DESSINS }, "ouvreDe
    l'outil de l'exploitant le change, par sa porte, et le montage d'un
    pavillon le referme. */
 Object.defineProperties(globalThis, vivants({ calqueActif: () => calqueActif }, "poseCalqueActif"));
-/* Le glissé et le pincement en cours : la carte graphique les lit par
-   accesseur, pour taire son survol pendant un geste. Seules les écoutes que
-   pose `brancheGestes` les changent. */
-Object.defineProperties(globalThis, vivants({ drag: () => drag, pince: () => pince }, "brancheGestes"));
 
 /* Ce que les essais du navigateur lisent dans la page, et que le code soudé
    n'appelle pas : les règles de `sur.mjs` éprouvées sur des entrées hostiles,

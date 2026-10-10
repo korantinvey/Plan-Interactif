@@ -51,11 +51,23 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
  * @property {() => void} libellesWebgl
  */
 /** @type {PageWebgl} */
-let _page = { vue: () => null, cadrePlan: () => new DOMRect(), appliqueVue: () => {}, libelles: () => {},
+const _page = { vue: () => null, cadrePlan: () => new DOMRect(), appliqueVue: () => {}, libelles: () => {},
   enEdition: () => false, drag: () => null, pince: () => null,
   libellesWebgl: () => {} };
 /** Le plan en SVG, caché : le modèle que ce rendu relit. @type {any} */
 let svg = null;
+
+/* Ce que ce rendu lit chez les modules qui l'importent — la vue et le SVG
+   (`vue.mjs`), les noms (`libelles.mjs`), l'édition en cours
+   (`edition-en-cours.mjs`), le glissé et le pincement (`gestes.mjs`). Il ne
+   peut les importer : chacun l'importe. Chacun le lui confie donc au
+   chargement de son module, avant que rien ne se dessine.
+   @param {Partial<PageWebgl> & { svg?: any }} o */
+export function confieAuWebgl(o){
+  const { svg: plan, ...reste } = o;
+  if (plan) svg = plan;
+  Object.assign(_page, reste);
+}
 
 export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !== "svg";
 /* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
@@ -108,13 +120,8 @@ function chargeWebgl(){
  * Brancher le rendu sur le plan, à la place que son code tenait dans le
  * script soudé : la bibliothèque n'est demandée qu'ici, au même moment
  * qu'avant parmi le reste du plan.
- *
- * @param {PageWebgl & { svg: any }} page
  */
-export function brancheWebgl(page){
-  const { svg: plan, ...reste } = page;
-  svg = plan;
-  _page = reste;
+export function brancheWebgl(){
   chargeWebgl();
 }
 

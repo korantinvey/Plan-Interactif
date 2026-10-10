@@ -30,7 +30,8 @@ import { mesure } from "./mesure.mjs";
 import { pointObjet, pointRepere, candidats, pointSaisi, routeEntre, mesureMarches, coupeMarche,
   distancesDesArrets, ecritDistance, ecritDuree, phraseLiaison } from "./itineraire.mjs";
 import { pointBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
-import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg } from "./vue.mjs";
+import { vue, changeVue, poseVue, cadrePlan, masque, masqueDroite, masqueHaut, svg,
+  confieALaVue } from "./vue.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 
@@ -810,3 +811,8 @@ export function brancheTiroirItineraire(b){
     if ($("iSugg").hidden) fermeItineraire();
   });
 }
+
+/* Les pastilles du trajet gardent leur taille à l'écran : la vue, que ce
+   module importe, les refait à chaque changement de vue — il les lui confie
+   en se chargeant. */
+confieALaVue({ rafraichitBouts });

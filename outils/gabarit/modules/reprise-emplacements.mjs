@@ -39,7 +39,7 @@ import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, mo
 import { ficheZone } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
-import { svg, vue, cadrePlan, versPlan } from "./vue.mjs";
+import { svg, vue, cadrePlan, versPlan, confieALaVue } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { ouvre, ferme } from "./fiche.mjs";
@@ -762,3 +762,8 @@ export function brancheRepriseEmplacements(page){
     if (o && o.ajout && o.kind === "zone") ficheZone(o);
   };
 }
+
+/* Les poignées d'un emplacement repris gardent leur taille à l'écran : la
+   vue, que ce module importe, les refait à chaque changement de vue — il les
+   lui confie en se chargeant ; la page publique ne les a pas. */
+confieALaVue({ dessinePoigneesGeo });

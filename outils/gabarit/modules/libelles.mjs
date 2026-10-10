@@ -26,8 +26,8 @@ import { conf } from "./configuration.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { largeur, remesureTextes, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
-import { GL, planifieWebgl, poseModelesLibelles } from "./webgl.mjs";
-import { view, cadrePlan, repeintLibelles } from "./vue.mjs";
+import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
+import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete, liste, confieALaRecherche } from "./recherche.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./tiroir-itineraire.mjs";
@@ -379,3 +379,9 @@ export function libellesWebgl(){
 /* La recherche, que ce module importe, ne peut l'importer en retour : il lui
    confie en se chargeant ce qu'elle en appelle (les noms à refaire quand le filtre change ce qui paraît). */
 confieALaRecherche({ libelles });
+
+/* La vue et le rendu par la carte graphique, que ce module importe, refont
+   les noms et ne peuvent l'importer : il leur confie en se chargeant ce qui
+   les écrit — les deux rendus suivent ainsi les mêmes règles. */
+confieALaVue({ libelles });
+confieAuWebgl({ libelles, libellesWebgl });
