@@ -17,8 +17,9 @@
    C'était tout le script de la page (`_motdepasse.html`), qui tenait sa propre
    copie de `$` et écrivait en toutes lettres les casiers de la console : il
    les importe désormais de `dom.mjs` et de `session.mjs`, comme la console et
-   le plan. La page n'en garde que le branchement, à la place que ce code
-   tenait : ce qu'il faisait au chargement s'y fait au même rang.
+   le plan. Son point d'entrée (`motdepasse.mjs`) le branche, posé après le
+   balisage là où se tenait ce code : ce qu'il faisait au chargement s'y fait
+   au même rang.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION } from "./session.mjs";
@@ -79,7 +80,8 @@ function ouvreSaisie(invitation) {
 /**
  * Ce que la page faisait au chargement, dans l'ordre où elle le faisait :
  * relire le projet, poser les deux formulaires, puis lire ce que le lien
- * apporte. Appelé par `_motdepasse.html`, à la place que ce code tenait.
+ * apporte. Appelé par le point d'entrée `motdepasse.mjs`, posé à la place
+ * que ce code tenait.
  */
 export function brancheMotDePasse() {
   CFG = (() => {

@@ -45,9 +45,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 21 l. → admin-plans.html, rapport.html
-
-- l.10 · Socle commun de la console et du rapport — le branchement
+### `_console-base.html` — 11 l. → admin-plans.html, rapport.html
 
 Éléments :
 
@@ -63,10 +61,6 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 17 l.
-
-- l.2 · La console multi-événements — le branchement, et le démarrage
-
 ### `_console.css` — 725 l. → console.css
 
 - l.666 · Page de rapport
@@ -80,10 +74,6 @@ l'endroit où l'on corrige quoi que ce soit.
 ### `_environs.html` — 21 l.
 
 - l.1 · 16. Les environs — le branchement
-
-### `_export.html` — 12 l.
-
-- l.1 · Export par exposant — le branchement
 
 ### `_fiche.html` — 21 l.
 
@@ -150,9 +140,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.1 · 11 septies. « Vous êtes ici » — le branchement
 
-### `_index.html` — 27 l. → index.html
-
-- l.18 · L'aiguillage de la racine — le branchement
+### `_index.html` — 17 l. → index.html
 
 Éléments :
 
@@ -190,9 +178,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 - l.3 · 10. Mode administration — le branchement
 
-### `_motdepasse.html` — 69 l. → motdepasse.html
-
-- l.61 · Poser un mot de passe — le branchement
+### `_motdepasse.html` — 59 l. → motdepasse.html
 
 Éléments :
 
@@ -217,10 +203,6 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
-
-### `_rapport-js.html` — 14 l.
-
-- l.2 · Rapport d'utilisation — le branchement
 
 ### `_recherche.html` — 17 l.
 
@@ -501,9 +483,9 @@ Fonctions :
 `programmeOffert` 136 · `suggestionOfferte` 137 · `langueOfferte` 157 · `appliqueLangue` 159
 `chercheSorte` 164
 
-### `modules/console.mjs` — 41 l. → console
+### `modules/console.mjs` — 44 l. → console
 
-- l.1 · Point d'entrée de la console
+- l.1 · Point d'entrée de la console — et son démarrage
 
 ### `modules/corps-fiche.mjs` — 267 l. → plan, plan-admin
 
@@ -698,23 +680,23 @@ Fonctions :
 
 `poseEvenements` 42 · `slugifie` 53 · `courant` 57 · `chargePlans` 59 · `majEvenement` 64
 
-### `modules/export.mjs` — 232 l. → console, rapport
+### `modules/export.mjs` — 233 l. → console, rapport
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
 
 Fonctions :
 
-`nb` 34 · `colonnesExport` 118 · `libellePeriode` 150 · `nomFichierExport` 156
-`nomFeuilleExport` 166 · `exporteExposants` 182 · `brancheExport` 230
+`nb` 35 · `colonnesExport` 119 · `libellePeriode` 151 · `nomFichierExport` 157
+`nomFeuilleExport` 167 · `exporteExposants` 183 · `brancheExport` 231
 
-### `modules/fenetre-console.mjs` — 144 l. → console, rapport
+### `modules/fenetre-console.mjs` — 143 l. → console, rapport
 
 - l.1 · La fenêtre de la console et du rapport
 
 Fonctions :
 
-`verseModale` 31 · `ouvreModale` 43 · `verrouilleModale` 67 · `fermeModale` 69
-`poseFenetre` 77 · `gardeLaPlace` 99 · `demande` 110 · `confirme` 138
+`verseModale` 30 · `ouvreModale` 42 · `verrouilleModale` 66 · `fermeModale` 68
+`poseFenetre` 76 · `gardeLaPlace` 98 · `demande` 109 · `confirme` 137
 
 ### `modules/fenetre.mjs` — 128 l. → plan, plan-admin
 
@@ -1019,18 +1001,18 @@ Fonctions :
 
 `modeleRetenu` 46 · `habilleModale` 80
 
-### `modules/mot-de-passe.mjs` — 208 l. → motdepasse
+### `modules/mot-de-passe.mjs` — 210 l. → motdepasse
 
 - l.1 · Poser un mot de passe
 
 Fonctions :
 
-`dit` 29 · `fragment` 35 · `garde` 42 · `lit` 46 · `demandeLien` 58 · `ouvreSaisie` 67
-`brancheMotDePasse` 84
+`dit` 30 · `fragment` 36 · `garde` 43 · `lit` 47 · `demandeLien` 59 · `ouvreSaisie` 68
+`brancheMotDePasse` 86
 
-### `modules/motdepasse.mjs` — 14 l. → motdepasse
+### `modules/motdepasse.mjs` — 16 l. → motdepasse
 
-- l.1 · Point d'entrée de la page du mot de passe
+- l.1 · Point d'entrée de la page du mot de passe — et son démarrage
 
 ### `modules/nappe.mjs` — 81 l. → plan-admin
 
@@ -1238,24 +1220,24 @@ Fonctions :
 `retientInviteRappel` 425 · `fenetreRappel` 460 · `proposeRappels` 493
 `reprendRappels` 536
 
-### `modules/rapport-utilisation.mjs` — 466 l. → rapport
+### `modules/rapport-utilisation.mjs` — 467 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 69 · `chargeEvenements` 74 · `joursPeriode` 92 · `chargeRapport` 94
-`chiffre` 105 · `barres` 124 · `portes` 164 · `jours` 215 · `dessineRapport` 236
-`dessineBarre` 389 · `rafraichit` 412 · `videEcran` 431 · `demarre` 437
-`brancheRapport` 456
+`courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
+`chiffre` 106 · `barres` 125 · `portes` 165 · `jours` 216 · `dessineRapport` 237
+`dessineBarre` 390 · `rafraichit` 413 · `videEcran` 432 · `demarre` 438
+`brancheRapport` 457
 
 Éléments :
 
 `#lienPublic`
 
-### `modules/rapport.mjs` — 31 l. → rapport
+### `modules/rapport.mjs` — 34 l. → rapport
 
-- l.1 · Point d'entrée du rapport
+- l.1 · Point d'entrée du rapport — et son démarrage
 
 ### `modules/recherche.mjs` — 1196 l. → plan, plan-admin
 
@@ -1433,15 +1415,15 @@ Fonctions :
 `seuilGere` 74 · `seuilImpose` 75 · `seuilParSurface` 76 · `regleSeuil` 81
 `aireDuStand` 99 · `seuilConcentration` 135 · `phraseSeuil` 158
 
-### `modules/socle-console.mjs` — 404 l. → console, rapport
+### `modules/socle-console.mjs` — 405 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`poseSession` 41 · `entetes` 64 · `renouvelle` 73 · `appel` 92 · `rest` 107
-`ecranConfig` 126 · `ecranConnexion` 158 · `deconnecte` 224 · `signale` 239 · `bloc` 263
-`grille` 281 · `idCompte` 298 · `themeSombre` 307 · `premierEcran` 325 · `brancheSocle` 340
+`poseSession` 42 · `entetes` 65 · `renouvelle` 74 · `appel` 93 · `rest` 108
+`ecranConfig` 127 · `ecranConnexion` 159 · `deconnecte` 225 · `signale` 240 · `bloc` 264
+`grille` 282 · `idCompte` 299 · `themeSombre` 308 · `premierEcran` 326 · `brancheSocle` 341
 
 ### `modules/sponsor.mjs` — 400 l. → plan, plan-admin
 
@@ -1602,7 +1584,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `modules/vivant.mjs` — 36 l. → plan, plan-admin, console, rapport
+### `modules/vivant.mjs` — 36 l. → plan, plan-admin
 
 - l.1 · Un état de module, lu par le code soudé tel qu'il est à l'instant
 

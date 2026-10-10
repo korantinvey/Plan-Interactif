@@ -36,7 +36,6 @@ const lis = (f) => fs.readFileSync(path.join(G, f), "utf8");
 const js = (f) => ({ fichier: f, js: true, texte: lis(f) });
 const html = (f, texte = lis(f)) => ({ fichier: f, js: false, texte });
 const TETE = [js("_config.js"), js("_langue.js")];
-const CONSOLE = ["_console-base.html", "_export.html"];
 
 /* Les morceaux du plan tels que le visiteur les reçoit. Une tranche peut
    courir d'un morceau au suivant — les plus longs sont coupés en morceaux
@@ -66,10 +65,11 @@ const PAGES = {
      chercherait un nom que seule l'administration reçoit. */
   "plan.html": [...TETE, ...BOUTS.map((b, i) => html(b, BOUTS_PUBLICS[i])),
     { fichier: "../genere.js", js: true, texte: "retireAdmin();" }],
-  "admin-plans.html": [...TETE, html("_console-head.html"), ...CONSOLE.map((f) => html(f)),
-    html("_console-js.html")],
-  "rapport.html": [...TETE, html("_rapport-head.html"), ...CONSOLE.map((f) => html(f)),
-    html("_rapport-js.html")],
+  /* Les écrans de l'exploitant n'ont plus de code soudé : tout leur code est
+     dans leur point d'entrée, relu comme module. Restent leur balisage et les
+     scripts qui les ouvrent. */
+  "admin-plans.html": [...TETE, html("_console-head.html"), html("_console-base.html")],
+  "rapport.html": [...TETE, html("_rapport-head.html"), html("_console-base.html")],
   "index.html": [...TETE, html("_index.html")],
   "motdepasse.html": [...TETE, html("_motdepasse.html")],
   "hors-ligne.html": [...TETE, html("_hors-ligne.html")],

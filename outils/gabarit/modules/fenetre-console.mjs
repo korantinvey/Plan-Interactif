@@ -7,10 +7,9 @@
    tire — une saisie, une confirmation. Ce n'est pas celle du plan
    (`modules/fenetre.mjs`) : elle n'a ni son habillage ni son ordre des calques.
 
-   Les modules qui l'ouvrent l'importent ; le code soudé la reçoit par son
-   point d'entrée. Ses écouteurs — la croix, le voile, la touche Échap — se
-   posent par `poseFenetre`, que le socle appelle à la place qu'ils tenaient :
-   le balisage de la fenêtre n'existe pas encore quand ce module s'exécute.
+   Les modules qui l'ouvrent l'importent. Ses écouteurs — la croix, le voile,
+   la touche Échap — se posent par `poseFenetre`, que le socle appelle à la
+   place qu'ils tenaient, en se branchant.
    ============================================================ */
 import { $ } from "./dom.mjs";
 

@@ -15,9 +15,9 @@
    rechargent la console : il le leur confie en se branchant
    (`brancheConsole`), puisqu'ils ne pourraient l'importer sans boucler.
 
-   Le code soudé n'en garde que le branchement, à la place que ce code
-   tenait, et le démarrage de la page ; le socle appelle `demarre` après la
-   connexion et `videEcran` à la déconnexion.
+   Le point d'entrée (`console.mjs`) le branche après le socle et l'export,
+   au rang que tenait ce code, puis démarre la page ; le socle appelle
+   `demarre` après la connexion et `videEcran` à la déconnexion.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -217,8 +217,8 @@ export async function demarre() {
    Le branchement
    ------------------------------------------------------------------ */
 /**
- * Appelé par le code soudé à la place que ce code tenait
- * (`_console-js.html`) : les modules qui rappellent l'écran reçoivent ce
+ * Appelé par le point d'entrée (`console.mjs`) à la place que ce code
+ * tenait : les modules qui rappellent l'écran reçoivent ce
  * qu'ils ne peuvent importer, et les commandes de la barre du haut se
  * posent, au même rang qu'avant parmi le reste de la page.
  */

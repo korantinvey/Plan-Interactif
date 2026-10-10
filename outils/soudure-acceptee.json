@@ -62,32 +62,10 @@
    "memorise",
    "toleranceTrace"
   ],
-  "console": [
-   "brancheConsole",
-   "brancheExport",
-   "brancheSocle",
-   "courant",
-   "demarre",
-   "premierEcran",
-   "selection",
-   "videEcran"
-  ],
-  "rapport": [
-   "brancheExport",
-   "brancheRapport",
-   "brancheSocle",
-   "courant",
-   "demarre",
-   "premierEcran",
-   "selection",
-   "videEcran"
-  ],
-  "motdepasse": [
-   "brancheMotDePasse"
-  ],
-  "accueil": [
-   "brancheAiguillage"
-  ]
+  "console": [],
+  "rapport": [],
+  "motdepasse": [],
+  "accueil": []
  },
  "gardes": {}
 }

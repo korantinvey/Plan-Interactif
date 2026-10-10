@@ -480,42 +480,44 @@ fs.writeFileSync(W + "console.css",
    Chacun n'écrit ensuite que ce qui lui est propre. */
 const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
 
-/* Chaque écran reçoit le script de son point d'entrée, avant le socle. */
-const assemble = (entree, tete, ...corps) =>
-  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + scriptDesModules(entree) + socle +
-  corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
+/* Une page dont tout le code est un module. Le script de son point d'entrée se
+   pose après tout le balisage, là où se tenait le script de la page, qui n'en
+   gardait que les branchements : il les fait lui-même, et ce qu'ils posaient
+   au chargement trouve donc la page entière, comme avant. Un script en ligne
+   resté dans la source s'exécuterait avant lui, hors de son rang : on le
+   refuse plutôt que de le servir. */
+function poseModulesSeuls(t, entree) {
+  if (/<script\b(?![^>]*\bsrc=)[^>]*>/.test(t))
+    throw new Error(entree + " : un script reste dans la page, son code doit vivre dans un module");
+  return t + scriptDesModules(entree);
+}
+
+/* Chaque écran : son en-tête, le balisage du socle, puis le script de son
+   point d'entrée, qui branche le socle, l'export et l'écran, dans cet ordre. */
+const assemble = (entree, tete) =>
+  poseModulesSeuls(fs.readFileSync(D + "/gabarit/" + tete, "utf8") + socle, entree);
 
 /* Les deux écrans exportent le même classeur : l'écriture et l'export sont des
-   modules (`modules/classeur.mjs`, `modules/export.mjs`), branchés par
-   `_export.html` avant l'écran, et c'est la page qui ferme le script. La console
-   fabrique en plus les vignettes des logos, avec la règle de recadrage du plan
-   (`modules/marque.mjs`) : une vignette est cadrée comme la page l'aurait fait. */
+   modules (`modules/classeur.mjs`, `modules/export.mjs`), que chaque point
+   d'entrée branche avant l'écran. La console fabrique en plus les vignettes
+   des logos, avec la règle de recadrage du plan (`modules/marque.mjs`) : une
+   vignette est cadrée comme la page l'aurait fait. */
 fs.writeFileSync(W + "admin-plans.html",
-  page(assemble("console", "_console-head.html", "_export.html", "_console-js.html"),
-       { deuxThemes: true }));
+  page(assemble("console", "_console-head.html"), { deuxThemes: true }));
 
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("rapport", "_rapport-head.html", "_export.html", "_rapport-js.html"),
-       { deuxThemes: true }));
+  page(assemble("rapport", "_rapport-head.html"), { deuxThemes: true }));
 
 /* --- poser son mot de passe ---
    Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul
    bagage le jeton d'un lien reçu par courriel. Un écran de connexion y serait
-   un contresens. Son code est un module : le script de son point d'entrée se
-   pose devant le seul script de la page, qui le branche. */
-function poseModulesSeuls(t, entree) {
-  const marque = "\n<script>\n";
-  if (t.split(marque).length !== 2) throw new Error(entree + " : script de la page introuvable, ou en double");
-  const script = scriptDesModules(entree);
-  return t.replace(marque, () => "\n" + script + "<script>\n");
-}
+   un contresens. */
 fs.writeFileSync(W + "motdepasse.html",
   page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8"), "motdepasse"),
        { deuxThemes: true }));
 
 /* --- page d'accueil : la racine ne doit pas répondre 404 ---
-   Elle ne fait qu'aiguiller, comme la page du mot de passe sans socle : le
-   script de son point d'entrée se pose devant celui de la page. */
+   Elle ne fait qu'aiguiller, comme la page du mot de passe sans socle. */
 fs.writeFileSync(W + "index.html",
   page(poseModulesSeuls(fs.readFileSync(D + "/gabarit/_index.html", "utf8"), "accueil")));
 

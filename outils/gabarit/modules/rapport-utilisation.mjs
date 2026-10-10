@@ -13,10 +13,11 @@
    brique d'un bloc, l'adresse des pages — vient de `socle-console.mjs`, que
    la console importe aussi ; la session y est un état, lu à l'instant : la
    connexion et la déconnexion la remplacent sous les yeux de la page. Les
-   commandes de la barre se posent par `brancheRapport`, à la place que ce
-   code tenait (`_rapport-js.html`). En retour, le socle appelle `demarre`
-   après la connexion et `videEcran` à la déconnexion, et l'export
-   (`_export.html`) lit `selection` et `courant` au moment du clic.
+   commandes de la barre se posent par `brancheRapport`, que le point
+   d'entrée (`rapport.mjs`) appelle à la place que ce code tenait. En
+   retour, le socle appelle `demarre` après la connexion et `videEcran` à
+   la déconnexion, et l'export lit `selection` et `courant` au moment du
+   clic, par ce que le point d'entrée lui confie.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
@@ -26,8 +27,8 @@ import { rest, SESSION, signale, bloc, BASE_PAGES } from "./socle-console.mjs";
 const CLE_EVT = "rapport-evenement";
 
 let EVTS = [], RAPPORT = null, periode = "30";
-/* Le salon lu. L'export (`_export.html`) le lit au moment du clic, par
-   l'accesseur que pose `rapport.mjs` ; seul ce module le remplace. */
+/* Le salon lu. L'export le lit au moment du clic, par la liaison que
+   `rapport.mjs` importe et lui confie ; seul ce module le remplace. */
 export let selection = null;
 
 /* Les périodes proposées. La valeur est un nombre de jours, ou « tout » : on
@@ -449,8 +450,8 @@ export async function demarre() {
    Le branchement
    ------------------------------------------------------------------ */
 /**
- * Les commandes de la barre, appelé par le code soudé à la place que ce code
- * tenait (`_rapport-js.html`) : elles s'y branchent au même rang qu'avant
+ * Les commandes de la barre, appelé par le point d'entrée (`rapport.mjs`) à
+ * la place que ce code tenait : elles s'y branchent au même rang qu'avant
  * parmi le reste de la page.
  */
 export function brancheRapport() {
