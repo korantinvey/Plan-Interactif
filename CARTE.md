@@ -446,7 +446,7 @@ Fonctions :
 `texteStandDessine` 556 · `poseLibellesDessines` 575 · `decoupeStand` 596
 `marqueStandsDessines` 611 · `rafraichitStandsDessines` 626 · `signale` 640
 
-### `modules/distinctions.mjs` — 366 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 371 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
@@ -454,8 +454,8 @@ Fonctions :
 
 `texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 75
 `traceDist` 106 · `oublieDists` 139 · `modesDuPlan` 143 · `releveDists` 145
-`dessineDists` 174 · `marquesListe` 200 · `poseDistsFiche` 230 · `refaitDistsFiche` 270
-`modeDist` 316 · `couleurDist` 328 · `appliqueDists` 350
+`dessineDists` 179 · `marquesListe` 205 · `poseDistsFiche` 235 · `refaitDistsFiche` 275
+`modeDist` 321 · `couleurDist` 333 · `appliqueDists` 355
 
 ### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
 
