@@ -70,12 +70,40 @@ const f3 = (/** @type {number} */ v) => v.toFixed(3);
    c'est la forme de presque tous les stands ; une rotonde, déjà courbe,
    reste telle quelle. */
 const RAYON = .8;
+/* Le vide entre deux tuiles : chacune se retire de vingt centimètres sur
+   tout son tour. Un trait de la couleur du fond faisait le même vide sur un
+   fond uni, mais se voyait comme un contour dès que le hall avait une autre
+   couleur que ce fond — une image, un calque, une teinte de zone. Retirer la
+   forme laisse passer ce qu'il y a dessous, quoi que ce soit. */
+const RETRAIT = .2;
 let tuiles = false;
+
+/** Le rayon d'un coin de tuile, d'après les côtés qui s'y rejoignent. */
+export const rayonTuile = (/** @type {number} */ a, /** @type {number} */ b) =>
+  Math.min(RAYON, a / 3, b / 3);
+
+/** Un anneau retiré de « g » vers l'intérieur : chaque côté glisse le long
+ *  de sa normale, et chaque sommet va à la rencontre de ses deux côtés. */
+function retire(/** @type {number[][]} */ pts, /** @type {number} */ g){
+  let aire = 0;
+  pts.forEach((p, i) => { const q = pts[(i + 1) % pts.length]; aire += p[0] * q[1] - q[0] * p[1]; });
+  const sens = aire > 0 ? -1 : 1;           // vers l'intérieur
+  const k = pts.length;
+  const normale = (p, q) => { const dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1;
+    return [sens * dy / l, -sens * dx / l]; };
+  return pts.map((p, i) => {
+    const n1 = normale(pts[(i + k - 1) % k], p), n2 = normale(p, pts[(i + 1) % k]);
+    // un angle très aigu enverrait le sommet au loin : on le borne
+    const f = g / Math.max(.25, 1 + n1[0] * n2[0] + n1[1] * n2[1]);
+    return [p[0] + (n1[0] + n2[0]) * f, p[1] + (n1[1] + n2[1]) * f];
+  });
+}
 
 function arrondi(d){
   const an = anneaux(d);
   if (!an) return d;
-  return an.map(pts => {
+  return an.map(brut => {
+    const pts = retire(brut, RETRAIT);
     const vers = (p, q, r) => {
       const l = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1;
       return [f3(p[0] + (q[0] - p[0]) * r / l), f3(p[1] + (q[1] - p[1]) * r / l)];
@@ -83,8 +111,7 @@ function arrondi(d){
     const k = pts.length;
     const coins = pts.map((p, i) => {
       const av = pts[(i + k - 1) % k], ap = pts[(i + 1) % k];
-      const r = Math.min(RAYON, Math.hypot(p[0] - av[0], p[1] - av[1]) / 3,
-                                Math.hypot(p[0] - ap[0], p[1] - ap[1]) / 3);
+      const r = rayonTuile(Math.hypot(p[0] - av[0], p[1] - av[1]), Math.hypot(p[0] - ap[0], p[1] - ap[1]));
       return { p, a: vers(p, av, r), b: vers(p, ap, r) };
     });
     let t = "M" + coins[0].b.join(" ");

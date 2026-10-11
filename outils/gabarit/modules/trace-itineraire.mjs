@@ -116,7 +116,7 @@ function peintItineraire(p){
   const g = $("itin");
   if (!g) return;
   const marches = marchesIci();
-  if (!marches.length){ g.innerHTML = ""; placePouls(null); return; }
+  if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
 
   const mes = mesureMarches(marches);
   const fini = p >= 1;
@@ -136,12 +136,6 @@ function peintItineraire(p){
     for (const t of tronconsDe(pts, cu, mes.total))
       traits += '<path class="iTrait" style="stroke:color-mix(in srgb,var(--accent-fort) ' +
         Math.round(t.t * 100) + '%,var(--accent-clair))" d="' + traceDe(t.pts) + '"/>';
-    /* L'étincelle attend que le trait soit arrivé. Chaque image du tracé
-       réécrit le groupe, ce qui relance son animation : elle resterait figée
-       au départ, une pastille de plus sur le point de départ. Une tête et sa
-       traîne, deux traits et non cinq : sur un trait en dégradé, une seule
-       lumière qui court suffit à dire le sens. */
-    if (fini) for (const n of [3, 5]) traits += '<path class="iSens iC' + n + '" d="' + chemin + '"/>';
   });
   out += traits;
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
@@ -174,6 +168,76 @@ function peintItineraire(p){
   }
   g.innerHTML = out;
   placePouls(fini ? (arrets.find(a => a.n) || null) : null);
+  // l'étincelle attend que le trait soit arrivé : elle court sur ce qui est écrit
+  lanceEtincelle(fini ? marches : null);
+}
+
+/* ------------------------------------------------------------
+   L'étincelle
+
+   Une lumière qui court du départ vers l'arrivée et dit le sens du trajet.
+   Elle ne vit pas dans le plan : sous la carte graphique, un trait qui défile
+   est un tiret découpé au pixel, sans lissage, et qui avance par sauts —
+   l'étincelle y paraissait pixelisée et saccadée. Posée dans la scène, c'est
+   un point rond et flou que le navigateur lisse, déplacé à chaque image par
+   une transformation : rien du plan ne se repeint pour elle.
+
+   Elle file à cent quarante pixels par seconde quel que soit le zoom,
+   suivie de huit points serrés qui s'estompent et se fondent en traînée, puis repart du
+   départ après un temps. Rien pour qui a demandé moins de mouvement.
+   ------------------------------------------------------------ */
+const ETINCELLE_PX_S = 140, TRAINE = 8, ECART_PX = 3.5, PAUSE_PX = 260;
+/** @type {HTMLElement | null} */
+let etincelle = null;
+let courseEt = 0, distEt = 0, avantEt = 0;
+/** @type {{ pts: number[][], cumuls: number[], total: number } | null} */
+let cheminEt = null;
+
+function lanceEtincelle(marches){
+  cancelAnimationFrame(courseEt); courseEt = 0;
+  const pts = marches && !REDUIT ? marches.flatMap(e => e.pts) : [];
+  if (pts.length < 2){ cheminEt = null; if (etincelle) etincelle.hidden = true; return; }
+  const cumuls = [0];
+  for (let i = 1; i < pts.length; i++)
+    cumuls.push(cumuls[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  cheminEt = { pts, cumuls, total: cumuls[cumuls.length - 1] };
+  if (!etincelle){
+    etincelle = document.createElement("div");
+    etincelle.className = "etincelle";
+    etincelle.setAttribute("aria-hidden", "true");
+    etincelle.innerHTML = "<i></i>".repeat(TRAINE + 1);
+    svg.after(etincelle);
+  }
+  etincelle.hidden = false;
+  distEt = 0; avantEt = performance.now();
+  courseEt = requestAnimationFrame(courtEtincelle);
+}
+
+/** Le point du trajet à la distance « d », en mètres depuis le départ. */
+function pointA(d){
+  const c = cheminEt, cu = c.cumuls;
+  let i = 1;
+  while (i < cu.length - 1 && cu[i] < d) i++;
+  const f = Math.max(0, Math.min(1, (d - cu[i - 1]) / ((cu[i] - cu[i - 1]) || 1)));
+  return [c.pts[i - 1][0] + (c.pts[i][0] - c.pts[i - 1][0]) * f, c.pts[i - 1][1] + (c.pts[i][1] - c.pts[i - 1][1]) * f];
+}
+
+function courtEtincelle(t){
+  courseEt = 0;
+  if (!cheminEt || !etincelle || !vue()) return;
+  const pxM = cadrePlan().width / vue().w;           // pixels par mètre, au zoom du moment
+  distEt += Math.min(100, t - avantEt) / 1000 * ETINCELLE_PX_S / pxM;
+  avantEt = t;
+  if (distEt > cheminEt.total + PAUSE_PX / pxM) distEt = 0;
+  /** @type {HTMLElement[]} */ ([...etincelle.children]).forEach((el, k) => {
+    const d = distEt - k * ECART_PX / pxM;
+    const voir = d >= 0 && d <= cheminEt.total;
+    el.style.opacity = voir ? String(1 - k / (TRAINE + 1)) : "0";
+    if (!voir) return;
+    const [x, y] = versScene(...pointA(d));
+    el.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)";
+  });
+  courseEt = requestAnimationFrame(courtEtincelle);
 }
 
 /* La prochaine étape respire, comme « Vous êtes ici » : c'est là que le
@@ -241,7 +305,7 @@ export function dessineItineraire(anime){
   if (tracage && !neuf && anime !== true) return;
   arreteTracage();
   const marches = marchesIci();
-  if (!marches.length){ g.innerHTML = ""; placePouls(null); return; }
+  if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
   if ((anime === undefined ? neuf : anime) && !REDUIT) lanceTracage();
   else peintItineraire(1);
 }

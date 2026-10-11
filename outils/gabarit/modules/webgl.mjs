@@ -30,6 +30,7 @@
    cours, et la préparation des noms, qui tient aux règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
    placement des libellés à la main s'importe (`libelle-place.mjs`).
    ============================================================ */
+import { avive } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
@@ -413,10 +414,11 @@ function assembleWebgl(){
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
-    const tuile = TUILES.size > 0 && enTuiles(), apres = [];
+    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel")) : new Set();
+    const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
-      if (tuile) apres.push(...couchesTuiles(c));
+      if (tuile) apres.push(...couchesTuiles(c, choisies));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
       else if (GL.survol) out.push(...coucheSurvol(c));
     }
@@ -1242,26 +1244,11 @@ function gonfleSurvol(){
   imageGonfle = requestAnimationFrame(image);
 }
 
-/** Une teinte avivée : plus saturée, et poussée vers le milieu de la clarté
- *  pour qu'une tuile pâle fonce un peu et qu'une tuile sombre s'éclaire. Rien
- *  pour une couleur sans teinte. */
-function avive(/** @type {number[]} */ c){
-  const [r, g, b] = [c[0] / 255, c[1] / 255, c[2] / 255];
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, e = max - min;
-  if (e < .04) return null;
-  const sat = e / (1 - Math.abs(2 * l - 1));
-  let h = max === r ? ((g - b) / e) % 6 : max === g ? (b - r) / e + 2 : (r - g) / e + 4;
-  h = (h * 60 + 360) % 360;
-  const s2 = Math.min(1, sat * 1.35 + .12), l2 = l > .55 ? l - .1 : l + .08;
-  const k2 = (1 - Math.abs(2 * l2 - 1)) * s2, x = k2 * (1 - Math.abs((h / 60) % 2 - 1)), m = l2 - k2 / 2;
-  const [r2, g2, b2] = h < 60 ? [k2, x, 0] : h < 120 ? [x, k2, 0] : h < 180 ? [0, k2, x]
-    : h < 240 ? [0, x, k2] : h < 300 ? [x, 0, k2] : [k2, 0, x];
-  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255), c[3]];
-}
-
 /** La tuile soulevée à la hauteur « k » : son ombre puis elle, agrandies
- *  autour du centre de leurs aplats, sa teinte à mi-chemin de la vive. */
-function coucheTuileSoulevee(aplats, k, n){
+ *  autour du centre de leurs aplats, sa teinte à mi-chemin de la vive. Une
+ *  tuile choisie garde sa teinte vive à toute hauteur : seul le survol la
+ *  soulève, et en redescendant elle ne repasse pas par sa couleur d'origine. */
+function coucheTuileSoulevee(aplats, k, n, choisie = false){
   const s = 1 + GONFLE * k;
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const d of aplats) for (const p of d.polygon[0]){
@@ -1273,7 +1260,8 @@ function coucheTuileSoulevee(aplats, k, n){
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   const cle = Math.round(k * 40);
   const vers = (d) => avive(d.couleur) || [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)];
-  const mele = (d) => { const v = vers(d); return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * k)); };
+  const mele = (d) => { const v = vers(d); if (choisie) return v;
+    return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * k)); };
   return [
     new deck.SolidPolygonLayer({ id: "survol-ombre-" + n, data: aplats, getPolygon: d => d.polygon,
       modelMatrix: autour(1 + (GONFLE + .02) * k), getFillColor: [20, 24, 26, Math.round(20 * k)],
@@ -1283,14 +1271,24 @@ function coucheTuileSoulevee(aplats, k, n){
   ];
 }
 
-/** Les tuiles en vol ou soulevées qu'une couche porte — celle qu'on survole
- *  en dernier, par-dessus celles qui se reposent. */
-function couchesTuiles(couche){
+/** Les tuiles choisies, puis celles en vol ou soulevées qu'une couche porte —
+ *  celle qu'on survole en dernier, par-dessus celles qui se reposent.
+ *
+ *  La tuile choisie prend la teinte du survol, à plat : la même couleur dit
+ *  « c'est celle-ci », qu'on la désigne de la souris ou qu'on l'ait ouverte.
+ *  Sa feuille de style la laisse à sa teinte d'origine, que la carte
+ *  graphique avive ici comme elle avive le survol. */
+function couchesTuiles(couche, choisies){
   const out = [], now = performance.now();
   let n = 0;
+  for (const el of choisies){
+    if (TUILES.has(el)) continue;
+    const aplats = aplatsDe(couche, el);
+    if (aplats.length) out.push(...coucheTuileSoulevee(aplats, 0, couche.id + "-c" + (n++), true));
+  }
   for (const [el, st] of TUILES){
     const aplats = aplatsDe(couche, el);
-    if (aplats.length) out.push(...coucheTuileSoulevee(aplats, hauteurTuile(st, now), couche.id + "-" + (n++)));
+    if (aplats.length) out.push(...coucheTuileSoulevee(aplats, hauteurTuile(st, now), couche.id + "-" + (n++), choisies.has(el)));
   }
   return out;
 }
@@ -1438,8 +1436,16 @@ function couchesPhareNoms(){
    ne voyait pas sauter un tiret parmi douze. */
 const COMETE_PERIODE = 200, COMETE_DUREE = 1.5, COMETE_HZ = 30;
 const palierDefile = t => Math.floor(t * COMETE_HZ);
+/* La période d'un trait qui défile, en pixels : son tiret et son vide, que la
+   feuille de style donne en demi-épaisseurs. Deux cents pour la comète ;
+   l'étincelle du fil lumineux en prend six cents, pour ne passer qu'une fois
+   là où la comète passait trois. Sa durée suit, à la même allure. */
+const periodeDe = c => (c.props.tirets[0] + c.props.tirets[1]) * c.props.demiEpaisseur || COMETE_PERIODE;
 /* Où en est la tête de sa course, entre 0 et 1, au palier où l'on est. */
-const phaseComete = t => (palierDefile(t) / COMETE_HZ) % COMETE_DUREE / COMETE_DUREE;
+const phaseDe = (c, t) => {
+  const duree = COMETE_DUREE * periodeDe(c) / COMETE_PERIODE;
+  return (palierDefile(t) / COMETE_HZ) % duree / duree;
+};
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
@@ -1454,7 +1460,7 @@ function animeCouche(c){
      période, comme le « stroke-dashoffset » de ses images-clés. Partir de sa
      propre longueur est ce qui fait tomber les trois têtes au même endroit. */
   if (c.props.defile && GL.bouge) return c.clone({
-    decalage: c.props.tirets[0] * c.props.demiEpaisseur - COMETE_PERIODE * phaseComete(GL.temps) });
+    decalage: c.props.tirets[0] * c.props.demiEpaisseur - periodeDe(c) * phaseDe(c, GL.temps) });
   return c;
 }
 

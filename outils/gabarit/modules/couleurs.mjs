@@ -71,3 +71,26 @@ export const ecarte = (/** @type {string} */ hex) => {
   const sombre = vers(0), clair = vers(255);
   return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
 };
+
+/**
+ * Une teinte avivée — celle du survol et de la sélection d'une tuile : plus
+ * saturée, et poussée vers le milieu de la clarté pour qu'une teinte pâle
+ * fonce un peu et qu'une sombre s'éclaire. « assombrit » la descend encore,
+ * pour un trait qui doit se lire sur elle. Rien pour une couleur sans teinte.
+ * @param {number[]} c  rouge, vert, bleu (0-255), et l'opacité qu'on garde
+ * @returns {number[] | null}
+ */
+export function avive(c, assombrit = 0){
+  const [r, g, b] = [c[0] / 255, c[1] / 255, c[2] / 255];
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, e = max - min;
+  if (e < .04) return null;
+  const sat = e / (1 - Math.abs(2 * l - 1));
+  let h = max === r ? ((g - b) / e) % 6 : max === g ? (b - r) / e + 2 : (r - g) / e + 4;
+  h = (h * 60 + 360) % 360;
+  const s2 = Math.min(1, sat * 1.35 + .12);
+  const l2 = Math.max(.08, (l > .55 ? l - .1 : l + .08) - assombrit);
+  const k2 = (1 - Math.abs(2 * l2 - 1)) * s2, x = k2 * (1 - Math.abs((h / 60) % 2 - 1)), m = l2 - k2 / 2;
+  const [r2, g2, b2] = h < 60 ? [k2, x, 0] : h < 120 ? [x, k2, 0] : h < 180 ? [0, k2, x]
+    : h < 240 ? [0, x, k2] : h < 300 ? [x, 0, k2] : [k2, 0, x];
+  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255), c[3] ?? 255];
+}
