@@ -41,13 +41,13 @@ export function caseInstallation(bloc){
     '<button type="button" class="apercuInst" data-facon="bouton">Android</button> · ' +
     '<button type="button" class="apercuInst" data-facon="partage">iPhone</button>' +
     ". Du rappel : " +
-    '<button type="button" class="apercuInst" data-facon="rappel:ouvrir">Android</button> · ' +
+    '<button type="button" class="apercuInst" data-facon="rappel:retrouver">Android</button> · ' +
     '<button type="button" class="apercuInst" data-facon="rappel:suggerer">iPhone</button>';
   /* Les deux rappels se montrent l'un comme l'autre : sur Android la page sait
      l'application posée, sur iPhone elle ne peut que la suggérer, et
      l'organisateur qui allume la case mérite de voir ce que chacun lira. */
   const APERCUS = {
-    "rappel:ouvrir": () => ouvreRappel("ouvrir", true),
+    "rappel:retrouver": () => ouvreRappel("retrouver", true),
     "rappel:suggerer": () => ouvreRappel("suggerer", true),
   };
   aide.querySelectorAll(".apercuInst").forEach(b => {

@@ -59,6 +59,11 @@ function groupe(k){
 export function ordonneDom(){
   const c = $("couches");
   pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
+  /* Les marques des distinctions suivent les stands qu'elles désignent, sous
+     les textes (`distinctions.mjs` `calqueDists`) : sans quoi la pile les
+     laisserait derrière, au fond du plan. */
+  const d = $("dists");
+  if (d) $("stands").after(d);
 }
 
 /** Le panneau des calques est à refaire : `pile.mjs` l'écoute chez
