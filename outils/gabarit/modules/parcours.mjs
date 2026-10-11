@@ -11,6 +11,7 @@
    (`tiroir-parcours.mjs`) la remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { avive } from "./couleurs.mjs";
 import { inscritTiroirExclusif } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
 import { SLUG } from "./salon.mjs";
@@ -366,6 +367,22 @@ function calqueMarques(){
  * marques changent par des chemins sans rapport — un signet, un clic, un
  * changement de pavillon — et une seule lecture les remet d'accord.
  */
+/**
+ * L'encadrement d'une tuile choisie, dans sa propre teinte. En Tuiles, la
+ * tuile choisie prend la couleur de son survol (`webgl.mjs`
+ * `couchesTuiles`) ; un liseré de la couleur du salon y ferait une seconde
+ * couleur, étrangère à la sienne — et même une nuance plus foncée se lisait
+ * comme un contour. Il prend donc la teinte même de la tuile, et s'y fond.
+ * Rien hors des Tuiles, ni pour une tuile sans teinte : le liseré garde
+ * alors la couleur de sélection réglée.
+ */
+function traitTuile(/** @type {Element} */ p){
+  if (!document.documentElement.classList.contains("ambiance-tuiles")) return "";
+  const v = (getComputedStyle(p).fill.match(/[\d.]+/g) || []).map(Number);
+  const c = v.length >= 3 ? avive([v[0], v[1], v[2], 255]) : null;
+  return c ? ' style="stroke:rgb(' + c.slice(0, 3).join(",") + ')"' : "";
+}
+
 export function dessineMarques(){
   /* Les liserés vivent hors des couches : rien ne les masquerait avec elles.
      Une couche de données retirée par l'exploitant doit pourtant emporter les
@@ -384,7 +401,7 @@ export function dessineMarques(){
     const d = ' d="' + p.getAttribute("d") + '"/>';
     if (g.classList.contains("enparcours")) parc += '<path class="parc"' + d;
     if (g.classList.contains("sel"))
-      sel += '<path class="sel' + (g.parentNode.id === "zones" ? " zn" : "") + '"' + d;
+      sel += '<path class="sel' + (g.parentNode.id === "zones" ? " zn" : "") + '"' + traitTuile(p) + d;
   });
   // la sélection en dernier : c'est elle qu'on vient de désigner
   calqueMarques().innerHTML = parc + sel;

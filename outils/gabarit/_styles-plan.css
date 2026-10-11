@@ -380,17 +380,17 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
    avant le survol et la sélection, à spécificité égale, pour leur laisser la
    main : un stand qu'on désigne doit se voir plus que son secteur. */
 .stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
-/* L'ambiance du plan (`ambiance.mjs`). Elle ne touche que le trait des
-   formes : la sélection, le survol, la chaleur passent par-dessus comme avant.
+/* L'ambiance du plan (`ambiance.mjs`). Elle change la forme des stands et des
+   zones, et leur trait ; le survol, la sélection, la chaleur passent
+   par-dessus comme avant.
 
-   Tuiles — le fond du plan passe entre les formes en guise de cloison : un
-   trait épais de sa couleur, constant à l'écran, détache chaque stand de ses
-   voisins. Aucune couleur imposée : ce sont celles du salon. Les zones
-   perdent leurs tirets — une tuile a un bord net — et prennent un aplat plus
-   franc, qui se lit comme une pièce du même jeu. */
+   Tuiles — sans trait : le vide entre les formes vient de ce qu'elles se
+   retirent sur leur tour (`ambiance.mjs` `RETRAIT`), et laisse voir le
+   hall quel qu'il soit. Aucune couleur imposée : ce sont celles du salon.
+   Les zones perdent leurs tirets et prennent un aplat plus franc, qui se lit
+   comme une pièce du même jeu. */
 html.ambiance-tuiles .stand path,
-html.ambiance-tuiles .zone path{stroke:var(--c-fond,var(--ground));stroke-width:2.5;
-  stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1}
+html.ambiance-tuiles .zone path{stroke:none}
 html.ambiance-tuiles .zone path{fill-opacity:.62}
 html.ambiance-tuiles .zone.masquee path{fill-opacity:.2}
 /* La carte de chaleur, en administration. Elle vient après le secteur — c'est
@@ -477,7 +477,11 @@ html.ambiance-tuiles :is(.stand,.zone):hover path{transform:scale(1.06);
 
    Seul l'aplat se pose ici : le liseré monte dans « #marques », hors d'atteinte
    des stands voisins. */
-.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft))}
+html:not(.ambiance-tuiles) :is(.stand,.zone).sel path{fill:var(--c-sel,var(--accent-soft))}
+/* En Tuiles, la tuile choisie garde sa teinte dans la feuille de style : la
+   carte graphique l'avive comme au survol (`webgl.mjs` `couchesTuiles`).
+   Le rendu SVG de secours fait de même par un filtre. */
+html.ambiance-tuiles :is(.stand,.zone).sel path{filter:saturate(1.6) brightness(.96)}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
@@ -511,7 +515,7 @@ html.ambiance-tuiles :is(.stand,.zone):hover path{transform:scale(1.06);
    couches de texte qui n'existaient pas — police du nom et police du numéro —
    à chaque ouverture de fiche, et deux atlas de police à fabriquer. Cent
    trente millisecondes pour une nuance que l'accent disait déjà. */
-#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent))}
+html:not(.ambiance-tuiles) :is(#labels text.sel,.dcal .lab text.sel){fill:var(--c-sel-trait,var(--accent))}
 /* Sur la carte de chaleur, l'emplacement ne porte plus les couleurs de la page
    mais sa température. Aucune encre unique ne
    tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le
