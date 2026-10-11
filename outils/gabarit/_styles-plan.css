@@ -342,20 +342,6 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 html.gl-pret .plan-gl{opacity:1}
 @media (prefers-reduced-motion:reduce){.plan-gl{transition:none}}
 
-/* Le vol de caméra (`vue.mjs` `voleVers`) : la scène se penche le temps du
-   trajet, d'un angle que le vol écrit image par image dans « --vol ». Seuls
-   penchent les calques qui couvrent toute la scène — plan, dessin, fond,
-   chaleur — et ils penchent ensemble, d'un même point de fuite. La propriété
-   « rotate » et non « transform », que le calque des libellés emploie déjà
-   pour s'étirer pendant un zoom : les deux se composent au lieu de s'écraser.
-   Ce qui est posé en un point du plan — le pouls de « Vous êtes ici »,
-   l'étincelle du trajet, les noms en appel — ne pencherait pas autour du même
-   centre : il s'efface le temps du vol, et revient à l'arrivée. */
-.stage.en-vol{perspective:1400px;perspective-origin:50% 35%}
-.stage.en-vol > :is(.plan-gl,svg,.fondGL,.calque-libelles,.chalHalos){rotate:x var(--vol,0deg);
-  transform-origin:50% 60%}
-.stage.en-vol > :is(.iciPouls,.etincelle,.appels){opacity:0}
-
 /* Le lever de rideau (`modules/rideau.mjs`) : des bandes de la couleur de la
    scène, au rang du plan et posées juste après lui, donc par-dessus. Elles se
    relèvent vers le haut ; une ombre courte souligne leur bord, sans quoi on
