@@ -93,7 +93,45 @@ export const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
  * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
  * forme quelconque.
  */
-export function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
+export function libelleEmplacement(s, as, l, h0, sel, pxParM, reg){
+  /* Un stand couché écrit dans sa longueur : on mesure comme s'il était
+     debout, puis on fait tourner l'ensemble — nom, numéro, pastille — autour
+     de l'ancre. */
+  const tourne = nomCouche(s, l, h0);
+  const out = libelleDroit(s, as, tourne ? h0 : l, tourne ? l : h0, sel, pxParM, reg);
+  if (!out || !tourne) return out;
+  const xy = decaleLibelle(as, reg);
+  return '<g transform="rotate(-90 ' + xy[0].toFixed(2) + ' ' + xy[1].toFixed(2) + ')">' + out + '</g>';
+}
+
+/**
+ * Le nom d'un stand étroit s'écrit-il à la verticale ?
+ *
+ * Sur un stand bien plus haut que large, le nom écrit en travers se réduit à
+ * la largeur, et devient illisible bien avant celui du voisin, plus trapu.
+ * Couché dans la longueur, il garde sa taille — le plan d'Eurosatory le fait,
+ * c'est de là que l'idée vient. Mais pencher la tête a un prix : on ne couche
+ * le nom que s'il y gagne nettement, d'un sixième au moins. Un stand à peine
+ * plus haut que large garde son nom droit, comme ses voisins.
+ *
+ * Réglage de l'exploitant, éteint par défaut : un salon qui ne l'a pas coché
+ * garde le plan qu'il connaissait.
+ */
+export const nomsPivotes = () => conf("_nomsPivotes").visible === true;
+
+export function nomCouche(s, w, h){
+  if (!nomsPivotes() || !(h > w * 1.25)) return false;
+  // les mesures de « libelleDroit » : le nom s'il y en a un, sinon le numéro
+  const taille = (l, ht) => {
+    if (s.nom){ const a = habille(s.nom, l * .9, ht * .62, 2.4, P_NOM); return a ? a.f : 0; }
+    return s.code ? Math.min(ht * .34, (l * .9) / largeur(s.code, P_CODE), 1.9) : 0;
+  };
+  const couche = taille(h, w);
+  return couche > 0 && couche > taille(w, h) * 1.15;
+}
+
+/** Le nom et le numéro, écrits droits dans une place de `w` sur `h`. */
+function libelleDroit(s, as, w, h, sel, pxParM, reg){
   const k = facteurLibelle(reg), force = libelleForce(reg);
   const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
   const fn = nom ? nom.f * k : 0;
