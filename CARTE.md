@@ -2736,13 +2736,13 @@ Importé par :
 
 bande-admin · habillage · lancement
 
-### `modules/toucher.mjs` — 28 l. → plan, plan-admin
+### `modules/toucher.mjs` — 54 l. → plan, plan-admin
 
 - l.1 · Un toucher qui se sent — la vibration brève du téléphone
 
 Fonctions :
 
-`vibre` 25
+`vibre` 31 · `interrupteur` 44
 
 Importé par :
 
@@ -2897,7 +2897,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 729 l. → plan, plan-admin
+### `modules/vue.mjs` — 743 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.82 · 6. Vue
@@ -2910,9 +2910,9 @@ Fonctions :
 `poseFacteurTrait` 213 · `suitLaVue` 229 · `versScene` 238 · `appliqueVue` 243
 `libellesDeLaVue` 311 · `rafraichitVue` 319 · `poseVue` 333 · `mesureBarre` 362
 `masqueHaut` 390 · `masque` 397 · `masqueDroite` 434 · `fit` 445 · `stoppeZoom` 483
-`glisseVersVise` 491 · `glisseVers` 534 · `inclineScene` 577 · `trajetVol` 592
-`voleVers` 615 · `rectVisee` 657 · `zoom` 677 · `echelle` 691 · `versPlan` 703
-`brancheVue` 714
+`glisseVersVise` 491 · `glisseVers` 534 · `inclineScene` 581 · `trajetVol` 596
+`voleVers` 628 · `rectVisee` 671 · `zoom` 691 · `echelle` 705 · `versPlan` 717
+`brancheVue` 728
 
 Importe :
 
