@@ -30,7 +30,7 @@ const annonce = (page, fichier) => page.evaluate((f) => {
   }));
 }, fichier);
 
-test.describe("les erreurs de la page", () => {
+test.describe("les erreurs de la page", { tag: "@base" }, () => {
   test("une erreur du plan part, sans rien du visiteur", async ({ page }) => {
     await prepare(page);
     const envois = await releve(page);

@@ -8,7 +8,7 @@ const { prepare, attendLaListe, DONNEES, PREMIER } = require("./aide.js");
 const PLAN = "/plan?plan=smcl-2026";
 
 test.describe("le plan public", () => {
-  test("s'ouvre sans erreur, liste et stands en place @telephone", async ({ page }) => {
+  test("s'ouvre sans erreur, liste et stands en place @telephone", { tag: "@base" }, async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);
     const lignes = await attendLaListe(page);
@@ -39,7 +39,7 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
-  test("la recherche resserre la liste, et la rend quand on l'efface", async ({ page }) => {
+  test("la recherche resserre la liste, et la rend quand on l'efface", { tag: "@base" }, async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);
     const lignes = await attendLaListe(page);
@@ -76,7 +76,7 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
-  test("une ligne de la liste ouvre la fiche de son exposant @telephone", async ({ page }) => {
+  test("une ligne de la liste ouvre la fiche de son exposant @telephone", { tag: "@base" }, async ({ page }) => {
     const erreurs = await prepare(page);
     /* En SVG : ce qu'on éprouve est le chemin de la liste à la fiche, non le
        dessin. Sur une machine d'intégration sans carte graphique, WebGL est
@@ -137,7 +137,7 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
-  test("s'ouvre en anglais par l'adresse", async ({ page }) => {
+  test("s'ouvre en anglais par l'adresse", { tag: "@base" }, async ({ page }) => {
     const erreurs = await prepare(page);
     /* Le dictionnaire est à part (`_langue.js` `chargeDico`) : il doit être là
        avant que le corps de la page ne soit lu, sans quoi elle paraîtrait en
@@ -182,7 +182,7 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
-  test("se dessine aussi sans WebGL", async ({ page }) => {
+  test("se dessine aussi sans WebGL", { tag: "@base" }, async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN + "&rendu=svg");
     await attendLaListe(page);
@@ -206,7 +206,7 @@ test.describe("le plan public", () => {
   });
 });
 
-test.describe("le plan de démonstration", () => {
+test.describe("le plan de démonstration", { tag: "@base" }, () => {
   test("se suffit de ses données embarquées", async ({ page }) => {
     const erreurs = await prepare(page);
     const demandes = [];
@@ -223,7 +223,7 @@ test.describe("le plan de démonstration", () => {
    jamais recevoir. Elles ne dépendent de rien du plan : on les appelle telles
    que la page les tient, puis on pose leur sortie dans le document pour
    vérifier que rien ne s'y exécute. */
-test.describe("ce qui vient d'ailleurs", () => {
+test.describe("ce qui vient d'ailleurs", { tag: "@base" }, () => {
   test("les adresses et les logos ne gardent que ce qui ne s'exécute pas", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN);
@@ -319,7 +319,7 @@ test.describe("ce qui vient d'ailleurs", () => {
   });
 });
 
-test.describe("les autres pages", () => {
+test.describe("les autres pages", { tag: "@base" }, () => {
   for (const [nom, adresse] of [
     ["l'accueil", "/index.html"],
     ["la console", "/admin-plans.html"],
@@ -385,7 +385,7 @@ test.describe("les autres pages", () => {
    `/plan-admin`, `/plan-smcl`. Elles ne nomment aucun salon — l'administration
    prenait « admin » pour le sien, et le partait chercher, l'annonçait, le
    rangeait. */
-test.describe("le salon que nomme l'adresse", () => {
+test.describe("le salon que nomme l'adresse", { tag: "@base" }, () => {
   /** Le salon que la page s'est donné, une fois ses modules chargés — sans
    *  attendre le plan, que la démonstration met longtemps à dessiner. */
   const salonDe = async (page, adresse) => {
