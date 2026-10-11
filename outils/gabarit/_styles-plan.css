@@ -341,6 +341,44 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .plan-gl{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s ease-out}
 html.gl-pret .plan-gl{opacity:1}
 @media (prefers-reduced-motion:reduce){.plan-gl{transition:none}}
+
+/* Le vol de caméra (`vue.mjs` `voleVers`) : la scène se penche le temps du
+   trajet, d'un angle que le vol écrit image par image dans « --vol ». Seuls
+   penchent les calques qui couvrent toute la scène — plan, dessin, fond,
+   chaleur — et ils penchent ensemble, d'un même point de fuite. La propriété
+   « rotate » et non « transform », que le calque des libellés emploie déjà
+   pour s'étirer pendant un zoom : les deux se composent au lieu de s'écraser.
+   Ce qui est posé en un point du plan — le pouls de « Vous êtes ici »,
+   l'étincelle du trajet, les noms en appel — ne pencherait pas autour du même
+   centre : il s'efface le temps du vol, et revient à l'arrivée. */
+.stage.en-vol{perspective:1400px;perspective-origin:50% 35%}
+.stage.en-vol > :is(.plan-gl,svg,.fondGL,.calque-libelles,.chalHalos){rotate:x var(--vol,0deg);
+  transform-origin:50% 60%}
+.stage.en-vol > :is(.iciPouls,.etincelle,.appels){opacity:0}
+
+/* Le lever de rideau (`modules/rideau.mjs`) : des bandes de la couleur de la
+   scène, au rang du plan et posées juste après lui, donc par-dessus. Elles se
+   relèvent vers le haut ; une ombre courte souligne leur bord, sans quoi on
+   ne verrait qu'un plan qui se dévoile, et non un rideau qui monte. */
+.rideau{position:absolute;inset:0;z-index:1;pointer-events:none}
+.rideau i{position:absolute;top:0;bottom:0;background:var(--c-fond,var(--ground));
+  transform-origin:50% 0;box-shadow:0 10px 18px -12px rgba(0,0,0,.28)}
+
+/* Les noms en appel (`modules/appels.mjs`) : une étiquette posée à côté du
+   stand qui n'a pas la place d'écrire le sien, reliée par un filet. Elle
+   reprend la police des noms du plan, et l'accent quand le stand est choisi.
+   Le calque ne prend aucun clic : le stand dessous reste ce qu'on touche. */
+.appels{position:absolute;inset:0;z-index:1;pointer-events:none;transition:opacity .15s}
+.appels svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.appels line{stroke:var(--ink-2);stroke-width:1.25;stroke-linecap:round;opacity:.7}
+.appels line.choisi{stroke:var(--accent);opacity:1;stroke-width:1.5}
+.appel{position:absolute;left:0;top:0;max-width:220px;padding:3px 9px 4px;border-radius:999px;
+  font:600 12px/1.25 var(--sans);color:var(--ink);background:var(--surface);
+  box-shadow:0 0 0 1px var(--line),0 6px 16px -8px rgba(20,24,26,.35);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .18s ease-out}
+.appel.vu{opacity:1}
+.appel.choisi{color:var(--accent-ink);background:var(--accent);box-shadow:0 6px 16px -8px rgba(20,24,26,.45)}
+@media (prefers-reduced-motion:reduce){.appel{transition:none}}
 html.gl-attente #plan > *,html.gl-pret #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
 /* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
