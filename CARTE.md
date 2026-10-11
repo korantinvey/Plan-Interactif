@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_config.js` — 15 l. → config.js
+### `_config.js` — 15 l. → config.js, plan-admin.html, plan.html
 
 ### `_console-base.html` — 11 l. → admin-plans.html, rapport.html
 
@@ -421,15 +421,15 @@ Fonctions :
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
 `ecarte` 61
 
-### `modules/demarrage.mjs` — 290 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 292 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
 `recadreListePosee` 64 · `demarre` 80 · `annonce` 138 · `panneDuChargement` 173
-`CLE_VERSION` 183 · `versionRetenue` 184 · `retientVersion` 187 · `demandePlan` 211
-`charge` 235 · `brancheDemarrage` 272
+`CLE_VERSION` 183 · `versionRetenue` 184 · `retientVersion` 187 · `demandePlan` 213
+`charge` 237 · `brancheDemarrage` 274
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 

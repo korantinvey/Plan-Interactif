@@ -201,7 +201,9 @@ const retientVersion = (v) => {
  *
  * Les deux demandes partent ensemble depuis l'en-tête de la page, le plan sous
  * la version d'hier : le pari se gagne presque toujours, et le plan est là
- * quand l'entête répond. Perdu, on le redemande une fois, sous la bonne.
+ * quand l'entête répond. Perdu, ou sans version d'hier, l'en-tête le demande
+ * lui-même sous la bonne dès que l'entête l'a dite (`genere.js` `PRECHARGE`) ;
+ * on ne le redemande ici que si cette demande-là a échoué.
  *
  * Un entête muet ne bloque rien : ce qu'on avait pris d'avance sert tel quel —
  * mieux vaut le plan d'hier que pas de plan —, et à défaut on retombe sur

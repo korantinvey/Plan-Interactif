@@ -61,9 +61,13 @@ http.createServer((q, s) => {
       /* Le type vient de l'amont : ce chemin ne rend pas que du JSON — une
          vignette de logo est une image, et l'annoncer en JSON la laissait
          brisée en tête de fiche, ici seulement. */
+      /* La version aussi, comme le Worker : sans elle, `modules/demarrage.mjs`
+         prend le plan demandé d'avance pour un autre, et le redemande — ici
+         seulement, si bien qu'un essai local le téléchargeait deux fois. */
       s.writeHead(r.statusCode, {
         "Content-Type": r.headers["content-type"] || "application/json",
         "Cache-Control": "no-store",
+        ...(r.headers["x-version"] ? { "X-Version": r.headers["x-version"] } : {}),
       });
       r.pipe(s);
     }).on("error", e => { s.writeHead(502); s.end(e.message); });
