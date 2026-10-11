@@ -36,7 +36,7 @@ const IDENTIFIANT = /^[A-Za-z_$][\w$]*$/;
 
 /* Ce que la construction fabrique : cité pour dire de ne pas y toucher, il
    n'existe pas forcément sur un clone neuf. */
-const FABRIQUES = new Set(["src/pages.mjs", "outils/tpl-multi.html", "web/config.js", "web/sw.js",
+const FABRIQUES = new Set(["src/pages.mjs", "outils/tpl-multi.html", "tpl-multi.html", "web/config.js", "web/sw.js",
   "web/console.css", "web/plan-smcl.html", "plan.html", "plan-admin.html", "plan-smcl.html"]);
 
 function trouve(t) {
