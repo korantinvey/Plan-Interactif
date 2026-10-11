@@ -1113,7 +1113,7 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1184 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1196 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.73 · 7. Sélection et fiche
@@ -1125,7 +1125,7 @@ Fonctions :
 `centrePoint` 240 · `programme` 272 · `produits` 321 · `ficheProduit` 349 · `ficheConf` 419
 `poseAppuiTactile` 572 · `ecarteClicFantome` 575 · `nomSociete` 584 · `choisitExposant` 598
 `poseMarque` 636 · `montreMarque` 696 · `poseCode` 719 · `rangeMarque` 760 · `ouvre` 816
-`ferme` 1132 · `onglet` 1150 · `brancheFiche` 1168
+`ferme` 1144 · `onglet` 1162 · `brancheFiche` 1180
 
 Éléments :
 

@@ -821,7 +821,19 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
      qu'il héberge restent atteignables par la liste : le réglage allège le
      plan, il ne retire personne du salon. */
   const plusieurs = heberges.length > 0 && coexChoisit();
-  if (plusieurs && iSoc === undefined){ choisitExposant(o, depuis, canal, recentrer); return; }
+  if (plusieurs && iSoc === undefined){
+    /* La fiche encore ouverte est celle d'avant — un autre stand, ou une
+       société de celui-ci : derrière le choix, elle laissait croire qu'on
+       allait la remplacer par elle-même. On la retire sans toucher à la
+       sélection, que `select` vient de poser sur le nouveau stand. Le bouton
+       « exposants ici » de la fiche passe, lui, droit au choix et la garde. */
+    if ($("detail").classList.contains("open")){
+      $("voile").classList.remove("on");
+      anime(() => null, -1);
+    }
+    choisitExposant(o, depuis, canal, recentrer);
+    return;
+  }
   /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
      c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
      de « titulaire » dans tout ce qui suit. */
