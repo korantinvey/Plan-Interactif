@@ -17,7 +17,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, state } from "./donnees.mjs";
-import { vue, svg, cadrePlan, confieALaVue } from "./vue.mjs";
+import { vue, svg, cadrePlan, confieALaVue, suitLaVue, versScene } from "./vue.mjs";
 
 /* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
    elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
@@ -58,6 +58,7 @@ export function dessineBorne(){
   let g = $("borneIci");
   if (!LIEU_BORNE || !DATA || !vue() || LIEU_BORNE.p !== state.plan){
     if (g) g.remove();
+    placePouls();
     return;
   }
   if (!g){
@@ -67,7 +68,37 @@ export function dessineBorne(){
     svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
   }
   rempliBorne(g);
+  placePouls();
 }
+
+/* ------------------------------------------------------------
+   Le battement
+   ------------------------------------------------------------ */
+/* Un point immobile se confond avec les pastilles des repères : il faut qu'il
+   respire pour qu'on le trouve d'un coup d'œil, comme sur une carte de
+   téléphone. Le battement ne vit pas dans le SVG : sous la carte graphique,
+   le plan est caché et ses animations coupées, et c'est le dessin qui
+   reprend chaque cercle. Posé dans la scène, au-dessus du plan, il bat de la
+   même façon quel que soit le rendu — et ne coûte qu'une transformation au
+   compositeur. Il ne remplace pas le point dessiné, qui reste le repère sûr. */
+/** @type {HTMLElement | null} */
+let pouls = null;
+
+function placePouls(){
+  const voir = !!(LIEU_BORNE && DATA && vue() && LIEU_BORNE.p === state.plan);
+  if (!voir){ if (pouls) pouls.hidden = true; return; }
+  if (!pouls){
+    pouls = document.createElement("div");
+    pouls.className = "iciPouls";
+    pouls.setAttribute("aria-hidden", "true");
+    // juste après le plan : au-dessus de lui, sous les commandes et la fiche
+    svg.after(pouls);
+  }
+  const [x, y] = versScene(LIEU_BORNE.xy[0], LIEU_BORNE.xy[1]);
+  pouls.hidden = false;
+  pouls.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)";
+}
+suitLaVue(() => { if (pouls && !pouls.hidden) placePouls(); });
 
 /** Le zoom change : le point garde sa taille à l'écran, pas celle du plan. */
 export function rafraichitBorne(){

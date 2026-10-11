@@ -27,6 +27,11 @@
      « --accent » pour son propre usage. */
   --accent-base:#2F49D1; --accent-clair:#6A80EE; --accent-fort:#1B2A8E;
   --zone:#C98A06; --zone-soft:#F7EAC6;
+  /* Le grain : un bruit fin posé sur les grands aplats, qui leur retire
+     l'air d'écran plat sans qu'on le remarque. Une tuile de 160 px, peinte
+     une fois par le navigateur ; sombre sur le clair, claire sur la nuit. */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-clair:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
   /* Un secteur n'a qu'une teinte : sa saturation et sa clarté sont posées ici,
      les mêmes pour tous, sans quoi le libellé du stand — écrit à l'encre du
@@ -185,6 +190,17 @@ button{cursor:pointer;background:none;border:none}
 /* Sauf en administration, où la bande de l'outil est au-dessus : c'est elle
    qui touche le haut de l'écran, et le retrait lui revient. */
 html.mode-admin .topbar{padding-top:8px;min-height:60px}
+/* Le bandeau par défaut prend un peu de matière : un reflet de l'accent du
+   salon dans le coin d'où l'on lit, un dégradé à peine sensible, et le
+   grain. Celui du modèle « Sobre », qui est le défaut ; les autres modèles ont
+   chacun leur fond et le gardent ; sur un
+   téléphone, la barre n'a plus de fond du tout (voir « max-width:900px »). */
+@media (min-width:901px){
+  .topbar:is(.bandeau-sobre,:not([class*="bandeau-"])){background:
+    var(--grain),
+    radial-gradient(70% 220% at 0% 0%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 70%),
+    linear-gradient(180deg,color-mix(in srgb,var(--surface) 70%,#fff),var(--surface))}
+}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
   line-height:1.18;overflow-wrap:anywhere}
 /* Le logo du salon ne paraît qu'en bande réduite, sur un téléphone : ailleurs
@@ -242,7 +258,10 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
    ------------------------------------------------------------------ */
 .bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:12px;
   padding:calc(5px + var(--sys-haut)) 18px 5px;min-height:calc(66px + var(--sys-haut));
-  background:var(--m-nuit);color:var(--ink);
+  background:var(--grain-clair),
+    radial-gradient(60% 240% at 0% 0%,color-mix(in srgb,var(--m-cyan) 16%,transparent),transparent 70%),
+    var(--m-nuit);
+  color:var(--ink);
   /* La nuit de la marque, et non la surface que la bande redéfinit juste en
      dessous pour ses boutons : c'est le fond de la bande que le système doit
      prolonger. */

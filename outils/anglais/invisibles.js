@@ -68,4 +68,8 @@ module.exports = [
   "» n'est pas un état du profil connecté",
   // `modules/evenements.mjs` : la même erreur, pour la porte des salons de la console
   "» n'est ni EVTS, ni selection, ni PLANS",
+
+  // `modules/recherche.mjs` : un morceau de l'attribut qui donne son rang à
+  // une ligne de la liste dans la cascade d'entrée — du balisage, pas un texte
+  'entre" style="--r:',
 ];

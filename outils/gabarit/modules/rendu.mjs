@@ -40,6 +40,7 @@ import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
+import { traceStand } from "./ambiance.mjs";
 
 /* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
@@ -87,7 +88,7 @@ export const baliseZone = (z) =>
   '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id + '"' +
   (z.ajout ? ' data-aj="' + esc(z.id) + '"' : "") +
   ' tabindex="0" role="button" aria-label="' +
-  esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>';
+  esc(z.nom || "zone") + '"><path d="' + traceStand(z.d) + '"/></g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :
    c'est par lui que la reprise de forme le retrouve. Lié à un exposant, il
    prend en « data-id » et « data-soc » l'emplacement et le rang de la société
@@ -98,7 +99,7 @@ export const baliseStand = (s) =>
   (s.ajout ? ' data-aj="' + esc(s.id) + '"' : "") +
   (s.lien ? ' data-soc="' + s.lien.soc + '"' : "") +
   ' tabindex="0" role="button" aria-label="' +
-  esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>';
+  esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + traceStand(s.d) + '"/></g>';
 
 export function montePlan(){
   const p = P();
