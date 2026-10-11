@@ -19,8 +19,11 @@
    toujours un geste qui l'appelle ici.
    ============================================================ */
 
-/* Assez pour se sentir, trop peu pour s'entendre sur une table. */
-export const PRISE = 10, BUTEE = 18;
+/* Assez pour se sentir, trop peu pour s'entendre sur une table. Dix
+   millisecondes suffisaient sur le papier, et ne se sentaient pas sur un
+   vrai téléphone Android : le petit moteur à balourd de la plupart d'entre
+   eux n'a pas le temps de démarrer. En deçà d'une trentaine, rien ne bouge. */
+export const PRISE = 30, BUTEE = 45;
 
 /**
  * Vibre `ms` millisecondes, si l'appareil sait le faire et que c'est un doigt
