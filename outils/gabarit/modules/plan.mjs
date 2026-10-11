@@ -25,6 +25,9 @@ import { lancePlan } from "./lancement.mjs";
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
    chargé, et c'est d'ici. */
 import "./edition-en-cours.mjs";
+/* La mini-carte de situation ne s'importe de nulle part : elle s'inscrit
+   auprès de la vue en se chargeant (`suitLaVue`), et se charge d'ici. */
+import "./mini-carte.mjs";
 
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,

@@ -201,6 +201,15 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--accent-soft)}
+/* L'entrée en cascade (`recherche.mjs` `liste`) : au plus 28 ms d'écart,
+   assez pour qu'on voie l'ordre, trop peu pour qu'on attende la dernière —
+   l'écart se resserre quand l'écran montre beaucoup de lignes (« --pas »). Le « both »
+   tient la ligne invisible pendant son délai, sans quoi elle paraîtrait puis
+   repartirait. */
+.row.entre{animation:ligneEntre .34s cubic-bezier(.2,.8,.3,1) both;
+  animation-delay:calc(var(--r,0) * var(--pas,28ms) + var(--recul,0ms))}
+@keyframes ligneEntre{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.row.entre{animation:none}}
 /* Le numéro tient sur une ligne : c'est un tout, et l'empiler en deux morceaux
    le donnait à lire comme deux numéros. La case s'élargit plutôt, jusqu'au
    plafond que `caseNumero` lui fixe. */
@@ -371,10 +380,31 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
    avant le survol et la sélection, à spécificité égale, pour leur laisser la
    main : un stand qu'on désigne doit se voir plus que son secteur. */
 .stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
+/* L'ambiance du plan (`ambiance.mjs`). Elle ne touche que le trait des
+   formes : la sélection, le survol, la chaleur passent par-dessus comme avant.
+
+   Tuiles — le fond du plan passe entre les formes en guise de cloison : un
+   trait épais de sa couleur, constant à l'écran, détache chaque stand de ses
+   voisins. Aucune couleur imposée : ce sont celles du salon. Les zones
+   perdent leurs tirets — une tuile a un bord net — et prennent un aplat plus
+   franc, qui se lit comme une pièce du même jeu. */
+html.ambiance-tuiles .stand path,
+html.ambiance-tuiles .zone path{stroke:var(--c-fond,var(--ground));stroke-width:2.5;
+  stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1}
+html.ambiance-tuiles .zone path{fill-opacity:.62}
+html.ambiance-tuiles .zone.masquee path{fill-opacity:.2}
 /* La carte de chaleur, en administration. Elle vient après le secteur — c'est
    la même question posée autrement, et on ne lit pas les deux à la fois — mais
    avant le survol et la sélection, qui gardent la main sur elle. */
-.stand[data-chaleur] path{fill:var(--chal-c)}
+html:not(.chaleur-halos) .stand[data-chaleur] path{fill:var(--chal-c)}
+/* En halos, les stands gardent leur blanc et c'est la toile posée dessus qui
+   les teinte (`chaleur.mjs` `dessineHalos`). Elle respire lentement, par son
+   opacité seule : quatre secondes, comme une respiration au repos. */
+.chalHalos{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;
+  mix-blend-mode:multiply;animation:chalRespire 4s ease-in-out infinite alternate}
+.chalHalos[hidden]{display:none}
+@keyframes chalRespire{from{opacity:.72}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.chalHalos{animation:none;opacity:.9}}
 /* Les deux liserés que le plan pose sur un stand — celui de la sélection,
    celui du parcours — se tracent dans « #marques », un calque à part posé
    au-dessus des couches, et non sur le stand lui-même : une cloison mitoyenne
@@ -430,7 +460,16 @@ html.sans-parcours #marques .parc{display:none}
    de désigner. Le temps d'une mise en avant, ils s'effacent tout à fait : ce
    qu'on a retenu se retrouve en refermant le cartouche. */
 html.poi-actif #marques .parc{display:none}
-.stand:hover path,.zone:hover path{fill:var(--accent-soft)}
+html:not(.ambiance-tuiles) :is(.stand,.zone):hover path{fill:var(--accent-soft)}
+/* Une tuile survolée se soulève : elle grandit un peu et sa teinte s'avive.
+   C'est le rendu SVG, de secours ; la carte graphique fait de même avec une
+   couche à elle (`webgl.mjs` `coucheTuileSoulevee`). Le SVG ne sait pas
+   la faire passer devant ses voisines — elles la recouvrent d'un bord. */
+html.ambiance-tuiles :is(.stand,.zone) path{transform-box:fill-box;transform-origin:center;
+  transition:transform .16s cubic-bezier(.2,.8,.3,1),filter .16s}
+html.ambiance-tuiles :is(.stand,.zone):hover path{transform:scale(1.06);
+  filter:saturate(1.6) brightness(.96) drop-shadow(0 1px 1.5px rgba(20,24,26,.25))}
+@media (prefers-reduced-motion:reduce){html.ambiance-tuiles :is(.stand,.zone) path{transition:none}}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
    et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
@@ -573,7 +612,7 @@ html.mode-edition .dcal.circulation-pmr path{fill:currentColor;fill-opacity:.12}
 html .dcal .forme.sdes path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;stroke-dasharray:none;fill-opacity:1}
 html .dcal .forme.sdes[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
-html .dcal .forme.sdes[data-chaleur] path{fill:var(--chal-c)}
+html:not(.chaleur-halos) .dcal .forme.sdes[data-chaleur] path{fill:var(--chal-c)}
 /* Rattaché — « lie », comme une image liée — il répond au pointeur par son
    tracé, y compris sur la page publique où le mode édition n'existe pas.
    Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
@@ -935,6 +974,28 @@ html.sans-image-stand .outils #imageSoc{
 .zoombar button+button{border-top:1px solid var(--line)}
 .zoombar button:hover{color:var(--ink);background:var(--surface-2)}
 .zoombar svg{width:14px;height:14px}
+/* La mini-carte de situation (`mini-carte.mjs`), en haut à gauche de la
+   scène : le seul coin que ni la fiche, ni les commandes, ni le cartouche des
+   repères n'occupent. Sa largeur suit les proportions du pavillon (« --mc-r »),
+   dans une boîte bornée des deux côtés. Elle entre en fondu : paraître d'un
+   coup en plein zoom ferait sursauter. */
+.miniCarte{position:absolute;left:14px;top:14px;z-index:3;
+  width:calc(min(180px, 104px * var(--mc-r,1.4)));aspect-ratio:var(--mc-r,1.4);max-height:120px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);
+  padding:5px;cursor:pointer;touch-action:none;animation:mcParait .22s ease-out}
+.miniCarte[hidden]{display:none}
+.miniCarte svg{display:block;width:100%;height:100%;overflow:visible}
+.miniCarte .mcStands{fill:var(--stand-line,#9AA095);opacity:.55}
+.miniCarte .mcZones{fill:var(--zone,#C98A06);opacity:.28}
+.miniCarte .mcCadre{fill:color-mix(in srgb,var(--accent) 14%,transparent);stroke:var(--accent);
+  stroke-width:2px;vector-effect:non-scaling-stroke;rx:2}
+@keyframes mcParait{from{opacity:0;transform:scale(.94)}}
+@media (prefers-reduced-motion:reduce){.miniCarte{animation:none}}
+/* Pas sur un téléphone : l'écran y est trop petit pour qu'on s'y perde au
+   même point, et chaque centimètre de plan y compte davantage. */
+@media (max-width:900px){.miniCarte{display:none}}
 /* Cartouche des points d'intérêt, au bas du plan. Il ne paraît que s'il y a
    des repères, et se retire de l'échelle pour ne pas la masquer. */
 /* Centré par des marges automatiques, et non par « left:50% » : un élément

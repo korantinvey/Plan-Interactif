@@ -265,7 +265,7 @@ function perdContexteWebgl(){
   GL.actif = false; GL.pret = false;
   document.documentElement.classList.remove("rendu-webgl", "gl-pret", "gl-attente", "en-edition");
   stage().classList.remove("survol-gl");
-  GL.survol = null; GL.focus = null;
+  GL.survol = null; GL.focus = null; TUILES.clear();
   try { GL.deck.finalize(); } catch (e) {}
   GL.deck = null;
   if (GL.hote) GL.hote.remove();
@@ -411,11 +411,16 @@ function assembleWebgl(){
   for (const b of blocsDansLOrdre()){
     if (b.id === "labels"){ out.push(...couchesLibellesWebgl(), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
+    /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
+       est le trait de leur contour — et donc après tout le bloc. */
+    const tuile = TUILES.size > 0 && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
+      if (tuile) apres.push(...couchesTuiles(c));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
-      if (GL.survol) out.push(...coucheSurvol(c));
+      else if (GL.survol) out.push(...coucheSurvol(c));
     }
+    out.push(...apres);
     out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
   return out;
@@ -1150,8 +1155,121 @@ function brancheSurvolWebgl(){
 }
 function poseSurvolWebgl(el){
   if (el === GL.survol) return;
+  const quitte = GL.survol;
   GL.survol = el;
+  if (enTuiles()){
+    if (quitte) visePour(quitte, 0);
+    if (el) visePour(el, 1);
+    gonfleSurvol();
+  } else TUILES.clear();
   GL.deck.setProps({ layers: assembleWebgl() });
+}
+
+/* ------------------------------------------------------------
+   Le survol d'une tuile
+
+   Dans l'ambiance Tuiles (`ambiance.mjs`), la tuile visée se soulève : elle
+   grandit un peu autour de son centre, passe devant le vide qui la sépare de
+   ses voisines, et prend une teinte vive tirée de la sienne — la même famille
+   de couleur, plus franche. Une ombre légère, un peu plus grande qu'elle, dit
+   qu'elle a quitté le sol. Une tuile neutre — blanche, grise — n'a pas de
+   teinte à aviver : elle prend celle du survol ordinaire.
+
+   Les deux sens s'animent : la tuile qu'on quitte se repose — elle rétrécit,
+   son ombre s'efface, sa teinte revient — pendant que la suivante se soulève.
+   Chaque tuile tient donc sa propre course, de 0 (au sol) à 1 (soulevée), et
+   un aller-retour rapide repart de là où elle en était au lieu de sauter.
+   Cent soixante millisecondes pour monter, un peu plus pour redescendre ;
+   puis plus rien ne bouge tant que la souris reste où elle est.
+   ------------------------------------------------------------ */
+const enTuiles = () => document.documentElement.classList.contains("ambiance-tuiles");
+const MONTE_MS = 160, DESCEND_MS = 220, GONFLE = .06;
+/** Les tuiles en mouvement ou soulevées : où leur course partait, vers où, et quand.
+ *  @type {Map<Element, { de: number, vers: number, t0: number }>} */
+const TUILES = new Map();
+let imageGonfle = 0;
+
+/** Où en est une tuile, de 0 à 1, à cet instant — en fin douce. */
+function hauteurTuile(st, now = performance.now()){
+  if (MOUVEMENT_REDUIT.matches) return st.vers;
+  const k = Math.min(1, (now - st.t0) / (st.vers > st.de ? MONTE_MS : DESCEND_MS));
+  return st.de + (st.vers - st.de) * (1 - (1 - k) * (1 - k) * (1 - k));
+}
+
+function visePour(el, vers){
+  const st = TUILES.get(el);
+  TUILES.set(el, { de: st ? hauteurTuile(st) : 0, vers, t0: performance.now() });
+}
+
+function gonfleSurvol(){
+  if (imageGonfle) return;
+  const image = () => {
+    imageGonfle = 0;
+    if (!GL.actif) return;
+    const now = performance.now();
+    let bouge = false;
+    for (const [el, st] of TUILES){
+      const h = hauteurTuile(st, now);
+      if (h !== st.vers) bouge = true;
+      else if (st.vers === 0) TUILES.delete(el);   // reposée : elle n'a plus de couche à elle
+    }
+    GL.deck.setProps({ layers: assembleWebgl() });
+    if (bouge) imageGonfle = requestAnimationFrame(image);
+  };
+  imageGonfle = requestAnimationFrame(image);
+}
+
+/** Une teinte avivée : plus saturée, et poussée vers le milieu de la clarté
+ *  pour qu'une tuile pâle fonce un peu et qu'une tuile sombre s'éclaire. Rien
+ *  pour une couleur sans teinte. */
+function avive(/** @type {number[]} */ c){
+  const [r, g, b] = [c[0] / 255, c[1] / 255, c[2] / 255];
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, e = max - min;
+  if (e < .04) return null;
+  const sat = e / (1 - Math.abs(2 * l - 1));
+  let h = max === r ? ((g - b) / e) % 6 : max === g ? (b - r) / e + 2 : (r - g) / e + 4;
+  h = (h * 60 + 360) % 360;
+  const s2 = Math.min(1, sat * 1.35 + .12), l2 = l > .55 ? l - .1 : l + .08;
+  const k2 = (1 - Math.abs(2 * l2 - 1)) * s2, x = k2 * (1 - Math.abs((h / 60) % 2 - 1)), m = l2 - k2 / 2;
+  const [r2, g2, b2] = h < 60 ? [k2, x, 0] : h < 120 ? [x, k2, 0] : h < 180 ? [0, k2, x]
+    : h < 240 ? [0, x, k2] : h < 300 ? [x, 0, k2] : [k2, 0, x];
+  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255), c[3]];
+}
+
+/** La tuile soulevée à la hauteur « k » : son ombre puis elle, agrandies
+ *  autour du centre de leurs aplats, sa teinte à mi-chemin de la vive. */
+function coucheTuileSoulevee(aplats, k, n){
+  const s = 1 + GONFLE * k;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const d of aplats) for (const p of d.polygon[0]){
+    if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+    if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+  }
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const autour = (e) => [e, 0, 0, 0, 0, e, 0, 0, 0, 0, 1, 0, cx * (1 - e), cy * (1 - e), 0, 1];
+  const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
+  const cle = Math.round(k * 40);
+  const vers = (d) => avive(d.couleur) || [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)];
+  const mele = (d) => { const v = vers(d); return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * k)); };
+  return [
+    new deck.SolidPolygonLayer({ id: "survol-ombre-" + n, data: aplats, getPolygon: d => d.polygon,
+      modelMatrix: autour(1 + (GONFLE + .02) * k), getFillColor: [20, 24, 26, Math.round(20 * k)],
+      updateTriggers: { getFillColor: cle } }),
+    new deck.SolidPolygonLayer({ id: "survol-" + n, data: aplats, getPolygon: d => d.polygon,
+      modelMatrix: autour(s), getFillColor: mele, updateTriggers: { getFillColor: cle } }),
+  ];
+}
+
+/** Les tuiles en vol ou soulevées qu'une couche porte — celle qu'on survole
+ *  en dernier, par-dessus celles qui se reposent. */
+function couchesTuiles(couche){
+  const out = [], now = performance.now();
+  let n = 0;
+  for (const [el, st] of TUILES){
+    const aplats = aplatsDe(couche, el);
+    if (aplats.length) out.push(...coucheTuileSoulevee(aplats, hauteurTuile(st, now), couche.id + "-" + (n++)));
+  }
+  return out;
 }
 /** Le curseur que la feuille de style donne à ce qui est visé — la main sur un
  *  stand, la flèche de redimensionnement d'une poignée, le déplacement d'une

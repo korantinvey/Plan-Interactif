@@ -649,6 +649,13 @@ const rangSorte = (o) => RANGS[o.kind] || 0;
  *  n'a plus une liste mais un annuaire : c'est le mot-clé qu'il faut préciser,
  *  et le compte au-dessus le dit. */
 const PLAFOND_SORTE = 500;
+/* La cascade couvre ce que la liste montre, et pas davantage : au-delà, les
+   lignes sont sous le pli. Plafonner à un nombre fixe laissait le bas d'un
+   grand écran immobile pendant que le haut entrait. L'ensemble tient en un
+   temps borné : plus il y a de lignes à l'écran, plus elles se suivent de
+   près. */
+const HAUTEUR_LIGNE = 40, DUREE_CASCADE = 420;
+let cleCascade = "", debutCascade = -1e9;
 
 /* Le premier bloc d'une ligne porte le numéro de stand ; une zone, une
    conférence et un repère n'en ont pas, et laisser la case vide effaçait
@@ -775,7 +782,28 @@ export function liste(){
   box.style.setProperty("--caseL", boite.l + "px");
   box.style.setProperty("--caseF", boite.f.toFixed(2) + "px");
 
-  box.innerHTML = montres.length ? montres.map(o => {
+  /* Les premières lignes entrent l'une après l'autre quand ce qu'elles montrent
+     change : le regard lit une réponse qui arrive, et non une liste qui
+     clignote. Seulement quand ce qu'elles montrent change — la liste se
+     réécrit aussi pour une case cochée ou une langue, et ses lignes n'ont
+     alors pas à revenir. Les lignes sont neuves à chaque écriture : leur
+     animation part d'elle-même, sans rien remettre à zéro. */
+  const vues = Math.min(60, Math.ceil((box.clientHeight || 600) / HAUTEUR_LIGNE) + 1);
+  const cle = montres.slice(0, vues).map(o => o.kind + o.id + "/" + (o.i ?? "")).join("|");
+  /* Une frappe réécrit souvent la liste deux fois de suite, la seconde pour
+     les mêmes résultats. Ses lignes neuves repartaient sans animation, et
+     celles du bas, qui attendaient encore leur tour, paraissaient d'un bloc :
+     la cascade s'arrêtait à mi-hauteur. Tant qu'elle court, la réécriture la
+     reprend donc là où elle en est — un délai négatif fait partir chaque
+     ligne au point de sa course où elle se trouvait. */
+  const maintenant = performance.now();
+  const neuve = cle !== cleCascade;
+  if (neuve){ debutCascade = maintenant; cleCascade = cle; }
+  const ecoule = maintenant - debutCascade;
+  const cascade = ecoule < DUREE_CASCADE + 400;
+  if (neuve) box.style.setProperty("--pas", Math.min(28, DUREE_CASCADE / vues).toFixed(1) + "ms");
+  box.style.setProperty("--recul", (-ecoule).toFixed(0) + "ms");
+  box.innerHTML = montres.length ? montres.map((o, k) => {
     const heberge = o.kind === "coex";
     /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
        stand et son nom. La surface louée et les angles ouverts regardent la
@@ -796,7 +824,8 @@ export function liste(){
     /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
        c'est une forme dessinée, pas un objet du plan — et son identifiant seul
        ne dirait pas où aller le chercher. */
-    return '<button class="row" data-id="' + esc(o.id) +
+    return '<button class="row' + (cascade && k < vues ? ' entre" style="--r:' + k : '') +
+      '" data-id="' + esc(o.id) +
       '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
       '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +

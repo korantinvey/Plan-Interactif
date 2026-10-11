@@ -34,6 +34,7 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -1110,6 +1111,38 @@ export function voletApparence(hote){
   };
   hote.appendChild(coul);
   majPastilles();
+
+  /* L'ambiance du plan, juste sous la couleur : c'est l'autre réglage qui
+     change le plan lui-même, et non ses panneaux. Chaque choix porte sa
+     vignette — trois stands dessinés dans l'ambiance —, parce qu'un nom ne
+     dit pas ce qu'est « Maquette » tant qu'on ne l'a pas vue. */
+  const amb = document.createElement("div");
+  amb.className = "reglage-ambiance";
+  amb.innerHTML = '<div class="tete"><span class="eyebrow">Ambiance du plan</span>' +
+    '<span class="val"></span></div><div class="ambiances" role="group" aria-label="Ambiance du plan"></div>';
+  const valAmb = amb.querySelector(".val");
+  const majAmb = () => {
+    const a = ambianceRetenue();
+    amb.querySelectorAll("button[data-amb]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.amb === a)));
+    valAmb.textContent = (AMBIANCES.find(x => x.cle === a) || AMBIANCES[0]).nom;
+  };
+  AMBIANCES.forEach(a => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.amb = a.cle;
+    b.innerHTML = '<span class="vign v-' + a.cle + '"><i></i><i></i><i></i></span>' +
+      '<span class="n"></span><span class="d"></span>';
+    b.querySelector(".n").textContent = a.nom;
+    b.querySelector(".d").textContent = a.dit;
+    b.onclick = () => {
+      if (a.cle === "classique") delete conf("_ambiance").cle; else conf("_ambiance").cle = a.cle;
+      appliqueAmbiance(); majAmb(); enregistreConf();
+    };
+    amb.querySelector(".ambiances").appendChild(b);
+  });
+  hote.appendChild(amb);
+  majAmb();
 
   /* La police des noms, avant les modèles et non après : leur planche est
      longue, et un réglage rangé dessous ne se trouvait qu'en la faisant
