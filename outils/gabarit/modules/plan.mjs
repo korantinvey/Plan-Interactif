@@ -28,6 +28,8 @@ import "./edition-en-cours.mjs";
 /* La mini-carte de situation ne s'importe de nulle part : elle s'inscrit
    auprès de la vue en se chargeant (`suitLaVue`), et se charge d'ici. */
 import "./mini-carte.mjs";
+// les noms des stands cherchés ou choisis, sortis dans la marge quand ils n'y tiennent pas
+import "./appels.mjs";
 
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,

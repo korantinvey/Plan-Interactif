@@ -34,7 +34,7 @@ import { recadreMarque } from "./marque.mjs";
 import { signetParcours, boutonParcours, dessineMarques, brancheParcours } from "./parcours.mjs";
 import { GL, rectEcranWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
+import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, voleVers, rectVisee }
   from "./vue.mjs";
 import { versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
@@ -262,8 +262,10 @@ export function centrePoint(xy){
      il fallait retrouver dans quel coin du salon on venait d'être posé. Le
      trajet le dit de lui-même, et le zoom qu'il resserre au passage montre le
      point s'approcher. L'ajustement au pavillon reste un bond, lui : il n'y a
-     pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
-  glisseVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
+     pas de chemin à montrer entre deux plans, qui ne partagent aucun repère.
+     Loin, le trajet devient un vol : la caméra prend de la hauteur et
+     redescend (`vue.mjs` `voleVers`). */
+  voleVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
 /** Le programme d'une zone, ou celui d'un exposant : la même liste, rendue. */
 function programme(l, titre){
