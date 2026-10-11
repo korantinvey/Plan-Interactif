@@ -12,13 +12,14 @@
    qu'en administration (`fiche.mjs`, `ADMIN`), et leurs gestes, ce module
    les confie à la fiche en se chargeant (`confieALaFiche`). La palette de
    la reprise d'un emplacement (`reprise-emplacements.mjs`), qui importe ce
-   module, lui est confiée par la reprise en se chargeant (`confieALaFicheZone`) : il n'a
-   plus de branchement. La configuration et son enregistrement, la liste de
+   module, suit son annonce (`ZONE_AJOUTEE_ENREGISTREE`) : il n'a plus de
+   branchement. La configuration et son enregistrement, la liste de
    la recherche, les types de zone, le cartouche des points d'intérêt et le
    dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,
    `reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { accesBase, base } from "./session.mjs";
@@ -37,21 +38,12 @@ import { cartouchePoi } from "./cartouche-poi.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { liste } from "./recherche.mjs";
 
-/* Ce que la reprise d'un emplacement, qui importe ce module, lui confie en se
-   chargeant. Les réglages (`CONF`, que le changement de salon remplace),
-   importés, se lisent tels qu'ils sont à l'instant. */
-/**
- * @typedef {object} PreteFicheZone
- * @property {() => void} majPaletteGeo
- */
-/** @type {PreteFicheZone} */
-const prete = { majPaletteGeo: () => {} };
-const majPaletteGeo = () => prete.majPaletteGeo();
-
-/** La porte par laquelle la reprise d'un emplacement (`reprise-emplacements.mjs`)
- *  confie sa palette.
- *  @param {Partial<PreteFicheZone>} o */
-export function confieALaFicheZone(o){ Object.assign(prete, o); }
+/* Les réglages (`CONF`, que le changement de salon remplace), importés, se
+   lisent tels qu'ils sont à l'instant. */
+/** Une zone ajoutée à la main vient d'être enregistrée : la palette de la
+ *  reprise d'un emplacement (`reprise-emplacements.mjs`), qui importe ce
+ *  module, l'écoute pour se refaire. */
+export const ZONE_AJOUTEE_ENREGISTREE = creeAnnonce();
 
 /* ============================================================
    La fiche d'une zone organisateur
@@ -745,7 +737,7 @@ async function enregistreZoneAjoutee(o, v, depart){
   rechAjout(o);
   libelles(); liste();
   cartouchePoi();
-  majPaletteGeo();
+  ZONE_AJOUTEE_ENREGISTREE.dis();
   if (state.sel === o.id) ouvre(o, null);
   /* Les salles font exception : leur colonne est indexée par salle, non par
      zone, et c'est le serveur qui rattache le programme — il reconnaît les

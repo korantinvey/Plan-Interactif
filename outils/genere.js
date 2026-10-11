@@ -264,8 +264,14 @@ const SLUG_DEFAUT = "smcl-2026";
  * sert aujourd'hui ; le plan, lui, est demandé sous la version qu'on avait la
  * dernière fois — pari qui se gagne presque toujours, un plan ouvert aux
  * visiteurs ne changeant qu'une fois par jour. Gagné, il sort du cache du
- * navigateur sans toucher le réseau ; perdu, `modules/demarrage.mjs` le redemande sous
- * la bonne version.
+ * navigateur sans toucher le réseau.
+ *
+ * Perdu, ou faute de version retenue — à la première visite —, le plan part
+ * d'ici dès que l'entête répond, sous la version qu'il nomme. Il attendait
+ * jusque-là que `modules/demarrage.mjs` le demande, donc que le script du plan
+ * soit arrivé et lancé : un téléchargement après l'autre, quand les deux
+ * pèsent à peu près autant. `demarrage.mjs` garde sa propre demande en recours,
+ * si l'entête ne répond pas.
  *
  * Réservé à la page publique : l'administration doit d'abord présenter sa
  * session, sans quoi les brouillons resteraient invisibles.
@@ -293,7 +299,16 @@ const PRECHARGE = [
   "     sans toucher le réseau, et il est là quand l'entête répond. */",
   "  let v = null;",
   '  try { v = localStorage.getItem("plan-version:" + slug); } catch (e) {}',
-  '  if (v) window.__plan = fetch(q + "&v=" + encodeURIComponent(v));',
+  '  const garde = v ? fetch(q + "&v=" + encodeURIComponent(v), { priority: "low" }) : null;',
+  "  /* Sinon, sous celle que l'entête nomme, sitôt qu'il l'a dite. En priorité",
+  "     basse, comme deck.gl : sur une ligne lente, partie si tôt, elle prenait",
+  "     son débit au script du plan — la liste paraissait une seconde plus tard",
+  "     en 3G, pour un plan dessiné au même moment. */",
+  "  window.__plan = window.__entete.then((e) => {",
+  "    const n = e && e.v;",
+  "    if (garde && (!n || n === v)) return garde;",
+  '    return n ? fetch(q + "&v=" + encodeURIComponent(n), { priority: "low" }) : garde;',
+  "  });",
   "}",
   "</" + "script>",
   "",
@@ -401,7 +416,32 @@ if (!fs.existsSync(W + DECK[1])) throw new Error("deck.gl absent : " + DECK[1]);
 const ANNONCE_DECK = '<link rel="preload" as="script" fetchpriority="low" href="/' + DECK[1] +
   '" integrity="' + DECK[2] + '">\n';
 const lieFeuille = (t) =>
-  t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n' + ANNONCE_DECK);
+  t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
+
+/* Ce qui part avant le premier script de la tête.
+
+   La feuille du plan vient après le moteur de langue et la configuration, deux
+   scripts bloquants : mesuré en 4G, le navigateur ne la demandait qu'une fois
+   ces deux-là reçus l'un après l'autre — six cents millisecondes pendant
+   lesquelles rien ne pouvait s'afficher. Annoncée en tête, elle part avec la
+   page ; sa balise reste où elle est, et la cascade avec elle. deck.gl
+   l'accompagne, en priorité basse.
+
+   La configuration, elle, entre dans la page : deux constantes, qui coûtaient
+   un aller-retour bloquant à elles seules. La console et le rapport gardent
+   `config.js`. */
+const BALISE_CONFIG = '<script src="config.js"></script>';
+const CONFIG_EN_LIGNE = "<script>\n" +
+  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")).trim() + "\n</script>";
+function annonceTot(html) {
+  if (html.split(BALISE_CONFIG).length !== 2) throw new Error("configuration introuvable, ou en double");
+  html = html.replace(BALISE_CONFIG, () => CONFIG_EN_LIGNE);
+  // la page n'écrit ni `<body>` ni `</head>` : c'est la feuille qui borne la tête
+  const premier = html.indexOf("<script"), feuille = html.indexOf('<link rel="stylesheet" href="/' + NOM_FEUILLE);
+  if (premier < 0 || feuille < 0 || premier > feuille) throw new Error("aucun script avant la feuille du plan");
+  return html.slice(0, premier) +
+    '<link rel="preload" as="style" href="/' + NOM_FEUILLE + '">\n' + ANNONCE_DECK + html.slice(premier);
+}
 /* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
    pages, elles, gardent la règle de Cloudflare — revalider à chaque fois.
    deck.gl et les polices aussi portent la leur dans leur nom (`outils/deck.js`,
@@ -513,10 +553,10 @@ function poseCsp(html) {
 }
 
 /* --- page publique : le mode administration n'est jamais activé --- */
-fs.writeFileSync(W + "plan.html", poseCsp(sortScripts(
+fs.writeFileSync(W + "plan.html", poseCsp(annonceTot(sortScripts(
   page(lieFeuille(connecte(tplPublic)),
        { tete: PRECHARGE, application: true, pleinEcran: true,
-         salon: SLUG_DEFAUT }))));
+         salon: SLUG_DEFAUT })))));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
@@ -534,9 +574,9 @@ function poseLieux(t) {
   return t.replace(OUVRE_DONNEES, () =>
     '<script id="lieux" type="application/json">' + LIEUX + "</script>\n" + OUVRE_DONNEES);
 }
-fs.writeFileSync(W + "plan-admin.html", poseCsp(sortScripts(
+fs.writeFileSync(W + "plan-admin.html", poseCsp(annonceTot(sortScripts(
   page(poseLieux(lieFeuille(connecte(tplAdmin))),
-       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }))));
+       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT })))));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",

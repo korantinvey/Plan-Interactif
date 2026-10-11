@@ -25,7 +25,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, parId, state, CONFERENCES } from "./donnees.mjs";
-import { ouvreModale, confieRetourAuxReglages } from "./fenetre.mjs";
+import { ouvreModale, APERCU_QUITTE } from "./fenetre.mjs";
 import { PROFIL_ADMIN } from "./acces-admin.mjs";
 import { champsZone, suitFicheZone, verseFicheZone, ecritColonneEvenement } from "./fiche-zone.mjs";
 import { voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
@@ -56,10 +56,10 @@ import { libelles } from "./libelles.mjs";
 
    Le retour est public de nom — l'invitation et le rappel, que le visiteur
    reçoit, l'appellent (`fenetre.mjs` `retourAuxReglages`) —, et
-   d'administration de contenu : ce module le confie à la fenêtre commune dès
-   que la page d'administration le charge, avant que `plan-admin.mjs` ne
-   lance le plan. */
-confieRetourAuxReglages((marque) => {
+   d'administration de contenu : ce module suit l'annonce de la fenêtre
+   commune (`APERCU_QUITTE`) dès que la page d'administration le charge,
+   avant que `plan-admin.mjs` ne lance le plan. */
+APERCU_QUITTE.suis((marque) => {
   queueMicrotask(() => {
     ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
