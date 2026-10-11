@@ -1095,7 +1095,7 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1181 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1186 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.73 · 7. Sélection et fiche
@@ -1103,11 +1103,11 @@ reprise-emplacements · volets
 Fonctions :
 
 `confieALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
-`select` 170 · `centre` 195 · `brancheActesFiche` 206 · `centreEtBaisseLaFiche` 222
-`centrePoint` 240 · `programme` 269 · `produits` 318 · `ficheProduit` 346 · `ficheConf` 416
-`poseAppuiTactile` 569 · `ecarteClicFantome` 572 · `nomSociete` 581 · `choisitExposant` 595
-`poseMarque` 633 · `montreMarque` 693 · `poseCode` 716 · `rangeMarque` 757 · `ouvre` 813
-`ferme` 1129 · `onglet` 1147 · `brancheFiche` 1165
+`select` 170 · `centre` 197 · `brancheActesFiche` 208 · `centreEtBaisseLaFiche` 224
+`centrePoint` 242 · `programme` 274 · `produits` 323 · `ficheProduit` 351 · `ficheConf` 421
+`poseAppuiTactile` 574 · `ecarteClicFantome` 577 · `nomSociete` 586 · `choisitExposant` 600
+`poseMarque` 638 · `montreMarque` 698 · `poseCode` 721 · `rangeMarque` 762 · `ouvre` 818
+`ferme` 1134 · `onglet` 1152 · `brancheFiche` 1170
 
 Éléments :
 
@@ -1231,7 +1231,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 477 l. → plan, plan-admin
+### `modules/gestes.mjs` — 481 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.72 · 8. Interactions du plan
@@ -1240,7 +1240,7 @@ Fonctions :
 
 `poseGestesAdmin` 70 · `milieu` 98 · `commencePince` 104 · `suitPince` 118
 `plieLesBandes` 171 · `saisitPlan` 185 · `cibleElargie` 222 · `planifieFiltre` 265
-`brancheGestes` 279 · `brancheLangue` 460
+`brancheGestes` 279 · `brancheLangue` 464
 
 Importe :
 

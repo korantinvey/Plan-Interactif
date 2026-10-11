@@ -192,7 +192,9 @@ export function select(id, recentrer, canal, iSoc){
      connaissait pas encore. */
   ouvre(o, n, canal, iSoc, recentrer);
 }
-export const centre = (o) => centrePoint(o.c);
+/** `recentrer` qui amène le plan sur l'emplacement sans toucher au zoom. */
+export const GARDE_ZOOM = "garde le zoom";
+export const centre = (o, gardeZoom) => centrePoint(o.c, gardeZoom);
 
 /* Les deux actions d'une fiche vivent à deux endroits : les boutons du pied,
    que le grand écran montre sans qu'on déroule, et les pictos de l'en-tête,
@@ -237,12 +239,15 @@ function centreEtBaisseLaFiche(cadre){
 
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
-export function centrePoint(xy){
+export function centrePoint(xy, gardeZoom){
   /* Le trajet part de la vue qu'on vise quand il y en a une : un centrage
      demandé pendant qu'un cran de molette finit de glisser s'enchaîne sur son
      arrivée, et non sur le point de passage où il l'a trouvé. */
   const base = vise || vue();
-  const w = Math.min(base.w, 55), h = w * (base.h / base.w);
+  /* Un appui sur le plan garde le zoom : on a déjà choisi d'où l'on regarde,
+     et plonger sur le stand ferait perdre ce qu'on voyait autour. La liste et
+     le bouton « Centrer », eux, viennent de loin et resserrent la vue. */
+  const w = gardeZoom ? base.w : Math.min(base.w, 55), h = w * (base.h / base.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
      fiche. On la pose au milieu de ce qui reste visible — d'après ce qui est
      réellement masqué, et non une proportion supposée.
@@ -1121,7 +1126,7 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
      au bord droit sur un écran large, un tiroir au bas d'un téléphone, dont
      la hauteur dépend de ce qu'on vient d'y écrire. Un seul ordre pour les
      deux écrans, là où il en fallait un par écran. */
-  if (recentrer) centre(o);
+  if (recentrer) centre(o, recentrer === GARDE_ZOOM);
   anime(() => rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
   if (!zone) mesure("fiche_stand", canal, o.id);
