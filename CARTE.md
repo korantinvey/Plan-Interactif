@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1703 l. → plan-smcl.html
+### `_styles-plan.css` — 1705 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -223,14 +223,14 @@ Importé par :
 
 edition · enregistrement · gestes-admin · outil-dessin · reprise-emplacements
 
-### `modules/ambiance.mjs` — 146 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 153 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles
 
 Fonctions :
 
 `ambianceRetenue` 37 · `anneaux` 43 · `f3` 55 · `rayonTuile` 82 · `retire` 87
-`arrondi` 102 · `traceStand` 128 · `appliqueAmbiance` 132
+`arrondi` 102 · `traceStand` 128 · `tuilesPosees` 133 · `appliqueAmbiance` 135
 
 Importe :
 
@@ -238,7 +238,7 @@ configuration · donnees · salon
 
 Importé par :
 
-apparence · distinctions · rendu · volets
+apparence · dessin · distinctions · rendu · volets
 
 ### `modules/annonce.mjs` — 45 l. → plan, plan-admin
 
@@ -697,25 +697,26 @@ Importé par :
 
 fiche-zone · icone-app
 
-### `modules/dessin.mjs` — 655 l. → plan, plan-admin
+### `modules/dessin.mjs` — 676 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — le tracé sur le plan
 
 Fonctions :
 
-`mentionOsm` 52 · `longueurFleche` 75 · `cheminFleche` 90 · `marqueFleche` 119
-`rafraichitFleches` 130 · `traceForme` 145 · `rotationTexte` 164 · `dessineDessins` 169
-`redessineForme` 210 · `peintCalque` 234 · `apercu` 241 · `apercuGuide` 253
-`traceRepere` 276 · `nomSurLePlan` 410 · `etiquetteSociete` 421 · `seRattache` 449
-`societeDeForme` 461 · `societesDuPlan` 473 · `traceImage` 507 · `traceStandDessine` 532
-`texteStandDessine` 556 · `poseLibellesDessines` 575 · `decoupeStand` 596
-`marqueStandsDessines` 611 · `rafraichitStandsDessines` 626 · `signale` 640
+`mentionOsm` 53 · `longueurFleche` 76 · `cheminFleche` 91 · `marqueFleche` 120
+`rafraichitFleches` 131 · `traceForme` 146 · `rotationTexte` 165 · `dessineDessins` 170
+`redessineForme` 211 · `peintCalque` 235 · `apercu` 242 · `apercuGuide` 254
+`traceRepere` 277 · `nomSurLePlan` 411 · `etiquetteSociete` 422 · `seRattache` 450
+`societeDeForme` 462 · `societesDuPlan` 474 · `traceImage` 508 · `traceStandDessine` 533
+`cheminStandDessine` 555 · `texteStandDessine` 577 · `poseLibellesDessines` 596
+`decoupeStand` 617 · `marqueStandsDessines` 632 · `rafraichitStandsDessines` 647
+`signale` 661
 
 Importe :
 
-calques-dessin · cartouche-poi · chemin-forme · configuration · dom · donnees · ecran
-environs · filtre · forme-choisie · itineraire · mode-admin · nom-emplacement · ordre-trace
-polices-plan · reperes · secteurs · texte · texte-plan · vue
+ambiance · calques-dessin · cartouche-poi · chemin-forme · configuration · dom · donnees
+ecran · environs · filtre · forme-choisie · itineraire · mode-admin · nom-emplacement
+ordre-trace · polices-plan · reperes · secteurs · texte · texte-plan · vue
 
 Importé par :
 
