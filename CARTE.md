@@ -1510,14 +1510,14 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · nom-emplacement · pile · placement-libelles
 tutoriel · webgl
 
-### `modules/libelles.mjs` — 276 l. → plan, plan-admin
+### `modules/libelles.mjs` — 284 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.49 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`libelles` 56 · `libelleZone` 133 · `emplacementWebgl` 161 · `libellesWebgl` 209
+`libelles` 56 · `libelleZone` 133 · `emplacementWebgl` 161 · `libellesWebgl` 217
 
 Importe :
 
@@ -1528,7 +1528,7 @@ trace-itineraire · vous-etes-ici · vue · webgl
 Importé par :
 
 fiche · fiche-zone · gestes · placement-libelles · plan · recherche · reglage-fiche
-reglages · reprise-emplacements
+reglages · reprise-emplacements · volets
 
 ### `modules/lien-parcours.mjs` — 97 l. → plan, plan-admin
 
@@ -1697,14 +1697,15 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 114 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 152 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
 Fonctions :
 
 `coexComptes` 32 · `coexChoisit` 33 · `ligneCode` 49 · `decaleLibelle` 83
-`facteurLibelle` 84 · `libelleForce` 85 · `libelleEmplacement` 96
+`facteurLibelle` 84 · `libelleForce` 85 · `libelleEmplacement` 96 · `nomsPivotes` 120
+`nomCouche` 122 · `libelleDroit` 134
 
 Importe :
 
@@ -1712,7 +1713,7 @@ configuration · libelle-place · polices-plan · texte · texte-plan
 
 Importé par :
 
-dessin · libelles
+dessin · libelles · volets
 
 ### `modules/noms-zones.mjs` — 36 l. → plan, plan-admin
 
@@ -2824,25 +2825,25 @@ Importé par :
 
 installation · rappels · tutoriel
 
-### `modules/volets.mjs` — 1260 l. → plan-admin
+### `modules/volets.mjs` — 1281 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
 Fonctions :
 
-`secteurs` 56 · `voletAdmin` 67 · `blocOptions` 232 · `blocLangues` 279 · `blocBarre` 353
-`blocHoraires` 411 · `voletParcours` 553 · `sallesSituees` 688 · `voletPmr` 704
-`nomDuTon` 795 · `svgVignette` 804 · `barreVignette` 806 · `vignetteDistPlan` 810
-`vignetteDistListe` 823 · `vignetteDistFiche` 837 · `salonDitSes` 857 · `coinPris` 864
-`voletDist` 887 · `voletApparence` 1052
+`secteurs` 58 · `voletAdmin` 69 · `blocOptions` 253 · `blocLangues` 300 · `blocBarre` 374
+`blocHoraires` 432 · `voletParcours` 574 · `sallesSituees` 709 · `voletPmr` 725
+`nomDuTon` 816 · `svgVignette` 825 · `barreVignette` 827 · `vignetteDistPlan` 831
+`vignetteDistListe` 844 · `vignetteDistFiche` 858 · `salonDitSes` 878 · `coinPris` 885
+`voletDist` 908 · `voletApparence` 1073
 
 Importe :
 
 ambiance · apercus · apparence · configuration · corps-fiche · distinctions · donnees
-fenetre · fiche-zone · habillage · horaires · itineraire · mode-admin · modeles · nuancier
-options · ordre-trace · polices-plan · recherche · reglage-application
-reglage-installation · reglage-rappel · reglage-sponsor · secteurs · seuil
-tiroir-itineraire · tutoriel
+fenetre · fiche-zone · habillage · horaires · itineraire · libelles · mode-admin · modeles
+nom-emplacement · nuancier · options · ordre-trace · polices-plan · recherche
+reglage-application · reglage-installation · reglage-rappel · reglage-sponsor · secteurs
+seuil · tiroir-itineraire · tutoriel
 
 Importé par :
 
