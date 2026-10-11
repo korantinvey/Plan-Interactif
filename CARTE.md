@@ -722,20 +722,20 @@ Importé par :
 bande-admin · batiments · edition · emplacements · enregistrement · fiche · gestes
 libelles · outil-dessin · pile · recherche · rendu · reprise-emplacements · socle-dessin
 
-### `modules/distinctions.mjs` — 379 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 382 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 54 · `texteCourtDist` 59 · `porteDist` 63 · `standPorte` 67 · `calqueDists` 76
-`traceDist` 107 · `oublieDists` 150 · `modesDuPlan` 154 · `releveDists` 158
-`dessineDists` 187 · `marquesListe` 213 · `poseDistsFiche` 243 · `refaitDistsFiche` 283
-`modeDist` 329 · `couleurDist` 341 · `appliqueDists` 363
+`texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 78
+`traceDist` 110 · `oublieDists` 153 · `modesDuPlan` 157 · `releveDists` 161
+`dessineDists` 190 · `marquesListe` 216 · `poseDistsFiche` 246 · `refaitDistsFiche` 286
+`modeDist` 332 · `couleurDist` 344 · `appliqueDists` 366
 
 Importe :
 
-ambiance · configuration · corps-fiche · couleurs · dom · donnees · texte · vue
+ambiance · configuration · corps-fiche · couleurs · dom · donnees · texte
 
 Importé par :
 
@@ -1809,14 +1809,14 @@ Importé par :
 
 pile
 
-### `modules/ordre-trace.mjs` — 72 l. → plan, plan-admin
+### `modules/ordre-trace.mjs` — 77 l. → plan, plan-admin
 
 - l.1 · Pile des calques — l'ordre de tracé
 
 Fonctions :
 
 `clePile` 23 · `entrees` 25 · `pile` 39 · `groupe` 51 · `ordonneDom` 59
-`construitPanneau` 70
+`construitPanneau` 75
 
 Importe :
 
@@ -2921,9 +2921,9 @@ chemin-forme · dom · ecran · environs · ordre-trace · vue-etat · vue-etat 
 Importé par :
 
 affiche-ici · appels · batiments · borne · calage-carte · cartouche-poi · chaleur
-demarrage · dessin · distinctions · edition · edition-en-cours · fiche · gestes · lancement
-libelles · mini-carte · nappe · outil-dessin · placement-libelles · plan · points-interet
-recherche · rendu · reprise-emplacements · rideau · sponsor · trace-itineraire · tutoriel
+demarrage · dessin · edition · edition-en-cours · fiche · gestes · lancement · libelles
+mini-carte · nappe · outil-dessin · placement-libelles · plan · points-interet · recherche
+rendu · reprise-emplacements · rideau · sponsor · trace-itineraire · tutoriel
 vous-etes-ici
 
 Portes :

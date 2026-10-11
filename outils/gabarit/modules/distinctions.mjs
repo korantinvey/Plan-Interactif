@@ -28,7 +28,6 @@ import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
 import { rayonTuile } from "./ambiance.mjs";
-import { svg } from "./vue.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -67,20 +66,24 @@ export const porteDist = (x, d) => Boolean(x && x[d.champ]) && montre("stand", d
 export const standPorte = (o, d) => Boolean(o) && o.kind !== "zone" &&
   societes(o).some(s => porteDist(s.soc, d));
 
-/* Les marques du plan vivent hors des couches, comme les liserés de la
-   sélection et du parcours et pour la même raison : posée dans le groupe du
+/* Les marques du plan vivent hors du groupe des stands, comme les liserés de
+   la sélection et du parcours et pour la même raison : posée dans le groupe du
    stand, une marque se faisait recouvrir par la cloison du voisin, tracé
-   après lui. Le calque ne reçoit aucun clic — c'est le stand qu'on désigne,
-   pas sa marque — et se range sous « #marques », que la sélection garde au
-   sommet. */
+   après lui. Mais elles suivent le calque des stands au lieu de coiffer tout
+   le plan : un coin corné posé au sommet passait devant le nom du stand et
+   en mangeait les lettres. Les textes, plus haut dans la pile, passent donc
+   devant elles — en SVG comme en WebGL, qui peint dans l'ordre du DOM.
+   `ordre-trace.mjs` `ordonneDom` l'y ramène quand la pile bouge. Il ne
+   reçoit aucun clic — c'est le stand qu'on désigne, pas sa marque. */
 function calqueDists(){
   let g = $("dists");
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "dists";
     g.setAttribute("aria-hidden", "true");
-    svg.insertBefore(g, svg.querySelector("#marques, #itin, #apercu, #poignees"));
   }
+  const st = $("stands");
+  if (st.nextSibling !== g) st.after(g);
   return g;
 }
 
