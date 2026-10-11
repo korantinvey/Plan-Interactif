@@ -138,10 +138,10 @@ function peintItineraire(p){
         Math.round(t.t * 100) + '%,var(--accent-clair))" d="' + traceDe(t.pts) + '"/>';
     /* L'étincelle attend que le trait soit arrivé. Chaque image du tracé
        réécrit le groupe, ce qui relance son animation : elle resterait figée
-       au départ, une pastille de plus sur le point de départ. Une tête et sa
-       traîne, deux traits et non cinq : sur un trait en dégradé, une seule
-       lumière qui court suffit à dire le sens. */
-    if (fini) for (const n of [3, 5]) traits += '<path class="iSens iC' + n + '" d="' + chemin + '"/>';
+       au départ, une pastille de plus sur le point de départ. Une étincelle et
+       sa lueur, qui ne repasse qu'une fois tous les six cents pixels : plus
+       serrée, elle se lisait comme une file de tirets — la comète d'avant. */
+    if (fini) for (const n of [1, 2, 3]) traits += '<path class="iSens iEt' + n + '" d="' + chemin + '"/>';
   });
   out += traits;
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de

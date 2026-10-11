@@ -122,7 +122,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
-### `_styles-parcours.css` — 630 l. → plan-smcl.html
+### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
 ### `_styles-plan.css` — 1673 l. → plan-smcl.html
 
@@ -1647,7 +1647,7 @@ Fonctions :
 `glisseVersVise` 489 · `glisseVers` 532 · `rectVisee` 554 · `zoom` 574 · `echelle` 588
 `versPlan` 600 · `brancheVue` 611
 
-### `modules/webgl.mjs` — 1524 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1532 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -1669,9 +1669,10 @@ Fonctions :
 `gonfleSurvol` 1229 · `coucheTuileSoulevee` 1251 · `couchesTuiles` 1281
 `poseCurseurWebgl` 1299 · `poseFocusWebgl` 1308 · `aplatsDe` 1315 · `coucheSurvol` 1318
 `coucheFocus` 1327 · `couchesPhare` 1354 · `lueurDe` 1371 · `opacitePhare` 1409
-`echellePhare` 1410 · `couchesPhareNoms` 1413 · `palierDefile` 1438 · `phaseComete` 1440
-`animeCouche` 1443 · `majAnimationWebgl` 1460 · `animeWebgl` 1468 · `objetSous` 1491
-`cibleWebgl` 1498 · `priseWebgl` 1505 · `libelleSousWebgl` 1510 · `rectEcranWebgl` 1515
+`echellePhare` 1410 · `couchesPhareNoms` 1413 · `palierDefile` 1438 · `periodeDe` 1443
+`phaseDe` 1445 · `animeCouche` 1451 · `majAnimationWebgl` 1468 · `animeWebgl` 1476
+`objetSous` 1499 · `cibleWebgl` 1506 · `priseWebgl` 1513 · `libelleSousWebgl` 1518
+`rectEcranWebgl` 1523
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 

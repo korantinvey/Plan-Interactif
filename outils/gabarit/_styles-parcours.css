@@ -488,7 +488,12 @@ html:is(.mode-borne,.mode-ici) .iChamp input[readonly]{background:var(--accent-s
    toujours une en vol, et le point ne paraît jamais s'éteindre. La boîte est
    nulle, ancrée au coin de la scène et déplacée par « transform » ; les ondes
    s'y centrent. */
-.iciPouls{position:absolute;left:0;top:0;width:0;height:0;z-index:1;pointer-events:none}
+.iciPouls{position:absolute;left:0;top:0;width:0;height:0;z-index:1;pointer-events:none;
+  /* La lueur, fixe, sous les ondes : une boîte nulle dont l'ombre déborde en
+     disque. Entre deux battements, le point reste cerné de lumière — c'est
+     elle qu'on trouve d'un coup d'œil, les ondes disent qu'il vit. */
+  border-radius:50%;box-shadow:0 0 16px 9px color-mix(in srgb,var(--accent) 38%,transparent),
+    0 0 34px 18px color-mix(in srgb,var(--accent) 14%,transparent)}
 .iciPouls[hidden]{display:none}
 .iciPouls::before,.iciPouls::after{content:"";position:absolute;left:-9px;top:-9px;
   width:18px;height:18px;border-radius:50%;background:var(--accent);opacity:0;
@@ -542,9 +547,9 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
    salon, deux traits larges et pâles, puis le trait lui-même, découpé en
    tronçons du clair au foncé — chacun porte sa nuance en style. */
 #itin .iLueur{stroke:var(--accent)}
-#itin .iLueur.l1{stroke-width:16;opacity:.08}
-#itin .iLueur.l2{stroke-width:8;opacity:.16}
-#itin .iTrait{stroke:var(--accent);stroke-width:3.5}
+#itin .iLueur.l1{stroke-width:24;opacity:.1}
+#itin .iLueur.l2{stroke-width:12;opacity:.2}
+#itin .iTrait{stroke:var(--accent);stroke-width:5}
 /* La comète, qui dit le sens du trajet.
 
    Des tirets clairs le disaient avant elle. Ils marchaient, mais ils se
@@ -581,6 +586,18 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
 @keyframes comete3{from{stroke-dashoffset:26}to{stroke-dashoffset:-174}}
 @keyframes comete4{from{stroke-dashoffset:15}to{stroke-dashoffset:-185}}
 @keyframes comete5{from{stroke-dashoffset:7}to{stroke-dashoffset:-193}}
+/* L'étincelle du fil lumineux : une tête vive, sa lueur et sa traîne, qui
+   ne repasse qu'une fois tous les six cents pixels — une seule lumière qui
+   court, et non une file de tirets. Même allure que la comète (deux cents
+   pixels en une seconde et demie), d'où quatre secondes et demie pour six
+   cents ; `webgl.mjs` `phaseDe` en déduit la sienne de la période. */
+#itin .iEt1,#itin .iEt2,#itin .iEt3{animation-duration:4.5s}
+#itin .iEt1{stroke-width:12;opacity:.22;stroke-dasharray:60 540;animation-name:etincelle1}
+#itin .iEt2{stroke-width:5;opacity:.6;stroke-dasharray:30 570;animation-name:etincelle2}
+#itin .iEt3{stroke-width:6;opacity:1;stroke-dasharray:6 594;animation-name:etincelle3}
+@keyframes etincelle1{from{stroke-dashoffset:60}to{stroke-dashoffset:-540}}
+@keyframes etincelle2{from{stroke-dashoffset:30}to{stroke-dashoffset:-570}}
+@keyframes etincelle3{from{stroke-dashoffset:6}to{stroke-dashoffset:-594}}
 @media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
 @media (prefers-reduced-motion:reduce){.chalTete button svg{transition:none}}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;

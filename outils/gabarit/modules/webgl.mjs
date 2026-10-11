@@ -1436,8 +1436,16 @@ function couchesPhareNoms(){
    ne voyait pas sauter un tiret parmi douze. */
 const COMETE_PERIODE = 200, COMETE_DUREE = 1.5, COMETE_HZ = 30;
 const palierDefile = t => Math.floor(t * COMETE_HZ);
+/* La période d'un trait qui défile, en pixels : son tiret et son vide, que la
+   feuille de style donne en demi-épaisseurs. Deux cents pour la comète ;
+   l'étincelle du fil lumineux en prend six cents, pour ne passer qu'une fois
+   là où la comète passait trois. Sa durée suit, à la même allure. */
+const periodeDe = c => (c.props.tirets[0] + c.props.tirets[1]) * c.props.demiEpaisseur || COMETE_PERIODE;
 /* Où en est la tête de sa course, entre 0 et 1, au palier où l'on est. */
-const phaseComete = t => (palierDefile(t) / COMETE_HZ) % COMETE_DUREE / COMETE_DUREE;
+const phaseDe = (c, t) => {
+  const duree = COMETE_DUREE * periodeDe(c) / COMETE_PERIODE;
+  return (palierDefile(t) / COMETE_HZ) % duree / duree;
+};
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
@@ -1452,7 +1460,7 @@ function animeCouche(c){
      période, comme le « stroke-dashoffset » de ses images-clés. Partir de sa
      propre longueur est ce qui fait tomber les trois têtes au même endroit. */
   if (c.props.defile && GL.bouge) return c.clone({
-    decalage: c.props.tirets[0] * c.props.demiEpaisseur - COMETE_PERIODE * phaseComete(GL.temps) });
+    decalage: c.props.tirets[0] * c.props.demiEpaisseur - periodeDe(c) * phaseDe(c, GL.temps) });
   return c;
 }
 
