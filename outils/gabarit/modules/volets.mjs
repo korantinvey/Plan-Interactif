@@ -51,6 +51,8 @@ import { ADMIN } from "./mode-admin.mjs";
 import { champZone } from "./fiche-zone.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
+import { libelles } from "./libelles.mjs";
+import { nomsPivotes } from "./nom-emplacement.mjs";
 
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
@@ -106,6 +108,25 @@ export function voletAdmin(hote){
       enregistreConf(); appliqueSecteurs(); appliqueFiltre();
       // les couleurs des secteurs vivent dans la pile : elles suivent
       if (ADMIN) construitPanneau();
+    };
+    bloc.appendChild(l);
+  }
+
+  /* Les noms couchés dans les stands étroits changent, comme les secteurs, ce
+     que le plan donne à voir et non ce qu'il propose. Éteints par défaut : un
+     salon garde l'écriture qu'il connaissait tant qu'on ne l'a pas choisie
+     pour lui (`nom-emplacement.mjs` `nomCouche`). */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent =
+      "Écrire à la verticale le nom des stands étroits, quand il y gagne en taille";
+    const c = l.querySelector("input");
+    c.checked = nomsPivotes();
+    c.onchange = e => {
+      conf("_nomsPivotes").visible = e.target.checked;
+      enregistreConf();
+      libelles();
     };
     bloc.appendChild(l);
   }
