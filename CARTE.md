@@ -1382,23 +1382,22 @@ Importé par :
 
 demarrage · enregistrement · fiche-zone
 
-### `modules/installation.mjs` — 902 l. → plan, plan-admin
+### `modules/installation.mjs` — 821 l. → plan, plan-admin
 
 - l.1 · L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 120 · `invitationVoulue` 121 · `auDoigt` 151 · `nommeApplication` 187
-`reponsesInstallation` 205 · `retientInstallation` 210 · `jourInstallation` 219
-`invitationEcartee` 222 · `refuseInstallation` 228 · `faconInstallation` 256
-`appliInstallee` 279 · `verifieApplication` 301 · `connaitLApplication` 311
-`adresseApplication` 324 · `lanceApplication` 344 · `faconRappel` 377 · `rappelEcarte` 385
-`refuseRappel` 391 · `relanceInvitation` 409 · `gesteInstallation` 414 · `doigtPose` 418
-`doigtLeve` 419 · `vueInstallation` 422 · `accueilleInvitation` 431
-`invitationRetenue` 457 · `suitLesGestes` 478 · `finInvitation` 486 · `rouvreInvitation` 508
-`essaieInvitation` 528 · `brancheInstallation` 571 · `teteInvitation` 665
-`poseGardeInstallation` 698 · `remplitInvitation` 721 · `ouvreInvitation` 751
-`ouvreRappel` 830 · `ouvreRetrouve` 892
+`reglageInstallation` 117 · `invitationVoulue` 118 · `auDoigt` 148 · `nommeApplication` 184
+`reponsesInstallation` 202 · `retientInstallation` 207 · `jourInstallation` 216
+`invitationEcartee` 219 · `refuseInstallation` 225 · `faconInstallation` 253
+`appliInstallee` 282 · `verifieApplication` 304 · `connaitLApplication` 314
+`faconRappel` 334 · `rappelEcarte` 342 · `refuseRappel` 348 · `relanceInvitation` 366
+`gesteInstallation` 371 · `doigtPose` 375 · `doigtLeve` 376 · `vueInstallation` 379
+`accueilleInvitation` 388 · `invitationRetenue` 414 · `suitLesGestes` 435
+`finInvitation` 443 · `rouvreInvitation` 465 · `essaieInvitation` 485
+`brancheInstallation` 528 · `teteInvitation` 621 · `poseGardeInstallation` 654
+`remplitInvitation` 677 · `ouvreInvitation` 707 · `ouvreRappel` 782
 
 Importe :
 
