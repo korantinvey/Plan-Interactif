@@ -122,10 +122,12 @@ export function appliqueApparence(){
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
+  /* L'ambiance d'abord : elle change la forme des stands, que les
+     distinctions mesurent pour poser leurs marques d'angle. */
+  appliqueAmbiance();
   appliqueDists();
   appliqueBarre();
   appliqueModele();
-  appliqueAmbiance();
 }
 
 /**

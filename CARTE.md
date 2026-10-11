@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 630 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1669 l. → plan-smcl.html
+### `_styles-plan.css` — 1673 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -190,14 +190,14 @@ Fonctions :
 `reprendTaille` 435 · `dupliqueForme` 456 · `pousseForme` 481 · `ecritDimensions` 498
 `appliqueDimension` 517
 
-### `modules/ambiance.mjs` — 119 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 146 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles
 
 Fonctions :
 
-`ambianceRetenue` 37 · `anneaux` 43 · `f3` 55 · `arrondi` 75 · `traceStand` 101
-`appliqueAmbiance` 105
+`ambianceRetenue` 37 · `anneaux` 43 · `f3` 55 · `rayonTuile` 82 · `retire` 87
+`arrondi` 102 · `traceStand` 128 · `appliqueAmbiance` 132
 
 ### `modules/annonce.mjs` — 45 l. → plan, plan-admin
 
@@ -216,14 +216,14 @@ Fonctions :
 `texteCorps` 85 · `clesPortees` 110 · `standApercu` 130 · `lignesApercu` 154
 `contenuApercu` 184 · `apercuFiche` 221 · `apercuListe` 299 · `apercuDuo` 321
 
-### `modules/apparence.mjs` — 180 l. → plan, plan-admin
+### `modules/apparence.mjs` — 182 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
 Fonctions :
 
 `styleFond` 28 · `sousCalques` 49 · `styleDataGroupe` 56 · `appliqueCouleursData` 65
-`styleData` 97 · `appliqueApparence` 103 · `appliqueCommandes` 169
+`styleData` 97 · `appliqueApparence` 103 · `appliqueCommandes` 171
 
 ### `modules/appel-fonction.mjs` — 120 l. → console
 
@@ -421,14 +421,14 @@ Fonctions :
 `encode` 27 · `decode` 29 · `correspondance` 34 · `sansPrefixe` 37 · `courte` 38
 `intitule` 53 · `intituleSuite` 65 · `aplani` 87 · `memeStyle` 97 · `autreFace` 115
 
-### `modules/couleurs.mjs` — 73 l. → plan, plan-admin
+### `modules/couleurs.mjs` — 96 l. → plan, plan-admin
 
 - l.1 · Les couleurs : d'une notation à l'autre, et ce que l'œil en perçoit
 
 Fonctions :
 
 `hslHex` 7 · `rgbHex` 19 · `hexa` 27 · `luminance` 31 · `trio` 37 · `melange` 47
-`ecarte` 61
+`ecarte` 61 · `avive` 83
 
 ### `modules/demarrage.mjs` — 292 l. → plan, plan-admin
 
@@ -462,16 +462,16 @@ Fonctions :
 `texteStandDessine` 556 · `poseLibellesDessines` 575 · `decoupeStand` 596
 `marqueStandsDessines` 611 · `rafraichitStandsDessines` 626 · `signale` 640
 
-### `modules/distinctions.mjs` — 366 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 379 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 75
-`traceDist` 106 · `oublieDists` 139 · `modesDuPlan` 143 · `releveDists` 145
-`dessineDists` 174 · `marquesListe` 200 · `poseDistsFiche` 230 · `refaitDistsFiche` 270
-`modeDist` 316 · `couleurDist` 328 · `appliqueDists` 350
+`texteDist` 54 · `texteCourtDist` 59 · `porteDist` 63 · `standPorte` 67 · `calqueDists` 76
+`traceDist` 107 · `oublieDists` 150 · `modesDuPlan` 154 · `releveDists` 158
+`dessineDists` 187 · `marquesListe` 213 · `poseDistsFiche` 243 · `refaitDistsFiche` 283
+`modeDist` 329 · `couleurDist` 341 · `appliqueDists` 363
 
 ### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
 
@@ -670,19 +670,19 @@ Fonctions :
 `basculeAffichageZone` 778 · `marqueZonesMasquees` 806 · `ecritColonnesEvenement` 826
 `ecritColonneEvenement` 860
 
-### `modules/fiche.mjs` — 1175 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1181 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.73 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 71 · `anime` 105 · `noeud` 137 · `canalPlan` 147 · `rangSociete` 155
-`select` 164 · `centre` 189 · `brancheActesFiche` 200 · `centreEtBaisseLaFiche` 216
-`centrePoint` 234 · `programme` 263 · `produits` 312 · `ficheProduit` 340 · `ficheConf` 410
-`poseAppuiTactile` 563 · `ecarteClicFantome` 566 · `nomSociete` 575 · `choisitExposant` 589
-`poseMarque` 627 · `montreMarque` 687 · `poseCode` 710 · `rangeMarque` 751 · `ouvre` 807
-`ferme` 1123 · `onglet` 1141 · `brancheFiche` 1159
+`confieALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
+`select` 170 · `centre` 195 · `brancheActesFiche` 206 · `centreEtBaisseLaFiche` 222
+`centrePoint` 240 · `programme` 269 · `produits` 318 · `ficheProduit` 346 · `ficheConf` 416
+`poseAppuiTactile` 569 · `ecarteClicFantome` 572 · `nomSociete` 581 · `choisitExposant` 595
+`poseMarque` 633 · `montreMarque` 693 · `poseCode` 716 · `rangeMarque` 757 · `ouvre` 813
+`ferme` 1129 · `onglet` 1147 · `brancheFiche` 1165
 
 Éléments :
 
@@ -1092,22 +1092,23 @@ Fonctions :
 
 `accueilleParcoursPartage` 45 · `adoptePartage` 123
 
-### `modules/parcours.mjs` — 578 l. → plan, plan-admin
+### `modules/parcours.mjs` — 595 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
 Fonctions :
 
-`_rafraichit` 25 · `_reprendRappels` 26 · `_synchroniseRappels` 27 · `poseParcours` 88
-`brancheListeParcours` 106 · `cleParcours` 119 · `identifiantParcours` 156
-`casierParcours` 164 · `dansParcours` 165 · `jourParcours` 168
-`attenduDepuisTropLongtemps` 173 · `trieParcours` 184 · `chargeParcours` 194
-`parcoursAEcrire` 228 · `enregistreParcours` 244 · `tientLeStockage` 273
-`plurielParcours` 287 · `contenuParcours` 296 · `signetParcours` 307 · `boutonParcours` 313
-`rafraichitMarque` 318 · `calqueMarques` 351 · `dessineMarques` 369 · `marqueParcours` 399
-`instantConf` 417 · `cleTemps` 421 · `nomDeStand` 431 · `groupeParcours` 433
-`fermeParcours` 447 · `apresBascule` 467 · `suitLeParcours` 469 · `basculeParcours` 479
-`brancheParcours` 503 · `verseAuParcours` 526 · `rangParcours` 555 · `refaitParcours` 578
+`_rafraichit` 26 · `_reprendRappels` 27 · `_synchroniseRappels` 28 · `poseParcours` 89
+`brancheListeParcours` 107 · `cleParcours` 120 · `identifiantParcours` 157
+`casierParcours` 165 · `dansParcours` 166 · `jourParcours` 169
+`attenduDepuisTropLongtemps` 174 · `trieParcours` 185 · `chargeParcours` 195
+`parcoursAEcrire` 229 · `enregistreParcours` 245 · `tientLeStockage` 274
+`plurielParcours` 288 · `contenuParcours` 297 · `signetParcours` 308 · `boutonParcours` 314
+`rafraichitMarque` 319 · `calqueMarques` 352 · `traitTuile` 379 · `dessineMarques` 386
+`marqueParcours` 416 · `instantConf` 434 · `cleTemps` 438 · `nomDeStand` 448
+`groupeParcours` 450 · `fermeParcours` 464 · `apresBascule` 484 · `suitLeParcours` 486
+`basculeParcours` 496 · `brancheParcours` 520 · `verseAuParcours` 543 · `rangParcours` 572
+`refaitParcours` 595
 
 ### `modules/partage.mjs` — 293 l. → plan, plan-admin
 
@@ -1646,31 +1647,31 @@ Fonctions :
 `glisseVersVise` 489 · `glisseVers` 532 · `rectVisee` 554 · `zoom` 574 · `echelle` 588
 `versPlan` 600 · `brancheVue` 611
 
-### `modules/webgl.mjs` — 1503 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1501 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`confieAuWebgl` 64 · `chargeWebgl` 97 · `brancheWebgl` 122 · `monteWebgl` 129
-`poseToileWebgl` 230 · `guetteContexteWebgl` 236 · `contextePerduWebgl` 246
-`verifieContexteWebgl` 253 · `perdContexteWebgl` 262 · `remonteWebgl` 283 · `vueDeck` 300
-`vueWebgl` 309 · `blocDe` 318 · `majEditionWebgl` 331 · `cleBloc` 343 · `planifieWebgl` 369
-`toutRepeindreWebgl` 373 · `blocsDansLOrdre` 380 · `repeintWebgl` 385 · `assembleWebgl` 409
-`constTexte` 448 · `jeuDeCaracteres` 644 · `sousPixelOffert` 698 · `couchesPetites` 703
-`couchesTexte` 713 · `accVide` 748 · `convertitBloc` 749 · `accDe` 765 · `parcoursGl` 772
-`formeGl` 808 · `texteGl` 850 · `imageGl` 873 · `partage` 905 · `designeGl` 911
-`couchesDeBloc` 913 · `modelesLibellesHtml` 1012 · `poseModelesLibelles` 1022
-`lisModelesLibelles` 1028 · `groupesNoms` 1061 · `couchesNoms` 1078
-`couchesPastilles` 1089 · `couchesLibellesWebgl` 1104 · `couchesDessineesWebgl` 1111
-`stage` 1132 · `brancheSurvolWebgl` 1136 · `poseSurvolWebgl` 1156 · `enTuiles` 1185
-`hauteurTuile` 1193 · `visePour` 1199 · `gonfleSurvol` 1204 · `avive` 1225
-`coucheTuileSoulevee` 1241 · `couchesTuiles` 1265 · `poseCurseurWebgl` 1278
-`poseFocusWebgl` 1287 · `aplatsDe` 1294 · `coucheSurvol` 1297 · `coucheFocus` 1306
-`couchesPhare` 1333 · `lueurDe` 1350 · `opacitePhare` 1388 · `echellePhare` 1389
-`couchesPhareNoms` 1392 · `palierDefile` 1417 · `phaseComete` 1419 · `animeCouche` 1422
-`majAnimationWebgl` 1439 · `animeWebgl` 1447 · `objetSous` 1470 · `cibleWebgl` 1477
-`priseWebgl` 1484 · `libelleSousWebgl` 1489 · `rectEcranWebgl` 1494
+`confieAuWebgl` 65 · `chargeWebgl` 98 · `brancheWebgl` 123 · `monteWebgl` 130
+`poseToileWebgl` 231 · `guetteContexteWebgl` 237 · `contextePerduWebgl` 247
+`verifieContexteWebgl` 254 · `perdContexteWebgl` 263 · `remonteWebgl` 284 · `vueDeck` 301
+`vueWebgl` 310 · `blocDe` 319 · `majEditionWebgl` 332 · `cleBloc` 344 · `planifieWebgl` 370
+`toutRepeindreWebgl` 374 · `blocsDansLOrdre` 381 · `repeintWebgl` 386 · `assembleWebgl` 410
+`constTexte` 450 · `jeuDeCaracteres` 646 · `sousPixelOffert` 700 · `couchesPetites` 705
+`couchesTexte` 715 · `accVide` 750 · `convertitBloc` 751 · `accDe` 767 · `parcoursGl` 774
+`formeGl` 810 · `texteGl` 852 · `imageGl` 875 · `partage` 907 · `designeGl` 913
+`couchesDeBloc` 915 · `modelesLibellesHtml` 1014 · `poseModelesLibelles` 1024
+`lisModelesLibelles` 1030 · `groupesNoms` 1063 · `couchesNoms` 1080
+`couchesPastilles` 1091 · `couchesLibellesWebgl` 1106 · `couchesDessineesWebgl` 1113
+`stage` 1134 · `brancheSurvolWebgl` 1138 · `poseSurvolWebgl` 1158 · `enTuiles` 1187
+`hauteurTuile` 1195 · `visePour` 1201 · `gonfleSurvol` 1206 · `coucheTuileSoulevee` 1228
+`couchesTuiles` 1258 · `poseCurseurWebgl` 1276 · `poseFocusWebgl` 1285 · `aplatsDe` 1292
+`coucheSurvol` 1295 · `coucheFocus` 1304 · `couchesPhare` 1331 · `lueurDe` 1348
+`opacitePhare` 1386 · `echellePhare` 1387 · `couchesPhareNoms` 1390 · `palierDefile` 1415
+`phaseComete` 1417 · `animeCouche` 1420 · `majAnimationWebgl` 1437 · `animeWebgl` 1445
+`objetSous` 1468 · `cibleWebgl` 1475 · `priseWebgl` 1482 · `libelleSousWebgl` 1487
+`rectEcranWebgl` 1492
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 

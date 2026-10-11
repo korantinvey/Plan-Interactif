@@ -109,8 +109,14 @@ export function anime(mesure, sens){
     /* « offsetTop » ignore la transformation : c'est la place du tiroir
        arrivé, et non celle d'où il glisse encore. */
     p.style.transformOrigin = (toucher.x - p.offsetLeft) + "px " + (toucher.y - p.offsetTop) + "px";
-    anim = p.animate([{ transform: "scale(.16)", opacity: 0 }],
+    /* Les deux bouts, écrits l'un et l'autre : une image-clé seule se place
+       à la fin de l'animation, et la fiche se réduisait alors vers le stand
+       au lieu d'en sortir. Le glissement CSS du tiroir se tait le temps du
+       geste — c'est l'animation qui mène, jusqu'à la place qu'il atteint. */
+    p.classList.add("glisse");
+    anim = p.animate([{ transform: "scale(.16)", opacity: 0, offset: 0 }, { transform: "none", opacity: 1 }],
       { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
+    anim.finished.then(() => p.classList.remove("glisse"), () => p.classList.remove("glisse"));
     return;
   }
   if (REDUIT || ETROIT()){ if (sens < 0) p.classList.remove("open"); return; }
