@@ -26,7 +26,8 @@ import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
 import { P_NOM, confieAuxPolices } from "./polices-plan.mjs";
 import { mesCalques, calqueActif } from "./calques-dessin.mjs";
-import { cheminForme, styleTrait, EPAISSEUR_TRAIT, facteurTrait, pxTrait } from "./chemin-forme.mjs";
+import { traceStand, tuilesPosees } from "./ambiance.mjs";
+import { cheminForme, estCadre, styleTrait, EPAISSEUR_TRAIT, facteurTrait, pxTrait } from "./chemin-forme.mjs";
 import { PICTOS, pictoForme, nomTypeRepere, modeDit, estTransport, glypheRepere, ligneAffichee,
   couleurRepere, encreRepere } from "./reperes.mjs";
 import { cartouchePoi, phareRepere } from "./cartouche-poi.mjs";
@@ -538,7 +539,27 @@ function traceStandDessine(f){
     (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
          '" tabindex="0" role="button" aria-label="' +
          esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
-    '><path d="' + cheminForme(f) + '"/><g class="lab"></g></g>';
+    '>' + cheminStandDessine(f) + '<g class="lab"></g></g>';
+}
+
+/**
+ * Le tracé d'un stand dessiné, dans l'ambiance du plan.
+ *
+ * En Tuiles, il se retire et s'arrondit comme les stands du plan — sans quoi
+ * il gardait sa cloison au milieu de tuiles détachées. L'arrondi ne lit que
+ * des segments absolus ; or un cadre s'écrit en « h » et « v » relatifs, et
+ * passait tel quel. On lui donne donc ses quatre coins. Les deux tracés
+ * restent sur le nœud : un changement d'ambiance passe de l'un à l'autre
+ * sans retracer les calques (`ambiance.mjs` `appliqueAmbiance`).
+ */
+function cheminStandDessine(f){
+  const pts = estCadre(f)
+    ? (([a, b]) => [[a[0], a[1]], [b[0], a[1]], [b[0], b[1]], [a[0], b[1]]])(f.pts)
+    : f.pts;
+  const classique = cheminForme(f);
+  const poly = "M" + pts.map(p => p[0] + " " + p[1]).join("L") + "Z";
+  return '<path d="' + (tuilesPosees() ? traceStand(poly) : classique) +
+    '" data-classique="' + classique + '" data-poly="' + poly + '"/>';
 }
 
 /**

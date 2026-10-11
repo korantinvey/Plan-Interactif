@@ -420,7 +420,8 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
    Les zones perdent leurs tirets et prennent un aplat plus franc, qui se lit
    comme une pièce du même jeu. */
 html.ambiance-tuiles .stand path,
-html.ambiance-tuiles .zone path{stroke:none}
+html.ambiance-tuiles .zone path,
+html.ambiance-tuiles .dcal .forme.sdes path{stroke:none}
 html.ambiance-tuiles .zone path{fill-opacity:.62}
 html.ambiance-tuiles .zone.masquee path{fill-opacity:.2}
 /* La carte de chaleur, en administration. Elle vient après le secteur — c'est
@@ -495,11 +496,11 @@ html:not(.ambiance-tuiles) :is(.stand,.zone):hover path{fill:var(--accent-soft)}
    C'est le rendu SVG, de secours ; la carte graphique fait de même avec une
    couche à elle (`webgl.mjs` `coucheTuileSoulevee`). Le SVG ne sait pas
    la faire passer devant ses voisines — elles la recouvrent d'un bord. */
-html.ambiance-tuiles :is(.stand,.zone) path{transform-box:fill-box;transform-origin:center;
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie) path{transform-box:fill-box;transform-origin:center;
   transition:transform .16s cubic-bezier(.2,.8,.3,1),filter .16s}
-html.ambiance-tuiles :is(.stand,.zone):hover path{transform:scale(1.06);
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie):hover path{transform:scale(1.06);
   filter:saturate(1.6) brightness(.96) drop-shadow(0 1px 1.5px rgba(20,24,26,.25))}
-@media (prefers-reduced-motion:reduce){html.ambiance-tuiles :is(.stand,.zone) path{transition:none}}
+@media (prefers-reduced-motion:reduce){html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie) path{transition:none}}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
    et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
@@ -511,7 +512,7 @@ html:not(.ambiance-tuiles) :is(.stand,.zone).sel path{fill:var(--c-sel,var(--acc
 /* En Tuiles, la tuile choisie garde sa teinte dans la feuille de style : la
    carte graphique l'avive comme au survol (`webgl.mjs` `couchesTuiles`).
    Le rendu SVG de secours fait de même par un filtre. */
-html.ambiance-tuiles :is(.stand,.zone).sel path{filter:saturate(1.6) brightness(.96)}
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes).sel path{filter:saturate(1.6) brightness(.96)}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
@@ -651,11 +652,12 @@ html:not(.chaleur-halos) .dcal .forme.sdes[data-chaleur] path{fill:var(--chal-c)
    tracé, y compris sur la page publique où le mode édition n'existe pas.
    Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
 .dcal .forme.sdes.lie path{pointer-events:all}
-html .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+html:not(.ambiance-tuiles) .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
 /* Le liseré de la sélection reste sur la forme : « #marques » recopie les
    tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
-   pas de cloison mitoyenne à ménager — il est posé sur son hôte. */
-html .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
+   pas de cloison mitoyenne à ménager — il est posé sur son hôte. En Tuiles,
+   il s'avive comme les autres tuiles, sans aplat ni liseré. */
+html:not(.ambiance-tuiles) .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
   stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
 .dcal .forme.sdes:focus{outline:none}
 html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}

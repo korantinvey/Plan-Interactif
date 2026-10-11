@@ -414,7 +414,7 @@ function assembleWebgl(){
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
-    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel")) : new Set();
+    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
