@@ -563,9 +563,13 @@ export function glisseVers(/** @type {any} */ but){
 /* La courbure du trajet : plus grande, la caméra monte plus haut. 1,4 est la
    valeur que l'article tient pour la plus naturelle. */
 const RHO = 1.4;
-/* Au-delà de cette distance entre les centres, comptée en largeurs de vue,
-   on vole ; en deçà, on glisse. */
-const SAUT = .9;
+/* On vole quand le stand est loin — au-delà de cette distance entre les
+   centres, comptée en largeurs de vue — ou quand l'échelle change d'au
+   moins ce rapport : depuis la vue d'ensemble, le stand est toujours dans le
+   cadre, et c'est la plongée vers lui qui fait le trajet. Sans ce second
+   seuil, le cas le plus courant — choisir un exposant dans la liste, le hall
+   entier à l'écran — ne volait jamais. */
+const SAUT = .9, PLONGEE = 1.8;
 /* L'inclinaison au milieu du vol, en degrés : de quoi sentir qu'on survole,
    pas assez pour que le plan bascule. */
 const INCLINAISON = 9;
@@ -592,11 +596,20 @@ function inclineScene(/** @type {number} */ t){
 function trajetVol(/** @type {any} */ a, /** @type {any} */ b){
   const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
   const dx = bx - ax, dy = by - ay, d1 = Math.hypot(dx, dy), w0 = a.w, w1 = b.w;
-  const r2 = RHO * RHO, r4 = r2 * r2;
+  const r2 = RHO * RHO, r4 = r2 * r2, rapport = b.h / b.w;
+  /* Sur place, le trajet n'est qu'un zoom : la formule générale divise par la
+     distance, et l'on prend sa limite. */
+  if (d1 < 1e-6){
+    const S = Math.log(w1 / w0) / RHO;
+    return { S: Math.abs(S), f: (/** @type {number} */ t) => {
+      const w = w0 * Math.exp(RHO * t * S), h = w * rapport;
+      return { x: ax + t * dx - w / 2, y: ay + t * dy - h / 2, w, h };
+    } };
+  }
   const b0 = (w1 * w1 - w0 * w0 + r4 * d1 * d1) / (2 * w0 * r2 * d1);
   const b1 = (w1 * w1 - w0 * w0 - r4 * d1 * d1) / (2 * w1 * r2 * d1);
   const q0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), q1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
-  const S = (q1 - q0) / RHO, c0 = Math.cosh(q0), rapport = b.h / b.w;
+  const S = (q1 - q0) / RHO, c0 = Math.cosh(q0);
   return { S, f: (/** @type {number} */ t) => {
     const s = t * S;
     const u = w0 / (r2 * d1) * (c0 * Math.tanh(RHO * s + q0) - Math.sinh(q0));
@@ -615,7 +628,8 @@ function trajetVol(/** @type {any} */ a, /** @type {any} */ b){
 export function voleVers(/** @type {any} */ but){
   const a = vise || vue();
   const d = a ? Math.hypot(but.x + but.w / 2 - (a.x + a.w / 2), but.y + but.h / 2 - (a.y + a.h / 2)) : 0;
-  if (REDUIT || !a || d < SAUT * Math.max(a.w, but.w)){ glisseVers(but); return; }
+  const rapportEchelle = a ? Math.max(a.w, but.w) / Math.min(a.w, but.w) : 1;
+  if (REDUIT || !a || (d < SAUT * Math.max(a.w, but.w) && rapportEchelle < PLONGEE)){ glisseVers(but); return; }
   stoppeZoom();
   const { S, f } = trajetVol(a, but);
   // la durée suit la longueur du trajet, bornée : ni un sursaut, ni une attente

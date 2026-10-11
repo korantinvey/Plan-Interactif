@@ -7,10 +7,16 @@
    téléphone. Deux moments seulement, pour qu'elle garde un sens : le doigt
    choisit un stand ou un repère, et le pincement bute sur la limite du zoom.
 
-   Les téléphones Android l'offrent ; l'iPhone ne laisse pas une page faire
-   vibrer, et l'appel n'y fait rien. Seul le doigt la déclenche — la souris et
-   le clavier n'ont rien à sentir. Le navigateur la refuse aussi tant que la
-   page n'a pas été touchée : c'est toujours un geste qui l'appelle ici.
+   Android l'offre par `navigator.vibrate`. L'iPhone n'a pas cet appel, et
+   la vibration y restait muette ; mais depuis iOS 18, Safari fait vibrer
+   l'appareil quand on bascule un interrupteur natif (`<input switch>`). On
+   en garde un, invisible, et on le bascule par son étiquette — c'est le geste
+   du doigt qui l'actionne, comme si on l'avait touché. Un iPhone plus ancien
+   n'y gagne rien, et n'y perd rien.
+
+   Seul le doigt la déclenche — la souris et le clavier n'ont rien à sentir.
+   Le navigateur la refuse aussi tant que la page n'a pas été touchée : c'est
+   toujours un geste qui l'appelle ici.
    ============================================================ */
 
 /* Assez pour se sentir, trop peu pour s'entendre sur une table. */
@@ -24,5 +30,25 @@ export const PRISE = 10, BUTEE = 18;
  */
 export function vibre(ms, sorte){
   if (sorte && sorte !== "touch") return;
-  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  try {
+    if (navigator.vibrate){ navigator.vibrate(ms); return; }
+    interrupteur().click();
+  } catch (e) {}
+}
+
+/** @type {HTMLLabelElement | null} */
+let etiquette = null;
+/* L'interrupteur de Safari, posé une fois et hors de vue. Hors de vue et non
+   caché : un élément masqué (`display:none`) ne se bascule plus, et ne fait
+   donc plus rien vibrer. */
+function interrupteur(){
+  if (etiquette) return etiquette;
+  etiquette = document.createElement("label");
+  etiquette.setAttribute("aria-hidden", "true");
+  etiquette.style.cssText = "position:fixed;left:-99px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
+  const c = document.createElement("input");
+  c.type = "checkbox"; c.setAttribute("switch", ""); c.tabIndex = -1;
+  etiquette.appendChild(c);
+  document.body.appendChild(etiquette);
+  return etiquette;
 }
