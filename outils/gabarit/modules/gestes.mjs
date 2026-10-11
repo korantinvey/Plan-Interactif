@@ -34,7 +34,7 @@ import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVu
   from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
   fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
-import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme, GARDE_ZOOM } from "./fiche.mjs";
+import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
 import { oublieChoixPoi, ouvrePoi, oublieReperes } from "./points-interet.mjs";
 import { poseBorneIci } from "./borne.mjs";
 import { vibre, PRISE, BUTEE } from "./toucher.mjs";
@@ -363,11 +363,11 @@ export function brancheGestes(){
         return;
       }
       if (viseItineraire(cible.dataset.id)) return;
-      /* Le stand touché vient au milieu de ce qui reste visible, sans changer
-         le zoom — sur un téléphone, la fiche qui monte du bas l'aurait caché ;
-         sur un grand écran, elle s'ouvre à droite. Le trajet est un vol
-         (`vue.mjs` `voleVers`), comme pour un exposant choisi dans la liste. */
-      select(cible.dataset.id, GARDE_ZOOM, canalPlan(cible), rangSociete(cible));
+      /* Le plan ne bouge pas sous le doigt : on a choisi ce qu'on regarde, et
+         le recentrer à chaque appui — essayé, en glissant puis en volant —
+         donnait la nausée à l'usage. La liste et la recherche, elles, viennent
+         de loin et amènent le plan sur le stand. */
+      select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
     } else { ferme(); finVisee(); }
   });
   svg.addEventListener("pointercancel", e => {
@@ -403,7 +403,7 @@ export function brancheGestes(){
         return;
       }
       if (!viseItineraire(g.dataset.id))
-        select(g.dataset.id, GARDE_ZOOM, canalPlan(g), rangSociete(g));
+        select(g.dataset.id, false, canalPlan(g), rangSociete(g));
     }
   });
   document.addEventListener("keydown", e => {

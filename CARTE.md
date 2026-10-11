@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1703 l. → plan-smcl.html
+### `_styles-plan.css` — 1689 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -1112,7 +1112,7 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1189 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1184 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.73 · 7. Sélection et fiche
@@ -1120,11 +1120,11 @@ reprise-emplacements · volets
 Fonctions :
 
 `confieALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
-`select` 170 · `centre` 198 · `brancheActesFiche` 209 · `centreEtBaisseLaFiche` 225
-`centrePoint` 243 · `programme` 277 · `produits` 326 · `ficheProduit` 354 · `ficheConf` 424
-`poseAppuiTactile` 577 · `ecarteClicFantome` 580 · `nomSociete` 589 · `choisitExposant` 603
-`poseMarque` 641 · `montreMarque` 701 · `poseCode` 724 · `rangeMarque` 765 · `ouvre` 821
-`ferme` 1137 · `onglet` 1155 · `brancheFiche` 1173
+`select` 170 · `centre` 195 · `brancheActesFiche` 206 · `centreEtBaisseLaFiche` 222
+`centrePoint` 240 · `programme` 272 · `produits` 321 · `ficheProduit` 349 · `ficheConf` 419
+`poseAppuiTactile` 572 · `ecarteClicFantome` 575 · `nomSociete` 584 · `choisitExposant` 598
+`poseMarque` 636 · `montreMarque` 696 · `poseCode` 719 · `rangeMarque` 760 · `ouvre` 816
+`ferme` 1132 · `onglet` 1150 · `brancheFiche` 1168
 
 Éléments :
 
@@ -2881,7 +2881,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 740 l. → plan, plan-admin
+### `modules/vue.mjs` — 627 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.82 · 6. Vue
@@ -2894,9 +2894,8 @@ Fonctions :
 `poseFacteurTrait` 213 · `suitLaVue` 229 · `versScene` 238 · `appliqueVue` 243
 `libellesDeLaVue` 311 · `rafraichitVue` 319 · `poseVue` 333 · `mesureBarre` 362
 `masqueHaut` 390 · `masque` 397 · `masqueDroite` 434 · `fit` 445 · `stoppeZoom` 483
-`glisseVersVise` 491 · `glisseVers` 534 · `inclineScene` 578 · `trajetVol` 593
-`voleVers` 625 · `rectVisee` 668 · `zoom` 688 · `echelle` 702 · `versPlan` 714
-`brancheVue` 725
+`glisseVersVise` 489 · `glisseVers` 532 · `rectVisee` 555 · `zoom` 575 · `echelle` 589
+`versPlan` 601 · `brancheVue` 612
 
 Importe :
 
