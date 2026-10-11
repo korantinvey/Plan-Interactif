@@ -25,6 +25,11 @@
   // liaison posée à la main. Sans elle, le Worker ne voit aucun stockage et
   // chaque visite retombe sur Supabase — l'en-tête X-Cache dit alors « absent ».
   // L'identifiant n'est pas un secret : il ne sert qu'avec le compte.
+  /* Les prévisualisations de branche partagent ces liaisons avec la
+     production : `src/index.mjs` (`cacheDe`) leur interdit donc `CACHE`, le
+     cache des visiteurs. Pour leur en donner un à elles, créer un second espace
+     (`npx wrangler kv namespace create plan-interactif-apercu`) et le déclarer
+     ici sous la liaison `CACHE_APERCU` ; sans lui, elles tournent sans cache. */
   "kv_namespaces": [
     { "binding": "CACHE", "id": "657809b94f4c480db3b248800c076e70" }
   ]

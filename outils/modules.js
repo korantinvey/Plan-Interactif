@@ -19,6 +19,7 @@
  * `epure`). Les écrans de l'exploitant, qu'aucun visiteur ne charge, le
  * restent toujours.
  */
+const fs = require("fs");
 const path = require("path");
 const esbuild = require("esbuild");
 
@@ -104,4 +105,20 @@ function entreesDe(module) {
   });
 }
 
-module.exports = { MODULES, ENTREES, assemble, carteDe, entreesDe };
+/**
+ * Les modules qu'un module importe, lus par acorn plutôt que par une
+ * expression : un import cité dans un commentaire ne compte pas. La carte en
+ * tire les deux sens — ce qu'il importe, qui l'importe —, que la prose du
+ * dépôt n'a plus à recopier.
+ */
+function importsDe(module) {
+  const acorn = require("acorn");
+  const source = fs.readFileSync(path.join(MODULES, module.replace(/^modules\//, "")), "utf8");
+  const arbre = acorn.parse(source, { ecmaVersion: "latest", sourceType: "module" });
+  return arbre.body
+    .map((n) => n.source && n.source.value)
+    .filter((src) => src && src.startsWith("./"))
+    .map((src) => src.slice(2));
+}
+
+module.exports = { MODULES, ENTREES, assemble, carteDe, entreesDe, importsDe };

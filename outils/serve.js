@@ -6,7 +6,9 @@
 const http = require("http"), https = require("https"), fs = require("fs");
 const path = require("path");
 const DIR = path.join(__dirname, "..", "web") + path.sep;
-const AMONT = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
+/* Le projet que vise la construction (`outils/projet.js`) : la production chez
+   soi, sauf `PLAN_PROJET=recette`. */
+const AMONT = require("./projet.js").projetDeLaConstruction().url + "/functions/v1/plan-public";
 /* La forme d'un nom de salon, la même qu'au relais : elle sert à reconnaître
    l'adresse propre à un salon comme à contrôler ce qu'on relaie. */
 const SALON = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -61,9 +63,13 @@ http.createServer((q, s) => {
       /* Le type vient de l'amont : ce chemin ne rend pas que du JSON — une
          vignette de logo est une image, et l'annoncer en JSON la laissait
          brisée en tête de fiche, ici seulement. */
+      /* La version aussi, comme le Worker : sans elle, `modules/demarrage.mjs`
+         prend le plan demandé d'avance pour un autre, et le redemande — ici
+         seulement, si bien qu'un essai local le téléchargeait deux fois. */
       s.writeHead(r.statusCode, {
         "Content-Type": r.headers["content-type"] || "application/json",
         "Cache-Control": "no-store",
+        ...(r.headers["x-version"] ? { "X-Version": r.headers["x-version"] } : {}),
       });
       r.pipe(s);
     }).on("error", e => { s.writeHead(502); s.end(e.message); });

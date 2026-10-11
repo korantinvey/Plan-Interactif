@@ -118,8 +118,12 @@ button{cursor:pointer;background:none;border:none}
    ce sont les mêmes qu'ailleurs, ils suivent. Les valeurs sont celles du thème
    sombre — sur la nuit, c'est ce thème-là qui a raison, quelle que soit
    l'heure choisie pour le reste de l'écran. */
+/* La nuit de la marque prend de la matière : un reflet cyan dans le coin du
+   logo, et un grain fin qui retire à l'aplat son air d'écran plat. */
 .topbar{display:flex;align-items:center;gap:12px;padding:0 18px;min-height:76px;
-  background:var(--m-nuit);border-bottom:1px solid var(--m-nuit);z-index:5;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    radial-gradient(60% 240% at 0% 0%,color-mix(in srgb,var(--m-cyan) 16%,transparent),transparent 70%),
+    var(--m-nuit);border-bottom:1px solid var(--m-nuit);z-index:5;
   --surface:#0E2E4E; --surface-2:#16334C; --surface-3:#183551;
   --line:#1E3C58; --line-strong:#325975;
   --ink:#FFFFFF; --ink-2:#9BB2C9; --ink-3:#7793AD;

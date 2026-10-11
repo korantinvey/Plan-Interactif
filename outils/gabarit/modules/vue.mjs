@@ -34,6 +34,7 @@ import { recul, dessineFondCarte } from "./environs.mjs";
 import { svg, vue, changeVue, cadrePlan, oublieCadre } from "./vue-etat.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
+import { facteurTrait } from "./chemin-forme.mjs";
 
 /* Ce que la vue rappelle chez les modules qui l'importent — ce qui dit si
    l'on édite, les noms, et ce qui garde sa taille à l'écran quel que soit le
@@ -202,7 +203,45 @@ function etireLibelles(){
     ((libPeints.y - vueEcrite.y) * b.s + b.y - a.y * k) + "px) scale(" + k + ")";
 }
 
+/* Le trait des calques de dessin s'amincit quand on recule
+   (`chemin-forme.mjs` `facteurTrait`). Le SVG le lit dans une variable de
+   « #couches » : la changer fait recalculer le style de tous les calques,
+   d'où l'arrondi au centième, qui la laisse en paix dès que le trait a
+   toute son épaisseur. La carte graphique, elle, n'en a pas besoin : elle
+   compte ce trait en mètres, bornés, et le zoom le règle seul. */
+let facteurPose = 1;
+function poseFacteurTrait(/** @type {any} */ view){
+  const f = Math.round(facteurTrait((cadrePlan().width || 1) / view.w) * 100) / 100;
+  if (f === facteurPose) return;
+  facteurPose = f;
+  const c = $("couches");
+  if (c) c.style.setProperty("--trait-f", String(f));
+}
+
+/* Ce qui se pose par-dessus le plan, hors du SVG comme du dessin de la carte
+   graphique — la mini-carte, le battement de « Vous êtes ici », les halos de
+   la chaleur. Ils suivent la vue quel que soit le rendu : c'est pourquoi ils
+   passent avant la sortie du chemin WebGL plus bas. Chacun s'y inscrit en se
+   chargeant ; la page qui ne l'embarque pas n'a rien à appeler. */
+/** @type {Array<() => void>} */
+const suiveurs = [];
+/** Inscrit ce qui doit suivre chaque changement de vue, geste compris. */
+export function suitLaVue(/** @type {() => void} */ f){ suiveurs.push(f); }
+
+/**
+ * Où un point du plan tombe dans la scène, en pixels depuis son coin haut
+ * gauche — le SVG la couvre entière. La vue a les proportions du cadre
+ * (`versPlan` fait le chemin inverse sur la même règle), et le cadre, mesuré
+ * une fois, ne force aucune remise en page : on peut l'appeler à chaque image.
+ * @returns {[number, number]}
+ */
+export function versScene(/** @type {number} */ x, /** @type {number} */ y){
+  const r = cadrePlan(), v = vue();
+  return [(x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height];
+}
+
 export const appliqueVue = () => {
+  for (const f of suiveurs) f();
   /* Le fond de carte, avant toute chose : il ne dépend que de la vue, et le
      chemin du rendu par la carte graphique sort plus bas sans passer par la
      « viewBox ». Posé là, il suit la vue quel que soit le rendu du plan. */
@@ -222,6 +261,7 @@ export const appliqueVue = () => {
   const view = vue();
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
+  poseFacteurTrait(view);
   if (libPeints) etireLibelles();
   prete.dessinePoignees();
   prete.dessinePoigneesGeo();

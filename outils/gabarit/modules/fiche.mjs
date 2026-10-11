@@ -88,10 +88,37 @@ let anim = null;
  * en page le plan entier — que les libellés, réécrits juste avant, viennent de
  * salir. La fiche s'ouvrait avec un temps de retard, sur l'écran même où elle
  * n'en avait aucun usage.
+ *
+ * Le téléphone a pourtant sa façon de faire naître la fiche du stand, sans
+ * rien mesurer : le doigt vient de toucher le plan, et l'endroit du toucher
+ * *est* le stand. La fiche part de là, minuscule, et rejoint son tiroir. Elle
+ * ne vise que l'état où la feuille de style la pose — un seul repère de
+ * départ, l'arrivée est laissée au tiroir et à ses crans, que le glissement
+ * CSS mène comme avant. Ouverte depuis la liste, sans toucher sur le plan, la
+ * fiche glisse simplement depuis le bas ; et se referme toujours ainsi.
  */
+/* Le dernier toucher du plan : où, et quand. Il ne vaut que s'il est récent —
+   une fiche ouverte depuis la liste une minute plus tard ne vient pas de là. */
+let toucher = { x: 0, y: 0, t: -1e9 };
+$("plan").addEventListener("pointerup", e => { toucher = { x: e.clientX, y: e.clientY, t: e.timeStamp }; });
+
 export function anime(mesure, sens){
   const p = $("detail");
   if (anim){ anim.cancel(); anim = null; }
+  if (!REDUIT && ETROIT() && sens > 0 && performance.now() - toucher.t < 700){
+    /* « offsetTop » ignore la transformation : c'est la place du tiroir
+       arrivé, et non celle d'où il glisse encore. */
+    p.style.transformOrigin = (toucher.x - p.offsetLeft) + "px " + (toucher.y - p.offsetTop) + "px";
+    /* Les deux bouts, écrits l'un et l'autre : une image-clé seule se place
+       à la fin de l'animation, et la fiche se réduisait alors vers le stand
+       au lieu d'en sortir. Le glissement CSS du tiroir se tait le temps du
+       geste — c'est l'animation qui mène, jusqu'à la place qu'il atteint. */
+    p.classList.add("glisse");
+    anim = p.animate([{ transform: "scale(.16)", opacity: 0, offset: 0 }, { transform: "none", opacity: 1 }],
+      { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
+    anim.finished.then(() => p.classList.remove("glisse"), () => p.classList.remove("glisse"));
+    return;
+  }
   if (REDUIT || ETROIT()){ if (sens < 0) p.classList.remove("open"); return; }
   const rect = mesure();
   if (!rect){ if (sens < 0) p.classList.remove("open"); return; }

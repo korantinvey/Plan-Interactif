@@ -36,7 +36,11 @@ const CLASSES = {
   "@deck.gl/extensions": ["PathStyleExtension"],
 };
 
-const SORTIE = path.join(__dirname, "..", "web", "bibliotheques", "deck.gl-" + VERSION + "-plan.min.js");
+/* Le nom porte l'empreinte du contenu, et non la seule version : le site garde
+   ce dossier un an sans revalider (`genere.js`, `_headers`). Une classe de
+   plus à la même version, sous le même nom, serait restée l'ancienne chez qui
+   l'avait déjà — et, l'intégrité ne concordant plus, son plan en SVG. */
+const DOSSIER = path.join(__dirname, "..", "web", "bibliotheques");
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "deck-"));
 try {
@@ -59,13 +63,16 @@ try {
     logLevel: "warning",
   });
   const code = r.outputFiles[0].text;
+  const SORTIE = path.join(DOSSIER, "deck.gl-" + VERSION + "-plan-" +
+    crypto.createHash("sha256").update(code).digest("hex").slice(0, 8) + ".min.js");
   fs.writeFileSync(SORTIE, code);
   const empreinte = "sha384-" + crypto.createHash("sha384").update(code).digest("base64");
   console.log("Écrit : " + path.relative(process.cwd(), SORTIE) +
     " (" + Math.round(code.length / 1024) + " Ko)\n" +
     "À reporter dans modules/webgl.mjs (DECK_WEBGL) :\n" +
     '  src: "bibliotheques/' + path.basename(SORTIE) + '",\n' +
-    '  integrite: "' + empreinte + '",');
+    '  integrite: "' + empreinte + '",\n' +
+    "Puis retirez du dépôt le fichier qu'il remplace.");
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });
 }

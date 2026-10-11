@@ -16,7 +16,7 @@
     "bd": "supabase db push",
     "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
     "sup": "supabase",
-    "essais": "node outils/essais/capacite.js && node outils/essais/terre.js && node outils/essais/forme.js && node outils/essais/temps.js && node outils/essais/itineraire.js && node outils/essais/parcours.js && node outils/essais/aimants.js && node outils/essais/sejour.js && node outils/essais/carte.js",
+    "essais": "node outils/essais/capacite.js && node outils/essais/terre.js && node outils/essais/forme.js && node outils/essais/temps.js && node outils/essais/itineraire.js && node outils/essais/parcours.js && node outils/essais/aimants.js && node outils/essais/sejour.js && node outils/essais/carte.js && node outils/essais/apercu.js",
     "adoption": "node outils/essais/adoption.js",
     "simulation": "node outils/essais/simulation.js",
     "fep26": "node outils/essais/fep26.js",
@@ -24,7 +24,8 @@
     "navigateur": "playwright test",
     "lint": "node outils/relecture.js",
     "types": "node outils/types.js",
-    "portes": "node outils/portes.js"
+    "portes": "node outils/portes.js",
+    "guide": "node outils/guide.js"
   },
   "type": "commonjs",
   "private": true,

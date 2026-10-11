@@ -27,6 +27,7 @@ import { DATA, parId, state, societes } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
+import { rayonTuile } from "./ambiance.mjs";
 import { svg } from "./vue.mjs";
 
 export const DISTINCTIONS = [
@@ -120,9 +121,19 @@ function traceDist(mode, p, b, rang, deuxLiseres){
      montrait plus qu'une. */
   const droite = rang % 2 === 0;
   const x = droite ? b.x + b.width : b.x, y = b.y, s = droite ? -1 : 1;
-  if (mode === "corne")
+  if (mode === "corne"){
+    /* Sur une tuile, l'angle est arrondi : une corne droite en dépassait d'un
+       triangle posé dans le vide. Elle suit donc l'arrondi du coin, du même
+       rayon que la tuile (`ambiance.mjs` `rayonTuile`), et s'allonge
+       d'autant pour rester lisible. */
+    if (document.documentElement.classList.contains("ambiance-tuiles")){
+      const r = rayonTuile(b.width, b.height), cc = Math.max(c, r * 1.7);
+      return '<path class="dPlein" d="M' + n(x + s * cc) + ' ' + n(y) + 'L' + n(x + s * r) + ' ' + n(y) +
+        'Q' + n(x) + ' ' + n(y) + ' ' + n(x) + ' ' + n(y + r) + 'L' + n(x) + ' ' + n(y + cc) + 'Z"/>';
+    }
     return '<path class="dPlein" d="M' + n(x + s * c) + ' ' + n(y) + 'L' + n(x) + ' ' +
       n(y) + 'L' + n(x) + ' ' + n(y + c) + 'Z"/>';
+  }
   if (mode === "point")
     return '<circle class="dPlein" cx="' + n(x + s * c * .58) + '" cy="' + n(y + c * .58) +
       '" r="' + n(c * .34) + '"/>';
@@ -140,7 +151,9 @@ export const oublieDists = () => { DISTS_VUES = { plan: -1, modes: "", traces: [
 
 /** Les modes du plan réunis en une clé : c'est ce qui décide si le relevé garde
  *  sa valeur, et il en faut autant que de distinctions. */
-const modesDuPlan = () => DISTINCTIONS.map(d => modeDist(d, "plan")).join("|");
+const modesDuPlan = () => DISTINCTIONS.map(d => modeDist(d, "plan")).join("|") +
+  // les tuiles changent la boîte des stands et la forme des cornes
+  (document.documentElement.classList.contains("ambiance-tuiles") ? "|tuiles" : "");
 
 function releveDists(){
   const traces = [];

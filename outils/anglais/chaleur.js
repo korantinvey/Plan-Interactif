@@ -79,4 +79,7 @@ module.exports = {
   "Le salon repart de zéro.": "The show starts again from zero.",
   "Il n'y avait aucune mesure à effacer.": "There were no measurements to erase.",
   "Remise à zéro impossible : {raison}": "Reset failed: {raison}",
+  // le choix du rendu, dans le cartouche
+  "Halos": "Halos",
+  "Aplats": "Flat",
 };

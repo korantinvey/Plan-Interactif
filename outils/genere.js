@@ -6,7 +6,11 @@ const pwa = require("./pwa.js");
 const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
 const modules = require("./modules.js");
+const { projetDeLaConstruction } = require("./projet.js");
 const D = __dirname;
+/* Le projet Supabase de cette construction, et si elle part en
+   prévisualisation : voir `outils/projet.js`. */
+const PROJET = projetDeLaConstruction();
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
 /* Les pages passent par le Worker, qui relaie et met en cache (src/index.js).
@@ -264,8 +268,14 @@ const SLUG_DEFAUT = "smcl-2026";
  * sert aujourd'hui ; le plan, lui, est demandé sous la version qu'on avait la
  * dernière fois — pari qui se gagne presque toujours, un plan ouvert aux
  * visiteurs ne changeant qu'une fois par jour. Gagné, il sort du cache du
- * navigateur sans toucher le réseau ; perdu, `modules/demarrage.mjs` le redemande sous
- * la bonne version.
+ * navigateur sans toucher le réseau.
+ *
+ * Perdu, ou faute de version retenue — à la première visite —, le plan part
+ * d'ici dès que l'entête répond, sous la version qu'il nomme. Il attendait
+ * jusque-là que `modules/demarrage.mjs` le demande, donc que le script du plan
+ * soit arrivé et lancé : un téléchargement après l'autre, quand les deux
+ * pèsent à peu près autant. `demarrage.mjs` garde sa propre demande en recours,
+ * si l'entête ne répond pas.
  *
  * Réservé à la page publique : l'administration doit d'abord présenter sa
  * session, sans quoi les brouillons resteraient invisibles.
@@ -293,7 +303,16 @@ const PRECHARGE = [
   "     sans toucher le réseau, et il est là quand l'entête répond. */",
   "  let v = null;",
   '  try { v = localStorage.getItem("plan-version:" + slug); } catch (e) {}',
-  '  if (v) window.__plan = fetch(q + "&v=" + encodeURIComponent(v));',
+  '  const garde = v ? fetch(q + "&v=" + encodeURIComponent(v), { priority: "low" }) : null;',
+  "  /* Sinon, sous celle que l'entête nomme, sitôt qu'il l'a dite. En priorité",
+  "     basse, comme deck.gl : sur une ligne lente, partie si tôt, elle prenait",
+  "     son débit au script du plan — la liste paraissait une seconde plus tard",
+  "     en 3G, pour un plan dessiné au même moment. */",
+  "  window.__plan = window.__entete.then((e) => {",
+  "    const n = e && e.v;",
+  "    if (garde && (!n || n === v)) return garde;",
+  '    return n ? fetch(q + "&v=" + encodeURIComponent(n), { priority: "low" }) : garde;',
+  "  });",
   "}",
   "</" + "script>",
   "",
@@ -381,12 +400,61 @@ function poseVersion(radical, extension, contenu, queue = () => "") {
   return nom;
 }
 const NOM_FEUILLE = poseVersion("plan", ".css", FEUILLE_PLAN);
+/* deck.gl, annoncé dès la tête de la page.
+
+   C'est le plus lourd de ce que reçoit le visiteur, et le plan attend après
+   lui pour paraître (`modules/webgl.mjs`, `gl-attente`). Or rien ne le
+   demandait avant que le script des modules, posé au bas de la page, se soit
+   exécuté : les deux se téléchargeaient l'un après l'autre. Annoncé ici, il
+   part avec la feuille de style — en priorité basse : mesuré en 3G, annoncé
+   à la priorité ordinaire, il prenait son débit à la feuille (+0,8 s avant
+   le premier trait) et au script (+1,5 s avant la liste) pour un plan dessiné
+   0,5 s plus tôt. Sous HTTP/2, la priorité basse ne lui laisse que le débit
+   dont les deux autres n'ont pas l'usage. Nom et intégrité sont lus dans le module
+   même, pour qu'une bibliothèque refaite (`npm run deck`) ne laisse pas la
+   page en annoncer une autre — qui partirait pour rien, et en double. */
+const DECK = fs.readFileSync(D + "/gabarit/modules/webgl.mjs", "utf8")
+  .match(/const DECK_WEBGL = \{\s*src: "([^"]+)",\s*integrite: "([^"]+)"/);
+if (!DECK) throw new Error("DECK_WEBGL introuvable dans modules/webgl.mjs");
+if (!fs.existsSync(W + DECK[1])) throw new Error("deck.gl absent : " + DECK[1]);
+const ANNONCE_DECK = '<link rel="preload" as="script" fetchpriority="low" href="/' + DECK[1] +
+  '" integrity="' + DECK[2] + '">\n';
 const lieFeuille = (t) =>
   t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
+
+/* Ce qui part avant le premier script de la tête.
+
+   La feuille du plan vient après le moteur de langue et la configuration, deux
+   scripts bloquants : mesuré en 4G, le navigateur ne la demandait qu'une fois
+   ces deux-là reçus l'un après l'autre — six cents millisecondes pendant
+   lesquelles rien ne pouvait s'afficher. Annoncée en tête, elle part avec la
+   page ; sa balise reste où elle est, et la cascade avec elle. deck.gl
+   l'accompagne, en priorité basse.
+
+   La configuration, elle, entre dans la page : deux constantes, qui coûtaient
+   un aller-retour bloquant à elles seules. La console et le rapport gardent
+   `config.js`. */
+const BALISE_CONFIG = '<script src="config.js"></script>';
+const CONFIG_EN_LIGNE = "<script>\n" +
+  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")).trim() + "\n</script>";
+function annonceTot(html) {
+  if (html.split(BALISE_CONFIG).length !== 2) throw new Error("configuration introuvable, ou en double");
+  html = html.replace(BALISE_CONFIG, () => CONFIG_EN_LIGNE);
+  // la page n'écrit ni `<body>` ni `</head>` : c'est la feuille qui borne la tête
+  const premier = html.indexOf("<script"), feuille = html.indexOf('<link rel="stylesheet" href="/' + NOM_FEUILLE);
+  if (premier < 0 || feuille < 0 || premier > feuille) throw new Error("aucun script avant la feuille du plan");
+  return html.slice(0, premier) +
+    '<link rel="preload" as="style" href="/' + NOM_FEUILLE + '">\n' + ANNONCE_DECK + html.slice(premier);
+}
 /* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
-   pages, elles, gardent la règle de Cloudflare — revalider à chaque fois. */
+   pages, elles, gardent la règle de Cloudflare — revalider à chaque fois.
+   deck.gl et les polices aussi portent la leur dans leur nom (`outils/deck.js`,
+   `outils/polices.js`) ; laissés à cette règle-là, ils coûtaient au visiteur
+   qui revient une demande au serveur chacun. Des polices, seuls les fichiers :
+   leurs feuilles, `polices/<famille>.css`, gardent un nom fixe. */
+const UN_AN = "\n  Cache-Control: public, max-age=31536000, immutable\n";
 fs.writeFileSync(W + "_headers",
-  "/" + VERSIONS + "*\n  Cache-Control: public, max-age=31536000, immutable\n");
+  ["/" + VERSIONS + "*", "/bibliotheques/*", "/polices/*.woff2"].map((m) => m + UN_AN).join(""));
 
 /* Les scripts du plan, servis à part de même.
 
@@ -489,10 +557,10 @@ function poseCsp(html) {
 }
 
 /* --- page publique : le mode administration n'est jamais activé --- */
-fs.writeFileSync(W + "plan.html", poseCsp(sortScripts(
+fs.writeFileSync(W + "plan.html", poseCsp(annonceTot(sortScripts(
   page(lieFeuille(connecte(tplPublic)),
        { tete: PRECHARGE, application: true, pleinEcran: true,
-         salon: SLUG_DEFAUT }))));
+         salon: SLUG_DEFAUT })))));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
@@ -510,9 +578,9 @@ function poseLieux(t) {
   return t.replace(OUVRE_DONNEES, () =>
     '<script id="lieux" type="application/json">' + LIEUX + "</script>\n" + OUVRE_DONNEES);
 }
-fs.writeFileSync(W + "plan-admin.html", poseCsp(sortScripts(
+fs.writeFileSync(W + "plan-admin.html", poseCsp(annonceTot(sortScripts(
   page(poseLieux(lieFeuille(connecte(tplAdmin))),
-       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }))));
+       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT })))));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
@@ -520,8 +588,11 @@ fs.writeFileSync(W + "plan-smcl.html",
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
-fs.writeFileSync(W + "config.js",
-  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")));
+const CONFIG = fs.readFileSync(D + "/gabarit/_config.js", "utf8")
+  .replace("__URL_PROJET__", () => PROJET.url)
+  .replace("__CLE_PROJET__", () => PROJET.cle);
+if (/__[A-Z_]+_PROJET__/.test(CONFIG)) throw new Error("config.js : projet non versé");
+fs.writeFileSync(W + "config.js", epureScript(CONFIG));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
 fs.writeFileSync(W + "console.css",
   minifieStyle(epureStyle(fs.readFileSync(D + "/gabarit/_console.css", "utf8"))));
@@ -625,7 +696,12 @@ const version = empreinte.digest("hex").slice(0, 12);
    blanche. `/api/pages` la dit, pour savoir ce qui est en ligne. */
 fs.writeFileSync(path.join(D, "..", "src", "pages.mjs"),
   "// Écrit par outils/genere.js — ne pas modifier, ne pas versionner.\n" +
-  "export const VERSION_DES_PAGES = " + JSON.stringify(version) + ";\n");
+  "export const VERSION_DES_PAGES = " + JSON.stringify(version) + ";\n" +
+  /* Le projet que relaie le Worker, et s'il tourne en prévisualisation : il
+     se tient alors à l'écart du cache et des écritures de la production. */
+  "export const PROJET = " + JSON.stringify({ url: PROJET.url, cle: PROJET.cle, nom: PROJET.nom }) + ";\n" +
+  "export const APERCU = " + JSON.stringify(PROJET.apercu) + ";\n");
+if (PROJET.apercu) console.log("  construction de prévisualisation — projet « " + PROJET.nom + " »");
 
 fs.writeFileSync(W + "sw.js",
   epureScript(fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version)));

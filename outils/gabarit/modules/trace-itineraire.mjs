@@ -14,8 +14,8 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { state } from "./donnees.mjs";
-import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseVue, confieALaVue }
-  from "./vue.mjs";
+import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseVue, confieALaVue,
+  suitLaVue, versScene } from "./vue.mjs";
 import { REDUIT } from "./ecran.mjs";
 import { mesureMarches, coupeMarche, distancesDesArrets } from "./itineraire.mjs";
 
@@ -75,28 +75,69 @@ function arreteTracage(){
   tracage = null;
 }
 
+/* ------------------------------------------------------------
+   Le fil lumineux
+
+   Le trait va du clair au foncé de la couleur du salon, du départ à
+   l'arrivée : on lit le sens sans attendre l'étincelle. Un dégradé SVG ne
+   passerait pas la carte graphique, qui ne lit que des couleurs pleines ; le
+   trait est donc découpé en tronçons d'égale longueur sur tout le trajet,
+   chacun d'une nuance — seize suffisent pour que l'œil voie une pente et non
+   des marches. Une lueur de la même couleur, deux traits larges et pâles,
+   remplace l'ancien liseré blanc : le trait se détache des stands en
+   rayonnant, au lieu d'être cerné.
+   ------------------------------------------------------------ */
+const NUANCES = 16;
+
+/** Une marche découpée aux bornes des tronçons du trajet entier : chaque
+ *  morceau porte sa position, de 0 au départ à 1 à l'arrivée. */
+function tronconsDe(pts, cumuls, total){
+  const pas = total / NUANCES, out = [];
+  let cours = [pts[0]], borne = (Math.floor(cumuls[0] / pas) + 1) * pas;
+  for (let i = 1; i < pts.length; i++){
+    while (cumuls[i] > borne && borne < total){
+      const f = (borne - cumuls[i - 1]) / ((cumuls[i] - cumuls[i - 1]) || 1);
+      const m = [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f];
+      cours.push(m);
+      out.push({ pts: cours, t: (borne - pas / 2) / total });
+      cours = [m];
+      borne += pas;
+    }
+    cours.push(pts[i]);
+  }
+  if (cours.length > 1) out.push({ pts: cours, t: Math.min(1, (borne - pas / 2) / total) });
+  return out;
+}
+
+const traceDe = (pts) => "M" + pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
+
 /** Le trait tel qu'il est à « p » de sa course — 1 : entier. */
 function peintItineraire(p){
   const g = $("itin");
   if (!g) return;
   const marches = marchesIci();
-  if (!marches.length){ g.innerHTML = ""; return; }
+  if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
 
   const mes = mesureMarches(marches);
   const fini = p >= 1;
   const d = fini ? Infinity : p * mes.total;
   const r = rayonBout();
   let out = "";
+  let traits = "";
   marches.forEach((e, j) => {
     const pts = fini ? e.pts : coupeMarche(e.pts, mes.cumuls[j], d);
     if (!pts) return;
-    const chemin = "M" + pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
-    out += '<path class="iHalo" d="' + chemin + '"/><path class="iTrait" d="' + chemin + '"/>';
-    /* La comète attend que le trait soit arrivé. Chaque image du tracé
-       réécrit le groupe, ce qui relance son animation : elle resterait figée
-       au départ, une pastille de plus sur le point de départ. */
-    if (fini) for (let n = 1; n <= 5; n++) out += '<path class="iSens iC' + n + '" d="' + chemin + '"/>';
+    const chemin = traceDe(pts);
+    // la lueur sous tout le trajet, d'une seule pièce : ses deux traits ne se recoupent pas
+    out += '<path class="iLueur l1" d="' + chemin + '"/><path class="iLueur l2" d="' + chemin + '"/>';
+    // coupé en chemin, son dernier point tombe à la distance atteinte, et non sur un sommet
+    const cu = mes.cumuls[j].slice(0, pts.length);
+    if (!fini) cu[cu.length - 1] = Math.min(cu[cu.length - 1], d);
+    for (const t of tronconsDe(pts, cu, mes.total))
+      traits += '<path class="iTrait" style="stroke:color-mix(in srgb,var(--accent-fort) ' +
+        Math.round(t.t * 100) + '%,var(--accent-clair))" d="' + traceDe(t.pts) + '"/>';
   });
+  out += traits;
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
      chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
      d'un point à un autre n'a que deux bouts, et un chiffre y serait du
@@ -112,9 +153,10 @@ function peintItineraire(p){
       const attend = ou && ou[i] > d ? " aVenir" : "";
       /* Le point de départ n'est pas un arrêt : on n'y visite rien, et lui
          donner un rang décalerait tous les autres d'une unité. */
-      out += '<circle class="iBout' + (a.conf ? " conf" : "") + attend + '" cx="' + a.xy[0] +
+      const proche = a.n && a === arrets.find(x => x.n) ? " proche" : "";
+      out += '<circle class="iBout' + (a.n ? " num" : "") + (a.conf ? " conf" : "") + proche + attend + '" cx="' + a.xy[0] +
              '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
-      if (a.n) out += '<text class="iNum' + (a.conf ? " conf" : "") + attend + '" x="' + a.xy[0] +
+      if (a.n) out += '<text class="iNum' + (a.conf ? " conf" : "") + proche + attend + '" x="' + a.xy[0] +
              '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
     });
   } else {
@@ -125,7 +167,103 @@ function peintItineraire(p){
            '" r="' + r.toFixed(2) + '"/>';
   }
   g.innerHTML = out;
+  placePouls(fini ? (arrets.find(a => a.n) || null) : null);
+  // l'étincelle attend que le trait soit arrivé : elle court sur ce qui est écrit
+  lanceEtincelle(fini ? marches : null);
 }
+
+/* ------------------------------------------------------------
+   L'étincelle
+
+   Une lumière qui court du départ vers l'arrivée et dit le sens du trajet.
+   Elle ne vit pas dans le plan : sous la carte graphique, un trait qui défile
+   est un tiret découpé au pixel, sans lissage, et qui avance par sauts —
+   l'étincelle y paraissait pixelisée et saccadée. Posée dans la scène, c'est
+   un point rond et flou que le navigateur lisse, déplacé à chaque image par
+   une transformation : rien du plan ne se repeint pour elle.
+
+   Elle file à cent quarante pixels par seconde quel que soit le zoom,
+   suivie de huit points serrés qui s'estompent et se fondent en traînée, puis repart du
+   départ après un temps. Rien pour qui a demandé moins de mouvement.
+   ------------------------------------------------------------ */
+const ETINCELLE_PX_S = 140, TRAINE = 8, ECART_PX = 3.5, PAUSE_PX = 260;
+/** @type {HTMLElement | null} */
+let etincelle = null;
+let courseEt = 0, distEt = 0, avantEt = 0;
+/** @type {{ pts: number[][], cumuls: number[], total: number } | null} */
+let cheminEt = null;
+
+function lanceEtincelle(marches){
+  cancelAnimationFrame(courseEt); courseEt = 0;
+  const pts = marches && !REDUIT ? marches.flatMap(e => e.pts) : [];
+  if (pts.length < 2){ cheminEt = null; if (etincelle) etincelle.hidden = true; return; }
+  const cumuls = [0];
+  for (let i = 1; i < pts.length; i++)
+    cumuls.push(cumuls[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  cheminEt = { pts, cumuls, total: cumuls[cumuls.length - 1] };
+  if (!etincelle){
+    etincelle = document.createElement("div");
+    etincelle.className = "etincelle";
+    etincelle.setAttribute("aria-hidden", "true");
+    etincelle.innerHTML = "<i></i>".repeat(TRAINE + 1);
+    svg.after(etincelle);
+  }
+  etincelle.hidden = false;
+  distEt = 0; avantEt = performance.now();
+  courseEt = requestAnimationFrame(courtEtincelle);
+}
+
+/** Le point du trajet à la distance « d », en mètres depuis le départ. */
+function pointA(d){
+  const c = cheminEt, cu = c.cumuls;
+  let i = 1;
+  while (i < cu.length - 1 && cu[i] < d) i++;
+  const f = Math.max(0, Math.min(1, (d - cu[i - 1]) / ((cu[i] - cu[i - 1]) || 1)));
+  return [c.pts[i - 1][0] + (c.pts[i][0] - c.pts[i - 1][0]) * f, c.pts[i - 1][1] + (c.pts[i][1] - c.pts[i - 1][1]) * f];
+}
+
+function courtEtincelle(t){
+  courseEt = 0;
+  if (!cheminEt || !etincelle || !vue()) return;
+  const pxM = cadrePlan().width / vue().w;           // pixels par mètre, au zoom du moment
+  distEt += Math.min(100, t - avantEt) / 1000 * ETINCELLE_PX_S / pxM;
+  avantEt = t;
+  if (distEt > cheminEt.total + PAUSE_PX / pxM) distEt = 0;
+  /** @type {HTMLElement[]} */ ([...etincelle.children]).forEach((el, k) => {
+    const d = distEt - k * ECART_PX / pxM;
+    const voir = d >= 0 && d <= cheminEt.total;
+    el.style.opacity = voir ? String(1 - k / (TRAINE + 1)) : "0";
+    if (!voir) return;
+    const [x, y] = versScene(...pointA(d));
+    el.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)";
+  });
+  courseEt = requestAnimationFrame(courtEtincelle);
+}
+
+/* La prochaine étape respire, comme « Vous êtes ici » : c'est là que le
+   visiteur va. Le battement vit dans la scène et non dans le plan, pour la
+   même raison que le point de la borne (`vous-etes-ici.mjs`) : sous la carte
+   graphique, le SVG est caché et ses animations coupées. Il paraît une fois
+   le trait arrivé — pendant l'écriture, il battrait sur un point encore vide. */
+/** @type {HTMLElement | null} */
+let pouls = null;
+/** @type {any} */
+let pouleSur = null;
+
+function placePouls(a){
+  pouleSur = a;
+  if (!a || a.p !== state.plan){ if (pouls) pouls.hidden = true; return; }
+  if (!pouls){
+    pouls = document.createElement("div");
+    pouls.className = "iciPouls etapePouls";
+    pouls.setAttribute("aria-hidden", "true");
+    svg.after(pouls);
+  }
+  const [x, y] = versScene(a.xy[0], a.xy[1]);
+  pouls.hidden = false;
+  pouls.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)";
+}
+suitLaVue(() => { if (pouleSur && pouls && !pouls.hidden) placePouls(pouleSur); });
 
 export function lanceTracage(){
   const t0 = performance.now();
@@ -167,7 +305,7 @@ export function dessineItineraire(anime){
   if (tracage && !neuf && anime !== true) return;
   arreteTracage();
   const marches = marchesIci();
-  if (!marches.length){ g.innerHTML = ""; return; }
+  if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
   if ((anime === undefined ? neuf : anime) && !REDUIT) lanceTracage();
   else peintItineraire(1);
 }

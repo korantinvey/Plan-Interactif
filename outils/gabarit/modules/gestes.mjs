@@ -23,6 +23,7 @@
    (`brancheLangue`) : elle refait ce que le plan a mesuré dans la langue
    d'avant.
    ============================================================ */
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT } from "./ecran.mjs";
@@ -91,6 +92,8 @@ const doigts = new Map();
 /** Le pincement en cours, ou rien : la carte graphique le lit comme le glissé. */
 /** @type {any} */
 export let pince = null;
+// le plan tenu, glissé ou pincé : l'envoi au repos attend qu'on le lâche
+inscritGesteTenu(() => drag || pince);
 
 const milieu = () => {
   const l = [...doigts.values()];

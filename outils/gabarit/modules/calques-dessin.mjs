@@ -13,22 +13,18 @@
    l'ouverture d'un salon (`ouvreDessins`) ; le calque ouvert, l'outil et le
    tracé, par leurs portes (`poseCalqueActif`, `poseOutil`, `poseEbauche`) :
    les modules qui les lisent les importent, et seules ces portes les
-   affectent. Le bouton qui dit l'attente est d'administration : son état est
-   confié par `enregistrement.mjs` en se chargeant (`confieAuxCalques`).
+   affectent. Le bouton qui dit l'attente est d'administration : un
+   changement d'attente s'annonce (`ATTENTE_CHANGEE`), et `enregistrement.mjs`
+   l'écoute.
    ============================================================ */
+import { creeAnnonce } from "./annonce.mjs";
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { P } from "./donnees.mjs";
 import { salonRange } from "./configuration.mjs";
 
-/* L'état du bouton d'enregistrement, que seule l'administration a
-   (`enregistrement.mjs`) : elle le confie en se chargeant ; la page publique
-   n'a pas de bouton, et rien n'est appelé. */
-/** @type {{ majAttente: () => void }} */
-const prete = { majAttente: () => {} };
-const majAttente = () => prete.majAttente();
-
-/** La porte de l'enregistrement, ouvert au chargement de son module.
- *  @param {{ majAttente: () => void }} o */
-export function confieAuxCalques(o){ Object.assign(prete, o); }
+/** Un calque entre en attente d'envoi, ou en sort. Le bouton qui le dit est
+ *  d'administration (`enregistrement.mjs`), seul à l'écouter. */
+export const ATTENTE_CHANGEE = creeAnnonce();
 
 /* Un rangement par salon, et non plus un seul pour tous — la même règle que
    pour les réglages, et un dégât de plus.
@@ -186,8 +182,7 @@ export const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
 export function marqueAttente(id, oui){
   if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
   try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
-  // le bouton qui le dit est d'administration (`modules/enregistrement.mjs`)
-  majAttente();
+  ATTENTE_CHANGEE.dis();
 }
 
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris
@@ -197,6 +192,8 @@ export const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 export let calqueActif = null;   // id du calque en cours d'édition
 export let outil = "main";
 export let enCours = null;       // tracé en construction
+// un tracé commencé attend son sommet suivant : l'envoi au repos attend
+inscritGesteTenu(() => enCours);
 
 /* Leurs portes. Le calque ouvert change par l'outil de l'exploitant, et se
    referme au montage d'un pavillon (`rendu.mjs` `montePlan`) ; l'outil et
