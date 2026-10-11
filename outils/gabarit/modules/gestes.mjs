@@ -34,7 +34,7 @@ import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVu
   from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
   fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
-import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
+import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme, GARDE_ZOOM } from "./fiche.mjs";
 import { oublieChoixPoi, ouvrePoi, oublieReperes } from "./points-interet.mjs";
 import { poseBorneIci } from "./borne.mjs";
 import { vibre, PRISE, BUTEE } from "./toucher.mjs";
@@ -363,7 +363,11 @@ export function brancheGestes(){
         return;
       }
       if (viseItineraire(cible.dataset.id)) return;
-      select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
+      /* Sur un téléphone, la fiche monte du bas et couvre la moitié du plan :
+         le stand touché tombait souvent dessous. Le plan glisse donc pour le
+         poser au milieu de ce qui reste visible. Un grand écran n'en a pas
+         besoin — la fiche s'ouvre à côté, et le stand reste sous le curseur. */
+      select(cible.dataset.id, ETROIT() && GARDE_ZOOM, canalPlan(cible), rangSociete(cible));
     } else { ferme(); finVisee(); }
   });
   svg.addEventListener("pointercancel", e => {
@@ -399,7 +403,7 @@ export function brancheGestes(){
         return;
       }
       if (!viseItineraire(g.dataset.id))
-        select(g.dataset.id, false, canalPlan(g), rangSociete(g));
+        select(g.dataset.id, ETROIT() && GARDE_ZOOM, canalPlan(g), rangSociete(g));
     }
   });
   document.addEventListener("keydown", e => {
