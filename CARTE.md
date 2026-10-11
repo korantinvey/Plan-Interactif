@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1673 l. → plan-smcl.html
+### `_styles-plan.css` — 1711 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -303,6 +303,23 @@ socle-console
 Importé par :
 
 comptes · synchronisation
+
+### `modules/appels.mjs` — 178 l. → plan, plan-admin
+
+- l.1 · Les noms en appel — ce qui ne tient pas dans son stand sort dans la marge
+
+Fonctions :
+
+`monteCalque` 57 · `appeles` 68 · `illisible` 81 · `chevauche` 87 · `boiteA` 91
+`auBord` 99 · `pose` 101 · `planifie` 168
+
+Importe :
+
+donnees · filtre · polices-plan · texte-plan · vue
+
+Importé par :
+
+plan
 
 ### `modules/application.mjs` — 37 l. → plan, plan-admin
 
@@ -649,20 +666,20 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/demarrage.mjs` — 292 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 296 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 64 · `demarre` 80 · `annonce` 138 · `panneDuChargement` 173
-`CLE_VERSION` 183 · `versionRetenue` 184 · `retientVersion` 187 · `demandePlan` 213
-`charge` 237 · `brancheDemarrage` 274
+`recadreListePosee` 65 · `demarre` 81 · `annonce` 142 · `panneDuChargement` 177
+`CLE_VERSION` 187 · `versionRetenue` 188 · `retientVersion` 191 · `demandePlan` 217
+`charge` 241 · `brancheDemarrage` 278
 
 Importe :
 
 annonce · borne · dom · donnees · fiche · ici · index-salon · installation · mode-admin
-parcours-recu · recherche · rendu · salon · sponsor · tutoriel · vue
+parcours-recu · recherche · rendu · rideau · salon · sponsor · tutoriel · vue
 
 Importé par :
 
@@ -756,12 +773,12 @@ Fonctions :
 
 Importé par :
 
-affiche-ici · aimants · ambiance · apercus · apparence · application · batiments · borne
-calage-carte · calques-dessin · cartouche-poi · chaleur · charge-annoncee · configuration
-corps-fiche · demarrage · dessin · distinctions · edition · emplacements · enregistrement
-environs · fiche · fiche-zone · filtre · gestes · ici · index-salon · installation
-itineraire · journee · libelles · mesure · mini-carte · nappe · noms-zones · ordre-trace
-outil-dessin · parcours · parcours-recu · partage · pile · placement-libelles
+affiche-ici · aimants · ambiance · apercus · apparence · appels · application · batiments
+borne · calage-carte · calques-dessin · cartouche-poi · chaleur · charge-annoncee
+configuration · corps-fiche · demarrage · dessin · distinctions · edition · emplacements
+enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici · index-salon
+installation · itineraire · journee · libelles · mesure · mini-carte · nappe · noms-zones
+ordre-trace · outil-dessin · parcours · parcours-recu · partage · pile · placement-libelles
 points-interet · rappels · recherche · reglage-application · reglage-fiche
 reglage-recherche · reglage-suggestion · reglages · rendu · reprise-emplacements · secteurs
 sejour · seuil · sponsor · suggestion · tiroir-itineraire · tiroir-parcours
@@ -811,8 +828,8 @@ Fonctions :
 
 Importé par :
 
-dessin · fiche · gestes · glisse-fenetre · mini-carte · recherche · tiroir-itineraire
-tiroirs · trace-itineraire · tutoriel · vue
+dessin · fiche · gestes · glisse-fenetre · mini-carte · recherche · rideau
+tiroir-itineraire · tiroirs · trace-itineraire · tutoriel · vue
 
 ### `modules/edition-en-cours.mjs` — 43 l. → plan, plan-admin
 
@@ -1095,7 +1112,7 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1186 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1189 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.73 · 7. Sélection et fiche
@@ -1103,11 +1120,11 @@ reprise-emplacements · volets
 Fonctions :
 
 `confieALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
-`select` 170 · `centre` 197 · `brancheActesFiche` 208 · `centreEtBaisseLaFiche` 224
-`centrePoint` 242 · `programme` 274 · `produits` 323 · `ficheProduit` 351 · `ficheConf` 421
-`poseAppuiTactile` 574 · `ecarteClicFantome` 577 · `nomSociete` 586 · `choisitExposant` 600
-`poseMarque` 638 · `montreMarque` 698 · `poseCode` 721 · `rangeMarque` 762 · `ouvre` 818
-`ferme` 1134 · `onglet` 1152 · `brancheFiche` 1170
+`select` 170 · `centre` 198 · `brancheActesFiche` 209 · `centreEtBaisseLaFiche` 225
+`centrePoint` 243 · `programme` 277 · `produits` 326 · `ficheProduit` 354 · `ficheConf` 424
+`poseAppuiTactile` 577 · `ecarteClicFantome` 580 · `nomSociete` 589 · `choisitExposant` 603
+`poseMarque` 641 · `montreMarque` 701 · `poseCode` 724 · `rangeMarque` 765 · `ouvre` 821
+`ferme` 1137 · `onglet` 1155 · `brancheFiche` 1173
 
 Éléments :
 
@@ -1146,7 +1163,7 @@ configuration · corps-fiche · donnees · texte
 
 Importé par :
 
-dessin · libelles · recherche · tout-au-parcours
+appels · dessin · libelles · recherche · tout-au-parcours
 
 ### `modules/forme-choisie.mjs` — 39 l. → plan, plan-admin
 
@@ -1231,21 +1248,22 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 481 l. → plan, plan-admin
+### `modules/gestes.mjs` — 491 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
-- l.72 · 8. Interactions du plan
+- l.73 · 8. Interactions du plan
 
 Fonctions :
 
-`poseGestesAdmin` 70 · `milieu` 98 · `commencePince` 104 · `suitPince` 118
-`plieLesBandes` 171 · `saisitPlan` 185 · `cibleElargie` 222 · `planifieFiltre` 265
-`brancheGestes` 279 · `brancheLangue` 464
+`poseGestesAdmin` 71 · `milieu` 99 · `commencePince` 105 · `suitPince` 119
+`plieLesBandes` 179 · `saisitPlan` 193 · `cibleElargie` 230 · `planifieFiltre` 273
+`brancheGestes` 287 · `brancheLangue` 474
 
 Importe :
 
 borne · dessin · dom · donnees · ecran · environs · fiche · geste-tenu · libelles · mesure
-noms-zones · points-interet · recherche · texte-plan · tiroir-itineraire · vue · webgl
+noms-zones · points-interet · recherche · texte-plan · tiroir-itineraire · toucher · vue
+webgl
 
 Importé par :
 
@@ -1364,23 +1382,22 @@ Importé par :
 
 demarrage · enregistrement · fiche-zone
 
-### `modules/installation.mjs` — 902 l. → plan, plan-admin
+### `modules/installation.mjs` — 821 l. → plan, plan-admin
 
 - l.1 · L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 120 · `invitationVoulue` 121 · `auDoigt` 151 · `nommeApplication` 187
-`reponsesInstallation` 205 · `retientInstallation` 210 · `jourInstallation` 219
-`invitationEcartee` 222 · `refuseInstallation` 228 · `faconInstallation` 256
-`appliInstallee` 279 · `verifieApplication` 301 · `connaitLApplication` 311
-`adresseApplication` 324 · `lanceApplication` 344 · `faconRappel` 377 · `rappelEcarte` 385
-`refuseRappel` 391 · `relanceInvitation` 409 · `gesteInstallation` 414 · `doigtPose` 418
-`doigtLeve` 419 · `vueInstallation` 422 · `accueilleInvitation` 431
-`invitationRetenue` 457 · `suitLesGestes` 478 · `finInvitation` 486 · `rouvreInvitation` 508
-`essaieInvitation` 528 · `brancheInstallation` 571 · `teteInvitation` 665
-`poseGardeInstallation` 698 · `remplitInvitation` 721 · `ouvreInvitation` 751
-`ouvreRappel` 830 · `ouvreRetrouve` 892
+`reglageInstallation` 117 · `invitationVoulue` 118 · `auDoigt` 148 · `nommeApplication` 184
+`reponsesInstallation` 202 · `retientInstallation` 207 · `jourInstallation` 216
+`invitationEcartee` 219 · `refuseInstallation` 225 · `faconInstallation` 253
+`appliInstallee` 282 · `verifieApplication` 304 · `connaitLApplication` 314
+`faconRappel` 334 · `rappelEcarte` 342 · `refuseRappel` 348 · `relanceInvitation` 366
+`gesteInstallation` 371 · `doigtPose` 375 · `doigtLeve` 376 · `vueInstallation` 379
+`accueilleInvitation` 388 · `invitationRetenue` 414 · `suitLesGestes` 435
+`finInvitation` 443 · `rouvreInvitation` 465 · `essaieInvitation` 485
+`brancheInstallation` 528 · `teteInvitation` 621 · `poseGardeInstallation` 654
+`remplitInvitation` 677 · `ouvreInvitation` 707 · `ouvreRappel` 782
 
 Importe :
 
@@ -1973,13 +1990,13 @@ acces-admin · affiche-ici · bande-admin · batiments · calage-carte · chaleu
 enregistrement · gestes-admin · lancement · nuancier · outil-dessin · pile
 placement-libelles · plan · reprise-emplacements
 
-### `modules/plan.mjs` — 52 l. → plan, plan-admin
+### `modules/plan.mjs` — 54 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
 Importe :
 
-edition-en-cours · lancement · libelles · mini-carte · polices-plan · salon · sur
+appels · edition-en-cours · lancement · libelles · mini-carte · polices-plan · salon · sur
 texte-plan · tutoriel · vue · webgl
 
 Importé par :
@@ -2022,8 +2039,8 @@ configuration · modeles
 
 Importé par :
 
-dessin · habillage · index-salon · libelles · nom-emplacement · plan · recherche · rendu
-volets
+appels · dessin · habillage · index-salon · libelles · nom-emplacement · plan · recherche
+rendu · volets
 
 Portes :
 
@@ -2350,6 +2367,22 @@ Importé par :
 
 gestes-admin · outil-dessin · pile · plan-admin
 
+### `modules/rideau.mjs` — 130 l. → plan, plan-admin
+
+- l.1 · Le lever de rideau — le plan se dévoile, allée par allée
+
+Fonctions :
+
+`cleVue` 37 · `dejaVu` 42 · `retiens` 46 · `ouvertSurQuelqueChose` 52 · `poseRideau` 62
+
+Importe :
+
+ecran · salon · sponsor · vue
+
+Importé par :
+
+demarrage
+
 ### `modules/salon.mjs` — 75 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
@@ -2362,7 +2395,7 @@ Importé par :
 
 affiche-ici · ambiance · application · borne · charge-annoncee · configuration · demarrage
 enregistrement · erreurs · essai-rappel · ici · installation · mesure · notifications
-parcours · partage · plan · rappels · recherche · rendu · sponsor · tutoriel
+parcours · partage · plan · rappels · recherche · rendu · rideau · sponsor · tutoriel
 
 ### `modules/secteurs.mjs` — 148 l. → plan, plan-admin
 
@@ -2490,7 +2523,7 @@ configuration · dom · donnees · salon · sur · vue
 
 Importé par :
 
-borne · demarrage · installation · lancement · reglage-sponsor · tutoriel
+borne · demarrage · installation · lancement · reglage-sponsor · rideau · tutoriel
 
 ### `modules/suggestion.mjs` — 329 l. → plan, plan-admin
 
@@ -2590,7 +2623,7 @@ texte
 
 Importé par :
 
-affiche-ici · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
+affiche-ici · appels · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
 recherche
 
 ### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
@@ -2702,6 +2735,18 @@ dom
 Importé par :
 
 bande-admin · habillage · lancement
+
+### `modules/toucher.mjs` — 28 l. → plan, plan-admin
+
+- l.1 · Un toucher qui se sent — la vibration brève du téléphone
+
+Fonctions :
+
+`vibre` 25
+
+Importé par :
+
+gestes
 
 ### `modules/tout-au-parcours.mjs` — 100 l. → plan, plan-admin
 
@@ -2852,7 +2897,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 626 l. → plan, plan-admin
+### `modules/vue.mjs` — 729 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.82 · 6. Vue
@@ -2865,8 +2910,9 @@ Fonctions :
 `poseFacteurTrait` 213 · `suitLaVue` 229 · `versScene` 238 · `appliqueVue` 243
 `libellesDeLaVue` 311 · `rafraichitVue` 319 · `poseVue` 333 · `mesureBarre` 362
 `masqueHaut` 390 · `masque` 397 · `masqueDroite` 434 · `fit` 445 · `stoppeZoom` 483
-`glisseVersVise` 489 · `glisseVers` 532 · `rectVisee` 554 · `zoom` 574 · `echelle` 588
-`versPlan` 600 · `brancheVue` 611
+`glisseVersVise` 491 · `glisseVers` 534 · `inclineScene` 577 · `trajetVol` 592
+`voleVers` 615 · `rectVisee` 657 · `zoom` 677 · `echelle` 691 · `versPlan` 703
+`brancheVue` 714
 
 Importe :
 
@@ -2874,10 +2920,11 @@ chemin-forme · dom · ecran · environs · ordre-trace · vue-etat · vue-etat 
 
 Importé par :
 
-affiche-ici · batiments · borne · calage-carte · cartouche-poi · chaleur · demarrage
-dessin · distinctions · edition · edition-en-cours · fiche · gestes · lancement · libelles
-mini-carte · nappe · outil-dessin · placement-libelles · plan · points-interet · recherche
-rendu · reprise-emplacements · sponsor · trace-itineraire · tutoriel · vous-etes-ici
+affiche-ici · appels · batiments · borne · calage-carte · cartouche-poi · chaleur
+demarrage · dessin · distinctions · edition · edition-en-cours · fiche · gestes · lancement
+libelles · mini-carte · nappe · outil-dessin · placement-libelles · plan · points-interet
+recherche · rendu · reprise-emplacements · rideau · sponsor · trace-itineraire · tutoriel
+vous-etes-ici
 
 Portes :
 

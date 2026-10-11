@@ -192,8 +192,9 @@ export function select(id, recentrer, canal, iSoc){
      connaissait pas encore. */
   ouvre(o, n, canal, iSoc, recentrer);
 }
-/** `recentrer` qui amène le plan sur l'emplacement sans toucher au zoom. */
-export const GARDE_ZOOM = "garde le zoom";
+/** `recentrer` qui amène le plan sur l'emplacement sans toucher au zoom. Un
+ *  symbole et non une chaîne : ce n'est qu'un marqueur, rien ne l'affiche. */
+export const GARDE_ZOOM = Symbol();
 export const centre = (o, gardeZoom) => centrePoint(o.c, gardeZoom);
 
 /* Les deux actions d'une fiche vivent à deux endroits : les boutons du pied,
