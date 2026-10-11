@@ -178,4 +178,6 @@ module.exports = {
   "Jamais plus de": "Never more than",
   "Au-delà, la règle de trois rendrait un seuil si haut qu'il ne se déclencherait jamais.":
     "Beyond that, the rule of three would return a threshold so high it would never come into play.",
+  // le volet « Apparence » : l'ambiance du plan
+  "Ambiance du plan": "Map style",
 };
