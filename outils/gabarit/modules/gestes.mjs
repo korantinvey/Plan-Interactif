@@ -363,11 +363,11 @@ export function brancheGestes(){
         return;
       }
       if (viseItineraire(cible.dataset.id)) return;
-      /* Sur un téléphone, la fiche monte du bas et couvre la moitié du plan :
-         le stand touché tombait souvent dessous. Le plan glisse donc pour le
-         poser au milieu de ce qui reste visible. Un grand écran n'en a pas
-         besoin — la fiche s'ouvre à côté, et le stand reste sous le curseur. */
-      select(cible.dataset.id, ETROIT() && GARDE_ZOOM, canalPlan(cible), rangSociete(cible));
+      /* Le stand touché vient au milieu de ce qui reste visible, sans changer
+         le zoom — sur un téléphone, la fiche qui monte du bas l'aurait caché ;
+         sur un grand écran, elle s'ouvre à droite. Le trajet est un vol
+         (`vue.mjs` `voleVers`), comme pour un exposant choisi dans la liste. */
+      select(cible.dataset.id, GARDE_ZOOM, canalPlan(cible), rangSociete(cible));
     } else { ferme(); finVisee(); }
   });
   svg.addEventListener("pointercancel", e => {
@@ -403,7 +403,7 @@ export function brancheGestes(){
         return;
       }
       if (!viseItineraire(g.dataset.id))
-        select(g.dataset.id, ETROIT() && GARDE_ZOOM, canalPlan(g), rangSociete(g));
+        select(g.dataset.id, GARDE_ZOOM, canalPlan(g), rangSociete(g));
     }
   });
   document.addEventListener("keydown", e => {

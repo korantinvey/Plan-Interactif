@@ -245,7 +245,7 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
 | ambiance du plan — Classique, Tuiles | `modules/ambiance.mjs` |
 | mini-carte de situation, zoomé | `modules/mini-carte.mjs` |
-| lever de rideau au premier chargement | `modules/rideau.mjs`, posé par `modules/demarrage.mjs` `demarre` |
+| vol de caméra vers un stand lointain | `modules/vue.mjs` `voleVers`, appelé par `modules/fiche.mjs` `centrePoint` |
 | noms en appel — stands cherchés ou choisis trop petits | `modules/appels.mjs` |
 | vibration au toucher | `modules/toucher.mjs`, appelé par `modules/gestes.mjs` |
 | fenêtre des réglages et ses volets | `modules/reglages.mjs` `ouvreReglages`, `modules/volets.mjs` |
