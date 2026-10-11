@@ -49,11 +49,6 @@ module.exports = [
   // lit alors est « Le rappel n'a pas pu être posé », qui a sa clé
   "clé indisponible", "clé absente",
 
-  // `modules/installation.mjs` : deux morceaux de l'adresse `intent://` qui réveille
-  // l'application installée — des noms qu'Android lit, et que rien n'affiche
-  ";action=android.intent.action.VIEW",
-  ";category=android.intent.category.BROWSABLE;end",
-
   // `_js.html` : le sélecteur qui reconnaît, dans l'en-tête d'un tiroir, ce qui
   // se clique — et que la prise du tiroir doit donc laisser tranquille
   "button,a,input,select,textarea,label,[role=tab]",
