@@ -2736,13 +2736,13 @@ Importé par :
 
 bande-admin · habillage · lancement
 
-### `modules/toucher.mjs` — 54 l. → plan, plan-admin
+### `modules/toucher.mjs` — 57 l. → plan, plan-admin
 
 - l.1 · Un toucher qui se sent — la vibration brève du téléphone
 
 Fonctions :
 
-`vibre` 31 · `interrupteur` 44
+`vibre` 34 · `interrupteur` 47
 
 Importé par :
 
