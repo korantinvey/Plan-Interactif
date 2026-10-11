@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1711 l. → plan-smcl.html
+### `_styles-plan.css` — 1703 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -666,20 +666,20 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/demarrage.mjs` — 296 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 292 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 65 · `demarre` 81 · `annonce` 142 · `panneDuChargement` 177
-`CLE_VERSION` 187 · `versionRetenue` 188 · `retientVersion` 191 · `demandePlan` 217
-`charge` 241 · `brancheDemarrage` 278
+`recadreListePosee` 64 · `demarre` 80 · `annonce` 138 · `panneDuChargement` 173
+`CLE_VERSION` 183 · `versionRetenue` 184 · `retientVersion` 187 · `demandePlan` 213
+`charge` 237 · `brancheDemarrage` 274
 
 Importe :
 
 annonce · borne · dom · donnees · fiche · ici · index-salon · installation · mode-admin
-parcours-recu · recherche · rendu · rideau · salon · sponsor · tutoriel · vue
+parcours-recu · recherche · rendu · salon · sponsor · tutoriel · vue
 
 Importé par :
 
@@ -828,8 +828,8 @@ Fonctions :
 
 Importé par :
 
-dessin · fiche · gestes · glisse-fenetre · mini-carte · recherche · rideau
-tiroir-itineraire · tiroirs · trace-itineraire · tutoriel · vue
+dessin · fiche · gestes · glisse-fenetre · mini-carte · recherche · tiroir-itineraire
+tiroirs · trace-itineraire · tutoriel · vue
 
 ### `modules/edition-en-cours.mjs` — 43 l. → plan, plan-admin
 
@@ -2367,22 +2367,6 @@ Importé par :
 
 gestes-admin · outil-dessin · pile · plan-admin
 
-### `modules/rideau.mjs` — 130 l. → plan, plan-admin
-
-- l.1 · Le lever de rideau — le plan se dévoile, allée par allée
-
-Fonctions :
-
-`cleVue` 37 · `dejaVu` 42 · `retiens` 46 · `ouvertSurQuelqueChose` 52 · `poseRideau` 62
-
-Importe :
-
-ecran · salon · sponsor · vue
-
-Importé par :
-
-demarrage
-
 ### `modules/salon.mjs` — 75 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
@@ -2395,7 +2379,7 @@ Importé par :
 
 affiche-ici · ambiance · application · borne · charge-annoncee · configuration · demarrage
 enregistrement · erreurs · essai-rappel · ici · installation · mesure · notifications
-parcours · partage · plan · rappels · recherche · rendu · rideau · sponsor · tutoriel
+parcours · partage · plan · rappels · recherche · rendu · sponsor · tutoriel
 
 ### `modules/secteurs.mjs` — 148 l. → plan, plan-admin
 
@@ -2523,7 +2507,7 @@ configuration · dom · donnees · salon · sur · vue
 
 Importé par :
 
-borne · demarrage · installation · lancement · reglage-sponsor · rideau · tutoriel
+borne · demarrage · installation · lancement · reglage-sponsor · tutoriel
 
 ### `modules/suggestion.mjs` — 329 l. → plan, plan-admin
 
@@ -2897,7 +2881,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 743 l. → plan, plan-admin
+### `modules/vue.mjs` — 740 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.82 · 6. Vue
@@ -2910,9 +2894,9 @@ Fonctions :
 `poseFacteurTrait` 213 · `suitLaVue` 229 · `versScene` 238 · `appliqueVue` 243
 `libellesDeLaVue` 311 · `rafraichitVue` 319 · `poseVue` 333 · `mesureBarre` 362
 `masqueHaut` 390 · `masque` 397 · `masqueDroite` 434 · `fit` 445 · `stoppeZoom` 483
-`glisseVersVise` 491 · `glisseVers` 534 · `inclineScene` 581 · `trajetVol` 596
-`voleVers` 628 · `rectVisee` 671 · `zoom` 691 · `echelle` 705 · `versPlan` 717
-`brancheVue` 728
+`glisseVersVise` 491 · `glisseVers` 534 · `inclineScene` 578 · `trajetVol` 593
+`voleVers` 625 · `rectVisee` 668 · `zoom` 688 · `echelle` 702 · `versPlan` 714
+`brancheVue` 725
 
 Importe :
 
@@ -2923,8 +2907,7 @@ Importé par :
 affiche-ici · appels · batiments · borne · calage-carte · cartouche-poi · chaleur
 demarrage · dessin · edition · edition-en-cours · fiche · gestes · lancement · libelles
 mini-carte · nappe · outil-dessin · placement-libelles · plan · points-interet · recherche
-rendu · reprise-emplacements · rideau · sponsor · trace-itineraire · tutoriel
-vous-etes-ici
+rendu · reprise-emplacements · sponsor · trace-itineraire · tutoriel · vous-etes-ici
 
 Portes :
 
