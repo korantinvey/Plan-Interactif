@@ -356,14 +356,6 @@ html.gl-pret .plan-gl{opacity:1}
   transform-origin:50% 60%}
 .stage.en-vol > :is(.iciPouls,.etincelle,.appels){opacity:0}
 
-/* Le lever de rideau (`modules/rideau.mjs`) : des bandes de la couleur de la
-   scène, au rang du plan et posées juste après lui, donc par-dessus. Elles se
-   relèvent vers le haut ; une ombre courte souligne leur bord, sans quoi on
-   ne verrait qu'un plan qui se dévoile, et non un rideau qui monte. */
-.rideau{position:absolute;inset:0;z-index:1;pointer-events:none}
-.rideau i{position:absolute;top:0;bottom:0;background:var(--c-fond,var(--ground));
-  transform-origin:50% 0;box-shadow:0 10px 18px -12px rgba(0,0,0,.28)}
-
 /* Les noms en appel (`modules/appels.mjs`) : une étiquette posée à côté du
    stand qui n'a pas la place d'écrire le sien, reliée par un filet. Elle
    reprend la police des noms du plan, et l'accent quand le stand est choisi.
