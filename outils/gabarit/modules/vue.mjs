@@ -483,6 +483,8 @@ let imageZoom = null;
 export function stoppeZoom(){
   if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
   vise = null;
+  enVol = false;
+  inclineScene(0);
   rendTextes();
 }
 
@@ -531,11 +533,112 @@ function glisseVersVise(){
  */
 export function glisseVers(/** @type {any} */ but){
   if (REDUIT){ changeVue(but); poseVue(); return; }
+  /* Un cran de molette pendant un vol le reprend en glissant, depuis là où
+     la caméra se trouve : le vol tenait l'image, et le glissement ne
+     démarre pas tant qu'elle est prise. */
+  if (enVol){ cancelAnimationFrame(imageZoom); imageZoom = null; enVol = false; inclineScene(0); }
   vise = but;
   /* Le trajet change l'échelle — un cran de molette, un centrage qui
      rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */
   figeTextes();
   glisseVersVise();
+}
+
+/* ------------------------------------------------------------
+   Le vol de caméra
+
+   Glisser à plat vers un stand à l'autre bout du hall faisait défiler le
+   plan sous les yeux à toute allure, à l'échelle de l'arrivée : on voyait
+   passer des stands sans pouvoir rien en lire, et l'on arrivait sans savoir
+   d'où. Une carte fait autrement — elle prend de la hauteur, survole, puis
+   redescend. Le trajet est celui de van Wijk et Nuij (« Smooth and efficient
+   zooming and panning », 2003), que Mapbox et d3 emploient : la vitesse
+   perçue y reste constante, et l'on voit à chaque instant d'où l'on part et
+   où l'on va.
+
+   Il ne sert qu'aux grands sauts. Un stand déjà dans la vue, ou tout près,
+   se rejoint en glissant : prendre de la hauteur pour si peu donnerait le
+   mal de mer.
+   ------------------------------------------------------------ */
+/* La courbure du trajet : plus grande, la caméra monte plus haut. 1,4 est la
+   valeur que l'article tient pour la plus naturelle. */
+const RHO = 1.4;
+/* Au-delà de cette distance entre les centres, comptée en largeurs de vue,
+   on vole ; en deçà, on glisse. */
+const SAUT = .9;
+/* L'inclinaison au milieu du vol, en degrés : de quoi sentir qu'on survole,
+   pas assez pour que le plan bascule. */
+const INCLINAISON = 9;
+let enVol = false;
+
+/* La scène penchée le temps du vol. Le réglage se pose sur la scène et non
+   sur la racine : le rendu WebGL repeint tout le plan à chaque changement de
+   classe ou de style de celle-ci (`webgl.mjs` `monteWebgl`). */
+function inclineScene(/** @type {number} */ t){
+  const stage = svg.parentElement;
+  if (!stage) return;
+  if (!t){
+    if (stage.classList.contains("en-vol")){ stage.classList.remove("en-vol"); stage.style.removeProperty("--vol"); }
+    return;
+  }
+  stage.classList.add("en-vol");
+  stage.style.setProperty("--vol", (Math.sin(Math.PI * t) * INCLINAISON).toFixed(2) + "deg");
+}
+
+/**
+ * Le trajet de van Wijk entre deux vues : `f(s)`, pour `s` de 0 à 1, donne
+ * la vue en chemin ; `S`, la longueur du trajet, en fixe la durée.
+ */
+function trajetVol(/** @type {any} */ a, /** @type {any} */ b){
+  const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
+  const dx = bx - ax, dy = by - ay, d1 = Math.hypot(dx, dy), w0 = a.w, w1 = b.w;
+  const r2 = RHO * RHO, r4 = r2 * r2;
+  const b0 = (w1 * w1 - w0 * w0 + r4 * d1 * d1) / (2 * w0 * r2 * d1);
+  const b1 = (w1 * w1 - w0 * w0 - r4 * d1 * d1) / (2 * w1 * r2 * d1);
+  const q0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), q1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+  const S = (q1 - q0) / RHO, c0 = Math.cosh(q0), rapport = b.h / b.w;
+  return { S, f: (/** @type {number} */ t) => {
+    const s = t * S;
+    const u = w0 / (r2 * d1) * (c0 * Math.tanh(RHO * s + q0) - Math.sinh(q0));
+    const w = w0 * c0 / Math.cosh(RHO * s + q0), h = w * rapport;
+    return { x: ax + u * dx - w / 2, y: ay + u * dy - h / 2, w, h };
+  } };
+}
+
+/**
+ * Aller à une vue en volant si elle est loin, en glissant sinon.
+ *
+ * Le vol pose la vue visée comme le glissement (`vise`) : la fiche mesure
+ * ainsi où le stand tombera (`rectVisee`), et un geste le coupe de la même
+ * façon (`stoppeZoom`).
+ */
+export function voleVers(/** @type {any} */ but){
+  const a = vise || vue();
+  const d = a ? Math.hypot(but.x + but.w / 2 - (a.x + a.w / 2), but.y + but.h / 2 - (a.y + a.h / 2)) : 0;
+  if (REDUIT || !a || d < SAUT * Math.max(a.w, but.w)){ glisseVers(but); return; }
+  stoppeZoom();
+  const { S, f } = trajetVol(a, but);
+  // la durée suit la longueur du trajet, bornée : ni un sursaut, ni une attente
+  const duree = Math.min(1300, Math.max(700, S * 1000 * RHO / Math.SQRT2 * .5));
+  vise = but; enVol = true;
+  figeTextes();
+  const debut = performance.now();
+  const pas = (/** @type {number} */ maintenant) => {
+    imageZoom = null;
+    if (!enVol || vise !== but) return;
+    const t = Math.min(1, (maintenant - debut) / duree);
+    if (t >= 1){ enVol = false; inclineScene(0); changeVue(but); vise = null; poseVue(); return; }
+    /* Doux au départ et à l'arrivée, sans traîner : une courbe plus creuse
+       laissait le plan immobile le premier tiers du vol, et le choix semblait
+       ne pas avoir été entendu. */
+    const e = (1 - Math.cos(Math.PI * t)) / 2;
+    figeTextes();
+    changeVue(f(e));
+    inclineScene(t);
+    appliqueVue(); echelle();
+    imageZoom = requestAnimationFrame(pas);
+  };
+  imageZoom = requestAnimationFrame(pas);
 }
 
 /**

@@ -32,10 +32,8 @@ module.exports = {
   // le rappel, l'application installée et le plan lu dans le navigateur
   "L'application est installée": "The app is installed",
   "Déjà sur votre écran d'accueil": "Already on your home screen",
-  "Vous lisez le plan dans le navigateur. Ouvert depuis l'application, il s'affiche en plein écran, se lance d'un geste et reste consultable sur place, même quand le réseau ne passe plus.":
-    "You are reading the map in the browser. Opened from the app, it shows full screen, launches in one tap, and stays available on site, even when there is no signal.",
-  "Rester ici": "Stay here",
-  "Ouvrir l'application": "Open the app",
+  "Vous lisez le plan dans le navigateur. Touchez cette icône sur votre écran d'accueil : le plan s'y ouvre en plein écran, se lance d'un geste et reste consultable sur place, même quand le réseau ne passe plus.":
+    "You are reading the map in the browser. Tap this icon on your home screen: the map opens full screen there, launches in one tap, and stays available on site, even when there is no signal.",
   "Compris": "OK",
 
   /* iOS ne dit pas qu'une application est installée, et rien ne l'y ouvre : la
@@ -43,12 +41,7 @@ module.exports = {
   "Le plan en application": "The map as an app",
   "Si vous l'avez ajouté à votre écran d'accueil, ouvrez-le depuis son icône plutôt que depuis le navigateur : il s'affiche en plein écran, se lance d'un geste et reste consultable sur place, même quand le réseau ne passe plus.":
     "If you added it to your home screen, open it from its icon rather than from the browser: it shows full screen, launches in one tap, and stays available on site, even when there is no signal.",
-
-  // le bouton n'a rien ouvert
-  "Ouvrez-la depuis son icône": "Open it from its icon",
   "Sur votre écran d'accueil": "On your home screen",
-  "Le navigateur n'a pas pu passer la main. Touchez cette icône sur votre écran d'accueil : le plan s'y ouvre en plein écran, et reste consultable même sans réseau.":
-    "The browser could not hand over. Tap this icon on your home screen: the map opens full screen there, and stays available even without a signal.",
 
   /* Ce que l'application installée ne reprend pas du navigateur, sur iOS. */
   "L'application aura sa propre mémoire : le parcours de visite que vous avez commencé ici n'y sera pas. Gardez-en une copie, vous l'y ouvrirez d'un lien.":

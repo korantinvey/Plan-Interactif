@@ -37,6 +37,7 @@ import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basc
 import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme, GARDE_ZOOM } from "./fiche.mjs";
 import { oublieChoixPoi, ouvrePoi, oublieReperes } from "./points-interet.mjs";
 import { poseBorneIci } from "./borne.mjs";
+import { vibre, PRISE, BUTEE } from "./toucher.mjs";
 import { visePoi, viseItineraire, finVisee } from "./tiroir-itineraire.mjs";
 import { _lg } from "./texte-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
@@ -122,7 +123,14 @@ function suitPince(){
   figeTextes();
   plieLesBandes(true);
   const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
-  const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
+  const voulu = pince.w * pince.d / Math.max(1, m.d);
+  const nw = Math.min(large, Math.max(6, voulu));
+  /* La limite du zoom se sent au doigt, une fois à chaque fois qu'on la
+     touche : sans quoi le pincement continuait sans que rien ne bouge, et
+     l'on ne savait pas si le plan avait cessé de répondre. */
+  const bute = nw !== voulu;
+  if (bute && !pince.bute) vibre(BUTEE);
+  pince.bute = bute;
   const nh = pince.h * (nw / pince.w);
   changeVue({
     x: pince.ancre[0] - (m.x - r.left) / r.width * nw,
@@ -347,6 +355,8 @@ export function brancheGestes(){
     if (cible){
       /* Un repère n'est pas un objet du plan : il n'a pas de fiche d'exposant,
          mais il a un nom, et c'est ce qu'on vient lui demander. */
+      // le doigt a pris quelque chose : il le sent
+      vibre(PRISE, e.pointerType);
       if (!cible.dataset.id){
         if (visePoi(cible.dataset.poi)) return;
         ouvrePoi(cible.dataset.poi, cible);
