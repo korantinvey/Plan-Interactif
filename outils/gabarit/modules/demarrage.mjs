@@ -35,7 +35,6 @@ import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { montePlan, chargeFond } from "./rendu.mjs";
-import { poseRideau } from "./rideau.mjs";
 
 /* Ce que le démarrage annonce, et que seule l'administration écoute : le
    bouton d'enregistrement et le rattrapage d'un envoi en retard
@@ -88,9 +87,6 @@ function demarre(/** @type {any} */ d){
   accueilleSponsor();
   montePlan();
   fit();
-  /* Le rideau tombe avant la première image du plan : posé plus tard, on
-     verrait le plan, puis le rideau, puis le plan encore. */
-  poseRideau();
   liste();
   recadreListePosee();
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,

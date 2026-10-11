@@ -556,20 +556,17 @@ export function glisseVers(/** @type {any} */ but){
    perçue y reste constante, et l'on voit à chaque instant d'où l'on part et
    où l'on va.
 
-   Il ne sert qu'aux grands sauts. Un stand déjà dans la vue, ou tout près,
-   se rejoint en glissant : prendre de la hauteur pour si peu donnerait le
-   mal de mer.
+   Il sert à chaque stand qu'on choisit, même tout près : la caméra monte
+   alors à peine, et le geste garde la même signature d'un bout à l'autre du
+   plan. Seul un stand déjà au point visé ne bouge pas — il n'y a pas de
+   trajet.
    ------------------------------------------------------------ */
 /* La courbure du trajet : plus grande, la caméra monte plus haut. 1,4 est la
    valeur que l'article tient pour la plus naturelle. */
 const RHO = 1.4;
-/* On vole quand le stand est loin — au-delà de cette distance entre les
-   centres, comptée en largeurs de vue — ou quand l'échelle change d'au
-   moins ce rapport : depuis la vue d'ensemble, le stand est toujours dans le
-   cadre, et c'est la plongée vers lui qui fait le trajet. Sans ce second
-   seuil, le cas le plus courant — choisir un exposant dans la liste, le hall
-   entier à l'écran — ne volait jamais. */
-const SAUT = .9, PLONGEE = 1.8;
+/* En deçà de ce déplacement, en mètres, et de ce changement d'échelle, la
+   vue est déjà où l'on va : on s'y pose en glissant, sans trajet à montrer. */
+const IMMOBILE = .5, MEME_ECHELLE = 1.05;
 /* L'inclinaison au milieu du vol, en degrés : de quoi sentir qu'on survole,
    pas assez pour que le plan bascule. */
 const INCLINAISON = 9;
@@ -619,7 +616,7 @@ function trajetVol(/** @type {any} */ a, /** @type {any} */ b){
 }
 
 /**
- * Aller à une vue en volant si elle est loin, en glissant sinon.
+ * Aller à une vue en volant, sauf si l'on y est déjà.
  *
  * Le vol pose la vue visée comme le glissement (`vise`) : la fiche mesure
  * ainsi où le stand tombera (`rectVisee`), et un geste le coupe de la même
@@ -629,7 +626,7 @@ export function voleVers(/** @type {any} */ but){
   const a = vise || vue();
   const d = a ? Math.hypot(but.x + but.w / 2 - (a.x + a.w / 2), but.y + but.h / 2 - (a.y + a.h / 2)) : 0;
   const rapportEchelle = a ? Math.max(a.w, but.w) / Math.min(a.w, but.w) : 1;
-  if (REDUIT || !a || (d < SAUT * Math.max(a.w, but.w) && rapportEchelle < PLONGEE)){ glisseVers(but); return; }
+  if (REDUIT || !a || (d < IMMOBILE && rapportEchelle < MEME_ECHELLE)){ glisseVers(but); return; }
   stoppeZoom();
   const { S, f } = trajetVol(a, but);
   // la durée suit la longueur du trajet, bornée : ni un sursaut, ni une attente
