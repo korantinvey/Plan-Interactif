@@ -129,6 +129,9 @@ export function traceStand(/** @type {string} */ d){
   return tuiles && d ? arrondi(d) : d;
 }
 
+/** Les tuiles sont-elles posées — pour qui trace un stand hors de `montePlan`. */
+export const tuilesPosees = () => tuiles;
+
 export function appliqueAmbiance(){
   const a = ambianceRetenue();
   AMBIANCES.forEach(x => racine.classList.toggle("ambiance-" + x.cle, x.cle === a));
@@ -142,5 +145,9 @@ export function appliqueAmbiance(){
       document.querySelectorAll("#" + groupe + " > g > path").forEach((el, i) => {
         if (formes[i]) el.setAttribute("d", traceStand(formes[i].d));
       });
+    // les stands dessinés portent leurs deux tracés (`dessin.mjs` `cheminStandDessine`)
+    document.querySelectorAll(".dcal .sdes > path[data-poly]").forEach(el => {
+      el.setAttribute("d", tuiles ? traceStand(el.dataset.poly) : el.dataset.classique);
+    });
   }
 }
