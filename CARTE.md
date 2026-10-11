@@ -1553,15 +1553,16 @@ Fonctions :
 
 `retenusPourParcours` 35 · `ajouteToutAuParcours` 60 · `poseToutAuParcours` 83
 
-### `modules/trace-itineraire.mjs` — 299 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 363 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
 `poseTrace` 33 · `marchesIci` 35 · `rayonBout` 40 · `arreteTracage` 73 · `tronconsDe` 94
-`traceDe` 112 · `peintItineraire` 115 · `placePouls` 189 · `lanceTracage` 204
-`dessineItineraire` 229 · `rafraichitBouts` 251 · `cadreItineraire` 274
+`traceDe` 112 · `peintItineraire` 115 · `lanceEtincelle` 196 · `pointA` 217
+`courtEtincelle` 225 · `placePouls` 253 · `lanceTracage` 268 · `dessineItineraire` 293
+`rafraichitBouts` 315 · `cadreItineraire` 338
 
 ### `modules/trace.mjs` — 178 l. → plan, plan-admin
 

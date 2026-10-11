@@ -586,18 +586,18 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
 @keyframes comete3{from{stroke-dashoffset:26}to{stroke-dashoffset:-174}}
 @keyframes comete4{from{stroke-dashoffset:15}to{stroke-dashoffset:-185}}
 @keyframes comete5{from{stroke-dashoffset:7}to{stroke-dashoffset:-193}}
-/* L'étincelle du fil lumineux : une tête vive, sa lueur et sa traîne, qui
-   ne repasse qu'une fois tous les six cents pixels — une seule lumière qui
-   court, et non une file de tirets. Même allure que la comète (deux cents
-   pixels en une seconde et demie), d'où quatre secondes et demie pour six
-   cents ; `webgl.mjs` `phaseDe` en déduit la sienne de la période. */
-#itin .iEt1,#itin .iEt2,#itin .iEt3{animation-duration:4.5s}
-#itin .iEt1{stroke-width:12;opacity:.22;stroke-dasharray:60 540;animation-name:etincelle1}
-#itin .iEt2{stroke-width:5;opacity:.6;stroke-dasharray:30 570;animation-name:etincelle2}
-#itin .iEt3{stroke-width:6;opacity:1;stroke-dasharray:6 594;animation-name:etincelle3}
-@keyframes etincelle1{from{stroke-dashoffset:60}to{stroke-dashoffset:-540}}
-@keyframes etincelle2{from{stroke-dashoffset:30}to{stroke-dashoffset:-570}}
-@keyframes etincelle3{from{stroke-dashoffset:6}to{stroke-dashoffset:-594}}
+/* L'étincelle du fil lumineux (`trace-itineraire.mjs`), posée dans la scène :
+   un cœur blanc dans un halo de la couleur du salon, flou et rond, que le
+   navigateur lisse. La tête d'abord, puis sa traîne qui rapetisse ; chaque
+   point est déplacé par « transform » à chaque image. */
+.etincelle{position:absolute;left:0;top:0;width:0;height:0;z-index:1;pointer-events:none}
+.etincelle[hidden]{display:none}
+.etincelle i{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 22%,color-mix(in srgb,var(--accent-clair) 75%,transparent) 42%,transparent 70%);
+  will-change:transform}
+.etincelle i:nth-child(n+2){left:-7px;top:-7px;width:14px;height:14px;filter:blur(1px)}
+.etincelle i:nth-child(n+5){left:-5px;top:-5px;width:10px;height:10px}
+.etincelle i:nth-child(n+8){left:-4px;top:-4px;width:8px;height:8px}
 @media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
 @media (prefers-reduced-motion:reduce){.chalTete button svg{transition:none}}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
