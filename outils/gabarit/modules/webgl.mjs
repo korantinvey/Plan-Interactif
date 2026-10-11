@@ -849,13 +849,36 @@ function formeGl(el, cs, m, op, traces, acc){
   }
 }
 
+/**
+ * Le corps d'un texte du plan tel que le dessin l'a écrit, en mètres.
+ *
+ * Le style calculé ne le rend pas fidèlement partout. Une application qui
+ * embarque le plan dans sa vue web y règle souvent une taille de police
+ * minimale (`minimumFontSize` de WKWebView, `setMinimumFontSize` ou le zoom
+ * du texte d'Android) : le navigateur l'applique à la valeur calculée, et un
+ * texte de deux mètres y valait huit ou dix. Le SVG, lui, dessine à la taille
+ * écrite — seul le rendu WebGL, qui relit le style, posait alors « Food
+ * Court » en géant et les « 5 minutes » des arrêts les uns sur les autres.
+ * Tous les textes du plan portent leur attribut, et aucune règle de la
+ * feuille de style ne le remplace : c'est donc lui qui fait foi, hérité au
+ * besoin d'un groupe ; le style calculé ne reste qu'en dernier recours.
+ */
+function corpsDeclare(el){
+  for (let n = el; n && n.getAttribute; n = n.parentNode){
+    const v = n.getAttribute("font-size");
+    if (v && /^\s*[\d.]+\s*(px)?\s*$/.test(v)) return parseFloat(v);
+    if (n.tagName === "svg") return 0;
+  }
+  return 0;
+}
+
 function texteGl(el, cs, m, op, acc){
   acc = accDe(el, acc);
   const texte = el.textContent;
   if (!texte || !texte.trim()) return;
   const coul = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (!coul) return;
-  const taille = parseFloat(cs.fontSize);
+  const taille = corpsDeclare(el) || parseFloat(cs.fontSize);
   if (!(taille > 0)) return;
   /* La ligne de base du SVG est au pied des lettres ; la bibliothèque centre
      le texte sur son point. On remonte d'un tiers de corps, dans le repère

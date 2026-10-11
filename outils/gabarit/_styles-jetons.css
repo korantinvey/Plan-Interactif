@@ -121,6 +121,10 @@ body{margin:0;background:var(--c-fond,var(--ground));color:var(--ink);
    Sur la racine et sur le corps à la fois : les navigateurs ne s'accordent pas
    sur celui des deux dont la valeur commande la fenêtre. */
 html,body{overscroll-behavior-y:none}
+/* Le texte garde la taille écrite : Safari et les vues web d'iOS le grossissent
+   sinon d'eux-mêmes — à la bascule en paysage, ou dans une application qui
+   les y autorise —, et la page n'est pas faite pour qu'on la relise ainsi. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Et le geste s'arrête au tiroir au lieu de remonter à la page : arrivé au bout
    de sa liste, le doigt qui continue emportait ce qu'il y a derrière — un
    sursaut du plan, pour un tiroir qui ne bougeait plus. */
