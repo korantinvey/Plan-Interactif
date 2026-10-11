@@ -2,6 +2,7 @@
    La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 /* L'habillage du modèle retenu (`habilleModale`), que la fenêtre reprend à
    chaque ouverture. */
 import { habilleModale } from "./modeles.mjs";
@@ -21,21 +22,16 @@ export const poseAvantFermeture = (f) => { avantFermeture = f; };
    fenêtre qui invite à installer, celle qui propose les rappels —, que le
    visiteur reçoit aussi (`installation.mjs`, `rappels.mjs`) ; mais seule
    l'administration connaît la fenêtre des réglages (`reglages.mjs`), qu'un
-   module public ne peut importer : elle ouvre cette porte en se chargeant.
-   Chez le visiteur, aucun aperçu ne s'ouvre, et rien n'est derrière. */
-/** @type {(marque: string) => void} */
-let retour = () => {};
-
-/** La porte du retour aux réglages, que `reglages.mjs` ouvre en se chargeant.
- *  @param {(marque: string) => void} f */
-export function confieRetourAuxReglages(f){
-  retour = f;
-}
+   module public ne peut importer : la sortie d'un aperçu s'annonce, avec la
+   case qui l'a ouvert, et les réglages l'écoutent. Chez le visiteur, aucun
+   aperçu ne s'ouvre, et personne n'écoute. */
+/** @type {import("./annonce.mjs").Annonce<[string]>} */
+export const APERCU_QUITTE = creeAnnonce();
 
 /** Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
  *  qui l'a ouvert — l'invitation à installer, le rappel des conférences.
  *  @param {string} marque */
-export const retourAuxReglages = (marque) => retour(marque);
+export const retourAuxReglages = (marque) => { APERCU_QUITTE.dis(marque); };
 
 function verseModale(){
   const f = avantFermeture;
