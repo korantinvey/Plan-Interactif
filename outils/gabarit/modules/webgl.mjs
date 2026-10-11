@@ -35,6 +35,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
+import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -79,7 +80,7 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan.min.js",
+  src: "bibliotheques/deck.gl-9.3.11-plan-b4ce2dbc.min.js",
   integrite: "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
 };
 export const GL = {
@@ -264,7 +265,7 @@ function perdContexteWebgl(){
   GL.actif = false; GL.pret = false;
   document.documentElement.classList.remove("rendu-webgl", "gl-pret", "gl-attente", "en-edition");
   stage().classList.remove("survol-gl");
-  GL.survol = null; GL.focus = null;
+  GL.survol = null; GL.focus = null; TUILES.clear();
   try { GL.deck.finalize(); } catch (e) {}
   GL.deck = null;
   if (GL.hote) GL.hote.remove();
@@ -410,11 +411,16 @@ function assembleWebgl(){
   for (const b of blocsDansLOrdre()){
     if (b.id === "labels"){ out.push(...couchesLibellesWebgl(), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
+    /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
+       est le trait de leur contour — et donc après tout le bloc. */
+    const tuile = TUILES.size > 0 && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
+      if (tuile) apres.push(...couchesTuiles(c));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
-      if (GL.survol) out.push(...coucheSurvol(c));
+      else if (GL.survol) out.push(...coucheSurvol(c));
     }
+    out.push(...apres);
     out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
   return out;
@@ -739,7 +745,7 @@ function couchesTexte(id, items, famille, graisse, extra){
    ------------------------------------------------------------ */
 /** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
-const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map(), prises });
+const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises });
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
   // racine — celles d'une forme dessinée comme celles d'un emplacement repris
@@ -819,7 +825,13 @@ function formeGl(el, cs, m, op, traces, acc){
   const sw = parseFloat(cs.strokeWidth);
   if (trait && sw > 0){
     const fixe = cs.vectorEffect === "non-scaling-stroke";
-    const largeur = fixe ? sw : sw * echelleM(m);
+    /* Le trait d'une forme dessinée s'amincit quand on recule : la feuille de
+       style l'a multiplié par le facteur de la vue où le SVG a été posé, on
+       retrouve donc l'épaisseur réglée, que les couches « traits-z » bornent
+       elles-mêmes au fil du zoom (`chemin-forme.mjs` `facteurTrait`). */
+    const amincit = fixe && el.classList.contains("trait");
+    const largeur = amincit ? Math.round(sw / (parseFloat(cs.getPropertyValue("--trait-f")) || 1) * 100) / 100
+      : fixe ? sw : sw * echelleM(m);
     const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
       ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
@@ -829,7 +841,7 @@ function formeGl(el, cs, m, op, traces, acc){
       if (t.pts.length < 2) continue;
       const path = t.pts.map(p => appM(m, p));
       if (t.ferme) path.push(path[0]);
-      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
+      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
         prise: el.closest(PRISES) });
     }
   }
@@ -945,6 +957,25 @@ function couchesDeBloc(acc, cle){
         extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
         tirets: bouge ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
     }
+  });
+  /* Les traits qui s'amincissent : comptés en mètres, à la largeur que le
+     SVG leur donnerait à « TRAIT_PLEIN » pixels par mètre, et bornés par
+     leur épaisseur réglée et son plancher. Les bornes tiennent à la couche,
+     non au trait : une couche par épaisseur, et un plan n'en compte que
+     quelques-unes. */
+  partage(acc.traitsZ, acc.prises, repondus).forEach((liste, k) => {
+    const parEpaisseur = new Map();
+    for (const d of liste){
+      if (!parEpaisseur.has(d.largeur)) parEpaisseur.set(d.largeur, []);
+      parEpaisseur.get(d.largeur).push(d);
+    }
+    let n = 0;
+    for (const [ep, l] of parEpaisseur)
+      out.push(new L.PathLayer({ id: cle + "-traits-z-" + k + "-" + (n++), data: l, pickable: k === 0,
+        getPath: d => d.path, getColor: d => d.couleur, getWidth: ep / TRAIT_PLEIN, widthUnits: "common",
+        widthMinPixels: ep * TRAIT_PLANCHER, widthMaxPixels: ep,
+        jointRounded: true, capRounded: false, extensions: constTexte().traits,
+        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2 }));
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
@@ -1124,8 +1155,121 @@ function brancheSurvolWebgl(){
 }
 function poseSurvolWebgl(el){
   if (el === GL.survol) return;
+  const quitte = GL.survol;
   GL.survol = el;
+  if (enTuiles()){
+    if (quitte) visePour(quitte, 0);
+    if (el) visePour(el, 1);
+    gonfleSurvol();
+  } else TUILES.clear();
   GL.deck.setProps({ layers: assembleWebgl() });
+}
+
+/* ------------------------------------------------------------
+   Le survol d'une tuile
+
+   Dans l'ambiance Tuiles (`ambiance.mjs`), la tuile visée se soulève : elle
+   grandit un peu autour de son centre, passe devant le vide qui la sépare de
+   ses voisines, et prend une teinte vive tirée de la sienne — la même famille
+   de couleur, plus franche. Une ombre légère, un peu plus grande qu'elle, dit
+   qu'elle a quitté le sol. Une tuile neutre — blanche, grise — n'a pas de
+   teinte à aviver : elle prend celle du survol ordinaire.
+
+   Les deux sens s'animent : la tuile qu'on quitte se repose — elle rétrécit,
+   son ombre s'efface, sa teinte revient — pendant que la suivante se soulève.
+   Chaque tuile tient donc sa propre course, de 0 (au sol) à 1 (soulevée), et
+   un aller-retour rapide repart de là où elle en était au lieu de sauter.
+   Cent soixante millisecondes pour monter, un peu plus pour redescendre ;
+   puis plus rien ne bouge tant que la souris reste où elle est.
+   ------------------------------------------------------------ */
+const enTuiles = () => document.documentElement.classList.contains("ambiance-tuiles");
+const MONTE_MS = 160, DESCEND_MS = 220, GONFLE = .06;
+/** Les tuiles en mouvement ou soulevées : où leur course partait, vers où, et quand.
+ *  @type {Map<Element, { de: number, vers: number, t0: number }>} */
+const TUILES = new Map();
+let imageGonfle = 0;
+
+/** Où en est une tuile, de 0 à 1, à cet instant — en fin douce. */
+function hauteurTuile(st, now = performance.now()){
+  if (MOUVEMENT_REDUIT.matches) return st.vers;
+  const k = Math.min(1, (now - st.t0) / (st.vers > st.de ? MONTE_MS : DESCEND_MS));
+  return st.de + (st.vers - st.de) * (1 - (1 - k) * (1 - k) * (1 - k));
+}
+
+function visePour(el, vers){
+  const st = TUILES.get(el);
+  TUILES.set(el, { de: st ? hauteurTuile(st) : 0, vers, t0: performance.now() });
+}
+
+function gonfleSurvol(){
+  if (imageGonfle) return;
+  const image = () => {
+    imageGonfle = 0;
+    if (!GL.actif) return;
+    const now = performance.now();
+    let bouge = false;
+    for (const [el, st] of TUILES){
+      const h = hauteurTuile(st, now);
+      if (h !== st.vers) bouge = true;
+      else if (st.vers === 0) TUILES.delete(el);   // reposée : elle n'a plus de couche à elle
+    }
+    GL.deck.setProps({ layers: assembleWebgl() });
+    if (bouge) imageGonfle = requestAnimationFrame(image);
+  };
+  imageGonfle = requestAnimationFrame(image);
+}
+
+/** Une teinte avivée : plus saturée, et poussée vers le milieu de la clarté
+ *  pour qu'une tuile pâle fonce un peu et qu'une tuile sombre s'éclaire. Rien
+ *  pour une couleur sans teinte. */
+function avive(/** @type {number[]} */ c){
+  const [r, g, b] = [c[0] / 255, c[1] / 255, c[2] / 255];
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, e = max - min;
+  if (e < .04) return null;
+  const sat = e / (1 - Math.abs(2 * l - 1));
+  let h = max === r ? ((g - b) / e) % 6 : max === g ? (b - r) / e + 2 : (r - g) / e + 4;
+  h = (h * 60 + 360) % 360;
+  const s2 = Math.min(1, sat * 1.35 + .12), l2 = l > .55 ? l - .1 : l + .08;
+  const k2 = (1 - Math.abs(2 * l2 - 1)) * s2, x = k2 * (1 - Math.abs((h / 60) % 2 - 1)), m = l2 - k2 / 2;
+  const [r2, g2, b2] = h < 60 ? [k2, x, 0] : h < 120 ? [x, k2, 0] : h < 180 ? [0, k2, x]
+    : h < 240 ? [0, x, k2] : h < 300 ? [x, 0, k2] : [k2, 0, x];
+  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255), c[3]];
+}
+
+/** La tuile soulevée à la hauteur « k » : son ombre puis elle, agrandies
+ *  autour du centre de leurs aplats, sa teinte à mi-chemin de la vive. */
+function coucheTuileSoulevee(aplats, k, n){
+  const s = 1 + GONFLE * k;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const d of aplats) for (const p of d.polygon[0]){
+    if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+    if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+  }
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  const autour = (e) => [e, 0, 0, 0, 0, e, 0, 0, 0, 0, 1, 0, cx * (1 - e), cy * (1 - e), 0, 1];
+  const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
+  const cle = Math.round(k * 40);
+  const vers = (d) => avive(d.couleur) || [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)];
+  const mele = (d) => { const v = vers(d); return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * k)); };
+  return [
+    new deck.SolidPolygonLayer({ id: "survol-ombre-" + n, data: aplats, getPolygon: d => d.polygon,
+      modelMatrix: autour(1 + (GONFLE + .02) * k), getFillColor: [20, 24, 26, Math.round(20 * k)],
+      updateTriggers: { getFillColor: cle } }),
+    new deck.SolidPolygonLayer({ id: "survol-" + n, data: aplats, getPolygon: d => d.polygon,
+      modelMatrix: autour(s), getFillColor: mele, updateTriggers: { getFillColor: cle } }),
+  ];
+}
+
+/** Les tuiles en vol ou soulevées qu'une couche porte — celle qu'on survole
+ *  en dernier, par-dessus celles qui se reposent. */
+function couchesTuiles(couche){
+  const out = [], now = performance.now();
+  let n = 0;
+  for (const [el, st] of TUILES){
+    const aplats = aplatsDe(couche, el);
+    if (aplats.length) out.push(...coucheTuileSoulevee(aplats, hauteurTuile(st, now), couche.id + "-" + (n++)));
+  }
+  return out;
 }
 /** Le curseur que la feuille de style donne à ce qui est visé — la main sur un
  *  stand, la flèche de redimensionnement d'une poignée, le déplacement d'une
@@ -1188,7 +1332,8 @@ function coucheFocus(couches){
    ------------------------------------------------------------ */
 function couchesPhare(el, sous, cle){
   const couches = couchesDeBloc(sous, cle);
-  const pts = sous.pleins.flatMap(d => d.polygon[0]).concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path));
+  const pts = sous.pleins.flatMap(d => d.polygon[0]).concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path),
+    ...sous.traitsZ.map(d => d.path));
   if (!pts.length) return couches;
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of pts){ x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }

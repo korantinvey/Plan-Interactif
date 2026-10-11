@@ -30,30 +30,31 @@
    deux relevés (`calques-dessin.mjs`) et l'annonce dans la liste
    (`demarrage.mjs`). L'enregistrement des dessins vit ici
    (`enregistreDessins`), et l'outil de dessin le reprend par son socle ;
-   seul se confie ce qui dit qu'un geste est en cours, que les gestes de
-   l'exploitant, qui l'atteignent tous, lui donnent (`gestes-admin.mjs`,
-   `confieGesteEnCours`). Le rangement des
-   réglages, lui, reçoit d'ici son envoi en base (`confiePublication`).
+   ce qui dit qu'un geste est en cours, chaque outil l'inscrit au registre
+   qu'il lit (`geste-tenu.mjs`). Le rangement des
+   réglages, lui, annonce chaque écriture (`CONF_ECRITE`), et l'envoi en
+   base la suit d'ici.
    ============================================================ */
+import { unGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { API } from "./salon.mjs";
 import { accesBase, base } from "./session.mjs";
 import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
-import { annonce, confieAuDemarrage } from "./demarrage.mjs";
+import { annonce, PLAN_DEMARRE } from "./demarrage.mjs";
 import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente,
-  confieAuxCalques, cleDessins } from "./calques-dessin.mjs";
+  ATTENTE_CHANGEE, cleDessins } from "./calques-dessin.mjs";
 import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
 import { rafraichitApercu } from "./nappe.mjs";
 import { oublieAimants } from "./aimants.mjs";
 import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { CONF, reglagesDuSalon, enregistreConf, confiePublication } from "./configuration.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
-import { confieALIndex } from "./index-salon.mjs";
+import { RESCAPES_TROUVES, REGLAGES_RECUS } from "./index-salon.mjs";
 
 /* Ce que les chargements remplacent — le mode, les réglages (`CONF`) —,
    importé, se lit tel qu'il est à l'instant : l'envoi en relit certains après
@@ -111,11 +112,6 @@ const REPOS_ECHEC = 20000;
    cours fait donc attendre l'envoi, qu'on regarde de près pour repartir dès
    qu'il est lâché, puis laisser le repos s'écouler. */
 const GUET = 150;
-let gesteEnCours = () => false;
-/** Ce qui dit qu'un geste est en cours, que les gestes de l'exploitant
- *  (`gestes-admin.mjs`) confient en se branchant : ils connaissent tous les
- *  outils, dont plusieurs importent ce module. */
-export function confieGesteEnCours(/** @type {() => boolean} */ f){ gesteEnCours = f; }
 
 /* Le relais garde le plan public dix minutes, et sert encore l'ancienne copie
    le temps de refaire la nouvelle : la base avait la configuration, les
@@ -270,10 +266,10 @@ export function programmePublication(){
 }
 
 /* Le rangement des réglages sur le poste (`configuration.mjs`
-   `enregistreConf`) est public, et ne peut importer ce module : il en reçoit
-   l'envoi dès que la page d'administration le charge, avant que le lancement
-   ne pose le moindre branchement. */
-confiePublication(programmePublication);
+   `enregistreConf`) est public, et ne peut importer ce module : il annonce
+   chaque écriture, que l'on suit dès que la page d'administration charge ce
+   module, avant que le lancement ne pose le moindre branchement. */
+CONF_ECRITE.suis(programmePublication);
 
 /** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
  *  de lui-même, sans attendre qu'on pense à cliquer. */
@@ -289,7 +285,7 @@ function envoie(/** @type {boolean} */ force){
   if (!autoDispo()) return;
   // un envoi est déjà en cours : il reprendra la main en finissant
   if (publication){ rejoue = true; return; }
-  if (force !== true && gesteEnCours()){ minuteur = setTimeout(apresGeste, GUET); return; }
+  if (force !== true && unGesteTenu()){ minuteur = setTimeout(apresGeste, GUET); return; }
   if (enRetard()) pousseConfiguration(true);
   else majAttente();
 }
@@ -297,7 +293,7 @@ function envoie(/** @type {boolean} */ force){
 /** Le geste qui retenait l'envoi est-il lâché ? Alors le repos recommence. */
 function apresGeste(){
   minuteur = null;
-  if (gesteEnCours()) minuteur = setTimeout(apresGeste, GUET);
+  if (unGesteTenu()) minuteur = setTimeout(apresGeste, GUET);
   // l'échec qu'on retentait reste dit par le bouton pendant ce repos
   else programmeEnvoi(REPOS, etatEnvoi);
 }
@@ -707,10 +703,11 @@ export function brancheSauvegarde(){
 }
 
 /* Les calques de dessin, le démarrage et l'index du salon, que la page
-   publique porte aussi, appellent l'enregistrement sans pouvoir l'importer :
-   il n'est qu'à l'administration. Il leur confie donc en se chargeant ce
-   qu'ils en appellent — l'état du bouton, le rattrapage d'un envoi en retard,
-   les calques rescapés, les réglages tels qu'ils sont arrivés. */
-confieAuxCalques({ majAttente });
-confieAuDemarrage({ majAttente, rattrapeRetard });
-confieALIndex({ compteRescapes, noteReglagesCharges });
+   publique porte aussi, ne peuvent importer l'enregistrement : il n'est qu'à
+   l'administration. Ils annoncent ce qui le concerne, et il les suit — l'état
+   du bouton, le rattrapage d'un envoi en retard, les calques rescapés, les
+   réglages tels qu'ils sont arrivés. */
+ATTENTE_CHANGEE.suis(majAttente);
+PLAN_DEMARRE.suis(() => { majAttente(); rattrapeRetard(); });
+RESCAPES_TROUVES.suis(compteRescapes);
+REGLAGES_RECUS.suis(noteReglagesCharges);

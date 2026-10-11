@@ -68,16 +68,26 @@ gestes qui l'empêchent de revenir :
   ou le dessin rangés dans un module d'interface en sortent (`filtre.mjs`,
   `cartouche-poi.mjs`, `trace-itineraire.mjs`). Une règle que plusieurs
   modules appliquaient chacun pour soi devient un **registre** où ils
-  s'inscrivent (`tiroirs-exclusifs.mjs`, `modes-edition.mjs`). Un module de base
-  qui doit dire ce qui vient de changer l'**annonce**, et les autres s'y
-  inscrivent (`parcours.mjs` `suitLeParcours`).
+  s'inscrivent (`tiroirs-exclusifs.mjs`, `modes-edition.mjs`, et
+  `geste-tenu.mjs` : aucun envoi au repos pendant qu'un outil tient un geste).
+- **Un module de base qui doit dire ce qui vient de changer l'annonce.** Il
+  exporte, sous le nom du fait, une annonce faite par `modules/annonce.mjs`
+  `creeAnnonce` (`PAVILLON_MONTE`, `SESSION_REFUSEE`), qu'il `dis`, et que les
+  autres `suis`ent en se chargeant. C'est la voie de la partition : la page
+  publique dit ce qui s'est passé sans nommer la fonction de l'exploitant qui
+  l'écoute, et chez le visiteur personne n'écoute. Les inscrits s'appellent
+  dans l'ordre de leur chargement : une annonce ne sert donc qu'à ce dont
+  l'ordre ne compte pas, ou qui n'a qu'un inscrit.
 - **Une porte, en dernier recours, et avec sa raison.** Une fonction qu'un
   module de base appelle chez un module qui l'importe lui est confiée par ce
-  dernier en se chargeant, par une porte `confie…` aux défauts sans effet.
-  Chacune est inscrite avec son genre et sa raison dans
-  `outils/portes-acceptees.json` — `partition` (le public appelle ce que seule
-  l'administration embarque), `rendu`, `registre`, `administration`.
-  `npm run portes` fait échouer une porte absente de la liste, une porte de la
+  dernier en se chargeant, par une porte `confie…` aux défauts sans effet. Il
+  en reste huit, chacune inscrite avec son genre et sa raison dans
+  `outils/portes-acceptees.json` — `partition` (l'administration remplace ou
+  ajoute, au lieu de seulement réagir : `confieChaleur`, `confieALaFiche`,
+  `confieLancementAdmin`), `rendu` (ce que chaque image d'un geste rappelle
+  dans un ordre fixe), `registre`. Une porte qui ne fait que prévenir devient
+  une annonce ; une porte qui ne fait que lire un état devient cet état, posé
+  dans le module qui le lit ou dans un registre. `npm run portes` fait échouer une porte absente de la liste, une porte de la
   liste qui n'existe plus, et **toute boucle d'imports**, nommée module par
   module : esbuild en accepte une sans rien dire, et l'ordre de chargement
   devient celui du hasard. Pour savoir si un module peut en importer un autre,
@@ -106,8 +116,12 @@ son chargement.
 en entier et y ajoute les modules de l'exploitant — un seul script par page,
 sans quoi deux exemplaires d'un module partagé auraient deux états. **Un module
 d'exploitant s'importe dans `plan-admin.mjs`, jamais dans `plan.mjs`** ; ce que
-la page publique appelle chez lui lui est confié par une porte de genre
-`partition`.
+la page publique doit faire savoir à l'administration, elle l'**annonce**, et
+le module d'exploitant l'écoute en se chargeant (`modules/rendu.mjs`
+`PAVILLON_MONTE`, `modules/demarrage.mjs` `PLAN_DEMARRE`). Une fonction que le
+public appelle sans s'en servir garde son nom dans un module public, qui
+annonce ce qu'elle demande (`modules/ordre-trace.mjs` `PANNEAU_A_REFAIRE`,
+écouté par `pile.mjs`).
 
 **Le balisage, par des tranches** de `_head.html`, bornées sur des lignes
 entières :
@@ -229,8 +243,10 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | dessin WebGL | `modules/webgl.mjs` ; lecture du SVG `modules/trace.mjs` ; bibliothèque `npm run deck` |
 | configuration (`CONF`, `conf`, `enregistreConf`), options vendues à part | `modules/configuration.mjs`, `modules/options.mjs` |
 | apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
+| ambiance du plan — Classique, Tuiles | `modules/ambiance.mjs` |
+| mini-carte de situation, zoomé | `modules/mini-carte.mjs` |
 | fenêtre des réglages et ses volets | `modules/reglages.mjs` `ouvreReglages`, `modules/volets.mjs` |
-| enregistrement pour tous, publication, oubli du cache | `modules/enregistrement.mjs` |
+| enregistrement pour tous, publication, oubli du cache | `modules/enregistrement.mjs` ; retenu pendant un geste par `modules/geste-tenu.mjs` (`inscritGesteTenu`) |
 | calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` |
 | choisir, déplacer, tourner une forme | `modules/edition.mjs` ; forme choisie `modules/forme-choisie.mjs` |
 | cote, aimants, grille, duplication | `modules/aimants.mjs` |

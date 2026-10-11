@@ -8,30 +8,22 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Ce qu'il n'importe pas — le mode administrateur à
-   activer — lui est confié par la bande de l'outil en se chargeant
-   (`confieALAcces`). Il se branche par `brancheAcces`, que `plan-admin.mjs`
+   activer — suit son annonce (`ACCES_ACCORDE`), qu'écoute la bande de
+   l'outil. Il se branche par `brancheAcces`, que `plan-admin.mjs`
    place dans le dernier emplacement du lancement (`apresLeDemarrage`, après
    `brancheDemarrage`). Le profil du compte,
    qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
-import { charge, confieAuDemarrage } from "./demarrage.mjs";
+import { charge, SESSION_REFUSEE } from "./demarrage.mjs";
 
-/* Ce que la bande de l'outil confie en se chargeant : l'activation du mode
-   administrateur (`modules/bande-admin.mjs`, qui importe l'enregistrement,
-   lequel importe ce module — l'importer d'ici les bouclerait). Le chargement
-   du plan, lui, s'importe (`demarrage.mjs`). */
-/**
- * @typedef {object} PreteAcces
- * @property {typeof import("./bande-admin.mjs").activeAdmin} activeAdmin
- */
-/** @type {PreteAcces} */
-const prete = { activeAdmin: () => {} };
-const activeAdmin = () => prete.activeAdmin();
-/** La porte par laquelle la bande de l'outil confie l'ouverture du mode.
- *  @param {Partial<PreteAcces>} o */
-export function confieALAcces(o){ Object.assign(prete, o); }
+/** L'accès est accordé : le mode administrateur s'ouvre. La bande de l'outil
+ *  l'écoute (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel
+ *  importe ce module — l'importer d'ici les bouclerait). Le chargement du
+ *  plan, lui, s'importe (`demarrage.mjs`). */
+export const ACCES_ACCORDE = creeAnnonce();
 
 /* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
    « Admin » aux réglages — la base, elle, ne distingue pas les deux profils
@@ -76,9 +68,9 @@ async function sessionValide(cfg, session){
 
 /**
  * La fenêtre d'accès. Le plan la rouvre aussi quand la base refuse une
- * session périmée : le démarrage, à qui ce module la confie en se chargeant
- * (`confieAuDemarrage` — la page publique, qui ne la reçoit pas, n'a rien à
- * rouvrir), et `enregistrement.mjs`, qui l'importe.
+ * session périmée : le démarrage l'annonce (`SESSION_REFUSEE`), et ce module
+ * le suit — chez le visiteur personne n'écoute, et il n'a rien à rouvrir —,
+ * et `enregistrement.mjs`, qui l'importe.
  *
  * @param {string} [message]
  */
@@ -153,7 +145,7 @@ export function ecranAcces(message){
          cela un administrateur qui ouvrait ses réglages aussitôt, sur un
          réseau lent, n'y trouvait pas son onglet « Admin ». */
       await litProfilA({ url, anonKey }, j);
-      activeAdmin();
+      ACCES_ACCORDE.dis();
       poseCompte();
       charge();
     } catch (e) {
@@ -241,12 +233,12 @@ export function brancheAcces(){
     const session = litLocal(CLE_SESSION);
     if (await sessionValide(cfg, session)){
       await litProfilA(cfg, session);
-      activeAdmin(); poseCompte(); charge();
+      ACCES_ACCORDE.dis(); poseCompte(); charge();
     }
     else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
   })();
 }
 
 /* Une session refusée au chargement rouvre la fenêtre d'accès : le
-   démarrage, que ce module importe, la reçoit d'ici en se chargeant. */
-confieAuDemarrage({ ecranAcces });
+   démarrage, que ce module importe, l'annonce. */
+SESSION_REFUSEE.suis(ecranAcces);

@@ -21,6 +21,7 @@ import { appliqueSecteurs } from "./recherche.mjs";
 import { dessineDists, appliqueDists } from "./distinctions.mjs";
 import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { appliqueOptions } from "./options.mjs";
+import { appliqueAmbiance } from "./ambiance.mjs";
 
 const racine = document.documentElement;
 
@@ -124,6 +125,7 @@ export function appliqueApparence(){
   appliqueDists();
   appliqueBarre();
   appliqueModele();
+  appliqueAmbiance();
 }
 
 /**

@@ -59,7 +59,7 @@ import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_RE
 import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { confieApresOption } from "./options.mjs";
-import { confieAuRendu } from "./rendu.mjs";
+import { MONTAGE_COMMENCE } from "./rendu.mjs";
 import { enregistreDessins, HIST, REFAIRE, instantane, clotSalve, memorise, toleranceTrace, fermeIci,
   remplitListeSocietes, societeSaisie, optionsModes, pictoVerrou } from "./socle-dessin.mjs";
 
@@ -910,14 +910,13 @@ export function brancheOutilDessin(){
 /* Le montage d'un pavillon réécrit ses groupes : l'emplacement qu'on
    reprenait n'existe plus, l'historique de l'éditeur valait pour l'autre
    pavillon, et la boîte à outils se replie. Le rendu, que la page publique
-   porte aussi, reçoit d'ici en se chargeant de quoi tout remettre au repos ;
-   la page publique, qui n'a ni éditeur ni outils, n'en a pas besoin. */
-confieAuRendu({ oublieEdition: () => {
+   porte aussi, l'annonce ; seul l'éditeur l'écoute. */
+MONTAGE_COMMENCE.suis(() => {
   if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
   const o = $("outils");
   if (o) o.classList.remove("open");
-} });
+});
 
 /* Le dessin est l'un des trois modes d'édition exclusifs : ouvrir les deux
    autres le referme, s'il est ouvert. */

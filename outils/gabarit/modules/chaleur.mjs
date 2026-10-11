@@ -34,6 +34,7 @@ import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { confieChaleur } from "./secteurs.mjs";
+import { svg, vue, suitLaVue, versScene, cadrePlan } from "./vue.mjs";
 
 const racine = document.documentElement;
 
@@ -47,6 +48,12 @@ let CHALEUR = null, chalOuvert = false, chalPose = false, chalJours = "30";
 /* Replié ou non — retenu d'une lecture à l'autre : qui a replié le cartouche
    une fois travaille au plan, et n'a pas à le replier à chaque ouverture. */
 let chalReduit = false;
+/* Deux façons de la peindre. En halos, la chaleur se lit comme une image
+   thermique — des nappes qui débordent des stands et se fondent quand ils se
+   touchent : c'est ce qu'on lit de loin, et qu'on montre en réunion. En
+   aplats, chaque stand prend sa couleur exacte : c'est ce qu'on vérifie de
+   près. Les halos par défaut ; le choix tient le temps de la page. */
+let chalRendu = "halos";
 
 const nbChal = (n) => Number(n || 0).toLocaleString("fr-FR");
 
@@ -157,7 +164,11 @@ export function coloreChaleur(){
   chalPose = !!on;
   /* L'encre des libellés ne peut plus venir du thème dès que les stands
      prennent la température : la feuille de style s'en charge, à ce drapeau. */
-  racine.classList.toggle("mode-chaleur", !!on);
+  const halos = !!on && chalRendu === "halos";
+  racine.classList.toggle("mode-chaleur", !!on && !halos);
+  racine.classList.toggle("chaleur-halos", halos);
+  /** @type {Array<[number, number, number, number, string]>} */
+  const releve = [];
   document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const titre = g.querySelector(":scope > title.chal");
     if (!on){
@@ -168,7 +179,15 @@ export function coloreChaleur(){
     }
     const n = CHALEUR.par.get(g.dataset.id) || 0;
     g.setAttribute("data-chaleur", "");
-    g.style.setProperty("--chal-c", tonChaleur(niveauChaleur(n, CHALEUR.max)));
+    const niv = niveauChaleur(n, CHALEUR.max), ton = tonChaleur(niv);
+    g.style.setProperty("--chal-c", ton);
+    /* La boîte se lit ici, une fois par lecture des compteurs, et non à chaque
+       image : le halo suit ensuite la vue sans rien remesurer. */
+    if (halos && n > 0){
+      const b = /** @type {SVGGraphicsElement} */ (g).getBBox();
+      releve.push([b.x + b.width / 2, b.y + b.height / 2,
+                   Math.max(b.width, b.height) / 2, niv, ton]);
+    }
     /* Le chiffre derrière la couleur, à portée de curseur. Une carte de chaleur
        se lit de loin mais se vérifie de près, et l'exploitant qui prépare une
        relance a besoin du nombre, pas de la nuance. */
@@ -180,7 +199,61 @@ export function coloreChaleur(){
       (o.nom || "emplacement") + " · " : "") +
       nbChal(n) + (n > 1 ? " consultations" : " consultation");
   });
+  // les plus chauds par-dessus : un rouge ne se noie pas sous le bleu d'à côté
+  HALOS = releve.sort((a, b) => a[3] - b[3]);
+  dessineHalos();
 }
+
+/* ------------------------------------------------------------------
+   Les halos
+   ------------------------------------------------------------------ */
+/* Une toile posée sur le plan, hors de lui : sous la carte graphique le SVG
+   est caché et ses filtres ignorés, et un flou par stand coûterait de toute
+   façon une passe chacun. Ici chaque halo est un dégradé radial, peint en
+   « multiply » sur les stands, qui gardent leur blanc et se teintent. La toile
+   respire par son opacité seule — le compositeur s'en charge, rien ne se
+   repeint pour cela. Elle suit la vue à chaque image : quelques centaines de
+   disques, une milliseconde. */
+/** @type {Array<[number, number, number, number, string]>} */
+let HALOS = [];
+/** @type {HTMLCanvasElement | null} */
+let toile = null;
+
+function dessineHalos(){
+  if (!HALOS.length || !racine.classList.contains("chaleur-halos") || !vue()){
+    if (toile) toile.hidden = true;
+    return;
+  }
+  if (!toile){
+    toile = document.createElement("canvas");
+    toile.className = "chalHalos";
+    toile.setAttribute("aria-hidden", "true");
+    svg.after(toile);
+  }
+  toile.hidden = false;
+  const r = cadrePlan(), d = Math.min(2, devicePixelRatio || 1);
+  const L = Math.round(r.width * d), H = Math.round(r.height * d);
+  if (toile.width !== L || toile.height !== H){ toile.width = L; toile.height = H; }
+  const c = toile.getContext("2d");
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, L, H);
+  c.scale(d, d);
+  const m = r.width / vue().w;           // pixels par mètre
+  for (const [x, y, ray, niv, ton] of HALOS){
+    const [px, py] = versScene(x, y);
+    // le halo déborde d'autant plus que le stand est chaud
+    const R = Math.max(10, ray * m * (1.25 + niv * 1.1));
+    if (px < -R || py < -R || px > r.width + R || py > r.height + R) continue;
+    const g = c.createRadialGradient(px, py, 0, px, py, R);
+    const a = .35 + niv * .5;
+    g.addColorStop(0, ton + Math.round(a * 255).toString(16).padStart(2, "0"));
+    g.addColorStop(.45, ton + Math.round(a * .55 * 255).toString(16).padStart(2, "0"));
+    g.addColorStop(1, ton + "00");
+    c.fillStyle = g;
+    c.fillRect(px - R, py - R, 2 * R, 2 * R);
+  }
+}
+suitLaVue(() => { if (toile && !toile.hidden) dessineHalos(); });
 
 /* ------------------------------------------------------------------
    Le cartouche
@@ -200,6 +273,9 @@ function cartoucheChaleur(){
     'stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
     '</button></div>' +
     '<div class="chalPer" id="chalPer" role="group" aria-label="Période"></div>' +
+    '<div class="chalPer chalRendu" id="chalRendu" role="group" aria-label="Rendu">' +
+    '<button type="button" data-rendu="halos">Halos</button>' +
+    '<button type="button" data-rendu="aplats">Aplats</button></div>' +
     '<div class="chalEch" id="chalEch" hidden><i></i>' +
     '<div class="bornes"><span>0</span><span></span><span></span></div></div>' +
     '<p class="chalEtat" id="chalEtat"></p>' +
@@ -223,6 +299,16 @@ function cartoucheChaleur(){
     };
     per.appendChild(b);
   });
+  const rendu = $("chalRendu");
+  const marqueRendu = () => rendu.querySelectorAll("button").forEach(x =>
+    x.setAttribute("aria-pressed", String(x.dataset.rendu === chalRendu)));
+  rendu.querySelectorAll("button").forEach(b => b.onclick = () => {
+    if (chalRendu === b.dataset.rendu) return;
+    chalRendu = b.dataset.rendu;
+    marqueRendu();
+    coloreChaleur();
+  });
+  marqueRendu();
   replieChaleur(chalReduit);
   return c;
 }

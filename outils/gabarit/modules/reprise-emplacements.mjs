@@ -20,8 +20,8 @@
    de dessin (`socle-dessin.mjs`) ; le dessin et le placement des libellés,
    avec lesquels il se dispute le glisser, se referment par le registre des
    modes d'édition (`modes-edition.mjs`), où il inscrit sa propre sortie. Il
-   confie en se chargeant sa palette à la fiche d'une zone, qu'il importe
-   (`confieALaFicheZone`).
+   refait sa palette quand la fiche d'une zone, qu'il importe, annonce une zone
+   ajoutée enregistrée (`ZONE_AJOUTEE_ENREGISTREE`).
    Les réglages et leur enregistrement (`configuration.mjs`, `CONF` lu tel
    qu'il est à l'instant), la vue, le panneau des calques (`ordre-trace.mjs`),
    le dessin des noms et des distinctions, le calque de dessin ouvert et le
@@ -30,6 +30,7 @@
    La recherche et la liste s'importent de `recherche.mjs`, la fiche de
    `fiche.mjs`.
    ============================================================ */
+import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { DATA, TOUS, parId, poseDonnees, state, P } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
@@ -40,7 +41,7 @@ import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques } from "./parcours.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, montreAimants, correction,
   aimante } from "./aimants.mjs";
-import { ficheZone, confieALaFicheZone } from "./fiche-zone.mjs";
+import { ficheZone, ZONE_AJOUTEE_ENREGISTREE } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan, confieALaVue } from "./vue.mjs";
@@ -66,8 +67,9 @@ const racine = document.documentElement;
 export let geoSel = null;       // l'emplacement dont on reprend la forme
 /** @type {any} */
 let glisseGeo = null;    // le geste en cours
-/** Une forme d'emplacement est-elle tenue ? L'envoi au repos attend qu'on la lâche. */
-export const geoGlisse = () => Boolean(glisseGeo);
+// une forme d'emplacement tenue, ou un ajout dont le tracé attend son sommet
+// suivant : l'envoi au repos attend
+inscritGesteTenu(() => glisseGeo || traceAjout);
 
 /** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheGeo(){
@@ -752,10 +754,9 @@ export function brancheRepriseEmplacements(){
    lui confie en se chargeant ; la page publique ne les a pas. */
 confieALaVue({ dessinePoigneesGeo });
 
-/* La fiche d'une zone et le placement des libellés sont importés par ce
-   module : ils ne peuvent l'importer en retour. Il leur confie donc, dès que
-   la page d'administration le charge, ce qu'ils lui empruntent. */
-confieALaFicheZone({ majPaletteGeo });
+/* La fiche d'une zone est importée par ce module : elle ne peut l'importer en
+   retour. Elle annonce une zone ajoutée enregistrée, et la palette se refait. */
+ZONE_AJOUTEE_ENREGISTREE.suis(majPaletteGeo);
 
 /* La reprise est l'un des trois modes d'édition exclusifs : ouvrir les deux
    autres la referme, si elle est ouverte. */

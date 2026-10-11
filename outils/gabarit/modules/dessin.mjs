@@ -26,7 +26,7 @@ import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
 import { P_NOM, confieAuxPolices } from "./polices-plan.mjs";
 import { mesCalques, calqueActif } from "./calques-dessin.mjs";
-import { cheminForme, styleTrait, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
+import { cheminForme, styleTrait, EPAISSEUR_TRAIT, facteurTrait, pxTrait } from "./chemin-forme.mjs";
 import { PICTOS, pictoForme, nomTypeRepere, modeDit, estTransport, glypheRepere, ligneAffichee,
   couleurRepere, encreRepere } from "./reperes.mjs";
 import { cartouchePoi, phareRepere } from "./cartouche-poi.mjs";
@@ -82,7 +82,7 @@ function longueurFleche(f){
   const view = vue();
   if (!view) return 0;
   const r = cadrePlan();
-  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  const ep = (f.ep > 0 ? f.ep : EPAISSEUR_TRAIT) * facteurTrait((r.width || 1) / view.w);
   return view.w / (r.width || 1) * (4 + ep * 3);
 }
 
@@ -120,12 +120,12 @@ function marqueFleche(f){
   const d = cheminFleche(f);
   if (!d) return "";
   const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
-  return '<path class="fleche" style="fill:none;stroke-dasharray:none' +
-         (ep !== EPAISSEUR_TRAIT ? ";stroke-width:" + ep : "") + '" d="' + d + '"/>';
+  return '<path class="fleche trait" style="fill:none;stroke-dasharray:none' +
+         (ep !== EPAISSEUR_TRAIT ? ";stroke-width:" + pxTrait(ep) : "") + '" d="' + d + '"/>';
 }
 
 /** Le zoom change : les pointes se reprennent, comme les pastilles de
- *  l'itinéraire — le trait, lui, garde son épaisseur par la feuille de style.
+ *  l'itinéraire — le trait, lui, suit par la feuille de style (`--trait-f`).
  *  Un plan sans flèche ne coûte que le premier test. */
 export function rafraichitFleches(){
   const c = $("couches");
