@@ -51,6 +51,9 @@ jobs:
       - name: Portes et boucles d'imports (cliquet de outils/portes-acceptees.json)
         run: npm run portes
 
+      - name: Le guide ne cite que ce qui existe (CLAUDE.md)
+        run: npm run guide
+
       - name: Moteur de la journée organisée
         run: npm run essais
 

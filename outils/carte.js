@@ -163,6 +163,23 @@ ecrit(
   ""
 );
 
+/* Le graphe des imports, dans les deux sens. C'est ce que la prose du dépôt
+   recopiait module par module — « importé par la fiche, la journée… » — et
+   qu'elle laissait vieillir : relu ici à chaque construction, il ne peut pas
+   mentir. Les portes viennent de leur cliquet, avec leur genre. */
+const IMPORTE = new Map(SOURCES.filter((n) => n.startsWith("modules/"))
+  .map((n) => [n.slice(8), modules.importsDe(n)]));
+const IMPORTE_PAR = new Map();
+for (const [m, liste] of IMPORTE) {
+  for (const i of liste) IMPORTE_PAR.set(i, [...(IMPORTE_PAR.get(i) || []), m]);
+}
+const PORTES = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, "portes-acceptees.json"), "utf8"));
+  } catch { return {}; }
+})();
+const sansExt = (m) => m.replace(/\.mjs$/, "");
+
 for (const nom of SOURCES) {
   const chemin = path.join(GABARIT, nom);
   const texte = lis(chemin);
@@ -190,6 +207,24 @@ for (const nom of SOURCES) {
     ecrit("", "Éléments :", "");
     for (const l of enveloppe(els.map((e) => `\`#${e}\``))) ecrit(l);
   }
+
+  if (nom.startsWith("modules/")) {
+    const m = nom.slice(8);
+    const imp = IMPORTE.get(m) || [], par = IMPORTE_PAR.get(m) || [];
+    const portes = Object.entries(PORTES).filter(([, p]) => p.module === m);
+    if (imp.length) {
+      ecrit("", "Importe :", "");
+      for (const l of enveloppe(imp.map(sansExt).sort())) ecrit(l);
+    }
+    if (par.length) {
+      ecrit("", "Importé par :", "");
+      for (const l of enveloppe(par.map(sansExt).sort())) ecrit(l);
+    }
+    if (portes.length) {
+      ecrit("", "Portes :", "");
+      for (const [p, d] of portes) ecrit(`- \`${p}\` (${d.genre}) — ${d.raison}`);
+    }
+  }
   ecrit("");
 }
 
@@ -210,7 +245,9 @@ if (orphelines.length) {
 }
 
 ecrit("## `supabase/functions/` — synchronisation Klipso et API publique", "");
-for (const dossier of ["_partage", "mesure", "plan-public", "sync-evenement"]) {
+/* Toutes les fonctions, et non une liste écrite à la main : `comptes`,
+   `rappels`, `plan-de-visite` et `vignettes` y manquaient. */
+for (const dossier of fs.readdirSync(path.join(SUP, "functions")).sort()) {
   const rep = path.join(SUP, "functions", dossier);
   if (!fs.existsSync(rep)) continue;
   for (const f of fs.readdirSync(rep).filter((f) => f.endsWith(".ts")).sort()) {

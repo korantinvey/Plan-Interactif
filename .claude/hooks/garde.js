@@ -28,7 +28,8 @@ const racine = process.env.CLAUDE_PROJECT_DIR || path.join(__dirname, "..", ".."
 const FABRIQUES = [
   [/^web\/[^/]+\.html$/, "outils/gabarit/"],
   [/^web\/console\.css$/, "outils/gabarit/_console.css"],
-  [/^web\/config\.js$/, "outils/genere.js"],
+  [/^web\/config\.js$/, "outils/gabarit/_config.js, ou outils/projet.js pour le projet"],
+  [/^src\/pages\.mjs$/, "outils/genere.js, ou outils/projet.js pour le projet"],
   [/^web\/sw\.js$/, "outils/gabarit/_sw.js ou outils/pwa.js"],
   [/^web\/manifeste\.webmanifest$/, "outils/pwa.js"],
   [/^web\/icone[^/]*$/, "outils/icones.js"],
