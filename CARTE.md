@@ -479,7 +479,7 @@ batiments · cartouche-poi · dessin · edition · edition-en-cours · enregistr
 forme-choisie · gestes-admin · index-salon · libelles · ordre-trace · outil-dessin · pile
 rendu · reprise-emplacements · socle-dessin · tiroir-itineraire · tutoriel
 
-### `modules/camera.mjs` — 181 l. → plan, plan-admin
+### `modules/camera.mjs` — 220 l. → plan, plan-admin
 
 - l.1 · La caméra du plan immersif — le hall vu de biais
 
@@ -487,7 +487,7 @@ Fonctions :
 
 `demandeCamera` 55 · `cameraVoulue` 62 · `capCamera` 64 · `cleCamera` 66 · `poseTrajet` 94
 `boutsDuTrajet` 99 · `metsEnJeu` 104 · `cameraEnJeu` 110 · `grandeurs` 113
-`platVersEcran` 123 · `ecranVersPlat` 141 · `matricesCamera` 164
+`platVersEcran` 123 · `ecranVersPlat` 141 · `solIncline` 165 · `matricesCamera` 203
 
 Importe :
 
@@ -495,7 +495,7 @@ annonce
 
 Importé par :
 
-ambiance · trace-itineraire · vue · vue-etat · webgl
+ambiance · environs · trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
 
@@ -950,23 +950,24 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 777 l. → plan, plan-admin
+### `modules/environs.mjs` — 826 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 52 · `styleSobre` 125 · `forceCarte` 219 · `calagePose` 237
-`calageCourant` 249 · `fondCourant` 252 · `recul` 257 · `adresseTuile` 262
-`tuilesDeLaVue` 272 · `chargeMapLibre` 337 · `vueGL` 368 · `styleDuFond` 389
-`guetteLaCarte` 417 · `poseCarteGL` 428 · `diagnostiqueGL` 518 · `relanceCarteGL` 538
-`videCarteGL` 550 · `dessineFondCarte` 575 · `cleMasqueCarte` 688 · `masqueCarte` 689
-`formesMasquantes` 698 · `contourDuHall` 720 · `cheminDuHall` 727 · `poseMasqueCarte` 745
-`ditCarte` 760 · `refaitFondCarte` 770
+`poseCalageEnCours` 53 · `styleSobre` 126 · `forceCarte` 220 · `calagePose` 238
+`calageCourant` 250 · `fondCourant` 253 · `recul` 258 · `adresseTuile` 263
+`tuilesDeLaVue` 273 · `chargeMapLibre` 338 · `vueGL` 370 · `styleDuFond` 388
+`guetteLaCarte` 416 · `poseCarteGL` 427 · `diagnostiqueGL` 517 · `relanceCarteGL` 537
+`videCarteGL` 549 · `inclineFond` 579 · `dessineFondCarte` 618 · `cleMasqueCarte` 737
+`masqueCarte` 738 · `formesMasquantes` 747 · `contourDuHall` 769 · `cheminDuHall` 776
+`poseMasqueCarte` 794 · `ditCarte` 809 · `refaitFondCarte` 819
 
 Importe :
 
-calques-dessin · chemin-forme · configuration · dom · donnees · terre · texte · vue-etat
+calques-dessin · camera · chemin-forme · configuration · dom · donnees · terre · texte
+vue-etat
 
 Importé par :
 
