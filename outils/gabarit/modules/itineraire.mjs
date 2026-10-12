@@ -165,7 +165,7 @@ export function sommets(o){
  * l'enveloppe de l'ancien sous le nom du nouveau. Posée sur l'objet, elle s'en
  * va avec lui, et il n'y a plus d'oubli à ne pas oublier.
  */
-function enveloppe(p){
+export function enveloppe(p){
   const garde = p.enveloppe;
   if (garde) return garde;
   const pts = [];
