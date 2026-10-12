@@ -48,6 +48,8 @@ module.exports = [
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
   "-petit-halo-", "-phare-", "-jeton-", "-plaque", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
   "LissageSdf",
+  // `modules/logos-stands.mjs` : du code de shader et le nom de son extension
+  "vFonduZoom = smoothstep(", "FonduZoom",
 
   // `modules/notifications.mjs` : le motif de deux pannes internes, porté par une
   // exception que la page rattrape sans jamais l'afficher — ce que le visiteur

@@ -37,6 +37,7 @@ import { API, PLAN_ADMIN } from "./salon.mjs";
 import { JOURS, momentLocal } from "./temps.mjs";
 import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
+import { VIGNETTES, VIGNETTES_ARRIVEES, adresseVignette } from "./vignettes.mjs";
 import { conf } from "./configuration.mjs";
 import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs, champDecoupage } from "./secteurs.mjs";
@@ -56,28 +57,6 @@ import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
 
-
-/**
- * L'adresse d'une vignette fabriquée à la synchronisation.
- *
- * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
- * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
- * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
- * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
- * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
- * analyser ici.
- *
- * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
- * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
- */
-export const adresseVignette = (cle) =>
-  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
-     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
-     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
-  VIGNETTES.get(cle) ||
-  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
-    ? API + "?vignette=" + cle
-    : "");
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
@@ -942,12 +921,6 @@ function prechargeMarque(id, iSoc){
 const VIGNETTES_PAR_LOT = 96;
 const LOTS_A_LA_FOIS = 2;
 
-/* Ce qui est arrivé, par clé : l'image elle-même, prête à poser. Le lot qui
-   l'a apportée reste, lui, dans le cache du navigateur et du service — son
-   adresse ne porte que des empreintes, il ne peut pas se périmer — si bien
-   que la visite d'après ne redemande rien. */
-export const VIGNETTES = new Map();
-
 export function prechargeLesVignettes(){
   if (!API) return;
   /* Ce que le navigateur sait du réseau. Rien n'oblige à le dire : en
@@ -1010,6 +983,7 @@ function chargeUnLot(lot){
            porte ses octets — passerait pour un logo lu chez sa source. */
         marquePrete(src);
       }
+      VIGNETTES_ARRIVEES.dis();
     })
     .catch(() => {});
 }

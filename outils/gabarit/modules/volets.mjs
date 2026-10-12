@@ -34,7 +34,7 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
-import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu } from "./ambiance.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -1247,11 +1247,32 @@ export function voletApparence(hote){
     poseCap(0); majCap(); enregistreConf();
   };
   amb.appendChild(ori);
+  /* Les logos à la place des noms, quand on s'approche : de l'immersif
+     seulement, où le toit des stands se voit de biais. */
+  const lev = document.createElement("div");
+  lev.className = "reglages logos-stands";
+  lev.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
+  /** @type {HTMLElement} */ (lev.querySelector("span")).textContent = "Logos des exposants sur les stands, de près";
+  /** @type {HTMLElement} */ (lev.querySelector(".aideR")).textContent =
+    "Quand on s'approche, le logo se pose sur le toit du stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.";
+  const levIn = /** @type {HTMLInputElement} */ (lev.querySelector("input"));
+  levIn.onchange = () => {
+    if (levIn.checked) conf("_ambiance").logos = true; else delete conf("_ambiance").logos;
+    appliqueAmbiance(); enregistreConf();
+  };
+  const majLev = () => {
+    levIn.checked = logosRetenus();
+    lev.hidden = ambianceRetenue() !== "immersif";
+  };
+  amb.appendChild(lev);
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majCap));
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majLev));
   hote.appendChild(amb);
   majAmb();
   majCap();
+  majLev();
 
   blocDecoupage(hote);
 

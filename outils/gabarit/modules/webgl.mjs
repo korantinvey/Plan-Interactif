@@ -41,6 +41,7 @@ import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
+import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
@@ -220,6 +221,14 @@ export function monteWebgl(){
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
       attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
+    /* Un logo prêt à se poser n'a rien à reconvertir : le prochain
+       assemblage le pose, et aucun bloc n'est sali. Le nom de son stand, lui,
+       doit apprendre à lui céder la place. */
+    PANNEAU_PRET.suis(() => {
+      if (!GL.camera || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+      _page.libellesWebgl();
+      planifieWebgl();
+    });
 
     brancheSurvolWebgl();
   }
@@ -394,7 +403,10 @@ function basculeCamera(){
 export function vueWebgl(enGeste = false){
   basculeCamera();
   poseGeste(enGeste);
-  GL.deck.setProps({ viewState: vueDeck() });
+  const v = vueDeck();
+  GL.deck.setProps({ viewState: v });
+  // les logos des stands ne couvrent que les abords de la vue (`logos-stands.mjs`)
+  if (GL.camera && logosARevoir(vueDuPlan(), v.zoom)) planifieWebgl();
 }
 
 /* ------------------------------------------------------------
@@ -500,7 +512,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesFigurants(), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesFigurants(), ...(GL.camera ? couchesLogos(deck, hauteurVolume, vueDuPlan(), vueDeck().zoom) : []), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
