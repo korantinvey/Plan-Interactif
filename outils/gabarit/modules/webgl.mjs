@@ -1004,11 +1004,13 @@ function meubleZone(el, polygon, couleur, acc){
    Sa teinte translucide — une zone l'est toujours, un stand que la recherche
    éteint aussi — est donc mêlée au sol qu'elle laissait voir, et le volume
    prend le ton que l'aplat avait. */
-/** La part de blanc qui éclaircit le volume choisi. */
-const CLAIR_CHOIX = .3;
-/** Une couleur mêlée de blanc, à cette part. */
-const eclaircit = (/** @type {number[]} */ c, /** @type {number} */ part) => part
-  ? [0, 1, 2].map(i => Math.round(c[i] + (255 - c[i]) * part)).concat(c[3] === undefined ? 255 : c[3]) : c;
+/* La part de noir qui fonce le volume choisi. Éclairci, il pâlissait vers le
+   blanc du sol et se lisait moins bien que ses voisins ; foncé, il tranche
+   sur eux comme sur le hall. */
+const SOMBRE_CHOIX = .28;
+/** Une couleur mêlée de noir, à cette part. */
+const fonce = (/** @type {number[]} */ c, /** @type {number} */ part) => part
+  ? [0, 1, 2].map(i => Math.round(c[i] * (1 - part))).concat(c[3] === undefined ? 255 : c[3]) : c;
 function opaque(couleur){
   const a = (couleur[3] === undefined ? 255 : couleur[3]) / 255;
   if (a >= 1) return couleur;
@@ -1023,10 +1025,10 @@ function formeGl(el, cs, m, op, traces, acc){
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el);
-    /* Le volume choisi s'éclaircit : monté devant un stand de même couleur, il
-       s'en détache au lieu de s'y confondre. */
+    /* Le volume choisi fonce : monté devant un stand de même couleur, il s'en
+       détache au lieu de s'y confondre. */
     const choisi = haut && el.parentNode.classList.contains("sel");
-    const base = haut ? opaque(plein) : plein, couleur = choisi ? eclaircit(base, CLAIR_CHOIX) : base;
+    const base = haut ? opaque(plein) : plein, couleur = choisi ? fonce(base, SOMBRE_CHOIX) : base;
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
     for (const polygon of avecTrous(anneaux)){
       const monte = monteeRepere(el, polygon, acc);
@@ -1226,11 +1228,15 @@ function detacheVolume(g, h){
     if (!siens.length){ out.push(c); continue; }
     const reste = c.props.data.filter(d => d.el !== g);
     if (reste.length) out.push(c.clone({ data: reste }));
-    // il s'éclaircit au clic, et reprend sa couleur dès qu'on le quitte
+    // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
+    if (c.props.contour) continue;
+    // il fonce au clic, et reprend sa couleur dès qu'on le quitte
     const choisi = g.classList.contains("sel");
-    out.push(c.clone({ id: c.id.replace(/-tot$/, "") + "-tot", data: siens.map(d => ({ ...d, haut: h.vers, hausse: h,
-      couleur: choisi ? eclaircit(d.base || d.couleur, CLAIR_CHOIX) : d.base || d.couleur })),
-      hausse: h, elevationScale: echelleHausse(h, performance.now()) }));
+    const id = c.id.replace(/-tot$/, "") + "-tot";
+    const data = siens.map(d => ({ ...d, haut: h.vers, hausse: h,
+      couleur: choisi ? fonce(d.base || d.couleur, SOMBRE_CHOIX) : d.base || d.couleur }));
+    out.push(c.clone({ id, data, hausse: h, elevationScale: echelleHausse(h, performance.now()) }),
+      coucheContours(id, data, { hausseContour: h }));
   }
   GL.blocs.set(b, out);
   GL.deck.setProps({ layers: assembleWebgl() });
@@ -1253,14 +1259,25 @@ function haussesParId(){
   return m;
 }
 
-/* Les arêtes des volumes, d'un ton plus sombre que leur couleur. Vu de biais,
-   deux stands de même couleur l'un derrière l'autre ne faisaient qu'une
-   surface : le stand choisi, monté devant son voisin, s'y fondait. Le liseré
-   les tient séparés, et dessine le volume là où la lumière ne le fait pas.
-   À demi transparent : les coins arrondis sont faits de petites faces, dont
-   un liseré plein striait les façades. */
-const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] * .72)).concat(150);
-const ARETES = { wireframe: true, getLineColor: (/** @type {any} */ d) => arete(d.couleur) };
+/* Le contour du dessus des volumes, d'un ton plus sombre que leur couleur.
+   Vu de biais, deux stands de même couleur l'un derrière l'autre ne
+   faisaient qu'une surface : le stand choisi, monté devant son voisin, s'y
+   fondait. Le contour les tient séparés.
+
+   Un trait le long du bord du dessus, et rien d'autre : les arêtes que la
+   bibliothèque sait tracer suivent chaque facette, et les coins arrondis,
+   faits de petites faces, se couvraient de stries verticales. Il se pose un
+   rien au-dessus du dessus, pour ne pas s'y enfoncer à moitié. */
+const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] * .62)).concat(255);
+/** Le contour d'un volume : l'anneau de son dessus, à sa hauteur. */
+const contourDe = (/** @type {any} */ d, /** @type {number} */ haut) =>
+  ({ path: d.polygon[0].map((/** @type {number[]} */ p) => [p[0], p[1], haut + .02]).concat([[d.polygon[0][0][0], d.polygon[0][0][1], haut + .02]]),
+     couleur: arete(d.couleur), el: d.el });
+/** La couche des contours d'une couche de volumes. */
+const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) =>
+  new deck.PathLayer({ id: id + "-contour", data: data.map(d => contourDe(d, d.haut)), pickable: false,
+    getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
+    getWidth: 1, widthUnits: "pixels", contour: true, ...extra });
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
@@ -1280,12 +1297,13 @@ function couchesDeBloc(acc, cle){
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
     if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
       extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE, ...ARETES }));
+      material: MATIERE }), coucheContours(cle + "-volumes-" + k, volumes));
     // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
     liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
       id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
       extruded: true, getPolygon: x => x.polygon, getFillColor: x => x.couleur, getElevation: x => x.haut,
-      material: MATIERE, ...ARETES, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) })));
+      material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) }),
+      coucheContours(cle + "-hausse-" + k + "-" + n, [d], { hausseContour: d.hausse })));
   });
   if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
     extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
@@ -1825,6 +1843,11 @@ const phaseDe = (c, t) => {
 const instant = () => performance.now();
 function animeCouche(c){
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
+  // le contour d'un volume en mouvement, posé à l'arrivée, s'écrase de même
+  if (c.props.hausseContour){
+    const e = echelleHausse(c.props.hausseContour, instant());
+    return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, e, 0, 0, 0, 0, 1] });
+  }
   // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
   if (c.props.hausseTexte){
     const h = c.props.hausseTexte, dz = hauteurHausse(h, instant()) - h.vers;
