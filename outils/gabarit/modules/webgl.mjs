@@ -997,6 +997,11 @@ function meubleZone(el, polygon, couleur, acc){
    Sa teinte translucide — une zone l'est toujours, un stand que la recherche
    éteint aussi — est donc mêlée au sol qu'elle laissait voir, et le volume
    prend le ton que l'aplat avait. */
+/** La part de blanc qui éclaircit le volume choisi. */
+const CLAIR_CHOIX = .3;
+/** Une couleur mêlée de blanc, à cette part. */
+const eclaircit = (/** @type {number[]} */ c, /** @type {number} */ part) => part
+  ? [0, 1, 2].map(i => Math.round(c[i] + (255 - c[i]) * part)).concat(c[3] === undefined ? 255 : c[3]) : c;
 function opaque(couleur){
   const a = (couleur[3] === undefined ? 255 : couleur[3]) / 255;
   if (a >= 1) return couleur;
@@ -1011,11 +1016,14 @@ function formeGl(el, cs, m, op, traces, acc){
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el);
-    const couleur = haut ? opaque(plein) : plein;
+    /* Le volume choisi s'éclaircit : monté devant un stand de même couleur, il
+       s'en détache au lieu de s'y confondre. */
+    const choisi = haut && el.parentNode.classList.contains("sel");
+    const base = haut ? opaque(plein) : plein, couleur = choisi ? eclaircit(base, CLAIR_CHOIX) : base;
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
     for (const polygon of avecTrous(anneaux)){
       const monte = monteeRepere(el, polygon, acc);
-      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, el: cible, prise, haut, hausse });
+      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse });
       if (haut) meubleZone(el, polygon, couleur, acc);
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
@@ -1211,7 +1219,10 @@ function detacheVolume(g, h){
     if (!siens.length){ out.push(c); continue; }
     const reste = c.props.data.filter(d => d.el !== g);
     if (reste.length) out.push(c.clone({ data: reste }));
-    out.push(c.clone({ id: c.id.replace(/-tot$/, "") + "-tot", data: siens.map(d => ({ ...d, haut: h.vers, hausse: h })),
+    // il s'éclaircit au clic, et reprend sa couleur dès qu'on le quitte
+    const choisi = g.classList.contains("sel");
+    out.push(c.clone({ id: c.id.replace(/-tot$/, "") + "-tot", data: siens.map(d => ({ ...d, haut: h.vers, hausse: h,
+      couleur: choisi ? eclaircit(d.base || d.couleur, CLAIR_CHOIX) : d.base || d.couleur })),
       hausse: h, elevationScale: echelleHausse(h, performance.now()) }));
   }
   GL.blocs.set(b, out);
@@ -1235,6 +1246,15 @@ function haussesParId(){
   return m;
 }
 
+/* Les arêtes des volumes, d'un ton plus sombre que leur couleur. Vu de biais,
+   deux stands de même couleur l'un derrière l'autre ne faisaient qu'une
+   surface : le stand choisi, monté devant son voisin, s'y fondait. Le liseré
+   les tient séparés, et dessine le volume là où la lumière ne le fait pas.
+   À demi transparent : les coins arrondis sont faits de petites faces, dont
+   un liseré plein striait les façades. */
+const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] * .72)).concat(150);
+const ARETES = { wireframe: true, getLineColor: (/** @type {any} */ d) => arete(d.couleur) };
+
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
    comptées pour qu'un dessus, en plein jour, rende à peu près la couleur que
@@ -1253,12 +1273,12 @@ function couchesDeBloc(acc, cle){
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
     if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
       extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE }));
+      material: MATIERE, ...ARETES }));
     // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
     liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
       id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
       extruded: true, getPolygon: x => x.polygon, getFillColor: x => x.couleur, getElevation: x => x.haut,
-      material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) })));
+      material: MATIERE, ...ARETES, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) })));
   });
   if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
     extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
