@@ -3059,7 +3059,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 2492 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2497 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3091,11 +3091,11 @@ Fonctions :
 `stage` 2071 · `brancheSurvolWebgl` 2075 · `poseSurvolWebgl` 2095 · `enTuiles` 2124
 `hauteurTuile` 2132 · `visePour` 2138 · `gonfleSurvol` 2143 · `coucheTuileSoulevee` 2165
 `couchesTuiles` 2195 · `poseCurseurWebgl` 2213 · `poseFocusWebgl` 2222 · `aplatsDe` 2229
-`coucheSurvol` 2232 · `coucheSurvolVolume` 2246 · `coucheFocus` 2259 · `couchesPhare` 2286
-`lueurDe` 2303 · `opacitePhare` 2341 · `echellePhare` 2342 · `couchesPhareNoms` 2345
-`palierDefile` 2370 · `periodeDe` 2375 · `phaseDe` 2377 · `instant` 2387
-`animeCouche` 2388 · `majAnimationWebgl` 2417 · `animeWebgl` 2425 · `objetSous` 2459
-`cibleWebgl` 2466 · `priseWebgl` 2473 · `libelleSousWebgl` 2478 · `rectEcranWebgl` 2483
+`coucheSurvol` 2232 · `coucheSurvolVolume` 2246 · `coucheFocus` 2264 · `couchesPhare` 2291
+`lueurDe` 2308 · `opacitePhare` 2346 · `echellePhare` 2347 · `couchesPhareNoms` 2350
+`palierDefile` 2375 · `periodeDe` 2380 · `phaseDe` 2382 · `instant` 2392
+`animeCouche` 2393 · `majAnimationWebgl` 2422 · `animeWebgl` 2430 · `objetSous` 2464
+`cibleWebgl` 2471 · `priseWebgl` 2478 · `libelleSousWebgl` 2483 · `rectEcranWebgl` 2488
 
 Importe :
 

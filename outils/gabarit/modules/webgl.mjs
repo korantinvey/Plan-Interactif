@@ -2249,7 +2249,12 @@ function coucheSurvolVolume(c){
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   const a = Math.max(.45, t[3] / 255);
   const teinte = (/** @type {number[]} */ k) => [0, 1, 2].map(i => Math.round(k[i] * (1 - a) + t[i] * a)).concat(255);
-  const e = c.props.elevationScale || 1;
+  /* La hauteur où le volume en est, et non celle de la couche telle qu'elle
+     est gardée : un volume qui monte ou descend a son échelle figée au départ
+     du mouvement, et seule l'animation (`animeCouche`) la tient à jour. Le
+     stand qu'on venait de quitter, survolé, se redressait ainsi à plus de
+     trois mètres, et engloutissait son nom ou son logo. */
+  const e = c.props.hausse ? echelleHausse(c.props.hausse, instant()) : c.props.elevationScale || 1;
   const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
   return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
     getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE }),
