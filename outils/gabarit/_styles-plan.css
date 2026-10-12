@@ -1186,8 +1186,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
      où un doigt qui monte escamotait la barre du navigateur, et tout ce qui
      s'ancre au bas de la page — le cartouche le premier — montait avec elle.
      On tient l'axe vertical des deux côtés : plus rien à défiler, et plus de
-     geste à donner au navigateur. « pinch-zoom » reste permis, c'est le seul
-     agrandissement dont dispose qui lit mal.
+     geste à donner au navigateur. Le pincement non plus : permis ici, il
+     agrandissait la page entière dès qu'un doigt touchait le cartouche, et
+     le cartouche avec elle, au lieu du plan — comme les tiroirs
+     (`_styles-modeles-parcours.css`).
 
      « overscroll-behavior-x » retient le bout de course : arrivé à la dernière
      pastille, l'élan continuait sur la page et faisait revenir la barre par
@@ -1196,10 +1198,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
      autorisé par l'intersection des valeurs rencontrées jusqu'à la zone qui
      défile, et le plan la refuse juste au-dessus. */
   .poi{max-width:calc(100% - 24px);bottom:12px;padding:6px 8px;
-    touch-action:pan-x pinch-zoom}
+    touch-action:pan-x}
   .poiDefile{flex-wrap:nowrap;justify-content:flex-start;
     overflow-x:auto;overflow-y:hidden;
-    touch-action:pan-x pinch-zoom;overscroll-behavior-x:contain;
+    touch-action:pan-x;overscroll-behavior-x:contain;
     scrollbar-width:none;-ms-overflow-style:none;
     gap:5px}
   .poiDefile::-webkit-scrollbar{display:none}
