@@ -81,16 +81,37 @@ export const ecarte = (/** @type {string} */ hex) => {
  * @returns {number[] | null}
  */
 export function avive(c, assombrit = 0){
+  const t = teinte(c);
+  if (!t) return null;
+  const [h, sat, l] = t;
+  return rvb(h, Math.min(1, sat * 1.35 + .12), Math.max(.08, (l > .55 ? l - .1 : l + .08) - assombrit), c[3] ?? 255);
+}
+
+/**
+ * Une teinte éclatante — celle du volume choisi en vue immersive : saturée
+ * presque à fond, à mi-clarté. Seulement avivée, elle restait trop proche de
+ * ses voisines pour qu'on la retrouve d'un coup d'œil. Rien pour une couleur
+ * sans teinte.
+ * @param {number[]} c  rouge, vert, bleu (0-255), et l'opacité qu'on garde
+ * @returns {number[] | null}
+ */
+export function eclate(c){
+  const t = teinte(c);
+  return t && rvb(t[0], Math.max(.92, t[1]), .55, c[3] ?? 255);
+}
+
+/** Teinte (0-360), saturation et clarté (0-1) ; rien pour un gris. */
+function teinte(/** @type {number[]} */ c){
   const [r, g, b] = [c[0] / 255, c[1] / 255, c[2] / 255];
   const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, e = max - min;
   if (e < .04) return null;
-  const sat = e / (1 - Math.abs(2 * l - 1));
-  let h = max === r ? ((g - b) / e) % 6 : max === g ? (b - r) / e + 2 : (r - g) / e + 4;
-  h = (h * 60 + 360) % 360;
-  const s2 = Math.min(1, sat * 1.35 + .12);
-  const l2 = Math.max(.08, (l > .55 ? l - .1 : l + .08) - assombrit);
+  const h = max === r ? ((g - b) / e) % 6 : max === g ? (b - r) / e + 2 : (r - g) / e + 4;
+  return [(h * 60 + 360) % 360, e / (1 - Math.abs(2 * l - 1)), l];
+}
+
+function rvb(/** @type {number} */ h, /** @type {number} */ s2, /** @type {number} */ l2, /** @type {number} */ a){
   const k2 = (1 - Math.abs(2 * l2 - 1)) * s2, x = k2 * (1 - Math.abs((h / 60) % 2 - 1)), m = l2 - k2 / 2;
   const [r2, g2, b2] = h < 60 ? [k2, x, 0] : h < 120 ? [x, k2, 0] : h < 180 ? [0, k2, x]
     : h < 240 ? [0, x, k2] : h < 300 ? [x, 0, k2] : [k2, 0, x];
-  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255), c[3] ?? 255];
+  return [Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255), a];
 }
