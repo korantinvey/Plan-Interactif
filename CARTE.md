@@ -2946,7 +2946,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 1982 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1994 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -2966,18 +2966,18 @@ Fonctions :
 `texteGl` 1105 · `imageGl` 1128 · `partage` 1160 · `designeGl` 1166 · `sortie` 1180
 `noteHauteur` 1186 · `anticipeHausses` 1215 · `detacheVolume` 1230 · `hauteurHausse` 1256
 `echelleHausse` 1261 · `haussesParId` 1264 · `arete` 1280 · `contourDe` 1282
-`coucheContours` 1286 · `couchesDeBloc` 1298 · `modelesLibellesHtml` 1419
-`poseModelesLibelles` 1429 · `lisModelesLibelles` 1435 · `groupesNoms` 1468
-`couchesNoms` 1485 · `couchesPastilles` 1496 · `couchesLibellesWebgl` 1511
-`couchesDessineesWebgl` 1541 · `stage` 1562 · `brancheSurvolWebgl` 1566
-`poseSurvolWebgl` 1586 · `enTuiles` 1615 · `hauteurTuile` 1623 · `visePour` 1629
-`gonfleSurvol` 1634 · `coucheTuileSoulevee` 1656 · `couchesTuiles` 1686
-`poseCurseurWebgl` 1704 · `poseFocusWebgl` 1713 · `aplatsDe` 1720 · `coucheSurvol` 1723
-`coucheSurvolVolume` 1737 · `coucheFocus` 1750 · `couchesPhare` 1777 · `lueurDe` 1794
-`opacitePhare` 1832 · `echellePhare` 1833 · `couchesPhareNoms` 1836 · `palierDefile` 1861
-`periodeDe` 1866 · `phaseDe` 1868 · `instant` 1878 · `animeCouche` 1879
-`majAnimationWebgl` 1907 · `animeWebgl` 1915 · `objetSous` 1949 · `cibleWebgl` 1956
-`priseWebgl` 1963 · `libelleSousWebgl` 1968 · `rectEcranWebgl` 1973
+`coucheContours` 1286 · `aPlat` 1305 · `couchesDeBloc` 1307 · `modelesLibellesHtml` 1431
+`poseModelesLibelles` 1441 · `lisModelesLibelles` 1447 · `groupesNoms` 1480
+`couchesNoms` 1497 · `couchesPastilles` 1508 · `couchesLibellesWebgl` 1523
+`couchesDessineesWebgl` 1553 · `stage` 1574 · `brancheSurvolWebgl` 1578
+`poseSurvolWebgl` 1598 · `enTuiles` 1627 · `hauteurTuile` 1635 · `visePour` 1641
+`gonfleSurvol` 1646 · `coucheTuileSoulevee` 1668 · `couchesTuiles` 1698
+`poseCurseurWebgl` 1716 · `poseFocusWebgl` 1725 · `aplatsDe` 1732 · `coucheSurvol` 1735
+`coucheSurvolVolume` 1749 · `coucheFocus` 1762 · `couchesPhare` 1789 · `lueurDe` 1806
+`opacitePhare` 1844 · `echellePhare` 1845 · `couchesPhareNoms` 1848 · `palierDefile` 1873
+`periodeDe` 1878 · `phaseDe` 1880 · `instant` 1890 · `animeCouche` 1891
+`majAnimationWebgl` 1919 · `animeWebgl` 1927 · `objetSous` 1961 · `cibleWebgl` 1968
+`priseWebgl` 1975 · `libelleSousWebgl` 1980 · `rectEcranWebgl` 1985
 
 Importe :
 
