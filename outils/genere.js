@@ -178,6 +178,29 @@ const epureBalisage = (s) =>
     i === 0 || tout[i - 1] === "\n" ? "" : saut || " ");
 
 /**
+ * L'aperçu d'un lien partagé : ce qu'en montrent une messagerie ou un réseau.
+ *
+ * Seule la page du plan public le porte — c'est elle qu'on partage, avec ses
+ * parcours. Ces lecteurs n'exécutent aucun script : ils ne voient que ce qui
+ * est écrit ici, donc rien du salon, que la page ne connaît qu'une fois ses
+ * données arrivées. Ils ne résolvent pas non plus une adresse relative :
+ * l'image se désigne sur le domaine de production, prévisualisation comprise
+ * — c'est la même. Carré et petit (`summary`) : l'icône n'a pas d'autre format.
+ */
+const ORIGINE_PRODUCTION = "https://plan-interactif.interactiveplan.workers.dev";
+const APERCU_PARTAGE = [
+  '<meta name="description" content="Plan interactif du salon : exposants, conférences, itinéraire et parcours de visite.">',
+  '<meta property="og:type" content="website">',
+  '<meta property="og:site_name" content="Plan interactif">',
+  '<meta property="og:title" content="Plan du salon">',
+  '<meta property="og:description" content="Exposants, conférences, itinéraire et parcours de visite.">',
+  '<meta property="og:image" content="' + ORIGINE_PRODUCTION + '/icone-512.png">',
+  '<meta property="og:locale" content="fr_FR">',
+  '<meta name="twitter:card" content="summary">',
+  "",
+].join("\n");
+
+/**
  * Le squelette d'une page.
  *
  * Sans déclaration d'encodage, un navigateur suppose Windows-1252 : les accents
@@ -187,7 +210,8 @@ const epureBalisage = (s) =>
  * Les options, toutes facultatives :
  *   `role`        — `data-role` porté par la page, lu par le chargeur.
  *   `tete`        — ce qui doit venir avant tout le reste (le préchargement).
- *   `application` — la page est installable : manifeste, icônes, service.
+ *   `application` — la page est installable : manifeste, icônes, service ;
+ *                   et c'est elle qu'on partage : l'aperçu d'un lien.
  *                   Le plan public, et lui seul (voir `outils/pwa.js`).
  *   `pleinEcran`  — la page va jusqu'aux bords de l'écran, sous les barres du
  *                   système : l'heure et la poignée de gestes se posent sur
@@ -224,7 +248,7 @@ function page(contenu, options) {
     (tete || "") +
     langue(contenu, salon) +
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
-    (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
+    (application && !autonome ? pwa.application(SLUG_DEFAUT) + APERCU_PARTAGE : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
     "\n</body>\n</html>\n");
 }
@@ -435,8 +459,14 @@ const lieFeuille = (t) =>
    un aller-retour bloquant à elles seules. La console et le rapport gardent
    `config.js`. */
 const BALISE_CONFIG = '<script src="config.js"></script>';
-const CONFIG_EN_LIGNE = "<script>\n" +
-  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")).trim() + "\n</script>";
+/* Versée une fois, pour `config.js` comme pour la page : la relire brute ici
+   livrait `__URL_PROJET__` en guise d'adresse, et l'administration cherchait
+   à se connecter chez un projet qui n'existe pas (« Failed to fetch »). */
+const CONFIG = fs.readFileSync(D + "/gabarit/_config.js", "utf8")
+  .replace("__URL_PROJET__", () => PROJET.url)
+  .replace("__CLE_PROJET__", () => PROJET.cle);
+if (/__[A-Z_]+_PROJET__/.test(CONFIG)) throw new Error("config.js : projet non versé");
+const CONFIG_EN_LIGNE = "<script>\n" + epureScript(CONFIG).trim() + "\n</script>";
 function annonceTot(html) {
   if (html.split(BALISE_CONFIG).length !== 2) throw new Error("configuration introuvable, ou en double");
   html = html.replace(BALISE_CONFIG, () => CONFIG_EN_LIGNE);
@@ -453,8 +483,47 @@ function annonceTot(html) {
    qui revient une demande au serveur chacun. Des polices, seuls les fichiers :
    leurs feuilles, `polices/<famille>.css`, gardent un nom fixe. */
 const UN_AN = "\n  Cache-Control: public, max-age=31536000, immutable\n";
+
+/* Les en-têtes de sûreté, pour toute réponse du domaine.
+
+   La politique de sécurité reste une balise de chaque page (`poseCsp`) : elle
+   les suit partout, jusque dans la démonstration publiée seule. Mais une
+   balise ne peut pas dire qui a le droit d'afficher la page dans un cadre —
+   `frame-ancestors` n'y est pas lu. C'est le seul ajout qui protège vraiment :
+   une page de l'exploitant glissée sous un cadre invisible, sur un autre site,
+   lui ferait cliquer ce qu'il ne voit pas.
+
+   Le plan public, lui, ne reçoit aucune restriction de cadre : la console
+   donne aux organisateurs de quoi l'intégrer à leur site
+   (`modules/fiche-evenement.mjs`), et `X-Frame-Options` l'y rendrait blanc.
+   Pour la même raison, rien n'isole les origines (`Cross-Origin-Embedder-Policy`
+   et `-Resource-Policy`) : les logos des exposants et MapLibre viennent
+   d'ailleurs, et seraient refusés.
+
+   `Permissions-Policy` ne nomme que des fonctions que le plan n'emploie pas,
+   et que Chromium connaît — une inconnue écrit une erreur dans la console. Le
+   Worker pose les mêmes sur ce qu'il sert lui-même (`src/index.mjs`
+   `surete`), qui ne passe pas par ce fichier. */
+const SURETE = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Strict-Transport-Security": "max-age=31536000",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+};
+/* Les pages de l'exploitant, sous leurs deux adresses : avec et sans `.html`. */
+const HORS_CADRE = {
+  "Content-Security-Policy": "frame-ancestors 'self'",
+  "X-Frame-Options": "SAMEORIGIN",
+};
+const PAGES_EXPLOITANT = ["/", "/index", "/plan-admin", "/admin-plans", "/rapport", "/motdepasse"];
+const regle = (motif, entetes) =>
+  motif + Object.entries(entetes).map(([n, v]) => "\n  " + n + ": " + v).join("") + "\n";
 fs.writeFileSync(W + "_headers",
-  ["/" + VERSIONS + "*", "/bibliotheques/*", "/polices/*.woff2"].map((m) => m + UN_AN).join(""));
+  ["/" + VERSIONS + "*", "/bibliotheques/*", "/polices/*.woff2"].map((m) => m + UN_AN).join("") +
+  regle("/*", SURETE) +
+  PAGES_EXPLOITANT.flatMap((m) => m === "/" ? [m] : [m, m + ".html"])
+    .map((m) => regle(m, HORS_CADRE)).join(""));
 
 /* Les scripts du plan, servis à part de même.
 
@@ -588,10 +657,6 @@ fs.writeFileSync(W + "plan-smcl.html",
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
-const CONFIG = fs.readFileSync(D + "/gabarit/_config.js", "utf8")
-  .replace("__URL_PROJET__", () => PROJET.url)
-  .replace("__CLE_PROJET__", () => PROJET.cle);
-if (/__[A-Z_]+_PROJET__/.test(CONFIG)) throw new Error("config.js : projet non versé");
 fs.writeFileSync(W + "config.js", epureScript(CONFIG));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
 fs.writeFileSync(W + "console.css",
@@ -700,7 +765,9 @@ fs.writeFileSync(path.join(D, "..", "src", "pages.mjs"),
   /* Le projet que relaie le Worker, et s'il tourne en prévisualisation : il
      se tient alors à l'écart du cache et des écritures de la production. */
   "export const PROJET = " + JSON.stringify({ url: PROJET.url, cle: PROJET.cle, nom: PROJET.nom }) + ";\n" +
-  "export const APERCU = " + JSON.stringify(PROJET.apercu) + ";\n");
+  "export const APERCU = " + JSON.stringify(PROJET.apercu) + ";\n" +
+  // les en-têtes de `_headers`, pour ce que le Worker sert sans lui
+  "export const SURETE = " + JSON.stringify(SURETE) + ";\n");
 if (PROJET.apercu) console.log("  construction de prévisualisation — projet « " + PROJET.nom + " »");
 
 fs.writeFileSync(W + "sw.js",

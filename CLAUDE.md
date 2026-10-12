@@ -208,7 +208,7 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 | `.github/workflows/` | construction, essais, déploiement Supabase, sauvegarde, correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | essais hors page — `npm run essais` ; l'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
-| `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
+| `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; seuls les essais `@base` (`npm run navigateur-base`) bloquent la pull request, le reste tourne sur `main` et chaque nuit — un essai neuf ne prend `@base` que s'il garde une page entière ou le parcours du visiteur ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
 | `outils/relecture.js`, `types.js`, `portes.js`, `guide.js` | ESLint, TypeScript (cliquet au stock vide), portes et boucles, ce guide — tous lancés par `npm run verifie` |
 
 ## Chercher sans tout ouvrir
@@ -245,7 +245,6 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
 | ambiance du plan — Classique, Tuiles | `modules/ambiance.mjs` |
 | mini-carte de situation, zoomé | `modules/mini-carte.mjs` |
-| vol de caméra vers un stand lointain | `modules/vue.mjs` `voleVers`, appelé par `modules/fiche.mjs` `centrePoint` |
 | noms en appel — stands cherchés ou choisis trop petits | `modules/appels.mjs` |
 | vibration au toucher | `modules/toucher.mjs`, appelé par `modules/gestes.mjs` |
 | fenêtre des réglages et ses volets | `modules/reglages.mjs` `ouvreReglages`, `modules/volets.mjs` |

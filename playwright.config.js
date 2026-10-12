@@ -24,6 +24,11 @@ module.exports = defineConfig({
   // les essais d'une page se gênent si l'on en lance trop à la fois sur une
   // petite machine d'intégration : le dessin du plan est lourd
   workers: process.env.CI ? 2 : undefined,
+  // Chaque essai ouvre sa propre page, et rien ne le lie à l'ordre de son
+  // fichier. Sans ce réglage, un fichier passait en bloc sur un seul worker :
+  // `plan.spec.js` y prenait cinq minutes à lui seul, et les tranches de
+  // l'intégration (`--shard`) ne pouvaient pas le répartir.
+  fullyParallel: true,
   retries: 0,
   timeout: 45_000,
   expect: { timeout: 15_000 },

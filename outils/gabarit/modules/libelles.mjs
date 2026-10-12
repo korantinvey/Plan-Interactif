@@ -28,7 +28,7 @@ import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.m
 import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
-import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce }
+import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce, nomCouche }
   from "./nom-emplacement.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./trace-itineraire.mjs";
@@ -158,7 +158,15 @@ const LOIN = 99;
  * se lit. Mêmes mesures que « libelleEmplacement » et « ligneCode » : c'est
  * aussi ce qu'écrit un stand dessiné, qui n'a simplement pas de pastille.
  */
-function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
+function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
+  /* Le stand couché (« nomCouche ») se mesure debout ; chaque point posé
+     tourne ensuite d'un quart de tour autour de l'ancre, comme le groupe que
+     le SVG fait tourner. La bibliothèque compte ses angles à l'inverse du
+     SVG : le « rotate(-90) » de l'un est l'angle 90 de l'autre. */
+  const tourne = nomCouche(s, l, h0);
+  const w = tourne ? h0 : l, h = tourne ? l : h0;
+  const pt = tourne ? (x, y) => [xy[0] + (y - xy[1]), xy[1] - (x - xy[0])] : (x, y) => [x, y];
+  const angle = tourne ? 90 : 0;
   const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
   const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
   const fn = nom ? nom.f * k : 0;
@@ -180,8 +188,13 @@ function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
     if (wCode + ecart + wPast <= w * .9 * k) past = { compte, wCode, ecart, wPast };
   }
   const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
+  /* Le centre du bloc et l'écart de chaque ligne, dits à part : la vue
+     immersive (`webgl.mjs`) empile les lignes en hauteur au-dessus du stand,
+     là où le plan à plat les échelonne dans le sol. Un nom couché garde son
+     placement — il est écrit en travers. */
   const pose = (lignes, f, x, y, cls, z0, z1) =>
-    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick, lbl: s.id });
+    noms.push({ text: lignes.join("\n"), position: pt(x, y), angle, taille: f, cls, z0, z1, pick, lbl: s.id,
+      ...(tourne ? {} : { centre: [xy[0], xy[1]], ecart: y - xy[1] }) });
   const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
@@ -201,7 +214,7 @@ function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
     const yp = haut + hNom + fc * (.92 - .84 + .58);
     pose([s.code], fc, g + past.wCode / 2, milieu, "cd" + c, z0, z1);
     pose([past.compte], fc, xp + past.wPast / 2, milieu, "coexN" + c, z0, z1);
-    pastilles.push({ path: [[xp + hp / 2, yp], [xp + Math.max(past.wPast - hp / 2, hp / 2 + .001), yp]],
+    pastilles.push({ path: [pt(xp + hp / 2, yp), pt(xp + Math.max(past.wPast - hp / 2, hp / 2 + .001), yp)],
       largeur: hp, cls: "coexPast" + c, z0, z1 });
   }
 }
@@ -250,8 +263,8 @@ export function libellesWebgl(){
         b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
     }
   }
-  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
-  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
+  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + (d.angle ? "^" + d.angle : "") + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
+  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.path[0][1].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
   if (cle === GL.cleLibelles) return;
   GL.cleLibelles = cle;

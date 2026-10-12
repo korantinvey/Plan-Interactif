@@ -1,4 +1,5 @@
-# Les essais, à chaque poussée et sur chaque pull request.
+# Les essais, en deux niveaux : la base sur chaque pull request, le reste sur
+# `main` et chaque nuit.
 #
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
@@ -7,19 +8,39 @@
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
 #
+# Pourquoi deux niveaux. Tous les essais du navigateur sur chaque branche
+# faisaient attendre cinq à dix minutes le moindre correctif. Sur leurs quatre
+# premiers jours, près de quatre cents exécutions, ils n'ont rougi que deux fois,
+# et deux fois par lenteur, jamais sur un vrai défaut. Ce qui protège vraiment
+# coûte peu : chaque page s'ouvre sans erreur, le parcours du visiteur tient,
+# rien d'étranger ne s'exécute. Ces essais-là portent l'étiquette `@base` et
+# bloquent la pull request. Les scènes d'interface fines (bulle de la visite,
+# Échap sur deux fenêtres, borne, boîte à outils du dessin) se rejouent
+# après la fusion et chaque nuit, en tranches parallèles : un défaut s'y voit
+# le jour même, sans que chaque branche paie pour lui.
+#
 # Les essais du navigateur ne parlent jamais au réseau : les données du plan
 # sont servies depuis `outils/plans.json`. Une panne de la production ne peut
 # donc pas faire rougir ce workflow, ni ce workflow peser sur la production.
 name: Essais
 
 on:
+  # Une branche n'est éprouvée qu'une fois sa pull request ouverte : la poussée
+  # et la pull request lançaient sinon deux fois les mêmes essais sur le même
+  # commit.
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
 
 concurrency:
   group: essais-${{ github.ref }}
-  cancel-in-progress: true
+  # Une pull request poussée à nouveau rend l'exécution d'avant inutile. Sur
+  # `main` en revanche, chaque fusion mérite son passage complet : annuler
+  # laissait les fusions rapprochées sans essai complet.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   essais:
@@ -60,14 +81,53 @@ jobs:
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Le plan dans le navigateur
-        run: npm run navigateur
+      - name: Le plan dans le navigateur, essais de base
+        run: npm run navigateur-base
 
       - name: Garder la trace d'un échec
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: traces-du-navigateur
+          name: traces-du-navigateur-base
+          path: test-results/
+          retention-days: 7
+
+  # Le reste des essais du navigateur, hors pull request. Quatre tranches en
+  # parallèle : le dépôt est public, les minutes ne coûtent rien, et l'attente
+  # est celle de la tranche la plus longue.
+  complet:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        tranche: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Construire les pages
+        run: npm run construire
+
+      - name: Installer Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Le plan dans le navigateur, tranche ${{ matrix.tranche }} sur 4
+        run: npx playwright test --grep-invert @base --shard=${{ matrix.tranche }}/4
+
+      - name: Garder la trace d'un échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-du-navigateur-${{ matrix.tranche }}
           path: test-results/
           retention-days: 7
 

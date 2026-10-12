@@ -342,20 +342,6 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 html.gl-pret .plan-gl{opacity:1}
 @media (prefers-reduced-motion:reduce){.plan-gl{transition:none}}
 
-/* Le vol de caméra (`vue.mjs` `voleVers`) : la scène se penche le temps du
-   trajet, d'un angle que le vol écrit image par image dans « --vol ». Seuls
-   penchent les calques qui couvrent toute la scène — plan, dessin, fond,
-   chaleur — et ils penchent ensemble, d'un même point de fuite. La propriété
-   « rotate » et non « transform », que le calque des libellés emploie déjà
-   pour s'étirer pendant un zoom : les deux se composent au lieu de s'écraser.
-   Ce qui est posé en un point du plan — le pouls de « Vous êtes ici »,
-   l'étincelle du trajet, les noms en appel — ne pencherait pas autour du même
-   centre : il s'efface le temps du vol, et revient à l'arrivée. */
-.stage.en-vol{perspective:1400px;perspective-origin:50% 35%}
-.stage.en-vol > :is(.plan-gl,svg,.fondGL,.calque-libelles,.chalHalos){rotate:x var(--vol,0deg);
-  transform-origin:50% 60%}
-.stage.en-vol > :is(.iciPouls,.etincelle,.appels){opacity:0}
-
 /* Les noms en appel (`modules/appels.mjs`) : une étiquette posée à côté du
    stand qui n'a pas la place d'écrire le sien, reliée par un filet. Elle
    reprend la police des noms du plan, et l'accent quand le stand est choisi.
@@ -420,7 +406,8 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
    Les zones perdent leurs tirets et prennent un aplat plus franc, qui se lit
    comme une pièce du même jeu. */
 html.ambiance-tuiles .stand path,
-html.ambiance-tuiles .zone path{stroke:none}
+html.ambiance-tuiles .zone path,
+html.ambiance-tuiles .dcal .forme.sdes path{stroke:none}
 html.ambiance-tuiles .zone path{fill-opacity:.62}
 html.ambiance-tuiles .zone.masquee path{fill-opacity:.2}
 /* La carte de chaleur, en administration. Elle vient après le secteur — c'est
@@ -495,11 +482,11 @@ html:not(.ambiance-tuiles) :is(.stand,.zone):hover path{fill:var(--accent-soft)}
    C'est le rendu SVG, de secours ; la carte graphique fait de même avec une
    couche à elle (`webgl.mjs` `coucheTuileSoulevee`). Le SVG ne sait pas
    la faire passer devant ses voisines — elles la recouvrent d'un bord. */
-html.ambiance-tuiles :is(.stand,.zone) path{transform-box:fill-box;transform-origin:center;
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie) path{transform-box:fill-box;transform-origin:center;
   transition:transform .16s cubic-bezier(.2,.8,.3,1),filter .16s}
-html.ambiance-tuiles :is(.stand,.zone):hover path{transform:scale(1.06);
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie):hover path{transform:scale(1.06);
   filter:saturate(1.6) brightness(.96) drop-shadow(0 1px 1.5px rgba(20,24,26,.25))}
-@media (prefers-reduced-motion:reduce){html.ambiance-tuiles :is(.stand,.zone) path{transition:none}}
+@media (prefers-reduced-motion:reduce){html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie) path{transition:none}}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
    et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
@@ -511,7 +498,7 @@ html:not(.ambiance-tuiles) :is(.stand,.zone).sel path{fill:var(--c-sel,var(--acc
 /* En Tuiles, la tuile choisie garde sa teinte dans la feuille de style : la
    carte graphique l'avive comme au survol (`webgl.mjs` `couchesTuiles`).
    Le rendu SVG de secours fait de même par un filtre. */
-html.ambiance-tuiles :is(.stand,.zone).sel path{filter:saturate(1.6) brightness(.96)}
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes).sel path{filter:saturate(1.6) brightness(.96)}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
@@ -651,11 +638,12 @@ html:not(.chaleur-halos) .dcal .forme.sdes[data-chaleur] path{fill:var(--chal-c)
    tracé, y compris sur la page publique où le mode édition n'existe pas.
    Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
 .dcal .forme.sdes.lie path{pointer-events:all}
-html .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+html:not(.ambiance-tuiles) .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
 /* Le liseré de la sélection reste sur la forme : « #marques » recopie les
    tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
-   pas de cloison mitoyenne à ménager — il est posé sur son hôte. */
-html .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
+   pas de cloison mitoyenne à ménager — il est posé sur son hôte. En Tuiles,
+   il s'avive comme les autres tuiles, sans aplat ni liseré. */
+html:not(.ambiance-tuiles) .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
   stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
 .dcal .forme.sdes:focus{outline:none}
 html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
@@ -1198,8 +1186,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
      où un doigt qui monte escamotait la barre du navigateur, et tout ce qui
      s'ancre au bas de la page — le cartouche le premier — montait avec elle.
      On tient l'axe vertical des deux côtés : plus rien à défiler, et plus de
-     geste à donner au navigateur. « pinch-zoom » reste permis, c'est le seul
-     agrandissement dont dispose qui lit mal.
+     geste à donner au navigateur. Le pincement non plus : permis ici, il
+     agrandissait la page entière dès qu'un doigt touchait le cartouche, et
+     le cartouche avec elle, au lieu du plan — comme les tiroirs
+     (`_styles-modeles-parcours.css`).
 
      « overscroll-behavior-x » retient le bout de course : arrivé à la dernière
      pastille, l'élan continuait sur la page et faisait revenir la barre par
@@ -1208,10 +1198,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
      autorisé par l'intersection des valeurs rencontrées jusqu'à la zone qui
      défile, et le plan la refuse juste au-dessus. */
   .poi{max-width:calc(100% - 24px);bottom:12px;padding:6px 8px;
-    touch-action:pan-x pinch-zoom}
+    touch-action:pan-x}
   .poiDefile{flex-wrap:nowrap;justify-content:flex-start;
     overflow-x:auto;overflow-y:hidden;
-    touch-action:pan-x pinch-zoom;overscroll-behavior-x:contain;
+    touch-action:pan-x;overscroll-behavior-x:contain;
     scrollbar-width:none;-ms-overflow-style:none;
     gap:5px}
   .poiDefile::-webkit-scrollbar{display:none}

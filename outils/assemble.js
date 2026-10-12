@@ -8,7 +8,7 @@
 const fs = require("fs");
 const D = __dirname;
 
-const BOUTS = ["_entete.html", "_styles-jetons.css", "_styles-plan.css", "_styles-modeles.css", "_styles-parcours.css", "_styles-modeles-parcours.css", "_styles-divers.css", "_head.html", "_js.html"];
+const BOUTS = ["_entete.html", "_styles-jetons.css", "_styles-plan.css", "_styles-modeles.css", "_styles-parcours.css", "_styles-modeles-parcours.css", "_styles-divers.css", "_styles-vitrine.css", "_head.html", "_js.html"];
 
 /** Un module tel qu'il entre dans l'assemblage. */
 function lisBout(b) {

@@ -8,6 +8,8 @@ module.exports = {
   "Ce que les visiteurs voient sur le plan. Publiez la configuration pour que le changement leur parvienne.":
     "What visitors see on the map. Publish the configuration for the change to reach them.",
   "Montrer les secteurs — couleurs et filtre": "Show sectors — colours and filter",
+  "Écrire à la verticale le nom des stands étroits, quand il y gagne en taille":
+    "Write narrow stands' names vertically, when that makes them larger",
   "Suivre les allées une à une — pour un hall arrondi ou aux rangées désaccordées":
     "Follow the aisles one by one — for a rounded hall or one with uneven rows",
 
@@ -180,4 +182,7 @@ module.exports = {
     "Beyond that, the rule of three would return a threshold so high it would never come into play.",
   // le volet « Apparence » : l'ambiance du plan
   "Ambiance du plan": "Map style",
+  "Orientation": "Orientation",
+  "Orientation de la vue": "View orientation",
+  "De face": "Front view",
 };

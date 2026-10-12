@@ -37,6 +37,9 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
+import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
+import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
+  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -81,8 +84,8 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan-b4ce2dbc.min.js",
-  integrite: "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
+  src: "bibliotheques/deck.gl-9.3.11-plan-ef08eeb5.min.js",
+  integrite: "sha384-NZseSRlLpdWIBLJtNNorQq/Mrx7IZjv90iDS/x8ERsfhSlfP6Z4D0ehGeDK1N46F",
 };
 export const GL = {
   charge: false, actif: false, deck: null,
@@ -93,6 +96,12 @@ export const GL = {
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
+  // la vue immersive est-elle à l'écran — voir « La vue immersive »
+  camera: false,
+  // la reconversion en cours change le plan entier de hauteur : sans mouvement
+  massif: false,
+  /** @type {number[] | null} le sol du hall, sur lequel un volume rend sa transparence */
+  sol: null,
 };
 
 function chargeWebgl(){
@@ -138,9 +147,10 @@ export function monteWebgl(){
   hote.setAttribute("aria-hidden", "true");
   svg.before(hote);
   GL.hote = hote;
+  GL.camera = enCamera();
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
-    views: new deck.OrthographicView({ id: "plan", flipY: true }),
+    views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     onError: e => console.warn("Rendu WebGL :", e && e.message),
     // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
@@ -154,6 +164,9 @@ export function monteWebgl(){
     },
   });
   GL.actif = true;
+  /* La caméra n'entre en jeu qu'une fois le dessin actif : son annonce fait
+     recadrer la vue, qui repasse par ici et remonterait le dessin. */
+  metsEnJeu(GL.camera);
   /* La bibliothèque ne garde que trois atlas de police, et le plan en demande
      un par famille, par graisse et par taille — deux tailles de rendu, autant
      de familles que l'exploitant a choisies pour ses noms et ses numéros. Au
@@ -179,9 +192,12 @@ export function monteWebgl(){
         const b = blocDe(n.target);
         if (b === "ordre") GL.ordre = true;
         else if (b) GL.sales.add(b);
+        // un stand qui monte ou s'abaisse emporte ses marques, posées sur son dessus
+        if (b && b !== "ordre" && b.id === "stands" && GL.camera && $("dists")) GL.sales.add($("dists"));
       }
       // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
       majEditionWebgl();
+      anticipeHausses(notes);
       planifieWebgl();
     }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
     // le mode carte de chaleur, un calque de noms éteint, une couleur réglée :
@@ -193,7 +209,9 @@ export function monteWebgl(){
        faisait reconvertir les six cents stands à chaque lettre. */
     new MutationObserver(notes => {
       if (notes.every(n => n.oldValue === document.documentElement.getAttribute(n.attributeName))) return;
-      majEditionWebgl(); toutRepeindreWebgl();
+      majEditionWebgl();
+      // l'ambiance ou le cap de l'immersif : la vue suit, avec le reste
+      if (!basculeCamera()){ GL.deck.setProps({ viewState: vueDeck() }); toutRepeindreWebgl(); }
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
       attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
@@ -264,6 +282,8 @@ function perdContexteWebgl(){
   if (!GL.actif) return;
   console.warn("Rendu WebGL : contexte perdu, le plan repasse en SVG.");
   GL.actif = false; GL.pret = false;
+  // le SVG ne sait pas se pencher : le plan revient à plat, et les gestes avec
+  GL.camera = false; metsEnJeu(false);
   document.documentElement.classList.remove("rendu-webgl", "gl-pret", "gl-attente", "en-edition");
   stage().classList.remove("survol-gl");
   GL.survol = null; GL.focus = null; TUILES.clear();
@@ -301,13 +321,73 @@ function remonteWebgl(){
 function vueDeck(){
   const r = cadrePlan(), view = vueDuPlan();
   const s = Math.min((r.width || 1) / view.w, (r.height || 1) / view.h);
-  return { target: [view.x + view.w / 2, view.y + view.h / 2, 0], zoom: Math.log2(s) };
+  /* Le cap ne sert pas au cadre ; il y est pour que la bibliothèque refasse
+     la vue quand l'exploitant tourne le hall sans bouger le plan — elle ne
+     recompose ses matrices que sur un changement de l'état de la vue. */
+  return { target: [view.x + view.w / 2, view.y + view.h / 2, 0], zoom: Math.log2(s), cap: cleCamera() };
+}
+
+/* ------------------------------------------------------------
+   La vue immersive
+
+   La même vue, vue de biais : le cadre à plat que les gestes manipulent ne
+   change pas, la caméra (`camera.mjs`) l'incline par-dessus. La bibliothèque
+   n'a pas de vue en perspective qui s'accorde à un cadre en mètres ; on lui
+   en donne une, faite des matrices que la caméra calcule.
+
+   À plat pendant l'édition : poser une forme, tirer une poignée, tracer un
+   calque se fait au millimètre, et d'en haut.
+   ------------------------------------------------------------ */
+const enCamera = () => cameraVoulue() && !_page.enEdition();
+
+/** @type {any} */
+let VueCamera = null;
+function vuesGl(){
+  if (!GL.camera) return new deck.OrthographicView({ id: "plan", flipY: true });
+  if (!VueCamera){
+    class ViewportCamera extends deck.Viewport {
+      constructor(/** @type {any} */ p){
+        const { vue, projection } = matricesCamera(p.width || 1, p.height || 1, Math.pow(2, p.zoom || 0));
+        super({ ...p, position: p.target, viewMatrix: vue, projectionMatrix: projection });
+      }
+    }
+    VueCamera = class extends deck.View {
+      getViewportType(){ return ViewportCamera; }
+    };
+  }
+  return new VueCamera({ id: "plan" });
+}
+
+/* La lumière des volumes : une ambiance claire, qui garde aux stands la
+   couleur que l'exploitant leur a donnée, et un jour qui vient du fond du
+   hall et de la gauche. Les dessus reçoivent la lumière ; les façades qui
+   regardent l'entrée restent dans leur ombre, et c'est ce qui les fait
+   monter. Sans volume, pas de lumière : un aplat éclairé changerait de ton. */
+function effetsGl(){
+  if (!GL.camera) return [];
+  return [new deck.LightingEffect({
+    ambiante: new deck.AmbientLight({ color: [255, 255, 255], intensity: 1 }),
+    jour: new deck.DirectionalLight({ color: [255, 255, 255], intensity: .5, direction: [.55, .9, -1] }),
+  })];
+}
+
+/** La caméra demandée, ou rendue : la vue, la lumière et tout le dessin
+ *  changent avec elle — les stands montent ou se couchent. */
+function basculeCamera(){
+  const cam = enCamera();
+  if (!GL.deck || cam === GL.camera) return false;
+  GL.camera = cam;
+  metsEnJeu(cam);
+  GL.deck.setProps({ views: vuesGl(), effects: effetsGl(), viewState: vueDeck() });
+  toutRepeindreWebgl();
+  return true;
 }
 
 /** Appelée à chaque image d'un geste : la matrice, et rien d'autre. Les noms
  *  qui passent un seuil de lisibilité se montrent ou se taisent dans le
  *  shader, qui connaît le zoom — voir « FiltreZoom ». */
 export function vueWebgl(){
+  basculeCamera();
   GL.deck.setProps({ viewState: vueDeck() });
 }
 
@@ -334,7 +414,7 @@ export function majEditionWebgl(){
   const r = document.documentElement, ed = _page.enEdition();
   if (r.classList.contains("en-edition") === ed) return;
   r.classList.toggle("en-edition", ed);
-  toutRepeindreWebgl();
+  if (!basculeCamera()) toutRepeindreWebgl();
 }
 
 /** La clé des couches d'un bloc. Elle tient au calque et non au nœud :
@@ -373,6 +453,10 @@ export function planifieWebgl(){
 }
 function toutRepeindreWebgl(){
   GL.tout = true; GL.couchesLibelles = null;
+  /* Le sol du hall : l'aplat qui le vide est peint de la couleur du fond
+     que l'exploitant a choisie, ou du gris de la page à défaut. */
+  const trou = $("trouDuFond");
+  GL.sol = trou ? couleurGl(getComputedStyle(trou).fill, 1) : null;
   // une mise en avant, la carte de chaleur : les noms s'estompent ou changent d'encre
   if (GL.actif){ lisModelesLibelles(); _page.libellesWebgl(); }
   planifieWebgl();
@@ -400,7 +484,7 @@ function repeintWebgl(){
     }
   }
   for (const b of [...GL.blocs.keys()]) if (!vus.has(b)) GL.blocs.delete(b);
-  GL.sales.clear(); GL.tout = false; GL.ordre = false;
+  GL.sales.clear(); GL.tout = false; GL.ordre = false; GL.massif = false;
   GL.deck.setProps({ layers: assembleWebgl() });
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
@@ -410,14 +494,15 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesLibellesWebgl(), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
-    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel")) : new Set();
+    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
+      if (GL.camera && GL.survol && c.props.extruded) out.push(...coucheSurvolVolume(c));
       if (tuile) apres.push(...couchesTuiles(c, choisies));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
       else if (GL.survol) out.push(...coucheSurvol(c));
@@ -708,19 +793,112 @@ function couchesPetites(id, commun, K, sousPixel){
   return [
     ...(commun.pickable ? [new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true })] : []),
     ...PASSES_SOUS_PIXEL.map(p => new deck.TextLayer({ ...base, id: id + "-petit" + p.canal,
-      pickable: false, sousPixel: [p.decalage, .6], parameters: { colorMask: p.masque } })),
+      pickable: false, sousPixel: [p.decalage, .6], parameters: { ...parametresTexte(), colorMask: p.masque } })),
   ];
 }
+
+/* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
+   immersive ; au sol, ils resteraient dedans, que les façades cachent. Celui
+   d'une zone masquée reste au sol avec elle. */
+function positionTexte(){
+  if (!GL.camera) return d => d.position;
+  /* Les lignes d'un stand s'empilent en hauteur au-dessus de son centre : un
+     nom dressé face à l'œil garde sa taille, quand l'écart que le plan à plat
+     met entre le nom et le numéro se tassait avec l'inclinaison — sur trois
+     lignes, le nom recouvrait son numéro. Monté, l'écart reste vertical à
+     l'écran, quel que soit le cap. */
+  const pose = (d, h) => d.centre
+    ? [d.position[0], d.centre[1], h + .02 - d.ecart / SINUS_INCLINAISON]
+    : [d.position[0], d.position[1], h + .02];
+  return d => {
+    if (d.zHausse !== undefined) return pose(d, d.zHausse);
+    const c = d.cls || "", zone = c.startsWith("zn");
+    if (zone && /\bmasquee\b/.test(c)) return d.position;
+    // le nom d'un stand abaissé sous un trajet descend avec lui
+    if (!zone && boutsDuTrajet() && !debout.has(d.lbl)) return pose(d, HAUTEUR_ABAISSEE);
+    return pose(d, (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1));
+  };
+}
+
+/* ------------------------------------------------------------
+   Les noms cachés par le stand choisi
+
+   Les noms se peignent par-dessus le relief (« parametresTexte ») : le stand
+   choisi, haussé au-dessus des autres, ne cache donc pas le nom du stand qui
+   se tient derrière lui, et les deux noms se mêlaient à l'écran — le sien,
+   posé sur son dessus, et celui du voisin, qui tombait au même endroit. Le
+   nom d'un stand plus loin de l'œil dont la place à l'écran tombe dans la
+   silhouette du volume choisi se tait donc, le temps du choix.
+
+   La silhouette se calcule vue de loin, sans la fuite : l'œil se tient à une
+   fois et demie la diagonale de la scène (`camera.mjs`), et la fuite ne
+   déplace un nom que d'une fraction de la taille d'un stand.
+   ------------------------------------------------------------ */
+/** @type {{ id: string, anneaux: number[][][], haut: number } | null} le volume choisi, relevé à la conversion */
+let CHOISI = null;
+const cleChoisi = () => CHOISI ? CHOISI.id + "@" + CHOISI.haut : "";
+
+/** Un point du monde vu à l'écran, en mètres, et sa proximité de l'œil. */
+function versEcran(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z){
+  const cap = capCamera(), cc = Math.cos(cap), sc = Math.sin(cap);
+  const st = SINUS_INCLINAISON, ct = Math.sqrt(1 - st * st);
+  const y1 = x * sc + y * cc;
+  return { u: x * cc - y * sc, v: ct * y1 - st * z, pres: st * y1 + ct * z };
+}
+/** L'enveloppe convexe de points de l'écran, dans un sens fixe. */
+function enveloppe(/** @type {number[][]} */ pts){
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const croix = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const bas = [], haut = [];
+  for (const q of p){ while (bas.length > 1 && croix(bas[bas.length - 2], bas[bas.length - 1], q) <= 0) bas.pop(); bas.push(q); }
+  for (const q of p.reverse()){ while (haut.length > 1 && croix(haut[haut.length - 2], haut[haut.length - 1], q) <= 0) haut.pop(); haut.push(q); }
+  return bas.slice(0, -1).concat(haut.slice(0, -1));
+}
+
+/** Les stands et les zones dont le nom passe derrière le volume choisi. */
+function nomsCaches(/** @type {any[]} */ liste){
+  const caches = new Set();
+  if (!GL.camera || !CHOISI || !CHOISI.anneaux[0]) return caches;
+  const pied = CHOISI.anneaux[0], h = CHOISI.haut;
+  const sil = enveloppe(pied.flatMap(([x, y]) =>
+    [versEcran(x, y, 0), versEcran(x, y, h)].map(e => [e.u, e.v])));
+  if (sil.length < 3) return caches;
+  const cx = pied.reduce((t, p) => t + p[0], 0) / pied.length, cy = pied.reduce((t, p) => t + p[1], 0) / pied.length;
+  const presChoisi = versEcran(cx, cy, 0).pres;
+  const pos = positionTexte();
+  for (const d of liste){
+    if (d.lbl === CHOISI.id || caches.has(d.lbl)) continue;
+    const sol = d.centre || d.position;
+    // ce qui se tient devant le choisi le cache, et garde donc son nom
+    if (versEcran(sol[0], sol[1], 0).pres >= presChoisi) continue;
+    const [x, y, z] = pos(d), e = versEcran(x, y, z || 0);
+    /* Un nom tient de la place : son milieu et ses deux bouts. Une ligne
+       mesure à peu près six dixièmes de corps par lettre. */
+    const lettres = Math.max(...String(d.text).split("\n").map(l => l.length));
+    const demi = d.taille * lettres * .3;
+    if ([-demi, 0, demi].some(du => dedansAnneau(sil, e.u + du, e.v))) caches.add(d.lbl);
+  }
+  return caches;
+}
+
+/* Un nom se dresse face à l'œil : en vue immersive, son rectangle traversait
+   le dessus du stand et le nom s'y coupait à mi-hauteur. Les noms se peignent
+   donc par-dessus le relief, sans le consulter — comme sur une maquette, où
+   l'étiquette se lit toujours. */
+const parametresTexte = () => GL.camera ? { depthCompare: "always", depthWriteEnabled: false } : {};
 
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
   const commun = {
     data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
-    getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
+    getText: d => d.text, getPosition: positionTexte(), getSize: d => d.taille, sizeUnits: "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
-    lineHeight: extra.lineHeight || 1, updateTriggers: extra.updateTriggers || K.sansDeclencheur,
+    lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
+    updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur),
+      getPosition: cleCamera() + GL.camera + JSON.stringify(boutsDuTrajet()) },
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
@@ -747,7 +925,8 @@ function couchesTexte(id, items, famille, graisse, extra){
    ------------------------------------------------------------ */
 /** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
-const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises });
+const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises,
+  decor: [] });
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
   // racine — celles d'une forme dessinée comme celles d'un emplacement repris
@@ -755,7 +934,11 @@ function convertitBloc(racine, cle){
   const acc = accVide((_page.enEdition() && (racine.classList.contains("editable") ||
       racine.id === "poignees" || racine.id === "poigneesGeo")) ||
     racine.id === "calageApercu");
+  const avant = racine.id === "stands" ? cleChoisi() : null;
+  if (avant !== null) CHOISI = null;
   parcoursGl(racine, M_ID, 1, acc);
+  // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
+  if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
   const out = couchesDeBloc(acc, cle);
   let i = 0;
   for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
@@ -807,14 +990,184 @@ function parcoursGl(el, m, op, acc){
   if (traces) formeGl(el, cs, m, op, traces, acc);
 }
 
+/* La hauteur d'une forme en vue immersive : celle d'un stand ou d'une zone
+   de l'organisateur pour leur tracé même, rien pour tout le reste. Seul le
+   tracé monte — la distinction, le halo de la chaleur, le liseré de la
+   sélection posés sur lui restent des aplats, qui se peignent alors au pied
+   du volume. Une zone masquée reste au sol : pâlie, elle dit à l'exploitant
+   qu'elle ne sera pas sur le plan public, et un volume la ferait voir. */
+/* Les stands qu'un trajet tracé garde debout : ceux où l'un de ses points
+   tombe — départ, arrêt, arrivée. Vu de biais, le trajet passait derrière
+   une rangée de stands et s'y cachait ; tout le reste s'abaisse donc le
+   temps qu'il est tracé. Le jeu se refait à chaque conversion, et sert aux
+   noms (`positionTexte`) et au mouvement qui part au clic, qui n'ont pas
+   le contour sous la main. */
+/** @type {Set<string>} les identifiants des stands gardés debout */
+let debout = new Set();
+function resteDebout(/** @type {Element} */ g, /** @type {number[][][] | undefined} */ anneaux){
+  const id = g.getAttribute("data-id") || "";
+  if (!anneaux || !anneaux[0]) return debout.has(id);
+  const an = anneaux[0];
+  const oui = (boutsDuTrajet() || []).some(b => dedansAnneau(an, b.xy[0], b.xy[1]));
+  if (oui) debout.add(id); else debout.delete(id);
+  return oui;
+}
+function dedansAnneau(/** @type {number[][]} */ an, /** @type {number} */ x, /** @type {number} */ y){
+  let ok = false;
+  for (let i = 0, j = an.length - 1; i < an.length; j = i++){
+    const [xi, yi] = an[i], [xj, yj] = an[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ok = !ok;
+  }
+  return ok;
+}
+/* Le trajet apparaît, change ou s'efface : le plan entier change de hauteur
+   d'un coup — six cents stands en mouvement chacun dans sa couche coûteraient
+   plus qu'ils ne montreraient. */
+TRAJET_CHANGE.suis(() => {
+  if (!GL.actif || !GL.camera) return;
+  GL.massif = true;
+  toutRepeindreWebgl();
+});
+
+/* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
+   sol, il en partageait la profondeur : vue de biais, la carte graphique ne
+   départageait plus les deux, et le trajet se hachait de traînées pâles. */
+const SOL_ITINERAIRE = .08;
+const auDessusDuSol = (el) => !GL.camera ? 0 : el.closest("#itin") ? SOL_ITINERAIRE : surSonStand(el);
+
+/* Le coin corné, la pastille, le liseré d'une distinction se posent sur le
+   dessus du stand qu'ils marquent : laissés au sol, ils restaient dans le
+   volume, que ses façades cachaient — la vue immersive perdait les nouveaux
+   exposants et les adhérents. Ils suivent la hauteur du stand, abaissé sous
+   un trajet ou haussé au choix, un rien au-dessus pour ne pas se hacher avec
+   son dessus. */
+function surSonStand(/** @type {Element} */ el){
+  const m = el.closest("#dists [data-sur]");
+  if (!m) return 0;
+  const id = m.getAttribute("data-sur") || "";
+  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
+  const trace = g && g.firstElementChild;
+  return trace ? hauteurVolume(trace) + .02 : 0;
+}
+
+function hauteurVolume(el, anneaux){
+  if (!cameraEnJeu()) return 0;
+  const g = el.parentNode;
+  if (!g || !g.classList || g.firstElementChild !== el) return 0;
+  const stand = g.classList.contains("stand"), zone = g.classList.contains("zone");
+  if (!stand && !zone) return 0;
+  if (stand && g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
+  if (zone && g.classList.contains("masquee")) return 0;
+  /* Un trajet tracé : tout s'abaisse, sauf où il part, s'arrête et arrive. */
+  if (boutsDuTrajet() && !zoneMeublee(g) && !resteDebout(g, anneaux)) return HAUTEUR_ABAISSEE;
+  /* Ce qu'on a choisi se hausse au-dessus des autres : vu de biais, un liseré
+     au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
+     des yeux en ouvrant sa fiche. */
+  /* Une zone que le décor sait meubler n'est plus qu'un sol teinté : c'est
+     son mobilier qui monte, et un bloc d'un mètre le cacherait. */
+  const h = stand ? HAUTEUR_STAND : zoneMeublee(g) ? SOL_MEUBLE : HAUTEUR_ZONE;
+  return g.classList.contains("sel") ? h * HAUSSE_CHOIX : h;
+}
+
+/* ------------------------------------------------------------
+   Le décor des zones
+
+   Le mobilier d'une zone typée (`decor.mjs`) monte sur son sol : chaque
+   pièce est un volume, peint d'après son rôle. Les assises prennent la
+   couleur de la zone, assombrie, pour que le restaurant reste doré et la
+   salle de sa teinte ; le reste a ses tons de mobilier, les mêmes partout.
+   Le décor ne se désigne pas : un appui sur une chaise ouvre la zone, dont
+   le sol est dessous.
+   ------------------------------------------------------------ */
+const SOL_MEUBLE = .12;
+const zoneMeublee = (/** @type {Element} */ g) =>
+  g.classList.contains("zone") && TYPES_MEUBLES.includes(g.getAttribute("data-type") || "");
+/** @type {Record<string, number[]>} */
+const TONS_DECOR = {
+  plateau: [250, 249, 244, 255], comptoir: [250, 249, 244, 255],
+  scene: [78, 90, 106, 255], ecran: [34, 42, 54, 255],
+  plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
+  marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
+};
+
+/* L'escalier, l'escalator ou l'ascenseur sous un repère (`decor.mjs`
+   `objetRepere`), et la hauteur où sa pastille se pose : tout ce qui la
+   dessine — aplat, pictogramme, liseré — y monte avec elle. Les autres
+   repères restent au sol. */
+function repereEnObjet(el){
+  if (!cameraEnJeu()) return null;
+  const r = el.closest(".repere[data-glyphe]");
+  const glyphe = r ? r.getAttribute("data-glyphe") || "" : "";
+  return OBJETS_REPERE.includes(glyphe) ? { r, glyphe } : null;
+}
+/* Ce qu'on sait de chaque repère monté pendant la conversion : son centre et
+   son objet. L'aplat de la pastille, son premier enfant, le pose ; le
+   pictogramme et le liseré, qui suivent, le relisent pour monter avec. */
+/** @type {WeakMap<Element, any>} */
+let objetsPoses = new WeakMap();
+/** Ce qu'un point de la pastille devient une fois montée sur son objet, ou rien. */
+function monteeRepere(el, polygon, acc){
+  const o = repereEnObjet(el);
+  if (!o) return null;
+  if (o.r.firstElementChild === el && polygon && polygon[0]){
+    const xs = polygon[0].map(p => p[0]), ys = polygon[0].map(p => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const obj = objetRepere(o.glyphe, cx, cy, Math.max(...ys) - Math.min(...ys));
+    for (const p of obj.pieces) acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] });
+    objetsPoses.set(o.r, { cx, cy, obj });
+  }
+  const pose = objetsPoses.get(o.r);
+  if (!pose || !pose.obj.pieces.length) return null;
+  const { cx, cy, obj } = pose, E = ECHELLE_PASTILLE;
+  return (/** @type {number[]} */ p) => [obj.ancre[0] + (p[0] - cx) * E, obj.ancre[1] + (p[1] - cy) * E, obj.dessus];
+}
+function meubleZone(el, polygon, couleur, acc){
+  const g = el.parentNode;
+  if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
+  const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
+  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0]))
+    acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
+}
+
+/* Un volume ne se peint pas en transparence : on verrait ses façades du fond
+   au travers de celles de devant, et la zone aurait l'air d'un bloc de verre.
+   Sa teinte translucide — une zone l'est toujours, un stand que la recherche
+   éteint aussi — est donc mêlée au sol qu'elle laissait voir, et le volume
+   prend le ton que l'aplat avait. */
+/* La part de noir qui fonce le volume choisi. Éclairci, il pâlissait vers le
+   blanc du sol et se lisait moins bien que ses voisins ; foncé, il tranche
+   sur eux comme sur le hall. */
+const SOMBRE_CHOIX = .28;
+/** Une couleur mêlée de noir, à cette part. */
+const fonce = (/** @type {number[]} */ c, /** @type {number} */ part) => part
+  ? [0, 1, 2].map(i => Math.round(c[i] * (1 - part))).concat(c[3] === undefined ? 255 : c[3]) : c;
+function opaque(couleur){
+  const a = (couleur[3] === undefined ? 255 : couleur[3]) / 255;
+  if (a >= 1) return couleur;
+  const sol = GL.sol || [233, 234, 228];
+  return [0, 1, 2].map(i => Math.round(couleur[i] * a + sol[i] * (1 - a))).concat(255);
+}
+
 function formeGl(el, cs, m, op, traces, acc){
   const cible = el.closest("[data-id],[data-poi]");
   acc = accDe(el, acc);
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(PRISES);
-    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible, prise });
+    const prise = el.closest(PRISES), haut = hauteurVolume(el, anneaux);
+    /* Le volume choisi fonce : monté devant un stand de même couleur, il s'en
+       détache au lieu de s'y confondre. */
+    const choisi = haut && el.parentNode.classList.contains("sel");
+    const base = haut ? opaque(plein) : plein, couleur = choisi ? fonce(base, SOMBRE_CHOIX) : base;
+    const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
+    if (choisi && el.parentNode.classList.contains("stand"))
+      CHOISI = { id: el.parentNode.getAttribute("data-id") || "", anneaux, haut };
+    const sol = auDessusDuSol(el);
+    for (const polygon of avecTrous(anneaux)){
+      const monte = monteeRepere(el, polygon, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
+      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse });
+      if (haut) meubleZone(el, polygon, couleur, acc);
+    }
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
        « pointer-events: all » donne en SVG au calque ouvert. Un aplat
@@ -839,9 +1192,11 @@ function formeGl(el, cs, m, op, traces, acc){
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
     const defile = el.classList.contains("iSens");
+    const sol = auDessusDuSol(el);
+    const monte = monteeRepere(el, null, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
     for (const t of traces){
       if (t.pts.length < 2) continue;
-      const path = t.pts.map(p => appM(m, p));
+      const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
       if (t.ferme) path.push(path[0]);
       (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
         prise: el.closest(PRISES) });
@@ -935,14 +1290,159 @@ const partage = (liste, prises, deja) => {
 /** Ce qu'une couche désigne quand on la vise. */
 const designeGl = (d) => d.el || d.prise;
 
+/* Le stand qu'on choisit monte, celui qu'on quitte redescend : en un peu
+   plus d'une seconde, et non d'un coup. Plus vite, on voyait le stand arrivé
+   en haut plutôt que s'élever ; à cette allure, le mouvement se suit des yeux.
+
+   La bibliothèque sait glisser d'une valeur à l'autre, mais pas ici : le bloc
+   des stands se reconvertit en entier à chaque sélection, et sa transition
+   repartait de la hauteur d'arrivée — le stand sautait. On anime donc nous-
+   mêmes. La conversion note la hauteur de chaque volume ; celui dont la
+   hauteur change se peint, le temps du mouvement, dans une couche à lui, à sa
+   hauteur d'arrivée, et la boucle d'animation (`animeCouche`) en règle
+   l'échelle d'une image à l'autre — un seul nombre, rien ne se recalcule. */
+const DUREE_HAUSSE = 1040;
+const sortie = (/** @type {number} */ t) => 1 - Math.pow(1 - t, 3);
+/** @type {WeakMap<Element, number>} la dernière hauteur peinte de chaque volume */
+const hauteursPeintes = new WeakMap();
+/** @type {Map<Element, { de: number, vers: number, t0: number }>} les volumes en mouvement */
+const hausses = new Map();
+/** Le volume vient-il de changer de hauteur ? On le note, et l'on dit s'il bouge. */
+function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
+  const avant = hauteursPeintes.get(g);
+  hauteursPeintes.set(g, haut);
+  // qui demande moins de mouvement le voit changer de hauteur d'un coup, comme
+  // le plan entier qui s'abaisse sous un trajet
+  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches && !GL.massif){
+    /* Un volume encore en route repart d'où il est, et non d'où il allait :
+       un clic sur un autre stand pendant la montée du premier le faisait
+       bondir à sa hauteur d'arrivée avant de redescendre. */
+    const enRoute = hausses.get(g), maintenant = performance.now();
+    const de = enRoute ? hauteurHausse(enRoute, maintenant) : avant;
+    hausses.set(g, { de, vers: haut, t0: maintenant });
+    // son nom quitte les couches communes pour monter avec lui
+    GL.couchesLibelles = null;
+  }
+  const h = hausses.get(g);
+  if (h && (h.vers !== haut || performance.now() - h.t0 >= DUREE_HAUSSE)){ hausses.delete(g); return null; }
+  return h || null;
+}
+/**
+ * Le mouvement part au clic, sans attendre la reconversion.
+ *
+ * Celle-ci ne vient qu'après que la page a montré la fiche (`planifieWebgl`),
+ * et reconvertir neuf cents stands prend son temps : sur un PC, le stand ne
+ * se mettait à monter qu'une fois la fiche ouverte. Le guet voit pourtant la
+ * sélection à l'instant où elle change. On sort donc le stand des couches
+ * déjà peintes pour le poser dans une couche de mouvement, et la boucle
+ * démarre ; la reconversion, quand elle vient, retrouve le mouvement noté et
+ * le continue.
+ */
+function anticipeHausses(notes){
+  if (!GL.camera) return;
+  const vus = new Set();
+  for (const n of notes){
+    const g = n.target;
+    if (n.type !== "attributes" || n.attributeName !== "class" || vus.has(g)) continue;
+    if (!g.classList || !(g.classList.contains("stand") || g.classList.contains("zone"))) continue;
+    vus.add(g);
+    const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+    if (!haut || hauteursPeintes.get(g) === haut) continue;
+    const h = noteHauteur(g, haut);
+    if (h) detacheVolume(g, h);
+  }
+}
+/** Le volume quitte les couches peintes de son bloc pour une couche de mouvement. */
+function detacheVolume(g, h){
+  const b = blocDe(g), couches = b && GL.blocs.get(b);
+  if (!couches) return;
+  const out = [];
+  for (const c of couches){
+    const volume = /-(volumes|hausse)-/.test(c.id) && Array.isArray(c.props.data);
+    const siens = volume ? c.props.data.filter(d => d.el === g) : [];
+    if (!siens.length){ out.push(c); continue; }
+    const reste = c.props.data.filter(d => d.el !== g);
+    if (reste.length) out.push(c.clone({ data: reste }));
+    // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
+    if (c.props.contour) continue;
+    // il fonce au clic, et reprend sa couleur dès qu'on le quitte
+    const choisi = g.classList.contains("sel");
+    const id = c.id.replace(/-tot$/, "") + "-tot";
+    const data = siens.map(d => ({ ...d, haut: h.vers, hausse: h,
+      couleur: choisi ? fonce(d.base || d.couleur, SOMBRE_CHOIX) : d.base || d.couleur }));
+    out.push(c.clone({ id, data, hausse: h, elevationScale: echelleHausse(h, performance.now()) }),
+      coucheContours(id, data, { hausseContour: h }));
+  }
+  GL.blocs.set(b, out);
+  GL.deck.setProps({ layers: assembleWebgl() });
+  majAnimationWebgl();
+}
+
+/** La hauteur d'un volume en mouvement, à cet instant. */
+function hauteurHausse(/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant){
+  const t = Math.min(1, Math.max(0, (maintenant - h.t0) / DUREE_HAUSSE));
+  return h.de + (h.vers - h.de) * sortie(t);
+}
+/** Où en est un volume en mouvement, en fraction de sa hauteur d'arrivée. */
+const echelleHausse = (/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant) =>
+  hauteurHausse(h, maintenant) / h.vers;
+/** Les volumes en mouvement, par l'identifiant que portent leurs noms. */
+function haussesParId(){
+  /** @type {Map<string, { de: number, vers: number, t0: number }>} */
+  const m = new Map();
+  for (const [g, h] of hausses){ const id = g.getAttribute("data-id"); if (id) m.set(id, h); }
+  return m;
+}
+
+/* Le contour du dessus des volumes, d'un ton plus sombre que leur couleur.
+   Vu de biais, deux stands de même couleur l'un derrière l'autre ne
+   faisaient qu'une surface : le stand choisi, monté devant son voisin, s'y
+   fondait. Le contour les tient séparés.
+
+   Un trait le long du bord du dessus, et rien d'autre : les arêtes que la
+   bibliothèque sait tracer suivent chaque facette, et les coins arrondis,
+   faits de petites faces, se couvraient de stries verticales. Il se pose un
+   rien au-dessus du dessus, pour ne pas s'y enfoncer à moitié. */
+const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] * .62)).concat(255);
+/** Le contour d'un volume : l'anneau de son dessus, à sa hauteur. */
+const contourDe = (/** @type {any} */ d, /** @type {number} */ haut) =>
+  ({ path: d.polygon[0].map((/** @type {number[]} */ p) => [p[0], p[1], haut + .02]).concat([[d.polygon[0][0][0], d.polygon[0][0][1], haut + .02]]),
+     couleur: arete(d.couleur), el: d.el });
+/** La couche des contours d'une couche de volumes. */
+const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) =>
+  new deck.PathLayer({ id: id + "-contour", data: data.map(d => contourDe(d, d.haut)), pickable: false,
+    getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
+    getWidth: 1, widthUnits: "pixels", contour: true, ...extra });
+
+/* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
+   brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
+   comptées pour qu'un dessus, en plein jour, rende à peu près la couleur que
+   l'exploitant a choisie — et qu'une façade à l'ombre en garde les quatre
+   cinquièmes. Plus sombre, tout le plan tournait au terne. */
+const MATIERE = { ambient: .8, diffuse: .42, shininess: 4, specularColor: [12, 12, 12] };
+
 function couchesDeBloc(acc, cle){
   const L = deck, out = [];
   const pleins = partage(acc.pleins, acc.prises);
   pleins.forEach((liste, k) => {
-    if (!liste.length) return;
-    out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: liste, pickable: k === 0,
+    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut && !d.hausse);
+    if (plats.length) out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
+    /* Les stands de la vue immersive : la même couleur, montée en volume. La
+       lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
+    if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
+      extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+      material: MATIERE }), coucheContours(cle + "-volumes-" + k, volumes));
+    // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
+    liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
+      id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
+      extruded: true, getPolygon: x => x.polygon, getFillColor: x => x.couleur, getElevation: x => x.haut,
+      material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) }),
+      coucheContours(cle + "-hausse-" + k + "-" + n, [d], { hausseContour: d.hausse })));
   });
+  if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
+    extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+    material: MATIERE }));
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
      relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
@@ -977,6 +1477,14 @@ function couchesDeBloc(acc, cle){
       if (!l.length) continue;
       const bouge = marque !== "";
       out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + marque, data: l, pickable: k === 0,
+        /* Le trajet se trace face à l'œil en vue immersive : couché sur le sol
+           incliné, il s'amincissait au loin jusqu'à se perdre. Et sans
+           consulter la profondeur : sa lueur, peinte juste avant à la même
+           hauteur, la retenait, et vu de biais le trait tombait d'un rien
+           derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
+           par-dessus, il se lit de bout en bout, comme une signalétique au
+           sol. */
+        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : {}),
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
         jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
         extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
@@ -1127,8 +1635,37 @@ function couchesPastilles(){
 }
 
 function couchesLibellesWebgl(){
-  if (!GL.couchesLibelles)
-    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles))];
+  if (!GL.couchesLibelles){
+    /* Le nom d'un stand qui monte ou redescend se peint à part, posé à la
+       hauteur d'arrivée : la boucle d'animation le décale d'image en image
+       du même écart que son volume (`animeCouche`). Les autres restent
+       ensemble — ce sont eux qu'on ne recalcule pas. */
+    /* Les noms des stands seulement : celui d'une zone flotte au-dessus de son
+       mobilier, loin de son sol, et n'a pas à suivre ce qu'il monte. */
+    const mobiles = new Map([...haussesParId()].filter(([id]) =>
+      GL.libelles.some(d => d.lbl === id && !(d.cls || "").startsWith("zn"))));
+    const caches = nomsCaches(GL.libelles);
+    const fixes = mobiles.size || caches.size
+      ? GL.libelles.filter(d => !mobiles.has(d.lbl) && !caches.has(d.lbl)) : GL.libelles;
+    /* Chaque liste a sa clé dans le cache des groupes : sous la même, le nom
+       qui monte reprenait les groupes de tous les autres, et le plan entier
+       se peignait deux fois, décalé — tous les noms paraissaient flous le
+       temps du mouvement. */
+    const cleFixes = (mobiles.size ? "labels-sans|" + [...mobiles.keys()].join("|") : "labels") +
+      (caches.size ? "|caches|" + [...caches].join("|") : "");
+    // les groupes d'un choix quitté ne reserviront pas : chaque stand choisi en ferait d'autres
+    for (const k of [...GL.groupes.keys()]) if (k.includes("|caches|") && k !== cleFixes) GL.groupes.delete(k);
+    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms(cleFixes, fixes))];
+    for (const [id, h] of mobiles){
+      /* Posé à la hauteur d'arrivée du volume, et non à celle que ses
+         classes diraient : le mouvement part au clic, avant que les noms
+         n'aient appris la sélection. */
+      if (caches.has(id)) continue;
+      const siens = GL.libelles.filter(d => d.lbl === id).map(d => ({ ...d, zHausse: h.vers }));
+      if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
+        groupesNoms("labels-hausse|" + id + "|" + h.vers, siens)).map(c => c.clone({ hausseTexte: h })));
+    }
+  }
   return GL.couchesLibelles;
 }
 
@@ -1324,6 +1861,24 @@ function coucheSurvol(couche){
     getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)] })];
 }
 
+/* Le survol d'un volume, en vue immersive : il n'a pas d'aplat sur lequel se
+   peindre, et le stand sous la souris ne s'allumait plus — choisir le départ
+   ou l'arrivée d'un itinéraire se faisait à l'aveugle. Le volume visé est
+   redessiné teinté de la couleur du survol, un rien plus haut que lui pour
+   ne pas s'y confondre. */
+function coucheSurvolVolume(c){
+  const siens = Array.isArray(c.props.data) ? c.props.data.filter(d => d.el === GL.survol) : [];
+  if (!siens.length) return [];
+  const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
+  const a = Math.max(.45, t[3] / 255);
+  const teinte = (/** @type {number[]} */ k) => [0, 1, 2].map(i => Math.round(k[i] * (1 - a) + t[i] * a)).concat(255);
+  const e = c.props.elevationScale || 1;
+  const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
+  return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
+    getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE }),
+  coucheContours("survol-volume", data)];
+}
+
 function coucheFocus(couches){
   if (!GL.focus) return [];
   const aplats = couches.flatMap(c => aplatsDe(c, GL.focus));
@@ -1448,7 +2003,23 @@ const phaseDe = (c, t) => {
 };
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
+/* L'instant de l'image : l'heure qu'il est, toujours. Celle de la dernière
+   image de la boucle datait dès que le plan travaillait entre deux images —
+   une reconversion, une fiche qui s'ouvre — et le volume repeint à ce
+   moment-là reculait à ce qu'il était alors. */
+const instant = () => performance.now();
 function animeCouche(c){
+  if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
+  // le contour d'un volume en mouvement, posé à l'arrivée, s'écrase de même
+  if (c.props.hausseContour){
+    const e = echelleHausse(c.props.hausseContour, instant());
+    return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, e, 0, 0, 0, 0, 1] });
+  }
+  // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
+  if (c.props.hausseTexte){
+    const h = c.props.hausseTexte, dz = hauteurHausse(h, instant()) - h.vers;
+    return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, dz, 1] });
+  }
   const ph = c.props.phare;
   if (ph && GL.animePhare){
     // les courbes de « pulseZone » et « pulsePoi » : 1 → 0,58 → 1, et 1 → 1,14 → 1
@@ -1470,17 +2041,28 @@ function majAnimationWebgl(){
   const couches = [...GL.blocs.values()].flat();
   GL.animePhare = GL.bouge && document.documentElement.classList.contains("poi-actif") &&
     (GL.libellesPhare.length > 0 || couches.some(c => c.props.phare));
-  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile));
+  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile)) || hausses.size > 0;
   if (GL.anime && !GL.imageAnim) GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
 function animeWebgl(now){
   GL.imageAnim = 0;
   if (!GL.actif || !GL.anime) return;
   GL.temps = now / 1000;
+  // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
+  for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34){
+    hausses.delete(g);
+    // arrivé : son nom rejoint les autres, et les groupes du mouvement s'oublient
+    GL.couchesLibelles = null;
+    for (const k of [...GL.groupes.keys()]) if (/^labels-(sans|hausse)\|/.test(k)) GL.groupes.delete(k);
+  }
+  if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
+    GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
+  }
   /* Tout le plan se redessine quand une couche change : le battement se
      contente donc de trente images par seconde, et le défilement seul ne
      redessine qu'à chacun de ses paliers. */
-  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps);
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
+    (hausses.size ? "|" + Math.round(now) : "");
   if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
 }

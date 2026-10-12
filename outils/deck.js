@@ -31,7 +31,8 @@ const VERSION = "9.3.11";
 /* Ce que `modules/webgl.mjs` emprunte à `deck`, et rien d'autre : un nom
    manquant ici tomberait sur `undefined` au premier dessin. */
 const CLASSES = {
-  "@deck.gl/core": ["Deck", "OrthographicView", "LayerExtension"],
+  "@deck.gl/core": ["Deck", "OrthographicView", "LayerExtension", "View", "Viewport",
+    "LightingEffect", "AmbientLight", "DirectionalLight"],
   "@deck.gl/layers": ["TextLayer", "PathLayer", "SolidPolygonLayer", "BitmapLayer"],
   "@deck.gl/extensions": ["PathStyleExtension"],
 };

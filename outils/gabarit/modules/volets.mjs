@@ -34,7 +34,7 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
-import { AMBIANCES, ambianceRetenue, appliqueAmbiance } from "./ambiance.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -51,6 +51,8 @@ import { ADMIN } from "./mode-admin.mjs";
 import { champZone } from "./fiche-zone.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
+import { libelles } from "./libelles.mjs";
+import { nomsPivotes } from "./nom-emplacement.mjs";
 
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
@@ -106,6 +108,25 @@ export function voletAdmin(hote){
       enregistreConf(); appliqueSecteurs(); appliqueFiltre();
       // les couleurs des secteurs vivent dans la pile : elles suivent
       if (ADMIN) construitPanneau();
+    };
+    bloc.appendChild(l);
+  }
+
+  /* Les noms couchés dans les stands étroits changent, comme les secteurs, ce
+     que le plan donne à voir et non ce qu'il propose. Éteints par défaut : un
+     salon garde l'écriture qu'il connaissait tant qu'on ne l'a pas choisie
+     pour lui (`nom-emplacement.mjs` `nomCouche`). */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent =
+      "Écrire à la verticale le nom des stands étroits, quand il y gagne en taille";
+    const c = l.querySelector("input");
+    c.checked = nomsPivotes();
+    c.onchange = e => {
+      conf("_nomsPivotes").visible = e.target.checked;
+      enregistreConf();
+      libelles();
     };
     bloc.appendChild(l);
   }
@@ -1141,8 +1162,38 @@ export function voletApparence(hote){
     };
     amb.querySelector(".ambiances").appendChild(b);
   });
+  /* L'orientation de l'immersif : le cap, en degrés, de quel côté on regarde
+     le hall. Un curseur plutôt que quatre côtés : un hall dont l'entrée est
+     en biais se regarde en biais. Le plan suit pendant qu'on le tire ; la
+     configuration ne s'écrit qu'au lâcher, comme la couleur. */
+  const ori = document.createElement("div");
+  ori.className = "orientation";
+  ori.innerHTML = '<span class="eyebrow">Orientation</span>' +
+    '<input type="range" min="-180" max="180" step="1" aria-label="Orientation de la vue">' +
+    '<output></output><button type="button" class="raz">De face</button>';
+  const capIn = /** @type {HTMLInputElement} */ (ori.querySelector("input"));
+  const capOut = /** @type {HTMLOutputElement} */ (ori.querySelector("output"));
+  const majCap = () => {
+    const c = capRetenu();
+    capIn.value = String(c);
+    capOut.textContent = c + "°";
+    ori.hidden = ambianceRetenue() !== "immersif";
+  };
+  const poseCap = (/** @type {number} */ c) => {
+    if (c) conf("_ambiance").cap = c; else delete conf("_ambiance").cap;
+    appliqueAmbiance(); capOut.textContent = c + "°";
+  };
+  capIn.oninput = () => poseCap(Number(capIn.value));
+  capIn.onchange = () => enregistreConf();
+  /** @type {HTMLButtonElement} */ (ori.querySelector(".raz")).onclick = () => {
+    poseCap(0); majCap(); enregistreConf();
+  };
+  amb.appendChild(ori);
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majCap));
   hote.appendChild(amb);
   majAmb();
+  majCap();
 
   /* La police des noms, avant les modèles et non après : leur planche est
      longue, et un réglage rangé dessous ne se trouvait qu'en la faisant

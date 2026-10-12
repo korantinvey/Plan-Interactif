@@ -207,8 +207,11 @@ export function dessineDists(){
   /* La classe de la distinction porte sa teinte, qu'un jeton de la racine lui
      donne : une couleur changée repeint alors les marques sans qu'on les
      réécrive, sur le plan comme dans les neuf cents lignes de la liste. */
+  /* Chaque marque nomme son stand : la vue immersive (`webgl.mjs`) la pose
+     sur le dessus de son volume, qu'elle ne saurait pas trouver sans lui. Pas
+     « data-id », qui la ferait désigner au clic à la place du stand. */
   g.innerHTML = DISTS_VUES.traces.map(t =>
-    '<g class="dM d-' + t.cle + (dim.has(t.id) ? " dim" : "") + '">' +
+    '<g class="dM d-' + t.cle + (dim.has(t.id) ? " dim" : "") + '" data-sur="' + esc(t.id) + '">' +
     t.d + '</g>').join("");
 }
 

@@ -31,7 +31,8 @@ import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, confieAuWebgl }
   from "./webgl.mjs";
 import { recul, dessineFondCarte } from "./environs.mjs";
-import { svg, vue, changeVue, cadrePlan, oublieCadre } from "./vue-etat.mjs";
+import { svg, vue, changeVue, cadrePlan, oublieCadre, redresse, incline } from "./vue-etat.mjs";
+import { cameraEnJeu, ecranVersPlat, CAMERA_CHANGEE } from "./camera.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 import { facteurTrait } from "./chemin-forme.mjs";
@@ -69,7 +70,7 @@ export function confieALaVue(o){ Object.assign(prete, o); }
 /* La vue, le SVG et le cadre vivent dans `vue-etat.mjs`, que le fond de carte
    et la carte graphique importent aussi ; les autres modules les importent
    d'ici, comme avant. */
-export { view, vue, changeVue, svg, cadrePlan } from "./vue-etat.mjs";
+export { view, vue, changeVue, svg, cadrePlan, redresse } from "./vue-etat.mjs";
 const enEdition = () => prete.enEdition();
 const libelles = () => prete.libelles();
 
@@ -237,7 +238,8 @@ export function suitLaVue(/** @type {() => void} */ f){ suiveurs.push(f); }
  */
 export function versScene(/** @type {number} */ x, /** @type {number} */ y){
   const r = cadrePlan(), v = vue();
-  return [(x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height];
+  // en vue immersive, le point du sol tel qu'on le voit incliné
+  return incline((x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height);
 }
 
 export const appliqueVue = () => {
@@ -455,7 +457,38 @@ export function fit(){
               des deux. */
            y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height });
+  if (cameraEnJeu()) recadreIncline(r, haut, cache);
   poseVue();
+}
+
+/**
+ * Le cadrage, revu pour la vue immersive.
+ *
+ * Incliné, le hall ne prend plus à l'écran la place qu'il prend à plat : sa
+ * profondeur se tasse, son fond rapetisse, et l'ajuster comme vu d'en haut le
+ * laissait petit au milieu d'une scène vide. On regarde donc où ses quatre
+ * coins tombent une fois inclinés, et l'on resserre le cadre d'autant, en
+ * ramenant leur milieu au centre de la bande visible. La fuite ne dépend pas
+ * du zoom mais de la scène : quelques passes suffisent à tomber juste.
+ */
+function recadreIncline(/** @type {DOMRect} */ r, /** @type {number} */ haut, /** @type {number} */ cache){
+  const MARGE = 28;
+  const bx0 = MARGE, bx1 = r.width - MARGE, by0 = haut + MARGE, by1 = r.height - cache - MARGE;
+  if (bx1 - bx0 < 60 || by1 - by0 < 60) return;
+  const coins = [[emp.x0, emp.y0], [emp.x1, emp.y0], [emp.x1, emp.y1], [emp.x0, emp.y1]];
+  for (let passe = 0; passe < 4; passe++){
+    const v = vue();
+    const vus = coins.map(([x, y]) => incline((x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height));
+    const xs = vus.map(c => c[0]), ys = vus.map(c => c[1]);
+    const sx0 = Math.min(...xs), sx1 = Math.max(...xs), sy0 = Math.min(...ys), sy1 = Math.max(...ys);
+    const f = Math.max((sx1 - sx0) / (bx1 - bx0), (sy1 - sy0) / (by1 - by0));
+    // le milieu des coins, ramené au milieu de la bande : l'écart, mesuré sur le sol
+    const a = ecranVersPlat((sx0 + sx1) / 2, (sy0 + sy1) / 2, r.width, r.height);
+    const b = ecranVersPlat((bx0 + bx1) / 2, (by0 + by1) / 2, r.width, r.height);
+    const mx = v.x + (a[0] - b[0]) / r.width * v.w, my = v.y + (a[1] - b[1]) / r.height * v.h;
+    const w = v.w * f, h = v.h * f;
+    changeVue({ x: mx + (v.w - w) / 2, y: my + (v.h - h) / 2, w, h });
+  }
 }
 /* Le zoom par crans, et la saccade qu'il donnait.
 
@@ -483,8 +516,6 @@ let imageZoom = null;
 export function stoppeZoom(){
   if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
   vise = null;
-  enVol = false;
-  inclineScene(0);
   rendTextes();
 }
 
@@ -533,10 +564,6 @@ function glisseVersVise(){
  */
 export function glisseVers(/** @type {any} */ but){
   if (REDUIT){ changeVue(but); poseVue(); return; }
-  /* Un cran de molette pendant un vol le reprend en glissant, depuis là où
-     la caméra se trouve : le vol tenait l'image, et le glissement ne
-     démarre pas tant qu'elle est prise. */
-  if (enVol){ cancelAnimationFrame(imageZoom); imageZoom = null; enVol = false; inclineScene(0); }
   vise = but;
   /* Le trajet change l'échelle — un cran de molette, un centrage qui
      rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */
@@ -544,113 +571,6 @@ export function glisseVers(/** @type {any} */ but){
   glisseVersVise();
 }
 
-/* ------------------------------------------------------------
-   Le vol de caméra
-
-   Glisser à plat vers un stand à l'autre bout du hall faisait défiler le
-   plan sous les yeux à toute allure, à l'échelle de l'arrivée : on voyait
-   passer des stands sans pouvoir rien en lire, et l'on arrivait sans savoir
-   d'où. Une carte fait autrement — elle prend de la hauteur, survole, puis
-   redescend. Le trajet est celui de van Wijk et Nuij (« Smooth and efficient
-   zooming and panning », 2003), que Mapbox et d3 emploient : la vitesse
-   perçue y reste constante, et l'on voit à chaque instant d'où l'on part et
-   où l'on va.
-
-   Il sert à chaque stand qu'on choisit, même tout près : la caméra monte
-   alors à peine, et le geste garde la même signature d'un bout à l'autre du
-   plan. Seul un stand déjà au point visé ne bouge pas — il n'y a pas de
-   trajet.
-   ------------------------------------------------------------ */
-/* La courbure du trajet : plus grande, la caméra monte plus haut. 1,4 est la
-   valeur que l'article tient pour la plus naturelle. */
-const RHO = 1.4;
-/* En deçà de ce déplacement, en mètres, et de ce changement d'échelle, la
-   vue est déjà où l'on va : on s'y pose en glissant, sans trajet à montrer. */
-const IMMOBILE = .5, MEME_ECHELLE = 1.05;
-/* L'inclinaison au milieu du vol, en degrés : de quoi sentir qu'on survole,
-   pas assez pour que le plan bascule. */
-const INCLINAISON = 9;
-let enVol = false;
-
-/* La scène penchée le temps du vol. Le réglage se pose sur la scène et non
-   sur la racine : le rendu WebGL repeint tout le plan à chaque changement de
-   classe ou de style de celle-ci (`webgl.mjs` `monteWebgl`). */
-function inclineScene(/** @type {number} */ t){
-  const stage = svg.parentElement;
-  if (!stage) return;
-  if (!t){
-    if (stage.classList.contains("en-vol")){ stage.classList.remove("en-vol"); stage.style.removeProperty("--vol"); }
-    return;
-  }
-  stage.classList.add("en-vol");
-  stage.style.setProperty("--vol", (Math.sin(Math.PI * t) * INCLINAISON).toFixed(2) + "deg");
-}
-
-/**
- * Le trajet de van Wijk entre deux vues : `f(s)`, pour `s` de 0 à 1, donne
- * la vue en chemin ; `S`, la longueur du trajet, en fixe la durée.
- */
-function trajetVol(/** @type {any} */ a, /** @type {any} */ b){
-  const ax = a.x + a.w / 2, ay = a.y + a.h / 2, bx = b.x + b.w / 2, by = b.y + b.h / 2;
-  const dx = bx - ax, dy = by - ay, d1 = Math.hypot(dx, dy), w0 = a.w, w1 = b.w;
-  const r2 = RHO * RHO, r4 = r2 * r2, rapport = b.h / b.w;
-  /* Sur place, le trajet n'est qu'un zoom : la formule générale divise par la
-     distance, et l'on prend sa limite. */
-  if (d1 < 1e-6){
-    const S = Math.log(w1 / w0) / RHO;
-    return { S: Math.abs(S), f: (/** @type {number} */ t) => {
-      const w = w0 * Math.exp(RHO * t * S), h = w * rapport;
-      return { x: ax + t * dx - w / 2, y: ay + t * dy - h / 2, w, h };
-    } };
-  }
-  const b0 = (w1 * w1 - w0 * w0 + r4 * d1 * d1) / (2 * w0 * r2 * d1);
-  const b1 = (w1 * w1 - w0 * w0 - r4 * d1 * d1) / (2 * w1 * r2 * d1);
-  const q0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), q1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
-  const S = (q1 - q0) / RHO, c0 = Math.cosh(q0);
-  return { S, f: (/** @type {number} */ t) => {
-    const s = t * S;
-    const u = w0 / (r2 * d1) * (c0 * Math.tanh(RHO * s + q0) - Math.sinh(q0));
-    const w = w0 * c0 / Math.cosh(RHO * s + q0), h = w * rapport;
-    return { x: ax + u * dx - w / 2, y: ay + u * dy - h / 2, w, h };
-  } };
-}
-
-/**
- * Aller à une vue en volant, sauf si l'on y est déjà.
- *
- * Le vol pose la vue visée comme le glissement (`vise`) : la fiche mesure
- * ainsi où le stand tombera (`rectVisee`), et un geste le coupe de la même
- * façon (`stoppeZoom`).
- */
-export function voleVers(/** @type {any} */ but){
-  const a = vise || vue();
-  const d = a ? Math.hypot(but.x + but.w / 2 - (a.x + a.w / 2), but.y + but.h / 2 - (a.y + a.h / 2)) : 0;
-  const rapportEchelle = a ? Math.max(a.w, but.w) / Math.min(a.w, but.w) : 1;
-  if (REDUIT || !a || (d < IMMOBILE && rapportEchelle < MEME_ECHELLE)){ glisseVers(but); return; }
-  stoppeZoom();
-  const { S, f } = trajetVol(a, but);
-  // la durée suit la longueur du trajet, bornée : ni un sursaut, ni une attente
-  const duree = Math.min(1300, Math.max(700, S * 1000 * RHO / Math.SQRT2 * .5));
-  vise = but; enVol = true;
-  figeTextes();
-  const debut = performance.now();
-  const pas = (/** @type {number} */ maintenant) => {
-    imageZoom = null;
-    if (!enVol || vise !== but) return;
-    const t = Math.min(1, (maintenant - debut) / duree);
-    if (t >= 1){ enVol = false; inclineScene(0); changeVue(but); vise = null; poseVue(); return; }
-    /* Doux au départ et à l'arrivée, sans traîner : une courbe plus creuse
-       laissait le plan immobile le premier tiers du vol, et le choix semblait
-       ne pas avoir été entendu. */
-    const e = (1 - Math.cos(Math.PI * t)) / 2;
-    figeTextes();
-    changeVue(f(e));
-    inclineScene(t);
-    appliqueVue(); echelle();
-    imageZoom = requestAnimationFrame(pas);
-  };
-  imageZoom = requestAnimationFrame(pas);
-}
 
 /**
  * Où un nœud du plan se trouvera quand la vue aura fini son trajet.
@@ -712,6 +632,7 @@ function echelle(){
 /* --- conversion écran → repère du plan --- */
 /** @returns {[number, number]} */
 export function versPlan(/** @type {number} */ clientX, /** @type {number} */ clientY){
+  [clientX, clientY] = redresse(clientX, clientY);
   const r = cadrePlan(), view = vue();
   return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
            +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
@@ -738,3 +659,9 @@ export function brancheVue(){
    lisent la vue et ne peuvent l'importer : elle la leur confie en se
    chargeant — par des lecteurs, puisque chaque geste la remplace. */
 confieAuWebgl({ appliqueVue });
+
+/* Le plan se pose à plat avant que la carte graphique n'arrive, et c'est elle
+   qui incline la vue : le hall cadré d'en haut se retrouvait petit au milieu
+   de la scène. Il se recadre donc quand la caméra entre en jeu, en sort, ou
+   que l'exploitant tourne le hall. */
+CAMERA_CHANGEE.suis(() => { if (emp && vue()) fit(); });

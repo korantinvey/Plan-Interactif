@@ -1,0 +1,187 @@
+/* Le modèle « Vitrine » : la seule écriture qui change la mise en page. */
+/* ------------------------------------------------------------
+   Vitrine
+
+   Les autres modèles habillent cinq pièces posées dans la même grille ;
+   celui-ci déplace aussi la grille. Le plan cesse d'aller d'un bord à l'autre
+   de l'écran : il se pose dans un écrin aux coins ronds, détaché de la page
+   par une marge, et la fiche, le parcours et l'itinéraire deviennent des
+   cartes qui flottent sur son bord droit au lieu d'un volet collé contre lui.
+   C'est l'allure des plans de salon qu'on montre en maquette — beaucoup de
+   blanc, peu de traits, l'ombre plutôt que le filet pour séparer.
+
+   La mise en page tient à la classe « page-vitrine », que `appliqueModele`
+   (modules/habillage.mjs) pose sur la racine : aucune des cinq pièces ne
+   décide de la scène qui les porte. L'habillage, lui, tient aux classes des
+   pièces, comme pour tout modèle — la vignette des réglages les porte en
+   réduction, sans la page autour, et doit se voir pareille.
+
+   Les couleurs restent celles du salon : l'accent remplit le bouton qui agit
+   et marque ce qui est choisi, le reste est un blanc et un gris d'ardoise que
+   le modèle pose pour son compte.
+
+   La feuille vient après toutes les autres (`outils/assemble.js`) : elle
+   reprend des règles écrites pour le téléphone et pour les tiroirs, qu'elle
+   doit pouvoir défaire sans surenchérir de sélecteurs.
+   ------------------------------------------------------------ */
+
+/* Les tons du modèle, posés sur chaque pièce et sur la page. L'ardoise tire un
+   peu vers le bleu : le greige du rendu d'origine, à côté d'un blanc pur,
+   paraissait sale. */
+:is(.modele-vitrine,.liste-vitrine,.bandeau-vitrine),html.page-vitrine{
+  --surface:#FFFFFF;--surface-2:#F2F4F6;
+  --line:#E2E6EA;--line-strong:#C8CFD5;
+  --ink:#14222B;--ink-2:#46555F;--ink-3:#7A8790;
+  --radius:12px;
+  --ombre-carte:0 1px 2px rgba(16,32,42,.05),0 18px 44px -20px rgba(16,32,42,.32)}
+html.page-vitrine{--ground:#EEF1F4;--vitrine-marge:16px}
+
+/* ------------------------------------------------------------
+   La page : le plan dans un écrin
+   ------------------------------------------------------------ */
+/* Au large seulement. Sur un téléphone, le plan prend déjà tout l'écran et
+   ses tiroirs montent du bas : une marge autour du hall y coûterait de la
+   place sans rien dire de plus. */
+@media (min-width:901px){
+  html.page-vitrine .app{background:var(--surface);
+    padding-right:calc(var(--vitrine-marge) + var(--sys-droite));
+    padding-bottom:calc(var(--vitrine-marge) + var(--sys-bas))}
+  /* L'écran est déjà blanc : la barre et la colonne n'ont plus besoin d'un
+     filet pour s'en séparer, c'est l'écrin du plan qui fait la limite. */
+  html.page-vitrine .topbar{border-bottom-color:transparent}
+  html.page-vitrine .side{border-right:none;background:none}
+  /* L'écrin. La coupe suit l'arrondi : la scène coupe déjà tout ce qui en
+     déborde, toile WebGL comprise, et l'arrondi ne vaut que si ce qu'elle
+     porte s'y arrête aussi. Un filet intérieur plutôt qu'une bordure : la
+     bordure aurait retiré deux pixels au cadre que la vue mesure. */
+  html.page-vitrine .stage{border-radius:22px;margin-top:4px;
+    background:var(--c-fond,var(--ground));
+    box-shadow:inset 0 0 0 1px var(--line)}
+
+  /* Les trois tiroirs deviennent des cartes, décollées du bord et du haut de
+     l'écrin. Fermées, elles glissent d'une marge de plus que leur largeur :
+     sans quoi le bord gauche et l'ombre d'une carte rangée restaient à
+     dépasser du plan. Le cadrage (`masqueDroite`, modules/vue.mjs) lit leur
+     largeur au repos et ignore la marge : le stand cadré tombe à seize points
+     plus près de la carte, sans jamais passer dessous. */
+  html.page-vitrine :is(.detail,.parcours,.itineraire){
+    top:14px;right:14px;bottom:14px;width:360px;
+    border:1px solid var(--line);border-radius:20px;overflow:hidden;
+    box-shadow:var(--ombre-carte);
+    transform:translateX(calc(100% + 40px))}
+  html.page-vitrine :is(.detail,.parcours,.itineraire).open{transform:none}
+  /* La mini-carte et la barre de zoom flottent sur le hall comme les cartes :
+     même arrondi, même ombre, plus de filet. */
+  html.page-vitrine .zoombar{left:18px;bottom:18px;border:none;border-radius:14px;
+    box-shadow:var(--ombre-carte);overflow:hidden}
+  html.page-vitrine .zoombar button{width:38px;height:38px}
+  html.page-vitrine .miniCarte{left:18px;top:18px;border-radius:16px;border-color:transparent;
+    box-shadow:var(--ombre-carte)}
+  html.page-vitrine .scalebar{left:72px;bottom:24px}
+}
+
+/* ------------------------------------------------------------
+   Le bandeau
+   ------------------------------------------------------------ */
+.bandeau-vitrine{background:var(--surface);--ton-barre:var(--surface)}
+.bandeau-vitrine .brand h1{font-size:21px;font-weight:700;letter-spacing:-.03em}
+/* Les pavillons en pilules séparées, l'actif plein de la couleur du salon :
+   c'est l'onglet qu'on lit d'abord en arrivant. */
+.bandeau-vitrine .halls{background:none;padding:0;gap:6px}
+.bandeau-vitrine .halls button{padding:7px 15px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface);font-weight:500;color:var(--ink-2)}
+.bandeau-vitrine .halls button:hover{border-color:var(--line-strong);color:var(--ink)}
+.bandeau-vitrine .halls button[aria-pressed="true"]{background:var(--accent-base);
+  border-color:var(--accent-base);color:var(--accent-ink);box-shadow:none}
+.bandeau-vitrine .halls button[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.75}
+.bandeau-vitrine .halls button .n{font-family:inherit}
+.bandeau-vitrine .iconbtn{width:38px;height:38px;border-radius:12px;border-color:var(--line)}
+.bandeau-vitrine .iconbtn svg{width:17px;height:17px}
+.bandeau-vitrine .iconbtn[aria-pressed="true"]{background:var(--accent-base);
+  border-color:var(--accent-base);color:var(--accent-ink)}
+.bandeau-vitrine .compte > summary{width:38px;height:38px;background:var(--accent-base);
+  color:var(--accent-ink)}
+/* La pastille du nombre, ronde et cernée du blanc de la barre : posée sur le
+   coin d'un bouton blanc, elle s'y découpe au lieu de s'y fondre. */
+.bandeau-vitrine .compteur{box-shadow:0 0 0 2px var(--surface)}
+.bandeau-vitrine .fleche{border-color:var(--line)}
+
+/* ------------------------------------------------------------
+   La liste
+   ------------------------------------------------------------ */
+/* La recherche en pilule, comme le champ qu'on cherche des yeux en haut d'un
+   catalogue ; elle se cerne de l'accent quand on y écrit. */
+.liste-vitrine .search{border-bottom:none;padding:16px 16px 10px}
+.liste-vitrine .search :is(input,.champ){border-radius:999px;background:var(--surface);
+  border:1px solid var(--line);padding-top:10px;padding-bottom:10px;
+  box-shadow:0 1px 2px rgba(16,32,42,.04)}
+.liste-vitrine .search input:focus{border-color:var(--accent-base);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent-base) 16%,transparent)}
+.liste-vitrine .crit-btn{width:40px;height:40px;border-radius:999px;background:var(--surface);
+  border-color:var(--line)}
+.liste-vitrine :is(.pan-crit,.actifs,.count){border-bottom:none}
+.liste-vitrine .side-pied{border-top:none}
+.liste-vitrine .actifs .actif{border-color:transparent}
+/* Chaque exposant, une ligne aux coins ronds plutôt qu'un rang entre deux
+   filets. La marge se prend sur la liste et non sur la ligne — voir « Verre » :
+   un bouton desserré se rétracte sur son texte. */
+.liste-vitrine .list{padding:2px 10px 10px}
+.liste-vitrine .row{border-bottom:none;border-radius:12px;padding:9px 10px;margin:1px 0}
+.liste-vitrine .row:hover{background:var(--surface-2)}
+.liste-vitrine .row[aria-current="true"]{background:var(--accent-soft)}
+.liste-vitrine .row .code{border:none;border-radius:8px;background:var(--surface-2);
+  font-family:inherit;font-weight:600;color:var(--ink-2)}
+.liste-vitrine .row[aria-current="true"] .code{background:var(--accent-base);color:var(--accent-ink)}
+.liste-vitrine .row .nm{font-weight:600}
+.liste-vitrine .row .hall{font-family:inherit;border-radius:999px}
+
+/* ------------------------------------------------------------
+   La fiche
+   ------------------------------------------------------------ */
+.modele-vitrine .detail-hd{border-bottom:none;padding-bottom:6px}
+.modele-vitrine .detail-hd{--titre:22px}
+.modele-vitrine .detail-hd h2{font-weight:700;letter-spacing:-.025em;line-height:1.2}
+.modele-vitrine .detail-hd .badge{background:var(--surface-2);border-color:transparent;
+  font-family:inherit;font-weight:500;color:var(--ink-2)}
+/* Le numéro du stand se lit toujours de loin, mais à l'échelle de la carte :
+   aux quatre cinquièmes d'un titre de vingt-deux points, il pesait plus lourd
+   que le nom. */
+.modele-vitrine .detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .66);
+  font-weight:600;color:var(--ink);padding:4px 11px}
+.modele-vitrine :is(.marque,.close,.crayon){border-radius:999px}
+.modele-vitrine .hdActs .marque,.modele-vitrine .detail-hd .close{width:34px;height:34px;
+  display:grid;place-items:center;background:var(--surface-2);border-color:transparent;padding:0}
+.modele-vitrine .hdActs .marque[hidden]{display:none}
+.modele-vitrine .detail-bd{gap:0}
+/* Les champs se séparent d'un filet clair, et l'intitulé se tait en gris :
+   c'est la valeur qu'on vient lire. */
+.modele-vitrine .field{padding:13px 0;gap:4px}
+.modele-vitrine .field + .field{border-top:1px solid var(--line)}
+.modele-vitrine .field .eyebrow{color:var(--ink-3)}
+.modele-vitrine .prog .conf{border-radius:12px}
+/* Les deux actions sur toute la largeur, l'une sous l'autre : l'itinéraire,
+   plein de la couleur du salon, d'abord — c'est ce qu'on fait d'une fiche une
+   fois lue ; centrer sur le plan, en second. */
+.modele-vitrine .acts{flex-direction:column;gap:8px;padding-top:14px}
+.modele-vitrine .acts .btn{width:100%;justify-content:center;text-align:center;
+  border-radius:12px;padding:11px 14px;font-weight:600;font-size:13.5px;
+  border:1px solid var(--line-strong);background:var(--surface)}
+.modele-vitrine .acts .btn:hover{border-color:var(--ink-3)}
+.modele-vitrine .acts .btn.itin{order:-1;background:var(--accent-base);
+  border-color:var(--accent-base);color:var(--accent-ink)}
+.modele-vitrine .acts .btn.itin:hover{filter:brightness(1.08)}
+.modele-vitrine .btn{border-radius:12px}
+
+/* ------------------------------------------------------------
+   Le parcours et l'itinéraire
+   ------------------------------------------------------------ */
+/* Chaque vignette — un stand retenu, un arrêt de la journée, une étape du
+   trajet — devient une carte grise aux coins ronds, et le bilan un aplat du
+   même gris : plus de filet nulle part, comme dans la fiche. */
+.modele-vitrine :is(.pRang .pOuvre,.jArret,.iEtape){border-radius:12px}
+.modele-vitrine :is(.jBilan,.iBilan){border-radius:14px;background:var(--surface-2)}
+.modele-vitrine :is(.iChamp input,.iSugg){border-radius:12px}
+.modele-vitrine :is(.pRang .pOte,.iEchange,.iVise){border-radius:999px}
+.modele-vitrine .pPied{border-top-color:var(--line)}
+.modele-vitrine .pActs{border-bottom-color:transparent}
+.modele-vitrine .pGroupe .jour{border-bottom-color:var(--line)}

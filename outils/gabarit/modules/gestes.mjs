@@ -30,11 +30,11 @@ import { ETROIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
 import { GL, cibleWebgl, confieAuWebgl } from "./webgl.mjs";
-import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit }
-  from "./vue.mjs";
+import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
+  redresse } from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
   fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
-import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme, GARDE_ZOOM } from "./fiche.mjs";
+import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
 import { oublieChoixPoi, ouvrePoi, oublieReperes } from "./points-interet.mjs";
 import { poseBorneIci } from "./borne.mjs";
 import { vibre, PRISE, BUTEE } from "./toucher.mjs";
@@ -295,26 +295,33 @@ export function brancheGestes(){
        l'appui suivant passait pour le second d'un pincement : plus rien ne
        répondait. Le premier doigt d'un geste ouvre donc une table vierge. */
     if (e.isPrimary) doigts.clear();
-    doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    /* Les doigts se comptent sur le plan à plat : en vue immersive, le point
+       touché est d'abord redressé (`redresse`), et glisser comme pincer
+       tiennent alors sous le doigt le point du sol qu'il a saisi. Seule la
+       désignation garde le point de l'écran : la carte graphique vise dans
+       ce qu'elle voit, volumes compris. */
+    const [ex, ey] = redresse(e.clientX, e.clientY);
+    doigts.set(e.pointerId, { x: ex, y: ey });
     if (doigts.size === 2){ commencePince(); return; }
     if (doigts.size > 2) return;
     /* Les outils de l'exploitant passent avant le glisser : le calage de la
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —
        dans cet ordre (`modules/gestes-admin.mjs`). */
     if (admin.appui(e)) return;
-    drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
+    drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false,
              // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
              cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
                              : e.target.closest("[data-id],[data-poi]") };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
   });
   svg.addEventListener("pointermove", e => {
-    if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const [ex, ey] = redresse(e.clientX, e.clientY);
+    if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: ex, y: ey });
     if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
     if (admin.suit(e)) return;
     if (!drag) return;
       const r = cadrePlan(), k = view.w / r.width;
-    const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
+    const dx = (ex - drag.x) * k, dy = (ey - drag.y) * k;
     if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLesBandes(true); }
     view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
   });
@@ -363,11 +370,11 @@ export function brancheGestes(){
         return;
       }
       if (viseItineraire(cible.dataset.id)) return;
-      /* Le stand touché vient au milieu de ce qui reste visible, sans changer
-         le zoom — sur un téléphone, la fiche qui monte du bas l'aurait caché ;
-         sur un grand écran, elle s'ouvre à droite. Le trajet est un vol
-         (`vue.mjs` `voleVers`), comme pour un exposant choisi dans la liste. */
-      select(cible.dataset.id, GARDE_ZOOM, canalPlan(cible), rangSociete(cible));
+      /* Le plan ne bouge pas sous le doigt : on a choisi ce qu'on regarde, et
+         le recentrer à chaque appui — essayé, en glissant puis en volant —
+         donnait la nausée à l'usage. La liste et la recherche, elles, viennent
+         de loin et amènent le plan sur le stand. */
+      select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
     } else { ferme(); finVisee(); }
   });
   svg.addEventListener("pointercancel", e => {
@@ -387,8 +394,9 @@ export function brancheGestes(){
        exponentiel : deux petits mouvements valent alors exactement un grand,
        et un tour de molette garde les dix-huit pour cent qu'il avait. */
     const px = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? r.height : 1);
+    const [ex, ey] = redresse(e.clientX, e.clientY);
     zoom(Math.exp(Math.max(-400, Math.min(400, px)) / 600),
-         (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+         (ex - r.left) / r.width, (ey - r.top) / r.height);
   }, { passive: false });
   svg.addEventListener("keydown", e => {
     const g = e.target.closest("[data-id],[data-poi]");
@@ -403,7 +411,7 @@ export function brancheGestes(){
         return;
       }
       if (!viseItineraire(g.dataset.id))
-        select(g.dataset.id, GARDE_ZOOM, canalPlan(g), rangSociete(g));
+        select(g.dataset.id, false, canalPlan(g), rangSociete(g));
     }
   });
   document.addEventListener("keydown", e => {
