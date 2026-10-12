@@ -33,7 +33,7 @@
  */
 /* Écrit par la construction, jamais versionné : sans lui, pas de déploiement
    (voir `outils/genere.js`). */
-import { VERSION_DES_PAGES, PROJET, APERCU } from "./pages.mjs";
+import { VERSION_DES_PAGES, PROJET, APERCU, SURETE } from "./pages.mjs";
 import { lisCarte, source } from "./carte.mjs";
 
 /* Le projet vient de la construction (`outils/projet.js`), seul endroit qui
@@ -978,127 +978,154 @@ async function chargePrevue(url) {
   });
 }
 
+/**
+ * Les en-têtes de sûreté, sur tout ce que le Worker rend.
+ *
+ * `web/_headers` les pose sur les fichiers servis sans lui, mais pas sur ses
+ * réponses à lui — le plan d'un salon (`/plan-<salon>`), l'API, le manifeste.
+ * La liste vient de la construction (`outils/genere.js` `SURETE`) : une seule
+ * à tenir. Ce que la réponse porte déjà est gardé.
+ *
+ * Aucune restriction de cadre sur le plan d'un salon, qu'un organisateur
+ * intègre à son site ; tout le reste n'a rien à faire dans un cadre.
+ */
+function surete(reponse, url) {
+  const sortie = new Response(reponse.body, reponse);
+  for (const [nom, valeur] of Object.entries(SURETE)) {
+    if (!sortie.headers.has(nom)) sortie.headers.set(nom, valeur);
+  }
+  if (!CHEMIN_SALON.test(url.pathname) && !sortie.headers.has("Content-Security-Policy")) {
+    sortie.headers.set("Content-Security-Policy", "frame-ancestors 'none'");
+  }
+  return sortie;
+}
+
 export default {
   async fetch(requete, env, ctx) {
-    const url = new URL(requete.url);
-    /* Le manifeste est un fichier construit, mais l'adresse qu'il fait rouvrir
-       dépend du salon d'où l'on installe : il passe par ici pour la recevoir. */
-    if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env, ctx);
-    /* Et l'icône que ce manifeste désigne : elle n'est pas un fichier de
-       `web/` mais une colonne de la base, déposée salon par salon. */
-    if (url.pathname === "/api/icone") return iconeApp(url);
-    /* L'adresse propre à un salon, celle que son application ouvre. Elle ne
-       nomme aucun fichier : c'est la page du plan qui s'y rend. */
-    if (CHEMIN_SALON.test(url.pathname)) return pageDuSalon(requete, env);
-    /* Les mesures d'utilisation prennent le même chemin que le plan : même
-       origine que la page, donc rien à configurer si le domaine change. Elles
-       ne sont ni lues ni mises en cache — elles ne font que passer. Le relais
-       répond en outre à toute origine, pour les portes qui ne sont pas servies
-       d'ici : voir `mesure` plus haut. */
-    if (url.pathname === "/api/mesure") return mesure(requete);
-    /* Les erreurs des pages : même origine, et seulement elle. */
-    if (url.pathname === "/api/erreur") return erreur(requete, env);
-    /* Le plan de visite annoncé, et la charge qu'il fait : même chemin, même
-       origine, et deux verbes. Le premier écrit sans rien rendre, le second
-       rend sans rien écrire. */
-    if (url.pathname === "/api/plan-de-visite") return planDeVisite(requete);
-    if (url.pathname === "/api/charge") return chargePrevue(url);
-    /* Les rappels de conférence prennent le même chemin, pour la même raison :
-       l'origine de la page, et rien à reconfigurer si le domaine change. */
-    if (url.pathname === "/api/rappels" || url.pathname === "/api/rappels/cle") {
-      return rappels(requete, url);
-    }
-    // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
-    if (url.pathname === "/api/oublie") return oublie(requete, env);
-    // la construction en ligne : ce qu'un déploiement a vraiment emporté
-    if (url.pathname === "/api/pages") {
-      return new Response(JSON.stringify({ pages: VERSION_DES_PAGES }), {
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
-    }
-    if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
-    /* La question que chaque ouverture de page pose, et la seule : le plan
-       a-t-il changé. Elle se répond du stockage, sans rien relayer. */
-    if (url.searchParams.get("entete")) return entete(url, env, ctx);
-    if (requete.method !== "GET" && requete.method !== "HEAD") {
-      return new Response("Méthode non permise", { status: 405 });
-    }
-
-    const amont = amontPour(url.searchParams);
-    /* Une vignette de logo ne pend d'aucun salon : elle est nommée par
-       l'empreinte de l'adresse d'où elle vient, et c'est tout ce qu'il faut
-       pour la rendre. Exiger un slug ici obligerait la page à en porter un
-       dans chaque adresse d'image, pour rien. */
-    if (!amont.searchParams.get("slug") && !amont.searchParams.get("vignette") &&
-        !amont.searchParams.get("vignettes")) {
-      return dit({ erreur: "Paramètre slug manquant." }, 400);
-    }
-
-    const jeton = requete.headers.get("Authorization");
-    const cache = jeton ? null : cacheDe(env, url);   // une identité contourne le cache
-    // la clé ne retient que les paramètres attendus : deux adresses qui ne
-    // diffèrent que par un paramètre parasite partagent la même entrée
-    const cle = amont.searchParams.get("vignettes")
-      ? await cleDeLot(amont)
-      : cleDe(amont);
-    /* Un lot de vignettes vaut celles qu'il porte : nommé par leurs clés, qui
-       sont les empreintes de ce qu'elles montrent, il ne peut pas être périmé
-       — et la fonction le dit elle-même, en ne déclarant public qu'un lot
-       complet (voir `rendVignettes`). */
-    const immuable = Boolean(amont.searchParams.get("fond") ||
-                             amont.searchParams.get("vignette") ||
-                             amont.searchParams.get("vignettes") ||
-                             /* Le plan sous sa version en fait partie : son
-                                adresse dit ce qu'elle contient, et la fonction
-                                ne la déclare publique que si elle porte bien
-                                la version qui se sert aujourd'hui. */
-                             amont.searchParams.get("v"));
-
-    const entetes = new Headers();
-    if (jeton) entetes.set("Authorization", jeton);
-    const apikey = requete.headers.get("apikey");
-    if (apikey) entetes.set("apikey", apikey);
-
-    if (cache) {
-      /* Un stockage qui refuse — quota du jour épuisé, panne passagère — ne doit
-         pas emporter la visite avec lui : on descend alors jusqu'à la source,
-         comme si l'entrée manquait. C'est la règle que ce fichier suit partout
-         ailleurs, et cette lecture-ci était la seule à l'enfreindre. */
-      const garde = await cache.getWithMetadata(cle, { type: "stream" })
-                               .catch(() => null);
-      if (garde && garde.value) {
-        const perime = Boolean(garde.metadata?.frais) &&
-                       Date.now() > garde.metadata.frais;
-        if (perime) {
-          ctx.waitUntil(rafraichit(cache, cle, amont.toString(), entetes));
-        }
-        const entetes = {
-          "Content-Type": garde.metadata?.ct || "application/json",
-          "Cache-Control": garde.metadata?.cc || "public, max-age=60",
-          "X-Cache": perime ? "stale" : "hit",
-        };
-        // la page compare ce qu'elle tient à ce qui se sert : elle doit la lire
-        // sur une copie gardée comme sur une réponse fraîche
-        if (garde.metadata?.v) entetes["X-Version"] = garde.metadata.v;
-        return new Response(garde.value, { headers: entetes });
-      }
-    }
-
-    const reponse = await fetch(amont.toString(), { headers: entetes });
-    const sortie = new Response(reponse.body, reponse);
-    sortie.headers.set("X-Cache", jeton ? "bypass" : cache ? "miss" : "absent");
-    /* Le corps n'est cloné que si l'entrée part vraiment au cache : un clone
-       qu'on ne lit pas oblige le runtime à tamponner toute la réponse, et un
-       fond de plan pèse deux mégaoctets. */
-    if (gardable(cache, reponse)) {
-      ctx.waitUntil(range(cache, cle, reponse, sortie.clone().body, immuable));
-      /* La version se range à part, et depuis cet appel-ci seulement : c'est le
-         plan sans version qui dit ce qui se sert aujourd'hui, celui qui en
-         porte une disant seulement ce qu'il portait ce jour-là. */
-      const v = reponse.headers.get("X-Version");
-      const slug = amont.searchParams.get("slug");
-      if (v && slug && !immuable) ctx.waitUntil(rangeLaVersion(cache, slug, v));
-    }
-    return sortie;
+    return surete(await aiguille(requete, env, ctx), new URL(requete.url));
   },
 };
+
+/** Ce que chaque chemin rend, avant les en-têtes de sûreté. */
+async function aiguille(requete, env, ctx) {
+  const url = new URL(requete.url);
+  /* Le manifeste est un fichier construit, mais l'adresse qu'il fait rouvrir
+     dépend du salon d'où l'on installe : il passe par ici pour la recevoir. */
+  if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env, ctx);
+  /* Et l'icône que ce manifeste désigne : elle n'est pas un fichier de
+     `web/` mais une colonne de la base, déposée salon par salon. */
+  if (url.pathname === "/api/icone") return iconeApp(url);
+  /* L'adresse propre à un salon, celle que son application ouvre. Elle ne
+     nomme aucun fichier : c'est la page du plan qui s'y rend. */
+  if (CHEMIN_SALON.test(url.pathname)) return pageDuSalon(requete, env);
+  /* Les mesures d'utilisation prennent le même chemin que le plan : même
+     origine que la page, donc rien à configurer si le domaine change. Elles
+     ne sont ni lues ni mises en cache — elles ne font que passer. Le relais
+     répond en outre à toute origine, pour les portes qui ne sont pas servies
+     d'ici : voir `mesure` plus haut. */
+  if (url.pathname === "/api/mesure") return mesure(requete);
+  /* Les erreurs des pages : même origine, et seulement elle. */
+  if (url.pathname === "/api/erreur") return erreur(requete, env);
+  /* Le plan de visite annoncé, et la charge qu'il fait : même chemin, même
+     origine, et deux verbes. Le premier écrit sans rien rendre, le second
+     rend sans rien écrire. */
+  if (url.pathname === "/api/plan-de-visite") return planDeVisite(requete);
+  if (url.pathname === "/api/charge") return chargePrevue(url);
+  /* Les rappels de conférence prennent le même chemin, pour la même raison :
+     l'origine de la page, et rien à reconfigurer si le domaine change. */
+  if (url.pathname === "/api/rappels" || url.pathname === "/api/rappels/cle") {
+    return rappels(requete, url);
+  }
+  // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
+  if (url.pathname === "/api/oublie") return oublie(requete, env);
+  // la construction en ligne : ce qu'un déploiement a vraiment emporté
+  if (url.pathname === "/api/pages") {
+    return new Response(JSON.stringify({ pages: VERSION_DES_PAGES }), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }
+  if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
+  /* La question que chaque ouverture de page pose, et la seule : le plan
+     a-t-il changé. Elle se répond du stockage, sans rien relayer. */
+  if (url.searchParams.get("entete")) return entete(url, env, ctx);
+  if (requete.method !== "GET" && requete.method !== "HEAD") {
+    return new Response("Méthode non permise", { status: 405 });
+  }
+
+  const amont = amontPour(url.searchParams);
+  /* Une vignette de logo ne pend d'aucun salon : elle est nommée par
+     l'empreinte de l'adresse d'où elle vient, et c'est tout ce qu'il faut
+     pour la rendre. Exiger un slug ici obligerait la page à en porter un
+     dans chaque adresse d'image, pour rien. */
+  if (!amont.searchParams.get("slug") && !amont.searchParams.get("vignette") &&
+      !amont.searchParams.get("vignettes")) {
+    return dit({ erreur: "Paramètre slug manquant." }, 400);
+  }
+
+  const jeton = requete.headers.get("Authorization");
+  const cache = jeton ? null : cacheDe(env, url);   // une identité contourne le cache
+  // la clé ne retient que les paramètres attendus : deux adresses qui ne
+  // diffèrent que par un paramètre parasite partagent la même entrée
+  const cle = amont.searchParams.get("vignettes")
+    ? await cleDeLot(amont)
+    : cleDe(amont);
+  /* Un lot de vignettes vaut celles qu'il porte : nommé par leurs clés, qui
+     sont les empreintes de ce qu'elles montrent, il ne peut pas être périmé
+     — et la fonction le dit elle-même, en ne déclarant public qu'un lot
+     complet (voir `rendVignettes`). */
+  const immuable = Boolean(amont.searchParams.get("fond") ||
+                           amont.searchParams.get("vignette") ||
+                           amont.searchParams.get("vignettes") ||
+                           /* Le plan sous sa version en fait partie : son
+                              adresse dit ce qu'elle contient, et la fonction
+                              ne la déclare publique que si elle porte bien
+                              la version qui se sert aujourd'hui. */
+                           amont.searchParams.get("v"));
+
+  const entetes = new Headers();
+  if (jeton) entetes.set("Authorization", jeton);
+  const apikey = requete.headers.get("apikey");
+  if (apikey) entetes.set("apikey", apikey);
+
+  if (cache) {
+    /* Un stockage qui refuse — quota du jour épuisé, panne passagère — ne doit
+       pas emporter la visite avec lui : on descend alors jusqu'à la source,
+       comme si l'entrée manquait. C'est la règle que ce fichier suit partout
+       ailleurs, et cette lecture-ci était la seule à l'enfreindre. */
+    const garde = await cache.getWithMetadata(cle, { type: "stream" })
+                             .catch(() => null);
+    if (garde && garde.value) {
+      const perime = Boolean(garde.metadata?.frais) &&
+                     Date.now() > garde.metadata.frais;
+      if (perime) {
+        ctx.waitUntil(rafraichit(cache, cle, amont.toString(), entetes));
+      }
+      const entetes = {
+        "Content-Type": garde.metadata?.ct || "application/json",
+        "Cache-Control": garde.metadata?.cc || "public, max-age=60",
+        "X-Cache": perime ? "stale" : "hit",
+      };
+      // la page compare ce qu'elle tient à ce qui se sert : elle doit la lire
+      // sur une copie gardée comme sur une réponse fraîche
+      if (garde.metadata?.v) entetes["X-Version"] = garde.metadata.v;
+      return new Response(garde.value, { headers: entetes });
+    }
+  }
+
+  const reponse = await fetch(amont.toString(), { headers: entetes });
+  const sortie = new Response(reponse.body, reponse);
+  sortie.headers.set("X-Cache", jeton ? "bypass" : cache ? "miss" : "absent");
+  /* Le corps n'est cloné que si l'entrée part vraiment au cache : un clone
+     qu'on ne lit pas oblige le runtime à tamponner toute la réponse, et un
+     fond de plan pèse deux mégaoctets. */
+  if (gardable(cache, reponse)) {
+    ctx.waitUntil(range(cache, cle, reponse, sortie.clone().body, immuable));
+    /* La version se range à part, et depuis cet appel-ci seulement : c'est le
+       plan sans version qui dit ce qui se sert aujourd'hui, celui qui en
+       porte une disant seulement ce qu'il portait ce jour-là. */
+    const v = reponse.headers.get("X-Version");
+    const slug = amont.searchParams.get("slug");
+    if (v && slug && !immuable) ctx.waitUntil(rangeLaVersion(cache, slug, v));
+  }
+  return sortie;
+}

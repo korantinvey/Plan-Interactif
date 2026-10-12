@@ -1389,6 +1389,14 @@
   /* L'en-tête mène le tiroir : il lui faut le contrat tactile de la poignée,
      sans quoi le navigateur voit un déplacement de page dans le geste. */
   :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
+  /* Les tiroirs défilent, mais ne s'agrandissent pas. Le plan refuse le
+     pincement au navigateur pour le faire lui-même ; les tiroirs le lui
+     laissaient, et un doigt posé sur l'un d'eux suffisait à agrandir la page
+     entière — tiroir compris, qui débordait alors de l'écran sans moyen d'en
+     revenir. Le navigateur n'accorde un geste à plusieurs doigts que si
+     chaque zone touchée le permet : le retirer ici rend le pincement au seul
+     plan. */
+  :is(.side,.detail,.parcours,.itineraire){touch-action:pan-x pan-y}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   /* Les deux actions passent du pied de la fiche à sa tête. Au pied, elles

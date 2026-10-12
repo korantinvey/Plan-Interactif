@@ -21,7 +21,7 @@
 
    Le calque est posé dans la scène, hors du SVG comme du dessin de la carte
    graphique, et vaut donc pour les deux rendus. Il suit chaque image d'un
-   geste (`suitLaVue`), et guette dans le SVG — que la carte graphique relit
+   geste (`suitLaVue`), dans cette image même, et guette dans le SVG — que la carte graphique relit
    aussi — la sélection et le retrait de la recherche, qui s'y écrivent en
    classes. Il ne prend aucun clic : le stand dessous reste ce qu'on touche.
    ============================================================ */
@@ -29,6 +29,7 @@ import { DATA, P, state } from "./donnees.mjs";
 import { filtre, visibleSurPlan } from "./filtre.mjs";
 import { P_NOM } from "./polices-plan.mjs";
 import { habille } from "./texte-plan.mjs";
+import { unGesteTenu } from "./geste-tenu.mjs";
 import { svg, vue, cadrePlan, masque, masqueHaut, masqueDroite, suitLaVue, versScene } from "./vue.mjs";
 
 /* En deçà de cette taille à l'écran, en pixels, un nom ne se lit pas. */
@@ -53,6 +54,9 @@ let filets = null;
 /** @type {Map<string, { el: HTMLElement, filet: SVGLineElement, w: number, h: number, place: number }>} */
 const etiquettes = new Map();
 let imageDemandee = 0;
+/* La part du plan qu'on voit vraiment, gardée le temps d'un geste. */
+/** @type {{ x: number, y: number, w: number, h: number } | null} */
+let vuDuGeste = null;
 
 function monteCalque(){
   if (calque) return;
@@ -104,9 +108,17 @@ function pose(){
   const cadre = cadrePlan();
   if (!cadre.width) return;
   const pxParM = cadre.width / vue().w;
-  // ce qu'on voit vraiment du plan : sans la barre, le tiroir ni la fiche
-  const vu = { x: 8, y: masqueHaut() + 8, w: cadre.width - masqueDroite() - 16,
-               h: cadre.height - masque() - masqueHaut() - 16 };
+  /* Ce qu'on voit vraiment du plan : sans la barre, le tiroir ni la fiche.
+     Mesuré une fois par geste, et non à chaque image : la barre et la liste
+     se plient au premier mouvement (`gestes.mjs` `plieLesBandes`), et relue
+     en pleine glissade leur position changeait d'une image à l'autre — les
+     étiquettes sautaient de coin en coin, et la lecture forçait une remise
+     en page à chaque image, fiche ouverte surtout. */
+  const tenu = unGesteTenu();
+  const vu = tenu && vuDuGeste || {
+    x: 8, y: masqueHaut() + 8, w: cadre.width - masqueDroite() - 16,
+    h: cadre.height - masque() - masqueHaut() - 16 };
+  vuDuGeste = tenu ? vu : null;
   const dedans = b => b.x >= vu.x && b.y >= vu.y && b.x + b.w <= vu.x + vu.w && b.y + b.h <= vu.y + vu.h;
 
   const l = [];
@@ -169,7 +181,15 @@ function planifie(){
   if (!imageDemandee) imageDemandee = requestAnimationFrame(pose);
 }
 
-suitLaVue(planifie);
+/* La vue, elle, se pose dans l'image même qui la change : `appliqueVue` est
+   appelée depuis une image, et une image demandée de là n'arrive qu'à la
+   suivante. L'étiquette du stand choisi traînait alors d'une image derrière
+   le plan, et sautait pour le rattraper — une saccade à chaque glissé, dès
+   qu'une fiche était ouverte. */
+suitLaVue(() => {
+  if (imageDemandee) cancelAnimationFrame(imageDemandee);
+  pose();
+});
 /* La sélection, la recherche et le changement de pavillon s'écrivent dans le
    SVG — classes des stands, stands remplacés : on y guette ce qui change,
    comme le fait la carte graphique, plutôt que d'être appelé par chacun. */
