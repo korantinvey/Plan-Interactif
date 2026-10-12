@@ -1421,13 +1421,24 @@ const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /**
    cinquièmes. Plus sombre, tout le plan tournait au terne. */
 const MATIERE = { ambient: .8, diffuse: .42, shininess: 4, specularColor: [12, 12, 12] };
 
+/* Ce qui est couché à plat — aplat, trait, image — se peint en vue immersive
+   dans l'ordre du dessin, sans écrire la profondeur. Une pastille et son
+   pictogramme, un cartouche et son logo, sont à la même hauteur ; vus de
+   biais, la carte graphique les départageait par une profondeur qui diffère
+   d'un rien d'un triangle à l'autre, et l'un perçait l'autre en dents de
+   scie : le pictogramme ne se lisait plus. Les volumes, peints avant eux,
+   gardent la leur : un stand devant un repère le cache toujours. */
+const aPlat = () => GL.camera ? { parameters: { depthCompare: "less-equal", depthWriteEnabled: false } } : {};
+
 function couchesDeBloc(acc, cle){
-  const L = deck, out = [];
+  const L = deck, out = [], plat = aPlat();
   const pleins = partage(acc.pleins, acc.prises);
+  // les volumes d'abord : ce qui est à plat se mesure à leur profondeur
+  const couches = [];
   pleins.forEach((liste, k) => {
     const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut && !d.hausse);
-    if (plats.length) out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
-      getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
+    if (plats.length) couches.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat }));
     /* Les stands de la vue immersive : la même couleur, montée en volume. La
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
     if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
@@ -1443,6 +1454,7 @@ function couchesDeBloc(acc, cle){
   if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
     extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
     material: MATIERE }));
+  out.push(...couches);
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
      relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
@@ -1484,7 +1496,7 @@ function couchesDeBloc(acc, cle){
            derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
            par-dessus, il se lit de bout en bout, comme une signalétique au
            sol. */
-        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : {}),
+        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
         jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
         extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
@@ -1508,13 +1520,13 @@ function couchesDeBloc(acc, cle){
         getPath: d => d.path, getColor: d => d.couleur, getWidth: ep / TRAIT_PLEIN, widthUnits: "common",
         widthMinPixels: ep * TRAIT_PLANCHER, widthMaxPixels: ep,
         jointRounded: true, capRounded: false, extensions: constTexte().traits,
-        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2 }));
+        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2, ...plat }));
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
     { pickable: g.items.some(d => d.el || (acc.prises && d.prise)) }));
   acc.images.forEach((d, k) => out.push(new L.BitmapLayer({ id: cle + "-image-" + k, image: d.href,
-    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el || (acc.prises && d.prise)), el: d.el, prise: d.prise })));
+    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el || (acc.prises && d.prise)), el: d.el, prise: d.prise, ...plat })));
   return out;
 }
 
@@ -1858,7 +1870,7 @@ function coucheSurvol(couche){
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   return [new deck.SolidPolygonLayer({ id: "survol", data: aplats, getPolygon: d => d.polygon,
     // l'opacité propre de l'aplat — une zone translucide, un stand écarté — reste la sienne
-    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)] })];
+    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)], ...aPlat() })];
 }
 
 /* Le survol d'un volume, en vue immersive : il n'a pas d'aplat sur lequel se
@@ -1885,7 +1897,7 @@ function coucheFocus(couches){
   if (!aplats.length) return [];
   const t = (GL.modeles.get("survol") || {}).trait || [0, 0, 0, 255];
   return [new deck.PathLayer({ id: "focus", data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
-    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits })];
+    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits, ...aPlat() })];
 }
 
 /* ------------------------------------------------------------
