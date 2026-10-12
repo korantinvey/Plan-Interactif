@@ -1151,9 +1151,13 @@ function poseJeton(el, polygon, couleur, acc){
   const glyphe = r.getAttribute("data-glyphe") || "";
   let ancre = [cx, cy], z = .02, E = ECHELLE_JETON;
   if (OBJETS_REPERE.includes(glyphe)){
-    const obj = objetRepere(glyphe, cx, cy, cote);
+    /* Le sens où il monte, et s'il est tenu par l'exploitant
+       (`outil-escalier.mjs`) : il bleuit alors et sort sa poignée. */
+    const enMain = r.hasAttribute("data-objet-choisi");
+    const obj = objetRepere(glyphe, cx, cy, cote, Number(r.getAttribute("data-sens")) || 0, enMain);
     // l'objet reste au sol du bloc : seul le jeton tourne
-    for (const p of obj.pieces) acc.parent.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] });
+    for (const p of obj.pieces) acc.parent.decor.push({ polygon: p.polygon, haut: p.haut,
+      couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
     if (obj.pieces.length){ ancre = obj.ancre; z = obj.dessus; E = ECHELLE_PASTILLE; }
   }
   jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, e: cote * EPAISSEUR_JETON,

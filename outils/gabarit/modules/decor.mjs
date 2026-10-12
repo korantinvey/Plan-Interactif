@@ -305,8 +305,9 @@ export function meuble(type, anneau, reglage = null, enMain = false){
    change d'étage : l'objet monte sous elle, à l'échelle du hall, et la
    pastille se pose dessus, comme une signalétique.
 
-   Les marches montent vers le haut du plan : vue de face, on voit l'escalier
-   par où l'on y monte.
+   Les marches montent d'office vers le haut du plan : vue de face, on voit
+   l'escalier par où l'on y monte. Mais un escalier réel monte dans le sens du
+   bâtiment, et l'exploitant le tourne (`objetRepere`, son `sens`).
 
    L'objet se mesure à la pastille et non au mètre : un repère se règle en
    taille pour se voir de loin, et un escalier à l'échelle vraie disparaissait
@@ -323,13 +324,73 @@ export const ECHELLE_PASTILLE = .5;
 /**
  * L'objet d'un repère dont la pastille mesure `cote` mètres et se centre en
  * (x, y) ; la hauteur et le point où la pastille se pose.
+ *
+ * `sens` le tourne autour de la pastille, en degrés : à zéro les marches
+ * montent vers le haut du plan, et un escalier réel monte rarement dans ce
+ * sens-là. L'exploitant le tourne (`edition.mjs`, `outil-escalier.mjs`) ; la
+ * pastille, elle, ne tourne pas — son pictogramme reste droit —, elle suit
+ * seulement le haut de l'escalier, où elle se pose.
+ *
+ * `enMain` : l'exploitant tient l'objet, qui porte alors sa poignée au bout
+ * d'une tige, dans le sens de la montée (`poigneeObjet`).
  * @param {string} glyphe
  * @param {number} x
  * @param {number} y
  * @param {number} cote
+ * @param {number} [sens]
+ * @param {boolean} [enMain]
  * @returns {{ pieces: Piece[], dessus: number, ancre: number[] }}
  */
-export function objetRepere(glyphe, x, y, cote = 5){
+export function objetRepere(glyphe, x, y, cote = 5, sens = 0, enMain = false){
+  const o = objetDroit(glyphe, x, y, cote);
+  if (enMain && o.pieces.length){
+    const [hx, hy] = poigneeDroite(glyphe, x, y, cote), r = rayonPoigneeObjet(cote), e = cote * .03;
+    const bord = y - etendueObjet(glyphe, cote) / 2;
+    o.pieces.push({ polygon: [[x - e, bord], [x + e, bord], [x + e, hy], [x - e, hy]], haut: .5, role: "tige" });
+    const rond = [];
+    for (let k = 0; k < 12; k++) rond.push([hx + r * Math.cos(k * Math.PI / 6), hy + r * Math.sin(k * Math.PI / 6)]);
+    o.pieces.push({ polygon: rond, haut: .55, role: "poignee" });
+  }
+  if (!Number.isFinite(sens) || !sens) return o;
+  const tourne = tourneur(x, y, sens);
+  return { pieces: o.pieces.map(p => ({ ...p, polygon: p.polygon.map(tourne) })),
+    dessus: o.dessus, ancre: tourne(o.ancre) };
+}
+
+/** Le passage du repère droit au repère tourné de `sens` degrés autour de (x, y). */
+const tourneur = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ sens) => {
+  const t = sens * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+  return (/** @type {number[]} */ p) => [x + (p[0] - x) * c - (p[1] - y) * s, y + (p[0] - x) * s + (p[1] - y) * c];
+};
+
+/** La longueur de l'objet dans le sens de la montée, en mètres. */
+const etendueObjet = (/** @type {string} */ glyphe, /** @type {number} */ cote) =>
+  glyphe === "ascenseur" ? cote * .8 : cote * 1.3;
+
+/** Le rayon de la poignée d'un objet, à la mesure de sa pastille. */
+export const rayonPoigneeObjet = (/** @type {number} */ cote) => Math.max(.3, cote * .12);
+
+/** La poignée, avant que l'objet ne tourne : au-delà du haut des marches, assez loin
+ *  pour ne pas se cacher sous la pastille qui s'y pose. */
+const poigneeDroite = (/** @type {string} */ glyphe, /** @type {number} */ x, /** @type {number} */ y,
+  /** @type {number} */ cote) => [x, y - etendueObjet(glyphe, cote) / 2 - cote * .85];
+
+/**
+ * Le milieu de la poignée qui tourne l'objet d'un repère tenu : au-delà du
+ * haut de l'escalier, dans le sens où l'on monte. L'outil la vise au même
+ * endroit que le dessin la pose.
+ * @param {string} glyphe
+ * @param {number} x
+ * @param {number} y
+ * @param {number} cote
+ * @param {number} sens
+ */
+export function poigneeObjet(glyphe, x, y, cote, sens){
+  return tourneur(x, y, sens || 0)(poigneeDroite(glyphe, x, y, cote));
+}
+
+/** L'objet tel qu'il se pose droit, les marches montant vers le haut du plan. */
+function objetDroit(/** @type {string} */ glyphe, /** @type {number} */ x, /** @type {number} */ y, cote = 5){
   /** @type {Piece[]} */
   const pieces = [];
   const boite = (/** @type {number} */ x0, /** @type {number} */ y0, /** @type {number} */ x1,
