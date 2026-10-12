@@ -39,7 +39,8 @@ import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, gliss
 import { versItineraire } from "./tiroir-itineraire.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } from "./corps-fiche.mjs";
-import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable, adresseVignette } from "./recherche.mjs";
+import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable } from "./recherche.mjs";
+import { adresseVignette } from "./vignettes.mjs";
 import { libelles, coexChoisit } from "./libelles.mjs";
 import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";

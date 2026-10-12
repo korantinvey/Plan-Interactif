@@ -22,6 +22,7 @@ import { P } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { PLAN_ADMIN } from "./salon.mjs";
 import { demandeCamera } from "./camera.mjs";
+import { CLASSE_LOGOS } from "./logos-stands.mjs";
 
 const racine = document.documentElement;
 
@@ -39,6 +40,14 @@ export const AMBIANCES = [
 const ESSAI = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("ambiance");
 /* Et le cap de l'immersif de même : « ?cap=-8 ». */
 const ESSAI_CAP = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("cap");
+
+/* Et les logos sur les stands : « ?logos=1 », ou « ?logos=0 » pour les taire. */
+const ESSAI_LOGOS = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("logos");
+
+/** Les logos remplacent-ils les noms des stands de près, en vue immersive ? */
+export function logosRetenus(){
+  return ESSAI_LOGOS !== null ? ESSAI_LOGOS === "1" : conf("_ambiance").logos === true;
+}
 
 /** Le cap de la vue immersive, en degrés : de face quand rien n'est réglé. */
 export function capRetenu(){
@@ -155,6 +164,7 @@ export function appliqueAmbiance(){
   AMBIANCES.forEach(x => racine.classList.toggle("ambiance-" + x.cle,
     x.cle === a || (x.cle === "tuiles" && enTuiles)));
   demandeCamera(a === "immersif", capRetenu());
+  racine.classList.toggle(CLASSE_LOGOS, a === "immersif" && logosRetenus());
   /* Le cap se dit aussi sur la racine : c'est par elle que le dessin apprend
      qu'il doit refaire sa vue — il guette sa classe et son style (`webgl.mjs`),
      et un cap qui tourne ne change aucune classe. */

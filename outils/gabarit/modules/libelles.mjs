@@ -34,6 +34,7 @@ import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./trace-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
+import { logoPose, cedeAuLogo } from "./logos-stands.mjs";
 import { boite } from "./forme-choisie.mjs";
 import { decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme, nomSurLePlan } from "./dessin.mjs";
 
@@ -241,7 +242,10 @@ export function libellesWebgl(){
     const sel = s.id === state.sel && !decoupe;
     if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
     const ps = place(s), reg = placementLibelle(s);
+    const avant = items.length, avantPastilles = pastilles.length;
     emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
+    // de près, le logo posé sur le toit tient lieu de nom (`logos-stands.mjs`)
+    if (logoPose(s)){ cedeAuLogo(items, avant); cedeAuLogo(pastilles, avantPastilles); }
   }
   /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
      calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
