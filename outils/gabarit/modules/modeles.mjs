@@ -42,6 +42,8 @@ export const MODELES = [
     resume: "Le programme en ligne de temps, et la liste égrenée le long du même rail." },
   { cle: "nu", nom: "Nu",
     resume: "Ni cadre ni libellés : la hiérarchie typographique seule." },
+  { cle: "vitrine", nom: "Vitrine",
+    resume: "Le plan dans un écrin, la fiche et le parcours en cartes qui flottent à côté." },
 ];
 export const modeleRetenu = () => {
   const c = (CONF["_fiche"] || {}).modele;

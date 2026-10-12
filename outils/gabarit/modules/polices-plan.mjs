@@ -64,7 +64,7 @@ export let P_CODE = ["500", '"IBM Plex Mono", monospace'];
    déjà sur le nom et sur le numéro de ses lignes de liste — celui du plan est
    le même nom, écrit sur la cloison plutôt que dans la marge.
 
-   Les onze sont nommés, y compris ceux qui gardent le rendu d'origine : c'est
+   Les douze sont nommés, y compris ceux qui gardent le rendu d'origine : c'est
    la table qu'on relit pour vérifier qu'un modèle dit la même chose des deux
    côtés, et un modèle absent s'y verrait comme un oubli plutôt que comme un
    choix. */
@@ -84,6 +84,7 @@ const POLICES_LIBELLE = {
   signal:   { nom: ["700", P_SANS],      code: ["600", P_CHASSE] },
   chrono:   { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
   nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  vitrine:  { nom: ["600", P_SANS],      code: ["600", P_SANS] },
 };
 
 /* Les polices qu'on peut préférer à celle du modèle, pour les noms du plan.

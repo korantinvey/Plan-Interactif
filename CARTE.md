@@ -126,6 +126,8 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-plan.css` — 1691 l. → plan-smcl.html
 
+### `_styles-vitrine.css` — 187 l. → plan-smcl.html
+
 ### `_sw.js` — 567 l.
 
 Fonctions :
@@ -1286,7 +1288,7 @@ Importé par :
 
 reglage-sponsor · reglage-suggestion · reglages
 
-### `modules/habillage.mjs` — 152 l. → plan, plan-admin
+### `modules/habillage.mjs` — 157 l. → plan, plan-admin
 
 - l.1 · L'habillage du plan — couleur principale, fond, barre du salon, modèle
 
@@ -1629,13 +1631,13 @@ bande-admin · batiments · calage-carte · chaleur · demarrage · dessin · ed
 edition-en-cours · emplacements · enregistrement · fiche · gestes-admin · index-salon
 nappe · outil-dessin · pile · placement-libelles · rendu · reprise-emplacements · volets
 
-### `modules/modeles.mjs` — 88 l. → plan, plan-admin
+### `modules/modeles.mjs` — 90 l. → plan, plan-admin
 
 - l.1 · Les modèles d'habillage du plan
 
 Fonctions :
 
-`modeleRetenu` 46 · `habilleModale` 80
+`modeleRetenu` 48 · `habilleModale` 82
 
 Importe :
 
@@ -2026,14 +2028,14 @@ Importé par :
 
 gestes · ligne-liste
 
-### `modules/polices-plan.mjs` — 328 l. → plan, plan-admin
+### `modules/polices-plan.mjs` — 329 l. → plan, plan-admin
 
 - l.1 · La police des noms sur le plan — celle du modèle, ou une autre de la liste
 
 Fonctions :
 
-`confieAuxPolices` 43 · `policeChoisie` 209 · `policeDuModele` 214 · `feuillePolice` 224
-`chargePolice` 246 · `policePrete` 266 · `policeDesNoms` 284 · `posePoliceLibelles` 313
+`confieAuxPolices` 43 · `policeChoisie` 210 · `policeDuModele` 215 · `feuillePolice` 225
+`chargePolice` 247 · `policePrete` 267 · `policeDesNoms` 285 · `posePoliceLibelles` 314
 
 Importe :
 

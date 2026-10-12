@@ -143,6 +143,11 @@ export function appliqueModele(){
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
   pose($("bandeau"), "bandeau-");
+  /* Et sur la page même, pour le seul modèle qui en change la mise en page :
+     « Vitrine » pose le plan dans un écrin et fait flotter les tiroirs à côté,
+     ce qu'aucune des cinq pièces ne peut décider de chez elle — la scène qui
+     les porte n'en est pas une. */
+  pose(document.documentElement, "page-");
   // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
   habilleModale();
   posePoliceLibelles(cle);
