@@ -1402,12 +1402,17 @@ function couchesLibellesWebgl(){
        du même écart que son volume (`animeCouche`). Les autres restent
        ensemble — ce sont eux qu'on ne recalcule pas. */
     const mobiles = haussesParId();
-    const fixes = GL.libelles.filter(d => !mobiles.has(d.lbl));
-    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", fixes))];
+    const fixes = mobiles.size ? GL.libelles.filter(d => !mobiles.has(d.lbl)) : GL.libelles;
+    /* Chaque liste a sa clé dans le cache des groupes : sous la même, le nom
+       qui monte reprenait les groupes de tous les autres, et le plan entier
+       se peignait deux fois, décalé — tous les noms paraissaient flous le
+       temps du mouvement. */
+    const cleFixes = mobiles.size ? "labels-sans|" + [...mobiles.keys()].join("|") : "labels";
+    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms(cleFixes, fixes))];
     for (const [id, h] of mobiles){
       const siens = GL.libelles.filter(d => d.lbl === id);
       if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
-        groupesNoms("labels", siens)).map(c => c.clone({ hausseTexte: h })));
+        groupesNoms("labels-hausse|" + id, siens)).map(c => c.clone({ hausseTexte: h })));
     }
   }
   return GL.couchesLibelles;
@@ -1768,8 +1773,9 @@ function animeWebgl(now){
   // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
   for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34){
     hausses.delete(g);
-    // arrivé : son nom rejoint les autres
+    // arrivé : son nom rejoint les autres, et les groupes du mouvement s'oublient
     GL.couchesLibelles = null;
+    for (const k of [...GL.groupes.keys()]) if (/^labels-(sans|hausse)\|/.test(k)) GL.groupes.delete(k);
   }
   if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
     GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;

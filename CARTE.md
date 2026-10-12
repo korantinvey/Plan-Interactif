@@ -2946,7 +2946,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 1830 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1836 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -2967,15 +2967,15 @@ Fonctions :
 `hauteurHausse` 1172 · `echelleHausse` 1177 · `haussesParId` 1180 · `couchesDeBloc` 1194
 `modelesLibellesHtml` 1306 · `poseModelesLibelles` 1316 · `lisModelesLibelles` 1322
 `groupesNoms` 1355 · `couchesNoms` 1372 · `couchesPastilles` 1383
-`couchesLibellesWebgl` 1398 · `couchesDessineesWebgl` 1417 · `stage` 1438
-`brancheSurvolWebgl` 1442 · `poseSurvolWebgl` 1462 · `enTuiles` 1491 · `hauteurTuile` 1499
-`visePour` 1505 · `gonfleSurvol` 1510 · `coucheTuileSoulevee` 1532 · `couchesTuiles` 1562
-`poseCurseurWebgl` 1580 · `poseFocusWebgl` 1589 · `aplatsDe` 1596 · `coucheSurvol` 1599
-`coucheFocus` 1608 · `couchesPhare` 1635 · `lueurDe` 1652 · `opacitePhare` 1690
-`echellePhare` 1691 · `couchesPhareNoms` 1694 · `palierDefile` 1719 · `periodeDe` 1724
-`phaseDe` 1726 · `animeCouche` 1732 · `majAnimationWebgl` 1755 · `animeWebgl` 1763
-`objetSous` 1797 · `cibleWebgl` 1804 · `priseWebgl` 1811 · `libelleSousWebgl` 1816
-`rectEcranWebgl` 1821
+`couchesLibellesWebgl` 1398 · `couchesDessineesWebgl` 1422 · `stage` 1443
+`brancheSurvolWebgl` 1447 · `poseSurvolWebgl` 1467 · `enTuiles` 1496 · `hauteurTuile` 1504
+`visePour` 1510 · `gonfleSurvol` 1515 · `coucheTuileSoulevee` 1537 · `couchesTuiles` 1567
+`poseCurseurWebgl` 1585 · `poseFocusWebgl` 1594 · `aplatsDe` 1601 · `coucheSurvol` 1604
+`coucheFocus` 1613 · `couchesPhare` 1640 · `lueurDe` 1657 · `opacitePhare` 1695
+`echellePhare` 1696 · `couchesPhareNoms` 1699 · `palierDefile` 1724 · `periodeDe` 1729
+`phaseDe` 1731 · `animeCouche` 1737 · `majAnimationWebgl` 1760 · `animeWebgl` 1768
+`objetSous` 1803 · `cibleWebgl` 1810 · `priseWebgl` 1817 · `libelleSousWebgl` 1822
+`rectEcranWebgl` 1827
 
 Importe :
 
