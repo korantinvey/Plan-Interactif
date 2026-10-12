@@ -38,7 +38,7 @@ module.exports = [
   "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
-  "FiltreZoom", "-petit", "-grand", "-pleins-", "-volumes-", "-decor", "-traits-z-", "-textes-", "-image-",
+  "FiltreZoom", "-petit", "-grand", "-pleins-", "-volumes-", "-decor", "-hausse-", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
   "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",

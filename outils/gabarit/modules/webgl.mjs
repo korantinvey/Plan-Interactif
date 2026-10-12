@@ -1010,9 +1010,10 @@ function formeGl(el, cs, m, op, traces, acc){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el);
     const couleur = haut ? opaque(plein) : plein;
+    const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
     for (const polygon of avecTrous(anneaux)){
       const monte = monteeRepere(el, polygon, acc);
-      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, el: cible, prise, haut });
+      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, el: cible, prise, haut, hausse });
       if (haut) meubleZone(el, polygon, couleur, acc);
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
@@ -1137,15 +1138,38 @@ const partage = (liste, prises, deja) => {
 const designeGl = (d) => d.el || d.prise;
 
 /* Le stand qu'on choisit monte, celui qu'on quitte redescend : en un quart
-   de seconde, et non d'un coup. La bibliothèque glisse d'elle-même d'une
-   hauteur à l'autre quand le bloc se reconvertit — le stand garde son rang
-   dans la liste, c'est par lui qu'elle sait qui bouge. Un geste plus long se
-   ferait attendre ; plus court, il ne se verrait pas. */
+   de seconde, et non d'un coup. Un geste plus long se ferait attendre ; plus
+   court, il ne se verrait pas.
+
+   La bibliothèque sait glisser d'une valeur à l'autre, mais pas ici : le bloc
+   des stands se reconvertit en entier à chaque sélection, et sa transition
+   repartait de la hauteur d'arrivée — le stand sautait. On anime donc nous-
+   mêmes. La conversion note la hauteur de chaque volume ; celui dont la
+   hauteur change se peint, le temps du mouvement, dans une couche à lui, à sa
+   hauteur d'arrivée, et la boucle d'animation (`animeCouche`) en règle
+   l'échelle d'une image à l'autre — un seul nombre, rien ne se recalcule. */
 const DUREE_HAUSSE = 260;
 const sortie = (/** @type {number} */ t) => 1 - Math.pow(1 - t, 3);
-// qui demande moins de mouvement voit le stand changer de hauteur d'un coup
-const transitionHauteur = () => MOUVEMENT_REDUIT.matches ? {}
-  : { getElevation: { duration: DUREE_HAUSSE, easing: sortie } };
+/** @type {WeakMap<Element, number>} la dernière hauteur peinte de chaque volume */
+const hauteursPeintes = new WeakMap();
+/** @type {Map<Element, { de: number, vers: number, t0: number }>} les volumes en mouvement */
+const hausses = new Map();
+/** Le volume vient-il de changer de hauteur ? On le note, et l'on dit s'il bouge. */
+function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
+  const avant = hauteursPeintes.get(g);
+  hauteursPeintes.set(g, haut);
+  // qui demande moins de mouvement le voit changer de hauteur d'un coup
+  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches)
+    hausses.set(g, { de: avant, vers: haut, t0: performance.now() });
+  const h = hausses.get(g);
+  if (h && (h.vers !== haut || performance.now() - h.t0 >= DUREE_HAUSSE)){ hausses.delete(g); return null; }
+  return h || null;
+}
+/** Où en est un volume en mouvement, en fraction de sa hauteur d'arrivée. */
+function echelleHausse(/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant){
+  const t = Math.min(1, Math.max(0, (maintenant - h.t0) / DUREE_HAUSSE));
+  return (h.de + (h.vers - h.de) * sortie(t)) / h.vers;
+}
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
@@ -1158,14 +1182,19 @@ function couchesDeBloc(acc, cle){
   const L = deck, out = [];
   const pleins = partage(acc.pleins, acc.prises);
   pleins.forEach((liste, k) => {
-    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut);
+    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut && !d.hausse);
     if (plats.length) out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
     /* Les stands de la vue immersive : la même couleur, montée en volume. La
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
     if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
       extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE, transitions: transitionHauteur() }));
+      material: MATIERE }));
+    // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
+    liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
+      id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
+      extruded: true, getPolygon: x => x.polygon, getFillColor: x => x.couleur, getElevation: x => x.haut,
+      material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) })));
   });
   if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
     extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
@@ -1676,6 +1705,7 @@ const phaseDe = (c, t) => {
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
+  if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, GL.maintenant || performance.now()) });
   const ph = c.props.phare;
   if (ph && GL.animePhare){
     // les courbes de « pulseZone » et « pulsePoi » : 1 → 0,58 → 1, et 1 → 1,14 → 1
@@ -1697,17 +1727,24 @@ function majAnimationWebgl(){
   const couches = [...GL.blocs.values()].flat();
   GL.animePhare = GL.bouge && document.documentElement.classList.contains("poi-actif") &&
     (GL.libellesPhare.length > 0 || couches.some(c => c.props.phare));
-  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile));
+  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile)) || hausses.size > 0;
   if (GL.anime && !GL.imageAnim) GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
 function animeWebgl(now){
   GL.imageAnim = 0;
   if (!GL.actif || !GL.anime) return;
   GL.temps = now / 1000;
+  GL.maintenant = now;
+  // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
+  for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34) hausses.delete(g);
+  if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
+    GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
+  }
   /* Tout le plan se redessine quand une couche change : le battement se
      contente donc de trente images par seconde, et le défilement seul ne
      redessine qu'à chacun de ses paliers. */
-  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps);
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
+    (hausses.size ? "|" + Math.round(now) : "");
   if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
