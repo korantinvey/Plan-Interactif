@@ -38,7 +38,7 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS, CHEVEUX, OMBRE } from "./figurants.mjs";
 import { grille, PAS_GRILLE } from "./itineraire.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -1241,10 +1241,12 @@ function meubleZone(el, polygon, couleur, acc){
    pavillon, et les couches gardent leurs données tant qu'elle ne change
    pas : la carte graphique ne les reçoit qu'une fois.
 
-   Trois maillages répétés (`SimpleMeshLayer`) et non des volumes montés à
-   la main : une silhouette — deux jambes, des épaules, une tête ronde — que
-   des prismes empilés ne savaient pas faire, et qui ne coûte qu'une position
-   par figurant.
+   Des maillages répétés (`SimpleMeshLayer`) et non des volumes montés à la
+   main : une silhouette — deux jambes, des épaules, une tête ronde — que des
+   prismes empilés ne savaient pas faire, et qui ne coûte qu'une position par
+   figurant. L'ombre, un voile, n'écrit pas la profondeur : posée à quatre
+   millimètres du sol, elle cacherait sinon le trait d'un itinéraire peint
+   après elle.
    ------------------------------------------------------------ */
 /** @type {{ grille: any, couches: any[], maillages: any }} */
 const FIGURANTS = { grille: null, couches: [], maillages: null };
@@ -1260,12 +1262,16 @@ function couchesFigurants(){
       getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
       getScale: (/** @type {any} */ f) => [1, 1, f.taille] };
     FIGURANTS.couches = [
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
+        getColor: OMBRE, getScale: [1, 1, 1], parameters: { depthWriteEnabled: false } }),
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-bas", mesh: M.bas,
         getColor: (/** @type {any} */ f) => TENUES[f.tenue].bas }),
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-haut", mesh: M.haut,
         getColor: (/** @type {any} */ f) => TENUES[f.tenue].haut }),
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-tete", mesh: M.tete,
         getColor: (/** @type {any} */ f) => TEINTS[f.peau] }),
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-cheveux", mesh: M.cheveux,
+        getColor: (/** @type {any} */ f) => CHEVEUX[f.cheveux] }),
     ];
   }
   return FIGURANTS.couches;

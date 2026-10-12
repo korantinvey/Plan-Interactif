@@ -105,7 +105,7 @@ function croix(w, h, l, deg = 0){
       nom + " : des triangles entiers, une normale par sommet");
   }
   dit(Math.abs(etendue(M.bas, 2)[0]) < 1e-9, "les pieds au sol");
-  const sommet = etendue(M.tete, 2)[1];
+  const sommet = Math.max(...Object.values(M).map(m => etendue(m, 2)[1]));
   dit(Math.abs(sommet - HAUTEUR_FIGURANT) < 1e-6, "la hauteur annoncée est celle du maillage");
   // un visiteur devant une cloison de deux mètres cinquante : les deux tiers
   const part = sommet / HAUTEUR_STAND;
@@ -116,6 +116,14 @@ function croix(w, h, l, deg = 0){
   const svelte = sommet / carrure;
   dit(svelte > 2.4, "une silhouette, pas une borne", "hauteur / carrure = " + svelte.toFixed(1));
   dit(etendue(M.tete, 2)[0] >= etendue(M.haut, 2)[1] - .02, "la tête sur les épaules");
+  dit(etendue(M.cheveux, 2)[1] > etendue(M.tete, 2)[1], "les cheveux coiffent la tête");
+  dit(etendue(M.cheveux, 2)[0] > etendue(M.tete, 2)[0] + .05, "le visage reste à découvert");
+  dit(etendue(M.ombre, 2)[1] < .01, "l'ombre reste au sol");
+  // deux jambes qu'on voit séparées, et non un seul pilier
+  const v = M.bas.attributes.positions.value;
+  let creux = Infinity;
+  for (let i = 0; i < v.length; i += 3) if (v[i + 2] > .3) creux = Math.min(creux, Math.abs(v[i + 1]));
+  dit(creux > .015, "un jour entre les jambes", (2 * creux * 100).toFixed(1) + " cm à mi-cuisse");
   dit(etendue(M.haut, 0)[1] - etendue(M.haut, 0)[0] < carrure, "plus large que profond");
 
   if (ko){ console.log("\n" + ko + " échec(s)"); process.exit(1); }

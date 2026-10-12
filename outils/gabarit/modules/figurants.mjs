@@ -71,6 +71,7 @@ export function graineDe(/** @type {string} */ id){
  * @property {number} y
  * @property {number} tenue    l'indice de sa tenue dans `TENUES`
  * @property {number} peau     l'indice de son teint dans `TEINTS`
+ * @property {number} cheveux  l'indice de leur couleur dans `CHEVEUX`
  * @property {number} taille   sa hauteur, en part de la hauteur type
  * @property {number} cap      le sens où il regarde, en degrés autour de la verticale
  */
@@ -127,7 +128,7 @@ export function placeFigurants(g, pas, graine){
   const marche = (/** @type {number} */ i) => i >= 0 && g.nappe[i] && g.marge[i] >= 2;
   const nouveau = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ cap) => ({ x, y,
     tenue: Math.floor(tire() * TENUES.length), peau: Math.floor(tire() * TEINTS.length),
-    taille: .92 + tire() * .16, cap });
+    cheveux: Math.floor(tire() * CHEVEUX.length), taille: .92 + tire() * .16, cap });
   /* On marche dans le sens d'une allée, pas en travers : le cap suit l'un des
      quatre sens de la grille, tournée avec le hall, à quelques degrés près. */
   const angleHall = Math.atan2(g.si, g.co) * 180 / Math.PI;
@@ -170,6 +171,13 @@ export const TENUES = [
 
 export const TEINTS = [[240, 206, 178], [222, 178, 142], [176, 124, 92], [118, 82, 60]];
 
+/* Des cheveux plus sombres que le visage, presque toujours : c'est ce
+   contraste qui fait lire une tête, de loin, et non une boule beige. */
+export const CHEVEUX = [[42, 32, 26], [28, 26, 26], [86, 58, 38], [62, 44, 32], [148, 112, 64], [150, 150, 152]];
+
+/** L'ombre au sol : un voile, qui pose le figurant sans rien cacher de l'allée. */
+export const OMBRE = [24, 28, 38, 34];
+
 /* ------------------------------------------------------------
    La silhouette
 
@@ -184,23 +192,32 @@ export const TEINTS = [[240, 206, 178], [222, 178, 142], [176, 124, 92], [118, 8
    quatre de front tiennent dans une allée de deux mètres, comme dans le
    vrai salon.
 
-   Trois maillages — le bas, le haut, la tête — que la carte graphique répète
-   pour chaque figurant, chacun teint de sa couleur. Un figurant y coûte
-   trois positions, et non trois cents sommets.
+   Le dessin est celui des maquettes d'architecte : peu de formes, franches.
+   Deux jambes bien séparées, les bras dans la couleur du haut le long du
+   corps, une tête un peu forte coiffée de cheveux sombres, et une ombre
+   douce au sol, sans laquelle un figurant flotte au-dessus de l'allée.
+
+   Cinq maillages — l'ombre, le bas, le haut, la tête, les cheveux — que la
+   carte graphique répète pour chaque figurant, chacun teint de sa couleur.
+   Un figurant y coûte une position, et non trois cents sommets.
    ------------------------------------------------------------ */
-/* Saisis en pleine marche, et non au garde-à-vous. Droits, jambes et bras
-   collés au corps, ils se lisaient comme des plots posés dans l'allée : ce
-   qui dit qu'on marche, c'est le pas. Les jambes partent donc en compas de la
-   hanche — l'une devant, l'autre derrière —, les bras balancent à l'inverse,
-   et le buste penche un peu vers l'avant, la tête avec lui. Immobiles
+/* Saisis en marche, et non au garde-à-vous. Droits, jambes et bras collés
+   au corps, ils se lisaient comme des plots posés dans l'allée : ce qui dit
+   qu'on marche, c'est le pas. Les jambes partent donc en compas de la
+   hanche, les bras balancent à l'inverse, et le buste penche un rien vers
+   l'avant. Un pas tranquille, de salon, et non une course. Immobiles
    pourtant : la pose suffit à l'œil, et le plan ne s'anime pas tout seul. */
-const JAMBE = { pied: .17, hanche: .02, ecart: .065, rayon: .058, haut: .5 };
-const BUSTE = { bas: .48, haut: .86, larg: [.12, .15], prof: [.1, .115], penche: .035 };
-const BRAS = { epaule: .02, main: .14, ecart: .17, rayon: .035, bas: .52, haut: .84 };
-const TETE = { avance: .045, centre: .96, rayon: .092 };
+const JAMBE = { pied: .12, hanche: .02, ecart: .075, rayon: .052, haut: .5 };
+const BUSTE = { bas: .48, haut: .86, larg: [.12, .15], prof: [.1, .115], penche: .025 };
+const BRAS = { main: .1, ecart: .175, rayon: .036, bas: .53, haut: .84 };
+const TETE = { avance: .03, centre: .965, rayon: .1 };
+/* Les cheveux : une calotte un peu plus grande que la tête, tirée vers
+   l'arrière — de face on voit le visage, de dos la chevelure. */
+const COIFFE = { gonfle: 1.08, recul: .018, monte: .008, part: .55 };
+const OMBRE_SOL = { long: .26, large: .18, haut: .004 };
 
 /** La hauteur d'un figurant de taille type, en mètres. */
-export const HAUTEUR_FIGURANT = TETE.centre + TETE.rayon;
+export const HAUTEUR_FIGURANT = TETE.centre + COIFFE.monte + TETE.rayon * COIFFE.gonfle;
 
 /**
  * Un tronc elliptique entre deux hauteurs, fermé en haut, ses faces en
@@ -230,20 +247,31 @@ function tronc(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @ty
   }
 }
 
-/** Une boule à facettes, ses normales tirées de son centre. */
+/** Une boule à facettes, ses normales tirées de son centre ; ou sa seule
+ *  calotte, du sommet jusqu'à la part `part` de sa hauteur. */
 function boule(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @type {number} */ cx,
-  /** @type {number} */ cz, /** @type {number} */ r, nLat = 6, nLon = 10){
+  /** @type {number} */ cz, /** @type {number} */ r, nLat = 6, nLon = 10, part = 1, cy = 0){
   const pt = (/** @type {number} */ i, /** @type {number} */ j) => {
-    const t = i * Math.PI / nLat, p = j * 2 * Math.PI / nLon;
+    const t = i * part * Math.PI / nLat, p = j * 2 * Math.PI / nLon;
     return [Math.sin(t) * Math.cos(p), Math.sin(t) * Math.sin(p), Math.cos(t)];
   };
   for (let i = 0; i < nLat; i++) for (let j = 0; j < nLon; j++){
     const q = [pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1)];
     for (const k of [0, 1, 2, 0, 2, 3]){
       const v = q[k];
-      pos.push(cx + v[0] * r, v[1] * r, cz + v[2] * r);
+      pos.push(cx + v[0] * r, cy + v[1] * r, cz + v[2] * r);
       nor.push(...v);
     }
+  }
+}
+
+/** Une ellipse couchée au sol, en éventail. */
+function disque(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @type {number} */ rx,
+  /** @type {number} */ ry, /** @type {number} */ z, n = 16){
+  for (let k = 0; k < n; k++){
+    const a = k * 2 * Math.PI / n, b = (k + 1) * 2 * Math.PI / n;
+    pos.push(0, 0, z, rx * Math.cos(a), ry * Math.sin(a), z, rx * Math.cos(b), ry * Math.sin(b), z);
+    nor.push(0, 0, 1, 0, 0, 1, 0, 0, 1);
   }
 }
 
@@ -259,11 +287,14 @@ const maillage = (/** @type {(pos: number[], nor: number[]) => void} */ fait) =>
 };
 
 /**
- * Les trois maillages d'un figurant, debout à l'origine, regardant vers les
- * x : le bas — les deux jambes —, le haut — buste et bras —, et la tête.
+ * Les maillages d'un figurant, debout à l'origine, regardant vers les x :
+ * son ombre, le bas — les deux jambes —, le haut — buste et bras —, la tête
+ * et les cheveux.
  */
 export function maillagesFigurant(){
   return {
+    // l'ombre s'allonge dans le sens du pas, sous les deux pieds
+    ombre: maillage((pos, nor) => disque(pos, nor, OMBRE_SOL.long, OMBRE_SOL.large, OMBRE_SOL.haut)),
     // chaque jambe, du pied à la hanche : la droite devant, la gauche derrière
     bas: maillage((pos, nor) => {
       const r = [JAMBE.rayon, JAMBE.rayon];
@@ -276,7 +307,12 @@ export function maillagesFigurant(){
       const r = [BRAS.rayon, BRAS.rayon];
       for (const s of [-1, 1]) tronc(pos, nor, -s * BRAS.main, s * BRAS.ecart, BRAS.bas, BRAS.haut,
         r, r, 6, s * BRAS.main + BUSTE.penche, 0);
+      /* une épaule ronde coiffe chaque bras : sans elle, le bout du bras
+         dépassait du buste en une pastille plate, claire sous la lumière */
+      for (const s of [-1, 1]) boule(pos, nor, BUSTE.penche, BRAS.haut - .01, BRAS.rayon * 1.35, 4, 8, 1, s * (BRAS.ecart - .01));
     }),
     tete: maillage((pos, nor) => boule(pos, nor, TETE.avance, TETE.centre, TETE.rayon)),
+    cheveux: maillage((pos, nor) => boule(pos, nor, TETE.avance - COIFFE.recul, TETE.centre + COIFFE.monte,
+      TETE.rayon * COIFFE.gonfle, 6, 12, COIFFE.part)),
   };
 }
