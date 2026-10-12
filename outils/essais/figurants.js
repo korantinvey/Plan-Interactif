@@ -65,13 +65,58 @@ function croix(w, h, l, deg = 0){
   const bas = foule.filter(p => p.y > grand.y0 + grand.h * PAS / 2).length;
   dit(bas > n * .35, "la foule couvre tout le hall", bas + " sur " + n + " dans la moitié basse");
 
-  console.log("La silhouette");
-  const s = silhouette({ x: 3, y: 4, tenue: 0, peau: 0, taille: 1 });
-  dit(s.length === 3, "jambes, buste, tête");
-  dit(s.every((p, i) => i === 0 || p.polygon[0][2] >= s[i - 1].polygon[0][2] + s[i - 1].haut - 1e-9),
-    "chaque pièce se pose sur la précédente");
-  const haut = s[2].polygon[0][2] + s[2].haut;
-  dit(haut < 1.6, "plus petit qu'un stand", haut.toFixed(2) + " m");
+  console.log("Les duos");
+  {
+    const g = croix(200, 160, 12, 23), f = placeFigurants(g, PAS, graineDe("fep27"));
+    let duos = 0, deTravers = 0;
+    for (let i = 0; i < f.length; i++) for (let j = i + 1; j < f.length; j++){
+      const d = Math.hypot(f[i].x - f[j].x, f[i].y - f[j].y);
+      if (d > .6) continue;
+      duos++;
+      // côte à côte : l'écart est perpendiculaire au sens où ils regardent
+      const c = f[i].cap * Math.PI / 180;
+      if (Math.abs(((f[j].x - f[i].x) * Math.cos(c) + (f[j].y - f[i].y) * Math.sin(c)) / d) > .05) deTravers++;
+      if (f[i].cap !== f[j].cap) deTravers++;
+    }
+    dit(duos > 0, "il y a des duos", duos + "");
+    dit(deTravers === 0, "un duo marche côte à côte, du même côté", deTravers + " de travers");
+    // le cap suit les allées, tournées de 23° avec le hall, à douze degrés près
+    dit(f.every(p => { const r = ((p.cap - 23) % 90 + 90) % 90; return r <= 12 || r >= 78; }),
+      "chacun regarde le long d'une allée");
+  }
+
+  console.log("La silhouette, à l'échelle de la maquette");
+  const { maillagesFigurant, HAUTEUR_FIGURANT } =
+    await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "figurants.mjs")));
+  // `camera.mjs` ne s'importe pas hors de la page : on relit sa hauteur de stand
+  const fs = require("fs");
+  const HAUTEUR_STAND = Number(/HAUTEUR_STAND = ([\d.]+)/.exec(fs.readFileSync(
+    path.join(__dirname, "..", "gabarit", "modules", "camera.mjs"), "utf8"))[1]);
+  const M = maillagesFigurant();
+  const etendue = (m, k) => {
+    const v = m.attributes.positions.value;
+    let lo = Infinity, hi = -Infinity;
+    for (let i = k; i < v.length; i += 3){ lo = Math.min(lo, v[i]); hi = Math.max(hi, v[i]); }
+    return [lo, hi];
+  };
+  for (const [nom, m] of Object.entries(M)){
+    const p = m.attributes.positions.value, n = m.attributes.normals.value;
+    dit(p.length % 9 === 0 && p.length === n.length && p.every(Number.isFinite),
+      nom + " : des triangles entiers, une normale par sommet");
+  }
+  dit(Math.abs(etendue(M.bas, 2)[0]) < 1e-9, "les pieds au sol");
+  const sommet = etendue(M.tete, 2)[1];
+  dit(Math.abs(sommet - HAUTEUR_FIGURANT) < 1e-6, "la hauteur annoncée est celle du maillage");
+  // un visiteur devant une cloison de deux mètres cinquante : les deux tiers
+  const part = sommet / HAUTEUR_STAND;
+  dit(part > .6 && part < .72, "les deux tiers d'un stand", (part * 100).toFixed(0) + " % de " + HAUTEUR_STAND + " m");
+  dit(sommet * 1.08 < HAUTEUR_STAND * .75, "le plus grand reste sous les trois quarts d'un stand");
+  const carrure = etendue(M.haut, 1)[1] - etendue(M.haut, 1)[0];
+  dit(carrure > .34 && carrure < .46, "une carrure d'épaules", (carrure * 100).toFixed(0) + " cm");
+  const svelte = sommet / carrure;
+  dit(svelte > 2.4, "une silhouette, pas une borne", "hauteur / carrure = " + svelte.toFixed(1));
+  dit(etendue(M.tete, 2)[0] >= etendue(M.haut, 2)[1] - .02, "la tête sur les épaules");
+  dit(etendue(M.haut, 0)[1] - etendue(M.haut, 0)[0] < carrure, "plus large que profond");
 
   if (ko){ console.log("\n" + ko + " échec(s)"); process.exit(1); }
   console.log("\nTout passe.");

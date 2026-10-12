@@ -1187,13 +1187,14 @@ Portes :
 
 - `confieALaFiche` (partition) — la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration
 
-### `modules/figurants.mjs` — 197 l. → plan, plan-admin
+### `modules/figurants.mjs` — 282 l. → plan, plan-admin
 
 - l.1 · Les figurants de la vue immersive — du monde dans les allées
 
 Fonctions :
 
-`hasard` 38 · `graineDe` 50 · `placeFigurants` 89 · `silhouette` 189
+`hasard` 38 · `graineDe` 50 · `placeFigurants` 90 · `tronc` 211 · `boule` 234
+`maillage` 253 · `maillagesFigurant` 265
 
 Importé par :
 
@@ -3021,7 +3022,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 2293 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2308 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3040,22 +3041,22 @@ Fonctions :
 `auDessusDuSol` 1056 · `surSonStand` 1064 · `hauteurVolume` 1073 · `zoneMeublee` 1103
 `poseJeton` 1148 · `mul4` 1171 · `enColonnes` 1180 · `translation` 1181 · `homothetie` 1183
 `autourDuZ` 1184 · `matriceJeton` 1196 · `couchesJeton` 1210 · `meubleZone` 1223
-`couchesFigurants` 1246 · `fonce` 1269 · `opaque` 1271 · `formeGl` 1278
-`corpsDeclare` 1349 · `texteGl` 1358 · `imageGl` 1382 · `imageDressee` 1424
-`socleImage` 1438 · `partage` 1450 · `designeGl` 1456 · `sortie` 1470 · `noteHauteur` 1476
-`anticipeHausses` 1506 · `detacheVolume` 1521 · `hauteurHausse` 1547 · `echelleHausse` 1552
-`haussesParId` 1555 · `arete` 1571 · `contourDe` 1573 · `coucheContours` 1577 · `aPlat` 1596
-`couchesDeBloc` 1598 · `modelesLibellesHtml` 1722 · `poseModelesLibelles` 1732
-`lisModelesLibelles` 1738 · `groupesNoms` 1771 · `couchesNoms` 1788
-`couchesPastilles` 1799 · `couchesLibellesWebgl` 1814 · `couchesDessineesWebgl` 1850
-`stage` 1871 · `brancheSurvolWebgl` 1875 · `poseSurvolWebgl` 1895 · `enTuiles` 1924
-`hauteurTuile` 1932 · `visePour` 1938 · `gonfleSurvol` 1943 · `coucheTuileSoulevee` 1965
-`couchesTuiles` 1995 · `poseCurseurWebgl` 2013 · `poseFocusWebgl` 2022 · `aplatsDe` 2029
-`coucheSurvol` 2032 · `coucheSurvolVolume` 2046 · `coucheFocus` 2059 · `couchesPhare` 2086
-`lueurDe` 2103 · `opacitePhare` 2141 · `echellePhare` 2142 · `couchesPhareNoms` 2145
-`palierDefile` 2170 · `periodeDe` 2175 · `phaseDe` 2177 · `instant` 2187
-`animeCouche` 2188 · `majAnimationWebgl` 2217 · `animeWebgl` 2226 · `objetSous` 2260
-`cibleWebgl` 2267 · `priseWebgl` 2274 · `libelleSousWebgl` 2279 · `rectEcranWebgl` 2284
+`couchesFigurants` 1251 · `fonce` 1284 · `opaque` 1286 · `formeGl` 1293
+`corpsDeclare` 1364 · `texteGl` 1373 · `imageGl` 1397 · `imageDressee` 1439
+`socleImage` 1453 · `partage` 1465 · `designeGl` 1471 · `sortie` 1485 · `noteHauteur` 1491
+`anticipeHausses` 1521 · `detacheVolume` 1536 · `hauteurHausse` 1562 · `echelleHausse` 1567
+`haussesParId` 1570 · `arete` 1586 · `contourDe` 1588 · `coucheContours` 1592 · `aPlat` 1611
+`couchesDeBloc` 1613 · `modelesLibellesHtml` 1737 · `poseModelesLibelles` 1747
+`lisModelesLibelles` 1753 · `groupesNoms` 1786 · `couchesNoms` 1803
+`couchesPastilles` 1814 · `couchesLibellesWebgl` 1829 · `couchesDessineesWebgl` 1865
+`stage` 1886 · `brancheSurvolWebgl` 1890 · `poseSurvolWebgl` 1910 · `enTuiles` 1939
+`hauteurTuile` 1947 · `visePour` 1953 · `gonfleSurvol` 1958 · `coucheTuileSoulevee` 1980
+`couchesTuiles` 2010 · `poseCurseurWebgl` 2028 · `poseFocusWebgl` 2037 · `aplatsDe` 2044
+`coucheSurvol` 2047 · `coucheSurvolVolume` 2061 · `coucheFocus` 2074 · `couchesPhare` 2101
+`lueurDe` 2118 · `opacitePhare` 2156 · `echellePhare` 2157 · `couchesPhareNoms` 2160
+`palierDefile` 2185 · `periodeDe` 2190 · `phaseDe` 2192 · `instant` 2202
+`animeCouche` 2203 · `majAnimationWebgl` 2232 · `animeWebgl` 2241 · `objetSous` 2275
+`cibleWebgl` 2282 · `priseWebgl` 2289 · `libelleSousWebgl` 2294 · `rectEcranWebgl` 2299
 
 Importe :
 

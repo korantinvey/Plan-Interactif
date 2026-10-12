@@ -15,8 +15,8 @@
    Ils ne se posent que là où l'on marche : la nappe de la grille de
    l'itinéraire (`itineraire.mjs` `grille`), qui sait déjà ce qui est allée
    et ce qui est stand, cloison ou zone fermée. Ce module ne lit pas la page :
-   il reçoit la grille, rend des pièces comme le décor (`decor.mjs`), que le
-   dessin (`webgl.mjs`) monte en volume. Il s'éprouve seul dans Node
+   il reçoit la grille, rend la place de chacun et le maillage d'une
+   silhouette, que le dessin (`webgl.mjs`) répète. Il s'éprouve seul dans Node
    (`outils/essais/figurants.js`).
    ============================================================ */
 
@@ -72,6 +72,7 @@ export function graineDe(/** @type {string} */ id){
  * @property {number} tenue    l'indice de sa tenue dans `TENUES`
  * @property {number} peau     l'indice de son teint dans `TEINTS`
  * @property {number} taille   sa hauteur, en part de la hauteur type
+ * @property {number} cap      le sens où il regarde, en degrés autour de la verticale
  */
 
 /**
@@ -124,9 +125,13 @@ export function placeFigurants(g, pas, graine){
     return cx < 0 || cy < 0 || cx >= g.w || cy >= g.h ? -1 : cy * g.w + cx;
   };
   const marche = (/** @type {number} */ i) => i >= 0 && g.nappe[i] && g.marge[i] >= 2;
-  const nouveau = (/** @type {number} */ x, /** @type {number} */ y) => ({ x, y,
+  const nouveau = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ cap) => ({ x, y,
     tenue: Math.floor(tire() * TENUES.length), peau: Math.floor(tire() * TEINTS.length),
-    taille: .92 + tire() * .16 });
+    taille: .92 + tire() * .16, cap });
+  /* On marche dans le sens d'une allée, pas en travers : le cap suit l'un des
+     quatre sens de la grille, tournée avec le hall, à quelques degrés près. */
+  const angleHall = Math.atan2(g.si, g.co) * 180 / Math.PI;
+  const capTire = () => angleHall + Math.floor(tire() * 4) * 90 + (tire() - .5) * 24;
 
   for (let i = 0; i < g.nappe.length && l.length < FIGURANTS_MAX; i++){
     if (!marche(i) || tire() >= chance) continue;
@@ -134,12 +139,15 @@ export function placeFigurants(g, pas, graine){
     // un peu de jeu dans la case : la trame de la grille ne doit pas se voir
     const [x, y] = auPlan(g.x0 + (cx + tire()) * pas, g.y0 + (cy + tire()) * pas);
     if (!libre(x, y, ECART)) continue;
-    range(nouveau(x, y));
-    /* Un compagnon, côte à côte : à cinquante-cinq centimètres, dans un sens
-       tiré au hasard, et seulement s'il a lui aussi les pieds dans l'allée. */
+    const cap = capTire();
+    range(nouveau(x, y, cap));
+    /* Un compagnon, côte à côte : à cinquante-cinq centimètres sur le flanc,
+       regardant du même côté, et seulement s'il a lui aussi les pieds dans
+       l'allée. */
     if (tire() < PART_DUOS && l.length < FIGURANTS_MAX){
-      const a = tire() * 2 * Math.PI, x2 = x + .55 * Math.cos(a), y2 = y + .55 * Math.sin(a);
-      if (marche(caseDe(x2, y2)) && libre(x2, y2, .5)) range(nouveau(x2, y2));
+      const flanc = (cap + (tire() < .5 ? 90 : -90)) * Math.PI / 180;
+      const x2 = x + .55 * Math.cos(flanc), y2 = y + .55 * Math.sin(flanc);
+      if (marche(caseDe(x2, y2)) && libre(x2, y2, .5)) range(nouveau(x2, y2, cap));
     }
   }
   return l;
@@ -162,36 +170,113 @@ export const TENUES = [
 
 export const TEINTS = [[240, 206, 178], [222, 178, 142], [176, 124, 92], [118, 82, 60]];
 
-/* Les mesures d'un figurant, en mètres. Plus petit que nature : les stands
-   de la maquette ne montent qu'à un mètre soixante (`camera.mjs`
-   `HAUTEUR_STAND`), et un visiteur à sa vraie taille les dépasserait. */
-const JAMBES = .5, BUSTE = .48, TETE = .2;
-const RAYON_CORPS = .17, RAYON_TETE = .1;
+/* ------------------------------------------------------------
+   La silhouette
 
-/** Un octogone de rayon r autour de (x, y), à la hauteur z. */
-const octogone = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ r,
-  /** @type {number} */ z) => {
-  const pts = [];
-  for (let k = 0; k < 8; k++){
-    const a = (k + .5) * Math.PI / 4;
-    pts.push([x + r * Math.cos(a), y + r * Math.sin(a), z]);
+   Les proportions se règlent sur celles de la maquette, et non sur la
+   nature. Les stands y gardent leur emprise vraie, au mètre, mais ne montent
+   qu'à un mètre soixante (`camera.mjs` `HAUTEUR_STAND`) quand une cloison
+   réelle en fait deux et demi. Un visiteur à sa vraie taille dépassait donc
+   les stands, et se lisait comme un géant dans un village : il est rabattu
+   dans le même rapport — un peu plus d'un mètre, les deux tiers d'un stand,
+   comme un visiteur devant une cloison. Sa carrure, elle, reste à l'échelle
+   du sol, à peine affinée pour que la silhouette ne paraisse pas trapue :
+   quatre de front tiennent dans une allée de deux mètres, comme dans le
+   vrai salon.
+
+   Trois maillages — le bas, le haut, la tête — que la carte graphique répète
+   pour chaque figurant, chacun teint de sa couleur. Un figurant y coûte
+   trois positions, et non trois cents sommets.
+   ------------------------------------------------------------ */
+/* Saisis en pleine marche, et non au garde-à-vous. Droits, jambes et bras
+   collés au corps, ils se lisaient comme des plots posés dans l'allée : ce
+   qui dit qu'on marche, c'est le pas. Les jambes partent donc en compas de la
+   hanche — l'une devant, l'autre derrière —, les bras balancent à l'inverse,
+   et le buste penche un peu vers l'avant, la tête avec lui. Immobiles
+   pourtant : la pose suffit à l'œil, et le plan ne s'anime pas tout seul. */
+const JAMBE = { pied: .17, hanche: .02, ecart: .065, rayon: .058, haut: .5 };
+const BUSTE = { bas: .48, haut: .86, larg: [.12, .15], prof: [.1, .115], penche: .035 };
+const BRAS = { epaule: .02, main: .14, ecart: .17, rayon: .035, bas: .52, haut: .84 };
+const TETE = { avance: .045, centre: .96, rayon: .092 };
+
+/** La hauteur d'un figurant de taille type, en mètres. */
+export const HAUTEUR_FIGURANT = TETE.centre + TETE.rayon;
+
+/**
+ * Un tronc elliptique entre deux hauteurs, fermé en haut, ses faces en
+ * triangles. Les rayons vont d'un bout à l'autre : un buste s'évase vers les
+ * épaules. Le haut peut glisser de (dx, dy) sur le bas : une jambe qui part
+ * en avant, un buste qui penche.
+ */
+function tronc(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @type {number} */ cx,
+  /** @type {number} */ cy, /** @type {number} */ z0, /** @type {number} */ z1,
+  /** @type {number[]} */ rx, /** @type {number[]} */ ry, n = 10, dx = 0, dy = 0){
+  const pt = (/** @type {number} */ k, /** @type {number} */ b) => {
+    const a = k * 2 * Math.PI / n;
+    return [cx + b * dx + rx[b] * Math.cos(a), cy + b * dy + ry[b] * Math.sin(a), b ? z1 : z0];
+  };
+  // la normale d'une ellipse, perpendiculaire à son bord
+  const nm = (/** @type {number} */ k) => {
+    const a = k * 2 * Math.PI / n, x = Math.cos(a) / rx[1], y = Math.sin(a) / ry[1], l = Math.hypot(x, y);
+    return [x / l, y / l, 0];
+  };
+  for (let k = 0; k < n; k++){
+    const [a0, a1, b0, b1] = [pt(k, 0), pt(k + 1, 0), pt(k, 1), pt(k + 1, 1)];
+    const [n0, n1] = [nm(k), nm(k + 1)];
+    pos.push(...a0, ...a1, ...b1, ...a0, ...b1, ...b0);
+    nor.push(...n0, ...n1, ...n1, ...n0, ...n1, ...n0);
+    pos.push(cx + dx, cy + dy, z1, ...b0, ...b1);
+    nor.push(0, 0, 1, 0, 0, 1, 0, 0, 1);
   }
-  return pts;
+}
+
+/** Une boule à facettes, ses normales tirées de son centre. */
+function boule(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @type {number} */ cx,
+  /** @type {number} */ cz, /** @type {number} */ r, nLat = 6, nLon = 10){
+  const pt = (/** @type {number} */ i, /** @type {number} */ j) => {
+    const t = i * Math.PI / nLat, p = j * 2 * Math.PI / nLon;
+    return [Math.sin(t) * Math.cos(p), Math.sin(t) * Math.sin(p), Math.cos(t)];
+  };
+  for (let i = 0; i < nLat; i++) for (let j = 0; j < nLon; j++){
+    const q = [pt(i, j), pt(i + 1, j), pt(i + 1, j + 1), pt(i, j + 1)];
+    for (const k of [0, 1, 2, 0, 2, 3]){
+      const v = q[k];
+      pos.push(cx + v[0] * r, v[1] * r, cz + v[2] * r);
+      nor.push(...v);
+    }
+  }
+}
+
+/**
+ * @typedef {{ positions: { value: Float32Array, size: number }, normals: { value: Float32Array, size: number } }} Maillage
+ */
+const maillage = (/** @type {(pos: number[], nor: number[]) => void} */ fait) => {
+  /** @type {number[]} */
+  const pos = [], nor = [];
+  fait(pos, nor);
+  return { attributes: { positions: { value: new Float32Array(pos), size: 3 },
+    normals: { value: new Float32Array(nor), size: 3 } } };
 };
 
 /**
- * Les volumes d'un figurant : ses jambes, son buste, sa tête, empilés. Trois
- * cylindres à huit pans ; à la distance où l'on voit le hall, il n'en faut
- * pas plus pour lire une silhouette.
- * @param {Figurant} f
- * @returns {{ polygon: number[][], haut: number, couleur: number[] }[]}
+ * Les trois maillages d'un figurant, debout à l'origine, regardant vers les
+ * x : le bas — les deux jambes —, le haut — buste et bras —, et la tête.
  */
-export function silhouette(f){
-  const k = f.taille, t = TENUES[f.tenue] || TENUES[0], p = TEINTS[f.peau] || TEINTS[0];
-  const j = JAMBES * k, b = BUSTE * k, h = TETE * k;
-  return [
-    { polygon: octogone(f.x, f.y, RAYON_CORPS * .85, 0), haut: j, couleur: [...t.bas, 255] },
-    { polygon: octogone(f.x, f.y, RAYON_CORPS, j), haut: b, couleur: [...t.haut, 255] },
-    { polygon: octogone(f.x, f.y, RAYON_TETE, j + b + .02), haut: h, couleur: [...p, 255] },
-  ];
+export function maillagesFigurant(){
+  return {
+    // chaque jambe, du pied à la hanche : la droite devant, la gauche derrière
+    bas: maillage((pos, nor) => {
+      const r = [JAMBE.rayon, JAMBE.rayon];
+      for (const s of [-1, 1]) tronc(pos, nor, s * JAMBE.pied, s * JAMBE.ecart, 0, JAMBE.haut,
+        r, r, 8, s * (JAMBE.hanche - JAMBE.pied), 0);
+    }),
+    // chaque bras, de la main à l'épaule, à l'inverse de la jambe du même côté
+    haut: maillage((pos, nor) => {
+      tronc(pos, nor, 0, 0, BUSTE.bas, BUSTE.haut, BUSTE.prof, BUSTE.larg, 12, BUSTE.penche, 0);
+      const r = [BRAS.rayon, BRAS.rayon];
+      for (const s of [-1, 1]) tronc(pos, nor, -s * BRAS.main, s * BRAS.ecart, BRAS.bas, BRAS.haut,
+        r, r, 6, s * BRAS.main + BUSTE.penche, 0);
+    }),
+    tete: maillage((pos, nor) => boule(pos, nor, TETE.avance, TETE.centre, TETE.rayon)),
+  };
 }

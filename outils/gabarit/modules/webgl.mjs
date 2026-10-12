@@ -38,7 +38,7 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, silhouette, graineDe } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE } from "./itineraire.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -87,8 +87,8 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan-ef08eeb5.min.js",
-  integrite: "sha384-NZseSRlLpdWIBLJtNNorQq/Mrx7IZjv90iDS/x8ERsfhSlfP6Z4D0ehGeDK1N46F",
+  src: "bibliotheques/deck.gl-9.3.11-plan-53efd7e8.min.js",
+  integrite: "sha384-RgImRMIyrd9hP0UaVP6ndqdVVIGUnZ7JVuk0LuYnVHqAYAOqHaGRzJPpuWdEDR1k",
 };
 export const GL = {
   charge: false, actif: false, deck: null,
@@ -1238,22 +1238,37 @@ function meubleZone(el, polygon, couleur, acc){
    les noms : ceux-ci passent devant, les stands cachent ceux qui sont
    derrière eux. Les figurants ne se désignent pas — un appui passe au
    travers, jusqu'à l'allée ou au stand. La grille se calcule une fois par
-   pavillon, et la couche garde ses données tant qu'elle ne change pas : la
-   carte graphique ne les reçoit qu'une fois.
+   pavillon, et les couches gardent leurs données tant qu'elle ne change
+   pas : la carte graphique ne les reçoit qu'une fois.
+
+   Trois maillages répétés (`SimpleMeshLayer`) et non des volumes montés à
+   la main : une silhouette — deux jambes, des épaules, une tête ronde — que
+   des prismes empilés ne savaient pas faire, et qui ne coûte qu'une position
+   par figurant.
    ------------------------------------------------------------ */
-/** @type {{ grille: any, couche: any }} */
-const FIGURANTS = { grille: null, couche: null };
+/** @type {{ grille: any, couches: any[], maillages: any }} */
+const FIGURANTS = { grille: null, couches: [], maillages: null };
 function couchesFigurants(){
   if (!GL.camera || !cameraEnJeu() || !DATA || !P()) return [];
   const p = P(), g = grille(p, false);
   if (FIGURANTS.grille !== g){
     FIGURANTS.grille = g;
-    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id)).flatMap(silhouette);
-    FIGURANTS.couche = new deck.SolidPolygonLayer({ id: "figurants", data, pickable: false,
-      extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE });
+    const M = FIGURANTS.maillages || (FIGURANTS.maillages = maillagesFigurant());
+    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id));
+    const commun = { data, pickable: false, material: MATIERE,
+      getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
+      getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
+      getScale: (/** @type {any} */ f) => [1, 1, f.taille] };
+    FIGURANTS.couches = [
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-bas", mesh: M.bas,
+        getColor: (/** @type {any} */ f) => TENUES[f.tenue].bas }),
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-haut", mesh: M.haut,
+        getColor: (/** @type {any} */ f) => TENUES[f.tenue].haut }),
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-tete", mesh: M.tete,
+        getColor: (/** @type {any} */ f) => TEINTS[f.peau] }),
+    ];
   }
-  return [FIGURANTS.couche];
+  return FIGURANTS.couches;
 }
 
 /* Un volume ne se peint pas en transparence : on verrait ses façades du fond
