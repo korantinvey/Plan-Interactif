@@ -30,7 +30,7 @@
    cours, et la préparation des noms, qui tient aux règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
    placement des libellés à la main s'importe (`libelle-place.mjs`).
    ============================================================ */
-import { avive } from "./couleurs.mjs";
+import { avive, eclate } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
@@ -1412,13 +1412,17 @@ function couchesFigurants(){
    Sa teinte translucide — une zone l'est toujours, un stand que la recherche
    éteint aussi — est donc mêlée au sol qu'elle laissait voir, et le volume
    prend le ton que l'aplat avait. */
-/* La part de noir qui fonce le volume choisi. Éclairci, il pâlissait vers le
-   blanc du sol et se lisait moins bien que ses voisins ; foncé, il tranche
-   sur eux comme sur le hall. */
-const SOMBRE_CHOIX = .28;
-/** Une couleur mêlée de noir, à cette part. */
-const fonce = (/** @type {number[]} */ c, /** @type {number} */ part) => part
-  ? [0, 1, 2].map(i => Math.round(c[i] * (1 - part))).concat(c[3] === undefined ? 255 : c[3]) : c;
+/* Le volume choisi prend sa propre teinte, en éclatant : saturée, à
+   mi-clarté. Éclairci, il pâlissait vers le blanc du sol ; foncé, il
+   tranchait sur ses voisins mais se lisait comme éteint plutôt que choisi.
+   Un stand gris n'a pas de teinte à faire éclater : il prend celle de
+   l'accent. */
+function eclatant(/** @type {number[]} */ c){
+  const e = eclate(c);
+  if (e) return e;
+  const accent = couleurGl(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(), 1);
+  return (accent && eclate(accent)) || c;
+}
 function opaque(couleur){
   const a = (couleur[3] === undefined ? 255 : couleur[3]) / 255;
   if (a >= 1) return couleur;
@@ -1433,10 +1437,10 @@ function formeGl(el, cs, m, op, traces, acc){
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el, anneaux);
-    /* Le volume choisi fonce : monté devant un stand de même couleur, il s'en
-       détache au lieu de s'y confondre. */
+    /* Le volume choisi s'allume : monté devant un stand de même couleur, il
+       s'en détache au lieu de s'y confondre. */
     const choisi = haut && el.parentNode.classList.contains("sel");
-    const base = haut ? opaque(plein) : plein, couleur = choisi ? fonce(base, SOMBRE_CHOIX) : base;
+    const base = haut ? opaque(plein) : plein, couleur = choisi ? eclatant(base) : base;
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
     if (choisi && el.parentNode.classList.contains("stand"))
       CHOISI = { id: el.parentNode.getAttribute("data-id") || "", anneaux, haut };
@@ -1714,11 +1718,11 @@ function detacheVolume(g, h){
     if (reste.length) out.push(c.clone({ data: reste }));
     // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
     if (c.props.contour) continue;
-    // il fonce au clic, et reprend sa couleur dès qu'on le quitte
+    // il s'allume au clic, et reprend sa couleur dès qu'on le quitte
     const choisi = g.classList.contains("sel");
     const id = c.id.replace(/-tot$/, "") + "-tot";
     const data = siens.map(d => ({ ...d, haut: h.vers, hausse: h,
-      couleur: choisi ? fonce(d.base || d.couleur, SOMBRE_CHOIX) : d.base || d.couleur }));
+      couleur: choisi ? eclatant(d.base || d.couleur) : d.base || d.couleur }));
     out.push(c.clone({ id, data, hausse: h, elevationScale: echelleHausse(h, performance.now()) }),
       coucheContours(id, data, { hausseContour: h }));
   }

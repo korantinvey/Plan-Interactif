@@ -50,6 +50,7 @@ import { rafraichitApercu } from "./nappe.mjs";
 import { oublieAimants } from "./aimants.mjs";
 import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
+import { indexeSecteurs } from "./secteurs.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
@@ -653,6 +654,8 @@ function appliqueSauvegarde(s){
     pavillons++;
   });
   if (s.reglages) Object.assign(CONF, reglagesDuSalon(s.reglages));
+  // la sauvegarde peut colorer le plan sur un autre champ que celui en place
+  indexeSecteurs();
   enregistreConf();
   // range les dessins sur le poste, oublie les relevés qui en dépendent, et
   // programme l'envoi — le même geste que pour un trait tracé à la main

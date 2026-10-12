@@ -38,7 +38,7 @@ import { sousCalques, styleFond, styleDataGroupe, styleData, appliqueCouleursDat
 import { appliqueFond } from "./habillage.mjs";
 import { suitNuancier } from "./nuancier.mjs";
 import { ouvreOrdre } from "./ordre-calques.mjs";
-import { SECTEURS, secteursMontres, couleurSecteur, peintSecteur } from "./secteurs.mjs";
+import { SECTEURS, secteursMontres, couleurSecteur, peintSecteur, confTeinte } from "./secteurs.mjs";
 import { DESSINS, calqueActif, mesCalques } from "./calques-dessin.mjs";
 import { dessineDessins, peintCalque } from "./dessin.mjs";
 import { creeCalque, enregistreDessins, verrouille, basculeVerrou, pictoVerrou, activeCalque, memorise }
@@ -508,7 +508,7 @@ function ligneCouleur(libelle, valeur, peint){
  * celle des autres couches.
  */
 function rangSecteur(hote, nom){
-  const c = conf("secteur:" + nom);
+  const c = confTeinte(nom);
   const d = ligneCouleur(nom, couleurSecteur(nom), (v) => {
     c.couleur = v;
     /* Seuls les stands de ce secteur changent de teinte : `appliqueSecteurs`

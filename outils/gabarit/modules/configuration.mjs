@@ -13,7 +13,7 @@
    index de `donnees.mjs`.
    ============================================================ */
 import { creeAnnonce } from "./annonce.mjs";
-import { DATA, SECTEURS } from "./donnees.mjs";
+import { DATA } from "./donnees.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
@@ -56,6 +56,11 @@ export function ouvreConf(/** @type {any} */ d){
  */
 export function reglagesDuSalon(source){
   const calques = new Set((DATA?.plans || []).flatMap(p => (p.fond || []).map(c => c.cle)));
+  /* Les secteurs relus sur les stands, et non dans `SECTEURS` : celui-ci suit
+     le champ choisi pour colorer le plan, que ces réglages mêmes apportent —
+     il n'est pas encore là. Et les couleurs de secteur doivent survivre au
+     détour par la ville, pour qui reviendra au secteur. */
+  const secteurs = new Set((DATA?.plans || []).flatMap(p => (p.stands || []).map(s => s.sect)));
   /** @type {Record<string, any>} */
   const sortie = {};
   Object.keys(source || {}).forEach(k => {
@@ -66,7 +71,7 @@ export function reglagesDuSalon(source){
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */
-    const dUnSecteur = k.indexOf("secteur:") === 0 && SECTEURS.has(k.slice(8));
+    const dUnSecteur = k.indexOf("secteur:") === 0 && secteurs.has(k.slice(8));
     /* « calque/sous-calque », mais l'un comme l'autre peut porter une barre
        oblique : on retient la clé dès qu'une de ses têtes nomme un calque. */
     const dUnCalque = calques.has(k) ||
