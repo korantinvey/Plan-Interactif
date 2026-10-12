@@ -1614,18 +1614,18 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 357 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 316 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands — la vue immersive, vue de près
 
 Fonctions :
 
-`image` 105 · `sansFond` 128 · `original` 203 · `toile` 222 · `logoPose` 243
-`cedeAuLogo` 253 · `fonduZoom` 266 · `pres` 290 · `logosARevoir` 298 · `couchesLogos` 313
+`image` 94 · `sansFond` 117 · `toile` 191 · `logoPose` 212 · `cedeAuLogo` 222
+`fonduZoom` 235 · `pres` 259 · `logosARevoir` 267 · `couchesLogos` 281
 
 Importe :
 
-annonce · camera · dom · donnees · sur · vignettes
+annonce · camera · dom · donnees · vignettes
 
 Importé par :
 
@@ -2673,7 +2673,7 @@ texte
 
 Importé par :
 
-corps-fiche · fiche · fiche-zone · index-salon · logos-stands · plan · recherche · sponsor
+corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor
 
 ### `modules/synchronisation.mjs` — 224 l. → console
 
