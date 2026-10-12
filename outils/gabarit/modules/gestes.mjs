@@ -113,7 +113,36 @@ function commencePince(){
             view.y + (m.y - r.top) / r.height * view.h],
   };
   drag = null;
-  saisitPlan(false);
+  /* Le curseur se rend, mais les bandes restent où elles sont. `saisitPlan`
+     les dépliait : le premier doigt avait souvent déjà glissé et les avait
+     pliées, et le pincement, à sa première image, les repliait aussitôt — un
+     aller-retour du tiroir sous les doigts à chaque début de zoom, d'autant
+     plus visible que le tiroir était haut. */
+  svg.style.cursor = "";
+}
+
+/* Un pincement n'a pas à tenir ses deux doigts dans le plan.
+
+   Au cran du milieu, la liste couvre près de la moitié de l'écran, et la
+   main qui écarte deux doigts sur ce qui reste du hall en pose souvent un sur
+   le tiroir. Ce doigt-là n'arrivait jamais au plan : le premier, resté seul,
+   faisait glisser la vue par à-coups pendant que le tiroir défilait sous
+   l'autre, et le plan ne grandissait pas.
+
+   Le second doigt est donc adopté d'où qu'il vienne, dès lors que le premier
+   tient le plan — la capture du SVG le dit, et elle ne survit pas à un doigt
+   levé, même quand son « pointerup » se perd. Écouté en capture sur la page,
+   avant le tiroir, qui ne le voit pas : il ne commence ni à glisser ni à
+   défiler. Le navigateur, lui, n'en fait rien de son côté : le premier doigt
+   lui a déjà refusé le geste (« touch-action:none »). */
+function adopteSecondDoigt(/** @type {PointerEvent} */ e){
+  if (e.pointerType !== "touch" || doigts.size !== 1 || svg.contains(/** @type {Node} */ (e.target))) return;
+  const [premier] = doigts.keys();
+  if (!svg.hasPointerCapture(premier)) return;
+  e.stopPropagation();
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  svg.setPointerCapture(e.pointerId);
+  commencePince();
 }
 
 function suitPince(){
@@ -285,6 +314,7 @@ function planifieFiltre(){
  * page, puis les commandes de la recherche et du zoom.
  */
 export function brancheGestes(){
+  document.addEventListener("pointerdown", adopteSecondDoigt, true);
   svg.addEventListener("pointerdown", e => {
     poseAppuiTactile(e.pointerType === "touch" || e.pointerType === "pen");
     // la main posée l'emporte sur la molette : un glissement qui finissait sa
