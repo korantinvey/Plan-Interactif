@@ -118,13 +118,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 293 l. → plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1599 l. → plan-smcl.html
+### `_styles-modeles-parcours.css` — 1607 l. → plan-smcl.html
 
 ### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1691 l. → plan-smcl.html
+### `_styles-plan.css` — 1693 l. → plan-smcl.html
 
 ### `_styles-vitrine.css` — 187 l. → plan-smcl.html
 
@@ -307,18 +307,18 @@ Importé par :
 
 comptes · synchronisation
 
-### `modules/appels.mjs` — 178 l. → plan, plan-admin
+### `modules/appels.mjs` — 198 l. → plan, plan-admin
 
 - l.1 · Les noms en appel — ce qui ne tient pas dans son stand sort dans la marge
 
 Fonctions :
 
-`monteCalque` 57 · `appeles` 68 · `illisible` 81 · `chevauche` 87 · `boiteA` 91
-`auBord` 99 · `pose` 101 · `planifie` 168
+`monteCalque` 61 · `appeles` 72 · `illisible` 85 · `chevauche` 91 · `boiteA` 95
+`auBord` 103 · `pose` 105 · `planifie` 180
 
 Importe :
 
-donnees · filtre · polices-plan · texte-plan · vue
+donnees · filtre · geste-tenu · polices-plan · texte-plan · vue
 
 Importé par :
 
@@ -1259,7 +1259,7 @@ Fonctions :
 
 Importé par :
 
-batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
+appels · batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
 placement-libelles · reprise-emplacements
 
 ### `modules/gestes-admin.mjs` — 167 l. → plan-admin
@@ -2946,7 +2946,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 1947 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1982 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -2958,25 +2958,26 @@ Fonctions :
 `enCamera` 337 · `vuesGl` 341 · `effetsGl` 362 · `basculeCamera` 372 · `vueWebgl` 385
 `blocDe` 395 · `majEditionWebgl` 408 · `cleBloc` 420 · `planifieWebgl` 446
 `toutRepeindreWebgl` 450 · `blocsDansLOrdre` 461 · `repeintWebgl` 466 · `assembleWebgl` 490
-`constTexte` 530 · `jeuDeCaracteres` 726 · `sousPixelOffert` 780 · `couchesPetites` 785
-`positionTexte` 798 · `parametresTexte` 820 · `couchesTexte` 822 · `accVide` 858
-`convertitBloc` 860 · `accDe` 876 · `parcoursGl` 883 · `hauteurVolume` 925
-`zoneMeublee` 953 · `repereEnObjet` 967 · `monteeRepere` 979 · `meubleZone` 994
-`fonce` 1012 · `opaque` 1014 · `formeGl` 1021 · `corpsDeclare` 1087 · `texteGl` 1096
-`imageGl` 1119 · `partage` 1151 · `designeGl` 1157 · `sortie` 1171 · `noteHauteur` 1177
-`anticipeHausses` 1206 · `detacheVolume` 1221 · `hauteurHausse` 1247 · `echelleHausse` 1252
-`haussesParId` 1255 · `arete` 1271 · `contourDe` 1273 · `coucheContours` 1277
-`couchesDeBloc` 1289 · `modelesLibellesHtml` 1402 · `poseModelesLibelles` 1412
-`lisModelesLibelles` 1418 · `groupesNoms` 1451 · `couchesNoms` 1468
-`couchesPastilles` 1479 · `couchesLibellesWebgl` 1494 · `couchesDessineesWebgl` 1524
-`stage` 1545 · `brancheSurvolWebgl` 1549 · `poseSurvolWebgl` 1569 · `enTuiles` 1598
-`hauteurTuile` 1606 · `visePour` 1612 · `gonfleSurvol` 1617 · `coucheTuileSoulevee` 1639
-`couchesTuiles` 1669 · `poseCurseurWebgl` 1687 · `poseFocusWebgl` 1696 · `aplatsDe` 1703
-`coucheSurvol` 1706 · `coucheFocus` 1715 · `couchesPhare` 1742 · `lueurDe` 1759
-`opacitePhare` 1797 · `echellePhare` 1798 · `couchesPhareNoms` 1801 · `palierDefile` 1826
-`periodeDe` 1831 · `phaseDe` 1833 · `instant` 1843 · `animeCouche` 1844
-`majAnimationWebgl` 1872 · `animeWebgl` 1880 · `objetSous` 1914 · `cibleWebgl` 1921
-`priseWebgl` 1928 · `libelleSousWebgl` 1933 · `rectEcranWebgl` 1938
+`constTexte` 531 · `jeuDeCaracteres` 727 · `sousPixelOffert` 781 · `couchesPetites` 786
+`positionTexte` 799 · `parametresTexte` 821 · `couchesTexte` 823 · `accVide` 859
+`convertitBloc` 861 · `accDe` 877 · `parcoursGl` 884 · `auDessusDuSol` 930
+`hauteurVolume` 932 · `zoneMeublee` 960 · `repereEnObjet` 974 · `monteeRepere` 986
+`meubleZone` 1001 · `fonce` 1019 · `opaque` 1021 · `formeGl` 1028 · `corpsDeclare` 1096
+`texteGl` 1105 · `imageGl` 1128 · `partage` 1160 · `designeGl` 1166 · `sortie` 1180
+`noteHauteur` 1186 · `anticipeHausses` 1215 · `detacheVolume` 1230 · `hauteurHausse` 1256
+`echelleHausse` 1261 · `haussesParId` 1264 · `arete` 1280 · `contourDe` 1282
+`coucheContours` 1286 · `couchesDeBloc` 1298 · `modelesLibellesHtml` 1419
+`poseModelesLibelles` 1429 · `lisModelesLibelles` 1435 · `groupesNoms` 1468
+`couchesNoms` 1485 · `couchesPastilles` 1496 · `couchesLibellesWebgl` 1511
+`couchesDessineesWebgl` 1541 · `stage` 1562 · `brancheSurvolWebgl` 1566
+`poseSurvolWebgl` 1586 · `enTuiles` 1615 · `hauteurTuile` 1623 · `visePour` 1629
+`gonfleSurvol` 1634 · `coucheTuileSoulevee` 1656 · `couchesTuiles` 1686
+`poseCurseurWebgl` 1704 · `poseFocusWebgl` 1713 · `aplatsDe` 1720 · `coucheSurvol` 1723
+`coucheSurvolVolume` 1737 · `coucheFocus` 1750 · `couchesPhare` 1777 · `lueurDe` 1794
+`opacitePhare` 1832 · `echellePhare` 1833 · `couchesPhareNoms` 1836 · `palierDefile` 1861
+`periodeDe` 1866 · `phaseDe` 1868 · `instant` 1878 · `animeCouche` 1879
+`majAnimationWebgl` 1907 · `animeWebgl` 1915 · `objetSous` 1949 · `cibleWebgl` 1956
+`priseWebgl` 1963 · `libelleSousWebgl` 1968 · `rectEcranWebgl` 1973
 
 Importe :
 
@@ -3125,8 +3126,8 @@ Portes :
 
 ## Le reste
 
-- `src/index.mjs` — 1104 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956
+- `src/index.mjs` — 1131 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956 · `surete` 992 · `aiguille` 1010
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

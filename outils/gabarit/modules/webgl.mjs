@@ -498,6 +498,7 @@ function assembleWebgl(){
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
+      if (GL.camera && GL.survol && c.props.extruded) out.push(...coucheSurvolVolume(c));
       if (tuile) apres.push(...couchesTuiles(c, choisies));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
       else if (GL.survol) out.push(...coucheSurvol(c));
@@ -922,6 +923,12 @@ function parcoursGl(el, m, op, acc){
    sélection posés sur lui restent des aplats, qui se peignent alors au pied
    du volume. Une zone masquée reste au sol : pâlie, elle dit à l'exploitant
    qu'elle ne sera pas sur le plan public, et un volume la ferait voir. */
+/* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
+   sol, il en partageait la profondeur : vue de biais, la carte graphique ne
+   départageait plus les deux, et le trajet se hachait de traînées pâles. */
+const SOL_ITINERAIRE = .08;
+const auDessusDuSol = (el) => GL.camera && el.closest("#itin") ? SOL_ITINERAIRE : 0;
+
 function hauteurVolume(el){
   if (!cameraEnJeu()) return 0;
   const g = el.parentNode;
@@ -1030,8 +1037,9 @@ function formeGl(el, cs, m, op, traces, acc){
     const choisi = haut && el.parentNode.classList.contains("sel");
     const base = haut ? opaque(plein) : plein, couleur = choisi ? fonce(base, SOMBRE_CHOIX) : base;
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
+    const sol = auDessusDuSol(el);
     for (const polygon of avecTrous(anneaux)){
-      const monte = monteeRepere(el, polygon, acc);
+      const monte = monteeRepere(el, polygon, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
       acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse });
       if (haut) meubleZone(el, polygon, couleur, acc);
     }
@@ -1059,7 +1067,8 @@ function formeGl(el, cs, m, op, traces, acc){
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
     const defile = el.classList.contains("iSens");
-    const monte = monteeRepere(el, null, acc);
+    const sol = auDessusDuSol(el);
+    const monte = monteeRepere(el, null, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
     for (const t of traces){
       if (t.pts.length < 2) continue;
       const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
@@ -1342,6 +1351,14 @@ function couchesDeBloc(acc, cle){
       if (!l.length) continue;
       const bouge = marque !== "";
       out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + marque, data: l, pickable: k === 0,
+        /* Le trajet se trace face à l'œil en vue immersive : couché sur le sol
+           incliné, il s'amincissait au loin jusqu'à se perdre. Et sans
+           consulter la profondeur : sa lueur, peinte juste avant à la même
+           hauteur, la retenait, et vu de biais le trait tombait d'un rien
+           derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
+           par-dessus, il se lit de bout en bout, comme une signalétique au
+           sol. */
+        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : {}),
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
         jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
         extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
@@ -1710,6 +1727,24 @@ function coucheSurvol(couche){
   return [new deck.SolidPolygonLayer({ id: "survol", data: aplats, getPolygon: d => d.polygon,
     // l'opacité propre de l'aplat — une zone translucide, un stand écarté — reste la sienne
     getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)] })];
+}
+
+/* Le survol d'un volume, en vue immersive : il n'a pas d'aplat sur lequel se
+   peindre, et le stand sous la souris ne s'allumait plus — choisir le départ
+   ou l'arrivée d'un itinéraire se faisait à l'aveugle. Le volume visé est
+   redessiné teinté de la couleur du survol, un rien plus haut que lui pour
+   ne pas s'y confondre. */
+function coucheSurvolVolume(c){
+  const siens = Array.isArray(c.props.data) ? c.props.data.filter(d => d.el === GL.survol) : [];
+  if (!siens.length) return [];
+  const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
+  const a = Math.max(.45, t[3] / 255);
+  const teinte = (/** @type {number[]} */ k) => [0, 1, 2].map(i => Math.round(k[i] * (1 - a) + t[i] * a)).concat(255);
+  const e = c.props.elevationScale || 1;
+  const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
+  return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
+    getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE }),
+  coucheContours("survol-volume", data)];
 }
 
 function coucheFocus(couches){
