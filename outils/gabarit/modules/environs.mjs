@@ -41,6 +41,7 @@ import { mesCalques } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { vue, cadrePlan } from "./vue-etat.mjs";
 import { solIncline } from "./camera.mjs";
+import { apresAffichage } from "./affichage.mjs";
 
 const racine = document.documentElement;
 
@@ -518,8 +519,13 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
   /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
      demandée — et c'est la moitié du diagnostic. */
   ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
-  guetteLaCarte(sig);
-  chargeMapLibre().then(gl => {
+  /* Ni la bibliothèque — huit cents kilo-octets à lire —, ni la carte et ses
+     programmes à compiler, avant que le plan soit à l'écran : montée dans la
+     foulée de la première image, la carte la retenait deux secondes sur un
+     téléphone (`affichage.mjs`). Le guet ne part qu'ensuite : le temps que le
+     plan met à paraître n'est pas un silence du service. Une fois le plan
+     affiché, l'attente est nulle. */
+  apresAffichage().then(() => { guetteLaCarte(sig); return chargeMapLibre(); }).then(gl => {
     /* Un autre fond a été choisi, ou la carte retirée, pendant le chargement.
        On rend le drapeau : sans cela il restait levé sur une carte jamais
        posée, et tout montage suivant sortait à la première ligne — « Situer le

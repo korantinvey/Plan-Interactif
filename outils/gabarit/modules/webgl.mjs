@@ -43,6 +43,7 @@ import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEI
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
+import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
 
@@ -120,7 +121,9 @@ function chargeWebgl(){
      secours : bibliothèque introuvable, ou dessin trop long à venir. */
   const racine = document.documentElement;
   racine.classList.add("gl-attente");
-  const secours = () => racine.classList.remove("gl-attente");
+  /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
+     attendait l'affichage n'a plus à attendre. */
+  const secours = () => { racine.classList.remove("gl-attente"); planAffiche(); };
   setTimeout(secours, 4000);
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
@@ -136,6 +139,8 @@ function chargeWebgl(){
  */
 export function brancheWebgl(){
   chargeWebgl();
+  // ce que la première image a laissé de côté (`couchesFigurants`) y entre
+  quandAffiche(planifieWebgl);
 }
 
 /** Le dessin prend la main dès que la bibliothèque et le plan sont là, dans
@@ -167,6 +172,7 @@ export function monteWebgl(){
       GL.pret = true;
       document.documentElement.classList.add("gl-pret");
       document.documentElement.classList.remove("gl-attente");
+      planAffiche();
     },
   });
   GL.actif = true;
@@ -1390,6 +1396,10 @@ function teinteDesFigurants(){
 /** @type {{ grille: any, couches: any[], maillages: any }} */
 const FIGURANTS = { grille: null, couches: [], maillages: null };
 function couchesFigurants(){
+  /* Décor : leurs programmes coûtent un tiers de seconde à compiler sur la
+     première image, qu'ils retardaient sans rien apprendre au visiteur. Ils
+     entrent à l'image d'après (`brancheWebgl`). */
+  if (!estAffiche()) return [];
   if (!GL.camera || !cameraEnJeu() || !DATA || !P()) return [];
   const p = P(), g = grille(p, false);
   if (FIGURANTS.grille !== g){
