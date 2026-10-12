@@ -41,7 +41,7 @@ module.exports = [
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-volumes-", "-decor", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
-  "-petit-halo-", "-phare-", "-jeton-", "-plaque", "-dos", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
+  "-petit-halo-", "-phare-", "-jeton-", "-plaque", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
   "LissageSdf",
 
   // `modules/notifications.mjs` : le motif de deux pannes internes, porté par une
