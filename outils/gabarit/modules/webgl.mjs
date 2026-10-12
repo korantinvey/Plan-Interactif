@@ -1136,6 +1136,17 @@ const partage = (liste, prises, deja) => {
 /** Ce qu'une couche désigne quand on la vise. */
 const designeGl = (d) => d.el || d.prise;
 
+/* Le stand qu'on choisit monte, celui qu'on quitte redescend : en un quart
+   de seconde, et non d'un coup. La bibliothèque glisse d'elle-même d'une
+   hauteur à l'autre quand le bloc se reconvertit — le stand garde son rang
+   dans la liste, c'est par lui qu'elle sait qui bouge. Un geste plus long se
+   ferait attendre ; plus court, il ne se verrait pas. */
+const DUREE_HAUSSE = 260;
+const sortie = (/** @type {number} */ t) => 1 - Math.pow(1 - t, 3);
+// qui demande moins de mouvement voit le stand changer de hauteur d'un coup
+const transitionHauteur = () => MOUVEMENT_REDUIT.matches ? {}
+  : { getElevation: { duration: DUREE_HAUSSE, easing: sortie } };
+
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
    comptées pour qu'un dessus, en plein jour, rende à peu près la couleur que
@@ -1154,7 +1165,7 @@ function couchesDeBloc(acc, cle){
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
     if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
       extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE }));
+      material: MATIERE, transitions: transitionHauteur() }));
   });
   if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
     extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
