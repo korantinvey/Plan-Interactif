@@ -37,6 +37,9 @@ const DEG = Math.PI / 180;
    se tasse au point que ses noms ne se lisent plus ; plus droit, les volumes
    ne se voient plus. */
 const INCLINAISON = 50 * DEG;
+/* Ce qu'une hauteur devient à l'écran, rapporté à ce qu'elle y serait vue de
+   face : qui veut un écart vertical donné à l'écran monte d'autant plus. */
+export const SINUS_INCLINAISON = Math.sin(INCLINAISON);
 /* L'œil se tient à une fois et demie la diagonale de la scène : assez près
    pour que le fond rapetisse et que l'entrée avance, assez loin pour qu'un
    hall en longueur ne s'écrase pas en pointe. */

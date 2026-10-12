@@ -39,7 +39,7 @@ import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
-  HAUTEUR_ZONE, HAUSSE_CHOIX } from "./camera.mjs";
+  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -797,12 +797,19 @@ function couchesPetites(id, commun, K, sousPixel){
    d'une zone masquée reste au sol avec elle. */
 function positionTexte(){
   if (!GL.camera) return d => d.position;
+  /* Les lignes d'un stand s'empilent en hauteur au-dessus de son centre : un
+     nom dressé face à l'œil garde sa taille, quand l'écart que le plan à plat
+     met entre le nom et le numéro se tassait avec l'inclinaison — sur trois
+     lignes, le nom recouvrait son numéro. Monté, l'écart reste vertical à
+     l'écran, quel que soit le cap. */
+  const pose = (d, h) => d.centre
+    ? [d.position[0], d.centre[1], h + .02 - d.ecart / SINUS_INCLINAISON]
+    : [d.position[0], d.position[1], h + .02];
   return d => {
-    if (d.zHausse !== undefined) return [d.position[0], d.position[1], d.zHausse + .02];
+    if (d.zHausse !== undefined) return pose(d, d.zHausse);
     const c = d.cls || "", zone = c.startsWith("zn");
     if (zone && /\bmasquee\b/.test(c)) return d.position;
-    const h = (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1);
-    return [d.position[0], d.position[1], h + .02];
+    return pose(d, (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1));
   };
 }
 

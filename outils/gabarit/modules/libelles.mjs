@@ -188,8 +188,13 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
     if (wCode + ecart + wPast <= w * .9 * k) past = { compte, wCode, ecart, wPast };
   }
   const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
+  /* Le centre du bloc et l'écart de chaque ligne, dits à part : la vue
+     immersive (`webgl.mjs`) empile les lignes en hauteur au-dessus du stand,
+     là où le plan à plat les échelonne dans le sol. Un nom couché garde son
+     placement — il est écrit en travers. */
   const pose = (lignes, f, x, y, cls, z0, z1) =>
-    noms.push({ text: lignes.join("\n"), position: pt(x, y), angle, taille: f, cls, z0, z1, pick, lbl: s.id });
+    noms.push({ text: lignes.join("\n"), position: pt(x, y), angle, taille: f, cls, z0, z1, pick, lbl: s.id,
+      ...(tourne ? {} : { centre: [xy[0], xy[1]], ecart: y - xy[1] }) });
   const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;

@@ -479,14 +479,14 @@ batiments · cartouche-poi · dessin · edition · edition-en-cours · enregistr
 forme-choisie · gestes-admin · index-salon · libelles · ordre-trace · outil-dessin · pile
 rendu · reprise-emplacements · socle-dessin · tiroir-itineraire · tutoriel
 
-### `modules/camera.mjs` — 152 l. → plan, plan-admin
+### `modules/camera.mjs` — 155 l. → plan, plan-admin
 
 - l.1 · La caméra du plan immersif — le hall vu de biais
 
 Fonctions :
 
-`demandeCamera` 52 · `cameraVoulue` 59 · `cleCamera` 61 · `metsEnJeu` 75 · `cameraEnJeu` 81
-`grandeurs` 84 · `platVersEcran` 94 · `ecranVersPlat` 112 · `matricesCamera` 135
+`demandeCamera` 55 · `cameraVoulue` 62 · `cleCamera` 64 · `metsEnJeu` 78 · `cameraEnJeu` 84
+`grandeurs` 87 · `platVersEcran` 97 · `ecranVersPlat` 115 · `matricesCamera` 138
 
 Importe :
 
@@ -1543,14 +1543,14 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · nom-emplacement · pile · placement-libelles
 tutoriel · webgl
 
-### `modules/libelles.mjs` — 284 l. → plan, plan-admin
+### `modules/libelles.mjs` — 289 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.49 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`libelles` 56 · `libelleZone` 133 · `emplacementWebgl` 161 · `libellesWebgl` 217
+`libelles` 56 · `libelleZone` 133 · `emplacementWebgl` 161 · `libellesWebgl` 222
 
 Importe :
 
@@ -2946,7 +2946,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 1917 l. → plan, plan-admin
+### `modules/webgl.mjs` — 1924 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -2959,24 +2959,24 @@ Fonctions :
 `blocDe` 395 · `majEditionWebgl` 408 · `cleBloc` 420 · `planifieWebgl` 446
 `toutRepeindreWebgl` 450 · `blocsDansLOrdre` 461 · `repeintWebgl` 466 · `assembleWebgl` 490
 `constTexte` 530 · `jeuDeCaracteres` 726 · `sousPixelOffert` 780 · `couchesPetites` 785
-`positionTexte` 798 · `parametresTexte` 813 · `couchesTexte` 815 · `accVide` 851
-`convertitBloc` 853 · `accDe` 869 · `parcoursGl` 876 · `hauteurVolume` 918
-`zoneMeublee` 946 · `repereEnObjet` 960 · `monteeRepere` 972 · `meubleZone` 987
-`eclaircit` 1003 · `opaque` 1005 · `formeGl` 1012 · `corpsDeclare` 1078 · `texteGl` 1087
-`imageGl` 1110 · `partage` 1142 · `designeGl` 1148 · `sortie` 1162 · `noteHauteur` 1168
-`anticipeHausses` 1197 · `detacheVolume` 1212 · `hauteurHausse` 1234 · `echelleHausse` 1239
-`haussesParId` 1242 · `arete` 1255 · `couchesDeBloc` 1265 · `modelesLibellesHtml` 1377
-`poseModelesLibelles` 1387 · `lisModelesLibelles` 1393 · `groupesNoms` 1426
-`couchesNoms` 1443 · `couchesPastilles` 1454 · `couchesLibellesWebgl` 1469
-`couchesDessineesWebgl` 1499 · `stage` 1520 · `brancheSurvolWebgl` 1524
-`poseSurvolWebgl` 1544 · `enTuiles` 1573 · `hauteurTuile` 1581 · `visePour` 1587
-`gonfleSurvol` 1592 · `coucheTuileSoulevee` 1614 · `couchesTuiles` 1644
-`poseCurseurWebgl` 1662 · `poseFocusWebgl` 1671 · `aplatsDe` 1678 · `coucheSurvol` 1681
-`coucheFocus` 1690 · `couchesPhare` 1717 · `lueurDe` 1734 · `opacitePhare` 1772
-`echellePhare` 1773 · `couchesPhareNoms` 1776 · `palierDefile` 1801 · `periodeDe` 1806
-`phaseDe` 1808 · `instant` 1818 · `animeCouche` 1819 · `majAnimationWebgl` 1842
-`animeWebgl` 1850 · `objetSous` 1884 · `cibleWebgl` 1891 · `priseWebgl` 1898
-`libelleSousWebgl` 1903 · `rectEcranWebgl` 1908
+`positionTexte` 798 · `parametresTexte` 820 · `couchesTexte` 822 · `accVide` 858
+`convertitBloc` 860 · `accDe` 876 · `parcoursGl` 883 · `hauteurVolume` 925
+`zoneMeublee` 953 · `repereEnObjet` 967 · `monteeRepere` 979 · `meubleZone` 994
+`eclaircit` 1010 · `opaque` 1012 · `formeGl` 1019 · `corpsDeclare` 1085 · `texteGl` 1094
+`imageGl` 1117 · `partage` 1149 · `designeGl` 1155 · `sortie` 1169 · `noteHauteur` 1175
+`anticipeHausses` 1204 · `detacheVolume` 1219 · `hauteurHausse` 1241 · `echelleHausse` 1246
+`haussesParId` 1249 · `arete` 1262 · `couchesDeBloc` 1272 · `modelesLibellesHtml` 1384
+`poseModelesLibelles` 1394 · `lisModelesLibelles` 1400 · `groupesNoms` 1433
+`couchesNoms` 1450 · `couchesPastilles` 1461 · `couchesLibellesWebgl` 1476
+`couchesDessineesWebgl` 1506 · `stage` 1527 · `brancheSurvolWebgl` 1531
+`poseSurvolWebgl` 1551 · `enTuiles` 1580 · `hauteurTuile` 1588 · `visePour` 1594
+`gonfleSurvol` 1599 · `coucheTuileSoulevee` 1621 · `couchesTuiles` 1651
+`poseCurseurWebgl` 1669 · `poseFocusWebgl` 1678 · `aplatsDe` 1685 · `coucheSurvol` 1688
+`coucheFocus` 1697 · `couchesPhare` 1724 · `lueurDe` 1741 · `opacitePhare` 1779
+`echellePhare` 1780 · `couchesPhareNoms` 1783 · `palierDefile` 1808 · `periodeDe` 1813
+`phaseDe` 1815 · `instant` 1825 · `animeCouche` 1826 · `majAnimationWebgl` 1849
+`animeWebgl` 1857 · `objetSous` 1891 · `cibleWebgl` 1898 · `priseWebgl` 1905
+`libelleSousWebgl` 1910 · `rectEcranWebgl` 1915
 
 Importe :
 
