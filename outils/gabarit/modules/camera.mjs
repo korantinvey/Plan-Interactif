@@ -60,6 +60,8 @@ export function demandeCamera(/** @type {boolean} */ voulue, /** @type {number} 
 }
 /** L'ambiance la demande-t-elle ? Le dessin seul décide de l'appliquer. */
 export const cameraVoulue = () => etat.voulue;
+/** Le cap retenu, en radians. */
+export const capCamera = () => etat.cap;
 /** Ce qui distingue une caméra d'une autre, pour qui doit savoir qu'elle a tourné. */
 export const cleCamera = () => etat.voulue ? String(etat.cap) : "";
 
