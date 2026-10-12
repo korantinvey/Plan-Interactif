@@ -29,7 +29,7 @@ import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
-import { GL, cibleWebgl, confieAuWebgl } from "./webgl.mjs";
+import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
   redresse } from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
@@ -313,6 +313,8 @@ export function brancheGestes(){
              cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
                              : e.target.closest("[data-id],[data-poi]") };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
+    // le stand appuyé commence à monter, sans attendre que le relâché le choisisse
+    monteALAppui(drag.cible);
   });
   svg.addEventListener("pointermove", e => {
     const [ex, ey] = redresse(e.clientX, e.clientY);
@@ -323,6 +325,10 @@ export function brancheGestes(){
       const r = cadrePlan(), k = view.w / r.width;
     const dx = (ex - drag.x) * k, dy = (ey - drag.y) * k;
     if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLesBandes(true); }
+    /* La main glisse : ce n'est pas un choix, le stand redescend. Compté en
+       pixels, et non en mètres comme le glissement : de près, deux mètres font
+       une main entière, et le stand serait monté tout du long. */
+    if (Math.abs(ex - drag.x) + Math.abs(ey - drag.y) > 6) rendLAppui();
     view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
   });
 
@@ -330,6 +336,9 @@ export function brancheGestes(){
      au pointerdown et on tranche au pointerup. */
   svg.addEventListener("pointerup", e => {
     doigts.delete(e.pointerId);
+    /* Ce que le relâché n'a pas choisi — un glissement, une visée, une borne
+       posée — redescend ; le choix, lui, est déjà fait quand ceci passe. */
+    setTimeout(rendLAppui, 0);
     // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
     // main sur le déplacement, sans quoi la vue sauterait
     if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
@@ -379,6 +388,7 @@ export function brancheGestes(){
   });
   svg.addEventListener("pointercancel", e => {
     doigts.delete(e.pointerId);
+    rendLAppui();
     if (doigts.size < 2) pince = null;
     // ce que les outils de l'exploitant tenaient se lâche aussi
     admin.annule();

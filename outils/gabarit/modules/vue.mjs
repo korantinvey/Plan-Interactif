@@ -252,7 +252,7 @@ export const appliqueVue = (enGeste = false) => {
      part vers elle, et le SVG caché garde sa géométrie figée. */
   if (RENDU_WEBGL && !GL.actif) monteWebgl();
   if (GL.actif){
-    vueWebgl();
+    vueWebgl(enGeste);
     majEditionWebgl();
     // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
     if (enEdition()) prete.dessinePoignees();

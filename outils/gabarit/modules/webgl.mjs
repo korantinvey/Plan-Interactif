@@ -39,7 +39,7 @@ import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -92,7 +92,7 @@ const DECK_WEBGL = {
   integrite: "sha384-RgImRMIyrd9hP0UaVP6ndqdVVIGUnZ7JVuk0LuYnVHqAYAOqHaGRzJPpuWdEDR1k",
 };
 export const GL = {
-  charge: false, actif: false, deck: null,
+  charge: false, actif: false, deck: null, geste: false,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
@@ -156,6 +156,7 @@ export function monteWebgl(){
     parent: hote, controller: false,
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
+    layerFilter: filtreCouches,
     onError: e => console.warn("Rendu WebGL :", e && e.message),
     // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
     onLoad: poseToileWebgl,
@@ -390,8 +391,9 @@ function basculeCamera(){
 /** Appelée à chaque image d'un geste : la matrice, et rien d'autre. Les noms
  *  qui passent un seuil de lisibilité se montrent ou se taisent dans le
  *  shader, qui connaît le zoom — voir « FiltreZoom ». */
-export function vueWebgl(){
+export function vueWebgl(enGeste = false){
   basculeCamera();
+  poseGeste(enGeste);
   GL.deck.setProps({ viewState: vueDeck() });
 }
 
@@ -561,7 +563,8 @@ function constTexte(){
       const am = this.getAttributeManager();
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
-    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0, muet: this.props.muetALEcran ? 1 : 0 } }); }
+    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0,
+      muet: this.props.muetALEcran && !GL.geste ? 1 : 0 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
@@ -609,7 +612,10 @@ function constTexte(){
   }
   TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
   TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
-  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0, muetALEcran: false };
+  /* Les deux drapeaux du texte sont des réglages de l'extension : la
+     bibliothèque les transmet ainsi aux lettres, que lit `filtreCouches`. */
+  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0,
+    muetALEcran: false, passeSousPixel: false };
   /* Le contour d'une lettre, et le flou qu'il prenait au zoom.
 
      Un texte SDF ne garde pas la forme de ses lettres : il garde, pour chaque
@@ -791,14 +797,53 @@ function sousPixelOffert(){
   if (/Mac|iPhone|iPad|iPod/.test(navigator.platform || "")) return false;
   return !/Android|Mobi|iPhone|iPad/.test(navigator.userAgent || "");
 }
+/* Le texte ordinaire, muet à l'écran, est toujours là — et non plus pour la
+   seule désignation : pendant un geste, c'est lui qui parle, et les trois
+   passes se taisent (`filtreCouches`). */
 function couchesPetites(id, commun, K, sousPixel){
   const base = { ...commun, fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode };
   if (!sousPixel || !sousPixelOffert()) return [new deck.TextLayer({ ...base, id: id + "-petit" })];
   return [
-    ...(commun.pickable ? [new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true })] : []),
+    new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true }),
     ...PASSES_SOUS_PIXEL.map(p => new deck.TextLayer({ ...base, id: id + "-petit" + p.canal,
-      pickable: false, sousPixel: [p.decalage, .6], parameters: { ...parametresTexte(), colorMask: p.masque } })),
+      pickable: false, passeSousPixel: true, sousPixel: [p.decalage, .6],
+      parameters: { ...parametresTexte(), colorMask: p.masque } })),
   ];
+}
+
+/**
+ * Ce que chaque image dessine vraiment.
+ *
+ * Une image de geste coûte à la carte graphique moins qu'à la bibliothèque :
+ * avant de dessiner une couche, celle-ci lui recompose tous ses réglages, et
+ * c'est le nombre de couches qui fait le prix, non le nombre de formes.
+ * Mesuré sur un vrai salon en vue immersive : cinquante et une couches, trois
+ * quarts du temps d'un zoom passés à les préparer, une image sur deux perdue.
+ *
+ * Or un petit texte lissé au sous-pixel en compte trois, une par canal de
+ * couleur — douze sur cinquante et une. Le lissage ne se voit que sur un
+ * texte immobile : pendant un geste, les trois passes se taisent, et la
+ * couche ordinaire, muette au repos, les remplace. Au repos, celle-ci ne
+ * sert plus qu'à la désignation.
+ */
+function filtreCouches(/** @type {any} */ { layer, isPicking }){
+  const p = layer.props;
+  if (p.muetALEcran) return isPicking || GL.geste;
+  if (p.passeSousPixel) return !GL.geste;
+  return true;
+}
+
+/* Le geste fini sans que la vue soit posée — rare, mais un doigt peut se
+   perdre — ne doit pas laisser le texte sans son lissage. */
+let _finGeste = 0;
+/** Le geste commence, ou finit : le texte change de couches. */
+function poseGeste(/** @type {boolean} */ oui){
+  clearTimeout(_finGeste);
+  if (oui) _finGeste = setTimeout(() => poseGeste(false), 250);
+  if (GL.geste === oui) return;
+  GL.geste = oui;
+  // la vue posée ne bouge plus : rien ne redessinerait sans cela
+  if (!oui) GL.deck.redraw("fin du geste");
 }
 
 /* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
@@ -1288,6 +1333,48 @@ function dansLeHall(/** @type {any} */ p){
   return ctx ? (/** @type {number} */ x, /** @type {number} */ y) => ctx.isPointInPath(trace, x, y) : null;
 }
 
+/* La teinte de chaque partie d'un figurant, choisie dans le shader.
+
+   Les parties d'une allure ne font qu'un maillage (`maillageReuni`), dont
+   chaque sommet dit sa partie ; chaque figurant porte ses quatre choix —
+   tenue, peau, cheveux, chaussures — et le shader lit la couleur dans les
+   palettes, écrites en dur dans son source. La lumière s'applique ensuite,
+   dans le fragment, comme pour une couleur ordinaire. */
+/** @type {any} */
+let _teinteFigurants = null;
+function teinteDesFigurants(){
+  if (_teinteFigurants) return _teinteFigurants;
+  const palette = (/** @type {string} */ nom, /** @type {number[][]} */ l) =>
+    "const vec3 " + nom + "[" + l.length + "] = vec3[" + l.length + "](" +
+    l.map(c => "vec3(" + c.slice(0, 3).map(v => (v / 255).toFixed(4)).join(", ") + ")").join(", ") + ");\n";
+  const decl = "in vec4 instanceFigurant;\n" +
+    palette("FIG_BAS", TENUES.map(t => t.bas)) + palette("FIG_CHAUSSURES", CHAUSSURES) +
+    palette("FIG_HAUT", TENUES.map(t => t.haut)) + palette("FIG_PEAU", TEINTS) + palette("FIG_CHEVEUX", CHEVEUX);
+  class TeinteDesFigurants extends deck.LayerExtension {
+    getShaders(){
+      return { inject: {
+        "vs:#decl": decl,
+        // l'ordre de `PARTIES` : bas, chaussures, haut, peau, cheveux
+        "vs:#main-end":
+          "int partie = int(colors.r + 0.5);\n" +
+          "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]\n" +
+          "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]\n" +
+          "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]\n" +
+          "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]\n" +
+          "  : FIG_CHEVEUX[int(instanceFigurant.z)];\n" +
+          "vColor = vec4(teinte, vColor.a);",
+      } };
+    }
+    initializeState(){
+      const am = this.getAttributeManager();
+      if (am) am.addInstanced({ instanceFigurant: { size: 4, accessor: "getFigurant" } });
+    }
+  }
+  TeinteDesFigurants.extensionName = "TeinteDesFigurants";
+  TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] } };
+  return (_teinteFigurants = new TeinteDesFigurants());
+}
+
 /** @type {{ grille: any, couches: any[], maillages: any }} */
 const FIGURANTS = { grille: null, couches: [], maillages: null };
 function couchesFigurants(){
@@ -1295,25 +1382,25 @@ function couchesFigurants(){
   const p = P(), g = grille(p, false);
   if (FIGURANTS.grille !== g){
     FIGURANTS.grille = g;
-    const M = FIGURANTS.maillages || (FIGURANTS.maillages = maillagesFigurant());
+    if (!FIGURANTS.maillages){
+      const M = maillagesFigurant();
+      FIGURANTS.maillages = { ombre: M.ombre, modeles: M.modeles.map(maillageReuni) };
+    }
+    const M = FIGURANTS.maillages;
     const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id), dansLeHall(p));
     const commun = { data, pickable: false, material: MATIERE,
       getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
       getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
       getScale: (/** @type {any} */ f) => [1, 1, f.taille] };
-    /** @type {Record<string, (f: any) => number[]>} */
-    const teinte = {
-      bas: f => TENUES[f.tenue].bas, chaussures: f => CHAUSSURES[f.chaussures],
-      haut: f => TENUES[f.tenue].haut, peau: f => TEINTS[f.peau], cheveux: f => CHEVEUX[f.cheveux],
-    };
     FIGURANTS.couches = [
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
         getColor: OMBRE, getScale: [1, 1, 1], parameters: { depthWriteEnabled: false } }),
-      // une couche par allure et par couleur : chacune ne répète que les siens
+      // une couche par allure : chacune ne répète que les siens, et les teint toutes parties
       ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
         const siens = data.filter(f => f.modele === k);
-        return siens.length ? Object.keys(teinte).map(partie => new deck.SimpleMeshLayer({
-          ...commun, data: siens, id: "figurants-" + k + "-" + partie, mesh: mod[partie], getColor: teinte[partie] })) : [];
+        return siens.length ? [new deck.SimpleMeshLayer({ ...commun, data: siens, id: "figurants-" + k,
+          mesh: mod, getColor: [255, 255, 255], extensions: [teinteDesFigurants()],
+          getFigurant: (/** @type {any} */ f) => [f.tenue, f.peau, f.cheveux, f.chaussures] })] : [];
       }),
     ];
   }
@@ -1581,6 +1668,39 @@ function anticipeHausses(notes){
     if (h) detacheVolume(g, h);
   }
 }
+/**
+ * Le mouvement part à l'appui, sans attendre le relâché.
+ *
+ * Un clic ne choisit qu'au relâché — on ne sait qu'alors si la main voulait
+ * choisir ou glisser —, et la montée attendait d'autant : le temps d'un
+ * clic, un dixième de seconde, se sentait comme un retard. Le stand appuyé
+ * se met donc à monter tout de suite, vers la hauteur d'un stand choisi.
+ * Le choix, au relâché, retrouve ce mouvement et le poursuit ; un glissement,
+ * ou un relâché qui ne le choisit pas, le fait redescendre (`rendLAppui`).
+ */
+/** @type {Element | null} */
+let _monteALAppui = null;
+export function monteALAppui(/** @type {Element | null} */ g){
+  if (!GL.actif || !GL.camera || !g || !g.classList || g.classList.contains("sel")) return;
+  if (!g.classList.contains("stand") && !g.classList.contains("zone")) return;
+  const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+  // un emplacement libre, ou un stand abaissé sous un trajet, ne monte pas au choix
+  if (!haut || haut === HAUTEUR_LIBRE || haut === HAUTEUR_ABAISSEE) return;
+  const h = noteHauteur(g, haut * HAUSSE_CHOIX);
+  if (!h) return;
+  _monteALAppui = g;
+  detacheVolume(g, h);
+}
+/** L'appui n'a pas choisi son stand : il reprend sa hauteur. */
+export function rendLAppui(){
+  const g = _monteALAppui;
+  _monteALAppui = null;
+  if (!g || !GL.actif || g.classList.contains("sel")) return;
+  const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+  const h = noteHauteur(g, haut);
+  if (h) detacheVolume(g, h);
+}
+
 /** Le volume quitte les couches peintes de son bloc pour une couche de mouvement. */
 function detacheVolume(g, h){
   const b = blocDe(g), couches = b && GL.blocs.get(b);
