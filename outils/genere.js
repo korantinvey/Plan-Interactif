@@ -459,8 +459,14 @@ const lieFeuille = (t) =>
    un aller-retour bloquant à elles seules. La console et le rapport gardent
    `config.js`. */
 const BALISE_CONFIG = '<script src="config.js"></script>';
-const CONFIG_EN_LIGNE = "<script>\n" +
-  epureScript(fs.readFileSync(D + "/gabarit/_config.js", "utf8")).trim() + "\n</script>";
+/* Versée une fois, pour `config.js` comme pour la page : la relire brute ici
+   livrait `__URL_PROJET__` en guise d'adresse, et l'administration cherchait
+   à se connecter chez un projet qui n'existe pas (« Failed to fetch »). */
+const CONFIG = fs.readFileSync(D + "/gabarit/_config.js", "utf8")
+  .replace("__URL_PROJET__", () => PROJET.url)
+  .replace("__CLE_PROJET__", () => PROJET.cle);
+if (/__[A-Z_]+_PROJET__/.test(CONFIG)) throw new Error("config.js : projet non versé");
+const CONFIG_EN_LIGNE = "<script>\n" + epureScript(CONFIG).trim() + "\n</script>";
 function annonceTot(html) {
   if (html.split(BALISE_CONFIG).length !== 2) throw new Error("configuration introuvable, ou en double");
   html = html.replace(BALISE_CONFIG, () => CONFIG_EN_LIGNE);
@@ -651,10 +657,6 @@ fs.writeFileSync(W + "plan-smcl.html",
        { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
-const CONFIG = fs.readFileSync(D + "/gabarit/_config.js", "utf8")
-  .replace("__URL_PROJET__", () => PROJET.url)
-  .replace("__CLE_PROJET__", () => PROJET.cle);
-if (/__[A-Z_]+_PROJET__/.test(CONFIG)) throw new Error("config.js : projet non versé");
 fs.writeFileSync(W + "config.js", epureScript(CONFIG));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
 fs.writeFileSync(W + "console.css",
