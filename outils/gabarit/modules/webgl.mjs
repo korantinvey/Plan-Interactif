@@ -1118,8 +1118,13 @@ function monteeRepere(el, polygon, acc){
   if (o.r.firstElementChild === el && polygon && polygon[0]){
     const xs = polygon[0].map(p => p[0]), ys = polygon[0].map(p => p[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const obj = objetRepere(o.glyphe, cx, cy, Math.max(...ys) - Math.min(...ys));
-    for (const p of obj.pieces) acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] });
+    /* Le sens où il monte, et s'il est tenu par l'exploitant
+       (`outil-escalier.mjs`) : il bleuit alors et sort sa poignée. */
+    const enMain = o.r.hasAttribute("data-objet-choisi");
+    const obj = objetRepere(o.glyphe, cx, cy, Math.max(...ys) - Math.min(...ys),
+      Number(o.r.getAttribute("data-sens")) || 0, enMain);
+    for (const p of obj.pieces) acc.decor.push({ polygon: p.polygon, haut: p.haut,
+      couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
     objetsPoses.set(o.r, { cx, cy, obj });
   }
   const pose = objetsPoses.get(o.r);

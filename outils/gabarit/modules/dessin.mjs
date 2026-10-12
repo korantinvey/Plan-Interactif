@@ -310,6 +310,9 @@ function traceRepere(f){
                /* Le pictogramme, que la vue immersive lit pour monter un
                   escalier ou un ascenseur sous la pastille (`decor.mjs`). */
                '" data-glyphe="' + esc(glypheRepere(f) || "") +
+               /* Et le sens où il monte, que l'exploitant a tourné : la
+                  pastille, elle, reste droite. */
+               (+f.rot ? '" data-sens="' + (+f.rot) : "") +
                '" tabindex="0" role="button" aria-label="' +
                esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
                teinte + '>';

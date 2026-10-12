@@ -32,7 +32,7 @@ const rect = (x, y, w, h, deg = 0) => {
 };
 
 (async () => {
-  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -125,6 +125,24 @@ const rect = (x, y, w, h, deg = 0) => {
   const marches = esc.pieces.map(x => x.haut);
   dit(marches.every((h, i) => !i || h > marches[i - 1]), "les marches montent l'une après l'autre");
   dit(esc.ancre[1] < 0, "la pastille se pose au fond, au-dessus de la dernière marche");
+
+  console.log("Un escalier tourné");
+  const droite = objetRepere("escalier", 0, 0, 6, 90);
+  const hautes = droite.pieces.map(x => x.haut), plusHaute = droite.pieces[hautes.indexOf(Math.max(...hautes))];
+  const basse = droite.pieces[hautes.indexOf(Math.min(...hautes))];
+  // la marche la plus haute court jusqu'au fond : son centre est plus loin dans le sens de la montée
+  const centreX = (q) => q.polygon.reduce((s, p) => s + p[0], 0) / q.polygon.length;
+  dit(centreX(plusHaute) > centreX(basse), "tourné de 90°, il monte vers la droite du plan");
+  dit(droite.ancre[0] > 0 && Math.abs(droite.ancre[1]) < 1e-6, "la pastille suit le haut des marches");
+  const droit = objetRepere("escalier", 3, 4, 6, 0);
+  dit(JSON.stringify(objetRepere("escalier", 3, 4, 6, 360).pieces.map(q => q.polygon.map(p => p.map(v => +v.toFixed(6)))))
+    === JSON.stringify(droit.pieces.map(q => q.polygon.map(p => p.map(v => +v.toFixed(6))))), "un tour complet le ramène");
+  const tenu = objetRepere("escalator", 0, 0, 6, 45, true);
+  dit(tenu.pieces.some(x => x.role === "poignee") && tenu.pieces.some(x => x.role === "tige"), "tenu, il sort sa poignée");
+  const [px, py] = poigneeObjet("escalator", 0, 0, 6, 45);
+  const rond = tenu.pieces.find(x => x.role === "poignee");
+  const rx = rond.polygon.reduce((s, p) => s + p[0], 0) / rond.polygon.length, ry = rond.polygon.reduce((s, p) => s + p[1], 0) / rond.polygon.length;
+  dit(Math.hypot(rx - px, ry - py) < 1e-6 && px > 0 && py < 0, "la poignée est où l'outil la vise, au haut des marches");
 
   if (ko){ console.log("\n" + ko + " échec(s)."); process.exit(1); }
   console.log("\nLe décor tient.");
