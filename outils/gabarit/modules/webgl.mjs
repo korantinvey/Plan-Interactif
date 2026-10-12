@@ -35,9 +35,13 @@ import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
+import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
+import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
+import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
 
@@ -84,8 +88,8 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan-ef08eeb5.min.js",
-  integrite: "sha384-NZseSRlLpdWIBLJtNNorQq/Mrx7IZjv90iDS/x8ERsfhSlfP6Z4D0ehGeDK1N46F",
+  src: "bibliotheques/deck.gl-9.3.11-plan-53efd7e8.min.js",
+  integrite: "sha384-RgImRMIyrd9hP0UaVP6ndqdVVIGUnZ7JVuk0LuYnVHqAYAOqHaGRzJPpuWdEDR1k",
 };
 export const GL = {
   charge: false, actif: false, deck: null,
@@ -494,7 +498,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesFigurants(), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
@@ -1134,6 +1138,11 @@ const EPAISSEUR_JETON = .16;
    dominait les stands de deux fois leur hauteur. Celui d'un objet prend la
    réduction que le décor lui a taillée. */
 const ECHELLE_JETON = .75;
+/* Un arrêt de transport se dresse comme les autres, mais sans épaisseur : une
+   plaque de quai est un panneau, et la tranche du jeton, vue d'au-dessus,
+   mangeait le haut de l'indice. Ce qu'on lit — le pictogramme, le numéro, les
+   barres du tram — reste face à l'œil, à la même taille. */
+const GLYPHES_MINCES = new Set(["transport", ...MODES_TRANSPORT.map(m => m.v)]);
 
 /* Ce qu'on sait de chaque repère pendant la conversion. L'aplat de la
    pastille, son premier enfant, le pose : son centre, sa taille, où il se
@@ -1158,7 +1167,8 @@ function poseJeton(el, polygon, couleur, acc){
       couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
     if (obj.pieces.length){ ancre = obj.ancre; z = obj.dessus; E = ECHELLE_PASTILLE; }
   }
-  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, e: cote * EPAISSEUR_JETON,
+  const mince = GLYPHES_MINCES.has(glyphe);
+  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, mince, e: mince ? 0 : cote * EPAISSEUR_JETON,
     polygon, couleur: opaque(couleur), el: r });
 }
 
@@ -1196,22 +1206,39 @@ function matriceJeton(/** @type {any} */ j, /** @type {number} */ t){
   return enColonnes(m);
 }
 
+/* Le corps du texte d'un jeton. La matrice ne réduit que son ancrage : les
+   lettres gardaient la taille de la pastille entière dans un jeton qui n'en
+   tient que les trois quarts, et vu de biais il se raccourcit encore en
+   hauteur quand elles, face à l'écran, ne se raccourcissent pas. Le numéro
+   débordait son rond et chevauchait les barres du tram. */
+function corpsDansLeJeton(/** @type {any} */ c, /** @type {any} */ j){
+  if (!j) return {};
+  const k = j.E, taille = c.props.getSize;
+  return { getSize: (/** @type {any} */ d, /** @type {any} */ i) => k * (typeof taille === "function" ? taille(d, i) : taille),
+    updateTriggers: { ...c.props.updateTriggers, getSize: k } };
+}
+
 /** Les couches d'un jeton : la plaque, puis le dessin sur sa face. */
 function couchesJeton(/** @type {Element} */ r, /** @type {any} */ sous, /** @type {string} */ cle){
   const j = jetonsPoses.get(r);
   const dessin = couchesDeBloc(sous, cle)
-    /* Couché sur la face, et non tourné vers l'écran : c'est la plaque qui
-       s'en charge. Et caché par ce qui se tient devant lui — les noms du plan
-       se peignent par-dessus le relief, et celui d'un jeton passait à travers
-       les stands. */
-    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: false,
+    /* Tourné vers l'écran, comme les noms du plan. Couché sur la face, il ne
+       l'était qu'en apparence : la bibliothèque ne passe que son point
+       d'ancrage par la matrice du jeton, et trace les lettres à plat sur le
+       sol, où le SVG les retourne — le numéro d'une ligne se lisait écrasé et
+       la tête en bas, « 13 » en miroir. Et caché par ce qui se tient devant
+       lui — les noms du plan se peignent par-dessus le relief, et celui d'un
+       jeton passait à travers les stands. */
+    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: true, ...corpsDansLeJeton(c, j),
       parameters: { ...c.props.parameters, depthCompare: "less-equal", depthWriteEnabled: false } }) : c);
   if (!j) return dessin;
+  const face = dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } }));
+  // l'arrêt n'a pas de plaque : son dessin porte déjà le fond de la pastille
+  if (j.mince) return face;
   const plaque = new deck.SolidPolygonLayer({ id: cle + "-plaque", data: [j], pickable: true,
     extruded: true, getPolygon: d => d.polygon[0], getFillColor: d => d.couleur, getElevation: d => d.e,
     material: MATIERE, el: r });
-  return [plaque.clone({ jeton: { ...j, face: "plaque" } }),
-    ...dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } }))];
+  return [plaque.clone({ jeton: { ...j, face: "plaque" } }), ...face];
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
@@ -1221,6 +1248,76 @@ function meubleZone(el, polygon, couleur, acc){
   for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
     g.hasAttribute("data-comptoir-choisi")))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
+}
+
+/* ------------------------------------------------------------
+   Les figurants
+
+   Du monde dans les allées de la vue immersive (`figurants.mjs`), semé sur
+   la grille de marche de l'itinéraire. Une couche à part, posée juste avant
+   les noms : ceux-ci passent devant, les stands cachent ceux qui sont
+   derrière eux. Les figurants ne se désignent pas — un appui passe au
+   travers, jusqu'à l'allée ou au stand. La grille se calcule une fois par
+   pavillon, et les couches gardent leurs données tant qu'elle ne change
+   pas : la carte graphique ne les reçoit qu'une fois.
+
+   Des maillages répétés (`SimpleMeshLayer`) et non des volumes montés à la
+   main : une silhouette — deux jambes, des épaules, une tête ronde — que des
+   prismes empilés ne savaient pas faire, et qui ne coûte qu'une position par
+   figurant. L'ombre, un voile, n'écrit pas la profondeur : posée à quatre
+   millimètres du sol, elle cacherait sinon le trait d'un itinéraire peint
+   après elle.
+   ------------------------------------------------------------ */
+/**
+ * Le bâtiment, pour ne semer personne dehors : le contour du hall relevé au
+ * calage de la carte (`environs.mjs` `contourDuHall`, relu ici sur le
+ * pavillon pour ne pas importer le fond de carte), sinon l'enveloppe des
+ * stands et des zones — celle-là même où l'itinéraire marche quand rien
+ * d'autre n'est dessiné.
+ */
+function dansLeHall(/** @type {any} */ p){
+  const calage = p.calage !== undefined ? p.calage : DATA.calage;
+  const pts = calage && calage.halls ? calage.halls[p.id] : null;
+  let trace = enveloppeDuSalon(p);
+  if (pts && pts.length >= 3){
+    trace = new Path2D();
+    pts.forEach((/** @type {number[]} */ q, /** @type {number} */ i) => i ? trace.lineTo(q[0], q[1]) : trace.moveTo(q[0], q[1]));
+    trace.closePath();
+  }
+  const ctx = document.createElement("canvas").getContext("2d");
+  return ctx ? (/** @type {number} */ x, /** @type {number} */ y) => ctx.isPointInPath(trace, x, y) : null;
+}
+
+/** @type {{ grille: any, couches: any[], maillages: any }} */
+const FIGURANTS = { grille: null, couches: [], maillages: null };
+function couchesFigurants(){
+  if (!GL.camera || !cameraEnJeu() || !DATA || !P()) return [];
+  const p = P(), g = grille(p, false);
+  if (FIGURANTS.grille !== g){
+    FIGURANTS.grille = g;
+    const M = FIGURANTS.maillages || (FIGURANTS.maillages = maillagesFigurant());
+    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id), dansLeHall(p));
+    const commun = { data, pickable: false, material: MATIERE,
+      getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
+      getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
+      getScale: (/** @type {any} */ f) => [1, 1, f.taille] };
+    /** @type {Record<string, (f: any) => number[]>} */
+    const teinte = {
+      bas: f => TENUES[f.tenue].bas, chaussures: f => CHAUSSURES[f.chaussures],
+      haut: f => TENUES[f.tenue].haut, peau: f => TEINTS[f.peau], cheveux: f => CHEVEUX[f.cheveux],
+    };
+    FIGURANTS.couches = [
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
+        getColor: OMBRE, getScale: [1, 1, 1], parameters: { depthWriteEnabled: false } }),
+      // une couche par allure et par couleur : chacune ne répète que les siens
+      ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
+        const siens = data.filter(f => f.modele === k);
+        return siens.length ? Object.keys(teinte).map(partie => new deck.SimpleMeshLayer({
+          ...commun, data: siens, id: "figurants-" + k + "-" + partie, mesh: mod[partie], getColor: teinte[partie] })) : [];
+      }),
+    ];
+  }
+  return FIGURANTS.couches;
 }
 
 /* Un volume ne se peint pas en transparence : on verrait ses façades du fond
