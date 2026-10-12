@@ -479,7 +479,7 @@ batiments · cartouche-poi · dessin · edition · edition-en-cours · enregistr
 forme-choisie · gestes-admin · index-salon · libelles · ordre-trace · outil-dessin · pile
 rendu · reprise-emplacements · socle-dessin · tiroir-itineraire · tutoriel
 
-### `modules/camera.mjs` — 181 l. → plan, plan-admin
+### `modules/camera.mjs` — 220 l. → plan, plan-admin
 
 - l.1 · La caméra du plan immersif — le hall vu de biais
 
@@ -487,7 +487,7 @@ Fonctions :
 
 `demandeCamera` 55 · `cameraVoulue` 62 · `capCamera` 64 · `cleCamera` 66 · `poseTrajet` 94
 `boutsDuTrajet` 99 · `metsEnJeu` 104 · `cameraEnJeu` 110 · `grandeurs` 113
-`platVersEcran` 123 · `ecranVersPlat` 141 · `matricesCamera` 164
+`platVersEcran` 123 · `ecranVersPlat` 141 · `solIncline` 165 · `matricesCamera` 203
 
 Importe :
 
@@ -495,7 +495,7 @@ annonce
 
 Importé par :
 
-ambiance · outil-comptoir · trace-itineraire · vue · vue-etat · webgl
+ambiance · environs · outil-comptoir · trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
 
@@ -952,23 +952,24 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 777 l. → plan, plan-admin
+### `modules/environs.mjs` — 826 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 52 · `styleSobre` 125 · `forceCarte` 219 · `calagePose` 237
-`calageCourant` 249 · `fondCourant` 252 · `recul` 257 · `adresseTuile` 262
-`tuilesDeLaVue` 272 · `chargeMapLibre` 337 · `vueGL` 368 · `styleDuFond` 389
-`guetteLaCarte` 417 · `poseCarteGL` 428 · `diagnostiqueGL` 518 · `relanceCarteGL` 538
-`videCarteGL` 550 · `dessineFondCarte` 575 · `cleMasqueCarte` 688 · `masqueCarte` 689
-`formesMasquantes` 698 · `contourDuHall` 720 · `cheminDuHall` 727 · `poseMasqueCarte` 745
-`ditCarte` 760 · `refaitFondCarte` 770
+`poseCalageEnCours` 53 · `styleSobre` 126 · `forceCarte` 220 · `calagePose` 238
+`calageCourant` 250 · `fondCourant` 253 · `recul` 258 · `adresseTuile` 263
+`tuilesDeLaVue` 273 · `chargeMapLibre` 338 · `vueGL` 370 · `styleDuFond` 388
+`guetteLaCarte` 416 · `poseCarteGL` 427 · `diagnostiqueGL` 517 · `relanceCarteGL` 537
+`videCarteGL` 549 · `inclineFond` 579 · `dessineFondCarte` 618 · `cleMasqueCarte` 737
+`masqueCarte` 738 · `formesMasquantes` 747 · `contourDuHall` 769 · `cheminDuHall` 776
+`poseMasqueCarte` 794 · `ditCarte` 809 · `refaitFondCarte` 819
 
 Importe :
 
-calques-dessin · chemin-forme · configuration · dom · donnees · terre · texte · vue-etat
+calques-dessin · camera · chemin-forme · configuration · dom · donnees · terre · texte
+vue-etat
 
 Importé par :
 
@@ -2986,7 +2987,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 2130 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2170 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3002,23 +3003,24 @@ Fonctions :
 `positionTexte` 803 · `cleChoisi` 839 · `versEcran` 842 · `enveloppe` 849 · `nomsCaches` 860
 `parametresTexte` 889 · `couchesTexte` 891 · `accVide` 928 · `convertitBloc` 930
 `accDe` 950 · `parcoursGl` 957 · `resteDebout` 1007 · `dedansAnneau` 1015
-`auDessusDuSol` 1036 · `surSonStand` 1044 · `hauteurVolume` 1053 · `zoneMeublee` 1083
-`repereEnObjet` 1099 · `monteeRepere` 1111 · `meubleZone` 1126 · `fonce` 1146
-`opaque` 1148 · `formeGl` 1155 · `corpsDeclare` 1225 · `texteGl` 1234 · `imageGl` 1257
-`partage` 1289 · `designeGl` 1295 · `sortie` 1309 · `noteHauteur` 1315
-`anticipeHausses` 1345 · `detacheVolume` 1360 · `hauteurHausse` 1386 · `echelleHausse` 1391
-`haussesParId` 1394 · `arete` 1410 · `contourDe` 1412 · `coucheContours` 1416 · `aPlat` 1435
-`couchesDeBloc` 1437 · `modelesLibellesHtml` 1561 · `poseModelesLibelles` 1571
-`lisModelesLibelles` 1577 · `groupesNoms` 1610 · `couchesNoms` 1627
-`couchesPastilles` 1638 · `couchesLibellesWebgl` 1653 · `couchesDessineesWebgl` 1689
-`stage` 1710 · `brancheSurvolWebgl` 1714 · `poseSurvolWebgl` 1734 · `enTuiles` 1763
-`hauteurTuile` 1771 · `visePour` 1777 · `gonfleSurvol` 1782 · `coucheTuileSoulevee` 1804
-`couchesTuiles` 1834 · `poseCurseurWebgl` 1852 · `poseFocusWebgl` 1861 · `aplatsDe` 1868
-`coucheSurvol` 1871 · `coucheSurvolVolume` 1885 · `coucheFocus` 1898 · `couchesPhare` 1925
-`lueurDe` 1942 · `opacitePhare` 1980 · `echellePhare` 1981 · `couchesPhareNoms` 1984
-`palierDefile` 2009 · `periodeDe` 2014 · `phaseDe` 2016 · `instant` 2026
-`animeCouche` 2027 · `majAnimationWebgl` 2055 · `animeWebgl` 2063 · `objetSous` 2097
-`cibleWebgl` 2104 · `priseWebgl` 2111 · `libelleSousWebgl` 2116 · `rectEcranWebgl` 2121
+`auDessusDuSol` 1040 · `surSonStand` 1048 · `hauteurVolume` 1057 · `zoneMeublee` 1087
+`repereEnObjet` 1103 · `monteeRepere` 1115 · `meubleZone` 1130 · `fonce` 1150
+`opaque` 1152 · `formeGl` 1159 · `corpsDeclare` 1229 · `texteGl` 1238 · `imageGl` 1261
+`imageDressee` 1303 · `socleImage` 1317 · `partage` 1329 · `designeGl` 1335 · `sortie` 1349
+`noteHauteur` 1355 · `anticipeHausses` 1385 · `detacheVolume` 1400 · `hauteurHausse` 1426
+`echelleHausse` 1431 · `haussesParId` 1434 · `arete` 1450 · `contourDe` 1452
+`coucheContours` 1456 · `aPlat` 1475 · `couchesDeBloc` 1477 · `modelesLibellesHtml` 1601
+`poseModelesLibelles` 1611 · `lisModelesLibelles` 1617 · `groupesNoms` 1650
+`couchesNoms` 1667 · `couchesPastilles` 1678 · `couchesLibellesWebgl` 1693
+`couchesDessineesWebgl` 1729 · `stage` 1750 · `brancheSurvolWebgl` 1754
+`poseSurvolWebgl` 1774 · `enTuiles` 1803 · `hauteurTuile` 1811 · `visePour` 1817
+`gonfleSurvol` 1822 · `coucheTuileSoulevee` 1844 · `couchesTuiles` 1874
+`poseCurseurWebgl` 1892 · `poseFocusWebgl` 1901 · `aplatsDe` 1908 · `coucheSurvol` 1911
+`coucheSurvolVolume` 1925 · `coucheFocus` 1938 · `couchesPhare` 1965 · `lueurDe` 1982
+`opacitePhare` 2020 · `echellePhare` 2021 · `couchesPhareNoms` 2024 · `palierDefile` 2049
+`periodeDe` 2054 · `phaseDe` 2056 · `instant` 2066 · `animeCouche` 2067
+`majAnimationWebgl` 2095 · `animeWebgl` 2103 · `objetSous` 2137 · `cibleWebgl` 2144
+`priseWebgl` 2151 · `libelleSousWebgl` 2156 · `rectEcranWebgl` 2161
 
 Importe :
 
