@@ -38,7 +38,7 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
+import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
@@ -1028,6 +1028,10 @@ TRAJET_CHANGE.suis(() => {
   GL.massif = true;
   toutRepeindreWebgl();
 });
+/* Le cap tourne : les images dressées face à l'œil (`imageDressee`) se
+   retournent avec lui, et elles ne tiennent leur orientation que de la
+   conversion. */
+CAMERA_CHANGEE.suis(() => { if (GL.actif && GL.camera) toutRepeindreWebgl(); });
 
 /* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
    sol, il en partageait la profondeur : vue de biais, la carte graphique ne
@@ -1273,8 +1277,44 @@ function imageGl(el, m, op, acc){
     x += (w - w2) / 2; y += (h - h2) / 2; w = w2; h = h2;
   }
   const a = appM(m, [x, y]), b = appM(m, [x + w, y + h]);
-  acc.images.push({ href, bornes: [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])],
+  const bornes = [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])];
+  acc.images.push({ href, bornes: GL.camera ? imageDressee(bornes, socleImage(el)) : bornes,
     op, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]") });
+}
+
+/* ------------------------------------------------------------
+   Les images debout
+
+   Couchée sur le sol incliné, une image — le logo qu'un exploitant pose
+   sur un stand — s'écrasait en hauteur d'autant que le hall fuyait, et ne
+   se lisait plus. En vue immersive, elle se dresse donc face à l'œil, comme
+   les noms : à angle droit de l'axe de la vue, quel que soit le cap, à sa
+   taille sur le plan et plantée par le milieu de son bord bas au centre de
+   l'endroit qu'elle couvrait.
+   ------------------------------------------------------------ */
+
+/** Les quatre coins d'une image dressée — bas gauche, haut gauche, haut
+ *  droit, bas droit, l'ordre de la bibliothèque —, depuis ses bornes à plat
+ *  `[gauche, bas, droite, haut]` et la hauteur `z` où elle se plante. */
+function imageDressee(/** @type {number[]} */ b, /** @type {number} */ z){
+  const cap = capCamera(), cc = Math.cos(cap), sc = Math.sin(cap);
+  const st = SINUS_INCLINAISON, ct = Math.sqrt(1 - st * st);
+  const w = b[2] - b[0], h = b[1] - b[3], cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  /* Les deux axes de l'écran, en mètres du monde (`versEcran` à l'envers) :
+     la droite reste au sol, le haut se penche en arrière de l'inclinaison. */
+  const droite = [cc, -sc, 0], haut = [-sc * ct, -cc * ct, st];
+  const pt = (/** @type {number} */ u, /** @type {number} */ v) =>
+    [cx + droite[0] * u + haut[0] * v, cy + droite[1] * u + haut[1] * v, z + haut[2] * v];
+  return [pt(-w / 2, 0), pt(-w / 2, h), pt(w / 2, h), pt(w / 2, 0)];
+}
+
+/** Où une image se plante : sur le dessus du stand qu'elle désigne — au sol,
+ *  ses façades la couperaient —, au sol sinon. */
+function socleImage(/** @type {Element} */ el){
+  const lie = el.closest("[data-id]");
+  if (!lie) return 0;
+  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(lie.getAttribute("data-id") || "") + '"]');
+  return g && g.firstElementChild ? hauteurVolume(g.firstElementChild) + .02 : 0;
 }
 
 /* Une forme qui ne désigne rien laisse passer le clic, comme en SVG où les
