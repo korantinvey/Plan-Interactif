@@ -39,7 +39,7 @@ import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
-  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON } from "./camera.mjs";
+  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -98,6 +98,8 @@ export const GL = {
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
   // la vue immersive est-elle à l'écran — voir « La vue immersive »
   camera: false,
+  // la reconversion en cours change le plan entier de hauteur : sans mouvement
+  massif: false,
   /** @type {number[] | null} le sol du hall, sur lequel un volume rend sa transparence */
   sol: null,
 };
@@ -190,6 +192,8 @@ export function monteWebgl(){
         const b = blocDe(n.target);
         if (b === "ordre") GL.ordre = true;
         else if (b) GL.sales.add(b);
+        // un stand qui monte ou s'abaisse emporte ses marques, posées sur son dessus
+        if (b && b !== "ordre" && b.id === "stands" && GL.camera && $("dists")) GL.sales.add($("dists"));
       }
       // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
       majEditionWebgl();
@@ -480,7 +484,7 @@ function repeintWebgl(){
     }
   }
   for (const b of [...GL.blocs.keys()]) if (!vus.has(b)) GL.blocs.delete(b);
-  GL.sales.clear(); GL.tout = false; GL.ordre = false;
+  GL.sales.clear(); GL.tout = false; GL.ordre = false; GL.massif = false;
   GL.deck.setProps({ layers: assembleWebgl() });
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
@@ -810,8 +814,72 @@ function positionTexte(){
     if (d.zHausse !== undefined) return pose(d, d.zHausse);
     const c = d.cls || "", zone = c.startsWith("zn");
     if (zone && /\bmasquee\b/.test(c)) return d.position;
+    // le nom d'un stand abaissé sous un trajet descend avec lui
+    if (!zone && boutsDuTrajet() && !debout.has(d.lbl)) return pose(d, HAUTEUR_ABAISSEE);
     return pose(d, (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1));
   };
+}
+
+/* ------------------------------------------------------------
+   Les noms cachés par le stand choisi
+
+   Les noms se peignent par-dessus le relief (« parametresTexte ») : le stand
+   choisi, haussé au-dessus des autres, ne cache donc pas le nom du stand qui
+   se tient derrière lui, et les deux noms se mêlaient à l'écran — le sien,
+   posé sur son dessus, et celui du voisin, qui tombait au même endroit. Le
+   nom d'un stand plus loin de l'œil dont la place à l'écran tombe dans la
+   silhouette du volume choisi se tait donc, le temps du choix.
+
+   La silhouette se calcule vue de loin, sans la fuite : l'œil se tient à une
+   fois et demie la diagonale de la scène (`camera.mjs`), et la fuite ne
+   déplace un nom que d'une fraction de la taille d'un stand.
+   ------------------------------------------------------------ */
+/** @type {{ id: string, anneaux: number[][][], haut: number } | null} le volume choisi, relevé à la conversion */
+let CHOISI = null;
+const cleChoisi = () => CHOISI ? CHOISI.id + "@" + CHOISI.haut : "";
+
+/** Un point du monde vu à l'écran, en mètres, et sa proximité de l'œil. */
+function versEcran(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z){
+  const cap = capCamera(), cc = Math.cos(cap), sc = Math.sin(cap);
+  const st = SINUS_INCLINAISON, ct = Math.sqrt(1 - st * st);
+  const y1 = x * sc + y * cc;
+  return { u: x * cc - y * sc, v: ct * y1 - st * z, pres: st * y1 + ct * z };
+}
+/** L'enveloppe convexe de points de l'écran, dans un sens fixe. */
+function enveloppe(/** @type {number[][]} */ pts){
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const croix = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const bas = [], haut = [];
+  for (const q of p){ while (bas.length > 1 && croix(bas[bas.length - 2], bas[bas.length - 1], q) <= 0) bas.pop(); bas.push(q); }
+  for (const q of p.reverse()){ while (haut.length > 1 && croix(haut[haut.length - 2], haut[haut.length - 1], q) <= 0) haut.pop(); haut.push(q); }
+  return bas.slice(0, -1).concat(haut.slice(0, -1));
+}
+
+/** Les stands et les zones dont le nom passe derrière le volume choisi. */
+function nomsCaches(/** @type {any[]} */ liste){
+  const caches = new Set();
+  if (!GL.camera || !CHOISI || !CHOISI.anneaux[0]) return caches;
+  const pied = CHOISI.anneaux[0], h = CHOISI.haut;
+  const sil = enveloppe(pied.flatMap(([x, y]) =>
+    [versEcran(x, y, 0), versEcran(x, y, h)].map(e => [e.u, e.v])));
+  if (sil.length < 3) return caches;
+  const cx = pied.reduce((t, p) => t + p[0], 0) / pied.length, cy = pied.reduce((t, p) => t + p[1], 0) / pied.length;
+  const presChoisi = versEcran(cx, cy, 0).pres;
+  const pos = positionTexte();
+  for (const d of liste){
+    if (d.lbl === CHOISI.id || caches.has(d.lbl)) continue;
+    const sol = d.centre || d.position;
+    // ce qui se tient devant le choisi le cache, et garde donc son nom
+    if (versEcran(sol[0], sol[1], 0).pres >= presChoisi) continue;
+    const [x, y, z] = pos(d), e = versEcran(x, y, z || 0);
+    /* Un nom tient de la place : son milieu et ses deux bouts. Une ligne
+       mesure à peu près six dixièmes de corps par lettre. */
+    const lettres = Math.max(...String(d.text).split("\n").map(l => l.length));
+    const demi = d.taille * lettres * .3;
+    if ([-demi, 0, demi].some(du => dedansAnneau(sil, e.u + du, e.v))) caches.add(d.lbl);
+  }
+  return caches;
 }
 
 /* Un nom se dresse face à l'œil : en vue immersive, son rectangle traversait
@@ -829,7 +897,8 @@ function couchesTexte(id, items, famille, graisse, extra){
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
     lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
-    updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur), getPosition: cleCamera() + GL.camera },
+    updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur),
+      getPosition: cleCamera() + GL.camera + JSON.stringify(boutsDuTrajet()) },
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
@@ -865,7 +934,11 @@ function convertitBloc(racine, cle){
   const acc = accVide((_page.enEdition() && (racine.classList.contains("editable") ||
       racine.id === "poignees" || racine.id === "poigneesGeo")) ||
     racine.id === "calageApercu");
+  const avant = racine.id === "stands" ? cleChoisi() : null;
+  if (avant !== null) CHOISI = null;
   parcoursGl(racine, M_ID, 1, acc);
+  // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
+  if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
   const out = couchesDeBloc(acc, cle);
   let i = 0;
   for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
@@ -923,13 +996,61 @@ function parcoursGl(el, m, op, acc){
    sélection posés sur lui restent des aplats, qui se peignent alors au pied
    du volume. Une zone masquée reste au sol : pâlie, elle dit à l'exploitant
    qu'elle ne sera pas sur le plan public, et un volume la ferait voir. */
+/* Les stands qu'un trajet tracé garde debout : ceux où l'un de ses points
+   tombe — départ, arrêt, arrivée. Vu de biais, le trajet passait derrière
+   une rangée de stands et s'y cachait ; tout le reste s'abaisse donc le
+   temps qu'il est tracé. Le jeu se refait à chaque conversion, et sert aux
+   noms (`positionTexte`) et au mouvement qui part au clic, qui n'ont pas
+   le contour sous la main. */
+/** @type {Set<string>} les identifiants des stands gardés debout */
+let debout = new Set();
+function resteDebout(/** @type {Element} */ g, /** @type {number[][][] | undefined} */ anneaux){
+  const id = g.getAttribute("data-id") || "";
+  if (!anneaux || !anneaux[0]) return debout.has(id);
+  const an = anneaux[0];
+  const oui = (boutsDuTrajet() || []).some(b => dedansAnneau(an, b.xy[0], b.xy[1]));
+  if (oui) debout.add(id); else debout.delete(id);
+  return oui;
+}
+function dedansAnneau(/** @type {number[][]} */ an, /** @type {number} */ x, /** @type {number} */ y){
+  let ok = false;
+  for (let i = 0, j = an.length - 1; i < an.length; j = i++){
+    const [xi, yi] = an[i], [xj, yj] = an[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ok = !ok;
+  }
+  return ok;
+}
+/* Le trajet apparaît, change ou s'efface : le plan entier change de hauteur
+   d'un coup — six cents stands en mouvement chacun dans sa couche coûteraient
+   plus qu'ils ne montreraient. */
+TRAJET_CHANGE.suis(() => {
+  if (!GL.actif || !GL.camera) return;
+  GL.massif = true;
+  toutRepeindreWebgl();
+});
+
 /* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
    sol, il en partageait la profondeur : vue de biais, la carte graphique ne
    départageait plus les deux, et le trajet se hachait de traînées pâles. */
 const SOL_ITINERAIRE = .08;
-const auDessusDuSol = (el) => GL.camera && el.closest("#itin") ? SOL_ITINERAIRE : 0;
+const auDessusDuSol = (el) => !GL.camera ? 0 : el.closest("#itin") ? SOL_ITINERAIRE : surSonStand(el);
 
-function hauteurVolume(el){
+/* Le coin corné, la pastille, le liseré d'une distinction se posent sur le
+   dessus du stand qu'ils marquent : laissés au sol, ils restaient dans le
+   volume, que ses façades cachaient — la vue immersive perdait les nouveaux
+   exposants et les adhérents. Ils suivent la hauteur du stand, abaissé sous
+   un trajet ou haussé au choix, un rien au-dessus pour ne pas se hacher avec
+   son dessus. */
+function surSonStand(/** @type {Element} */ el){
+  const m = el.closest("#dists [data-sur]");
+  if (!m) return 0;
+  const id = m.getAttribute("data-sur") || "";
+  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
+  const trace = g && g.firstElementChild;
+  return trace ? hauteurVolume(trace) + .02 : 0;
+}
+
+function hauteurVolume(el, anneaux){
   if (!cameraEnJeu()) return 0;
   const g = el.parentNode;
   if (!g || !g.classList || g.firstElementChild !== el) return 0;
@@ -937,6 +1058,8 @@ function hauteurVolume(el){
   if (!stand && !zone) return 0;
   if (stand && g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
   if (zone && g.classList.contains("masquee")) return 0;
+  /* Un trajet tracé : tout s'abaisse, sauf où il part, s'arrête et arrive. */
+  if (boutsDuTrajet() && !zoneMeublee(g) && !resteDebout(g, anneaux)) return HAUTEUR_ABAISSEE;
   /* Ce qu'on a choisi se hausse au-dessus des autres : vu de biais, un liseré
      au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
      des yeux en ouvrant sa fiche. */
@@ -1031,12 +1154,14 @@ function formeGl(el, cs, m, op, traces, acc){
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(PRISES), haut = hauteurVolume(el);
+    const prise = el.closest(PRISES), haut = hauteurVolume(el, anneaux);
     /* Le volume choisi fonce : monté devant un stand de même couleur, il s'en
        détache au lieu de s'y confondre. */
     const choisi = haut && el.parentNode.classList.contains("sel");
     const base = haut ? opaque(plein) : plein, couleur = choisi ? fonce(base, SOMBRE_CHOIX) : base;
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
+    if (choisi && el.parentNode.classList.contains("stand"))
+      CHOISI = { id: el.parentNode.getAttribute("data-id") || "", anneaux, haut };
     const sol = auDessusDuSol(el);
     for (const polygon of avecTrous(anneaux)){
       const monte = monteeRepere(el, polygon, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
@@ -1186,8 +1311,9 @@ const hausses = new Map();
 function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
   const avant = hauteursPeintes.get(g);
   hauteursPeintes.set(g, haut);
-  // qui demande moins de mouvement le voit changer de hauteur d'un coup
-  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches){
+  // qui demande moins de mouvement le voit changer de hauteur d'un coup, comme
+  // le plan entier qui s'abaisse sous un trajet
+  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches && !GL.massif){
     /* Un volume encore en route repart d'où il est, et non d'où il allait :
        un clic sur un autre stand pendant la montée du premier le faisait
        bondir à sa hauteur d'arrivée avant de redescendre. */
@@ -1530,17 +1656,23 @@ function couchesLibellesWebgl(){
        mobilier, loin de son sol, et n'a pas à suivre ce qu'il monte. */
     const mobiles = new Map([...haussesParId()].filter(([id]) =>
       GL.libelles.some(d => d.lbl === id && !(d.cls || "").startsWith("zn"))));
-    const fixes = mobiles.size ? GL.libelles.filter(d => !mobiles.has(d.lbl)) : GL.libelles;
+    const caches = nomsCaches(GL.libelles);
+    const fixes = mobiles.size || caches.size
+      ? GL.libelles.filter(d => !mobiles.has(d.lbl) && !caches.has(d.lbl)) : GL.libelles;
     /* Chaque liste a sa clé dans le cache des groupes : sous la même, le nom
        qui monte reprenait les groupes de tous les autres, et le plan entier
        se peignait deux fois, décalé — tous les noms paraissaient flous le
        temps du mouvement. */
-    const cleFixes = mobiles.size ? "labels-sans|" + [...mobiles.keys()].join("|") : "labels";
+    const cleFixes = (mobiles.size ? "labels-sans|" + [...mobiles.keys()].join("|") : "labels") +
+      (caches.size ? "|caches|" + [...caches].join("|") : "");
+    // les groupes d'un choix quitté ne reserviront pas : chaque stand choisi en ferait d'autres
+    for (const k of [...GL.groupes.keys()]) if (k.includes("|caches|") && k !== cleFixes) GL.groupes.delete(k);
     GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms(cleFixes, fixes))];
     for (const [id, h] of mobiles){
       /* Posé à la hauteur d'arrivée du volume, et non à celle que ses
          classes diraient : le mouvement part au clic, avant que les noms
          n'aient appris la sélection. */
+      if (caches.has(id)) continue;
       const siens = GL.libelles.filter(d => d.lbl === id).map(d => ({ ...d, zHausse: h.vers }));
       if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
         groupesNoms("labels-hausse|" + id + "|" + h.vers, siens)).map(c => c.clone({ hausseTexte: h })));

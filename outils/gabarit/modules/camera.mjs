@@ -60,6 +60,8 @@ export function demandeCamera(/** @type {boolean} */ voulue, /** @type {number} 
 }
 /** L'ambiance la demande-t-elle ? Le dessin seul décide de l'appliquer. */
 export const cameraVoulue = () => etat.voulue;
+/** Le cap retenu, en radians. */
+export const capCamera = () => etat.cap;
 /** Ce qui distingue une caméra d'une autre, pour qui doit savoir qu'elle a tourné. */
 export const cleCamera = () => etat.voulue ? String(etat.cap) : "";
 
@@ -74,6 +76,30 @@ export const HAUTEUR_STAND = 1.6, HAUTEUR_LIBRE = .06;
 export const HAUTEUR_ZONE = 1;
 /* Ce qu'on choisit se hausse au-dessus du reste, d'autant. */
 export const HAUSSE_CHOIX = 2.2;
+/* ------------------------------------------------------------
+   Le trajet à l'écran
+
+   Vu de biais, un itinéraire qui passe derrière une rangée de stands s'y
+   cache. Tant qu'un trajet est tracé, les stands s'abaissent donc — sauf
+   ceux où il part, s'arrête et arrive. Le tracé (`trace-itineraire.mjs`) dit
+   ici quels points il relie ; le dessin (`webgl.mjs`) l'écoute et garde haut
+   tout stand qui en contient un. Ce module neutre sert de relais : le dessin
+   ne peut importer le tracé, qui l'atteint par la vue.
+   ------------------------------------------------------------ */
+/** @type {{ p: number, xy: number[] }[] | null} */
+let bouts = null;
+/** Le trajet vient d'apparaître, de changer ou de disparaître. */
+export const TRAJET_CHANGE = creeAnnonce();
+/** Les points que relie le trajet tracé — départ, arrêts, arrivée —, ou rien. */
+export function poseTrajet(/** @type {{ p: number, xy: number[] }[] | null} */ points){
+  const avant = JSON.stringify(bouts), apres = JSON.stringify(points);
+  bouts = points;
+  if (avant !== apres) TRAJET_CHANGE.dis();
+}
+export const boutsDuTrajet = () => bouts;
+/** La hauteur d'un stand abaissé pendant qu'un trajet est tracé. */
+export const HAUTEUR_ABAISSEE = .18;
+
 /** Le dessin applique la caméra, ou la retire. */
 export function metsEnJeu(/** @type {boolean} */ oui){
   if (etat.enJeu === oui) return;
