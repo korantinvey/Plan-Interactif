@@ -30,7 +30,7 @@ function croix(w, h, l, deg = 0){
 }
 
 (async () => {
-  const { placeFigurants, silhouette, graineDe, FIGURANTS_MAX, TENUES, TEINTS } =
+  const { placeFigurants, graineDe, FIGURANTS_MAX, TENUES, TEINTS } =
     await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "figurants.mjs")));
   const PAS = .5;
 
