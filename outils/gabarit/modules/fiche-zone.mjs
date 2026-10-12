@@ -134,7 +134,8 @@ export function champsZone(hote, o){
   const montreComptoir = champComptoir(champZone(hote, "Comptoir d'accueil",
     document.createElement("div"),
     "Faites glisser le comptoir pour le placer, tirez sa poignée ronde pour le " +
-    "tourner (Maj pour un angle libre). Il se dresse ainsi dans la vue " +
+    "tourner (Maj pour un angle libre) : il reste dans la zone, et s'arrête " +
+    "contre son bord. Il se dresse ainsi dans la vue " +
     "immersive, pour le visiteur comme pour vous — où il se prend aussi " +
     "directement sur le plan."), o);
   const suitType = () => montreComptoir(type.value === "accueil");

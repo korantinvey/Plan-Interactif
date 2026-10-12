@@ -24,7 +24,7 @@
    Un module de l'administration : `fiche-zone.mjs` l'importe.
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
-import { comptoir, reglageComptoirValide } from "./decor.mjs";
+import { comptoir, reglageComptoirValide, rapprocheComptoir } from "./decor.mjs";
 import { anneauDe } from "./outil-comptoir.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -131,9 +131,20 @@ export function champComptoir(bloc, o){
 
   /** Le réglage qu'on modifie : celui en place, ou le placement d'office figé. */
   const fige = () => {
-    if (r) return r;
+    // un réglage qui ne tient plus dans la zone retouchée ne compte plus
+    if (r && comptoir(an, r).choisi) return r;
     const c = place();
     return (r = { u: (c.cx - x0) / w, v: (c.cy - y0) / h, a: c.angle });
+  };
+  /** Vouloir un autre réglage : le comptoir reste dans sa zone, et s'arrête
+   *  contre le bord qu'on lui fait franchir (`decor.mjs` `rapprocheComptoir`). */
+  const veut = (/** @type {(q: { u: number, v: number, a: number }) => void} */ change) => {
+    const depart = { ...fige() }, voulu = { ...depart };
+    change(voulu);
+    voulu.u = Math.min(1, Math.max(0, voulu.u));
+    voulu.v = Math.min(1, Math.max(0, voulu.v));
+    voulu.a = ((voulu.a % 180) + 180) % 180;
+    r = rapprocheComptoir(an, depart, voulu);
   };
 
   const versPlan = (/** @type {PointerEvent} */ e) => {
@@ -159,16 +170,15 @@ export function champComptoir(bloc, o){
     if (!geste) return;
     const p = versPlan(e);
     if (!p) return;
-    const q = fige();
     if (geste.genre === "place"){
-      q.u = Math.min(1, Math.max(0, (p[0] - geste.dx - x0) / w));
-      q.v = Math.min(1, Math.max(0, (p[1] - geste.dy - y0) / h));
+      const { dx, dy } = geste;
+      veut(q => { q.u = (p[0] - dx - x0) / w; q.v = (p[1] - dy - y0) / h; });
     } else {
       const c = place();
       // la poignée est du côté « -y » du comptoir : l'angle se lit d'elle au milieu
       let a = Math.atan2(p[0] - c.cx, -(p[1] - c.cy)) * 180 / Math.PI;
       if (!e.shiftKey) a = Math.round(a / PAS_ANGLE) * PAS_ANGLE;
-      q.a = ((a % 180) + 180) % 180;
+      veut(q => { q.a = a; });
     }
     dessine();
   });
@@ -176,9 +186,9 @@ export function champComptoir(bloc, o){
   toile.addEventListener("pointerup", lache);
   toile.addEventListener("pointercancel", lache);
 
-  angle.oninput = () => { fige().a = +angle.value; dessine(); };
+  angle.oninput = () => { veut(q => { q.a = +angle.value; }); dessine(); };
   angle.onchange = enregistre;
-  quart.onclick = () => { const q = fige(); q.a = (q.a + 90) % 180; dessine(); enregistre(); };
+  quart.onclick = () => { veut(q => { q.a += 90; }); dessine(); enregistre(); };
   auCentre.onclick = () => { r = null; dessine(); enregistre(); };
 
   dessine();

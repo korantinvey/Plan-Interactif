@@ -687,14 +687,15 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 295 l. → plan, plan-admin
+### `modules/decor.mjs` — 356 l. → plan, plan-admin
 
 - l.1 · Le décor de la vue immersive — le mobilier des zones de l'organisateur
 
 Fonctions :
 
-`dedans` 42 · `repere` 55 · `reglageComptoirValide` 77 · `comptoir` 93
-`poigneeComptoir` 119 · `meuble` 132 · `objetRepere` 271
+`dedans` 42 · `repere` 55 · `reglageComptoirValide` 77 · `comptoir` 100
+`comptoirTient` 126 · `rapprocheComptoir` 147 · `poigneeComptoir` 183 · `meuble` 196
+`objetRepere` 332
 
 Importé par :
 
@@ -1122,19 +1123,19 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 881 l. → plan-admin
+### `modules/fiche-zone.mjs` — 882 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.49 · La fiche d'une zone organisateur
-- l.781 · Masquer une zone organisateur
+- l.782 · Masquer une zone organisateur
 
 Fonctions :
 
-`champZone` 75 · `champsZone` 100 · `champSalles` 205 · `nomDeZone` 257 · `cadreLogo` 283
-`champLogo` 355 · `editeurRiche` 393 · `memeFicheZone` 550 · `suitFicheZone` 557
-`verseFicheZone` 565 · `ficheZone` 591 · `enregistreZone` 616 · `enregistreZoneAjoutee` 729
-`basculeAffichageZone` 792 · `marqueZonesMasquees` 820 · `ecritColonnesEvenement` 840
-`ecritColonneEvenement` 874
+`champZone` 75 · `champsZone` 100 · `champSalles` 206 · `nomDeZone` 258 · `cadreLogo` 284
+`champLogo` 356 · `editeurRiche` 394 · `memeFicheZone` 551 · `suitFicheZone` 558
+`verseFicheZone` 566 · `ficheZone` 592 · `enregistreZone` 617 · `enregistreZoneAjoutee` 730
+`basculeAffichageZone` 793 · `marqueZonesMasquees` 821 · `ecritColonnesEvenement` 841
+`ecritColonneEvenement` 875
 
 Importe :
 
@@ -1864,16 +1865,16 @@ Importé par :
 bande-admin · batiments · calage-carte · dessin · enregistrement · ordre-calques
 outil-dessin · pile · rendu · reprise-emplacements · volets · vue
 
-### `modules/outil-comptoir.mjs` — 204 l. → plan-admin
+### `modules/outil-comptoir.mjs` — 208 l. → plan-admin
 
 - l.1 · Le comptoir d'un accueil, attrapé sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
-`aire` 41 · `anneauDe` 45 · `emprise` 51 · `reglageDe` 58 · `zoneDe` 70 · `lis` 74
-`metresParPixel` 83 · `vise` 86 · `choisitComptoir` 107 · `pose` 118 · `reglageCourant` 128
-`comptoirPointerDown` 135 · `comptoirPointerMove` 147 · `comptoirPointerUp` 166
-`lacheComptoir` 176 · `comptoirClavier` 182 · `relacheComptoir` 200
+`aire` 42 · `anneauDe` 46 · `emprise` 52 · `reglageDe` 59 · `zoneDe` 71 · `lis` 75
+`metresParPixel` 84 · `vise` 87 · `choisitComptoir` 108 · `pose` 120 · `reglageCourant` 132
+`comptoirPointerDown` 139 · `comptoirPointerMove` 151 · `comptoirPointerUp` 170
+`lacheComptoir` 180 · `comptoirClavier` 186 · `relacheComptoir` 204
 
 Importe :
 
@@ -2234,7 +2235,7 @@ Importé par :
 
 volets
 
-### `modules/reglage-comptoir.mjs` — 186 l. → plan-admin
+### `modules/reglage-comptoir.mjs` — 196 l. → plan-admin
 
 - l.1 · Le comptoir d'un accueil — où l'exploitant le pose, dans quel sens
 

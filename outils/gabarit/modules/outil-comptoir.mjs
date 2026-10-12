@@ -14,7 +14,8 @@
    poignée : tout autre appui suit son cours, glisser le plan ou ouvrir une
    fiche. La carte graphique ne désigne pas le décor ; on vise donc par le
    calcul, sur le sol, avec la même règle que le dessin (`comptoir`,
-   `poigneeComptoir`). Le plateau se dresse à un mètre du sol, et vu de biais
+   `poigneeComptoir`). Il reste dans sa zone : tiré contre le bord, il s'y
+   arrête et glisse le long (`rapprocheComptoir`). Le plateau se dresse à un mètre du sol, et vu de biais
    son dessus tombe un peu derrière son pied : la visée est large en
    profondeur.
 
@@ -26,7 +27,7 @@
    des gestes de l'exploitant.
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
-import { comptoir, poigneeComptoir, reglageComptoirValide, RAYON_POIGNEE } from "./decor.mjs";
+import { comptoir, poigneeComptoir, reglageComptoirValide, rapprocheComptoir, RAYON_POIGNEE } from "./decor.mjs";
 import { lisTrace } from "./trace.mjs";
 import { svg, versPlan, vue, cadrePlan } from "./vue.mjs";
 import { cameraEnJeu } from "./camera.mjs";
@@ -114,13 +115,16 @@ export function choisitComptoir(/** @type {string | null} */ id){
   else choisi = null;
 }
 
-/** Poser un réglage sur la zone, sans l'écrire encore sur le poste. */
-function pose(/** @type {string} */ id, /** @type {{ u: number, v: number, a: number }} */ r){
+/** Poser un réglage sur la zone, sans l'écrire encore sur le poste. Le
+ *  comptoir reste dans sa zone : tiré contre le bord, il s'y arrête. */
+function pose(/** @type {{ id: string, an: number[][], c: any }} */ z, /** @type {{ u: number, v: number, a: number }} */ r){
+  const voulu = { u: Math.min(1, Math.max(0, r.u)), v: Math.min(1, Math.max(0, r.v)),
+    a: ((r.a % 180) + 180) % 180 };
+  const q = rapprocheComptoir(z.an, reglageCourant(z), voulu);
   const t = CONF._comptoirs = CONF._comptoirs || {};
-  const n = { u: +Math.min(1, Math.max(0, r.u)).toFixed(4), v: +Math.min(1, Math.max(0, r.v)).toFixed(4),
-    a: Math.round((((r.a % 180) + 180) % 180) * 10) / 10 };
-  t[id] = n;
-  const g = zoneDe(id);
+  const n = { u: +q.u.toFixed(4), v: +q.v.toFixed(4), a: Math.round((((q.a % 180) + 180) % 180) * 10) / 10 };
+  t[z.id] = n;
+  const g = zoneDe(z.id);
   if (g) g.setAttribute("data-comptoir", [n.u, n.v, n.a].join(" "));
 }
 
@@ -159,7 +163,7 @@ export function comptoirPointerMove(/** @type {PointerEvent} */ e){
     r.a = a;
   }
   geste.bouge = true;
-  pose(z.id, r);
+  pose(z, r);
   return true;
 }
 
@@ -191,7 +195,7 @@ export function comptoirClavier(/** @type {KeyboardEvent} */ e){
   } else if (e.key === "r" || e.key === "R") r.a += 90;
   else return false;
   e.preventDefault();
-  pose(z.id, r);
+  pose(z, r);
   enregistreConf();
   return true;
 }

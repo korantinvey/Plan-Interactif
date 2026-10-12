@@ -84,9 +84,16 @@ export const reglageComptoirValide = (/** @type {any} */ r) => Boolean(r &&
  * Rien ne dit où est l'entrée d'un hall : posé d'office, le comptoir se met
  * au milieu de la zone, en travers de son plus long côté — et tombait souvent
  * en plein passage. L'exploitant le place donc et le tourne lui-même
- * (`reglage-comptoir.mjs`) ; le milieu est rangé en part de l'emprise de la
- * zone et non en mètres, pour qu'une zone retouchée garde son comptoir chez
- * elle. La fiche de la zone et le dessin le relisent par cette seule règle.
+ * (`reglage-comptoir.mjs`, `outil-comptoir.mjs`) ; le milieu est rangé en
+ * part de l'emprise de la zone et non en mètres, pour qu'une zone retouchée
+ * garde son comptoir chez elle.
+ *
+ * Il reste dans sa zone : c'est le comptoir de cet accueil, pas un meuble
+ * posé dans l'allée. Les outils l'y retiennent pendant le geste
+ * (`rapprocheComptoir`) ; un réglage qui n'y tient plus — la zone retouchée
+ * a rétréci — est oublié au profit du placement d'office, plutôt que de
+ * laisser le comptoir déborder. La fiche, l'outil et le dessin le relisent
+ * tous par cette seule règle.
  * @param {number[][]} anneau
  * @param {ReglageComptoir | null | undefined} reglage
  */
@@ -97,12 +104,69 @@ export function comptoir(anneau, reglage){
     const r = /** @type {ReglageComptoir} */ (reglage);
     const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
     const x0 = Math.min(...xs), y0 = Math.min(...ys);
-    return { cx: x0 + r.u * (Math.max(...xs) - x0), cy: y0 + r.v * (Math.max(...ys) - y0),
+    const c = { cx: x0 + r.u * (Math.max(...xs) - x0), cy: y0 + r.v * (Math.max(...ys) - y0),
       angle: r.a, demi, prof, choisi: true };
+    if (comptoirTient(anneau, c)) return c;
   }
   const [cx, cy] = R.plan((R.s0 + R.s1) / 2, (R.t0 + R.t1) / 2);
   // en travers : le long côté suit la normale au plus long côté de la zone
   return { cx, cy, angle: Math.atan2(R.ux, -R.uy) * 180 / Math.PI, demi, prof, choisi: false };
+}
+
+/** Le jeu laissé entre le comptoir et le bord de sa zone, en mètres. */
+const JEU_COMPTOIR = .1;
+
+/**
+ * Le comptoir tient-il dans sa zone ? Ses quatre coins, écartés du jeu,
+ * tombent dedans, et aucun sommet du contour ne perce son plateau — ce qui
+ * arriverait dans l'angle rentrant d'une zone en L, coins pourtant dedans.
+ * @param {number[][]} anneau
+ * @param {{ cx: number, cy: number, angle: number, demi: number, prof: number }} c
+ */
+export function comptoirTient(anneau, c){
+  const t = c.angle * Math.PI / 180, dx = Math.cos(t), dy = Math.sin(t);
+  const a = c.demi + JEU_COMPTOIR, b = c.prof + JEU_COMPTOIR;
+  for (const [i, j] of [[-1, -1], [1, -1], [1, 1], [-1, 1]])
+    if (!dedans(anneau, c.cx + i * a * dx - j * b * dy, c.cy + i * a * dy + j * b * dx)) return false;
+  return !anneau.some(([x, y]) => {
+    const ox = x - c.cx, oy = y - c.cy;
+    return Math.abs(ox * dx + oy * dy) < a && Math.abs(-ox * dy + oy * dx) < b;
+  });
+}
+
+/**
+ * Le réglage le plus proche de « voulu » qui garde le comptoir dans sa zone,
+ * en partant de « depart », qui y tient : celui qu'on tire contre le bord s'y
+ * arrête et glisse le long, au lieu de passer au travers ; celui qu'on tourne
+ * dans une zone trop étroite s'arrête au dernier angle qui passe.
+ * @param {number[][]} anneau
+ * @param {ReglageComptoir} depart
+ * @param {ReglageComptoir} voulu
+ * @returns {ReglageComptoir}
+ */
+export function rapprocheComptoir(anneau, depart, voulu){
+  const tient = (/** @type {ReglageComptoir} */ r) => reglageComptoirValide(r) && comptoir(anneau, r).choisi;
+  if (tient(voulu)) return voulu;
+  /** Le dernier réglage qui tient sur le chemin de « de » à « vers ». */
+  const avance = (/** @type {ReglageComptoir} */ de, /** @type {ReglageComptoir} */ vers) => {
+    // l'angle se rejoint par le plus court : un comptoir à 175° est à 5° de 0°
+    const da = ((vers.a - de.a) % 180 + 270) % 180 - 90;
+    const entre = (/** @type {number} */ k) =>
+      ({ u: de.u + k * (vers.u - de.u), v: de.v + k * (vers.v - de.v), a: de.a + k * da });
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 16; k++){
+      const m = (lo + hi) / 2;
+      if (tient(entre(m))) lo = m; else hi = m;
+    }
+    return entre(lo);
+  };
+  /* Arrêté contre le bord, le geste garde la part qui le longe : chaque axe
+     resté libre avance encore seul, comme une main qui glisse le long d'une
+     cloison. */
+  let r = avance(depart, voulu);
+  r = avance(r, { ...r, u: voulu.u });
+  r = avance(r, { ...r, v: voulu.v });
+  return r;
 }
 
 /** La tige de la poignée, en mètres depuis le milieu du comptoir. */
@@ -190,18 +254,15 @@ export function meuble(type, anneau, reglage = null, enMain = false){
         pose(a, b, .24, .24, .45, "assise", .05);
       }
   } else if (type === "accueil"){
-    /* Un comptoir, et deux plantes à ses bouts. Placé à la main, il est posé
-       où on l'a voulu, même à cheval sur le bord : c'est un choix, et le taire
-       ferait croire que le réglage n'a pas pris. */
+    /* Un comptoir, et deux plantes à ses bouts. Placé à la main, il tient
+       dans sa zone par construction (`comptoir`) ; posé d'office, il n'est
+       dressé que s'il y tient aussi. */
     const c = comptoir(anneau, reglage);
     const ang = c.angle * Math.PI / 180, dx = Math.cos(ang), dy = Math.sin(ang);
     const coin = (/** @type {number} */ i, /** @type {number} */ j) =>
       [c.cx + i * c.demi * dx - j * c.prof * dy, c.cy + i * c.demi * dy + j * c.prof * dx];
     const polygon = COINS.map(([i, j]) => coin(i, j));
-    const marge = (/** @type {number} */ i, /** @type {number} */ j) =>
-      dedans(anneau, c.cx + i * (c.demi + .1) * dx - j * (c.prof + .1) * dy,
-        c.cy + i * (c.demi + .1) * dy + j * (c.prof + .1) * dx);
-    if (enMain || c.choisi || COINS.every(([i, j]) => marge(i, j)))
+    if (c.choisi || comptoirTient(anneau, c))
       pieces.push({ polygon, haut: 1.1, role: enMain ? "comptoir-choisi" : "comptoir" });
     /* Choisi, il porte sa poignée : une tige basse depuis son flanc, et un
        rond au bout, qu'on tire pour le tourner. Basse, pour que l'endroit où

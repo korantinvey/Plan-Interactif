@@ -32,7 +32,7 @@ const rect = (x, y, w, h, deg = 0) => {
 };
 
 (async () => {
-  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -70,7 +70,7 @@ const rect = (x, y, w, h, deg = 0) => {
   const ys = plat.polygon.map(p => p[1]), xs = plat.polygon.map(p => p[0]);
   dit(Math.max(...xs) - Math.min(...xs) > Math.max(...ys) - Math.min(...ys),
     "tourné à 0°, son long côté suit l'horizontale du plan");
-  const tourne = meuble("accueil", hall, { u: .25, v: .75, a: 90 }).find(x => x.role === "comptoir");
+  const tourne = meuble("accueil", hall, { u: .5, v: .5, a: 90 }).find(x => x.role === "comptoir");
   const ys2 = tourne.polygon.map(p => p[1]), xs2 = tourne.polygon.map(p => p[0]);
   dit(Math.max(...ys2) - Math.min(...ys2) > Math.max(...xs2) - Math.min(...xs2), "tourné à 90°, la verticale");
   dit(comptoir(hall, { u: 2, v: .5, a: 0 }).choisi === false, "un réglage hors de l'emprise est ignoré");
@@ -82,8 +82,31 @@ const rect = (x, y, w, h, deg = 0) => {
     "choisi, le comptoir sort sa poignée");
   const [hx, hy] = poigneeComptoir(comptoir(hall, { u: .25, v: .75, a: 0 }));
   dit(Math.abs(hx - 4.5) < 1e-6 && hy < 23.5, "tourné à 0°, la poignée est au-dessus de lui sur le plan");
-  const [hx2] = poigneeComptoir(comptoir(hall, { u: .25, v: .75, a: 90 }));
-  dit(hx2 > 4.5, "tourné à 90°, elle passe à sa droite");
+  const [hx2] = poigneeComptoir(comptoir(hall, { u: .5, v: .5, a: 90 }));
+  dit(hx2 > 10, "tourné à 90°, elle passe à sa droite");
+
+  console.log("Le comptoir reste dans sa zone");
+  dit(!comptoir(hall, { u: .02, v: .5, a: 0 }).choisi,
+    "un réglage qui le ferait déborder est oublié pour le placement d'office");
+  dit(meuble("accueil", hall, { u: .02, v: .5, a: 0 }).every(x => x.polygon.every(([a, b]) => dedans(hall, a, b))),
+    "et rien n'est dessiné hors de la zone");
+  const centre = { u: .5, v: .5, a: 0 };
+  const contre = rapprocheComptoir(hall, centre, { u: 0, v: .5, a: 0 });
+  const cc = comptoir(hall, contre);
+  dit(cc.choisi && Math.abs(cc.cx - cc.demi - (-1)) < .2, "tiré vers le bord, il s'y arrête",
+    "bord gauche à " + (cc.cx - cc.demi).toFixed(2));
+  const longe = rapprocheComptoir(hall, centre, { u: 0, v: .3, a: 0 });
+  dit(comptoir(hall, longe).choisi && Math.abs(longe.v - .3) < 1e-3, "tiré de biais, il glisse le long du bord");
+  // contre le bord d'une zone de quatre mètres, il ne peut se mettre debout
+  const etroit = rect(0, 0, 10, 4);
+  const debout = rapprocheComptoir(etroit, { u: .5, v: .15, a: 0 }, { u: .5, v: .15, a: 90 });
+  dit(comptoir(etroit, debout).choisi && debout.a < 90, "dans une zone étroite, il ne tourne que tant qu'il passe",
+    debout.a.toFixed(1) + "°");
+  // une zone en L : les quatre coins dedans, l'angle rentrant perce le plateau
+  const L = [[0, 0], [20, 0], [20, 6], [6, 6], [6, 20], [0, 20]];
+  const pique = { cx: 6.5, cy: 6.5, angle: 45, demi: 4, prof: .35 };
+  dit(!comptoirTient(L, pique), "dans une zone en L, l'angle rentrant ne traverse pas le plateau");
+  dit(comptoirTient(L, { cx: 12, cy: 3, angle: 0, demi: 4, prof: .35 }), "posé dans une branche du L, il tient");
 
   console.log("Une zone immense");
   const n = meuble("conferences", rect(0, 0, 400, 300)).length;
