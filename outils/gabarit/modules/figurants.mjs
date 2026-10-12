@@ -429,6 +429,35 @@ function maillagesDe(m){
   };
 }
 
+/* Les parties d'une allure, dans l'ordre où le shader du dessin les numérote
+   (`webgl.mjs` `TeinteDesFigurants`). */
+export const PARTIES = ["bas", "chaussures", "haut", "peau", "cheveux"];
+
+/**
+ * Les parties d'une allure réunies en un seul maillage, chaque sommet portant
+ * le numéro de la sienne dans le premier canal de sa couleur.
+ *
+ * Une couche par partie et par allure en faisait vingt : la carte graphique
+ * n'y voyait rien, mais la bibliothèque recompose les réglages de chaque
+ * couche à chaque image, et un zoom en payait le prix vingt fois. Réunies,
+ * une allure n'en fait plus qu'une, et le shader teint chaque partie de la
+ * couleur du figurant.
+ * @param {any} mod les maillages d'une allure, par partie
+ */
+export function maillageReuni(mod){
+  const n = PARTIES.reduce((s, p) => s + mod[p].attributes.positions.value.length, 0);
+  const pos = new Float32Array(n), nor = new Float32Array(n), cou = new Float32Array(n);
+  let o = 0;
+  PARTIES.forEach((p, i) => {
+    const a = mod[p].attributes;
+    pos.set(a.positions.value, o); nor.set(a.normals.value, o);
+    for (let k = o; k < o + a.positions.value.length; k += 3) cou[k] = i;
+    o += a.positions.value.length;
+  });
+  return { attributes: { positions: { value: pos, size: 3 }, normals: { value: nor, size: 3 },
+    colors: { value: cou, size: 3 } } };
+}
+
 /**
  * L'ombre, commune à tous, et les maillages de chaque allure, dans l'ordre
  * de `MODELES`.

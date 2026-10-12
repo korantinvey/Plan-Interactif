@@ -37,6 +37,11 @@ module.exports = [
   // d'attribut SVG et des classes de libellés — rien de tout cela ne s'affiche
   "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
+  // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
+  // que la bibliothèque garde pour elle
+  "const vec3 ", "] = vec3[", "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]",
+  "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]", "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]",
+  "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]", "TeinteDesFigurants", "fin du geste",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-volumes-", "-decor", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
