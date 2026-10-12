@@ -1160,7 +1160,12 @@ function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
   hauteursPeintes.set(g, haut);
   // qui demande moins de mouvement le voit changer de hauteur d'un coup
   if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches){
-    hausses.set(g, { de: avant, vers: haut, t0: performance.now() });
+    /* Un volume encore en route repart d'où il est, et non d'où il allait :
+       un clic sur un autre stand pendant la montée du premier le faisait
+       bondir à sa hauteur d'arrivée avant de redescendre. */
+    const enRoute = hausses.get(g), maintenant = performance.now();
+    const de = enRoute ? hauteurHausse(enRoute, maintenant) : avant;
+    hausses.set(g, { de, vers: haut, t0: maintenant });
     // son nom quitte les couches communes pour monter avec lui
     GL.couchesLibelles = null;
   }
@@ -1734,11 +1739,15 @@ const phaseDe = (c, t) => {
 };
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
+/* L'instant de l'image : celui de la boucle quand elle tourne, l'heure qu'il
+   est sinon — l'image d'une boucle arrêtée peut dater de la dernière
+   animation, et un volume s'y croyait encore à son départ. */
+const instant = () => GL.anime && GL.maintenant ? GL.maintenant : performance.now();
 function animeCouche(c){
-  if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, GL.maintenant || performance.now()) });
+  if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
   // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
   if (c.props.hausseTexte){
-    const h = c.props.hausseTexte, dz = hauteurHausse(h, GL.maintenant || performance.now()) - h.vers;
+    const h = c.props.hausseTexte, dz = hauteurHausse(h, instant()) - h.vers;
     return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, dz, 1] });
   }
   const ph = c.props.phare;
