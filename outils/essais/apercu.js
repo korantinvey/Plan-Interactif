@@ -116,6 +116,21 @@ const BRANCHE = "https://ma-branche-plan-interactif.interactiveplan.workers.dev"
       "branche avec CACHE_APERCU : elle range là, et pas ailleurs");
   }
 
+  /* — les en-têtes de sûreté, sur ce que le Worker sert lui-même. Le même
+     Worker sous la même adresse : l'essai le charge déjà, autant s'en servir.
+     Le plan d'un salon doit rester intégrable au site de l'organisateur. */
+  {
+    const env = { CACHE: stockage(), ASSETS: { fetch: async () => new Response("<!doctype html>") } };
+    const api = await sert(PRODUCTION, "/api/plan?slug=fep26", {}, env);
+    dit(api.headers.get("X-Content-Type-Options") === "nosniff" &&
+        /frame-ancestors 'none'/.test(api.headers.get("Content-Security-Policy") || ""),
+      "sûreté : l'API porte ses en-têtes, et refuse les cadres");
+    const salon = await sert(PRODUCTION, "/plan-fep26", {}, env);
+    dit(salon.headers.get("Referrer-Policy") && !salon.headers.has("Content-Security-Policy") &&
+        !salon.headers.has("X-Frame-Options"),
+      "sûreté : le plan d'un salon garde ses en-têtes et reste intégrable");
+  }
+
   console.log(ko ? "\n" + ko + " échec(s)" : "\nune prévisualisation reste à l'écart de la production");
   process.exit(ko ? 1 : 0);
 })();
