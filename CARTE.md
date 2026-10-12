@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1691 l. → plan-smcl.html
+### `_styles-plan.css` — 1693 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
@@ -304,18 +304,18 @@ Importé par :
 
 comptes · synchronisation
 
-### `modules/appels.mjs` — 178 l. → plan, plan-admin
+### `modules/appels.mjs` — 198 l. → plan, plan-admin
 
 - l.1 · Les noms en appel — ce qui ne tient pas dans son stand sort dans la marge
 
 Fonctions :
 
-`monteCalque` 57 · `appeles` 68 · `illisible` 81 · `chevauche` 87 · `boiteA` 91
-`auBord` 99 · `pose` 101 · `planifie` 168
+`monteCalque` 61 · `appeles` 72 · `illisible` 85 · `chevauche` 91 · `boiteA` 95
+`auBord` 103 · `pose` 105 · `planifie` 180
 
 Importe :
 
-donnees · filtre · polices-plan · texte-plan · vue
+donnees · filtre · geste-tenu · polices-plan · texte-plan · vue
 
 Importé par :
 
@@ -1227,7 +1227,7 @@ Fonctions :
 
 Importé par :
 
-batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
+appels · batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
 placement-libelles · reprise-emplacements
 
 ### `modules/gestes-admin.mjs` — 167 l. → plan-admin
@@ -3088,8 +3088,8 @@ Portes :
 
 ## Le reste
 
-- `src/index.mjs` — 1104 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956
+- `src/index.mjs` — 1131 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956 · `surete` 992 · `aiguille` 1010
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
