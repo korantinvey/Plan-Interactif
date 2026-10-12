@@ -512,7 +512,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesFigurants(), ...(GL.camera ? couchesLogos(deck, hauteurVolume, vueDuPlan(), vueDeck().zoom) : []), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesFigurants(), ...(GL.camera ? couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom) : []), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
@@ -1741,6 +1741,15 @@ function detacheVolume(g, h){
   GL.blocs.set(b, out);
   GL.deck.setProps({ layers: assembleWebgl() });
   majAnimationWebgl();
+}
+
+/** La hauteur d'un tracé de stand à cet instant : en mouvement, où il en
+ *  est ; au repos, la sienne. Le logo posé sur son toit (`logos-stands.mjs`)
+ *  la suit image par image — l'assemblage se refait à chacune tant qu'un
+ *  volume bouge —, au lieu de sauter d'emblée à la hauteur d'arrivée. */
+function hauteurEnCours(/** @type {Element} */ el){
+  const h = el.parentNode && hausses.get(/** @type {Element} */ (el.parentNode));
+  return h ? hauteurHausse(h, instant()) : hauteurVolume(el);
 }
 
 /** La hauteur d'un volume en mouvement, à cet instant. */
