@@ -118,13 +118,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 293 l. → plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1576 l. → plan-smcl.html
+### `_styles-modeles-parcours.css` — 1584 l. → plan-smcl.html
 
 ### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
 ### `_styles-parcours.css` — 647 l. → plan-smcl.html
 
-### `_styles-plan.css` — 1691 l. → plan-smcl.html
+### `_styles-plan.css` — 1693 l. → plan-smcl.html
 
 ### `_sw.js` — 567 l.
 
