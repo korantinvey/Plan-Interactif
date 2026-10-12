@@ -41,8 +41,10 @@ import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePoli
 import { REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil } from "./seuil.mjs";
 import { JOURS_SALON_MAX, lueHeure, lueDate, datesSalon, horairesSalon } from "./horaires.mjs";
 import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
-import { SECTEURS } from "./secteurs.mjs";
-import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
+import { SECTEURS, champDecoupage, champsDecoupables, indexeSecteurs }
+  from "./secteurs.mjs";
+import { appliqueSecteurs, appliqueFiltre, refaitCriteres, liste } from "./recherche.mjs";
+import { CLE_SECTEUR } from "./filtre.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { DISTINCTIONS, ETOILE_DIST, MARQUES_DIST, modeDist, couleurDist, appliqueDists }
   from "./distinctions.mjs";
@@ -1067,6 +1069,62 @@ export function voletDist(hote, d){
   };
 }
 
+/**
+ * Sur quel champ les stands se colorent : le secteur par défaut, ou la ville,
+ * le pays, un champ propre au salon.
+ *
+ * Un salon qui ne sectorise pas, ou dont les secteurs ne disent rien au
+ * visiteur, n'avait que le blanc ; un autre se lit mieux par pays que par
+ * secteur. Chaque champ porte son nombre de parts : dix-huit couleurs ne se
+ * lisent pas comme cinq, et on le sait avant de choisir. Le filtre qui ouvre
+ * la recherche suit le même champ (`recherche.mjs` `clesCriteres`), et les
+ * couleurs de chaque part se règlent dans la pile, sous la couche Stands.
+ */
+function blocDecoupage(hote){
+  const champs = champsDecoupables();
+  if (!champs.length) return;
+  const dec = document.createElement("div");
+  dec.className = "reglage-decoupe";
+  dec.innerHTML = '<div class="tete"><span class="eyebrow">Couleur des stands selon</span>' +
+    '<span class="val"></span></div>' +
+    '<div class="champsDecoupe" role="group" aria-label="Champ qui colore les stands"></div>';
+  const val = dec.querySelector(".val");
+  const maj = () => {
+    const c = champDecoupage();
+    dec.querySelectorAll("button[data-champ]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.champ === c)));
+    // éteintes, les couleurs ne suivent aucun champ : le dire, plutôt qu'une
+    // pastille cochée qui ne peindrait rien
+    val.textContent = conf("_secteurs").visible === false
+      ? "couleurs éteintes (onglet Admin)" : "";
+  };
+  champs.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.champ = c.cle;
+    b.innerHTML = '<span></span><span class="n"></span>';
+    b.firstChild.textContent = c.libelle;
+    b.lastChild.textContent = String(c.n);
+    b.onclick = () => {
+      if (c.cle === CLE_SECTEUR) delete conf("_secteurs").champ;
+      else conf("_secteurs").champ = c.cle;
+      enregistreConf();
+      /* Les parts changent toutes : l'index se refait, le plan se repeint,
+         le filtre de tête change de champ — et un critère retenu sur
+         l'ancien tombe avec lui. */
+      indexeSecteurs();
+      appliqueSecteurs();
+      refaitCriteres();
+      appliqueFiltre();
+      if (ADMIN) construitPanneau();
+      maj();
+    };
+    dec.querySelector(".champsDecoupe").appendChild(b);
+  });
+  hote.appendChild(dec);
+  maj();
+}
+
 /** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
  *  porte, et l'habillage de ses panneaux — la liste des exposants, la fiche
  *  détail, le parcours de visite et l'itinéraire. */
@@ -1194,6 +1252,8 @@ export function voletApparence(hote){
   hote.appendChild(amb);
   majAmb();
   majCap();
+
+  blocDecoupage(hote);
 
   /* La police des noms, avant les modèles et non après : leur planche est
      longue, et un réglage rangé dessous ne se trouvait qu'en la faisant

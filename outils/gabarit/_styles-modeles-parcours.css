@@ -342,9 +342,9 @@
    hexadécimal à respecter.
    La police des noms, qui le suit, en reprend la tête : ce qui est en place,
    et de quoi revenir à ce que prévoit le modèle. */
-.reglage-coul,.reglage-police,.reglage-ambiance{margin:2px 0 18px}
-.reglage-coul .tete,.reglage-police .tete,.reglage-ambiance .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
-.reglage-coul .val,.reglage-police .val,.reglage-ambiance .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+.reglage-coul,.reglage-police,.reglage-ambiance,.reglage-decoupe{margin:2px 0 18px}
+.reglage-coul .tete,.reglage-police .tete,.reglage-ambiance .tete,.reglage-decoupe .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val,.reglage-police .val,.reglage-ambiance .val,.reglage-decoupe .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
   color:var(--ink-3)}
 .reglage-coul .raz,.reglage-police .raz{margin-left:auto;font-size:12px;color:var(--ink-3);
   text-decoration:underline}
@@ -401,14 +401,14 @@
 /* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
    l'allure du bouton des critères de recherche une fois actif — c'en est un,
    de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
-.genresPol{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
-.genresPol button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
+.genresPol,.champsDecoupe{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.genresPol button,.champsDecoupe button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
   border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
   color:var(--ink-2);font-size:12px;font-weight:600}
-.genresPol button:hover{border-color:var(--line-strong);color:var(--ink)}
-.genresPol button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+.genresPol button:hover,.champsDecoupe button:hover{border-color:var(--line-strong);color:var(--ink)}
+.genresPol button[aria-pressed="true"],.champsDecoupe button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
   color:var(--ink)}
-.genresPol .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
+.genresPol .n,.champsDecoupe .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
   color:var(--ink-3)}
 /* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
    ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas

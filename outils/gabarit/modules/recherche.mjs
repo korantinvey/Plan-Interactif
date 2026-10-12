@@ -39,7 +39,7 @@ import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
 import { conf } from "./configuration.mjs";
 import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
-import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
+import { secteursMontres, pastilleSecteur, coloreSecteurs, champDecoupage } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
@@ -200,11 +200,16 @@ function ordreCriteres(cles){
  * C'est aussi le découpage le plus large du salon : le poser en tête range les
  * critères du plus grossier au plus fin — c'est l'ordre par défaut, que
  * l'exploitant refait à sa main si son salon se tranche autrement.
+ *
+ * Quand le plan se colore sur un autre champ que le secteur (`champDecoupage`),
+ * c'est ce champ qui prend sa place, pastilles comprises : le filtre suit ce
+ * que les couleurs montrent. Coché par ailleurs, il ne paraît qu'une fois.
  */
 export function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
-  const cochees = Object.keys(r).filter(k => r[k] === true);
-  return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
+  const tete = champDecoupage();
+  const cochees = Object.keys(r).filter(k => r[k] === true && k !== tete);
+  return ordreCriteres(secteursMontres() ? [tete].concat(cochees) : cochees);
 }
 
 /* L'intitulé d'un critère vit dans `corps-fiche.mjs`, qui l'écrit aussi en
@@ -371,7 +376,7 @@ function majCriteres(){
       b.type = "button";
       b.className = "actif";
       b.title = "Retirer ce critère";
-      b.innerHTML = (cle === CLE_SECTEUR ? pastilleSecteur(v) : "") +
+      b.innerHTML = (cle === champDecoupage() ? pastilleSecteur(v) : "") +
         '<span class="k"></span><span class="v"></span>' +
         '<span class="x" aria-hidden="true">×</span>';
       b.querySelector(".k").textContent = lib;
@@ -500,7 +505,7 @@ function remplitCriteres(){
         b.dataset.cle = c.cle;
         b.dataset.val = x.v;
         b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-        b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
+        b.innerHTML = (c.cle === champDecoupage() ? pastilleSecteur(x.v) : "") +
           '<span class="l"></span><span class="n"></span>';
         b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
         b.querySelector(".n").textContent = x.n;
