@@ -304,18 +304,18 @@ Importé par :
 
 comptes · synchronisation
 
-### `modules/appels.mjs` — 178 l. → plan, plan-admin
+### `modules/appels.mjs` — 198 l. → plan, plan-admin
 
 - l.1 · Les noms en appel — ce qui ne tient pas dans son stand sort dans la marge
 
 Fonctions :
 
-`monteCalque` 57 · `appeles` 68 · `illisible` 81 · `chevauche` 87 · `boiteA` 91
-`auBord` 99 · `pose` 101 · `planifie` 168
+`monteCalque` 61 · `appeles` 72 · `illisible` 85 · `chevauche` 91 · `boiteA` 95
+`auBord` 103 · `pose` 105 · `planifie` 180
 
 Importe :
 
-donnees · filtre · polices-plan · texte-plan · vue
+donnees · filtre · geste-tenu · polices-plan · texte-plan · vue
 
 Importé par :
 
@@ -1227,7 +1227,7 @@ Fonctions :
 
 Importé par :
 
-batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
+appels · batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
 placement-libelles · reprise-emplacements
 
 ### `modules/gestes-admin.mjs` — 167 l. → plan-admin
