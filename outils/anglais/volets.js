@@ -182,4 +182,7 @@ module.exports = {
     "Beyond that, the rule of three would return a threshold so high it would never come into play.",
   // le volet « Apparence » : l'ambiance du plan
   "Ambiance du plan": "Map style",
+  "Orientation": "Orientation",
+  "Orientation de la vue": "View orientation",
+  "De face": "Front view",
 };

@@ -34,7 +34,7 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
-import { AMBIANCES, ambianceRetenue, appliqueAmbiance } from "./ambiance.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -1162,8 +1162,38 @@ export function voletApparence(hote){
     };
     amb.querySelector(".ambiances").appendChild(b);
   });
+  /* L'orientation de l'immersif : le cap, en degrés, de quel côté on regarde
+     le hall. Un curseur plutôt que quatre côtés : un hall dont l'entrée est
+     en biais se regarde en biais. Le plan suit pendant qu'on le tire ; la
+     configuration ne s'écrit qu'au lâcher, comme la couleur. */
+  const ori = document.createElement("div");
+  ori.className = "orientation";
+  ori.innerHTML = '<span class="eyebrow">Orientation</span>' +
+    '<input type="range" min="-180" max="180" step="1" aria-label="Orientation de la vue">' +
+    '<output></output><button type="button" class="raz">De face</button>';
+  const capIn = /** @type {HTMLInputElement} */ (ori.querySelector("input"));
+  const capOut = /** @type {HTMLOutputElement} */ (ori.querySelector("output"));
+  const majCap = () => {
+    const c = capRetenu();
+    capIn.value = String(c);
+    capOut.textContent = c + "°";
+    ori.hidden = ambianceRetenue() !== "immersif";
+  };
+  const poseCap = (/** @type {number} */ c) => {
+    if (c) conf("_ambiance").cap = c; else delete conf("_ambiance").cap;
+    appliqueAmbiance(); capOut.textContent = c + "°";
+  };
+  capIn.oninput = () => poseCap(Number(capIn.value));
+  capIn.onchange = () => enregistreConf();
+  /** @type {HTMLButtonElement} */ (ori.querySelector(".raz")).onclick = () => {
+    poseCap(0); majCap(); enregistreConf();
+  };
+  amb.appendChild(ori);
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majCap));
   hote.appendChild(amb);
   majAmb();
+  majCap();
 
   /* La police des noms, avant les modèles et non après : leur planche est
      longue, et un réglage rangé dessous ne se trouvait qu'en la faisant

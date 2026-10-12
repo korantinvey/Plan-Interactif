@@ -37,6 +37,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
+import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -81,8 +82,8 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan-b4ce2dbc.min.js",
-  integrite: "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
+  src: "bibliotheques/deck.gl-9.3.11-plan-ef08eeb5.min.js",
+  integrite: "sha384-NZseSRlLpdWIBLJtNNorQq/Mrx7IZjv90iDS/x8ERsfhSlfP6Z4D0ehGeDK1N46F",
 };
 export const GL = {
   charge: false, actif: false, deck: null,
@@ -93,6 +94,8 @@ export const GL = {
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
+  // la vue immersive est-elle à l'écran — voir « La vue immersive »
+  camera: false,
 };
 
 function chargeWebgl(){
@@ -138,9 +141,10 @@ export function monteWebgl(){
   hote.setAttribute("aria-hidden", "true");
   svg.before(hote);
   GL.hote = hote;
+  GL.camera = enCamera();
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
-    views: new deck.OrthographicView({ id: "plan", flipY: true }),
+    views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     onError: e => console.warn("Rendu WebGL :", e && e.message),
     // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
@@ -154,6 +158,9 @@ export function monteWebgl(){
     },
   });
   GL.actif = true;
+  /* La caméra n'entre en jeu qu'une fois le dessin actif : son annonce fait
+     recadrer la vue, qui repasse par ici et remonterait le dessin. */
+  metsEnJeu(GL.camera);
   /* La bibliothèque ne garde que trois atlas de police, et le plan en demande
      un par famille, par graisse et par taille — deux tailles de rendu, autant
      de familles que l'exploitant a choisies pour ses noms et ses numéros. Au
@@ -193,7 +200,9 @@ export function monteWebgl(){
        faisait reconvertir les six cents stands à chaque lettre. */
     new MutationObserver(notes => {
       if (notes.every(n => n.oldValue === document.documentElement.getAttribute(n.attributeName))) return;
-      majEditionWebgl(); toutRepeindreWebgl();
+      majEditionWebgl();
+      // l'ambiance ou le cap de l'immersif : la vue suit, avec le reste
+      if (!basculeCamera()){ GL.deck.setProps({ viewState: vueDeck() }); toutRepeindreWebgl(); }
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
       attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
@@ -264,6 +273,8 @@ function perdContexteWebgl(){
   if (!GL.actif) return;
   console.warn("Rendu WebGL : contexte perdu, le plan repasse en SVG.");
   GL.actif = false; GL.pret = false;
+  // le SVG ne sait pas se pencher : le plan revient à plat, et les gestes avec
+  GL.camera = false; metsEnJeu(false);
   document.documentElement.classList.remove("rendu-webgl", "gl-pret", "gl-attente", "en-edition");
   stage().classList.remove("survol-gl");
   GL.survol = null; GL.focus = null; TUILES.clear();
@@ -301,13 +312,73 @@ function remonteWebgl(){
 function vueDeck(){
   const r = cadrePlan(), view = vueDuPlan();
   const s = Math.min((r.width || 1) / view.w, (r.height || 1) / view.h);
-  return { target: [view.x + view.w / 2, view.y + view.h / 2, 0], zoom: Math.log2(s) };
+  /* Le cap ne sert pas au cadre ; il y est pour que la bibliothèque refasse
+     la vue quand l'exploitant tourne le hall sans bouger le plan — elle ne
+     recompose ses matrices que sur un changement de l'état de la vue. */
+  return { target: [view.x + view.w / 2, view.y + view.h / 2, 0], zoom: Math.log2(s), cap: cleCamera() };
+}
+
+/* ------------------------------------------------------------
+   La vue immersive
+
+   La même vue, vue de biais : le cadre à plat que les gestes manipulent ne
+   change pas, la caméra (`camera.mjs`) l'incline par-dessus. La bibliothèque
+   n'a pas de vue en perspective qui s'accorde à un cadre en mètres ; on lui
+   en donne une, faite des matrices que la caméra calcule.
+
+   À plat pendant l'édition : poser une forme, tirer une poignée, tracer un
+   calque se fait au millimètre, et d'en haut.
+   ------------------------------------------------------------ */
+const enCamera = () => cameraVoulue() && !_page.enEdition();
+
+/** @type {any} */
+let VueCamera = null;
+function vuesGl(){
+  if (!GL.camera) return new deck.OrthographicView({ id: "plan", flipY: true });
+  if (!VueCamera){
+    class ViewportCamera extends deck.Viewport {
+      constructor(/** @type {any} */ p){
+        const { vue, projection } = matricesCamera(p.width || 1, p.height || 1, Math.pow(2, p.zoom || 0));
+        super({ ...p, position: p.target, viewMatrix: vue, projectionMatrix: projection });
+      }
+    }
+    VueCamera = class extends deck.View {
+      getViewportType(){ return ViewportCamera; }
+    };
+  }
+  return new VueCamera({ id: "plan" });
+}
+
+/* La lumière des volumes : une ambiance claire, qui garde aux stands la
+   couleur que l'exploitant leur a donnée, et un jour qui vient du fond du
+   hall et de la gauche. Les dessus reçoivent la lumière ; les façades qui
+   regardent l'entrée restent dans leur ombre, et c'est ce qui les fait
+   monter. Sans volume, pas de lumière : un aplat éclairé changerait de ton. */
+function effetsGl(){
+  if (!GL.camera) return [];
+  return [new deck.LightingEffect({
+    ambiante: new deck.AmbientLight({ color: [255, 255, 255], intensity: .78 }),
+    jour: new deck.DirectionalLight({ color: [255, 255, 255], intensity: .55, direction: [.55, .9, -1] }),
+  })];
+}
+
+/** La caméra demandée, ou rendue : la vue, la lumière et tout le dessin
+ *  changent avec elle — les stands montent ou se couchent. */
+function basculeCamera(){
+  const cam = enCamera();
+  if (!GL.deck || cam === GL.camera) return false;
+  GL.camera = cam;
+  metsEnJeu(cam);
+  GL.deck.setProps({ views: vuesGl(), effects: effetsGl(), viewState: vueDeck() });
+  toutRepeindreWebgl();
+  return true;
 }
 
 /** Appelée à chaque image d'un geste : la matrice, et rien d'autre. Les noms
  *  qui passent un seuil de lisibilité se montrent ou se taisent dans le
  *  shader, qui connaît le zoom — voir « FiltreZoom ». */
 export function vueWebgl(){
+  basculeCamera();
   GL.deck.setProps({ viewState: vueDeck() });
 }
 
@@ -334,7 +405,7 @@ export function majEditionWebgl(){
   const r = document.documentElement, ed = _page.enEdition();
   if (r.classList.contains("en-edition") === ed) return;
   r.classList.toggle("en-edition", ed);
-  toutRepeindreWebgl();
+  if (!basculeCamera()) toutRepeindreWebgl();
 }
 
 /** La clé des couches d'un bloc. Elle tient au calque et non au nœud :
@@ -708,19 +779,36 @@ function couchesPetites(id, commun, K, sousPixel){
   return [
     ...(commun.pickable ? [new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true })] : []),
     ...PASSES_SOUS_PIXEL.map(p => new deck.TextLayer({ ...base, id: id + "-petit" + p.canal,
-      pickable: false, sousPixel: [p.decalage, .6], parameters: { colorMask: p.masque } })),
+      pickable: false, sousPixel: [p.decalage, .6], parameters: { ...parametresTexte(), colorMask: p.masque } })),
   ];
 }
+
+/* Les noms des stands, posés sur le dessus de leur volume en vue immersive ;
+   au sol, ils resteraient dans le stand, que ses façades cachent. Les noms
+   des zones restent au sol, comme les zones. */
+function positionTexte(){
+  if (!GL.camera) return d => d.position;
+  const z = HAUTEUR_STAND + .02, zSel = HAUTEUR_STAND * 2.2 + .02;
+  return d => d.cls && d.cls.startsWith("zn") ? d.position
+    : [d.position[0], d.position[1], /\bsel\b/.test(d.cls || "") ? zSel : z];
+}
+
+/* Un nom se dresse face à l'œil : en vue immersive, son rectangle traversait
+   le dessus du stand et le nom s'y coupait à mi-hauteur. Les noms se peignent
+   donc par-dessus le relief, sans le consulter — comme sur une maquette, où
+   l'étiquette se lit toujours. */
+const parametresTexte = () => GL.camera ? { depthCompare: "always", depthWriteEnabled: false } : {};
 
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
   const commun = {
     data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
-    getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
+    getText: d => d.text, getPosition: positionTexte(), getSize: d => d.taille, sizeUnits: "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
-    lineHeight: extra.lineHeight || 1, updateTriggers: extra.updateTriggers || K.sansDeclencheur,
+    lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
+    updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur), getPosition: cleCamera() + GL.camera },
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
@@ -807,14 +895,29 @@ function parcoursGl(el, m, op, acc){
   if (traces) formeGl(el, cs, m, op, traces, acc);
 }
 
+/* La hauteur d'une forme en vue immersive : celle d'un stand pour le tracé
+   même d'un stand, rien pour tout le reste. Seul le tracé monte — la
+   distinction, le halo de la chaleur, le liseré de la sélection posés sur lui
+   restent des aplats, qui se peignent alors au pied du volume. */
+function hauteurVolume(el){
+  if (!cameraEnJeu()) return 0;
+  const g = el.parentNode;
+  if (!g || !g.classList || !g.classList.contains("stand") || g.firstElementChild !== el) return 0;
+  if (g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
+  /* Le stand choisi se hausse au-dessus des autres : vu de biais, un liseré
+     au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
+     des yeux en ouvrant sa fiche. */
+  return g.classList.contains("sel") ? HAUTEUR_STAND * 2.2 : HAUTEUR_STAND;
+}
+
 function formeGl(el, cs, m, op, traces, acc){
   const cible = el.closest("[data-id],[data-poi]");
   acc = accDe(el, acc);
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(PRISES);
-    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible, prise });
+    const prise = el.closest(PRISES), haut = hauteurVolume(el);
+    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible, prise, haut });
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
        « pointer-events: all » donne en SVG au calque ouvert. Un aplat
@@ -935,13 +1038,22 @@ const partage = (liste, prises, deja) => {
 /** Ce qu'une couche désigne quand on la vise. */
 const designeGl = (d) => d.el || d.prise;
 
+/* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
+   brille changerait de couleur d'un bout du hall à l'autre. */
+const MATIERE = { ambient: .62, diffuse: .55, shininess: 4, specularColor: [20, 20, 20] };
+
 function couchesDeBloc(acc, cle){
   const L = deck, out = [];
   const pleins = partage(acc.pleins, acc.prises);
   pleins.forEach((liste, k) => {
-    if (!liste.length) return;
-    out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: liste, pickable: k === 0,
+    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut);
+    if (plats.length) out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
+    /* Les stands de la vue immersive : la même couleur, montée en volume. La
+       lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
+    if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
+      extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+      material: MATIERE }));
   });
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on

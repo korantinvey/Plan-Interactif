@@ -1574,3 +1574,20 @@
 .vign.v-tuiles{gap:4px}
 .vign.v-tuiles i{background:#fff;border-radius:4px}
 .vign.v-tuiles i:nth-child(2){background:hsl(150 58% 87%)}
+/* L'immersif : les mêmes tuiles, couchées en perspective, chacune avec sa
+   tranche — un liseré plus sombre sous elle, qui suffit à la faire monter. */
+.vign.v-immersif{gap:5px;perspective:120px;padding:8px 14px 10px}
+.vign.v-immersif i{background:#fff;border-radius:3px;transform:rotateX(38deg);
+  box-shadow:0 3px 0 #C9D0D6,0 6px 8px -4px rgba(20,40,60,.35)}
+.vign.v-immersif i:nth-child(2){background:hsl(150 58% 87%);box-shadow:0 3px 0 hsl(150 30% 66%),0 6px 8px -4px rgba(20,40,60,.35)}
+/* L'orientation de la vue immersive, sous les trois cartes : de quel côté du
+   hall on se tient. Elle ne paraît qu'avec l'immersif — ailleurs le plan se
+   regarde d'en haut, et un cap n'y voudrait rien dire. */
+.orientation{display:flex;align-items:center;gap:10px;margin-top:10px}
+.orientation[hidden]{display:none}
+.orientation .eyebrow{flex:0 0 auto}
+.orientation input[type="range"]{flex:1;min-width:0;padding:0;background:none;border:none;
+  accent-color:var(--accent)}
+.orientation output{flex:0 0 3.6em;text-align:right;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;color:var(--ink-2)}
+.orientation .raz{flex:0 0 auto}
