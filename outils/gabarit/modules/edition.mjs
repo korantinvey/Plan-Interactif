@@ -34,8 +34,9 @@ import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, 
 import { vue, cadrePlan, versPlan, svg, confieALaVue } from "./vue.mjs";
 import { calqueActif, outil } from "./calques-dessin.mjs";
 import { estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
+import { OBJETS_REPERE } from "./decor.mjs";
 import { TYPES_REPERE, MODES_TRANSPORT, pictoForme, nomTypeRepere, estTransport, modeTransport, couleurRepere,
-  couleurLigne, couleurEcrite, libelleDoffice } from "./reperes.mjs";
+  couleurLigne, couleurEcrite, libelleDoffice, glypheRepere } from "./reperes.mjs";
 import { dessineDessins, redessineForme, apercuGuide, seRattache, societeDeForme, etiquetteSociete }
   from "./dessin.mjs";
 import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
@@ -195,10 +196,12 @@ export function majElement(){
     $("elemTexte").value = f.txt || "";
     $("elemTaille").value = f.taille || 2;
   }
-  /* L'orientation ne vaut que pour un texte libre : le libellé d'un repère
-     accompagne un pictogramme qui, lui, reste droit. */
-  $("elemRotationBloc").hidden = f.t !== "texte";
-  if (f.t === "texte") $("elemRotation").value = +f.rot || 0;
+  /* L'orientation vaut pour un texte libre, et pour l'objet qu'un repère
+     dresse en vue immersive — l'escalier monte dans le sens qu'on lui donne.
+     Le pictogramme d'un repère, lui, reste droit. */
+  const tourne = f.t === "texte" || repereAObjet(f);
+  $("elemRotationBloc").hidden = !tourne;
+  if (tourne) $("elemRotation").value = +f.rot || 0;
 
   /* L'arrondi se règle après coup, et sur n'importe quel tracé : un contour
      posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
@@ -438,12 +441,15 @@ export function appliqueTexte(salve){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
+/** Un repère qui dresse un objet en vue immersive : escalier, escalator, ascenseur. */
+const repereAObjet = (f) => f.t === "repere" && OBJETS_REPERE.includes(glypheRepere(f) || "");
+
 /** L'orientation d'un texte, en degrés, ramenée entre −180 et 180 : 270 et
  *  −90 couchent le texte de la même façon, et une seule écriture évite qu'un
  *  tour complet ne s'accumule au fil des clics. Droit, il n'écrit rien. */
 export function appliqueRotation(salve){
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || cible.f.t !== "texte") return;
+  if (!cible || (cible.f.t !== "texte" && !repereAObjet(cible.f))) return;
   const v = parseFloat($("elemRotation").value);
   if (!isFinite(v)) return;
   memorise(salve);
