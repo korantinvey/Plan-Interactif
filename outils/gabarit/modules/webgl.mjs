@@ -37,7 +37,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
-import { meuble, TYPES_MEUBLES } from "./decor.mjs";
+import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX } from "./camera.mjs";
 
@@ -948,7 +948,40 @@ const TONS_DECOR = {
   plateau: [250, 249, 244, 255], comptoir: [250, 249, 244, 255],
   scene: [78, 90, 106, 255], ecran: [34, 42, 54, 255],
   plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
+  marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
 };
+
+/* L'escalier, l'escalator ou l'ascenseur sous un repère (`decor.mjs`
+   `objetRepere`), et la hauteur où sa pastille se pose : tout ce qui la
+   dessine — aplat, pictogramme, liseré — y monte avec elle. Les autres
+   repères restent au sol. */
+function repereEnObjet(el){
+  if (!cameraEnJeu()) return null;
+  const r = el.closest(".repere[data-glyphe]");
+  const glyphe = r ? r.getAttribute("data-glyphe") || "" : "";
+  return OBJETS_REPERE.includes(glyphe) ? { r, glyphe } : null;
+}
+/* Ce qu'on sait de chaque repère monté pendant la conversion : son centre et
+   son objet. L'aplat de la pastille, son premier enfant, le pose ; le
+   pictogramme et le liseré, qui suivent, le relisent pour monter avec. */
+/** @type {WeakMap<Element, any>} */
+let objetsPoses = new WeakMap();
+/** Ce qu'un point de la pastille devient une fois montée sur son objet, ou rien. */
+function monteeRepere(el, polygon, acc){
+  const o = repereEnObjet(el);
+  if (!o) return null;
+  if (o.r.firstElementChild === el && polygon && polygon[0]){
+    const xs = polygon[0].map(p => p[0]), ys = polygon[0].map(p => p[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const obj = objetRepere(o.glyphe, cx, cy, Math.max(...ys) - Math.min(...ys));
+    for (const p of obj.pieces) acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] });
+    objetsPoses.set(o.r, { cx, cy, obj });
+  }
+  const pose = objetsPoses.get(o.r);
+  if (!pose || !pose.obj.pieces.length) return null;
+  const { cx, cy, obj } = pose, E = ECHELLE_PASTILLE;
+  return (/** @type {number[]} */ p) => [obj.ancre[0] + (p[0] - cx) * E, obj.ancre[1] + (p[1] - cy) * E, obj.dessus];
+}
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
   if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
@@ -978,7 +1011,8 @@ function formeGl(el, cs, m, op, traces, acc){
     const prise = el.closest(PRISES), haut = hauteurVolume(el);
     const couleur = haut ? opaque(plein) : plein;
     for (const polygon of avecTrous(anneaux)){
-      acc.pleins.push({ polygon, couleur, el: cible, prise, haut });
+      const monte = monteeRepere(el, polygon, acc);
+      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, el: cible, prise, haut });
       if (haut) meubleZone(el, polygon, couleur, acc);
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
@@ -1005,9 +1039,10 @@ function formeGl(el, cs, m, op, traces, acc){
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
     const defile = el.classList.contains("iSens");
+    const monte = monteeRepere(el, null, acc);
     for (const t of traces){
       if (t.pts.length < 2) continue;
-      const path = t.pts.map(p => appM(m, p));
+      const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
       if (t.ferme) path.push(path[0]);
       (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
         prise: el.closest(PRISES) });

@@ -144,3 +144,61 @@ export function meuble(type, anneau){
   }
   return pieces;
 }
+
+/* ------------------------------------------------------------
+   Les objets des repères
+
+   Un escalier, un escalator, un ascenseur sont des repères — un point et un
+   pictogramme. Vue de biais, une pastille couchée au sol ne dit pas qu'on
+   change d'étage : l'objet monte sous elle, à l'échelle du hall, et la
+   pastille se pose dessus, comme une signalétique.
+
+   Les marches montent vers le haut du plan : vue de face, on voit l'escalier
+   par où l'on y monte.
+
+   L'objet se mesure à la pastille et non au mètre : un repère se règle en
+   taille pour se voir de loin, et un escalier à l'échelle vraie disparaissait
+   sous elle. La pastille, elle, se réduit de moitié en montant et se pose au
+   fond, au-dessus de la dernière marche : les premières restent à la vue.
+   ------------------------------------------------------------ */
+
+/** Les pictogrammes de repère qui ont un objet. */
+export const OBJETS_REPERE = ["escalier", "escalator", "ascenseur"];
+
+/** La pastille montée sur son objet, à cette fraction de sa taille. */
+export const ECHELLE_PASTILLE = .5;
+
+/**
+ * L'objet d'un repère dont la pastille mesure `cote` mètres et se centre en
+ * (x, y) ; la hauteur et le point où la pastille se pose.
+ * @param {string} glyphe
+ * @param {number} x
+ * @param {number} y
+ * @param {number} cote
+ * @returns {{ pieces: Piece[], dessus: number, ancre: number[] }}
+ */
+export function objetRepere(glyphe, x, y, cote = 5){
+  /** @type {Piece[]} */
+  const pieces = [];
+  const boite = (/** @type {number} */ x0, /** @type {number} */ y0, /** @type {number} */ x1,
+    /** @type {number} */ y1, /** @type {number} */ haut, /** @type {string} */ role) =>
+    pieces.push({ polygon: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], haut, role });
+  if (glyphe === "escalier" || glyphe === "escalator"){
+    const meca = glyphe === "escalator";
+    const larg = cote * (meca ? .5 : .75), long = cote * 1.3, haut = cote * .4;
+    const n = meca ? 12 : 7, pas = long / n, x0 = x - larg / 2, x1 = x + larg / 2;
+    const fond = y - long / 2, front = y + long / 2;
+    // chaque marche court jusqu'au fond : posées ensemble, elles font l'escalier
+    for (let i = 0; i < n; i++) boite(x0, fond, x1, front - i * pas, haut * (i + 1) / n, "marche");
+    // l'escalator a ses deux flancs, pleins et sombres, qui dépassent des marches
+    const f = cote * .04;
+    if (meca) for (const [a, b] of [[x0 - f, x0], [x1, x1 + f]]) boite(a, fond, b, front, haut * 1.25, "flanc");
+    return { pieces, dessus: haut * (meca ? 1.25 : 1) + .05, ancre: [x, fond + cote * ECHELLE_PASTILLE / 2] };
+  }
+  if (glyphe === "ascenseur"){
+    const d = cote * .4;
+    boite(x - d, y - d, x + d, y + d, cote * .55, "cabine");
+    return { pieces, dessus: cote * .55 + .05, ancre: [x, y] };
+  }
+  return { pieces, dessus: 0, ancre: [x, y] };
+}

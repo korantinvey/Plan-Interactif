@@ -32,7 +32,7 @@ const rect = (x, y, w, h, deg = 0) => {
 };
 
 (async () => {
-  const { meuble, TYPES_MEUBLES } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -58,6 +58,20 @@ const rect = (x, y, w, h, deg = 0) => {
   console.log("Une zone immense");
   const n = meuble("conferences", rect(0, 0, 400, 300)).length;
   dit(n <= 600, "le décor s'arrête à la borne", n + " pièces");
+
+  console.log("Les objets des repères");
+  for (const g of OBJETS_REPERE){
+    const o = objetRepere(g, 100, 50, 7.2);
+    const sommet = Math.max(...o.pieces.map(x => x.haut));
+    dit(o.pieces.length > 0 && o.dessus >= sommet, g + " : un objet, la pastille posée dessus", "dessus " + o.dessus.toFixed(2));
+    const xs = o.pieces.flatMap(x => x.polygon.map(p => p[0]));
+    dit(Math.max(...xs) - Math.min(...xs) <= 7.2, g + " : pas plus large que sa pastille");
+  }
+  dit(!objetRepere("wc", 0, 0, 7).pieces.length, "un repère sans objet reste une pastille au sol");
+  const esc = objetRepere("escalier", 0, 0, 6);
+  const marches = esc.pieces.map(x => x.haut);
+  dit(marches.every((h, i) => !i || h > marches[i - 1]), "les marches montent l'une après l'autre");
+  dit(esc.ancre[1] < 0, "la pastille se pose au fond, au-dessus de la dernière marche");
 
   if (ko){ console.log("\n" + ko + " échec(s)."); process.exit(1); }
   console.log("\nLe décor tient.");
