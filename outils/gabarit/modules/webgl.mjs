@@ -38,6 +38,9 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
+import { placeFigurants, silhouette, graineDe } from "./figurants.mjs";
+import { grille, PAS_GRILLE } from "./itineraire.mjs";
+import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
 
@@ -494,7 +497,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesFigurants(), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
@@ -1225,6 +1228,32 @@ function meubleZone(el, polygon, couleur, acc){
   for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
     g.hasAttribute("data-comptoir-choisi")))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
+}
+
+/* ------------------------------------------------------------
+   Les figurants
+
+   Du monde dans les allées de la vue immersive (`figurants.mjs`), semé sur
+   la grille de marche de l'itinéraire. Une couche à part, posée juste avant
+   les noms : ceux-ci passent devant, les stands cachent ceux qui sont
+   derrière eux. Les figurants ne se désignent pas — un appui passe au
+   travers, jusqu'à l'allée ou au stand. La grille se calcule une fois par
+   pavillon, et la couche garde ses données tant qu'elle ne change pas : la
+   carte graphique ne les reçoit qu'une fois.
+   ------------------------------------------------------------ */
+/** @type {{ grille: any, couche: any }} */
+const FIGURANTS = { grille: null, couche: null };
+function couchesFigurants(){
+  if (!GL.camera || !cameraEnJeu() || !DATA || !P()) return [];
+  const p = P(), g = grille(p, false);
+  if (FIGURANTS.grille !== g){
+    FIGURANTS.grille = g;
+    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id)).flatMap(silhouette);
+    FIGURANTS.couche = new deck.SolidPolygonLayer({ id: "figurants", data, pickable: false,
+      extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+      material: MATIERE });
+  }
+  return [FIGURANTS.couche];
 }
 
 /* Un volume ne se peint pas en transparence : on verrait ses façades du fond
