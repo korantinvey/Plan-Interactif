@@ -47,30 +47,50 @@ Un module `affichage.mjs` émet, **une seule fois** par page :
 - ou au repli SVG (`chargeWebgl` `secours` : bibliothèque absente, ou dessin
   trop long).
 
+- ou à la fin du démarrage (`demarrage.mjs` `demarre`) quand aucun dessin
+  WebGL n'est attendu (`?rendu=svg`, pas de WebGL2).
+
 Il expose `quandAffiche(fn)` — appelle `fn` tout de suite si le signal est déjà
-passé — et `planAffiche()` pour l'émettre. Rien d'autre n'attend une minuterie.
+passé —, `apresAffichage()` qui en rend la promesse, `estAffiche()`, et
+`planAffiche()` pour l'émettre. Il pose la classe `plan-affiche` sur la racine,
+que les essais lisent. Rien d'autre n'attend une minuterie.
 
 ## 2. Première image minimale (PR 1)
 
-**Calques.** `assembleWebgl` ne rend, tant que le signal n'est pas passé, que
-le socle : blocs des stands et zones, calques de dessin, libellés. Sont
-repoussés les familles invisibles à l'ouverture — `couchesFigurants`,
-`coucheSurvol`, `coucheSurvolVolume`, `couchesPastilles`, `coucheFocus`,
-`couchesPhareNoms` —, la frontière exacte étant fixée par le profil : on ne
-repousse qu'une famille dont la compilation coûte et qu'on ne voit pas.
+**Ce que le profil a appris** (mesures du 13 octobre, après la rédaction
+initiale de cette section) :
 
-Après le signal, les familles repoussées entrent **une par image**
-(`requestAnimationFrame` successifs) : la compilation s'étale, le plan reste
-manipulable entre deux.
+- La première image deck.gl est une seule tâche de ~4 s (4,0 → 8,0 s), dont
+  2,0 s d'attente de la carte graphique sur la compilation des programmes :
+  contours `path-layer` 1,1 s, figurants `simple-mesh-layer` 0,34 s,
+  aplats `solid-polygon-layer` 0,29 s, texte `multi-icon-layer` 0,27 s. Le
+  même total sans ralentissement du processeur : c'est un coût réel.
+- Survol, volumes de survol, focus et pastilles ne sont **pas** montés à
+  l'ouverture : ils ne coûtent rien et ne se repoussent pas.
+- MapLibre se monte **dans la foulée** de la première image deck.gl
+  (8,0 → 10,0 s, dont la compilation de ses propres programmes), avant que
+  l'écran ait pu la peindre : c'est lui qui retient le plan deux secondes de
+  plus.
+- La compilation asynchrone de luma.gl (`_disabledFeatures`
+  `compilation-status-async-webgl`, désactivée par défaut) a été essayée :
+  l'attente se déplace aussitôt dans la lecture des attributs du programme
+  (`getActiveAttrib`, faite dans le constructeur du pipeline), sans rien
+  gagner. Écartée : il faudrait modifier deck.gl.
 
-Une famille sollicitée avant son tour (survol, sélection, focus) entre
-sur-le-champ : `GL.differees` est un ensemble, qu'un geste vide de la famille
-concernée.
+**Calques.** Seuls les figurants (`couchesFigurants`) sont repoussés : ce sont
+les seuls à la fois montés à l'ouverture, coûteux, et décoratifs. Avant le
+signal, `couchesFigurants` rend une liste vide ; au signal, une demande de
+repeinte (`planifieWebgl`) les fait entrer.
 
-**Carte du quartier.** `dessineFondCarte` ne fait appel à `poseCarteGL` (donc à
-`chargeMapLibre`) qu'après le signal ; avant, il ne dessine rien et
-`quandAffiche` le rappelle. Les tuiles matricielles (fond sans `style`) ne
-changent pas : elles ne coûtent pas de compilation.
+**Carte du quartier.** `poseCarteGL` ne demande la bibliothèque
+(`chargeMapLibre`) et ne construit la carte qu'après le signal : ni le
+téléchargement, ni l'analyse du script, ni la compilation de ses programmes
+ne précèdent la première image. Les tuiles matricielles (fond sans `style`) ne
+changent pas : elles ne compilent rien.
+
+**Le signal attend la peinture.** `planAffiche` ne réveille ses inscrits
+qu'après l'image suivante (`requestAnimationFrame` puis `setTimeout`) : le
+travail repoussé ne peut plus passer avant que l'écran ait montré le plan.
 
 ## 3. Deux scripts (PR 2)
 
