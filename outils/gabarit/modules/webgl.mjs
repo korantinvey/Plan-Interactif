@@ -37,7 +37,8 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
-import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE } from "./camera.mjs";
+import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
+  HAUTEUR_ZONE, HAUSSE_CHOIX } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -96,6 +97,8 @@ export const GL = {
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
   // la vue immersive est-elle à l'écran — voir « La vue immersive »
   camera: false,
+  /** @type {number[] | null} le sol du hall, sur lequel un volume rend sa transparence */
+  sol: null,
 };
 
 function chargeWebgl(){
@@ -357,8 +360,8 @@ function vuesGl(){
 function effetsGl(){
   if (!GL.camera) return [];
   return [new deck.LightingEffect({
-    ambiante: new deck.AmbientLight({ color: [255, 255, 255], intensity: .78 }),
-    jour: new deck.DirectionalLight({ color: [255, 255, 255], intensity: .55, direction: [.55, .9, -1] }),
+    ambiante: new deck.AmbientLight({ color: [255, 255, 255], intensity: 1 }),
+    jour: new deck.DirectionalLight({ color: [255, 255, 255], intensity: .5, direction: [.55, .9, -1] }),
   })];
 }
 
@@ -444,6 +447,10 @@ export function planifieWebgl(){
 }
 function toutRepeindreWebgl(){
   GL.tout = true; GL.couchesLibelles = null;
+  /* Le sol du hall : l'aplat qui le vide est peint de la couleur du fond
+     que l'exploitant a choisie, ou du gris de la page à défaut. */
+  const trou = $("trouDuFond");
+  GL.sol = trou ? couleurGl(getComputedStyle(trou).fill, 1) : null;
   // une mise en avant, la carte de chaleur : les noms s'estompent ou changent d'encre
   if (GL.actif){ lisModelesLibelles(); _page.libellesWebgl(); }
   planifieWebgl();
@@ -783,14 +790,17 @@ function couchesPetites(id, commun, K, sousPixel){
   ];
 }
 
-/* Les noms des stands, posés sur le dessus de leur volume en vue immersive ;
-   au sol, ils resteraient dans le stand, que ses façades cachent. Les noms
-   des zones restent au sol, comme les zones. */
+/* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
+   immersive ; au sol, ils resteraient dedans, que les façades cachent. Celui
+   d'une zone masquée reste au sol avec elle. */
 function positionTexte(){
   if (!GL.camera) return d => d.position;
-  const z = HAUTEUR_STAND + .02, zSel = HAUTEUR_STAND * 2.2 + .02;
-  return d => d.cls && d.cls.startsWith("zn") ? d.position
-    : [d.position[0], d.position[1], /\bsel\b/.test(d.cls || "") ? zSel : z];
+  return d => {
+    const c = d.cls || "", zone = c.startsWith("zn");
+    if (zone && /\bmasquee\b/.test(c)) return d.position;
+    const h = (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1);
+    return [d.position[0], d.position[1], h + .02];
+  };
 }
 
 /* Un nom se dresse face à l'œil : en vue immersive, son rectangle traversait
@@ -895,19 +905,37 @@ function parcoursGl(el, m, op, acc){
   if (traces) formeGl(el, cs, m, op, traces, acc);
 }
 
-/* La hauteur d'une forme en vue immersive : celle d'un stand pour le tracé
-   même d'un stand, rien pour tout le reste. Seul le tracé monte — la
-   distinction, le halo de la chaleur, le liseré de la sélection posés sur lui
-   restent des aplats, qui se peignent alors au pied du volume. */
+/* La hauteur d'une forme en vue immersive : celle d'un stand ou d'une zone
+   de l'organisateur pour leur tracé même, rien pour tout le reste. Seul le
+   tracé monte — la distinction, le halo de la chaleur, le liseré de la
+   sélection posés sur lui restent des aplats, qui se peignent alors au pied
+   du volume. Une zone masquée reste au sol : pâlie, elle dit à l'exploitant
+   qu'elle ne sera pas sur le plan public, et un volume la ferait voir. */
 function hauteurVolume(el){
   if (!cameraEnJeu()) return 0;
   const g = el.parentNode;
-  if (!g || !g.classList || !g.classList.contains("stand") || g.firstElementChild !== el) return 0;
-  if (g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
-  /* Le stand choisi se hausse au-dessus des autres : vu de biais, un liseré
+  if (!g || !g.classList || g.firstElementChild !== el) return 0;
+  const stand = g.classList.contains("stand"), zone = g.classList.contains("zone");
+  if (!stand && !zone) return 0;
+  if (stand && g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
+  if (zone && g.classList.contains("masquee")) return 0;
+  /* Ce qu'on a choisi se hausse au-dessus des autres : vu de biais, un liseré
      au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
      des yeux en ouvrant sa fiche. */
-  return g.classList.contains("sel") ? HAUTEUR_STAND * 2.2 : HAUTEUR_STAND;
+  const h = stand ? HAUTEUR_STAND : HAUTEUR_ZONE;
+  return g.classList.contains("sel") ? h * HAUSSE_CHOIX : h;
+}
+
+/* Un volume ne se peint pas en transparence : on verrait ses façades du fond
+   au travers de celles de devant, et la zone aurait l'air d'un bloc de verre.
+   Sa teinte translucide — une zone l'est toujours, un stand que la recherche
+   éteint aussi — est donc mêlée au sol qu'elle laissait voir, et le volume
+   prend le ton que l'aplat avait. */
+function opaque(couleur){
+  const a = (couleur[3] === undefined ? 255 : couleur[3]) / 255;
+  if (a >= 1) return couleur;
+  const sol = GL.sol || [233, 234, 228];
+  return [0, 1, 2].map(i => Math.round(couleur[i] * a + sol[i] * (1 - a))).concat(255);
 }
 
 function formeGl(el, cs, m, op, traces, acc){
@@ -917,7 +945,8 @@ function formeGl(el, cs, m, op, traces, acc){
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el);
-    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible, prise, haut });
+    const couleur = haut ? opaque(plein) : plein;
+    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur, el: cible, prise, haut });
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
        « pointer-events: all » donne en SVG au calque ouvert. Un aplat
@@ -1039,8 +1068,11 @@ const partage = (liste, prises, deja) => {
 const designeGl = (d) => d.el || d.prise;
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
-   brille changerait de couleur d'un bout du hall à l'autre. */
-const MATIERE = { ambient: .62, diffuse: .55, shininess: 4, specularColor: [20, 20, 20] };
+   brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
+   comptées pour qu'un dessus, en plein jour, rende à peu près la couleur que
+   l'exploitant a choisie — et qu'une façade à l'ombre en garde les quatre
+   cinquièmes. Plus sombre, tout le plan tournait au terne. */
+const MATIERE = { ambient: .8, diffuse: .42, shininess: 4, specularColor: [12, 12, 12] };
 
 function couchesDeBloc(acc, cle){
   const L = deck, out = [];

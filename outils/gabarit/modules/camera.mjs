@@ -65,6 +65,12 @@ export const cleCamera = () => etat.voulue ? String(etat.cap) : "";
    celui qui le suit. Un emplacement libre reste au ras du sol — il se lit
    comme un vide entre les stands, ce qu'il est. */
 export const HAUTEUR_STAND = 1.6, HAUTEUR_LIBRE = .06;
+/* Une zone de l'organisateur — restaurant, accueil, salle — monte moins haut
+   qu'un stand : elle couvre souvent un grand pan du hall, et à hauteur de
+   stand elle cacherait les noms de toute une allée derrière elle. */
+export const HAUTEUR_ZONE = 1;
+/* Ce qu'on choisit se hausse au-dessus du reste, d'autant. */
+export const HAUSSE_CHOIX = 2.2;
 /** Le dessin applique la caméra, ou la retire. */
 export function metsEnJeu(/** @type {boolean} */ oui){
   if (etat.enJeu === oui) return;
