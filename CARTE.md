@@ -118,7 +118,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 293 l. → plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1576 l. → plan-smcl.html
+### `_styles-modeles-parcours.css` — 1584 l. → plan-smcl.html
 
 ### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
