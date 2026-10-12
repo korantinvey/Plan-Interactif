@@ -332,10 +332,16 @@ export function brancheGestes(){
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —
        dans cet ordre (`modules/gestes-admin.mjs`). */
     if (admin.appui(e)) return;
+    /* Ce que le doigt touche ne sert qu'à l'appui, jamais au glissé ni au
+       pincement. En SVG, la cible se lit au doigt posé : la capture renverra
+       tout le reste au plan. Sous la carte graphique, elle attend le doigt
+       levé (`pointerup`) : le dessin, seul à savoir où tombent ses formes, ne
+       le dit qu'en relisant ses pixels, ce qui arrête la page jusqu'à ce qu'il
+       ait fini son image — un à-coup au départ de chaque geste, quand la
+       plupart n'étaient pas des appuis. La vue n'a pas bougé d'ici là, sans
+       quoi ce ne serait plus un appui : la réponse est la même. */
     drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
-             // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
-             cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
-                             : e.target.closest("[data-id],[data-poi]") };
+             cible: GL.actif ? null : e.target.closest("[data-id],[data-poi]") };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
   });
   svg.addEventListener("pointermove", e => {
@@ -361,6 +367,7 @@ export function brancheGestes(){
     try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
     if (d && d.bouge){ poseVue(); return; }
     if (!d) return;
+    if (GL.actif) d.cible = cibleWebgl(d.x, d.y);
     /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
        sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
        recherche dont ils débordent la marge, s'il y en a un. */

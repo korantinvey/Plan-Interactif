@@ -1249,7 +1249,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 521 l. → plan, plan-admin
+### `modules/gestes.mjs` — 528 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.73 · 8. Interactions du plan
@@ -1258,7 +1258,7 @@ Fonctions :
 
 `poseGestesAdmin` 71 · `milieu` 99 · `commencePince` 105 · `adopteSecondDoigt` 138
 `suitPince` 148 · `plieLesBandes` 208 · `saisitPlan` 222 · `cibleElargie` 259
-`planifieFiltre` 302 · `brancheGestes` 316 · `brancheLangue` 504
+`planifieFiltre` 302 · `brancheGestes` 316 · `brancheLangue` 511
 
 Importe :
 

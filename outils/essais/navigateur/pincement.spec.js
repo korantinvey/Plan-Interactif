@@ -24,6 +24,8 @@ async function listeAuMilieu(page) {
 const doigt = (id, x, y) => ({ id, x, y });
 
 test.describe("le pincement, tiroir ouvert", () => {
+  test.skip(({ isMobile }) => !isMobile, "la liste n'est un tiroir que sur écran étroit");
+
   /* Au cran du milieu, la liste couvre près de la moitié de l'écran, et le
      second doigt d'un pincement y tombait : il n'arrivait jamais au plan, qui
      glissait sous le premier au lieu de grandir. */
@@ -86,6 +88,54 @@ test.describe("le pincement, tiroir ouvert", () => {
     }
     expect(await page.evaluate(() => /** @type {any} */ (globalThis).__deplie)).toBe(0);
     await toucher("touchEnd", []);
+    expect(erreurs).toEqual([]);
+  });
+});
+
+/* Sous la carte graphique, savoir quelle forme est sous le doigt oblige à
+   relire ses pixels, ce qui arrête la page jusqu'à ce qu'elle ait fini son
+   image. On ne le lui demandait au doigt posé que pour l'appui, et chaque
+   glissé, chaque pincement commençait donc par cet à-coup. */
+test.describe("l'appui sous la carte graphique", () => {
+  test("ne relit les pixels qu'au doigt levé, et ouvre toujours la fiche", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.addInitScript(() => {
+      const g = /** @type {any} */ (globalThis);
+      g.__relectures = 0;
+      for (const C of [g.WebGL2RenderingContext, g.WebGLRenderingContext]) {
+        if (!C) continue;
+        const lit = C.prototype.readPixels;
+        C.prototype.readPixels = function () { g.__relectures++; return lit.apply(this, arguments); };
+      }
+    });
+    await page.goto("/plan?plan=smcl-2026");
+    await attendLaListe(page);
+    test.skip(!(await page.evaluate(() => /** @type {any} */ (globalThis).__essais.GL.actif)),
+      "pas de WebGL2 dans ce navigateur");
+    await page.waitForFunction(() => document.documentElement.classList.contains("gl-pret"));
+    // le plus grand stand entièrement dans le cadre : l'appui ne peut pas le manquer
+    const vise = await page.evaluate(() => {
+      const { rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
+      const c = document.getElementById("plan").getBoundingClientRect();
+      let mieux = null;
+      for (const n of document.querySelectorAll("#stands [data-id]")) {
+        const r = rectEcranWebgl(n);
+        if (!r || r.left < c.left || r.top < c.top || r.right > c.right || r.bottom > c.bottom) continue;
+        if (!mieux || r.width * r.height > mieux.aire) {
+          mieux = { id: n.getAttribute("data-id"), x: r.left + r.width / 2, y: r.top + r.height / 2,
+                    aire: r.width * r.height };
+        }
+      }
+      return mieux;
+    });
+    expect(vise).not.toBeNull();
+
+    await page.mouse.move(vise.x, vise.y);
+    const avant = await page.evaluate(() => /** @type {any} */ (globalThis).__relectures);
+    await page.mouse.down();
+    expect(await page.evaluate(() => /** @type {any} */ (globalThis).__relectures)).toBe(avant);
+    await page.mouse.up();
+    await expect(page.locator("#detail")).toHaveClass(/open/);
     expect(erreurs).toEqual([]);
   });
 });
