@@ -35,6 +35,7 @@ import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
@@ -94,7 +95,7 @@ export const GL = {
   charge: false, actif: false, deck: null,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
-  groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "", tourne: false,
+  groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0,
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
@@ -954,7 +955,7 @@ function convertitBloc(racine, cle){
 /* Ce que le cartouche met en avant se range à part : il bat, et seules ses
    couches changent d'une image à l'autre. */
 function accDe(el, acc){
-  // un repère de la vue immersive : un jeton, à part, qui tourne (`couchesJeton`)
+  // un repère de la vue immersive : un jeton, à part, que sa matrice dresse (`couchesJeton`)
   const r = GL.camera && acc.jetons && el.closest(".repere[data-poi]");
   if (r){
     if (!acc.jetons.has(r)){
@@ -1117,28 +1118,31 @@ const TONS_DECOR = {
 
    Couchée sur le sol incliné, la pastille d'un repère s'écrasait en hauteur
    d'autant que le hall fuyait, et son pictogramme ne se lisait plus. En vue
-   immersive, elle devient un jeton : une plaque épaisse, debout, qui tourne
-   doucement sur elle-même et porte son pictogramme sur ses deux faces — de
-   dos, il se lit encore à l'endroit.
+   immersive, elle devient un jeton : une plaque épaisse, debout, face à l'œil
+   quel que soit le cap.
 
-   Le repère se convertit à plat, dans son propre accumulateur (`accDe`), comme
-   le SVG le dessine ; c'est une matrice par couche qui le dresse, l'épaissit
-   et le fait tourner (`matriceJeton`), recalculée à chaque image comme le
-   battement des repères mis en avant. Il se plante au sol, à l'endroit qu'il
-   désigne, ou sur l'escalier, l'escalator ou l'ascenseur qu'il surmonte
-   (`decor.mjs` `objetRepere`). Le mouvement réduit le laisse immobile, face
-   à l'œil.
+   Il a tourné sur lui-même, un temps : le plan entier se redessinait alors à
+   chaque image, sans fin, et l'ouverture d'une fiche saccadait. Immobile, il
+   ne coûte plus rien entre deux gestes.
+
+   Le repère se convertit à plat, dans son propre accumulateur (`accDe`),
+   comme le SVG le dessine ; une matrice par couche le dresse et l'épaissit
+   (`matriceJeton`). Il se plante au sol, à l'endroit qu'il désigne, ou sur
+   l'escalier, l'escalator ou l'ascenseur qu'il surmonte (`decor.mjs`
+   `objetRepere`).
    ------------------------------------------------------------ */
 
-/* Un tour en douze secondes : assez lent pour que le pictogramme se lise
-   d'un coup d'œil à presque tout instant, assez vif pour se voir tourner. */
-const TOUR_JETON = 12;
 /* L'épaisseur du jeton, rapportée à sa hauteur. */
 const EPAISSEUR_JETON = .16;
 /* Un jeton au sol garde les trois quarts de la pastille : à pleine taille, il
    dominait les stands de deux fois leur hauteur. Celui d'un objet prend la
    réduction que le décor lui a taillée. */
 const ECHELLE_JETON = .75;
+/* Un arrêt de transport se dresse comme les autres, mais sans épaisseur : une
+   plaque de quai est un panneau, et la tranche du jeton, vue d'au-dessus,
+   mangeait le haut de l'indice. Ce qu'on lit — le pictogramme, le numéro, les
+   barres du tram — reste face à l'œil, à la même taille. */
+const GLYPHES_MINCES = new Set(["transport", ...MODES_TRANSPORT.map(m => m.v)]);
 
 /* Ce qu'on sait de chaque repère pendant la conversion. L'aplat de la
    pastille, son premier enfant, le pose : son centre, sa taille, où il se
@@ -1158,12 +1162,13 @@ function poseJeton(el, polygon, couleur, acc){
        (`outil-escalier.mjs`) : il bleuit alors et sort sa poignée. */
     const enMain = r.hasAttribute("data-objet-choisi");
     const obj = objetRepere(glyphe, cx, cy, cote, Number(r.getAttribute("data-sens")) || 0, enMain);
-    // l'objet reste au sol du bloc : seul le jeton tourne
+    // l'objet reste au sol du bloc : seul le jeton se dresse
     for (const p of obj.pieces) acc.parent.decor.push({ polygon: p.polygon, haut: p.haut,
       couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
     if (obj.pieces.length){ ancre = obj.ancre; z = obj.dessus; E = ECHELLE_PASTILLE; }
   }
-  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, e: cote * EPAISSEUR_JETON,
+  const mince = GLYPHES_MINCES.has(glyphe);
+  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, mince, e: mince ? 0 : cote * EPAISSEUR_JETON,
     polygon, couleur: opaque(couleur), el: r });
 }
 
@@ -1185,40 +1190,55 @@ const autourDuZ = (/** @type {number} */ a) =>
   [Math.cos(a), -Math.sin(a), 0, 0, Math.sin(a), Math.cos(a), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 // la plaque se lève : sa face (vers +z) regarde l'œil, le haut du dessin monte
 const DEBOUT = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1];
-// et se retourne pour la face de dos, qui se lit alors à l'endroit
-const DOS = [-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1];
 
 /**
- * Ce qui mène une couche du jeton, dessinée à plat, à sa place du moment :
- * centrée, posée sur sa face, levée, tournée — face à l'œil quand le tour
- * est à zéro, quel que soit le cap —, puis plantée.
+ * Ce qui mène une couche du jeton, dessinée à plat, à sa place : centrée,
+ * posée sur sa face, levée, tournée face à l'œil selon le cap, puis plantée.
  */
 function matriceJeton(/** @type {any} */ j, /** @type {number} */ t){
   const ph = GL.animePhare && j.el.classList.contains("phare") ? echellePhare(t) : 1;
-  const k = j.E * ph, tour = GL.bouge ? 2 * Math.PI * t / TOUR_JETON : 0;
+  const k = j.E * ph;
   const pose = mul4(mul4(mul4(translation(j.ancre[0], j.ancre[1], j.z + j.demi * k),
-    autourDuZ(tour - capCamera())), DEBOUT), homothetie(k));
-  // la plaque d'épaisseur e, centrée ; le dessin juste devant sa face, ou derrière l'autre
-  const devant = j.e / 2 + j.e * .04;
+    autourDuZ(-capCamera())), DEBOUT), homothetie(k));
+  // la plaque d'épaisseur e, centrée ; le dessin juste devant sa face
   const m = j.face === "plaque" ? mul4(pose, translation(-j.cx, -j.cy, -j.e / 2))
-    : j.face === "dos" ? mul4(mul4(pose, DOS), translation(-j.cx, -j.cy, devant))
-    : mul4(pose, translation(-j.cx, -j.cy, devant));
+    : mul4(pose, translation(-j.cx, -j.cy, j.e / 2 + j.e * .04));
   return enColonnes(m);
 }
 
-/** Les couches d'un jeton : la plaque, puis le dessin sur ses deux faces. */
+/* Le corps du texte d'un jeton. La matrice ne réduit que son ancrage : les
+   lettres gardaient la taille de la pastille entière dans un jeton qui n'en
+   tient que les trois quarts, et vu de biais il se raccourcit encore en
+   hauteur quand elles, face à l'écran, ne se raccourcissent pas. Le numéro
+   débordait son rond et chevauchait les barres du tram. */
+function corpsDansLeJeton(/** @type {any} */ c, /** @type {any} */ j){
+  if (!j) return {};
+  const k = j.E, taille = c.props.getSize;
+  return { getSize: (/** @type {any} */ d, /** @type {any} */ i) => k * (typeof taille === "function" ? taille(d, i) : taille),
+    updateTriggers: { ...c.props.updateTriggers, getSize: k } };
+}
+
+/** Les couches d'un jeton : la plaque, puis le dessin sur sa face. */
 function couchesJeton(/** @type {Element} */ r, /** @type {any} */ sous, /** @type {string} */ cle){
   const j = jetonsPoses.get(r);
   const dessin = couchesDeBloc(sous, cle)
-    // couché sur la face, et non tourné vers l'écran : c'est la plaque qui s'en charge
-    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: false }) : c);
+    /* Tourné vers l'écran, comme les noms du plan. Couché sur la face, il ne
+       l'était qu'en apparence : la bibliothèque ne passe que son point
+       d'ancrage par la matrice du jeton, et trace les lettres à plat sur le
+       sol, où le SVG les retourne — le numéro d'une ligne se lisait écrasé et
+       la tête en bas, « 13 » en miroir. Et caché par ce qui se tient devant
+       lui — les noms du plan se peignent par-dessus le relief, et celui d'un
+       jeton passait à travers les stands. */
+    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: true, ...corpsDansLeJeton(c, j),
+      parameters: { ...c.props.parameters, depthCompare: "less-equal", depthWriteEnabled: false } }) : c);
   if (!j) return dessin;
+  const face = dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } }));
+  // l'arrêt n'a pas de plaque : son dessin porte déjà le fond de la pastille
+  if (j.mince) return face;
   const plaque = new deck.SolidPolygonLayer({ id: cle + "-plaque", data: [j], pickable: true,
     extruded: true, getPolygon: d => d.polygon[0], getFillColor: d => d.couleur, getElevation: d => d.e,
     material: MATIERE, el: r });
-  return [plaque.clone({ jeton: { ...j, face: "plaque" } }),
-    ...dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } })),
-    ...dessin.map(c => c.clone({ id: c.id + "-dos", jeton: { ...j, face: "dos" } }))];
+  return [plaque.clone({ jeton: { ...j, face: "plaque" } }), ...face];
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
@@ -2263,8 +2283,7 @@ function majAnimationWebgl(){
   const couches = [...GL.blocs.values()].flat();
   GL.animePhare = GL.bouge && document.documentElement.classList.contains("poi-actif") &&
     (GL.libellesPhare.length > 0 || couches.some(c => c.props.phare));
-  GL.tourne = GL.bouge && GL.camera && couches.some(c => c.props.jeton);
-  GL.anime = GL.animePhare || GL.tourne || (GL.bouge && couches.some(c => c.props.defile)) || hausses.size > 0;
+  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile)) || hausses.size > 0;
   if (GL.anime && !GL.imageAnim) GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
 function animeWebgl(now){
@@ -2278,13 +2297,13 @@ function animeWebgl(now){
     GL.couchesLibelles = null;
     for (const k of [...GL.groupes.keys()]) if (/^labels-(sans|hausse)\|/.test(k)) GL.groupes.delete(k);
   }
-  if (!GL.animePhare && !GL.tourne && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
+  if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
     GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
   }
   /* Tout le plan se redessine quand une couche change : le battement se
      contente donc de trente images par seconde, et le défilement seul ne
      redessine qu'à chacun de ses paliers. */
-  const cle = (GL.animePhare || GL.tourne ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
     (hausses.size ? "|" + Math.round(now) : "");
   if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
