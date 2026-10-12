@@ -37,6 +37,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
+import { meuble, TYPES_MEUBLES } from "./decor.mjs";
 import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX } from "./camera.mjs";
 
@@ -845,7 +846,8 @@ function couchesTexte(id, items, famille, graisse, extra){
    ------------------------------------------------------------ */
 /** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
-const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises });
+const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises,
+  decor: [] });
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
   // racine — celles d'une forme dessinée comme celles d'un emplacement repris
@@ -922,8 +924,37 @@ function hauteurVolume(el){
   /* Ce qu'on a choisi se hausse au-dessus des autres : vu de biais, un liseré
      au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
      des yeux en ouvrant sa fiche. */
-  const h = stand ? HAUTEUR_STAND : HAUTEUR_ZONE;
+  /* Une zone que le décor sait meubler n'est plus qu'un sol teinté : c'est
+     son mobilier qui monte, et un bloc d'un mètre le cacherait. */
+  const h = stand ? HAUTEUR_STAND : zoneMeublee(g) ? SOL_MEUBLE : HAUTEUR_ZONE;
   return g.classList.contains("sel") ? h * HAUSSE_CHOIX : h;
+}
+
+/* ------------------------------------------------------------
+   Le décor des zones
+
+   Le mobilier d'une zone typée (`decor.mjs`) monte sur son sol : chaque
+   pièce est un volume, peint d'après son rôle. Les assises prennent la
+   couleur de la zone, assombrie, pour que le restaurant reste doré et la
+   salle de sa teinte ; le reste a ses tons de mobilier, les mêmes partout.
+   Le décor ne se désigne pas : un appui sur une chaise ouvre la zone, dont
+   le sol est dessous.
+   ------------------------------------------------------------ */
+const SOL_MEUBLE = .12;
+const zoneMeublee = (/** @type {Element} */ g) =>
+  g.classList.contains("zone") && TYPES_MEUBLES.includes(g.getAttribute("data-type") || "");
+/** @type {Record<string, number[]>} */
+const TONS_DECOR = {
+  plateau: [250, 249, 244, 255], comptoir: [250, 249, 244, 255],
+  scene: [78, 90, 106, 255], ecran: [34, 42, 54, 255],
+  plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
+};
+function meubleZone(el, polygon, couleur, acc){
+  const g = el.parentNode;
+  if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
+  const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
+  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0]))
+    acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
 }
 
 /* Un volume ne se peint pas en transparence : on verrait ses façades du fond
@@ -946,7 +977,10 @@ function formeGl(el, cs, m, op, traces, acc){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el);
     const couleur = haut ? opaque(plein) : plein;
-    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur, el: cible, prise, haut });
+    for (const polygon of avecTrous(anneaux)){
+      acc.pleins.push({ polygon, couleur, el: cible, prise, haut });
+      if (haut) meubleZone(el, polygon, couleur, acc);
+    }
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
        « pointer-events: all » donne en SVG au calque ouvert. Un aplat
@@ -1087,6 +1121,9 @@ function couchesDeBloc(acc, cle){
       extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
       material: MATIERE }));
   });
+  if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
+    extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+    material: MATIERE }));
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
      relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
