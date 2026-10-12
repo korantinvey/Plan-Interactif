@@ -1187,14 +1187,14 @@ Portes :
 
 - `confieALaFiche` (partition) — la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration
 
-### `modules/figurants.mjs` — 318 l. → plan, plan-admin
+### `modules/figurants.mjs` — 403 l. → plan, plan-admin
 
 - l.1 · Les figurants de la vue immersive — du monde dans les allées
 
 Fonctions :
 
-`hasard` 38 · `graineDe` 50 · `placeFigurants` 91 · `tronc` 228 · `boule` 252 · `disque` 269
-`maillage` 281 · `maillagesFigurant` 294
+`hasard` 38 · `graineDe` 50 · `placeFigurants` 93 · `tronc` 259 · `membre` 283 · `boule` 292
+`disque` 309 · `maillage` 322 · `pose` 331 · `maillagesDe` 347 · `maillagesFigurant` 397
 
 Importé par :
 
@@ -3022,7 +3022,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 2314 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2317 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3041,22 +3041,22 @@ Fonctions :
 `auDessusDuSol` 1056 · `surSonStand` 1064 · `hauteurVolume` 1073 · `zoneMeublee` 1103
 `poseJeton` 1148 · `mul4` 1171 · `enColonnes` 1180 · `translation` 1181 · `homothetie` 1183
 `autourDuZ` 1184 · `matriceJeton` 1196 · `couchesJeton` 1210 · `meubleZone` 1223
-`couchesFigurants` 1253 · `fonce` 1290 · `opaque` 1292 · `formeGl` 1299
-`corpsDeclare` 1370 · `texteGl` 1379 · `imageGl` 1403 · `imageDressee` 1445
-`socleImage` 1459 · `partage` 1471 · `designeGl` 1477 · `sortie` 1491 · `noteHauteur` 1497
-`anticipeHausses` 1527 · `detacheVolume` 1542 · `hauteurHausse` 1568 · `echelleHausse` 1573
-`haussesParId` 1576 · `arete` 1592 · `contourDe` 1594 · `coucheContours` 1598 · `aPlat` 1617
-`couchesDeBloc` 1619 · `modelesLibellesHtml` 1743 · `poseModelesLibelles` 1753
-`lisModelesLibelles` 1759 · `groupesNoms` 1792 · `couchesNoms` 1809
-`couchesPastilles` 1820 · `couchesLibellesWebgl` 1835 · `couchesDessineesWebgl` 1871
-`stage` 1892 · `brancheSurvolWebgl` 1896 · `poseSurvolWebgl` 1916 · `enTuiles` 1945
-`hauteurTuile` 1953 · `visePour` 1959 · `gonfleSurvol` 1964 · `coucheTuileSoulevee` 1986
-`couchesTuiles` 2016 · `poseCurseurWebgl` 2034 · `poseFocusWebgl` 2043 · `aplatsDe` 2050
-`coucheSurvol` 2053 · `coucheSurvolVolume` 2067 · `coucheFocus` 2080 · `couchesPhare` 2107
-`lueurDe` 2124 · `opacitePhare` 2162 · `echellePhare` 2163 · `couchesPhareNoms` 2166
-`palierDefile` 2191 · `periodeDe` 2196 · `phaseDe` 2198 · `instant` 2208
-`animeCouche` 2209 · `majAnimationWebgl` 2238 · `animeWebgl` 2247 · `objetSous` 2281
-`cibleWebgl` 2288 · `priseWebgl` 2295 · `libelleSousWebgl` 2300 · `rectEcranWebgl` 2305
+`couchesFigurants` 1253 · `fonce` 1293 · `opaque` 1295 · `formeGl` 1302
+`corpsDeclare` 1373 · `texteGl` 1382 · `imageGl` 1406 · `imageDressee` 1448
+`socleImage` 1462 · `partage` 1474 · `designeGl` 1480 · `sortie` 1494 · `noteHauteur` 1500
+`anticipeHausses` 1530 · `detacheVolume` 1545 · `hauteurHausse` 1571 · `echelleHausse` 1576
+`haussesParId` 1579 · `arete` 1595 · `contourDe` 1597 · `coucheContours` 1601 · `aPlat` 1620
+`couchesDeBloc` 1622 · `modelesLibellesHtml` 1746 · `poseModelesLibelles` 1756
+`lisModelesLibelles` 1762 · `groupesNoms` 1795 · `couchesNoms` 1812
+`couchesPastilles` 1823 · `couchesLibellesWebgl` 1838 · `couchesDessineesWebgl` 1874
+`stage` 1895 · `brancheSurvolWebgl` 1899 · `poseSurvolWebgl` 1919 · `enTuiles` 1948
+`hauteurTuile` 1956 · `visePour` 1962 · `gonfleSurvol` 1967 · `coucheTuileSoulevee` 1989
+`couchesTuiles` 2019 · `poseCurseurWebgl` 2037 · `poseFocusWebgl` 2046 · `aplatsDe` 2053
+`coucheSurvol` 2056 · `coucheSurvolVolume` 2070 · `coucheFocus` 2083 · `couchesPhare` 2110
+`lueurDe` 2127 · `opacitePhare` 2165 · `echellePhare` 2166 · `couchesPhareNoms` 2169
+`palierDefile` 2194 · `periodeDe` 2199 · `phaseDe` 2201 · `instant` 2211
+`animeCouche` 2212 · `majAnimationWebgl` 2241 · `animeWebgl` 2250 · `objetSous` 2284
+`cibleWebgl` 2291 · `priseWebgl` 2298 · `libelleSousWebgl` 2303 · `rectEcranWebgl` 2308
 
 Importe :
 

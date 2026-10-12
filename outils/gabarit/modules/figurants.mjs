@@ -74,6 +74,8 @@ export function graineDe(/** @type {string} */ id){
  * @property {number} cheveux  l'indice de leur couleur dans `CHEVEUX`
  * @property {number} taille   sa hauteur, en part de la hauteur type
  * @property {number} cap      le sens où il regarde, en degrés autour de la verticale
+ * @property {number} modele   l'indice de son allure dans `MODELES`
+ * @property {number} chaussures l'indice de leur couleur dans `CHAUSSURES`
  */
 
 /**
@@ -128,7 +130,8 @@ export function placeFigurants(g, pas, graine){
   const marche = (/** @type {number} */ i) => i >= 0 && g.nappe[i] && g.marge[i] >= 2;
   const nouveau = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ cap) => ({ x, y,
     tenue: Math.floor(tire() * TENUES.length), peau: Math.floor(tire() * TEINTS.length),
-    cheveux: Math.floor(tire() * CHEVEUX.length), taille: .92 + tire() * .16, cap });
+    cheveux: Math.floor(tire() * CHEVEUX.length), taille: .92 + tire() * .16, cap,
+    modele: Math.floor(tire() * MODELES.length), chaussures: Math.floor(tire() * CHAUSSURES.length) });
   /* On marche dans le sens d'une allée, pas en travers : le cap suit l'un des
      quatre sens de la grille, tournée avec le hall, à quelques degrés près. */
   const angleHall = Math.atan2(g.si, g.co) * 180 / Math.PI;
@@ -192,32 +195,60 @@ export const OMBRE = [24, 28, 38, 34];
    quatre de front tiennent dans une allée de deux mètres, comme dans le
    vrai salon.
 
-   Le dessin est celui des maquettes d'architecte : peu de formes, franches.
-   Deux jambes bien séparées, les bras dans la couleur du haut le long du
-   corps, une tête un peu forte coiffée de cheveux sombres, et une ombre
-   douce au sol, sans laquelle un figurant flotte au-dessus de l'allée.
+   Le dessin est celui des maquettes d'architecte : des formes simples, mais
+   toutes celles qu'on reconnaît d'un coup d'œil — chaussures, mains, cou,
+   un buste qui s'évase de la taille aux épaules, une coiffure sombre sur le
+   visage —, et une ombre douce au sol, sans laquelle un figurant flotte
+   au-dessus de l'allée. Des modèles d'artiste, téléchargés, auraient dit
+   plus encore, mais pesaient un mégaoctet et demi chacun : tout est tracé
+   ici, en quelques kilooctets de code.
 
-   Cinq maillages — l'ombre, le bas, le haut, la tête, les cheveux — que la
-   carte graphique répète pour chaque figurant, chacun teint de sa couleur.
-   Un figurant y coûte une position, et non trois cents sommets.
+   Pour chaque allure, cinq maillages — le bas, les chaussures, le haut, la
+   peau, les cheveux —, plus l'ombre commune, que la carte graphique répète
+   pour chaque figurant, chacun teint de sa couleur. Un figurant y coûte une
+   position, et non mille sommets.
    ------------------------------------------------------------ */
 /* Saisis en marche, et non au garde-à-vous. Droits, jambes et bras collés
    au corps, ils se lisaient comme des plots posés dans l'allée : ce qui dit
    qu'on marche, c'est le pas. Les jambes partent donc en compas de la
    hanche, les bras balancent à l'inverse, et le buste penche un rien vers
    l'avant. Un pas tranquille, de salon, et non une course. Immobiles
-   pourtant : la pose suffit à l'œil, et le plan ne s'anime pas tout seul. */
-const JAMBE = { pied: .12, hanche: .02, ecart: .075, rayon: .052, haut: .5 };
-const BUSTE = { bas: .48, haut: .86, larg: [.12, .15], prof: [.1, .115], penche: .025 };
-const BRAS = { main: .1, ecart: .175, rayon: .036, bas: .53, haut: .84 };
+   pourtant : la pose suffit à l'œil, et le plan ne s'anime pas tout seul.
+
+   La jambe droite (s = 1) est devant, le bras droit derrière. */
+const HANCHE = { z: .5, ecart: .075, avance: .02 };
+const PIED = { avance: .12, rayon: .052 };
+const CHAUSSURE = { haut: .055, long: [.075, .065], large: [.042, .036], bout: .025 };
+const BUSTE = { taille: .48, poitrine: .7, epaules: .86, penche: .025,
+  prof: [.095, .108, .1], larg: [.118, .142, .15] };
+const BRAS = { main: .1, ecart: .175, rayon: .036, bas: .53, haut: .84, coude: .7 };
+const MAIN = { rayon: .034 };
+const COU = { rayon: .04, haut: .9 };
 const TETE = { avance: .03, centre: .965, rayon: .1 };
+const JUPE = { bas: .3, larg: .2, prof: .165 };
 /* Les cheveux : une calotte un peu plus grande que la tête, tirée vers
-   l'arrière — de face on voit le visage, de dos la chevelure. */
-const COIFFE = { gonfle: 1.08, recul: .018, monte: .008, part: .55 };
+   l'arrière — de face on voit le visage, de dos la chevelure. Longs, ils
+   descendent en plus dans le dos jusqu'aux épaules. */
+const COIFFE = { gonfle: 1.08, recul: .018, monte: .008, courte: .55, longue: .62 };
 const OMBRE_SOL = { long: .26, large: .18, haut: .004 };
 
 /** La hauteur d'un figurant de taille type, en mètres. */
 export const HAUTEUR_FIGURANT = TETE.centre + COIFFE.monte + TETE.rayon * COIFFE.gonfle;
+
+/**
+ * Les quatre allures de la foule. Un salon n'est pas une colonne d'uniformes :
+ * la jupe, les avant-bras nus, les cheveux longs suffisent à varier la
+ * silhouette, et chacune reçoit en plus ses couleurs (`TENUES`, `CHEVEUX`).
+ */
+export const MODELES = [
+  { nom: "veste", jupe: false, manches: "longues", cheveux: "courts" },
+  { nom: "chemise", jupe: false, manches: "courtes", cheveux: "courts" },
+  { nom: "jupe", jupe: true, manches: "courtes", cheveux: "longs" },
+  { nom: "pantalon", jupe: false, manches: "longues", cheveux: "longs" },
+];
+
+/* Le bout des chaussures : sombre, quelle que soit la tenue. */
+export const CHAUSSURES = [[34, 34, 38], [58, 42, 32], [26, 30, 44], [90, 92, 98]];
 
 /**
  * Un tronc elliptique entre deux hauteurs, fermé en haut, ses faces en
@@ -245,6 +276,15 @@ function tronc(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @ty
     pos.push(cx + dx, cy + dy, z1, ...b0, ...b1);
     nor.push(0, 0, 1, 0, 0, 1, 0, 0, 1);
   }
+}
+
+/** Un membre rond tiré d'un point à un autre, sur une part [t0, t1] de sa
+ *  longueur : l'avant-bras nu et la manche sont deux parts du même bras. */
+function membre(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @type {number[]} */ a,
+  /** @type {number[]} */ b, /** @type {number} */ r, t0 = 0, t1 = 1, n = 7){
+  const en = (/** @type {number} */ t) => a.map((v, i) => v + (b[i] - v) * t);
+  const [p, q] = [en(t0), en(t1)];
+  tronc(pos, nor, p[0], p[1], p[2], q[2], [r, r], [r, r], n, q[0] - p[0], q[1] - p[1]);
 }
 
 /** Une boule à facettes, ses normales tirées de son centre ; ou sa seule
@@ -276,7 +316,8 @@ function disque(/** @type {number[]} */ pos, /** @type {number[]} */ nor, /** @t
 }
 
 /**
- * @typedef {{ positions: { value: Float32Array, size: number }, normals: { value: Float32Array, size: number } }} Maillage
+ * @typedef {{ attributes: { positions: { value: Float32Array, size: number },
+ *   normals: { value: Float32Array, size: number } } }} Maillage
  */
 const maillage = (/** @type {(pos: number[], nor: number[]) => void} */ fait) => {
   /** @type {number[]} */
@@ -286,33 +327,77 @@ const maillage = (/** @type {(pos: number[], nor: number[]) => void} */ fait) =>
     normals: { value: new Float32Array(nor), size: 3 } } };
 };
 
+/** Les points d'appui de la pose : pied, hanche, épaule, main de chaque côté. */
+const pose = (/** @type {number} */ s) => ({
+  pied: [s * PIED.avance, s * HANCHE.ecart, CHAUSSURE.haut * .6],
+  hanche: [s * HANCHE.avance, s * HANCHE.ecart, HANCHE.z],
+  epaule: [BUSTE.penche, s * BRAS.ecart, BRAS.haut],
+  main: [-s * BRAS.main, s * BRAS.ecart, BRAS.bas],
+});
+/** La part du bras, depuis la main, où s'arrête une manche courte. */
+const COUDE = (BRAS.coude - BRAS.bas) / (BRAS.haut - BRAS.bas);
+
 /**
- * Les maillages d'un figurant, debout à l'origine, regardant vers les x :
- * son ombre, le bas — les deux jambes —, le haut — buste et bras —, la tête
- * et les cheveux.
+ * Les maillages d'une allure, debout à l'origine, regardant vers les x. Ils
+ * vont par couleur, chacun teint pour chaque figurant : le bas — pantalon ou
+ * jupe —, les chaussures, le haut — buste et manches —, la peau — tête, cou,
+ * mains, et ce que la tenue laisse nu — et les cheveux.
+ * @param {typeof MODELES[number]} m
+ */
+function maillagesDe(m){
+  const cotes = [-1, 1].map(pose);
+  return {
+    bas: maillage((pos, nor) => {
+      if (m.jupe){
+        // la jupe s'évase de la taille à mi-mollet ; les jambes nues sont à la peau
+        tronc(pos, nor, 0, 0, JUPE.bas, BUSTE.taille + .03, [JUPE.prof, BUSTE.prof[0]],
+          [JUPE.larg, BUSTE.larg[0]], 12, BUSTE.penche * .4, 0);
+      } else for (const c of cotes) membre(pos, nor, c.pied, c.hanche, PIED.rayon, 0, 1, 8);
+    }),
+    chaussures: maillage((pos, nor) => {
+      for (const c of cotes) tronc(pos, nor, c.pied[0] + CHAUSSURE.bout, c.pied[1], 0, CHAUSSURE.haut,
+        CHAUSSURE.long, CHAUSSURE.large, 8);
+    }),
+    haut: maillage((pos, nor) => {
+      // la taille, la poitrine, les épaules : un buste, et non un tube
+      const p = BUSTE.penche, k = (BUSTE.poitrine - BUSTE.taille) / (BUSTE.epaules - BUSTE.taille);
+      tronc(pos, nor, 0, 0, BUSTE.taille, BUSTE.poitrine, BUSTE.prof.slice(0, 2), BUSTE.larg.slice(0, 2), 12, p * k, 0);
+      tronc(pos, nor, p * k, 0, BUSTE.poitrine, BUSTE.epaules, BUSTE.prof.slice(1), BUSTE.larg.slice(1), 12, p * (1 - k), 0);
+      for (const c of cotes){
+        membre(pos, nor, c.main, c.epaule, BRAS.rayon, m.manches === "courtes" ? COUDE : 0, 1, 7);
+        /* une épaule ronde coiffe chaque bras : sans elle, le bout du bras
+           dépassait du buste en une pastille plate, claire sous la lumière */
+        boule(pos, nor, p, BRAS.haut - .01, BRAS.rayon * 1.35, 3, 6, 1, c.epaule[1] * .94);
+      }
+    }),
+    peau: maillage((pos, nor) => {
+      boule(pos, nor, TETE.avance, TETE.centre, TETE.rayon, 6, 10);
+      tronc(pos, nor, BUSTE.penche, 0, BUSTE.epaules - .02, COU.haut, [COU.rayon, COU.rayon], [COU.rayon, COU.rayon], 8);
+      for (const c of cotes){
+        boule(pos, nor, c.main[0], c.main[2] - MAIN.rayon * .6, MAIN.rayon, 3, 6, 1, c.main[1]);
+        if (m.manches === "courtes") membre(pos, nor, c.main, c.epaule, BRAS.rayon * .9, 0, COUDE + .02, 7);
+        if (m.jupe) membre(pos, nor, c.pied, c.hanche, PIED.rayon * .85, 0, .62, 8);
+      }
+    }),
+    cheveux: maillage((pos, nor) => {
+      const longs = m.cheveux === "longs";
+      boule(pos, nor, TETE.avance - COIFFE.recul, TETE.centre + COIFFE.monte, TETE.rayon * COIFFE.gonfle,
+        5, 10, longs ? COIFFE.longue : COIFFE.courte);
+      // longs, ils tombent dans le dos jusqu'aux épaules
+      if (longs) tronc(pos, nor, TETE.avance - .06, 0, BUSTE.epaules - .03, TETE.centre,
+        [.055, .07], [.085, .1], 10);
+    }),
+  };
+}
+
+/**
+ * L'ombre, commune à tous, et les maillages de chaque allure, dans l'ordre
+ * de `MODELES`.
  */
 export function maillagesFigurant(){
   return {
     // l'ombre s'allonge dans le sens du pas, sous les deux pieds
     ombre: maillage((pos, nor) => disque(pos, nor, OMBRE_SOL.long, OMBRE_SOL.large, OMBRE_SOL.haut)),
-    // chaque jambe, du pied à la hanche : la droite devant, la gauche derrière
-    bas: maillage((pos, nor) => {
-      const r = [JAMBE.rayon, JAMBE.rayon];
-      for (const s of [-1, 1]) tronc(pos, nor, s * JAMBE.pied, s * JAMBE.ecart, 0, JAMBE.haut,
-        r, r, 8, s * (JAMBE.hanche - JAMBE.pied), 0);
-    }),
-    // chaque bras, de la main à l'épaule, à l'inverse de la jambe du même côté
-    haut: maillage((pos, nor) => {
-      tronc(pos, nor, 0, 0, BUSTE.bas, BUSTE.haut, BUSTE.prof, BUSTE.larg, 12, BUSTE.penche, 0);
-      const r = [BRAS.rayon, BRAS.rayon];
-      for (const s of [-1, 1]) tronc(pos, nor, -s * BRAS.main, s * BRAS.ecart, BRAS.bas, BRAS.haut,
-        r, r, 6, s * BRAS.main + BUSTE.penche, 0);
-      /* une épaule ronde coiffe chaque bras : sans elle, le bout du bras
-         dépassait du buste en une pastille plate, claire sous la lumière */
-      for (const s of [-1, 1]) boule(pos, nor, BUSTE.penche, BRAS.haut - .01, BRAS.rayon * 1.35, 4, 8, 1, s * (BRAS.ecart - .01));
-    }),
-    tete: maillage((pos, nor) => boule(pos, nor, TETE.avance, TETE.centre, TETE.rayon)),
-    cheveux: maillage((pos, nor) => boule(pos, nor, TETE.avance - COIFFE.recul, TETE.centre + COIFFE.monte,
-      TETE.rayon * COIFFE.gonfle, 6, 12, COIFFE.part)),
+    modeles: MODELES.map(maillagesDe),
   };
 }

@@ -86,45 +86,50 @@ function croix(w, h, l, deg = 0){
   }
 
   console.log("La silhouette, à l'échelle de la maquette");
-  const { maillagesFigurant, HAUTEUR_FIGURANT } =
+  const { maillagesFigurant, HAUTEUR_FIGURANT, MODELES } =
     await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "figurants.mjs")));
   // `camera.mjs` ne s'importe pas hors de la page : on relit sa hauteur de stand
   const fs = require("fs");
   const HAUTEUR_STAND = Number(/HAUTEUR_STAND = ([\d.]+)/.exec(fs.readFileSync(
     path.join(__dirname, "..", "gabarit", "modules", "camera.mjs"), "utf8"))[1]);
-  const M = maillagesFigurant();
+  const { ombre, modeles } = maillagesFigurant();
   const etendue = (m, k) => {
     const v = m.attributes.positions.value;
     let lo = Infinity, hi = -Infinity;
     for (let i = k; i < v.length; i += 3){ lo = Math.min(lo, v[i]); hi = Math.max(hi, v[i]); }
     return [lo, hi];
   };
-  for (const [nom, m] of Object.entries(M)){
-    const p = m.attributes.positions.value, n = m.attributes.normals.value;
-    dit(p.length % 9 === 0 && p.length === n.length && p.every(Number.isFinite),
+  dit(etendue(ombre, 2)[1] < .01, "l'ombre reste au sol");
+  dit(modeles.length === MODELES.length, "un jeu de maillages par allure", modeles.length + "");
+  modeles.forEach((M, k) => {
+    const nom = MODELES[k].nom;
+    dit(Object.values(M).every(m => { const p = m.attributes.positions.value, n = m.attributes.normals.value;
+      return p.length > 0 && p.length % 9 === 0 && p.length === n.length && p.every(Number.isFinite); }),
       nom + " : des triangles entiers, une normale par sommet");
-  }
-  dit(Math.abs(etendue(M.bas, 2)[0]) < 1e-9, "les pieds au sol");
-  const sommet = Math.max(...Object.values(M).map(m => etendue(m, 2)[1]));
-  dit(Math.abs(sommet - HAUTEUR_FIGURANT) < 1e-6, "la hauteur annoncée est celle du maillage");
-  // un visiteur devant une cloison de deux mètres cinquante : les deux tiers
-  const part = sommet / HAUTEUR_STAND;
-  dit(part > .6 && part < .72, "les deux tiers d'un stand", (part * 100).toFixed(0) + " % de " + HAUTEUR_STAND + " m");
-  dit(sommet * 1.08 < HAUTEUR_STAND * .75, "le plus grand reste sous les trois quarts d'un stand");
-  const carrure = etendue(M.haut, 1)[1] - etendue(M.haut, 1)[0];
-  dit(carrure > .34 && carrure < .46, "une carrure d'épaules", (carrure * 100).toFixed(0) + " cm");
-  const svelte = sommet / carrure;
-  dit(svelte > 2.4, "une silhouette, pas une borne", "hauteur / carrure = " + svelte.toFixed(1));
-  dit(etendue(M.tete, 2)[0] >= etendue(M.haut, 2)[1] - .02, "la tête sur les épaules");
-  dit(etendue(M.cheveux, 2)[1] > etendue(M.tete, 2)[1], "les cheveux coiffent la tête");
-  dit(etendue(M.cheveux, 2)[0] > etendue(M.tete, 2)[0] + .05, "le visage reste à découvert");
-  dit(etendue(M.ombre, 2)[1] < .01, "l'ombre reste au sol");
-  // deux jambes qu'on voit séparées, et non un seul pilier
-  const v = M.bas.attributes.positions.value;
-  let creux = Infinity;
-  for (let i = 0; i < v.length; i += 3) if (v[i + 2] > .3) creux = Math.min(creux, Math.abs(v[i + 1]));
-  dit(creux > .015, "un jour entre les jambes", (2 * creux * 100).toFixed(1) + " cm à mi-cuisse");
-  dit(etendue(M.haut, 0)[1] - etendue(M.haut, 0)[0] < carrure, "plus large que profond");
+    const tout = Object.values(M);
+    const sommet = Math.max(...tout.map(m => etendue(m, 2)[1]));
+    dit(Math.abs(Math.min(...tout.map(m => etendue(m, 2)[0]))) < 1e-9, nom + " : les pieds au sol");
+    dit(Math.abs(sommet - HAUTEUR_FIGURANT) < 1e-6, nom + " : la hauteur annoncée est celle du maillage");
+    // un visiteur devant une cloison de deux mètres cinquante : les deux tiers
+    const part = sommet / HAUTEUR_STAND;
+    dit(part > .6 && part < .72, nom + " : les deux tiers d'un stand", (part * 100).toFixed(0) + " %");
+    dit(sommet * 1.08 < HAUTEUR_STAND * .75, nom + " : le plus grand reste sous les trois quarts d'un stand");
+    const carrure = etendue(M.haut, 1)[1] - etendue(M.haut, 1)[0];
+    dit(carrure > .34 && carrure < .46, nom + " : une carrure d'épaules", (carrure * 100).toFixed(0) + " cm");
+    dit(sommet / carrure > 2.4, nom + " : une silhouette, pas une borne");
+    dit(etendue(M.cheveux, 2)[1] > etendue(M.peau, 2)[1], nom + " : les cheveux coiffent la tête");
+    dit(etendue(M.chaussures, 2)[1] < .08, nom + " : les chaussures au sol");
+    if (!MODELES[k].jupe){
+      // deux jambes qu'on voit séparées, et non un seul pilier
+      const v = M.bas.attributes.positions.value;
+      let creux = Infinity;
+      for (let i = 0; i < v.length; i += 3) if (v[i + 2] > .3) creux = Math.min(creux, Math.abs(v[i + 1]));
+      dit(creux > .015, nom + " : un jour entre les jambes", (2 * creux * 100).toFixed(1) + " cm");
+    }
+  });
+  // assez légers pour être répétés six cents fois
+  const sommets = modeles.reduce((t, M) => t + Object.values(M).reduce((u, m) => u + m.attributes.positions.value.length / 3, 0), 0);
+  dit(sommets / modeles.length < 6000, "un figurant tient en peu de sommets", Math.round(sommets / modeles.length) + " par allure");
 
   if (ko){ console.log("\n" + ko + " échec(s)"); process.exit(1); }
   console.log("\nTout passe.");

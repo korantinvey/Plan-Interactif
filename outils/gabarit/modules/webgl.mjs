@@ -38,7 +38,7 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS, CHEVEUX, OMBRE } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
 import { grille, PAS_GRILLE } from "./itineraire.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -1261,17 +1261,20 @@ function couchesFigurants(){
       getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
       getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
       getScale: (/** @type {any} */ f) => [1, 1, f.taille] };
+    /** @type {Record<string, (f: any) => number[]>} */
+    const teinte = {
+      bas: f => TENUES[f.tenue].bas, chaussures: f => CHAUSSURES[f.chaussures],
+      haut: f => TENUES[f.tenue].haut, peau: f => TEINTS[f.peau], cheveux: f => CHEVEUX[f.cheveux],
+    };
     FIGURANTS.couches = [
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
         getColor: OMBRE, getScale: [1, 1, 1], parameters: { depthWriteEnabled: false } }),
-      new deck.SimpleMeshLayer({ ...commun, id: "figurants-bas", mesh: M.bas,
-        getColor: (/** @type {any} */ f) => TENUES[f.tenue].bas }),
-      new deck.SimpleMeshLayer({ ...commun, id: "figurants-haut", mesh: M.haut,
-        getColor: (/** @type {any} */ f) => TENUES[f.tenue].haut }),
-      new deck.SimpleMeshLayer({ ...commun, id: "figurants-tete", mesh: M.tete,
-        getColor: (/** @type {any} */ f) => TEINTS[f.peau] }),
-      new deck.SimpleMeshLayer({ ...commun, id: "figurants-cheveux", mesh: M.cheveux,
-        getColor: (/** @type {any} */ f) => CHEVEUX[f.cheveux] }),
+      // une couche par allure et par couleur : chacune ne répète que les siens
+      ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
+        const siens = data.filter(f => f.modele === k);
+        return siens.length ? Object.keys(teinte).map(partie => new deck.SimpleMeshLayer({
+          ...commun, data: siens, id: "figurants-" + k + "-" + partie, mesh: mod[partie], getColor: teinte[partie] })) : [];
+      }),
     ];
   }
   return FIGURANTS.couches;
