@@ -35,6 +35,7 @@ import { $ } from "./dom.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
@@ -1134,6 +1135,11 @@ const EPAISSEUR_JETON = .16;
    dominait les stands de deux fois leur hauteur. Celui d'un objet prend la
    réduction que le décor lui a taillée. */
 const ECHELLE_JETON = .75;
+/* Un arrêt de transport se dresse comme les autres, mais sans épaisseur : une
+   plaque de quai est un panneau, et la tranche du jeton, vue d'au-dessus,
+   mangeait le haut de l'indice. Ce qu'on lit — le pictogramme, le numéro, les
+   barres du tram — reste face à l'œil, à la même taille. */
+const GLYPHES_MINCES = new Set(["transport", ...MODES_TRANSPORT.map(m => m.v)]);
 
 /* Ce qu'on sait de chaque repère pendant la conversion. L'aplat de la
    pastille, son premier enfant, le pose : son centre, sa taille, où il se
@@ -1158,7 +1164,8 @@ function poseJeton(el, polygon, couleur, acc){
       couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
     if (obj.pieces.length){ ancre = obj.ancre; z = obj.dessus; E = ECHELLE_PASTILLE; }
   }
-  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, e: cote * EPAISSEUR_JETON,
+  const mince = GLYPHES_MINCES.has(glyphe);
+  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, mince, e: mince ? 0 : cote * EPAISSEUR_JETON,
     polygon, couleur: opaque(couleur), el: r });
 }
 
@@ -1196,22 +1203,39 @@ function matriceJeton(/** @type {any} */ j, /** @type {number} */ t){
   return enColonnes(m);
 }
 
+/* Le corps du texte d'un jeton. La matrice ne réduit que son ancrage : les
+   lettres gardaient la taille de la pastille entière dans un jeton qui n'en
+   tient que les trois quarts, et vu de biais il se raccourcit encore en
+   hauteur quand elles, face à l'écran, ne se raccourcissent pas. Le numéro
+   débordait son rond et chevauchait les barres du tram. */
+function corpsDansLeJeton(/** @type {any} */ c, /** @type {any} */ j){
+  if (!j) return {};
+  const k = j.E, taille = c.props.getSize;
+  return { getSize: (/** @type {any} */ d, /** @type {any} */ i) => k * (typeof taille === "function" ? taille(d, i) : taille),
+    updateTriggers: { ...c.props.updateTriggers, getSize: k } };
+}
+
 /** Les couches d'un jeton : la plaque, puis le dessin sur sa face. */
 function couchesJeton(/** @type {Element} */ r, /** @type {any} */ sous, /** @type {string} */ cle){
   const j = jetonsPoses.get(r);
   const dessin = couchesDeBloc(sous, cle)
-    /* Couché sur la face, et non tourné vers l'écran : c'est la plaque qui
-       s'en charge. Et caché par ce qui se tient devant lui — les noms du plan
-       se peignent par-dessus le relief, et celui d'un jeton passait à travers
-       les stands. */
-    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: false,
+    /* Tourné vers l'écran, comme les noms du plan. Couché sur la face, il ne
+       l'était qu'en apparence : la bibliothèque ne passe que son point
+       d'ancrage par la matrice du jeton, et trace les lettres à plat sur le
+       sol, où le SVG les retourne — le numéro d'une ligne se lisait écrasé et
+       la tête en bas, « 13 » en miroir. Et caché par ce qui se tient devant
+       lui — les noms du plan se peignent par-dessus le relief, et celui d'un
+       jeton passait à travers les stands. */
+    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: true, ...corpsDansLeJeton(c, j),
       parameters: { ...c.props.parameters, depthCompare: "less-equal", depthWriteEnabled: false } }) : c);
   if (!j) return dessin;
+  const face = dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } }));
+  // l'arrêt n'a pas de plaque : son dessin porte déjà le fond de la pastille
+  if (j.mince) return face;
   const plaque = new deck.SolidPolygonLayer({ id: cle + "-plaque", data: [j], pickable: true,
     extruded: true, getPolygon: d => d.polygon[0], getFillColor: d => d.couleur, getElevation: d => d.e,
     material: MATIERE, el: r });
-  return [plaque.clone({ jeton: { ...j, face: "plaque" } }),
-    ...dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } }))];
+  return [plaque.clone({ jeton: { ...j, face: "plaque" } }), ...face];
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
