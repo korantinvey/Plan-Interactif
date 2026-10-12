@@ -8,6 +8,11 @@
    `SECTEURS`, qu'il range avec les autres index du salon (`donnees.mjs`) :
    la configuration l'y lit.
 
+   Le découpage suit le secteur tant que l'exploitant n'en a pas choisi un
+   autre (`champDecoupage`) : la ville, le pays, un champ propre au salon. Le
+   module garde son nom et ses mots — « secteur » y désigne une part du
+   découpage, quel que soit le champ qui la trace.
+
    La carte de chaleur se pose sur les mêmes formes et suit la teinte ; elle
    n'est que d'administration (`modules/chaleur.mjs`, par `plan-admin.mjs`),
    qui la confie à ce module en se chargeant (`confieChaleur`) : la page
@@ -17,6 +22,8 @@ import { COLLATION } from "./texte.mjs";
 import { hslHex } from "./couleurs.mjs";
 import { DATA, parId, SECTEURS, poseDonnees } from "./donnees.mjs";
 import { conf, jeton } from "./configuration.mjs";
+import { valeursCritere, CLE_SECTEUR } from "./filtre.mjs";
+import { libelleCritere, PREFIXE_PERSO } from "./corps-fiche.mjs";
 
 /* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
@@ -24,6 +31,66 @@ let coloreChaleur = () => {};
 /** La porte de la carte de chaleur, que `chaleur.mjs` ouvre en se chargeant.
  *  @param {() => void} f */
 export function confieChaleur(f){ coloreChaleur = f; }
+
+/** Le champ qui découpe le salon en couleurs : le secteur, sauf choix contraire. */
+export const champDecoupage = () => conf("_secteurs").champ || CLE_SECTEUR;
+
+/* La première valeur d'un champ sur un stand. Le secteur se lit en direct :
+   c'est celui de l'emplacement, et il est là même quand le critère ne l'est pas. */
+const premiere = (o, champ) =>
+  (champ === CLE_SECTEUR ? o.sect : valeursCritere(o, champ)[0]) || null;
+
+/**
+ * La part du découpage où tombe un stand, ou rien.
+ *
+ * Une seule valeur par stand : un stand n'a qu'une couleur. Un champ à valeurs
+ * multiples s'y range donc sous la première — c'est pourquoi nomenclature et
+ * thématiques, qui en portent des dizaines, ne sont pas offertes au choix
+ * (`champsDecoupables`).
+ */
+export const valeurDecoupage = (o) => premiere(o, champDecoupage());
+
+/**
+ * Où se range la couleur choisie pour une part du découpage.
+ *
+ * Celle d'un secteur garde sa clé d'avant (« secteur:nom »), sans quoi les
+ * salons déjà réglés perdraient leurs couleurs. Les autres champs se rangent
+ * sous « _secteurs », un tiroir par champ : revenir à la ville après un détour
+ * par le pays retrouve les couleurs qu'on lui avait données, et deux champs
+ * qui partagent une valeur — « Oui » — ne se la disputent pas.
+ * @param {string} nom
+ */
+export function confTeinte(nom){
+  const champ = champDecoupage();
+  if (champ === CLE_SECTEUR) return conf("secteur:" + nom);
+  const s = conf("_secteurs");
+  const parChamp = s.teintes = s.teintes || {};
+  const t = parChamp[champ] = parChamp[champ] || {};
+  return t[nom] = t[nom] || {};
+}
+
+/* Les champs qu'on peut proposer pour découper : ceux qui tiennent en une
+   valeur par stand. Les champs propres au salon s'y ajoutent à leur suite. */
+const DECOUPABLES = [CLE_SECTEUR, "ville", "pays", "nouveau", "adherent"];
+
+/**
+ * Les champs que le salon renseigne, chacun avec son nombre de parts.
+ *
+ * Un champ qu'aucun stand ne remplit ne découperait rien : il n'est pas
+ * proposé — sauf celui qui est en place, pour qu'on voie ce qui est retenu
+ * même après une synchronisation qui l'aurait vidé.
+ * @returns {{cle: string, libelle: string, n: number}[]}
+ */
+export function champsDecoupables(){
+  const persos = ((DATA && DATA.fiche && DATA.fiche.perso) || [])
+    .filter(c => c && c.cle).map(c => PREFIXE_PERSO + c.cle);
+  const stands = (DATA ? DATA.plans : []).flatMap(p => p.stands);
+  const actuel = champDecoupage();
+  return DECOUPABLES.concat(persos).map(cle => ({
+    cle, libelle: libelleCritere(cle),
+    n: new Set(stands.map(o => premiere(o, cle)).filter(Boolean)).size,
+  })).filter(c => c.n > 0 || c.cle === actuel);
+}
 
 /* Les secteurs, et la teinte de chacun.
 
@@ -34,7 +101,7 @@ export function confieChaleur(f){ coloreChaleur = f; }
    sa couleur d'un pavillon à l'autre, et d'une synchronisation à la suivante. */
 const TEINTES = [212, 28, 145, 340, 262, 42, 190, 8, 100, 310, 172, 62];
 export function indexeSecteurs(){
-  const noms = [...new Set(DATA.plans.flatMap(p => p.stands.map(s => s.sect)))]
+  const noms = [...new Set(DATA.plans.flatMap(p => p.stands.map(valeurDecoupage)))]
     .filter(Boolean).sort(COLLATION.compare);
   poseDonnees({ SECTEURS: new Map(noms.map((n, i) => [n, TEINTES[i % TEINTES.length]])) });
 }
@@ -64,7 +131,7 @@ const couleurConf = v => /^#[0-9A-Fa-f]{3,8}$/.test(String(v || "")) ? String(v)
  * que le sélecteur doit présenter, et non la teinte brute d'où elle sort.
  */
 export function couleurSecteur(nom){
-  return couleurConf(conf("secteur:" + nom).couleur) ||
+  return couleurConf(confTeinte(nom).couleur) ||
     hslHex(SECTEURS.get(nom) || 0,
            parseFloat(jeton("--sect-s")) || 58, parseFloat(jeton("--sect-l")) || 87);
 }
@@ -80,7 +147,7 @@ export function couleurSecteur(nom){
 export function pastilleSecteur(nom){
   const h = SECTEURS.get(nom);
   if (h === undefined) return "";
-  const c = couleurConf(conf("secteur:" + nom).couleur);
+  const c = couleurConf(confTeinte(nom).couleur);
   return '<i class="pastille" style="--sect-h:' + h +
     (c ? ";--sect-c:" + c : "") + '"></i>';
 }
@@ -100,7 +167,7 @@ export function coloreSecteurs(){
   const on = secteursMontres();
   document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
-    const nom = on && o ? o.sect : null;
+    const nom = on && o ? valeurDecoupage(o) : null;
     const h = nom ? SECTEURS.get(nom) : undefined;
     if (h === undefined){
       g.removeAttribute("data-sect");
@@ -112,7 +179,7 @@ export function coloreSecteurs(){
       /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
          se pose telle quelle, comme celle des autres couches, et ne se laisse
          donc pas pâlir par la clarté dont le plan tient les secteurs. */
-      const c = couleurConf(conf("secteur:" + nom).couleur);
+      const c = couleurConf(confTeinte(nom).couleur);
       if (c) g.style.setProperty("--sect-c", c);
       else g.style.removeProperty("--sect-c");
     }
@@ -137,11 +204,11 @@ export function coloreSecteurs(){
  */
 export function peintSecteur(nom){
   if (!secteursMontres()) return;
-  const c = couleurConf(conf("secteur:" + nom).couleur);
+  const c = couleurConf(confTeinte(nom).couleur);
   document.querySelectorAll("#stands g[data-sect], #couches .dcal .sdes[data-sect]")
     .forEach(g => {
       const o = parId.get(g.dataset.id);
-      if (!o || o.sect !== nom) return;
+      if (!o || valeurDecoupage(o) !== nom) return;
       if (c) g.style.setProperty("--sect-c", c);
       else g.style.removeProperty("--sect-c");
     });

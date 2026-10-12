@@ -489,13 +489,20 @@ interface Retraits {
  * envoyé : c'est de lui que la page tire les valeurs du filtre, et la
  * recherche ce qu'elle indexe des critères. Le décocher ne dit alors que « pas
  * sur la fiche », pas « pas du tout ».
+ *
+ * Il en va de même du champ sur lequel le plan colore ses stands (`decoupes`,
+ * relevé dans l'apparence) : la page en tire la couleur de chacun, et un pays
+ * retiré de la fiche laisserait tout le plan en blanc.
  */
-function retraits(fiche: Record<string, unknown>): Retraits | null {
+function retraits(
+  fiche: Record<string, unknown>,
+  decoupes: Set<string>,
+): Retraits | null {
   const montre = (fiche.stand ?? {}) as Record<string, boolean>;
   const criteres = (fiche.criteres ?? {}) as Record<string, boolean>;
   const retire = (cible: string) =>
     (MASQUE_PAR_DEFAUT[cible] ? montre[cible] !== true : montre[cible] === false) &&
-    criteres[cible] !== true;
+    criteres[cible] !== true && !decoupes.has(cible);
 
   const cles = Object.entries(CHAMPS_FICHE)
     .filter(([cible]) => retire(cible))
@@ -824,7 +831,17 @@ Deno.serve(async (req) => {
     const parInstantane = Object.fromEntries((instantanes ?? []).map((i) => [i.plan_id, i]));
 
     // le même pour tout le salon : il ne dépend que de son réglage de fiche
-    const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
+    /* Le champ qui colore les stands, s'il n'est pas le secteur. Le réglage est
+       recopié dans chaque pavillon ; on les prend tous, un envoi interrompu
+       pouvant les laisser en désaccord. */
+    const decoupes = new Set(
+      (apparences ?? [])
+        .map((a) => (a.reglages as { _secteurs?: { champ?: unknown } } | null)?._secteurs?.champ)
+        .filter((c): c is string => typeof c === "string"),
+    );
+    const retrait = identifie
+      ? null
+      : retraits((evt.fiche ?? {}) as Record<string, unknown>, decoupes);
 
     /* La zone de chaque salle, par son nom — c'est ce qu'une conférence porte
        de sa salle. Une salle connue mais rattachée à rien y figure aussi, avec

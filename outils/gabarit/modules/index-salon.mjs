@@ -130,10 +130,6 @@ export function indexe(/** @type {any} */ d){
     if (c && c.libelle && c.libelle_en) intitules[c.libelle] = c.libelle_en;
   });
   LANGUE.donnees("champs", intitules);
-  /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
-     des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
-     dans la configuration, parlent bien de lui. */
-  indexeSecteurs();
 
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
@@ -166,6 +162,9 @@ export function indexe(/** @type {any} */ d){
       Object.assign(reglagesEnBase, bloc);
       Object.assign(CONF, bloc);
     });
+  /* Les secteurs se relèvent après les réglages, et non avant : ce sont eux
+     qui disent sur quel champ le plan se découpe en couleurs. */
+  indexeSecteurs();
 
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
