@@ -17,6 +17,8 @@
    d'un restaurant. Il est rangé sur une trame, dans l'axe du plus long côté
    de la zone, et une pièce qui ne tient pas entière dans le contour n'est
    pas posée. Les quantités ne promettent rien ; c'est une image du lieu.
+   Une exception : le comptoir d'un accueil, que le visiteur cherche des yeux
+   en entrant, se place et se tourne à la main (`comptoir`).
    ============================================================ */
 
 /** Les types que le décor sait meubler. Une zone d'un autre type, ou sans
@@ -60,16 +62,56 @@ function repere(/** @type {number[][]} */ an){
   const s0 = Math.min(...s), s1 = Math.max(...s), t0 = Math.min(...t), t1 = Math.max(...t);
   /** Du repère de la zone au plan. */
   const plan = (/** @type {number} */ a, /** @type {number} */ b) => [a * ux + b * vx, a * uy + b * vy];
-  return { s0, s1, t0, t1, plan };
+  return { s0, s1, t0, t1, plan, ux, uy };
+}
+
+/**
+ * @typedef {object} ReglageComptoir
+ * @property {number} u   le milieu du comptoir, en part de la largeur de l'emprise de la zone
+ * @property {number} v   et de sa hauteur, sur le plan
+ * @property {number} a   l'angle de son long côté sur le plan, en degrés
+ */
+
+/** Un réglage tenable : trois nombres, le milieu dans l'emprise. */
+export const reglageComptoirValide = (/** @type {any} */ r) => Boolean(r &&
+  [r.u, r.v, r.a].every(Number.isFinite) && r.u >= 0 && r.u <= 1 && r.v >= 0 && r.v <= 1);
+
+/**
+ * Le comptoir d'un accueil : son milieu, le sens de son long côté et ses
+ * demi-côtés, en mètres sur le plan.
+ *
+ * Rien ne dit où est l'entrée d'un hall : posé d'office, le comptoir se met
+ * au milieu de la zone, en travers de son plus long côté — et tombait souvent
+ * en plein passage. L'exploitant le place donc et le tourne lui-même
+ * (`reglage-comptoir.mjs`) ; le milieu est rangé en part de l'emprise de la
+ * zone et non en mètres, pour qu'une zone retouchée garde son comptoir chez
+ * elle. La fiche de la zone et le dessin le relisent par cette seule règle.
+ * @param {number[][]} anneau
+ * @param {ReglageComptoir | null | undefined} reglage
+ */
+export function comptoir(anneau, reglage){
+  const R = repere(anneau), l = R.t1 - R.t0;
+  const demi = Math.min(l * .35, 4), prof = .35;
+  if (reglageComptoirValide(reglage)){
+    const r = /** @type {ReglageComptoir} */ (reglage);
+    const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
+    const x0 = Math.min(...xs), y0 = Math.min(...ys);
+    return { cx: x0 + r.u * (Math.max(...xs) - x0), cy: y0 + r.v * (Math.max(...ys) - y0),
+      angle: r.a, demi, prof, choisi: true };
+  }
+  const [cx, cy] = R.plan((R.s0 + R.s1) / 2, (R.t0 + R.t1) / 2);
+  // en travers : le long côté suit la normale au plus long côté de la zone
+  return { cx, cy, angle: Math.atan2(R.ux, -R.uy) * 180 / Math.PI, demi, prof, choisi: false };
 }
 
 /**
  * Le mobilier d'une zone.
  * @param {string} type       le type de la zone
  * @param {number[][]} anneau son contour, en mètres
+ * @param {ReglageComptoir | null} [reglage] le comptoir placé à la main, sur un accueil
  * @returns {Piece[]}
  */
-export function meuble(type, anneau){
+export function meuble(type, anneau, reglage = null){
   if (!TYPES_MEUBLES.includes(type) || !anneau || anneau.length < 3) return [];
   const R = repere(anneau);
   /** @type {Piece[]} */
@@ -130,12 +172,27 @@ export function meuble(type, anneau){
         pose(a, b, .24, .24, .45, "assise", .05);
       }
   } else if (type === "accueil"){
-    // un comptoir au milieu, en travers, et deux plantes à ses bouts
-    const c = (R.s0 + R.s1) / 2, demi = Math.min(l * .35, 4);
-    pose(c, (R.t0 + R.t1) / 2, .35, demi, 1.1, "comptoir", .1);
+    /* Un comptoir, et deux plantes à ses bouts. Placé à la main, il est posé
+       où on l'a voulu, même à cheval sur le bord : c'est un choix, et le taire
+       ferait croire que le réglage n'a pas pris. */
+    const c = comptoir(anneau, reglage);
+    const ang = c.angle * Math.PI / 180, dx = Math.cos(ang), dy = Math.sin(ang);
+    const coin = (/** @type {number} */ i, /** @type {number} */ j) =>
+      [c.cx + i * c.demi * dx - j * c.prof * dy, c.cy + i * c.demi * dy + j * c.prof * dx];
+    const polygon = COINS.map(([i, j]) => coin(i, j));
+    const marge = (/** @type {number} */ i, /** @type {number} */ j) =>
+      dedans(anneau, c.cx + i * (c.demi + .1) * dx - j * (c.prof + .1) * dy,
+        c.cy + i * (c.demi + .1) * dy + j * (c.prof + .1) * dx);
+    if (c.choisi || COINS.every(([i, j]) => marge(i, j))) pieces.push({ polygon, haut: 1.1, role: "comptoir" });
     for (const sens of [-1, 1]){
-      const b = (R.t0 + R.t1) / 2 + sens * (demi + .7);
-      if (b > R.t0 + .4 && b < R.t1 - .4) ronde(c, b, .32, 1.3, "plante");
+      const px = c.cx + sens * (c.demi + .7) * dx, py = c.cy + sens * (c.demi + .7) * dy;
+      if (!dedans(anneau, px, py)) continue;
+      const rond = [];
+      for (let k = 0; k < 8; k++){
+        const t = (k + .5) * Math.PI / 4;
+        rond.push([px + .32 * Math.cos(t), py + .32 * Math.sin(t)]);
+      }
+      pieces.push({ polygon: rond, haut: 1.3, role: "plante" });
     }
   } else if (type === "vestiaire"){
     // des portants parallèles, un mètre quarante entre deux

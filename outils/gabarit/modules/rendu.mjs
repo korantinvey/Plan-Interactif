@@ -41,6 +41,8 @@ import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { confieAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { traceStand } from "./ambiance.mjs";
+import { CONF } from "./configuration.mjs";
+import { reglageComptoirValide } from "./decor.mjs";
 
 /* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
@@ -72,6 +74,12 @@ export function monteHabillage(){
    ce drapeau permet aux deux ordres d'arrivée d'aboutir. */
 export let MONTE = false;
 
+/** Le comptoir placé à la main d'une zone, en attribut, ou rien. */
+function attributComptoir(id){
+  const r = (CONF._comptoirs || {})[id];
+  return reglageComptoirValide(r) ? ' data-comptoir="' + [r.u, r.v, r.a].join(" ") + '"' : "";
+}
+
 /* Le balisage d'une zone et d'un stand, sortis de « montePlan » pour qu'un
    emplacement ajouté à la main (`reprise-emplacements.mjs`) se pose dans le même
    groupe que ceux de la source, sans qu'on remonte tout le pavillon.
@@ -90,6 +98,10 @@ export const baliseZone = (z) =>
   /* Son type, que la vue immersive meuble (`decor.mjs`) : rien d'autre ne le
      lit sur le plan. */
   (z.type ? ' data-type="' + esc(z.type) + '"' : "") +
+  /* Le comptoir d'un accueil, s'il a été placé à la main (`decor.mjs`
+     `comptoir`) : posé sur la zone comme son type, le dessin le relit au même
+     endroit, et le changer ici suffit à le repeindre. */
+  attributComptoir(z.id) +
   ' tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + traceStand(z.d) + '"/></g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :

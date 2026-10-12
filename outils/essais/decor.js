@@ -32,7 +32,7 @@ const rect = (x, y, w, h, deg = 0) => {
 };
 
 (async () => {
-  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -54,6 +54,28 @@ const rect = (x, y, w, h, deg = 0) => {
   dit(!meuble("transport", rect(0, 0, 22, 14)).length && !meuble("", rect(0, 0, 22, 14)).length,
     "une zone sans type meublable reste vide");
   dit(!meuble("restauration", rect(0, 0, 1.5, 1.5)).length, "une zone trop petite ne reçoit rien");
+
+  console.log("Le comptoir placé à la main");
+  const hall = rect(10, 20, 22, 14);       // de -1 à 21 en x, de 13 à 27 en y
+  const auto = comptoir(hall, null);
+  dit(!auto.choisi && Math.abs(auto.cx - 10) < 1e-6 && Math.abs(auto.cy - 20) < 1e-6,
+    "sans réglage, il se pose au milieu");
+  dit(Math.abs(Math.abs(Math.sin(auto.angle * Math.PI / 180)) - 1) < 1e-6,
+    "sans réglage, en travers du plus long côté", auto.angle.toFixed(1) + "°");
+  const place = comptoir(hall, { u: .25, v: .75, a: 0 });
+  dit(place.choisi && Math.abs(place.cx - 4.5) < 1e-6 && Math.abs(place.cy - 23.5) < 1e-6,
+    "réglé, il se pose où on l'a voulu, en part de l'emprise");
+  const pieces = meuble("accueil", hall, { u: .25, v: .75, a: 0 });
+  const plat = pieces.find(x => x.role === "comptoir");
+  const ys = plat.polygon.map(p => p[1]), xs = plat.polygon.map(p => p[0]);
+  dit(Math.max(...xs) - Math.min(...xs) > Math.max(...ys) - Math.min(...ys),
+    "tourné à 0°, son long côté suit l'horizontale du plan");
+  const tourne = meuble("accueil", hall, { u: .25, v: .75, a: 90 }).find(x => x.role === "comptoir");
+  const ys2 = tourne.polygon.map(p => p[1]), xs2 = tourne.polygon.map(p => p[0]);
+  dit(Math.max(...ys2) - Math.min(...ys2) > Math.max(...xs2) - Math.min(...xs2), "tourné à 90°, la verticale");
+  dit(comptoir(hall, { u: 2, v: .5, a: 0 }).choisi === false, "un réglage hors de l'emprise est ignoré");
+  dit(meuble("accueil", hall, { u: NaN, v: 0, a: 0 }).some(x => x.role === "comptoir"),
+    "un réglage illisible laisse le placement d'office");
 
   console.log("Une zone immense");
   const n = meuble("conferences", rect(0, 0, 400, 300)).length;

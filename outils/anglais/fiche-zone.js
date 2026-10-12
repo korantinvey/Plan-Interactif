@@ -5,6 +5,9 @@
    Les mots que d'autres réglages emploient aussi — « Retirer », « Poser », le
    cadre de dépôt d'un logo — restent dans `_admin1.js`, avec eux. */
 module.exports = {
+  "Comptoir d'accueil": "Reception desk",
+  "Faites glisser le comptoir pour le placer, tirez sa poignée ronde pour le tourner (Maj pour un angle libre). Il se dresse ainsi dans la vue immersive, pour le visiteur comme pour vous.":
+    "Drag the desk to place it, pull its round handle to turn it (Shift for a free angle). This is how it stands in the immersive view, for visitors as for you.",
   "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour revenir au nom d'origine, s'il y en a un.":
     "The area's name, on the map and in its details. Leave empty to go back to the original name, if there is one.",
   "Agora, Halte-garderie, Pitch Retail…": "Agora, Crèche, Pitch Retail…",

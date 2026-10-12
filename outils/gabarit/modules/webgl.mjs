@@ -1125,7 +1125,8 @@ function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
   if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
-  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0]))
+  const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
+  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a }))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
 }
 
