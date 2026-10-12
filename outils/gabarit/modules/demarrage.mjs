@@ -35,6 +35,7 @@ import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { montePlan, chargeFond } from "./rendu.mjs";
+import { planAffiche } from "./affichage.mjs";
 
 /* Ce que le démarrage annonce, et que seule l'administration écoute : le
    bouton d'enregistrement et le rattrapage d'un envoi en retard
@@ -87,6 +88,11 @@ function demarre(/** @type {any} */ d){
   accueilleSponsor();
   montePlan();
   fit();
+  /* Sans dessin WebGL attendu — `?rendu=svg`, pas de WebGL2 —, aucune image
+     ne viendra dire que le plan est à l'écran : il l'est, en SVG, dès ici.
+     Avec un dessin attendu, c'est sa première image qui le dira
+     (`webgl.mjs`). */
+  if (!document.documentElement.classList.contains("gl-attente")) planAffiche();
   liste();
   recadreListePosee();
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,
