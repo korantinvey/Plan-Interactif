@@ -22,14 +22,19 @@
 
    Seules les vignettes déjà reçues par lot (`vignettes.mjs`) font un logo :
    recadrées à la synchronisation, elles pèsent quelques kilo-octets, et le lot
-   est déjà parti au démarrage. Un logo lu chez sa source — non recadré, et
-   d'une autre origine, qui interdirait de le recopier sur une toile — ne se
-   pose pas, et le stand garde son nom.
+   est déjà parti au démarrage. Sans vignette, le stand garde son nom.
+
+   De très près, la vignette — six cents pixels — ne suffit plus : le logo
+   d'origine, deux à quatre fois plus fin, est alors demandé à sa source, pour
+   les seuls stands autour de la vue, comme la fiche le demande à son
+   ouverture (`marque.mjs`). Il remplace la vignette dès qu'il arrive ; une
+   source qui refuse le partage laisse la vignette en place.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES } from "./vignettes.mjs";
+import { adresseImage } from "./sur.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 
 /** La classe que la racine porte quand l'option est prise en vue immersive. */
@@ -52,6 +57,14 @@ const LARGEUR_MAX = 12;
    cents pixels, et la vignette entière dès douze mètres. Jamais plus que
    ce qu'elle porte : l'agrandir n'inventerait aucun détail. */
 const PIXELS_PAR_METRE = 50, PIXELS_MIN = 96;
+/* Le logo d'origine est demandé quand l'écran réclame plus de pixels que la
+   vignette n'en a — passé cette part —, et ramené à cette largeur au plus :
+   certains dépassent deux mille cinq cents pixels et deux mégaoctets, que la
+   carte graphique n'a pas à porter pour un toit. */
+const PART_VIGNETTE = 1.15, LARGEUR_HD = 1280;
+/* Le zoom bouge de plus d'un demi-cran depuis la dernière pose : la finesse
+   voulue a changé, les logos se reposent. */
+const PAS_DE_FINESSE = .5;
 /* Un rien de marge vide autour du logo, pour que ses bords ne se coupent pas
    net. */
 const MARGE = 2;
@@ -112,7 +125,7 @@ function image(/** @type {string} */ cle){
  * blanc d'une lettre ou d'un motif, enclos dans le logo, reste. Un logo déjà
  * détouré n'a rien de clair au bord, et passe tel quel.
  */
-function sansFond(/** @type {HTMLImageElement} */ i, /** @type {number} */ w, /** @type {number} */ h){
+function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /** @type {number} */ h){
   const toile = document.createElement("canvas");
   toile.width = w; toile.height = h;
   const ctx = toile.getContext("2d", { willReadFrequently: true });
@@ -138,17 +151,80 @@ function sansFond(/** @type {HTMLImageElement} */ i, /** @type {number} */ w, /*
     if (k >= w) file.push(k - w);
     if (k < w * (h - 1)) file.push(k + w);
   }
+  /* Le bord. Un pixel du contour mêle la couleur du logo au blanc du fond :
+     laissé tel quel, il dessinait un liseré clair et crénelé sur le toit. On
+     défait ce mélange — sa part de blanc devient de la transparence, et sa
+     couleur redevient celle du logo, que le plus foncé de ses voisins dit —,
+     sur deux pixels de profondeur. */
+  const fond = (/** @type {number} */ k) => vu[k] === 1 && px[k * 4 + 3] < 255 * .5;
+  // seuls les pixels à deux pas du fond au plus : sur un logo d'origine, tous
+  // les parcourir avec leurs vingt-cinq voisins figeait la page
+  const bord = new Uint8Array(w * h);
+  for (let k = 0; k < w * h; k++){
+    if (!fond(k)) continue;
+    const x0 = k % w, y0 = (k - x0) / w;
+    // un fond qui ne touche pas le logo n'a pas de bord autour de lui
+    if (!((x0 > 0 && !fond(k - 1)) || (x0 < w - 1 && !fond(k + 1)) ||
+      (y0 > 0 && !fond(k - w)) || (y0 < h - 1 && !fond(k + w)))) continue;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
+      const xx = x0 + dx, yy = y0 + dy;
+      if (xx >= 0 && yy >= 0 && xx < w && yy < h) bord[yy * w + xx] = 1;
+    }
+  }
+  for (let k = 0; k < w * h; k++){
+    if (!bord[k] || fond(k)) continue;
+    const x = k % w, y = (k - x) / w;
+    let pres = false, encre = 255;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+      const kk = yy * w + xx;
+      if (fond(kk)){ pres = true; continue; }
+      const m = Math.min(px[kk * 4], px[kk * 4 + 1], px[kk * 4 + 2]);
+      if (m < encre) encre = m;
+    }
+    if (!pres || encre > 235) continue;
+    const m = Math.min(px[k * 4], px[k * 4 + 1], px[k * 4 + 2]);
+    const a = Math.max(0, Math.min(1, (255 - m) / (255 - encre)));
+    if (a >= 1) continue;
+    for (let c = 0; c < 3; c++)
+      px[k * 4 + c] = a > .02 ? Math.max(0, Math.min(255, Math.round((px[k * 4 + c] - (1 - a) * 255) / a))) : px[k * 4 + c];
+    px[k * 4 + 3] = Math.round(px[k * 4 + 3] * a);
+  }
   ctx.putImageData(img, 0, 0);
   return toile;
 }
 
+/* Les logos d'origine, par adresse, ramenés à `LARGEUR_HD` au plus. */
+/** @type {Map<string, "attente" | "panne" | ImageBitmap>} */
+const originaux = new Map();
+
+/** Le logo d'origine d'un stand, ou rien tant qu'il n'est pas là. */
+function original(/** @type {any} */ s){
+  const src = adresseImage(s.logo);
+  if (!src) return null;
+  const deja = originaux.get(src);
+  if (deja) return typeof deja === "string" ? null : deja;
+  originaux.set(src, "attente");
+  /* Sans identité, comme la fiche : le dépôt d'un logo n'a rien à savoir du
+     visiteur. Et en partage d'origine, sans quoi la toile ne se relirait pas. */
+  fetch(src, { mode: "cors", credentials: "omit" })
+    .then(r => r.ok ? r.blob() : Promise.reject(r.status))
+    .then(b => createImageBitmap(b).then(i => i.width > LARGEUR_HD
+      ? (i.close(), createImageBitmap(b, { resizeWidth: LARGEUR_HD, resizeQuality: "high" })) : i))
+    .then(i => { originaux.set(src, i); PANNEAU_PRET.dis(); })
+    .catch(() => originaux.set(src, "panne"));
+  return null;
+}
+
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
  *  hauteur de ce que la vue de biais lui reprendra. */
-function toile(/** @type {string} */ cle, /** @type {HTMLImageElement} */ i, /** @type {number} */ largeur){
-  const lw = Math.max(1, Math.min(i.naturalWidth, Math.round(largeur)));
+function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
+  /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur){
+  const lw = Math.max(1, Math.min(iw, Math.round(largeur)));
   const k = cle + "@" + lw;
   if (toiles.has(k)) return toiles.get(k) || null;
-  const lh = Math.max(1, Math.round(i.naturalHeight * lw / i.naturalWidth));
+  const lh = Math.max(1, Math.round(ih * lw / iw));
   const logo = sansFond(i, lw, lh);
   const t = document.createElement("canvas");
   t.width = lw + 2 * MARGE;
@@ -210,7 +286,7 @@ function fonduZoom(/** @type {any} */ L){
 /* Ce que les couches posées couvrent : le cadre à plat, marge comprise, ou
    rien sous le seuil. */
 /** @type {{ x0: number, y0: number, x1: number, y1: number } | null} */
-let couvert = null;
+let couvert = null, zoomPose = 0;
 const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 
 /**
@@ -222,7 +298,8 @@ const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 export function logosARevoir(v, zoom){
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
   if (!pres(zoom)) return couvert !== null;
-  return !couvert || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
+  return !couvert || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1 ||
+    Math.abs(zoom - zoomPose) > PAS_DE_FINESSE;
 }
 
 /**
@@ -239,6 +316,9 @@ export function couchesLogos(L, hauteurDe, v, zoom){
   if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)) return [];
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
+  zoomPose = zoom;
+  // les pixels d'écran par mètre de toit, à ce zoom
+  const ecran = Math.pow(2, zoom) * (devicePixelRatio || 1);
   /** @type {Map<string, Element>} */
   const groupes = new Map();
   $("stands").querySelectorAll("g.stand[data-id]").forEach(g => groupes.set(g.getAttribute("data-id") || "", g));
@@ -257,7 +337,13 @@ export function couchesLogos(L, hauteurDe, v, zoom){
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
-    const t = toile(s.vignette, i, Math.max(PIXELS_MIN, large * PIXELS_PAR_METRE));
+    /* La vignette tant qu'elle suffit à l'écran ; au-delà, le logo d'origine
+       s'il est là, une fois pour toutes à sa pleine finesse : une toile par
+       cran de zoom referait le détourage à chaque geste. */
+    const voulu = large * ecran;
+    const hd = voulu > i.naturalWidth * PART_VIGNETTE ? original(s) : null;
+    const t = hd ? toile(s.vignette + "|hd", hd, hd.width, hd.height, hd.width)
+      : toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * PIXELS_PAR_METRE));
     if (!t) continue;
     const z = hauteurDe(trace) + .05;
     const x0 = cx - large / 2, x1 = cx + large / 2, haut = cy - prof / 2, bas = cy + prof / 2;
