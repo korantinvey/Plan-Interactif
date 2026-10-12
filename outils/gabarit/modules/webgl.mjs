@@ -193,6 +193,7 @@ export function monteWebgl(){
       }
       // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
       majEditionWebgl();
+      anticipeHausses(notes);
       planifieWebgl();
     }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
     // le mode carte de chaleur, un calque de noms éteint, une couleur réglée :
@@ -797,6 +798,7 @@ function couchesPetites(id, commun, K, sousPixel){
 function positionTexte(){
   if (!GL.camera) return d => d.position;
   return d => {
+    if (d.zHausse !== undefined) return [d.position[0], d.position[1], d.zHausse + .02];
     const c = d.cls || "", zone = c.startsWith("zn");
     if (zone && /\bmasquee\b/.test(c)) return d.position;
     const h = (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1);
@@ -1173,6 +1175,50 @@ function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
   if (h && (h.vers !== haut || performance.now() - h.t0 >= DUREE_HAUSSE)){ hausses.delete(g); return null; }
   return h || null;
 }
+/**
+ * Le mouvement part au clic, sans attendre la reconversion.
+ *
+ * Celle-ci ne vient qu'après que la page a montré la fiche (`planifieWebgl`),
+ * et reconvertir neuf cents stands prend son temps : sur un PC, le stand ne
+ * se mettait à monter qu'une fois la fiche ouverte. Le guet voit pourtant la
+ * sélection à l'instant où elle change. On sort donc le stand des couches
+ * déjà peintes pour le poser dans une couche de mouvement, et la boucle
+ * démarre ; la reconversion, quand elle vient, retrouve le mouvement noté et
+ * le continue.
+ */
+function anticipeHausses(notes){
+  if (!GL.camera) return;
+  const vus = new Set();
+  for (const n of notes){
+    const g = n.target;
+    if (n.type !== "attributes" || n.attributeName !== "class" || vus.has(g)) continue;
+    if (!g.classList || !(g.classList.contains("stand") || g.classList.contains("zone"))) continue;
+    vus.add(g);
+    const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+    if (!haut || hauteursPeintes.get(g) === haut) continue;
+    const h = noteHauteur(g, haut);
+    if (h) detacheVolume(g, h);
+  }
+}
+/** Le volume quitte les couches peintes de son bloc pour une couche de mouvement. */
+function detacheVolume(g, h){
+  const b = blocDe(g), couches = b && GL.blocs.get(b);
+  if (!couches) return;
+  const out = [];
+  for (const c of couches){
+    const volume = /-(volumes|hausse)-/.test(c.id) && Array.isArray(c.props.data);
+    const siens = volume ? c.props.data.filter(d => d.el === g) : [];
+    if (!siens.length){ out.push(c); continue; }
+    const reste = c.props.data.filter(d => d.el !== g);
+    if (reste.length) out.push(c.clone({ data: reste }));
+    out.push(c.clone({ id: c.id.replace(/-tot$/, "") + "-tot", data: siens.map(d => ({ ...d, haut: h.vers, hausse: h })),
+      hausse: h, elevationScale: echelleHausse(h, performance.now()) }));
+  }
+  GL.blocs.set(b, out);
+  GL.deck.setProps({ layers: assembleWebgl() });
+  majAnimationWebgl();
+}
+
 /** La hauteur d'un volume en mouvement, à cet instant. */
 function hauteurHausse(/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant){
   const t = Math.min(1, Math.max(0, (maintenant - h.t0) / DUREE_HAUSSE));
@@ -1406,7 +1452,10 @@ function couchesLibellesWebgl(){
        hauteur d'arrivée : la boucle d'animation le décale d'image en image
        du même écart que son volume (`animeCouche`). Les autres restent
        ensemble — ce sont eux qu'on ne recalcule pas. */
-    const mobiles = haussesParId();
+    /* Les noms des stands seulement : celui d'une zone flotte au-dessus de son
+       mobilier, loin de son sol, et n'a pas à suivre ce qu'il monte. */
+    const mobiles = new Map([...haussesParId()].filter(([id]) =>
+      GL.libelles.some(d => d.lbl === id && !(d.cls || "").startsWith("zn"))));
     const fixes = mobiles.size ? GL.libelles.filter(d => !mobiles.has(d.lbl)) : GL.libelles;
     /* Chaque liste a sa clé dans le cache des groupes : sous la même, le nom
        qui monte reprenait les groupes de tous les autres, et le plan entier
@@ -1415,9 +1464,12 @@ function couchesLibellesWebgl(){
     const cleFixes = mobiles.size ? "labels-sans|" + [...mobiles.keys()].join("|") : "labels";
     GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms(cleFixes, fixes))];
     for (const [id, h] of mobiles){
-      const siens = GL.libelles.filter(d => d.lbl === id);
+      /* Posé à la hauteur d'arrivée du volume, et non à celle que ses
+         classes diraient : le mouvement part au clic, avant que les noms
+         n'aient appris la sélection. */
+      const siens = GL.libelles.filter(d => d.lbl === id).map(d => ({ ...d, zHausse: h.vers }));
       if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
-        groupesNoms("labels-hausse|" + id, siens)).map(c => c.clone({ hausseTexte: h })));
+        groupesNoms("labels-hausse|" + id + "|" + h.vers, siens)).map(c => c.clone({ hausseTexte: h })));
     }
   }
   return GL.couchesLibelles;
@@ -1739,10 +1791,11 @@ const phaseDe = (c, t) => {
 };
 
 /** Une couche telle qu'elle doit paraître à cet instant. */
-/* L'instant de l'image : celui de la boucle quand elle tourne, l'heure qu'il
-   est sinon — l'image d'une boucle arrêtée peut dater de la dernière
-   animation, et un volume s'y croyait encore à son départ. */
-const instant = () => GL.anime && GL.maintenant ? GL.maintenant : performance.now();
+/* L'instant de l'image : l'heure qu'il est, toujours. Celle de la dernière
+   image de la boucle datait dès que le plan travaillait entre deux images —
+   une reconversion, une fiche qui s'ouvre — et le volume repeint à ce
+   moment-là reculait à ce qu'il était alors. */
+const instant = () => performance.now();
 function animeCouche(c){
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
   // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
@@ -1778,7 +1831,6 @@ function animeWebgl(now){
   GL.imageAnim = 0;
   if (!GL.actif || !GL.anime) return;
   GL.temps = now / 1000;
-  GL.maintenant = now;
   // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
   for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34){
     hausses.delete(g);
