@@ -479,14 +479,15 @@ batiments · cartouche-poi · dessin · edition · edition-en-cours · enregistr
 forme-choisie · gestes-admin · index-salon · libelles · ordre-trace · outil-dessin · pile
 rendu · reprise-emplacements · socle-dessin · tiroir-itineraire · tutoriel
 
-### `modules/camera.mjs` — 155 l. → plan, plan-admin
+### `modules/camera.mjs` — 179 l. → plan, plan-admin
 
 - l.1 · La caméra du plan immersif — le hall vu de biais
 
 Fonctions :
 
-`demandeCamera` 55 · `cameraVoulue` 62 · `cleCamera` 64 · `metsEnJeu` 78 · `cameraEnJeu` 84
-`grandeurs` 87 · `platVersEcran` 97 · `ecranVersPlat` 115 · `matricesCamera` 138
+`demandeCamera` 55 · `cameraVoulue` 62 · `cleCamera` 64 · `poseTrajet` 92
+`boutsDuTrajet` 97 · `metsEnJeu` 102 · `cameraEnJeu` 108 · `grandeurs` 111
+`platVersEcran` 121 · `ecranVersPlat` 139 · `matricesCamera` 162
 
 Importe :
 
@@ -494,7 +495,7 @@ annonce
 
 Importé par :
 
-ambiance · vue · vue-etat · webgl
+ambiance · trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
 
@@ -2660,18 +2661,18 @@ libelles · nom-emplacement · outil-dessin · parcours · pile · points-intere
 rapport-utilisation · recherche · reglage-fiche · reglage-suggestion · rendu · secteurs
 socle-dessin · suggestion · sur · texte-plan
 
-### `modules/tiroir-itineraire.mjs` — 637 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 639 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir et la visée
 
 Fonctions :
 
 `calculeRoute` 73 · `champIti` 91 · `fermeSugg` 95 · `montreSugg` 102 · `choisitPoint` 136
-`valideSaisie` 145 · `effaceItineraire` 157 · `relance` 185 · `montreResultat` 227
-`poseVisee` 371 · `confieVisee` 384 · `suitLaVisee` 386 · `bandeauVisee` 388
-`armeVisee` 410 · `finVisee` 428 · `viseItineraire` 444 · `visePoi` 450 · `visePoint` 456
-`ouvreItineraire` 484 · `fermeItineraire` 511 · `versItineraire` 521
-`versItineraireDe` 524 · `brancheTiroirItineraire` 551
+`valideSaisie` 145 · `effaceItineraire` 157 · `relance` 185 · `montreResultat` 229
+`poseVisee` 373 · `confieVisee` 386 · `suitLaVisee` 388 · `bandeauVisee` 390
+`armeVisee` 412 · `finVisee` 430 · `viseItineraire` 446 · `visePoi` 452 · `visePoint` 458
+`ouvreItineraire` 486 · `fermeItineraire` 513 · `versItineraire` 523
+`versItineraireDe` 526 · `brancheTiroirItineraire` 553
 
 Importe :
 
@@ -2782,20 +2783,20 @@ Importé par :
 
 recherche
 
-### `modules/trace-itineraire.mjs` — 363 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 368 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
-`poseTrace` 33 · `marchesIci` 35 · `rayonBout` 40 · `arreteTracage` 73 · `tronconsDe` 94
-`traceDe` 112 · `peintItineraire` 115 · `lanceEtincelle` 196 · `pointA` 217
-`courtEtincelle` 225 · `placePouls` 253 · `lanceTracage` 268 · `dessineItineraire` 293
-`rafraichitBouts` 315 · `cadreItineraire` 338
+`poseTrace` 34 · `marchesIci` 36 · `rayonBout` 41 · `arreteTracage` 74 · `tronconsDe` 95
+`traceDe` 113 · `peintItineraire` 116 · `lanceEtincelle` 197 · `pointA` 218
+`courtEtincelle` 226 · `placePouls` 254 · `lanceTracage` 269 · `dessineItineraire` 294
+`rafraichitBouts` 320 · `cadreItineraire` 343
 
 Importe :
 
-dom · donnees · ecran · itineraire · vue
+camera · dom · donnees · ecran · itineraire · vue
 
 Importé par :
 
@@ -2946,38 +2947,38 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 1982 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2023 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`confieAuWebgl` 68 · `chargeWebgl` 105 · `brancheWebgl` 130 · `monteWebgl` 137
-`poseToileWebgl` 245 · `guetteContexteWebgl` 251 · `contextePerduWebgl` 261
-`verifieContexteWebgl` 268 · `perdContexteWebgl` 277 · `remonteWebgl` 300 · `vueDeck` 317
-`enCamera` 337 · `vuesGl` 341 · `effetsGl` 362 · `basculeCamera` 372 · `vueWebgl` 385
-`blocDe` 395 · `majEditionWebgl` 408 · `cleBloc` 420 · `planifieWebgl` 446
-`toutRepeindreWebgl` 450 · `blocsDansLOrdre` 461 · `repeintWebgl` 466 · `assembleWebgl` 490
-`constTexte` 531 · `jeuDeCaracteres` 727 · `sousPixelOffert` 781 · `couchesPetites` 786
-`positionTexte` 799 · `parametresTexte` 821 · `couchesTexte` 823 · `accVide` 859
-`convertitBloc` 861 · `accDe` 877 · `parcoursGl` 884 · `auDessusDuSol` 930
-`hauteurVolume` 932 · `zoneMeublee` 960 · `repereEnObjet` 974 · `monteeRepere` 986
-`meubleZone` 1001 · `fonce` 1019 · `opaque` 1021 · `formeGl` 1028 · `corpsDeclare` 1096
-`texteGl` 1105 · `imageGl` 1128 · `partage` 1160 · `designeGl` 1166 · `sortie` 1180
-`noteHauteur` 1186 · `anticipeHausses` 1215 · `detacheVolume` 1230 · `hauteurHausse` 1256
-`echelleHausse` 1261 · `haussesParId` 1264 · `arete` 1280 · `contourDe` 1282
-`coucheContours` 1286 · `couchesDeBloc` 1298 · `modelesLibellesHtml` 1419
-`poseModelesLibelles` 1429 · `lisModelesLibelles` 1435 · `groupesNoms` 1468
-`couchesNoms` 1485 · `couchesPastilles` 1496 · `couchesLibellesWebgl` 1511
-`couchesDessineesWebgl` 1541 · `stage` 1562 · `brancheSurvolWebgl` 1566
-`poseSurvolWebgl` 1586 · `enTuiles` 1615 · `hauteurTuile` 1623 · `visePour` 1629
-`gonfleSurvol` 1634 · `coucheTuileSoulevee` 1656 · `couchesTuiles` 1686
-`poseCurseurWebgl` 1704 · `poseFocusWebgl` 1713 · `aplatsDe` 1720 · `coucheSurvol` 1723
-`coucheSurvolVolume` 1737 · `coucheFocus` 1750 · `couchesPhare` 1777 · `lueurDe` 1794
-`opacitePhare` 1832 · `echellePhare` 1833 · `couchesPhareNoms` 1836 · `palierDefile` 1861
-`periodeDe` 1866 · `phaseDe` 1868 · `instant` 1878 · `animeCouche` 1879
-`majAnimationWebgl` 1907 · `animeWebgl` 1915 · `objetSous` 1949 · `cibleWebgl` 1956
-`priseWebgl` 1963 · `libelleSousWebgl` 1968 · `rectEcranWebgl` 1973
+`confieAuWebgl` 68 · `chargeWebgl` 107 · `brancheWebgl` 132 · `monteWebgl` 139
+`poseToileWebgl` 247 · `guetteContexteWebgl` 253 · `contextePerduWebgl` 263
+`verifieContexteWebgl` 270 · `perdContexteWebgl` 279 · `remonteWebgl` 302 · `vueDeck` 319
+`enCamera` 339 · `vuesGl` 343 · `effetsGl` 364 · `basculeCamera` 374 · `vueWebgl` 387
+`blocDe` 397 · `majEditionWebgl` 410 · `cleBloc` 422 · `planifieWebgl` 448
+`toutRepeindreWebgl` 452 · `blocsDansLOrdre` 463 · `repeintWebgl` 468 · `assembleWebgl` 492
+`constTexte` 533 · `jeuDeCaracteres` 729 · `sousPixelOffert` 783 · `couchesPetites` 788
+`positionTexte` 801 · `parametresTexte` 825 · `couchesTexte` 827 · `accVide` 864
+`convertitBloc` 866 · `accDe` 882 · `parcoursGl` 889 · `resteDebout` 939
+`dedansAnneau` 947 · `auDessusDuSol` 968 · `hauteurVolume` 970 · `zoneMeublee` 1000
+`repereEnObjet` 1014 · `monteeRepere` 1026 · `meubleZone` 1041 · `fonce` 1059
+`opaque` 1061 · `formeGl` 1068 · `corpsDeclare` 1136 · `texteGl` 1145 · `imageGl` 1168
+`partage` 1200 · `designeGl` 1206 · `sortie` 1220 · `noteHauteur` 1226
+`anticipeHausses` 1256 · `detacheVolume` 1271 · `hauteurHausse` 1297 · `echelleHausse` 1302
+`haussesParId` 1305 · `arete` 1321 · `contourDe` 1323 · `coucheContours` 1327
+`couchesDeBloc` 1339 · `modelesLibellesHtml` 1460 · `poseModelesLibelles` 1470
+`lisModelesLibelles` 1476 · `groupesNoms` 1509 · `couchesNoms` 1526
+`couchesPastilles` 1537 · `couchesLibellesWebgl` 1552 · `couchesDessineesWebgl` 1582
+`stage` 1603 · `brancheSurvolWebgl` 1607 · `poseSurvolWebgl` 1627 · `enTuiles` 1656
+`hauteurTuile` 1664 · `visePour` 1670 · `gonfleSurvol` 1675 · `coucheTuileSoulevee` 1697
+`couchesTuiles` 1727 · `poseCurseurWebgl` 1745 · `poseFocusWebgl` 1754 · `aplatsDe` 1761
+`coucheSurvol` 1764 · `coucheSurvolVolume` 1778 · `coucheFocus` 1791 · `couchesPhare` 1818
+`lueurDe` 1835 · `opacitePhare` 1873 · `echellePhare` 1874 · `couchesPhareNoms` 1877
+`palierDefile` 1902 · `periodeDe` 1907 · `phaseDe` 1909 · `instant` 1919
+`animeCouche` 1920 · `majAnimationWebgl` 1948 · `animeWebgl` 1956 · `objetSous` 1990
+`cibleWebgl` 1997 · `priseWebgl` 2004 · `libelleSousWebgl` 2009 · `rectEcranWebgl` 2014
 
 Importe :
 
