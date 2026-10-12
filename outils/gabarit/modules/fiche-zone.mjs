@@ -135,7 +135,8 @@ export function champsZone(hote, o){
     document.createElement("div"),
     "Faites glisser le comptoir pour le placer, tirez sa poignée ronde pour le " +
     "tourner (Maj pour un angle libre). Il se dresse ainsi dans la vue " +
-    "immersive, pour le visiteur comme pour vous."), o);
+    "immersive, pour le visiteur comme pour vous — où il se prend aussi " +
+    "directement sur le plan."), o);
   const suitType = () => montreComptoir(type.value === "accueil");
   type.addEventListener("change", suitType);
   suitType();

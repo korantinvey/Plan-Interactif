@@ -1085,6 +1085,8 @@ const zoneMeublee = (/** @type {Element} */ g) =>
 /** @type {Record<string, number[]>} */
 const TONS_DECOR = {
   plateau: [250, 249, 244, 255], comptoir: [250, 249, 244, 255],
+  // le comptoir que l'exploitant tient (`outil-comptoir.mjs`), et sa poignée
+  "comptoir-choisi": [138, 176, 246, 255], tige: [60, 70, 84, 255], poignee: [37, 99, 235, 255],
   scene: [78, 90, 106, 255], ecran: [34, 42, 54, 255],
   plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
   marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
@@ -1126,7 +1128,8 @@ function meubleZone(el, polygon, couleur, acc){
   if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
   const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
-  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a }))
+  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
+    g.hasAttribute("data-comptoir-choisi")))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
 }
 

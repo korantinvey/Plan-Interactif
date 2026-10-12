@@ -18,26 +18,19 @@
    (`rendu.mjs`) est ce que le dessin relit, et le SVG observé se repeint dès
    qu'il change.
 
+   Le même comptoir se prend aussi sur le plan, en vue immersive
+   (`outil-comptoir.mjs`), d'où ce champ emprunte la lecture du contour.
+
    Un module de l'administration : `fiche-zone.mjs` l'importe.
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { comptoir, reglageComptoirValide } from "./decor.mjs";
-import { lisTrace } from "./trace.mjs";
+import { anneauDe } from "./outil-comptoir.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, de biais à
    quarante-cinq degrés, rarement entre deux — Maj libère le pas. */
 const PAS_ANGLE = 5;
-
-/** L'aire signée d'un anneau. */
-const aire = (/** @type {number[][]} */ an) =>
-  an.reduce((s, p, i) => { const q = an[(i + 1) % an.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
-
-/** Le contour extérieur d'une zone : le plus grand anneau de son tracé. */
-function anneauDe(/** @type {string} */ d){
-  const anneaux = lisTrace(d || "").map(t => t.pts).filter(p => p.length >= 3);
-  return anneaux.sort((a, b) => Math.abs(aire(b)) - Math.abs(aire(a)))[0] || null;
-}
 
 const el = (/** @type {string} */ nom, /** @type {Record<string, any>} */ attrs = {}) => {
   const n = document.createElementNS(NS, nom);

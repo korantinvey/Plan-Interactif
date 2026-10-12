@@ -34,7 +34,8 @@ const PIECES_MAX = 600;
  * @typedef {object} Piece
  * @property {number[][]} polygon   le contour au sol, en mètres
  * @property {number} haut          la hauteur, en mètres
- * @property {string} role          plateau, assise, scene, ecran, comptoir, plante, portant
+ * @property {string} role          plateau, assise, scene, ecran, comptoir, plante, portant,
+ *                                  et sur un comptoir choisi : comptoir-choisi, tige, poignee
  */
 
 /** Le point est-il dans l'anneau ? */
@@ -104,14 +105,31 @@ export function comptoir(anneau, reglage){
   return { cx, cy, angle: Math.atan2(R.ux, -R.uy) * 180 / Math.PI, demi, prof, choisi: false };
 }
 
+/** La tige de la poignée, en mètres depuis le milieu du comptoir. */
+const TIGE = 1.4;
+/** Le rayon de la poignée ronde, en mètres. */
+export const RAYON_POIGNEE = .4;
+
+/**
+ * Le milieu de la poignée qui tourne un comptoir choisi : au bout d'une tige
+ * perpendiculaire à son long côté. L'outil (`outil-comptoir.mjs`) la vise au
+ * même endroit que le dessin la pose.
+ * @param {{ cx: number, cy: number, angle: number, prof: number }} c
+ */
+export function poigneeComptoir(c){
+  const t = c.angle * Math.PI / 180, d = c.prof + TIGE;
+  return [c.cx + Math.sin(t) * d, c.cy - Math.cos(t) * d];
+}
+
 /**
  * Le mobilier d'une zone.
  * @param {string} type       le type de la zone
  * @param {number[][]} anneau son contour, en mètres
  * @param {ReglageComptoir | null} [reglage] le comptoir placé à la main, sur un accueil
+ * @param {boolean} [enMain] le comptoir est choisi par l'exploitant : il porte sa poignée
  * @returns {Piece[]}
  */
-export function meuble(type, anneau, reglage = null){
+export function meuble(type, anneau, reglage = null, enMain = false){
   if (!TYPES_MEUBLES.includes(type) || !anneau || anneau.length < 3) return [];
   const R = repere(anneau);
   /** @type {Piece[]} */
@@ -183,7 +201,23 @@ export function meuble(type, anneau, reglage = null){
     const marge = (/** @type {number} */ i, /** @type {number} */ j) =>
       dedans(anneau, c.cx + i * (c.demi + .1) * dx - j * (c.prof + .1) * dy,
         c.cy + i * (c.demi + .1) * dy + j * (c.prof + .1) * dx);
-    if (c.choisi || COINS.every(([i, j]) => marge(i, j))) pieces.push({ polygon, haut: 1.1, role: "comptoir" });
+    if (enMain || c.choisi || COINS.every(([i, j]) => marge(i, j)))
+      pieces.push({ polygon, haut: 1.1, role: enMain ? "comptoir-choisi" : "comptoir" });
+    /* Choisi, il porte sa poignée : une tige basse depuis son flanc, et un
+       rond au bout, qu'on tire pour le tourner. Basse, pour que l'endroit où
+       on la voit soit celui où le doigt la trouve sur le sol. */
+    if (enMain){
+      const [hx, hy] = poigneeComptoir(c), nx = Math.sin(ang), ny = -Math.cos(ang), e = .06;
+      const x0 = c.cx + nx * c.prof, y0 = c.cy + ny * c.prof;
+      pieces.push({ polygon: [[x0 - e * dx, y0 - e * dy], [hx - e * dx, hy - e * dy],
+        [hx + e * dx, hy + e * dy], [x0 + e * dx, y0 + e * dy]], haut: .5, role: "tige" });
+      const rond = [];
+      for (let k = 0; k < 12; k++){
+        const t = k * Math.PI / 6;
+        rond.push([hx + RAYON_POIGNEE * Math.cos(t), hy + RAYON_POIGNEE * Math.sin(t)]);
+      }
+      pieces.push({ polygon: rond, haut: .55, role: "poignee" });
+    }
     for (const sens of [-1, 1]){
       const px = c.cx + sens * (c.demi + .7) * dx, py = c.cy + sens * (c.demi + .7) * dy;
       if (!dedans(anneau, px, py)) continue;

@@ -32,7 +32,7 @@ const rect = (x, y, w, h, deg = 0) => {
 };
 
 (async () => {
-  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -76,6 +76,14 @@ const rect = (x, y, w, h, deg = 0) => {
   dit(comptoir(hall, { u: 2, v: .5, a: 0 }).choisi === false, "un réglage hors de l'emprise est ignoré");
   dit(meuble("accueil", hall, { u: NaN, v: 0, a: 0 }).some(x => x.role === "comptoir"),
     "un réglage illisible laisse le placement d'office");
+
+  const enMain = meuble("accueil", hall, { u: .25, v: .75, a: 0 }, true);
+  dit(["comptoir-choisi", "tige", "poignee"].every(r => enMain.some(x => x.role === r)),
+    "choisi, le comptoir sort sa poignée");
+  const [hx, hy] = poigneeComptoir(comptoir(hall, { u: .25, v: .75, a: 0 }));
+  dit(Math.abs(hx - 4.5) < 1e-6 && hy < 23.5, "tourné à 0°, la poignée est au-dessus de lui sur le plan");
+  const [hx2] = poigneeComptoir(comptoir(hall, { u: .25, v: .75, a: 90 }));
+  dit(hx2 > 4.5, "tourné à 90°, elle passe à sa droite");
 
   console.log("Une zone immense");
   const n = meuble("conferences", rect(0, 0, 400, 300)).length;

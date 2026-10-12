@@ -495,7 +495,7 @@ annonce
 
 Importé par :
 
-ambiance · trace-itineraire · vue · vue-etat · webgl
+ambiance · outil-comptoir · trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
 
@@ -628,11 +628,11 @@ Importé par :
 ambiance · apparence · batiments · calage-carte · calques-dessin · cartouche-poi · dessin
 distinctions · emplacements · enregistrement · environs · fiche-zone · filtre · habillage
 horaires · index-salon · installation · libelle-place · modeles · nappe · nom-emplacement
-options · ordre-calques · ordre-trace · outil-dessin · parcours-recu · partage · pile · pile
-placement-libelles · polices-plan · rappels · recherche · reglage-comptoir
-reglage-installation · reglage-rappel · reglage-recherche · reglage-sponsor
-reglage-suggestion · reglages · rendu · reprise-emplacements · secteurs · seuil · sponsor
-suggestion · tiroir-itineraire · tout-au-parcours · tutoriel · volets
+options · ordre-calques · ordre-trace · outil-comptoir · outil-dessin · parcours-recu
+partage · pile · pile · placement-libelles · polices-plan · rappels · recherche
+reglage-comptoir · reglage-installation · reglage-rappel · reglage-recherche
+reglage-sponsor · reglage-suggestion · reglages · rendu · reprise-emplacements · secteurs
+seuil · sponsor · suggestion · tiroir-itineraire · tout-au-parcours · tutoriel · volets
 
 ### `modules/console.mjs` — 42 l. → console
 
@@ -687,18 +687,18 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 261 l. → plan, plan-admin
+### `modules/decor.mjs` — 295 l. → plan, plan-admin
 
 - l.1 · Le décor de la vue immersive — le mobilier des zones de l'organisateur
 
 Fonctions :
 
-`dedans` 41 · `repere` 54 · `reglageComptoirValide` 76 · `comptoir` 92 · `meuble` 114
-`objetRepere` 237
+`dedans` 42 · `repere` 55 · `reglageComptoirValide` 77 · `comptoir` 93
+`poigneeComptoir` 119 · `meuble` 132 · `objetRepere` 271
 
 Importé par :
 
-reglage-comptoir · rendu · webgl
+outil-comptoir · reglage-comptoir · rendu · webgl
 
 ### `modules/demarrage.mjs` — 292 l. → plan, plan-admin
 
@@ -1122,19 +1122,19 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 880 l. → plan-admin
+### `modules/fiche-zone.mjs` — 881 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.49 · La fiche d'une zone organisateur
-- l.780 · Masquer une zone organisateur
+- l.781 · Masquer une zone organisateur
 
 Fonctions :
 
-`champZone` 75 · `champsZone` 100 · `champSalles` 204 · `nomDeZone` 256 · `cadreLogo` 282
-`champLogo` 354 · `editeurRiche` 392 · `memeFicheZone` 549 · `suitFicheZone` 556
-`verseFicheZone` 564 · `ficheZone` 590 · `enregistreZone` 615 · `enregistreZoneAjoutee` 728
-`basculeAffichageZone` 791 · `marqueZonesMasquees` 819 · `ecritColonnesEvenement` 839
-`ecritColonneEvenement` 873
+`champZone` 75 · `champsZone` 100 · `champSalles` 205 · `nomDeZone` 257 · `cadreLogo` 283
+`champLogo` 355 · `editeurRiche` 393 · `memeFicheZone` 550 · `suitFicheZone` 557
+`verseFicheZone` 565 · `ficheZone` 591 · `enregistreZone` 616 · `enregistreZoneAjoutee` 729
+`basculeAffichageZone` 792 · `marqueZonesMasquees` 820 · `ecritColonnesEvenement` 840
+`ecritColonneEvenement` 874
 
 Importe :
 
@@ -1262,22 +1262,22 @@ Fonctions :
 Importé par :
 
 appels · batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
-placement-libelles · reprise-emplacements
+outil-comptoir · placement-libelles · reprise-emplacements
 
-### `modules/gestes-admin.mjs` — 167 l. → plan-admin
+### `modules/gestes-admin.mjs` — 179 l. → plan-admin
 
 - l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
 
 Fonctions :
 
-`appui` 41 · `suit` 55 · `leve` 64 · `annuleGeste` 75 · `clavier` 81 · `echap` 126
-`apresEchap` 144 · `entree` 151 · `brancheGestesAdmin` 159
+`appui` 43 · `suit` 61 · `leve` 71 · `annuleGeste` 83 · `clavier` 90 · `echap` 137
+`apresEchap` 156 · `entree` 163 · `brancheGestesAdmin` 171
 
 Importe :
 
 affiche-ici · aimants · batiments · calage-carte · calques-dessin · dom · edition
-emplacements · forme-choisie · gestes · libelle-place · mode-admin · outil-dessin
-placement-libelles · reprise-emplacements
+emplacements · forme-choisie · gestes · libelle-place · mode-admin · outil-comptoir
+outil-dessin · placement-libelles · reprise-emplacements
 
 Importé par :
 
@@ -1661,7 +1661,8 @@ Importé par :
 
 bande-admin · batiments · calage-carte · chaleur · demarrage · dessin · edition
 edition-en-cours · emplacements · enregistrement · fiche · gestes-admin · index-salon
-nappe · outil-dessin · pile · placement-libelles · rendu · reprise-emplacements · volets
+nappe · outil-comptoir · outil-dessin · pile · placement-libelles · rendu
+reprise-emplacements · volets
 
 ### `modules/modeles.mjs` — 90 l. → plan, plan-admin
 
@@ -1862,6 +1863,25 @@ Importé par :
 
 bande-admin · batiments · calage-carte · dessin · enregistrement · ordre-calques
 outil-dessin · pile · rendu · reprise-emplacements · volets · vue
+
+### `modules/outil-comptoir.mjs` — 204 l. → plan-admin
+
+- l.1 · Le comptoir d'un accueil, attrapé sur le plan — l'outil de l'exploitant
+
+Fonctions :
+
+`aire` 41 · `anneauDe` 45 · `emprise` 51 · `reglageDe` 58 · `zoneDe` 70 · `lis` 74
+`metresParPixel` 83 · `vise` 86 · `choisitComptoir` 107 · `pose` 118 · `reglageCourant` 128
+`comptoirPointerDown` 135 · `comptoirPointerMove` 147 · `comptoirPointerUp` 166
+`lacheComptoir` 176 · `comptoirClavier` 182 · `relacheComptoir` 200
+
+Importe :
+
+camera · configuration · decor · geste-tenu · mode-admin · trace · vue
+
+Importé par :
+
+gestes-admin · reglage-comptoir
 
 ### `modules/outil-dessin.mjs` — 938 l. → plan-admin
 
@@ -2214,17 +2234,17 @@ Importé par :
 
 volets
 
-### `modules/reglage-comptoir.mjs` — 193 l. → plan-admin
+### `modules/reglage-comptoir.mjs` — 186 l. → plan-admin
 
 - l.1 · Le comptoir d'un accueil — où l'exploitant le pose, dans quel sens
 
 Fonctions :
 
-`aire` 33 · `anneauDe` 37 · `el` 42 · `champComptoir` 54
+`el` 35 · `champComptoir` 47
 
 Importe :
 
-configuration · decor · trace
+configuration · decor · outil-comptoir
 
 Importé par :
 
@@ -2830,7 +2850,7 @@ Fonctions :
 
 Importé par :
 
-reglage-comptoir · webgl
+outil-comptoir · webgl
 
 ### `modules/tutoriel.mjs` — 1032 l. → plan, plan-admin
 
@@ -2957,14 +2977,15 @@ Importé par :
 
 affiche-ici · appels · batiments · borne · calage-carte · cartouche-poi · chaleur
 demarrage · dessin · edition · edition-en-cours · fiche · gestes · lancement · libelles
-mini-carte · nappe · outil-dessin · placement-libelles · plan · points-interet · recherche
-rendu · reprise-emplacements · sponsor · trace-itineraire · tutoriel · vous-etes-ici
+mini-carte · nappe · outil-comptoir · outil-dessin · placement-libelles · plan
+points-interet · recherche · rendu · reprise-emplacements · sponsor · trace-itineraire
+tutoriel · vous-etes-ici
 
 Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 2127 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2130 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -2981,22 +3002,22 @@ Fonctions :
 `parametresTexte` 889 · `couchesTexte` 891 · `accVide` 928 · `convertitBloc` 930
 `accDe` 950 · `parcoursGl` 957 · `resteDebout` 1007 · `dedansAnneau` 1015
 `auDessusDuSol` 1036 · `surSonStand` 1044 · `hauteurVolume` 1053 · `zoneMeublee` 1083
-`repereEnObjet` 1097 · `monteeRepere` 1109 · `meubleZone` 1124 · `fonce` 1143
-`opaque` 1145 · `formeGl` 1152 · `corpsDeclare` 1222 · `texteGl` 1231 · `imageGl` 1254
-`partage` 1286 · `designeGl` 1292 · `sortie` 1306 · `noteHauteur` 1312
-`anticipeHausses` 1342 · `detacheVolume` 1357 · `hauteurHausse` 1383 · `echelleHausse` 1388
-`haussesParId` 1391 · `arete` 1407 · `contourDe` 1409 · `coucheContours` 1413 · `aPlat` 1432
-`couchesDeBloc` 1434 · `modelesLibellesHtml` 1558 · `poseModelesLibelles` 1568
-`lisModelesLibelles` 1574 · `groupesNoms` 1607 · `couchesNoms` 1624
-`couchesPastilles` 1635 · `couchesLibellesWebgl` 1650 · `couchesDessineesWebgl` 1686
-`stage` 1707 · `brancheSurvolWebgl` 1711 · `poseSurvolWebgl` 1731 · `enTuiles` 1760
-`hauteurTuile` 1768 · `visePour` 1774 · `gonfleSurvol` 1779 · `coucheTuileSoulevee` 1801
-`couchesTuiles` 1831 · `poseCurseurWebgl` 1849 · `poseFocusWebgl` 1858 · `aplatsDe` 1865
-`coucheSurvol` 1868 · `coucheSurvolVolume` 1882 · `coucheFocus` 1895 · `couchesPhare` 1922
-`lueurDe` 1939 · `opacitePhare` 1977 · `echellePhare` 1978 · `couchesPhareNoms` 1981
-`palierDefile` 2006 · `periodeDe` 2011 · `phaseDe` 2013 · `instant` 2023
-`animeCouche` 2024 · `majAnimationWebgl` 2052 · `animeWebgl` 2060 · `objetSous` 2094
-`cibleWebgl` 2101 · `priseWebgl` 2108 · `libelleSousWebgl` 2113 · `rectEcranWebgl` 2118
+`repereEnObjet` 1099 · `monteeRepere` 1111 · `meubleZone` 1126 · `fonce` 1146
+`opaque` 1148 · `formeGl` 1155 · `corpsDeclare` 1225 · `texteGl` 1234 · `imageGl` 1257
+`partage` 1289 · `designeGl` 1295 · `sortie` 1309 · `noteHauteur` 1315
+`anticipeHausses` 1345 · `detacheVolume` 1360 · `hauteurHausse` 1386 · `echelleHausse` 1391
+`haussesParId` 1394 · `arete` 1410 · `contourDe` 1412 · `coucheContours` 1416 · `aPlat` 1435
+`couchesDeBloc` 1437 · `modelesLibellesHtml` 1561 · `poseModelesLibelles` 1571
+`lisModelesLibelles` 1577 · `groupesNoms` 1610 · `couchesNoms` 1627
+`couchesPastilles` 1638 · `couchesLibellesWebgl` 1653 · `couchesDessineesWebgl` 1689
+`stage` 1710 · `brancheSurvolWebgl` 1714 · `poseSurvolWebgl` 1734 · `enTuiles` 1763
+`hauteurTuile` 1771 · `visePour` 1777 · `gonfleSurvol` 1782 · `coucheTuileSoulevee` 1804
+`couchesTuiles` 1834 · `poseCurseurWebgl` 1852 · `poseFocusWebgl` 1861 · `aplatsDe` 1868
+`coucheSurvol` 1871 · `coucheSurvolVolume` 1885 · `coucheFocus` 1898 · `couchesPhare` 1925
+`lueurDe` 1942 · `opacitePhare` 1980 · `echellePhare` 1981 · `couchesPhareNoms` 1984
+`palierDefile` 2009 · `periodeDe` 2014 · `phaseDe` 2016 · `instant` 2026
+`animeCouche` 2027 · `majAnimationWebgl` 2055 · `animeWebgl` 2063 · `objetSous` 2097
+`cibleWebgl` 2104 · `priseWebgl` 2111 · `libelleSousWebgl` 2116 · `rectEcranWebgl` 2121
 
 Importe :
 
