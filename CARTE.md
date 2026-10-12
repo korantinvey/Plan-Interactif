@@ -955,7 +955,7 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 826 l. → plan, plan-admin
+### `modules/environs.mjs` — 907 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -964,10 +964,11 @@ Fonctions :
 `poseCalageEnCours` 53 · `styleSobre` 126 · `forceCarte` 220 · `calagePose` 238
 `calageCourant` 250 · `fondCourant` 253 · `recul` 258 · `adresseTuile` 263
 `tuilesDeLaVue` 273 · `chargeMapLibre` 338 · `vueGL` 370 · `styleDuFond` 388
-`guetteLaCarte` 416 · `poseCarteGL` 427 · `diagnostiqueGL` 517 · `relanceCarteGL` 537
-`videCarteGL` 549 · `inclineFond` 579 · `dessineFondCarte` 618 · `cleMasqueCarte` 737
-`masqueCarte` 738 · `formesMasquantes` 747 · `contourDuHall` 769 · `cheminDuHall` 776
-`poseMasqueCarte` 794 · `ditCarte` 809 · `refaitFondCarte` 819
+`guetteLaCarte` 416 · `recaleCarteGL` 450 · `redessineCarteGL` 470 · `poseCarteGL` 484
+`diagnostiqueGL` 583 · `relanceCarteGL` 603 · `videCarteGL` 616 · `inclineFond` 650
+`dessineFondCarte` 698 · `cleMasqueCarte` 818 · `masqueCarte` 819 · `formesMasquantes` 828
+`contourDuHall` 850 · `cheminDuHall` 857 · `poseMasqueCarte` 875 · `ditCarte` 890
+`refaitFondCarte` 900
 
 Importe :
 
@@ -2991,7 +2992,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 667 l. → plan, plan-admin
+### `modules/vue.mjs` — 683 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3004,8 +3005,8 @@ Fonctions :
 `poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `appliqueVue` 245
 `libellesDeLaVue` 313 · `rafraichitVue` 321 · `poseVue` 335 · `mesureBarre` 364
 `masqueHaut` 392 · `masque` 399 · `masqueDroite` 436 · `fit` 447 · `recadreIncline` 474
-`stoppeZoom` 516 · `glisseVersVise` 522 · `glisseVers` 565 · `rectVisee` 588 · `zoom` 608
-`echelle` 622 · `versPlan` 634 · `brancheVue` 646
+`stoppeZoom` 516 · `glisseVersVise` 534 · `glisseVers` 580 · `rectVisee` 604 · `zoom` 624
+`echelle` 638 · `versPlan` 650 · `brancheVue` 662
 
 Importe :
 

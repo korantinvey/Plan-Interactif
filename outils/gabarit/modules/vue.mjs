@@ -242,12 +242,12 @@ export function versScene(/** @type {number} */ x, /** @type {number} */ y){
   return incline((x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height);
 }
 
-export const appliqueVue = () => {
+export const appliqueVue = (enGeste = false) => {
   for (const f of suiveurs) f();
   /* Le fond de carte, avant toute chose : il ne dépend que de la vue, et le
      chemin du rendu par la carte graphique sort plus bas sans passer par la
      « viewBox ». Posé là, il suit la vue quel que soit le rendu du plan. */
-  dessineFondCarte();
+  dessineFondCarte(enGeste);
   /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
      part vers elle, et le SVG caché garde sa géométrie figée. */
   if (RENDU_WEBGL && !GL.actif) monteWebgl();
@@ -322,7 +322,7 @@ export function rafraichitVue(){
   if (!imageDemandee){
     imageDemandee = requestAnimationFrame(() => {
       imageDemandee = null;
-      appliqueVue(); echelle();
+      appliqueVue(true); echelle();
       // la poignée du calage se mesure en pixels : elle suit la vue
       if (prete.calage) prete.calage();
     });
@@ -519,9 +519,24 @@ export function stoppeZoom(){
   rendTextes();
 }
 
+/* La demi-vie du trajet, en millisecondes : le temps qu'il faut pour couvrir
+   la moitié de ce qui reste.
+
+   Un centrage sur un stand garde quarante-cinq millisecondes : il déplace la
+   vue sans qu'on l'ait poussée, et doit se laisser suivre des yeux. Un cran de
+   molette en prend vingt-cinq. À quarante-cinq, la main sentait le retard :
+   la première image ne parcourait qu'un dixième du cran, et il fallait un
+   dixième de seconde pour que le plan semble partir — davantage là où le
+   dessin ne tient pas chaque image, en vue immersive sur un vrai salon. */
+const DEMI_VIE = 45, DEMI_VIE_MOLETTE = 25;
+let demiVie = DEMI_VIE;
+
 function glisseVersVise(){
   if (imageZoom) return;
-  let precedent = performance.now();
+  /* Le geste date d'avant la première image : compter depuis lui ne laissait
+     à cette image que les quelques millisecondes écoulées, un pas à peine
+     visible. Elle compte pour une image entière. */
+  let precedent = performance.now() - 16;
   const pas = (/** @type {number} */ maintenant) => {
     imageZoom = null;
     if (!vise) return;
@@ -530,7 +545,7 @@ function glisseVersVise(){
     const dt = Math.min(64, maintenant - precedent) || 16;
     precedent = maintenant;
     figeTextes();
-    const k = 1 - Math.pow(.5, dt / 45);
+    const k = 1 - Math.pow(.5, dt / demiVie);
     const but = vise, avant = vue();
     const view = { x: avant.x + (but.x - avant.x) * k, y: avant.y + (but.y - avant.y) * k,
                    w: avant.w + (but.w - avant.w) * k, h: avant.h + (but.h - avant.h) * k };
@@ -548,7 +563,7 @@ function glisseVersVise(){
     if (reste < but.w * .002){
       changeVue(but); vise = null; poseVue(); return;
     }
-    appliqueVue(); echelle();
+    appliqueVue(true); echelle();
     imageZoom = requestAnimationFrame(pas);
   };
   imageZoom = requestAnimationFrame(pas);
@@ -562,9 +577,10 @@ function glisseVersVise(){
  * les animations s'y pose tout de suite — « poseVue » arrête au passage le
  * trajet qui serait en cours.
  */
-export function glisseVers(/** @type {any} */ but){
+export function glisseVers(/** @type {any} */ but, demi = DEMI_VIE){
   if (REDUIT){ changeVue(but); poseVue(); return; }
   vise = but;
+  demiVie = demi;
   /* Le trajet change l'échelle — un cran de molette, un centrage qui
      rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */
   figeTextes();
@@ -612,7 +628,7 @@ export function zoom(/** @type {number} */ f, /** @type {number} */ fx, /** @typ
      au-delà des murs. */
   const nw = Math.min((emp.x1 - emp.x0) * recul(), Math.max(6, base.w * f)), k = nw / base.w;
   glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
-               w: nw, h: base.h * k });
+               w: nw, h: base.h * k }, DEMI_VIE_MOLETTE);
 }
 /* Ce que la règle affiche déjà. Écrire `textContent` remplace le texte même
    quand il ne change pas — le nœud est jeté et refait, et la règle se remet en

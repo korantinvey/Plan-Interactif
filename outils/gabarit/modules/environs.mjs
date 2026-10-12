@@ -424,7 +424,64 @@ function guetteLaCarte(style){
 }
 
 /** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
-function poseCarteGL(cal, fond, etendue){
+/* ------------------------------------------------------------
+   La carte vectorielle pendant un geste
+
+   MapLibre peint sa propre toile, avec sa propre carte graphique, et la
+   recadrer à chaque image d'un zoom la lui faisait repeindre entière — en
+   vue immersive, une toile deux à trois fois plus grande que l'écran, puisque
+   le fond couvre tout le sol jusqu'à l'horizon. Mesuré sur un vrai salon :
+   une image sur six perdue, et une de retard au premier cran de molette.
+
+   Pendant le geste, la toile garde donc sa dernière image, et le CSS la
+   recale : la vue qui bouge n'est qu'une homothétie et une translation du
+   sol à plat, que l'inclinaison reprend par-dessus. Elle n'est redessinée
+   que si l'image gardée ne couvre plus l'hôte, ou s'y étire au point de se
+   brouiller — et toujours là où la vue se pose.
+   ------------------------------------------------------------ */
+/** L'étendue que la toile montre, telle que MapLibre l'a dessinée. @type {any} */
+let _etendueGL = null;
+/** La toile recalée, en attente d'être redessinée. @type {any} */
+let _releveGL = null;
+/* Au-delà, l'image gardée est trop agrandie pour rester nette. */
+const ETIREMENT_MAX = 1.5;
+
+/** L'image gardée, recalée sur l'étendue `e` ; faux si elle ne la couvre plus. */
+function recaleCarteGL(/** @type {any} */ e){
+  const e0 = _etendueGL, hote = $("fondCarteGL");
+  if (!e0 || !hote || e0.px !== e.px || e0.py !== e.py) return false;
+  // un pixel de l'hôte montrait le mètre e0.x + u·e0.mParPx ; il doit tomber en u'
+  const sx = e0.mParPx / e.mParPx, sy = e0.mParPxY / e.mParPxY;
+  const tx = (e0.x - e.x) / e.mParPx, ty = (e0.y - e.y) / e.mParPxY;
+  if (sx > ETIREMENT_MAX || sy > ETIREMENT_MAX) return false;
+  if (tx > .5 || ty > .5 || tx + sx * e.px < e.px - .5 || ty + sy * e.py < e.py - .5) return false;
+  /* L'origine des transformations est celle de l'inclinaison — le coin de la
+     scène —, et non le coin de l'hôte où le recalage se compte : la
+     translation l'en corrige. */
+  const ox = _sol ? -_sol.x : 0, oy = _sol ? -_sol.y : 0;
+  const st = hote.style;
+  st.transformOrigin = ox + "px " + oy + "px";
+  st.transform = (_sol ? _sol.matrice + " " : "") +
+    "translate(" + (tx + (sx - 1) * ox) + "px," + (ty + (sy - 1) * oy) + "px) scale(" + sx + "," + sy + ")";
+  return true;
+}
+
+/** La toile redessinée sur l'étendue `e`, et son recalage retiré dans la même image. */
+function redessineCarteGL(/** @type {any} */ cal, /** @type {any} */ e){
+  clearTimeout(_releveGL); _releveGL = null;
+  const recalee = _etendueGL !== null;
+  _carteGL.jumpTo(vueGL(cal, e));
+  /* Recadrée, la carte ne se repeint qu'à sa prochaine image, alors que le
+     recalage retiré se voit dès la nôtre : pour une image, elle aurait sauté
+     du double. On la peint donc tout de suite. */
+  if (recalee && _carteGL.style) _carteGL.redraw();
+  const st = $("fondCarteGL").style;
+  if (_sol){ st.transformOrigin = -_sol.x + "px " + -_sol.y + "px"; st.transform = _sol.matrice; }
+  else { st.removeProperty("transform"); st.removeProperty("transform-origin"); }
+  _etendueGL = e;
+}
+
+function poseCarteGL(cal, fond, etendue, enGeste = false){
   const hote = $("fondCarteGL");
   if (!hote || _echecGL) return;
   /* Une adresse collée l'emporte sur tout ; sinon c'est l'objet du fond, ou son
@@ -441,8 +498,16 @@ function poseCarteGL(cal, fond, etendue){
       ditCarte("Chargement de la carte…");
       guetteLaCarte(sig);
       _carteGL.setStyle(style);
+      _etendueGL = null;
     }
-    _carteGL.jumpTo(vueGL(cal, etendue));
+    if (enGeste && recaleCarteGL(etendue)){
+      /* Un geste qui s'arrête passe par la pose de la vue, qui redessine ;
+         ce délai rattrape celui qui finirait autrement. */
+      clearTimeout(_releveGL);
+      _releveGL = setTimeout(() => { _releveGL = null; dessineFondCarte(); }, 250);
+      return;
+    }
+    redessineCarteGL(cal, etendue);
     return;
   }
   /* Le montage est asynchrone et la vue se refait à chaque image : sans ce
@@ -462,6 +527,7 @@ function poseCarteGL(cal, fond, etendue){
     if (gen !== _genGL){ _monteGL = false; return; }
     const v = vueGL(cal, etendue);
     _styleGL = sig;
+    _etendueGL = etendue;
     _carteGL = new gl.Map({
       container: hote, style: style,
       center: v.center, zoom: v.zoom, bearing: v.bearing,
@@ -541,6 +607,7 @@ export function relanceCarteGL(){
   _ditGL = "";
   _monteGL = false;
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  _etendueGL = null;
   ditCarte("");
   dessineFondCarte();
 }
@@ -556,6 +623,7 @@ function videCarteGL(){
      justement en vol — que le drapeau avait le plus besoin d'être rendu. */
   _monteGL = false;
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  _etendueGL = null;
   if (hote) hote.hidden = true;
 }
 
@@ -563,6 +631,9 @@ function videCarteGL(){
    toucher leur style — et ne redimensionner la toile de MapLibre — que
    lorsque la caméra change, et non à chaque image d'un glissement. */
 let _inclinaison = "";
+/** L'inclinaison posée, que le recalage d'un geste compose avec la sienne.
+ *  @type {ReturnType<typeof solIncline>} */
+let _sol = null;
 
 /**
  * Le fond incliné comme le plan, et l'étendue de sol qu'il doit couvrir.
@@ -581,6 +652,9 @@ function inclineFond(/** @type {DOMRect} */ r){
   const sig = sol ? [sol.matrice, sol.x, sol.y, sol.w, sol.h].join("|") : "";
   if (sig !== _inclinaison){
     _inclinaison = sig;
+    _sol = sol;
+    // l'hôte change de taille : l'image gardée pour le geste ne vaut plus
+    _etendueGL = null;
     for (const id of ["fondTuiles", "fondCarteGL"]){
       const el = $(id);
       if (!el) continue;
@@ -614,8 +688,14 @@ let _tuilesMuettes = 0;
    nœuds du plan, et que le guet du rendu WebGL relit à chaque fois. */
 let _calagePose = "";
 
-/** Le fond de carte, refait pour la vue courante. */
-export function dessineFondCarte(){
+/**
+ * Le fond de carte, refait pour la vue courante.
+ *
+ * `enGeste` : la vue change à chaque image — molette, glissement, pincement —
+ * et la carte vectorielle peut se contenter d'être recalée (`recaleCarteGL`).
+ * Sans lui, elle est redessinée là où la vue s'est posée.
+ */
+export function dessineFondCarte(enGeste = false){
   const hote = $("fondCarte");
   if (!hote) return;
   const cal = calageCourant(), fond = fondCourant();
@@ -646,7 +726,8 @@ export function dessineFondCarte(){
   const b = inclineFond(r);
   const kx = view.w / (r.width || 1), ky = view.h / (r.height || 1);
   const etendue = { x: view.x + b.x * kx, y: view.y + b.y * ky,
-                    w: b.w * kx, h: b.h * ky, mParPx: kx };
+                    w: b.w * kx, h: b.h * ky, mParPx: kx, mParPxY: ky,
+                    px: b.w, py: b.h };
   /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
      et se la voit poser ici, à chaque changement de vue. C'est le prix de
      n'être pas repris par le rendu de la carte graphique. */
@@ -660,7 +741,7 @@ export function dessineFondCarte(){
     if (hote.firstChild || hote.hasAttribute("transform")){
       hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
     }
-    poseCarteGL(cal, fond, etendue);
+    poseCarteGL(cal, fond, etendue, enGeste);
     return;
   }
   videCarteGL();
