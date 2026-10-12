@@ -40,6 +40,7 @@ import { CONF } from "./configuration.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { vue, cadrePlan } from "./vue-etat.mjs";
+import { solIncline } from "./camera.mjs";
 
 const racine = document.documentElement;
 
@@ -358,20 +359,18 @@ function chargeMapLibre(){
 }
 
 /**
- * Où la carte vectorielle doit regarder, déduit de la vue du plan.
+ * Où la carte vectorielle doit regarder, déduit de l'étendue que le fond
+ * couvre — la vue, ou davantage en vue immersive (`inclineFond`).
  *
  * Le cap est l'opposé de l'angle du calage : MapLibre nomme « cap » l'azimut
  * qui se trouve en haut de l'écran, et le haut de notre plan pointe vers
  * l'azimut −angle. L'échelle suit la convention du moteur, où le monde fait
  * 512 pixels au niveau zéro — d'où le 78 271 et non le 156 543 des tuiles.
  */
-function vueGL(cal){
-  const view = vue();
-  const r = cadrePlan();
-  const mParPx = view.w / (r.width || 1);
+function vueGL(cal, e){
   return {
-    center: versTerre([view.x + view.w / 2, view.y + view.h / 2], cal),
-    zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * mParPx)) / Math.LN2,
+    center: versTerre([e.x + e.w / 2, e.y + e.h / 2], cal),
+    zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * e.mParPx)) / Math.LN2,
     bearing: -cal.angle / DEG,
   };
 }
@@ -425,7 +424,7 @@ function guetteLaCarte(style){
 }
 
 /** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
-function poseCarteGL(cal, fond){
+function poseCarteGL(cal, fond, etendue){
   const hote = $("fondCarteGL");
   if (!hote || _echecGL) return;
   /* Une adresse collée l'emporte sur tout ; sinon c'est l'objet du fond, ou son
@@ -443,7 +442,7 @@ function poseCarteGL(cal, fond){
       guetteLaCarte(sig);
       _carteGL.setStyle(style);
     }
-    _carteGL.jumpTo(vueGL(cal));
+    _carteGL.jumpTo(vueGL(cal, etendue));
     return;
   }
   /* Le montage est asynchrone et la vue se refait à chaque image : sans ce
@@ -461,7 +460,7 @@ function poseCarteGL(cal, fond){
        posée, et tout montage suivant sortait à la première ligne — « Situer le
        salon » ne montait plus rien, sans un mot, jusqu'au rechargement. */
     if (gen !== _genGL){ _monteGL = false; return; }
-    const v = vueGL(cal);
+    const v = vueGL(cal, etendue);
     _styleGL = sig;
     _carteGL = new gl.Map({
       container: hote, style: style,
@@ -560,6 +559,50 @@ function videCarteGL(){
   if (hote) hote.hidden = true;
 }
 
+/* L'inclinaison posée sur les deux hôtes du fond : une empreinte, pour ne
+   toucher leur style — et ne redimensionner la toile de MapLibre — que
+   lorsque la caméra change, et non à chaque image d'un glissement. */
+let _inclinaison = "";
+
+/**
+ * Le fond incliné comme le plan, et l'étendue de sol qu'il doit couvrir.
+ *
+ * En vue immersive, la carte graphique incline le hall (`camera.mjs`) ; le
+ * fond, peint à plat sous elle, restait droit, et les rues glissaient sous
+ * les murs d'autant plus qu'on regardait loin. Les deux hôtes — tuiles et
+ * toile vectorielle — reçoivent donc la même projection, en CSS, et
+ * s'agrandissent de ce que l'inclinaison découvre au fond.
+ *
+ * Rend l'étendue en pixels de la scène à plat ; hors de la vue immersive,
+ * c'est la scène elle-même.
+ */
+function inclineFond(/** @type {DOMRect} */ r){
+  const sol = solIncline(r.width, r.height);
+  const sig = sol ? [sol.matrice, sol.x, sol.y, sol.w, sol.h].join("|") : "";
+  if (sig !== _inclinaison){
+    _inclinaison = sig;
+    for (const id of ["fondTuiles", "fondCarteGL"]){
+      const el = $(id);
+      if (!el) continue;
+      const st = el.style;
+      if (!sol){
+        for (const p of ["inset", "left", "top", "width", "height", "transform", "transform-origin"])
+          st.removeProperty(p);
+        continue;
+      }
+      st.inset = "auto";
+      st.left = sol.x + "px"; st.top = sol.y + "px";
+      st.width = sol.w + "px"; st.height = sol.h + "px";
+      // l'origine au coin de la scène : la matrice compte ses pixels depuis là
+      st.transformOrigin = -sol.x + "px " + -sol.y + "px";
+      st.transform = sol.matrice;
+    }
+    // MapLibre ne voit pas seul que son hôte a changé de taille
+    if (_carteGL) _carteGL.resize();
+  }
+  return sol || { x: 0, y: 0, w: r.width, h: r.height };
+}
+
 /* Ce qui est déjà posé : sans cette empreinte, chaque image d'un glissement
    réécrirait les mêmes trente balises et redemanderait les mêmes tuiles. */
 let _fondPose = "";
@@ -597,12 +640,19 @@ export function dessineFondCarte(){
     racine.style.setProperty("--carte-force", String(force));
     if (credit) credit.textContent = fond.credit;
   }
+  /* Ce que le fond doit couvrir, en mètres : la vue, ou davantage quand le
+     plan s'incline et découvre le fond du hall. */
+  const r = cadrePlan();
+  const b = inclineFond(r);
+  const kx = view.w / (r.width || 1), ky = view.h / (r.height || 1);
+  const etendue = { x: view.x + b.x * kx, y: view.y + b.y * ky,
+                    w: b.w * kx, h: b.h * ky, mParPx: kx };
   /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
      et se la voit poser ici, à chaque changement de vue. C'est le prix de
      n'être pas repris par le rendu de la carte graphique. */
   const cadre = $("fondTuiles");
   if (cadre) cadre.setAttribute("viewBox",
-    view.x + " " + view.y + " " + view.w + " " + view.h);
+    etendue.x + " " + etendue.y + " " + etendue.w + " " + etendue.h);
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
   if (fond.style || fond.objet){
@@ -610,12 +660,11 @@ export function dessineFondCarte(){
     if (hote.firstChild || hote.hasAttribute("transform")){
       hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
     }
-    poseCarteGL(cal, fond);
+    poseCarteGL(cal, fond, etendue);
     return;
   }
   videCarteGL();
-  const r = cadrePlan();
-  const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
+  const t = tuilesDeLaVue(cal, fond, etendue, kx);
 
   /* Le groupe suit toujours : la position de l'ancre, la rotation vers le
      repère du plan, l'échelle est/sud. Ce n'est qu'une attribution, et c'est
