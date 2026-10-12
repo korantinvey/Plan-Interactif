@@ -489,7 +489,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesLibellesWebgl(), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
@@ -1159,16 +1159,29 @@ function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
   const avant = hauteursPeintes.get(g);
   hauteursPeintes.set(g, haut);
   // qui demande moins de mouvement le voit changer de hauteur d'un coup
-  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches)
+  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches){
     hausses.set(g, { de: avant, vers: haut, t0: performance.now() });
+    // son nom quitte les couches communes pour monter avec lui
+    GL.couchesLibelles = null;
+  }
   const h = hausses.get(g);
   if (h && (h.vers !== haut || performance.now() - h.t0 >= DUREE_HAUSSE)){ hausses.delete(g); return null; }
   return h || null;
 }
-/** Où en est un volume en mouvement, en fraction de sa hauteur d'arrivée. */
-function echelleHausse(/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant){
+/** La hauteur d'un volume en mouvement, à cet instant. */
+function hauteurHausse(/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant){
   const t = Math.min(1, Math.max(0, (maintenant - h.t0) / DUREE_HAUSSE));
-  return (h.de + (h.vers - h.de) * sortie(t)) / h.vers;
+  return h.de + (h.vers - h.de) * sortie(t);
+}
+/** Où en est un volume en mouvement, en fraction de sa hauteur d'arrivée. */
+const echelleHausse = (/** @type {{ de: number, vers: number, t0: number }} */ h, /** @type {number} */ maintenant) =>
+  hauteurHausse(h, maintenant) / h.vers;
+/** Les volumes en mouvement, par l'identifiant que portent leurs noms. */
+function haussesParId(){
+  /** @type {Map<string, { de: number, vers: number, t0: number }>} */
+  const m = new Map();
+  for (const [g, h] of hausses){ const id = g.getAttribute("data-id"); if (id) m.set(id, h); }
+  return m;
 }
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
@@ -1383,8 +1396,20 @@ function couchesPastilles(){
 }
 
 function couchesLibellesWebgl(){
-  if (!GL.couchesLibelles)
-    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles))];
+  if (!GL.couchesLibelles){
+    /* Le nom d'un stand qui monte ou redescend se peint à part, posé à la
+       hauteur d'arrivée : la boucle d'animation le décale d'image en image
+       du même écart que son volume (`animeCouche`). Les autres restent
+       ensemble — ce sont eux qu'on ne recalcule pas. */
+    const mobiles = haussesParId();
+    const fixes = GL.libelles.filter(d => !mobiles.has(d.lbl));
+    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", fixes))];
+    for (const [id, h] of mobiles){
+      const siens = GL.libelles.filter(d => d.lbl === id);
+      if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
+        groupesNoms("labels", siens)).map(c => c.clone({ hausseTexte: h })));
+    }
+  }
   return GL.couchesLibelles;
 }
 
@@ -1706,6 +1731,11 @@ const phaseDe = (c, t) => {
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, GL.maintenant || performance.now()) });
+  // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
+  if (c.props.hausseTexte){
+    const h = c.props.hausseTexte, dz = hauteurHausse(h, GL.maintenant || performance.now()) - h.vers;
+    return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, dz, 1] });
+  }
   const ph = c.props.phare;
   if (ph && GL.animePhare){
     // les courbes de « pulseZone » et « pulsePoi » : 1 → 0,58 → 1, et 1 → 1,14 → 1
@@ -1736,7 +1766,11 @@ function animeWebgl(now){
   GL.temps = now / 1000;
   GL.maintenant = now;
   // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
-  for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34) hausses.delete(g);
+  for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34){
+    hausses.delete(g);
+    // arrivé : son nom rejoint les autres
+    GL.couchesLibelles = null;
+  }
   if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
     GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
   }
