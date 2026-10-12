@@ -39,7 +39,7 @@ import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
-import { grille, PAS_GRILLE } from "./itineraire.mjs";
+import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
@@ -1248,6 +1248,26 @@ function meubleZone(el, polygon, couleur, acc){
    millimètres du sol, elle cacherait sinon le trait d'un itinéraire peint
    après elle.
    ------------------------------------------------------------ */
+/**
+ * Le bâtiment, pour ne semer personne dehors : le contour du hall relevé au
+ * calage de la carte (`environs.mjs` `contourDuHall`, relu ici sur le
+ * pavillon pour ne pas importer le fond de carte), sinon l'enveloppe des
+ * stands et des zones — celle-là même où l'itinéraire marche quand rien
+ * d'autre n'est dessiné.
+ */
+function dansLeHall(/** @type {any} */ p){
+  const calage = p.calage !== undefined ? p.calage : DATA.calage;
+  const pts = calage && calage.halls ? calage.halls[p.id] : null;
+  let trace = enveloppeDuSalon(p);
+  if (pts && pts.length >= 3){
+    trace = new Path2D();
+    pts.forEach((/** @type {number[]} */ q, /** @type {number} */ i) => i ? trace.lineTo(q[0], q[1]) : trace.moveTo(q[0], q[1]));
+    trace.closePath();
+  }
+  const ctx = document.createElement("canvas").getContext("2d");
+  return ctx ? (/** @type {number} */ x, /** @type {number} */ y) => ctx.isPointInPath(trace, x, y) : null;
+}
+
 /** @type {{ grille: any, couches: any[], maillages: any }} */
 const FIGURANTS = { grille: null, couches: [], maillages: null };
 function couchesFigurants(){
@@ -1256,7 +1276,7 @@ function couchesFigurants(){
   if (FIGURANTS.grille !== g){
     FIGURANTS.grille = g;
     const M = FIGURANTS.maillages || (FIGURANTS.maillages = maillagesFigurant());
-    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id));
+    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id), dansLeHall(p));
     const commun = { data, pickable: false, material: MATIERE,
       getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
       getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],

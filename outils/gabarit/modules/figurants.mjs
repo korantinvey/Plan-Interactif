@@ -34,6 +34,13 @@ const ECART = 1.6;
 /* La part de ceux qui vont à deux, côte à côte. */
 const PART_DUOS = .3;
 
+/* Un figurant visite : il marche à quelques mètres d'un stand ou d'une zone,
+   jamais au milieu d'un parvis vide. La grille de marche, elle, ouvre tout ce
+   que l'exploitant a dessiné comme circulation — y compris le chemin de la
+   gare au hall, et le parvis devant l'entrée. Sans cette borne, une foule s'y
+   promenait, dehors. */
+const PROCHE_STAND = 6;
+
 /** Une suite de nombres tirée d'une graine : toujours la même pour la même graine. */
 export function hasard(/** @type {number} */ graine){
   let a = graine >>> 0;
@@ -63,6 +70,7 @@ export function graineDe(/** @type {string} */ id){
  * @property {number} si
  * @property {Uint8Array} nappe   1 où l'on marche
  * @property {Uint8Array} marge   la distance au mur, en cases
+ * @property {Uint8Array} barrage non nul sous un stand ou une zone fermée
  */
 
 /**
@@ -85,19 +93,24 @@ export function graineDe(/** @type {string} */ id){
  * celle qui touche un mur n'en a pas, pour qu'aucun figurant ne rase une
  * cloison ou ne disparaisse à moitié dans un stand. Un tirage trop près d'un
  * autre est écarté : la foule se répartit au lieu de s'agglutiner.
+ *
+ * Seules comptent les cases du salon : à moins de `PROCHE_STAND` d'un stand
+ * ou d'une zone, et dans le hall quand on sait le dire (`dansLeHall`).
  * @param {GrilleMarche} g
  * @param {number} pas      le côté d'une case, en mètres
  * @param {number} graine
+ * @param {((x: number, y: number) => boolean) | null} [dansLeHall] le point est-il dans le bâtiment
  * @returns {Figurant[]}
  */
-export function placeFigurants(g, pas, graine){
+export function placeFigurants(g, pas, graine, dansLeHall = null){
   const tire = hasard(graine);
+  const proche = presDesStands(g, Math.round(PROCHE_STAND / pas));
   /* Un hall trop grand pour la borne voit chaque case perdre de sa chance,
      plutôt que le semis s'arrêter en route : la borne atteinte au premier
      tiers de la grille peuplait le fond du hall et laissait l'entrée vide.
      Les duos et les tirages écartés laissent assez de marge sous la borne. */
   let cases = 0;
-  for (let i = 0; i < g.nappe.length; i++) if (g.nappe[i] && g.marge[i] >= 2) cases++;
+  for (let i = 0; i < g.nappe.length; i++) if (g.nappe[i] && g.marge[i] >= 2 && proche[i]) cases++;
   const chance = Math.min(pas * pas / METRES_PAR_FIGURANT, FIGURANTS_MAX / (1 + PART_DUOS) / Math.max(1, cases));
   /** @type {Figurant[]} */
   const l = [];
@@ -127,7 +140,8 @@ export function placeFigurants(g, pas, graine){
     const cx = Math.floor((u - g.x0) / pas), cy = Math.floor((v - g.y0) / pas);
     return cx < 0 || cy < 0 || cx >= g.w || cy >= g.h ? -1 : cy * g.w + cx;
   };
-  const marche = (/** @type {number} */ i) => i >= 0 && g.nappe[i] && g.marge[i] >= 2;
+  const marche = (/** @type {number} */ i) => i >= 0 && g.nappe[i] && g.marge[i] >= 2 && proche[i] === 1;
+  const dedans = (/** @type {number} */ x, /** @type {number} */ y) => !dansLeHall || dansLeHall(x, y);
   const nouveau = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ cap) => ({ x, y,
     tenue: Math.floor(tire() * TENUES.length), peau: Math.floor(tire() * TEINTS.length),
     cheveux: Math.floor(tire() * CHEVEUX.length), taille: .92 + tire() * .16, cap,
@@ -142,7 +156,7 @@ export function placeFigurants(g, pas, graine){
     const cx = i % g.w, cy = (i - cx) / g.w;
     // un peu de jeu dans la case : la trame de la grille ne doit pas se voir
     const [x, y] = auPlan(g.x0 + (cx + tire()) * pas, g.y0 + (cy + tire()) * pas);
-    if (!libre(x, y, ECART)) continue;
+    if (!dedans(x, y) || !libre(x, y, ECART)) continue;
     const cap = capTire();
     range(nouveau(x, y, cap));
     /* Un compagnon, côte à côte : à cinquante-cinq centimètres sur le flanc,
@@ -151,10 +165,35 @@ export function placeFigurants(g, pas, graine){
     if (tire() < PART_DUOS && l.length < FIGURANTS_MAX){
       const flanc = (cap + (tire() < .5 ? 90 : -90)) * Math.PI / 180;
       const x2 = x + .55 * Math.cos(flanc), y2 = y + .55 * Math.sin(flanc);
-      if (marche(caseDe(x2, y2)) && libre(x2, y2, .5)) range(nouveau(x2, y2, cap));
+      if (marche(caseDe(x2, y2)) && dedans(x2, y2) && libre(x2, y2, .5)) range(nouveau(x2, y2, cap));
     }
   }
   return l;
+}
+
+/**
+ * Les cases à moins de `portee` cases d'un stand ou d'une zone fermée, de
+ * proche en proche — un balayage en largeur depuis tout ce qui barre. Il
+ * traverse les murs : c'est la distance au salon qu'on mesure, pas le chemin.
+ */
+function presDesStands(/** @type {GrilleMarche} */ g, /** @type {number} */ portee){
+  const n = g.w * g.h, d = new Int16Array(n).fill(-1), file = new Int32Array(n);
+  let tete = 0, queue = 0;
+  for (let i = 0; i < n; i++) if (g.barrage[i]){ d[i] = 0; file[queue++] = i; }
+  while (tete < queue){
+    const i = file[tete++];
+    if (d[i] >= portee) continue;
+    const cx = i % g.w, cy = (i - cx) / g.w;
+    for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]]){
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (d[j] >= 0) continue;
+      d[j] = d[i] + 1; file[queue++] = j;
+    }
+  }
+  const r = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (d[i] >= 0) r[i] = 1;
+  return r;
 }
 
 /* Les tenues : un haut, un bas. Des tons de salon professionnel — beaucoup de

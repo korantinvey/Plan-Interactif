@@ -26,7 +26,21 @@ function croix(w, h, l, deg = 0){
     const d = Math.max(l / 2 - dx, l / 2 - dy);
     if (d > 0){ nappe[y * w + x] = 1; marge[y * w + x] = Math.ceil(d); }
   }
-  return { x0: -10, y0: 20, w, h, co: Math.cos(a), si: Math.sin(a), nappe, marge };
+  const barrage = nappe.map(v => v ? 0 : 1);
+  return { x0: -10, y0: 20, w, h, co: Math.cos(a), si: Math.sin(a), nappe, marge, barrage };
+}
+
+/** Un hall en damier : des îlots de six mètres, des allées de trois. */
+function damier(w, h){
+  const nappe = new Uint8Array(w * h), marge = new Uint8Array(w * h), barrage = new Uint8Array(w * h);
+  const ILOT = 12, ALLEE = 6, P = ILOT + ALLEE;
+  const bord = (k) => { const r = k % P; return r < ILOT ? 0 : Math.min(r - ILOT + 1, P - r); };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const i = y * w + x, bx = bord(x), by = bord(y);
+    if (!bx && !by){ barrage[i] = 1; continue; }
+    nappe[i] = 1; marge[i] = Math.max(bx, by);
+  }
+  return { x0: 0, y0: 0, w, h, co: 1, si: 0, nappe, marge, barrage };
 }
 
 (async () => {
@@ -58,12 +72,29 @@ function croix(w, h, l, deg = 0){
   }
 
   console.log("Un hall immense");
-  const grand = croix(3000, 3000, 2800);
+  const grand = damier(3000, 3000);
   const foule = placeFigurants(grand, PAS, 7), n = foule.length;
   dit(n <= FIGURANTS_MAX, "la borne tient", n + " ≤ " + FIGURANTS_MAX);
   // la borne ne doit pas arrêter le semis en route : le bas du hall a son monde
   const bas = foule.filter(p => p.y > grand.y0 + grand.h * PAS / 2).length;
   dit(bas > n * .35, "la foule couvre tout le hall", bas + " sur " + n + " dans la moitié basse");
+
+  console.log("Personne dehors");
+  {
+    // un parvis de cent mètres, ouvert, et un seul îlot de stands dans un coin
+    const w = 200, h = 200, nappe = new Uint8Array(w * h).fill(1), marge = new Uint8Array(w * h).fill(20),
+      barrage = new Uint8Array(w * h);
+    for (let y = 0; y < 20; y++) for (let x = 0; x < 20; x++){ const i = y * w + x; nappe[i] = 0; marge[i] = 0; barrage[i] = 1; }
+    const parvis = { x0: 0, y0: 0, w, h, co: 1, si: 0, nappe, marge, barrage };
+    const f = placeFigurants(parvis, PAS, 3);
+    dit(f.length > 0, "les abords des stands se peuplent", f.length + " figurants");
+    // l'îlot couvre dix mètres de côté : on s'en tient à six mètres, une case de jeu
+    const loin = f.filter(p => Math.max(p.x, p.y) > 10 + 6 + PAS * 1.5).length;
+    dit(loin === 0, "personne au milieu du parvis", loin + " trop loin des stands");
+    const g = croix(200, 160, 12, 23), limite = (x) => x < 20;
+    const dans = placeFigurants(g, PAS, graineDe("fep27"), (x) => limite(x));
+    dit(dans.length > 0 && dans.every(p => limite(p.x)), "personne hors du hall", dans.length + " dedans");
+  }
 
   console.log("Les duos");
   {
