@@ -23,4 +23,6 @@ module.exports = {
   "Le programme en ligne de temps, et la liste égrenée le long du même rail.": "The programme as a timeline, and the list strung along the same rail.",
   "Nu": "Bare",
   "Ni cadre ni libellés : la hiérarchie typographique seule.": "No frames, no labels: typographic hierarchy alone.",
+  "Vitrine": "Showcase",
+  "Le plan dans un écrin, la fiche et le parcours en cartes qui flottent à côté.": "The map in a frame, with the profile and visit plan as cards floating beside it.",
 };

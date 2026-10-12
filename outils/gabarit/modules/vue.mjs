@@ -31,7 +31,8 @@ import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, confieAuWebgl }
   from "./webgl.mjs";
 import { recul, dessineFondCarte } from "./environs.mjs";
-import { svg, vue, changeVue, cadrePlan, oublieCadre } from "./vue-etat.mjs";
+import { svg, vue, changeVue, cadrePlan, oublieCadre, redresse, incline } from "./vue-etat.mjs";
+import { cameraEnJeu, ecranVersPlat, CAMERA_CHANGEE } from "./camera.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 import { facteurTrait } from "./chemin-forme.mjs";
@@ -69,7 +70,7 @@ export function confieALaVue(o){ Object.assign(prete, o); }
 /* La vue, le SVG et le cadre vivent dans `vue-etat.mjs`, que le fond de carte
    et la carte graphique importent aussi ; les autres modules les importent
    d'ici, comme avant. */
-export { view, vue, changeVue, svg, cadrePlan } from "./vue-etat.mjs";
+export { view, vue, changeVue, svg, cadrePlan, redresse } from "./vue-etat.mjs";
 const enEdition = () => prete.enEdition();
 const libelles = () => prete.libelles();
 
@@ -237,7 +238,8 @@ export function suitLaVue(/** @type {() => void} */ f){ suiveurs.push(f); }
  */
 export function versScene(/** @type {number} */ x, /** @type {number} */ y){
   const r = cadrePlan(), v = vue();
-  return [(x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height];
+  // en vue immersive, le point du sol tel qu'on le voit incliné
+  return incline((x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height);
 }
 
 export const appliqueVue = () => {
@@ -455,7 +457,38 @@ export function fit(){
               des deux. */
            y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height });
+  if (cameraEnJeu()) recadreIncline(r, haut, cache);
   poseVue();
+}
+
+/**
+ * Le cadrage, revu pour la vue immersive.
+ *
+ * Incliné, le hall ne prend plus à l'écran la place qu'il prend à plat : sa
+ * profondeur se tasse, son fond rapetisse, et l'ajuster comme vu d'en haut le
+ * laissait petit au milieu d'une scène vide. On regarde donc où ses quatre
+ * coins tombent une fois inclinés, et l'on resserre le cadre d'autant, en
+ * ramenant leur milieu au centre de la bande visible. La fuite ne dépend pas
+ * du zoom mais de la scène : quelques passes suffisent à tomber juste.
+ */
+function recadreIncline(/** @type {DOMRect} */ r, /** @type {number} */ haut, /** @type {number} */ cache){
+  const MARGE = 28;
+  const bx0 = MARGE, bx1 = r.width - MARGE, by0 = haut + MARGE, by1 = r.height - cache - MARGE;
+  if (bx1 - bx0 < 60 || by1 - by0 < 60) return;
+  const coins = [[emp.x0, emp.y0], [emp.x1, emp.y0], [emp.x1, emp.y1], [emp.x0, emp.y1]];
+  for (let passe = 0; passe < 4; passe++){
+    const v = vue();
+    const vus = coins.map(([x, y]) => incline((x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height));
+    const xs = vus.map(c => c[0]), ys = vus.map(c => c[1]);
+    const sx0 = Math.min(...xs), sx1 = Math.max(...xs), sy0 = Math.min(...ys), sy1 = Math.max(...ys);
+    const f = Math.max((sx1 - sx0) / (bx1 - bx0), (sy1 - sy0) / (by1 - by0));
+    // le milieu des coins, ramené au milieu de la bande : l'écart, mesuré sur le sol
+    const a = ecranVersPlat((sx0 + sx1) / 2, (sy0 + sy1) / 2, r.width, r.height);
+    const b = ecranVersPlat((bx0 + bx1) / 2, (by0 + by1) / 2, r.width, r.height);
+    const mx = v.x + (a[0] - b[0]) / r.width * v.w, my = v.y + (a[1] - b[1]) / r.height * v.h;
+    const w = v.w * f, h = v.h * f;
+    changeVue({ x: mx + (v.w - w) / 2, y: my + (v.h - h) / 2, w, h });
+  }
 }
 /* Le zoom par crans, et la saccade qu'il donnait.
 
@@ -599,6 +632,7 @@ function echelle(){
 /* --- conversion écran → repère du plan --- */
 /** @returns {[number, number]} */
 export function versPlan(/** @type {number} */ clientX, /** @type {number} */ clientY){
+  [clientX, clientY] = redresse(clientX, clientY);
   const r = cadrePlan(), view = vue();
   return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
            +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
@@ -625,3 +659,9 @@ export function brancheVue(){
    lisent la vue et ne peuvent l'importer : elle la leur confie en se
    chargeant — par des lecteurs, puisque chaque geste la remplace. */
 confieAuWebgl({ appliqueVue });
+
+/* Le plan se pose à plat avant que la carte graphique n'arrive, et c'est elle
+   qui incline la vue : le hall cadré d'en haut se retrouvait petit au milieu
+   de la scène. Il se recadre donc quand la caméra entre en jeu, en sort, ou
+   que l'exploitant tourne le hall. */
+CAMERA_CHANGEE.suis(() => { if (emp && vue()) fit(); });

@@ -307,6 +307,9 @@ function traceRepere(f){
                (anneau ? " anneau" : "") +
                (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
+               /* Le pictogramme, que la vue immersive lit pour monter un
+                  escalier ou un ascenseur sous la pastille (`decor.mjs`). */
+               '" data-glyphe="' + esc(glypheRepere(f) || "") +
                '" tabindex="0" role="button" aria-label="' +
                esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
                teinte + '>';

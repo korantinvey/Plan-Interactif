@@ -1,5 +1,5 @@
 /* ============================================================
-   L'ambiance du plan — Classique, Tuiles
+   L'ambiance du plan — Classique, Tuiles, Immersif
 
    Le modèle habille les panneaux ; l'ambiance habille le plan lui-même, la
    forme de ses stands et de ses zones :
@@ -7,6 +7,10 @@
    - Classique : le plan tel qu'il a toujours été, cloisons fines.
    - Tuiles : stands et zones aux coins arrondis, détachés les uns des autres
      par un vide au lieu d'une cloison. Plus calme, plus grand public.
+   - Immersif : les tuiles en volume, le hall vu de biais comme une maquette
+     posée sur la table. La caméra est dans `camera.mjs`, le volume dans
+     `webgl.mjs` ; sans carte graphique, le plan reste en tuiles à plat. Le
+     cap — de quel côté on regarde le hall — se règle avec l'ambiance.
 
    Une ambiance est une forme, pas une palette : les couleurs restent celles
    que l'exploitant règle — stands, zones, secteurs, fond.
@@ -17,12 +21,14 @@
 import { P } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { PLAN_ADMIN } from "./salon.mjs";
+import { demandeCamera } from "./camera.mjs";
 
 const racine = document.documentElement;
 
 export const AMBIANCES = [
   { cle: "classique", nom: "Classique", dit: "Cloisons fines, aplats francs." },
   { cle: "tuiles", nom: "Tuiles", dit: "Coins arrondis, stands détachés." },
+  { cle: "immersif", nom: "Immersif", dit: "Le hall vu de biais, les stands en volume." },
 ];
 
 /* Essayer une ambiance sans la publier : « ?ambiance=tuiles » sur le plan
@@ -31,6 +37,14 @@ export const AMBIANCES = [
    dans deux onglets. Pas en administration, où c'est le réglage qu'on voit
    et qu'on change — l'adresse le masquerait. */
 const ESSAI = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("ambiance");
+/* Et le cap de l'immersif de même : « ?cap=-8 ». */
+const ESSAI_CAP = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("cap");
+
+/** Le cap de la vue immersive, en degrés : de face quand rien n'est réglé. */
+export function capRetenu(){
+  const c = Number(ESSAI_CAP !== null ? ESSAI_CAP : conf("_ambiance").cap);
+  return Number.isFinite(c) ? Math.max(-180, Math.min(180, c)) : 0;
+}
 
 /** L'ambiance retenue — Classique quand rien n'est réglé, ou qu'une clé
  *  inconnue arrive d'une configuration plus récente que la page. */
@@ -134,12 +148,23 @@ export const tuilesPosees = () => tuiles;
 
 export function appliqueAmbiance(){
   const a = ambianceRetenue();
-  AMBIANCES.forEach(x => racine.classList.toggle("ambiance-" + x.cle, x.cle === a));
+  /* L'immersif est fait de tuiles : il en porte la classe, et la feuille de
+     style les dessine pour lui comme pour elles. Des blocs détachés se lisent
+     en volume ; collés cloison contre cloison, ils ne feraient qu'un relief. */
+  const enTuiles = a === "tuiles" || a === "immersif";
+  AMBIANCES.forEach(x => racine.classList.toggle("ambiance-" + x.cle,
+    x.cle === a || (x.cle === "tuiles" && enTuiles)));
+  demandeCamera(a === "immersif", capRetenu());
+  /* Le cap se dit aussi sur la racine : c'est par elle que le dessin apprend
+     qu'il doit refaire sa vue — il guette sa classe et son style (`webgl.mjs`),
+     et un cap qui tourne ne change aucune classe. */
+  if (a === "immersif") racine.style.setProperty("--cap-immersif", capRetenu() + "deg");
+  else racine.style.removeProperty("--cap-immersif");
   /* Les tuiles changent la forme des stands et des zones déjà posés : on les
      retrace dans l'ordre où `montePlan` les a écrits, celui des données du
      pavillon. */
-  if (tuiles !== (a === "tuiles")){
-    tuiles = a === "tuiles";
+  if (tuiles !== enTuiles){
+    tuiles = enTuiles;
     const p = P();
     for (const [groupe, formes] of [["stands", p.stands], ["zones", p.zones]])
       document.querySelectorAll("#" + groupe + " > g > path").forEach((el, i) => {

@@ -87,6 +87,9 @@ export let MONTE = false;
 export const baliseZone = (z) =>
   '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id + '"' +
   (z.ajout ? ' data-aj="' + esc(z.id) + '"' : "") +
+  /* Son type, que la vue immersive meuble (`decor.mjs`) : rien d'autre ne le
+     lit sur le plan. */
+  (z.type ? ' data-type="' + esc(z.type) + '"' : "") +
   ' tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + traceStand(z.d) + '"/></g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :
@@ -98,6 +101,9 @@ export const baliseStand = (s) =>
   '<g class="stand" data-id="' + esc(s.lien ? s.lien.stand : s.id) + '"' +
   (s.ajout ? ' data-aj="' + esc(s.id) + '"' : "") +
   (s.lien ? ' data-soc="' + s.lien.soc + '"' : "") +
+  /* Un emplacement que personne n'occupe : la vue immersive le laisse au sol
+     quand les stands montent (`webgl.mjs`), et rien d'autre ne le lit. */
+  (!s.nom && !s.lien ? ' data-libre=""' : "") +
   ' tabindex="0" role="button" aria-label="' +
   esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + traceStand(s.d) + '"/></g>';
 
