@@ -208,6 +208,8 @@ export function relance(){
     attente = null;
     try {
       ROUTE = calculeRoute();
+      // ses deux bouts, que la vue immersive garde debout quand elle abaisse le reste
+      if (ROUTE) ROUTE.bouts = [ITI.a, ITI.b].filter(Boolean).map(b => ({ p: b.p, xy: b.xy }));
     } catch (e){
       console.warn("Itinéraire :", e);
       ROUTE = { pmr: ITI.pmr, etapes: [], m: 0, panne: true };

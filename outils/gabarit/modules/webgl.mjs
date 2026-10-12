@@ -39,7 +39,7 @@ import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
-  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON } from "./camera.mjs";
+  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -98,6 +98,8 @@ export const GL = {
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
   // la vue immersive est-elle à l'écran — voir « La vue immersive »
   camera: false,
+  // la reconversion en cours change le plan entier de hauteur : sans mouvement
+  massif: false,
   /** @type {number[] | null} le sol du hall, sur lequel un volume rend sa transparence */
   sol: null,
 };
@@ -480,7 +482,7 @@ function repeintWebgl(){
     }
   }
   for (const b of [...GL.blocs.keys()]) if (!vus.has(b)) GL.blocs.delete(b);
-  GL.sales.clear(); GL.tout = false; GL.ordre = false;
+  GL.sales.clear(); GL.tout = false; GL.ordre = false; GL.massif = false;
   GL.deck.setProps({ layers: assembleWebgl() });
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
@@ -810,6 +812,8 @@ function positionTexte(){
     if (d.zHausse !== undefined) return pose(d, d.zHausse);
     const c = d.cls || "", zone = c.startsWith("zn");
     if (zone && /\bmasquee\b/.test(c)) return d.position;
+    // le nom d'un stand abaissé sous un trajet descend avec lui
+    if (!zone && boutsDuTrajet() && !debout.has(d.lbl)) return pose(d, HAUTEUR_ABAISSEE);
     return pose(d, (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1));
   };
 }
@@ -829,7 +833,8 @@ function couchesTexte(id, items, famille, graisse, extra){
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
     lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
-    updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur), getPosition: cleCamera() + GL.camera },
+    updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur),
+      getPosition: cleCamera() + GL.camera + JSON.stringify(boutsDuTrajet()) },
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
@@ -923,13 +928,46 @@ function parcoursGl(el, m, op, acc){
    sélection posés sur lui restent des aplats, qui se peignent alors au pied
    du volume. Une zone masquée reste au sol : pâlie, elle dit à l'exploitant
    qu'elle ne sera pas sur le plan public, et un volume la ferait voir. */
+/* Les stands qu'un trajet tracé garde debout : ceux où l'un de ses points
+   tombe — départ, arrêt, arrivée. Vu de biais, le trajet passait derrière
+   une rangée de stands et s'y cachait ; tout le reste s'abaisse donc le
+   temps qu'il est tracé. Le jeu se refait à chaque conversion, et sert aux
+   noms (`positionTexte`) et au mouvement qui part au clic, qui n'ont pas
+   le contour sous la main. */
+/** @type {Set<string>} les identifiants des stands gardés debout */
+let debout = new Set();
+function resteDebout(/** @type {Element} */ g, /** @type {number[][][] | undefined} */ anneaux){
+  const id = g.getAttribute("data-id") || "";
+  if (!anneaux || !anneaux[0]) return debout.has(id);
+  const an = anneaux[0];
+  const oui = (boutsDuTrajet() || []).some(b => dedansAnneau(an, b.xy[0], b.xy[1]));
+  if (oui) debout.add(id); else debout.delete(id);
+  return oui;
+}
+function dedansAnneau(/** @type {number[][]} */ an, /** @type {number} */ x, /** @type {number} */ y){
+  let ok = false;
+  for (let i = 0, j = an.length - 1; i < an.length; j = i++){
+    const [xi, yi] = an[i], [xj, yj] = an[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ok = !ok;
+  }
+  return ok;
+}
+/* Le trajet apparaît, change ou s'efface : le plan entier change de hauteur
+   d'un coup — six cents stands en mouvement chacun dans sa couche coûteraient
+   plus qu'ils ne montreraient. */
+TRAJET_CHANGE.suis(() => {
+  if (!GL.actif || !GL.camera) return;
+  GL.massif = true;
+  toutRepeindreWebgl();
+});
+
 /* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
    sol, il en partageait la profondeur : vue de biais, la carte graphique ne
    départageait plus les deux, et le trajet se hachait de traînées pâles. */
 const SOL_ITINERAIRE = .08;
 const auDessusDuSol = (el) => GL.camera && el.closest("#itin") ? SOL_ITINERAIRE : 0;
 
-function hauteurVolume(el){
+function hauteurVolume(el, anneaux){
   if (!cameraEnJeu()) return 0;
   const g = el.parentNode;
   if (!g || !g.classList || g.firstElementChild !== el) return 0;
@@ -937,6 +975,8 @@ function hauteurVolume(el){
   if (!stand && !zone) return 0;
   if (stand && g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
   if (zone && g.classList.contains("masquee")) return 0;
+  /* Un trajet tracé : tout s'abaisse, sauf où il part, s'arrête et arrive. */
+  if (boutsDuTrajet() && !zoneMeublee(g) && !resteDebout(g, anneaux)) return HAUTEUR_ABAISSEE;
   /* Ce qu'on a choisi se hausse au-dessus des autres : vu de biais, un liseré
      au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
      des yeux en ouvrant sa fiche. */
@@ -1031,7 +1071,7 @@ function formeGl(el, cs, m, op, traces, acc){
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(PRISES), haut = hauteurVolume(el);
+    const prise = el.closest(PRISES), haut = hauteurVolume(el, anneaux);
     /* Le volume choisi fonce : monté devant un stand de même couleur, il s'en
        détache au lieu de s'y confondre. */
     const choisi = haut && el.parentNode.classList.contains("sel");
@@ -1186,8 +1226,9 @@ const hausses = new Map();
 function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
   const avant = hauteursPeintes.get(g);
   hauteursPeintes.set(g, haut);
-  // qui demande moins de mouvement le voit changer de hauteur d'un coup
-  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches){
+  // qui demande moins de mouvement le voit changer de hauteur d'un coup, comme
+  // le plan entier qui s'abaisse sous un trajet
+  if (avant !== undefined && avant !== haut && !MOUVEMENT_REDUIT.matches && !GL.massif){
     /* Un volume encore en route repart d'où il est, et non d'où il allait :
        un clic sur un autre stand pendant la montée du premier le faisait
        bondir à sa hauteur d'arrivée avant de redescendre. */

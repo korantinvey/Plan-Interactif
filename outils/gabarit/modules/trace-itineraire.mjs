@@ -18,6 +18,7 @@ import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseV
   suitLaVue, versScene } from "./vue.mjs";
 import { REDUIT } from "./ecran.mjs";
 import { mesureMarches, coupeMarche, distancesDesArrets } from "./itineraire.mjs";
+import { poseTrajet } from "./camera.mjs";
 
 /**
  * Ce que le plan montre en ce moment.
@@ -305,6 +306,10 @@ export function dessineItineraire(anime){
   if (tracage && !neuf && anime !== true) return;
   arreteTracage();
   const marches = marchesIci();
+  /* Ce que le trajet relie, pour la vue immersive : elle abaisse les stands
+     qui pourraient le cacher, sauf ceux-là (`camera.mjs` `poseTrajet`). */
+  poseTrajet(marches.length && TRACE ? (TRACE.bouts || TRACE.arrets || [])
+    .filter(b => b.p === state.plan).map(b => ({ p: b.p, xy: b.xy })) : null);
   if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
   if ((anime === undefined ? neuf : anime) && !REDUIT) lanceTracage();
   else peintItineraire(1);
