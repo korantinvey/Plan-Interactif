@@ -1137,9 +1137,9 @@ const partage = (liste, prises, deja) => {
 /** Ce qu'une couche désigne quand on la vise. */
 const designeGl = (d) => d.el || d.prise;
 
-/* Le stand qu'on choisit monte, celui qu'on quitte redescend : en une demi-
-   seconde, et non d'un coup. Un quart de seconde passait trop vite pour qu'on
-   voie le stand s'élever : on le voyait seulement arrivé en haut.
+/* Le stand qu'on choisit monte, celui qu'on quitte redescend : en un peu
+   plus d'une seconde, et non d'un coup. Plus vite, on voyait le stand arrivé
+   en haut plutôt que s'élever ; à cette allure, le mouvement se suit des yeux.
 
    La bibliothèque sait glisser d'une valeur à l'autre, mais pas ici : le bloc
    des stands se reconvertit en entier à chaque sélection, et sa transition
@@ -1148,7 +1148,7 @@ const designeGl = (d) => d.el || d.prise;
    hauteur change se peint, le temps du mouvement, dans une couche à lui, à sa
    hauteur d'arrivée, et la boucle d'animation (`animeCouche`) en règle
    l'échelle d'une image à l'autre — un seul nombre, rien ne se recalcule. */
-const DUREE_HAUSSE = 520;
+const DUREE_HAUSSE = 1040;
 const sortie = (/** @type {number} */ t) => 1 - Math.pow(1 - t, 3);
 /** @type {WeakMap<Element, number>} la dernière hauteur peinte de chaque volume */
 const hauteursPeintes = new WeakMap();
