@@ -149,6 +149,17 @@ export function brancheWebgl(){
   quandAffiche(planifieWebgl);
 }
 
+/* L'image de la toile n'est pas gardée d'une trame à l'autre. La
+   bibliothèque la garde par défaut, ce qui oblige la carte graphique d'un
+   téléphone — qui peint par tuiles et jette d'ordinaire ce qu'elle a montré
+   — à la recopier à chaque image. Rien ne relit la toile : la désignation lit
+   sa propre image, hors de l'écran.
+
+   La densité, elle, reste celle de l'écran : plafonnée à deux sur un
+   téléphone, le plan y paraissait moins net sans que le zoom en devienne
+   assez fluide pour le justifier. */
+const TOILE = { deviceProps: { webgl: { preserveDrawingBuffer: false } } };
+
 /** Le dessin prend la main dès que la bibliothèque et le plan sont là, dans
  *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
  *  posée. */
@@ -166,6 +177,7 @@ export function monteWebgl(){
   GL.camera = enCamera();
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
+    ...TOILE,
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
