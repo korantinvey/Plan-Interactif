@@ -246,7 +246,7 @@ export function versScene(/** @type {number} */ x, /** @type {number} */ y){
  * La vue ramenée près du hall : son milieu ne s'écarte pas de l'emprise de
  * plus de `DEBORD_VUE` fois sa taille. Elle est corrigée sur place, et rendue.
  *
- * Le recul seul ne suffisait pas : on s'arrêtait à huit largeurs de hall,
+ * Le recul seul ne suffisait pas : on s'arrêtait à quelques largeurs de hall,
  * mais rien n'empêchait de faire glisser le plan hors de l'écran, et l'on se
  * retrouvait devant un quartier vide, ou devant rien, sans savoir où revenir.
  * Retenue ici, à chaque image, plutôt que dans chaque geste : le glissement,

@@ -222,18 +222,22 @@ export const forceCarte = (cal) =>
   cal && isFinite(cal.force) ? Math.max(0.1, Math.min(1, cal.force)) : FORCE_CARTE;
 
 /* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
-   qu'il n'y a rien au-delà des murs, huit fois dès qu'une carte s'y trouve —
+   qu'il n'y a rien au-delà des murs, un peu plus dès qu'une carte s'y trouve —
    c'est pour la voir qu'on l'a posée, et la vue s'arrêtait au bord de la
-   première rue. L'emprise, elle, ne bouge pas : elle tient aussi la grille
-   d'itinéraire, au demi-mètre. */
-const RECUL_CARTE = 8;
+   première rue. Un peu plus, et non huit fois comme d'abord : de si loin le
+   hall n'était plus qu'un timbre au milieu du quartier, et l'on regardait la
+   ville plutôt que le salon. Trois fois et un tiers montrent les abords —
+   parkings, entrées, rues qui y mènent — et s'arrêtent là. L'emprise, elle,
+   ne bouge pas : elle tient aussi la grille d'itinéraire, au demi-mètre. */
+const RECUL_CARTE = 3.3;
 
 /* Jusqu'où le milieu de la vue s'écarte du pavillon, en part de la vue : trois
-   dixièmes de part et d'autre de son emprise. Le hall garde ainsi au moins un
-   cinquième de l'écran dans chaque sens, quel que soit le zoom — on peut
-   regarder ce qui le borde, non le perdre (`vue.mjs` `retiensVue`).
+   vingtièmes de part et d'autre de son emprise. Le hall garde ainsi plus d'un
+   tiers de l'écran dans chaque sens, quel que soit le zoom — on peut regarder
+   ce qui le borde, non le perdre (`vue.mjs` `retiensVue`). Le double, essayé
+   d'abord, laissait encore glisser le hall jusqu'au bord de l'écran.
 
-   Ni plus serré, ni sur le seul pavillon : le plan s'ajuste et se centre dans
+   Pas sur le seul pavillon : le plan s'ajuste et se centre dans
    la bande que le tiroir et la fiche laissent libre, et son milieu tombe
    alors hors du hall — le retenir là défaisait le cadrage. Nul pendant qu'un
    exploitant cale la carte, qui peut avoir à chercher loin. */
@@ -276,7 +280,7 @@ export function recul(){
  * Le carré de sol que le fond couvre, en mètres du plan — au-delà, rien ne
  * se télécharge.
  *
- * Le dézoom s'arrête à huit largeurs de pavillon : on ne voit jamais plus
+ * Le dézoom s'arrête à `RECUL_CARTE` largeurs de pavillon : on ne voit jamais plus
  * loin, et le glissement retient le hall à l'écran (`DEBORD_VUE`) — sauf à
  * incliner le plan : la vue immersive découvre alors le sol jusqu'à
  * l'horizon, et en demandait les tuiles par centaines. Le carré tient la vue
@@ -290,12 +294,12 @@ function zoneDuFond(){
   if (CALAGE_EN_COURS) return null;
   const p = DATA && DATA.plans ? P() : null, e = p && p.emprise;
   if (!e) return null;
-  /* Le compte, pour la vue la plus large — huit largeurs, deux fois plus
-     haute sur un téléphone — poussée au bout de ce que `DEBORD_VUE` permet :
-     son bord le plus lointain tombe à un demi-hall, plus 0,3 + 0,5 fois sa
-     hauteur de seize largeurs, du centre. Treize largeurs et un tiers : on en
-     prend quatorze. */
-  const d = RECUL_CARTE * 1.75 * Math.max(e.x1 - e.x0, e.y1 - e.y0);
+  /* Le compte, pour la vue la plus large — `RECUL_CARTE` largeurs, deux fois
+     plus haute sur un téléphone — poussée au bout de ce que `DEBORD_VUE`
+     permet : son bord le plus lointain tombe à un demi-hall, plus
+     `DEBORD_VUE` + 0,5 fois sa hauteur, du centre. */
+  const t = Math.max(e.x1 - e.x0, e.y1 - e.y0);
+  const d = t * (0.5 + RECUL_CARTE * 2 * (DEBORD_VUE + 0.5));
   const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
   return { x0: cx - d, y0: cy - d, x1: cx + d, y1: cy + d };
 }
