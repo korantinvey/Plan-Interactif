@@ -795,17 +795,17 @@ Importé par :
 
 detourage-travail · logos-stands · marque
 
-### `modules/distinctions.mjs` — 448 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 450 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
 `texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 78
-`traceDist` 109 · `coinDuTrace` 166 · `coinDeBoite` 205 · `oublieDists` 216
-`modesDuPlan` 220 · `releveDists` 224 · `dessineDists` 253 · `marquesListe` 282
-`poseDistsFiche` 312 · `refaitDistsFiche` 352 · `modeDist` 398 · `couleurDist` 410
-`appliqueDists` 432
+`traceDist` 109 · `coinDuTrace` 166 · `coinDeBoite` 207 · `oublieDists` 218
+`modesDuPlan` 222 · `releveDists` 226 · `dessineDists` 255 · `marquesListe` 284
+`poseDistsFiche` 314 · `refaitDistsFiche` 354 · `modeDist` 400 · `couleurDist` 412
+`appliqueDists` 434
 
 Importe :
 

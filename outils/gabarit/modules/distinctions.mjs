@@ -185,7 +185,9 @@ function coinDuTrace(d, droite, tuiles){
   }
   // l'angle haut droit tire vers +x et −y, le haut gauche vers −x et −y
   const sx = droite ? 1 : -1;
-  let mieux = null, score = -Infinity;
+  /** @type {{ an: number[][], i: number } | null} */
+  let mieux = null;
+  let score = -Infinity;
   for (const an of anneaux) an.forEach((q, i) => {
     const t = sx * q[0] - q[1];
     if (t > score + 1e-6){ score = t; mieux = { an, i }; }
