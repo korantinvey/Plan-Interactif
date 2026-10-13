@@ -10,7 +10,7 @@ module.exports = {
   "Verrouiller le calque : ni dessin, ni suppression": "Lock layer: no drawing, no deleting",
   "⇅ Réorganiser les calques": "⇅ Reorder layers",
   "Contour seul ou surface remplie": "Outline only or filled",
-  "Placer les libellés à la main": "Place labels by hand",
+  "Placer les libellés et les logos à la main": "Place labels and logos by hand",
   "Reprendre ou ajouter des formes à la main": "Reshape or add shapes by hand",
   "Couche verrouillée : ouvrez son cadenas pour reprendre ou ajouter une forme.":
     "Locked layer: open its padlock to reshape or add a shape.",

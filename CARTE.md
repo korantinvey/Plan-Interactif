@@ -1594,14 +1594,14 @@ Portes :
 
 - `confieLancementAdmin` (partition) — les branchements de l'exploitant prennent leur rang dans le lancement public, dont l'ordre est le comportement
 
-### `modules/libelle-place.mjs` — 73 l. → plan, plan-admin
+### `modules/libelle-place.mjs` — 104 l. → plan, plan-admin
 
 - l.1 · Placer un libellé à la main — ce que le plan public en reçoit
 
 Fonctions :
 
 `cleLibelle` 36 · `poseModeLibelles` 45 · `poseLibelleChoisi` 50 · `empreinteLibelle` 62
-`placementLibelle` 70
+`placementLibelle` 70 · `cleLogo` 89 · `empreinteLogo` 95 · `placementLogo` 101
 
 Importe :
 
@@ -1609,8 +1609,8 @@ configuration · texte-plan
 
 Importé par :
 
-edition-en-cours · gestes-admin · libelles · nom-emplacement · pile · placement-libelles
-tutoriel · webgl
+edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
+placement-libelles · tutoriel · webgl
 
 ### `modules/libelles.mjs` — 293 l. → plan, plan-admin
 
@@ -1660,23 +1660,23 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 782 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 788 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 80 · `tassement` 93 · `annoncePret` 144 · `pret` 150 · `geleLogos` 157
-`arriveeSansFond` 201 · `grande` 217 · `pompeGrandes` 231 · `demandeGrande` 235
-`image` 274 · `sansFond` 294 · `lanceTravailleur` 333 · `demandeDetourage` 354 · `pompe` 361
-`parLaPageSeule` 381 · `detoureRevenu` 390 · `toile` 414 · `logoPose` 451
-`sourceDuToit` 461 · `cedeAuLogo` 474 · `CARRE` 503 · `filtrage` 536 · `plancheDe` 553
-`extensionPlanche` 589 · `pres` 621 · `solVu` 632 · `logosARevoir` 649 · `groupe` 664
-`oublie` 675 · `annoncePoses` 708 · `couchesLogos` 724
+`finesse` 81 · `tassement` 94 · `annoncePret` 145 · `pret` 151 · `geleLogos` 158
+`arriveeSansFond` 202 · `grande` 218 · `pompeGrandes` 232 · `demandeGrande` 236
+`image` 275 · `sansFond` 295 · `lanceTravailleur` 334 · `demandeDetourage` 355 · `pompe` 362
+`parLaPageSeule` 382 · `detoureRevenu` 391 · `toile` 415 · `logoPose` 452
+`sourceDuToit` 462 · `cedeAuLogo` 475 · `CARRE` 504 · `filtrage` 537 · `plancheDe` 554
+`extensionPlanche` 590 · `pres` 622 · `solVu` 633 · `logosARevoir` 650 · `groupe` 665
+`oublie` 676 · `annoncePoses` 709 · `couchesLogos` 725
 
 Importe :
 
-annonce · camera · detourage · dom · donnees · ecran · vignettes · vue-etat
+annonce · camera · detourage · dom · donnees · ecran · libelle-place · vignettes · vue-etat
 
 Importé par :
 
@@ -2125,16 +2125,16 @@ Importé par :
 
 plan-admin
 
-### `modules/placement-libelles.mjs` — 178 l. → plan-admin
+### `modules/placement-libelles.mjs` — 207 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
-`lacheLibelle` 42 · `posePlacement` 51 · `libelleAutomatique` 68
-`modePlacementLibelles` 77 · `majPaletteLibelle` 94 · `choisitLibelle` 111
-`pousseLibelle` 118 · `libellePointerDown` 126 · `libellePointerMove` 142
-`libellePointerUp` 151 · `branchePlacementLibelles` 164
+`lacheLibelle` 43 · `choisi` 52 · `repeint` 65 · `posePlacement` 75
+`libelleAutomatique` 92 · `modePlacementLibelles` 101 · `majPaletteLibelle` 120
+`choisitLibelle` 139 · `pousseLibelle` 146 · `libellePointerDown` 154
+`libellePointerMove` 171 · `libellePointerUp` 180 · `branchePlacementLibelles` 193
 
 Importe :
 
