@@ -24,19 +24,25 @@
    classe, posée par `ambiance.mjs`, et `webgl.mjs` demande ici ses couches.
    Le SVG (`?rendu=svg`) n'en pose pas : ses noms restent.
 
-   Seules les vignettes déjà reçues par lot (`vignettes.mjs`) font un logo :
-   recadrées à la synchronisation, elles pèsent quelques kilo-octets, et le lot
-   est déjà parti au démarrage. Sans vignette, le stand garde son nom.
+   Le toit pose la grande vignette (`vignettes.mjs` `adresseGrande`),
+   fabriquée à la synchronisation et déjà détourée — son fond blanc retiré
+   une fois pour tous (`marque.mjs` `vignetteDeLogo`). Ce tri se faisait ici,
+   chez chaque visiteur, deux logos à la fois : sur un écran de bureau, la
+   centaine de stands autour de la vue de Franchise Expo paraissait un à un,
+   pendant de longues secondes, et leurs noms s'étaient tus avant. Le nom ne
+   cède donc la place qu'au logo prêt à poser (`logoPose`). Un salon que la
+   synchronisation n'a pas encore refait n'a pas de grande, ou une grande au
+   fond blanc : la page la détoure alors elle-même, ou à défaut la petite du
+   lot. Sans vignette, le stand garde son nom.
 
    Le logo d'origine, deux à quatre fois plus fin, a été demandé un temps à
    sa source de très près : il pèse jusqu'à deux mégaoctets, et le gain ne
-   valait pas ce chargement pour un toit. La vignette sert à tous les zooms.
+   valait pas ce chargement pour un toit.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
-import { VIGNETTE_SORTIE } from "./marque.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 
@@ -100,8 +106,9 @@ VIGNETTES_ARRIVEES.suis(() => PANNEAU_PRET.dis());
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
 const images = new Map();
 /** Les vignettes détourées, à leur pleine finesse, par clé, de la moins
- *  récemment posée à la plus récente. */
-/** @type {Map<string, HTMLCanvasElement | null>} */
+ *  récemment posée à la plus récente : une toile quand la page les a
+ *  détourées, l'image même quand elles sont arrivées sans fond. */
+/** @type {Map<string, HTMLCanvasElement | HTMLImageElement | null>} */
 const detourees = new Map();
 /* Combien on en garde, en pixels. Chacune tient les siens — un
    demi-mégaoctet pour une vignette de six cents sur deux cents, le triple pour
@@ -109,8 +116,8 @@ const detourees = new Map();
    cents stands les aurait toutes gardées. Vingt millions de pixels, quatre-
    vingts mégaoctets, couvrent la vue et ses abords ; une vignette oubliée se
    détoure à nouveau quand on revient vers elle, comme à la première fois. Les
-   vignettes reçues, elles, restent : quelques kilo-octets chacune, et c'est
-   par elles que le nom d'un stand sait qu'il a un logo. */
+   vignettes reçues, elles, restent : quelques kilo-octets chacune — et la
+   grande arrivée sans fond n'est que l'image reçue, qui ne s'oublie pas. */
 const PIXELS_GARDES = 20e6;
 /** Les toiles prêtes à poser, par clé et par largeur — seules celles de la
  *  dernière pose : une finesse quittée se refait d'une simple réduction. */
@@ -118,15 +125,33 @@ const PIXELS_GARDES = 20e6;
 const toiles = new Map();
 
 /** Les grandes vignettes, par clé : demandées par les seuls toits vus de
- *  près, quand la petite ne suffit plus à leur finesse. */
+ *  près. */
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
 const grandes = new Map();
-/* La petite doit manquer d'au moins ce rapport pour qu'on aille chercher la
-   grande : en deçà, l'écart ne se voit pas, et le trajet coûterait pour rien. */
-const PLUS_FIN = 1.25;
 
-/** La grande vignette décodée, ou rien : pas encore arrivée, ou inutile —
- *  l'original n'en tenait pas plus, et le service répond qu'il n'y en a pas. */
+/**
+ * L'image est-elle arrivée sans fond ? Un de ses coins transparent suffit à
+ * le dire : une grande au fond blanc — fabriquée avant que la
+ * synchronisation ne détoure — n'en a aucun. Quatre pixels lus, au lieu
+ * de tous les trier.
+ */
+function arriveeSansFond(/** @type {HTMLImageElement} */ i){
+  try {
+    const t = document.createElement("canvas");
+    t.width = 2; t.height = 2;
+    const ctx = t.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return false;
+    const w = i.naturalWidth, h = i.naturalHeight;
+    for (const [x, y] of [[0, 0], [1, 0], [0, 1], [1, 1]])
+      ctx.drawImage(i, x * (w - 1), y * (h - 1), 1, 1, x, y, 1, 1);
+    const d = ctx.getImageData(0, 0, 2, 2).data;
+    return d[3] < 16 || d[7] < 16 || d[11] < 16 || d[15] < 16;
+  } catch (e) { return false; }
+}
+
+/** La grande vignette décodée, ou rien : pas encore arrivée, ou absente —
+ *  le service répond qu'il n'y en a pas pour un logo que la synchronisation
+ *  n'a pas encore refait. Arrivée sans fond, elle est prête à poser. */
 function grande(/** @type {string} */ cle){
   const deja = grandes.get(cle);
   if (deja) return typeof deja === "string" ? null : deja;
@@ -137,10 +162,14 @@ function grande(/** @type {string} */ cle){
   // lue par le détourage : une origine qui ne le permettrait pas la rendrait muette
   i.crossOrigin = "anonymous";
   i.onload = () => {
-    grandes.set(cle, i.naturalWidth && i.naturalHeight ? i : "panne");
+    const lue = Boolean(i.naturalWidth && i.naturalHeight);
+    grandes.set(cle, lue ? i : "panne");
+    // avant l'annonce : les noms qu'elle fait refaire doivent la savoir prête
+    if (lue && arriveeSansFond(i)) detourees.set(cle + "+g", i);
     PANNEAU_PRET.dis();
   };
-  i.onerror = () => grandes.set(cle, "panne");
+  // sans grande, le toit se rabat sur la petite : il doit l'apprendre
+  i.onerror = () => { grandes.set(cle, "panne"); PANNEAU_PRET.dis(); };
   i.src = src;
   return null;
 }
@@ -190,6 +219,9 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
    paraît quand le sien revient (`PANNEAU_PRET`). Sans travailleur — script
    absent des essais, navigateur qui le refuse —, la page détoure elle-même,
    mais un logo par tâche : la page respire entre deux.
+
+   Depuis que la synchronisation détoure la grande, ce chemin n'est plus que
+   le recours d'un salon qu'elle n'a pas encore refait.
    ------------------------------------------------------------ */
 /** Ce qui attend son détourage, et ce qui y est. */
 /** @type {{ cle: string, i: CanvasImageSource, iw: number, ih: number }[]} */
@@ -312,11 +344,26 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   return toiles.get(k) || null;
 }
 
-/** Le stand montre-t-il son logo de près ? Sa vignette se décode si elle ne
- *  l'est pas encore. */
+/** Le stand montre-t-il son logo de près ? Seulement s'il est prêt à poser :
+ *  un nom qui se taisait dès la vignette reçue laissait le stand vide tant
+ *  que son logo se préparait. */
 export function logoPose(/** @type {any} */ s){
   return Boolean(s && s.vignette &&
-    document.documentElement.classList.contains(CLASSE_LOGOS) && image(s.vignette));
+    document.documentElement.classList.contains(CLASSE_LOGOS) &&
+    (detourees.get(s.vignette + "+g") || detourees.get(s.vignette)));
+}
+
+/**
+ * Ce que le toit d'un stand pose : la grande, arrivée sans fond ; une grande
+ * au fond blanc, que la page détoure ; à défaut de grande, la petite, que la
+ * page détoure aussi. Rien tant que la grande est en route.
+ */
+function sourceDuToit(/** @type {string} */ cle){
+  const g = grande(cle);
+  if (g) return { cle: cle + "+g", i: g };
+  if (grandes.get(cle) !== "panne") return null;
+  const i = image(cle);
+  return i && { cle, i };
 }
 
 /**
@@ -503,11 +550,13 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
   const posees = new Set(data.map(d => d.t.dataset.cle));
   for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
   const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
+  // une image arrivée sans fond ne coûte rien de plus : on la garde
+  const toileDe = (/** @type {any} */ d) => d instanceof HTMLCanvasElement ? d : null;
   let pixels = 0;
-  for (const d of detourees.values()) if (d) pixels += d.width * d.height;
+  for (const d of detourees.values()){ const t = toileDe(d); if (t) pixels += t.width * t.height; }
   for (const [cle, d] of [...detourees]){
     if (pixels <= PIXELS_GARDES) break;
-    if (enJeu.has(cle)) continue;
+    if (enJeu.has(cle) || (d && !toileDe(d))) continue;
     detourees.delete(cle);
     if (d) pixels -= d.width * d.height;
   }
@@ -536,28 +585,18 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     const [cx, cy] = s.c;
     if (cx < couvert.x0 || cx > couvert.x1 || cy < couvert.y0 || cy > couvert.y1) continue;
     const g = groupe(s.id), trace = g && g.firstElementChild;
-    const i = trace && image(s.vignette);
-    if (!i) continue;
+    const src = trace && sourceDuToit(s.vignette);
+    if (!src) continue;
     vus.add(s.id);
+    const iw = src.i.naturalWidth, ih = src.i.naturalHeight;
     // le toit, d'après la boîte du stand : le logo en suit les côtés
     const bb = s.bb || [0, 0];
-    const rapport = i.naturalWidth / (i.naturalHeight / tasse);
+    const rapport = iw / (ih / tasse);
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
     const voulue = Math.max(PIXELS_MIN, large * finesseCouverte);
-    /* La petite a été réduite à sa taille de fiche : quand le toit en demande
-       nettement plus, et qu'elle a bien été réduite — un côté au plafond —,
-       la grande prend sa place dès qu'elle est là. Sa clé de toile se
-       distingue, pour que les deux ne se confondent pas. */
-    let src = i, cleSrc = s.vignette;
-    if (voulue > i.naturalWidth * PLUS_FIN && Math.max(i.naturalWidth, i.naturalHeight) >= VIGNETTE_SORTIE - 1){
-      const g = grande(s.vignette), cleG = s.vignette + "+g";
-      // la petite reste posée tant que la grande se détoure
-      if (g && detourees.has(cleG)){ src = g; cleSrc = cleG; }
-      else if (g) demandeDetourage(cleG, g, g.naturalWidth, g.naturalHeight);
-    }
-    const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue, tasse);
+    const t = toile(src.cle, src.i, iw, ih, voulue, tasse);
     if (!t) continue;
     /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
        sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et

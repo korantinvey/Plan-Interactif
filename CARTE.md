@@ -782,7 +782,7 @@ Importe :
 
 detourage
 
-### `modules/detourage.mjs` — 157 l. → plan, plan-admin
+### `modules/detourage.mjs` — 157 l. → plan, plan-admin, console
 
 - l.1 · Le détourage d'un logo — son fond blanc retiré, pixel par pixel
 
@@ -792,7 +792,7 @@ Fonctions :
 
 Importé par :
 
-detourage-travail · logos-stands
+detourage-travail · logos-stands · marque
 
 ### `modules/distinctions.mjs` — 385 l. → plan, plan-admin
 
@@ -1659,39 +1659,44 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 583 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 622 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 70 · `tassement` 83 · `grande` 130 · `image` 149 · `sansFond` 169
-`lanceTravailleur` 205 · `demandeDetourage` 226 · `pompe` 233 · `parLaPageSeule` 253
-`detoureRevenu` 263 · `toile` 288 · `logoPose` 317 · `cedeAuLogo` 327 · `CARRE` 356
-`filtrage` 389 · `plancheDe` 406 · `extensionPlanche` 442 · `pres` 473 · `logosARevoir` 481
-`groupe` 491 · `oublie` 502 · `couchesLogos` 525
+`finesse` 76 · `tassement` 89 · `arriveeSansFond` 138 · `grande` 155 · `image` 178
+`sansFond` 198 · `lanceTravailleur` 237 · `demandeDetourage` 258 · `pompe` 265
+`parLaPageSeule` 285 · `detoureRevenu` 295 · `toile` 320 · `logoPose` 350
+`sourceDuToit` 361 · `cedeAuLogo` 374 · `CARRE` 403 · `filtrage` 436 · `plancheDe` 453
+`extensionPlanche` 489 · `pres` 520 · `logosARevoir` 528 · `groupe` 538 · `oublie` 549
+`couchesLogos` 574
 
 Importe :
 
-annonce · camera · detourage · dom · donnees · marque · vignettes
+annonce · camera · detourage · dom · donnees · vignettes
 
 Importé par :
 
 ambiance · libelles · webgl
 
-### `modules/marque.mjs` — 314 l. → plan, plan-admin, console
+### `modules/marque.mjs` — 335 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
 
 Fonctions :
 
-`marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
-`vignetteMarque` 130 · `webp64` 161 · `boiteMarque` 179 · `toileMarque` 245
-`vignetteDeLogo` 275
+`marquePrete` 56 · `recadreMarque` 60 · `marqueRecadree` 86 · `imageChargee` 115
+`vignetteMarque` 131 · `webp64` 171 · `boiteMarque` 189 · `toileMarque` 255 · `sansFond` 271
+`vignetteDeLogo` 298
+
+Importe :
+
+detourage
 
 Importé par :
 
-fiche · logos-stands · recherche · synchronisation
+fiche · recherche · synchronisation
 
 ### `modules/mesure.mjs` — 654 l. → plan, plan-admin
 
@@ -2724,14 +2729,14 @@ Importé par :
 
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor
 
-### `modules/synchronisation.mjs` — 277 l. → console
+### `modules/synchronisation.mjs` — 280 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
 `brancheSynchronisation` 35 · `etapesPressenties` 53 · `synchronise` 68
-`fabriqueLesVignettes` 167 · `oublieLePlan` 262 · `envoieVignettes` 270
+`fabriqueLesVignettes` 167 · `oublieLePlan` 265 · `envoieVignettes` 273
 
 Importe :
 
@@ -3234,7 +3239,7 @@ Portes :
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
 `champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
 
-### `supabase/functions/vignettes/index.ts` — 237 l.
+### `supabase/functions/vignettes/index.ts` — 253 l.
 
 `cors` 27 · `service` 43 · `adressesDeLogos` 52 · `adressesDuSalon` 77
 
@@ -3296,6 +3301,7 @@ Portes :
 - `20261010121534_les_erreurs_des_pages_du_plan.sql` — erreur_page, fn erreur_publique, fn erreurs_du_salon, fn purge_erreurs
 - `20261013091043_grande_vignette_des_logos.sql` — vignette_de_logo
 - `20261013121249_vignettes_de_logos_en_avif.sql` — vignette_de_logo
+- `20261013132628_grande_vignette_detouree.sql` — vignette_de_logo
 
 ## Le reste
 

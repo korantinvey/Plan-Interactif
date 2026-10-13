@@ -15,6 +15,7 @@
    décoder des images : c'est le navigateur de l'exploitant qui s'en charge,
    une fois par salon, avec la puissance qu'une fonction n'a pas.
    ============================================================ */
+import { detoure } from "./detourage.mjs";
 
 /**
  * La marque sans le vide qui l'entoure.
@@ -148,13 +149,22 @@ const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
    et la fiche ne lui accorde que trois cents pixels sur soixante-douze. Six
    cents couvrent un écran dense sans peser trois kilo-octets de plus. */
 export const VIGNETTE_SORTIE = 600;
-/* La grande, pour le toit d'un stand vu de près en vue immersive, où un logo
-   occupe huit cents pixels d'écran dense. Elle n'est demandée que là, un logo
-   à la fois : elle peut peser le double sans rien coûter aux fiches. Plus
-   finement encodée que la petite — le défaut du navigateur bave sur le bord
-   des lettres, que le toit montre de près. Seulement quand l'original tient
-   nettement plus que la petite : sinon elle ne serait qu'une copie. */
-const GRANDE_SORTIE = 1000, GRANDE_QUALITE = .9, GRANDE_UTILE = 1.2;
+/* La grande, le logo du toit d'un stand (`logos-stands.mjs`), où il occupe
+   de près huit cents pixels d'écran dense. Elle n'est demandée que là : elle
+   peut peser le double sans rien coûter aux fiches. Plus finement encodée que
+   la petite — le défaut du navigateur bave sur le bord des lettres, que le
+   toit montre de près.
+
+   Elle part détourée, son fond blanc retiré (`detourage.mjs`). Ce tri se
+   faisait chez chaque visiteur, deux logos à la fois : sur un écran de
+   bureau, la centaine de stands autour de la vue de Franchise Expo
+   paraissait un à un, pendant de longues secondes. Il se fait ici une fois
+   pour tous, et le toit pose la grande telle quelle. La petite garde son
+   fond : des modèles de fiche ont un en-tête coloré, où le logo se montre
+   tel que l'exposant l'a donné. C'est pourquoi la grande se fait pour chaque
+   logo, même quand l'original n'en tient pas plus que la petite : elle est
+   alors de sa taille, mais détourée. */
+const GRANDE_SORTIE = 1000, GRANDE_QUALITE = .9;
 
 /** Une toile en webp, en base64 ; `null` si le navigateur ne sait pas
  *  l'encoder. */
@@ -256,6 +266,19 @@ async function toileMarque(octets, im, b, cote){
 }
 
 
+/** Le fond blanc de cette toile retiré, en place ; faux si elle ne se lit
+ *  pas. */
+function sansFond(/** @type {HTMLCanvasElement} */ t){
+  try {
+    const ctx = t.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return false;
+    const img = ctx.getImageData(0, 0, t.width, t.height);
+    detoure(img.data, t.width, t.height);
+    ctx.putImageData(img, 0, 0);
+    return true;
+  } catch (e) { return false; }
+}
+
 /**
  * La vignette d'un logo, telle que la console l'envoie à la base.
  *
@@ -297,15 +320,13 @@ export async function vignetteDeLogo(source, avif = null){
     let image = avif ? avif(toile) : null;
     if (!image){ format = "webp"; image = await webp64(toile); }
     if (!image) return null;
-    /* La grande, du même original et du même cadre. Vide quand elle
-       n'apporterait rien, ou que le navigateur n'a pas su la faire : la base
-       la tient alors pour faite, et le toit garde la petite. */
+    /* La grande, du même original et du même cadre, détourée. Vide quand le
+       navigateur n'a pas su la faire : la base la tient alors pour faite, et
+       le toit garde la petite, qu'il détoure lui-même. */
     let grande = "";
-    if (Math.max(cadre.w, cadre.h) > VIGNETTE_SORTIE * GRANDE_UTILE){
-      const t = await toileMarque(octets, im, cadre, GRANDE_SORTIE);
-      grande = (t && (format === "avif" ? avif(t) : await webp64(t, GRANDE_QUALITE))) || "";
-    }
-    return { source, format, image, grande, largeur: toile.width, hauteur: toile.height };
+    const t = await toileMarque(octets, im, cadre, GRANDE_SORTIE);
+    if (t && sansFond(t)) grande = (format === "avif" ? avif(t) : await webp64(t, GRANDE_QUALITE)) || "";
+    return { source, format, image, grande, detouree: true, largeur: toile.width, hauteur: toile.height };
   } catch (e) {
     return null;
   } finally {

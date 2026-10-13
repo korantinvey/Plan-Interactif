@@ -12,8 +12,10 @@ const { prepare, attendLaListe, DONNEES } = require("./aide");
 test.use({ serviceWorkers: "block" });
 
 /** Le plan public, logos demandés, de près sur le premier stand de la liste.
- *  Rend les erreurs relevées, ou rien sans carte graphique. */
-async function deP(page, ambiance) {
+ *  Rend les erreurs relevées, ou rien sans carte graphique. Sans `grandes`,
+ *  l'API n'a de grande pour aucun logo — un salon que la synchronisation n'a
+ *  pas refait — et le toit pose la petite, que la page détoure. */
+async function deP(page, ambiance, grandes = false) {
   const erreurs = await prepare(page);
   await page.goto("/plan-smcl.html");
   // des vignettes rouges sur fond blanc, que le détourage laisse rouges, de
@@ -25,11 +27,22 @@ async function deP(page, ambiance) {
     x.fillStyle = "#c00"; x.fillRect(10, 8, c.width - 20, 24);
     return c.toDataURL("image/webp").split(",")[1];
   }));
+  // la grande telle que la synchronisation la fait : déjà sans fond
+  const grande = Buffer.from(await page.evaluate(() => {
+    const c = document.createElement("canvas"); c.width = 200; c.height = 60;
+    const x = /** @type {CanvasRenderingContext2D} */ (c.getContext("2d"));
+    x.fillStyle = "#c00"; x.fillRect(16, 12, 168, 36);
+    return c.toDataURL("image/png").split(",")[1];
+  }), "base64");
   const donnees = JSON.parse(JSON.stringify(DONNEES));
   donnees.plans[0].stands.forEach((s, i) => { s.vignette = (i % 7).toString(16).padStart(8, "a"); });
   await page.route((u) => u.pathname === "/api/plan", (r) => {
     const u = new URL(r.request().url()), lot = u.searchParams.get("vignettes");
     if (lot) return r.fulfill({ json: Object.fromEntries(lot.split(",").map((k) => [k, webps[parseInt(k, 16) % 7]])) });
+    if (u.searchParams.get("grande")) {
+      return grandes ? r.fulfill({ contentType: "image/png", body: grande })
+        : r.fulfill({ status: 404, body: "Pas de grande vignette." });
+    }
     if (u.searchParams.get("entete")) return r.fulfill({ json: { v: "essai-logos" } });
     return r.fulfill({ status: 200, contentType: "application/json",
                        headers: { "X-Version": "essai-logos" }, body: JSON.stringify(donnees) });
@@ -105,5 +118,18 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
 
   const apres = await logosPoses(page);
   for (const l of apres) expect(l.cas, l.cle).not.toEqual([0, 0, 1, 1]);
+  expect(erreurs).toEqual([]);
+});
+
+/* La grande arrive détourée de la synchronisation : le toit la pose telle
+   quelle, sans repasser par le détourage de la page — qui, deux logos à la
+   fois, faisait paraître un à un la centaine de stands d'un écran de
+   bureau. */
+test("la grande arrivée sans fond se pose telle quelle", async ({ page }) => {
+  test.setTimeout(90_000);
+  const erreurs = await deP(page, "classique", true);
+  test.skip(!erreurs, "pas de carte graphique");
+  const poses = await logosPoses(page);
+  for (const l of poses) expect(l.cle, "la grande, et non la petite").toContain("+g@");
   expect(erreurs).toEqual([]);
 });

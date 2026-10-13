@@ -188,7 +188,10 @@ async function fabriqueLesVignettes(e) {
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
     let lot;
     try {
-      lot = await fonction("vignettes", { evenementId: e.id, format, ecartees: [...ecartees, ...enWebp] });
+      /* « detoure » : la grande part sans son fond (`marque.mjs`
+         `vignetteDeLogo`), et celles d'avant, au fond blanc, sont à refaire. */
+      lot = await fonction("vignettes", { evenementId: e.id, format, detoure: true,
+        ecartees: [...ecartees, ...enWebp] });
     } catch (err) {
       /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
          qui ne commence jamais sans rien annoncer laisse chercher du mauvais
