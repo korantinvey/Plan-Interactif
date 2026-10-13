@@ -627,7 +627,8 @@ function constTexte(){
       const am = this.getAttributeManager();
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
-    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0,
+    // pendant un geste, l'atlas des grands textes écrit aussi les petits (`filtreCouches`)
+    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: GL.geste && this.props.modeFiltre === 2 ? 0 : this.props.modeFiltre || 0,
       muet: this.props.muetALEcran && !GL.geste ? 1 : 0, etire: this.props.etireAPlat || 1 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
@@ -889,9 +890,19 @@ function couchesPetites(id, commun, K, sousPixel){
  * texte immobile : pendant un geste, les trois passes se taisent, et la
  * couche ordinaire, muette au repos, les remplace. Au repos, celle-ci ne
  * sert plus qu'à la désignation.
+ *
+ * Restaient deux couches par groupe de noms, une par atlas — petit et grand
+ * —, et quatre de plus pour le liseré des petits : seize couches de texte sur
+ * trente-cinq, le plus gros poste d'une image de zoom après la réunion des
+ * jetons. Pendant un geste, l'atlas des grands textes écrit donc tous les
+ * noms, et celui des petits se tait, liseré compris — le grand trace le sien
+ * dans son champ de distance. Son défaut, des lettres plus grêles sous une
+ * douzaine de pixels, ne se voit pas sur un texte qui bouge ; au repos, chaque
+ * nom retrouve son atlas. La désignation, elle, garde les deux.
  */
 function filtreCouches(/** @type {any} */ { layer, isPicking }){
   const p = layer.props;
+  if (GL.geste && !isPicking && p.modeFiltre === 1) return false;
   if (p.muetALEcran) return isPicking || GL.geste;
   if (p.passeSousPixel) return !GL.geste;
   return true;
