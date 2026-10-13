@@ -518,7 +518,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesFigurants(), ...(GL.camera ? couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom) : []), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesFigurants(), ...(GL.camera ? couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device) : []), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */

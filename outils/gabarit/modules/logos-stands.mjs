@@ -151,6 +151,7 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
     if (k >= w) file.push(k - w);
     if (k < w * (h - 1)) file.push(k + w);
   }
+  creux(px, vu, w, h, clarte);
   /* Le bord. Un pixel du contour mêle la couleur du logo au blanc du fond :
      laissé tel quel, il dessinait un liseré clair et crénelé sur le toit. On
      défait ce mélange — sa part de blanc devient de la transparence, et sa
@@ -196,6 +197,60 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
 }
 
 
+
+/* Un creux est du fond si les trois quarts de son pourtour sont à moins de
+   cette part du petit côté du logo — une épaisseur de trait — du fond
+   retiré. */
+const TRAIT = .12;
+
+/**
+ * Les creux des lettres. Le fond ne se retire que de proche en proche depuis
+ * le pourtour : l'œil d'un « a », d'un « e », d'un « A » n'y touche pas, et
+ * restait blanc sur le toit coloré. Un clair enclos est donc du fond aussi
+ * quand il n'est séparé du fond retiré que par un trait mince ; le blanc d'un
+ * texte posé sur un aplat, loin du bord de l'aplat, reste.
+ */
+function creux(/** @type {Uint8ClampedArray} */ px, /** @type {Uint8Array} */ vu,
+  /** @type {number} */ w, /** @type {number} */ h, /** @type {(k: number) => number} */ clarte){
+  const n = w * h, clair = (/** @type {number} */ k) => clarte(k) >= CLAIR_FOND;
+  // la distance de chaque pixel au fond retiré, en pas, à travers le logo
+  const dist = new Int32Array(n).fill(-1), file = new Int32Array(n);
+  let debut = 0, fin = 0;
+  for (let k = 0; k < n; k++) if (vu[k] && clair(k)){ dist[k] = 0; file[fin++] = k; }
+  if (!fin) return;
+  while (debut < fin){
+    const k = file[debut++], x = k % w, d = dist[k] + 1;
+    for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
+      if (kk < 0 || kk >= n || dist[kk] >= 0) continue;
+      dist[kk] = d; file[fin++] = kk;
+    }
+  }
+  const seuil = Math.max(2, Math.round(TRAIT * Math.min(w, h)));
+  const range = new Uint8Array(n);
+  for (let k0 = 0; k0 < n; k0++){
+    if (vu[k0] || range[k0] || !clair(k0)) continue;
+    // le creux entier, et la distance de son pourtour au fond
+    const siens = [k0], bords = [];
+    range[k0] = 1;
+    for (let i = 0; i < siens.length; i++){
+      const k = siens[i], x = k % w;
+      let auBord = false;
+      for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
+        if (kk < 0 || kk >= n) continue;
+        if (!clair(kk)){ auBord = true; continue; }
+        if (!vu[kk] && !range[kk]){ range[kk] = 1; siens.push(kk); }
+      }
+      if (auBord) bords.push(dist[k]);
+    }
+    if (!bords.length) continue;
+    bords.sort((a, b) => a - b);
+    if (bords[Math.floor(bords.length * .75)] > seuil) continue;
+    for (const k of siens){
+      px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - clarte(k)) / (BLANC_FOND - CLAIR_FOND))));
+      vu[k] = 1;
+    }
+  }
+}
 
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
  *  hauteur de ce que la vue de biais lui reprendra.
@@ -287,8 +342,25 @@ const IMPRIME = { ambient: 1, diffuse: 0, shininess: 1, specularColor: [0, 0, 0]
    pas pour une toile qu'on lui donne : demandés au filtrage, ils restaient
    vides, et dès que le toit fuyait assez, le logo virait au noir passé un arc
    de cercle — là où la carte graphique changeait de niveau. Les logos ne
-   paraissent que de près, où la réduction reste faible. */
+   paraissent que de près, où la réduction reste faible.
+
+   Vu de biais, un toit se réduit plus en profondeur qu'en largeur ; le
+   filtrage ordinaire lisse alors le logo dans les deux sens, à la mesure du
+   plus réduit, et le logo paraissait flou dès le seuil franchi, quand le
+   toit est encore petit et fuyant. Le filtrage anisotrope, que presque
+   toutes les cartes graphiques offrent, ne lisse que dans le sens où l'image
+   se tasse. */
 const FILTRAGE = { minFilter: "linear", magFilter: "linear" };
+const ANISOTROPE = 8;
+/** Le filtrage, anisotrope si la carte graphique le sait faire. La question
+ *  active l'extension, que la bibliothèque n'active pas d'elle-même. */
+const filtrage = (/** @type {any} */ appareil) => {
+  try {
+    if (appareil && appareil.features && appareil.features.has("texture-filterable-anisotropic-webgl"))
+      return { ...FILTRAGE, maxAnisotropy: ANISOTROPE };
+  } catch (e) { /* une bibliothèque qui ne sait pas répondre : le filtrage ordinaire */ }
+  return FILTRAGE;
+};
 
 /** La dernière planche posée : on ne la refait que si les logos changent. */
 /** @type {{ cle: string, toile: HTMLCanvasElement, cases: Map<HTMLCanvasElement, number[]> } | null} */
@@ -393,8 +465,9 @@ function groupe(/** @type {string} */ id){
  * @param {(el: Element) => number} hauteurDe la hauteur du volume d'un tracé de stand
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
  * @param {number} zoom
+ * @param {any} [appareil] la carte graphique, telle que la bibliothèque la tient
  */
-export function couchesLogos(L, hauteurDe, v, zoom){
+export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const p = P();
   couvert = null;
   if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)) return [];
@@ -425,7 +498,7 @@ export function couchesLogos(L, hauteurDe, v, zoom){
   const toiles = [...new Set(data.map(d => d.t))].sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || ""));
   const pl = plancheDe(toiles);
   return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture: pl.toile, pickable: true,
-    material: IMPRIME, textureParameters: FILTRAGE, extensions: extensionPlanche(L),
+    material: IMPRIME, textureParameters: filtrage(appareil), extensions: extensionPlanche(L),
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
     getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
     getOrientation: [0, 0, 0],
