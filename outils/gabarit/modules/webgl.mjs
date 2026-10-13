@@ -1101,7 +1101,8 @@ function convertitBloc(racine, cle){
   let i = 0;
   for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
   out.push(...couchesJetons(acc.jetons, cle));
-  return out;
+  // les marques des distinctions suivent leur stand qui monte (`marquesSurLesToits`)
+  return racine.id === "dists" && GL.camera ? out.map(c => c.clone({ marques: true })) : out;
 }
 
 /* Ce que le cartouche met en avant se range à part : il bat, et seules ses
@@ -1214,13 +1215,40 @@ const auDessusDuSol = (el) => !GL.camera ? 0 : el.closest("#itin") ? SOL_ITINERA
    exposants et les adhérents. Ils suivent la hauteur du stand, abaissé sous
    un trajet ou haussé au choix, un rien au-dessus pour ne pas se hacher avec
    son dessus. */
+const AU_DESSUS_DU_TOIT = .02;
 function surSonStand(/** @type {Element} */ el){
-  const m = el.closest("#dists [data-sur]");
-  if (!m) return 0;
-  const id = m.getAttribute("data-sur") || "";
-  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
+  const g = standDeLaMarque(el);
   const trace = g && g.firstElementChild;
-  return trace ? hauteurVolume(trace) + .02 : 0;
+  return trace ? hauteurVolume(trace) + AU_DESSUS_DU_TOIT : 0;
+}
+/** Le stand qu'une marque de distinction désigne, ou rien. */
+function standDeLaMarque(/** @type {Element} */ el){
+  const m = el.closest("#dists [data-sur]");
+  if (!m) return null;
+  const id = m.getAttribute("data-sur") || "";
+  return $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
+}
+
+/* La marque se convertit à la hauteur d'arrivée de son stand, mais le stand
+   y va en une seconde : posée là d'emblée, elle sautait en haut au clic et
+   en bas au départ, laissant le toit la rejoindre. Chaque marque retient
+   donc son stand (`sur`), et le temps qu'il bouge, chaque image la repose à
+   la hauteur où il en est — comme le logo de son toit (`logosSurLesToits`). */
+function marquesSurLesToits(/** @type {any} */ c){
+  if (!hausses.size) return c;
+  const t = instant(), z = new Map();
+  for (const [g, h] of hausses) z.set(g, hauteurHausse(h, t) + AU_DESSUS_DU_TOIT);
+  const bouge = (/** @type {any} */ d) => d.sur && z.has(d.sur);
+  const leve = (/** @type {any} */ d, /** @type {number[][]} */ pts) =>
+    pts.map(p => [p[0], p[1], z.get(d.sur)]);
+  // l'instant, et non la clé de l'image, comme pour les logos
+  if (c instanceof deck.SolidPolygonLayer) return c.clone({
+    getPolygon: (/** @type {any} */ d) => bouge(d) ? d.polygon.map((/** @type {number[][]} */ a) => leve(d, a)) : d.polygon,
+    updateTriggers: { ...c.props.updateTriggers, getPolygon: t } });
+  if (c instanceof deck.PathLayer) return c.clone({
+    getPath: (/** @type {any} */ d) => bouge(d) ? leve(d, d.path) : d.path,
+    updateTriggers: { ...c.props.updateTriggers, getPath: t } });
+  return c;
 }
 
 function hauteurVolume(el, anneaux){
@@ -1658,11 +1686,11 @@ function formeGl(el, cs, m, op, traces, acc){
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
     if (choisi && el.parentNode.classList.contains("stand"))
       CHOISI = { id: el.parentNode.getAttribute("data-id") || "", anneaux, haut };
-    const sol = auDessusDuSol(el);
+    const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
     for (const polygon of avecTrous(anneaux)){
       poseJeton(el, polygon, couleur, acc);
       const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
-      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse });
+      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse, sur });
       if (haut) meubleZone(el, polygon, couleur, acc);
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
@@ -1689,14 +1717,14 @@ function formeGl(el, cs, m, op, traces, acc){
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
     const defile = el.classList.contains("iSens");
-    const sol = auDessusDuSol(el);
+    const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
     const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
     for (const t of traces){
       if (t.pts.length < 2) continue;
       const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
       if (t.ferme) path.push(path[0]);
       (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
-        prise: el.closest(PRISES) });
+        prise: el.closest(PRISES), sur });
     }
   }
 }
@@ -2657,6 +2685,7 @@ const phaseDe = (c, t) => {
    moment-là reculait à ce qu'il était alors. */
 const instant = () => performance.now();
 function animeCouche(c){
+  if (c.props.marques) return marquesSurLesToits(c);
   if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
   // le contour d'un volume en mouvement, posé à l'arrivée, s'écrase de même
