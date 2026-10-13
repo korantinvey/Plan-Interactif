@@ -31,7 +31,7 @@ import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
 import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
-  redresse } from "./vue.mjs";
+  redresse, retiensVue } from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
   fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
 import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
@@ -128,15 +128,16 @@ function suitPince(){
   /* La limite du zoom se sent au doigt, une fois à chaque fois qu'on la
      touche : sans quoi le pincement continuait sans que rien ne bouge, et
      l'on ne savait pas si le plan avait cessé de répondre. */
-  const bute = nw !== voulu;
+  const nh = pince.h * (nw / pince.w);
+  const x = pince.ancre[0] - (m.x - r.left) / r.width * nw,
+        y = pince.ancre[1] - (m.y - r.top) / r.height * nh;
+  /* Le pincement déplace aussi : les deux doigts qui glissent ensemble
+     butent sur le bord du hall comme un seul. */
+  const v = retiensVue({ x: x, y: y, w: nw, h: nh });
+  changeVue(v);
+  const bute = nw !== voulu || v.x !== x || v.y !== y;
   if (bute && !pince.bute) vibre(BUTEE);
   pince.bute = bute;
-  const nh = pince.h * (nw / pince.w);
-  changeVue({
-    x: pince.ancre[0] - (m.x - r.left) / r.width * nw,
-    y: pince.ancre[1] - (m.y - r.top) / r.height * nh,
-    w: nw, h: nh,
-  });
   rafraichitVue();
 }
 
@@ -308,7 +309,7 @@ export function brancheGestes(){
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —
        dans cet ordre (`modules/gestes-admin.mjs`). */
     if (admin.appui(e)) return;
-    drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false,
+    drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false,
              // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
              cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
                              : e.target.closest("[data-id],[data-poi]") };
@@ -329,7 +330,16 @@ export function brancheGestes(){
        pixels, et non en mètres comme le glissement : de près, deux mètres font
        une main entière, et le stand serait monté tout du long. */
     if (Math.abs(ex - drag.x) + Math.abs(ey - drag.y) > 6) rendLAppui();
-    view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
+    view.x = drag.vx - dx; view.y = drag.vy - dy;
+    /* Le bord du hall se sent au doigt, comme la limite du pincement : une
+       fois à chaque fois qu'on le touche. Sans quoi le plan cessait de suivre
+       la main sans rien dire, et l'on croyait le glissement en panne. */
+    const x = view.x, y = view.y;
+    retiensVue(view);
+    const bute = view.x !== x || view.y !== y;
+    if (bute && !drag.bute) vibre(BUTEE, e.pointerType);
+    drag.bute = bute;
+    rafraichitVue();
   });
 
   /* La capture de pointeur redirige le clic vers le <svg> : on retient la cible

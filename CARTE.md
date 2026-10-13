@@ -980,20 +980,20 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 913 l. → plan, plan-admin
+### `modules/environs.mjs` — 999 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `calagePose` 239
-`calageCourant` 251 · `fondCourant` 254 · `recul` 259 · `adresseTuile` 264
-`tuilesDeLaVue` 274 · `chargeMapLibre` 339 · `vueGL` 371 · `styleDuFond` 389
-`guetteLaCarte` 417 · `recaleCarteGL` 451 · `redessineCarteGL` 471 · `poseCarteGL` 485
-`diagnostiqueGL` 589 · `relanceCarteGL` 609 · `videCarteGL` 622 · `inclineFond` 656
-`dessineFondCarte` 704 · `cleMasqueCarte` 824 · `masqueCarte` 825 · `formesMasquantes` 834
-`contourDuHall` 856 · `cheminDuHall` 863 · `poseMasqueCarte` 881 · `ditCarte` 896
-`refaitFondCarte` 906
+`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `vueLibre` 241
+`calagePose` 251 · `calageCourant` 263 · `fondCourant` 266 · `recul` 271 · `zoneDuFond` 289
+`bornesDuFond` 306 · `borneLeStyle` 320 · `adresseTuile` 332 · `tuilesDeLaVue` 342
+`chargeMapLibre` 415 · `vueGL` 447 · `styleDuFond` 465 · `guetteLaCarte` 493
+`recaleCarteGL` 527 · `redessineCarteGL` 547 · `poseCarteGL` 561 · `diagnostiqueGL` 675
+`relanceCarteGL` 695 · `videCarteGL` 708 · `inclineFond` 742 · `dessineFondCarte` 790
+`cleMasqueCarte` 910 · `masqueCarte` 911 · `formesMasquantes` 920 · `contourDuHall` 942
+`cheminDuHall` 949 · `poseMasqueCarte` 967 · `ditCarte` 982 · `refaitFondCarte` 992
 
 Importe :
 
@@ -1328,7 +1328,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 509 l. → plan, plan-admin
+### `modules/gestes.mjs` — 519 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.73 · 8. Interactions du plan
@@ -1336,8 +1336,8 @@ plan-admin
 Fonctions :
 
 `poseGestesAdmin` 71 · `milieu` 99 · `commencePince` 105 · `suitPince` 119
-`plieLesBandes` 179 · `saisitPlan` 193 · `cibleElargie` 230 · `planifieFiltre` 273
-`brancheGestes` 287 · `brancheLangue` 492
+`plieLesBandes` 180 · `saisitPlan` 194 · `cibleElargie` 231 · `planifieFiltre` 274
+`brancheGestes` 288 · `brancheLangue` 502
 
 Importe :
 
@@ -3054,7 +3054,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 683 l. → plan, plan-admin
+### `modules/vue.mjs` — 710 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3064,11 +3064,11 @@ Fonctions :
 `confieALaVue` 68 · `enEdition` 74 · `libelles` 75 · `poseEmprise` 81 · `figeTextes` 105
 `rendTextes` 113 · `cadrage` 152 · `peintLibelles` 157 · `repeintLibelles` 165
 `detacheLibelles` 169 · `rattacheLibelles` 181 · `etireLibelles` 199
-`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `appliqueVue` 245
-`libellesDeLaVue` 313 · `rafraichitVue` 321 · `poseVue` 335 · `mesureBarre` 364
-`masqueHaut` 392 · `masque` 399 · `masqueDroite` 436 · `fit` 447 · `recadreIncline` 474
-`stoppeZoom` 516 · `glisseVersVise` 534 · `glisseVers` 580 · `rectVisee` 604 · `zoom` 624
-`echelle` 638 · `versPlan` 650 · `brancheVue` 662
+`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 258
+`appliqueVue` 268 · `libellesDeLaVue` 337 · `rafraichitVue` 345 · `poseVue` 359
+`mesureBarre` 388 · `masqueHaut` 416 · `masque` 423 · `masqueDroite` 460 · `fit` 471
+`recadreIncline` 498 · `stoppeZoom` 540 · `glisseVersVise` 558 · `glisseVers` 604
+`rectVisee` 631 · `zoom` 651 · `echelle` 665 · `versPlan` 677 · `brancheVue` 689
 
 Importe :
 
