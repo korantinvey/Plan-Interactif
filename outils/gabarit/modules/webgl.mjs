@@ -39,7 +39,7 @@ import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
@@ -372,7 +372,10 @@ const enCamera = () => cameraVoulue() && !_page.enEdition();
 /** @type {any} */
 let VueCamera = null;
 function vuesGl(){
-  if (!GL.camera) return new deck.OrthographicView({ id: "plan", flipY: true });
+  /* Un champ en hauteur, à plat aussi : les figurants s'y tiennent debout,
+     un peu couchés (`penchee`). Sans lui, la vue n'en gardait que quelques
+     millimètres au-dessus du sol, et ils en sortaient. */
+  if (!GL.camera) return new deck.OrthographicView({ id: "plan", flipY: true, near: -1e4, far: 1e4 });
   if (!VueCamera){
     class ViewportCamera extends deck.Viewport {
       constructor(/** @type {any} */ p){
@@ -1345,8 +1348,8 @@ function meubleZone(el, polygon, couleur, acc){
 /* ------------------------------------------------------------
    Les figurants
 
-   Du monde dans les allées de la vue immersive (`figurants.mjs`), semé sur
-   la grille de marche de l'itinéraire. Une couche à part, posée juste avant
+   Du monde dans les allées (`figurants.mjs`), semé sur la grille de marche
+   de l'itinéraire, quand l'exploitant le veut (`CLASSE_FIGURANTS`). Une couche à part, posée juste avant
    les noms : ceux-ci passent devant, les stands cachent ceux qui sont
    derrière eux. Les figurants ne se désignent pas — un appui passe au
    travers, jusqu'à l'allée ou au stand. La grille se calcule une fois par
@@ -1359,6 +1362,16 @@ function meubleZone(el, polygon, couleur, acc){
    figurant. L'ombre, un voile, n'écrit pas la profondeur : posée à quatre
    millimètres du sol, elle cacherait sinon le trait d'un itinéraire peint
    après elle.
+
+   À plat, la vue regarde d'aplomb, et une silhouette debout n'y montrait
+   que le dessus de sa tête — une tache, qu'on prenait pour une salissure du
+   plan. Chacun s'y couche donc vers le haut de l'écran (`BIAIS_A_PLAT`),
+   comme vu depuis le bas du plan : on entrevoit le corps, les bras, la
+   tête, et l'on reconnaît une personne. Les pieds restent à leur place
+   dans l'allée. La vue à plat se donne pour cela un peu de profondeur
+   au-dessus du sol (`vuesGl`) : sans elle, tout ce qui dépassait de
+   quelques millimètres sortait du champ. Pas en édition : l'exploitant qui déplace
+   un stand n'a que faire d'une foule qui se resème à chaque geste.
    ------------------------------------------------------------ */
 /**
  * Le bâtiment, pour ne semer personne dehors : le contour du hall relevé au
@@ -1422,17 +1435,40 @@ function teinteDesFigurants(){
   return (_teinteFigurants = new TeinteDesFigurants());
 }
 
-/** @type {{ grille: any, couches: any[], maillages: any }} */
-const FIGURANTS = { grille: null, couches: [], maillages: null };
+/* De combien un figurant se couche vers le haut de l'écran, à plat : assez
+   pour qu'on voie son corps, pas au point qu'il paraisse tomber à la
+   renverse. */
+const BIAIS_A_PLAT = 40 * Math.PI / 180;
+
+/**
+ * La place d'un figurant à plat, colonne par colonne : tourné vers son cap,
+ * à sa taille, puis couché d'un bloc vers le haut de l'écran — les y
+ * décroissants du plan —, pour tous du même côté, comme vus d'un même œil.
+ * @param {any} f
+ */
+function penchee(f){
+  const c = f.cap * Math.PI / 180, cc = Math.cos(c), sc = Math.sin(c);
+  const cb = Math.cos(BIAIS_A_PLAT), sb = Math.sin(BIAIS_A_PLAT), t = f.taille;
+  return [cc, sc * cb, sc * sb, 0,
+    -sc, cc * cb, cc * sb, 0,
+    0, -t * sb, t * cb, 0,
+    0, 0, 0, 1];
+}
+
+/** @type {{ grille: any, plat: boolean, couches: any[], maillages: any }} */
+const FIGURANTS = { grille: null, plat: false, couches: [], maillages: null };
 function couchesFigurants(){
   /* Décor : leurs programmes coûtent un tiers de seconde à compiler sur la
      première image, qu'ils retardaient sans rien apprendre au visiteur. Ils
      entrent à l'image d'après (`brancheWebgl`). */
   if (!estAffiche()) return [];
-  if (!GL.camera || !cameraEnJeu() || !DATA || !P()) return [];
-  const p = P(), g = grille(p, false);
-  if (FIGURANTS.grille !== g){
+  if (!document.documentElement.classList.contains(CLASSE_FIGURANTS)) return [];
+  if (_page.enEdition() || !DATA || !P()) return [];
+  if (GL.camera && !cameraEnJeu()) return [];
+  const p = P(), g = grille(p, false), plat = !GL.camera;
+  if (FIGURANTS.grille !== g || FIGURANTS.plat !== plat){
     FIGURANTS.grille = g;
+    FIGURANTS.plat = plat;
     if (!FIGURANTS.maillages){
       const M = maillagesFigurant();
       FIGURANTS.maillages = { ombre: M.ombre, modeles: M.modeles.map(maillageReuni) };
@@ -1442,10 +1478,11 @@ function couchesFigurants(){
     const commun = { data, pickable: false, material: MATIERE,
       getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
       getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
-      getScale: (/** @type {any} */ f) => [1, 1, f.taille] };
+      getScale: (/** @type {any} */ f) => [1, 1, f.taille],
+      ...(plat ? { getTransformMatrix: penchee } : {}) };
     FIGURANTS.couches = [
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
-        getColor: OMBRE, getScale: [1, 1, 1], parameters: { depthWriteEnabled: false } }),
+        getColor: OMBRE, getScale: [1, 1, 1], getTransformMatrix: [], parameters: { depthWriteEnabled: false } }),
       // une couche par allure : chacune ne répète que les siens, et les teint toutes parties
       ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
         const siens = data.filter(f => f.modele === k);
