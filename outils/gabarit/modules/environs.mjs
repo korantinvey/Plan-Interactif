@@ -222,11 +222,27 @@ export const forceCarte = (cal) =>
   cal && isFinite(cal.force) ? Math.max(0.1, Math.min(1, cal.force)) : FORCE_CARTE;
 
 /* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
-   qu'il n'y a rien au-delà des murs, huit fois dès qu'une carte s'y trouve —
+   qu'il n'y a rien au-delà des murs, un peu plus dès qu'une carte s'y trouve —
    c'est pour la voir qu'on l'a posée, et la vue s'arrêtait au bord de la
-   première rue. L'emprise, elle, ne bouge pas : elle tient aussi la grille
-   d'itinéraire, au demi-mètre. */
-const RECUL_CARTE = 8;
+   première rue. Un peu plus, et non huit fois comme d'abord : de si loin le
+   hall n'était plus qu'un timbre au milieu du quartier, et l'on regardait la
+   ville plutôt que le salon. Trois fois et un tiers montrent les abords —
+   parkings, entrées, rues qui y mènent — et s'arrêtent là. L'emprise, elle,
+   ne bouge pas : elle tient aussi la grille d'itinéraire, au demi-mètre. */
+const RECUL_CARTE = 3.3;
+
+/* Jusqu'où le milieu de la vue s'écarte du pavillon, en part de la vue : trois
+   vingtièmes de part et d'autre de son emprise. Le hall garde ainsi plus d'un
+   tiers de l'écran dans chaque sens, quel que soit le zoom — on peut regarder
+   ce qui le borde, non le perdre (`vue.mjs` `retiensVue`). Le double, essayé
+   d'abord, laissait encore glisser le hall jusqu'au bord de l'écran.
+
+   Pas sur le seul pavillon : le plan s'ajuste et se centre dans
+   la bande que le tiroir et la fiche laissent libre, et son milieu tombe
+   alors hors du hall — le retenir là défaisait le cadrage. Nul pendant qu'un
+   exploitant cale la carte, qui peut avoir à chercher loin. */
+export const DEBORD_VUE = 0.3;
+export const vueLibre = () => !!CALAGE_EN_COURS;
 
 /**
  * Le calage enregistré pour le pavillon regardé.
@@ -260,6 +276,62 @@ export function recul(){
   return fondCourant() ? RECUL_CARTE : 2.5;
 }
 
+/**
+ * Le carré de sol que le fond couvre, en mètres du plan — au-delà, rien ne
+ * se télécharge.
+ *
+ * Le dézoom s'arrête à `RECUL_CARTE` largeurs de pavillon : on ne voit jamais plus
+ * loin, et le glissement retient le hall à l'écran (`DEBORD_VUE`) — sauf à
+ * incliner le plan : la vue immersive découvre alors le sol jusqu'à
+ * l'horizon, et en demandait les tuiles par centaines. Le carré tient la vue
+ * la plus large, poussée au bout du glissement, sur un téléphone en hauteur
+ * et quel que soit le cap du hall.
+ *
+ * Nul pendant qu'un exploitant cale la carte : il cherche le hall dans le
+ * quartier, et le plan n'y est pas encore à sa place.
+ */
+function zoneDuFond(){
+  if (CALAGE_EN_COURS) return null;
+  const p = DATA && DATA.plans ? P() : null, e = p && p.emprise;
+  if (!e) return null;
+  /* Le compte, pour la vue la plus large — `RECUL_CARTE` largeurs, deux fois
+     plus haute sur un téléphone — poussée au bout de ce que `DEBORD_VUE`
+     permet : son bord le plus lointain tombe à un demi-hall, plus
+     `DEBORD_VUE` + 0,5 fois sa hauteur, du centre. */
+  const t = Math.max(e.x1 - e.x0, e.y1 - e.y0);
+  const d = t * (0.5 + RECUL_CARTE * 2 * (DEBORD_VUE + 0.5));
+  const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
+  return { x0: cx - d, y0: cy - d, x1: cx + d, y1: cy + d };
+}
+
+/** Le même carré en longitudes et latitudes — `[ouest, sud, est, nord]`, ce
+ *  que MapLibre prend pour borner une source —, ou nul. Arrondi au mètre près,
+ *  pour qu'une empreinte puisse dire s'il a changé. */
+function bornesDuFond(cal){
+  const z = zoneDuFond();
+  if (!z || !cal) return null;
+  const coins = [[z.x0, z.y0], [z.x1, z.y0], [z.x1, z.y1], [z.x0, z.y1]]
+    .map(q => versTerre(q, cal));
+  const r5 = (v) => Math.round(v * 1e5) / 1e5;
+  const lon = coins.map(q => q[0]), lat = coins.map(q => q[1]);
+  return [r5(Math.min.apply(null, lon)), r5(Math.min.apply(null, lat)),
+          r5(Math.max.apply(null, lon)), r5(Math.max.apply(null, lat))];
+}
+
+/** Un style dont chaque source tuilée ne sert que le carré du hall : le
+ *  moteur ne demande aucune tuile hors de ses bornes, et peint là son fond
+ *  uni. Posées sur la source, elles l'emportent sur celles de son TileJSON. */
+function borneLeStyle(style, bornes){
+  if (!bornes || !style || !style.sources) return style;
+  const sources = {};
+  for (const id in style.sources){
+    const src = style.sources[id];
+    sources[id] = /^(vector|raster|raster-dem)$/.test(src.type)
+      ? Object.assign({}, src, { bounds: bornes }) : src;
+  }
+  return Object.assign({}, style, { sources: sources });
+}
+
 /** L'adresse d'une tuile. */
 const adresseTuile = (fond, z, x, y) => fond.url
   .replace("{z}", z).replace("{x}", x).replace("{y}", y);
@@ -271,9 +343,17 @@ const adresseTuile = (fond, z, x, y) => fond.url
  * arithmétique de ce module qu'une erreur de signe rendrait invisible à la
  * lecture et évidente à l'écran.
  */
-function tuilesDeLaVue(cal, fond, vue, mParPx){
+function tuilesDeLaVue(cal, fond, vue, mParPx, zone){
   const z = niveauDesTuiles(cal, mParPx, fond.max);
   const k = echelleDesTuiles(cal, z);
+  /* La vue ramenée au carré du hall : ce qui en sort ne se demande pas. Le
+     niveau, lui, se choisit sur la vue entière — c'est son échelle. */
+  if (zone){
+    const x0 = Math.max(vue.x, zone.x0), y0 = Math.max(vue.y, zone.y0);
+    const x1 = Math.min(vue.x + vue.w, zone.x1), y1 = Math.min(vue.y + vue.h, zone.y1);
+    if (x1 <= x0 || y1 <= y0) return { z: z, k: k, tuiles: [] };
+    vue = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
   const ancre = pixelsMercator(cal.lon, cal.lat, z);
   /* Les quatre coins de la vue, ramenés en est/sud puis en pixels. La
      transformation étant rigide, c'est encore un rectangle — tourné ; on
@@ -489,8 +569,15 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
      adresse. L'empreinte sert à savoir si le style a changé — un objet n'a pas
      d'adresse à comparer, on prend le nom du fond. */
   const style = (cal && cal.style) || (fond.objet ? fond.objet() : styleDuFond(cal, fond));
-  const sig = (cal && cal.style) || (fond.objet ? "objet:" + cal.fond : style);
+  /* Les bornes entrent dans l'empreinte : un autre pavillon, un calage
+     enregistré, et le style se repose sur le nouveau carré. */
+  const bornes = bornesDuFond(cal);
+  const sig = ((cal && cal.style) || (fond.objet ? "objet:" + cal.fond : style)) +
+    (bornes ? "|" + bornes.join(",") : "");
   if (!style) return;
+  /* Le style passe par là une fois chargé — une adresse aussi bien qu'un
+     objet — avant que le moteur ne demande la moindre tuile. */
+  const pose = { transformStyle: (_avant, apres) => borneLeStyle(apres, bornes) };
   hote.hidden = false;
   if (_carteGL){
     if (_styleGL !== sig){
@@ -498,7 +585,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
       _ditGL = "";
       ditCarte("Chargement de la carte…");
       guetteLaCarte(sig);
-      _carteGL.setStyle(style);
+      _carteGL.setStyle(style, pose);
       _etendueGL = null;
     }
     if (enGeste && recaleCarteGL(etendue)){
@@ -534,8 +621,10 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
     const v = vueGL(cal, etendue);
     _styleGL = sig;
     _etendueGL = etendue;
+    /* Le style se pose après, et non dans les options : seul `setStyle`
+       sait le borner avant qu'il ne serve. */
     _carteGL = new gl.Map({
-      container: hote, style: style,
+      container: hote,
       center: v.center, zoom: v.zoom, bearing: v.bearing,
       /* Aucun geste : tout passe par le SVG posé dessus. Et pas d'attribution
          intégrée — la nôtre est déjà au coin du plan, à la même place pour
@@ -546,6 +635,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
          clignoter les noms de rues pendant qu'on cale. */
       fadeDuration: 0,
     });
+    _carteGL.setStyle(style, pose);
     /* Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce
        qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
        Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
@@ -751,7 +841,7 @@ export function dessineFondCarte(enGeste = false){
     return;
   }
   videCarteGL();
-  const t = tuilesDeLaVue(cal, fond, etendue, kx);
+  const t = tuilesDeLaVue(cal, fond, etendue, kx, zoneDuFond());
 
   /* Le groupe suit toujours : la position de l'ancre, la rotation vers le
      repère du plan, l'échelle est/sud. Ce n'est qu'une attribution, et c'est

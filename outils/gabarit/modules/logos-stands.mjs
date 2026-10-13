@@ -293,8 +293,12 @@ const filtrage = (/** @type {any} */ appareil) => {
   return FILTRAGE;
 };
 
-/** La dernière planche posée : on ne la refait que si les logos changent. */
-/** @type {{ cle: string, toile: HTMLCanvasElement, cases: Map<HTMLCanvasElement, number[]> } | null} */
+/** La dernière planche posée : on ne la refait que si les logos changent.
+ *  Ses cases se rangent par clé de toile, et non par toile : une toile
+ *  oubliée sous le seuil se refait à l'identique sous la même clé quand on
+ *  revient, et la planche gardée, qui la connaissait sous son ancien objet,
+ *  n'y trouvait plus sa case — chaque logo peignait alors la planche entière. */
+/** @type {{ cle: string, toile: HTMLCanvasElement, cases: Map<string, number[]> } | null} */
 let planche = null;
 
 /** La planche de ces toiles : une rangée après l'autre, de gauche à droite. */
@@ -322,8 +326,10 @@ function plancheDe(/** @type {HTMLCanvasElement[]} */ toiles){
   const ctx = toile.getContext("2d");
   if (ctx){ ctx.imageSmoothingQuality = "high"; for (const [t, c] of r.cases) ctx.drawImage(t, c[0], c[1], c[2], c[3]); }
   // la case de chaque logo, en fractions de la planche
-  for (const [t, c] of r.cases) r.cases.set(t, [c[0] / toile.width, c[1] / toile.height, c[2] / toile.width, c[3] / toile.height]);
-  return (planche = { cle, toile, cases: r.cases });
+  /** @type {Map<string, number[]>} */
+  const cases = new Map();
+  for (const [t, c] of r.cases) cases.set(t.dataset.cle || "", [c[0] / toile.width, c[1] / toile.height, c[2] / toile.width, c[3] / toile.height]);
+  return (planche = { cle, toile, cases });
 }
 
 /* Ce que la couche ajoute au maillage : la case que chaque logo lit sur la
@@ -469,6 +475,6 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
     getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
     getOrientation: [0, 0, 0],
-    getCaseLogo: (/** @type {any} */ d) => pl.cases.get(d.t) || [0, 0, 1, 1],
+    getCaseLogo: (/** @type {any} */ d) => pl.cases.get(d.t.dataset.cle || "") || [0, 0, 1, 1],
     updateTriggers: { getCaseLogo: pl.cle } })];
 }

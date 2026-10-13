@@ -76,6 +76,9 @@ export const HAUTEUR_STAND = 1.6, HAUTEUR_LIBRE = .06;
 export const HAUTEUR_ZONE = 1;
 /* Ce qu'on choisit se hausse au-dessus du reste, d'autant. */
 export const HAUSSE_CHOIX = 2.2;
+/** La classe que la racine porte quand les noms des stands se couchent sur
+ *  leur toit au lieu de se dresser face à l'œil (`ambiance.mjs`, `webgl.mjs`). */
+export const CLASSE_NOMS_A_PLAT = "noms-a-plat";
 /* ------------------------------------------------------------
    Le trajet à l'écran
 
