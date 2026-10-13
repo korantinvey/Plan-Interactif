@@ -19,6 +19,7 @@ import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseV
 import { REDUIT } from "./ecran.mjs";
 import { mesureMarches, coupeMarche, distancesDesArrets } from "./itineraire.mjs";
 import { poseTrajet } from "./camera.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 
 /**
  * Ce que le plan montre en ce moment.
@@ -30,8 +31,13 @@ import { poseTrajet } from "./camera.mjs";
  */
 export let TRACE = null;
 
+/** Le trait vient de changer de propriétaire. Le rappel du trajet, au haut
+ *  du plan, l'écoute : la journée qui prend le trait doit l'éteindre sans
+ *  connaître le tiroir de l'itinéraire. */
+export const TRACE_POSEE = creeAnnonce();
+
 /** La porte du tracé : la journée organisée le prend pour elle, ou le rend. */
-export function poseTrace(t){ TRACE = t; }
+export function poseTrace(t){ TRACE = t; TRACE_POSEE.dis(); }
 
 const marchesIci = () => (TRACE ? TRACE.etapes : [])
   .filter(e => e.genre === "marche" && e.p === state.plan);

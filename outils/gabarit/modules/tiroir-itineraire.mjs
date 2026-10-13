@@ -33,7 +33,7 @@
    chargeant (`brancheItineraire`, au bas du module).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { TRACE, poseTrace, dessineItineraire, rafraichitBouts, cadreItineraire } from "./trace-itineraire.mjs";
+import { TRACE, TRACE_POSEE, poseTrace, dessineItineraire, rafraichitBouts, cadreItineraire } from "./trace-itineraire.mjs";
 import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { DATA, parId, state, P } from "./donnees.mjs";
 import { mesure } from "./mesure.mjs";
@@ -161,8 +161,9 @@ export function effaceItineraire(){
   ITI.a = borne; ITI.b = null;
   ROUTE = null; poseTrace(null);
   /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
-     il appelle la même visée — celle du seul champ qui reste à remplir. */
-  visee = borne ? "b" : "a";
+     il appelle la même visée — celle du seul champ qui reste à remplir. Effacé
+     depuis le rappel, tiroir fermé, le visiteur en a fini : rien ne s'arme. */
+  visee = !$("itineraire").classList.contains("open") ? null : borne ? "b" : "a";
   bandeauVisee();
   $("iDepart").value = "";
   $("iArrivee").value = "";
@@ -227,6 +228,33 @@ export function relance(){
 }
 
 function montreResultat(etat){
+  ecritResultat(etat);
+  majRappelRoute();
+}
+
+/**
+ * Le rappel du trajet, au haut du plan.
+ *
+ * Le trait reste sur le plan quand le tiroir se referme — c'est voulu, on
+ * marche en regardant le plan. Mais l'ôter obligeait à rouvrir le tiroir et à
+ * descendre jusqu'à son bouton : le geste ne se voyait pas là où se voit le
+ * trait. Le rappel paraît donc tant que le trait affiché est celui du trajet
+ * demandé et que le tiroir est fermé ; il cède la place au bandeau de visée,
+ * qui occupe la même. Un calcul sans trait — panne, aucun chemin, même point
+ * — n'a rien à effacer sur le plan : le tiroir le dit, le rappel se tait.
+ */
+function majRappelRoute(){
+  const r = $("routeRappel");
+  if (!r) return;
+  const trace = !!ROUTE && TRACE === ROUTE &&
+    !ROUTE.panne && !ROUTE.sansChemin && !ROUTE.memePoint && !ROUTE.aucunTrace;
+  r.hidden = !trace || !!visee || $("itineraire").classList.contains("open");
+  if (r.hidden) return;
+  $("routeResume").textContent = (ROUTE.coupe ? "≥ " : "") + ecritDistance(ROUTE.m) +
+    " · " + ecritDuree(ROUTE.m, ROUTE.pmr, ROUTE.minutes);
+}
+
+function ecritResultat(etat){
   const z = $("iResultat"), badge = $("iResume");
   z.innerHTML = "";
   const dit = (cls, txt) => {
@@ -407,6 +435,7 @@ export function bandeauVisee(){
      affiché, lui, occupe la même place au bas de l'écran : il cède le passage
      plutôt que de se superposer (`borne.mjs`, `ici.mjs`). */
   SUIVENT_LA_VISEE.forEach(f => f());
+  majRappelRoute();
 }
 
 function armeVisee(r){
@@ -422,7 +451,7 @@ function armeVisee(r){
   const efface = ETROIT() && $("itineraire").classList.contains("open");
   visee = (visee === r && !efface) ? null : r;
   fermeSugg();
-  if (visee && ETROIT()) fermeItineraire();
+  if (visee && ETROIT()) fermeItineraire(true);
   bandeauVisee();
 }
 
@@ -510,12 +539,22 @@ function ouvreItineraire(arme = true){
     bandeauVisee();
   }
 }
-export function fermeItineraire(){
+/**
+ * @param garde  Vrai pour garder la visée armée : c'est la cible d'un champ,
+ *   sur un téléphone, qui retire le tiroir pour laisser voir tout le plan.
+ *   Toute autre fermeture — sa croix, son bouton, un autre tiroir — dit que le
+ *   visiteur passe à autre chose : le bandeau « Indiquez votre départ » ne
+ *   doit pas lui survivre, sans quoi le plan resterait une liste de points à
+ *   toucher, et ses stands n'ouvriraient plus leur fiche.
+ */
+export function fermeItineraire(garde = false){
   const t = $("itineraire");
   if (!t || !t.classList.contains("open")) return;
   t.classList.remove("open");
+  if (!garde && (visee === "a" || visee === "b")){ visee = null; bandeauVisee(); }
   $("btnItineraire").setAttribute("aria-pressed", "false");
   fermeSugg();
+  majRappelRoute();
 }
 
 /** Depuis une fiche : « j'y vais ». L'arrivée est connue, le départ reste à
@@ -615,8 +654,11 @@ export function brancheTiroirItineraire(){
 
   $("btnItineraire").onclick = () =>
     $("itineraire").classList.contains("open") ? fermeItineraire() : ouvreItineraire();
-  $("closeItineraire").onclick = fermeItineraire;
+  $("closeItineraire").onclick = () => fermeItineraire();
   $("videItineraire").onclick = effaceItineraire;
+  $("routeVoir").onclick = () => ouvreItineraire(false);
+  $("routeEfface").onclick = effaceItineraire;
+  TRACE_POSEE.suis(majRappelRoute);
 
   addEventListener("keydown", e => {
     if (e.key !== "Escape" || $("modale").classList.contains("open")) return;
@@ -636,4 +678,4 @@ brancheItineraire({ conf: () => CONF, dessins: () => DESSINS, instantConf, finIn
 
 /* L'itinéraire est l'un des trois tiroirs qui se partagent la bande : ouvrir
    la fiche ou le parcours le referme, s'il est ouvert. */
-inscritTiroirExclusif("itineraire", fermeItineraire);
+inscritTiroirExclusif("itineraire", () => fermeItineraire());
