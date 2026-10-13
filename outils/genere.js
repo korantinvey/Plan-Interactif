@@ -361,7 +361,10 @@ function connecte(t) {
 /* La marque du produit y entre par `define` (`MARQUE_PRODUIT`), et non par
    `marques` après coup : dans un script minifié, une substitution décalerait
    la carte de correspondance. */
-const DEFINIS = { MARQUE_PRODUIT: JSON.stringify(uneLigne(icones.svgPage())) };
+/* Le script du travailleur qui détoure les logos (`modules/detourage-travail.mjs`)
+   y entre de même, en chaîne : la page le lance depuis une adresse « blob: ». */
+const DEFINIS = { MARQUE_PRODUIT: JSON.stringify(uneLigne(icones.svgPage())),
+  TRAVAIL_DETOURAGE: JSON.stringify(modules.travail("detourage-travail.mjs")) };
 const scriptDesModules = (entree) =>
   '<script data-modules="' + entree + '">\n' + modules.assemble(entree, DEFINIS) + "</script>\n";
 /* Le script des modules se pose après tout le balisage et les données : la
