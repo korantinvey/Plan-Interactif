@@ -126,6 +126,15 @@ VIGNETTES_ARRIVEES.suis(() => annoncePret());
    attend donc sa fin (`geleLogos`, appelé par `webgl.mjs`) ; la couche ne
    se refait alors que si la vue quitte ce qu'elle couvre, avec les logos
    qu'elle avait déjà.
+
+   La finesse attend aussi. Elle avance par demi-crans de zoom, et un
+   pincement en franchit plusieurs : chacun refaisait les toiles de tous les
+   logos autour de la vue, leur planche, l'envoi à la carte graphique et
+   l'assemblage du plan entier — cent quarante-sept repeints en vingt
+   secondes de pincement, des images de cinquante à cent quarante
+   millisecondes, le même soir, sur le même téléphone. Les logos gardent
+   donc pendant le geste la finesse où ils ont été posés, un peu flous si
+   l'on s'approche, et reprennent la juste à sa fin.
    ------------------------------------------------------------ */
 let gele = false, annonceRetenue = false;
 /** Les logos devenus prêts pendant le geste, posés à sa fin. */
@@ -150,7 +159,9 @@ export function geleLogos(/** @type {boolean} */ oui){
   if (oui) return;
   for (const [cle, logo] of enRetard) detourees.set(cle, logo);
   enRetard.clear();
-  if (annonceRetenue){ annonceRetenue = false; PANNEAU_PRET.dis(); }
+  // les logos posés pendant le geste reprennent la finesse de la vue où il s'arrête
+  const affiner = couvert !== null && pres(zoomVu) && finesse(zoomVu) !== finesseCouverte;
+  if (annonceRetenue || affiner){ annonceRetenue = false; PANNEAU_PRET.dis(); }
 }
 
 /** Les vignettes décodées, par clé. */
@@ -604,8 +615,9 @@ function extensionPlanche(/** @type {any} */ L){
    sous le seuil. */
 /** @type {{ x0: number, y0: number, x1: number, y1: number } | null} */
 let couvert = null;
-/* La finesse à laquelle ils ont été posés. */
-let finesseCouverte = 0;
+/* La finesse à laquelle ils ont été posés, et le zoom de la dernière image
+   vue, que la fin d'un geste relit (`geleLogos`). */
+let finesseCouverte = 0, zoomVu = 0;
 const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 
 /**
@@ -635,11 +647,14 @@ function solVu(v){
  * @param {number} zoom
  */
 export function logosARevoir(v, zoom){
+  zoomVu = zoom;
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
   if (!pres(zoom)) return couvert !== null;
   if (!couvert) return true;
   const sol = solVu(v);
-  return finesse(zoom) !== finesseCouverte || sol.x < couvert.x0 || sol.y < couvert.y0 || sol.x + sol.w > couvert.x1 || sol.y + sol.h > couvert.y1;
+  if (sol.x < couvert.x0 || sol.y < couvert.y0 || sol.x + sol.w > couvert.x1 || sol.y + sol.h > couvert.y1) return true;
+  // la finesse attend la fin du geste (`geleLogos`)
+  return !gele && finesse(zoom) !== finesseCouverte;
 }
 
 /* Les stands du plan par identifiant. Relus à chaque image tant qu'un volume
@@ -717,7 +732,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const dedans = (/** @type {any} */ b, /** @type {number[]} */ c) => c[0] >= b.x0 && c[0] <= b.x1 && c[1] >= b.y0 && c[1] <= b.y1;
   couvert = autour(MARGE_VUE);
   const loin = autour(MARGE_PRECHARGE);
-  finesseCouverte = finesse(zoom);
+  if (!gele || !finesseCouverte) finesseCouverte = finesse(zoom);
   const enVolume = cameraEnJeu(), tasse = tassement();
   // du centre de la vue vers ses bords : les grandes se demandent dans cet ordre
   const vx = v.x + v.w / 2, vy = v.y + v.h / 2;
