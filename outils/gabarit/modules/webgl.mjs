@@ -1984,11 +1984,21 @@ const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] 
 const contourDe = (/** @type {any} */ d, /** @type {number} */ haut) =>
   ({ path: d.polygon[0].map((/** @type {number[]} */ p) => [p[0], p[1], haut + .02]).concat([[d.polygon[0][0][0], d.polygon[0][0][1], haut + .02]]),
      couleur: arete(d.couleur), el: d.el });
-/** La couche des contours d'une couche de volumes. */
+/** Le contour d'un volume en mouvement, posé à l'arrivée, écrasé à la hauteur où il en est. */
+const ecraseContour = (/** @type {{ de: number, vers: number, t0: number }} */ h) =>
+  [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, echelleHausse(h, instant()), 0, 0, 0, 0, 1];
+/** La couche des contours d'une couche de volumes.
+ *
+ *  Un contour en mouvement naît déjà écrasé. Seule l'animation (`animeCouche`)
+ *  le tenait à jour, et la teinte du survol ne passe pas par elle quand le
+ *  plan se réassemble — au clic, à l'ouverture de la fiche : le temps d'une
+ *  image, le contour du dessus paraissait à la hauteur d'arrivée, avant que
+ *  le stand ne monte. */
 const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) =>
   new deck.PathLayer({ id: id + "-contour", data: data.map(d => contourDe(d, d.haut)), pickable: false,
     getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
-    getWidth: 1, widthUnits: "pixels", contour: true, ...extra });
+    getWidth: 1, widthUnits: "pixels", contour: true,
+    ...(extra.hausseContour ? { modelMatrix: ecraseContour(extra.hausseContour) } : {}), ...extra });
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
@@ -2492,8 +2502,22 @@ function coucheSurvolVolume(c){
      est gardée : un volume qui monte ou descend a son échelle figée au départ
      du mouvement, et seule l'animation (`animeCouche`) la tient à jour. Le
      stand qu'on venait de quitter, survolé, se redressait ainsi à plus de
-     trois mètres, et engloutissait son nom ou son logo. */
-  const e = c.props.hausse ? echelleHausse(c.props.hausse, instant()) : c.props.elevationScale || 1;
+     trois mètres, et engloutissait son nom ou son logo.
+
+     Ce mouvement, la teinte le porte avec lui, et l'animation la tient à jour
+     comme le volume. Les images d'un mouvement ne refont plus que les couches
+     qui bougent (`reanime`) : posée une fois à la hauteur du départ, la teinte
+     restait en place pendant que le stand choisi montait à travers elle, et
+     son dessus clignotait le temps que les deux se croisent. */
+  const h = c.props.hausse;
+  if (h){
+    const data = siens.map(d => ({ ...d, haut: d.haut + .03, couleur: teinte(d.couleur) }));
+    return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
+      hausse: h, elevationScale: echelleHausse(h, instant()) }),
+    coucheContours("survol-volume", data, { hausseContour: h })];
+  }
+  const e = c.props.elevationScale || 1;
   const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
   return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
     getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE }),
@@ -2636,10 +2660,7 @@ function animeCouche(c){
   if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
   // le contour d'un volume en mouvement, posé à l'arrivée, s'écrase de même
-  if (c.props.hausseContour){
-    const e = echelleHausse(c.props.hausseContour, instant());
-    return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, e, 0, 0, 0, 0, 1] });
-  }
+  if (c.props.hausseContour) return c.clone({ modelMatrix: ecraseContour(c.props.hausseContour) });
   // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
   if (c.props.hausseTexte){
     const h = c.props.hausseTexte, dz = hauteurHausse(h, instant()) - h.vers;
@@ -2717,10 +2738,20 @@ function reanime(/** @type {any[]} */ couches){
  *  recalcule, celle des autres ne change pas. */
 function logosSurLesToits(/** @type {any} */ c){
   if (!GL.camera || !hausses.size || !c.props.data.some((/** @type {any} */ d) => hausses.has(d.el))) return c;
+  /* Les hauteurs se prennent ici, au même instant que celle des toits
+     (`animeCouche`), et non quand la bibliothèque relit la position : elle le
+     fait plus tard, au moment de peindre, et le stand avait monté entre-temps.
+     Le logo le devançait, jusqu'à quinze centimètres au-dessus de son toit au
+     début de la montée, avant de s'y reposer. */
+  const t = instant(), z = new Map();
+  for (const d of c.props.data){
+    const h = hausses.get(d.el);
+    if (h) z.set(d.el, hauteurHausse(h, t) + .05);
+  }
   return c.clone({
-    getPosition: (/** @type {any} */ d) => hausses.has(d.el) && d.el.firstElementChild
-      ? [d.x, d.y, hauteurEnCours(d.el.firstElementChild) + .05] : [d.x, d.y, d.z],
-    updateTriggers: { ...c.props.updateTriggers, getPosition: GL.cleAnim },
+    getPosition: (/** @type {any} */ d) => [d.x, d.y, z.has(d.el) ? z.get(d.el) : d.z],
+    // l'instant, et non la clé de l'image : un réassemblage entre deux images la retrouvait inchangée
+    updateTriggers: { ...c.props.updateTriggers, getPosition: t },
   });
 }
 
