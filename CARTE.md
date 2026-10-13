@@ -237,15 +237,15 @@ Importé par :
 
 edition · enregistrement · gestes-admin · outil-dessin · reprise-emplacements
 
-### `modules/ambiance.mjs` — 189 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 198 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles, Immersif
 
 Fonctions :
 
-`logosRetenus` 49 · `capRetenu` 54 · `ambianceRetenue` 61 · `anneaux` 67 · `f3` 79
-`rayonTuile` 106 · `retire` 111 · `arrondi` 126 · `traceStand` 152 · `tuilesPosees` 157
-`appliqueAmbiance` 159
+`nomsAPlatRetenus` 51 · `logosRetenus` 57 · `capRetenu` 62 · `ambianceRetenue` 69
+`anneaux` 75 · `f3` 87 · `rayonTuile` 114 · `retire` 119 · `arrondi` 134 · `traceStand` 160
+`tuilesPosees` 165 · `appliqueAmbiance` 167
 
 Importe :
 
@@ -491,15 +491,15 @@ batiments · cartouche-poi · dessin · edition · edition-en-cours · enregistr
 forme-choisie · gestes-admin · index-salon · libelles · ordre-trace · outil-dessin · pile
 rendu · reprise-emplacements · socle-dessin · tiroir-itineraire · tutoriel
 
-### `modules/camera.mjs` — 220 l. → plan, plan-admin
+### `modules/camera.mjs` — 223 l. → plan, plan-admin
 
 - l.1 · La caméra du plan immersif — le hall vu de biais
 
 Fonctions :
 
-`demandeCamera` 55 · `cameraVoulue` 62 · `capCamera` 64 · `cleCamera` 66 · `poseTrajet` 94
-`boutsDuTrajet` 99 · `metsEnJeu` 104 · `cameraEnJeu` 110 · `grandeurs` 113
-`platVersEcran` 123 · `ecranVersPlat` 141 · `solIncline` 165 · `matricesCamera` 203
+`demandeCamera` 55 · `cameraVoulue` 62 · `capCamera` 64 · `cleCamera` 66 · `poseTrajet` 97
+`boutsDuTrajet` 102 · `metsEnJeu` 107 · `cameraEnJeu` 113 · `grandeurs` 116
+`platVersEcran` 126 · `ecranVersPlat` 144 · `solIncline` 168 · `matricesCamera` 206
 
 Importe :
 
@@ -993,20 +993,20 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 913 l. → plan, plan-admin
+### `modules/environs.mjs` — 1003 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `calagePose` 239
-`calageCourant` 251 · `fondCourant` 254 · `recul` 259 · `adresseTuile` 264
-`tuilesDeLaVue` 274 · `chargeMapLibre` 339 · `vueGL` 371 · `styleDuFond` 389
-`guetteLaCarte` 417 · `recaleCarteGL` 451 · `redessineCarteGL` 471 · `poseCarteGL` 485
-`diagnostiqueGL` 589 · `relanceCarteGL` 609 · `videCarteGL` 622 · `inclineFond` 656
-`dessineFondCarte` 704 · `cleMasqueCarte` 824 · `masqueCarte` 825 · `formesMasquantes` 834
-`contourDuHall` 856 · `cheminDuHall` 863 · `poseMasqueCarte` 881 · `ditCarte` 896
-`refaitFondCarte` 906
+`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `vueLibre` 245
+`calagePose` 255 · `calageCourant` 267 · `fondCourant` 270 · `recul` 275 · `zoneDuFond` 293
+`bornesDuFond` 310 · `borneLeStyle` 324 · `adresseTuile` 336 · `tuilesDeLaVue` 346
+`chargeMapLibre` 419 · `vueGL` 451 · `styleDuFond` 469 · `guetteLaCarte` 497
+`recaleCarteGL` 531 · `redessineCarteGL` 551 · `poseCarteGL` 565 · `diagnostiqueGL` 679
+`relanceCarteGL` 699 · `videCarteGL` 712 · `inclineFond` 746 · `dessineFondCarte` 794
+`cleMasqueCarte` 914 · `masqueCarte` 915 · `formesMasquantes` 924 · `contourDuHall` 946
+`cheminDuHall` 953 · `poseMasqueCarte` 971 · `ditCarte` 986 · `refaitFondCarte` 996
 
 Importe :
 
@@ -1341,7 +1341,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 509 l. → plan, plan-admin
+### `modules/gestes.mjs` — 519 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.73 · 8. Interactions du plan
@@ -1349,8 +1349,8 @@ plan-admin
 Fonctions :
 
 `poseGestesAdmin` 71 · `milieu` 99 · `commencePince` 105 · `suitPince` 119
-`plieLesBandes` 179 · `saisitPlan` 193 · `cibleElargie` 230 · `planifieFiltre` 273
-`brancheGestes` 287 · `brancheLangue` 492
+`plieLesBandes` 180 · `saisitPlan` 194 · `cibleElargie` 231 · `planifieFiltre` 274
+`brancheGestes` 288 · `brancheLangue` 502
 
 Importe :
 
@@ -1651,16 +1651,16 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 474 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 480 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
 `finesse` 70 · `tassement` 83 · `grande` 130 · `image` 149 · `sansFond` 169 · `toile` 189
-`logoPose` 216 · `cedeAuLogo` 226 · `CARRE` 255 · `filtrage` 288 · `plancheDe` 301
-`extensionPlanche` 335 · `pres` 366 · `logosARevoir` 374 · `groupe` 384 · `oublie` 395
-`couchesLogos` 418
+`logoPose` 216 · `cedeAuLogo` 226 · `CARRE` 255 · `filtrage` 288 · `plancheDe` 305
+`extensionPlanche` 341 · `pres` 372 · `logosARevoir` 380 · `groupe` 390 · `oublie` 401
+`couchesLogos` 424
 
 Importe :
 
@@ -3011,7 +3011,7 @@ Importé par :
 
 installation · rappels · tutoriel
 
-### `modules/volets.mjs` — 1387 l. → plan-admin
+### `modules/volets.mjs` — 1408 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
@@ -3068,7 +3068,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 683 l. → plan, plan-admin
+### `modules/vue.mjs` — 710 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3078,11 +3078,11 @@ Fonctions :
 `confieALaVue` 68 · `enEdition` 74 · `libelles` 75 · `poseEmprise` 81 · `figeTextes` 105
 `rendTextes` 113 · `cadrage` 152 · `peintLibelles` 157 · `repeintLibelles` 165
 `detacheLibelles` 169 · `rattacheLibelles` 181 · `etireLibelles` 199
-`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `appliqueVue` 245
-`libellesDeLaVue` 313 · `rafraichitVue` 321 · `poseVue` 335 · `mesureBarre` 364
-`masqueHaut` 392 · `masque` 399 · `masqueDroite` 436 · `fit` 447 · `recadreIncline` 474
-`stoppeZoom` 516 · `glisseVersVise` 534 · `glisseVers` 580 · `rectVisee` 604 · `zoom` 624
-`echelle` 638 · `versPlan` 650 · `brancheVue` 662
+`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 258
+`appliqueVue` 268 · `libellesDeLaVue` 337 · `rafraichitVue` 345 · `poseVue` 359
+`mesureBarre` 388 · `masqueHaut` 416 · `masque` 423 · `masqueDroite` 460 · `fit` 471
+`recadreIncline` 498 · `stoppeZoom` 540 · `glisseVersVise` 558 · `glisseVers` 604
+`rectVisee` 631 · `zoom` 651 · `echelle` 665 · `versPlan` 677 · `brancheVue` 689
 
 Importe :
 
@@ -3100,7 +3100,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 2516 l. → plan, plan-admin
+### `modules/webgl.mjs` — 2537 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3112,31 +3112,31 @@ Fonctions :
 `enCamera` 361 · `vuesGl` 365 · `effetsGl` 386 · `basculeCamera` 396 · `vueWebgl` 409
 `blocDe` 423 · `majEditionWebgl` 436 · `cleBloc` 448 · `planifieWebgl` 474
 `toutRepeindreWebgl` 478 · `blocsDansLOrdre` 489 · `repeintWebgl` 494 · `assembleWebgl` 518
-`constTexte` 559 · `jeuDeCaracteres` 759 · `sousPixelOffert` 813 · `couchesPetites` 821
-`filtreCouches` 847 · `poseGeste` 858 · `positionTexte` 870 · `cleChoisi` 908
-`versEcran` 911 · `enveloppe` 918 · `nomsCaches` 929 · `parametresTexte` 958
-`couchesTexte` 960 · `accVide` 997 · `convertitBloc` 999 · `accDe` 1020 · `parcoursGl` 1037
-`resteDebout` 1087 · `dedansAnneau` 1095 · `auDessusDuSol` 1120 · `surSonStand` 1128
-`hauteurVolume` 1137 · `zoneMeublee` 1167 · `poseJeton` 1215 · `mul4` 1239
-`enColonnes` 1248 · `translation` 1249 · `homothetie` 1251 · `autourDuZ` 1252
-`matriceJeton` 1261 · `corpsDansLeJeton` 1277 · `couchesJeton` 1285 · `meubleZone` 1306
-`dansLeHall` 1341 · `teinteDesFigurants` 1363 · `couchesFigurants` 1398 · `eclatant` 1442
-`opaque` 1448 · `formeGl` 1455 · `corpsDeclare` 1526 · `texteGl` 1535 · `imageGl` 1559
-`imageDressee` 1601 · `socleImage` 1615 · `partage` 1627 · `designeGl` 1633 · `sortie` 1647
-`noteHauteur` 1653 · `anticipeHausses` 1683 · `monteALAppui` 1709 · `rendLAppui` 1721
-`detacheVolume` 1731 · `hauteurEnCours` 1760 · `hauteurHausse` 1766 · `echelleHausse` 1771
-`haussesParId` 1774 · `arete` 1790 · `contourDe` 1792 · `coucheContours` 1796 · `aPlat` 1815
-`couchesDeBloc` 1817 · `modelesLibellesHtml` 1941 · `poseModelesLibelles` 1951
-`lisModelesLibelles` 1957 · `groupesNoms` 1990 · `couchesNoms` 2007
-`couchesPastilles` 2018 · `couchesLibellesWebgl` 2033 · `couchesDessineesWebgl` 2069
-`stage` 2090 · `brancheSurvolWebgl` 2094 · `poseSurvolWebgl` 2114 · `enTuiles` 2143
-`hauteurTuile` 2151 · `visePour` 2157 · `gonfleSurvol` 2162 · `coucheTuileSoulevee` 2184
-`couchesTuiles` 2214 · `poseCurseurWebgl` 2232 · `poseFocusWebgl` 2241 · `aplatsDe` 2248
-`coucheSurvol` 2251 · `coucheSurvolVolume` 2265 · `coucheFocus` 2283 · `couchesPhare` 2310
-`lueurDe` 2327 · `opacitePhare` 2365 · `echellePhare` 2366 · `couchesPhareNoms` 2369
-`palierDefile` 2394 · `periodeDe` 2399 · `phaseDe` 2401 · `instant` 2411
-`animeCouche` 2412 · `majAnimationWebgl` 2441 · `animeWebgl` 2449 · `objetSous` 2483
-`cibleWebgl` 2490 · `priseWebgl` 2497 · `libelleSousWebgl` 2502 · `rectEcranWebgl` 2507
+`constTexte` 559 · `jeuDeCaracteres` 761 · `sousPixelOffert` 815 · `couchesPetites` 823
+`filtreCouches` 849 · `poseGeste` 860 · `positionTexte` 872 · `cleChoisi` 912
+`versEcran` 915 · `enveloppe` 922 · `nomsCaches` 933 · `parametresTexte` 962
+`nomsAPlat` 971 · `couchesTexte` 973 · `accVide` 1015 · `convertitBloc` 1017 · `accDe` 1038
+`parcoursGl` 1055 · `resteDebout` 1105 · `dedansAnneau` 1113 · `auDessusDuSol` 1138
+`surSonStand` 1146 · `hauteurVolume` 1155 · `zoneMeublee` 1185 · `poseJeton` 1233
+`mul4` 1257 · `enColonnes` 1266 · `translation` 1267 · `homothetie` 1269 · `autourDuZ` 1270
+`matriceJeton` 1279 · `corpsDansLeJeton` 1295 · `couchesJeton` 1303 · `meubleZone` 1324
+`dansLeHall` 1359 · `teinteDesFigurants` 1381 · `couchesFigurants` 1416 · `eclatant` 1460
+`opaque` 1466 · `formeGl` 1473 · `corpsDeclare` 1544 · `texteGl` 1553 · `imageGl` 1577
+`imageDressee` 1619 · `socleImage` 1633 · `partage` 1645 · `designeGl` 1651 · `sortie` 1665
+`noteHauteur` 1671 · `anticipeHausses` 1701 · `monteALAppui` 1727 · `rendLAppui` 1739
+`detacheVolume` 1749 · `hauteurEnCours` 1778 · `hauteurHausse` 1784 · `echelleHausse` 1789
+`haussesParId` 1792 · `arete` 1808 · `contourDe` 1810 · `coucheContours` 1814 · `aPlat` 1833
+`couchesDeBloc` 1835 · `modelesLibellesHtml` 1959 · `poseModelesLibelles` 1969
+`lisModelesLibelles` 1975 · `groupesNoms` 2008 · `couchesNoms` 2025
+`couchesPastilles` 2039 · `couchesLibellesWebgl` 2054 · `couchesDessineesWebgl` 2090
+`stage` 2111 · `brancheSurvolWebgl` 2115 · `poseSurvolWebgl` 2135 · `enTuiles` 2164
+`hauteurTuile` 2172 · `visePour` 2178 · `gonfleSurvol` 2183 · `coucheTuileSoulevee` 2205
+`couchesTuiles` 2235 · `poseCurseurWebgl` 2253 · `poseFocusWebgl` 2262 · `aplatsDe` 2269
+`coucheSurvol` 2272 · `coucheSurvolVolume` 2286 · `coucheFocus` 2304 · `couchesPhare` 2331
+`lueurDe` 2348 · `opacitePhare` 2386 · `echellePhare` 2387 · `couchesPhareNoms` 2390
+`palierDefile` 2415 · `periodeDe` 2420 · `phaseDe` 2422 · `instant` 2432
+`animeCouche` 2433 · `majAnimationWebgl` 2462 · `animeWebgl` 2470 · `objetSous` 2504
+`cibleWebgl` 2511 · `priseWebgl` 2518 · `libelleSousWebgl` 2523 · `rectEcranWebgl` 2528
 
 Importe :
 
