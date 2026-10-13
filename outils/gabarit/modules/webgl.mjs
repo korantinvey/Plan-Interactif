@@ -149,6 +149,38 @@ export function brancheWebgl(){
   quandAffiche(planifieWebgl);
 }
 
+/* La toile d'un téléphone.
+
+   Ce qui reste du coût d'une image, une fois les couches réduites, tient à
+   la carte graphique du téléphone : elle peint chaque pixel, et un écran de
+   densité trois en compte trois millions. Trois réglages de la toile, que la
+   bibliothèque laissait aux valeurs d'un ordinateur :
+
+   - l'image n'est plus gardée d'une trame à l'autre. La bibliothèque la garde
+     par défaut, ce qui oblige la carte graphique d'un téléphone — qui peint
+     par tuiles et jette d'ordinaire ce qu'elle a montré — à la recopier à
+     chaque image. Rien ne relit la toile : la désignation lit sa propre
+     image, hors de l'écran ;
+   - sur un écran tactile, la toile se peint en densité deux au plus : moitié
+     moins de pixels sur un écran de densité trois, pour une différence que
+     l'œil ne fait pas à la distance d'un téléphone ;
+   - et sans lissage des bords (MSAA) dès la densité deux, où un bord en
+     escalier ne fait plus qu'un demi-pixel de l'écran.
+
+   Un ordinateur garde sa pleine densité et son lissage : il n'en manquait
+   pas. `?densite=3` rend au téléphone sa densité d'origine, pour comparer. */
+const DENSITE_TACTILE = 2;
+function reglagesToile(){
+  const dpr = window.devicePixelRatio || 1;
+  const tactile = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const essai = Number(new URLSearchParams(location.search).get("densite"));
+  const densite = tactile ? Math.min(dpr, essai > 0 ? essai : DENSITE_TACTILE) : dpr;
+  return {
+    useDevicePixels: tactile ? densite : true,
+    deviceProps: { webgl: { preserveDrawingBuffer: false, antialias: !(tactile && densite >= 2) } },
+  };
+}
+
 /** Le dessin prend la main dès que la bibliothèque et le plan sont là, dans
  *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
  *  posée. */
@@ -166,6 +198,7 @@ export function monteWebgl(){
   GL.camera = enCamera();
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
+    ...reglagesToile(),
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
