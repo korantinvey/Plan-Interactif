@@ -103,9 +103,8 @@ export const ETOILE_DIST =
  * échoppe de trois mètres de côté reste visible, et la même marque à l'échelle
  * d'un stand de cent mètres carrés en couvrirait le nom.
  *
- * Le coin corné se pose sur l'angle de la boîte du tracé, non sur le tracé
- * lui-même : un stand en L n'a pas cet angle-là, et sa corne déborde dans
- * l'allée. C'est le prix de cette marque, et le volet des réglages le dit.
+ * Elle se pose sur un vrai coin du tracé (`coinDuTrace`), celui qui avance le
+ * plus vers le haut droit — ou le haut gauche pour la seconde.
  */
 function traceDist(mode, p, b, rang, deuxLiseres){
   /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
@@ -123,26 +122,90 @@ function traceDist(mode, p, b, rang, deuxLiseres){
      gauche : au même coin, la seconde recouvrait la première et le stand n'en
      montrait plus qu'une. */
   const droite = rang % 2 === 0;
-  const x = droite ? b.x + b.width : b.x, y = b.y, s = droite ? -1 : 1;
+  const tuiles = document.documentElement.classList.contains("ambiance-tuiles");
+  const k = coinDuTrace(p.getAttribute("d") || "", droite, tuiles) || coinDeBoite(b, droite);
+  const [x, y] = k.p, [ux, uy] = k.u, [vx, vy] = k.v;
+  // un point de l'angle, à « a » le long d'un côté et « e » le long de l'autre
+  const pt = (a, e) => [x + ux * a + vx * e, y + uy * a + vy * e];
+  const en = (a, e) => pt(a, e).map(n).join(" ");
   if (mode === "corne"){
     /* Sur une tuile, l'angle est arrondi : une corne droite en dépassait d'un
        triangle posé dans le vide. Elle suit donc l'arrondi du coin, du même
        rayon que la tuile (`ambiance.mjs` `rayonTuile`), et s'allonge
        d'autant pour rester lisible. */
-    if (document.documentElement.classList.contains("ambiance-tuiles")){
-      const r = rayonTuile(b.width, b.height), cc = Math.max(c, r * 1.7);
-      return '<path class="dPlein" d="M' + n(x + s * cc) + ' ' + n(y) + 'L' + n(x + s * r) + ' ' + n(y) +
-        'Q' + n(x) + ' ' + n(y) + ' ' + n(x) + ' ' + n(y + r) + 'L' + n(x) + ' ' + n(y + cc) + 'Z"/>';
+    if (tuiles){
+      const r = rayonTuile(k.lu, k.lv), cc = Math.max(c, r * 1.7);
+      return '<path class="dPlein" d="M' + en(cc, 0) + 'L' + en(r, 0) +
+        'Q' + en(0, 0) + ' ' + en(0, r) + 'L' + en(0, cc) + 'Z"/>';
     }
-    return '<path class="dPlein" d="M' + n(x + s * c) + ' ' + n(y) + 'L' + n(x) + ' ' +
-      n(y) + 'L' + n(x) + ' ' + n(y + c) + 'Z"/>';
+    return '<path class="dPlein" d="M' + en(c, 0) + 'L' + en(0, 0) + 'L' + en(0, c) + 'Z"/>';
   }
+  /* La pastille et l'étincelle se posent dans l'angle, à égale distance de
+     ses deux côtés ; l'étincelle garde l'aplomb de son dessin. */
+  const [cx, cy] = pt(c * .58, c * .58);
   if (mode === "point")
-    return '<circle class="dPlein" cx="' + n(x + s * c * .58) + '" cy="' + n(y + c * .58) +
-      '" r="' + n(c * .34) + '"/>';
-  return '<g class="dPlein" transform="translate(' +
-    n(droite ? x - c * 1.08 : x + c * .08) + ' ' + n(y + c * .08) +
+    return '<circle class="dPlein" cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(c * .34) + '"/>';
+  return '<g class="dPlein" transform="translate(' + n(cx - c * .5) + ' ' + n(cy - c * .5) +
     ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_DIST + '</g>';
+}
+
+/**
+ * Le sommet du tracé qui fait le coin haut droit — ou haut gauche — du stand,
+ * et la direction de ses deux côtés.
+ *
+ * La boîte du tracé ne suffit pas : un stand un peu de biais, ou dont un côté
+ * fuit, n'a pas de sommet à l'angle de sa boîte, et la corne s'y posait dans
+ * le vide, à côté du vrai coin. On prend donc le sommet le plus avancé vers
+ * cet angle — toujours un coin saillant, jamais le creux d'un L — et la
+ * marque longe les deux côtés qui s'y rejoignent.
+ *
+ * Sur une tuile, le tracé n'a plus de sommets mais des arrondis : le point de
+ * contrôle de chaque arrondi est le coin, retiré comme la tuile. Un tracé
+ * courbe — une rotonde — n'a pas de coin : la boîte reprend la main.
+ */
+function coinDuTrace(d, droite, tuiles){
+  const nb = "(-?\\d*\\.?\\d+(?:e[-+]?\\d+)?)";
+  const anneaux = [];
+  if (tuiles){
+    if (!/^[\sMLQZ0-9.,eE+-]+$/.test(d)) return null;
+    for (const sous of d.split(/(?=M)/)){
+      const pts = [...sous.matchAll(new RegExp("Q\\s*" + nb + "[\\s,]+" + nb, "gi"))]
+        .map(m => [Number(m[1]), Number(m[2])]);
+      if (pts.length >= 3) anneaux.push(pts);
+    }
+  } else {
+    if (!/^[\sMLZ0-9.,eE+-]+$/.test(d)) return null;
+    for (const sous of d.split(/(?=M)/)){
+      const v = (sous.match(new RegExp(nb, "gi")) || []).map(Number), pts = [];
+      for (let i = 0; i + 1 < v.length; i += 2) pts.push([v[i], v[i + 1]]);
+      const a0 = pts[0], z = pts[pts.length - 1];
+      if (pts.length > 1 && a0[0] === z[0] && a0[1] === z[1]) pts.pop();
+      if (pts.length >= 3) anneaux.push(pts);
+    }
+  }
+  // l'angle haut droit tire vers +x et −y, le haut gauche vers −x et −y
+  const sx = droite ? 1 : -1;
+  let mieux = null, score = -Infinity;
+  for (const an of anneaux) an.forEach((q, i) => {
+    const t = sx * q[0] - q[1];
+    if (t > score + 1e-6){ score = t; mieux = { an, i }; }
+  });
+  if (!mieux) return null;
+  const { an, i } = mieux, q = an[i];
+  const vers = (r) => {
+    const dx = r[0] - q[0], dy = r[1] - q[1], l = Math.hypot(dx, dy);
+    return l > 1e-6 ? { u: [dx / l, dy / l], l } : null;
+  };
+  const a = vers(an[(i + an.length - 1) % an.length]), z = vers(an[(i + 1) % an.length]);
+  if (!a || !z) return null;
+  return { p: q, u: a.u, v: z.u, lu: a.l, lv: z.l };
+}
+
+/** L'angle de la boîte, pour un tracé qui n'a pas de coin à offrir. */
+function coinDeBoite(b, droite){
+  const s = droite ? -1 : 1;
+  return { p: [droite ? b.x + b.width : b.x, b.y], u: [s, 0], v: [0, 1],
+    lu: b.width, lv: b.height };
 }
 
 /* Le relevé demande la boîte de chaque forme, que seul le navigateur sait

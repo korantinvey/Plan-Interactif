@@ -979,9 +979,8 @@ export function voletDist(hote, d){
   };
 
   bloc("plan", "Sur le plan",
-    "Une forme posée sur le stand. Le coin corné se place sur l'angle de la " +
-    "boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde " +
-    "dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise " +
+    "Une forme posée sur le stand. Le coin corné se cale sur le vrai coin du " +
+    "stand, même posé de biais, et en longe les deux côtés. Le liseré, lui, emprunte le trait que la sélection utilise " +
     "déjà. Deux distinctions affichées prennent chacune un coin, l'une à " +
     "droite et l'autre à gauche : elles ne se recouvrent pas.");
   bloc("liste", "Dans la liste",

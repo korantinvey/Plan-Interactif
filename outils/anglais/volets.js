@@ -133,8 +133,8 @@ module.exports = {
     "The \u201cTrade body member\u201d field is unticked in the console: the marks set here will only show once the field is made visible.",
   "Couleur des marques": "Colour of the marks",
   "Sur le plan": "On the map",
-  "Une forme posée sur le stand. Le coin corné se place sur l'angle de la boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise déjà. Deux distinctions affichées prennent chacune un coin, l'une à droite et l'autre à gauche : elles ne se recouvrent pas.":
-    "A shape laid on the stand. The folded corner sits on the corner of the outline's box: an L-shaped stand has no such corner, and its fold spills into the aisle. The outline, for its part, borrows the stroke selection already uses. Two distinctions on show take a corner each, one on the right and one on the left: they do not overlap.",
+  "Une forme posée sur le stand. Le coin corné se cale sur le vrai coin du stand, même posé de biais, et en longe les deux côtés. Le liseré, lui, emprunte le trait que la sélection utilise déjà. Deux distinctions affichées prennent chacune un coin, l'une à droite et l'autre à gauche : elles ne se recouvrent pas.":
+    "A shape laid on the stand. The folded corner fits the stand's actual corner, even when it sits at an angle, and runs along both of its sides. The outline, for its part, borrows the stroke selection already uses. Two distinctions on show take a corner each, one on the right and one on the left: they do not overlap.",
   "Dans la liste": "In the list",
   "La ligne des résultats. Le cartouche dit le mot, mais l'ellipse le mange sur une enseigne longue ; la mention descend sur la seconde ligne, où rien ne la tronque.":
     "The result row. The tag says the word, but the ellipsis eats it on a long brand name; the caption drops to the second line, where nothing truncates it.",
