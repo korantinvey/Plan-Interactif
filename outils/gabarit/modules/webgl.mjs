@@ -32,6 +32,7 @@
    ============================================================ */
 import { avive, eclate } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
@@ -93,6 +94,11 @@ const DECK_WEBGL = {
   src: "bibliotheques/deck.gl-9.3.11-plan-53efd7e8.min.js",
   integrite: "sha384-RgImRMIyrd9hP0UaVP6ndqdVVIGUnZ7JVuk0LuYnVHqAYAOqHaGRzJPpuWdEDR1k",
 };
+/** Un repeint vient de finir : sa durée en millisecondes, et combien de
+ *  blocs il a refaits. Seul le relevé des performances l'écoute
+ *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
+ *  @type {import("./annonce.mjs").Annonce<[number, number]>} */
+export const REPEINT_FINI = creeAnnonce();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -522,6 +528,7 @@ function repeintWebgl(){
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
+  REPEINT_FINI.dis(GL.duree, n);
 }
 
 function assembleWebgl(){

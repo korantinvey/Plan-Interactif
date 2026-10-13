@@ -30,6 +30,10 @@ import "./edition-en-cours.mjs";
 import "./mini-carte.mjs";
 // les noms des stands cherchés ou choisis, sortis dans la marge quand ils n'y tiennent pas
 import "./appels.mjs";
+/* Le relevé des performances (`?perf`) ne s'importe de nulle part : il
+   s'inscrit auprès du rendu et du démarrage en se chargeant, et ne fait rien
+   sans `?perf` dans l'adresse. */
+import "./releve.mjs";
 
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,
