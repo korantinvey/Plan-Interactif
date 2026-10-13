@@ -474,7 +474,8 @@ self.addEventListener("fetch", (e) => {
          copie gardée est ce qui permet de retrouver le plan hors ligne. */
       e.respondWith(adresse.searchParams.get("v") ||
                     adresse.searchParams.get("vignette") ||
-                    adresse.searchParams.get("vignettes")
+                    adresse.searchParams.get("vignettes") ||
+                    adresse.searchParams.get("grande")
         ? dabordCache(e, requete, DURABLE)
         : dabordReseau(e, requete));
       return;

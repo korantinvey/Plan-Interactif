@@ -38,8 +38,10 @@ for (const ambiance of ["classique", "tuiles"]) {
     const webgl = await page.waitForFunction(() => window.__essais.GL.deck, null, { timeout: 15_000 })
       .then(() => true, () => false);
     test.skip(!webgl, "pas de carte graphique : le plan reste en SVG, et ses noms");
-    // ouvrir un stand le cadre de près
+    // ouvrir un stand le cadre de près ; un cran de plus passe le seuil des logos
     await page.locator("#list .row").first().click();
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => document.getElementById("zIn").click());
 
     // un logo posé, à plat, se laisse viser là où il est peint
     const vise = await page.waitForFunction(() => {

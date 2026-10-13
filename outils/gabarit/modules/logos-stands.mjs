@@ -35,17 +35,21 @@
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
-import { VIGNETTES, VIGNETTES_ARRIVEES } from "./vignettes.mjs";
+import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
+import { VIGNETTE_SORTIE } from "./marque.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 
-/** La classe que la racine porte quand l'option est prise en vue immersive. */
+/** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
 
 /* Le seuil, en zoom de la carte graphique — le logarithme des pixels par
    mètre. Au-delà, le nom d'un stand qui a un logo se tait ; le logo, lui,
    paraît sur le dernier quart de cran qui y mène, pour que le stand ne reste
-   jamais vide entre les deux. */
-const ZOOM_LOGO = Math.log2(16), ZOOM_FONDU = ZOOM_LOGO - .25;
+   jamais vide entre les deux. Seize pixels par mètre le faisaient paraître
+   trop tôt : un logo de deux mètres n'y tenait qu'une quarantaine de pixels,
+   où le nom se lisait mieux que lui. À vingt-quatre, il paraît assez grand
+   pour être lu. */
+const ZOOM_LOGO = Math.log2(24), ZOOM_FONDU = ZOOM_LOGO - .25;
 
 /* La part du toit que le logo occupe, dans un sens comme dans l'autre. */
 const PART_DU_TOIT = .82;
@@ -104,18 +108,47 @@ const images = new Map();
  *  récemment posée à la plus récente. */
 /** @type {Map<string, HTMLCanvasElement | null>} */
 const detourees = new Map();
-/* Combien on en garde. Chacune tient ses pixels — un demi-mégaoctet pour une
-   vignette de six cents sur deux cents —, et un visiteur qui parcourt de près
-   tout un salon de cinq cents stands les aurait toutes gardées. Cent
-   cinquante couvrent la vue et ses abords ; une vignette oubliée se détoure à
-   nouveau quand on revient vers elle, comme à la première fois. Les vignettes
-   reçues, elles, restent : quelques kilo-octets chacune, et c'est par elles
-   que le nom d'un stand sait qu'il a un logo. */
-const GARDEES = 150;
+/* Combien on en garde, en pixels. Chacune tient les siens — un
+   demi-mégaoctet pour une vignette de six cents sur deux cents, le triple pour
+   une grande —, et un visiteur qui parcourt de près tout un salon de cinq
+   cents stands les aurait toutes gardées. Vingt millions de pixels, quatre-
+   vingts mégaoctets, couvrent la vue et ses abords ; une vignette oubliée se
+   détoure à nouveau quand on revient vers elle, comme à la première fois. Les
+   vignettes reçues, elles, restent : quelques kilo-octets chacune, et c'est
+   par elles que le nom d'un stand sait qu'il a un logo. */
+const PIXELS_GARDES = 20e6;
 /** Les toiles prêtes à poser, par clé et par largeur — seules celles de la
  *  dernière pose : une finesse quittée se refait d'une simple réduction. */
 /** @type {Map<string, HTMLCanvasElement | null>} */
 const toiles = new Map();
+
+/** Les grandes vignettes, par clé : demandées par les seuls toits vus de
+ *  près, quand la petite ne suffit plus à leur finesse. */
+/** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
+const grandes = new Map();
+/* La petite doit manquer d'au moins ce rapport pour qu'on aille chercher la
+   grande : en deçà, l'écart ne se voit pas, et le trajet coûterait pour rien. */
+const PLUS_FIN = 1.25;
+
+/** La grande vignette décodée, ou rien : pas encore arrivée, ou inutile —
+ *  l'original n'en tenait pas plus, et le service répond qu'il n'y en a pas. */
+function grande(/** @type {string} */ cle){
+  const deja = grandes.get(cle);
+  if (deja) return typeof deja === "string" ? null : deja;
+  const src = adresseGrande(cle);
+  if (!src){ grandes.set(cle, "panne"); return null; }
+  grandes.set(cle, "attente");
+  const i = new Image();
+  // lue par le détourage : une origine qui ne le permettrait pas la rendrait muette
+  i.crossOrigin = "anonymous";
+  i.onload = () => {
+    grandes.set(cle, i.naturalWidth && i.naturalHeight ? i : "panne");
+    PANNEAU_PRET.dis();
+  };
+  i.onerror = () => grandes.set(cle, "panne");
+  i.src = src;
+  return null;
+}
 
 /** La vignette décodée, ou rien tant qu'elle ne l'est pas. */
 function image(/** @type {string} */ cle){
@@ -485,10 +518,13 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
   const posees = new Set(data.map(d => d.t.dataset.cle));
   for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
   const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
-  const garde = Math.max(GARDEES, enJeu.size);
-  for (const cle of [...detourees.keys()]){
-    if (detourees.size <= garde) break;
-    if (!enJeu.has(cle)) detourees.delete(cle);
+  let pixels = 0;
+  for (const d of detourees.values()) if (d) pixels += d.width * d.height;
+  for (const [cle, d] of [...detourees]){
+    if (pixels <= PIXELS_GARDES) break;
+    if (enJeu.has(cle)) continue;
+    detourees.delete(cle);
+    if (d) pixels -= d.width * d.height;
   }
 }
 
@@ -524,7 +560,17 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
-    const t = toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * finesseCouverte), tasse);
+    const voulue = Math.max(PIXELS_MIN, large * finesseCouverte);
+    /* La petite a été réduite à sa taille de fiche : quand le toit en demande
+       nettement plus, et qu'elle a bien été réduite — un côté au plafond —,
+       la grande prend sa place dès qu'elle est là. Sa clé de toile se
+       distingue, pour que les deux ne se confondent pas. */
+    let src = i, cleSrc = s.vignette;
+    if (voulue > i.naturalWidth * PLUS_FIN && Math.max(i.naturalWidth, i.naturalHeight) >= VIGNETTE_SORTIE - 1){
+      const g = grande(s.vignette);
+      if (g){ src = g; cleSrc = s.vignette + "+g"; }
+    }
+    const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue, tasse);
     if (!t) continue;
     /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
        sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
