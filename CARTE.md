@@ -2715,14 +2715,14 @@ Importé par :
 
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor
 
-### `modules/synchronisation.mjs` — 252 l. → console
+### `modules/synchronisation.mjs` — 277 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
 `brancheSynchronisation` 35 · `etapesPressenties` 53 · `synchronise` 68
-`fabriqueLesVignettes` 165 · `envoieVignettes` 245
+`fabriqueLesVignettes` 167 · `oublieLePlan` 262 · `envoieVignettes` 270
 
 Importe :
 
