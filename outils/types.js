@@ -38,6 +38,8 @@ const DECLARATIONS = [
   "declare var __DICTIONNAIRE__: any;",
   // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
   "declare const MARQUE_PRODUIT: string;",
+  // le script du travailleur qui détoure les logos, versé de même ; absent des essais
+  "declare const TRAVAIL_DETOURAGE: string | undefined;",
   /* Un élément cherché par sélecteur, rendu sans type précis — la règle de
      `$` (`modules/dom.mjs`), pour la même raison : la bibliothèque rend un
      `Element` nu, sans `dataset`, `value` ni `onclick`, et chaque recherche

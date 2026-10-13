@@ -82,6 +82,25 @@ function assemble(entree, define = {}) {
   return code + reperes.join("\n") + "\n";
 }
 
+/**
+ * Le script d'un travailleur (`modules/detourage-travail.mjs`), rendu en
+ * chaîne : la construction le verse dans le script du plan par `define`, et
+ * la page le lance depuis une adresse « blob: ». Minifié avec le plan, sans
+ * carte : il ne tient que quelques lignes, et ses erreurs reviennent à la page.
+ */
+function travail(module) {
+  return esbuild.buildSync({
+    entryPoints: [path.join(MODULES, module)],
+    bundle: true,
+    format: "iife",
+    write: false,
+    charset: "utf8",
+    legalComments: "none",
+    logLevel: "silent",
+    minify: MINIFIES.includes("plan"),
+  }).outputFiles[0].text;
+}
+
 /** La carte d'un script minifié, d'après son code ; `undefined` s'il ne l'est pas. */
 const carteDe = (code) => CARTES.get(code.trim());
 
@@ -121,4 +140,4 @@ function importsDe(module) {
     .map((src) => src.slice(2));
 }
 
-module.exports = { MODULES, ENTREES, assemble, carteDe, entreesDe, importsDe };
+module.exports = { MODULES, ENTREES, assemble, travail, carteDe, entreesDe, importsDe };
