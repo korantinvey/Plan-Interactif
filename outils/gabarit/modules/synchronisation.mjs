@@ -162,11 +162,19 @@ const PAQUET_VIGNETTES = 8;
 const TOURS_VIGNETTES = 200;
 
 async function fabriqueLesVignettes(e) {
-  let faites = 0, refusees = 0, total = 0;
+  let faites = 0, total = 0, deja = null;
+  /* Un logo illisible chez sa source n'est jamais enregistré : sans cette
+     mémoire, le serveur le rendrait à chaque tour, il serait retéléchargé et
+     recompté autant de fois — un compte qui dépassait son total de loin. On
+     les lui renvoie pour qu'il les écarte de ce qui reste à faire. */
+  const ecartees = new Set();
+  const compte = () => signale(traduit("Préparation des logos : {n} sur {t}…")
+    .replace("{n}", String(Math.min(total, (deja || 0) + faites + ecartees.size)))
+    .replace("{t}", String(total)));
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
     let lot;
     try {
-      lot = await fonction("vignettes", { evenementId: e.id });
+      lot = await fonction("vignettes", { evenementId: e.id, ecartees: [...ecartees] });
     } catch (err) {
       /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
          qui ne commence jamais sans rien annoncer laisse chercher du mauvais
@@ -176,24 +184,31 @@ async function fabriqueLesVignettes(e) {
       return;
     }
     total = lot.total || total;
-    if (!lot.aFaire || !lot.aFaire.length) break;
+    /* Ce que les synchronisations d'avant ont déjà fait compte dans
+       l'avancement : sans quoi le compte partirait de zéro vers un total qui
+       les inclut. */
+    if (deja === null) deja = Math.max(0, total - (lot.reste || 0));
+    /* Un serveur d'avant ignore la liste des écartées et les rend encore :
+       on ne retente pas ce qui a déjà échoué, et un lot qui n'en contient
+       plus d'autres met fin à la préparation. */
+    const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s));
+    if (!aFaire.length) break;
 
     const paquet = [];
-    for (const source of lot.aFaire) {
+    for (const source of aFaire) {
       const v = await vignetteDeLogo(source);
       if (v) paquet.push(v);
-      else refusees++;
+      else ecartees.add(source);
       if (paquet.length >= PAQUET_VIGNETTES) {
         faites += await envoieVignettes(e, paquet);
         paquet.length = 0;
-        signale(traduit("Préparation des logos : {n} sur {t}…")
-          .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
+        compte();
       }
     }
     if (paquet.length) faites += await envoieVignettes(e, paquet);
-    signale(traduit("Préparation des logos : {n} sur {t}…")
-      .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
+    compte();
   }
+  const refusees = ecartees.size;
 
   /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
      premier cas surprend quand on attend le contraire — un champ de logo non

@@ -1,10 +1,13 @@
 /* ============================================================
-   Les logos sur les stands — la vue immersive, vue de près
+   Les logos sur les stands, vus de près
 
-   De loin, le hall se lit par ses volumes et ses noms. Quand on s'approche,
+   De loin, le hall se lit par ses formes et ses noms. Quand on s'approche,
    l'enseigne d'un stand dit plus vite que son nom qui l'occupe : son logo se
-   pose alors à plat sur le toit du stand, imprimé comme une enseigne peinte,
-   sans plaque ni bord, et le nom lui cède la place.
+   pose alors à plat sur le stand — sur son toit en vue immersive —, imprimé
+   comme une enseigne peinte, sans plaque ni bord, et le nom lui cède la place.
+   Toutes les ambiances le permettent : à plat, en classique comme en tuiles,
+   le logo est seulement dessiné sans l'étirement que la vue de biais
+   demande.
 
    À la place, et non en plus. Un premier essai le faisait flotter au-dessus
    du stand : le nom restait dessous, les noms des stands de devant — peints
@@ -19,6 +22,7 @@
 
    Une option de l'exploitant (volet « Apparence ») ; la racine en porte la
    classe, posée par `ambiance.mjs`, et `webgl.mjs` demande ici ses couches.
+   Le SVG (`?rendu=svg`) n'en pose pas : ses noms restent.
 
    Seules les vignettes déjà reçues par lot (`vignettes.mjs`) font un logo :
    recadrées à la synchronisation, elles pèsent quelques kilo-octets, et le lot
@@ -33,9 +37,10 @@ import { P } from "./donnees.mjs";
 import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { VIGNETTE_SORTIE } from "./marque.mjs";
+import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 
-/** La classe que la racine porte quand l'option est prise en vue immersive. */
+/** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
 
 /* Le seuil, en zoom de la carte graphique — le logarithme des pixels par
@@ -69,17 +74,13 @@ const finesse = (/** @type {number} */ zoom) => {
 /* Un rien de marge vide autour du logo, pour que ses bords ne se coupent pas
    net. */
 const MARGE = 2;
-/* Le logo est imprimé sur le toit, sans plaque ni bord : le fond blanc que
-   la plupart des vignettes portent est retiré, à partir de leur pourtour. Un
-   pixel compte pour du fond au-dessus de ce clair, et s'efface tout à fait
-   au-dessus du second ; entre les deux, il s'estompe, pour que le contour du
-   logo ne crénelle pas. */
-const CLAIR_FOND = 225, BLANC_FOND = 245;
 /* Couchée sur le sol incliné, une image se tasse en hauteur d'autant que le
    hall fuit. Le logo est donc dessiné étiré d'autant : vu de biais, il
    reprend ses proportions. Le compte est juste de face, et reste bon aux
-   quelques degrés de cap qu'un hall prend d'ordinaire. */
+   quelques degrés de cap qu'un hall prend d'ordinaire. À plat, vu d'en haut,
+   rien ne se tasse. */
 const TASSEMENT = Math.sqrt(1 - SINUS_INCLINAISON * SINUS_INCLINAISON);
+const tassement = () => cameraEnJeu() ? TASSEMENT : 1;
 
 /* Seuls les logos autour de la vue se posent. Une texture par logo, à pleine
    finesse : les cinq cents d'un salon comme Franchise Expo tiendraient des
@@ -162,11 +163,8 @@ function image(/** @type {string} */ cle){
 }
 
 /**
- * Le logo à cette largeur, son fond retiré.
- *
- * Seul le clair qui touche le pourtour, de proche en proche, est du fond : le
- * blanc d'une lettre ou d'un motif, enclos dans le logo, reste. Un logo déjà
- * détouré n'a rien de clair au bord, et passe tel quel.
+ * Le logo à cette largeur, son fond blanc retiré (`detourage.mjs`) : il est
+ * imprimé sur le toit, sans plaque ni bord.
  */
 function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /** @type {number} */ h){
   const toile = document.createElement("canvas");
@@ -175,137 +173,25 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
   if (!ctx) return null;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(i, 0, 0, w, h);
-  const img = ctx.getImageData(0, 0, w, h), px = img.data;
-  const clarte = (/** @type {number} */ k) => px[k * 4 + 3] < 16 ? 255 : Math.min(px[k * 4], px[k * 4 + 1], px[k * 4 + 2]);
-  const vu = new Uint8Array(w * h), file = [];
-  for (let x = 0; x < w; x++) file.push(x, (h - 1) * w + x);
-  for (let y = 0; y < h; y++) file.push(y * w, y * w + w - 1);
-  while (file.length){
-    const k = /** @type {number} */ (file.pop());
-    if (vu[k]) continue;
-    vu[k] = 1;
-    const c = clarte(k);
-    if (c < CLAIR_FOND) continue;
-    // le fond s'efface, son liseré s'estompe
-    px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - c) / (BLANC_FOND - CLAIR_FOND))));
-    const x = k % w;
-    if (x > 0) file.push(k - 1);
-    if (x < w - 1) file.push(k + 1);
-    if (k >= w) file.push(k - w);
-    if (k < w * (h - 1)) file.push(k + w);
-  }
-  creux(px, vu, w, h, clarte);
-  /* Le bord. Un pixel du contour mêle la couleur du logo au blanc du fond :
-     laissé tel quel, il dessinait un liseré clair et crénelé sur le toit. On
-     défait ce mélange — sa part de blanc devient de la transparence, et sa
-     couleur redevient celle du logo, que le plus foncé de ses voisins dit —,
-     sur deux pixels de profondeur. */
-  const fond = (/** @type {number} */ k) => vu[k] === 1 && px[k * 4 + 3] < 255 * .5;
-  // seuls les pixels à deux pas du fond au plus : sur un logo d'origine, tous
-  // les parcourir avec leurs vingt-cinq voisins figeait la page
-  const bord = new Uint8Array(w * h);
-  for (let k = 0; k < w * h; k++){
-    if (!fond(k)) continue;
-    const x0 = k % w, y0 = (k - x0) / w;
-    // un fond qui ne touche pas le logo n'a pas de bord autour de lui
-    if (!((x0 > 0 && !fond(k - 1)) || (x0 < w - 1 && !fond(k + 1)) ||
-      (y0 > 0 && !fond(k - w)) || (y0 < h - 1 && !fond(k + w)))) continue;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
-      const xx = x0 + dx, yy = y0 + dy;
-      if (xx >= 0 && yy >= 0 && xx < w && yy < h) bord[yy * w + xx] = 1;
-    }
-  }
-  for (let k = 0; k < w * h; k++){
-    if (!bord[k] || fond(k)) continue;
-    const x = k % w, y = (k - x) / w;
-    let pres = false, encre = 255;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
-      const xx = x + dx, yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
-      const kk = yy * w + xx;
-      if (fond(kk)){ pres = true; continue; }
-      const m = Math.min(px[kk * 4], px[kk * 4 + 1], px[kk * 4 + 2]);
-      if (m < encre) encre = m;
-    }
-    if (!pres || encre > 235) continue;
-    const m = Math.min(px[k * 4], px[k * 4 + 1], px[k * 4 + 2]);
-    const a = Math.max(0, Math.min(1, (255 - m) / (255 - encre)));
-    if (a >= 1) continue;
-    for (let c = 0; c < 3; c++)
-      px[k * 4 + c] = a > .02 ? Math.max(0, Math.min(255, Math.round((px[k * 4 + c] - (1 - a) * 255) / a))) : px[k * 4 + c];
-    px[k * 4 + 3] = Math.round(px[k * 4 + 3] * a);
-  }
+  const img = ctx.getImageData(0, 0, w, h);
+  detoure(img.data, w, h);
   ctx.putImageData(img, 0, 0);
   return toile;
 }
 
-
-
-/* Un creux est du fond si les trois quarts de son pourtour sont à moins de
-   cette part du petit côté du logo — une épaisseur de trait — du fond
-   retiré. */
-const TRAIT = .12;
-
-/**
- * Les creux des lettres. Le fond ne se retire que de proche en proche depuis
- * le pourtour : l'œil d'un « a », d'un « e », d'un « A » n'y touche pas, et
- * restait blanc sur le toit coloré. Un clair enclos est donc du fond aussi
- * quand il n'est séparé du fond retiré que par un trait mince ; le blanc d'un
- * texte posé sur un aplat, loin du bord de l'aplat, reste.
- */
-function creux(/** @type {Uint8ClampedArray} */ px, /** @type {Uint8Array} */ vu,
-  /** @type {number} */ w, /** @type {number} */ h, /** @type {(k: number) => number} */ clarte){
-  const n = w * h, clair = (/** @type {number} */ k) => clarte(k) >= CLAIR_FOND;
-  // la distance de chaque pixel au fond retiré, en pas, à travers le logo
-  const dist = new Int32Array(n).fill(-1), file = new Int32Array(n);
-  let debut = 0, fin = 0;
-  for (let k = 0; k < n; k++) if (vu[k] && clair(k)){ dist[k] = 0; file[fin++] = k; }
-  if (!fin) return;
-  while (debut < fin){
-    const k = file[debut++], x = k % w, d = dist[k] + 1;
-    for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
-      if (kk < 0 || kk >= n || dist[kk] >= 0) continue;
-      dist[kk] = d; file[fin++] = kk;
-    }
-  }
-  const seuil = Math.max(2, Math.round(TRAIT * Math.min(w, h)));
-  const range = new Uint8Array(n);
-  for (let k0 = 0; k0 < n; k0++){
-    if (vu[k0] || range[k0] || !clair(k0)) continue;
-    // le creux entier, et la distance de son pourtour au fond
-    const siens = [k0], bords = [];
-    range[k0] = 1;
-    for (let i = 0; i < siens.length; i++){
-      const k = siens[i], x = k % w;
-      let auBord = false;
-      for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
-        if (kk < 0 || kk >= n) continue;
-        if (!clair(kk)){ auBord = true; continue; }
-        if (!vu[kk] && !range[kk]){ range[kk] = 1; siens.push(kk); }
-      }
-      if (auBord) bords.push(dist[k]);
-    }
-    if (!bords.length) continue;
-    bords.sort((a, b) => a - b);
-    if (bords[Math.floor(bords.length * .75)] > seuil) continue;
-    for (const k of siens){
-      px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - clarte(k)) / (BLANC_FOND - CLAIR_FOND))));
-      vu[k] = 1;
-    }
-  }
-}
-
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
- *  hauteur de ce que la vue de biais lui reprendra.
+ *  hauteur de ce que la vue de biais lui reprendra — `tasse`, 1 à plat.
  *
  *  Le détourage se fait une fois, sur la vignette entière, et chaque finesse
  *  n'en est qu'une réduction : la refaire à chaque demi-cran de zoom coûtait
  *  un parcours de chaque logo, et détourée en petit, la vignette perdait au
  *  bord ce que la réduction avait déjà fondu. */
 function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
-  /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur){
+  /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur,
+  /** @type {number} */ tasse){
   const lw = Math.max(1, Math.min(iw, Math.round(largeur)));
-  const k = cle + "@" + lw;
+  // le tassement dans la clé : passer de l'immersif au plat refait la toile
+  const k = cle + "@" + lw + (tasse === 1 ? "" : "~");
   if (toiles.has(k)) return toiles.get(k) || null;
   const lh = Math.max(1, Math.round(ih * lw / iw));
   const logo = detourees.has(cle) ? detourees.get(cle) : sansFond(i, iw, ih);
@@ -314,11 +200,11 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   detourees.set(cle, logo || null);
   const t = document.createElement("canvas");
   t.width = lw + 2 * MARGE;
-  t.height = Math.round((lh + 2 * MARGE) / TASSEMENT);
+  t.height = Math.round((lh + 2 * MARGE) / tasse);
   const ctx = t.getContext("2d");
   if (logo && ctx){
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(logo, MARGE, MARGE / TASSEMENT, lw, lh / TASSEMENT);
+    ctx.drawImage(logo, MARGE, MARGE / tasse, lw, lh / tasse);
   }
   t.dataset.cle = k;
   toiles.set(k, logo && ctx ? t : null);
@@ -328,7 +214,7 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
 /** Le stand montre-t-il son logo de près ? Sa vignette se décode si elle ne
  *  l'est pas encore. */
 export function logoPose(/** @type {any} */ s){
-  return Boolean(s && s.vignette && cameraEnJeu() &&
+  return Boolean(s && s.vignette &&
     document.documentElement.classList.contains(CLASSE_LOGOS) && image(s.vignette));
 }
 
@@ -521,8 +407,8 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
 }
 
 /**
- * La couche des logos, pour la vue immersive : un carré par logo autour de la
- * vue, tous peints d'une planche.
+ * La couche des logos : un carré par logo autour de la vue, tous peints
+ * d'une planche.
  * @param {any} L la bibliothèque
  * @param {(el: Element) => number} hauteurDe la hauteur du volume d'un tracé de stand
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
@@ -536,6 +422,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
   finesseCouverte = finesse(zoom);
+  const enVolume = cameraEnJeu(), tasse = tassement();
   const data = [], vus = new Set();
   for (const s of p.stands || []){
     if (!s.vignette || !s.c || vus.has(s.id)) continue;
@@ -547,7 +434,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     vus.add(s.id);
     // le toit, d'après la boîte du stand : le logo en suit les côtés
     const bb = s.bb || [0, 0];
-    const rapport = i.naturalWidth / (i.naturalHeight / TASSEMENT);
+    const rapport = i.naturalWidth / (i.naturalHeight / tasse);
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
@@ -561,9 +448,12 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
       const g = grande(s.vignette);
       if (g){ src = g; cleSrc = s.vignette + "+g"; }
     }
-    const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue);
+    const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue, tasse);
     if (!t) continue;
-    data.push({ x: cx, y: cy, z: hauteurDe(trace) + .05, large, prof, t, el: g });
+    /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
+       sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
+       ce rien suffisait à sortir le logo de ce qu'elle montre. */
+    data.push({ x: cx, y: cy, z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g });
   }
   oublie(data);
   if (!data.length) return [];
@@ -572,6 +462,10 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const pl = plancheDe(toiles);
   return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture: pl.toile, pickable: true,
     material: IMPRIME, textureParameters: filtrage(appareil), extensions: extensionPlanche(L),
+    /* À plat, tout est à la même hauteur : la profondeur départagerait le
+       logo et son stand au hasard. L'ordre des couches suffit — il se peint
+       après les stands, avant les noms. */
+    ...(enVolume ? {} : { parameters: { depthCompare: "always", depthWriteEnabled: false } }),
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
     getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
     getOrientation: [0, 0, 0],

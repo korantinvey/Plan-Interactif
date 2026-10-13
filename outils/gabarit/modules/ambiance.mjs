@@ -52,7 +52,8 @@ export function nomsAPlatRetenus(){
   return ESSAI_NOMS !== null ? ESSAI_NOMS === "plat" : conf("_ambiance").nomsAPlat === true;
 }
 
-/** Les logos remplacent-ils les noms des stands de près, en vue immersive ? */
+/** Les logos remplacent-ils les noms des stands de près, quelle que soit
+ *  l'ambiance ? */
 export function logosRetenus(){
   return ESSAI_LOGOS !== null ? ESSAI_LOGOS === "1" : conf("_ambiance").logos === true;
 }
@@ -172,7 +173,7 @@ export function appliqueAmbiance(){
   AMBIANCES.forEach(x => racine.classList.toggle("ambiance-" + x.cle,
     x.cle === a || (x.cle === "tuiles" && enTuiles)));
   demandeCamera(a === "immersif", capRetenu());
-  racine.classList.toggle(CLASSE_LOGOS, a === "immersif" && logosRetenus());
+  racine.classList.toggle(CLASSE_LOGOS, logosRetenus());
   racine.classList.toggle(CLASSE_NOMS_A_PLAT, a === "immersif" && nomsAPlatRetenus());
   /* Le cap se dit aussi sur la racine : c'est par elle que le dessin apprend
      qu'il doit refaire sa vue — il guette sa classe et son style (`webgl.mjs`),

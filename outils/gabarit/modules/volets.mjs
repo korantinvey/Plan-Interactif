@@ -1247,23 +1247,20 @@ export function voletApparence(hote){
     poseCap(0); majCap(); enregistreConf();
   };
   amb.appendChild(ori);
-  /* Les logos à la place des noms, quand on s'approche : de l'immersif
-     seulement, où le toit des stands se voit de biais. */
+  /* Les logos à la place des noms, quand on s'approche : couchés sur le toit
+     en immersif, posés à plat sur le stand en classique et en tuiles. */
   const lev = document.createElement("div");
   lev.className = "reglages logos-stands";
   lev.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
   /** @type {HTMLElement} */ (lev.querySelector("span")).textContent = "Logos des exposants sur les stands, de près";
   /** @type {HTMLElement} */ (lev.querySelector(".aideR")).textContent =
-    "Quand on s'approche, le logo se pose sur le toit du stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.";
+    "Quand on s'approche, le logo se pose sur le stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.";
   const levIn = /** @type {HTMLInputElement} */ (lev.querySelector("input"));
   levIn.onchange = () => {
     if (levIn.checked) conf("_ambiance").logos = true; else delete conf("_ambiance").logos;
     appliqueAmbiance(); enregistreConf();
   };
-  const majLev = () => {
-    levIn.checked = logosRetenus();
-    lev.hidden = ambianceRetenue() !== "immersif";
-  };
+  const majLev = () => { levIn.checked = logosRetenus(); };
   amb.appendChild(lev);
   /* Les noms couchés sur le toit, imprimés comme les logos, au lieu de se
      dresser face à l'œil : un essai de lecture, de l'immersif seulement. */
@@ -1285,8 +1282,6 @@ export function voletApparence(hote){
   amb.appendChild(nap);
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majCap));
-  amb.querySelectorAll("button[data-amb]").forEach(b =>
-    b.addEventListener("click", majLev));
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majNap));
   hote.appendChild(amb);
