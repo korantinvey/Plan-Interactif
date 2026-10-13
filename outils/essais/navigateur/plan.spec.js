@@ -123,6 +123,65 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Ouvrir le tiroir arme la visée ; le refermer par son bouton, c'est y
+     renoncer. Le bandeau « Indiquez votre départ » survivait au tiroir, et le
+     plan restait une liste de points à toucher. */
+  test("refermer l'itinéraire éteint la visée @telephone", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN + "&rendu=svg");
+    await attendLaListe(page);
+    for (const fermer of ["#btnItineraire", "#closeItineraire"]){
+      await page.click("#btnItineraire");
+      await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
+      await expect(page.locator("#viseur")).toBeVisible();
+      await page.click(fermer);
+      await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+      await expect(page.locator("#viseur")).toBeHidden();
+      await expect(page.locator("html")).not.toHaveClass(/\bvise-plan\b/);
+    }
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Le trait reste sur le plan quand le tiroir se referme ; l'ôter ne doit
+     pas obliger à le rouvrir. Le rappel du haut le montre et l'efface
+     (`modules/tiroir-itineraire.mjs` `majRappelRoute`) — sans réarmer la
+     visée, puisque le visiteur en a fini. */
+  test("un trajet se retire du plan sans rouvrir son tiroir", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN + "&rendu=svg");
+    const lignes = await attendLaListe(page);
+    const rappel = page.locator("#routeRappel");
+    await expect(rappel).toBeHidden();
+
+    // une arrivée par la fiche, un départ par la visée sur un autre stand
+    await lignes.nth(0).click();
+    await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
+    await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
+    await expect(page.locator("#viseur")).toBeVisible();
+    const arrivee = await page.inputValue("#iArrivee");
+    const autre = await page.evaluate((nom) => {
+      const g = [...document.querySelectorAll("svg [data-id]")]
+        .find((e) => e.getAttribute("data-id") && !e.textContent.includes(nom));
+      const r = g.getBoundingClientRect();
+      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+    }, arrivee);
+    await page.mouse.click(autre.x, autre.y);
+    await expect(page.locator("#iResume")).toContainText("m ·");
+
+    // tiroir ouvert, le rappel se tait ; fermé, il paraît avec le résumé
+    await expect(rappel).toBeHidden();
+    await page.click("#closeItineraire");
+    await expect(rappel).toBeVisible();
+    await expect(page.locator("#routeResume")).toHaveText(await page.textContent("#iResume"));
+
+    await page.click("#routeEfface");
+    await expect(rappel).toBeHidden();
+    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+    await expect(page.locator("#viseur")).toBeHidden();
+    expect(await page.inputValue("#iArrivee")).toBe("");
+    expect(erreurs).toEqual([]);
+  });
+
   test("les onglets passent d'un pavillon à l'autre", async ({ page }) => {
     test.skip(DONNEES.plans.length < 2, "un seul pavillon dans les données");
     const erreurs = await prepare(page);

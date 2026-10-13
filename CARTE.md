@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 640 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -48,12 +48,13 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnConfidentialite` · `#stage` · `#fondCarteGL` · `#fondTuiles` · `#fondCarte`
 `#trouDuFond` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#calqueLibelles`
 `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#creditCarte` · `#mentionOsm`
-`#poi` · `#poiDefile` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#calageBat`
-`#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel`
-`#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
-`#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
-`#outilsCalque` · `#renommeOutils` · `#replieOutils` · `#fermeOutils` · `#roleIti`
-`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#poi` · `#poiDefile` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#routeRappel`
+`#routeVoir` · `#routeResume` · `#routeEfface` · `#calageBat` · `#calageAngle`
+`#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel` · `#iciRappelTxt`
+`#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme` · `#calageCorps`
+`#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils` · `#outilsCalque`
+`#renommeOutils` · `#replieOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
 `#texteADessiner` · `#repereType` · `#repereTransport` · `#repereMode` · `#repereLigne`
 `#repereCouleur` · `#repereTexte` · `#imageSoc` · `#standSoc` · `#listeSoc`
@@ -122,7 +123,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 830 l. → plan-smcl.html
 
-### `_styles-parcours.css` — 647 l. → plan-smcl.html
+### `_styles-parcours.css` — 665 l. → plan-smcl.html
 
 ### `_styles-plan.css` — 1693 l. → plan-smcl.html
 
@@ -266,7 +267,7 @@ Fonctions :
 Importé par :
 
 acces-admin · calques-dessin · camera · configuration · demarrage · fenetre · fiche-zone
-index-salon · logos-stands · ordre-trace · rendu · vignettes · webgl
+index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes · webgl
 
 ### `modules/apercus.mjs` — 327 l. → plan-admin
 
@@ -2833,18 +2834,19 @@ libelles · nom-emplacement · outil-dessin · parcours · pile · points-intere
 rapport-utilisation · recherche · reglage-fiche · reglage-suggestion · rendu · secteurs
 socle-dessin · suggestion · sur · texte-plan
 
-### `modules/tiroir-itineraire.mjs` — 639 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 681 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir et la visée
 
 Fonctions :
 
 `calculeRoute` 73 · `champIti` 91 · `fermeSugg` 95 · `montreSugg` 102 · `choisitPoint` 136
-`valideSaisie` 145 · `effaceItineraire` 157 · `relance` 185 · `montreResultat` 229
-`poseVisee` 373 · `confieVisee` 386 · `suitLaVisee` 388 · `bandeauVisee` 390
-`armeVisee` 412 · `finVisee` 430 · `viseItineraire` 446 · `visePoi` 452 · `visePoint` 458
-`ouvreItineraire` 486 · `fermeItineraire` 513 · `versItineraire` 523
-`versItineraireDe` 526 · `brancheTiroirItineraire` 553
+`valideSaisie` 145 · `effaceItineraire` 157 · `relance` 186 · `montreResultat` 230
+`majRappelRoute` 246 · `ecritResultat` 257 · `poseVisee` 401 · `confieVisee` 414
+`suitLaVisee` 416 · `bandeauVisee` 418 · `armeVisee` 441 · `finVisee` 459
+`viseItineraire` 475 · `visePoi` 481 · `visePoint` 487 · `ouvreItineraire` 515
+`fermeItineraire` 550 · `versItineraire` 562 · `versItineraireDe` 565
+`brancheTiroirItineraire` 592
 
 Importe :
 
@@ -2955,20 +2957,20 @@ Importé par :
 
 recherche
 
-### `modules/trace-itineraire.mjs` — 368 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 374 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
-`poseTrace` 34 · `marchesIci` 36 · `rayonBout` 41 · `arreteTracage` 74 · `tronconsDe` 95
-`traceDe` 113 · `peintItineraire` 116 · `lanceEtincelle` 197 · `pointA` 218
-`courtEtincelle` 226 · `placePouls` 254 · `lanceTracage` 269 · `dessineItineraire` 294
-`rafraichitBouts` 320 · `cadreItineraire` 343
+`poseTrace` 40 · `marchesIci` 42 · `rayonBout` 47 · `arreteTracage` 80 · `tronconsDe` 101
+`traceDe` 119 · `peintItineraire` 122 · `lanceEtincelle` 203 · `pointA` 224
+`courtEtincelle` 232 · `placePouls` 260 · `lanceTracage` 275 · `dessineItineraire` 300
+`rafraichitBouts` 326 · `cadreItineraire` 349
 
 Importe :
 
-camera · dom · donnees · ecran · itineraire · vue
+annonce · camera · dom · donnees · ecran · itineraire · vue
 
 Importé par :
 

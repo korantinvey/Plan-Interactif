@@ -131,6 +131,8 @@ module.exports = {
   "Évite les escaliers et les escalators, les obstacles signalés, et les passages de moins d'un mètre quarante.":
     "Avoids stairs and escalators, reported obstacles, and passages narrower than 1.40 metres.",
   "Effacer l'itinéraire": "Clear route",
+  "Revoir le détail du trajet": "Show route details",
+  "Effacer": "Clear",
   "Choisir une forme pour la reprendre": "Pick a shape to rework it",
   "Ajouter un rectangle": "Add a rectangle",
   "Ajouter un polygone — clic pour chaque sommet, Entrée pour fermer":
