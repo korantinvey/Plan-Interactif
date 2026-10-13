@@ -901,8 +901,8 @@ Fonctions :
 
 Importé par :
 
-dessin · fiche · gestes · glisse-fenetre · mini-carte · recherche · tiroir-itineraire
-tiroirs · trace-itineraire · tutoriel · vue
+dessin · fiche · gestes · glisse-fenetre · logos-stands · mini-carte · recherche
+tiroir-itineraire · tiroirs · trace-itineraire · tutoriel · vue
 
 ### `modules/edition-en-cours.mjs` — 43 l. → plan, plan-admin
 
@@ -1659,21 +1659,21 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 583 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 586 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 70 · `tassement` 83 · `grande` 130 · `image` 149 · `sansFond` 169
-`lanceTravailleur` 205 · `demandeDetourage` 226 · `pompe` 233 · `parLaPageSeule` 253
-`detoureRevenu` 263 · `toile` 288 · `logoPose` 317 · `cedeAuLogo` 327 · `CARRE` 356
-`filtrage` 389 · `plancheDe` 406 · `extensionPlanche` 442 · `pres` 473 · `logosARevoir` 481
-`groupe` 491 · `oublie` 502 · `couchesLogos` 525
+`finesse` 73 · `tassement` 86 · `grande` 133 · `image` 152 · `sansFond` 172
+`lanceTravailleur` 208 · `demandeDetourage` 229 · `pompe` 236 · `parLaPageSeule` 256
+`detoureRevenu` 266 · `toile` 291 · `logoPose` 320 · `cedeAuLogo` 330 · `CARRE` 359
+`filtrage` 392 · `plancheDe` 409 · `extensionPlanche` 445 · `pres` 476 · `logosARevoir` 484
+`groupe` 494 · `oublie` 505 · `couchesLogos` 528
 
 Importe :
 
-annonce · camera · detourage · dom · donnees · marque · vignettes
+annonce · camera · detourage · dom · donnees · ecran · marque · vignettes
 
 Importé par :
 
