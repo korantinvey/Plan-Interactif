@@ -3201,9 +3201,9 @@ Portes :
 
 `versionFond` 47 · `versionDuPlan` 92 · `condense` 96
 
-### `supabase/functions/_partage/vignette.ts` — 36 l.
+### `supabase/functions/_partage/vignette.ts` — 67 l.
 
-`cleDeVignette` 28
+`cleDeVignette` 28 · `tranchesDAdresses` 52
 
 ### `supabase/functions/comptes/index.ts` — 263 l.
 
@@ -3217,12 +3217,12 @@ Portes :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1165 l.
+### `supabase/functions/plan-public/index.ts` — 1170 l.
 
-`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 123 · `avecVignette` 165
-`rendVignette` 206 · `rendGrande` 233 · `rendVignettes` 325 · `lu` 368 · `salon` 378
-`appDuSalon` 404 · `rendIconeApp` 435 · `retraits` 540 · `ampute` 567 · `masquesDe` 610
-`masquesDuPlan` 630
+`cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 124 · `avecVignette` 170
+`rendVignette` 211 · `rendGrande` 238 · `rendVignettes` 330 · `lu` 373 · `salon` 383
+`appDuSalon` 409 · `rendIconeApp` 440 · `retraits` 545 · `ampute` 572 · `masquesDe` 615
+`masquesDuPlan` 635
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
@@ -3234,7 +3234,7 @@ Portes :
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
 `champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
 
-### `supabase/functions/vignettes/index.ts` — 233 l.
+### `supabase/functions/vignettes/index.ts` — 237 l.
 
 `cors` 27 · `service` 43 · `adressesDeLogos` 52 · `adressesDuSalon` 77
 
