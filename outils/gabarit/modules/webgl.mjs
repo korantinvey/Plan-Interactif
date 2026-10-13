@@ -153,7 +153,7 @@ export function brancheWebgl(){
 
    Ce qui reste du coût d'une image, une fois les couches réduites, tient à
    la carte graphique du téléphone : elle peint chaque pixel, et un écran de
-   densité trois en compte trois millions. Trois réglages de la toile, que la
+   densité trois en compte trois millions. Deux réglages de la toile, que la
    bibliothèque laissait aux valeurs d'un ordinateur :
 
    - l'image n'est plus gardée d'une trame à l'autre. La bibliothèque la garde
@@ -163,12 +163,13 @@ export function brancheWebgl(){
      image, hors de l'écran ;
    - sur un écran tactile, la toile se peint en densité deux au plus : moitié
      moins de pixels sur un écran de densité trois, pour une différence que
-     l'œil ne fait pas à la distance d'un téléphone ;
-   - et sans lissage des bords (MSAA) dès la densité deux, où un bord en
-     escalier ne fait plus qu'un demi-pixel de l'écran.
+     l'œil ne fait pas à la distance d'un téléphone.
 
-   Un ordinateur garde sa pleine densité et son lissage : il n'en manquait
-   pas. `?densite=3` rend au téléphone sa densité d'origine, pour comparer. */
+   Le lissage des bords (MSAA) reste : retiré dès la densité deux, les arêtes
+   des stands se voyaient en escalier sur un vrai téléphone.
+
+   Un ordinateur garde sa pleine densité : il n'en manquait pas.
+   `?densite=3` rend au téléphone sa densité d'origine, pour comparer. */
 const DENSITE_TACTILE = 2;
 function reglagesToile(){
   const dpr = window.devicePixelRatio || 1;
@@ -177,7 +178,7 @@ function reglagesToile(){
   const densite = tactile ? Math.min(dpr, essai > 0 ? essai : DENSITE_TACTILE) : dpr;
   return {
     useDevicePixels: tactile ? densite : true,
-    deviceProps: { webgl: { preserveDrawingBuffer: false, antialias: !(tactile && densite >= 2) } },
+    deviceProps: { webgl: { preserveDrawingBuffer: false } },
   };
 }
 
