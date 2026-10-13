@@ -30,7 +30,7 @@
    chez chaque visiteur, deux logos à la fois : sur un écran de bureau, la
    centaine de stands autour de la vue de Franchise Expo paraissait un à un,
    pendant de longues secondes, et leurs noms s'étaient tus avant. Le nom ne
-   cède donc la place qu'au logo prêt à poser (`logoPose`). Un salon que la
+   cède donc la place qu'au logo que la couche pose (`logoPose`). Un salon que la
    synchronisation n'a pas encore refait n'a pas de grande, ou une grande au
    fond blanc : la page la détoure alors elle-même, ou à défaut la petite du
    lot. Sans vignette, le stand garde son nom.
@@ -41,7 +41,8 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
-import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
+import { cameraEnJeu, ecranVersPlat, SINUS_INCLINAISON } from "./camera.mjs";
+import { cadrePlan } from "./vue-etat.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
@@ -99,6 +100,16 @@ const tassement = () => cameraEnJeu() ? TASSEMENT : 1;
    chaque côté, et l'on repose quand la vue sort de cette marge. Reculée sous
    le seuil, plus aucun : leurs textures sont rendues. */
 const MARGE_VUE = .5;
+/* Les grandes vignettes, elles, se demandent plus loin : une par logo, au
+   service, elles arrivaient quand la vue entrait dans leur marge — un geste
+   faisait alors paraître les logos un à un devant soi, après les noms. D'une
+   vue et demie de chaque côté, elles sont là quand on y arrive. */
+const MARGE_PRECHARGE = 1.5;
+/* Combien de grandes en route à la fois. Toutes à la fois, dans l'ordre du
+   plan, celles du milieu de l'écran attendaient derrière celles des bords ;
+   rangées par distance au centre de la vue, les plus proches arrivent les
+   premières. */
+const GRANDES_EN_ROUTE = 8;
 
 /** Un logo vient d'être prêt : le dessin doit le poser, et le nom du stand
  *  lui céder la place. */
@@ -158,23 +169,38 @@ function arriveeSansFond(/** @type {HTMLImageElement} */ i){
 function grande(/** @type {string} */ cle){
   const deja = grandes.get(cle);
   if (deja) return typeof deja === "string" ? null : deja;
+  if (!adresseGrande(cle)){ grandes.set(cle, "panne"); return null; }
+  if (!fileGrandes.includes(cle)) fileGrandes.push(cle);
+  pompeGrandes();
+  return null;
+}
+
+/** Les grandes qui attendent leur tour, la plus voulue en tête. */
+/** @type {string[]} */
+const fileGrandes = [];
+let grandesEnRoute = 0;
+
+function pompeGrandes(){
+  while (grandesEnRoute < GRANDES_EN_ROUTE && fileGrandes.length) demandeGrande(/** @type {string} */ (fileGrandes.shift()));
+}
+
+function demandeGrande(/** @type {string} */ cle){
   const src = adresseGrande(cle);
-  if (!src){ grandes.set(cle, "panne"); return null; }
   grandes.set(cle, "attente");
+  grandesEnRoute++;
   const i = new Image();
   // lue par le détourage : une origine qui ne le permettrait pas la rendrait muette
   i.crossOrigin = "anonymous";
   i.onload = () => {
     const lue = Boolean(i.naturalWidth && i.naturalHeight);
     grandes.set(cle, lue ? i : "panne");
-    // avant l'annonce : les noms qu'elle fait refaire doivent la savoir prête
     if (lue && arriveeSansFond(i)) detourees.set(cle + "+g", i);
+    grandesEnRoute--; pompeGrandes();
     PANNEAU_PRET.dis();
   };
   // sans grande, le toit se rabat sur la petite : il doit l'apprendre
-  i.onerror = () => { grandes.set(cle, "panne"); PANNEAU_PRET.dis(); };
+  i.onerror = () => { grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); PANNEAU_PRET.dis(); };
   i.src = src;
-  return null;
 }
 
 /** La vignette décodée, ou rien tant qu'elle ne l'est pas. */
@@ -347,13 +373,19 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   return toiles.get(k) || null;
 }
 
-/** Le stand montre-t-il son logo de près ? Seulement s'il est prêt à poser :
- *  un nom qui se taisait dès la vignette reçue laissait le stand vide tant
- *  que son logo se préparait. */
+/** Les stands dont le logo est posé, d'après la dernière couche. */
+/** @type {Set<string>} */
+let posesDerniers = new Set();
+
+/** Le stand montre-t-il son logo de près ? Seulement s'il est posé : un nom
+ *  qui se taisait dès la vignette reçue laissait le stand vide tant que son
+ *  logo se préparait, et un nom qui se taisait dès le logo prêt le laissait
+ *  vide hors des abords de la vue, que la couche ne couvre pas — un stand
+ *  déjà vu de près, puis quitté, restait sans nom ni logo au retour, jusqu'à
+ *  ce que la vue bouge assez pour que la couche se refasse. */
 export function logoPose(/** @type {any} */ s){
   return Boolean(s && s.vignette &&
-    document.documentElement.classList.contains(CLASSE_LOGOS) &&
-    (detourees.get(s.vignette + "+g") || detourees.get(s.vignette)));
+    document.documentElement.classList.contains(CLASSE_LOGOS) && posesDerniers.has(s.id));
 }
 
 /**
@@ -523,6 +555,26 @@ let finesseCouverte = 0;
 const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 
 /**
+ * Le sol que l'écran montre, en mètres du plan. À plat, l'écran entier — un
+ * peu plus que la vue quand ses proportions ne sont pas celles du cadre. En
+ * vue immersive, bien plus : le fond du hall recule vers l'horizon, et la
+ * couche, bornée au cadre à plat, laissait sans logo tout le haut de l'écran.
+ * Jamais plus de deux vues de chaque côté : vers l'horizon, l'étendue
+ * deviendrait sans fin pour des stands qu'on n'y distingue plus.
+ * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
+ */
+function solVu(v){
+  const r = cadrePlan(), W = r.width || 1, H = r.height || 1;
+  const s = Math.min(W / v.w, H / v.h), cx = v.x + v.w / 2, cy = v.y + v.h / 2;
+  const coins = [[0, 0], [W, 0], [W, H], [0, H]].map(([x, y]) => ecranVersPlat(x, y, W, H));
+  const xs = coins.map(q => cx + (q[0] - W / 2) / s), ys = coins.map(q => cy + (q[1] - H / 2) / s);
+  const borne = 2 * Math.max(v.w, v.h);
+  const x0 = Math.max(Math.min(...xs, v.x), v.x - borne), y0 = Math.max(Math.min(...ys, v.y), v.y - borne);
+  const x1 = Math.min(Math.max(...xs, v.x + v.w), v.x + v.w + borne), y1 = Math.min(Math.max(...ys, v.y + v.h), v.y + v.h + borne);
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+/**
  * La vue a-t-elle quitté ce que les logos posés couvrent ? Appelée à chaque
  * image d'un geste : deux comparaisons, et rien d'autre.
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
@@ -531,7 +583,9 @@ const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 export function logosARevoir(v, zoom){
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
   if (!pres(zoom)) return couvert !== null;
-  return !couvert || finesse(zoom) !== finesseCouverte || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
+  if (!couvert) return true;
+  const sol = solVu(v);
+  return finesse(zoom) !== finesseCouverte || sol.x < couvert.x0 || sol.y < couvert.y0 || sol.x + sol.w > couvert.x1 || sol.y + sol.h > couvert.y1;
 }
 
 /* Les stands du plan par identifiant. Relus à chaque image tant qu'un volume
@@ -565,6 +619,16 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
   }
 }
 
+/** Les noms suivent les logos posés : si la couche en pose d'autres que la
+ *  dernière fois, ils doivent se refaire — un nom se tait devant un logo qui
+ *  vient d'être posé, et revient là où la couche n'en pose plus. */
+function annoncePoses(/** @type {{ id: string }[]} */ data){
+  const ids = new Set(data.map(d => d.id));
+  if (ids.size === posesDerniers.size && [...ids].every(id => posesDerniers.has(id))) return;
+  posesDerniers = ids;
+  PANNEAU_PRET.dis();
+}
+
 /**
  * La couche des logos : un carré par logo autour de la vue, tous peints
  * d'une planche.
@@ -577,16 +641,25 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
 export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const p = P();
   couvert = null;
-  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)){ oublie([]); return []; }
-  const m = Math.max(v.w, v.h) * MARGE_VUE;
-  couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
+  // celles qui n'ont pas pris la route se rangent à nouveau, d'après cette vue
+  fileGrandes.length = 0;
+  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)){ oublie([]); annoncePoses([]); return []; }
+  const sol = solVu(v), cote = Math.max(v.w, v.h);
+  const autour = (/** @type {number} */ k) => ({ x0: sol.x - cote * k, y0: sol.y - cote * k, x1: sol.x + sol.w + cote * k, y1: sol.y + sol.h + cote * k });
+  const dedans = (/** @type {any} */ b, /** @type {number[]} */ c) => c[0] >= b.x0 && c[0] <= b.x1 && c[1] >= b.y0 && c[1] <= b.y1;
+  couvert = autour(MARGE_VUE);
+  const loin = autour(MARGE_PRECHARGE);
   finesseCouverte = finesse(zoom);
   const enVolume = cameraEnJeu(), tasse = tassement();
+  // du centre de la vue vers ses bords : les grandes se demandent dans cet ordre
+  const vx = v.x + v.w / 2, vy = v.y + v.h / 2;
+  const autourDeLaVue = (p.stands || []).filter((/** @type {any} */ s) => s.vignette && s.c && dedans(loin, s.c))
+    .map((/** @type {any} */ s) => ({ s, d: (s.c[0] - vx) ** 2 + (s.c[1] - vy) ** 2 })).sort((a, b) => a.d - b.d);
   const data = [], vus = new Set();
-  for (const s of p.stands || []){
-    if (!s.vignette || !s.c || vus.has(s.id)) continue;
+  for (const { s } of autourDeLaVue){
+    if (vus.has(s.id)) continue;
+    if (!dedans(couvert, s.c)){ grande(s.vignette); continue; }
     const [cx, cy] = s.c;
-    if (cx < couvert.x0 || cx > couvert.x1 || cy < couvert.y0 || cy > couvert.y1) continue;
     const g = groupe(s.id), trace = g && g.firstElementChild;
     const src = trace && sourceDuToit(s.vignette);
     if (!src) continue;
@@ -604,9 +677,10 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
        sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
        ce rien suffisait à sortir le logo de ce qu'elle montre. */
-    data.push({ x: cx, y: cy, z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g });
+    data.push({ x: cx, y: cy, z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g, id: s.id });
   }
   oublie(data);
+  annoncePoses(data);
   if (!data.length) return [];
   // dans un ordre fixe, pour qu'une même vue retrouve la même planche
   const toiles = [...new Set(data.map(d => d.t))].sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || ""));
