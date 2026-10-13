@@ -178,7 +178,7 @@ const toiles = new Map();
 
 /** Les grandes vignettes, par clé : demandées par les seuls toits vus de
  *  près. */
-/** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
+/** @type {Map<string, "attente" | "panne" | HTMLImageElement | ImageBitmap>} */
 const grandes = new Map();
 
 /**
@@ -225,31 +225,37 @@ function demandeGrande(/** @type {string} */ cle){
   const src = adresseGrande(cle);
   grandes.set(cle, "attente");
   grandesEnRoute++;
+  /** Arrivée et décodée : prête à poser si elle vient sans fond, à détourer sinon. */
+  const recue = (/** @type {HTMLImageElement | ImageBitmap} */ i, /** @type {number} */ w, /** @type {number} */ h) => {
+    if (!(w && h)){ panne(); return; }
+    // prête avant l'annonce : les noms qu'elle fait refaire doivent la savoir prête
+    grandes.set(cle, i);
+    grandesEnRoute--; pompeGrandes();
+    if (arriveeSansFond(i, w, h)) pret(cle + "+g", i);
+    else annoncePret();
+  };
+  // sans grande, le toit se rabat sur la petite : il doit l'apprendre
+  const panne = () => { grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); annoncePret(); };
+  /* Reçue en octets et décodée hors de la page. Une image de la page se
+     décodait sur son fil au moment d'être lue — pour savoir si elle venait
+     sans fond, puis pour chaque toile —, et créer une « ImageBitmap » d'une
+     balise image le fait aussi, dans Chrome : de cinq à cinquante
+     millisecondes par logo sur un téléphone, deux à trois cents fois en
+     parcourant un salon de près, souvent en plein geste (`?perf`, le 13
+     octobre 2026). Décodée depuis ses octets, elle l'est à côté, et la page
+     n'en reçoit que le résultat. */
+  if (typeof createImageBitmap === "function" && typeof fetch === "function"){
+    fetch(src)
+      .then(r => r.ok ? r.blob() : Promise.reject(new Error("HTTP " + r.status)))
+      .then(octets => createImageBitmap(octets))
+      .then(b => recue(b, b.width, b.height), panne);
+    return;
+  }
   const i = new Image();
   // lue par le détourage : une origine qui ne le permettrait pas la rendrait muette
   i.crossOrigin = "anonymous";
-  i.onload = () => {
-    if (!(i.naturalWidth && i.naturalHeight)){
-      grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); annoncePret(); return;
-    }
-    /* Décodée hors de la page avant d'être lue. Lire ses coins tout de suite
-       forçait le navigateur à la décoder là, sur le fil de la page : de cinq à
-       cinquante millisecondes par logo sur un téléphone, une centaine de fois
-       quand on s'approche (`?perf`). Le décodage gardé sert ensuite à chaque
-       toile, qui sinon décodait encore. */
-    const decodee = typeof createImageBitmap === "function"
-      ? createImageBitmap(i).catch(() => null) : Promise.resolve(null);
-    decodee.then(b => {
-      const source = b || i;
-      // prête avant l'annonce : les noms qu'elle fait refaire doivent la savoir prête
-      grandes.set(cle, i);
-      grandesEnRoute--; pompeGrandes();
-      if (arriveeSansFond(source, i.naturalWidth, i.naturalHeight)) pret(cle + "+g", source);
-      else { if (b) b.close(); annoncePret(); }
-    });
-  };
-  // sans grande, le toit se rabat sur la petite : il doit l'apprendre
-  i.onerror = () => { grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); annoncePret(); };
+  i.onload = () => recue(i, i.naturalWidth, i.naturalHeight);
+  i.onerror = panne;
   i.src = src;
 }
 
@@ -720,7 +726,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     const src = trace && sourceDuToit(s.vignette);
     if (!src) continue;
     vus.add(s.id);
-    const iw = src.i.naturalWidth, ih = src.i.naturalHeight;
+    const [iw, ih] = src.i instanceof HTMLImageElement ? [src.i.naturalWidth, src.i.naturalHeight] : [src.i.width, src.i.height];
     // le toit, d'après la boîte du stand : le logo en suit les côtés
     const bb = s.bb || [0, 0];
     const rapport = iw / (ih / tasse);

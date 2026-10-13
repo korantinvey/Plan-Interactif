@@ -534,14 +534,39 @@ function repeintWebgl(){
   REPEINT_FINI.dis(GL.duree, n);
 }
 
-function assembleWebgl(){
+/** Ce que le bloc des noms a posé au dernier assemblage complet : les images
+ *  d'un mouvement le reprennent tel quel. */
+/** @type {{ figurants: any[], logos: any[], libelles: any[], phare: any[] } | null} */
+let posesSurLePlan = null;
+
+/**
+ * Toutes les couches du plan, dans l'ordre où elles se peignent.
+ *
+ * `enMouvement` : une image d'un mouvement — une tuile qui se soulève sous la
+ * souris. Ce qui ne dépend pas du mouvement — les figurants, les logos, les
+ * noms — se reprend du dernier assemblage complet : le refaire à chaque image
+ * coûtait les deux tiers d'une seconde par quinze secondes de survol en vue
+ * immersive (trace du 13 octobre 2026), et la bibliothèque, recevant des
+ * couches neuves, en recomptait les attributs.
+ */
+function assembleWebgl(enMouvement = false){
   const out = [];
+  /* Une seule fois, et non pour chacun des blocs : sur tout le document,
+     cette recherche a coûté plus d'une seconde en quinze de survol en vue
+     immersive (trace du 13 octobre 2026). */
+  const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesFigurants(), ...couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){
+      if (!enMouvement || !posesSurLePlan) posesSurLePlan = { figurants: couchesFigurants(),
+        logos: couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device),
+        libelles: couchesLibellesWebgl(), phare: couchesPhareNoms() };
+      const p = posesSurLePlan;
+      out.push(...p.figurants, ...p.logos.map(logosSurLesToits), ...p.libelles.map(animeCouche), ...p.phare);
+      continue;
+    }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
-    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
@@ -2169,11 +2194,22 @@ const stage = () => svg.parentNode;
 const FOCALISABLE = ".stand, .zone, .dcal .forme.sdes";
 let _survolXY = null, _survolImage = 0;
 
+/* La désignation sous la souris redessine le plan pour la carte graphique et
+   en relit un pixel : une fois par image tant que la souris bouge, elle a
+   pris 1,3 s sur quinze secondes de survol en vue immersive (trace du
+   13 octobre 2026). Une fois par dixième de seconde suffit à l'œil, et la
+   dernière position est toujours servie. */
+const SURVOL_ESPACE = 100;
+let _survolDernier = 0;
 function demandeSurvolWebgl(){
-  if (!_survolImage) _survolImage = requestAnimationFrame(survoleWebgl);
+  if (_survolImage) return;
+  const reste = _survolDernier + SURVOL_ESPACE - performance.now();
+  if (reste <= 0){ _survolImage = requestAnimationFrame(survoleWebgl); return; }
+  _survolImage = setTimeout(() => { _survolImage = requestAnimationFrame(survoleWebgl); }, reste);
 }
 function survoleWebgl(){
   _survolImage = 0;
+  _survolDernier = performance.now();
   /* Pendant un geste, la désignation redessinait tout le plan pour la carte
      graphique à chaque image — deux cents millisecondes sur un zoom à la
      molette de Funexpo — pour un survol que la vue déplaçait aussitôt. Elle
@@ -2259,7 +2295,7 @@ function gonfleSurvol(){
       if (h !== st.vers) bouge = true;
       else if (st.vers === 0) TUILES.delete(el);   // reposée : elle n'a plus de couche à elle
     }
-    GL.deck.setProps({ layers: assembleWebgl() });
+    GL.deck.setProps({ layers: assembleWebgl(true) });
     if (bouge) imageGonfle = requestAnimationFrame(image);
   };
   imageGonfle = requestAnimationFrame(image);
@@ -2538,9 +2574,11 @@ function animeWebgl(now){
   GL.imageAnim = 0;
   if (!GL.actif || !GL.anime) return;
   GL.temps = now / 1000;
+  let arrive = false;
   // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
   for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34){
     hausses.delete(g);
+    arrive = true;
     // arrivé : son nom rejoint les autres, et les groupes du mouvement s'oublient
     GL.couchesLibelles = null;
     for (const k of [...GL.groupes.keys()]) if (/^labels-(sans|hausse)\|/.test(k)) GL.groupes.delete(k);
@@ -2553,8 +2591,38 @@ function animeWebgl(now){
      redessine qu'à chacun de ses paliers. */
   const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
     (hausses.size ? "|" + Math.round(now) : "");
-  if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
+  if (cle !== GL.cleAnim){
+    GL.cleAnim = cle;
+    /* Une image de l'animation ne refait que ce qui bouge. Elle réassemblait
+       tout le plan — logos, figurants, noms —, et la bibliothèque, recevant
+       des couches neuves, en recomptait les attributs : en vue immersive, un
+       stand monte à chaque appui et redescend quand on glisse, et chaque
+       geste commençait ainsi par une seconde à 35-70 ms l'image sur un
+       téléphone Android récent (`?perf`, le 13 octobre 2026). Les couches
+       qui ne bougent pas gardent leur objet, et la bibliothèque les passe.
+       Un volume arrivé change les couches elles-mêmes : là, on réassemble. */
+    GL.deck.setProps({ layers: arrive ? assembleWebgl() : reanime(GL.deck.props.layers) });
+  }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
+}
+
+/** Les couches déjà posées, à cet instant de l'animation. */
+function reanime(/** @type {any[]} */ couches){
+  return couches.map(c => Array.isArray(c) ? reanime(c)
+    : !c || !c.props ? c
+    : c.id === "logos-stands" ? logosSurLesToits(c)
+    : animeCouche(c));
+}
+
+/** Le logo d'un stand qui monte reste sur son toit : seule sa hauteur se
+ *  recalcule, celle des autres ne change pas. */
+function logosSurLesToits(/** @type {any} */ c){
+  if (!GL.camera || !hausses.size || !c.props.data.some((/** @type {any} */ d) => hausses.has(d.el))) return c;
+  return c.clone({
+    getPosition: (/** @type {any} */ d) => hausses.has(d.el) && d.el.firstElementChild
+      ? [d.x, d.y, hauteurEnCours(d.el.firstElementChild) + .05] : [d.x, d.y, d.z],
+    updateTriggers: { ...c.props.updateTriggers, getPosition: GL.cleAnim },
+  });
 }
 
 /* ------------------------------------------------------------

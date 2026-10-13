@@ -76,6 +76,10 @@ export function poseGestesAdmin(/** @type {GestesAdmin} */ g){ admin = g; }
 /** Le glissé en cours, ou rien : la carte graphique le lit pour taire son survol. */
 /** @type {any} */
 export let drag = null;
+/* Le temps qu'un doigt posé sans bouger met à dire qu'il choisit : le stand
+   appuyé commence alors à monter. Plus bref, c'est un appui, que le relâché
+   tranche ; un glissement part presque toujours avant. */
+const APPUI_TENU = 90;
 
 /* ------------------------------------------------------------------
    Pincement à deux doigts.
@@ -309,13 +313,30 @@ export function brancheGestes(){
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —
        dans cet ordre (`modules/gestes-admin.mjs`). */
     if (admin.appui(e)) return;
-    drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false,
-             // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
-             cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
-                             : e.target.closest("[data-id],[data-poi]") };
+    // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
+    const ecran = [e.clientX, e.clientY], touche = e.target;
+    const vise = () => GL.actif ? cibleWebgl(ecran[0], ecran[1])
+      : touche instanceof Element ? touche.closest("[data-id],[data-poi]") : null;
+    /* Au doigt, ce qu'on touche ne se cherche que si l'on choisit. Le chercher
+       demande une image à la carte graphique — vingt à cinquante
+       millisecondes sur un téléphone, en vue immersive —, et le stand appuyé
+       qui montait sortait de la couche des volumes, que la bibliothèque
+       recomptait en entier, puis y rentrait au premier glissement : chaque
+       geste commençait par là (`?perf`, le 13 octobre 2026). Le doigt qui
+       glisse ne paie donc rien ; celui qui reste posé voit le stand monter un
+       instant plus tard, et le relâché désigne comme avant. La souris garde
+       sa montée immédiate : elle ne glisse que bouton tenu, et rarement. */
+    const tactile = e.pointerType === "touch" || e.pointerType === "pen";
+    const d = drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false, glisse: false,
+             /** @type {any} */ cible: tactile ? undefined : vise(), vise, montee: 0 };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
     // le stand appuyé commence à monter, sans attendre que le relâché le choisisse
-    monteALAppui(drag.cible);
+    if (!tactile) monteALAppui(d.cible);
+    else d.montee = setTimeout(() => {
+      if (drag !== d || d.glisse || d.bouge) return;
+      d.cible = vise();
+      monteALAppui(d.cible);
+    }, APPUI_TENU);
   });
   svg.addEventListener("pointermove", e => {
     const [ex, ey] = redresse(e.clientX, e.clientY);
@@ -329,7 +350,7 @@ export function brancheGestes(){
     /* La main glisse : ce n'est pas un choix, le stand redescend. Compté en
        pixels, et non en mètres comme le glissement : de près, deux mètres font
        une main entière, et le stand serait monté tout du long. */
-    if (Math.abs(ex - drag.x) + Math.abs(ey - drag.y) > 6) rendLAppui();
+    if (Math.abs(ex - drag.x) + Math.abs(ey - drag.y) > 6){ drag.glisse = true; rendLAppui(); }
     view.x = drag.vx - dx; view.y = drag.vy - dy;
     /* Le bord du hall se sent au doigt, comme la limite du pincement : une
        fois à chaque fois qu'on le touche. Sans quoi le plan cessait de suivre
@@ -355,8 +376,11 @@ export function brancheGestes(){
     if (admin.leve(e)) return;
     const d = drag; drag = null; saisitPlan(false);
     try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (d) clearTimeout(d.montee);
     if (d && d.bouge){ poseVue(); return; }
     if (!d) return;
+    // un appui bref au doigt : ce qu'il touche se cherche maintenant
+    if (d.cible === undefined) d.cible = d.vise();
     /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
        sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
        recherche dont ils débordent la marge, s'il y en a un. */
