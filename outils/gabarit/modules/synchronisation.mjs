@@ -23,7 +23,7 @@ import { fonction, fluxFonction } from "./appel-fonction.mjs";
 import { vignetteDeLogo } from "./marque.mjs";
 import { PLANS } from "./evenements.mjs";
 import { source } from "./provenance.mjs";
-import { signale } from "./socle-console.mjs";
+import { signale, appel } from "./socle-console.mjs";
 
 /** @type {{ charge: () => Promise<void> }} */
 let _console = {
@@ -120,6 +120,8 @@ export async function synchronise(e) {
     vue.fini(mot, n.erreur ? "alerte" : "ok");
     signale(mot, !!n.erreur);
     await _console.charge();
+    // le plan qu'elle vient d'écrire, et non celui que le relais gardait
+    oublieLePlan(e);
     /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
        elles ne font pas partie du plan, rien ne les attend, et leur fabrication
        peut durer plusieurs minutes sur un gros salon. Elle se suit dans la
@@ -217,6 +219,11 @@ async function fabriqueLesVignettes(e) {
      sources. */
   if (!total) { signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
   if (!faites && !refusees) return;
+  /* Les vignettes ne sont portées que par le plan que l'API refait : le relais,
+     qui a pu garder celui d'avant elles — une visite entre la fin de la
+     synchronisation et celle des logos suffit —, le servirait sans elles un
+     jour durant, et pas un logo ne paraîtrait sur le plan. */
+  if (faites) oublieLePlan(e);
   /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
      un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
      qui n'atteint jamais son total sans explication en serait une. */
@@ -225,6 +232,24 @@ async function fabriqueLesVignettes(e) {
       .replace("{n}", String(faites)).replace("{r}", String(refusees))
     : traduit("{n} logos préparés pour les fiches.").replace("{n}", String(faites));
   signale(mot);
+}
+
+/**
+ * Demande au relais d'oublier le plan public de ce salon, comme le fait
+ * l'enregistrement depuis le plan (`enregistrement.mjs` `oublieCache`).
+ *
+ * Le relais sert le plan sous une version prise sur son contenu, et ne le
+ * refait de lui-même qu'au bout d'un jour. Or chaque synchronisation Eventmaker
+ * signe à nouveau l'adresse de chaque logo : la vignette, retrouvée par cette
+ * adresse exacte, n'apparaît que dans un plan refait après sa fabrication.
+ *
+ * Sans réponse attendue : la console servie hors du relais — un essai en
+ * local — n'a rien à oublier, et ce n'est qu'un cache.
+ */
+function oublieLePlan(e) {
+  if (!e?.slug) return;
+  appel(location.origin + "/api/oublie?slug=" + encodeURIComponent(e.slug),
+    { method: "POST" }).catch(() => {});
 }
 
 /** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son
