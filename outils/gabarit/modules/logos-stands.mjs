@@ -45,6 +45,7 @@ import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
+import { ETROIT } from "./ecran.mjs";
 
 /** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
@@ -55,8 +56,10 @@ export const CLASSE_LOGOS = "logos-stands";
    jamais vide entre les deux. Seize pixels par mètre l'ont fait paraître trop
    tôt, puis vingt-quatre trop tard : il fallait s'approcher si près, surtout
    sur téléphone où l'écran ne montre qu'un bout du hall, que les logos ne
-   paraissaient presque jamais. Il est vu de deux fois plus haut, à douze. */
-const ZOOM_LOGO = Math.log2(12), ZOOM_FONDU = ZOOM_LOGO - .25;
+   paraissaient presque jamais. Il est vu de deux fois plus haut, à douze, et
+   sur écran étroit d'une fois et demie plus haut encore, à huit. Lu une fois,
+   au chargement : le shader et les noms le figent. */
+const ZOOM_LOGO = Math.log2(ETROIT() ? 8 : 12), ZOOM_FONDU = ZOOM_LOGO - .25;
 
 /* La part du toit que le logo occupe, dans un sens comme dans l'autre. */
 const PART_DU_TOIT = .82;
