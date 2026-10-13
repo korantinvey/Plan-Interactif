@@ -46,11 +46,11 @@ export const CLASSE_LOGOS = "logos-stands";
 /* Le seuil, en zoom de la carte graphique — le logarithme des pixels par
    mètre. Au-delà, le nom d'un stand qui a un logo se tait ; le logo, lui,
    paraît sur le dernier quart de cran qui y mène, pour que le stand ne reste
-   jamais vide entre les deux. Seize pixels par mètre le faisaient paraître
-   trop tôt : un logo de deux mètres n'y tenait qu'une quarantaine de pixels,
-   où le nom se lisait mieux que lui. À vingt-quatre, il paraît assez grand
-   pour être lu. */
-const ZOOM_LOGO = Math.log2(24), ZOOM_FONDU = ZOOM_LOGO - .25;
+   jamais vide entre les deux. Seize pixels par mètre l'ont fait paraître trop
+   tôt, puis vingt-quatre trop tard : il fallait s'approcher si près, surtout
+   sur téléphone où l'écran ne montre qu'un bout du hall, que les logos ne
+   paraissaient presque jamais. Il est vu de deux fois plus haut, à douze. */
+const ZOOM_LOGO = Math.log2(12), ZOOM_FONDU = ZOOM_LOGO - .25;
 
 /* La part du toit que le logo occupe, dans un sens comme dans l'autre. */
 const PART_DU_TOIT = .82;
