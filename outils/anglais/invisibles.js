@@ -6,6 +6,13 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  // `modules/encodeur-avif.mjs` : l'empreinte du module WebAssembly, que le
+  // navigateur vérifie, et le message d'une erreur que la console rattrape
+  // pour retomber sur le WebP — ni l'une ni l'autre ne s'affiche
+  "sha384-05Hrg6MAEOyGEl+DBp138l7mH4bs/srHNfuLKY1bXS0R9WI/amgsW509B8FkaZWr",
+  "encodeur AVIF indisponible",
+  // `modules/recherche.mjs` : un morceau de l'adresse `data:` d'une vignette
+  ";base64,",
   // `_environs.html` : le corps de la requête Overpass, qui part au serveur
   // et ne s'affiche jamais
   "[out:json][timeout:60][bbox:",

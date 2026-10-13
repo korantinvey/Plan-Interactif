@@ -294,6 +294,8 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   (`outils/essais/forme.js`). Les accords des champs : `modules/correspondance.mjs`
   `ACCORDS` et `_partage/champs.ts`. L'empreinte d'une conférence :
   `modules/notifications.mjs` `empreinteDebut` et la fonction SQL `empreinte_debut`.
+  Le type d'une vignette lu dans ses octets : `modules/recherche.mjs`
+  `chargeUnLot` et `_partage/octets.ts` `typeDeVignette`.
 - **Le seuil de concentration n'est pas une capacité** : le compteur ne voit
   que les journées organisées depuis le plan. C'est un prix, jamais un refus
   (`modules/ordonnanceur.mjs` `peineDeCharge`). La clé de configuration

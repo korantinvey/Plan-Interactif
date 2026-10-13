@@ -265,8 +265,14 @@ async function toileMarque(octets, im, b, cote){
  * `null` quand la source ne rend rien d'utilisable — injoignable, partage
  * refusé, format qu'on ne sait pas lire. Ce n'est pas une panne : le logo se
  * chargera chez sa source, comme il l'a toujours fait.
+ *
+ * L'encodeur AVIF est confié par l'appelant, et non importé : ce module part
+ * aussi chez le visiteur, qui n'a que faire de trois mégaoctets d'encodeur
+ * (`encodeur-avif.mjs`, que seule la console charge). Sans lui, ou s'il
+ * échoue sur un logo, la vignette se fait en WebP — et le dit, pour être
+ * rangée sous son format.
  */
-export async function vignetteDeLogo(source){
+export async function vignetteDeLogo(source, avif = null){
   let octets = null;
   try {
     const r = await fetch(source, { mode: "cors", credentials: "omit" });
@@ -285,7 +291,11 @@ export async function vignetteDeLogo(source){
     const cadre = boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight };
     const toile = await toileMarque(octets, im, cadre, VIGNETTE_SORTIE);
     if (!toile) return null;
-    const image = await webp64(toile);
+    /* Les deux d'un même format : la base range la ligne sous lui, et une
+       grande en WebP sous une clé AVIF passerait pour ce qu'elle n'est pas. */
+    let format = avif ? "avif" : "webp";
+    let image = avif ? avif(toile) : null;
+    if (!image){ format = "webp"; image = await webp64(toile); }
     if (!image) return null;
     /* La grande, du même original et du même cadre. Vide quand elle
        n'apporterait rien, ou que le navigateur n'a pas su la faire : la base
@@ -293,9 +303,9 @@ export async function vignetteDeLogo(source){
     let grande = "";
     if (Math.max(cadre.w, cadre.h) > VIGNETTE_SORTIE * GRANDE_UTILE){
       const t = await toileMarque(octets, im, cadre, GRANDE_SORTIE);
-      grande = (t && await webp64(t, GRANDE_QUALITE)) || "";
+      grande = (t && (format === "avif" ? avif(t) : await webp64(t, GRANDE_QUALITE))) || "";
     }
-    return { source, image, grande, largeur: toile.width, hauteur: toile.height };
+    return { source, format, image, grande, largeur: toile.width, hauteur: toile.height };
   } catch (e) {
     return null;
   } finally {

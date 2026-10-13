@@ -974,7 +974,13 @@ function chargeUnLot(lot){
       const attendues = new Set(lot);
       for (const cle of Object.keys(recu || {})){
         if (!attendues.has(cle)) continue;
-        const src = "data:image/webp;base64," + recu[cle];
+        /* Le type se lit dans les premiers octets, comme le fait l'API
+           (`_partage/octets.ts` `typeDeVignette`) : « RIFF » d'un WebP,
+           « UklGR » en base64 ; un PNG, que rend Safari ; le reste est de
+           l'AVIF. */
+        const b64 = String(recu[cle]);
+        const type = b64.startsWith("UklGR") ? "webp" : b64.startsWith("iVBOR") ? "png" : "avif";
+        const src = "data:image/" + type + ";base64," + recu[cle];
         if (!IMAGE_SURE.test(src)) continue;
         VIGNETTES.set(cle, src);
         /* Elle arrive déjà recadrée et à la taille : le dire évite à la fiche

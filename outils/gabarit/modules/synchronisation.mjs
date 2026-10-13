@@ -21,6 +21,7 @@ import { $ } from "./dom.mjs";
 import { fenetreAvancement, suitAuServeur } from "./avancement.mjs";
 import { fonction, fluxFonction } from "./appel-fonction.mjs";
 import { vignetteDeLogo } from "./marque.mjs";
+import { encodeurAvif, avif64 } from "./encodeur-avif.mjs";
 import { PLANS } from "./evenements.mjs";
 import { source } from "./provenance.mjs";
 import { signale, appel } from "./socle-console.mjs";
@@ -170,13 +171,24 @@ async function fabriqueLesVignettes(e) {
      recompté autant de fois — un compte qui dépassait son total de loin. On
      les lui renvoie pour qu'il les écarte de ce qui reste à faire. */
   const ecartees = new Set();
+  /* L'encodeur AVIF, s'il se charge. Le serveur l'apprend à chaque demande :
+     une console qui sait le faire refait une fois les logos qui n'ont qu'une
+     vignette WebP ; une console qui ne le sait pas s'en tient à ce qui manque,
+     sans quoi elle referait chaque fois le même WebP. */
+  const enc = await encodeurAvif();
+  const avif = enc ? (/** @type {HTMLCanvasElement} */ t) => avif64(enc, t) : null;
+  const format = avif ? "avif" : "webp";
+  /* Les logos que l'AVIF n'a pas su faire, rangés en WebP : le serveur les
+     dirait encore à faire, et chaque tour les referait. On les lui écarte
+     comme les illisibles, sans les compter avec eux — ils sont préparés. */
+  const enWebp = new Set();
   const compte = () => signale(traduit("Préparation des logos : {n} sur {t}…")
     .replace("{n}", String(Math.min(total, (deja || 0) + faites + ecartees.size)))
     .replace("{t}", String(total)));
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
     let lot;
     try {
-      lot = await fonction("vignettes", { evenementId: e.id, ecartees: [...ecartees] });
+      lot = await fonction("vignettes", { evenementId: e.id, format, ecartees: [...ecartees, ...enWebp] });
     } catch (err) {
       /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
          qui ne commence jamais sans rien annoncer laisse chercher du mauvais
@@ -193,14 +205,15 @@ async function fabriqueLesVignettes(e) {
     /* Un serveur d'avant ignore la liste des écartées et les rend encore :
        on ne retente pas ce qui a déjà échoué, et un lot qui n'en contient
        plus d'autres met fin à la préparation. */
-    const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s));
+    const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s) && !enWebp.has(s));
     if (!aFaire.length) break;
 
     const paquet = [];
     for (const source of aFaire) {
-      const v = await vignetteDeLogo(source);
+      const v = await vignetteDeLogo(source, avif);
       if (v) paquet.push(v);
       else ecartees.add(source);
+      if (v && v.format !== format) enWebp.add(source);
       if (paquet.length >= PAQUET_VIGNETTES) {
         faites += await envoieVignettes(e, paquet);
         paquet.length = 0;

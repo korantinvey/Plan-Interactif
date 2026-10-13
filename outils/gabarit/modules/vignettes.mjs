@@ -17,6 +17,45 @@ import { creeAnnonce } from "./annonce.mjs";
    que la visite d'après ne redemande rien. */
 export const VIGNETTES = new Map();
 
+/* Le navigateur sait-il lire l'AVIF ? Les vignettes se fabriquent dans ce
+   format depuis qu'il pèse moitié moins que le WebP ; les navigateurs qui
+   l'ignorent — iOS d'avant la 16.4, Edge d'avant 2024 — prennent la WebP du
+   même logo, que l'API publique donne à côté (`vignetteWebp`).
+
+   Une image d'un pixel, essayée dès le chargement : la réponse arrive bien
+   avant le plan. On présume qu'il sait tant qu'il n'a pas dit non — c'est
+   presque toujours vrai — et un non tardif retouche les données déjà
+   reçues. */
+let avifLisible = true;
+/** @type {any} */
+let recues = null;
+if (typeof Image !== "undefined"){
+  const essai = new Image();
+  essai.onerror = () => { avifLisible = false; if (recues) sansAvif(recues); };
+  essai.src = "data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAABoAAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQAMAAAAABNjb2xybmNseAACAAIABoAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACJtZGF0EgAKCBgABggQEDQgMgwYAAooooQAALASmpg=";
+}
+
+/** Chaque logo d'AVIF ramené à sa WebP, ou à son logo d'origine s'il n'en a
+ *  pas : tout ce qui lit `vignette` lit alors ce que ce navigateur montre. */
+function sansAvif(/** @type {any} */ d){
+  const ramene = (/** @type {any} */ x) => {
+    if (!x || !("vignetteWebp" in x)) return;
+    if (x.vignetteWebp) x.vignette = x.vignetteWebp;
+    else delete x.vignette;
+    delete x.vignetteWebp;
+  };
+  for (const p of (d && d.plans) || []){
+    for (const s of p.stands || []){ ramene(s); (s.coex || []).forEach(ramene); }
+  }
+}
+
+/** Les données du plan, à leur arrivée : avant l'index, pour que rien n'ait
+ *  encore lu une clé que ce navigateur ne saurait montrer. */
+export function vignettesLisibles(/** @type {any} */ d){
+  recues = d;
+  if (!avifLisible) sansAvif(d);
+}
+
 /** Un lot de vignettes vient d'arriver : qui en attendait peut les poser. */
 export const VIGNETTES_ARRIVEES = creeAnnonce();
 

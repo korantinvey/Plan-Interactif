@@ -19,9 +19,17 @@
  * Elle se calcule ici et non chez l'appelant : c'est la seule façon de garantir
  * qu'une vignette envoyée par la console et une vignette demandée par la page
  * portent le même nom.
+ *
+ * Une vignette AVIF a la sienne, distincte de celle de la WebP du même logo :
+ * changer le contenu sous une clé gardée un an ne l'aurait fait arriver chez
+ * personne. La WebP garde la clé d'avant — celles qui sont en base restent
+ * justes, et les plans déjà gardés les citent encore.
  */
-export async function cleDeVignette(source: string): Promise<string> {
-  const octets = new TextEncoder().encode(source);
+export async function cleDeVignette(
+  source: string,
+  format: "webp" | "avif" = "webp",
+): Promise<string> {
+  const octets = new TextEncoder().encode(format === "webp" ? source : format + ":" + source);
   const empreinte = await crypto.subtle.digest("SHA-256", octets);
   return [...new Uint8Array(empreinte).slice(0, 12)]
     .map((n) => n.toString(16).padStart(2, "0")).join("");
