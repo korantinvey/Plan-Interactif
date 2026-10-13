@@ -773,6 +773,18 @@ bande-admin · batiments · edition · emplacements · enregistrement · fiche �
 libelles · outil-dessin · outil-escalier · pile · recherche · rendu · reprise-emplacements
 socle-dessin
 
+### `modules/detourage.mjs` — 157 l. → plan, plan-admin
+
+- l.1 · Le détourage d'un logo — son fond blanc retiré, pixel par pixel
+
+Fonctions :
+
+`detoure` 34 · `creux` 117
+
+Importé par :
+
+logos-stands
+
 ### `modules/distinctions.mjs` — 385 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
@@ -1626,20 +1638,20 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 596 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 474 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 69 · `tassement` 88 · `grande` 135 · `image` 154 · `sansFond` 177 · `creux` 262
-`toile` 311 · `logoPose` 338 · `cedeAuLogo` 348 · `CARRE` 377 · `filtrage` 410
-`plancheDe` 423 · `extensionPlanche` 457 · `pres` 488 · `logosARevoir` 496 · `groupe` 506
-`oublie` 517 · `couchesLogos` 540
+`finesse` 70 · `tassement` 83 · `grande` 130 · `image` 149 · `sansFond` 169 · `toile` 189
+`logoPose` 216 · `cedeAuLogo` 226 · `CARRE` 255 · `filtrage` 288 · `plancheDe` 301
+`extensionPlanche` 335 · `pres` 366 · `logosARevoir` 374 · `groupe` 384 · `oublie` 395
+`couchesLogos` 418
 
 Importe :
 
-annonce · camera · dom · donnees · marque · vignettes
+annonce · camera · detourage · dom · donnees · marque · vignettes
 
 Importé par :
 
