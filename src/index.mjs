@@ -47,7 +47,7 @@ const PLAN_DE_VISITE = BASE + "plan-de-visite";
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
 const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
-const PARAMS = ["slug", "fond", "v", "vignette", "vignettes"];
+const PARAMS = ["slug", "fond", "v", "vignette", "vignettes", "grande"];
 
 /* L'adresse d'une prévisualisation : `<branche>-plan-interactif.<compte>.workers.dev`,
    ou le préfixe d'une version à la place de la branche. La production n'en a
@@ -1058,12 +1058,17 @@ async function aiguille(requete, env, ctx) {
      pour la rendre. Exiger un slug ici obligerait la page à en porter un
      dans chaque adresse d'image, pour rien. */
   if (!amont.searchParams.get("slug") && !amont.searchParams.get("vignette") &&
-      !amont.searchParams.get("vignettes")) {
+      !amont.searchParams.get("vignettes") && !amont.searchParams.get("grande")) {
     return dit({ erreur: "Paramètre slug manquant." }, 400);
   }
 
   const jeton = requete.headers.get("Authorization");
-  const cache = jeton ? null : cacheDe(env, url);   // une identité contourne le cache
+  /* Une identité contourne le cache. La grande vignette d'un logo aussi :
+     demandée une à une, par les seuls toits vus de près, elle aurait coûté
+     une écriture du stockage par logo — et il n'en accepte que mille par
+     jour. Elle se garde chez le visiteur, au navigateur et au service worker,
+     où elle ne périme jamais. */
+  const cache = jeton || amont.searchParams.get("grande") ? null : cacheDe(env, url);
   // la clé ne retient que les paramètres attendus : deux adresses qui ne
   // diffèrent que par un paramètre parasite partagent la même entrée
   const cle = amont.searchParams.get("vignettes")
