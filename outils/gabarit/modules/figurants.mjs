@@ -1,9 +1,16 @@
 /* ============================================================
-   Les figurants de la vue immersive — du monde dans les allées
+   Les figurants — du monde dans les allées
 
    La maquette d'un salon vide a l'air d'un salon fermé. Vue de biais
    (`camera.mjs`), quelques silhouettes dans les allées donnent l'échelle — un
    stand se mesure à ceux qui passent devant — et disent que le lieu se visite.
+   À plat, en classique et en tuiles, les mêmes silhouettes se couchent un peu
+   vers le haut de l'écran (`webgl.mjs`) : vues d'aplomb, elles n'étaient
+   qu'une tache, et c'est le corps entrevu qui fait lire une personne.
+
+   L'exploitant les allume ou les éteint pour toutes les ambiances
+   (`ambiance.mjs` `figurantsRetenus`) ; le dessin l'apprend par la classe
+   `CLASSE_FIGURANTS` sur la racine, comme pour les logos.
 
    Les figurants ne disent rien de la fréquentation : aucune donnée ne place
    un visiteur, et la carte de chaleur est là pour la vraie. Ils sont semés
@@ -19,6 +26,9 @@
    silhouette, que le dessin (`webgl.mjs`) répète. Il s'éprouve seul dans Node
    (`outils/essais/figurants.js`).
    ============================================================ */
+
+/** La classe de la racine quand il y a du monde dans les allées. */
+export const CLASSE_FIGURANTS = "avec-figurants";
 
 /* Un figurant pour tant de mètres carrés d'allée : assez pour peupler le
    hall, pas assez pour qu'il ait l'air bondé ni pour cacher les noms. */

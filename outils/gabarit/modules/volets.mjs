@@ -34,7 +34,7 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
-import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus, nomsAPlatRetenus } from "./ambiance.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus, nomsAPlatRetenus, figurantsRetenus } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -1262,6 +1262,23 @@ export function voletApparence(hote){
   };
   const majLev = () => { levIn.checked = logosRetenus(); };
   amb.appendChild(lev);
+  /* Du monde dans les allées, dans toutes les ambiances. La case dit ce que
+     le visiteur voit : tant que rien n'est réglé, c'est l'ambiance qui
+     décide (`figurantsRetenus`), et la case la suit quand on en change. Le
+     premier geste écrit le choix, qui vaut ensuite pour toutes. */
+  const fig = document.createElement("div");
+  fig.className = "reglages logos-stands";
+  fig.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
+  /** @type {HTMLElement} */ (fig.querySelector("span")).textContent = "Du monde dans les allées";
+  /** @type {HTMLElement} */ (fig.querySelector(".aideR")).textContent =
+    "Des silhouettes de visiteurs, semées dans les allées pour donner l'échelle et la vie du salon. Elles ne disent rien de la fréquentation réelle.";
+  const figIn = /** @type {HTMLInputElement} */ (fig.querySelector("input"));
+  figIn.onchange = () => {
+    conf("_ambiance").figurants = figIn.checked;
+    appliqueAmbiance(); enregistreConf();
+  };
+  const majFig = () => { figIn.checked = figurantsRetenus(); };
+  amb.appendChild(fig);
   /* Les noms couchés sur le toit, imprimés comme les logos, au lieu de se
      dresser face à l'œil : un essai de lecture, de l'immersif seulement. */
   const nap = document.createElement("div");
@@ -1284,10 +1301,13 @@ export function voletApparence(hote){
     b.addEventListener("click", majCap));
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majNap));
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majFig));
   hote.appendChild(amb);
   majAmb();
   majCap();
   majLev();
+  majFig();
   majNap();
 
   blocDecoupage(hote);

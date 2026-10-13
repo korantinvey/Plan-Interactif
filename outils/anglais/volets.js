@@ -190,6 +190,9 @@ module.exports = {
   "Orientation de la vue": "View orientation",
   "De face": "Front view",
   "Logos des exposants sur les stands, de près": "Exhibitor logos on the stands, up close",
+  "Du monde dans les allées": "People in the aisles",
+  "Des silhouettes de visiteurs, semées dans les allées pour donner l'échelle et la vie du salon. Elles ne disent rien de la fréquentation réelle.":
+    "Visitor figures scattered in the aisles to give a sense of scale and a lively show. They say nothing about actual attendance.",
   "Noms des exposants à plat sur les stands": "Exhibitor names flat on the stands",
   "Le nom est imprimé sur le toit du stand, comme un logo, au lieu de se dresser face à vous.":
     "The name is printed on the stand's roof, like a logo, instead of standing up to face you.",
