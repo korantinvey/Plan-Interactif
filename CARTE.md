@@ -1660,19 +1660,19 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 761 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 776 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 80 · `tassement` 93 · `annoncePret` 135 · `pret` 141 · `geleLogos` 148
-`arriveeSansFond` 190 · `grande` 206 · `pompeGrandes` 220 · `demandeGrande` 224
-`image` 263 · `sansFond` 283 · `lanceTravailleur` 322 · `demandeDetourage` 343 · `pompe` 350
-`parLaPageSeule` 370 · `detoureRevenu` 379 · `toile` 403 · `logoPose` 440
-`sourceDuToit` 450 · `cedeAuLogo` 463 · `CARRE` 492 · `filtrage` 525 · `plancheDe` 542
-`extensionPlanche` 578 · `pres` 609 · `solVu` 620 · `logosARevoir` 637 · `groupe` 649
-`oublie` 660 · `annoncePoses` 687 · `couchesLogos` 703
+`finesse` 80 · `tassement` 93 · `annoncePret` 144 · `pret` 150 · `geleLogos` 157
+`arriveeSansFond` 201 · `grande` 217 · `pompeGrandes` 231 · `demandeGrande` 235
+`image` 274 · `sansFond` 294 · `lanceTravailleur` 333 · `demandeDetourage` 354 · `pompe` 361
+`parLaPageSeule` 381 · `detoureRevenu` 390 · `toile` 414 · `logoPose` 451
+`sourceDuToit` 461 · `cedeAuLogo` 474 · `CARRE` 503 · `filtrage` 536 · `plancheDe` 553
+`extensionPlanche` 589 · `pres` 621 · `solVu` 632 · `logosARevoir` 649 · `groupe` 664
+`oublie` 675 · `annoncePoses` 702 · `couchesLogos` 718
 
 Importe :
 
