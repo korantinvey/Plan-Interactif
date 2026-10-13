@@ -86,4 +86,9 @@ module.exports = [
   // `modules/recherche.mjs` : un morceau de l'attribut qui donne son rang à
   // une ligne de la liste dans la cascade d'entrée — du balisage, pas un texte
   'entre" style="--r:',
+
+  // `modules/releve.mjs` : les noms de deux extensions WebGL que le relevé
+  // des performances demande, et la pastille de l'instrument, `?perf`, que
+  // seul celui qui mesure voit — « fps » se lit pareil dans les deux langues
+  "WEBGL_debug_renderer_info", "WEBGL_lose_context", " fps · ",
 ];
