@@ -94,10 +94,20 @@ VIGNETTES_ARRIVEES.suis(() => PANNEAU_PRET.dis());
 /** Les vignettes décodées, par clé. */
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
 const images = new Map();
-/** Les vignettes détourées, à leur pleine finesse, par clé. */
+/** Les vignettes détourées, à leur pleine finesse, par clé, de la moins
+ *  récemment posée à la plus récente. */
 /** @type {Map<string, HTMLCanvasElement | null>} */
 const detourees = new Map();
-/** Les toiles prêtes à poser, par clé et par largeur. */
+/* Combien on en garde. Chacune tient ses pixels — un demi-mégaoctet pour une
+   vignette de six cents sur deux cents —, et un visiteur qui parcourt de près
+   tout un salon de cinq cents stands les aurait toutes gardées. Cent
+   cinquante couvrent la vue et ses abords ; une vignette oubliée se détoure à
+   nouveau quand on revient vers elle, comme à la première fois. Les vignettes
+   reçues, elles, restent : quelques kilo-octets chacune, et c'est par elles
+   que le nom d'un stand sait qu'il a un logo. */
+const GARDEES = 150;
+/** Les toiles prêtes à poser, par clé et par largeur — seules celles de la
+ *  dernière pose : une finesse quittée se refait d'une simple réduction. */
 /** @type {Map<string, HTMLCanvasElement | null>} */
 const toiles = new Map();
 
@@ -265,8 +275,10 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   const k = cle + "@" + lw;
   if (toiles.has(k)) return toiles.get(k) || null;
   const lh = Math.max(1, Math.round(ih * lw / iw));
-  if (!detourees.has(cle)) detourees.set(cle, sansFond(i, iw, ih));
-  const logo = detourees.get(cle);
+  const logo = detourees.has(cle) ? detourees.get(cle) : sansFond(i, iw, ih);
+  // la plus récente passe en dernier
+  detourees.delete(cle);
+  detourees.set(cle, logo || null);
   const t = document.createElement("canvas");
   t.width = lw + 2 * MARGE;
   t.height = Math.round((lh + 2 * MARGE) / TASSEMENT);
@@ -458,6 +470,20 @@ function groupe(/** @type {string} */ id){
   return groupes.get(id);
 }
 
+/** Ce qui n'est plus posé s'oublie : toutes les toiles d'avant, et les
+ *  vignettes détourées au-delà de celles qu'on garde, les plus anciennes
+ *  d'abord. */
+function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
+  const posees = new Set(data.map(d => d.t.dataset.cle));
+  for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
+  const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
+  const garde = Math.max(GARDEES, enJeu.size);
+  for (const cle of [...detourees.keys()]){
+    if (detourees.size <= garde) break;
+    if (!enJeu.has(cle)) detourees.delete(cle);
+  }
+}
+
 /**
  * La couche des logos, pour la vue immersive : un carré par logo autour de la
  * vue, tous peints d'une planche.
@@ -470,7 +496,7 @@ function groupe(/** @type {string} */ id){
 export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const p = P();
   couvert = null;
-  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)) return [];
+  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)){ oublie([]); return []; }
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
   finesseCouverte = finesse(zoom);
@@ -493,6 +519,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     if (!t) continue;
     data.push({ x: cx, y: cy, z: hauteurDe(trace) + .05, large, prof, t, el: g });
   }
+  oublie(data);
   if (!data.length) return [];
   // dans un ordre fixe, pour qu'une même vue retrouve la même planche
   const toiles = [...new Set(data.map(d => d.t))].sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || ""));
