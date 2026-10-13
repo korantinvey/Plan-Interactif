@@ -132,14 +132,22 @@ Deno.serve(async (req) => {
          qu'une vignette WebP sont à refaire. Une console d'avant ne le dit
          pas, et ne fait que du WebP. */
       format?: string;
+      /* La console détoure la grande, que seul le toit d'un stand lit : les
+         grandes d'avant, au fond blanc, sont à refaire. Une console d'avant
+         ne le dit pas, et s'en tient à ce qui manque. */
+      detoure?: boolean;
       vignettes?: {
         source: string; image: string; largeur: number; hauteur: number;
         /* Le format de l'image et de la grande ; absent d'une console d'avant,
            qui n'envoie que du WebP. */
         format?: string;
-        /* La grande, pour les toits vus de près : vide quand l'original n'en
-           tient pas plus que la petite. Une console d'avant ne l'envoie pas. */
+        /* La grande, le logo du toit d'un stand : vide quand le navigateur
+           n'a pas su la faire — ou, d'une console d'avant, quand l'original
+           n'en tenait pas plus que la petite. Plus ancienne encore, une
+           console ne l'envoie pas. */
         grande?: string;
+        /* La grande a son fond retiré ; absent d'une console d'avant. */
+        detouree?: boolean;
       }[];
     };
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
@@ -186,6 +194,12 @@ Deno.serve(async (req) => {
           largeur: v.largeur | 0,
           hauteur: v.hauteur | 0,
           ...(typeof v.grande === "string" ? { grande: v.grande } : {}),
+          /* Toujours écrit : une console d'avant qui refait une ligne y pose
+             une grande au fond blanc, qui ne doit plus passer pour détourée.
+             Une grande vide — le navigateur n'a pas su la faire — compte
+             pour faite : la redemander à chaque tour ne la ferait pas mieux,
+             et le toit garde la petite. */
+          grande_detouree: v.detouree === true,
           pose: new Date().toISOString(),
         });
       }
@@ -206,7 +220,8 @@ Deno.serve(async (req) => {
        Une vignette sans sa grande n'est pas faite : celles d'avant la grande
        se refont une fois, la petite avec. Pour une console qui sait l'AVIF,
        une vignette WebP ne l'est pas non plus : elle se refait une fois, en
-       AVIF, sous sa clé à elle. */
+       AVIF, sous sa clé à elle. Pour une console qui détoure, une grande au
+       fond blanc ne l'est pas davantage. */
     const enAvif = corps.format === "avif";
     const connues = new Set<string>();
     for (const tranche of tranchesDAdresses(adresses)) {
@@ -214,6 +229,7 @@ Deno.serve(async (req) => {
         .select("source").in("source", tranche)
         .not("grande", "is", null);
       if (enAvif) q = q.eq("format", "avif");
+      if (corps.detoure === true) q = q.eq("grande_detouree", true);
       /* Un échec se dit au lieu de passer pour « rien n'est fait » : la
          console referait alors tout le salon, tour après tour, sans fin. */
       const { data, error } = await q;
