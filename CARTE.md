@@ -715,20 +715,21 @@ Importé par :
 
 edition · outil-comptoir · outil-escalier · reglage-comptoir · rendu · webgl
 
-### `modules/demarrage.mjs` — 298 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 300 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 65 · `demarre` 81 · `annonce` 144 · `panneDuChargement` 179
-`CLE_VERSION` 189 · `versionRetenue` 190 · `retientVersion` 193 · `demandePlan` 219
-`charge` 243 · `brancheDemarrage` 280
+`recadreListePosee` 66 · `demarre` 82 · `annonce` 146 · `panneDuChargement` 181
+`CLE_VERSION` 191 · `versionRetenue` 192 · `retientVersion` 195 · `demandePlan` 221
+`charge` 245 · `brancheDemarrage` 282
 
 Importe :
 
 affichage · annonce · borne · dom · donnees · fiche · ici · index-salon · installation
-mode-admin · parcours-recu · recherche · rendu · salon · sponsor · tutoriel · vue
+mode-admin · parcours-recu · recherche · rendu · salon · sponsor · tutoriel · vignettes
+vue
 
 Importé par :
 
@@ -954,6 +955,18 @@ Importé par :
 
 edition-en-cours · fiche-zone · gestes-admin · index-salon · outil-dessin · pile
 reprise-emplacements
+
+### `modules/encodeur-avif.mjs` — 94 l. → console
+
+- l.1 · L'encodeur AVIF des vignettes de logos — console seulement
+
+Fonctions :
+
+`script` 40 · `encodeurAvif` 55 · `avif64` 78
+
+Importé par :
+
+synchronisation
 
 ### `modules/enregistrement.mjs` — 716 l. → plan-admin
 
@@ -1657,7 +1670,7 @@ Importé par :
 
 ambiance · libelles · webgl
 
-### `modules/marque.mjs` — 304 l. → plan, plan-admin, console
+### `modules/marque.mjs` — 314 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
 
@@ -1665,7 +1678,7 @@ Fonctions :
 
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `webp64` 161 · `boiteMarque` 179 · `toileMarque` 245
-`vignetteDeLogo` 269
+`vignetteDeLogo` 275
 
 Importé par :
 
@@ -2274,7 +2287,7 @@ Importe :
 
 export · rapport-utilisation · socle-console
 
-### `modules/recherche.mjs` — 1020 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1026 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
@@ -2288,7 +2301,7 @@ Fonctions :
 `appliqueFiltre` 592 · `oublieRetrait` 608 · `reprendRecherche` 617 · `rangSorte` 630
 `codeCase` 659 · `caseNumero` 676 · `sousLigne` 696 · `liste` 710 · `marqueChoisie` 847
 `prechargeMarque` 873 · `prechargeLesVignettes` 924 · `chargeUnLot` 970
-`brancheRecherche` 995
+`brancheRecherche` 1001
 
 Importe :
 
@@ -2685,14 +2698,14 @@ Importé par :
 
 reglage-suggestion · tiroir-parcours
 
-### `modules/sur.mjs` — 190 l. → plan, plan-admin
+### `modules/sur.mjs` — 191 l. → plan, plan-admin
 
 - l.1 · Ce qui vient d'ailleurs, relu avant d'être affiché
 
 Fonctions :
 
-`lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 70 · `imageSure` 83
-`assainitRiche` 112 · `enBlocs` 160 · `rangeRiche` 173
+`lien` 22 · `adresseWeb` 30 · `adresseSure` 43 · `adresseImage` 71 · `imageSure` 84
+`assainitRiche` 113 · `enBlocs` 161 · `rangeRiche` 174
 
 Importe :
 
@@ -2702,18 +2715,19 @@ Importé par :
 
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor
 
-### `modules/synchronisation.mjs` — 264 l. → console
+### `modules/synchronisation.mjs` — 277 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
-`brancheSynchronisation` 34 · `etapesPressenties` 52 · `synchronise` 67
-`fabriqueLesVignettes` 166 · `oublieLePlan` 249 · `envoieVignettes` 257
+`brancheSynchronisation` 35 · `etapesPressenties` 53 · `synchronise` 68
+`fabriqueLesVignettes` 167 · `oublieLePlan` 262 · `envoieVignettes` 270
 
 Importe :
 
-appel-fonction · avancement · dom · evenements · marque · provenance · socle-console
+appel-fonction · avancement · dom · encodeur-avif · evenements · marque · provenance
+socle-console
 
 Importé par :
 
@@ -2969,13 +2983,13 @@ Importé par :
 
 demarrage · installation · plan · volets
 
-### `modules/vignettes.mjs` — 51 l. → plan, plan-admin
+### `modules/vignettes.mjs` — 90 l. → plan, plan-admin
 
 - l.1 · Les vignettes des logos — ce qui est arrivé, et où le demander
 
 Fonctions :
 
-`adresseVignette` 36 · `adresseGrande` 50
+`sansAvif` 40 · `vignettesLisibles` 54 · `adresseVignette` 75 · `adresseGrande` 89
 
 Importe :
 
@@ -2983,7 +2997,7 @@ annonce · salon
 
 Importé par :
 
-fiche · logos-stands · recherche
+demarrage · fiche · logos-stands · recherche
 
 ### `modules/visite-guidee.mjs` — 17 l. → plan, plan-admin
 
@@ -3159,9 +3173,9 @@ Portes :
 `r2` 23 · `versAnneaux` 26 · `versTrace` 44 · `distSegment` 55 · `distBord` 64
 `poleInterieur` 83 · `portee` 104 · `boite` 113 · `emprise` 144 · `dedans` 155
 
-### `supabase/functions/_partage/octets.ts` — 18 l.
+### `supabase/functions/_partage/octets.ts` — 31 l.
 
-`octetsDeVignette` 12
+`octetsDeVignette` 12 · `typeDeVignette` 27
 
 ### `supabase/functions/_partage/push.ts` — 229 l.
 
@@ -3177,9 +3191,9 @@ Portes :
 
 `versionFond` 47 · `versionDuPlan` 92 · `condense` 96
 
-### `supabase/functions/_partage/vignette.ts` — 28 l.
+### `supabase/functions/_partage/vignette.ts` — 36 l.
 
-`cleDeVignette` 23
+`cleDeVignette` 28
 
 ### `supabase/functions/comptes/index.ts` — 263 l.
 
@@ -3193,12 +3207,12 @@ Portes :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1149 l.
+### `supabase/functions/plan-public/index.ts` — 1165 l.
 
-`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 118 · `avecVignette` 155
-`rendVignette` 191 · `rendGrande` 217 · `rendVignettes` 309 · `lu` 352 · `salon` 362
-`appDuSalon` 388 · `rendIconeApp` 419 · `retraits` 524 · `ampute` 551 · `masquesDe` 594
-`masquesDuPlan` 614
+`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 123 · `avecVignette` 165
+`rendVignette` 206 · `rendGrande` 233 · `rendVignettes` 325 · `lu` 368 · `salon` 378
+`appDuSalon` 404 · `rendIconeApp` 435 · `retraits` 540 · `ampute` 567 · `masquesDe` 610
+`masquesDuPlan` 630
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
@@ -3210,9 +3224,9 @@ Portes :
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
 `champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
 
-### `supabase/functions/vignettes/index.ts` — 208 l.
+### `supabase/functions/vignettes/index.ts` — 233 l.
 
-`cors` 26 · `service` 42 · `adressesDeLogos` 51 · `adressesDuSalon` 76
+`cors` 27 · `service` 43 · `adressesDeLogos` 52 · `adressesDuSalon` 77
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -3271,10 +3285,11 @@ Portes :
 - `20261008172816_la_porte_publique_des_mesures.sql` — fn mesure_publique
 - `20261010121534_les_erreurs_des_pages_du_plan.sql` — erreur_page, fn erreur_publique, fn erreurs_du_salon, fn purge_erreurs
 - `20261013091043_grande_vignette_des_logos.sql` — vignette_de_logo
+- `20261013121249_vignettes_de_logos_en_avif.sql` — vignette_de_logo
 
 ## Le reste
 
-- `src/index.mjs` — 1136 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+- `src/index.mjs` — 1140 l. · Worker Cloudflare : relais et cache de `/api/plan`.
   `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956 · `surete` 992 · `aiguille` 1010
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
