@@ -1105,15 +1105,19 @@ async function aiguille(requete, env, ctx) {
       if (perime) {
         ctx.waitUntil(rafraichit(cache, cle, amont.toString(), entetes));
       }
-      const entetes = {
+      /* Sous un autre nom que les en-têtes de la demande : redéclarés ici, ils
+         masquaient ceux que le rafraîchissement juste au-dessus emporte, et
+         une entrée périmée faisait lever le Worker (erreur 1101) au lieu
+         d'être servie — le plan sans version ne se refaisait plus. */
+      const servis = {
         "Content-Type": garde.metadata?.ct || "application/json",
         "Cache-Control": garde.metadata?.cc || "public, max-age=60",
         "X-Cache": perime ? "stale" : "hit",
       };
       // la page compare ce qu'elle tient à ce qui se sert : elle doit la lire
       // sur une copie gardée comme sur une réponse fraîche
-      if (garde.metadata?.v) entetes["X-Version"] = garde.metadata.v;
-      return new Response(garde.value, { headers: entetes });
+      if (garde.metadata?.v) servis["X-Version"] = garde.metadata.v;
+      return new Response(garde.value, { headers: servis });
     }
   }
 

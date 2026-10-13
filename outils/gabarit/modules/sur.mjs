@@ -55,8 +55,9 @@ export function adresseSure(v){
    Le « svg » n'y figure pas, et c'est délibéré : il porte du script, que le
    navigateur exécute dès qu'on le pose autrement que dans une image. Le
    convertisseur n'en produit de toute façon jamais — il rend ce que la toile
-   sait écrire, webp là où c'est possible, png partout. */
-export const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+   sait écrire, webp là où c'est possible, png partout ; l'AVIF est celui des
+   vignettes de logos, que la console encode elle-même. */
+export const IMAGE_SURE = /^data:image\/(png|jpeg|webp|avif);base64,[A-Za-z0-9+/]+=*$/;
 
 /**
  * Le logo d'une société, relu avant d'être affiché.

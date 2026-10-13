@@ -116,6 +116,24 @@ const BRANCHE = "https://ma-branche-plan-interactif.interactiveplan.workers.dev"
       "branche avec CACHE_APERCU : elle range là, et pas ailleurs");
   }
 
+  /* — une entrée périmée se sert, et se refait derrière. Les en-têtes qu'elle
+     reprend portaient le nom de ceux que le rafraîchissement emporte : la
+     redéclaration les masquait, et le Worker levait (erreur 1101) sur chaque
+     plan sans version dont l'entrée avait passé sa fraîcheur. */
+  {
+    const env = { CACHE: stockage(), ASSETS: { fetch: async () => new Response("") } };
+    await sert(PRODUCTION, "/api/plan?slug=fep26", {}, env);
+    await env.CACHE.put("v1?slug=fep26", '{"plan":0}', {
+      metadata: { ct: "application/json", cc: "public, max-age=60", v: "ancienne", frais: Date.now() - 1000 },
+    });
+    let r = null, erreur = "";
+    try { r = await sert(PRODUCTION, "/api/plan?slug=fep26", {}, env); }
+    catch (e) { erreur = e.message; }
+    dit(r && r.ok && r.headers.get("X-Cache") === "stale",
+      "production : une entrée périmée est servie, sans faire lever le Worker",
+      erreur || (r && r.headers.get("X-Cache")));
+  }
+
   /* — les en-têtes de sûreté, sur ce que le Worker sert lui-même. Le même
      Worker sous la même adresse : l'essai le charge déjà, autant s'en servir.
      Le plan d'un salon doit rester intégrable au site de l'organisateur. */

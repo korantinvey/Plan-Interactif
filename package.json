@@ -13,6 +13,7 @@
     "polices": "node outils/polices.js",
     "lieux": "node outils/lieux.js",
     "deck": "node outils/deck.js",
+    "avif": "node outils/avif.js",
     "bd": "supabase db push",
     "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
     "sup": "supabase",

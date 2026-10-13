@@ -16,6 +16,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { cleDeVignette } from "../_partage/vignette.ts";
+import { typeDeVignette } from "../_partage/octets.ts";
 
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
@@ -127,8 +128,15 @@ Deno.serve(async (req) => {
          préparation : rien ne les enregistre, et sans elles chaque tour les
          rendrait de nouveau en tête du lot. */
       ecartees?: string[];
+      /* Ce que la console sait fabriquer. « avif » : les logos qui n'ont
+         qu'une vignette WebP sont à refaire. Une console d'avant ne le dit
+         pas, et ne fait que du WebP. */
+      format?: string;
       vignettes?: {
         source: string; image: string; largeur: number; hauteur: number;
+        /* Le format de l'image et de la grande ; absent d'une console d'avant,
+           qui n'envoie que du WebP. */
+        format?: string;
         /* La grande, pour les toits vus de près : vide quand l'original n'en
            tient pas plus que la petite. Une console d'avant ne l'envoie pas. */
         grande?: string;
@@ -159,9 +167,21 @@ Deno.serve(async (req) => {
       for (const v of corps.vignettes) {
         if (!v?.source || !v.image) continue;
         if (!permises.has(v.source)) { refusees++; continue; }
+        /* Le format se relit dans les octets : une image rangée sous la clé
+           d'un autre format ferait servir l'un pour l'autre. Sous « webp »
+           passe aussi le PNG, que Safari rend quand on lui demande du WebP —
+           comme avant ; le type servi se lit de toute façon dans les octets. */
+        const format = v.format === "avif" ? "avif" : "webp";
+        const avif = (b64: string) => typeDeVignette(b64) === "image/avif";
+        if (avif(v.image) !== (format === "avif") ||
+            (v.grande && avif(v.grande) !== (format === "avif"))) {
+          refusees++;
+          continue;
+        }
         lignes.push({
-          cle: await cleDeVignette(v.source),
+          cle: await cleDeVignette(v.source, format),
           source: v.source,
+          format,
           image: v.image,
           largeur: v.largeur | 0,
           hauteur: v.hauteur | 0,
@@ -183,12 +203,17 @@ Deno.serve(async (req) => {
        c'est l'adresse que l'instantané connaît. Par tranches — une requête qui
        porte cinq cents adresses dépasse ce qu'un intermédiaire transmet.
        Une vignette sans sa grande n'est pas faite : celles d'avant la grande
-       se refont une fois, la petite avec. */
+       se refont une fois, la petite avec. Pour une console qui sait l'AVIF,
+       une vignette WebP ne l'est pas non plus : elle se refait une fois, en
+       AVIF, sous sa clé à elle. */
+    const enAvif = corps.format === "avif";
     const connues = new Set<string>();
     for (let i = 0; i < adresses.length; i += 50) {
-      const { data } = await db.from("vignette_de_logo")
+      let q = db.from("vignette_de_logo")
         .select("source").in("source", adresses.slice(i, i + 50))
         .not("grande", "is", null);
+      if (enAvif) q = q.eq("format", "avif");
+      const { data } = await q;
       for (const v of data ?? []) connues.add(String((v as { source: string }).source));
     }
 
