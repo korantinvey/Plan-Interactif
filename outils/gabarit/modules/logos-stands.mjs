@@ -39,6 +39,7 @@ import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { VIGNETTE_SORTIE } from "./marque.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
+import { ETROIT } from "./ecran.mjs";
 
 /** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
@@ -49,8 +50,12 @@ export const CLASSE_LOGOS = "logos-stands";
    jamais vide entre les deux. Seize pixels par mètre le faisaient paraître
    trop tôt : un logo de deux mètres n'y tenait qu'une quarantaine de pixels,
    où le nom se lisait mieux que lui. À vingt-quatre, il paraît assez grand
-   pour être lu. */
-const ZOOM_LOGO = Math.log2(24), ZOOM_FONDU = ZOOM_LOGO - .25;
+   pour être lu.
+   Sur téléphone, l'écran ne montre qu'un bout du hall à ce zoom : il fallait
+   s'approcher si près que les logos ne paraissaient presque jamais. Le seuil
+   y est vu de deux fois plus haut, à douze pixels par mètre. Lu une fois, au
+   chargement : le shader et les noms le figent. */
+const ZOOM_LOGO = Math.log2(ETROIT() ? 12 : 24), ZOOM_FONDU = ZOOM_LOGO - .25;
 
 /* La part du toit que le logo occupe, dans un sens comme dans l'autre. */
 const PART_DU_TOIT = .82;
