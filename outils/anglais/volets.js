@@ -190,6 +190,6 @@ module.exports = {
   "Orientation de la vue": "View orientation",
   "De face": "Front view",
   "Logos des exposants sur les stands, de près": "Exhibitor logos on the stands, up close",
-  "Quand on s'approche, le logo se pose sur le toit du stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.":
-    "As you get closer, the logo appears on the stand's roof, in place of its name. Exhibitors whose logo is unknown keep their name.",
+  "Quand on s'approche, le logo se pose sur le stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.":
+    "As you get closer, the logo appears on the stand, in place of its name. Exhibitors whose logo is unknown keep their name.",
 };

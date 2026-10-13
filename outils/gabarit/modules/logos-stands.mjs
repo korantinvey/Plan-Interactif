@@ -1,10 +1,13 @@
 /* ============================================================
-   Les logos sur les stands — la vue immersive, vue de près
+   Les logos sur les stands, vus de près
 
-   De loin, le hall se lit par ses volumes et ses noms. Quand on s'approche,
+   De loin, le hall se lit par ses formes et ses noms. Quand on s'approche,
    l'enseigne d'un stand dit plus vite que son nom qui l'occupe : son logo se
-   pose alors à plat sur le toit du stand, imprimé comme une enseigne peinte,
-   sans plaque ni bord, et le nom lui cède la place.
+   pose alors à plat sur le stand — sur son toit en vue immersive —, imprimé
+   comme une enseigne peinte, sans plaque ni bord, et le nom lui cède la place.
+   Toutes les ambiances le permettent : à plat, en classique comme en tuiles,
+   le logo est seulement dessiné sans l'étirement que la vue de biais
+   demande.
 
    À la place, et non en plus. Un premier essai le faisait flotter au-dessus
    du stand : le nom restait dessous, les noms des stands de devant — peints
@@ -19,6 +22,7 @@
 
    Une option de l'exploitant (volet « Apparence ») ; la racine en porte la
    classe, posée par `ambiance.mjs`, et `webgl.mjs` demande ici ses couches.
+   Le SVG (`?rendu=svg`) n'en pose pas : ses noms restent.
 
    Seules les vignettes déjà reçues par lot (`vignettes.mjs`) font un logo :
    recadrées à la synchronisation, elles pèsent quelques kilo-octets, et le lot
@@ -36,7 +40,7 @@ import { VIGNETTE_SORTIE } from "./marque.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 
-/** La classe que la racine porte quand l'option est prise en vue immersive. */
+/** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
 
 /* Le seuil, en zoom de la carte graphique — le logarithme des pixels par
@@ -73,8 +77,10 @@ const MARGE = 2;
 /* Couchée sur le sol incliné, une image se tasse en hauteur d'autant que le
    hall fuit. Le logo est donc dessiné étiré d'autant : vu de biais, il
    reprend ses proportions. Le compte est juste de face, et reste bon aux
-   quelques degrés de cap qu'un hall prend d'ordinaire. */
+   quelques degrés de cap qu'un hall prend d'ordinaire. À plat, vu d'en haut,
+   rien ne se tasse. */
 const TASSEMENT = Math.sqrt(1 - SINUS_INCLINAISON * SINUS_INCLINAISON);
+const tassement = () => cameraEnJeu() ? TASSEMENT : 1;
 
 /* Seuls les logos autour de la vue se posent. Une texture par logo, à pleine
    finesse : les cinq cents d'un salon comme Franchise Expo tiendraient des
@@ -174,16 +180,18 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
 }
 
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
- *  hauteur de ce que la vue de biais lui reprendra.
+ *  hauteur de ce que la vue de biais lui reprendra — `tasse`, 1 à plat.
  *
  *  Le détourage se fait une fois, sur la vignette entière, et chaque finesse
  *  n'en est qu'une réduction : la refaire à chaque demi-cran de zoom coûtait
  *  un parcours de chaque logo, et détourée en petit, la vignette perdait au
  *  bord ce que la réduction avait déjà fondu. */
 function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
-  /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur){
+  /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur,
+  /** @type {number} */ tasse){
   const lw = Math.max(1, Math.min(iw, Math.round(largeur)));
-  const k = cle + "@" + lw;
+  // le tassement dans la clé : passer de l'immersif au plat refait la toile
+  const k = cle + "@" + lw + (tasse === 1 ? "" : "~");
   if (toiles.has(k)) return toiles.get(k) || null;
   const lh = Math.max(1, Math.round(ih * lw / iw));
   const logo = detourees.has(cle) ? detourees.get(cle) : sansFond(i, iw, ih);
@@ -192,11 +200,11 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   detourees.set(cle, logo || null);
   const t = document.createElement("canvas");
   t.width = lw + 2 * MARGE;
-  t.height = Math.round((lh + 2 * MARGE) / TASSEMENT);
+  t.height = Math.round((lh + 2 * MARGE) / tasse);
   const ctx = t.getContext("2d");
   if (logo && ctx){
     ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(logo, MARGE, MARGE / TASSEMENT, lw, lh / TASSEMENT);
+    ctx.drawImage(logo, MARGE, MARGE / tasse, lw, lh / tasse);
   }
   t.dataset.cle = k;
   toiles.set(k, logo && ctx ? t : null);
@@ -206,7 +214,7 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
 /** Le stand montre-t-il son logo de près ? Sa vignette se décode si elle ne
  *  l'est pas encore. */
 export function logoPose(/** @type {any} */ s){
-  return Boolean(s && s.vignette && cameraEnJeu() &&
+  return Boolean(s && s.vignette &&
     document.documentElement.classList.contains(CLASSE_LOGOS) && image(s.vignette));
 }
 
@@ -399,8 +407,8 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
 }
 
 /**
- * La couche des logos, pour la vue immersive : un carré par logo autour de la
- * vue, tous peints d'une planche.
+ * La couche des logos : un carré par logo autour de la vue, tous peints
+ * d'une planche.
  * @param {any} L la bibliothèque
  * @param {(el: Element) => number} hauteurDe la hauteur du volume d'un tracé de stand
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
@@ -414,6 +422,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
   finesseCouverte = finesse(zoom);
+  const enVolume = cameraEnJeu(), tasse = tassement();
   const data = [], vus = new Set();
   for (const s of p.stands || []){
     if (!s.vignette || !s.c || vus.has(s.id)) continue;
@@ -425,7 +434,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     vus.add(s.id);
     // le toit, d'après la boîte du stand : le logo en suit les côtés
     const bb = s.bb || [0, 0];
-    const rapport = i.naturalWidth / (i.naturalHeight / TASSEMENT);
+    const rapport = i.naturalWidth / (i.naturalHeight / tasse);
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
@@ -439,9 +448,12 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
       const g = grande(s.vignette);
       if (g){ src = g; cleSrc = s.vignette + "+g"; }
     }
-    const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue);
+    const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue, tasse);
     if (!t) continue;
-    data.push({ x: cx, y: cy, z: hauteurDe(trace) + .05, large, prof, t, el: g });
+    /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
+       sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
+       ce rien suffisait à sortir le logo de ce qu'elle montre. */
+    data.push({ x: cx, y: cy, z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g });
   }
   oublie(data);
   if (!data.length) return [];
@@ -450,6 +462,10 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const pl = plancheDe(toiles);
   return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture: pl.toile, pickable: true,
     material: IMPRIME, textureParameters: filtrage(appareil), extensions: extensionPlanche(L),
+    /* À plat, tout est à la même hauteur : la profondeur départagerait le
+       logo et son stand au hasard. L'ordre des couches suffit — il se peint
+       après les stands, avant les noms. */
+    ...(enVolume ? {} : { parameters: { depthCompare: "always", depthWriteEnabled: false } }),
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
     getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
     getOrientation: [0, 0, 0],

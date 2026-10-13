@@ -237,15 +237,15 @@ Importé par :
 
 edition · enregistrement · gestes-admin · outil-dessin · reprise-emplacements
 
-### `modules/ambiance.mjs` — 188 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 189 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles, Immersif
 
 Fonctions :
 
-`logosRetenus` 48 · `capRetenu` 53 · `ambianceRetenue` 60 · `anneaux` 66 · `f3` 78
-`rayonTuile` 105 · `retire` 110 · `arrondi` 125 · `traceStand` 151 · `tuilesPosees` 156
-`appliqueAmbiance` 158
+`logosRetenus` 49 · `capRetenu` 54 · `ambianceRetenue` 61 · `anneaux` 67 · `f3` 79
+`rayonTuile` 106 · `retire` 111 · `arrondi` 126 · `traceStand` 152 · `tuilesPosees` 157
+`appliqueAmbiance` 159
 
 Importe :
 
@@ -1638,15 +1638,16 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 458 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 474 l. → plan, plan-admin
 
-- l.1 · Les logos sur les stands — la vue immersive, vue de près
+- l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 66 · `grande` 124 · `image` 143 · `sansFond` 163 · `toile` 183 · `logoPose` 208
-`cedeAuLogo` 218 · `CARRE` 247 · `filtrage` 280 · `plancheDe` 293 · `extensionPlanche` 327
-`pres` 358 · `logosARevoir` 366 · `groupe` 376 · `oublie` 387 · `couchesLogos` 410
+`finesse` 70 · `tassement` 83 · `grande` 130 · `image` 149 · `sansFond` 169 · `toile` 189
+`logoPose` 216 · `cedeAuLogo` 226 · `CARRE` 255 · `filtrage` 288 · `plancheDe` 301
+`extensionPlanche` 335 · `pres` 366 · `logosARevoir` 374 · `groupe` 384 · `oublie` 395
+`couchesLogos` 418
 
 Importe :
 
@@ -2996,7 +2997,7 @@ Importé par :
 
 installation · rappels · tutoriel
 
-### `modules/volets.mjs` — 1392 l. → plan-admin
+### `modules/volets.mjs` — 1387 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
