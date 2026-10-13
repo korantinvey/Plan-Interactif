@@ -2997,13 +2997,13 @@ Importé par :
 
 demarrage · installation · plan · volets
 
-### `modules/vignettes.mjs` — 90 l. → plan, plan-admin
+### `modules/vignettes.mjs` — 97 l. → plan, plan-admin
 
 - l.1 · Les vignettes des logos — ce qui est arrivé, et où le demander
 
 Fonctions :
 
-`sansAvif` 40 · `vignettesLisibles` 54 · `adresseVignette` 75 · `adresseGrande` 89
+`sansAvif` 40 · `vignettesLisibles` 54 · `adresseVignette` 75 · `adresseGrande` 96
 
 Importe :
 
