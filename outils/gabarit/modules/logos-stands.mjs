@@ -179,6 +179,105 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
   return toile;
 }
 
+/* ------------------------------------------------------------
+   Le détourage, hors de la page
+
+   Fait sur place, au moment de poser les logos, il figeait la page : sept
+   cents millisecondes sur Funexpo, quand le zoom passait le seuil et que les
+   quinze logos autour de la vue se détouraient dans la même image. Il se fait
+   désormais dans un travailleur (`detourage-travail.mjs`), deux à la fois au
+   plus — chacun tient son image décodée pendant le trajet —, et chaque logo
+   paraît quand le sien revient (`PANNEAU_PRET`). Sans travailleur — script
+   absent des essais, navigateur qui le refuse —, la page détoure elle-même,
+   mais un logo par tâche : la page respire entre deux.
+   ------------------------------------------------------------ */
+/** Ce qui attend son détourage, et ce qui y est. */
+/** @type {{ cle: string, i: CanvasImageSource, iw: number, ih: number }[]} */
+const aDetourer = [];
+/** @type {Map<number, { cle: string, i: CanvasImageSource, iw: number, ih: number }>} */
+const enDetourage = new Map();
+const EN_MEME_TEMPS = 2;
+let numero = 0;
+/** @type {Worker | null | undefined} — `undefined` tant qu'on ne l'a pas demandé */
+let travailleur;
+let parLaPage = 0;
+
+function lanceTravailleur(){
+  if (travailleur !== undefined) return travailleur;
+  travailleur = null;
+  try {
+    if (typeof TRAVAIL_DETOURAGE !== "string" || typeof Worker !== "function" ||
+      typeof OffscreenCanvas !== "function" || typeof createImageBitmap !== "function") return null;
+    const t = new Worker(URL.createObjectURL(new Blob([TRAVAIL_DETOURAGE], { type: "text/javascript" })));
+    t.addEventListener("message", e => detoureRevenu(e.data.n, e.data.img));
+    // perdu en route : ce qu'il tenait repasse par la page
+    t.addEventListener("error", () => {
+      travailleur = null;
+      for (const a of enDetourage.values()) aDetourer.push(a);
+      enDetourage.clear();
+      pompe();
+    });
+    travailleur = t;
+  } catch (e) { travailleur = null; }
+  return travailleur;
+}
+
+/** Le logo de cette clé se détoure dès qu'il le peut ; il paraîtra au retour. */
+function demandeDetourage(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
+  /** @type {number} */ iw, /** @type {number} */ ih){
+  if (aDetourer.some(a => a.cle === cle) || [...enDetourage.values()].some(a => a.cle === cle)) return;
+  aDetourer.push({ cle, i, iw, ih });
+  pompe();
+}
+
+function pompe(){
+  const t = lanceTravailleur();
+  if (!t){
+    if (!parLaPage && aDetourer.length) parLaPage = setTimeout(parLaPageSeule, 0);
+    return;
+  }
+  while (enDetourage.size < EN_MEME_TEMPS && aDetourer.length){
+    const a = /** @type {{ cle: string, i: CanvasImageSource, iw: number, ih: number }} */ (aDetourer.shift());
+    const n = ++numero;
+    enDetourage.set(n, a);
+    createImageBitmap(/** @type {ImageBitmapSource} */ (a.i))
+      .then(image => {
+        if (travailleur && enDetourage.has(n)) travailleur.postMessage({ n, image }, [image]);
+        else image.close();
+      })
+      .catch(() => detoureRevenu(n, null));
+  }
+}
+
+/** Un logo par tâche, quand la page détoure elle-même. */
+function parLaPageSeule(){
+  parLaPage = 0;
+  const a = aDetourer.shift();
+  if (!a) return;
+  detourees.set(a.cle, sansFond(a.i, a.iw, a.ih));
+  PANNEAU_PRET.dis();
+  pompe();
+}
+
+/** Le travailleur rend un logo — ou rien, et la page le détoure elle-même. */
+function detoureRevenu(/** @type {number} */ n, /** @type {ImageData | null} */ img){
+  const a = enDetourage.get(n);
+  if (!a) return;
+  enDetourage.delete(n);
+  /** @type {HTMLCanvasElement | null} */
+  let t = null;
+  if (img){
+    t = document.createElement("canvas");
+    t.width = img.width; t.height = img.height;
+    const ctx = t.getContext("2d");
+    if (ctx) ctx.putImageData(img, 0, 0);
+    else t = null;
+  }
+  detourees.set(a.cle, t || sansFond(a.i, a.iw, a.ih));
+  PANNEAU_PRET.dis();
+  pompe();
+}
+
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
  *  hauteur de ce que la vue de biais lui reprendra — `tasse`, 1 à plat.
  *
@@ -193,8 +292,10 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   // le tassement dans la clé : passer de l'immersif au plat refait la toile
   const k = cle + "@" + lw + (tasse === 1 ? "" : "~");
   if (toiles.has(k)) return toiles.get(k) || null;
+  // pas encore détouré : rien à poser, le logo paraîtra à son retour
+  if (!detourees.has(cle)){ demandeDetourage(cle, i, iw, ih); return null; }
   const lh = Math.max(1, Math.round(ih * lw / iw));
-  const logo = detourees.has(cle) ? detourees.get(cle) : sansFond(i, iw, ih);
+  const logo = detourees.get(cle);
   // la plus récente passe en dernier
   detourees.delete(cle);
   detourees.set(cle, logo || null);
@@ -451,8 +552,10 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
        distingue, pour que les deux ne se confondent pas. */
     let src = i, cleSrc = s.vignette;
     if (voulue > i.naturalWidth * PLUS_FIN && Math.max(i.naturalWidth, i.naturalHeight) >= VIGNETTE_SORTIE - 1){
-      const g = grande(s.vignette);
-      if (g){ src = g; cleSrc = s.vignette + "+g"; }
+      const g = grande(s.vignette), cleG = s.vignette + "+g";
+      // la petite reste posée tant que la grande se détoure
+      if (g && detourees.has(cleG)){ src = g; cleSrc = cleG; }
+      else if (g) demandeDetourage(cleG, g, g.naturalWidth, g.naturalHeight);
     }
     const t = toile(cleSrc, src, src.naturalWidth, src.naturalHeight, voulue, tasse);
     if (!t) continue;

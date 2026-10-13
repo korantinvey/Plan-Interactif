@@ -229,11 +229,20 @@ export function monteWebgl(){
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
     /* Un logo prêt à se poser n'a rien à reconvertir : le prochain
        assemblage le pose, et aucun bloc n'est sali. Le nom de son stand, lui,
-       doit apprendre à lui céder la place. */
+       doit apprendre à lui céder la place.
+
+       Une fois par image, quel que soit le nombre de logos prêts : les
+       vignettes d'un lot se décodent ensemble, et chacune refaisait tous les
+       noms du plan — treize fois en sept millisecondes sur Funexpo. */
+    let logosPrets = 0;
     PANNEAU_PRET.suis(() => {
-      if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return;
-      _page.libellesWebgl();
-      planifieWebgl();
+      if (logosPrets || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+      logosPrets = requestAnimationFrame(() => {
+        logosPrets = 0;
+        if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+        _page.libellesWebgl();
+        planifieWebgl();
+      });
     });
 
     brancheSurvolWebgl();
@@ -864,6 +873,8 @@ function poseGeste(/** @type {boolean} */ oui){
   GL.geste = oui;
   // la vue posée ne bouge plus : rien ne redessinerait sans cela
   if (!oui) GL.deck.redraw("fin du geste");
+  // le survol, suspendu pendant le geste, se retrouve sous la souris
+  if (!oui && _survolXY) demandeSurvolWebgl();
 }
 
 /* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
@@ -2112,18 +2123,28 @@ const stage = () => svg.parentNode;
 const FOCALISABLE = ".stand, .zone, .dcal .forme.sdes";
 let _survolXY = null, _survolImage = 0;
 
+function demandeSurvolWebgl(){
+  if (!_survolImage) _survolImage = requestAnimationFrame(survoleWebgl);
+}
+function survoleWebgl(){
+  _survolImage = 0;
+  /* Pendant un geste, la désignation redessinait tout le plan pour la carte
+     graphique à chaque image — deux cents millisecondes sur un zoom à la
+     molette de Funexpo — pour un survol que la vue déplaçait aussitôt. Elle
+     attend la fin du geste (`poseGeste`), qui la redemande : le stand sous la
+     souris immobile est alors le bon, ce qu'il n'était pas après un zoom. */
+  if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
+  const o = objetSous(_survolXY[0], _survolXY[1], _page.enEdition() ? 3 : 0);
+  const el = o && o.el;
+  poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
+  poseCurseurWebgl(o);
+}
+
 function brancheSurvolWebgl(){
   svg.addEventListener("pointermove", e => {
     if (e.pointerType !== "mouse" || e.buttons || _page.drag() || _page.pince()){ poseSurvolWebgl(null); return; }
     _survolXY = [e.clientX, e.clientY];
-    if (!_survolImage) _survolImage = requestAnimationFrame(() => {
-      _survolImage = 0;
-      if (!_survolXY || !GL.actif) return;
-      const o = objetSous(_survolXY[0], _survolXY[1], _page.enEdition() ? 3 : 0);
-      const el = o && o.el;
-      poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
-      poseCurseurWebgl(o);
-    });
+    demandeSurvolWebgl();
   });
   svg.addEventListener("pointerleave", () => { _survolXY = null; poseSurvolWebgl(null); poseCurseurWebgl(null); });
   svg.addEventListener("focusin", e => {
