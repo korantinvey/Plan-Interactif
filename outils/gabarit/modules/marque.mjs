@@ -147,7 +147,29 @@ const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
    recadrage de secours : elle sera servie telle quelle à tous les visiteurs,
    et la fiche ne lui accorde que trois cents pixels sur soixante-douze. Six
    cents couvrent un écran dense sans peser trois kilo-octets de plus. */
-const VIGNETTE_SORTIE = 600;
+export const VIGNETTE_SORTIE = 600;
+/* La grande, pour le toit d'un stand vu de près en vue immersive, où un logo
+   occupe huit cents pixels d'écran dense. Elle n'est demandée que là, un logo
+   à la fois : elle peut peser le double sans rien coûter aux fiches. Plus
+   finement encodée que la petite — le défaut du navigateur bave sur le bord
+   des lettres, que le toit montre de près. Seulement quand l'original tient
+   nettement plus que la petite : sinon elle ne serait qu'une copie. */
+const GRANDE_SORTIE = 1000, GRANDE_QUALITE = .9, GRANDE_UTILE = 1.2;
+
+/** Une toile en webp, en base64 ; `null` si le navigateur ne sait pas
+ *  l'encoder. */
+async function webp64(toile, qualite){
+  const b = await new Promise(f => toile.toBlob(f, "image/webp", qualite));
+  if (!b) return null;
+  const tampon = new Uint8Array(await b.arrayBuffer());
+  /* Par tranches : « String.fromCharCode » reçoit ses octets en arguments,
+     et une image entière en dépasserait la limite. */
+  let brut = "";
+  for (let i = 0; i < tampon.length; i += 8192){
+    brut += String.fromCharCode.apply(null, tampon.subarray(i, i + 8192));
+  }
+  return btoa(brut);
+}
 
 /**
  * Le cadre du dessin dans l'image, en pixels de l'original — ou `null` quand
@@ -260,20 +282,20 @@ export async function vignetteDeLogo(source){
     /* Rien à retirer : on recadre quand même au format de sortie, pour que ce
        qui part en base soit toujours une vignette et jamais l'original —
        c'est tout l'intérêt de la fabriquer. */
-    const toile = await toileMarque(octets, im,
-      boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight },
-      VIGNETTE_SORTIE);
+    const cadre = boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight };
+    const toile = await toileMarque(octets, im, cadre, VIGNETTE_SORTIE);
     if (!toile) return null;
-    const b = await new Promise(f => toile.toBlob(f, "image/webp"));
-    if (!b) return null;
-    const tampon = new Uint8Array(await b.arrayBuffer());
-    /* Par tranches : « String.fromCharCode » reçoit ses octets en arguments,
-       et une image entière en dépasserait la limite. */
-    let brut = "";
-    for (let i = 0; i < tampon.length; i += 8192){
-      brut += String.fromCharCode.apply(null, tampon.subarray(i, i + 8192));
+    const image = await webp64(toile);
+    if (!image) return null;
+    /* La grande, du même original et du même cadre. Vide quand elle
+       n'apporterait rien, ou que le navigateur n'a pas su la faire : la base
+       la tient alors pour faite, et le toit garde la petite. */
+    let grande = "";
+    if (Math.max(cadre.w, cadre.h) > VIGNETTE_SORTIE * GRANDE_UTILE){
+      const t = await toileMarque(octets, im, cadre, GRANDE_SORTIE);
+      grande = (t && await webp64(t, GRANDE_QUALITE)) || "";
     }
-    return { source, image: btoa(brut), largeur: toile.width, hauteur: toile.height };
+    return { source, image, grande, largeur: toile.width, hauteur: toile.height };
   } catch (e) {
     return null;
   } finally {

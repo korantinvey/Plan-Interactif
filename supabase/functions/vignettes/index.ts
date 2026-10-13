@@ -123,7 +123,12 @@ Deno.serve(async (req) => {
 
     const corps = await req.json().catch(() => ({})) as {
       evenementId?: string;
-      vignettes?: { source: string; image: string; largeur: number; hauteur: number }[];
+      vignettes?: {
+        source: string; image: string; largeur: number; hauteur: number;
+        /* La grande, pour les toits vus de près : vide quand l'original n'en
+           tient pas plus que la petite. Une console d'avant ne l'envoie pas. */
+        grande?: string;
+      }[];
     };
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
 
@@ -156,6 +161,7 @@ Deno.serve(async (req) => {
           image: v.image,
           largeur: v.largeur | 0,
           hauteur: v.hauteur | 0,
+          ...(typeof v.grande === "string" ? { grande: v.grande } : {}),
           pose: new Date().toISOString(),
         });
       }
@@ -171,11 +177,14 @@ Deno.serve(async (req) => {
 
     /* Ce qui est déjà fait, demandé par adresse : la table porte les deux, et
        c'est l'adresse que l'instantané connaît. Par tranches — une requête qui
-       porte cinq cents adresses dépasse ce qu'un intermédiaire transmet. */
+       porte cinq cents adresses dépasse ce qu'un intermédiaire transmet.
+       Une vignette sans sa grande n'est pas faite : celles d'avant la grande
+       se refont une fois, la petite avec. */
     const connues = new Set<string>();
     for (let i = 0; i < adresses.length; i += 50) {
       const { data } = await db.from("vignette_de_logo")
-        .select("source").in("source", adresses.slice(i, i + 50));
+        .select("source").in("source", adresses.slice(i, i + 50))
+        .not("grande", "is", null);
       for (const v of data ?? []) connues.add(String((v as { source: string }).source));
     }
 

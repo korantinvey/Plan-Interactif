@@ -206,6 +206,33 @@ async function rendVignette(cle: string, entetes: Record<string, string>) {
   });
 }
 
+/**
+ * La grande vignette d'un logo, pour un toit vu de près en vue immersive.
+ *
+ * Sous la même clé que la petite, et aussi immuable qu'elle : elle sort du
+ * même original, et ne passe que de « pas encore faite » à faite. Tant qu'elle
+ * manque — pas encore fabriquée, ou inutile parce que l'original n'en tenait
+ * pas plus — un 404 que rien ne garde, et le toit garde la petite.
+ */
+async function rendGrande(cle: string, entetes: Record<string, string>) {
+  const nu = { ...entetes, "Cache-Control": "no-store" };
+  if (!/^[0-9a-f]{8,64}$/.test(cle)) {
+    return new Response("Clé de vignette invalide.", { status: 400, headers: nu });
+  }
+  const { data, error } = await service()
+    .from("vignette_de_logo").select("grande").eq("cle", cle).maybeSingle();
+  if (error) return new Response("Vignette indisponible.", { status: 503, headers: nu });
+  const grande = String((data as { grande: string | null } | null)?.grande ?? "");
+  if (!grande) return new Response("Pas de grande vignette.", { status: 404, headers: nu });
+  return new Response(octetsDeVignette(grande), {
+    headers: {
+      ...entetes,
+      "Content-Type": "image/webp",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
+
 /* Combien de clés une demande groupée porte au plus. La même mesure que les
    tranches d'adresses plus haut, et pour la même raison : au-delà, l'adresse
    qu'on envoie à la base dépasse ce qu'un intermédiaire accepte de
@@ -648,6 +675,8 @@ Deno.serve(async (req) => {
        d'aucun salon, et c'est une requête par fiche ouverte. */
     const vignette = new URL(req.url).searchParams.get("vignette");
     if (vignette) return await rendVignette(vignette, CORS);
+    const grande = new URL(req.url).searchParams.get("grande");
+    if (grande) return await rendGrande(grande, CORS);
     /* Et le lot, à côté d'elle : c'est la même chose rendue en gros, pour la
        visite qui les veut toutes. */
     const lot = new URL(req.url).searchParams.get("vignettes");

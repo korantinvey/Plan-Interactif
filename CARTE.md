@@ -128,7 +128,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-vitrine.css` — 187 l. → plan-smcl.html
 
-### `_sw.js` — 567 l.
+### `_sw.js` — 568 l.
 
 Fonctions :
 
@@ -1626,36 +1626,38 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 534 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 577 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands — la vue immersive, vue de près
 
 Fonctions :
 
-`finesse` 61 · `image` 115 · `sansFond` 138 · `creux` 223 · `toile` 272 · `logoPose` 297
-`cedeAuLogo` 307 · `CARRE` 336 · `filtrage` 369 · `plancheDe` 382 · `extensionPlanche` 416
-`pres` 447 · `logosARevoir` 455 · `groupe` 465 · `oublie` 476 · `couchesLogos` 496
+`finesse` 62 · `grande` 126 · `image` 145 · `sansFond` 168 · `creux` 253 · `toile` 302
+`logoPose` 327 · `cedeAuLogo` 337 · `CARRE` 366 · `filtrage` 399 · `plancheDe` 412
+`extensionPlanche` 446 · `pres` 477 · `logosARevoir` 485 · `groupe` 495 · `oublie` 506
+`couchesLogos` 529
 
 Importe :
 
-annonce · camera · dom · donnees · vignettes
+annonce · camera · dom · donnees · marque · vignettes
 
 Importé par :
 
 ambiance · libelles · webgl
 
-### `modules/marque.mjs` — 282 l. → plan, plan-admin, console
+### `modules/marque.mjs` — 304 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
 
 Fonctions :
 
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
-`vignetteMarque` 130 · `boiteMarque` 157 · `toileMarque` 223 · `vignetteDeLogo` 247
+`vignetteMarque` 130 · `webp64` 161 · `boiteMarque` 179 · `toileMarque` 245
+`vignetteDeLogo` 269
 
 Importé par :
 
-fiche · recherche · synchronisation
+fiche · logos-stands · recherche · synchronisation
 
 ### `modules/mesure.mjs` — 654 l. → plan, plan-admin
 
@@ -2955,13 +2957,13 @@ Importé par :
 
 demarrage · installation · plan · volets
 
-### `modules/vignettes.mjs` — 43 l. → plan, plan-admin
+### `modules/vignettes.mjs` — 51 l. → plan, plan-admin
 
 - l.1 · Les vignettes des logos — ce qui est arrivé, et où le demander
 
 Fonctions :
 
-`adresseVignette` 36
+`adresseVignette` 36 · `adresseGrande` 50
 
 Importe :
 
@@ -3179,11 +3181,12 @@ Portes :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1120 l.
+### `supabase/functions/plan-public/index.ts` — 1149 l.
 
 `cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 118 · `avecVignette` 155
-`rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
-`rendIconeApp` 392 · `retraits` 497 · `ampute` 524 · `masquesDe` 567 · `masquesDuPlan` 587
+`rendVignette` 191 · `rendGrande` 217 · `rendVignettes` 309 · `lu` 352 · `salon` 362
+`appDuSalon` 388 · `rendIconeApp` 419 · `retraits` 524 · `ampute` 551 · `masquesDe` 594
+`masquesDuPlan` 614
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
@@ -3195,7 +3198,7 @@ Portes :
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
 `champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
 
-### `supabase/functions/vignettes/index.ts` — 191 l.
+### `supabase/functions/vignettes/index.ts` — 200 l.
 
 `cors` 26 · `service` 42 · `adressesDeLogos` 51 · `adressesDuSalon` 76
 
@@ -3255,10 +3258,11 @@ Portes :
 - `20260922144359_la_charge_prevue_des_stands.sql` — plan_de_visite, compteur, fn enregistre_mesures, fn pose_plan_de_visite, fn charge_prevue, fn purge_presences, fn reinitialise_compteurs, fn rapport_utilisation
 - `20261008172816_la_porte_publique_des_mesures.sql` — fn mesure_publique
 - `20261010121534_les_erreurs_des_pages_du_plan.sql` — erreur_page, fn erreur_publique, fn erreurs_du_salon, fn purge_erreurs
+- `20261013091043_grande_vignette_des_logos.sql` — vignette_de_logo
 
 ## Le reste
 
-- `src/index.mjs` — 1131 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+- `src/index.mjs` — 1136 l. · Worker Cloudflare : relais et cache de `/api/plan`.
   `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956 · `surete` 992 · `aiguille` 1010
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
