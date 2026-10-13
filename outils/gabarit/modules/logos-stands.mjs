@@ -48,12 +48,20 @@ const PART_DU_TOIT = .82;
 /* Au-delà, un logo de grand stand d'angle ne gagne plus rien à grandir. */
 const LARGEUR_MAX = 12;
 
-/* La finesse du logo, en pixels de sa toile par mètre de toit. Réduites à
-   256 pixels, les vignettes — 600 de large — se lisaient en escalier dès
-   qu'on s'approchait ; à cette finesse, un logo de quatre mètres garde deux
-   cents pixels, et la vignette entière dès douze mètres. Jamais plus que
-   ce qu'elle porte : l'agrandir n'inventerait aucun détail. */
-const PIXELS_PAR_METRE = 50, PIXELS_MIN = 96;
+/* La finesse du logo, en pixels de sa toile par mètre de toit. Elle suit ce
+   que l'écran en montre : fixée à cinquante, elle laissait un logo de deux
+   mètres et demi à cent vingt pixels, que la vue de près étalait sur deux
+   cents pixels d'écran dense — le logo paraissait flou au moment même où il
+   prenait la place du nom. Elle vaut donc les pixels d'écran par mètre, densité
+   comprise, majorés pour les stands du premier plan, que la perspective
+   grossit au-delà de ce que dit le zoom du centre. Elle avance par demi-crans,
+   pour qu'un pincement ne refasse pas les toiles à chaque image. Jamais plus
+   que ce que la vignette porte : l'agrandir n'inventerait aucun détail. */
+const PIXELS_PAR_METRE_MIN = 50, PIXELS_MIN = 96, PREMIER_PLAN = 1.5;
+const finesse = (/** @type {number} */ zoom) => {
+  const voulue = 2 ** zoom * Math.min(3, window.devicePixelRatio || 1) * PREMIER_PLAN;
+  return Math.max(PIXELS_PAR_METRE_MIN, 2 ** (Math.ceil(Math.log2(voulue) * 2) / 2));
+};
 /* Un rien de marge vide autour du logo, pour que ses bords ne se coupent pas
    net. */
 const MARGE = 2;
@@ -86,7 +94,10 @@ VIGNETTES_ARRIVEES.suis(() => PANNEAU_PRET.dis());
 /** Les vignettes décodées, par clé. */
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
 const images = new Map();
-/** Les toiles prêtes à poser, par clé et par finesse. */
+/** Les vignettes détourées, à leur pleine finesse, par clé. */
+/** @type {Map<string, HTMLCanvasElement | null>} */
+const detourees = new Map();
+/** Les toiles prêtes à poser, par clé et par largeur. */
 /** @type {Map<string, HTMLCanvasElement | null>} */
 const toiles = new Map();
 
@@ -187,14 +198,20 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
 
 
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
- *  hauteur de ce que la vue de biais lui reprendra. */
+ *  hauteur de ce que la vue de biais lui reprendra.
+ *
+ *  Le détourage se fait une fois, sur la vignette entière, et chaque finesse
+ *  n'en est qu'une réduction : la refaire à chaque demi-cran de zoom coûtait
+ *  un parcours de chaque logo, et détourée en petit, la vignette perdait au
+ *  bord ce que la réduction avait déjà fondu. */
 function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur){
   const lw = Math.max(1, Math.min(iw, Math.round(largeur)));
   const k = cle + "@" + lw;
   if (toiles.has(k)) return toiles.get(k) || null;
   const lh = Math.max(1, Math.round(ih * lw / iw));
-  const logo = sansFond(i, lw, lh);
+  if (!detourees.has(cle)) detourees.set(cle, sansFond(i, iw, ih));
+  const logo = detourees.get(cle);
   const t = document.createElement("canvas");
   t.width = lw + 2 * MARGE;
   t.height = Math.round((lh + 2 * MARGE) / TASSEMENT);
@@ -240,8 +257,11 @@ export function cedeAuLogo(/** @type {any[]} */ liste, /** @type {number} */ dep
    ------------------------------------------------------------ */
 
 /* La planche : sa largeur, le vide entre deux cases — sans lui, les niveaux
-   réduits de la texture mêlaient au bord d'un logo celui du voisin —, et sa
-   hauteur au plus, au-delà de laquelle les logos s'y rangent réduits. */
+   réduits de la texture mêlaient au bord d'un logo celui du voisin —, et son
+   côté au plus, au-delà duquel les logos s'y rangent réduits. Elle s'élargit
+   avant de réduire : à la finesse d'un écran dense, la centaine de logos
+   autour de la vue débordait souvent la planche étroite, et la réduction
+   rendait le flou qu'on venait d'ôter. */
 const PLANCHE = 2048, JOINT = 6, PLANCHE_MAX = 4096;
 
 /** Le carré d'un mètre de côté, couché, que chaque logo étire à sa taille. Le
@@ -278,23 +298,24 @@ let planche = null;
 function plancheDe(/** @type {HTMLCanvasElement[]} */ toiles){
   const cle = toiles.map(t => t.dataset.cle).join("|");
   if (planche && planche.cle === cle) return planche;
-  const place = (/** @type {number} */ k) => {
+  const place = (/** @type {number} */ k, /** @type {number} */ large) => {
     /** @type {Map<HTMLCanvasElement, number[]>} */
     const cases = new Map();
     let x = 0, y = 0, rangee = 0;
     for (const t of toiles){
       const w = Math.ceil(t.width * k), h = Math.ceil(t.height * k);
-      if (x + w + JOINT > PLANCHE){ x = 0; y += rangee + JOINT; rangee = 0; }
+      if (x + w + JOINT > large){ x = 0; y += rangee + JOINT; rangee = 0; }
       cases.set(t, [x + JOINT, y + JOINT, w, h]);
       x += w + JOINT; rangee = Math.max(rangee, h);
     }
     return { cases, haut: y + rangee + 2 * JOINT };
   };
-  let r = place(1);
-  // trop haute, la planche se refait réduite d'autant
-  if (r.haut > PLANCHE_MAX) r = place(PLANCHE_MAX / r.haut * .98);
+  let large = PLANCHE, r = place(1, large);
+  if (r.haut > PLANCHE_MAX){ large = PLANCHE_MAX; r = place(1, large); }
+  // trop haute encore, la planche se refait réduite d'autant
+  if (r.haut > PLANCHE_MAX) r = place(PLANCHE_MAX / r.haut * .98, large);
   const toile = document.createElement("canvas");
-  toile.width = PLANCHE; toile.height = Math.max(1, r.haut);
+  toile.width = large; toile.height = Math.max(1, r.haut);
   const ctx = toile.getContext("2d");
   if (ctx){ ctx.imageSmoothingQuality = "high"; for (const [t, c] of r.cases) ctx.drawImage(t, c[0], c[1], c[2], c[3]); }
   // la case de chaque logo, en fractions de la planche
@@ -337,6 +358,8 @@ function extensionPlanche(/** @type {any} */ L){
    sous le seuil. */
 /** @type {{ x0: number, y0: number, x1: number, y1: number } | null} */
 let couvert = null;
+/* La finesse à laquelle ils ont été posés. */
+let finesseCouverte = 0;
 const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 
 /**
@@ -348,7 +371,7 @@ const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 export function logosARevoir(v, zoom){
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
   if (!pres(zoom)) return couvert !== null;
-  return !couvert || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
+  return !couvert || finesse(zoom) !== finesseCouverte || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
 }
 
 /* Les stands du plan par identifiant. Relus à chaque image tant qu'un volume
@@ -377,6 +400,7 @@ export function couchesLogos(L, hauteurDe, v, zoom){
   if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)) return [];
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
+  finesseCouverte = finesse(zoom);
   const data = [], vus = new Set();
   for (const s of p.stands || []){
     if (!s.vignette || !s.c || vus.has(s.id)) continue;
@@ -392,7 +416,7 @@ export function couchesLogos(L, hauteurDe, v, zoom){
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
-    const t = toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * PIXELS_PAR_METRE));
+    const t = toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * finesseCouverte));
     if (!t) continue;
     data.push({ x: cx, y: cy, z: hauteurDe(trace) + .05, large, prof, t, el: g });
   }
