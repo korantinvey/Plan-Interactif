@@ -67,13 +67,16 @@ async function deP(page, ambiance, grandes = false) {
    prend plusieurs secondes, et sept logos deux à deux en font une douzaine. */
 const ATTENTE_LOGOS = 40_000;
 
-/** La couche des logos, une fois posée : chaque logo, et la case qu'il lit. */
-const logosPoses = (page) => page.waitForFunction(() => {
+/** La couche des logos, une fois posée : chaque logo, et la case qu'il lit.
+ *  Ils paraissent un à un, au retour du détourage : `auMoins` attend qu'il y
+ *  en ait autant de distincts, sans quoi le relevé tombe sur le premier seul. */
+const logosPoses = (page, auMoins = 1) => page.waitForFunction((n) => {
   const d = window.__essais.GL.deck;
   const c = (d.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
   if (!c || !c.props.data.length) return false;
+  if (new Set(c.props.data.map((e) => e.t.dataset.cle)).size < n) return false;
   return c.props.data.map((e) => ({ z: e.z, cle: e.t.dataset.cle, cas: c.props.getCaseLogo(e) }));
-}, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
+}, auMoins, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
 
 for (const ambiance of ["classique", "tuiles"]) {
   test("le logo prend la place du nom, en " + ambiance, async ({ page }) => {
@@ -108,7 +111,8 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
   test.setTimeout(180_000);
   const erreurs = await deP(page, "classique");
   test.skip(!erreurs, "pas de carte graphique");
-  const avant = await logosPoses(page);
+  // une planche d'une seule toile n'a qu'une case, la planche entière
+  const avant = await logosPoses(page, 2);
   expect(new Set(avant.map((l) => l.cle)).size).toBeGreaterThan(1);
 
   const zoom = () => page.evaluate(() => window.__essais.GL.deck.props.viewState.zoom);
@@ -132,7 +136,7 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
     .catch(async () => { throw new Error("zoom " + await zoom() + " au lieu de " + z0); });
   await page.waitForTimeout(1000);
 
-  const apres = await logosPoses(page);
+  const apres = await logosPoses(page, 2);
   for (const l of apres) expect(l.cas, l.cle).not.toEqual([0, 0, 1, 1]);
   expect(erreurs).toEqual([]);
 });
