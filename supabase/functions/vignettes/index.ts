@@ -123,6 +123,10 @@ Deno.serve(async (req) => {
 
     const corps = await req.json().catch(() => ({})) as {
       evenementId?: string;
+      /* Les adresses que la console n'a pas su lire pendant cette
+         préparation : rien ne les enregistre, et sans elles chaque tour les
+         rendrait de nouveau en tête du lot. */
+      ecartees?: string[];
       vignettes?: {
         source: string; image: string; largeur: number; hauteur: number;
         /* La grande, pour les toits vus de près : vide quand l'original n'en
@@ -188,10 +192,14 @@ Deno.serve(async (req) => {
       for (const v of data ?? []) connues.add(String((v as { source: string }).source));
     }
 
-    const aFaire = adresses.filter((a) => !connues.has(a));
+    const ecartees = new Set(Array.isArray(corps.ecartees) ? corps.ecartees : []);
+    const restantes = adresses.filter((a) => !connues.has(a));
+    const aFaire = restantes.filter((a) => !ecartees.has(a));
     return repond({
       aFaire: aFaire.slice(0, LOT),
-      reste: aFaire.length,
+      /* Le reste compte les écartées : elles ne sont pas faites, et
+         l'avancement de la console les compte déjà de son côté. */
+      reste: restantes.length,
       total: adresses.length,
     });
   } catch (err) {

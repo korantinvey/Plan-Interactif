@@ -2701,14 +2701,14 @@ Importé par :
 
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor
 
-### `modules/synchronisation.mjs` — 224 l. → console
+### `modules/synchronisation.mjs` — 239 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
 `brancheSynchronisation` 34 · `etapesPressenties` 52 · `synchronise` 67
-`fabriqueLesVignettes` 164 · `envoieVignettes` 217
+`fabriqueLesVignettes` 164 · `envoieVignettes` 232
 
 Importe :
 
@@ -3209,7 +3209,7 @@ Portes :
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
 `champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
 
-### `supabase/functions/vignettes/index.ts` — 200 l.
+### `supabase/functions/vignettes/index.ts` — 208 l.
 
 `cors` 26 · `service` 42 · `adressesDeLogos` 51 · `adressesDuSalon` 76
 
