@@ -660,6 +660,12 @@ function groupe(/** @type {string} */ id){
 function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
   const posees = new Set(data.map(d => d.t.dataset.cle));
   for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
+  /* Reculé sous le seuil, rien n'est posé, et tout devenait oubliable : les
+     grandes, décodées d'avance, se fermaient jusqu'au budget, et le zoom
+     suivant les redemandait au service, huit à la fois — les logos
+     reparaissaient un à un, comme la première fois. Elles attendent donc
+     qu'une vue de près en pose d'autres pour céder leur place. */
+  if (!posees.size) return;
   const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
   /* Une image arrivée sans fond, gardée telle quelle, ne coûte rien de plus ;
      décodée d'avance, elle tient ses pixels comme une toile. Oubliée, elle se
