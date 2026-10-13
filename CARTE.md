@@ -1659,22 +1659,22 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 625 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 699 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 79 · `tassement` 92 · `arriveeSansFond` 141 · `grande` 158 · `image` 181
-`sansFond` 201 · `lanceTravailleur` 240 · `demandeDetourage` 261 · `pompe` 268
-`parLaPageSeule` 288 · `detoureRevenu` 298 · `toile` 323 · `logoPose` 353
-`sourceDuToit` 364 · `cedeAuLogo` 377 · `CARRE` 406 · `filtrage` 439 · `plancheDe` 456
-`extensionPlanche` 492 · `pres` 523 · `logosARevoir` 531 · `groupe` 541 · `oublie` 552
-`couchesLogos` 577
+`finesse` 80 · `tassement` 93 · `arriveeSansFond` 152 · `grande` 169 · `pompeGrandes` 183
+`demandeGrande` 187 · `image` 207 · `sansFond` 227 · `lanceTravailleur` 266
+`demandeDetourage` 287 · `pompe` 294 · `parLaPageSeule` 314 · `detoureRevenu` 324
+`toile` 349 · `logoPose` 386 · `sourceDuToit` 396 · `cedeAuLogo` 409 · `CARRE` 438
+`filtrage` 471 · `plancheDe` 488 · `extensionPlanche` 524 · `pres` 555 · `solVu` 566
+`logosARevoir` 583 · `groupe` 595 · `oublie` 606 · `annoncePoses` 625 · `couchesLogos` 641
 
 Importe :
 
-annonce · camera · detourage · dom · donnees · ecran · vignettes
+annonce · camera · detourage · dom · donnees · ecran · vignettes · vue-etat
 
 Importé par :
 
@@ -3080,7 +3080,7 @@ camera · dom
 
 Importé par :
 
-environs · socle-dessin · vue · vue · webgl
+environs · logos-stands · socle-dessin · vue · vue · webgl
 
 ### `modules/vue.mjs` — 710 l. → plan, plan-admin
 
