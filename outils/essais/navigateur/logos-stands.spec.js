@@ -17,7 +17,10 @@ test.use({ serviceWorkers: "block" });
  *  pas refait — et le toit pose la petite, que la page détoure. */
 async function deP(page, ambiance, grandes = false) {
   const erreurs = await prepare(page);
-  await page.goto("/plan-smcl.html");
+  /* Les vignettes se peignent sur la page vierge où l'essai commence : y
+     charger d'abord la démonstration coûtait vingt secondes de carte
+     graphique logicielle, sur un essai qui en passe déjà plus d'une minute à
+     amener ses logos. */
   // des vignettes rouges sur fond blanc, que le détourage laisse rouges, de
   // largeurs différentes : sept logos qui ne se confondent pas sur la planche
   const webps = await page.evaluate(() => Array.from({ length: 7 }, (_, k) => {
@@ -59,17 +62,22 @@ async function deP(page, ambiance, grandes = false) {
   return erreurs;
 }
 
+/* Chaque logo attend son détourage par le travailleur, puis une image pour
+   se poser ; sous la carte graphique logicielle de l'intégration, une image
+   prend plusieurs secondes, et sept logos deux à deux en font une douzaine. */
+const ATTENTE_LOGOS = 40_000;
+
 /** La couche des logos, une fois posée : chaque logo, et la case qu'il lit. */
 const logosPoses = (page) => page.waitForFunction(() => {
   const d = window.__essais.GL.deck;
   const c = (d.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
   if (!c || !c.props.data.length) return false;
   return c.props.data.map((e) => ({ z: e.z, cle: e.t.dataset.cle, cas: c.props.getCaseLogo(e) }));
-}, null, { timeout: 20_000 }).then((h) => h.jsonValue());
+}, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
 
 for (const ambiance of ["classique", "tuiles"]) {
   test("le logo prend la place du nom, en " + ambiance, async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(150_000);
     const erreurs = await deP(page, ambiance);
     test.skip(!erreurs, "pas de carte graphique : le plan reste en SVG, et ses noms");
 
@@ -85,7 +93,7 @@ for (const ambiance of ["classique", "tuiles"]) {
         return { z: e.z, pris: Boolean(d.pickObject({ x, y, radius: 2, layerIds: ["logos-stands"] })) };
       }
       return false;
-    }, null, { timeout: 20_000 }).then((h) => h.jsonValue());
+    }, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
     expect(vise).toEqual({ z: 0, pris: true });
     expect(erreurs).toEqual([]);
   });
@@ -105,13 +113,21 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
 
   const zoom = () => page.evaluate(() => window.__essais.GL.deck.props.viewState.zoom);
   const z0 = await zoom();
-  const cran = async (id) => { await page.evaluate((b) => document.getElementById(b).click(), id); await page.waitForTimeout(700); };
-  for (let i = 0; i < 3; i++) await cran("zOut");
+  /* Les crans s'enchaînent sur la vue visée (`vue.mjs` `zoom`) : une rafale
+     ne coûte qu'un glissement, quand chaque cran attendu à part coûtait ici
+     une image du plan entier, de dix secondes et plus. Six crans de 1,33
+     passent sous le seuil des logos d'un bureau (douze pixels par mètre, un
+     demi-cran de marge), et six de 0,75 ramènent au même zoom, à deux
+     centièmes près. */
+  const CRANS = 6;
+  const rafale = (id) => page.evaluate(([b, n]) => { for (let i = 0; i < n; i++) document.getElementById(b).click(); }, [id, CRANS]);
+  await rafale("zOut");
   await page.waitForFunction(() => {
     const d = window.__essais.GL.deck;
     return !(d.props.layers || []).flat(Infinity).filter(Boolean).some((l) => l.id === "logos-stands");
-  }, null, { timeout: 20_000 });
-  for (let i = 0; i < 3; i++) await cran("zIn");
+  }, null, { timeout: ATTENTE_LOGOS })
+    .catch(async () => { throw new Error("des logos encore posés au zoom " + await zoom()); });
+  await rafale("zIn");
   await page.waitForFunction((z) => Math.abs(window.__essais.GL.deck.props.viewState.zoom - z) < .05, z0, { timeout: 20_000 })
     .catch(async () => { throw new Error("zoom " + await zoom() + " au lieu de " + z0); });
   await page.waitForTimeout(1000);
@@ -126,7 +142,7 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
    fois, faisait paraître un à un la centaine de stands d'un écran de
    bureau. */
 test("la grande arrivée sans fond se pose telle quelle", async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   const erreurs = await deP(page, "classique", true);
   test.skip(!erreurs, "pas de carte graphique");
   const poses = await logosPoses(page);
