@@ -85,6 +85,13 @@ export const adresseVignette = (/** @type {any} */ cle) =>
  * L'adresse de la grande vignette d'un logo, que seuls les toits vus de près
  * demandent (`logos-stands.mjs`). Sous la même clé que la petite, aussi
  * immuable qu'elle ; rien sans API — la démonstration n'a que ses petites.
+ *
+ * « d=1 » ne dit rien au service — le relais ne transmet que les paramètres
+ * qu'il connaît (`src/index.mjs` `amontPour`) — mais change l'adresse. La
+ * grande a changé sous sa clé quand la synchronisation s'est mise à la
+ * détourer, et l'ancienne, au fond blanc, se gardait sans fin au navigateur
+ * et au service worker : sans ce paramètre, les visiteurs d'avant l'auraient
+ * encore détourée eux-mêmes, aussi lentement qu'avant.
  */
 export const adresseGrande = (/** @type {any} */ cle) =>
-  API && /^[0-9a-f]{8,64}$/.test(String(cle || "")) ? API + "?grande=" + cle : "";
+  API && /^[0-9a-f]{8,64}$/.test(String(cle || "")) ? API + "?grande=" + cle + "&d=1" : "";
