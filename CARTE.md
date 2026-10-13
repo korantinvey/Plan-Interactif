@@ -1626,15 +1626,15 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 410 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 534 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands — la vue immersive, vue de près
 
 Fonctions :
 
-`image` 94 · `sansFond` 117 · `toile` 191 · `logoPose` 213 · `cedeAuLogo` 223 · `CARRE` 249
-`plancheDe` 278 · `extensionPlanche` 311 · `pres` 340 · `logosARevoir` 348 · `groupe` 358
-`couchesLogos` 374
+`finesse` 61 · `image` 115 · `sansFond` 138 · `creux` 223 · `toile` 272 · `logoPose` 297
+`cedeAuLogo` 307 · `CARRE` 336 · `filtrage` 369 · `plancheDe` 382 · `extensionPlanche` 416
+`pres` 447 · `logosARevoir` 455 · `groupe` 465 · `oublie` 476 · `couchesLogos` 496
 
 Importe :
 

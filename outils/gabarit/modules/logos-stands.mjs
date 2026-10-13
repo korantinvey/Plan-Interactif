@@ -48,12 +48,20 @@ const PART_DU_TOIT = .82;
 /* Au-delà, un logo de grand stand d'angle ne gagne plus rien à grandir. */
 const LARGEUR_MAX = 12;
 
-/* La finesse du logo, en pixels de sa toile par mètre de toit. Réduites à
-   256 pixels, les vignettes — 600 de large — se lisaient en escalier dès
-   qu'on s'approchait ; à cette finesse, un logo de quatre mètres garde deux
-   cents pixels, et la vignette entière dès douze mètres. Jamais plus que
-   ce qu'elle porte : l'agrandir n'inventerait aucun détail. */
-const PIXELS_PAR_METRE = 50, PIXELS_MIN = 96;
+/* La finesse du logo, en pixels de sa toile par mètre de toit. Elle suit ce
+   que l'écran en montre : fixée à cinquante, elle laissait un logo de deux
+   mètres et demi à cent vingt pixels, que la vue de près étalait sur deux
+   cents pixels d'écran dense — le logo paraissait flou au moment même où il
+   prenait la place du nom. Elle vaut donc les pixels d'écran par mètre, densité
+   comprise, majorés pour les stands du premier plan, que la perspective
+   grossit au-delà de ce que dit le zoom du centre. Elle avance par demi-crans,
+   pour qu'un pincement ne refasse pas les toiles à chaque image. Jamais plus
+   que ce que la vignette porte : l'agrandir n'inventerait aucun détail. */
+const PIXELS_PAR_METRE_MIN = 50, PIXELS_MIN = 96, PREMIER_PLAN = 1.5;
+const finesse = (/** @type {number} */ zoom) => {
+  const voulue = 2 ** zoom * Math.min(3, window.devicePixelRatio || 1) * PREMIER_PLAN;
+  return Math.max(PIXELS_PAR_METRE_MIN, 2 ** (Math.ceil(Math.log2(voulue) * 2) / 2));
+};
 /* Un rien de marge vide autour du logo, pour que ses bords ne se coupent pas
    net. */
 const MARGE = 2;
@@ -86,7 +94,20 @@ VIGNETTES_ARRIVEES.suis(() => PANNEAU_PRET.dis());
 /** Les vignettes décodées, par clé. */
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
 const images = new Map();
-/** Les toiles prêtes à poser, par clé et par finesse. */
+/** Les vignettes détourées, à leur pleine finesse, par clé, de la moins
+ *  récemment posée à la plus récente. */
+/** @type {Map<string, HTMLCanvasElement | null>} */
+const detourees = new Map();
+/* Combien on en garde. Chacune tient ses pixels — un demi-mégaoctet pour une
+   vignette de six cents sur deux cents —, et un visiteur qui parcourt de près
+   tout un salon de cinq cents stands les aurait toutes gardées. Cent
+   cinquante couvrent la vue et ses abords ; une vignette oubliée se détoure à
+   nouveau quand on revient vers elle, comme à la première fois. Les vignettes
+   reçues, elles, restent : quelques kilo-octets chacune, et c'est par elles
+   que le nom d'un stand sait qu'il a un logo. */
+const GARDEES = 150;
+/** Les toiles prêtes à poser, par clé et par largeur — seules celles de la
+ *  dernière pose : une finesse quittée se refait d'une simple réduction. */
 /** @type {Map<string, HTMLCanvasElement | null>} */
 const toiles = new Map();
 
@@ -140,6 +161,7 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
     if (k >= w) file.push(k - w);
     if (k < w * (h - 1)) file.push(k + w);
   }
+  creux(px, vu, w, h, clarte);
   /* Le bord. Un pixel du contour mêle la couleur du logo au blanc du fond :
      laissé tel quel, il dessinait un liseré clair et crénelé sur le toit. On
      défait ce mélange — sa part de blanc devient de la transparence, et sa
@@ -186,15 +208,77 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
 
 
 
+/* Un creux est du fond si les trois quarts de son pourtour sont à moins de
+   cette part du petit côté du logo — une épaisseur de trait — du fond
+   retiré. */
+const TRAIT = .12;
+
+/**
+ * Les creux des lettres. Le fond ne se retire que de proche en proche depuis
+ * le pourtour : l'œil d'un « a », d'un « e », d'un « A » n'y touche pas, et
+ * restait blanc sur le toit coloré. Un clair enclos est donc du fond aussi
+ * quand il n'est séparé du fond retiré que par un trait mince ; le blanc d'un
+ * texte posé sur un aplat, loin du bord de l'aplat, reste.
+ */
+function creux(/** @type {Uint8ClampedArray} */ px, /** @type {Uint8Array} */ vu,
+  /** @type {number} */ w, /** @type {number} */ h, /** @type {(k: number) => number} */ clarte){
+  const n = w * h, clair = (/** @type {number} */ k) => clarte(k) >= CLAIR_FOND;
+  // la distance de chaque pixel au fond retiré, en pas, à travers le logo
+  const dist = new Int32Array(n).fill(-1), file = new Int32Array(n);
+  let debut = 0, fin = 0;
+  for (let k = 0; k < n; k++) if (vu[k] && clair(k)){ dist[k] = 0; file[fin++] = k; }
+  if (!fin) return;
+  while (debut < fin){
+    const k = file[debut++], x = k % w, d = dist[k] + 1;
+    for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
+      if (kk < 0 || kk >= n || dist[kk] >= 0) continue;
+      dist[kk] = d; file[fin++] = kk;
+    }
+  }
+  const seuil = Math.max(2, Math.round(TRAIT * Math.min(w, h)));
+  const range = new Uint8Array(n);
+  for (let k0 = 0; k0 < n; k0++){
+    if (vu[k0] || range[k0] || !clair(k0)) continue;
+    // le creux entier, et la distance de son pourtour au fond
+    const siens = [k0], bords = [];
+    range[k0] = 1;
+    for (let i = 0; i < siens.length; i++){
+      const k = siens[i], x = k % w;
+      let auBord = false;
+      for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
+        if (kk < 0 || kk >= n) continue;
+        if (!clair(kk)){ auBord = true; continue; }
+        if (!vu[kk] && !range[kk]){ range[kk] = 1; siens.push(kk); }
+      }
+      if (auBord) bords.push(dist[k]);
+    }
+    if (!bords.length) continue;
+    bords.sort((a, b) => a - b);
+    if (bords[Math.floor(bords.length * .75)] > seuil) continue;
+    for (const k of siens){
+      px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - clarte(k)) / (BLANC_FOND - CLAIR_FOND))));
+      vu[k] = 1;
+    }
+  }
+}
+
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
- *  hauteur de ce que la vue de biais lui reprendra. */
+ *  hauteur de ce que la vue de biais lui reprendra.
+ *
+ *  Le détourage se fait une fois, sur la vignette entière, et chaque finesse
+ *  n'en est qu'une réduction : la refaire à chaque demi-cran de zoom coûtait
+ *  un parcours de chaque logo, et détourée en petit, la vignette perdait au
+ *  bord ce que la réduction avait déjà fondu. */
 function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur){
   const lw = Math.max(1, Math.min(iw, Math.round(largeur)));
   const k = cle + "@" + lw;
   if (toiles.has(k)) return toiles.get(k) || null;
   const lh = Math.max(1, Math.round(ih * lw / iw));
-  const logo = sansFond(i, lw, lh);
+  const logo = detourees.has(cle) ? detourees.get(cle) : sansFond(i, iw, ih);
+  // la plus récente passe en dernier
+  detourees.delete(cle);
+  detourees.set(cle, logo || null);
   const t = document.createElement("canvas");
   t.width = lw + 2 * MARGE;
   t.height = Math.round((lh + 2 * MARGE) / TASSEMENT);
@@ -240,8 +324,11 @@ export function cedeAuLogo(/** @type {any[]} */ liste, /** @type {number} */ dep
    ------------------------------------------------------------ */
 
 /* La planche : sa largeur, le vide entre deux cases — sans lui, les niveaux
-   réduits de la texture mêlaient au bord d'un logo celui du voisin —, et sa
-   hauteur au plus, au-delà de laquelle les logos s'y rangent réduits. */
+   réduits de la texture mêlaient au bord d'un logo celui du voisin —, et son
+   côté au plus, au-delà duquel les logos s'y rangent réduits. Elle s'élargit
+   avant de réduire : à la finesse d'un écran dense, la centaine de logos
+   autour de la vue débordait souvent la planche étroite, et la réduction
+   rendait le flou qu'on venait d'ôter. */
 const PLANCHE = 2048, JOINT = 6, PLANCHE_MAX = 4096;
 
 /** Le carré d'un mètre de côté, couché, que chaque logo étire à sa taille. Le
@@ -267,8 +354,25 @@ const IMPRIME = { ambient: 1, diffuse: 0, shininess: 1, specularColor: [0, 0, 0]
    pas pour une toile qu'on lui donne : demandés au filtrage, ils restaient
    vides, et dès que le toit fuyait assez, le logo virait au noir passé un arc
    de cercle — là où la carte graphique changeait de niveau. Les logos ne
-   paraissent que de près, où la réduction reste faible. */
+   paraissent que de près, où la réduction reste faible.
+
+   Vu de biais, un toit se réduit plus en profondeur qu'en largeur ; le
+   filtrage ordinaire lisse alors le logo dans les deux sens, à la mesure du
+   plus réduit, et le logo paraissait flou dès le seuil franchi, quand le
+   toit est encore petit et fuyant. Le filtrage anisotrope, que presque
+   toutes les cartes graphiques offrent, ne lisse que dans le sens où l'image
+   se tasse. */
 const FILTRAGE = { minFilter: "linear", magFilter: "linear" };
+const ANISOTROPE = 8;
+/** Le filtrage, anisotrope si la carte graphique le sait faire. La question
+ *  active l'extension, que la bibliothèque n'active pas d'elle-même. */
+const filtrage = (/** @type {any} */ appareil) => {
+  try {
+    if (appareil && appareil.features && appareil.features.has("texture-filterable-anisotropic-webgl"))
+      return { ...FILTRAGE, maxAnisotropy: ANISOTROPE };
+  } catch (e) { /* une bibliothèque qui ne sait pas répondre : le filtrage ordinaire */ }
+  return FILTRAGE;
+};
 
 /** La dernière planche posée : on ne la refait que si les logos changent. */
 /** @type {{ cle: string, toile: HTMLCanvasElement, cases: Map<HTMLCanvasElement, number[]> } | null} */
@@ -278,23 +382,24 @@ let planche = null;
 function plancheDe(/** @type {HTMLCanvasElement[]} */ toiles){
   const cle = toiles.map(t => t.dataset.cle).join("|");
   if (planche && planche.cle === cle) return planche;
-  const place = (/** @type {number} */ k) => {
+  const place = (/** @type {number} */ k, /** @type {number} */ large) => {
     /** @type {Map<HTMLCanvasElement, number[]>} */
     const cases = new Map();
     let x = 0, y = 0, rangee = 0;
     for (const t of toiles){
       const w = Math.ceil(t.width * k), h = Math.ceil(t.height * k);
-      if (x + w + JOINT > PLANCHE){ x = 0; y += rangee + JOINT; rangee = 0; }
+      if (x + w + JOINT > large){ x = 0; y += rangee + JOINT; rangee = 0; }
       cases.set(t, [x + JOINT, y + JOINT, w, h]);
       x += w + JOINT; rangee = Math.max(rangee, h);
     }
     return { cases, haut: y + rangee + 2 * JOINT };
   };
-  let r = place(1);
-  // trop haute, la planche se refait réduite d'autant
-  if (r.haut > PLANCHE_MAX) r = place(PLANCHE_MAX / r.haut * .98);
+  let large = PLANCHE, r = place(1, large);
+  if (r.haut > PLANCHE_MAX){ large = PLANCHE_MAX; r = place(1, large); }
+  // trop haute encore, la planche se refait réduite d'autant
+  if (r.haut > PLANCHE_MAX) r = place(PLANCHE_MAX / r.haut * .98, large);
   const toile = document.createElement("canvas");
-  toile.width = PLANCHE; toile.height = Math.max(1, r.haut);
+  toile.width = large; toile.height = Math.max(1, r.haut);
   const ctx = toile.getContext("2d");
   if (ctx){ ctx.imageSmoothingQuality = "high"; for (const [t, c] of r.cases) ctx.drawImage(t, c[0], c[1], c[2], c[3]); }
   // la case de chaque logo, en fractions de la planche
@@ -337,6 +442,8 @@ function extensionPlanche(/** @type {any} */ L){
    sous le seuil. */
 /** @type {{ x0: number, y0: number, x1: number, y1: number } | null} */
 let couvert = null;
+/* La finesse à laquelle ils ont été posés. */
+let finesseCouverte = 0;
 const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 
 /**
@@ -348,7 +455,7 @@ const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
 export function logosARevoir(v, zoom){
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
   if (!pres(zoom)) return couvert !== null;
-  return !couvert || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
+  return !couvert || finesse(zoom) !== finesseCouverte || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
 }
 
 /* Les stands du plan par identifiant. Relus à chaque image tant qu'un volume
@@ -363,6 +470,20 @@ function groupe(/** @type {string} */ id){
   return groupes.get(id);
 }
 
+/** Ce qui n'est plus posé s'oublie : toutes les toiles d'avant, et les
+ *  vignettes détourées au-delà de celles qu'on garde, les plus anciennes
+ *  d'abord. */
+function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
+  const posees = new Set(data.map(d => d.t.dataset.cle));
+  for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
+  const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
+  const garde = Math.max(GARDEES, enJeu.size);
+  for (const cle of [...detourees.keys()]){
+    if (detourees.size <= garde) break;
+    if (!enJeu.has(cle)) detourees.delete(cle);
+  }
+}
+
 /**
  * La couche des logos, pour la vue immersive : un carré par logo autour de la
  * vue, tous peints d'une planche.
@@ -370,13 +491,15 @@ function groupe(/** @type {string} */ id){
  * @param {(el: Element) => number} hauteurDe la hauteur du volume d'un tracé de stand
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
  * @param {number} zoom
+ * @param {any} [appareil] la carte graphique, telle que la bibliothèque la tient
  */
-export function couchesLogos(L, hauteurDe, v, zoom){
+export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const p = P();
   couvert = null;
-  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)) return [];
+  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)){ oublie([]); return []; }
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
+  finesseCouverte = finesse(zoom);
   const data = [], vus = new Set();
   for (const s of p.stands || []){
     if (!s.vignette || !s.c || vus.has(s.id)) continue;
@@ -392,16 +515,17 @@ export function couchesLogos(L, hauteurDe, v, zoom){
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
     if (!(prof > 0)) continue;
     const large = prof * rapport;
-    const t = toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * PIXELS_PAR_METRE));
+    const t = toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * finesseCouverte));
     if (!t) continue;
     data.push({ x: cx, y: cy, z: hauteurDe(trace) + .05, large, prof, t, el: g });
   }
+  oublie(data);
   if (!data.length) return [];
   // dans un ordre fixe, pour qu'une même vue retrouve la même planche
   const toiles = [...new Set(data.map(d => d.t))].sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || ""));
   const pl = plancheDe(toiles);
   return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture: pl.toile, pickable: true,
-    material: IMPRIME, textureParameters: FILTRAGE, extensions: extensionPlanche(L),
+    material: IMPRIME, textureParameters: filtrage(appareil), extensions: extensionPlanche(L),
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
     getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
     getOrientation: [0, 0, 0],
