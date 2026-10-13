@@ -203,6 +203,7 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(logo, MARGE, MARGE / TASSEMENT, lw, lh / TASSEMENT);
   }
+  t.dataset.cle = k;
   toiles.set(k, logo && ctx ? t : null);
   return toiles.get(k) || null;
 }
@@ -227,33 +228,113 @@ export function cedeAuLogo(/** @type {any[]} */ liste, /** @type {number} */ dep
   }
 }
 
-/* Le fondu au zoom, dans le shader : la couche reste la même d'une image à
+/* ------------------------------------------------------------
+   Une couche pour tous
+
+   Une couche par logo coûtait cher : la bibliothèque paie, pour chaque
+   couche et à chaque image, ses réglages, ses tampons et son dessin. Treize
+   logos ajoutaient un cinquième au plan entier de Funexpo, et un grand salon
+   en aurait doublé le coût. Les logos autour de la vue se rangent donc sur
+   une seule planche, et un seul maillage — un carré — se répète une fois par
+   logo, chacun lisant sa case de la planche.
+   ------------------------------------------------------------ */
+
+/* La planche : sa largeur, le vide entre deux cases — sans lui, les niveaux
+   réduits de la texture mêlaient au bord d'un logo celui du voisin —, et sa
+   hauteur au plus, au-delà de laquelle les logos s'y rangent réduits. */
+const PLANCHE = 2048, JOINT = 6, PLANCHE_MAX = 4096;
+
+/** Le carré d'un mètre de côté, couché, que chaque logo étire à sa taille. Le
+ *  haut de l'image regarde le fond du hall, vers les y décroissants. */
+const CARRE = (() => {
+  const c = [[-.5, -.5, 0, 0], [.5, -.5, 1, 0], [.5, .5, 1, 1], [-.5, -.5, 0, 0], [.5, .5, 1, 1], [-.5, .5, 0, 1]];
+  return { attributes: {
+    positions: { value: new Float32Array(c.flatMap(([x, y]) => [x, y, 0])), size: 3 },
+    normals: { value: new Float32Array(c.flatMap(() => [0, 0, 1])), size: 3 },
+    texCoords: { value: new Float32Array(c.flatMap(([, , u, w]) => [u, w])), size: 2 },
+  } };
+})();
+
+/* Le logo est imprimé, non éclairé : la lumière des volumes, appliquée au
+   carré, ternissait ses couleurs — le rouge de RTS Chapuis tournait au brun.
+   Une matière toute d'ambiance rend la couleur telle quelle. Sa brillance
+   n'est pas nulle, quoique sans reflet : à zéro, le reflet se calcule en
+   « pow(x, 0) », que la carte graphique ne définit pas pour un x nul ou
+   négatif — une ellipse noire couvrait le logo de très près, là où la vue
+   tombait dans ce cas. */
+const IMPRIME = { ambient: 1, diffuse: 0, shininess: 1, specularColor: [0, 0, 0] };
+/* La planche se lit sans niveaux réduits. La bibliothèque ne les fabrique
+   pas pour une toile qu'on lui donne : demandés au filtrage, ils restaient
+   vides, et dès que le toit fuyait assez, le logo virait au noir passé un arc
+   de cercle — là où la carte graphique changeait de niveau. Les logos ne
+   paraissent que de près, où la réduction reste faible. */
+const FILTRAGE = { minFilter: "linear", magFilter: "linear" };
+
+/** La dernière planche posée : on ne la refait que si les logos changent. */
+/** @type {{ cle: string, toile: HTMLCanvasElement, cases: Map<HTMLCanvasElement, number[]> } | null} */
+let planche = null;
+
+/** La planche de ces toiles : une rangée après l'autre, de gauche à droite. */
+function plancheDe(/** @type {HTMLCanvasElement[]} */ toiles){
+  const cle = toiles.map(t => t.dataset.cle).join("|");
+  if (planche && planche.cle === cle) return planche;
+  const place = (/** @type {number} */ k) => {
+    /** @type {Map<HTMLCanvasElement, number[]>} */
+    const cases = new Map();
+    let x = 0, y = 0, rangee = 0;
+    for (const t of toiles){
+      const w = Math.ceil(t.width * k), h = Math.ceil(t.height * k);
+      if (x + w + JOINT > PLANCHE){ x = 0; y += rangee + JOINT; rangee = 0; }
+      cases.set(t, [x + JOINT, y + JOINT, w, h]);
+      x += w + JOINT; rangee = Math.max(rangee, h);
+    }
+    return { cases, haut: y + rangee + 2 * JOINT };
+  };
+  let r = place(1);
+  // trop haute, la planche se refait réduite d'autant
+  if (r.haut > PLANCHE_MAX) r = place(PLANCHE_MAX / r.haut * .98);
+  const toile = document.createElement("canvas");
+  toile.width = PLANCHE; toile.height = Math.max(1, r.haut);
+  const ctx = toile.getContext("2d");
+  if (ctx){ ctx.imageSmoothingQuality = "high"; for (const [t, c] of r.cases) ctx.drawImage(t, c[0], c[1], c[2], c[3]); }
+  // la case de chaque logo, en fractions de la planche
+  for (const [t, c] of r.cases) r.cases.set(t, [c[0] / toile.width, c[1] / toile.height, c[2] / toile.width, c[3] / toile.height]);
+  return (planche = { cle, toile, cases: r.cases });
+}
+
+/* Ce que la couche ajoute au maillage : la case que chaque logo lit sur la
+   planche, et le fondu au zoom — la couche reste la même d'une image à
    l'autre, seule l'échelle de la projection change. Un objet créé une fois :
    la bibliothèque compare ses extensions par identité. */
 /** @type {any} */
-let FONDU = null;
-function fonduZoom(/** @type {any} */ L){
-  if (FONDU) return FONDU;
-  class FonduZoom extends L.LayerExtension {
+let PLANCHE_EXT = null;
+function extensionPlanche(/** @type {any} */ L){
+  if (PLANCHE_EXT) return PLANCHE_EXT;
+  class CasesEtFondu extends L.LayerExtension {
     getShaders(){
       return {
         inject: {
-          "vs:#decl": "out float vFonduZoom;",
-          "vs:#main-end": "vFonduZoom = smoothstep(" + ZOOM_FONDU.toFixed(4) + ", " +
-            ZOOM_LOGO.toFixed(4) + ", log2(project.scale));",
+          "vs:#decl": "in vec4 instanceCaseLogo;\nout float vFonduZoom;",
+          "vs:#main-end": "vTexCoord = instanceCaseLogo.xy + vTexCoord * instanceCaseLogo.zw;\n" +
+            "vFonduZoom = smoothstep(" + ZOOM_FONDU.toFixed(4) + ", " + ZOOM_LOGO.toFixed(4) + ", log2(project.scale));",
           "fs:#decl": "in float vFonduZoom;",
           // effacé, il ne se vise plus : un appui le traverse jusqu'au stand
           "fs:DECKGL_FILTER_COLOR": "color.a *= vFonduZoom;\nif (color.a < 0.02) discard;",
         },
       };
     }
+    initializeState(){
+      const am = this.getAttributeManager();
+      if (am) am.addInstanced({ instanceCaseLogo: { size: 4, accessor: "getCaseLogo" } });
+    }
   }
-  FonduZoom.extensionName = "FonduZoom";
-  return (FONDU = [new FonduZoom()]);
+  CasesEtFondu.extensionName = "CasesEtFondu";
+  CasesEtFondu.defaultProps = { getCaseLogo: { type: "accessor", value: [0, 0, 1, 1] } };
+  return (PLANCHE_EXT = [new CasesEtFondu()]);
 }
 
-/* Ce que les couches posées couvrent : le cadre à plat, marge comprise, ou
-   rien sous le seuil. */
+/* Ce que les logos posés couvrent : le cadre à plat, marge comprise, ou rien
+   sous le seuil. */
 /** @type {{ x0: number, y0: number, x1: number, y1: number } | null} */
 let couvert = null;
 const pres = (/** @type {number} */ zoom) => zoom >= ZOOM_FONDU - .5;
@@ -270,9 +351,21 @@ export function logosARevoir(v, zoom){
   return !couvert || v.x < couvert.x0 || v.y < couvert.y0 || v.x + v.w > couvert.x1 || v.y + v.h > couvert.y1;
 }
 
+/* Les stands du plan par identifiant. Relus à chaque image tant qu'un volume
+   bouge, ils se gardent ; un plan remonté a d'autres éléments, et les relit. */
+/** @type {Map<string, Element>} */
+let groupes = new Map();
+function groupe(/** @type {string} */ id){
+  const g = groupes.get(id);
+  if (g && g.isConnected) return g;
+  groupes = new Map();
+  $("stands").querySelectorAll("g.stand[data-id]").forEach(e => groupes.set(e.getAttribute("data-id") || "", e));
+  return groupes.get(id);
+}
+
 /**
- * Les couches des logos, pour la vue immersive : une par logo autour de la
- * vue, chacune avec sa texture.
+ * La couche des logos, pour la vue immersive : un carré par logo autour de la
+ * vue, tous peints d'une planche.
  * @param {any} L la bibliothèque
  * @param {(el: Element) => number} hauteurDe la hauteur du volume d'un tracé de stand
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
@@ -284,15 +377,12 @@ export function couchesLogos(L, hauteurDe, v, zoom){
   if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)) return [];
   const m = Math.max(v.w, v.h) * MARGE_VUE;
   couvert = { x0: v.x - m, y0: v.y - m, x1: v.x + v.w + m, y1: v.y + v.h + m };
-  /** @type {Map<string, Element>} */
-  const groupes = new Map();
-  $("stands").querySelectorAll("g.stand[data-id]").forEach(g => groupes.set(g.getAttribute("data-id") || "", g));
-  const fondu = fonduZoom(L), out = [], vus = new Set();
+  const data = [], vus = new Set();
   for (const s of p.stands || []){
     if (!s.vignette || !s.c || vus.has(s.id)) continue;
     const [cx, cy] = s.c;
     if (cx < couvert.x0 || cx > couvert.x1 || cy < couvert.y0 || cy > couvert.y1) continue;
-    const g = groupes.get(s.id), trace = g && g.firstElementChild;
+    const g = groupe(s.id), trace = g && g.firstElementChild;
     const i = trace && image(s.vignette);
     if (!i) continue;
     vus.add(s.id);
@@ -304,13 +394,17 @@ export function couchesLogos(L, hauteurDe, v, zoom){
     const large = prof * rapport;
     const t = toile(s.vignette, i, i.naturalWidth, i.naturalHeight, Math.max(PIXELS_MIN, large * PIXELS_PAR_METRE));
     if (!t) continue;
-    const z = hauteurDe(trace) + .05;
-    const x0 = cx - large / 2, x1 = cx + large / 2, haut = cy - prof / 2, bas = cy + prof / 2;
-    /* Les coins dans l'ordre de la bibliothèque — bas gauche, haut gauche,
-       haut droit, bas droit —, le haut de l'image vers le fond du hall, comme
-       les images que l'exploitant pose à plat (`webgl.mjs` `imageGl`). */
-    out.push(new L.BitmapLayer({ id: "logo-" + s.id, image: t, pickable: true, el: g, extensions: fondu,
-      bounds: [[x0, bas, z], [x0, haut, z], [x1, haut, z], [x1, bas, z]] }));
+    data.push({ x: cx, y: cy, z: hauteurDe(trace) + .05, large, prof, t, el: g });
   }
-  return out;
+  if (!data.length) return [];
+  // dans un ordre fixe, pour qu'une même vue retrouve la même planche
+  const toiles = [...new Set(data.map(d => d.t))].sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || ""));
+  const pl = plancheDe(toiles);
+  return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture: pl.toile, pickable: true,
+    material: IMPRIME, textureParameters: FILTRAGE, extensions: extensionPlanche(L),
+    getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
+    getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
+    getOrientation: [0, 0, 0],
+    getCaseLogo: (/** @type {any} */ d) => pl.cases.get(d.t) || [0, 0, 1, 1],
+    updateTriggers: { getCaseLogo: pl.cle } })];
 }
