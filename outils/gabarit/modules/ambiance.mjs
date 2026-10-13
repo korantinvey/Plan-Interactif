@@ -21,7 +21,7 @@
 import { P } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { PLAN_ADMIN } from "./salon.mjs";
-import { demandeCamera } from "./camera.mjs";
+import { demandeCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
 import { CLASSE_LOGOS } from "./logos-stands.mjs";
 
 const racine = document.documentElement;
@@ -43,6 +43,14 @@ const ESSAI_CAP = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("
 
 /* Et les logos sur les stands : « ?logos=1 », ou « ?logos=0 » pour les taire. */
 const ESSAI_LOGOS = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("logos");
+
+/* Et les noms couchés sur le toit : « ?noms=plat », ou « ?noms=debout ». */
+const ESSAI_NOMS = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("noms");
+
+/** Les noms des stands se couchent-ils sur leur toit, en vue immersive ? */
+export function nomsAPlatRetenus(){
+  return ESSAI_NOMS !== null ? ESSAI_NOMS === "plat" : conf("_ambiance").nomsAPlat === true;
+}
 
 /** Les logos remplacent-ils les noms des stands de près, en vue immersive ? */
 export function logosRetenus(){
@@ -165,6 +173,7 @@ export function appliqueAmbiance(){
     x.cle === a || (x.cle === "tuiles" && enTuiles)));
   demandeCamera(a === "immersif", capRetenu());
   racine.classList.toggle(CLASSE_LOGOS, a === "immersif" && logosRetenus());
+  racine.classList.toggle(CLASSE_NOMS_A_PLAT, a === "immersif" && nomsAPlatRetenus());
   /* Le cap se dit aussi sur la racine : c'est par elle que le dessin apprend
      qu'il doit refaire sa vue — il guette sa classe et son style (`webgl.mjs`),
      et un cap qui tourne ne change aucune classe. */

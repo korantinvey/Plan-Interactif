@@ -45,7 +45,7 @@ import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS } from "./logos-
 import { DATA, P } from "./donnees.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
-  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
+  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -565,8 +565,8 @@ function constTexte(){
   class FiltreZoom extends deck.LayerExtension {
     getShaders(){
       return {
-        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n  float muet;\n} filtreZoom;\n",
-                    uniformTypes: { mode: "f32", muet: "f32" } }],
+        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n  float muet;\n  float etire;\n} filtreZoom;\n",
+                    uniformTypes: { mode: "f32", muet: "f32", etire: "f32" } }],
         inject: {
           "vs:#decl": "in vec3 instanceZoomFiltre;",
           "vs:DECKGL_FILTER_GL_POSITION":
@@ -574,6 +574,8 @@ function constTexte(){
             "bool garde = filtreZoom.mode > 1.5 ? z < instanceZoomFiltre.z : (filtreZoom.mode > 0.5 && z >= instanceZoomFiltre.z);\n" +
             "if (filtreZoom.muet > 0.5 && !bool(picking.isActive)) garde = true;\n" +
             "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || garde) position = vec4(0.0, 0.0, 2.0, 1.0);",
+          // un nom couché sur le toit s'étire en profondeur de ce que la vue de biais lui reprend
+          "vs:DECKGL_FILTER_SIZE": "size.y *= filtreZoom.etire;",
         },
       };
     }
@@ -582,7 +584,7 @@ function constTexte(){
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
     draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0,
-      muet: this.props.muetALEcran && !GL.geste ? 1 : 0 } }); }
+      muet: this.props.muetALEcran && !GL.geste ? 1 : 0, etire: this.props.etireAPlat || 1 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
@@ -633,7 +635,7 @@ function constTexte(){
   /* Les deux drapeaux du texte sont des réglages de l'extension : la
      bibliothèque les transmet ainsi aux lettres, que lit `filtreCouches`. */
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0,
-    muetALEcran: false, passeSousPixel: false };
+    muetALEcran: false, passeSousPixel: false, etireAPlat: 1 };
   /* Le contour d'une lettre, et le flou qu'il prenait au zoom.
 
      Un texte SDF ne garde pas la forme de ses lettres : il garde, pour chaque
@@ -867,16 +869,18 @@ function poseGeste(/** @type {boolean} */ oui){
 /* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
    immersive ; au sol, ils resteraient dedans, que les façades cachent. Celui
    d'une zone masquée reste au sol avec elle. */
-function positionTexte(){
+function positionTexte(couche = false){
   if (!GL.camera) return d => d.position;
   /* Les lignes d'un stand s'empilent en hauteur au-dessus de son centre : un
      nom dressé face à l'œil garde sa taille, quand l'écart que le plan à plat
      met entre le nom et le numéro se tassait avec l'inclinaison — sur trois
      lignes, le nom recouvrait son numéro. Monté, l'écart reste vertical à
      l'écran, quel que soit le cap. */
-  const pose = (d, h) => d.centre
-    ? [d.position[0], d.centre[1], h + .02 - d.ecart / SINUS_INCLINAISON]
-    : [d.position[0], d.position[1], h + .02];
+  /* Couché sur le toit, le nom reprend le placement du plan à plat, l'écart
+     entre ses lignes étiré comme les lettres (`ETIRE_A_PLAT`). */
+  const pose = (d, h) => !d.centre ? [d.position[0], d.position[1], h + .02]
+    : couche ? [d.position[0], d.centre[1] + d.ecart * ETIRE_A_PLAT, h + .02]
+    : [d.position[0], d.centre[1], h + .02 - d.ecart / SINUS_INCLINAISON];
   return d => {
     // déjà posé — le texte d'un jeton, que sa matrice dresse
     if (d.position.length > 2) return d.position;
@@ -957,17 +961,31 @@ function nomsCaches(/** @type {any[]} */ liste){
    l'étiquette se lit toujours. */
 const parametresTexte = () => GL.camera ? { depthCompare: "always", depthWriteEnabled: false } : {};
 
+/* Les noms des stands peuvent aussi se coucher sur le toit, imprimés comme
+   les logos (`logos-stands.mjs`) : un essai de lecture, que l'exploitant
+   prend dans le volet « Apparence » ou le visiteur par « ?noms=plat ».
+   Couchée sur le sol incliné, une lettre se tasse en hauteur d'autant que le
+   hall fuit ; elle est donc étirée d'autant dans le shader, et reprend ses
+   proportions vue de biais — juste de face, comme pour les logos. */
+const ETIRE_A_PLAT = 1 / Math.sqrt(1 - SINUS_INCLINAISON * SINUS_INCLINAISON);
+const nomsAPlat = () => GL.camera && document.documentElement.classList.contains(CLASSE_NOMS_A_PLAT);
+
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
+  const couche = Boolean(extra.couche);
   const commun = {
+    /* Couchées, les lignes de la bibliothèque montent vers les y croissants,
+       qui sont l'avant du hall : le nom se lisait en miroir. L'étirement le
+       retourne du même coup. */
+    ...(couche ? { billboard: false, etireAPlat: -ETIRE_A_PLAT } : {}),
     data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
-    getText: d => d.text, getPosition: positionTexte(), getSize: d => d.taille, sizeUnits: "common",
+    getText: d => d.text, getPosition: positionTexte(couche), getSize: d => d.taille, sizeUnits: "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
     lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
     updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur),
-      getPosition: cleCamera() + GL.camera + JSON.stringify(boutsDuTrajet()) },
+      getPosition: cleCamera() + GL.camera + couche + JSON.stringify(boutsDuTrajet()) },
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
@@ -2006,8 +2024,11 @@ function groupesNoms(cle, liste){
 }
 function couchesNoms(prefixe, groupes){
   let i = 0;
+  const couche = nomsAPlat();
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
     g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp,
+      // seuls les noms écrits sur un stand se couchent : celui d'une zone flotte au-dessus de son mobilier
+      couche: couche && g.sp,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }

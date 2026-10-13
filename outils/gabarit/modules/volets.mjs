@@ -34,7 +34,7 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
-import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus } from "./ambiance.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus, nomsAPlatRetenus } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
@@ -1265,14 +1265,35 @@ export function voletApparence(hote){
     lev.hidden = ambianceRetenue() !== "immersif";
   };
   amb.appendChild(lev);
+  /* Les noms couchés sur le toit, imprimés comme les logos, au lieu de se
+     dresser face à l'œil : un essai de lecture, de l'immersif seulement. */
+  const nap = document.createElement("div");
+  nap.className = "reglages logos-stands";
+  nap.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
+  /** @type {HTMLElement} */ (nap.querySelector("span")).textContent = "Noms des exposants à plat sur les stands";
+  /** @type {HTMLElement} */ (nap.querySelector(".aideR")).textContent =
+    "Le nom est imprimé sur le toit du stand, comme un logo, au lieu de se dresser face à vous.";
+  const napIn = /** @type {HTMLInputElement} */ (nap.querySelector("input"));
+  napIn.onchange = () => {
+    if (napIn.checked) conf("_ambiance").nomsAPlat = true; else delete conf("_ambiance").nomsAPlat;
+    appliqueAmbiance(); enregistreConf();
+  };
+  const majNap = () => {
+    napIn.checked = nomsAPlatRetenus();
+    nap.hidden = ambianceRetenue() !== "immersif";
+  };
+  amb.appendChild(nap);
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majCap));
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majLev));
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majNap));
   hote.appendChild(amb);
   majAmb();
   majCap();
   majLev();
+  majNap();
 
   blocDecoupage(hote);
 

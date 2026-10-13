@@ -192,4 +192,7 @@ module.exports = {
   "Logos des exposants sur les stands, de près": "Exhibitor logos on the stands, up close",
   "Quand on s'approche, le logo se pose sur le toit du stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.":
     "As you get closer, the logo appears on the stand's roof, in place of its name. Exhibitors whose logo is unknown keep their name.",
+  "Noms des exposants à plat sur les stands": "Exhibitor names flat on the stands",
+  "Le nom est imprimé sur le toit du stand, comme un logo, au lieu de se dresser face à vous.":
+    "The name is printed on the stand's roof, like a logo, instead of standing up to face you.",
 };
