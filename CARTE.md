@@ -2125,7 +2125,7 @@ Importé par :
 
 plan-admin
 
-### `modules/placement-libelles.mjs` — 207 l. → plan-admin
+### `modules/placement-libelles.mjs` — 212 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
@@ -2134,7 +2134,7 @@ Fonctions :
 `lacheLibelle` 43 · `choisi` 52 · `repeint` 65 · `posePlacement` 75
 `libelleAutomatique` 92 · `modePlacementLibelles` 101 · `majPaletteLibelle` 120
 `choisitLibelle` 139 · `pousseLibelle` 146 · `libellePointerDown` 154
-`libellePointerMove` 171 · `libellePointerUp` 180 · `branchePlacementLibelles` 193
+`libellePointerMove` 176 · `libellePointerUp` 185 · `branchePlacementLibelles` 198
 
 Importe :
 

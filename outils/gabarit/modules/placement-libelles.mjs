@@ -130,7 +130,7 @@ function majPaletteLibelle(){
   $("libAuto").disabled = !r;
   $("libAide").textContent = c.logo
     ? (r ? "Glissez le logo, ou ajustez-le aux flèches du clavier."
-         : "Glissez ce logo pour le déplacer, ou tirez la taille.")
+         : "Logo choisi : glissez-le pour le déplacer, ou tirez la taille.")
     : (r ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
          : "Glissez ce libellé pour le déplacer, ou tirez la taille.");
 }
@@ -157,10 +157,15 @@ export function libellePointerDown(e){
   // vu de près, c'est le logo qu'on attrape : il porte « logo: » devant l'identifiant du stand
   const id = GL.actif ? libelleSousWebgl(e.clientX, e.clientY) : g && g.dataset.lbl;
   if (!id) return false;
+  /* Un logo couvre presque tout son stand : en glissant le plan, crayon
+     resté allumé, on l'emportait au passage. Le premier appui le choisit
+     seulement ; seul un logo déjà choisi se glisse. */
+  const dejaChoisi = id === libSel;
   choisitLibelle(id);
   const c = choisi();
   if (!c){ choisitLibelle(null); return false; }
   e.preventDefault();
+  if (c.logo && !dejaChoisi) return true;
   const r = c.lu(c.o);
   glisseLib = { c, depart: versPlan(e.clientX, e.clientY),
                 dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
