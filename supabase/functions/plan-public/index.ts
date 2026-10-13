@@ -38,6 +38,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
+import { tranchesDAdresses } from "../_partage/vignette.ts";
 import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
@@ -137,11 +138,15 @@ async function vignettesParAdresse(
   if (!adresses.size) return par;
   const liste = [...adresses];
   const sb = service();
-  // par tranches : une requête qui porte cinq cents adresses dépasse ce qu'un
-  // intermédiaire accepte de transmettre
-  for (let i = 0; i < liste.length; i += 50) {
-    const { data } = await sb.from("vignette_de_logo")
-      .select("cle,source,format").in("source", liste.slice(i, i + 50));
+  // par tranches : une requête qui porte trop d'adresses dépasse ce qu'un
+  // intermédiaire accepte de transmettre (`tranchesDAdresses`)
+  for (const tranche of tranchesDAdresses(liste)) {
+    const { data, error } = await sb.from("vignette_de_logo")
+      .select("cle,source,format").in("source", tranche);
+    /* Un échec n'empêche pas le plan de partir — ses logos se chargeront
+       chez leur source —, mais il se dit : tu, il faisait passer des salons
+       entiers pour n'avoir aucune vignette. */
+    if (error) console.error("vignettes introuvables :", error.message);
     for (const v of data ?? []) {
       const r = v as { cle: string; source: string; format?: string };
       const source = String(r.source), deja = par.get(source);

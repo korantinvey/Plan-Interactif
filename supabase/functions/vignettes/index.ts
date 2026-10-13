@@ -15,7 +15,7 @@
  * le même nom.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { cleDeVignette } from "../_partage/vignette.ts";
+import { cleDeVignette, tranchesDAdresses } from "../_partage/vignette.ts";
 import { typeDeVignette } from "../_partage/octets.ts";
 
 const ORIGINES = [
@@ -201,19 +201,23 @@ Deno.serve(async (req) => {
 
     /* Ce qui est déjà fait, demandé par adresse : la table porte les deux, et
        c'est l'adresse que l'instantané connaît. Par tranches — une requête qui
-       porte cinq cents adresses dépasse ce qu'un intermédiaire transmet.
+       porte trop d'adresses dépasse ce qu'un intermédiaire transmet
+       (`tranchesDAdresses`).
        Une vignette sans sa grande n'est pas faite : celles d'avant la grande
        se refont une fois, la petite avec. Pour une console qui sait l'AVIF,
        une vignette WebP ne l'est pas non plus : elle se refait une fois, en
        AVIF, sous sa clé à elle. */
     const enAvif = corps.format === "avif";
     const connues = new Set<string>();
-    for (let i = 0; i < adresses.length; i += 50) {
+    for (const tranche of tranchesDAdresses(adresses)) {
       let q = db.from("vignette_de_logo")
-        .select("source").in("source", adresses.slice(i, i + 50))
+        .select("source").in("source", tranche)
         .not("grande", "is", null);
       if (enAvif) q = q.eq("format", "avif");
-      const { data } = await q;
+      /* Un échec se dit au lieu de passer pour « rien n'est fait » : la
+         console referait alors tout le salon, tour après tour, sans fin. */
+      const { data, error } = await q;
+      if (error) return repond({ erreur: error.message }, 500);
       for (const v of data ?? []) connues.add(String((v as { source: string }).source));
     }
 
