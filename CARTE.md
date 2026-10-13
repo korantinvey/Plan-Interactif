@@ -1316,7 +1316,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 509 l. → plan, plan-admin
+### `modules/gestes.mjs` — 519 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.73 · 8. Interactions du plan
@@ -1324,8 +1324,8 @@ plan-admin
 Fonctions :
 
 `poseGestesAdmin` 71 · `milieu` 99 · `commencePince` 105 · `suitPince` 119
-`plieLesBandes` 179 · `saisitPlan` 193 · `cibleElargie` 230 · `planifieFiltre` 273
-`brancheGestes` 287 · `brancheLangue` 492
+`plieLesBandes` 180 · `saisitPlan` 194 · `cibleElargie` 231 · `planifieFiltre` 274
+`brancheGestes` 288 · `brancheLangue` 502
 
 Importe :
 
@@ -3042,7 +3042,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 709 l. → plan, plan-admin
+### `modules/vue.mjs` — 710 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3052,11 +3052,11 @@ Fonctions :
 `confieALaVue` 68 · `enEdition` 74 · `libelles` 75 · `poseEmprise` 81 · `figeTextes` 105
 `rendTextes` 113 · `cadrage` 152 · `peintLibelles` 157 · `repeintLibelles` 165
 `detacheLibelles` 169 · `rattacheLibelles` 181 · `etireLibelles` 199
-`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 257
-`appliqueVue` 267 · `libellesDeLaVue` 336 · `rafraichitVue` 344 · `poseVue` 358
-`mesureBarre` 387 · `masqueHaut` 415 · `masque` 422 · `masqueDroite` 459 · `fit` 470
-`recadreIncline` 497 · `stoppeZoom` 539 · `glisseVersVise` 557 · `glisseVers` 603
-`rectVisee` 630 · `zoom` 650 · `echelle` 664 · `versPlan` 676 · `brancheVue` 688
+`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 258
+`appliqueVue` 268 · `libellesDeLaVue` 337 · `rafraichitVue` 345 · `poseVue` 359
+`mesureBarre` 388 · `masqueHaut` 416 · `masque` 423 · `masqueDroite` 460 · `fit` 471
+`recadreIncline` 498 · `stoppeZoom` 540 · `glisseVersVise` 558 · `glisseVers` 604
+`rectVisee` 631 · `zoom` 651 · `echelle` 665 · `versPlan` 677 · `brancheVue` 689
 
 Importe :
 

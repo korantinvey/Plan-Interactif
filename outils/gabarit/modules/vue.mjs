@@ -252,9 +252,10 @@ export function versScene(/** @type {number} */ x, /** @type {number} */ y){
  * Retenue ici, à chaque image, plutôt que dans chaque geste : le glissement,
  * le pincement, la vignette et la molette passent tous par là. Le glissement
  * repartant à chaque mouvement de l'endroit saisi, la main qui revient
- * reprend le plan dès qu'elle repasse la borne.
+ * reprend le plan dès qu'elle repasse la borne. Les gestes du doigt l'appellent
+ * aussi d'eux-mêmes, pour savoir s'ils butent (`gestes.mjs`).
  */
-function retiensVue(/** @type {any} */ v){
+export function retiensVue(/** @type {any} */ v){
   if (!emp || !v || vueLibre()) return v;
   const cx = v.x + v.w / 2, cy = v.y + v.h / 2;
   const mx = v.w * DEBORD_VUE, my = v.h * DEBORD_VUE;
