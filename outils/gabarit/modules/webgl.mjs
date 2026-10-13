@@ -42,7 +42,7 @@ import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
-import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS } from "./logos-stands.mjs";
+import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -881,6 +881,8 @@ function poseGeste(/** @type {boolean} */ oui){
   if (oui) _finGeste = setTimeout(() => poseGeste(false), 250);
   if (GL.geste === oui) return;
   GL.geste = oui;
+  // les logos prêts pendant le geste attendent sa fin (`logos-stands.mjs`)
+  geleLogos(oui);
   // la vue posée ne bouge plus : rien ne redessinerait sans cela
   if (!oui) GL.deck.redraw("fin du geste");
   // le survol, suspendu pendant le geste, se retrouve sous la souris

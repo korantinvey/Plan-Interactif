@@ -114,7 +114,44 @@ const GRANDES_EN_ROUTE = 8;
 /** Un logo vient d'être prêt : le dessin doit le poser, et le nom du stand
  *  lui céder la place. */
 export const PANNEAU_PRET = creeAnnonce();
-VIGNETTES_ARRIVEES.suis(() => PANNEAU_PRET.dis());
+VIGNETTES_ARRIVEES.suis(() => annoncePret());
+
+/* ------------------------------------------------------------
+   Rien ne se prépare sous le doigt
+
+   Un logo prêt fait refaire la planche entière, la renvoyer à la carte
+   graphique et retaire les noms. Le 13 octobre 2026, sur un téléphone Android
+   récent, des logos arrivés pendant un pincement l'ont gelé une seconde, à
+   six images par seconde (`?perf`). Pendant un geste, ce qui devient prêt
+   attend donc sa fin (`geleLogos`, appelé par `webgl.mjs`) ; la couche ne
+   se refait alors que si la vue quitte ce qu'elle couvre, avec les logos
+   qu'elle avait déjà.
+   ------------------------------------------------------------ */
+let gele = false, annonceRetenue = false;
+/** Les logos devenus prêts pendant le geste, posés à sa fin. */
+/** @type {Map<string, Logo>} */
+const enRetard = new Map();
+
+function annoncePret(){
+  if (gele) annonceRetenue = true;
+  else PANNEAU_PRET.dis();
+}
+
+/** Un logo est prêt à poser — tout de suite, ou à la fin du geste. */
+function pret(/** @type {string} */ cle, /** @type {Logo} */ logo){
+  if (gele) enRetard.set(cle, logo);
+  else detourees.set(cle, logo);
+  annoncePret();
+}
+
+/** Un geste commence ou finit : à sa fin, ce qui a attendu se pose. */
+export function geleLogos(/** @type {boolean} */ oui){
+  gele = oui;
+  if (oui) return;
+  for (const [cle, logo] of enRetard) detourees.set(cle, logo);
+  enRetard.clear();
+  if (annonceRetenue){ annonceRetenue = false; PANNEAU_PRET.dis(); }
+}
 
 /** Les vignettes décodées, par clé. */
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement>} */
@@ -122,7 +159,8 @@ const images = new Map();
 /** Les vignettes détourées, à leur pleine finesse, par clé, de la moins
  *  récemment posée à la plus récente : une toile quand la page les a
  *  détourées, l'image même quand elles sont arrivées sans fond. */
-/** @type {Map<string, HTMLCanvasElement | HTMLImageElement | null>} */
+/** @typedef {HTMLCanvasElement | HTMLImageElement | ImageBitmap | null} Logo */
+/** @type {Map<string, Logo>} */
 const detourees = new Map();
 /* Combien on en garde, en pixels. Chacune tient les siens — un
    demi-mégaoctet pour une vignette de six cents sur deux cents, le triple pour
@@ -149,13 +187,12 @@ const grandes = new Map();
  * synchronisation ne détoure — n'en a aucun. Quatre pixels lus, au lieu
  * de tous les trier.
  */
-function arriveeSansFond(/** @type {HTMLImageElement} */ i){
+function arriveeSansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /** @type {number} */ h){
   try {
     const t = document.createElement("canvas");
     t.width = 2; t.height = 2;
     const ctx = t.getContext("2d", { willReadFrequently: true });
     if (!ctx) return false;
-    const w = i.naturalWidth, h = i.naturalHeight;
     for (const [x, y] of [[0, 0], [1, 0], [0, 1], [1, 1]])
       ctx.drawImage(i, x * (w - 1), y * (h - 1), 1, 1, x, y, 1, 1);
     const d = ctx.getImageData(0, 0, 2, 2).data;
@@ -192,14 +229,27 @@ function demandeGrande(/** @type {string} */ cle){
   // lue par le détourage : une origine qui ne le permettrait pas la rendrait muette
   i.crossOrigin = "anonymous";
   i.onload = () => {
-    const lue = Boolean(i.naturalWidth && i.naturalHeight);
-    grandes.set(cle, lue ? i : "panne");
-    if (lue && arriveeSansFond(i)) detourees.set(cle + "+g", i);
-    grandesEnRoute--; pompeGrandes();
-    PANNEAU_PRET.dis();
+    if (!(i.naturalWidth && i.naturalHeight)){
+      grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); annoncePret(); return;
+    }
+    /* Décodée hors de la page avant d'être lue. Lire ses coins tout de suite
+       forçait le navigateur à la décoder là, sur le fil de la page : de cinq à
+       cinquante millisecondes par logo sur un téléphone, une centaine de fois
+       quand on s'approche (`?perf`). Le décodage gardé sert ensuite à chaque
+       toile, qui sinon décodait encore. */
+    const decodee = typeof createImageBitmap === "function"
+      ? createImageBitmap(i).catch(() => null) : Promise.resolve(null);
+    decodee.then(b => {
+      const source = b || i;
+      // prête avant l'annonce : les noms qu'elle fait refaire doivent la savoir prête
+      grandes.set(cle, i);
+      grandesEnRoute--; pompeGrandes();
+      if (arriveeSansFond(source, i.naturalWidth, i.naturalHeight)) pret(cle + "+g", source);
+      else { if (b) b.close(); annoncePret(); }
+    });
   };
   // sans grande, le toit se rabat sur la petite : il doit l'apprendre
-  i.onerror = () => { grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); PANNEAU_PRET.dis(); };
+  i.onerror = () => { grandes.set(cle, "panne"); grandesEnRoute--; pompeGrandes(); annoncePret(); };
   i.src = src;
 }
 
@@ -213,7 +263,7 @@ function image(/** @type {string} */ cle){
   const i = new Image();
   i.onload = () => {
     images.set(cle, i.naturalWidth && i.naturalHeight ? i : "panne");
-    PANNEAU_PRET.dis();
+    annoncePret();
   };
   i.onerror = () => images.set(cle, "panne");
   i.src = src;
@@ -315,8 +365,7 @@ function parLaPageSeule(){
   parLaPage = 0;
   const a = aDetourer.shift();
   if (!a) return;
-  detourees.set(a.cle, sansFond(a.i, a.iw, a.ih));
-  PANNEAU_PRET.dis();
+  pret(a.cle, sansFond(a.i, a.iw, a.ih));
   pompe();
 }
 
@@ -334,8 +383,7 @@ function detoureRevenu(/** @type {number} */ n, /** @type {ImageData | null} */ 
     if (ctx) ctx.putImageData(img, 0, 0);
     else t = null;
   }
-  detourees.set(a.cle, t || sansFond(a.i, a.iw, a.ih));
-  PANNEAU_PRET.dis();
+  pret(a.cle, t || sansFond(a.i, a.iw, a.ih));
   pompe();
 }
 
@@ -353,8 +401,8 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   // le tassement dans la clé : passer de l'immersif au plat refait la toile
   const k = cle + "@" + lw + (tasse === 1 ? "" : "~");
   if (toiles.has(k)) return toiles.get(k) || null;
-  // pas encore détouré : rien à poser, le logo paraîtra à son retour
-  if (!detourees.has(cle)){ demandeDetourage(cle, i, iw, ih); return null; }
+  // pas encore détouré : rien à poser, le logo paraîtra à son retour — ou à la fin du geste
+  if (!detourees.has(cle)){ if (!enRetard.has(cle)) demandeDetourage(cle, i, iw, ih); return null; }
   const lh = Math.max(1, Math.round(ih * lw / iw));
   const logo = detourees.get(cle);
   // la plus récente passe en dernier
@@ -607,15 +655,23 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
   const posees = new Set(data.map(d => d.t.dataset.cle));
   for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
   const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
-  // une image arrivée sans fond ne coûte rien de plus : on la garde
-  const toileDe = (/** @type {any} */ d) => d instanceof HTMLCanvasElement ? d : null;
+  /* Une image arrivée sans fond, gardée telle quelle, ne coûte rien de plus ;
+     décodée d'avance, elle tient ses pixels comme une toile. Oubliée, elle se
+     redemande au navigateur, qui l'a gardée, et se redécode. */
+  const pese = (/** @type {any} */ d) => typeof ImageBitmap !== "undefined" && d instanceof ImageBitmap ? d
+    : d instanceof HTMLCanvasElement ? d : null;
   let pixels = 0;
-  for (const d of detourees.values()){ const t = toileDe(d); if (t) pixels += t.width * t.height; }
+  for (const d of detourees.values()){ const t = pese(d); if (t) pixels += t.width * t.height; }
   for (const [cle, d] of [...detourees]){
     if (pixels <= PIXELS_GARDES) break;
-    if (enJeu.has(cle) || (d && !toileDe(d))) continue;
+    const t = pese(d);
+    if (enJeu.has(cle) || (d && !t)) continue;
     detourees.delete(cle);
-    if (d) pixels -= d.width * d.height;
+    if (!t) continue;
+    pixels -= t.width * t.height;
+    if (t instanceof HTMLCanvasElement) continue;
+    t.close();
+    if (cle.endsWith("+g")) grandes.delete(cle.slice(0, -2));
   }
 }
 
