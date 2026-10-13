@@ -44,7 +44,8 @@ const ESSAI_CAP = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("
 /* Et les logos sur les stands : « ?logos=1 », ou « ?logos=0 » pour les taire. */
 const ESSAI_LOGOS = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("logos");
 
-/** Les logos remplacent-ils les noms des stands de près, en vue immersive ? */
+/** Les logos remplacent-ils les noms des stands de près, quelle que soit
+ *  l'ambiance ? */
 export function logosRetenus(){
   return ESSAI_LOGOS !== null ? ESSAI_LOGOS === "1" : conf("_ambiance").logos === true;
 }
@@ -164,7 +165,7 @@ export function appliqueAmbiance(){
   AMBIANCES.forEach(x => racine.classList.toggle("ambiance-" + x.cle,
     x.cle === a || (x.cle === "tuiles" && enTuiles)));
   demandeCamera(a === "immersif", capRetenu());
-  racine.classList.toggle(CLASSE_LOGOS, a === "immersif" && logosRetenus());
+  racine.classList.toggle(CLASSE_LOGOS, logosRetenus());
   /* Le cap se dit aussi sur la racine : c'est par elle que le dessin apprend
      qu'il doit refaire sa vue — il guette sa classe et son style (`webgl.mjs`),
      et un cap qui tourne ne change aucune classe. */

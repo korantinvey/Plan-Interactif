@@ -231,7 +231,7 @@ export function monteWebgl(){
        assemblage le pose, et aucun bloc n'est sali. Le nom de son stand, lui,
        doit apprendre à lui céder la place. */
     PANNEAU_PRET.suis(() => {
-      if (!GL.camera || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+      if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return;
       _page.libellesWebgl();
       planifieWebgl();
     });
@@ -412,7 +412,7 @@ export function vueWebgl(enGeste = false){
   const v = vueDeck();
   GL.deck.setProps({ viewState: v });
   // les logos des stands ne couvrent que les abords de la vue (`logos-stands.mjs`)
-  if (GL.camera && logosARevoir(vueDuPlan(), v.zoom)) planifieWebgl();
+  if (logosARevoir(vueDuPlan(), v.zoom)) planifieWebgl();
 }
 
 /* ------------------------------------------------------------
@@ -518,7 +518,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesFigurants(), ...(GL.camera ? couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device) : []), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){ out.push(...couchesFigurants(), ...couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device), ...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
