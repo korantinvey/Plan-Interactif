@@ -38,7 +38,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
-import { octetsDeVignette } from "../_partage/octets.ts";
+import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -114,10 +114,15 @@ const service = () =>
  * la clé, et charge le logo chez la source comme elle l'a toujours fait. C'est
  * ce qui permet aux vignettes d'apparaître au fil de leur fabrication, sans
  * que rien ne les attende.
+ *
+ * Un logo peut en avoir deux, une WebP et une AVIF, sous deux clés : l'AVIF
+ * est préférée, plus légère de moitié ; la WebP l'accompagne pour les
+ * navigateurs qui ne lisent pas l'AVIF (`vignettes.mjs` `vignettesLisibles`).
  */
+type Vignettes = { cle: string; avif?: boolean; webp?: string };
 async function vignettesParAdresse(
   instantanes: { charge?: unknown }[],
-): Promise<Map<string, string>> {
+): Promise<Map<string, Vignettes>> {
   const adresses = new Set<string>();
   for (const inst of instantanes) {
     const charge = (inst?.charge ?? {}) as Record<string, unknown>;
@@ -128,7 +133,7 @@ async function vignettesParAdresse(
       }
     }
   }
-  const par = new Map<string, string>();
+  const par = new Map<string, Vignettes>();
   if (!adresses.size) return par;
   const liste = [...adresses];
   const sb = service();
@@ -136,10 +141,15 @@ async function vignettesParAdresse(
   // intermédiaire accepte de transmettre
   for (let i = 0; i < liste.length; i += 50) {
     const { data } = await sb.from("vignette_de_logo")
-      .select("cle,source").in("source", liste.slice(i, i + 50));
+      .select("cle,source,format").in("source", liste.slice(i, i + 50));
     for (const v of data ?? []) {
-      const r = v as { cle: string; source: string };
-      par.set(String(r.source), String(r.cle));
+      const r = v as { cle: string; source: string; format?: string };
+      const source = String(r.source), deja = par.get(source);
+      if (r.format === "avif") {
+        par.set(source, { cle: String(r.cle), avif: true, webp: deja?.webp ?? deja?.cle });
+      }
+      else if (deja) deja.webp = String(r.cle);
+      else par.set(source, { cle: String(r.cle) });
     }
   }
   return par;
@@ -154,19 +164,24 @@ async function vignettesParAdresse(
  */
 function avecVignette(
   st: Record<string, unknown>,
-  par: Map<string, string>,
+  par: Map<string, Vignettes>,
 ): Record<string, unknown> {
   if (!par.size) return st;
-  const cle = typeof st.logo === "string" ? par.get(st.logo) : undefined;
+  /* `vignetteWebp` dit que `vignette` est de l'AVIF — vide quand le logo n'a
+     pas de WebP : un navigateur qui ne lit pas l'AVIF prend alors le logo
+     d'origine, plutôt qu'une image qu'il ne saurait montrer. */
+  const cles = (v?: Vignettes) =>
+    v ? { vignette: v.cle, ...(v.avif ? { vignetteWebp: v.webp ?? "" } : {}) } : null;
+  const siens = typeof st.logo === "string" ? cles(par.get(st.logo)) : null;
   const coex = (st.coex ?? []) as Record<string, unknown>[];
   const heberges = coex.map((c) => {
-    const k = c && typeof c.logo === "string" ? par.get(c.logo) : undefined;
-    return k ? { ...c, vignette: k } : c;
+    const k = c && typeof c.logo === "string" ? cles(par.get(c.logo)) : null;
+    return k ? { ...c, ...k } : c;
   });
-  if (!cle && !heberges.some((c, i) => c !== coex[i])) return st;
+  if (!siens && !heberges.some((c, i) => c !== coex[i])) return st;
   return {
     ...st,
-    ...(cle ? { vignette: cle } : {}),
+    ...(siens ?? {}),
     ...(coex.length ? { coex: heberges } : {}),
   };
 }
@@ -197,10 +212,11 @@ async function rendVignette(cle: string, entetes: Record<string, string>) {
     .from("vignette_de_logo").select("image").eq("cle", cle).maybeSingle();
   if (error) return new Response("Vignette indisponible.", { status: 503, headers: nu });
   if (!data) return new Response("Vignette inconnue.", { status: 404, headers: nu });
-  return new Response(octetsDeVignette(String((data as { image: string }).image)), {
+  const image = String((data as { image: string }).image);
+  return new Response(octetsDeVignette(image), {
     headers: {
       ...entetes,
-      "Content-Type": "image/webp",
+      "Content-Type": typeDeVignette(image),
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
@@ -227,7 +243,7 @@ async function rendGrande(cle: string, entetes: Record<string, string>) {
   return new Response(octetsDeVignette(grande), {
     headers: {
       ...entetes,
-      "Content-Type": "image/webp",
+      "Content-Type": typeDeVignette(grande),
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
