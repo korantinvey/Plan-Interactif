@@ -627,7 +627,8 @@ function constTexte(){
       const am = this.getAttributeManager();
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
-    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0,
+    // pendant un geste, l'atlas des grands textes écrit aussi les petits (`filtreCouches`)
+    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: GL.geste && this.props.modeFiltre === 2 ? 0 : this.props.modeFiltre || 0,
       muet: this.props.muetALEcran && !GL.geste ? 1 : 0, etire: this.props.etireAPlat || 1 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
@@ -889,9 +890,19 @@ function couchesPetites(id, commun, K, sousPixel){
  * texte immobile : pendant un geste, les trois passes se taisent, et la
  * couche ordinaire, muette au repos, les remplace. Au repos, celle-ci ne
  * sert plus qu'à la désignation.
+ *
+ * Restaient deux couches par groupe de noms, une par atlas — petit et grand
+ * —, et quatre de plus pour le liseré des petits : seize couches de texte sur
+ * trente-cinq, le plus gros poste d'une image de zoom après la réunion des
+ * jetons. Pendant un geste, l'atlas des grands textes écrit donc tous les
+ * noms, et celui des petits se tait, liseré compris — le grand trace le sien
+ * dans son champ de distance. Son défaut, des lettres plus grêles sous une
+ * douzaine de pixels, ne se voit pas sur un texte qui bouge ; au repos, chaque
+ * nom retrouve son atlas. La désignation, elle, garde les deux.
  */
 function filtreCouches(/** @type {any} */ { layer, isPicking }){
   const p = layer.props;
+  if (GL.geste && !isPicking && p.modeFiltre === 1) return false;
   if (p.muetALEcran) return isPicking || GL.geste;
   if (p.passeSousPixel) return !GL.geste;
   return true;
@@ -1077,7 +1088,7 @@ function convertitBloc(racine, cle){
   const out = couchesDeBloc(acc, cle);
   let i = 0;
   for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
-  for (const [r, sous] of acc.jetons) out.push(...couchesJeton(r, sous, cle + "-jeton-" + (i++)));
+  out.push(...couchesJetons(acc.jetons, cle));
   return out;
 }
 
@@ -1368,6 +1379,75 @@ function couchesJeton(/** @type {Element} */ r, /** @type {any} */ sous, /** @ty
     extruded: true, getPolygon: d => d.polygon[0], getFillColor: d => d.couleur, getElevation: d => d.e,
     material: MATIERE, el: r });
   return [plaque.clone({ jeton: { ...j, face: "plaque" } }), ...face];
+}
+
+/* ------------------------------------------------------------
+   Les jetons d'un calque, peints ensemble
+
+   Un jeton par couche — sa plaque, ses aplats, ses textes, chacun sous sa
+   matrice — coûtait à la bibliothèque autant qu'un calque entier : sur un vrai
+   salon en vue immersive (fep27, téléphone émulé), quatre jetons faisaient
+   dix-sept couches et quarante pour cent du temps d'une image de zoom. Le
+   prix tient au nombre de couches, non au nombre de formes.
+
+   Or tous les jetons se dressent de la même façon : tournés face à l'œil
+   selon le cap, debout. Ils ne diffèrent que par l'endroit où ils se plantent
+   et leur taille. Leurs coordonnées se calculent donc ici, dans le repère
+   tourné, et une seule matrice — la rotation commune — les dresse tous :
+
+     M p = T(a) R k (p − c + d) = R (Rᵀ a + k (p − c + d))
+
+   La bibliothèque n'extrude un polygone qu'à partir de sa propre hauteur :
+   dans ce repère, c'est la face du jeton, et l'épaisseur de la plaque monte
+   vers l'œil. Le cap ne change qu'avec la caméra, qui reconvertit tout
+   (`CAMERA_CHANGEE`).
+
+   Restent à part, un par un, le jeton qui bat (sa taille change à chaque
+   image), celui qui porte une image et celui dont la pastille n'a pas été
+   relevée.
+   ------------------------------------------------------------ */
+/** Les jetons d'un calque : ceux qui se réunissent, et les autres. */
+function couchesJetons(/** @type {Map<Element, any>} */ jetons, /** @type {string} */ cle){
+  const out = [], reunis = [];
+  let i = 0;
+  for (const [r, sous] of jetons){
+    const j = jetonsPoses.get(r);
+    if (j && !r.classList.contains("phare") && !sous.images.length) reunis.push([j, sous]);
+    else out.push(...couchesJeton(r, sous, cle + "-jeton-" + (i++)));
+  }
+  if (!reunis.length) return out;
+  const R = mul4(autourDuZ(-capCamera()), DEBOUT);
+  // la rotation inverse, la transposée : ses lignes sont les colonnes de R
+  const versR = (/** @type {number[]} */ a) => [0, 1, 2].map(l => R[l] * a[0] + R[4 + l] * a[1] + R[8 + l] * a[2]);
+  const acc = { ...accVide(reunis[0][1].prises), phares: null, jetons: null };
+  const plaques = [];
+  for (const [j, sous] of reunis){
+    const k = j.E, o = versR([j.ancre[0], j.ancre[1], j.z + j.demi * k]);
+    const ici = (/** @type {number} */ d) => (/** @type {number[]} */ p) =>
+      [o[0] + k * (p[0] - j.cx), o[1] + k * (p[1] - j.cy), o[2] + k * (d + (p[2] || 0))];
+    // le dessin juste devant la face, la plaque centrée sur elle
+    const face = ici(j.e / 2 + j.e * .04);
+    for (const d of sous.pleins) acc.pleins.push({ ...d, polygon: d.polygon.map((/** @type {number[][]} */ a) => a.map(face)),
+      ...(d.haut ? { haut: d.haut * k } : {}) });
+    for (const sorte of ["traitsPx", "traitsM", "traitsZ"])
+      for (const d of sous[sorte]) acc[sorte].push({ ...d, path: d.path.map(face) });
+    for (const [c, g] of sous.textes){
+      if (!acc.textes.has(c)) acc.textes.set(c, { ...g, items: [] });
+      // la taille suit celle du jeton, que la matrice commune ne porte pas
+      acc.textes.get(c).items.push(...g.items.map((/** @type {any} */ d) => ({ ...d, position: face(d.position), taille: d.taille * k })));
+    }
+    // l'arrêt n'a pas de plaque : son dessin porte déjà le fond de la pastille
+    if (!j.mince) plaques.push({ polygon: j.polygon[0].map(ici(-j.e / 2)), couleur: j.couleur, e: j.e * k, el: j.el });
+  }
+  const modelMatrix = enColonnes(R);
+  if (plaques.length) out.push(new deck.SolidPolygonLayer({ id: cle + "-jetons-plaques", data: plaques, pickable: true,
+    extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.e,
+    material: MATIERE, modelMatrix }));
+  // les textes tournés vers l'écran et cachés par ce qui se tient devant, comme ceux d'un jeton seul
+  for (const c of couchesDeBloc(acc, cle + "-jetons")) out.push(c instanceof deck.TextLayer
+    ? c.clone({ billboard: true, modelMatrix, parameters: { ...c.props.parameters, depthCompare: "less-equal", depthWriteEnabled: false } })
+    : c.clone({ modelMatrix }));
+  return out;
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
@@ -2378,7 +2458,9 @@ function coucheSurvol(couche){
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   return [new deck.SolidPolygonLayer({ id: "survol", data: aplats, getPolygon: d => d.polygon,
     // l'opacité propre de l'aplat — une zone translucide, un stand écarté — reste la sienne
-    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)], ...aPlat() })];
+    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)], ...aPlat(),
+    // l’aplat d’un jeton est dressé par la matrice de sa couche : la teinte la suit
+    modelMatrix: couche.props.modelMatrix })];
 }
 
 /* Le survol d'un volume, en vue immersive : il n'a pas d'aplat sur lequel se
@@ -2387,6 +2469,8 @@ function coucheSurvol(couche){
    redessiné teinté de la couleur du survol, un rien plus haut que lui pour
    ne pas s'y confondre. */
 function coucheSurvolVolume(c){
+  // la plaque d’un jeton, dressée par sa matrice : son aplat de face porte déjà le survol
+  if (c.props.modelMatrix) return [];
   const siens = Array.isArray(c.props.data) ? c.props.data.filter(d => d.el === GL.survol) : [];
   if (!siens.length) return [];
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
@@ -2406,11 +2490,14 @@ function coucheSurvolVolume(c){
 
 function coucheFocus(couches){
   if (!GL.focus) return [];
-  const aplats = couches.flatMap(c => aplatsDe(c, GL.focus));
-  if (!aplats.length) return [];
   const t = (GL.modeles.get("survol") || {}).trait || [0, 0, 0, 255];
-  return [new deck.PathLayer({ id: "focus", data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
-    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits, ...aPlat() })];
+  // une couche par matrice : les aplats des jetons se dressent avec la leur
+  return couches.flatMap((c, n) => {
+    const aplats = aplatsDe(c, GL.focus);
+    return aplats.length ? [new deck.PathLayer({ id: "focus-" + n, data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
+      getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits, ...aPlat(),
+      modelMatrix: c.props.modelMatrix })] : [];
+  });
 }
 
 /* ------------------------------------------------------------

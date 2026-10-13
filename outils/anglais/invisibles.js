@@ -44,6 +44,8 @@ module.exports = [
   // d'attribut SVG et des classes de libellés — rien de tout cela ne s'affiche
   "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
+  // les noms des couches où les jetons se peignent ensemble
+  "-jetons-plaques", "-jetons",
   // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
   // que la bibliothèque garde pour elle
   "const vec3 ", "] = vec3[", "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]",
