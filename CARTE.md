@@ -1638,16 +1638,16 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 474 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 480 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
 `finesse` 70 · `tassement` 83 · `grande` 130 · `image` 149 · `sansFond` 169 · `toile` 189
-`logoPose` 216 · `cedeAuLogo` 226 · `CARRE` 255 · `filtrage` 288 · `plancheDe` 301
-`extensionPlanche` 335 · `pres` 366 · `logosARevoir` 374 · `groupe` 384 · `oublie` 395
-`couchesLogos` 418
+`logoPose` 216 · `cedeAuLogo` 226 · `CARRE` 255 · `filtrage` 288 · `plancheDe` 305
+`extensionPlanche` 341 · `pres` 372 · `logosARevoir` 380 · `groupe` 390 · `oublie` 401
+`couchesLogos` 424
 
 Importe :
 
