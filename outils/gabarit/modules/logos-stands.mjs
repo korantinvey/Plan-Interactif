@@ -33,6 +33,7 @@ import { P } from "./donnees.mjs";
 import { cameraEnJeu, SINUS_INCLINAISON } from "./camera.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { VIGNETTE_SORTIE } from "./marque.mjs";
+import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 
 /** La classe que la racine porte quand l'option est prise en vue immersive. */
@@ -69,12 +70,6 @@ const finesse = (/** @type {number} */ zoom) => {
 /* Un rien de marge vide autour du logo, pour que ses bords ne se coupent pas
    net. */
 const MARGE = 2;
-/* Le logo est imprimé sur le toit, sans plaque ni bord : le fond blanc que
-   la plupart des vignettes portent est retiré, à partir de leur pourtour. Un
-   pixel compte pour du fond au-dessus de ce clair, et s'efface tout à fait
-   au-dessus du second ; entre les deux, il s'estompe, pour que le contour du
-   logo ne crénelle pas. */
-const CLAIR_FOND = 225, BLANC_FOND = 245;
 /* Couchée sur le sol incliné, une image se tasse en hauteur d'autant que le
    hall fuit. Le logo est donc dessiné étiré d'autant : vu de biais, il
    reprend ses proportions. Le compte est juste de face, et reste bon aux
@@ -162,11 +157,8 @@ function image(/** @type {string} */ cle){
 }
 
 /**
- * Le logo à cette largeur, son fond retiré.
- *
- * Seul le clair qui touche le pourtour, de proche en proche, est du fond : le
- * blanc d'une lettre ou d'un motif, enclos dans le logo, reste. Un logo déjà
- * détouré n'a rien de clair au bord, et passe tel quel.
+ * Le logo à cette largeur, son fond blanc retiré (`detourage.mjs`) : il est
+ * imprimé sur le toit, sans plaque ni bord.
  */
 function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /** @type {number} */ h){
   const toile = document.createElement("canvas");
@@ -175,124 +167,10 @@ function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /
   if (!ctx) return null;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(i, 0, 0, w, h);
-  const img = ctx.getImageData(0, 0, w, h), px = img.data;
-  const clarte = (/** @type {number} */ k) => px[k * 4 + 3] < 16 ? 255 : Math.min(px[k * 4], px[k * 4 + 1], px[k * 4 + 2]);
-  const vu = new Uint8Array(w * h), file = [];
-  for (let x = 0; x < w; x++) file.push(x, (h - 1) * w + x);
-  for (let y = 0; y < h; y++) file.push(y * w, y * w + w - 1);
-  while (file.length){
-    const k = /** @type {number} */ (file.pop());
-    if (vu[k]) continue;
-    vu[k] = 1;
-    const c = clarte(k);
-    if (c < CLAIR_FOND) continue;
-    // le fond s'efface, son liseré s'estompe
-    px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - c) / (BLANC_FOND - CLAIR_FOND))));
-    const x = k % w;
-    if (x > 0) file.push(k - 1);
-    if (x < w - 1) file.push(k + 1);
-    if (k >= w) file.push(k - w);
-    if (k < w * (h - 1)) file.push(k + w);
-  }
-  creux(px, vu, w, h, clarte);
-  /* Le bord. Un pixel du contour mêle la couleur du logo au blanc du fond :
-     laissé tel quel, il dessinait un liseré clair et crénelé sur le toit. On
-     défait ce mélange — sa part de blanc devient de la transparence, et sa
-     couleur redevient celle du logo, que le plus foncé de ses voisins dit —,
-     sur deux pixels de profondeur. */
-  const fond = (/** @type {number} */ k) => vu[k] === 1 && px[k * 4 + 3] < 255 * .5;
-  // seuls les pixels à deux pas du fond au plus : sur un logo d'origine, tous
-  // les parcourir avec leurs vingt-cinq voisins figeait la page
-  const bord = new Uint8Array(w * h);
-  for (let k = 0; k < w * h; k++){
-    if (!fond(k)) continue;
-    const x0 = k % w, y0 = (k - x0) / w;
-    // un fond qui ne touche pas le logo n'a pas de bord autour de lui
-    if (!((x0 > 0 && !fond(k - 1)) || (x0 < w - 1 && !fond(k + 1)) ||
-      (y0 > 0 && !fond(k - w)) || (y0 < h - 1 && !fond(k + w)))) continue;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
-      const xx = x0 + dx, yy = y0 + dy;
-      if (xx >= 0 && yy >= 0 && xx < w && yy < h) bord[yy * w + xx] = 1;
-    }
-  }
-  for (let k = 0; k < w * h; k++){
-    if (!bord[k] || fond(k)) continue;
-    const x = k % w, y = (k - x) / w;
-    let pres = false, encre = 255;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
-      const xx = x + dx, yy = y + dy;
-      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
-      const kk = yy * w + xx;
-      if (fond(kk)){ pres = true; continue; }
-      const m = Math.min(px[kk * 4], px[kk * 4 + 1], px[kk * 4 + 2]);
-      if (m < encre) encre = m;
-    }
-    if (!pres || encre > 235) continue;
-    const m = Math.min(px[k * 4], px[k * 4 + 1], px[k * 4 + 2]);
-    const a = Math.max(0, Math.min(1, (255 - m) / (255 - encre)));
-    if (a >= 1) continue;
-    for (let c = 0; c < 3; c++)
-      px[k * 4 + c] = a > .02 ? Math.max(0, Math.min(255, Math.round((px[k * 4 + c] - (1 - a) * 255) / a))) : px[k * 4 + c];
-    px[k * 4 + 3] = Math.round(px[k * 4 + 3] * a);
-  }
+  const img = ctx.getImageData(0, 0, w, h);
+  detoure(img.data, w, h);
   ctx.putImageData(img, 0, 0);
   return toile;
-}
-
-
-
-/* Un creux est du fond si les trois quarts de son pourtour sont à moins de
-   cette part du petit côté du logo — une épaisseur de trait — du fond
-   retiré. */
-const TRAIT = .12;
-
-/**
- * Les creux des lettres. Le fond ne se retire que de proche en proche depuis
- * le pourtour : l'œil d'un « a », d'un « e », d'un « A » n'y touche pas, et
- * restait blanc sur le toit coloré. Un clair enclos est donc du fond aussi
- * quand il n'est séparé du fond retiré que par un trait mince ; le blanc d'un
- * texte posé sur un aplat, loin du bord de l'aplat, reste.
- */
-function creux(/** @type {Uint8ClampedArray} */ px, /** @type {Uint8Array} */ vu,
-  /** @type {number} */ w, /** @type {number} */ h, /** @type {(k: number) => number} */ clarte){
-  const n = w * h, clair = (/** @type {number} */ k) => clarte(k) >= CLAIR_FOND;
-  // la distance de chaque pixel au fond retiré, en pas, à travers le logo
-  const dist = new Int32Array(n).fill(-1), file = new Int32Array(n);
-  let debut = 0, fin = 0;
-  for (let k = 0; k < n; k++) if (vu[k] && clair(k)){ dist[k] = 0; file[fin++] = k; }
-  if (!fin) return;
-  while (debut < fin){
-    const k = file[debut++], x = k % w, d = dist[k] + 1;
-    for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
-      if (kk < 0 || kk >= n || dist[kk] >= 0) continue;
-      dist[kk] = d; file[fin++] = kk;
-    }
-  }
-  const seuil = Math.max(2, Math.round(TRAIT * Math.min(w, h)));
-  const range = new Uint8Array(n);
-  for (let k0 = 0; k0 < n; k0++){
-    if (vu[k0] || range[k0] || !clair(k0)) continue;
-    // le creux entier, et la distance de son pourtour au fond
-    const siens = [k0], bords = [];
-    range[k0] = 1;
-    for (let i = 0; i < siens.length; i++){
-      const k = siens[i], x = k % w;
-      let auBord = false;
-      for (const kk of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]){
-        if (kk < 0 || kk >= n) continue;
-        if (!clair(kk)){ auBord = true; continue; }
-        if (!vu[kk] && !range[kk]){ range[kk] = 1; siens.push(kk); }
-      }
-      if (auBord) bords.push(dist[k]);
-    }
-    if (!bords.length) continue;
-    bords.sort((a, b) => a - b);
-    if (bords[Math.floor(bords.length * .75)] > seuil) continue;
-    for (const k of siens){
-      px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - clarte(k)) / (BLANC_FOND - CLAIR_FOND))));
-      vu[k] = 1;
-    }
-  }
 }
 
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
