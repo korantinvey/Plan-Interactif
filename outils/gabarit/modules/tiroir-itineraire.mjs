@@ -235,8 +235,10 @@ function montreResultat(etat){
 /**
  * Le rappel du trajet, au haut du plan.
  *
- * Le trait reste sur le plan quand le tiroir se referme — c'est voulu, on
- * marche en regardant le plan. Mais l'ôter obligeait à rouvrir le tiroir et à
+ * Le trait reste sur le plan quand un autre tiroir prend la bande — la fiche
+ * d'un stand touché en chemin : on marche en regardant le plan. Refermé de
+ * soi-même, le tiroir l'emporte (`quitteItineraire`). Mais l'ôter obligeait à
+ * rouvrir le tiroir et à
  * descendre jusqu'à son bouton : le geste ne se voyait pas là où se voit le
  * trait. Le rappel paraît donc tant que le trait affiché est celui du trajet
  * demandé et que le tiroir est fermé ; il cède la place au bandeau de visée,
@@ -557,6 +559,18 @@ export function fermeItineraire(garde = false){
   majRappelRoute();
 }
 
+/**
+ * Refermer le tiroir de soi-même — sa croix, son bouton, « Échap » — c'est
+ * quitter l'itinéraire : le trajet s'efface avec lui. Le trait gardé sur le
+ * plan se lisait comme un mode resté ouvert, dont il fallait encore sortir par
+ * le rappel. Seul un autre tiroir qui prend la bande — la fiche d'un stand
+ * touché en chemin — le laisse en place, avec son rappel pour y revenir.
+ */
+function quitteItineraire(){
+  fermeItineraire();
+  effaceItineraire();
+}
+
 /** Depuis une fiche : « j'y vais ». L'arrivée est connue, le départ reste à
  *  dire — c'est lui qu'on met sous le curseur. */
 export const versItineraire = (o) => versItineraireDe(pointObjet(o));
@@ -653,8 +667,8 @@ export function brancheTiroirItineraire(){
   }
 
   $("btnItineraire").onclick = () =>
-    $("itineraire").classList.contains("open") ? fermeItineraire() : ouvreItineraire();
-  $("closeItineraire").onclick = () => fermeItineraire();
+    $("itineraire").classList.contains("open") ? quitteItineraire() : ouvreItineraire();
+  $("closeItineraire").onclick = quitteItineraire;
   $("videItineraire").onclick = effaceItineraire;
   $("routeVoir").onclick = () => ouvreItineraire(false);
   $("routeEfface").onclick = effaceItineraire;
@@ -663,7 +677,7 @@ export function brancheTiroirItineraire(){
   addEventListener("keydown", e => {
     if (e.key !== "Escape" || $("modale").classList.contains("open")) return;
     if (visee){ e.stopPropagation(); finVisee(); return; }
-    if ($("iSugg").hidden) fermeItineraire();
+    if ($("iSugg").hidden && $("itineraire").classList.contains("open")) quitteItineraire();
   });
 }
 

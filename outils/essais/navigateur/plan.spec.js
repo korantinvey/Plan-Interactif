@@ -142,11 +142,12 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
-  /* Le trait reste sur le plan quand le tiroir se referme ; l'ôter ne doit
-     pas obliger à le rouvrir. Le rappel du haut le montre et l'efface
-     (`modules/tiroir-itineraire.mjs` `majRappelRoute`) — sans réarmer la
+  /* Refermer le tiroir de soi-même, c'est quitter l'itinéraire : le trajet
+     s'efface avec lui (`modules/tiroir-itineraire.mjs` `quitteItineraire`).
+     Seul un autre tiroir qui prend la bande laisse le trait sur le plan ; le
+     rappel du haut le montre et l'efface (`majRappelRoute`) — sans réarmer la
      visée, puisque le visiteur en a fini. */
-  test("un trajet se retire du plan sans rouvrir son tiroir", async ({ page }) => {
+  test("refermer l'itinéraire l'efface, un autre tiroir le laisse au rappel", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.goto(PLAN + "&rendu=svg");
     const lignes = await attendLaListe(page);
@@ -154,29 +155,42 @@ test.describe("le plan public", () => {
     await expect(rappel).toBeHidden();
 
     // une arrivée par la fiche, un départ par la visée sur un autre stand
-    await lignes.nth(0).click();
-    await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
-    await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
-    await expect(page.locator("#viseur")).toBeVisible();
-    const arrivee = await page.inputValue("#iArrivee");
-    const autre = await page.evaluate((nom) => {
-      const g = [...document.querySelectorAll("svg [data-id]")]
-        .find((e) => e.getAttribute("data-id") && !e.textContent.includes(nom));
-      const r = g.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-    }, arrivee);
-    await page.mouse.click(autre.x, autre.y);
-    await expect(page.locator("#iResume")).toContainText("m ·");
+    const demandeTrajet = async () => {
+      await lignes.nth(0).click();
+      await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
+      await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
+      await expect(page.locator("#viseur")).toBeVisible();
+      const arrivee = await page.inputValue("#iArrivee");
+      const autre = await page.evaluate((nom) => {
+        const g = [...document.querySelectorAll("svg [data-id]")]
+          .find((e) => e.getAttribute("data-id") && !e.textContent.includes(nom));
+        const r = g.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }, arrivee);
+      await page.mouse.click(autre.x, autre.y);
+      await expect(page.locator("#iResume")).toContainText("m ·");
+      await expect(rappel).toBeHidden();
+    };
 
-    // tiroir ouvert, le rappel se tait ; fermé, il paraît avec le résumé
-    await expect(rappel).toBeHidden();
+    // refermé par sa croix, le tiroir emporte le trajet
+    await demandeTrajet();
     await page.click("#closeItineraire");
+    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+    await expect(rappel).toBeHidden();
+    await expect(page.locator("#viseur")).toBeHidden();
+    expect(await page.inputValue("#iArrivee")).toBe("");
+    expect(await page.inputValue("#iDepart")).toBe("");
+
+    // refermé par un autre tiroir, il laisse le trait et son rappel
+    await demandeTrajet();
+    const resume = await page.textContent("#iResume");
+    await page.click("#btnParcours");
+    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
     await expect(rappel).toBeVisible();
-    await expect(page.locator("#routeResume")).toHaveText(await page.textContent("#iResume"));
+    await expect(page.locator("#routeResume")).toHaveText(resume);
 
     await page.click("#routeEfface");
     await expect(rappel).toBeHidden();
-    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
     await expect(page.locator("#viseur")).toBeHidden();
     expect(await page.inputValue("#iArrivee")).toBe("");
     expect(erreurs).toEqual([]);

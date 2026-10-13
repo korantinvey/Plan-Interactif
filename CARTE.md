@@ -2834,7 +2834,7 @@ libelles · nom-emplacement · outil-dessin · parcours · pile · points-intere
 rapport-utilisation · recherche · reglage-fiche · reglage-suggestion · rendu · secteurs
 socle-dessin · suggestion · sur · texte-plan
 
-### `modules/tiroir-itineraire.mjs` — 681 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 695 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir et la visée
 
@@ -2842,11 +2842,11 @@ Fonctions :
 
 `calculeRoute` 73 · `champIti` 91 · `fermeSugg` 95 · `montreSugg` 102 · `choisitPoint` 136
 `valideSaisie` 145 · `effaceItineraire` 157 · `relance` 186 · `montreResultat` 230
-`majRappelRoute` 246 · `ecritResultat` 257 · `poseVisee` 401 · `confieVisee` 414
-`suitLaVisee` 416 · `bandeauVisee` 418 · `armeVisee` 441 · `finVisee` 459
-`viseItineraire` 475 · `visePoi` 481 · `visePoint` 487 · `ouvreItineraire` 515
-`fermeItineraire` 550 · `versItineraire` 562 · `versItineraireDe` 565
-`brancheTiroirItineraire` 592
+`majRappelRoute` 248 · `ecritResultat` 259 · `poseVisee` 403 · `confieVisee` 416
+`suitLaVisee` 418 · `bandeauVisee` 420 · `armeVisee` 443 · `finVisee` 461
+`viseItineraire` 477 · `visePoi` 483 · `visePoint` 489 · `ouvreItineraire` 517
+`fermeItineraire` 552 · `quitteItineraire` 569 · `versItineraire` 576
+`versItineraireDe` 579 · `brancheTiroirItineraire` 606
 
 Importe :
 
