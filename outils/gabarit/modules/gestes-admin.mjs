@@ -34,6 +34,10 @@ import { choisitForme, supprimeForme } from "./edition.mjs";
 import { dupliqueForme, pousseForme } from "./aimants.mjs";
 import { codeIciAuPoint } from "./affiche-ici.mjs";
 import { formeSel } from "./forme-choisie.mjs";
+import { comptoirPointerDown, comptoirPointerMove, comptoirPointerUp, lacheComptoir, comptoirClavier,
+  relacheComptoir } from "./outil-comptoir.mjs";
+import { escalierPointerDown, escalierPointerMove, escalierPointerUp, lacheEscalier, escalierClavier,
+  relacheEscalier } from "./outil-escalier.mjs";
 
 /* Le doigt posé. Caler la carte passe avant tout : tant qu'un mode est armé,
    la main saisit le fond et non le plan — c'est le seul geste que la palette
@@ -49,6 +53,14 @@ function appui(/** @type {PointerEvent} */ e){
   // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
   if (calagePointerDown(e)) return true;
   if (dessinPointerDown(e)) return true;
+  /* Le comptoir d'un accueil ne se prend qu'en vue immersive, où aucun des
+     outils d'avant n'est ouvert : il passe en dernier, juste avant le plan
+     qu'on glisserait. */
+  /* L'escalier d'un repère se prend de même, et avant le comptoir : posé sur
+     un accueil, c'est lui qu'on vise. Tenir l'un relâche l'autre — un seul
+     objet sous la main, et sous les flèches. */
+  if (escalierPointerDown(e)){ relacheComptoir(); return true; }
+  if (comptoirPointerDown(e)) return true;
   return false;
 }
 
@@ -58,6 +70,8 @@ function suit(/** @type {PointerEvent} */ e){
   if (geometriePointerMove(e)) return true;
   if (calagePointerMove(e)) return true;
   if (dessinPointerMove(e)) return true;
+  if (escalierPointerMove(e)) return true;
+  if (comptoirPointerMove(e)) return true;
   return false;
 }
 
@@ -67,6 +81,8 @@ function leve(/** @type {PointerEvent} */ e){
   if (geometriePointerUp(e)) return true;
   if (dessinPointerUp(e)) return true;
   if (calagePointerUp()) return true;
+  if (escalierPointerUp(e)) return true;
+  if (comptoirPointerUp(e)) return true;
   return false;
 }
 
@@ -75,6 +91,8 @@ function leve(/** @type {PointerEvent} */ e){
 function annuleGeste(){
   lacheLibelle();
   lacheGeo();
+  lacheComptoir();
+  lacheEscalier();
 }
 
 /* Les raccourcis et les flèches de l'éditeur, avant tout le reste du clavier. */
@@ -109,6 +127,9 @@ function clavier(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
                     e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return true;
   }
+  // le comptoir choisi d'un accueil, du même pas, et R pour le quart de tour
+  if (ADMIN && !saisie && !e.ctrlKey && !e.metaKey && !e.altKey && (escalierClavier(e) || comptoirClavier(e)))
+    return true;
   /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
      voisine, le clavier lui donne l'allée qui les sépare. */
   if (ADMIN && formeSel && !saisie && e.key.indexOf("Arrow") === 0){
@@ -136,6 +157,8 @@ function echap(){
   if (enCours){ termineTrace(false); return true; }
   if (formeSel){ choisitForme(null); return true; }
   if (calqueActif){ activeCalque(calqueActif); return true; }
+  if (relacheEscalier()) return true;
+  if (relacheComptoir()) return true;
   return false;
 }
 

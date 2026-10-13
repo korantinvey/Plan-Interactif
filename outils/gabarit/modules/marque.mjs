@@ -15,6 +15,7 @@
    décoder des images : c'est le navigateur de l'exploitant qui s'en charge,
    une fois par salon, avec la puissance qu'une fonction n'a pas.
    ============================================================ */
+import { detoure } from "./detourage.mjs";
 
 /**
  * La marque sans le vide qui l'entoure.
@@ -147,7 +148,38 @@ const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
    recadrage de secours : elle sera servie telle quelle à tous les visiteurs,
    et la fiche ne lui accorde que trois cents pixels sur soixante-douze. Six
    cents couvrent un écran dense sans peser trois kilo-octets de plus. */
-const VIGNETTE_SORTIE = 600;
+export const VIGNETTE_SORTIE = 600;
+/* La grande, le logo du toit d'un stand (`logos-stands.mjs`), où il occupe
+   de près huit cents pixels d'écran dense. Elle n'est demandée que là : elle
+   peut peser le double sans rien coûter aux fiches. Plus finement encodée que
+   la petite — le défaut du navigateur bave sur le bord des lettres, que le
+   toit montre de près.
+
+   Elle part détourée, son fond blanc retiré (`detourage.mjs`). Ce tri se
+   faisait chez chaque visiteur, deux logos à la fois : sur un écran de
+   bureau, la centaine de stands autour de la vue de Franchise Expo
+   paraissait un à un, pendant de longues secondes. Il se fait ici une fois
+   pour tous, et le toit pose la grande telle quelle. La petite garde son
+   fond : des modèles de fiche ont un en-tête coloré, où le logo se montre
+   tel que l'exposant l'a donné. C'est pourquoi la grande se fait pour chaque
+   logo, même quand l'original n'en tient pas plus que la petite : elle est
+   alors de sa taille, mais détourée. */
+const GRANDE_SORTIE = 1000, GRANDE_QUALITE = .9;
+
+/** Une toile en webp, en base64 ; `null` si le navigateur ne sait pas
+ *  l'encoder. */
+async function webp64(toile, qualite){
+  const b = await new Promise(f => toile.toBlob(f, "image/webp", qualite));
+  if (!b) return null;
+  const tampon = new Uint8Array(await b.arrayBuffer());
+  /* Par tranches : « String.fromCharCode » reçoit ses octets en arguments,
+     et une image entière en dépasserait la limite. */
+  let brut = "";
+  for (let i = 0; i < tampon.length; i += 8192){
+    brut += String.fromCharCode.apply(null, tampon.subarray(i, i + 8192));
+  }
+  return btoa(brut);
+}
 
 /**
  * Le cadre du dessin dans l'image, en pixels de l'original — ou `null` quand
@@ -234,6 +266,19 @@ async function toileMarque(octets, im, b, cote){
 }
 
 
+/** Le fond blanc de cette toile retiré, en place ; faux si elle ne se lit
+ *  pas. */
+function sansFond(/** @type {HTMLCanvasElement} */ t){
+  try {
+    const ctx = t.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return false;
+    const img = ctx.getImageData(0, 0, t.width, t.height);
+    detoure(img.data, t.width, t.height);
+    ctx.putImageData(img, 0, 0);
+    return true;
+  } catch (e) { return false; }
+}
+
 /**
  * La vignette d'un logo, telle que la console l'envoie à la base.
  *
@@ -243,8 +288,14 @@ async function toileMarque(octets, im, b, cote){
  * `null` quand la source ne rend rien d'utilisable — injoignable, partage
  * refusé, format qu'on ne sait pas lire. Ce n'est pas une panne : le logo se
  * chargera chez sa source, comme il l'a toujours fait.
+ *
+ * L'encodeur AVIF est confié par l'appelant, et non importé : ce module part
+ * aussi chez le visiteur, qui n'a que faire de trois mégaoctets d'encodeur
+ * (`encodeur-avif.mjs`, que seule la console charge). Sans lui, ou s'il
+ * échoue sur un logo, la vignette se fait en WebP — et le dit, pour être
+ * rangée sous son format.
  */
-export async function vignetteDeLogo(source){
+export async function vignetteDeLogo(source, avif = null){
   let octets = null;
   try {
     const r = await fetch(source, { mode: "cors", credentials: "omit" });
@@ -260,20 +311,22 @@ export async function vignetteDeLogo(source){
     /* Rien à retirer : on recadre quand même au format de sortie, pour que ce
        qui part en base soit toujours une vignette et jamais l'original —
        c'est tout l'intérêt de la fabriquer. */
-    const toile = await toileMarque(octets, im,
-      boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight },
-      VIGNETTE_SORTIE);
+    const cadre = boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight };
+    const toile = await toileMarque(octets, im, cadre, VIGNETTE_SORTIE);
     if (!toile) return null;
-    const b = await new Promise(f => toile.toBlob(f, "image/webp"));
-    if (!b) return null;
-    const tampon = new Uint8Array(await b.arrayBuffer());
-    /* Par tranches : « String.fromCharCode » reçoit ses octets en arguments,
-       et une image entière en dépasserait la limite. */
-    let brut = "";
-    for (let i = 0; i < tampon.length; i += 8192){
-      brut += String.fromCharCode.apply(null, tampon.subarray(i, i + 8192));
-    }
-    return { source, image: btoa(brut), largeur: toile.width, hauteur: toile.height };
+    /* Les deux d'un même format : la base range la ligne sous lui, et une
+       grande en WebP sous une clé AVIF passerait pour ce qu'elle n'est pas. */
+    let format = avif ? "avif" : "webp";
+    let image = avif ? avif(toile) : null;
+    if (!image){ format = "webp"; image = await webp64(toile); }
+    if (!image) return null;
+    /* La grande, du même original et du même cadre, détourée. Vide quand le
+       navigateur n'a pas su la faire : la base la tient alors pour faite, et
+       le toit garde la petite, qu'il détoure lui-même. */
+    let grande = "";
+    const t = await toileMarque(octets, im, cadre, GRANDE_SORTIE);
+    if (t && sansFond(t)) grande = (format === "avif" ? avif(t) : await webp64(t, GRANDE_QUALITE)) || "";
+    return { source, format, image, grande, detouree: true, largeur: toile.width, hauteur: toile.height };
   } catch (e) {
     return null;
   } finally {

@@ -29,9 +29,9 @@ import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
-import { GL, cibleWebgl, confieAuWebgl } from "./webgl.mjs";
+import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
-  redresse } from "./vue.mjs";
+  redresse, retiensVue } from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
   fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
 import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
@@ -76,6 +76,10 @@ export function poseGestesAdmin(/** @type {GestesAdmin} */ g){ admin = g; }
 /** Le glissé en cours, ou rien : la carte graphique le lit pour taire son survol. */
 /** @type {any} */
 export let drag = null;
+/* Le temps qu'un doigt posé sans bouger met à dire qu'il choisit : le stand
+   appuyé commence alors à monter. Plus bref, c'est un appui, que le relâché
+   tranche ; un glissement part presque toujours avant. */
+const APPUI_TENU = 90;
 
 /* ------------------------------------------------------------------
    Pincement à deux doigts.
@@ -128,15 +132,16 @@ function suitPince(){
   /* La limite du zoom se sent au doigt, une fois à chaque fois qu'on la
      touche : sans quoi le pincement continuait sans que rien ne bouge, et
      l'on ne savait pas si le plan avait cessé de répondre. */
-  const bute = nw !== voulu;
+  const nh = pince.h * (nw / pince.w);
+  const x = pince.ancre[0] - (m.x - r.left) / r.width * nw,
+        y = pince.ancre[1] - (m.y - r.top) / r.height * nh;
+  /* Le pincement déplace aussi : les deux doigts qui glissent ensemble
+     butent sur le bord du hall comme un seul. */
+  const v = retiensVue({ x: x, y: y, w: nw, h: nh });
+  changeVue(v);
+  const bute = nw !== voulu || v.x !== x || v.y !== y;
   if (bute && !pince.bute) vibre(BUTEE);
   pince.bute = bute;
-  const nh = pince.h * (nw / pince.w);
-  changeVue({
-    x: pince.ancre[0] - (m.x - r.left) / r.width * nw,
-    y: pince.ancre[1] - (m.y - r.top) / r.height * nh,
-    w: nw, h: nh,
-  });
   rafraichitVue();
 }
 
@@ -308,11 +313,30 @@ export function brancheGestes(){
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —
        dans cet ordre (`modules/gestes-admin.mjs`). */
     if (admin.appui(e)) return;
-    drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false,
-             // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
-             cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
-                             : e.target.closest("[data-id],[data-poi]") };
+    // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
+    const ecran = [e.clientX, e.clientY], touche = e.target;
+    const vise = () => GL.actif ? cibleWebgl(ecran[0], ecran[1])
+      : touche instanceof Element ? touche.closest("[data-id],[data-poi]") : null;
+    /* Au doigt, ce qu'on touche ne se cherche que si l'on choisit. Le chercher
+       demande une image à la carte graphique — vingt à cinquante
+       millisecondes sur un téléphone, en vue immersive —, et le stand appuyé
+       qui montait sortait de la couche des volumes, que la bibliothèque
+       recomptait en entier, puis y rentrait au premier glissement : chaque
+       geste commençait par là (`?perf`, le 13 octobre 2026). Le doigt qui
+       glisse ne paie donc rien ; celui qui reste posé voit le stand monter un
+       instant plus tard, et le relâché désigne comme avant. La souris garde
+       sa montée immédiate : elle ne glisse que bouton tenu, et rarement. */
+    const tactile = e.pointerType === "touch" || e.pointerType === "pen";
+    const d = drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false, glisse: false,
+             /** @type {any} */ cible: tactile ? undefined : vise(), vise, montee: 0 };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
+    // le stand appuyé commence à monter, sans attendre que le relâché le choisisse
+    if (!tactile) monteALAppui(d.cible);
+    else d.montee = setTimeout(() => {
+      if (drag !== d || d.glisse || d.bouge) return;
+      d.cible = vise();
+      monteALAppui(d.cible);
+    }, APPUI_TENU);
   });
   svg.addEventListener("pointermove", e => {
     const [ex, ey] = redresse(e.clientX, e.clientY);
@@ -323,21 +347,40 @@ export function brancheGestes(){
       const r = cadrePlan(), k = view.w / r.width;
     const dx = (ex - drag.x) * k, dy = (ey - drag.y) * k;
     if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLesBandes(true); }
-    view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
+    /* La main glisse : ce n'est pas un choix, le stand redescend. Compté en
+       pixels, et non en mètres comme le glissement : de près, deux mètres font
+       une main entière, et le stand serait monté tout du long. */
+    if (Math.abs(ex - drag.x) + Math.abs(ey - drag.y) > 6){ drag.glisse = true; rendLAppui(); }
+    view.x = drag.vx - dx; view.y = drag.vy - dy;
+    /* Le bord du hall se sent au doigt, comme la limite du pincement : une
+       fois à chaque fois qu'on le touche. Sans quoi le plan cessait de suivre
+       la main sans rien dire, et l'on croyait le glissement en panne. */
+    const x = view.x, y = view.y;
+    retiensVue(view);
+    const bute = view.x !== x || view.y !== y;
+    if (bute && !drag.bute) vibre(BUTEE, e.pointerType);
+    drag.bute = bute;
+    rafraichitVue();
   });
 
   /* La capture de pointeur redirige le clic vers le <svg> : on retient la cible
      au pointerdown et on tranche au pointerup. */
   svg.addEventListener("pointerup", e => {
     doigts.delete(e.pointerId);
+    /* Ce que le relâché n'a pas choisi — un glissement, une visée, une borne
+       posée — redescend ; le choix, lui, est déjà fait quand ceci passe. */
+    setTimeout(rendLAppui, 0);
     // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
     // main sur le déplacement, sans quoi la vue sauterait
     if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
     if (admin.leve(e)) return;
     const d = drag; drag = null; saisitPlan(false);
     try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (d) clearTimeout(d.montee);
     if (d && d.bouge){ poseVue(); return; }
     if (!d) return;
+    // un appui bref au doigt : ce qu'il touche se cherche maintenant
+    if (d.cible === undefined) d.cible = d.vise();
     /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
        sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
        recherche dont ils débordent la marge, s'il y en a un. */
@@ -379,6 +422,7 @@ export function brancheGestes(){
   });
   svg.addEventListener("pointercancel", e => {
     doigts.delete(e.pointerId);
+    rendLAppui();
     if (doigts.size < 2) pince = null;
     // ce que les outils de l'exploitant tenaient se lâche aussi
     admin.annule();

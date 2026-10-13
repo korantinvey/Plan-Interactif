@@ -34,15 +34,17 @@ import { blocRappel } from "./reglage-rappel.mjs";
 import { conf, jeton, optionActive, appliqueLangue, enregistreConf } from "./configuration.mjs";
 import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
-import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu } from "./ambiance.mjs";
+import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus, nomsAPlatRetenus, figurantsRetenus } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
 import { REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil } from "./seuil.mjs";
 import { JOURS_SALON_MAX, lueHeure, lueDate, datesSalon, horairesSalon } from "./horaires.mjs";
 import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
-import { SECTEURS } from "./secteurs.mjs";
-import { appliqueSecteurs, appliqueFiltre, liste } from "./recherche.mjs";
+import { SECTEURS, champDecoupage, champsDecoupables, indexeSecteurs }
+  from "./secteurs.mjs";
+import { appliqueSecteurs, appliqueFiltre, refaitCriteres, liste } from "./recherche.mjs";
+import { CLE_SECTEUR } from "./filtre.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { DISTINCTIONS, ETOILE_DIST, MARQUES_DIST, modeDist, couleurDist, appliqueDists }
   from "./distinctions.mjs";
@@ -977,9 +979,8 @@ export function voletDist(hote, d){
   };
 
   bloc("plan", "Sur le plan",
-    "Une forme posée sur le stand. Le coin corné se place sur l'angle de la " +
-    "boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde " +
-    "dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise " +
+    "Une forme posée sur le stand. Le coin corné se cale sur le vrai coin du " +
+    "stand, même posé de biais, et en longe les deux côtés. Le liseré, lui, emprunte le trait que la sélection utilise " +
     "déjà. Deux distinctions affichées prennent chacune un coin, l'une à " +
     "droite et l'autre à gauche : elles ne se recouvrent pas.");
   bloc("liste", "Dans la liste",
@@ -1065,6 +1066,62 @@ export function voletDist(hote, d){
       liste();
     }, REPOS_NUANCIER);
   };
+}
+
+/**
+ * Sur quel champ les stands se colorent : le secteur par défaut, ou la ville,
+ * le pays, un champ propre au salon.
+ *
+ * Un salon qui ne sectorise pas, ou dont les secteurs ne disent rien au
+ * visiteur, n'avait que le blanc ; un autre se lit mieux par pays que par
+ * secteur. Chaque champ porte son nombre de parts : dix-huit couleurs ne se
+ * lisent pas comme cinq, et on le sait avant de choisir. Le filtre qui ouvre
+ * la recherche suit le même champ (`recherche.mjs` `clesCriteres`), et les
+ * couleurs de chaque part se règlent dans la pile, sous la couche Stands.
+ */
+function blocDecoupage(hote){
+  const champs = champsDecoupables();
+  if (!champs.length) return;
+  const dec = document.createElement("div");
+  dec.className = "reglage-decoupe";
+  dec.innerHTML = '<div class="tete"><span class="eyebrow">Couleur des stands selon</span>' +
+    '<span class="val"></span></div>' +
+    '<div class="champsDecoupe" role="group" aria-label="Champ qui colore les stands"></div>';
+  const val = dec.querySelector(".val");
+  const maj = () => {
+    const c = champDecoupage();
+    dec.querySelectorAll("button[data-champ]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.champ === c)));
+    // éteintes, les couleurs ne suivent aucun champ : le dire, plutôt qu'une
+    // pastille cochée qui ne peindrait rien
+    val.textContent = conf("_secteurs").visible === false
+      ? "couleurs éteintes (onglet Admin)" : "";
+  };
+  champs.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.champ = c.cle;
+    b.innerHTML = '<span></span><span class="n"></span>';
+    b.firstChild.textContent = c.libelle;
+    b.lastChild.textContent = String(c.n);
+    b.onclick = () => {
+      if (c.cle === CLE_SECTEUR) delete conf("_secteurs").champ;
+      else conf("_secteurs").champ = c.cle;
+      enregistreConf();
+      /* Les parts changent toutes : l'index se refait, le plan se repeint,
+         le filtre de tête change de champ — et un critère retenu sur
+         l'ancien tombe avec lui. */
+      indexeSecteurs();
+      appliqueSecteurs();
+      refaitCriteres();
+      appliqueFiltre();
+      if (ADMIN) construitPanneau();
+      maj();
+    };
+    dec.querySelector(".champsDecoupe").appendChild(b);
+  });
+  hote.appendChild(dec);
+  maj();
 }
 
 /** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
@@ -1189,11 +1246,70 @@ export function voletApparence(hote){
     poseCap(0); majCap(); enregistreConf();
   };
   amb.appendChild(ori);
+  /* Les logos à la place des noms, quand on s'approche : couchés sur le toit
+     en immersif, posés à plat sur le stand en classique et en tuiles. */
+  const lev = document.createElement("div");
+  lev.className = "reglages logos-stands";
+  lev.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
+  /** @type {HTMLElement} */ (lev.querySelector("span")).textContent = "Logos des exposants sur les stands, de près";
+  /** @type {HTMLElement} */ (lev.querySelector(".aideR")).textContent =
+    "Quand on s'approche, le logo se pose sur le stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.";
+  const levIn = /** @type {HTMLInputElement} */ (lev.querySelector("input"));
+  levIn.onchange = () => {
+    if (levIn.checked) conf("_ambiance").logos = true; else delete conf("_ambiance").logos;
+    appliqueAmbiance(); enregistreConf();
+  };
+  const majLev = () => { levIn.checked = logosRetenus(); };
+  amb.appendChild(lev);
+  /* Du monde dans les allées, dans toutes les ambiances. La case dit ce que
+     le visiteur voit : tant que rien n'est réglé, c'est l'ambiance qui
+     décide (`figurantsRetenus`), et la case la suit quand on en change. Le
+     premier geste écrit le choix, qui vaut ensuite pour toutes. */
+  const fig = document.createElement("div");
+  fig.className = "reglages logos-stands";
+  fig.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
+  /** @type {HTMLElement} */ (fig.querySelector("span")).textContent = "Du monde dans les allées";
+  /** @type {HTMLElement} */ (fig.querySelector(".aideR")).textContent =
+    "Des silhouettes de visiteurs, semées dans les allées pour donner l'échelle et la vie du salon. Elles ne disent rien de la fréquentation réelle.";
+  const figIn = /** @type {HTMLInputElement} */ (fig.querySelector("input"));
+  figIn.onchange = () => {
+    conf("_ambiance").figurants = figIn.checked;
+    appliqueAmbiance(); enregistreConf();
+  };
+  const majFig = () => { figIn.checked = figurantsRetenus(); };
+  amb.appendChild(fig);
+  /* Les noms couchés sur le toit, imprimés comme les logos, au lieu de se
+     dresser face à l'œil : un essai de lecture, de l'immersif seulement. */
+  const nap = document.createElement("div");
+  nap.className = "reglages logos-stands";
+  nap.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p>';
+  /** @type {HTMLElement} */ (nap.querySelector("span")).textContent = "Noms des exposants à plat sur les stands";
+  /** @type {HTMLElement} */ (nap.querySelector(".aideR")).textContent =
+    "Le nom est imprimé sur le toit du stand, comme un logo, au lieu de se dresser face à vous.";
+  const napIn = /** @type {HTMLInputElement} */ (nap.querySelector("input"));
+  napIn.onchange = () => {
+    if (napIn.checked) conf("_ambiance").nomsAPlat = true; else delete conf("_ambiance").nomsAPlat;
+    appliqueAmbiance(); enregistreConf();
+  };
+  const majNap = () => {
+    napIn.checked = nomsAPlatRetenus();
+    nap.hidden = ambianceRetenue() !== "immersif";
+  };
+  amb.appendChild(nap);
   amb.querySelectorAll("button[data-amb]").forEach(b =>
     b.addEventListener("click", majCap));
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majNap));
+  amb.querySelectorAll("button[data-amb]").forEach(b =>
+    b.addEventListener("click", majFig));
   hote.appendChild(amb);
   majAmb();
   majCap();
+  majLev();
+  majFig();
+  majNap();
+
+  blocDecoupage(hote);
 
   /* La police des noms, avant les modèles et non après : leur planche est
      longue, et un réglage rangé dessous ne se trouvait qu'en la faisant

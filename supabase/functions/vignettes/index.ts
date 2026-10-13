@@ -15,7 +15,8 @@
  * le même nom.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { cleDeVignette } from "../_partage/vignette.ts";
+import { cleDeVignette, tranchesDAdresses } from "../_partage/vignette.ts";
+import { typeDeVignette } from "../_partage/octets.ts";
 
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
@@ -123,7 +124,31 @@ Deno.serve(async (req) => {
 
     const corps = await req.json().catch(() => ({})) as {
       evenementId?: string;
-      vignettes?: { source: string; image: string; largeur: number; hauteur: number }[];
+      /* Les adresses que la console n'a pas su lire pendant cette
+         préparation : rien ne les enregistre, et sans elles chaque tour les
+         rendrait de nouveau en tête du lot. */
+      ecartees?: string[];
+      /* Ce que la console sait fabriquer. « avif » : les logos qui n'ont
+         qu'une vignette WebP sont à refaire. Une console d'avant ne le dit
+         pas, et ne fait que du WebP. */
+      format?: string;
+      /* La console détoure la grande, que seul le toit d'un stand lit : les
+         grandes d'avant, au fond blanc, sont à refaire. Une console d'avant
+         ne le dit pas, et s'en tient à ce qui manque. */
+      detoure?: boolean;
+      vignettes?: {
+        source: string; image: string; largeur: number; hauteur: number;
+        /* Le format de l'image et de la grande ; absent d'une console d'avant,
+           qui n'envoie que du WebP. */
+        format?: string;
+        /* La grande, le logo du toit d'un stand : vide quand le navigateur
+           n'a pas su la faire — ou, d'une console d'avant, quand l'original
+           n'en tenait pas plus que la petite. Plus ancienne encore, une
+           console ne l'envoie pas. */
+        grande?: string;
+        /* La grande a son fond retiré ; absent d'une console d'avant. */
+        detouree?: boolean;
+      }[];
     };
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
 
@@ -150,12 +175,31 @@ Deno.serve(async (req) => {
       for (const v of corps.vignettes) {
         if (!v?.source || !v.image) continue;
         if (!permises.has(v.source)) { refusees++; continue; }
+        /* Le format se relit dans les octets : une image rangée sous la clé
+           d'un autre format ferait servir l'un pour l'autre. Sous « webp »
+           passe aussi le PNG, que Safari rend quand on lui demande du WebP —
+           comme avant ; le type servi se lit de toute façon dans les octets. */
+        const format = v.format === "avif" ? "avif" : "webp";
+        const avif = (b64: string) => typeDeVignette(b64) === "image/avif";
+        if (avif(v.image) !== (format === "avif") ||
+            (v.grande && avif(v.grande) !== (format === "avif"))) {
+          refusees++;
+          continue;
+        }
         lignes.push({
-          cle: await cleDeVignette(v.source),
+          cle: await cleDeVignette(v.source, format),
           source: v.source,
+          format,
           image: v.image,
           largeur: v.largeur | 0,
           hauteur: v.hauteur | 0,
+          ...(typeof v.grande === "string" ? { grande: v.grande } : {}),
+          /* Toujours écrit : une console d'avant qui refait une ligne y pose
+             une grande au fond blanc, qui ne doit plus passer pour détourée.
+             Une grande vide — le navigateur n'a pas su la faire — compte
+             pour faite : la redemander à chaque tour ne la ferait pas mieux,
+             et le toit garde la petite. */
+          grande_detouree: v.detouree === true,
           pose: new Date().toISOString(),
         });
       }
@@ -171,18 +215,36 @@ Deno.serve(async (req) => {
 
     /* Ce qui est déjà fait, demandé par adresse : la table porte les deux, et
        c'est l'adresse que l'instantané connaît. Par tranches — une requête qui
-       porte cinq cents adresses dépasse ce qu'un intermédiaire transmet. */
+       porte trop d'adresses dépasse ce qu'un intermédiaire transmet
+       (`tranchesDAdresses`).
+       Une vignette sans sa grande n'est pas faite : celles d'avant la grande
+       se refont une fois, la petite avec. Pour une console qui sait l'AVIF,
+       une vignette WebP ne l'est pas non plus : elle se refait une fois, en
+       AVIF, sous sa clé à elle. Pour une console qui détoure, une grande au
+       fond blanc ne l'est pas davantage. */
+    const enAvif = corps.format === "avif";
     const connues = new Set<string>();
-    for (let i = 0; i < adresses.length; i += 50) {
-      const { data } = await db.from("vignette_de_logo")
-        .select("source").in("source", adresses.slice(i, i + 50));
+    for (const tranche of tranchesDAdresses(adresses)) {
+      let q = db.from("vignette_de_logo")
+        .select("source").in("source", tranche)
+        .not("grande", "is", null);
+      if (enAvif) q = q.eq("format", "avif");
+      if (corps.detoure === true) q = q.eq("grande_detouree", true);
+      /* Un échec se dit au lieu de passer pour « rien n'est fait » : la
+         console referait alors tout le salon, tour après tour, sans fin. */
+      const { data, error } = await q;
+      if (error) return repond({ erreur: error.message }, 500);
       for (const v of data ?? []) connues.add(String((v as { source: string }).source));
     }
 
-    const aFaire = adresses.filter((a) => !connues.has(a));
+    const ecartees = new Set(Array.isArray(corps.ecartees) ? corps.ecartees : []);
+    const restantes = adresses.filter((a) => !connues.has(a));
+    const aFaire = restantes.filter((a) => !ecartees.has(a));
     return repond({
       aFaire: aFaire.slice(0, LOT),
-      reste: aFaire.length,
+      /* Le reste compte les écartées : elles ne sont pas faites, et
+         l'avancement de la console les compte déjà de son côté. */
+      reste: restantes.length,
       total: adresses.length,
     });
   } catch (err) {

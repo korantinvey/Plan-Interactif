@@ -76,6 +76,9 @@ export const HAUTEUR_STAND = 1.6, HAUTEUR_LIBRE = .06;
 export const HAUTEUR_ZONE = 1;
 /* Ce qu'on choisit se hausse au-dessus du reste, d'autant. */
 export const HAUSSE_CHOIX = 2.2;
+/** La classe que la racine porte quand les noms des stands se couchent sur
+ *  leur toit au lieu de se dresser face à l'œil (`ambiance.mjs`, `webgl.mjs`). */
+export const CLASSE_NOMS_A_PLAT = "noms-a-plat";
 /* ------------------------------------------------------------
    Le trajet à l'écran
 
@@ -147,6 +150,45 @@ export function ecranVersPlat(/** @type {number} */ sx, /** @type {number} */ sy
   const y1 = v / den, w = 1 - y1 * st / P;
   const x1 = u * w;
   return [W / 2 + x1 * cc + y1 * sc, H / 2 - x1 * sc + y1 * cc];
+}
+
+/**
+ * La même projection, pour qui se peint hors de la carte graphique.
+ *
+ * Le fond de carte (`environs.mjs`) est une image ou une toile à plat, posée
+ * sous le plan : sans cela il restait droit pendant que le hall s'inclinait
+ * par-dessus, et les rues ne tombaient plus sous les murs. Or la vue en
+ * perspective d'un sol plat n'est qu'une homographie, que la transformation
+ * `matrix3d` du CSS rend exactement — `platVersEcran`, écrite en matrice.
+ *
+ * Elle se pose depuis le coin haut gauche de la scène, et vaut pour tout
+ * élément qui y prend ses pixels. Rien quand la caméra n'est pas en jeu.
+ * @returns {{ matrice: string, x: number, y: number, w: number, h: number } | null}
+ */
+export function solIncline(/** @type {number} */ W, /** @type {number} */ H){
+  if (!etat.enJeu || !W || !H) return null;
+  const { cc, sc, ct, st, P } = grandeurs(W, H);
+  const a = st / P;
+  // le point tourné, puis sa profondeur, en fonction du point à plat
+  const x0 = -(cc * W - sc * H) / 2, y0 = -(sc * W + cc * H) / 2;
+  const wx = -a * sc, wy = -a * cc, w0 = 1 - a * y0;
+  const m = [
+    cc + W / 2 * wx,       ct * sc + H / 2 * wx,  0, wx,
+    -sc + W / 2 * wy,      ct * cc + H / 2 * wy,  0, wy,
+    0,                     0,                     1, 0,
+    x0 + W / 2 * w0,       ct * y0 + H / 2 * w0,  0, w0,
+  ];
+  /* Incliné, l'écran montre plus de sol qu'à plat : le fond du hall recule,
+     et ce qui couvrait la scène n'en couvre plus que le bas. On rend donc
+     aussi l'étendue de sol que les quatre coins de l'écran laissent voir —
+     les bords d'une homographie restent droits, ses coins suffisent —, avec
+     une marge pour que l'arrondi ne laisse pas un liseré nu. */
+  const coins = [[0, 0], [W, 0], [W, H], [0, H]].map(([x, y]) => ecranVersPlat(x, y, W, H));
+  const marge = .02 * Math.hypot(W, H);
+  const xs = coins.map(q => q[0]), ys = coins.map(q => q[1]);
+  const x = Math.floor(Math.min(...xs) - marge), y = Math.floor(Math.min(...ys) - marge);
+  return { matrice: "matrix3d(" + m.map(v => +v.toFixed(9)).join(",") + ")",
+           x, y, w: Math.ceil(Math.max(...xs) + marge) - x, h: Math.ceil(Math.max(...ys) + marge) - y };
 }
 
 /**

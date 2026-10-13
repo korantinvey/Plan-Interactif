@@ -25,6 +25,7 @@ import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
 import { API, SLUG, PLAN_ADMIN, entetesApi } from "./salon.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
 import { indexe } from "./index-salon.mjs";
+import { vignettesLisibles } from "./vignettes.mjs";
 import { accueilleSponsor, suitSponsor, fermeSponsor } from "./sponsor.mjs";
 import { view, fit } from "./vue.mjs";
 import { liste, prechargeLesVignettes } from "./recherche.mjs";
@@ -35,6 +36,7 @@ import { proposeTutoriel } from "./tutoriel.mjs";
 import { accueilleInvitation } from "./installation.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { montePlan, chargeFond } from "./rendu.mjs";
+import { planAffiche } from "./affichage.mjs";
 
 /* Ce que le démarrage annonce, et que seule l'administration écoute : le
    bouton d'enregistrement et le rattrapage d'un envoi en retard
@@ -78,6 +80,7 @@ function recadreListePosee(){
 }
 
 function demarre(/** @type {any} */ d){
+  vignettesLisibles(d);
   indexe(d);
   /* Le générique du sponsor avant le plan, et non après : ce qu'il couvre,
      c'est justement le temps que le plan met à se dessiner. Il sait déjà être
@@ -87,6 +90,11 @@ function demarre(/** @type {any} */ d){
   accueilleSponsor();
   montePlan();
   fit();
+  /* Sans dessin WebGL attendu — `?rendu=svg`, pas de WebGL2 —, aucune image
+     ne viendra dire que le plan est à l'écran : il l'est, en SVG, dès ici.
+     Avec un dessin attendu, c'est sa première image qui le dira
+     (`webgl.mjs`). */
+  if (!document.documentElement.classList.contains("gl-attente")) planAffiche();
   liste();
   recadreListePosee();
   /* Le plan est dessiné : le générique peut finir de compter ses secondes,

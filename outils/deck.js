@@ -35,6 +35,7 @@ const CLASSES = {
     "LightingEffect", "AmbientLight", "DirectionalLight"],
   "@deck.gl/layers": ["TextLayer", "PathLayer", "SolidPolygonLayer", "BitmapLayer"],
   "@deck.gl/extensions": ["PathStyleExtension"],
+  "@deck.gl/mesh-layers": ["SimpleMeshLayer"],
 };
 
 /* Le nom porte l'empreinte du contenu, et non la seule version : le site garde

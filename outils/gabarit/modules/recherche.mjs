@@ -37,9 +37,10 @@ import { API, PLAN_ADMIN } from "./salon.mjs";
 import { JOURS, momentLocal } from "./temps.mjs";
 import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
+import { VIGNETTES, VIGNETTES_ARRIVEES, adresseVignette } from "./vignettes.mjs";
 import { conf } from "./configuration.mjs";
 import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
-import { secteursMontres, pastilleSecteur, coloreSecteurs } from "./secteurs.mjs";
+import { secteursMontres, pastilleSecteur, coloreSecteurs, champDecoupage } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
@@ -56,28 +57,6 @@ import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
 
-
-/**
- * L'adresse d'une vignette fabriquée à la synchronisation.
- *
- * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
- * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
- * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
- * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
- * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
- * analyser ici.
- *
- * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
- * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
- */
-export const adresseVignette = (cle) =>
-  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
-     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
-     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
-  VIGNETTES.get(cle) ||
-  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
-    ? API + "?vignette=" + cle
-    : "");
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
@@ -200,11 +179,16 @@ function ordreCriteres(cles){
  * C'est aussi le découpage le plus large du salon : le poser en tête range les
  * critères du plus grossier au plus fin — c'est l'ordre par défaut, que
  * l'exploitant refait à sa main si son salon se tranche autrement.
+ *
+ * Quand le plan se colore sur un autre champ que le secteur (`champDecoupage`),
+ * c'est ce champ qui prend sa place, pastilles comprises : le filtre suit ce
+ * que les couleurs montrent. Coché par ailleurs, il ne paraît qu'une fois.
  */
 export function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
-  const cochees = Object.keys(r).filter(k => r[k] === true);
-  return ordreCriteres(secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees);
+  const tete = champDecoupage();
+  const cochees = Object.keys(r).filter(k => r[k] === true && k !== tete);
+  return ordreCriteres(secteursMontres() ? [tete].concat(cochees) : cochees);
 }
 
 /* L'intitulé d'un critère vit dans `corps-fiche.mjs`, qui l'écrit aussi en
@@ -371,7 +355,7 @@ function majCriteres(){
       b.type = "button";
       b.className = "actif";
       b.title = "Retirer ce critère";
-      b.innerHTML = (cle === CLE_SECTEUR ? pastilleSecteur(v) : "") +
+      b.innerHTML = (cle === champDecoupage() ? pastilleSecteur(v) : "") +
         '<span class="k"></span><span class="v"></span>' +
         '<span class="x" aria-hidden="true">×</span>';
       b.querySelector(".k").textContent = lib;
@@ -500,7 +484,7 @@ function remplitCriteres(){
         b.dataset.cle = c.cle;
         b.dataset.val = x.v;
         b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-        b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
+        b.innerHTML = (c.cle === champDecoupage() ? pastilleSecteur(x.v) : "") +
           '<span class="l"></span><span class="n"></span>';
         b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
         b.querySelector(".n").textContent = x.n;
@@ -937,12 +921,6 @@ function prechargeMarque(id, iSoc){
 const VIGNETTES_PAR_LOT = 96;
 const LOTS_A_LA_FOIS = 2;
 
-/* Ce qui est arrivé, par clé : l'image elle-même, prête à poser. Le lot qui
-   l'a apportée reste, lui, dans le cache du navigateur et du service — son
-   adresse ne porte que des empreintes, il ne peut pas se périmer — si bien
-   que la visite d'après ne redemande rien. */
-export const VIGNETTES = new Map();
-
 export function prechargeLesVignettes(){
   if (!API) return;
   /* Ce que le navigateur sait du réseau. Rien n'oblige à le dire : en
@@ -996,7 +974,13 @@ function chargeUnLot(lot){
       const attendues = new Set(lot);
       for (const cle of Object.keys(recu || {})){
         if (!attendues.has(cle)) continue;
-        const src = "data:image/webp;base64," + recu[cle];
+        /* Le type se lit dans les premiers octets, comme le fait l'API
+           (`_partage/octets.ts` `typeDeVignette`) : « RIFF » d'un WebP,
+           « UklGR » en base64 ; un PNG, que rend Safari ; le reste est de
+           l'AVIF. */
+        const b64 = String(recu[cle]);
+        const type = b64.startsWith("UklGR") ? "webp" : b64.startsWith("iVBOR") ? "png" : "avif";
+        const src = "data:image/" + type + ";base64," + recu[cle];
         if (!IMAGE_SURE.test(src)) continue;
         VIGNETTES.set(cle, src);
         /* Elle arrive déjà recadrée et à la taille : le dire évite à la fiche
@@ -1005,6 +989,7 @@ function chargeUnLot(lot){
            porte ses octets — passerait pour un logo lu chez sa source. */
         marquePrete(src);
       }
+      VIGNETTES_ARRIVEES.dis();
     })
     .catch(() => {});
 }

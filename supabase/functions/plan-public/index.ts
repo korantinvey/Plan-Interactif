@@ -38,7 +38,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
-import { octetsDeVignette } from "../_partage/octets.ts";
+import { tranchesDAdresses } from "../_partage/vignette.ts";
+import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -114,10 +115,15 @@ const service = () =>
  * la clé, et charge le logo chez la source comme elle l'a toujours fait. C'est
  * ce qui permet aux vignettes d'apparaître au fil de leur fabrication, sans
  * que rien ne les attende.
+ *
+ * Un logo peut en avoir deux, une WebP et une AVIF, sous deux clés : l'AVIF
+ * est préférée, plus légère de moitié ; la WebP l'accompagne pour les
+ * navigateurs qui ne lisent pas l'AVIF (`vignettes.mjs` `vignettesLisibles`).
  */
+type Vignettes = { cle: string; avif?: boolean; webp?: string };
 async function vignettesParAdresse(
   instantanes: { charge?: unknown }[],
-): Promise<Map<string, string>> {
+): Promise<Map<string, Vignettes>> {
   const adresses = new Set<string>();
   for (const inst of instantanes) {
     const charge = (inst?.charge ?? {}) as Record<string, unknown>;
@@ -128,18 +134,27 @@ async function vignettesParAdresse(
       }
     }
   }
-  const par = new Map<string, string>();
+  const par = new Map<string, Vignettes>();
   if (!adresses.size) return par;
   const liste = [...adresses];
   const sb = service();
-  // par tranches : une requête qui porte cinq cents adresses dépasse ce qu'un
-  // intermédiaire accepte de transmettre
-  for (let i = 0; i < liste.length; i += 50) {
-    const { data } = await sb.from("vignette_de_logo")
-      .select("cle,source").in("source", liste.slice(i, i + 50));
+  // par tranches : une requête qui porte trop d'adresses dépasse ce qu'un
+  // intermédiaire accepte de transmettre (`tranchesDAdresses`)
+  for (const tranche of tranchesDAdresses(liste)) {
+    const { data, error } = await sb.from("vignette_de_logo")
+      .select("cle,source,format").in("source", tranche);
+    /* Un échec n'empêche pas le plan de partir — ses logos se chargeront
+       chez leur source —, mais il se dit : tu, il faisait passer des salons
+       entiers pour n'avoir aucune vignette. */
+    if (error) console.error("vignettes introuvables :", error.message);
     for (const v of data ?? []) {
-      const r = v as { cle: string; source: string };
-      par.set(String(r.source), String(r.cle));
+      const r = v as { cle: string; source: string; format?: string };
+      const source = String(r.source), deja = par.get(source);
+      if (r.format === "avif") {
+        par.set(source, { cle: String(r.cle), avif: true, webp: deja?.webp ?? deja?.cle });
+      }
+      else if (deja) deja.webp = String(r.cle);
+      else par.set(source, { cle: String(r.cle) });
     }
   }
   return par;
@@ -154,19 +169,24 @@ async function vignettesParAdresse(
  */
 function avecVignette(
   st: Record<string, unknown>,
-  par: Map<string, string>,
+  par: Map<string, Vignettes>,
 ): Record<string, unknown> {
   if (!par.size) return st;
-  const cle = typeof st.logo === "string" ? par.get(st.logo) : undefined;
+  /* `vignetteWebp` dit que `vignette` est de l'AVIF — vide quand le logo n'a
+     pas de WebP : un navigateur qui ne lit pas l'AVIF prend alors le logo
+     d'origine, plutôt qu'une image qu'il ne saurait montrer. */
+  const cles = (v?: Vignettes) =>
+    v ? { vignette: v.cle, ...(v.avif ? { vignetteWebp: v.webp ?? "" } : {}) } : null;
+  const siens = typeof st.logo === "string" ? cles(par.get(st.logo)) : null;
   const coex = (st.coex ?? []) as Record<string, unknown>[];
   const heberges = coex.map((c) => {
-    const k = c && typeof c.logo === "string" ? par.get(c.logo) : undefined;
-    return k ? { ...c, vignette: k } : c;
+    const k = c && typeof c.logo === "string" ? cles(par.get(c.logo)) : null;
+    return k ? { ...c, ...k } : c;
   });
-  if (!cle && !heberges.some((c, i) => c !== coex[i])) return st;
+  if (!siens && !heberges.some((c, i) => c !== coex[i])) return st;
   return {
     ...st,
-    ...(cle ? { vignette: cle } : {}),
+    ...(siens ?? {}),
     ...(coex.length ? { coex: heberges } : {}),
   };
 }
@@ -197,10 +217,38 @@ async function rendVignette(cle: string, entetes: Record<string, string>) {
     .from("vignette_de_logo").select("image").eq("cle", cle).maybeSingle();
   if (error) return new Response("Vignette indisponible.", { status: 503, headers: nu });
   if (!data) return new Response("Vignette inconnue.", { status: 404, headers: nu });
-  return new Response(octetsDeVignette(String((data as { image: string }).image)), {
+  const image = String((data as { image: string }).image);
+  return new Response(octetsDeVignette(image), {
     headers: {
       ...entetes,
-      "Content-Type": "image/webp",
+      "Content-Type": typeDeVignette(image),
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
+
+/**
+ * La grande vignette d'un logo, pour un toit vu de près en vue immersive.
+ *
+ * Sous la même clé que la petite, et aussi immuable qu'elle : elle sort du
+ * même original, et ne passe que de « pas encore faite » à faite. Tant qu'elle
+ * manque — pas encore fabriquée, ou inutile parce que l'original n'en tenait
+ * pas plus — un 404 que rien ne garde, et le toit garde la petite.
+ */
+async function rendGrande(cle: string, entetes: Record<string, string>) {
+  const nu = { ...entetes, "Cache-Control": "no-store" };
+  if (!/^[0-9a-f]{8,64}$/.test(cle)) {
+    return new Response("Clé de vignette invalide.", { status: 400, headers: nu });
+  }
+  const { data, error } = await service()
+    .from("vignette_de_logo").select("grande").eq("cle", cle).maybeSingle();
+  if (error) return new Response("Vignette indisponible.", { status: 503, headers: nu });
+  const grande = String((data as { grande: string | null } | null)?.grande ?? "");
+  if (!grande) return new Response("Pas de grande vignette.", { status: 404, headers: nu });
+  return new Response(octetsDeVignette(grande), {
+    headers: {
+      ...entetes,
+      "Content-Type": typeDeVignette(grande),
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
@@ -489,13 +537,20 @@ interface Retraits {
  * envoyé : c'est de lui que la page tire les valeurs du filtre, et la
  * recherche ce qu'elle indexe des critères. Le décocher ne dit alors que « pas
  * sur la fiche », pas « pas du tout ».
+ *
+ * Il en va de même du champ sur lequel le plan colore ses stands (`decoupes`,
+ * relevé dans l'apparence) : la page en tire la couleur de chacun, et un pays
+ * retiré de la fiche laisserait tout le plan en blanc.
  */
-function retraits(fiche: Record<string, unknown>): Retraits | null {
+function retraits(
+  fiche: Record<string, unknown>,
+  decoupes: Set<string>,
+): Retraits | null {
   const montre = (fiche.stand ?? {}) as Record<string, boolean>;
   const criteres = (fiche.criteres ?? {}) as Record<string, boolean>;
   const retire = (cible: string) =>
     (MASQUE_PAR_DEFAUT[cible] ? montre[cible] !== true : montre[cible] === false) &&
-    criteres[cible] !== true;
+    criteres[cible] !== true && !decoupes.has(cible);
 
   const cles = Object.entries(CHAMPS_FICHE)
     .filter(([cible]) => retire(cible))
@@ -641,6 +696,8 @@ Deno.serve(async (req) => {
        d'aucun salon, et c'est une requête par fiche ouverte. */
     const vignette = new URL(req.url).searchParams.get("vignette");
     if (vignette) return await rendVignette(vignette, CORS);
+    const grande = new URL(req.url).searchParams.get("grande");
+    if (grande) return await rendGrande(grande, CORS);
     /* Et le lot, à côté d'elle : c'est la même chose rendue en gros, pour la
        visite qui les veut toutes. */
     const lot = new URL(req.url).searchParams.get("vignettes");
@@ -824,7 +881,17 @@ Deno.serve(async (req) => {
     const parInstantane = Object.fromEntries((instantanes ?? []).map((i) => [i.plan_id, i]));
 
     // le même pour tout le salon : il ne dépend que de son réglage de fiche
-    const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
+    /* Le champ qui colore les stands, s'il n'est pas le secteur. Le réglage est
+       recopié dans chaque pavillon ; on les prend tous, un envoi interrompu
+       pouvant les laisser en désaccord. */
+    const decoupes = new Set(
+      (apparences ?? [])
+        .map((a) => (a.reglages as { _secteurs?: { champ?: unknown } } | null)?._secteurs?.champ)
+        .filter((c): c is string => typeof c === "string"),
+    );
+    const retrait = identifie
+      ? null
+      : retraits((evt.fiche ?? {}) as Record<string, unknown>, decoupes);
 
     /* La zone de chaque salle, par son nom — c'est ce qu'une conférence porte
        de sa salle. Une salle connue mais rattachée à rien y figure aussi, avec

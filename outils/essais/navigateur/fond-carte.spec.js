@@ -141,4 +141,49 @@ test.describe("le fond de carte", () => {
     await expect(etat).toHaveClass(/alerte/);
     expect(erreurs).toEqual([]);
   });
+
+  test("en vue immersive, la carte s'incline avec le plan", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0, fond: "osm" };
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await page.route("https://tile.openstreetmap.org/**",
+      (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
+    const CAP = 30;
+    await page.goto("/plan.html?plan=smcl-2026&ambiance=immersif&cap=" + CAP);
+    await attendLaListe(page);
+    await expect(page.locator("#fondCarte image").first()).toBeAttached();
+    const camera = await page.waitForFunction(() => window.__essais.GL.camera, null, { timeout: 10_000 })
+      .then(() => true, () => false);
+    test.skip(!camera, "pas de carte graphique : le plan reste à plat");
+
+    /* Un point de la carte, pris loin du centre — vers le fond, où l'écart se
+       voyait le plus —, doit tomber là où la caméra pose le même point du
+       sol. La projection est récrite ici à partir de ses constantes
+       (`camera.mjs`) : c'est la pose de la matrice — origine, agrandissement,
+       « viewBox » — que l'essai éprouve. */
+    const { vu, attendu } = await page.evaluate((cap) => {
+      const v = window.__essais.view, r = document.getElementById("plan").getBoundingClientRect();
+      const px = v.x + v.w * .2, py = v.y + v.h * .1;
+      const ns = "http://www.w3.org/2000/svg", fond = document.getElementById("fondTuiles");
+      const m = document.createElementNS(ns, "rect");
+      m.setAttribute("x", String(px - v.w / 2000)); m.setAttribute("y", String(py - v.w / 2000));
+      m.setAttribute("width", String(v.w / 1000)); m.setAttribute("height", String(v.w / 1000));
+      fond.appendChild(m);
+      const b = m.getBoundingClientRect();
+      const W = r.width, H = r.height, D = Math.PI / 180;
+      const cc = Math.cos(cap * D), sc = Math.sin(cap * D), ct = Math.cos(50 * D), st = Math.sin(50 * D);
+      const P = 1.5 * Math.hypot(W, H);
+      const X = (px - v.x) / v.w * W - W / 2, Y = (py - v.y) / v.h * H - H / 2;
+      const x1 = X * cc - Y * sc, y1 = X * sc + Y * cc, w = 1 - y1 * st / P;
+      return { vu: [b.x + b.width / 2, b.y + b.height / 2],
+               attendu: [r.left + W / 2 + x1 / w, r.top + H / 2 + y1 * ct / w] };
+    }, CAP);
+    expect(Math.abs(vu[0] - attendu[0])).toBeLessThan(1.5);
+    expect(Math.abs(vu[1] - attendu[1])).toBeLessThan(1.5);
+    expect(erreurs).toEqual([]);
+  });
 });

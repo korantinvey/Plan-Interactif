@@ -6,6 +6,13 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  // `modules/encodeur-avif.mjs` : l'empreinte du module WebAssembly, que le
+  // navigateur vérifie, et le message d'une erreur que la console rattrape
+  // pour retomber sur le WebP — ni l'une ni l'autre ne s'affiche
+  "sha384-05Hrg6MAEOyGEl+DBp138l7mH4bs/srHNfuLKY1bXS0R9WI/amgsW509B8FkaZWr",
+  "encodeur AVIF indisponible",
+  // `modules/recherche.mjs` : un morceau de l'adresse `data:` d'une vignette
+  ";base64,",
   // `_environs.html` : le corps de la requête Overpass, qui part au serveur
   // et ne s'affiche jamais
   "[out:json][timeout:60][bbox:",
@@ -37,12 +44,21 @@ module.exports = [
   // d'attribut SVG et des classes de libellés — rien de tout cela ne s'affiche
   "sha384-2vx9QLYRDQOSjHJYMBs+6exoK/4mzV4tcLtK+O+UMgXzpj+prg4XRsogBgU0Rben",
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
+  // les noms des couches où les jetons se peignent ensemble
+  "-jetons-plaques", "-jetons",
+  // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
+  // que la bibliothèque garde pour elle
+  "const vec3 ", "] = vec3[", "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]",
+  "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]", "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]",
+  "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]", "TeinteDesFigurants", "fin du geste",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-volumes-", "-decor", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
-  "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
+  "-petit-halo-", "-phare-", "-jeton-", "-plaque", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
   "LissageSdf",
+  // `modules/logos-stands.mjs` : du code de shader et le nom de son extension
+  "vFonduZoom = smoothstep(", "CasesEtFondu",
 
   // `modules/notifications.mjs` : le motif de deux pannes internes, porté par une
   // exception que la page rattrape sans jamais l'afficher — ce que le visiteur
@@ -72,4 +88,9 @@ module.exports = [
   // `modules/recherche.mjs` : un morceau de l'attribut qui donne son rang à
   // une ligne de la liste dans la cascade d'entrée — du balisage, pas un texte
   'entre" style="--r:',
+
+  // `modules/releve.mjs` : les noms de deux extensions WebGL que le relevé
+  // des performances demande, et la pastille de l'instrument, `?perf`, que
+  // seul celui qui mesure voit — « fps » se lit pareil dans les deux langues
+  "WEBGL_debug_renderer_info", "WEBGL_lose_context", " fps · ",
 ];

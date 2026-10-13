@@ -133,8 +133,8 @@ module.exports = {
     "The \u201cTrade body member\u201d field is unticked in the console: the marks set here will only show once the field is made visible.",
   "Couleur des marques": "Colour of the marks",
   "Sur le plan": "On the map",
-  "Une forme posée sur le stand. Le coin corné se place sur l'angle de la boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise déjà. Deux distinctions affichées prennent chacune un coin, l'une à droite et l'autre à gauche : elles ne se recouvrent pas.":
-    "A shape laid on the stand. The folded corner sits on the corner of the outline's box: an L-shaped stand has no such corner, and its fold spills into the aisle. The outline, for its part, borrows the stroke selection already uses. Two distinctions on show take a corner each, one on the right and one on the left: they do not overlap.",
+  "Une forme posée sur le stand. Le coin corné se cale sur le vrai coin du stand, même posé de biais, et en longe les deux côtés. Le liseré, lui, emprunte le trait que la sélection utilise déjà. Deux distinctions affichées prennent chacune un coin, l'une à droite et l'autre à gauche : elles ne se recouvrent pas.":
+    "A shape laid on the stand. The folded corner fits the stand's actual corner, even when it sits at an angle, and runs along both of its sides. The outline, for its part, borrows the stroke selection already uses. Two distinctions on show take a corner each, one on the right and one on the left: they do not overlap.",
   "Dans la liste": "In the list",
   "La ligne des résultats. Le cartouche dit le mot, mais l'ellipse le mange sur une enseigne longue ; la mention descend sur la seconde ligne, où rien ne la tronque.":
     "The result row. The tag says the word, but the ellipsis eats it on a long brand name; the caption drops to the second line, where nothing truncates it.",
@@ -180,9 +180,22 @@ module.exports = {
   "Jamais plus de": "Never more than",
   "Au-delà, la règle de trois rendrait un seuil si haut qu'il ne se déclencherait jamais.":
     "Beyond that, the rule of three would return a threshold so high it would never come into play.",
+  // le volet « Apparence » : le champ qui colore les stands
+  "Couleur des stands selon": "Colour stands by",
+  "Champ qui colore les stands": "Field that colours the stands",
+  "couleurs éteintes (onglet Admin)": "colours turned off (Admin tab)",
   // le volet « Apparence » : l'ambiance du plan
   "Ambiance du plan": "Map style",
   "Orientation": "Orientation",
   "Orientation de la vue": "View orientation",
   "De face": "Front view",
+  "Logos des exposants sur les stands, de près": "Exhibitor logos on the stands, up close",
+  "Du monde dans les allées": "People in the aisles",
+  "Des silhouettes de visiteurs, semées dans les allées pour donner l'échelle et la vie du salon. Elles ne disent rien de la fréquentation réelle.":
+    "Visitor figures scattered in the aisles to give a sense of scale and a lively show. They say nothing about actual attendance.",
+  "Noms des exposants à plat sur les stands": "Exhibitor names flat on the stands",
+  "Le nom est imprimé sur le toit du stand, comme un logo, au lieu de se dresser face à vous.":
+    "The name is printed on the stand's roof, like a logo, instead of standing up to face you.",
+  "Quand on s'approche, le logo se pose sur le stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.":
+    "As you get closer, the logo appears on the stand, in place of its name. Exhibitors whose logo is unknown keep their name.",
 };

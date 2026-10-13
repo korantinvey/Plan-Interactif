@@ -40,6 +40,8 @@ import { CONF } from "./configuration.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { cheminForme } from "./chemin-forme.mjs";
 import { vue, cadrePlan } from "./vue-etat.mjs";
+import { solIncline } from "./camera.mjs";
+import { apresAffichage } from "./affichage.mjs";
 
 const racine = document.documentElement;
 
@@ -220,11 +222,27 @@ export const forceCarte = (cal) =>
   cal && isFinite(cal.force) ? Math.max(0.1, Math.min(1, cal.force)) : FORCE_CARTE;
 
 /* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
-   qu'il n'y a rien au-delà des murs, huit fois dès qu'une carte s'y trouve —
+   qu'il n'y a rien au-delà des murs, un peu plus dès qu'une carte s'y trouve —
    c'est pour la voir qu'on l'a posée, et la vue s'arrêtait au bord de la
-   première rue. L'emprise, elle, ne bouge pas : elle tient aussi la grille
-   d'itinéraire, au demi-mètre. */
-const RECUL_CARTE = 8;
+   première rue. Un peu plus, et non huit fois comme d'abord : de si loin le
+   hall n'était plus qu'un timbre au milieu du quartier, et l'on regardait la
+   ville plutôt que le salon. Trois fois et un tiers montrent les abords —
+   parkings, entrées, rues qui y mènent — et s'arrêtent là. L'emprise, elle,
+   ne bouge pas : elle tient aussi la grille d'itinéraire, au demi-mètre. */
+const RECUL_CARTE = 3.3;
+
+/* Jusqu'où le milieu de la vue s'écarte du pavillon, en part de la vue : trois
+   vingtièmes de part et d'autre de son emprise. Le hall garde ainsi plus d'un
+   tiers de l'écran dans chaque sens, quel que soit le zoom — on peut regarder
+   ce qui le borde, non le perdre (`vue.mjs` `retiensVue`). Le double, essayé
+   d'abord, laissait encore glisser le hall jusqu'au bord de l'écran.
+
+   Pas sur le seul pavillon : le plan s'ajuste et se centre dans
+   la bande que le tiroir et la fiche laissent libre, et son milieu tombe
+   alors hors du hall — le retenir là défaisait le cadrage. Nul pendant qu'un
+   exploitant cale la carte, qui peut avoir à chercher loin. */
+export const DEBORD_VUE = 0.3;
+export const vueLibre = () => !!CALAGE_EN_COURS;
 
 /**
  * Le calage enregistré pour le pavillon regardé.
@@ -258,6 +276,62 @@ export function recul(){
   return fondCourant() ? RECUL_CARTE : 2.5;
 }
 
+/**
+ * Le carré de sol que le fond couvre, en mètres du plan — au-delà, rien ne
+ * se télécharge.
+ *
+ * Le dézoom s'arrête à `RECUL_CARTE` largeurs de pavillon : on ne voit jamais plus
+ * loin, et le glissement retient le hall à l'écran (`DEBORD_VUE`) — sauf à
+ * incliner le plan : la vue immersive découvre alors le sol jusqu'à
+ * l'horizon, et en demandait les tuiles par centaines. Le carré tient la vue
+ * la plus large, poussée au bout du glissement, sur un téléphone en hauteur
+ * et quel que soit le cap du hall.
+ *
+ * Nul pendant qu'un exploitant cale la carte : il cherche le hall dans le
+ * quartier, et le plan n'y est pas encore à sa place.
+ */
+function zoneDuFond(){
+  if (CALAGE_EN_COURS) return null;
+  const p = DATA && DATA.plans ? P() : null, e = p && p.emprise;
+  if (!e) return null;
+  /* Le compte, pour la vue la plus large — `RECUL_CARTE` largeurs, deux fois
+     plus haute sur un téléphone — poussée au bout de ce que `DEBORD_VUE`
+     permet : son bord le plus lointain tombe à un demi-hall, plus
+     `DEBORD_VUE` + 0,5 fois sa hauteur, du centre. */
+  const t = Math.max(e.x1 - e.x0, e.y1 - e.y0);
+  const d = t * (0.5 + RECUL_CARTE * 2 * (DEBORD_VUE + 0.5));
+  const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
+  return { x0: cx - d, y0: cy - d, x1: cx + d, y1: cy + d };
+}
+
+/** Le même carré en longitudes et latitudes — `[ouest, sud, est, nord]`, ce
+ *  que MapLibre prend pour borner une source —, ou nul. Arrondi au mètre près,
+ *  pour qu'une empreinte puisse dire s'il a changé. */
+function bornesDuFond(cal){
+  const z = zoneDuFond();
+  if (!z || !cal) return null;
+  const coins = [[z.x0, z.y0], [z.x1, z.y0], [z.x1, z.y1], [z.x0, z.y1]]
+    .map(q => versTerre(q, cal));
+  const r5 = (v) => Math.round(v * 1e5) / 1e5;
+  const lon = coins.map(q => q[0]), lat = coins.map(q => q[1]);
+  return [r5(Math.min.apply(null, lon)), r5(Math.min.apply(null, lat)),
+          r5(Math.max.apply(null, lon)), r5(Math.max.apply(null, lat))];
+}
+
+/** Un style dont chaque source tuilée ne sert que le carré du hall : le
+ *  moteur ne demande aucune tuile hors de ses bornes, et peint là son fond
+ *  uni. Posées sur la source, elles l'emportent sur celles de son TileJSON. */
+function borneLeStyle(style, bornes){
+  if (!bornes || !style || !style.sources) return style;
+  const sources = {};
+  for (const id in style.sources){
+    const src = style.sources[id];
+    sources[id] = /^(vector|raster|raster-dem)$/.test(src.type)
+      ? Object.assign({}, src, { bounds: bornes }) : src;
+  }
+  return Object.assign({}, style, { sources: sources });
+}
+
 /** L'adresse d'une tuile. */
 const adresseTuile = (fond, z, x, y) => fond.url
   .replace("{z}", z).replace("{x}", x).replace("{y}", y);
@@ -269,9 +343,17 @@ const adresseTuile = (fond, z, x, y) => fond.url
  * arithmétique de ce module qu'une erreur de signe rendrait invisible à la
  * lecture et évidente à l'écran.
  */
-function tuilesDeLaVue(cal, fond, vue, mParPx){
+function tuilesDeLaVue(cal, fond, vue, mParPx, zone){
   const z = niveauDesTuiles(cal, mParPx, fond.max);
   const k = echelleDesTuiles(cal, z);
+  /* La vue ramenée au carré du hall : ce qui en sort ne se demande pas. Le
+     niveau, lui, se choisit sur la vue entière — c'est son échelle. */
+  if (zone){
+    const x0 = Math.max(vue.x, zone.x0), y0 = Math.max(vue.y, zone.y0);
+    const x1 = Math.min(vue.x + vue.w, zone.x1), y1 = Math.min(vue.y + vue.h, zone.y1);
+    if (x1 <= x0 || y1 <= y0) return { z: z, k: k, tuiles: [] };
+    vue = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  }
   const ancre = pixelsMercator(cal.lon, cal.lat, z);
   /* Les quatre coins de la vue, ramenés en est/sud puis en pixels. La
      transformation étant rigide, c'est encore un rectangle — tourné ; on
@@ -358,20 +440,18 @@ function chargeMapLibre(){
 }
 
 /**
- * Où la carte vectorielle doit regarder, déduit de la vue du plan.
+ * Où la carte vectorielle doit regarder, déduit de l'étendue que le fond
+ * couvre — la vue, ou davantage en vue immersive (`inclineFond`).
  *
  * Le cap est l'opposé de l'angle du calage : MapLibre nomme « cap » l'azimut
  * qui se trouve en haut de l'écran, et le haut de notre plan pointe vers
  * l'azimut −angle. L'échelle suit la convention du moteur, où le monde fait
  * 512 pixels au niveau zéro — d'où le 78 271 et non le 156 543 des tuiles.
  */
-function vueGL(cal){
-  const view = vue();
-  const r = cadrePlan();
-  const mParPx = view.w / (r.width || 1);
+function vueGL(cal, e){
   return {
-    center: versTerre([view.x + view.w / 2, view.y + view.h / 2], cal),
-    zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * mParPx)) / Math.LN2,
+    center: versTerre([e.x + e.w / 2, e.y + e.h / 2], cal),
+    zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * e.mParPx)) / Math.LN2,
     bearing: -cal.angle / DEG,
   };
 }
@@ -425,15 +505,79 @@ function guetteLaCarte(style){
 }
 
 /** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
-function poseCarteGL(cal, fond){
+/* ------------------------------------------------------------
+   La carte vectorielle pendant un geste
+
+   MapLibre peint sa propre toile, avec sa propre carte graphique, et la
+   recadrer à chaque image d'un zoom la lui faisait repeindre entière — en
+   vue immersive, une toile deux à trois fois plus grande que l'écran, puisque
+   le fond couvre tout le sol jusqu'à l'horizon. Mesuré sur un vrai salon :
+   une image sur six perdue, et une de retard au premier cran de molette.
+
+   Pendant le geste, la toile garde donc sa dernière image, et le CSS la
+   recale : la vue qui bouge n'est qu'une homothétie et une translation du
+   sol à plat, que l'inclinaison reprend par-dessus. Elle n'est redessinée
+   que si l'image gardée ne couvre plus l'hôte, ou s'y étire au point de se
+   brouiller — et toujours là où la vue se pose.
+   ------------------------------------------------------------ */
+/** L'étendue que la toile montre, telle que MapLibre l'a dessinée. @type {any} */
+let _etendueGL = null;
+/** La toile recalée, en attente d'être redessinée. @type {any} */
+let _releveGL = null;
+/* Au-delà, l'image gardée est trop agrandie pour rester nette. */
+const ETIREMENT_MAX = 1.5;
+
+/** L'image gardée, recalée sur l'étendue `e` ; faux si elle ne la couvre plus. */
+function recaleCarteGL(/** @type {any} */ e){
+  const e0 = _etendueGL, hote = $("fondCarteGL");
+  if (!e0 || !hote || e0.px !== e.px || e0.py !== e.py) return false;
+  // un pixel de l'hôte montrait le mètre e0.x + u·e0.mParPx ; il doit tomber en u'
+  const sx = e0.mParPx / e.mParPx, sy = e0.mParPxY / e.mParPxY;
+  const tx = (e0.x - e.x) / e.mParPx, ty = (e0.y - e.y) / e.mParPxY;
+  if (sx > ETIREMENT_MAX || sy > ETIREMENT_MAX) return false;
+  if (tx > .5 || ty > .5 || tx + sx * e.px < e.px - .5 || ty + sy * e.py < e.py - .5) return false;
+  /* L'origine des transformations est celle de l'inclinaison — le coin de la
+     scène —, et non le coin de l'hôte où le recalage se compte : la
+     translation l'en corrige. */
+  const ox = _sol ? -_sol.x : 0, oy = _sol ? -_sol.y : 0;
+  const st = hote.style;
+  st.transformOrigin = ox + "px " + oy + "px";
+  st.transform = (_sol ? _sol.matrice + " " : "") +
+    "translate(" + (tx + (sx - 1) * ox) + "px," + (ty + (sy - 1) * oy) + "px) scale(" + sx + "," + sy + ")";
+  return true;
+}
+
+/** La toile redessinée sur l'étendue `e`, et son recalage retiré dans la même image. */
+function redessineCarteGL(/** @type {any} */ cal, /** @type {any} */ e){
+  clearTimeout(_releveGL); _releveGL = null;
+  const recalee = _etendueGL !== null;
+  _carteGL.jumpTo(vueGL(cal, e));
+  /* Recadrée, la carte ne se repeint qu'à sa prochaine image, alors que le
+     recalage retiré se voit dès la nôtre : pour une image, elle aurait sauté
+     du double. On la peint donc tout de suite. */
+  if (recalee && _carteGL.style) _carteGL.redraw();
+  const st = $("fondCarteGL").style;
+  if (_sol){ st.transformOrigin = -_sol.x + "px " + -_sol.y + "px"; st.transform = _sol.matrice; }
+  else { st.removeProperty("transform"); st.removeProperty("transform-origin"); }
+  _etendueGL = e;
+}
+
+function poseCarteGL(cal, fond, etendue, enGeste = false){
   const hote = $("fondCarteGL");
   if (!hote || _echecGL) return;
   /* Une adresse collée l'emporte sur tout ; sinon c'est l'objet du fond, ou son
      adresse. L'empreinte sert à savoir si le style a changé — un objet n'a pas
      d'adresse à comparer, on prend le nom du fond. */
   const style = (cal && cal.style) || (fond.objet ? fond.objet() : styleDuFond(cal, fond));
-  const sig = (cal && cal.style) || (fond.objet ? "objet:" + cal.fond : style);
+  /* Les bornes entrent dans l'empreinte : un autre pavillon, un calage
+     enregistré, et le style se repose sur le nouveau carré. */
+  const bornes = bornesDuFond(cal);
+  const sig = ((cal && cal.style) || (fond.objet ? "objet:" + cal.fond : style)) +
+    (bornes ? "|" + bornes.join(",") : "");
   if (!style) return;
+  /* Le style passe par là une fois chargé — une adresse aussi bien qu'un
+     objet — avant que le moteur ne demande la moindre tuile. */
+  const pose = { transformStyle: (_avant, apres) => borneLeStyle(apres, bornes) };
   hote.hidden = false;
   if (_carteGL){
     if (_styleGL !== sig){
@@ -441,9 +585,17 @@ function poseCarteGL(cal, fond){
       _ditGL = "";
       ditCarte("Chargement de la carte…");
       guetteLaCarte(sig);
-      _carteGL.setStyle(style);
+      _carteGL.setStyle(style, pose);
+      _etendueGL = null;
     }
-    _carteGL.jumpTo(vueGL(cal));
+    if (enGeste && recaleCarteGL(etendue)){
+      /* Un geste qui s'arrête passe par la pose de la vue, qui redessine ;
+         ce délai rattrape celui qui finirait autrement. */
+      clearTimeout(_releveGL);
+      _releveGL = setTimeout(() => { _releveGL = null; dessineFondCarte(); }, 250);
+      return;
+    }
+    redessineCarteGL(cal, etendue);
     return;
   }
   /* Le montage est asynchrone et la vue se refait à chaque image : sans ce
@@ -454,17 +606,25 @@ function poseCarteGL(cal, fond){
   /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
      demandée — et c'est la moitié du diagnostic. */
   ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
-  guetteLaCarte(sig);
-  chargeMapLibre().then(gl => {
+  /* Ni la bibliothèque — huit cents kilo-octets à lire —, ni la carte et ses
+     programmes à compiler, avant que le plan soit à l'écran : montée dans la
+     foulée de la première image, la carte la retenait deux secondes sur un
+     téléphone (`affichage.mjs`). Le guet ne part qu'ensuite : le temps que le
+     plan met à paraître n'est pas un silence du service. Une fois le plan
+     affiché, l'attente est nulle. */
+  apresAffichage().then(() => { guetteLaCarte(sig); return chargeMapLibre(); }).then(gl => {
     /* Un autre fond a été choisi, ou la carte retirée, pendant le chargement.
        On rend le drapeau : sans cela il restait levé sur une carte jamais
        posée, et tout montage suivant sortait à la première ligne — « Situer le
        salon » ne montait plus rien, sans un mot, jusqu'au rechargement. */
     if (gen !== _genGL){ _monteGL = false; return; }
-    const v = vueGL(cal);
+    const v = vueGL(cal, etendue);
     _styleGL = sig;
+    _etendueGL = etendue;
+    /* Le style se pose après, et non dans les options : seul `setStyle`
+       sait le borner avant qu'il ne serve. */
     _carteGL = new gl.Map({
-      container: hote, style: style,
+      container: hote,
       center: v.center, zoom: v.zoom, bearing: v.bearing,
       /* Aucun geste : tout passe par le SVG posé dessus. Et pas d'attribution
          intégrée — la nôtre est déjà au coin du plan, à la même place pour
@@ -475,6 +635,7 @@ function poseCarteGL(cal, fond){
          clignoter les noms de rues pendant qu'on cale. */
       fadeDuration: 0,
     });
+    _carteGL.setStyle(style, pose);
     /* Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce
        qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
        Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
@@ -542,6 +703,7 @@ export function relanceCarteGL(){
   _ditGL = "";
   _monteGL = false;
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  _etendueGL = null;
   ditCarte("");
   dessineFondCarte();
 }
@@ -557,7 +719,58 @@ function videCarteGL(){
      justement en vol — que le drapeau avait le plus besoin d'être rendu. */
   _monteGL = false;
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  _etendueGL = null;
   if (hote) hote.hidden = true;
+}
+
+/* L'inclinaison posée sur les deux hôtes du fond : une empreinte, pour ne
+   toucher leur style — et ne redimensionner la toile de MapLibre — que
+   lorsque la caméra change, et non à chaque image d'un glissement. */
+let _inclinaison = "";
+/** L'inclinaison posée, que le recalage d'un geste compose avec la sienne.
+ *  @type {ReturnType<typeof solIncline>} */
+let _sol = null;
+
+/**
+ * Le fond incliné comme le plan, et l'étendue de sol qu'il doit couvrir.
+ *
+ * En vue immersive, la carte graphique incline le hall (`camera.mjs`) ; le
+ * fond, peint à plat sous elle, restait droit, et les rues glissaient sous
+ * les murs d'autant plus qu'on regardait loin. Les deux hôtes — tuiles et
+ * toile vectorielle — reçoivent donc la même projection, en CSS, et
+ * s'agrandissent de ce que l'inclinaison découvre au fond.
+ *
+ * Rend l'étendue en pixels de la scène à plat ; hors de la vue immersive,
+ * c'est la scène elle-même.
+ */
+function inclineFond(/** @type {DOMRect} */ r){
+  const sol = solIncline(r.width, r.height);
+  const sig = sol ? [sol.matrice, sol.x, sol.y, sol.w, sol.h].join("|") : "";
+  if (sig !== _inclinaison){
+    _inclinaison = sig;
+    _sol = sol;
+    // l'hôte change de taille : l'image gardée pour le geste ne vaut plus
+    _etendueGL = null;
+    for (const id of ["fondTuiles", "fondCarteGL"]){
+      const el = $(id);
+      if (!el) continue;
+      const st = el.style;
+      if (!sol){
+        for (const p of ["inset", "left", "top", "width", "height", "transform", "transform-origin"])
+          st.removeProperty(p);
+        continue;
+      }
+      st.inset = "auto";
+      st.left = sol.x + "px"; st.top = sol.y + "px";
+      st.width = sol.w + "px"; st.height = sol.h + "px";
+      // l'origine au coin de la scène : la matrice compte ses pixels depuis là
+      st.transformOrigin = -sol.x + "px " + -sol.y + "px";
+      st.transform = sol.matrice;
+    }
+    // MapLibre ne voit pas seul que son hôte a changé de taille
+    if (_carteGL) _carteGL.resize();
+  }
+  return sol || { x: 0, y: 0, w: r.width, h: r.height };
 }
 
 /* Ce qui est déjà posé : sans cette empreinte, chaque image d'un glissement
@@ -571,8 +784,14 @@ let _tuilesMuettes = 0;
    nœuds du plan, et que le guet du rendu WebGL relit à chaque fois. */
 let _calagePose = "";
 
-/** Le fond de carte, refait pour la vue courante. */
-export function dessineFondCarte(){
+/**
+ * Le fond de carte, refait pour la vue courante.
+ *
+ * `enGeste` : la vue change à chaque image — molette, glissement, pincement —
+ * et la carte vectorielle peut se contenter d'être recalée (`recaleCarteGL`).
+ * Sans lui, elle est redessinée là où la vue s'est posée.
+ */
+export function dessineFondCarte(enGeste = false){
   const hote = $("fondCarte");
   if (!hote) return;
   const cal = calageCourant(), fond = fondCourant();
@@ -597,12 +816,20 @@ export function dessineFondCarte(){
     racine.style.setProperty("--carte-force", String(force));
     if (credit) credit.textContent = fond.credit;
   }
+  /* Ce que le fond doit couvrir, en mètres : la vue, ou davantage quand le
+     plan s'incline et découvre le fond du hall. */
+  const r = cadrePlan();
+  const b = inclineFond(r);
+  const kx = view.w / (r.width || 1), ky = view.h / (r.height || 1);
+  const etendue = { x: view.x + b.x * kx, y: view.y + b.y * ky,
+                    w: b.w * kx, h: b.h * ky, mParPx: kx, mParPxY: ky,
+                    px: b.w, py: b.h };
   /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
      et se la voit poser ici, à chaque changement de vue. C'est le prix de
      n'être pas repris par le rendu de la carte graphique. */
   const cadre = $("fondTuiles");
   if (cadre) cadre.setAttribute("viewBox",
-    view.x + " " + view.y + " " + view.w + " " + view.h);
+    etendue.x + " " + etendue.y + " " + etendue.w + " " + etendue.h);
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
   if (fond.style || fond.objet){
@@ -610,12 +837,11 @@ export function dessineFondCarte(){
     if (hote.firstChild || hote.hasAttribute("transform")){
       hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
     }
-    poseCarteGL(cal, fond);
+    poseCarteGL(cal, fond, etendue, enGeste);
     return;
   }
   videCarteGL();
-  const r = cadrePlan();
-  const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
+  const t = tuilesDeLaVue(cal, fond, etendue, kx, zoneDuFond());
 
   /* Le groupe suit toujours : la position de l'ancre, la rotation vers le
      repère du plan, l'échelle est/sud. Ce n'est qu'une attribution, et c'est

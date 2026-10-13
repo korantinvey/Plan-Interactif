@@ -30,16 +30,23 @@
    cours, et la préparation des noms, qui tient aux règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
    placement des libellés à la main s'importe (`libelle-place.mjs`).
    ============================================================ */
-import { avive } from "./couleurs.mjs";
+import { avive, eclate } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
-  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera } from "./camera.mjs";
+import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
+import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
+import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
+import { DATA, P } from "./donnees.mjs";
+import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
+import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
+  HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
 
 /* Ce que le module demande au plan sans pouvoir l'importer, confié par la
    porte plus bas. Rien de cela ne sert avant — le dessin ne monte qu'une fois
@@ -84,11 +91,16 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan-ef08eeb5.min.js",
-  integrite: "sha384-NZseSRlLpdWIBLJtNNorQq/Mrx7IZjv90iDS/x8ERsfhSlfP6Z4D0ehGeDK1N46F",
+  src: "bibliotheques/deck.gl-9.3.11-plan-53efd7e8.min.js",
+  integrite: "sha384-RgImRMIyrd9hP0UaVP6ndqdVVIGUnZ7JVuk0LuYnVHqAYAOqHaGRzJPpuWdEDR1k",
 };
+/** Un repeint vient de finir : sa durée en millisecondes, et combien de
+ *  blocs il a refaits. Seul le relevé des performances l'écoute
+ *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
+ *  @type {import("./annonce.mjs").Annonce<[number, number]>} */
+export const REPEINT_FINI = creeAnnonce();
 export const GL = {
-  charge: false, actif: false, deck: null,
+  charge: false, actif: false, deck: null, geste: false,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
@@ -115,7 +127,9 @@ function chargeWebgl(){
      secours : bibliothèque introuvable, ou dessin trop long à venir. */
   const racine = document.documentElement;
   racine.classList.add("gl-attente");
-  const secours = () => racine.classList.remove("gl-attente");
+  /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
+     attendait l'affichage n'a plus à attendre. */
+  const secours = () => { racine.classList.remove("gl-attente"); planAffiche(); };
   setTimeout(secours, 4000);
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
@@ -131,7 +145,20 @@ function chargeWebgl(){
  */
 export function brancheWebgl(){
   chargeWebgl();
+  // ce que la première image a laissé de côté (`couchesFigurants`) y entre
+  quandAffiche(planifieWebgl);
 }
+
+/* L'image de la toile n'est pas gardée d'une trame à l'autre. La
+   bibliothèque la garde par défaut, ce qui oblige la carte graphique d'un
+   téléphone — qui peint par tuiles et jette d'ordinaire ce qu'elle a montré
+   — à la recopier à chaque image. Rien ne relit la toile : la désignation lit
+   sa propre image, hors de l'écran.
+
+   La densité, elle, reste celle de l'écran : plafonnée à deux sur un
+   téléphone, le plan y paraissait moins net sans que le zoom en devienne
+   assez fluide pour le justifier. */
+const TOILE = { deviceProps: { webgl: { preserveDrawingBuffer: false } } };
 
 /** Le dessin prend la main dès que la bibliothèque et le plan sont là, dans
  *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
@@ -150,8 +177,10 @@ export function monteWebgl(){
   GL.camera = enCamera();
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
+    ...TOILE,
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
+    layerFilter: filtreCouches,
     onError: e => console.warn("Rendu WebGL :", e && e.message),
     // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
     onLoad: poseToileWebgl,
@@ -161,6 +190,7 @@ export function monteWebgl(){
       GL.pret = true;
       document.documentElement.classList.add("gl-pret");
       document.documentElement.classList.remove("gl-attente");
+      planAffiche();
     },
   });
   GL.actif = true;
@@ -215,6 +245,23 @@ export function monteWebgl(){
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
       attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
+    /* Un logo prêt à se poser n'a rien à reconvertir : le prochain
+       assemblage le pose, et aucun bloc n'est sali. Le nom de son stand, lui,
+       doit apprendre à lui céder la place.
+
+       Une fois par image, quel que soit le nombre de logos prêts : les
+       vignettes d'un lot se décodent ensemble, et chacune refaisait tous les
+       noms du plan — treize fois en sept millisecondes sur Funexpo. */
+    let logosPrets = 0;
+    PANNEAU_PRET.suis(() => {
+      if (logosPrets || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+      logosPrets = requestAnimationFrame(() => {
+        logosPrets = 0;
+        if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+        _page.libellesWebgl();
+        planifieWebgl();
+      });
+    });
 
     brancheSurvolWebgl();
   }
@@ -343,7 +390,10 @@ const enCamera = () => cameraVoulue() && !_page.enEdition();
 /** @type {any} */
 let VueCamera = null;
 function vuesGl(){
-  if (!GL.camera) return new deck.OrthographicView({ id: "plan", flipY: true });
+  /* Un champ en hauteur, à plat aussi : les figurants s'y tiennent debout,
+     un peu couchés (`penchee`). Sans lui, la vue n'en gardait que quelques
+     millimètres au-dessus du sol, et ils en sortaient. */
+  if (!GL.camera) return new deck.OrthographicView({ id: "plan", flipY: true, near: -1e4, far: 1e4 });
   if (!VueCamera){
     class ViewportCamera extends deck.Viewport {
       constructor(/** @type {any} */ p){
@@ -386,9 +436,13 @@ function basculeCamera(){
 /** Appelée à chaque image d'un geste : la matrice, et rien d'autre. Les noms
  *  qui passent un seuil de lisibilité se montrent ou se taisent dans le
  *  shader, qui connaît le zoom — voir « FiltreZoom ». */
-export function vueWebgl(){
+export function vueWebgl(enGeste = false){
   basculeCamera();
-  GL.deck.setProps({ viewState: vueDeck() });
+  poseGeste(enGeste);
+  const v = vueDeck();
+  GL.deck.setProps({ viewState: v });
+  // les logos des stands ne couvrent que les abords de la vue (`logos-stands.mjs`)
+  if (logosARevoir(vueDuPlan(), v.zoom)) planifieWebgl();
 }
 
 /* ------------------------------------------------------------
@@ -489,16 +543,42 @@ function repeintWebgl(){
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
+  REPEINT_FINI.dis(GL.duree, n);
 }
 
-function assembleWebgl(){
+/** Ce que le bloc des noms a posé au dernier assemblage complet : les images
+ *  d'un mouvement le reprennent tel quel. */
+/** @type {{ figurants: any[], logos: any[], libelles: any[], phare: any[] } | null} */
+let posesSurLePlan = null;
+
+/**
+ * Toutes les couches du plan, dans l'ordre où elles se peignent.
+ *
+ * `enMouvement` : une image d'un mouvement — une tuile qui se soulève sous la
+ * souris. Ce qui ne dépend pas du mouvement — les figurants, les logos, les
+ * noms — se reprend du dernier assemblage complet : le refaire à chaque image
+ * coûtait les deux tiers d'une seconde par quinze secondes de survol en vue
+ * immersive (trace du 13 octobre 2026), et la bibliothèque, recevant des
+ * couches neuves, en recomptait les attributs.
+ */
+function assembleWebgl(enMouvement = false){
   const out = [];
+  /* Une seule fois, et non pour chacun des blocs : sur tout le document,
+     cette recherche a coûté plus d'une seconde en quinze de survol en vue
+     immersive (trace du 13 octobre 2026). */
+  const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
   for (const b of blocsDansLOrdre()){
-    if (b.id === "labels"){ out.push(...couchesLibellesWebgl().map(animeCouche), ...couchesPhareNoms()); continue; }
+    if (b.id === "labels"){
+      if (!enMouvement || !posesSurLePlan) posesSurLePlan = { figurants: couchesFigurants(),
+        logos: couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device),
+        libelles: couchesLibellesWebgl(), phare: couchesPhareNoms() };
+      const p = posesSurLePlan;
+      out.push(...p.figurants, ...p.logos.map(logosSurLesToits), ...p.libelles.map(animeCouche), ...p.phare);
+      continue;
+    }
     const couches = GL.blocs.get(b) || [];
     /* Une tuile soulevée passe devant le vide qui borde ses voisines — ce vide
        est le trait de leur contour — et donc après tout le bloc. */
-    const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
       out.push(animeCouche(c));
@@ -541,8 +621,8 @@ function constTexte(){
   class FiltreZoom extends deck.LayerExtension {
     getShaders(){
       return {
-        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n  float muet;\n} filtreZoom;\n",
-                    uniformTypes: { mode: "f32", muet: "f32" } }],
+        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n  float muet;\n  float etire;\n} filtreZoom;\n",
+                    uniformTypes: { mode: "f32", muet: "f32", etire: "f32" } }],
         inject: {
           "vs:#decl": "in vec3 instanceZoomFiltre;",
           "vs:DECKGL_FILTER_GL_POSITION":
@@ -550,6 +630,8 @@ function constTexte(){
             "bool garde = filtreZoom.mode > 1.5 ? z < instanceZoomFiltre.z : (filtreZoom.mode > 0.5 && z >= instanceZoomFiltre.z);\n" +
             "if (filtreZoom.muet > 0.5 && !bool(picking.isActive)) garde = true;\n" +
             "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || garde) position = vec4(0.0, 0.0, 2.0, 1.0);",
+          // un nom couché sur le toit s'étire en profondeur de ce que la vue de biais lui reprend
+          "vs:DECKGL_FILTER_SIZE": "size.y *= filtreZoom.etire;",
         },
       };
     }
@@ -557,7 +639,9 @@ function constTexte(){
       const am = this.getAttributeManager();
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
-    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0, muet: this.props.muetALEcran ? 1 : 0 } }); }
+    // pendant un geste, l'atlas des grands textes écrit aussi les petits (`filtreCouches`)
+    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: GL.geste && this.props.modeFiltre === 2 ? 0 : this.props.modeFiltre || 0,
+      muet: this.props.muetALEcran && !GL.geste ? 1 : 0, etire: this.props.etireAPlat || 1 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
@@ -605,7 +689,10 @@ function constTexte(){
   }
   TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
   TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
-  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0, muetALEcran: false };
+  /* Les deux drapeaux du texte sont des réglages de l'extension : la
+     bibliothèque les transmet ainsi aux lettres, que lit `filtreCouches`. */
+  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0,
+    muetALEcran: false, passeSousPixel: false, etireAPlat: 1 };
   /* Le contour d'une lettre, et le flou qu'il prenait au zoom.
 
      Un texte SDF ne garde pas la forme de ses lettres : il garde, pour chaque
@@ -787,30 +874,87 @@ function sousPixelOffert(){
   if (/Mac|iPhone|iPad|iPod/.test(navigator.platform || "")) return false;
   return !/Android|Mobi|iPhone|iPad/.test(navigator.userAgent || "");
 }
+/* Le texte ordinaire, muet à l'écran, est toujours là — et non plus pour la
+   seule désignation : pendant un geste, c'est lui qui parle, et les trois
+   passes se taisent (`filtreCouches`). */
 function couchesPetites(id, commun, K, sousPixel){
   const base = { ...commun, fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode };
   if (!sousPixel || !sousPixelOffert()) return [new deck.TextLayer({ ...base, id: id + "-petit" })];
   return [
-    ...(commun.pickable ? [new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true })] : []),
+    new deck.TextLayer({ ...base, id: id + "-petit", muetALEcran: true }),
     ...PASSES_SOUS_PIXEL.map(p => new deck.TextLayer({ ...base, id: id + "-petit" + p.canal,
-      pickable: false, sousPixel: [p.decalage, .6], parameters: { ...parametresTexte(), colorMask: p.masque } })),
+      pickable: false, passeSousPixel: true, sousPixel: [p.decalage, .6],
+      parameters: { ...parametresTexte(), colorMask: p.masque } })),
   ];
+}
+
+/**
+ * Ce que chaque image dessine vraiment.
+ *
+ * Une image de geste coûte à la carte graphique moins qu'à la bibliothèque :
+ * avant de dessiner une couche, celle-ci lui recompose tous ses réglages, et
+ * c'est le nombre de couches qui fait le prix, non le nombre de formes.
+ * Mesuré sur un vrai salon en vue immersive : cinquante et une couches, trois
+ * quarts du temps d'un zoom passés à les préparer, une image sur deux perdue.
+ *
+ * Or un petit texte lissé au sous-pixel en compte trois, une par canal de
+ * couleur — douze sur cinquante et une. Le lissage ne se voit que sur un
+ * texte immobile : pendant un geste, les trois passes se taisent, et la
+ * couche ordinaire, muette au repos, les remplace. Au repos, celle-ci ne
+ * sert plus qu'à la désignation.
+ *
+ * Restaient deux couches par groupe de noms, une par atlas — petit et grand
+ * —, et quatre de plus pour le liseré des petits : seize couches de texte sur
+ * trente-cinq, le plus gros poste d'une image de zoom après la réunion des
+ * jetons. Pendant un geste, l'atlas des grands textes écrit donc tous les
+ * noms, et celui des petits se tait, liseré compris — le grand trace le sien
+ * dans son champ de distance. Son défaut, des lettres plus grêles sous une
+ * douzaine de pixels, ne se voit pas sur un texte qui bouge ; au repos, chaque
+ * nom retrouve son atlas. La désignation, elle, garde les deux.
+ */
+function filtreCouches(/** @type {any} */ { layer, isPicking }){
+  const p = layer.props;
+  if (GL.geste && !isPicking && p.modeFiltre === 1) return false;
+  if (p.muetALEcran) return isPicking || GL.geste;
+  if (p.passeSousPixel) return !GL.geste;
+  return true;
+}
+
+/* Le geste fini sans que la vue soit posée — rare, mais un doigt peut se
+   perdre — ne doit pas laisser le texte sans son lissage. */
+let _finGeste = 0;
+/** Le geste commence, ou finit : le texte change de couches. */
+function poseGeste(/** @type {boolean} */ oui){
+  clearTimeout(_finGeste);
+  if (oui) _finGeste = setTimeout(() => poseGeste(false), 250);
+  if (GL.geste === oui) return;
+  GL.geste = oui;
+  // les logos prêts pendant le geste attendent sa fin (`logos-stands.mjs`)
+  geleLogos(oui);
+  // la vue posée ne bouge plus : rien ne redessinerait sans cela
+  if (!oui) GL.deck.redraw("fin du geste");
+  // le survol, suspendu pendant le geste, se retrouve sous la souris
+  if (!oui && _survolXY) demandeSurvolWebgl();
 }
 
 /* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
    immersive ; au sol, ils resteraient dedans, que les façades cachent. Celui
    d'une zone masquée reste au sol avec elle. */
-function positionTexte(){
+function positionTexte(couche = false){
   if (!GL.camera) return d => d.position;
   /* Les lignes d'un stand s'empilent en hauteur au-dessus de son centre : un
      nom dressé face à l'œil garde sa taille, quand l'écart que le plan à plat
      met entre le nom et le numéro se tassait avec l'inclinaison — sur trois
      lignes, le nom recouvrait son numéro. Monté, l'écart reste vertical à
      l'écran, quel que soit le cap. */
-  const pose = (d, h) => d.centre
-    ? [d.position[0], d.centre[1], h + .02 - d.ecart / SINUS_INCLINAISON]
-    : [d.position[0], d.position[1], h + .02];
+  /* Couché sur le toit, le nom reprend le placement du plan à plat, l'écart
+     entre ses lignes étiré comme les lettres (`ETIRE_A_PLAT`). */
+  const pose = (d, h) => !d.centre ? [d.position[0], d.position[1], h + .02]
+    : couche ? [d.position[0], d.centre[1] + d.ecart * ETIRE_A_PLAT, h + .02]
+    : [d.position[0], d.centre[1], h + .02 - d.ecart / SINUS_INCLINAISON];
   return d => {
+    // déjà posé — le texte d'un jeton, que sa matrice dresse
+    if (d.position.length > 2) return d.position;
     if (d.zHausse !== undefined) return pose(d, d.zHausse);
     const c = d.cls || "", zone = c.startsWith("zn");
     if (zone && /\bmasquee\b/.test(c)) return d.position;
@@ -888,17 +1032,31 @@ function nomsCaches(/** @type {any[]} */ liste){
    l'étiquette se lit toujours. */
 const parametresTexte = () => GL.camera ? { depthCompare: "always", depthWriteEnabled: false } : {};
 
+/* Les noms des stands peuvent aussi se coucher sur le toit, imprimés comme
+   les logos (`logos-stands.mjs`) : un essai de lecture, que l'exploitant
+   prend dans le volet « Apparence » ou le visiteur par « ?noms=plat ».
+   Couchée sur le sol incliné, une lettre se tasse en hauteur d'autant que le
+   hall fuit ; elle est donc étirée d'autant dans le shader, et reprend ses
+   proportions vue de biais — juste de face, comme pour les logos. */
+const ETIRE_A_PLAT = 1 / Math.sqrt(1 - SINUS_INCLINAISON * SINUS_INCLINAISON);
+const nomsAPlat = () => GL.camera && document.documentElement.classList.contains(CLASSE_NOMS_A_PLAT);
+
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
+  const couche = Boolean(extra.couche);
   const commun = {
+    /* Couchées, les lignes de la bibliothèque montent vers les y croissants,
+       qui sont l'avant du hall : le nom se lisait en miroir. L'étirement le
+       retourne du même coup. */
+    ...(couche ? { billboard: false, etireAPlat: -ETIRE_A_PLAT } : {}),
     data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
-    getText: d => d.text, getPosition: positionTexte(), getSize: d => d.taille, sizeUnits: "common",
+    getText: d => d.text, getPosition: positionTexte(couche), getSize: d => d.taille, sizeUnits: "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
     lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
     updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur),
-      getPosition: cleCamera() + GL.camera + JSON.stringify(boutsDuTrajet()) },
+      getPosition: cleCamera() + GL.camera + couche + JSON.stringify(boutsDuTrajet()) },
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
@@ -926,7 +1084,7 @@ function couchesTexte(id, items, famille, graisse, extra){
 /** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises,
-  decor: [] });
+  decor: [], jetons: new Map(), parent: null });
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
   // racine — celles d'une forme dessinée comme celles d'un emplacement repris
@@ -942,12 +1100,23 @@ function convertitBloc(racine, cle){
   const out = couchesDeBloc(acc, cle);
   let i = 0;
   for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
+  out.push(...couchesJetons(acc.jetons, cle));
   return out;
 }
 
 /* Ce que le cartouche met en avant se range à part : il bat, et seules ses
    couches changent d'une image à l'autre. */
 function accDe(el, acc){
+  // un repère de la vue immersive : un jeton, à part, que sa matrice dresse (`couchesJeton`)
+  const r = GL.camera && acc.jetons && el.closest(".repere[data-poi]");
+  if (r){
+    if (!acc.jetons.has(r)){
+      // le repère a pu bouger, changer de taille ou d'objet depuis la conversion d'avant
+      jetonsPoses.delete(r);
+      acc.jetons.set(r, { ...accVide(acc.prises), phares: null, jetons: null, parent: acc });
+    }
+    return acc.jetons.get(r);
+  }
   const ph = acc.phares && el.closest(".phare");
   if (!ph) return acc;
   if (!acc.phares.has(ph)) acc.phares.set(ph, accVide(acc.prises));
@@ -1028,6 +1197,10 @@ TRAJET_CHANGE.suis(() => {
   GL.massif = true;
   toutRepeindreWebgl();
 });
+/* Le cap tourne : les images dressées face à l'œil (`imageDressee`) se
+   retournent avec lui, et elles ne tiennent leur orientation que de la
+   conversion. */
+CAMERA_CHANGEE.suis(() => { if (GL.actif && GL.camera) toutRepeindreWebgl(); });
 
 /* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
    sol, il en partageait la profondeur : vue de biais, la carte graphique ne
@@ -1085,48 +1258,367 @@ const zoneMeublee = (/** @type {Element} */ g) =>
 /** @type {Record<string, number[]>} */
 const TONS_DECOR = {
   plateau: [250, 249, 244, 255], comptoir: [250, 249, 244, 255],
+  // le comptoir que l'exploitant tient (`outil-comptoir.mjs`), et sa poignée
+  "comptoir-choisi": [138, 176, 246, 255], tige: [60, 70, 84, 255], poignee: [37, 99, 235, 255],
   scene: [78, 90, 106, 255], ecran: [34, 42, 54, 255],
   plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
   marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
 };
 
-/* L'escalier, l'escalator ou l'ascenseur sous un repère (`decor.mjs`
-   `objetRepere`), et la hauteur où sa pastille se pose : tout ce qui la
-   dessine — aplat, pictogramme, liseré — y monte avec elle. Les autres
-   repères restent au sol. */
-function repereEnObjet(el){
-  if (!cameraEnJeu()) return null;
-  const r = el.closest(".repere[data-glyphe]");
-  const glyphe = r ? r.getAttribute("data-glyphe") || "" : "";
-  return OBJETS_REPERE.includes(glyphe) ? { r, glyphe } : null;
-}
-/* Ce qu'on sait de chaque repère monté pendant la conversion : son centre et
-   son objet. L'aplat de la pastille, son premier enfant, le pose ; le
-   pictogramme et le liseré, qui suivent, le relisent pour monter avec. */
+/* ------------------------------------------------------------
+   Les repères en jetons
+
+   Couchée sur le sol incliné, la pastille d'un repère s'écrasait en hauteur
+   d'autant que le hall fuyait, et son pictogramme ne se lisait plus. En vue
+   immersive, elle devient un jeton : une plaque épaisse, debout, face à l'œil
+   quel que soit le cap.
+
+   Il a tourné sur lui-même, un temps : le plan entier se redessinait alors à
+   chaque image, sans fin, et l'ouverture d'une fiche saccadait. Immobile, il
+   ne coûte plus rien entre deux gestes.
+
+   Le repère se convertit à plat, dans son propre accumulateur (`accDe`),
+   comme le SVG le dessine ; une matrice par couche le dresse et l'épaissit
+   (`matriceJeton`). Il se plante au sol, à l'endroit qu'il désigne, ou sur
+   l'escalier, l'escalator ou l'ascenseur qu'il surmonte (`decor.mjs`
+   `objetRepere`).
+   ------------------------------------------------------------ */
+
+/* L'épaisseur du jeton, rapportée à sa hauteur. */
+const EPAISSEUR_JETON = .16;
+/* Un jeton au sol garde les trois quarts de la pastille : à pleine taille, il
+   dominait les stands de deux fois leur hauteur. Celui d'un objet prend la
+   réduction que le décor lui a taillée. */
+const ECHELLE_JETON = .75;
+/* Un arrêt de transport se dresse comme les autres, mais sans épaisseur : une
+   plaque de quai est un panneau, et la tranche du jeton, vue d'au-dessus,
+   mangeait le haut de l'indice. Ce qu'on lit — le pictogramme, le numéro, les
+   barres du tram — reste face à l'œil, à la même taille. */
+const GLYPHES_MINCES = new Set(["transport", ...MODES_TRANSPORT.map(m => m.v)]);
+
+/* Ce qu'on sait de chaque repère pendant la conversion. L'aplat de la
+   pastille, son premier enfant, le pose : son centre, sa taille, où il se
+   plante, et la plaque elle-même. */
 /** @type {WeakMap<Element, any>} */
-let objetsPoses = new WeakMap();
-/** Ce qu'un point de la pastille devient une fois montée sur son objet, ou rien. */
-function monteeRepere(el, polygon, acc){
-  const o = repereEnObjet(el);
-  if (!o) return null;
-  if (o.r.firstElementChild === el && polygon && polygon[0]){
-    const xs = polygon[0].map(p => p[0]), ys = polygon[0].map(p => p[1]);
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const obj = objetRepere(o.glyphe, cx, cy, Math.max(...ys) - Math.min(...ys));
-    for (const p of obj.pieces) acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] });
-    objetsPoses.set(o.r, { cx, cy, obj });
+const jetonsPoses = new WeakMap();
+function poseJeton(el, polygon, couleur, acc){
+  const r = acc.parent && el.closest(".repere[data-poi]");
+  if (!r || r.firstElementChild !== el || !polygon || !polygon[0] || jetonsPoses.has(r)) return;
+  const xs = polygon[0].map(p => p[0]), ys = polygon[0].map(p => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const cote = Math.max(...ys) - Math.min(...ys);
+  const glyphe = r.getAttribute("data-glyphe") || "";
+  let ancre = [cx, cy], z = .02, E = ECHELLE_JETON;
+  if (OBJETS_REPERE.includes(glyphe)){
+    /* Le sens où il monte, et s'il est tenu par l'exploitant
+       (`outil-escalier.mjs`) : il bleuit alors et sort sa poignée. */
+    const enMain = r.hasAttribute("data-objet-choisi");
+    const obj = objetRepere(glyphe, cx, cy, cote, Number(r.getAttribute("data-sens")) || 0, enMain);
+    // l'objet reste au sol du bloc : seul le jeton se dresse
+    for (const p of obj.pieces) acc.parent.decor.push({ polygon: p.polygon, haut: p.haut,
+      couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
+    if (obj.pieces.length){ ancre = obj.ancre; z = obj.dessus; E = ECHELLE_PASTILLE; }
   }
-  const pose = objetsPoses.get(o.r);
-  if (!pose || !pose.obj.pieces.length) return null;
-  const { cx, cy, obj } = pose, E = ECHELLE_PASTILLE;
-  return (/** @type {number[]} */ p) => [obj.ancre[0] + (p[0] - cx) * E, obj.ancre[1] + (p[1] - cy) * E, obj.dessus];
+  const mince = GLYPHES_MINCES.has(glyphe);
+  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, mince, e: mince ? 0 : cote * EPAISSEUR_JETON,
+    polygon, couleur: opaque(couleur), el: r });
+}
+
+// des matrices 4 × 4 écrites par lignes, rendues par colonnes à la bibliothèque
+const mul4 = (/** @type {number[]} */ a, /** @type {number[]} */ b) => {
+  const o = [];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++){
+    let t = 0;
+    for (let k = 0; k < 4; k++) t += a[i * 4 + k] * b[k * 4 + j];
+    o.push(t);
+  }
+  return o;
+};
+const enColonnes = (/** @type {number[]} */ m) => [0, 1, 2, 3].flatMap(j => [0, 1, 2, 3].map(i => m[i * 4 + j]));
+const translation = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) =>
+  [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
+const homothetie = (/** @type {number} */ k) => [k, 0, 0, 0, 0, k, 0, 0, 0, 0, k, 0, 0, 0, 0, 1];
+const autourDuZ = (/** @type {number} */ a) =>
+  [Math.cos(a), -Math.sin(a), 0, 0, Math.sin(a), Math.cos(a), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+// la plaque se lève : sa face (vers +z) regarde l'œil, le haut du dessin monte
+const DEBOUT = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1];
+
+/**
+ * Ce qui mène une couche du jeton, dessinée à plat, à sa place : centrée,
+ * posée sur sa face, levée, tournée face à l'œil selon le cap, puis plantée.
+ */
+function matriceJeton(/** @type {any} */ j, /** @type {number} */ t){
+  const ph = GL.animePhare && j.el.classList.contains("phare") ? echellePhare(t) : 1;
+  const k = j.E * ph;
+  const pose = mul4(mul4(mul4(translation(j.ancre[0], j.ancre[1], j.z + j.demi * k),
+    autourDuZ(-capCamera())), DEBOUT), homothetie(k));
+  // la plaque d'épaisseur e, centrée ; le dessin juste devant sa face
+  const m = j.face === "plaque" ? mul4(pose, translation(-j.cx, -j.cy, -j.e / 2))
+    : mul4(pose, translation(-j.cx, -j.cy, j.e / 2 + j.e * .04));
+  return enColonnes(m);
+}
+
+/* Le corps du texte d'un jeton. La matrice ne réduit que son ancrage : les
+   lettres gardaient la taille de la pastille entière dans un jeton qui n'en
+   tient que les trois quarts, et vu de biais il se raccourcit encore en
+   hauteur quand elles, face à l'écran, ne se raccourcissent pas. Le numéro
+   débordait son rond et chevauchait les barres du tram. */
+function corpsDansLeJeton(/** @type {any} */ c, /** @type {any} */ j){
+  if (!j) return {};
+  const k = j.E, taille = c.props.getSize;
+  return { getSize: (/** @type {any} */ d, /** @type {any} */ i) => k * (typeof taille === "function" ? taille(d, i) : taille),
+    updateTriggers: { ...c.props.updateTriggers, getSize: k } };
+}
+
+/** Les couches d'un jeton : la plaque, puis le dessin sur sa face. */
+function couchesJeton(/** @type {Element} */ r, /** @type {any} */ sous, /** @type {string} */ cle){
+  const j = jetonsPoses.get(r);
+  const dessin = couchesDeBloc(sous, cle)
+    /* Tourné vers l'écran, comme les noms du plan. Couché sur la face, il ne
+       l'était qu'en apparence : la bibliothèque ne passe que son point
+       d'ancrage par la matrice du jeton, et trace les lettres à plat sur le
+       sol, où le SVG les retourne — le numéro d'une ligne se lisait écrasé et
+       la tête en bas, « 13 » en miroir. Et caché par ce qui se tient devant
+       lui — les noms du plan se peignent par-dessus le relief, et celui d'un
+       jeton passait à travers les stands. */
+    .map(c => c instanceof deck.TextLayer ? c.clone({ billboard: true, ...corpsDansLeJeton(c, j),
+      parameters: { ...c.props.parameters, depthCompare: "less-equal", depthWriteEnabled: false } }) : c);
+  if (!j) return dessin;
+  const face = dessin.map(c => c.clone({ jeton: { ...j, face: "avant" } }));
+  // l'arrêt n'a pas de plaque : son dessin porte déjà le fond de la pastille
+  if (j.mince) return face;
+  const plaque = new deck.SolidPolygonLayer({ id: cle + "-plaque", data: [j], pickable: true,
+    extruded: true, getPolygon: d => d.polygon[0], getFillColor: d => d.couleur, getElevation: d => d.e,
+    material: MATIERE, el: r });
+  return [plaque.clone({ jeton: { ...j, face: "plaque" } }), ...face];
+}
+
+/* ------------------------------------------------------------
+   Les jetons d'un calque, peints ensemble
+
+   Un jeton par couche — sa plaque, ses aplats, ses textes, chacun sous sa
+   matrice — coûtait à la bibliothèque autant qu'un calque entier : sur un vrai
+   salon en vue immersive (fep27, téléphone émulé), quatre jetons faisaient
+   dix-sept couches et quarante pour cent du temps d'une image de zoom. Le
+   prix tient au nombre de couches, non au nombre de formes.
+
+   Or tous les jetons se dressent de la même façon : tournés face à l'œil
+   selon le cap, debout. Ils ne diffèrent que par l'endroit où ils se plantent
+   et leur taille. Leurs coordonnées se calculent donc ici, dans le repère
+   tourné, et une seule matrice — la rotation commune — les dresse tous :
+
+     M p = T(a) R k (p − c + d) = R (Rᵀ a + k (p − c + d))
+
+   La bibliothèque n'extrude un polygone qu'à partir de sa propre hauteur :
+   dans ce repère, c'est la face du jeton, et l'épaisseur de la plaque monte
+   vers l'œil. Le cap ne change qu'avec la caméra, qui reconvertit tout
+   (`CAMERA_CHANGEE`).
+
+   Restent à part, un par un, le jeton qui bat (sa taille change à chaque
+   image), celui qui porte une image et celui dont la pastille n'a pas été
+   relevée.
+   ------------------------------------------------------------ */
+/** Les jetons d'un calque : ceux qui se réunissent, et les autres. */
+function couchesJetons(/** @type {Map<Element, any>} */ jetons, /** @type {string} */ cle){
+  const out = [], reunis = [];
+  let i = 0;
+  for (const [r, sous] of jetons){
+    const j = jetonsPoses.get(r);
+    if (j && !r.classList.contains("phare") && !sous.images.length) reunis.push([j, sous]);
+    else out.push(...couchesJeton(r, sous, cle + "-jeton-" + (i++)));
+  }
+  if (!reunis.length) return out;
+  const R = mul4(autourDuZ(-capCamera()), DEBOUT);
+  // la rotation inverse, la transposée : ses lignes sont les colonnes de R
+  const versR = (/** @type {number[]} */ a) => [0, 1, 2].map(l => R[l] * a[0] + R[4 + l] * a[1] + R[8 + l] * a[2]);
+  const acc = { ...accVide(reunis[0][1].prises), phares: null, jetons: null };
+  const plaques = [];
+  for (const [j, sous] of reunis){
+    const k = j.E, o = versR([j.ancre[0], j.ancre[1], j.z + j.demi * k]);
+    const ici = (/** @type {number} */ d) => (/** @type {number[]} */ p) =>
+      [o[0] + k * (p[0] - j.cx), o[1] + k * (p[1] - j.cy), o[2] + k * (d + (p[2] || 0))];
+    // le dessin juste devant la face, la plaque centrée sur elle
+    const face = ici(j.e / 2 + j.e * .04);
+    for (const d of sous.pleins) acc.pleins.push({ ...d, polygon: d.polygon.map((/** @type {number[][]} */ a) => a.map(face)),
+      ...(d.haut ? { haut: d.haut * k } : {}) });
+    for (const sorte of ["traitsPx", "traitsM", "traitsZ"])
+      for (const d of sous[sorte]) acc[sorte].push({ ...d, path: d.path.map(face) });
+    for (const [c, g] of sous.textes){
+      if (!acc.textes.has(c)) acc.textes.set(c, { ...g, items: [] });
+      // la taille suit celle du jeton, que la matrice commune ne porte pas
+      acc.textes.get(c).items.push(...g.items.map((/** @type {any} */ d) => ({ ...d, position: face(d.position), taille: d.taille * k })));
+    }
+    // l'arrêt n'a pas de plaque : son dessin porte déjà le fond de la pastille
+    if (!j.mince) plaques.push({ polygon: j.polygon[0].map(ici(-j.e / 2)), couleur: j.couleur, e: j.e * k, el: j.el });
+  }
+  const modelMatrix = enColonnes(R);
+  if (plaques.length) out.push(new deck.SolidPolygonLayer({ id: cle + "-jetons-plaques", data: plaques, pickable: true,
+    extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.e,
+    material: MATIERE, modelMatrix }));
+  // les textes tournés vers l'écran et cachés par ce qui se tient devant, comme ceux d'un jeton seul
+  for (const c of couchesDeBloc(acc, cle + "-jetons")) out.push(c instanceof deck.TextLayer
+    ? c.clone({ billboard: true, modelMatrix, parameters: { ...c.props.parameters, depthCompare: "less-equal", depthWriteEnabled: false } })
+    : c.clone({ modelMatrix }));
+  return out;
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
   if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
-  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0]))
+  const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
+  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
+    g.hasAttribute("data-comptoir-choisi")))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
+}
+
+/* ------------------------------------------------------------
+   Les figurants
+
+   Du monde dans les allées (`figurants.mjs`), semé sur la grille de marche
+   de l'itinéraire, quand l'exploitant le veut (`CLASSE_FIGURANTS`). Une couche à part, posée juste avant
+   les noms : ceux-ci passent devant, les stands cachent ceux qui sont
+   derrière eux. Les figurants ne se désignent pas — un appui passe au
+   travers, jusqu'à l'allée ou au stand. La grille se calcule une fois par
+   pavillon, et les couches gardent leurs données tant qu'elle ne change
+   pas : la carte graphique ne les reçoit qu'une fois.
+
+   Des maillages répétés (`SimpleMeshLayer`) et non des volumes montés à la
+   main : une silhouette — deux jambes, des épaules, une tête ronde — que des
+   prismes empilés ne savaient pas faire, et qui ne coûte qu'une position par
+   figurant. L'ombre, un voile, n'écrit pas la profondeur : posée à quatre
+   millimètres du sol, elle cacherait sinon le trait d'un itinéraire peint
+   après elle.
+
+   À plat, la vue regarde d'aplomb, et une silhouette debout n'y montrait
+   que le dessus de sa tête — une tache, qu'on prenait pour une salissure du
+   plan. Chacun s'y couche donc vers le haut de l'écran (`BIAIS_A_PLAT`),
+   comme vu depuis le bas du plan : on entrevoit le corps, les bras, la
+   tête, et l'on reconnaît une personne. Les pieds restent à leur place
+   dans l'allée. La vue à plat se donne pour cela un peu de profondeur
+   au-dessus du sol (`vuesGl`) : sans elle, tout ce qui dépassait de
+   quelques millimètres sortait du champ. Pas en édition : l'exploitant qui déplace
+   un stand n'a que faire d'une foule qui se resème à chaque geste.
+   ------------------------------------------------------------ */
+/**
+ * Le bâtiment, pour ne semer personne dehors : le contour du hall relevé au
+ * calage de la carte (`environs.mjs` `contourDuHall`, relu ici sur le
+ * pavillon pour ne pas importer le fond de carte), sinon l'enveloppe des
+ * stands et des zones — celle-là même où l'itinéraire marche quand rien
+ * d'autre n'est dessiné.
+ */
+function dansLeHall(/** @type {any} */ p){
+  const calage = p.calage !== undefined ? p.calage : DATA.calage;
+  const pts = calage && calage.halls ? calage.halls[p.id] : null;
+  let trace = enveloppeDuSalon(p);
+  if (pts && pts.length >= 3){
+    trace = new Path2D();
+    pts.forEach((/** @type {number[]} */ q, /** @type {number} */ i) => i ? trace.lineTo(q[0], q[1]) : trace.moveTo(q[0], q[1]));
+    trace.closePath();
+  }
+  const ctx = document.createElement("canvas").getContext("2d");
+  return ctx ? (/** @type {number} */ x, /** @type {number} */ y) => ctx.isPointInPath(trace, x, y) : null;
+}
+
+/* La teinte de chaque partie d'un figurant, choisie dans le shader.
+
+   Les parties d'une allure ne font qu'un maillage (`maillageReuni`), dont
+   chaque sommet dit sa partie ; chaque figurant porte ses quatre choix —
+   tenue, peau, cheveux, chaussures — et le shader lit la couleur dans les
+   palettes, écrites en dur dans son source. La lumière s'applique ensuite,
+   dans le fragment, comme pour une couleur ordinaire. */
+/** @type {any} */
+let _teinteFigurants = null;
+function teinteDesFigurants(){
+  if (_teinteFigurants) return _teinteFigurants;
+  const palette = (/** @type {string} */ nom, /** @type {number[][]} */ l) =>
+    "const vec3 " + nom + "[" + l.length + "] = vec3[" + l.length + "](" +
+    l.map(c => "vec3(" + c.slice(0, 3).map(v => (v / 255).toFixed(4)).join(", ") + ")").join(", ") + ");\n";
+  const decl = "in vec4 instanceFigurant;\n" +
+    palette("FIG_BAS", TENUES.map(t => t.bas)) + palette("FIG_CHAUSSURES", CHAUSSURES) +
+    palette("FIG_HAUT", TENUES.map(t => t.haut)) + palette("FIG_PEAU", TEINTS) + palette("FIG_CHEVEUX", CHEVEUX);
+  class TeinteDesFigurants extends deck.LayerExtension {
+    getShaders(){
+      return { inject: {
+        "vs:#decl": decl,
+        // l'ordre de `PARTIES` : bas, chaussures, haut, peau, cheveux
+        "vs:#main-end":
+          "int partie = int(colors.r + 0.5);\n" +
+          "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]\n" +
+          "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]\n" +
+          "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]\n" +
+          "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]\n" +
+          "  : FIG_CHEVEUX[int(instanceFigurant.z)];\n" +
+          "vColor = vec4(teinte, vColor.a);",
+      } };
+    }
+    initializeState(){
+      const am = this.getAttributeManager();
+      if (am) am.addInstanced({ instanceFigurant: { size: 4, accessor: "getFigurant" } });
+    }
+  }
+  TeinteDesFigurants.extensionName = "TeinteDesFigurants";
+  TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] } };
+  return (_teinteFigurants = new TeinteDesFigurants());
+}
+
+/* De combien un figurant se couche vers le haut de l'écran, à plat : assez
+   pour qu'on voie son corps, pas au point qu'il paraisse tomber à la
+   renverse. */
+const BIAIS_A_PLAT = 40 * Math.PI / 180;
+
+/**
+ * La place d'un figurant à plat, colonne par colonne : tourné vers son cap,
+ * à sa taille, puis couché d'un bloc vers le haut de l'écran — les y
+ * décroissants du plan —, pour tous du même côté, comme vus d'un même œil.
+ * @param {any} f
+ */
+function penchee(f){
+  const c = f.cap * Math.PI / 180, cc = Math.cos(c), sc = Math.sin(c);
+  const cb = Math.cos(BIAIS_A_PLAT), sb = Math.sin(BIAIS_A_PLAT), t = f.taille;
+  return [cc, sc * cb, sc * sb, 0,
+    -sc, cc * cb, cc * sb, 0,
+    0, -t * sb, t * cb, 0,
+    0, 0, 0, 1];
+}
+
+/** @type {{ grille: any, plat: boolean, couches: any[], maillages: any }} */
+const FIGURANTS = { grille: null, plat: false, couches: [], maillages: null };
+function couchesFigurants(){
+  /* Décor : leurs programmes coûtent un tiers de seconde à compiler sur la
+     première image, qu'ils retardaient sans rien apprendre au visiteur. Ils
+     entrent à l'image d'après (`brancheWebgl`). */
+  if (!estAffiche()) return [];
+  if (!document.documentElement.classList.contains(CLASSE_FIGURANTS)) return [];
+  if (_page.enEdition() || !DATA || !P()) return [];
+  if (GL.camera && !cameraEnJeu()) return [];
+  const p = P(), g = grille(p, false), plat = !GL.camera;
+  if (FIGURANTS.grille !== g || FIGURANTS.plat !== plat){
+    FIGURANTS.grille = g;
+    FIGURANTS.plat = plat;
+    if (!FIGURANTS.maillages){
+      const M = maillagesFigurant();
+      FIGURANTS.maillages = { ombre: M.ombre, modeles: M.modeles.map(maillageReuni) };
+    }
+    const M = FIGURANTS.maillages;
+    const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id), dansLeHall(p));
+    const commun = { data, pickable: false, material: MATIERE,
+      getPosition: (/** @type {any} */ f) => [f.x, f.y, 0],
+      getOrientation: (/** @type {any} */ f) => [0, f.cap, 0],
+      getScale: (/** @type {any} */ f) => [1, 1, f.taille],
+      ...(plat ? { getTransformMatrix: penchee } : {}) };
+    FIGURANTS.couches = [
+      new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
+        getColor: OMBRE, getScale: [1, 1, 1], getTransformMatrix: [], parameters: { depthWriteEnabled: false } }),
+      // une couche par allure : chacune ne répète que les siens, et les teint toutes parties
+      ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
+        const siens = data.filter(f => f.modele === k);
+        return siens.length ? [new deck.SimpleMeshLayer({ ...commun, data: siens, id: "figurants-" + k,
+          mesh: mod, getColor: [255, 255, 255], extensions: [teinteDesFigurants()],
+          getFigurant: (/** @type {any} */ f) => [f.tenue, f.peau, f.cheveux, f.chaussures] })] : [];
+      }),
+    ];
+  }
+  return FIGURANTS.couches;
 }
 
 /* Un volume ne se peint pas en transparence : on verrait ses façades du fond
@@ -1134,13 +1626,17 @@ function meubleZone(el, polygon, couleur, acc){
    Sa teinte translucide — une zone l'est toujours, un stand que la recherche
    éteint aussi — est donc mêlée au sol qu'elle laissait voir, et le volume
    prend le ton que l'aplat avait. */
-/* La part de noir qui fonce le volume choisi. Éclairci, il pâlissait vers le
-   blanc du sol et se lisait moins bien que ses voisins ; foncé, il tranche
-   sur eux comme sur le hall. */
-const SOMBRE_CHOIX = .28;
-/** Une couleur mêlée de noir, à cette part. */
-const fonce = (/** @type {number[]} */ c, /** @type {number} */ part) => part
-  ? [0, 1, 2].map(i => Math.round(c[i] * (1 - part))).concat(c[3] === undefined ? 255 : c[3]) : c;
+/* Le volume choisi prend sa propre teinte, en éclatant : saturée, à
+   mi-clarté. Éclairci, il pâlissait vers le blanc du sol ; foncé, il
+   tranchait sur ses voisins mais se lisait comme éteint plutôt que choisi.
+   Un stand gris n'a pas de teinte à faire éclater : il prend celle de
+   l'accent. */
+function eclatant(/** @type {number[]} */ c){
+  const e = eclate(c);
+  if (e) return e;
+  const accent = couleurGl(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim(), 1);
+  return (accent && eclate(accent)) || c;
+}
 function opaque(couleur){
   const a = (couleur[3] === undefined ? 255 : couleur[3]) / 255;
   if (a >= 1) return couleur;
@@ -1155,16 +1651,17 @@ function formeGl(el, cs, m, op, traces, acc){
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
     const prise = el.closest(PRISES), haut = hauteurVolume(el, anneaux);
-    /* Le volume choisi fonce : monté devant un stand de même couleur, il s'en
-       détache au lieu de s'y confondre. */
+    /* Le volume choisi s'allume : monté devant un stand de même couleur, il
+       s'en détache au lieu de s'y confondre. */
     const choisi = haut && el.parentNode.classList.contains("sel");
-    const base = haut ? opaque(plein) : plein, couleur = choisi ? fonce(base, SOMBRE_CHOIX) : base;
+    const base = haut ? opaque(plein) : plein, couleur = choisi ? eclatant(base) : base;
     const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
     if (choisi && el.parentNode.classList.contains("stand"))
       CHOISI = { id: el.parentNode.getAttribute("data-id") || "", anneaux, haut };
     const sol = auDessusDuSol(el);
     for (const polygon of avecTrous(anneaux)){
-      const monte = monteeRepere(el, polygon, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
+      poseJeton(el, polygon, couleur, acc);
+      const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
       acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse });
       if (haut) meubleZone(el, polygon, couleur, acc);
     }
@@ -1193,7 +1690,7 @@ function formeGl(el, cs, m, op, traces, acc){
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
     const defile = el.classList.contains("iSens");
     const sol = auDessusDuSol(el);
-    const monte = monteeRepere(el, null, acc) || (sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null);
+    const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
     for (const t of traces){
       if (t.pts.length < 2) continue;
       const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
@@ -1244,7 +1741,8 @@ function texteGl(el, cs, m, op, acc){
   const cle = famille + "|" + graisse;
   if (!acc.textes.has(cle)) acc.textes.set(cle, { famille, graisse, items: [] });
   acc.textes.get(cle).items.push({
-    text: texte, position: pos, taille: taille * echelleM(m), angle: -angle,
+    // dans un jeton, au ras de sa face : la hauteur de la position le dit à `positionTexte`
+    text: texte, position: acc.parent ? [pos[0], pos[1], 0] : pos, taille: taille * echelleM(m), angle: -angle,
     ancre: cs.textAnchor === "middle" ? "middle" : cs.textAnchor === "end" ? "end" : "start",
     couleur: coul, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]"),
   });
@@ -1273,8 +1771,44 @@ function imageGl(el, m, op, acc){
     x += (w - w2) / 2; y += (h - h2) / 2; w = w2; h = h2;
   }
   const a = appM(m, [x, y]), b = appM(m, [x + w, y + h]);
-  acc.images.push({ href, bornes: [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])],
+  const bornes = [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])];
+  acc.images.push({ href, bornes: GL.camera ? imageDressee(bornes, socleImage(el)) : bornes,
     op, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]") });
+}
+
+/* ------------------------------------------------------------
+   Les images debout
+
+   Couchée sur le sol incliné, une image — le logo qu'un exploitant pose
+   sur un stand — s'écrasait en hauteur d'autant que le hall fuyait, et ne
+   se lisait plus. En vue immersive, elle se dresse donc face à l'œil, comme
+   les noms : à angle droit de l'axe de la vue, quel que soit le cap, à sa
+   taille sur le plan et plantée par le milieu de son bord bas au centre de
+   l'endroit qu'elle couvrait.
+   ------------------------------------------------------------ */
+
+/** Les quatre coins d'une image dressée — bas gauche, haut gauche, haut
+ *  droit, bas droit, l'ordre de la bibliothèque —, depuis ses bornes à plat
+ *  `[gauche, bas, droite, haut]` et la hauteur `z` où elle se plante. */
+function imageDressee(/** @type {number[]} */ b, /** @type {number} */ z){
+  const cap = capCamera(), cc = Math.cos(cap), sc = Math.sin(cap);
+  const st = SINUS_INCLINAISON, ct = Math.sqrt(1 - st * st);
+  const w = b[2] - b[0], h = b[1] - b[3], cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  /* Les deux axes de l'écran, en mètres du monde (`versEcran` à l'envers) :
+     la droite reste au sol, le haut se penche en arrière de l'inclinaison. */
+  const droite = [cc, -sc, 0], haut = [-sc * ct, -cc * ct, st];
+  const pt = (/** @type {number} */ u, /** @type {number} */ v) =>
+    [cx + droite[0] * u + haut[0] * v, cy + droite[1] * u + haut[1] * v, z + haut[2] * v];
+  return [pt(-w / 2, 0), pt(-w / 2, h), pt(w / 2, h), pt(w / 2, 0)];
+}
+
+/** Où une image se plante : sur le dessus du stand qu'elle désigne — au sol,
+ *  ses façades la couperaient —, au sol sinon. */
+function socleImage(/** @type {Element} */ el){
+  const lie = el.closest("[data-id]");
+  if (!lie) return 0;
+  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(lie.getAttribute("data-id") || "") + '"]');
+  return g && g.firstElementChild ? hauteurVolume(g.firstElementChild) + .02 : 0;
 }
 
 /* Une forme qui ne désigne rien laisse passer le clic, comme en SVG où les
@@ -1352,6 +1886,39 @@ function anticipeHausses(notes){
     if (h) detacheVolume(g, h);
   }
 }
+/**
+ * Le mouvement part à l'appui, sans attendre le relâché.
+ *
+ * Un clic ne choisit qu'au relâché — on ne sait qu'alors si la main voulait
+ * choisir ou glisser —, et la montée attendait d'autant : le temps d'un
+ * clic, un dixième de seconde, se sentait comme un retard. Le stand appuyé
+ * se met donc à monter tout de suite, vers la hauteur d'un stand choisi.
+ * Le choix, au relâché, retrouve ce mouvement et le poursuit ; un glissement,
+ * ou un relâché qui ne le choisit pas, le fait redescendre (`rendLAppui`).
+ */
+/** @type {Element | null} */
+let _monteALAppui = null;
+export function monteALAppui(/** @type {Element | null} */ g){
+  if (!GL.actif || !GL.camera || !g || !g.classList || g.classList.contains("sel")) return;
+  if (!g.classList.contains("stand") && !g.classList.contains("zone")) return;
+  const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+  // un emplacement libre, ou un stand abaissé sous un trajet, ne monte pas au choix
+  if (!haut || haut === HAUTEUR_LIBRE || haut === HAUTEUR_ABAISSEE) return;
+  const h = noteHauteur(g, haut * HAUSSE_CHOIX);
+  if (!h) return;
+  _monteALAppui = g;
+  detacheVolume(g, h);
+}
+/** L'appui n'a pas choisi son stand : il reprend sa hauteur. */
+export function rendLAppui(){
+  const g = _monteALAppui;
+  _monteALAppui = null;
+  if (!g || !GL.actif || g.classList.contains("sel")) return;
+  const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+  const h = noteHauteur(g, haut);
+  if (h) detacheVolume(g, h);
+}
+
 /** Le volume quitte les couches peintes de son bloc pour une couche de mouvement. */
 function detacheVolume(g, h){
   const b = blocDe(g), couches = b && GL.blocs.get(b);
@@ -1365,17 +1932,26 @@ function detacheVolume(g, h){
     if (reste.length) out.push(c.clone({ data: reste }));
     // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
     if (c.props.contour) continue;
-    // il fonce au clic, et reprend sa couleur dès qu'on le quitte
+    // il s'allume au clic, et reprend sa couleur dès qu'on le quitte
     const choisi = g.classList.contains("sel");
     const id = c.id.replace(/-tot$/, "") + "-tot";
     const data = siens.map(d => ({ ...d, haut: h.vers, hausse: h,
-      couleur: choisi ? fonce(d.base || d.couleur, SOMBRE_CHOIX) : d.base || d.couleur }));
+      couleur: choisi ? eclatant(d.base || d.couleur) : d.base || d.couleur }));
     out.push(c.clone({ id, data, hausse: h, elevationScale: echelleHausse(h, performance.now()) }),
       coucheContours(id, data, { hausseContour: h }));
   }
   GL.blocs.set(b, out);
   GL.deck.setProps({ layers: assembleWebgl() });
   majAnimationWebgl();
+}
+
+/** La hauteur d'un tracé de stand à cet instant : en mouvement, où il en
+ *  est ; au repos, la sienne. Le logo posé sur son toit (`logos-stands.mjs`)
+ *  la suit image par image — l'assemblage se refait à chacune tant qu'un
+ *  volume bouge —, au lieu de sauter d'emblée à la hauteur d'arrivée. */
+function hauteurEnCours(/** @type {Element} */ el){
+  const h = el.parentNode && hausses.get(/** @type {Element} */ (el.parentNode));
+  return h ? hauteurHausse(h, instant()) : hauteurVolume(el);
 }
 
 /** La hauteur d'un volume en mouvement, à cet instant. */
@@ -1408,11 +1984,21 @@ const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] 
 const contourDe = (/** @type {any} */ d, /** @type {number} */ haut) =>
   ({ path: d.polygon[0].map((/** @type {number[]} */ p) => [p[0], p[1], haut + .02]).concat([[d.polygon[0][0][0], d.polygon[0][0][1], haut + .02]]),
      couleur: arete(d.couleur), el: d.el });
-/** La couche des contours d'une couche de volumes. */
+/** Le contour d'un volume en mouvement, posé à l'arrivée, écrasé à la hauteur où il en est. */
+const ecraseContour = (/** @type {{ de: number, vers: number, t0: number }} */ h) =>
+  [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, echelleHausse(h, instant()), 0, 0, 0, 0, 1];
+/** La couche des contours d'une couche de volumes.
+ *
+ *  Un contour en mouvement naît déjà écrasé. Seule l'animation (`animeCouche`)
+ *  le tenait à jour, et la teinte du survol ne passe pas par elle quand le
+ *  plan se réassemble — au clic, à l'ouverture de la fiche : le temps d'une
+ *  image, le contour du dessus paraissait à la hauteur d'arrivée, avant que
+ *  le stand ne monte. */
 const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) =>
   new deck.PathLayer({ id: id + "-contour", data: data.map(d => contourDe(d, d.haut)), pickable: false,
     getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
-    getWidth: 1, widthUnits: "pixels", contour: true, ...extra });
+    getWidth: 1, widthUnits: "pixels", contour: true,
+    ...(extra.hausseContour ? { modelMatrix: ecraseContour(extra.hausseContour) } : {}), ...extra });
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
@@ -1421,13 +2007,24 @@ const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /**
    cinquièmes. Plus sombre, tout le plan tournait au terne. */
 const MATIERE = { ambient: .8, diffuse: .42, shininess: 4, specularColor: [12, 12, 12] };
 
+/* Ce qui est couché à plat — aplat, trait, image — se peint en vue immersive
+   dans l'ordre du dessin, sans écrire la profondeur. Une pastille et son
+   pictogramme, un cartouche et son logo, sont à la même hauteur ; vus de
+   biais, la carte graphique les départageait par une profondeur qui diffère
+   d'un rien d'un triangle à l'autre, et l'un perçait l'autre en dents de
+   scie : le pictogramme ne se lisait plus. Les volumes, peints avant eux,
+   gardent la leur : un stand devant un repère le cache toujours. */
+const aPlat = () => GL.camera ? { parameters: { depthCompare: "less-equal", depthWriteEnabled: false } } : {};
+
 function couchesDeBloc(acc, cle){
-  const L = deck, out = [];
+  const L = deck, out = [], plat = aPlat();
   const pleins = partage(acc.pleins, acc.prises);
+  // les volumes d'abord : ce qui est à plat se mesure à leur profondeur
+  const couches = [];
   pleins.forEach((liste, k) => {
     const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut && !d.hausse);
-    if (plats.length) out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
-      getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
+    if (plats.length) couches.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat }));
     /* Les stands de la vue immersive : la même couleur, montée en volume. La
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
     if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
@@ -1443,6 +2040,7 @@ function couchesDeBloc(acc, cle){
   if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
     extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
     material: MATIERE }));
+  out.push(...couches);
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
      relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
@@ -1484,7 +2082,7 @@ function couchesDeBloc(acc, cle){
            derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
            par-dessus, il se lit de bout en bout, comme une signalétique au
            sol. */
-        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : {}),
+        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
         jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
         extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
@@ -1508,13 +2106,13 @@ function couchesDeBloc(acc, cle){
         getPath: d => d.path, getColor: d => d.couleur, getWidth: ep / TRAIT_PLEIN, widthUnits: "common",
         widthMinPixels: ep * TRAIT_PLANCHER, widthMaxPixels: ep,
         jointRounded: true, capRounded: false, extensions: constTexte().traits,
-        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2 }));
+        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2, ...plat }));
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
     { pickable: g.items.some(d => d.el || (acc.prises && d.prise)) }));
   acc.images.forEach((d, k) => out.push(new L.BitmapLayer({ id: cle + "-image-" + k, image: d.href,
-    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el || (acc.prises && d.prise)), el: d.el, prise: d.prise })));
+    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el || (acc.prises && d.prise)), el: d.el, prise: d.prise, ...plat })));
   return out;
 }
 
@@ -1610,8 +2208,11 @@ function groupesNoms(cle, liste){
 }
 function couchesNoms(prefixe, groupes){
   let i = 0;
+  const couche = nomsAPlat();
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
     g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp,
+      // seuls les noms écrits sur un stand se couchent : celui d'une zone flotte au-dessus de son mobilier
+      couche: couche && g.sp,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }
@@ -1695,18 +2296,39 @@ const stage = () => svg.parentNode;
 const FOCALISABLE = ".stand, .zone, .dcal .forme.sdes";
 let _survolXY = null, _survolImage = 0;
 
+/* La désignation sous la souris redessine le plan pour la carte graphique et
+   en relit un pixel : une fois par image tant que la souris bouge, elle a
+   pris 1,3 s sur quinze secondes de survol en vue immersive (trace du
+   13 octobre 2026). Une fois par dixième de seconde suffit à l'œil, et la
+   dernière position est toujours servie. */
+const SURVOL_ESPACE = 100;
+let _survolDernier = 0;
+function demandeSurvolWebgl(){
+  if (_survolImage) return;
+  const reste = _survolDernier + SURVOL_ESPACE - performance.now();
+  if (reste <= 0){ _survolImage = requestAnimationFrame(survoleWebgl); return; }
+  _survolImage = setTimeout(() => { _survolImage = requestAnimationFrame(survoleWebgl); }, reste);
+}
+function survoleWebgl(){
+  _survolImage = 0;
+  _survolDernier = performance.now();
+  /* Pendant un geste, la désignation redessinait tout le plan pour la carte
+     graphique à chaque image — deux cents millisecondes sur un zoom à la
+     molette de Funexpo — pour un survol que la vue déplaçait aussitôt. Elle
+     attend la fin du geste (`poseGeste`), qui la redemande : le stand sous la
+     souris immobile est alors le bon, ce qu'il n'était pas après un zoom. */
+  if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
+  const o = objetSous(_survolXY[0], _survolXY[1], _page.enEdition() ? 3 : 0);
+  const el = o && o.el;
+  poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
+  poseCurseurWebgl(o);
+}
+
 function brancheSurvolWebgl(){
   svg.addEventListener("pointermove", e => {
     if (e.pointerType !== "mouse" || e.buttons || _page.drag() || _page.pince()){ poseSurvolWebgl(null); return; }
     _survolXY = [e.clientX, e.clientY];
-    if (!_survolImage) _survolImage = requestAnimationFrame(() => {
-      _survolImage = 0;
-      if (!_survolXY || !GL.actif) return;
-      const o = objetSous(_survolXY[0], _survolXY[1], _page.enEdition() ? 3 : 0);
-      const el = o && o.el;
-      poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
-      poseCurseurWebgl(o);
-    });
+    demandeSurvolWebgl();
   });
   svg.addEventListener("pointerleave", () => { _survolXY = null; poseSurvolWebgl(null); poseCurseurWebgl(null); });
   svg.addEventListener("focusin", e => {
@@ -1775,7 +2397,7 @@ function gonfleSurvol(){
       if (h !== st.vers) bouge = true;
       else if (st.vers === 0) TUILES.delete(el);   // reposée : elle n'a plus de couche à elle
     }
-    GL.deck.setProps({ layers: assembleWebgl() });
+    GL.deck.setProps({ layers: assembleWebgl(true) });
     if (bouge) imageGonfle = requestAnimationFrame(image);
   };
   imageGonfle = requestAnimationFrame(image);
@@ -1858,7 +2480,9 @@ function coucheSurvol(couche){
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   return [new deck.SolidPolygonLayer({ id: "survol", data: aplats, getPolygon: d => d.polygon,
     // l'opacité propre de l'aplat — une zone translucide, un stand écarté — reste la sienne
-    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)] })];
+    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)], ...aPlat(),
+    // l’aplat d’un jeton est dressé par la matrice de sa couche : la teinte la suit
+    modelMatrix: couche.props.modelMatrix })];
 }
 
 /* Le survol d'un volume, en vue immersive : il n'a pas d'aplat sur lequel se
@@ -1867,11 +2491,32 @@ function coucheSurvol(couche){
    redessiné teinté de la couleur du survol, un rien plus haut que lui pour
    ne pas s'y confondre. */
 function coucheSurvolVolume(c){
+  // la plaque d’un jeton, dressée par sa matrice : son aplat de face porte déjà le survol
+  if (c.props.modelMatrix) return [];
   const siens = Array.isArray(c.props.data) ? c.props.data.filter(d => d.el === GL.survol) : [];
   if (!siens.length) return [];
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   const a = Math.max(.45, t[3] / 255);
   const teinte = (/** @type {number[]} */ k) => [0, 1, 2].map(i => Math.round(k[i] * (1 - a) + t[i] * a)).concat(255);
+  /* La hauteur où le volume en est, et non celle de la couche telle qu'elle
+     est gardée : un volume qui monte ou descend a son échelle figée au départ
+     du mouvement, et seule l'animation (`animeCouche`) la tient à jour. Le
+     stand qu'on venait de quitter, survolé, se redressait ainsi à plus de
+     trois mètres, et engloutissait son nom ou son logo.
+
+     Ce mouvement, la teinte le porte avec lui, et l'animation la tient à jour
+     comme le volume. Les images d'un mouvement ne refont plus que les couches
+     qui bougent (`reanime`) : posée une fois à la hauteur du départ, la teinte
+     restait en place pendant que le stand choisi montait à travers elle, et
+     son dessus clignotait le temps que les deux se croisent. */
+  const h = c.props.hausse;
+  if (h){
+    const data = siens.map(d => ({ ...d, haut: d.haut + .03, couleur: teinte(d.couleur) }));
+    return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
+      hausse: h, elevationScale: echelleHausse(h, instant()) }),
+    coucheContours("survol-volume", data, { hausseContour: h })];
+  }
   const e = c.props.elevationScale || 1;
   const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
   return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
@@ -1881,11 +2526,14 @@ function coucheSurvolVolume(c){
 
 function coucheFocus(couches){
   if (!GL.focus) return [];
-  const aplats = couches.flatMap(c => aplatsDe(c, GL.focus));
-  if (!aplats.length) return [];
   const t = (GL.modeles.get("survol") || {}).trait || [0, 0, 0, 255];
-  return [new deck.PathLayer({ id: "focus", data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
-    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits })];
+  // une couche par matrice : les aplats des jetons se dressent avec la leur
+  return couches.flatMap((c, n) => {
+    const aplats = aplatsDe(c, GL.focus);
+    return aplats.length ? [new deck.PathLayer({ id: "focus-" + n, data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
+      getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits, ...aPlat(),
+      modelMatrix: c.props.modelMatrix })] : [];
+  });
 }
 
 /* ------------------------------------------------------------
@@ -2009,12 +2657,10 @@ const phaseDe = (c, t) => {
    moment-là reculait à ce qu'il était alors. */
 const instant = () => performance.now();
 function animeCouche(c){
+  if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
   // le contour d'un volume en mouvement, posé à l'arrivée, s'écrase de même
-  if (c.props.hausseContour){
-    const e = echelleHausse(c.props.hausseContour, instant());
-    return c.clone({ modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, e, 0, 0, 0, 0, 1] });
-  }
+  if (c.props.hausseContour) return c.clone({ modelMatrix: ecraseContour(c.props.hausseContour) });
   // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
   if (c.props.hausseTexte){
     const h = c.props.hausseTexte, dz = hauteurHausse(h, instant()) - h.vers;
@@ -2048,9 +2694,11 @@ function animeWebgl(now){
   GL.imageAnim = 0;
   if (!GL.actif || !GL.anime) return;
   GL.temps = now / 1000;
+  let arrive = false;
   // un volume arrivé en haut, ou en bas, quitte la boucle ; elle s'arrête après le dernier
   for (const [g, h] of hausses) if (now - h.t0 >= DUREE_HAUSSE + 34){
     hausses.delete(g);
+    arrive = true;
     // arrivé : son nom rejoint les autres, et les groupes du mouvement s'oublient
     GL.couchesLibelles = null;
     for (const k of [...GL.groupes.keys()]) if (/^labels-(sans|hausse)\|/.test(k)) GL.groupes.delete(k);
@@ -2063,8 +2711,48 @@ function animeWebgl(now){
      redessine qu'à chacun de ses paliers. */
   const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
     (hausses.size ? "|" + Math.round(now) : "");
-  if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
+  if (cle !== GL.cleAnim){
+    GL.cleAnim = cle;
+    /* Une image de l'animation ne refait que ce qui bouge. Elle réassemblait
+       tout le plan — logos, figurants, noms —, et la bibliothèque, recevant
+       des couches neuves, en recomptait les attributs : en vue immersive, un
+       stand monte à chaque appui et redescend quand on glisse, et chaque
+       geste commençait ainsi par une seconde à 35-70 ms l'image sur un
+       téléphone Android récent (`?perf`, le 13 octobre 2026). Les couches
+       qui ne bougent pas gardent leur objet, et la bibliothèque les passe.
+       Un volume arrivé change les couches elles-mêmes : là, on réassemble. */
+    GL.deck.setProps({ layers: arrive ? assembleWebgl() : reanime(GL.deck.props.layers) });
+  }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
+}
+
+/** Les couches déjà posées, à cet instant de l'animation. */
+function reanime(/** @type {any[]} */ couches){
+  return couches.map(c => Array.isArray(c) ? reanime(c)
+    : !c || !c.props ? c
+    : c.id === "logos-stands" ? logosSurLesToits(c)
+    : animeCouche(c));
+}
+
+/** Le logo d'un stand qui monte reste sur son toit : seule sa hauteur se
+ *  recalcule, celle des autres ne change pas. */
+function logosSurLesToits(/** @type {any} */ c){
+  if (!GL.camera || !hausses.size || !c.props.data.some((/** @type {any} */ d) => hausses.has(d.el))) return c;
+  /* Les hauteurs se prennent ici, au même instant que celle des toits
+     (`animeCouche`), et non quand la bibliothèque relit la position : elle le
+     fait plus tard, au moment de peindre, et le stand avait monté entre-temps.
+     Le logo le devançait, jusqu'à quinze centimètres au-dessus de son toit au
+     début de la montée, avant de s'y reposer. */
+  const t = instant(), z = new Map();
+  for (const d of c.props.data){
+    const h = hausses.get(d.el);
+    if (h) z.set(d.el, hauteurHausse(h, t) + .05);
+  }
+  return c.clone({
+    getPosition: (/** @type {any} */ d) => [d.x, d.y, z.has(d.el) ? z.get(d.el) : d.z],
+    // l'instant, et non la clé de l'image : un réassemblage entre deux images la retrouvait inchangée
+    updateTriggers: { ...c.props.updateTriggers, getPosition: t },
+  });
 }
 
 /* ------------------------------------------------------------

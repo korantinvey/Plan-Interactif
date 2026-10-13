@@ -37,6 +37,7 @@ import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./cartouche-poi.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { liste } from "./recherche.mjs";
+import { champComptoir } from "./reglage-comptoir.mjs";
 
 /* Les réglages (`CONF`, que le changement de salon remplace), importés, se
    lisent tels qu'ils sont à l'instant. */
@@ -126,6 +127,20 @@ export function champsZone(hote, o){
   type.innerHTML = TYPES_ZONE.map(t =>
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
+
+  /* Le comptoir d'un accueil se place à la main : la vue immersive le posait
+     au milieu de la zone, souvent en plein passage. Le champ ne paraît que
+     sur un accueil, et suit le type qu'on choisit. */
+  const montreComptoir = champComptoir(champZone(hote, "Comptoir d'accueil",
+    document.createElement("div"),
+    "Faites glisser le comptoir pour le placer, tirez sa poignée ronde pour le " +
+    "tourner (Maj pour un angle libre) : il reste dans la zone, et s'arrête " +
+    "contre son bord. Il se dresse ainsi dans la vue " +
+    "immersive, pour le visiteur comme pour vous — où il se prend aussi " +
+    "directement sur le plan."), o);
+  const suitType = () => montreComptoir(type.value === "accueil");
+  type.addEventListener("change", suitType);
+  suitType();
 
   /* Une zone est un mur pour le calcul d'itinéraire, et c'est juste d'une
      réserve, faux d'un accueil qu'on traverse de part en part. Le contour ne

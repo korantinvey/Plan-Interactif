@@ -21,9 +21,10 @@ import { $ } from "./dom.mjs";
 import { fenetreAvancement, suitAuServeur } from "./avancement.mjs";
 import { fonction, fluxFonction } from "./appel-fonction.mjs";
 import { vignetteDeLogo } from "./marque.mjs";
+import { encodeurAvif, avif64 } from "./encodeur-avif.mjs";
 import { PLANS } from "./evenements.mjs";
 import { source } from "./provenance.mjs";
-import { signale } from "./socle-console.mjs";
+import { signale, appel } from "./socle-console.mjs";
 
 /** @type {{ charge: () => Promise<void> }} */
 let _console = {
@@ -120,6 +121,8 @@ export async function synchronise(e) {
     vue.fini(mot, n.erreur ? "alerte" : "ok");
     signale(mot, !!n.erreur);
     await _console.charge();
+    // le plan qu'elle vient d'écrire, et non celui que le relais gardait
+    oublieLePlan(e);
     /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
        elles ne font pas partie du plan, rien ne les attend, et leur fabrication
        peut durer plusieurs minutes sur un gros salon. Elle se suit dans la
@@ -162,11 +165,33 @@ const PAQUET_VIGNETTES = 8;
 const TOURS_VIGNETTES = 200;
 
 async function fabriqueLesVignettes(e) {
-  let faites = 0, refusees = 0, total = 0;
+  let faites = 0, total = 0, deja = null;
+  /* Un logo illisible chez sa source n'est jamais enregistré : sans cette
+     mémoire, le serveur le rendrait à chaque tour, il serait retéléchargé et
+     recompté autant de fois — un compte qui dépassait son total de loin. On
+     les lui renvoie pour qu'il les écarte de ce qui reste à faire. */
+  const ecartees = new Set();
+  /* L'encodeur AVIF, s'il se charge. Le serveur l'apprend à chaque demande :
+     une console qui sait le faire refait une fois les logos qui n'ont qu'une
+     vignette WebP ; une console qui ne le sait pas s'en tient à ce qui manque,
+     sans quoi elle referait chaque fois le même WebP. */
+  const enc = await encodeurAvif();
+  const avif = enc ? (/** @type {HTMLCanvasElement} */ t) => avif64(enc, t) : null;
+  const format = avif ? "avif" : "webp";
+  /* Les logos que l'AVIF n'a pas su faire, rangés en WebP : le serveur les
+     dirait encore à faire, et chaque tour les referait. On les lui écarte
+     comme les illisibles, sans les compter avec eux — ils sont préparés. */
+  const enWebp = new Set();
+  const compte = () => signale(traduit("Préparation des logos : {n} sur {t}…")
+    .replace("{n}", String(Math.min(total, (deja || 0) + faites + ecartees.size)))
+    .replace("{t}", String(total)));
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
     let lot;
     try {
-      lot = await fonction("vignettes", { evenementId: e.id });
+      /* « detoure » : la grande part sans son fond (`marque.mjs`
+         `vignetteDeLogo`), et celles d'avant, au fond blanc, sont à refaire. */
+      lot = await fonction("vignettes", { evenementId: e.id, format, detoure: true,
+        ecartees: [...ecartees, ...enWebp] });
     } catch (err) {
       /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
          qui ne commence jamais sans rien annoncer laisse chercher du mauvais
@@ -176,24 +201,32 @@ async function fabriqueLesVignettes(e) {
       return;
     }
     total = lot.total || total;
-    if (!lot.aFaire || !lot.aFaire.length) break;
+    /* Ce que les synchronisations d'avant ont déjà fait compte dans
+       l'avancement : sans quoi le compte partirait de zéro vers un total qui
+       les inclut. */
+    if (deja === null) deja = Math.max(0, total - (lot.reste || 0));
+    /* Un serveur d'avant ignore la liste des écartées et les rend encore :
+       on ne retente pas ce qui a déjà échoué, et un lot qui n'en contient
+       plus d'autres met fin à la préparation. */
+    const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s) && !enWebp.has(s));
+    if (!aFaire.length) break;
 
     const paquet = [];
-    for (const source of lot.aFaire) {
-      const v = await vignetteDeLogo(source);
+    for (const source of aFaire) {
+      const v = await vignetteDeLogo(source, avif);
       if (v) paquet.push(v);
-      else refusees++;
+      else ecartees.add(source);
+      if (v && v.format !== format) enWebp.add(source);
       if (paquet.length >= PAQUET_VIGNETTES) {
         faites += await envoieVignettes(e, paquet);
         paquet.length = 0;
-        signale(traduit("Préparation des logos : {n} sur {t}…")
-          .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
+        compte();
       }
     }
     if (paquet.length) faites += await envoieVignettes(e, paquet);
-    signale(traduit("Préparation des logos : {n} sur {t}…")
-      .replace("{n}", String(faites + refusees)).replace("{t}", String(total)));
+    compte();
   }
+  const refusees = ecartees.size;
 
   /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
      premier cas surprend quand on attend le contraire — un champ de logo non
@@ -202,6 +235,11 @@ async function fabriqueLesVignettes(e) {
      sources. */
   if (!total) { signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
   if (!faites && !refusees) return;
+  /* Les vignettes ne sont portées que par le plan que l'API refait : le relais,
+     qui a pu garder celui d'avant elles — une visite entre la fin de la
+     synchronisation et celle des logos suffit —, le servirait sans elles un
+     jour durant, et pas un logo ne paraîtrait sur le plan. */
+  if (faites) oublieLePlan(e);
   /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
      un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
      qui n'atteint jamais son total sans explication en serait une. */
@@ -210,6 +248,24 @@ async function fabriqueLesVignettes(e) {
       .replace("{n}", String(faites)).replace("{r}", String(refusees))
     : traduit("{n} logos préparés pour les fiches.").replace("{n}", String(faites));
   signale(mot);
+}
+
+/**
+ * Demande au relais d'oublier le plan public de ce salon, comme le fait
+ * l'enregistrement depuis le plan (`enregistrement.mjs` `oublieCache`).
+ *
+ * Le relais sert le plan sous une version prise sur son contenu, et ne le
+ * refait de lui-même qu'au bout d'un jour. Or chaque synchronisation Eventmaker
+ * signe à nouveau l'adresse de chaque logo : la vignette, retrouvée par cette
+ * adresse exacte, n'apparaît que dans un plan refait après sa fabrication.
+ *
+ * Sans réponse attendue : la console servie hors du relais — un essai en
+ * local — n'a rien à oublier, et ce n'est qu'un cache.
+ */
+function oublieLePlan(e) {
+  if (!e?.slug) return;
+  appel(location.origin + "/api/oublie?slug=" + encodeURIComponent(e.slug),
+    { method: "POST" }).catch(() => {});
 }
 
 /** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son

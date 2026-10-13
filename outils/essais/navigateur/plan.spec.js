@@ -123,6 +123,79 @@ test.describe("le plan public", () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Ouvrir le tiroir arme la visée ; le refermer par son bouton, c'est y
+     renoncer. Le bandeau « Indiquez votre départ » survivait au tiroir, et le
+     plan restait une liste de points à toucher. */
+  test("refermer l'itinéraire éteint la visée @telephone", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN + "&rendu=svg");
+    await attendLaListe(page);
+    for (const fermer of ["#btnItineraire", "#closeItineraire"]){
+      await page.click("#btnItineraire");
+      await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
+      await expect(page.locator("#viseur")).toBeVisible();
+      await page.click(fermer);
+      await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+      await expect(page.locator("#viseur")).toBeHidden();
+      await expect(page.locator("html")).not.toHaveClass(/\bvise-plan\b/);
+    }
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Refermer le tiroir de soi-même, c'est quitter l'itinéraire : le trajet
+     s'efface avec lui (`modules/tiroir-itineraire.mjs` `quitteItineraire`).
+     Seul un autre tiroir qui prend la bande laisse le trait sur le plan ; le
+     rappel du haut le montre et l'efface (`majRappelRoute`) — sans réarmer la
+     visée, puisque le visiteur en a fini. */
+  test("refermer l'itinéraire l'efface, un autre tiroir le laisse au rappel", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto(PLAN + "&rendu=svg");
+    const lignes = await attendLaListe(page);
+    const rappel = page.locator("#routeRappel");
+    await expect(rappel).toBeHidden();
+
+    // une arrivée par la fiche, un départ par la visée sur un autre stand
+    const demandeTrajet = async () => {
+      await lignes.nth(0).click();
+      await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
+      await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
+      await expect(page.locator("#viseur")).toBeVisible();
+      const arrivee = await page.inputValue("#iArrivee");
+      const autre = await page.evaluate((nom) => {
+        const g = [...document.querySelectorAll("svg [data-id]")]
+          .find((e) => e.getAttribute("data-id") && !e.textContent.includes(nom));
+        const r = g.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }, arrivee);
+      await page.mouse.click(autre.x, autre.y);
+      await expect(page.locator("#iResume")).toContainText("m ·");
+      await expect(rappel).toBeHidden();
+    };
+
+    // refermé par sa croix, le tiroir emporte le trajet
+    await demandeTrajet();
+    await page.click("#closeItineraire");
+    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+    await expect(rappel).toBeHidden();
+    await expect(page.locator("#viseur")).toBeHidden();
+    expect(await page.inputValue("#iArrivee")).toBe("");
+    expect(await page.inputValue("#iDepart")).toBe("");
+
+    // refermé par un autre tiroir, il laisse le trait et son rappel
+    await demandeTrajet();
+    const resume = await page.textContent("#iResume");
+    await page.click("#btnParcours");
+    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+    await expect(rappel).toBeVisible();
+    await expect(page.locator("#routeResume")).toHaveText(resume);
+
+    await page.click("#routeEfface");
+    await expect(rappel).toBeHidden();
+    await expect(page.locator("#viseur")).toBeHidden();
+    expect(await page.inputValue("#iArrivee")).toBe("");
+    expect(erreurs).toEqual([]);
+  });
+
   test("les onglets passent d'un pavillon à l'autre", async ({ page }) => {
     test.skip(DONNEES.plans.length < 2, "un seul pavillon dans les données");
     const erreurs = await prepare(page);
