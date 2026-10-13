@@ -795,16 +795,17 @@ Importé par :
 
 detourage-travail · logos-stands · marque
 
-### `modules/distinctions.mjs` — 385 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 450 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
 `texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 78
-`traceDist` 110 · `oublieDists` 153 · `modesDuPlan` 157 · `releveDists` 161
-`dessineDists` 190 · `marquesListe` 219 · `poseDistsFiche` 249 · `refaitDistsFiche` 289
-`modeDist` 335 · `couleurDist` 347 · `appliqueDists` 369
+`traceDist` 109 · `coinDuTrace` 166 · `coinDeBoite` 207 · `oublieDists` 218
+`modesDuPlan` 222 · `releveDists` 226 · `dessineDists` 255 · `marquesListe` 284
+`poseDistsFiche` 314 · `refaitDistsFiche` 354 · `modeDist` 400 · `couleurDist` 412
+`appliqueDists` 434
 
 Importe :
 
@@ -3049,7 +3050,7 @@ Importé par :
 
 installation · rappels · tutoriel
 
-### `modules/volets.mjs` — 1428 l. → plan-admin
+### `modules/volets.mjs` — 1427 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
@@ -3059,7 +3060,7 @@ Fonctions :
 `blocHoraires` 434 · `voletParcours` 576 · `sallesSituees` 711 · `voletPmr` 727
 `nomDuTon` 818 · `svgVignette` 827 · `barreVignette` 829 · `vignetteDistPlan` 833
 `vignetteDistListe` 846 · `vignetteDistFiche` 860 · `salonDitSes` 880 · `coinPris` 887
-`voletDist` 910 · `blocDecoupage` 1083 · `voletApparence` 1131
+`voletDist` 910 · `blocDecoupage` 1082 · `voletApparence` 1130
 
 Importe :
 
