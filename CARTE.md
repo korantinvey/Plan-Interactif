@@ -2479,17 +2479,17 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 404 l. → plan, plan-admin
+### `modules/releve.mjs` — 410 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
 Fonctions :
 
 `ms` 66 · `garde` 68 · `decrit` 76 · `dansLeReleve` 92 · `commence` 96 · `centile` 107
-`clos` 111 · `ecouteGestes` 131 · `image` 163 · `observe` 195 · `fichier` 203
-`ecouteNavigateur` 205 · `echantillonne` 236 · `carteGraphique` 255 · `appareil` 273
-`chargement` 290 · `synthese` 307 · `releve` 321 · `affiche` 349 · `partage` 356
-`posePastille` 373
+`sorte` 113 · `clos` 117 · `ecouteGestes` 136 · `image` 168 · `observe` 200 · `fichier` 208
+`ecouteNavigateur` 210 · `echantillonne` 242 · `carteGraphique` 261 · `appareil` 279
+`chargement` 296 · `synthese` 313 · `releve` 327 · `affiche` 355 · `partage` 362
+`posePastille` 379
 
 Importe :
 

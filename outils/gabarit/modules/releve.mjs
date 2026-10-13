@@ -108,6 +108,12 @@ function centile(/** @type {number[]} */ tri, /** @type {number} */ p){
   return tri.length ? tri[Math.min(tri.length - 1, Math.floor(tri.length * p))] : 0;
 }
 
+/** La sorte du geste, telle qu'on la sait à ce moment : un appui devient
+ *  glisser ou pincer en chemin. */
+function sorte(/** @type {Geste} */ g){
+  return g.type !== "appui" ? g.type : g.doigts > 1 ? "pincer" : g.chemin > 10 ? "glisser" : "appui";
+}
+
 function clos(){
   const g = geste;
   geste = null;
@@ -115,8 +121,7 @@ function clos(){
   const tri = [...g.images].sort((a, b) => a - b);
   // jusqu'à la dernière image de son élan, pas seulement jusqu'au doigt levé
   const duree = Math.max(g.fin || g.dernier, g.image) - g.t;
-  let type = g.type;
-  if (type === "appui") type = g.doigts > 1 ? "pincer" : g.chemin > 10 ? "glisser" : "appui";
+  const type = sorte(g);
   garde("gestes", {
     t: Math.round(g.t), type, cible: g.cible, ms: Math.round(duree),
     doigts: g.doigts || undefined, chemin: g.chemin ? Math.round(g.chemin) : undefined,
@@ -175,7 +180,7 @@ function image(/** @type {number} */ ts){
       const histo = enGeste ? R.histo.geste : R.histo.repos;
       histo[TRANCHES.findIndex(b => dt <= b)]++;
       if (enGeste && geste){ geste.images.push(dt); geste.image = t; }
-      if (dt > SACCADE) garde("saccades", { t: Math.round(t), ms: ms(dt), geste: enGeste ? geste?.type : undefined });
+      if (dt > SACCADE) garde("saccades", { t: Math.round(t), ms: ms(dt), geste: enGeste && geste ? sorte(geste) : undefined });
     }
   }
   precedente = ts;
@@ -211,7 +216,7 @@ function ecouteNavigateur(){
     t: Math.round(e.startTime), ms: Math.round(e.duration), bloquant: Math.round(e.blockingDuration || 0),
     rendu: e.renderStart ? Math.round(e.startTime + e.duration - e.renderStart) : undefined,
     style: e.styleAndLayoutStart ? Math.round(e.startTime + e.duration - e.styleAndLayoutStart) : undefined,
-    geste: geste?.type,
+    geste: geste ? sorte(geste) : undefined,
     scripts: (e.scripts || []).filter((/** @type {any} */ s) => s.duration >= 5).slice(0, 8).map((/** @type {any} */ s) => ({
       ms: Math.round(s.duration), appel: s.invoker, sorte: s.invokerType,
       fichier: fichier(s.sourceURL || ""), fonction: s.sourceFunctionName || undefined,
@@ -220,13 +225,14 @@ function ecouteNavigateur(){
     })),
   }));
   if (!loaf) observe("longtask", e => garde("images", { t: Math.round(e.startTime), ms: Math.round(e.duration),
-    longueTache: true, geste: geste?.type }));
+    longueTache: true, geste: geste ? sorte(geste) : undefined }));
   observe("event", e => garde("evenements", {
     t: Math.round(e.startTime), type: e.name, ms: Math.round(e.duration),
     attente: Math.round(e.processingStart - e.startTime),
     traitement: Math.round(e.processingEnd - e.processingStart),
     cible: decrit(e.target),
-  }), { durationThreshold: 16 });
+  // sous cinquante millisecondes, la liste se remplissait en une minute de choses que la main ne sent pas
+  }), { durationThreshold: 50 });
   addEventListener("error", e => garde("erreurs", { t: Math.round(performance.now()), message: String(e.message).slice(0, 200),
     fichier: fichier(e.filename || ""), ligne: e.lineno, colonne: e.colno }));
   addEventListener("unhandledrejection", e => garde("erreurs", { t: Math.round(performance.now()),
@@ -392,7 +398,7 @@ if (ACTIF){
   ecouteGestes();
   ecouteNavigateur();
   REPEINT_FINI.suis((duree, blocs) => {
-    garde("repeints", { t: Math.round(performance.now()), ms: ms(duree), blocs, geste: geste?.type });
+    garde("repeints", { t: Math.round(performance.now()), ms: ms(duree), blocs, geste: geste ? sorte(geste) : undefined });
     if (geste){ geste.repeints++; geste.msRepeints += duree; }
   });
   PLAN_DEMARRE.suis(() => { R.jalons["plan-demarre"] = Math.round(performance.now()); });
