@@ -30,7 +30,7 @@
 import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, confieAuWebgl }
   from "./webgl.mjs";
-import { recul, dessineFondCarte } from "./environs.mjs";
+import { recul, dessineFondCarte, DEBORD_VUE, vueLibre } from "./environs.mjs";
 import { svg, vue, changeVue, cadrePlan, oublieCadre, redresse, incline } from "./vue-etat.mjs";
 import { cameraEnJeu, ecranVersPlat, CAMERA_CHANGEE } from "./camera.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
@@ -242,7 +242,30 @@ export function versScene(/** @type {number} */ x, /** @type {number} */ y){
   return incline((x - v.x) / v.w * r.width, (y - v.y) / v.h * r.height);
 }
 
+/**
+ * La vue ramenée près du hall : son milieu ne s'écarte pas de l'emprise de
+ * plus de `DEBORD_VUE` fois sa taille. Elle est corrigée sur place, et rendue.
+ *
+ * Le recul seul ne suffisait pas : on s'arrêtait à huit largeurs de hall,
+ * mais rien n'empêchait de faire glisser le plan hors de l'écran, et l'on se
+ * retrouvait devant un quartier vide, ou devant rien, sans savoir où revenir.
+ * Retenue ici, à chaque image, plutôt que dans chaque geste : le glissement,
+ * le pincement, la vignette et la molette passent tous par là. Le glissement
+ * repartant à chaque mouvement de l'endroit saisi, la main qui revient
+ * reprend le plan dès qu'elle repasse la borne.
+ */
+function retiensVue(/** @type {any} */ v){
+  if (!emp || !v || vueLibre()) return v;
+  const cx = v.x + v.w / 2, cy = v.y + v.h / 2;
+  const mx = v.w * DEBORD_VUE, my = v.h * DEBORD_VUE;
+  const nx = Math.max(emp.x0 - mx, Math.min(emp.x1 + mx, cx));
+  const ny = Math.max(emp.y0 - my, Math.min(emp.y1 + my, cy));
+  v.x += nx - cx; v.y += ny - cy;
+  return v;
+}
+
 export const appliqueVue = (enGeste = false) => {
+  retiensVue(vue());
   for (const f of suiveurs) f();
   /* Le fond de carte, avant toute chose : il ne dépend que de la vue, et le
      chemin du rendu par la carte graphique sort plus bas sans passer par la
@@ -578,6 +601,9 @@ function glisseVersVise(){
  * trajet qui serait en cours.
  */
 export function glisseVers(/** @type {any} */ but, demi = DEMI_VIE){
+  /* Le but est retenu d'avance : retenu en chemin seulement, le trajet
+     viserait un point qu'il n'atteint jamais, et ne finirait pas. */
+  but = retiensVue(Object.assign({}, but));
   if (REDUIT){ changeVue(but); poseVue(); return; }
   vise = but;
   demiVie = demi;

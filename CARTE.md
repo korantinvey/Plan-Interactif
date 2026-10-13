@@ -968,20 +968,20 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 982 l. → plan, plan-admin
+### `modules/environs.mjs` — 999 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `calagePose` 239
-`calageCourant` 251 · `fondCourant` 254 · `recul` 259 · `zoneDuFond` 277
-`bornesDuFond` 289 · `borneLeStyle` 303 · `adresseTuile` 315 · `tuilesDeLaVue` 325
-`chargeMapLibre` 398 · `vueGL` 430 · `styleDuFond` 448 · `guetteLaCarte` 476
-`recaleCarteGL` 510 · `redessineCarteGL` 530 · `poseCarteGL` 544 · `diagnostiqueGL` 658
-`relanceCarteGL` 678 · `videCarteGL` 691 · `inclineFond` 725 · `dessineFondCarte` 773
-`cleMasqueCarte` 893 · `masqueCarte` 894 · `formesMasquantes` 903 · `contourDuHall` 925
-`cheminDuHall` 932 · `poseMasqueCarte` 950 · `ditCarte` 965 · `refaitFondCarte` 975
+`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `vueLibre` 241
+`calagePose` 251 · `calageCourant` 263 · `fondCourant` 266 · `recul` 271 · `zoneDuFond` 289
+`bornesDuFond` 306 · `borneLeStyle` 320 · `adresseTuile` 332 · `tuilesDeLaVue` 342
+`chargeMapLibre` 415 · `vueGL` 447 · `styleDuFond` 465 · `guetteLaCarte` 493
+`recaleCarteGL` 527 · `redessineCarteGL` 547 · `poseCarteGL` 561 · `diagnostiqueGL` 675
+`relanceCarteGL` 695 · `videCarteGL` 708 · `inclineFond` 742 · `dessineFondCarte` 790
+`cleMasqueCarte` 910 · `masqueCarte` 911 · `formesMasquantes` 920 · `contourDuHall` 942
+`cheminDuHall` 949 · `poseMasqueCarte` 967 · `ditCarte` 982 · `refaitFondCarte` 992
 
 Importe :
 
@@ -3042,7 +3042,7 @@ Importé par :
 
 environs · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 683 l. → plan, plan-admin
+### `modules/vue.mjs` — 709 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3052,11 +3052,11 @@ Fonctions :
 `confieALaVue` 68 · `enEdition` 74 · `libelles` 75 · `poseEmprise` 81 · `figeTextes` 105
 `rendTextes` 113 · `cadrage` 152 · `peintLibelles` 157 · `repeintLibelles` 165
 `detacheLibelles` 169 · `rattacheLibelles` 181 · `etireLibelles` 199
-`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `appliqueVue` 245
-`libellesDeLaVue` 313 · `rafraichitVue` 321 · `poseVue` 335 · `mesureBarre` 364
-`masqueHaut` 392 · `masque` 399 · `masqueDroite` 436 · `fit` 447 · `recadreIncline` 474
-`stoppeZoom` 516 · `glisseVersVise` 534 · `glisseVers` 580 · `rectVisee` 604 · `zoom` 624
-`echelle` 638 · `versPlan` 650 · `brancheVue` 662
+`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 257
+`appliqueVue` 267 · `libellesDeLaVue` 336 · `rafraichitVue` 344 · `poseVue` 358
+`mesureBarre` 387 · `masqueHaut` 415 · `masque` 422 · `masqueDroite` 459 · `fit` 470
+`recadreIncline` 497 · `stoppeZoom` 539 · `glisseVersVise` 557 · `glisseVers` 603
+`rectVisee` 630 · `zoom` 650 · `echelle` 664 · `versPlan` 676 · `brancheVue` 688
 
 Importe :
 

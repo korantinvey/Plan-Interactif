@@ -228,6 +228,18 @@ export const forceCarte = (cal) =>
    d'itinéraire, au demi-mètre. */
 const RECUL_CARTE = 8;
 
+/* Jusqu'où le milieu de la vue s'écarte du pavillon, en part de la vue : trois
+   dixièmes de part et d'autre de son emprise. Le hall garde ainsi au moins un
+   cinquième de l'écran dans chaque sens, quel que soit le zoom — on peut
+   regarder ce qui le borde, non le perdre (`vue.mjs` `retiensVue`).
+
+   Ni plus serré, ni sur le seul pavillon : le plan s'ajuste et se centre dans
+   la bande que le tiroir et la fiche laissent libre, et son milieu tombe
+   alors hors du hall — le retenir là défaisait le cadrage. Nul pendant qu'un
+   exploitant cale la carte, qui peut avoir à chercher loin. */
+export const DEBORD_VUE = 0.3;
+export const vueLibre = () => !!CALAGE_EN_COURS;
+
 /**
  * Le calage enregistré pour le pavillon regardé.
  *
@@ -265,11 +277,11 @@ export function recul(){
  * se télécharge.
  *
  * Le dézoom s'arrête à huit largeurs de pavillon : on ne voit jamais plus
- * loin, sauf à faire glisser le plan hors de lui, ou à l'incliner — la vue
- * immersive découvre alors le sol jusqu'à l'horizon, et en demandait les
- * tuiles par centaines. Le carré tient deux fois ce recul de part et d'autre
- * du centre : la vue la plus large y entre encore sur un téléphone en
- * hauteur, deux fois plus haut que large, et quel que soit le cap du hall.
+ * loin, et le glissement retient le hall à l'écran (`DEBORD_VUE`) — sauf à
+ * incliner le plan : la vue immersive découvre alors le sol jusqu'à
+ * l'horizon, et en demandait les tuiles par centaines. Le carré tient la vue
+ * la plus large, poussée au bout du glissement, sur un téléphone en hauteur
+ * et quel que soit le cap du hall.
  *
  * Nul pendant qu'un exploitant cale la carte : il cherche le hall dans le
  * quartier, et le plan n'y est pas encore à sa place.
@@ -278,7 +290,12 @@ function zoneDuFond(){
   if (CALAGE_EN_COURS) return null;
   const p = DATA && DATA.plans ? P() : null, e = p && p.emprise;
   if (!e) return null;
-  const d = RECUL_CARTE * Math.max(e.x1 - e.x0, e.y1 - e.y0);
+  /* Le compte, pour la vue la plus large — huit largeurs, deux fois plus
+     haute sur un téléphone — poussée au bout de ce que `DEBORD_VUE` permet :
+     son bord le plus lointain tombe à un demi-hall, plus 0,3 + 0,5 fois sa
+     hauteur de seize largeurs, du centre. Treize largeurs et un tiers : on en
+     prend quatorze. */
+  const d = RECUL_CARTE * 1.75 * Math.max(e.x1 - e.x0, e.y1 - e.y0);
   const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
   return { x0: cx - d, y0: cy - d, x1: cx + d, y1: cy + d };
 }
