@@ -172,7 +172,7 @@ export function remplitPanneau(){
       /* avant la pastille, et non après comme le crayon d'un calque de dessin :
          les couleurs des couches de données forment une colonne, et un bouton
          glissé entre elles la romprait */
-      (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
+      (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés et les logos à la main">&#9998;</button>' : "") +
       (sorte ? boutonVerrouGeo(sorte) +
                '<button class="ren rgeo" data-geo="' + sorte +
                '" title="Reprendre ou ajouter des formes à la main">&#9998;</button>' : "") +

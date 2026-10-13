@@ -47,6 +47,7 @@ import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 import { ETROIT } from "./ecran.mjs";
+import { placementLogo, PLACE_LIBELLES, PREFIXE_LOGO } from "./libelle-place.mjs";
 
 /** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
@@ -751,7 +752,9 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     // le toit, d'après la boîte du stand : le logo en suit les côtés
     const bb = s.bb || [0, 0];
     const rapport = iw / (ih / tasse);
-    const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport);
+    // l'exploitant l'a peut-être déplacé ou retaillé, là où la boîte trompe (`libelle-place.mjs`)
+    const reg = placementLogo(s), k = reg && reg.k > 0 ? reg.k : 1;
+    const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport) * k;
     if (!(prof > 0)) continue;
     const large = prof * rapport;
     const voulue = Math.max(PIXELS_MIN, large * finesseCouverte);
@@ -760,7 +763,10 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
        sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
        ce rien suffisait à sortir le logo de ce qu'elle montre. */
-    data.push({ x: cx, y: cy, z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g, id: s.id });
+    data.push({ x: cx + (reg ? +reg.dx || 0 : 0), y: cy + (reg ? +reg.dy || 0 : 0),
+      z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g, id: s.id,
+      // attrapé par l'outil de placement, et lui seul : hors de ce mode, un appui ouvre la fiche
+      lbl: PLACE_LIBELLES ? PREFIXE_LOGO + s.id : null });
   }
   oublie(data);
   annoncePoses(data);

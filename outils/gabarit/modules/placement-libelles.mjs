@@ -4,7 +4,8 @@
    Le mode, la palette du libellé retouché, le glisser et le pas du clavier.
    Le pourquoi du réglage, et ce que le visiteur en reçoit — le placement
    relu au dessin des noms —, sont dans `modules/libelle-place.mjs`, dont ce
-   module pose l'état par ses portes.
+   module pose l'état par ses portes. Le logo d'un stand, qui tient lieu de
+   nom vu de près, se règle ici de la même façon.
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. L'outil de dessin et la reprise d'un emplacement, avec
@@ -19,9 +20,9 @@ import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { parId } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { GL, libelleSousWebgl } from "./webgl.mjs";
+import { GL, libelleSousWebgl, planifieWebgl } from "./webgl.mjs";
 import { cleLibelle, PLACE_LIBELLES, libSel, poseModeLibelles, poseLibelleChoisi, empreinteLibelle,
-  placementLibelle } from "./libelle-place.mjs";
+  placementLibelle, cleLogo, empreinteLogo, placementLogo, PREFIXE_LOGO } from "./libelle-place.mjs";
 import { svg, versPlan } from "./vue.mjs";
 import { libelles } from "./libelles.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
@@ -44,33 +45,56 @@ export function lacheLibelle(){
 }
 
 /**
+ * Ce que l'outil retouche : un libellé, ou — vu de près, là où il tient lieu
+ * de nom — le logo d'un stand. Les deux se règlent de la même façon, sous
+ * deux clés ; seuls la clé, l'empreinte et ce qu'il faut repeindre changent.
+ */
+function choisi(){
+  if (!libSel) return null;
+  const logo = libSel.startsWith(PREFIXE_LOGO);
+  const o = parId.get(logo ? libSel.slice(PREFIXE_LOGO.length) : libSel);
+  if (!o) return null;
+  return logo
+    ? { o, logo, cle: cleLogo(o.id), empreinte: empreinteLogo, lu: placementLogo }
+    : { o, logo, cle: cleLibelle(o.id), empreinte: empreinteLibelle, lu: placementLibelle };
+}
+
+/** Repeindre ce qui vient de changer. Le logo vit dans les couches que
+ *  l'assemblage refait (`logos-stands.mjs`) : les noms seuls n'y suffisent
+ *  pas, eux qui ne repeignent rien quand leur texte n'a pas bougé. */
+function repeint(logo){
+  libelles();
+  if (logo) planifieWebgl();
+}
+
+/**
  * Poser un placement, sans l'écrire sur le poste : un glisser en produit un
  * par image, et enregistrer à chaque fois sérialiserait toute la configuration
  * soixante fois par seconde. C'est la fin du geste qui enregistre.
  */
-function posePlacement(o, change){
-  const r = placementLibelle(o);
+function posePlacement(c, change){
+  const r = c.lu(c.o);
   const n = { dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, k: r && r.k > 0 ? r.k : 1,
-              e: empreinteLibelle(o) };
+              e: c.empreinte(c.o) };
   change(n);
   n.dx = +(+n.dx).toFixed(2);
   n.dy = +(+n.dy).toFixed(2);
   n.k = Math.max(.4, Math.min(3, +n.k || 1));
   /* Un placement qui ne déplace ni n'agrandit rien n'est pas un réglage : il
      sort de la configuration plutôt que d'y peser et d'y vieillir. */
-  if (!n.dx && !n.dy && Math.abs(n.k - 1) < .001) delete CONF[cleLibelle(o.id)];
-  else CONF[cleLibelle(o.id)] = n;
-  libelles();
+  if (!n.dx && !n.dy && Math.abs(n.k - 1) < .001) delete CONF[c.cle];
+  else CONF[c.cle] = n;
+  repeint(c.logo);
   majPaletteLibelle();
 }
 
-/** Rendre un libellé à son placement automatique. */
+/** Rendre un libellé, ou un logo, à son placement automatique. */
 function libelleAutomatique(){
-  const o = libSel && parId.get(libSel);
-  if (!o) return;
-  delete CONF[cleLibelle(o.id)];
+  const c = choisi();
+  if (!c) return;
+  delete CONF[c.cle];
   enregistreConf();
-  libelles();
+  repeint(c.logo);
   majPaletteLibelle();
 }
 
@@ -87,27 +111,31 @@ export function modePlacementLibelles(on){
   const crayon = document.querySelector("#pile .rlib");
   if (crayon) crayon.setAttribute("aria-pressed", PLACE_LIBELLES);
   majPaletteLibelle();
-  libelles();
+  /* Les logos ne se laissent attraper qu'en mode placement : leurs couches
+     se refont pour le dire (`logos-stands.mjs`). */
+  repeint(true);
 }
 
 /** La palette du libellé retouché : sa taille, et de quoi y renoncer. */
 function majPaletteLibelle(){
   const z = $("libReg");
   if (!z || !ADMIN || !$("libNom")) return;
-  const o = libSel && parId.get(libSel);
-  z.classList.toggle("open", !!(PLACE_LIBELLES && o));
-  if (!(PLACE_LIBELLES && o)) return;
-  const r = placementLibelle(o);
-  $("libNom").textContent = o.nom || o.code ||
-    (o.kind === "zone" ? "Zone sans nom" : "Stand");
+  const c = choisi();
+  z.classList.toggle("open", !!(PLACE_LIBELLES && c));
+  if (!(PLACE_LIBELLES && c)) return;
+  const o = c.o, r = c.lu(o);
+  $("libNom").textContent = (c.logo ? "Logo · " : "") + (o.nom || o.code ||
+    (o.kind === "zone" ? "Zone sans nom" : "Stand"));
   $("libTaille").value = r && r.k ? r.k : 1;
   $("libAuto").disabled = !r;
-  $("libAide").textContent = r
-    ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
-    : "Glissez ce libellé pour le déplacer, ou tirez la taille.";
+  $("libAide").textContent = c.logo
+    ? (r ? "Glissez le logo, ou ajustez-le aux flèches du clavier."
+         : "Logo choisi : glissez-le pour le déplacer, ou tirez la taille.")
+    : (r ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
+         : "Glissez ce libellé pour le déplacer, ou tirez la taille.");
 }
 
-/** Choisir le libellé qu'on retouche — au clic, ou en le glissant. */
+/** Choisir le libellé, ou le logo, qu'on retouche — au clic, ou en le glissant. */
 function choisitLibelle(id){
   poseLibelleChoisi(id);
   libelles();
@@ -116,9 +144,9 @@ function choisitLibelle(id){
 
 /** Le pas du clavier : un quart de mètre, un mètre touche majuscule tenue. */
 export function pousseLibelle(dx, dy){
-  const o = libSel && parId.get(libSel);
-  if (!o) return;
-  posePlacement(o, n => { n.dx += dx; n.dy += dy; });
+  const c = choisi();
+  if (!c) return;
+  posePlacement(c, n => { n.dx += dx; n.dy += dy; });
   enregistreConf();
 }
 
@@ -126,14 +154,20 @@ export function pousseLibelle(dx, dy){
 export function libellePointerDown(e){
   if (!PLACE_LIBELLES) return false;
   const g = GL.actif ? null : e.target.closest("#labels .lbl");
+  // vu de près, c'est le logo qu'on attrape : il porte « logo: » devant l'identifiant du stand
   const id = GL.actif ? libelleSousWebgl(e.clientX, e.clientY) : g && g.dataset.lbl;
   if (!id) return false;
-  const o = parId.get(id);
-  if (!o) return false;
+  /* Un logo couvre presque tout son stand : en glissant le plan, crayon
+     resté allumé, on l'emportait au passage. Le premier appui le choisit
+     seulement ; seul un logo déjà choisi se glisse. */
+  const dejaChoisi = id === libSel;
+  choisitLibelle(id);
+  const c = choisi();
+  if (!c){ choisitLibelle(null); return false; }
   e.preventDefault();
-  choisitLibelle(o.id);
-  const r = placementLibelle(o);
-  glisseLib = { o: o, depart: versPlan(e.clientX, e.clientY),
+  if (c.logo && !dejaChoisi) return true;
+  const r = c.lu(c.o);
+  glisseLib = { c, depart: versPlan(e.clientX, e.clientY),
                 dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   return true;
@@ -144,7 +178,7 @@ export function libellePointerMove(e){
   const p = versPlan(e.clientX, e.clientY);
   const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
   const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
-  posePlacement(glisseLib.o, n => { n.dx = dx; n.dy = dy; });
+  posePlacement(glisseLib.c, n => { n.dx = dx; n.dy = dy; });
   return true;
 }
 
@@ -166,8 +200,8 @@ export function branchePlacementLibelles(){
   if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
   if ($("libTaille")){
     $("libTaille").oninput = e => {
-      const o = libSel && parId.get(libSel);
-      if (o) posePlacement(o, n => { n.k = +e.target.value; });
+      const c = choisi();
+      if (c) posePlacement(c, n => { n.k = +e.target.value; });
     };
     $("libTaille").onchange = enregistreConf;
   }

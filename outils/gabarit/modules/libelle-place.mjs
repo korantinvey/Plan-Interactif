@@ -71,3 +71,34 @@ export function placementLibelle(o){
   const r = CONF[cleLibelle(o.id)];
   return r && r.e === empreinteLibelle(o) ? r : null;
 }
+
+/* ------------------------------------------------------------
+   Le logo d'un stand, placé à la main
+
+   Le logo se pose au milieu de la boîte du stand, à la taille qu'elle
+   autorise (`logos-stands.mjs`). Sur un stand en L, ce milieu tombe dans la
+   découpe, et le logo déborde sur le voisin. Même remède que pour le nom, et
+   même réglage — un décalage et un facteur de taille —, mais sous sa propre
+   clé : le nom se lit de loin et le logo de près, l'un n'a pas de raison de
+   prendre la taille de l'autre.
+
+   L'empreinte ne retient que la forme du stand, et non l'image : la
+   synchronisation refait les vignettes à chaque évolution de leur format, et
+   tous les logos placés seraient revenus au milieu à chaque fois.
+   ------------------------------------------------------------ */
+export const cleLogo = (id) => "_logo:" + id;
+
+/** Ce que l'outil choisit quand il attrape un logo : l'identifiant du stand,
+ *  précédé de ceci — un libellé et un logo du même stand se distinguent. */
+export const PREFIXE_LOGO = "logo:";
+
+export function empreinteLogo(s){
+  const c = s.c || [0, 0], bb = s.bb || [0, 0];
+  return [(+c[0]).toFixed(2), (+c[1]).toFixed(2), (+bb[0]).toFixed(2), (+bb[1]).toFixed(2)].join("|");
+}
+
+/** Le placement du logo réglé à la main, s'il décrit encore le stand. */
+export function placementLogo(s){
+  const r = CONF[cleLogo(s.id)];
+  return r && r.e === empreinteLogo(s) ? r : null;
+}
