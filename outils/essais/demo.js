@@ -23,7 +23,10 @@ const dit = (ok, q, d) => {
 
 const demo = salonDemo(source);
 const texte = JSON.stringify(demo);
-const bas = texte.toLowerCase();
+/* Les noms se cherchent dans le texte, et non dans les octets des logos : le
+   base64 finit toujours par écrire « smcl » quelque part. */
+const lisible = JSON.stringify({ ...demo, vignettes: null });
+const bas = lisible.toLowerCase();
 
 /* Les noms réels, cherchés tels quels dans tout ce que la page reçoit. Les
    plus courts — « AXA », « ORANGE » — se retrouveraient dans n'importe quel
@@ -59,13 +62,13 @@ dit(!tels.length, "les numéros sont dans la plage réservée à la fiction", te
 
 /* L'organisateur et ses marques. Les clés des calques (« INFOPRO_… ») restent :
    le visiteur n'en voit que le nom, et la configuration en connaît une. */
-const sansCles = texte.replace(/"cle":"INFOPRO_[A-Z_]+"/g, "").replace(/id=\\"INFOPRO_[A-Z_]+\\"/g, "");
+const sansCles = lisible.replace(/"cle":"INFOPRO_[A-Z_]+"/g, "").replace(/id=\\"INFOPRO_[A-Z_]+\\"/g, "");
 const marques = ["smcl", "infopro", "vis ta ville", "vis ton sport", "atmosph", "léni", "l&#233;ni",
   "parkopolis", "arene de l", "vinci"]
   .filter((m) => sansCles.toLowerCase().includes(m));
 dit(!marques.length, "ni l'organisateur ni ses marques", marques.join(" ; "));
 
-const guids = texte.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
+const guids = lisible.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || [];
 dit(!guids.length, "aucun identifiant Klipso", guids.slice(0, 3).join(" ; "));
 const anciensIds = new Set(source.plans.flatMap((p) => [...p.stands, ...p.zones].map((o) => o.id)));
 const gardes = demo.plans.flatMap((p) => [...p.stands, ...p.zones]).filter((o) => anciensIds.has(o.id));
@@ -84,6 +87,17 @@ dit(confs.length >= 30, "un programme fourni", confs.length + " conférences");
 const orphelines = confs.filter((c) => !parId.has(c.zone) || c.exposants.some((e) => !parId.get(e.stand)?.nom));
 dit(!orphelines.length, "chaque conférence a sa salle et son exposant", orphelines.map((c) => c.id).join(" ; "));
 dit(JSON.stringify(salonDemo(source)) === texte, "deux constructions, le même salon");
+
+/* Les logos, dessinés à part (`npm run logos-demo`) : un changement de noms
+   qui ne les aurait pas refaits laisserait des sociétés sans logo. */
+const societes = demo.plans.flatMap((p) => p.stands.flatMap((s) => [s, ...(s.coex || [])])).filter((s) => s.nom);
+const sansLogo = [...new Set(societes.filter((s) => !s.vignette).map((s) => s.nom))];
+dit(!sansLogo.length, "chaque société a son logo", sansLogo.length + " sans logo, dont " +
+  sansLogo.slice(0, 3).join(" ; ") + " — relancer npm run logos-demo");
+const images = Object.entries(demo.vignettes || {});
+const mal = images.filter(([, src]) => !/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(src));
+dit(!mal.length && societes.every((s) => !s.vignette || demo.vignettes[s.vignette]),
+  "chaque vignette est une image que la page accepte");
 
 if (ko) { console.log("\n" + ko + " échec(s)"); process.exit(1); }
 console.log("\nle salon de démonstration ne nomme personne");

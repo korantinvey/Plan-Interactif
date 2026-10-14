@@ -224,6 +224,9 @@ const APERCU_PARTAGE = [
  *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
  *                   une icône, le fichier voisin n'existerait pas. Ses
  *                   polices viennent donc avec elle.
+ *   `choixAmbiance` — le visiteur passe d'une ambiance du plan à l'autre
+ *                   (`modules/choix-ambiance.mjs`) : la démonstration, qui
+ *                   les montre toutes à qui hésite.
  *   `deuxThemes`  — la page a un thème clair et un thème sombre, et suit la
  *                   préférence de l'appareil : la barre du navigateur lui
  *                   demande donc une couleur par préférence. C'est le cas de
@@ -232,9 +235,10 @@ const APERCU_PARTAGE = [
  */
 function page(contenu, options) {
   const { role, tete, application, autonome, deuxThemes, pleinEcran,
-          salon } = options || {};
+          salon, choixAmbiance } = options || {};
   return epure('<!doctype html>\n<html lang="fr"' +
-    (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
+    (role ? ' data-role="' + role + '"' : "") +
+    (choixAmbiance ? " data-choix-ambiance" : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     /* `viewport-fit=cover` étend la page sous les barres du système au lieu de
        l'arrêter à leur bord. Le plan la demandait déjà lui-même, en repli et
@@ -669,7 +673,7 @@ fs.writeFileSync(W + "demo.html",
   page(tplPublic.replace("/*__DATA__*/", () =>
     JSON.stringify(salonDemo(JSON.parse(fs.readFileSync(D + "/plans.json", "utf8"))))
       .replace(/<\/(script)/gi, "<\\/$1")),
-       { autonome: true, pleinEcran: true }));
+       { autonome: true, pleinEcran: true, choixAmbiance: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.writeFileSync(W + "config.js", epureScript(CONFIG));

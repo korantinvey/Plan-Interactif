@@ -1342,6 +1342,8 @@
      mesurée à zéro, et l'échelle redescendrait sur le cartouche au retour. */
   html[data-tiroir="demi"] .poi,
   html[data-tiroir="plein"] .poi,
+  html[data-tiroir="demi"] .choixAmbiance,
+  html[data-tiroir="plein"] .choixAmbiance,
   html[data-tiroir="demi"] .zoombar,
   html[data-tiroir="plein"] .zoombar,
   html[data-tiroir="demi"] .scalebar,

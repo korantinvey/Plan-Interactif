@@ -194,6 +194,14 @@
       <button id="zOut" aria-label="Zoom arrière"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
       <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
     </div>
+    <!-- Le choix de l'ambiance, offert au visiteur de la démonstration
+         seulement (`modules/choix-ambiance.mjs`) : partout ailleurs, c'est
+         l'exploitant qui la choisit, pour tous. -->
+    <div class="choixAmbiance" id="choixAmbiance" role="group" aria-label="Ambiance du plan" hidden>
+      <button type="button" data-ambiance="classique" aria-pressed="false">Classique</button>
+      <button type="button" data-ambiance="tuiles" aria-pressed="false">Tuiles</button>
+      <button type="button" data-ambiance="immersif" aria-pressed="false">Immersif</button>
+    </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
     <!-- Le fond de carte se cite. C'est la contrepartie de tuiles qu'on
          n'a pas dessinées, et elle ne paraît que lorsqu'il y en a. -->

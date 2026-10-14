@@ -12,6 +12,7 @@
     "migration": "node outils/migration.js",
     "polices": "node outils/polices.js",
     "lieux": "node outils/lieux.js",
+    "logos-demo": "node outils/logos-demo.js",
     "deck": "node outils/deck.js",
     "avif": "node outils/avif.js",
     "bd": "supabase db push",

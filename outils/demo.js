@@ -29,6 +29,8 @@
  * `outils/essais/demo.js` vérifie qu'aucun nom réel n'y survit.
  */
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 
 /* Changer le sel redistribue tous les noms : à ne toucher que pour cela. */
 const SEL = "demo-2027";
@@ -292,6 +294,13 @@ function enseigne(r, famille) {
 const slug = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
   .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+/** Les logos dessinés par `logos-demo.js`, par nom de société ; rien s'il
+ *  n'a pas encore tourné. */
+function lisLogos() {
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "logos-demo.json"), "utf8")); }
+  catch (e) { return {}; }
+}
+
 /**
  * Le salon de démonstration, tiré du plan figé.
  * @param {{ evenement: string, plans: any[] }} source  le contenu de `outils/plans.json`
@@ -443,7 +452,29 @@ function salonDemo(source) {
     });
   });
 
-  return { evenement: "Salon Démo 2027", fuseau: "Europe/Paris", anglais, plans };
+  /* Les logos, dessinés une fois pour toutes (`logos-demo.js`) et embarqués
+     comme le seraient des vignettes reçues par lot : la page n'a pas d'API à
+     qui les demander (`modules/vignettes.mjs` `vignettesLisibles`). Une
+     société qui n'en a pas — le fichier n'a pas suivi un changement de
+     noms — garde son nom seul ; l'essai le signale. */
+  const vignettes = {};
+  const logos = lisLogos();
+  const pose = (soc) => {
+    const b64 = soc && soc.nom && logos[soc.nom];
+    if (!b64) return;
+    const cle = empreinte("logo|" + soc.nom, 16);
+    soc.vignette = cle;
+    vignettes[cle] = "data:image/webp;base64," + b64;
+  };
+  plans.forEach((p) => p.stands.forEach((s) => { pose(s); (s.coex || []).forEach(pose); }));
+
+  /* Les réglages que l'exploitant aurait publiés : les logos sur le toit des
+     stands, ce qu'une démonstration doit montrer d'emblée. Recopiés dans
+     chaque pavillon, comme le fait la publication. */
+  const apparence = { reglages: { _ambiance: { cle: "classique", logos: true } } };
+  plans.forEach((p) => { p.apparence = apparence; });
+
+  return { evenement: "Salon Démo 2027", fuseau: "Europe/Paris", anglais, vignettes, plans };
 }
 
 module.exports = { salonDemo };
