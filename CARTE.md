@@ -1676,7 +1676,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1186 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1254 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1688,11 +1688,12 @@ Fonctions :
 `demandeDetourage` 373 · `pompe` 380 · `parLaPageSeule` 400 · `detoureRevenu` 409
 `largeurDeToile` 426 · `cleDeToile` 429 · `toileDejaRangee` 435 · `toileProche` 456
 `toile` 477 · `logoPose` 512 · `sourceDuToit` 522 · `cedeAuLogo` 535 · `CARRE` 564
-`filtrage` 597 · `plancheDe` 614 · `extensionPlanche` 650 · `bilanLogos` 749
-`rendPlanche` 765 · `taillesDe` 777 · `rangPour` 786 · `nouvellePlanche` 795 · `place` 813
-`envoie` 832 · `cedeUneCase` 850 · `range` 866 · `plancheGardee` 906
-`oubliePlancheBientot` 936 · `pres` 948 · `solVu` 959 · `logosARevoir` 976 · `groupe` 991
-`oublie` 1002 · `annoncePoses` 1036 · `matriceDuToit` 1057 · `couchesLogos` 1078
+`filtrage` 597 · `plancheDe` 614 · `extensionPlanche` 650 · `bilanLogos` 756
+`rendPlanche` 773 · `taillesDe` 785 · `rangPour` 794 · `nouvellePlanche` 803 · `vaA` 821
+`videE` 822 · `place` 827 · `libere` 866 · `liberable` 888 · `envoie` 898
+`cedeLaPlace` 920 · `range` 942 · `plancheGardee` 974 · `oubliePlancheBientot` 1004
+`pres` 1016 · `solVu` 1027 · `logosARevoir` 1044 · `groupe` 1059 · `oublie` 1070
+`annoncePoses` 1104 · `matriceDuToit` 1125 · `couchesLogos` 1146
 
 Importe :
 

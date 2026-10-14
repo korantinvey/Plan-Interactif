@@ -712,7 +712,8 @@ const OUBLI_PLANCHE = 30_000;
    une vue en deux poses ; le geste, qui ne doit rien attendre, peu. */
 const ENVOIS_AU_REPOS = 48, MS_AU_REPOS = 12, ENVOIS_EN_GESTE = 12, MS_EN_GESTE = 6;
 
-/** @typedef {{ x: number, y: number, w: number, h: number }} Case */
+/** @typedef {{ y: number, h: number, x: number, trous: { x: number, w: number }[] }} Etagere */
+/** @typedef {{ x: number, y: number, w: number, h: number, e?: Etagere }} Case */
 /**
  * @typedef {object} Planche
  * @property {any} appareil la carte graphique qui la tient
@@ -721,8 +722,8 @@ const ENVOIS_AU_REPOS = 48, MS_AU_REPOS = 12, ENVOIS_EN_GESTE = 12, MS_EN_GESTE 
  * @property {number} haut
  * @property {number} rang dans `TAILLES_PLANCHE`
  * @property {Map<string, Case & { vu: number }>} cases par clé de toile, et la pose où chacune a servi
- * @property {Case[]} libres les cases rendues, à reprendre
- * @property {{ y: number, h: number, x: number }[]} etageres
+ * @property {Etagere[]} etageres de haut en bas, chacune avec ses trous —
+ *   les cases rendues, fondues à leurs voisines — et sa fin, `x`
  * @property {number} bas le haut de la prochaine étagère
  */
 /** @type {Planche | null} */
@@ -734,7 +735,7 @@ let poseN = 0, minuterieOubli = 0;
  *  pas, on n'en connaît que ce qu'on lui a demandé. */
 export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0, cedees: 0,
   niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0,
-  vignettesRecues: 0, renvois: 0, videes: 0, oubliees: 0 };
+  vignettesRecues: 0, renvois: 0, rechargements: 0, oubliees: 0 };
 /* Les logos affichés, et ceux déjà envoyés une fois, par vignette : ce qui
    rapporte les comptes au parcours. Deux visites ne font pas les mêmes
    gestes ; envoyer chaque logo une fois, et rien de plus, se compare. */
@@ -742,15 +743,22 @@ export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, e
 const logosVus = new Set();
 /** @type {Set<string>} */
 const logosEnvoyes = new Set();
+/* Et chaque toile envoyée : la renvoyer telle quelle, c'est qu'on l'avait
+   cédée trop tôt — un rechargement, quand un renvoi à une autre finesse
+   suit le zoom. */
+/** @type {Set<string>} */
+const toilesEnvoyees = new Set();
 
 /** Les comptes, et ce qu'ils valent rapportés au parcours : envois par logo
  *  affiché — un, au mieux —, part des envois qui renvoient un logo déjà
- *  envoyé, poids moyen d'un envoi. Lu par le relevé `?perf`. */
+ *  envoyé, à une autre finesse ou à la même, poids moyen d'un envoi. Lu par
+ *  le relevé `?perf`. */
 export function bilanLogos(){
   const c = COMPTES_LOGOS, n = logosVus.size;
   return { ...c, logosDistincts: n,
     envoisParLogo: n ? Math.round(c.envois / n * 100) / 100 : 0,
     partRenvois: c.envois ? Math.round(c.renvois / c.envois * 1000) / 10 : 0,
+    partRechargements: c.envois ? Math.round(c.rechargements / c.envois * 1000) / 10 : 0,
     koParEnvoi: c.envois ? Math.round(c.octetsEnvoyes / c.envois / 1024) : 0 };
 }
 
@@ -803,26 +811,84 @@ function nouvellePlanche(/** @type {any} */ appareil, /** @type {number} */ rang
       sampler: { addressModeU: "clamp-to-edge", addressModeV: "clamp-to-edge", mipmapFilter: "linear", ...filtrage(appareil) } });
     COMPTES_LOGOS.textures++;
     COMPTES_LOGOS.octetsTexture = Math.round(large * haut * 4 * 4 / 3);
-    return { appareil, tex, large, haut, rang, cases: new Map(), libres: [], etageres: [], bas: 0 };
+    return { appareil, tex, large, haut, rang, cases: new Map(), etageres: [], bas: 0 };
   } catch (e) { return null; }
 }
 
-/** Une place de `w` sur `h` sur la planche, joints compris : une case rendue
- *  qui ne gâche pas plus qu'elle ne sert, une étagère de sa hauteur, ou une
- *  étagère neuve. Rien si la planche est pleine. */
+/* Une étagère prend les toiles d'au moins six dixièmes de sa hauteur :
+   plus basses, elles gâcheraient le reste de la case. */
+const ETAGERE_PLEINE = .6;
+const vaA = (/** @type {Etagere} */ e, /** @type {number} */ h) => h <= e.h && h >= e.h * ETAGERE_PLEINE;
+const videE = (/** @type {Etagere} */ e) => e.x === 0 && !e.trous.length;
+
+/** Une place de `w` sur `h` sur la planche, joints compris : le trou le plus
+ *  juste d'une étagère à sa hauteur, sa fin, une étagère vidée recoupée à sa
+ *  hauteur, ou une étagère neuve. Rien si la planche est pleine. */
 function place(/** @type {Planche} */ pl, /** @type {number} */ w, /** @type {number} */ h){
-  let k = -1, perte = w * h;
-  pl.libres.forEach((c, i) => {
-    if (c.w >= w && c.h >= h && c.w * c.h - w * h <= perte){ perte = c.w * c.h - w * h; k = i; }
-  });
-  if (k >= 0) return pl.libres.splice(k, 1)[0];
+  /** @type {Etagere | null} */
+  let em = null, km = -1, perte = Infinity;
   for (const e of pl.etageres){
-    if (h <= e.h && h >= e.h * .6 && e.x + w <= pl.large){ const c = { x: e.x, y: e.y, w, h: e.h }; e.x += w; return c; }
+    if (!vaA(e, h)) continue;
+    e.trous.forEach((t, k) => {
+      const p = (t.w - w) * e.h + (e.h - h) * w;
+      if (t.w >= w && p < perte){ em = e; km = k; perte = p; }
+    });
+    const p = (e.h - h) * w;
+    if (e.x + w <= pl.large && p < perte){ em = e; km = -1; perte = p; }
   }
-  if (pl.bas + h > pl.haut || w > pl.large) return null;
-  pl.etageres.push({ y: pl.bas, h, x: w });
+  if (em){
+    const e = /** @type {Etagere} */ (em);
+    if (km < 0){ const c = { x: e.x, y: e.y, w, h: e.h, e }; e.x += w; return c; }
+    const t = e.trous[km], c = { x: t.x, y: e.y, w, h: e.h, e };
+    t.x += w; t.w -= w;
+    if (!t.w) e.trous.splice(km, 1);
+    return c;
+  }
+  if (w > pl.large) return null;
+  // une étagère vidée, plus haute qu'il ne faut : recoupée, le reste attend
+  const i = pl.etageres.findIndex(e => videE(e) && e.h >= h);
+  if (i >= 0){
+    const e = pl.etageres[i];
+    if (e.h > h) pl.etageres.splice(i + 1, 0, { y: e.y + h, h: e.h - h, x: 0, trous: [] });
+    e.h = h; e.x = w;
+    return { x: 0, y: e.y, w, h, e };
+  }
+  if (pl.bas + h > pl.haut) return null;
+  const e = { y: pl.bas, h, x: w, trous: [] };
+  pl.etageres.push(e);
   pl.bas += h;
-  return { x: 0, y: pl.bas - h, w, h };
+  return { x: 0, y: e.y, w, h, e };
+}
+
+/** La case rendue à son étagère, fondue aux trous qui la touchent ; une
+ *  étagère vidée se fond à ses voisines vides, et la dernière rend sa
+ *  hauteur à la planche. */
+function libere(/** @type {Planche} */ pl, /** @type {Case} */ c){
+  const e = c.e;
+  if (!e) return;
+  let x = c.x, w = c.w;
+  e.trous = e.trous.filter(t => {
+    if (t.x + t.w === x){ x = t.x; w += t.w; return false; }
+    if (t.x === x + w){ w += t.w; return false; }
+    return true;
+  });
+  if (x + w === e.x) e.x = x;
+  else e.trous.push({ x, w });
+  if (!videE(e)) return;
+  let i = pl.etageres.indexOf(e);
+  const avant = pl.etageres[i - 1], apres = pl.etageres[i + 1];
+  if (apres && videE(apres)){ e.h += apres.h; pl.etageres.splice(i + 1, 1); }
+  if (avant && videE(avant)){ avant.h += e.h; pl.etageres.splice(i, 1); i--; }
+  const der = pl.etageres[pl.etageres.length - 1];
+  if (der && videE(der)){ pl.bas = der.y; pl.etageres.pop(); }
+}
+
+/** Ce que la case libérerait d'un tenant sur son étagère, trous voisins et
+ *  fin compris. */
+function liberable(/** @type {Planche} */ pl, /** @type {Case} */ c){
+  const e = /** @type {Etagere} */ (c.e);
+  if (c.x + c.w === e.x) return pl.large - c.x + e.trous.reduce((a, t) => a + (t.x + t.w === c.x ? t.w : 0), 0);
+  return c.w + e.trous.reduce((a, t) => a + (t.x + t.w === c.x || t.x === c.x + c.w ? t.w : 0), 0);
 }
 
 /** La toile envoyée dans sa case, le reste de la case vidé : une case
@@ -843,53 +909,55 @@ function envoie(/** @type {Planche} */ pl, /** @type {Case} */ c, /** @type {HTM
 }
 
 
-/** La case d'un logo qui n'est plus posé, assez grande pour (w, h) : la
- *  moins récemment vue, puis la plus juste. Elle cède sa place — et lui seul
- *  s'oublie, quand vider toutes les cases d'un coup jetait les logos qu'on
- *  venait de quitter et qu'un retour en arrière renvoyait un à un. */
-function cedeUneCase(/** @type {Planche} */ pl, /** @type {Set<string>} */ enJeu, /** @type {number} */ w, /** @type {number} */ h){
-  /** @type {string | null} */
-  let mieux = null, vu = Infinity, aire = Infinity;
-  for (const [k, c] of pl.cases){
-    if (enJeu.has(k) || c.w < w || c.h < h || c.w * c.h > 2 * w * h) continue;
-    if (c.vu < vu || (c.vu === vu && c.w * c.h < aire)){ mieux = k; vu = c.vu; aire = c.w * c.h; }
+/** Une place pour (w, h), quitte à céder des cases de logos qui ne sont
+ *  plus posés, une à une : la moins récemment vue de celles qui suffisent
+ *  seules, sinon la moins récemment vue tout court, jusqu'à ce que la place
+ *  se fasse. Vider d'un coup toutes les cases hors de la vue — ce que faisait
+ *  la planche dès qu'aucune case ne convenait telle quelle, soit presque
+ *  toujours : 338 cases vidées, aucune cédée, trois envois sur quatre pour
+ *  un logo déjà envoyé (`?perf`, FEP27, téléphone, 14 octobre 2026) — jetait
+ *  les logos qu'on venait de quitter, et un retour en arrière les renvoyait. */
+function cedeLaPlace(/** @type {Planche} */ pl, /** @type {Set<string>} */ enJeu, /** @type {number} */ w, /** @type {number} */ h){
+  for (;;){
+    const c = place(pl, w, h);
+    if (c) return c;
+    /** @type {string | null} */
+    let seule = null, autre = null;
+    let vuSeule = Infinity, vuAutre = Infinity;
+    for (const [k, v] of pl.cases){
+      if (enJeu.has(k)) continue;
+      if (v.vu < vuAutre){ autre = k; vuAutre = v.vu; }
+      if (v.vu < vuSeule && v.e && vaA(v.e, h) && liberable(pl, v) >= w){ seule = k; vuSeule = v.vu; }
+    }
+    const k = seule ?? autre;
+    if (k === null) return null;
+    libere(pl, /** @type {Case} */ (pl.cases.get(k)));
+    pl.cases.delete(k); toiles.delete(k);
+    COMPTES_LOGOS.cedees++;
   }
-  if (mieux === null) return null;
-  const c = /** @type {Case & { vu: number }} */ (pl.cases.get(mieux));
-  pl.cases.delete(mieux); toiles.delete(mieux);
-  COMPTES_LOGOS.cedees++;
-  return { x: c.x, y: c.y, w: c.w, h: c.h };
 }
 
 /** Chaque toile voulue dans sa case : celles déjà rangées n'envoient rien.
  *  Rend faux si elles n'y tiennent pas, même planche vidée et agrandie. */
 function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ voulues){
   const enJeu = new Set(voulues.map(t => t.dataset.cle || ""));
-  let envoye = false, vide = false;
+  let envoye = false;
   for (const t of voulues){
     const cle = t.dataset.cle || "";
     const deja = pl.cases.get(cle);
     if (deja){ deja.vu = poseN; continue; }
     // le joint des deux côtés, dans la case même : elle se vide avec elle
     const w = t.width + 2 * JOINT, h = t.height + 2 * JOINT;
-    let c = place(pl, w, h) || cedeUneCase(pl, enJeu, w, h);
-    // en dernier recours, toutes les cases des logos qui ne sont plus posés à la fois
-    if (!c && !vide){
-      vide = true;
-      for (const [k, v] of [...pl.cases]){
-        if (enJeu.has(k)) continue;
-        pl.cases.delete(k); pl.libres.push(v); toiles.delete(k);
-        COMPTES_LOGOS.videes++;
-      }
-      c = place(pl, w, h);
-    }
+    const c = cedeLaPlace(pl, enJeu, w, h);
     if (!c) return false;
-    if (!envoie(pl, c, t)){ pl.libres.push(c); return false; }
+    if (!envoie(pl, c, t)){ libere(pl, c); return false; }
     pl.cases.set(cle, { ...c, vu: poseN });
     // la vignette d'avant l'arobase : la même, à une autre finesse, est un renvoi
     const logo = cle.slice(0, cle.lastIndexOf("@"));
     if (logosEnvoyes.has(logo)) COMPTES_LOGOS.renvois++;
     else logosEnvoyes.add(logo);
+    if (toilesEnvoyees.has(cle)) COMPTES_LOGOS.rechargements++;
+    else toilesEnvoyees.add(cle);
     envoye = true;
   }
   if (envoye){ pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++; }
@@ -918,7 +986,7 @@ function plancheGardee(/** @type {any} */ appareil, /** @type {HTMLCanvasElement
      éparses s'étant peut-être émiettées, puis plus grande. */
   for (let rang = gardee.rang; ; rang = Math.max(rang + 1, rangPour(appareil, voulues))){
     const avant = gardee;
-    const pl = rang === avant.rang ? { ...avant, cases: new Map(), libres: [], etageres: [], bas: 0 }
+    const pl = rang === avant.rang ? { ...avant, cases: new Map(), etageres: [], bas: 0 }
       : nouvellePlanche(appareil, rang);
     if (!pl) break;
     if (pl !== avant && pl.tex !== avant.tex){ try { avant.tex.destroy(); } catch (e) { /* perdu */ } COMPTES_LOGOS.agrandissements++; }
