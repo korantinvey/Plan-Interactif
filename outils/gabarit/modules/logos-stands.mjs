@@ -970,6 +970,30 @@ function annoncePoses(/** @type {{ id: string }[]} */ data){
 }
 
 /**
+ * Ce qui couche le carré d'un mètre sur le toit : sa taille, l'angle que
+ * l'exploitant lui a donné, et l'étirement de la vue de biais.
+ *
+ * L'étirement suit la profondeur du hall, et non le logo : tourné d'un quart
+ * de tour, c'est sa largeur qui fuit. La taille et l'angle de la bibliothèque
+ * l'appliqueraient au logo, avant de le tourner — un logo couché de travers
+ * aurait paru écrasé. Il s'applique donc après, sur le plan lui-même.
+ * @param {number} large la largeur du logo, en mètres
+ * @param {number} prof sa profondeur, étirement compris
+ * @param {number} angle en degrés, dans le sens des aiguilles d'une montre — y descend
+ * @param {number} tasse le tassement de la vue
+ * @returns {number[]} la matrice, colonne après colonne
+ */
+function matriceDuToit(large, prof, angle, tasse){
+  const r = angle * Math.PI / 180, cos = Math.cos(r), sin = Math.sin(r);
+  // la profondeur sans l'étirement : celle que le logo a vu d'en haut
+  const juste = prof * tasse;
+  return [large * cos, large * sin / tasse, 0, 0,
+          -juste * sin, juste * cos / tasse, 0, 0,
+          0, 0, 1, 0,
+          0, 0, 0, 1];
+}
+
+/**
  * La couche des logos : un carré par logo autour de la vue, tous peints
  * d'une planche.
  * @param {any} L la bibliothèque
@@ -1045,7 +1069,8 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = n
       }
     }
     if (!t) continue;
-    data.push({ x, y, z, large, prof, t, el: g, id: s.id,
+    data.push({ x, y, z, t, el: g, id: s.id,
+      m: matriceDuToit(large, prof, reg ? +reg.a || 0 : 0, tasse),
       // attrapé par l'outil de placement, et lui seul : hors de ce mode, un appui ouvre la fiche
       lbl: PLACE_LIBELLES ? PREFIXE_LOGO + s.id : null });
   }
@@ -1082,8 +1107,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = n
        après les stands, avant les noms. */
     ...(enVolume ? {} : { parameters: { depthCompare: "always", depthWriteEnabled: false } }),
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
-    getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
-    getOrientation: [0, 0, 0],
+    getTransformMatrix: (/** @type {any} */ d) => d.m,
     getCaseLogo: (/** @type {any} */ d) => caseDe(d.t) || [0, 0, 1, 1],
     updateTriggers: { getCaseLogo: cleCases } })];
 }

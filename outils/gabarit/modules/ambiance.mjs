@@ -41,7 +41,7 @@ export const AMBIANCES = [
    n'a pas d'accès administrateur, et on compare deux ambiances côte à côte
    dans deux onglets. Pas en administration, où c'est le réglage qu'on voit
    et qu'on change — l'adresse le masquerait. */
-const ESSAI = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("ambiance");
+let ESSAI = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("ambiance");
 /* Et le cap de l'immersif de même : « ?cap=-8 ». */
 const ESSAI_CAP = PLAN_ADMIN ? null : new URLSearchParams(location.search).get("cap");
 
@@ -180,6 +180,14 @@ export function traceStand(/** @type {string} */ d){
 
 /** Les tuiles sont-elles posées — pour qui trace un stand hors de `montePlan`. */
 export const tuilesPosees = () => tuiles;
+
+/** Une autre ambiance pour cette visite, sans rien publier — comme
+ *  « ?ambiance= », mais en cours de route : le choix que la démonstration
+ *  offre à son visiteur (`choix-ambiance.mjs`). */
+export function essaieAmbiance(/** @type {string} */ cle){
+  ESSAI = cle;
+  appliqueAmbiance();
+}
 
 export function appliqueAmbiance(){
   const a = ambianceRetenue();

@@ -75,14 +75,19 @@ function repeint(logo){
 function posePlacement(c, change){
   const r = c.lu(c.o);
   const n = { dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, k: r && r.k > 0 ? r.k : 1,
-              e: c.empreinte(c.o) };
+              a: r ? +r.a || 0 : 0, e: c.empreinte(c.o) };
   change(n);
   n.dx = +(+n.dx).toFixed(2);
   n.dy = +(+n.dy).toFixed(2);
   n.k = Math.max(.4, Math.min(3, +n.k || 1));
-  /* Un placement qui ne déplace ni n'agrandit rien n'est pas un réglage : il
-     sort de la configuration plutôt que d'y peser et d'y vieillir. */
-  if (!n.dx && !n.dy && Math.abs(n.k - 1) < .001) delete CONF[c.cle];
+  // en degrés, dans le sens des aiguilles d'une montre, ramené à ]-180, 180]
+  n.a = +((((+n.a || 0) % 360) + 540) % 360 - 180).toFixed(1);
+  if (n.a === -180) n.a = 180;
+  // seul un logo se tourne ; un libellé sans angle n'en porte pas la clé
+  if (!n.a) delete n.a;
+  /* Un placement qui ne déplace, n'agrandit ni ne tourne rien n'est pas un
+     réglage : il sort de la configuration plutôt que d'y peser et d'y vieillir. */
+  if (!n.dx && !n.dy && !n.a && Math.abs(n.k - 1) < .001) delete CONF[c.cle];
   else CONF[c.cle] = n;
   repeint(c.logo);
   majPaletteLibelle();
@@ -116,7 +121,7 @@ export function modePlacementLibelles(on){
   repeint(true);
 }
 
-/** La palette du libellé retouché : sa taille, et de quoi y renoncer. */
+/** La palette du libellé retouché : sa taille, l'angle d'un logo, et de quoi y renoncer. */
 function majPaletteLibelle(){
   const z = $("libReg");
   if (!z || !ADMIN || !$("libNom")) return;
@@ -127,10 +132,16 @@ function majPaletteLibelle(){
   $("libNom").textContent = (c.logo ? "Logo · " : "") + (o.nom || o.code ||
     (o.kind === "zone" ? "Zone sans nom" : "Stand"));
   $("libTaille").value = r && r.k ? r.k : 1;
+  if ($("libAngle")){
+    $("libAngleChamp").hidden = !c.logo;
+    const a = r ? +r.a || 0 : 0;
+    $("libAngle").value = a;
+    $("libAngleVal").textContent = Math.round(a) + "°";
+  }
   $("libAuto").disabled = !r;
   $("libAide").textContent = c.logo
     ? (r ? "Glissez le logo, ou ajustez-le aux flèches du clavier."
-         : "Logo choisi : glissez-le pour le déplacer, ou tirez la taille.")
+         : "Logo choisi : glissez-le pour le déplacer, tirez la taille ou l'angle.")
     : (r ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
          : "Glissez ce libellé pour le déplacer, ou tirez la taille.");
 }
@@ -204,6 +215,17 @@ export function branchePlacementLibelles(){
       if (c) posePlacement(c, n => { n.k = +e.target.value; });
     };
     $("libTaille").onchange = enregistreConf;
+  }
+  if ($("libAngle")){
+    /* Un logo couché de travers se remet d'aplomb sans viser au degré près :
+       à moins de trois degrés d'un quart de tour, le curseur s'y pose. */
+    $("libAngle").oninput = e => {
+      const c = choisi();
+      if (!c || !c.logo) return;
+      const a = +e.target.value, quart = Math.round(a / 90) * 90;
+      posePlacement(c, n => { n.a = Math.abs(a - quart) < 3 ? quart : a; });
+    };
+    $("libAngle").onchange = enregistreConf;
   }
 }
 

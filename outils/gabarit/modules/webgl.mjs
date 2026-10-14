@@ -116,6 +116,10 @@ export const GL = {
   sol: null,
 };
 
+/* Ce qu'on attend au plus le dessin avant de montrer le SVG, quand l'attente
+   a une raison — voir `chargeWebgl`. */
+const ATTENTE_MAX = 15000;
+
 function chargeWebgl(){
   if (!RENDU_WEBGL) return;
   let gl2 = null;
@@ -130,7 +134,23 @@ function chargeWebgl(){
   /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
      attendait l'affichage n'a plus à attendre. */
   const secours = () => { racine.classList.remove("gl-attente"); planAffiche(); };
-  setTimeout(secours, 4000);
+  /* Le secours n'en est un que s'il montre le même plan. En immersif, le SVG
+     n'a que les tuiles à plat : montré le temps que les volumes se préparent
+     — et c'est le dessin le plus long à venir —, il faisait croire à une
+     autre ambiance, aussitôt remplacée. Et tant que le plan n'est pas posé,
+     il n'y a rien à secourir : le SVG montré vide se remplirait, puis le
+     dessin le remplacerait — le plan paraîtrait deux fois. On attend donc
+     encore, jusqu'à une borne : un dessin qui ne vient jamais ne doit pas
+     laisser l'écran vide. La bibliothèque introuvable, elle, montre le SVG
+     sans attendre (`onerror`). */
+  const debut = performance.now();
+  const echeance = () => {
+    if (GL.pret) return;
+    const attendre = !GL.abandon && (cameraVoulue() || (GL.charge && !vueDuPlan()));
+    if (attendre && performance.now() - debut < ATTENTE_MAX){ setTimeout(echeance, 500); return; }
+    secours();
+  };
+  setTimeout(echeance, 4000);
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
   s.onload = () => { GL.charge = true; monteWebgl(); };

@@ -86,6 +86,45 @@ const NOIR = [20, 20, 20], ROUGE = [200, 0, 40];
     dit(i.alpha(5, 5) === 0, "le fond autour de l'aplat s'efface");
   }
 
+  console.log("des lettres à œil dans un cadre");
+  {
+    /* Le cas de SEPCO : une ellipse fine enclôt les lettres, dont les yeux
+       n'ont de distance au fond qu'une fois le dedans du cadre retiré. */
+    const i = image(300, 200);
+    i.cadre(40, 20, 260, 180, 3, NOIR);
+    i.cadre(90, 60, 150, 140, 8, NOIR);
+    i.cadre(160, 60, 220, 140, 8, NOIR);
+    detoure(i.px, i.w, i.h);
+    dit(i.alpha(60, 40) === 0, "le blanc dans le cadre s'efface");
+    dit(i.alpha(120, 100) === 0, "l'œil de la première lettre s'efface", "alpha " + i.alpha(120, 100));
+    dit(i.alpha(190, 100) === 0, "l'œil de la seconde aussi", "alpha " + i.alpha(190, 100));
+    dit(i.alpha(93, 100) === 255, "leur trait reste");
+  }
+
+  console.log("l'œil d'une lettre grasse sur un logo bas");
+  {
+    /* Le cas de Chapuis : sur un logo long et bas, le trait d'un « p » gras
+       dépasse le seuil tiré du petit côté, mais pas la largeur de son œil. */
+    const i = image(400, 80);
+    i.cadre(150, 10, 190, 70, 11, NOIR);
+    detoure(i.px, i.w, i.h);
+    dit(i.alpha(170, 40) === 0, "l'œil s'efface", "alpha " + i.alpha(170, 40));
+    dit(i.alpha(155, 40) === 255, "son trait reste");
+  }
+
+  console.log("un texte blanc dans un bandeau mince");
+  {
+    /* Le cas d'AQUILUS : un bandeau bien plus mince que le petit côté du
+       logo, et des lettres blanches dedans. Le seuil tiré du petit côté les
+       retirait toutes ; plus fines que la marge du bandeau, elles restent. */
+    const i = image(300, 300);
+    i.peint(20, 140, 280, 172, ROUGE);
+    for (let n = 0; n < 8; n++) i.peint(40 + n * 30, 148, 44 + n * 30, 164, [255, 255, 255]);
+    detoure(i.px, i.w, i.h);
+    dit(i.alpha(42, 156) === 255, "le blanc des lettres reste", "alpha " + i.alpha(42, 156));
+    dit(i.alpha(5, 5) === 0, "le fond autour du bandeau s'efface");
+  }
+
   console.log("un logo déjà détouré");
   {
     const i = image(200, 100);

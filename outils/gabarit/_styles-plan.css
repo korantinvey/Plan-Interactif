@@ -996,6 +996,17 @@ html.sans-image-stand .outils #imageSoc{
 .zoombar button+button{border-top:1px solid var(--line)}
 .zoombar button:hover{color:var(--ink);background:var(--surface-2)}
 .zoombar svg{width:14px;height:14px}
+/* Le choix de l'ambiance, sur la démonstration (`choix-ambiance.mjs`) : en
+   haut au milieu de la scène, que la mini-carte laisse libre — elle tient le
+   coin gauche. Un groupe de trois boutons, le retenu plein. */
+.choixAmbiance[hidden]{display:none}
+.choixAmbiance{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:3;
+  display:flex;gap:2px;padding:3px;background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;box-shadow:var(--shadow)}
+.choixAmbiance button{padding:6px 14px;border-radius:999px;font:inherit;font-size:13px;
+  font-weight:600;color:var(--ink-2);white-space:nowrap}
+.choixAmbiance button:hover{color:var(--ink);background:var(--surface-2)}
+.choixAmbiance button[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent)}
 /* La mini-carte de situation (`mini-carte.mjs`), en haut à gauche de la
    scène : le seul coin que ni la fiche, ni les commandes, ni le cartouche des
    repères n'occupent. Sa largeur suit les proportions du pavillon (« --mc-r »),

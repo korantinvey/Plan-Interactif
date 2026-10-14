@@ -17,6 +17,10 @@ outils/*.json
 # La bibliothèque des lieux, versée dans la page d'administration. Même
 # raison encore : elle ne se régénère qu'avec le réseau (`node outils/lieux.js`).
 !outils/lieux.json
+# Les logos des exposants inventés de web/demo.html. Ils se dessinent dans
+# Chromium (`npm run logos-demo`), que la construction de Cloudflare n'a pas :
+# sans eux la démonstration paraîtrait sans un logo.
+!outils/logos-demo.json
 # Le cliquet des types : ce que `npm run types` accepte encore. Il fait foi
 # en intégration, il ne se régénère donc pas de lui-même.
 !outils/types-acceptes.json
