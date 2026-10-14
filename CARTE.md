@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 644 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 652 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -47,14 +47,14 @@ l'endroit où l'on corrige quoi que ce soit.
 `#critVoir` · `#actifs` · `#count` · `#countTxt` · `#list` · `#piedSide`
 `#btnConfidentialite` · `#stage` · `#fondCarteGL` · `#fondTuiles` · `#fondCarte`
 `#trouDuFond` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#calqueLibelles`
-`#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#creditCarte` · `#mentionOsm`
-`#poi` · `#poiDefile` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#routeRappel`
-`#routeVoir` · `#routeResume` · `#routeEfface` · `#calageBat` · `#calageAngle`
-`#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel` · `#iciRappelTxt`
-`#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme` · `#calageCorps`
-`#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils` · `#outilsCalque`
-`#renommeOutils` · `#replieOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
-`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#zIn` · `#zOut` · `#zFit` · `#choixAmbiance` · `#scaleBar` · `#scaleTxt` · `#creditCarte`
+`#mentionOsm` · `#poi` · `#poiDefile` · `#viseur` · `#viseurTxt` · `#viseurStop`
+`#routeRappel` · `#routeVoir` · `#routeResume` · `#routeEfface` · `#calageBat`
+`#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel`
+`#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
+`#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
+`#outilsCalque` · `#renommeOutils` · `#replieOutils` · `#fermeOutils` · `#roleIti`
+`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
 `#texteADessiner` · `#repereType` · `#repereTransport` · `#repereMode` · `#repereLigne`
 `#repereCouleur` · `#repereTexte` · `#imageSoc` · `#standSoc` · `#listeSoc`
@@ -98,7 +98,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#data`
 
-### `_langue.js` — 864 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
+### `_langue.js` — 864 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -116,19 +116,19 @@ l'endroit où l'on corrige quoi que ce soit.
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_styles-divers.css` — 315 l. → plan-smcl.html
+### `_styles-divers.css` — 315 l. → demo.html, plan-smcl.html
 
-### `_styles-jetons.css` — 293 l. → plan-smcl.html
+### `_styles-jetons.css` — 293 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1623 l. → plan-smcl.html
+### `_styles-modeles-parcours.css` — 1625 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles.css` — 830 l. → plan-smcl.html
+### `_styles-modeles.css` — 830 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 665 l. → plan-smcl.html
+### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1693 l. → plan-smcl.html
+### `_styles-plan.css` — 1704 l. → demo.html, plan-smcl.html
 
-### `_styles-vitrine.css` — 187 l. → plan-smcl.html
+### `_styles-vitrine.css` — 187 l. → demo.html, plan-smcl.html
 
 ### `_sw.js` — 568 l.
 
@@ -239,7 +239,7 @@ Importé par :
 
 edition · enregistrement · gestes-admin · outil-dessin · reprise-emplacements
 
-### `modules/ambiance.mjs` — 216 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 224 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles, Immersif
 
@@ -247,7 +247,8 @@ Fonctions :
 
 `figurantsRetenus` 61 · `nomsAPlatRetenus` 68 · `logosRetenus` 74 · `capRetenu` 79
 `ambianceRetenue` 86 · `anneaux` 92 · `f3` 104 · `rayonTuile` 131 · `retire` 136
-`arrondi` 151 · `traceStand` 177 · `tuilesPosees` 182 · `appliqueAmbiance` 184
+`arrondi` 151 · `traceStand` 177 · `tuilesPosees` 182 · `essaieAmbiance` 187
+`appliqueAmbiance` 192
 
 Importe :
 
@@ -255,7 +256,7 @@ camera · configuration · donnees · figurants · logos-stands · salon
 
 Importé par :
 
-apparence · dessin · distinctions · rendu · volets
+apparence · choix-ambiance · dessin · distinctions · rendu · volets
 
 ### `modules/annonce.mjs` — 45 l. → plan, plan-admin
 
@@ -590,6 +591,18 @@ Importé par :
 
 dessin · edition · environs · itineraire · outil-dessin · reprise-emplacements · vue · webgl
 
+### `modules/choix-ambiance.mjs` — 34 l. → plan, plan-admin
+
+- l.1 · Le choix de l'ambiance, offert au visiteur
+
+Importe :
+
+ambiance · demarrage · dom
+
+Importé par :
+
+plan
+
 ### `modules/classeur.mjs` — 235 l. → console, rapport
 
 - l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
@@ -735,7 +748,7 @@ vue
 
 Importé par :
 
-acces-admin · enregistrement · fiche-zone · lancement · releve
+acces-admin · choix-ambiance · enregistrement · fiche-zone · lancement · releve
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -828,15 +841,16 @@ Fonctions :
 Importé par :
 
 acces-admin · affiche-ici · aimants · apparence · bande-admin · batiments · borne
-calage-carte · cartouche-poi · chaleur · comptes · demarrage · dessin · distinctions
-ecran-console · edition · enregistrement · environs · fenetre · fenetre-console · fiche
-fiche-evenement · fiche-zone · gestes · gestes-admin · glisse-fenetre · habillage · ici
-index-salon · installation · journee · libelles · ligne-liste · logos-stands · mesure
-mode-admin · modeles · mot-de-passe · nappe · ordre-calques · ordre-trace · outil-dessin
-panneau-criteres · parcours · partage · pile · placement-libelles · points-interet · rappels
-rapport-utilisation · recherche · reglages · rendu · reprise-emplacements · socle-console
-socle-dessin · sponsor · suggestion · synchronisation · tiroir-itineraire · tiroir-parcours
-tiroirs · ton-barre · trace-itineraire · tutoriel · vous-etes-ici · vue · vue-etat · webgl
+calage-carte · cartouche-poi · chaleur · choix-ambiance · comptes · demarrage · dessin
+distinctions · ecran-console · edition · enregistrement · environs · fenetre
+fenetre-console · fiche · fiche-evenement · fiche-zone · gestes · gestes-admin
+glisse-fenetre · habillage · ici · index-salon · installation · journee · libelles
+ligne-liste · logos-stands · mesure · mode-admin · modeles · mot-de-passe · nappe
+ordre-calques · ordre-trace · outil-dessin · panneau-criteres · parcours · partage · pile
+placement-libelles · points-interet · rappels · rapport-utilisation · recherche · reglages
+rendu · reprise-emplacements · socle-console · socle-dessin · sponsor · suggestion
+synchronisation · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre
+trace-itineraire · tutoriel · vous-etes-ici · vue · vue-etat · webgl
 
 ### `modules/donnees.mjs` — 105 l. → plan, plan-admin
 
@@ -1700,7 +1714,7 @@ detourage
 
 Importé par :
 
-fiche · recherche · synchronisation
+fiche · recherche · synchronisation · vignettes
 
 ### `modules/mesure.mjs` — 654 l. → plan, plan-admin
 
@@ -2161,14 +2175,14 @@ acces-admin · affiche-ici · bande-admin · batiments · calage-carte · chaleu
 enregistrement · gestes-admin · lancement · nuancier · outil-dessin · pile
 placement-libelles · plan · reprise-emplacements
 
-### `modules/plan.mjs` — 58 l. → plan, plan-admin
+### `modules/plan.mjs` — 62 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
 Importe :
 
-appels · edition-en-cours · lancement · libelles · mini-carte · polices-plan · releve
-salon · sur · texte-plan · tutoriel · vue · webgl
+appels · choix-ambiance · edition-en-cours · lancement · libelles · mini-carte
+polices-plan · releve · salon · sur · texte-plan · tutoriel · vue · webgl
 
 Importé par :
 
@@ -2752,7 +2766,7 @@ texte
 
 Importé par :
 
-corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor
+corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor · vignettes
 
 ### `modules/synchronisation.mjs` — 280 l. → console
 
@@ -3023,17 +3037,17 @@ Importé par :
 
 demarrage · installation · plan · volets
 
-### `modules/vignettes.mjs` — 97 l. → plan, plan-admin
+### `modules/vignettes.mjs` — 109 l. → plan, plan-admin
 
 - l.1 · Les vignettes des logos — ce qui est arrivé, et où le demander
 
 Fonctions :
 
-`sansAvif` 40 · `vignettesLisibles` 54 · `adresseVignette` 75 · `adresseGrande` 96
+`sansAvif` 42 · `vignettesLisibles` 56 · `adresseVignette` 87 · `adresseGrande` 108
 
 Importe :
 
-annonce · salon
+annonce · marque · salon · sur
 
 Importé par :
 

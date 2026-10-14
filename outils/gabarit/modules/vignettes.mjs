@@ -10,6 +10,8 @@
    ============================================================ */
 import { API } from "./salon.mjs";
 import { creeAnnonce } from "./annonce.mjs";
+import { IMAGE_SURE } from "./sur.mjs";
+import { marquePrete } from "./marque.mjs";
 
 /* Ce qui est arrivé, par clé : l'image elle-même, prête à poser. Le lot qui
    l'a apportée reste, lui, dans le cache du navigateur et du service — son
@@ -53,6 +55,16 @@ function sansAvif(/** @type {any} */ d){
  *  encore lu une clé que ce navigateur ne saurait montrer. */
 export function vignettesLisibles(/** @type {any} */ d){
   recues = d;
+  /* Une page à données figées porte ses vignettes avec elle — elle n'a pas
+     d'API à qui les demander (la démonstration, `outils/demo.js`). Rangées
+     comme celles d'un lot, et relues de même : seule une image que la page
+     reconnaît y entre, et elle arrive recadrée — sans le dire, la fiche la
+     relirait pour n'y rien trouver à retirer (`recherche.mjs` `chargeUnLot`). */
+  for (const [cle, src] of Object.entries((d && d.vignettes) || {})){
+    if (!IMAGE_SURE.test(String(src))) continue;
+    VIGNETTES.set(cle, String(src));
+    marquePrete(String(src));
+  }
   if (!avifLisible) sansAvif(d);
 }
 

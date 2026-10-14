@@ -7,6 +7,7 @@ const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
 const modules = require("./modules.js");
 const { projetDeLaConstruction } = require("./projet.js");
+const { salonDemo } = require("./demo.js");
 const D = __dirname;
 /* Le projet Supabase de cette construction, et si elle part en
    prévisualisation : voir `outils/projet.js`. */
@@ -223,6 +224,9 @@ const APERCU_PARTAGE = [
  *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
  *                   une icône, le fichier voisin n'existerait pas. Ses
  *                   polices viennent donc avec elle.
+ *   `choixAmbiance` — le visiteur passe d'une ambiance du plan à l'autre
+ *                   (`modules/choix-ambiance.mjs`) : la démonstration, qui
+ *                   les montre toutes à qui hésite.
  *   `deuxThemes`  — la page a un thème clair et un thème sombre, et suit la
  *                   préférence de l'appareil : la barre du navigateur lui
  *                   demande donc une couleur par préférence. C'est le cas de
@@ -231,9 +235,10 @@ const APERCU_PARTAGE = [
  */
 function page(contenu, options) {
   const { role, tete, application, autonome, deuxThemes, pleinEcran,
-          salon } = options || {};
+          salon, choixAmbiance } = options || {};
   return epure('<!doctype html>\n<html lang="fr"' +
-    (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
+    (role ? ' data-role="' + role + '"' : "") +
+    (choixAmbiance ? " data-choix-ambiance" : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     /* `viewport-fit=cover` étend la page sous les barres du système au lieu de
        l'arrêter à leur bord. Le plan la demandait déjà lui-même, en repli et
@@ -659,6 +664,17 @@ fs.writeFileSync(W + "plan-smcl.html",
   page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8")),
        { autonome: true, pleinEcran: true }));
 
+/* --- la même, dépersonnalisée : un vrai plan, des exposants inventés ---
+   Celle-ci se montre à un prospect (`outils/demo.js`). Elle est servie à
+   `/demo` et non à `/plan-demo` : ce chemin-là désigne le salon « demo »
+   (`modules/salon.mjs` `CHEMIN_SALON`). Seul `</script` est à neutraliser
+   dans des données posées entre deux balises de script. */
+fs.writeFileSync(W + "demo.html",
+  page(tplPublic.replace("/*__DATA__*/", () =>
+    JSON.stringify(salonDemo(JSON.parse(fs.readFileSync(D + "/plans.json", "utf8"))))
+      .replace(/<\/(script)/gi, "<\\/$1")),
+       { autonome: true, pleinEcran: true, choixAmbiance: true }));
+
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.writeFileSync(W + "config.js", epureScript(CONFIG));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
@@ -737,7 +753,7 @@ fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
  * part : c'est de là qu'il tire sa version, il ne peut pas s'y compter.
  */
 const FABRIQUEES = [
-  "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
+  "index.html", "plan.html", "plan-admin.html", "plan-smcl.html", "demo.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
   "config.js", "console.css", ...VERSIONNES, "_headers", "manifeste.webmanifest",
   "icone.svg", "icone-onglet.svg",

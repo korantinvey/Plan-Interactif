@@ -34,6 +34,10 @@ import "./appels.mjs";
    s'inscrit auprès du rendu et du démarrage en se chargeant, et ne fait rien
    sans `?perf` dans l'adresse. */
 import "./releve.mjs";
+/* Le choix de l'ambiance offert au visiteur de la démonstration ne s'importe
+   de nulle part : il se branche en se chargeant, et ne paraît que sur la page
+   qui le demande. */
+import "./choix-ambiance.mjs";
 
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,

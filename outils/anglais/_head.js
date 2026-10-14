@@ -34,6 +34,8 @@ module.exports = {
   "Zoom avant": "Zoom in",
   "Zoom arrière": "Zoom out",
   "Ajuster": "Fit to screen",
+  // le choix de l'ambiance, sur la démonstration (les trois noms sont ceux d'`ambiance.js`)
+  "Ambiance du plan": "Map style",
   "Annuler": "Cancel",
   "© les contributeurs d'OpenStreetMap": "© OpenStreetMap contributors",
 
