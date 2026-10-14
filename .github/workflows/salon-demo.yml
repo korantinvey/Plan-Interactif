@@ -37,12 +37,30 @@ jobs:
 
       # La clé « service_role », ou à défaut la clé secrète du nouveau
       # format : l'une ou l'autre ouvre la base sans politique.
+      # Le journal dit ce que l'API a répondu — son code, le nom et le type
+      # de chaque clé —, jamais une clé : un refus muet ne se diagnostique
+      # pas. La CLI, qu'emploie déjà la sauvegarde, sert de second recours.
       - name: Demander la clé de service
         run: |
-          cle=$(curl -sf -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            "https://api.supabase.com/v1/projects/$REFERENCE/api-keys?reveal=true" |
-            jq -r '[.[] | select(.name == "service_role" or .type == "secret") | .api_key
-                    | select(. != null and . != "")][0] // empty')
+          choisit='[.[] | select(.name == "service_role" or .type == "secret") | .api_key
+                    | select(. != null and . != "")][0] // empty'
+          code=$(curl -s -o cles.json -w "%{http_code}" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$REFERENCE/api-keys?reveal=true")
+          echo "API de gestion : HTTP $code"
+          cle=""
+          if [ "$code" = "200" ]; then
+            jq -r '.[] | "  \(.name) · \(.type // "legacy") · \(if (.api_key // "") != "" then "lisible" else "masquée" end)"' cles.json
+            cle=$(jq -r "$choisit" cles.json)
+          else
+            jq -r '.message // .error // empty' cles.json 2>/dev/null || true
+          fi
+          rm -f cles.json
+          if [ -z "$cle" ]; then
+            echo "Recours : la CLI Supabase"
+            cle=$(npx --no-install supabase projects api-keys --project-ref "$REFERENCE" -o json |
+              jq -r "$choisit") || true
+          fi
           [ -n "$cle" ] || { echo "::error::clé de service introuvable"; exit 1; }
           echo "::add-mask::$cle"
           echo "SUPABASE_SERVICE_ROLE_KEY=$cle" >> "$GITHUB_ENV"
