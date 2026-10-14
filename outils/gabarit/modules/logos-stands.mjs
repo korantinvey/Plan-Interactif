@@ -696,7 +696,7 @@ const ENVOIS_AU_REPOS = 48, MS_AU_REPOS = 12, ENVOIS_EN_GESTE = 12, MS_EN_GESTE 
  * @property {number} large
  * @property {number} haut
  * @property {number} rang dans `TAILLES_PLANCHE`
- * @property {Map<string, Case>} cases par clé de toile
+ * @property {Map<string, Case & { vu: number }>} cases par clé de toile, et la pose où chacune a servi
  * @property {Case[]} libres les cases rendues, à reprendre
  * @property {{ y: number, h: number, x: number }[]} etageres
  * @property {number} bas le haut de la prochaine étagère
@@ -708,7 +708,7 @@ let poseN = 0, minuterieOubli = 0;
 /** Ce que la planche a coûté depuis l'ouverture — lu par le relevé `?perf`.
  *  Des comptes, non des mesures : la mémoire de la carte graphique ne se lit
  *  pas, on n'en connaît que ce qu'on lui a demandé. */
-export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0,
+export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0, cedees: 0,
   niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0 };
 
 /* Combien de toiles la plus grande planche n'a pas su tenir : tant que la vue
@@ -738,7 +738,7 @@ function taillesDe(/** @type {any} */ appareil){
  *  planche d'une vue de FEP27 a grandi deux fois et s'est rangée à neuf
  *  quatre — autant d'envois complets. */
 function rangPour(/** @type {any} */ appareil, /** @type {HTMLCanvasElement[]} */ voulues){
-  const aire = 1.25 * voulues.reduce((a, t) => a + (t.width + 2 * JOINT) * (t.height + 2 * JOINT), 0);
+  const aire = 1.25 * voulues.reduce((a, t) => a + arrondiCase(t.width + 2 * JOINT) * arrondiCase(t.height + 2 * JOINT), 0);
   const tailles = taillesDe(appareil);
   const i = tailles.findIndex(([w, h]) => w * h >= aire);
   return i < 0 ? Math.max(0, tailles.length - 1) : i;
@@ -796,6 +796,33 @@ function envoie(/** @type {Planche} */ pl, /** @type {Case} */ c, /** @type {HTM
   return true;
 }
 
+/* Les cases ont des tailles arrondies. Taillées au pixel près, chacune à
+   son logo, une case rendue ne convenait presque jamais au suivant : la
+   planche s'émiettait, et faute de place assez grande, tout se rangeait à
+   neuf et se renvoyait — six à dix fois par visite sur un téléphone (`?perf`,
+   FEP27, 14 octobre 2026). Arrondies, une case rendue sert au premier logo
+   de même gabarit. */
+const PAS_CASE = 32;
+const arrondiCase = (/** @type {number} */ v) => Math.ceil(v / PAS_CASE) * PAS_CASE;
+
+/** La case d'un logo qui n'est plus posé, assez grande pour (w, h) : la
+ *  moins récemment vue, puis la plus juste. Elle cède sa place — et lui seul
+ *  s'oublie, quand vider toutes les cases d'un coup jetait les logos qu'on
+ *  venait de quitter et qu'un retour en arrière renvoyait un à un. */
+function cedeUneCase(/** @type {Planche} */ pl, /** @type {Set<string>} */ enJeu, /** @type {number} */ w, /** @type {number} */ h){
+  /** @type {string | null} */
+  let mieux = null, vu = Infinity, aire = Infinity;
+  for (const [k, c] of pl.cases){
+    if (enJeu.has(k) || c.w < w || c.h < h || c.w * c.h > 2 * w * h) continue;
+    if (c.vu < vu || (c.vu === vu && c.w * c.h < aire)){ mieux = k; vu = c.vu; aire = c.w * c.h; }
+  }
+  if (mieux === null) return null;
+  const c = /** @type {Case & { vu: number }} */ (pl.cases.get(mieux));
+  pl.cases.delete(mieux); toiles.delete(mieux);
+  COMPTES_LOGOS.cedees++;
+  return { x: c.x, y: c.y, w: c.w, h: c.h };
+}
+
 /** Chaque toile voulue dans sa case : celles déjà rangées n'envoient rien.
  *  Rend faux si elles n'y tiennent pas, même planche vidée et agrandie. */
 function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ voulues){
@@ -803,12 +830,13 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
   let envoye = false, vide = false;
   for (const t of voulues){
     const cle = t.dataset.cle || "";
-    if (pl.cases.has(cle)) continue;
+    const deja = pl.cases.get(cle);
+    if (deja){ deja.vu = poseN; continue; }
     // le joint des deux côtés, dans la case même : elle se vide avec elle
-    const w = t.width + 2 * JOINT, h = t.height + 2 * JOINT;
-    let c = place(pl, w, h);
+    const w = arrondiCase(t.width + 2 * JOINT), h = arrondiCase(t.height + 2 * JOINT);
+    let c = place(pl, w, h) || cedeUneCase(pl, enJeu, w, h);
+    // en dernier recours, toutes les cases des logos qui ne sont plus posés à la fois
     if (!c && !vide){
-      // les cases des logos qui ne sont plus posés cèdent leur place, toutes à la fois
       vide = true;
       for (const [k, v] of [...pl.cases]){
         if (enJeu.has(k)) continue;
@@ -818,7 +846,7 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
     }
     if (!c) return false;
     if (!envoie(pl, c, t)){ pl.libres.push(c); return false; }
-    pl.cases.set(cle, c);
+    pl.cases.set(cle, { ...c, vu: poseN });
     envoye = true;
   }
   if (envoye){ pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++; }

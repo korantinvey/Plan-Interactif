@@ -1676,7 +1676,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1113 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1141 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1689,10 +1689,10 @@ Fonctions :
 `largeurDeToile` 425 · `cleDeToile` 428 · `toileDejaRangee` 434 · `toile` 453
 `logoPose` 488 · `sourceDuToit` 498 · `cedeAuLogo` 511 · `CARRE` 540 · `filtrage` 573
 `plancheDe` 590 · `extensionPlanche` 626 · `rendPlanche` 722 · `taillesDe` 731
-`rangPour` 740 · `nouvellePlanche` 749 · `place` 767 · `envoie` 786 · `range` 801
-`plancheGardee` 835 · `oubliePlancheBientot` 865 · `pres` 877 · `solVu` 888
-`logosARevoir` 905 · `groupe` 920 · `oublie` 931 · `annoncePoses` 965 · `matriceDuToit` 986
-`couchesLogos` 1007
+`rangPour` 740 · `nouvellePlanche` 749 · `place` 767 · `envoie` 786 · `arrondiCase` 806
+`cedeUneCase` 812 · `range` 828 · `plancheGardee` 863 · `oubliePlancheBientot` 893
+`pres` 905 · `solVu` 916 · `logosARevoir` 933 · `groupe` 948 · `oublie` 959
+`annoncePoses` 993 · `matriceDuToit` 1014 · `couchesLogos` 1035
 
 Importe :
 
@@ -1700,7 +1700,7 @@ annonce · camera · detourage · dom · donnees · ecran · libelle-place · vi
 
 Importé par :
 
-ambiance · libelles · releve · webgl
+ambiance · libelles · plan · releve · webgl
 
 ### `modules/marque.mjs` — 335 l. → plan, plan-admin, console
 
@@ -2179,14 +2179,14 @@ acces-admin · affiche-ici · bande-admin · batiments · calage-carte · chaleu
 enregistrement · gestes-admin · lancement · nuancier · outil-dessin · pile
 placement-libelles · plan · reprise-emplacements
 
-### `modules/plan.mjs` — 62 l. → plan, plan-admin
+### `modules/plan.mjs` — 63 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
 Importe :
 
-appels · choix-ambiance · edition-en-cours · lancement · libelles · mini-carte
-polices-plan · releve · salon · sur · texte-plan · tutoriel · vue · webgl
+appels · choix-ambiance · edition-en-cours · lancement · libelles · logos-stands
+mini-carte · polices-plan · releve · salon · sur · texte-plan · tutoriel · vue · webgl
 
 Importé par :
 
