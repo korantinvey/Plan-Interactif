@@ -553,6 +553,21 @@ function repeintWebgl(){
   REPEINT_FINI.dis(GL.duree, n);
 }
 
+/** Les points d'écran que fait un mètre du plan, le long de ses x, à cet
+ *  endroit et à cette hauteur — la perspective comprise, que la vue immersive
+ *  donne aux logos du premier plan et retire à ceux du fond. Rien tant que
+ *  la bibliothèque n'a pas de vue : les logos prennent la finesse du zoom. */
+function pointsParMetre(){
+  let vp = null;
+  // avant sa première image, la bibliothèque refuse de dire ses vues : elle lève une assertion
+  try { vp = GL.deck && GL.deck.getViewports()[0]; } catch (e) { vp = null; }
+  if (!vp) return null;
+  return (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) => {
+    const a = vp.project([x - .5, y, z]), b = vp.project([x + .5, y, z]);
+    return Math.hypot(b[0] - a[0], b[1] - a[1]);
+  };
+}
+
 /** Ce que le bloc des noms a posé au dernier assemblage complet : les images
  *  d'un mouvement le reprennent tel quel. */
 /** @type {{ figurants: any[], logos: any[], libelles: any[], phare: any[] } | null} */
@@ -577,7 +592,7 @@ function assembleWebgl(enMouvement = false){
   for (const b of blocsDansLOrdre()){
     if (b.id === "labels"){
       if (!enMouvement || !posesSurLePlan) posesSurLePlan = { figurants: couchesFigurants(),
-        logos: couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device),
+        logos: couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device, pointsParMetre()),
         libelles: couchesLibellesWebgl(), phare: couchesPhareNoms() };
       const p = posesSurLePlan;
       out.push(...p.figurants, ...p.logos.map(logosSurLesToits), ...p.libelles.map(animeCouche), ...p.phare);
@@ -1963,8 +1978,16 @@ function detacheVolume(g, h){
     const volume = /-(volumes|hausse)-/.test(c.id) && Array.isArray(c.props.data);
     const siens = volume ? c.props.data.filter(d => d.el === g) : [];
     if (!siens.length){ out.push(c); continue; }
-    const reste = c.props.data.filter(d => d.el !== g);
-    if (reste.length) out.push(c.clone({ data: reste }));
+    /* La grande couche d'un bloc garde le volume qui part, aplati sous sa
+       copie mobile : le lui retirer changeait ses données, et la
+       bibliothèque retriangulait tous les stands du hall — la moitié d'une
+       image de 75 à 90 ms à chaque appui sur un téléphone (`?perf`, FEP27,
+       14 octobre 2026). Aplati, seules ses hauteurs se recalculent. */
+    if (GRANDE_COUCHE.test(c.id)) out.push(masqueVolumes(c, new Set([...(c.props.partis || []), g])));
+    else {
+      const reste = c.props.data.filter(d => d.el !== g);
+      if (reste.length) out.push(c.clone({ data: reste }));
+    }
     // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
     if (c.props.contour) continue;
     // il s'allume au clic, et reprend sa couleur dès qu'on le quitte
@@ -2029,11 +2052,68 @@ const ecraseContour = (/** @type {{ de: number, vers: number, t0: number }} */ h
  *  plan se réassemble — au clic, à l'ouverture de la fiche : le temps d'une
  *  image, le contour du dessus paraissait à la hauteur d'arrivée, avant que
  *  le stand ne monte. */
-const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) =>
-  new deck.PathLayer({ id: id + "-contour", data: data.map(d => contourDe(d, d.haut)), pickable: false,
+const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) => {
+  const anneaux = data.map(d => contourDe(d, d.haut));
+  return new deck.PathLayer({ id: id + "-contour", data: anneaux, pickable: false,
     getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
     getWidth: 1, widthUnits: "pixels", contour: true,
+    dataComparator: memesFormes, updateTriggers: { getColor: signeCouleurs(anneaux) },
     ...(extra.hausseContour ? { modelMatrix: ecraseContour(extra.hausseContour) } : {}), ...extra });
+};
+
+/* ------------------------------------------------------------
+   Des couches qui gardent leurs formes
+
+   Choisir un stand change sa couleur et le fait monter : le bloc se
+   reconvertit, et chaque couche reçoit des données neuves. La bibliothèque
+   les tenait pour d'autres formes et retriangulait le hall entier, pour un
+   stand qui avait changé de ton. Deux données de mêmes formes, dans le même
+   ordre, sont donc tenues pour les mêmes (`memesFormes`) ; ce qui a pu
+   changer — couleurs, hauteurs, traits — se dit par une signature
+   (`updateTriggers`), et seul cela se recalcule.
+   ------------------------------------------------------------ */
+/** Les points d'une forme : le polygone d'un aplat ou d'un volume, le chemin
+ *  d'un contour. */
+const formeDe = (/** @type {any} */ d) => d.polygon || d.path;
+/** Deux listes des mêmes formes, des mêmes éléments, dans le même ordre ? */
+function memesFormes(/** @type {any} */ neuves, /** @type {any} */ avant){
+  if (neuves === avant) return true;
+  if (!Array.isArray(neuves) || !Array.isArray(avant) || neuves.length !== avant.length) return false;
+  for (let i = 0; i < neuves.length; i++){
+    const a = neuves[i], b = avant[i];
+    if (a.el !== b.el || !memesPoints(formeDe(a), formeDe(b))) return false;
+  }
+  return true;
+}
+/** Des tableaux de nombres, imbriqués, égaux terme à terme. */
+function memesPoints(/** @type {any} */ a, /** @type {any} */ b){
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return a === b;
+  for (let i = 0; i < a.length; i++) if (!memesPoints(a[i], b[i])) return false;
+  return true;
+}
+/** Ce que les couleurs d'une couche disent d'elles, pour savoir si elles ont changé. */
+const signeCouleurs = (/** @type {any[]} */ data) => data.map(d => d.couleur ? d.couleur.join(",") : "").join(";");
+
+/* La grande couche des volumes d'un bloc, et son contour — non la copie d'un
+   volume qui bouge (`-tot`, `-hausse-`). */
+const GRANDE_COUCHE = /-volumes-\d+(-contour)?$/;
+/** Les volumes `partis` — en mouvement, peints par leur copie — aplatis au
+ *  sol dans la couche, et leur contour effacé. Leurs formes restent : seules
+ *  les hauteurs, ou les traits, se recalculent. Avec `etContour`, la couche
+ *  de volumes neuve et son contour. */
+function masqueVolumes(/** @type {any} */ c, /** @type {Set<Element>} */ partis, etContour = false){
+  const cle = [...partis].map(g => g.getAttribute("data-id") || "").join("|");
+  if (etContour){
+    const v = masqueVolumes(c, partis);
+    const contour = coucheContours(c.id, c.props.data);
+    return [v, masqueVolumes(contour, partis)];
+  }
+  if (c.props.contour) return c.clone({ partis, getWidth: (/** @type {any} */ x) => partis.has(x.el) ? 0 : 1,
+    updateTriggers: { ...c.props.updateTriggers, getWidth: cle } });
+  return c.clone({ partis, getElevation: (/** @type {any} */ d) => partis.has(d.el) ? 0 : d.haut,
+    updateTriggers: { ...c.props.updateTriggers, getElevation: cle + "#" + c.props.data.map((/** @type {any} */ d) => d.haut).join(",") } });
+}
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
@@ -2057,14 +2137,18 @@ function couchesDeBloc(acc, cle){
   // les volumes d'abord : ce qui est à plat se mesure à leur profondeur
   const couches = [];
   pleins.forEach((liste, k) => {
-    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut && !d.hausse);
+    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut);
     if (plats.length) couches.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
-      getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat }));
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat,
+      dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(plats) } }));
     /* Les stands de la vue immersive : la même couleur, montée en volume. La
-       lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
-    if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
-      extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE }), coucheContours(cle + "-volumes-" + k, volumes));
+       lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi.
+       Celui qui monte ou descend y reste, aplati (`masqueVolumes`) : sa copie
+       mobile suit, et la couche garde ses formes d'une conversion à l'autre. */
+    if (volumes.length) out.push(...masqueVolumes(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes,
+      pickable: k === 0, extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+      material: MATIERE, dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(volumes) } }),
+    new Set(volumes.filter(d => d.hausse).map(d => d.el)), true));
     // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
     liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
       id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
@@ -2607,7 +2691,9 @@ function coucheSurvol(couche){
 function coucheSurvolVolume(c){
   // la plaque d’un jeton, dressée par sa matrice : son aplat de face porte déjà le survol
   if (c.props.modelMatrix) return [];
-  const siens = Array.isArray(c.props.data) ? c.props.data.filter(d => d.el === GL.survol) : [];
+  // un volume aplati sous sa copie mobile : c'est elle qui porte le survol
+  const siens = Array.isArray(c.props.data)
+    ? c.props.data.filter(d => d.el === GL.survol && !(c.props.partis && c.props.partis.has(d.el))) : [];
   if (!siens.length) return [];
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   const a = Math.max(.45, t[3] / 255);

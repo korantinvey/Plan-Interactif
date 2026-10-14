@@ -82,6 +82,18 @@ const finesse = (/** @type {number} */ zoom) => {
   const voulue = 2 ** zoom * Math.min(3, window.devicePixelRatio || 1) * PREMIER_PLAN;
   return Math.max(PIXELS_PAR_METRE_MIN, 2 ** (Math.ceil(Math.log2(voulue) * 2) / 2));
 };
+/* La largeur d'une toile, d'après ce que le logo occupe à l'écran à sa
+   place : en vue immersive, un logo du premier plan s'étale, un logo du fond
+   n'est qu'un trait. La finesse unique, prise au premier plan et sur la
+   densité de l'écran, les faisait tous aussi fins : sur un téléphone à trois
+   pixels par point, la planche débordait sans cesse — six agrandissements,
+   onze rangements et 343 Mo envoyés en quarante secondes (`?perf`, FEP27,
+   14 octobre 2026). Elle avance par demi-octaves, pour qu'un zoom ne refasse
+   pas les toiles à chaque cran, et se borne : jamais moins qu'un trait
+   lisible, jamais plus que la vignette. */
+const TOILE_MIN = 64, TOILE_MAX = 1024;
+const palier = (/** @type {number} */ px) =>
+  Math.min(TOILE_MAX, Math.max(TOILE_MIN, 2 ** (Math.ceil(Math.log2(Math.max(1, px)) * 2) / 2)));
 /* Un rien de marge vide autour du logo, pour que ses bords ne se coupent pas
    net. */
 const MARGE = 2;
@@ -965,8 +977,10 @@ function annoncePoses(/** @type {{ id: string }[]} */ data){
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
  * @param {number} zoom
  * @param {any} [appareil] la carte graphique, telle que la bibliothèque la tient
+ * @param {((x: number, y: number, z: number) => number) | null} [pointsParMetre] les points d'écran
+ *   que fait un mètre du plan, à cet endroit et à cette hauteur ; sans, la finesse du zoom
  */
-export function couchesLogos(L, hauteurDe, v, zoom, appareil){
+export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
   const p = P();
   couvert = null;
   // celles qui n'ont pas pris la route se rangent à nouveau, d'après cette vue
@@ -980,7 +994,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   couvert = autour(MARGE_VUE);
   const loin = autour(MARGE_PRECHARGE);
   if (!gele || !finesseCouverte) finesseCouverte = finesse(zoom);
-  const enVolume = cameraEnJeu(), tasse = tassement();
+  const enVolume = cameraEnJeu(), tasse = tassement(), densite = Math.min(3, window.devicePixelRatio || 1);
   // du centre de la vue vers ses bords : les grandes se demandent dans cet ordre
   const vx = v.x + v.w / 2, vy = v.y + v.h / 2;
   const autourDeLaVue = (p.stands || []).filter((/** @type {any} */ s) => s.vignette && s.c && dedans(loin, s.c))
@@ -1006,8 +1020,20 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     const prof = Math.min(bb[1] * PART_DU_TOIT, bb[0] * PART_DU_TOIT / rapport, LARGEUR_MAX / rapport) * k;
     if (!(prof > 0)) continue;
     const large = prof * rapport;
-    const voulue = Math.max(PIXELS_MIN, large * finesseCouverte);
+    const x = cx + (reg ? +reg.dx || 0 : 0), y = cy + (reg ? +reg.dy || 0 : 0);
+    /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
+       sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
+       ce rien suffisait à sortir le logo de ce qu'elle montre. */
+    const z = enVolume ? hauteurDe(trace) + .05 : 0;
+    /* Mesuré au sol que l'écran montre : un logo des abords prend l'échelle
+       du bord le plus proche. Mesuré à sa place, derrière la caméra quand les
+       abords y débordent, il rendait une échelle sans fin. */
+    const pts = pointsParMetre
+      ? pointsParMetre(Math.min(Math.max(x, sol.x), sol.x + sol.w), Math.min(Math.max(y, sol.y), sol.y + sol.h), z) : 0;
+    const voulue = pts > 0 && isFinite(pts) ? palier(large * pts * densite) : Math.max(PIXELS_MIN, large * finesseCouverte);
     let t = toiles.get(cleDeToile(src.cle, iw, voulue, tasse));
+    // pendant un geste, un logo déjà rangé garde sa toile : la juste finesse attend sa fin
+    if (t === undefined && gele) t = toileDejaRangee(src.cle, tasse) || undefined;
     if (t === undefined){
       if (faites >= (gele ? ENVOIS_EN_GESTE : ENVOIS_AU_REPOS) || msFaites > (gele ? MS_EN_GESTE : MS_AU_REPOS)){
         t = toileDejaRangee(src.cle, tasse); attente++;
@@ -1019,11 +1045,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
       }
     }
     if (!t) continue;
-    /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
-       sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
-       ce rien suffisait à sortir le logo de ce qu'elle montre. */
-    data.push({ x: cx + (reg ? +reg.dx || 0 : 0), y: cy + (reg ? +reg.dy || 0 : 0),
-      z: enVolume ? hauteurDe(trace) + .05 : 0, large, prof, t, el: g, id: s.id,
+    data.push({ x, y, z, large, prof, t, el: g, id: s.id,
       // attrapé par l'outil de placement, et lui seul : hors de ce mode, un appui ouvre la fiche
       lbl: PLACE_LIBELLES ? PREFIXE_LOGO + s.id : null });
   }
