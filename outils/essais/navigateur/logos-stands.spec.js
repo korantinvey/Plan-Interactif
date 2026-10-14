@@ -69,13 +69,18 @@ async function deP(page, ambiance, grandes = false, conf = null) {
    prend plusieurs secondes, et sept logos deux à deux en font une douzaine. */
 const ATTENTE_LOGOS = 40_000;
 
-/** La couche des logos, une fois posée : chaque logo, et la case qu'il lit. */
-const logosPoses = (page) => page.waitForFunction(() => {
+/** La couche des logos, une fois posée : chaque logo, et la case qu'il lit.
+ *  Avec `distincts`, une fois qu'elle en pose autant de différents — les logos
+ *  paraissent à mesure qu'ils sont prêts, et la première pose peut n'en
+ *  montrer qu'un. */
+const logosPoses = (page, distincts = 1) => page.waitForFunction((n) => {
   const d = window.__essais.GL.deck;
   const c = (d.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
-  if (!c || !c.props.data.length) return false;
-  return c.props.data.map((e) => ({ z: e.z, cle: e.t.dataset.cle, cas: c.props.getCaseLogo(e) }));
-}, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
+  if (!c || new Set(c.props.data.map((e) => e.t.dataset.cle)).size < n) return false;
+  // une toile : la planche refaite à chaque pose ; une texture : la planche gardée
+  const gardee = !(c.props.texture instanceof HTMLCanvasElement);
+  return c.props.data.map((e) => ({ z: e.z, cle: e.t.dataset.cle, cas: c.props.getCaseLogo(e), gardee }));
+}, distincts, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
 
 for (const ambiance of ["classique", "tuiles"]) {
   test("le logo prend la place du nom, en " + ambiance, async ({ page }) => {
@@ -110,7 +115,7 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
   test.setTimeout(180_000);
   const erreurs = await deP(page, "classique");
   test.skip(!erreurs, "pas de carte graphique");
-  const avant = await logosPoses(page);
+  const avant = await logosPoses(page, 2);
   expect(new Set(avant.map((l) => l.cle)).size).toBeGreaterThan(1);
 
   const zoom = () => page.evaluate(() => window.__essais.GL.deck.props.viewState.zoom);
@@ -136,6 +141,8 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
 
   const apres = await logosPoses(page);
   for (const l of apres) expect(l.cas, l.cle).not.toEqual([0, 0, 1, 1]);
+  // gardée sur la carte graphique, la planche n'est pas refaite à chaque pose
+  expect(apres[0].gardee).toBe(true);
   expect(erreurs).toEqual([]);
 });
 

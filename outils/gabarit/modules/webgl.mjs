@@ -42,7 +42,7 @@ import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
-import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
+import { couchesLogos, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -266,12 +266,16 @@ export function monteWebgl(){
       attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
     /* Un logo prêt à se poser n'a rien à reconvertir : le prochain
-       assemblage le pose, et aucun bloc n'est sali. Le nom de son stand, lui,
-       doit apprendre à lui céder la place.
+       assemblage le pose, et aucun bloc n'est sali. Les noms ne se refont
+       que lorsque les logos posés changent : celui d'un stand doit alors
+       apprendre à lui céder la place.
 
-       Une fois par image, quel que soit le nombre de logos prêts : les
+       Une fois par image, quel que soit le nombre de logos posés : les
        vignettes d'un lot se décodent ensemble, et chacune refaisait tous les
        noms du plan — treize fois en sept millisecondes sur Funexpo. */
+    LOGO_PRET.suis(() => {
+      if (document.documentElement.classList.contains(CLASSE_LOGOS)) planifieWebgl();
+    });
     let logosPrets = 0;
     PANNEAU_PRET.suis(() => {
       if (logosPrets || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
@@ -459,6 +463,8 @@ function basculeCamera(){
 export function vueWebgl(enGeste = false){
   basculeCamera();
   poseGeste(enGeste);
+  // ce que le survol a trouvé ne tient plus sous la souris
+  _epoqueSurvol++;
   const v = vueDeck();
   GL.deck.setProps({ viewState: v });
   // les logos des stands ne couvrent que les abords de la vue (`logos-stands.mjs`)
@@ -544,6 +550,7 @@ function blocsDansLOrdre(){
 function repeintWebgl(){
   GL.image = 0;
   if (!GL.actif) return;
+  _epoqueSurvol++;
   const t0 = performance.now();
   const vus = new Set();
   let n = 0;
@@ -564,6 +571,21 @@ function repeintWebgl(){
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
   REPEINT_FINI.dis(GL.duree, n);
+}
+
+/** Les points d'écran que fait un mètre du plan, le long de ses x, à cet
+ *  endroit et à cette hauteur — la perspective comprise, que la vue immersive
+ *  donne aux logos du premier plan et retire à ceux du fond. Rien tant que
+ *  la bibliothèque n'a pas de vue : les logos prennent la finesse du zoom. */
+function pointsParMetre(){
+  let vp = null;
+  // avant sa première image, la bibliothèque refuse de dire ses vues : elle lève une assertion
+  try { vp = GL.deck && GL.deck.getViewports()[0]; } catch (e) { vp = null; }
+  if (!vp) return null;
+  return (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ z) => {
+    const a = vp.project([x - .5, y, z]), b = vp.project([x + .5, y, z]);
+    return Math.hypot(b[0] - a[0], b[1] - a[1]);
+  };
 }
 
 /** Ce que le bloc des noms a posé au dernier assemblage complet : les images
@@ -590,7 +612,7 @@ function assembleWebgl(enMouvement = false){
   for (const b of blocsDansLOrdre()){
     if (b.id === "labels"){
       if (!enMouvement || !posesSurLePlan) posesSurLePlan = { figurants: couchesFigurants(),
-        logos: couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device),
+        logos: couchesLogos(deck, hauteurEnCours, vueDuPlan(), vueDeck().zoom, GL.deck && GL.deck.device, pointsParMetre()),
         libelles: couchesLibellesWebgl(), phare: couchesPhareNoms() };
       const p = posesSurLePlan;
       out.push(...p.figurants, ...p.logos.map(logosSurLesToits), ...p.libelles.map(animeCouche), ...p.phare);
@@ -1976,8 +1998,16 @@ function detacheVolume(g, h){
     const volume = /-(volumes|hausse)-/.test(c.id) && Array.isArray(c.props.data);
     const siens = volume ? c.props.data.filter(d => d.el === g) : [];
     if (!siens.length){ out.push(c); continue; }
-    const reste = c.props.data.filter(d => d.el !== g);
-    if (reste.length) out.push(c.clone({ data: reste }));
+    /* La grande couche d'un bloc garde le volume qui part, aplati sous sa
+       copie mobile : le lui retirer changeait ses données, et la
+       bibliothèque retriangulait tous les stands du hall — la moitié d'une
+       image de 75 à 90 ms à chaque appui sur un téléphone (`?perf`, FEP27,
+       14 octobre 2026). Aplati, seules ses hauteurs se recalculent. */
+    if (GRANDE_COUCHE.test(c.id)) out.push(masqueVolumes(c, new Set([...(c.props.partis || []), g])));
+    else {
+      const reste = c.props.data.filter(d => d.el !== g);
+      if (reste.length) out.push(c.clone({ data: reste }));
+    }
     // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
     if (c.props.contour) continue;
     // il s'allume au clic, et reprend sa couleur dès qu'on le quitte
@@ -2042,11 +2072,68 @@ const ecraseContour = (/** @type {{ de: number, vers: number, t0: number }} */ h
  *  plan se réassemble — au clic, à l'ouverture de la fiche : le temps d'une
  *  image, le contour du dessus paraissait à la hauteur d'arrivée, avant que
  *  le stand ne monte. */
-const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) =>
-  new deck.PathLayer({ id: id + "-contour", data: data.map(d => contourDe(d, d.haut)), pickable: false,
+const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) => {
+  const anneaux = data.map(d => contourDe(d, d.haut));
+  return new deck.PathLayer({ id: id + "-contour", data: anneaux, pickable: false,
     getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
     getWidth: 1, widthUnits: "pixels", contour: true,
+    dataComparator: memesFormes, updateTriggers: { getColor: signeCouleurs(anneaux) },
     ...(extra.hausseContour ? { modelMatrix: ecraseContour(extra.hausseContour) } : {}), ...extra });
+};
+
+/* ------------------------------------------------------------
+   Des couches qui gardent leurs formes
+
+   Choisir un stand change sa couleur et le fait monter : le bloc se
+   reconvertit, et chaque couche reçoit des données neuves. La bibliothèque
+   les tenait pour d'autres formes et retriangulait le hall entier, pour un
+   stand qui avait changé de ton. Deux données de mêmes formes, dans le même
+   ordre, sont donc tenues pour les mêmes (`memesFormes`) ; ce qui a pu
+   changer — couleurs, hauteurs, traits — se dit par une signature
+   (`updateTriggers`), et seul cela se recalcule.
+   ------------------------------------------------------------ */
+/** Les points d'une forme : le polygone d'un aplat ou d'un volume, le chemin
+ *  d'un contour. */
+const formeDe = (/** @type {any} */ d) => d.polygon || d.path;
+/** Deux listes des mêmes formes, des mêmes éléments, dans le même ordre ? */
+function memesFormes(/** @type {any} */ neuves, /** @type {any} */ avant){
+  if (neuves === avant) return true;
+  if (!Array.isArray(neuves) || !Array.isArray(avant) || neuves.length !== avant.length) return false;
+  for (let i = 0; i < neuves.length; i++){
+    const a = neuves[i], b = avant[i];
+    if (a.el !== b.el || !memesPoints(formeDe(a), formeDe(b))) return false;
+  }
+  return true;
+}
+/** Des tableaux de nombres, imbriqués, égaux terme à terme. */
+function memesPoints(/** @type {any} */ a, /** @type {any} */ b){
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return a === b;
+  for (let i = 0; i < a.length; i++) if (!memesPoints(a[i], b[i])) return false;
+  return true;
+}
+/** Ce que les couleurs d'une couche disent d'elles, pour savoir si elles ont changé. */
+const signeCouleurs = (/** @type {any[]} */ data) => data.map(d => d.couleur ? d.couleur.join(",") : "").join(";");
+
+/* La grande couche des volumes d'un bloc, et son contour — non la copie d'un
+   volume qui bouge (`-tot`, `-hausse-`). */
+const GRANDE_COUCHE = /-volumes-\d+(-contour)?$/;
+/** Les volumes `partis` — en mouvement, peints par leur copie — aplatis au
+ *  sol dans la couche, et leur contour effacé. Leurs formes restent : seules
+ *  les hauteurs, ou les traits, se recalculent. Avec `etContour`, la couche
+ *  de volumes neuve et son contour. */
+function masqueVolumes(/** @type {any} */ c, /** @type {Set<Element>} */ partis, etContour = false){
+  const cle = [...partis].map(g => g.getAttribute("data-id") || "").join("|");
+  if (etContour){
+    const v = masqueVolumes(c, partis);
+    const contour = coucheContours(c.id, c.props.data);
+    return [v, masqueVolumes(contour, partis)];
+  }
+  if (c.props.contour) return c.clone({ partis, getWidth: (/** @type {any} */ x) => partis.has(x.el) ? 0 : 1,
+    updateTriggers: { ...c.props.updateTriggers, getWidth: cle } });
+  return c.clone({ partis, getElevation: (/** @type {any} */ d) => partis.has(d.el) ? 0 : d.haut,
+    updateTriggers: { ...c.props.updateTriggers, getElevation: cle + "#" + c.props.data.map((/** @type {any} */ d) => d.haut).join(",") } });
+}
 
 /* Une matière mate : un plan de salon n'a pas de reflets, et un dessus qui
    brille changerait de couleur d'un bout du hall à l'autre. Les parts sont
@@ -2070,14 +2157,18 @@ function couchesDeBloc(acc, cle){
   // les volumes d'abord : ce qui est à plat se mesure à leur profondeur
   const couches = [];
   pleins.forEach((liste, k) => {
-    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut && !d.hausse);
+    const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut);
     if (plats.length) couches.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
-      getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat }));
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat,
+      dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(plats) } }));
     /* Les stands de la vue immersive : la même couleur, montée en volume. La
-       lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi. */
-    if (volumes.length) out.push(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes, pickable: k === 0,
-      extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-      material: MATIERE }), coucheContours(cle + "-volumes-" + k, volumes));
+       lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi.
+       Celui qui monte ou descend y reste, aplati (`masqueVolumes`) : sa copie
+       mobile suit, et la couche garde ses formes d'une conversion à l'autre. */
+    if (volumes.length) out.push(...masqueVolumes(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes,
+      pickable: k === 0, extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
+      material: MATIERE, dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(volumes) } }),
+    new Set(volumes.filter(d => d.hausse).map(d => d.el)), true));
     // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
     liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
       id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
@@ -2351,6 +2442,70 @@ let _survolXY = null, _survolImage = 0;
    dernière position est toujours servie. */
 const SURVOL_ESPACE = 100;
 let _survolDernier = 0;
+
+/* ------------------------------------------------------------
+   La désignation sans attendre la carte graphique
+
+   Demander ce qui est sous la souris fait peindre le plan dans une image
+   cachée, puis en relire un pixel. La relecture attendait que la carte
+   graphique ait fini tout ce qu'on lui avait confié — l'image du plan en
+   cours comprise : environ cent millisecondes à chaque survol sur un poste
+   de bureau à carte intégrée (`?perf`, FEP27, 14 octobre 2026), pendant
+   lesquelles la page ne répondait plus.
+
+   La bibliothèque sait relire « plus tard » : elle copie le pixel dans un
+   tampon, puis le lit. Mais en WebGL elle le lit aussitôt, sans attendre la
+   copie, et l'attente revient. On lui apprend donc à poser une barrière et à
+   ne lire qu'une fois la carte graphique passée : la page continue pendant
+   ce temps, et le survol arrive une image ou deux plus tard.
+
+   Sans barrière possible — WebGL sans « fenceSync », bibliothèque qui a
+   changé —, ou au premier échec, la désignation redevient immédiate.
+   ------------------------------------------------------------ */
+/** @type {boolean | null} — `null` tant qu'on ne l'a pas essayée */
+let _lectureDifferee = null;
+function lectureDifferee(){
+  if (_lectureDifferee !== null) return _lectureDifferee;
+  _lectureDifferee = false;
+  try {
+    const d = GL.deck && GL.deck.device;
+    if (!d || d.type !== "webgl" || typeof d.createFence !== "function" ||
+      typeof GL.deck.pickObjectAsync !== "function") return false;
+    const essai = d.createBuffer({ byteLength: 4 });
+    const proto = Object.getPrototypeOf(essai);
+    essai.destroy();
+    if (typeof proto.readSyncWebGL !== "function" || typeof proto.readAsync !== "function") return false;
+    if (!proto.__barriere){
+      proto.__barriere = true;
+      /** @this {any} */
+      proto.readAsync = async function(/** @type {number} */ debut = 0, /** @type {number} */ longueur){
+        const barriere = this.device.createFence();
+        // sans cela, la barrière peut attendre dans la file sans jamais partir
+        this.device.gl.flush();
+        try { await barriere.signaled; } finally { barriere.destroy(); }
+        return this.readSyncWebGL(debut, longueur);
+      };
+    }
+    _lectureDifferee = true;
+  } catch (e) { _lectureDifferee = false; }
+  return _lectureDifferee;
+}
+
+/* Ce que le survol a trouvé, où, et dans quelle vue : un clic de la souris
+   au même point le reprend au lieu de redemander une image à la carte
+   graphique. La vue qui bouge, le plan repeint, et il ne vaut plus rien. */
+let _epoqueSurvol = 0;
+/** @type {{ x: number, y: number, rayon: number, epoque: number, o: any } | null} */
+let _survolVu = null;
+let _survolEnCours = false;
+
+/** Le survol a trouvé `o` sous (x, y) : le stand s'allume, le curseur suit. */
+function survolTrouve(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon, /** @type {any} */ o){
+  _survolVu = { x, y, rayon, epoque: _epoqueSurvol, o };
+  const el = o && o.el;
+  poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
+  poseCurseurWebgl(o);
+}
 function demandeSurvolWebgl(){
   if (_survolImage) return;
   const reste = _survolDernier + SURVOL_ESPACE - performance.now();
@@ -2366,10 +2521,23 @@ function survoleWebgl(){
      attend la fin du geste (`poseGeste`), qui la redemande : le stand sous la
      souris immobile est alors le bon, ce qu'il n'était pas après un zoom. */
   if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
-  const o = objetSous(_survolXY[0], _survolXY[1], _page.enEdition() ? 3 : 0);
-  const el = o && o.el;
-  poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
-  poseCurseurWebgl(o);
+  const [x, y] = _survolXY, rayon = _page.enEdition() ? 3 : 0;
+  if (!lectureDifferee()){ survolTrouve(x, y, rayon, objetSous(x, y, rayon)); return; }
+  // une désignation à la fois : la suivante part au retour de celle-ci
+  if (_survolEnCours) return;
+  _survolEnCours = true;
+  const epoque = _epoqueSurvol;
+  objetSousDiffere(x, y, rayon).then(o => {
+    _survolEnCours = false;
+    if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
+    // la vue a bougé pendant la relecture : ce qu'elle a vu n'est plus sous la souris
+    if (epoque === _epoqueSurvol) survolTrouve(x, y, rayon, o);
+    if (epoque !== _epoqueSurvol || _survolXY[0] !== x || _survolXY[1] !== y) demandeSurvolWebgl();
+  }, () => {
+    _survolEnCours = false;
+    _lectureDifferee = false;
+    demandeSurvolWebgl();
+  });
 }
 
 function brancheSurvolWebgl(){
@@ -2394,7 +2562,9 @@ function poseSurvolWebgl(el){
     if (el) visePour(el, 1);
     gonfleSurvol();
   } else TUILES.clear();
-  GL.deck.setProps({ layers: assembleWebgl() });
+  /* Les noms, les logos et les figurants ne dépendent pas du survol : ils se
+     reprennent du dernier assemblage complet, comme pendant un mouvement. */
+  GL.deck.setProps({ layers: assembleWebgl(true) });
 }
 
 /* ------------------------------------------------------------
@@ -2541,7 +2711,9 @@ function coucheSurvol(couche){
 function coucheSurvolVolume(c){
   // la plaque d’un jeton, dressée par sa matrice : son aplat de face porte déjà le survol
   if (c.props.modelMatrix) return [];
-  const siens = Array.isArray(c.props.data) ? c.props.data.filter(d => d.el === GL.survol) : [];
+  // un volume aplati sous sa copie mobile : c'est elle qui porte le survol
+  const siens = Array.isArray(c.props.data)
+    ? c.props.data.filter(d => d.el === GL.survol && !(c.props.partis && c.props.partis.has(d.el))) : [];
   if (!siens.length) return [];
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
   const a = Math.max(.45, t[3] / 255);
@@ -2817,12 +2989,22 @@ function logosSurLesToits(/** @type {any} */ c){
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
   const r = cadrePlan();
-  const o = GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 });
+  return lisObjet(GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
+}
+/** La même question, la réponse relue sans attendre la carte graphique. */
+async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
+  const r = cadrePlan();
+  return lisObjet(await GL.deck.pickObjectAsync({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
+}
+function lisObjet(/** @type {any} */ o){
   if (!o) return null;
   const d = o.object || {}, p = (o.layer && o.layer.props) || {};
   return { el: d.el || p.el || null, prise: d.prise || p.prise || null, lbl: d.lbl || null };
 }
 export function cibleWebgl(x, y, rayon){
+  // la souris immobile depuis son survol : il a déjà demandé
+  const s = _survolVu;
+  if (s && s.epoque === _epoqueSurvol && s.x === x && s.y === y && s.rayon === (rayon || 0)) return s.o ? s.o.el : null;
   const o = objetSous(x, y, rayon);
   return o ? o.el : null;
 }
