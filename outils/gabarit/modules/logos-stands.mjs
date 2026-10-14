@@ -669,8 +669,12 @@ const TAILLES_PLANCHE = [[PLANCHE, 1024], [PLANCHE, PLANCHE], [PLANCHE, PLANCHE_
    renvoyer, et la vue d'ensemble, qui n'en montre aucun, ne la garde pas. */
 const OUBLI_PLANCHE = 30_000;
 /* Ce qu'une pose envoie au plus : les plus proches du centre d'abord, le
-   reste à l'image suivante. Le stand garde son nom en attendant. */
-const ENVOIS_PAR_POSE = 12, MS_PAR_POSE = 8;
+   reste à l'image suivante. Le stand garde son nom en attendant. Douze au
+   repos, puis sept poses pour une centaine de logos : sur un poste de bureau
+   chargé (`?perf`, FEP27, 14 octobre 2026), ils paraissaient plus lentement
+   qu'avec la planche refaite d'un coup. Le repos en prend donc assez pour
+   une vue en deux poses ; le geste, qui ne doit rien attendre, peu. */
+const ENVOIS_AU_REPOS = 48, MS_AU_REPOS = 12, ENVOIS_EN_GESTE = 12, MS_EN_GESTE = 6;
 
 /** @typedef {{ x: number, y: number, w: number, h: number }} Case */
 /**
@@ -711,11 +715,27 @@ function rendPlanche(garderToiles = false){
   if (!garderToiles) toiles.clear();
 }
 
+/** Les tailles que cette carte graphique accepte. */
+function taillesDe(/** @type {any} */ appareil){
+  const max = (appareil.limits && appareil.limits.maxTextureDimension2D) || PLANCHE;
+  return TAILLES_PLANCHE.filter(([w, h]) => w <= max && h <= max);
+}
+
+/** Le premier rang où ces toiles tiennent sans doute, d'après leur aire et
+ *  un quart de plus pour le jeu des étagères. Partie de la plus petite, la
+ *  planche d'une vue de FEP27 a grandi deux fois et s'est rangée à neuf
+ *  quatre — autant d'envois complets. */
+function rangPour(/** @type {any} */ appareil, /** @type {HTMLCanvasElement[]} */ voulues){
+  const aire = 1.25 * voulues.reduce((a, t) => a + (t.width + 2 * JOINT) * (t.height + 2 * JOINT), 0);
+  const tailles = taillesDe(appareil);
+  const i = tailles.findIndex(([w, h]) => w * h >= aire);
+  return i < 0 ? Math.max(0, tailles.length - 1) : i;
+}
+
 /** Une planche neuve, vide, à ce rang de taille ; rien si la carte graphique
  *  ne la sait pas faire. */
 function nouvellePlanche(/** @type {any} */ appareil, /** @type {number} */ rang){
-  const max = (appareil.limits && appareil.limits.maxTextureDimension2D) || PLANCHE;
-  const tailles = TAILLES_PLANCHE.filter(([w, h]) => w <= max && h <= max);
+  const tailles = taillesDe(appareil);
   if (rang >= tailles.length) return null;
   const [large, haut] = tailles[rang];
   try {
@@ -808,12 +828,12 @@ function plancheGardee(/** @type {any} */ appareil, /** @type {HTMLCanvasElement
   if (voulues.length >= tropDeToiles * .8) return null;
   tropDeToiles = Infinity;
   poseN++;
-  if (!gardee) gardee = nouvellePlanche(appareil, 0);
+  if (!gardee) gardee = nouvellePlanche(appareil, rangPour(appareil, voulues));
   if (!gardee) return null;
   if (range(gardee, voulues)) return gardee;
   /* Vidée, elle ne tient pas encore : rangée à neuf à sa taille, les cases
      éparses s'étant peut-être émiettées, puis plus grande. */
-  for (let rang = gardee.rang; ; rang++){
+  for (let rang = gardee.rang; ; rang = Math.max(rang + 1, rangPour(appareil, voulues))){
     const avant = gardee;
     const pl = rang === avant.rang ? { ...avant, cases: new Map(), libres: [], etageres: [], bas: 0 }
       : nouvellePlanche(appareil, rang);
@@ -989,7 +1009,9 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     const voulue = Math.max(PIXELS_MIN, large * finesseCouverte);
     let t = toiles.get(cleDeToile(src.cle, iw, voulue, tasse));
     if (t === undefined){
-      if (faites >= ENVOIS_PAR_POSE || msFaites > MS_PAR_POSE){ t = toileDejaRangee(src.cle, tasse); attente++; }
+      if (faites >= (gele ? ENVOIS_EN_GESTE : ENVOIS_AU_REPOS) || msFaites > (gele ? MS_EN_GESTE : MS_AU_REPOS)){
+        t = toileDejaRangee(src.cle, tasse); attente++;
+      }
       else {
         const t0 = performance.now();
         t = toile(src.cle, src.i, iw, ih, voulue, tasse);
