@@ -783,13 +783,13 @@ Importe :
 
 detourage
 
-### `modules/detourage.mjs` — 157 l. → plan, plan-admin, console
+### `modules/detourage.mjs` — 221 l. → plan, plan-admin, console
 
 - l.1 · Le détourage d'un logo — son fond blanc retiré, pixel par pixel
 
 Fonctions :
 
-`detoure` 34 · `creux` 117
+`detoure` 46 · `creux` 136 · `largeur` 191 · `longueur` 211
 
 Importé par :
 
@@ -3330,6 +3330,7 @@ Portes :
 - `20261013091043_grande_vignette_des_logos.sql` — vignette_de_logo
 - `20261013121249_vignettes_de_logos_en_avif.sql` — vignette_de_logo
 - `20261013132628_grande_vignette_detouree.sql` — vignette_de_logo
+- `20261014082348_grandes_vignettes_a_redetourer.sql` — —
 
 ## Le reste
 
