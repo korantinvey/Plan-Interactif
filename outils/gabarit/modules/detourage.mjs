@@ -19,6 +19,18 @@ const CLAIR_FOND = 225, BLANC_FOND = 245;
    retiré. */
 const TRAIT = .12;
 
+/* Ou si ce trait n'est pas plus épais que le creux lui-même n'est large : l'œil
+   d'un « p » gras, sur un logo long et bas où le petit côté donne un seuil
+   trop mince. Un texte blanc posé sur un aplat ne passe pas pour autant : ses
+   lettres sont plus fines que la marge d'aplat qui les sépare du dehors. */
+const PART_CREUX = 1;
+
+/* Le seuil tiré du petit côté ne vaut que pour un creux trapu — l'œil d'une
+   lettre, plus large ici que le tiers de sa longueur. Une lettre blanche,
+   longue et fine, posée dans un bandeau mince en serait enclose d'aussi
+   près : elle n'est retirée que si le bandeau est plus mince qu'elle. */
+const TRAPU = .35;
+
 /**
  * Retire le fond d'un logo, en place.
  *
@@ -50,7 +62,11 @@ export function detoure(px, w, h){
     if (k >= w) file.push(k - w);
     if (k < w * (h - 1)) file.push(k + w);
   }
-  creux(px, vu, w, h, clarte);
+  /* Un creux retiré rapproche du fond ceux qu'il enclôt : les lettres posées
+     dans un cadre n'ont de distance qu'une fois le dedans du cadre retiré. On
+     remesure donc tant qu'un tour en retire, en bornant les tours — chacun
+     reparcourt l'image entière. */
+  for (let tour = 0; tour < 4 && creux(px, vu, w, h, clarte); tour++);
   /* Le bord. Un pixel du contour mêle la couleur du logo au blanc du fond :
      laissé tel quel, il dessinait un liseré clair et crénelé sur le toit. On
      défait ce mélange — sa part de blanc devient de la transparence, et sa
@@ -108,6 +124,9 @@ export function detoure(px, w, h){
  * texte posé sur un aplat, lui, est enclos par l'aplat entier, loin du bord :
  * il reste.
  *
+ * Rend le nombre de pixels retirés, pour que `detoure` sache s'il faut
+ * remesurer.
+ *
  * @param {Uint8ClampedArray} px
  * @param {Uint8Array} vu le fond déjà parcouru depuis le pourtour
  * @param {number} w
@@ -124,7 +143,7 @@ function creux(px, vu, w, h, clarte){
   const dist = new Int32Array(n).fill(-1), file = new Int32Array(n);
   let debut = 0, fin = 0;
   for (let k = 0; k < n; k++) if (vu[k] && clair(k)){ dist[k] = 0; file[fin++] = k; }
-  if (!fin) return;
+  if (!fin) return 0;
   while (debut < fin){
     const k = file[debut++], d = dist[k] + 1;
     for (const kk of voisins(k)){
@@ -134,6 +153,7 @@ function creux(px, vu, w, h, clarte){
   }
   const seuil = Math.max(2, Math.round(TRAIT * Math.min(w, h)));
   const range = new Uint8Array(n);
+  let retires = 0;
   for (let k0 = 0; k0 < n; k0++){
     if (vu[k0] || range[k0] || !clair(k0)) continue;
     // le creux entier, et la distance au fond du trait qui l'enclôt
@@ -148,10 +168,54 @@ function creux(px, vu, w, h, clarte){
     }
     if (!trait.length) continue;
     trait.sort((a, b) => a - b);
-    if (trait[Math.floor(trait.length * .75)] > seuil) continue;
+    const epais = trait[Math.floor(trait.length * .75)];
+    const large = largeur(siens, voisins);
+    if (epais > PART_CREUX * large && (epais > seuil || large < TRAPU * longueur(siens, w))) continue;
+    retires += siens.length;
     for (const k of siens){
       px[k * 4 + 3] = Math.round(px[k * 4 + 3] * Math.max(0, Math.min(1, (BLANC_FOND - clarte(k)) / (BLANC_FOND - CLAIR_FOND))));
       vu[k] = 1;
     }
   }
+  return retires;
+}
+
+/**
+ * La largeur d'un creux : deux fois la distance à son bord de son pixel le
+ * plus enfoncé — le diamètre de l'œil d'une lettre, l'épaisseur d'une lettre
+ * blanche.
+ *
+ * @param {number[]} siens les pixels du creux
+ * @param {(k: number) => number[]} voisins
+ */
+function largeur(siens, voisins){
+  // à la taille du creux, non de l'image : un logo en compte parfois des centaines
+  const prof = new Map(siens.map(k => [k, 0])), file = [];
+  for (const k of siens)
+    if (voisins(k).some(kk => !prof.has(kk))){ prof.set(k, 1); file.push(k); }
+  let p = 0;
+  for (let i = 0; i < file.length; i++){
+    const k = file[i];
+    p = /** @type {number} */ (prof.get(k));
+    for (const kk of voisins(k)) if (prof.get(kk) === 0){ prof.set(kk, p + 1); file.push(kk); }
+  }
+  return 2 * p;
+}
+
+/**
+ * La longueur d'un creux : le grand côté du rectangle qui l'enclôt.
+ *
+ * @param {number[]} siens
+ * @param {number} w la largeur de l'image
+ */
+function longueur(siens, w){
+  let x0 = Infinity, x1 = -1, y0 = Infinity, y1 = -1;
+  for (const k of siens){
+    const x = k % w, y = (k - x) / w;
+    if (x < x0) x0 = x;
+    if (x > x1) x1 = x;
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  return Math.max(x1 - x0, y1 - y0) + 1;
 }
