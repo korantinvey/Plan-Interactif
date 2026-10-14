@@ -14,9 +14,11 @@ test.use({ serviceWorkers: "block" });
 /** Le plan public, logos demandés, de près sur le premier stand de la liste.
  *  Rend les erreurs relevées, ou rien sans carte graphique. Sans `grandes`,
  *  l'API n'a de grande pour aucun logo — un salon que la synchronisation n'a
- *  pas refait — et le toit pose la petite, que la page détoure. */
-async function deP(page, ambiance, grandes = false) {
+ *  pas refait — et le toit pose la petite, que la page détoure. `conf`, le
+ *  réglage du salon tel que l'exploitant l'a laissé sur ce poste. */
+async function deP(page, ambiance, grandes = false, conf = null) {
   const erreurs = await prepare(page);
+  if (conf) await page.addInitScript((c) => localStorage.setItem("plan-conf:smcl-2026", c), JSON.stringify(conf));
   /* Les vignettes se peignent sur la page vierge où l'essai commence : y
      charger d'abord la démonstration coûtait vingt secondes de carte
      graphique logicielle, sur un essai qui en passe déjà plus d'une minute à
@@ -147,5 +149,43 @@ test("la grande arrivée sans fond se pose telle quelle", async ({ page }) => {
   test.skip(!erreurs, "pas de carte graphique");
   const poses = await logosPoses(page);
   for (const l of poses) expect(l.cle, "la grande, et non la petite").toContain("+g@");
+  expect(erreurs).toEqual([]);
+});
+
+/* L'exploitant tourne un logo depuis l'outil de placement (`placement-libelles.mjs`).
+   Tourné d'un quart de tour, un logo plus large que profond se vise au-dessus
+   de son centre, là où sa largeur passe désormais, et non plus à côté — la
+   carte graphique a bien reçu l'angle, et la visée le suit. */
+test("un logo tourné d'un quart de tour se pose en travers", async ({ page }) => {
+  test.setTimeout(150_000);
+  // l'empreinte que `libelle-place.mjs` `empreinteLogo` relit, pour chaque stand
+  const conf = Object.fromEntries(DONNEES.plans[0].stands.map((s) => ["_logo:" + s.id,
+    { dx: 0, dy: 0, k: 1, a: 90, e: [s.c[0], s.c[1], s.bb[0], s.bb[1]].map((v) => (+v).toFixed(2)).join("|") }]));
+  const erreurs = await deP(page, "classique", true, conf);
+  test.skip(!erreurs, "pas de carte graphique");
+  await logosPoses(page);
+  const vise = await page.evaluate(() => {
+    const d = window.__essais.GL.deck, vp = d.getViewports()[0];
+    const c = (d.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
+    const plan = document.getElementById("plan").getBoundingClientRect();
+    const sous = (/** @type {number[]} */ p) => {
+      const [x, y] = vp.project(p);
+      const o = d.pickObject({ x, y, radius: 0, layerIds: ["logos-stands"] });
+      return o && o.object ? o.object.id : null;
+    };
+    for (const e of c.props.data) {
+      const m = c.props.getTransformMatrix(e);
+      const large = Math.hypot(m[0], m[1]), prof = Math.hypot(m[4], m[5]);
+      const [x, y] = vp.project([e.x, e.y, e.z]);
+      if (large < 1.6 * prof || x < 80 || y < 80 || x > plan.width - 80 || y > plan.height - 80) continue;
+      // aux quatre dixièmes de sa largeur : dedans en travers, dehors à plat
+      const loin = .4 * large;
+      return { centre: sous([e.x, e.y, e.z]) === e.id,
+               enTravers: sous([e.x, e.y + loin, e.z]) === e.id,
+               aPlat: sous([e.x + loin, e.y, e.z]) === e.id };
+    }
+    return null;
+  });
+  expect(vise).toEqual({ centre: true, enTravers: true, aPlat: false });
   expect(erreurs).toEqual([]);
 });

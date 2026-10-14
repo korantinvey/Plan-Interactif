@@ -436,6 +436,10 @@
       </div>
       <label class="elemChamp"><span>Taille</span>
         <input id="libTaille" type="range" min="0.4" max="3" step="0.05" value="1"></label>
+      <!-- un logo seul se tourne : le nom suit le fil de la lecture -->
+      <label class="elemChamp" id="libAngleChamp" hidden><span>Angle</span>
+        <input id="libAngle" type="range" min="-180" max="180" step="1" value="0">
+        <output id="libAngleVal">0°</output></label>
       <button class="auto" id="libAuto">Placement automatique</button>
       <div class="outilsPied"><span id="libAide"></span></div>
     </div>
