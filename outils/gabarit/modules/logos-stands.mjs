@@ -735,7 +735,7 @@ let poseN = 0, minuterieOubli = 0;
  *  pas, on n'en connaît que ce qu'on lui a demandé. */
 export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0, cedees: 0,
   niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0,
-  vignettesRecues: 0, renvois: 0, rechargements: 0, oubliees: 0 };
+  vignettesRecues: 0, renvois: 0, rechargements: 0, recopiees: 0, oubliees: 0 };
 /* Les logos affichés, et ceux déjà envoyés une fois, par vignette : ce qui
    rapporte les comptes au parcours. Deux visites ne font pas les mêmes
    gestes ; envoyer chaque logo une fois, et rien de plus, se compare. */
@@ -937,9 +937,25 @@ function cedeLaPlace(/** @type {Planche} */ pl, /** @type {Set<string>} */ enJeu
   }
 }
 
-/** Chaque toile voulue dans sa case : celles déjà rangées n'envoient rien.
+/** La case d'une planche recopiée dans une autre, d'une carte graphique à
+ *  elle-même : rien ne repasse par le processeur. */
+function recopie(/** @type {Planche} */ pl, /** @type {Case} */ c, /** @type {{ fb: any }} */ source, /** @type {Case} */ v,
+  /** @type {number} */ w, /** @type {number} */ h){
+  try {
+    const enc = pl.appareil.createCommandEncoder();
+    enc.copyTextureToTexture({ sourceTexture: source.fb, origin: [v.x, v.y], destinationTexture: pl.tex,
+      destinationOrigin: [c.x, c.y, 0], width: w, height: h });
+    pl.appareil.submit(enc.finish());
+    COMPTES_LOGOS.recopiees++;
+    return true;
+  } catch (e) { return false; }
+}
+
+/** Chaque toile voulue dans sa case : celles déjà rangées n'envoient rien,
+ *  celles de la planche d'avant, quand elle se refait, s'y recopient.
  *  Rend faux si elles n'y tiennent pas, même planche vidée et agrandie. */
-function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ voulues){
+function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ voulues,
+  /** @type {{ pl: Planche, fb: any } | null} */ source = null){
   const enJeu = new Set(voulues.map(t => t.dataset.cle || ""));
   let envoye = false;
   for (const t of voulues){
@@ -950,6 +966,12 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
     const w = t.width + 2 * JOINT, h = t.height + 2 * JOINT;
     const c = cedeLaPlace(pl, enJeu, w, h);
     if (!c) return false;
+    const v = source && source.pl.cases.get(cle);
+    if (v && source && recopie(pl, c, source, v, w, h)){
+      pl.cases.set(cle, { ...c, vu: poseN });
+      envoye = true;
+      continue;
+    }
     if (!envoie(pl, c, t)){ libere(pl, c); return false; }
     pl.cases.set(cle, { ...c, vu: poseN });
     // la vignette d'avant l'arobase : la même, à une autre finesse, est un renvoi
@@ -983,17 +1005,32 @@ function plancheGardee(/** @type {any} */ appareil, /** @type {HTMLCanvasElement
   if (!gardee) return null;
   if (range(gardee, voulues)) return gardee;
   /* Vidée, elle ne tient pas encore : rangée à neuf à sa taille, les cases
-     éparses s'étant peut-être émiettées, puis plus grande. */
-  for (let rang = gardee.rang; ; rang = Math.max(rang + 1, rangPour(appareil, voulues))){
-    const avant = gardee;
-    const pl = rang === avant.rang ? { ...avant, cases: new Map(), etageres: [], bas: 0 }
-      : nouvellePlanche(appareil, rang);
+     éparses s'étant peut-être émiettées, puis plus grande. La neuve recopie
+     de l'ancienne ce qu'elle tenait déjà : chaque planche refaite renvoyait
+     sinon toute la vue — 488 envois sur 921 pour une toile déjà envoyée
+     (`?perf`, FEP27, téléphone, 14 octobre 2026). L'ancienne vit le temps
+     de la copie. */
+  const avant = gardee;
+  /** @type {{ pl: Planche, fb: any } | null} */
+  let source = null;
+  try {
+    source = { pl: avant, fb: appareil.createFramebuffer({ width: avant.large, height: avant.haut, colorAttachments: [avant.tex] }) };
+  } catch (e) { source = null; }
+  /** @type {Planche | null} */
+  let fin = null;
+  for (let rang = avant.rang; ; rang = Math.max(rang + 1, rangPour(appareil, voulues))){
+    const pl = nouvellePlanche(appareil, rang);
     if (!pl) break;
-    if (pl !== avant && pl.tex !== avant.tex){ try { avant.tex.destroy(); } catch (e) { /* perdu */ } COMPTES_LOGOS.agrandissements++; }
-    else COMPTES_LOGOS.rangements++;
-    gardee = pl;
-    if (range(pl, voulues)) return pl;
+    if (rang === avant.rang) COMPTES_LOGOS.rangements++;
+    else COMPTES_LOGOS.agrandissements++;
+    if (range(pl, voulues, source)){ fin = pl; break; }
+    try { pl.tex.destroy(); } catch (e) { /* perdu */ }
   }
+  if (source) try { source.fb.destroy(); } catch (e) { /* perdu */ }
+  try { avant.tex.destroy(); } catch (e) { /* perdu */ }
+  gardee = fin;
+  if (fin) return fin;
+  COMPTES_LOGOS.octetsTexture = 0;
   COMPTES_LOGOS.recours++;
   tropDeToiles = voulues.length;
   rendPlanche(true);
