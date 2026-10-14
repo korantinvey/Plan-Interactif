@@ -259,6 +259,7 @@ function demandeGrande(/** @type {string} */ cle){
     if (!(w && h)){ panne(); return; }
     // prête avant l'annonce : les noms qu'elle fait refaire doivent la savoir prête
     grandes.set(cle, i);
+    COMPTES_LOGOS.vignettesRecues++;
     grandesEnRoute--; pompeGrandes();
     if (arriveeSansFond(i, w, h)) pret(cle + "+g", i);
     else annoncePret();
@@ -732,7 +733,26 @@ let poseN = 0, minuterieOubli = 0;
  *  Des comptes, non des mesures : la mémoire de la carte graphique ne se lit
  *  pas, on n'en connaît que ce qu'on lui a demandé. */
 export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0, cedees: 0,
-  niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0 };
+  niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0,
+  vignettesRecues: 0, renvois: 0, videes: 0, oubliees: 0 };
+/* Les logos affichés, et ceux déjà envoyés une fois, par vignette : ce qui
+   rapporte les comptes au parcours. Deux visites ne font pas les mêmes
+   gestes ; envoyer chaque logo une fois, et rien de plus, se compare. */
+/** @type {Set<string>} */
+const logosVus = new Set();
+/** @type {Set<string>} */
+const logosEnvoyes = new Set();
+
+/** Les comptes, et ce qu'ils valent rapportés au parcours : envois par logo
+ *  affiché — un, au mieux —, part des envois qui renvoient un logo déjà
+ *  envoyé, poids moyen d'un envoi. Lu par le relevé `?perf`. */
+export function bilanLogos(){
+  const c = COMPTES_LOGOS, n = logosVus.size;
+  return { ...c, logosDistincts: n,
+    envoisParLogo: n ? Math.round(c.envois / n * 100) / 100 : 0,
+    partRenvois: c.envois ? Math.round(c.renvois / c.envois * 1000) / 10 : 0,
+    koParEnvoi: c.envois ? Math.round(c.octetsEnvoyes / c.envois / 1024) : 0 };
+}
 
 /* Combien de toiles la plus grande planche n'a pas su tenir : tant que la vue
    en demande autant, la planche d'autrefois sert d'emblée. Sans cela, chaque
@@ -744,7 +764,10 @@ let tropDeToiles = Infinity;
  *  pour la planche d'autrefois, qui les reprend aussitôt. */
 function rendPlanche(garderToiles = false){
   clearTimeout(minuterieOubli); minuterieOubli = 0;
-  if (gardee) try { gardee.tex.destroy(); } catch (e) { /* contexte déjà perdu */ }
+  if (gardee){
+    COMPTES_LOGOS.oubliees += gardee.cases.size;
+    try { gardee.tex.destroy(); } catch (e) { /* contexte déjà perdu */ }
+  }
   gardee = null;
   COMPTES_LOGOS.octetsTexture = 0;
   if (!garderToiles) toiles.clear();
@@ -856,12 +879,17 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
       for (const [k, v] of [...pl.cases]){
         if (enJeu.has(k)) continue;
         pl.cases.delete(k); pl.libres.push(v); toiles.delete(k);
+        COMPTES_LOGOS.videes++;
       }
       c = place(pl, w, h);
     }
     if (!c) return false;
     if (!envoie(pl, c, t)){ pl.libres.push(c); return false; }
     pl.cases.set(cle, { ...c, vu: poseN });
+    // la vignette d'avant l'arobase : la même, à une autre finesse, est un renvoi
+    const logo = cle.slice(0, cle.lastIndexOf("@"));
+    if (logosEnvoyes.has(logo)) COMPTES_LOGOS.renvois++;
+    else logosEnvoyes.add(logo);
     envoye = true;
   }
   if (envoye){ pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++; }
@@ -1113,6 +1141,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = n
       }
     }
     if (!t) continue;
+    logosVus.add(src.cle);
     data.push({ x, y, z, t, el: g, id: s.id,
       m: matriceDuToit(large, prof, reg ? +reg.a || 0 : 0, tasse),
       // attrapé par l'outil de placement, et lui seul : hors de ce mode, un appui ouvre la fiche

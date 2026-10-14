@@ -1676,7 +1676,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1157 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1186 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1684,15 +1684,15 @@ Fonctions :
 
 `finesse` 81 · `palier` 95 · `tassement` 106 · `annoncePret` 162 · `pret` 168
 `geleLogos` 175 · `arriveeSansFond` 219 · `grande` 235 · `pompeGrandes` 249
-`demandeGrande` 253 · `image` 292 · `sansFond` 312 · `lanceTravailleur` 351
-`demandeDetourage` 372 · `pompe` 379 · `parLaPageSeule` 399 · `detoureRevenu` 408
-`largeurDeToile` 425 · `cleDeToile` 428 · `toileDejaRangee` 434 · `toileProche` 455
-`toile` 476 · `logoPose` 511 · `sourceDuToit` 521 · `cedeAuLogo` 534 · `CARRE` 563
-`filtrage` 596 · `plancheDe` 613 · `extensionPlanche` 649 · `rendPlanche` 745
-`taillesDe` 754 · `rangPour` 763 · `nouvellePlanche` 772 · `place` 790 · `envoie` 809
-`cedeUneCase` 827 · `range` 843 · `plancheGardee` 878 · `oubliePlancheBientot` 908
-`pres` 920 · `solVu` 931 · `logosARevoir` 948 · `groupe` 963 · `oublie` 974
-`annoncePoses` 1008 · `matriceDuToit` 1029 · `couchesLogos` 1050
+`demandeGrande` 253 · `image` 293 · `sansFond` 313 · `lanceTravailleur` 352
+`demandeDetourage` 373 · `pompe` 380 · `parLaPageSeule` 400 · `detoureRevenu` 409
+`largeurDeToile` 426 · `cleDeToile` 429 · `toileDejaRangee` 435 · `toileProche` 456
+`toile` 477 · `logoPose` 512 · `sourceDuToit` 522 · `cedeAuLogo` 535 · `CARRE` 564
+`filtrage` 597 · `plancheDe` 614 · `extensionPlanche` 650 · `bilanLogos` 749
+`rendPlanche` 765 · `taillesDe` 777 · `rangPour` 786 · `nouvellePlanche` 795 · `place` 813
+`envoie` 832 · `cedeUneCase` 850 · `range` 866 · `plancheGardee` 906
+`oubliePlancheBientot` 936 · `pres` 948 · `solVu` 959 · `logosARevoir` 976 · `groupe` 991
+`oublie` 1002 · `annoncePoses` 1036 · `matriceDuToit` 1057 · `couchesLogos` 1078
 
 Importe :
 
@@ -2501,7 +2501,7 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 415 l. → plan, plan-admin
+### `modules/releve.mjs` — 417 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
@@ -2510,8 +2510,8 @@ Fonctions :
 `ms` 69 · `garde` 71 · `decrit` 79 · `dansLeReleve` 95 · `commence` 99 · `centile` 110
 `sorte` 116 · `clos` 120 · `ecouteGestes` 139 · `image` 171 · `observe` 203 · `fichier` 211
 `ecouteNavigateur` 213 · `echantillonne` 245 · `carteGraphique` 264 · `appareil` 282
-`chargement` 299 · `synthese` 316 · `releve` 330 · `affiche` 360 · `partage` 367
-`posePastille` 384
+`chargement` 299 · `synthese` 316 · `releve` 330 · `affiche` 362 · `partage` 369
+`posePastille` 386
 
 Importe :
 
