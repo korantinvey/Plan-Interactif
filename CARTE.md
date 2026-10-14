@@ -1676,7 +1676,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1291 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1300 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1691,10 +1691,10 @@ Fonctions :
 `filtrage` 597 · `plancheDe` 614 · `extensionPlanche` 650 · `bilanLogos` 756
 `rendPlanche` 773 · `taillesDe` 785 · `rangPour` 794 · `nouvellePlanche` 803 · `vaA` 821
 `videE` 822 · `place` 827 · `libere` 866 · `liberable` 888 · `envoie` 898
-`cedeLaPlace` 920 · `recopie` 942 · `range` 957 · `plancheGardee` 996
-`oubliePlancheBientot` 1041 · `pres` 1053 · `solVu` 1064 · `logosARevoir` 1081
-`groupe` 1096 · `oublie` 1107 · `annoncePoses` 1141 · `matriceDuToit` 1162
-`couchesLogos` 1183
+`cedeLaPlace` 920 · `recopie` 951 · `range` 966 · `plancheGardee` 1005
+`oubliePlancheBientot` 1050 · `pres` 1062 · `solVu` 1073 · `logosARevoir` 1090
+`groupe` 1105 · `oublie` 1116 · `annoncePoses` 1150 · `matriceDuToit` 1171
+`couchesLogos` 1192
 
 Importe :
 

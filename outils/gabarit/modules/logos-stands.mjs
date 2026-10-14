@@ -918,6 +918,14 @@ function envoie(/** @type {Planche} */ pl, /** @type {Case} */ c, /** @type {HTM
  *  un logo déjà envoyé (`?perf`, FEP27, téléphone, 14 octobre 2026) — jetait
  *  les logos qu'on venait de quitter, et un retour en arrière les renvoyait. */
 function cedeLaPlace(/** @type {Planche} */ pl, /** @type {Set<string>} */ enJeu, /** @type {number} */ w, /** @type {number} */ h){
+  /* Un logo posé à une autre finesse que celle-ci : son ancienne case
+     cède la première, avant celle d'un logo qu'on a seulement quitté. Les
+     finesses passées encombraient la planche — 352 envois à une finesse
+     neuve, et 697 cases cédées, dont autant de logos voisins à renvoyer au
+     retour (`?perf`, FEP27, téléphone, 14 octobre 2026). */
+  const logo = (/** @type {string} */ k) => k.slice(0, k.lastIndexOf("@"));
+  const posesIci = new Set([...enJeu].map(logo));
+  const age = (/** @type {string} */ k, /** @type {{ vu: number }} */ v) => posesIci.has(logo(k)) ? -1 : v.vu;
   for (;;){
     const c = place(pl, w, h);
     if (c) return c;
@@ -926,8 +934,9 @@ function cedeLaPlace(/** @type {Planche} */ pl, /** @type {Set<string>} */ enJeu
     let vuSeule = Infinity, vuAutre = Infinity;
     for (const [k, v] of pl.cases){
       if (enJeu.has(k)) continue;
-      if (v.vu < vuAutre){ autre = k; vuAutre = v.vu; }
-      if (v.vu < vuSeule && v.e && vaA(v.e, h) && liberable(pl, v) >= w){ seule = k; vuSeule = v.vu; }
+      const vu = age(k, v);
+      if (vu < vuAutre){ autre = k; vuAutre = vu; }
+      if (vu < vuSeule && v.e && vaA(v.e, h) && liberable(pl, v) >= w){ seule = k; vuSeule = vu; }
     }
     const k = seule ?? autre;
     if (k === null) return null;
