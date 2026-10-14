@@ -443,6 +443,29 @@ function toileDejaRangee(/** @type {string} */ cle, /** @type {number} */ tasse)
   return mieux;
 }
 
+/* Un logo garde la toile qu'il a tant qu'elle vaut au moins sept dixièmes
+   de la finesse voulue, ou au plus le double. La refaire à chaque palier
+   franchi renvoyait les logos de toute la vue à chaque pincement : 2 555
+   envois et 308 Mo en moins d'une minute sur un téléphone (`?perf`, FEP27,
+   14 octobre 2026). Un rien moins net, le temps de zoomer assez pour que
+   l'écart se voie. */
+const TOLERANCE_BAS = .7, TOLERANCE_HAUT = 2;
+/** Une toile de ce logo déjà rangée, assez proche de cette largeur — la plus
+ *  proche ; rien sinon. */
+function toileProche(/** @type {string} */ cle, /** @type {number} */ tasse, /** @type {number} */ largeur){
+  if (!gardee) return undefined;
+  const debut = cle + "@";
+  let mieux, ecart = Infinity;
+  for (const k of gardee.cases.keys()){
+    if (!k.startsWith(debut) || k.endsWith("~") !== (tasse !== 1)) continue;
+    const t = toiles.get(k), lw = t ? t.width - 2 * MARGE : 0;
+    if (!t || lw < largeur * TOLERANCE_BAS || lw > largeur * TOLERANCE_HAUT) continue;
+    const e = Math.abs(Math.log(lw / largeur));
+    if (e < ecart){ mieux = t; ecart = e; }
+  }
+  return mieux;
+}
+
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
  *  hauteur de ce que la vue de biais lui reprendra — `tasse`, 1 à plat.
  *
@@ -738,7 +761,7 @@ function taillesDe(/** @type {any} */ appareil){
  *  planche d'une vue de FEP27 a grandi deux fois et s'est rangée à neuf
  *  quatre — autant d'envois complets. */
 function rangPour(/** @type {any} */ appareil, /** @type {HTMLCanvasElement[]} */ voulues){
-  const aire = 1.25 * voulues.reduce((a, t) => a + arrondiCase(t.width + 2 * JOINT) * arrondiCase(t.height + 2 * JOINT), 0);
+  const aire = 1.25 * voulues.reduce((a, t) => a + (t.width + 2 * JOINT) * (t.height + 2 * JOINT), 0);
   const tailles = taillesDe(appareil);
   const i = tailles.findIndex(([w, h]) => w * h >= aire);
   return i < 0 ? Math.max(0, tailles.length - 1) : i;
@@ -796,14 +819,6 @@ function envoie(/** @type {Planche} */ pl, /** @type {Case} */ c, /** @type {HTM
   return true;
 }
 
-/* Les cases ont des tailles arrondies. Taillées au pixel près, chacune à
-   son logo, une case rendue ne convenait presque jamais au suivant : la
-   planche s'émiettait, et faute de place assez grande, tout se rangeait à
-   neuf et se renvoyait — six à dix fois par visite sur un téléphone (`?perf`,
-   FEP27, 14 octobre 2026). Arrondies, une case rendue sert au premier logo
-   de même gabarit. */
-const PAS_CASE = 32;
-const arrondiCase = (/** @type {number} */ v) => Math.ceil(v / PAS_CASE) * PAS_CASE;
 
 /** La case d'un logo qui n'est plus posé, assez grande pour (w, h) : la
  *  moins récemment vue, puis la plus juste. Elle cède sa place — et lui seul
@@ -833,7 +848,7 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
     const deja = pl.cases.get(cle);
     if (deja){ deja.vu = poseN; continue; }
     // le joint des deux côtés, dans la case même : elle se vide avec elle
-    const w = arrondiCase(t.width + 2 * JOINT), h = arrondiCase(t.height + 2 * JOINT);
+    const w = t.width + 2 * JOINT, h = t.height + 2 * JOINT;
     let c = place(pl, w, h) || cedeUneCase(pl, enJeu, w, h);
     // en dernier recours, toutes les cases des logos qui ne sont plus posés à la fois
     if (!c && !vide){
@@ -1084,6 +1099,7 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = n
       ? pointsParMetre(Math.min(Math.max(x, sol.x), sol.x + sol.w), Math.min(Math.max(y, sol.y), sol.y + sol.h), z) : 0;
     const voulue = pts > 0 && isFinite(pts) ? palier(large * pts * densite) : Math.max(PIXELS_MIN, large * finesseCouverte);
     let t = toiles.get(cleDeToile(src.cle, iw, voulue, tasse));
+    if (t === undefined) t = toileProche(src.cle, tasse, largeurDeToile(iw, voulue));
     // pendant un geste, un logo déjà rangé garde sa toile : la juste finesse attend sa fin
     if (t === undefined && gele) t = toileDejaRangee(src.cle, tasse) || undefined;
     if (t === undefined){
