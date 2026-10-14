@@ -641,6 +641,8 @@ function assembleWebgl(enMouvement = false){
    texte se double donc d'une autre, tirée d'un atlas à petite taille, et la
    carte graphique passe de l'une à l'autre au seuil. */
 const SEUIL_PETIT_TEXTE = 14;
+/* Le filtre d'un nom masqué : aucun zoom ne le montre. */
+const MASQUE_ZOOM = [100, -100, 100];
 
 /* Montrer ou taire un texte selon le zoom, sans que rien ne bouge côté page.
 
@@ -1099,9 +1101,17 @@ function couchesTexte(id, items, famille, graisse, extra){
     lineHeight: extra.lineHeight || 1, parameters: parametresTexte(),
     updateTriggers: { ...(extra.updateTriggers || K.sansDeclencheur),
       getPosition: cleCamera() + GL.camera + couche + JSON.stringify(boutsDuTrajet()) },
-    getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
-                         Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
+    getZoomFiltre: d => extra.masque && extra.masque.has(d.lbl) ? MASQUE_ZOOM
+      : [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1, Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
+  // le masque ne recalcule que le filtre : les lettres restent en page
+  commun.updateTriggers.getZoomFiltre = extra.cleMasque || "";
+  /* Un nom en mouvement, le temps de sa montée : le grand atlas seul, comme
+     pendant un geste — le lissage fin ne se voit pas sur un texte qui bouge,
+     et chacune de ses cinq couches s'initialisait, son atlas compris. */
+  if (extra.seulGrand) return [new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas,
+    extensions: K.grand.ext, modeFiltre: 0,
+    ...(halo ? { outlineWidth: Math.min(.9, halo.largeur * 2.6), outlineColor: halo.couleur } : {}) })];
   /* Le liseré clair qui détache un nom de ce qu'il recouvre — carte de
      chaleur, zone mise en avant. Les grands textes le tirent de leur champ de
      distance, en proportion du corps comme le « .15em » du SVG. Les petits
@@ -2345,11 +2355,21 @@ function groupesNoms(cle, liste){
   GL.groupes.set(cle, { version, groupes: [...groupes.values()] });
   return GL.groupes.get(cle).groupes;
 }
-function couchesNoms(prefixe, groupes){
+/**
+ * Les couches des noms de ces groupes. `masque` : les identifiants dont les
+ * noms se taisent sans quitter leurs couches — le shader les écarte, et seul
+ * leur filtre se recalcule quand il change (`cleMasque`). `seulGrand` : le
+ * grand atlas seul, pour un nom qui bouge.
+ * @param {string} prefixe
+ * @param {any[]} groupes
+ * @param {{ masque?: Set<string> | null, cleMasque?: string, seulGrand?: boolean }} [o]
+ */
+function couchesNoms(prefixe, groupes, o = {}){
   let i = 0;
   const couche = nomsAPlat();
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
     g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES, sousPixel: g.sp,
+      masque: o.masque || null, cleMasque: o.cleMasque || "", seulGrand: Boolean(o.seulGrand),
       // seuls les noms écrits sur un stand se couchent : celui d'une zone flotte au-dessus de son mobilier
       couche: couche && g.sp,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
@@ -2385,17 +2405,15 @@ function couchesLibellesWebgl(){
     const mobiles = new Map([...haussesParId()].filter(([id]) =>
       GL.libelles.some(d => d.lbl === id && !(d.cls || "").startsWith("zn"))));
     const caches = nomsCaches(GL.libelles);
-    const fixes = mobiles.size || caches.size
-      ? GL.libelles.filter(d => !mobiles.has(d.lbl) && !caches.has(d.lbl)) : GL.libelles;
-    /* Chaque liste a sa clé dans le cache des groupes : sous la même, le nom
-       qui monte reprenait les groupes de tous les autres, et le plan entier
-       se peignait deux fois, décalé — tous les noms paraissaient flous le
-       temps du mouvement. */
-    const cleFixes = (mobiles.size ? "labels-sans|" + [...mobiles.keys()].join("|") : "labels") +
-      (caches.size ? "|caches|" + [...caches].join("|") : "");
-    // les groupes d'un choix quitté ne reserviront pas : chaque stand choisi en ferait d'autres
-    for (const k of [...GL.groupes.keys()]) if (k.includes("|caches|") && k !== cleFixes) GL.groupes.delete(k);
-    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms(cleFixes, fixes))];
+    /* Les noms qui montent, et ceux que le stand choisi cache, se taisent
+       dans les couches de tous — ils n'en sortent plus. En sortir faisait
+       regrouper tous les autres, au départ du mouvement puis à son arrivée :
+       chaque appui remettait en page tous les noms du plan, deux fois de plus
+       que nécessaire (FEP27, 14 octobre 2026). Masqués, seul leur filtre se
+       recalcule. */
+    const masque = new Set([...mobiles.keys(), ...caches]);
+    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles),
+      { masque, cleMasque: [...masque].sort().join("|") })];
     for (const [id, h] of mobiles){
       /* Posé à la hauteur d'arrivée du volume, et non à celle que ses
          classes diraient : le mouvement part au clic, avant que les noms
@@ -2403,7 +2421,7 @@ function couchesLibellesWebgl(){
       if (caches.has(id)) continue;
       const siens = GL.libelles.filter(d => d.lbl === id).map(d => ({ ...d, zHausse: h.vers }));
       if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
-        groupesNoms("labels-hausse|" + id + "|" + h.vers, siens)).map(c => c.clone({ hausseTexte: h })));
+        groupesNoms("labels-hausse|" + id + "|" + h.vers, siens), { seulGrand: true }).map(c => c.clone({ hausseTexte: h })));
     }
   }
   return GL.couchesLibelles;
@@ -2922,7 +2940,7 @@ function animeWebgl(now){
     arrive = true;
     // arrivé : son nom rejoint les autres, et les groupes du mouvement s'oublient
     GL.couchesLibelles = null;
-    for (const k of [...GL.groupes.keys()]) if (/^labels-(sans|hausse)\|/.test(k)) GL.groupes.delete(k);
+    for (const k of [...GL.groupes.keys()]) if (/^labels-hausse\|/.test(k)) GL.groupes.delete(k);
   }
   if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
     GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
