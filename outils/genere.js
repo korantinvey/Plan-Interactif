@@ -7,7 +7,7 @@ const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
 const modules = require("./modules.js");
 const { projetDeLaConstruction } = require("./projet.js");
-const { salonDemo } = require("./demo.js");
+const { salonDemo, lisSource, imagesProduits, DOSSIER_PRODUITS } = require("./demo.js");
 const D = __dirname;
 /* Le projet Supabase de cette construction, et si elle part en
    prévisualisation : voir `outils/projet.js`. */
@@ -664,16 +664,23 @@ fs.writeFileSync(W + "plan-smcl.html",
   page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8")),
        { autonome: true, pleinEcran: true }));
 
-/* --- la même, dépersonnalisée : un vrai plan, des exposants inventés ---
-   Celle-ci se montre à un prospect (`outils/demo.js`). Elle est servie à
-   `/demo` et non à `/plan-demo` : ce chemin-là désigne le salon « demo »
-   (`modules/salon.mjs` `CHEMIN_SALON`). Seul `</script` est à neutraliser
-   dans des données posées entre deux balises de script. */
-fs.writeFileSync(W + "demo.html",
-  page(tplPublic.replace("/*__DATA__*/", () =>
-    JSON.stringify(salonDemo(JSON.parse(fs.readFileSync(D + "/plans.json", "utf8"))))
-      .replace(/<\/(script)/gi, "<\\/$1")),
-       { autonome: true, pleinEcran: true, choixAmbiance: true }));
+/* --- le salon de démonstration, figé : un vrai plan, des exposants inventés ---
+   Celui-ci se montre à un prospect (`outils/demo.js`). Il est servi à `/demo`,
+   et non à `/plan-demo` : ce chemin-là est le même salon écrit dans la base,
+   qui se règle en administration (`outils/salon-demo.js`). Seul `</script`
+   est à neutraliser dans des données posées entre deux balises de script.
+   Les images de ses produits sont servies à côté : la fiche n'accepte pour
+   elles qu'une adresse, jamais des octets. */
+{
+  const { sansLogo, ...salon } = salonDemo(lisSource());
+  if (sansLogo) console.warn("démonstration : " + sansLogo + " société(s) sans logo — npm run logos-demo");
+  fs.writeFileSync(W + "demo.html",
+    page(tplPublic.replace("/*__DATA__*/", () =>
+      JSON.stringify(salon).replace(/<\/(script)/gi, "<\\/$1")),
+         { autonome: true, pleinEcran: true, choixAmbiance: true }));
+  fs.mkdirSync(W + DOSSIER_PRODUITS, { recursive: true });
+  for (const [nom, svg] of Object.entries(imagesProduits())) fs.writeFileSync(W + DOSSIER_PRODUITS + "/" + nom, svg);
+}
 
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.writeFileSync(W + "config.js", epureScript(CONFIG));

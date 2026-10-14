@@ -21,6 +21,10 @@ outils/*.json
 # Chromium (`npm run logos-demo`), que la construction de Cloudflare n'a pas :
 # sans eux la démonstration paraîtrait sans un logo.
 !outils/logos-demo.json
+# La source du salon de démonstration : un salon publié, tel que son API
+# publique le sert (`npm run source-demo`). Même raison que plans.json : la
+# construction tourne sans réseau, et rien n'y est plus exposé que la page.
+!outils/source-demo.json
 # Le cliquet des types : ce que `npm run types` accepte encore. Il fait foi
 # en intégration, il ne se régénère donc pas de lui-même.
 !outils/types-acceptes.json

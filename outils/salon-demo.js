@@ -19,19 +19,22 @@
  *   - les pavillons et les calques gardent leurs identifiants, tirés du sel de
  *     `demo.js` : les réglages, rangés par identifiant de calque, retrouvent
  *     leur calque ;
- *   - l'apparence n'est posée qu'à la création — celle de la console
- *     l'emporte ensuite ;
- *   - l'instantané et les logos, eux, sont refaits : ce sont les données.
+ *   - l'apparence et les dessins ne sont posés qu'à la création d'un
+ *     pavillon — ceux de la console l'emportent ensuite ;
+ *   - l'instantané, le programme, les produits et les logos, eux, sont
+ *     refaits : ce sont les données.
+ *
+ * Quand la source change de plan (`npm run source-demo` sur un autre salon),
+ * les pavillons d'avant sont retirés et les réglages du salon — fiche, zones
+ * masquées, calage — reprennent ceux de la nouvelle source.
  *
  * Les logos entrent dans `vignette_de_logo` comme ceux qu'une console aurait
  * fabriqués, sous l'adresse `<site>/logo.webp` de chaque société : un domaine
  * en `.example`, qui ne mène nulle part, et que seule la vignette sert.
  */
-const fs = require("fs");
-const path = require("path");
 const crypto = require("crypto");
 const { PROJETS } = require("./projet.js");
-const { salonDemo } = require("./demo.js");
+const { salonDemo, lisSource } = require("./demo.js");
 
 const SLUG = "demo";
 const INSTANCE = "demo";
@@ -87,7 +90,8 @@ function tailleWebp(b) {
 }
 
 (async () => {
-  const salon = salonDemo(JSON.parse(fs.readFileSync(path.join(__dirname, "plans.json"), "utf8")));
+  const { sansLogo, ...salon } = salonDemo(lisSource());
+  if (sansLogo) console.warn(sansLogo + " société(s) sans logo — npm run logos-demo");
 
   /* Les logos : la page figée les porte en octets, la base les sert sous
      l'adresse de chaque société. */
@@ -107,25 +111,50 @@ function tailleWebp(b) {
   };
   salon.plans.forEach((p) => p.stands.forEach((s) => { versAdresse(s); (s.coex || []).forEach(versAdresse); }));
 
-  /* L'événement : créé une fois, puis laissé à la console. */
+  /* L'événement : créé une fois, puis laissé à la console — sauf quand le plan
+     lui-même change (une autre source) : ses réglages de salon désignaient
+     alors des zones qui n'existent plus, et on repose ceux de la source. */
   const maintenant = new Date().toISOString();
+  const masquees = Object.fromEntries(salon.plans.flatMap((p) => (p.zonesCachees || []).map((z) => [z.id, true])));
+  const reglagesDuSalon = {
+    fiche: salon.fiche, calage: salon.calage, fuseau_choisi: salon.fuseau,
+    zones: {}, zones_masquees: masquees, zones_traversables: salon.zonesTraversables,
+    zones_fiches: {}, salles: {},
+  };
   let [evt] = await base("evenement?select=id,nom,etat&slug=eq." + SLUG, {}, "Lecture de l'événement");
+  let neuf = false;
   if (!evt) {
     [evt] = await ecrit("evenement", [{
       nom: salon.evenement, slug: SLUG, instance: INSTANCE, rythme_min: 0, etat: "publie",
-      fuseau_choisi: salon.fuseau, libelles_en: salon.anglais, derniere_sync: maintenant,
+      libelles_en: salon.anglais, derniere_sync: maintenant, ...reglagesDuSalon,
     }], "slug", "Création de l'événement");
+    neuf = true;
     console.log("Événement créé : " + evt.nom);
-  } else {
-    await base("evenement?id=eq." + evt.id, {
-      method: "PATCH", body: JSON.stringify({ libelles_en: salon.anglais, derniere_sync: maintenant }),
-    }, "Mise à jour de l'événement");
-    console.log("Événement repris : " + evt.nom + " (" + evt.etat + ")");
   }
 
+  /* Les pavillons d'avant qui ne sont plus dans la source s'en vont, avec
+     leurs calques, leur instantané, leur apparence et leurs dessins. */
+  const avant = await base("plan?select=id,id_klipso&evenement_id=eq." + evt.id, {}, "Lecture des pavillons");
+  const voulus = new Set(salon.plans.map((p) => p.id));
+  const partants = avant.filter((p) => !voulus.has(p.id_klipso));
+  if (partants.length) {
+    await base("plan?id=in.(" + partants.map((p) => p.id).join(",") + ")", { method: "DELETE" },
+      "Retrait des pavillons d'avant");
+    console.log(partants.length + " pavillon(s) d'avant retiré(s)");
+  }
+  const changeDePlan = !neuf && (partants.length > 0 || salon.plans.some((p) => !avant.some((a) => a.id_klipso === p.id)));
+  await base("evenement?id=eq." + evt.id, {
+    method: "PATCH",
+    body: JSON.stringify({ libelles_en: salon.anglais, derniere_sync: maintenant,
+      ...(changeDePlan ? reglagesDuSalon : {}) }),
+  }, "Mise à jour de l'événement");
+  if (!neuf) console.log("Événement repris : " + evt.nom + " (" + evt.etat + ")" +
+    (changeDePlan ? " — réglages du salon reposés pour le nouveau plan" : ""));
+
   for (const p of salon.plans) {
+    const nouveau = !avant.some((a) => a.id_klipso === p.id);
     const [pl] = await ecrit("plan", [{
-      evenement_id: evt.id, id_klipso: uuid("plan|" + p.id), libelle: p.libelle, hall: p.hall,
+      evenement_id: evt.id, id_klipso: p.id, libelle: p.libelle, hall: p.hall, calage: p.calage,
       emprise: p.emprise, nb_stands: p.stands.length, nb_zones: p.zones.length, modifie_le: maintenant,
     }], "evenement_id,id_klipso", "Écriture du pavillon " + p.libelle);
 
@@ -134,22 +163,35 @@ function tailleWebp(b) {
       type: null, ordre_klipso: c.ordre, svg: c.svg,
     })), "plan_id,id_klipso", "Écriture des calques de " + p.libelle);
 
+    /* Les zones que la source masque y entrent aussi : la base les garde dans
+       l'instantané, et c'est `zones_masquees` qui les retire au visiteur. */
+    const zones = [...p.zones, ...(p.zonesCachees || []).filter((z) => !p.zones.some((x) => x.id === z.id))
+      .map((z) => ({ ...z, nom: null }))];
     await ecrit("instantane", [{
       plan_id: pl.id, genere_le: maintenant,
-      charge: { stands: p.stands, zones: p.zones, conferences: p.conferences, emprise: p.emprise },
+      charge: { stands: p.stands, zones, conferences: p.conferences, emprise: p.emprise },
     }], "plan_id", "Écriture de l'instantané de " + p.libelle);
 
-    /* Posée à la création seulement : ensuite, c'est la console qui règle.
-       Les calques que les données figées masquent au départ — cotes,
-       numérotation, qui doublent ce que le plan écrit — le sont ici aussi :
-       la base ne garde pas ce drapeau, la configuration si. */
-    const masques = Object.fromEntries(p.fond.filter((c) => c.visible === false)
-      .map((c) => [c.cle, { visible: false }]));
-    await ecrit("apparence", [{ plan_id: pl.id, reglages: { ...masques, ...p.apparence.reglages } }],
+    // posée à la création seulement : ensuite, c'est la console qui règle
+    await ecrit("apparence", [{ plan_id: pl.id, pile: p.apparence.pile, reglages: p.apparence.reglages }],
       "plan_id", "Apparence de " + p.libelle, true);
 
+    /* Les dessins de même : ils se retouchent en administration, et un import
+       qui les reposerait effacerait ce travail. */
+    if (nouveau && p.dessins.length) {
+      await base("calque_dessin", {
+        method: "POST",
+        body: JSON.stringify(p.dessins.map((d, rang) => ({
+          plan_id: pl.id, cle: d.id, nom: d.nom, couleur: d.couleur, rempli: Boolean(d.rempli),
+          visible: d.visible !== false, rang, formes: d.formes || [],
+        }))),
+      }, "Écriture des dessins de " + p.libelle);
+    }
+
     console.log(p.libelle + " : " + p.stands.length + " stands, " + p.zones.length + " zones, " +
-      p.conferences.length + " conférences, " + p.fond.length + " calques");
+      p.conferences.length + " conférences, " +
+      p.stands.reduce((a, s) => a + (s.produits || []).length, 0) + " produits, " +
+      p.dessins.length + " dessins" + (nouveau ? "" : " (dessins et apparence gardés)"));
   }
 
   const lignes = [...vignettes.values()];
