@@ -259,6 +259,9 @@ export function monteWebgl(){
        faisait reconvertir les six cents stands à chaque lettre. */
     new MutationObserver(notes => {
       if (notes.every(n => n.oldValue === document.documentElement.getAttribute(n.attributeName))) return;
+      /* Le dessin perdu retire lui-même ses classes de la racine : le guet,
+         posé une fois pour toutes, s'éveille alors sur un dessin déjà jeté. */
+      if (!GL.actif) return;
       majEditionWebgl();
       // l'ambiance ou le cap de l'immersif : la vue suit, avec le reste
       if (!basculeCamera()){ GL.deck.setProps({ viewState: vueDeck() }); toutRepeindreWebgl(); }
@@ -320,7 +323,7 @@ const ATTENTE_REMONTE = 600;
 function poseToileWebgl(){
   if (!GL.actif || GL.toile) return;
   GL.toile = (GL.deck.getCanvas && GL.deck.getCanvas()) || (GL.hote && GL.hote.querySelector("canvas"));
-  if (GL.toile) GL.toile.addEventListener("webglcontextlost", perdContexteWebgl);
+  if (GL.toile) GL.toile.addEventListener("webglcontextlost", () => perdContexteWebgl());
 }
 
 function guetteContexteWebgl(){
@@ -345,13 +348,53 @@ function verifieContexteWebgl(){
   if (!GL.actif){ remonteWebgl(); return; }
   poseToileWebgl();
   if (contextePerduWebgl()) perdContexteWebgl();
+  else guetteBoucleWebgl();
+}
+
+/* ------------------------------------------------------------
+   La boucle arrêtée.
+
+   La bibliothèque peint dans une boucle d'images qui ne se relance qu'une
+   fois l'image finie. Qu'une image lève une erreur, et la suivante n'est
+   jamais demandée ; que la carte graphique soit reprise sans que l'événement
+   arrive, et chaque image passe sans rien peindre. Dans les deux cas la toile
+   se fige sur la dernière image, sans rien dire : la vue change toujours, les
+   appels du plan la suivent, mais le hall ne bouge plus sous le doigt. C'est
+   ce qu'on trouvait en revenant sur l'application laissée en arrière-plan.
+
+   On le voit à l'horloge de la boucle, qu'elle remet à l'heure à chaque image
+   peinte : au retour sur la page et pendant un geste, si elle n'a pas bougé
+   au bout d'un moment, le dessin est tenu pour perdu — le SVG reprend le
+   plan, et le dessin remonte sur une toile neuve, comme après une perte de
+   contexte.
+
+   Le délai laisse passer la reconversion d'un plan entier, qui tient la main
+   une demi-seconde sur un téléphone ; et la page cachée suspend la garde, ses
+   images l'étant aussi.
+   ------------------------------------------------------------ */
+const BOUCLE_MUETTE = 1500;
+let _gardeBoucle = 0;
+
+function guetteBoucleWebgl(){
+  if (_gardeBoucle || !GL.actif || !GL.pret || document.visibilityState !== "visible") return;
+  const boucle = GL.deck && GL.deck.animationLoop;
+  // une bibliothèque qui n'a plus cette horloge n'est pas gardée : mieux vaut rien qu'un faux arrêt
+  if (!boucle || typeof boucle._lastFrameTime !== "number") return;
+  const avant = boucle._lastFrameTime;
+  _gardeBoucle = setTimeout(() => {
+    _gardeBoucle = 0;
+    if (!GL.actif || !GL.deck || GL.deck.animationLoop !== boucle) return;
+    if (document.visibilityState !== "visible" || boucle._lastFrameTime !== avant) return;
+    perdContexteWebgl("la boucle d'images s'est arrêtée");
+  }, BOUCLE_MUETTE);
 }
 
 /** Le SVG reprend le plan, tel qu'il est : tout ce qui tenait à l'ancienne
  *  carte graphique est jeté, couches comprises. */
-function perdContexteWebgl(){
+function perdContexteWebgl(raison = "contexte perdu"){
   if (!GL.actif) return;
-  console.warn("Rendu WebGL : contexte perdu, le plan repasse en SVG.");
+  console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
+  clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
   // le SVG ne sait pas se pencher : le plan revient à plat, et les gestes avec
   GL.camera = false; metsEnJeu(false);
@@ -467,6 +510,7 @@ export function vueWebgl(enGeste = false){
   _epoqueSurvol++;
   const v = vueDeck();
   GL.deck.setProps({ viewState: v });
+  guetteBoucleWebgl();
   // les logos des stands ne couvrent que les abords de la vue (`logos-stands.mjs`)
   if (logosARevoir(vueDuPlan(), v.zoom)) planifieWebgl();
 }
