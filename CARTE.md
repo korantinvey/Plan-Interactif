@@ -3282,11 +3282,11 @@ Portes :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1894 l.
+### `supabase/functions/sync-evenement/index.ts` — 1907 l.
 
-`cors` 43 · `bourre` 112 · `client` 122 · `ecrit` 144 · `gaia` 152 · `libellesChoix` 163
-`retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
-`champsKlipso` 300 · `hebergee` 1842 · `nettoieUrl` 1870 · `groupeTextes` 1880
+`cors` 43 · `bourre` 116 · `client` 126 · `ecrit` 148 · `gaia` 156 · `libellesChoix` 167
+`retiensAnglais` 194 · `fournisseur` 212 · `raccourci` 220 · `enClair` 257 · `range` 283
+`champsKlipso` 304 · `hebergee` 1855 · `nettoieUrl` 1883 · `groupeTextes` 1893
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
