@@ -7,6 +7,7 @@ const traductions = require("./traductions.js");
 const reserve = require("./reserve.js");
 const modules = require("./modules.js");
 const { projetDeLaConstruction } = require("./projet.js");
+const { salonDemo } = require("./demo.js");
 const D = __dirname;
 /* Le projet Supabase de cette construction, et si elle part en
    prévisualisation : voir `outils/projet.js`. */
@@ -659,6 +660,17 @@ fs.writeFileSync(W + "plan-smcl.html",
   page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8")),
        { autonome: true, pleinEcran: true }));
 
+/* --- la même, dépersonnalisée : un vrai plan, des exposants inventés ---
+   Celle-ci se montre à un prospect (`outils/demo.js`). Elle est servie à
+   `/demo` et non à `/plan-demo` : ce chemin-là désigne le salon « demo »
+   (`modules/salon.mjs` `CHEMIN_SALON`). Seul `</script` est à neutraliser
+   dans des données posées entre deux balises de script. */
+fs.writeFileSync(W + "demo.html",
+  page(tplPublic.replace("/*__DATA__*/", () =>
+    JSON.stringify(salonDemo(JSON.parse(fs.readFileSync(D + "/plans.json", "utf8"))))
+      .replace(/<\/(script)/gi, "<\\/$1")),
+       { autonome: true, pleinEcran: true }));
+
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.writeFileSync(W + "config.js", epureScript(CONFIG));
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
@@ -737,7 +749,7 @@ fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
  * part : c'est de là qu'il tire sa version, il ne peut pas s'y compter.
  */
 const FABRIQUEES = [
-  "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
+  "index.html", "plan.html", "plan-admin.html", "plan-smcl.html", "demo.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
   "config.js", "console.css", ...VERSIONNES, "_headers", "manifeste.webmanifest",
   "icone.svg", "icone-onglet.svg",

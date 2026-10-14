@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 644 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 644 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -98,7 +98,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#data`
 
-### `_langue.js` — 864 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
+### `_langue.js` — 864 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -116,19 +116,19 @@ l'endroit où l'on corrige quoi que ce soit.
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_styles-divers.css` — 315 l. → plan-smcl.html
+### `_styles-divers.css` — 315 l. → demo.html, plan-smcl.html
 
-### `_styles-jetons.css` — 293 l. → plan-smcl.html
+### `_styles-jetons.css` — 293 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1623 l. → plan-smcl.html
+### `_styles-modeles-parcours.css` — 1623 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles.css` — 830 l. → plan-smcl.html
+### `_styles-modeles.css` — 830 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 665 l. → plan-smcl.html
+### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1693 l. → plan-smcl.html
+### `_styles-plan.css` — 1693 l. → demo.html, plan-smcl.html
 
-### `_styles-vitrine.css` — 187 l. → plan-smcl.html
+### `_styles-vitrine.css` — 187 l. → demo.html, plan-smcl.html
 
 ### `_sw.js` — 568 l.
 
