@@ -443,6 +443,8 @@ function basculeCamera(){
 export function vueWebgl(enGeste = false){
   basculeCamera();
   poseGeste(enGeste);
+  // ce que le survol a trouvé ne tient plus sous la souris
+  _epoqueSurvol++;
   const v = vueDeck();
   GL.deck.setProps({ viewState: v });
   // les logos des stands ne couvrent que les abords de la vue (`logos-stands.mjs`)
@@ -528,6 +530,7 @@ function blocsDansLOrdre(){
 function repeintWebgl(){
   GL.image = 0;
   if (!GL.actif) return;
+  _epoqueSurvol++;
   const t0 = performance.now();
   const vus = new Set();
   let n = 0;
@@ -2335,6 +2338,70 @@ let _survolXY = null, _survolImage = 0;
    dernière position est toujours servie. */
 const SURVOL_ESPACE = 100;
 let _survolDernier = 0;
+
+/* ------------------------------------------------------------
+   La désignation sans attendre la carte graphique
+
+   Demander ce qui est sous la souris fait peindre le plan dans une image
+   cachée, puis en relire un pixel. La relecture attendait que la carte
+   graphique ait fini tout ce qu'on lui avait confié — l'image du plan en
+   cours comprise : environ cent millisecondes à chaque survol sur un poste
+   de bureau à carte intégrée (`?perf`, FEP27, 14 octobre 2026), pendant
+   lesquelles la page ne répondait plus.
+
+   La bibliothèque sait relire « plus tard » : elle copie le pixel dans un
+   tampon, puis le lit. Mais en WebGL elle le lit aussitôt, sans attendre la
+   copie, et l'attente revient. On lui apprend donc à poser une barrière et à
+   ne lire qu'une fois la carte graphique passée : la page continue pendant
+   ce temps, et le survol arrive une image ou deux plus tard.
+
+   Sans barrière possible — WebGL sans « fenceSync », bibliothèque qui a
+   changé —, ou au premier échec, la désignation redevient immédiate.
+   ------------------------------------------------------------ */
+/** @type {boolean | null} — `null` tant qu'on ne l'a pas essayée */
+let _lectureDifferee = null;
+function lectureDifferee(){
+  if (_lectureDifferee !== null) return _lectureDifferee;
+  _lectureDifferee = false;
+  try {
+    const d = GL.deck && GL.deck.device;
+    if (!d || d.type !== "webgl" || typeof d.createFence !== "function" ||
+      typeof GL.deck.pickObjectAsync !== "function") return false;
+    const essai = d.createBuffer({ byteLength: 4 });
+    const proto = Object.getPrototypeOf(essai);
+    essai.destroy();
+    if (typeof proto.readSyncWebGL !== "function" || typeof proto.readAsync !== "function") return false;
+    if (!proto.__barriere){
+      proto.__barriere = true;
+      /** @this {any} */
+      proto.readAsync = async function(/** @type {number} */ debut = 0, /** @type {number} */ longueur){
+        const barriere = this.device.createFence();
+        // sans cela, la barrière peut attendre dans la file sans jamais partir
+        this.device.gl.flush();
+        try { await barriere.signaled; } finally { barriere.destroy(); }
+        return this.readSyncWebGL(debut, longueur);
+      };
+    }
+    _lectureDifferee = true;
+  } catch (e) { _lectureDifferee = false; }
+  return _lectureDifferee;
+}
+
+/* Ce que le survol a trouvé, où, et dans quelle vue : un clic de la souris
+   au même point le reprend au lieu de redemander une image à la carte
+   graphique. La vue qui bouge, le plan repeint, et il ne vaut plus rien. */
+let _epoqueSurvol = 0;
+/** @type {{ x: number, y: number, rayon: number, epoque: number, o: any } | null} */
+let _survolVu = null;
+let _survolEnCours = false;
+
+/** Le survol a trouvé `o` sous (x, y) : le stand s'allume, le curseur suit. */
+function survolTrouve(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon, /** @type {any} */ o){
+  _survolVu = { x, y, rayon, epoque: _epoqueSurvol, o };
+  const el = o && o.el;
+  poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
+  poseCurseurWebgl(o);
+}
 function demandeSurvolWebgl(){
   if (_survolImage) return;
   const reste = _survolDernier + SURVOL_ESPACE - performance.now();
@@ -2350,10 +2417,23 @@ function survoleWebgl(){
      attend la fin du geste (`poseGeste`), qui la redemande : le stand sous la
      souris immobile est alors le bon, ce qu'il n'était pas après un zoom. */
   if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
-  const o = objetSous(_survolXY[0], _survolXY[1], _page.enEdition() ? 3 : 0);
-  const el = o && o.el;
-  poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
-  poseCurseurWebgl(o);
+  const [x, y] = _survolXY, rayon = _page.enEdition() ? 3 : 0;
+  if (!lectureDifferee()){ survolTrouve(x, y, rayon, objetSous(x, y, rayon)); return; }
+  // une désignation à la fois : la suivante part au retour de celle-ci
+  if (_survolEnCours) return;
+  _survolEnCours = true;
+  const epoque = _epoqueSurvol;
+  objetSousDiffere(x, y, rayon).then(o => {
+    _survolEnCours = false;
+    if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
+    // la vue a bougé pendant la relecture : ce qu'elle a vu n'est plus sous la souris
+    if (epoque === _epoqueSurvol) survolTrouve(x, y, rayon, o);
+    if (epoque !== _epoqueSurvol || _survolXY[0] !== x || _survolXY[1] !== y) demandeSurvolWebgl();
+  }, () => {
+    _survolEnCours = false;
+    _lectureDifferee = false;
+    demandeSurvolWebgl();
+  });
 }
 
 function brancheSurvolWebgl(){
@@ -2378,7 +2458,9 @@ function poseSurvolWebgl(el){
     if (el) visePour(el, 1);
     gonfleSurvol();
   } else TUILES.clear();
-  GL.deck.setProps({ layers: assembleWebgl() });
+  /* Les noms, les logos et les figurants ne dépendent pas du survol : ils se
+     reprennent du dernier assemblage complet, comme pendant un mouvement. */
+  GL.deck.setProps({ layers: assembleWebgl(true) });
 }
 
 /* ------------------------------------------------------------
@@ -2801,12 +2883,22 @@ function logosSurLesToits(/** @type {any} */ c){
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
   const r = cadrePlan();
-  const o = GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 });
+  return lisObjet(GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
+}
+/** La même question, la réponse relue sans attendre la carte graphique. */
+async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
+  const r = cadrePlan();
+  return lisObjet(await GL.deck.pickObjectAsync({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
+}
+function lisObjet(/** @type {any} */ o){
   if (!o) return null;
   const d = o.object || {}, p = (o.layer && o.layer.props) || {};
   return { el: d.el || p.el || null, prise: d.prise || p.prise || null, lbl: d.lbl || null };
 }
 export function cibleWebgl(x, y, rayon){
+  // la souris immobile depuis son survol : il a déjà demandé
+  const s = _survolVu;
+  if (s && s.epoque === _epoqueSurvol && s.x === x && s.y === y && s.rayon === (rayon || 0)) return s.o ? s.o.el : null;
   const o = objetSous(x, y, rayon);
   return o ? o.el : null;
 }
