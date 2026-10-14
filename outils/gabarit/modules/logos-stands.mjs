@@ -112,16 +112,21 @@ const MARGE_PRECHARGE = 1.5;
    premières. */
 const GRANDES_EN_ROUTE = 8;
 
-/** Un logo vient d'être prêt : le dessin doit le poser, et le nom du stand
- *  lui céder la place. */
+/** Les logos posés ont changé : les noms des stands doivent se refaire — se
+ *  taire devant un logo qui vient de se poser, revenir là où il n'y en a plus. */
 export const PANNEAU_PRET = creeAnnonce();
+/** Un logo vient d'être prêt : le dessin doit le poser. Les noms n'ont rien à
+ *  en apprendre tant qu'il ne l'est pas (`PANNEAU_PRET`) — les refaire à
+ *  chaque arrivée doublait le travail d'une apparition massive. */
+export const LOGO_PRET = creeAnnonce();
 VIGNETTES_ARRIVEES.suis(() => annoncePret());
 
 /* ------------------------------------------------------------
    Rien ne se prépare sous le doigt
 
-   Un logo prêt fait refaire la planche entière, la renvoyer à la carte
-   graphique et retaire les noms. Le 13 octobre 2026, sur un téléphone Android
+   Un logo prêt faisait refaire la planche entière, la renvoyer à la carte
+   graphique et retaire les noms — elle ne reçoit plus que sa case
+   (« La planche gardée »), mais un geste ne doit rien attendre d'autre. Le 13 octobre 2026, sur un téléphone Android
    récent, des logos arrivés pendant un pincement l'ont gelé une seconde, à
    six images par seconde (`?perf`). Pendant un geste, ce qui devient prêt
    attend donc sa fin (`geleLogos`, appelé par `webgl.mjs`) ; la couche ne
@@ -144,7 +149,7 @@ const enRetard = new Map();
 
 function annoncePret(){
   if (gele) annonceRetenue = true;
-  else PANNEAU_PRET.dis();
+  else LOGO_PRET.dis();
 }
 
 /** Un logo est prêt à poser — tout de suite, ou à la fin du geste. */
@@ -162,7 +167,7 @@ export function geleLogos(/** @type {boolean} */ oui){
   enRetard.clear();
   // les logos posés pendant le geste reprennent la finesse de la vue où il s'arrête
   const affiner = couvert !== null && pres(zoomVu) && finesse(zoomVu) !== finesseCouverte;
-  if (annonceRetenue || affiner){ annonceRetenue = false; PANNEAU_PRET.dis(); }
+  if (annonceRetenue || affiner){ annonceRetenue = false; LOGO_PRET.dis(); }
 }
 
 /** Les vignettes décodées, par clé. */
@@ -405,6 +410,27 @@ function detoureRevenu(/** @type {number} */ n, /** @type {ImageData | null} */ 
   pompe();
 }
 
+const largeurDeToile = (/** @type {number} */ iw, /** @type {number} */ largeur) => Math.max(1, Math.min(iw, Math.round(largeur)));
+/** La clé de la toile d'un logo à cette largeur — le tassement dedans :
+ *  passer de l'immersif au plat refait la toile. */
+const cleDeToile = (/** @type {string} */ cle, /** @type {number} */ iw, /** @type {number} */ largeur, /** @type {number} */ tasse) =>
+  cle + "@" + largeurDeToile(iw, largeur) + (tasse === 1 ? "" : "~");
+
+/** Une toile de ce logo déjà rangée sur la planche gardée, à une autre
+ *  finesse, la plus fine : elle tient la place de celle qui attend son tour,
+ *  un peu floue ou un peu lourde, plutôt que de rendre le toit à son nom. */
+function toileDejaRangee(/** @type {string} */ cle, /** @type {number} */ tasse){
+  if (!gardee) return null;
+  const debut = cle + "@", fin = tasse === 1 ? "" : "~";
+  let mieux = null, large = 0;
+  for (const k of gardee.cases.keys()){
+    if (!k.startsWith(debut) || k.endsWith("~") !== (fin === "~")) continue;
+    const t = toiles.get(k);
+    if (t && t.width > large){ mieux = t; large = t.width; }
+  }
+  return mieux;
+}
+
 /** La toile d'un logo à cette largeur en pixels : détouré, puis étiré en
  *  hauteur de ce que la vue de biais lui reprendra — `tasse`, 1 à plat.
  *
@@ -415,9 +441,7 @@ function detoureRevenu(/** @type {number} */ n, /** @type {ImageData | null} */ 
 function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
   /** @type {number} */ iw, /** @type {number} */ ih, /** @type {number} */ largeur,
   /** @type {number} */ tasse){
-  const lw = Math.max(1, Math.min(iw, Math.round(largeur)));
-  // le tassement dans la clé : passer de l'immersif au plat refait la toile
-  const k = cle + "@" + lw + (tasse === 1 ? "" : "~");
+  const lw = largeurDeToile(iw, largeur), k = cleDeToile(cle, iw, largeur, tasse);
   if (toiles.has(k)) return toiles.get(k) || null;
   // pas encore détouré : rien à poser, le logo paraîtra à son retour — ou à la fin du geste
   if (!detourees.has(cle)){ if (!enRetard.has(cle)) demandeDetourage(cle, i, iw, ih); return null; }
@@ -518,11 +542,11 @@ const CARRE = (() => {
    négatif — une ellipse noire couvrait le logo de très près, là où la vue
    tombait dans ce cas. */
 const IMPRIME = { ambient: 1, diffuse: 0, shininess: 1, specularColor: [0, 0, 0] };
-/* La planche se lit sans niveaux réduits. La bibliothèque ne les fabrique
-   pas pour une toile qu'on lui donne : demandés au filtrage, ils restaient
-   vides, et dès que le toit fuyait assez, le logo virait au noir passé un arc
-   de cercle — là où la carte graphique changeait de niveau. Les logos ne
-   paraissent que de près, où la réduction reste faible.
+/* Les niveaux réduits de la planche. Une version de la bibliothèque ne les
+   fabriquait pas pour une toile qu'on lui donnait : demandés au filtrage, ils
+   restaient vides, et dès que le toit fuyait assez, le logo virait au noir
+   passé un arc de cercle. La 9.3 les fabrique, et la planche gardée les
+   recalcule à chaque pose (`range`) : le filtrage peut les lire.
 
    Vu de biais, un toit se réduit plus en profondeur qu'en largeur ; le
    filtrage ordinaire lisse alors le logo dans les deux sens, à la mesure du
@@ -612,6 +636,205 @@ function extensionPlanche(/** @type {any} */ L){
   return (PLANCHE_EXT = [new CasesEtFondu()]);
 }
 
+/* ------------------------------------------------------------
+   La planche gardée
+
+   La planche se refaisait entière dès qu'un seul logo changeait : une toile
+   neuve, que la bibliothèque envoyait à la carte graphique comme une texture
+   neuve — jusqu'à quatre mille pixels de côté, soixante-quatre mégaoctets et
+   le tiers de plus pour ses niveaux réduits, alloués, remplis puis
+   recalculés —, avant de rendre l'ancienne. Une apparition massive en
+   faisait autant que de logos arrivés, et chaque déplacement hors des
+   abords de la vue une de plus, pour une planche aux neuf dixièmes
+   inchangée. Ce sont les saccades des appareils modestes.
+
+   La texture est donc créée une fois et gardée : chaque logo neuf y prend
+   une case, seule envoyée ; une case dont le logo n'est plus posé reste
+   remplie, et sert telle quelle si l'on revient vers lui, jusqu'à ce qu'un
+   autre ait besoin de la place. Sa taille ne dépasse pas celle que la planche
+   atteignait déjà : elle commence petite et ne double que si la vue en
+   demande plus — c'est alors la seule fois où tout se renvoie. Au-delà, la
+   planche d'autrefois, réduite (`plancheDe`), reste le recours.
+
+   Les niveaux réduits se recalculent une fois par pose, quel que soit le
+   nombre de cases envoyées : la bibliothèque les faisait aussi, et le logo
+   se lit de même.
+   ------------------------------------------------------------ */
+
+/* Ses tailles successives, jamais au-delà de ce que la carte graphique
+   accepte. */
+const TAILLES_PLANCHE = [[PLANCHE, 1024], [PLANCHE, PLANCHE], [PLANCHE, PLANCHE_MAX], [PLANCHE_MAX, PLANCHE_MAX]];
+/* Reculé sous le seuil, la planche attend ce temps avant de rendre sa
+   mémoire : un zoom qui hésite autour du seuil retrouve ses logos sans rien
+   renvoyer, et la vue d'ensemble, qui n'en montre aucun, ne la garde pas. */
+const OUBLI_PLANCHE = 30_000;
+/* Ce qu'une pose envoie au plus : les plus proches du centre d'abord, le
+   reste à l'image suivante. Le stand garde son nom en attendant. */
+const ENVOIS_PAR_POSE = 12, MS_PAR_POSE = 8;
+
+/** @typedef {{ x: number, y: number, w: number, h: number }} Case */
+/**
+ * @typedef {object} Planche
+ * @property {any} appareil la carte graphique qui la tient
+ * @property {any} tex la texture
+ * @property {number} large
+ * @property {number} haut
+ * @property {number} rang dans `TAILLES_PLANCHE`
+ * @property {Map<string, Case>} cases par clé de toile
+ * @property {Case[]} libres les cases rendues, à reprendre
+ * @property {{ y: number, h: number, x: number }[]} etageres
+ * @property {number} bas le haut de la prochaine étagère
+ */
+/** @type {Planche | null} */
+let gardee = null;
+let poseN = 0, minuterieOubli = 0;
+
+/** Ce que la planche a coûté depuis l'ouverture — lu par le relevé `?perf`.
+ *  Des comptes, non des mesures : la mémoire de la carte graphique ne se lit
+ *  pas, on n'en connaît que ce qu'on lui a demandé. */
+export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0,
+  niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0 };
+
+/* Combien de toiles la plus grande planche n'a pas su tenir : tant que la vue
+   en demande autant, la planche d'autrefois sert d'emblée. Sans cela, chaque
+   pose refaisait les planches gardées de toutes les tailles avant d'y
+   renoncer. */
+let tropDeToiles = Infinity;
+
+/** La planche rend sa texture, et les toiles qu'elle seule gardait — sauf
+ *  pour la planche d'autrefois, qui les reprend aussitôt. */
+function rendPlanche(garderToiles = false){
+  clearTimeout(minuterieOubli); minuterieOubli = 0;
+  if (gardee) try { gardee.tex.destroy(); } catch (e) { /* contexte déjà perdu */ }
+  gardee = null;
+  COMPTES_LOGOS.octetsTexture = 0;
+  if (!garderToiles) toiles.clear();
+}
+
+/** Une planche neuve, vide, à ce rang de taille ; rien si la carte graphique
+ *  ne la sait pas faire. */
+function nouvellePlanche(/** @type {any} */ appareil, /** @type {number} */ rang){
+  const max = (appareil.limits && appareil.limits.maxTextureDimension2D) || PLANCHE;
+  const tailles = TAILLES_PLANCHE.filter(([w, h]) => w <= max && h <= max);
+  if (rang >= tailles.length) return null;
+  const [large, haut] = tailles[rang];
+  try {
+    const tex = appareil.createTexture({ width: large, height: haut, format: "rgba8unorm",
+      mipLevels: appareil.getMipLevelCount(large, haut),
+      // ce que la bibliothèque posait d'elle-même, et le filtrage d'ici
+      sampler: { addressModeU: "clamp-to-edge", addressModeV: "clamp-to-edge", mipmapFilter: "linear", ...filtrage(appareil) } });
+    COMPTES_LOGOS.textures++;
+    COMPTES_LOGOS.octetsTexture = Math.round(large * haut * 4 * 4 / 3);
+    return { appareil, tex, large, haut, rang, cases: new Map(), libres: [], etageres: [], bas: 0 };
+  } catch (e) { return null; }
+}
+
+/** Une place de `w` sur `h` sur la planche, joints compris : une case rendue
+ *  qui ne gâche pas plus qu'elle ne sert, une étagère de sa hauteur, ou une
+ *  étagère neuve. Rien si la planche est pleine. */
+function place(/** @type {Planche} */ pl, /** @type {number} */ w, /** @type {number} */ h){
+  let k = -1, perte = w * h;
+  pl.libres.forEach((c, i) => {
+    if (c.w >= w && c.h >= h && c.w * c.h - w * h <= perte){ perte = c.w * c.h - w * h; k = i; }
+  });
+  if (k >= 0) return pl.libres.splice(k, 1)[0];
+  for (const e of pl.etageres){
+    if (h <= e.h && h >= e.h * .6 && e.x + w <= pl.large){ const c = { x: e.x, y: e.y, w, h: e.h }; e.x += w; return c; }
+  }
+  if (pl.bas + h > pl.haut || w > pl.large) return null;
+  pl.etageres.push({ y: pl.bas, h, x: w });
+  pl.bas += h;
+  return { x: 0, y: pl.bas - h, w, h };
+}
+
+/** La toile envoyée dans sa case, le reste de la case vidé : une case
+ *  reprise garde sinon le bord du logo d'avant, que les niveaux réduits
+ *  mêleraient au nouveau. */
+let toileEnvoi = /** @type {HTMLCanvasElement | null} */ (null);
+function envoie(/** @type {Planche} */ pl, /** @type {Case} */ c, /** @type {HTMLCanvasElement} */ t){
+  const e = toileEnvoi || (toileEnvoi = document.createElement("canvas"));
+  e.width = c.w; e.height = c.h;
+  const ctx = e.getContext("2d");
+  if (!ctx) return false;
+  ctx.clearRect(0, 0, c.w, c.h);
+  ctx.drawImage(t, JOINT, JOINT);
+  pl.tex.copyExternalImage({ image: e, x: c.x, y: c.y, width: c.w, height: c.h });
+  COMPTES_LOGOS.envois++;
+  COMPTES_LOGOS.octetsEnvoyes += c.w * c.h * 4;
+  return true;
+}
+
+/** Chaque toile voulue dans sa case : celles déjà rangées n'envoient rien.
+ *  Rend faux si elles n'y tiennent pas, même planche vidée et agrandie. */
+function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ voulues){
+  const enJeu = new Set(voulues.map(t => t.dataset.cle || ""));
+  let envoye = false, vide = false;
+  for (const t of voulues){
+    const cle = t.dataset.cle || "";
+    if (pl.cases.has(cle)) continue;
+    // le joint des deux côtés, dans la case même : elle se vide avec elle
+    const w = t.width + 2 * JOINT, h = t.height + 2 * JOINT;
+    let c = place(pl, w, h);
+    if (!c && !vide){
+      // les cases des logos qui ne sont plus posés cèdent leur place, toutes à la fois
+      vide = true;
+      for (const [k, v] of [...pl.cases]){
+        if (enJeu.has(k)) continue;
+        pl.cases.delete(k); pl.libres.push(v); toiles.delete(k);
+      }
+      c = place(pl, w, h);
+    }
+    if (!c) return false;
+    if (!envoie(pl, c, t)){ pl.libres.push(c); return false; }
+    pl.cases.set(cle, c);
+    envoye = true;
+  }
+  if (envoye){ pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++; }
+  return true;
+}
+
+/**
+ * La planche gardée, chaque toile voulue rangée dedans. Pleine même vidée,
+ * elle se refait — rangée à neuf, puis plus grande — et tout se renvoie : le
+ * seul cas où la pose coûte ce qu'elle coûtait toujours. Rien quand la carte
+ * graphique ne s'y prête pas, ou que la plus grande n'y suffit pas : la
+ * planche d'autrefois prend le relais.
+ */
+function plancheGardee(/** @type {any} */ appareil, /** @type {HTMLCanvasElement[]} */ voulues){
+  if (!appareil || typeof appareil.createTexture !== "function") return null;
+  clearTimeout(minuterieOubli); minuterieOubli = 0;
+  // la carte graphique a changé — un contexte perdu, puis rendu
+  if (gardee && gardee.appareil !== appareil) rendPlanche();
+  if (voulues.length >= tropDeToiles * .8) return null;
+  tropDeToiles = Infinity;
+  poseN++;
+  if (!gardee) gardee = nouvellePlanche(appareil, 0);
+  if (!gardee) return null;
+  if (range(gardee, voulues)) return gardee;
+  /* Vidée, elle ne tient pas encore : rangée à neuf à sa taille, les cases
+     éparses s'étant peut-être émiettées, puis plus grande. */
+  for (let rang = gardee.rang; ; rang++){
+    const avant = gardee;
+    const pl = rang === avant.rang ? { ...avant, cases: new Map(), libres: [], etageres: [], bas: 0 }
+      : nouvellePlanche(appareil, rang);
+    if (!pl) break;
+    if (pl !== avant && pl.tex !== avant.tex){ try { avant.tex.destroy(); } catch (e) { /* perdu */ } COMPTES_LOGOS.agrandissements++; }
+    else COMPTES_LOGOS.rangements++;
+    gardee = pl;
+    if (range(pl, voulues)) return pl;
+  }
+  COMPTES_LOGOS.recours++;
+  tropDeToiles = voulues.length;
+  rendPlanche(true);
+  return null;
+}
+
+/** Sous le seuil, la planche attend un peu, puis rend sa mémoire. */
+function oubliePlancheBientot(){
+  if (!gardee || minuterieOubli) return;
+  minuterieOubli = setTimeout(rendPlanche, OUBLI_PLANCHE);
+}
+
 /* Ce que les logos posés couvrent : le cadre à plat, marge comprise, ou rien
    sous le seuil. */
 /** @type {{ x0: number, y0: number, x1: number, y1: number } | null} */
@@ -675,7 +898,8 @@ function groupe(/** @type {string} */ id){
  *  d'abord. */
 function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
   const posees = new Set(data.map(d => d.t.dataset.cle));
-  for (const k of [...toiles.keys()]) if (!posees.has(k)) toiles.delete(k);
+  // une toile rangée sur la planche gardée reste : elle s'y renverrait si la planche se refait
+  for (const k of [...toiles.keys()]) if (!posees.has(k) && !(gardee && gardee.cases.has(k))) toiles.delete(k);
   /* Reculé sous le seuil, rien n'est posé, et tout devenait oubliable : les
      grandes, décodées d'avance, se fermaient jusqu'au budget, et le zoom
      suivant les redemandait au service, huit à la fois — les logos
@@ -727,7 +951,9 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   couvert = null;
   // celles qui n'ont pas pris la route se rangent à nouveau, d'après cette vue
   fileGrandes.length = 0;
-  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)){ oublie([]); annoncePoses([]); return []; }
+  if (!p || !document.documentElement.classList.contains(CLASSE_LOGOS) || !pres(zoom)){
+    oublie([]); annoncePoses([]); oubliePlancheBientot(); return [];
+  }
   const sol = solVu(v), cote = Math.max(v.w, v.h);
   const autour = (/** @type {number} */ k) => ({ x0: sol.x - cote * k, y0: sol.y - cote * k, x1: sol.x + sol.w + cote * k, y1: sol.y + sol.h + cote * k });
   const dedans = (/** @type {any} */ b, /** @type {number[]} */ c) => c[0] >= b.x0 && c[0] <= b.x1 && c[1] >= b.y0 && c[1] <= b.y1;
@@ -740,6 +966,9 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   const autourDeLaVue = (p.stands || []).filter((/** @type {any} */ s) => s.vignette && s.c && dedans(loin, s.c))
     .map((/** @type {any} */ s) => ({ s, d: (s.c[0] - vx) ** 2 + (s.c[1] - vy) ** 2 })).sort((a, b) => a.d - b.d);
   const data = [], vus = new Set();
+  /* Les toiles neuves de cette pose — chacune à envoyer — et leur temps. Au-
+     delà, un logo garde la toile qu'il avait, ou attend la pose suivante. */
+  let faites = 0, msFaites = 0, attente = 0;
   for (const { s } of autourDeLaVue){
     if (vus.has(s.id)) continue;
     if (!dedans(couvert, s.c)){ grande(s.vignette); continue; }
@@ -758,7 +987,15 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     if (!(prof > 0)) continue;
     const large = prof * rapport;
     const voulue = Math.max(PIXELS_MIN, large * finesseCouverte);
-    const t = toile(src.cle, src.i, iw, ih, voulue, tasse);
+    let t = toiles.get(cleDeToile(src.cle, iw, voulue, tasse));
+    if (t === undefined){
+      if (faites >= ENVOIS_PAR_POSE || msFaites > MS_PAR_POSE){ t = toileDejaRangee(src.cle, tasse); attente++; }
+      else {
+        const t0 = performance.now();
+        t = toile(src.cle, src.i, iw, ih, voulue, tasse);
+        if (t){ faites++; msFaites += performance.now() - t0; }
+      }
+    }
     if (!t) continue;
     /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
        sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
@@ -770,11 +1007,31 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
   }
   oublie(data);
   annoncePoses(data);
+  COMPTES_LOGOS.poses++;
+  COMPTES_LOGOS.enAttente = attente;
+  // le reste à la pose suivante — ou à la fin du geste
+  if (attente) annoncePret();
   if (!data.length) return [];
-  // dans un ordre fixe, pour qu'une même vue retrouve la même planche
-  const toiles = [...new Set(data.map(d => d.t))].sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || ""));
-  const pl = plancheDe(toiles);
-  return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture: pl.toile, pickable: true,
+  // du centre vers les bords : les plus proches prennent les premières cases
+  const voulues = [...new Set(data.map(d => d.t))];
+  const gp = plancheGardee(appareil, voulues);
+  /** @type {any} */
+  let texture, cleCases;
+  /** @type {(t: HTMLCanvasElement) => number[] | undefined} */
+  let caseDe;
+  if (gp){
+    texture = gp.tex; cleCases = "g" + poseN;
+    caseDe = t => {
+      const c = gp.cases.get(t.dataset.cle || "");
+      return c && [(c.x + JOINT) / gp.large, (c.y + JOINT) / gp.haut, t.width / gp.large, t.height / gp.haut];
+    };
+  } else {
+    // dans un ordre fixe, pour qu'une même vue retrouve la même planche
+    const pl = plancheDe(voulues.sort((a, b) => (a.dataset.cle || "").localeCompare(b.dataset.cle || "")));
+    texture = pl.toile; cleCases = pl.cle;
+    caseDe = t => pl.cases.get(t.dataset.cle || "");
+  }
+  return [new L.SimpleMeshLayer({ id: "logos-stands", data, mesh: CARRE, texture, pickable: true,
     material: IMPRIME, textureParameters: filtrage(appareil), extensions: extensionPlanche(L),
     /* À plat, tout est à la même hauteur : la profondeur départagerait le
        logo et son stand au hasard. L'ordre des couches suffit — il se peint
@@ -783,6 +1040,6 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil){
     getPosition: (/** @type {any} */ d) => [d.x, d.y, d.z],
     getScale: (/** @type {any} */ d) => [d.large, d.prof, 1],
     getOrientation: [0, 0, 0],
-    getCaseLogo: (/** @type {any} */ d) => pl.cases.get(d.t.dataset.cle || "") || [0, 0, 1, 1],
-    updateTriggers: { getCaseLogo: pl.cle } })];
+    getCaseLogo: (/** @type {any} */ d) => caseDe(d.t) || [0, 0, 1, 1],
+    updateTriggers: { getCaseLogo: cleCases } })];
 }

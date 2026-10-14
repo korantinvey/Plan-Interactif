@@ -42,7 +42,7 @@ import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
-import { couchesLogos, logosARevoir, PANNEAU_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
+import { couchesLogos, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
@@ -246,12 +246,16 @@ export function monteWebgl(){
       attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
     /* Un logo prêt à se poser n'a rien à reconvertir : le prochain
-       assemblage le pose, et aucun bloc n'est sali. Le nom de son stand, lui,
-       doit apprendre à lui céder la place.
+       assemblage le pose, et aucun bloc n'est sali. Les noms ne se refont
+       que lorsque les logos posés changent : celui d'un stand doit alors
+       apprendre à lui céder la place.
 
-       Une fois par image, quel que soit le nombre de logos prêts : les
+       Une fois par image, quel que soit le nombre de logos posés : les
        vignettes d'un lot se décodent ensemble, et chacune refaisait tous les
        noms du plan — treize fois en sept millisecondes sur Funexpo. */
+    LOGO_PRET.suis(() => {
+      if (document.documentElement.classList.contains(CLASSE_LOGOS)) planifieWebgl();
+    });
     let logosPrets = 0;
     PANNEAU_PRET.suis(() => {
       if (logosPrets || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;

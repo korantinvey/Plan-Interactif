@@ -15,7 +15,9 @@
      — les images longues que le navigateur attribue à un script (« long
        animation frames », Chrome) ou, à défaut, les longues tâches ;
      — les événements lents à répondre (Event Timing) ;
-     — le démarrage, les ressources lourdes, la mémoire, l'appareil.
+     — le démarrage, les ressources lourdes, la mémoire, l'appareil ;
+     — ce que la planche des logos a créé et envoyé (`logos-stands.mjs`
+       `COMPTES_LOGOS`).
 
    Rien ne part au serveur : le relevé reste dans la page jusqu'à ce qu'on
    touche « Partager », et part alors par le menu de partage du téléphone.
@@ -30,6 +32,7 @@ import { GL, RENDU_WEBGL, REPEINT_FINI } from "./webgl.mjs";
 import { quandAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
+import { COMPTES_LOGOS } from "./logos-stands.mjs";
 
 const ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
 
@@ -342,6 +345,8 @@ function releve(){
     gestes: R.gestes, saccades: R.saccades, repeints: R.repeints,
     imagesLongues: R.images, evenementsLents: R.evenements,
     memoire: R.memoire, deck: R.deck, erreurs: R.erreurs,
+    // des comptes, non des mesures : « octetsTexture » est ce qu'on a demandé à la carte graphique
+    logos: { ...COMPTES_LOGOS },
     perdus: R.perdus,
   };
 }
