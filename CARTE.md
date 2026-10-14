@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 640 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 644 l. → plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -65,19 +65,20 @@ l'endroit où l'on corrige quoi que ce soit.
 `#elemTaille` · `#elemRotationBloc` · `#elemRotation` · `#elemRotationQuart`
 `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg` · `#elemEpaisseur` · `#elemStyle`
 `#elemFleche` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
-`#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#geoReg` · `#geoNom` · `#geoFerme`
-`#geoInfos` · `#geoCodeL` · `#geoCode` · `#geoSocL` · `#geoSoc` · `#geoTitreL` · `#geoTitre`
-`#geoDim` · `#geoLargeur` · `#geoHauteur` · `#geoOrigine` · `#geoFiche` · `#geoSupprime`
-`#geoAide` · `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile`
-`#voile` · `#detail` · `#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque`
-`#closeDetail` · `#dKind` · `#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode`
-`#dVis` · `#dPartage` · `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb`
-`#dOngProd` · `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours`
-`#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire`
-`#btnPartage` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied`
-`#jRetour` · `#itineraire` · `#poigneeItineraire` · `#closeItineraire` · `#iResume`
-`#iCorps` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB`
-`#iPmr` · `#iResultat` · `#videItineraire`
+`#libFerme` · `#libTaille` · `#libAngleChamp` · `#libAngle` · `#libAngleVal` · `#libAuto`
+`#libAide` · `#geoReg` · `#geoNom` · `#geoFerme` · `#geoInfos` · `#geoCodeL` · `#geoCode`
+`#geoSocL` · `#geoSoc` · `#geoTitreL` · `#geoTitre` · `#geoDim` · `#geoLargeur`
+`#geoHauteur` · `#geoOrigine` · `#geoFiche` · `#geoSupprime` · `#geoAide` · `#modale`
+`#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail`
+`#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque` · `#closeDetail`
+`#dKind` · `#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis`
+`#dPartage` · `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd`
+`#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours` · `#pEyebrow`
+`#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire` · `#btnPartage` · `#jJours`
+`#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRetour` · `#itineraire`
+`#poigneeItineraire` · `#closeItineraire` · `#iResume` · `#iCorps` · `#iDepart` · `#iViseA`
+`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
+`#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
@@ -1661,7 +1662,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 788 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 812 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1673,7 +1674,7 @@ Fonctions :
 `parLaPageSeule` 382 · `detoureRevenu` 391 · `toile` 415 · `logoPose` 452
 `sourceDuToit` 462 · `cedeAuLogo` 475 · `CARRE` 504 · `filtrage` 537 · `plancheDe` 554
 `extensionPlanche` 590 · `pres` 622 · `solVu` 633 · `logosARevoir` 650 · `groupe` 665
-`oublie` 676 · `annoncePoses` 709 · `couchesLogos` 725
+`oublie` 676 · `annoncePoses` 709 · `matriceDuToit` 730 · `couchesLogos` 749
 
 Importe :
 
@@ -2126,16 +2127,16 @@ Importé par :
 
 plan-admin
 
-### `modules/placement-libelles.mjs` — 212 l. → plan-admin
+### `modules/placement-libelles.mjs` — 234 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
 `lacheLibelle` 43 · `choisi` 52 · `repeint` 65 · `posePlacement` 75
-`libelleAutomatique` 92 · `modePlacementLibelles` 101 · `majPaletteLibelle` 120
-`choisitLibelle` 139 · `pousseLibelle` 146 · `libellePointerDown` 154
-`libellePointerMove` 176 · `libellePointerUp` 185 · `branchePlacementLibelles` 198
+`libelleAutomatique` 97 · `modePlacementLibelles` 106 · `majPaletteLibelle` 125
+`choisitLibelle` 150 · `pousseLibelle` 157 · `libellePointerDown` 165
+`libellePointerMove` 187 · `libellePointerUp` 196 · `branchePlacementLibelles` 209
 
 Importe :
 
