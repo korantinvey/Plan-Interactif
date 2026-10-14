@@ -76,6 +76,10 @@ const NOMS: Record<string, string> = {
    salons — c'est une propriété standard du stand, et non un champ de dossier
    que chaque organisateur baptiserait à sa façon : il n'y a donc rien à régler
    pour lui, ni ici ni dans la console. */
+/* L'instance du salon de démonstration, que `outils/salon-demo.js` écrit et
+   que la synchronisation refuse. */
+const INSTANCE_DEMO = "demo";
+
 const CHAMP_SECTEUR = "SecteurExp";
 
 /* Le hall de l'emplacement. Il tient au stand et non au pavillon : un plan
@@ -475,6 +479,15 @@ Deno.serve(async (req) => {
     const { data: evt, error: e1 } = await db
       .from("evenement").select("*").eq("id", corps.evenementId).single();
     if (e1 || !evt) return repond({ erreur: "Événement introuvable." }, 404);
+    /* Le salon de démonstration n'a pas de source : ses exposants sont
+       inventés, et écrits par `outils/salon-demo.js`. Le synchroniser
+       interrogerait Klipso sous une instance qui n'existe pas — au mieux un
+       refus, au pire un instantané vidé. */
+    if (evt.instance === INSTANCE_DEMO) {
+      return repond({
+        erreur: "Le salon de démonstration ne se synchronise pas : ses données viennent du workflow « Salon de démonstration ».",
+      }, 409);
+    }
 
     /* Le champ d'origine retenu pour chaque cible de la fiche. Résolu une fois
        pour toutes : la boucle des stands le consulte des milliers de fois, et

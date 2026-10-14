@@ -101,6 +101,8 @@ module.exports = {
   "Paramètre slug manquant.": "Missing slug parameter.",
   "Session expirée : reconnectez-vous.": "Session expired: please sign in again.",
   "Événement introuvable.": "Event not found.",
+  "Le salon de démonstration ne se synchronise pas : ses données viennent du workflow « Salon de démonstration ».":
+    "The demo show is not synchronised: its data comes from the “Salon de démonstration” workflow.",
   "Pavillon introuvable.": "Hall not found.",
   "Aucun pavillon : lancez une synchronisation.": "No halls: run a synchronisation.",
   "Aucun pavillon publié.": "No published halls.",

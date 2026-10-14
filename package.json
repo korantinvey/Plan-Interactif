@@ -13,6 +13,7 @@
     "polices": "node outils/polices.js",
     "lieux": "node outils/lieux.js",
     "logos-demo": "node outils/logos-demo.js",
+    "salon-demo": "node outils/salon-demo.js",
     "deck": "node outils/deck.js",
     "avif": "node outils/avif.js",
     "bd": "supabase db push",

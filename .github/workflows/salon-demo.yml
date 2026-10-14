@@ -1,0 +1,53 @@
+# Le salon de démonstration, écrit dans la base comme un vrai salon.
+#
+# Lancé à la main (onglet Actions → « Salon de démonstration » → Run workflow).
+# Il écrit, sous le slug `demo`, le salon inventé de `outils/demo.js` : il
+# paraît alors dans la console, se règle en administration
+# (`/plan-admin?plan=demo`) et se voit à `/plan-demo`. Relancé, il refait les
+# données sans toucher à ce qui a été réglé (`outils/salon-demo.js`).
+#
+# La clé de service n'est rangée nulle part : elle est demandée à l'API de
+# gestion de Supabase avec le jeton qu'emploie déjà le déploiement, masquée
+# dans le journal, et oubliée avec la machine.
+name: Salon de démonstration
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: salon-demo
+  cancel-in-progress: false
+
+jobs:
+  ecrire:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # même référence que le déploiement : le sous-domaine de l'API, public
+      REFERENCE: ${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # La clé « service_role », ou à défaut la clé secrète du nouveau
+      # format : l'une ou l'autre ouvre la base sans politique.
+      - name: Demander la clé de service
+        run: |
+          cle=$(curl -sf -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$REFERENCE/api-keys?reveal=true" |
+            jq -r '[.[] | select(.name == "service_role" or .type == "secret") | .api_key
+                    | select(. != null and . != "")][0] // empty')
+          [ -n "$cle" ] || { echo "::error::clé de service introuvable"; exit 1; }
+          echo "::add-mask::$cle"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$cle" >> "$GITHUB_ENV"
+
+      - name: Écrire le salon
+        run: node outils/salon-demo.js
+        env:
+          SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}.supabase.co
