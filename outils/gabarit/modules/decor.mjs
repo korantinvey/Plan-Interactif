@@ -24,7 +24,7 @@
 
 /** Les types que le décor sait meubler. Une zone d'un autre type, ou sans
  *  type, reste un bloc. */
-export const TYPES_MEUBLES = ["restauration", "conferences", "accueil", "vestiaire", "lounge"];
+export const TYPES_MEUBLES = ["restauration", "foodtruck", "conferences", "accueil", "vestiaire", "lounge"];
 
 /* Au-delà, on cesse de poser : une zone immense — un hall d'exposition
    déclaré « restauration » par erreur — ne doit pas coûter dix mille pièces
@@ -36,7 +36,7 @@ const PIECES_MAX = 600;
  * @property {number[][]} polygon   le contour au sol, en mètres
  * @property {number} haut          la hauteur, en mètres
  * @property {string} role          plateau, assise, scene, ecran, comptoir, plante, portant,
- *                                  canape, tapis,
+ *                                  canape, tapis, carrosserie, habitacle, store,
  *                                  et sur un comptoir choisi : comptoir-choisi, tige, poignee
  */
 
@@ -237,6 +237,27 @@ export function meuble(type, anneau, reglage = null, enMain = false){
         for (const [i, j] of [[1, 0], [-1, 0], [0, 1], [0, -1]])
           pose(a + i * .85, b + j * .85, .2, .2, .45, "assise", 0);
       }
+  } else if (type === "foodtruck"){
+    /* Des camions rangés le long d'un côté, le comptoir ouvert vers la zone,
+       et devant eux, passé la file d'attente, des mange-debout sans chaises :
+       c'est ce qui distingue d'un regard le foodtruck du restaurant assis. Le
+       camion n'est posé qu'entier — caisse, cabine et comptoir —, un camion
+       coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
+       toit côté comptoir, est ce qu'on voit d'aplomb. */
+    const pas = 7.4, n = Math.floor((L + .6) / pas);
+    const b = R.t0 + .3 + 1.15;
+    for (let k = 0; k < n; k++){
+      const a = (R.s0 + R.s1) / 2 + (k - (n - 1) / 2) * pas;
+      if (!tient(a, b + .175, 3.1, 1.325, .2)) continue;
+      pose(a - .7, b, 2.4, 1.15, 2.7, "carrosserie", 0);
+      pose(a + 2.4, b, .7, 1.05, 2.2, "habitacle", 0);
+      pose(a - .7, b + .9, 2.4, .25, 2.85, "store", 0);
+      pose(a - .7, b + 1.325, 1.6, .175, 1.05, "comptoir", 0);
+    }
+    const pasT = 2.4;
+    for (let tb = b + 1.5 + 2 + .45; tb <= R.t1 - .45 + 1e-6; tb += pasT)
+      for (let a = R.s0 + pasT / 2; a <= R.s1 - pasT / 2 + 1e-6; a += pasT)
+        if (tient(a, tb, .45, .45, .2)) ronde(a, tb, .4, 1.1, "plateau");
   } else if (type === "conferences"){
     /* La scène au fond, sur toute la largeur, et l'écran qui la domine. Rien
        ne dit par où l'on entre dans la salle : le fond est le bout le plus

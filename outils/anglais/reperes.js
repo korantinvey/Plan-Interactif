@@ -12,6 +12,7 @@ module.exports = {
   "Entrée/Sortie": "Entrance/Exit",
   "Escalator": "Escalator",
   "Escalier": "Stairs",
+  "Foodtruck": "Food truck",
   "Information": "Information",
   "Parking": "Car park",
   "Restauration": "Food & drink",
