@@ -43,7 +43,7 @@ import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, mo
   aimante } from "./aimants.mjs";
 import { ficheZone, ZONE_AJOUTEE_ENREGISTREE } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
-  elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien } from "./emplacements.mjs";
+  elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien, estLie } from "./emplacements.mjs";
 import { svg, vue, cadrePlan, versPlan, confieALaVue } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
@@ -474,7 +474,7 @@ function lieAjout(texte){
   poseLien(o, r, (h) => parId.get(h));
   rechAjout(o);
   poseDonnees({ TOUS: TOUS.filter(x => x !== o) });
-  if (!o.lien) TOUS.push(o);
+  if (!estLie(o)) TOUS.push(o);
   const g = groupeGeo(o);
   if (g){
     g.outerHTML = baliseStand(o);
@@ -497,7 +497,7 @@ function ecritInfosAjout(o){
   $("geoCodeL").hidden = !stand;
   $("geoSocL").hidden = !stand;
   // lié, le stand porte le nom de l'exposant : il n'y a rien à écrire
-  $("geoTitreL").hidden = Boolean(o.lien);
+  $("geoTitreL").hidden = estLie(o);
   /* Le lien se vend avec le dessin des stands : sans l'option, le champ se
      ferme comme celui du calque de dessin, et ce qui est déjà lié le reste. */
   $("geoSoc").disabled = !optionActive("dessinStand");
@@ -506,7 +506,7 @@ function ecritInfosAjout(o){
   met("geoCode", String(r.code || (o.lien ? "" : o.code) || ""));
   $("geoCode").placeholder = o.lien ? String(o.code || "B42") : "B42";
   met("geoTitre", String(o.nom || ""));
-  const l = o.lien && parId.get(o.lien.stand);
+  const l = estLie(o) && parId.get(o.lien.stand);
   const soc = l && (o.lien.soc < 0 ? l : (l.coex || [])[o.lien.soc]);
   met("geoSoc", soc ? etiquetteSociete(l, soc) || "" : "");
   $("geoSoc").placeholder = o.lienPerdu ? "Exposant introuvable — à relier"

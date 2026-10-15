@@ -23,7 +23,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { indexeSecteurs } from "./secteurs.mjs";
 import { clesCriteres, valeursCritere, texteCriteres, texteAnglaisPerso, indexeCriteres, liste }
   from "./recherche.mjs";
-import { appliqueAjouts, appliqueGeometries } from "./emplacements.mjs";
+import { appliqueAjouts, appliqueGeometries, estLie } from "./emplacements.mjs";
 import { posePoliceLibelles } from "./polices-plan.mjs";
 import { modeleRetenu } from "./modeles.mjs";
 import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
@@ -252,7 +252,7 @@ export function indexe(/** @type {any} */ d){
      reste dans l'index, pour que la reprise de forme le retrouve, mais pas
      dans ce qu'on cherche et qu'on compte — l'exposant y est déjà. */
   const formes = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
-  poseDonnees({ TOUS: formes.filter(o => !o.lien), parId: new Map(formes.map(o => [o.id, o])) });
+  poseDonnees({ TOUS: formes.filter(o => !estLie(o)), parId: new Map(formes.map(o => [o.id, o])) });
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
      qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
      propre que son nom et son rang, par lequel la fiche la retrouvera. */
