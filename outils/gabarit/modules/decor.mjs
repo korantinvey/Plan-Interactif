@@ -244,15 +244,30 @@ export function meuble(type, anneau, reglage = null, enMain = false){
        camion n'est posé qu'entier — caisse, cabine et comptoir —, un camion
        coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
        toit côté comptoir, est ce qu'on voit d'aplomb. */
+    /* Un camion centré en (a, b), à l'échelle k. */
+    const camion = (/** @type {number} */ a, /** @type {number} */ b, k = 1) => {
+      pose(a - .7 * k, b, 2.4 * k, 1.15 * k, 2.7 * k, "carrosserie", 0);
+      pose(a + 2.4 * k, b, .7 * k, 1.05 * k, 2.2 * k, "habitacle", 0);
+      pose(a - .7 * k, b + .9 * k, 2.4 * k, .25 * k, 2.85 * k, "store", 0);
+      pose(a - .7 * k, b + 1.325 * k, 1.6 * k, .175 * k, 1.05 * k, "comptoir", 0);
+    };
     const pas = 7.4, n = Math.floor((L + .6) / pas);
     const b = R.t0 + .3 + 1.15;
+    let poses = 0;
     for (let k = 0; k < n; k++){
       const a = (R.s0 + R.s1) / 2 + (k - (n - 1) / 2) * pas;
       if (!tient(a, b + .175, 3.1, 1.325, .2)) continue;
-      pose(a - .7, b, 2.4, 1.15, 2.7, "carrosserie", 0);
-      pose(a + 2.4, b, .7, 1.05, 2.2, "habitacle", 0);
-      pose(a - .7, b + .9, 2.4, .25, 2.85, "store", 0);
-      pose(a - .7, b + 1.325, 1.6, .175, 1.05, "comptoir", 0);
+      camion(a, b);
+      poses++;
+    }
+    /* Une zone dessinée à la taille d'un seul camion — c'est souvent ainsi
+       qu'un foodtruck est posé sur un plan — n'en recevait aucun, et restait
+       nue. Elle reçoit le sien, réduit à ce qu'elle mesure : mieux vaut un
+       camion un peu court que pas de camion. */
+    if (!poses){
+      const ac = (R.s0 + R.s1) / 2, bc = (R.t0 + R.t1) / 2;
+      for (let k = Math.min(1, (L - .3) / 6.2, (l - .3) / 2.65); k >= .3; k -= .05)
+        if (tient(ac, bc, 3.1 * k, 1.325 * k, .1)){ camion(ac, bc - .175 * k, k); break; }
     }
     const pasT = 2.4;
     for (let tb = b + 1.5 + 2 + .45; tb <= R.t1 - .45 + 1e-6; tb += pasT)

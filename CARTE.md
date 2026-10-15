@@ -715,7 +715,7 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 468 l. → plan, plan-admin
+### `modules/decor.mjs` — 483 l. → plan, plan-admin
 
 - l.1 · Le décor du plan — le mobilier des zones de l'organisateur
 
@@ -723,8 +723,8 @@ Fonctions :
 
 `dedans` 44 · `repere` 57 · `reglageComptoirValide` 79 · `comptoir` 102
 `comptoirTient` 128 · `rapprocheComptoir` 149 · `poigneeComptoir` 185 · `meuble` 198
-`objetRepere` 395 · `tourneur` 412 · `etendueObjet` 418 · `rayonPoigneeObjet` 422
-`poigneeObjet` 439 · `objetDroit` 444
+`objetRepere` 410 · `tourneur` 427 · `etendueObjet` 433 · `rayonPoigneeObjet` 437
+`poigneeObjet` 454 · `objetDroit` 459
 
 Importé par :
 
@@ -1191,19 +1191,19 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 882 l. → plan-admin
+### `modules/fiche-zone.mjs` — 894 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.49 · La fiche d'une zone organisateur
-- l.782 · Masquer une zone organisateur
+- l.794 · Masquer une zone organisateur
 
 Fonctions :
 
 `champZone` 75 · `champsZone` 100 · `champSalles` 206 · `nomDeZone` 258 · `cadreLogo` 284
 `champLogo` 356 · `editeurRiche` 394 · `memeFicheZone` 551 · `suitFicheZone` 558
-`verseFicheZone` 566 · `ficheZone` 592 · `enregistreZone` 617 · `enregistreZoneAjoutee` 730
-`basculeAffichageZone` 793 · `marqueZonesMasquees` 821 · `ecritColonnesEvenement` 841
-`ecritColonneEvenement` 875
+`verseFicheZone` 566 · `ficheZone` 592 · `marqueType` 621 · `enregistreZone` 627
+`enregistreZoneAjoutee` 741 · `basculeAffichageZone` 805 · `marqueZonesMasquees` 833
+`ecritColonnesEvenement` 853 · `ecritColonneEvenement` 887
 
 Importe :
 

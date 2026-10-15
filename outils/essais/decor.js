@@ -50,6 +50,10 @@ const rect = (x, y, w, h, deg = 0) => {
   dit(["plateau", "assise"].every(r => roles("restauration").has(r)), "un restaurant : des tables et des chaises");
   dit(["carrosserie", "habitacle", "comptoir", "plateau"].every(r => roles("foodtruck").has(r)) &&
     !roles("foodtruck").has("assise"), "un foodtruck : des camions et des mange-debout, sans chaises");
+  {
+    const seul = meuble("foodtruck", rect(0, 0, 5.5, 2.6));
+    dit(seul.filter(x => x.role === "carrosserie").length === 1, "un foodtruck à la taille d'un camion : un camion, réduit");
+  }
   dit(["scene", "ecran", "assise"].every(r => roles("conferences").has(r)), "une salle : une scène, un écran, des sièges");
   dit(roles("accueil").has("comptoir"), "un accueil : un comptoir");
   dit(roles("vestiaire").has("portant"), "un vestiaire : des portants");
