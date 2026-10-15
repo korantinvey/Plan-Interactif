@@ -81,8 +81,6 @@ export function ouvrePoi(id, depuis, recentrer){
 
   const type = pictoForme(f);
   const dit = String(f.txt || "").trim();
-  $("dKind").hidden = false;
-  $("dKind").textContent = type ? nomTypeRepere(type) : "Repère";
   $("dName").textContent = dit || (type ? nomTypeRepere(type) : "Repère");
   /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
      la fiche portait celui du stand consulté juste avant. */

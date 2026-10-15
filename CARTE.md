@@ -71,8 +71,8 @@ l'endroit où l'on corrige quoi que ce soit.
 `#geoHauteur` · `#geoOrigine` · `#geoFiche` · `#geoSupprime` · `#geoAide` · `#modale`
 `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail`
 `#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque` · `#closeDetail`
-`#dKind` · `#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis`
-`#dPartage` · `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd`
+`#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis` · `#dPartage`
+`#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd`
 `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours` · `#pEyebrow`
 `#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire` · `#btnPartage` · `#jJours`
 `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRetour` · `#itineraire`
@@ -126,7 +126,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1725 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1714 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 187 l. → demo.html, plan-smcl.html
 
@@ -272,14 +272,14 @@ acces-admin · calques-dessin · camera · cartouche-poi · configuration · dem
 fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes
 webgl
 
-### `modules/apercus.mjs` — 327 l. → plan-admin
+### `modules/apercus.mjs` — 326 l. → plan-admin
 
 - l.1 · Les aperçus de la fenêtre des réglages — l'exploitant seul
 
 Fonctions :
 
 `texteCorps` 85 · `clesPortees` 110 · `standApercu` 130 · `lignesApercu` 154
-`contenuApercu` 184 · `apercuFiche` 221 · `apercuListe` 299 · `apercuDuo` 321
+`contenuApercu` 184 · `apercuFiche` 221 · `apercuListe` 298 · `apercuDuo` 320
 
 Importe :
 
@@ -1218,19 +1218,19 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1197 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1193 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.74 · 7. Sélection et fiche
+- l.73 · 7. Sélection et fiche
 
 Fonctions :
 
-`confieALaFiche` 72 · `anime` 106 · `noeud` 144 · `canalPlan` 154 · `rangSociete` 162
-`select` 171 · `centre` 196 · `brancheActesFiche` 207 · `centreEtBaisseLaFiche` 223
-`centrePoint` 241 · `programme` 273 · `produits` 322 · `ficheProduit` 350 · `ficheConf` 420
-`poseAppuiTactile` 573 · `ecarteClicFantome` 576 · `nomSociete` 585 · `choisitExposant` 599
-`poseMarque` 637 · `montreMarque` 697 · `poseCode` 720 · `rangeMarque` 761 · `ouvre` 817
-`ferme` 1145 · `onglet` 1163 · `brancheFiche` 1181
+`confieALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
+`select` 170 · `centre` 195 · `brancheActesFiche` 206 · `centreEtBaisseLaFiche` 222
+`centrePoint` 240 · `programme` 272 · `produits` 321 · `ficheProduit` 349 · `ficheConf` 419
+`poseAppuiTactile` 572 · `ecarteClicFantome` 575 · `nomSociete` 584 · `choisitExposant` 598
+`poseMarque` 636 · `montreMarque` 696 · `poseCode` 719 · `rangeMarque` 760 · `ouvre` 816
+`ferme` 1141 · `onglet` 1159 · `brancheFiche` 1177
 
 Éléments :
 
@@ -1239,9 +1239,8 @@ Fonctions :
 Importe :
 
 corps-fiche · dessin · distinctions · dom · donnees · ecran · fenetre · forme-choisie
-libelles · marque · mesure · mode-admin · noms-zones · parcours · recherche · rendu
-reperes · sur · temps · texte · tiroir-itineraire · tiroirs · tiroirs-exclusifs · vignettes
-vue · webgl
+libelles · marque · mesure · mode-admin · noms-zones · parcours · recherche · rendu · sur
+temps · texte · tiroir-itineraire · tiroirs · tiroirs-exclusifs · vignettes · vue · webgl
 
 Importé par :
 
@@ -2196,7 +2195,7 @@ Importé par :
 
 plan-admin
 
-### `modules/points-interet.mjs` — 140 l. → plan, plan-admin
+### `modules/points-interet.mjs` — 138 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt — la fiche d'un repère, et le chemin vers lui
 
@@ -2564,8 +2563,8 @@ couleurs
 
 Importé par :
 
-cartouche-poi · dessin · edition · fiche · fiche-zone · itineraire · outil-dessin
-points-interet · socle-dessin · webgl
+cartouche-poi · dessin · edition · fiche-zone · itineraire · outil-dessin · points-interet
+socle-dessin · webgl
 
 ### `modules/reprise-emplacements.mjs` — 763 l. → plan-admin
 

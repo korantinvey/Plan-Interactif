@@ -271,9 +271,8 @@ export function apercuFiche(cle, vu){
       '<div class="hdActs"><span class="marque">' +
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
-      '<div class="hdTete"><span class="eyebrow">Stand</span>' +
-        (vu.neuf ? '<span class="badge dist pic d-neuf">Nouvel exposant</span>' : "") +
-      '</div>' +
+      (vu.neuf ? '<div class="hdTete"><span class="pastDist">' +
+        '<span class="badge dist pic d-neuf">Nouvel exposant</span></span></div>' : "") +
       '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
       '<div class="hdBadges">' +
         '<span class="badge code">' +
