@@ -292,6 +292,51 @@ test.describe("le plan de démonstration", { tag: "@base" }, () => {
   });
 });
 
+/* Une pastille du cartouche pose une question — « où sont les salles ? » — et
+   la liste y répond comme le plan : les zones mises en avant et, pour des
+   salles de conférence, le programme qu'elles abritent ; rien d'autre. Les
+   données de la démonstration n'ont ni zone typée ni programme : on leur en
+   donne. En SVG, que le rendu logiciel des essais ne fige pas. */
+test.describe("le cartouche des points d'intérêt", () => {
+  const donnees = JSON.parse(JSON.stringify(require("../../plans.json")));
+  const zones = donnees.plans[0].zones;
+  zones[0].type = "restauration";
+  zones[1].type = zones[2].type = "conferences";
+  donnees.plans[0].conferences = [
+    { id: "c1", nom: "Conf Alpha", salle: "S1", zone: zones[1].id, debut: "2026-03-01T10:00:00Z" },
+    { id: "c2", nom: "Conf Beta", salle: "S2", zone: zones[2].id, debut: "2026-03-01T11:00:00Z" },
+    { id: "c3", nom: "Conf Ailleurs", salle: "S3", debut: "2026-03-01T12:00:00Z" },
+  ];
+
+  test("resserre la liste sur ce qu'il met en avant", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.route("**/api/plan**", (r) => {
+      if (new URL(r.request().url()).searchParams.get("entete")) return r.fallback();
+      return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(donnees) });
+    });
+    await page.goto(PLAN + "&rendu=svg");
+    const lignes = await attendLaListe(page);
+    await expect(lignes).toHaveCount(PREMIER);
+    const pastille = (nom) => page.locator("#poi .poiBtn", { hasText: nom });
+
+    await pastille("Conférences").click();
+    await expect(page.locator("#list .row")).toHaveText([
+      /Vis ta ville Adaptée|Le Refuge/, /Vis ta ville Adaptée|Le Refuge/, /Conf Alpha/, /Conf Beta/,
+    ]);
+    await expect(page.locator("#countTxt")).toContainText("Conférences");
+
+    await pastille("Restauration").click();
+    await expect(page.locator("#list .row")).toHaveCount(1);
+    await expect(page.locator("#list .row")).toContainText(zones[0].nom);
+
+    // relâchée, la pastille rend le sommaire du pavillon
+    await pastille("Restauration").click();
+    await expect(lignes).toHaveCount(PREMIER);
+    await expect(page.locator("#count")).toBeHidden();
+    expect(erreurs).toEqual([]);
+  });
+});
+
 /* Les règles de `modules/sur.mjs`, éprouvées sur ce qu'un visiteur ne devrait
    jamais recevoir. Elles ne dépendent de rien du plan : on les appelle telles
    que la page les tient, puis on pose leur sortie dans le document pour
