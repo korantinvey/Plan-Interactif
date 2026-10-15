@@ -95,7 +95,7 @@ function attributComptoir(id){
 export const baliseZone = (z) =>
   '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id + '"' +
   (z.ajout ? ' data-aj="' + esc(z.id) + '"' : "") +
-  /* Son type, que la vue immersive meuble (`decor.mjs`) : rien d'autre ne le
+  /* Son type, dont le plan meuble la zone (`decor.mjs`) : rien d'autre ne le
      lit sur le plan. */
   (z.type ? ' data-type="' + esc(z.type) + '"' : "") +
   /* Le comptoir d'un accueil, s'il a été placé à la main (`decor.mjs`
