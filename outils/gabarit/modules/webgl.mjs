@@ -653,6 +653,7 @@ function assembleWebgl(enMouvement = false){
      cette recherche a coûté plus d'une seconde en quinze de survol en vue
      immersive (trace du 13 octobre 2026). */
   const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
+  suisChoisies(choisies);
   for (const b of blocsDansLOrdre()){
     if (b.id === "labels"){
       if (!enMouvement || !posesSurLePlan) posesSurLePlan = { figurants: couchesFigurants(),
@@ -2626,8 +2627,8 @@ function poseSurvolWebgl(el){
   const quitte = GL.survol;
   GL.survol = el;
   if (enTuiles()){
-    if (quitte) visePour(quitte, 0);
-    if (el) visePour(el, 1);
+    if (quitte) visePour(quitte, CHOISIES.has(quitte) ? 1 : 0);
+    if (el) visePour(el, CHOISIES.has(el) ? 1 : SURVOLEE);
     gonfleSurvol();
   } else TUILES.clear();
   /* Les noms, les logos et les figurants ne dépendent pas du survol : ils se
@@ -2651,9 +2652,20 @@ function poseSurvolWebgl(el){
    un aller-retour rapide repart de là où elle en était au lieu de sauter.
    Cent soixante millisecondes pour monter, un peu plus pour redescendre ;
    puis plus rien ne bouge tant que la souris reste où elle est.
+
+   La tuile qu'on choisit grandit de même, à plat — rien n'y prend de volume,
+   c'est l'affaire de l'immersif — et reste grandie tant qu'elle est choisie :
+   seule sa teinte changeait, et rien ne disait au doigt que l'appui avait
+   pris. Quittée par la souris, elle garde sa taille ; déchoisie, elle revient
+   à la sienne.
    ------------------------------------------------------------ */
 const enTuiles = () => document.documentElement.classList.contains("ambiance-tuiles");
-const MONTE_MS = 160, DESCEND_MS = 220, GONFLE = .06;
+/* La course va de 0 (au sol) à 1 (choisie, douze pour cent de plus) ; le
+   survol s'arrête à mi-course, six pour cent. Choisie, la tuile doit se voir
+   d'un peu loin : à six, elle ne gagnait que trois pour cent par bord, que
+   l'ombre au repos de ses voisines (`ombresAuRepos`) absorbait. Au survol,
+   sous la souris, ces six suffisent, et douze faisaient sauter le plan. */
+const MONTE_MS = 160, DESCEND_MS = 220, GONFLE = .12, SURVOLEE = .5;
 /** Les tuiles en mouvement ou soulevées : où leur course partait, vers où, et quand.
  *  @type {Map<Element, { de: number, vers: number, t0: number }>} */
 const TUILES = new Map();
@@ -2669,6 +2681,19 @@ function hauteurTuile(st, now = performance.now()){
 function visePour(el, vers){
   const st = TUILES.get(el);
   TUILES.set(el, { de: st ? hauteurTuile(st) : 0, vers, t0: performance.now() });
+}
+
+/** Les tuiles choisies au dernier assemblage : celles qui le deviennent
+ *  grandissent, celles qui cessent de l'être reprennent leur taille — sauf
+ *  sous la souris.
+ *  @type {Set<Element>} */
+let CHOISIES = new Set();
+function suisChoisies(/** @type {Set<Element>} */ choisies){
+  let change = false;
+  for (const el of choisies) if (!CHOISIES.has(el)){ visePour(el, 1); change = true; }
+  for (const el of CHOISIES) if (!choisies.has(el)){ visePour(el, el === GL.survol ? SURVOLEE : 0); change = true; }
+  CHOISIES = choisies;
+  if (change) gonfleSurvol();
 }
 
 function gonfleSurvol(){
@@ -2689,10 +2714,11 @@ function gonfleSurvol(){
   imageGonfle = requestAnimationFrame(image);
 }
 
-/** La tuile soulevée à la hauteur « k » : son ombre puis elle, agrandies
- *  autour du centre de leurs aplats, sa teinte à mi-chemin de la vive. Une
- *  tuile choisie garde sa teinte vive à toute hauteur : seul le survol la
- *  soulève, et en redescendant elle ne repasse pas par sa couleur d'origine. */
+/** La tuile à la course « k » : son ombre puis elle, agrandies autour du
+ *  centre de leurs aplats, sa teinte à mi-chemin de la vive — pleinement vive
+ *  dès la mi-course, où le survol s'arrête. Une
+ *  tuile choisie garde sa teinte vive à toute hauteur : en montant comme en
+ *  redescendant, elle ne repasse pas par sa couleur d'origine. */
 function coucheTuileSoulevee(aplats, k, n, choisie = false){
   const s = 1 + GONFLE * k;
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -2703,21 +2729,22 @@ function coucheTuileSoulevee(aplats, k, n, choisie = false){
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   const autour = (e) => [e, 0, 0, 0, 0, e, 0, 0, 0, 0, 1, 0, cx * (1 - e), cy * (1 - e), 0, 1];
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
-  const cle = Math.round(k * 40);
+  const vif = Math.min(1, k / SURVOLEE), cle = Math.round(k * 40);
   const vers = (d) => avive(d.couleur) || [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)];
   const mele = (d) => { const v = vers(d); if (choisie) return v;
-    return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * k)); };
+    return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * vif)); };
   return [
     new deck.SolidPolygonLayer({ id: "survol-ombre-" + n, data: aplats, getPolygon: d => d.polygon,
-      modelMatrix: autour(1 + (GONFLE + .02) * k), getFillColor: [20, 24, 26, Math.round(20 * k)],
+      modelMatrix: autour(s + .02 * vif), getFillColor: [20, 24, 26, Math.round(20 * vif)],
       updateTriggers: { getFillColor: cle } }),
     new deck.SolidPolygonLayer({ id: "survol-" + n, data: aplats, getPolygon: d => d.polygon,
       modelMatrix: autour(s), getFillColor: mele, updateTriggers: { getFillColor: cle } }),
   ];
 }
 
-/** Les tuiles choisies, puis celles en vol ou soulevées qu'une couche porte —
- *  celle qu'on survole en dernier, par-dessus celles qui se reposent.
+/** Les tuiles qui grandissent, rétrécissent ou restent grandies dans une
+ *  couche — choisies ou survolées, celle qu'on survole en dernier par-dessus
+ *  celles qui reprennent leur taille.
  *
  *  La tuile choisie prend la teinte du survol, à plat : la même couleur dit
  *  « c'est celle-ci », qu'on la désigne de la souris ou qu'on l'ait ouverte.
@@ -2726,11 +2753,6 @@ function coucheTuileSoulevee(aplats, k, n, choisie = false){
 function couchesTuiles(couche, choisies){
   const out = [], now = performance.now();
   let n = 0;
-  for (const el of choisies){
-    if (TUILES.has(el)) continue;
-    const aplats = aplatsDe(couche, el);
-    if (aplats.length) out.push(...coucheTuileSoulevee(aplats, 0, couche.id + "-c" + (n++), true));
-  }
   for (const [el, st] of TUILES){
     const aplats = aplatsDe(couche, el);
     if (aplats.length) out.push(...coucheTuileSoulevee(aplats, hauteurTuile(st, now), couche.id + "-" + (n++), choisies.has(el)));

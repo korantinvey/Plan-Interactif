@@ -523,8 +523,10 @@ html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie):hover path{transform:scal
 html:not(.ambiance-tuiles) :is(.stand,.zone).sel path{fill:var(--c-sel,var(--accent-soft))}
 /* En Tuiles, la tuile choisie garde sa teinte dans la feuille de style : la
    carte graphique l'avive comme au survol (`webgl.mjs` `couchesTuiles`).
-   Le rendu SVG de secours fait de même par un filtre. */
+   Le rendu SVG de secours fait de même par un filtre, et la fait grandir
+   deux fois plus qu'au survol, qu'elle se voie au-delà de l'ombre des voisines. */
 html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes).sel path{filter:saturate(1.6) brightness(.96)}
+html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie).sel path{transform:scale(1.12)}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
