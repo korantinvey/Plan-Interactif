@@ -18,6 +18,7 @@ module.exports = {
   "Salle de réunion": "Meeting room",
   "Secours": "First aid",
   "Sortie": "Exit",
+  "Lounge": "Lounge",
   "Transports en commun": "Public transport",
   "Vestiaire": "Cloakroom",
   "WC": "Toilets",

@@ -48,6 +48,9 @@ export const PICTOS = {
   pmr: { vb: "0 -960 960 960", d: "<path d=\"M480-720q-33 0-56.5-23.5T400-800q0-33 23.5-56.5T480-880q33 0 56.5 23.5T560-800q0 33-23.5 56.5T480-720ZM680-80v-200H480q-33 0-56.5-23.5T400-360v-240q0-33 23.5-56.5T480-680q24 0 41.5 10.5T559-636q55 66 99.5 90.5T760-520v80q-53 0-107-23t-93-55v138h120q33 0 56.5 23.5T760-300v220h-80Zm-280 0q-83 0-141.5-58.5T200-280q0-72 45.5-127T360-476v82q-35 14-57.5 44.5T280-280q0 50 35 85t85 35q39 0 69.5-22.5T514-240h82q-14 69-69 114.5T400-80Z\"/>" },
   parking: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-720h280q100 0 170 70t70 170q0 100-70 170t-170 70H400v240H240Zm160-400h128q33 0 56.5-23.5T608-600q0-33-23.5-56.5T528-680H400v160Z\"/>" },
   distributeur: { vb: "0 -960 960 960", d: "<path d=\"M415-360v-180h-90v-60h240v60h-90v180h-60Zm-335 0v-200q0-17 11.5-28.5T120-600h120q17 0 28.5 11.5T280-560v200h-60v-60h-80v60H80Zm60-120h80v-60h-80v60Zm480 120v-200q0-17 11.5-28.5T660-600h180q17 0 28.5 11.5T880-560v200h-60v-180h-40v140h-60v-140h-40v180h-60Z\"/>" },
+  /* Le lounge n'a pas d'équivalent dans le recueil : son canapé est dessiné
+     ici, sur la même grille de 960 unités, au même poids que ses voisins. */
+  lounge: { vb: "0 -960 960 960", d: "<path d=\"M160-200q-33 0-56.5-23.5T80-280v-200q0-33 23.5-56.5T160-560q33 0 56.5 23.5T240-480v120h480v-120q0-33 23.5-56.5T800-560q33 0 56.5 23.5T880-480v200q0 33-23.5 56.5T800-200H160Zm0 0h80v40h-80v-40Zm560 0h80v40h-80v-40ZM280-420v-220q0-33 23.5-56.5T360-720h240q33 0 56.5 23.5T680-640v220H280Z\"/>" },
   reunion: { vb: "0 -960 960 960", d: "<path d=\"M120-120v-80h80v-640h400v40h160v600h80v80H680v-600h-80v600H120Zm160-640v560-560Zm160 320q17 0 28.5-11.5T480-480q0-17-11.5-28.5T440-520q-17 0-28.5 11.5T400-480q0 17 11.5 28.5T440-440ZM280-200h240v-560H280v560Z\"/>" },
   /* Les transports en commun. Le premier sert le générique — la zone que
      l'exploitant a dite « Transports en commun », le repère dont on n'a pas
@@ -208,6 +211,10 @@ export const TYPES_ZONE = [
   { v: "conferences",  nom: "Conférences",  picto: "reunion" },
   { v: "vestiaire",    nom: "Vestiaire",    picto: "vestiaire" },
   { v: "accueil",      nom: "Accueil",      picto: "accueil" },
+  /* Un espace où l'on s'assoit sans rien acheter ni écouter : salon VIP,
+     espace exposants, coin détente. Le visiteur fatigué le cherche comme il
+     cherche la restauration, et ne le reconnaît pas à son nom de marque. */
+  { v: "lounge",       nom: "Lounge",       picto: "lounge" },
   /* Une gare routière, un parvis de tramway : ce que le salon a dessiné comme
      une zone et qui est, pour le visiteur qui repart, la même chose qu'un
      arrêt. Le pictogramme est le générique — une zone n'a pas de ligne. */
