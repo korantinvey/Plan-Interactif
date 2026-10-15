@@ -614,6 +614,16 @@ export function ficheZone(o){
  * l'organisateur garderait ici son ancien nom pour toujours. Un champ qu'on
  * n'a pas touché ne touche donc pas à sa colonne.
  */
+/* Le type se pose aussi sur la zone dessinée : c'est là que le décor le lit
+   (`rendu.mjs` `baliseZone`), et le dessin se repeint de lui-même quand
+   l'attribut change. Sans cela, la zone qu'on vient de dire « Foodtruck »
+   restait un bloc nu jusqu'au rechargement. */
+function marqueType(o){
+  const g = document.querySelector('#zones g.zone[data-id="' + CSS.escape(o.id) + '"]');
+  if (!g) return;
+  if (o.type) g.setAttribute("data-type", o.type); else g.removeAttribute("data-type");
+}
+
 async function enregistreZone(o, v, depart){
   if (o.ajout) return enregistreZoneAjoutee(o, v, depart);
   const nom = String(v.libelle || "").trim();
@@ -709,6 +719,7 @@ async function enregistreZone(o, v, depart){
   o.lien = adresse;
   o.logo = blason;
   o.type = genre;
+  marqueType(o);
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
   o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
   libelles(); liste();
@@ -746,6 +757,7 @@ async function enregistreZoneAjoutee(o, v, depart){
     else { delete r[k]; o[k] = undefined; }
   });
   o.nom = nom || null;
+  marqueType(o);
   enregistreConf();
   oublieGrilles();
   nomsAnglaisDesZones();
