@@ -20,7 +20,8 @@
  *     `demo.js` : les réglages, rangés par identifiant de calque, retrouvent
  *     leur calque ;
  *   - l'apparence et les dessins ne sont posés qu'à la création d'un
- *     pavillon — ceux de la console l'emportent ensuite ;
+ *     pavillon — ceux de la console l'emportent ensuite, sauf les dates du
+ *     salon (`_horaires`), qui suivent le programme ;
  *   - l'instantané, le programme, les produits et les logos, eux, sont
  *     refaits : ce sont les données.
  *
@@ -175,6 +176,15 @@ function tailleWebp(b) {
     // posée à la création seulement : ensuite, c'est la console qui règle
     await ecrit("apparence", [{ plan_id: pl.id, pile: p.apparence.pile, reglages: p.apparence.reglages }],
       "plan_id", "Apparence de " + p.libelle, true);
+    /* Sauf les dates du salon : le programme y est posé, et des dates restées
+       ailleurs laisseraient chaque conférence hors des jours du salon. */
+    const [ap] = await base("apparence?select=reglages&plan_id=eq." + pl.id, {}, "Lecture de l'apparence");
+    if (ap && JSON.stringify((ap.reglages || {})._horaires) !== JSON.stringify(p.apparence.reglages._horaires)) {
+      await base("apparence?plan_id=eq." + pl.id, {
+        method: "PATCH",
+        body: JSON.stringify({ reglages: { ...ap.reglages, _horaires: p.apparence.reglages._horaires } }),
+      }, "Dates du salon de " + p.libelle);
+    }
 
     /* Les dessins de même : ils se retouchent en administration, et un import
        qui les reposerait effacerait ce travail. */
