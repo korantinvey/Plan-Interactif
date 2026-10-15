@@ -1370,11 +1370,13 @@ function hauteurVolume(el, anneaux){
    Le décor des zones
 
    Le mobilier d'une zone typée (`decor.mjs`) monte sur son sol : chaque
-   pièce est un volume, peint d'après son rôle. Les assises prennent la
-   couleur de la zone, assombrie, pour que le restaurant reste doré et la
-   salle de sa teinte ; le reste a ses tons de mobilier, les mêmes partout.
+   pièce est un volume, peint d'après son rôle. Les assises, les canapés et
+   les camions prennent la couleur de la zone, assombrie, pour que le
+   restaurant reste doré, la salle et le lounge de leur teinte ; le reste a ses tons de mobilier, les mêmes partout.
    Le décor ne se désigne pas : un appui sur une chaise ouvre la zone, dont
-   le sol est dessous.
+   le sol est dessous. À plat — Classique, Tuiles —, les mêmes pièces se
+   couchent au sol, vues d'aplomb : la zone reste de sa hauteur, son
+   mobilier peint par-dessus.
    ------------------------------------------------------------ */
 const SOL_MEUBLE = .12;
 const zoneMeublee = (/** @type {Element} */ g) =>
@@ -1386,6 +1388,10 @@ const TONS_DECOR = {
   "comptoir-choisi": [138, 176, 246, 255], tige: [60, 70, 84, 255], poignee: [37, 99, 235, 255],
   scene: [78, 90, 106, 255], ecran: [34, 42, 54, 255],
   plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
+  // le tapis d'un lounge, clair : il dit le salon sans prendre la couleur de la zone
+  tapis: [226, 214, 196, 255],
+  // la cabine vitrée d'un foodtruck, et le store rouge qui le signale de loin
+  habitacle: [192, 214, 230, 255], store: [214, 84, 72, 255],
   marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
 };
 
@@ -1587,11 +1593,13 @@ function couchesJetons(/** @type {Map<Element, any>} */ jetons, /** @type {strin
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
-  if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
+  if (!g || !g.classList || g.firstElementChild !== el || !zoneMeublee(g)
+    || g.classList.contains("masquee") || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
   const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
+  // l'outil du comptoir ne se tient qu'en immersif : à plat, ni bleu ni poignée
   for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
-    g.hasAttribute("data-comptoir-choisi")))
+    cameraEnJeu() && g.hasAttribute("data-comptoir-choisi")))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
 }
 
@@ -1787,7 +1795,8 @@ function formeGl(el, cs, m, op, traces, acc){
       poseJeton(el, polygon, couleur, acc);
       const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
       acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse, sur });
-      if (haut) meubleZone(el, polygon, couleur, acc);
+      // à plat aussi : vu d'aplomb, le mobilier dit encore ce qu'on fait dans la zone
+      if (haut || !cameraEnJeu()) meubleZone(el, polygon, couleur, acc);
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
@@ -2062,15 +2071,12 @@ function detacheVolume(g, h){
       const reste = c.props.data.filter(d => d.el !== g);
       if (reste.length) out.push(c.clone({ data: reste }));
     }
-    // le contour d'un volume parti part avec lui : il se refait avec le volume, juste après
-    if (c.props.contour) continue;
     // il s'allume au clic, et reprend sa couleur dès qu'on le quitte
     const choisi = g.classList.contains("sel");
     const id = c.id.replace(/-tot$/, "") + "-tot";
     const data = siens.map(d => ({ ...d, haut: h.vers, hausse: h,
       couleur: choisi ? eclatant(d.base || d.couleur) : d.base || d.couleur }));
-    out.push(c.clone({ id, data, hausse: h, elevationScale: echelleHausse(h, performance.now()) }),
-      coucheContours(id, data, { hausseContour: h }));
+    out.push(c.clone({ id, data, hausse: h, elevationScale: echelleHausse(h, performance.now()) }));
   }
   GL.blocs.set(b, out);
   GL.deck.setProps({ layers: assembleWebgl() });
@@ -2102,39 +2108,6 @@ function haussesParId(){
   return m;
 }
 
-/* Le contour du dessus des volumes, d'un ton plus sombre que leur couleur.
-   Vu de biais, deux stands de même couleur l'un derrière l'autre ne
-   faisaient qu'une surface : le stand choisi, monté devant son voisin, s'y
-   fondait. Le contour les tient séparés.
-
-   Un trait le long du bord du dessus, et rien d'autre : les arêtes que la
-   bibliothèque sait tracer suivent chaque facette, et les coins arrondis,
-   faits de petites faces, se couvraient de stries verticales. Il se pose un
-   rien au-dessus du dessus, pour ne pas s'y enfoncer à moitié. */
-const arete = (/** @type {number[]} */ c) => [0, 1, 2].map(i => Math.round(c[i] * .62)).concat(255);
-/** Le contour d'un volume : l'anneau de son dessus, à sa hauteur. */
-const contourDe = (/** @type {any} */ d, /** @type {number} */ haut) =>
-  ({ path: d.polygon[0].map((/** @type {number[]} */ p) => [p[0], p[1], haut + .02]).concat([[d.polygon[0][0][0], d.polygon[0][0][1], haut + .02]]),
-     couleur: arete(d.couleur), el: d.el });
-/** Le contour d'un volume en mouvement, posé à l'arrivée, écrasé à la hauteur où il en est. */
-const ecraseContour = (/** @type {{ de: number, vers: number, t0: number }} */ h) =>
-  [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, echelleHausse(h, instant()), 0, 0, 0, 0, 1];
-/** La couche des contours d'une couche de volumes.
- *
- *  Un contour en mouvement naît déjà écrasé. Seule l'animation (`animeCouche`)
- *  le tenait à jour, et la teinte du survol ne passe pas par elle quand le
- *  plan se réassemble — au clic, à l'ouverture de la fiche : le temps d'une
- *  image, le contour du dessus paraissait à la hauteur d'arrivée, avant que
- *  le stand ne monte. */
-const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /** @type {any} */ extra = {}) => {
-  const anneaux = data.map(d => contourDe(d, d.haut));
-  return new deck.PathLayer({ id: id + "-contour", data: anneaux, pickable: false,
-    getPath: (/** @type {any} */ x) => x.path, getColor: (/** @type {any} */ x) => x.couleur,
-    getWidth: 1, widthUnits: "pixels", contour: true,
-    dataComparator: memesFormes, updateTriggers: { getColor: signeCouleurs(anneaux) },
-    ...(extra.hausseContour ? { modelMatrix: ecraseContour(extra.hausseContour) } : {}), ...extra });
-};
-
 /* ------------------------------------------------------------
    Des couches qui gardent leurs formes
 
@@ -2143,19 +2116,16 @@ const coucheContours = (/** @type {string} */ id, /** @type {any[]} */ data, /**
    les tenait pour d'autres formes et retriangulait le hall entier, pour un
    stand qui avait changé de ton. Deux données de mêmes formes, dans le même
    ordre, sont donc tenues pour les mêmes (`memesFormes`) ; ce qui a pu
-   changer — couleurs, hauteurs, traits — se dit par une signature
+   changer — couleurs, hauteurs — se dit par une signature
    (`updateTriggers`), et seul cela se recalcule.
    ------------------------------------------------------------ */
-/** Les points d'une forme : le polygone d'un aplat ou d'un volume, le chemin
- *  d'un contour. */
-const formeDe = (/** @type {any} */ d) => d.polygon || d.path;
 /** Deux listes des mêmes formes, des mêmes éléments, dans le même ordre ? */
 function memesFormes(/** @type {any} */ neuves, /** @type {any} */ avant){
   if (neuves === avant) return true;
   if (!Array.isArray(neuves) || !Array.isArray(avant) || neuves.length !== avant.length) return false;
   for (let i = 0; i < neuves.length; i++){
     const a = neuves[i], b = avant[i];
-    if (a.el !== b.el || !memesPoints(formeDe(a), formeDe(b))) return false;
+    if (a.el !== b.el || !memesPoints(a.polygon, b.polygon)) return false;
   }
   return true;
 }
@@ -2169,22 +2139,14 @@ function memesPoints(/** @type {any} */ a, /** @type {any} */ b){
 /** Ce que les couleurs d'une couche disent d'elles, pour savoir si elles ont changé. */
 const signeCouleurs = (/** @type {any[]} */ data) => data.map(d => d.couleur ? d.couleur.join(",") : "").join(";");
 
-/* La grande couche des volumes d'un bloc, et son contour — non la copie d'un
-   volume qui bouge (`-tot`, `-hausse-`). */
-const GRANDE_COUCHE = /-volumes-\d+(-contour)?$/;
+/* La grande couche des volumes d'un bloc — non la copie d'un volume qui
+   bouge (`-tot`, `-hausse-`). */
+const GRANDE_COUCHE = /-volumes-\d+$/;
 /** Les volumes `partis` — en mouvement, peints par leur copie — aplatis au
- *  sol dans la couche, et leur contour effacé. Leurs formes restent : seules
- *  les hauteurs, ou les traits, se recalculent. Avec `etContour`, la couche
- *  de volumes neuve et son contour. */
-function masqueVolumes(/** @type {any} */ c, /** @type {Set<Element>} */ partis, etContour = false){
+ *  sol dans la couche. Leurs formes restent : seules les hauteurs se
+ *  recalculent. */
+function masqueVolumes(/** @type {any} */ c, /** @type {Set<Element>} */ partis){
   const cle = [...partis].map(g => g.getAttribute("data-id") || "").join("|");
-  if (etContour){
-    const v = masqueVolumes(c, partis);
-    const contour = coucheContours(c.id, c.props.data);
-    return [v, masqueVolumes(contour, partis)];
-  }
-  if (c.props.contour) return c.clone({ partis, getWidth: (/** @type {any} */ x) => partis.has(x.el) ? 0 : 1,
-    updateTriggers: { ...c.props.updateTriggers, getWidth: cle } });
   return c.clone({ partis, getElevation: (/** @type {any} */ d) => partis.has(d.el) ? 0 : d.haut,
     updateTriggers: { ...c.props.updateTriggers, getElevation: cle + "#" + c.props.data.map((/** @type {any} */ d) => d.haut).join(",") } });
 }
@@ -2205,6 +2167,41 @@ const MATIERE = { ambient: .8, diffuse: .42, shininess: 4, specularColor: [12, 1
    gardent la leur : un stand devant un repère le cache toujours. */
 const aPlat = () => GL.camera ? { parameters: { depthCompare: "less-equal", depthWriteEnabled: false } } : {};
 
+/* L'ombre au repos des tuiles. Posées à plat, elles se lisaient comme
+   des pastilles imprimées ; une ombre légère, décalée vers le bas, les
+   détache du sol comme des pièces d'un jeu. Elle se peint sous toute la
+   couche, avant elle : les tuiles voisines la recouvrent, et elle ne se voit
+   que dans le vide qui les sépare. Seules les tuiles opaques en ont une — sous
+   une zone translucide, elle transparaîtrait en bande sombre. Le décalage
+   suit la taille des tuiles, non l'écran : une ombre portée grandit avec ce
+   qui la porte. L'immersif a ses volumes et sa lumière, il n'en a pas besoin.
+   La tuile soulevée garde la sienne, plus grande (`coucheTuileSoulevee`). */
+const OMBRE_TUILE = [20, 24, 26, 13], DECALE_OMBRE = .055;
+function ombresAuRepos(plats, cle, plat){
+  if (!enTuiles() || GL.camera) return [];
+  const tuiles = plats.filter(d => d.couleur[3] >= 250 && !d.prise && d.el && d.el.matches(".stand,.zone,.sdes"));
+  if (!tuiles.length) return [];
+  /* Le côté court d'une tuile ordinaire : la médiane, pour qu'un grand hall
+     dessiné en zone ne jette pas son ombre à travers l'allée. */
+  const cotes = tuiles.map(d => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const p of d.polygon[0]){
+      if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+    }
+    return Math.min(x1 - x0, y1 - y0);
+  }).sort((a, b) => a - b);
+  const e = cotes[cotes.length >> 1] * DECALE_OMBRE;
+  /* Un aplat décalé seul avait un bord franc, comme une seconde tuile
+     grise. Trois aplats de plus en plus décalés s'additionnent : l'ombre est
+     plus dense au pied de la tuile et s'éteint en s'éloignant — un flou, sans
+     passe de flou. Un peu de côté, surtout vers le bas : la lumière vient
+     d'en haut à gauche. */
+  return [1 / 3, 2 / 3, 1].map((f, n) => new deck.SolidPolygonLayer({ id: cle + "-ombres-" + n, data: tuiles,
+    pickable: false, getPolygon: d => d.polygon, getFillColor: OMBRE_TUILE, ...plat, dataComparator: memesFormes,
+    modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, e * f * .4, e * f, 0, 1] }));
+}
+
 function couchesDeBloc(acc, cle){
   const L = deck, out = [], plat = aPlat();
   const pleins = partage(acc.pleins, acc.prises);
@@ -2212,28 +2209,37 @@ function couchesDeBloc(acc, cle){
   const couches = [];
   pleins.forEach((liste, k) => {
     const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut);
+    if (plats.length && k === 0) couches.push(...ombresAuRepos(plats, cle, plat));
     if (plats.length) couches.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat,
       dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(plats) } }));
     /* Les stands de la vue immersive : la même couleur, montée en volume. La
        lumière (`effetsGl`) fonce les façades ; le dessus garde le ton choisi.
        Celui qui monte ou descend y reste, aplati (`masqueVolumes`) : sa copie
-       mobile suit, et la couche garde ses formes d'une conversion à l'autre. */
-    if (volumes.length) out.push(...masqueVolumes(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes,
+       mobile suit, et la couche garde ses formes d'une conversion à l'autre.
+       Aucun trait ne borde le dessus : posé un rien au-dessus pour ne pas s'y
+       enfoncer, il ne tombait jamais tout à fait sur l'arête, et se voyait
+       comme un liseré décalé plus qu'il ne séparait deux stands voisins. */
+    if (volumes.length) out.push(masqueVolumes(new L.SolidPolygonLayer({ id: cle + "-volumes-" + k, data: volumes,
       pickable: k === 0, extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
       material: MATIERE, dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(volumes) } }),
-    new Set(volumes.filter(d => d.hausse).map(d => d.el)), true));
+    new Set(volumes.filter(d => d.hausse).map(d => d.el))));
     // chaque volume en mouvement, seul dans sa couche : la boucle en règle l'échelle
     liste.filter(d => d.hausse).forEach((d, n) => out.push(new L.SolidPolygonLayer({
       id: cle + "-hausse-" + k + "-" + n, data: [d], pickable: k === 0,
       extruded: true, getPolygon: x => x.polygon, getFillColor: x => x.couleur, getElevation: x => x.haut,
-      material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) }),
-      coucheContours(cle + "-hausse-" + k + "-" + n, [d], { hausseContour: d.hausse })));
+      material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) })));
   });
-  if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
-    extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-    material: MATIERE }));
+  /* En volume, le décor se mesure à la profondeur et passe avant les
+     aplats ; à plat, il n'en a pas, et se peint après eux — sans quoi le sol
+     de sa zone le recouvrirait. */
+  const volume = cameraEnJeu();
+  const decor = acc.decor.length ? new L.SolidPolygonLayer({ id: cle + (volume ? "-decor" : "-decor-plat"), data: acc.decor, pickable: false,
+    getPolygon: d => d.polygon, getFillColor: d => d.couleur,
+    ...(volume ? { extruded: true, getElevation: d => d.haut, material: MATIERE } : plat) }) : null;
+  if (decor && volume) out.push(decor);
   out.push(...couches);
+  if (decor && !volume) out.push(decor);
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
      relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
@@ -2796,14 +2802,12 @@ function coucheSurvolVolume(c){
     const data = siens.map(d => ({ ...d, haut: d.haut + .03, couleur: teinte(d.couleur) }));
     return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
-      hausse: h, elevationScale: echelleHausse(h, instant()) }),
-    coucheContours("survol-volume", data, { hausseContour: h })];
+      hausse: h, elevationScale: echelleHausse(h, instant()) })];
   }
   const e = c.props.elevationScale || 1;
   const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
   return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
-    getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE }),
-  coucheContours("survol-volume", data)];
+    getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE })];
 }
 
 function coucheFocus(couches){
@@ -2942,8 +2946,6 @@ function animeCouche(c){
   if (c.props.marques) return marquesSurLesToits(c);
   if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
-  // le contour d'un volume en mouvement, posé à l'arrivée, s'écrase de même
-  if (c.props.hausseContour) return c.clone({ modelMatrix: ecraseContour(c.props.hausseContour) });
   // le nom d'un volume en mouvement : posé à l'arrivée, il descend de ce qui reste à monter
   if (c.props.hausseTexte){
     const h = c.props.hausseTexte, dz = hauteurHausse(h, instant()) - h.vers;
