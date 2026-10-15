@@ -82,9 +82,14 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
-/* Déplié, le bouton garde la marque de ce qu'il a ouvert — la pastille du
-   nombre retenu, elle, dit autre chose et se peint par « aria-pressed ». */
-.crit-btn[aria-expanded="true"]{border-color:var(--line-strong);color:var(--ink)}
+/* Déplié, le bouton s'allume, couleurs renversées : un simple filet plus
+   appuyé ne se voyait pas, et l'on ne savait plus que c'est lui qui replie le
+   panneau. La pastille du nombre retenu, elle, dit autre chose et se peint
+   par « aria-pressed » ; elle se détoure pour rester lisible sur l'allumé.
+   Chaque modèle de liste reprend l'allumé à ses couleurs. */
+.crit-btn[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
+.crit-btn[aria-expanded="true"] .compteur{box-shadow:0 0 0 2px var(--accent-ink)}
 
 /* Le panneau des critères, déplié dans la colonne.
 
