@@ -2628,7 +2628,7 @@ function poseSurvolWebgl(el){
   GL.survol = el;
   if (enTuiles()){
     if (quitte) visePour(quitte, CHOISIES.has(quitte) ? 1 : 0);
-    if (el) visePour(el, 1);
+    if (el) visePour(el, CHOISIES.has(el) ? 1 : SURVOLEE);
     gonfleSurvol();
   } else TUILES.clear();
   /* Les noms, les logos et les figurants ne dépendent pas du survol : ils se
@@ -2660,10 +2660,12 @@ function poseSurvolWebgl(el){
    à la sienne.
    ------------------------------------------------------------ */
 const enTuiles = () => document.documentElement.classList.contains("ambiance-tuiles");
-/* Douze pour cent : à six, la tuile ne gagnait que trois pour cent par bord,
-   et l'ombre au repos de ses voisines (`ombresAuRepos`), plus large que cela,
-   l'absorbait — on ne la voyait plus grandir. */
-const MONTE_MS = 160, DESCEND_MS = 220, GONFLE = .12;
+/* La course va de 0 (au sol) à 1 (choisie, douze pour cent de plus) ; le
+   survol s'arrête à mi-course, six pour cent. Choisie, la tuile doit se voir
+   d'un peu loin : à six, elle ne gagnait que trois pour cent par bord, que
+   l'ombre au repos de ses voisines (`ombresAuRepos`) absorbait. Au survol,
+   sous la souris, ces six suffisent, et douze faisaient sauter le plan. */
+const MONTE_MS = 160, DESCEND_MS = 220, GONFLE = .12, SURVOLEE = .5;
 /** Les tuiles en mouvement ou soulevées : où leur course partait, vers où, et quand.
  *  @type {Map<Element, { de: number, vers: number, t0: number }>} */
 const TUILES = new Map();
@@ -2689,7 +2691,7 @@ let CHOISIES = new Set();
 function suisChoisies(/** @type {Set<Element>} */ choisies){
   let change = false;
   for (const el of choisies) if (!CHOISIES.has(el)){ visePour(el, 1); change = true; }
-  for (const el of CHOISIES) if (!choisies.has(el)){ visePour(el, el === GL.survol ? 1 : 0); change = true; }
+  for (const el of CHOISIES) if (!choisies.has(el)){ visePour(el, el === GL.survol ? SURVOLEE : 0); change = true; }
   CHOISIES = choisies;
   if (change) gonfleSurvol();
 }
@@ -2712,8 +2714,9 @@ function gonfleSurvol(){
   imageGonfle = requestAnimationFrame(image);
 }
 
-/** La tuile soulevée à la hauteur « k » : son ombre puis elle, agrandies
- *  autour du centre de leurs aplats, sa teinte à mi-chemin de la vive. Une
+/** La tuile à la course « k » : son ombre puis elle, agrandies autour du
+ *  centre de leurs aplats, sa teinte à mi-chemin de la vive — pleinement vive
+ *  dès la mi-course, où le survol s'arrête. Une
  *  tuile choisie garde sa teinte vive à toute hauteur : en montant comme en
  *  redescendant, elle ne repasse pas par sa couleur d'origine. */
 function coucheTuileSoulevee(aplats, k, n, choisie = false){
@@ -2726,13 +2729,13 @@ function coucheTuileSoulevee(aplats, k, n, choisie = false){
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   const autour = (e) => [e, 0, 0, 0, 0, e, 0, 0, 0, 0, 1, 0, cx * (1 - e), cy * (1 - e), 0, 1];
   const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
-  const cle = Math.round(k * 40);
+  const vif = Math.min(1, k / SURVOLEE), cle = Math.round(k * 40);
   const vers = (d) => avive(d.couleur) || [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)];
   const mele = (d) => { const v = vers(d); if (choisie) return v;
-    return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * k)); };
+    return [0, 1, 2, 3].map(i => Math.round(d.couleur[i] + (v[i] - d.couleur[i]) * vif)); };
   return [
     new deck.SolidPolygonLayer({ id: "survol-ombre-" + n, data: aplats, getPolygon: d => d.polygon,
-      modelMatrix: autour(1 + (GONFLE + .02) * k), getFillColor: [20, 24, 26, Math.round(20 * k)],
+      modelMatrix: autour(s + .02 * vif), getFillColor: [20, 24, 26, Math.round(20 * vif)],
       updateTriggers: { getFillColor: cle } }),
     new deck.SolidPolygonLayer({ id: "survol-" + n, data: aplats, getPolygon: d => d.polygon,
       modelMatrix: autour(s), getFillColor: mele, updateTriggers: { getFillColor: cle } }),

@@ -3178,7 +3178,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3134 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3137 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3212,15 +3212,15 @@ Fonctions :
 `couchesLibellesWebgl` 2448 · `couchesDessineesWebgl` 2482 · `stage` 2503
 `lectureDifferee` 2536 · `survolTrouve` 2572 · `demandeSurvolWebgl` 2578
 `survoleWebgl` 2584 · `brancheSurvolWebgl` 2612 · `poseSurvolWebgl` 2625 · `enTuiles` 2662
-`hauteurTuile` 2673 · `visePour` 2679 · `suisChoisies` 2689 · `gonfleSurvol` 2697
-`coucheTuileSoulevee` 2719 · `couchesTuiles` 2750 · `poseCurseurWebgl` 2763
-`poseFocusWebgl` 2772 · `aplatsDe` 2779 · `coucheSurvol` 2782 · `coucheSurvolVolume` 2798
-`coucheFocus` 2832 · `couchesPhare` 2862 · `lueurDe` 2879 · `opacitePhare` 2917
-`echellePhare` 2918 · `couchesPhareNoms` 2921 · `palierDefile` 2946 · `periodeDe` 2951
-`phaseDe` 2953 · `instant` 2963 · `animeCouche` 2964 · `majAnimationWebgl` 2989
-`animeWebgl` 2997 · `reanime` 3034 · `logosSurLesToits` 3043 · `objetSous` 3073
-`objetSousDiffere` 3078 · `viseEnAvance` 3092 · `lisObjet` 3100 · `cibleWebgl` 3105
-`priseWebgl` 3115 · `libelleSousWebgl` 3120 · `rectEcranWebgl` 3125
+`hauteurTuile` 2675 · `visePour` 2681 · `suisChoisies` 2691 · `gonfleSurvol` 2699
+`coucheTuileSoulevee` 2722 · `couchesTuiles` 2753 · `poseCurseurWebgl` 2766
+`poseFocusWebgl` 2775 · `aplatsDe` 2782 · `coucheSurvol` 2785 · `coucheSurvolVolume` 2801
+`coucheFocus` 2835 · `couchesPhare` 2865 · `lueurDe` 2882 · `opacitePhare` 2920
+`echellePhare` 2921 · `couchesPhareNoms` 2924 · `palierDefile` 2949 · `periodeDe` 2954
+`phaseDe` 2956 · `instant` 2966 · `animeCouche` 2967 · `majAnimationWebgl` 2992
+`animeWebgl` 3000 · `reanime` 3037 · `logosSurLesToits` 3046 · `objetSous` 3076
+`objetSousDiffere` 3081 · `viseEnAvance` 3095 · `lisObjet` 3103 · `cibleWebgl` 3108
+`priseWebgl` 3118 · `libelleSousWebgl` 3123 · `rectEcranWebgl` 3128
 
 Importe :
 
