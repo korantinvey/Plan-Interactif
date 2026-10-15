@@ -48,6 +48,8 @@ const rect = (x, y, w, h, deg = 0) => {
   console.log("Ce que chaque type pose");
   const roles = (type) => new Set(meuble(type, rect(0, 0, 22, 14)).map(x => x.role));
   dit(["plateau", "assise"].every(r => roles("restauration").has(r)), "un restaurant : des tables et des chaises");
+  dit(["carrosserie", "habitacle", "comptoir", "plateau"].every(r => roles("foodtruck").has(r)) &&
+    !roles("foodtruck").has("assise"), "un foodtruck : des camions et des mange-debout, sans chaises");
   dit(["scene", "ecran", "assise"].every(r => roles("conferences").has(r)), "une salle : une scène, un écran, des sièges");
   dit(roles("accueil").has("comptoir"), "un accueil : un comptoir");
   dit(roles("vestiaire").has("portant"), "un vestiaire : des portants");

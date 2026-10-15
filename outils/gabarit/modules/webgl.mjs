@@ -1370,9 +1370,9 @@ function hauteurVolume(el, anneaux){
    Le décor des zones
 
    Le mobilier d'une zone typée (`decor.mjs`) monte sur son sol : chaque
-   pièce est un volume, peint d'après son rôle. Les assises et les canapés
-   prennent la couleur de la zone, assombrie, pour que le restaurant reste
-   doré, la salle et le lounge de leur teinte ; le reste a ses tons de mobilier, les mêmes partout.
+   pièce est un volume, peint d'après son rôle. Les assises, les canapés et
+   les camions prennent la couleur de la zone, assombrie, pour que le
+   restaurant reste doré, la salle et le lounge de leur teinte ; le reste a ses tons de mobilier, les mêmes partout.
    Le décor ne se désigne pas : un appui sur une chaise ouvre la zone, dont
    le sol est dessous. À plat — Classique, Tuiles —, les mêmes pièces se
    couchent au sol, vues d'aplomb : la zone reste de sa hauteur, son
@@ -1390,6 +1390,8 @@ const TONS_DECOR = {
   plante: [96, 156, 98, 255], portant: [128, 136, 148, 255],
   // le tapis d'un lounge, clair : il dit le salon sans prendre la couleur de la zone
   tapis: [226, 214, 196, 255],
+  // la cabine vitrée d'un foodtruck, et le store rouge qui le signale de loin
+  habitacle: [192, 214, 230, 255], store: [214, 84, 72, 255],
   marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
 };
 
