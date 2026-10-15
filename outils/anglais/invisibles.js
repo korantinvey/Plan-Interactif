@@ -46,6 +46,8 @@ module.exports = [
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
   // les noms des couches où les jetons se peignent ensemble
   "-jetons-plaques", "-jetons",
+  // pourquoi le dessin rend la main au SVG, dit à la console seule
+  "la boucle d'images s'est arrêtée", "contexte perdu",
   // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
   // que la bibliothèque garde pour elle
   "const vec3 ", "] = vec3[", "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]",

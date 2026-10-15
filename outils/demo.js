@@ -1,39 +1,50 @@
 /**
- * Le salon de démonstration — un vrai plan, des exposants inventés.
+ * Le salon de démonstration — le plan d'un vrai salon, des exposants inventés.
  *
- * `plan-smcl.html` montre le SMCL tel que Klipso l'a rendu : ses exposants,
- * leurs sites, les espaces de l'organisateur sous leurs noms de marque. On ne
- * le montre pas à un prospect. Cette page-ci garde ce qui fait un plan
- * crédible — les pavillons, la géométrie des stands, leur numérotation, leur
- * état de commercialisation, la répartition des familles de produits — et
- * remplace tout ce qui nomme quelqu'un :
+ * La source est un salon réel tel que l'API publique le sert à un visiteur
+ * (`outils/source-demo.json`, FEP27 : `npm run source-demo`). On en garde ce
+ * qui fait un plan crédible et ne nomme personne — la géométrie des stands et
+ * des zones, les dessins posés à la main, l'apparence réglée par l'exploitant,
+ * la nomenclature, les secteurs, les champs propres au salon — et on remplace
+ * le reste :
  *
- *   - chaque exposant reçoit un nom, une raison sociale, une ville, un site en
- *     `.example` (domaine réservé, qui ne mène chez personne) et un numéro
- *     dans la plage que l'ARCEP réserve à la fiction (01 99 00 xx xx) ;
- *   - les codes de nomenclature deviennent des libellés lisibles, inventés ;
- *   - les espaces de l'organisateur prennent des noms génériques, et les
- *     calques de fond qui recopiaient leurs noms de marque sont retirés ;
- *   - les identifiants Klipso (pavillons, stands, zones) sont refaits ;
- *   - un programme de conférences, absent des données figées, est ajouté
- *     pour que la fiche d'une zone, la journée organisée et les rappels aient
- *     de quoi se montrer.
+ *   - tous les emplacements sont occupés : un stand libre, en option ou en
+ *     contact reçoit lui aussi un exposant, un numéro et un logo — un plan de
+ *     démonstration à moitié vide montrerait surtout des trous ;
+ *   - chaque exposant reçoit un nom tiré de son secteur, une raison sociale,
+ *     une ville, un site en `.example` (domaine réservé, qui ne mène chez
+ *     personne) et un numéro dans la plage que l'ARCEP réserve à la fiction
+ *     (01 99 00 xx xx) ; ses réseaux sociaux ne sont pas inventés — un faux
+ *     compte sur un vrai réseau pourrait être celui de quelqu'un ;
+ *   - chacun présente un catalogue de produits, et les espaces de conférence
+ *     portent un programme sur les jours d'ouverture du salon ;
+ *   - ce que l'apparence et les zones citaient — sponsor, libellé posé à la
+ *     main, fiche d'un restaurant, mention d'une fédération — est remplacé.
+ *
+ * Les identifiants des stands, des zones et des dessins restent ceux de la
+ * source : ce sont des empreintes, et l'apparence comme les dessins les
+ * désignent. Celui du pavillon, un identifiant Klipso, est refait.
  *
  * Tout est tiré d'un hasard à graine fixe : deux constructions donnent le même
  * salon, octet pour octet — sans quoi la version du service de second plan
- * changerait à chaque construction (`genere.js` `FABRIQUEES`). Un même exposant
- * réel présent sur deux stands y reçoit le même nom inventé, tiré de son nom
- * réel par empreinte : rien ne permet de remonter de l'un à l'autre.
+ * changerait à chaque construction (`genere.js` `FABRIQUEES`).
  *
- * Appelé par `genere.js`, qui pose le résultat dans `web/demo.html` ;
+ * Appelé par `genere.js` (`web/demo.html`) et par `salon-demo.js` (la base) ;
  * `outils/essais/demo.js` vérifie qu'aucun nom réel n'y survit.
  */
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
-/* Changer le sel redistribue tous les noms : à ne toucher que pour cela. */
+/* Changer le sel redistribue tous les noms — et rend les logos à refaire
+   (`npm run logos-demo`). */
 const SEL = "demo-2027";
+
+/* Où sont servies les images des produits. Elles sont posées dans `web/` à la
+   construction (`imagesProduits`), mais la fiche n'accepte qu'une adresse
+   complète (`sur.mjs` `adresseImage`) : c'est donc celle de la production. */
+const ORIGINE = "https://plan-interactif.interactiveplan.workers.dev";
+const DOSSIER_PRODUITS = "demo-produits";
 
 /** Un hasard reproductible, tiré d'une clé. */
 function hasard(cle) {
@@ -48,84 +59,58 @@ function hasard(cle) {
 const pioche = (r, l) => l[Math.floor(r() * l.length)];
 const deux = (r) => String(Math.floor(r() * 100)).padStart(2, "0");
 const empreinte = (t, n = 8) => crypto.createHash("sha256").update(SEL + "|" + t).digest("hex").slice(0, n);
+const slug = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const clone = (o) => JSON.parse(JSON.stringify(o));
 
-/* ---------- la nomenclature : une famille par lettre de code ----------
-   Les codes Klipso du SMCL (« SMCL26_J4C ») gardent leur répartition — un
-   stand en porte deux ou trois —, sous des libellés inventés. Chaque famille a
-   son vocabulaire d'enseigne, pour qu'un « Voltéa Énergies » ne vende pas des
-   aires de jeux. */
-const FAMILLES = {
-  A: { nom: "Administration & gestion", mots: ["Gestion", "Conseil", "Solutions", "Public"],
-    sous: [["Logiciels de gestion", "Management software"], ["Dématérialisation", "Paperless administration"],
-      ["Archivage", "Archiving"], ["Ressources humaines", "Human resources"],
-      ["Finances locales", "Local finance"], ["Marchés publics", "Public procurement"],
-      ["Conseil juridique", "Legal advice"], ["Assurances", "Insurance"],
-      ["Formation des agents", "Staff training"], ["État civil", "Civil registry"]] },
-  B: { nom: "Communication & citoyenneté", mots: ["Médias", "Com", "Éditions", "Signal"],
-    sous: [["Signalétique", "Signage"], ["Affichage numérique", "Digital displays"],
-      ["Participation citoyenne", "Citizen participation"], ["Édition & impression", "Publishing & printing"],
-      ["Événementiel", "Events"], ["Médias locaux", "Local media"],
-      ["Applications citoyennes", "Citizen apps"], ["Objets promotionnels", "Promotional items"]] },
-  C: { nom: "Construction & aménagement", mots: ["Urbain", "Aménagement", "Bâti", "Structures"],
-    sous: [["Bâtiments modulaires", "Modular buildings"], ["Aires de jeux", "Playgrounds"],
-      ["Mobilier urbain", "Street furniture"], ["Voirie", "Roads"], ["Éclairage public", "Street lighting"],
-      ["Revêtements de sol", "Floor coverings"], ["Clôtures & portails", "Fences & gates"],
-      ["Équipements sportifs", "Sports equipment"], ["Rénovation énergétique", "Energy retrofit"],
-      ["Ingénierie", "Engineering"]] },
-  D: { nom: "Énergie & climat", mots: ["Énergies", "Solaire", "Watt", "Thermique"],
-    sous: [["Photovoltaïque", "Solar power"], ["Réseaux de chaleur", "District heating"],
-      ["Efficacité énergétique", "Energy efficiency"], ["Bornes de recharge", "Charging stations"],
-      ["Stockage d'énergie", "Energy storage"], ["Bois-énergie", "Wood energy"],
-      ["Audit énergétique", "Energy audit"]] },
-  E: { nom: "Santé, social & enfance", mots: ["Santé", "Enfance", "Solidarité", "Care"],
-    sous: [["Petite enfance", "Early childhood"], ["Restauration collective", "Catering"],
-      ["Maintien à domicile", "Home care"], ["Santé connectée", "Connected health"],
-      ["Accessibilité", "Accessibility"], ["Seniors", "Seniors"],
-      ["Équipements scolaires", "School equipment"], ["Insertion", "Social inclusion"]] },
-  F: { nom: "Environnement & cadre de vie", mots: ["Environnement", "Propreté", "Nature", "Eau"],
-    sous: [["Gestion des déchets", "Waste management"], ["Propreté urbaine", "Street cleaning"],
-      ["Eau & assainissement", "Water & sanitation"], ["Espaces verts", "Green spaces"],
-      ["Biodiversité", "Biodiversity"], ["Qualité de l'air", "Air quality"],
-      ["Compostage", "Composting"], ["Matériel de nettoyage", "Cleaning equipment"]] },
-  G: { nom: "Sécurité & prévention", mots: ["Sécurité", "Protection", "Vigie", "Prévention"],
-    sous: [["Vidéoprotection", "Video surveillance"], ["Police municipale", "Municipal police"],
-      ["Contrôle d'accès", "Access control"], ["Sécurité incendie", "Fire safety"],
-      ["Gestion de crise", "Crisis management"], ["Défibrillateurs", "Defibrillators"]] },
-  H: { nom: "Culture, sport & loisirs", mots: ["Loisirs", "Sport", "Culture", "Scène"],
-    sous: [["Équipements culturels", "Cultural facilities"], ["Bibliothèques", "Libraries"],
-      ["Billetterie", "Ticketing"], ["Spectacle vivant", "Performing arts"], ["Tourisme", "Tourism"],
-      ["Parcs de loisirs", "Leisure parks"], ["Matériel sportif", "Sports gear"],
-      ["Piscines", "Swimming pools"], ["Parasport", "Para sport"]] },
-  I: { nom: "Numérique & connectivité", mots: ["Numérique", "Data", "Connect", "Cloud"],
-    sous: [["Très haut débit", "Broadband"], ["Cybersécurité", "Cybersecurity"],
-      ["Données ouvertes", "Open data"], ["Ville intelligente", "Smart city"],
-      ["Hébergement", "Hosting"], ["Téléphonie", "Telephony"],
-      ["Inclusion numérique", "Digital inclusion"], ["Objets connectés", "Connected devices"]] },
-  J: { nom: "Transport & mobilité", mots: ["Mobilité", "Transports", "Cycles", "Move"],
-    sous: [["Transport à la demande", "On-demand transport"], ["Vélos & cycles", "Bicycles"],
-      ["Stationnement", "Parking"], ["Véhicules électriques", "Electric vehicles"],
-      ["Covoiturage", "Carpooling"], ["Signalisation routière", "Road signs"],
-      ["Logistique urbaine", "Urban logistics"], ["Véhicules utilitaires", "Utility vehicles"],
-      ["Autopartage", "Car sharing"], ["Transport scolaire", "School transport"]] },
-  K: { nom: "Développement & attractivité", mots: ["Territoires", "Développement", "Avenir", "Atout"],
-    sous: [["Développement économique", "Economic development"], ["Commerce de proximité", "Local retail"],
-      ["Revitalisation des centres-bourgs", "Town centre revival"], ["Marketing territorial", "Place branding"],
-      ["Financement", "Funding"], ["Tiers-lieux", "Third places"],
-      ["Agriculture urbaine", "Urban farming"], ["Circuits courts", "Short supply chains"]] },
+/* ---------- les secteurs ----------
+   Ceux de la source, chacun avec le vocabulaire de ses enseignes, ses
+   couleurs d'image et son catalogue : un « Burgeo Snack » ne vend pas de
+   l'assurance. Un secteur que la source nomme d'après quelqu'un change de nom
+   (`nom`). */
+const SECTEURS = {
+  "Mode et équipement de la personne": { mots: ["Mode", "Kids", "Style", "Shoes", "Optic"], c: ["#7c3aed", "#f0abfc"],
+    produits: ["Boutique de centre-ville", "Corner en grand magasin", "Collection capsule", "Format outlet", "Boutique éphémère"] },
+  "Commerce alimentaire": { mots: ["Épicerie", "Gourmet", "Délices", "Fromagerie", "Cave"], c: ["#b45309", "#fde68a"],
+    produits: ["Boutique de quartier", "Format kiosque", "Coffrets gourmands", "Atelier dégustation", "Vente en ligne locale"] },
+  "Bâtiment et habitat": { mots: ["Habitat", "Rénov", "Maison", "Déco", "Cuisines"], c: ["#0f766e", "#99f6e4"],
+    produits: ["Agence rénovation clé en main", "Showroom cuisine", "Pack isolation", "Dépannage 7 jours sur 7"] },
+  "Restauration Rapide": { mots: ["Burger", "Tacos", "Poké", "Pizza", "Snack", "Bagel"], c: ["#dc2626", "#fdba74"],
+    produits: ["Restaurant en centre commercial", "Format drive", "Cuisine de livraison", "Kiosque de gare", "Food truck"] },
+  "Restauration assise": { mots: ["Bistrot", "Brasserie", "Trattoria", "Table", "Comptoir"], c: ["#9f1239", "#fecdd3"],
+    produits: ["Brasserie de 120 couverts", "Restaurant de zone commerciale", "Bar à vins", "Formule bistronomique"] },
+  "Services aux particuliers": { mots: ["Services", "Domicile", "Coiffure", "Pressing", "Fit"], c: ["#0369a1", "#bae6fd"],
+    produits: ["Agence de services à domicile", "Salon de coiffure", "Studio de remise en forme", "Pressing écologique"] },
+  "Hôtellerie": { mots: ["Hôtel", "Suites", "Lodge", "Resort"], c: ["#1e3a8a", "#fcd34d"],
+    produits: ["Hôtel de 60 chambres", "Résidence hôtelière", "Conversion d'hôtel indépendant", "Hôtel de gare"] },
+  "Experts FFF": { nom: "Experts de la franchise", en: "Franchise experts",
+    mots: ["Conseil", "Avocats", "Expertise", "Partners"], c: ["#334155", "#cbd5e1"],
+    produits: ["Audit de réseau", "Rédaction du DIP", "Accompagnement du franchisé", "Étude d'implantation"] },
+  "Services aux entreprises": { mots: ["Business", "Pro", "Solutions", "Office", "Net"], c: ["#4338ca", "#c7d2fe"],
+    produits: ["Agence de recrutement", "Centre d'affaires", "Nettoyage professionnel", "Solution de gestion"] },
+  "Médias": { mots: ["Mag", "Média", "Hebdo", "Radio"], c: ["#be185d", "#fbcfe8"],
+    produits: ["Magazine des réseaux", "Annuaire de la franchise", "Lettre hebdomadaire", "Émission vidéo"] },
+  "Organismes de financement et d'assurance": { mots: ["Finance", "Assurances", "Crédit", "Capital"], c: ["#065f46", "#a7f3d0"],
+    produits: ["Prêt création franchise", "Assurance multirisque commerce", "Prêt d'honneur", "Crédit-bail matériel"] },
+  "Fédérations et institutionnels": { mots: ["Fédération", "Union", "Chambre", "Réseau"], c: ["#1d4ed8", "#bfdbfe"],
+    produits: ["Formation des créateurs", "Annuaire des réseaux", "Médiation", "Guide du futur franchisé"] },
+  "Distribution alimentaire": { mots: ["Market", "Primeur", "Bio", "Frais", "Proxi"], c: ["#15803d", "#bbf7d0"],
+    produits: ["Supérette de proximité", "Magasin bio", "Format drive piéton", "Épicerie vrac"] },
+  "Villes et territoires": { mots: ["Territoires", "Agglo", "Attractivité", "Région"], c: ["#0e7490", "#a5f3fc"],
+    produits: ["Local commercial en centre-ville", "Aide à l'implantation", "Pépinière de commerces", "Loyer d'amorçage"] },
+  "Immobilier": { mots: ["Immo", "Patrimoine", "Agence", "Habitat"], c: ["#a16207", "#fef08a"],
+    produits: ["Agence immobilière", "Gestion locative", "Mandataire indépendant", "Transaction de commerces"] },
 };
+const nomSecteur = (s) => (SECTEURS[s] && SECTEURS[s].nom) || s;
 
-/* ---------- les noms d'enseigne ---------- */
+/* ---------- les noms ---------- */
 const DEBUTS = ["Al", "Bel", "Cal", "Cor", "Dal", "Del", "Ev", "Fal", "Gal", "Hel", "Is", "Jun", "Kal",
   "Lum", "Lor", "Mar", "Nov", "Or", "Pol", "Quen", "Ri", "Sol", "Sy", "Tal", "Ter", "Ur", "Val", "Ver",
-  "Vi", "Zé", "Ar", "Bré", "Cé", "Fé", "Ly", "Mé", "Né", "Pré", "Rhô", "Tri"];
+  "Vi", "Zé", "Ar", "Bré", "Cé", "Fé", "Ly", "Mé", "Né", "Pré", "Rhô", "Tri", "Ko", "Mo", "Pa", "Ti"];
 const MILIEUX = ["a", "é", "i", "o", "ya", "ri", "li", "ne", "va", "ra", "to", "mi", "lo", "dé", "", ""];
 const FINS = ["ris", "lia", "nov", "tis", "ga", "lys", "mo", "tec", "via", "sys", "dia", "nor", "bel",
-  "rane", "lane", "vik", "mia", "ten", "zio", "ka", "line", "dor", "phane", "tura"];
-const FORMES = ["SAS", "SAS", "SAS", "SARL", "SARL", "SA", "SCOP", "EURL"];
-const FORMES_ASSO = ["Association", "Fédération", "Réseau", "Collectif"];
-const OBJETS_ASSO = ["des communes rurales", "pour la transition locale", "des acteurs du vélo",
-  "des élus de la montagne", "pour l'inclusion numérique", "des territoires solidaires",
-  "des petites villes", "pour le sport pour tous", "des aidants", "des jardins partagés"];
+  "rane", "lane", "vik", "mia", "ten", "zio", "ka", "line", "dor", "phane", "tura", "lo", "zen"];
+const FORMES = ["SAS", "SAS", "SAS", "SARL", "SARL", "SA", "EURL"];
 
 /* Des villes réelles — un lieu ne nomme personne —, la France d'abord. */
 const VILLES = [
@@ -140,15 +125,13 @@ const VILLES = [
   ["57000", "Metz", "France"], ["54000", "Nancy", "France"], ["45000", "Orléans", "France"],
   ["80000", "Amiens", "France"], ["72000", "Le Mans", "France"], ["42000", "Saint-Étienne", "France"],
   ["92100", "Boulogne-Billancourt", "France"], ["93200", "Saint-Denis", "France"],
-  ["94200", "Ivry-sur-Seine", "France"], ["78000", "Versailles", "France"], ["91300", "Massy", "France"],
-  ["74000", "Annecy", "France"], ["17000", "La Rochelle", "France"], ["56100", "Lorient", "France"],
-  ["1000", "Bruxelles", "Belgique"], ["4000", "Liège", "Belgique"], ["1003", "Lausanne", "Suisse"],
-  ["1204", "Genève", "Suisse"], ["08001", "Barcelone", "Espagne"], ["1450", "Luxembourg", "Luxembourg"],
+  ["78000", "Versailles", "France"], ["74000", "Annecy", "France"], ["17000", "La Rochelle", "France"],
+  ["1000", "Bruxelles", "Belgique"], ["1003", "Lausanne", "Suisse"], ["08001", "Barcelone", "Espagne"],
+  ["1450", "Luxembourg", "Luxembourg"], ["H2X 1Y4", "Montréal", "Canada"],
 ];
 const VOIES = ["rue de la Gare", "avenue de la République", "rue des Artisans", "boulevard Pasteur",
   "rue du Moulin", "allée des Tilleuls", "rue de l'Industrie", "chemin des Vignes", "rue Victor-Hugo",
   "place du Marché", "rue des Écoles", "avenue Jean-Jaurès", "rue du Port", "quai des Chartrons"];
-
 const PRENOMS = ["Camille", "Julien", "Sophie", "Karim", "Élodie", "Thomas", "Nadia", "Antoine", "Léa",
   "Mehdi", "Claire", "Hugo", "Inès", "Pierre", "Manon", "Yann", "Sarah", "Olivier", "Amina", "Lucas",
   "Hélène", "Bruno", "Fatou", "Nicolas", "Agathe", "Samuel", "Laure", "Rémi", "Chloé", "Damien"];
@@ -157,142 +140,314 @@ const NOMS_FAMILLE = ["Martin", "Bernard", "Dubois", "Moreau", "Laurent", "Garni
   "Mercier", "Blanc", "Guérin", "Boyer", "Chevalier", "Perrin", "Morin", "Mathieu", "Clément",
   "Gauthier", "Roussel", "Henry", "Barbier", "Arnaud"];
 
-/* ---------- les espaces de l'organisateur ----------
-   Noms de marque du SMCL (« Vis ta ville », « Atmosphère », « Léni »…)
-   ramenés à ce que l'espace est. Un nom générique — « Accueil », « Vestiaire »
-   — passe tel quel ; un nom que la liste ne connaît pas devient « Espace n ». */
-const ZONES = {
-  "Vis ta ville A table": ["Village Restauration", "Food village"],
-  "Vis ta ville Adaptée": ["Village Accessibilité", "Accessibility village"],
-  "Le Refuge": ["Espace Détente", "Chill-out area"],
-  "VESTIAIRE": ["Vestiaire", "Cloakroom"],
-  "VIS TON SPORT": ["Terrain de démonstration", "Demo court"],
-  "ZONE ACCUEIL": ["Accueil", "Welcome desk"],
-  "Accueil": ["Accueil", "Welcome desk"],
-  "Réserve Accueil": ["Réserve", "Storage"],
-  "Racks Presse": ["Présentoirs presse", "Press racks"],
-  "ZONE ANNEXE": ["Zone annexe", "Annex"],
-  "Salle des Evénements": ["Salle des événements", "Events hall"],
-  "Vis ta ville En scène": ["Village Culture", "Culture village"],
-  "Atmosphère Qualité de vie et longévité": ["Agora Bien vieillir", "Healthy ageing forum"],
-  "Arène du Sport": ["Scène Sport", "Sports stage"],
-  "LAB Inclusif & Solidaire": ["Atelier Solidarités", "Solidarity workshop"],
-  "Vis ta ville Au coeur du parcours de soins": ["Village Santé", "Health village"],
-  "Léni": ["Point info", "Info point"],
-  "Atmosphère Foncier, sol et ressources": ["Agora Foncier & ressources", "Land & resources forum"],
-  "Atmophère Prévention et gestion des risques": ["Agora Risques & prévention", "Risk prevention forum"],
-  "Atmosphère Planification écologique et énergétique": ["Agora Transition énergétique", "Energy transition forum"],
-  "LA SERRE": ["Jardin d'innovation", "Innovation garden"],
-  "LAB": ["Atelier Démonstrations", "Demo workshop"],
-  "Vis Ta Ville En mouvement": ["Village Mobilités", "Mobility village"],
-  "Vis Ta Ville Au coeur de la vie locale": ["Village Vie locale", "Local life village"],
-  "Vis Ta Ville Mairie Connectée": ["Village Mairie numérique", "Digital town hall village"],
-  "Atmophère Mobilité et logistique": ["Agora Mobilité & logistique", "Mobility & logistics forum"],
-  "ARENE de l'Audace": ["Grande Scène", "Main stage"],
-};
-/* Les espaces où l'on tient des conférences, et le thème de chacun : son
-   programme puise d'abord dans les sujets de ce thème, la grande scène et la
-   salle des événements dans tous. */
-const SALLES = {
-  "Agora Bien vieillir": "Santé, social & enfance",
-  "Atelier Solidarités": "Santé, social & enfance",
-  "Agora Foncier & ressources": "Construction & aménagement",
-  "Agora Risques & prévention": "Sécurité & prévention",
-  "Agora Transition énergétique": "Énergie & climat",
-  "Agora Mobilité & logistique": "Transport & mobilité",
-  "Scène Sport": "Culture, sport & loisirs",
-  "Atelier Démonstrations": "Numérique & connectivité",
-  "Grande Scène": null,
-  "Salle des événements": null,
-};
-
-/* Les calques de fond qui ne font que recopier les noms des espaces — masqués
-   au départ, mais qu'un visiteur peut rallumer : ils citeraient les marques de
-   l'organisateur sous les noms neufs. */
-const CALQUES_RETIRES = new Set(["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"]);
-/* Les textes de fond qui nomment quelqu'un : un programme de l'organisateur
-   dans la délimitation des secteurs, l'exploitant d'un local dans le bâtiment. */
-const TEXTES = {
-  "SALON DES SPORTS &amp; PARASPORTS": "SPORTS &amp; PARASPORTS",
-  "PARKOPOLIS": "STATIONNEMENT &amp; VOIRIE",
-  "Vinci": "",
-  "Locataire:": "",
-};
-
-/* ---------- le programme ---------- */
-/* Mardi et mercredi, sous les deux formes que la source donne : l'heure locale
-   du salon, et l'instant ISO (heure d'hiver à Paris). */
-const JOURS = [["03/16/2027", "2027-03-16"], ["03/17/2027", "2027-03-17"]];
-const CRENEAUX = [["10:00", "10:45"], ["11:30", "12:15"], ["14:00", "14:45"], ["15:30", "16:15"]];
+/* ---------- le programme ----------
+   Les jours sont ceux que l'exploitant a réglés (`_horaires`), à défaut trois
+   jours de mars. Les espaces « Pitch » présentent un exposant chacun ; les
+   autres puisent dans les sujets, sans répéter un titre tant qu'il en reste. */
+const CRENEAUX = ["10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"];
 const TYPES = [["Conférence", "#2563eb"], ["Table ronde", "#9333ea"], ["Atelier", "#059669"],
-  ["Retour d'expérience", "#d97706"]];
-/* Rangés par thème — celui d'une famille de la nomenclature, ce qui permet de
-   confier la séance à un exposant du métier. */
-const SUJETS = {
-  "Énergie & climat": ["Réussir la rénovation énergétique des écoles",
-    "Éclairage public : éteindre la nuit, retours de terrain",
-    "Réseau de chaleur bois : le montage d'un projet communal",
-    "Bornes de recharge : planifier le maillage du territoire",
-    "Solaire sur les toits publics : du cadastre à la mise en service",
-    "Piloter les consommations de cinquante bâtiments"],
-  "Transport & mobilité": ["Le vélo dans les villes moyennes : par où commencer ?",
-    "Transport à la demande en zone rurale",
-    "Logistique du dernier kilomètre en centre-ville",
-    "Zones à faibles émissions : accompagner plutôt que sanctionner",
-    "Stationnement : moins de places, mieux partagées",
-    "Électrifier la flotte communale"],
-  "Santé, social & enfance": ["Restauration scolaire : 50 % de produits durables, mode d'emploi",
-    "Accueillir les seniors : habitat, mobilité, lien social",
-    "Déserts médicaux : ce qu'une commune peut vraiment faire",
-    "Crèches : recruter quand personne ne postule",
-    "Aidants : repérer, soutenir, relayer",
-    "Le maintien à domicile vu par ceux qui le font"],
-  "Sécurité & prévention": ["Gestion de crise : l'exercice qui a tout changé",
-    "Vidéoprotection : cadre légal et bonnes pratiques",
-    "Prévenir les inondations : l'apport des solutions fondées sur la nature",
-    "Police municipale et gendarmerie : travailler ensemble",
-    "Plan communal de sauvegarde : le tenir à jour"],
-  "Construction & aménagement": ["Accessibilité des bâtiments publics : où en est-on ?",
-    "Aires de jeux inclusives : concevoir pour tous les enfants",
-    "Zéro artificialisation nette : densifier sans défigurer",
-    "Friches : du terrain vague au quartier",
-    "Construire en bois local"],
-  "Culture, sport & loisirs": ["Sport pour tous : ouvrir les équipements aux associations",
-    "Culture hors les murs : la bibliothèque qui se déplace",
-    "Piscines : rénover ou reconstruire ?",
-    "Le parasport dans les clubs de quartier",
-    "Un festival à l'échelle d'un village"],
-  "Numérique & connectivité": ["Cybersécurité : protéger une mairie de 5 000 habitants",
-    "Données ouvertes : ce que la loi impose, ce qu'on peut en faire",
-    "Inclusion numérique : former les habitants éloignés",
-    "Démarches en ligne : le guichet qui ne ferme jamais",
-    "Capteurs urbains : mesurer avant de décider"],
-  "Environnement & cadre de vie": ["Îlots de fraîcheur : désimperméabiliser les cours d'école",
-    "Biodiversité : un atlas communal en deux ans",
-    "Réduire les déchets de la commune de 30 %"],
-  "Développement & attractivité": ["Revitaliser un centre-bourg sans grand budget",
-    "Tiers-lieux : faire vivre un lieu après l'inauguration",
-    "Circuits courts : relier producteurs et cantines"],
-  "Administration & gestion": ["Financer ses projets avec les fonds européens",
-    "Mutualiser les achats entre communes",
-    "Recruter et fidéliser les agents territoriaux"],
-  "Communication & citoyenneté": ["Participation citoyenne : du budget participatif à la décision",
-    "Signalétique : se repérer dans une ville qui change"],
-};
-const TOUS_SUJETS = Object.entries(SUJETS).flatMap(([theme, l]) => l.map((titre) => [titre, theme]));
+  ["Témoignage", "#d97706"]];
+const SUJETS = [
+  "Devenir franchisé : les dix questions à se poser", "Financer son entrée en franchise",
+  "Le document d'information précontractuelle décrypté", "Choisir son emplacement",
+  "Reconversion : de salarié à franchisé", "Franchise et multi-franchise",
+  "Les erreurs à éviter la première année", "Master franchise : se développer à l'international",
+  "Restauration rapide : les formats qui gagnent", "Le commerce de centre-ville a-t-il un avenir ?",
+  "Franchise et numérique : du clic au magasin", "Recruter et fidéliser ses équipes",
+  "Ouvrir à deux : la franchise en couple", "Les réseaux qui recrutent en 2027",
+  "Franchise et engagement environnemental", "Reprendre un point de vente existant",
+  "Les services à la personne en franchise", "Immobilier : devenir agent en réseau",
+  "Hôtellerie : la franchise pour les indépendants", "Beauté et bien-être : des concepts qui durent",
+  "Les aides à la création d'entreprise", "Négocier son bail commercial", "Le prêt d'honneur expliqué",
+  "Premier bilan : lire ses chiffres", "Animer son point de vente", "Petits budgets : par où commencer ?",
+  "Les jeunes réseaux à suivre", "La franchise en zone rurale", "Former ses franchisés",
+  "Commerce associé ou franchise ?", "Le droit de la franchise en 2027",
+  "Trois franchisés, trois parcours", "Choisir son réseau : la méthode", "Ouvrir en centre commercial",
+  "Ouvrir en gare et en aéroport", "Se lancer après cinquante ans", "Entreprendre au féminin en franchise",
+  "Le contrat de franchise, clause par clause", "L'apport personnel : combien faut-il ?",
+  "Bien préparer sa visite du salon", "Développer un réseau de franchise", "Franchise et licence de marque",
+  "Les chiffres clés de la franchise", "Réussir son ouverture : les cent premiers jours",
+  "Le rôle de l'animateur de réseau", "Franchise et intelligence artificielle",
+];
+const TEXTE_CONF = "Franchiseurs, franchisés et experts partagent ce qui a marché, ce qui a " +
+  "coincé, et ce qu'ils referaient autrement. Questions de la salle en fin de séance.";
 
-/** Une enseigne inventée, dans le vocabulaire de sa famille. */
-function enseigne(r, famille) {
+/** Une enseigne inventée, dans le vocabulaire de son secteur. */
+function enseigne(r, mots) {
   const marque = pioche(r, DEBUTS) + pioche(r, MILIEUX) + pioche(r, FINS);
-  const mot = famille ? pioche(r, famille.mots) : "";
   const x = r();
-  if (!mot || x < 0.35) return marque;
-  if (x < 0.8) return marque + " " + mot;
-  return mot + " " + marque;
+  if (!mots || x < 0.4) return marque;
+  if (x < 0.8) return marque + " " + pioche(r, mots);
+  return pioche(r, mots) + " " + marque;
 }
 
-const slug = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-  .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+/**
+ * Le salon de démonstration, tiré de la source.
+ * @param {any} source  le contenu de `outils/source-demo.json`
+ * @param {{ logos?: Record<string, string> }} [o]  les logos par nom de société
+ *   (`logos-demo.json` à défaut) — `logos-demo.js` passe `{}`, il les dessine
+ */
+function salonDemo(source, o) {
+  const logos = (o && o.logos) || lisLogos();
+  const src = clone(source);
+  const tous = src.plans.flatMap((p) => p.stands);
+
+  /* Ce que chaque secteur porte de nomenclature dans la source : un stand
+     libre qu'on peuple en reçoit d'un secteur qu'on lui donne. */
+  const nomenclDe = {};
+  tous.forEach((s) => {
+    if (!s.sect) return;
+    (nomenclDe[s.sect] = nomenclDe[s.sect] || new Set());
+    (s.nomencl || []).forEach((n) => nomenclDe[s.sect].add(n));
+  });
+  const secteurs = Object.keys(SECTEURS).filter((k) => nomenclDe[k] || true);
+  // le secteur d'un stand qui n'en dit rien : celui que sa nomenclature nomme
+  const secteurDe = (s, r) => s.sect ||
+    (s.nomencl || []).find((n) => SECTEURS[n]) || pioche(r, secteurs);
+
+  const pris = new Set();
+  const societes = new Map();
+  const vignettes = {};
+  let sansLogo = 0;
+  /** Une société inventée — une seule par exposant réel, sous sa clé. */
+  function societe(cle, sect) {
+    if (societes.has(cle)) return clone(societes.get(cle));
+    const r = hasard("societe|" + cle);
+    const def = SECTEURS[sect] || {};
+    let nom = "";
+    for (let i = 0; !nom || pris.has(nom.toLowerCase()); i++) nom = enseigne(r, def.mots);
+    pris.add(nom.toLowerCase());
+    const [cp, ville, pays] = pioche(r, VILLES);
+    const s = {
+      nom, plan: nom.toUpperCase() + " " + pioche(r, FORMES),
+      site: "https://www." + slug(nom) + ".example",
+      adr: (1 + Math.floor(r() * 120)) + " " + pioche(r, VOIES), cp, ville, pays,
+      ...(pays === "France" ? { tel: "01 99 00 " + deux(r) + " " + deux(r) } : {}),
+    };
+    /* Le catalogue : de deux à cinq offres du secteur, dans un ordre à elle.
+       L'image est celle de l'offre, servie par le site. */
+    const offres = (def.produits || []).map((n, i) => [n, i]).sort(() => r() - 0.5);
+    s.produits = offres.slice(0, 2 + Math.floor(r() * Math.min(4, offres.length - 1))).map(([n, i]) => ({
+      id: "p" + empreinte("produit|" + nom + "|" + i, 10), nom: n,
+      texte: "<p>" + n + ", chez " + nom + " : le concept, l'accompagnement à " +
+        "l'ouverture et les conditions d'entrée dans le réseau.</p>",
+      image: ORIGINE + "/" + DOSSIER_PRODUITS + "/" + slug(nomSecteur(sect)) + "-" + i + ".svg",
+      grande: null, doc: null, video: null, themes: [nomSecteur(sect)],
+    }));
+    if (logos[nom]) {
+      const k = empreinte("logo|" + nom, 16);
+      s.vignette = k;
+      vignettes[k] = "data:image/webp;base64," + logos[nom];
+    } else sansLogo++;
+    societes.set(cle, s);
+    return clone(s);
+  }
+
+  /* Les codes des stands que la source ne numérote pas : un numéro « D »
+     (démonstration), dans l'ordre du plan. */
+  let numero = 0;
+  const stands = (p) => p.stands.map((s) => {
+    const r = hasard("stand|" + s.id);
+    const sect = secteurDe(s, r);
+    const reel = s.nom || s.plan || ("libre|" + s.id);
+    const soc = societe(s.nom ? reel : "libre|" + s.id, sect);
+    const nomencl = s.nomencl && s.nomencl.length ? s.nomencl
+      : [sect, ...[...(nomenclDe[sect] || [])].filter((n) => n !== sect).sort().slice(0, 1)];
+    const o = {
+      id: s.id, code: s.code || "D" + String(++numero).padStart(2, "0"),
+      ...soc, sect: nomSecteur(sect),
+      nomencl: nomencl.map(nomSecteur),
+      m2: s.m2, angles: s.angles, niveaux: s.niveaux, etat: "Affecte",
+      d: s.d, c: s.c, bb: s.bb,
+      ...(s.hall ? { hall: s.hall } : {}),
+      ...(s.lb != null ? { lb: s.lb, lc: s.lc } : {}),
+      // les marques de la fiche : celles de la source, ou tirées pour un stand peuplé
+      ...((s.nom ? s.neuf : r() < 0.1) ? { neuf: true } : {}),
+      ...((s.nom ? s.adh : r() < 0.4) ? { adh: true } : {}),
+    };
+    /* Les champs propres au salon gardent leurs réponses — « Oui », « Non » —,
+       sauf celui que l'exploitant a créé pour essayer. */
+    const perso = { ...(s.perso || {}) };
+    delete perso.test;
+    if (!s.nom) {
+      perso["parcours-de-visite-2"] = r() < 0.3 ? "Oui" : "Non";
+      perso.reprise = r() < 0.2 ? "Oui" : "Non";
+    }
+    if (Object.keys(perso).length) o.perso = perso;
+    if (s.coex && s.coex.length) {
+      o.coex = s.coex.map((c, k) => {
+        const h = societe("coex|" + (c.nom || s.id + k), sect);
+        return { ...h, nomencl: o.nomencl, ...(c.adh ? { adh: true } : {}) };
+      });
+    }
+    return o;
+  });
+
+  /* Les zones gardent leur nom — « Agora », « Pitch », « Club business » ne
+     nomment personne. Leurs fiches non : un restaurant qui s'y présentait
+     sous son enseigne, un « test » oublié. */
+  const FICHES_ZONES = {
+    restauration: "<p>Restauration rapide et boissons, de 9 h à 18 h chaque jour du salon.</p>",
+    accueil: "<p>Badges, plan papier et informations pratiques.</p>",
+  };
+  const zones = (p) => p.zones.map((z) => {
+    const o = { ...z };
+    delete o.lien; delete o.logo;
+    if (o.description) o.description = FICHES_ZONES[o.type] || "";
+    if (!o.description) delete o.description;
+    return o;
+  });
+
+  /* L'apparence de l'exploitant, débarrassée de ce qui nommait quelqu'un ou
+     ne désigne plus rien : les calques Klipso, dont la démonstration n'a pas
+     le dessin. */
+  const ID_PLAN = (p) => "d" + empreinte("plan|" + p.id, 7) + "-0000-5000-a000-" + empreinte("plan2|" + p.id, 12);
+  const CLE_NUMEROS = "Numérotation des stands";
+  function apparence(p, idPlan, parId) {
+    const a = clone(p.apparence || { pile: [], reglages: {} });
+    const klipso = new Set(p.fond.map((c) => c.cle));
+    const reglages = {};
+    for (const [k, v] of Object.entries(a.reglages || {})) {
+      const tete = k.split("/")[0];
+      if (klipso.has(tete)) continue;
+      if (k.startsWith("_calage:")) { reglages["_calage:" + idPlan] = v; continue; }
+      if (k.startsWith("secteur:")) { reglages["secteur:" + nomSecteur(k.slice(8))] = v; continue; }
+      if (k.startsWith("_lab:") && v && typeof v.e === "string") {
+        // un libellé posé à la main recopie le nom de ce qu'il désigne
+        const cible = parId.get(k.slice(5));
+        reglages[k] = { ...v, e: v.e.replace(/^[^|]*/, () => (cible && cible.nom) || "") };
+        continue;
+      }
+      reglages[k] = v;
+    }
+    if (reglages._sponsor) {
+      reglages._sponsor = { ...reglages._sponsor, nom: "Banque Démo",
+        lien: "www.banque-demo.example", logo: "" };
+    }
+    if (reglages._adherent) reglages._adherent = { ...reglages._adherent, texte: "Membre du réseau" };
+    if (reglages._suggestion) {
+      const renomme = (t) => Object.fromEntries(Object.entries(t || {}).map(([k, v]) => [nomSecteur(k), v]));
+      reglages._suggestion = { ...reglages._suggestion,
+        auto: renomme(reglages._suggestion.auto), fixes: renomme(reglages._suggestion.fixes) };
+    }
+    reglages[CLE_NUMEROS] = { visible: false };
+    reglages._ambiance = { ...(reglages._ambiance || {}), logos: true };
+    // la pile : les calques Klipso cèdent leur place à la numérotation
+    const pile = [];
+    for (const e of a.pile || []) {
+      if (e.startsWith("fond:")) { if (!pile.includes("fond:" + CLE_NUMEROS)) pile.push("fond:" + CLE_NUMEROS); continue; }
+      if (e.startsWith("dessin:") && !p.dessins.some((d) => "dessin:" + d.id === e && !RETIRES.has(d.nom))) continue;
+      pile.push(e);
+    }
+    return { pile, reglages };
+  }
+
+  /* Les dessins : on les garde, sauf l'essai qu'on avait oublié, et le calque
+     qui nommait une enseigne réelle prend un nom générique. */
+  const RETIRES = new Set(["test secteur"]);
+  const dessins = (p) => (p.dessins || []).filter((d) => !RETIRES.has(d.nom)).map((d) => ({
+    ...d, nom: /^Coex /.test(d.nom) ? "Stands partagés" : d.nom,
+  }));
+
+  /* La numérotation des stands, comme le calque que Klipso en fait : un fond
+     à montrer ou à cacher, et la base veut au moins un calque par pavillon. */
+  const numeros = (st) => '<g id="numeros" data-s="rgb(0,0,0)" data-f="none">' + st.map((s) =>
+    '<text x="' + s.c[0] + '" y="' + s.c[1] + '" font-size="0.6" text-anchor="middle">' +
+      s.code.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</text>").join("") + "</g>";
+
+  const plans = src.plans.map((p) => {
+    const idPlan = ID_PLAN(p);
+    const st = stands(p);
+    const zs = zones(p);
+    const parId = new Map([...st, ...zs].map((x) => [x.id, x]));
+    return {
+      id: idPlan, libelle: "Plan du salon", hall: null,
+      emprise: p.emprise, calage: p.calage || null,
+      fond: [{ id: empreinte("calque|" + idPlan, 8), cle: CLE_NUMEROS, nom: CLE_NUMEROS, ordre: 1,
+        visible: false, svg: numeros(st) }],
+      stands: st, zones: zs, ...(p.zonesCachees ? { zonesCachees: p.zonesCachees } : {}),
+      conferences: [], apparence: apparence(p, idPlan, parId), dessins: dessins(p),
+    };
+  });
+
+  /* Le programme. */
+  const h = (plans[0] && plans[0].apparence.reglages._horaires) || {};
+  const jours = Object.keys(h.jours || {}).sort();
+  const JOURS = (jours.length ? jours : ["20270313", "20270314", "20270315"]).map((j) => ({
+    iso: j.slice(0, 4) + "-" + j.slice(4, 6) + "-" + j.slice(6, 8),
+    local: j.slice(4, 6) + "/" + j.slice(6, 8) + "/" + j.slice(0, 4),
+    fin: ((h.jours || {})[j] || {}).fermeture || "18:00",
+  }));
+  // heure d'hiver à Paris, et le salon se tient en mars
+  const instant = (iso, hm) => iso + "T" + hm + ":00+01:00";
+  const plus = (hm, min) => {
+    const t = +hm.slice(0, 2) * 60 + +hm.slice(3) + min;
+    return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+  };
+  let n = 0;
+  const dits = new Set();
+  plans.forEach((p) => {
+    const occupes = p.stands;
+    const experts = occupes.filter((s) => s.sect === nomSecteur("Experts FFF"));
+    const medias = occupes.filter((s) => s.sect === "Médias");
+    const salles = p.zones.filter((z) => z.nom && (z.type === "conferences" ||
+      /^(Plateau TV|Place des experts)$/.test(z.nom)));
+    salles.forEach((z) => {
+      const r = hasard("salle|" + z.id);
+      const pitch = /^Pitch/.test(z.nom);
+      const ordre = [...SUJETS].sort(() => r() - 0.5);
+      JOURS.forEach((j) => CRENEAUX.forEach((de) => {
+        if (de >= j.fin || r() < (pitch ? 0.3 : 0.45)) return;
+        n++;
+        const duree = pitch ? 20 : 45;
+        const hote = pioche(r, pitch ? occupes : (experts.length && r() < 0.4 ? experts : occupes));
+        let titre;
+        if (pitch) titre = hote.nom + " : le concept en vingt minutes";
+        else {
+          titre = ordre.find((t) => !dits.has(t)) || pioche(r, ordre);
+          dits.add(titre);
+        }
+        const [type, couleur] = pitch ? ["Pitch", "#e11d48"] : pioche(r, TYPES);
+        const personne = (societe) => ({ nom: pioche(r, PRENOMS) + " " + pioche(r, NOMS_FAMILLE), societe });
+        const intervenants = [personne(hote.nom)];
+        if (!pitch && type === "Table ronde") intervenants.push(personne(pioche(r, occupes).nom), personne(pioche(r, occupes).nom));
+        const animateurs = !pitch && medias.length && r() < 0.5 ? [personne(pioche(r, medias).nom)] : [];
+        p.conferences.push({
+          id: "demo-conf-" + n, nom: titre,
+          texte: pitch ? "Le dirigeant de " + hote.nom + " présente son concept, son modèle économique " +
+            "et le profil des candidats recherchés." : TEXTE_CONF,
+          debut: instant(j.iso, de), fin: instant(j.iso, plus(de, duree)),
+          debutLocal: j.local + " " + de, finLocal: j.local + " " + plus(de, duree),
+          salle: z.nom, type, couleur, theme: hote.sect, zone: z.id,
+          exposants: [{ stand: hote.id, nom: hote.nom }],
+          intervenants, ...(animateurs.length ? { animateurs } : {}),
+        });
+      }));
+    });
+  });
+
+  /* La fiche : celle de la source, sans le champ créé pour essayer. */
+  const fiche = clone(src.fiche || {});
+  if (fiche.perso) fiche.perso = fiche.perso.filter((c) => c.cle !== "test");
+  if (fiche.ordre) fiche.ordre = fiche.ordre.filter((c) => c !== "perso:test");
+
+  /* L'anglais des listes : ce que la démonstration montre encore, et le nom
+     neuf des secteurs renommés. */
+  const montre = new Set();
+  plans.forEach((p) => p.stands.forEach((s) => {
+    [s.sect, ...(s.nomencl || []), ...Object.values(s.perso || {})].forEach((v) => montre.add(v));
+  }));
+  const anglais = Object.fromEntries(Object.entries(src.anglais || {}).filter(([k]) => montre.has(k)));
+  for (const def of Object.values(SECTEURS)) if (def.nom && def.en) anglais[def.nom] = def.en;
+
+  return {
+    evenement: "Salon Démo 2027", fuseau: src.fuseau || "Europe/Paris",
+    fiche, calage: src.calage || null, anglais,
+    nomsZones: {}, zonesMasquees: {}, zonesTraversables: src.zonesTraversables || {},
+    fichesZones: {}, salles: {},
+    vignettes, plans, sansLogo,
+  };
+}
 
 /** Les logos dessinés par `logos-demo.js`, par nom de société ; rien s'il
  *  n'a pas encore tourné. */
@@ -301,180 +456,41 @@ function lisLogos() {
   catch (e) { return {}; }
 }
 
+/** La source versionnée. */
+const lisSource = () => JSON.parse(fs.readFileSync(path.join(__dirname, "source-demo.json"), "utf8"));
+
 /**
- * Le salon de démonstration, tiré du plan figé.
- * @param {{ evenement: string, plans: any[] }} source  le contenu de `outils/plans.json`
+ * Les images des produits : une par offre de chaque secteur, en SVG — un
+ * aplat aux couleurs du secteur, une forme, le nom de l'offre. Posées dans
+ * `web/demo-produits/` par la construction.
+ * @returns {Record<string, string>} le nom de fichier, et son contenu
  */
-function salonDemo(source) {
-  /* Les libellés de la nomenclature : chaque code reçoit, dans l'ordre de sa
-     famille, le sous-thème suivant — une famille plus fournie que sa liste en
-     réemploie, ce qui ne fait que regrouper deux codes sous un libellé. */
-  const codes = [...new Set(source.plans.flatMap((p) => p.stands.flatMap((s) => s.nomencl || [])))].sort();
-  const libelle = new Map();
-  const rang = {};
-  const anglais = {};
-  for (const c of codes) {
-    const l = c.replace(/^[A-Z0-9]+_/, "")[0];
-    const f = FAMILLES[l] || FAMILLES.K;
-    const i = rang[l] = (rang[l] ?? -1) + 1;
-    const [fr, en] = f.sous[i % f.sous.length];
-    libelle.set(c, fr);
-    anglais[fr] = en;
+function imagesProduits() {
+  const sortie = {};
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  for (const [sect, def] of Object.entries(SECTEURS)) {
+    def.produits.forEach((nom, i) => {
+      const [c1, c2] = def.c;
+      const r = hasard("image|" + sect + "|" + i);
+      const forme = Math.floor(r() * 3);
+      const motif = forme === 0 ? '<circle cx="250" cy="150" r="90" fill="' + c2 + '" opacity=".9"/>'
+        : forme === 1 ? '<rect x="160" y="60" width="180" height="180" rx="36" fill="' + c2 + '" opacity=".9"/>'
+        : '<path d="M250 50 L350 240 L150 240 Z" fill="' + c2 + '" opacity=".9"/>';
+      // le nom sur deux lignes au plus, coupé au mot
+      const mots = nom.split(" ");
+      const lignes = nom.length > 22 ? [mots.slice(0, Math.ceil(mots.length / 2)).join(" "),
+        mots.slice(Math.ceil(mots.length / 2)).join(" ")] : [nom];
+      sortie[slug(nomSecteur(sect)) + "-" + i + ".svg"] =
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 375" width="500" height="375">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 +
+        '"/><stop offset="1" stop-color="' + c1 + '" stop-opacity=".75"/></linearGradient></defs>' +
+        '<rect width="500" height="375" fill="url(#g)"/>' + motif +
+        lignes.map((l, k) => '<text x="250" y="' + (300 + k * 34 - (lignes.length - 1) * 17) +
+          '" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="700" fill="#fff" ' +
+          'text-anchor="middle">' + esc(l) + "</text>").join("") + "</svg>\n";
+    });
   }
-  const familleDe = (s) => {
-    const c = (s.nomencl || [])[0];
-    return c ? FAMILLES[c.replace(/^[A-Z0-9]+_/, "")[0]] : null;
-  };
-
-  /* Un exposant réel → une société inventée. La clé est son nom réel : ses
-     stands gardent un seul nom, et l'empreinte ne se remonte pas. */
-  const pris = new Set();
-  const societes = new Map();
-  function societe(cle, famille) {
-    if (societes.has(cle)) return societes.get(cle);
-    const r = hasard("societe|" + cle);
-    let nom = "";
-    let asso = r() < 0.08;
-    for (let essai = 0; !nom || pris.has(nom.toLowerCase()); essai++) {
-      nom = asso
-        ? pioche(r, FORMES_ASSO) + " " + pioche(r, OBJETS_ASSO)
-        : enseigne(r, famille);
-      if (essai > 4) asso = false;
-    }
-    pris.add(nom.toLowerCase());
-    const [cp, ville, pays] = pioche(r, VILLES);
-    const s = {
-      nom,
-      plan: asso ? nom.toUpperCase() : nom.toUpperCase() + " " + pioche(r, FORMES),
-      site: "https://www." + slug(nom) + ".example",
-      adr: (1 + Math.floor(r() * 120)) + " " + pioche(r, VOIES),
-      cp, ville, pays,
-      ...(pays === "France" ? { tel: "01 99 00 " + deux(r) + " " + deux(r) } : {}),
-    };
-    societes.set(cle, s);
-    return s;
-  }
-
-  const familleStand = new Map();
-  const plans = source.plans.map((p, i) => {
-    const n = i + 1;
-    const ids = new Map();
-    const id = (ancien) => {
-      if (!ids.has(ancien)) ids.set(ancien, "p" + i + "-" + empreinte("id|" + ancien));
-      return ids.get(ancien);
-    };
-
-    const stands = p.stands.map((s) => {
-      const o = {
-        id: id(s.id), code: s.code, plan: null, nom: null, site: null, nomencl: null,
-        m2: s.m2, angles: s.angles, niveaux: s.niveaux, etat: s.etat, d: s.d, c: s.c, bb: s.bb,
-      };
-      if (!s.nom && !s.plan) return o;
-      const soc = societe(s.nom || s.plan, familleDe(s));
-      /* Un emplacement libre garde parfois la seule raison sociale d'un
-         ancien dossier : il la garde, inventée, et rien de plus. */
-      if (!s.nom) return { ...o, plan: soc.plan };
-      Object.assign(o, soc);
-      if (familleDe(s)) familleStand.set(o.id, familleDe(s).nom);
-      o.nomencl = s.nomencl ? [...new Set(s.nomencl.map((c) => libelle.get(c)))] : null;
-      /* Quelques grands stands hébergent : de quoi montrer la fiche partagée
-         et le choix entre enseignes. */
-      const r = hasard("coex|" + s.id);
-      if (s.m2 >= 36 && r() < 0.12) {
-        o.coex = Array.from({ length: 1 + Math.floor(r() * 3) }, (_, k) => {
-          const h = societe("coex|" + s.id + "|" + k, familleDe(s));
-          return { ...h, nomencl: o.nomencl };
-        });
-      }
-      return o;
-    });
-
-    let anonymes = 0;
-    const zones = p.zones.map((z) => {
-      const nom = z.nom == null ? null : (ZONES[z.nom] || ["Espace " + (++anonymes), "Area " + anonymes]);
-      return { id: id(z.id), nom: nom && nom[0], ...(nom ? { nom_en: nom[1] } : {}),
-        m2: z.m2, d: z.d, c: z.c, bb: z.bb };
-    });
-
-    const fond = p.fond.filter((f) => !CALQUES_RETIRES.has(f.cle)).map((f) => ({
-      ...f,
-      svg: f.svg.replace(/(<text[^>]*>)([^<]*)(<\/text>)/g,
-        (tout, a, t, b) => (t in TEXTES ? (TEXTES[t] ? a + TEXTES[t] + b : "") : tout)),
-    }));
-
-    return {
-      id: "demo-pavillon-" + n, libelle: p.libelle, hall: "DEMO_H" + n,
-      emprise: p.emprise, fond, stands, zones, conferences: [],
-    };
-  });
-
-  /* Le programme : chaque salle reçoit des créneaux sur deux jours, sur son
-     thème d'abord, et chaque séance est tenue par un exposant du même
-     pavillon et du même métier — la fiche de l'un mène à l'autre. Aucun
-     titre ne sert deux fois tant qu'il en reste. */
-  let numero = 0;
-  const dits = new Set();
-  const villesFr = VILLES.filter((v) => v[2] === "France").map((v) => v[1]);
-  plans.forEach((p) => {
-    const occupes = p.stands.filter((s) => s.nom);
-    p.zones.filter((z) => z.nom in SALLES).forEach((z) => {
-      const theme = SALLES[z.nom];
-      const r = hasard("salle|" + z.id);
-      const ordre = [...TOUS_SUJETS].sort(() => r() - 0.5)
-        .sort((x, y) => (y[1] === theme) - (x[1] === theme));
-      JOURS.forEach(([jour, iso]) => CRENEAUX.forEach(([de, a]) => {
-        if (r() < 0.25) return;   // un programme sans trou n'a pas l'air vrai
-        const [titre, sujet] = ordre.find((x) => !dits.has(x[0])) || pioche(r, ordre);
-        dits.add(titre);
-        numero++;
-        const [type, couleur] = pioche(r, TYPES);
-        const metier = occupes.filter((s) => familleStand.get(s.id) === sujet);
-        const hote = pioche(r, metier.length ? metier : occupes);
-        const gens = Array.from({ length: type === "Table ronde" ? 3 : 1 + Math.floor(r() * 2) }, (_, k) => {
-          const ville = pioche(r, villesFr);
-          return {
-            nom: pioche(r, PRENOMS) + " " + pioche(r, NOMS_FAMILLE),
-            societe: k === 0 ? hote.nom : "Ville " + (/^Le /.test(ville) ? ville.replace(/^Le /, "du ")
-              : /^[AEIOUÉÈ]/.test(ville) ? "d'" + ville : "de " + ville),
-          };
-        });
-        p.conferences.push({
-          id: "demo-conf-" + numero, nom: titre,
-          texte: "Élus, agents et entreprises partagent ce qui a marché, ce qui a coincé, " +
-            "et ce qu'ils referaient autrement. Questions de la salle en fin de séance.",
-          debut: iso + "T" + de + ":00+01:00", fin: iso + "T" + a + ":00+01:00",
-          debutLocal: jour + " " + de, finLocal: jour + " " + a,
-          salle: z.nom, type, couleur, theme: sujet, zone: z.id,
-          exposants: [{ stand: hote.id, nom: hote.nom }],
-          intervenants: gens,
-        });
-      }));
-    });
-  });
-
-  /* Les logos, dessinés une fois pour toutes (`logos-demo.js`) et embarqués
-     comme le seraient des vignettes reçues par lot : la page n'a pas d'API à
-     qui les demander (`modules/vignettes.mjs` `vignettesLisibles`). Une
-     société qui n'en a pas — le fichier n'a pas suivi un changement de
-     noms — garde son nom seul ; l'essai le signale. */
-  const vignettes = {};
-  const logos = lisLogos();
-  const pose = (soc) => {
-    const b64 = soc && soc.nom && logos[soc.nom];
-    if (!b64) return;
-    const cle = empreinte("logo|" + soc.nom, 16);
-    soc.vignette = cle;
-    vignettes[cle] = "data:image/webp;base64," + b64;
-  };
-  plans.forEach((p) => p.stands.forEach((s) => { pose(s); (s.coex || []).forEach(pose); }));
-
-  /* Les réglages que l'exploitant aurait publiés : les logos sur le toit des
-     stands, ce qu'une démonstration doit montrer d'emblée. Recopiés dans
-     chaque pavillon, comme le fait la publication. */
-  const apparence = { reglages: { _ambiance: { cle: "classique", logos: true } } };
-  plans.forEach((p) => { p.apparence = apparence; });
-
-  return { evenement: "Salon Démo 2027", fuseau: "Europe/Paris", anglais, vignettes, plans };
+  return sortie;
 }
 
-module.exports = { salonDemo };
+module.exports = { salonDemo, lisSource, imagesProduits, DOSSIER_PRODUITS, ORIGINE };
