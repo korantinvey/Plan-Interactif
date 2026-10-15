@@ -44,9 +44,13 @@ const motEntier = (n) => new RegExp("(^|[^" + lettre + "])" +
   n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "($|[^" + lettre + "])");
 /* Un emplacement libre porte parfois, en guise de raison sociale, un mot de
    la nomenclature — « beauté » : ce vocabulaire n'identifie personne, et la
-   démonstration le reprend légitimement. */
-const vocabulaire = source.plans.flatMap((p) => p.stands.flatMap((s) => [s.sect, ...(s.nomencl || [])]))
-  .concat(Object.keys(source.anglais || {})).filter(Boolean).join(" | ").toLowerCase();
+   démonstration le reprend légitimement.
+   Les secteurs inventés en sont aussi, avec leur forme sans accents : celle
+   qui nomme les images de leurs produits (« mode-et-beaute »). */
+const sansAccents = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const termes = [source, demo].flatMap((d) => d.plans.flatMap((p) => p.stands.flatMap((s) => [s.sect, ...(s.nomencl || [])])))
+  .concat(Object.keys(source.anglais || {})).filter(Boolean);
+const vocabulaire = termes.concat(termes.map(sansAccents)).join(" | ").toLowerCase();
 const longs = [...reels].filter((n) => n.length >= 6 && !motEntier(n).test(vocabulaire));
 const fuites = longs.filter((n) => motEntier(n).test(bas));
 dit(!fuites.length, "aucun nom réel de six lettres ou plus, nulle part", fuites.slice(0, 5).join(" ; "));
