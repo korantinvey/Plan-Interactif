@@ -19,7 +19,8 @@
  *     (01 99 00 xx xx) ; ses réseaux sociaux ne sont pas inventés — un faux
  *     compte sur un vrai réseau pourrait être celui de quelqu'un ;
  *   - chacun présente un catalogue de produits, et les espaces de conférence
- *     portent un programme sur les jours d'ouverture du salon ;
+ *     portent un programme inventé — titres et intervenants — sur les deux
+ *     jours du salon, les 2 et 3 juin 2027 ;
  *   - ce que l'apparence et les zones citaient — sponsor, libellé posé à la
  *     main, fiche d'un restaurant, mention d'une fédération — est remplacé.
  *
@@ -189,36 +190,44 @@ const NOMS_FAMILLE = ["Martin", "Bernard", "Dubois", "Moreau", "Laurent", "Garni
   "Gauthier", "Roussel", "Henry", "Barbier", "Arnaud"];
 
 /* ---------- le programme ----------
-   Les jours sont ceux que l'exploitant a réglés (`_horaires`), à défaut trois
-   jours de mars. Les espaces « Pitch » présentent un exposant chacun ; les
-   autres puisent dans les sujets, sans répéter un titre tant qu'il en reste. */
-const CRENEAUX = ["10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"];
+   Le salon de démonstration se tient les 2 et 3 juin 2027 : ses dates
+   remplacent celles de la source, et le programme s'y pose. Rien n'y est
+   repris du programme réel — ni titre, ni intervenant : chaque titre est
+   composé d'un sujet et d'un angle tirés au hasard, chaque intervenant d'un
+   prénom, d'un nom et d'une société inventés. Les espaces « Pitch »
+   présentent un exposant chacun. */
+const HORAIRES = {
+  debut: "2027-06-02", fin: "2027-06-03",
+  jours: { "20270602": { ouverture: "09:00", fermeture: "18:30" },
+    "20270603": { ouverture: "09:00", fermeture: "18:00" } },
+};
+const CRENEAUX = ["09:30", "10:30", "11:30", "12:30", "14:00", "15:00", "16:00", "17:00"];
+const DUREES = [30, 45, 45, 60];
 const TYPES = [["Conférence", "#2563eb"], ["Table ronde", "#9333ea"], ["Atelier", "#059669"],
   ["Témoignage", "#d97706"]];
-const SUJETS = [
-  "Devenir franchisé : les dix questions à se poser", "Financer son entrée en franchise",
-  "Le document d'information précontractuelle décrypté", "Choisir son emplacement",
-  "Reconversion : de salarié à franchisé", "Franchise et multi-franchise",
-  "Les erreurs à éviter la première année", "Master franchise : se développer à l'international",
-  "Restauration rapide : les formats qui gagnent", "Le commerce de centre-ville a-t-il un avenir ?",
-  "Franchise et numérique : du clic au magasin", "Recruter et fidéliser ses équipes",
-  "Ouvrir à deux : la franchise en couple", "Les réseaux qui recrutent en 2027",
-  "Franchise et engagement environnemental", "Reprendre un point de vente existant",
-  "Les services à la personne en franchise", "Immobilier : devenir agent en réseau",
-  "Hôtellerie : la franchise pour les indépendants", "Beauté et bien-être : des concepts qui durent",
-  "Les aides à la création d'entreprise", "Négocier son bail commercial", "Le prêt d'honneur expliqué",
-  "Premier bilan : lire ses chiffres", "Animer son point de vente", "Petits budgets : par où commencer ?",
-  "Les jeunes réseaux à suivre", "La franchise en zone rurale", "Former ses franchisés",
-  "Commerce associé ou franchise ?", "Le droit de la franchise en 2027",
-  "Trois franchisés, trois parcours", "Choisir son réseau : la méthode", "Ouvrir en centre commercial",
-  "Ouvrir en gare et en aéroport", "Se lancer après cinquante ans", "Entreprendre au féminin en franchise",
-  "Le contrat de franchise, clause par clause", "L'apport personnel : combien faut-il ?",
-  "Bien préparer sa visite du salon", "Développer un réseau de franchise", "Franchise et licence de marque",
-  "Les chiffres clés de la franchise", "Réussir son ouverture : les cent premiers jours",
-  "Le rôle de l'animateur de réseau", "Franchise et intelligence artificielle",
+const SUJETS = ["Le financement de départ", "L'apport personnel", "Le choix de l'emplacement",
+  "La reconversion professionnelle", "Le contrat de réseau", "Le premier bilan", "Le recrutement",
+  "La fidélisation des équipes", "Le point de vente connecté", "Le développement à l'étranger",
+  "Le commerce de proximité", "La formation des nouveaux venus", "La reprise d'un commerce",
+  "L'ouverture en centre commercial", "Le bail commercial", "La relation avec la tête de réseau",
+  "L'entrepreneuriat à deux", "La transition écologique du magasin", "La gestion de trésorerie",
+  "Le marketing local", "L'ouverture d'un second point de vente", "Les aides à la création",
+  "Le prêt bancaire", "La création en zone rurale", "Les concepts de petite surface",
+  "L'animation commerciale", "La sortie du réseau", "Les données clients"];
+const ANGLES = ["mode d'emploi", "les pièges à éviter", "cinq questions à se poser",
+  "retours d'expérience", "idées reçues et réalités", "par où commencer ?", "la méthode pas à pas",
+  "regards croisés", "ce qui change en 2027", "les bons réflexes", "ce que les chiffres disent",
+  "témoignages de terrain", "comment s'y préparer"];
+const TEXTES = [
+  "Des entrepreneurs et des experts partagent ce qui a marché, ce qui a coincé, et ce " +
+    "qu'ils referaient autrement. Questions de la salle en fin de séance.",
+  "Une heure pour faire le tour du sujet, exemples chiffrés à l'appui, et repartir avec " +
+    "une liste des points à vérifier.",
+  "Un échange concret entre porteurs de projet et professionnels du secteur, suivi d'un " +
+    "temps de questions.",
+  "Les intervenants reviennent sur leur parcours et détaillent les étapes, les délais et " +
+    "les coûts qu'ils n'avaient pas anticipés.",
 ];
-const TEXTE_CONF = "Franchiseurs, franchisés et experts partagent ce qui a marché, ce qui a " +
-  "coincé, et ce qu'ils referaient autrement. Questions de la salle en fin de séance.";
 
 /** Une enseigne inventée, dans le vocabulaire de son secteur. */
 function enseigne(r, mots) {
@@ -418,23 +427,43 @@ function salonDemo(source, o) {
     };
   });
 
-  /* Le programme. */
-  const h = (plans[0] && plans[0].apparence.reglages._horaires) || {};
-  const jours = Object.keys(h.jours || {}).sort();
-  const JOURS = (jours.length ? jours : ["20270313", "20270314", "20270315"]).map((j) => ({
+  /* Le programme, sur les jours de `HORAIRES`. L'heure se dit dans le fuseau
+     du salon, à l'heure d'été comme d'hiver. */
+  const fuseau = src.fuseau || "Europe/Paris";
+  const JOURS = Object.keys(HORAIRES.jours).sort().map((j) => ({
     iso: j.slice(0, 4) + "-" + j.slice(4, 6) + "-" + j.slice(6, 8),
     local: j.slice(4, 6) + "/" + j.slice(6, 8) + "/" + j.slice(0, 4),
-    fin: ((h.jours || {})[j] || {}).fermeture || "18:00",
+    fin: HORAIRES.jours[j].fermeture,
   }));
-  // heure d'hiver à Paris, et le salon se tient en mars
-  const instant = (iso, hm) => iso + "T" + hm + ":00+01:00";
+  const decalage = (iso) => {
+    const nom = new Intl.DateTimeFormat("en-US", { timeZone: fuseau, timeZoneName: "longOffset" })
+      .formatToParts(new Date(iso + "T12:00:00Z")).find((x) => x.type === "timeZoneName").value;
+    return nom.replace("GMT", "") || "+00:00";
+  };
+  const instant = (iso, hm) => iso + "T" + hm + ":00" + decalage(iso);
   const plus = (hm, min) => {
     const t = +hm.slice(0, 2) * 60 + +hm.slice(3) + min;
     return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
   };
+  /* Des conférenciers inventés : un nom tiré une fois pour toutes par
+     personne, pour qu'un même expert revienne sous le même nom d'une séance
+     à l'autre, et quelques cabinets qui n'exposent pas. */
+  const rp = hasard("conferenciers");
+  const CABINETS = Array.from({ length: 8 }, () => pioche(rp, ["Cabinet ", "Atelier ", "Groupe ", ""]) +
+    enseigne(rp, ["Conseil", "Avocats", "Expertise", "Partenaires"]));
+  const gens = new Map();
+  const personne = (r, societe) => {
+    if (!gens.has(societe)) gens.set(societe, []);
+    const deja = gens.get(societe);
+    if (deja.length && r() < 0.6) return { nom: pioche(r, deja), societe };
+    const nom = pioche(r, PRENOMS) + " " + pioche(r, NOMS_FAMILLE);
+    deja.push(nom);
+    return { nom, societe };
+  };
   let n = 0;
   const dits = new Set();
   plans.forEach((p) => {
+    p.apparence.reglages._horaires = clone(HORAIRES);
     const occupes = p.stands;
     const experts = occupes.filter((s) => s.sect === SECTEUR_EXPERTS);
     const salles = p.zones.filter((z) => z.nom && (z.type === "conferences" ||
@@ -442,34 +471,47 @@ function salonDemo(source, o) {
     salles.forEach((z) => {
       const r = hasard("salle|" + z.id);
       const pitch = /^Pitch/.test(z.nom);
-      const ordre = [...SUJETS].sort(() => r() - 0.5);
-      JOURS.forEach((j) => CRENEAUX.forEach((de) => {
-        if (de >= j.fin || r() < (pitch ? 0.3 : 0.45)) return;
-        n++;
-        const duree = pitch ? 20 : 45;
-        const hote = pioche(r, pitch ? occupes : (experts.length && r() < 0.4 ? experts : occupes));
-        let titre;
-        if (pitch) titre = hote.nom + " : le concept en vingt minutes";
-        else {
-          titre = ordre.find((t) => !dits.has(t)) || pioche(r, ordre);
+      JOURS.forEach((j) => {
+        let libre = "00:00";
+        CRENEAUX.forEach((de) => {
+          if (de < libre || de >= j.fin || r() < (pitch ? 0.25 : 0.35)) return;
+          const duree = pitch ? 20 : pioche(r, DUREES);
+          const fin = plus(de, duree);
+          if (fin > j.fin) return;
+          libre = fin;
+          n++;
+          const hote = pioche(r, pitch ? occupes : (experts.length && r() < 0.4 ? experts : occupes));
+          let titre;
+          if (pitch) titre = hote.nom + " : " + pioche(r, ["le concept en vingt minutes",
+            "un réseau qui recrute", "rencontre avec le fondateur", "le modèle en chiffres"]);
+          else {
+            const sujet = r() < 0.2 ? hote.sect : pioche(r, SUJETS);
+            titre = sujet + " : " + pioche(r, ANGLES);
+            for (let essai = 0; dits.has(titre) && essai < 20; essai++)
+              titre = pioche(r, SUJETS) + " : " + pioche(r, ANGLES);
+          }
           dits.add(titre);
-        }
-        const [type, couleur] = pitch ? ["Pitch", "#e11d48"] : pioche(r, TYPES);
-        const personne = (societe) => ({ nom: pioche(r, PRENOMS) + " " + pioche(r, NOMS_FAMILLE), societe });
-        const intervenants = [personne(hote.nom)];
-        if (!pitch && type === "Table ronde") intervenants.push(personne(pioche(r, occupes).nom), personne(pioche(r, occupes).nom));
-        const animateurs = !pitch && experts.length && r() < 0.5 ? [personne(pioche(r, experts).nom)] : [];
-        p.conferences.push({
-          id: "demo-conf-" + n, nom: titre,
-          texte: pitch ? "Le dirigeant de " + hote.nom + " présente son concept, son modèle économique " +
-            "et le profil des candidats recherchés." : TEXTE_CONF,
-          debut: instant(j.iso, de), fin: instant(j.iso, plus(de, duree)),
-          debutLocal: j.local + " " + de, finLocal: j.local + " " + plus(de, duree),
-          salle: z.nom, type, couleur, theme: hote.sect, zone: z.id,
-          exposants: [{ stand: hote.id, nom: hote.nom }],
-          intervenants, ...(animateurs.length ? { animateurs } : {}),
+          const [type, couleur] = pitch ? ["Pitch", "#e11d48"] : pioche(r, TYPES);
+          const exterieur = () => pioche(r, CABINETS);
+          const intervenants = [personne(r, hote.nom)];
+          if (!pitch && type === "Table ronde") {
+            intervenants.push(personne(r, pioche(r, occupes).nom),
+              personne(r, r() < 0.5 ? exterieur() : pioche(r, occupes).nom));
+          } else if (!pitch && r() < 0.3) intervenants.push(personne(r, exterieur()));
+          const animateurs = !pitch && r() < 0.5
+            ? [personne(r, experts.length && r() < 0.6 ? pioche(r, experts).nom : exterieur())] : [];
+          p.conferences.push({
+            id: "demo-conf-" + n, nom: titre,
+            texte: pitch ? "Le dirigeant de " + hote.nom + " présente son concept, son modèle " +
+              "économique et le profil des candidats recherchés." : pioche(r, TEXTES),
+            debut: instant(j.iso, de), fin: instant(j.iso, fin),
+            debutLocal: j.local + " " + de, finLocal: j.local + " " + fin,
+            salle: z.nom, type, couleur, theme: hote.sect, zone: z.id,
+            exposants: [{ stand: hote.id, nom: hote.nom }],
+            intervenants, ...(animateurs.length ? { animateurs } : {}),
+          });
         });
-      }));
+      });
     });
   });
 
