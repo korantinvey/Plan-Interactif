@@ -42,7 +42,6 @@ import { montre, LIBELLE_CORPS, ordreCorps, champCorps, corpsRange, pictoRS } fr
 import { PREFIXE_PERSO, liste, marqueChoisie, filtreTheme, themeFiltrable } from "./recherche.mjs";
 import { adresseVignette } from "./vignettes.mjs";
 import { libelles, coexChoisit } from "./libelles.mjs";
-import { typeZone } from "./reperes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { baisseTiroir } from "./tiroirs.mjs";
@@ -847,12 +846,9 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
   fermeLesAutresTiroirs("fiche");
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
-  /* « Zone organisateur » n'apprenait rien : la forme et la couleur le disent.
-     Le type, lui, apprend quelque chose — c'est même tout ce qu'une zone dit
-     de sa fonction, et ce qui la fait répondre au cartouche. */
-  const genre = zone ? typeZone(o) : null;
-  $("dKind").textContent = zone ? (genre ? genre.nom : "") : "Stand";
-  $("dKind").hidden = zone && !genre;
+  /* Pas de surtitre « Stand », « Restauration » : le nom, le numéro et le
+     contenu de la fiche disent déjà ce qu'on regarde, et la ligne qu'il
+     occupait repoussait d'autant ce qu'on est venu lire. */
   const titre = (zone ? nomDeLaZone(o) : soc.nom) || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
