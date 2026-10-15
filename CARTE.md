@@ -126,7 +126,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1713 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1720 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 187 l. → demo.html, plan-smcl.html
 
