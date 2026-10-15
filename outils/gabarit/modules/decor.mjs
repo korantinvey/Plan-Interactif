@@ -24,7 +24,7 @@
 
 /** Les types que le décor sait meubler. Une zone d'un autre type, ou sans
  *  type, reste un bloc. */
-export const TYPES_MEUBLES = ["restauration", "conferences", "accueil", "vestiaire"];
+export const TYPES_MEUBLES = ["restauration", "conferences", "accueil", "vestiaire", "lounge"];
 
 /* Au-delà, on cesse de poser : une zone immense — un hall d'exposition
    déclaré « restauration » par erreur — ne doit pas coûter dix mille pièces
@@ -36,6 +36,7 @@ const PIECES_MAX = 600;
  * @property {number[][]} polygon   le contour au sol, en mètres
  * @property {number} haut          la hauteur, en mètres
  * @property {string} role          plateau, assise, scene, ecran, comptoir, plante, portant,
+ *                                  canape, tapis,
  *                                  et sur un comptoir choisi : comptoir-choisi, tige, poignee
  */
 
@@ -294,6 +295,34 @@ export function meuble(type, anneau, reglage = null, enMain = false){
     // des portants parallèles, un mètre quarante entre deux
     const demi = Math.max(.5, l / 2 - .9);
     for (let a = R.s0 + 1; a <= R.s1 - 1; a += 1.4) pose(a, (R.t0 + R.t1) / 2, .18, demi, 1.6, "portant", .1);
+  } else if (type === "lounge"){
+    /* Des salons : sur un tapis, une table basse entre deux canapés qui se
+       font face, un fauteuil à chaque bout, et une plante dans un coin. C'est
+       ce qui distingue d'un regard le lounge du restaurant, dont les tables
+       hautes s'alignent sans tapis. Un salon n'est posé que si son tapis
+       tient entier : à moitié dans le mur, il ne dirait plus qu'on s'y
+       installe. */
+    const pasA = 5.6, pasB = 4.2;
+    let n = 0;
+    for (let a = R.s0 + pasA / 2; a <= R.s1 - pasA / 2 + 1e-6; a += pasA)
+      for (let b = R.t0 + pasB / 2; b <= R.t1 - pasB / 2 + 1e-6; b += pasB){
+        if (!tient(a, b, 2, 1.5, 0)) continue;
+        // le tapis d'abord : à plat, ce qui est posé après se peint par-dessus
+        pose(a, b, 2, 1.5, .03, "tapis", 0);
+        pose(a, b, .6, .35, .4, "plateau", 0);
+        for (const j of [-1, 1]) pose(a, b + j * 1.1, 1, .4, .75, "canape", 0);
+        for (const i of [-1, 1]) pose(a + i * 1.55, b, .4, .4, .75, "canape", 0);
+        // la plante change de coin d'un salon à l'autre, pour ne pas faire rangée
+        const i = n % 2 ? 1 : -1, px = a + i * 2.4, py = b - 1.75;
+        n++;
+        if (pieces.length >= PIECES_MAX || !tient(px, py, .32, .32, 0)) continue;
+        const rond = [];
+        for (let k = 0; k < 8; k++){
+          const t = (k + .5) * Math.PI / 4;
+          rond.push(R.plan(px + .32 * Math.cos(t), py + .32 * Math.sin(t)));
+        }
+        pieces.push({ polygon: rond, haut: 1.3, role: "plante" });
+      }
   }
   return pieces;
 }

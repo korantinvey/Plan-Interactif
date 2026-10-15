@@ -51,6 +51,8 @@ const rect = (x, y, w, h, deg = 0) => {
   dit(["scene", "ecran", "assise"].every(r => roles("conferences").has(r)), "une salle : une scène, un écran, des sièges");
   dit(roles("accueil").has("comptoir"), "un accueil : un comptoir");
   dit(roles("vestiaire").has("portant"), "un vestiaire : des portants");
+  dit(["tapis", "plateau", "canape", "plante"].every(r => roles("lounge").has(r)),
+    "un lounge : des tapis, des tables basses, des canapés, des plantes");
   dit(!meuble("transport", rect(0, 0, 22, 14)).length && !meuble("", rect(0, 0, 22, 14)).length,
     "une zone sans type meublable reste vide");
   dit(!meuble("restauration", rect(0, 0, 1.5, 1.5)).length, "une zone trop petite ne reçoit rien");
