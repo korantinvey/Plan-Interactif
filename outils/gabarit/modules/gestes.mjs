@@ -29,7 +29,7 @@ import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
-import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui } from "./webgl.mjs";
+import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui, viseEnAvance } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
   redresse, retiensVue } from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
@@ -315,7 +315,13 @@ export function brancheGestes(){
     if (admin.appui(e)) return;
     // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
     const ecran = [e.clientX, e.clientY], touche = e.target;
-    const vise = () => GL.actif ? cibleWebgl(ecran[0], ecran[1])
+    const tactile = e.pointerType === "touch" || e.pointerType === "pen";
+    /* Au doigt, la carte graphique est interrogée dès l'appui, sans
+       l'attendre : le relâché trouve la réponse prête (`viseEnAvance`). Un
+       stand redessiné entre-temps hors de la page ne compte plus. */
+    const avance = tactile ? viseEnAvance(ecran[0], ecran[1]) : null;
+    const vise = () => avance && avance.fini && (!avance.el || avance.el.isConnected) ? avance.el
+      : GL.actif ? cibleWebgl(ecran[0], ecran[1])
       : touche instanceof Element ? touche.closest("[data-id],[data-poi]") : null;
     /* Au doigt, ce qu'on touche ne se cherche que si l'on choisit. Le chercher
        demande une image à la carte graphique — vingt à cinquante
@@ -323,19 +329,23 @@ export function brancheGestes(){
        qui montait sortait de la couche des volumes, que la bibliothèque
        recomptait en entier, puis y rentrait au premier glissement : chaque
        geste commençait par là (`?perf`, le 13 octobre 2026). Le doigt qui
-       glisse ne paie donc rien ; celui qui reste posé voit le stand monter un
-       instant plus tard, et le relâché désigne comme avant. La souris garde
+       glisse ne paie donc que la question posée sans l'attendre ; celui qui
+       reste posé voit le stand monter un instant plus tard, et le relâché
+       désigne comme avant. La souris garde
        sa montée immédiate : elle ne glisse que bouton tenu, et rarement. */
-    const tactile = e.pointerType === "touch" || e.pointerType === "pen";
     const d = drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false, glisse: false,
              /** @type {any} */ cible: tactile ? undefined : vise(), vise, montee: 0 };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
     // le stand appuyé commence à monter, sans attendre que le relâché le choisisse
     if (!tactile) monteALAppui(d.cible);
     else d.montee = setTimeout(() => {
-      if (drag !== d || d.glisse || d.bouge) return;
-      d.cible = vise();
-      monteALAppui(d.cible);
+      const monte = () => {
+        if (drag !== d || d.glisse || d.bouge) return;
+        d.cible = vise();
+        monteALAppui(d.cible);
+      };
+      // la réponse en route : le stand monte à son retour plutôt que de la redemander
+      if (avance && !avance.fini) avance.promesse.then(monte); else monte();
     }, APPUI_TENU);
   });
   svg.addEventListener("pointermove", e => {

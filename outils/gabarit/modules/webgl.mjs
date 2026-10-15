@@ -3058,6 +3058,24 @@ async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y
   const r = cadrePlan();
   return lisObjet(await GL.deck.pickObjectAsync({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
 }
+/**
+ * Ce que le doigt touche, demandé dès qu'il se pose, la réponse relue sans
+ * attendre la carte graphique. Demandé au relâché, l'appui figeait la page
+ * le temps qu'elle finisse l'image en cours : quinze à cinquante
+ * millisecondes par appui sur un téléphone (`?perf`, FEP27, 15 octobre
+ * 2026). Le relâché vient un dixième de seconde plus tard ou davantage ; la
+ * réponse l'attend. Rien sans relecture différée : le relâché demande alors
+ * comme avant.
+ * @returns {{ fini: boolean, el: Element | null, promesse: Promise<Element | null | undefined> } | null}
+ */
+export function viseEnAvance(/** @type {number} */ x, /** @type {number} */ y){
+  if (!GL.actif || !lectureDifferee()) return null;
+  /** @type {{ fini: boolean, el: Element | null, promesse: Promise<Element | null | undefined> }} */
+  const a = { fini: false, el: null, promesse: Promise.resolve(undefined) };
+  a.promesse = objetSousDiffere(x, y, 0).then(o => { a.el = o ? o.el : null; a.fini = true; return a.el; },
+    () => { _lectureDifferee = false; return undefined; });
+  return a;
+}
 function lisObjet(/** @type {any} */ o){
   if (!o) return null;
   const d = o.object || {}, p = (o.layer && o.layer.props) || {};

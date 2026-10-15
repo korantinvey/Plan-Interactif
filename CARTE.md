@@ -1366,7 +1366,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 543 l. → plan, plan-admin
+### `modules/gestes.mjs` — 553 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.73 · 8. Interactions du plan
@@ -1375,7 +1375,7 @@ Fonctions :
 
 `poseGestesAdmin` 71 · `milieu` 103 · `commencePince` 109 · `suitPince` 123
 `plieLesBandes` 184 · `saisitPlan` 198 · `cibleElargie` 235 · `planifieFiltre` 278
-`brancheGestes` 292 · `brancheLangue` 526
+`brancheGestes` 292 · `brancheLangue` 536
 
 Importe :
 
@@ -3160,7 +3160,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3095 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3113 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3201,8 +3201,9 @@ Fonctions :
 `lueurDe` 2856 · `opacitePhare` 2894 · `echellePhare` 2895 · `couchesPhareNoms` 2898
 `palierDefile` 2923 · `periodeDe` 2928 · `phaseDe` 2930 · `instant` 2940
 `animeCouche` 2941 · `majAnimationWebgl` 2968 · `animeWebgl` 2976 · `reanime` 3013
-`logosSurLesToits` 3022 · `objetSous` 3052 · `objetSousDiffere` 3057 · `lisObjet` 3061
-`cibleWebgl` 3066 · `priseWebgl` 3076 · `libelleSousWebgl` 3081 · `rectEcranWebgl` 3086
+`logosSurLesToits` 3022 · `objetSous` 3052 · `objetSousDiffere` 3057 · `viseEnAvance` 3071
+`lisObjet` 3079 · `cibleWebgl` 3084 · `priseWebgl` 3094 · `libelleSousWebgl` 3099
+`rectEcranWebgl` 3104
 
 Importe :
 
