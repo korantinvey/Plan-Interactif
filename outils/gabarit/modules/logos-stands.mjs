@@ -735,7 +735,12 @@ let poseN = 0, minuterieOubli = 0;
  *  pas, on n'en connaît que ce qu'on lui a demandé. */
 export const COMPTES_LOGOS = { textures: 0, agrandissements: 0, rangements: 0, envois: 0, octetsEnvoyes: 0, cedees: 0,
   niveauxReduits: 0, recours: 0, octetsTexture: 0, poses: 0, enAttente: 0,
-  vignettesRecues: 0, renvois: 0, rechargements: 0, recopiees: 0, oubliees: 0 };
+  vignettesRecues: 0, renvois: 0, rechargements: 0, recopiees: 0, oubliees: 0,
+  /* Le temps que la pose prend au fil principal, en millisecondes : en tout,
+     au pire, combien dépassent une image, et ce qu'y prennent la planche et
+     ses niveaux réduits. Le relevé montrait le peintre à 30 à 100 ms en
+     plein geste sans dire si les logos y étaient pour quelque chose. */
+  msPoses: 0, msPoseMax: 0, posesLentes: 0, msPlanche: 0, msNiveaux: 0 };
 /* Les logos affichés, et ceux déjà envoyés une fois, par vignette : ce qui
    rapporte les comptes au parcours. Deux visites ne font pas les mêmes
    gestes ; envoyer chaque logo une fois, et rien de plus, se compare. */
@@ -759,7 +764,9 @@ export function bilanLogos(){
     envoisParLogo: n ? Math.round(c.envois / n * 100) / 100 : 0,
     partRenvois: c.envois ? Math.round(c.renvois / c.envois * 1000) / 10 : 0,
     partRechargements: c.envois ? Math.round(c.rechargements / c.envois * 1000) / 10 : 0,
-    koParEnvoi: c.envois ? Math.round(c.octetsEnvoyes / c.envois / 1024) : 0 };
+    koParEnvoi: c.envois ? Math.round(c.octetsEnvoyes / c.envois / 1024) : 0,
+    msPoses: Math.round(c.msPoses), msPoseMax: Math.round(c.msPoseMax),
+    msPlanche: Math.round(c.msPlanche), msNiveaux: Math.round(c.msNiveaux) };
 }
 
 /* Combien de toiles la plus grande planche n'a pas su tenir : tant que la vue
@@ -991,7 +998,11 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
     else toilesEnvoyees.add(cle);
     envoye = true;
   }
-  if (envoye){ pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++; }
+  if (envoye){
+    const t0 = performance.now();
+    pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++;
+    COMPTES_LOGOS.msNiveaux += performance.now() - t0;
+  }
   return true;
 }
 
@@ -1178,6 +1189,19 @@ function matriceDuToit(large, prof, angle, tasse){
           0, 0, 0, 1];
 }
 
+/** La couche des logos, et le temps qu'elle a pris au fil principal,
+ *  compté pour le relevé (`COMPTES_LOGOS`).
+ *  @param {Parameters<typeof poseLogos>} a */
+export function couchesLogos(...a){
+  const t0 = performance.now();
+  try { return poseLogos(...a); }
+  finally {
+    const ms = performance.now() - t0, c = COMPTES_LOGOS;
+    c.msPoses += ms; c.msPoseMax = Math.max(c.msPoseMax, ms);
+    if (ms > 16) c.posesLentes++;
+  }
+}
+
 /**
  * La couche des logos : un carré par logo autour de la vue, tous peints
  * d'une planche.
@@ -1189,7 +1213,7 @@ function matriceDuToit(large, prof, angle, tasse){
  * @param {((x: number, y: number, z: number) => number) | null} [pointsParMetre] les points d'écran
  *   que fait un mètre du plan, à cet endroit et à cette hauteur ; sans, la finesse du zoom
  */
-export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
+function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
   const p = P();
   couvert = null;
   // celles qui n'ont pas pris la route se rangent à nouveau, d'après cette vue
@@ -1270,7 +1294,9 @@ export function couchesLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = n
   if (!data.length) return [];
   // du centre vers les bords : les plus proches prennent les premières cases
   const voulues = [...new Set(data.map(d => d.t))];
+  const tp = performance.now();
   const gp = plancheGardee(appareil, voulues);
+  COMPTES_LOGOS.msPlanche += performance.now() - tp;
   /** @type {any} */
   let texture, cleCases;
   /** @type {(t: HTMLCanvasElement) => number[] | undefined} */
