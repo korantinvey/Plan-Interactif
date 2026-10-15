@@ -120,7 +120,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 293 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1625 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1650 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 830 l. → demo.html, plan-smcl.html
 
@@ -128,7 +128,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-plan.css` — 1714 l. → demo.html, plan-smcl.html
 
-### `_styles-vitrine.css` — 187 l. → demo.html, plan-smcl.html
+### `_styles-vitrine.css` — 191 l. → demo.html, plan-smcl.html
 
 ### `_sw.js` — 568 l.
 

@@ -63,12 +63,16 @@ html.page-vitrine{--ground:#EEF1F4;--vitrine-marge:16px}
      sans quoi le bord gauche et l'ombre d'une carte rangée restaient à
      dépasser du plan. Le cadrage (`masqueDroite`, modules/vue.mjs) lit leur
      largeur au repos et ignore la marge : le stand cadré tombe à seize points
-     plus près de la carte, sans jamais passer dessous. */
+     plus près de la carte, sans jamais passer dessous.
+     L'arrondi est taillé par « clip-path », sans ombre : une carte arrondie
+     par « border-radius » ou ombrée perd le lissage sous-pixel de son texte
+     (voir les tiroirs, `_styles-modeles-parcours.css`). */
   html.page-vitrine :is(.detail,.parcours,.itineraire){
     top:14px;right:14px;bottom:14px;width:360px;
-    border:1px solid var(--line);border-radius:20px;overflow:hidden;
-    box-shadow:var(--ombre-carte);
+    border:1px solid var(--line);border-radius:0;overflow:hidden;
+    clip-path:inset(0 round 20px);box-shadow:none;
     transform:translateX(calc(100% + 40px))}
+  html.page-vitrine :is(.detail,.parcours,.itineraire)::before{display:none}
   html.page-vitrine :is(.detail,.parcours,.itineraire).open{transform:none}
   /* La mini-carte et la barre de zoom flottent sur le hall comme les cartes :
      même arrondi, même ombre, plus de filet. */

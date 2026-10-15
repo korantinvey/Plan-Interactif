@@ -36,6 +36,31 @@
 :is(.parcours,.itineraire).modele-billet{border-radius:16px 0 0 16px}
 :is(.parcours,.itineraire).modele-nu{box-shadow:none;border-left-color:transparent}
 
+/* Le texte des tiroirs de droite, net sous Windows. Ouvert, un tiroir couvre
+   le canevas WebGL, que le navigateur compose à part : ce qui le recouvre est
+   composé à part aussi, et Chrome n'y lisse le texte au sous-pixel
+   (ClearType) que si ce calque est opaque d'un bord à l'autre et n'annonce
+   aucune transformation — sinon le texte passe en niveaux de gris, et paraît
+   flou. D'où un calque à soi, demandé par l'opacité et non plus par
+   « will-change: transform » ; l'ombre sortie du tiroir, qui agrandissait
+   son calque au-delà du fond ; l'arrondi taillé par « clip-path » et non par
+   « border-radius », qui laissait des coins transparents ; et un fond plein
+   sous le dégradé du verre, dont la surface est translucide. Mesuré dans
+   Chromium au rendu sous-pixel : la fiche passait de 0 % à 84 % de bords
+   lissés en couleur. Le téléphone n'a pas ce rendu : ses tiroirs restent tels
+   quels. L'ombre ne survit pas à la taille d'un arrondi ; elle tombe donc sur
+   le verre, le billet et la vitrine, que leur aplat détache déjà du plan. */
+@media (min-width:901px){
+  :is(.detail,.parcours,.itineraire){will-change:opacity;box-shadow:none}
+  :is(.detail,.parcours,.itineraire).open::before{content:"";position:absolute;top:0;bottom:0;
+    right:100%;width:14px;pointer-events:none;will-change:transform;
+    background:linear-gradient(to left,rgba(10,14,18,.14),rgba(10,14,18,.04) 50%,rgba(10,14,18,0))}
+  :is(.detail,.parcours,.itineraire).modele-nu::before{display:none}
+  :is(.detail,.parcours,.itineraire).modele-verre{background-color:var(--accent-base);
+    border-radius:0;clip-path:inset(0 round 20px 0 0 20px)}
+  :is(.detail,.parcours,.itineraire).modele-billet{border-radius:0;clip-path:inset(0 round 16px 0 0 16px)}
+}
+
 /* Grille — les filets francs de la fiche traversent les tiroirs : une étape,
    un arrêt, un stand retenu se séparent d'un trait plein plutôt que de flotter
    sur un aplat. Le liseré de gauche reste : il porte la couleur du type de
@@ -1381,7 +1406,7 @@
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     /* au-dessus du tiroir de la liste, qui se replie quand elle s'ouvre */
     z-index:13;
-    transform:translateY(100%);opacity:1;pointer-events:none;
+    transform:translateY(100%);opacity:1;pointer-events:none;will-change:transform;
     transition:transform .28s cubic-bezier(.32,.72,0,1),
                max-height .28s cubic-bezier(.32,.72,0,1);
   }
