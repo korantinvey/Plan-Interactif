@@ -185,6 +185,12 @@ const SORTES_AJOUT = { stands: "stand", zones: "zone" };
 const FICHE_AJOUT = ["nom_en", "type", "description", "description_en", "lien",
                      "logo", "traversable", "masquee"];
 
+/** Un stand ajouté relié à un exposant : il n'est que la forme de celui-ci.
+ *  Le « lien » d'une zone est l'adresse web de sa fiche, et ne relie rien —
+ *  lu sans la sorte, il retirait de la liste et de la recherche toute zone
+ *  à qui l'on avait donné un site. */
+export const estLie = (o) => o.kind === "stand" && Boolean(o.lien);
+
 /** Des anneaux lisibles : ce qui vient de la configuration a pu être écrit
  *  par une autre version de la page, ou abîmé en route. */
 export const anneauxValides = (a) => Array.isArray(a) && a.length > 0 && a.every(r =>
@@ -221,7 +227,8 @@ export function objetAjoute(id, r, i, hotes){
  * redevient ce qu'on lui avait écrit, et la palette dit qu'il est à relier.
  */
 export function poseLien(o, r, hotes){
-  delete o.lien; delete o.lienPerdu;
+  // une zone n'a pas d'exposant : son « lien » est l'adresse de sa fiche
+  if (o.kind === "stand") { delete o.lien; delete o.lienPerdu; }
   const propre = String(r.code || "").trim();
   o.nom = String(r.nom || "").trim() || null;
   if (o.kind === "stand") o.code = propre;

@@ -963,7 +963,7 @@ Importé par :
 
 gestes-admin · outil-dessin
 
-### `modules/emplacements.mjs` — 282 l. → plan, plan-admin
+### `modules/emplacements.mjs` — 289 l. → plan, plan-admin
 
 - l.1 · Reprendre à la main la géométrie d'un emplacement — ce que le plan
 
@@ -971,8 +971,8 @@ Fonctions :
 
 `cleGeo` 50 · `poseSorteGeo` 59 · `geometrieSource` 72 · `reposeSource` 81
 `poseGeometrie` 90 · `retoucheGeo` 104 · `elargitEmprise` 117 · `appliqueGeometries` 138
-`cleAjout` 179 · `anneauxValides` 190 · `rechAjout` 195 · `objetAjoute` 204 · `poseLien` 223
-`appliqueAjouts` 250
+`cleAjout` 179 · `estLie` 192 · `anneauxValides` 196 · `rechAjout` 201 · `objetAjoute` 210
+`poseLien` 229 · `appliqueAjouts` 257
 
 Importe :
 
