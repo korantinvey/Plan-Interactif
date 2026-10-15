@@ -1,12 +1,13 @@
 /* ============================================================
-   Le décor de la vue immersive — le mobilier des zones de l'organisateur
+   Le décor du plan — le mobilier des zones de l'organisateur
 
    Vue de biais (`camera.mjs`), une zone montée d'un bloc ne dit rien de ce
    qu'on y fait : un restaurant et une salle de conférence y sont deux pavés
    de la même couleur. La maquette d'un salon les meuble — des tables rondes
    et leurs chaises, une scène, son écran et des rangées de sièges — et c'est
    ce qui la rend vivante. Ce module meuble donc une zone d'après le type que
-   l'exploitant lui a donné (`reperes.mjs` `TYPES_ZONE`).
+   l'exploitant lui a donné (`reperes.mjs` `TYPES_ZONE`). À plat, les mêmes
+   pièces vues d'aplomb distinguent encore le restaurant de la salle.
 
    Il ne dessine rien : il rend des pièces — un contour au sol en mètres, une
    hauteur, un rôle — que le dessin (`webgl.mjs`) monte en volume et peint

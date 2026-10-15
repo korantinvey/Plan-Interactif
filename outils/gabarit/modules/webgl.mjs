@@ -1374,7 +1374,9 @@ function hauteurVolume(el, anneaux){
    couleur de la zone, assombrie, pour que le restaurant reste doré et la
    salle de sa teinte ; le reste a ses tons de mobilier, les mêmes partout.
    Le décor ne se désigne pas : un appui sur une chaise ouvre la zone, dont
-   le sol est dessous.
+   le sol est dessous. À plat — Classique, Tuiles —, les mêmes pièces se
+   couchent au sol, vues d'aplomb : la zone reste de sa hauteur, son
+   mobilier peint par-dessus.
    ------------------------------------------------------------ */
 const SOL_MEUBLE = .12;
 const zoneMeublee = (/** @type {Element} */ g) =>
@@ -1587,11 +1589,13 @@ function couchesJetons(/** @type {Map<Element, any>} */ jetons, /** @type {strin
 }
 function meubleZone(el, polygon, couleur, acc){
   const g = el.parentNode;
-  if (!cameraEnJeu() || !g || !zoneMeublee(g) || !polygon || !polygon[0]) return;
+  if (!g || !g.classList || g.firstElementChild !== el || !zoneMeublee(g)
+    || g.classList.contains("masquee") || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
   const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
+  // l'outil du comptoir ne se tient qu'en immersif : à plat, ni bleu ni poignée
   for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
-    g.hasAttribute("data-comptoir-choisi")))
+    cameraEnJeu() && g.hasAttribute("data-comptoir-choisi")))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
 }
 
@@ -1787,7 +1791,8 @@ function formeGl(el, cs, m, op, traces, acc){
       poseJeton(el, polygon, couleur, acc);
       const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
       acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse, sur });
-      if (haut) meubleZone(el, polygon, couleur, acc);
+      // à plat aussi : vu d'aplomb, le mobilier dit encore ce qu'on fait dans la zone
+      if (haut || !cameraEnJeu()) meubleZone(el, polygon, couleur, acc);
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
@@ -2205,6 +2210,41 @@ const MATIERE = { ambient: .8, diffuse: .42, shininess: 4, specularColor: [12, 1
    gardent la leur : un stand devant un repère le cache toujours. */
 const aPlat = () => GL.camera ? { parameters: { depthCompare: "less-equal", depthWriteEnabled: false } } : {};
 
+/* L'ombre au repos des tuiles. Posées à plat, elles se lisaient comme
+   des pastilles imprimées ; une ombre légère, décalée vers le bas, les
+   détache du sol comme des pièces d'un jeu. Elle se peint sous toute la
+   couche, avant elle : les tuiles voisines la recouvrent, et elle ne se voit
+   que dans le vide qui les sépare. Seules les tuiles opaques en ont une — sous
+   une zone translucide, elle transparaîtrait en bande sombre. Le décalage
+   suit la taille des tuiles, non l'écran : une ombre portée grandit avec ce
+   qui la porte. L'immersif a ses volumes et sa lumière, il n'en a pas besoin.
+   La tuile soulevée garde la sienne, plus grande (`coucheTuileSoulevee`). */
+const OMBRE_TUILE = [20, 24, 26, 13], DECALE_OMBRE = .055;
+function ombresAuRepos(plats, cle, plat){
+  if (!enTuiles() || GL.camera) return [];
+  const tuiles = plats.filter(d => d.couleur[3] >= 250 && !d.prise && d.el && d.el.matches(".stand,.zone,.sdes"));
+  if (!tuiles.length) return [];
+  /* Le côté court d'une tuile ordinaire : la médiane, pour qu'un grand hall
+     dessiné en zone ne jette pas son ombre à travers l'allée. */
+  const cotes = tuiles.map(d => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const p of d.polygon[0]){
+      if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0];
+      if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
+    }
+    return Math.min(x1 - x0, y1 - y0);
+  }).sort((a, b) => a - b);
+  const e = cotes[cotes.length >> 1] * DECALE_OMBRE;
+  /* Un aplat décalé seul avait un bord franc, comme une seconde tuile
+     grise. Trois aplats de plus en plus décalés s'additionnent : l'ombre est
+     plus dense au pied de la tuile et s'éteint en s'éloignant — un flou, sans
+     passe de flou. Un peu de côté, surtout vers le bas : la lumière vient
+     d'en haut à gauche. */
+  return [1 / 3, 2 / 3, 1].map((f, n) => new deck.SolidPolygonLayer({ id: cle + "-ombres-" + n, data: tuiles,
+    pickable: false, getPolygon: d => d.polygon, getFillColor: OMBRE_TUILE, ...plat, dataComparator: memesFormes,
+    modelMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, e * f * .4, e * f, 0, 1] }));
+}
+
 function couchesDeBloc(acc, cle){
   const L = deck, out = [], plat = aPlat();
   const pleins = partage(acc.pleins, acc.prises);
@@ -2212,6 +2252,7 @@ function couchesDeBloc(acc, cle){
   const couches = [];
   pleins.forEach((liste, k) => {
     const plats = liste.filter(d => !d.haut), volumes = liste.filter(d => d.haut);
+    if (plats.length && k === 0) couches.push(...ombresAuRepos(plats, cle, plat));
     if (plats.length) couches.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: plats, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur, ...plat,
       dataComparator: memesFormes, updateTriggers: { getFillColor: signeCouleurs(plats) } }));
@@ -2230,10 +2271,16 @@ function couchesDeBloc(acc, cle){
       material: MATIERE, hausse: d.hausse, elevationScale: echelleHausse(d.hausse, performance.now()) }),
       coucheContours(cle + "-hausse-" + k + "-" + n, [d], { hausseContour: d.hausse })));
   });
-  if (acc.decor.length) out.push(new L.SolidPolygonLayer({ id: cle + "-decor", data: acc.decor, pickable: false,
-    extruded: true, getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut,
-    material: MATIERE }));
+  /* En volume, le décor se mesure à la profondeur et passe avant les
+     aplats ; à plat, il n'en a pas, et se peint après eux — sans quoi le sol
+     de sa zone le recouvrirait. */
+  const volume = cameraEnJeu();
+  const decor = acc.decor.length ? new L.SolidPolygonLayer({ id: cle + (volume ? "-decor" : "-decor-plat"), data: acc.decor, pickable: false,
+    getPolygon: d => d.polygon, getFillColor: d => d.couleur,
+    ...(volume ? { extruded: true, getElevation: d => d.haut, material: MATIERE } : plat) }) : null;
+  if (decor && volume) out.push(decor);
   out.push(...couches);
+  if (decor && !volume) out.push(decor);
   /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
      Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
      relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
