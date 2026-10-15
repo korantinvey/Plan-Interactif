@@ -17,7 +17,12 @@
      — les événements lents à répondre (Event Timing) ;
      — le démarrage, les ressources lourdes, la mémoire, l'appareil ;
      — ce que la planche des logos a créé et envoyé, et ce que cela vaut par
-       logo affiché (`logos-stands.mjs` `bilanLogos`).
+       logo affiché (`logos-stands.mjs` `bilanLogos`) ;
+     — chaque programme que la carte graphique compile, et le temps que la
+       page l'a attendu, et chaque dessin jeté — contexte perdu, ou boucle
+       tenue pour arrêtée (`webgl.mjs` `DESSIN_JETE`) : sur un téléphone, une
+       compilation pendant un geste fige l'écran, et un dessin jeté se
+       remonte en recompilant tout.
 
    Rien ne part au serveur : le relevé reste dans la page jusqu'à ce qu'on
    touche « Partager », et part alors par le menu de partage du téléphone.
@@ -28,17 +33,18 @@
    relevé est un instrument, pas un mode à laisser aux visiteurs.
    ============================================================ */
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI, DESSIN_JETE } from "./webgl.mjs";
 import { quandAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
 
-const ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
+export const RELEVE_ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
+const ACTIF = RELEVE_ACTIF;
 
 // au-delà, une liste garde ses premières entrées et compte celles qu'elle perd
 const BORNES = { gestes: 400, saccades: 800, repeints: 1500, images: 300, evenements: 400,
-  memoire: 720, deck: 720, erreurs: 50 };
+  memoire: 720, deck: 720, erreurs: 50, programmes: 200, contextes: 50 };
 // une image plus longue que ceci est une saccade que l'œil voit
 const SACCADE = 50;
 // un geste dure tant qu'une entrée arrive à moins de ceci de la précédente
@@ -61,8 +67,12 @@ const R = {
   /** @type {any[]} */ memoire: [],
   /** @type {any[]} */ deck: [],
   /** @type {any[]} */ erreurs: [],
+  /** @type {any[]} */ programmes: [],
+  /** @type {any[]} */ contextes: [],
   /** @type {Record<string, number>} */
   perdus: {},
+  /** ce que d'autres modules joignent au relevé (`banc.mjs`) @type {Record<string, any>} */
+  annexes: {},
   histo: { geste: TRANCHES.map(() => 0), repos: TRANCHES.map(() => 0) },
 };
 
@@ -242,6 +252,66 @@ function ecouteNavigateur(){
     message: String(e.reason && e.reason.message || e.reason).slice(0, 200) }));
 }
 
+/* ------------------------------------------------------------
+   La carte graphique : ce qu'elle compile, et le dessin perdu
+   ------------------------------------------------------------ */
+/* deck.gl compile un programme la première fois qu'une sorte de couche se
+   dessine, et l'attend en lisant son état (`LINK_STATUS`) : c'est cette
+   lecture qui bloque la page, non l'appel qui lance la compilation. Le nom
+   vient du `SHADER_NAME` que deck.gl écrit dans chaque source. La toile
+   n'existe pas encore quand ce module se charge : on guette le prototype. */
+const LINK_STATUS = 0x8B82;
+function guetteProgrammes(){
+  const noms = new WeakMap(), progs = new WeakMap();
+  for (const C of [globalThis.WebGL2RenderingContext, globalThis.WebGLRenderingContext]){
+    if (!C) continue;
+    const P = /** @type {any} */ (C.prototype);
+    const source = P.shaderSource, attache = P.attachShader, lie = P.linkProgram, lit = P.getProgramParameter;
+    P.shaderSource = function(/** @type {any} */ sh, /** @type {string} */ src){
+      const m = /SHADER_NAME\s+(\S+)/.exec(src || "");
+      noms.set(sh, m ? m[1].replace(/-(vertex|fragment)-shader$/, "") : "?");
+      return source.call(this, sh, src);
+    };
+    P.attachShader = function(/** @type {any} */ pr, /** @type {any} */ sh){
+      if (noms.has(sh) && !progs.has(pr)) progs.set(pr, { nom: noms.get(sh) });
+      return attache.call(this, pr, sh);
+    };
+    P.linkProgram = function(/** @type {any} */ pr){
+      const t = performance.now();
+      const r = lie.call(this, pr);
+      const o = { t: Math.round(t), nom: (progs.get(pr) || {}).nom || "?", ms: ms(performance.now() - t),
+        attente: 0, apresAffichage: !!R.jalons["plan-affiche"], geste: geste ? sorte(geste) : undefined };
+      progs.set(pr, o);
+      garde("programmes", o);
+      return r;
+    };
+    P.getProgramParameter = function(/** @type {any} */ pr, /** @type {number} */ p){
+      if (p !== LINK_STATUS) return lit.call(this, pr, p);
+      const t = performance.now();
+      const r = lit.call(this, pr, p);
+      const o = progs.get(pr);
+      if (o && "attente" in o) o.attente = ms(o.attente + performance.now() - t);
+      return r;
+    };
+  }
+  /* La perte et le retour ne remontent pas : on les prend au passage, avant
+     la toile. */
+  for (const type of ["webglcontextlost", "webglcontextrestored", "webglcontextcreationerror"])
+    document.addEventListener(type, () => garde("contextes", { t: Math.round(performance.now()),
+      type: type.slice(14), geste: geste ? sorte(geste) : undefined }), { capture: true });
+}
+
+/** Ce que la carte graphique a compilé et perdu jusqu'ici : le banc
+ *  d'essai le lit avant et après chaque phase. */
+export function comptesGpu(){
+  return { programmes: R.programmes.length,
+    msProgrammes: R.programmes.reduce((a, p) => a + p.ms + p.attente, 0),
+    pertes: R.contextes.filter(c => c.type === "jete").length };
+}
+
+/** Joindre au relevé partagé, sous `cle`, ce qu'un autre module a mesuré. */
+export function joinsAuReleve(/** @type {string} */ cle, /** @type {any} */ v){ R.annexes[cle] = v; }
+
 function echantillonne(){
   const t = Math.round(performance.now());
   const m = /** @type {any} */ (performance).memory;
@@ -261,7 +331,7 @@ function echantillonne(){
 /* ------------------------------------------------------------
    Le relevé, mis en forme
    ------------------------------------------------------------ */
-function carteGraphique(){
+export function carteGraphique(){
   try {
     const c = document.createElement("canvas");
     const gl = c.getContext("webgl2") || c.getContext("webgl");
@@ -320,7 +390,12 @@ function synthese(){
       partPlus33: n ? ms(100 * (h[4] + h[5] + h[6]) / n) : 0 };
   };
   const reps = R.repeints.map(r => r.ms).sort((a, b) => a - b);
+  const apres = R.programmes.filter(p => p.apresAffichage);
   return {
+    programmes: { n: R.programmes.length, apresAffichage: apres.length,
+      msAttente: ms(R.programmes.reduce((a, p) => a + p.ms + p.attente, 0)),
+      msAttenteApresAffichage: ms(apres.reduce((a, p) => a + p.ms + p.attente, 0)) },
+    dessinsJetes: R.contextes.filter(c => c.type === "jete").length,
     enGeste: resume(R.histo.geste), auRepos: resume(R.histo.repos),
     repeints: { n: reps.length, p50: ms(centile(reps, .5)), p95: ms(centile(reps, .95)), max: reps[reps.length - 1] || 0 },
     saccades: R.saccades.length + (R.perdus.saccades || 0),
@@ -336,7 +411,8 @@ function releve(){
     salon: SLUG || null, administration: PLAN_ADMIN, adresse: location.pathname + location.search,
     ouvert: new Date(R.ouvert).toISOString(), duree: Math.round(performance.now()),
     versions,
-    rendu: { webglVoulu: RENDU_WEBGL, webglActif: GL.actif, immersif: GL.camera, blocs: GL.blocs.size },
+    rendu: { webglVoulu: RENDU_WEBGL, webglActif: GL.actif, immersif: GL.camera, blocs: GL.blocs.size,
+      ambiance: [...document.documentElement.classList].filter(c => c.startsWith("ambiance-")).join(" ") || undefined },
     plan: { emplacements: TOUS.length, noeudsDom: document.getElementsByTagName("*").length },
     appareil: appareil(),
     jalons: R.jalons,
@@ -345,10 +421,12 @@ function releve(){
     gestes: R.gestes, saccades: R.saccades, repeints: R.repeints,
     imagesLongues: R.images, evenementsLents: R.evenements,
     memoire: R.memoire, deck: R.deck, erreurs: R.erreurs,
+    programmes: R.programmes, contextes: R.contextes,
     /* des comptes, non des mesures : « octetsTexture » est ce qu'on a demandé à
        la carte graphique ; « envoisParLogo », « partRenvois » et « koParEnvoi »
        se comparent d'une visite à l'autre, quels qu'en soient les gestes */
     logos: bilanLogos(),
+    ...R.annexes,
     perdus: R.perdus,
   };
 }
@@ -362,7 +440,11 @@ let compteur = null;
 function affiche(){
   if (!compteur) return;
   const s = R.saccades.length + (R.perdus.saccades || 0);
-  compteur.textContent = ips + " fps · " + s + " ⚠";
+  /* Ce que la carte graphique a compilé depuis l'affichage : au repos, ce
+     nombre ne devrait plus bouger. Un dessin jeté se signale à part. */
+  const c = R.programmes.filter(p => p.apresAffichage).length;
+  const pertes = R.contextes.filter(x => x.type === "jete").length;
+  compteur.textContent = ips + " fps · " + s + " ⚠ · " + c + " ⚙" + (pertes ? " · " + pertes + " ✖" : "");
   compteur.style.color = ips >= 50 ? "#7CFC9A" : ips >= 30 ? "#FFD166" : "#FF6B6B";
 }
 
@@ -402,12 +484,15 @@ function posePastille(){
 }
 
 if (ACTIF){
+  guetteProgrammes();
   ecouteGestes();
   ecouteNavigateur();
   REPEINT_FINI.suis((duree, blocs) => {
     garde("repeints", { t: Math.round(performance.now()), ms: ms(duree), blocs, geste: geste ? sorte(geste) : undefined });
     if (geste){ geste.repeints++; geste.msRepeints += duree; }
   });
+  DESSIN_JETE.suis(raison => garde("contextes", { t: Math.round(performance.now()), type: "jete", raison,
+    geste: geste ? sorte(geste) : undefined }));
   PLAN_DEMARRE.suis(() => { R.jalons["plan-demarre"] = Math.round(performance.now()); });
   quandAffiche(() => { R.jalons["plan-affiche"] = Math.round(performance.now()); });
   setInterval(echantillonne, 5000);

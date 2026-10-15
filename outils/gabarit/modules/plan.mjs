@@ -35,6 +35,9 @@ import "./appels.mjs";
    s'inscrit auprès du rendu et du démarrage en se chargeant, et ne fait rien
    sans `?perf` dans l'adresse. */
 import "./releve.mjs";
+/* Le banc d'essai (`?perf=banc`) non plus : il joue sa suite de mouvements
+   en se chargeant, et rien sans cette adresse. */
+import "./banc.mjs";
 /* Le choix de l'ambiance offert au visiteur de la démonstration ne s'importe
    de nulle part : il se branche en se chargeant, et ne paraît que sur la page
    qui le demande. */

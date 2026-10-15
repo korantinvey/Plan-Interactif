@@ -99,6 +99,11 @@ const DECK_WEBGL = {
  *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
  *  @type {import("./annonce.mjs").Annonce<[number, number]>} */
 export const REPEINT_FINI = creeAnnonce();
+/** Le dessin vient d'être jeté — contexte perdu, ou boucle tenue pour
+ *  arrêtée — et va remonter en recompilant tout : la raison. Seul le relevé
+ *  l'écoute, qui ne voit passer l'événement de la toile que pour une vraie
+ *  perte. @type {import("./annonce.mjs").Annonce<[string]>} */
+export const DESSIN_JETE = creeAnnonce();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -394,6 +399,7 @@ function guetteBoucleWebgl(){
 function perdContexteWebgl(raison = "contexte perdu"){
   if (!GL.actif) return;
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
+  DESSIN_JETE.dis(raison);
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
   // le SVG ne sait pas se pencher : le plan revient à plat, et les gestes avec
