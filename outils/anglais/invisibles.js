@@ -54,7 +54,7 @@ module.exports = [
   "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]", "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]",
   "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]", "TeinteDesFigurants", "fin du geste",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
-  "FiltreZoom", "-petit", "-grand", "-pleins-", "-ombres-", "-volumes-", "-decor", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "|caches|", "-traits-z-", "-textes-", "-image-",
+  "FiltreZoom", "-petit", "-grand", "-pleins-", "-ombres-", "-volumes-", "-decor", "-decor-plat", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
   "-petit-halo-", "-phare-", "-jeton-", "-plaque", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
