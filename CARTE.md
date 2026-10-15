@@ -1588,18 +1588,18 @@ Importé par :
 
 lancement · tiroir-parcours · tutoriel
 
-### `modules/lancement.mjs` — 126 l. → plan, plan-admin
+### `modules/lancement.mjs` — 129 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`confieLancementAdmin` 70 · `lancePlan` 73
+`confieLancementAdmin` 71 · `lancePlan` 74
 
 Importe :
 
 bandes · borne · demarrage · erreurs · fenetre · fiche · gestes · habillage · ici
-installation · journee · ligne-liste · mesure · partage · recherche · sponsor
+installation · journee · ligne-liste · mesure · partage · recherche · retour · sponsor
 tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
 
 Importé par :
@@ -2594,6 +2594,22 @@ Importé par :
 
 gestes-admin · outil-dessin · pile · plan-admin
 
+### `modules/retour.mjs` — 63 l. → plan, plan-admin
+
+- l.1 · Le retour sur une page restée ouverte
+
+Fonctions :
+
+`verifieAuRetour` 37 · `brancheRetour` 60
+
+Importe :
+
+salon
+
+Importé par :
+
+lancement
+
 ### `modules/salon.mjs` — 75 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
@@ -2606,8 +2622,8 @@ Importé par :
 
 affiche-ici · ambiance · application · borne · charge-annoncee · configuration · demarrage
 enregistrement · erreurs · essai-rappel · ici · installation · mesure · notifications
-parcours · partage · plan · rappels · recherche · releve · rendu · sponsor · tutoriel
-vignettes
+parcours · partage · plan · rappels · recherche · releve · rendu · retour · sponsor
+tutoriel · vignettes
 
 ### `modules/secteurs.mjs` — 215 l. → plan, plan-admin
 
