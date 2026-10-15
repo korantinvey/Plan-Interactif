@@ -373,6 +373,7 @@
   color:var(--ink)}
 .liste-grille .search-field :is(svg,.vide-q){color:var(--ink-3)}
 .liste-grille .crit-btn{background:var(--surface);border-color:var(--ink);color:var(--ink)}
+.liste-grille .crit-btn[aria-expanded="true"]{background:var(--ink);color:var(--surface)}
 .liste-grille .count{border-bottom:2px solid var(--ink);color:var(--ink);
   font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase}
@@ -429,6 +430,7 @@
 .liste-billet .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-billet .crit-btn{background:rgba(255,255,255,.2);border-color:transparent;
   border-radius:999px;color:var(--accent-ink)}
+.liste-billet .crit-btn[aria-expanded="true"]{background:var(--accent-ink);color:var(--accent)}
 .liste-billet .count{border-bottom:2px dashed var(--line-strong);
   font-family:"IBM Plex Mono",monospace;font-size:11px}
 .liste-billet .row{border-bottom:1px dashed var(--line-strong)}
@@ -473,6 +475,7 @@
 .liste-brut .search :is(input,.champ){background:#FFFDF5;border:2px solid #111;color:#111}
 .liste-brut .search-field :is(svg,.vide-q){color:#111}
 .liste-brut .crit-btn{background:#FFFDF5;border:2px solid #111;color:#111}
+.liste-brut .crit-btn[aria-expanded="true"]{background:#111;color:#FFFDF5}
 .liste-brut .count{border-bottom:3px solid #111;color:#111;font-size:10.5px;font-weight:700;
   letter-spacing:.05em;text-transform:uppercase}
 .liste-brut .row{border-bottom:2px solid #111}
@@ -500,6 +503,7 @@
 .liste-verre .search input::placeholder{color:rgba(255,255,255,.62)}
 .liste-verre .crit-btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);
   border-radius:999px;color:#fff}
+.liste-verre .crit-btn[aria-expanded="true"]{background:#fff;border-color:#fff;color:var(--accent-fort)}
 /* Un carreau, et non une ligne : il lui faut de l'air autour. La marge se
    prend sur la liste et non sur la ligne — un bouton dont on desserre la
    largeur se rétracte sur son texte, et les carreaux se rangeaient en escalier
@@ -559,6 +563,8 @@
 .liste-signal .crit-btn{color:var(--accent-ink);
   background:color-mix(in srgb,var(--accent-ink) 18%,transparent);
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
+.liste-signal .crit-btn[aria-expanded="true"]{background:var(--accent-ink);
+  border-color:var(--accent-ink);color:var(--accent-fort)}
 .liste-signal .count{color:var(--ink-2);font-size:10.5px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase}
 .liste-signal .row .code{background:var(--surface-2);border-color:var(--line-strong);

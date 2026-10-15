@@ -123,6 +123,8 @@ html.page-vitrine{--ground:#EEF1F4;--vitrine-marge:16px}
   box-shadow:0 0 0 3px color-mix(in srgb,var(--accent-base) 16%,transparent)}
 .liste-vitrine .crit-btn{width:40px;height:40px;border-radius:999px;background:var(--surface);
   border-color:var(--line)}
+.liste-vitrine .crit-btn[aria-expanded="true"]{background:var(--accent-base);
+  border-color:var(--accent-base);color:var(--accent-ink)}
 .liste-vitrine :is(.pan-crit,.actifs,.count){border-bottom:none}
 .liste-vitrine .side-pied{border-top:none}
 .liste-vitrine .actifs .actif{border-color:transparent}
