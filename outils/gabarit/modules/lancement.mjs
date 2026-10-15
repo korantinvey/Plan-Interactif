@@ -49,6 +49,7 @@ import { brancheInstallation } from "./installation.mjs";
 import { brancheWebgl } from "./webgl.mjs";
 import { brancheSponsor } from "./sponsor.mjs";
 import { brancheDemarrage } from "./demarrage.mjs";
+import { brancheRetour } from "./retour.mjs";
 
 /**
  * Les emplacements de l'administration, chacun au rang d'une tranche `@admin`
@@ -119,6 +120,8 @@ export function lancePlan(){
   brancheInstallation();
   brancheWebgl();
   brancheSponsor();
+  // la page restée ouverte rattrape, au retour, la construction mise en ligne entre-temps
+  brancheRetour();
   // la page démarre une fois tout le reste posé — sur la page publique, il
   // retire aussi les commandes de l'exploitant (`demarrage.mjs`)
   brancheDemarrage();
