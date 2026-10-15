@@ -12,9 +12,14 @@
    ne connaît pas la fiche d'un repère, qui vit dans `points-interet.mjs`.
    Il vivait avec elle, et le dessin, en l'important, atteignait la fiche —
    qui ne pouvait plus l'importer en retour.
+
+   La liste se resserre sur ce que la pastille met en avant
+   (`retenusParPoi`) : ce module ne peut l'importer — elle l'importe pour le
+   relevé —, il annonce donc le choix (`POI_CHANGE`), qu'elle suit.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { DATA, parId, P } from "./donnees.mjs";
+import { DATA, parId, P, state, CONFERENCES } from "./donnees.mjs";
+import { creeAnnonce } from "./annonce.mjs";
 import { conf } from "./configuration.mjs";
 import { fit } from "./vue.mjs";
 import { nomRepere } from "./itineraire.mjs";
@@ -63,8 +68,9 @@ export function reperesCherchables(){
         const picto = pictoForme(f);
         const type = picto ? nomTypeRepere(picto) : "";
         const ajout = type === nom ? "" : type;
+        // la forme part avec la ligne : la mise en avant du cartouche la relit
         REPERES.push({
-          kind: "poi", id: f.id, p: i, nom: nom, type: ajout,
+          kind: "poi", id: f.id, p: i, nom: nom, type: ajout, forme: f,
           rech: (nom + " " + ajout).toLowerCase(),
         });
       });
@@ -102,6 +108,16 @@ export function reperesCherchables(){
  * le pictogramme générique, et son compte dit combien d'arrêts elle couvre.
  */
 let poiChoisi = null;
+
+/* Ce que la pastille choisie annonce, pour le compte de la liste ; et le
+   dernier choix annoncé, pour ne le redire qu'une fois changé — le cartouche
+   se refait à chaque calque retouché sans que rien ne change. */
+let libelleChoisi = "";
+let poiDit = null;
+
+/** Le choix d'une pastille vient de changer : la liste se resserre ou se
+ *  rouvre (`recherche.mjs`). */
+export const POI_CHANGE = creeAnnonce();
 
 /* Un libellé qui ne porte qu'un seul type : ce que rejoint alors ce qu'on a
    laissé sans pictogramme, pour que la zone « Restauration » et le repère qui
@@ -195,6 +211,7 @@ export function cartouchePoi(){
           '" aria-hidden="true">' + g.d + '</svg>'
         : "") + '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
       b.querySelector("span").textContent = libellePoi(o);
+      if (cle === poiChoisi) libelleChoisi = libellePoi(o);
       b.onclick = () => {
         const choisit = poiChoisi !== cle;
         poiChoisi = choisit ? cle : null;
@@ -268,6 +285,34 @@ function eclairePoi(){
   $("labels").querySelectorAll(".lbl[data-lbl]").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   document.documentElement.classList.toggle("poi-actif", !!poiChoisi);
+  if (poiChoisi !== poiDit){ poiDit = poiChoisi; POI_CHANGE.dis(); }
+}
+
+/** Une pastille est-elle choisie, et laquelle — pour le compte de la liste. */
+export const poiActif = () => Boolean(poiChoisi);
+export const libellePoiChoisi = () => poiChoisi ? libelleChoisi : "";
+
+/**
+ * Ce que la liste montre quand une pastille est choisie.
+ *
+ * La pastille répond à « où mange-t-on ? » sur le plan ; la liste, qui
+ * continuait de dérouler les huit cents stands, répondait à une autre
+ * question. Elle se resserre donc sur la même réponse : les zones et les
+ * repères mis en avant, et ce qui s'y rattache — le programme des salles de
+ * conférence qu'on vient d'allumer. La restauration n'a rien de tel : seuls
+ * ses endroits restent.
+ *
+ * Le pavillon affiché seulement, comme le cartouche : ses pastilles sont
+ * celles de ce pavillon, et le choix tombe quand on en change.
+ */
+export function retenusParPoi(){
+  if (!poiChoisi) return [];
+  const zones = conf("data:zones").visible === false ? []
+    : P().zones.filter(z => !z.masquee && phareZone(z));
+  const allumees = new Set(zones.map(z => String(z.id)));
+  const reperes = reperesCherchables().filter(o => o.p === state.plan && phareRepere(o.forme));
+  const programme = CONFERENCES.filter(c => c.zone && allumees.has(String(c.zone)));
+  return [...zones, ...reperes, ...programme];
 }
 
 /**

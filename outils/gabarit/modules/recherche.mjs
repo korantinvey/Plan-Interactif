@@ -7,7 +7,9 @@
    sur le plan à leur forme et à leur couleur, et le tiroir des calques les
    montre ou les cache. Elles ne paraissent donc plus dans la liste, ni sous
    mot-clé ni sans. Sur le plan, rien ne change : elles gardent leur libellé,
-   leur fiche et leur programme.
+   leur fiche et leur programme. Une pastille du cartouche choisie les y
+   ramène : la liste se resserre alors sur ce qu'elle met en avant
+   (`cartouche-poi.mjs` `retenusParPoi`).
 
    Ici : les critères et leur panneau, le retrait du plan, la liste et ses
    vignettes. Les secteurs vivent dans
@@ -46,7 +48,8 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { montre, PREFIXE_PERSO, libelleCritere } from "./corps-fiche.mjs";
 import { dessineDists, marquesListe, porteDist, standPorte } from "./distinctions.mjs";
-import { reperesCherchables } from "./cartouche-poi.mjs";
+import { reperesCherchables, retenusParPoi, poiActif, libellePoiChoisi, POI_CHANGE }
+  from "./cartouche-poi.mjs";
 import { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRetrait, leveRetrait,
   valeursCritere, CLE_SECTEUR, critParSociete, releveHotes } from "./filtre.mjs";
 import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
@@ -710,8 +713,13 @@ function sousLigne(o){
 export function liste(){
   const box = $("list");
   const q = state.qn;
+  /* Une pastille du cartouche choisie pose sa propre question : la liste
+     montre ce qu'elle met en avant, et le mot-clé, s'il y en a un, n'y
+     cherche plus que là. Un critère décrit une société : il n'a rien à dire
+     d'une restauration ni d'une salle. */
+  const poi = poiActif();
   // un critère retenu déborde le pavillon affiché, comme un mot-clé
-  const tout = filtre();
+  const tout = filtre() || poi;
   /* Les sociétés hébergées rejoignent la liste dès qu'on cherche une société,
      et non un emplacement : par son nom, par ce qu'elle vient faire là, ou par
      l'un des champs que l'exploitant propose en critère. Ceux-là sont à elle,
@@ -730,7 +738,8 @@ export function liste(){
     /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
        un critère décrit une société, et un escalier n'en est pas une. */
     .concat(q ? reperesCherchables() : []);
-  const vus = portee.filter(visible).sort((a, b) =>
+  const vus = (poi ? retenusParPoi().filter(o => !q || (o.rech || "").includes(q))
+                   : portee.filter(visible)).sort((a, b) =>
     (rangSorte(a) - rangSorte(b)) ||
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
@@ -749,7 +758,7 @@ export function liste(){
     mesureTiroir();
   }
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    " · tous pavillons";
+    " · " + (poi ? libellePoiChoisi() : "tous pavillons");
 
   /* Le plafond se compte par sorte, et non sur la liste entière : les stands
      passant devant, une recherche large le remplissait à eux seuls et les
@@ -999,6 +1008,8 @@ function chargeUnLot(lot){
  * l'écoute de la liste s'y pose.
  */
 export function brancheRecherche(){
+  // la pastille choisie ou relâchée resserre la liste, ou la rouvre
+  POI_CHANGE.suis(() => { if (DATA) liste(); });
   /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
      se refont (`texte-plan.mjs` `remesureTextes`), et le plan se retrace si
      l'une a changé — les repères et les stands dessinés portent leur nom dans

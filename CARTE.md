@@ -268,8 +268,9 @@ Fonctions :
 
 Importé par :
 
-acces-admin · calques-dessin · camera · configuration · demarrage · fenetre · fiche-zone
-index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes · webgl
+acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · fenetre
+fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes
+webgl
 
 ### `modules/apercus.mjs` — 327 l. → plan-admin
 
@@ -513,20 +514,21 @@ Importé par :
 ambiance · environs · logos-stands · outil-comptoir · outil-escalier · trace-itineraire
 vue · vue-etat · webgl
 
-### `modules/cartouche-poi.mjs` — 294 l. → plan, plan-admin
+### `modules/cartouche-poi.mjs` — 339 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt sur le plan — le cartouche, la mise en avant, le
 
 Fonctions :
 
-`oublieReperes` 45 · `reperesCherchables` 47 · `clePoi` 113 · `cartouchePoi` 115
-`mesureCartouche` 228 · `pharePoi` 244 · `phareRepere` 248 · `phareZone` 250
-`eclairePoi` 256 · `oublieChoixPoi` 289
+`oublieReperes` 50 · `reperesCherchables` 52 · `clePoi` 129 · `cartouchePoi` 131
+`mesureCartouche` 245 · `pharePoi` 261 · `phareRepere` 265 · `phareZone` 267
+`eclairePoi` 273 · `poiActif` 292 · `libellePoiChoisi` 293 · `retenusParPoi` 308
+`oublieChoixPoi` 334
 
 Importe :
 
-bandes · calques-dessin · configuration · dom · donnees · forme-choisie · itineraire
-reperes · vue
+annonce · bandes · calques-dessin · configuration · dom · donnees · forme-choisie
+itineraire · reperes · vue
 
 Importé par :
 
@@ -2325,21 +2327,21 @@ Importe :
 
 export · rapport-utilisation · socle-console
 
-### `modules/recherche.mjs` — 1026 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1037 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`appliqueSecteurs` 69 · `filtreTheme` 87 · `themeFiltrable` 144 · `ordreCriteres` 160
-`clesCriteres` 187 · `texteCriteres` 201 · `texteAnglaisPerso` 217 · `indexeCriteres` 231
-`refaitCriteres` 265 · `critereActif` 272 · `basculeCritere` 274 · `videCriteres` 283
-`majVideQ` 292 · `videRecherche` 305 · `nCriteres` 320 · `majCriteres` 329
-`remplitCriteres` 396 · `basculeCriteres` 535 · `ouvreCriteres` 540 · `marqueRetrait` 574
-`appliqueFiltre` 592 · `oublieRetrait` 608 · `reprendRecherche` 617 · `rangSorte` 630
-`codeCase` 659 · `caseNumero` 676 · `sousLigne` 696 · `liste` 710 · `marqueChoisie` 847
-`prechargeMarque` 873 · `prechargeLesVignettes` 924 · `chargeUnLot` 970
-`brancheRecherche` 1001
+`appliqueSecteurs` 72 · `filtreTheme` 90 · `themeFiltrable` 147 · `ordreCriteres` 163
+`clesCriteres` 190 · `texteCriteres` 204 · `texteAnglaisPerso` 220 · `indexeCriteres` 234
+`refaitCriteres` 268 · `critereActif` 275 · `basculeCritere` 277 · `videCriteres` 286
+`majVideQ` 295 · `videRecherche` 308 · `nCriteres` 323 · `majCriteres` 332
+`remplitCriteres` 399 · `basculeCriteres` 538 · `ouvreCriteres` 543 · `marqueRetrait` 577
+`appliqueFiltre` 595 · `oublieRetrait` 611 · `reprendRecherche` 620 · `rangSorte` 633
+`codeCase` 662 · `caseNumero` 679 · `sousLigne` 699 · `liste` 713 · `marqueChoisie` 856
+`prechargeMarque` 882 · `prechargeLesVignettes` 933 · `chargeUnLot` 979
+`brancheRecherche` 1010
 
 Importe :
 
