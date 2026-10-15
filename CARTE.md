@@ -1565,7 +1565,7 @@ enregistrement · fiche-zone · index-salon · journee · nappe · outil-dessin 
 points-interet · reprise-emplacements · sejour · seuil · tiroir-itineraire
 trace-itineraire · tutoriel · volets · webgl
 
-### `modules/journee.mjs` — 1252 l. → plan, plan-admin
+### `modules/journee.mjs` — 1269 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
 
@@ -1576,8 +1576,9 @@ Fonctions :
 `arretJournee` 255 · `remplitOnglets` 302 · `jourDuStand` 331 · `ouvreChoixJour` 343
 `figeLaVisite` 400 · `placeSurJour` 409 · `rendAuPlan` 417 · `retireDuSejour` 423
 `remplitJournee` 433 · `ecritApercu` 646 · `appliqueVueParcours` 676 · `traceJournee` 718
-`montreLeJour` 727 · `perimeJournee` 742 · `oublieSejour` 757 · `ouvreOrganisation` 772
-`essaieSejour` 1152 · `lanceSejour` 1182 · `refaitSejour` 1221 · `brancheJournee` 1236
+`retireTraceJournee` 735 · `montreLeJour` 743 · `perimeJournee` 758 · `oublieSejour` 773
+`ouvreOrganisation` 785 · `essaieSejour` 1165 · `lanceSejour` 1195 · `refaitSejour` 1234
+`brancheJournee` 1249
 
 Importe :
 
@@ -2901,14 +2902,14 @@ Portes :
 
 - `confieVisee` (registre) — la borne et le code « Vous êtes ici » y inscrivent leur propre visée ; la page publique n'a pas la seconde
 
-### `modules/tiroir-parcours.mjs` — 286 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 298 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
 Fonctions :
 
-`rafraichitParcours` 50 · `remplitParcours` 80 · `ouvreParcours` 169 · `videLeParcours` 185
-`brancheTiroirParcours` 215
+`rafraichitParcours` 50 · `remplitParcours` 80 · `quitteParcours` 175 · `ouvreParcours` 181
+`videLeParcours` 197 · `brancheTiroirParcours` 227
 
 Importe :
 
