@@ -1079,6 +1079,16 @@ html.sans-image-stand .outils #imageSoc{
      entièrement rondes, et posés sur un tiroir aux coins adoucis */
   border-radius:12px;box-shadow:var(--shadow)}
 .poi[hidden]{display:none}
+/* Sur un grand écran, la fiche, le parcours et l'itinéraire sont une colonne
+   de 340 px à droite du plan, que le cartouche centré sur toute la scène
+   chevauchait : posé plus haut qu'eux, il prenait les clics destinés au pied
+   du panneau — « Vider le parcours » n'était plus atteignable. Il se recentre
+   donc sur ce qui reste du plan. Sur téléphone ces panneaux sont des tiroirs
+   du bas, que le cartouche quitte déjà (voir le gabarit étroit). */
+@media (min-width:901px){
+  .stage:has(> :is(.detail,.parcours,.itineraire).open) > .poi{right:340px;
+    max-width:min(760px,calc(100% - 340px - 32px))}
+}
 .poiDefile{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 /* La flèche du cartouche est plus discrète que celle des bandes de critères.
    Là elle surmonte un panneau, où un bouton de plus ne surprend personne ; ici
