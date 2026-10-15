@@ -426,6 +426,11 @@ html.ambiance-tuiles:not(.chaleur-halos,.ambiance-immersif) :is(.stand,.dcal .fo
 html.ambiance-immersif :is(.stand,.zone,.dcal .forme.sdes) path{stroke:none}
 html.ambiance-tuiles .zone path{fill-opacity:.62}
 html.ambiance-tuiles .zone.masquee path{fill-opacity:.2}
+/* L'ombre au repos des tuiles, dans le rendu SVG de secours — la carte
+   graphique peint la sienne (`webgl.mjs` `ombresAuRepos`). Un seul filtre
+   sur tout le groupe des stands plutôt qu'un par stand : neuf cents filtres
+   se recalculaient à chaque pas de zoom. Les zones, translucides, n'en ont pas. */
+html.ambiance-tuiles:not(.ambiance-immersif,.rendu-webgl) #stands{filter:drop-shadow(.4px 1px .6px rgba(20,24,26,.16))}
 /* La carte de chaleur, en administration. Elle vient après le secteur — c'est
    la même question posée autrement, et on ne lit pas les deux à la fois — mais
    avant le survol et la sélection, qui gardent la main sur elle. */

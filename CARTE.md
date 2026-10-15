@@ -126,7 +126,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1720 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1725 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 187 l. → demo.html, plan-smcl.html
 
@@ -3160,7 +3160,7 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3113 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3149 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3189,21 +3189,21 @@ Fonctions :
 `detacheVolume` 2047 · `hauteurEnCours` 2084 · `hauteurHausse` 2090 · `echelleHausse` 2095
 `haussesParId` 2098 · `arete` 2114 · `contourDe` 2116 · `ecraseContour` 2120
 `coucheContours` 2129 · `formeDe` 2151 · `memesFormes` 2153 · `memesPoints` 2163
-`signeCouleurs` 2170 · `masqueVolumes` 2179 · `aPlat` 2206 · `couchesDeBloc` 2208
-`modelesLibellesHtml` 2336 · `poseModelesLibelles` 2346 · `lisModelesLibelles` 2352
-`groupesNoms` 2385 · `couchesNoms` 2411 · `couchesPastilles` 2426
-`couchesLibellesWebgl` 2441 · `couchesDessineesWebgl` 2475 · `stage` 2496
-`lectureDifferee` 2529 · `survolTrouve` 2565 · `demandeSurvolWebgl` 2571
-`survoleWebgl` 2577 · `brancheSurvolWebgl` 2605 · `poseSurvolWebgl` 2618 · `enTuiles` 2649
-`hauteurTuile` 2657 · `visePour` 2663 · `gonfleSurvol` 2668 · `coucheTuileSoulevee` 2690
-`couchesTuiles` 2720 · `poseCurseurWebgl` 2738 · `poseFocusWebgl` 2747 · `aplatsDe` 2754
-`coucheSurvol` 2757 · `coucheSurvolVolume` 2773 · `coucheFocus` 2809 · `couchesPhare` 2839
-`lueurDe` 2856 · `opacitePhare` 2894 · `echellePhare` 2895 · `couchesPhareNoms` 2898
-`palierDefile` 2923 · `periodeDe` 2928 · `phaseDe` 2930 · `instant` 2940
-`animeCouche` 2941 · `majAnimationWebgl` 2968 · `animeWebgl` 2976 · `reanime` 3013
-`logosSurLesToits` 3022 · `objetSous` 3052 · `objetSousDiffere` 3057 · `viseEnAvance` 3071
-`lisObjet` 3079 · `cibleWebgl` 3084 · `priseWebgl` 3094 · `libelleSousWebgl` 3099
-`rectEcranWebgl` 3104
+`signeCouleurs` 2170 · `masqueVolumes` 2179 · `aPlat` 2206 · `ombresAuRepos` 2218
+`couchesDeBloc` 2243 · `modelesLibellesHtml` 2372 · `poseModelesLibelles` 2382
+`lisModelesLibelles` 2388 · `groupesNoms` 2421 · `couchesNoms` 2447
+`couchesPastilles` 2462 · `couchesLibellesWebgl` 2477 · `couchesDessineesWebgl` 2511
+`stage` 2532 · `lectureDifferee` 2565 · `survolTrouve` 2601 · `demandeSurvolWebgl` 2607
+`survoleWebgl` 2613 · `brancheSurvolWebgl` 2641 · `poseSurvolWebgl` 2654 · `enTuiles` 2685
+`hauteurTuile` 2693 · `visePour` 2699 · `gonfleSurvol` 2704 · `coucheTuileSoulevee` 2726
+`couchesTuiles` 2756 · `poseCurseurWebgl` 2774 · `poseFocusWebgl` 2783 · `aplatsDe` 2790
+`coucheSurvol` 2793 · `coucheSurvolVolume` 2809 · `coucheFocus` 2845 · `couchesPhare` 2875
+`lueurDe` 2892 · `opacitePhare` 2930 · `echellePhare` 2931 · `couchesPhareNoms` 2934
+`palierDefile` 2959 · `periodeDe` 2964 · `phaseDe` 2966 · `instant` 2976
+`animeCouche` 2977 · `majAnimationWebgl` 3004 · `animeWebgl` 3012 · `reanime` 3049
+`logosSurLesToits` 3058 · `objetSous` 3088 · `objetSousDiffere` 3093 · `viseEnAvance` 3107
+`lisObjet` 3115 · `cibleWebgl` 3120 · `priseWebgl` 3130 · `libelleSousWebgl` 3135
+`rectEcranWebgl` 3140
 
 Importe :
 
