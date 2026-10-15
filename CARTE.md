@@ -593,13 +593,13 @@ Importé par :
 
 dessin · edition · environs · itineraire · outil-dessin · reprise-emplacements · vue · webgl
 
-### `modules/choix-ambiance.mjs` — 34 l. → plan, plan-admin
+### `modules/choix-ambiance.mjs` — 45 l. → plan, plan-admin
 
 - l.1 · Le choix de l'ambiance, offert au visiteur
 
 Importe :
 
-ambiance · demarrage · dom
+ambiance · demarrage · dom · salon
 
 Importé par :
 
@@ -2622,10 +2622,10 @@ Fonctions :
 
 Importé par :
 
-affiche-ici · ambiance · application · borne · charge-annoncee · configuration · demarrage
-enregistrement · erreurs · essai-rappel · ici · installation · mesure · notifications
-parcours · partage · plan · rappels · recherche · releve · rendu · retour · sponsor
-tutoriel · vignettes
+affiche-ici · ambiance · application · borne · charge-annoncee · choix-ambiance
+configuration · demarrage · enregistrement · erreurs · essai-rappel · ici · installation
+mesure · notifications · parcours · partage · plan · rappels · recherche · releve · rendu
+retour · sponsor · tutoriel · vignettes
 
 ### `modules/secteurs.mjs` — 215 l. → plan, plan-admin
 
