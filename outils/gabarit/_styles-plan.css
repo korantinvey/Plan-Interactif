@@ -404,10 +404,19 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
    retirent sur leur tour (`ambiance.mjs` `RETRAIT`), et laisse voir le
    hall quel qu'il soit. Aucune couleur imposée : ce sont celles du salon.
    Les zones perdent leurs tirets et prennent un aplat plus franc, qui se lit
-   comme une pièce du même jeu. */
+   comme une pièce du même jeu.
+
+   Un liseré sombre et translucide, d'un pixel, borde pourtant chaque tuile :
+   sur un fond clair, un stand pâle s'y fondait. Sombre et non teinté, il
+   fonce le bord de n'importe quelle couleur sans en imposer une ; le rendu
+   WebGL le relit dans le style calculé comme tout autre trait. L'immersif,
+   qui porte aussi la classe des tuiles, n'en a pas : ses volumes ont leurs
+   arêtes, et un liseré resté au sol se verrait sous eux. */
 html.ambiance-tuiles .stand path,
 html.ambiance-tuiles .zone path,
-html.ambiance-tuiles .dcal .forme.sdes path{stroke:none}
+html.ambiance-tuiles .dcal .forme.sdes path{stroke:rgba(20,24,26,.16);stroke-width:1;
+  stroke-dasharray:none;vector-effect:non-scaling-stroke}
+html.ambiance-immersif :is(.stand,.zone,.dcal .forme.sdes) path{stroke:none}
 html.ambiance-tuiles .zone path{fill-opacity:.62}
 html.ambiance-tuiles .zone.masquee path{fill-opacity:.2}
 /* La carte de chaleur, en administration. Elle vient après le secteur — c'est
