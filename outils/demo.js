@@ -5,12 +5,14 @@
  * (`outils/source-demo.json`, FEP27 : `npm run source-demo`). On en garde ce
  * qui fait un plan crédible et ne nomme personne — la géométrie des stands et
  * des zones, les dessins posés à la main, l'apparence réglée par l'exploitant,
- * la nomenclature, les secteurs, les champs propres au salon — et on remplace
- * le reste :
+ * les champs propres au salon — et on remplace le reste :
  *
  *   - tous les emplacements sont occupés : un stand libre, en option ou en
  *     contact reçoit lui aussi un exposant, un numéro et un logo — un plan de
  *     démonstration à moitié vide montrerait surtout des trous ;
+ *   - six secteurs inventés remplacent ceux de la source, chacun posé sur une
+ *     zone d'un seul tenant du plan (`zonesImplantation`), avec sa
+ *     nomenclature et sa couleur ;
  *   - chaque exposant reçoit un nom tiré de son secteur, une raison sociale,
  *     une ville, un site en `.example` (domaine réservé, qui ne mène chez
  *     personne) et un numéro dans la plage que l'ARCEP réserve à la fiction
@@ -64,44 +66,90 @@ const slug = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 /* ---------- les secteurs ----------
-   Ceux de la source, chacun avec le vocabulaire de ses enseignes, ses
-   couleurs d'image et son catalogue : un « Burgeo Snack » ne vend pas de
-   l'assurance. Un secteur que la source nomme d'après quelqu'un change de nom
-   (`nom`). */
+   Six secteurs inventés, et non ceux de la source : la nomenclature d'un vrai
+   salon le reconnaît aussi sûrement que ses exposants. Chacun porte le
+   vocabulaire de ses enseignes, ses sous-catégories (la nomenclature), sa
+   couleur sur le plan, ses couleurs d'image et son catalogue : un « Burger
+   Snack » ne vend pas de l'assurance. */
 const SECTEURS = {
-  "Mode et équipement de la personne": { mots: ["Mode", "Kids", "Style", "Shoes", "Optic"], c: ["#7c3aed", "#f0abfc"],
-    produits: ["Boutique de centre-ville", "Corner en grand magasin", "Collection capsule", "Format outlet", "Boutique éphémère"] },
-  "Commerce alimentaire": { mots: ["Épicerie", "Gourmet", "Délices", "Fromagerie", "Cave"], c: ["#b45309", "#fde68a"],
-    produits: ["Boutique de quartier", "Format kiosque", "Coffrets gourmands", "Atelier dégustation", "Vente en ligne locale"] },
-  "Bâtiment et habitat": { mots: ["Habitat", "Rénov", "Maison", "Déco", "Cuisines"], c: ["#0f766e", "#99f6e4"],
-    produits: ["Agence rénovation clé en main", "Showroom cuisine", "Pack isolation", "Dépannage 7 jours sur 7"] },
-  "Restauration Rapide": { mots: ["Burger", "Tacos", "Poké", "Pizza", "Snack", "Bagel"], c: ["#dc2626", "#fdba74"],
-    produits: ["Restaurant en centre commercial", "Format drive", "Cuisine de livraison", "Kiosque de gare", "Food truck"] },
-  "Restauration assise": { mots: ["Bistrot", "Brasserie", "Trattoria", "Table", "Comptoir"], c: ["#9f1239", "#fecdd3"],
-    produits: ["Brasserie de 120 couverts", "Restaurant de zone commerciale", "Bar à vins", "Formule bistronomique"] },
-  "Services aux particuliers": { mots: ["Services", "Domicile", "Coiffure", "Pressing", "Fit"], c: ["#0369a1", "#bae6fd"],
-    produits: ["Agence de services à domicile", "Salon de coiffure", "Studio de remise en forme", "Pressing écologique"] },
-  "Hôtellerie": { mots: ["Hôtel", "Suites", "Lodge", "Resort"], c: ["#1e3a8a", "#fcd34d"],
-    produits: ["Hôtel de 60 chambres", "Résidence hôtelière", "Conversion d'hôtel indépendant", "Hôtel de gare"] },
-  "Experts FFF": { nom: "Experts de la franchise", en: "Franchise experts",
-    mots: ["Conseil", "Avocats", "Expertise", "Partners"], c: ["#334155", "#cbd5e1"],
-    produits: ["Audit de réseau", "Rédaction du DIP", "Accompagnement du franchisé", "Étude d'implantation"] },
-  "Services aux entreprises": { mots: ["Business", "Pro", "Solutions", "Office", "Net"], c: ["#4338ca", "#c7d2fe"],
-    produits: ["Agence de recrutement", "Centre d'affaires", "Nettoyage professionnel", "Solution de gestion"] },
-  "Médias": { mots: ["Mag", "Média", "Hebdo", "Radio"], c: ["#be185d", "#fbcfe8"],
-    produits: ["Magazine des réseaux", "Annuaire de la franchise", "Lettre hebdomadaire", "Émission vidéo"] },
-  "Organismes de financement et d'assurance": { mots: ["Finance", "Assurances", "Crédit", "Capital"], c: ["#065f46", "#a7f3d0"],
-    produits: ["Prêt création franchise", "Assurance multirisque commerce", "Prêt d'honneur", "Crédit-bail matériel"] },
-  "Fédérations et institutionnels": { mots: ["Fédération", "Union", "Chambre", "Réseau"], c: ["#1d4ed8", "#bfdbfe"],
-    produits: ["Formation des créateurs", "Annuaire des réseaux", "Médiation", "Guide du futur franchisé"] },
-  "Distribution alimentaire": { mots: ["Market", "Primeur", "Bio", "Frais", "Proxi"], c: ["#15803d", "#bbf7d0"],
-    produits: ["Supérette de proximité", "Magasin bio", "Format drive piéton", "Épicerie vrac"] },
-  "Villes et territoires": { mots: ["Territoires", "Agglo", "Attractivité", "Région"], c: ["#0e7490", "#a5f3fc"],
-    produits: ["Local commercial en centre-ville", "Aide à l'implantation", "Pépinière de commerces", "Loyer d'amorçage"] },
-  "Immobilier": { mots: ["Immo", "Patrimoine", "Agence", "Habitat"], c: ["#a16207", "#fef08a"],
-    produits: ["Agence immobilière", "Gestion locative", "Mandataire indépendant", "Transaction de commerces"] },
+  "Restauration": { en: "Food service", couleur: "#f6a96b", c: ["#dc2626", "#fdba74"],
+    mots: ["Burger", "Tacos", "Poké", "Pizza", "Bistrot", "Brasserie", "Comptoir"],
+    sous: { "Restauration rapide": "Fast food", "Restauration à table": "Sit-down dining",
+      "Café et boulangerie": "Café and bakery" },
+    produits: ["Restaurant en centre commercial", "Format drive", "Cuisine de livraison", "Food truck",
+      "Brasserie de 120 couverts"] },
+  "Alimentation": { en: "Food retail", couleur: "#8fd694", c: ["#15803d", "#bbf7d0"],
+    mots: ["Épicerie", "Gourmet", "Market", "Primeur", "Bio", "Cave"],
+    sous: { "Épicerie fine": "Delicatessen", "Magasin bio": "Organic store", "Cave et spiritueux": "Wine and spirits" },
+    produits: ["Boutique de quartier", "Supérette de proximité", "Coffrets gourmands", "Épicerie vrac",
+      "Atelier dégustation"] },
+  "Mode et beauté": { en: "Fashion and beauty", couleur: "#f3a6c8", c: ["#be185d", "#fbcfe8"],
+    mots: ["Mode", "Style", "Shoes", "Optic", "Beauty", "Spa"],
+    sous: { "Prêt-à-porter": "Ready-to-wear", "Cosmétique": "Cosmetics", "Optique": "Eyewear" },
+    produits: ["Boutique de centre-ville", "Corner en grand magasin", "Institut de beauté", "Collection capsule",
+      "Boutique éphémère"] },
+  "Habitat et immobilier": { en: "Home and real estate", couleur: "#8fb8f2", c: ["#0f766e", "#99f6e4"],
+    mots: ["Habitat", "Rénov", "Maison", "Déco", "Immo", "Cuisines"],
+    sous: { "Rénovation": "Renovation", "Cuisine et bain": "Kitchen and bath", "Agence immobilière": "Real estate agency" },
+    produits: ["Agence rénovation clé en main", "Showroom cuisine", "Pack isolation", "Agence immobilière",
+      "Gestion locative"] },
+  "Services à la personne": { en: "Personal services", couleur: "#b9a3f5", c: ["#4338ca", "#c7d2fe"],
+    mots: ["Services", "Domicile", "Coiffure", "Pressing", "Fit", "Kids"],
+    sous: { "Aide à domicile": "Home help", "Sport et bien-être": "Sport and wellness",
+      "Garde d'enfants": "Childcare" },
+    produits: ["Agence de services à domicile", "Salon de coiffure", "Studio de remise en forme",
+      "Pressing écologique", "Micro-crèche"] },
+  "Conseil et financement": { en: "Advice and finance", couleur: "#f2d16b", c: ["#334155", "#cbd5e1"],
+    mots: ["Conseil", "Finance", "Assurances", "Partners", "Capital", "Expertise"],
+    sous: { "Expertise de la franchise": "Franchise expertise", "Banque et assurance": "Banking and insurance",
+      "Services aux entreprises": "Business services" },
+    produits: ["Audit de réseau", "Rédaction du DIP", "Prêt création franchise", "Assurance multirisque commerce",
+      "Centre d'affaires"] },
 };
-const nomSecteur = (s) => (SECTEURS[s] && SECTEURS[s].nom) || s;
+/* Celui des conférenciers et des animateurs du programme. */
+const SECTEUR_EXPERTS = "Conseil et financement";
+
+/**
+ * Les zones d'implantation : les stands découpés en autant de parts que de
+ * secteurs, d'un seul tenant chacune, comme un organisateur range un secteur
+ * dans un coin du hall plutôt que de le semer partout.
+ *
+ * Chaque coupe partage les secteurs en deux moitiés et passe par la plus
+ * large allée qui laisse à chaque côté, à peu près, la part de stands de ses
+ * secteurs — d'abord entre les halls, puis le long des allées : des zones
+ * d'un seul tenant, et de tailles voisines. Un pur calcul sur les centres : la même source donne les mêmes zones.
+ * @param {any[]} stands
+ * @param {number} k  le nombre de zones
+ * @returns {Map<string, number>} le rang de la zone de chaque stand
+ */
+function zonesImplantation(stands, k) {
+  const zone = new Map();
+  let suivante = 0;
+  (function coupe(liste, k) {
+    if (k <= 1 || liste.length < 2) {
+      const z = suivante++;
+      liste.forEach((s) => zone.set(s.id, z));
+      return;
+    }
+    let mieux = null;
+    for (const kg of new Set([Math.floor(k / 2), Math.ceil(k / 2)])) {
+      // la coupe tombe près de la part qui revient au premier côté
+      const vise = liste.length * kg / k, marge = liste.length * 0.12;
+      for (const axe of [0, 1]) {
+        const tries = [...liste].sort((a, b) => a.c[axe] - b.c[axe] || (a.id < b.id ? -1 : 1));
+        const de = Math.max(1, Math.ceil(vise - marge)), a = Math.min(tries.length - 1, Math.floor(vise + marge));
+        for (let i = de; i <= a; i++) {
+          const ecart = tries[i].c[axe] - tries[i - 1].c[axe];
+          if (!mieux || ecart > mieux.ecart) mieux = { ecart, tries, i, kg };
+        }
+      }
+    }
+    const { tries, i, kg } = mieux;
+    coupe(tries.slice(0, i), kg);
+    coupe(tries.slice(i), k - kg);
+  })(stands, k);
+  return zone;
+}
 
 /* ---------- les noms ---------- */
 const DEBUTS = ["Al", "Bel", "Cal", "Cor", "Dal", "Del", "Ev", "Fal", "Gal", "Hel", "Is", "Jun", "Kal",
@@ -190,20 +238,13 @@ function enseigne(r, mots) {
 function salonDemo(source, o) {
   const logos = (o && o.logos) || lisLogos();
   const src = clone(source);
-  const tous = src.plans.flatMap((p) => p.stands);
 
-  /* Ce que chaque secteur porte de nomenclature dans la source : un stand
-     libre qu'on peuple en reçoit d'un secteur qu'on lui donne. */
-  const nomenclDe = {};
-  tous.forEach((s) => {
-    if (!s.sect) return;
-    (nomenclDe[s.sect] = nomenclDe[s.sect] || new Set());
-    (s.nomencl || []).forEach((n) => nomenclDe[s.sect].add(n));
-  });
-  const secteurs = Object.keys(SECTEURS).filter((k) => nomenclDe[k] || true);
-  // le secteur d'un stand qui n'en dit rien : celui que sa nomenclature nomme
-  const secteurDe = (s, r) => s.sect ||
-    (s.nomencl || []).find((n) => SECTEURS[n]) || pioche(r, secteurs);
+  /* Le secteur de chaque stand : celui de sa zone d'implantation, quel que
+     soit celui de la source. */
+  const secteurs = Object.keys(SECTEURS);
+  const secteurDe = new Map();
+  src.plans.forEach((p) => zonesImplantation(p.stands, secteurs.length)
+    .forEach((z, id) => secteurDe.set(id, secteurs[z])));
 
   const pris = new Set();
   const societes = new Map();
@@ -231,8 +272,8 @@ function salonDemo(source, o) {
       id: "p" + empreinte("produit|" + nom + "|" + i, 10), nom: n,
       texte: "<p>" + n + ", chez " + nom + " : le concept, l'accompagnement à " +
         "l'ouverture et les conditions d'entrée dans le réseau.</p>",
-      image: ORIGINE + "/" + DOSSIER_PRODUITS + "/" + slug(nomSecteur(sect)) + "-" + i + ".svg",
-      grande: null, doc: null, video: null, themes: [nomSecteur(sect)],
+      image: ORIGINE + "/" + DOSSIER_PRODUITS + "/" + slug(sect) + "-" + i + ".svg",
+      grande: null, doc: null, video: null, themes: [sect],
     }));
     if (logos[nom]) {
       const k = empreinte("logo|" + nom, 16);
@@ -248,15 +289,12 @@ function salonDemo(source, o) {
   let numero = 0;
   const stands = (p) => p.stands.map((s) => {
     const r = hasard("stand|" + s.id);
-    const sect = secteurDe(s, r);
+    const sect = secteurDe.get(s.id);
     const reel = s.nom || s.plan || ("libre|" + s.id);
     const soc = societe(s.nom ? reel : "libre|" + s.id, sect);
-    const nomencl = s.nomencl && s.nomencl.length ? s.nomencl
-      : [sect, ...[...(nomenclDe[sect] || [])].filter((n) => n !== sect).sort().slice(0, 1)];
     const o = {
       id: s.id, code: s.code || "D" + String(++numero).padStart(2, "0"),
-      ...soc, sect: nomSecteur(sect),
-      nomencl: nomencl.map(nomSecteur),
+      ...soc, sect, nomencl: [sect, pioche(r, Object.keys(SECTEURS[sect].sous))],
       m2: s.m2, angles: s.angles, niveaux: s.niveaux, etat: "Affecte",
       d: s.d, c: s.c, bb: s.bb,
       ...(s.hall ? { hall: s.hall } : {}),
@@ -311,7 +349,7 @@ function salonDemo(source, o) {
       const tete = k.split("/")[0];
       if (klipso.has(tete)) continue;
       if (k.startsWith("_calage:")) { reglages["_calage:" + idPlan] = v; continue; }
-      if (k.startsWith("secteur:")) { reglages["secteur:" + nomSecteur(k.slice(8))] = v; continue; }
+      if (k.startsWith("secteur:")) continue;
       if (k.startsWith("_lab:") && v && typeof v.e === "string") {
         // un libellé posé à la main recopie le nom de ce qu'il désigne
         const cible = parId.get(k.slice(5));
@@ -326,10 +364,20 @@ function salonDemo(source, o) {
     }
     if (reglages._adherent) reglages._adherent = { ...reglages._adherent, texte: "Membre du réseau" };
     if (reglages._suggestion) {
-      const renomme = (t) => Object.fromEntries(Object.entries(t || {}).map(([k, v]) => [nomSecteur(k), v]));
-      reglages._suggestion = { ...reglages._suggestion,
-        auto: renomme(reglages._suggestion.auto), fixes: renomme(reglages._suggestion.fixes) };
+      /* Les exposants désignés, rangés sous le secteur qu'ils ont reçu : trois
+         au plus pour le classement, un seul quand l'organisateur choisit. */
+      const auto = {}, fixes = {};
+      Object.values(reglages._suggestion.auto || {}).flat().forEach((id) => {
+        const sect = secteurDe.get(id);
+        if (sect && (auto[sect] = auto[sect] || []).length < 3) auto[sect].push(id);
+      });
+      Object.values(reglages._suggestion.fixes || {}).forEach((id) => {
+        const sect = secteurDe.get(id);
+        if (sect && !fixes[sect]) fixes[sect] = id;
+      });
+      reglages._suggestion = { ...reglages._suggestion, auto, fixes };
     }
+    for (const [nom, def] of Object.entries(SECTEURS)) reglages["secteur:" + nom] = { couleur: def.couleur };
     reglages[CLE_NUMEROS] = { visible: false };
     reglages._ambiance = { ...(reglages._ambiance || {}), logos: true };
     // la pile : les calques Klipso cèdent leur place à la numérotation
@@ -388,8 +436,7 @@ function salonDemo(source, o) {
   const dits = new Set();
   plans.forEach((p) => {
     const occupes = p.stands;
-    const experts = occupes.filter((s) => s.sect === nomSecteur("Experts FFF"));
-    const medias = occupes.filter((s) => s.sect === "Médias");
+    const experts = occupes.filter((s) => s.sect === SECTEUR_EXPERTS);
     const salles = p.zones.filter((z) => z.nom && (z.type === "conferences" ||
       /^(Plateau TV|Place des experts)$/.test(z.nom)));
     salles.forEach((z) => {
@@ -411,7 +458,7 @@ function salonDemo(source, o) {
         const personne = (societe) => ({ nom: pioche(r, PRENOMS) + " " + pioche(r, NOMS_FAMILLE), societe });
         const intervenants = [personne(hote.nom)];
         if (!pitch && type === "Table ronde") intervenants.push(personne(pioche(r, occupes).nom), personne(pioche(r, occupes).nom));
-        const animateurs = !pitch && medias.length && r() < 0.5 ? [personne(pioche(r, medias).nom)] : [];
+        const animateurs = !pitch && experts.length && r() < 0.5 ? [personne(pioche(r, experts).nom)] : [];
         p.conferences.push({
           id: "demo-conf-" + n, nom: titre,
           texte: pitch ? "Le dirigeant de " + hote.nom + " présente son concept, son modèle économique " +
@@ -431,14 +478,14 @@ function salonDemo(source, o) {
   if (fiche.perso) fiche.perso = fiche.perso.filter((c) => c.cle !== "test");
   if (fiche.ordre) fiche.ordre = fiche.ordre.filter((c) => c !== "perso:test");
 
-  /* L'anglais des listes : ce que la démonstration montre encore, et le nom
-     neuf des secteurs renommés. */
+  /* L'anglais des listes : ce que la démonstration montre encore des champs
+     de la source, et les secteurs inventés avec leurs sous-catégories. */
   const montre = new Set();
   plans.forEach((p) => p.stands.forEach((s) => {
     [s.sect, ...(s.nomencl || []), ...Object.values(s.perso || {})].forEach((v) => montre.add(v));
   }));
   const anglais = Object.fromEntries(Object.entries(src.anglais || {}).filter(([k]) => montre.has(k)));
-  for (const def of Object.values(SECTEURS)) if (def.nom && def.en) anglais[def.nom] = def.en;
+  for (const [nom, def] of Object.entries(SECTEURS)) Object.assign(anglais, { [nom]: def.en }, def.sous);
 
   return {
     evenement: "Salon Démo 2027", fuseau: src.fuseau || "Europe/Paris",
@@ -480,7 +527,7 @@ function imagesProduits() {
       const mots = nom.split(" ");
       const lignes = nom.length > 22 ? [mots.slice(0, Math.ceil(mots.length / 2)).join(" "),
         mots.slice(Math.ceil(mots.length / 2)).join(" ")] : [nom];
-      sortie[slug(nomSecteur(sect)) + "-" + i + ".svg"] =
+      sortie[slug(sect) + "-" + i + ".svg"] =
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 375" width="500" height="375">' +
         '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 +
         '"/><stop offset="1" stop-color="' + c1 + '" stop-opacity=".75"/></linearGradient></defs>' +
