@@ -20,6 +20,7 @@ import { view } from "./vue.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
 import { libelles } from "./libelles.mjs";
 import { lancePlan } from "./lancement.mjs";
+import { COMPTES_LOGOS } from "./logos-stands.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
    en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
@@ -41,15 +42,15 @@ import "./choix-ambiance.mjs";
 
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,
-   les mesures du texte, le rendu par la carte graphique et les libellés qu'on
-   réécrit sur des mesures neuves. Seuls les essais lisent `__essais`. La
+   les mesures du texte, le rendu par la carte graphique, ce que la planche
+   des logos a coûté et les libellés qu'on réécrit sur des mesures neuves. Seuls les essais lisent `__essais`. La
    graisse et la police des libellés se
    remplacent au choix d'un modèle : elles se lisent donc par un accesseur,
    qui rend celles du moment ; la visite guidée en cours aussi, que le module
    pose en la lançant et efface en la quittant, et la vue du plan, que les
    gestes remplacent sans cesse. */
 globalThis.__essais = {
-  SLUG, GL, rectEcranWebgl, _lg, largeur, libelles,
+  SLUG, GL, rectEcranWebgl, _lg, largeur, libelles, COMPTES_LOGOS,
   adresseSure, adresseImage, imageSure, assainitRiche,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },

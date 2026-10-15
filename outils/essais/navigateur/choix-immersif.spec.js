@@ -5,7 +5,9 @@
  * changeait les données de la grande couche des volumes, et la bibliothèque
  * retriangulait tous les stands du hall — deux fois par appui (`webgl.mjs`,
  * « Des couches qui gardent leurs formes »). Il y reste désormais, aplati :
- * seule sa copie, d'un seul stand, se triangule.
+ * seule sa copie, d'un seul stand, se triangule. Ses noms montent avec
+ * lui dans le seul grand atlas, et ceux des autres ne se remettent pas en
+ * page (`webgl.mjs` `couchesLibellesWebgl`).
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe } = require("./aide");
@@ -29,6 +31,12 @@ test("choisir un stand ne retriangule pas le hall", async ({ page }) => {
       .find((l) => /-volumes-\d+$/.test(l.id) && l.state && l.state.polygonTesselator);
     const proto = Object.getPrototypeOf(c.state.polygonTesselator), avant = proto.updateGeometry;
     window.__triangulees = [];
+    // chaque couche qui naît pendant le choix
+    let base = Object.getPrototypeOf(c);
+    while (base && !Object.prototype.hasOwnProperty.call(base, "_initialize")) base = Object.getPrototypeOf(base);
+    const init = base._initialize;
+    window.__nees = [];
+    base._initialize = function () { window.__nees.push(this.id); return init.apply(this, arguments); };
     proto.updateGeometry = function (o) {
       window.__triangulees.push(o && o.data && o.data.length !== undefined ? o.data.length : -1);
       return avant.apply(this, arguments);
@@ -44,5 +52,9 @@ test("choisir un stand ne retriangule pas le hall", async ({ page }) => {
   const triangulees = await page.evaluate(() => window.__triangulees);
   // la copie qui monte, et elle seule : un stand à la fois, jamais le hall
   for (const n of triangulees) expect(n, "formes retriangulées d'un coup (" + id + ")").toBeLessThanOrEqual(2);
+  /* Le nom qui monte se peint du grand atlas seul : ses cinq couches
+     s'initialisaient à chaque appui, chacune avec son atlas. */
+  const nees = await page.evaluate(() => window.__nees);
+  for (const id of nees.filter((x) => x.startsWith("libelles-hausse-"))) expect(id).toMatch(/-grand(-characters)?$/);
   expect(erreurs).toEqual([]);
 });
