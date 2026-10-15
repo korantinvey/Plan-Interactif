@@ -2177,8 +2177,11 @@ const aPlat = () => GL.camera ? { parameters: { depthCompare: "less-equal", dept
    qui la porte. L'immersif a ses volumes et sa lumière, il n'en a pas besoin.
    La tuile soulevée garde la sienne, plus grande (`coucheTuileSoulevee`). */
 const OMBRE_TUILE = [20, 24, 26, 13], DECALE_OMBRE = .055;
+/* « ?ombres=non » les retire, pour mesurer ce qu'elles coûtent à l'affichage
+   sur l'appareil même où l'on doute. */
+const SANS_OMBRES = new URLSearchParams(location.search).get("ombres") === "non";
 function ombresAuRepos(plats, cle, plat){
-  if (!enTuiles() || GL.camera) return [];
+  if (SANS_OMBRES || !enTuiles() || GL.camera) return [];
   const tuiles = plats.filter(d => d.couleur[3] >= 250 && !d.prise && d.el && d.el.matches(".stand,.zone,.sdes"));
   if (!tuiles.length) return [];
   /* Le côté court d'une tuile ordinaire : la médiane, pour qu'un grand hall
