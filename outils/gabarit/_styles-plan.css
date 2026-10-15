@@ -1314,16 +1314,13 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    texte à l'écart du coin des actions ; la marque, plus haute qu'une ligne,
    en demande davantage — c'est la règle d'en dessous. */
 .detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
-  column-gap:12px;row-gap:2px;padding-right:26px}
+  column-gap:12px;row-gap:2px;padding-right:var(--coin-actes)}
 .detail-hd .hdNom h2{padding-right:0;margin-right:auto}
-/* Vingt-six pixels tiennent un texte à l'écart du coin : haut d'une ligne, il
-   passe sous le signet et la croix sans jamais les atteindre. La marque, elle,
-   vaut trois lignes de titre — elle remonte dans leur bande, et le peu qui
-   restait à droite l'y menait tout droit dès que le nom mangeait la ligne.
-   Elle se réserve donc le coin entier, cette largeur que la ligne du type se
-   réserve déjà. La réserve suit la marque : elle tombe quand celle-ci déménage
-   sous le numéro, où le coin est loin. */
-.detail-hd .hdNom:has(> .logoZone:not([hidden])){padding-right:var(--coin-actes)}
+/* Le nom ouvre la fiche : aucun surtitre ne le repousse plus sous le coin des
+   actions, il se tient donc sur leur ligne et s'en réserve la largeur — le
+   signet et la croix, et sur l'écran étroit les boutons de centrage et
+   d'itinéraire. La marque, haute de trois lignes de titre, tient dans la même
+   réserve. */
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
@@ -1391,27 +1388,16 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
      fait 22,8 : la ligne du numéro portait la fraction que le titre
      au-dessus venait de perdre. Même arrondi, sur la même variable. */
   line-height:round(calc(var(--titre) * 1.2), 1px)}
-/* La ligne du type — « Stand », « Zone » — porte aussi la mention des nouveaux
-   venus : c'est la première ligne qu'on lit, avant même le nom, et la pastille
-   y annonce l'exposant au lieu de commenter son numéro, deux lignes plus bas.
-   La réserve de droite est celle du coin des actions, marque et croix : sans
-   elle, une pastille un peu longue passait dessous. Quand la place manque, le
-   flex la renvoie sous le libellé plutôt que de la comprimer.
-
-   La pastille ne se range pas contre le libellé : ses marges automatiques la
-   posent au milieu de ce qui reste entre lui et le coin des actions — collée
-   au mot « Stand », elle s'en faisait lire comme la suite. L'écart de la ligne
-   lui garde de l'air même quand le milieu n'existe plus, sur un écran étroit
-   ou sous le tampon penché du modèle kraft. */
+/* La ligne des pastilles — « Nouvel exposant », les distinctions — au-dessus
+   du nom : c'est la première qu'on lit, et la pastille y annonce l'exposant
+   au lieu de commenter son numéro, deux lignes plus bas. La réserve de droite
+   est celle du coin des actions : sans elle, une pastille un peu longue
+   passait dessous. Sans pastille, la ligne disparaît et le nom monte à sa
+   place — la tête de fiche d'un exposant sans distinction commence par lui. */
 .detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;
-  column-gap:14px;row-gap:4px;padding-right:var(--coin-actes)}
-/* Les pastilles voyagent dans un étui : deux marges automatiques, une par
-   pastille, les auraient écartées aux deux bouts de ce qui reste. Vide, l'étui
-   ne prend pas de place — la tête de fiche d'un exposant sans distinction est
-   celle qu'elle était. */
-.detail-hd .hdTete .pastDist{display:flex;flex-wrap:wrap;align-items:center;
-  gap:8px;margin-inline:auto}
-.detail-hd .hdTete .pastDist:empty{display:none}
+  gap:8px;padding-right:var(--coin-actes);margin-bottom:6px}
+.detail-hd .hdTete:not(:has(.pastDist > *)){display:none}
+.detail-hd .hdTete .pastDist{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 /* Une distinction se signale au-dessus du nom. La pastille reprend l'accent de
    la page plutôt qu'une couleur à elle : c'est une distinction, pas une
    alerte, et une teinte de plus ferait un troisième langage sur le plan après
@@ -1475,6 +1461,9 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
   font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase}
 .detail.avecCorne .detail-hd .hdTete{padding-left:68px}
+/* Sans pastille, c'est le nom qui ouvre la tête de fiche : il s'écarte à son
+   tour du coin corné. */
+.detail.avecCorne .detail-hd .hdTete:not(:has(.pastDist > *)) + .hdNom{padding-left:68px}
 /* Le bandeau prend toute la largeur : rien ne lui dispute sa place, et il
    descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
    est déjà à l'étroit. C'est à l'exploitant d'en juger, et deux bandeaux
