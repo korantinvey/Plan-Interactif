@@ -723,6 +723,22 @@ function traceJournee(){
   dessineItineraire();
 }
 
+/**
+ * Retirer du plan le trait de la visite, s'il y est encore.
+ *
+ * Quitter la journée — refermer le tiroir de soi-même, revenir à la liste —
+ * doit rendre le plan nu, comme le fait l'itinéraire qu'on referme : le trait
+ * resté seul se lisait comme un mode dont on ne trouvait plus la sortie. La
+ * journée, elle, reste calculée ; rouvrir le tiroir la retrace. Un trajet
+ * demandé à côté n'est pas le sien : il reste.
+ */
+export function retireTraceJournee(){
+  if (SEJOUR && SEJOUR.jours.some(j => j.dessin && trace() === j.dessin)){
+    poseTrace(null);
+    dessineItineraire();
+  }
+}
+
 /** Passer à un jour : le tiroir, le trait et le cadrage le suivent. */
 function montreLeJour(j){
   if (!j) return;
@@ -755,10 +771,7 @@ export function perimeJournee(){
  * conférence qui motivait le refus n'est plus au parcours.
  */
 export function oublieSejour(){
-  if (SEJOUR && SEJOUR.jours.some(j => j.dessin && trace() === j.dessin)){
-    poseTrace(null);
-    dessineItineraire();
-  }
+  retireTraceJournee();
   SEJOUR = null;
   JOURNEE = null;
   vueJournee = false;
@@ -1248,5 +1261,9 @@ export function brancheJournee(){
      ------------------------------------------------------------ */
   $("btnJournee").onclick = ouvreOrganisation;
   $("jRefaire").onclick = ouvreOrganisation;
-  $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
+  $("jRetour").onclick = () => {
+    vueJournee = false;
+    retireTraceJournee();
+    appliqueVueParcours();
+  };
 }
