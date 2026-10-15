@@ -38,7 +38,7 @@ import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
-import { appliqueVueParcours, perimeJournee, oublieSejour } from "./journee.mjs";
+import { appliqueVueParcours, perimeJournee, oublieSejour, retireTraceJournee } from "./journee.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { confieApresOption } from "./options.mjs";
 const racine = document.documentElement;
@@ -166,6 +166,18 @@ export function remplitParcours(){
   poseGardeParcours(hote);
 }
 
+/**
+ * Refermer le tiroir de soi-même — sa croix, son bouton, « Échap » — c'est
+ * quitter la journée : son trait s'efface avec lui. Seul un autre tiroir qui
+ * prend la bande — la fiche d'un stand de la journée — le laisse en place
+ * (`fermeParcours`, par le registre des tiroirs).
+ */
+function quitteParcours(){
+  if (!$("parcours").classList.contains("open")) return;
+  fermeParcours();
+  retireTraceJournee();
+}
+
 function ouvreParcours(){
   // la fiche et l'itinéraire occupent la même bande : ils cèdent la place
   // plutôt que de s'y superposer
@@ -221,8 +233,8 @@ export function brancheTiroirParcours(){
   });
 
   $("btnParcours").onclick = () =>
-    $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
-  $("closeParcours").onclick = fermeParcours;
+    $("parcours").classList.contains("open") ? quitteParcours() : ouvreParcours();
+  $("closeParcours").onclick = quitteParcours;
 
   $("videParcours").onclick = () => confirme("Vider le parcours",
     "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
@@ -232,7 +244,7 @@ export function brancheTiroirParcours(){
   /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
      le tiroir, pas avec lui. */
   addEventListener("keydown", e => {
-    if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
+    if (e.key === "Escape" && !$("modale").classList.contains("open")) quitteParcours();
   });
 }
 
