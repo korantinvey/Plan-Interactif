@@ -468,8 +468,16 @@ function toileDejaRangee(/** @type {string} */ cle, /** @type {number} */ tasse)
    franchi renvoyait les logos de toute la vue à chaque pincement : 2 555
    envois et 308 Mo en moins d'une minute sur un téléphone (`?perf`, FEP27,
    14 octobre 2026). Un rien moins net, le temps de zoomer assez pour que
-   l'écart se voie. */
-const TOLERANCE_BAS = .7, TOLERANCE_HAUT = 2;
+   l'écart se voie.
+
+   Plus fine, elle se garde jusqu'au quadruple : la carte graphique réduit
+   d'elle-même un logo trop net, par les niveaux de la planche, et le redessiner
+   plus petit au dézoom n'apportait rien qu'un envoi. Au double, chaque
+   pincement qui reculait renvoyait toute la vue — 37 % des envois étaient le
+   même logo à une autre finesse (`?perf`, Mali-G720, 16 octobre 2026). Pas
+   au-delà : une toile trop grande tient sa place sur la planche, et chasse
+   d'autres logos qu'il faudrait renvoyer. */
+const TOLERANCE_BAS = .7, TOLERANCE_HAUT = 4;
 /** Une toile de ce logo déjà rangée, assez proche de cette largeur — la plus
  *  proche ; rien sinon. */
 function toileProche(/** @type {string} */ cle, /** @type {number} */ tasse, /** @type {number} */ largeur){

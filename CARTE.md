@@ -1697,7 +1697,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1358 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1366 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1707,15 +1707,15 @@ Fonctions :
 `geleLogos` 193 · `arriveeSansFond` 238 · `grande` 254 · `pompeGrandes` 268
 `demandeGrande` 272 · `image` 312 · `sansFond` 332 · `lanceTravailleur` 371
 `demandeDetourage` 392 · `pompe` 399 · `parLaPageSeule` 419 · `detoureRevenu` 428
-`largeurDeToile` 445 · `cleDeToile` 448 · `toileDejaRangee` 454 · `toileProche` 475
-`toile` 496 · `logoPose` 531 · `sourceDuToit` 541 · `cedeAuLogo` 554 · `CARRE` 583
-`filtrage` 616 · `plancheDe` 633 · `extensionPlanche` 669 · `bilanLogos` 780
-`rendPlanche` 799 · `taillesDe` 811 · `rangPour` 820 · `nouvellePlanche` 829 · `vaA` 847
-`videE` 848 · `place` 853 · `libere` 892 · `liberable` 914 · `envoie` 924
-`cedeLaPlace` 946 · `recopie` 977 · `range` 992 · `plancheGardee` 1035
-`oubliePlancheBientot` 1080 · `pres` 1092 · `solVu` 1103 · `logosARevoir` 1120
-`aRevoir` 1128 · `groupe` 1141 · `oublie` 1152 · `annoncePoses` 1186 · `matriceDuToit` 1208
-`couchesLogos` 1221 · `poseLogos` 1242
+`largeurDeToile` 445 · `cleDeToile` 448 · `toileDejaRangee` 454 · `toileProche` 483
+`toile` 504 · `logoPose` 539 · `sourceDuToit` 549 · `cedeAuLogo` 562 · `CARRE` 591
+`filtrage` 624 · `plancheDe` 641 · `extensionPlanche` 677 · `bilanLogos` 788
+`rendPlanche` 807 · `taillesDe` 819 · `rangPour` 828 · `nouvellePlanche` 837 · `vaA` 855
+`videE` 856 · `place` 861 · `libere` 900 · `liberable` 922 · `envoie` 932
+`cedeLaPlace` 954 · `recopie` 985 · `range` 1000 · `plancheGardee` 1043
+`oubliePlancheBientot` 1088 · `pres` 1100 · `solVu` 1111 · `logosARevoir` 1128
+`aRevoir` 1136 · `groupe` 1149 · `oublie` 1160 · `annoncePoses` 1194 · `matriceDuToit` 1216
+`couchesLogos` 1229 · `poseLogos` 1250
 
 Importe :
 
