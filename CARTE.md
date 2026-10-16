@@ -372,19 +372,19 @@ Importé par :
 
 synchronisation
 
-### `modules/banc.mjs` — 244 l. → plan, plan-admin
+### `modules/banc.mjs` — 279 l. → plan, plan-admin
 
 - l.1 · Le banc d'essai — `?perf=banc`
 
 Fonctions :
 
-`attends` 38 · `image` 39 · `doux` 41 · `bouge` 44 · `resserre` 58 · `centile` 94
-`compteImages` 98 · `mesure` 112 · `bouton` 139 · `posePanneau` 147 · `selectionne` 175
-`ombres` 183 · `resume` 185 · `lance` 206
+`attends` 39 · `image` 40 · `doux` 42 · `bouge` 45 · `resserre` 61 · `cible` 73
+`centile` 125 · `compteImages` 129 · `mesure` 143 · `bouton` 170 · `posePanneau` 178
+`selectionne` 206 · `ombres` 214 · `resume` 216 · `lance` 240
 
 Importe :
 
-affichage · fiche · releve · salon · vue · webgl
+affichage · donnees · fiche · releve · salon · vue · webgl
 
 Importé par :
 
@@ -882,17 +882,17 @@ Fonctions :
 
 Importé par :
 
-affiche-ici · aimants · ambiance · apercus · apparence · appels · application · batiments
-borne · calage-carte · calques-dessin · cartouche-poi · chaleur · charge-annoncee
-configuration · corps-fiche · demarrage · dessin · distinctions · edition · emplacements
-enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici · index-salon
-installation · itineraire · journee · libelles · logos-stands · mesure · mini-carte · nappe
-noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu · partage · pile
-placement-libelles · points-interet · rappels · recherche · reglage-application
-reglage-fiche · reglage-recherche · reglage-suggestion · reglages · releve · rendu
-reprise-emplacements · secteurs · sejour · seuil · sponsor · suggestion · tiroir-itineraire
-tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel · volets · vous-etes-ici
-webgl
+affiche-ici · aimants · ambiance · apercus · apparence · appels · application · banc
+batiments · borne · calage-carte · calques-dessin · cartouche-poi · chaleur
+charge-annoncee · configuration · corps-fiche · demarrage · dessin · distinctions · edition
+emplacements · enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici
+index-salon · installation · itineraire · journee · libelles · logos-stands · mesure
+mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu
+partage · pile · placement-libelles · points-interet · rappels · recherche
+reglage-application · reglage-fiche · reglage-recherche · reglage-suggestion · reglages
+releve · rendu · reprise-emplacements · secteurs · sejour · seuil · sponsor · suggestion
+tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel
+volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 

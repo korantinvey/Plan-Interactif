@@ -24,6 +24,7 @@ import { select, ferme } from "./fiche.mjs";
 import { apresAffichage } from "./affichage.mjs";
 import { GL, RENDU_WEBGL } from "./webgl.mjs";
 import { SLUG } from "./salon.mjs";
+import { TOUS, state } from "./donnees.mjs";
 import { RELEVE_ACTIF, comptesGpu, joinsAuReleve, carteGraphique } from "./releve.mjs";
 
 const ACTIF = RELEVE_ACTIF && /[?&]perf=banc(?:&|$)/.test(location.search);
@@ -54,16 +55,46 @@ async function bouge(/** @type {number} */ ms, /** @type {(t: number) => any} */
   poseVue();
 }
 
-/** La vue `v` resserrée d'un facteur `k` autour de son centre. */
-const resserre = (/** @type {any} */ v, /** @type {number} */ k) => ({
-  x: v.x + v.w * (1 - k) / 2, y: v.y + v.h * (1 - k) / 2, w: v.w * k, h: v.h * k });
+/** La vue `v` resserrée d'un facteur `k`, son centre mené de celui de `v`
+ *  jusqu'à `but` à mesure qu'elle se resserre — comme deux doigts qui
+ *  pincent au-dessus d'un point, et non au milieu de l'écran. */
+function resserre(/** @type {any} */ v, /** @type {number} */ k, /** @type {number[]} */ but){
+  const a = (1 - k) / (1 - RESSERRE);
+  const cx = v.x + v.w / 2 + (but[0] - v.x - v.w / 2) * a, cy = v.y + v.h / 2 + (but[1] - v.y - v.h / 2) * a;
+  return { x: cx - v.w * k / 2, y: cy - v.h * k / 2, w: v.w * k, h: v.h * k };
+}
+
+/* Où zoomer. Le milieu de l'emprise tombait dans le vide sur un salon dont
+   les halls entourent une cour ou s'étirent en équerre : on mesurait un plan
+   sans rien à peindre. On découpe le pavillon ouvert en cases de la taille de
+   la vue resserrée, et l'on prend la plus peuplée : c'est là qu'un visiteur
+   zoome, et ce qui coûte le plus à dessiner. Le stand de la fiche est le
+   plus proche de ce point. */
+function cible(/** @type {any} */ v){
+  const ici = TOUS.filter(o => o.p === state.plan && Array.isArray(o.c));
+  if (!ici.length) return { but: [v.x + v.w / 2, v.y + v.h / 2], stand: null };
+  const cw = v.w * RESSERRE, ch = v.h * RESSERRE;
+  /** @type {Map<string, any[]>} */
+  const cases = new Map();
+  for (const o of ici){
+    const k = Math.floor(o.c[0] / cw) + ":" + Math.floor(o.c[1] / ch);
+    const l = cases.get(k);
+    if (l) l.push(o); else cases.set(k, [o]);
+  }
+  const pleine = [...cases.values()].reduce((a, b) => b.length > a.length ? b : a);
+  const but = [pleine.reduce((s, o) => s + o.c[0], 0) / pleine.length,
+    pleine.reduce((s, o) => s + o.c[1], 0) / pleine.length];
+  const proche = pleine.reduce((a, b) =>
+    Math.hypot(b.c[0] - but[0], b.c[1] - but[1]) < Math.hypot(a.c[0] - but[0], a.c[1] - but[1]) ? b : a);
+  return { but, stand: proche.id, stands: pleine.length };
+}
 
 /* Les phases d'un tour. Le glisser décrit un cercle et revient d'où il
    part : le zoom arrière repart ainsi de la même vue à chaque tour. */
 /** @type {{ nom: string, joue: (ctx: any) => Promise<void> }[]} */
 const PHASES = [
   { nom: "zoom avant", joue: async c => {
-    await bouge(3000, t => resserre(c.ensemble, Math.pow(RESSERRE, doux(t))), true);
+    await bouge(3000, t => resserre(c.ensemble, Math.pow(RESSERRE, doux(t)), c.but), true);
   } },
   { nom: "glisser", joue: async () => {
     const v0 = { ...vue() }, r = v0.w * .6;
@@ -191,6 +222,7 @@ function resume(/** @type {any[]} */ lignes){
       (RENDU_WEBGL && GL.actif ? "webgl" : "svg") + " · " + new Date().toISOString().slice(0, 16),
     (c ? c.puce : "?") + " · dpr " + devicePixelRatio + " · " + innerWidth + "x" + innerHeight,
     navigator.userAgent,
+    visee + " emplacements dans la vue zoomée",
     "",
     "tour phase          ips  p50  p95   max  >50ms  shaders(ms)  jetés",
   ];
@@ -203,6 +235,8 @@ function resume(/** @type {any[]} */ lignes){
 }
 
 let enCours = false;
+// combien d'emplacements tombent dans la vue zoomée : un banc ne se compare qu'à charge égale
+let visee = 0;
 async function lance(){
   if (enCours) return;
   enCours = true;
@@ -216,8 +250,9 @@ async function lance(){
   for (let tour = 1; tour <= 2; tour++){
     fit();
     await attends(1500);
-    const premier = document.querySelector("#stands [data-id]");
-    const ctx = { ensemble: { ...vue() }, stand: premier instanceof HTMLElement || premier instanceof SVGElement ? premier.dataset.id : null };
+    const ensemble = { ...vue() };
+    const ctx = { ensemble, ...cible(ensemble) };
+    visee = ctx.stands || 0;
     for (const phase of PHASES){
       if (etat) etat.textContent = "Banc d'essai · tour " + tour + "/2 · " + phase.nom + " — ne touchez pas l'écran";
       lignes.push(await mesure(tour, phase, ctx));

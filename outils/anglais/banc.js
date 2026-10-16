@@ -11,6 +11,7 @@ module.exports = {
   "zoom arrière": "zoom out",
   "fiche du stand": "stand card",
   "sans ombres": "no shadows",
+  "{n} emplacements dans la vue zoomée": "{n} stands in the zoomed view",
   "ombres": "shadows",
   " · dpr ": " · dpr ",
   "tour phase          ips  p50  p95   max  >50ms  shaders(ms)  jetés": "round phase         fps  p50  p95   max  >50ms  shaders(ms)  dropped",
