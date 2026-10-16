@@ -26,7 +26,7 @@
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
-import { ETROIT } from "./ecran.mjs";
+import { ETROIT, REDUIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
 import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui, viseEnAvance } from "./webgl.mjs";
@@ -181,6 +181,73 @@ function suitPince(){
    un doigt levé — un `pointercancel` du système, une main qui sort de l'écran
    — et elles resteraient pliées sur un plan qu'on ne manipule plus. */
 let bandesPliees = false, filetBandes = null;
+
+/* L'élan du glisser.
+
+   Le plan s'arrêtait net sous le doigt levé, quand la main, elle,
+   ralentissait encore : mesuré image par image, le glisser au doigt était
+   aussi régulier que le banc d'essai (`?perf`, Mali-G720, 16 octobre 2026),
+   et pourtant moins fluide à l'œil — le banc freine en douceur, le doigt
+   cassait le mouvement. Lâché en mouvement, le plan garde donc la vitesse
+   de la main et la perd peu à peu, comme sur toute carte au doigt.
+
+   La vitesse se lit sur les dernières positions, à moins d'un dixième de
+   seconde du lâcher : plus loin, elle dirait le geste d'avant. Un doigt
+   resté immobile un instant avant de se lever ne lance rien. L'élan s'éteint
+   en quelques dixièmes de seconde, bute sur le bord du hall comme le
+   glisser, et cède à tout ce qui reprend la vue : un appui, la molette, un
+   centrage sur un stand. Le mouvement réduit du système n'en a pas. */
+const ELAN_FENETRE = 100, ELAN_DEMI_VIE = 110, ELAN_MIN = .25, ELAN_FIN = .02;
+/** @type {{ t: number, x: number, y: number }[]} */
+let traceGlisser = [];
+let elan = 0;
+/** @type {{ x: number, y: number } | null} */
+let vueElan = null;
+
+function noteGlisser(){
+  const t = performance.now();
+  traceGlisser.push({ t, x: view.x, y: view.y });
+  while (traceGlisser.length > 2 && t - traceGlisser[0].t > ELAN_FENETRE) traceGlisser.shift();
+}
+
+function stoppeElan(){
+  if (!elan) return;
+  cancelAnimationFrame(elan); elan = 0; vueElan = null;
+}
+
+/** Lance l'élan d'un glisser qui vient de finir ; faux s'il n'y a pas lieu. */
+function lanceElan(){
+  const tr = traceGlisser;
+  traceGlisser = [];
+  if (REDUIT || tr.length < 2) return false;
+  const a = tr[0], b = tr[tr.length - 1], maintenant = performance.now();
+  if (maintenant - b.t > 50 || b.t - a.t < 8) return false;
+  // la vitesse en unités du plan par milliseconde, et sa mesure en pixels d'écran
+  let vx = (b.x - a.x) / (b.t - a.t), vy = (b.y - a.y) / (b.t - a.t);
+  const parPixel = view.w / (cadrePlan().width || 1);
+  if (Math.hypot(vx, vy) / parPixel < ELAN_MIN) return false;
+  let avant = maintenant;
+  const pas = (/** @type {number} */ ts) => {
+    // la vue a été reprise ailleurs — centrage, molette, ajustement : l'élan lui cède
+    if (vueElan && (view.x !== vueElan.x || view.y !== vueElan.y)){ elan = 0; vueElan = null; return; }
+    const dt = Math.min(50, Math.max(0, ts - avant));
+    avant = ts;
+    const f = Math.pow(.5, dt / ELAN_DEMI_VIE);
+    vx *= f; vy *= f;
+    const x = view.x + vx * dt, y = view.y + vy * dt;
+    view.x = x; view.y = y;
+    retiensVue(view);
+    // le bord du hall arrête l'élan dans ce sens
+    if (view.x !== x) vx = 0;
+    if (view.y !== y) vy = 0;
+    vueElan = { x: view.x, y: view.y };
+    if (Math.hypot(vx, vy) / parPixel < ELAN_FIN){ elan = 0; vueElan = null; poseVue(); return; }
+    rafraichitVue();
+    elan = requestAnimationFrame(pas);
+  };
+  elan = requestAnimationFrame(pas);
+  return true;
+}
 function plieLesBandes(oui){
   const b = $("bandeau"), tiroir = $("side");
   if (!b || !ETROIT() || document.documentElement.classList.contains("mode-admin")) return;
@@ -295,6 +362,9 @@ export function brancheGestes(){
     // la main posée l'emporte sur la molette : un glissement qui finissait sa
     // course tirerait la vue sous le doigt qui vient de la saisir
     stoppeZoom();
+    // et sur l'élan du glisser d'avant : le doigt rattrape le plan
+    stoppeElan();
+    traceGlisser = [];
     /* Un « pointerup » se perd parfois — la main sort de l'écran, le navigateur
        passe la main à un geste système. Le doigt restait alors inscrit, et
        l'appui suivant passait pour le second d'un pincement : plus rien ne
@@ -370,6 +440,8 @@ export function brancheGestes(){
     const bute = view.x !== x || view.y !== y;
     if (bute && !drag.bute) vibre(BUTEE, e.pointerType);
     drag.bute = bute;
+    // la vue montrée, bord compris : c'est elle que l'élan prolonge
+    noteGlisser();
     rafraichitVue();
   });
 
@@ -387,7 +459,7 @@ export function brancheGestes(){
     const d = drag; drag = null; saisitPlan(false);
     try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
     if (d) clearTimeout(d.montee);
-    if (d && d.bouge){ poseVue(); return; }
+    if (d && d.bouge){ if (!lanceElan()) poseVue(); return; }
     if (!d) return;
     // un appui bref au doigt : ce qu'il touche se cherche maintenant
     if (d.cible === undefined) d.cible = d.vise();
@@ -441,6 +513,7 @@ export function brancheGestes(){
   });
   svg.addEventListener("wheel", e => {
     e.preventDefault();
+    stoppeElan();
     const r = cadrePlan();
     /* Les navigateurs ne comptent pas dans la même unité — pixels, lignes ou
        pages — et un pavé tactile envoie des dixièmes de cran là où une molette
