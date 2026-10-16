@@ -164,6 +164,15 @@ let gele = false, annonceRetenue = false;
    pose les plus proches du centre quand la vue sort de ce qui est couvert,
    et le reste à son terme. */
 let panneauRetenu = false;
+/* Le zoom où le geste a commencé. Un pincement, un tour de molette changent
+   le zoom à chaque image : la vue sortait sans cesse de ce que les logos
+   couvrent, et chaque sortie repeignait le plan — dix-huit repeints dans un
+   pincement de sept secondes, de quinze à trente-cinq millisecondes chacun,
+   plus autant à la bibliothèque, quand le glisser n'en faisait aucun
+   (`?perf`, Mali-G720, 16 octobre 2026). Tant que le zoom bouge, les logos
+   attendent donc le doigt levé ; le glisser, qui ne change pas le zoom,
+   garde les siens. */
+let zoomDuGeste = 0;
 /** Les logos devenus prêts pendant le geste, posés à sa fin. */
 /** @type {Map<string, Logo>} */
 const enRetard = new Map();
@@ -183,7 +192,7 @@ function pret(/** @type {string} */ cle, /** @type {Logo} */ logo){
 /** Un geste commence ou finit : à sa fin, ce qui a attendu se pose. */
 export function geleLogos(/** @type {boolean} */ oui){
   gele = oui;
-  if (oui) return;
+  if (oui){ zoomDuGeste = zoomVu; return; }
   if (panneauRetenu){ panneauRetenu = false; PANNEAU_PRET.dis(); }
   for (const [cle, logo] of enRetard) detourees.set(cle, logo);
   enRetard.clear();
@@ -1111,6 +1120,12 @@ function solVu(v){
 export function logosARevoir(v, zoom){
   zoomVu = zoom;
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
+  const revoir = aRevoir(v, zoom);
+  // le zoom bouge pendant le geste : la pose attend sa fin (`zoomDuGeste`)
+  if (revoir && gele && Math.abs(zoom - zoomDuGeste) > .01){ annonceRetenue = true; return false; }
+  return revoir;
+}
+function aRevoir(/** @type {{ x: number, y: number, w: number, h: number }} */ v, /** @type {number} */ zoom){
   if (!pres(zoom)) return couvert !== null;
   if (!couvert) return true;
   const sol = solVu(v);
