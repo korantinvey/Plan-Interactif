@@ -372,7 +372,7 @@ Importé par :
 
 synchronisation
 
-### `modules/banc.mjs` — 317 l. → plan, plan-admin
+### `modules/banc.mjs` — 322 l. → plan, plan-admin
 
 - l.1 · Le banc d'essai — `?perf=banc`
 
@@ -380,8 +380,8 @@ Fonctions :
 
 `attends` 40 · `image` 41 · `doux` 43 · `bouge` 46 · `resserre` 62 · `sansAccents` 72
 `standVoulu` 74 · `dansLaVue` 81 · `cible` 93 · `centile` 147 · `compteImages` 151
-`mesure` 165 · `bouton` 193 · `posePanneau` 201 · `selectionne` 229 · `ombres` 237
-`resume` 239 · `lance` 273
+`mesure` 165 · `bouton` 193 · `posePanneau` 201 · `selectionne` 234 · `ombres` 242
+`resume` 244 · `lance` 278
 
 Importe :
 
@@ -2524,7 +2524,7 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 508 l. → plan, plan-admin
+### `modules/releve.mjs` — 510 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
@@ -2534,8 +2534,8 @@ Fonctions :
 `sorte` 126 · `clos` 130 · `ecouteGestes` 149 · `image` 181 · `observe` 213 · `fichier` 221
 `ecouteNavigateur` 223 · `guetteProgrammes` 264 · `comptesGpu` 306 · `programmesDepuis` 314
 `joinsAuReleve` 319 · `echantillonne` 321 · `carteGraphique` 340 · `appareil` 358
-`chargement` 375 · `synthese` 392 · `releve` 411 · `affiche` 446 · `partage` 457
-`posePastille` 474
+`chargement` 375 · `synthese` 392 · `releve` 411 · `affiche` 446 · `partage` 459
+`posePastille` 476
 
 Importe :
 

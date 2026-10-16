@@ -454,7 +454,9 @@ function affiche(){
   compteur.style.color = ips >= 50 ? "#7CFC9A" : ips >= 30 ? "#FFD166" : "#FF6B6B";
 }
 
-async function partage(){
+/** Le relevé, partagé par le menu du téléphone ; le banc d'essai l'offre
+ *  aussi dans son panneau, qui couvre la pastille sur un écran étroit. */
+export async function partage(){
   const texte = JSON.stringify(releve());
   const jour = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   const nom = "releve-plan-" + (SLUG || "demo") + "-" + jour + ".txt";

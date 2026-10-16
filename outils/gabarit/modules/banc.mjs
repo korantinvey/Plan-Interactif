@@ -25,7 +25,7 @@ import { apresAffichage } from "./affichage.mjs";
 import { GL, RENDU_WEBGL } from "./webgl.mjs";
 import { SLUG } from "./salon.mjs";
 import { TOUS, state } from "./donnees.mjs";
-import { RELEVE_ACTIF, comptesGpu, programmesDepuis, joinsAuReleve, carteGraphique } from "./releve.mjs";
+import { RELEVE_ACTIF, comptesGpu, programmesDepuis, joinsAuReleve, carteGraphique, partage } from "./releve.mjs";
 import { changePlan } from "./rendu.mjs";
 
 const ACTIF = RELEVE_ACTIF && /[?&]perf=banc(?:&|$)/.test(location.search);
@@ -212,7 +212,12 @@ function posePanneau(){
   ligne.style.cssText = "display:none;gap:6px;flex-wrap:wrap";
   copier = bouton("Copier le résumé");
   rejouer = bouton("Rejouer");
-  ligne.append(copier, rejouer);
+  /* Sur un téléphone, le panneau couvre la pastille du relevé et son bouton :
+     le partage se fait aussi d'ici, et le panneau se ferme pour rendre le plan. */
+  const partager = bouton("Partager le relevé"), fermer = bouton("Fermer");
+  partager.addEventListener("click", () => { partage(); });
+  fermer.addEventListener("click", () => { boite.remove(); });
+  ligne.append(copier, partager, rejouer, fermer);
   copier.addEventListener("click", () => {
     const texte = resultat ? resultat.textContent || "" : "";
     const fait = () => { if (copier) copier.textContent = "Résumé copié"; };
