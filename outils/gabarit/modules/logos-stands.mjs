@@ -155,6 +155,15 @@ VIGNETTES_ARRIVEES.suis(() => annoncePret());
    l'on s'approche, et reprennent la juste à sa fin.
    ------------------------------------------------------------ */
 let gele = false, annonceRetenue = false;
+/* Les logos posés ont changé pendant un geste : les noms leur cèderont la
+   place à sa fin. Annoncé sur-le-champ, le changement faisait refaire les
+   noms et repeindre le plan, et ce repeint reposait douze logos de plus —
+   donc les changeait encore : une dizaine de repeints complets en une
+   demi-seconde, au zoom avant comme au dézoom, jusqu'à couvrir toute la
+   marge (`?perf=banc&stand=dallorane`, 16 octobre 2026). Retenu, le geste
+   pose les plus proches du centre quand la vue sort de ce qui est couvert,
+   et le reste à son terme. */
+let panneauRetenu = false;
 /** Les logos devenus prêts pendant le geste, posés à sa fin. */
 /** @type {Map<string, Logo>} */
 const enRetard = new Map();
@@ -175,6 +184,7 @@ function pret(/** @type {string} */ cle, /** @type {Logo} */ logo){
 export function geleLogos(/** @type {boolean} */ oui){
   gele = oui;
   if (oui) return;
+  if (panneauRetenu){ panneauRetenu = false; PANNEAU_PRET.dis(); }
   for (const [cle, logo] of enRetard) detourees.set(cle, logo);
   enRetard.clear();
   // les logos posés pendant le geste reprennent la finesse de la vue où il s'arrête
@@ -1162,7 +1172,8 @@ function annoncePoses(/** @type {{ id: string }[]} */ data){
   const ids = new Set(data.map(d => d.id));
   if (ids.size === posesDerniers.size && [...ids].every(id => posesDerniers.has(id))) return;
   posesDerniers = ids;
-  PANNEAU_PRET.dis();
+  if (gele) panneauRetenu = true;
+  else PANNEAU_PRET.dis();
 }
 
 /**
@@ -1269,7 +1280,13 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
     // pendant un geste, un logo déjà rangé garde sa toile : la juste finesse attend sa fin
     if (t === undefined && gele) t = toileDejaRangee(src.cle, tasse) || undefined;
     if (t === undefined){
-      if (faites >= (gele ? ENVOIS_EN_GESTE : ENVOIS_AU_REPOS) || msFaites > (gele ? MS_EN_GESTE : MS_AU_REPOS)){
+      /* Pendant un geste, sous le zoom où les logos sont pleins, ils
+         s'effacent : en créer un, c'était le détourer et l'envoyer à la
+         carte graphique pour un logo à peine visible — au dézoom, chaque
+         stand entré dans la vue le demandait, alors que tous allaient
+         disparaître. Il attend la fin du geste, s'il en est encore. */
+      if (gele && zoom < ZOOM_LOGO){ t = toileDejaRangee(src.cle, tasse); attente++; }
+      else if (faites >= (gele ? ENVOIS_EN_GESTE : ENVOIS_AU_REPOS) || msFaites > (gele ? MS_EN_GESTE : MS_AU_REPOS)){
         t = toileDejaRangee(src.cle, tasse); attente++;
       }
       else {

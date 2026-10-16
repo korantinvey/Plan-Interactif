@@ -1697,25 +1697,25 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1326 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1343 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 81 · `palier` 95 · `tassement` 106 · `annoncePret` 162 · `pret` 168
-`geleLogos` 175 · `arriveeSansFond` 219 · `grande` 235 · `pompeGrandes` 249
-`demandeGrande` 253 · `image` 293 · `sansFond` 313 · `lanceTravailleur` 352
-`demandeDetourage` 373 · `pompe` 380 · `parLaPageSeule` 400 · `detoureRevenu` 409
-`largeurDeToile` 426 · `cleDeToile` 429 · `toileDejaRangee` 435 · `toileProche` 456
-`toile` 477 · `logoPose` 512 · `sourceDuToit` 522 · `cedeAuLogo` 535 · `CARRE` 564
-`filtrage` 597 · `plancheDe` 614 · `extensionPlanche` 650 · `bilanLogos` 761
-`rendPlanche` 780 · `taillesDe` 792 · `rangPour` 801 · `nouvellePlanche` 810 · `vaA` 828
-`videE` 829 · `place` 834 · `libere` 873 · `liberable` 895 · `envoie` 905
-`cedeLaPlace` 927 · `recopie` 958 · `range` 973 · `plancheGardee` 1016
-`oubliePlancheBientot` 1061 · `pres` 1073 · `solVu` 1084 · `logosARevoir` 1101
-`groupe` 1116 · `oublie` 1127 · `annoncePoses` 1161 · `matriceDuToit` 1182
-`couchesLogos` 1195 · `poseLogos` 1216
+`finesse` 81 · `palier` 95 · `tassement` 106 · `annoncePret` 171 · `pret` 177
+`geleLogos` 184 · `arriveeSansFond` 229 · `grande` 245 · `pompeGrandes` 259
+`demandeGrande` 263 · `image` 303 · `sansFond` 323 · `lanceTravailleur` 362
+`demandeDetourage` 383 · `pompe` 390 · `parLaPageSeule` 410 · `detoureRevenu` 419
+`largeurDeToile` 436 · `cleDeToile` 439 · `toileDejaRangee` 445 · `toileProche` 466
+`toile` 487 · `logoPose` 522 · `sourceDuToit` 532 · `cedeAuLogo` 545 · `CARRE` 574
+`filtrage` 607 · `plancheDe` 624 · `extensionPlanche` 660 · `bilanLogos` 771
+`rendPlanche` 790 · `taillesDe` 802 · `rangPour` 811 · `nouvellePlanche` 820 · `vaA` 838
+`videE` 839 · `place` 844 · `libere` 883 · `liberable` 905 · `envoie` 915
+`cedeLaPlace` 937 · `recopie` 968 · `range` 983 · `plancheGardee` 1026
+`oubliePlancheBientot` 1071 · `pres` 1083 · `solVu` 1094 · `logosARevoir` 1111
+`groupe` 1126 · `oublie` 1137 · `annoncePoses` 1171 · `matriceDuToit` 1193
+`couchesLogos` 1206 · `poseLogos` 1227
 
 Importe :
 
