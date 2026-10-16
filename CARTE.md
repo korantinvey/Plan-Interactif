@@ -2524,7 +2524,7 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 601 l. → plan, plan-admin
+### `modules/releve.mjs` — 600 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
@@ -2534,9 +2534,9 @@ Fonctions :
 `sorte` 134 · `clos` 138 · `ecouteGestes` 157 · `image` 190 · `observe` 223 · `fichier` 231
 `ecouteNavigateur` 233 · `guetteProgrammes` 274 · `comptesGpu` 316 · `programmesDepuis` 324
 `joinsAuReleve` 329 · `marqueReleve` 344 · `guetteDessins` 347 · `traceImage` 355
-`fluidite` 368 · `bilanFluidite` 404 · `echantillonne` 411 · `carteGraphique` 430
-`appareil` 448 · `chargement` 465 · `synthese` 482 · `releve` 502 · `affiche` 537
-`partage` 550 · `posePastille` 567
+`fluidite` 367 · `bilanFluidite` 403 · `echantillonne` 410 · `carteGraphique` 429
+`appareil` 447 · `chargement` 464 · `synthese` 481 · `releve` 501 · `affiche` 536
+`partage` 549 · `posePastille` 566
 
 Importe :
 

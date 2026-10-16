@@ -353,7 +353,6 @@ function guetteDessins(){
 }
 
 function traceImage(){
-  const D = (globalThis.__dbg ||= { appels: 0, sansTag: 0, gardes: 0 }); D.appels++; D.n = R.trace.length;
   const enGeste = !!geste && (doigts.size > 0 || performance.now() - geste.dernier < FIN_GESTE);
   const tag = etiquette || (enGeste && geste ? "doigt " + numeroGeste + " " + sorte(geste) : null);
   if (!tag){ positionsDepuis = 0; return; }
