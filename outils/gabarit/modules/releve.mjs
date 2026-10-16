@@ -17,16 +17,7 @@
      — les événements lents à répondre (Event Timing) ;
      — le démarrage, les ressources lourdes, la mémoire, l'appareil ;
      — ce que la planche des logos a créé et envoyé, et ce que cela vaut par
-       logo affiché (`logos-stands.mjs` `bilanLogos`) ;
-     — la fluidité que l'œil voit : à chaque image que la bibliothèque
-       dessine, où est la vue, combien de positions du doigt sont arrivées
-       depuis la précédente, et depuis combien de temps — d'où les à-coups
-       du pas, les images figées en plein geste, le retard sur le doigt ;
-     — chaque programme que la carte graphique compile, et le temps que la
-       page l'a attendu, et chaque dessin jeté — contexte perdu, ou boucle
-       tenue pour arrêtée (`webgl.mjs` `DESSIN_JETE`) : sur un téléphone, une
-       compilation pendant un geste fige l'écran, et un dessin jeté se
-       remonte en recompilant tout.
+       logo affiché (`logos-stands.mjs` `bilanLogos`).
 
    Rien ne part au serveur : le relevé reste dans la page jusqu'à ce qu'on
    touche « Partager », et part alors par le menu de partage du téléphone.
@@ -37,19 +28,17 @@
    relevé est un instrument, pas un mode à laisser aux visiteurs.
    ============================================================ */
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI, DESSIN_JETE } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI } from "./webgl.mjs";
 import { quandAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
-import { vue, cadrePlan } from "./vue-etat.mjs";
 
-export const RELEVE_ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
-const ACTIF = RELEVE_ACTIF;
+const ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
 
 // au-delà, une liste garde ses premières entrées et compte celles qu'elle perd
 const BORNES = { gestes: 400, saccades: 800, repeints: 1500, images: 300, evenements: 400,
-  memoire: 720, deck: 720, erreurs: 50, programmes: 200, contextes: 50, trace: 9000 };
+  memoire: 720, deck: 720, erreurs: 50 };
 // une image plus longue que ceci est une saccade que l'œil voit
 const SACCADE = 50;
 // un geste dure tant qu'une entrée arrive à moins de ceci de la précédente
@@ -72,13 +61,8 @@ const R = {
   /** @type {any[]} */ memoire: [],
   /** @type {any[]} */ deck: [],
   /** @type {any[]} */ erreurs: [],
-  /** @type {any[]} */ programmes: [],
-  /** @type {any[]} */ contextes: [],
-  /** chaque image dessinée pendant un mouvement @type {any[]} */ trace: [],
   /** @type {Record<string, number>} */
   perdus: {},
-  /** ce que d'autres modules joignent au relevé (`banc.mjs`) @type {Record<string, any>} */
-  annexes: {},
   histo: { geste: TRANCHES.map(() => 0), repos: TRANCHES.map(() => 0) },
 };
 
@@ -106,7 +90,6 @@ function decrit(/** @type {EventTarget | null | undefined} */ c){
    ------------------------------------------------------------ */
 /** @type {Geste | null} */
 let geste = null;
-let numeroGeste = 0;
 const doigts = new Map();
 
 function dansLeReleve(/** @type {Event} */ e){
@@ -119,7 +102,6 @@ function commence(/** @type {string} */ type, /** @type {Event} */ e){
     geste.dernier = t; return geste;
   }
   if (geste) clos();
-  numeroGeste++;
   geste = { t, fin: 0, type, doigts: 0, chemin: 0, cible: decrit(e.target), images: [],
     repeints: 0, msRepeints: 0, dernier: t, image: t };
   return geste;
@@ -164,7 +146,6 @@ function ecouteGestes(){
     g.fin = 0;
   }, o);
   addEventListener("pointermove", e => {
-    if (doigts.has(e.pointerId)){ positionsDepuis++; derniere = performance.now(); }
     const avant = doigts.get(e.pointerId);
     if (!avant || !geste) return;
     geste.chemin += Math.hypot(e.clientX - avant[0], e.clientY - avant[1]);
@@ -189,7 +170,6 @@ let precedente = 0, imagesSeconde = 0, debutSeconde = 0, ips = 0;
 
 function image(/** @type {number} */ ts){
   requestAnimationFrame(image);
-  guetteDessins();
   if (document.hidden){ precedente = 0; return; }
   /* L'heure de l'image sert à l'écart entre deux images, le plus juste ; tout
      le reste se date à `performance.now()`, comme les gestes — certains
@@ -262,151 +242,6 @@ function ecouteNavigateur(){
     message: String(e.reason && e.reason.message || e.reason).slice(0, 200) }));
 }
 
-/* ------------------------------------------------------------
-   La carte graphique : ce qu'elle compile, et le dessin perdu
-   ------------------------------------------------------------ */
-/* deck.gl compile un programme la première fois qu'une sorte de couche se
-   dessine, et l'attend en lisant son état (`LINK_STATUS`) : c'est cette
-   lecture qui bloque la page, non l'appel qui lance la compilation. Le nom
-   vient du `SHADER_NAME` que deck.gl écrit dans chaque source. La toile
-   n'existe pas encore quand ce module se charge : on guette le prototype. */
-const LINK_STATUS = 0x8B82;
-function guetteProgrammes(){
-  const noms = new WeakMap(), progs = new WeakMap();
-  for (const C of [globalThis.WebGL2RenderingContext, globalThis.WebGLRenderingContext]){
-    if (!C) continue;
-    const P = /** @type {any} */ (C.prototype);
-    const source = P.shaderSource, attache = P.attachShader, lie = P.linkProgram, lit = P.getProgramParameter;
-    P.shaderSource = function(/** @type {any} */ sh, /** @type {string} */ src){
-      const m = /SHADER_NAME\s+(\S+)/.exec(src || "");
-      noms.set(sh, m ? m[1].replace(/-(vertex|fragment)-shader$/, "") : "?");
-      return source.call(this, sh, src);
-    };
-    P.attachShader = function(/** @type {any} */ pr, /** @type {any} */ sh){
-      if (noms.has(sh) && !progs.has(pr)) progs.set(pr, { nom: noms.get(sh) });
-      return attache.call(this, pr, sh);
-    };
-    P.linkProgram = function(/** @type {any} */ pr){
-      const t = performance.now();
-      const r = lie.call(this, pr);
-      const o = { t: Math.round(t), nom: (progs.get(pr) || {}).nom || "?", ms: ms(performance.now() - t),
-        attente: 0, apresAffichage: !!R.jalons["plan-affiche"], geste: geste ? sorte(geste) : undefined };
-      progs.set(pr, o);
-      garde("programmes", o);
-      return r;
-    };
-    P.getProgramParameter = function(/** @type {any} */ pr, /** @type {number} */ p){
-      if (p !== LINK_STATUS) return lit.call(this, pr, p);
-      const t = performance.now();
-      const r = lit.call(this, pr, p);
-      const o = progs.get(pr);
-      if (o && "attente" in o) o.attente = ms(o.attente + performance.now() - t);
-      return r;
-    };
-  }
-  /* La perte et le retour ne remontent pas : on les prend au passage, avant
-     la toile. */
-  for (const type of ["webglcontextlost", "webglcontextrestored", "webglcontextcreationerror"])
-    document.addEventListener(type, () => garde("contextes", { t: Math.round(performance.now()),
-      type: type.slice(14), geste: geste ? sorte(geste) : undefined }), { capture: true });
-}
-
-/** Ce que la carte graphique a compilé et perdu jusqu'ici : le banc
- *  d'essai le lit avant et après chaque phase. */
-export function comptesGpu(){
-  return { programmes: R.programmes.length,
-    msProgrammes: R.programmes.reduce((a, p) => a + p.ms + p.attente, 0),
-    pertes: R.contextes.filter(c => c.type === "jete").length };
-}
-
-/** Les programmes compilés à partir du `n`-ième : leur nom, ce qu'ils ont
- *  coûté, et s'ils l'ont été après l'affichage du plan. */
-export function programmesDepuis(/** @type {number} */ n){
-  return R.programmes.slice(n).map(p => ({ nom: p.nom, ms: Math.round(p.ms + p.attente), apresAffichage: p.apresAffichage }));
-}
-
-/** Joindre au relevé partagé, sous `cle`, ce qu'un autre module a mesuré. */
-export function joinsAuReleve(/** @type {string} */ cle, /** @type {any} */ v){ R.annexes[cle] = v; }
-
-/* ------------------------------------------------------------
-   La fluidité, image par image
-
-   Les images par seconde ne disent pas si le mouvement est égal : à soixante
-   images, un plan qui avance de dix pixels, puis de vingt, puis de zéro, se
-   voit saccader. On note donc, à chaque image que la bibliothèque dessine,
-   la vue qu'elle montre, et ce que le doigt a envoyé depuis la précédente.
-   Le banc d'essai étiquette ses phases (`marqueReleve`) ; le doigt, ses
-   gestes. Chaque morceau se résume en quatre nombres que l'on compare.
-   ------------------------------------------------------------ */
-/** @type {string | null} */
-let etiquette = null;
-/** Le banc d'essai nomme ce qu'il joue : ses images se rangent sous ce nom. */
-export function marqueReleve(/** @type {string | null} */ nom){ etiquette = nom; }
-let positionsDepuis = 0, derniere = 0;
-
-function guetteDessins(){
-  const d = /** @type {any} */ (GL.deck);
-  if (!d || d.__releveTrace) return;
-  d.__releveTrace = true;
-  const avant = d.props.onAfterRender;
-  d.setProps({ onAfterRender: (/** @type {any[]} */ ...a) => { if (avant) avant(...a); traceImage(); } });
-}
-
-function traceImage(){
-  const enGeste = !!geste && (doigts.size > 0 || performance.now() - geste.dernier < FIN_GESTE);
-  const tag = etiquette || (enGeste && geste ? "doigt " + numeroGeste + " " + sorte(geste) : null);
-  if (!tag){ positionsDepuis = 0; return; }
-  const v = vue(), r = cadrePlan(), t = performance.now();
-  garde("trace", { t: ms(t), tag, x: v.x + v.w / 2, y: v.y + v.h / 2, w: v.w, W: r.width || 1,
-    positions: positionsDepuis, retard: derniere ? ms(t - derniere) : null });
-  positionsDepuis = 0;
-}
-
-/** Les quatre nombres d'un morceau : le pas de l'image à l'image, en pixels
- *  d'écran (le zoom compté au bord de l'écran), et sa régularité. */
-function fluidite(/** @type {any[]} */ l){
-  const pas = [], dts = [];
-  for (let i = 1; i < l.length; i++){
-    const a = l[i - 1], b = l[i], k = b.W / b.w;
-    const d = Math.hypot((b.x - a.x) * k, (b.y - a.y) * k) + Math.abs(Math.log(b.w / a.w)) * b.W / 2;
-    pas.push(d); dts.push(b.t - a.t);
-  }
-  const bouge = pas.filter(d => d > .3);
-  if (bouge.length < 5) return null;
-  const tri = [...dts].sort((a, b) => a - b), med = centile(tri, .5);
-  const vit = pas.map((d, i) => d / Math.max(1, dts[i]));
-  /* l'à-coup : l'écart de chaque vitesse à la moyenne de ses deux voisines,
-     rapporté à la vitesse moyenne — nul pour un mouvement égal ou qui
-     accélère doucement, fort pour un pas qui hésite */
-  const moy = vit.reduce((a, b) => a + b, 0) / vit.length;
-  const ecarts = [];
-  for (let i = 1; i < vit.length - 1; i++) ecarts.push(Math.abs(vit[i] - (vit[i - 1] + vit[i + 1]) / 2));
-  const ec = [...ecarts].sort((a, b) => a - b);
-  // une image qui ne bouge pas entre deux qui bougent : le plan a calé
-  let figees = 0;
-  for (let i = 1; i < pas.length - 1; i++) if (pas[i] <= .3 && pas[i - 1] > .3 && pas[i + 1] > .3) figees++;
-  const pos = l.map(e => e.positions), ret = l.map(e => e.retard).filter(x => x != null).sort((a, b) => a - b);
-  return {
-    images: l.length, ms: Math.round(l[l.length - 1].t - l[0].t),
-    ecartMs: { p50: ms(med), p95: ms(centile(tri, .95)), reguliers: Math.round(100 * dts.filter(x => Math.abs(x - med) <= 3).length / dts.length) },
-    pasPx: { p50: ms(centile([...bouge].sort((a, b) => a - b), .5)), max: ms(Math.max(...bouge)) },
-    acoups: moy ? Math.round(100 * centile(ec, .5) / moy) : 0,
-    acoupsP90: moy ? Math.round(100 * centile(ec, .9) / moy) : 0,
-    figees,
-    positionsParImage: pos.some(x => x) ? Object.fromEntries([0, 1, 2, 3].map(n => [n === 3 ? "3+" : String(n),
-      pos.filter(x => n === 3 ? x >= 3 : x === n).length])) : undefined,
-    retardMs: ret.length ? { p50: ms(centile(ret, .5)), p95: ms(centile(ret, .95)) } : undefined,
-  };
-}
-
-/** Chaque morceau étiqueté, résumé. */
-export function bilanFluidite(){
-  /** @type {Map<string, any[]>} */
-  const parTag = new Map();
-  for (const e of R.trace){ const l = parTag.get(e.tag); if (l) l.push(e); else parTag.set(e.tag, [e]); }
-  return [...parTag].map(([tag, l]) => ({ tag, ...fluidite(l) })).filter(x => x.images);
-}
-
 function echantillonne(){
   const t = Math.round(performance.now());
   const m = /** @type {any} */ (performance).memory;
@@ -426,7 +261,7 @@ function echantillonne(){
 /* ------------------------------------------------------------
    Le relevé, mis en forme
    ------------------------------------------------------------ */
-export function carteGraphique(){
+function carteGraphique(){
   try {
     const c = document.createElement("canvas");
     const gl = c.getContext("webgl2") || c.getContext("webgl");
@@ -485,16 +320,10 @@ function synthese(){
       partPlus33: n ? ms(100 * (h[4] + h[5] + h[6]) / n) : 0 };
   };
   const reps = R.repeints.map(r => r.ms).sort((a, b) => a - b);
-  const apres = R.programmes.filter(p => p.apresAffichage);
   return {
-    programmes: { n: R.programmes.length, apresAffichage: apres.length,
-      msAttente: ms(R.programmes.reduce((a, p) => a + p.ms + p.attente, 0)),
-      msAttenteApresAffichage: ms(apres.reduce((a, p) => a + p.ms + p.attente, 0)) },
-    dessinsJetes: R.contextes.filter(c => c.type === "jete").length,
     enGeste: resume(R.histo.geste), auRepos: resume(R.histo.repos),
     repeints: { n: reps.length, p50: ms(centile(reps, .5)), p95: ms(centile(reps, .95)), max: reps[reps.length - 1] || 0 },
     saccades: R.saccades.length + (R.perdus.saccades || 0),
-    fluidite: bilanFluidite(),
   };
 }
 
@@ -507,8 +336,7 @@ function releve(){
     salon: SLUG || null, administration: PLAN_ADMIN, adresse: location.pathname + location.search,
     ouvert: new Date(R.ouvert).toISOString(), duree: Math.round(performance.now()),
     versions,
-    rendu: { webglVoulu: RENDU_WEBGL, webglActif: GL.actif, immersif: GL.camera, blocs: GL.blocs.size,
-      ambiance: [...document.documentElement.classList].filter(c => c.startsWith("ambiance-")).join(" ") || undefined },
+    rendu: { webglVoulu: RENDU_WEBGL, webglActif: GL.actif, immersif: GL.camera, blocs: GL.blocs.size },
     plan: { emplacements: TOUS.length, noeudsDom: document.getElementsByTagName("*").length },
     appareil: appareil(),
     jalons: R.jalons,
@@ -517,12 +345,10 @@ function releve(){
     gestes: R.gestes, saccades: R.saccades, repeints: R.repeints,
     imagesLongues: R.images, evenementsLents: R.evenements,
     memoire: R.memoire, deck: R.deck, erreurs: R.erreurs,
-    programmes: R.programmes, contextes: R.contextes,
     /* des comptes, non des mesures : « octetsTexture » est ce qu'on a demandé à
        la carte graphique ; « envoisParLogo », « partRenvois » et « koParEnvoi »
        se comparent d'une visite à l'autre, quels qu'en soient les gestes */
     logos: bilanLogos(),
-    ...R.annexes,
     perdus: R.perdus,
   };
 }
@@ -536,17 +362,11 @@ let compteur = null;
 function affiche(){
   if (!compteur) return;
   const s = R.saccades.length + (R.perdus.saccades || 0);
-  /* Ce que la carte graphique a compilé depuis l'affichage : au repos, ce
-     nombre ne devrait plus bouger. Un dessin jeté se signale à part. */
-  const c = R.programmes.filter(p => p.apresAffichage).length;
-  const pertes = R.contextes.filter(x => x.type === "jete").length;
-  compteur.textContent = ips + " fps · " + s + " ⚠ · " + c + " ⚙" + (pertes ? " · " + pertes + " ✖" : "");
+  compteur.textContent = ips + " fps · " + s + " ⚠";
   compteur.style.color = ips >= 50 ? "#7CFC9A" : ips >= 30 ? "#FFD166" : "#FF6B6B";
 }
 
-/** Le relevé, partagé par le menu du téléphone ; le banc d'essai l'offre
- *  aussi dans son panneau, qui couvre la pastille sur un écran étroit. */
-export async function partage(){
+async function partage(){
   const texte = JSON.stringify(releve());
   const jour = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
   const nom = "releve-plan-" + (SLUG || "demo") + "-" + jour + ".txt";
@@ -582,15 +402,12 @@ function posePastille(){
 }
 
 if (ACTIF){
-  guetteProgrammes();
   ecouteGestes();
   ecouteNavigateur();
   REPEINT_FINI.suis((duree, blocs) => {
     garde("repeints", { t: Math.round(performance.now()), ms: ms(duree), blocs, geste: geste ? sorte(geste) : undefined });
     if (geste){ geste.repeints++; geste.msRepeints += duree; }
   });
-  DESSIN_JETE.suis(raison => garde("contextes", { t: Math.round(performance.now()), type: "jete", raison,
-    geste: geste ? sorte(geste) : undefined }));
   PLAN_DEMARRE.suis(() => { R.jalons["plan-demarre"] = Math.round(performance.now()); });
   quandAffiche(() => { R.jalons["plan-affiche"] = Math.round(performance.now()); });
   setInterval(echantillonne, 5000);

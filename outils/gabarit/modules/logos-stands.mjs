@@ -155,24 +155,6 @@ VIGNETTES_ARRIVEES.suis(() => annoncePret());
    l'on s'approche, et reprennent la juste à sa fin.
    ------------------------------------------------------------ */
 let gele = false, annonceRetenue = false;
-/* Les logos posés ont changé pendant un geste : les noms leur cèderont la
-   place à sa fin. Annoncé sur-le-champ, le changement faisait refaire les
-   noms et repeindre le plan, et ce repeint reposait douze logos de plus —
-   donc les changeait encore : une dizaine de repeints complets en une
-   demi-seconde, au zoom avant comme au dézoom, jusqu'à couvrir toute la
-   marge (`?perf=banc&stand=dallorane`, 16 octobre 2026). Retenu, le geste
-   pose les plus proches du centre quand la vue sort de ce qui est couvert,
-   et le reste à son terme. */
-let panneauRetenu = false;
-/* Le zoom où le geste a commencé. Un pincement, un tour de molette changent
-   le zoom à chaque image : la vue sortait sans cesse de ce que les logos
-   couvrent, et chaque sortie repeignait le plan — dix-huit repeints dans un
-   pincement de sept secondes, de quinze à trente-cinq millisecondes chacun,
-   plus autant à la bibliothèque, quand le glisser n'en faisait aucun
-   (`?perf`, Mali-G720, 16 octobre 2026). Tant que le zoom bouge, les logos
-   attendent donc le doigt levé ; le glisser, qui ne change pas le zoom,
-   garde les siens. */
-let zoomDuGeste = 0;
 /** Les logos devenus prêts pendant le geste, posés à sa fin. */
 /** @type {Map<string, Logo>} */
 const enRetard = new Map();
@@ -192,8 +174,7 @@ function pret(/** @type {string} */ cle, /** @type {Logo} */ logo){
 /** Un geste commence ou finit : à sa fin, ce qui a attendu se pose. */
 export function geleLogos(/** @type {boolean} */ oui){
   gele = oui;
-  if (oui){ zoomDuGeste = zoomVu; return; }
-  if (panneauRetenu){ panneauRetenu = false; PANNEAU_PRET.dis(); }
+  if (oui) return;
   for (const [cle, logo] of enRetard) detourees.set(cle, logo);
   enRetard.clear();
   // les logos posés pendant le geste reprennent la finesse de la vue où il s'arrête
@@ -468,16 +449,8 @@ function toileDejaRangee(/** @type {string} */ cle, /** @type {number} */ tasse)
    franchi renvoyait les logos de toute la vue à chaque pincement : 2 555
    envois et 308 Mo en moins d'une minute sur un téléphone (`?perf`, FEP27,
    14 octobre 2026). Un rien moins net, le temps de zoomer assez pour que
-   l'écart se voie.
-
-   Plus fine, elle se garde jusqu'au quadruple : la carte graphique réduit
-   d'elle-même un logo trop net, par les niveaux de la planche, et le redessiner
-   plus petit au dézoom n'apportait rien qu'un envoi. Au double, chaque
-   pincement qui reculait renvoyait toute la vue — 37 % des envois étaient le
-   même logo à une autre finesse (`?perf`, Mali-G720, 16 octobre 2026). Pas
-   au-delà : une toile trop grande tient sa place sur la planche, et chasse
-   d'autres logos qu'il faudrait renvoyer. */
-const TOLERANCE_BAS = .7, TOLERANCE_HAUT = 4;
+   l'écart se voie. */
+const TOLERANCE_BAS = .7, TOLERANCE_HAUT = 2;
 /** Une toile de ce logo déjà rangée, assez proche de cette largeur — la plus
  *  proche ; rien sinon. */
 function toileProche(/** @type {string} */ cle, /** @type {number} */ tasse, /** @type {number} */ largeur){
@@ -1128,12 +1101,6 @@ function solVu(v){
 export function logosARevoir(v, zoom){
   zoomVu = zoom;
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
-  const revoir = aRevoir(v, zoom);
-  // le zoom bouge pendant le geste : la pose attend sa fin (`zoomDuGeste`)
-  if (revoir && gele && Math.abs(zoom - zoomDuGeste) > .01){ annonceRetenue = true; return false; }
-  return revoir;
-}
-function aRevoir(/** @type {{ x: number, y: number, w: number, h: number }} */ v, /** @type {number} */ zoom){
   if (!pres(zoom)) return couvert !== null;
   if (!couvert) return true;
   const sol = solVu(v);
@@ -1195,8 +1162,7 @@ function annoncePoses(/** @type {{ id: string }[]} */ data){
   const ids = new Set(data.map(d => d.id));
   if (ids.size === posesDerniers.size && [...ids].every(id => posesDerniers.has(id))) return;
   posesDerniers = ids;
-  if (gele) panneauRetenu = true;
-  else PANNEAU_PRET.dis();
+  PANNEAU_PRET.dis();
 }
 
 /**
@@ -1303,13 +1269,7 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
     // pendant un geste, un logo déjà rangé garde sa toile : la juste finesse attend sa fin
     if (t === undefined && gele) t = toileDejaRangee(src.cle, tasse) || undefined;
     if (t === undefined){
-      /* Pendant un geste, sous le zoom où les logos sont pleins, ils
-         s'effacent : en créer un, c'était le détourer et l'envoyer à la
-         carte graphique pour un logo à peine visible — au dézoom, chaque
-         stand entré dans la vue le demandait, alors que tous allaient
-         disparaître. Il attend la fin du geste, s'il en est encore. */
-      if (gele && zoom < ZOOM_LOGO){ t = toileDejaRangee(src.cle, tasse); attente++; }
-      else if (faites >= (gele ? ENVOIS_EN_GESTE : ENVOIS_AU_REPOS) || msFaites > (gele ? MS_EN_GESTE : MS_AU_REPOS)){
+      if (faites >= (gele ? ENVOIS_EN_GESTE : ENVOIS_AU_REPOS) || msFaites > (gele ? MS_EN_GESTE : MS_AU_REPOS)){
         t = toileDejaRangee(src.cle, tasse); attente++;
       }
       else {
