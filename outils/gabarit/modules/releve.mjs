@@ -309,6 +309,12 @@ export function comptesGpu(){
     pertes: R.contextes.filter(c => c.type === "jete").length };
 }
 
+/** Les programmes compilés à partir du `n`-ième : leur nom, ce qu'ils ont
+ *  coûté, et s'ils l'ont été après l'affichage du plan. */
+export function programmesDepuis(/** @type {number} */ n){
+  return R.programmes.slice(n).map(p => ({ nom: p.nom, ms: Math.round(p.ms + p.attente), apresAffichage: p.apresAffichage }));
+}
+
 /** Joindre au relevé partagé, sous `cle`, ce qu'un autre module a mesuré. */
 export function joinsAuReleve(/** @type {string} */ cle, /** @type {any} */ v){ R.annexes[cle] = v; }
 

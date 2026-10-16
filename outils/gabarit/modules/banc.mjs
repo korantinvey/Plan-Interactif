@@ -25,7 +25,8 @@ import { apresAffichage } from "./affichage.mjs";
 import { GL, RENDU_WEBGL } from "./webgl.mjs";
 import { SLUG } from "./salon.mjs";
 import { TOUS, state } from "./donnees.mjs";
-import { RELEVE_ACTIF, comptesGpu, joinsAuReleve, carteGraphique } from "./releve.mjs";
+import { RELEVE_ACTIF, comptesGpu, programmesDepuis, joinsAuReleve, carteGraphique } from "./releve.mjs";
+import { changePlan } from "./rendu.mjs";
 
 const ACTIF = RELEVE_ACTIF && /[?&]perf=banc(?:&|$)/.test(location.search);
 
@@ -64,13 +65,34 @@ function resserre(/** @type {any} */ v, /** @type {number} */ k, /** @type {numb
   return { x: cx - v.w * k / 2, y: cy - v.h * k / 2, w: v.w * k, h: v.h * k };
 }
 
-/* Où zoomer. Le milieu de l'emprise tombait dans le vide sur un salon dont
+/* Le stand que l'adresse nomme (`&stand=dallorane`) : cherché dans son nom,
+   son enseigne ou son numéro, sans casse ni accents. Un même banc se rejoue
+   ainsi au même endroit d'une version à l'autre, sur le stand que l'on sait
+   chargé — et non sur ce que le découpage en cases aurait trouvé ce jour-là. */
+const sansAccents = (/** @type {string} */ t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const VOULU = sansAccents(new URLSearchParams(location.search).get("stand") || "");
+function standVoulu(){
+  if (!VOULU) return null;
+  return TOUS.find(o => Array.isArray(o.c) &&
+    [o.nom, o.plan, o.code].some(x => typeof x === "string" && sansAccents(x).includes(VOULU))) || null;
+}
+
+/** Combien d'emplacements du pavillon ouvert tombent dans la vue resserrée sur `but`. */
+function dansLaVue(/** @type {any} */ v, /** @type {number[]} */ but){
+  const w = v.w * RESSERRE / 2, h = v.h * RESSERRE / 2;
+  return TOUS.filter(o => o.p === state.plan && Array.isArray(o.c) &&
+    Math.abs(o.c[0] - but[0]) < w && Math.abs(o.c[1] - but[1]) < h).length;
+}
+
+/* Où zoomer, sans stand nommé. Le milieu de l'emprise tombait dans le vide sur un salon dont
    les halls entourent une cour ou s'étirent en équerre : on mesurait un plan
    sans rien à peindre. On découpe le pavillon ouvert en cases de la taille de
    la vue resserrée, et l'on prend la plus peuplée : c'est là qu'un visiteur
    zoome, et ce qui coûte le plus à dessiner. Le stand de la fiche est le
    plus proche de ce point. */
 function cible(/** @type {any} */ v){
+  const o = standVoulu();
+  if (o && o.p === state.plan) return { but: o.c, stand: o.id, stands: dansLaVue(v, o.c), nom: o.nom || o.plan };
   const ici = TOUS.filter(o => o.p === state.plan && Array.isArray(o.c));
   if (!ici.length) return { but: [v.x + v.w / 2, v.y + v.h / 2], stand: null };
   const cw = v.w * RESSERRE, ch = v.h * RESSERRE;
@@ -86,7 +108,7 @@ function cible(/** @type {any} */ v){
     pleine.reduce((s, o) => s + o.c[1], 0) / pleine.length];
   const proche = pleine.reduce((a, b) =>
     Math.hypot(b.c[0] - but[0], b.c[1] - but[1]) < Math.hypot(a.c[0] - but[0], a.c[1] - but[1]) ? b : a);
-  return { but, stand: proche.id, stands: pleine.length };
+  return { but, stand: proche.id, stands: dansLaVue(v, but) };
 }
 
 /* Les phases d'un tour. Le glisser décrit un cercle et revient d'où il
@@ -142,6 +164,7 @@ function compteImages(){
 
 async function mesure(/** @type {number} */ tour, /** @type {any} */ phase, /** @type {any} */ ctx){
   const gpu0 = comptesGpu(), t0 = performance.now();
+  const n0 = gpu0.programmes;
   const arrete = compteImages();
   await phase.joue(ctx);
   await attends(APRES);
@@ -152,7 +175,7 @@ async function mesure(/** @type {number} */ tour, /** @type {any} */ phase, /** 
     p50: Math.round(centile(tri, .5)), p95: Math.round(centile(tri, .95)), max: Math.round(tri[tri.length - 1] || 0),
     saccades: tri.filter(x => x > SACCADE).length,
     programmes: gpu.programmes - gpu0.programmes, msProgrammes: Math.round(gpu.msProgrammes - gpu0.msProgrammes),
-    pertes: gpu.pertes - gpu0.pertes };
+    pertes: gpu.pertes - gpu0.pertes, shaders: programmesDepuis(n0) };
 }
 
 /* ------------------------------------------------------------
@@ -222,7 +245,9 @@ function resume(/** @type {any[]} */ lignes){
       (RENDU_WEBGL && GL.actif ? "webgl" : "svg") + " · " + new Date().toISOString().slice(0, 16),
     (c ? c.puce : "?") + " · dpr " + devicePixelRatio + " · " + innerWidth + "x" + innerHeight,
     navigator.userAgent,
-    visee + " emplacements dans la vue zoomée",
+    (cibleNom ? "zoom sur " + cibleNom + " · " : "") + visee + " emplacements dans la vue zoomée",
+    // ce qui s'est compilé après l'affichage, avant le premier mouvement
+    ...avantBanc.map(p => "shader compilé avant le banc : " + p.nom + " (" + p.ms + " ms)"),
     "",
     "tour phase          ips  p50  p95   max  >50ms  shaders(ms)  jetés",
   ];
@@ -231,12 +256,20 @@ function resume(/** @type {any[]} */ lignes){
     String(l.ips).padStart(4) + String(l.p50).padStart(5) + String(l.p95).padStart(5) +
     String(l.max).padStart(6) + String(l.saccades).padStart(7) +
     (l.programmes + " (" + l.msProgrammes + ")").padStart(13) + String(l.pertes).padStart(8));
-  return tete.concat(corps).join("\n");
+  /* Le nom de chaque shader compilé pendant le banc, et où : c'est lui qu'on
+     préparera pendant l'écran de chargement. */
+  const noms = lignes.flatMap(l => l.shaders.map((/** @type {any} */ p) =>
+    "  tour " + l.tour + " · " + l.phase + " : " + p.nom + " (" + p.ms + " ms)"));
+  return tete.concat(corps, noms.length ? ["", "shaders compilés pendant le banc :", ...noms] : []).join("\n");
 }
 
 let enCours = false;
 // combien d'emplacements tombent dans la vue zoomée : un banc ne se compare qu'à charge égale
 let visee = 0;
+// le stand nommé par l'adresse, s'il a été trouvé
+let cibleNom = "";
+/** ce qui s'est compilé entre l'affichage et le premier mouvement @type {any[]} */
+let avantBanc = [];
 async function lance(){
   if (enCours) return;
   enCours = true;
@@ -247,12 +280,17 @@ async function lance(){
   ferme();
   /** @type {any[]} */
   const lignes = [];
+  avantBanc = programmesDepuis(0).filter(p => p.apresAffichage);
+  // le stand nommé peut vivre dans un autre pavillon : le banc s'y rend d'abord
+  const o = standVoulu();
+  if (o && o.p !== state.plan){ changePlan(o.p); await attends(2000); }
   for (let tour = 1; tour <= 2; tour++){
     fit();
     await attends(1500);
     const ensemble = { ...vue() };
     const ctx = { ensemble, ...cible(ensemble) };
     visee = ctx.stands || 0;
+    cibleNom = ctx.nom || "";
     for (const phase of PHASES){
       if (etat) etat.textContent = "Banc d'essai · tour " + tour + "/2 · " + phase.nom + " — ne touchez pas l'écran";
       lignes.push(await mesure(tour, phase, ctx));

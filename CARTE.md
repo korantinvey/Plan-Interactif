@@ -372,19 +372,20 @@ Importé par :
 
 synchronisation
 
-### `modules/banc.mjs` — 279 l. → plan, plan-admin
+### `modules/banc.mjs` — 317 l. → plan, plan-admin
 
 - l.1 · Le banc d'essai — `?perf=banc`
 
 Fonctions :
 
-`attends` 39 · `image` 40 · `doux` 42 · `bouge` 45 · `resserre` 61 · `cible` 73
-`centile` 125 · `compteImages` 129 · `mesure` 143 · `bouton` 170 · `posePanneau` 178
-`selectionne` 206 · `ombres` 214 · `resume` 216 · `lance` 240
+`attends` 40 · `image` 41 · `doux` 43 · `bouge` 46 · `resserre` 62 · `sansAccents` 72
+`standVoulu` 74 · `dansLaVue` 81 · `cible` 93 · `centile` 147 · `compteImages` 151
+`mesure` 165 · `bouton` 193 · `posePanneau` 201 · `selectionne` 229 · `ombres` 237
+`resume` 239 · `lance` 273
 
 Importe :
 
-affichage · donnees · fiche · releve · salon · vue · webgl
+affichage · donnees · fiche · releve · rendu · salon · vue · webgl
 
 Importé par :
 
@@ -2523,7 +2524,7 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 502 l. → plan, plan-admin
+### `modules/releve.mjs` — 508 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
@@ -2531,9 +2532,10 @@ Fonctions :
 
 `ms` 79 · `garde` 81 · `decrit` 89 · `dansLeReleve` 105 · `commence` 109 · `centile` 120
 `sorte` 126 · `clos` 130 · `ecouteGestes` 149 · `image` 181 · `observe` 213 · `fichier` 221
-`ecouteNavigateur` 223 · `guetteProgrammes` 264 · `comptesGpu` 306 · `joinsAuReleve` 313
-`echantillonne` 315 · `carteGraphique` 334 · `appareil` 352 · `chargement` 369
-`synthese` 386 · `releve` 405 · `affiche` 440 · `partage` 451 · `posePastille` 468
+`ecouteNavigateur` 223 · `guetteProgrammes` 264 · `comptesGpu` 306 · `programmesDepuis` 314
+`joinsAuReleve` 319 · `echantillonne` 321 · `carteGraphique` 340 · `appareil` 358
+`chargement` 375 · `synthese` 392 · `releve` 411 · `affiche` 446 · `partage` 457
+`posePastille` 474
 
 Importe :
 
@@ -2560,8 +2562,8 @@ recherche · salon · texte · tiroirs-exclusifs · trace-itineraire · vous-ete
 
 Importé par :
 
-bande-admin · borne · calage-carte · demarrage · fiche · journee · nappe · outil-dessin
-points-interet · reprise-emplacements · tiroir-itineraire · tutoriel
+banc · bande-admin · borne · calage-carte · demarrage · fiche · journee · nappe
+outil-dessin · points-interet · reprise-emplacements · tiroir-itineraire · tutoriel
 
 ### `modules/reperes.mjs` — 447 l. → plan, plan-admin
 
