@@ -372,7 +372,7 @@ Importé par :
 
 synchronisation
 
-### `modules/banc.mjs` — 322 l. → plan, plan-admin
+### `modules/banc.mjs` — 329 l. → plan, plan-admin
 
 - l.1 · Le banc d'essai — `?perf=banc`
 
@@ -380,8 +380,8 @@ Fonctions :
 
 `attends` 40 · `image` 41 · `doux` 43 · `bouge` 46 · `resserre` 62 · `sansAccents` 72
 `standVoulu` 74 · `dansLaVue` 81 · `cible` 93 · `centile` 147 · `compteImages` 151
-`mesure` 165 · `bouton` 193 · `posePanneau` 201 · `selectionne` 234 · `ombres` 242
-`resume` 244 · `lance` 278
+`mesure` 165 · `bouton` 199 · `posePanneau` 207 · `selectionne` 240 · `ombres` 248
+`resume` 250 · `lance` 285
 
 Importe :
 
@@ -2524,22 +2524,23 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 510 l. → plan, plan-admin
+### `modules/releve.mjs` — 601 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
 Fonctions :
 
-`ms` 79 · `garde` 81 · `decrit` 89 · `dansLeReleve` 105 · `commence` 109 · `centile` 120
-`sorte` 126 · `clos` 130 · `ecouteGestes` 149 · `image` 181 · `observe` 213 · `fichier` 221
-`ecouteNavigateur` 223 · `guetteProgrammes` 264 · `comptesGpu` 306 · `programmesDepuis` 314
-`joinsAuReleve` 319 · `echantillonne` 321 · `carteGraphique` 340 · `appareil` 358
-`chargement` 375 · `synthese` 392 · `releve` 411 · `affiche` 446 · `partage` 459
-`posePastille` 476
+`ms` 85 · `garde` 87 · `decrit` 95 · `dansLeReleve` 112 · `commence` 116 · `centile` 128
+`sorte` 134 · `clos` 138 · `ecouteGestes` 157 · `image` 190 · `observe` 223 · `fichier` 231
+`ecouteNavigateur` 233 · `guetteProgrammes` 274 · `comptesGpu` 316 · `programmesDepuis` 324
+`joinsAuReleve` 329 · `marqueReleve` 344 · `guetteDessins` 347 · `traceImage` 355
+`fluidite` 368 · `bilanFluidite` 404 · `echantillonne` 411 · `carteGraphique` 430
+`appareil` 448 · `chargement` 465 · `synthese` 482 · `releve` 502 · `affiche` 537
+`partage` 550 · `posePastille` 567
 
 Importe :
 
-affichage · demarrage · donnees · logos-stands · salon · webgl
+affichage · demarrage · donnees · logos-stands · salon · vue-etat · webgl
 
 Importé par :
 
@@ -3164,7 +3165,7 @@ camera · dom
 
 Importé par :
 
-environs · logos-stands · socle-dessin · vue · vue · webgl
+environs · logos-stands · releve · socle-dessin · vue · vue · webgl
 
 ### `modules/vue.mjs` — 739 l. → plan, plan-admin
 

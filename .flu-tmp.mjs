@@ -1,0 +1,12 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const p = await b.newPage({ viewport: { width: 412, height: 860 } });
+p.on("pageerror", e => console.log("ERREUR", e.message));
+await p.goto("http://localhost:4180/plan-smcl.html?ambiance=tuiles&perf");
+await p.waitForFunction(() => document.documentElement.classList.contains("gl-pret"), null, { timeout: 90000 });
+await p.waitForTimeout(3000);
+console.log("avant", await p.evaluate(() => JSON.stringify(globalThis.__dbg)));
+await p.mouse.move(300, 400);
+await p.mouse.down(); for (let i = 0; i < 40; i++){ await p.mouse.move(300 - i * 3, 400 + i); await p.waitForTimeout(50); } await p.mouse.up();
+console.log("après", await p.evaluate(() => JSON.stringify(globalThis.__dbg)));
+await b.close();

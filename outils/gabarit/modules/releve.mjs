@@ -18,6 +18,10 @@
      — le démarrage, les ressources lourdes, la mémoire, l'appareil ;
      — ce que la planche des logos a créé et envoyé, et ce que cela vaut par
        logo affiché (`logos-stands.mjs` `bilanLogos`) ;
+     — la fluidité que l'œil voit : à chaque image que la bibliothèque
+       dessine, où est la vue, combien de positions du doigt sont arrivées
+       depuis la précédente, et depuis combien de temps — d'où les à-coups
+       du pas, les images figées en plein geste, le retard sur le doigt ;
      — chaque programme que la carte graphique compile, et le temps que la
        page l'a attendu, et chaque dessin jeté — contexte perdu, ou boucle
        tenue pour arrêtée (`webgl.mjs` `DESSIN_JETE`) : sur un téléphone, une
@@ -38,13 +42,14 @@ import { quandAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
+import { vue, cadrePlan } from "./vue-etat.mjs";
 
 export const RELEVE_ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
 const ACTIF = RELEVE_ACTIF;
 
 // au-delà, une liste garde ses premières entrées et compte celles qu'elle perd
 const BORNES = { gestes: 400, saccades: 800, repeints: 1500, images: 300, evenements: 400,
-  memoire: 720, deck: 720, erreurs: 50, programmes: 200, contextes: 50 };
+  memoire: 720, deck: 720, erreurs: 50, programmes: 200, contextes: 50, trace: 9000 };
 // une image plus longue que ceci est une saccade que l'œil voit
 const SACCADE = 50;
 // un geste dure tant qu'une entrée arrive à moins de ceci de la précédente
@@ -69,6 +74,7 @@ const R = {
   /** @type {any[]} */ erreurs: [],
   /** @type {any[]} */ programmes: [],
   /** @type {any[]} */ contextes: [],
+  /** chaque image dessinée pendant un mouvement @type {any[]} */ trace: [],
   /** @type {Record<string, number>} */
   perdus: {},
   /** ce que d'autres modules joignent au relevé (`banc.mjs`) @type {Record<string, any>} */
@@ -100,6 +106,7 @@ function decrit(/** @type {EventTarget | null | undefined} */ c){
    ------------------------------------------------------------ */
 /** @type {Geste | null} */
 let geste = null;
+let numeroGeste = 0;
 const doigts = new Map();
 
 function dansLeReleve(/** @type {Event} */ e){
@@ -112,6 +119,7 @@ function commence(/** @type {string} */ type, /** @type {Event} */ e){
     geste.dernier = t; return geste;
   }
   if (geste) clos();
+  numeroGeste++;
   geste = { t, fin: 0, type, doigts: 0, chemin: 0, cible: decrit(e.target), images: [],
     repeints: 0, msRepeints: 0, dernier: t, image: t };
   return geste;
@@ -156,6 +164,7 @@ function ecouteGestes(){
     g.fin = 0;
   }, o);
   addEventListener("pointermove", e => {
+    if (doigts.has(e.pointerId)){ positionsDepuis++; derniere = performance.now(); }
     const avant = doigts.get(e.pointerId);
     if (!avant || !geste) return;
     geste.chemin += Math.hypot(e.clientX - avant[0], e.clientY - avant[1]);
@@ -180,6 +189,7 @@ let precedente = 0, imagesSeconde = 0, debutSeconde = 0, ips = 0;
 
 function image(/** @type {number} */ ts){
   requestAnimationFrame(image);
+  guetteDessins();
   if (document.hidden){ precedente = 0; return; }
   /* L'heure de l'image sert à l'écart entre deux images, le plus juste ; tout
      le reste se date à `performance.now()`, comme les gestes — certains
@@ -318,6 +328,86 @@ export function programmesDepuis(/** @type {number} */ n){
 /** Joindre au relevé partagé, sous `cle`, ce qu'un autre module a mesuré. */
 export function joinsAuReleve(/** @type {string} */ cle, /** @type {any} */ v){ R.annexes[cle] = v; }
 
+/* ------------------------------------------------------------
+   La fluidité, image par image
+
+   Les images par seconde ne disent pas si le mouvement est égal : à soixante
+   images, un plan qui avance de dix pixels, puis de vingt, puis de zéro, se
+   voit saccader. On note donc, à chaque image que la bibliothèque dessine,
+   la vue qu'elle montre, et ce que le doigt a envoyé depuis la précédente.
+   Le banc d'essai étiquette ses phases (`marqueReleve`) ; le doigt, ses
+   gestes. Chaque morceau se résume en quatre nombres que l'on compare.
+   ------------------------------------------------------------ */
+/** @type {string | null} */
+let etiquette = null;
+/** Le banc d'essai nomme ce qu'il joue : ses images se rangent sous ce nom. */
+export function marqueReleve(/** @type {string | null} */ nom){ etiquette = nom; }
+let positionsDepuis = 0, derniere = 0;
+
+function guetteDessins(){
+  const d = /** @type {any} */ (GL.deck);
+  if (!d || d.__releveTrace) return;
+  d.__releveTrace = true;
+  const avant = d.props.onAfterRender;
+  d.setProps({ onAfterRender: (/** @type {any[]} */ ...a) => { if (avant) avant(...a); traceImage(); } });
+}
+
+function traceImage(){
+  const D = (globalThis.__dbg ||= { appels: 0, sansTag: 0, gardes: 0 }); D.appels++; D.n = R.trace.length;
+  const enGeste = !!geste && (doigts.size > 0 || performance.now() - geste.dernier < FIN_GESTE);
+  const tag = etiquette || (enGeste && geste ? "doigt " + numeroGeste + " " + sorte(geste) : null);
+  if (!tag){ positionsDepuis = 0; return; }
+  const v = vue(), r = cadrePlan(), t = performance.now();
+  garde("trace", { t: ms(t), tag, x: v.x + v.w / 2, y: v.y + v.h / 2, w: v.w, W: r.width || 1,
+    positions: positionsDepuis, retard: derniere ? ms(t - derniere) : null });
+  positionsDepuis = 0;
+}
+
+/** Les quatre nombres d'un morceau : le pas de l'image à l'image, en pixels
+ *  d'écran (le zoom compté au bord de l'écran), et sa régularité. */
+function fluidite(/** @type {any[]} */ l){
+  const pas = [], dts = [];
+  for (let i = 1; i < l.length; i++){
+    const a = l[i - 1], b = l[i], k = b.W / b.w;
+    const d = Math.hypot((b.x - a.x) * k, (b.y - a.y) * k) + Math.abs(Math.log(b.w / a.w)) * b.W / 2;
+    pas.push(d); dts.push(b.t - a.t);
+  }
+  const bouge = pas.filter(d => d > .3);
+  if (bouge.length < 5) return null;
+  const tri = [...dts].sort((a, b) => a - b), med = centile(tri, .5);
+  const vit = pas.map((d, i) => d / Math.max(1, dts[i]));
+  /* l'à-coup : l'écart de chaque vitesse à la moyenne de ses deux voisines,
+     rapporté à la vitesse moyenne — nul pour un mouvement égal ou qui
+     accélère doucement, fort pour un pas qui hésite */
+  const moy = vit.reduce((a, b) => a + b, 0) / vit.length;
+  const ecarts = [];
+  for (let i = 1; i < vit.length - 1; i++) ecarts.push(Math.abs(vit[i] - (vit[i - 1] + vit[i + 1]) / 2));
+  const ec = [...ecarts].sort((a, b) => a - b);
+  // une image qui ne bouge pas entre deux qui bougent : le plan a calé
+  let figees = 0;
+  for (let i = 1; i < pas.length - 1; i++) if (pas[i] <= .3 && pas[i - 1] > .3 && pas[i + 1] > .3) figees++;
+  const pos = l.map(e => e.positions), ret = l.map(e => e.retard).filter(x => x != null).sort((a, b) => a - b);
+  return {
+    images: l.length, ms: Math.round(l[l.length - 1].t - l[0].t),
+    ecartMs: { p50: ms(med), p95: ms(centile(tri, .95)), reguliers: Math.round(100 * dts.filter(x => Math.abs(x - med) <= 3).length / dts.length) },
+    pasPx: { p50: ms(centile([...bouge].sort((a, b) => a - b), .5)), max: ms(Math.max(...bouge)) },
+    acoups: moy ? Math.round(100 * centile(ec, .5) / moy) : 0,
+    acoupsP90: moy ? Math.round(100 * centile(ec, .9) / moy) : 0,
+    figees,
+    positionsParImage: pos.some(x => x) ? Object.fromEntries([0, 1, 2, 3].map(n => [n === 3 ? "3+" : String(n),
+      pos.filter(x => n === 3 ? x >= 3 : x === n).length])) : undefined,
+    retardMs: ret.length ? { p50: ms(centile(ret, .5)), p95: ms(centile(ret, .95)) } : undefined,
+  };
+}
+
+/** Chaque morceau étiqueté, résumé. */
+export function bilanFluidite(){
+  /** @type {Map<string, any[]>} */
+  const parTag = new Map();
+  for (const e of R.trace){ const l = parTag.get(e.tag); if (l) l.push(e); else parTag.set(e.tag, [e]); }
+  return [...parTag].map(([tag, l]) => ({ tag, ...fluidite(l) })).filter(x => x.images);
+}
+
 function echantillonne(){
   const t = Math.round(performance.now());
   const m = /** @type {any} */ (performance).memory;
@@ -405,6 +495,7 @@ function synthese(){
     enGeste: resume(R.histo.geste), auRepos: resume(R.histo.repos),
     repeints: { n: reps.length, p50: ms(centile(reps, .5)), p95: ms(centile(reps, .95)), max: reps[reps.length - 1] || 0 },
     saccades: R.saccades.length + (R.perdus.saccades || 0),
+    fluidite: bilanFluidite(),
   };
 }
 

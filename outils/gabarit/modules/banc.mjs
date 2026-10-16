@@ -25,7 +25,7 @@ import { apresAffichage } from "./affichage.mjs";
 import { GL, RENDU_WEBGL } from "./webgl.mjs";
 import { SLUG } from "./salon.mjs";
 import { TOUS, state } from "./donnees.mjs";
-import { RELEVE_ACTIF, comptesGpu, programmesDepuis, joinsAuReleve, carteGraphique, partage } from "./releve.mjs";
+import { RELEVE_ACTIF, comptesGpu, programmesDepuis, joinsAuReleve, carteGraphique, partage, marqueReleve, bilanFluidite } from "./releve.mjs";
 import { changePlan } from "./rendu.mjs";
 
 const ACTIF = RELEVE_ACTIF && /[?&]perf=banc(?:&|$)/.test(location.search);
@@ -166,16 +166,22 @@ async function mesure(/** @type {number} */ tour, /** @type {any} */ phase, /** 
   const gpu0 = comptesGpu(), t0 = performance.now();
   const n0 = gpu0.programmes;
   const arrete = compteImages();
+  // les images de la phase se rangent sous son nom : leur fluidité se compare à celle du doigt
+  const tag = "banc " + tour + " " + phase.nom;
+  marqueReleve(tag);
   await phase.joue(ctx);
+  marqueReleve(null);
   await attends(APRES);
   const dts = arrete(), duree = performance.now() - t0, gpu = comptesGpu();
+  const fl = bilanFluidite().find(f => f.tag === tag);
   const tri = [...dts].sort((a, b) => a - b);
   return { tour, phase: phase.nom, ms: Math.round(duree), images: tri.length,
     ips: Math.round(tri.length * 1000 / duree),
     p50: Math.round(centile(tri, .5)), p95: Math.round(centile(tri, .95)), max: Math.round(tri[tri.length - 1] || 0),
     saccades: tri.filter(x => x > SACCADE).length,
     programmes: gpu.programmes - gpu0.programmes, msProgrammes: Math.round(gpu.msProgrammes - gpu0.msProgrammes),
-    pertes: gpu.pertes - gpu0.pertes, shaders: programmesDepuis(n0) };
+    pertes: gpu.pertes - gpu0.pertes, shaders: programmesDepuis(n0),
+    acoups: fl ? fl.acoups : null, figees: fl ? fl.figees : null, reguliers: fl ? fl.ecartMs.reguliers : null };
 }
 
 /* ------------------------------------------------------------
@@ -254,13 +260,14 @@ function resume(/** @type {any[]} */ lignes){
     // ce qui s'est compilé après l'affichage, avant le premier mouvement
     ...avantBanc.map(p => "shader compilé avant le banc : " + p.nom + " (" + p.ms + " ms)"),
     "",
-    "tour phase          ips  p50  p95   max  >50ms  shaders(ms)  jetés",
+    "tour phase          ips  p50  p95   max  >50ms  shaders(ms)  jetés  à-coups%  figées  réguliers%",
   ];
   const corps = lignes.map(l =>
     String(l.tour).padEnd(5) + l.phase.padEnd(15) +
     String(l.ips).padStart(4) + String(l.p50).padStart(5) + String(l.p95).padStart(5) +
     String(l.max).padStart(6) + String(l.saccades).padStart(7) +
-    (l.programmes + " (" + l.msProgrammes + ")").padStart(13) + String(l.pertes).padStart(8));
+    (l.programmes + " (" + l.msProgrammes + ")").padStart(13) + String(l.pertes).padStart(8) +
+    String(l.acoups ?? "—").padStart(10) + String(l.figees ?? "—").padStart(8) + String(l.reguliers ?? "—").padStart(12));
   /* Le nom de chaque shader compilé pendant le banc, et où : c'est lui qu'on
      préparera pendant l'écran de chargement. */
   const noms = lignes.flatMap(l => l.shaders.map((/** @type {any} */ p) =>
