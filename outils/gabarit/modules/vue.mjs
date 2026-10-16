@@ -341,15 +341,44 @@ function libellesDeLaVue(){
   prete.rafraichitBorne();
 }
 
+/* Le rythme d'un geste sur un écran à 120 Hz.
+
+   Un téléphone récent passe à 120 Hz dès qu'un doigt le touche. Le plan, à
+   pleine densité, n'y tient pas chaque image : il peignait tantôt en huit
+   millisecondes, tantôt en seize, vingt-cinq ou trente-trois, et le hall
+   avançait par à-coups sous le doigt — quand le banc d'essai, qui ne touche
+   pas l'écran, restait à 60 Hz et glissait d'un mouvement égal. Un Mali-G720,
+   au glisser : 883 images sous 17 ms, 101 à 25, 51 entre 33 et 50
+   (`?perf`, 16 octobre 2026). Une image d'écran sur deux, à 120 Hz, rend un
+   60 régulier, que l'œil lit plus fluide qu'un 120 qui hésite.
+
+   Au doigt seulement, et dès 100 Hz : un écran à 60 ou 90 Hz garde chaque
+   image, et la souris d'un poste de bureau, qui tient son rythme, aussi. */
+const RYTHME_TACTILE = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+// l'heure de la dernière image où la vue a été posée, et celle du dernier rappel d'image
+let imagePosee = 0, rappelPrecedent = 0;
+
+function imageDuGeste(/** @type {number} */ ts){
+  const vsync = rappelPrecedent ? ts - rappelPrecedent : Infinity;
+  rappelPrecedent = ts;
+  // à 120 Hz, l'image d'après : la vue se pose toutes les deux images d'écran
+  if (RYTHME_TACTILE && vsync < 10 && ts - imagePosee < 12){
+    imageDemandee = requestAnimationFrame(imageDuGeste);
+    return;
+  }
+  imagePosee = ts;
+  imageDemandee = null;
+  appliqueVue(true); echelle();
+  // la poignée du calage se mesure en pixels : elle suit la vue
+  if (prete.calage) prete.calage();
+}
+
 /** Pendant un geste : le strict nécessaire, une fois par image. */
 export function rafraichitVue(){
   if (!imageDemandee){
-    imageDemandee = requestAnimationFrame(() => {
-      imageDemandee = null;
-      appliqueVue(true); echelle();
-      // la poignée du calage se mesure en pixels : elle suit la vue
-      if (prete.calage) prete.calage();
-    });
+    // après une pause, le premier rappel ne dit rien du rythme de l'écran
+    if (performance.now() - rappelPrecedent > 50) rappelPrecedent = 0;
+    imageDemandee = requestAnimationFrame(imageDuGeste);
   }
   clearTimeout(libellesEnAttente);
   libellesEnAttente = setTimeout(() => { libellesEnAttente = null; libellesDeLaVue(); }, 150);

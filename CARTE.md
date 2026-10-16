@@ -3166,7 +3166,7 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 710 l. → plan, plan-admin
+### `modules/vue.mjs` — 739 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3177,10 +3177,11 @@ Fonctions :
 `rendTextes` 113 · `cadrage` 152 · `peintLibelles` 157 · `repeintLibelles` 165
 `detacheLibelles` 169 · `rattacheLibelles` 181 · `etireLibelles` 199
 `poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 258
-`appliqueVue` 268 · `libellesDeLaVue` 337 · `rafraichitVue` 345 · `poseVue` 359
-`mesureBarre` 388 · `masqueHaut` 416 · `masque` 423 · `masqueDroite` 460 · `fit` 471
-`recadreIncline` 498 · `stoppeZoom` 540 · `glisseVersVise` 558 · `glisseVers` 604
-`rectVisee` 631 · `zoom` 651 · `echelle` 665 · `versPlan` 677 · `brancheVue` 689
+`appliqueVue` 268 · `libellesDeLaVue` 337 · `imageDuGeste` 361 · `rafraichitVue` 377
+`poseVue` 388 · `mesureBarre` 417 · `masqueHaut` 445 · `masque` 452 · `masqueDroite` 489
+`fit` 500 · `recadreIncline` 527 · `stoppeZoom` 569 · `glisseVersVise` 587
+`glisseVers` 633 · `rectVisee` 660 · `zoom` 680 · `echelle` 694 · `versPlan` 706
+`brancheVue` 718
 
 Importe :
 
