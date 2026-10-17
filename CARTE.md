@@ -1020,7 +1020,7 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1003 l. → plan, plan-admin
+### `modules/environs.mjs` — 1069 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1030,10 +1030,11 @@ Fonctions :
 `calagePose` 255 · `calageCourant` 267 · `fondCourant` 270 · `recul` 275 · `zoneDuFond` 293
 `bornesDuFond` 310 · `borneLeStyle` 324 · `adresseTuile` 336 · `tuilesDeLaVue` 346
 `chargeMapLibre` 419 · `vueGL` 451 · `styleDuFond` 469 · `guetteLaCarte` 497
-`recaleCarteGL` 531 · `redessineCarteGL` 551 · `poseCarteGL` 565 · `diagnostiqueGL` 679
-`relanceCarteGL` 699 · `videCarteGL` 712 · `inclineFond` 746 · `dessineFondCarte` 794
-`cleMasqueCarte` 914 · `masqueCarte` 915 · `formesMasquantes` 924 · `contourDuHall` 946
-`cheminDuHall` 953 · `poseMasqueCarte` 971 · `ditCarte` 986 · `refaitFondCarte` 996
+`recaleCarteGL` 531 · `redessineCarteGL` 551 · `poseCarteGL` 565 · `diagnostiqueGL` 682
+`relanceCarteGL` 702 · `retireCarteGL` 716 · `guetteRetourGL` 743 · `carteGLPerdue` 750
+`verifieCarteGL` 760 · `videCarteGL` 778 · `inclineFond` 812 · `dessineFondCarte` 860
+`cleMasqueCarte` 980 · `masqueCarte` 981 · `formesMasquantes` 990 · `contourDuHall` 1012
+`cheminDuHall` 1019 · `poseMasqueCarte` 1037 · `ditCarte` 1052 · `refaitFondCarte` 1062
 
 Importe :
 
