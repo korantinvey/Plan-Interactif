@@ -640,6 +640,9 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
        qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
        Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
     _carteGL.on("error", ev => diagnostiqueGL(ev));
+    /* La carte graphique reprise pendant la veille : voir `guetteRetourGL`. */
+    _carteGL.on("webglcontextlost", verifieCarteGL);
+    guetteRetourGL();
     /* Et quand elle arrive, le dire aussi : sans ce mot, une carte pâlie par
        la discrétion et posée sous le plan peut passer pour absente. */
     _carteGL.on("load", () => {
@@ -702,10 +705,73 @@ export function relanceCarteGL(){
   _echecGL = "";
   _ditGL = "";
   _monteGL = false;
-  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  if (_carteGL){ retireCarteGL(); _styleGL = ""; }
   _etendueGL = null;
   ditCarte("");
   dessineFondCarte();
+}
+
+/** La carte retirée, même sur un contexte mort : le moteur y libère des
+ *  ressources que la carte graphique a déjà reprises, et peut s'en plaindre. */
+function retireCarteGL(){
+  try { _carteGL.remove(); } catch (e) {}
+  _carteGL = null;
+}
+
+/* ------------------------------------------------------------
+   Le contexte perdu.
+
+   Un téléphone mis en veille reprend la carte graphique aux pages qu'il ne
+   montre plus. Le plan sait remonter son dessin (`webgl.mjs`) ; la toile de
+   MapLibre, elle, restait morte au retour — le navigateur y peint un petit
+   visage triste dans le coin, et le quartier disparaît sous le pavillon. Le
+   moteur promet de se refaire quand le contexte lui est rendu, mais un
+   téléphone ne le rend pas toujours.
+
+   Au retour sur la page, on laisse donc au moteur le temps de se refaire,
+   puis on regarde la toile nous-mêmes — l'événement de perte peut ne jamais
+   venir, l'onglet dormait. Toujours morte, la carte est remontée sur une
+   toile neuve. Et pas indéfiniment : un appareil qui la reprend à chaque fois
+   perd le fond plutôt que de le faire clignoter.
+   ------------------------------------------------------------ */
+const REMONTES_GL = 3;
+/* Le temps qu'il faut à la mémoire pour retomber, et au moteur pour se refaire
+   seul s'il le peut. */
+const ATTENTE_RETOUR_GL = 600;
+let _remontesGL = 0, _retourGL = null, _veilleGL = false;
+
+function guetteRetourGL(){
+  if (_veilleGL) return;
+  _veilleGL = true;
+  document.addEventListener("visibilitychange", verifieCarteGL);
+  addEventListener("pageshow", verifieCarteGL);
+}
+
+function carteGLPerdue(){
+  const toile = _carteGL && _carteGL.getCanvas();
+  if (!toile) return false;
+  /* Le contexte déjà pris est rendu tel quel, mort ou vif ; le moteur prend
+     la deux s'il peut, la un sinon. */
+  let gl = null;
+  try { gl = toile.getContext("webgl2") || toile.getContext("webgl"); } catch (e) {}
+  return !gl || gl.isContextLost();
+}
+
+function verifieCarteGL(){
+  if (document.visibilityState !== "visible" || !_carteGL) return;
+  clearTimeout(_retourGL);
+  _retourGL = setTimeout(() => {
+    if (document.visibilityState !== "visible" || !carteGLPerdue()) return;
+    console.warn("Fond de carte : contexte perdu, la carte est remontée.");
+    if (++_remontesGL > REMONTES_GL){
+      /* La toile morte ne montre plus que le visage triste : on la retire, et
+         l'échec retenu empêche la vue suivante de la remonter. */
+      videCarteGL();
+      _echecGL = "contexte perdu";
+      return;
+    }
+    relanceCarteGL();
+  }, ATTENTE_RETOUR_GL);
 }
 
 /** La carte vectorielle, retirée — on repasse aux tuiles, ou à rien. */
@@ -718,7 +784,7 @@ function videCarteGL(){
   /* Hors du `if` : c'est quand aucune carte n'est encore posée — un montage
      justement en vol — que le drapeau avait le plus besoin d'être rendu. */
   _monteGL = false;
-  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  if (_carteGL){ retireCarteGL(); _styleGL = ""; }
   _etendueGL = null;
   if (hote) hote.hidden = true;
 }
