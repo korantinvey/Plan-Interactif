@@ -90,8 +90,7 @@ Pour chaque empreinte :
 
 | situation | geste |
 |---|---|
-| sans issue, total ≥ 2 | ouvre une issue, étiquette `anomalie`, puis `note_remontee` |
-| sans issue, total = 1 | attend : un cas isolé n'ouvre rien |
+| sans issue | ouvre une issue dès la première occurrence, étiquette `anomalie`, puis `note_remontee` |
 | issue ouverte, total en hausse | commente « +N depuis le <passage> », version et salons touchés |
 | issue fermée, total en hausse | la rouvre avec le même commentaire : **récidive** |
 | total égal ou en baisse | recale seulement |
@@ -103,7 +102,11 @@ dernière occurrence, la version des pages, et l'empreinte en pied (que le
 diagnostic relit). Il ne contient **aucun slug**, car le dépôt est public et
 un slug nomme un client.
 
-Pour ne pas inonder le dépôt, un passage ouvre au plus 10 issues ; le reste
+Un bug vu une seule fois est un bug : pas de seuil d'occurrences. Le tri se
+fait en amont, `erreurs.mjs` écartant déjà extensions, scripts tiers et
+erreurs d'une autre origine. Pour ne pas inonder le dépôt d'un coup (une
+version cassée peut produire vingt erreurs distinctes en une heure), un
+passage ouvre au plus 10 issues ; le reste
 attend le passage suivant, et le résumé du workflow le dit.
 
 Le workflow tourne chaque nuit (`43 4 * * *`) et sur `workflow_dispatch`, avec
@@ -113,7 +116,7 @@ liste les issues `anomalie` ouvertes.
 
 Le script s'essaie hors réseau : `--essai <fichier.json>` lit les lignes d'un
 fichier au lieu de la base, et écrit les gestes prévus au lieu de les faire.
-Un essai dans `outils/essais/remontee.js` couvre les cinq situations du
+Un essai dans `outils/essais/remontee.js` couvre les quatre situations du
 tableau.
 
 ## 4. Le diagnostic — tâche planifiée Claude « Diagnostic des anomalies »
@@ -143,7 +146,7 @@ le demandant dans une session). Sa consigne :
 - Migration : rejouée dans PGlite (droits `anon`, `authenticated` et
   `service_role` simulés). `anon` et `authenticated` ne lisent pas
   `erreur_remontee`.
-- `outils/essais/remontee.js` : les cinq situations, et le plafond de 10.
+- `outils/essais/remontee.js` : les quatre situations, et le plafond de 10.
 - Capture : `npm run construire`, puis une panne provoquée sur le serveur
   d'essai (API coupée en 500, exception injectée dans `demarre`). Seules ces
   deux-là partent vers `/api/erreur` ; une coupure réseau ne part pas.
