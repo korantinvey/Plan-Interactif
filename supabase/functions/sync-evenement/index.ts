@@ -1523,9 +1523,16 @@ Deno.serve(async (req) => {
 
           for (const c of confEm) {
             const idSalle = c.salleId || c.salle || "";
-            if (!idSalle) continue;
-            let fiche = sallesConf[idSalle];
-            if (!fiche) fiche = sallesConf[idSalle] = { nom: c.salle, code: null, zone: null, auto: null, manuel: false };
+            /* Un programme saisi peut ne pas dire où se tient un rendez-vous :
+               on n'invente pas de salle, la conférence part sans, et ne se
+               situe que par l'exposant qui la tient. Eventmaker, lui, en
+               donne toujours une à ce qui mérite d'être montré. */
+            if (!idSalle && fournisseur(evt, "conferences") !== "saisie") continue;
+            let fiche = idSalle ? sallesConf[idSalle] : null;
+            if (!fiche) {
+              fiche = { nom: c.salle, code: null, zone: null, auto: null, manuel: false };
+              if (idSalle) sallesConf[idSalle] = fiche;
+            }
             fiche.nom = c.salle;
 
             const segments = codeSalle(c.salle);

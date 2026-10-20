@@ -11,13 +11,11 @@
 -- (`_partage/programme-saisi.ts`) — salles situées, stands rattachés,
 -- rappels ouverts, rien ne la distingue plus ensuite d’un programme importé.
 --
--- Le programme de Funexpo 2026 y est recopié, en français et en anglais
--- d’après les deux versions de la page. Les heures de fin ne sont données
--- que là où le site les donne ; les ateliers de sculpture, annoncés sans
--- horaire, courent sur les heures d’ouverture du salon. Leur salle est
--- rattachée à la zone « Atelier sculpture » déjà posée sur le plan ; la
--- « Salle de conférences » n’a pas de zone, elle se rattachera depuis la
--- fiche de celle qui l’accueillera.
+-- Le programme de Funexpo 2026 y est recopié tel que le site le donne, en
+-- français et en anglais, sans rien y ajouter : ce que le site tait reste
+-- vide. L’atelier de sculpture n’a ni horaire ni lieu (« n° stand à venir ») ;
+-- les conférences n’ont pas d’heure de fin. Seul le titre de la conférence du
+-- vendredi, que la page anglaise n’a pas encore, est traduit du français.
 
 alter table evenement
   add column if not exists conferences_saisies jsonb not null default '[]'::jsonb;
@@ -28,13 +26,13 @@ comment on column evenement.conferences_saisies is
 update evenement
 set conferences_saisies = $programme$[
   {
-    "id": "funexpo26-atelier-sculpture-18",
-    "nom": "Atelier de sculpture : initiation à la reconstruction faciale",
-    "texte": "En essayant de réaliser tout ou partie d’une main, découvrez ce que peut être le travail d’un thanatoplasticien. Cet atelier vous propose une première approche pratique de la représentation anatomique, guidée par Ugo Panico.\n\nIllustrateur, sculpteur et enseignant, Ugo Panico a été formé à l’école Émile Cohl, où il enseigne la sculpture depuis douze ans. Il a enseigné l’illustration et l’anatomie à l’école Brassart, et intervient aujourd’hui auprès de l’AFITT pour des cours de représentation anatomique. Prestataire dans l’image et le volume, il a réalisé de nombreux décors pour des opéras, des théâtres et des parcs d’attraction.\n\nInscription gratuite sur place.",
-    "debut": "2026-11-18T09:30:00+01:00",
-    "fin": "2026-11-18T19:00:00+01:00",
-    "salle": "Atelier sculpture",
-    "type": "Atelier",
+    "id": "funexpo26-atelier-sculpture",
+    "nom": "L’atelier de sculpture",
+    "texte": "Initiation à la reconstruction faciale avec Ugo Panico.\n\nEn essayant de réaliser tout ou partie d’une main, découvrez ce que peut être le travail d’un thanatoplasticien. Cet atelier vous propose une première approche pratique de la représentation anatomique, guidée par Ugo Panico.\n\nRencontrez Ugo Panico\nIllustrateur, sculpteur et enseignant. Ugo Panico a été formé à l'école Emile Cohl et y est resté en tant que professeur de sculpture depuis 12 ans.\nIl a enseigné l'illustration et l'anatomie à l'école Brassart, première école de design graphique et de création digitale, créée il y a 75 ans et implantée dans 15 régions en France\nAujourd'hui, Ugo intervient auprès d'AFITT pour des cours de représentation anatomique.\nPar ailleurs, Prestataire dans l'image et le volume, il a réalisé de nombreux décors pour des opéras, des théâtres et des parcs d'attraction.\n\nDates des ateliers : mercredi 18 et jeudi 19 novembre\nInscription gratuite sur place (n° stand à venir)",
+    "debut": null,
+    "fin": null,
+    "salle": null,
+    "type": null,
     "intervenants": [
       {
         "nom": "Ugo Panico",
@@ -43,16 +41,14 @@ set conferences_saisies = $programme$[
       }
     ],
     "en": {
-      "nom": "Sculpture workshop: introduction to facial reconstruction",
-      "texte": "By attempting to create all or part of a hand, discover what the work of a thanatoplastic artist entails. This workshop offers a first practical approach to anatomical representation, guided by Ugo Panico.\n\nIllustrator, sculptor and teacher, Ugo Panico trained at the Emile Cohl school, where he has taught sculpture for 12 years. He taught illustration and anatomy at the Brassart school, and today works with AFITT to teach anatomical representation courses. As a service provider in image and volume, he has created numerous sets for operas, theatres and amusement parks.\n\nFree registration on site.",
-      "salle": "Sculpture workshop",
-      "type": "Workshop"
+      "nom": "The sculpture workshop",
+      "texte": "Introduction to facial reconstruction with Ugo Panico.\n\nBy attempting to create all or part of a hand, discover what the work of a thanatoplastic artist entails. This workshop offers a first practical approach to anatomical representation, guided by Ugo Panico.\n\nMeet Ugo Panico\nIllustrator, sculptor and teacher. Ugo Panico trained at the Emile Cohl school and has remained there as a sculpture teacher for 12 years.\nHe taught illustration and anatomy at the Brassart school, the first school of graphic design and digital creation, created 75 years ago and located in 15 regions in France.\nToday, Ugo is working with AFITT to teach anatomical representation courses.\nFurthermore, as a service provider in image and volume, he has created numerous sets for operas, theatres and amusement parks.\n\nWorkshop dates: Wednesday 18th and Thursday 19th November\nFree registration on site (stand number to be announced)"
     }
   },
   {
     "id": "funexpo26-funeraire-animalier",
     "nom": "Funéraire animalier : un nouveau rôle pour les pompes funèbres ?",
-    "texte": "L’animal de compagnie prend une place de plus en plus importante dans la vie des Français, au point d’être considéré comme un membre de la famille. Leur mort laisse de nombreuses familles démunies : elles connaissent mal leurs droits, les solutions existantes et les professionnels vers lesquels se tourner.\n\nAprès un point clair et accessible sur la réglementation aujourd’hui, cette conférence explorera la place que les pompes funèbres peuvent prendre face à ce besoin émergent : informer, orienter et imaginer de nouveaux services.\n\nUne invitation à regarder au-delà des pratiques actuelles et à réfléchir, très concrètement, à ce que pourrait devenir le funéraire animalier de demain.",
+    "texte": "L’animal de compagnie prend une place de plus en plus importante dans la vie des français au point d’être considéré comme un membre de la famille. Leur mort laisse de nombreuses familles démunies : elles connaissent mal leurs droits, les solutions existantes et les professionnels vers lesquels se tourner.\n\nAprès un point clair et accessible sur la réglementation aujourd’hui, cette conférence explorera la place que les pompes funèbres peuvent prendre face à ce besoin émergent : informer, orienter et imaginer de nouveaux services.\n\nUne invitation à regarder au-delà des pratiques actuelles et à réfléchir, très concrètement, à ce que pourrait devenir le funéraire animalier de demain.",
     "debut": "2026-11-18T14:00:00+01:00",
     "fin": null,
     "salle": "Salle de conférences",
@@ -61,11 +57,11 @@ set conferences_saisies = $programme$[
       {
         "nom": "Caroline de Rauglaudre",
         "societe": "La neuvième planète",
-        "fonction": "Conseillère funéraire et juriste en droit animalier, co-fondatrice de l’association La neuvième planète"
+        "fonction": "conseillère funéraire et juriste en droit animalier, co-fondatrice de l'association La neuvième planète"
       }
     ],
     "en": {
-      "nom": "Pet funerals",
+      "nom": "Pet Funeral",
       "texte": "A meeting dedicated to pet funerals, to shed light on this activity and its place in the profession.",
       "salle": "Conference room",
       "type": "Conference"
@@ -78,42 +74,18 @@ set conferences_saisies = $programme$[
     "debut": "2026-11-18T18:30:00+01:00",
     "fin": "2026-11-18T20:30:00+01:00",
     "salle": "Stand C99",
-    "type": "Temps fort",
+    "type": null,
     "stands": [
       "C99"
     ],
     "en": {
-      "nom": "FFPF cocktail",
-      "texte": "The FFPF is extending its hours from 6:30pm to 8:30pm. On the program: cocktails and musical entertainment at its stand.",
-      "salle": "Booth C99",
-      "type": "Highlight"
-    }
-  },
-  {
-    "id": "funexpo26-atelier-sculpture-19",
-    "nom": "Atelier de sculpture : initiation à la reconstruction faciale",
-    "texte": "En essayant de réaliser tout ou partie d’une main, découvrez ce que peut être le travail d’un thanatoplasticien. Cet atelier vous propose une première approche pratique de la représentation anatomique, guidée par Ugo Panico.\n\nIllustrateur, sculpteur et enseignant, Ugo Panico a été formé à l’école Émile Cohl, où il enseigne la sculpture depuis douze ans. Il a enseigné l’illustration et l’anatomie à l’école Brassart, et intervient aujourd’hui auprès de l’AFITT pour des cours de représentation anatomique. Prestataire dans l’image et le volume, il a réalisé de nombreux décors pour des opéras, des théâtres et des parcs d’attraction.\n\nInscription gratuite sur place.",
-    "debut": "2026-11-19T09:30:00+01:00",
-    "fin": "2026-11-19T19:00:00+01:00",
-    "salle": "Atelier sculpture",
-    "type": "Atelier",
-    "intervenants": [
-      {
-        "nom": "Ugo Panico",
-        "societe": null,
-        "fonction": "Illustrateur, sculpteur et enseignant"
-      }
-    ],
-    "en": {
-      "nom": "Sculpture workshop: introduction to facial reconstruction",
-      "texte": "By attempting to create all or part of a hand, discover what the work of a thanatoplastic artist entails. This workshop offers a first practical approach to anatomical representation, guided by Ugo Panico.\n\nIllustrator, sculptor and teacher, Ugo Panico trained at the Emile Cohl school, where he has taught sculpture for 12 years. He taught illustration and anatomy at the Brassart school, and today works with AFITT to teach anatomical representation courses. As a service provider in image and volume, he has created numerous sets for operas, theatres and amusement parks.\n\nFree registration on site.",
-      "salle": "Sculpture workshop",
-      "type": "Workshop"
+      "nom": "FFPF Cocktail",
+      "texte": "The FFPF is extending its hours from 6:30pm to 8:30pm. On the program: cocktails and musical entertainment at its stand."
     }
   },
   {
     "id": "funexpo26-corps-montrables",
-    "nom": "Tous les corps sont-ils montrables ?",
+    "nom": "Tous les corps sont-ils montrables",
     "texte": "La présentation du défunt occupe une place essentielle dans l’accompagnement des familles. À travers son expérience de l’embaumement, Alain Koninckx apporte un éclairage sur les possibilités de présentation du corps, l’apparence apaisée du défunt et leur rôle dans le travail de deuil.\n\nPassionné par l’embaumement depuis sa découverte du milieu funéraire en 2003, il s’est formé au collège international des sciences mortuaires de Liège, avec des stages en Angleterre. Certifié en 2007 par l’European & International Examinations Board of Mortuary Science et membre du British Institute of Embalmers, il a travaillé neuf ans au laboratoire d’anatomie des facultés universitaires Notre-Dame de la Paix, autour du don de corps à la science. Depuis 2008, il exerce comme embaumeur indépendant, avec pour objectif la réconciliation des vivants et des morts.",
     "debut": "2026-11-19T10:30:00+01:00",
     "fin": null,
@@ -122,8 +94,8 @@ set conferences_saisies = $programme$[
     "intervenants": [
       {
         "nom": "Alain Koninckx",
-        "societe": "European School of Embalming Skills Limited",
-        "fonction": "Formateur restauration faciale"
+        "societe": "EUROPEAN SCHOOL OF EMBALMING SKILLS LIMITED",
+        "fonction": "formateur restauration faciale"
       }
     ],
     "en": {
@@ -135,7 +107,7 @@ set conferences_saisies = $programme$[
   },
   {
     "id": "funexpo26-histoire-104",
-    "nom": "Histoire des pompes funèbres et du « 104 »",
+    "nom": "Histoire des pompes funèbres et du \"104\"",
     "texte": "Explorez l’histoire des pompes funèbres et du « 104 » avec Bruno Bertherat, maître de conférences à l’université d’Avignon. Auteur d’une thèse sur la Morgue à Paris au XIXe siècle, il est spécialiste de l’histoire des pratiques funéraires à l’époque contemporaine.",
     "debut": "2026-11-19T14:00:00+01:00",
     "fin": null,
@@ -144,20 +116,20 @@ set conferences_saisies = $programme$[
     "intervenants": [
       {
         "nom": "Bruno Bertherat",
-        "societe": "Université d’Avignon",
-        "fonction": "Maître de conférences"
+        "societe": "Université d'Avignon",
+        "fonction": "Maître de conférences à l'Université d'Avignon"
       }
     ],
     "en": {
-      "nom": "History of funeral homes and the “104”",
-      "texte": "Explore the history of funeral homes and the “104” with Bruno Bertherat, lecturer at the University of Avignon. Author of a thesis on the Morgue in 19th-century Paris, he is a specialist in the history of funeral practices in the contemporary era.",
+      "nom": "History of funeral homes and the \"104\"",
+      "texte": "Explore the history of funeral homes and the \"104\" with Bruno Bertherat, lecturer at the University of Avignon. Author of a thesis on the Morgue in 19th-century Paris, he is a specialist in the history of funeral practices in the contemporary era.",
       "salle": "Conference room",
       "type": "Conference"
     }
   },
   {
     "id": "funexpo26-thanatopraxie-environnement",
-    "nom": "Thanatopraxie et environnement",
+    "nom": "Thanatopraxie et l'environnement",
     "texte": null,
     "debut": "2026-11-20T14:00:00+01:00",
     "fin": null,
@@ -166,39 +138,31 @@ set conferences_saisies = $programme$[
     "intervenants": [
       {
         "nom": "Alain Koninckx",
-        "societe": "European School of Embalming Skills Limited",
-        "fonction": "Formateur restauration faciale"
+        "societe": "EUROPEAN SCHOOL OF EMBALMING SKILLS LIMITED",
+        "fonction": "formateur restauration faciale"
       }
     ],
     "en": {
-      "nom": "Embalming and the environment",
-      "salle": "Conference room",
-      "type": "Conference"
+      "nom": "Embalming and the environment"
     }
   },
   {
     "id": "funexpo26-remise-diplomes-enamef",
-    "nom": "Remise des diplômes ENAMEF",
+    "nom": "Remise diplômes – ENAMEF",
     "texte": "Un rendez-vous pour saluer les parcours de formation et mettre à l’honneur les diplômés.",
     "debut": "2026-11-20T15:00:00+01:00",
     "fin": null,
     "salle": "Stand C99",
-    "type": "Temps fort",
+    "type": null,
     "stands": [
       "C99"
     ],
     "en": {
-      "nom": "ENAMEF graduation ceremony",
-      "texte": "An event to celebrate training paths and honor graduates.",
-      "salle": "Booth C99",
-      "type": "Highlight"
+      "nom": "Graduation Ceremony – ENAMEF",
+      "texte": "An event to celebrate training paths and honor graduates."
     }
   }
 ]$programme$::jsonb,
     sources = coalesce(sources, '{}'::jsonb) || jsonb_build_object(
-      'conferences', jsonb_build_object('fournisseur', 'saisie', 'cle', null)),
-    salles = coalesce(salles, '{}'::jsonb) || jsonb_build_object(
-      'Atelier sculpture', jsonb_build_object(
-        'nom', 'Atelier sculpture', 'code', null,
-        'zone', 'z3d570ab1', 'auto', null, 'manuel', true))
+      'conferences', jsonb_build_object('fournisseur', 'saisie', 'cle', null))
 where slug = 'funexpo-2026';
