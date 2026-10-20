@@ -266,6 +266,7 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | itinéraire | calcul `modules/itineraire.mjs`, tiroir et visée `modules/tiroir-itineraire.mjs`, tracé `modules/trace-itineraire.mjs` |
 | borne, code « Vous êtes ici » | `modules/borne.mjs`, `modules/vous-etes-ici.mjs`, `modules/ici.mjs`, `modules/affiche-ici.mjs` |
 | rappels de conférence | `modules/rappels.mjs`, `modules/notifications.mjs` ; serveur `supabase/functions/rappels/` |
+| programme saisi à la main (source « saisie ») | colonne `evenement.conferences_saisies`, lue par `_partage/programme-saisi.ts` ; anglais posé par `modules/index-salon.mjs` |
 | suggestion, visite guidée, générique du sponsor | `modules/suggestion.mjs`, `modules/tutoriel.mjs`, `modules/sponsor.mjs` |
 | installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/index.mjs` `manifeste` |
 | mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/index.mjs` `mesure`, `erreur` |

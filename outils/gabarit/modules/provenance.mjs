@@ -29,13 +29,16 @@ export const DOMAINES = [
    "La géométrie des pavillons et des calques."],
   ["stands",      "Exposants",   ["klipso", "eventmaker"],
    "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan."],
-  ["conferences", "Conférences", ["aucun", "klipso", "eventmaker"],
-   "Le programme du salon. Eventmaker le rend, et dit qui tient quoi ; Klipso ne le reprend pas encore."],
+  ["conferences", "Conférences", ["aucun", "klipso", "eventmaker", "saisie"],
+   "Le programme du salon. Eventmaker le rend, et dit qui tient quoi ; Klipso ne le reprend pas encore ; la saisie manuelle relit celui recopié dans la fiche du salon, quand aucun outil ne le publie."],
   ["produits",    "Produits",    ["aucun", "klipso", "eventmaker"],
    "Le catalogue que chaque exposant présente, montré sur sa fiche. Eventmaker le rend ; Klipso ne le reprend pas encore."],
 ];
 export const FOURNISSEURS = {
   aucun: "Non synchronisé", klipso: "Klipso", eventmaker: "Eventmaker",
+  /* Pas un outil : le programme recopié dans `evenement.conferences_saisies`,
+     que la synchronisation relit comme elle lirait Eventmaker. */
+  saisie: "Saisie manuelle",
 };
 
 /* Un domaine que rien ne reprend vaut mieux « non synchronisé » qu'un

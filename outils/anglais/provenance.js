@@ -9,13 +9,14 @@ module.exports = {
   "La géométrie des pavillons et des calques.": "The geometry of halls and layers.",
   "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan.":
     "The companies attached to the stands. Geometry and areas stay with the map.",
-  "Le programme du salon. Eventmaker le rend, et dit qui tient quoi ; Klipso ne le reprend pas encore.":
-    "The show's programme. Eventmaker serves it, and says who runs what; Klipso does not pick it up yet.",
+  "Le programme du salon. Eventmaker le rend, et dit qui tient quoi ; Klipso ne le reprend pas encore ; la saisie manuelle relit celui recopié dans la fiche du salon, quand aucun outil ne le publie.":
+    "The show's programme. Eventmaker serves it, and says who runs what; Klipso does not pick it up yet; manual entry reads the one copied into the show's record, when no tool publishes it.",
   "Le catalogue que chaque exposant présente, montré sur sa fiche. Eventmaker le rend ; Klipso ne le reprend pas encore.":
     "The catalogue each exhibitor presents, shown on their record. Eventmaker serves it; Klipso does not pick it up yet.",
   "Non synchronisé": "Not synchronised",
   "Klipso": "Klipso",
   "Eventmaker": "Eventmaker",
+  "Saisie manuelle": "Manual entry",
   "Instance": "Instance",
   "Le sous-domaine Klipso.": "The Klipso subdomain.",
   "Identifiant d'événement": "Event ID",
