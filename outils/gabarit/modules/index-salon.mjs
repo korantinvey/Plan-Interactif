@@ -120,6 +120,18 @@ export function indexe(/** @type {any} */ d){
   });
   LANGUE.protege(noms);
   nomsAnglaisDesZones();
+  /* L'anglais d'un programme saisi à la main, que la synchronisation porte
+     à côté du français (`en`). Le titre et la présentation se traduisent
+     d'un bloc, comme le nom d'une zone : découpés en phrases, ils ne
+     retrouveraient rien dans le dictionnaire de la page. */
+  const conf = {};
+  DATA.plans.forEach(p => p.conferences.forEach(c => {
+    if (!c.en) return;
+    ["nom", "texte", "salle", "type", "theme"].forEach(k => {
+      if (c[k] && c.en[k]) conf[c[k]] = c.en[k];
+    });
+  }));
+  LANGUE.donnees("conferences", conf);
   /* L'anglais des valeurs des listes — secteurs, nomenclature, parcours de
      visite — tel que la synchronisation l'a relevé dans les sources. */
   LANGUE.donnees("sources", d.anglais || {});

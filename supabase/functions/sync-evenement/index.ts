@@ -30,6 +30,7 @@ import {
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
+import { programmeSaisi } from "../_partage/programme-saisi.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -946,6 +947,9 @@ Deno.serve(async (req) => {
       let exposantsConf = new Map<string, ExposantConfEm[]>();
       let intervenantsConf = new Map<string, IntervenantEm[]>();
       let animateursConf = new Map<string, IntervenantEm[]>();
+      /* Les conférences saisies désignent leur exposant par son emplacement :
+         il se résout pavillon par pavillon, une fois les stands composés. */
+      let standsConf = new Map<string, string[]>();
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
@@ -982,6 +986,17 @@ Deno.serve(async (req) => {
         });
         etape("conferences", "encours", confEm.length + " conférences lues"
           + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
+      } else if (fournisseur(evt, "conferences") === "saisie") {
+        /* Le programme recopié à la main dans la fiche du salon : rien à
+           appeler, il suffit de le relire sous la forme d'Eventmaker. */
+        etape("conferences", "encours");
+        const p = programmeSaisi(evt.conferences_saisies);
+        confEm = p.conferences;
+        standsConf = p.stands;
+        intervenantsConf = p.intervenants;
+        pese("conferences", confEm.length || 1);
+        chiffres({ "Conférences": confEm.length });
+        etape("conferences", "encours", confEm.length + " conférences saisies");
       }
 
       /* Les produits qu'un exposant présente. Ils tiennent à sa fiche
@@ -1546,10 +1561,16 @@ Deno.serve(async (req) => {
             const expos = cites
               .map((e) => ({ stand: parDossier.get(e.dossier), nom: e.nom }))
               .filter((e): e is { stand: string; nom: string | null } => Boolean(e.stand));
+            // un programme saisi nomme l'emplacement : celui d'ici, s'il y est
+            for (const code of standsConf.get(c.id) ?? []) {
+              const s = stands.find((x) => x.code && cleStand(x.code) === cleStand(code));
+              if (s && !expos.some((e) => e.stand === s.id)) expos.push({ stand: s.id, nom: s.nom ?? null });
+            }
             const sienne = fiche.zone && anneauxZone.has(fiche.zone);
             // sans zone et sans exposant nulle part, elle n'a d'attache
             // qu'ici : on la remonte pour qu'elle existe, la console la situera
-            if (sienne || expos.length || (!fiche.zone && !cites.length)) {
+            const citeAilleurs = cites.length || standsConf.has(c.id);
+            if (sienne || expos.length || (!fiche.zone && !citeAilleurs)) {
               conferences.push({
                 id: c.id, nom: c.nom, texte: c.texte,
                 debut: c.debut, fin: c.fin,
@@ -1561,6 +1582,8 @@ Deno.serve(async (req) => {
                 // clé ne descend pas plutôt que de partir vide sur tout un salon
                 ...(intervenants.length ? { intervenants } : {}),
                 ...(animateurs.length ? { animateurs } : {}),
+                // l'anglais d'un programme saisi ; Eventmaker n'en donne pas
+                ...("en" in c && c.en ? { en: c.en } : {}),
               });
             }
           }

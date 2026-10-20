@@ -1484,14 +1484,14 @@ Importé par :
 
 fiche-evenement
 
-### `modules/index-salon.mjs` — 486 l. → plan, plan-admin
+### `modules/index-salon.mjs` — 498 l. → plan, plan-admin
 
 - l.1 · 1. L'index du salon — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`texteProduits` 53 · `indexe` 57 · `chronoConf` 298 · `confsDuPlan` 303
-`indexeConferences` 321 · `rangeConferences` 399 · `poseFavicon` 446 · `poseLogoSalon` 472
+`texteProduits` 53 · `indexe` 57 · `chronoConf` 310 · `confsDuPlan` 315
+`indexeConferences` 333 · `rangeConferences` 411 · `poseFavicon` 458 · `poseLogoSalon` 484
 
 Importe :
 
@@ -2241,15 +2241,15 @@ Portes :
 
 - `confieAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
-### `modules/provenance.mjs` — 161 l. → console
+### `modules/provenance.mjs` — 164 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
 - l.19 · Provenance des données
 
 Fonctions :
 
-`fournisseurUtilise` 83 · `sourceNom` 93 · `source` 97 · `ligneSource` 101
-`resumeProvenance` 124 · `ouvreProvenance` 145
+`fournisseurUtilise` 86 · `sourceNom` 96 · `source` 100 · `ligneSource` 104
+`resumeProvenance` 127 · `ouvreProvenance` 148
 
 Importe :
 
@@ -3263,6 +3263,10 @@ Portes :
 
 `octetsDeVignette` 12 · `typeDeVignette` 27
 
+### `supabase/functions/_partage/programme-saisi.ts` — 84 l.
+
+`programmeSaisi` 52
+
 ### `supabase/functions/_partage/push.ts` — 229 l.
 
 `octets` 49 · `base64url` 57 · `colle` 63 · `texte` 71 · `cleDeSignature` 83
@@ -3304,11 +3308,11 @@ Portes :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1907 l.
+### `supabase/functions/sync-evenement/index.ts` — 1930 l.
 
-`cors` 43 · `bourre` 116 · `client` 126 · `ecrit` 148 · `gaia` 156 · `libellesChoix` 167
-`retiensAnglais` 194 · `fournisseur` 212 · `raccourci` 220 · `enClair` 257 · `range` 283
-`champsKlipso` 304 · `hebergee` 1855 · `nettoieUrl` 1883 · `groupeTextes` 1893
+`cors` 44 · `bourre` 117 · `client` 127 · `ecrit` 149 · `gaia` 157 · `libellesChoix` 168
+`retiensAnglais` 195 · `fournisseur` 213 · `raccourci` 221 · `enClair` 258 · `range` 284
+`champsKlipso` 305 · `hebergee` 1878 · `nettoieUrl` 1906 · `groupeTextes` 1916
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
@@ -3374,6 +3378,7 @@ Portes :
 - `20261013121249_vignettes_de_logos_en_avif.sql` — vignette_de_logo
 - `20261013132628_grande_vignette_detouree.sql` — vignette_de_logo
 - `20261014082348_grandes_vignettes_a_redetourer.sql` — —
+- `20261020224043_le_programme_de_conferences_saisi_a_la_main.sql` — evenement
 
 ## Le reste
 
