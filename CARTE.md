@@ -3308,11 +3308,11 @@ Portes :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1930 l.
+### `supabase/functions/sync-evenement/index.ts` — 1937 l.
 
 `cors` 44 · `bourre` 117 · `client` 127 · `ecrit` 149 · `gaia` 157 · `libellesChoix` 168
 `retiensAnglais` 195 · `fournisseur` 213 · `raccourci` 221 · `enClair` 258 · `range` 284
-`champsKlipso` 305 · `hebergee` 1878 · `nettoieUrl` 1906 · `groupeTextes` 1916
+`champsKlipso` 305 · `hebergee` 1885 · `nettoieUrl` 1913 · `groupeTextes` 1923
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
