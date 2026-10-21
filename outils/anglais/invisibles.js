@@ -6,6 +6,9 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  // `modules/reglage-foodtrucks.mjs` : un morceau de l'attribut « transform »
+  // qui tourne un camion dans le champ de la fiche
+  ") rotate(",
   // `modules/encodeur-avif.mjs` : l'empreinte du module WebAssembly, que le
   // navigateur vérifie, et le message d'une erreur que la console rattrape
   // pour retomber sur le WebP — ni l'une ni l'autre ne s'affiche

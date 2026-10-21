@@ -38,6 +38,7 @@ import { cartouchePoi } from "./cartouche-poi.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { liste } from "./recherche.mjs";
 import { champComptoir } from "./reglage-comptoir.mjs";
+import { champFoodtrucks } from "./reglage-foodtrucks.mjs";
 
 /* Les réglages (`CONF`, que le changement de salon remplace), importés, se
    lisent tels qu'ils sont à l'instant. */
@@ -138,7 +139,19 @@ export function champsZone(hote, o){
     "contre son bord. Il se dresse ainsi dans la vue " +
     "immersive, pour le visiteur comme pour vous — où il se prend aussi " +
     "directement sur le plan."), o);
-  const suitType = () => montreComptoir(type.value === "accueil");
+  /* Les camions d'un foodtruck, de même : combien il en vient, où ils se
+     garent, de quel côté ils servent. */
+  const montreCamions = champFoodtrucks(champZone(hote, "Foodtrucks",
+    document.createElement("div"),
+    "Choisissez le nombre de camions, faites-les glisser pour les placer, " +
+    "choisissez-en un et tirez sa poignée ronde pour le tourner (Maj pour un " +
+    "angle libre) : le store rouge marque le côté qui sert. Ils restent dans " +
+    "la zone, et se dressent ainsi dans la vue immersive — où ils se prennent " +
+    "aussi directement sur le plan."), o);
+  const suitType = () => {
+    montreComptoir(type.value === "accueil");
+    montreCamions(type.value === "foodtruck");
+  };
   type.addEventListener("change", suitType);
   suitType();
 

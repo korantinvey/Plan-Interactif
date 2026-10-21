@@ -6,6 +6,9 @@
    cadre de dépôt d'un logo — restent dans `_admin1.js`, avec eux. */
 module.exports = {
   "Comptoir d'accueil": "Reception desk",
+  "Foodtrucks": "Food trucks",
+  "Choisissez le nombre de camions, faites-les glisser pour les placer, choisissez-en un et tirez sa poignée ronde pour le tourner (Maj pour un angle libre) : le store rouge marque le côté qui sert. Ils restent dans la zone, et se dressent ainsi dans la vue immersive — où ils se prennent aussi directement sur le plan.":
+    "Choose the number of trucks, drag them to place them, select one and pull its round handle to turn it (Shift for a free angle): the red awning marks the serving side. They stay inside the area, and this is how they stand in the immersive view — where you can also grab them right on the map.",
   "Faites glisser le comptoir pour le placer, tirez sa poignée ronde pour le tourner (Maj pour un angle libre) : il reste dans la zone, et s'arrête contre son bord. Il se dresse ainsi dans la vue immersive, pour le visiteur comme pour vous — où il se prend aussi directement sur le plan.":
     "Drag the desk to place it, pull its round handle to turn it (Shift for a free angle): it stays inside the area, and stops at its edge. This is how it stands in the immersive view, for visitors as for you — where you can also grab it right on the map.",
   "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour revenir au nom d'origine, s'il y en a un.":

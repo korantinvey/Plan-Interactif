@@ -36,6 +36,8 @@ import { codeIciAuPoint } from "./affiche-ici.mjs";
 import { formeSel } from "./forme-choisie.mjs";
 import { comptoirPointerDown, comptoirPointerMove, comptoirPointerUp, lacheComptoir, comptoirClavier,
   relacheComptoir } from "./outil-comptoir.mjs";
+import { foodtruckPointerDown, foodtruckPointerMove, foodtruckPointerUp, lacheFoodtruck, foodtruckClavier,
+  relacheFoodtruck } from "./outil-foodtruck.mjs";
 import { escalierPointerDown, escalierPointerMove, escalierPointerUp, lacheEscalier, escalierClavier,
   relacheEscalier } from "./outil-escalier.mjs";
 
@@ -59,8 +61,10 @@ function appui(/** @type {PointerEvent} */ e){
   /* L'escalier d'un repère se prend de même, et avant le comptoir : posé sur
      un accueil, c'est lui qu'on vise. Tenir l'un relâche l'autre — un seul
      objet sous la main, et sous les flèches. */
-  if (escalierPointerDown(e)){ relacheComptoir(); return true; }
-  if (comptoirPointerDown(e)) return true;
+  if (escalierPointerDown(e)){ relacheComptoir(); relacheFoodtruck(); return true; }
+  if (comptoirPointerDown(e)){ relacheFoodtruck(); return true; }
+  // les camions d'un foodtruck, de même, en dernier : on ne les pose pas sur un accueil
+  if (foodtruckPointerDown(e)) return true;
   return false;
 }
 
@@ -72,6 +76,7 @@ function suit(/** @type {PointerEvent} */ e){
   if (dessinPointerMove(e)) return true;
   if (escalierPointerMove(e)) return true;
   if (comptoirPointerMove(e)) return true;
+  if (foodtruckPointerMove(e)) return true;
   return false;
 }
 
@@ -83,6 +88,7 @@ function leve(/** @type {PointerEvent} */ e){
   if (calagePointerUp()) return true;
   if (escalierPointerUp(e)) return true;
   if (comptoirPointerUp(e)) return true;
+  if (foodtruckPointerUp(e)) return true;
   return false;
 }
 
@@ -92,6 +98,7 @@ function annuleGeste(){
   lacheLibelle();
   lacheGeo();
   lacheComptoir();
+  lacheFoodtruck();
   lacheEscalier();
 }
 
@@ -127,8 +134,8 @@ function clavier(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
                     e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return true;
   }
-  // le comptoir choisi d'un accueil, du même pas, et R pour le quart de tour
-  if (ADMIN && !saisie && !e.ctrlKey && !e.metaKey && !e.altKey && (escalierClavier(e) || comptoirClavier(e)))
+  // le comptoir choisi d'un accueil ou le camion d'un foodtruck, du même pas, et R pour le quart de tour
+  if (ADMIN && !saisie && !e.ctrlKey && !e.metaKey && !e.altKey && (escalierClavier(e) || comptoirClavier(e) || foodtruckClavier(e)))
     return true;
   /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
      voisine, le clavier lui donne l'allée qui les sépare. */
@@ -159,6 +166,7 @@ function echap(){
   if (calqueActif){ activeCalque(calqueActif); return true; }
   if (relacheEscalier()) return true;
   if (relacheComptoir()) return true;
+  if (relacheFoodtruck()) return true;
   return false;
 }
 

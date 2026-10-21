@@ -32,7 +32,8 @@ const rect = (x, y, w, h, deg = 0) => {
 };
 
 (async () => {
-  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+  const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet,
+    camions, figeCamions, ajouteCamion, rapprocheCamion, camionsSeGenent } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -115,6 +116,34 @@ const rect = (x, y, w, h, deg = 0) => {
   const pique = { cx: 6.5, cy: 6.5, angle: 45, demi: 4, prof: .35 };
   dit(!comptoirTient(L, pique), "dans une zone en L, l'angle rentrant ne traverse pas le plateau");
   dit(comptoirTient(L, { cx: 12, cy: 3, angle: 0, demi: 4, prof: .35 }), "posé dans une branche du L, il tient");
+
+  console.log("Les camions placés à la main");
+  {
+    const parc = rect(10, 10, 30, 20);
+    const auto = figeCamions(parc, null);
+    dit(auto.length > 0 && camions(parc, auto).length === auto.length, "le rangement d'office se fige sans rien perdre",
+      auto.length + " camions");
+    dit(!camions(parc, []).length && !meuble("foodtruck", parc, []).some(x => x.role === "carrosserie"),
+      "zéro camion choisi : aucun camion", "");
+    const un = [{ u: .5, v: .5, a: 90 }];
+    const c = camions(parc, un)[0];
+    dit(c && Math.abs(c.cx - 10) < 1e-6 && Math.abs(c.cy - 10) < 1e-6 && c.angle === 90, "un camion se pose où on le met");
+    const tourne = meuble("foodtruck", parc, un).filter(x => x.role === "carrosserie");
+    const ys = tourne[0].polygon.map(p => p[1]), xs = tourne[0].polygon.map(p => p[0]);
+    dit(Math.max(...ys) - Math.min(...ys) > Math.max(...xs) - Math.min(...xs), "tourné d'un quart, il s'allonge en hauteur");
+    let r = [];
+    for (let i = 0; i < 6; i++){ const n = ajouteCamion(parc, r); if (n) r = [...r, n]; }
+    const poses = camions(parc, r);
+    dit(poses.length === 6, "six camions ajoutés tiennent dans la zone", poses.length + "");
+    dit(!poses.some((a, i) => poses.some((b, j) => i < j && camionsSeGenent(a, b))), "les camions ajoutés ne se chevauchent pas");
+    const p = meuble("foodtruck", parc, r);
+    dit(!p.some(x => x.polygon.some(([a, b]) => !dedans(parc, a, b))), "rien ne déborde du contour");
+    const contre = rapprocheCamion(parc, { u: .5, v: .5, a: 0 }, { u: 0, v: .5, a: 0 });
+    dit(contre.u > 0 && camions(parc, [contre]).length === 1, "tiré hors de la zone, il s'arrête contre le bord");
+    dit(camions(parc, [{ u: .01, v: .01, a: 0 }]).length === 0, "un camion qui ne tient plus n'est pas posé");
+    dit(meuble("foodtruck", parc, r, 2).some(x => x.role === "poignee") &&
+      meuble("foodtruck", parc, r, 2).filter(x => x.role === "comptoir-choisi").length === 1, "tenu, un camion sort sa poignée");
+  }
 
   console.log("Une zone immense");
   const n = meuble("conferences", rect(0, 0, 400, 300)).length;

@@ -1602,10 +1602,25 @@ function meubleZone(el, polygon, couleur, acc){
   if (!g || !g.classList || g.firstElementChild !== el || !zoneMeublee(g)
     || g.classList.contains("masquee") || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
-  const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
-  // l'outil du comptoir ne se tient qu'en immersif : à plat, ni bleu ni poignée
-  for (const p of meuble(g.getAttribute("data-type") || "", polygon[0], { u, v, a },
-    cameraEnJeu() && g.hasAttribute("data-comptoir-choisi")))
+  const type = g.getAttribute("data-type") || "";
+  /* Le réglage à la main : le comptoir d'un accueil, ou les camions d'un
+     foodtruck (`rendu.mjs` `texteCamions`). L'outil ne se tient qu'en
+     immersif : à plat, ni bleu ni poignée. */
+  let reglage, enMain;
+  if (type === "foodtruck"){
+    const t = g.getAttribute("data-foodtrucks");
+    reglage = t === null ? null : t.split(";").filter(Boolean).map(c => {
+      const [u, v, a] = c.split(" ").map(Number);
+      return { u, v, a };
+    });
+    const i = g.getAttribute("data-foodtruck-choisi");
+    enMain = cameraEnJeu() && i !== null ? Number(i) : false;
+  } else {
+    const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
+    reglage = { u, v, a };
+    enMain = cameraEnJeu() && g.hasAttribute("data-comptoir-choisi");
+  }
+  for (const p of meuble(type, polygon[0], reglage, enMain))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
 }
 

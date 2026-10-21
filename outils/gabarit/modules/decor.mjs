@@ -187,12 +187,221 @@ export function poigneeComptoir(c){
   return [c.cx + Math.sin(t) * d, c.cy - Math.cos(t) * d];
 }
 
+/* ------------------------------------------------------------
+   Les camions d'un foodtruck
+
+   Rangés d'office le long du plus long côté, les camions ne disaient ni
+   combien il en vient ni où ils se garent : l'exploitant en choisit le
+   nombre, les place et les tourne (`reglage-foodtrucks.mjs`,
+   `outil-foodtruck.mjs`). Chacun se range comme le comptoir d'un accueil —
+   son milieu en part de l'emprise de la zone, son angle en degrés —, mais
+   sur un tour entier : un camion a un avant, et un comptoir d'un seul côté.
+
+   Dans le repère d'un camion, l'axe x court de l'arrière vers la cabine,
+   l'axe y vers le comptoir. Le milieu du camion n'est pas celui de son
+   emprise : le comptoir déborde d'un côté seulement.
+   ------------------------------------------------------------ */
+
+/** L'emprise d'un camion à l'échelle 1, en mètres depuis son milieu : vers
+ *  l'arrière, l'avant, le flanc fermé, le côté du comptoir. */
+export const CAMION = { ar: 3.1, av: 3.1, dos: 1.15, cote: 1.5 };
+/** Le jeu laissé entre un camion et le bord de sa zone, en mètres. */
+const JEU_CAMION = .1;
+/** Au-delà, on n'en ajoute plus : une zone de foodtrucks n'est pas un parking. */
+export const CAMIONS_MAX = 30;
+
+/**
+ * @typedef {object} Camion
+ * @property {number} cx
+ * @property {number} cy
+ * @property {number} angle  l'axe arrière → cabine sur le plan, en degrés
+ * @property {number} k      l'échelle : un camion réduit dans une zone qui n'en tient pas un entier
+ */
+
+/** Un réglage tenable : une liste — vide, c'est zéro camion — de milieux dans l'emprise. */
+export const reglageCamionsValide = (/** @type {any} */ r) => Array.isArray(r) && r.length <= CAMIONS_MAX &&
+  r.every(c => c && [c.u, c.v, c.a].every(Number.isFinite) && c.u >= 0 && c.u <= 1 && c.v >= 0 && c.v <= 1);
+
+/** Les quatre coins de l'emprise d'un camion, écartés de « jeu », sur le plan. */
+function coinsCamion(/** @type {Camion} */ c, jeu = 0){
+  const t = c.angle * Math.PI / 180, dx = Math.cos(t), dy = Math.sin(t);
+  const x0 = -CAMION.ar * c.k - jeu, x1 = CAMION.av * c.k + jeu, y0 = -CAMION.dos * c.k - jeu, y1 = CAMION.cote * c.k + jeu;
+  return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => [c.cx + x * dx - y * dy, c.cy + x * dy + y * dx]);
+}
+
+/** Le point tombe-t-il dans l'emprise du camion, écartée de « jeu » ? */
+function dansCamion(/** @type {Camion} */ c, /** @type {number} */ x, /** @type {number} */ y, jeu = 0){
+  const t = c.angle * Math.PI / 180, ox = x - c.cx, oy = y - c.cy;
+  const lx = ox * Math.cos(t) + oy * Math.sin(t), ly = -ox * Math.sin(t) + oy * Math.cos(t);
+  return lx > -CAMION.ar * c.k - jeu && lx < CAMION.av * c.k + jeu && ly > -CAMION.dos * c.k - jeu && ly < CAMION.cote * c.k + jeu;
+}
+
+/**
+ * Le camion tient-il dans sa zone ? Comme le comptoir (`comptoirTient`) : ses
+ * coins dedans, et aucun sommet du contour ne perce sa caisse.
+ * @param {number[][]} anneau
+ * @param {Camion} c
+ */
+export function camionTient(anneau, c){
+  if (!coinsCamion(c, JEU_CAMION).every(([x, y]) => dedans(anneau, x, y))) return false;
+  return !anneau.some(([x, y]) => dansCamion(c, x, y, JEU_CAMION));
+}
+
+/** Deux camions se chevauchent-ils ? Un coin de l'un dans l'autre, ou leurs milieux confondus. */
+export const camionsSeGenent = (/** @type {Camion} */ a, /** @type {Camion} */ b) =>
+  coinsCamion(a).some(([x, y]) => dansCamion(b, x, y)) || coinsCamion(b).some(([x, y]) => dansCamion(a, x, y)) ||
+  dansCamion(b, a.cx, a.cy);
+
+/**
+ * Les camions rangés d'office, à l'échelle 1 si la zone en tient un entier.
+ * @param {number[][]} anneau
+ * @returns {Camion[]}
+ */
+function camionsDOffice(anneau){
+  const R = repere(anneau), L = R.s1 - R.s0, l = R.t1 - R.t0;
+  const angle = Math.atan2(R.uy, R.ux) * 180 / Math.PI;
+  const camionEn = (/** @type {number} */ a, /** @type {number} */ b, k = 1) => {
+    const [cx, cy] = R.plan(a, b);
+    return { cx, cy, angle, k };
+  };
+  /** @type {Camion[]} */
+  const out = [];
+  const pas = 7.4, n = Math.floor((L + .6) / pas);
+  const b = R.t0 + .3 + CAMION.dos;
+  for (let i = 0; i < n; i++){
+    const c = camionEn((R.s0 + R.s1) / 2 + (i - (n - 1) / 2) * pas, b);
+    if (coinsCamion(c, .2).every(([x, y]) => dedans(anneau, x, y))) out.push(c);
+  }
+  /* Une zone dessinée à la taille d'un seul camion — c'est souvent ainsi
+     qu'un foodtruck est posé sur un plan — n'en recevait aucun, et restait
+     nue. Elle reçoit le sien, réduit à ce qu'elle mesure : mieux vaut un
+     camion un peu court que pas de camion. */
+  if (!out.length){
+    const ac = (R.s0 + R.s1) / 2, bc = (R.t0 + R.t1) / 2;
+    for (let k = Math.min(1, (L - .3) / 6.2, (l - .3) / 2.65); k >= .3; k -= .05){
+      const c = camionEn(ac, bc - .175 * k, k);
+      if (coinsCamion(c, .1).every(([x, y]) => dedans(anneau, x, y))){ out.push(c); break; }
+    }
+  }
+  return out;
+}
+
+/** L'échelle des camions d'une zone : celle que le rangement d'office leur donne. */
+const echelleCamions = (/** @type {number[][]} */ anneau) => (camionsDOffice(anneau)[0] || { k: 1 }).k;
+
+/** Un réglage de camion, mis sur le plan. */
+const camionDe = (/** @type {number[][]} */ anneau, /** @type {{ u: number, v: number, a: number }} */ r, /** @type {number} */ k) => {
+  const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys);
+  return { cx: x0 + r.u * (Math.max(...xs) - x0), cy: y0 + r.v * (Math.max(...ys) - y0), angle: r.a, k };
+};
+
+/**
+ * Les camions d'une zone de foodtrucks : ceux que l'exploitant a placés, ou
+ * le rangement d'office tant qu'il n'y a pas touché. Un camion placé qui ne
+ * tient plus — la zone retouchée a rétréci — n'est pas posé, plutôt que de
+ * déborder ; les autres restent où on les a mis.
+ * @param {number[][]} anneau
+ * @param {{ u: number, v: number, a: number }[] | null | undefined} reglage
+ * @returns {Camion[]}
+ */
+export function camions(anneau, reglage){
+  if (!reglageCamionsValide(reglage)) return camionsDOffice(anneau);
+  const k = echelleCamions(anneau);
+  return /** @type {any[]} */ (reglage).map(r => camionDe(anneau, r, k)).filter(c => camionTient(anneau, c));
+}
+
+/**
+ * Le réglage figé des camions : celui en place, ou le rangement d'office
+ * traduit en réglage, pour qu'on parte de ce qu'on voit.
+ * @param {number[][]} anneau
+ * @param {any} reglage
+ * @returns {{ u: number, v: number, a: number }[]}
+ */
+export function figeCamions(anneau, reglage){
+  const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys);
+  const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
+  return camions(anneau, reglage).map(c => ({ u: (c.cx - x0) / w, v: (c.cy - y0) / h, a: ((c.angle % 360) + 360) % 360 }));
+}
+
+/**
+ * Un camion de plus : à la première place libre d'une trame d'un mètre, en
+ * partant du milieu, dans le sens des autres ; ou rien si la zone est pleine.
+ * @param {number[][]} anneau
+ * @param {{ u: number, v: number, a: number }[]} reglage  le réglage figé
+ */
+export function ajouteCamion(anneau, reglage){
+  if (reglage.length >= CAMIONS_MAX) return null;
+  const k = echelleCamions(anneau), R = repere(anneau);
+  const poses = reglage.map(r => camionDe(anneau, r, k));
+  const angles = [reglage.length ? reglage[reglage.length - 1].a : Math.atan2(R.uy, R.ux) * 180 / Math.PI];
+  angles.push(angles[0] + 90);
+  const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys);
+  const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
+  /* Les places, du milieu vers les bords : le premier camion d'une zone vide
+     se pose au centre, les suivants à côté. */
+  const places = [];
+  for (let x = x0 + .5; x < x0 + w; x += 1) for (let y = y0 + .5; y < y0 + h; y += 1) places.push([x, y]);
+  const mx = x0 + w / 2, my = y0 + h / 2;
+  places.sort((p, q) => Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(q[0] - mx, q[1] - my));
+  for (const a of angles) for (const [x, y] of places){
+    const c = { cx: x, cy: y, angle: a, k };
+    if (camionTient(anneau, c) && !poses.some(p => camionsSeGenent(p, c)))
+      return { u: (x - x0) / w, v: (y - y0) / h, a: ((a % 360) + 360) % 360 };
+  }
+  return null;
+}
+
+/**
+ * Le réglage le plus proche de « voulu » qui garde le camion dans sa zone,
+ * en partant de « depart », qui y tient : tiré contre le bord, il s'y arrête
+ * et glisse le long, comme le comptoir (`rapprocheComptoir`).
+ * @param {number[][]} anneau
+ * @param {{ u: number, v: number, a: number }} depart
+ * @param {{ u: number, v: number, a: number }} voulu
+ */
+export function rapprocheCamion(anneau, depart, voulu){
+  const k = echelleCamions(anneau);
+  const tient = (/** @type {{ u: number, v: number, a: number }} */ r) =>
+    r.u >= 0 && r.u <= 1 && r.v >= 0 && r.v <= 1 && camionTient(anneau, camionDe(anneau, r, k));
+  if (tient(voulu)) return voulu;
+  const avance = (/** @type {any} */ de, /** @type {any} */ vers) => {
+    // l'angle se rejoint par le plus court, sur un tour entier : un camion a un avant
+    const da = ((vers.a - de.a) % 360 + 540) % 360 - 180;
+    const entre = (/** @type {number} */ m) => ({ u: de.u + m * (vers.u - de.u), v: de.v + m * (vers.v - de.v), a: de.a + m * da });
+    let lo = 0, hi = 1;
+    for (let i = 0; i < 16; i++){
+      const m = (lo + hi) / 2;
+      if (tient(entre(m))) lo = m; else hi = m;
+    }
+    return entre(lo);
+  };
+  let r = avance(depart, voulu);
+  r = avance(r, { ...r, u: voulu.u });
+  r = avance(r, { ...r, v: voulu.v });
+  return r;
+}
+
+/**
+ * Le milieu de la poignée qui tourne un camion tenu : au-delà de sa cabine,
+ * dans l'axe. L'outil la vise au même endroit que le dessin la pose.
+ * @param {Camion} c
+ */
+export function poigneeCamion(c){
+  const t = c.angle * Math.PI / 180, d = CAMION.av * c.k + TIGE;
+  return [c.cx + Math.cos(t) * d, c.cy + Math.sin(t) * d];
+}
+
 /**
  * Le mobilier d'une zone.
  * @param {string} type       le type de la zone
  * @param {number[][]} anneau son contour, en mètres
- * @param {ReglageComptoir | null} [reglage] le comptoir placé à la main, sur un accueil
- * @param {boolean} [enMain] le comptoir est choisi par l'exploitant : il porte sa poignée
+ * @param {any} [reglage] le comptoir placé à la main, sur un accueil (`ReglageComptoir`) ;
+ *                        les camions, sur un foodtruck (une liste de réglages)
+ * @param {boolean | number} [enMain] le comptoir est choisi par l'exploitant, ou sur un
+ *                        foodtruck le rang du camion tenu : il porte sa poignée
  * @returns {Piece[]}
  */
 export function meuble(type, anneau, reglage = null, enMain = false){
@@ -243,36 +452,50 @@ export function meuble(type, anneau, reglage = null, enMain = false){
        c'est ce qui distingue d'un regard le foodtruck du restaurant assis. Le
        camion n'est posé qu'entier — caisse, cabine et comptoir —, un camion
        coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
-       toit côté comptoir, est ce qu'on voit d'aplomb. */
-    /* Un camion centré en (a, b), à l'échelle k. */
-    const camion = (/** @type {number} */ a, /** @type {number} */ b, k = 1) => {
-      pose(a - .7 * k, b, 2.4 * k, 1.15 * k, 2.7 * k, "carrosserie", 0);
-      pose(a + 2.4 * k, b, .7 * k, 1.05 * k, 2.2 * k, "habitacle", 0);
-      pose(a - .7 * k, b + .9 * k, 2.4 * k, .25 * k, 2.85 * k, "store", 0);
-      pose(a - .7 * k, b + 1.325 * k, 1.6 * k, .175 * k, 1.05 * k, "comptoir", 0);
-    };
-    const pas = 7.4, n = Math.floor((L + .6) / pas);
-    const b = R.t0 + .3 + 1.15;
-    let poses = 0;
-    for (let k = 0; k < n; k++){
-      const a = (R.s0 + R.s1) / 2 + (k - (n - 1) / 2) * pas;
-      if (!tient(a, b + .175, 3.1, 1.325, .2)) continue;
-      camion(a, b);
-      poses++;
-    }
-    /* Une zone dessinée à la taille d'un seul camion — c'est souvent ainsi
-       qu'un foodtruck est posé sur un plan — n'en recevait aucun, et restait
-       nue. Elle reçoit le sien, réduit à ce qu'elle mesure : mieux vaut un
-       camion un peu court que pas de camion. */
-    if (!poses){
-      const ac = (R.s0 + R.s1) / 2, bc = (R.t0 + R.t1) / 2;
-      for (let k = Math.min(1, (L - .3) / 6.2, (l - .3) / 2.65); k >= .3; k -= .05)
-        if (tient(ac, bc, 3.1 * k, 1.325 * k, .1)){ camion(ac, bc - .175 * k, k); break; }
-    }
+       toit côté comptoir, est ce qu'on voit d'aplomb.
+       Leur nombre et leur place se choisissent à la main (`camions`) ; sans
+       réglage, ils se rangent d'office. Les mange-debout, eux, se sèment
+       partout où ni un camion ni sa file ne les gênent. */
+    const liste = camions(anneau, Array.isArray(reglage) ? reglage : null);
+    liste.forEach((c, i) => {
+      const t = c.angle * Math.PI / 180, dx = Math.cos(t), dy = Math.sin(t), k = c.k;
+      /* Une boîte du camion, posée par son milieu (x, y) et ses demi-côtés
+         dans le repère du camion. */
+      const boite = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ da,
+        /** @type {number} */ db, /** @type {number} */ haut, /** @type {string} */ role) => {
+        if (pieces.length >= PIECES_MAX) return;
+        pieces.push({ haut, role, polygon: COINS.map(([u, v]) => {
+          const lx = (x + u * da) * k, ly = (y + v * db) * k;
+          return [c.cx + lx * dx - ly * dy, c.cy + lx * dy + ly * dx];
+        }) });
+      };
+      const tenu = enMain === i;
+      boite(-.7, 0, 2.4, 1.15, 2.7 * k, tenu ? "comptoir-choisi" : "carrosserie");
+      boite(2.4, 0, .7, 1.05, 2.2 * k, "habitacle");
+      boite(-.7, .9, 2.4, .25, 2.85 * k, "store");
+      boite(-.7, 1.325, 1.6, .175, 1.05 * k, "comptoir");
+      /* Tenu, il porte sa poignée au bout du capot : une tige basse, et un
+         rond qu'on tire pour le tourner. */
+      if (tenu){
+        const [hx, hy] = poigneeCamion(c), e = .06, x0 = c.cx + CAMION.av * k * dx, y0 = c.cy + CAMION.av * k * dy;
+        pieces.push({ polygon: [[x0 + e * dy, y0 - e * dx], [hx + e * dy, hy - e * dx],
+          [hx - e * dy, hy + e * dx], [x0 - e * dy, y0 + e * dx]], haut: .5, role: "tige" });
+        const rond = [];
+        for (let q = 0; q < 12; q++)
+          rond.push([hx + RAYON_POIGNEE * Math.cos(q * Math.PI / 6), hy + RAYON_POIGNEE * Math.sin(q * Math.PI / 6)]);
+        pieces.push({ polygon: rond, haut: .55, role: "poignee" });
+      }
+    });
+    /** Le point (x, y) tombe-t-il sur un camion, ou dans la file devant son comptoir ? */
+    const gene = (/** @type {number} */ x, /** @type {number} */ y) => liste.some(c => {
+      const t = c.angle * Math.PI / 180, ox = x - c.cx, oy = y - c.cy;
+      const lx = ox * Math.cos(t) + oy * Math.sin(t), ly = -ox * Math.sin(t) + oy * Math.cos(t);
+      return Math.abs(lx) < CAMION.av * c.k + 1 && ly > -CAMION.ar * c.k - 1 && ly < CAMION.cote * c.k + 2.5;
+    });
     const pasT = 2.4;
-    for (let tb = b + 1.5 + 2 + .45; tb <= R.t1 - .45 + 1e-6; tb += pasT)
+    for (let tb = R.t0 + pasT / 2; tb <= R.t1 - .45 + 1e-6; tb += pasT)
       for (let a = R.s0 + pasT / 2; a <= R.s1 - pasT / 2 + 1e-6; a += pasT)
-        if (tient(a, tb, .45, .45, .2)) ronde(a, tb, .4, 1.1, "plateau");
+        if (tient(a, tb, .45, .45, .2) && !gene(...R.plan(a, tb))) ronde(a, tb, .4, 1.1, "plateau");
   } else if (type === "conferences"){
     /* La scène au fond, sur toute la largeur, et l'écran qui la domine. Rien
        ne dit par où l'on entre dans la salle : le fond est le bout le plus
