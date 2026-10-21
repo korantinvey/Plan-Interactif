@@ -75,12 +75,14 @@ test.describe("la perte du contexte WebGL", { tag: "@base" }, () => {
       window.__essais.CONTEXTE_PERDU.suis((r) => { vues.push(r); throw new Error("auditeur fautif"); });
       const toile = window.__essais.GL.toile;
       toile.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
-      await new Promise((r) => setTimeout(r, 500));
       return vues;
     });
     expect(raisons).toEqual(["contexte perdu"]);
-    // le démontage est allé au bout : plus de dessin déclaré, la page vit
-    expect(await page.evaluate(() => window.__essais.GL.deck === null || window.__essais.GL.actif === false)).toBe(true);
+    /* Le démontage est allé au bout : plus de dessin déclaré, la page vit.
+       Attendu et non relu après un délai fixe : sous la charge de toute la
+       suite, une demi-seconde ne suffisait pas toujours. */
+    await expect.poll(() => page.evaluate(() =>
+      window.__essais.GL.deck === null || window.__essais.GL.actif === false), { timeout: 10_000 }).toBe(true);
     expect(erreurs.filter((e) => !/auditeur/.test(e))).toEqual([]);
   });
 });

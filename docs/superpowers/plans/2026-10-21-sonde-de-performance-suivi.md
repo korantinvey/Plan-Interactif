@@ -1,6 +1,6 @@
 # Suivi d'exécution — sonde de performance
 
-Copie du registre du coordinateur (normalement hors dépôt, dans `.superpowers/sdd/`), versionnée pour qu'une autre session reprenne le chantier. Tâches 1 à 7 terminées ; reste la tâche 8 (vérification d'ensemble, PR). Les décisions R1 à R5 et les « Ruling » priment sur le plan.
+Copie du registre du coordinateur (normalement hors dépôt, dans `.superpowers/sdd/`), versionnée pour qu'une autre session reprenne le chantier. Tâches 1 à 8 terminées ; reste à ouvrir la PR (la migration part en production à la fusion). Les décisions R1 à R5 et les « Ruling » priment sur le plan.
 
 # SDD ledger — plan: docs/superpowers/plans/2026-10-21-sonde-de-performance.md
 
@@ -123,6 +123,9 @@ Task 7: `performances-regles.js` (6 règles, `pistes`, `regressions`), `performa
 Ruling: le script lit `releve_perf` seul, pas `perf_bilan` — pourquoi : le détail se garde 30 jours, deux semaines y tiennent, et des bilans quotidiens ne refont pas une médiane de semaine — si faux : une requête de plus
 Task 7: minor (deferred): les repeints ne se séparent pas par vue dans le résumé : la règle immersive lit ceux des visites qui ont utilisé l'immersif
 Task 7: complete
+Task 8: construire, controle.js, traductions, `npm run essais` (6 suites), `npm run verifie` : tout passe ; migration 20261021115942 postérieure à la dernière de `main` (20261020224043)
+Task 8: navigateur-base 33/34 au premier passage — releve.spec « un auditeur qui lève » sous la charge de la suite (3/3 seul) ; délai fixe de 500 ms remplacé par une attente ; 34/34 ensuite
+Task 8: étape 3 (envoi vu dans le réseau) couverte par sonde.spec, qui intercepte `/api/sonde` et en mesure la taille
 
 
 ---
