@@ -42,7 +42,7 @@ import { confieAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { traceStand } from "./ambiance.mjs";
 import { CONF } from "./configuration.mjs";
-import { reglageComptoirValide } from "./decor.mjs";
+import { reglageComptoirValide, reglageCamionsValide } from "./decor.mjs";
 
 /* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
@@ -80,6 +80,15 @@ function attributComptoir(id){
   return reglageComptoirValide(r) ? ' data-comptoir="' + [r.u, r.v, r.a].join(" ") + '"' : "";
 }
 
+/** Les camions placés à la main d'un foodtruck : « u v a » séparés de « ; ».
+ *  Vide, c'est zéro camion ; sans l'attribut, le rangement d'office. */
+export const texteCamions = (/** @type {{ u: number, v: number, a: number }[]} */ r) =>
+  r.map(c => [c.u, c.v, c.a].join(" ")).join(";");
+function attributCamions(id){
+  const r = (CONF._foodtrucks || {})[id];
+  return reglageCamionsValide(r) ? ' data-foodtrucks="' + texteCamions(r) + '"' : "";
+}
+
 /* Le balisage d'une zone et d'un stand, sortis de « montePlan » pour qu'un
    emplacement ajouté à la main (`reprise-emplacements.mjs`) se pose dans le même
    groupe que ceux de la source, sans qu'on remonte tout le pavillon.
@@ -102,6 +111,8 @@ export const baliseZone = (z) =>
      `comptoir`) : posé sur la zone comme son type, le dessin le relit au même
      endroit, et le changer ici suffit à le repeindre. */
   attributComptoir(z.id) +
+  // les camions d'un foodtruck, de même
+  attributCamions(z.id) +
   ' tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + traceStand(z.d) + '"/></g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :

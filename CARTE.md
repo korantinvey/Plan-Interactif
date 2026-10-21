@@ -120,7 +120,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 293 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1650 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1660 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
@@ -511,8 +511,8 @@ annonce
 
 Importé par :
 
-ambiance · environs · logos-stands · outil-comptoir · outil-escalier · trace-itineraire
-vue · vue-etat · webgl
+ambiance · environs · logos-stands · outil-comptoir · outil-escalier · outil-foodtruck
+trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 339 l. → plan, plan-admin
 
@@ -658,11 +658,12 @@ Importé par :
 ambiance · apparence · batiments · calage-carte · calques-dessin · cartouche-poi · dessin
 distinctions · emplacements · enregistrement · environs · fiche-zone · filtre · habillage
 horaires · index-salon · installation · libelle-place · modeles · nappe · nom-emplacement
-options · ordre-calques · ordre-trace · outil-comptoir · outil-dessin · parcours-recu
-partage · pile · pile · placement-libelles · polices-plan · rappels · recherche
-reglage-comptoir · reglage-installation · reglage-rappel · reglage-recherche
-reglage-sponsor · reglage-suggestion · reglages · rendu · reprise-emplacements · secteurs
-seuil · sponsor · suggestion · tiroir-itineraire · tout-au-parcours · tutoriel · volets
+options · ordre-calques · ordre-trace · outil-comptoir · outil-dessin · outil-foodtruck
+parcours-recu · partage · pile · pile · placement-libelles · polices-plan · rappels
+recherche · reglage-comptoir · reglage-foodtrucks · reglage-installation · reglage-rappel
+reglage-recherche · reglage-sponsor · reglage-suggestion · reglages · rendu
+reprise-emplacements · secteurs · seuil · sponsor · suggestion · tiroir-itineraire
+tout-au-parcours · tutoriel · volets
 
 ### `modules/console.mjs` — 42 l. → console
 
@@ -717,20 +718,24 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 483 l. → plan, plan-admin
+### `modules/decor.mjs` — 706 l. → plan, plan-admin
 
 - l.1 · Le décor du plan — le mobilier des zones de l'organisateur
 
 Fonctions :
 
 `dedans` 44 · `repere` 57 · `reglageComptoirValide` 79 · `comptoir` 102
-`comptoirTient` 128 · `rapprocheComptoir` 149 · `poigneeComptoir` 185 · `meuble` 198
-`objetRepere` 410 · `tourneur` 427 · `etendueObjet` 433 · `rayonPoigneeObjet` 437
-`poigneeObjet` 454 · `objetDroit` 459
+`comptoirTient` 128 · `rapprocheComptoir` 149 · `poigneeComptoir` 185
+`reglageCamionsValide` 222 · `coinsCamion` 226 · `dansCamion` 233 · `camionTient` 245
+`camionsSeGenent` 251 · `camionsDOffice` 260 · `echelleCamions` 290 · `camionDe` 293
+`camions` 308 · `figeCamions` 321 · `ajouteCamion` 334 · `rapprocheCamion` 365
+`poigneeCamion` 392 · `meuble` 407 · `objetRepere` 633 · `tourneur` 650 · `etendueObjet` 656
+`rayonPoigneeObjet` 660 · `poigneeObjet` 677 · `objetDroit` 682
 
 Importé par :
 
-edition · outil-comptoir · outil-escalier · reglage-comptoir · rendu · webgl
+edition · outil-comptoir · outil-escalier · outil-foodtruck · reglage-comptoir
+reglage-foodtrucks · rendu · webgl
 
 ### `modules/demarrage.mjs` — 300 l. → plan, plan-admin
 
@@ -1194,25 +1199,25 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 894 l. → plan-admin
+### `modules/fiche-zone.mjs` — 907 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
-- l.49 · La fiche d'une zone organisateur
-- l.794 · Masquer une zone organisateur
+- l.50 · La fiche d'une zone organisateur
+- l.807 · Masquer une zone organisateur
 
 Fonctions :
 
-`champZone` 75 · `champsZone` 100 · `champSalles` 206 · `nomDeZone` 258 · `cadreLogo` 284
-`champLogo` 356 · `editeurRiche` 394 · `memeFicheZone` 551 · `suitFicheZone` 558
-`verseFicheZone` 566 · `ficheZone` 592 · `marqueType` 621 · `enregistreZone` 627
-`enregistreZoneAjoutee` 741 · `basculeAffichageZone` 805 · `marqueZonesMasquees` 833
-`ecritColonnesEvenement` 853 · `ecritColonneEvenement` 887
+`champZone` 76 · `champsZone` 101 · `champSalles` 219 · `nomDeZone` 271 · `cadreLogo` 297
+`champLogo` 369 · `editeurRiche` 407 · `memeFicheZone` 564 · `suitFicheZone` 571
+`verseFicheZone` 579 · `ficheZone` 605 · `marqueType` 634 · `enregistreZone` 640
+`enregistreZoneAjoutee` 754 · `basculeAffichageZone` 818 · `marqueZonesMasquees` 846
+`ecritColonnesEvenement` 866 · `ecritColonneEvenement` 900
 
 Importe :
 
 annonce · cartouche-poi · configuration · demarrage · depot-image · dom · donnees
 emplacements · fenetre · fiche · index-salon · itineraire · libelles · noms-zones
-recherche · reglage-comptoir · reperes · session · sur · texte
+recherche · reglage-comptoir · reglage-foodtrucks · reperes · session · sur · texte
 
 Importé par :
 
@@ -1347,22 +1352,23 @@ Fonctions :
 Importé par :
 
 appels · batiments · calage-carte · calques-dessin · edition · enregistrement · gestes
-outil-comptoir · outil-escalier · placement-libelles · reprise-emplacements
+outil-comptoir · outil-escalier · outil-foodtruck · placement-libelles
+reprise-emplacements
 
-### `modules/gestes-admin.mjs` — 190 l. → plan-admin
+### `modules/gestes-admin.mjs` — 198 l. → plan-admin
 
 - l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
 
 Fonctions :
 
-`appui` 45 · `suit` 67 · `leve` 78 · `annuleGeste` 91 · `clavier` 99 · `echap` 147
-`apresEchap` 167 · `entree` 174 · `brancheGestesAdmin` 182
+`appui` 47 · `suit` 71 · `leve` 83 · `annuleGeste` 97 · `clavier` 106 · `echap` 154
+`apresEchap` 175 · `entree` 182 · `brancheGestesAdmin` 190
 
 Importe :
 
 affiche-ici · aimants · batiments · calage-carte · calques-dessin · dom · edition
 emplacements · forme-choisie · gestes · libelle-place · mode-admin · outil-comptoir
-outil-dessin · outil-escalier · placement-libelles · reprise-emplacements
+outil-dessin · outil-escalier · outil-foodtruck · placement-libelles · reprise-emplacements
 
 Importé par :
 
@@ -1781,8 +1787,8 @@ Importé par :
 
 bande-admin · batiments · calage-carte · chaleur · demarrage · dessin · edition
 edition-en-cours · emplacements · enregistrement · fiche · gestes-admin · index-salon
-nappe · outil-comptoir · outil-dessin · outil-escalier · pile · placement-libelles · rendu
-reprise-emplacements · volets
+nappe · outil-comptoir · outil-dessin · outil-escalier · outil-foodtruck · pile
+placement-libelles · rendu · reprise-emplacements · volets
 
 ### `modules/modeles.mjs` — 90 l. → plan, plan-admin
 
@@ -2001,7 +2007,7 @@ camera · configuration · decor · geste-tenu · mode-admin · trace · vue
 
 Importé par :
 
-gestes-admin · reglage-comptoir
+gestes-admin · outil-foodtruck · reglage-comptoir · reglage-foodtrucks
 
 ### `modules/outil-dessin.mjs` — 938 l. → plan-admin
 
@@ -2044,6 +2050,26 @@ Fonctions :
 Importe :
 
 camera · decor · dessin · forme-choisie · geste-tenu · mode-admin · socle-dessin · vue
+
+Importé par :
+
+gestes-admin
+
+### `modules/outil-foodtruck.mjs` — 180 l. → plan-admin
+
+- l.1 · Les camions d'un foodtruck, attrapés sur le plan — l'outil de l'exploitant
+
+Fonctions :
+
+`zoneDe` 43 · `reglageDe` 47 · `lis` 53 · `metresParPixel` 61 · `vise` 65
+`choisitFoodtruck` 88 · `pose` 99 · `foodtruckPointerDown` 109 · `foodtruckPointerMove` 122
+`foodtruckPointerUp` 142 · `lacheFoodtruck` 152 · `foodtruckClavier` 158
+`relacheFoodtruck` 176
+
+Importe :
+
+camera · configuration · decor · geste-tenu · mode-admin · outil-comptoir
+reglage-foodtrucks · vue
 
 Importé par :
 
@@ -2406,6 +2432,22 @@ Importé par :
 
 reglages
 
+### `modules/reglage-foodtrucks.mjs` — 250 l. → plan-admin
+
+- l.1 · Les camions d'un foodtruck — combien, où, dans quel sens
+
+Fonctions :
+
+`el` 33 · `bouton` 38 · `ecritCamions` 51 · `champFoodtrucks` 69
+
+Importe :
+
+configuration · decor · outil-comptoir · rendu
+
+Importé par :
+
+fiche-zone · outil-foodtruck
+
 ### `modules/reglage-installation.mjs` — 58 l. → plan-admin
 
 - l.1 · La case de l'invitation à installer, dans l'onglet « Admin » des réglages
@@ -2527,14 +2569,15 @@ Importé par :
 
 plan
 
-### `modules/rendu.mjs` — 229 l. → plan, plan-admin
+### `modules/rendu.mjs` — 240 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
 Fonctions :
 
-`monteHabillage` 60 · `attributComptoir` 78 · `baliseZone` 95 · `baliseStand` 112
-`montePlan` 122 · `onglets` 154 · `chargeFond` 184 · `changePlan` 216
+`monteHabillage` 60 · `attributComptoir` 78 · `texteCamions` 85 · `attributCamions` 87
+`baliseZone` 104 · `baliseStand` 123 · `montePlan` 133 · `onglets` 165 · `chargeFond` 195
+`changePlan` 227
 
 Importe :
 
@@ -2545,7 +2588,7 @@ recherche · salon · texte · tiroirs-exclusifs · trace-itineraire · vous-ete
 Importé par :
 
 bande-admin · borne · calage-carte · demarrage · fiche · journee · nappe · outil-dessin
-points-interet · reprise-emplacements · tiroir-itineraire · tutoriel
+points-interet · reglage-foodtrucks · reprise-emplacements · tiroir-itineraire · tutoriel
 
 ### `modules/reperes.mjs` — 447 l. → plan, plan-admin
 
@@ -3172,15 +3215,15 @@ Importé par :
 
 affiche-ici · appels · batiments · borne · calage-carte · cartouche-poi · chaleur
 demarrage · dessin · edition · edition-en-cours · fiche · gestes · lancement · libelles
-mini-carte · nappe · outil-comptoir · outil-dessin · outil-escalier · placement-libelles
-plan · points-interet · recherche · rendu · reprise-emplacements · sponsor
-trace-itineraire · tutoriel · vous-etes-ici
+mini-carte · nappe · outil-comptoir · outil-dessin · outil-escalier · outil-foodtruck
+placement-libelles · plan · points-interet · recherche · rendu · reprise-emplacements
+sponsor · trace-itineraire · tutoriel · vous-etes-ici
 
 Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3137 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3152 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3201,28 +3244,28 @@ Fonctions :
 `standDeLaMarque` 1322 · `marquesSurLesToits` 1334 · `hauteurVolume` 1351
 `zoneMeublee` 1383 · `poseJeton` 1435 · `mul4` 1459 · `enColonnes` 1468 · `translation` 1469
 `homothetie` 1471 · `autourDuZ` 1472 · `matriceJeton` 1481 · `corpsDansLeJeton` 1497
-`couchesJeton` 1505 · `couchesJetons` 1553 · `meubleZone` 1595 · `dansLeHall` 1642
-`teinteDesFigurants` 1664 · `penchee` 1708 · `couchesFigurants` 1719 · `eclatant` 1767
-`opaque` 1773 · `formeGl` 1780 · `corpsDeclare` 1852 · `texteGl` 1861 · `imageGl` 1885
-`imageDressee` 1927 · `socleImage` 1941 · `partage` 1953 · `designeGl` 1959 · `sortie` 1973
-`noteHauteur` 1979 · `anticipeHausses` 2009 · `monteALAppui` 2035 · `rendLAppui` 2047
-`detacheVolume` 2057 · `hauteurEnCours` 2091 · `hauteurHausse` 2097 · `echelleHausse` 2102
-`haussesParId` 2105 · `memesFormes` 2124 · `memesPoints` 2134 · `signeCouleurs` 2141
-`masqueVolumes` 2149 · `aPlat` 2169 · `ombresAuRepos` 2181 · `couchesDeBloc` 2206
-`modelesLibellesHtml` 2343 · `poseModelesLibelles` 2353 · `lisModelesLibelles` 2359
-`groupesNoms` 2392 · `couchesNoms` 2418 · `couchesPastilles` 2433
-`couchesLibellesWebgl` 2448 · `couchesDessineesWebgl` 2482 · `stage` 2503
-`lectureDifferee` 2536 · `survolTrouve` 2572 · `demandeSurvolWebgl` 2578
-`survoleWebgl` 2584 · `brancheSurvolWebgl` 2612 · `poseSurvolWebgl` 2625 · `enTuiles` 2662
-`hauteurTuile` 2675 · `visePour` 2681 · `suisChoisies` 2691 · `gonfleSurvol` 2699
-`coucheTuileSoulevee` 2722 · `couchesTuiles` 2753 · `poseCurseurWebgl` 2766
-`poseFocusWebgl` 2775 · `aplatsDe` 2782 · `coucheSurvol` 2785 · `coucheSurvolVolume` 2801
-`coucheFocus` 2835 · `couchesPhare` 2865 · `lueurDe` 2882 · `opacitePhare` 2920
-`echellePhare` 2921 · `couchesPhareNoms` 2924 · `palierDefile` 2949 · `periodeDe` 2954
-`phaseDe` 2956 · `instant` 2966 · `animeCouche` 2967 · `majAnimationWebgl` 2992
-`animeWebgl` 3000 · `reanime` 3037 · `logosSurLesToits` 3046 · `objetSous` 3076
-`objetSousDiffere` 3081 · `viseEnAvance` 3095 · `lisObjet` 3103 · `cibleWebgl` 3108
-`priseWebgl` 3118 · `libelleSousWebgl` 3123 · `rectEcranWebgl` 3128
+`couchesJeton` 1505 · `couchesJetons` 1553 · `meubleZone` 1595 · `dansLeHall` 1657
+`teinteDesFigurants` 1679 · `penchee` 1723 · `couchesFigurants` 1734 · `eclatant` 1782
+`opaque` 1788 · `formeGl` 1795 · `corpsDeclare` 1867 · `texteGl` 1876 · `imageGl` 1900
+`imageDressee` 1942 · `socleImage` 1956 · `partage` 1968 · `designeGl` 1974 · `sortie` 1988
+`noteHauteur` 1994 · `anticipeHausses` 2024 · `monteALAppui` 2050 · `rendLAppui` 2062
+`detacheVolume` 2072 · `hauteurEnCours` 2106 · `hauteurHausse` 2112 · `echelleHausse` 2117
+`haussesParId` 2120 · `memesFormes` 2139 · `memesPoints` 2149 · `signeCouleurs` 2156
+`masqueVolumes` 2164 · `aPlat` 2184 · `ombresAuRepos` 2196 · `couchesDeBloc` 2221
+`modelesLibellesHtml` 2358 · `poseModelesLibelles` 2368 · `lisModelesLibelles` 2374
+`groupesNoms` 2407 · `couchesNoms` 2433 · `couchesPastilles` 2448
+`couchesLibellesWebgl` 2463 · `couchesDessineesWebgl` 2497 · `stage` 2518
+`lectureDifferee` 2551 · `survolTrouve` 2587 · `demandeSurvolWebgl` 2593
+`survoleWebgl` 2599 · `brancheSurvolWebgl` 2627 · `poseSurvolWebgl` 2640 · `enTuiles` 2677
+`hauteurTuile` 2690 · `visePour` 2696 · `suisChoisies` 2706 · `gonfleSurvol` 2714
+`coucheTuileSoulevee` 2737 · `couchesTuiles` 2768 · `poseCurseurWebgl` 2781
+`poseFocusWebgl` 2790 · `aplatsDe` 2797 · `coucheSurvol` 2800 · `coucheSurvolVolume` 2816
+`coucheFocus` 2850 · `couchesPhare` 2880 · `lueurDe` 2897 · `opacitePhare` 2935
+`echellePhare` 2936 · `couchesPhareNoms` 2939 · `palierDefile` 2964 · `periodeDe` 2969
+`phaseDe` 2971 · `instant` 2981 · `animeCouche` 2982 · `majAnimationWebgl` 3007
+`animeWebgl` 3015 · `reanime` 3052 · `logosSurLesToits` 3061 · `objetSous` 3091
+`objetSousDiffere` 3096 · `viseEnAvance` 3110 · `lisObjet` 3118 · `cibleWebgl` 3123
+`priseWebgl` 3133 · `libelleSousWebgl` 3138 · `rectEcranWebgl` 3143
 
 Importe :
 
