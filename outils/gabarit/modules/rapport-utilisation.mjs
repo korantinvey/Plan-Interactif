@@ -26,7 +26,7 @@ import { rest, SESSION, signale, bloc, BASE_PAGES } from "./socle-console.mjs";
 
 const CLE_EVT = "rapport-evenement";
 
-let EVTS = [], RAPPORT = null, ERREURS = null, periode = "30";
+let EVTS = [], RAPPORT = null, ERREURS = null, PERF = null, periode = "30";
 /* Le salon lu. L'export le lit au moment du clic, par la liaison que
    `rapport.mjs` importe et lui confie ; seul ce module le remplace. */
 export let selection = null;
@@ -97,10 +97,175 @@ async function chargeRapport() {
   const corps = JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() });
   /* Les erreurs à part : une base qui n'a pas encore reçu leur migration ne
      doit pas priver l'organisateur de son rapport. */
-  [RAPPORT, ERREURS] = await Promise.all([
+  [RAPPORT, ERREURS, PERF] = await Promise.all([
     rest("rpc/rapport_utilisation", { method: "POST", body: corps }),
     rest("rpc/erreurs_du_salon", { method: "POST", body: corps }).catch(() => null),
+    /* « Depuis le début » ne dit rien à la sonde, qui prendrait alors sept
+       jours : ses bilans n'en gardent que quatre-vingt-dix, on les demande. */
+    rest("rpc/performances_du_salon", { method: "POST",
+      body: JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() ?? PERF_GARDES_JOURS }) })
+      .catch(() => null),
   ]);
+}
+
+/* ------------------------------------------------------------------
+   Performances
+   ------------------------------------------------------------------ */
+/* L'âge auquel la base efface les bilans de la sonde (`purge_perf`). */
+const PERF_GARDES_JOURS = 90;
+
+/* Chaque page, et son libellé sur téléphone puis sur bureau : entiers, pour
+   que la traduction les trouve tels quels. */
+const PAGES_PERF = [
+  ["plan", "Téléphone · plan public", "Bureau · plan public"],
+  ["admin", "Téléphone · administration", "Bureau · administration"],
+  ["borne", "Borne tactile", "Borne"],
+];
+
+/* Des secondes à une décimale : une ouverture se ressent à la demi-seconde,
+   la milliseconde n'aurait l'air que d'une précision. */
+const secondes = (ms) => (Math.round(ms / 100) / 10).toLocaleString("fr-FR");
+const fini = (v) => typeof v === "number" && isFinite(v);
+const lentes = (p90) => fini(p90)
+  ? "10 % des visites au-delà de " + secondes(p90) + " s" : "Temps médian";
+
+/**
+ * La moyenne des valeurs d'une liste, pesée par ses visites.
+ *
+ * La base garde une médiane par jour, pas les visites : la médiane de toute la
+ * période ne se refait pas sans elles. La moyenne des médianes, pesée par le
+ * nombre de visites de chaque jour, s'en approche assez pour dire « plutôt
+ * deux secondes » — c'est tout ce que l'exploitant en lit.
+ */
+function pese(liste, lit) {
+  let somme = 0, poids = 0;
+  liste.forEach((x) => {
+    const v = lit(x), n = x.visites || 0;
+    if (fini(v) && n > 0) { somme += v * n; poids += n; }
+  });
+  return poids ? somme / poids : null;
+}
+
+/** Réunit, d'un jour à l'autre, les lignes de même clé (une carte, un fichier). */
+function reunit(listes, cle, valeur) {
+  const m = new Map();
+  listes.flat().forEach((x) => {
+    const k = x?.[cle];
+    if (!k) return;
+    const d = m.get(k) || { [cle]: k, famille: x.famille, visites: 0, lignes: [] };
+    d.visites += x.visites || 0;
+    d.lignes.push(x);
+    m.set(k, d);
+  });
+  return [...m.values()].map((d) => ({ ...d, valeur: pese(d.lignes, valeur) }));
+}
+
+/** Une ligne de libellé et de valeur, comme celles des erreurs. */
+function ligne(hote, valeur, texte, detail) {
+  const d = document.createElement("div");
+  d.className = "erreur";
+  d.innerHTML = '<span class="n"></span><span class="m"></span><span class="o"></span>';
+  d.querySelector(".n").textContent = valeur;
+  d.querySelector(".m").textContent = texte;
+  d.querySelector(".o").textContent = detail || "";
+  hote.appendChild(d);
+}
+
+function sousTitre(hote, texte) {
+  const t = document.createElement("p");
+  t.className = "eyebrow";
+  t.style.margin = "18px 0 8px";
+  t.textContent = texte;
+  hote.appendChild(t);
+}
+
+/**
+ * Le bloc « Performances » : ce que la sonde (`sonde.mjs`) a relevé, dit pour
+ * un exploitant. Les jours passés viennent de leurs bilans, par page et par
+ * support ; la journée en cours, que la nuit n'a pas encore résumée, du
+ * détail des relevés — sans le partage téléphone et bureau, qu'elle n'a pas.
+ * Le nom d'une carte ou d'un fichier vient d'une page : il s'écrit en texte.
+ */
+function performances(hote, p) {
+  const bilans = p?.bilans || [];
+  const auj = p?.aujourdhui || {};
+  const ajd = auj.etapes?.affichage || {};
+  const recues = p?.recues || 0, ecartees = p?.ecartees || 0;
+  if (!recues && !bilans.length) {
+    const v = document.createElement("p");
+    v.className = "astuce";
+    v.textContent = "Pas encore de relevé. Chaque visite du plan dépose le sien, en silence ; " +
+      "le bilan de la journée se fait la nuit.";
+    hote.appendChild(v);
+    return;
+  }
+  const details = bilans.map((b) => ({ ...(b.detail || {}), visites: b.visites }));
+
+  const g = document.createElement("div");
+  g.className = "chiffres seul";
+  chiffre(g, recues + ecartees, ecartees ? "Visites reçues" : "Visites relevées",
+    ecartees ? "dont " + nb(ecartees) + (ecartees > 1 ? " écartées" : " écartée") +
+      " par le plafond, tirées au sort pour mesurer toute la journée." : "", true);
+  hote.appendChild(g);
+
+  sousTitre(hote, "Ouverture du plan");
+  const o = document.createElement("div");
+  o.className = "erreurs";
+  PAGES_PERF.forEach(([page, telephone, bureau]) => [true, false].forEach((mobile) => {
+    const l = bilans.filter((b) => b.page === page && b.mobile === mobile);
+    const p50 = pese(l, (b) => b.affiche_p50), p90 = pese(l, (b) => b.affiche_p90);
+    if (!fini(p50)) return;
+    const d = l.map((b) => ({ ...(b.detail?.etapes || {}), visites: b.visites }));
+    const etape = (k) => pese(d, (x) => x[k]?.p50);
+    // les étapes ne se disent qu'au complet : une à moitié se lirait comme le tout
+    const etapes = ["reponse", "donnees", "preparation"].map(etape);
+    ligne(o, secondes(p50) + " s", mobile ? telephone : bureau,
+      lentes(p90) + (etapes.every(fini)
+        ? " · page " + secondes(etapes[0]) + " s, données " + secondes(etapes[1]) +
+          " s, préparation " + secondes(etapes[2]) + " s"
+        : ""));
+  }));
+  if (fini(ajd.p50)) {
+    ligne(o, secondes(ajd.p50) + " s", "Aujourd'hui · plan public",
+      lentes(ajd.p90) + " · tous appareils, la journée se partage la nuit");
+  }
+  hote.appendChild(o);
+
+  sousTitre(hote, "Fluidité");
+  /* La journée en cours n'a pas de compte à elle : elle pèse ce qui, reçu,
+     n'est pas encore dans un bilan. */
+  const sansBilan = Math.max(1, recues - bilans.reduce((t, b) => t + (b.visites || 0), 0));
+  const vues = [...details, { vues: auj.vues, visites: sansBilan }];
+  const f = document.createElement("div");
+  f.className = "erreurs";
+  [["classique", "Vue classique"], ["immersif", "Vue immersive"]].forEach(([k, t]) => {
+    const v = pese(vues, (x) => x.vues?.[k]?.p50);
+    if (fini(v)) ligne(f, Math.round(v) + " %", t, "Part médiane des images lentes pendant les gestes");
+  });
+  if (!f.children.length) ligne(f, "—", "Aucun geste relevé sur la période.");
+  hote.appendChild(f);
+
+  sousTitre(hote, "Poids");
+  const w = document.createElement("div");
+  w.className = "erreurs";
+  const ko = pese(bilans, (b) => b.transfert_p50);
+  if (fini(ko)) ligne(w, nb(Math.round(ko)) + " Ko", "Téléchargés à l'ouverture, en médiane");
+  reunit([...details.map((x) => x.lourds || []), auj.lourds || []], "fichier", (x) => x.ko_p50)
+    .sort((a, b) => b.visites - a.visites).slice(0, 5)
+    .forEach((x) => ligne(w, nb(x.visites), x.fichier, fini(x.valeur)
+      ? "Parmi les plus lourds de ces visites · " + nb(Math.round(x.valeur)) + " Ko"
+      : "Parmi les plus lourds de ces visites"));
+  hote.appendChild(w);
+
+  sousTitre(hote, "Appareils qui souffrent");
+  const a = document.createElement("div");
+  a.className = "erreurs";
+  reunit([...details.map((x) => x.appareils || []), auj.appareils || []], "carte", (x) => x.affiche_p50)
+    .filter((x) => fini(x.valeur)).sort((x, y) => y.valeur - x.valeur).slice(0, 5)
+    .forEach((x) => ligne(a, nb(x.visites), x.carte + (x.famille ? " · " + x.famille : ""),
+      "Ouverture médiane : " + secondes(x.valeur) + " s"));
+  if (!a.children.length) ligne(a, "—", "Aucune carte graphique nommée sur la période.");
+  hote.appendChild(a);
 }
 
 /* Les erreurs que les pages du salon ont signalées (`modules/erreurs.mjs`),
@@ -291,6 +456,9 @@ function dessineRapport() {
         ? "Les visites sont comptées dès la première ouverture du plan public."
         : "L'événement est en brouillon : son plan n'est pas encore servi aux visiteurs.");
     f.appendChild(v);
+    /* La sonde relève aussi l'administration d'un salon en brouillon : c'est
+       là qu'on le prépare, et sa lenteur se juge avant la publication. */
+    if (PERF && (PERF.recues || PERF.bilans?.length)) f.appendChild(blocPerformances());
     return;
   }
 
@@ -422,6 +590,20 @@ function dessineRapport() {
     b6.appendChild(a6);
     f.appendChild(b6);
   }
+
+  f.appendChild(blocPerformances());
+}
+
+function blocPerformances() {
+  const b = bloc("Performances");
+  performances(b, PERF);
+  const a = document.createElement("p");
+  a.className = "astuce";
+  a.style.marginTop = "10px";
+  a.textContent = "Mesuré dans le navigateur des visiteurs, sans rien qui dise qui ils sont. " +
+    "Détail gardé trente jours, bilans quatre-vingt-dix.";
+  b.appendChild(a);
+  return b;
 }
 
 function dessineBarre() {
@@ -467,7 +649,7 @@ async function rafraichit() {
 
 /** Fin de session : la console vide sa liste, le rapport vide ses chiffres. */
 export function videEcran() {
-  EVTS = []; RAPPORT = null; selection = null;
+  EVTS = []; RAPPORT = null; PERF = null; selection = null;
   dessineBarre();
   dessineRapport();
 }

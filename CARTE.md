@@ -2337,16 +2337,18 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 504 l. → rapport
+### `modules/rapport-utilisation.mjs` — 686 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
 `courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
-`erreurs` 108 · `chiffre` 131 · `barres` 150 · `portes` 190 · `jours` 241
-`dessineRapport` 262 · `dessineBarre` 427 · `rafraichit` 450 · `videEcran` 469
-`demarre` 475 · `brancheRapport` 494
+`secondes` 127 · `fini` 128 · `lentes` 129 · `pese` 140 · `reunit` 150 · `ligne` 164
+`sousTitre` 174 · `performances` 189 · `erreurs` 273 · `chiffre` 296 · `barres` 315
+`portes` 355 · `jours` 406 · `dessineRapport` 427 · `blocPerformances` 597
+`dessineBarre` 609 · `rafraichit` 632 · `videEcran` 651 · `demarre` 657
+`brancheRapport` 676
 
 Éléments :
 
@@ -2794,21 +2796,21 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 584 l. → plan, plan-admin
+### `modules/sonde.mjs` — 591 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 75 · `vue0` 86
-`nouvelleVisite` 94 · `vueDuMoment` 116 · `commence` 118 · `sorte` 128 · `clos` 130
-`relance` 146 · `image` 152 · `ecouteGestes` 179 · `nomDuScript` 216 · `gel` 223
-`ecouteNavigateur` 237 · `memoire` 249 · `contexteDuPlan` 262 · `lisAppareil` 274
-`finDesDonnees` 291 · `leChargement` 300 · `fluidite` 310 · `laCarte` 318
-`resumeSonde` 337 · `octets` 361 · `coupe` 364 · `tronque` 375 · `fraiche` 403
-`litLaFile` 406 · `ecritLaFile` 414 · `retire` 426 · `corps` 429 · `versionDesPages` 437
-`envoieUne` 448 · `pousse` 474 · `actif` 499 · `envoie` 503 · `brancheSonde` 528
-`demarre` 541
+`sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 81 · `vue0` 92
+`nouvelleVisite` 100 · `vueDuMoment` 122 · `commence` 124 · `sorte` 134 · `clos` 136
+`relance` 152 · `image` 158 · `ecouteGestes` 185 · `nomDuScript` 222 · `gel` 229
+`ecouteNavigateur` 243 · `memoire` 255 · `contexteDuPlan` 268 · `lisAppareil` 280
+`finDesDonnees` 298 · `leChargement` 307 · `fluidite` 317 · `laCarte` 325
+`resumeSonde` 344 · `octets` 368 · `coupe` 371 · `tronque` 382 · `fraiche` 410
+`litLaFile` 413 · `ecritLaFile` 421 · `retire` 433 · `corps` 436 · `versionDesPages` 444
+`envoieUne` 455 · `pousse` 481 · `actif` 506 · `envoie` 510 · `brancheSonde` 535
+`demarre` 548
 
 Importe :
 

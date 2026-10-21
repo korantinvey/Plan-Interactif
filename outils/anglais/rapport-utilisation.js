@@ -71,4 +71,48 @@ module.exports = {
   "plan public": "public map",
   "Ce que les pages du salon ont rencontré en route, et combien de fois, avec l'endroit du code. Rien n'y dit qui l'a rencontré. Gardées quatre-vingt-dix jours.":
     "What the show's pages ran into, and how often, with the place in the code. Nothing here says who ran into it. Kept for ninety days.",
+  // le bloc « Performances », nourri par la sonde
+  "Performances": "Performance",
+  "Pas encore de relevé. Chaque visite du plan dépose le sien, en silence ; le bilan de la journée se fait la nuit.":
+    "No measurements yet. Each visit to the map quietly leaves its own; the day's summary is computed overnight.",
+  "Visites reçues": "Visits received",
+  "Visites relevées": "Visits measured",
+  "dont {n} écartées par le plafond, tirées au sort pour mesurer toute la journée.":
+    "including {n} left out by the cap, drawn at random to measure the whole day.",
+  "dont {n} écartée par le plafond, tirées au sort pour mesurer toute la journée.":
+    "including {n} left out by the cap, drawn at random to measure the whole day.",
+  "Ouverture du plan": "Map opening",
+  "Téléphone · plan public": "Phone · public map",
+  "Bureau · plan public": "Desktop · public map",
+  "Téléphone · administration": "Phone · administration",
+  "Bureau · administration": "Desktop · administration",
+  "Borne tactile": "Touch kiosk",
+  "Borne": "Kiosk",
+  "Aujourd'hui · plan public": "Today · public map",
+  "Temps médian": "Median time",
+  "10 % des visites au-delà de {n} s": "10% of visits beyond {n} s",
+  "10 % des visites au-delà de {n} s · page {n2} s, données {n3} s, préparation {n4} s":
+    "10% of visits beyond {n} s · page {n2} s, data {n3} s, preparation {n4} s",
+  "Temps médian · page {n2} s, données {n3} s, préparation {n4} s":
+    "Median time · page {n2} s, data {n3} s, preparation {n4} s",
+  "10 % des visites au-delà de {n} s · tous appareils, la journée se partage la nuit":
+    "10% of visits beyond {n} s · all devices, the day is split overnight",
+  "Temps médian · tous appareils, la journée se partage la nuit":
+    "Median time · all devices, the day is split overnight",
+  "Fluidité": "Smoothness",
+  "Vue classique": "Classic view",
+  "Vue immersive": "Immersive view",
+  "Part médiane des images lentes pendant les gestes": "Median share of slow frames during gestures",
+  "Aucun geste relevé sur la période.": "No gestures measured over the period.",
+  "Poids": "Weight",
+  "Téléchargés à l'ouverture, en médiane": "Downloaded at opening, median",
+  "Parmi les plus lourds de ces visites": "Among the heaviest for these visits",
+  "Parmi les plus lourds de ces visites · {n} Ko": "Among the heaviest for these visits · {n} KB",
+  "Appareils qui souffrent": "Struggling devices",
+  "Ouverture médiane : {n} s": "Median opening: {n} s",
+  "Aucune carte graphique nommée sur la période.": "No graphics card named over the period.",
+  "Mesuré dans le navigateur des visiteurs, sans rien qui dise qui ils sont. Détail gardé trente jours, bilans quatre-vingt-dix.":
+    "Measured in visitors' browsers, with nothing that says who they are. Detail kept thirty days, summaries ninety.",
+  "{n} s": "{n} s",
+  "{n} Ko": "{n} KB",
 };

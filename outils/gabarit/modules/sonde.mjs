@@ -71,8 +71,14 @@ function uuid(){
   return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
 }
 
-/** Garde au plus `ECHANTILLON` valeurs, tirées uniformément parmi les `n` vues. */
-function echantillonne(/** @type {number[]} */ l, /** @type {number} */ n, /** @type {number} */ v){
+/**
+ * Garde au plus `ECHANTILLON` valeurs, tirées uniformément parmi les `n` vues.
+ * @template T
+ * @param {T[]} l
+ * @param {number} n
+ * @param {T} v
+ */
+function echantillonne(l, n, v){
   if (l.length < ECHANTILLON) l.push(v);
   else { const i = Math.floor(Math.random() * n); if (i < ECHANTILLON) l[i] = v; }
 }
@@ -274,7 +280,8 @@ let carteLue = false;
 function lisAppareil(creux = false){
   if (!APPAREIL){
     // la taille de la fenêtre n'apprend rien sur l'appareil, et le distingue un peu plus
-    const { fenetre, carte, ...a } = appareil({ agentComplet: false, carte: false });
+    const a = appareil({ agentComplet: false, carte: false });
+    delete a.fenetre; delete a.carte;
     APPAREIL = a;
   }
   if (!carteLue){
