@@ -3461,6 +3461,7 @@ Portes :
 - `20261014082348_grandes_vignettes_a_redetourer.sql` — —
 - `20261020224043_le_programme_de_conferences_saisi_a_la_main.sql` — evenement
 - `20261021115942_sonde_de_performance.sql` — releve_perf, perf_jour, perf_bilan, fn sonde_nombre, fn sonde_enregistre, fn sonde_publique, fn sonde_admin, fn sonde_detail, fn bilan_perf, fn purge_perf, fn performances_du_salon
+- `20261021193740_lecture_des_performances.sql` — lecteur_perf, fn lecteur_perf_nouveau, fn lecteur_perf_retire, fn lecture_perf
 
 ## Le reste
 
