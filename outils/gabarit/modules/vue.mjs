@@ -469,6 +469,8 @@ export function masqueDroite(){
 }
 
 export function fit(){
+  // avant le premier plan, rien à cadrer : l'emprise n'est pas encore posée
+  if (!emp) return;
   const r = cadrePlan();
   const cache = masque(), haut = masqueHaut();
   const hUtile = Math.max(60, r.height - cache - haut);
@@ -649,6 +651,10 @@ export function rectVisee(/** @type {any} */ n){
  * trajet que le premier n'avait pas fini de parcourir.
  */
 export function zoom(/** @type {number} */ f, /** @type {number} */ fx, /** @type {number} */ fy){
+  /* Les boutons et la molette répondent dès l'ouverture de la page, le plan
+     seulement au retour de l'API : un cran donné entre les deux lisait une
+     emprise encore vide (relevé en production sur un gros salon). */
+  if (!emp) return;
   const base = vise || vue();
   /* Jusqu'où l'on recule : `recul()` ouvre la limite quand le quartier a été
      dessiné autour du pavillon, et la garde serrée quand il n'y a rien à voir

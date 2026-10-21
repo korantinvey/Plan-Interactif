@@ -1374,7 +1374,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 626 l. → plan, plan-admin
+### `modules/gestes.mjs` — 632 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.73 · 8. Interactions du plan
@@ -1384,7 +1384,7 @@ Fonctions :
 `poseGestesAdmin` 71 · `milieu` 103 · `commencePince` 109 · `suitPince` 123
 `noteGlisser` 207 · `stoppeElan` 213 · `lanceElan` 219 · `plieLesBandes` 251
 `saisitPlan` 265 · `cibleElargie` 302 · `planifieFiltre` 345 · `brancheGestes` 359
-`brancheLangue` 609
+`brancheLangue` 615
 
 Importe :
 
@@ -3191,7 +3191,7 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 710 l. → plan, plan-admin
+### `modules/vue.mjs` — 716 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.83 · 6. Vue
@@ -3204,8 +3204,8 @@ Fonctions :
 `poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 258
 `appliqueVue` 268 · `libellesDeLaVue` 337 · `rafraichitVue` 345 · `poseVue` 359
 `mesureBarre` 388 · `masqueHaut` 416 · `masque` 423 · `masqueDroite` 460 · `fit` 471
-`recadreIncline` 498 · `stoppeZoom` 540 · `glisseVersVise` 558 · `glisseVers` 604
-`rectVisee` 631 · `zoom` 651 · `echelle` 665 · `versPlan` 677 · `brancheVue` 689
+`recadreIncline` 500 · `stoppeZoom` 542 · `glisseVersVise` 560 · `glisseVers` 606
+`rectVisee` 633 · `zoom` 653 · `echelle` 671 · `versPlan` 683 · `brancheVue` 695
 
 Importe :
 
