@@ -114,6 +114,20 @@ async function main() {
   dit(jp.recues + jp.ecartees === 500, "recues + ecartees = 500", JSON.stringify(jp));
   dit(jp.recues === await lignes("plan"), "recues égale le nombre de lignes");
 
+  // --- le plafond de 300 : 500 visites n'y arrivent pas, on le fait donc mordre
+  // à la main (un salon à part, compte du jour posé à 299, probabilité 100/299
+  // par visite : sans plafond, plusieurs des quarante entreraient)
+  const PLAFOND = (await un(
+    "insert into evenement (nom, slug, instance, etat, fuseau) values ('Plafond', 'plafond', 'x', 'publie', 'Europe/Paris') returning id")).id;
+  await publique("plafond", "plan", uuid(), resume(1));
+  await db.query("update perf_jour set recues = 299 where evenement_id = $1 and page = 'plan'", [PLAFOND]);
+  await db.exec("select setseed(0.5)");
+  let passees = 0;
+  for (let i = 0; i < 40; i++) if (await publique("plafond", "plan", uuid(), resume(i))) passees++;
+  const jpl = await un("select recues, ecartees from perf_jour where evenement_id = $1 and page = 'plan'", [PLAFOND]);
+  dit(passees === 1 && jpl.recues === 300, "à 299 reçues, une seule visite de plus entre", passees + " / " + JSON.stringify(jpl));
+  dit(jpl.ecartees === 39, "les suivantes sont écartées et comptées", JSON.stringify(jpl));
+
   // --- admin et borne : 50 par jour, indépendants du plan
   const avantPlan = (await jour("plan")).recues;
   let admin = 0;
