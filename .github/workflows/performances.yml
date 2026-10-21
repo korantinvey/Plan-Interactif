@@ -1,0 +1,35 @@
+# La fiche de pistes de performance : chaque lundi, les relevés de la sonde de
+# la semaine passée deviennent une issue « Performances — semaine du … »,
+# étiquette `performances`, ses pistes classées par gain estimé. Rien n'y nomme
+# un salon : le dépôt est public (`outils/performances.js`).
+name: Performances
+
+on:
+  schedule:
+    # le lundi à 5 h 17 UTC, après le bilan de la nuit (`purge_perf`, 2 h 41)
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  fiche:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # la même que celle de `supabase.yml` : publique, c'est le sous-domaine de l'API
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run performances

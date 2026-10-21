@@ -33,17 +33,13 @@ import { quandAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
+import { SACCADE, FIN_GESTE, TRANCHES, centile, fichier, observe, chargement, appareil } from "./mesures-page.mjs";
 
 const ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
 
 // au-delà, une liste garde ses premières entrées et compte celles qu'elle perd
 const BORNES = { gestes: 400, saccades: 800, repeints: 1500, images: 300, evenements: 400,
   memoire: 720, deck: 720, erreurs: 50 };
-// une image plus longue que ceci est une saccade que l'œil voit
-const SACCADE = 50;
-// un geste dure tant qu'une entrée arrive à moins de ceci de la précédente
-const FIN_GESTE = 300;
-const TRANCHES = [17, 25, 33, 50, 100, 250, Infinity];
 
 /** @typedef {{ t: number, fin: number, type: string, doigts: number, chemin: number,
  *    cible: string, images: number[], repeints: number, msRepeints: number,
@@ -105,10 +101,6 @@ function commence(/** @type {string} */ type, /** @type {Event} */ e){
   geste = { t, fin: 0, type, doigts: 0, chemin: 0, cible: decrit(e.target), images: [],
     repeints: 0, msRepeints: 0, dernier: t, image: t };
   return geste;
-}
-
-function centile(/** @type {number[]} */ tri, /** @type {number} */ p){
-  return tri.length ? tri[Math.min(tri.length - 1, Math.floor(tri.length * p))] : 0;
 }
 
 /** La sorte du geste, telle qu'on la sait à ce moment : un appui devient
@@ -200,16 +192,6 @@ function image(/** @type {number} */ ts){
 /* ------------------------------------------------------------
    Ce que le navigateur sait dire de lui-même
    ------------------------------------------------------------ */
-function observe(/** @type {string} */ type, /** @type {(e: any) => void} */ f, /** @type {any} */ plus = {}){
-  try {
-    const po = new PerformanceObserver(l => l.getEntries().forEach(f));
-    po.observe({ type, buffered: true, ...plus });
-    return true;
-  } catch (e) { return false; }
-}
-
-const fichier = (/** @type {string} */ u) => { try { return new URL(u).pathname.split("/").pop() || u; } catch (e) { return u; } };
-
 function ecouteNavigateur(){
   observe("paint", e => { R.jalons[e.name] = Math.round(e.startTime); });
   observe("largest-contentful-paint", e => { R.jalons["largest-contentful-paint"] = Math.round(e.startTime); });
@@ -261,56 +243,11 @@ function echantillonne(){
 /* ------------------------------------------------------------
    Le relevé, mis en forme
    ------------------------------------------------------------ */
-function carteGraphique(){
-  try {
-    const c = document.createElement("canvas");
-    const gl = c.getContext("webgl2") || c.getContext("webgl");
-    if (!gl) return null;
-    const ext = gl.getExtension("WEBGL_debug_renderer_info");
-    const r = {
-      webgl2: typeof WebGL2RenderingContext !== "undefined" && gl instanceof WebGL2RenderingContext,
-      fabricant: ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
-      puce: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-      textureMax: gl.getParameter(gl.MAX_TEXTURE_SIZE),
-    };
-    const perte = gl.getExtension("WEBGL_lose_context");
-    if (perte) perte.loseContext();
-    return r;
-  } catch (e) { return null; }
-}
-
-function appareil(){
-  const n = /** @type {any} */ (navigator);
-  return {
-    agent: navigator.userAgent,
-    plateforme: n.userAgentData ? { mobile: n.userAgentData.mobile, systeme: n.userAgentData.platform } : undefined,
-    densite: devicePixelRatio,
-    ecran: [screen.width, screen.height],
-    fenetre: [innerWidth, innerHeight],
-    coeurs: navigator.hardwareConcurrency,
-    memoireGo: n.deviceMemory,
-    reseau: n.connection ? { type: n.connection.effectiveType, debitMbps: n.connection.downlink, rttMs: n.connection.rtt,
-      economie: n.connection.saveData } : undefined,
-    carte: carteGraphique(),
-    mouvementReduit: matchMedia("(prefers-reduced-motion: reduce)").matches,
-  };
-}
-
-function chargement(){
-  const nav = /** @type {any} */ (performance.getEntriesByType("navigation")[0]);
-  const lourdes = performance.getEntriesByType("resource")
-    .map(e => /** @type {any} */ (e))
-    .filter(e => e.duration > 150 || e.transferSize > 50000 || e.decodedBodySize > 200000)
-    .sort((a, b) => b.duration - a.duration).slice(0, 40)
-    .map(e => ({ fichier: fichier(e.name), sorte: e.initiatorType, debut: Math.round(e.startTime),
-      ms: Math.round(e.duration), transfertKo: Math.round((e.transferSize || 0) / 1024),
-      tailleKo: Math.round((e.decodedBodySize || 0) / 1024) }));
-  return {
-    page: nav ? { reponse: Math.round(nav.responseEnd), domPret: Math.round(nav.domContentLoadedEventEnd),
-      charge: Math.round(nav.loadEventEnd), transfertKo: Math.round((nav.transferSize || 0) / 1024),
-      type: nav.type } : null,
-    ressources: lourdes,
-  };
+/** Le chargement tel que le relevé le partage depuis toujours : sans les totaux
+ *  que seule la sonde lit. */
+function laPage(){
+  const { page, ressources } = chargement(40);
+  return { page, ressources };
 }
 
 function synthese(){
@@ -340,7 +277,7 @@ function releve(){
     plan: { emplacements: TOUS.length, noeudsDom: document.getElementsByTagName("*").length },
     appareil: appareil(),
     jalons: R.jalons,
-    chargement: chargement(),
+    chargement: laPage(),
     synthese: synthese(),
     gestes: R.gestes, saccades: R.saccades, repeints: R.repeints,
     imagesLongues: R.images, evenementsLents: R.evenements,

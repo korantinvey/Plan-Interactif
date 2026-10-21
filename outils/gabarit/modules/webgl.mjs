@@ -99,6 +99,11 @@ const DECK_WEBGL = {
  *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
  *  @type {import("./annonce.mjs").Annonce<[number, number]>} */
 export const REPEINT_FINI = creeAnnonce();
+/** Le rendu WebGL vient d'être abandonné pour le SVG : la raison. La sonde
+ *  (`sonde.mjs`) compte ces pertes par appareil ; chez le visiteur sans
+ *  sonde, personne n'écoute.
+ *  @type {import("./annonce.mjs").Annonce<[string]>} */
+export const CONTEXTE_PERDU = creeAnnonce();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -393,6 +398,11 @@ function guetteBoucleWebgl(){
  *  carte graphique est jeté, couches comprises. */
 function perdContexteWebgl(raison = "contexte perdu"){
   if (!GL.actif) return;
+  /* Dit avant le démontage, pour que la sonde lise la raison et non l'état
+     d'après — mais sous garde : un auditeur qui lève interromprait la
+     fonction avant « GL.aRemonter », et le plan resterait déclaré actif
+     sans contexte valide. */
+  try { CONTEXTE_PERDU.dis(raison); } catch (e) { console.warn("Rendu WebGL : un auditeur de la perte a échoué.", e); }
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;

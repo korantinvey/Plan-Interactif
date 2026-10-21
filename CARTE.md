@@ -178,7 +178,7 @@ Fonctions :
 
 Importé par :
 
-demarrage · environs · releve · webgl
+demarrage · environs · releve · sonde · webgl
 
 ### `modules/affiche-ici.mjs` — 397 l. → plan-admin
 
@@ -755,7 +755,7 @@ vue
 
 Importé par :
 
-acces-admin · choix-ambiance · enregistrement · fiche-zone · lancement · releve
+acces-admin · choix-ambiance · enregistrement · fiche-zone · lancement · releve · sonde
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -877,9 +877,9 @@ installation · itineraire · journee · libelles · logos-stands · mesure · m
 noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu · partage · pile
 placement-libelles · points-interet · rappels · recherche · reglage-application
 reglage-fiche · reglage-recherche · reglage-suggestion · reglages · releve · rendu
-reprise-emplacements · secteurs · sejour · seuil · sponsor · suggestion · tiroir-itineraire
-tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel · volets · vous-etes-ici
-webgl
+reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor · suggestion
+tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel
+volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 
@@ -1598,19 +1598,19 @@ Importé par :
 
 lancement · tiroir-parcours · tutoriel
 
-### `modules/lancement.mjs` — 129 l. → plan, plan-admin
+### `modules/lancement.mjs` — 132 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`confieLancementAdmin` 71 · `lancePlan` 74
+`confieLancementAdmin` 72 · `lancePlan` 75
 
 Importe :
 
 bandes · borne · demarrage · erreurs · fenetre · fiche · gestes · habillage · ici
-installation · journee · ligne-liste · mesure · partage · recherche · retour · sponsor
-tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
+installation · journee · ligne-liste · mesure · partage · recherche · retour · sonde
+sponsor · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
 
 Importé par :
 
@@ -1712,7 +1712,7 @@ annonce · camera · detourage · dom · donnees · ecran · libelle-place · vi
 
 Importé par :
 
-ambiance · libelles · plan · releve · webgl
+ambiance · libelles · plan · releve · sonde · webgl
 
 ### `modules/marque.mjs` — 335 l. → plan, plan-admin, console
 
@@ -1753,7 +1753,20 @@ dom · donnees · fenetre · salon
 Importé par :
 
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
-notifications · parcours · partage · tiroir-itineraire
+notifications · parcours · partage · sonde · tiroir-itineraire
+
+### `modules/mesures-page.mjs` — 158 l. → plan, plan-admin
+
+- l.1 · Les mesures de la page, partagées
+
+Fonctions :
+
+`centile` 26 · `fichier` 32 · `observe` 37 · `carteGraphique` 51 · `navigateur` 79
+`mobileDeRepli` 97 · `appareil` 110 · `chargement` 137
+
+Importé par :
+
+releve · sonde
 
 ### `modules/mini-carte.mjs` — 104 l. → plan, plan-admin
 
@@ -2324,16 +2337,18 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 504 l. → rapport
+### `modules/rapport-utilisation.mjs` — 686 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
 `courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
-`erreurs` 108 · `chiffre` 131 · `barres` 150 · `portes` 190 · `jours` 241
-`dessineRapport` 262 · `dessineBarre` 427 · `rafraichit` 450 · `videEcran` 469
-`demarre` 475 · `brancheRapport` 494
+`secondes` 127 · `fini` 128 · `lentes` 129 · `pese` 140 · `reunit` 150 · `ligne` 164
+`sousTitre` 174 · `performances` 189 · `erreurs` 273 · `chiffre` 296 · `barres` 315
+`portes` 355 · `jours` 406 · `dessineRapport` 427 · `blocPerformances` 597
+`dessineBarre` 609 · `rafraichit` 632 · `videEcran` 651 · `demarre` 657
+`brancheRapport` 676
 
 Éléments :
 
@@ -2549,21 +2564,20 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 417 l. → plan, plan-admin
+### `modules/releve.mjs` — 354 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
 Fonctions :
 
-`ms` 69 · `garde` 71 · `decrit` 79 · `dansLeReleve` 95 · `commence` 99 · `centile` 110
-`sorte` 116 · `clos` 120 · `ecouteGestes` 139 · `image` 171 · `observe` 203 · `fichier` 211
-`ecouteNavigateur` 213 · `echantillonne` 245 · `carteGraphique` 264 · `appareil` 282
-`chargement` 299 · `synthese` 316 · `releve` 330 · `affiche` 362 · `partage` 369
-`posePastille` 386
+`ms` 65 · `garde` 67 · `decrit` 75 · `dansLeReleve` 91 · `commence` 95 · `sorte` 108
+`clos` 112 · `ecouteGestes` 131 · `image` 163 · `ecouteNavigateur` 195 · `echantillonne` 227
+`laPage` 248 · `synthese` 253 · `releve` 267 · `affiche` 299 · `partage` 306
+`posePastille` 323
 
 Importe :
 
-affichage · demarrage · donnees · logos-stands · salon · webgl
+affichage · demarrage · donnees · logos-stands · mesures-page · salon · webgl
 
 Importé par :
 
@@ -2670,7 +2684,7 @@ Importé par :
 affiche-ici · ambiance · application · borne · charge-annoncee · choix-ambiance
 configuration · demarrage · enregistrement · erreurs · essai-rappel · ici · installation
 mesure · notifications · parcours · partage · plan · rappels · recherche · releve · rendu
-retour · sponsor · tutoriel · vignettes
+retour · sonde · sponsor · tutoriel · vignettes
 
 ### `modules/secteurs.mjs` — 215 l. → plan, plan-admin
 
@@ -2714,7 +2728,7 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
@@ -2726,7 +2740,7 @@ Fonctions :
 Importé par :
 
 acces-admin · calage-carte · chaleur · enregistrement · fiche-zone · mot-de-passe
-reglage-application · reglage-suggestion · socle-console
+reglage-application · reglage-suggestion · socle-console · sonde
 
 ### `modules/seuil.mjs` — 179 l. → plan, plan-admin
 
@@ -2781,6 +2795,31 @@ calques-dessin · dessin · dom · enregistrement · reperes · texte · vue-eta
 Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
+
+### `modules/sonde.mjs` — 591 l. → plan, plan-admin
+
+- l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
+
+Fonctions :
+
+`sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 81 · `vue0` 92
+`nouvelleVisite` 100 · `vueDuMoment` 122 · `commence` 124 · `sorte` 134 · `clos` 136
+`relance` 152 · `image` 158 · `ecouteGestes` 185 · `nomDuScript` 222 · `gel` 229
+`ecouteNavigateur` 243 · `memoire` 255 · `contexteDuPlan` 268 · `lisAppareil` 280
+`finDesDonnees` 298 · `leChargement` 307 · `fluidite` 317 · `laCarte` 325
+`resumeSonde` 344 · `octets` 368 · `coupe` 371 · `tronque` 382 · `fraiche` 410
+`litLaFile` 413 · `ecritLaFile` 421 · `retire` 433 · `corps` 436 · `versionDesPages` 444
+`envoieUne` 455 · `pousse` 481 · `actif` 506 · `envoie` 510 · `brancheSonde` 535
+`demarre` 548
+
+Importe :
+
+affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · session
+webgl
+
+Importé par :
+
+lancement
 
 ### `modules/sponsor.mjs` — 398 l. → plan, plan-admin
 
@@ -3223,49 +3262,49 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3157 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3167 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`confieAuWebgl` 75 · `chargeWebgl` 123 · `brancheWebgl` 166 · `monteWebgl` 186
-`poseToileWebgl` 323 · `guetteContexteWebgl` 329 · `contextePerduWebgl` 339
-`verifieContexteWebgl` 346 · `guetteBoucleWebgl` 378 · `perdContexteWebgl` 394
-`remonteWebgl` 423 · `vueDeck` 440 · `enCamera` 460 · `vuesGl` 464 · `effetsGl` 488
-`basculeCamera` 498 · `vueWebgl` 511 · `blocDe` 528 · `majEditionWebgl` 541 · `cleBloc` 553
-`planifieWebgl` 579 · `toutRepeindreWebgl` 583 · `blocsDansLOrdre` 594 · `repeintWebgl` 599
-`pointsParMetre` 629 · `assembleWebgl` 655 · `constTexte` 709 · `jeuDeCaracteres` 912
-`sousPixelOffert` 966 · `couchesPetites` 974 · `filtreCouches` 1009 · `poseGeste` 1021
-`positionTexte` 1037 · `cleChoisi` 1077 · `versEcran` 1080 · `enveloppe` 1087
-`nomsCaches` 1098 · `parametresTexte` 1127 · `nomsAPlat` 1136 · `couchesTexte` 1138
-`accVide` 1188 · `convertitBloc` 1190 · `accDe` 1212 · `parcoursGl` 1229
-`resteDebout` 1279 · `dedansAnneau` 1287 · `auDessusDuSol` 1312 · `surSonStand` 1321
-`standDeLaMarque` 1327 · `marquesSurLesToits` 1339 · `hauteurVolume` 1356
-`zoneMeublee` 1388 · `poseJeton` 1440 · `mul4` 1464 · `enColonnes` 1473 · `translation` 1474
-`homothetie` 1476 · `autourDuZ` 1477 · `matriceJeton` 1486 · `corpsDansLeJeton` 1502
-`couchesJeton` 1510 · `couchesJetons` 1558 · `meubleZone` 1600 · `dansLeHall` 1662
-`teinteDesFigurants` 1684 · `penchee` 1728 · `couchesFigurants` 1739 · `eclatant` 1787
-`opaque` 1793 · `formeGl` 1800 · `corpsDeclare` 1872 · `texteGl` 1881 · `imageGl` 1905
-`imageDressee` 1947 · `socleImage` 1961 · `partage` 1973 · `designeGl` 1979 · `sortie` 1993
-`noteHauteur` 1999 · `anticipeHausses` 2029 · `monteALAppui` 2055 · `rendLAppui` 2067
-`detacheVolume` 2077 · `hauteurEnCours` 2111 · `hauteurHausse` 2117 · `echelleHausse` 2122
-`haussesParId` 2125 · `memesFormes` 2144 · `memesPoints` 2154 · `signeCouleurs` 2161
-`masqueVolumes` 2169 · `aPlat` 2189 · `ombresAuRepos` 2201 · `couchesDeBloc` 2226
-`modelesLibellesHtml` 2363 · `poseModelesLibelles` 2373 · `lisModelesLibelles` 2379
-`groupesNoms` 2412 · `couchesNoms` 2438 · `couchesPastilles` 2453
-`couchesLibellesWebgl` 2468 · `couchesDessineesWebgl` 2502 · `stage` 2523
-`lectureDifferee` 2556 · `survolTrouve` 2592 · `demandeSurvolWebgl` 2598
-`survoleWebgl` 2604 · `brancheSurvolWebgl` 2632 · `poseSurvolWebgl` 2645 · `enTuiles` 2682
-`hauteurTuile` 2695 · `visePour` 2701 · `suisChoisies` 2711 · `gonfleSurvol` 2719
-`coucheTuileSoulevee` 2742 · `couchesTuiles` 2773 · `poseCurseurWebgl` 2786
-`poseFocusWebgl` 2795 · `aplatsDe` 2802 · `coucheSurvol` 2805 · `coucheSurvolVolume` 2821
-`coucheFocus` 2855 · `couchesPhare` 2885 · `lueurDe` 2902 · `opacitePhare` 2940
-`echellePhare` 2941 · `couchesPhareNoms` 2944 · `palierDefile` 2969 · `periodeDe` 2974
-`phaseDe` 2976 · `instant` 2986 · `animeCouche` 2987 · `majAnimationWebgl` 3012
-`animeWebgl` 3020 · `reanime` 3057 · `logosSurLesToits` 3066 · `objetSous` 3096
-`objetSousDiffere` 3101 · `viseEnAvance` 3115 · `lisObjet` 3123 · `cibleWebgl` 3128
-`priseWebgl` 3138 · `libelleSousWebgl` 3143 · `rectEcranWebgl` 3148
+`confieAuWebgl` 75 · `chargeWebgl` 128 · `brancheWebgl` 171 · `monteWebgl` 191
+`poseToileWebgl` 328 · `guetteContexteWebgl` 334 · `contextePerduWebgl` 344
+`verifieContexteWebgl` 351 · `guetteBoucleWebgl` 383 · `perdContexteWebgl` 399
+`remonteWebgl` 433 · `vueDeck` 450 · `enCamera` 470 · `vuesGl` 474 · `effetsGl` 498
+`basculeCamera` 508 · `vueWebgl` 521 · `blocDe` 538 · `majEditionWebgl` 551 · `cleBloc` 563
+`planifieWebgl` 589 · `toutRepeindreWebgl` 593 · `blocsDansLOrdre` 604 · `repeintWebgl` 609
+`pointsParMetre` 639 · `assembleWebgl` 665 · `constTexte` 719 · `jeuDeCaracteres` 922
+`sousPixelOffert` 976 · `couchesPetites` 984 · `filtreCouches` 1019 · `poseGeste` 1031
+`positionTexte` 1047 · `cleChoisi` 1087 · `versEcran` 1090 · `enveloppe` 1097
+`nomsCaches` 1108 · `parametresTexte` 1137 · `nomsAPlat` 1146 · `couchesTexte` 1148
+`accVide` 1198 · `convertitBloc` 1200 · `accDe` 1222 · `parcoursGl` 1239
+`resteDebout` 1289 · `dedansAnneau` 1297 · `auDessusDuSol` 1322 · `surSonStand` 1331
+`standDeLaMarque` 1337 · `marquesSurLesToits` 1349 · `hauteurVolume` 1366
+`zoneMeublee` 1398 · `poseJeton` 1450 · `mul4` 1474 · `enColonnes` 1483 · `translation` 1484
+`homothetie` 1486 · `autourDuZ` 1487 · `matriceJeton` 1496 · `corpsDansLeJeton` 1512
+`couchesJeton` 1520 · `couchesJetons` 1568 · `meubleZone` 1610 · `dansLeHall` 1672
+`teinteDesFigurants` 1694 · `penchee` 1738 · `couchesFigurants` 1749 · `eclatant` 1797
+`opaque` 1803 · `formeGl` 1810 · `corpsDeclare` 1882 · `texteGl` 1891 · `imageGl` 1915
+`imageDressee` 1957 · `socleImage` 1971 · `partage` 1983 · `designeGl` 1989 · `sortie` 2003
+`noteHauteur` 2009 · `anticipeHausses` 2039 · `monteALAppui` 2065 · `rendLAppui` 2077
+`detacheVolume` 2087 · `hauteurEnCours` 2121 · `hauteurHausse` 2127 · `echelleHausse` 2132
+`haussesParId` 2135 · `memesFormes` 2154 · `memesPoints` 2164 · `signeCouleurs` 2171
+`masqueVolumes` 2179 · `aPlat` 2199 · `ombresAuRepos` 2211 · `couchesDeBloc` 2236
+`modelesLibellesHtml` 2373 · `poseModelesLibelles` 2383 · `lisModelesLibelles` 2389
+`groupesNoms` 2422 · `couchesNoms` 2448 · `couchesPastilles` 2463
+`couchesLibellesWebgl` 2478 · `couchesDessineesWebgl` 2512 · `stage` 2533
+`lectureDifferee` 2566 · `survolTrouve` 2602 · `demandeSurvolWebgl` 2608
+`survoleWebgl` 2614 · `brancheSurvolWebgl` 2642 · `poseSurvolWebgl` 2655 · `enTuiles` 2692
+`hauteurTuile` 2705 · `visePour` 2711 · `suisChoisies` 2721 · `gonfleSurvol` 2729
+`coucheTuileSoulevee` 2752 · `couchesTuiles` 2783 · `poseCurseurWebgl` 2796
+`poseFocusWebgl` 2805 · `aplatsDe` 2812 · `coucheSurvol` 2815 · `coucheSurvolVolume` 2831
+`coucheFocus` 2865 · `couchesPhare` 2895 · `lueurDe` 2912 · `opacitePhare` 2950
+`echellePhare` 2951 · `couchesPhareNoms` 2954 · `palierDefile` 2979 · `periodeDe` 2984
+`phaseDe` 2986 · `instant` 2996 · `animeCouche` 2997 · `majAnimationWebgl` 3022
+`animeWebgl` 3030 · `reanime` 3067 · `logosSurLesToits` 3076 · `objetSous` 3106
+`objetSousDiffere` 3111 · `viseEnAvance` 3125 · `lisObjet` 3133 · `cibleWebgl` 3138
+`priseWebgl` 3148 · `libelleSousWebgl` 3153 · `rectEcranWebgl` 3158
 
 Importe :
 
@@ -3275,7 +3314,7 @@ itineraire · libelle-place · logos-stands · reperes · trace · vue-etat
 Importé par :
 
 batiments · edition · edition-en-cours · fiche · gestes · lancement · libelles
-placement-libelles · plan · releve · reprise-emplacements · tutoriel · vue
+placement-libelles · plan · releve · reprise-emplacements · sonde · tutoriel · vue
 
 Portes :
 
@@ -3422,11 +3461,12 @@ Portes :
 - `20261013132628_grande_vignette_detouree.sql` — vignette_de_logo
 - `20261014082348_grandes_vignettes_a_redetourer.sql` — —
 - `20261020224043_le_programme_de_conferences_saisi_a_la_main.sql` — evenement
+- `20261021115942_sonde_de_performance.sql` — releve_perf, perf_jour, perf_bilan, fn sonde_nombre, fn sonde_enregistre, fn sonde_publique, fn sonde_admin, fn sonde_detail, fn bilan_perf, fn purge_perf, fn performances_du_salon
 
 ## Le reste
 
-- `src/index.mjs` — 1140 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `planDeVisite` 917 · `chargePrevue` 956 · `surete` 992 · `aiguille` 1010
+- `src/index.mjs` — 1234 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 206 `rangeLaVersion` 209 · `ditVersion` 217 · `meta` 226 · `gardable` 242 · `range` 248 `rafraichit` 255 · `entete` 290 · `oublie` 333 · `rappels` 423 · `cleApp` 468 `cheminDuSalon` 499 · `pageDuSalon` 516 · `appDuSalon` 540 · `iconesDuSalon` 586 `manifeste` 626 · `iconeApp` 716 · `mesure` 760 · `carteDuScript` 849 · `lieuDe` 862 `erreur` 876 · `texteDuScript` 925 · `geleResolu` 938 · `sonde` 965 · `planDeVisite` 1009 `chargePrevue` 1048 · `surete` 1084 · `aiguille` 1102
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
