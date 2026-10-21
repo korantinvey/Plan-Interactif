@@ -2352,7 +2352,7 @@ function modelesLibellesHtml(){
   return CLASSES_LIBELLES.map(c => temoin(c, "lbl", c)).join("") +
     CLASSES_PHARE.map(c => temoin(c, "lbl phare", c + " phare")).join("") +
     temoin("nm", "lbl pick", "pick") +
-    '<rect data-modele="survol" style="fill:var(--accent-soft);stroke:var(--accent)"/>' +
+    '<rect data-modele="survol" style="fill:var(--c-survol,var(--accent-soft));stroke:var(--accent)"/>' +
     '<rect data-modele="poi" style="fill:var(--c-poi,var(--accent))"/>';
 }
 export function poseModelesLibelles(){

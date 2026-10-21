@@ -503,7 +503,9 @@ html.sans-parcours #marques .parc{display:none}
    de désigner. Le temps d'une mise en avant, ils s'effacent tout à fait : ce
    qu'on a retenu se retrouve en refermant le cartouche. */
 html.poi-actif #marques .parc{display:none}
-html:not(.ambiance-tuiles) :is(.stand,.zone):hover path{fill:var(--accent-soft)}
+/* La teinte du survol se règle à part (« Élément survolé », sous les Repères) ;
+   sans réglage, l'aplat doux de la couleur principale. */
+html:not(.ambiance-tuiles) :is(.stand,.zone):hover path{fill:var(--c-survol,var(--accent-soft))}
 /* Une tuile survolée se soulève : elle grandit un peu et sa teinte s'avive.
    C'est le rendu SVG, de secours ; la carte graphique fait de même avec une
    couche à elle (`webgl.mjs` `coucheTuileSoulevee`). Le SVG ne sait pas
@@ -666,7 +668,7 @@ html:not(.chaleur-halos) .dcal .forme.sdes[data-chaleur] path{fill:var(--chal-c)
    tracé, y compris sur la page publique où le mode édition n'existe pas.
    Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
 .dcal .forme.sdes.lie path{pointer-events:all}
-html:not(.ambiance-tuiles) .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+html:not(.ambiance-tuiles) .dcal .forme.sdes.lie:hover path{fill:var(--c-survol,var(--accent-soft))}
 /* Le liseré de la sélection reste sur la forme : « #marques » recopie les
    tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
    pas de cloison mitoyenne à ménager — il est posé sur son hôte. En Tuiles,
