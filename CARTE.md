@@ -126,7 +126,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1731 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1733 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 193 l. → demo.html, plan-smcl.html
 
@@ -289,14 +289,14 @@ Importé par :
 
 reglage-fiche · volets
 
-### `modules/apparence.mjs` — 182 l. → plan, plan-admin
+### `modules/apparence.mjs` — 186 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
 Fonctions :
 
 `styleFond` 28 · `sousCalques` 49 · `styleDataGroupe` 56 · `appliqueCouleursData` 65
-`styleData` 97 · `appliqueApparence` 103 · `appliqueCommandes` 171
+`styleData` 101 · `appliqueApparence` 107 · `appliqueCommandes` 175
 
 Importe :
 
@@ -2127,18 +2127,18 @@ Importé par :
 
 installation · lancement · tiroir-parcours
 
-### `modules/pile.mjs` — 549 l. → plan-admin
+### `modules/pile.mjs` — 556 l. → plan-admin
 
 - l.1 · Le panneau des calques
 - l.65 · Panneau : deux sections, chacune rangée par nom
 - l.360 · Repères
-- l.412 · Fond du plan
+- l.419 · Fond du plan
 
 Fonctions :
 
 `secteurs` 53 · `joli` 56 · `nature` 83 · `boutonAjout` 90 · `boutonVerrou` 110
-`intertitre` 118 · `remplitPanneau` 128 · `sectionSelection` 376 · `sectionFond` 432
-`ligneCouleur` 490 · `rangSecteur` 510 · `rangSous` 523 · `defautCouleur` 545
+`intertitre` 118 · `remplitPanneau` 128 · `sectionSelection` 376 · `sectionFond` 439
+`ligneCouleur` 497 · `rangSecteur` 517 · `rangSous` 530 · `defautCouleur` 552
 
 Importe :
 
