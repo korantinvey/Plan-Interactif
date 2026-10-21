@@ -296,7 +296,7 @@ function performances(hote, p) {
   for (const o of p.ouvertures) {
     chiffre(g, 0, NOMS[o.page] + " · " + (o.mobile ? "téléphone" : "bureau"),
       "Les 10 % les plus lents : " + secondes(o.p90) + " · " + visites(o.visites));
-    g.lastChild.querySelector(".n").textContent = secondes(o.p50);
+    /** @type {HTMLElement} */ (g.lastChild).querySelector(".n").textContent = secondes(o.p50);
   }
   hote.appendChild(g);
   const e = p.etapes;
@@ -344,7 +344,7 @@ function performances(hote, p) {
   const gp = document.createElement("div");
   gp.className = "chiffres seul";
   chiffre(gp, 0, "Téléchargé à l'ouverture du plan", "Médiane des visites.");
-  gp.lastChild.querySelector(".n").textContent = nombre(p.poids) ? nb(Math.round(p.poids)) + " Ko" : "—";
+  /** @type {HTMLElement} */ (gp.lastChild).querySelector(".n").textContent = nombre(p.poids) ? nb(Math.round(p.poids)) + " Ko" : "—";
   hote.appendChild(gp);
   if (p.lourds.length) {
     const lo = document.createElement("div");
