@@ -36,7 +36,8 @@ const JOURS_FICHE = 7;
 /* Une version n'est comparée à la précédente qu'avec assez de visites des deux
    côtés, et si l'écart dépasse le bruit — provisoires, comme les seuils. */
 const VISITES_PAR_VERSION = 5;
-const DEGRADATION = { relatif: 0.2, ms: 200, part: 0.03 };
+/* la part d'images lentes est déjà un pourcentage (0-100) : `part` est en points */
+const DEGRADATION = { relatif: 0.2, ms: 200, part: 3 };
 
 /* ---------- Petits outils ---------- */
 
@@ -247,7 +248,7 @@ function degradations(releves) {
       for (const [nom, lit, unite, plancher] of mesures) {
         const a = centile(A.rows.map(lit), 0.5), b = centile(B.rows.map(lit), 0.5);
         if (a == null || b == null || b - a < plancher || b < a * (1 + DEGRADATION.relatif)) continue;
-        const f = unite === "%" ? (x) => Math.round(x * 100) : (x) => Math.round(x);
+        const f = unite === "%" ? (x) => Math.round(x) : (x) => Math.round(x);
         causes.push(nom + " " + f(a) + " → " + f(b) + " " + unite);
       }
       if (causes.length) {
@@ -288,7 +289,8 @@ function bilanSemaine(bilans, de, a) {
 /* ---------- Le corps de l'issue ---------- */
 
 const ms = (x) => (x == null ? "—" : Math.round(x) + " ms");
-const pc = (x) => (x == null ? "—" : Math.round(x * 100) + " %");
+/* déjà un pourcentage : la sonde donne la part d'images lentes sur 0-100 */
+const pc = (x) => (x == null ? "—" : Math.round(x) + " %");
 
 function variation(avant, apres) {
   if (avant == null || apres == null || avant === 0) return "";

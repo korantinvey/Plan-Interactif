@@ -28,8 +28,9 @@ const SEUIL = {
   lourdKo: 100,
   /** préparation (données reçues → plan affiché, médiane, ms) */
   preparationMs: 800,
-  /** immersif plus saccadé que classique : écart de part d'images > 33 ms */
-  ecartFluidite: 0.10,
+  /** immersif plus saccadé que classique : écart de part d'images de plus de 33 ms, en points de pourcentage
+   *  (la sonde donne cette part déjà en pourcentage, 0-100 : `sonde.mjs` `partPlus33`) */
+  ecartFluidite: 10,
   /** visites immersives minimales pour qu'une médiane veuille dire quelque chose */
   immersifMin: 5,
   /** repeint long (centile 95, ms) : au-delà de deux images à 60 Hz */
@@ -103,7 +104,7 @@ const REGLES = [
         if (diff > SEUIL.ecartFluidite) {
           meilleur = {
             touche: ind.nImmersif, ecart: diff / SEUIL.ecartFluidite,
-            detail: Math.round(ind.partImmersif * 100) + " % d'images lentes en immersif contre " + Math.round(ind.partClassique * 100) + " % en classique" + indice,
+            detail: Math.round(ind.partImmersif) + " % d'images lentes en immersif contre " + Math.round(ind.partClassique) + " % en classique" + indice,
           };
         }
       }

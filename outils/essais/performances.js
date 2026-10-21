@@ -27,7 +27,7 @@ const dit = (ok, q, d) => {
 const sains = () => ({
   page: "plan", mobile: true, visites: 100, nImmersif: 40,
   donneesP50: 400, preparationP50: 300, afficheP50: 900,
-  partClassique: 0.05, partImmersif: 0.06, repeintP95: 10, gpuP95: null,
+  partClassique: 5, partImmersif: 6, repeintP95: 10, gpuP95: null,
   logosMoP50: 20, lourds: [{ fichier: "/versions/plan.abc.js", visites: 10, part: 0.1, koP50: 200 }],
   familles: [{ famille: "Android · Mali-G78", visites: 50, avecPerte: 0 }],
 });
@@ -49,15 +49,15 @@ dit(REGLES.every((r) => r.titre && r.levier), "chaque règle dit son levier");
   dit(ids(i).length === 0, "le même fichier dans 40 % des visites : pas de piste"); }
 { const i = sains(); i.preparationP50 = 3000;
   dit(ids(i).join() === "preparation", "préparation longue : piste", ids(i).join()); }
-{ const i = sains(); i.partImmersif = 0.4; i.gpuP95 = null;
+{ const i = sains(); i.partImmersif = 40; i.gpuP95 = null;
   const p = pistes([i]);
   dit(p.length === 1 && p[0].id === "immersif", "immersif moins fluide SANS gpuTime : la règle se déclenche quand même", ids(i).join()); }
-{ const i = sains(); i.partImmersif = 0.4; i.gpuP95 = 30;
+{ const i = sains(); i.partImmersif = 40; i.gpuP95 = 30;
   const p = pistes([i]);
   dit(p.length === 1 && /GPU/.test(p[0].detail), "avec gpuTime, il s'ajoute au détail en indice", p[0] && p[0].detail); }
 { const i = sains(); i.repeintP95 = 80;
   dit(ids(i).join() === "immersif", "repeints longs seuls : la même piste", ids(i).join()); }
-{ const i = sains(); i.partImmersif = 0.4; i.nImmersif = 1;
+{ const i = sains(); i.partImmersif = 40; i.nImmersif = 1;
   dit(ids(i).length === 0, "une seule visite immersive ne fait pas une piste"); }
 { const i = sains(); i.logosMoP50 = 400;
   dit(ids(i).join() === "logos", "mémoire des logos élevée sur téléphone : piste", ids(i).join()); }
@@ -79,7 +79,7 @@ const SLUGS = ["fep27", "salon-de-la-biere"];
 function visite(i, o) {
   return Object.assign({
     evenement_id: UUID[0], jour: jour(2), page: "plan", version: "v1", mobile: true, immersif: false,
-    affiche_ms: 900, donnees_ms: 400, transfert_ko: 500, part_plus33_classique: 0.05, part_plus33_immersif: null,
+    affiche_ms: 900, donnees_ms: 400, transfert_ko: 500, part_plus33_classique: 5, part_plus33_immersif: null,
     gels: 0, repeint_ms_p95: 10, gpu_ms_p95: null, pertes_contexte: 0,
     systeme: "Android", carte: "ARM Mali-G78", logos_octets: 20e6, pic_mo: 150,
     lourds: [{ fichier: "/versions/plan.abc.js", transfertKo: 300 }],
@@ -137,19 +137,27 @@ console.log("L'injection markdown");
 
 console.log("La semaine d'avant");
 { const bil = [
-    { salon: "salon-aaaa", jour: jour(10), page: "plan", mobile: true, visites: 10, affiche_p50: 1000, donnees_p50: 500, part_plus33_p50: 0.1, gels_moy: 0, pertes_contexte: 1 },
-    { salon: "salon-aaaa", jour: jour(9), page: "plan", mobile: true, visites: 30, affiche_p50: 2000, donnees_p50: 900, part_plus33_p50: 0.2, gels_moy: 1, pertes_contexte: 2 },
-    { salon: "salon-aaaa", jour: jour(3), page: "plan", mobile: true, visites: 99, affiche_p50: 9999, donnees_p50: 1, part_plus33_p50: 0.9, gels_moy: 0, pertes_contexte: 0 }];
+    { salon: "salon-aaaa", jour: jour(10), page: "plan", mobile: true, visites: 10, affiche_p50: 1000, donnees_p50: 500, part_plus33_p50: 10, gels_moy: 0, pertes_contexte: 1 },
+    { salon: "salon-aaaa", jour: jour(9), page: "plan", mobile: true, visites: 30, affiche_p50: 2000, donnees_p50: 900, part_plus33_p50: 20, gels_moy: 1, pertes_contexte: 2 },
+    { salon: "salon-aaaa", jour: jour(3), page: "plan", mobile: true, visites: 99, affiche_p50: 9999, donnees_p50: 1, part_plus33_p50: 90, gels_moy: 0, pertes_contexte: 0 }];
   const m = P.bilanSemaine(bil.map((b) => Object.assign({}, b)), jour(14), jour(8)).get("plan|true");
-  dit(m && m.visites === 40 && Math.abs(m.affiche_p50 - 1750) < 1e-9 && Math.abs(m.donnees_p50 - 800) < 1e-9 && Math.abs(m.part_plus33_p50 - 0.175) < 1e-9 && m.pertes === 3,
+  dit(m && m.visites === 40 && Math.abs(m.affiche_p50 - 1750) < 1e-9 && Math.abs(m.donnees_p50 - 800) < 1e-9 && Math.abs(m.part_plus33_p50 - 17.5) < 1e-9 && m.pertes === 3,
     "bilanSemaine pondère par les visites et ignore les autres jours", JSON.stringify(m));
-  const rel = []; for (let i = 0; i < 8; i++) rel.push(visite(i, { affiche_ms: 3500, donnees_ms: 1600, part_plus33_classique: 0.35 }));
+  const rel = []; for (let i = 0; i < 8; i++) rel.push(visite(i, { affiche_ms: 3500, donnees_ms: 1600, part_plus33_classique: 35 }));
   const { corps } = P.fiche({ releves: rel, bilans: bil, aujourdhui: AUJ });
   const ligne = (corps.match(/^\| plan \| téléphone.*$/m) || [""])[0];
   dit(/1750 ms \(\+100 %\)/.test(ligne) && /800 ms \(\+100 %\)/.test(ligne) && /18 % \(\+100 %\)/.test(ligne), "le tableau compare l'affichage, les données et les images lentes à la semaine d'avant", ligne); }
 { const q = P.requetes(AUJ)[0];
   dit(!/transfert_ko|pic_mo|gels/.test(q) && /case when jour >= '2026-10-21'::date - 7 then resume #> '\{chargement,lourds\}'|jsonb_typeof/.test(q) && /case when jour >= '2026-10-21'::date - 7 then resume #>> '\{appareil,systeme\}'/.test(q),
     "la lecture ne joint lourds, systeme, carte… que pour la semaine analysée, et laisse les colonnes inutiles"); }
+
+console.log("Les unités");
+{ const rel = [];
+  for (let i = 0; i < 10; i++) rel.push(visite(i, { immersif: true, part_plus33_classique: 35, part_plus33_immersif: 80, affiche_ms: 3000 }));
+  const { corps } = P.fiche({ releves: rel, bilans: [], aujourdhui: AUJ });
+  const pcts = (corps.match(/\d+(?:[.,]\d+)? %/g) || []).map((x) => parseFloat(x));
+  dit(pcts.length > 0 && pcts.every((x) => x <= 100), "aucun pourcentage de la fiche ne dépasse 100 (la part d'images lentes est déjà un pourcentage)", (corps.match(/\d+ % d'images lentes[^.]*/) || [""])[0]);
+  dit(/80 % d'images lentes en immersif contre 35 % en classique/.test(corps), "une visite réelle à 35 % s'affiche 35 %, l'écart de 45 points déclenche la piste immersif"); }
 
 console.log("La semaine sans relevé");
 { const r = P.fiche({ releves: [], bilans: [], aujourdhui: AUJ });
