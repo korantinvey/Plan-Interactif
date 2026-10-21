@@ -29,6 +29,7 @@ module.exports = {
   "Textes des zones": "Area labels",
   "Repères": "Landmarks",
   "Élément sélectionné": "Selected item",
+  "Élément survolé": "Hovered item",
   "Points d'intérêt": "Points of interest",
   "Blanc": "White",
   "Ivoire": "Ivory",

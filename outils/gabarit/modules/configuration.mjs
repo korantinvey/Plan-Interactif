@@ -67,7 +67,7 @@ export function reglagesDuSalon(source){
     if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
     const general = k[0] === "_" || k.indexOf("data:") === 0 ||
                     k === "labStand" || k === "labZone" || k === "selection" ||
-                    k === "parcours" || k === "poi";
+                    k === "survol" || k === "parcours" || k === "poi";
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */

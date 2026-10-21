@@ -76,6 +76,10 @@ export function appliqueCouleursData(){
   const sel = conf("selection").couleur;
   pose(sel, "--c-sel");
   pose(sel && ecarte(sel), "--c-sel-trait");
+  /* Le survol n'a que son aplat : il passe, et ne laisse aucun liseré. Il se
+     règle à part de la sélection, sans quoi le stand qu'on désigne et celui
+     sous la souris ne se distingueraient plus. */
+  pose(conf("survol").couleur, "--c-survol");
   /* Le parcours n'a qu'un liseré, sans aplat : il double le contour d'un stand
      qui garde par ailleurs sa teinte. Une seule couleur suffit donc, et elle
      se règle à part de la sélection — les deux marques se croisent sur le même
