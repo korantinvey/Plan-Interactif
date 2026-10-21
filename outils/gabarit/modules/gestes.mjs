@@ -357,7 +357,11 @@ function planifieFiltre(){
  * page, puis les commandes de la recherche et du zoom.
  */
 export function brancheGestes(){
+  /* Les gestes sont branchés au lancement, le plan monté au retour de l'API :
+     entre les deux, la vue n'existe pas encore, et un appui la lisait —
+     « versPlan », le glisser, la molette. Rien à faire avant le premier plan. */
   svg.addEventListener("pointerdown", e => {
+    if (!view) return;
     poseAppuiTactile(e.pointerType === "touch" || e.pointerType === "pen");
     // la main posée l'emporte sur la molette : un glissement qui finissait sa
     // course tirerait la vue sous le doigt qui vient de la saisir
@@ -419,6 +423,7 @@ export function brancheGestes(){
     }, APPUI_TENU);
   });
   svg.addEventListener("pointermove", e => {
+    if (!view) return;
     const [ex, ey] = redresse(e.clientX, e.clientY);
     if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: ex, y: ey });
     if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
@@ -513,6 +518,7 @@ export function brancheGestes(){
   });
   svg.addEventListener("wheel", e => {
     e.preventDefault();
+    if (!view) return;
     stoppeElan();
     const r = cadrePlan();
     /* Les navigateurs ne comptent pas dans la même unité — pixels, lignes ou
