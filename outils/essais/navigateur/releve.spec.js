@@ -70,19 +70,22 @@ test.describe("la perte du contexte WebGL", { tag: "@base" }, () => {
     const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
       .then(() => true, () => false);
     test.skip(!dessin, "pas de carte graphique : le plan reste en SVG");
-    const raisons = await page.evaluate(async () => {
+    const { raisons, demonte } = await page.evaluate(async () => {
       const vues = [];
       window.__essais.CONTEXTE_PERDU.suis((r) => { vues.push(r); throw new Error("auditeur fautif"); });
       const toile = window.__essais.GL.toile;
       toile.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
-      return vues;
+      /* Lu tout de suite : le démontage est synchrone, et le dessin remonte de
+         lui-même 600 ms plus tard. Lu après une attente, une machine chargée
+         voyait déjà la toile neuve et l'essai échouait sans défaut du plan. */
+      const GL = window.__essais.GL;
+      return { raisons: vues, demonte: GL.deck === null && GL.actif === false };
     });
     expect(raisons).toEqual(["contexte perdu"]);
-    /* Le démontage est allé au bout : plus de dessin déclaré, la page vit.
-       Attendu et non relu après un délai fixe : sous la charge de toute la
-       suite, une demi-seconde ne suffisait pas toujours. */
-    await expect.poll(() => page.evaluate(() =>
-      window.__essais.GL.deck === null || window.__essais.GL.actif === false), { timeout: 10_000 }).toBe(true);
+    // le démontage est allé au bout : plus de dessin déclaré
+    expect(demonte).toBe(true);
+    // et la page vit : rien d'autre n'a levé, remontée comprise
+    await page.waitForTimeout(1000);
     expect(erreurs.filter((e) => !/auditeur/.test(e))).toEqual([]);
   });
 });
