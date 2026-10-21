@@ -20,6 +20,10 @@
 -- (`select lecteur_perf_retire('claude');`), et un jeton de même nom en
 -- remplace un autre : refaire le jeton invalide l'ancien.
 --
+-- `pg_temp` ferme le chemin de recherche en dernier : sans cela Postgres le
+-- cherche en premier, et un rôle de l'API ayant le droit TEMP créerait une
+-- table temporaire `lecteur_perf` portant l'empreinte d'un jeton inventé.
+--
 -- Rejouable : tout est `if not exists` ou `create or replace`.
 
 create table if not exists lecteur_perf (
@@ -41,7 +45,7 @@ revoke all on lecteur_perf from public, anon, authenticated;
 create or replace function lecteur_perf_nouveau(p_nom text) returns text
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_jeton text;
@@ -65,7 +69,7 @@ revoke all on function lecteur_perf_nouveau(text) from public, anon, authenticat
 create or replace function lecteur_perf_retire(p_nom text) returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_lignes integer;
@@ -81,7 +85,7 @@ comment on function lecteur_perf_retire is
 
 revoke all on function lecteur_perf_retire(text) from public, anon, authenticated;
 
-/* La porte de lecture. Sans jeton valable, `null` et rien d'autre : elle ne dit
+/* La porte de lecture. Sans jeton valable (64 caractères hexadécimaux, comme émis plus haut), `null` et rien d'autre : elle ne dit
    pas si le jeton était court, faux ou révoqué.
 
    Les dates : `jour` entre `p_de` et `p_a`, par défaut les sept derniers jours
@@ -101,7 +105,7 @@ create or replace function lecture_perf(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 declare
   v_a       date;
@@ -111,7 +115,8 @@ declare
   v_slug    text := nullif(btrim(coalesce(p_slug, '')), '');
   v_rendu   jsonb;
 begin
-  if p_jeton is null or length(p_jeton) < 32
+  -- le format se vérifie avant tout hachage : un jeton démesuré n'est pas haché
+  if p_jeton is null or p_jeton !~ '^[0-9a-f]{64}$'
      or not exists (select 1 from lecteur_perf
                      where empreinte = encode(sha256(convert_to(p_jeton, 'UTF8')), 'hex')) then
     return null;
@@ -121,8 +126,10 @@ begin
     raise exception 'lecture_perf : p_quoi doit valoir releves, bilans, jours ou salons (reçu : %)', p_quoi;
   end if;
 
-  v_a  := coalesce(p_a, current_date);
-  v_de := greatest(coalesce(p_de, v_a - 6), v_a - 90);
+  -- `jour` est daté dans le fuseau du salon, `current_date` est en UTC : sans
+  -- `p_a`, la fenêtre va jusqu'à demain pour ne pas perdre le jour d'un salon à l'est
+  v_a  := coalesce(p_a, current_date + 1);
+  v_de := greatest(coalesce(p_de, coalesce(p_a, current_date) - 6), v_a - 90);
 
   if p_quoi = 'releves' then
     select coalesce(jsonb_agg(l.ligne order by l.jour, l.recu, l.evenement_id, l.visite), '[]'::jsonb)

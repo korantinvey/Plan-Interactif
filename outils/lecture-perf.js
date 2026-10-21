@@ -60,11 +60,22 @@ async function main() {
     throw new Error("SUPABASE_LECTURE manque : créez un jeton (select lecteur_perf_nouveau('claude'); dans l'éditeur SQL de Supabase) et rangez-le dans cette variable d'environnement.");
   }
   const { quoi, options } = lisArguments(process.argv.slice(2));
+  for (const nom of ["de", "a"]) {
+    const v = options[nom];
+    if (v !== undefined && !(/^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(Date.parse(v)))) {
+      throw new Error("--" + nom + " attend une date AAAA-MM-JJ : " + v);
+    }
+  }
+  /* Fenêtre fixée une fois : une lecture à cheval sur minuit ne doit pas la
+     décaler d'une page à l'autre. */
+  const demain = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const a = options.a || demain;
+  const de = options.de || new Date(Date.parse(a) - 7 * 86400000).toISOString().slice(0, 10);
   const projet = PROJETS.production;
   const lignes = [];
   for (let decalage = 0; ; decalage += PAGE) {
     const page = await appelle(projet, jeton, {
-      p_quoi: quoi, p_de: options.de || null, p_a: options.a || null,
+      p_quoi: quoi, p_de: de, p_a: a,
       p_slug: options.slug || null, p_limite: PAGE, p_decalage: decalage,
     });
     if (page === null) throw new Error("Jeton refusé (inconnu, révoqué ou trop court).");

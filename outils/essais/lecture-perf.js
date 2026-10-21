@@ -96,6 +96,10 @@ async function main() {
   dit(await lis("0".repeat(64), "tout") === null, "…mais un faux jeton n'apprend rien : null d'abord");
 
   // --- droits
+  // base.js ne simule pas les privilèges par défaut de Supabase sur les tables :
+  // on les donne, puis on rejoue la migration, qui doit les reprendre.
+  await db.exec("grant all on lecteur_perf to anon, authenticated");
+  await db.exec(fs.readFileSync(path.join(MIGRATIONS, fs.readdirSync(MIGRATIONS).find((f) => f.endsWith("_lecture_des_performances.sql"))), "utf8"));
   const refus = async (sql) => /permission denied/i.test(await refuse(() => anon(sql)));
   dit(await refus("select * from lecteur_perf"), "anon ne lit pas lecteur_perf");
   dit(await refus("select lecteur_perf_nouveau('pirate')"), "anon n'appelle pas lecteur_perf_nouveau");
@@ -104,6 +108,27 @@ async function main() {
   const authRefus = /permission denied/i.test(await refuse(() => db.query("select lecteur_perf_nouveau('pirate')")));
   await db.exec("reset role");
   dit(authRefus, "authenticated n'appelle pas lecteur_perf_nouveau");
+
+  const nul = async (sql) => { const r = await refuse(() => anon(sql)); return /permission denied/i.test(r); };
+  dit(await nul("insert into lecteur_perf (empreinte, nom) values ('x', 'y')"), "anon n'écrit pas dans lecteur_perf");
+
+  // --- une table temporaire ne se substitue pas au registre
+  const faux = "ab".repeat(32);
+  await db.exec("grant temp on database postgres to anon").catch(() => {});
+  await db.exec("set role anon");
+  let temp = "";
+  try {
+    await db.exec("create temp table lecteur_perf (empreinte text, nom text, cree timestamptz)");
+    await db.query("insert into lecteur_perf values (encode(sha256(convert_to($1, 'UTF8')), 'hex'), 'faux', now())", [faux]);
+  } catch (e) { temp = e.message; }
+  let vu;
+  try { vu = (await db.query("select lecture_perf($1, 'salons') as r", [faux])).rows[0].r; }
+  finally { await db.exec("drop table if exists pg_temp.lecteur_perf"); await db.exec("reset role"); }
+  dit(vu === null, "une table temporaire lecteur_perf ne fait pas accepter un jeton inventé", temp || "table temporaire créée");
+
+  // --- jeton démesuré ou mal formé : refusé sans être haché
+  dit(await lis("a".repeat(5000000), "salons") === null && await lis("A".repeat(64), "salons") === null,
+    "un jeton hors du format [0-9a-f]{64} est refusé");
 
   // --- le jeton n'est pas gardé
   const ligne = await un("select * from lecteur_perf where nom = 'claude'");
