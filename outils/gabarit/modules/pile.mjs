@@ -385,6 +385,13 @@ function sectionSelection(hote){
   bloc.appendChild(ligneCouleur("Élément sélectionné", c.couleur || jeton("--accent-soft"),
     (v) => { c.couleur = v; appliqueCouleursData(); }));
 
+  /* Le survol, juste en dessous : c'est le geste qui précède la sélection, et
+     l'on règle les deux en les comparant. Sans réglage, l'aplat doux de la
+     couleur principale, qui la suit quand elle change. */
+  const s = conf("survol");
+  bloc.appendChild(ligneCouleur("Élément survolé", s.couleur || jeton("--accent-soft"),
+    (v) => { s.couleur = v; appliqueCouleursData(); }));
+
   /* Le parcours retiré, sa couleur ne règle plus rien : la ligne s'efface avec
      lui, et revient si l'exploitant le rouvre. */
   if (conf("_parcours").visible !== false){

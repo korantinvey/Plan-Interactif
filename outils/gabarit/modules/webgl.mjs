@@ -396,6 +396,12 @@ function perdContexteWebgl(raison = "contexte perdu"){
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
+  /* Dit tout de suite, et non une fois le dessin jeté : rendre la caméra
+     recadre la vue, qui repasse aussitôt par « monteWebgl ». Sans ce drapeau,
+     un dessin neuf y naissait, que la suite jetait à la place de l'ancien —
+     le plan restait déclaré actif sans dessin, et chaque geste, chaque retour
+     sur la page levait sur un « GL.deck » vide. */
+  GL.aRemonter = true;
   // le SVG ne sait pas se pencher : le plan revient à plat, et les gestes avec
   GL.camera = false; metsEnJeu(false);
   document.documentElement.classList.remove("rendu-webgl", "gl-pret", "gl-attente", "en-edition");
@@ -407,7 +413,6 @@ function perdContexteWebgl(raison = "contexte perdu"){
   GL.hote = null; GL.toile = null;
   GL.blocs.clear(); GL.sales.clear(); GL.groupes.clear();
   GL.couchesLibelles = null; GL.cleLibelles = ""; GL.tout = true;
-  GL.aRemonter = true;
   /* Le SVG ne suivait plus la vue depuis la première image du dessin, et ses
      noms étaient éteints : il les retrouve pour la vue du moment. */
   if (typeof _page.appliqueVue === "function") _page.appliqueVue();
@@ -2362,7 +2367,7 @@ function modelesLibellesHtml(){
   return CLASSES_LIBELLES.map(c => temoin(c, "lbl", c)).join("") +
     CLASSES_PHARE.map(c => temoin(c, "lbl phare", c + " phare")).join("") +
     temoin("nm", "lbl pick", "pick") +
-    '<rect data-modele="survol" style="fill:var(--accent-soft);stroke:var(--accent)"/>' +
+    '<rect data-modele="survol" style="fill:var(--c-survol,var(--accent-soft));stroke:var(--accent)"/>' +
     '<rect data-modele="poi" style="fill:var(--c-poi,var(--accent))"/>';
 }
 export function poseModelesLibelles(){
