@@ -63,8 +63,7 @@ export function entetesApi(){
   const e = {};
   if (document.documentElement.dataset.role !== "admin") return e;
   try {
-    const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
-                || window.PLAN_CONFIG || null;
+    const cfg = configProjet();
     const ses = JSON.parse(localStorage.getItem("console-session") || "null");
     if (cfg?.anonKey && ses?.access_token){
       e["apikey"] = cfg.anonKey;
@@ -72,4 +71,14 @@ export function entetesApi(){
     }
   } catch (err) {}
   return e;
+}
+
+/** Le projet Supabase, tel que la console l'a laissé sur le poste, sinon celui
+ *  des pages. Ici et non dans `session.mjs` : ce module-ci est public, et
+ *  l'envoi du résumé de la sonde en a besoin sur la page d'administration sans
+ *  que le visiteur reçoive pour autant le code de l'exploitant. */
+export function configProjet(){
+  try {
+    return JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG || null;
+  } catch (e) { return window.PLAN_CONFIG || null; }
 }
