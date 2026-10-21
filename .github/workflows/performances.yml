@@ -1,0 +1,45 @@
+# Dresse chaque lundi la fiche de pistes de performance, en issue.
+#
+# La sonde relève ce que vivent les visiteurs ; ce workflow en tire, une fois
+# par semaine, les pistes classées par gain (`outils/performances.js`). Une
+# issue par semaine, étiquette « performances » : relancé en cours de semaine,
+# il met à jour la même au lieu d'en ouvrir une autre. Une semaine sans relevé
+# ne publie rien.
+#
+# Le dépôt est public : le script n'écrit aucun slug ni nom de salon, seulement
+# une étiquette `salon-xxxx` (voir son en-tête). Le droit d'écrire se limite aux
+# issues ; la base se lit par le jeton de gestion déjà secret pour `supabase.yml`.
+name: Performances
+
+on:
+  schedule:
+    # lundi 05:17 UTC — une minute qui n'est pas « pile », GitHub décale les
+    # tâches lancées toutes en même temps
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: performances
+  cancel-in-progress: false
+
+jobs:
+  fiche:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run performances
