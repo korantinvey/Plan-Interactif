@@ -48,10 +48,12 @@ export function ecritDepartBorne(){
 /* ------------------------------------------------------------
    « Vous êtes ici »
    ------------------------------------------------------------ */
-/** Rayon du point, constant à l'écran, donc exprimé en mètres d'après le zoom. */
+/** Rayon du point, constant à l'écran, donc exprimé en mètres d'après le zoom.
+ *  Dix pixels : à sept, il ne pesait pas plus qu'une pastille de repère, et
+ *  c'est lui qu'on cherche d'abord en arrivant devant la borne. */
 function rayonBorne(){
   const r = cadrePlan();
-  return Math.max(.4, vue().w / (r.width || 1) * 7);
+  return Math.max(.4, vue().w / (r.width || 1) * 10);
 }
 
 export function dessineBorne(){
@@ -89,11 +91,21 @@ function placePouls(){
   if (!voir){ if (pouls) pouls.hidden = true; return; }
   if (!pouls){
     pouls = document.createElement("div");
-    pouls.className = "iciPouls";
+    pouls.className = "iciPouls iciBorne";
     pouls.setAttribute("aria-hidden", "true");
+    /* L'étiquette vit ici, et non dans le plan : sous la carte graphique, le
+       SVG est caché et rien ne la redessinerait. Posée dans la scène, elle
+       garde aussi son fond plein au-dessus des noms de stands, quel que soit
+       le zoom. */
+    const nom = document.createElement("span");
+    nom.className = "iciNom";
+    pouls.append(nom);
     // juste après le plan : au-dessus de lui, sous les commandes et la fiche
     svg.after(pouls);
   }
+  // par « textContent » : le moteur de langue le traduit, comme le titre
+  const nom = pouls.querySelector(".iciNom");
+  if (nom.textContent !== LIEU_BORNE.nom) nom.textContent = LIEU_BORNE.nom;
   const [x, y] = versScene(LIEU_BORNE.xy[0], LIEU_BORNE.xy[1]);
   pouls.hidden = false;
   pouls.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)";
@@ -108,15 +120,17 @@ export function rafraichitBorne(){
 
 function rempliBorne(g){
   const r = rayonBorne(), x = LIEU_BORNE.xy[0], y = LIEU_BORNE.xy[1];
+  /* Un liseré sombre au-delà du blanc : le blanc seul disparaît sur une allée
+     claire, le sombre seul sur un stand foncé — les deux ensemble détachent le
+     point de n'importe quel fond. Le nom, lui, est porté par la scène
+     (`placePouls`). */
   g.innerHTML = '<title></title>' +
-    '<circle class="bOnde" cx="' + x + '" cy="' + y + '" r="' + (r * 2.6).toFixed(2) + '"/>' +
-    '<circle class="bPoint" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(2) + '"/>' +
-    '<text class="bNom" x="' + x + '" y="' + (y - r * 3.4).toFixed(2) +
-    '" font-size="' + (r * 2).toFixed(2) + '"></text>';
-  /* Le titre et le nom passent par « textContent » : le moteur de langue les
-     traduit là où il ne traduirait pas une valeur d'attribut construite. */
+    '<circle class="bOnde" cx="' + x + '" cy="' + y + '" r="' + (r * 2.4).toFixed(2) + '"/>' +
+    '<circle class="bCerne" cx="' + x + '" cy="' + y + '" r="' + (r * 1.3).toFixed(2) + '"/>' +
+    '<circle class="bPoint" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(2) + '"/>';
+  /* Le titre passe par « textContent » : le moteur de langue le traduit là où
+     il ne traduirait pas une valeur d'attribut construite. */
   g.querySelector("title").textContent = LIEU_BORNE.nom;
-  g.querySelector(".bNom").textContent = LIEU_BORNE.nom;
 }
 
 /* Le point garde sa taille à l'écran : la vue, que ce module importe, le

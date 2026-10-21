@@ -477,15 +477,18 @@ html:is(.mode-borne,.mode-ici) .iChamp input[readonly]{background:var(--accent-s
 
 /* « Vous êtes ici ». C'est la première chose qu'on cherche des yeux devant un
    écran qu'on n'a pas choisi : le point ne suit donc pas le zoom — il garde sa
-   taille à l'écran, comme les pastilles du trajet — et son nom se lit par-dessus
-   le plan, cerné de la couleur du fond plutôt que posé sur une étiquette. */
+   taille à l'écran, comme les pastilles du trajet.
+
+   Sa couleur ne vient pas du salon. L'accent, c'est souvent la teinte même des
+   stands : le point vert se perdait entre deux stands verts. Le rouge d'une
+   épingle de carte, qu'aucune palette de salon ne donne à ses stands, se
+   trouve d'un coup d'œil — et se lit partout comme « ici ». */
+:root{--ici:#E5322D}
 #borneIci{pointer-events:none}
-#borneIci .bOnde{fill:var(--accent);opacity:.16}
-#borneIci .bPoint{fill:var(--accent);stroke:var(--surface);stroke-width:2;
+#borneIci .bOnde{fill:var(--ici);opacity:.2}
+#borneIci .bCerne{fill:#fff;stroke:rgba(21,24,26,.55);stroke-width:1.5;
   vector-effect:non-scaling-stroke}
-#borneIci .bNom{fill:var(--ink);font-family:"Archivo",sans-serif;font-weight:700;
-  text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:4;
-  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+#borneIci .bPoint{fill:var(--ici)}
 /* Le battement, posé dans la scène et non dans le plan (voir
    `vous-etes-ici.mjs`). Deux ondes décalées d'une demi-période : il y en a
    toujours une en vol, et le point ne paraît jamais s'éteindre. La boîte est
@@ -502,6 +505,25 @@ html:is(.mode-borne,.mode-ici) .iChamp input[readonly]{background:var(--accent-s
   width:18px;height:18px;border-radius:50%;background:var(--accent);opacity:0;
   animation:iciOnde 2.4s cubic-bezier(.2,.6,.35,1) infinite}
 .iciPouls::after{animation-delay:1.2s}
+/* La borne bat dans sa couleur à elle (voir `#borneIci`) ; l'étape du trajet,
+   qui emprunte le même battement, garde l'accent du salon. */
+.iciBorne{box-shadow:0 0 16px 9px color-mix(in srgb,var(--ici) 34%,transparent),
+    0 0 34px 18px color-mix(in srgb,var(--ici) 12%,transparent)}
+.iciBorne::before,.iciBorne::after{left:-11px;top:-11px;width:22px;height:22px;
+  background:var(--ici)}
+/* Le nom, sur une bulle pleine plutôt que cerné du fond : un texte nu se range
+   parmi les noms de stands, et l'un d'eux, en grandes capitales, le couvrait.
+   La bulle sombre passe devant eux et pointe le point qu'elle nomme. Ses
+   couleurs suivent le thème — l'encre en fond, la surface en lettres —, si
+   bien qu'elle reste le contraste le plus fort de l'écran, de jour comme de
+   nuit. */
+.iciNom{position:absolute;left:0;bottom:24px;transform:translateX(-50%);
+  padding:6px 12px 7px;border-radius:8px;background:var(--ink);color:var(--surface);
+  font:600 15px/1.15 "Archivo",sans-serif;letter-spacing:.005em;white-space:nowrap;
+  box-shadow:0 3px 10px rgba(0,0,0,.22)}
+.iciNom::after{content:"";position:absolute;left:50%;top:100%;margin-left:-6px;
+  border:6px solid transparent;border-top-color:var(--ink);border-bottom:0}
+.iciNom:empty{display:none}
 @keyframes iciOnde{0%{transform:scale(.6);opacity:.45}100%{transform:scale(4.2);opacity:0}}
 @media (prefers-reduced-motion:reduce){
   .iciPouls::before{animation:none;opacity:.2;transform:scale(2)}

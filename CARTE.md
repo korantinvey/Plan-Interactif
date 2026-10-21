@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 665 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 687 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1733 l. → demo.html, plan-smcl.html
 
@@ -3158,14 +3158,14 @@ Importé par :
 
 reglages
 
-### `modules/vous-etes-ici.mjs` — 124 l. → plan, plan-admin
+### `modules/vous-etes-ici.mjs` — 138 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le départ imposé, et son point sur le plan
 
 Fonctions :
 
-`pointBorne` 27 · `poseLieuBorne` 32 · `ecritDepartBorne` 42 · `rayonBorne` 52
-`dessineBorne` 57 · `placePouls` 87 · `rafraichitBorne` 104 · `rempliBorne` 109
+`pointBorne` 27 · `poseLieuBorne` 32 · `ecritDepartBorne` 42 · `rayonBorne` 54
+`dessineBorne` 59 · `placePouls` 89 · `rafraichitBorne` 116 · `rempliBorne` 121
 
 Importe :
 
