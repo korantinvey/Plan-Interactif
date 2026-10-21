@@ -82,29 +82,32 @@ const logosPoses = (page, distincts = 1) => page.waitForFunction((n) => {
   return c.props.data.map((e) => ({ z: e.z, cle: e.t.dataset.cle, cas: c.props.getCaseLogo(e), gardee }));
 }, distincts, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
 
-for (const ambiance of ["classique", "tuiles"]) {
-  test("le logo prend la place du nom, en " + ambiance, async ({ page }) => {
-    test.setTimeout(150_000);
-    const erreurs = await deP(page, ambiance);
-    test.skip(!erreurs, "pas de carte graphique : le plan reste en SVG, et ses noms");
+/* En classique seulement. La couche des logos est la même dans toutes les
+   ambiances, et la variante en tuiles n'éprouvait rien de plus : elle payait
+   seulement le dessin des tuiles sous la carte graphique logicielle de
+   l'intégration, deux minutes et demie contre moins d'une, au bord du délai
+   qu'elle finissait par passer. */
+test("le logo prend la place du nom", async ({ page }) => {
+  test.setTimeout(150_000);
+  const erreurs = await deP(page, "classique");
+  test.skip(!erreurs, "pas de carte graphique : le plan reste en SVG, et ses noms");
 
-    // un logo posé, à plat, se laisse viser là où il est peint
-    const vise = await page.waitForFunction(() => {
-      const d = window.__essais.GL.deck, vp = d.getViewports()[0];
-      const c = (d.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
-      if (!c || !c.props.data.length || !vp) return false;
-      const plan = document.getElementById("plan").getBoundingClientRect();
-      for (const e of c.props.data) {
-        const [x, y] = vp.project([e.x, e.y, e.z]);
-        if (x < 40 || y < 40 || x > plan.width - 40 || y > plan.height - 40) continue;
-        return { z: e.z, pris: Boolean(d.pickObject({ x, y, radius: 2, layerIds: ["logos-stands"] })) };
-      }
-      return false;
-    }, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
-    expect(vise).toEqual({ z: 0, pris: true });
-    expect(erreurs).toEqual([]);
-  });
-}
+  // un logo posé, à plat, se laisse viser là où il est peint
+  const vise = await page.waitForFunction(() => {
+    const d = window.__essais.GL.deck, vp = d.getViewports()[0];
+    const c = (d.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
+    if (!c || !c.props.data.length || !vp) return false;
+    const plan = document.getElementById("plan").getBoundingClientRect();
+    for (const e of c.props.data) {
+      const [x, y] = vp.project([e.x, e.y, e.z]);
+      if (x < 40 || y < 40 || x > plan.width - 40 || y > plan.height - 40) continue;
+      return { z: e.z, pris: Boolean(d.pickObject({ x, y, radius: 2, layerIds: ["logos-stands"] })) };
+    }
+    return false;
+  }, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
+  expect(vise).toEqual({ z: 0, pris: true });
+  expect(erreurs).toEqual([]);
+});
 
 /* Reculé sous le seuil, plus aucun logo n'est posé et leurs toiles sont
    oubliées ; revenu au même endroit, elles se refont sous les mêmes clés. La

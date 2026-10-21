@@ -29,7 +29,11 @@ module.exports = defineConfig({
   // `plan.spec.js` y prenait cinq minutes à lui seul, et les tranches de
   // l'intégration (`--shard`) ne pouvaient pas le répartir.
   fullyParallel: true,
-  retries: 0,
+  /* Une reprise en intégration : sous sa carte graphique logicielle, un même
+     essai y varie du simple au triple, et un dépassement de délai passager
+     bloquait une fusion sans rien dire du code. L'essai repris reste signalé
+     « flaky » ; un vrai défaut échoue deux fois et reste rouge. */
+  retries: process.env.CI ? 1 : 0,
   timeout: 45_000,
   expect: { timeout: 15_000 },
   reporter: process.env.CI ? [["list"], ["github"]] : "list",
