@@ -274,6 +274,7 @@ let carteLue = false;
 function lisAppareil(creux = false){
   if (!APPAREIL){
     // la taille de la fenêtre n'apprend rien sur l'appareil, et le distingue un peu plus
+    // eslint-disable-next-line no-unused-vars -- `fenetre` et `carte` sont écartés exprès du résumé : on ne garde que le reste
     const { fenetre, carte, ...a } = appareil({ agentComplet: false, carte: false });
     APPAREIL = a;
   }
