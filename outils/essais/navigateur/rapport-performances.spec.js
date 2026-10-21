@@ -97,6 +97,43 @@ test.describe("les performances dans le rapport", () => {
     expect(erreurs).toEqual([]);
   });
 
+  test("la journée en cours n'est comptée qu'une fois, et la borne n'entre pas dans les listes du plan", async ({ page }) => {
+    const jour = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date());
+    const du = (mobile, visites, ko, carte, ms) => ({
+      jour, page: "plan", mobile, visites, affiche_p50: 2000, affiche_p90: 4000, transfert_p50: 500,
+      detail: { ...detail(ko), lourds: [{ fichier: "carte.svg", visites, ko_p50: ko }],
+                appareils: [{ carte, famille: "Android", visites, affiche_p50: ms }] } });
+    const perf = {
+      bilans: [
+        du(true, 10, 200, "GPU Mobile", 3000),
+        du(false, 5, 400, "GPU Bureau", 1000),
+        { jour: "2026-10-20", page: "borne", mobile: false, visites: 7, affiche_p50: 900,
+          affiche_p90: 1500, transfert_p50: 100,
+          detail: { ...detail(100), lourds: [{ fichier: "borne.js", visites: 7, ko_p50: 100 }],
+                    appareils: [{ carte: "GPU Borne", famille: "Linux", visites: 7, affiche_p50: 5000 }] } },
+      ],
+      // le détail du jour contient les deux bilans du jour : 25 visites de carte.svg, 25 de GPU Mobile
+      aujourdhui: { vues: { classique: { p50: 6 }, immersif: { p50: 20 } },
+                    appareils: [{ carte: "GPU Mobile", famille: "Android", visites: 25, affiche_p50: 3000 }],
+                    lourds: [{ fichier: "carte.svg", visites: 25, ko_p50: 300 }],
+                    etapes: { affichage: { p50: 2000, p90: 4000 } } },
+      recues: 40, ecartees: 0,
+    };
+    // attendus : carte.svg 25 (et non 25 + 10 + 5 = 40), GPU Mobile 25 (et non 35), GPU Bureau absent
+    // du détail du jour donc absent aussi des listes ; rien de la borne
+    const erreurs = await ouvreRapport(page, perf);
+    const b = blocPerf(page);
+    await expect(b.locator(".erreur", { hasText: "carte.svg" }).locator(".n")).toHaveText("25");
+    await expect(b.locator(".erreur", { hasText: "GPU Mobile" }).locator(".n")).toHaveText("25");
+    await expect(b.locator(".erreur", { hasText: "GPU Bureau" })).toHaveCount(0);
+    await expect(b.locator(".erreur", { hasText: "borne.js" })).toHaveCount(0);
+    await expect(b.locator(".erreur", { hasText: "GPU Borne" })).toHaveCount(0);
+    // la fluidité ne lit plus que la source du jour : 6 % et 20 %
+    await expect(b.locator(".erreur", { hasText: "Vue classique" })).toContainText("6 %");
+    await expect(b.locator(".erreur", { hasText: "Vue immersive" })).toContainText("20 %");
+    expect(erreurs).toEqual([]);
+  });
+
   test("sans la sonde en base, le reste du rapport s'affiche", async ({ page }) => {
     const erreurs = await ouvreRapport(page, null);
     await expect(page.locator(".bloc-hd", { hasText: "Fréquentation" })).toBeVisible();

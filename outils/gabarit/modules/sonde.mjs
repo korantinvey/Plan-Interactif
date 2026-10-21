@@ -29,8 +29,7 @@
    Une erreur de la sonde ne doit jamais devenir une erreur du plan : chaque
    écoute est sous garde.
    ============================================================ */
-import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi } from "./salon.mjs";
-import { accesBase } from "./session.mjs";
+import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
@@ -294,24 +293,46 @@ function lisAppareil(creux = false){
 /* ------------------------------------------------------------
    Le résumé
    ------------------------------------------------------------ */
-/** La fin de la requête des données du salon : la dernière, s'il a fallu la refaire. */
-function finDesDonnees(){
+/** La fin de la requête des données du salon : la dernière, s'il a fallu la refaire.
+ *  Bien d'autres demandes partent sous la même adresse — l'entête (`entete=`),
+ *  le fond du pavillon (`slug=…&fond=`, lancé avant l'affichage et souvent
+ *  fini après), les vignettes. Seules comptent donc celles qui ne portent que
+ *  `slug` et la version `v` : un paramètre ajouté demain n'y entrera pas. */
+const DEMANDE_DU_PLAN = new Set(["slug", "v"]);
+function finDesDonnees(/** @type {number} */ jusqua){
   if (!API) return undefined;
   const base = new URL(API, location.href).href;
   let fin = 0;
-  for (const e of performance.getEntriesByType("resource"))
-    if (e.name.startsWith(base) && !/[?&]entete=/.test(e.name)) fin = Math.max(fin, /** @type {any} */ (e).responseEnd);
+  for (const e of performance.getEntriesByType("resource")){
+    if (!e.name.startsWith(base) || e.startTime > jusqua) continue;
+    const cles = [...new URL(e.name).searchParams.keys()];
+    if (cles.includes("slug") && cles.every(c => DEMANDE_DU_PLAN.has(c)))
+      fin = Math.max(fin, /** @type {any} */ (e).responseEnd);
+  }
   return fin ? Math.round(fin) : undefined;
 }
 
+/** Le bilan de l'ouverture, figé dès que le plan est affiché : ce que la
+ *  visite charge ensuite (vignettes, fonds) n'est plus l'ouverture, et le
+ *  rapport le dit « téléchargé à l'ouverture du plan ». Tant que rien n'est
+ *  affiché (panne), il se refait à chaque envoi : c'est là qu'il a le plus à dire. */
+/** @type {any} */
+let OUVERTURE = null;
+
 function leChargement(){
-  const c = chargement(5);
-  return {
+  // le LCP, lui, peut encore se préciser jusqu'au premier geste : il reste vivant
+  if (OUVERTURE){ OUVERTURE.jalons.lcp = J.lcp; return OUVERTURE; }
+  const affiche = J["plan-affiche"];
+  const jusqua = affiche === undefined ? Infinity : affiche;
+  const c = chargement(5, jusqua);
+  const bilan = {
     jalons: { reponse: c.page ? c.page.reponse : undefined, domPret: c.page ? c.page.domPret : undefined,
-      "plan-demarre": J["plan-demarre"], donnees: finDesDonnees(), "plan-affiche": J["plan-affiche"], lcp: J.lcp },
+      "plan-demarre": J["plan-demarre"], donnees: finDesDonnees(jusqua), "plan-affiche": affiche, lcp: J.lcp },
     transfertKo: c.transfertKo, depuisCache: c.depuisCache,
     lourds: c.ressources.map(({ fichier, sorte, ms, transfertKo, tailleKo }) => ({ fichier, sorte, ms, transfertKo, tailleKo })),
   };
+  if (affiche !== undefined) OUVERTURE = bilan;
+  return bilan;
 }
 
 function fluidite(/** @type {any} */ v){
@@ -331,7 +352,9 @@ function laCarte(){
   const fps = V.deck.map((/** @type {any} */ d) => d.fps).filter((/** @type {number} */ x) => x > 0);
   const toile = /** @type {any} */ (GL.toile);
   return {
-    repeints: { n: V.nRepeints, p50: ms(centile(reps, .5)), p95: ms(centile(reps, .95)), max: ms(V.maxRepeint) },
+    // sans repeint (rendu SVG), aucun centile : un zéro tirerait la médiane vers le bas
+    repeints: { n: V.nRepeints, p50: reps.length ? ms(centile(reps, .5)) : undefined,
+      p95: reps.length ? ms(centile(reps, .95)) : undefined, max: reps.length ? ms(V.maxRepeint) : undefined },
     gpuMsP95: p95("gpu"), cpuMsP95: p95("cpu"), fpsMin: fps.length ? Math.round(Math.min(...fps)) : undefined,
     densite: toile && toile.clientWidth ? Math.round(100 * toile.width / toile.clientWidth) / 100 : undefined,
     logos: bilanLogos(), pertesContexte: V.pertes,
@@ -381,6 +404,10 @@ function coupe(/** @type {any} */ o, /** @type {number} */ n){
  *  arrive, un résumé trop gros est refusé tout entier. */
 function tronque(/** @type {any} */ r){
   if (octets(r) <= PLAFOND) return r;
+  /* Sur une copie : le résumé partage le bilan figé de l'ouverture et
+     l'appareil gardé, et ce qu'un envoi trop gros retire manquerait sinon
+     à tous les suivants. */
+  r = JSON.parse(JSON.stringify(r));
   r.gels.pires = r.gels.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste }));
   const lourds = r.chargement && r.chargement.lourds;
   while (lourds && lourds.length && octets(r) > PLAFOND) lourds.pop();
@@ -458,9 +485,9 @@ async function envoieUne(/** @type {any} */ e, /** @type {boolean} */ dernier = 
   try {
     if (e.admin){
       // un *beacon* ne porte pas d'en-têtes : la session passe par `fetch`
-      const acces = accesBase();
-      if (!acces) return "garde";
-      r = await fetch(acces.cfg.url + "/rest/v1/rpc/sonde_admin", { method: "POST", keepalive: true,
+      const cfg = configProjet();
+      if (!cfg?.url || !entetesApi().Authorization) return "garde";
+      r = await fetch(cfg.url + "/rest/v1/rpc/sonde_admin", { method: "POST", keepalive: true,
         headers: { ...entetesApi(), "Content-Type": "application/json" }, body: corps(e) });
       // un jeton périmé ne s'échange pas ici : la sonde n'a pas à renouveler la session de l'exploitant
       if (r.status === 401 || r.status === 403) return "garde";

@@ -132,11 +132,14 @@ export function appareil(/** @type {{ agentComplet?: boolean, gl?: any, carte?: 
 /**
  * Ce que la page a chargé : le document, les `max` ressources les plus lentes
  * ou les plus lourdes, le total transféré, et la part (0 à 1) des ressources
- * servies sans rien transférer, c'est-à-dire par le cache.
+ * servies sans rien transférer, c'est-à-dire par le cache. `jusqua` borne aux
+ * ressources parties avant cet instant (ms depuis l'ouverture) : la sonde fige
+ * ainsi le bilan de l'ouverture, sans ce que la visite charge ensuite.
  */
-export function chargement(max = 40){
+export function chargement(max = 40, jusqua = Infinity){
   const nav = /** @type {any} */ (performance.getEntriesByType("navigation")[0]);
-  const toutes = performance.getEntriesByType("resource").map(e => /** @type {any} */ (e));
+  const toutes = performance.getEntriesByType("resource").map(e => /** @type {any} */ (e))
+    .filter(e => e.startTime <= jusqua);
   const lourdes = toutes
     .filter(e => e.duration > 150 || e.transferSize > 50000 || e.decodedBodySize > 200000)
     .sort((a, b) => b.duration - a.duration).slice(0, max)

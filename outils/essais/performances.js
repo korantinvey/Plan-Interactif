@@ -8,7 +8,7 @@
  *
  *   node outils/essais/performances.js     (chaîné dans `npm run essais`)
  */
-const { indicateurs, corps, etiquette, lundiMesure, REQUETE } = require("../performances.js");
+const { texteSur, fichierPropre, indicateurs, corps, etiquette, lundiMesure, REQUETE } = require("../performances.js");
 const { baseNeuve } = require("./base.js");
 const { pistes, regressions } = require("../performances-regles.js");
 
@@ -50,9 +50,9 @@ dit(ids(lentes).includes("donnees-telephone"), "données lentes sur téléphone"
 dit(!ids(serie(30, { mobile: false, donnees_ms: 4000, affiche_ms: 4600 })).includes("donnees-telephone"),
   "les mêmes données sur bureau ne déclenchent pas la règle du téléphone");
 
-const lourd = serie(30, (i) => ({ lourds: i < 20 ? [{ fichier: "logos.webp", transfertKo: 900 }] : [] }));
+const lourd = serie(30, (i) => ({ lourds: i < 20 ? [{ fichier: "plan.1321f61dd3.js", transfertKo: 900 }] : [] }));
 const pLourd = pistes(indicateurs(lourd, AU)).find((p) => p.id === "fichier-lourd");
-dit(pLourd && pLourd.detail.includes("logos.webp"), "un fichier lourd dans plus de la moitié des visites",
+dit(pLourd && pLourd.detail.includes("plan.1321f61dd3.js"), "un fichier lourd dans plus de la moitié des visites",
   pLourd && pLourd.detail);
 
 const longue = serie(30, { donnees_ms: 800, affiche_ms: 3500 });
@@ -116,6 +116,29 @@ dit(etiquette(SALON) === etiquette(SALON) && etiquette(SALON) !== etiquette(AUTR
 dit(etiquette("00000000-0000-0000-0000-000000000000") === "salon-" +
   require("crypto").createHash("md5").update("00000000-0000-0000-0000-000000000000").digest("hex").slice(0, 4),
   "l'étiquette est celle que la base calcule");
+
+/* Les noms de fichiers lourds : une liste blanche, car la page n'envoie que le
+   dernier segment du chemin et un nom libre peut porter un slug. */
+const noms = ["plan-fep27", "fep27-logo.png", "fep27.webp", "https://cdn.example/logo.png?slug=fep27", "plan.1321f61dd3.js"];
+const textePropre = corps(indicateurs(serie(30, { lourds: noms.map((fichier) => ({ fichier, transfertKo: 300 })) }), AU));
+dit(!textePropre.includes("fep27"), "aucun nom libre de fichier ne sort dans le corps");
+dit(textePropre.includes("plan.1321f61dd3.js"), "un fichier versionné de nos pages garde son nom");
+dit(textePropre.includes("autre fichier .png") && textePropre.includes("autre fichier .webp") &&
+  textePropre.includes("autre fichier`"), "les autres sont regroupés par extension, ou sans");
+dit(fichierPropre("plan.1321f61dd3.js") === "plan.1321f61dd3.js" && fichierPropre("sw.js") === "sw.js" &&
+  fichierPropre("x.php") === "autre fichier" && fichierPropre(null) === "autre fichier",
+  "fichierPropre : liste blanche, extension en liste fixe");
+
+/* Les textes d'un visiteur anonyme n'atteignent pas le corps avec de quoi se lire en Markdown. */
+const pieges = ["@x", "](http://e)", "<img src=x>", "#12", "a|b", "a`b", "![i](u)"];
+const piegeux = serie(30, (i) => ({ mobile: false, famille: "Win" + pieges[i % pieges.length] + "dows", version: pieges[i % pieges.length],
+  page: "plan" + pieges[i % pieges.length], pertes_contexte: 1,
+  lourds: [{ fichier: pieges[i % pieges.length] + ".png", transfertKo: 900 }] }));
+const corpsPiege = corps(indicateurs(piegeux, AU));
+dit(pieges.every((p) => !corpsPiege.includes(p)), "@x, ](http://e), <img>, #12, |, apostrophe inverse, ![i](u) ne sortent pas");
+dit(texteSur("@x ](http://e) <img> #12 | `a` ![i](u)").split("").every((c) => /[\p{L}\p{N} ._·+()-]/u.test(c)),
+  "texteSur ne garde que lettres, chiffres, espace et ._·+()-", texteSur("@x ](http://e) <img> #12 | `a` ![i](u)"));
+dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères");
 
 /* La requête du script, sur le vrai schéma : une colonne renommée dans la
    migration casserait la fiche du lundi sans qu'aucun autre essai le voie. */

@@ -179,6 +179,15 @@ function sousTitre(hote, texte) {
   hote.appendChild(t);
 }
 
+/** La date du jour dans le fuseau du salon, comme la base la calcule
+ *  (`performances_du_salon`, `v_auj`) ; un fuseau inconnu vaut UTC, comme là-bas. */
+function jourDuSalon(fuseau) {
+  for (const tz of [fuseau || "UTC", "UTC"]) {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date()); } catch { /* fuseau inconnu */ }
+  }
+  return "";
+}
+
 /**
  * Le bloc « Performances » : ce que la sonde (`sonde.mjs`) a relevé, dit pour
  * un exploitant. Les jours passés viennent de leurs bilans, par page et par
@@ -199,7 +208,19 @@ function performances(hote, p) {
     hote.appendChild(v);
     return;
   }
-  const details = bilans.map((b) => ({ ...(b.detail || {}), visites: b.visites }));
+  /* Les listes (fichiers, cartes, vues) ne parlent que du plan public : le
+     détail du jour, lui, est demandé pour cette seule page, et la borne ou
+     l'administration n'ont pas les mêmes fichiers. Et la nuit résume aussi le
+     jour en cours (`purge_perf` appelle `bilan_perf(current_date)`) : tant que
+     le détail du jour est là, il contient ces bilans, qui compteraient deux
+     fois la même visite. On les écarte donc, et leur poids passe au détail. */
+  const duJour = jourDuSalon(RAPPORT?.fuseau);
+  const ajdPorte = !!(auj.lourds?.length || auj.appareils?.length || fini(ajd.p50) ||
+    fini(auj.vues?.classique?.p50) || fini(auj.vues?.immersif?.p50));
+  const duPlan = bilans.filter((b) => b.page === "plan");
+  const ecartes = ajdPorte ? duPlan.filter((b) => b.jour === duJour) : [];
+  const details = duPlan.filter((b) => !ecartes.includes(b))
+    .map((b) => ({ ...(b.detail || {}), visites: b.visites }));
 
   const g = document.createElement("div");
   g.className = "chiffres seul";
@@ -234,7 +255,8 @@ function performances(hote, p) {
   sousTitre(hote, "Fluidité");
   /* La journée en cours n'a pas de compte à elle : elle pèse ce qui, reçu,
      n'est pas encore dans un bilan. */
-  const sansBilan = Math.max(1, recues - bilans.reduce((t, b) => t + (b.visites || 0), 0));
+  const sansBilan = Math.max(1, recues - bilans.reduce((t, b) => t + (b.visites || 0), 0)) +
+    ecartes.reduce((t, b) => t + (b.visites || 0), 0);
   const vues = [...details, { vues: auj.vues, visites: sansBilan }];
   const f = document.createElement("div");
   f.className = "erreurs";

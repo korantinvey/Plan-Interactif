@@ -1755,14 +1755,14 @@ Importé par :
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
 notifications · parcours · partage · sonde · tiroir-itineraire
 
-### `modules/mesures-page.mjs` — 158 l. → plan, plan-admin
+### `modules/mesures-page.mjs` — 161 l. → plan, plan-admin
 
 - l.1 · Les mesures de la page, partagées
 
 Fonctions :
 
 `centile` 26 · `fichier` 32 · `observe` 37 · `carteGraphique` 51 · `navigateur` 79
-`mobileDeRepli` 97 · `appareil` 110 · `chargement` 137
+`mobileDeRepli` 97 · `appareil` 110 · `chargement` 139
 
 Importé par :
 
@@ -2337,7 +2337,7 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 686 l. → rapport
+### `modules/rapport-utilisation.mjs` — 708 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
@@ -2345,10 +2345,10 @@ Fonctions :
 
 `courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
 `secondes` 127 · `fini` 128 · `lentes` 129 · `pese` 140 · `reunit` 150 · `ligne` 164
-`sousTitre` 174 · `performances` 189 · `erreurs` 273 · `chiffre` 296 · `barres` 315
-`portes` 355 · `jours` 406 · `dessineRapport` 427 · `blocPerformances` 597
-`dessineBarre` 609 · `rafraichit` 632 · `videEcran` 651 · `demarre` 657
-`brancheRapport` 676
+`sousTitre` 174 · `jourDuSalon` 184 · `performances` 198 · `erreurs` 295 · `chiffre` 318
+`barres` 337 · `portes` 377 · `jours` 428 · `dessineRapport` 449 · `blocPerformances` 619
+`dessineBarre` 631 · `rafraichit` 654 · `videEcran` 673 · `demarre` 679
+`brancheRapport` 698
 
 Éléments :
 
@@ -2671,13 +2671,13 @@ Importé par :
 
 lancement
 
-### `modules/salon.mjs` — 75 l. → plan, plan-admin
+### `modules/salon.mjs` — 84 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
 
 Fonctions :
 
-`cheminDuSalon` 33 · `cheminPartageable` 44 · `entetesApi` 61
+`cheminDuSalon` 33 · `cheminPartageable` 44 · `entetesApi` 61 · `configProjet` 80
 
 Importé par :
 
@@ -2728,7 +2728,7 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
@@ -2740,7 +2740,7 @@ Fonctions :
 Importé par :
 
 acces-admin · calage-carte · chaleur · enregistrement · fiche-zone · mot-de-passe
-reglage-application · reglage-suggestion · socle-console · sonde
+reglage-application · reglage-suggestion · socle-console
 
 ### `modules/seuil.mjs` — 179 l. → plan, plan-admin
 
@@ -2796,26 +2796,25 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 591 l. → plan, plan-admin
+### `modules/sonde.mjs` — 618 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 81 · `vue0` 92
-`nouvelleVisite` 100 · `vueDuMoment` 122 · `commence` 124 · `sorte` 134 · `clos` 136
-`relance` 152 · `image` 158 · `ecouteGestes` 185 · `nomDuScript` 222 · `gel` 229
-`ecouteNavigateur` 243 · `memoire` 255 · `contexteDuPlan` 268 · `lisAppareil` 280
-`finDesDonnees` 298 · `leChargement` 307 · `fluidite` 317 · `laCarte` 325
-`resumeSonde` 344 · `octets` 368 · `coupe` 371 · `tronque` 382 · `fraiche` 410
-`litLaFile` 413 · `ecritLaFile` 421 · `retire` 433 · `corps` 436 · `versionDesPages` 444
-`envoieUne` 455 · `pousse` 481 · `actif` 506 · `envoie` 510 · `brancheSonde` 535
-`demarre` 548
+`sur` 59 · `ms` 60 · `enCreux` 61 · `uuid` 64 · `echantillonne` 80 · `vue0` 91
+`nouvelleVisite` 99 · `vueDuMoment` 121 · `commence` 123 · `sorte` 133 · `clos` 135
+`relance` 151 · `image` 157 · `ecouteGestes` 184 · `nomDuScript` 221 · `gel` 228
+`ecouteNavigateur` 242 · `memoire` 254 · `contexteDuPlan` 267 · `lisAppareil` 279
+`finDesDonnees` 302 · `leChargement` 322 · `fluidite` 338 · `laCarte` 346
+`resumeSonde` 367 · `octets` 391 · `coupe` 394 · `tronque` 405 · `fraiche` 437
+`litLaFile` 440 · `ecritLaFile` 448 · `retire` 460 · `corps` 463 · `versionDesPages` 471
+`envoieUne` 482 · `pousse` 508 · `actif` 533 · `envoie` 537 · `brancheSonde` 562
+`demarre` 575
 
 Importe :
 
-affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · session
-webgl
+affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · webgl
 
 Importé par :
 

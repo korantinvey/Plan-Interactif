@@ -90,6 +90,39 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(erreurs).toEqual([]);
   });
 
+  test("le bilan de l'ouverture est figé : une vignette chargée ensuite ne le déplace pas", async ({ page }) => {
+    await prepare(page);
+    const envois = await releve(page);
+    /* Un fond de pavillon demandé dès l'ouverture sous l'adresse des données
+       (`slug=…&fond=`), et servi longtemps après l'affichage : ce n'est pas
+       la fin des données. */
+    await page.route((u) => u.pathname === "/api/plan" && u.searchParams.has("fond"), async (r) => {
+      await new Promise((ok) => setTimeout(ok, 6000));
+      return r.fulfill({ status: 404, body: "" }).catch(() => {});
+    });
+    await page.addInitScript(() => {
+      fetch("/api/plan?slug=smcl-2026&fond=essai").then(r => r.arrayBuffer()).catch(() => {});
+    });
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    // une vignette part sous l'adresse de l'API, après l'affichage — et pèse autant que le plan
+    const vignette = () => page.evaluate(() => fetch("/api/plan?vignette=0123456789abcdef").then(r => r.arrayBuffer()).then(() => 0));
+    await vignette();
+    await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    const avant = envois[0].resume.chargement;
+    expect(avant.jalons.donnees).toBeGreaterThan(0);
+    expect(avant.jalons.donnees).toBeLessThanOrEqual(avant.jalons["plan-affiche"]);
+    await vignette();
+    await glisse(page);
+    await cache(page);
+    await expect.poll(() => envois.length, { timeout: 5_000 }).toBeGreaterThan(1);
+    const apres = envois[envois.length - 1].resume.chargement;
+    expect(apres.jalons.donnees).toBe(avant.jalons.donnees);
+    expect(apres.transfertKo).toBe(avant.transfertKo);
+    expect(apres.depuisCache).toBe(avant.depuisCache);
+    expect(apres.lourds).toEqual(avant.lourds);
+  });
+
   test("rien ne part chez qui a refusé la mesure", async ({ page }) => {
     await prepare(page);
     await page.addInitScript(() => localStorage.setItem("plan-mesure-refusee", "1"));
@@ -177,9 +210,9 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
         return r.fulfill({ status: 200, contentType: "application/octet-stream", body: Buffer.alloc(300_000, 7) });
       });
       await page.addInitScript((n) => {
-        addEventListener("DOMContentLoaded", () => {
-          for (let i = 0; i < 60; i++) fetch("/lourd/" + "n".repeat(n) + "-" + i + ".bin").catch(() => {});
-        });
+        // dès l'ouverture : le bilan se fige à l'affichage, ce qui part après n'y compte plus
+        // le corps lu : sans lui, Chromium peut ne laisser aucune entrée de ressource
+        for (let i = 0; i < 60; i++) fetch("/lourd/" + "n".repeat(n) + "-" + i + ".bin").then(r => r.arrayBuffer()).catch(() => {});
       }, longueur);
       await page.goto(PLAN);
       await attendLaListe(page);
@@ -189,7 +222,14 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
       expect(r.chargement.lourds.length).toBeLessThanOrEqual(5);
       // le chargement lui-même n'a pas été sacrifié au détail
       expect(r.chargement.jalons["plan-affiche"]).toBeGreaterThan(0);
-      if (longueur > 200) expect(r.chargement.lourds.length).toBeLessThan(5);
+      // les fichiers ont bien pesé, avant l'affichage : sans eux l'essai ne prouverait rien
+      const vus = await page.evaluate((affiche) => performance.getEntriesByType("resource")
+        .filter((e) => e.name.includes("/lourd/") && e.startTime <= affiche).length, r.chargement.jalons["plan-affiche"]);
+      expect(vus).toBeGreaterThanOrEqual(5);
+      const nommes = r.chargement.lourds.filter((l) => /^n+-\d+\.bin$/.test(l.fichier));
+      if (longueur === 200) expect(nommes.length).toBeGreaterThan(0);
+      // à deux mille, la troncature a mordu : des lourds retirés, ou des noms coupés
+      else expect(r.chargement.lourds.length < 5 || r.chargement.lourds.every((l) => l.fichier.length <= 60)).toBe(true);
       expect(erreurs).toEqual([]);
     });
   }

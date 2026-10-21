@@ -53,6 +53,47 @@ select r.evenement_id, r.jour::text as jour, r.page, r.mobile, r.immersif, r.ver
 const etiquette = (evenementId) =>
   "salon-" + crypto.createHash("md5").update(String(evenementId)).digest("hex").slice(0, 4);
 
+/**
+ * Tout texte venu d'un relevé est écrit par un visiteur anonyme (la clé qui
+ * ouvre la porte circule dans chaque page) et l'issue est publique : on n'en
+ * garde que lettres, chiffres, espace et `._·+()-`, sur 60 caractères. Sans
+ * `/ @ # [ ] ! < > |` ni apostrophe inverse, rien ne s'y lit comme un lien,
+ * une mention, une image, une référence ou une cellule de tableau.
+ */
+function texteSur(s) {
+  return String(s == null ? "" : s).normalize("NFC").replace(/[^\p{L}\p{N} ._·+()-]/gu, "")
+    .replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+/* Les fichiers que la page nomme dans `lourds` sont les derniers segments de chemin
+   (`mesures-page.mjs` `fichier()`) : un nom libre — logo de stand, domaine tiers,
+   `plan-<slug>` — peut porter un slug. On ne cite donc par leur nom que les fichiers
+   versionnés de nos pages (point d'entrée + empreinte, tels que la construction les
+   pose sous `web/versions/`) et quelques noms connus ; le reste est regroupé par extension. */
+const ENTREES = "plan|plan-admin|anglais|langue|console|rapport|motdepasse|accueil";
+const FICHIER_VERSIONNE = new RegExp("^(" + ENTREES + ")\\.[0-9a-f]{8,}\\.(js|css)$");
+const FICHIER_CONNU = new Set(["plan", "config.js", "sw.js"]);
+const EXTENSIONS = new Set(["js", "css", "json", "html", "svg", "png", "jpg", "jpeg", "webp", "avif", "gif", "woff", "woff2", "mp4"]);
+
+function fichierPropre(f) {
+  const nom = String(f || "").split(/[?#]/)[0].split("/").pop();
+  if (FICHIER_VERSIONNE.test(nom) || FICHIER_CONNU.has(nom)) return nom;
+  const ext = /\.([A-Za-z0-9]{1,5})$/.exec(nom);
+  const e = ext && ext[1].toLowerCase();
+  return e && EXTENSIONS.has(e) ? "autre fichier ." + e : "autre fichier";
+}
+
+/** Un relevé dont tout texte qui peut atteindre la fiche est assaini, une fois pour toutes. */
+const assaini = (r) => ({
+  ...r,
+  page: texteSur(r.page) || "(sans page)",
+  version: texteSur(r.version),
+  famille: texteSur(r.famille) || "inconnue",
+  lourds: Array.isArray(r.lourds)
+    ? r.lourds.filter(Boolean).map((x) => ({ fichier: fichierPropre(x.fichier), transfertKo: x.transfertKo }))
+    : r.lourds,
+});
+
 const jourIso = (d) => d.toISOString().slice(0, 10);
 const plusJours = (iso, n) => jourIso(new Date(Date.parse(iso + "T00:00:00Z") + n * 864e5));
 
@@ -113,7 +154,8 @@ function groupes(releves) {
  * `au` est le jour où la fiche se fait ; la semaine mesurée va du lundi
  * précédent au dimanche.
  */
-function indicateurs(tous, au) {
+function indicateurs(brut, au) {
+  const tous = brut.map(assaini);
   const de = lundiMesure(au), a = plusJours(de, 7), avant = plusJours(de, -7);
   const semaine = tous.filter((r) => r.jour >= de && r.jour < a);
   const precedente = tous.filter((r) => r.jour >= avant && r.jour < de);
@@ -129,7 +171,7 @@ function indicateurs(tous, au) {
     for (const r of l) {
       const vus = new Set();
       for (const x of r.lourds || []) {
-        if (!x?.fichier || vus.has(x.fichier)) continue;
+        if (!x.fichier || vus.has(x.fichier)) continue;
         vus.add(x.fichier);
         if (!m.has(x.fichier)) m.set(x.fichier, []);
         m.get(x.fichier).push(x.transfertKo);
@@ -242,7 +284,8 @@ async function lisBase() {
     headers: { "Authorization": "Bearer " + jeton, "Content-Type": "application/json" },
     body: JSON.stringify({ query: REQUETE }),
   });
-  if (!r.ok) throw new Error("lecture de la base refusée (" + r.status + ") : " + (await r.text()).slice(0, 300));
+  // la réponse brute n'est pas imprimée : un journal de CI se lit hors de l'équipe
+  if (!r.ok) throw new Error("lecture de la base refusée (" + r.status + ")");
   return r.json();
 }
 
@@ -282,4 +325,4 @@ if (require.main === module) {
   principal(process.argv.slice(2)).catch((e) => { console.error(e.message); process.exit(1); });
 }
 
-module.exports = { indicateurs, corps, etiquette, lundiMesure, REQUETE };
+module.exports = { texteSur, fichierPropre, indicateurs, corps, etiquette, lundiMesure, REQUETE };
