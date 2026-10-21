@@ -90,6 +90,28 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(erreurs).toEqual([]);
   });
 
+  test("le bilan de l'ouverture est figé : une vignette chargée ensuite ne le déplace pas", async ({ page }) => {
+    await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    // une vignette part sous l'adresse de l'API, après l'affichage — et pèse autant que le plan
+    const vignette = () => page.evaluate(() => fetch("/api/plan?vignette=0123456789abcdef").then(r => r.arrayBuffer()).then(() => 0));
+    await vignette();
+    await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    const avant = envois[0].resume.chargement;
+    expect(avant.jalons.donnees).toBeLessThanOrEqual(avant.jalons["plan-affiche"]);
+    await vignette();
+    await glisse(page);
+    await cache(page);
+    await expect.poll(() => envois.length, { timeout: 5_000 }).toBeGreaterThan(1);
+    const apres = envois[envois.length - 1].resume.chargement;
+    expect(apres.jalons.donnees).toBe(avant.jalons.donnees);
+    expect(apres.transfertKo).toBe(avant.transfertKo);
+    expect(apres.depuisCache).toBe(avant.depuisCache);
+    expect(apres.lourds).toEqual(avant.lourds);
+  });
+
   test("rien ne part chez qui a refusé la mesure", async ({ page }) => {
     await prepare(page);
     await page.addInitScript(() => localStorage.setItem("plan-mesure-refusee", "1"));
@@ -177,9 +199,8 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
         return r.fulfill({ status: 200, contentType: "application/octet-stream", body: Buffer.alloc(300_000, 7) });
       });
       await page.addInitScript((n) => {
-        addEventListener("DOMContentLoaded", () => {
-          for (let i = 0; i < 60; i++) fetch("/lourd/" + "n".repeat(n) + "-" + i + ".bin").catch(() => {});
-        });
+        // dès l'ouverture : le bilan se fige à l'affichage, ce qui part après n'y compte plus
+        for (let i = 0; i < 60; i++) fetch("/lourd/" + "n".repeat(n) + "-" + i + ".bin").catch(() => {});
       }, longueur);
       await page.goto(PLAN);
       await attendLaListe(page);
