@@ -291,15 +291,21 @@ function lisAppareil(creux = false){
    Le résumé
    ------------------------------------------------------------ */
 /** La fin de la requête des données du salon : la dernière, s'il a fallu la refaire.
- *  Les vignettes partent sous la même adresse (`?vignette=`, `?grande=`,
- *  `?vignettes=`) mais après l'affichage : seule la demande du plan porte `slug=`. */
+ *  Bien d'autres demandes partent sous la même adresse — l'entête (`entete=`),
+ *  le fond du pavillon (`slug=…&fond=`, lancé avant l'affichage et souvent
+ *  fini après), les vignettes. Seules comptent donc celles qui ne portent que
+ *  `slug` et la version `v` : un paramètre ajouté demain n'y entrera pas. */
+const DEMANDE_DU_PLAN = new Set(["slug", "v"]);
 function finDesDonnees(/** @type {number} */ jusqua){
   if (!API) return undefined;
   const base = new URL(API, location.href).href;
   let fin = 0;
-  for (const e of performance.getEntriesByType("resource"))
-    if (e.name.startsWith(base) && /[?&]slug=/.test(e.name) && !/[?&]entete=/.test(e.name) && e.startTime <= jusqua)
+  for (const e of performance.getEntriesByType("resource")){
+    if (!e.name.startsWith(base) || e.startTime > jusqua) continue;
+    const cles = [...new URL(e.name).searchParams.keys()];
+    if (cles.includes("slug") && cles.every(c => DEMANDE_DU_PLAN.has(c)))
       fin = Math.max(fin, /** @type {any} */ (e).responseEnd);
+  }
   return fin ? Math.round(fin) : undefined;
 }
 
@@ -395,6 +401,10 @@ function coupe(/** @type {any} */ o, /** @type {number} */ n){
  *  arrive, un résumé trop gros est refusé tout entier. */
 function tronque(/** @type {any} */ r){
   if (octets(r) <= PLAFOND) return r;
+  /* Sur une copie : le résumé partage le bilan figé de l'ouverture et
+     l'appareil gardé, et ce qu'un envoi trop gros retire manquerait sinon
+     à tous les suivants. */
+  r = JSON.parse(JSON.stringify(r));
   r.gels.pires = r.gels.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste }));
   const lourds = r.chargement && r.chargement.lourds;
   while (lourds && lourds.length && octets(r) > PLAFOND) lourds.pop();

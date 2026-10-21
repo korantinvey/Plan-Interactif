@@ -2796,7 +2796,7 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 605 l. → plan, plan-admin
+### `modules/sonde.mjs` — 615 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
@@ -2806,11 +2806,11 @@ Fonctions :
 `nouvelleVisite` 96 · `vueDuMoment` 118 · `commence` 120 · `sorte` 130 · `clos` 132
 `relance` 148 · `image` 154 · `ecouteGestes` 181 · `nomDuScript` 218 · `gel` 225
 `ecouteNavigateur` 239 · `memoire` 251 · `contexteDuPlan` 264 · `lisAppareil` 276
-`finDesDonnees` 296 · `leChargement` 313 · `fluidite` 329 · `laCarte` 337
-`resumeSonde` 358 · `octets` 382 · `coupe` 385 · `tronque` 396 · `fraiche` 424
-`litLaFile` 427 · `ecritLaFile` 435 · `retire` 447 · `corps` 450 · `versionDesPages` 458
-`envoieUne` 469 · `pousse` 495 · `actif` 520 · `envoie` 524 · `brancheSonde` 549
-`demarre` 562
+`finDesDonnees` 299 · `leChargement` 319 · `fluidite` 335 · `laCarte` 343
+`resumeSonde` 364 · `octets` 388 · `coupe` 391 · `tronque` 402 · `fraiche` 434
+`litLaFile` 437 · `ecritLaFile` 445 · `retire` 457 · `corps` 460 · `versionDesPages` 468
+`envoieUne` 479 · `pousse` 505 · `actif` 530 · `envoie` 534 · `brancheSonde` 559
+`demarre` 572
 
 Importe :
 
