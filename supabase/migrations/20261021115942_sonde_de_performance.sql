@@ -89,7 +89,7 @@ as $$
          end;
 $$;
 
-revoke all on function sonde_nombre(jsonb) from public;
+revoke all on function sonde_nombre(jsonb) from public, anon;
 
 /* Enregistre un résumé : remplace celui de la visite si elle est connue, sinon
    la fait passer sous le quota de sa page. Interne — `sonde_publique` et
@@ -224,7 +224,9 @@ $$;
 comment on function sonde_enregistre is
   'Interne : remplace le résumé d''une visite connue, ou fait passer une visite neuve sous le quota de sa page.';
 
-revoke all on function sonde_enregistre(uuid, text, text, uuid, jsonb) from public;
+-- Supabase accorde `execute` à anon et authenticated sur tout ce qui naît dans public :
+-- un appel direct contournerait la garde « salon publié » de `sonde_publique`
+revoke all on function sonde_enregistre(uuid, text, text, uuid, jsonb) from public, anon, authenticated;
 
 /* La porte, appelée par le Worker avec la clé publique. Un salon publié, une
    page du public (`plan` ou `borne` : l'exploitant passe par `sonde_admin`),
@@ -397,7 +399,9 @@ as $$
           'p90', percentile_cont(0.9) within group (order by affiche_ms))) from r));
 $$;
 
-revoke all on function sonde_detail(uuid, date, date, text, boolean) from public;
+-- invoker et soumis à la RLS : `performances_du_salon` (invoker aussi) l'appelle avec les
+-- droits du compte, il doit donc rester exécutable par authenticated, jamais par anon
+revoke all on function sonde_detail(uuid, date, date, text, boolean) from public, anon;
 grant execute on function sonde_detail(uuid, date, date, text, boolean) to authenticated;
 
 /* Recalcule le bilan d'un jour. Rejouable : le jour est remplacé en entier, un
@@ -408,6 +412,8 @@ security definer
 set search_path = public
 as $$
 begin
+  -- un jour dont les relevés sont déjà purgés garde son bilan : le recalculer l'effacerait
+  if not exists (select 1 from releve_perf where jour = p_jour) then return; end if;
   delete from perf_bilan where jour = p_jour;
   insert into perf_bilan (evenement_id, jour, page, mobile, visites, affiche_p50, affiche_p90,
                           donnees_p50, donnees_p90, transfert_p50, part_plus33_p50, gels_moy,
@@ -437,9 +443,9 @@ $$;
 comment on function bilan_perf is
   'Recalcule le bilan de performance d''un jour (rejouable).';
 
-revoke all on function bilan_perf(date) from public;
+revoke all on function bilan_perf(date) from public, anon, authenticated;
 
-/* La nuit : le bilan de la veille d'abord, puis la purge — un relevé n'est
+/* La nuit : les bilans des trois derniers jours d'abord, puis la purge — un relevé n'est
    effacé qu'après avoir nourri son bilan. 30 jours pour les relevés, 90 pour
    les bilans et les quotas. */
 create or replace function purge_perf() returns void
@@ -448,7 +454,11 @@ security definer
 set search_path = public
 as $$
 begin
+  -- trois jours, pas un : le relevé d'un salon à l'ouest de l'UTC date encore du jour local en
+  -- cours à 02:41 UTC, et une nuit manquée se rattrape
+  perform bilan_perf(current_date - 2);
   perform bilan_perf(current_date - 1);
+  perform bilan_perf(current_date);
   delete from releve_perf where jour < current_date - 30;
   delete from perf_bilan  where jour < current_date - 90;
   delete from perf_jour   where jour < current_date - 90;
@@ -456,9 +466,9 @@ end;
 $$;
 
 comment on function purge_perf is
-  'Bilan de la veille, puis purge : relevés à 30 jours, bilans et quotas à 90.';
+  'Bilans des trois derniers jours, puis purge : relevés à 30 jours, bilans et quotas à 90.';
 
-revoke all on function purge_perf() from public;
+revoke all on function purge_perf() from public, anon, authenticated;
 
 do $$
 begin

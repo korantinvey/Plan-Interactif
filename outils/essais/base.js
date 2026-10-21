@@ -34,6 +34,9 @@ async function baseNeuve() {
     grant usage on schema auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
   `);
+  // Supabase accorde `execute` sur toute fonction du schéma public à ces rôles : sans cela
+  // l'essai ne verrait pas une fonction `security definer` oubliée ouverte à tous.
+  await db.exec("alter default privileges in schema public grant execute on functions to anon, authenticated, service_role");
   const fichiers = fs.readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql") && !SAUTEES.has(f)).sort();
   for (const f of fichiers) {
     try {

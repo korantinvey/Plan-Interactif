@@ -196,10 +196,9 @@ async function main() {
 
   // --- trente visites fabriquées la veille
   const veille = (await un("select (current_date - 1) j")).j;
-  const CARTES = [["Google", "ANGLE (Mali-G78)", "Android"], ["Apple", "Apple GPU", "iOS"]];
   const fab = [];
   for (let i = 0; i < 30; i++) {
-    const mobile = i % 2 === 0, imm = i % 3 === 0, c = CARTES[i % 4 < 2 ? 0 : 1];
+    const mobile = i % 2 === 0, imm = i % 3 === 0, c = ["Fab" + (i % 11), "Puce" + (i % 11), "Android"];
     const affiche = 1000 + i * 100;
     const r = {
       format: "sonde-plan/1", page: "plan", support: "web",
@@ -228,7 +227,8 @@ async function main() {
     bm.affiche_p90 + " " + bm.donnees_p50 + " " + bm.pertes_contexte);
   const dm = bm.detail;
   dit(dm.lourds[0].fichier === "logos.png" && dm.lourds[0].visites === 15, "le fichier lourd le plus fréquent vient en tête", JSON.stringify(dm.lourds[0]));
-  dit(dm.lourds.length === 10 && dm.appareils.length >= 1 && dm.appareils.length <= 10, "au plus dix lourds et dix appareils", dm.lourds.length + "/" + dm.appareils.length);
+  dit(dm.lourds.length === 10 && dm.appareils.length === 10, "onze cartes fabriquées : dix appareils et dix lourds gardés", dm.lourds.length + "/" + dm.appareils.length);
+  dit(dm.appareils.every((a, k) => k === 0 || dm.appareils[k - 1].affiche_p50 >= a.affiche_p50), "les appareils vont du plus lent au moins lent", dm.appareils.map((a) => a.affiche_p50).join(" "));
   dit(dm.appareils.every((a) => a.carte && a.famille && a.visites > 0), "chaque appareil dit sa carte, sa famille, ses visites", JSON.stringify(dm.appareils[0]));
   dit(dm.vues.classique.p50 !== undefined && dm.vues.immersif.p90 !== undefined, "les deux vues ont leurs centiles");
   const e = dm.etapes;
@@ -280,6 +280,36 @@ async function main() {
   dit(j91 === 0, "purge_perf efface aussi perf_jour de 91 jours");
   const encore = (await un("select count(*)::int n from perf_bilan where jour = $1 and evenement_id = $2", [veille, SALON])).n;
   dit(encore === 2, "le bilan de la veille est produit puis gardé", encore);
+
+  // --- droits : rien de ce qui est interne n'est ouvert aux rôles de l'API
+  const peut = async (r, f) => (await un("select has_function_privilege($1, $2, 'execute') a", [r, f])).a;
+  for (const f of ["bilan_perf(date)", "purge_perf()", "sonde_enregistre(uuid,text,text,uuid,jsonb)"])
+    dit(!(await peut("anon", f)) && !(await peut("authenticated", f)), "ni anon ni authenticated n'exécutent " + f);
+  dit(!(await peut("anon", "sonde_detail(uuid,date,date,text,boolean)")) && await peut("authenticated", "sonde_detail(uuid,date,date,text,boolean)"),
+    "sonde_detail (invoker, sous RLS) reste à authenticated seul");
+  dit(await peut("anon", "sonde_publique(text,text,text,uuid,jsonb)"), "anon garde sonde_publique");
+  dit(await peut("authenticated", "sonde_admin(text,text,uuid,jsonb)") && await peut("authenticated", "performances_du_salon(uuid,integer)"),
+    "authenticated garde sonde_admin et performances_du_salon");
+  dit(!(await peut("anon", "sonde_admin(text,text,uuid,jsonb)")), "anon n'exécute pas sonde_admin");
+
+  // --- bilan_perf ne réécrit pas un jour dont les relevés sont purgés
+  const ancien = (await un("select (current_date - 60) j")).j;
+  await db.query("insert into perf_bilan (evenement_id, jour, page, mobile, visites) values ($1,$2,'plan',false,7)", [SALON, ancien]);
+  await db.query("select bilan_perf($1::date)", [ancien]);
+  dit((await un("select visites from perf_bilan where evenement_id = $1 and jour = $2", [SALON, ancien]))?.visites === 7,
+    "un bilan de 60 jours survit à bilan_perf de ce jour");
+
+  // --- le fuseau : un jour local encore ouvert à 02:41 UTC est recalculé le lendemain
+  const LA = (await un(
+    "insert into evenement (nom, slug, instance, etat, fuseau) values ('LA', 'la', 'x', 'publie', 'America/Los_Angeles') returning id")).id;
+  const releveLA = async (ms) => db.query(
+    "insert into releve_perf (evenement_id, visite, jour, page, mobile, affiche_ms, resume) values ($1,$2,current_date,'plan',false,$3,'{}')", [LA, uuid(), ms]);
+  await releveLA(1000);
+  await db.query("select purge_perf()");
+  await releveLA(2000);
+  await db.query("select purge_perf()");
+  dit((await un("select visites from perf_bilan where evenement_id = $1 and jour = current_date", [LA]))?.visites === 2,
+    "purge_perf recalcule le jour en cours : le relevé tardif d'un salon à l'ouest est compté");
 
   // --- la migration rejouée une seconde fois
   const fichier = fs.readdirSync(MIGRATIONS).find((f) => f.endsWith("_sonde_de_performance.sql"));
