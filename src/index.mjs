@@ -905,6 +905,95 @@ async function erreur(requete, env) {
 }
 
 /**
+ * Relais des relevés de performance (`modules/sonde.mjs`).
+ *
+ * Même porte que les erreurs, même origine seulement, et pour la même raison :
+ * un relevé ne se signale que de nos propres pages. Deux différences. Le corps
+ * se lit en texte sans exiger `application/json` — un `sendBeacon` sur une
+ * chaîne part en `text/plain`. Et les gels arrivent avec une `position`, un
+ * décalage en caractères dans le script servi : décoder 420 à 660 Ko sur un
+ * téléphone qui vient de geler coûterait une tâche longue de plus, alors que
+ * le Worker lit déjà ces fichiers pour les cartes. C'est donc ici que la
+ * position devient une ligne et une colonne, puis un module (`lieuDe`).
+ * La base borne le reste (`sonde_publique`, 4 Ko de résumé).
+ */
+const PORTE_SONDE = BASE.replace("/functions/v1/", "/rest/v1/rpc/") + "sonde_publique";
+const SONDE_MAX = 6144;
+const SCRIPTS = new Map();
+
+/** Le texte d'un script servi, lu une fois : la position se compte dedans. */
+async function texteDuScript(chemin, env, origine) {
+  if (!SCRIPTS.has(chemin)) {
+    SCRIPTS.set(chemin, (async () => {
+      const r = await env.ASSETS.fetch(new Request(new URL(chemin, origine).toString()));
+      return r.ok ? await r.text() : null;
+    })().catch(() => null));
+    // deux scripts au plus, plan et plan-admin : une instance vit longtemps
+    if (SCRIPTS.size > 2) SCRIPTS.delete(SCRIPTS.keys().next().value);
+  }
+  return SCRIPTS.get(chemin);
+}
+
+/** Un gel tel que la base le garde : un lieu si le script le dit, sinon un nom de fichier nu. */
+async function geleResolu(g, env, origine) {
+  if (!g || typeof g !== "object") return null;
+  const sortie = {
+    ms: Number(g.ms) || 0,
+    geste: String(g.geste ?? "").slice(0, 40),
+    fonction: String(g.fonction ?? "").slice(0, 80),
+  };
+  let chemin = "";
+  try { chemin = new URL(String(g.fichier || ""), "https://pages").pathname; } catch { /* illisible */ }
+  const position = g.position;
+  if (SCRIPT_DU_PLAN.test(chemin) && Number.isInteger(position) && position >= 0) {
+    const texte = await texteDuScript(chemin, env, origine);
+    if (texte && position < texte.length) {
+      const avant = texte.slice(0, position);
+      const ligne = avant.split("\n").length;
+      // la colonne d'un navigateur se compte de un : `lieuDe` la rend à la carte
+      const colonne = position - (avant.lastIndexOf("\n") + 1) + 1;
+      sortie.lieu = await lieuDe({ fichier: chemin, ligne, colonne }, env, origine);
+      return sortie;
+    }
+  }
+  sortie.fichier = chemin.split("/").pop().slice(0, 80);
+  return sortie;
+}
+
+async function sonde(requete, env) {
+  if (requete.method !== "POST") return new Response("Méthode non permise", { status: 405 });
+  const origine = requete.headers.get("Origin");
+  if (origine && origine !== new URL(requete.url).origin) return new Response(null, { status: 403 });
+  const corps = await requete.text();
+  if (corps.length > SONDE_MAX) return new Response(null, { status: 413 });
+  let paquet;
+  try { paquet = JSON.parse(corps); } catch { paquet = null; }
+  if (!paquet || typeof paquet !== "object" || !paquet.resume || typeof paquet.resume !== "object") {
+    return new Response(null, { status: 400 });
+  }
+  if (ecritEnProduction(new URL(requete.url))) return ecartee({});
+  const resume = paquet.resume;
+  if (resume.gels && Array.isArray(resume.gels.pires)) {
+    const pires = await Promise.all(resume.gels.pires.slice(0, 3).map((g) => geleResolu(g, env, requete.url)));
+    resume.gels.pires = pires.filter(Boolean);
+  }
+  await fetch(PORTE_SONDE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: CLE_PUBLIQUE },
+    body: JSON.stringify({
+      p_slug: String(paquet.slug ?? ""),
+      p_page: paquet.page === "borne" ? "borne" : "plan",
+      p_version: VERSION_DES_PAGES,
+      p_visite: String(paquet.visite ?? ""),
+      p_resume: resume,
+    }),
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
+  // la page n'attend rien : un relevé qui ne s'écrit pas ne se réessaie pas
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}
+
+/**
  * Relais des plans de visite : un aller simple, sans identité et sans cache.
  *
  * Le même chemin que la mesure, et la même absence de cache — mais pas le même
@@ -1026,6 +1115,8 @@ async function aiguille(requete, env, ctx) {
   if (url.pathname === "/api/mesure") return mesure(requete);
   /* Les erreurs des pages : même origine, et seulement elle. */
   if (url.pathname === "/api/erreur") return erreur(requete, env);
+  /* Les relevés de performance : même origine, même porte. */
+  if (url.pathname === "/api/sonde") return sonde(requete, env);
   /* Le plan de visite annoncé, et la charge qu'il fait : même chemin, même
      origine, et deux verbes. Le premier écrit sans rien rendre, le second
      rend sans rien écrire. */
