@@ -45,6 +45,7 @@ import { brancheBorne } from "./borne.mjs";
 import { brancheIci } from "./ici.mjs";
 import { brancheJournee } from "./journee.mjs";
 import { brancheMesure } from "./mesure.mjs";
+import { brancheSonde } from "./sonde.mjs";
 import { brancheInstallation } from "./installation.mjs";
 import { brancheWebgl } from "./webgl.mjs";
 import { brancheSponsor } from "./sponsor.mjs";
@@ -116,6 +117,8 @@ export function lancePlan(){
   brancheIci();
   brancheJournee();
   brancheMesure();
+  // la sonde suit le refus de la mesure : branchée juste après elle
+  brancheSonde();
   admin.apresLaMesure();
   brancheInstallation();
   brancheWebgl();

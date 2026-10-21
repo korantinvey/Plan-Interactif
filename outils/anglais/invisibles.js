@@ -98,4 +98,7 @@ module.exports = [
   // des performances demande, et la pastille de l'instrument, `?perf`, que
   // seul celui qui mesure voit — « fps » se lit pareil dans les deux langues
   "WEBGL_debug_renderer_info", "WEBGL_lose_context", " fps · ",
+  // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
+  // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
+  "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",
 ];

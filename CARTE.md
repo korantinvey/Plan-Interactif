@@ -178,7 +178,7 @@ Fonctions :
 
 Importé par :
 
-demarrage · environs · releve · webgl
+demarrage · environs · releve · sonde · webgl
 
 ### `modules/affiche-ici.mjs` — 397 l. → plan-admin
 
@@ -755,7 +755,7 @@ vue
 
 Importé par :
 
-acces-admin · choix-ambiance · enregistrement · fiche-zone · lancement · releve
+acces-admin · choix-ambiance · enregistrement · fiche-zone · lancement · releve · sonde
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -877,9 +877,9 @@ installation · itineraire · journee · libelles · logos-stands · mesure · m
 noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu · partage · pile
 placement-libelles · points-interet · rappels · recherche · reglage-application
 reglage-fiche · reglage-recherche · reglage-suggestion · reglages · releve · rendu
-reprise-emplacements · secteurs · sejour · seuil · sponsor · suggestion · tiroir-itineraire
-tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel · volets · vous-etes-ici
-webgl
+reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor · suggestion
+tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel
+volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 
@@ -1598,19 +1598,19 @@ Importé par :
 
 lancement · tiroir-parcours · tutoriel
 
-### `modules/lancement.mjs` — 129 l. → plan, plan-admin
+### `modules/lancement.mjs` — 132 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`confieLancementAdmin` 71 · `lancePlan` 74
+`confieLancementAdmin` 72 · `lancePlan` 75
 
 Importe :
 
 bandes · borne · demarrage · erreurs · fenetre · fiche · gestes · habillage · ici
-installation · journee · ligne-liste · mesure · partage · recherche · retour · sponsor
-tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
+installation · journee · ligne-liste · mesure · partage · recherche · retour · sonde
+sponsor · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
 
 Importé par :
 
@@ -1712,7 +1712,7 @@ annonce · camera · detourage · dom · donnees · ecran · libelle-place · vi
 
 Importé par :
 
-ambiance · libelles · plan · releve · webgl
+ambiance · libelles · plan · releve · sonde · webgl
 
 ### `modules/marque.mjs` — 335 l. → plan, plan-admin, console
 
@@ -1753,7 +1753,7 @@ dom · donnees · fenetre · salon
 Importé par :
 
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
-notifications · parcours · partage · tiroir-itineraire
+notifications · parcours · partage · sonde · tiroir-itineraire
 
 ### `modules/mesures-page.mjs` — 147 l. → plan, plan-admin
 
@@ -1766,7 +1766,7 @@ Fonctions :
 
 Importé par :
 
-releve
+releve · sonde
 
 ### `modules/mini-carte.mjs` — 104 l. → plan, plan-admin
 
@@ -2682,7 +2682,7 @@ Importé par :
 affiche-ici · ambiance · application · borne · charge-annoncee · choix-ambiance
 configuration · demarrage · enregistrement · erreurs · essai-rappel · ici · installation
 mesure · notifications · parcours · partage · plan · rappels · recherche · releve · rendu
-retour · sponsor · tutoriel · vignettes
+retour · sonde · sponsor · tutoriel · vignettes
 
 ### `modules/secteurs.mjs` — 215 l. → plan, plan-admin
 
@@ -2726,7 +2726,7 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
@@ -2738,7 +2738,7 @@ Fonctions :
 Importé par :
 
 acces-admin · calage-carte · chaleur · enregistrement · fiche-zone · mot-de-passe
-reglage-application · reglage-suggestion · socle-console
+reglage-application · reglage-suggestion · socle-console · sonde
 
 ### `modules/seuil.mjs` — 179 l. → plan, plan-admin
 
@@ -2793,6 +2793,31 @@ calques-dessin · dessin · dom · enregistrement · reperes · texte · vue-eta
 Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
+
+### `modules/sonde.mjs` — 596 l. → plan, plan-admin
+
+- l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
+
+Fonctions :
+
+`sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 75 · `vue0` 86
+`nouvelleVisite` 94 · `vueDuMoment` 116 · `commence` 118 · `sorte` 128 · `clos` 130
+`relance` 146 · `image` 152 · `ecouteGestes` 179 · `nomDuScript` 213 · `litLesLignes` 227
+`lieu` 237 · `gel` 246 · `ecouteNavigateur` 261 · `memoire` 273 · `contexteDuPlan` 286
+`lisAppareil` 294 · `finDesDonnees` 307 · `leChargement` 316 · `fluidite` 326
+`laCarte` 334 · `resumeSonde` 353 · `octets` 376 · `coupe` 379 · `tronque` 390
+`fraiche` 418 · `litLaFile` 421 · `ecritLaFile` 429 · `retire` 441 · `corps` 444
+`versionDesPages` 452 · `envoieUne` 463 · `pousse` 489 · `actif` 512 · `envoie` 516
+`brancheSonde` 541 · `demarre` 554
+
+Importe :
+
+affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · session
+webgl
+
+Importé par :
+
+lancement
 
 ### `modules/sponsor.mjs` — 398 l. → plan, plan-admin
 
@@ -3287,7 +3312,7 @@ itineraire · libelle-place · logos-stands · reperes · trace · vue-etat
 Importé par :
 
 batiments · edition · edition-en-cours · fiche · gestes · lancement · libelles
-placement-libelles · plan · releve · reprise-emplacements · tutoriel · vue
+placement-libelles · plan · releve · reprise-emplacements · sonde · tutoriel · vue
 
 Portes :
 
