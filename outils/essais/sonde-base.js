@@ -34,7 +34,7 @@ async function main() {
   const resume = (affiche) => ({
     format: "sonde-plan/1", page: "plan", support: "web",
     chargement: { jalons: { "plan-affiche": affiche, donnees: 300 }, transfertKo: 812 },
-    fluidite: { classique: { partPlus33: 0.05 }, immersif: { partPlus33: 0.2 } },
+    fluidite: { classique: { partPlus33: 5 }, immersif: { partPlus33: 20 } },
     gels: { n: 2 }, gpu: { repeints: { p95: 9.5 }, gpuMsP95: 4.5, pertesContexte: 1 },
     appareil: { mobile: true }, plan: { immersifUtilise: false },
   });
@@ -62,7 +62,7 @@ async function main() {
   dit(l1 && l1.affiche_ms === 1500, "affiche_ms vient de chargement.jalons[plan-affiche]", l1 && l1.affiche_ms);
   dit(l1 && l1.donnees_ms === 300 && l1.transfert_ko === 812 && l1.gels === 2 && l1.pertes_contexte === 1,
     "les autres colonnes entières viennent du résumé");
-  dit(l1 && Math.abs(l1.part_plus33_classique - 0.05) < 1e-6 && Math.abs(l1.part_plus33_immersif - 0.2) < 1e-6
+  dit(l1 && Math.abs(l1.part_plus33_classique - 5) < 1e-6 && Math.abs(l1.part_plus33_immersif - 20) < 1e-6
       && Math.abs(l1.repeint_ms_p95 - 9.5) < 1e-6 && Math.abs(l1.gpu_ms_p95 - 4.5) < 1e-6,
     "les colonnes décimales viennent du résumé");
   dit(l1 && l1.mobile === true && l1.immersif === false && l1.support === "web" && l1.version === "abc123",
