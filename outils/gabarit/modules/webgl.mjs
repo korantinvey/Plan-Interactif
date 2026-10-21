@@ -398,8 +398,11 @@ function guetteBoucleWebgl(){
  *  carte graphique est jeté, couches comprises. */
 function perdContexteWebgl(raison = "contexte perdu"){
   if (!GL.actif) return;
-  // avant tout démontage : la sonde lit la raison, pas l'état d'après
-  CONTEXTE_PERDU.dis(raison);
+  /* Dit avant le démontage, pour que la sonde lise la raison et non l'état
+     d'après — mais sous garde : un auditeur qui lève interromprait la
+     fonction avant « GL.aRemonter », et le plan resterait déclaré actif
+     sans contexte valide. */
+  try { CONTEXTE_PERDU.dis(raison); } catch (e) { console.warn("Rendu WebGL : un auditeur de la perte a échoué.", e); }
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;

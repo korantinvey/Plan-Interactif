@@ -13,7 +13,7 @@
    ============================================================ */
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 import { adresseSure, adresseImage, imageSure, assainitRiche } from "./sur.mjs";
-import { GL, rectEcranWebgl } from "./webgl.mjs";
+import { GL, rectEcranWebgl, CONTEXTE_PERDU } from "./webgl.mjs";
 import { TUTO } from "./tutoriel.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { view } from "./vue.mjs";
@@ -50,7 +50,7 @@ import "./choix-ambiance.mjs";
    pose en la lançant et efface en la quittant, et la vue du plan, que les
    gestes remplacent sans cesse. */
 globalThis.__essais = {
-  SLUG, GL, rectEcranWebgl, _lg, largeur, libelles, COMPTES_LOGOS,
+  SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
   adresseSure, adresseImage, imageSure, assainitRiche,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },

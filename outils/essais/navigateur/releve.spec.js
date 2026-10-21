@@ -61,3 +61,26 @@ test.describe("le relevé des performances", { tag: "@base" }, () => {
     expect(erreurs).toEqual([]);
   });
 });
+
+test.describe("la perte du contexte WebGL", { tag: "@base" }, () => {
+  test("un auditeur qui lève n'empêche pas le plan de repasser en SVG", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await page.goto("/plan.html?plan=smcl-2026");
+    await attendLaListe(page);
+    const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
+      .then(() => true, () => false);
+    test.skip(!dessin, "pas de carte graphique : le plan reste en SVG");
+    const raisons = await page.evaluate(async () => {
+      const vues = [];
+      window.__essais.CONTEXTE_PERDU.suis((r) => { vues.push(r); throw new Error("auditeur fautif"); });
+      const toile = window.__essais.GL.toile;
+      toile.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
+      await new Promise((r) => setTimeout(r, 500));
+      return vues;
+    });
+    expect(raisons).toEqual(["contexte perdu"]);
+    // le démontage est allé au bout : plus de dessin déclaré, la page vit
+    expect(await page.evaluate(() => window.__essais.GL.deck === null || window.__essais.GL.actif === false)).toBe(true);
+    expect(erreurs.filter((e) => !/auditeur/.test(e))).toEqual([]);
+  });
+});
