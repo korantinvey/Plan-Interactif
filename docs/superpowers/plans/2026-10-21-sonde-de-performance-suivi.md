@@ -1,6 +1,6 @@
 # Suivi d'exécution — sonde de performance
 
-Copie du registre du coordinateur (normalement hors dépôt, dans `.superpowers/sdd/`), versionnée pour qu'une autre session reprenne le chantier. Tâches 1 à 5 terminées et relues ; reprendre à la tâche 6. Les décisions R1 à R5 et les « Ruling » priment sur le plan.
+Copie du registre du coordinateur (normalement hors dépôt, dans `.superpowers/sdd/`), versionnée pour qu'une autre session reprenne le chantier. Tâches 1 à 7 terminées ; reste la tâche 8 (vérification d'ensemble, PR). Les décisions R1 à R5 et les « Ruling » priment sur le plan.
 
 # SDD ledger — plan: docs/superpowers/plans/2026-10-21-sonde-de-performance.md
 
@@ -112,6 +112,17 @@ Task 5: minor (deferred): essai CRLF appelle env.ASSETS.fetch sans liaison à th
 Task 5: complete (commits 21d37ac..1de1d1e, review clean)
 Task 6: dispatched (base 1de1d1e, implémenteur a806f3b08a523093a, sonnet)
 Task 6: interrompue (départ de l'utilisateur) — travail partiel abandonné ; à reprendre depuis le début dans la session cloud
+Task 6: reprise dans la session cloud, branche `claude/peaceful-dirac-rljft7` (partie de `sonde-de-performance`) ; rapport-performances.spec 3/3 (dont l'anglais)
+Ruling: « Depuis le début » demande 90 jours à `performances_du_salon` — pourquoi : `p_jours` nul y vaut 7, et les bilans ne se gardent que 90 jours — si faux : la période « tout » montrerait une semaine
+Ruling: « N visites reçues, dont M écartées » compte recues + ecartees — pourquoi : `perf_jour.recues` ne compte que les retenues, « dont » doit désigner une partie du tout — si faux : un libellé à reprendre
+Ruling: le bloc se montre aussi sur un salon sans mesure d'usage (brouillon) dès qu'il a des relevés — pourquoi : la sonde relève l'admin d'un salon non publié, c'est sa raison d'être
+Task 6: minor (deferred): les médianes de la période sont des moyennes de médianes quotidiennes pesées par les visites (la base ne garde pas mieux) ; la journée en cours pèse `recues − Σ bilans`, qui compte aussi admin et borne
+Task 6: au passage, deux remarques laissées par la tâche 4 dans sonde.mjs (ESLint : déstructuration inutilisée ; TypeScript : `echantillonne` générique) — `npm run verifie` échouait sur la branche
+Task 6: complete
+Task 7: `performances-regles.js` (6 règles, `pistes`, `regressions`), `performances.js` (relevés de 14 jours par l'API de gestion, `--sec`, `--depuis`, `--au`), `performances.yml` ; essais 27/27, dont la requête du script sur le schéma (PGlite)
+Ruling: le script lit `releve_perf` seul, pas `perf_bilan` — pourquoi : le détail se garde 30 jours, deux semaines y tiennent, et des bilans quotidiens ne refont pas une médiane de semaine — si faux : une requête de plus
+Task 7: minor (deferred): les repeints ne se séparent pas par vue dans le résumé : la règle immersive lit ceux des visites qui ont utilisé l'immersif
+Task 7: complete
 
 
 ---
