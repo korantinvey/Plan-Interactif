@@ -1755,14 +1755,14 @@ Importé par :
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
 notifications · parcours · partage · sonde · tiroir-itineraire
 
-### `modules/mesures-page.mjs` — 158 l. → plan, plan-admin
+### `modules/mesures-page.mjs` — 161 l. → plan, plan-admin
 
 - l.1 · Les mesures de la page, partagées
 
 Fonctions :
 
 `centile` 26 · `fichier` 32 · `observe` 37 · `carteGraphique` 51 · `navigateur` 79
-`mobileDeRepli` 97 · `appareil` 110 · `chargement` 137
+`mobileDeRepli` 97 · `appareil` 110 · `chargement` 139
 
 Importé par :
 
@@ -2671,13 +2671,13 @@ Importé par :
 
 lancement
 
-### `modules/salon.mjs` — 75 l. → plan, plan-admin
+### `modules/salon.mjs` — 84 l. → plan, plan-admin
 
 - l.1 · Le salon et la page : ce que l'adresse et la construction disent
 
 Fonctions :
 
-`cheminDuSalon` 33 · `cheminPartageable` 44 · `entetesApi` 61
+`cheminDuSalon` 33 · `cheminPartageable` 44 · `entetesApi` 61 · `configProjet` 80
 
 Importé par :
 
@@ -2728,7 +2728,7 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 147 l. → plan, plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
@@ -2740,7 +2740,7 @@ Fonctions :
 Importé par :
 
 acces-admin · calage-carte · chaleur · enregistrement · fiche-zone · mot-de-passe
-reglage-application · reglage-suggestion · socle-console · sonde
+reglage-application · reglage-suggestion · socle-console
 
 ### `modules/seuil.mjs` — 179 l. → plan, plan-admin
 
@@ -2796,26 +2796,25 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 588 l. → plan, plan-admin
+### `modules/sonde.mjs` — 605 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 78 · `vue0` 89
-`nouvelleVisite` 97 · `vueDuMoment` 119 · `commence` 121 · `sorte` 131 · `clos` 133
-`relance` 149 · `image` 155 · `ecouteGestes` 182 · `nomDuScript` 219 · `gel` 226
-`ecouteNavigateur` 240 · `memoire` 252 · `contexteDuPlan` 265 · `lisAppareil` 277
-`finDesDonnees` 295 · `leChargement` 304 · `fluidite` 314 · `laCarte` 322
-`resumeSonde` 341 · `octets` 365 · `coupe` 368 · `tronque` 379 · `fraiche` 407
-`litLaFile` 410 · `ecritLaFile` 418 · `retire` 430 · `corps` 433 · `versionDesPages` 441
-`envoieUne` 452 · `pousse` 478 · `actif` 503 · `envoie` 507 · `brancheSonde` 532
-`demarre` 545
+`sur` 59 · `ms` 60 · `enCreux` 61 · `uuid` 64 · `echantillonne` 77 · `vue0` 88
+`nouvelleVisite` 96 · `vueDuMoment` 118 · `commence` 120 · `sorte` 130 · `clos` 132
+`relance` 148 · `image` 154 · `ecouteGestes` 181 · `nomDuScript` 218 · `gel` 225
+`ecouteNavigateur` 239 · `memoire` 251 · `contexteDuPlan` 264 · `lisAppareil` 276
+`finDesDonnees` 296 · `leChargement` 313 · `fluidite` 329 · `laCarte` 337
+`resumeSonde` 358 · `octets` 382 · `coupe` 385 · `tronque` 396 · `fraiche` 424
+`litLaFile` 427 · `ecritLaFile` 435 · `retire` 447 · `corps` 450 · `versionDesPages` 458
+`envoieUne` 469 · `pousse` 495 · `actif` 520 · `envoie` 524 · `brancheSonde` 549
+`demarre` 562
 
 Importe :
 
-affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · session
-webgl
+affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · webgl
 
 Importé par :
 
