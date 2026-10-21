@@ -71,4 +71,32 @@ module.exports = {
   "plan public": "public map",
   "Ce que les pages du salon ont rencontré en route, et combien de fois, avec l'endroit du code. Rien n'y dit qui l'a rencontré. Gardées quatre-vingt-dix jours.":
     "What the show's pages ran into, and how often, with the place in the code. Nothing here says who ran into it. Kept for ninety days.",
+  "Performances": "Performance",
+  "Pas encore de relevé": "No readings yet",
+  "Ouverture du plan": "Opening the map",
+  "Borne": "Kiosk",
+  "Les 10 % les plus lents :": "Slowest 10%:",
+  "La page arrive": "The page arrives",
+  "Les données arrivent": "The data arrives",
+  "Préparation du plan": "Preparing the map",
+  "Plan affiché": "Map shown",
+  "Temps comptés depuis l'ouverture de la page, sauf la préparation, qui est une durée.":
+    "Times counted from when the page opens, except preparation, which is a duration.",
+  "« Les 10 % les plus lents » : le temps au-delà duquel se trouvent les visites les plus lentes.":
+    "\"Slowest 10%\": the time beyond which the slowest visits fall.",
+  "Fluidité": "Smoothness",
+  "Part des images qui ont saccadé pendant que le visiteur déplaçait le plan. Plus c'est bas, mieux c'est.":
+    "Share of frames that stuttered while the visitor moved the map. The lower, the better.",
+  "Poids": "Weight",
+  "Téléchargé à l'ouverture du plan": "Downloaded when the map opens",
+  "Médiane des visites.": "Median across visits.",
+  "Parmi les plus lourds dans": "Among the heaviest in",
+  "Appareils qui souffrent": "Devices that struggle",
+  "Aucun appareil identifié pour l'instant.": "No device identified yet.",
+  "visite relevée": "visit recorded",
+  "visites relevées": "visits recorded",
+  "écartée": "discarded",
+  "écartées": "discarded",
+  "par le plafond": "by the daily cap",
+  "dont": "including",
 };

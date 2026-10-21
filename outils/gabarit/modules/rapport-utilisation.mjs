@@ -26,7 +26,7 @@ import { rest, SESSION, signale, bloc, BASE_PAGES } from "./socle-console.mjs";
 
 const CLE_EVT = "rapport-evenement";
 
-let EVTS = [], RAPPORT = null, ERREURS = null, periode = "30";
+let EVTS = [], RAPPORT = null, ERREURS = null, PERFS = null, periode = "30";
 /* Le salon lu. L'export le lit au moment du clic, par la liaison que
    `rapport.mjs` importe et lui confie ; seul ce module le remplace. */
 export let selection = null;
@@ -93,13 +93,16 @@ async function chargeEvenements() {
 const joursPeriode = () => periode === "tout" ? null : Number(periode);
 
 async function chargeRapport() {
-  if (!selection) { RAPPORT = null; return; }
+  if (!selection) { RAPPORT = null; PERFS = null; return; }
   const corps = JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() });
   /* Les erreurs à part : une base qui n'a pas encore reçu leur migration ne
      doit pas priver l'organisateur de son rapport. */
-  [RAPPORT, ERREURS] = await Promise.all([
+  [RAPPORT, ERREURS, PERFS] = await Promise.all([
     rest("rpc/rapport_utilisation", { method: "POST", body: corps }),
     rest("rpc/erreurs_du_salon", { method: "POST", body: corps }).catch(() => null),
+    /* Les performances de même : la sonde a sa propre migration, et sans elle
+       le rapport garde tout le reste. */
+    rest("rpc/performances_du_salon", { method: "POST", body: corps }).catch(() => null),
   ]);
 }
 
@@ -123,6 +126,247 @@ function erreurs(hote, liste) {
     esc(new Date(e.derniere).toLocaleDateString("fr-FR", { dateStyle: "medium" })) +
     '</span></div>').join("");
   hote.appendChild(t);
+}
+
+/* ------------------------------------------------------------------
+   Performances
+
+   La base rend un bilan par jour, page et support : médiane et 90e centile
+   de chacun. Sur plusieurs jours, on ne peut pas recalculer un centile qu'on
+   n'a plus en données ; on fait donc le choix le plus honnête des deux :
+   - une médiane se moyenne en pondérant chaque jour par ses visites (un
+     jour de 3 visites ne pèse pas autant qu'un jour de 300) ;
+   - un 90e centile se prend au plus mauvais des jours : il peut surestimer
+     le vrai, jamais cacher une mauvaise journée, et ce rapport sert à
+     trouver ce qui va mal.
+   ------------------------------------------------------------------ */
+const nombre = (v) => typeof v === "number" && isFinite(v);
+
+/** Moyenne pondérée de `[valeur, poids]`, les valeurs absentes laissées de côté. */
+function moyennePonderee(paires) {
+  let somme = 0, poids = 0;
+  for (const [v, w] of paires) if (nombre(v) && w > 0) { somme += v * w; poids += w; }
+  return poids ? somme / poids : null;
+}
+
+const maximum = (valeurs) => {
+  const v = valeurs.filter(nombre);
+  return v.length ? Math.max(...v) : null;
+};
+
+/** `{ p50, p90 }` d'une série de bilans : médiane pondérée, pire 90e centile. */
+const centiles = (sources, lit) => ({
+  p50: moyennePonderee(sources.map((s) => [lit(s)?.p50, s.poids])),
+  p90: maximum(sources.map((s) => lit(s)?.p90)),
+});
+
+/**
+ * Ce que la période dit des performances, prêt à dessiner. Rend `null` quand
+ * il n'y a rien à lire.
+ *
+ * La journée en cours (`aujourdhui`) n'a pas de nombre de visites : si la
+ * base a déjà un bilan de ce jour, elle remplace son détail, plus frais ; sinon
+ * elle compte pour les visites qu'elle liste, au moins une.
+ */
+function synthesePerformances(perf, fuseau) {
+  if (!perf) return null;
+  const bilans = Array.isArray(perf.bilans) ? perf.bilans : [];
+  let auj = null;
+  try {
+    auj = new Date().toLocaleDateString("en-CA", { timeZone: fuseau || "UTC" });
+  } catch (e) { auj = new Date().toISOString().slice(0, 10); }
+  const jourDeLaPage = (l) => String(l.jour).slice(0, 10);
+
+  const frais = perf.aujourdhui && (perf.aujourdhui.appareils?.length || nombre(perf.aujourdhui.etapes?.affichage?.p50))
+    ? perf.aujourdhui : null;
+  const planAuj = bilans.some((l) => l.page === "plan" && jourDeLaPage(l) === auj);
+
+  // une source par bilan de la page plan : ses visites et son détail
+  const plan = bilans.filter((l) => l.page === "plan").map((l) => ({
+    poids: l.visites,
+    detail: frais && jourDeLaPage(l) === auj ? frais : l.detail,
+    ligne: l,
+  }));
+  if (frais && !planAuj) {
+    const vues = (frais.appareils || []).reduce((n, a) => n + (a.visites || 0), 0);
+    plan.push({ poids: Math.max(1, vues), detail: frais, ligne: null });
+  }
+
+  const recues = Number(perf.recues) || 0;
+  const ecartees = Number(perf.ecartees) || 0;
+  const visites = recues || bilans.reduce((n, l) => n + (l.visites || 0), 0);
+  if (!bilans.length && !plan.length && !visites) return null;
+
+  // l'ouverture, une ligne par page et par support
+  const ouvertures = [];
+  for (const page of ["plan", "admin", "borne"]) {
+    for (const mobile of [true, false]) {
+      const lignes = bilans.filter((l) => l.page === page && l.mobile === mobile);
+      if (!lignes.length) continue;
+      const src = lignes.map((l) => ({ poids: l.visites, l }));
+      ouvertures.push({
+        page, mobile,
+        visites: lignes.reduce((n, l) => n + l.visites, 0),
+        ...centiles(src, (s) => ({ p50: s.l.affiche_p50, p90: s.l.affiche_p90 })),
+      });
+    }
+  }
+
+  const etape = (cle) => centiles(plan, (s) => s.detail?.etapes?.[cle]);
+  const vue = (cle) => moyennePonderee(plan.map((s) => [s.detail?.vues?.[cle]?.p50, s.poids]));
+
+  // les appareils : même carte sur plusieurs jours, additionnée et pondérée
+  const cartes = new Map();
+  for (const s of plan) for (const a of s.detail?.appareils || []) {
+    const c = cartes.get(a.carte) || { carte: a.carte, famille: a.famille, visites: 0, ms: [] };
+    c.visites += a.visites || 0;
+    c.ms.push([a.affiche_p50, a.visites || 0]);
+    cartes.set(a.carte, c);
+  }
+  const appareils = [...cartes.values()]
+    .map((c) => ({ carte: c.carte, famille: c.famille, visites: c.visites, ms: moyennePonderee(c.ms) }))
+    .sort((a, b) => (b.ms ?? 0) - (a.ms ?? 0)).slice(0, 5);
+
+  // les fichiers lourds : ceux qui reviennent dans le plus de visites
+  const fichiers = new Map();
+  for (const s of plan) for (const l of s.detail?.lourds || []) {
+    const c = fichiers.get(l.fichier) || { fichier: l.fichier, visites: 0, ko: [] };
+    c.visites += l.visites || 0;
+    c.ko.push([l.ko_p50, l.visites || 0]);
+    fichiers.set(l.fichier, c);
+  }
+  const lourds = [...fichiers.values()]
+    .map((c) => ({ fichier: c.fichier, visites: c.visites, ko: moyennePonderee(c.ko) }))
+    .sort((a, b) => b.visites - a.visites).slice(0, 5);
+
+  return {
+    visites, ecartees, ouvertures,
+    etapes: { page: etape("reponse"), donnees: etape("donnees"),
+      preparation: etape("preparation"), affichage: etape("affichage") },
+    fluidite: { classique: vue("classique"), immersif: vue("immersif") },
+    poids: moyennePonderee(bilans.filter((l) => l.page === "plan").map((l) => [l.transfert_p50, l.visites])),
+    lourds, appareils,
+  };
+}
+
+/** Des secondes à une décimale, à la française : « 2,4 s ». */
+const secondes = (ms) => nombre(ms)
+  ? (ms / 1000).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " s"
+  : "—";
+
+const pluriel = (n, un, plusieurs) => nb(n) + " " + (n > 1 ? plusieurs : un);
+
+/** Un petit intertitre, comme « Par canal » plus haut. */
+function intertitre(hote, texte) {
+  const t = document.createElement("p");
+  t.className = "eyebrow";
+  t.style.margin = "18px 0 10px";
+  t.textContent = texte;
+  hote.appendChild(t);
+}
+
+function performances(hote, p) {
+  if (!p) {
+    const v = document.createElement("p");
+    v.className = "astuce";
+    v.textContent = "Pas encore de relevé";
+    hote.appendChild(v);
+    return;
+  }
+
+  intertitre(hote, "Ouverture du plan");
+  const g = document.createElement("div");
+  g.className = "chiffres";
+  const NOMS = { plan: "Plan", admin: "Administration", borne: "Borne" };
+  for (const o of p.ouvertures) {
+    chiffre(g, 0, NOMS[o.page] + " · " + (o.mobile ? "téléphone" : "bureau"),
+      "Les 10 % les plus lents : " + secondes(o.p90) + " · " + pluriel(o.visites, "visite", "visites"));
+    g.lastChild.querySelector(".n").textContent = secondes(o.p50);
+  }
+  hote.appendChild(g);
+  const e = p.etapes;
+  const liste = document.createElement("div");
+  liste.className = "erreurs";
+  liste.style.marginTop = "12px";
+  for (const [nom, v, duree] of [
+    ["La page arrive", e.page], ["Les données arrivent", e.donnees],
+    ["Préparation du plan", e.preparation, true], ["Plan affiché", e.affichage]]) {
+    const l = document.createElement("div");
+    l.className = "erreur";
+    l.innerHTML = '<span class="n"></span><span class="m"></span><span class="o"></span>';
+    l.querySelector(".n").textContent = secondes(v.p50);
+    l.querySelector(".m").textContent = nom + (duree ? "" : " après");
+    l.querySelector(".o").textContent = "Les 10 % les plus lents : " + secondes(v.p90);
+    liste.appendChild(l);
+  }
+  hote.appendChild(liste);
+  const note = document.createElement("p");
+  note.className = "astuce";
+  note.style.marginTop = "8px";
+  note.textContent = "Temps comptés depuis l'ouverture de la page, sauf la préparation, qui est une durée. " +
+    "« Les 10 % les plus lents » : le temps au-delà duquel se trouvent les visites les plus lentes.";
+  hote.appendChild(note);
+
+  intertitre(hote, "Fluidité");
+  const barresFluides = document.createElement("div");
+  barresFluides.className = "barres";
+  for (const [nom, v] of [["Classique", p.fluidite.classique], ["Immersif", p.fluidite.immersif]]) {
+    const b = document.createElement("div");
+    b.className = "barre";
+    b.innerHTML = '<span class="l"></span><span class="j"><span></span></span><span class="v"></span>';
+    b.querySelector(".l").textContent = nom;
+    b.querySelector(".j > span").style.width = nombre(v) ? Math.min(100, v) + "%" : "0%";
+    b.querySelector(".v").textContent = nombre(v) ? Math.round(v) + " %" : "—";
+    barresFluides.appendChild(b);
+  }
+  hote.appendChild(barresFluides);
+  const fl = document.createElement("p");
+  fl.className = "astuce";
+  fl.style.marginTop = "8px";
+  fl.textContent = "Part des images qui ont saccadé pendant que le visiteur déplaçait le plan. Plus c'est bas, mieux c'est.";
+  hote.appendChild(fl);
+
+  intertitre(hote, "Poids");
+  const gp = document.createElement("div");
+  gp.className = "chiffres seul";
+  chiffre(gp, 0, "Téléchargé à l'ouverture du plan", "Médiane des visites.");
+  gp.lastChild.querySelector(".n").textContent = nombre(p.poids) ? nb(Math.round(p.poids)) + " Ko" : "—";
+  hote.appendChild(gp);
+  if (p.lourds.length) {
+    const lo = document.createElement("div");
+    lo.className = "erreurs";
+    lo.style.marginTop = "12px";
+    lo.innerHTML = p.lourds.map((f) =>
+      '<div class="erreur"><span class="n">' + esc(nb(Math.round(f.ko || 0))) + ' Ko</span>' +
+      '<span class="m">' + esc(f.fichier) + '</span>' +
+      '<span class="o">Parmi les plus lourds dans ' + esc(pluriel(f.visites, "visite", "visites")) +
+      '</span></div>').join("");
+    hote.appendChild(lo);
+  }
+
+  intertitre(hote, "Appareils qui souffrent");
+  if (p.appareils.length) {
+    const ap = document.createElement("div");
+    ap.className = "erreurs";
+    ap.innerHTML = p.appareils.map((a) =>
+      '<div class="erreur appareil"><span class="n">' + esc(secondes(a.ms)) + '</span>' +
+      '<span class="m">' + esc(a.carte) + '</span>' +
+      '<span class="o">' + (a.famille ? esc(a.famille) + " · " : "") +
+      esc(pluriel(a.visites, "visite", "visites")) + '</span></div>').join("");
+    hote.appendChild(ap);
+  } else {
+    const v = document.createElement("p");
+    v.className = "astuce";
+    v.textContent = "Aucun appareil identifié pour l'instant.";
+    hote.appendChild(v);
+  }
+
+  const total = document.createElement("p");
+  total.className = "astuce";
+  total.style.marginTop = "14px";
+  total.textContent = pluriel(p.visites, "visite relevée", "visites relevées") +
+    (p.ecartees ? ", dont " + pluriel(p.ecartees, "écartée", "écartées") + " par le plafond" : "") + ".";
+  hote.appendChild(total);
 }
 
 /* ------------------------------------------------------------------
@@ -411,6 +655,10 @@ function dessineRapport() {
   b5.appendChild(a5);
   f.appendChild(b5);
 
+  const bp = bloc("Performances");
+  performances(bp, synthesePerformances(PERFS, r.fuseau));
+  f.appendChild(bp);
+
   if (ERREURS) {
     const b6 = bloc("Erreurs des pages");
     erreurs(b6, ERREURS);
@@ -467,7 +715,7 @@ async function rafraichit() {
 
 /** Fin de session : la console vide sa liste, le rapport vide ses chiffres. */
 export function videEcran() {
-  EVTS = []; RAPPORT = null; selection = null;
+  EVTS = []; RAPPORT = null; PERFS = null; selection = null;
   dessineBarre();
   dessineRapport();
 }

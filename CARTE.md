@@ -2337,16 +2337,18 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 504 l. → rapport
+### `modules/rapport-utilisation.mjs` — 752 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
 `courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
-`erreurs` 108 · `chiffre` 131 · `barres` 150 · `portes` 190 · `jours` 241
-`dessineRapport` 262 · `dessineBarre` 427 · `rafraichit` 450 · `videEcran` 469
-`demarre` 475 · `brancheRapport` 494
+`erreurs` 111 · `nombre` 143 · `moyennePonderee` 146 · `maximum` 152 · `centiles` 158
+`synthesePerformances` 171 · `secondes` 253 · `pluriel` 257 · `intertitre` 260
+`performances` 268 · `chiffre` 375 · `barres` 394 · `portes` 434 · `jours` 485
+`dessineRapport` 506 · `dessineBarre` 675 · `rafraichit` 698 · `videEcran` 717
+`demarre` 723 · `brancheRapport` 742
 
 Éléments :
 
