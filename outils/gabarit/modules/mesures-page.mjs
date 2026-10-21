@@ -48,7 +48,7 @@ export function observe(/** @type {string} */ type, /** @type {(e: any) => void}
 /** La carte graphique, lue sur un contexte qu'on tient déjà (`gl`) ou, à
  *  défaut, sur un canevas jeté aussitôt. Lire celui du plan évite de
  *  consommer un second contexte, que les téléphones comptent au plus juste. */
-function carteGraphique(/** @type {any} */ gl = null){
+export function carteGraphique(/** @type {any} */ gl = null){
   try {
     const neuf = !gl;
     if (neuf){
@@ -90,19 +90,30 @@ function navigateur(){
   return { famille: "autre", version: 0 };
 }
 
+/** Un téléphone ou une tablette, quand le navigateur ne le dit pas lui-même :
+ *  `userAgentData` n'existe que sous Chromium, et sans ce repli chaque iPhone,
+ *  chaque Firefox partait « bureau ». Le motif est lu dans l'agent sans le
+ *  garder ; un iPad qui se dit Macintosh se trahit par son pointeur grossier. */
+function mobileDeRepli(){
+  if (/Mobi|iPhone|iPad|Android/.test(navigator.userAgent)) return true;
+  try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; }
+}
+
 /**
  * L'appareil. Par défaut avec l'agent utilisateur entier, pour le relevé qu'on
  * partage soi-même ; la sonde, qui part au serveur, demande `agentComplet:
  * false` et n'emporte que la famille et la version majeure (`mobile` et
- * `systeme` à plat, comme son résumé les attend).
+ * `systeme` à plat, comme son résumé les attend ; `mobile` y est toujours un
+ * booléen). `carte: false` laisse la carte graphique de côté : la sonde la lit
+ * à part, sur le contexte du plan ou dans un moment creux.
  */
-export function appareil(/** @type {{ agentComplet?: boolean, gl?: any }} */ { agentComplet = true, gl = null } = {}){
+export function appareil(/** @type {{ agentComplet?: boolean, gl?: any, carte?: boolean }} */ { agentComplet = true, gl = null, carte = true } = {}){
   const n = /** @type {any} */ (navigator);
   const plateforme = n.userAgentData ? { mobile: n.userAgentData.mobile, systeme: n.userAgentData.platform } : undefined;
   return {
     ...(agentComplet
       ? { agent: navigator.userAgent, plateforme }
-      : { mobile: plateforme && plateforme.mobile, systeme: plateforme && plateforme.systeme, navigateur: navigateur() }),
+      : { mobile: plateforme && typeof plateforme.mobile === "boolean" ? plateforme.mobile : mobileDeRepli(), systeme: plateforme && plateforme.systeme, navigateur: navigateur() }),
     densite: devicePixelRatio,
     ecran: [screen.width, screen.height],
     fenetre: [innerWidth, innerHeight],
@@ -110,7 +121,7 @@ export function appareil(/** @type {{ agentComplet?: boolean, gl?: any }} */ { a
     memoireGo: n.deviceMemory,
     reseau: n.connection ? { type: n.connection.effectiveType, debitMbps: n.connection.downlink, rttMs: n.connection.rtt,
       economie: n.connection.saveData } : undefined,
-    carte: carteGraphique(gl),
+    carte: carte ? carteGraphique(gl) : undefined,
     mouvementReduit: matchMedia("(prefers-reduced-motion: reduce)").matches,
   };
 }

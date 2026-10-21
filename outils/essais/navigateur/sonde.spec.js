@@ -267,3 +267,61 @@ test.describe("la sonde de l'administration", () => {
     expect(erreurs).toEqual([]);
   });
 });
+
+test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", () => {
+  test("cachée avant que le plan paraisse, la visite dit sur quoi elle tournait", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    // les données du salon ne viennent jamais : le plan ne paraît pas
+    await page.route("**/api/plan**", () => {});
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await page.waitForTimeout(1000);
+    expect(await page.evaluate(() => document.documentElement.classList.contains("plan-affiche"))).toBe(false);
+    await cache(page);
+    await expect.poll(() => envois.length).toBeGreaterThan(0);
+    const a = envois[0].resume.appareil;
+    expect(typeof a.navigateur.famille).toBe("string");
+    expect(typeof a.mobile).toBe("boolean");
+    expect(erreurs).toEqual([]);
+  });
+
+  test("sans userAgentData, un iPhone se dit téléphone", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    await page.addInitScript(() => {
+      const iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 " +
+        "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+      Object.defineProperty(Navigator.prototype, "userAgentData", { get: () => undefined, configurable: true });
+      Object.defineProperty(Navigator.prototype, "userAgent", { get: () => iphone, configurable: true });
+    });
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const a = await page.evaluate(() => window.__essais.sonde.resume.appareil);
+    expect(a.mobile).toBe(true);
+    expect(a.navigateur.famille).toBe("Safari");
+    expect(a.agent).toBeUndefined();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("refus posé en cours de visite : ce qui attendait en file ne part plus", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    /* Hors réseau : la reprise de l'ouverture, faite en creux, ne peut pas
+       emporter l'entrée avant que le refus soit posé. */
+    await page.context().setOffline(true);
+    // un résumé d'une visite d'avant, resté sans réseau
+    await page.evaluate(() => localStorage.setItem("plan-sonde", JSON.stringify([{
+      visite: "11111111-2222-4333-8444-555555555555", pose: Date.now(), admin: false,
+      slug: "smcl-2026", page: "plan", resume: { format: "sonde-plan/1" } }])));
+    await page.locator("#btnConfidentialite").click();
+    await page.locator("#modale input[type=checkbox]").check();
+    // le réseau revient : c'est l'instant où la file repartirait
+    await page.context().setOffline(false);
+    await page.waitForTimeout(2000);
+    expect(envois).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
+});

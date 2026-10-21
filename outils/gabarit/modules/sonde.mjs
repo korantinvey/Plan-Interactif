@@ -37,7 +37,7 @@ import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
 import { mesureOuverte, supportMesure } from "./mesure.mjs";
-import { SACCADE, FIN_GESTE, TRANCHES, centile, fichier, observe, chargement, appareil } from "./mesures-page.mjs";
+import { SACCADE, FIN_GESTE, TRANCHES, centile, fichier, observe, chargement, appareil, carteGraphique } from "./mesures-page.mjs";
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
@@ -209,38 +209,15 @@ function ecouteGestes(){
 const DE_NOUS = /^\/versions\/[^/]+\.js$/;
 
 /** Le script, tel que le résumé le nomme : le chemin du nôtre, que le Worker
- *  ramène au module d'origine par sa carte ; le seul nom de fichier des autres. */
+ *  ramène au module d'origine par sa carte ; le seul nom de fichier des autres.
+ *  Le navigateur le situe par sa position dans le fichier : c'est le Worker qui
+ *  en tire la ligne et la colonne (R4) — relire le paquet ici coûterait au
+ *  téléphone une tâche longue de plus, juste après celle qu'on mesure. */
 function nomDuScript(/** @type {string} */ u){
   try {
     const a = new URL(u, location.href);
     return a.origin === location.origin && DE_NOUS.test(a.pathname) ? a.pathname : fichier(u);
   } catch (e) { return ""; }
-}
-
-/* Le navigateur situe un script fautif par sa position dans le fichier, le
-   Worker attend une ligne et une colonne. Le paquet minifié n'a que quelques
-   lignes : leurs débuts se lisent une fois, du cache, et seulement si une
-   image longue a désigné ce fichier. */
-/** @type {Map<string, number[] | null>} */
-const debutsDeLigne = new Map();
-
-function litLesLignes(/** @type {string} */ u){
-  if (debutsDeLigne.has(u) || !nomDuScript(u).startsWith("/versions/")) return;
-  debutsDeLigne.set(u, null);
-  enCreux(() => fetch(u, { cache: "force-cache" }).then(r => r.ok ? r.text() : "").then(t => {
-    const d = [0];
-    for (let i = t.indexOf("\n"); i >= 0; i = t.indexOf("\n", i + 1)) d.push(i + 1);
-    if (t) debutsDeLigne.set(u, d);
-  }).catch(() => {}));
-}
-
-function lieu(/** @type {string} */ u, /** @type {number} */ pos){
-  const d = debutsDeLigne.get(u);
-  if (!d || !(pos >= 0)) return {};
-  let l = 0;
-  while (l + 1 < d.length && d[l + 1] <= pos) l++;
-  // la colonne d'un navigateur se compte de un
-  return { ligne: l + 1, colonne: pos - d[l] + 1 };
 }
 
 function gel(/** @type {number} */ duree, /** @type {any} */ scripts){
@@ -252,7 +229,6 @@ function gel(/** @type {number} */ duree, /** @type {any} */ scripts){
   const p = { ms: Math.round(duree), geste: geste ? sorte(geste) : undefined,
     url: s ? s.sourceURL || "" : "", fonction: s && s.sourceFunctionName || undefined,
     position: s && s.sourceCharPosition >= 0 ? s.sourceCharPosition : -1 };
-  if (p.url) litLesLignes(p.url);
   g.pires.push(p);
   g.pires.sort((/** @type {any} */ a, /** @type {any} */ b) => b.ms - a.ms);
   g.pires.length = Math.min(g.pires.length, 3);
@@ -289,15 +265,23 @@ function contexteDuPlan(){
   return (d.device && d.device.gl) || (GL.toile && /** @type {any} */ (GL.toile).getContext("webgl2")) || null;
 }
 
-/** L'appareil : sur le contexte du plan dès qu'il existe ; sans lui, seulement
- *  dans le moment creux d'après l'affichage (`creux`). */
+let carteLue = false;
+
+/** L'appareil. Tout ce qui ne coûte rien se lit dès le branchement : une
+ *  visite qui ne voit jamais le plan, ou qui part avant, dit au moins sur quoi
+ *  elle tournait. La carte graphique seule attend : sur le contexte du plan dès
+ *  qu'il existe ; sans lui, dans le moment creux d'après l'affichage (`creux`). */
 function lisAppareil(creux = false){
-  if (APPAREIL) return APPAREIL;
-  const gl = contexteDuPlan();
-  if (!gl && !creux) return undefined;
-  // la taille de la fenêtre n'apprend rien sur l'appareil, et le distingue un peu plus
-  const { fenetre, ...a } = appareil({ agentComplet: false, gl });
-  return (APPAREIL = a);
+  if (!APPAREIL){
+    // la taille de la fenêtre n'apprend rien sur l'appareil, et le distingue un peu plus
+    const { fenetre, carte, ...a } = appareil({ agentComplet: false, carte: false });
+    APPAREIL = a;
+  }
+  if (!carteLue){
+    const gl = contexteDuPlan();
+    if (gl || creux){ carteLue = true; APPAREIL.carte = carteGraphique(gl) || undefined; }
+  }
+  return APPAREIL;
 }
 
 /* ------------------------------------------------------------
@@ -362,7 +346,8 @@ export function resumeSonde(){
     fluidite: { classique: fluidite(V.vues.classique), immersif: fluidite(V.vues.immersif) },
     gels: { n: g.n, totalMs: Math.round(g.totalMs), maxMs: Math.round(g.maxMs),
       pires: g.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
-        fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction, ...lieu(p.url, p.position) })) },
+        fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
+        position: p.url && p.position >= 0 ? p.position : undefined })) },
     reactivite: { ...V.reactivite },
     gpu: laCarte(),
     memoire: { picMo: V.picMo || undefined },
@@ -487,6 +472,8 @@ async function envoieUne(/** @type {any} */ e, /** @type {boolean} */ dernier = 
 let pousseEnCours = false;
 
 async function pousse(/** @type {boolean} */ dernier = false){
+  // un refus posé en cours de visite vaut aussi pour ce qui attendait en file (R5)
+  if (!actif()) return;
   const f = litLaFile();
   // la péremption s'applique même quand rien ne part
   ecritLaFile(f);
@@ -553,6 +540,7 @@ export function brancheSonde(){
 
 function demarre(){
   SUPPORT = supportMesure();
+  lisAppareil();
   nouvelleVisite(true);
   ecouteGestes();
   ecouteNavigateur();

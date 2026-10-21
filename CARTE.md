@@ -1755,14 +1755,14 @@ Importé par :
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
 notifications · parcours · partage · sonde · tiroir-itineraire
 
-### `modules/mesures-page.mjs` — 147 l. → plan, plan-admin
+### `modules/mesures-page.mjs` — 158 l. → plan, plan-admin
 
 - l.1 · Les mesures de la page, partagées
 
 Fonctions :
 
 `centile` 26 · `fichier` 32 · `observe` 37 · `carteGraphique` 51 · `navigateur` 79
-`appareil` 99 · `chargement` 126
+`mobileDeRepli` 97 · `appareil` 110 · `chargement` 137
 
 Importé par :
 
@@ -2794,7 +2794,7 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 596 l. → plan, plan-admin
+### `modules/sonde.mjs` — 584 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
@@ -2802,13 +2802,13 @@ Fonctions :
 
 `sur` 60 · `ms` 61 · `enCreux` 62 · `uuid` 65 · `echantillonne` 75 · `vue0` 86
 `nouvelleVisite` 94 · `vueDuMoment` 116 · `commence` 118 · `sorte` 128 · `clos` 130
-`relance` 146 · `image` 152 · `ecouteGestes` 179 · `nomDuScript` 213 · `litLesLignes` 227
-`lieu` 237 · `gel` 246 · `ecouteNavigateur` 261 · `memoire` 273 · `contexteDuPlan` 286
-`lisAppareil` 294 · `finDesDonnees` 307 · `leChargement` 316 · `fluidite` 326
-`laCarte` 334 · `resumeSonde` 353 · `octets` 376 · `coupe` 379 · `tronque` 390
-`fraiche` 418 · `litLaFile` 421 · `ecritLaFile` 429 · `retire` 441 · `corps` 444
-`versionDesPages` 452 · `envoieUne` 463 · `pousse` 489 · `actif` 512 · `envoie` 516
-`brancheSonde` 541 · `demarre` 554
+`relance` 146 · `image` 152 · `ecouteGestes` 179 · `nomDuScript` 216 · `gel` 223
+`ecouteNavigateur` 237 · `memoire` 249 · `contexteDuPlan` 262 · `lisAppareil` 274
+`finDesDonnees` 291 · `leChargement` 300 · `fluidite` 310 · `laCarte` 318
+`resumeSonde` 337 · `octets` 361 · `coupe` 364 · `tronque` 375 · `fraiche` 403
+`litLaFile` 406 · `ecritLaFile` 414 · `retire` 426 · `corps` 429 · `versionDesPages` 437
+`envoieUne` 448 · `pousse` 474 · `actif` 499 · `envoie` 503 · `brancheSonde` 528
+`demarre` 541
 
 Importe :
 
