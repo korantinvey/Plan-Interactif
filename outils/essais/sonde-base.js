@@ -10,7 +10,7 @@
  */
 const fs = require("fs");
 const path = require("path");
-const { baseNeuve, MIGRATIONS } = require("./base.js");
+const { baseNeuve, commeCompte, MIGRATIONS } = require("./base.js");
 
 let ko = 0;
 const dit = (ok, q, d) => {
@@ -162,6 +162,124 @@ async function main() {
   try { anon = (await db.query("select count(*)::int n from releve_perf")).rows[0].n; } catch { anon = -1; }
   await db.exec("reset role");
   dit(anon <= 0, "le public ne lit pas les relevés", anon);
+
+  // === la porte de l'admin, le bilan de nuit, la lecture, la purge ===
+  // Supabase donne aux rôles les droits par défaut sur les tables du schéma
+  // public ; PGlite non. On les pose, pour que la RLS soit seule à décider.
+  await db.exec("grant select on all tables in schema public to authenticated; grant usage on schema public to authenticated, anon");
+  // le premier compte devient administrateur (déclencheur), le second non
+  const ADMIN = (await un("insert into auth.users (email) values ('admin@x.fr') returning id")).id;
+  const AUTRE = (await un("insert into auth.users (email) values ('autre@x.fr') returning id")).id;
+  await db.query("select (select role from profil where id = $1) = 'admin' as a", [ADMIN]).then((r) =>
+    dit(r.rows[0].a === true, "(le premier compte d'essai est administrateur)"));
+  await db.query("insert into evenement (nom, slug, instance, etat, fuseau) values ('Pas publié', 'pas-publie', 'x', 'brouillon', 'Europe/Paris')");
+  const parAdmin = async (slug, visite, r) => (await db.query(
+    "select sonde_admin($1, 'abc123', $2, $3::jsonb) as ok", [slug, visite, JSON.stringify(r)])).rows[0].ok;
+  const sansCompte = async () => { await db.query("select set_config('request.jwt.claim.sub', '', false)"); };
+
+  await commeCompte(db, ADMIN);
+  const va = uuid();
+  dit(await parAdmin("pas-publie", va, resume(900)) === true, "l'administrateur mesure un salon non publié");
+  const la = await un("select page, affiche_ms from releve_perf where visite = $1", [va]);
+  dit(la && la.page === "admin" && la.affiche_ms === 900, "la ligne est rangée sous la page admin", JSON.stringify(la));
+  await sansCompte();
+  const vb = uuid();
+  dit(await parAdmin("pas-publie", vb, resume(1)) === false, "sans compte connecté, sonde_admin refuse");
+  await commeCompte(db, AUTRE);
+  dit(await parAdmin("pas-publie", vb, resume(1)) === false, "un compte sans accès au salon est refusé");
+  dit(await parAdmin("inconnu", vb, resume(1)) === false, "un salon inconnu est refusé");
+  dit((await un("select count(*)::int n from releve_perf where visite = $1", [vb])).n === 0, "aucune ligne écrite par les refus");
+  const droits = await un(`select has_function_privilege('anon', 'sonde_admin(text,text,uuid,jsonb)', 'execute') a,
+    has_function_privilege('authenticated', 'sonde_admin(text,text,uuid,jsonb)', 'execute') b`);
+  dit(droits.a === false && droits.b === true, "sonde_admin n'est exécutable que par authenticated", JSON.stringify(droits));
+  await commeCompte(db, ADMIN);
+
+  // --- trente visites fabriquées la veille
+  const veille = (await un("select (current_date - 1) j")).j;
+  const CARTES = [["Google", "ANGLE (Mali-G78)", "Android"], ["Apple", "Apple GPU", "iOS"]];
+  const fab = [];
+  for (let i = 0; i < 30; i++) {
+    const mobile = i % 2 === 0, imm = i % 3 === 0, c = CARTES[i % 4 < 2 ? 0 : 1];
+    const affiche = 1000 + i * 100;
+    const r = {
+      format: "sonde-plan/1", page: "plan", support: "web",
+      chargement: { jalons: { reponse: 100 + i, donnees: 400, "plan-affiche": affiche }, transfertKo: 500 + i,
+        lourds: [{ fichier: "logos.png", transfertKo: 200 + i }, ...(i < 5 ? [{ fichier: "fond.jpg", transfertKo: 90 }] : []),
+                 { fichier: "rare" + i + ".svg", transfertKo: 10 }] },
+      fluidite: { classique: { partPlus33: 0.1 + (i % 4) / 100 }, immersif: { partPlus33: 0.3 } },
+      gels: { n: i % 3 }, gpu: { repeints: { p95: 8 }, gpuMsP95: 4, pertesContexte: i === 0 ? 1 : 0 },
+      appareil: { mobile, systeme: c[2], carte: { fabricant: c[0], puce: c[1] } }, plan: { immersifUtilise: imm },
+    };
+    fab.push({ mobile, imm, affiche });
+    await db.query(
+      "insert into releve_perf (evenement_id, visite, jour, page, mobile, immersif, affiche_ms, donnees_ms, transfert_ko, part_plus33_classique, part_plus33_immersif, gels, pertes_contexte, resume) values ($1,$2,$3,'plan',$4,$5,$6,400,$7,$8,0.3,$9,$10,$11::jsonb)",
+      [SALON, uuid(), veille, mobile, imm, affiche, 500 + i, 0.1 + (i % 4) / 100, i % 3, i === 0 ? 1 : 0, JSON.stringify(r)]);
+  }
+  const mediane = (a) => { const t = [...a].sort((x, y) => x - y), m = t.length / 2; return t.length % 2 ? t[(t.length - 1) / 2] : (t[m - 1] + t[m]) / 2; };
+  await db.query("select bilan_perf($1::date)", [veille]);
+  const bil = (await db.query("select * from perf_bilan where evenement_id = $1 and jour = $2 order by page, mobile", [SALON, veille])).rows;
+  dit(bil.length === 2, "un bilan par page et par support (mobile, bureau)", bil.length);
+  dit(bil.reduce((a, b) => a + b.visites, 0) === 30, "les visites du bilan font 30", bil.map((b) => b.visites).join("+"));
+  const bm = bil.find((b) => b.mobile === true), bb = bil.find((b) => b.mobile === false);
+  dit(bm.visites === 15 && bb.visites === 15, "quinze visites mobile, quinze bureau");
+  const mm = mediane(fab.filter((f) => f.mobile).map((f) => f.affiche));
+  dit(Math.abs(bm.affiche_p50 - mm) < 1e-6, "affiche_p50 mobile est la médiane calculée", bm.affiche_p50 + " / " + mm);
+  dit(bm.affiche_p90 >= bm.affiche_p50 && bm.donnees_p50 === 400 && bm.pertes_contexte === 1, "p90, données et pertes de contexte",
+    bm.affiche_p90 + " " + bm.donnees_p50 + " " + bm.pertes_contexte);
+  const dm = bm.detail;
+  dit(dm.lourds[0].fichier === "logos.png" && dm.lourds[0].visites === 15, "le fichier lourd le plus fréquent vient en tête", JSON.stringify(dm.lourds[0]));
+  dit(dm.lourds.length === 10 && dm.appareils.length >= 1 && dm.appareils.length <= 10, "au plus dix lourds et dix appareils", dm.lourds.length + "/" + dm.appareils.length);
+  dit(dm.appareils.every((a) => a.carte && a.famille && a.visites > 0), "chaque appareil dit sa carte, sa famille, ses visites", JSON.stringify(dm.appareils[0]));
+  dit(dm.vues.classique.p50 !== undefined && dm.vues.immersif.p90 !== undefined, "les deux vues ont leurs centiles");
+  const e = dm.etapes;
+  dit(e.donnees.p50 === 400 && e.affichage.p50 === bm.affiche_p50 && Math.abs(e.preparation.p50 - (bm.affiche_p50 - 400)) < 1e-6
+      && e.reponse.p50 >= 100, "les étapes dérivent des jalons", JSON.stringify(e));
+  const tout = async () => JSON.stringify((await db.query("select * from perf_bilan order by evenement_id, jour, page, mobile")).rows);
+  const avant = await tout();
+  await db.query("select bilan_perf($1::date)", [veille]);
+  dit(await tout() === avant, "bilan_perf rejoué : mêmes lignes, pas de doublon");
+
+  // --- la lecture, par la RLS elle-même
+  const periode = async (compte, evt) => {
+    await commeCompte(db, compte);
+    await db.exec("set role authenticated");
+    try { return (await db.query("select performances_du_salon($1, 7) as p", [evt])).rows[0].p; }
+    finally { await db.exec("reset role"); }
+  };
+  const pAdmin = await periode(ADMIN, SALON);
+  dit(pAdmin.bilans.length >= 2, "l'administrateur lit les bilans du salon", pAdmin.bilans.length);
+  dit(typeof pAdmin.recues === "number" && typeof pAdmin.ecartees === "number" && pAdmin.aujourdhui && pAdmin.aujourdhui.etapes !== undefined,
+    "recues, ecartees et aujourdhui sont rendus");
+  const pAutre = await periode(AUTRE, SALON);
+  dit(pAutre.bilans.length === 0, "un compte sans accès ne lit aucun bilan", pAutre.bilans.length);
+  dit(pAutre.recues === 0 && pAutre.ecartees === 0, "ni quota ni relevé du salon", pAutre.recues + "/" + pAutre.ecartees);
+  await db.exec("set role authenticated");
+  const vus = (await db.query("select count(*)::int n from releve_perf where evenement_id = $1", [SALON])).rows[0].n;
+  await db.exec("reset role");
+  dit(vus === 0, "la RLS cache les relevés au compte sans accès (rôle authenticated)", vus);
+  await commeCompte(db, ADMIN);
+  await db.exec("set role authenticated");
+  const vusAdmin = (await db.query("select count(*)::int n from releve_perf where evenement_id = $1", [SALON])).rows[0].n;
+  await db.exec("reset role");
+  dit(vusAdmin > 0, "et les montre à l'administrateur", vusAdmin);
+
+  // --- la purge : 31 jours de relevé, 91 jours de bilan s'effacent ; 29 et 89 restent
+  const vieux = uuid(), recent = uuid();
+  for (const [v, age] of [[vieux, 31], [recent, 29]])
+    await db.query("insert into releve_perf (evenement_id, visite, jour, page, resume) values ($1,$2,current_date - $3::int,'borne','{}')", [SALON, v, age]);
+  for (const age of [91, 89])
+    await db.query("insert into perf_bilan (evenement_id, jour, page, mobile, visites) values ($1,current_date - $2::int,'borne',false,1)", [SALON, age]);
+  await db.query("insert into perf_jour (evenement_id, jour, page) values ($1,current_date - 91,'borne'), ($1,current_date - 89,'borne')", [SALON]);
+  await db.query("select purge_perf()");
+  const reste = async (v) => (await un("select count(*)::int n from releve_perf where visite = $1", [v])).n;
+  dit(await reste(vieux) === 0 && await reste(recent) === 1, "purge_perf : relevé de 31 jours effacé, celui de 29 gardé");
+  const b91 = (await un("select count(*)::int n from perf_bilan where jour = current_date - 91")).n;
+  const b89 = (await un("select count(*)::int n from perf_bilan where jour = current_date - 89")).n;
+  dit(b91 === 0 && b89 === 1, "purge_perf : bilan de 91 jours effacé, celui de 89 gardé", b91 + "/" + b89);
+  const j91 = (await un("select count(*)::int n from perf_jour where jour = current_date - 91")).n;
+  dit(j91 === 0, "purge_perf efface aussi perf_jour de 91 jours");
+  const encore = (await un("select count(*)::int n from perf_bilan where jour = $1 and evenement_id = $2", [veille, SALON])).n;
+  dit(encore === 2, "le bilan de la veille est produit puis gardé", encore);
 
   // --- la migration rejouée une seconde fois
   const fichier = fs.readdirSync(MIGRATIONS).find((f) => f.endsWith("_sonde_de_performance.sql"));
