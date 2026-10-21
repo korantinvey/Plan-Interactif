@@ -948,10 +948,12 @@ async function geleResolu(g, env, origine) {
   if (SCRIPT_DU_PLAN.test(chemin) && Number.isInteger(position) && position >= 0) {
     const texte = await texteDuScript(chemin, env, origine);
     if (texte && position < texte.length) {
-      const avant = texte.slice(0, position);
-      const ligne = avant.split("\n").length;
+      // on compte les fins de ligne sans découper : le script pèse 500 Ko et plus,
+      // et un découpage par gel allouerait autant de fois le préfixe
+      let ligne = 1, debut = 0;
+      for (let i = texte.indexOf("\n"); i >= 0 && i < position; i = texte.indexOf("\n", i + 1)) { ligne++; debut = i + 1; }
       // la colonne d'un navigateur se compte de un : `lieuDe` la rend à la carte
-      const colonne = position - (avant.lastIndexOf("\n") + 1) + 1;
+      const colonne = position - debut + 1;
       sortie.lieu = await lieuDe({ fichier: chemin, ligne, colonne }, env, origine);
       return sortie;
     }
@@ -965,10 +967,11 @@ async function sonde(requete, env) {
   const origine = requete.headers.get("Origin");
   if (origine && origine !== new URL(requete.url).origin) return new Response(null, { status: 403 });
   const corps = await requete.text();
-  if (corps.length > SONDE_MAX) return new Response(null, { status: 413 });
+  // 6 Ko d'octets, non de caractères : un « é » en pèse deux
+  if (new TextEncoder().encode(corps).length > SONDE_MAX) return new Response(null, { status: 413 });
   let paquet;
   try { paquet = JSON.parse(corps); } catch { paquet = null; }
-  if (!paquet || typeof paquet !== "object" || !paquet.resume || typeof paquet.resume !== "object") {
+  if (!paquet || typeof paquet !== "object" || !paquet.resume || typeof paquet.resume !== "object" || Array.isArray(paquet.resume)) {
     return new Response(null, { status: 400 });
   }
   if (ecritEnProduction(new URL(requete.url))) return ecartee({});

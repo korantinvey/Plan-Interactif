@@ -98,6 +98,10 @@ const SCRIPT = "/versions/plan.0123456789.js";
     dit(m.status === 400, "6144 octets passent la taille (puis 400 : pas du JSON)", m.status);
     const t = await appel(PRODUCTION, "x".repeat(6145));
     dit(t.status === 413, "6145 octets sont refusés (413)", t.status);
+    const lourd = await appel(PRODUCTION, JSON.stringify({ slug: "x", resume: {}, bourrage: "é".repeat(3100) }));
+    dit(lourd.status === 413, "3100 « é » (plus de 6144 octets) sont refusés (413)", lourd.status);
+    const tab = await appel(PRODUCTION, valide({ resume: [] }));
+    dit(tab.status === 400, "un résumé en tableau est refusé (400)", tab.status);
     const b = await appel(PRODUCTION, "{");
     dit(b.status === 400, "un corps illisible est refusé (400)", b.status);
     dit(parti.length === 0, "et rien ne part vers la base", parti.length + " appel(s)");
@@ -138,6 +142,23 @@ const SCRIPT = "/versions/plan.0123456789.js";
     const q = parti[0] && parti[0].corps.p_resume.gels.pires;
     dit(q && q.length === 3 && q.every((x) => x.fichier === "plan.0123456789.js" && x.lieu === undefined && x.position === undefined),
       "une position invalide n'est pas résolue, et trois gels au plus sont relayés", q && JSON.stringify(q));
+  }
+
+  // — ligne et colonne : début de fichier, début de ligne, fins de ligne CRLF (sans carte : le lieu est la position brute)
+  {
+    parti.length = 0;
+    const admin = "/versions/plan-admin.0123456789.js";
+    const texte = "alpha\r\nbeta\r\ngamma delta";
+    const avant = env.ASSETS.fetch;
+    env.ASSETS.fetch = async (r) => new URL(r.url).pathname === admin ? new Response(texte) : avant(r);
+    await appel(PRODUCTION, valide({ resume: resume([
+      { ms: 3, geste: "a", fichier: admin, fonction: "", position: 0 },
+      { ms: 2, geste: "b", fichier: admin, fonction: "", position: texte.indexOf("gamma") },
+      { ms: 1, geste: "c", fichier: admin, fonction: "", position: texte.indexOf("delta") },
+    ]) }));
+    const x = parti[0] && parti[0].corps.p_resume.gels.pires.map((g) => g.lieu);
+    dit(x && x[0].endsWith(":1:1") && x[1].endsWith(":3:1") && x[2].endsWith(":3:7"),
+      "début de fichier, début de ligne (colonne 1) et CRLF", JSON.stringify(x));
   }
 
   if (ko) { console.error("\n" + ko + " échec(s)."); process.exit(1); }
