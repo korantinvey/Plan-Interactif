@@ -183,10 +183,10 @@ majeure du navigateur suffisent, et le reste rend la visite reconnaissable.
   lenteur de l'admin est l'une des deux raisons d'être de la sonde, et
   l'exploitant prépare surtout des salons non publiés. Sur la page admin, la
   sonde n'envoie donc pas au Worker mais à une RPC **authentifiée**,
-  `sonde_admin(p_evenement, p_version, p_visite, p_resume)`, `security
-  invoker`, appelée avec le jeton de session comme le rapport
-  (`socle-console.mjs` `rest`) : elle n'écrit que si l'appelant a accès au
-  salon (`acces_salon`), publié ou non. L'identité sert à ouvrir la porte et
+  `sonde_admin(p_slug, p_version, p_visite, p_resume)`, appelée avec le jeton
+  de session (`salon.mjs` `entetesApi`) : `security definer` pour écrire dans
+  des tables que l'exploitant ne fait que lire, elle n'écrit que si
+  `acces_salon` est vrai pour l'appelant (`auth.uid()`), salon publié ou non. L'identité sert à ouvrir la porte et
   **n'est pas enregistrée** : la ligne est la même que pour une visite.
   La version des pages, que le Worker ajoute ailleurs, est lue par la page
   (scripts sous `/versions/`, comme `releve.mjs`).
