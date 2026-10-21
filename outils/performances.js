@@ -67,12 +67,33 @@ function centile(valeurs, p) {
   return i + 1 < v.length ? v[i] + (v[i + 1] - v[i]) * (r - i) : v[i];
 }
 
-/** Un fichier est cité par son chemin, sans requête ; sous `/api/`, sans ce qui suit le premier segment. */
+/**
+ * Tout texte venu d'un relevé est écrit par un visiteur anonyme (la clé qui
+ * ouvre la porte circule dans chaque page) : on n'en garde que lettres,
+ * chiffres, espace et `._·+()-`, sur 60 caractères. Sans `/ @ # [ ] ! < > |`
+ * ni apostrophe inverse, rien ne s'y lit comme un lien, une mention, une
+ * image ou une cellule de tableau.
+ */
+function texteSur(s) {
+  return String(s == null ? "" : s).normalize("NFC").replace(/[^\p{L}\p{N} ._·+()-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+/* Les fichiers que la page nomme dans `lourds` sont ses derniers segments de chemin
+   (`mesures-page.mjs`) : un nom libre — logo de stand, domaine tiers, `plan-<slug>` —
+   peut porter un slug. On ne cite donc par leur nom que les fichiers versionnés de nos
+   pages (point d'entrée + empreinte, tels que la construction les pose sous
+   `web/versions/`) et quelques noms connus ; tout le reste est regroupé par extension. */
+const ENTREES = "plan|plan-admin|anglais|langue|console|rapport|motdepasse|accueil";
+const FICHIER_VERSIONNE = new RegExp("^(" + ENTREES + ")\\.[0-9a-f]{8,}\\.(js|css)$");
+const FICHIER_CONNU = new Set(["plan", "config.js", "sw.js"]);
+const EXTENSIONS = new Set(["js", "css", "json", "html", "svg", "png", "jpg", "jpeg", "webp", "avif", "gif", "woff", "woff2", "mp4"]);
+
 function fichierPropre(f) {
-  let chemin = String(f || "");
-  try { chemin = new URL(chemin, "https://x.invalid").pathname; } catch (e) { chemin = chemin.split(/[?#]/)[0]; }
-  const api = /^\/api\/[^/]+/.exec(chemin);
-  return api ? api[0] + "/…" : chemin;
+  const nom = String(f || "").split(/[?#]/)[0].split("/").pop();
+  if (FICHIER_VERSIONNE.test(nom) || FICHIER_CONNU.has(nom)) return nom;
+  const ext = /\.([A-Za-z0-9]{1,5})$/.exec(nom);
+  const e = ext && ext[1].toLowerCase();
+  return e && EXTENSIONS.has(e) ? "autre fichier ." + e : "autre fichier";
 }
 
 /* ---------- La lecture ---------- */
@@ -85,17 +106,21 @@ function leJour(iso) {
 /** Les deux requêtes de lecture : 14 jours de relevés, 14 jours de bilans. */
 function requetes(aujourdhui) {
   const j = leJour(aujourdhui);
+  // ce qui ne sert qu'aux indicateurs de la semaine n'est lu que pour elle
+  const sem = "jour >= '" + j + "'::date - " + JOURS_FICHE;
   const fenetre = "jour >= '" + j + "'::date - 14 and jour <= '" + j + "'::date";
   const salon = "'salon-' || left(md5(evenement_id::text), 4)";
   return [
     "select " + salon + " as salon, jour::text as jour, page, version, coalesce(mobile, false) as mobile,\n" +
-    "  coalesce(immersif, false) as immersif, affiche_ms, donnees_ms, transfert_ko,\n" +
-    "  part_plus33_classique, part_plus33_immersif, gels, repeint_ms_p95, gpu_ms_p95, pertes_contexte,\n" +
-    "  resume #>> '{appareil,systeme}' as systeme,\n" +
-    "  nullif(trim(concat_ws(' ', resume #>> '{appareil,carte,fabricant}', resume #>> '{appareil,carte,puce}')), '') as carte,\n" +
-    "  sonde_nombre(resume #> '{gpu,logos,octetsTexture}') as logos_octets,\n" +
-    "  sonde_nombre(resume #> '{memoire,picMo}') as pic_mo,\n" +
-    "  case when jsonb_typeof(resume #> '{chargement,lourds}') = 'array' then resume #> '{chargement,lourds}' end as lourds\n" +
+    "  coalesce(immersif, false) as immersif, affiche_ms, donnees_ms,\n" +
+    "  part_plus33_classique, part_plus33_immersif,\n" +
+    "  case when " + sem + " then repeint_ms_p95 end as repeint_ms_p95,\n" +
+    "  case when " + sem + " then gpu_ms_p95 end as gpu_ms_p95,\n" +
+    "  case when " + sem + " then pertes_contexte end as pertes_contexte,\n" +
+    "  case when " + sem + " then resume #>> '{appareil,systeme}' end as systeme,\n" +
+    "  case when " + sem + " then nullif(trim(concat_ws(' ', resume #>> '{appareil,carte,fabricant}', resume #>> '{appareil,carte,puce}')), '') end as carte,\n" +
+    "  case when " + sem + " then sonde_nombre(resume #> '{gpu,logos,octetsTexture}') end as logos_octets,\n" +
+    "  case when " + sem + " and jsonb_typeof(resume #> '{chargement,lourds}') = 'array' then resume #> '{chargement,lourds}' end as lourds\n" +
     "from releve_perf where " + fenetre + " order by jour",
     "select " + salon + " as salon, jour::text as jour, page, mobile, visites, affiche_p50, donnees_p50,\n" +
     "  part_plus33_p50, gels_moy, pertes_contexte\n" +
@@ -110,7 +135,12 @@ async function interroge(ref, jeton, query) {
     body: JSON.stringify({ query }),
   });
   const texte = await r.text();
-  if (!r.ok) throw new Error("API de gestion Supabase : " + r.status + " " + texte.slice(0, 300));
+  if (!r.ok) {
+    // le statut et le message, pas la réponse brute
+    let message = "";
+    try { message = String(JSON.parse(texte).message || ""); } catch (e) { /* pas du JSON */ }
+    throw new Error("API de gestion Supabase : " + r.status + (message ? " " + message.slice(0, 200) : ""));
+  }
   const lignes = JSON.parse(texte);
   if (!Array.isArray(lignes)) throw new Error("réponse inattendue de l'API de gestion Supabase");
   return lignes;
@@ -143,7 +173,7 @@ function lourdsDe(rows) {
 function famillesDe(rows) {
   const m = new Map();
   for (const r of rows) {
-    const nom = [r.systeme, r.carte].filter(Boolean).join(" · ") || "appareil inconnu";
+    const nom = [texteSur(r.systeme), texteSur(r.carte)].filter(Boolean).join(" · ") || "appareil inconnu";
     const f = m.get(nom) || { famille: nom, visites: 0, avecPerte: 0 };
     f.visites++;
     if ((num(r.pertes_contexte) || 0) > 0) f.avecPerte++;
@@ -166,6 +196,7 @@ function indicateursDe(page, mobile, rows) {
     preparationP50: centile(rows.filter((r) => num(r.affiche_ms) != null && num(r.donnees_ms) != null).map((r) => r.affiche_ms - r.donnees_ms), 0.5),
     afficheP50: centile(rows.map((r) => r.affiche_ms), 0.5),
     afficheP90: centile(rows.map((r) => r.affiche_ms), 0.9),
+    partP50: centile(rows.map(partVue), 0.5),
     partClassique: centile(rows.map((r) => r.part_plus33_classique), 0.5),
     partImmersif: centile(immersifs.map((r) => r.part_plus33_immersif), 0.5),
     repeintP95: centile(rows.map((r) => r.repeint_ms_p95), 0.95),
@@ -197,7 +228,7 @@ function degradations(releves) {
     const k = r.page + "|" + r.mobile;
     if (!g.has(k)) g.set(k, new Map());
     const v = g.get(k);
-    const nom = r.version || "(sans version)";
+    const nom = texteSur(r.version) || "(sans version)";
     if (!v.has(nom)) v.set(nom, []);
     v.get(nom).push(r);
   }
@@ -285,7 +316,7 @@ function fiche({ releves, bilans, aujourdhui }) {
   const avant = bilanSemaine(bil, avantDebut, avantFin);
 
   const L = [];
-  L.push("Relevés du " + debut + " au " + fin + " : **" + semaine.length + " visites**, " + salons.size + " salon(s).");
+  L.push("Semaine analysée : du " + debut + " au " + fin + " (les sept jours pleins avant le " + aujourdhui + "), **" + semaine.length + " visites**, " + salons.size + " salon(s). Le titre porte le lundi de la semaine en cours : c'est la clé qui fait retrouver cette issue si le script est relancé.");
   L.push("");
   L.push("## Pistes, classées par gain");
   L.push("");
@@ -303,13 +334,15 @@ function fiche({ releves, bilans, aujourdhui }) {
   L.push("");
   L.push("## Cette semaine, par page");
   L.push("");
-  L.push("| page | appareil | visites | données (médiane) | affichage (médiane) | images lentes (classique) | images lentes (immersif) | semaine d'avant : affichage |");
-  L.push("|---|---|---|---|---|---|---|---|");
+  L.push("| page | appareil | visites | données (médiane) | affichage (médiane) | images lentes (classique) | images lentes (immersif) | affichage, semaine d'avant | données, semaine d'avant | images lentes, semaine d'avant |");
+  L.push("|---|---|---|---|---|---|---|---|---|---|");
   for (const i of inds) {
     const b = avant.get(i.page + "|" + i.mobile);
     L.push("| " + i.page + " | " + (i.mobile ? "téléphone" : "ordinateur") + " | " + i.visites + " | " + ms(i.donneesP50) +
       " | " + ms(i.afficheP50) + " | " + pc(i.partClassique) + " | " + (i.nImmersif ? pc(i.partImmersif) + " (" + i.nImmersif + ")" : "—") +
-      " | " + (b && b.affiche_p50 != null ? ms(b.affiche_p50) + variation(b.affiche_p50, i.afficheP50) : "—") + " |");
+      " | " + (b && b.affiche_p50 != null ? ms(b.affiche_p50) + variation(b.affiche_p50, i.afficheP50) : "—") +
+      " | " + (b && b.donnees_p50 != null ? ms(b.donnees_p50) + variation(b.donnees_p50, i.donneesP50) : "—") +
+      " | " + (b && b.part_plus33_p50 != null ? pc(b.part_plus33_p50) + variation(b.part_plus33_p50, i.partP50) : "—") + " |");
   }
   L.push("");
   L.push("## Salons relevés");
@@ -328,8 +361,11 @@ function gh(args, input) {
 
 function publie(titre, corps, depot) {
   const R = ["--repo", depot];
-  // le libellé se crée s'il manque ; `--force` le laisse tel quel s'il existe
-  gh(["label", "create", "performances", ...R, "--description", "Fiche hebdomadaire de pistes de performance", "--color", "1d76db", "--force"]);
+  // créée si absente seulement : une couleur ou une description retouchées à la main restent
+  const libelles = JSON.parse(gh(["label", "list", ...R, "--search", "performances", "--json", "name"]));
+  if (!libelles.some((l) => l.name === "performances")) {
+    gh(["label", "create", "performances", ...R, "--description", "Fiche hebdomadaire de pistes de performance", "--color", "1d76db"]);
+  }
   const existantes = JSON.parse(gh(["issue", "list", ...R, "--label", "performances", "--state", "all", "--limit", "100", "--json", "number,title"]));
   const deja = existantes.find((i) => i.title === titre);
   if (deja) {
@@ -370,4 +406,4 @@ if (require.main === module) {
   principal(process.argv.slice(2)).catch((e) => { console.error("performances : " + e.message); process.exit(1); });
 }
 
-module.exports = { etiquette, lundiDe, requetes, indicateurs, degradations, fiche };
+module.exports = { texteSur, fichierPropre, bilanSemaine, etiquette, lundiDe, requetes, indicateurs, degradations, fiche };

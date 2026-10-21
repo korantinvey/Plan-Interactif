@@ -114,6 +114,43 @@ console.log("Le respect des salons");
 { const q = P.requetes(AUJ).join("\n");
   dit(!/slug|\bnom\b/i.test(q) && /left\(md5\(evenement_id::text\), 4\)/.test(q), "les requêtes ne ramènent ni slug ni nom ; l'étiquette se calcule en SQL"); }
 
+console.log("Les noms libres");
+{ const rel = [];
+  const noms = ["plan-fep27", "fep27-logo.png", "fep27.webp", "https://cdn.exemple.net/img/fep27-logo.png?slug=fep27", "plan.1321f61dd3.js"];
+  for (let i = 0; i < 10; i++) rel.push(visite(i, { lourds: noms.map((n) => ({ fichier: n, transfertKo: 900 })), donnees_ms: 5000, affiche_ms: 7000 }));
+  const { corps } = P.fiche({ releves: rel, bilans: [], aujourdhui: AUJ });
+  const noms2 = P.indicateurs(rel)[0].lourds.map((l) => l.fichier);
+  dit(!corps.includes("fep27") && !noms2.join().includes("fep27") && noms2.includes("autre fichier .png") && noms2.includes("autre fichier .webp"), "un nom libre (plan-fep27, fep27-logo.png, fep27.webp) ne sort pas : il est regroupé par extension", noms2.join(" | "));
+  dit(noms2.includes("plan.1321f61dd3.js"), "un fichier versionné de nos pages garde son nom");
+  dit(P.fichierPropre("/plan-fep27") === "autre fichier" && P.fichierPropre("fep27.php") === "autre fichier", "une extension inconnue n'est pas citée non plus");
+}
+
+console.log("L'injection markdown");
+{ const mauvais = "@x ](http://e) <img src=x> #12 | `a` ![i](u)";
+  const t = P.texteSur(mauvais);
+  dit(!/[/@#[\]!<>`|]/.test(t), "texteSur retire / @ # [ ] ! < > ` |", JSON.stringify(t));
+  dit(P.texteSur("x".repeat(200)).length === 60 && P.texteSur("Mali-G78 (ARM) · v1.2+") === "Mali-G78 (ARM) · v1.2+", "tronquée à 60, garde ._·+()- et les lettres");
+  const rel = [];
+  for (let i = 0; i < 10; i++) rel.push(visite(i, { systeme: "@x", carte: "](http://e) <img> #12 |", version: "v|1 [a](b)", immersif: false, pertes_contexte: 1 }));
+  const { corps } = P.fiche({ releves: rel, bilans: [], aujourdhui: AUJ });
+  dit(!/@x|\]\(|<img|#12|\[a\]/.test(corps), "ni mention, ni lien, ni image, ni titre venus des relevés ne passent dans le corps"); }
+
+console.log("La semaine d'avant");
+{ const bil = [
+    { salon: "salon-aaaa", jour: jour(10), page: "plan", mobile: true, visites: 10, affiche_p50: 1000, donnees_p50: 500, part_plus33_p50: 0.1, gels_moy: 0, pertes_contexte: 1 },
+    { salon: "salon-aaaa", jour: jour(9), page: "plan", mobile: true, visites: 30, affiche_p50: 2000, donnees_p50: 900, part_plus33_p50: 0.2, gels_moy: 1, pertes_contexte: 2 },
+    { salon: "salon-aaaa", jour: jour(3), page: "plan", mobile: true, visites: 99, affiche_p50: 9999, donnees_p50: 1, part_plus33_p50: 0.9, gels_moy: 0, pertes_contexte: 0 }];
+  const m = P.bilanSemaine(bil.map((b) => Object.assign({}, b)), jour(14), jour(8)).get("plan|true");
+  dit(m && m.visites === 40 && Math.abs(m.affiche_p50 - 1750) < 1e-9 && Math.abs(m.donnees_p50 - 800) < 1e-9 && Math.abs(m.part_plus33_p50 - 0.175) < 1e-9 && m.pertes === 3,
+    "bilanSemaine pondère par les visites et ignore les autres jours", JSON.stringify(m));
+  const rel = []; for (let i = 0; i < 8; i++) rel.push(visite(i, { affiche_ms: 3500, donnees_ms: 1600, part_plus33_classique: 0.35 }));
+  const { corps } = P.fiche({ releves: rel, bilans: bil, aujourdhui: AUJ });
+  const ligne = (corps.match(/^\| plan \| téléphone.*$/m) || [""])[0];
+  dit(/1750 ms \(\+100 %\)/.test(ligne) && /800 ms \(\+100 %\)/.test(ligne) && /18 % \(\+100 %\)/.test(ligne), "le tableau compare l'affichage, les données et les images lentes à la semaine d'avant", ligne); }
+{ const q = P.requetes(AUJ)[0];
+  dit(!/transfert_ko|pic_mo|gels/.test(q) && /case when jour >= '2026-10-21'::date - 7 then resume #> '\{chargement,lourds\}'|jsonb_typeof/.test(q) && /case when jour >= '2026-10-21'::date - 7 then resume #>> '\{appareil,systeme\}'/.test(q),
+    "la lecture ne joint lourds, systeme, carte… que pour la semaine analysée, et laisse les colonnes inutiles"); }
+
 console.log("La semaine sans relevé");
 { const r = P.fiche({ releves: [], bilans: [], aujourdhui: AUJ });
   dit(r.vide === true && /aucun relevé/i.test(r.corps), "aucun relevé : le script le dit et ne publie rien"); }
@@ -130,6 +167,41 @@ console.log("Sans jeton");
   try { sortie = execFileSync(process.execPath, [path.join(__dirname, "..", "performances.js"), "--sec", "--depuis", f], { env, encoding: "utf8" }); }
   catch (e) { code = e.status || 1; sortie = String(e.stdout) + String(e.stderr); }
   dit(code === 0 && /Performances — semaine du 2026-10-19/.test(sortie), "--sec --depuis tourne sans jeton et imprime la fiche", "code " + code);
+  fs.rmSync(dossier, { recursive: true, force: true });
+}
+
+console.log("La publication (gh factice)");
+{ const dossier = fs.mkdtempSync(path.join(os.tmpdir(), "perf-gh-"));
+  const journal = path.join(dossier, "journal.jsonl");
+  const faux = path.join(dossier, "gh");
+  fs.writeFileSync(faux, `#!${process.execPath}
+const fs = require("fs");
+let entree = ""; process.stdin.on("data", (d) => (entree += d)).on("end", () => {
+  const a = process.argv.slice(2);
+  fs.appendFileSync(process.env.JOURNAL, JSON.stringify({ a, entree }) + "\\n");
+  if (a[0] === "label" && a[1] === "list") console.log(process.env.FAUX_LIBELLES || "[]");
+  else if (a[0] === "issue" && a[1] === "list") console.log(process.env.FAUX_ISSUES || "[]");
+  else if (a[0] === "issue" && a[1] === "create") console.log("https://github.com/x/y/issues/9");
+});
+`, { mode: 0o755 });
+  const f = path.join(dossier, "r.json");
+  const rel = []; for (let i = 0; i < 10; i++) rel.push(visite(i, { donnees_ms: 4000 }));
+  fs.writeFileSync(f, JSON.stringify({ aujourdhui: AUJ, releves: rel, bilans: [] }));
+  const lance = (extra) => {
+    fs.writeFileSync(journal, "");
+    const env = Object.assign({}, process.env, { PATH: dossier + path.delimiter + process.env.PATH, JOURNAL: journal, GITHUB_REPOSITORY: "x/y" }, extra);
+    delete env.SUPABASE_ACCESS_TOKEN;
+    execFileSync(process.execPath, [path.join(__dirname, "..", "performances.js"), "--depuis", f], { env, encoding: "utf8" });
+    return fs.readFileSync(journal, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  };
+  const titre = "Performances — semaine du 2026-10-19";
+  let c = lance({});
+  const creation = c.find((x) => x.a[0] === "issue" && x.a[1] === "create");
+  dit(creation && creation.a.includes(titre) && creation.a.includes("performances") && /Semaine analysée/.test(creation.entree), "l'issue n'existe pas : elle est créée, titrée par le lundi, étiquetée, corps en entrée");
+  dit(c.some((x) => x.a[0] === "label" && x.a[1] === "create") && !c.some((x) => x.a.includes("--force")), "l'étiquette manquante est créée, sans --force");
+  c = lance({ FAUX_ISSUES: JSON.stringify([{ number: 7, title: titre }]), FAUX_LIBELLES: JSON.stringify([{ name: "performances" }]) });
+  const maj = c.find((x) => x.a[0] === "issue" && x.a[1] === "edit");
+  dit(maj && maj.a[2] === "7" && !c.some((x) => x.a[1] === "create") && /Semaine analysée/.test(maj.entree), "l'issue existe : elle est mise à jour, ni créée ni étiquette recréée");
   fs.rmSync(dossier, { recursive: true, force: true });
 }
 

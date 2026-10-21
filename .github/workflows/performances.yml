@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # vide : le script retombe sur le projet de production de `outils/projet.js`
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v5

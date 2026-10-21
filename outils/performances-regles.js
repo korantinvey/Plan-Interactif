@@ -15,8 +15,7 @@
  * comporte bien. Les changer ne demande que de retoucher les constantes
  * ci-dessous — la fiche, elle, ne bouge pas.
  *
- * Ce module est pur (aucun réseau, aucune date) pour que les essais le
- * éprouvent sur des indicateurs fabriqués.
+ * Ce module est pur (aucun réseau, aucune date) pour que les essais l'éprouvent sur des indicateurs fabriqués.
  */
 
 /* Provisoires — à reposer d'après les premiers relevés réels. */
