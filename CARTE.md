@@ -2337,18 +2337,18 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 752 l. → rapport
+### `modules/rapport-utilisation.mjs` — 774 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
-`erreurs` 111 · `nombre` 143 · `moyennePonderee` 146 · `maximum` 152 · `centiles` 158
-`synthesePerformances` 171 · `secondes` 253 · `pluriel` 257 · `intertitre` 260
-`performances` 268 · `chiffre` 375 · `barres` 394 · `portes` 434 · `jours` 485
-`dessineRapport` 506 · `dessineBarre` 675 · `rafraichit` 698 · `videEcran` 717
-`demarre` 723 · `brancheRapport` 742
+`courant` 74 · `chargeEvenements` 79 · `joursPeriode` 97 · `chargeRapport` 99
+`erreurs` 119 · `nombre` 151 · `moyennePonderee` 154 · `maximum` 160 · `centiles` 166
+`synthesePerformances` 178 · `secondes` 266 · `visites` 272 · `intertitre` 275
+`performances` 283 · `chiffre` 397 · `barres` 416 · `portes` 456 · `jours` 507
+`dessineRapport` 528 · `dessineBarre` 697 · `rafraichit` 720 · `videEcran` 739
+`demarre` 745 · `brancheRapport` 764
 
 Éléments :
 
@@ -2796,7 +2796,7 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 584 l. → plan, plan-admin
+### `modules/sonde.mjs` — 585 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
@@ -2806,11 +2806,11 @@ Fonctions :
 `nouvelleVisite` 94 · `vueDuMoment` 116 · `commence` 118 · `sorte` 128 · `clos` 130
 `relance` 146 · `image` 152 · `ecouteGestes` 179 · `nomDuScript` 216 · `gel` 223
 `ecouteNavigateur` 237 · `memoire` 249 · `contexteDuPlan` 262 · `lisAppareil` 274
-`finDesDonnees` 291 · `leChargement` 300 · `fluidite` 310 · `laCarte` 318
-`resumeSonde` 337 · `octets` 361 · `coupe` 364 · `tronque` 375 · `fraiche` 403
-`litLaFile` 406 · `ecritLaFile` 414 · `retire` 426 · `corps` 429 · `versionDesPages` 437
-`envoieUne` 448 · `pousse` 474 · `actif` 499 · `envoie` 503 · `brancheSonde` 528
-`demarre` 541
+`finDesDonnees` 292 · `leChargement` 301 · `fluidite` 311 · `laCarte` 319
+`resumeSonde` 338 · `octets` 362 · `coupe` 365 · `tronque` 376 · `fraiche` 404
+`litLaFile` 407 · `ecritLaFile` 415 · `retire` 427 · `corps` 430 · `versionDesPages` 438
+`envoieUne` 449 · `pousse` 475 · `actif` 500 · `envoie` 504 · `brancheSonde` 529
+`demarre` 542
 
 Importe :
 

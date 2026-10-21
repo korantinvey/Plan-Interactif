@@ -26,6 +26,10 @@ import { rest, SESSION, signale, bloc, BASE_PAGES } from "./socle-console.mjs";
 
 const CLE_EVT = "rapport-evenement";
 
+/* Ce que la base garde des bilans de performance, et le plus qu'elle rende :
+   `performances_du_salon` plafonne à 90 et `purge_perf` efface au-delà. */
+const JOURS_BILANS = 90;
+
 let EVTS = [], RAPPORT = null, ERREURS = null, PERFS = null, periode = "30";
 /* Le salon lu. L'export le lit au moment du clic, par la liaison que
    `rapport.mjs` importe et lui confie ; seul ce module le remplace. */
@@ -95,6 +99,10 @@ const joursPeriode = () => periode === "tout" ? null : Number(periode);
 async function chargeRapport() {
   if (!selection) { RAPPORT = null; PERFS = null; return; }
   const corps = JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() });
+  /* Les performances ne se lisent que sur les bilans gardés : « depuis le
+     début » s'y borne à quatre-vingt-dix jours, car la base, sans nombre de
+     jours, en lirait sept. */
+  const corpsPerf = JSON.stringify({ p_evenement: selection, p_jours: joursPeriode() ?? JOURS_BILANS });
   /* Les erreurs à part : une base qui n'a pas encore reçu leur migration ne
      doit pas priver l'organisateur de son rapport. */
   [RAPPORT, ERREURS, PERFS] = await Promise.all([
@@ -102,7 +110,7 @@ async function chargeRapport() {
     rest("rpc/erreurs_du_salon", { method: "POST", body: corps }).catch(() => null),
     /* Les performances de même : la sonde a sa propre migration, et sans elle
        le rapport garde tout le reste. */
-    rest("rpc/performances_du_salon", { method: "POST", body: corps }).catch(() => null),
+    rest("rpc/performances_du_salon", { method: "POST", body: corpsPerf }).catch(() => null),
   ]);
 }
 
@@ -164,9 +172,8 @@ const centiles = (sources, lit) => ({
  * Ce que la période dit des performances, prêt à dessiner. Rend `null` quand
  * il n'y a rien à lire.
  *
- * La journée en cours (`aujourdhui`) n'a pas de nombre de visites : si la
- * base a déjà un bilan de ce jour, elle remplace son détail, plus frais ; sinon
- * elle compte pour les visites qu'elle liste, au moins une.
+ * La journée en cours (`aujourdhui`) n'a pas de nombre de visites propre :
+ * elle remplace les bilans du jour pour le détail, une seule fois.
  */
 function synthesePerformances(perf, fuseau) {
   if (!perf) return null;
@@ -179,17 +186,20 @@ function synthesePerformances(perf, fuseau) {
 
   const frais = perf.aujourdhui && (perf.aujourdhui.appareils?.length || nombre(perf.aujourdhui.etapes?.affichage?.p50))
     ? perf.aujourdhui : null;
-  const planAuj = bilans.some((l) => l.page === "plan" && jourDeLaPage(l) === auj);
 
-  // une source par bilan de la page plan : ses visites et son détail
-  const plan = bilans.filter((l) => l.page === "plan").map((l) => ({
-    poids: l.visites,
-    detail: frais && jourDeLaPage(l) === auj ? frais : l.detail,
-    ligne: l,
-  }));
-  if (frais && !planAuj) {
-    const vues = (frais.appareils || []).reduce((n, a) => n + (a.visites || 0), 0);
-    plan.push({ poids: Math.max(1, vues), detail: frais, ligne: null });
+  /* Une source par bilan de la page plan : ses visites et son détail. Le
+     détail du jour en cours, lui, couvre tous les supports d'un coup : il
+     remplace donc les lignes du jour (mobile et bureau) par une seule source,
+     sans quoi il serait compté deux fois. Son poids est le plus grand des deux
+     comptes, les visites des bilans (de la nuit, peut-être en retard) et celles
+     que le détail liste lui-même. */
+  const lignesPlan = bilans.filter((l) => l.page === "plan");
+  const duJour = lignesPlan.filter((l) => jourDeLaPage(l) === auj);
+  const plan = lignesPlan.filter((l) => !(frais && duJour.includes(l)))
+    .map((l) => ({ poids: l.visites, detail: l.detail }));
+  if (frais) {
+    const listees = (frais.appareils || []).reduce((n, a) => n + (a.visites || 0), 0);
+    plan.push({ poids: Math.max(1, listees, duJour.reduce((n, l) => n + l.visites, 0)), detail: frais });
   }
 
   const recues = Number(perf.recues) || 0;
@@ -213,6 +223,9 @@ function synthesePerformances(perf, fuseau) {
   }
 
   const etape = (cle) => centiles(plan, (s) => s.detail?.etapes?.[cle]);
+  /* Approximation assumée : la base ne dit pas combien de visites ont utilisé
+     chaque vue, la médiane d'une vue est donc pesée par toutes les visites du
+     jour, y compris celles qui n'ont jamais quitté l'autre. */
   const vue = (cle) => moyennePonderee(plan.map((s) => [s.detail?.vues?.[cle]?.p50, s.poids]));
 
   // les appareils : même carte sur plusieurs jours, additionnée et pondérée
@@ -254,7 +267,9 @@ const secondes = (ms) => nombre(ms)
   ? (ms / 1000).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " s"
   : "—";
 
-const pluriel = (n, un, plusieurs) => nb(n) + " " + (n > 1 ? plusieurs : un);
+/* Des phrases entières, jamais deux moitiés : la version anglaise traduit un
+   texte à la fois, d'après un modèle (« {n} visites »). */
+const visites = (n) => nb(n) + (n > 1 ? " visites" : " visite");
 
 /** Un petit intertitre, comme « Par canal » plus haut. */
 function intertitre(hote, texte) {
@@ -280,7 +295,7 @@ function performances(hote, p) {
   const NOMS = { plan: "Plan", admin: "Administration", borne: "Borne" };
   for (const o of p.ouvertures) {
     chiffre(g, 0, NOMS[o.page] + " · " + (o.mobile ? "téléphone" : "bureau"),
-      "Les 10 % les plus lents : " + secondes(o.p90) + " · " + pluriel(o.visites, "visite", "visites"));
+      "Les 10 % les plus lents : " + secondes(o.p90) + " · " + visites(o.visites));
     g.lastChild.querySelector(".n").textContent = secondes(o.p50);
   }
   hote.appendChild(g);
@@ -288,14 +303,14 @@ function performances(hote, p) {
   const liste = document.createElement("div");
   liste.className = "erreurs";
   liste.style.marginTop = "12px";
-  for (const [nom, v, duree] of [
-    ["La page arrive", e.page], ["Les données arrivent", e.donnees],
-    ["Préparation du plan", e.preparation, true], ["Plan affiché", e.affichage]]) {
+  for (const [nom, v] of [
+    ["La page arrive après", e.page], ["Les données arrivent après", e.donnees],
+    ["Préparation du plan", e.preparation], ["Plan affiché après", e.affichage]]) {
     const l = document.createElement("div");
     l.className = "erreur";
     l.innerHTML = '<span class="n"></span><span class="m"></span><span class="o"></span>';
     l.querySelector(".n").textContent = secondes(v.p50);
-    l.querySelector(".m").textContent = nom + (duree ? "" : " après");
+    l.querySelector(".m").textContent = nom;
     l.querySelector(".o").textContent = "Les 10 % les plus lents : " + secondes(v.p90);
     liste.appendChild(l);
   }
@@ -303,8 +318,7 @@ function performances(hote, p) {
   const note = document.createElement("p");
   note.className = "astuce";
   note.style.marginTop = "8px";
-  note.textContent = "Temps comptés depuis l'ouverture de la page, sauf la préparation, qui est une durée. " +
-    "« Les 10 % les plus lents » : le temps au-delà duquel se trouvent les visites les plus lentes.";
+  note.textContent = "Temps comptés depuis l'ouverture de la page, sauf la préparation, qui est une durée. « Les 10 % les plus lents » : le temps au-delà duquel se trouvent les visites les plus lentes.";
   hote.appendChild(note);
 
   intertitre(hote, "Fluidité");
@@ -339,7 +353,7 @@ function performances(hote, p) {
     lo.innerHTML = p.lourds.map((f) =>
       '<div class="erreur"><span class="n">' + esc(nb(Math.round(f.ko || 0))) + ' Ko</span>' +
       '<span class="m">' + esc(f.fichier) + '</span>' +
-      '<span class="o">Parmi les plus lourds dans ' + esc(pluriel(f.visites, "visite", "visites")) +
+      '<span class="o">Parmi les plus lourds dans ' + esc(visites(f.visites)) +
       '</span></div>').join("");
     hote.appendChild(lo);
   }
@@ -350,9 +364,8 @@ function performances(hote, p) {
     ap.className = "erreurs";
     ap.innerHTML = p.appareils.map((a) =>
       '<div class="erreur appareil"><span class="n">' + esc(secondes(a.ms)) + '</span>' +
-      '<span class="m">' + esc(a.carte) + '</span>' +
-      '<span class="o">' + (a.famille ? esc(a.famille) + " · " : "") +
-      esc(pluriel(a.visites, "visite", "visites")) + '</span></div>').join("");
+      '<span class="m">' + esc(a.carte) + (a.famille ? " · " + esc(a.famille) : "") + '</span>' +
+      '<span class="o">' + esc(visites(a.visites)) + '</span></div>').join("");
     hote.appendChild(ap);
   } else {
     const v = document.createElement("p");
@@ -364,9 +377,18 @@ function performances(hote, p) {
   const total = document.createElement("p");
   total.className = "astuce";
   total.style.marginTop = "14px";
-  total.textContent = pluriel(p.visites, "visite relevée", "visites relevées") +
-    (p.ecartees ? ", dont " + pluriel(p.ecartees, "écartée", "écartées") + " par le plafond" : "") + ".";
+  total.textContent = nb(p.visites) + " " + (p.visites > 1 ? "visites relevées" : "visite relevée") +
+    (p.ecartees
+      ? ", dont " + nb(p.ecartees) + " " + (p.ecartees > 1 ? "écartées" : "écartée") + " par le plafond"
+      : "") + ".";
   hote.appendChild(total);
+  if (periode === "tout") {
+    const an = document.createElement("p");
+    an.className = "astuce";
+    an.style.marginTop = "6px";
+    an.textContent = "90 derniers jours au plus";
+    hote.appendChild(an);
+  }
 }
 
 /* ------------------------------------------------------------------
