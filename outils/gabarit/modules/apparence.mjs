@@ -68,7 +68,10 @@ export function appliqueCouleursData(){
   pose(conf("data:zones").couleur, "--c-zone");
   const general = conf("data:labels").couleur;
   pose(conf("labStand").couleur || general, "--c-lab-stand");
-  pose(conf("labZone").couleur || general, "--c-lab-zone");
+  const labZone = conf("labZone").couleur || general;
+  pose(labZone, "--c-lab-zone");
+  pose(labZone && trio(labZone) && (luminance(trio(labZone)) > 0.42
+    ? "rgba(14,17,19,.75)" : "rgba(255,255,255,.85)"), "--c-lab-zone-lisere");
   /* Un stand sélectionné prend deux couleurs — l'aplat et son liseré — et
      l'exploitant n'en règle qu'une : celle qu'il voit. Le liseré s'en déduit,
      sans quoi il faudrait accorder deux nuanciers à la main pour que le second

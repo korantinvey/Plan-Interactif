@@ -717,6 +717,17 @@ const MASQUE_ZOOM = [100, -100, 100];
    plage se passait en réglage de couche : il fallait recréer les couches à
    chaque pas de zoom. Sur un téléphone lent, ce seul travail coupait la
    cadence de moitié. */
+/* Le liseré du grand atlas se dit en points de l'atlas, et non en part du
+   corps : la bibliothèque le divise par le rayon du champ, dont elle ne
+   garde hors de la lettre que les trois quarts. Passé en corps, comme il
+   l'était, il se réduisait à rien, et seules les copies décalées d'un pixel
+   des petits textes en tenaient lieu. Le trait du SVG est centré sur le
+   contour : seule sa moitié dépasse de la lettre, et c'est elle qu'on
+   reprend. Au-delà de neuf dixièmes du champ, il en touche le bord et s'y
+   crénelle. */
+const RAYON_SDF = 16;
+const largeurLisere = (/** @type {number} */ em) => Math.min(.9 * RAYON_SDF, em / 2 * 64 / .75);
+
 let CONST_TEXTE = null;
 function constTexte(){
   if (CONST_TEXTE) return CONST_TEXTE;
@@ -892,7 +903,12 @@ function constTexte(){
        réductions de l'atlas où lisent les petits textes, deux points n'en
        valaient plus qu'un demi, et la lettre d'à côté s'invitait. */
     petit: { ext: textes, mode: 1, atlas: { sdf: false, fontSize: 24, buffer: 4 } },
-    grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 6 } },
+    /* Le champ de distance porte seize points autour de la lettre, et non
+       les douze de la bibliothèque : le liseré s'y lit, et douze points ne
+       le laissaient pas dépasser 0,08 em — le nom blanc d'une zone se perdait
+       encore sur les tables blanches de son mobilier. La marge suit, sans
+       quoi le liseré serait rogné au bord de la case. */
+    grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 10, radius: RAYON_SDF } },
     /* Tous les traits partagent un seul programme : tirets — un trait plein
        en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
     traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new TiretsQuiDefilent(), new FiltreZoom()],
@@ -1177,7 +1193,7 @@ function couchesTexte(id, items, famille, graisse, extra){
      et chacune de ses cinq couches s'initialisait, son atlas compris. */
   if (extra.seulGrand) return [new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas,
     extensions: K.grand.ext, modeFiltre: 0,
-    ...(halo ? { outlineWidth: Math.min(.9, halo.largeur * 2.6), outlineColor: halo.couleur } : {}) })];
+    ...(halo ? { outlineWidth: largeurLisere(halo.largeur), outlineColor: halo.couleur } : {}) })];
   /* Le liseré clair qui détache un nom de ce qu'il recouvre — carte de
      chaleur, zone mise en avant. Les grands textes le tirent de leur champ de
      distance, en proportion du corps comme le « .15em » du SVG. Les petits
@@ -1190,7 +1206,7 @@ function couchesTexte(id, items, famille, graisse, extra){
     ...autour,
     ...couchesPetites(id, commun, K, extra.sousPixel),
     new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext, modeFiltre: K.grand.mode,
-      ...(halo ? { outlineWidth: Math.min(.9, halo.largeur * 2.6), outlineColor: halo.couleur } : {}) }),
+      ...(halo ? { outlineWidth: largeurLisere(halo.largeur), outlineColor: halo.couleur } : {}) }),
   ];
 }
 
