@@ -55,4 +55,6 @@ module.exports = {
   "Dernière erreur : {erreur}": "Last error: {erreur}",
   "Dernière : {date}": "Last: {date}",
   "Jamais synchronisé.": "Never synchronised.",
+  // la base Klipso choisie dans « Sources de données »
+  "Base Klipso du salon : {instance}.": "Show's Klipso database: {instance}.",
 };

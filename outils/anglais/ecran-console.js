@@ -28,6 +28,7 @@ module.exports = {
   "Nouvel événement": "New event",
   "Création…": "Creating…",
   "Événement créé.": "Event created.",
+  "Créer": "Create",
   "Données rechargées.": "Data reloaded.",
   "Chargement impossible : {raison}": "Could not load: {raison}",
 };

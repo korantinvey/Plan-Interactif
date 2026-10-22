@@ -28,6 +28,7 @@ import { DOMAINES, FOURNISSEURS_CONF, fournisseurUtilise, source, resumeProvenan
   ouvreProvenance } from "./provenance.mjs";
 import { resumeFiche, ouvreFiche } from "./fiche-detail.mjs";
 import { ouvreModale } from "./fenetre-console.mjs";
+import { chargeBases, choixBase } from "./bases-klipso.mjs";
 import { SESSION, bloc, grille, signale, rest, BASE_PAGES } from "./socle-console.mjs";
 
 /** @type {{
@@ -368,6 +369,32 @@ function champCle(cle, libelle, aide, forme, exemple) {
 }
 
 /**
+ * La base Klipso du salon, choisie dans le menu des bases connues.
+ *
+ * L'administrateur seul lit la liste — la base la refuse aux organisateurs,
+ * qui gardent le champ libre. Elle arrive après la fenêtre : le champ libre
+ * tient la place en attendant, et la reprend si la liste ne vient pas.
+ */
+function champInstance() {
+  const libre = champ("instance", "Instance", "Le sous-domaine Klipso.", 'spellcheck="false"');
+  if (MOI?.role !== "admin") return libre;
+  const e = courant();
+  chargeBases().then((bases) => {
+    if (!libre.isConnected) return;
+    libre.replaceWith(choixBase({
+      bases, valeur: e.instance || "",
+      surChoix: async (instance) => {
+        if (instance === e.instance) return;
+        e.instance = instance;
+        try { await majEvenement(e.id, { instance }); signale("Base Klipso du salon : " + instance + "."); }
+        catch (err) { signale(err.message, true); }
+      },
+    }).element);
+  }).catch(() => {});
+  return libre;
+}
+
+/**
  * Fenêtre des raccordements, un onglet par fournisseur. Chaque onglet dit
  * aussi ce qu'il alimente : un identifiant saisi sans qu'aucun domaine ne
  * s'en serve ne produirait rien, et c'est le genre d'oubli qu'on ne voit pas.
@@ -393,6 +420,7 @@ export function ouvreSources(apres) {
       f.champs.forEach((c) => {
         g.appendChild(c.dansCles
           ? champCle(c.dansCles, c.libelle, c.aide, c.forme, c.exemple)
+          : c.colonne === "instance" ? champInstance()
           : champ(c.colonne, c.libelle, c.aide, 'spellcheck="false"'));
       });
       pan.appendChild(g);

@@ -274,6 +274,7 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | accès administrateur, session, bande d'administration | `modules/acces-admin.mjs`, `modules/session.mjs`, `modules/bande-admin.mjs`, `modules/mode-admin.mjs` |
 | console multi-événements | `modules/console.mjs`, `modules/ecran-console.mjs`, socle `modules/socle-console.mjs` |
 | fiche d'un salon, provenance, correspondance des champs | `modules/fiche-evenement.mjs`, `modules/provenance.mjs`, `modules/fiche-detail.mjs`, `modules/correspondance.mjs` |
+| bases Klipso et leur clé, choisies à la création d'un salon | `modules/bases-klipso.mjs` ; clés dans `prive.cle_klipso`, lues par `supabase/functions/sync-evenement/` `cleKlipso` |
 | synchronisation et son avancement | `supabase/functions/sync-evenement/`, `modules/synchronisation.mjs`, `modules/avancement.mjs` |
 | rapport d'utilisation, export tableur | `modules/rapport-utilisation.mjs`, `modules/export.mjs` |
 | comptes, mot de passe | `modules/comptes.mjs`, `modules/mot-de-passe.mjs` |
@@ -348,8 +349,12 @@ séparera — il se branche en remplissant `PROJETS.recette`.
 ## Secrets
 
 Aucune clé dans le dépôt. `.env` est exclu ; les clés serveur vivent dans les
-secrets Supabase (`npx supabase secrets set …`). La clé `service_role` et la
-clé Klipso ne doivent jamais atteindre une page ni un commit. La clé
+secrets Supabase (`npx supabase secrets set …`). Les clés Klipso font
+exception : une par base, saisie dans la console, rangée dans
+`prive.cle_klipso` — un schéma que l'API ne publie pas et que la sauvegarde
+n'emporte pas ; `KLIPSO_API_KEY` ne sert plus qu'aux bases sans clé propre.
+La clé `service_role` et les clés Klipso ne doivent jamais atteindre une page
+ni un commit. La clé
 « publishable » de `outils/projet.js` est faite pour circuler.
 
 Toute nouvelle adresse de déploiement doit être ajoutée à
