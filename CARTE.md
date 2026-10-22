@@ -3161,13 +3161,13 @@ Importé par :
 
 demarrage · installation · plan · volets
 
-### `modules/vignettes.mjs` — 109 l. → plan, plan-admin
+### `modules/vignettes.mjs` — 112 l. → plan, plan-admin
 
 - l.1 · Les vignettes des logos — ce qui est arrivé, et où le demander
 
 Fonctions :
 
-`sansAvif` 42 · `vignettesLisibles` 56 · `adresseVignette` 87 · `adresseGrande` 108
+`sansAvif` 45 · `vignettesLisibles` 59 · `adresseVignette` 90 · `adresseGrande` 111
 
 Importe :
 
@@ -3397,12 +3397,12 @@ Portes :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1176 l.
+### `supabase/functions/plan-public/index.ts` — 1180 l.
 
-`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 123 · `avecVignette` 172
-`rendVignette` 217 · `rendGrande` 244 · `rendVignettes` 336 · `lu` 379 · `salon` 389
-`appDuSalon` 415 · `rendIconeApp` 446 · `retraits` 551 · `ampute` 578 · `masquesDe` 621
-`masquesDuPlan` 641
+`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 123 · `avecVignette` 177
+`rendVignette` 221 · `rendGrande` 248 · `rendVignettes` 340 · `lu` 383 · `salon` 393
+`appDuSalon` 419 · `rendIconeApp` 450 · `retraits` 555 · `ampute` 582 · `masquesDe` 625
+`masquesDuPlan` 645
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
@@ -3484,6 +3484,7 @@ Portes :
 - `20261021193740_lecture_des_performances.sql` — lecteur_perf, fn lecteur_perf_nouveau, fn lecteur_perf_retire, fn lecture_perf
 - `20261022082549_une_cle_par_base_klipso.sql` — base_klipso, prive.cle_klipso, fn enregistre_base_klipso, fn cle_klipso
 - `20261022110142_vignettes_lues_par_leurs_adresses_en_une_fois.sql` — fn vignettes_par_source
+- `20261022135740_les_erreurs_des_pages_lues_par_jeton.sql` — fn lecture_perf
 
 ## Le reste
 

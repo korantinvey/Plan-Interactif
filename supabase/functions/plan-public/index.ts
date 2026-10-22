@@ -160,14 +160,19 @@ async function vignettesParAdresse(
  * Le stand, augmenté de la clé de vignette de son logo — et de celle de chaque
  * société qu'il héberge, qui a le sien.
  *
- * La clé remplace l'adresse quand elle suffit à tout navigateur : la page ne
- * lit l'adresse d'origine qu'à défaut de vignette (`fiche.mjs`,
- * `recherche.mjs`), et les toits des stands ne lisent que la vignette. Une
- * adresse signée d'Eventmaker pèse six cents signes que la compression ne
- * réduit pas — le hasard d'une signature ne se compresse pas — et les logos
- * de fep27 faisaient ainsi 71 des 136 Ko du plan compressé, pour rien. Sans
- * vignette, ou avec une AVIF seule, l'adresse reste : c'est sur elle que la
- * page retombe.
+ * La clé remplace l'adresse : la page ne lit l'adresse d'origine qu'à défaut
+ * de vignette (`fiche.mjs`, `recherche.mjs`), et les toits des stands ne
+ * lisent que la vignette. Une adresse signée d'Eventmaker pèse six cents
+ * signes que la compression ne réduit pas — le hasard d'une signature ne se
+ * compresse pas — et les logos de fep27 faisaient ainsi 71 des 136 Ko du plan
+ * compressé. Sans vignette, l'adresse reste : c'est sur elle que la page
+ * retombe.
+ *
+ * Une AVIF sans WebP la remplace aussi, et c'est un choix : le navigateur qui
+ * ignore l'AVIF — Safari d'avant iOS 16.4, l'iPhone 7 et plus ancien — n'a
+ * alors plus de logo, et le stand garde son nom. L'adresse gardée pour lui
+ * seul faisait payer la moitié du plan à tous les autres, et les vignettes de
+ * fep27, toutes en AVIF seule, la gardaient toutes.
  */
 function avecVignette(
   st: Record<string, unknown>,
@@ -175,16 +180,15 @@ function avecVignette(
 ): Record<string, unknown> {
   if (!par.size) return st;
   /* `vignetteWebp` dit que `vignette` est de l'AVIF — vide quand le logo n'a
-     pas de WebP : un navigateur qui ne lit pas l'AVIF prend alors le logo
-     d'origine, plutôt qu'une image qu'il ne saurait montrer. */
+     pas de WebP : un navigateur qui ne lit pas l'AVIF n'a alors pas de logo,
+     plutôt qu'une image qu'il ne saurait montrer. */
   const cles = (v?: Vignettes) =>
     v ? { vignette: v.cle, ...(v.avif ? { vignetteWebp: v.webp ?? "" } : {}) } : null;
   const augmente = (s: Record<string, unknown>) => {
     const v = typeof s.logo === "string" ? par.get(s.logo) : undefined;
     if (!v) return s;
     const sortie: Record<string, unknown> = { ...s, ...cles(v) };
-    // une AVIF sans WebP laisse l'adresse : c'est le secours de qui ignore l'AVIF
-    if (!v.avif || v.webp) delete sortie.logo;
+    delete sortie.logo;
     return sortie;
   };
   const siens = augmente(st);
