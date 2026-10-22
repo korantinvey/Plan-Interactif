@@ -9,4 +9,7 @@ module.exports = {
   "Retirer": "Remove",
   "rangement automatique": "automatic layout",
   "la zone est pleine": "the area is full",
+  "Logo du camion…": "Truck logo…",
+  "Changer le logo…": "Change the logo…",
+  "Retirer le logo": "Remove the logo",
 };

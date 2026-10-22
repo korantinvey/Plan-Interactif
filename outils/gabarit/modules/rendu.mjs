@@ -81,9 +81,12 @@ function attributComptoir(id){
 }
 
 /** Les camions placés à la main d'un foodtruck : « u v a » séparés de « ; ».
- *  Vide, c'est zéro camion ; sans l'attribut, le rangement d'office. */
-export const texteCamions = (/** @type {{ u: number, v: number, a: number }[]} */ r) =>
-  r.map(c => [c.u, c.v, c.a].join(" ")).join(";");
+ *  Vide, c'est zéro camion ; sans l'attribut, le rangement d'office. Un camion
+ *  qui a un logo y ajoute sa trace — son poids et sa fin —, pour qu'un logo
+ *  changé repeigne la zone : le logo lui-même reste dans la configuration. */
+export const texteCamions = (/** @type {{ u: number, v: number, a: number, logo?: string }[]} */ r) =>
+  r.map(c => [c.u, c.v, c.a].join(" ") + (typeof c.logo === "string" && c.logo
+    ? " " + c.logo.length + c.logo.slice(-6).replace(/[^\w]/g, "") : "")).join(";");
 function attributCamions(id){
   const r = (CONF._foodtrucks || {})[id];
   return reglageCamionsValide(r) ? ' data-foodtrucks="' + texteCamions(r) + '"' : "";
