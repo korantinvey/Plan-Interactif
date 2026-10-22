@@ -21,7 +21,8 @@
  *     leur calque ;
  *   - l'apparence et les dessins ne sont posés qu'à la création d'un
  *     pavillon — ceux de la console l'emportent ensuite, sauf les dates du
- *     salon (`_horaires`), qui suivent le programme ;
+ *     salon (`_horaires`), qui suivent le programme, et les logos des
+ *     foodtrucks, posés sur les camions qui n'en ont pas (`logosAuxCamions`) ;
  *   - l'instantané, le programme, les produits et les logos, eux, sont
  *     refaits : ce sont les données.
  *
@@ -35,9 +36,35 @@
  */
 const crypto = require("crypto");
 const { PROJETS } = require("./projet.js");
-const { salonDemo, lisSource } = require("./demo.js");
+const { salonDemo, lisSource, logosFoodtrucks, lisLogos } = require("./demo.js");
 
 const SLUG = "demo";
+
+/**
+ * Les camions des foodtrucks, réglés dans la console, avec un logo chacun.
+ *
+ * Ce que l'exploitant a placé reste où il l'a mis, et un logo qu'il a choisi
+ * reste le sien : seuls les camions sans logo reçoivent, dans l'ordre, les
+ * enseignes inventées de la démonstration. Une zone que la démonstration
+ * gare et que la console n'a pas réglée reçoit son camion. Rien à poser :
+ * « null ».
+ */
+function logosAuxCamions(console_, demo) {
+  const enseignes = logosFoodtrucks(lisLogos());
+  if (!enseignes.length) return null;
+  const t = { ...(console_ || {}) };
+  for (const [id, liste] of Object.entries(demo || {})) if (!Array.isArray(t[id])) t[id] = liste;
+  let n = 0;
+  for (const id of Object.keys(t).sort()) {
+    if (!Array.isArray(t[id])) continue;
+    t[id] = t[id].map((c) => {
+      if (!c || c.logo) return c;
+      const e = enseignes[n++ % enseignes.length];
+      return { ...c, logo: e.logo, lr: e.lr };
+    });
+  }
+  return t;
+}
 const INSTANCE = "demo";
 
 const URL_BASE = process.env.SUPABASE_URL || PROJETS.production.url;
@@ -179,11 +206,16 @@ function tailleWebp(b) {
     /* Sauf les dates du salon : le programme y est posé, et des dates restées
        ailleurs laisseraient chaque conférence hors des jours du salon. */
     const [ap] = await base("apparence?select=reglages&plan_id=eq." + pl.id, {}, "Lecture de l'apparence");
-    if (ap && JSON.stringify((ap.reglages || {})._horaires) !== JSON.stringify(p.apparence.reglages._horaires)) {
-      await base("apparence?plan_id=eq." + pl.id, {
-        method: "PATCH",
-        body: JSON.stringify({ reglages: { ...ap.reglages, _horaires: p.apparence.reglages._horaires } }),
-      }, "Dates du salon de " + p.libelle);
+    if (ap){
+      const avant = ap.reglages || {};
+      const camions = logosAuxCamions(avant._foodtrucks, p.apparence.reglages._foodtrucks);
+      const apres = { ...avant, _horaires: p.apparence.reglages._horaires, ...(camions ? { _foodtrucks: camions } : {}) };
+      if (JSON.stringify(apres) !== JSON.stringify(avant)) {
+        await base("apparence?plan_id=eq." + pl.id, {
+          method: "PATCH",
+          body: JSON.stringify({ reglages: apres }),
+        }, "Dates du salon et logos des foodtrucks de " + p.libelle);
+      }
     }
 
     /* Les dessins de même : ils se retouchent en administration, et un import

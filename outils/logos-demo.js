@@ -21,7 +21,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { pathToFileURL } = require("url");
 const { chromium } = require("@playwright/test");
-const { salonDemo, lisSource } = require("./demo.js");
+const { salonDemo, lisSource, FOODTRUCKS } = require("./demo.js");
 
 const D = __dirname;
 const SORTIE = path.join(D, "logos-demo.json");
@@ -176,7 +176,7 @@ function dessine(specs) {
   // sans logos : ce sont eux qu'on dessine
   const salon = salonDemo(lisSource(), { logos: {} });
   const noms = [...new Set(salon.plans.flatMap((p) => p.stands.flatMap((s) =>
-    [s.nom, ...(s.coex || []).map((c) => c.nom)])).filter(Boolean))].sort();
+    [s.nom, ...(s.coex || []).map((c) => c.nom)])).filter(Boolean)), ...FOODTRUCKS].sort();
   const specs = noms.map((nom) => ({
     nom,
     graine: crypto.createHash("sha256").update("logo|" + nom).digest().readUInt32LE(0),

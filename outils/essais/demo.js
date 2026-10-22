@@ -106,6 +106,10 @@ const pileMorte = plan.apparence.pile.filter((e) => e.startsWith("dessin:") &&
   !plan.dessins.some((d) => "dessin:" + d.id === e));
 dit(!pileMorte.length, "la pile ne désigne que des dessins présents", pileMorte.join(" ; "));
 dit(JSON.stringify(salonDemo(source)) === texte, "deux constructions, le même salon");
+const garees = demo.plans.flatMap((p) => p.zones.filter((z) => z.type === "foodtruck")
+  .map((z) => (p.apparence.reglages._foodtrucks || {})[z.id]));
+dit(garees.length > 0 && garees.every((l) => Array.isArray(l) && l.length && l.every((c) =>
+  /^data:image\/webp;base64,/.test(c.logo) && c.lr > 0)), "chaque foodtruck porte un logo", garees.length + " zone(s)");
 
 function texteSource() { return JSON.stringify(source); }
 
