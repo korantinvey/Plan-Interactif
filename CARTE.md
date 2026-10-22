@@ -3483,6 +3483,7 @@ Portes :
 - `20261021193740_lecture_des_performances.sql` — lecteur_perf, fn lecteur_perf_nouveau, fn lecteur_perf_retire, fn lecture_perf
 - `20261022082549_une_cle_par_base_klipso.sql` — base_klipso, prive.cle_klipso, fn enregistre_base_klipso, fn cle_klipso
 - `20261022110142_vignettes_lues_par_leurs_adresses_en_une_fois.sql` — fn vignettes_par_source
+- `20261022135740_les_erreurs_des_pages_lues_par_jeton.sql` — fn lecture_perf
 
 ## Le reste
 

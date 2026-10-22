@@ -3,7 +3,7 @@
  *
  * Rejoue les migrations dans PGlite (`base.js`) puis éprouve la porte que la
  * clé publiable atteint : refus muet sans jeton valable, lecture seule des
- * relevés, bilans, quotas et salons avec leur `slug`, filtres, bornes,
+ * relevés, bilans, quotas, erreurs et salons avec leur `slug`, filtres, bornes,
  * pagination, et le fait que le jeton ne se retrouve jamais en clair dans la
  * base ni n'est émis par un autre rôle que le propriétaire.
  *
@@ -37,6 +37,10 @@ async function main() {
   await releve(B, 0, 2000); await releve(A, 20, 900);
   await db.query("insert into perf_bilan (evenement_id, jour, page, mobile, visites) values ($1,current_date,'plan',false,5)", [A]);
   await db.query("insert into perf_jour (evenement_id, jour, page, recues) values ($1,current_date,'plan',4)", [B]);
+  const erreurPage = (evt, decalageJours, empreinte, nombre) => db.query(
+    "insert into erreur_page (evenement_id, jour, page, empreinte, message, lieu, version, nombre) values ($1,current_date - $2::int,'admin',$3,'x is undefined','modules/fiche.mjs:132','1436aa6a0a',$4)",
+    [evt, decalageJours, empreinte, nombre]);
+  await erreurPage(A, 0, "e1", 7); await erreurPage(B, 0, "e2", 1); await erreurPage(A, 30, "e3", 2);
 
   const anon = async (sql, args) => {
     await db.exec("set role anon");
@@ -64,6 +68,13 @@ async function main() {
   dit(bil.length === 1 && bil[0].slug === "a" && bil[0].visites === 5, "bilans avec slug");
   const jours = await lis(jeton, "jours");
   dit(jours.length === 1 && jours[0].slug === "b" && jours[0].recues === 4, "jours avec slug");
+  const err = await lis(jeton, "erreurs");
+  dit(err.length === 2 && err.every((l) => l.slug && !("evenement_id" in l) && l.message && l.lieu && l.version),
+    "erreurs des 7 jours, avec slug, message, endroit et version", err.length);
+  dit(err.find((l) => l.slug === "a").nombre === 7, "erreurs : le nombre d'occurrences suit");
+  dit((await lis(jeton, "erreurs", { slug: "b" })).length === 1, "erreurs : p_slug filtre");
+  dit((await lis(jeton, "erreurs", { de: "2000-01-01" })).length === 3, "erreurs : les bornes de dates valent comme ailleurs");
+  dit(await lis("0".repeat(64), "erreurs") === null, "erreurs : un faux jeton n'apprend rien");
   const salons = await lis(jeton, "salons");
   dit(salons.length === 2 && salons[0].slug === "a" && Object.keys(salons[0]).sort().join() === "id,nom,slug",
     "salons : id, slug, nom seulement", JSON.stringify(salons[0]));
@@ -156,6 +167,18 @@ async function main() {
     await db.exec(sql); await db.exec(sql);
   } catch (e) { erreur = e.message; }
   dit(!erreur, "la migration rejouée deux fois ne produit aucune erreur", erreur);
+  /* La lecture des erreurs redéfinit la porte en entier : rejouée par-dessus
+     l'ancienne, elle doit la rendre telle qu'elle était, la branche en plus. */
+  const suite = fs.readdirSync(MIGRATIONS).find((f) => f.endsWith("_les_erreurs_des_pages_lues_par_jeton.sql"));
+  let erreurSuite = "";
+  try {
+    const sql = fs.readFileSync(path.join(MIGRATIONS, suite || "absente.sql"), "utf8");
+    await db.exec(sql); await db.exec(sql);
+  } catch (e) { erreurSuite = e.message; }
+  dit(!erreurSuite, "la lecture des erreurs rejouée deux fois ne produit aucune erreur", erreurSuite);
+  const jeton3 = (await un("select lecteur_perf_nouveau('claude') as j")).j;
+  dit((await lis(jeton3, "erreurs")).length === 2 && (await lis(jeton3, "releves")).length > 0,
+    "après rejeu, les erreurs comme les relevés se lisent");
 
   await db.close();
   if (ko) { console.log("\n" + ko + " échec(s)"); process.exit(1); }

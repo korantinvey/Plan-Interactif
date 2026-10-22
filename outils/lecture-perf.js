@@ -1,5 +1,7 @@
 /**
- * Lit les relevés de la sonde de performance par HTTPS, pour les analyser.
+ * Lit les relevés de la sonde de performance par HTTPS, pour les analyser — et
+ * les erreurs des pages, qui disent ce que les gels ne disent pas : la page
+ * qu'une exception a cassée.
  *
  * Pourquoi : le conteneur d'une session Claude Code ne joint Supabase que par
  * HTTPS, avec la clé publiable ; pas de connexion Postgres directe. La fonction
@@ -7,8 +9,11 @@
  * l'exploitant a créé lui-même.
  *
  *   node outils/lecture-perf.js releves --de 2026-10-21 --a 2026-10-27 --slug fep27
- *   node outils/lecture-perf.js bilans|jours|salons [--de J] [--a J] [--slug S]
+ *   node outils/lecture-perf.js bilans|jours|erreurs|salons [--de J] [--a J] [--slug S]
  *   ajouter  --sortie fichier.json  pour écrire au lieu d'imprimer.
+ *
+ * Derrière le relais d'une session Claude Code, le `fetch` de Node ne le
+ * prend pas de lui-même : `NODE_USE_ENV_PROXY=1 node outils/lecture-perf.js …`.
  *
  * Créer le jeton : dans l'éditeur SQL de Supabase,
  *   select lecteur_perf_nouveau('claude');
@@ -20,7 +25,7 @@
 const fs = require("fs");
 const { PROJETS } = require("./projet.js");
 
-const QUOI = ["releves", "bilans", "jours", "salons"];
+const QUOI = ["releves", "bilans", "jours", "erreurs", "salons"];
 const PAGE = 1000;
 
 function lisArguments(argv) {
