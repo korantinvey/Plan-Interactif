@@ -30,6 +30,7 @@ import { camions, figeCamions, ajouteCamion, reglageCamionsValide, CAMION, CAMIO
 import { anneauDe, emprise } from "./outil-comptoir.mjs";
 import { texteCamions } from "./rendu.mjs";
 import { reduitLogo } from "./depot-image.mjs";
+import { detoure } from "./detourage.mjs";
 import { imageSure } from "./sur.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -65,6 +66,51 @@ export function ecritCamions(id, r){
   document.querySelectorAll('#zones g[data-id="' + CSS.escape(String(id)) + '"]').forEach(g => {
     if (r) g.setAttribute("data-foodtrucks", texteCamions(t[id]));
     else g.removeAttribute("data-foodtrucks");
+  });
+}
+
+/**
+ * Le logo réduit, son fond blanc retiré et recadré au plus près — avec la
+ * largeur sur la hauteur de ce qui reste.
+ *
+ * Sur la devanture, le logo s'imprime à même la caisse : le fond blanc d'un
+ * fichier y faisait deux bandes blanches de part et d'autre d'un logo carré.
+ * Le même tri que pour le toit des stands (`detourage.mjs`) le retire ; un
+ * logo qui n'a pas de fond passe tel quel. Le rapport se lit sur l'image
+ * recadrée : la devanture s'y taille sans la déformer.
+ * @param {string} src
+ * @returns {Promise<{ src: string, lr: number }>}
+ */
+function sansFond(src){
+  return new Promise((tenu, rompu) => {
+    const im = new Image();
+    im.onerror = () => rompu(new Error("image illisible"));
+    im.onload = () => {
+      const w = im.naturalWidth || 1, h = im.naturalHeight || 1;
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return tenu({ src, lr: w / h });
+      ctx.drawImage(im, 0, 0);
+      const img = ctx.getImageData(0, 0, w, h);
+      detoure(img.data, w, h);
+      let x0 = w, y0 = h, x1 = -1, y1 = -1;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (img.data[(y * w + x) * 4 + 3] > 16){
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+      // tout blanc : mieux vaut le logo tel quel que rien
+      if (x1 < 0) return tenu({ src, lr: w / h });
+      ctx.putImageData(img, 0, 0);
+      const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+      const coupe = document.createElement("canvas");
+      coupe.width = cw; coupe.height = ch;
+      const cc = coupe.getContext("2d");
+      if (!cc) return tenu({ src, lr: w / h });
+      cc.drawImage(c, x0, y0, cw, ch, 0, 0, cw, ch);
+      // webp garde la transparence ; un navigateur qui ne sait pas l'écrire répond en png
+      tenu({ src: coupe.toDataURL("image/webp", .85), lr: cw / ch });
+    };
+    im.src = src;
   });
 }
 
@@ -293,13 +339,7 @@ export function champFoodtrucks(bloc, o){
     if (!f || tenu < 0) return;
     const cible = tenu;
     ditLogo.textContent = "Lecture…";
-    // le rapport se lit sur l'image réduite : la devanture s'y taille sans la déformer
-    reduitLogo(f).then(src => new Promise((tenuP, rompu) => {
-      const im = new Image();
-      im.onload = () => tenuP({ src, lr: im.naturalWidth / Math.max(1, im.naturalHeight) || 1 });
-      im.onerror = () => rompu(new Error("image illisible"));
-      im.src = src;
-    })).then((/** @type {any} */ o) => {
+    reduitLogo(f).then(sansFond).then((/** @type {any} */ o) => {
       ditLogo.textContent = Math.round(o.src.length / 1365) + " Ko";
       // un autre camion pris entre-temps : le logo va à celui qu'on visait
       const avant = tenu;
