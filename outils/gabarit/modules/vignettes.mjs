@@ -38,7 +38,10 @@ if (typeof Image !== "undefined"){
 }
 
 /** Chaque logo d'AVIF ramené à sa WebP, ou à son logo d'origine s'il n'en a
- *  pas : tout ce qui lit `vignette` lit alors ce que ce navigateur montre. */
+ *  pas : tout ce qui lit `vignette` lit alors ce que ce navigateur montre.
+ *  L'API ne joint plus l'adresse d'origine à une AVIF seule (`plan-public`
+ *  `avecVignette`) : ce navigateur n'a alors pas de logo, et le stand garde
+ *  son nom. */
 function sansAvif(/** @type {any} */ d){
   const ramene = (/** @type {any} */ x) => {
     if (!x || !("vignetteWebp" in x)) return;
