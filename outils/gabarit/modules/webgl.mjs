@@ -1061,7 +1061,11 @@ function poseGeste(/** @type {boolean} */ oui){
 
 /* Les noms des stands et des zones, posés sur le dessus de leur volume en vue
    immersive ; au sol, ils resteraient dedans, que les façades cachent. Celui
-   d'une zone masquée reste au sol avec elle. */
+   d'une zone masquée reste au sol avec elle. Celui d'une zone meublée se pose
+   sur son sol, qui n'est qu'un tapis (`hauteurVolume`) : posé à la hauteur
+   d'une zone en bloc, il flottait un mètre au-dessus, et vu de biais il
+   remontait vers le fond du hall, hors du milieu de la zone. Les noms se
+   peignent par-dessus le relief : le mobilier ne le cache pas pour autant. */
 function positionTexte(couche = false){
   if (!GL.camera) return d => d.position;
   /* Les lignes d'un stand s'empilent en hauteur au-dessus de son centre : un
@@ -1082,7 +1086,7 @@ function positionTexte(couche = false){
     if (zone && /\bmasquee\b/.test(c)) return d.position;
     // le nom d'un stand abaissé sous un trajet descend avec lui
     if (!zone && boutsDuTrajet() && !debout.has(d.lbl)) return pose(d, HAUTEUR_ABAISSEE);
-    return pose(d, (zone ? HAUTEUR_ZONE : HAUTEUR_STAND) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1));
+    return pose(d, (!zone ? HAUTEUR_STAND : d.meuble ? SOL_MEUBLE : HAUTEUR_ZONE) * (/\bsel\b/.test(c) ? HAUSSE_CHOIX : 1));
   };
 }
 

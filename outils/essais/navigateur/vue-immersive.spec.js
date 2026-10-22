@@ -54,4 +54,39 @@ test.describe("la vue immersive", () => {
     expect(u(bd) - u(bg)).toBeCloseTo(20, 3);
     expect(erreurs).toEqual([]);
   });
+  /* Une zone meublée n'est qu'un tapis sous son mobilier : son nom se pose
+     sur ce sol, au milieu de la zone. Posé à la hauteur d'une zone en bloc, il
+     remontait à l'écran vers le fond du hall, hors de la zone de près. */
+  test("le nom d'une zone meublée tombe au milieu de son sol", async ({ page }) => {
+    test.setTimeout(90_000);
+    const erreurs = await prepare(page);
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    for (const z of donnees.plans[0].zones) z.type = "restauration";
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-meuble" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-meuble" }, body: JSON.stringify(donnees) }));
+    await page.goto("/plan.html?plan=smcl-2026&ambiance=immersif");
+    await attendLaListe(page);
+    const camera = await page.waitForFunction(() => window.__essais.GL.camera, null, { timeout: 15_000 })
+      .then(() => true, () => false);
+    test.skip(!camera, "pas de carte graphique : le plan reste à plat");
+
+    // l'écart, à l'écran, entre le nom posé et le milieu de la zone au sol
+    const ecarts = await page.waitForFunction(() => {
+      const GL = window.__essais.GL, vp = GL.deck.getViewports()[0];
+      const l = [];
+      for (const c of (GL.deck.props.layers || []).flat(Infinity).filter(Boolean)){
+        if (!/^libelles-/.test(c.id)) continue;
+        for (const d of c.props.data || []){
+          if (!(d.cls || "").startsWith("zn")) continue;
+          const a = vp.project(c.props.getPosition(d)), b = vp.project([d.position[0], d.position[1], 0]);
+          l.push(Math.hypot(a[0] - b[0], a[1] - b[1]));
+        }
+      }
+      return l.length && l;
+    }, null, { timeout: 15_000 }).then(h => h.jsonValue());
+    for (const e of ecarts) expect(e).toBeLessThan(1.5);
+    expect(erreurs).toEqual([]);
+  });
 });
