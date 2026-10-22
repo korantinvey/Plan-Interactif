@@ -38,7 +38,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
-import { lisParTranches } from "../_partage/vignette.ts";
 import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
@@ -136,27 +135,23 @@ async function vignettesParAdresse(
   }
   const par = new Map<string, Vignettes>();
   if (!adresses.size) return par;
-  const sb = service();
-  // par tranches : une requête qui porte trop d'adresses dépasse ce qu'un
-  // intermédiaire accepte de transmettre (`tranchesDAdresses`)
-  const lues = await lisParTranches([...adresses], (tranche) =>
-    sb.from("vignette_de_logo").select("cle,source,format").in("source", tranche));
-  /* Les deux vignettes d'une adresse viennent de la même tranche, et leur
-     rencontre ne dépend pas de l'ordre : l'ordre d'arrivée ne change rien. */
-  for (const { data, error } of lues) {
-    /* Un échec n'empêche pas le plan de partir — ses logos se chargeront
-       chez leur source —, mais il se dit : tu, il faisait passer des salons
-       entiers pour n'avoir aucune vignette. */
-    if (error) console.error("vignettes introuvables :", error.message);
-    for (const v of data ?? []) {
-      const r = v as { cle: string; source: string; format?: string };
-      const source = String(r.source), deja = par.get(source);
-      if (r.format === "avif") {
-        par.set(source, { cle: String(r.cle), avif: true, webp: deja?.webp ?? deja?.cle });
-      }
-      else if (deja) deja.webp = String(r.cle);
-      else par.set(source, { cle: String(r.cle) });
+  /* Toutes les adresses dans le corps d'un seul appel : par un filtre `in`,
+     elles voyageaient dans l'adresse de la requête, par tranches, et les
+     adresses signées d'Eventmaker en faisaient vingt-neuf allers-retours pour
+     un salon (migration `vignettes_lues_par_leurs_adresses_en_une_fois`). */
+  const { data, error } = await service()
+    .rpc("vignettes_par_source", { p_sources: [...adresses] });
+  /* Un échec n'empêche pas le plan de partir — ses logos se chargeront
+     chez leur source —, mais il se dit : tu, il faisait passer des salons
+     entiers pour n'avoir aucune vignette. */
+  if (error) console.error("vignettes introuvables :", error.message);
+  for (const v of (data ?? []) as { cle: string; source: string; format?: string }[]) {
+    const source = String(v.source), deja = par.get(source);
+    if (v.format === "avif") {
+      par.set(source, { cle: String(v.cle), avif: true, webp: deja?.webp ?? deja?.cle });
     }
+    else if (deja) deja.webp = String(v.cle);
+    else par.set(source, { cle: String(v.cle) });
   }
   return par;
 }

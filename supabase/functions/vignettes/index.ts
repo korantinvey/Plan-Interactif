@@ -15,7 +15,7 @@
  * le même nom.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { cleDeVignette, lisParTranches } from "../_partage/vignette.ts";
+import { cleDeVignette } from "../_partage/vignette.ts";
 import { typeDeVignette } from "../_partage/octets.ts";
 
 const ORIGINES = [
@@ -214,30 +214,27 @@ Deno.serve(async (req) => {
     if (!adresses.length) return repond({ aFaire: [], reste: 0, total: 0 });
 
     /* Ce qui est déjà fait, demandé par adresse : la table porte les deux, et
-       c'est l'adresse que l'instantané connaît. Par tranches — une requête qui
-       porte trop d'adresses dépasse ce qu'un intermédiaire transmet
-       (`tranchesDAdresses`), et elles partent plusieurs à la fois
-       (`lisParTranches`).
+       c'est l'adresse que l'instantané connaît. Toutes en un seul appel, dans
+       son corps : dans l'adresse de la requête, elles partaient par tranches,
+       et les adresses signées d'Eventmaker en faisaient des dizaines.
        Une vignette sans sa grande n'est pas faite : celles d'avant la grande
        se refont une fois, la petite avec. Pour une console qui sait l'AVIF,
        une vignette WebP ne l'est pas non plus : elle se refait une fois, en
        AVIF, sous sa clé à elle. Pour une console qui détoure, une grande au
        fond blanc ne l'est pas davantage. */
     const enAvif = corps.format === "avif";
+    const { data, error } = await db.rpc("vignettes_par_source", { p_sources: adresses });
+    /* Un échec se dit au lieu de passer pour « rien n'est fait » : la
+       console referait alors tout le salon, tour après tour, sans fin. */
+    if (error) return repond({ erreur: error.message }, 500);
     const connues = new Set<string>();
-    const lues = await lisParTranches(adresses, (tranche) => {
-      let q = db.from("vignette_de_logo")
-        .select("source").in("source", tranche)
-        .not("grande", "is", null);
-      if (enAvif) q = q.eq("format", "avif");
-      if (corps.detoure === true) q = q.eq("grande_detouree", true);
-      return q;
-    });
-    for (const { data, error } of lues) {
-      /* Un échec se dit au lieu de passer pour « rien n'est fait » : la
-         console referait alors tout le salon, tour après tour, sans fin. */
-      if (error) return repond({ erreur: error.message }, 500);
-      for (const v of data ?? []) connues.add(String((v as { source: string }).source));
+    for (
+      const v of (data ?? []) as { source: string; format: string; a_grande: boolean; grande_detouree: boolean }[]
+    ) {
+      if (!v.a_grande) continue;
+      if (enAvif && v.format !== "avif") continue;
+      if (corps.detoure === true && !v.grande_detouree) continue;
+      connues.add(String(v.source));
     }
 
     const ecartees = new Set(Array.isArray(corps.ecartees) ? corps.ecartees : []);
