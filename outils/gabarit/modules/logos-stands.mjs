@@ -209,6 +209,15 @@ const toiles = new Map();
  *  près. */
 /** @type {Map<string, "attente" | "panne" | HTMLImageElement | ImageBitmap>} */
 const grandes = new Map();
+/* Les grandes que le budget a libérées sans qu'elles soient posées. Le
+   préchargement des abords les redemandait à la pose suivante, le budget les
+   relibérait aussitôt, et la boucle tournait sans le moindre geste — 12 182
+   grandes reçues en six minutes pour les 226 logos de fep27, et près de la
+   moitié du temps figé (sonde, 22 octobre 2026). Elles ne reviennent donc que
+   quand leur toit entre dans la vue : la mémoire reste au budget, et rien ne
+   tourne. */
+/** @type {Set<string>} */
+const cedeesAuBudget = new Set();
 
 /**
  * L'image est-elle arrivée sans fond ? Un de ses coins transparent suffit à
@@ -232,9 +241,12 @@ function arriveeSansFond(/** @type {CanvasImageSource} */ i, /** @type {number} 
 /** La grande vignette décodée, ou rien : pas encore arrivée, ou absente —
  *  le service répond qu'il n'y en a pas pour un logo que la synchronisation
  *  n'a pas encore refait. Arrivée sans fond, elle est prête à poser. */
-function grande(/** @type {string} */ cle){
+function grande(/** @type {string} */ cle, precharge = false){
   const deja = grandes.get(cle);
   if (deja) return typeof deja === "string" ? null : deja;
+  // libérée faute de place, elle ne revient que pour un toit vu, jamais pour les abords
+  if (precharge && cedeesAuBudget.has(cle)) return null;
+  cedeesAuBudget.delete(cle);
   if (!adresseGrande(cle)){ grandes.set(cle, "panne"); return null; }
   if (!fileGrandes.includes(cle)) fileGrandes.push(cle);
   pompeGrandes();
@@ -1123,8 +1135,8 @@ function groupe(/** @type {string} */ id){
 
 /** Ce qui n'est plus posé s'oublie : toutes les toiles d'avant, et les
  *  vignettes détourées au-delà de celles qu'on garde, les plus anciennes
- *  d'abord. */
-function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
+ *  d'abord — jamais celles que la vue montre, `voulues`, posées ou non. */
+function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data, voulues = new Set()){
   const posees = new Set(data.map(d => d.t.dataset.cle));
   // une toile rangée sur la planche gardée reste : elle s'y renverrait si la planche se refait
   for (const k of [...toiles.keys()]) if (!posees.has(k) && !(gardee && gardee.cases.has(k))) toiles.delete(k);
@@ -1135,6 +1147,7 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
      qu'une vue de près en pose d'autres pour céder leur place. */
   if (!posees.size) return;
   const enJeu = new Set([...posees].map(k => (k || "").slice(0, (k || "").lastIndexOf("@"))));
+  for (const v of voulues) enJeu.add(v);
   /* Une image arrivée sans fond, gardée telle quelle, ne coûte rien de plus ;
      décodée d'avance, elle tient ses pixels comme une toile. Oubliée, elle se
      redemande au navigateur, qui l'a gardée, et se redécode. */
@@ -1151,7 +1164,7 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data){
     pixels -= t.width * t.height;
     if (t instanceof HTMLCanvasElement) continue;
     t.close();
-    if (cle.endsWith("+g")) grandes.delete(cle.slice(0, -2));
+    if (cle.endsWith("+g")){ grandes.delete(cle.slice(0, -2)); cedeesAuBudget.add(cle.slice(0, -2)); }
   }
 }
 
@@ -1233,17 +1246,23 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
   const autourDeLaVue = (p.stands || []).filter((/** @type {any} */ s) => s.vignette && s.c && dedans(loin, s.c))
     .map((/** @type {any} */ s) => ({ s, d: (s.c[0] - vx) ** 2 + (s.c[1] - vy) ** 2 })).sort((a, b) => a.d - b.d);
   const data = [], vus = new Set();
+  /* Ce que la vue montre, posé ou non encore : un logo qui attend sa toile
+     (trop d'envois pour cette pose) ne doit pas céder sa vignette au budget,
+     qu'il redemanderait à la pose suivante. */
+  /** @type {Set<string>} */
+  const voulus = new Set();
   /* Les toiles neuves de cette pose — chacune à envoyer — et leur temps. Au-
      delà, un logo garde la toile qu'il avait, ou attend la pose suivante. */
   let faites = 0, msFaites = 0, attente = 0;
   for (const { s } of autourDeLaVue){
     if (vus.has(s.id)) continue;
-    if (!dedans(couvert, s.c)){ grande(s.vignette); continue; }
+    if (!dedans(couvert, s.c)){ grande(s.vignette, true); continue; }
     const [cx, cy] = s.c;
     const g = groupe(s.id), trace = g && g.firstElementChild;
     const src = trace && sourceDuToit(s.vignette);
     if (!src) continue;
     vus.add(s.id);
+    voulus.add(src.cle);
     const [iw, ih] = src.i instanceof HTMLImageElement ? [src.i.naturalWidth, src.i.naturalHeight] : [src.i.width, src.i.height];
     // le toit, d'après la boîte du stand : le logo en suit les côtés
     const bb = s.bb || [0, 0];
@@ -1285,7 +1304,7 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
       // attrapé par l'outil de placement, et lui seul : hors de ce mode, un appui ouvre la fiche
       lbl: PLACE_LIBELLES ? PREFIXE_LOGO + s.id : null });
   }
-  oublie(data);
+  oublie(data, voulus);
   annoncePoses(data);
   COMPTES_LOGOS.poses++;
   COMPTES_LOGOS.enAttente = attente;
