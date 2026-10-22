@@ -21,4 +21,8 @@ module.exports = {
   "Saisissez l'instance de la base.": "Enter the database instance.",
   "Saisissez la clé de la base.": "Enter the database key.",
   "moninstance": "myinstance",
+  "Base déjà enregistrée : sa clé est reprise, rien à ressaisir.":
+    "Database already saved: its key is reused, nothing to re-enter.",
+  "Base déjà enregistrée, sur la clé commune : rien à ressaisir.":
+    "Database already saved, on the shared key: nothing to re-enter.",
 };

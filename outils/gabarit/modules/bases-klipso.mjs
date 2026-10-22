@@ -119,12 +119,33 @@ export function choixBase({ bases, valeur = "", surChoix }) {
     dit("");
   }
 
+  /* Une instance déjà enregistrée, saisie comme neuve, est reprise telle
+     quelle, avec la clé qu'elle a déjà : la redemander obligerait à la
+     retrouver, et l'écraserait au passage. La casse ne compte pas — c'est un
+     nom d'hôte. Changer la clé d'une base connue reste un geste à part,
+     « Changer la clé… ». */
+  function reprend() {
+    const saisie = instance.value.trim().toLowerCase();
+    const b = menu.value === NOUVELLE && saisie &&
+      liste.find((x) => x.instance.toLowerCase() === saisie);
+    if (!b) return false;
+    instance.value = "";
+    cle.value = "";
+    menu.value = b.instance;
+    montre();
+    aide.textContent = b.cle_modifiee_le
+      ? "Base déjà enregistrée : sa clé est reprise, rien à ressaisir."
+      : "Base déjà enregistrée, sur la clé commune : rien à ressaisir.";
+    return true;
+  }
+
   /**
    * Ce qui est choisi, ou null si la saisie est incomplète — l'alerte le dit
    * alors sous le champ. `cle` est vide quand rien ne s'enregistre.
    * @returns {{ instance: string, cle: string } | null}
    */
   function lit() {
+    reprend();
     const nouvelle = menu.value === NOUVELLE;
     const i = nouvelle ? instance.value.trim() : menu.value;
     const c = neuve.hidden ? "" : cle.value.trim();
@@ -167,6 +188,8 @@ export function choixBase({ bases, valeur = "", surChoix }) {
   };
   // l'alerte dit ce qui manquait : elle se tait dès qu'on y répond
   neuve.oninput = () => dit("");
+  // dès qu'on quitte le champ : la clé n'a pas à être tapée pour rien
+  instance.onchange = () => { if (reprend() && surChoix) surChoix(menu.value); };
   changeCle.onclick = () => { remplaceCle = true; montre(); cle.focus(); };
   bouton.onclick = async () => {
     const choix = lit();
