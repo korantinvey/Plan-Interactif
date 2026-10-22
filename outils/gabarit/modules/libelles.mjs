@@ -36,6 +36,7 @@ import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
 import { logoPose, cedeAuLogo } from "./logos-stands.mjs";
 import { boite } from "./forme-choisie.mjs";
+import { TYPES_MEUBLES } from "./decor.mjs";
 import { decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme, nomSurLePlan } from "./dessin.mjs";
 
 
@@ -235,7 +236,9 @@ export function libellesWebgl(){
     items.push({ text: a.lignes.join("\n"), position: xy, taille: f,
       cls: "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : "") + (phareZone(z) ? " phare" : ""),
       z0: sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), z1: LOIN,
-      pick: Boolean(PLACE_LIBELLES && z.id === libSel), lbl: z.id });
+      pick: Boolean(PLACE_LIBELLES && z.id === libSel), lbl: z.id,
+      // une zone meublée n'est qu'un sol en vue immersive : son nom s'y pose (`webgl.mjs` `positionTexte`)
+      ...(TYPES_MEUBLES.includes(z.type || "") ? { meuble: true } : {}) });
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
@@ -267,7 +270,7 @@ export function libellesWebgl(){
         b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
     }
   }
-  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + (d.angle ? "^" + d.angle : "") + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
+  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + (d.angle ? "^" + d.angle : "") + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "") + (d.meuble ? "m" : "");
   const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.path[0][1].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
   if (cle === GL.cleLibelles) return;
