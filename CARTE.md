@@ -3380,9 +3380,9 @@ Portes :
 
 `versionFond` 47 · `versionDuPlan` 92 · `condense` 96
 
-### `supabase/functions/_partage/vignette.ts` — 67 l.
+### `supabase/functions/_partage/vignette.ts` — 36 l.
 
-`cleDeVignette` 28 · `tranchesDAdresses` 52
+`cleDeVignette` 28
 
 ### `supabase/functions/comptes/index.ts` — 263 l.
 
@@ -3396,12 +3396,12 @@ Portes :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1170 l.
+### `supabase/functions/plan-public/index.ts` — 1176 l.
 
-`cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 124 · `avecVignette` 170
-`rendVignette` 211 · `rendGrande` 238 · `rendVignettes` 330 · `lu` 373 · `salon` 383
-`appDuSalon` 409 · `rendIconeApp` 440 · `retraits` 545 · `ampute` 572 · `masquesDe` 615
-`masquesDuPlan` 635
+`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 123 · `avecVignette` 172
+`rendVignette` 217 · `rendGrande` 244 · `rendVignettes` 336 · `lu` 379 · `salon` 389
+`appDuSalon` 415 · `rendIconeApp` 446 · `retraits` 551 · `ampute` 578 · `masquesDe` 621
+`masquesDuPlan` 641
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
@@ -3482,6 +3482,7 @@ Portes :
 - `20261021115942_sonde_de_performance.sql` — releve_perf, perf_jour, perf_bilan, fn sonde_nombre, fn sonde_enregistre, fn sonde_publique, fn sonde_admin, fn sonde_detail, fn bilan_perf, fn purge_perf, fn performances_du_salon
 - `20261021193740_lecture_des_performances.sql` — lecteur_perf, fn lecteur_perf_nouveau, fn lecteur_perf_retire, fn lecture_perf
 - `20261022082549_une_cle_par_base_klipso.sql` — base_klipso, prive.cle_klipso, fn enregistre_base_klipso, fn cle_klipso
+- `20261022110142_vignettes_lues_par_leurs_adresses_en_une_fois.sql` — fn vignettes_par_source
 
 ## Le reste
 
