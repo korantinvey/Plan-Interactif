@@ -550,8 +550,16 @@ html.ambiance-tuiles :is(.stand,.zone,.dcal .sdes.lie).sel path{transform:scale(
   font-weight:var(--graisse-lab-code,500)}
 #labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,var(--sans));
   font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
+/* Le nom d'une zone se pose sur ce qu'elle contient — le mobilier d'un
+   restaurant, des tables blanches où un nom blanc disparaissait. Un liseré
+   le détache de tout fond, de la teinte opposée à son encre : clair par
+   défaut sous l'or des zones, sombre sous une encre claire
+   (`apparence.mjs` `appliqueCouleursData`). Mesuré en « em », comme celui
+   de la carte de chaleur, pour tenir à tous les zooms. */
 #labels text.zn{font-family:var(--police-lab-nom,var(--sans));
-  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone));
+  paint-order:stroke;stroke:var(--c-lab-zone-lisere,rgba(255,255,255,.85));stroke-width:.18em;
+  stroke-linejoin:round;stroke-linecap:round}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré.
