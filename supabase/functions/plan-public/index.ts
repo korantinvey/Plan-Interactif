@@ -111,16 +111,24 @@ const service = () =>
  * calculer cinq cents empreintes à chaque demande du plan coûterait pour rien
  * sur le chemin le plus fréquenté du service.
  *
- * Une table vide ne change rien : la page garde l'adresse d'origine à côté de
- * la clé, et charge le logo chez la source comme elle l'a toujours fait. C'est
+ * Une table vide ne change rien : sans clé, la page garde l'adresse d'origine,
+ * et charge le logo chez la source comme elle l'a toujours fait. C'est
  * ce qui permet aux vignettes d'apparaître au fil de leur fabrication, sans
  * que rien ne les attende.
  *
  * Un logo peut en avoir deux, une WebP et une AVIF, sous deux clés : l'AVIF
  * est préférée, plus légère de moitié ; la WebP l'accompagne pour les
  * navigateurs qui ne lisent pas l'AVIF (`vignettes.mjs` `vignettesLisibles`).
+ *
+ * Les tranches partent ensemble, quelques-unes à la fois. Lues l'une après
+ * l'autre, elles additionnaient leurs allers-retours : les adresses signées
+ * d'Eventmaker n'en logent que neuf par tranche, et les 245 logos de fep27
+ * en faisaient vingt-neuf — quatre à cinq secondes à chaque plan assemblé,
+ * relevées par la sonde le 22 octobre 2026. Le nombre est borné pour ne pas
+ * prendre à la base toutes ses connexions d'un coup.
  */
 type Vignettes = { cle: string; avif?: boolean; webp?: string };
+const LECTURES_SIMULTANEES = 8;
 async function vignettesParAdresse(
   instantanes: { charge?: unknown }[],
 ): Promise<Map<string, Vignettes>> {
@@ -140,9 +148,23 @@ async function vignettesParAdresse(
   const sb = service();
   // par tranches : une requête qui porte trop d'adresses dépasse ce qu'un
   // intermédiaire accepte de transmettre (`tranchesDAdresses`)
-  for (const tranche of tranchesDAdresses(liste)) {
-    const { data, error } = await sb.from("vignette_de_logo")
-      .select("cle,source,format").in("source", tranche);
+  const tranches = tranchesDAdresses(liste);
+  const lisTranche = (tranche: string[]) =>
+    sb.from("vignette_de_logo").select("cle,source,format").in("source", tranche);
+  const lues: Awaited<ReturnType<typeof lisTranche>>[] = [];
+  let suivante = 0;
+  const lecteur = async () => {
+    while (suivante < tranches.length) {
+      const i = suivante++;
+      lues[i] = await lisTranche(tranches[i]);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(LECTURES_SIMULTANEES, tranches.length) }, lecteur),
+  );
+  /* Les deux vignettes d'une adresse viennent de la même tranche, et leur
+     rencontre ne dépend pas de l'ordre : l'ordre d'arrivée ne change rien. */
+  for (const { data, error } of lues) {
     /* Un échec n'empêche pas le plan de partir — ses logos se chargeront
        chez leur source —, mais il se dit : tu, il faisait passer des salons
        entiers pour n'avoir aucune vignette. */
@@ -164,8 +186,14 @@ async function vignettesParAdresse(
  * Le stand, augmenté de la clé de vignette de son logo — et de celle de chaque
  * société qu'il héberge, qui a le sien.
  *
- * La clé s'ajoute à l'adresse et ne la remplace pas : elle peut manquer, et la
- * page a besoin des deux pour savoir sur quoi retomber.
+ * La clé remplace l'adresse quand elle suffit à tout navigateur : la page ne
+ * lit l'adresse d'origine qu'à défaut de vignette (`fiche.mjs`,
+ * `recherche.mjs`), et les toits des stands ne lisent que la vignette. Une
+ * adresse signée d'Eventmaker pèse six cents signes que la compression ne
+ * réduit pas — le hasard d'une signature ne se compresse pas — et les logos
+ * de fep27 faisaient ainsi 71 des 136 Ko du plan compressé, pour rien. Sans
+ * vignette, ou avec une AVIF seule, l'adresse reste : c'est sur elle que la
+ * page retombe.
  */
 function avecVignette(
   st: Record<string, unknown>,
@@ -177,16 +205,20 @@ function avecVignette(
      d'origine, plutôt qu'une image qu'il ne saurait montrer. */
   const cles = (v?: Vignettes) =>
     v ? { vignette: v.cle, ...(v.avif ? { vignetteWebp: v.webp ?? "" } : {}) } : null;
-  const siens = typeof st.logo === "string" ? cles(par.get(st.logo)) : null;
+  const augmente = (s: Record<string, unknown>) => {
+    const v = typeof s.logo === "string" ? par.get(s.logo) : undefined;
+    if (!v) return s;
+    const sortie: Record<string, unknown> = { ...s, ...cles(v) };
+    // une AVIF sans WebP laisse l'adresse : c'est le secours de qui ignore l'AVIF
+    if (!v.avif || v.webp) delete sortie.logo;
+    return sortie;
+  };
+  const siens = augmente(st);
   const coex = (st.coex ?? []) as Record<string, unknown>[];
-  const heberges = coex.map((c) => {
-    const k = c && typeof c.logo === "string" ? cles(par.get(c.logo)) : null;
-    return k ? { ...c, ...k } : c;
-  });
-  if (!siens && !heberges.some((c, i) => c !== coex[i])) return st;
+  const heberges = coex.map((c) => (c ? augmente(c) : c));
+  if (siens === st && !heberges.some((c, i) => c !== coex[i])) return st;
   return {
-    ...st,
-    ...(siens ?? {}),
+    ...siens,
     ...(coex.length ? { coex: heberges } : {}),
   };
 }
@@ -203,10 +235,10 @@ function avecVignette(
  * vérifier, et ce chemin-là doit rester le plus court possible — c'est une
  * requête par fiche ouverte.
  *
- * Une vignette inconnue n'est pas une panne : la page garde l'adresse
- * d'origine à côté de la clé, et charge le logo chez la source comme avant.
- * D'où un 404 que rien ne garde, pour que le lot suivant de la synchronisation
- * se voie sans attendre.
+ * Une vignette inconnue n'est pas une panne : le plan ne nomme que celles que
+ * la table porte, et garde l'adresse d'origine des autres, que la page charge
+ * chez la source comme avant. D'où un 404 que rien ne garde, pour que le lot
+ * suivant de la synchronisation se voie sans attendre.
  */
 async function rendVignette(cle: string, entetes: Record<string, string>) {
   const nu = { ...entetes, "Cache-Control": "no-store" };

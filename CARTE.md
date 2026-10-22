@@ -3378,12 +3378,12 @@ Portes :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1170 l.
+### `supabase/functions/plan-public/index.ts` — 1202 l.
 
-`cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 124 · `avecVignette` 170
-`rendVignette` 211 · `rendGrande` 238 · `rendVignettes` 330 · `lu` 373 · `salon` 383
-`appDuSalon` 409 · `rendIconeApp` 440 · `retraits` 545 · `ampute` 572 · `masquesDe` 615
-`masquesDuPlan` 635
+`cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 132 · `avecVignette` 198
+`rendVignette` 243 · `rendGrande` 270 · `rendVignettes` 362 · `lu` 405 · `salon` 415
+`appDuSalon` 441 · `rendIconeApp` 472 · `retraits` 577 · `ampute` 604 · `masquesDe` 647
+`masquesDuPlan` 667
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
