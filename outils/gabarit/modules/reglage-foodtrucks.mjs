@@ -17,6 +17,11 @@
    Les mêmes camions se prennent aussi sur le plan, en vue immersive
    (`outil-foodtruck.mjs`).
 
+   Chaque camion peut porter un logo, imprimé sur sa devanture
+   (`decor.mjs` `enseignesCamions`). Il est réduit puis rangé dans le réglage
+   même, en data-URI, comme le logo d'une zone (`depot-image.mjs`) : il part
+   avec le plan, et voyage avec son camion quand on le déplace.
+
    Un module de l'administration : `fiche-zone.mjs` l'importe.
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
@@ -24,6 +29,8 @@ import { camions, figeCamions, ajouteCamion, reglageCamionsValide, CAMION, CAMIO
   from "./decor.mjs";
 import { anneauDe, emprise } from "./outil-comptoir.mjs";
 import { texteCamions } from "./rendu.mjs";
+import { reduitLogo } from "./depot-image.mjs";
+import { imageSure } from "./sur.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 /* Le pas de l'angle sous la poignée : un camion se gare droit, ou de biais à
@@ -46,11 +53,12 @@ const bouton = (/** @type {string} */ texte) => {
  * Écrire le réglage d'une zone — ou l'oublier, « null » rendant le rangement
  * d'office — et le poser sur la zone dessinée, que le plan relit.
  * @param {string} id
- * @param {{ u: number, v: number, a: number }[] | null} r
+ * @param {{ u: number, v: number, a: number, logo?: string, lr?: number }[] | null} r
  */
 export function ecritCamions(id, r){
   const t = CONF._foodtrucks = CONF._foodtrucks || {};
-  if (r) t[id] = r.map(c => ({ u: +c.u.toFixed(4), v: +c.v.toFixed(4), a: Math.round((((c.a % 360) + 360) % 360) * 10) / 10 }));
+  if (r) t[id] = r.map(c => ({ u: +c.u.toFixed(4), v: +c.v.toFixed(4), a: Math.round((((c.a % 360) + 360) % 360) * 10) / 10,
+    ...(c.logo ? { logo: c.logo, lr: +(Number(c.lr) || 1).toFixed(3) } : {}) }));
   else delete t[id];
   if (!Object.keys(t).length) delete CONF._foodtrucks;
   // la zone peut être d'un autre pavillon : chacune se repeint
@@ -107,7 +115,19 @@ export function champFoodtrucks(bloc, o){
   const rangee = document.createElement("div");
   rangee.className = "rangeeComptoirZ";
   rangee.append(angle, degres, quart, retire, auto);
-  bloc.append(compte, toile, rangee);
+
+  // le logo du camion tenu
+  const choisirLogo = bouton("Logo du camion…"), oterLogo = bouton("Retirer le logo");
+  const ditLogo = document.createElement("span");
+  ditLogo.className = "degresZ";
+  const fichier = document.createElement("input");
+  fichier.type = "file";
+  fichier.accept = "image/*";
+  fichier.hidden = true;
+  const rangeeLogo = document.createElement("div");
+  rangeeLogo.className = "rangeeComptoirZ";
+  rangeeLogo.append(choisirLogo, oterLogo, ditLogo, fichier);
+  bloc.append(compte, toile, rangee, rangeeLogo);
 
   /* L'état du champ : le réglage enregistré, ou rien tant qu'on n'a touché à
      rien — c'est alors le rangement d'office que l'exploitant voit. */
@@ -124,11 +144,20 @@ export function champFoodtrucks(bloc, o){
     parc.replaceChildren(...liste.map((c, i) => {
       const g = el("g", { class: "camionZ" + (i === tenu ? " tenu" : ""),
         transform: "translate(" + c.cx + " " + c.cy + ") rotate(" + c.angle + ") scale(" + c.k + ")" });
-      // la caisse, la cabine à l'avant, le store et le comptoir sur le flanc qui sert
+      // la caisse, la cabine à l'avant, le store sur le flanc qui sert
       g.append(el("rect", { class: "caisseZ", x: -CAMION.ar, y: -CAMION.dos, width: 4.8, height: 2.3 }),
         el("rect", { class: "cabineZ", x: 1.7, y: -1.05, width: 1.4, height: 2.1 }),
-        el("rect", { class: "storeZ", x: -CAMION.ar, y: .65, width: 4.8, height: .5 }),
-        el("rect", { class: "guichetZ", x: -2.3, y: 1.15, width: 3.2, height: .35 }));
+        el("rect", { class: "storeZ", x: -CAMION.ar, y: .65, width: 4.8, height: .5 }));
+      /* Le logo sur le toit, comme le plan à plat le pose : retourné quand le
+         camion a la tête en bas, pour se lire à l'endroit. */
+      const logo = r && r[i] ? imageSure(r[i].logo) : "";
+      if (logo){
+        const im = el("image", { x: -2.7, y: -1, width: 4, height: 1.5, preserveAspectRatio: "xMidYMid meet",
+          "pointer-events": "none" });
+        im.setAttribute("href", logo);
+        if (Math.cos(c.angle * Math.PI / 180) < 0) im.setAttribute("transform", "rotate(180 -.7 -.25)");
+        g.append(im);
+      }
       g.addEventListener("pointerdown", commence("place", i));
       return g;
     }));
@@ -145,7 +174,11 @@ export function champFoodtrucks(bloc, o){
       angle.value = String(a);
       degres.textContent = a + "°";
     } else degres.textContent = "";
-    angle.disabled = quart.disabled = retire.disabled = !c;
+    angle.disabled = quart.disabled = retire.disabled = choisirLogo.disabled = !c;
+    const sonLogo = c && r && r[tenu] ? r[tenu].logo : "";
+    choisirLogo.textContent = sonLogo ? "Changer le logo…" : "Logo du camion…";
+    oterLogo.hidden = !sonLogo;
+    if (!c) ditLogo.textContent = "";
     nombre.value = String(liste.length);
     moins.disabled = !liste.length;
     dit.textContent = r ? "" : "rangement automatique";
@@ -246,6 +279,39 @@ export function champFoodtrucks(bloc, o){
     enregistre();
   };
   auto.onclick = () => { r = null; tenu = -1; dessine(); enregistre(); };
+
+  /** Poser « logo » sur le camion tenu — « » l'ôte — et l'écrire. */
+  const poseLogo = (/** @type {string} */ logo, lr = 1) => {
+    const liste = fige(), c = liste[tenu];
+    if (!c) return;
+    if (logo){ c.logo = logo; c.lr = lr; }
+    else { delete c.logo; delete c.lr; }
+    dessine();
+    enregistre();
+  };
+  const prend = (/** @type {File | undefined} */ f) => {
+    if (!f || tenu < 0) return;
+    const cible = tenu;
+    ditLogo.textContent = "Lecture…";
+    // le rapport se lit sur l'image réduite : la devanture s'y taille sans la déformer
+    reduitLogo(f).then(src => new Promise((tenuP, rompu) => {
+      const im = new Image();
+      im.onload = () => tenuP({ src, lr: im.naturalWidth / Math.max(1, im.naturalHeight) || 1 });
+      im.onerror = () => rompu(new Error("image illisible"));
+      im.src = src;
+    })).then((/** @type {any} */ o) => {
+      ditLogo.textContent = Math.round(o.src.length / 1365) + " Ko";
+      // un autre camion pris entre-temps : le logo va à celui qu'on visait
+      const avant = tenu;
+      tenu = cible;
+      poseLogo(o.src, o.lr);
+      tenu = avant;
+      dessine();
+    }).catch(e => { ditLogo.textContent = "Échec : " + e.message; });
+  };
+  choisirLogo.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files ? fichier.files[0] : undefined); fichier.value = ""; };
+  oterLogo.onclick = () => { ditLogo.textContent = ""; poseLogo(""); };
 
   dessine();
   return (/** @type {boolean} */ oui) => { champ.hidden = !oui; };

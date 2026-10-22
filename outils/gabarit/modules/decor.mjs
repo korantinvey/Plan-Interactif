@@ -320,13 +320,16 @@ export function camions(anneau, reglage){
  * traduit en réglage, pour qu'on parte de ce qu'on voit.
  * @param {number[][]} anneau
  * @param {any} reglage
- * @returns {{ u: number, v: number, a: number }[]}
+ * @returns {{ u: number, v: number, a: number, logo?: string, lr?: number }[]}
  */
 export function figeCamions(anneau, reglage){
   const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
   const x0 = Math.min(...xs), y0 = Math.min(...ys);
   const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
-  return camions(anneau, reglage).map(c => ({ u: (c.cx - x0) / w, v: (c.cy - y0) / h, a: ((c.angle % 360) + 360) % 360 }));
+  const tenu = reglageCamionsValide(reglage);
+  // le logo suit son camion : figer pour le déplacer ne doit pas le lui ôter
+  return camions(anneau, reglage).map((c, i) => ({ u: (c.cx - x0) / w, v: (c.cy - y0) / h, a: ((c.angle % 360) + 360) % 360,
+    ...(tenu && reglage[i].logo ? { logo: reglage[i].logo, lr: reglage[i].lr } : {}) }));
 }
 
 /**
@@ -371,6 +374,54 @@ export function ajouteCamion(anneau, reglage){
 export function poigneeCamion(c){
   const t = c.angle * Math.PI / 180, d = CAMION.av * c.k + TIGE;
   return [c.cx + Math.cos(t) * d, c.cy + Math.sin(t) * d];
+}
+
+/* La devanture d'un camion, où son logo s'imprime : le flanc qui sert, entre
+   le bas de la caisse et son toit — la cabine n'en porte pas.
+   À plat, ce flanc ne se voit pas d'aplomb : le logo passe sur le toit, à
+   côté du store, et se retourne pour se lire à l'endroit, le haut du logo
+   vers le haut de l'écran. */
+const DEVANTURE = { x: -.7, large: 4, z0: .9, z1: 2.5 };
+const TOIT = { x: -.7, y: -.25, large: 4, prof: 1.5 };
+
+/**
+ * Les logos des camions d'une zone, chacun par les quatre coins de l'image —
+ * bas gauche, haut gauche, haut droit, bas droit, l'ordre de deck.gl —, en
+ * mètres, la hauteur en troisième.
+ * @param {number[][]} anneau
+ * @param {{ u: number, v: number, a: number, logo?: string, lr?: number }[] | null} reglage
+ *   les logos déjà relus : ce module ne juge pas ce qu'il imprime
+ * @param {boolean} aPlat
+ * @returns {{ logo: string, coins: number[][] }[]}
+ */
+export function enseignesCamions(anneau, reglage, aPlat){
+  if (!reglageCamionsValide(reglage)) return [];
+  const regl = /** @type {any[]} */ (reglage);
+  /** @type {{ logo: string, coins: number[][] }[]} */
+  const out = [];
+  camions(anneau, reglage).forEach((c, i) => {
+    const r = regl[i], logo = r && r.logo;
+    if (!logo) return;
+    // un rapport absent ou fou donne un carré, plutôt qu'un fil
+    const lr = Number.isFinite(r.lr) && r.lr > 0 ? Math.min(8, Math.max(.125, r.lr)) : 1;
+    const t = c.angle * Math.PI / 180, dx = Math.cos(t), dy = Math.sin(t), k = c.k;
+    const plan = (/** @type {number} */ lx, /** @type {number} */ ly, z = 0) =>
+      [c.cx + (lx * dx - ly * dy) * k, c.cy + (lx * dy + ly * dx) * k, z * k];
+    if (aPlat){
+      const w = Math.min(TOIT.large, TOIT.prof * lr), h = w / lr;
+      // le haut du logo vers le flanc fermé, sauf s'il pointerait alors vers le bas de l'écran
+      const s = dx < 0 ? -1 : 1, g = TOIT.x - s * w / 2, d = TOIT.x + s * w / 2;
+      const haut = TOIT.y - s * h / 2, bas = TOIT.y + s * h / 2;
+      out.push({ logo, coins: [plan(g, bas), plan(g, haut), plan(d, haut), plan(d, bas)] });
+    } else {
+      const hmax = DEVANTURE.z1 - DEVANTURE.z0, w = Math.min(DEVANTURE.large, hmax * lr), h = w / lr;
+      const zm = (DEVANTURE.z0 + DEVANTURE.z1) / 2, z0 = zm - h / 2, z1 = zm + h / 2;
+      // un rien devant le flanc de la caisse, pour ne pas s'y confondre ; vu de face, l'arrière est à gauche
+      const y = 1.15 + .03, g = DEVANTURE.x - w / 2, d = DEVANTURE.x + w / 2;
+      out.push({ logo, coins: [plan(g, y, z0), plan(g, y, z1), plan(d, y, z1), plan(d, y, z0)] });
+    }
+  });
+  return out;
 }
 
 /**
@@ -426,11 +477,13 @@ export function meuble(type, anneau, reglage = null, enMain = false){
           pose(a + i * .85, b + j * .85, .2, .2, .45, "assise", 0);
       }
   } else if (type === "foodtruck"){
-    /* Des camions rangés le long d'un côté, le comptoir ouvert vers la zone,
+    /* Des camions rangés le long d'un côté, le flanc qui sert ouvert vers la zone,
        et devant eux, passé la file d'attente, des mange-debout sans chaises :
        c'est ce qui distingue d'un regard le foodtruck du restaurant assis. Le
-       camion est posé entier — caisse, cabine et comptoir —, même s'il
-       déborde : un camion coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
+       camion est posé entier — caisse et cabine —, même s'il déborde : un
+       camion coupé par le mur ne dirait plus ce qu'il est. Il n'a plus de
+       comptoir en saillie : ce bloc blanc cachait le bas de la devanture,
+       où s'imprime son logo. Le store, une bande sur le
        toit côté comptoir, est ce qu'on voit d'aplomb.
        Leur nombre et leur place se choisissent à la main (`camions`) ; sans
        réglage, ils se rangent d'office. Les mange-debout, eux, se sèment
@@ -451,8 +504,11 @@ export function meuble(type, anneau, reglage = null, enMain = false){
       const tenu = enMain === i;
       boite(-.7, 0, 2.4, 1.15, 2.7 * k, tenu ? "comptoir-choisi" : "carrosserie");
       boite(2.4, 0, .7, 1.05, 2.2 * k, "habitacle");
-      boite(-.7, .9, 2.4, .25, 2.85 * k, "store");
-      boite(-.7, 1.325, 1.6, .175, 1.05 * k, "comptoir");
+      /* Le store s'arrête deux centimètres en deçà du flanc : monté du sol
+         comme toute boîte, sa face dans le plan même de la caisse se
+         disputait la profondeur avec elle, et la devanture clignotait de
+         rayures rouges à chaque zoom. Il ne paraît plus qu'au-dessus du toit. */
+      boite(-.7, .89, 2.4, .24, 2.85 * k, "store");
       /* Tenu, il porte sa poignée au bout du capot : une tige basse, et un
          rond qu'on tire pour le tourner. */
       if (tenu){

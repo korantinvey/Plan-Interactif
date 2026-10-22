@@ -641,7 +641,6 @@
 .camionsZ .caisseZ{fill:#b98a3e;stroke:var(--ink-2);stroke-width:1}
 .camionsZ .cabineZ{fill:#c0d6e6;stroke:var(--ink-2);stroke-width:1}
 .camionsZ .storeZ{fill:#d65448}
-.camionsZ .guichetZ{fill:#faf9f4;stroke:var(--ink-3);stroke-width:1}
 .camionsZ .camionZ.tenu .caisseZ{fill:#8ab0f6;stroke:var(--accent);stroke-width:2}
 .champZ .rangeeComptoirZ .nombreZ{width:4.5em;text-align:center}
 /* Les salles du programme, dans la fiche de la zone : une coche par salle, et

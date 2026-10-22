@@ -33,7 +33,7 @@ const rect = (x, y, w, h, deg = 0) => {
 
 (async () => {
   const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet,
-    camions, figeCamions, ajouteCamion, camionsSeGenent } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+    camions, figeCamions, ajouteCamion, camionsSeGenent, enseignesCamions } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -49,7 +49,8 @@ const rect = (x, y, w, h, deg = 0) => {
   console.log("Ce que chaque type pose");
   const roles = (type) => new Set(meuble(type, rect(0, 0, 22, 14)).map(x => x.role));
   dit(["plateau", "assise"].every(r => roles("restauration").has(r)), "un restaurant : des tables et des chaises");
-  dit(["carrosserie", "habitacle", "comptoir", "plateau"].every(r => roles("foodtruck").has(r)) &&
+  dit(["carrosserie", "habitacle", "store", "plateau"].every(r => roles("foodtruck").has(r)) &&
+    !roles("foodtruck").has("comptoir") &&
     !roles("foodtruck").has("assise"), "un foodtruck : des camions et des mange-debout, sans chaises");
   {
     const seul = meuble("foodtruck", rect(0, 0, 5.5, 2.6));
@@ -145,6 +146,20 @@ const rect = (x, y, w, h, deg = 0) => {
     const p = meuble("foodtruck", parc, r);
     dit(!p.some(x => x.polygon.some(([a, b]) => !dedans(parc, a, b))), "rien ne déborde du contour");
     dit(camions(parc, [{ u: .01, v: .01, a: 0 }]).length === 1, "un camion qui déborde du contour reste posé");
+    const logo = "data:image/png;base64,AAAA";
+    const marque = [{ u: .5, v: .5, a: 0, logo, lr: 2 }, { u: .2, v: .2, a: 0 }];
+    dit(figeCamions(parc, marque)[0].logo === logo && !figeCamions(parc, marque)[1].logo, "figé, un camion garde son logo");
+    const [dev] = enseignesCamions(parc, marque, false);
+    dit(enseignesCamions(parc, marque, false).length === 1 && dev.logo === logo, "un logo par camion qui en a un");
+    // vu depuis le comptoir (en bas de l'écran, à angle nul), l'arrière à gauche, le haut en l'air
+    dit(dev.coins.every(p => Math.abs(p[1] - (10 + 1.18)) < 1e-6) && dev.coins[0][0] < dev.coins[3][0] &&
+      dev.coins[1][2] > dev.coins[0][2] && dev.coins[0][2] >= .9 - 1e-6, "en volume, le logo se dresse sur la devanture");
+    const larg = dev.coins[3][0] - dev.coins[0][0], haut = dev.coins[1][2] - dev.coins[0][2];
+    dit(Math.abs(larg / haut - 2) < 1e-6, "le logo garde ses proportions", (larg / haut).toFixed(2));
+    for (const a of [0, 180]){
+      const [t] = enseignesCamions(parc, [{ u: .5, v: .5, a, logo, lr: 2 }], true);
+      dit(t.coins[1][1] < t.coins[0][1] && t.coins[3][0] > t.coins[0][0], "à plat, tourné de " + a + "°, le logo se lit à l'endroit");
+    }
     dit(meuble("foodtruck", parc, r, 2).some(x => x.role === "poignee") &&
       meuble("foodtruck", parc, r, 2).filter(x => x.role === "comptoir-choisi").length === 1, "tenu, un camion sort sa poignée");
   }

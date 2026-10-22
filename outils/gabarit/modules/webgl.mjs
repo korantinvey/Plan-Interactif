@@ -39,11 +39,13 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
-import { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
+import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { couchesLogos, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
+import { CONF } from "./configuration.mjs";
+import { imageSure } from "./sur.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
@@ -1632,6 +1634,18 @@ function meubleZone(el, polygon, couleur, acc){
   }
   for (const p of meuble(type, polygon[0], reglage, enMain))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
+  /* Les logos des camions : trop lourds pour l'attribut, qui n'en porte que
+     la trace pour qu'un logo changé repeigne la zone, ils se lisent dans la
+     configuration — relus, puisqu'elle a voyagé par la base. */
+  if (type === "foodtruck" && reglage){
+    const conf = (CONF._foodtrucks || {})[g.getAttribute("data-id") || ""];
+    if (Array.isArray(conf)) reglage.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
+      const c = conf[i], logo = c && imageSure(c.logo);
+      if (logo){ r.logo = logo; r.lr = Number(c.lr); }
+    });
+    for (const e of enseignesCamions(polygon[0], reglage, !cameraEnJeu()))
+      acc.images.push({ href: e.logo, bornes: e.coins, op: 1, el: null, prise: null });
+  }
 }
 
 /* ------------------------------------------------------------
