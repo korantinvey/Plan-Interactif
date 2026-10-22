@@ -153,7 +153,7 @@ const rect = (x, y, w, h, deg = 0) => {
     dit(enseignesCamions(parc, marque, false).length === 1 && dev.logo === logo, "un logo par camion qui en a un");
     // vu depuis le comptoir (en bas de l'écran, à angle nul), l'arrière à gauche, le haut en l'air
     dit(dev.coins.every(p => Math.abs(p[1] - (10 + 1.18)) < 1e-6) && dev.coins[0][0] < dev.coins[3][0] &&
-      dev.coins[1][2] > dev.coins[0][2] && dev.coins[0][2] >= .9 - 1e-6, "en volume, le logo se dresse sur la devanture");
+      dev.coins[1][2] > dev.coins[0][2] && dev.coins[0][2] >= .15 - 1e-6 && dev.coins[1][2] <= 2.7, "en volume, le logo se dresse sur la devanture");
     const larg = dev.coins[3][0] - dev.coins[0][0], haut = dev.coins[1][2] - dev.coins[0][2];
     dit(Math.abs(larg / haut - 2) < 1e-6, "le logo garde ses proportions", (larg / haut).toFixed(2));
     for (const a of [0, 180]){

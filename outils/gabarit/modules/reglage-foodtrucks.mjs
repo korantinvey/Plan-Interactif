@@ -198,7 +198,7 @@ export function champFoodtrucks(bloc, o){
          camion a la tête en bas, pour se lire à l'endroit. */
       const logo = r && r[i] ? imageSure(r[i].logo) : "";
       if (logo){
-        const im = el("image", { x: -2.7, y: -1, width: 4, height: 1.5, preserveAspectRatio: "xMidYMid meet",
+        const im = el("image", { x: -3, y: -1.1, width: 4.6, height: 1.7, preserveAspectRatio: "xMidYMid meet",
           "pointer-events": "none" });
         im.setAttribute("href", logo);
         if (Math.cos(c.angle * Math.PI / 180) < 0) im.setAttribute("transform", "rotate(180 -.7 -.25)");
