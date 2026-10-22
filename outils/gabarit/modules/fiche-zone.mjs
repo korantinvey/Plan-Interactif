@@ -145,8 +145,8 @@ export function champsZone(hote, o){
     document.createElement("div"),
     "Choisissez le nombre de camions, faites-les glisser pour les placer, " +
     "choisissez-en un et tirez sa poignée ronde pour le tourner (Maj pour un " +
-    "angle libre) : le store rouge marque le côté qui sert. Ils restent dans " +
-    "la zone, et se dressent ainsi dans la vue immersive — où ils se prennent " +
+    "angle libre) : le store rouge marque le côté qui sert. Ils peuvent " +
+    "déborder de la zone, et se dressent ainsi dans la vue immersive — où ils se prennent " +
     "aussi directement sur le plan."), o);
   const suitType = () => {
     montreComptoir(type.value === "accueil");

@@ -302,9 +302,9 @@ const camionDe = (/** @type {number[][]} */ anneau, /** @type {{ u: number, v: n
 
 /**
  * Les camions d'une zone de foodtrucks : ceux que l'exploitant a placés, ou
- * le rangement d'office tant qu'il n'y a pas touché. Un camion placé qui ne
- * tient plus — la zone retouchée a rétréci — n'est pas posé, plutôt que de
- * déborder ; les autres restent où on les a mis.
+ * le rangement d'office tant qu'il n'y a pas touché. Un camion placé peut
+ * déborder du contour : le tenir dedans bloquait les gestes — un demi-tour
+ * dans une zone à peine plus grande que lui s'arrêtait contre le bord.
  * @param {number[][]} anneau
  * @param {{ u: number, v: number, a: number }[] | null | undefined} reglage
  * @returns {Camion[]}
@@ -312,7 +312,7 @@ const camionDe = (/** @type {number[][]} */ anneau, /** @type {{ u: number, v: n
 export function camions(anneau, reglage){
   if (!reglageCamionsValide(reglage)) return camionsDOffice(anneau);
   const k = echelleCamions(anneau);
-  return /** @type {any[]} */ (reglage).map(r => camionDe(anneau, r, k)).filter(c => camionTient(anneau, c));
+  return /** @type {any[]} */ (reglage).map(r => camionDe(anneau, r, k));
 }
 
 /**
@@ -361,36 +361,6 @@ export function ajouteCamion(anneau, reglage){
       return { u: (x - x0) / w, v: (y - y0) / h, a: ((a % 360) + 360) % 360 };
   }
   return null;
-}
-
-/**
- * Le réglage le plus proche de « voulu » qui garde le camion dans sa zone,
- * en partant de « depart », qui y tient : tiré contre le bord, il s'y arrête
- * et glisse le long, comme le comptoir (`rapprocheComptoir`).
- * @param {number[][]} anneau
- * @param {{ u: number, v: number, a: number }} depart
- * @param {{ u: number, v: number, a: number }} voulu
- */
-export function rapprocheCamion(anneau, depart, voulu){
-  const k = echelleCamions(anneau);
-  const tient = (/** @type {{ u: number, v: number, a: number }} */ r) =>
-    r.u >= 0 && r.u <= 1 && r.v >= 0 && r.v <= 1 && camionTient(anneau, camionDe(anneau, r, k));
-  if (tient(voulu)) return voulu;
-  const avance = (/** @type {any} */ de, /** @type {any} */ vers) => {
-    // l'angle se rejoint par le plus court, sur un tour entier : un camion a un avant
-    const da = ((vers.a - de.a) % 360 + 540) % 360 - 180;
-    const entre = (/** @type {number} */ m) => ({ u: de.u + m * (vers.u - de.u), v: de.v + m * (vers.v - de.v), a: de.a + m * da });
-    let lo = 0, hi = 1;
-    for (let i = 0; i < 16; i++){
-      const m = (lo + hi) / 2;
-      if (tient(entre(m))) lo = m; else hi = m;
-    }
-    return entre(lo);
-  };
-  let r = avance(depart, voulu);
-  r = avance(r, { ...r, u: voulu.u });
-  r = avance(r, { ...r, v: voulu.v });
-  return r;
 }
 
 /**
@@ -459,8 +429,8 @@ export function meuble(type, anneau, reglage = null, enMain = false){
     /* Des camions rangés le long d'un côté, le comptoir ouvert vers la zone,
        et devant eux, passé la file d'attente, des mange-debout sans chaises :
        c'est ce qui distingue d'un regard le foodtruck du restaurant assis. Le
-       camion n'est posé qu'entier — caisse, cabine et comptoir —, un camion
-       coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
+       camion est posé entier — caisse, cabine et comptoir —, même s'il
+       déborde : un camion coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
        toit côté comptoir, est ce qu'on voit d'aplomb.
        Leur nombre et leur place se choisissent à la main (`camions`) ; sans
        réglage, ils se rangent d'office. Les mange-debout, eux, se sèment

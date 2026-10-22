@@ -20,7 +20,7 @@
    Un module de l'administration : `fiche-zone.mjs` l'importe.
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
-import { camions, figeCamions, ajouteCamion, rapprocheCamion, reglageCamionsValide, CAMION, CAMIONS_MAX }
+import { camions, figeCamions, ajouteCamion, reglageCamionsValide, CAMION, CAMIONS_MAX }
   from "./decor.mjs";
 import { anneauDe, emprise } from "./outil-comptoir.mjs";
 import { texteCamions } from "./rendu.mjs";
@@ -154,15 +154,17 @@ export function champFoodtrucks(bloc, o){
 
   const enregistre = () => { ecritCamions(o.id, r); enregistreConf(); };
 
-  /** Vouloir un autre réglage pour le camion tenu : il reste dans sa zone. */
+  /** Vouloir un autre réglage pour le camion tenu : son milieu reste dans
+   *  l'emprise de la zone, sa caisse peut en sortir, le temps d'un demi-tour
+   *  ou pour de bon. */
   const veut = (/** @type {(q: { u: number, v: number, a: number }) => void} */ change) => {
     const liste = fige();
     if (!liste[tenu]) return;
-    const depart = { ...liste[tenu] }, voulu = { ...depart };
+    const voulu = { ...liste[tenu] };
     change(voulu);
     voulu.u = Math.min(1, Math.max(0, voulu.u));
     voulu.v = Math.min(1, Math.max(0, voulu.v));
-    liste[tenu] = rapprocheCamion(an, depart, voulu);
+    liste[tenu] = voulu;
   };
 
   const versPlan = (/** @type {PointerEvent} */ e) => {
