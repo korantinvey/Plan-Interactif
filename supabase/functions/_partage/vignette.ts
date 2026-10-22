@@ -65,3 +65,34 @@ export function tranchesDAdresses(adresses: string[]): string[][] {
   if (tranche.length) tranches.push(tranche);
   return tranches;
 }
+
+/* Les tranches partent ensemble, quelques-unes à la fois. Lues l'une après
+   l'autre, elles additionnaient leurs allers-retours : les adresses signées
+   d'Eventmaker n'en logent que neuf par tranche, et les 245 logos de fep27 en
+   faisaient vingt-neuf — quatre à cinq secondes à chaque plan assemblé,
+   relevées par la sonde le 22 octobre 2026. Le nombre est borné pour ne pas
+   prendre à la base toutes ses connexions d'un coup. */
+const LECTURES_SIMULTANEES = 8;
+
+/**
+ * Les adresses lues tranche par tranche (`tranchesDAdresses`), plusieurs à la
+ * fois ; les réponses reviennent dans l'ordre des tranches.
+ */
+export async function lisParTranches<T>(
+  adresses: string[],
+  lis: (tranche: string[]) => PromiseLike<T>,
+): Promise<T[]> {
+  const tranches = tranchesDAdresses(adresses);
+  const lues: T[] = [];
+  let suivante = 0;
+  const lecteur = async () => {
+    while (suivante < tranches.length) {
+      const i = suivante++;
+      lues[i] = await lis(tranches[i]);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(LECTURES_SIMULTANEES, tranches.length) }, lecteur),
+  );
+  return lues;
+}

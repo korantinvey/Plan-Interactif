@@ -38,7 +38,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
-import { tranchesDAdresses } from "../_partage/vignette.ts";
+import { lisParTranches } from "../_partage/vignette.ts";
 import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
@@ -119,16 +119,8 @@ const service = () =>
  * Un logo peut en avoir deux, une WebP et une AVIF, sous deux clés : l'AVIF
  * est préférée, plus légère de moitié ; la WebP l'accompagne pour les
  * navigateurs qui ne lisent pas l'AVIF (`vignettes.mjs` `vignettesLisibles`).
- *
- * Les tranches partent ensemble, quelques-unes à la fois. Lues l'une après
- * l'autre, elles additionnaient leurs allers-retours : les adresses signées
- * d'Eventmaker n'en logent que neuf par tranche, et les 245 logos de fep27
- * en faisaient vingt-neuf — quatre à cinq secondes à chaque plan assemblé,
- * relevées par la sonde le 22 octobre 2026. Le nombre est borné pour ne pas
- * prendre à la base toutes ses connexions d'un coup.
  */
 type Vignettes = { cle: string; avif?: boolean; webp?: string };
-const LECTURES_SIMULTANEES = 8;
 async function vignettesParAdresse(
   instantanes: { charge?: unknown }[],
 ): Promise<Map<string, Vignettes>> {
@@ -144,24 +136,11 @@ async function vignettesParAdresse(
   }
   const par = new Map<string, Vignettes>();
   if (!adresses.size) return par;
-  const liste = [...adresses];
   const sb = service();
   // par tranches : une requête qui porte trop d'adresses dépasse ce qu'un
   // intermédiaire accepte de transmettre (`tranchesDAdresses`)
-  const tranches = tranchesDAdresses(liste);
-  const lisTranche = (tranche: string[]) =>
-    sb.from("vignette_de_logo").select("cle,source,format").in("source", tranche);
-  const lues: Awaited<ReturnType<typeof lisTranche>>[] = [];
-  let suivante = 0;
-  const lecteur = async () => {
-    while (suivante < tranches.length) {
-      const i = suivante++;
-      lues[i] = await lisTranche(tranches[i]);
-    }
-  };
-  await Promise.all(
-    Array.from({ length: Math.min(LECTURES_SIMULTANEES, tranches.length) }, lecteur),
-  );
+  const lues = await lisParTranches([...adresses], (tranche) =>
+    sb.from("vignette_de_logo").select("cle,source,format").in("source", tranche));
   /* Les deux vignettes d'une adresse viennent de la même tranche, et leur
      rencontre ne dépend pas de l'ordre : l'ordre d'arrivée ne change rien. */
   for (const { data, error } of lues) {
