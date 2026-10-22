@@ -149,6 +149,69 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
   expect(erreurs).toEqual([]);
 });
 
+/* Au repos, rien ne se redemande. Les grandes des abords se préchargeaient,
+   le budget des vignettes décodées les libérait aussitôt, et la pose suivante
+   les redemandait : sans le moindre geste, la boucle tournait tant que la vue
+   restait de près — 12 182 grandes reçues en six minutes pour les 226 logos
+   de fep27, et près de la moitié du temps figé (sonde, 22 octobre 2026).
+   Ici, une clé par stand et des grandes assez lourdes pour qu'une quinzaine
+   remplisse le budget. */
+test("au repos, les grandes des abords ne se redemandent pas sans fin", async ({ page }) => {
+  test.setTimeout(240_000);
+  const erreurs = await prepare(page);
+  const grande = Buffer.from(await page.evaluate(() => {
+    const c = document.createElement("canvas"); c.width = 1200; c.height = 1200;
+    const x = /** @type {CanvasRenderingContext2D} */ (c.getContext("2d"));
+    // le fond transparent : une grande telle que la synchronisation la détoure
+    x.fillStyle = "#c00"; x.fillRect(100, 100, 1000, 1000);
+    return c.toDataURL("image/png").split(",")[1];
+  }), "base64");
+  const petite = await page.evaluate(() => {
+    const c = document.createElement("canvas"); c.width = 80; c.height = 40;
+    const x = /** @type {CanvasRenderingContext2D} */ (c.getContext("2d"));
+    x.fillStyle = "#fff"; x.fillRect(0, 0, 80, 40); x.fillStyle = "#c00"; x.fillRect(10, 8, 60, 24);
+    return c.toDataURL("image/webp").split(",")[1];
+  });
+  const donnees = JSON.parse(JSON.stringify(DONNEES));
+  /* Un stand sur six porte un logo : assez pour déborder le budget, assez peu
+     pour que le premier chargement finisse vite sous une carte graphique
+     logicielle — la boucle ne tourne qu'une fois les abords arrivés. */
+  donnees.plans[0].stands.forEach((s, i) => { if (i % 6 === 0) s.vignette = (i + 1).toString(16).padStart(8, "b"); });
+  /** @type {Map<string, number>} */
+  const demandes = new Map();
+  await page.route((u) => u.pathname === "/api/plan", (r) => {
+    const u = new URL(r.request().url()), lot = u.searchParams.get("vignettes"), g = u.searchParams.get("grande");
+    if (lot) return r.fulfill({ json: Object.fromEntries(lot.split(",").map((k) => [k, petite])) });
+    if (g) {
+      demandes.set(g, (demandes.get(g) || 0) + 1);
+      return r.fulfill({ contentType: "image/png", body: grande });
+    }
+    if (u.searchParams.get("entete")) return r.fulfill({ json: { v: "essai-boucle" } });
+    return r.fulfill({ status: 200, contentType: "application/json",
+                       headers: { "X-Version": "essai-boucle" }, body: JSON.stringify(donnees) });
+  });
+  await page.goto("/plan.html?plan=smcl-2026&logos=1&ambiance=classique");
+  await attendLaListe(page);
+  const webgl = await page.waitForFunction(() => window.__essais.GL.deck, null, { timeout: 15_000 })
+    .then(() => true, () => false);
+  test.skip(!webgl, "pas de carte graphique");
+  await page.locator("#list .row").first().click();
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => document.getElementById("zIn").click());
+  await logosPoses(page);
+
+  // le temps que les grandes des abords arrivent ; ensuite, plus rien ne bouge
+  const recues = () => page.evaluate(() => window.__essais.COMPTES_LOGOS.vignettesRecues);
+  await page.waitForTimeout(25_000);
+  const avant = await recues();
+  await page.waitForTimeout(20_000);
+  const apres = await recues();
+  const pire = Math.max(...demandes.values());
+  expect(apres - avant, "grandes reçues pendant vingt secondes sans geste").toBeLessThanOrEqual(2);
+  expect(pire, "une même grande redemandée").toBeLessThanOrEqual(2);
+  expect(erreurs).toEqual([]);
+});
+
 /* La grande arrive détourée de la synchronisation : le toit la pose telle
    quelle, sans repasser par le détourage de la page — qui, deux logos à la
    fois, faisait paraître un à un la centaine de stands d'un écran de
