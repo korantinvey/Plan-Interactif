@@ -243,8 +243,10 @@ function dansCamion(/** @type {Camion} */ c, /** @type {number} */ x, /** @type 
  * @param {Camion} c
  */
 export function camionTient(anneau, c){
-  if (!coinsCamion(c, JEU_CAMION).every(([x, y]) => dedans(anneau, x, y))) return false;
-  return !anneau.some(([x, y]) => dansCamion(c, x, y, JEU_CAMION));
+  // le jeu suit l'échelle : dix centimètres de chaque côté n'entrent pas dans une zone d'un mètre
+  const jeu = JEU_CAMION * Math.min(1, c.k);
+  if (!coinsCamion(c, jeu).every(([x, y]) => dedans(anneau, x, y))) return false;
+  return !anneau.some(([x, y]) => dansCamion(c, x, y, jeu));
 }
 
 /** Deux camions se chevauchent-ils ? Un coin de l'un dans l'autre, ou leurs milieux confondus. */
@@ -275,12 +277,14 @@ function camionsDOffice(anneau){
   /* Une zone dessinée à la taille d'un seul camion — c'est souvent ainsi
      qu'un foodtruck est posé sur un plan — n'en recevait aucun, et restait
      nue. Elle reçoit le sien, réduit à ce qu'elle mesure : mieux vaut un
-     camion un peu court que pas de camion. */
+     camion un peu court que pas de camion. Sans plancher : une zone minuscule
+     refusait tout camion, et « + » répondait qu'elle était pleine alors
+     qu'elle était vide. Le jeu au bord rétrécit avec lui. */
   if (!out.length){
     const ac = (R.s0 + R.s1) / 2, bc = (R.t0 + R.t1) / 2;
-    for (let k = Math.min(1, (L - .3) / 6.2, (l - .3) / 2.65); k >= .3; k -= .05){
+    for (let k = Math.min(1, L / 6.5, l / 2.95); k > 1e-4; k *= .92){
       const c = camionEn(ac, bc - .175 * k, k);
-      if (coinsCamion(c, .1).every(([x, y]) => dedans(anneau, x, y))){ out.push(c); break; }
+      if (coinsCamion(c, .1 * k).every(([x, y]) => dedans(anneau, x, y))){ out.push(c); break; }
     }
   }
   return out;
@@ -326,7 +330,7 @@ export function figeCamions(anneau, reglage){
 }
 
 /**
- * Un camion de plus : à la première place libre d'une trame d'un mètre, en
+ * Un camion de plus : à la première place libre d'une trame d'un mètre au plus, en
  * partant du milieu, dans le sens des autres ; ou rien si la zone est pleine.
  * @param {number[][]} anneau
  * @param {{ u: number, v: number, a: number }[]} reglage  le réglage figé
@@ -341,11 +345,16 @@ export function ajouteCamion(anneau, reglage){
   const x0 = Math.min(...xs), y0 = Math.min(...ys);
   const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
   /* Les places, du milieu vers les bords : le premier camion d'une zone vide
-     se pose au centre, les suivants à côté. */
-  const places = [];
-  for (let x = x0 + .5; x < x0 + w; x += 1) for (let y = y0 + .5; y < y0 + h; y += 1) places.push([x, y]);
+     se pose au centre, les suivants à côté. La trame se resserre avec les
+     camions réduits, sans quoi une petite zone n'offrait aucune place. */
+  const pas = Math.min(1, k), places = [];
+  for (let x = x0 + pas / 2; x < x0 + w; x += pas) for (let y = y0 + pas / 2; y < y0 + h; y += pas) places.push([x, y]);
   const mx = x0 + w / 2, my = y0 + h / 2;
   places.sort((p, q) => Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(q[0] - mx, q[1] - my));
+  /* La place du rangement d'office d'abord : un camion réduit à la mesure de
+     sa zone n'entre que là, entre les nœuds de la trame. */
+  const dOffice = camionsDOffice(anneau)[0];
+  if (dOffice) places.unshift([dOffice.cx, dOffice.cy]);
   for (const a of angles) for (const [x, y] of places){
     const c = { cx: x, cy: y, angle: a, k };
     if (camionTient(anneau, c) && !poses.some(p => camionsSeGenent(p, c)))

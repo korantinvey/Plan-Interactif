@@ -54,6 +54,12 @@ const rect = (x, y, w, h, deg = 0) => {
   {
     const seul = meuble("foodtruck", rect(0, 0, 5.5, 2.6));
     dit(seul.filter(x => x.role === "carrosserie").length === 1, "un foodtruck à la taille d'un camion : un camion, réduit");
+    // aucune taille plancher : une zone minuscule reçoit encore son camion, et « + » en ajoute
+    const mini = rect(0, 0, .6, .4);
+    dit(meuble("foodtruck", mini).filter(x => x.role === "carrosserie").length === 1, "une zone minuscule : son camion, très réduit");
+    const a = ajouteCamion(mini, []), b = a && ajouteCamion(mini, [a]);
+    dit(Boolean(a) && camions(mini, [a]).length === 1, "une zone minuscule vide n'est pas pleine");
+    dit(!b || camions(mini, [a, b]).length === 2, "un second camion, s'il entre, tient aussi");
   }
   dit(["scene", "ecran", "assise"].every(r => roles("conferences").has(r)), "une salle : une scène, un écran, des sièges");
   dit(roles("accueil").has("comptoir"), "un accueil : un comptoir");
