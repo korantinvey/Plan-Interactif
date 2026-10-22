@@ -29,7 +29,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console.css` — 738 l. → console.css
+### `_console.css` — 745 l. → console.css
 
 - l.670 · Page de rapport
 
@@ -120,7 +120,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 293 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1660 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1659 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
@@ -405,6 +405,22 @@ Importé par :
 
 cartouche-poi · lancement · recherche · rendu
 
+### `modules/bases-klipso.mjs` — 211 l. → console
+
+- l.1 · Bases Klipso — le menu des bases connues, et la saisie d'une base neuve
+
+Fonctions :
+
+`chargeBases` 32 · `enregistreBase` 37 · `date` 44 · `choixBase` 59
+
+Importe :
+
+socle-console
+
+Importé par :
+
+ecran-console · fiche-evenement
+
 ### `modules/batiments.mjs` — 597 l. → plan-admin
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
@@ -663,7 +679,7 @@ parcours-recu · partage · pile · pile · placement-libelles · polices-plan �
 recherche · reglage-comptoir · reglage-foodtrucks · reglage-installation · reglage-rappel
 reglage-recherche · reglage-sponsor · reglage-suggestion · reglages · rendu
 reprise-emplacements · secteurs · seuil · sponsor · suggestion · tiroir-itineraire
-tout-au-parcours · tutoriel · volets
+tout-au-parcours · tutoriel · volets · webgl
 
 ### `modules/console.mjs` — 42 l. → console
 
@@ -718,7 +734,7 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 706 l. → plan, plan-admin
+### `modules/decor.mjs` — 741 l. → plan, plan-admin
 
 - l.1 · Le décor du plan — le mobilier des zones de l'organisateur
 
@@ -727,10 +743,10 @@ Fonctions :
 `dedans` 44 · `repere` 57 · `reglageComptoirValide` 79 · `comptoir` 102
 `comptoirTient` 128 · `rapprocheComptoir` 149 · `poigneeComptoir` 185
 `reglageCamionsValide` 222 · `coinsCamion` 226 · `dansCamion` 233 · `camionTient` 245
-`camionsSeGenent` 251 · `camionsDOffice` 260 · `echelleCamions` 290 · `camionDe` 293
-`camions` 308 · `figeCamions` 321 · `ajouteCamion` 334 · `rapprocheCamion` 365
-`poigneeCamion` 392 · `meuble` 407 · `objetRepere` 633 · `tourneur` 650 · `etendueObjet` 656
-`rayonPoigneeObjet` 660 · `poigneeObjet` 677 · `objetDroit` 682
+`camionsSeGenent` 253 · `camionsDOffice` 262 · `echelleCamions` 294 · `camionDe` 297
+`camions` 312 · `figeCamions` 325 · `ajouteCamion` 341 · `poigneeCamion` 374
+`enseignesCamions` 397 · `meuble` 437 · `objetRepere` 668 · `tourneur` 685
+`etendueObjet` 691 · `rayonPoigneeObjet` 695 · `poigneeObjet` 712 · `objetDroit` 717
 
 Importé par :
 
@@ -767,7 +783,7 @@ Fonctions :
 
 Importé par :
 
-fiche-zone · icone-app
+fiche-zone · icone-app · reglage-foodtrucks
 
 ### `modules/dessin.mjs` — 682 l. → plan, plan-admin
 
@@ -897,19 +913,19 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 293 l. → console
+### `modules/ecran-console.mjs` — 328 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 36 · `selonAdresse` 63 · `majAdresse` 71 · `majBarre` 86 · `dessineChoix` 128
-`majLiens` 145 · `videEcran` 186 · `dessine` 191 · `demarre` 206 · `brancheConsole` 224
+`charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 129
+`majLiens` 146 · `videEcran` 187 · `dessine` 192 · `demarre` 207 · `brancheConsole` 225
 
 Importe :
 
-comptes · dom · duplication · evenements · export · fenetre-console · fiche-evenement
-socle-console · synchronisation · texte
+bases-klipso · comptes · dom · duplication · evenements · export · fenetre-console
+fiche-evenement · socle-console · synchronisation · texte
 
 Importé par :
 
@@ -1176,15 +1192,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 437 l. → console
+### `modules/fiche-evenement.mjs` — 465 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 45 · `champ` 56 · `champFavicon` 99 · `dessineFiche` 176 · `ligneOutil` 306
-`ligneReglage` 322 · `champCle` 336 · `ouvreSources` 375 · `majIntegration` 420
-`majMsgSync` 427
+`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 307
+`ligneReglage` 323 · `champCle` 337 · `champInstance` 378 · `ouvreSources` 402
+`majIntegration` 448 · `majMsgSync` 455
 
 Éléments :
 
@@ -1192,26 +1208,26 @@ Fonctions :
 
 Importe :
 
-comptes · dom · evenements · fenetre-console · fiche-detail · fuseau · icone-onglet
-provenance · socle-console · synchronisation
+bases-klipso · comptes · dom · evenements · fenetre-console · fiche-detail · fuseau
+icone-onglet · provenance · socle-console · synchronisation
 
 Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 907 l. → plan-admin
+### `modules/fiche-zone.mjs` — 908 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.50 · La fiche d'une zone organisateur
-- l.807 · Masquer une zone organisateur
+- l.808 · Masquer une zone organisateur
 
 Fonctions :
 
-`champZone` 76 · `champsZone` 101 · `champSalles` 219 · `nomDeZone` 271 · `cadreLogo` 297
-`champLogo` 369 · `editeurRiche` 407 · `memeFicheZone` 564 · `suitFicheZone` 571
-`verseFicheZone` 579 · `ficheZone` 605 · `marqueType` 634 · `enregistreZone` 640
-`enregistreZoneAjoutee` 754 · `basculeAffichageZone` 818 · `marqueZonesMasquees` 846
-`ecritColonnesEvenement` 866 · `ecritColonneEvenement` 900
+`champZone` 76 · `champsZone` 101 · `champSalles` 220 · `nomDeZone` 272 · `cadreLogo` 298
+`champLogo` 370 · `editeurRiche` 408 · `memeFicheZone` 565 · `suitFicheZone` 572
+`verseFicheZone` 580 · `ficheZone` 606 · `marqueType` 635 · `enregistreZone` 641
+`enregistreZoneAjoutee` 755 · `basculeAffichageZone` 819 · `marqueZonesMasquees` 847
+`ecritColonnesEvenement` 867 · `ecritColonneEvenement` 901
 
 Importe :
 
@@ -2068,16 +2084,16 @@ Importé par :
 
 gestes-admin
 
-### `modules/outil-foodtruck.mjs` — 180 l. → plan-admin
+### `modules/outil-foodtruck.mjs` — 181 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck, attrapés sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
 `zoneDe` 43 · `reglageDe` 47 · `lis` 53 · `metresParPixel` 61 · `vise` 65
-`choisitFoodtruck` 88 · `pose` 99 · `foodtruckPointerDown` 109 · `foodtruckPointerMove` 122
-`foodtruckPointerUp` 142 · `lacheFoodtruck` 152 · `foodtruckClavier` 158
-`relacheFoodtruck` 176
+`choisitFoodtruck` 88 · `pose` 99 · `foodtruckPointerDown` 110 · `foodtruckPointerMove` 123
+`foodtruckPointerUp` 143 · `lacheFoodtruck` 153 · `foodtruckClavier` 159
+`relacheFoodtruck` 177
 
 Importe :
 
@@ -2447,17 +2463,17 @@ Importé par :
 
 reglages
 
-### `modules/reglage-foodtrucks.mjs` — 250 l. → plan-admin
+### `modules/reglage-foodtrucks.mjs` — 318 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck — combien, où, dans quel sens
 
 Fonctions :
 
-`el` 33 · `bouton` 38 · `ecritCamions` 51 · `champFoodtrucks` 69
+`el` 40 · `bouton` 45 · `ecritCamions` 58 · `champFoodtrucks` 77
 
 Importe :
 
-configuration · decor · outil-comptoir · rendu
+configuration · decor · depot-image · outil-comptoir · rendu · sur
 
 Importé par :
 
@@ -2583,15 +2599,15 @@ Importé par :
 
 plan
 
-### `modules/rendu.mjs` — 240 l. → plan, plan-admin
+### `modules/rendu.mjs` — 243 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
 Fonctions :
 
-`monteHabillage` 60 · `attributComptoir` 78 · `texteCamions` 85 · `attributCamions` 87
-`baliseZone` 104 · `baliseStand` 123 · `montePlan` 133 · `onglets` 165 · `chargeFond` 195
-`changePlan` 227
+`monteHabillage` 60 · `attributComptoir` 78 · `texteCamions` 87 · `attributCamions` 90
+`baliseZone` 107 · `baliseStand` 126 · `montePlan` 136 · `onglets` 168 · `chargeFond` 198
+`changePlan` 230
 
 Importe :
 
@@ -2775,8 +2791,8 @@ dom · fenetre-console · session
 
 Importé par :
 
-appel-fonction · avancement · comptes · console · duplication · ecran-console · evenements
-export · fiche-detail · fiche-evenement · fuseau · provenance · rapport
+appel-fonction · avancement · bases-klipso · comptes · console · duplication · ecran-console
+evenements · export · fiche-detail · fiche-evenement · fuseau · provenance · rapport
 rapport-utilisation · synchronisation
 
 ### `modules/socle-dessin.mjs` — 108 l. → plan-admin
@@ -2873,7 +2889,8 @@ texte
 
 Importé par :
 
-corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · sponsor · vignettes
+corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · reglage-foodtrucks
+sponsor · vignettes · webgl
 
 ### `modules/synchronisation.mjs` — 280 l. → console
 
@@ -3261,54 +3278,55 @@ Portes :
 
 - `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3167 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3181 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`confieAuWebgl` 75 · `chargeWebgl` 128 · `brancheWebgl` 171 · `monteWebgl` 191
-`poseToileWebgl` 328 · `guetteContexteWebgl` 334 · `contextePerduWebgl` 344
-`verifieContexteWebgl` 351 · `guetteBoucleWebgl` 383 · `perdContexteWebgl` 399
-`remonteWebgl` 433 · `vueDeck` 450 · `enCamera` 470 · `vuesGl` 474 · `effetsGl` 498
-`basculeCamera` 508 · `vueWebgl` 521 · `blocDe` 538 · `majEditionWebgl` 551 · `cleBloc` 563
-`planifieWebgl` 589 · `toutRepeindreWebgl` 593 · `blocsDansLOrdre` 604 · `repeintWebgl` 609
-`pointsParMetre` 639 · `assembleWebgl` 665 · `constTexte` 719 · `jeuDeCaracteres` 922
-`sousPixelOffert` 976 · `couchesPetites` 984 · `filtreCouches` 1019 · `poseGeste` 1031
-`positionTexte` 1047 · `cleChoisi` 1087 · `versEcran` 1090 · `enveloppe` 1097
-`nomsCaches` 1108 · `parametresTexte` 1137 · `nomsAPlat` 1146 · `couchesTexte` 1148
-`accVide` 1198 · `convertitBloc` 1200 · `accDe` 1222 · `parcoursGl` 1239
-`resteDebout` 1289 · `dedansAnneau` 1297 · `auDessusDuSol` 1322 · `surSonStand` 1331
-`standDeLaMarque` 1337 · `marquesSurLesToits` 1349 · `hauteurVolume` 1366
-`zoneMeublee` 1398 · `poseJeton` 1450 · `mul4` 1474 · `enColonnes` 1483 · `translation` 1484
-`homothetie` 1486 · `autourDuZ` 1487 · `matriceJeton` 1496 · `corpsDansLeJeton` 1512
-`couchesJeton` 1520 · `couchesJetons` 1568 · `meubleZone` 1610 · `dansLeHall` 1672
-`teinteDesFigurants` 1694 · `penchee` 1738 · `couchesFigurants` 1749 · `eclatant` 1797
-`opaque` 1803 · `formeGl` 1810 · `corpsDeclare` 1882 · `texteGl` 1891 · `imageGl` 1915
-`imageDressee` 1957 · `socleImage` 1971 · `partage` 1983 · `designeGl` 1989 · `sortie` 2003
-`noteHauteur` 2009 · `anticipeHausses` 2039 · `monteALAppui` 2065 · `rendLAppui` 2077
-`detacheVolume` 2087 · `hauteurEnCours` 2121 · `hauteurHausse` 2127 · `echelleHausse` 2132
-`haussesParId` 2135 · `memesFormes` 2154 · `memesPoints` 2164 · `signeCouleurs` 2171
-`masqueVolumes` 2179 · `aPlat` 2199 · `ombresAuRepos` 2211 · `couchesDeBloc` 2236
-`modelesLibellesHtml` 2373 · `poseModelesLibelles` 2383 · `lisModelesLibelles` 2389
-`groupesNoms` 2422 · `couchesNoms` 2448 · `couchesPastilles` 2463
-`couchesLibellesWebgl` 2478 · `couchesDessineesWebgl` 2512 · `stage` 2533
-`lectureDifferee` 2566 · `survolTrouve` 2602 · `demandeSurvolWebgl` 2608
-`survoleWebgl` 2614 · `brancheSurvolWebgl` 2642 · `poseSurvolWebgl` 2655 · `enTuiles` 2692
-`hauteurTuile` 2705 · `visePour` 2711 · `suisChoisies` 2721 · `gonfleSurvol` 2729
-`coucheTuileSoulevee` 2752 · `couchesTuiles` 2783 · `poseCurseurWebgl` 2796
-`poseFocusWebgl` 2805 · `aplatsDe` 2812 · `coucheSurvol` 2815 · `coucheSurvolVolume` 2831
-`coucheFocus` 2865 · `couchesPhare` 2895 · `lueurDe` 2912 · `opacitePhare` 2950
-`echellePhare` 2951 · `couchesPhareNoms` 2954 · `palierDefile` 2979 · `periodeDe` 2984
-`phaseDe` 2986 · `instant` 2996 · `animeCouche` 2997 · `majAnimationWebgl` 3022
-`animeWebgl` 3030 · `reanime` 3067 · `logosSurLesToits` 3076 · `objetSous` 3106
-`objetSousDiffere` 3111 · `viseEnAvance` 3125 · `lisObjet` 3133 · `cibleWebgl` 3138
-`priseWebgl` 3148 · `libelleSousWebgl` 3153 · `rectEcranWebgl` 3158
+`confieAuWebgl` 77 · `chargeWebgl` 130 · `brancheWebgl` 173 · `monteWebgl` 193
+`poseToileWebgl` 330 · `guetteContexteWebgl` 336 · `contextePerduWebgl` 346
+`verifieContexteWebgl` 353 · `guetteBoucleWebgl` 385 · `perdContexteWebgl` 401
+`remonteWebgl` 435 · `vueDeck` 452 · `enCamera` 472 · `vuesGl` 476 · `effetsGl` 500
+`basculeCamera` 510 · `vueWebgl` 523 · `blocDe` 540 · `majEditionWebgl` 553 · `cleBloc` 565
+`planifieWebgl` 591 · `toutRepeindreWebgl` 595 · `blocsDansLOrdre` 606 · `repeintWebgl` 611
+`pointsParMetre` 641 · `assembleWebgl` 667 · `constTexte` 721 · `jeuDeCaracteres` 924
+`sousPixelOffert` 978 · `couchesPetites` 986 · `filtreCouches` 1021 · `poseGeste` 1033
+`positionTexte` 1049 · `cleChoisi` 1089 · `versEcran` 1092 · `enveloppe` 1099
+`nomsCaches` 1110 · `parametresTexte` 1139 · `nomsAPlat` 1148 · `couchesTexte` 1150
+`accVide` 1200 · `convertitBloc` 1202 · `accDe` 1224 · `parcoursGl` 1241
+`resteDebout` 1291 · `dedansAnneau` 1299 · `auDessusDuSol` 1324 · `surSonStand` 1333
+`standDeLaMarque` 1339 · `marquesSurLesToits` 1351 · `hauteurVolume` 1368
+`zoneMeublee` 1400 · `poseJeton` 1452 · `mul4` 1476 · `enColonnes` 1485 · `translation` 1486
+`homothetie` 1488 · `autourDuZ` 1489 · `matriceJeton` 1498 · `corpsDansLeJeton` 1514
+`couchesJeton` 1522 · `couchesJetons` 1570 · `meubleZone` 1612 · `dansLeHall` 1686
+`teinteDesFigurants` 1708 · `penchee` 1752 · `couchesFigurants` 1763 · `eclatant` 1811
+`opaque` 1817 · `formeGl` 1824 · `corpsDeclare` 1896 · `texteGl` 1905 · `imageGl` 1929
+`imageDressee` 1971 · `socleImage` 1985 · `partage` 1997 · `designeGl` 2003 · `sortie` 2017
+`noteHauteur` 2023 · `anticipeHausses` 2053 · `monteALAppui` 2079 · `rendLAppui` 2091
+`detacheVolume` 2101 · `hauteurEnCours` 2135 · `hauteurHausse` 2141 · `echelleHausse` 2146
+`haussesParId` 2149 · `memesFormes` 2168 · `memesPoints` 2178 · `signeCouleurs` 2185
+`masqueVolumes` 2193 · `aPlat` 2213 · `ombresAuRepos` 2225 · `couchesDeBloc` 2250
+`modelesLibellesHtml` 2387 · `poseModelesLibelles` 2397 · `lisModelesLibelles` 2403
+`groupesNoms` 2436 · `couchesNoms` 2462 · `couchesPastilles` 2477
+`couchesLibellesWebgl` 2492 · `couchesDessineesWebgl` 2526 · `stage` 2547
+`lectureDifferee` 2580 · `survolTrouve` 2616 · `demandeSurvolWebgl` 2622
+`survoleWebgl` 2628 · `brancheSurvolWebgl` 2656 · `poseSurvolWebgl` 2669 · `enTuiles` 2706
+`hauteurTuile` 2719 · `visePour` 2725 · `suisChoisies` 2735 · `gonfleSurvol` 2743
+`coucheTuileSoulevee` 2766 · `couchesTuiles` 2797 · `poseCurseurWebgl` 2810
+`poseFocusWebgl` 2819 · `aplatsDe` 2826 · `coucheSurvol` 2829 · `coucheSurvolVolume` 2845
+`coucheFocus` 2879 · `couchesPhare` 2909 · `lueurDe` 2926 · `opacitePhare` 2964
+`echellePhare` 2965 · `couchesPhareNoms` 2968 · `palierDefile` 2993 · `periodeDe` 2998
+`phaseDe` 3000 · `instant` 3010 · `animeCouche` 3011 · `majAnimationWebgl` 3036
+`animeWebgl` 3044 · `reanime` 3081 · `logosSurLesToits` 3090 · `objetSous` 3120
+`objetSousDiffere` 3125 · `viseEnAvance` 3139 · `lisObjet` 3147 · `cibleWebgl` 3152
+`priseWebgl` 3162 · `libelleSousWebgl` 3167 · `rectEcranWebgl` 3172
 
 Importe :
 
-affichage · annonce · camera · chemin-forme · couleurs · decor · dom · donnees · figurants
-itineraire · libelle-place · logos-stands · reperes · trace · vue-etat
+affichage · annonce · camera · chemin-forme · configuration · couleurs · decor · dom
+donnees · figurants · itineraire · libelle-place · logos-stands · reperes · sur · trace
+vue-etat
 
 Importé par :
 
@@ -3389,11 +3407,12 @@ Portes :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1937 l.
+### `supabase/functions/sync-evenement/index.ts` — 1957 l.
 
-`cors` 44 · `bourre` 117 · `client` 127 · `ecrit` 149 · `gaia` 157 · `libellesChoix` 168
-`retiensAnglais` 195 · `fournisseur` 213 · `raccourci` 221 · `enClair` 258 · `range` 284
-`champsKlipso` 305 · `hebergee` 1885 · `nettoieUrl` 1913 · `groupeTextes` 1923
+`cors` 45 · `bourre` 118 · `client` 128 · `ecrit` 150 · `gaia` 158 · `cleKlipso` 169
+`libellesChoix` 188 · `retiensAnglais` 215 · `fournisseur` 233 · `raccourci` 241
+`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1905 · `nettoieUrl` 1933
+`groupeTextes` 1943
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
@@ -3462,6 +3481,7 @@ Portes :
 - `20261020224043_le_programme_de_conferences_saisi_a_la_main.sql` — evenement
 - `20261021115942_sonde_de_performance.sql` — releve_perf, perf_jour, perf_bilan, fn sonde_nombre, fn sonde_enregistre, fn sonde_publique, fn sonde_admin, fn sonde_detail, fn bilan_perf, fn purge_perf, fn performances_du_salon
 - `20261021193740_lecture_des_performances.sql` — lecteur_perf, fn lecteur_perf_nouveau, fn lecteur_perf_retire, fn lecture_perf
+- `20261022082549_une_cle_par_base_klipso.sql` — base_klipso, prive.cle_klipso, fn enregistre_base_klipso, fn cle_klipso
 
 ## Le reste
 
