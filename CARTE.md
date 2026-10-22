@@ -1656,14 +1656,14 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 296 l. → plan, plan-admin
+### `modules/libelles.mjs` — 300 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.51 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.52 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`libelles` 58 · `libelleZone` 135 · `emplacementWebgl` 163 · `libellesWebgl` 224
+`libelles` 59 · `libelleZone` 138 · `emplacementWebgl` 166 · `libellesWebgl` 227
 
 Importe :
 
@@ -1890,7 +1890,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 152 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 210 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -1898,7 +1898,8 @@ Fonctions :
 
 `coexComptes` 32 · `coexChoisit` 33 · `ligneCode` 49 · `decaleLibelle` 83
 `facteurLibelle` 84 · `libelleForce` 85 · `libelleEmplacement` 96 · `nomsPivotes` 120
-`nomCouche` 122 · `libelleDroit` 134
+`nomCouche` 122 · `nomsUniformes` 146 · `poseCorpsUniforme` 165 · `habilleNom` 187
+`libelleDroit` 192
 
 Importe :
 
@@ -3191,17 +3192,17 @@ Importé par :
 
 installation · rappels · tutoriel
 
-### `modules/volets.mjs` — 1427 l. → plan-admin
+### `modules/volets.mjs` — 1445 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
 Fonctions :
 
-`secteurs` 60 · `voletAdmin` 71 · `blocOptions` 255 · `blocLangues` 302 · `blocBarre` 376
-`blocHoraires` 434 · `voletParcours` 576 · `sallesSituees` 711 · `voletPmr` 727
-`nomDuTon` 818 · `svgVignette` 827 · `barreVignette` 829 · `vignetteDistPlan` 833
-`vignetteDistListe` 846 · `vignetteDistFiche` 860 · `salonDitSes` 880 · `coinPris` 887
-`voletDist` 910 · `blocDecoupage` 1082 · `voletApparence` 1130
+`secteurs` 60 · `voletAdmin` 71 · `blocOptions` 273 · `blocLangues` 320 · `blocBarre` 394
+`blocHoraires` 452 · `voletParcours` 594 · `sallesSituees` 729 · `voletPmr` 745
+`nomDuTon` 836 · `svgVignette` 845 · `barreVignette` 847 · `vignetteDistPlan` 851
+`vignetteDistListe` 864 · `vignetteDistFiche` 878 · `salonDitSes` 898 · `coinPris` 905
+`voletDist` 928 · `blocDecoupage` 1100 · `voletApparence` 1148
 
 Importe :
 

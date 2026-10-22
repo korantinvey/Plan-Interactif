@@ -54,7 +54,7 @@ import { champZone } from "./fiche-zone.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { relance } from "./tiroir-itineraire.mjs";
 import { libelles } from "./libelles.mjs";
-import { nomsPivotes } from "./nom-emplacement.mjs";
+import { nomsPivotes, nomsUniformes } from "./nom-emplacement.mjs";
 
 // les secteurs du salon, que l'index remplace à chaque chargement
 const secteurs = () => SECTEURS;
@@ -127,6 +127,24 @@ export function voletAdmin(hote){
     c.checked = nomsPivotes();
     c.onchange = e => {
       conf("_nomsPivotes").visible = e.target.checked;
+      enregistreConf();
+      libelles();
+    };
+    bloc.appendChild(l);
+  }
+
+  /* La même taille pour tous les noms des stands, celle du plus petit : un
+     choix de régularité contre la lisibilité de loin, éteint par défaut pour
+     la même raison (`nom-emplacement.mjs` `poseCorpsUniforme`). */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent =
+      "Écrire tous les noms des stands à la même taille, celle du plus petit";
+    const c = l.querySelector("input");
+    c.checked = nomsUniformes();
+    c.onchange = e => {
+      conf("_nomsUniformes").visible = e.target.checked;
       enregistreConf();
       libelles();
     };
