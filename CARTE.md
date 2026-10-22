@@ -718,7 +718,7 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 706 l. → plan, plan-admin
+### `modules/decor.mjs` — 715 l. → plan, plan-admin
 
 - l.1 · Le décor du plan — le mobilier des zones de l'organisateur
 
@@ -727,10 +727,10 @@ Fonctions :
 `dedans` 44 · `repere` 57 · `reglageComptoirValide` 79 · `comptoir` 102
 `comptoirTient` 128 · `rapprocheComptoir` 149 · `poigneeComptoir` 185
 `reglageCamionsValide` 222 · `coinsCamion` 226 · `dansCamion` 233 · `camionTient` 245
-`camionsSeGenent` 251 · `camionsDOffice` 260 · `echelleCamions` 290 · `camionDe` 293
-`camions` 308 · `figeCamions` 321 · `ajouteCamion` 334 · `rapprocheCamion` 365
-`poigneeCamion` 392 · `meuble` 407 · `objetRepere` 633 · `tourneur` 650 · `etendueObjet` 656
-`rayonPoigneeObjet` 660 · `poigneeObjet` 677 · `objetDroit` 682
+`camionsSeGenent` 253 · `camionsDOffice` 262 · `echelleCamions` 294 · `camionDe` 297
+`camions` 312 · `figeCamions` 325 · `ajouteCamion` 338 · `rapprocheCamion` 374
+`poigneeCamion` 401 · `meuble` 416 · `objetRepere` 642 · `tourneur` 659 · `etendueObjet` 665
+`rayonPoigneeObjet` 669 · `poigneeObjet` 686 · `objetDroit` 691
 
 Importé par :
 
