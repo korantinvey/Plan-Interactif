@@ -830,7 +830,7 @@ Fonctions :
 
 Importé par :
 
-detourage-travail · logos-stands · marque
+detourage-travail · logos-stands · marque · reglage-foodtrucks
 
 ### `modules/distinctions.mjs` — 450 l. → plan, plan-admin
 
@@ -2463,17 +2463,17 @@ Importé par :
 
 reglages
 
-### `modules/reglage-foodtrucks.mjs` — 318 l. → plan-admin
+### `modules/reglage-foodtrucks.mjs` — 358 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck — combien, où, dans quel sens
 
 Fonctions :
 
-`el` 40 · `bouton` 45 · `ecritCamions` 58 · `champFoodtrucks` 77
+`el` 41 · `bouton` 46 · `ecritCamions` 59 · `sansFond` 84 · `champFoodtrucks` 123
 
 Importe :
 
-configuration · decor · depot-image · outil-comptoir · rendu · sur
+configuration · decor · depot-image · detourage · outil-comptoir · rendu · sur
 
 Importé par :
 
