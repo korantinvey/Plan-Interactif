@@ -456,6 +456,27 @@ function vueGL(cal, e){
   };
 }
 
+/* La latitude au-delà de laquelle la projection de Mercator n'a plus rien à
+   peindre : MapLibre n'y montre que du vide. */
+const LAT_MERCATOR = 85.051129;
+
+/**
+ * Une vue que MapLibre peut prendre.
+ *
+ * Il ne se contente pas de la refuser. Une latitude hors de ±90° lève
+ * « Invalid LngLat » sur ce recadrage seul ; mais un zoom, un centre ou un cap
+ * qui ne sont pas des nombres finis lèvent « failed to invert matrix », et
+ * laissent sa matrice faussée : chaque recadrage suivant, même juste, lève la
+ * même erreur, jusqu'au rechargement — éprouvé dans Chromium sur
+ * maplibre-gl 4.7. L'étendue inclinée de la vue immersive va jusqu'à
+ * l'horizon (`inclineFond`), et de loin son centre passe le pôle.
+ */
+function vueGLValable(/** @type {any} */ v){
+  return Number.isFinite(v.zoom) && Number.isFinite(v.bearing) &&
+    Number.isFinite(v.center[0]) && Number.isFinite(v.center[1]) &&
+    Math.abs(v.center[1]) <= LAT_MERCATOR;
+}
+
 /**
  * L'adresse du style à charger : celle que l'exploitant a collée, sinon celle
  * du fond retenu.
@@ -551,7 +572,23 @@ function recaleCarteGL(/** @type {any} */ e){
 function redessineCarteGL(/** @type {any} */ cal, /** @type {any} */ e){
   clearTimeout(_releveGL); _releveGL = null;
   const recalee = _etendueGL !== null;
-  _carteGL.jumpTo(vueGL(cal, e));
+  const v = vueGL(cal, e);
+  /* Une vue que la carte ne sait pas prendre : pas de fond plutôt qu'un fond
+     décalé. `poseCarteGL` rend l'hôte visible à la vue suivante. */
+  if (!vueGLValable(v)){
+    $("fondCarteGL").hidden = true;
+    _etendueGL = null;
+    return;
+  }
+  try { _carteGL.jumpTo(v); }
+  catch (err) {
+    /* Refusée quand même : sa matrice est peut-être faussée pour de bon. La
+       carte est retirée, et la vue suivante en remonte une neuve — pas
+       indéfiniment, comme après un contexte perdu. */
+    videCarteGL();
+    if (++_remontesGL > REMONTES_GL) _echecGL = "vue refusée";
+    throw err;
+  }
   /* Recadrée, la carte ne se repeint qu'à sa prochaine image, alors que le
      recalage retiré se voit dès la nôtre : pour une image, elle aurait sauté
      du double. On la peint donc tout de suite. */

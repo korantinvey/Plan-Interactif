@@ -51,6 +51,8 @@ module.exports = [
   "-jetons-plaques", "-jetons",
   // pourquoi le dessin rend la main au SVG, dit à la console seule
   "la boucle d'images s'est arrêtée", "contexte perdu",
+  // pourquoi le fond de carte vectoriel n'est plus remonté, gardé sans être montré
+  "vue refusée",
   // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
   // que la bibliothèque garde pour elle
   "const vec3 ", "] = vec3[", "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]",

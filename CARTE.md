@@ -1041,7 +1041,7 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1069 l. → plan, plan-admin
+### `modules/environs.mjs` — 1106 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1050,12 +1050,13 @@ Fonctions :
 `poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `vueLibre` 245
 `calagePose` 255 · `calageCourant` 267 · `fondCourant` 270 · `recul` 275 · `zoneDuFond` 293
 `bornesDuFond` 310 · `borneLeStyle` 324 · `adresseTuile` 336 · `tuilesDeLaVue` 346
-`chargeMapLibre` 419 · `vueGL` 451 · `styleDuFond` 469 · `guetteLaCarte` 497
-`recaleCarteGL` 531 · `redessineCarteGL` 551 · `poseCarteGL` 565 · `diagnostiqueGL` 682
-`relanceCarteGL` 702 · `retireCarteGL` 716 · `guetteRetourGL` 743 · `carteGLPerdue` 750
-`verifieCarteGL` 760 · `videCarteGL` 778 · `inclineFond` 812 · `dessineFondCarte` 860
-`cleMasqueCarte` 980 · `masqueCarte` 981 · `formesMasquantes` 990 · `contourDuHall` 1012
-`cheminDuHall` 1019 · `poseMasqueCarte` 1037 · `ditCarte` 1052 · `refaitFondCarte` 1062
+`chargeMapLibre` 419 · `vueGL` 451 · `vueGLValable` 474 · `styleDuFond` 490
+`guetteLaCarte` 518 · `recaleCarteGL` 552 · `redessineCarteGL` 572 · `poseCarteGL` 602
+`diagnostiqueGL` 719 · `relanceCarteGL` 739 · `retireCarteGL` 753 · `guetteRetourGL` 780
+`carteGLPerdue` 787 · `verifieCarteGL` 797 · `videCarteGL` 815 · `inclineFond` 849
+`dessineFondCarte` 897 · `cleMasqueCarte` 1017 · `masqueCarte` 1018
+`formesMasquantes` 1027 · `contourDuHall` 1049 · `cheminDuHall` 1056
+`poseMasqueCarte` 1074 · `ditCarte` 1089 · `refaitFondCarte` 1099
 
 Importe :
 
@@ -1066,13 +1067,14 @@ Importé par :
 
 calage-carte · dessin · gestes · vue
 
-### `modules/erreurs.mjs` — 95 l. → plan, plan-admin
+### `modules/erreurs.mjs` — 109 l. → plan, plan-admin
 
 - l.1 · Les erreurs de la page, signalées
 
 Fonctions :
 
-`denous` 38 · `lieuDansLaPile` 46 · `envoie` 52 · `signale` 64 · `brancheErreurs` 79
+`denous` 38 · `lieuDansLaPile` 46 · `envoie` 52 · `signale` 64 · `signaleErreur` 84
+`brancheErreurs` 93
 
 Importe :
 
@@ -1080,7 +1082,7 @@ mesure · salon
 
 Importé par :
 
-lancement
+lancement · vue
 
 ### `modules/essai-rappel.mjs` — 69 l. → plan-admin
 
@@ -3246,25 +3248,26 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 716 l. → plan, plan-admin
+### `modules/vue.mjs` — 722 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
-- l.83 · 6. Vue
+- l.84 · 6. Vue
 
 Fonctions :
 
-`confieALaVue` 68 · `enEdition` 74 · `libelles` 75 · `poseEmprise` 81 · `figeTextes` 105
-`rendTextes` 113 · `cadrage` 152 · `peintLibelles` 157 · `repeintLibelles` 165
-`detacheLibelles` 169 · `rattacheLibelles` 181 · `etireLibelles` 199
-`poseFacteurTrait` 214 · `suitLaVue` 230 · `versScene` 239 · `retiensVue` 258
-`appliqueVue` 268 · `libellesDeLaVue` 337 · `rafraichitVue` 345 · `poseVue` 359
-`mesureBarre` 388 · `masqueHaut` 416 · `masque` 423 · `masqueDroite` 460 · `fit` 471
-`recadreIncline` 500 · `stoppeZoom` 542 · `glisseVersVise` 560 · `glisseVers` 606
-`rectVisee` 633 · `zoom` 653 · `echelle` 671 · `versPlan` 683 · `brancheVue` 695
+`confieALaVue` 69 · `enEdition` 75 · `libelles` 76 · `poseEmprise` 82 · `figeTextes` 106
+`rendTextes` 114 · `cadrage` 153 · `peintLibelles` 158 · `repeintLibelles` 166
+`detacheLibelles` 170 · `rattacheLibelles` 182 · `etireLibelles` 200
+`poseFacteurTrait` 215 · `suitLaVue` 231 · `versScene` 240 · `retiensVue` 259
+`appliqueVue` 269 · `libellesDeLaVue` 343 · `rafraichitVue` 351 · `poseVue` 365
+`mesureBarre` 394 · `masqueHaut` 422 · `masque` 429 · `masqueDroite` 466 · `fit` 477
+`recadreIncline` 506 · `stoppeZoom` 548 · `glisseVersVise` 566 · `glisseVers` 612
+`rectVisee` 639 · `zoom` 659 · `echelle` 677 · `versPlan` 689 · `brancheVue` 701
 
 Importe :
 
-camera · chemin-forme · dom · ecran · environs · ordre-trace · vue-etat · vue-etat · webgl
+camera · chemin-forme · dom · ecran · environs · erreurs · ordre-trace · vue-etat · vue-etat
+webgl
 
 Importé par :
 

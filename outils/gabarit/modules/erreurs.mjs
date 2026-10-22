@@ -73,6 +73,20 @@ function signale(message, lieu) {
 }
 
 /**
+ * Une erreur rattrapée, signalée quand même.
+ *
+ * Ce qu'un module met sous garde pour que le reste de la page continue — le
+ * fond de carte, que `vue.mjs` dessine avant le plan — ne passe plus par les
+ * écoutes ci-dessous : sans ce signalement, la garde aurait tu la panne
+ * qu'elle contient. L'endroit se lit dans sa pile, comme pour une promesse
+ * rejetée.
+ */
+export function signaleErreur(/** @type {any} */ e) {
+  signale(e && e.message ? (e.name ? e.name + ": " : "") + e.message : String(e),
+    lieuDansLaPile(e && e.stack));
+}
+
+/**
  * Les écoutes, posées en tête du lancement (`lancement.mjs`) : tout ce qui
  * suit, branchements compris, est couvert.
  */

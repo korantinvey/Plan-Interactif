@@ -36,6 +36,7 @@ import { cameraEnJeu, ecranVersPlat, CAMERA_CHANGEE } from "./camera.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 import { facteurTrait } from "./chemin-forme.mjs";
+import { signaleErreur } from "./erreurs.mjs";
 
 /* Ce que la vue rappelle chez les modules qui l'importent — ce qui dit si
    l'on édite, les noms, et ce qui garde sa taille à l'écran quel que soit le
@@ -270,8 +271,13 @@ export const appliqueVue = (enGeste = false) => {
   for (const f of suiveurs) f();
   /* Le fond de carte, avant toute chose : il ne dépend que de la vue, et le
      chemin du rendu par la carte graphique sort plus bas sans passer par la
-     « viewBox ». Posé là, il suit la vue quel que soit le rendu du plan. */
-  dessineFondCarte(enGeste);
+     « viewBox ». Posé là, il suit la vue quel que soit le rendu du plan.
+     Sous garde : c'est un décor servi par d'autres, et quand MapLibre levait
+     une erreur, tout ce qui suit était sauté — le plan ne suivait plus la vue,
+     la page semblait figée, et il fallait la recharger (démo de fep27, le
+     22 octobre 2026). Le fond peut rester en retard ; le plan, jamais. */
+  try { dessineFondCarte(enGeste); }
+  catch (e) { signaleErreur(e); }
   /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
      part vers elle, et le SVG caché garde sa géométrie figée. */
   if (RENDU_WEBGL && !GL.actif) monteWebgl();
