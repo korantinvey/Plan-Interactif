@@ -29,7 +29,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console.css` — 738 l. → console.css
+### `_console.css` — 745 l. → console.css
 
 - l.670 · Page de rapport
 
@@ -404,6 +404,22 @@ Fonctions :
 Importé par :
 
 cartouche-poi · lancement · recherche · rendu
+
+### `modules/bases-klipso.mjs` — 188 l. → console
+
+- l.1 · Bases Klipso — le menu des bases connues, et la saisie d'une base neuve
+
+Fonctions :
+
+`chargeBases` 32 · `enregistreBase` 37 · `date` 44 · `choixBase` 59
+
+Importe :
+
+socle-console
+
+Importé par :
+
+ecran-console · fiche-evenement
 
 ### `modules/batiments.mjs` — 597 l. → plan-admin
 
@@ -897,19 +913,19 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 293 l. → console
+### `modules/ecran-console.mjs` — 328 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 36 · `selonAdresse` 63 · `majAdresse` 71 · `majBarre` 86 · `dessineChoix` 128
-`majLiens` 145 · `videEcran` 186 · `dessine` 191 · `demarre` 206 · `brancheConsole` 224
+`charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 129
+`majLiens` 146 · `videEcran` 187 · `dessine` 192 · `demarre` 207 · `brancheConsole` 225
 
 Importe :
 
-comptes · dom · duplication · evenements · export · fenetre-console · fiche-evenement
-socle-console · synchronisation · texte
+bases-klipso · comptes · dom · duplication · evenements · export · fenetre-console
+fiche-evenement · socle-console · synchronisation · texte
 
 Importé par :
 
@@ -1176,15 +1192,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 437 l. → console
+### `modules/fiche-evenement.mjs` — 465 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 45 · `champ` 56 · `champFavicon` 99 · `dessineFiche` 176 · `ligneOutil` 306
-`ligneReglage` 322 · `champCle` 336 · `ouvreSources` 375 · `majIntegration` 420
-`majMsgSync` 427
+`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 307
+`ligneReglage` 323 · `champCle` 337 · `champInstance` 378 · `ouvreSources` 402
+`majIntegration` 448 · `majMsgSync` 455
 
 Éléments :
 
@@ -1192,8 +1208,8 @@ Fonctions :
 
 Importe :
 
-comptes · dom · evenements · fenetre-console · fiche-detail · fuseau · icone-onglet
-provenance · socle-console · synchronisation
+bases-klipso · comptes · dom · evenements · fenetre-console · fiche-detail · fuseau
+icone-onglet · provenance · socle-console · synchronisation
 
 Importé par :
 
@@ -2775,8 +2791,8 @@ dom · fenetre-console · session
 
 Importé par :
 
-appel-fonction · avancement · comptes · console · duplication · ecran-console · evenements
-export · fiche-detail · fiche-evenement · fuseau · provenance · rapport
+appel-fonction · avancement · bases-klipso · comptes · console · duplication · ecran-console
+evenements · export · fiche-detail · fiche-evenement · fuseau · provenance · rapport
 rapport-utilisation · synchronisation
 
 ### `modules/socle-dessin.mjs` — 108 l. → plan-admin
@@ -3389,11 +3405,12 @@ Portes :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1937 l.
+### `supabase/functions/sync-evenement/index.ts` — 1957 l.
 
-`cors` 44 · `bourre` 117 · `client` 127 · `ecrit` 149 · `gaia` 157 · `libellesChoix` 168
-`retiensAnglais` 195 · `fournisseur` 213 · `raccourci` 221 · `enClair` 258 · `range` 284
-`champsKlipso` 305 · `hebergee` 1885 · `nettoieUrl` 1913 · `groupeTextes` 1923
+`cors` 45 · `bourre` 118 · `client` 128 · `ecrit` 150 · `gaia` 158 · `cleKlipso` 169
+`libellesChoix` 188 · `retiensAnglais` 215 · `fournisseur` 233 · `raccourci` 241
+`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1905 · `nettoieUrl` 1933
+`groupeTextes` 1943
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
@@ -3462,6 +3479,7 @@ Portes :
 - `20261020224043_le_programme_de_conferences_saisi_a_la_main.sql` — evenement
 - `20261021115942_sonde_de_performance.sql` — releve_perf, perf_jour, perf_bilan, fn sonde_nombre, fn sonde_enregistre, fn sonde_publique, fn sonde_admin, fn sonde_detail, fn bilan_perf, fn purge_perf, fn performances_du_salon
 - `20261021193740_lecture_des_performances.sql` — lecteur_perf, fn lecteur_perf_nouveau, fn lecteur_perf_retire, fn lecture_perf
+- `20261022082549_une_cle_par_base_klipso.sql` — base_klipso, prive.cle_klipso, fn enregistre_base_klipso, fn cle_klipso
 
 ## Le reste
 

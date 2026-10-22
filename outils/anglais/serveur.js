@@ -133,4 +133,13 @@ module.exports = {
   "Écriture du fuseau du salon": "Saving the show time zone",
   "Écriture de la date de synchronisation": "Saving the synchronisation date",
   "la base n'a rien rendu": "the database returned nothing",
+
+  // la clé de la base Klipso du salon, et les refus de son enregistrement
+  "Clé de la base Klipso": "Klipso database key",
+  "Aucune clé pour la base Klipso « {instance} » : saisissez-la dans la console, fenêtre « Sources de données ».":
+    "No key for Klipso database “{instance}”: enter it in the console, “Data sources” window.",
+  "Seul un administrateur enregistre une base Klipso.": "Only an administrator can save a Klipso database.",
+  "Instance Klipso invalide : le sous-domaine seul, lettres, chiffres et tirets.":
+    "Invalid Klipso instance: the subdomain only, letters, digits and hyphens.",
+  "La clé de la base Klipso est vide.": "The Klipso database key is empty.",
 };
