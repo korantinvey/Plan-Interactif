@@ -23,7 +23,7 @@
    des gestes de l'exploitant.
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
-import { camions, figeCamions, rapprocheCamion, poigneeCamion, reglageCamionsValide, CAMION, RAYON_POIGNEE }
+import { camions, figeCamions, poigneeCamion, reglageCamionsValide, CAMION, RAYON_POIGNEE }
   from "./decor.mjs";
 import { anneauDe, emprise } from "./outil-comptoir.mjs";
 import { ecritCamions } from "./reglage-foodtrucks.mjs";
@@ -102,7 +102,8 @@ function pose(/** @type {{ id: string, an: number[][] }} */ z, /** @type {number
   if (!liste[i]) return;
   voulu.u = Math.min(1, Math.max(0, voulu.u));
   voulu.v = Math.min(1, Math.max(0, voulu.v));
-  liste[i] = rapprocheCamion(z.an, liste[i], voulu);
+  // son milieu reste dans l'emprise de la zone ; sa caisse peut en sortir
+  liste[i] = voulu;
   ecritCamions(z.id, liste);
 }
 

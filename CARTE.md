@@ -734,7 +734,7 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/decor.mjs` — 715 l. → plan, plan-admin
+### `modules/decor.mjs` — 685 l. → plan, plan-admin
 
 - l.1 · Le décor du plan — le mobilier des zones de l'organisateur
 
@@ -744,9 +744,9 @@ Fonctions :
 `comptoirTient` 128 · `rapprocheComptoir` 149 · `poigneeComptoir` 185
 `reglageCamionsValide` 222 · `coinsCamion` 226 · `dansCamion` 233 · `camionTient` 245
 `camionsSeGenent` 253 · `camionsDOffice` 262 · `echelleCamions` 294 · `camionDe` 297
-`camions` 312 · `figeCamions` 325 · `ajouteCamion` 338 · `rapprocheCamion` 374
-`poigneeCamion` 401 · `meuble` 416 · `objetRepere` 642 · `tourneur` 659 · `etendueObjet` 665
-`rayonPoigneeObjet` 669 · `poigneeObjet` 686 · `objetDroit` 691
+`camions` 312 · `figeCamions` 325 · `ajouteCamion` 338 · `poigneeCamion` 371 · `meuble` 386
+`objetRepere` 612 · `tourneur` 629 · `etendueObjet` 635 · `rayonPoigneeObjet` 639
+`poigneeObjet` 656 · `objetDroit` 661
 
 Importé par :
 
@@ -2084,16 +2084,16 @@ Importé par :
 
 gestes-admin
 
-### `modules/outil-foodtruck.mjs` — 180 l. → plan-admin
+### `modules/outil-foodtruck.mjs` — 181 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck, attrapés sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
 `zoneDe` 43 · `reglageDe` 47 · `lis` 53 · `metresParPixel` 61 · `vise` 65
-`choisitFoodtruck` 88 · `pose` 99 · `foodtruckPointerDown` 109 · `foodtruckPointerMove` 122
-`foodtruckPointerUp` 142 · `lacheFoodtruck` 152 · `foodtruckClavier` 158
-`relacheFoodtruck` 176
+`choisitFoodtruck` 88 · `pose` 99 · `foodtruckPointerDown` 110 · `foodtruckPointerMove` 123
+`foodtruckPointerUp` 143 · `lacheFoodtruck` 153 · `foodtruckClavier` 159
+`relacheFoodtruck` 177
 
 Importe :
 
@@ -2463,7 +2463,7 @@ Importé par :
 
 reglages
 
-### `modules/reglage-foodtrucks.mjs` — 250 l. → plan-admin
+### `modules/reglage-foodtrucks.mjs` — 252 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck — combien, où, dans quel sens
 

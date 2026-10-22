@@ -33,7 +33,7 @@ const rect = (x, y, w, h, deg = 0) => {
 
 (async () => {
   const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet,
-    camions, figeCamions, ajouteCamion, rapprocheCamion, camionsSeGenent } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+    camions, figeCamions, ajouteCamion, camionsSeGenent } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -144,9 +144,7 @@ const rect = (x, y, w, h, deg = 0) => {
     dit(!poses.some((a, i) => poses.some((b, j) => i < j && camionsSeGenent(a, b))), "les camions ajoutés ne se chevauchent pas");
     const p = meuble("foodtruck", parc, r);
     dit(!p.some(x => x.polygon.some(([a, b]) => !dedans(parc, a, b))), "rien ne déborde du contour");
-    const contre = rapprocheCamion(parc, { u: .5, v: .5, a: 0 }, { u: 0, v: .5, a: 0 });
-    dit(contre.u > 0 && camions(parc, [contre]).length === 1, "tiré hors de la zone, il s'arrête contre le bord");
-    dit(camions(parc, [{ u: .01, v: .01, a: 0 }]).length === 0, "un camion qui ne tient plus n'est pas posé");
+    dit(camions(parc, [{ u: .01, v: .01, a: 0 }]).length === 1, "un camion qui déborde du contour reste posé");
     dit(meuble("foodtruck", parc, r, 2).some(x => x.role === "poignee") &&
       meuble("foodtruck", parc, r, 2).filter(x => x.role === "comptoir-choisi").length === 1, "tenu, un camion sort sa poignée");
   }
