@@ -381,8 +381,10 @@ export function poigneeCamion(c){
    À plat, ce flanc ne se voit pas d'aplomb : le logo passe sur le toit, à
    côté du store, et se retourne pour se lire à l'endroit, le haut du logo
    vers le haut de l'écran. */
-const DEVANTURE = { x: -.7, large: 4, z0: .9, z1: 2.5 };
-const TOIT = { x: -.7, y: -.25, large: 4, prof: 1.5 };
+/* Presque toute la caisse, à dix centimètres de ses bords : un logo se lit
+   de loin, et la devanture n'a plus de comptoir à laisser voir. */
+const DEVANTURE = { x: -.7, large: 4.6, z0: .15, z1: 2.6 };
+const TOIT = { x: -.7, y: -.25, large: 4.6, prof: 1.7 };
 
 /**
  * Les logos des camions d'une zone, chacun par les quatre coins de l'image —
