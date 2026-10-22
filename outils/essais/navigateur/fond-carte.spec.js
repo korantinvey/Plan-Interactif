@@ -142,6 +142,48 @@ test.describe("le fond de carte", () => {
     expect(erreurs).toEqual([]);
   });
 
+  test("une carte qui refuse sa vue ne fige pas le plan", async ({ page }) => {
+    /* MapLibre levait « failed to invert matrix » à chaque recadrage une fois
+       sa matrice faussée, et `appliqueVue`, qui peint le fond avant le plan,
+       s'arrêtait là : le plan ne suivait plus la vue, et il fallait recharger
+       (démo de fep27, le 22 octobre 2026). Cette carte-ci refuse tout. */
+    const erreurs = await prepare(page);
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0, fond: "maison" };
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await page.route(MAPLIBRE, (r) => r.fulfill({ contentType: "application/javascript",
+      body: "window.__montages = 0; window.maplibregl = { Map: class { " +
+        "constructor(o){ this.o = o; window.__montages++; } on(){ return this; } " +
+        "jumpTo(){ throw new Error('failed to invert matrix'); } setStyle(){} remove(){} " +
+        "resize(){} redraw(){} getCanvas(){ return null; } } };" }));
+    // en SVG, la « viewBox » dit sans ambiguïté si le plan a suivi la vue
+    await page.goto("/plan.html?plan=smcl-2026&rendu=svg");
+    await attendLaListe(page);
+    await page.waitForFunction(() => window.__montages >= 1, null, { timeout: 10_000 });
+
+    const plan = page.locator("#plan");
+    const boite = await plan.boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    for (let i = 0; i < 6; i++) { await page.mouse.wheel(0, -240); await page.waitForTimeout(120); }
+    await page.waitForTimeout(400);
+
+    const { suit, montages } = await page.evaluate(() => {
+      const v = window.__essais.view;
+      const b = document.getElementById("plan").getAttribute("viewBox").split(" ").map(Number);
+      const proche = (a, c) => Math.abs(a - c) <= Math.abs(c) * 1e-6 + 1e-6;
+      return { suit: proche(b[0], v.x) && proche(b[1], v.y) && proche(b[2], v.w) && proche(b[3], v.h),
+               montages: window.__montages };
+    });
+    expect(suit).toBe(true);
+    // retirée puis remontée après chaque refus, mais pas sans fin
+    expect(montages).toBeLessThanOrEqual(5);
+    expect(erreurs).toEqual([]);
+  });
+
   test("en vue immersive, la carte s'incline avec le plan", async ({ page }) => {
     const erreurs = await prepare(page);
     const donnees = JSON.parse(JSON.stringify(DONNEES));
