@@ -6,6 +6,8 @@
 # Les secrets des fonctions (KLIPSO_API_KEY, EVENTMAKER_TOKEN, ORIGINES_AUTORISEES)
 # ne sont pas touchés ici : ils sont posés une fois pour toutes côté Supabase,
 # par « npx supabase secrets set », et n'ont donc pas à transiter par GitHub.
+# KLIPSO_API_KEY n'est plus que la clé commune des bases Klipso qui n'ont pas
+# la leur : chaque base porte sa clé, saisie dans la console.
 name: Supabase
 
 on:

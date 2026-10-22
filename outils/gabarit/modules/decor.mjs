@@ -243,8 +243,10 @@ function dansCamion(/** @type {Camion} */ c, /** @type {number} */ x, /** @type 
  * @param {Camion} c
  */
 export function camionTient(anneau, c){
-  if (!coinsCamion(c, JEU_CAMION).every(([x, y]) => dedans(anneau, x, y))) return false;
-  return !anneau.some(([x, y]) => dansCamion(c, x, y, JEU_CAMION));
+  // le jeu suit l'échelle : dix centimètres de chaque côté n'entrent pas dans une zone d'un mètre
+  const jeu = JEU_CAMION * Math.min(1, c.k);
+  if (!coinsCamion(c, jeu).every(([x, y]) => dedans(anneau, x, y))) return false;
+  return !anneau.some(([x, y]) => dansCamion(c, x, y, jeu));
 }
 
 /** Deux camions se chevauchent-ils ? Un coin de l'un dans l'autre, ou leurs milieux confondus. */
@@ -275,12 +277,14 @@ function camionsDOffice(anneau){
   /* Une zone dessinée à la taille d'un seul camion — c'est souvent ainsi
      qu'un foodtruck est posé sur un plan — n'en recevait aucun, et restait
      nue. Elle reçoit le sien, réduit à ce qu'elle mesure : mieux vaut un
-     camion un peu court que pas de camion. */
+     camion un peu court que pas de camion. Sans plancher : une zone minuscule
+     refusait tout camion, et « + » répondait qu'elle était pleine alors
+     qu'elle était vide. Le jeu au bord rétrécit avec lui. */
   if (!out.length){
     const ac = (R.s0 + R.s1) / 2, bc = (R.t0 + R.t1) / 2;
-    for (let k = Math.min(1, (L - .3) / 6.2, (l - .3) / 2.65); k >= .3; k -= .05){
+    for (let k = Math.min(1, L / 6.5, l / 2.95); k > 1e-4; k *= .92){
       const c = camionEn(ac, bc - .175 * k, k);
-      if (coinsCamion(c, .1).every(([x, y]) => dedans(anneau, x, y))){ out.push(c); break; }
+      if (coinsCamion(c, .1 * k).every(([x, y]) => dedans(anneau, x, y))){ out.push(c); break; }
     }
   }
   return out;
@@ -298,9 +302,9 @@ const camionDe = (/** @type {number[][]} */ anneau, /** @type {{ u: number, v: n
 
 /**
  * Les camions d'une zone de foodtrucks : ceux que l'exploitant a placés, ou
- * le rangement d'office tant qu'il n'y a pas touché. Un camion placé qui ne
- * tient plus — la zone retouchée a rétréci — n'est pas posé, plutôt que de
- * déborder ; les autres restent où on les a mis.
+ * le rangement d'office tant qu'il n'y a pas touché. Un camion placé peut
+ * déborder du contour : le tenir dedans bloquait les gestes — un demi-tour
+ * dans une zone à peine plus grande que lui s'arrêtait contre le bord.
  * @param {number[][]} anneau
  * @param {{ u: number, v: number, a: number }[] | null | undefined} reglage
  * @returns {Camion[]}
@@ -308,7 +312,7 @@ const camionDe = (/** @type {number[][]} */ anneau, /** @type {{ u: number, v: n
 export function camions(anneau, reglage){
   if (!reglageCamionsValide(reglage)) return camionsDOffice(anneau);
   const k = echelleCamions(anneau);
-  return /** @type {any[]} */ (reglage).map(r => camionDe(anneau, r, k)).filter(c => camionTient(anneau, c));
+  return /** @type {any[]} */ (reglage).map(r => camionDe(anneau, r, k));
 }
 
 /**
@@ -316,17 +320,20 @@ export function camions(anneau, reglage){
  * traduit en réglage, pour qu'on parte de ce qu'on voit.
  * @param {number[][]} anneau
  * @param {any} reglage
- * @returns {{ u: number, v: number, a: number }[]}
+ * @returns {{ u: number, v: number, a: number, logo?: string, lr?: number }[]}
  */
 export function figeCamions(anneau, reglage){
   const xs = anneau.map(p => p[0]), ys = anneau.map(p => p[1]);
   const x0 = Math.min(...xs), y0 = Math.min(...ys);
   const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
-  return camions(anneau, reglage).map(c => ({ u: (c.cx - x0) / w, v: (c.cy - y0) / h, a: ((c.angle % 360) + 360) % 360 }));
+  const tenu = reglageCamionsValide(reglage);
+  // le logo suit son camion : figer pour le déplacer ne doit pas le lui ôter
+  return camions(anneau, reglage).map((c, i) => ({ u: (c.cx - x0) / w, v: (c.cy - y0) / h, a: ((c.angle % 360) + 360) % 360,
+    ...(tenu && reglage[i].logo ? { logo: reglage[i].logo, lr: reglage[i].lr } : {}) }));
 }
 
 /**
- * Un camion de plus : à la première place libre d'une trame d'un mètre, en
+ * Un camion de plus : à la première place libre d'une trame d'un mètre au plus, en
  * partant du milieu, dans le sens des autres ; ou rien si la zone est pleine.
  * @param {number[][]} anneau
  * @param {{ u: number, v: number, a: number }[]} reglage  le réglage figé
@@ -341,47 +348,22 @@ export function ajouteCamion(anneau, reglage){
   const x0 = Math.min(...xs), y0 = Math.min(...ys);
   const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
   /* Les places, du milieu vers les bords : le premier camion d'une zone vide
-     se pose au centre, les suivants à côté. */
-  const places = [];
-  for (let x = x0 + .5; x < x0 + w; x += 1) for (let y = y0 + .5; y < y0 + h; y += 1) places.push([x, y]);
+     se pose au centre, les suivants à côté. La trame se resserre avec les
+     camions réduits, sans quoi une petite zone n'offrait aucune place. */
+  const pas = Math.min(1, k), places = [];
+  for (let x = x0 + pas / 2; x < x0 + w; x += pas) for (let y = y0 + pas / 2; y < y0 + h; y += pas) places.push([x, y]);
   const mx = x0 + w / 2, my = y0 + h / 2;
   places.sort((p, q) => Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(q[0] - mx, q[1] - my));
+  /* La place du rangement d'office d'abord : un camion réduit à la mesure de
+     sa zone n'entre que là, entre les nœuds de la trame. */
+  const dOffice = camionsDOffice(anneau)[0];
+  if (dOffice) places.unshift([dOffice.cx, dOffice.cy]);
   for (const a of angles) for (const [x, y] of places){
     const c = { cx: x, cy: y, angle: a, k };
     if (camionTient(anneau, c) && !poses.some(p => camionsSeGenent(p, c)))
       return { u: (x - x0) / w, v: (y - y0) / h, a: ((a % 360) + 360) % 360 };
   }
   return null;
-}
-
-/**
- * Le réglage le plus proche de « voulu » qui garde le camion dans sa zone,
- * en partant de « depart », qui y tient : tiré contre le bord, il s'y arrête
- * et glisse le long, comme le comptoir (`rapprocheComptoir`).
- * @param {number[][]} anneau
- * @param {{ u: number, v: number, a: number }} depart
- * @param {{ u: number, v: number, a: number }} voulu
- */
-export function rapprocheCamion(anneau, depart, voulu){
-  const k = echelleCamions(anneau);
-  const tient = (/** @type {{ u: number, v: number, a: number }} */ r) =>
-    r.u >= 0 && r.u <= 1 && r.v >= 0 && r.v <= 1 && camionTient(anneau, camionDe(anneau, r, k));
-  if (tient(voulu)) return voulu;
-  const avance = (/** @type {any} */ de, /** @type {any} */ vers) => {
-    // l'angle se rejoint par le plus court, sur un tour entier : un camion a un avant
-    const da = ((vers.a - de.a) % 360 + 540) % 360 - 180;
-    const entre = (/** @type {number} */ m) => ({ u: de.u + m * (vers.u - de.u), v: de.v + m * (vers.v - de.v), a: de.a + m * da });
-    let lo = 0, hi = 1;
-    for (let i = 0; i < 16; i++){
-      const m = (lo + hi) / 2;
-      if (tient(entre(m))) lo = m; else hi = m;
-    }
-    return entre(lo);
-  };
-  let r = avance(depart, voulu);
-  r = avance(r, { ...r, u: voulu.u });
-  r = avance(r, { ...r, v: voulu.v });
-  return r;
 }
 
 /**
@@ -392,6 +374,54 @@ export function rapprocheCamion(anneau, depart, voulu){
 export function poigneeCamion(c){
   const t = c.angle * Math.PI / 180, d = CAMION.av * c.k + TIGE;
   return [c.cx + Math.cos(t) * d, c.cy + Math.sin(t) * d];
+}
+
+/* La devanture d'un camion, où son logo s'imprime : le flanc qui sert, entre
+   le bas de la caisse et son toit — la cabine n'en porte pas.
+   À plat, ce flanc ne se voit pas d'aplomb : le logo passe sur le toit, à
+   côté du store, et se retourne pour se lire à l'endroit, le haut du logo
+   vers le haut de l'écran. */
+const DEVANTURE = { x: -.7, large: 4, z0: .9, z1: 2.5 };
+const TOIT = { x: -.7, y: -.25, large: 4, prof: 1.5 };
+
+/**
+ * Les logos des camions d'une zone, chacun par les quatre coins de l'image —
+ * bas gauche, haut gauche, haut droit, bas droit, l'ordre de deck.gl —, en
+ * mètres, la hauteur en troisième.
+ * @param {number[][]} anneau
+ * @param {{ u: number, v: number, a: number, logo?: string, lr?: number }[] | null} reglage
+ *   les logos déjà relus : ce module ne juge pas ce qu'il imprime
+ * @param {boolean} aPlat
+ * @returns {{ logo: string, coins: number[][] }[]}
+ */
+export function enseignesCamions(anneau, reglage, aPlat){
+  if (!reglageCamionsValide(reglage)) return [];
+  const regl = /** @type {any[]} */ (reglage);
+  /** @type {{ logo: string, coins: number[][] }[]} */
+  const out = [];
+  camions(anneau, reglage).forEach((c, i) => {
+    const r = regl[i], logo = r && r.logo;
+    if (!logo) return;
+    // un rapport absent ou fou donne un carré, plutôt qu'un fil
+    const lr = Number.isFinite(r.lr) && r.lr > 0 ? Math.min(8, Math.max(.125, r.lr)) : 1;
+    const t = c.angle * Math.PI / 180, dx = Math.cos(t), dy = Math.sin(t), k = c.k;
+    const plan = (/** @type {number} */ lx, /** @type {number} */ ly, z = 0) =>
+      [c.cx + (lx * dx - ly * dy) * k, c.cy + (lx * dy + ly * dx) * k, z * k];
+    if (aPlat){
+      const w = Math.min(TOIT.large, TOIT.prof * lr), h = w / lr;
+      // le haut du logo vers le flanc fermé, sauf s'il pointerait alors vers le bas de l'écran
+      const s = dx < 0 ? -1 : 1, g = TOIT.x - s * w / 2, d = TOIT.x + s * w / 2;
+      const haut = TOIT.y - s * h / 2, bas = TOIT.y + s * h / 2;
+      out.push({ logo, coins: [plan(g, bas), plan(g, haut), plan(d, haut), plan(d, bas)] });
+    } else {
+      const hmax = DEVANTURE.z1 - DEVANTURE.z0, w = Math.min(DEVANTURE.large, hmax * lr), h = w / lr;
+      const zm = (DEVANTURE.z0 + DEVANTURE.z1) / 2, z0 = zm - h / 2, z1 = zm + h / 2;
+      // un rien devant le flanc de la caisse, pour ne pas s'y confondre ; vu de face, l'arrière est à gauche
+      const y = 1.15 + .03, g = DEVANTURE.x - w / 2, d = DEVANTURE.x + w / 2;
+      out.push({ logo, coins: [plan(g, y, z0), plan(g, y, z1), plan(d, y, z1), plan(d, y, z0)] });
+    }
+  });
+  return out;
 }
 
 /**
@@ -447,11 +477,13 @@ export function meuble(type, anneau, reglage = null, enMain = false){
           pose(a + i * .85, b + j * .85, .2, .2, .45, "assise", 0);
       }
   } else if (type === "foodtruck"){
-    /* Des camions rangés le long d'un côté, le comptoir ouvert vers la zone,
+    /* Des camions rangés le long d'un côté, le flanc qui sert ouvert vers la zone,
        et devant eux, passé la file d'attente, des mange-debout sans chaises :
        c'est ce qui distingue d'un regard le foodtruck du restaurant assis. Le
-       camion n'est posé qu'entier — caisse, cabine et comptoir —, un camion
-       coupé par le mur ne dirait plus ce qu'il est. Le store, une bande sur le
+       camion est posé entier — caisse et cabine —, même s'il déborde : un
+       camion coupé par le mur ne dirait plus ce qu'il est. Il n'a plus de
+       comptoir en saillie : ce bloc blanc cachait le bas de la devanture,
+       où s'imprime son logo. Le store, une bande sur le
        toit côté comptoir, est ce qu'on voit d'aplomb.
        Leur nombre et leur place se choisissent à la main (`camions`) ; sans
        réglage, ils se rangent d'office. Les mange-debout, eux, se sèment
@@ -472,8 +504,11 @@ export function meuble(type, anneau, reglage = null, enMain = false){
       const tenu = enMain === i;
       boite(-.7, 0, 2.4, 1.15, 2.7 * k, tenu ? "comptoir-choisi" : "carrosserie");
       boite(2.4, 0, .7, 1.05, 2.2 * k, "habitacle");
-      boite(-.7, .9, 2.4, .25, 2.85 * k, "store");
-      boite(-.7, 1.325, 1.6, .175, 1.05 * k, "comptoir");
+      /* Le store s'arrête deux centimètres en deçà du flanc : monté du sol
+         comme toute boîte, sa face dans le plan même de la caisse se
+         disputait la profondeur avec elle, et la devanture clignotait de
+         rayures rouges à chaque zoom. Il ne paraît plus qu'au-dessus du toit. */
+      boite(-.7, .89, 2.4, .24, 2.85 * k, "store");
       /* Tenu, il porte sa poignée au bout du capot : une tige basse, et un
          rond qu'on tire pour le tourner. */
       if (tenu){

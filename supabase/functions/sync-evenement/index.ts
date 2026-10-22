@@ -13,8 +13,9 @@
  * L'événement à synchroniser est donc toujours un salon de la base, et le
  * droit de l'appelant sur ce salon se vérifie avant tout appel sortant.
  *
- * La clé Klipso vient des secrets de la fonction. Elle ne transite ni par la
- * requête, ni par la base, ni par le navigateur.
+ * La clé Klipso est celle de la base du salon (`prive.cle_klipso`, lue par
+ * `cle_klipso` sous la clé de service), sinon la clé commune des secrets de la
+ * fonction. Elle ne transite ni par la requête ni par le navigateur.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { Gaia, egal } from "../_partage/gaia.ts";
@@ -154,8 +155,27 @@ async function ecrit(
   if (error) throw new Error(quoi + " : " + error.message);
 }
 
-const gaia = (instance: string, eventId?: string) =>
-  new Gaia({ instance, apiKey: Deno.env.get("KLIPSO_API_KEY") ?? "", eventId });
+const gaia = (instance: string, apiKey: string, eventId?: string) =>
+  new Gaia({ instance, apiKey, eventId });
+
+/**
+ * La clé de la base Klipso d'un salon.
+ *
+ * Chaque base peut porter la sienne, saisie dans la console ; celles d'avant
+ * n'en ont pas et vivent sur la clé commune, `KLIPSO_API_KEY`. Une base sans
+ * aucune des deux s'arrête ici, en le disant : Klipso refuserait l'appel avec
+ * un message qui ne dirait pas où aller saisir la clé.
+ */
+async function cleKlipso(db: ReturnType<typeof client>, instance: string): Promise<string> {
+  const { data, error } = await db.rpc("cle_klipso", { p_instance: instance });
+  if (error) throw new Error("Clé de la base Klipso : " + error.message);
+  const cle = (typeof data === "string" && data) || Deno.env.get("KLIPSO_API_KEY") || "";
+  if (!cle) {
+    throw new Error("Aucune clé pour la base Klipso « " + instance +
+      " » : saisissez-la dans la console, fenêtre « Sources de données ».");
+  }
+  return cle;
+}
 
 /**
  * Les libellés d'un champ « choix », et de quoi dire pourquoi il n'y en a pas.
@@ -803,7 +823,7 @@ Deno.serve(async (req) => {
         // attend, et un premier relevé vide ne lui apprendrait rien
         depose();
         try {
-      const g = gaia(evt.instance, evt.event_id ?? undefined);
+      const g = gaia(evt.instance, await cleKlipso(db, evt.instance), evt.event_id ?? undefined);
       const resume: Record<string, unknown>[] = [];
       /* L'anglais des valeurs des listes, relevé au passage dans les deux
          sources : la page du plan le reçoit pour sa version anglaise. Un relevé

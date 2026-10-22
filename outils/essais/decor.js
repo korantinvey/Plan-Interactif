@@ -33,7 +33,7 @@ const rect = (x, y, w, h, deg = 0) => {
 
 (async () => {
   const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet,
-    camions, figeCamions, ajouteCamion, rapprocheCamion, camionsSeGenent } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+    camions, figeCamions, ajouteCamion, camionsSeGenent, enseignesCamions } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -49,11 +49,18 @@ const rect = (x, y, w, h, deg = 0) => {
   console.log("Ce que chaque type pose");
   const roles = (type) => new Set(meuble(type, rect(0, 0, 22, 14)).map(x => x.role));
   dit(["plateau", "assise"].every(r => roles("restauration").has(r)), "un restaurant : des tables et des chaises");
-  dit(["carrosserie", "habitacle", "comptoir", "plateau"].every(r => roles("foodtruck").has(r)) &&
+  dit(["carrosserie", "habitacle", "store", "plateau"].every(r => roles("foodtruck").has(r)) &&
+    !roles("foodtruck").has("comptoir") &&
     !roles("foodtruck").has("assise"), "un foodtruck : des camions et des mange-debout, sans chaises");
   {
     const seul = meuble("foodtruck", rect(0, 0, 5.5, 2.6));
     dit(seul.filter(x => x.role === "carrosserie").length === 1, "un foodtruck à la taille d'un camion : un camion, réduit");
+    // aucune taille plancher : une zone minuscule reçoit encore son camion, et « + » en ajoute
+    const mini = rect(0, 0, .6, .4);
+    dit(meuble("foodtruck", mini).filter(x => x.role === "carrosserie").length === 1, "une zone minuscule : son camion, très réduit");
+    const a = ajouteCamion(mini, []), b = a && ajouteCamion(mini, [a]);
+    dit(Boolean(a) && camions(mini, [a]).length === 1, "une zone minuscule vide n'est pas pleine");
+    dit(!b || camions(mini, [a, b]).length === 2, "un second camion, s'il entre, tient aussi");
   }
   dit(["scene", "ecran", "assise"].every(r => roles("conferences").has(r)), "une salle : une scène, un écran, des sièges");
   dit(roles("accueil").has("comptoir"), "un accueil : un comptoir");
@@ -138,9 +145,21 @@ const rect = (x, y, w, h, deg = 0) => {
     dit(!poses.some((a, i) => poses.some((b, j) => i < j && camionsSeGenent(a, b))), "les camions ajoutés ne se chevauchent pas");
     const p = meuble("foodtruck", parc, r);
     dit(!p.some(x => x.polygon.some(([a, b]) => !dedans(parc, a, b))), "rien ne déborde du contour");
-    const contre = rapprocheCamion(parc, { u: .5, v: .5, a: 0 }, { u: 0, v: .5, a: 0 });
-    dit(contre.u > 0 && camions(parc, [contre]).length === 1, "tiré hors de la zone, il s'arrête contre le bord");
-    dit(camions(parc, [{ u: .01, v: .01, a: 0 }]).length === 0, "un camion qui ne tient plus n'est pas posé");
+    dit(camions(parc, [{ u: .01, v: .01, a: 0 }]).length === 1, "un camion qui déborde du contour reste posé");
+    const logo = "data:image/png;base64,AAAA";
+    const marque = [{ u: .5, v: .5, a: 0, logo, lr: 2 }, { u: .2, v: .2, a: 0 }];
+    dit(figeCamions(parc, marque)[0].logo === logo && !figeCamions(parc, marque)[1].logo, "figé, un camion garde son logo");
+    const [dev] = enseignesCamions(parc, marque, false);
+    dit(enseignesCamions(parc, marque, false).length === 1 && dev.logo === logo, "un logo par camion qui en a un");
+    // vu depuis le comptoir (en bas de l'écran, à angle nul), l'arrière à gauche, le haut en l'air
+    dit(dev.coins.every(p => Math.abs(p[1] - (10 + 1.18)) < 1e-6) && dev.coins[0][0] < dev.coins[3][0] &&
+      dev.coins[1][2] > dev.coins[0][2] && dev.coins[0][2] >= .9 - 1e-6, "en volume, le logo se dresse sur la devanture");
+    const larg = dev.coins[3][0] - dev.coins[0][0], haut = dev.coins[1][2] - dev.coins[0][2];
+    dit(Math.abs(larg / haut - 2) < 1e-6, "le logo garde ses proportions", (larg / haut).toFixed(2));
+    for (const a of [0, 180]){
+      const [t] = enseignesCamions(parc, [{ u: .5, v: .5, a, logo, lr: 2 }], true);
+      dit(t.coins[1][1] < t.coins[0][1] && t.coins[3][0] > t.coins[0][0], "à plat, tourné de " + a + "°, le logo se lit à l'endroit");
+    }
     dit(meuble("foodtruck", parc, r, 2).some(x => x.role === "poignee") &&
       meuble("foodtruck", parc, r, 2).filter(x => x.role === "comptoir-choisi").length === 1, "tenu, un camion sort sa poignée");
   }

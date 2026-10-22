@@ -21,7 +21,8 @@
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { rest, signale, BASE_PAGES, ecranConfig } from "./socle-console.mjs";
-import { demande, confirme } from "./fenetre-console.mjs";
+import { confirme, ouvreModale } from "./fenetre-console.mjs";
+import { chargeBases, choixBase } from "./bases-klipso.mjs";
 import { EVTS, selection, PLANS, poseEvenements, courant, chargePlans, majEvenement, slugifie }
   from "./evenements.mjs";
 import { MOI, poseComptes, litMonProfil, ouvreComptes } from "./comptes.mjs";
@@ -234,15 +235,24 @@ export function brancheConsole() {
   /* ----------------------------------------------------------------
      Barre du haut
      ---------------------------------------------------------------- */
-  $("btnNouveau").onclick = () =>
-    demande("Nouvel événement", "Nom de l'événement", "", async (nom) => {
+  /* Un salon naît rattaché à sa base Klipso : choisie parmi celles que la
+     console connaît, ou déclarée sur-le-champ avec sa clé. La base neuve
+     s'enregistre avant le salon — un salon créé sur une base sans clé
+     échouerait à sa première synchronisation. */
+  $("btnNouveau").onclick = async () => {
+    let bases;
+    try { bases = await chargeBases(); } catch (err) { signale(err.message, true); return; }
+    /** @type {HTMLInputElement} */ let nom;
+    /** @type {ReturnType<typeof choixBase>} */ let base;
+    const cree = async (/** @type {string} */ n, /** @type {{ instance: string, cle: string }} */ choix) => {
       signale("Création…");
       try {
+        const instance = await base.enregistre(choix);
         const rep = await rest("evenement", {
           method: "POST",
           headers: { "Prefer": "return=representation" },
           body: JSON.stringify({
-            nom, slug: slugifie(nom) || "evenement", instance: "", etat: "brouillon",
+            nom: n, slug: slugifie(n) || "evenement", instance, etat: "brouillon",
           }),
         });
         const cree = Array.isArray(rep) ? rep[0] : rep;
@@ -250,7 +260,32 @@ export function brancheConsole() {
         await charge();
         signale("Événement créé.");
       } catch (err) { signale(err.message, true); }
-    });
+    };
+    ouvreModale("Nouvel événement", (corps) => {
+      const l = document.createElement("label");
+      l.innerHTML = "<span>Nom de l'événement</span><input>";
+      nom = /** @type {HTMLInputElement} */ (l.querySelector("input"));
+      base = choixBase({ bases });
+      corps.append(l, base.element);
+      setTimeout(() => nom.focus(), 30);
+      // Entrée crée le salon depuis n'importe quel champ, comme le faisait la
+      // simple saisie du nom
+      corps.onkeydown = (ev) => {
+        if (ev.key !== "Enter" || !(ev.target instanceof HTMLInputElement)) return;
+        ev.preventDefault();
+        /** @type {HTMLElement | null} */ ($("mPied").querySelector(".primaire"))?.click();
+      };
+    }, [{ libelle: "Annuler" },
+        { libelle: "Créer", genre: "primaire", action: () => {
+          /* La fenêtre ne se ferme pas sur une saisie incomplète : l'alerte
+             dit ce qui manque sous le champ. */
+          const n = nom.value.trim();
+          if (!n) { nom.focus(); return false; }
+          const choix = base.lit();
+          if (!choix) return false;
+          cree(n, choix);
+        } }]);
+  };
 
   /* Rechargement à la demande : la console ne surveille pas la base, et une
      synchronisation lancée ailleurs ne se voit pas toute seule. */

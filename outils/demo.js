@@ -22,7 +22,9 @@
  *     portent un programme inventé — titres et intervenants — sur les deux
  *     jours du salon, les 2 et 3 juin 2027 ;
  *   - ce que l'apparence et les zones citaient — sponsor, libellé posé à la
- *     main, fiche d'un restaurant, mention d'une fédération — est remplacé.
+ *     main, fiche d'un restaurant, mention d'une fédération — est remplacé ;
+ *   - le « Food Court » devient une zone de foodtrucks, et ses camions portent
+ *     le logo d'enseignes inventées (`FOODTRUCKS`).
  *
  * Les identifiants des stands, des zones et des dessins restent ceux de la
  * source : ce sont des empreintes, et l'apparence comme les dessins les
@@ -48,6 +50,34 @@ const SEL = "demo-2027";
    complète (`sur.mjs` `adresseImage`) : c'est donc celle de la production. */
 const ORIGINE = "https://plan-interactif.interactiveplan.workers.dev";
 const DOSSIER_PRODUITS = "demo-produits";
+
+/* Les enseignes des foodtrucks : inventées, comme les exposants, et dessinées
+   par `logos-demo.js` avec eux. Leurs camions se garent dans les zones dites
+   ici, chacun avec son logo sur sa devanture (`decor.mjs` `enseignesCamions`).
+   L'ordre compte : c'est celui où les camions reçoivent leur enseigne. */
+const FOODTRUCKS = ["Le Camion Gourmand", "Tacos Nomades", "Pizza Vagabonde", "Burger Ambulant",
+  "Crêpes en Route", "Wok Itinérant"];
+const ZONES_FOODTRUCKS = new Set(["Food Court"]);
+
+/** La largeur sur la hauteur d'un logo WebP, lue dans son en-tête ; un carré
+ *  si le format n'est pas celui qu'on attend. */
+function rapportWebp(b64) {
+  const o = Buffer.from(b64.slice(0, 64), "base64");
+  if (o.toString("latin1", 0, 4) !== "RIFF" || o.toString("latin1", 8, 12) !== "WEBP") return 1;
+  const sorte = o.toString("latin1", 12, 16);
+  let l = 0, h = 0;
+  if (sorte === "VP8X") { l = 1 + o.readUIntLE(24, 3); h = 1 + o.readUIntLE(27, 3); }
+  else if (sorte === "VP8L") { const b = o.readUInt32LE(21); l = 1 + (b & 0x3fff); h = 1 + ((b >> 14) & 0x3fff); }
+  else if (sorte === "VP8 ") { l = o.readUInt16LE(26) & 0x3fff; h = o.readUInt16LE(28) & 0x3fff; }
+  return l > 0 && h > 0 ? +(l / h).toFixed(3) : 1;
+}
+
+/** Les logos des foodtrucks, dans l'ordre de `FOODTRUCKS`, prêts pour le
+ *  réglage d'un camion ; ceux que `logos-demo.js` n'a pas encore dessinés manquent. */
+function logosFoodtrucks(logos) {
+  return FOODTRUCKS.filter((nom) => logos[nom])
+    .map((nom) => ({ nom, logo: "data:image/webp;base64," + logos[nom], lr: rapportWebp(logos[nom]) }));
+}
 
 /** Un hasard reproductible, tiré d'une clé. */
 function hasard(cle) {
@@ -340,6 +370,7 @@ function salonDemo(source, o) {
   const zones = (p) => p.zones.map((z) => {
     const o = { ...z };
     delete o.lien; delete o.logo;
+    if (ZONES_FOODTRUCKS.has(o.nom)) o.type = "foodtruck";
     if (o.description) o.description = FICHES_ZONES[o.type] || "";
     if (!o.description) delete o.description;
     return o;
@@ -389,6 +420,17 @@ function salonDemo(source, o) {
     for (const [nom, def] of Object.entries(SECTEURS)) reglages["secteur:" + nom] = { couleur: def.couleur };
     reglages[CLE_NUMEROS] = { visible: false };
     reglages._ambiance = { ...(reglages._ambiance || {}), logos: true };
+    /* Un camion par zone de foodtrucks, au milieu, couché sur son long côté,
+       avec l'enseigne suivante : la zone du plan n'en tient pas davantage. */
+    const enseignes = logosFoodtrucks(logos);
+    const garees = [...parId.values()].filter((z) => z.type === "foodtruck" && z.bb);
+    if (enseignes.length && garees.length) {
+      reglages._foodtrucks = { ...(reglages._foodtrucks || {}) };
+      garees.forEach((z, i) => {
+        const e = enseignes[i % enseignes.length];
+        reglages._foodtrucks[z.id] = [{ u: 0.5, v: 0.5, a: z.bb[0] >= z.bb[1] ? 0 : 90, logo: e.logo, lr: e.lr }];
+      });
+    }
     // la pile : les calques Klipso cèdent leur place à la numérotation
     const pile = [];
     for (const e of a.pile || []) {
@@ -582,4 +624,4 @@ function imagesProduits() {
   return sortie;
 }
 
-module.exports = { salonDemo, lisSource, imagesProduits, DOSSIER_PRODUITS, ORIGINE };
+module.exports = { salonDemo, lisSource, imagesProduits, DOSSIER_PRODUITS, ORIGINE, FOODTRUCKS, logosFoodtrucks, lisLogos };
