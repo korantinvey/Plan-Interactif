@@ -230,13 +230,19 @@ export function posePaliers(stands, zones, tasse = [1, 1], libres = new Map()){
 }
 
 /* Les places où le nom peut s'écrire : celle du stand d'abord, puis celles
-   qu'offrent les allées, du plus sobre au plus large, telles que la vue les
-   montre. Un stand couché lit les débords et le tassement en travers, sa
-   largeur étant la hauteur sur le plan. */
+   qu'offrent les allées, de la plus sobre à la plus large, telles que la vue
+   les montre — `[largeur, hauteur, dx, dy]`, le décalage étant celui du
+   centre de la place, qui glisse vers l'allée quand le nom ne déborde que
+   d'un côté. Le décalage reste vrai : seule la taille se tasse. Un stand
+   couché lit tout en travers, dans le repère du nom : sa largeur est la
+   hauteur sur le plan, et le quart de tour qui le couche (`libelleEmplacement`)
+   envoie le haut du plan vers sa droite. */
 function placesDuNom(s, w, h, tourne){
   const [tx, ty] = tourne ? [tassement[1], tassement[0]] : tassement;
-  return [[w, h], ...(decoupes.has(s) ? [] : debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])]
-    .map(([pw, ph]) => [pw * tx, ph * ty]);
+  const places = (decoupes.has(s) ? [] : debords.get(s) || []).map(([g, ha, d, b]) => tourne
+    ? [w + ha + b, h + g + d, (ha - b) / 2, (d - g) / 2]
+    : [w + g + d, h + ha + b, (d - g) / 2, (b - ha) / 2]);
+  return [[w, h, 0, 0], ...places].map(([pw, ph, dx, dy]) => [pw * tx, ph * ty, dx, dy]);
 }
 
 /* Les lignes qu'un nom harmonisé peut prendre quand cela le fait monter d'un
@@ -277,23 +283,25 @@ function cibleDe(s, w, h, tourne){
  * « habille » garde le moins de lignes, et un nom qu'on coupait en trois pour
  * l'écrire plus grand se remet sur une seule ligne s'il tient à son palier.
  * Des places possibles, il prend la première qui l'atteint : un nom qui tient
- * chez lui ne déborde pas. Les paliers, eux, se comptent sur trois lignes :
+ * chez lui ne déborde pas. Le décalage de cette place, `dx` et `dy`, dit
+ * où poser le nom : vers l'allée, s'il ne déborde que d'un côté. Les paliers, eux, se comptent sur trois lignes :
  * la colonne de mots est un recours pour le nom, non une mesure du pavillon.
  *
  * @param {{ nom?: string }} s
  * @param {number} w
  * @param {number} h
  * @param {boolean} [tourne]
+ * @returns {{ f: number, lignes: string[], dx?: number, dy?: number } | null}
  */
 export function habilleNom(s, w, h, tourne = false){
   const nom = s.nom || "";
   if (!paliers.length) return habille(nom, w * .9, h * .62, 2.4, P_NOM);
   const { cible, lignes } = cibleDe(s, w, h, tourne);
   let best = null;
-  for (const [pw, ph] of placesDuNom(s, w, h, tourne)){
+  for (const [pw, ph, dx, dy] of placesDuNom(s, w, h, tourne)){
     const a = habille(nom, pw * .9, ph * .62, cible, P_NOM, lignes);
-    if (a && a.f >= cible * (1 - 1e-9)) return a;
-    if (a && (!best || a.f > best.f)) best = a;
+    if (a && a.f >= cible * (1 - 1e-9)) return { ...a, dx, dy };
+    if (a && (!best || a.f > best.f)) best = { ...a, dx, dy };
   }
   return best;
 }
@@ -310,7 +318,10 @@ function libelleDroit(s, as, w, h, sel, pxParM, reg, tourne){
   if (!codeLisible && !nomLisible) return "";
 
   const c = sel ? " sel" : "";
-  const xy = decaleLibelle(as, reg);
+  /* Le nom qui déborde d'un seul côté glisse vers l'allée, et son numéro
+     avec lui, dessous : séparés, on ne saurait plus lequel va avec lequel. */
+  const a0 = decaleLibelle(as, reg);
+  const xy = nom && nom.dx !== undefined ? [a0[0] + nom.dx, a0[1] + nom.dy] : a0;
   const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0;
   const hCode = codeLisible ? fc * 1.25 : 0;
   let y = xy[1] - (hNom + hCode) / 2, out = "";

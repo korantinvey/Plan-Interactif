@@ -734,13 +734,13 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/debord-allees.mjs` — 86 l. → plan, plan-admin
+### `modules/debord-allees.mjs` — 116 l. → plan, plan-admin
 
 - l.1 · Le débord des noms sur les allées — la place libre autour d'un stand
 
 Fonctions :
 
-`boiteDe` 21 · `contient` 22 · `croise` 23 · `debordsAuxAllees` 51
+`boiteDe` 21 · `contient` 22 · `croise` 23 · `debordsAuxAllees` 62
 
 Importé par :
 
@@ -1668,7 +1668,7 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 381 l. → plan, plan-admin
+### `modules/libelles.mjs` — 385 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.54 · 4. Libellés — le nom de l'exposant prime sur le numéro
@@ -1676,7 +1676,7 @@ placement-libelles · tutoriel · webgl
 Fonctions :
 
 `partsLibres` 77 · `libelles` 112 · `libelleZone` 195 · `emplacementWebgl` 223
-`tassementImmersif` 289 · `libellesWebgl` 294
+`tassementImmersif` 293 · `libellesWebgl` 298
 
 Importe :
 
@@ -1903,7 +1903,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 320 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 331 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -1911,8 +1911,8 @@ Fonctions :
 
 `coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
 `facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
-`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 212 · `placesDuNom` 236
-`tailleMax` 248 · `cibleDe` 263 · `habilleNom` 288 · `libelleDroit` 302
+`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 212 · `placesDuNom` 240
+`tailleMax` 254 · `cibleDe` 269 · `habilleNom` 296 · `libelleDroit` 310
 
 Importe :
 

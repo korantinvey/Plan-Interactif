@@ -235,6 +235,10 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
   const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
   const c = sel ? " sel" : "";
+  /* Le nom qui déborde d'un seul côté glisse vers l'allée, son numéro avec
+     lui — comme « libelleDroit », dans le repère du nom, avant le quart de
+     tour du nom couché. */
+  const cx = xy[0] + (nom && nom.dx || 0), cy = xy[1] + (nom && nom.dy || 0);
   // les seuils de « libelleEmplacement », dits en zoom : 2^zoom pixels par mètre
   const seuil = t => tout ? -LOIN : Math.log2(t);
   const zN = nom ? seuil(4.5 / fn) : LOIN;
@@ -256,7 +260,7 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
      placement — il est écrit en travers. */
   const pose = (lignes, f, x, y, cls, z0, z1) =>
     noms.push({ text: lignes.join("\n"), position: pt(x, y), angle, taille: f, cls, z0, z1, pick, lbl: s.id,
-      ...(tourne ? {} : { centre: [xy[0], xy[1]], ecart: y - xy[1] }) });
+      ...(tourne ? {} : { centre: [cx, cy], ecart: y - cy }) });
   const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
@@ -264,13 +268,13 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
     const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
     if (!nomLisible && !codeLisible) continue;
     const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0, hCode = codeLisible ? fc * 1.25 : 0;
-    const haut = xy[1] - (hNom + hCode) / 2;
-    if (nomLisible) pose(nom.lignes, fn, xy[0], haut + hNom / 2, "nm" + c, z0, z1);
+    const haut = cy - (hNom + hCode) / 2;
+    if (nomLisible) pose(nom.lignes, fn, cx, haut + hNom / 2, "nm" + c, z0, z1);
     if (!codeLisible) continue;
     // le numéro a sa ligne de base à 0,92 corps sous le nom ; son milieu, un tiers plus haut
     const milieu = haut + hNom + fc * .59;
-    if (!past){ pose([s.code], fc, xy[0], milieu, "cd" + c, z0, z1); continue; }
-    const g = xy[0] - (past.wCode + past.ecart + past.wPast) / 2;
+    if (!past){ pose([s.code], fc, cx, milieu, "cd" + c, z0, z1); continue; }
+    const g = cx - (past.wCode + past.ecart + past.wPast) / 2;
     const xp = g + past.wCode + past.ecart, hp = fc * 1.16;
     // le milieu de la pastille : sa boîte part à 0,84 corps au-dessus de la ligne de base
     const yp = haut + hNom + fc * (.92 - .84 + .58);
