@@ -1902,7 +1902,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 271 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 281 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -1911,7 +1911,7 @@ Fonctions :
 `coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
 `facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
 `nomCouche` 126 · `nomsUniformes` 161 · `posePaliers` 189 · `placesDuNom` 208
-`tailleMax` 213 · `habilleNom` 239 · `libelleDroit` 253
+`tailleMax` 218 · `habilleNom` 245 · `libelleDroit` 263
 
 Importe :
 
@@ -2966,16 +2966,16 @@ Importé par :
 
 calage-carte · environs · seuil
 
-### `modules/texte-plan.mjs` — 111 l. → plan, plan-admin
+### `modules/texte-plan.mjs` — 115 l. → plan, plan-admin
 
 - l.1 · Le texte sur le plan — sa mesure, sa coupe en lignes, sa place
 - l.18 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.102 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.106 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`mesureTexte` 26 · `largeur` 31 · `remesureTextes` 56 · `decoupe` 71 · `habille` 84
-`lignesSvg` 95 · `ancre` 110 · `place` 111
+`mesureTexte` 26 · `largeur` 31 · `remesureTextes` 56 · `decoupe` 71 · `habille` 88
+`lignesSvg` 99 · `ancre` 114 · `place` 115
 
 Importe :
 

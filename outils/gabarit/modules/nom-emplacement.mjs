@@ -209,11 +209,16 @@ function placesDuNom(s, w, h, tourne){
   return [[w, h], ...(debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])];
 }
 
+/* Les lignes qu'un nom harmonisé peut prendre quand cela le fait monter d'un
+   palier : un stand étroit et haut, dont le nom bute sur la largeur, gagne
+   à l'écrire en colonne dans la hauteur que le débord lui donne. */
+const LIGNES_EN_COLONNE = 5;
+
 /** La plus grande taille que le nom peut prendre, débords compris. */
-function tailleMax(s, w, h, tourne){
+function tailleMax(s, w, h, tourne, maxLignes = 3){
   let f = 0;
   for (const [pw, ph] of placesDuNom(s, w, h, tourne)){
-    const a = habille(s.nom || "", pw * .9, ph * .62, 2.4, P_NOM);
+    const a = habille(s.nom || "", pw * .9, ph * .62, 2.4, P_NOM, maxLignes);
     if (a && a.f > f) f = a.f;
   }
   return f;
@@ -229,7 +234,8 @@ function tailleMax(s, w, h, tourne){
  * « habille » garde le moins de lignes, et un nom qu'on coupait en trois pour
  * l'écrire plus grand se remet sur une seule ligne s'il tient à son palier.
  * Des places possibles, il prend la première qui l'atteint : un nom qui tient
- * chez lui ne déborde pas.
+ * chez lui ne déborde pas. Les paliers, eux, se comptent sur trois lignes :
+ * la colonne de mots est un recours pour le nom, non une mesure du pavillon.
  *
  * @param {{ nom?: string }} s
  * @param {number} w
@@ -239,10 +245,14 @@ function tailleMax(s, w, h, tourne){
 export function habilleNom(s, w, h, tourne = false){
   const nom = s.nom || "";
   if (!paliers.length) return habille(nom, w * .9, h * .62, 2.4, P_NOM);
-  const cible = palierDe(tailleMax(s, w, h, tourne), paliers);
+  /* Au-delà de trois lignes, seulement si le nom y gagne un palier : quelques
+     centimètres de plus ne valent pas une colonne de mots. */
+  let cible = palierDe(tailleMax(s, w, h, tourne), paliers), lignes = 3;
+  const enColonne = palierDe(tailleMax(s, w, h, tourne, LIGNES_EN_COLONNE), paliers);
+  if (enColonne > cible && paliers.includes(enColonne)){ cible = enColonne; lignes = LIGNES_EN_COLONNE; }
   let best = null;
   for (const [pw, ph] of placesDuNom(s, w, h, tourne)){
-    const a = habille(nom, pw * .9, ph * .62, cible, P_NOM);
+    const a = habille(nom, pw * .9, ph * .62, cible, P_NOM, lignes);
     if (a && a.f >= cible * (1 - 1e-9)) return a;
     if (a && (!best || a.f > best.f)) best = a;
   }
