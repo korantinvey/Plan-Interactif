@@ -11,13 +11,15 @@
    Il vivait dans `libelles.mjs`, que le dessin importait donc pour écrire
    ses stands : les libellés ne pouvaient plus importer le dessin, qui devait
    leur confier ce qu'ils en appellent. Il ne dépend que de la mesure du
-   texte, des polices, de la configuration et du placement à la main.
+   texte, des polices, de la configuration, du placement à la main et de la
+   place libre sur les allées (`debord-allees.mjs`).
    ============================================================ */
 import { esc } from "./texte.mjs";
 import { conf } from "./configuration.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { habille, largeur, lignesSvg, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { debordsAuxAllees } from "./debord-allees.mjs";
 
 /**
  * Ce que le plan dit des stands partagés, et que l'exploitant peut retirer.
@@ -98,7 +100,7 @@ export function libelleEmplacement(s, as, l, h0, sel, pxParM, reg){
      debout, puis on fait tourner l'ensemble — nom, numéro, pastille — autour
      de l'ancre. */
   const tourne = nomCouche(s, l, h0);
-  const out = libelleDroit(s, as, tourne ? h0 : l, tourne ? l : h0, sel, pxParM, reg);
+  const out = libelleDroit(s, as, tourne ? h0 : l, tourne ? l : h0, sel, pxParM, reg, tourne);
   if (!out || !tourne) return out;
   const xy = decaleLibelle(as, reg);
   return '<g transform="rotate(-90 ' + xy[0].toFixed(2) + ' ' + xy[1].toFixed(2) + ')">' + out + '</g>';
@@ -142,56 +144,92 @@ export function nomCouche(s, w, h){
  *
  * Seuls les noms s'alignent : les zones gardent leur taille, et le numéro
  * reste sous le nom, plus petit que lui, comme dans « libelleDroit ».
+ *
+ * La taille du plus petit tombant vite à rien, un nom a le droit, dans ce
+ * mode seulement, de déborder de son stand sur l'allée qui le borde — pas sur
+ * un stand voisin ni sur une zone (`debord-allees.mjs`). Le numéro, lui,
+ * reste dans le stand : c'est lui qui désigne l'emplacement.
  */
 export const nomsUniformes = () => conf("_nomsUniformes").visible === true;
 
-/* La taille commune, que les deux rendus fixent au début de chaque écriture
-   (`libelles.mjs`). Le stand dessiné à la main la lit sans compter dans son
-   calcul : le dessin importe ce module, et ce module ne peut pas l'importer. */
+/* La taille commune, et ce que chaque stand du pavillon peut prendre sur les
+   allées, que les deux rendus fixent au début de chaque écriture
+   (`libelles.mjs`). Le stand dessiné à la main lit la taille sans compter
+   dans son calcul, et ne déborde pas : le dessin importe ce module, et ce
+   module ne peut pas l'importer. */
 let corpsUniforme = 0;
+let debords = new Map();
+/* Les débords comparent chaque stand à tous les autres : on ne les refait
+   que si le pavillon a changé — un autre pavillon, un stand repris ou
+   déplacé —, et non à chaque arrêt de la vue. */
+let cleDebords = "";
 
 /**
  * Fixe la taille commune des noms d'après les stands d'un pavillon. Chaque nom
- * se mesure comme « libelleDroit » le ferait, couché s'il doit l'être, et sans
- * le facteur du placement à la main : ce facteur s'applique ensuite, par-dessus
- * la taille commune, comme il s'applique à la taille calculée.
+ * se mesure comme « libelleDroit » le ferait, couché s'il doit l'être, avec la
+ * place qu'il peut prendre sur les allées, et sans le facteur du placement à
+ * la main : ce facteur s'applique ensuite, par-dessus la taille commune, comme
+ * il s'applique à la taille calculée.
  *
- * On refait le calcul à chaque écriture plutôt que de le garder : une police
- * qui arrive, un stand repris ou la case des noms couchés le changent, et
- * il ne coûte qu'une lecture des mesures déjà gardées.
+ * La taille, elle, se refait à chaque écriture : une police qui arrive ou la
+ * case des noms couchés la changent, et elle ne coûte qu'une lecture des
+ * mesures déjà gardées.
  *
- * @param {{ nom?: string, code?: string }[]} stands
+ * @param {{ nom?: string, code?: string, c?: number[], bb?: number[] }[]} stands
+ * @param {{ c?: number[], bb?: number[] }[]} zones
  */
-export function poseCorpsUniforme(stands){
+export function poseCorpsUniforme(stands, zones){
   corpsUniforme = 0;
-  if (!nomsUniformes()) return;
+  if (!nomsUniformes()){ debords = new Map(); cleDebords = ""; return; }
+  let cle = stands.length + ":" + zones.length;
+  for (const o of [...stands, ...zones]) if (o.c && o.bb) cle += "|" + o.c.join(",") + "," + o.bb.join(",");
+  if (cle !== cleDebords){ debords = debordsAuxAllees(stands, zones); cleDebords = cle; }
   let min = Infinity;
   for (const s of stands){
     if (!s.nom) continue;
     const [l, h] = place(s);
     const tourne = nomCouche(s, l, h);
-    const a = habille(s.nom, (tourne ? h : l) * .9, (tourne ? l : h) * .62, 2.4, P_NOM);
+    const a = habilleNom(s, tourne ? h : l, tourne ? l : h, tourne, 2.4);
     if (a && a.f > 0 && a.f < min) min = a.f;
   }
   if (min < Infinity) corpsUniforme = min;
 }
 
 /**
- * Le nom d'un stand, coupé et mesuré pour une place de `w` sur `h`.
+ * Le nom d'un stand, coupé et mesuré pour une place de `w` sur `h` — `tourne`
+ * dit si cette place est celle du stand couché, dont la largeur est la
+ * hauteur sur le plan.
  *
  * La taille commune entre comme plafond de « habille » plutôt qu'en réduisant
  * son résultat après coup : à égalité de taille, « habille » garde le moins de
  * lignes, et un nom qu'on coupait en trois pour l'écrire plus grand se remet
  * sur une seule ligne s'il tient à la taille commune.
+ *
+ * Avec les débords, on garde la plus grande taille parmi la place du stand et
+ * celles qu'offrent les allées ; à égalité, la première, celle du stand : un
+ * nom qui tient chez lui à la taille commune ne déborde pas.
+ *
+ * @param {{ nom?: string }} s
+ * @param {number} w
+ * @param {number} h
+ * @param {boolean} [tourne]
+ * @param {number} [plafond] la taille commune par défaut
  */
-export function habilleNom(nom, w, h){
-  return habille(nom, w * .9, h * .62, corpsUniforme || 2.4, P_NOM);
+export function habilleNom(s, w, h, tourne = false, plafond = corpsUniforme || 2.4){
+  const nom = s.nom || "";
+  let best = habille(nom, w * .9, h * .62, plafond, P_NOM);
+  for (const [dw, dh] of debords.get(s) || []){
+    const [aw, ah] = tourne ? [dh, dw] : [dw, dh];
+    const a = habille(nom, (w + aw) * .9, (h + ah) * .62, plafond, P_NOM);
+    if (a && (!best || a.f > best.f)) best = a;
+  }
+  return best;
 }
 
 /** Le nom et le numéro, écrits droits dans une place de `w` sur `h`. */
-function libelleDroit(s, as, w, h, sel, pxParM, reg){
+function libelleDroit(s, as, w, h, sel, pxParM, reg, tourne){
   const k = facteurLibelle(reg), force = libelleForce(reg);
-  const nom = s.nom ? habilleNom(s.nom, w, h) : null;
+  const nom = s.nom ? habilleNom(s, w, h, tourne) : null;
   const fn = nom ? nom.f * k : 0;
   const nomLisible = nom && (sel || force || fn * pxParM >= 4.5);
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;

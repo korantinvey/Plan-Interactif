@@ -734,6 +734,18 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
+### `modules/debord-allees.mjs` — 87 l. → plan, plan-admin
+
+- l.1 · Le débord des noms sur les allées — la place libre autour d'un stand
+
+Fonctions :
+
+`boiteDe` 22 · `contient` 23 · `croise` 24 · `debordsAuxAllees` 52
+
+Importé par :
+
+nom-emplacement
+
 ### `modules/decor.mjs` — 743 l. → plan, plan-admin
 
 - l.1 · Le décor du plan — le mobilier des zones de l'organisateur
@@ -1890,20 +1902,20 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 210 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 248 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
 Fonctions :
 
-`coexComptes` 32 · `coexChoisit` 33 · `ligneCode` 49 · `decaleLibelle` 83
-`facteurLibelle` 84 · `libelleForce` 85 · `libelleEmplacement` 96 · `nomsPivotes` 120
-`nomCouche` 122 · `nomsUniformes` 146 · `poseCorpsUniforme` 165 · `habilleNom` 187
-`libelleDroit` 192
+`coexComptes` 34 · `coexChoisit` 35 · `ligneCode` 51 · `decaleLibelle` 85
+`facteurLibelle` 86 · `libelleForce` 87 · `libelleEmplacement` 98 · `nomsPivotes` 122
+`nomCouche` 124 · `nomsUniformes` 153 · `poseCorpsUniforme` 181 · `habilleNom` 218
+`libelleDroit` 230
 
 Importe :
 
-configuration · libelle-place · polices-plan · texte · texte-plan
+configuration · debord-allees · libelle-place · polices-plan · texte · texte-plan
 
 Importé par :
 

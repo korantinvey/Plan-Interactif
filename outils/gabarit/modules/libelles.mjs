@@ -71,7 +71,7 @@ export function libelles(){
   }
   const l = $("labels"), p = P();
   // la taille commune des noms, si l'exploitant l'a choisie, avant tout nom écrit
-  poseCorpsUniforme(p.stands);
+  poseCorpsUniforme(p.stands, p.zones);
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
   const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
@@ -173,7 +173,7 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
   const pt = tourne ? (x, y) => [xy[0] + (y - xy[1]), xy[1] - (x - xy[0])] : (x, y) => [x, y];
   const angle = tourne ? 90 : 0;
   const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
-  const nom = s.nom ? habilleNom(s.nom, w, h) : null;
+  const nom = s.nom ? habilleNom(s, w, h, tourne) : null;
   const fn = nom ? nom.f * k : 0;
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
   const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
@@ -229,7 +229,7 @@ export function libellesWebgl(){
   // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
   if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
   const p = P(), items = [], pastilles = [], dessines = new Map();
-  poseCorpsUniforme(p.stands);
+  poseCorpsUniforme(p.stands, p.zones);
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
