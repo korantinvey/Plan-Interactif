@@ -1903,7 +1903,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 293 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 311 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -1911,8 +1911,8 @@ Fonctions :
 
 `coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
 `facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
-`nomCouche` 126 · `nomsUniformes` 161 · `posePaliers` 197 · `placesDuNom` 218
-`tailleMax` 230 · `habilleNom` 257 · `libelleDroit` 275
+`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 206 · `placesDuNom` 227
+`tailleMax` 239 · `cibleDe` 254 · `habilleNom` 279 · `libelleDroit` 293
 
 Importe :
 

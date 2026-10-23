@@ -125,6 +125,15 @@ export const nomsPivotes = () => conf("_nomsPivotes").visible === true;
 
 export function nomCouche(s, w, h){
   if (!nomsPivotes() || !(h > w * 1.25)) return false;
+  /* Harmonisés, les noms se comparent par palier : couper le nom en lignes
+     se lit mieux que pencher la tête, et l'on ne couche que celui que la
+     verticale fait monter d'un palier (FEP27, 23 octobre 2026). Sous le
+     plus petit palier, chacun garde sa taille : la règle d'un sixième vaut
+     de nouveau. */
+  if (paliers.length && s.nom){
+    const droit = cibleDe(s, w, h, false).cible, couche = cibleDe(s, h, w, true).cible;
+    return paliers.includes(couche) ? couche > droit : couche > droit * 1.15;
+  }
   // les mesures de « libelleDroit » : le nom s'il y en a un, sinon le numéro
   const taille = (l, ht) => {
     if (s.nom){ const a = habille(s.nom, l * .9, ht * .62, 2.4, P_NOM); return a ? a.f : 0; }
@@ -237,6 +246,19 @@ function tailleMax(s, w, h, tourne, maxLignes = 3){
 }
 
 /**
+ * La taille qu'un nom harmonisé vise dans une place de `w` sur `h`, et le
+ * nombre de lignes qu'il s'accorde pour l'atteindre. Au-delà de trois lignes,
+ * seulement si le nom y gagne un palier : quelques centimètres de plus ne
+ * valent pas une colonne de mots.
+ */
+function cibleDe(s, w, h, tourne){
+  const cible = palierDe(tailleMax(s, w, h, tourne), paliers);
+  const enColonne = palierDe(tailleMax(s, w, h, tourne, LIGNES_EN_COLONNE), paliers);
+  return enColonne > cible && paliers.includes(enColonne)
+    ? { cible: enColonne, lignes: LIGNES_EN_COLONNE } : { cible, lignes: 3 };
+}
+
+/**
  * Le nom d'un stand, coupé et mesuré pour une place de `w` sur `h` — `tourne`
  * dit si cette place est celle du stand couché, dont la largeur est la
  * hauteur sur le plan.
@@ -257,11 +279,7 @@ function tailleMax(s, w, h, tourne, maxLignes = 3){
 export function habilleNom(s, w, h, tourne = false){
   const nom = s.nom || "";
   if (!paliers.length) return habille(nom, w * .9, h * .62, 2.4, P_NOM);
-  /* Au-delà de trois lignes, seulement si le nom y gagne un palier : quelques
-     centimètres de plus ne valent pas une colonne de mots. */
-  let cible = palierDe(tailleMax(s, w, h, tourne), paliers), lignes = 3;
-  const enColonne = palierDe(tailleMax(s, w, h, tourne, LIGNES_EN_COLONNE), paliers);
-  if (enColonne > cible && paliers.includes(enColonne)){ cible = enColonne; lignes = LIGNES_EN_COLONNE; }
+  const { cible, lignes } = cibleDe(s, w, h, tourne);
   let best = null;
   for (const [pw, ph] of placesDuNom(s, w, h, tourne)){
     const a = habille(nom, pw * .9, ph * .62, cible, P_NOM, lignes);
