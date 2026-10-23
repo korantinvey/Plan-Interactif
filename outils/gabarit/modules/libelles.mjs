@@ -246,8 +246,18 @@ export function libellesWebgl(){
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
-    const sel = s.id === state.sel && !decoupe;
-    if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
+    /* Un stand ajouté et lié est choisi quand sa société l'est, et suit le
+       filtre de celle-ci — comme dans « libelles ». Choisi seulement par son
+       propre identifiant, que la fiche ne sélectionne jamais, il n'était
+       jamais forcé : son nom ne s'écrivait qu'au zoom des noms ordinaires,
+       que la taille commune (`nom-emplacement.mjs` `nomsUniformes`) rendait
+       hors d'atteinte (FEP27, 23 octobre 2026). */
+    const hote = s.lien && parId.get(s.lien.stand);
+    const sel = hote
+      ? s.lien.stand === state.sel && s.lien.soc === state.selSoc
+      : s.id === state.sel && !decoupe;
+    const vu = hote ? visibleSociete(hote, s.lien.soc) : visibleSurPlan(s);
+    if ((!sel && !vu) || (!s.code && !s.nom)) continue;
     const ps = place(s), reg = placementLibelle(s);
     const avant = items.length, avantPastilles = pastilles.length;
     emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
