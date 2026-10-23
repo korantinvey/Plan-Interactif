@@ -1668,7 +1668,7 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 300 l. → plan, plan-admin
+### `modules/libelles.mjs` — 310 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.52 · 4. Libellés — le nom de l'exposant prime sur le numéro
