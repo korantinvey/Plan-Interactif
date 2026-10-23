@@ -16,7 +16,7 @@
 import { esc } from "./texte.mjs";
 import { conf } from "./configuration.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
-import { habille, largeur, lignesSvg } from "./texte-plan.mjs";
+import { habille, largeur, lignesSvg, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 
 /**
@@ -130,10 +130,68 @@ export function nomCouche(s, w, h){
   return couche > 0 && couche > taille(w, h) * 1.15;
 }
 
+/**
+ * Les noms des stands écrits tous dans la même taille.
+ *
+ * Chaque nom prend la plus grande taille que sa place lui permet : un grand
+ * stand au nom court écrit en grand, un petit stand au nom long en tout
+ * petit, et le plan semble crier certains noms. Allumé, ce réglage aligne
+ * tous les noms du pavillon sur le plus petit d'entre eux. Le plan perd en
+ * lisibilité de loin ce qu'il gagne en régularité : c'est à l'exploitant de
+ * choisir, d'où le réglage, éteint par défaut comme celui des noms couchés.
+ *
+ * Seuls les noms s'alignent : les zones gardent leur taille, et le numéro
+ * reste sous le nom, plus petit que lui, comme dans « libelleDroit ».
+ */
+export const nomsUniformes = () => conf("_nomsUniformes").visible === true;
+
+/* La taille commune, que les deux rendus fixent au début de chaque écriture
+   (`libelles.mjs`). Le stand dessiné à la main la lit sans compter dans son
+   calcul : le dessin importe ce module, et ce module ne peut pas l'importer. */
+let corpsUniforme = 0;
+
+/**
+ * Fixe la taille commune des noms d'après les stands d'un pavillon. Chaque nom
+ * se mesure comme « libelleDroit » le ferait, couché s'il doit l'être, et sans
+ * le facteur du placement à la main : ce facteur s'applique ensuite, par-dessus
+ * la taille commune, comme il s'applique à la taille calculée.
+ *
+ * On refait le calcul à chaque écriture plutôt que de le garder : une police
+ * qui arrive, un stand repris ou la case des noms couchés le changent, et
+ * il ne coûte qu'une lecture des mesures déjà gardées.
+ *
+ * @param {{ nom?: string, code?: string }[]} stands
+ */
+export function poseCorpsUniforme(stands){
+  corpsUniforme = 0;
+  if (!nomsUniformes()) return;
+  let min = Infinity;
+  for (const s of stands){
+    if (!s.nom) continue;
+    const [l, h] = place(s);
+    const tourne = nomCouche(s, l, h);
+    const a = habille(s.nom, (tourne ? h : l) * .9, (tourne ? l : h) * .62, 2.4, P_NOM);
+    if (a && a.f > 0 && a.f < min) min = a.f;
+  }
+  if (min < Infinity) corpsUniforme = min;
+}
+
+/**
+ * Le nom d'un stand, coupé et mesuré pour une place de `w` sur `h`.
+ *
+ * La taille commune entre comme plafond de « habille » plutôt qu'en réduisant
+ * son résultat après coup : à égalité de taille, « habille » garde le moins de
+ * lignes, et un nom qu'on coupait en trois pour l'écrire plus grand se remet
+ * sur une seule ligne s'il tient à la taille commune.
+ */
+export function habilleNom(nom, w, h){
+  return habille(nom, w * .9, h * .62, corpsUniforme || 2.4, P_NOM);
+}
+
 /** Le nom et le numéro, écrits droits dans une place de `w` sur `h`. */
 function libelleDroit(s, as, w, h, sel, pxParM, reg){
   const k = facteurLibelle(reg), force = libelleForce(reg);
-  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+  const nom = s.nom ? habilleNom(s.nom, w, h) : null;
   const fn = nom ? nom.f * k : 0;
   const nomLisible = nom && (sel || force || fn * pxParM >= 4.5);
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;

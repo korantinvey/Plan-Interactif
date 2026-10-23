@@ -10,6 +10,8 @@ module.exports = {
   "Montrer les secteurs — couleurs et filtre": "Show sectors — colours and filter",
   "Écrire à la verticale le nom des stands étroits, quand il y gagne en taille":
     "Write narrow stands' names vertically, when that makes them larger",
+  "Écrire tous les noms des stands à la même taille, celle du plus petit":
+    "Write all stand names at the same size, that of the smallest",
   "Suivre les allées une à une — pour un hall arrondi ou aux rangées désaccordées":
     "Follow the aisles one by one — for a rounded hall or one with uneven rows",
 
