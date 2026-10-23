@@ -734,13 +734,13 @@ Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
 
-### `modules/debord-allees.mjs` — 87 l. → plan, plan-admin
+### `modules/debord-allees.mjs` — 86 l. → plan, plan-admin
 
 - l.1 · Le débord des noms sur les allées — la place libre autour d'un stand
 
 Fonctions :
 
-`boiteDe` 22 · `contient` 23 · `croise` 24 · `debordsAuxAllees` 52
+`boiteDe` 21 · `contient` 22 · `croise` 23 · `debordsAuxAllees` 51
 
 Importé par :
 
@@ -1902,20 +1902,21 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 248 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 271 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
 Fonctions :
 
-`coexComptes` 34 · `coexChoisit` 35 · `ligneCode` 51 · `decaleLibelle` 85
-`facteurLibelle` 86 · `libelleForce` 87 · `libelleEmplacement` 98 · `nomsPivotes` 122
-`nomCouche` 124 · `nomsUniformes` 153 · `poseCorpsUniforme` 181 · `habilleNom` 218
-`libelleDroit` 230
+`coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
+`facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
+`nomCouche` 126 · `nomsUniformes` 161 · `posePaliers` 189 · `placesDuNom` 208
+`tailleMax` 213 · `habilleNom` 239 · `libelleDroit` 253
 
 Importe :
 
-configuration · debord-allees · libelle-place · polices-plan · texte · texte-plan
+configuration · debord-allees · libelle-place · paliers-noms · polices-plan · texte
+texte-plan
 
 Importé par :
 
@@ -2118,6 +2119,18 @@ reglage-foodtrucks · vue
 Importé par :
 
 gestes-admin
+
+### `modules/paliers-noms.mjs` — 50 l. → plan, plan-admin
+
+- l.1 · Les paliers des noms — trois tailles pour tout un pavillon
+
+Fonctions :
+
+`paliersDe` 30 · `palierDe` 46
+
+Importé par :
+
+nom-emplacement
 
 ### `modules/panneau-criteres.mjs` — 41 l. → plan, plan-admin
 

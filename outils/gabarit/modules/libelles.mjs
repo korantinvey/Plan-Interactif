@@ -29,7 +29,7 @@ import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
 import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce, nomCouche,
-  habilleNom, poseCorpsUniforme }
+  habilleNom, posePaliers }
   from "./nom-emplacement.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./trace-itineraire.mjs";
@@ -70,8 +70,8 @@ export function libelles(){
     return;
   }
   const l = $("labels"), p = P();
-  // la taille commune des noms, si l'exploitant l'a choisie, avant tout nom écrit
-  poseCorpsUniforme(p.stands, p.zones);
+  // les paliers des noms, si l'exploitant les a choisis, avant tout nom écrit
+  posePaliers(p.stands, p.zones);
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
   const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
@@ -229,7 +229,7 @@ export function libellesWebgl(){
   // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
   if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
   const p = P(), items = [], pastilles = [], dessines = new Map();
-  poseCorpsUniforme(p.stands, p.zones);
+  posePaliers(p.stands, p.zones);
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
@@ -250,8 +250,8 @@ export function libellesWebgl(){
        filtre de celle-ci — comme dans « libelles ». Choisi seulement par son
        propre identifiant, que la fiche ne sélectionne jamais, il n'était
        jamais forcé : son nom ne s'écrivait qu'au zoom des noms ordinaires,
-       que la taille commune (`nom-emplacement.mjs` `nomsUniformes`) rendait
-       hors d'atteinte (FEP27, 23 octobre 2026). */
+       qu'un nom harmonisé (`nom-emplacement.mjs` `nomsUniformes`) pouvait
+       ne pas atteindre (FEP27, 23 octobre 2026). */
     const hote = s.lien && parId.get(s.lien.stand);
     const sel = hote
       ? s.lien.stand === state.sel && s.lien.soc === state.selSoc

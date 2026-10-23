@@ -1,11 +1,10 @@
 /* ============================================================
    Le débord des noms sur les allées — la place libre autour d'un stand
 
-   Quand tous les noms s'écrivent à la même taille (`nom-emplacement.mjs`
-   `nomsUniformes`), cette taille est celle du plus petit stand au nom le plus
-   long : elle tombe vite à rien. Pour la relever, un nom a le droit de
-   déborder de son stand sur l'allée qui le borde — jamais sur un stand
-   voisin, ni sur une zone de l'organisateur.
+   Quand les noms des stands s'harmonisent en trois paliers
+   (`nom-emplacement.mjs` `nomsUniformes`), un nom qui n'atteint pas le sien
+   dans son stand a le droit, pour y parvenir, de déborder sur l'allée qui le
+   borde — jamais sur un stand voisin, ni sur une zone de l'organisateur.
 
    Ce module ne fait que le calcul, sur les centres et les boîtes des
    emplacements : il ne dépend de rien, et s'éprouve seul dans Node

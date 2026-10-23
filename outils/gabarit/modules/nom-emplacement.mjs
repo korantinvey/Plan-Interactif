@@ -12,7 +12,8 @@
    ses stands : les libellés ne pouvaient plus importer le dessin, qui devait
    leur confier ce qu'ils en appellent. Il ne dépend que de la mesure du
    texte, des polices, de la configuration, du placement à la main et de la
-   place libre sur les allées (`debord-allees.mjs`).
+   place libre sur les allées (`debord-allees.mjs`), et des paliers des noms
+   (`paliers-noms.mjs`).
    ============================================================ */
 import { esc } from "./texte.mjs";
 import { conf } from "./configuration.mjs";
@@ -20,6 +21,7 @@ import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { habille, largeur, lignesSvg, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { debordsAuxAllees } from "./debord-allees.mjs";
+import { paliersDe, palierDe } from "./paliers-noms.mjs";
 
 /**
  * Ce que le plan dit des stands partagés, et que l'exploitant peut retirer.
@@ -133,31 +135,37 @@ export function nomCouche(s, w, h){
 }
 
 /**
- * Les noms des stands écrits tous dans la même taille.
+ * Les noms des stands harmonisés : trois tailles, les plus grandes plafonnées.
  *
  * Chaque nom prend la plus grande taille que sa place lui permet : un grand
  * stand au nom court écrit en grand, un petit stand au nom long en tout
- * petit, et le plan semble crier certains noms. Allumé, ce réglage aligne
- * tous les noms du pavillon sur le plus petit d'entre eux. Le plan perd en
- * lisibilité de loin ce qu'il gagne en régularité : c'est à l'exploitant de
- * choisir, d'où le réglage, éteint par défaut comme celui des noms couchés.
+ * petit, et le plan semble crier certains noms. Allumé, ce réglage ramène les
+ * noms du pavillon à trois paliers, le plus haut à la médiane de leurs
+ * tailles (`paliers-noms.mjs`) : les grands noms se plafonnent, chacun prend
+ * le plus grand palier qu'il atteint, et aucun ne descend sous ce qu'il
+ * pouvait faire chez lui. Caler tous les noms sur le plus petit, comme on l'a
+ * d'abord fait, les rendait tous illisibles pour un seul long nom.
  *
- * Seuls les noms s'alignent : les zones gardent leur taille, et le numéro
+ * Éteint par défaut comme celui des noms couchés : un salon garde l'écriture
+ * qu'il connaissait tant qu'on ne l'a pas choisie pour lui. La clé garde son
+ * premier nom, `_nomsUniformes`, pour ne pas perdre la case déjà cochée.
+ *
+ * Seuls les noms s'harmonisent : les zones gardent leur taille, et le numéro
  * reste sous le nom, plus petit que lui, comme dans « libelleDroit ».
  *
- * La taille du plus petit tombant vite à rien, un nom a le droit, dans ce
- * mode seulement, de déborder de son stand sur l'allée qui le borde — pas sur
- * un stand voisin ni sur une zone (`debord-allees.mjs`). Le numéro, lui,
- * reste dans le stand : c'est lui qui désigne l'emplacement.
+ * Pour atteindre un palier, un nom a le droit, dans ce mode seulement, de
+ * déborder de son stand sur l'allée qui le borde — pas sur un stand voisin ni
+ * sur une zone (`debord-allees.mjs`). Le numéro, lui, reste dans le stand :
+ * c'est lui qui désigne l'emplacement.
  */
 export const nomsUniformes = () => conf("_nomsUniformes").visible === true;
 
-/* La taille commune, et ce que chaque stand du pavillon peut prendre sur les
+/* Les paliers, et ce que chaque stand du pavillon peut prendre sur les
    allées, que les deux rendus fixent au début de chaque écriture
-   (`libelles.mjs`). Le stand dessiné à la main lit la taille sans compter
-   dans son calcul, et ne déborde pas : le dessin importe ce module, et ce
+   (`libelles.mjs`). Le stand dessiné à la main suit les paliers sans compter
+   dans leur calcul, et ne déborde pas : le dessin importe ce module, et ce
    module ne peut pas l'importer. */
-let corpsUniforme = 0;
+let paliers = [];
 let debords = new Map();
 /* Les débords comparent chaque stand à tous les autres : on ne les refait
    que si le pavillon a changé — un autre pavillon, un stand repris ou
@@ -165,34 +173,50 @@ let debords = new Map();
 let cleDebords = "";
 
 /**
- * Fixe la taille commune des noms d'après les stands d'un pavillon. Chaque nom
- * se mesure comme « libelleDroit » le ferait, couché s'il doit l'être, avec la
+ * Fixe les paliers des noms d'après les stands d'un pavillon. Chaque nom se
+ * mesure comme « libelleDroit » le ferait, couché s'il doit l'être, avec la
  * place qu'il peut prendre sur les allées, et sans le facteur du placement à
- * la main : ce facteur s'applique ensuite, par-dessus la taille commune, comme
- * il s'applique à la taille calculée.
+ * la main : ce facteur s'applique ensuite, par-dessus le palier, comme il
+ * s'applique à la taille calculée.
  *
- * La taille, elle, se refait à chaque écriture : une police qui arrive ou la
- * case des noms couchés la changent, et elle ne coûte qu'une lecture des
+ * Les paliers, eux, se refont à chaque écriture : une police qui arrive ou la
+ * case des noms couchés les changent, et ils ne coûtent qu'une lecture des
  * mesures déjà gardées.
  *
  * @param {{ nom?: string, code?: string, c?: number[], bb?: number[] }[]} stands
  * @param {{ c?: number[], bb?: number[] }[]} zones
  */
-export function poseCorpsUniforme(stands, zones){
-  corpsUniforme = 0;
+export function posePaliers(stands, zones){
+  paliers = [];
   if (!nomsUniformes()){ debords = new Map(); cleDebords = ""; return; }
   let cle = stands.length + ":" + zones.length;
   for (const o of [...stands, ...zones]) if (o.c && o.bb) cle += "|" + o.c.join(",") + "," + o.bb.join(",");
   if (cle !== cleDebords){ debords = debordsAuxAllees(stands, zones); cleDebords = cle; }
-  let min = Infinity;
+  const tailles = [];
   for (const s of stands){
     if (!s.nom) continue;
     const [l, h] = place(s);
     const tourne = nomCouche(s, l, h);
-    const a = habilleNom(s, tourne ? h : l, tourne ? l : h, tourne, 2.4);
-    if (a && a.f > 0 && a.f < min) min = a.f;
+    tailles.push(tailleMax(s, tourne ? h : l, tourne ? l : h, tourne));
   }
-  if (min < Infinity) corpsUniforme = min;
+  paliers = paliersDe(tailles);
+}
+
+/* Les places où le nom peut s'écrire : celle du stand d'abord, puis celles
+   qu'offrent les allées, du plus sobre au plus large. Un stand couché lit
+   les débords en travers, sa largeur étant la hauteur sur le plan. */
+function placesDuNom(s, w, h, tourne){
+  return [[w, h], ...(debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])];
+}
+
+/** La plus grande taille que le nom peut prendre, débords compris. */
+function tailleMax(s, w, h, tourne){
+  let f = 0;
+  for (const [pw, ph] of placesDuNom(s, w, h, tourne)){
+    const a = habille(s.nom || "", pw * .9, ph * .62, 2.4, P_NOM);
+    if (a && a.f > f) f = a.f;
+  }
+  return f;
 }
 
 /**
@@ -200,27 +224,26 @@ export function poseCorpsUniforme(stands, zones){
  * dit si cette place est celle du stand couché, dont la largeur est la
  * hauteur sur le plan.
  *
- * La taille commune entre comme plafond de « habille » plutôt qu'en réduisant
- * son résultat après coup : à égalité de taille, « habille » garde le moins de
- * lignes, et un nom qu'on coupait en trois pour l'écrire plus grand se remet
- * sur une seule ligne s'il tient à la taille commune.
- *
- * Avec les débords, on garde la plus grande taille parmi la place du stand et
- * celles qu'offrent les allées ; à égalité, la première, celle du stand : un
- * nom qui tient chez lui à la taille commune ne déborde pas.
+ * Harmonisé, le nom vise son palier, qui entre comme plafond de « habille »
+ * plutôt qu'en réduisant son résultat après coup : à égalité de taille,
+ * « habille » garde le moins de lignes, et un nom qu'on coupait en trois pour
+ * l'écrire plus grand se remet sur une seule ligne s'il tient à son palier.
+ * Des places possibles, il prend la première qui l'atteint : un nom qui tient
+ * chez lui ne déborde pas.
  *
  * @param {{ nom?: string }} s
  * @param {number} w
  * @param {number} h
  * @param {boolean} [tourne]
- * @param {number} [plafond] la taille commune par défaut
  */
-export function habilleNom(s, w, h, tourne = false, plafond = corpsUniforme || 2.4){
+export function habilleNom(s, w, h, tourne = false){
   const nom = s.nom || "";
-  let best = habille(nom, w * .9, h * .62, plafond, P_NOM);
-  for (const [dw, dh] of debords.get(s) || []){
-    const [aw, ah] = tourne ? [dh, dw] : [dw, dh];
-    const a = habille(nom, (w + aw) * .9, (h + ah) * .62, plafond, P_NOM);
+  if (!paliers.length) return habille(nom, w * .9, h * .62, 2.4, P_NOM);
+  const cible = palierDe(tailleMax(s, w, h, tourne), paliers);
+  let best = null;
+  for (const [pw, ph] of placesDuNom(s, w, h, tourne)){
+    const a = habille(nom, pw * .9, ph * .62, cible, P_NOM);
+    if (a && a.f >= cible * (1 - 1e-9)) return a;
     if (a && (!best || a.f > best.f)) best = a;
   }
   return best;

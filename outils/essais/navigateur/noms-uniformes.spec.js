@@ -1,9 +1,10 @@
 /**
- * Les noms des stands à la même taille — une case de l'onglet « Admin ».
+ * Les noms des stands harmonisés — une case de l'onglet « Admin ».
  *
- * Éteinte par défaut, elle aligne tous les noms du pavillon sur le plus petit
- * (`nom-emplacement.mjs` `poseCorpsUniforme`). On l'éprouve en SVG, où chaque
- * nom porte sa taille dans son attribut ; le rendu WebGL lit la même.
+ * Éteinte par défaut, elle ramène les noms du pavillon à trois tailles, les
+ * plus grands plafonnés (`nom-emplacement.mjs` `posePaliers`). On l'éprouve
+ * en SVG, où chaque nom porte sa taille dans son attribut ; le rendu WebGL lit
+ * la même.
  *
  * La session de l'exploitant et la base sont simulées : rien ne sort.
  */
@@ -14,10 +15,18 @@ const BASE = "https://base.essai";
 /* L'onglet « Admin » n'est offert qu'au profil administrateur, que la page ne
    demande qu'avec l'identifiant du compte : le jeton simulé doit en porter un. */
 const JETON = "e30." + Buffer.from(JSON.stringify({ sub: "u1", exp: 4102444800 })).toString("base64url") + ".sig";
-/* Les tailles distinctes des noms écrits. Le nom choisi, ou réglé à la main,
-   suit ses propres règles : on ne compte que les autres. */
-const tailles = (page) => page.evaluate(() => new Set([...document.querySelectorAll("#labels .lbl:not(.pick) text.nm:not(.sel)")]
-  .map(t => t.getAttribute("font-size"))).size);
+/* Les tailles des noms écrits. Le nom choisi, ou réglé à la main, suit ses
+   propres règles : on ne compte que les autres. */
+const tailles = (page) => page.evaluate(() => [...document.querySelectorAll("#labels .lbl:not(.pick) text.nm:not(.sel)")]
+  .map(t => Number(t.getAttribute("font-size"))));
+const distinctes = (t) => new Set(t).size;
+/* La part des noms écrits à l'une des trois tailles les plus fréquentes : les
+   autres sont ceux qui n'atteignent pas le plus petit palier. */
+const auxPaliers = (t) => {
+  const n = new Map();
+  for (const f of t) n.set(f, (n.get(f) || 0) + 1);
+  return [...n.values()].sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0) / (t.length || 1);
+};
 
 /** Rapproche la vue : de loin, les noms ne s'écrivent pas. */
 async function rapproche(page) {
@@ -28,7 +37,7 @@ async function rapproche(page) {
   await page.waitForTimeout(600);
 }
 
-test.describe("les noms des stands à la même taille", () => {
+test.describe("les noms des stands harmonisés", () => {
   test("éteinte par défaut, puis allumée depuis l'onglet Admin", async ({ page }) => {
     const erreurs = await prepare(page);
     await page.addInitScript(([base, jeton]) => {
@@ -48,12 +57,13 @@ test.describe("les noms des stands à la même taille", () => {
     await attendLaListe(page);
     await rapproche(page);
     // chaque nom à la taille que sa place lui donne, tant que la case n'est pas cochée
-    expect(await tailles(page)).toBeGreaterThan(1);
+    const avant = await tailles(page);
+    expect(distinctes(avant)).toBeGreaterThan(3);
 
     await page.locator("#btnReglages").click();
     await page.locator(".ongReg button", { hasText: "Admin" }).click();
     const caseNoms = page.locator(".voletReg:not([hidden]) label",
-      { hasText: "Écrire tous les noms des stands à la même taille" }).locator("input");
+      { hasText: "Harmoniser la taille des noms des stands" }).locator("input");
     await expect(caseNoms).not.toBeChecked();
     await caseNoms.check();
 
@@ -62,11 +72,15 @@ test.describe("les noms des stands à la même taille", () => {
       .filter(k => k.startsWith("plan-conf:"))
       .map(k => JSON.parse(localStorage.getItem(k))._nomsUniformes));
     expect(range).toContainEqual({ visible: true });
-    // une seule taille, et au moins un nom écrit : la case qui tairait tout ne passerait pas
-    await expect.poll(() => tailles(page)).toBe(1);
+    /* Presque tous les noms à l'un des trois paliers, et aucun plus grand
+       qu'avant : les grands se plafonnent, rien ne grossit. */
+    await expect.poll(async () => auxPaliers(await tailles(page))).toBeGreaterThanOrEqual(.8);
+    const apres = await tailles(page);
+    expect(apres.length).toBeGreaterThan(0);
+    expect(Math.max(...apres)).toBeLessThan(Math.max(...avant));
 
     await caseNoms.uncheck();
-    await expect.poll(() => tailles(page)).toBeGreaterThan(1);
+    await expect.poll(async () => distinctes(await tailles(page))).toBeGreaterThan(3);
     expect(erreurs).toEqual([]);
   });
 });
