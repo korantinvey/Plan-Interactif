@@ -96,6 +96,20 @@ export function habille(txt, w, h, maxPolice, police, maxLignes = 3){
   }
   return best;
 }
+/**
+ * Les coupes d'un texte en une, deux ou trois lignes, chacune avec la largeur
+ * de sa plus longue ligne pour une police de corps 1. De quoi estimer la
+ * taille qu'un nom prendrait dans un grand nombre de places sans refaire ses
+ * coupes à chaque fois (`libelles.mjs` `partsLibres`).
+ */
+export function coupes(txt, police, maxLignes = 3){
+  const out = [];
+  for (let n = 1; n <= maxLignes; n++){
+    const lignes = decoupe(txt, n);
+    if (lignes) out.push({ n, w: Math.max(...lignes.map(l => largeur(l, police))) });
+  }
+  return out;
+}
 export function lignesSvg(lignes, f, x, yCentre, cls){
   const dep = yCentre - ((lignes.length - 1) * f * 1.18) / 2 + f * .33;
   return lignes.map((t, i) =>

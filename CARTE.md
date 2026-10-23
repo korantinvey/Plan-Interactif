@@ -1668,21 +1668,21 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 321 l. → plan, plan-admin
+### `modules/libelles.mjs` — 381 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.53 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.54 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`libelles` 60 · `libelleZone` 139 · `emplacementWebgl` 167 · `tassementImmersif` 233
-`libellesWebgl` 238
+`partsLibres` 77 · `libelles` 112 · `libelleZone` 195 · `emplacementWebgl` 223
+`tassementImmersif` 289 · `libellesWebgl` 294
 
 Importe :
 
 calques-dessin · camera · cartouche-poi · decor · dessin · dom · donnees · filtre
-forme-choisie · libelle-place · logos-stands · nom-emplacement · noms-zones · polices-plan
-texte · texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
+forme-choisie · libelle-place · logos-stands · nom-emplacement · noms-zones · place-libre
+polices-plan · texte · texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
 
 Importé par :
 
@@ -1903,7 +1903,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 311 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 320 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -1911,8 +1911,8 @@ Fonctions :
 
 `coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
 `facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
-`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 206 · `placesDuNom` 227
-`tailleMax` 239 · `cibleDe` 254 · `habilleNom` 279 · `libelleDroit` 293
+`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 212 · `placesDuNom` 236
+`tailleMax` 248 · `cibleDe` 263 · `habilleNom` 288 · `libelleDroit` 302
 
 Importe :
 
@@ -2234,6 +2234,18 @@ outil-dessin · placement-libelles · reprise-emplacements · secteurs · texte
 Importé par :
 
 plan-admin
+
+### `modules/place-libre.mjs` — 68 l. → plan, plan-admin
+
+- l.1 · La place libre d'un emplacement découpé — où son nom peut encore s'écrire
+
+Fonctions :
+
+`rectangleLibre` 38
+
+Importé par :
+
+libelles
 
 ### `modules/placement-libelles.mjs` — 234 l. → plan-admin
 
@@ -2967,16 +2979,16 @@ Importé par :
 
 calage-carte · environs · seuil
 
-### `modules/texte-plan.mjs` — 115 l. → plan, plan-admin
+### `modules/texte-plan.mjs` — 129 l. → plan, plan-admin
 
 - l.1 · Le texte sur le plan — sa mesure, sa coupe en lignes, sa place
 - l.18 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.106 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.120 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
 `mesureTexte` 26 · `largeur` 31 · `remesureTextes` 56 · `decoupe` 71 · `habille` 88
-`lignesSvg` 99 · `ancre` 114 · `place` 115
+`coupes` 105 · `lignesSvg` 113 · `ancre` 128 · `place` 129
 
 Importe :
 

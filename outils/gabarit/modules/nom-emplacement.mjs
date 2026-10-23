@@ -183,6 +183,10 @@ let debords = new Map();
    sur l'allée — passait à l'écran sur le stand de derrière (FEP27,
    23 octobre 2026). À plat, rien ne se tasse. */
 let tassement = [1, 1];
+/* La part libre des emplacements découpés : leur nom s'y écrit, et ne
+   déborde pas — les débords ont été mesurés depuis l'emplacement entier, et
+   mèneraient sur les parts. */
+let decoupes = new Map();
 /* Les débords comparent chaque stand à tous les autres : on ne les refait
    que si le pavillon a changé — un autre pavillon, un stand repris ou
    déplacé —, et non à chaque arrêt de la vue. */
@@ -202,18 +206,23 @@ let cleDebords = "";
  * @param {{ nom?: string, code?: string, c?: number[], bb?: number[] }[]} stands
  * @param {{ c?: number[], bb?: number[] }[]} zones
  * @param {number[]} [tasse] ce que la vue laisse voir de chaque dimension, en x et en y
+ * @param {Map<object, { c: number[], bb: number[] } | null>} [libres] la part libre
+ *   des emplacements découpés, `null` pour ceux qui n'en ont plus (`libelles.mjs`)
  */
-export function posePaliers(stands, zones, tasse = [1, 1]){
+export function posePaliers(stands, zones, tasse = [1, 1], libres = new Map()){
   paliers = [];
   tassement = tasse;
+  decoupes = libres;
   if (!nomsUniformes()){ debords = new Map(); cleDebords = ""; return; }
   let cle = stands.length + ":" + zones.length;
   for (const o of [...stands, ...zones]) if (o.c && o.bb) cle += "|" + o.c.join(",") + "," + o.bb.join(",");
   if (cle !== cleDebords){ debords = debordsAuxAllees(stands, zones); cleDebords = cle; }
   const tailles = [];
   for (const s of stands){
-    if (!s.nom) continue;
-    const [l, h] = place(s);
+    // un emplacement entièrement découpé n'écrit pas son nom : il ne compte pas
+    if (!s.nom || decoupes.get(s) === null) continue;
+    const lib = decoupes.get(s);
+    const [l, h] = lib ? lib.bb : place(s);
     const tourne = nomCouche(s, l, h);
     tailles.push(tailleMax(s, tourne ? h : l, tourne ? l : h, tourne));
   }
@@ -226,7 +235,7 @@ export function posePaliers(stands, zones, tasse = [1, 1]){
    largeur étant la hauteur sur le plan. */
 function placesDuNom(s, w, h, tourne){
   const [tx, ty] = tourne ? [tassement[1], tassement[0]] : tassement;
-  return [[w, h], ...(debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])]
+  return [[w, h], ...(decoupes.has(s) ? [] : debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])]
     .map(([pw, ph]) => [pw * tx, ph * ty]);
 }
 
