@@ -25,6 +25,7 @@ import { P_NOM, P_CODE, confieAuxPolices } from "./polices-plan.mjs";
 import { largeur, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
+import { capCamera, SINUS_INCLINAISON } from "./camera.mjs";
 import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
@@ -224,12 +225,22 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
   }
 }
 
+/* Ce que la vue immersive laisse voir de chaque dimension du sol. La
+   profondeur suit le cap : un point s'éloigne de l'œil de « x·sin(cap) +
+   y·cos(cap) » (`webgl.mjs` `versEcran`), et c'est dans ce sens-là que
+   l'inclinaison tasse le sol. Une boîte droite se tasse donc en x et en y
+   d'autant que chacun de ses côtés suit ce sens. */
+function tassementImmersif(){
+  const cap = capCamera(), perte = 1 - SINUS_INCLINAISON;
+  return [1 - perte * Math.sin(cap) ** 2, 1 - perte * Math.cos(cap) ** 2];
+}
+
 export function libellesWebgl(){
   if (!GL.actif) return;
   // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
   if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
   const p = P(), items = [], pastilles = [], dessines = new Map();
-  posePaliers(p.stands, p.zones);
+  posePaliers(p.stands, p.zones, GL.camera ? tassementImmersif() : undefined);
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && !visibleSurPlan(z))) continue;

@@ -527,8 +527,8 @@ annonce
 
 Importé par :
 
-ambiance · environs · logos-stands · outil-comptoir · outil-escalier · outil-foodtruck
-trace-itineraire · vue · vue-etat · webgl
+ambiance · environs · libelles · logos-stands · outil-comptoir · outil-escalier
+outil-foodtruck · trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 339 l. → plan, plan-admin
 
@@ -1668,20 +1668,21 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 310 l. → plan, plan-admin
+### `modules/libelles.mjs` — 321 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.52 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.53 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`libelles` 59 · `libelleZone` 138 · `emplacementWebgl` 166 · `libellesWebgl` 227
+`libelles` 60 · `libelleZone` 139 · `emplacementWebgl` 167 · `tassementImmersif` 233
+`libellesWebgl` 238
 
 Importe :
 
-calques-dessin · cartouche-poi · decor · dessin · dom · donnees · filtre · forme-choisie
-libelle-place · logos-stands · nom-emplacement · noms-zones · polices-plan · texte
-texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
+calques-dessin · camera · cartouche-poi · decor · dessin · dom · donnees · filtre
+forme-choisie · libelle-place · logos-stands · nom-emplacement · noms-zones · polices-plan
+texte · texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
 
 Importé par :
 
@@ -1902,7 +1903,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 281 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 293 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -1910,8 +1911,8 @@ Fonctions :
 
 `coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
 `facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
-`nomCouche` 126 · `nomsUniformes` 161 · `posePaliers` 189 · `placesDuNom` 208
-`tailleMax` 218 · `habilleNom` 245 · `libelleDroit` 263
+`nomCouche` 126 · `nomsUniformes` 161 · `posePaliers` 197 · `placesDuNom` 218
+`tailleMax` 230 · `habilleNom` 257 · `libelleDroit` 275
 
 Importe :
 

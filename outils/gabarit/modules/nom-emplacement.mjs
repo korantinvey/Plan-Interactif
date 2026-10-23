@@ -167,6 +167,13 @@ export const nomsUniformes = () => conf("_nomsUniformes").visible === true;
    module ne peut pas l'importer. */
 let paliers = [];
 let debords = new Map();
+/* Ce que la vue immersive laisse voir de chaque dimension d'un stand, en x et
+   en y : le sol s'y tasse dans la profondeur, quand les noms, dressés face à
+   l'œil, gardent leur taille. Mesuré sur le sol entier, un nom qui en
+   remplissait la profondeur — un nom couché, surtout, ou un nom qui déborde
+   sur l'allée — passait à l'écran sur le stand de derrière (FEP27,
+   23 octobre 2026). À plat, rien ne se tasse. */
+let tassement = [1, 1];
 /* Les débords comparent chaque stand à tous les autres : on ne les refait
    que si le pavillon a changé — un autre pavillon, un stand repris ou
    déplacé —, et non à chaque arrêt de la vue. */
@@ -185,9 +192,11 @@ let cleDebords = "";
  *
  * @param {{ nom?: string, code?: string, c?: number[], bb?: number[] }[]} stands
  * @param {{ c?: number[], bb?: number[] }[]} zones
+ * @param {number[]} [tasse] ce que la vue laisse voir de chaque dimension, en x et en y
  */
-export function posePaliers(stands, zones){
+export function posePaliers(stands, zones, tasse = [1, 1]){
   paliers = [];
+  tassement = tasse;
   if (!nomsUniformes()){ debords = new Map(); cleDebords = ""; return; }
   let cle = stands.length + ":" + zones.length;
   for (const o of [...stands, ...zones]) if (o.c && o.bb) cle += "|" + o.c.join(",") + "," + o.bb.join(",");
@@ -203,10 +212,13 @@ export function posePaliers(stands, zones){
 }
 
 /* Les places où le nom peut s'écrire : celle du stand d'abord, puis celles
-   qu'offrent les allées, du plus sobre au plus large. Un stand couché lit
-   les débords en travers, sa largeur étant la hauteur sur le plan. */
+   qu'offrent les allées, du plus sobre au plus large, telles que la vue les
+   montre. Un stand couché lit les débords et le tassement en travers, sa
+   largeur étant la hauteur sur le plan. */
 function placesDuNom(s, w, h, tourne){
-  return [[w, h], ...(debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])];
+  const [tx, ty] = tourne ? [tassement[1], tassement[0]] : tassement;
+  return [[w, h], ...(debords.get(s) || []).map(([dw, dh]) => tourne ? [w + dh, h + dw] : [w + dw, h + dh])]
+    .map(([pw, ph]) => [pw * tx, ph * ty]);
 }
 
 /* Les lignes qu'un nom harmonisé peut prendre quand cela le fait monter d'un
