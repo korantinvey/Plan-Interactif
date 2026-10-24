@@ -86,6 +86,12 @@ export const options = {
     http_req_failed: [{ threshold: "rate<0.01", abortOnFail: true, delayAbortEval: "30s" }],
     "http_req_duration{nom:plan}": ["p(95)<1500"],
     "http_req_duration{nom:entete}": ["p(95)<800"],
+    /* Bornes larges : elles ne sont là que pour que le bilan détaille chaque
+       sorte d'appel — k6 ne ventile par étiquette que ce qui a un seuil. */
+    "http_req_duration{nom:page}": ["p(95)<5000"],
+    "http_req_duration{nom:fond}": ["p(95)<5000"],
+    "http_req_duration{nom:logos}": ["p(95)<5000"],
+    "http_req_duration{nom:mesure}": ["p(95)<5000"],
   },
 };
 
