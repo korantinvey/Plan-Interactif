@@ -42,7 +42,7 @@ import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
-import { couchesLogos, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
+import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
 import { imageSure } from "./sur.mjs";
@@ -119,6 +119,13 @@ export const GL = {
   camera: false,
   // la reconversion en cours change le plan entier de hauteur : sans mouvement
   massif: false,
+  /* La première image, posée par étapes — voir « Une sorte de couche par
+     image » : les sortes déjà entrées, et s'il en reste à faire entrer. */
+  /** @type {Set<string>} */
+  entrees: new Set(),
+  partielle: false,
+  // le programme des logos, préparé au calme une fois le plan montré (`chauffeLogosWebgl`)
+  logosChauds: false, chauffeLogos: false, chauffeDemandee: false,
   /** @type {number[] | null} le sol du hall, sur lequel un volume rend sa transparence */
   sol: null,
 };
@@ -202,6 +209,9 @@ export function monteWebgl(){
   svg.before(hote);
   GL.hote = hote;
   GL.camera = enCamera();
+  // une carte graphique neuve — la première, ou celle d'après un contexte perdu — n'a aucun programme
+  GL.entrees = new Set(); GL.partielle = false;
+  GL.logosChauds = false; GL.chauffeLogos = false; GL.chauffeDemandee = false;
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
     ...TOILE,
@@ -213,6 +223,8 @@ export function monteWebgl(){
     onLoad: poseToileWebgl,
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
     onAfterRender: () => {
+      // la sorte de couche de cette image est prête : la suivante entre à l'image d'après
+      if (GL.partielle){ planifieWebgl(); return; }
       if (GL.pret || !GL.deck.props.layers.length) return;
       GL.pret = true;
       document.documentElement.classList.add("gl-pret");
@@ -678,6 +690,10 @@ function assembleWebgl(enMouvement = false){
         libelles: couchesLibellesWebgl(), phare: couchesPhareNoms() };
       const p = posesSurLePlan;
       out.push(...p.figurants, ...p.logos.map(logosSurLesToits), ...p.libelles.map(animeCouche), ...p.phare);
+      if (GL.chauffeLogos){
+        GL.chauffeLogos = false; GL.logosChauds = true;
+        out.push(...coucheDeChauffe(deck, GL.camera));
+      }
       continue;
     }
     const couches = GL.blocs.get(b) || [];
@@ -694,8 +710,76 @@ function assembleWebgl(enMouvement = false){
     out.push(...apres);
     out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
+  demandeChauffeLogos(out);
+  return parEtapes(out);
+}
+
+/* ------------------------------------------------------------
+   Une sorte de couche par image
+
+   La première image du plan était la plus longue de toute la visite : 1,9 s
+   sur le poste d'essai pour fep27 en vue immersive, dont 1,4 s à attendre
+   que la carte graphique lie les programmes de cinq sortes de couches — 590,
+   370, 175, 150 et 85 ms —, tous dans la même image (CDP, 24 octobre 2026).
+   La sonde en relève jusqu'à 9,2 s chez un visiteur, sans le moindre geste.
+   La bibliothèque lie chaque programme d'un bloc, à la création de sa
+   couche : elle sait le faire en tâche de fond, mais l'a désactivé, et relit
+   aussitôt ce que le programme contient — l'attente ne s'éviterait pas.
+
+   Tant que le plan n'est pas montré (« gl-pret »), le dessin est invisible :
+   chaque image y fait donc entrer une sorte de couche de plus, et les
+   précédentes, déjà liées, ne coûtent plus rien. Le temps passé à lier ne
+   change pas, mais il se découpe en images — la page répond entre deux, et
+   la plus longue ne porte qu'un programme. Le plan paraît entier, à sa
+   première image visible, comme avant. Une sorte se reconnaît à sa classe,
+   à ses extensions et à son relief : ce qui choisit les programmes.
+   ------------------------------------------------------------ */
+const sorteDe = (/** @type {any} */ c) => (c.constructor && c.constructor.layerName || "") + "|" +
+  (c.props.extensions || []).map((/** @type {any} */ e) => e && e.constructor && e.constructor.extensionName).join(",") +
+  (c.props.extruded ? "|relief" : "");
+
+/** Les couches de cette image : toutes une fois le plan montré, sinon celles
+ *  des sortes déjà entrées, et une de plus. */
+function parEtapes(/** @type {any[]} */ couches){
+  GL.partielle = false;
+  if (GL.pret) return couches;
+  let neuve = false;
+  const out = couches.filter(c => {
+    if (!c || !c.props) return true;
+    const k = sorteDe(c);
+    if (GL.entrees.has(k)) return true;
+    if (neuve) return false;
+    neuve = true; GL.entrees.add(k);
+    return true;
+  });
+  GL.partielle = out.length < couches.length;
   return out;
 }
+
+/* Le programme des logos se lie à la première vue de près : en plein geste,
+   au moment où le zoom passe le seuil — 200 ms sur le poste d'essai, en
+   pleine molette (CDP, 24 octobre 2026), cinq fois plus sur la carte
+   graphique intégrée d'un visiteur. Il se lie donc au calme, une fois le plan
+   montré, par une couche des logos sans aucun logo : rien ne se voit, et la
+   bibliothèque garde le programme pour la vraie. */
+function demandeChauffeLogos(/** @type {any[]} */ couches){
+  if (!GL.pret || GL.logosChauds || GL.chauffeDemandee ||
+    !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
+  // déjà posés : leur programme est lié
+  if (couches.some(c => c && c.id === "logos-stands")){ GL.logosChauds = true; return; }
+  GL.chauffeDemandee = true;
+  const deckAvant = GL.deck;
+  const essaie = () => {
+    if (GL.deck !== deckAvant || !GL.actif) return;
+    // un geste en cours ne doit rien attendre : on repasse au prochain creux
+    if (GL.geste){ auCreux(essaie); return; }
+    GL.chauffeLogos = true;
+    planifieWebgl();
+  };
+  auCreux(essaie);
+}
+const auCreux = (/** @type {() => void} */ f) => window.requestIdleCallback
+  ? requestIdleCallback(f, { timeout: 4000 }) : setTimeout(f, 1500);
 
 /* Le texte SDF garde des bords nets quand il grandit, mais il se désagrège
    sous une douzaine de pixels : les noms de la vue d'ensemble devenaient des
