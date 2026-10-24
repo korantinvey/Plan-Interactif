@@ -2816,21 +2816,21 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 618 l. → plan, plan-admin
+### `modules/sonde.mjs` — 638 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
 `sur` 59 · `ms` 60 · `enCreux` 61 · `uuid` 64 · `echantillonne` 80 · `vue0` 91
-`nouvelleVisite` 99 · `vueDuMoment` 121 · `commence` 123 · `sorte` 133 · `clos` 135
-`relance` 151 · `image` 157 · `ecouteGestes` 184 · `nomDuScript` 221 · `gel` 228
-`ecouteNavigateur` 242 · `memoire` 254 · `contexteDuPlan` 267 · `lisAppareil` 279
-`finDesDonnees` 302 · `leChargement` 322 · `fluidite` 338 · `laCarte` 346
-`resumeSonde` 367 · `octets` 391 · `coupe` 394 · `tronque` 405 · `fraiche` 437
-`litLaFile` 440 · `ecritLaFile` 448 · `retire` 460 · `corps` 463 · `versionDesPages` 471
-`envoieUne` 482 · `pousse` 508 · `actif` 533 · `envoie` 537 · `brancheSonde` 562
-`demarre` 575
+`nouvelleVisite` 99 · `vueDuMoment` 122 · `commence` 124 · `sorte` 134 · `clos` 136
+`relance` 152 · `image` 158 · `ecouteGestes` 185 · `nomDuScript` 222 · `gel` 229
+`ecouteNavigateur` 243 · `memoire` 274 · `contexteDuPlan` 287 · `lisAppareil` 299
+`finDesDonnees` 322 · `leChargement` 342 · `fluidite` 358 · `laCarte` 366
+`resumeSonde` 387 · `octets` 411 · `coupe` 414 · `tronque` 425 · `fraiche` 457
+`litLaFile` 460 · `ecritLaFile` 468 · `retire` 480 · `corps` 483 · `versionDesPages` 491
+`envoieUne` 502 · `pousse` 528 · `actif` 553 · `envoie` 557 · `brancheSonde` 582
+`demarre` 595
 
 Importe :
 
