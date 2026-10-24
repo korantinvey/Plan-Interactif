@@ -4,7 +4,7 @@
  *
  *   k6 run -e SALON=<slug> outils/essais/charge-k6.mjs
  *        [-e BASE=https://…] [-e PIC=5] [-e PALIER=120] [-e VISITE=60]
- *        [-e BUDGET=50000] [-e LOGOS=0]
+ *        [-e BUDGET=50000] [-e LOGOS=0] [-e ECRIRE=1]
  *
  * Le même parcours que `charge.js`, celui de la page d'un nouveau venu : la
  * page, l'entête, le plan sous sa version, le fond du premier pavillon, les
@@ -23,7 +23,9 @@
  * Les mesures visent un salon qui n'existe pas, pour la raison que donne
  * `charge.js` : toute la chaîne travaille, rien ne rejoint le rapport d'un
  * vrai salon. Les compteurs que les visiteurs se disputent dans la base ne
- * sont donc pas éprouvés ici.
+ * sont donc pas éprouvés ici — sauf `ECRIRE=1`, qui écrit dans le salon visé
+ * en connaissance de cause : sa carte de chaleur se remet ensuite à zéro
+ * depuis l'administration (`reinitialise_compteurs`).
  *
  * Avant de partir, l'essai fait son devis. L'offre gratuite de Cloudflare
  * borne le Worker à cent mille appels par jour et le stockage à autant de
@@ -44,7 +46,8 @@ const LOGOS = __ENV.LOGOS !== "0";
 /* Le découpage de la page : d'autres lots seraient d'autres clés, absentes du
    cache, et chacune y coûterait une écriture — il n'en accepte que mille. */
 const VIGNETTES_PAR_LOT = 96;
-const SALON_MESURE = "essai-de-charge-inexistant";
+const ECRIRE = __ENV.ECRIRE === "1";
+const SALON_MESURE = ECRIRE ? SALON : "essai-de-charge-inexistant";
 
 if (!SALON) throw new Error("Nommez le salon : k6 run -e SALON=<slug> outils/essais/charge-k6.mjs");
 
@@ -121,6 +124,7 @@ export function setup() {
   const appels = OUVERTURES * (1 + lectures + mesures);
   console.log(`Salon ${SALON}, version ${v} : ${fond ? "un fond" : "pas de fond"}, ` +
     `${triees.length} logos en ${lots.length} lots.`);
+  console.log(`Mesures ${ECRIRE ? "ÉCRITES dans le salon " + SALON : "adressées à un salon inexistant (rien d'écrit)"}.`);
   console.log(`Devis : ${OUVERTURES} ouvertures, ${appels} appels du Worker, ` +
     `${OUVERTURES * lectures} lectures du stockage. Quota gratuit : 100 000 de chaque par jour.`);
   if (appels > BUDGET || OUVERTURES * lectures > BUDGET) {
@@ -164,6 +168,6 @@ export default function (releve) {
       { headers: { "Content-Type": "application/json" }, tags: { nom: "mesure" },
         // le salon inexistant répond « introuvable » : c'est la réponse attendue,
         // celle d'une chaîne qui a travaillé jusqu'à la base sans rien y écrire
-        responseCallback: http.expectedStatuses(204, 404) });
+        responseCallback: ECRIRE ? http.expectedStatuses(204) : http.expectedStatuses(204, 404) });
   }
 }
