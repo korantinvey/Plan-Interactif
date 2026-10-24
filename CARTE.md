@@ -118,7 +118,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-divers.css` — 315 l. → demo.html, plan-smcl.html
 
-### `_styles-jetons.css` — 293 l. → demo.html, plan-smcl.html
+### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles-parcours.css` — 1659 l. → demo.html, plan-smcl.html
 
@@ -372,13 +372,13 @@ Importé par :
 
 synchronisation
 
-### `modules/bande-admin.mjs` — 113 l. → plan-admin
+### `modules/bande-admin.mjs` — 124 l. → plan-admin
 
 - l.1 · 10. Mode administration — son ouverture, et la bande de l'outil
 
 Fonctions :
 
-`activeAdmin` 31
+`activeAdmin` 33
 
 Éléments :
 
@@ -386,8 +386,8 @@ Fonctions :
 
 Importe :
 
-acces-admin · affiche-ici · dessin · dom · enregistrement · mode-admin · ordre-trace
-reglages · rendu · ton-barre
+acces-admin · affiche-ici · demarrage · dessin · dom · donnees · enregistrement · mode-admin
+ordre-trace · reglages · rendu · ton-barre
 
 Importé par :
 
@@ -771,7 +771,8 @@ vue
 
 Importé par :
 
-acces-admin · choix-ambiance · enregistrement · fiche-zone · lancement · releve · sonde
+acces-admin · bande-admin · choix-ambiance · enregistrement · fiche-zone · lancement
+releve · sonde
 
 ### `modules/depot-image.mjs` — 73 l. → plan-admin
 
@@ -885,17 +886,17 @@ Fonctions :
 
 Importé par :
 
-affiche-ici · aimants · ambiance · apercus · apparence · appels · application · batiments
-borne · calage-carte · calques-dessin · cartouche-poi · chaleur · charge-annoncee
-configuration · corps-fiche · demarrage · dessin · distinctions · edition · emplacements
-enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici · index-salon
-installation · itineraire · journee · libelles · logos-stands · mesure · mini-carte · nappe
-noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu · partage · pile
-placement-libelles · points-interet · rappels · recherche · reglage-application
-reglage-fiche · reglage-recherche · reglage-suggestion · reglages · releve · rendu
-reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor · suggestion
-tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire · tutoriel
-volets · vous-etes-ici · webgl
+affiche-ici · aimants · ambiance · apercus · apparence · appels · application · bande-admin
+batiments · borne · calage-carte · calques-dessin · cartouche-poi · chaleur
+charge-annoncee · configuration · corps-fiche · demarrage · dessin · distinctions · edition
+emplacements · enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici
+index-salon · installation · itineraire · journee · libelles · logos-stands · mesure
+mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu
+partage · pile · placement-libelles · points-interet · rappels · recherche
+reglage-application · reglage-fiche · reglage-recherche · reglage-suggestion · reglages
+releve · rendu · reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor
+suggestion · tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire
+tutoriel · volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 

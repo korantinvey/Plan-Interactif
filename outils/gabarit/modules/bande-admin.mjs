@@ -20,6 +20,8 @@ import { majAttente, pousseConfiguration, brancheSauvegarde } from "./enregistre
 import { MONTE } from "./rendu.mjs";
 import { poseTonDeLaBarre } from "./ton-barre.mjs";
 import { ouvreReglages } from "./reglages.mjs";
+import { DATA } from "./donnees.mjs";
+import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 
@@ -56,6 +58,15 @@ export function activeAdmin(){
      onglet ne s'appelant « [object PointerEvent] », la fenêtre s'ouvrait sur
      rien : ni onglet actif, ni contenu. */
   if (r){ r.hidden = false; r.onclick = () => ouvreReglages(); }
+  /* L'identité se vérifie bien avant que le plan n'arrive — quatre secondes
+     sur l'admin de la FEP — et les réglages lisent le salon à l'ouverture : un
+     clic dans l'intervalle ouvrait une fenêtre qui tombait sur « DATA » vide
+     (relevé neuf fois en production, `reglage-fiche.mjs`). Le bouton attend
+     donc le plan, grisé ; si l'API ne répond jamais, il n'y a rien à régler. */
+  if (r && !DATA){
+    r.disabled = true;
+    PLAN_DEMARRE.suis(() => { r.disabled = false; });
+  }
   /* Les commandes de l'outil quittent le bandeau du salon pour la bande du
      dessus, dans l'ordre où l'on s'en sert. Elles y portaient l'habillage
      choisi par l'exploitant — cerclées sous « Billet », à angle vif sous
