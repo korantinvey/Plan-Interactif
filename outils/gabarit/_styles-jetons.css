@@ -241,6 +241,10 @@ html.mode-admin .topbar{padding-top:8px;min-height:60px}
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+/* Un bouton qui attend le plan (les réglages, avant l'API) le montre : pâli,
+   et sans la main du survol qui promettait un clic. */
+.iconbtn:disabled{opacity:.45;cursor:progress}
+.iconbtn:disabled:hover{border-color:var(--line);color:var(--ink-2)}
 .iconbtn svg{width:15px;height:15px}
 
 /* ------------------------------------------------------------------
