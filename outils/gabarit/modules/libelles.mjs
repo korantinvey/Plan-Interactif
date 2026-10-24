@@ -22,14 +22,16 @@ import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { parId, state, P } from "./donnees.mjs";
 import { P_NOM, P_CODE, confieAuxPolices } from "./polices-plan.mjs";
-import { largeur, habille, lignesSvg, ancre, place } from "./texte-plan.mjs";
+import { largeur, habille, lignesSvg, ancre, place, coupes } from "./texte-plan.mjs";
+import { rectangleLibre } from "./place-libre.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
+import { capCamera, SINUS_INCLINAISON } from "./camera.mjs";
 import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
 import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce, nomCouche,
-  habilleNom, poseCorpsUniforme }
+  habilleNom, posePaliers, nomsPivotes }
   from "./nom-emplacement.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./trace-itineraire.mjs";
@@ -56,6 +58,57 @@ export { libelleEmplacement, coexChoisit };
    `texte-plan.mjs` — le placement à la main (`libelle-place.mjs`) les lit
    aussi, et ne peut importer ce module-ci. */
 
+/* ------------------------------------------------------------
+   Les emplacements découpés.
+
+   Un emplacement peut porter, posés sur lui, les stands dessinés pour les
+   sociétés qu'il héberge, ou des stands ajoutés et liés à lui : chacun écrit
+   son nom sur sa part. Le nom de l'emplacement s'écrit alors dans la partie
+   restée libre (`place-libre.mjs`), et se tait s'il n'en reste plus — sauf
+   choisi : on le cherche, il doit se trouver.
+   ------------------------------------------------------------ */
+let _libres = { cle: "", map: new Map() };
+
+/**
+ * Pour chaque emplacement du pavillon qui porte des parts, sa place libre —
+ * `{ c, bb }`, un centre et une taille comme ceux d'un emplacement — ou
+ * `null` s'il ne lui en reste pas. Les autres n'y figurent pas.
+ */
+function partsLibres(p){
+  const trous = new Map();
+  const ajoute = (id, b) => { if (!trous.has(id)) trous.set(id, []); trous.get(id).push(b); };
+  for (const s of p.stands){
+    if (s.lien && s.lien.stand && s.c && s.bb)
+      ajoute(s.lien.stand, [s.c[0] - s.bb[0] / 2, s.c[1] - s.bb[1] / 2, s.c[0] + s.bb[0] / 2, s.c[1] + s.bb[1] / 2]);
+  }
+  for (const cal of mesCalques()){
+    if (cal.visible === false) continue;
+    for (const f of cal.formes) if (f.t === "stand" && f.stand && f.pts && f.pts.length) ajoute(f.stand, boite(f));
+  }
+  const hotes = p.stands.filter(s => trous.has(s.id) && s.c && s.bb);
+  /* Le calcul essaie des dizaines de milliers de rectangles par emplacement :
+     on ne le refait que si une part, un emplacement ou un nom a changé, et
+     non à chaque arrêt de la vue. */
+  const cle = (nomsPivotes() ? "v" : "") + hotes.map(s => s.id + ":" + (s.nom || "") + ":" + s.c.join() + ":" + s.bb.join() + ":" +
+    trous.get(s.id).map(b => b.map(v => v.toFixed(2)).join()).join(";")).join("|");
+  if (cle === _libres.cle) return _libres.map;
+  const map = new Map();
+  for (const s of hotes){
+    const b = [s.c[0] - s.bb[0] / 2, s.c[1] - s.bb[1] / 2, s.c[0] + s.bb[0] / 2, s.c[1] + s.bb[1] / 2];
+    // la taille que le nom prendrait, droit ou couché : les mesures de « libelleDroit »
+    const c = s.nom ? coupes(s.nom, P_NOM) : [];
+    const taille = (w, h) => c.length
+      ? Math.max(...c.map(x => Math.min(w * .9 / x.w, h * .62 / (x.n * 1.18), 2.4)))
+      : Math.min(w, h);
+    const note = (w, h) => Math.max(taille(w, h), nomsPivotes() && h > w * 1.25 ? taille(h, w) : 0);
+    const r = rectangleLibre(b, trous.get(s.id), note);
+    if (r === b) continue;
+    map.set(s, r ? { c: [(r[0] + r[2]) / 2, (r[1] + r[3]) / 2], bb: [r[2] - r[0], r[3] - r[1]] } : null);
+  }
+  _libres = { cle, map };
+  return map;
+}
+
 export function libelles(){
   if (GL.actif){
     libellesWebgl();
@@ -70,8 +123,9 @@ export function libelles(){
     return;
   }
   const l = $("labels"), p = P();
-  // la taille commune des noms, si l'exploitant l'a choisie, avant tout nom écrit
-  poseCorpsUniforme(p.stands);
+  const libres = partsLibres(p);
+  // les paliers des noms, si l'exploitant les a choisis, avant tout nom écrit
+  posePaliers(p.stands, p.zones, undefined, libres);
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
   const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
@@ -116,8 +170,11 @@ export function libelles(){
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
-    const ps = place(s);
-    out += groupe(s, libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM,
+    // découpé, il écrit dans sa part libre ; entièrement découpé, il se tait
+    const lib = sel ? undefined : libres.get(s);
+    if (lib === null) continue;
+    const ps = lib ? lib.bb : place(s);
+    out += groupe(s, libelleEmplacement(s, lib ? lib.c : ancre(s), ps[0], ps[1], sel, pxParM,
                                         placementLibelle(s)));
   }
 
@@ -173,11 +230,15 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
   const pt = tourne ? (x, y) => [xy[0] + (y - xy[1]), xy[1] - (x - xy[0])] : (x, y) => [x, y];
   const angle = tourne ? 90 : 0;
   const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
-  const nom = s.nom ? habilleNom(s.nom, w, h) : null;
+  const nom = s.nom ? habilleNom(s, w, h, tourne) : null;
   const fn = nom ? nom.f * k : 0;
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
   const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
   const c = sel ? " sel" : "";
+  /* Le nom qui déborde d'un seul côté glisse vers l'allée, son numéro avec
+     lui — comme « libelleDroit », dans le repère du nom, avant le quart de
+     tour du nom couché. */
+  const cx = xy[0] + (nom && nom.dx || 0), cy = xy[1] + (nom && nom.dy || 0);
   // les seuils de « libelleEmplacement », dits en zoom : 2^zoom pixels par mètre
   const seuil = t => tout ? -LOIN : Math.log2(t);
   const zN = nom ? seuil(4.5 / fn) : LOIN;
@@ -199,7 +260,7 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
      placement — il est écrit en travers. */
   const pose = (lignes, f, x, y, cls, z0, z1) =>
     noms.push({ text: lignes.join("\n"), position: pt(x, y), angle, taille: f, cls, z0, z1, pick, lbl: s.id,
-      ...(tourne ? {} : { centre: [xy[0], xy[1]], ecart: y - xy[1] }) });
+      ...(tourne ? {} : { centre: [cx, cy], ecart: y - cy }) });
   const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
@@ -207,13 +268,13 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
     const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
     if (!nomLisible && !codeLisible) continue;
     const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0, hCode = codeLisible ? fc * 1.25 : 0;
-    const haut = xy[1] - (hNom + hCode) / 2;
-    if (nomLisible) pose(nom.lignes, fn, xy[0], haut + hNom / 2, "nm" + c, z0, z1);
+    const haut = cy - (hNom + hCode) / 2;
+    if (nomLisible) pose(nom.lignes, fn, cx, haut + hNom / 2, "nm" + c, z0, z1);
     if (!codeLisible) continue;
     // le numéro a sa ligne de base à 0,92 corps sous le nom ; son milieu, un tiers plus haut
     const milieu = haut + hNom + fc * .59;
-    if (!past){ pose([s.code], fc, xy[0], milieu, "cd" + c, z0, z1); continue; }
-    const g = xy[0] - (past.wCode + past.ecart + past.wPast) / 2;
+    if (!past){ pose([s.code], fc, cx, milieu, "cd" + c, z0, z1); continue; }
+    const g = cx - (past.wCode + past.ecart + past.wPast) / 2;
     const xp = g + past.wCode + past.ecart, hp = fc * 1.16;
     // le milieu de la pastille : sa boîte part à 0,84 corps au-dessus de la ligne de base
     const yp = haut + hNom + fc * (.92 - .84 + .58);
@@ -224,12 +285,23 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
   }
 }
 
+/* Ce que la vue immersive laisse voir de chaque dimension du sol. La
+   profondeur suit le cap : un point s'éloigne de l'œil de « x·sin(cap) +
+   y·cos(cap) » (`webgl.mjs` `versEcran`), et c'est dans ce sens-là que
+   l'inclinaison tasse le sol. Une boîte droite se tasse donc en x et en y
+   d'autant que chacun de ses côtés suit ce sens. */
+function tassementImmersif(){
+  const cap = capCamera(), perte = 1 - SINUS_INCLINAISON;
+  return [1 - perte * Math.sin(cap) ** 2, 1 - perte * Math.cos(cap) ** 2];
+}
+
 export function libellesWebgl(){
   if (!GL.actif) return;
   // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
   if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
   const p = P(), items = [], pastilles = [], dessines = new Map();
-  poseCorpsUniforme(p.stands);
+  const libres = partsLibres(p);
+  posePaliers(p.stands, p.zones, GL.camera ? tassementImmersif() : undefined, libres);
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
@@ -246,11 +318,24 @@ export function libellesWebgl(){
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
-    const sel = s.id === state.sel && !decoupe;
-    if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
-    const ps = place(s), reg = placementLibelle(s);
+    /* Un stand ajouté et lié est choisi quand sa société l'est, et suit le
+       filtre de celle-ci — comme dans « libelles ». Choisi seulement par son
+       propre identifiant, que la fiche ne sélectionne jamais, il n'était
+       jamais forcé : son nom ne s'écrivait qu'au zoom des noms ordinaires,
+       qu'un nom harmonisé (`nom-emplacement.mjs` `nomsUniformes`) pouvait
+       ne pas atteindre (FEP27, 23 octobre 2026). */
+    const hote = s.lien && parId.get(s.lien.stand);
+    const sel = hote
+      ? s.lien.stand === state.sel && s.lien.soc === state.selSoc
+      : s.id === state.sel && !decoupe;
+    const vu = hote ? visibleSociete(hote, s.lien.soc) : visibleSurPlan(s);
+    if ((!sel && !vu) || (!s.code && !s.nom)) continue;
+    // comme en SVG : la part libre d'un emplacement découpé, ou rien
+    const lib = sel ? undefined : libres.get(s);
+    if (lib === null) continue;
+    const ps = lib ? lib.bb : place(s), reg = placementLibelle(s);
     const avant = items.length, avantPastilles = pastilles.length;
-    emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
+    emplacementWebgl(s, decaleLibelle(lib ? lib.c : ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
     // de près, le logo posé sur le toit tient lieu de nom (`logos-stands.mjs`)
     if (logoPose(s)){ cedeAuLogo(items, avant); cedeAuLogo(pastilles, avantPastilles); }
   }

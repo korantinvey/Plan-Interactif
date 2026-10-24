@@ -133,14 +133,14 @@ export function voletAdmin(hote){
     bloc.appendChild(l);
   }
 
-  /* La même taille pour tous les noms des stands, celle du plus petit : un
-     choix de régularité contre la lisibilité de loin, éteint par défaut pour
-     la même raison (`nom-emplacement.mjs` `poseCorpsUniforme`). */
+  /* Les noms des stands en trois tailles, les plus grands plafonnés : un
+     choix de régularité, éteint par défaut pour la même raison
+     (`nom-emplacement.mjs` `posePaliers`). */
   {
     const l = document.createElement("label");
     l.innerHTML = '<input type="checkbox"><span></span>';
     l.querySelector("span").textContent =
-      "Écrire tous les noms des stands à la même taille, celle du plus petit";
+      "Harmoniser la taille des noms des stands — trois tailles, les plus grands plafonnés";
     const c = l.querySelector("input");
     c.checked = nomsUniformes();
     c.onchange = e => {

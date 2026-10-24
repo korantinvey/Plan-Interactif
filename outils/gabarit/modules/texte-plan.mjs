@@ -81,9 +81,13 @@ function decoupe(txt, n){
   }
   return out.length === n ? out : null;
 }
-export function habille(txt, w, h, maxPolice, police){
+/* Trois lignes au plus d'ordinaire : au-delà, un nom devient une colonne de
+   mots qui se lit comme une liste. Les noms harmonisés en accordent jusqu'à
+   cinq, et seulement au nom que cela fait monter d'un palier
+   (`nom-emplacement.mjs` `habilleNom`). */
+export function habille(txt, w, h, maxPolice, police, maxLignes = 3){
   let best = null;
-  for (let n = 1; n <= 3; n++){
+  for (let n = 1; n <= maxLignes; n++){
     const lignes = decoupe(txt, n);
     if (!lignes) continue;
     const plusLarge = Math.max(...lignes.map(l => largeur(l, police)));
@@ -91,6 +95,20 @@ export function habille(txt, w, h, maxPolice, police){
     if (!best || f > best.f) best = { f, lignes };
   }
   return best;
+}
+/**
+ * Les coupes d'un texte en une, deux ou trois lignes, chacune avec la largeur
+ * de sa plus longue ligne pour une police de corps 1. De quoi estimer la
+ * taille qu'un nom prendrait dans un grand nombre de places sans refaire ses
+ * coupes à chaque fois (`libelles.mjs` `partsLibres`).
+ */
+export function coupes(txt, police, maxLignes = 3){
+  const out = [];
+  for (let n = 1; n <= maxLignes; n++){
+    const lignes = decoupe(txt, n);
+    if (lignes) out.push({ n, w: Math.max(...lignes.map(l => largeur(l, police))) });
+  }
+  return out;
 }
 export function lignesSvg(lignes, f, x, yCentre, cls){
   const dep = yCentre - ((lignes.length - 1) * f * 1.18) / 2 + f * .33;

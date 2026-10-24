@@ -528,8 +528,8 @@ annonce
 
 Importé par :
 
-ambiance · environs · logos-stands · outil-comptoir · outil-escalier · outil-foodtruck
-trace-itineraire · vue · vue-etat · webgl
+ambiance · environs · libelles · logos-stands · outil-comptoir · outil-escalier
+outil-foodtruck · trace-itineraire · vue · vue-etat · webgl
 
 ### `modules/cartouche-poi.mjs` — 339 l. → plan, plan-admin
 
@@ -734,6 +734,18 @@ Fonctions :
 Importé par :
 
 apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
+
+### `modules/debord-allees.mjs` — 116 l. → plan, plan-admin
+
+- l.1 · Le débord des noms sur les allées — la place libre autour d'un stand
+
+Fonctions :
+
+`boiteDe` 21 · `contient` 22 · `croise` 23 · `debordsAuxAllees` 62
+
+Importé par :
+
+nom-emplacement
 
 ### `modules/decor.mjs` — 743 l. → plan, plan-admin
 
@@ -1659,20 +1671,21 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 300 l. → plan, plan-admin
+### `modules/libelles.mjs` — 385 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.52 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.54 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`libelles` 59 · `libelleZone` 138 · `emplacementWebgl` 166 · `libellesWebgl` 227
+`partsLibres` 77 · `libelles` 112 · `libelleZone` 195 · `emplacementWebgl` 223
+`tassementImmersif` 293 · `libellesWebgl` 298
 
 Importe :
 
-calques-dessin · cartouche-poi · decor · dessin · dom · donnees · filtre · forme-choisie
-libelle-place · logos-stands · nom-emplacement · noms-zones · polices-plan · texte
-texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
+calques-dessin · camera · cartouche-poi · decor · dessin · dom · donnees · filtre
+forme-choisie · libelle-place · logos-stands · nom-emplacement · noms-zones · place-libre
+polices-plan · texte · texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
 
 Importé par :
 
@@ -1893,20 +1906,21 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 210 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 331 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
 Fonctions :
 
-`coexComptes` 32 · `coexChoisit` 33 · `ligneCode` 49 · `decaleLibelle` 83
-`facteurLibelle` 84 · `libelleForce` 85 · `libelleEmplacement` 96 · `nomsPivotes` 120
-`nomCouche` 122 · `nomsUniformes` 146 · `poseCorpsUniforme` 165 · `habilleNom` 187
-`libelleDroit` 192
+`coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
+`facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
+`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 212 · `placesDuNom` 240
+`tailleMax` 254 · `cibleDe` 269 · `habilleNom` 296 · `libelleDroit` 310
 
 Importe :
 
-configuration · libelle-place · polices-plan · texte · texte-plan
+configuration · debord-allees · libelle-place · paliers-noms · polices-plan · texte
+texte-plan
 
 Importé par :
 
@@ -2110,6 +2124,18 @@ Importé par :
 
 gestes-admin
 
+### `modules/paliers-noms.mjs` — 59 l. → plan, plan-admin
+
+- l.1 · Les paliers des noms — trois tailles pour tout un pavillon
+
+Fonctions :
+
+`paliersDe` 40 · `palierDe` 55
+
+Importé par :
+
+nom-emplacement
+
 ### `modules/panneau-criteres.mjs` — 41 l. → plan, plan-admin
 
 - l.1 · Le panneau des critères déplié — sa relecture, et le replier
@@ -2211,6 +2237,18 @@ outil-dessin · placement-libelles · reprise-emplacements · secteurs · texte
 Importé par :
 
 plan-admin
+
+### `modules/place-libre.mjs` — 68 l. → plan, plan-admin
+
+- l.1 · La place libre d'un emplacement découpé — où son nom peut encore s'écrire
+
+Fonctions :
+
+`rectangleLibre` 38
+
+Importé par :
+
+libelles
 
 ### `modules/placement-libelles.mjs` — 234 l. → plan-admin
 
@@ -2944,16 +2982,16 @@ Importé par :
 
 calage-carte · environs · seuil
 
-### `modules/texte-plan.mjs` — 111 l. → plan, plan-admin
+### `modules/texte-plan.mjs` — 129 l. → plan, plan-admin
 
 - l.1 · Le texte sur le plan — sa mesure, sa coupe en lignes, sa place
 - l.18 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.102 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.120 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`mesureTexte` 26 · `largeur` 31 · `remesureTextes` 56 · `decoupe` 71 · `habille` 84
-`lignesSvg` 95 · `ancre` 110 · `place` 111
+`mesureTexte` 26 · `largeur` 31 · `remesureTextes` 56 · `decoupe` 71 · `habille` 88
+`coupes` 105 · `lignesSvg` 113 · `ancre` 128 · `place` 129
 
 Importe :
 
