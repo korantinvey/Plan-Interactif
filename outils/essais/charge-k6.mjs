@@ -161,6 +161,9 @@ export default function (releve) {
     premier = false;
     http.post(BASE + "/api/mesure",
       JSON.stringify({ slug: SALON_MESURE, visiteur: qui, support: "web", gestes }),
-      { headers: { "Content-Type": "application/json" }, tags: { nom: "mesure" } });
+      { headers: { "Content-Type": "application/json" }, tags: { nom: "mesure" },
+        // le salon inexistant répond « introuvable » : c'est la réponse attendue,
+        // celle d'une chaîne qui a travaillé jusqu'à la base sans rien y écrire
+        responseCallback: http.expectedStatuses(204, 404) });
   }
 }
