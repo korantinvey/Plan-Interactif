@@ -56,7 +56,12 @@ export const PAVILLON_QUITTE = creeAnnonce();
 
 /* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
    ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
-   instantané malgré le poids du fond de plan. */
+   instantané malgré le poids du fond de plan.
+
+   Ils naissent vides : leur dessin n'entre qu'au premier affichage du calque,
+   par `apparence.mjs` `styleFond`, que l'apparence appelle juste après chaque
+   montage. Un calque éteint — chez l'exploitant, qui les reçoit tous, c'était
+   l'essentiel du document — n'y pèse plus rien. */
 export function monteHabillage(){
   const c = $("couches");
   c.querySelectorAll(".cal").forEach(g => g.remove());
@@ -64,7 +69,6 @@ export function monteHabillage(){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "cal");
     g.dataset.cle = f.cle;
-    g.innerHTML = f.svg || "";
     c.appendChild(g);
   });
 }

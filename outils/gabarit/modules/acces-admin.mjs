@@ -17,7 +17,7 @@
 import { $ } from "./dom.mjs";
 import { creeAnnonce } from "./annonce.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
-import { charge, SESSION_REFUSEE } from "./demarrage.mjs";
+import { charge, prechargeAdmin, SESSION_REFUSEE } from "./demarrage.mjs";
 
 /** L'accès est accordé : le mode administrateur s'ouvre. La bande de l'outil
  *  l'écoute (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel
@@ -228,11 +228,20 @@ export function brancheAcces(){
     if (ev.key === "Escape" && m && m.open) m.open = false;
   });
 
+  /* Le plan part tout de suite, sous le jeton du poste, s'il n'est pas déjà
+     parti de l'en-tête : il n'attend rien de la vérification qui suit, et sa
+     réponse attendra l'accès pour s'afficher (`demarrage.mjs`
+     `prechargeAdmin`). */
+  prechargeAdmin();
+
   (async () => {
     const cfg = configuration();
     const session = litLocal(CLE_SESSION);
-    if (await sessionValide(cfg, session)){
-      await litProfilA(cfg, session);
+    /* La session et le profil ensemble : l'un n'attend rien de l'autre. Sur
+       une session refusée, le profil lu ne sert pas — la connexion le relira —
+       et ne dit de toute façon rien : l'onglet « Admin » reste caché. */
+    const [valide] = await Promise.all([sessionValide(cfg, session), litProfilA(cfg, session)]);
+    if (valide){
       ACCES_ACCORDE.dis(); poseCompte(); charge();
     }
     else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);

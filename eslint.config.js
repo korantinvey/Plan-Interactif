@@ -72,7 +72,8 @@ module.exports = [
      fonctions de tous sans le dire. Un nom passe d'un module à l'autre par
      `import`, ou par une porte (`confieALaVue`…) quand l'import bouclerait.
      Les noms en `__` font exception : l'amorce que la construction pose
-     avant les scripts (`__plan`, `__entete`, que le démarrage consomme) et
+     avant les scripts (`__plan`, `__entete`, `__planAdmin`, que le
+     démarrage consomme) et
      ce que les essais lisent dans la page (`__essais`, `plan.mjs`). */
   {
     files: ["outils/gabarit/modules/**/*.mjs"],
