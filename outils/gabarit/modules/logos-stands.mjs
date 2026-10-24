@@ -1202,6 +1202,19 @@ function matriceDuToit(large, prof, angle, tasse){
           0, 0, 0, 1];
 }
 
+/** La couche des logos sans aucun logo : elle ne peint rien, mais fait lier
+ *  à la carte graphique le programme de la vraie — mêmes maillage, matière et
+ *  extensions —, au calme plutôt qu'au premier zoom de près (`webgl.mjs`
+ *  `demandeChauffeLogos`). La bibliothèque garde le programme après elle.
+ *  @param {any} L la bibliothèque
+ *  @param {boolean} enVolume */
+export function coucheDeChauffe(L, enVolume){
+  return [new L.SimpleMeshLayer({ id: "logos-stands-chauffe", data: [], mesh: CARRE, pickable: false,
+    material: IMPRIME, extensions: extensionPlanche(L),
+    ...(enVolume ? {} : { parameters: { depthCompare: "always", depthWriteEnabled: false } }),
+    getPosition: () => [0, 0, 0] })];
+}
+
 /** La couche des logos, et le temps qu'elle a pris au fil principal,
  *  compté pour le relevé (`COMPTES_LOGOS`).
  *  @param {Parameters<typeof poseLogos>} a */
