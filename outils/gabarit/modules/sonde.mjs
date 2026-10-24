@@ -100,7 +100,8 @@ function nouvelleVisite(/** @type {boolean} */ chargee){
   V = { id: uuid(), debut: Date.now(), t0: chargee ? 0 : performance.now(), chargee,
     vues: { classique: vue0(), immersif: vue0() }, gesteDepuisEnvoi: false, immersif: false,
     gels: { n: 0, totalMs: 0, maxMs: 0, /** @type {any[]} */ pires: [] },
-    reactivite: { n: 0, pireMs: 0, pireType: /** @type {string | undefined} */ (undefined) },
+    reactivite: { n: 0, pireMs: 0, pireType: /** @type {string | undefined} */ (undefined),
+      survols: { n: 0, pireMs: 0 } },
     /** @type {number[]} */ repeints: [], nRepeints: 0, maxRepeint: 0,
     /** @type {any[]} */ deck: [], nDeck: 0, pertes: 0, picMo: 0 };
 }
@@ -243,13 +244,32 @@ function ecouteNavigateur(){
   observe("largest-contentful-paint", sur((/** @type {any} */ e) => { J.lcp = Math.round(e.startTime); }));
   const loaf = observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts)));
   if (!loaf) observe("longtask", sur((/** @type {any} */ e) => gel(e.duration, null)));
+  /* La réactivité ne retient que ce que le visiteur a fait — appui, relâché,
+     clic, touche : les événements qui portent un `interactionId`. Le
+     navigateur rapporte aussi l'entrée et la sortie du pointeur d'un élément,
+     qui partent seules dès que la page change sous une souris immobile : l'une
+     d'elles, tombée dans une longue image, en prenait toute la durée, et la
+     sonde désignait le survol comme la pire interaction de presque chaque
+     visite sur poste fixe — 8,9 s de « pointerover » pour une image de 9,2 s
+     au chargement, sans geste (relevés du 21 au 24 octobre 2026). Ces
+     survols se comptent à part : ils disent qu'une longue image a eu un
+     témoin, non que le survol coûte. Le champ `survols` marque aussi le
+     changement de règle : les relevés qui ne l'ont pas comptaient tout. */
   observe("event", sur((/** @type {any} */ e) => {
     if (e.duration <= 100) return;
-    const r = V.reactivite;
-    r.n++;
-    if (e.duration > r.pireMs){ r.pireMs = Math.round(e.duration); r.pireType = e.name; }
+    if (e.interactionId > 0){
+      const r = V.reactivite;
+      r.n++;
+      if (e.duration > r.pireMs){ r.pireMs = Math.round(e.duration); r.pireType = e.name; }
+    } else if (SURVOLS.test(e.name)){
+      const s = V.reactivite.survols;
+      s.n++;
+      s.pireMs = Math.max(s.pireMs, Math.round(e.duration));
+    }
   }), { durationThreshold: 104 });
 }
+/** L'entrée et la sortie du pointeur, que rien n'a demandées au visiteur. */
+const SURVOLS = /^(pointer|mouse)(over|out|enter|leave)$/;
 
 function memoire(){
   const m = /** @type {any} */ (performance).memory;
@@ -378,7 +398,7 @@ export function resumeSonde(){
       pires: g.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
         fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
         position: p.url && p.position >= 0 ? p.position : undefined })) },
-    reactivite: { ...V.reactivite },
+    reactivite: { ...V.reactivite, survols: { ...V.reactivite.survols } },
     gpu: laCarte(),
     memoire: { picMo: V.picMo || undefined },
     appareil: lisAppareil(),
