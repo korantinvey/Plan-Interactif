@@ -2121,13 +2121,13 @@ Importé par :
 
 gestes-admin
 
-### `modules/paliers-noms.mjs` — 50 l. → plan, plan-admin
+### `modules/paliers-noms.mjs` — 59 l. → plan, plan-admin
 
 - l.1 · Les paliers des noms — trois tailles pour tout un pavillon
 
 Fonctions :
 
-`paliersDe` 30 · `palierDe` 46
+`paliersDe` 40 · `palierDe` 55
 
 Importé par :
 

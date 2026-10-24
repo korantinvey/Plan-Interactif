@@ -149,8 +149,8 @@ export function nomCouche(s, w, h){
  * Chaque nom prend la plus grande taille que sa place lui permet : un grand
  * stand au nom court écrit en grand, un petit stand au nom long en tout
  * petit, et le plan semble crier certains noms. Allumé, ce réglage ramène les
- * noms du pavillon à trois paliers, le plus haut à la médiane de leurs
- * tailles (`paliers-noms.mjs`) : les grands noms se plafonnent, chacun prend
+ * noms du pavillon à trois paliers, le plus haut à la taille qu'atteignent
+ * les trois quarts d'entre eux (`paliers-noms.mjs`) : les grands noms se plafonnent, chacun prend
  * le plus grand palier qu'il atteint, et aucun ne descend sous ce qu'il
  * pouvait faire chez lui. Caler tous les noms sur le plus petit, comme on l'a
  * d'abord fait, les rendait tous illisibles pour un seul long nom.
