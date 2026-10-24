@@ -307,7 +307,8 @@ const SLUG_DEFAUT = "smcl-2026";
  * si l'entête ne répond pas.
  *
  * Réservé à la page publique : l'administration doit d'abord présenter sa
- * session, sans quoi les brouillons resteraient invisibles.
+ * session, sans quoi les brouillons resteraient invisibles. Elle a sa propre
+ * amorce, `PRECHARGE_ADMIN`.
  */
 const PRECHARGE = [
   "<script>",
@@ -347,7 +348,52 @@ const PRECHARGE = [
   "",
 ].join("\n");
 
-const tpl = fs.readFileSync(D + "/tpl-multi.html", "utf8");
+/**
+ * L'amorce de l'administration : le plan de l'exploitant, demandé sous sa
+ * session dès l'en-tête.
+ *
+ * Il partait après le script de la page — six cents kilo-octets à lire et à
+ * lancer —, puis après la vérification de la session et la lecture du profil,
+ * l'un après l'autre : quatre secondes en médiane avant les données chez
+ * FEP27, contre moins d'une pour le plan public. Rien de cela ne le
+ * conditionne : la demande porte le jeton que le poste garde, et c'est la base
+ * qui le juge — un jeton périmé reçoit un refus, pas un brouillon. La réponse
+ * attend, sans rien afficher, que `acces-admin.mjs` ait accordé l'accès ;
+ * `demarrage.mjs` `charge` la reprend si elle vaut pour le même salon et le
+ * même jeton, et redemande sinon.
+ *
+ * Ni version ni cache, comme la demande qu'elle devance : l'exploitant regarde
+ * l'état réel. Seulement si le poste garde une session et la configuration du
+ * projet — ce que la console et la fenêtre d'accès y écrivent ; sans elles, la
+ * demande part du module, sitôt la page lancée (`prechargeAdmin`). Le salon se
+ * lit dans `?plan=` seulement : l'administration n'est jamais servie sous
+ * `/plan-<salon>`.
+ */
+const PRECHARGE_ADMIN = [
+  "<script>",
+  "{",
+  "  try {",
+  '    const ses = JSON.parse(localStorage.getItem("console-session") || "null");',
+  '    const cfg = JSON.parse(localStorage.getItem("console-config") || "null");',
+  "    if (ses && ses.access_token && cfg && cfg.anonKey) {",
+  '      const slug = new URLSearchParams(location.search).get("plan") || "' + SLUG_DEFAUT + '";',
+  '      const adresse = "' + API + '?slug=" + encodeURIComponent(slug);',
+  '      const jeton = "Bearer " + ses.access_token;',
+  "      const reponse = fetch(adresse, {",
+  '        headers: { apikey: cfg.anonKey, Authorization: jeton }, cache: "no-store" });',
+  /* Une demande qu'on ne reprend pas — la session a changé entre-temps — ne
+     doit pas finir en rejet que personne n'attrape : la page le relèverait
+     comme une erreur. Celle qu'on reprend garde le sien. */
+  "      reponse.catch(() => {});",
+  "      window.__planAdmin = { adresse, jeton, reponse };",
+  "    }",
+  "  } catch (e) {}",
+  "}",
+  "</" + "script>",
+  "",
+].join("\n");
+
+const tpl =fs.readFileSync(D + "/tpl-multi.html", "utf8");
 
 /** Branche la page sur l'API plutôt que sur des données figées. Les réglages
  *  se posent sur le script des modules : c'est `modules/salon.mjs` qui les lit. */
@@ -657,7 +703,7 @@ function poseLieux(t) {
 }
 fs.writeFileSync(W + "plan-admin.html", poseCsp(annonceTot(sortScripts(
   page(poseLieux(lieFeuille(connecte(tplAdmin))),
-       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT })))));
+       { role: "admin", tete: PRECHARGE_ADMIN, pleinEcran: true, salon: SLUG_DEFAUT })))));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",

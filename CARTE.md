@@ -138,7 +138,7 @@ Fonctions :
 `borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
 `tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
 
-### `modules/acces-admin.mjs` — 244 l. → plan-admin
+### `modules/acces-admin.mjs` — 253 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
@@ -289,14 +289,15 @@ Importé par :
 
 reglage-fiche · volets
 
-### `modules/apparence.mjs` — 189 l. → plan, plan-admin
+### `modules/apparence.mjs` — 234 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
 Fonctions :
 
-`styleFond` 28 · `sousCalques` 49 · `styleDataGroupe` 56 · `appliqueCouleursData` 65
-`styleData` 104 · `appliqueApparence` 110 · `appliqueCommandes` 178
+`fondDe` 40 · `remplitCalque` 41 · `styleFond` 50 · `lisSous` 82 · `sousCalques` 84
+`styleDataGroupe` 101 · `appliqueCouleursData` 110 · `styleData` 149
+`appliqueApparence` 155 · `appliqueCommandes` 223
 
 Importe :
 
@@ -753,7 +754,7 @@ Importé par :
 edition · libelles · outil-comptoir · outil-escalier · outil-foodtruck · reglage-comptoir
 reglage-foodtrucks · rendu · webgl
 
-### `modules/demarrage.mjs` — 300 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 338 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
@@ -761,7 +762,8 @@ Fonctions :
 
 `recadreListePosee` 66 · `demarre` 82 · `annonce` 146 · `panneDuChargement` 181
 `CLE_VERSION` 191 · `versionRetenue` 192 · `retientVersion` 195 · `demandePlan` 221
-`charge` 245 · `brancheDemarrage` 282
+`adresseAdmin` 249 · `demandeAdmin` 250 · `prechargeAdmin` 266 · `planAdmin` 279
+`charge` 288 · `brancheDemarrage` 320
 
 Importe :
 
@@ -2602,15 +2604,15 @@ Importé par :
 
 plan
 
-### `modules/rendu.mjs` — 243 l. → plan, plan-admin
+### `modules/rendu.mjs` — 247 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
 Fonctions :
 
-`monteHabillage` 60 · `attributComptoir` 78 · `texteCamions` 87 · `attributCamions` 90
-`baliseZone` 107 · `baliseStand` 126 · `montePlan` 136 · `onglets` 168 · `chargeFond` 198
-`changePlan` 230
+`monteHabillage` 65 · `attributComptoir` 82 · `texteCamions` 91 · `attributCamions` 94
+`baliseZone` 111 · `baliseStand` 130 · `montePlan` 140 · `onglets` 172 · `chargeFond` 202
+`changePlan` 234
 
 Importe :
 

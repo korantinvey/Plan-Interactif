@@ -47,13 +47,15 @@ const DECLARATIONS = [
      se précise là où il sert, par `@type`. Une recherche par balise
      (`querySelector("svg")`) garde son type exact. */
   /* Ce que la page pose elle-même sur `window` avant son script — l'amorce de
-     `genere.js` (`__plan`, `__entete`), la configuration (`PLAN_CONFIG`) —,
+     `genere.js` (`__plan`, `__entete`, et `__planAdmin` chez l'exploitant),
+     la configuration (`PLAN_CONFIG`) —,
      ce qu'une bibliothèque chargée à la demande y pose (`maplibregl`), et ce
      que des navigateurs offrent sans que la norme le dise : chaque usage le
      teste avant de s'en servir. */
   // `__dicoArrive` : l'appel par lequel le dictionnaire anglais à part se déclare (`_langue.js`)
   "interface Window { PLAN_CONFIG?: any; __plan?: Promise<Response> | null; __dicoArrive?: (d: any) => void;",
-  "  __entete?: Promise<any> | null; maplibregl?: any; clipboardData?: DataTransfer; }",
+  "  __entete?: Promise<any> | null; maplibregl?: any; clipboardData?: DataTransfer;",
+  "  __planAdmin?: { adresse: string, jeton: string, reponse: Promise<Response> } | null; }",
   "interface Navigator { connection?: any; getInstalledRelatedApps?: () => Promise<any[]>; }",
   "interface ParentNode {",
   "  querySelector<E extends Element = any>(selectors: string): E | null;",

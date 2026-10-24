@@ -242,18 +242,56 @@ function demandePlan(){
   });
 }
 
+/* La demande du plan de l'exploitant : son adresse, et la seule façon de
+   l'envoyer. En administration, la session passe dans la demande et le
+   brouillon qu'elle rend ne doit rester nulle part : ni version, ni cache, et
+   donc pas d'entête — l'exploitant regarde l'état réel, jamais une copie. */
+const adresseAdmin = () => API + "?slug=" + encodeURIComponent(SLUG);
+const demandeAdmin = (/** @type {Record<string, string>} */ entetes) =>
+  fetch(adresseAdmin(), { headers: entetes, cache: "no-store" });
+
+/**
+ * Le plan de l'exploitant, demandé sans attendre que sa session soit vérifiée.
+ *
+ * L'administration faisait trois allers-retours l'un après l'autre : la
+ * session auprès de l'authentification, puis le profil, puis seulement le
+ * plan — chez FEP27, quatre secondes en médiane avant les données, contre
+ * moins d'une pour le plan public. Or le plan n'attend rien des deux premiers :
+ * il part avec le même jeton, et c'est la base qui le juge — un jeton périmé
+ * reçoit un refus, pas un brouillon. On le demande donc dès qu'on a un jeton
+ * (l'en-tête de la page le fait plus tôt encore : `genere.js`
+ * `PRECHARGE_ADMIN`), et la réponse attend, sans rien afficher, que l'accès
+ * soit accordé : `charge` la prend alors au lieu d'en lancer une autre.
+ */
+export function prechargeAdmin(){
+  if (window.__planAdmin) return;
+  const entetes = entetesApi();
+  if (!entetes.Authorization) return;
+  const reponse = demandeAdmin(entetes);
+  // une demande qu'on ne reprendra pas ne doit pas finir en rejet orphelin
+  reponse.catch(() => {});
+  window.__planAdmin = { adresse: adresseAdmin(), jeton: entetes.Authorization, reponse };
+}
+
+/* La demande partie d'avance, si elle vaut encore : même salon, même jeton.
+   Une connexion faite entre-temps change le jeton — on redemande alors sous le
+   nouveau. Une demande d'avance qui n'aboutit pas ne coûte qu'un essai de plus. */
+function planAdmin(/** @type {Record<string, string>} */ entetes){
+  const pris = window.__planAdmin;
+  window.__planAdmin = null;
+  if (pris && pris.adresse === adresseAdmin() && pris.jeton === entetes.Authorization){
+    return pris.reponse.catch(() => demandeAdmin(entetes));
+  }
+  return demandeAdmin(entetes);
+}
+
 export function charge(){
   annonce("Chargement du plan…");
   const entetes = entetesApi();
-  /* En administration, la session passe dans la demande et le brouillon qu'elle
-     rend ne doit rester nulle part : ni version, ni cache, et donc pas d'entête
-     — l'exploitant regarde l'état réel, jamais une copie.
-     Pour le visiteur, les demandes sont déjà parties depuis l'en-tête de la
-     page : on les récupère plutôt que d'en lancer d'autres. */
-  const depart = entetes.Authorization
-    ? fetch(API + "?slug=" + encodeURIComponent(SLUG),
-            { headers: entetes, cache: "no-store" })
-    : demandePlan();
+  /* Pour le visiteur, les demandes sont déjà parties depuis l'en-tête de la
+     page : on les récupère plutôt que d'en lancer d'autres. L'exploitant
+     reprend de même celle qu'on a lancée avant de vérifier sa session. */
+  const depart = entetes.Authorization ? planAdmin(entetes) : demandePlan();
   window.__plan = window.__entete = null;
   return depart
     .then(r => {
