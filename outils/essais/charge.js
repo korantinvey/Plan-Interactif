@@ -2,12 +2,27 @@
 /**
  * Essai de charge : N visiteurs qui arrivent en même temps sur un plan.
  *
- * Chaque visiteur refait ce que fait la page, dans le même ordre :
- *   1. la page elle-même (`/plan?plan=<salon>`), servie par Cloudflare ;
- *   2. l'entête de version et le plan, en parallèle — comme `demandePlan` ;
- *   3. puis, tant que dure sa visite, un paquet de mesures toutes les trente
+ * Chaque visiteur refait ce que fait la page d'un nouveau venu, dans le même
+ * ordre :
+ *   1. la page elle-même (`/plan-<salon>`), servie par le Worker ;
+ *   2. l'entête de version, puis le plan sous cette version — comme
+ *      `demandePlan` quand l'appareil n'en retient aucune ;
+ *   3. le fond du premier pavillon et les lots de logos, dans l'ordre et le
+ *      découpage de la page (`rendu.mjs`, `recherche.mjs` `chargeUnLot`) : ce
+ *      sont les plus gros transferts, et les lots mêmes que le cache garde ;
+ *   4. puis, tant que dure sa visite, un paquet de mesures toutes les trente
  *      secondes environ — le rythme de `MESURE_DELAI`, qui est un plafond :
  *      un vrai visiteur en envoie plutôt moins.
+ *
+ * Les adresses du fond et des logos se relèvent une fois, avant l'essai : lire
+ * le plan de chaque visiteur fictif ferait travailler la machine qui essaie,
+ * pas le serveur.
+ *
+ * Avant de partir, l'essai dit ce qu'il va dépenser des quotas de Cloudflare.
+ * L'offre gratuite borne le Worker à cent mille appels par jour et le stockage
+ * à autant de lectures, tous salons confondus : un essai qui les épuise met
+ * hors ligne les vrais plans jusqu'à minuit UTC. Au-delà de `--budget`, il
+ * refuse de partir.
  *
  * Les mesures visent par défaut un salon qui n'existe pas. Ce n'est pas une
  * précaution de façade : `enregistre_mesures` cherche alors l'événement, ne le
@@ -23,6 +38,7 @@
  *
  *   node outils/essais/charge.js --base https://… --salon smcl-2026
  *        [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee] [--journal bilan.txt] [--mesures-seules]
+ *        [--sans-logos] [--budget 50000]
  */
 "use strict";
 
@@ -48,6 +64,12 @@ const JOURNAL = opt("journal", "");
    qu'on voulait lire. */
 const MESURES_SEULES = opt("mesures-seules", false) === true;
 const SALON_MESURE = ECRIRE ? SALON : "essai-de-charge-inexistant";
+const SANS_LOGOS = opt("sans-logos", false) === true;
+/* La moitié du quota gratuit : il en reste pour les vrais visiteurs du jour. */
+const BUDGET = Number(opt("budget", 50000));
+/* Le découpage de la page (`recherche.mjs`) : d'autres lots seraient d'autres
+   clés, absentes du cache, et chacune y coûterait une écriture. */
+const VIGNETTES_PAR_LOT = 96;
 
 if (!BASE || !SALON) {
   console.error("Usage : node outils/essais/charge.js --base https://… --salon <slug> [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee]");
@@ -95,13 +117,47 @@ async function appel(sorte, url, init) {
 const attends = (ms) => new Promise((ok) => setTimeout(ok, ms));
 const jetonVisiteur = () => Math.random().toString(36).slice(2, 14);
 
+const API = BASE + "/api/plan?slug=" + encodeURIComponent(SALON);
+
+/** Ce que la page demandera après le plan : la version, le fond du pavillon
+ *  qui s'ouvre, les lots de logos. Relevé une fois, hors des mesures. */
+async function reconnais() {
+  const e = await fetch(API + "&entete=1").then((r) => r.ok ? r.json() : null).catch(() => null);
+  if (!e || !e.v) {
+    console.error(`Le salon ${SALON} ne répond pas sur ${BASE} : est-il publié, et le nom est-il exact ?`);
+    process.exit(2);
+  }
+  const d = await fetch(API + "&v=" + encodeURIComponent(e.v)).then((r) => r.json());
+  const p = (d.plans || []).find((x) => (x.fond || []).some((c) => c.svg === undefined));
+  const fond = p ? API + "&fond=" + encodeURIComponent(p.id) +
+    "&v=" + encodeURIComponent(p.versionFond || d.genereLe || "0") : null;
+  const cles = new Set();
+  for (const x of d.plans || []) {
+    for (const s of x.stands || []) {
+      for (const soc of [s].concat(s.coex || [])) if (soc && soc.vignette) cles.add(soc.vignette);
+    }
+  }
+  const triees = [...cles].sort();
+  const lots = [];
+  for (let i = 0; i < triees.length; i += VIGNETTES_PAR_LOT) {
+    lots.push(BASE + "/api/plan?vignettes=" + triees.slice(i, i + VIGNETTES_PAR_LOT).join(","));
+  }
+  return { v: e.v, fond, lots: SANS_LOGOS ? [] : lots, logos: triees.length };
+}
+
+let RELEVE = null;
+
 async function visiteur() {
-  const api = BASE + "/api/plan?slug=" + encodeURIComponent(SALON);
-  if (!MESURES_SEULES) await appel("page", BASE + "/plan?plan=" + encodeURIComponent(SALON));
-  if (!MESURES_SEULES) await Promise.all([
-    appel("entête", api + "&entete=1"),
-    appel("plan", api),
-  ]);
+  if (!MESURES_SEULES) {
+    await appel("page", BASE + "/plan-" + encodeURIComponent(SALON));
+    await appel("entête", API + "&entete=1");
+    await appel("plan", API + "&v=" + encodeURIComponent(RELEVE.v));
+    if (RELEVE.fond) await appel("fond", RELEVE.fond);
+    // deux lots à la fois, comme `LOTS_A_LA_FOIS`
+    let i = 0;
+    const suivant = async () => { while (i < RELEVE.lots.length) await appel("logos", RELEVE.lots[i++]); };
+    await Promise.all([suivant(), suivant()]);
+  }
   if (JOURNEE) {
     await appel("charge", BASE + "/api/charge?slug=" + encodeURIComponent(SALON));
   }
@@ -160,7 +216,31 @@ function bilan(enCourse) {
   if (!enCourse) console.log("\n" + texte);
 }
 
-const debut = Date.now();
+/** Ce que l'essai coûtera, en appels du Worker et en lectures du stockage. */
+function devis() {
+  const mesures = 1 + Math.max(0, Math.floor((DUREE - 4500) / 30000));
+  const lus = MESURES_SEULES ? 0 : 2 + (RELEVE.fond ? 1 : 0) + RELEVE.lots.length;
+  const parVisiteur = lus + (MESURES_SEULES ? 0 : 1) + mesures + (JOURNEE ? 1 : 0);
+  return { appels: VISITEURS * parVisiteur, lectures: VISITEURS * lus, parVisiteur };
+}
+
+async function lance() {
+  if (MESURES_SEULES) RELEVE = { v: "", fond: null, lots: [], logos: 0 };
+  else RELEVE = await reconnais();
+  const d = devis();
+  console.log(`Salon ${SALON}, version ${RELEVE.v || "—"} : ${RELEVE.fond ? "un fond" : "pas de fond"}, ` +
+    `${RELEVE.logos} logos en ${RELEVE.lots.length} lots.`);
+  console.log(`Devis : ${d.appels} appels du Worker (${d.parVisiteur} par visiteur), ${d.lectures} lectures du stockage. ` +
+    `Quota gratuit : 100 000 de chaque par jour.`);
+  if (d.appels > BUDGET || d.lectures > BUDGET) {
+    console.error(`Au-delà du budget de ${BUDGET} : moins de visiteurs, une visite plus courte, ` +
+      `ou --budget en connaissance de cause.`);
+    process.exit(2);
+  }
+  return d;
+}
+
+let debut = Date.now();
 // hors terminal, un retour chariot par seconde ferait un journal illisible
 const suivi = setInterval(() => {
   const t = Math.round((Date.now() - debut) / 1000);
@@ -172,6 +252,8 @@ const suivi = setInterval(() => {
 process.on("SIGINT", () => { clearInterval(suivi); bilan(); process.exit(1); });
 
 console.log(`Essai de charge : ${VISITEURS} visiteurs sur ${BASE}, salon ${SALON}.`);
-Promise.all(
-  Array.from({ length: VISITEURS }, () => attends(Math.random() * MONTEE).then(visiteur)),
-).then(() => { clearInterval(suivi); bilan(); });
+lance().then(() => {
+  debut = Date.now();
+  return Promise.all(
+    Array.from({ length: VISITEURS }, () => attends(Math.random() * MONTEE).then(visiteur)));
+}).then(() => { clearInterval(suivi); bilan(); });
