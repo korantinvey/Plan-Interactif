@@ -25,10 +25,33 @@ import { appliqueAmbiance } from "./ambiance.mjs";
 
 const racine = document.documentElement;
 
+/* Le dessin d'un calque du fond n'entre dans le document qu'une fois montré.
+
+   L'exploitant reçoit le fond entier, calques éteints compris : c'est de là
+   qu'il choisit d'en rallumer un (`plan-public`). Posé d'office, ce dessin
+   invisible faisait l'essentiel du document — chez FEP27, sept calques tous
+   éteints, près de dix-neuf mille éléments, quand le plan public en compte
+   quatre mille en tout : de la mémoire et du recalcul de style pour rien
+   d'affiché. Le groupe, lui, est posé vide dès le montage (`rendu.mjs`
+   `monteHabillage`) : il garde sa place dans la pile, et l'ordre ne bouge pas
+   quand son contenu arrive. Ceux qu'on a remplis sont retenus ici ; un
+   pavillon remonté recrée ses groupes, qui repartent donc vides. */
+const remplis = new WeakSet();
+const fondDe = (cle) => P().fond.find(f => f.cle === cle);
+function remplitCalque(g, cle){
+  if (remplis.has(g)) return;
+  const f = fondDe(cle);
+  // le fond n'est pas encore arrivé : `chargeFond` remontera l'habillage
+  if (!f || f.svg === undefined) return;
+  g.innerHTML = f.svg || "";
+  remplis.add(g);
+}
+
 export function styleFond(cle){
   const c = conf(cle);
   const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
   if (!g) return;
+  if (c.visible !== false) remplitCalque(g, cle);
   g.style.display = c.visible === false ? "none" : "";
   g.querySelectorAll("g[data-s]").forEach(sub => {
     const sc = CONF[sousCle(cle, sub.id)] || {};
@@ -46,9 +69,31 @@ export function styleFond(cle){
     }
   });
 }
+/* Les sous-calques d'un calque éteint se lisent hors du document.
+
+   Le panneau des calques les liste tous, éteints compris : c'est là qu'on en
+   rallume un. Pour un calque que rien n'a encore montré, on les lit dans une
+   copie détachée de son dessin, que le ramasse-miettes reprend ensuite — la
+   poser dans la page pour la lire y aurait remis tout ce qu'on en retire. Le
+   relevé se garde, attaché au dessin lu : le panneau se reconstruit à chaque
+   retouche de la pile, et l'aurait chaque fois relu en entier. */
+/** @type {WeakMap<object, { svg: string, liste: { id: string, src: string }[] }>} */
+const sousLus = new WeakMap();
+const lisSous = (/** @type {Element} */ g) =>
+  [...g.querySelectorAll("g[data-s]")].map(s => ({ id: s.id, src: /** @type {any} */ (s).dataset.s }));
 export function sousCalques(cle){
   const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
-  return g ? [...g.querySelectorAll("g[data-s]")].map(s => ({ id: s.id, src: s.dataset.s })) : [];
+  if (!g) return [];
+  if (remplis.has(g)) return lisSous(g);
+  const f = fondDe(cle);
+  if (!f || !f.svg) return [];
+  const lu = sousLus.get(f);
+  if (lu && lu.svg === f.svg) return lu.liste;
+  const copie = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  copie.innerHTML = f.svg;
+  const liste = lisSous(copie);
+  sousLus.set(f, { svg: f.svg, liste });
+  return liste;
 }
 
 /* Les couches de données n'ont pas de SVG propre : leur visibilité joue sur
