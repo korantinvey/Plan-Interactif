@@ -50,12 +50,13 @@ try {
   process.exit(1);
 }
 
-/* La relecture par ESLint, le cliquet des types, puis celui des portes : ce
+/* La relecture par ESLint, la référence figée des types, puis celle des
+   injections : ce
    qu'un développeur attend d'un dépôt, ce qui voit une variable morte, un nom
    que rien ne déclare ou un appel faux là où la syntaxe ne regarde pas — et
-   une boucle d'imports ou une porte ouverte sans raison, par où le code se
-   ressouderait. Et le guide, qui ne doit citer que ce qui existe encore. */
-for (const script of ["controles/relecture.js", "controles/types.js", "controles/portes.js", "controles/guide.js"]) {
+   une boucle d'imports ou une injection ajoutée sans raison, par où le code se
+   recouplerait. Et le guide, qui ne doit citer que ce qui existe encore. */
+for (const script of ["controles/relecture.js", "controles/types.js", "controles/injections.js", "controles/guide.js"]) {
   try {
     lance(script);
   } catch (e) {

@@ -19,10 +19,10 @@
    Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
    `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : la police des
    noms, qui ne peut importer ce module, le lit par un lecteur que celui-ci
-   lui confie en se chargeant (`confieAuxPolices`).
+   lui confie en se chargeant (`injecteAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, state, P } from "./donnees.mjs";
 import { API, SLUG, entetesApi } from "./salon.mjs";
@@ -38,7 +38,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { majFondus } from "./bandes.mjs";
 import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
-import { confieAuxPolices } from "./polices-plan.mjs";
+import { injecteAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { traceStand } from "./ambiance.mjs";
 import { CONF } from "./configuration.mjs";
@@ -48,11 +48,11 @@ import { reglageComptoirValide, reglageCamionsValide } from "./decor.mjs";
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
    calage de la carte en cours (`calage-carte.mjs`). */
 /** Les groupes du pavillon vont être réécrits. */
-export const MONTAGE_COMMENCE = creeAnnonce();
+export const MONTAGE_COMMENCE = creeEvenement();
 /** Le pavillon est dessiné, juste avant de se dire monté. */
-export const PAVILLON_MONTE = creeAnnonce();
+export const PAVILLON_MONTE = creeEvenement();
 /** On quitte un pavillon pour un autre. */
-export const PAVILLON_QUITTE = creeAnnonce();
+export const PAVILLON_QUITTE = creeEvenement();
 
 /* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
    ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
@@ -149,7 +149,7 @@ export function montePlan(){
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter ; la
      boîte à outils n'existe qu'en administration. La page publique n'a rien
      de cela : ni éditeur, ni outils. */
-  MONTAGE_COMMENCE.dis();
+  MONTAGE_COMMENCE.emet();
   monteHabillage();
   dessineDessins();                // crée les calques de dessin puis ordonne la pile
   // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
@@ -163,7 +163,7 @@ export function montePlan(){
   // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
   dessineBorne();
   // la nappe de la grille n'est qu'à l'exploitant (`modules/nappe.mjs`)
-  PAVILLON_MONTE.dis();
+  PAVILLON_MONTE.emet();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -235,7 +235,7 @@ export function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
   /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
-  PAVILLON_QUITTE.dis();
+  PAVILLON_QUITTE.emet();
   fermeTiroir("fiche");
   montePlan(); fit(); liste();
   chargeFond(i);
@@ -244,4 +244,4 @@ export function changePlan(i){
 /* Le pavillon monté ou non, confié à la police des noms dès que ce module se
    charge, par un lecteur : elle ne retrace rien avant le premier montage, et
    ne peut importer ce module, qui l'atteint en chemin. */
-confieAuxPolices({ monte: () => MONTE });
+injecteAuxPolices({ monte: () => MONTE });

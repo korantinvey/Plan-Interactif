@@ -15,7 +15,7 @@
    qu'après l'image suivante : le travail repoussé ne peut plus passer devant
    la peinture qu'il attendait.
 
-   À la différence d'une annonce (`annonce.mjs`), il se souvient : qui
+   À la différence d'une annonce (`evenement.mjs`), il se souvient : qui
    s'inscrit après coup est appelé tout de suite. Sans aucun import : tous
    peuvent l'importer.
    ============================================================ */

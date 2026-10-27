@@ -270,7 +270,7 @@ export function programmePublication(){
    `enregistreConf`) est public, et ne peut importer ce module : il annonce
    chaque écriture, que l'on suit dès que la page d'administration charge ce
    module, avant que le lancement ne pose le moindre branchement. */
-CONF_ECRITE.suis(programmePublication);
+CONF_ECRITE.ecoute(programmePublication);
 
 /** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
  *  de lui-même, sans attendre qu'on pense à cliquer. */
@@ -710,7 +710,7 @@ export function brancheSauvegarde(){
    l'administration. Ils annoncent ce qui le concerne, et il les suit — l'état
    du bouton, le rattrapage d'un envoi en retard, les calques rescapés, les
    réglages tels qu'ils sont arrivés. */
-ATTENTE_CHANGEE.suis(majAttente);
-PLAN_DEMARRE.suis(() => { majAttente(); rattrapeRetard(); });
-RESCAPES_TROUVES.suis(compteRescapes);
-REGLAGES_RECUS.suis(noteReglagesCharges);
+ATTENTE_CHANGEE.ecoute(majAttente);
+PLAN_DEMARRE.ecoute(() => { majAttente(); rattrapeRetard(); });
+RESCAPES_TROUVES.ecoute(compteRescapes);
+REGLAGES_RECUS.ecoute(noteReglagesCharges);

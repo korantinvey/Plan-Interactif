@@ -29,7 +29,7 @@
     "lecture-perf": "node outils/scripts/lecture-perf.js",
     "lint": "node outils/controles/relecture.js",
     "types": "node outils/controles/types.js",
-    "portes": "node outils/controles/portes.js",
+    "injections": "node outils/controles/injections.js",
     "guide": "node outils/controles/guide.js"
   },
   "type": "commonjs",

@@ -28,7 +28,7 @@
    (`fiche.mjs`, `configuration.mjs`), les critères de la recherche de
    `recherche.mjs`. Le tiroir du parcours (`tiroir-parcours.mjs`) importe
    celui-ci pour y poser la proposition, et ne peut donc s'importer d'ici :
-   il se confie en se chargeant, par `confieALaSuggestion`. Le module n'a pas
+   il se confie en se chargeant, par `injecteALaSuggestion`. Le module n'a pas
    de branchement.
    ============================================================ */
 import { $ } from "./dom.mjs";

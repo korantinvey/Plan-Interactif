@@ -8,7 +8,7 @@
    « Admin » (`volets.mjs`), d'exploitant.
 
    Ce qu'une option refait en se fermant, chacun des modules qu'elle touche
-   le lui confie en se chargeant, par `confieApresOption` : le tiroir du
+   le lui confie en se chargeant, par `injecteApresOption` : le tiroir du
    parcours pour la journée et la suggestion, l'index du salon pour le
    programme, l'outil de dessin (`outil-dessin.mjs`, que le visiteur ne reçoit
    pas) pour ses deux options. Ce module ne dépend ainsi que de la
@@ -52,7 +52,7 @@ const racine = document.documentElement;
  * « classe » marque celles qui se ferment par la feuille de style — un bouton
  * de la boîte à outils, celui du tiroir du parcours ; « apres » dit ce qui se
  * refait sur-le-champ pour les autres, que le module concerné confie
- * (`confieApresOption`).
+ * (`injecteApresOption`).
  *
  * @type {{ cle: string, classe?: string, libelle: string, aide: string, apres?: () => void }[]}
  */
@@ -111,7 +111,7 @@ export function appliqueOptions(){
  * @param {string} cle
  * @param {() => void} apres
  */
-export function confieApresOption(cle, apres){
+export function injecteApresOption(cle, apres){
   const o = OPTIONS.find(x => x.cle === cle);
   if (o) o.apres = apres;
 }

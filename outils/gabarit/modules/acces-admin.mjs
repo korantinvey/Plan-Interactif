@@ -15,7 +15,7 @@
    qu'il lit, est à lui : la fenêtre des réglages l'importe (`reglages.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
 import { charge, prechargeAdmin, SESSION_REFUSEE } from "./demarrage.mjs";
 
@@ -23,7 +23,7 @@ import { charge, prechargeAdmin, SESSION_REFUSEE } from "./demarrage.mjs";
  *  l'écoute (`modules/bande-admin.mjs`, qui importe l'enregistrement, lequel
  *  importe ce module — l'importer d'ici les bouclerait). Le chargement du
  *  plan, lui, s'importe (`demarrage.mjs`). */
-export const ACCES_ACCORDE = creeAnnonce();
+export const ACCES_ACCORDE = creeEvenement();
 
 /* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
    « Admin » aux réglages — la base, elle, ne distingue pas les deux profils
@@ -145,7 +145,7 @@ export function ecranAcces(message){
          cela un administrateur qui ouvrait ses réglages aussitôt, sur un
          réseau lent, n'y trouvait pas son onglet « Admin ». */
       await litProfilA({ url, anonKey }, j);
-      ACCES_ACCORDE.dis();
+      ACCES_ACCORDE.emet();
       poseCompte();
       charge();
     } catch (e) {
@@ -242,7 +242,7 @@ export function brancheAcces(){
        et ne dit de toute façon rien : l'onglet « Admin » reste caché. */
     const [valide] = await Promise.all([sessionValide(cfg, session), litProfilA(cfg, session)]);
     if (valide){
-      ACCES_ACCORDE.dis(); poseCompte(); charge();
+      ACCES_ACCORDE.emet(); poseCompte(); charge();
     }
     else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
   })();
@@ -250,4 +250,4 @@ export function brancheAcces(){
 
 /* Une session refusée au chargement rouvre la fenêtre d'accès : le
    démarrage, que ce module importe, l'annonce. */
-SESSION_REFUSEE.suis(ecranAcces);
+SESSION_REFUSEE.ecoute(ecranAcces);

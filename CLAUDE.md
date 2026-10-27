@@ -71,8 +71,8 @@ gestes qui l'empêchent de revenir :
   s'inscrivent (`tiroirs-exclusifs.mjs`, `modes-edition.mjs`, et
   `geste-tenu.mjs` : aucun envoi au repos pendant qu'un outil tient un geste).
 - **Un module de base qui doit dire ce qui vient de changer l'annonce.** Il
-  exporte, sous le nom du fait, une annonce faite par `modules/annonce.mjs`
-  `creeAnnonce` (`PAVILLON_MONTE`, `SESSION_REFUSEE`), qu'il `dis`, et que les
+  exporte, sous le nom du fait, une annonce faite par `modules/evenement.mjs`
+  `creeEvenement` (`PAVILLON_MONTE`, `SESSION_REFUSEE`), qu'il `dis`, et que les
   autres `suis`ent en se chargeant. C'est la voie de la partition : la page
   publique dit ce qui s'est passé sans nommer la fonction de l'exploitant qui
   l'écoute, et chez le visiteur personne n'écoute. Les inscrits s'appellent
@@ -82,12 +82,12 @@ gestes qui l'empêchent de revenir :
   module de base appelle chez un module qui l'importe lui est confiée par ce
   dernier en se chargeant, par une porte `confie…` aux défauts sans effet. Il
   en reste huit, chacune inscrite avec son genre et sa raison dans
-  `outils/controles/portes-acceptees.json` — `partition` (l'administration remplace ou
-  ajoute, au lieu de seulement réagir : `confieChaleur`, `confieALaFiche`,
-  `confieLancementAdmin`), `rendu` (ce que chaque image d'un geste rappelle
+  `outils/controles/injections-acceptees.json` — `partition` (l'administration remplace ou
+  ajoute, au lieu de seulement réagir : `injecteChaleur`, `injecteALaFiche`,
+  `injecteLancementAdmin`), `rendu` (ce que chaque image d'un geste rappelle
   dans un ordre fixe), `registre`. Une porte qui ne fait que prévenir devient
   une annonce ; une porte qui ne fait que lire un état devient cet état, posé
-  dans le module qui le lit ou dans un registre. `npm run portes` fait échouer une porte absente de la liste, une porte de la
+  dans le module qui le lit ou dans un registre. `npm run injections` fait échouer une porte absente de la liste, une porte de la
   liste qui n'existe plus, et **toute boucle d'imports**, nommée module par
   module : esbuild en accepte une sans rien dire, et l'ordre de chargement
   devient celui du hasard. Pour savoir si un module peut en importer un autre,
@@ -107,7 +107,7 @@ gestes qui l'empêchent de revenir :
 comportement** : « Échap » referme la fenêtre avant le tiroir parce que l'une
 s'écoute avant l'autre. Un branchement ne change de rang qu'en sachant ce qu'il
 déplace. L'administration remplit quatre emplacements avant de lancer
-(`confieLancementAdmin`) ; chaque point d'entrée lance lui-même, à la fin de
+(`injecteLancementAdmin`) ; chaque point d'entrée lance lui-même, à la fin de
 son chargement.
 
 ## Ce que le visiteur ne reçoit pas
@@ -209,7 +209,7 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | essais hors page — `npm run essais`, par `node --test` : **tout fichier `*.js` de ce dossier est un essai**, lancé dans son propre processus, en parallèle des autres, et compté en échec s'il sort en erreur ; une aide partagée va dans `aides/`. L'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
 | `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; seuls les essais `@base` (`npm run navigateur-base`) bloquent la pull request, le reste tourne sur `main` et chaque nuit — un essai neuf ne prend `@base` que s'il garde une page entière ou le parcours du visiteur ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
-| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, cliquet au stock vide), `portes.js` (portes et boucles), `guide.js` (ce guide) — et leurs cliquets `*.json` |
+| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, cliquet au stock vide), `injections.js` (portes et boucles), `guide.js` (ce guide) — et leurs cliquets `*.json` |
 | `outils/donnees/` | les données figées que relit la construction — versionnées, voir « Données figées » |
 | `outils/scripts/` | ce qui se lance à la main ou par un workflow, hors construction : serveur d'essai, migration, lieux, démonstration, fiche de performance ; `klipso/` l'exploration de l'API |
 | `outils/bancs/` | bancs de mesure longs (`npm run fep26`, `npm run charge`), que la CI ne lance pas |

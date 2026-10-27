@@ -598,13 +598,13 @@ function demarre(){
   nouvelleVisite(true);
   ecouteGestes();
   ecouteNavigateur();
-  REPEINT_FINI.suis(sur((/** @type {number} */ duree) => {
+  REPEINT_FINI.ecoute(sur((/** @type {number} */ duree) => {
     V.nRepeints++;
     V.maxRepeint = Math.max(V.maxRepeint, duree);
     echantillonne(V.repeints, V.nRepeints, duree);
   }));
-  CONTEXTE_PERDU.suis(sur(() => { V.pertes++; }));
-  PLAN_DEMARRE.suis(sur(() => { J["plan-demarre"] = Math.round(performance.now()); }));
+  CONTEXTE_PERDU.ecoute(sur(() => { V.pertes++; }));
+  PLAN_DEMARRE.ecoute(sur(() => { J["plan-demarre"] = Math.round(performance.now()); }));
   quandAffiche(sur(() => {
     J["plan-affiche"] = Math.round(performance.now());
     setTimeout(sur(() => envoie()), PREMIER_ENVOI);

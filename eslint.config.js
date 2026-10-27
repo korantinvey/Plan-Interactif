@@ -70,7 +70,7 @@ module.exports = [
      Et rien ne se pose sur l'objet global : c'est ainsi que le code des
      pages s'était soudé en un seul espace de noms, chacun appelant les
      fonctions de tous sans le dire. Un nom passe d'un module à l'autre par
-     `import`, ou par une porte (`confieALaVue`…) quand l'import bouclerait.
+     `import`, ou par une porte (`injecteALaVue`…) quand l'import bouclerait.
      Les noms en `__` font exception : l'amorce que la construction pose
      avant les scripts (`__plan`, `__entete`, `__planAdmin`, que le
      démarrage consomme) et

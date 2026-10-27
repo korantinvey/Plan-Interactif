@@ -31,7 +31,7 @@ import { GL, priseWebgl } from "./webgl.mjs";
 import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
-import { vue, cadrePlan, versPlan, svg, confieALaVue } from "./vue.mjs";
+import { vue, cadrePlan, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { calqueActif, outil } from "./calques-dessin.mjs";
 import { estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { OBJETS_REPERE } from "./decor.mjs";
@@ -717,4 +717,4 @@ export function editionPointerUp(e){
    que ce module importe, les refait à chaque changement de vue — il les lui
    confie en se chargeant. La page publique, qui n'embarque pas l'éditeur,
    n'a pas de poignées à refaire. */
-confieALaVue({ dessinePoignees });
+injecteALaVue({ dessinePoignees });

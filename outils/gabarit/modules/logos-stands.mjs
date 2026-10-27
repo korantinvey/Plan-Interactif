@@ -46,7 +46,7 @@ import { cameraEnJeu, ecranVersPlat, SINUS_INCLINAISON } from "./camera.mjs";
 import { cadrePlan } from "./vue-etat.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { detoure } from "./detourage.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { placementLogo, PLACE_LIBELLES, PREFIXE_LOGO } from "./libelle-place.mjs";
 
@@ -136,12 +136,12 @@ const GRANDES_EN_ROUTE = 8;
 
 /** Les logos posés ont changé : les noms des stands doivent se refaire — se
  *  taire devant un logo qui vient de se poser, revenir là où il n'y en a plus. */
-export const PANNEAU_PRET = creeAnnonce();
+export const PANNEAU_PRET = creeEvenement();
 /** Un logo vient d'être prêt : le dessin doit le poser. Les noms n'ont rien à
  *  en apprendre tant qu'il ne l'est pas (`PANNEAU_PRET`) — les refaire à
  *  chaque arrivée doublait le travail d'une apparition massive. */
-export const LOGO_PRET = creeAnnonce();
-VIGNETTES_ARRIVEES.suis(() => annoncePret());
+export const LOGO_PRET = creeEvenement();
+VIGNETTES_ARRIVEES.ecoute(() => annoncePret());
 
 /* ------------------------------------------------------------
    Rien ne se prépare sous le doigt
@@ -171,7 +171,7 @@ const enRetard = new Map();
 
 function annoncePret(){
   if (gele) annonceRetenue = true;
-  else LOGO_PRET.dis();
+  else LOGO_PRET.emet();
 }
 
 /** Un logo est prêt à poser — tout de suite, ou à la fin du geste. */
@@ -189,7 +189,7 @@ export function geleLogos(/** @type {boolean} */ oui){
   enRetard.clear();
   // les logos posés pendant le geste reprennent la finesse de la vue où il s'arrête
   const affiner = couvert !== null && pres(zoomVu) && finesse(zoomVu) !== finesseCouverte;
-  if (annonceRetenue || affiner){ annonceRetenue = false; LOGO_PRET.dis(); }
+  if (annonceRetenue || affiner){ annonceRetenue = false; LOGO_PRET.emet(); }
 }
 
 /** Les vignettes décodées, par clé. */
@@ -1197,7 +1197,7 @@ function annoncePoses(/** @type {{ id: string }[]} */ data, tus = false){
   if (tus === nomsTus && ids.size === posesDerniers.size && [...ids].every(id => posesDerniers.has(id))) return;
   posesDerniers = ids;
   nomsTus = tus;
-  PANNEAU_PRET.dis();
+  PANNEAU_PRET.emet();
 }
 
 /**

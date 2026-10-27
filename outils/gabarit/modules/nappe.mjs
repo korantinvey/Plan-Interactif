@@ -79,4 +79,4 @@ export function rafraichitApercu(){
 }
 
 /* La nappe se refait au montage d'un pavillon, que le rendu annonce. */
-PAVILLON_MONTE.suis(rafraichitApercu);
+PAVILLON_MONTE.ecoute(rafraichitApercu);

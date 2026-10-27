@@ -25,7 +25,7 @@
    importe pas : ce qu'il leur doit — le départ qu'ils imposent — vit dans
    `vous-etes-ici.mjs`, et ce qu'ils font d'une visée qui les regarde, ou d'un
    bandeau qui doit céder la place, ils le lui confient en se chargeant
-   (`confieVisee`, `suitLaVisee`).
+   (`injecteVisee`, `suitLaVisee`).
 
    Le calcul, lui, n'importe ni les réglages, ni les calques, ni ce que le
    parcours et la journée savent des conférences : il s'éprouve seul dans
@@ -413,7 +413,7 @@ const VISEES = {};
 const SUIVENT_LA_VISEE = [];
 
 /** @param {string} genre @param {(pt: any) => any} f */
-export function confieVisee(genre, f){ VISEES[genre] = f; }
+export function injecteVisee(genre, f){ VISEES[genre] = f; }
 /** @param {() => void} f */
 export function suitLaVisee(f){ SUIVENT_LA_VISEE.push(f); }
 
@@ -672,7 +672,7 @@ export function brancheTiroirItineraire(){
   $("videItineraire").onclick = effaceItineraire;
   $("routeVoir").onclick = () => ouvreItineraire(false);
   $("routeEfface").onclick = effaceItineraire;
-  TRACE_POSEE.suis(majRappelRoute);
+  TRACE_POSEE.ecoute(majRappelRoute);
 
   addEventListener("keydown", e => {
     if (e.key !== "Escape" || $("modale").classList.contains("open")) return;

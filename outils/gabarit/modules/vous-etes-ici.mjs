@@ -17,7 +17,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, state } from "./donnees.mjs";
-import { vue, svg, cadrePlan, confieALaVue, suitLaVue, versScene } from "./vue.mjs";
+import { vue, svg, cadrePlan, injecteALaVue, suitLaVue, versScene } from "./vue.mjs";
 
 /* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
    elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
@@ -135,4 +135,4 @@ function rempliBorne(g){
 
 /* Le point garde sa taille à l'écran : la vue, que ce module importe, le
    refait à chaque changement de vue — il le lui confie en se chargeant. */
-confieALaVue({ rafraichitBorne });
+injecteALaVue({ rafraichitBorne });

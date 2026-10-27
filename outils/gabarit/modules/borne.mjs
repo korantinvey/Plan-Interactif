@@ -50,7 +50,7 @@ import { vue, versPlan, fit } from "./vue.mjs";
 import { videRecherche } from "./recherche.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { LIEU_BORNE, poseLieuBorne, dessineBorne, ecritDepartBorne } from "./vous-etes-ici.mjs";
-import { visee, poseVisee, bandeauVisee, fermeItineraire, effaceItineraire, confieVisee, suitLaVisee }
+import { visee, poseVisee, bandeauVisee, fermeItineraire, effaceItineraire, injecteVisee, suitLaVisee }
   from "./tiroir-itineraire.mjs";
 import { ferme } from "./fiche.mjs";
 import { fermeParcours, videLeParcours } from "./tiroir-parcours.mjs";
@@ -347,5 +347,5 @@ export function brancheBorne(){
    tiroir de l'itinéraire, qui tient la visée, ne peut plus l'importer — c'est
    lui que la borne importe. Elle lui confie donc l'un et l'autre en se
    chargeant, avant que rien ne vise ni ne s'affiche. */
-confieVisee("borne", poseLaBorne);
+injecteVisee("borne", poseLaBorne);
 suitLaVisee(montreBandeauBorne);

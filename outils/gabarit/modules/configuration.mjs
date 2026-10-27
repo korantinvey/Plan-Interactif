@@ -12,7 +12,7 @@
    seul `ouvreConf` les remplace. Les secteurs du salon, il les lit parmi les
    index de `donnees.mjs`.
    ============================================================ */
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { DATA } from "./donnees.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
@@ -83,13 +83,13 @@ export function reglagesDuSalon(source){
 
 /** La configuration vient d'être écrite sur le poste. L'envoi en base n'est
  *  qu'à l'administration (`enregistrement.mjs`), seule à l'écouter. */
-export const CONF_ECRITE = creeAnnonce();
+export const CONF_ECRITE = creeEvenement();
 
 /** Les réglages d'apparence se posent sur le poste, puis montent en base
  *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 export const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
-  CONF_ECRITE.dis();
+  CONF_ECRITE.emet();
 };
 
 /** @returns {Record<string, any>} */

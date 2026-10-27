@@ -22,7 +22,7 @@ import { qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { calquesDe, pointObjet, pointRepere } from "./itineraire.mjs";
 import { lieuNomme, pointLibre } from "./borne.mjs";
 import { ICI_LIBRE } from "./ici.mjs";
-import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire, confieVisee }
+import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire, injecteVisee }
   from "./tiroir-itineraire.mjs";
 import { fermeParcours } from "./tiroir-parcours.mjs";
 import { versPlan } from "./vue.mjs";
@@ -394,4 +394,4 @@ export function boutonCodeIci(){
    tiroir de l'itinéraire reçoit, lui revient par cette porte, ouverte au
    chargement — la page publique, qui n'embarque pas ce module, n'a donc pas
    cette visée du tout. */
-confieVisee("ici", ouvreCodeIci);
+injecteVisee("ici", ouvreCodeIci);

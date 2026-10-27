@@ -59,7 +59,7 @@ import { libelles } from "./libelles.mjs";
    d'administration de contenu : ce module suit l'annonce de la fenêtre
    commune (`APERCU_QUITTE`) dès que la page d'administration le charge,
    avant que `plan-admin.mjs` ne lance le plan. */
-APERCU_QUITTE.suis((marque) => {
+APERCU_QUITTE.ecoute((marque) => {
   queueMicrotask(() => {
     ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');

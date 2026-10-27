@@ -23,7 +23,7 @@ import { lancePlan } from "./lancement.mjs";
 import { COMPTES_LOGOS } from "./logos-stands.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
    rendu par la carte graphique le reçoivent de ce module, qui le leur confie
-   en se chargeant (`confieALaVue`, `confieAuWebgl`). Il doit donc être
+   en se chargeant (`injecteALaVue`, `injecteAuWebgl`). Il doit donc être
    chargé, et c'est d'ici. */
 import "./edition-en-cours.mjs";
 /* La mini-carte de situation ne s'importe de nulle part : elle s'inscrit

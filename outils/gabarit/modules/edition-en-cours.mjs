@@ -5,16 +5,16 @@
    demandent, mais ne peuvent l'importer : ce qu'il lit — le calque ouvert, le
    placement des libellés, la couche reprise — vit dans des modules qui
    importent l'un ou l'autre. Il vit donc ici, et le leur confie en se
-   chargeant (`confieAuWebgl`, `confieALaVue`). Plus rien ne l'importe :
+   chargeant (`injecteAuWebgl`, `injecteALaVue`). Plus rien ne l'importe :
    `plan.mjs` le charge sans nom pour qu'il s'inscrive, et le visiteur le
    reçoit donc — hors de l'administration, il est toujours faux.
    ============================================================ */
-import { GL, confieAuWebgl } from "./webgl.mjs";
+import { GL, injecteAuWebgl } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { calqueActif } from "./calques-dessin.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
-import { confieALaVue } from "./vue.mjs";
+import { injecteALaVue } from "./vue.mjs";
 
 /* ------------------------------------------------------------
    L'édition.
@@ -39,5 +39,5 @@ export const enEdition = () => GL.actif && ADMIN &&
 
 /* La vue et le rendu par la carte graphique demandent si l'on édite, et ne
    peuvent importer ce module : il le leur confie en se chargeant. */
-confieALaVue({ enEdition });
-confieAuWebgl({ enEdition });
+injecteALaVue({ enEdition });
+injecteAuWebgl({ enEdition });

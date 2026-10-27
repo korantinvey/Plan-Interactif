@@ -58,7 +58,7 @@ import { dessineDessins, redessineForme, apercu, apercuGuide, signale, TAILLE_RE
   societeDeForme } from "./dessin.mjs";
 import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
-import { confieApresOption } from "./options.mjs";
+import { injecteApresOption } from "./options.mjs";
 import { MONTAGE_COMMENCE } from "./rendu.mjs";
 import { enregistreDessins, HIST, REFAIRE, instantane, clotSalve, memorise, toleranceTrace, fermeIci,
   remplitListeSocietes, societeSaisie, optionsModes, pictoVerrou } from "./socle-dessin.mjs";
@@ -541,11 +541,11 @@ const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
    (`options.mjs`). L'outil qu'on ferme ne s'est jamais tenu en main hors de
    l'administration, et le champ image ne se pose qu'outil en main. */
 // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
-confieApresOption("dessinStand", () => { if (outil === "stand") choisitOutil("main"); });
+injecteApresOption("dessinStand", () => { if (outil === "stand") choisitOutil("main"); });
 /* Le gris du champ vient de la feuille de style, mais sa prise au clavier
    et sa liste de choix se posent en JS, et seulement l'outil en main : on
    repasse par là pour l'exploitant qui bascule l'option sans le lâcher. */
-confieApresOption("imageStand", () => { if (outil === "image") poseChampImage(); });
+injecteApresOption("imageStand", () => { if (outil === "image") poseChampImage(); });
 
 /* --- suppression au clic en mode sélection --- */
 export function choisitOutil(o){
@@ -781,7 +781,7 @@ export function renommeCalque(c, apres){
 
 /**
  * Le branchement, appelé par `plan-admin.mjs` à son rang dans le lancement
- * (`lancement.mjs` `confieLancementAdmin`). Les boutons et les champs de la
+ * (`lancement.mjs` `injecteLancementAdmin`). Les boutons et les champs de la
  * boîte à outils s'y branchent, comme le dépôt et le collage d'une image.
  */
 export function brancheOutilDessin(){
@@ -911,7 +911,7 @@ export function brancheOutilDessin(){
    reprenait n'existe plus, l'historique de l'éditeur valait pour l'autre
    pavillon, et la boîte à outils se replie. Le rendu, que la page publique
    porte aussi, l'annonce ; seul l'éditeur l'écoute. */
-MONTAGE_COMMENCE.suis(() => {
+MONTAGE_COMMENCE.ecoute(() => {
   if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
   const o = $("outils");

@@ -41,5 +41,5 @@ if (boite && offert){
     essaieAmbiance(b.dataset.ambiance);
     marque();
   });
-  PLAN_DEMARRE.suis(() => { boite.hidden = false; marque(); });
+  PLAN_DEMARRE.ecoute(() => { boite.hidden = false; marque(); });
 }

@@ -341,11 +341,11 @@ function posePastille(){
 if (ACTIF){
   ecouteGestes();
   ecouteNavigateur();
-  REPEINT_FINI.suis((duree, blocs) => {
+  REPEINT_FINI.ecoute((duree, blocs) => {
     garde("repeints", { t: Math.round(performance.now()), ms: ms(duree), blocs, geste: geste ? sorte(geste) : undefined });
     if (geste){ geste.repeints++; geste.msRepeints += duree; }
   });
-  PLAN_DEMARRE.suis(() => { R.jalons["plan-demarre"] = Math.round(performance.now()); });
+  PLAN_DEMARRE.ecoute(() => { R.jalons["plan-demarre"] = Math.round(performance.now()); });
   quandAffiche(() => { R.jalons["plan-affiche"] = Math.round(performance.now()); });
   setInterval(echantillonne, 5000);
   requestAnimationFrame(image);

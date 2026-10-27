@@ -69,8 +69,8 @@ jobs:
       - name: Types (cliquet de outils/controles/types-acceptes.json)
         run: npm run types
 
-      - name: Portes et boucles d'imports (cliquet de outils/controles/portes-acceptees.json)
-        run: npm run portes
+      - name: Portes et boucles d'imports (cliquet de outils/controles/injections-acceptees.json)
+        run: npm run injections
 
       - name: Le guide ne cite que ce qui existe (CLAUDE.md)
         run: npm run guide

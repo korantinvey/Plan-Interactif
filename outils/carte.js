@@ -166,16 +166,16 @@ ecrit(
 /* Le graphe des imports, dans les deux sens. C'est ce que la prose du dépôt
    recopiait module par module — « importé par la fiche, la journée… » — et
    qu'elle laissait vieillir : relu ici à chaque construction, il ne peut pas
-   mentir. Les portes viennent de leur cliquet, avec leur genre. */
+   mentir. Les injections viennent de leur référence figée, avec leur genre. */
 const IMPORTE = new Map(SOURCES.filter((n) => n.startsWith("modules/"))
   .map((n) => [n.slice(8), modules.importsDe(n)]));
 const IMPORTE_PAR = new Map();
 for (const [m, liste] of IMPORTE) {
   for (const i of liste) IMPORTE_PAR.set(i, [...(IMPORTE_PAR.get(i) || []), m]);
 }
-const PORTES = (() => {
+const INJECTIONS = (() => {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, "controles", "portes-acceptees.json"), "utf8"));
+    return JSON.parse(fs.readFileSync(path.join(__dirname, "controles", "injections-acceptees.json"), "utf8"));
   } catch { return {}; }
 })();
 const sansExt = (m) => m.replace(/\.mjs$/, "");
@@ -211,7 +211,7 @@ for (const nom of SOURCES) {
   if (nom.startsWith("modules/")) {
     const m = nom.slice(8);
     const imp = IMPORTE.get(m) || [], par = IMPORTE_PAR.get(m) || [];
-    const portes = Object.entries(PORTES).filter(([, p]) => p.module === m);
+    const injections = Object.entries(INJECTIONS).filter(([, p]) => p.module === m);
     if (imp.length) {
       ecrit("", "Importe :", "");
       for (const l of enveloppe(imp.map(sansExt).sort())) ecrit(l);
@@ -220,9 +220,9 @@ for (const nom of SOURCES) {
       ecrit("", "Importé par :", "");
       for (const l of enveloppe(par.map(sansExt).sort())) ecrit(l);
     }
-    if (portes.length) {
-      ecrit("", "Portes :", "");
-      for (const [p, d] of portes) ecrit(`- \`${p}\` (${d.genre}) — ${d.raison}`);
+    if (injections.length) {
+      ecrit("", "Injections :", "");
+      for (const [p, d] of injections) ecrit(`- \`${p}\` (${d.genre}) — ${d.raison}`);
     }
   }
   ecrit("");

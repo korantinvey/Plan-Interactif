@@ -44,7 +44,7 @@ import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, mo
 import { ficheZone, ZONE_AJOUTEE_ENREGISTREE } from "./fiche-zone.mjs";
 import { SORTE_GEO, poseSorteGeo, cleGeo, cleAjout, geometrieSource, reposeSource, poseGeometrie,
   elargitEmprise, anneauxValides, rechAjout, objetAjoute, poseLien, estLie } from "./emplacements.mjs";
-import { svg, vue, cadrePlan, versPlan, confieALaVue } from "./vue.mjs";
+import { svg, vue, cadrePlan, versPlan, injecteALaVue } from "./vue.mjs";
 import { appliqueSecteurs, marqueRetrait, liste } from "./recherche.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { ouvre, ferme } from "./fiche.mjs";
@@ -726,7 +726,7 @@ export function geometriePointerUp(e){
 
 /**
  * Le branchement, appelé dans un emplacement du lancement que
- * `plan-admin.mjs` remplit (`confieLancementAdmin`).
+ * `plan-admin.mjs` remplit (`injecteLancementAdmin`).
  * La palette reçoit ici ses écoutes, à leur rang parmi celles du plan.
  */
 export function brancheRepriseEmplacements(){
@@ -752,11 +752,11 @@ export function brancheRepriseEmplacements(){
 /* Les poignées d'un emplacement repris gardent leur taille à l'écran : la
    vue, que ce module importe, les refait à chaque changement de vue — il les
    lui confie en se chargeant ; la page publique ne les a pas. */
-confieALaVue({ dessinePoigneesGeo });
+injecteALaVue({ dessinePoigneesGeo });
 
 /* La fiche d'une zone est importée par ce module : elle ne peut l'importer en
    retour. Elle annonce une zone ajoutée enregistrée, et la palette se refait. */
-ZONE_AJOUTEE_ENREGISTREE.suis(majPaletteGeo);
+ZONE_AJOUTEE_ENREGISTREE.ecoute(majPaletteGeo);
 
 /* La reprise est l'un des trois modes d'édition exclusifs : ouvrir les deux
    autres la referme, si elle est ouverte. */

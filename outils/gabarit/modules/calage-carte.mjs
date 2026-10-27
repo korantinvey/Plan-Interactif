@@ -820,4 +820,4 @@ export function voletEnvirons(hote){
 /* Le calage qu'on règle appartient au pavillon qu'on quitte : le passage
    d'un pavillon à l'autre (`rendu.mjs` `changePlan`) l'annonce, et on
    l'oublie. */
-PAVILLON_QUITTE.suis(oublieCalageEnCours);
+PAVILLON_QUITTE.ecoute(oublieCalageEnCours);

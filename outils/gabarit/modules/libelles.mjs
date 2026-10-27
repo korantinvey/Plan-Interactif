@@ -21,13 +21,13 @@
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { parId, state, P } from "./donnees.mjs";
-import { P_NOM, P_CODE, confieAuxPolices } from "./polices-plan.mjs";
+import { P_NOM, P_CODE, injecteAuxPolices } from "./polices-plan.mjs";
 import { largeur, habille, lignesSvg, ancre, place, coupes } from "./texte-plan.mjs";
 import { rectangleLibre } from "./place-libre.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
-import { GL, planifieWebgl, poseModelesLibelles, confieAuWebgl } from "./webgl.mjs";
+import { GL, planifieWebgl, poseModelesLibelles, injecteAuWebgl } from "./webgl.mjs";
 import { capCamera, SINUS_INCLINAISON } from "./camera.mjs";
-import { view, cadrePlan, repeintLibelles, confieALaVue } from "./vue.mjs";
+import { view, cadrePlan, repeintLibelles, injecteALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
 import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce, nomCouche,
@@ -378,10 +378,10 @@ export function libellesWebgl(){
 /* La vue et le rendu par la carte graphique, que ce module importe, refont
    les noms et ne peuvent l'importer : il leur confie en se chargeant ce qui
    les écrit — les deux rendus suivent ainsi les mêmes règles. */
-confieALaVue({ libelles });
-confieAuWebgl({ libelles, libellesWebgl });
+injecteALaVue({ libelles });
+injecteAuWebgl({ libelles, libellesWebgl });
 
 /* Les libellés, confiés à la police des noms dès que ce module se charge :
    elle les fait réécrire quand elle change, et ne peut importer ce module, qui
    l'importe pour mesurer ses noms. */
-confieAuxPolices({ libelles });
+injecteAuxPolices({ libelles });

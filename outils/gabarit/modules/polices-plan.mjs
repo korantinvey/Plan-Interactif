@@ -7,7 +7,7 @@
    et `P_CODE`, vivent ici : les modules qui mesurent les noms les importent,
    et seul `posePoliceLibelles` les remplace. Ce qu'il faut retracer
    quand elles changent — les dessins, les libellés, la liste — et le plan
-   monté ou non lui sont confiés par la porte `confieAuxPolices`, que chacun
+   monté ou non lui sont confiés par la porte `injecteAuxPolices`, que chacun
    de ces modules ouvre en se chargeant.
 
    `npm run polices` et la construction relisent `POLICES_NOMS` dans ce
@@ -40,7 +40,7 @@ const prete = { monte: () => false, dessineDessins: () => {}, libelles: () => {}
  *
  * @param {Partial<PretePolices>} o
  */
-export function confieAuxPolices(o){
+export function injecteAuxPolices(o){
   Object.assign(prete, o);
 }
 
