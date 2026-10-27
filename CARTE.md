@@ -847,7 +847,7 @@ Importé par :
 
 detourage-travail · logos-stands · marque · reglage-foodtrucks
 
-### `modules/distinctions.mjs` — 450 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 455 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
@@ -855,9 +855,9 @@ Fonctions :
 
 `texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 78
 `traceDist` 109 · `coinDuTrace` 166 · `coinDeBoite` 207 · `oublieDists` 218
-`modesDuPlan` 222 · `releveDists` 226 · `dessineDists` 255 · `marquesListe` 284
-`poseDistsFiche` 314 · `refaitDistsFiche` 354 · `modeDist` 400 · `couleurDist` 412
-`appliqueDists` 434
+`modesDuPlan` 222 · `releveDists` 226 · `dessineDists` 260 · `marquesListe` 289
+`poseDistsFiche` 319 · `refaitDistsFiche` 359 · `modeDist` 405 · `couleurDist` 417
+`appliqueDists` 439
 
 Importe :
 
