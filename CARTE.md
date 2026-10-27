@@ -138,6 +138,23 @@ Fonctions :
 `borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
 `tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
 
+### `modules/abords-salles.mjs` — 244 l. → plan, plan-admin
+
+- l.1 · Les abords d'une salle qui se vide
+
+Fonctions :
+
+`regleFoule` 66 · `ecarteFoule` 83 · `heureAuSalon` 87 · `sallesEnMouvement` 96
+`oublieFoules` 128 · `foule` 140 · `bilanFoule` 228
+
+Importe :
+
+donnees · grille-marche · recherche-chemin · temps
+
+Importé par :
+
+itineraire · itineraire · troncon
+
 ### `modules/acces-admin.mjs` — 253 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
@@ -594,7 +611,8 @@ Fonctions :
 
 Importé par :
 
-dessin · edition · environs · itineraire · outil-dessin · reprise-emplacements · vue · webgl
+dessin · edition · environs · grille-marche · outil-dessin · reprise-emplacements · vue
+webgl
 
 ### `modules/choix-ambiance.mjs` — 45 l. → plan, plan-admin
 
@@ -886,17 +904,17 @@ Fonctions :
 
 Importé par :
 
-affiche-ici · aimants · ambiance · apercus · apparence · appels · application · bande-admin
-batiments · borne · calage-carte · calques-dessin · cartouche-poi · chaleur
-charge-annoncee · configuration · corps-fiche · demarrage · dessin · distinctions · edition
-emplacements · enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici
-index-salon · installation · itineraire · journee · libelles · logos-stands · mesure
-mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu
-partage · pile · placement-libelles · points-interet · rappels · recherche
+abords-salles · affiche-ici · aimants · ambiance · apercus · apparence · appels
+application · bande-admin · batiments · borne · calage-carte · calques-dessin
+cartouche-poi · chaleur · charge-annoncee · configuration · corps-fiche · demarrage · dessin
+distinctions · edition · emplacements · enregistrement · environs · fiche · fiche-zone
+filtre · gestes · ici · index-salon · installation · journee · libelles · logos-stands
+mesure · mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours
+parcours-recu · partage · pile · placement-libelles · points-interet · rappels · recherche
 reglage-application · reglage-fiche · reglage-recherche · reglage-suggestion · reglages
 releve · rendu · reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor
 suggestion · tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire
-tutoriel · volets · vous-etes-ici · webgl
+trajet · tutoriel · volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 
@@ -1445,6 +1463,28 @@ Importé par :
 
 reglage-sponsor · reglage-suggestion · reglages
 
+### `modules/grille-marche.mjs` — 935 l. → plan, plan-admin
+
+- l.1 · La grille de marche — le sol d'un pavillon, case par case
+
+Fonctions :
+
+`brancheItineraire` 35 · `conf` 37 · `instantConf` 38 · `finInstant` 39 · `sommets` 140
+`enveloppe` 160 · `oublieGrillesDeMarche` 202 · `calquesDe` 205 · `reperesDe` 213
+`zoneTraversee` 293 · `zonesDuTerrain` 302 · `cleRoleIti` 305 · `roleIti` 306
+`nomRoleIti` 307 · `estCirculation` 310 · `formesRole` 335 · `anglePlan` 367
+`dansGrille` 406 · `horsGrille` 407 · `grille` 417 · `distanceAuMur` 606 · `cretes` 649
+`nappePrincipale` 667 · `celluleDe` 702 · `caseDe` 706 · `centreCase` 711 · `empriseDe` 754
+`accrocheDepuis` 816 · `versLeMilieu` 889 · `accroche` 924
+
+Importe :
+
+chemin-forme
+
+Importé par :
+
+abords-salles · itineraire · itineraire · recherche-chemin · trait-chemin · trajet · troncon
+
 ### `modules/habillage.mjs` — 157 l. → plan, plan-admin
 
 - l.1 · L'habillage du plan — couleur principale, fond, barre du salon, modèle
@@ -1568,36 +1608,19 @@ Importé par :
 
 demarrage · index-salon · lancement · reglage-installation
 
-### `modules/itineraire.mjs` — 2647 l. → plan, plan-admin
+### `modules/itineraire.mjs` — 136 l. → plan, plan-admin
 
 - l.1 · L'itinéraire — le calcul d'un trajet d'un point du salon à un autre
 
 Fonctions :
 
-`brancheItineraire` 42 · `conf` 44 · `instantConf` 45 · `finInstant` 46 · `sommets` 148
-`enveloppe` 168 · `oublieGrilles` 211 · `calquesDe` 216 · `reperesDe` 224
-`zoneTraversee` 304 · `zonesDuTerrain` 313 · `cleRoleIti` 316 · `roleIti` 317
-`nomRoleIti` 318 · `estCirculation` 321 · `formesRole` 346 · `anglePlan` 378
-`dansGrille` 417 · `horsGrille` 418 · `grille` 428 · `distanceAuMur` 617 · `cretes` 660
-`nappePrincipale` 678 · `celluleDe` 713 · `caseDe` 717 · `centreCase` 722 · `empriseDe` 765
-`accrocheDepuis` 827 · `versLeMilieu` 900 · `accroche` 935 · `Tas` 950 · `travail` 994
-`cherche` 1017 · `distancesDepuis` 1084 · `distancesMulti` 1098 · `regleFoule` 1170
-`ecarteFoule` 1187 · `heureAuSalon` 1191 · `sallesEnMouvement` 1200 · `foule` 1243
-`bilanFoule` 1331 · `reduit` 1360 · `guidageAllees` 1423 · `recentre` 1479 · `passable` 1564
-`lisse` 1598 · `longueur` 1625 · `longueurDehors` 1641 · `nettoie` 1683 · `oublieFaces` 1730
-`facesLibres` 1732 · `amorce` 1829 · `faceDeSortie` 1864 · `raccordTient` 1910
-`accesDe` 1940 · `couplesAcces` 1992 · `troncon` 2025 · `pointObjet` 2070
-`pointRepere` 2077 · `candidats` 2086 · `pointSaisi` 2120 · `portesDe` 2132
-`versPorte` 2139 · `typeLiaison` 2200 · `nomRepere` 2208 · `oublieLiaisons` 2226
-`lienEcrits` 2238 · `ecritLiens` 2247 · `annuaireLiaisons` 2252 · `liensDe` 2284
-`coutLiaison` 2304 · `passagePraticable` 2311 · `passagesDe` 2319 · `sortiesDe` 2329
-`plansRelies` 2337 · `balayage` 2361 · `distanceDepuis` 2379 · `cheminLiaisons` 2406
-`routeParLiaisons` 2492 · `routeEntre` 2530 · `mesureMarches` 2568 · `coupeMarche` 2583
-`distancesDesArrets` 2599 · `ecritDistance` 2613 · `ecritDuree` 2621 · `phraseLiaison` 2635
+`oublieGrilles` 48 · `mesureMarches` 57 · `coupeMarche` 72 · `distancesDesArrets` 88
+`ecritDistance` 102 · `ecritDuree` 110 · `phraseLiaison` 124
 
 Importe :
 
-chemin-forme · donnees · reperes · temps · texte
+abords-salles · abords-salles · grille-marche · grille-marche · recherche-chemin · reperes
+temps · trait-chemin · trajet · trajet · troncon
 
 Importé par :
 
@@ -2431,6 +2454,22 @@ Importe :
 
 export · rapport-utilisation · socle-console
 
+### `modules/recherche-chemin.mjs` — 184 l. → plan, plan-admin
+
+- l.1 · La recherche du chemin — A* sur la grille de marche
+
+Fonctions :
+
+`Tas` 18 · `travail` 58 · `cherche` 81 · `distancesDepuis` 148 · `distancesMulti` 162
+
+Importe :
+
+grille-marche
+
+Importé par :
+
+abords-salles · itineraire · trajet · troncon
+
 ### `modules/recherche.mjs` — 1037 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
@@ -2686,7 +2725,7 @@ couleurs
 Importé par :
 
 cartouche-poi · dessin · edition · fiche-zone · itineraire · outil-dessin · points-interet
-socle-dessin · webgl
+socle-dessin · trajet · webgl
 
 ### `modules/reprise-emplacements.mjs` — 763 l. → plan-admin
 
@@ -2967,8 +3006,8 @@ Fonctions :
 
 Importé par :
 
-charge-annoncee · edition · fiche · horaires · itineraire · journee · parcours
-points-interet · rappels · recherche · sejour · tiroir-parcours
+abords-salles · charge-annoncee · edition · fiche · horaires · itineraire · journee
+parcours · points-interet · rappels · recherche · sejour · tiroir-parcours
 
 ### `modules/terre.mjs` — 173 l. → plan, plan-admin
 
@@ -3015,10 +3054,10 @@ Fonctions :
 Importé par :
 
 affiche-ici · apercus · classeur · corps-fiche · dessin · distinctions · ecran-console
-edition · environs · fiche · fiche-detail · fiche-zone · filtre · fuseau · itineraire
-libelles · nom-emplacement · outil-dessin · parcours · pile · points-interet · qr
-rapport-utilisation · recherche · reglage-fiche · reglage-suggestion · rendu · secteurs
-socle-dessin · suggestion · sur · texte-plan
+edition · environs · fiche · fiche-detail · fiche-zone · filtre · fuseau · libelles
+nom-emplacement · outil-dessin · parcours · pile · points-interet · qr · rapport-utilisation
+recherche · reglage-fiche · reglage-suggestion · rendu · secteurs · socle-dessin
+suggestion · sur · texte-plan · trajet
 
 ### `modules/tiroir-itineraire.mjs` — 695 l. → plan, plan-admin
 
@@ -3174,6 +3213,61 @@ Fonctions :
 Importé par :
 
 outil-comptoir · webgl
+
+### `modules/trait-chemin.mjs` — 377 l. → plan, plan-admin
+
+- l.1 · Du chemin en cases au trait qu'on suit
+
+Fonctions :
+
+`reduit` 23 · `guidageAllees` 86 · `recentre` 142 · `passable` 227 · `lisse` 261
+`longueur` 288 · `longueurDehors` 304 · `nettoie` 346
+
+Importe :
+
+grille-marche
+
+Importé par :
+
+itineraire · troncon
+
+### `modules/trajet.mjs` — 519 l. → plan, plan-admin
+
+- l.1 · Le trajet complet — points désignables, liaisons, passage d'un plan à l'autre
+
+Fonctions :
+
+`pointObjet` 27 · `pointRepere` 34 · `candidats` 43 · `pointSaisi` 77 · `portesDe` 89
+`versPorte` 96 · `typeLiaison` 157 · `nomRepere` 165 · `oublieLiaisons` 183
+`lienEcrits` 195 · `ecritLiens` 204 · `annuaireLiaisons` 209 · `liensDe` 241
+`coutLiaison` 261 · `passagePraticable` 268 · `passagesDe` 276 · `sortiesDe` 286
+`plansRelies` 294 · `oublieBalayages` 318 · `balayage` 319 · `distanceDepuis` 337
+`cheminLiaisons` 364 · `routeParLiaisons` 450 · `routeEntre` 488
+
+Importe :
+
+donnees · grille-marche · recherche-chemin · reperes · texte · troncon
+
+Importé par :
+
+itineraire · itineraire
+
+### `modules/troncon.mjs` — 359 l. → plan, plan-admin
+
+- l.1 · Le tronçon — d'un point à un autre dans un même pavillon
+
+Fonctions :
+
+`oublieFaces` 32 · `facesLibres` 34 · `amorce` 131 · `faceDeSortie` 166 · `raccordTient` 212
+`accesDe` 242 · `couplesAcces` 294 · `troncon` 327
+
+Importe :
+
+abords-salles · grille-marche · recherche-chemin · trait-chemin
+
+Importé par :
+
+itineraire · trajet
 
 ### `modules/tutoriel.mjs` — 1032 l. → plan, plan-admin
 

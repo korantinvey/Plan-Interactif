@@ -2,7 +2,7 @@
    Itinéraire — la nappe de la grille de marche
 
    L'outil de mise au point de l'exploitant : la grille du calcul
-   (`itineraire.mjs` `grille`), peinte sous le plan telle que le calcul la
+   (`grille-marche.mjs` `grille`), peinte sous le plan telle que le calcul la
    voit. Le visiteur ne la reçoit pas : seul `plan-admin.mjs` embarque ce
    module. Le montage d'un pavillon (`rendu.mjs`) refait la nappe sans
    l'importer : ce module écoute son événement (`PAVILLON_MONTE`), que personne
