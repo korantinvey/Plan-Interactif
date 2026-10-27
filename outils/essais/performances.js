@@ -52,8 +52,35 @@ dit(!ids(serie(30, { mobile: false, donnees_ms: 4000, affiche_ms: 4600 })).inclu
 
 const lourd = serie(30, (i) => ({ lourds: i < 20 ? [{ fichier: "plan.1321f61dd3.js", transfertKo: 900 }] : [] }));
 const pLourd = pistes(indicateurs(lourd, AU)).find((p) => p.id === "fichier-lourd");
-dit(pLourd && pLourd.detail.includes("plan.1321f61dd3.js"), "un fichier lourd dans plus de la moitié des visites",
+dit(pLourd && pLourd.detail.includes("`plan.js`"), "un fichier lourd dans plus de la moitié des visites",
   pLourd && pLourd.detail);
+
+/* Le script de la page change d'empreinte à chaque construction : une semaine
+   à deux versions le comptait pour deux fichiers, chacun sous le seuil. */
+const deuxVersions = serie(30, (i) => ({ lourds: i < 20
+  ? [{ fichier: i % 2 ? "plan.aafddd7718.js" : "plan.b9000f1f87.js", sorte: "script", ms: 250, tailleKo: 419, transfertKo: 0 }]
+  : [] }));
+const pDeux = pistes(indicateurs(deuxVersions, AU)).find((p) => p.id === "fichier-lourd");
+dit(pDeux && pDeux.detail.includes("67 %"), "deux empreintes du même script comptent pour un seul fichier",
+  pDeux && pDeux.detail);
+/* Et sa taille est celle qu'on lit, non celle qui a passé le réseau : servi par
+   le cache, il ne transfère rien — la fiche du 26 octobre disait « 0 Ko ». */
+dit(pDeux && pDeux.detail.includes("419 Ko") && pDeux.detail.includes("250 ms") && !pDeux.detail.includes("0 Ko médian"),
+  "un fichier servi par le cache garde sa taille et sa durée", pDeux && pDeux.detail);
+
+/* Les appels se jugent à leur durée, à part des fichiers : l'entête du plan,
+   cinquante octets, attendait la base quand le relais l'avait oublié. */
+const entete = serie(30, (i) => ({ lourds: i < 12
+  ? [{ fichier: "plan", sorte: "fetch", ms: 900, tailleKo: 0, transfertKo: 0 },
+     { fichier: "plan", sorte: "fetch", ms: 300, tailleKo: 908, transfertKo: 0 }]
+  : [] }));
+const pEntete = pistes(indicateurs(entete, AU)).filter((p) => p.id === "appel-lent");
+dit(pEntete.length === 1 && pEntete[0].detail.includes("`plan (entête)`") && pEntete[0].detail.includes("900 ms"),
+  "un appel lent dans plus d'une visite sur quatre, l'entête à part du plan", pEntete.map((p) => p.detail).join(" / "));
+dit(!pistes(indicateurs(entete, AU)).some((p) => p.id === "fichier-lourd"),
+  "un appel n'est jamais pris pour un fichier lourd");
+const rapide = serie(30, { lourds: [{ fichier: "user", sorte: "fetch", ms: 200, tailleKo: 1, transfertKo: 1 }] });
+dit(!ids(rapide).includes("appel-lent"), "un appel sous la demi-seconde ne fait pas de piste", JSON.stringify(ids(rapide)));
 
 const longue = serie(30, { donnees_ms: 800, affiche_ms: 3500 });
 dit(ids(longue).includes("preparation-longue"), "préparation longue", JSON.stringify(ids(longue)));
@@ -122,12 +149,17 @@ dit(etiquette("00000000-0000-0000-0000-000000000000") === "salon-" +
 const noms = ["plan-fep27", "fep27-logo.png", "fep27.webp", "https://cdn.example/logo.png?slug=fep27", "plan.1321f61dd3.js"];
 const textePropre = corps(indicateurs(serie(30, { lourds: noms.map((fichier) => ({ fichier, transfertKo: 300 })) }), AU));
 dit(!textePropre.includes("fep27"), "aucun nom libre de fichier ne sort dans le corps");
-dit(textePropre.includes("plan.1321f61dd3.js"), "un fichier versionné de nos pages garde son nom");
+dit(textePropre.includes("`plan.js`"), "un fichier versionné de nos pages garde son nom, sans son empreinte");
 dit(textePropre.includes("autre fichier .png") && textePropre.includes("autre fichier .webp") &&
   textePropre.includes("autre fichier`"), "les autres sont regroupés par extension, ou sans");
-dit(fichierPropre("plan.1321f61dd3.js") === "plan.1321f61dd3.js" && fichierPropre("sw.js") === "sw.js" &&
+dit(fichierPropre("plan.1321f61dd3.js") === "plan.js" && fichierPropre("sw.js") === "sw.js" &&
+  fichierPropre("deck.gl-9.3.11-plan-53efd7e8.min.js", "link") === "deck.gl.js" &&
   fichierPropre("x.php") === "autre fichier" && fichierPropre(null) === "autre fichier",
   "fichierPropre : liste blanche, extension en liste fixe");
+dit(fichierPropre("plan", "fetch", 0) === "plan (entête)" && fichierPropre("plan", "fetch", 908) === "plan" &&
+  fichierPropre("plan", "img", 3) === "plan (vignettes)" && fichierPropre("sonde_admin", "fetch") === "sonde_admin" &&
+  fichierPropre("fep27", "fetch") === "autre appel" && fichierPropre("plan", "script") === "autre fichier",
+  "fichierPropre : les appels connus par leur nom, le plan en trois");
 
 /* Les textes d'un visiteur anonyme n'atteignent pas le corps avec de quoi se lire en Markdown. */
 const pieges = ["@x", "](http://e)", "<img src=x>", "#12", "a|b", "a`b", "![i](u)"];
@@ -160,6 +192,8 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
   const r = lignes[0] || {};
   dit(lignes.length === 1 && /^\d{4}-\d{2}-\d{2}$/.test(r.jour) && /Z$/.test(r.recu),
     "la requête du script tourne sur le schéma", JSON.stringify({ jour: r.jour, recu: r.recu }));
+  dit(r.lourds?.[0]?.sorte === "img" && r.lourds?.[0]?.ms === 300 && r.lourds?.[0]?.tailleKo === 700,
+    "elle lit la sorte, la durée et la taille de chaque ressource", JSON.stringify(r.lourds));
   dit(r.famille === "Android" && r.logos_octets === 3 * 1048576 && r.lourds?.[0]?.fichier === "logos.webp" &&
     r.donnees_ms === 1900 && r.mobile === true, "elle rend ce que les règles lisent", JSON.stringify(r).slice(0, 200));
   const ind = indicateurs(lignes, plusSept(r.jour));

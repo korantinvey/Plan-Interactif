@@ -23,6 +23,12 @@ const SEUILS = {
   donneesTelephoneMs: 2500,
   // un fichier qui compte parmi les plus lourds d'une visite sur deux pèse sur toutes
   partFichierLourd: 0.5,
+  /* Un appel ne figure parmi les ressources relevées que s'il a passé 150 ms
+     (`mesures-page.mjs` `chargement`) : y revenir dit déjà qu'il est lent. Une
+     visite sur quatre suffit donc, et c'est sa durée qui fait la piste — une
+     demi-seconde attendue à l'ouverture. */
+  partAppelLent: 0.25,
+  appelLentMs: 500,
   // des données reçues au plan affiché : le montage, que le visiteur attend sans rien voir
   preparationMs: 1500,
   // l'immersif peut coûter un peu plus que la vue classique, pas dix points d'images lentes
@@ -39,6 +45,13 @@ const SEUILS = {
 
 const ms = (v) => Math.round(v) + " ms";
 const s1 = (v) => (Math.round(v / 100) / 10).toFixed(1).replace(".", ",") + " s";
+/** Ce qu'une ressource coûte, en médiane sur les visites où elle figure. */
+const mesures = (f) => {
+  const m = [];
+  if (f.taille_p50 > 0) m.push(Math.round(f.taille_p50) + " Ko");
+  if (f.ms_p50 != null) m.push(ms(f.ms_p50));
+  return m.length ? ", " + m.join(" et ") + " médians" : "";
+};
 const nomGroupe = (g) => (g.mobile ? "téléphone" : "bureau") + " · " + g.page;
 
 const REGLES = [
@@ -56,15 +69,32 @@ const REGLES = [
   },
   {
     id: "fichier-lourd",
-    titre: "Un fichier revient parmi les plus lourds",
+    titre: "Un fichier revient parmi les plus lourds ou les plus lents",
     levier: "Le compresser, le découper ou le charger plus tard.",
+    /* La taille est celle du fichier lu, et non ce qui a passé le réseau : un
+       script servi par le cache n'a rien transféré, mais il se lit et se lance
+       quand même — la fiche du 26 octobre en affichait « 0 Ko médian ». */
     applique: (ind) => ind.fichiers
-      .filter((f) => f.total >= MIN_VISITES && f.part > SEUILS.partFichierLourd)
+      .filter((f) => !f.appel && f.total >= MIN_VISITES && f.part > SEUILS.partFichierLourd)
       .map((f) => ({
         touche: f.visites,
         ecart: (f.part - SEUILS.partFichierLourd) / SEUILS.partFichierLourd,
         detail: "`" + f.fichier + "` (" + f.page + ") : dans " + Math.round(f.part * 100) +
-          " % des visites" + (f.ko_p50 != null ? ", " + Math.round(f.ko_p50) + " Ko médian" : ""),
+          " % des visites" + mesures(f),
+      })),
+  },
+  {
+    id: "appel-lent",
+    titre: "Un appel fait attendre l'ouverture",
+    levier: "Le servir de plus près (stockage du Worker, cache du navigateur), le demander plus tôt, ou ne plus faire attendre la page sur lui.",
+    applique: (ind) => ind.fichiers
+      .filter((f) => f.appel && f.total >= MIN_VISITES && f.part > SEUILS.partAppelLent &&
+        f.ms_p50 > SEUILS.appelLentMs)
+      .map((f) => ({
+        touche: f.visites,
+        ecart: (f.ms_p50 - SEUILS.appelLentMs) / SEUILS.appelLentMs,
+        detail: "`" + f.fichier + "` (" + f.page + ") : plus de 150 ms dans " + Math.round(f.part * 100) +
+          " % des visites" + mesures(f),
       })),
   },
   {
