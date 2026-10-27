@@ -109,6 +109,47 @@ test("le logo prend la place du nom", async ({ page }) => {
   expect(erreurs).toEqual([]);
 });
 
+/* Bien au-delà du seuil, le nom d'un stand couvert par son logo n'est plus
+   mesuré : chaque pose le remesurait pour le taire aussitôt. Repassé sous le
+   seuil, logos encore posés, il revient — le stand ne reste pas vide. */
+test("de près, le nom couvert par son logo ne se mesure plus", async ({ page }) => {
+  test.setTimeout(180_000);
+  const erreurs = await deP(page, "classique");
+  test.skip(!erreurs, "pas de carte graphique");
+  const zoom = () => page.evaluate(() => window.__essais.GL.deck.props.viewState.zoom);
+  // le seuil d'un bureau : douze pixels par mètre
+  const SEUIL = Math.log2(12);
+  const poses = () => page.evaluate(() => {
+    const c = (window.__essais.GL.deck.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
+    return c ? c.props.data.map((e) => e.id) : [];
+  });
+  const nommes = (ids) => page.evaluate((ids) => window.__essais.GL.libelles
+    .filter((d) => ids.includes(d.lbl) && d.cls.startsWith("nm")).map((d) => d.lbl), ids);
+
+  while (await zoom() < SEUIL + .75) {
+    await page.evaluate(() => document.getElementById("zIn").click());
+    await page.waitForTimeout(800);
+  }
+  await logosPoses(page);
+  await page.waitForTimeout(1000);
+  const ids = await poses();
+  expect(ids.length).toBeGreaterThan(0);
+  expect(await nommes(ids)).toEqual([]);
+
+  while (await zoom() >= SEUIL) {
+    await page.evaluate(() => document.getElementById("zOut").click());
+    await page.waitForTimeout(800);
+  }
+  // logos encore posés, et leurs noms revenus
+  await page.waitForFunction(() => {
+    const c = (window.__essais.GL.deck.props.layers || []).flat(Infinity).filter(Boolean).find((l) => l.id === "logos-stands");
+    if (!c || !c.props.data.length) return false;
+    const ids = c.props.data.map((e) => e.id);
+    return window.__essais.GL.libelles.some((d) => ids.includes(d.lbl) && d.cls.startsWith("nm"));
+  }, null, { timeout: ATTENTE_LOGOS });
+  expect(erreurs).toEqual([]);
+});
+
 /* Reculé sous le seuil, plus aucun logo n'est posé et leurs toiles sont
    oubliées ; revenu au même endroit, elles se refont sous les mêmes clés. La
    planche gardée d'avant rangeait ses cases par toile : les neuves n'y

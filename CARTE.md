@@ -1671,7 +1671,7 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 385 l. → plan, plan-admin
+### `modules/libelles.mjs` — 387 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.54 · 4. Libellés — le nom de l'exposant prime sur le numéro
@@ -1720,25 +1720,25 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1358 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1380 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 81 · `palier` 95 · `tassement` 106 · `annoncePret` 162 · `pret` 168
-`geleLogos` 175 · `arriveeSansFond` 228 · `grande` 244 · `pompeGrandes` 261
-`demandeGrande` 265 · `image` 305 · `sansFond` 325 · `lanceTravailleur` 364
-`demandeDetourage` 385 · `pompe` 392 · `parLaPageSeule` 412 · `detoureRevenu` 421
-`largeurDeToile` 438 · `cleDeToile` 441 · `toileDejaRangee` 447 · `toileProche` 468
-`toile` 489 · `logoPose` 524 · `sourceDuToit` 534 · `cedeAuLogo` 547 · `CARRE` 576
-`filtrage` 609 · `plancheDe` 626 · `extensionPlanche` 662 · `bilanLogos` 773
-`rendPlanche` 792 · `taillesDe` 804 · `rangPour` 813 · `nouvellePlanche` 822 · `vaA` 840
-`videE` 841 · `place` 846 · `libere` 885 · `liberable` 907 · `envoie` 917
-`cedeLaPlace` 939 · `recopie` 970 · `range` 985 · `plancheGardee` 1028
-`oubliePlancheBientot` 1073 · `pres` 1085 · `solVu` 1096 · `logosARevoir` 1113
-`groupe` 1128 · `oublie` 1139 · `annoncePoses` 1174 · `matriceDuToit` 1195
-`coucheDeChauffe` 1211 · `couchesLogos` 1221 · `poseLogos` 1242
+`finesse` 91 · `palier` 105 · `tassement` 116 · `annoncePret` 172 · `pret` 178
+`geleLogos` 185 · `arriveeSansFond` 238 · `grande` 254 · `pompeGrandes` 271
+`demandeGrande` 275 · `image` 315 · `sansFond` 335 · `lanceTravailleur` 374
+`demandeDetourage` 395 · `pompe` 402 · `parLaPageSeule` 422 · `detoureRevenu` 431
+`largeurDeToile` 448 · `cleDeToile` 451 · `toileDejaRangee` 457 · `toileProche` 478
+`toile` 499 · `logoPose` 536 · `nomTu` 544 · `sourceDuToit` 553 · `cedeAuLogo` 566
+`CARRE` 595 · `filtrage` 628 · `plancheDe` 645 · `extensionPlanche` 681 · `bilanLogos` 792
+`rendPlanche` 811 · `taillesDe` 823 · `rangPour` 832 · `nouvellePlanche` 841 · `vaA` 859
+`videE` 860 · `place` 865 · `libere` 904 · `liberable` 926 · `envoie` 936
+`cedeLaPlace` 958 · `recopie` 989 · `range` 1004 · `plancheGardee` 1047
+`oubliePlancheBientot` 1092 · `pres` 1104 · `solVu` 1115 · `logosARevoir` 1132
+`groupe` 1148 · `oublie` 1159 · `annoncePoses` 1195 · `matriceDuToit` 1217
+`coucheDeChauffe` 1233 · `couchesLogos` 1243 · `poseLogos` 1264
 
 Importe :
 

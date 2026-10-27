@@ -18,7 +18,8 @@
    Le passage de l'un à l'autre se fait au zoom, au même seuil des deux
    côtés : le nom se tait (`cedeAuLogo`, appelé par `libelles.mjs`), le logo
    paraît en un court fondu peint par le shader (`fonduZoom`). Rien ne bouge de
-   lui-même : c'est le geste qui règle le passage.
+   lui-même : c'est le geste qui règle le passage. Bien au-delà du seuil, le
+   nom d'un stand couvert par son logo ne se mesure même plus (`nomTu`).
 
    Une option de l'exploitant (volet « Apparence ») ; la racine en porte la
    classe, posée par `ambiance.mjs`, et `webgl.mjs` demande ici ses couches.
@@ -62,6 +63,15 @@ export const CLASSE_LOGOS = "logos-stands";
    sur écran étroit d'une fois et demie plus haut encore, à huit. Lu une fois,
    au chargement : le shader et les noms le figent. */
 const ZOOM_LOGO = Math.log2(ETROIT() ? 8 : 12), ZOOM_FONDU = ZOOM_LOGO - .25;
+/* Au-delà du seuil, les noms des stands couverts par leur logo ne servaient
+   plus qu'au retour sous le seuil, et chaque nouvelle pose — un pas de côté
+   suffit — les remesurait tous pour les taire aussitôt. Passé ce second
+   seuil, ils ne se mesurent plus ; repassé sous le troisième, la couche se
+   refait (`logosARevoir`) et ils reviennent, un quart de cran avant d'être
+   lus : le logo, encore entier, couvre le stand le temps qu'ils arrivent.
+   L'écart des deux évite qu'un zoom tenu juste au bord ne les refasse à
+   chaque image. */
+const ZOOM_NOMS_TUS = ZOOM_LOGO + .5, ZOOM_NOMS_RENDUS = ZOOM_LOGO + .25;
 
 /* La part du toit que le logo occupe, dans un sens comme dans l'autre. */
 const PART_DU_TOIT = .82;
@@ -514,6 +524,8 @@ function toile(/** @type {string} */ cle, /** @type {CanvasImageSource} */ i,
 /** Les stands dont le logo est posé, d'après la dernière couche. */
 /** @type {Set<string>} */
 let posesDerniers = new Set();
+/* La dernière pose s'est-elle faite au-delà de `ZOOM_NOMS_TUS` ? */
+let nomsTus = false;
 
 /** Le stand montre-t-il son logo de près ? Seulement s'il est posé : un nom
  *  qui se taisait dès la vignette reçue laissait le stand vide tant que son
@@ -524,6 +536,13 @@ let posesDerniers = new Set();
 export function logoPose(/** @type {any} */ s){
   return Boolean(s && s.vignette &&
     document.documentElement.classList.contains(CLASSE_LOGOS) && posesDerniers.has(s.id));
+}
+
+/** Le nom du stand est-il tout à fait couvert par son logo, à tout zoom que
+ *  la vue peut prendre avant que la couche se refasse ? Il n'est alors pas
+ *  même mesuré (`libelles.mjs`). */
+export function nomTu(/** @type {any} */ s){
+  return nomsTus && logoPose(s);
 }
 
 /**
@@ -1115,6 +1134,7 @@ export function logosARevoir(v, zoom){
   if (!document.documentElement.classList.contains(CLASSE_LOGOS)) return false;
   if (!pres(zoom)) return couvert !== null;
   if (!couvert) return true;
+  if (nomsTus ? zoom < ZOOM_NOMS_RENDUS : zoom >= ZOOM_NOMS_TUS) return true;
   const sol = solVu(v);
   if (sol.x < couvert.x0 || sol.y < couvert.y0 || sol.x + sol.w > couvert.x1 || sol.y + sol.h > couvert.y1) return true;
   // la finesse attend la fin du geste (`geleLogos`)
@@ -1169,12 +1189,14 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data, voulues = new Se
 }
 
 /** Les noms suivent les logos posés : si la couche en pose d'autres que la
- *  dernière fois, ils doivent se refaire — un nom se tait devant un logo qui
- *  vient d'être posé, et revient là où la couche n'en pose plus. */
-function annoncePoses(/** @type {{ id: string }[]} */ data){
+ *  dernière fois, ou qu'elle les pose de l'autre côté de `ZOOM_NOMS_TUS`, ils
+ *  doivent se refaire — un nom se tait devant un logo qui vient d'être posé,
+ *  et revient là où la couche n'en pose plus. */
+function annoncePoses(/** @type {{ id: string }[]} */ data, tus = false){
   const ids = new Set(data.map(d => d.id));
-  if (ids.size === posesDerniers.size && [...ids].every(id => posesDerniers.has(id))) return;
+  if (tus === nomsTus && ids.size === posesDerniers.size && [...ids].every(id => posesDerniers.has(id))) return;
   posesDerniers = ids;
+  nomsTus = tus;
   PANNEAU_PRET.dis();
 }
 
@@ -1318,7 +1340,7 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
       lbl: PLACE_LIBELLES ? PREFIXE_LOGO + s.id : null });
   }
   oublie(data, voulus);
-  annoncePoses(data);
+  annoncePoses(data, nomsTus ? zoom >= ZOOM_NOMS_RENDUS : zoom >= ZOOM_NOMS_TUS);
   COMPTES_LOGOS.poses++;
   COMPTES_LOGOS.enAttente = attente;
   // le reste à la pose suivante — ou à la fin du geste
