@@ -13,7 +13,7 @@
  * ici par `brancheAimants`, comme `outil-dessin.mjs` le fait dans la page. Le
  * document se réduit aux quelques éléments que le module lit ou pose.
  *
- *   node outils/essais/aimants.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/aimants.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

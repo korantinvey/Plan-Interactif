@@ -298,7 +298,7 @@ test.describe("le plan de démonstration", { tag: "@base" }, () => {
    données de la démonstration n'ont ni zone typée ni programme : on leur en
    donne. En SVG, que le rendu logiciel des essais ne fige pas. */
 test.describe("le cartouche des points d'intérêt", () => {
-  const donnees = JSON.parse(JSON.stringify(require("../../plans.json")));
+  const donnees = JSON.parse(JSON.stringify(require("../../donnees/plans.json")));
   const zones = donnees.plans[0].zones;
   zones[0].type = "restauration";
   zones[1].type = zones[2].type = "conferences";

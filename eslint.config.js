@@ -1,6 +1,6 @@
 /**
  * La relecture par ESLint. `npm run lint` la lance en entier : ce fichier pour
- * les outils, le Worker et les essais ; `outils/relecture.js` pour le code des
+ * les outils, le Worker et les essais ; `outils/controles/relecture.js` pour le code des
  * pages, qu'on ne peut relire que tel que la page l'assemble (il y explique
  * pourquoi), et qui reprend d'ici ses règles et ses globales.
  */
@@ -44,7 +44,7 @@ module.exports = [
       ".claude/**",
       "outils/tpl-multi.html", "outils/chk.js", "outils/brut/**", "outils/svg/**",
       "simulations/**", "test-results/**", "playwright-report/**",
-      // relus par `outils/relecture.js`, tels que la page les assemble
+      // relus par `outils/controles/relecture.js`, tels que la page les assemble
       "outils/gabarit/*.{html,css,js}", "!outils/gabarit/_sw.js",
     ],
   },
@@ -70,7 +70,7 @@ module.exports = [
      Et rien ne se pose sur l'objet global : c'est ainsi que le code des
      pages s'était soudé en un seul espace de noms, chacun appelant les
      fonctions de tous sans le dire. Un nom passe d'un module à l'autre par
-     `import`, ou par une porte (`confieALaVue`…) quand l'import bouclerait.
+     `import`, ou par une porte (`injecteALaVue`…) quand l'import bouclerait.
      Les noms en `__` font exception : l'amorce que la construction pose
      avant les scripts (`__plan`, `__entete`, `__planAdmin`, que le
      démarrage consomme) et

@@ -8,12 +8,12 @@
  * SQL `lecture_perf` (lecture seule) n'y répond qu'à qui présente un jeton que
  * l'exploitant a créé lui-même.
  *
- *   node outils/lecture-perf.js releves --de 2026-10-21 --a 2026-10-27 --slug fep27
- *   node outils/lecture-perf.js bilans|jours|erreurs|salons [--de J] [--a J] [--slug S]
+ *   node outils/scripts/lecture-perf.js releves --de 2026-10-21 --a 2026-10-27 --slug fep27
+ *   node outils/scripts/lecture-perf.js bilans|jours|erreurs|salons [--de J] [--a J] [--slug S]
  *   ajouter  --sortie fichier.json  pour écrire au lieu d'imprimer.
  *
  * Derrière le relais d'une session Claude Code, le `fetch` de Node ne le
- * prend pas de lui-même : `NODE_USE_ENV_PROXY=1 node outils/lecture-perf.js …`.
+ * prend pas de lui-même : `NODE_USE_ENV_PROXY=1 node outils/scripts/lecture-perf.js …`.
  *
  * Créer le jeton : dans l'éditeur SQL de Supabase,
  *   select lecteur_perf_nouveau('claude');
@@ -23,7 +23,7 @@
  * Le révoquer : select lecteur_perf_retire('claude');
  */
 const fs = require("fs");
-const { PROJETS } = require("./projet.js");
+const { PROJETS } = require("../projet.js");
 
 const QUOI = ["releves", "bilans", "jours", "erreurs", "salons"];
 const PAGE = 1000;
@@ -39,7 +39,7 @@ function lisArguments(argv) {
     options[nom.slice(2)] = reste[i + 1];
   }
   if (!QUOI.includes(quoi)) {
-    throw new Error("Usage : node outils/lecture-perf.js <" + QUOI.join("|") + "> [--de AAAA-MM-JJ] [--a AAAA-MM-JJ] [--slug salon] [--sortie fichier]");
+    throw new Error("Usage : node outils/scripts/lecture-perf.js <" + QUOI.join("|") + "> [--de AAAA-MM-JJ] [--a AAAA-MM-JJ] [--slug salon] [--sortie fichier]");
   }
   return { quoi, options };
 }

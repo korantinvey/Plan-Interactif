@@ -14,17 +14,17 @@
    source, qu'il est seul à refaire, vit ici. Il ne dépend ni de la fiche ni
    de la liste ni des libellés, qui l'importent tous trois ; seule la police
    des noms, qu'il importe, reçoit de lui en se chargeant de quoi le retracer
-   (`confieAuxPolices`).
+   (`injecteAuxPolices`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state, P, societes } from "./donnees.mjs";
 import { optionActive } from "./configuration.mjs";
-import { svg, vue, cadrePlan, confieALaVue } from "./vue.mjs";
+import { svg, vue, cadrePlan, injecteALaVue } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
-import { P_NOM, confieAuxPolices } from "./polices-plan.mjs";
+import { P_NOM, injecteAuxPolices } from "./polices-plan.mjs";
 import { mesCalques, calqueActif } from "./calques-dessin.mjs";
 import { traceStand, tuilesPosees } from "./ambiance.mjs";
 import { cheminForme, estCadre, styleTrait, EPAISSEUR_TRAIT, facteurTrait, pxTrait } from "./chemin-forme.mjs";
@@ -674,9 +674,9 @@ export function signale(id){
 /* La pointe d'une ligne fléchée garde sa taille à l'écran : la vue, que ce
    module importe, la refait à chaque changement de vue — il la lui confie en
    se chargeant. */
-confieALaVue({ rafraichitFleches });
+injecteALaVue({ rafraichitFleches });
 
 /* Le dessin des calques, confié dès que ce module se charge à la police des
    noms, qui le rappelle sans pouvoir l'importer : ce module l'importe pour
    écrire les siens. Les libellés, eux, l'importent. */
-confieAuxPolices({ dessineDessins });
+injecteAuxPolices({ dessineDessins });

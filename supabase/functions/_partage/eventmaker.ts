@@ -59,7 +59,7 @@ const PAR_PAGE = 500;
 
 /* Le programme du site public ne passe pas par REST, où rien ne relie une
    session à un exposant, mais par ce graphe — non documenté, et public : ni
-   jeton ni en-tête, l'identifiant de l'événement suffit. `outils/eventmaker.md`
+   jeton ni en-tête, l'identifiant de l'événement suffit. `docs/eventmaker.md`
    raconte par où on y est arrivé. */
 const GRAPHE = "https://app.eventmaker.io/api/graphql";
 
@@ -742,7 +742,7 @@ export class Eventmaker {
   /**
    * Les produits d'un exposant, indexés par fiche d'invité.
    *
-   * `outils/eventmaker-produits.md` raconte l'enquête ; voici ce qu'elle a
+   * `docs/eventmaker-produits.md` raconte l'enquête ; voici ce qu'elle a
    * retenu. La ressource est hors documentation, comme les sessions, mais dans
    * l'API REST et non dans le graphe : deux appels suffisent pour le plus gros
    * catalogue du compte.

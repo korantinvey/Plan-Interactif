@@ -8,7 +8,7 @@
  * la construction le minifie, et l'on y cherche des phrases dont on sait le
  * module : la carte doit tomber sur la ligne qui les porte.
  *
- *   node outils/essais/carte.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/carte.js     (lancé par `npm run essais`)
  */
 const fs = require("fs");
 const path = require("path");

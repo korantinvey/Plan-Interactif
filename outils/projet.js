@@ -2,7 +2,7 @@
  * Le projet Supabase que parlent les pages, le Worker et le serveur d'essai.
  *
  * L'adresse était écrite trois fois — `_config.js`, `src/index.mjs`,
- * `outils/serve.js` — et rien ne disait qu'il fallait changer les trois
+ * `outils/scripts/serve.js` — et rien ne disait qu'il fallait changer les trois
  * ensemble. Elle ne l'est plus qu'ici : `genere.js` la verse dans `config.js`
  * et dans `src/pages.mjs`, que le Worker importe.
  *

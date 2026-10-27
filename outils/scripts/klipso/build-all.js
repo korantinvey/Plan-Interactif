@@ -150,7 +150,7 @@ for (const [i, meta] of index.entries()) {
 
 plans.sort((a, b) => a.libelle.localeCompare(b.libelle, "fr", { numeric: true }));
 const out = { evenement: "SMCL 2026", plans };
-fs.writeFileSync(path.join(D, "plans.json"), JSON.stringify(out));
-console.log("\nplans.json :", (fs.statSync(path.join(D, "plans.json")).size / 1048576).toFixed(2), "Mo");
+fs.writeFileSync(path.join(D, "..", "..", "donnees", "plans.json"), JSON.stringify(out));
+console.log("\nplans.json :", (fs.statSync(path.join(D, "..", "..", "donnees", "plans.json")).size / 1048576).toFixed(2), "Mo");
 console.log("total      :", plans.reduce((a, p) => a + p.stands.length, 0), "stands,",
             plans.reduce((a, p) => a + p.zones.length, 0), "zones");

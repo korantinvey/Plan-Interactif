@@ -15,12 +15,12 @@
    `ordre-trace.mjs`). Hors de l'administration, il retire en dernier les
    commandes de l'exploitant (`mode-admin.mjs` `retireAdmin`) : la page
    publique n'a plus à le demander. Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) suit ses deux
-   annonces (`PLAN_DEMARRE`, `SESSION_REFUSEE`) ; chez le visiteur personne
+   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) écoute ses deux
+   événements (`PLAN_DEMARRE`, `SESSION_REFUSEE`) ; chez le visiteur personne
    n'écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { DATA, TOUS, CONFS, state } from "./donnees.mjs";
 import { API, SLUG, PLAN_ADMIN, entetesApi } from "./salon.mjs";
 import { retireAdmin } from "./mode-admin.mjs";
@@ -42,11 +42,11 @@ import { planAffiche } from "./affichage.mjs";
    bouton d'enregistrement et le rattrapage d'un envoi en retard
    (`enregistrement.mjs`), la fenêtre d'accès (`acces-admin.mjs`). */
 /** Le plan est dessiné et manipulable. */
-export const PLAN_DEMARRE = creeAnnonce();
+export const PLAN_DEMARRE = creeEvenement();
 /** La base a refusé la session : le message à dire. Personne ne l'écoute chez
  *  le visiteur, qui garde alors l'erreur ordinaire.
- *  @type {import("./annonce.mjs").Annonce<[string]>} */
-export const SESSION_REFUSEE = creeAnnonce();
+ *  @type {import("./evenement.mjs").Evenement<[string]>} */
+export const SESSION_REFUSEE = creeEvenement();
 
 /* ------------------------------------------------------------------
    Démarrage : données figées si elles sont dans la page, sinon appel
@@ -103,7 +103,7 @@ function demarre(/** @type {any} */ d){
   /* Le plan chargé, le bouton peut dire où en est l'enregistrement, et ce
      qu'une session précédente n'a pas réussi à enregistrer repart de
      lui-même — en administration seulement (`modules/enregistrement.mjs`). */
-  PLAN_DEMARRE.dis();
+  PLAN_DEMARRE.emet();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
@@ -297,9 +297,9 @@ export function charge(){
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que
       // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
-      if (r.status === 401 && SESSION_REFUSEE.suivie()){
+      if (r.status === 401 && SESSION_REFUSEE.ecoutee()){
         try { localStorage.removeItem("console-session"); } catch (e) {}
-        SESSION_REFUSEE.dis("Session expirée, reconnectez-vous.");
+        SESSION_REFUSEE.emet("Session expirée, reconnectez-vous.");
         return Promise.reject(new Error("Session expirée."));
       }
       return r.ok ? r.json()

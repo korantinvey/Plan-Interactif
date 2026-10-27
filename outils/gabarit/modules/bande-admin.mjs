@@ -65,7 +65,7 @@ export function activeAdmin(){
      donc le plan, grisé ; si l'API ne répond jamais, il n'y a rien à régler. */
   if (r && !DATA){
     r.disabled = true;
-    PLAN_DEMARRE.suis(() => { r.disabled = false; });
+    PLAN_DEMARRE.ecoute(() => { r.disabled = false; });
   }
   /* Les commandes de l'outil quittent le bandeau du salon pour la bande du
      dessus, dans l'ordre où l'on s'en sert. Elles y portaient l'habillage
@@ -121,4 +121,4 @@ export function activeAdmin(){
    Elle annonce l'accès accordé, et on l'écoute dès que la page
    d'administration charge ce module, bien avant que la session soit
    vérifiée. */
-ACCES_ACCORDE.suis(activeAdmin);
+ACCES_ACCORDE.ecoute(activeAdmin);

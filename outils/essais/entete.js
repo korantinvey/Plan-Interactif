@@ -12,7 +12,7 @@
  * plus tôt n'écrase pas une plus récente, et que l'oubli ne coûte pas plus
  * d'écritures qu'avant — le stockage n'en accepte que mille par jour.
  *
- *   node outils/essais/entete.js     (chaîné dans `npm run essais`, après la construction)
+ *   node outils/essais/entete.js     (lancé par `npm run essais`, après la construction)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

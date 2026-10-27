@@ -14,7 +14,7 @@
    Ce qu'elle emprunte aux modules qui l'importent — le montage du plan, les
    découpages dessinés, les distinctions, et, en
    administration seulement, les deux gestes de l'exploitant sur une zone —
-   chacun le lui confie en se chargeant, par `confieALaFiche`. La liste, les
+   chacun le lui confie en se chargeant, par `injecteALaFiche`. La liste, les
    thématiques et les vignettes s'importent de `recherche.mjs`, les tiroirs
    de `tiroirs.mjs`, le nom d'une zone de `noms-zones.mjs`, la forme d'un
    repère dessiné de `forme-choisie.mjs`.
@@ -56,7 +56,7 @@ import { montePlan } from "./rendu.mjs";
  * de l'exploitant sur une zone (`fiche-zone.mjs`). Tous l'importent, ou
  * importent qui l'importe : elle ne peut les importer en retour, et chacun
  * lui confie ce qu'elle en appelle au chargement de son module, par
- * `confieALaFiche`. La page publique n'embarque
+ * `injecteALaFiche`. La page publique n'embarque
  * pas `fiche-zone.mjs` : ses deux gestes y restent absents, et le crayon
  * comme la pastille sans écoute.
  * @typedef {object} PageFiche
@@ -68,7 +68,7 @@ const prete = /** @type {any} */ ({ ficheZone: null, basculeAffichageZone: null 
 
 /** La porte des modules qui prêtent à la fiche ce qu'elle appelle.
  *  @param {Partial<PageFiche>} o */
-export function confieALaFiche(o){ Object.assign(prete, o); }
+export function injecteALaFiche(o){ Object.assign(prete, o); }
 
 /* ============================================================
    7. Sélection et fiche
@@ -568,7 +568,7 @@ export function ficheConf(id, canal){
    insensible le temps qu'il passe, et seulement après un appui : à la souris,
    rien ne justifierait ce temps mort. */
 export let dernierAppuiTactile = false;
-/** La porte du dernier appui : les gestes la passent à chaque doigt posé. */
+/** Le mutateur du dernier appui : les gestes la passent à chaque doigt posé. */
 export function poseAppuiTactile(/** @type {boolean} */ v){ dernierAppuiTactile = v; }
 let degel = null;
 
@@ -1172,7 +1172,7 @@ export function onglet(n){
  * fiche — le rangement de sa marque au redimensionnement, ses onglets, sa
  * croix et le voile — se posent au même rang qu'avant parmi celles du plan.
  * Il ne reçoit plus rien : ce que la fiche emprunte lui est confié par
- * `confieALaFiche`.
+ * `injecteALaFiche`.
  */
 export function brancheFiche(){
   /* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli

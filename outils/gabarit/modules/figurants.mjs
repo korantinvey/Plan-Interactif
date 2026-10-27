@@ -20,7 +20,7 @@
    non plus — le plan ne s'anime pas sous les yeux du visiteur.
 
    Ils ne se posent que là où l'on marche : la nappe de la grille de
-   l'itinéraire (`itineraire.mjs` `grille`), qui sait déjà ce qui est allée
+   l'itinéraire (`grille-marche.mjs` `grille`), qui sait déjà ce qui est allée
    et ce qui est stand, cloison ou zone fermée. Ce module ne lit pas la page :
    il reçoit la grille, rend la place de chacun et le maillage d'une
    silhouette, que le dessin (`webgl.mjs`) répète. Il s'éprouve seul dans Node

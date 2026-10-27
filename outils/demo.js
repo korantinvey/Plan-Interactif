@@ -2,7 +2,7 @@
  * Le salon de démonstration — le plan d'un vrai salon, des exposants inventés.
  *
  * La source est un salon réel tel que l'API publique le sert à un visiteur
- * (`outils/source-demo.json`, FEP27 : `npm run source-demo`). On en garde ce
+ * (`outils/donnees/source-demo.json`, FEP27 : `npm run source-demo`). On en garde ce
  * qui fait un plan crédible et ne nomme personne — la géométrie des stands et
  * des zones, les dessins posés à la main, l'apparence réglée par l'exploitant,
  * les champs propres au salon — et on remplace le reste :
@@ -270,7 +270,7 @@ function enseigne(r, mots) {
 
 /**
  * Le salon de démonstration, tiré de la source.
- * @param {any} source  le contenu de `outils/source-demo.json`
+ * @param {any} source  le contenu de `outils/donnees/source-demo.json`
  * @param {{ logos?: Record<string, string> }} [o]  les logos par nom de société
  *   (`logos-demo.json` à défaut) — `logos-demo.js` passe `{}`, il les dessine
  */
@@ -583,12 +583,12 @@ function salonDemo(source, o) {
 /** Les logos dessinés par `logos-demo.js`, par nom de société ; rien s'il
  *  n'a pas encore tourné. */
 function lisLogos() {
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "logos-demo.json"), "utf8")); }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, "donnees", "logos-demo.json"), "utf8")); }
   catch (e) { return {}; }
 }
 
 /** La source versionnée. */
-const lisSource = () => JSON.parse(fs.readFileSync(path.join(__dirname, "source-demo.json"), "utf8"));
+const lisSource = () => JSON.parse(fs.readFileSync(path.join(__dirname, "donnees", "source-demo.json"), "utf8"));
 
 /**
  * Les images des produits : une par offre de chaque secteur, en SVG — un

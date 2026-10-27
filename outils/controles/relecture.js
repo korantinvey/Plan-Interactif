@@ -17,12 +17,12 @@
 const fs = require("fs");
 const path = require("path");
 const { ESLint, Linter } = require("eslint");
-const { BOUTS, lisBout } = require("./assemble.js");
-const { REGLES, GLOBALES_PAGE } = require("../eslint.config.js");
+const { BOUTS, lisBout } = require("../assemble.js");
+const { REGLES, GLOBALES_PAGE } = require("../../eslint.config.js");
 const globals = require("globals");
 
-const RACINE = path.join(__dirname, "..");
-const G = path.join(__dirname, "gabarit");
+const RACINE = path.join(__dirname, "..", "..");
+const G = path.join(__dirname, "..", "gabarit");
 const lis = (f) => fs.readFileSync(path.join(G, f), "utf8");
 
 /* Chaque page, telle que `genere.js` la compose : la configuration et le

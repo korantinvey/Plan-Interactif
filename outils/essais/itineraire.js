@@ -1,6 +1,7 @@
 /**
- * L'itinéraire : la grille de marche de `modules/itineraire.mjs`, éprouvée
- * seule.
+ * L'itinéraire : la grille de marche (`modules/grille-marche.mjs`) et ce qui
+ * en suit, éprouvés seuls au travers de `modules/itineraire.mjs`, qui les
+ * réexporte.
  *
  * La grille d'un vrai pavillon se peint sur un canevas, que Node n'a pas. Ce
  * qui vient après, en revanche — l'écart au mur, la nappe, la recherche du
@@ -11,7 +12,7 @@
  * rien planter : elle envoie le visiteur par le mauvais côté de l'allée, ou
  * lui annonce dix minutes pour cinq.
  *
- *   node outils/essais/itineraire.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/itineraire.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

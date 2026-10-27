@@ -7,7 +7,7 @@
  * planter : le nom repasserait sur les parts, ou disparaîtrait d'un
  * emplacement qui avait la place. D'où des emplacements connus au mètre.
  *
- *   node outils/essais/place-libre.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/place-libre.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

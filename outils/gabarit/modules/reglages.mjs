@@ -56,10 +56,10 @@ import { libelles } from "./libelles.mjs";
 
    Le retour est public de nom — l'invitation et le rappel, que le visiteur
    reçoit, l'appellent (`fenetre.mjs` `retourAuxReglages`) —, et
-   d'administration de contenu : ce module suit l'annonce de la fenêtre
+   d'administration de contenu : ce module écoute l'événement de la fenêtre
    commune (`APERCU_QUITTE`) dès que la page d'administration le charge,
    avant que `plan-admin.mjs` ne lance le plan. */
-APERCU_QUITTE.suis((marque) => {
+APERCU_QUITTE.ecoute((marque) => {
   queueMicrotask(() => {
     ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');

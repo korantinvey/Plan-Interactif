@@ -10,7 +10,7 @@
    commandes, que le démarrage fait en dernier hors de l'administration
    (`demarrage.mjs` `brancheDemarrage`). L'ouverture du mode,
    elle, est d'exploitant : elle vit dans `modules/bande-admin.mjs`, que seul
-   `plan-admin.mjs` embarque, et c'est elle seule qui pose l'état, par sa porte
+   `plan-admin.mjs` embarque, et c'est elle seule qui pose l'état, par son mutateur
    `ouvreModeAdmin`. Les modules l'importent.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -18,7 +18,7 @@ import { $ } from "./dom.mjs";
 /** Le mode administration est-il ouvert ? Faux dans la page publique, toujours. */
 export let ADMIN = false;
 
-/** La porte de l'état : l'ouverture du mode (`bande-admin.mjs` `activeAdmin`). */
+/** Le mutateur de l'état : l'ouverture du mode (`bande-admin.mjs` `activeAdmin`). */
 export function ouvreModeAdmin(){
   ADMIN = true;
 }

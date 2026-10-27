@@ -15,7 +15,7 @@
 
    La carte de chaleur se pose sur les mêmes formes et suit la teinte ; elle
    n'est que d'administration (`modules/chaleur.mjs`, par `plan-admin.mjs`),
-   qui la confie à ce module en se chargeant (`confieChaleur`) : la page
+   qui la confie à ce module en se chargeant (`injecteChaleur`) : la page
    publique, qui ne l'embarque pas, garde la teinte seule.
    ============================================================ */
 import { COLLATION } from "./texte.mjs";
@@ -28,9 +28,9 @@ import { libelleCritere, PREFIXE_PERSO } from "./corps-fiche.mjs";
 /* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
 
-/** La porte de la carte de chaleur, que `chaleur.mjs` ouvre en se chargeant.
+/** L'injection de la carte de chaleur, que `chaleur.mjs` remplit en se chargeant.
  *  @param {() => void} f */
-export function confieChaleur(f){ coloreChaleur = f; }
+export function injecteChaleur(f){ coloreChaleur = f; }
 
 /** Le champ qui découpe le salon en couleurs : le secteur, sauf choix contraire. */
 export const champDecoupage = () => conf("_secteurs").champ || CLE_SECTEUR;

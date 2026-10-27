@@ -166,16 +166,16 @@ ecrit(
 /* Le graphe des imports, dans les deux sens. C'est ce que la prose du dépôt
    recopiait module par module — « importé par la fiche, la journée… » — et
    qu'elle laissait vieillir : relu ici à chaque construction, il ne peut pas
-   mentir. Les portes viennent de leur cliquet, avec leur genre. */
+   mentir. Les injections viennent de leur référence figée, avec leur genre. */
 const IMPORTE = new Map(SOURCES.filter((n) => n.startsWith("modules/"))
   .map((n) => [n.slice(8), modules.importsDe(n)]));
 const IMPORTE_PAR = new Map();
 for (const [m, liste] of IMPORTE) {
   for (const i of liste) IMPORTE_PAR.set(i, [...(IMPORTE_PAR.get(i) || []), m]);
 }
-const PORTES = (() => {
+const INJECTIONS = (() => {
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, "portes-acceptees.json"), "utf8"));
+    return JSON.parse(fs.readFileSync(path.join(__dirname, "controles", "injections-acceptees.json"), "utf8"));
   } catch { return {}; }
 })();
 const sansExt = (m) => m.replace(/\.mjs$/, "");
@@ -211,7 +211,7 @@ for (const nom of SOURCES) {
   if (nom.startsWith("modules/")) {
     const m = nom.slice(8);
     const imp = IMPORTE.get(m) || [], par = IMPORTE_PAR.get(m) || [];
-    const portes = Object.entries(PORTES).filter(([, p]) => p.module === m);
+    const injections = Object.entries(INJECTIONS).filter(([, p]) => p.module === m);
     if (imp.length) {
       ecrit("", "Importe :", "");
       for (const l of enveloppe(imp.map(sansExt).sort())) ecrit(l);
@@ -220,9 +220,9 @@ for (const nom of SOURCES) {
       ecrit("", "Importé par :", "");
       for (const l of enveloppe(par.map(sansExt).sort())) ecrit(l);
     }
-    if (portes.length) {
-      ecrit("", "Portes :", "");
-      for (const [p, d] of portes) ecrit(`- \`${p}\` (${d.genre}) — ${d.raison}`);
+    if (injections.length) {
+      ecrit("", "Injections :", "");
+      for (const [p, d] of injections) ecrit(`- \`${p}\` (${d.genre}) — ${d.raison}`);
     }
   }
   ecrit("");
@@ -289,19 +289,19 @@ ecrit(
   "- `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.",
   "- `outils/icones.js` — dessine l'icône de l'application, et l'encode en PNG.",
   "- `outils/carte.js` — produit ce fichier.",
-  "- `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.",
-  "- `outils/controle.js` — analyse le script de chaque page construite, en module",
+  "- `outils/controles/verifie.js` — reconstruit, et échoue si le versionné était en retard.",
+  "- `outils/controles/controle.js` — analyse le script de chaque page construite, en module",
   "  ES : une redéclaration y est une erreur, là où un `<script>` la tolère.",
-  "- `outils/migration.js` — crée une migration horodatée à la seconde.",
+  "- `outils/scripts/migration.js` — crée une migration horodatée à la seconde.",
   "- `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors",
-  "  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.",
+  "  construction (réseau requis) ; écrit `outils/donnees/polices.json`, relu par `genere.js`.",
   "- `outils/gabarit/_langue.js` — la version anglaise : posé en tête de chaque page, il",
   "  traduit ce qu'elle affiche d'après le dictionnaire, et tient la bascule FR/EN.",
   "- `outils/anglais/` — le dictionnaire anglais, un fichier par module ; `serveur.js` et",
   "  `donnees.js` pour ce qui arrive du serveur, `invisibles.js` pour les faux positifs.",
   "- `outils/traductions.js` — relève les chaînes visibles du gabarit, échoue sur celles",
   "  qui n'ont pas de traduction ; choisit aussi ce que chaque page emporte du dictionnaire.",
-  "- `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —",
+  "- `outils/scripts/klipso/fetch-all.js`, `outils/scripts/klipso/build-all.js`, `outils/scripts/klipso/optim.js`, `outils/scripts/klipso/lire-pdf.js` —",
   "  outils hors ligne de récupération et de préparation des plans (clé Klipso requise).",
   ""
 );

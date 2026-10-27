@@ -10,7 +10,7 @@
  * la même requête, servie sous l'adresse de la production puis sous celle
  * d'une branche.
  *
- *   node outils/essais/apercu.js     (chaîné dans `npm run essais`, après la construction)
+ *   node outils/essais/apercu.js     (lancé par `npm run essais`, après la construction)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

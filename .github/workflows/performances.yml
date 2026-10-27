@@ -1,7 +1,7 @@
 # La fiche de pistes de performance : chaque lundi, les relevés de la sonde de
 # la semaine passée deviennent une issue « Performances — semaine du … »,
 # étiquette `performances`, ses pistes classées par gain estimé. Rien n'y nomme
-# un salon : le dépôt est public (`outils/performances.js`).
+# un salon : le dépôt est public (`outils/scripts/performances.js`).
 name: Performances
 
 on:

@@ -14,12 +14,12 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { state } from "./donnees.mjs";
-import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseVue, confieALaVue,
+import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseVue, injecteALaVue,
   suitLaVue, versScene } from "./vue.mjs";
 import { REDUIT } from "./ecran.mjs";
 import { mesureMarches, coupeMarche, distancesDesArrets } from "./itineraire.mjs";
 import { poseTrajet } from "./camera.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 
 /**
  * Ce que le plan montre en ce moment.
@@ -34,10 +34,10 @@ export let TRACE = null;
 /** Le trait vient de changer de propriétaire. Le rappel du trajet, au haut
  *  du plan, l'écoute : la journée qui prend le trait doit l'éteindre sans
  *  connaître le tiroir de l'itinéraire. */
-export const TRACE_POSEE = creeAnnonce();
+export const TRACE_POSEE = creeEvenement();
 
-/** La porte du tracé : la journée organisée le prend pour elle, ou le rend. */
-export function poseTrace(t){ TRACE = t; TRACE_POSEE.dis(); }
+/** Le mutateur du tracé : la journée organisée le prend pour elle, ou le rend. */
+export function poseTrace(t){ TRACE = t; TRACE_POSEE.emet(); }
 
 const marchesIci = () => (TRACE ? TRACE.etapes : [])
   .filter(e => e.genre === "marche" && e.p === state.plan);
@@ -371,4 +371,4 @@ export function cadreItineraire(){
 /* Les pastilles du trajet gardent leur taille à l'écran : la vue, que ce
    module importe, les refait à chaque changement de vue — il les lui confie
    en se chargeant. */
-confieALaVue({ rafraichitBouts });
+injecteALaVue({ rafraichitBouts });

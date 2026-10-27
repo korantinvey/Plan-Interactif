@@ -11,7 +11,7 @@
    change, le dessin des calques et les noms du plan (`dessin.mjs`,
    `libelles.mjs`) le lisent. Il vivait dans la recherche, et ces deux-là
    devaient donc importer la liste pour savoir quoi éteindre — d'où une
-   recherche qui ne pouvait plus les importer, et des portes pour le leur
+   recherche qui ne pouvait plus les importer, et des injections pour le leur
    faire dire. Il ne dépend que des données, de la configuration et du corps
    de la fiche.
    ============================================================ */

@@ -21,7 +21,7 @@
  * freinée par Cloudflare comme une attaque — des 429 ou des 403 en série
  * parlent alors de l'essai, pas du plan.
  *
- *   node outils/essais/charge.js --base https://… --salon smcl-2026
+ *   node outils/bancs/charge.js --base https://… --salon smcl-2026
  *        [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee] [--journal bilan.txt] [--mesures-seules]
  */
 "use strict";
@@ -50,7 +50,7 @@ const MESURES_SEULES = opt("mesures-seules", false) === true;
 const SALON_MESURE = ECRIRE ? SALON : "essai-de-charge-inexistant";
 
 if (!BASE || !SALON) {
-  console.error("Usage : node outils/essais/charge.js --base https://… --salon <slug> [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee]");
+  console.error("Usage : node outils/bancs/charge.js --base https://… --salon <slug> [--visiteurs 3000] [--montee 60] [--duree 300] [--ecrire] [--journee]");
   process.exit(2);
 }
 

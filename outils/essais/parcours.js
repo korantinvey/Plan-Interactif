@@ -8,7 +8,7 @@
  * l'aller-retour plutôt que de relire le code : ce qu'on a écrit doit revenir
  * tel quel, et ce qu'on n'a pas écrit ne doit rien rendre.
  *
- *   node outils/essais/parcours.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/parcours.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

@@ -138,6 +138,23 @@ Fonctions :
 `borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
 `tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
 
+### `modules/abords-salles.mjs` — 244 l. → plan, plan-admin
+
+- l.1 · Les abords d'une salle qui se vide
+
+Fonctions :
+
+`regleFoule` 66 · `ecarteFoule` 83 · `heureAuSalon` 87 · `sallesEnMouvement` 96
+`oublieFoules` 128 · `foule` 140 · `bilanFoule` 228
+
+Importe :
+
+donnees · grille-marche · recherche-chemin · temps
+
+Importé par :
+
+itineraire · itineraire · troncon
+
 ### `modules/acces-admin.mjs` — 253 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
@@ -154,7 +171,7 @@ Fonctions :
 
 Importe :
 
-annonce · demarrage · dom · session
+demarrage · dom · evenement · session
 
 Importé par :
 
@@ -257,20 +274,6 @@ camera · configuration · donnees · figurants · logos-stands · salon
 Importé par :
 
 apparence · choix-ambiance · dessin · distinctions · rendu · volets
-
-### `modules/annonce.mjs` — 45 l. → plan, plan-admin
-
-- l.1 · Une annonce — dire ce qui vient de se passer, sans savoir qui écoute
-
-Fonctions :
-
-`creeAnnonce` 37
-
-Importé par :
-
-acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · fenetre
-fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes
-webgl
 
 ### `modules/apercus.mjs` — 326 l. → plan-admin
 
@@ -504,7 +507,7 @@ Fonctions :
 
 Importe :
 
-annonce · configuration · donnees · geste-tenu
+configuration · donnees · evenement · geste-tenu
 
 Importé par :
 
@@ -524,7 +527,7 @@ Fonctions :
 
 Importe :
 
-annonce
+evenement
 
 Importé par :
 
@@ -544,7 +547,7 @@ Fonctions :
 
 Importe :
 
-annonce · bandes · calques-dessin · configuration · dom · donnees · forme-choisie
+bandes · calques-dessin · configuration · dom · donnees · evenement · forme-choisie
 itineraire · reperes · vue
 
 Importé par :
@@ -608,7 +611,8 @@ Fonctions :
 
 Importé par :
 
-dessin · edition · environs · itineraire · outil-dessin · reprise-emplacements · vue · webgl
+dessin · edition · environs · grille-marche · outil-dessin · reprise-emplacements · vue
+webgl
 
 ### `modules/choix-ambiance.mjs` — 45 l. → plan, plan-admin
 
@@ -668,7 +672,7 @@ Fonctions :
 
 Importe :
 
-annonce · donnees · salon
+donnees · evenement · salon
 
 Importé par :
 
@@ -779,7 +783,7 @@ Fonctions :
 
 Importe :
 
-affichage · annonce · borne · dom · donnees · fiche · ici · index-salon · installation
+affichage · borne · dom · donnees · evenement · fiche · ici · index-salon · installation
 mode-admin · parcours-recu · recherche · rendu · salon · sponsor · tutoriel · vignettes
 vue
 
@@ -900,17 +904,17 @@ Fonctions :
 
 Importé par :
 
-affiche-ici · aimants · ambiance · apercus · apparence · appels · application · bande-admin
-batiments · borne · calage-carte · calques-dessin · cartouche-poi · chaleur
-charge-annoncee · configuration · corps-fiche · demarrage · dessin · distinctions · edition
-emplacements · enregistrement · environs · fiche · fiche-zone · filtre · gestes · ici
-index-salon · installation · itineraire · journee · libelles · logos-stands · mesure
-mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours · parcours-recu
-partage · pile · placement-libelles · points-interet · rappels · recherche
+abords-salles · affiche-ici · aimants · ambiance · apercus · apparence · appels
+application · bande-admin · batiments · borne · calage-carte · calques-dessin
+cartouche-poi · chaleur · charge-annoncee · configuration · corps-fiche · demarrage · dessin
+distinctions · edition · emplacements · enregistrement · environs · fiche · fiche-zone
+filtre · gestes · ici · index-salon · installation · journee · libelles · logos-stands
+mesure · mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours
+parcours-recu · partage · pile · placement-libelles · points-interet · rappels · recherche
 reglage-application · reglage-fiche · reglage-recherche · reglage-suggestion · reglages
 releve · rendu · reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor
 suggestion · tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire
-tutoriel · volets · vous-etes-ici · webgl
+trajet · tutoriel · volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 
@@ -1115,6 +1119,20 @@ Importé par :
 
 reglage-rappel
 
+### `modules/evenement.mjs` — 46 l. → plan, plan-admin
+
+- l.1 · Un événement — dire ce qui vient de se passer, sans savoir qui écoute
+
+Fonctions :
+
+`creeEvenement` 38
+
+Importé par :
+
+acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · fenetre
+fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes
+webgl
+
 ### `modules/evenements.mjs` — 70 l. → console
 
 - l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
@@ -1179,7 +1197,7 @@ Fonctions :
 
 Importe :
 
-annonce · dom · modeles
+dom · evenement · modeles
 
 Importé par :
 
@@ -1248,9 +1266,9 @@ Fonctions :
 
 Importe :
 
-annonce · cartouche-poi · configuration · demarrage · depot-image · dom · donnees
-emplacements · fenetre · fiche · index-salon · itineraire · libelles · noms-zones
-recherche · reglage-comptoir · reglage-foodtrucks · reperes · session · sur · texte
+cartouche-poi · configuration · demarrage · depot-image · dom · donnees · emplacements
+evenement · fenetre · fiche · index-salon · itineraire · libelles · noms-zones · recherche
+reglage-comptoir · reglage-foodtrucks · reperes · session · sur · texte
 
 Importé par :
 
@@ -1264,7 +1282,7 @@ reprise-emplacements · volets
 
 Fonctions :
 
-`confieALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
+`injecteALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
 `select` 170 · `centre` 195 · `brancheActesFiche` 206 · `centreEtBaisseLaFiche` 222
 `centrePoint` 240 · `programme` 272 · `produits` 321 · `ficheProduit` 349 · `ficheConf` 419
 `poseAppuiTactile` 572 · `ecarteClicFantome` 575 · `nomSociete` 584 · `choisitExposant` 598
@@ -1287,9 +1305,9 @@ affiche-ici · borne · chaleur · demarrage · fiche-zone · gestes · journee 
 ligne-liste · points-interet · reglage-fiche · reglages · reprise-emplacements · suggestion
 tiroir-parcours · tutoriel
 
-Portes :
+Injections :
 
-- `confieALaFiche` (partition) — la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration
+- `injecteALaFiche` (partition) — la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration
 
 ### `modules/figurants.mjs` — 481 l. → plan, plan-admin
 
@@ -1445,6 +1463,28 @@ Importé par :
 
 reglage-sponsor · reglage-suggestion · reglages
 
+### `modules/grille-marche.mjs` — 935 l. → plan, plan-admin
+
+- l.1 · La grille de marche — le sol d'un pavillon, case par case
+
+Fonctions :
+
+`brancheItineraire` 35 · `conf` 37 · `instantConf` 38 · `finInstant` 39 · `sommets` 140
+`enveloppe` 160 · `oublieGrillesDeMarche` 202 · `calquesDe` 205 · `reperesDe` 213
+`zoneTraversee` 293 · `zonesDuTerrain` 302 · `cleRoleIti` 305 · `roleIti` 306
+`nomRoleIti` 307 · `estCirculation` 310 · `formesRole` 335 · `anglePlan` 367
+`dansGrille` 406 · `horsGrille` 407 · `grille` 417 · `distanceAuMur` 606 · `cretes` 649
+`nappePrincipale` 667 · `celluleDe` 702 · `caseDe` 706 · `centreCase` 711 · `empriseDe` 754
+`accrocheDepuis` 816 · `versLeMilieu` 889 · `accroche` 924
+
+Importe :
+
+chemin-forme
+
+Importé par :
+
+abords-salles · itineraire · itineraire · recherche-chemin · trait-chemin · trajet · troncon
+
 ### `modules/habillage.mjs` — 157 l. → plan, plan-admin
 
 - l.1 · L'habillage du plan — couleur principale, fond, barre du salon, modèle
@@ -1534,7 +1574,7 @@ Fonctions :
 
 Importe :
 
-annonce · calques-dessin · cartouche-poi · configuration · dom · donnees · emplacements
+calques-dessin · cartouche-poi · configuration · dom · donnees · emplacements · evenement
 installation · itineraire · mode-admin · modeles · noms-zones · options · parcours
 polices-plan · recherche · secteurs · sur · tiroir-parcours
 
@@ -1568,36 +1608,19 @@ Importé par :
 
 demarrage · index-salon · lancement · reglage-installation
 
-### `modules/itineraire.mjs` — 2647 l. → plan, plan-admin
+### `modules/itineraire.mjs` — 136 l. → plan, plan-admin
 
 - l.1 · L'itinéraire — le calcul d'un trajet d'un point du salon à un autre
 
 Fonctions :
 
-`brancheItineraire` 42 · `conf` 44 · `instantConf` 45 · `finInstant` 46 · `sommets` 148
-`enveloppe` 168 · `oublieGrilles` 211 · `calquesDe` 216 · `reperesDe` 224
-`zoneTraversee` 304 · `zonesDuTerrain` 313 · `cleRoleIti` 316 · `roleIti` 317
-`nomRoleIti` 318 · `estCirculation` 321 · `formesRole` 346 · `anglePlan` 378
-`dansGrille` 417 · `horsGrille` 418 · `grille` 428 · `distanceAuMur` 617 · `cretes` 660
-`nappePrincipale` 678 · `celluleDe` 713 · `caseDe` 717 · `centreCase` 722 · `empriseDe` 765
-`accrocheDepuis` 827 · `versLeMilieu` 900 · `accroche` 935 · `Tas` 950 · `travail` 994
-`cherche` 1017 · `distancesDepuis` 1084 · `distancesMulti` 1098 · `regleFoule` 1170
-`ecarteFoule` 1187 · `heureAuSalon` 1191 · `sallesEnMouvement` 1200 · `foule` 1243
-`bilanFoule` 1331 · `reduit` 1360 · `guidageAllees` 1423 · `recentre` 1479 · `passable` 1564
-`lisse` 1598 · `longueur` 1625 · `longueurDehors` 1641 · `nettoie` 1683 · `oublieFaces` 1730
-`facesLibres` 1732 · `amorce` 1829 · `faceDeSortie` 1864 · `raccordTient` 1910
-`accesDe` 1940 · `couplesAcces` 1992 · `troncon` 2025 · `pointObjet` 2070
-`pointRepere` 2077 · `candidats` 2086 · `pointSaisi` 2120 · `portesDe` 2132
-`versPorte` 2139 · `typeLiaison` 2200 · `nomRepere` 2208 · `oublieLiaisons` 2226
-`lienEcrits` 2238 · `ecritLiens` 2247 · `annuaireLiaisons` 2252 · `liensDe` 2284
-`coutLiaison` 2304 · `passagePraticable` 2311 · `passagesDe` 2319 · `sortiesDe` 2329
-`plansRelies` 2337 · `balayage` 2361 · `distanceDepuis` 2379 · `cheminLiaisons` 2406
-`routeParLiaisons` 2492 · `routeEntre` 2530 · `mesureMarches` 2568 · `coupeMarche` 2583
-`distancesDesArrets` 2599 · `ecritDistance` 2613 · `ecritDuree` 2621 · `phraseLiaison` 2635
+`oublieGrilles` 48 · `mesureMarches` 57 · `coupeMarche` 72 · `distancesDesArrets` 88
+`ecritDistance` 102 · `ecritDuree` 110 · `phraseLiaison` 124
 
 Importe :
 
-chemin-forme · donnees · reperes · temps · texte
+abords-salles · abords-salles · grille-marche · grille-marche · recherche-chemin · reperes
+temps · trait-chemin · trajet · trajet · troncon
 
 Importé par :
 
@@ -1637,7 +1660,7 @@ lancement · tiroir-parcours · tutoriel
 
 Fonctions :
 
-`confieLancementAdmin` 72 · `lancePlan` 75
+`injecteLancementAdmin` 72 · `lancePlan` 75
 
 Importe :
 
@@ -1649,9 +1672,9 @@ Importé par :
 
 plan · plan-admin
 
-Portes :
+Injections :
 
-- `confieLancementAdmin` (partition) — les branchements de l'exploitant prennent leur rang dans le lancement public, dont l'ordre est le comportement
+- `injecteLancementAdmin` (partition) — les branchements de l'exploitant prennent leur rang dans le lancement public, dont l'ordre est le comportement
 
 ### `modules/libelle-place.mjs` — 104 l. → plan, plan-admin
 
@@ -1742,7 +1765,8 @@ Fonctions :
 
 Importe :
 
-annonce · camera · detourage · dom · donnees · ecran · libelle-place · vignettes · vue-etat
+camera · detourage · dom · donnees · ecran · evenement · libelle-place · vignettes
+vue-etat
 
 Importé par :
 
@@ -1978,7 +2002,7 @@ outil-dessin · pile · plan-admin · volets
 
 Fonctions :
 
-`appliqueOptions` 100 · `confieApresOption` 114
+`appliqueOptions` 100 · `injecteApresOption` 114
 
 Importe :
 
@@ -1988,9 +2012,9 @@ Importé par :
 
 apparence · index-salon · outil-dessin · tiroir-parcours · volets
 
-Portes :
+Injections :
 
-- `confieApresOption` (registre) — chaque module que touche une option vendue à part y inscrit ce qu'il refait quand elle change
+- `injecteApresOption` (registre) — chaque module que touche une option vendue à part y inscrit ce qu'il refait quand elle change
 
 ### `modules/ordonnanceur.mjs` — 865 l. → plan, plan-admin
 
@@ -2032,7 +2056,7 @@ Fonctions :
 
 Importe :
 
-annonce · calques-dessin · configuration · dom · donnees
+calques-dessin · configuration · dom · donnees · evenement
 
 Importé par :
 
@@ -2324,7 +2348,7 @@ gestes · ligne-liste
 
 Fonctions :
 
-`confieAuxPolices` 43 · `policeChoisie` 210 · `policeDuModele` 215 · `feuillePolice` 225
+`injecteAuxPolices` 43 · `policeChoisie` 210 · `policeDuModele` 215 · `feuillePolice` 225
 `chargePolice` 247 · `policePrete` 267 · `policeDesNoms` 285 · `posePoliceLibelles` 314
 
 Importe :
@@ -2336,9 +2360,9 @@ Importé par :
 appels · dessin · habillage · index-salon · libelles · nom-emplacement · plan · recherche
 rendu · volets
 
-Portes :
+Injections :
 
-- `confieAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
+- `injecteAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
 ### `modules/provenance.mjs` — 164 l. → console
 
@@ -2429,6 +2453,22 @@ rapport
 Importe :
 
 export · rapport-utilisation · socle-console
+
+### `modules/recherche-chemin.mjs` — 184 l. → plan, plan-admin
+
+- l.1 · La recherche du chemin — A* sur la grille de marche
+
+Fonctions :
+
+`Tas` 18 · `travail` 58 · `cherche` 81 · `distancesDepuis` 148 · `distancesMulti` 162
+
+Importe :
+
+grille-marche
+
+Importé par :
+
+abords-salles · itineraire · trajet · troncon
 
 ### `modules/recherche.mjs` — 1037 l. → plan, plan-admin
 
@@ -2655,9 +2695,10 @@ Fonctions :
 
 Importe :
 
-ambiance · annonce · apparence · bandes · calques-dessin · configuration · decor · dessin
-distinctions · dom · donnees · mode-admin · ordre-trace · parcours · polices-plan
-recherche · salon · texte · tiroirs-exclusifs · trace-itineraire · vous-etes-ici · vue
+ambiance · apparence · bandes · calques-dessin · configuration · decor · dessin
+distinctions · dom · donnees · evenement · mode-admin · ordre-trace · parcours
+polices-plan · recherche · salon · texte · tiroirs-exclusifs · trace-itineraire
+vous-etes-ici · vue
 
 Importé par :
 
@@ -2684,7 +2725,7 @@ couleurs
 Importé par :
 
 cartouche-poi · dessin · edition · fiche-zone · itineraire · outil-dessin · points-interet
-socle-dessin · webgl
+socle-dessin · trajet · webgl
 
 ### `modules/reprise-emplacements.mjs` — 763 l. → plan-admin
 
@@ -2752,7 +2793,7 @@ retour · sonde · sponsor · tutoriel · vignettes
 
 Fonctions :
 
-`coloreChaleur` 29 · `confieChaleur` 33 · `champDecoupage` 36 · `premiere` 40
+`coloreChaleur` 29 · `injecteChaleur` 33 · `champDecoupage` 36 · `premiere` 40
 `valeurDecoupage` 51 · `confTeinte` 63 · `champsDecoupables` 84 · `indexeSecteurs` 103
 `secteursMontres` 120 · `couleurConf` 124 · `couleurSecteur` 133 · `pastilleSecteur` 147
 `coloreSecteurs` 160 · `peintSecteur` 205
@@ -2765,9 +2806,9 @@ Importé par :
 
 chaleur · dessin · enregistrement · index-salon · pile · recherche · volets
 
-Portes :
+Injections :
 
-- `confieChaleur` (partition) — la teinte des secteurs, publique, laisse la place à la carte de chaleur, d'administration
+- `injecteChaleur` (partition) — la teinte des secteurs, publique, laisse la place à la carte de chaleur, d'administration
 
 ### `modules/sejour.mjs` — 579 l. → plan, plan-admin
 
@@ -2965,8 +3006,8 @@ Fonctions :
 
 Importé par :
 
-charge-annoncee · edition · fiche · horaires · itineraire · journee · parcours
-points-interet · rappels · recherche · sejour · tiroir-parcours
+abords-salles · charge-annoncee · edition · fiche · horaires · itineraire · journee
+parcours · points-interet · rappels · recherche · sejour · tiroir-parcours
 
 ### `modules/terre.mjs` — 173 l. → plan, plan-admin
 
@@ -3013,10 +3054,10 @@ Fonctions :
 Importé par :
 
 affiche-ici · apercus · classeur · corps-fiche · dessin · distinctions · ecran-console
-edition · environs · fiche · fiche-detail · fiche-zone · filtre · fuseau · itineraire
-libelles · nom-emplacement · outil-dessin · parcours · pile · points-interet · qr
-rapport-utilisation · recherche · reglage-fiche · reglage-suggestion · rendu · secteurs
-socle-dessin · suggestion · sur · texte-plan
+edition · environs · fiche · fiche-detail · fiche-zone · filtre · fuseau · libelles
+nom-emplacement · outil-dessin · parcours · pile · points-interet · qr · rapport-utilisation
+recherche · reglage-fiche · reglage-suggestion · rendu · secteurs · socle-dessin
+suggestion · sur · texte-plan · trajet
 
 ### `modules/tiroir-itineraire.mjs` — 695 l. → plan, plan-admin
 
@@ -3026,7 +3067,7 @@ Fonctions :
 
 `calculeRoute` 73 · `champIti` 91 · `fermeSugg` 95 · `montreSugg` 102 · `choisitPoint` 136
 `valideSaisie` 145 · `effaceItineraire` 157 · `relance` 186 · `montreResultat` 230
-`majRappelRoute` 248 · `ecritResultat` 259 · `poseVisee` 403 · `confieVisee` 416
+`majRappelRoute` 248 · `ecritResultat` 259 · `poseVisee` 403 · `injecteVisee` 416
 `suitLaVisee` 418 · `bandeauVisee` 420 · `armeVisee` 443 · `finVisee` 461
 `viseItineraire` 477 · `visePoi` 483 · `visePoint` 489 · `ouvreItineraire` 517
 `fermeItineraire` 552 · `quitteItineraire` 569 · `versItineraire` 576
@@ -3042,9 +3083,9 @@ Importé par :
 affiche-ici · borne · fiche · gestes · ici · journee · lancement · nappe · outil-dessin
 points-interet · tutoriel · volets
 
-Portes :
+Injections :
 
-- `confieVisee` (registre) — la borne et le code « Vous êtes ici » y inscrivent leur propre visée ; la page publique n'a pas la seconde
+- `injecteVisee` (registre) — la borne et le code « Vous êtes ici » y inscrivent leur propre visée ; la page publique n'a pas la seconde
 
 ### `modules/tiroir-parcours.mjs` — 298 l. → plan, plan-admin
 
@@ -3154,7 +3195,7 @@ Fonctions :
 
 Importe :
 
-annonce · camera · dom · donnees · ecran · itineraire · vue
+camera · dom · donnees · ecran · evenement · itineraire · vue
 
 Importé par :
 
@@ -3172,6 +3213,61 @@ Fonctions :
 Importé par :
 
 outil-comptoir · webgl
+
+### `modules/trait-chemin.mjs` — 377 l. → plan, plan-admin
+
+- l.1 · Du chemin en cases au trait qu'on suit
+
+Fonctions :
+
+`reduit` 23 · `guidageAllees` 86 · `recentre` 142 · `passable` 227 · `lisse` 261
+`longueur` 288 · `longueurDehors` 304 · `nettoie` 346
+
+Importe :
+
+grille-marche
+
+Importé par :
+
+itineraire · troncon
+
+### `modules/trajet.mjs` — 519 l. → plan, plan-admin
+
+- l.1 · Le trajet complet — points désignables, liaisons, passage d'un plan à l'autre
+
+Fonctions :
+
+`pointObjet` 27 · `pointRepere` 34 · `candidats` 43 · `pointSaisi` 77 · `portesDe` 89
+`versPorte` 96 · `typeLiaison` 157 · `nomRepere` 165 · `oublieLiaisons` 183
+`lienEcrits` 195 · `ecritLiens` 204 · `annuaireLiaisons` 209 · `liensDe` 241
+`coutLiaison` 261 · `passagePraticable` 268 · `passagesDe` 276 · `sortiesDe` 286
+`plansRelies` 294 · `oublieBalayages` 318 · `balayage` 319 · `distanceDepuis` 337
+`cheminLiaisons` 364 · `routeParLiaisons` 450 · `routeEntre` 488
+
+Importe :
+
+donnees · grille-marche · recherche-chemin · reperes · texte · troncon
+
+Importé par :
+
+itineraire · itineraire
+
+### `modules/troncon.mjs` — 359 l. → plan, plan-admin
+
+- l.1 · Le tronçon — d'un point à un autre dans un même pavillon
+
+Fonctions :
+
+`oublieFaces` 32 · `facesLibres` 34 · `amorce` 131 · `faceDeSortie` 166 · `raccordTient` 212
+`accesDe` 242 · `couplesAcces` 294 · `troncon` 327
+
+Importe :
+
+abords-salles · grille-marche · recherche-chemin · trait-chemin
+
+Importé par :
+
+itineraire · trajet
 
 ### `modules/tutoriel.mjs` — 1032 l. → plan, plan-admin
 
@@ -3215,7 +3311,7 @@ Fonctions :
 
 Importe :
 
-annonce · marque · salon · sur
+evenement · marque · salon · sur
 
 Importé par :
 
@@ -3297,7 +3393,7 @@ environs · logos-stands · socle-dessin · vue · vue · webgl
 
 Fonctions :
 
-`confieALaVue` 69 · `enEdition` 75 · `libelles` 76 · `poseEmprise` 82 · `figeTextes` 106
+`injecteALaVue` 69 · `enEdition` 75 · `libelles` 76 · `poseEmprise` 82 · `figeTextes` 106
 `rendTextes` 114 · `cadrage` 153 · `peintLibelles` 158 · `repeintLibelles` 166
 `detacheLibelles` 170 · `rattacheLibelles` 182 · `etireLibelles` 200
 `poseFacteurTrait` 215 · `suitLaVue` 231 · `versScene` 240 · `retiensVue` 259
@@ -3319,9 +3415,9 @@ mini-carte · nappe · outil-comptoir · outil-dessin · outil-escalier · outil
 placement-libelles · plan · points-interet · recherche · rendu · reprise-emplacements
 sponsor · trace-itineraire · tutoriel · vous-etes-ici
 
-Portes :
+Injections :
 
-- `confieALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
+- `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
 ### `modules/webgl.mjs` — 3285 l. → plan, plan-admin
 
@@ -3329,7 +3425,7 @@ Portes :
 
 Fonctions :
 
-`confieAuWebgl` 77 · `chargeWebgl` 137 · `brancheWebgl` 180 · `monteWebgl` 200
+`injecteAuWebgl` 77 · `chargeWebgl` 137 · `brancheWebgl` 180 · `monteWebgl` 200
 `poseToileWebgl` 342 · `guetteContexteWebgl` 348 · `contextePerduWebgl` 358
 `verifieContexteWebgl` 365 · `guetteBoucleWebgl` 397 · `perdContexteWebgl` 413
 `remonteWebgl` 447 · `vueDeck` 464 · `enCamera` 484 · `vuesGl` 488 · `effetsGl` 512
@@ -3371,8 +3467,8 @@ Fonctions :
 
 Importe :
 
-affichage · annonce · camera · chemin-forme · configuration · couleurs · decor · dom
-donnees · figurants · itineraire · libelle-place · logos-stands · reperes · sur · trace
+affichage · camera · chemin-forme · configuration · couleurs · decor · dom · donnees
+evenement · figurants · itineraire · libelle-place · logos-stands · reperes · sur · trace
 vue-etat
 
 Importé par :
@@ -3380,9 +3476,9 @@ Importé par :
 batiments · edition · edition-en-cours · fiche · gestes · lancement · libelles
 placement-libelles · plan · releve · reprise-emplacements · sonde · tutoriel · vue
 
-Portes :
+Injections :
 
-- `confieAuWebgl` (rendu) — la carte graphique lit la vue, les gestes et les noms de modules qui l'importent pour la monter
+- `injecteAuWebgl` (rendu) — la carte graphique lit la vue, les gestes et les noms de modules qui l'importent pour la monter
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
@@ -3541,17 +3637,17 @@ Portes :
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
 - `outils/icones.js` — dessine l'icône de l'application, et l'encode en PNG.
 - `outils/carte.js` — produit ce fichier.
-- `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.
-- `outils/controle.js` — analyse le script de chaque page construite, en module
+- `outils/controles/verifie.js` — reconstruit, et échoue si le versionné était en retard.
+- `outils/controles/controle.js` — analyse le script de chaque page construite, en module
   ES : une redéclaration y est une erreur, là où un `<script>` la tolère.
-- `outils/migration.js` — crée une migration horodatée à la seconde.
+- `outils/scripts/migration.js` — crée une migration horodatée à la seconde.
 - `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors
-  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.
+  construction (réseau requis) ; écrit `outils/donnees/polices.json`, relu par `genere.js`.
 - `outils/gabarit/_langue.js` — la version anglaise : posé en tête de chaque page, il
   traduit ce qu'elle affiche d'après le dictionnaire, et tient la bascule FR/EN.
 - `outils/anglais/` — le dictionnaire anglais, un fichier par module ; `serveur.js` et
   `donnees.js` pour ce qui arrive du serveur, `invisibles.js` pour les faux positifs.
 - `outils/traductions.js` — relève les chaînes visibles du gabarit, échoue sur celles
   qui n'ont pas de traduction ; choisit aussi ce que chaque page emporte du dictionnaire.
-- `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —
+- `outils/scripts/klipso/fetch-all.js`, `outils/scripts/klipso/build-all.js`, `outils/scripts/klipso/optim.js`, `outils/scripts/klipso/lire-pdf.js` —
   outils hors ligne de récupération et de préparation des plans (clé Klipso requise).

@@ -2,7 +2,7 @@
    La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 /* L'habillage du modèle retenu (`habilleModale`), que la fenêtre reprend à
    chaque ouverture. */
 import { habilleModale } from "./modeles.mjs";
@@ -25,13 +25,13 @@ export const poseAvantFermeture = (f) => { avantFermeture = f; };
    module public ne peut importer : la sortie d'un aperçu s'annonce, avec la
    case qui l'a ouvert, et les réglages l'écoutent. Chez le visiteur, aucun
    aperçu ne s'ouvre, et personne n'écoute. */
-/** @type {import("./annonce.mjs").Annonce<[string]>} */
-export const APERCU_QUITTE = creeAnnonce();
+/** @type {import("./evenement.mjs").Evenement<[string]>} */
+export const APERCU_QUITTE = creeEvenement();
 
 /** Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
  *  qui l'a ouvert — l'invitation à installer, le rappel des conférences.
  *  @param {string} marque */
-export const retourAuxReglages = (marque) => { APERCU_QUITTE.dis(marque); };
+export const retourAuxReglages = (marque) => { APERCU_QUITTE.emet(marque); };
 
 function verseModale(){
   const f = avantFermeture;

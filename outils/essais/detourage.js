@@ -7,7 +7,7 @@
  * lettres, un texte blanc sur un aplat — et l'on regarde, pixel par pixel, ce
  * qui reste.
  *
- *   node outils/essais/detourage.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/detourage.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

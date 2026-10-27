@@ -23,7 +23,7 @@
    placement réglé, le mode et le libellé retouché (faux et vide hors de
    l'administration). L'outil qui les change — le mode, la palette, le geste —
    est d'exploitant : il vit dans `modules/placement-libelles.mjs`, que seul
-   `plan-admin.mjs` embarque, et pose l'état par les portes d'ici. Qui lit
+   `plan-admin.mjs` embarque, et pose l'état par les mutateurs d'ici. Qui lit
    le mode et le libellé retouché les importe, et les trouve tels qu'ils
    sont à l'instant. Les réglages (`configuration.mjs`) et ce qui situe un nom sur sa forme
    (`texte-plan.mjs`) s'importent.
@@ -41,12 +41,12 @@ export let PLACE_LIBELLES = false;
 /** @type {any} */
 export let libSel = null;      // l'objet dont on retouche le libellé
 
-/** La porte du mode : l'outil seul l'ouvre et le ferme (`modePlacementLibelles`). */
+/** Le mutateur du mode : l'outil seul l'ouvre et le ferme (`modePlacementLibelles`). */
 export function poseModeLibelles(on){
   PLACE_LIBELLES = on;
 }
 
-/** La porte du libellé retouché : l'outil seul le choisit (`choisitLibelle`). */
+/** Le mutateur du libellé retouché : l'outil seul le choisit (`choisitLibelle`). */
 export function poseLibelleChoisi(id){
   libSel = id;
 }

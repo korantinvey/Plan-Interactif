@@ -78,7 +78,7 @@ const NOMS: Record<string, string> = {
    salons — c'est une propriété standard du stand, et non un champ de dossier
    que chaque organisateur baptiserait à sa façon : il n'y a donc rien à régler
    pour lui, ni ici ni dans la console. */
-/* L'instance du salon de démonstration, que `outils/salon-demo.js` écrit et
+/* L'instance du salon de démonstration, que `outils/scripts/salon-demo.js` écrit et
    que la synchronisation refuse. */
 const INSTANCE_DEMO = "demo";
 
@@ -501,7 +501,7 @@ Deno.serve(async (req) => {
       .from("evenement").select("*").eq("id", corps.evenementId).single();
     if (e1 || !evt) return repond({ erreur: "Événement introuvable." }, 404);
     /* Le salon de démonstration n'a pas de source : ses exposants sont
-       inventés, et écrits par `outils/salon-demo.js`. Le synchroniser
+       inventés, et écrits par `outils/scripts/salon-demo.js`. Le synchroniser
        interrogerait Klipso sous une instance qui n'existe pas — au mieux un
        refus, au pire un instantané vidé. */
     if (evt.instance === INSTANCE_DEMO) {
@@ -1022,7 +1022,7 @@ Deno.serve(async (req) => {
       /* Les produits qu'un exposant présente. Ils tiennent à sa fiche
          d'invité, et à rien d'autre : pas de numéro à normaliser, pas de
          dossier à rapprocher — c'est la seule chose d'Eventmaker qui se
-         rattache au plan sans appariement. `outils/eventmaker-produits.md`
+         rattache au plan sans appariement. `docs/eventmaker-produits.md`
          dit pourquoi, et ce que valent les fiches qu'on écarte.
 
          L'étape vient après les exposants, dont elle relit l'index, et avant

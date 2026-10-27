@@ -14,7 +14,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const MIGRATIONS = path.join(__dirname, "..", "..", "supabase", "migrations");
+const MIGRATIONS = path.join(__dirname, "..", "..", "..", "supabase", "migrations");
 
 /** Cette migration échoue exprès sans `pg_cron` ni `pg_net` (elle ne programme
  *  que des rappels, et veut le dire à voix haute en production) : ici, aucun

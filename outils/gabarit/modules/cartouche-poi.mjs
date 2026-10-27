@@ -15,11 +15,11 @@
 
    La liste se resserre sur ce que la pastille met en avant
    (`retenusParPoi`) : ce module ne peut l'importer — elle l'importe pour le
-   relevé —, il annonce donc le choix (`POI_CHANGE`), qu'elle suit.
+   relevé —, il émet donc le choix (`POI_CHANGE`), qu'elle écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, P, state, CONFERENCES } from "./donnees.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { conf } from "./configuration.mjs";
 import { fit } from "./vue.mjs";
 import { nomRepere } from "./itineraire.mjs";
@@ -117,7 +117,7 @@ let poiDit = null;
 
 /** Le choix d'une pastille vient de changer : la liste se resserre ou se
  *  rouvre (`recherche.mjs`). */
-export const POI_CHANGE = creeAnnonce();
+export const POI_CHANGE = creeEvenement();
 
 /* Un libellé qui ne porte qu'un seul type : ce que rejoint alors ce qu'on a
    laissé sans pictogramme, pour que la zone « Restauration » et le repère qui
@@ -285,7 +285,7 @@ function eclairePoi(){
   $("labels").querySelectorAll(".lbl[data-lbl]").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   document.documentElement.classList.toggle("poi-actif", !!poiChoisi);
-  if (poiChoisi !== poiDit){ poiDit = poiChoisi; POI_CHANGE.dis(); }
+  if (poiChoisi !== poiDit){ poiDit = poiChoisi; POI_CHANGE.emet(); }
 }
 
 /** Une pastille est-elle choisie, et laquelle — pour le compte de la liste. */

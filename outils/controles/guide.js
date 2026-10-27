@@ -18,14 +18,18 @@
  * Les clés de configuration, les sélecteurs et le reste qui n'a pas la forme
  * d'un identifiant ne sont pas contrôlés.
  *
- *   node outils/guide.js     (`npm run guide`, lancé par `npm run verifie`)
+ *   node outils/controles/guide.js     (`npm run guide`, lancé par `npm run verifie`)
  */
 const fs = require("fs");
 const path = require("path");
 
-const RACINE = path.join(__dirname, "..");
+const RACINE = path.join(__dirname, "..", "..");
 const GUIDE = path.join(RACINE, "CLAUDE.md");
-const BASES = ["", "outils/gabarit", "outils", "supabase/functions", "web"].map((b) => path.join(RACINE, b));
+/* Un chemin du guide se cherche depuis la racine, puis depuis chaque dossier
+   où il se lit sans préfixe : un tableau qui présente `outils/controles/` y
+   nomme ensuite `verifie.js` tout court. */
+const BASES = ["", "outils/gabarit", "outils", "outils/controles", "outils/donnees", "outils/scripts", "outils/essais",
+  "supabase/functions", "web"].map((b) => path.join(RACINE, b));
 
 /* Un chemin : au moins un segment suivi d'une extension connue, ou un dossier
    terminé par une barre. Un nom nu sans barre (`plan.mjs`) est un fichier de

@@ -29,7 +29,7 @@
    haut gauche, comme `cadrePlan` les donne.
    ============================================================ */
 
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 
 const DEG = Math.PI / 180;
 
@@ -49,14 +49,14 @@ const etat = { voulue: false, enJeu: false, cap: 0 };
 
 /** La caméra vient d'entrer en jeu, d'en sortir ou de tourner : ce qui était
  *  cadré à plat ne l'est plus, et la vue (`vue.mjs`) recadre. */
-export const CAMERA_CHANGEE = creeAnnonce();
+export const CAMERA_CHANGEE = creeEvenement();
 
 /** L'ambiance demande la caméra, ou la rend. Le cap est en degrés. */
 export function demandeCamera(/** @type {boolean} */ voulue, /** @type {number} */ cap){
   const avant = etat.cap;
   etat.voulue = voulue;
   etat.cap = (Number(cap) || 0) * DEG;
-  if (etat.enJeu && etat.cap !== avant) CAMERA_CHANGEE.dis();
+  if (etat.enJeu && etat.cap !== avant) CAMERA_CHANGEE.emet();
 }
 /** L'ambiance la demande-t-elle ? Le dessin seul décide de l'appliquer. */
 export const cameraVoulue = () => etat.voulue;
@@ -92,12 +92,12 @@ export const CLASSE_NOMS_A_PLAT = "noms-a-plat";
 /** @type {{ p: number, xy: number[] }[] | null} */
 let bouts = null;
 /** Le trajet vient d'apparaître, de changer ou de disparaître. */
-export const TRAJET_CHANGE = creeAnnonce();
+export const TRAJET_CHANGE = creeEvenement();
 /** Les points que relie le trajet tracé — départ, arrêts, arrivée —, ou rien. */
 export function poseTrajet(/** @type {{ p: number, xy: number[] }[] | null} */ points){
   const avant = JSON.stringify(bouts), apres = JSON.stringify(points);
   bouts = points;
-  if (avant !== apres) TRAJET_CHANGE.dis();
+  if (avant !== apres) TRAJET_CHANGE.emet();
 }
 export const boutsDuTrajet = () => bouts;
 /** La hauteur d'un stand abaissé pendant qu'un trajet est tracé. */
@@ -107,7 +107,7 @@ export const HAUTEUR_ABAISSEE = .18;
 export function metsEnJeu(/** @type {boolean} */ oui){
   if (etat.enJeu === oui) return;
   etat.enJeu = oui;
-  CAMERA_CHANGEE.dis();
+  CAMERA_CHANGEE.emet();
 }
 /** La caméra est-elle à l'écran ? Sinon, toutes les conversions sont l'identité. */
 export const cameraEnJeu = () => etat.enJeu;

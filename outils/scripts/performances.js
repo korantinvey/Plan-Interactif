@@ -27,7 +27,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { PROJETS } = require("./projet.js");
+const { PROJETS } = require("../projet.js");
 const { pistes, regressions, SEUILS } = require("./performances-regles.js");
 
 const ETIQUETTE_ISSUE = "performances";
@@ -275,7 +275,7 @@ const pc = (v) => v == null ? "—" : Math.round(v) + " %";
 function corps(ind) {
   const l = [];
   l.push("Relevés de la sonde du " + ind.de + " au " + ind.a + " : " + ind.visites +
-    " visites, tous salons confondus. Fiche refaite chaque lundi par `outils/performances.js`.");
+    " visites, tous salons confondus. Fiche refaite chaque lundi par `outils/scripts/performances.js`.");
   l.push("");
   l.push("## Pistes, par gain estimé");
   l.push("");
@@ -311,7 +311,7 @@ function corps(ind) {
   ind.salons.slice(0, 10).forEach((x) =>
     l.push("- `" + x.etiquette + "` — " + x.visites + " visites, ouverture médiane " + s1(x.affiche_p50)));
   l.push("");
-  l.push("<sub>Seuils de départ, à reprendre d'après les relevés : `outils/performances-regles.js` " +
+  l.push("<sub>Seuils de départ, à reprendre d'après les relevés : `outils/scripts/performances-regles.js` " +
     "(données sur téléphone " + SEUILS.donneesTelephoneMs + " ms, préparation " + SEUILS.preparationMs + " ms).</sub>");
   return l.join("\n") + "\n";
 }

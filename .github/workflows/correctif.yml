@@ -176,7 +176,7 @@ jobs:
           # pull request, rien qui parle à GitHub. La destination de la poussée
           # reste écrite dans ce fichier.
           claude_args: |
-            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(npm run verifie),Bash(npm run construire),Bash(node outils/controle.js),Bash(node outils/traductions.js),Bash(git add:*),Bash(git commit:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(ls:*),Bash(sed -n:*)"
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(npm run verifie),Bash(npm run construire),Bash(node outils/controles/controle.js),Bash(node outils/traductions.js),Bash(git add:*),Bash(git commit:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(ls:*),Bash(sed -n:*)"
 
       # Les pages ne sont plus versionnées : Cloudflare les construit au
       # déploiement. On les construit ici pour les contrôler, et pour refaire
@@ -185,7 +185,7 @@ jobs:
         if: steps.acces.outputs.posee == 'oui' && steps.corriger.outcome == 'success'
         run: |
           npm run construire
-          node outils/controle.js
+          node outils/controles/controle.js
           if [ -n "$(git status --porcelain CARTE.md)" ]; then
             git add CARTE.md
             git commit -m "Refait l'index des sources"

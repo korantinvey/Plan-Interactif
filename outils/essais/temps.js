@@ -7,7 +7,7 @@
  * un visiteur d'un autre fuseau. D'où des cas qui mesurent l'instant rendu
  * contre l'heure UTC attendue, plutôt que de rejouer le calcul.
  *
- *   node outils/essais/temps.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/temps.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

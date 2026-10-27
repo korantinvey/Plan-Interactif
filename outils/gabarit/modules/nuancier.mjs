@@ -35,7 +35,7 @@ const presseNuanciers = () => NUANCIERS_EN_ATTENTE.forEach(fixe => fixe());
 
 /** Le branchement, appelé par `plan-admin.mjs` dans l'emplacement que le
  *  lancement lui ouvre après l'habillage (`lancement.mjs`
- *  `confieLancementAdmin`) : les écoutes y passent devant celles de
+ *  `injecteLancementAdmin`) : les écoutes y passent devant celles de
  *  l'enregistrement (`brancheEnregistrement`). */
 export function brancheNuancier(){
   document.addEventListener("visibilitychange", () => {

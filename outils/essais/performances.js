@@ -6,11 +6,11 @@
  * un indicateur se signale avec les deux versions ; et la fiche, publiée dans
  * un dépôt public, ne nomme aucun salon.
  *
- *   node outils/essais/performances.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/performances.js     (lancé par `npm run essais`)
  */
-const { texteSur, fichierPropre, indicateurs, corps, etiquette, lundiMesure, REQUETE } = require("../performances.js");
-const { baseNeuve } = require("./base.js");
-const { pistes, regressions } = require("../performances-regles.js");
+const { texteSur, fichierPropre, indicateurs, corps, etiquette, lundiMesure, REQUETE } = require("../scripts/performances.js");
+const { baseNeuve } = require("./aides/base.js");
+const { pistes, regressions } = require("../scripts/performances-regles.js");
 
 let ko = 0;
 const dit = (ok, q, d) => {

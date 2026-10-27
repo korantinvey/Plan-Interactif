@@ -29,7 +29,7 @@ import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT, REDUIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
 import { recul } from "./environs.mjs";
-import { GL, cibleWebgl, confieAuWebgl, monteALAppui, rendLAppui, viseEnAvance } from "./webgl.mjs";
+import { GL, cibleWebgl, injecteAuWebgl, monteALAppui, rendLAppui, viseEnAvance } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
   redresse, retiensVue } from "./vue.mjs";
 import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
@@ -629,4 +629,4 @@ export function brancheLangue(){
 /* Le rendu par la carte graphique tait son survol pendant un geste, et ne
    peut importer ce module : il lui confie en se chargeant le glissé et le
    pincement en cours, par des lecteurs — ils changent à chaque appui. */
-confieAuWebgl({ drag: () => drag, pince: () => pince });
+injecteAuWebgl({ drag: () => drag, pince: () => pince });

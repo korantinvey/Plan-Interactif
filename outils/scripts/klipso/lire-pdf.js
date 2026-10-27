@@ -4,7 +4,7 @@
  * dessin de texte reçoivent. Cela suffit à chercher un nom d'entité dans la
  * documentation GAIA ; ce n'est pas un lecteur de PDF.
  *
- *   node outils/lire-pdf.js <fichier.pdf> [motif]
+ *   node outils/scripts/klipso/lire-pdf.js <fichier.pdf> [motif]
  */
 const fs = require("fs");
 const zlib = require("zlib");

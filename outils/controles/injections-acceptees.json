@@ -1,40 +1,40 @@
 {
-  "confieChaleur": {
+  "injecteChaleur": {
     "module": "secteurs.mjs",
     "genre": "partition",
     "raison": "la teinte des secteurs, publique, laisse la place à la carte de chaleur, d'administration"
   },
-  "confieLancementAdmin": {
+  "injecteLancementAdmin": {
     "module": "lancement.mjs",
     "genre": "partition",
     "raison": "les branchements de l'exploitant prennent leur rang dans le lancement public, dont l'ordre est le comportement"
   },
-  "confieALaFiche": {
+  "injecteALaFiche": {
     "module": "fiche.mjs",
     "genre": "partition",
     "raison": "la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration"
   },
-  "confieALaVue": {
+  "injecteALaVue": {
     "module": "vue.mjs",
     "genre": "rendu",
     "raison": "chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage"
   },
-  "confieAuWebgl": {
+  "injecteAuWebgl": {
     "module": "webgl.mjs",
     "genre": "rendu",
     "raison": "la carte graphique lit la vue, les gestes et les noms de modules qui l'importent pour la monter"
   },
-  "confieAuxPolices": {
+  "injecteAuxPolices": {
     "module": "polices-plan.mjs",
     "genre": "rendu",
     "raison": "une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices"
   },
-  "confieApresOption": {
+  "injecteApresOption": {
     "module": "options.mjs",
     "genre": "registre",
     "raison": "chaque module que touche une option vendue à part y inscrit ce qu'il refait quand elle change"
   },
-  "confieVisee": {
+  "injecteVisee": {
     "module": "tiroir-itineraire.mjs",
     "genre": "registre",
     "raison": "la borne et le code « Vous êtes ici » y inscrivent leur propre visée ; la page publique n'a pas la seconde"

@@ -22,7 +22,7 @@
    **Ce que seule l'administration a** s'intercale dans la suite publique, aux
    rangs que les tranches `@admin` tenaient : le point d'entrée de
    l'administration (`plan-admin.mjs`) remplit ces emplacements avant de
-   lancer (`confieLancementAdmin`) ; la page publique les laisse vides. C'est
+   lancer (`injecteLancementAdmin`) ; la page publique les laisse vides. C'est
    pourquoi chaque point d'entrée lance lui-même, à la fin de son chargement :
    l'administration reprend tout le plan public avant d'y ajouter ses modules,
    et la suite doit attendre qu'ils soient là.
@@ -67,9 +67,9 @@ const admin = {
   apresLesGestes: () => {}, apresLHabillage: () => {}, apresLaMesure: () => {}, apresLeDemarrage: () => {},
 };
 
-/** La porte du point d'entrée de l'administration, ouverte avant de lancer.
+/** L'injection du point d'entrée de l'administration, remplie avant de lancer.
  *  @param {Partial<EtapesAdmin>} o */
-export function confieLancementAdmin(o){ Object.assign(admin, o); }
+export function injecteLancementAdmin(o){ Object.assign(admin, o); }
 
 /** La suite des branchements, dans l'ordre du script d'avant. */
 export function lancePlan(){

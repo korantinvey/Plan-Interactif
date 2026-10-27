@@ -15,7 +15,7 @@
  * tout ce que portent les halls d'ici. Une case est peinte si son centre l'est,
  * ce que fait aussi le seuil de `grille` sur le lissage d'un vrai canevas.
  *
- *   node outils/essais/sejour.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/sejour.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

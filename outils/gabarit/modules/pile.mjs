@@ -60,7 +60,7 @@ const joli = (/** @type {any} */ id) => String(id)
 /* Le contenu de `construitPanneau` : l'ordre de tracé annonce le panneau à
    refaire, et on l'écoute dès que la page d'administration charge ce module —
    avant le lancement, donc avant toute annonce. */
-PANNEAU_A_REFAIRE.suis(remplitPanneau);
+PANNEAU_A_REFAIRE.ecoute(remplitPanneau);
 
 /* ============================================================
    Panneau : deux sections, chacune rangée par nom
