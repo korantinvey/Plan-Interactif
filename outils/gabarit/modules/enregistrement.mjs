@@ -18,9 +18,9 @@
    rattrape un envoi qui a échoué.
 
    Un geste d'exploitant : `plan-admin.mjs` embarque ce module, `plan.mjs`
-   jamais — la page publique n'a ni session ni bouton ; ce qu'elle en appelle,
-   il le lui confie en se chargeant, par des portes aux défauts sans effet
-   (voir en fin de module). Il se branche par `brancheEnregistrement`, que
+   jamais — la page publique n'a ni session ni bouton ; ce qu'elle doit lui
+   faire savoir, elle l'émet en événement, que ce module écoute en se
+   chargeant (voir en fin de module). Il se branche par `brancheEnregistrement`, que
    `plan-admin.mjs` place dans la suite du lancement (`lancement.mjs`) au
    rang que ce code tenait : les écouteurs de la page s'y posent au même rang
    qu'avant. Le mode administrateur, les
@@ -270,7 +270,7 @@ export function programmePublication(){
    `enregistreConf`) est public, et ne peut importer ce module : il annonce
    chaque écriture, que l'on suit dès que la page d'administration charge ce
    module, avant que le lancement ne pose le moindre branchement. */
-CONF_ECRITE.suis(programmePublication);
+CONF_ECRITE.ecoute(programmePublication);
 
 /** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
  *  de lui-même, sans attendre qu'on pense à cliquer. */
@@ -707,10 +707,10 @@ export function brancheSauvegarde(){
 
 /* Les calques de dessin, le démarrage et l'index du salon, que la page
    publique porte aussi, ne peuvent importer l'enregistrement : il n'est qu'à
-   l'administration. Ils annoncent ce qui le concerne, et il les suit — l'état
+   l'administration. Ils émettent ce qui le concerne en événements, et il les écoute — l'état
    du bouton, le rattrapage d'un envoi en retard, les calques rescapés, les
    réglages tels qu'ils sont arrivés. */
-ATTENTE_CHANGEE.suis(majAttente);
-PLAN_DEMARRE.suis(() => { majAttente(); rattrapeRetard(); });
-RESCAPES_TROUVES.suis(compteRescapes);
-REGLAGES_RECUS.suis(noteReglagesCharges);
+ATTENTE_CHANGEE.ecoute(majAttente);
+PLAN_DEMARRE.ecoute(() => { majAttente(); rattrapeRetard(); });
+RESCAPES_TROUVES.ecoute(compteRescapes);
+REGLAGES_RECUS.ecoute(noteReglagesCharges);

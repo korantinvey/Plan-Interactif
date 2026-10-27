@@ -17,7 +17,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, state } from "./donnees.mjs";
-import { vue, svg, cadrePlan, confieALaVue, suitLaVue, versScene } from "./vue.mjs";
+import { vue, svg, cadrePlan, injecteALaVue, suitLaVue, versScene } from "./vue.mjs";
 
 /* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
    elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
@@ -26,7 +26,7 @@ export let LIEU_BORNE = null;
 /** Le départ imposé, lu par l'itinéraire et par l'organisation de la journée. */
 export function pointBorne(){ return LIEU_BORNE; }
 
-/** La porte du départ imposé : la borne le pose, le code affiché dans le hall
+/** Le mutateur du départ imposé : la borne le pose, le code affiché dans le hall
  *  (`modules/ici.mjs`) le pose et l'éteint — une variable importée ne se
  *  réaffecte pas d'ailleurs que de son module. */
 export function poseLieuBorne(lieu){ LIEU_BORNE = lieu; }
@@ -135,4 +135,4 @@ function rempliBorne(g){
 
 /* Le point garde sa taille à l'écran : la vue, que ce module importe, le
    refait à chaque changement de vue — il le lui confie en se chargeant. */
-confieALaVue({ rafraichitBorne });
+injecteALaVue({ rafraichitBorne });

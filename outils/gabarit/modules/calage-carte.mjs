@@ -303,7 +303,7 @@ async function calageEnregistre(){
    ------------------------------------------------------------ */
 
 /* Les bâtiments auxquels s'accrocher. Le calage en cours de réglage, lui,
-   vit dans `environs.mjs`, qui le dessine : on l'écrit par sa porte. */
+   vit dans `environs.mjs`, qui le dessine : on l'écrit par son mutateur. */
 let ENV_BATIS = [];
 let ENV_BATI = 0;
 
@@ -820,4 +820,4 @@ export function voletEnvirons(hote){
 /* Le calage qu'on règle appartient au pavillon qu'on quitte : le passage
    d'un pavillon à l'autre (`rendu.mjs` `changePlan`) l'annonce, et on
    l'oublie. */
-PAVILLON_QUITTE.suis(oublieCalageEnCours);
+PAVILLON_QUITTE.ecoute(oublieCalageEnCours);

@@ -6,7 +6,7 @@
  * même tourné — qu'une zone se meuble selon son type, et qu'une zone immense
  * ne coûte pas au dessin plus que la borne.
  *
- *   node outils/essais/decor.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/decor.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

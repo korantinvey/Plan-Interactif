@@ -3,7 +3,7 @@
 #
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
-# la relecture ESLint, le cliquet des types, le typage des fonctions Supabase, les
+# la relecture ESLint, la référence figée des types, le typage des fonctions Supabase, les
 # douze cas du moteur de la journée organisée,
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
@@ -20,7 +20,7 @@
 # le jour même, sans que chaque branche paie pour lui.
 #
 # Les essais du navigateur ne parlent jamais au réseau : les données du plan
-# sont servies depuis `outils/plans.json`. Une panne de la production ne peut
+# sont servies depuis `outils/donnees/plans.json`. Une panne de la production ne peut
 # donc pas faire rougir ce workflow, ni ce workflow peser sur la production.
 name: Essais
 
@@ -66,11 +66,11 @@ jobs:
       - name: Relecture par ESLint
         run: npm run lint
 
-      - name: Types (cliquet de outils/types-acceptes.json)
+      - name: Types (référence figée outils/controles/types-acceptes.json)
         run: npm run types
 
-      - name: Portes et boucles d'imports (cliquet de outils/portes-acceptees.json)
-        run: npm run portes
+      - name: Injections et boucles d'imports (référence figée outils/controles/injections-acceptees.json)
+        run: npm run injections
 
       - name: Le guide ne cite que ce qui existe (CLAUDE.md)
         run: npm run guide

@@ -1,36 +1,14 @@
 .env
 .env.local
 node_modules/
-outils/brut/
-outils/svg/
-outils/*.json
-!outils/package.json
-# Source des données figées de web/plan-smcl.html. Sans elle, `npm run
-# construire` échoue sur un clone neuf, et elle ne se régénère qu'avec une clé
-# Klipso. Les mêmes données sont déjà publiées dans la page : rien de plus
-# n'est exposé, et la construction redevient reproductible partout.
-!outils/plans.json
-# Les déclarations des polices rapatriées dans web/polices/, relues par la
-# construction. Même raison : elles ne se régénèrent qu'avec le réseau
-# (`npm run polices`), et sans elles un clone neuf ne construit plus.
-!outils/polices.json
-# La bibliothèque des lieux, versée dans la page d'administration. Même
-# raison encore : elle ne se régénère qu'avec le réseau (`node outils/lieux.js`).
-!outils/lieux.json
-# Les logos des exposants inventés de web/demo.html. Ils se dessinent dans
-# Chromium (`npm run logos-demo`), que la construction de Cloudflare n'a pas :
-# sans eux la démonstration paraîtrait sans un logo.
-!outils/logos-demo.json
-# La source du salon de démonstration : un salon publié, tel que son API
-# publique le sert (`npm run source-demo`). Même raison que plans.json : la
-# construction tourne sans réseau, et rien n'y est plus exposé que la page.
-!outils/source-demo.json
-# Le cliquet des types : ce que `npm run types` accepte encore. Il fait foi
-# en intégration, il ne se régénère donc pas de lui-même.
-!outils/types-acceptes.json
-# Le cliquet des portes : celles que `npm run portes` accepte, avec leur
-# raison. Même chose : il fait foi en intégration.
-!outils/portes-acceptees.json
+# Ce que rapportent les scripts d'exploration de Klipso (`outils/scripts/klipso/`).
+outils/scripts/klipso/brut/
+outils/scripts/klipso/svg/
+# `outils/donnees/` et les références figées de `outils/controles/` restent versionnés,
+# eux : ils ne se régénèrent qu'avec le réseau ou une clé Klipso (plans.json,
+# polices.json, lieux.json, source-demo.json), dans Chromium (logos-demo.json),
+# ou font foi en intégration (types-acceptes.json, portes-acceptees.json).
+# Sans eux, un clone neuf ne construit plus.
 supabase/.temp/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont
@@ -60,6 +38,6 @@ src/pages.mjs
 # Sorties de simulation : régénérées par `npm run fep26`, jamais relues par le code.
 simulations/
 
-# Ce que laissent les essais du navigateur : traces et rapport d’un échec.
+# Ce que laissent les essais du navigateur : traces et rapport d'un échec.
 test-results/
 playwright-report/

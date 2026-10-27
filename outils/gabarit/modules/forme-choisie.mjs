@@ -9,7 +9,7 @@
    embarque, et que les autres importent.
 
    La forme choisie se remplace sans cesse — un clic, la boîte à outils, un
-   calque qu'on ferme — : elle ne change que par sa porte (`poseFormeSel`).
+   calque qu'on ferme — : elle ne change que par son mutateur (`poseFormeSel`).
    Qui la lit l'importe, et la trouve telle qu'elle est à l'instant.
    ============================================================ */
 import { mesCalques } from "./calques-dessin.mjs";
@@ -18,7 +18,7 @@ import { mesCalques } from "./calques-dessin.mjs";
  *  @type {any} */
 export let formeSel = null;
 
-/** La porte de la forme choisie.
+/** Le mutateur de la forme choisie.
  *  @param {any} id */
 export function poseFormeSel(id){
   formeSel = id;

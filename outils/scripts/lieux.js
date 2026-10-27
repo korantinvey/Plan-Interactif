@@ -3,8 +3,8 @@
  * souvent, tirés d'OpenStreetMap et simplifiés, ou relevés à la main quand OSM
  * ne les connaît pas séparément.
  *
- *   node outils/lieux.js              → outils/lieux.json (versionné)
- *   node outils/lieux.js grimaldi     → ce lieu seul, les autres gardés tels quels
+ *   node outils/scripts/lieux.js              → outils/donnees/lieux.json (versionné)
+ *   node outils/scripts/lieux.js grimaldi     → ce lieu seul, les autres gardés tels quels
  *
  * Un contour de hall ne change pas d'un salon à l'autre, et le retracer à la
  * main sur chaque plan prenait une après-midi pour un résultat moins juste que
@@ -304,7 +304,7 @@ function verifieSaisi(lieu, b) {
   });
 }
 
-const SORTIE = path.join(__dirname, "lieux.json");
+const SORTIE = path.join(__dirname, "..", "donnees", "lieux.json");
 
 /** Les lieux du fichier en place, pour garder ceux qu'on ne refait pas. */
 function ancienneSortie() {

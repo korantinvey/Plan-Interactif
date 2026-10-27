@@ -10,10 +10,10 @@
    ici, c'est ce point d'entrée qui lance, une fois les modules de
    l'exploitant chargés : leurs branchements prennent, dans la suite de
    `lancement.mjs`, les quatre emplacements que la page publique laisse vides
-   (`confieLancementAdmin`).
+   (`injecteLancementAdmin`).
    ============================================================ */
 import "./plan.mjs";
-import { confieLancementAdmin, lancePlan } from "./lancement.mjs";
+import { injecteLancementAdmin, lancePlan } from "./lancement.mjs";
 import { brancheChaleur } from "./chaleur.mjs";
 import { brancheCalageCarte } from "./calage-carte.mjs";
 import { brancheAcces } from "./acces-admin.mjs";
@@ -37,14 +37,14 @@ import "./pile.mjs";
 import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
 /* La bibliothèque des halls de lieux connus, que la construction verse dans
-   cette page seule, en données (`genere.js`, `outils/lieux.json`). Lue au
+   cette page seule, en données (`genere.js`, `outils/donnees/lieux.json`). Lue au
    lancement : la balise précède le script des modules. */
 function lieux(){
   const el = document.getElementById("lieux");
   try { return el ? JSON.parse(el.textContent) : null; } catch (e) { return null; }
 }
 
-confieLancementAdmin({
+injecteLancementAdmin({
   // les gestes de l'exploitant prennent leur rang dans la chaîne des appuis
   apresLesGestes: () => brancheGestesAdmin(),
   /* le nuancier, le placement des libellés, l'outil de dessin, la reprise et

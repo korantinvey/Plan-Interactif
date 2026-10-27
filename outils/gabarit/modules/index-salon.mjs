@@ -10,12 +10,12 @@
    Les calques dessinés, leur file d'attente et ce que la base en a confirmé
    s'importent (`calques-dessin.mjs`), comme l'oubli des repères
    (`points-interet.mjs`). Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`) suit ses deux annonces
+   (`modules/enregistrement.mjs`) écoute ses deux événements
    (`RESCAPES_TROUVES`, `REGLAGES_RECUS`) ; chez le visiteur personne
    n'écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { DATA, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, poseDonnees } from "./donnees.mjs";
 import { imageSure } from "./sur.mjs";
 import { CONF, ouvreConf, reglagesDuSalon, programmeOffert } from "./configuration.mjs";
@@ -30,7 +30,7 @@ import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
 import { nommeApplication } from "./installation.mjs";
 import { chargeParcours } from "./parcours.mjs";
 import { rafraichitParcours } from "./tiroir-parcours.mjs";
-import { confieApresOption } from "./options.mjs";
+import { injecteApresOption } from "./options.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubliees, rangeDessins }
   from "./calques-dessin.mjs";
@@ -39,11 +39,11 @@ import { oublieReperes } from "./cartouche-poi.mjs";
 /* Ce que l'index annonce, et que seul l'enregistrement écoute
    (`enregistrement.mjs`). */
 /** Des calques que ce poste seul connaît ont été repris : combien.
- *  @type {import("./annonce.mjs").Annonce<[number]>} */
-export const RESCAPES_TROUVES = creeAnnonce();
+ *  @type {import("./evenement.mjs").Evenement<[number]>} */
+export const RESCAPES_TROUVES = creeEvenement();
 /** Les réglages tels que la base les a rendus.
- *  @type {import("./annonce.mjs").Annonce<[any]>} */
-export const REGLAGES_RECUS = creeAnnonce();
+ *  @type {import("./evenement.mjs").Evenement<[any]>} */
+export const REGLAGES_RECUS = creeEvenement();
 
 /* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
    thématiques — tout ce que sa fenêtre montre en propre. Sa présentation reste
@@ -214,7 +214,7 @@ export function indexe(/** @type {any} */ d){
         DESSINS[p.id] = deLaBase.concat(rescapes);
         if (rescapes.length){
           marqueAttente(p.id, true);
-          RESCAPES_TROUVES.dis(rescapes.length);
+          RESCAPES_TROUVES.emet(rescapes.length);
         }
       } else {
         DESSINS[p.id] = deLaBase;
@@ -231,7 +231,7 @@ export function indexe(/** @type {any} */ d){
      poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
      resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
      repart au prochain envoi — ce navigateur est le seul endroit où il est. */
-  if (ADMIN) REGLAGES_RECUS.dis(reglagesEnBase);
+  if (ADMIN) REGLAGES_RECUS.emet(reglagesEnBase);
 
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de
@@ -494,5 +494,5 @@ function poseLogoSalon(src){
    affichée derrière la fenêtre est peut-être un résultat de recherche, et le
    tiroir du parcours peut être ouvert : les deux obéissent sur-le-champ. Ce
    module le confie à la liste des options en se chargeant
-   (`confieApresOption`). */
-confieApresOption("programme", () => { indexeConferences(); liste(); rafraichitParcours(); });
+   (`injecteApresOption`). */
+injecteApresOption("programme", () => { indexeConferences(); liste(); rafraichitParcours(); });

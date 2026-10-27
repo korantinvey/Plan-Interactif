@@ -72,7 +72,7 @@ test.describe("la perte du contexte WebGL", { tag: "@base" }, () => {
     test.skip(!dessin, "pas de carte graphique : le plan reste en SVG");
     const { raisons, demonte } = await page.evaluate(async () => {
       const vues = [];
-      window.__essais.CONTEXTE_PERDU.suis((r) => { vues.push(r); throw new Error("auditeur fautif"); });
+      window.__essais.CONTEXTE_PERDU.ecoute((r) => { vues.push(r); throw new Error("auditeur fautif"); });
       const toile = window.__essais.GL.toile;
       toile.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
       /* Lu tout de suite : le démontage est synchrone, et le dessin remonte de

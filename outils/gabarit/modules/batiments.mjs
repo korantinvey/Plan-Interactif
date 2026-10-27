@@ -3,7 +3,7 @@
 
    Le contour d'un hall ne change pas d'un salon à l'autre, et on le retraçait
    pourtant à la main sur chaque plan : une après-midi, pour un tracé moins
-   juste que le cadastre. La bibliothèque (`outils/lieux.js`) garde les halls
+   juste que le cadastre. La bibliothèque (`outils/scripts/lieux.js`) garde les halls
    des lieux où l'on expose le plus souvent ; on les pose ici en calques de
    dessin ordinaires — un par hall, verrouillés, qu'on masque ou recolore
    comme les autres.
@@ -37,7 +37,7 @@ import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, priseWebgl } from "./webgl.mjs";
-import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, confieALaVue } from "./vue.mjs";
+import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { activeCalque, memorise, cleVerrou, enregistreDessins } from "./outil-dessin.mjs";
@@ -594,4 +594,4 @@ export function rouvreCalage(c){
 /* La poignée du calage d'un hall se mesure en pixels : la vue, que ce module
    importe, la refait pendant le geste et à sa fin — il la lui confie en se
    chargeant, et elle ne se dessine que pendant un calage. */
-confieALaVue({ calage: () => { if (CALAGE) dessineCalage(); } });
+injecteALaVue({ calage: () => { if (CALAGE) dessineCalage(); } });

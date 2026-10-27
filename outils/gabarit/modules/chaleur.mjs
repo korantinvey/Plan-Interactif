@@ -33,7 +33,7 @@ import { DATA, parId } from "./donnees.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { confieChaleur } from "./secteurs.mjs";
+import { injecteChaleur } from "./secteurs.mjs";
 import { svg, vue, suitLaVue, versScene, cadrePlan } from "./vue.mjs";
 
 const racine = document.documentElement;
@@ -759,4 +759,4 @@ export function brancheChaleur(){
 /* La teinte des secteurs (`secteurs.mjs`) appelle la carte quand elle repeint
    les stands : ce module la lui confie en se chargeant, et la page publique,
    qui ne l'embarque pas, n'a pas de carte à appeler. */
-confieChaleur(coloreChaleur);
+injecteChaleur(coloreChaleur);

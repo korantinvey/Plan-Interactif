@@ -28,7 +28,7 @@
    des polices arrivées.
 
    En retour, ce module confie en se chargeant ce qu'un module qu'il importe
-   lui emprunte : la liste à la police des noms (`confieAuxPolices`). Le
+   lui emprunte : la liste à la police des noms (`injecteAuxPolices`). Le
    panneau des critères se replie par `panneau-criteres.mjs`, que les tiroirs
    importent aussi.
    ============================================================ */
@@ -41,7 +41,7 @@ import { IMAGE_SURE, adresseImage } from "./sur.mjs";
 import { marquePrete, recadreMarque } from "./marque.mjs";
 import { VIGNETTES, VIGNETTES_ARRIVEES, adresseVignette } from "./vignettes.mjs";
 import { conf } from "./configuration.mjs";
-import { P_CODE, confieAuxPolices } from "./polices-plan.mjs";
+import { P_CODE, injecteAuxPolices } from "./polices-plan.mjs";
 import { secteursMontres, pastilleSecteur, coloreSecteurs, champDecoupage } from "./secteurs.mjs";
 import { majFondus } from "./bandes.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
@@ -998,7 +998,7 @@ function chargeUnLot(lot){
            porte ses octets — passerait pour un logo lu chez sa source. */
         marquePrete(src);
       }
-      VIGNETTES_ARRIVEES.dis();
+      VIGNETTES_ARRIVEES.emet();
     })
     .catch(() => {});
 }
@@ -1009,7 +1009,7 @@ function chargeUnLot(lot){
  */
 export function brancheRecherche(){
   // la pastille choisie ou relâchée resserre la liste, ou la rouvre
-  POI_CHANGE.suis(() => { if (DATA) liste(); });
+  POI_CHANGE.ecoute(() => { if (DATA) liste(); });
   /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
      se refont (`texte-plan.mjs` `remesureTextes`), et le plan se retrace si
      l'une a changé — les repères et les stands dessinés portent leur nom dans
@@ -1033,5 +1033,5 @@ export function brancheRecherche(){
 /* La liste, confiée à la police des noms dès que ce module se charge : sa
    case du numéro se taille sur la police des numéros, que ce module importe —
    elle ne peut donc l'importer en retour. */
-confieAuxPolices({ liste });
+injecteAuxPolices({ liste });
 

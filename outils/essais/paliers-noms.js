@@ -6,7 +6,7 @@
  * reprendraient leurs tailles disparates, ou tomberaient tous au plus petit,
  * et l'on ne le verrait qu'à l'écran. D'où des tailles connues.
  *
- *   node outils/essais/paliers-noms.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/paliers-noms.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

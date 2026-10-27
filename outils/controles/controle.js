@@ -25,14 +25,14 @@
  * Les pages construites sont lues plutôt que les sources : c'est ce qui part
  * chez le visiteur, et une page ajoutée demain est couverte sans qu'on y pense.
  *
- *   node outils/controle.js
+ *   node outils/controles/controle.js
  */
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
-const RACINE = path.join(__dirname, "..");
+const RACINE = path.join(__dirname, "..", "..");
 const WEB = path.join(RACINE, "web");
 
 /* Un `<script src=…>` est un fichier à part, contrôlé pour lui-même ; un

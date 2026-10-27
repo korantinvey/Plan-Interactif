@@ -22,7 +22,7 @@ import { qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { calquesDe, pointObjet, pointRepere } from "./itineraire.mjs";
 import { lieuNomme, pointLibre } from "./borne.mjs";
 import { ICI_LIBRE } from "./ici.mjs";
-import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire, confieVisee }
+import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire, injecteVisee }
   from "./tiroir-itineraire.mjs";
 import { fermeParcours } from "./tiroir-parcours.mjs";
 import { versPlan } from "./vue.mjs";
@@ -31,7 +31,7 @@ import { largeur } from "./texte-plan.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 
 /* La visée vient du tiroir de l'itinéraire : on la lit telle qu'elle est à
-   l'instant, et on l'arme par sa porte. */
+   l'instant, et on l'arme par son mutateur. */
 const visee = () => viseeIti;
 const vise = (v) => poseVisee(v);
 const racine = document.documentElement;
@@ -394,4 +394,4 @@ export function boutonCodeIci(){
    tiroir de l'itinéraire reçoit, lui revient par cette porte, ouverte au
    chargement — la page publique, qui n'embarque pas ce module, n'a donc pas
    cette visée du tout. */
-confieVisee("ici", ouvreCodeIci);
+injecteVisee("ici", ouvreCodeIci);

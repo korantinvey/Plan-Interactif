@@ -11,10 +11,10 @@
  * Le code n'a jamais été écrit pour lui : il en relève quelques centaines de
  * remarques, presque toutes des éléments du DOM qu'il ne sait pas plus précis
  * qu'un `Element`. Exiger zéro d'un coup aurait semé des annotations partout.
- * On tient donc un cliquet : les remarques d'aujourd'hui sont inscrites dans
- * `outils/types-acceptes.json`, et seule une remarque **nouvelle** fait
+ * On tient donc une référence figée (*baseline*) : les remarques d'aujourd'hui sont inscrites dans
+ * `outils/controles/types-acceptes.json`, et seule une remarque **nouvelle** fait
  * échouer. Le stock se résorbe module par module ; quand il baisse,
- * `npm run types -- --resserre` réinscrit l'état, et le cliquet se referme.
+ * `npm run types -- --resserre` réinscrit l'état, et la référence se resserre.
  *
  * Une remarque est repérée par son module, son code, son message et le texte
  * de sa ligne — pas par son numéro de ligne, qui bouge à chaque retouche au
@@ -25,7 +25,7 @@ const os = require("os");
 const path = require("path");
 const ts = require("typescript");
 const { compose, PAGES } = require("./relecture.js");
-const modules = require("./modules.js");
+const modules = require("../modules.js");
 
 const ACCEPTES = path.join(__dirname, "types-acceptes.json");
 
@@ -141,7 +141,7 @@ if (require.main === module) {
     const etat = {};
     for (const [k, r] of [...vues].sort(([a], [b]) => a.localeCompare(b))) etat[k] = r.n;
     fs.writeFileSync(ACCEPTES, JSON.stringify(etat, null, 1) + "\n");
-    console.log("Cliquet resserré : " + vues.size + " remarques inscrites dans outils/types-acceptes.json.");
+    console.log("Cliquet resserré : " + vues.size + " remarques inscrites dans outils/controles/types-acceptes.json.");
     process.exit(0);
   }
 
@@ -159,5 +159,5 @@ if (require.main === module) {
   }
   const total = [...vues.values()].reduce((n, r) => n + r.n, 0);
   console.log("Types : " + total + " remarques connues, aucune nouvelle." +
-    (parties.length ? "\n" + parties.length + " ont disparu : `npm run types -- --resserre` referme le cliquet." : ""));
+    (parties.length ? "\n" + parties.length + " ont disparu : `npm run types -- --resserre` resserre la référence." : ""));
 }

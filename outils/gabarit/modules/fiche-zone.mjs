@@ -10,16 +10,16 @@
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais — le crayon et la pastille qui y mènent ne paraissent
    qu'en administration (`fiche.mjs`, `ADMIN`), et leurs gestes, ce module
-   les confie à la fiche en se chargeant (`confieALaFiche`). La palette de
+   les confie à la fiche en se chargeant (`injecteALaFiche`). La palette de
    la reprise d'un emplacement (`reprise-emplacements.mjs`), qui importe ce
-   module, suit son annonce (`ZONE_AJOUTEE_ENREGISTREE`) : il n'a plus de
+   module, écoute son événement (`ZONE_AJOUTEE_ENREGISTREE`) : il n'a plus de
    branchement. La configuration et son enregistrement, la liste de
    la recherche, les types de zone, le cartouche des points d'intérêt et le
    dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,
    `reperes.mjs`, `points-interet.mjs`, `libelles.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { accesBase, base } from "./session.mjs";
@@ -31,7 +31,7 @@ import { cleAjout, rechAjout } from "./emplacements.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
 import { rangeConferences } from "./index-salon.mjs";
 import { annonce } from "./demarrage.mjs";
-import { ouvre, confieALaFiche } from "./fiche.mjs";
+import { ouvre, injecteALaFiche } from "./fiche.mjs";
 import { libelles } from "./libelles.mjs";
 import { TYPES_ZONE, typeZone } from "./reperes.mjs";
 import { cartouchePoi } from "./cartouche-poi.mjs";
@@ -45,7 +45,7 @@ import { champFoodtrucks } from "./reglage-foodtrucks.mjs";
 /** Une zone ajoutée à la main vient d'être enregistrée : la palette de la
  *  reprise d'un emplacement (`reprise-emplacements.mjs`), qui importe ce
  *  module, l'écoute pour se refaire. */
-export const ZONE_AJOUTEE_ENREGISTREE = creeAnnonce();
+export const ZONE_AJOUTEE_ENREGISTREE = creeEvenement();
 
 /* ============================================================
    La fiche d'une zone organisateur
@@ -778,7 +778,7 @@ async function enregistreZoneAjoutee(o, v, depart){
   rechAjout(o);
   libelles(); liste();
   cartouchePoi();
-  ZONE_AJOUTEE_ENREGISTREE.dis();
+  ZONE_AJOUTEE_ENREGISTREE.emet();
   if (state.sel === o.id) ouvre(o, null);
   /* Les salles font exception : leur colonne est indexée par salle, non par
      zone, et c'est le serveur qui rattache le programme — il reconnaît les
@@ -905,4 +905,4 @@ export const ecritColonneEvenement = (colonne, secours, change) =>
    confie en se chargeant les deux gestes de l'exploitant sur une zone — la
    reprendre, la retirer du plan public. Seule l'administration embarque ce
    module : la page publique n'a ni l'un ni l'autre. */
-confieALaFiche({ ficheZone, basculeAffichageZone });
+injecteALaFiche({ ficheZone, basculeAffichageZone });

@@ -25,7 +25,7 @@
    importe pas : ce qu'il leur doit — le départ qu'ils imposent — vit dans
    `vous-etes-ici.mjs`, et ce qu'ils font d'une visée qui les regarde, ou d'un
    bandeau qui doit céder la place, ils le lui confient en se chargeant
-   (`confieVisee`, `suitLaVisee`).
+   (`injecteVisee`, `suitLaVisee`).
 
    Le calcul, lui, n'importe ni les réglages, ni les calques, ni ce que le
    parcours et la journée savent des conférences : il s'éprouve seul dans
@@ -51,7 +51,7 @@ import { changePlan } from "./rendu.mjs";
    n'atteint plus ce tiroir depuis que le tracé vit à part ; la fiche et le
    parcours, qu'il referme en s'ouvrant, se referment par le registre des
    tiroirs exclusifs (`tiroirs-exclusifs.mjs`). La vue s'importe de `vue.mjs`,
-   sa porte comprise : les gestes la remplacent sans cesse, et le trajet la
+   son mutateur compris : les gestes la remplacent sans cesse, et le trajet la
    recadre. */
 const racine = document.documentElement;
 
@@ -79,7 +79,7 @@ function calculeRoute(){
   return r;
 }
 
-/* Le tracé sur le plan — l'état du trait (`TRACE`), sa porte, son dessin
+/* Le tracé sur le plan — l'état du trait (`TRACE`), son mutateur, son dessin
    animé, ses pastilles et le cadrage — vit dans `trace-itineraire.mjs` : le
    montage d'un pavillon le redessine sans importer ce tiroir. Il s'importe
    d'ici comme avant. */
@@ -398,7 +398,7 @@ function ecritResultat(etat){
  */
 export let visee = null;
 
-/** La porte de la visée : la borne et l'affiche du code l'arment pour elles,
+/** L'injection de la visée : la borne et l'affiche du code l'arment pour elles,
  *  la visite guidée l'éteint. */
 export function poseVisee(v){ visee = v; }
 
@@ -413,7 +413,7 @@ const VISEES = {};
 const SUIVENT_LA_VISEE = [];
 
 /** @param {string} genre @param {(pt: any) => any} f */
-export function confieVisee(genre, f){ VISEES[genre] = f; }
+export function injecteVisee(genre, f){ VISEES[genre] = f; }
 /** @param {() => void} f */
 export function suitLaVisee(f){ SUIVENT_LA_VISEE.push(f); }
 
@@ -672,7 +672,7 @@ export function brancheTiroirItineraire(){
   $("videItineraire").onclick = effaceItineraire;
   $("routeVoir").onclick = () => ouvreItineraire(false);
   $("routeEfface").onclick = effaceItineraire;
-  TRACE_POSEE.suis(majRappelRoute);
+  TRACE_POSEE.ecoute(majRappelRoute);
 
   addEventListener("keydown", e => {
     if (e.key !== "Escape" || $("modale").classList.contains("open")) return;

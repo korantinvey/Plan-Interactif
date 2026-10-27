@@ -7,11 +7,35 @@ déploiement ; ce fichier ne retient que ce qui se paie cher quand on l'ignore.
 **Ce fichier dit les règles ; `CARTE.md` dit où sont les choses.** La carte est
 produite à chaque construction : pour chaque module, ses sections, ses
 fonctions avec leur ligne, les éléments qu'il désigne, ce qu'il importe, qui
-l'importe, et ses portes. Ce que ce guide en recopiait en prose a vieilli plus
+l'importe, et ses injections. Ce que ce guide en recopiait en prose a vieilli plus
 vite qu'on ne le corrigeait — près d'un commit sur deux le retouchait. Il ne
 nomme donc plus, par intention, que le module par où entrer, et chaque module
 dit en tête ce qu'il fait et pourquoi. `npm run guide` vérifie que tout fichier
 et toute fonction cités ici existent encore.
+
+## Glossaire
+
+Le code est en français ; ses noms d'architecture sont les termes courants.
+Restent quelques mots du métier, et quelques mots du dépôt :
+
+| mot | sens |
+|---|---|
+| salon, événement | un salon professionnel, une ligne de la table `evenement` |
+| pavillon | un plan du salon — un hall, un étage ; `P` le pavillon affiché |
+| exploitant | qui administre le salon (page `plan-admin.html`), par opposition au visiteur |
+| emplacement | un stand ou une zone, tels que Klipso les dessine |
+| calque | une couche du plan : celles de Klipso (habillage) ou celles dessinées à la main |
+| journée organisée | le parcours de visite rangé par l'ordonnanceur, heure par heure |
+| borne | un écran fixe dans le hall, qui sait où il est (« Vous êtes ici ») |
+| événement (code) | publication / abonnement : `creeEvenement`, `emet`, `ecoute` (`modules/evenement.mjs`) |
+| injection | inversion de dépendance par une fonction `injecte…` exportée, listée dans `injections-acceptees.json` |
+| mutateur | la seule fonction qui réaffecte un état exporté (`pose…`, `changeVue`) |
+| registre | une liste où plusieurs modules s'inscrivent en se chargeant |
+| tranche | un bloc `@admin` du balisage, retiré de la page publique |
+| référence figée | *baseline* : ce qu'un contrôle tolère encore, qui ne peut que diminuer |
+| essai, banc | un test ; un banc de mesure (*benchmark*) |
+| construire, éprouver | *build* ; tester |
+| carte | `CARTE.md`, l'index du code, régénéré à chaque construction |
 
 ## La chaîne de fabrication
 
@@ -59,8 +83,9 @@ construction verse dans le code passe par `define` (`genere.js` `DEFINIS`),
 jamais par une substitution après coup, qui décalerait la carte.
 
 Ce code a longtemps été un seul script par page, des morceaux mis bout à bout
-où chacun appelait les fonctions de tous les autres — le « code soudé ». Les
-gestes qui l'empêchent de revenir :
+où chacun appelait les fonctions de tous les autres — un couplage fort que
+l'histoire du dépôt appelle le « code soudé ». Les gestes qui l'empêchent de
+revenir :
 
 - **Une fonction s'importe.** Une fonction recopiée dans deux pages devient un
   seul module importé deux fois. Ce qui ne sert qu'au module n'est pas exporté.
@@ -70,28 +95,35 @@ gestes qui l'empêchent de revenir :
   modules appliquaient chacun pour soi devient un **registre** où ils
   s'inscrivent (`tiroirs-exclusifs.mjs`, `modes-edition.mjs`, et
   `geste-tenu.mjs` : aucun envoi au repos pendant qu'un outil tient un geste).
-- **Un module de base qui doit dire ce qui vient de changer l'annonce.** Il
-  exporte, sous le nom du fait, une annonce faite par `modules/annonce.mjs`
-  `creeAnnonce` (`PAVILLON_MONTE`, `SESSION_REFUSEE`), qu'il `dis`, et que les
-  autres `suis`ent en se chargeant. C'est la voie de la partition : la page
-  publique dit ce qui s'est passé sans nommer la fonction de l'exploitant qui
-  l'écoute, et chez le visiteur personne n'écoute. Les inscrits s'appellent
-  dans l'ordre de leur chargement : une annonce ne sert donc qu'à ce dont
-  l'ordre ne compte pas, ou qui n'a qu'un inscrit.
-- **Une porte, en dernier recours, et avec sa raison.** Une fonction qu'un
-  module de base appelle chez un module qui l'importe lui est confiée par ce
-  dernier en se chargeant, par une porte `confie…` aux défauts sans effet. Il
-  en reste huit, chacune inscrite avec son genre et sa raison dans
-  `outils/portes-acceptees.json` — `partition` (l'administration remplace ou
-  ajoute, au lieu de seulement réagir : `confieChaleur`, `confieALaFiche`,
-  `confieLancementAdmin`), `rendu` (ce que chaque image d'un geste rappelle
-  dans un ordre fixe), `registre`. Une porte qui ne fait que prévenir devient
-  une annonce ; une porte qui ne fait que lire un état devient cet état, posé
-  dans le module qui le lit ou dans un registre. `npm run portes` fait échouer une porte absente de la liste, une porte de la
-  liste qui n'existe plus, et **toute boucle d'imports**, nommée module par
-  module : esbuild en accepte une sans rien dire, et l'ordre de chargement
-  devient celui du hasard. Pour savoir si un module peut en importer un autre,
-  regardez dans `CARTE.md` si le second atteint déjà le premier.
+- **Un module de base qui doit dire ce qui vient de changer émet un
+  événement** (publication / abonnement). Il exporte, sous le nom du fait, un
+  événement fait par `modules/evenement.mjs` `creeEvenement`
+  (`PAVILLON_MONTE`, `SESSION_REFUSEE`), qu'il `emet`, et que les autres
+  `ecoute`nt en se chargeant. C'est la voie de la partition : la page publique
+  dit ce qui s'est passé sans nommer la fonction de l'exploitant qui l'écoute,
+  et chez le visiteur personne n'écoute. Les écouteurs s'appellent dans
+  l'ordre de leur chargement : un événement ne sert donc qu'à ce dont l'ordre
+  ne compte pas, ou qui n'a qu'un écouteur.
+- **Une injection de dépendance, en dernier recours, et avec sa raison.** Une
+  fonction qu'un module de base appelle chez un module qui l'importe lui est
+  injectée par ce dernier en se chargeant, par une fonction `injecte…` aux
+  défauts sans effet — une inversion de dépendance. Il en reste huit, chacune
+  inscrite avec son genre et sa raison dans
+  `outils/controles/injections-acceptees.json` — `partition` (l'administration
+  remplace ou ajoute, au lieu de seulement réagir : `injecteChaleur`,
+  `injecteALaFiche`, `injecteLancementAdmin`), `rendu` (ce que chaque image
+  d'un geste rappelle dans un ordre fixe), `registre`. Une injection qui ne
+  fait que prévenir devient un événement ; une injection qui ne fait que lire
+  un état devient cet état, posé dans le module qui le lit ou dans un
+  registre. `npm run injections` fait échouer une injection absente de la
+  liste, une injection de la liste qui n'existe plus, et **toute boucle
+  d'imports**, nommée module par module : esbuild en accepte une sans rien
+  dire, et l'ordre de chargement devient celui du hasard. Pour savoir si un
+  module peut en importer un autre, regardez dans `CARTE.md` si le second
+  atteint déjà le premier.
+- **Un état exporté ne se réaffecte que par son mutateur** (`poseFormeSel`,
+  `changeVue`, `poseDonnees`) : une variable importée ne se réaffecte pas
+  hors de son module.
 - **Un module que plus rien n'importe mais qui s'inscrit reste chargé** : le
   point d'entrée l'importe sans nom, avec un commentaire
   (`import "./edition-en-cours.mjs";`).
@@ -107,7 +139,7 @@ gestes qui l'empêchent de revenir :
 comportement** : « Échap » referme la fenêtre avant le tiroir parce que l'une
 s'écoute avant l'autre. Un branchement ne change de rang qu'en sachant ce qu'il
 déplace. L'administration remplit quatre emplacements avant de lancer
-(`confieLancementAdmin`) ; chaque point d'entrée lance lui-même, à la fin de
+(`injecteLancementAdmin`) ; chaque point d'entrée lance lui-même, à la fin de
 son chargement.
 
 ## Ce que le visiteur ne reçoit pas
@@ -116,14 +148,15 @@ son chargement.
 en entier et y ajoute les modules de l'exploitant — un seul script par page,
 sans quoi deux exemplaires d'un module partagé auraient deux états. **Un module
 d'exploitant s'importe dans `plan-admin.mjs`, jamais dans `plan.mjs`** ; ce que
-la page publique doit faire savoir à l'administration, elle l'**annonce**, et
-le module d'exploitant l'écoute en se chargeant (`modules/rendu.mjs`
+la page publique doit faire savoir à l'administration, elle l'**émet en
+événement**, et le module d'exploitant l'écoute en se chargeant (`modules/rendu.mjs`
 `PAVILLON_MONTE`, `modules/demarrage.mjs` `PLAN_DEMARRE`). Une fonction que le
 public appelle sans s'en servir garde son nom dans un module public, qui
-annonce ce qu'elle demande (`modules/ordre-trace.mjs` `PANNEAU_A_REFAIRE`,
+émet ce qu'elle demande (`modules/ordre-trace.mjs` `PANNEAU_A_REFAIRE`,
 écouté par `pile.mjs`).
 
-**Le balisage, par des tranches** de `_head.html`, bornées sur des lignes
+**Le balisage, par des blocs conditionnels** de `_head.html` (une compilation
+conditionnelle, que le dépôt appelle « tranches »), bornés sur des lignes
 entières :
 
 ```
@@ -167,10 +200,10 @@ commiter l'index sur la branche. `git pull --rebase`.
 ## Données figées
 
 `web/plan-smcl.html` embarque ses données au lieu d'appeler l'API : c'est la
-démonstration, publiable en artefact. Sa source, `outils/plans.json`, est
+démonstration, publiable en artefact. Sa source, `outils/donnees/plans.json`, est
 **versionnée** — sans elle la construction échoue sur un clone neuf, et elle ne
 se régénère qu'avec une clé Klipso. De même `web/polices/`,
-`outils/polices.json` (`npm run polices`) et `outils/lieux.json`
+`outils/donnees/polices.json` (`npm run polices`) et `outils/donnees/lieux.json`
 (`npm run lieux`), qui ne se refont qu'avec le réseau. **Aucune page ne demande
 ses polices à Google** — chaque visiteur lui transmettrait son adresse IP ;
 `npm run construire` échoue si une page le fait.
@@ -202,14 +235,18 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 | `outils/gabarit/` | la source des pages ; `modules/` tout le JavaScript |
 | `web/` | les pages construites — non versionnées, sauf `polices/` et `bibliotheques/` |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan`, mesures, erreurs, manifeste |
-| `outils/projet.js` | le projet Supabase des pages et du Worker, production ou recette |
+| `outils/*.js` | la chaîne de construction, et elle seule (`assemble.js`, `genere.js`, `carte.js`…) ; `outils/projet.js` le projet Supabase des pages et du Worker, production ou recette |
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso, API publique, rappels, comptes ; `_partage/` le commun |
 | `.github/workflows/` | construction, essais, déploiement Supabase, sauvegarde, correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
-| `outils/essais/` | essais hors page — `npm run essais` ; l'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
+| `outils/essais/` | essais hors page — `npm run essais`, par `node --test` : **tout fichier `*.js` de ce dossier est un essai**, lancé dans son propre processus, en parallèle des autres, et compté en échec s'il sort en erreur ; une aide partagée va dans `aides/`. L'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
 | `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; seuls les essais `@base` (`npm run navigateur-base`) bloquent la pull request, le reste tourne sur `main` et chaque nuit — un essai neuf ne prend `@base` que s'il garde une page entière ou le parcours du visiteur ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
-| `outils/relecture.js`, `types.js`, `portes.js`, `guide.js` | ESLint, TypeScript (cliquet au stock vide), portes et boucles, ce guide — tous lancés par `npm run verifie` |
+| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, référence figée au stock vide), `injections.js` (injections et boucles), `guide.js` (ce guide) — et leurs références figées `*.json` (*baseline*) |
+| `outils/donnees/` | les données figées que relit la construction — versionnées, voir « Données figées » |
+| `outils/scripts/` | ce qui se lance à la main ou par un workflow, hors construction : serveur d'essai, migration, lieux, démonstration, fiche de performance ; `klipso/` l'exploration de l'API |
+| `outils/bancs/` | bancs de mesure longs (`npm run fep26`, `npm run charge`), que la CI ne lance pas |
+| `docs/` | notes d'étude (Eventmaker), défauts relevés pendant la sortie en modules |
 
 ## Chercher sans tout ouvrir
 
@@ -225,11 +262,11 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 ### Par intention : le module où entrer
 
 Un chemin `modules/…` se lit sous `outils/gabarit/`. Ce qu'il importe, qui
-l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
+l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 
 | intention | entrer par |
 |---|---|
-| données du salon (`DATA`, `TOUS`, `parId`…), état de la vue `state`, pavillon `P` | `modules/donnees.mjs`, posées par `modules/index-salon.mjs` `indexe` au travers de `poseDonnees`, seule porte d'écriture |
+| données du salon (`DATA`, `TOUS`, `parId`…), état de la vue `state`, pavillon `P` | `modules/donnees.mjs`, posées par `modules/index-salon.mjs` `indexe` au travers de `poseDonnees`, seul mutateur |
 | démarrage, appel de l'API, panne réseau, version du plan | `modules/demarrage.mjs` (`demarre`, `charge`, `demandePlan`) |
 | recherche, liste, panneau des critères | `modules/recherche.mjs` ; la question posée, sans écran, `modules/filtre.mjs` ; ce qu'ouvre une ligne `modules/ligne-liste.mjs` |
 | sortes cherchées, ordre des critères (réglages) | `modules/reglage-recherche.mjs` |
@@ -257,7 +294,7 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | repères, transports en commun | `modules/reperes.mjs`, `modules/cartouche-poi.mjs`, `modules/points-interet.mjs` |
 | libellé placé à la main | `modules/libelle-place.mjs`, `modules/placement-libelles.mjs` |
 | ordre et panneau des calques, fond du plan | `modules/ordre-trace.mjs`, `modules/pile.mjs`, `modules/ordre-calques.mjs` |
-| halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/lieux.js` (`lieuOsm`, `lieuSaisi`) |
+| halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/scripts/lieux.js` (`lieuOsm`, `lieuSaisi`) |
 | fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` |
 | secteurs, distinctions, polices des noms | `modules/secteurs.mjs`, `modules/distinctions.mjs`, `modules/polices-plan.mjs` |
 | parcours, partage, copie gardée | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs` |

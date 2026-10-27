@@ -13,7 +13,7 @@
    le rendu des calques marque la forme choisie, la fiche et l'itinéraire
    retrouvent un repère par son identifiant, et l'outil de dessin
    (`outil-dessin.mjs`) la relâche à plusieurs endroits. Le module l'importe,
-   et la change par sa porte (`poseFormeSel`).
+   et la change par son mutateur (`poseFormeSel`).
 
    Le calque actif et l'outil tenu (`calques-dessin.mjs`), le tracé des
    formes (`chemin-forme.mjs`, `dessin.mjs`), ce qu'un repère et un arrêt sont
@@ -31,7 +31,7 @@ import { GL, priseWebgl } from "./webgl.mjs";
 import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
-import { vue, cadrePlan, versPlan, svg, confieALaVue } from "./vue.mjs";
+import { vue, cadrePlan, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { calqueActif, outil } from "./calques-dessin.mjs";
 import { estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { OBJETS_REPERE } from "./decor.mjs";
@@ -717,4 +717,4 @@ export function editionPointerUp(e){
    que ce module importe, les refait à chaque changement de vue — il les lui
    confie en se chargeant. La page publique, qui n'embarque pas l'éditeur,
    n'a pas de poignées à refaire. */
-confieALaVue({ dessinePoignees });
+injecteALaVue({ dessinePoignees });

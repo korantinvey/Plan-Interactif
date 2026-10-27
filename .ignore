@@ -17,4 +17,4 @@
 
 # 6 Mo de données figées sur une poignée de lignes : une recherche qui y touche
 # ramène des lignes de centaines de milliers de caractères.
-/outils/plans.json
+/outils/donnees/plans.json

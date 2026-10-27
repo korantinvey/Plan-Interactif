@@ -12,7 +12,7 @@
  * Le fichier du serveur est du TypeScript pour Deno : on en retire les types
  * avec le compilateur que `npm run types` emploie déjà, sans rien installer.
  *
- *   node outils/essais/forme.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/forme.js     (lancé par `npm run essais`)
  */
 const fs = require("fs");
 const path = require("path");

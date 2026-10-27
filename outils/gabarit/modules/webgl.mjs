@@ -26,13 +26,13 @@
 
    Ce module lit la vue, le SVG et son cadre dans `vue-etat.mjs` ; le reste,
    les modules qui l'importent le lui confient en se chargeant
-   (`confieAuWebgl`) : l'application de la vue, les gestes, l'édition en
+   (`injecteAuWebgl`) : l'application de la vue, les gestes, l'édition en
    cours, et la préparation des noms, qui tient aux règles des libellés. Ce qu'il lit du SVG passe par `trace.mjs` ; le
    placement des libellés à la main s'importe (`libelle-place.mjs`).
    ============================================================ */
 import { avive, eclate } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
@@ -74,7 +74,7 @@ const _page = { appliqueVue: () => {}, libelles: () => {},
    le SVG — le modèle, caché, que ce rendu relit — et son cadre, il les lit
    dans `vue-etat.mjs`.
    @param {Partial<PageWebgl>} o */
-export function confieAuWebgl(o){ Object.assign(_page, o); }
+export function injecteAuWebgl(o){ Object.assign(_page, o); }
 
 export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !== "svg";
 /* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
@@ -89,7 +89,7 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
 
    Réduite aux classes que ce module emprunte à `deck` : la bibliothèque
    entière pesait 470 Ko compressés, celle-ci 213. Elle se refait par
-   `npm run deck` (`outils/deck.js`), qui dit le nom et l'empreinte à
+   `npm run deck` (`outils/scripts/deck.js`), qui dit le nom et l'empreinte à
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
@@ -99,13 +99,13 @@ const DECK_WEBGL = {
 /** Un repeint vient de finir : sa durée en millisecondes, et combien de
  *  blocs il a refaits. Seul le relevé des performances l'écoute
  *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
- *  @type {import("./annonce.mjs").Annonce<[number, number]>} */
-export const REPEINT_FINI = creeAnnonce();
+ *  @type {import("./evenement.mjs").Evenement<[number, number]>} */
+export const REPEINT_FINI = creeEvenement();
 /** Le rendu WebGL vient d'être abandonné pour le SVG : la raison. La sonde
  *  (`sonde.mjs`) compte ces pertes par appareil ; chez le visiteur sans
  *  sonde, personne n'écoute.
- *  @type {import("./annonce.mjs").Annonce<[string]>} */
-export const CONTEXTE_PERDU = creeAnnonce();
+ *  @type {import("./evenement.mjs").Evenement<[string]>} */
+export const CONTEXTE_PERDU = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -233,7 +233,7 @@ export function monteWebgl(){
     },
   });
   GL.actif = true;
-  /* La caméra n'entre en jeu qu'une fois le dessin actif : son annonce fait
+  /* La caméra n'entre en jeu qu'une fois le dessin actif : son événement fait
      recadrer la vue, qui repasse par ici et remonterait le dessin. */
   metsEnJeu(GL.camera);
   /* La bibliothèque ne garde que trois atlas de police, et le plan en demande
@@ -295,11 +295,11 @@ export function monteWebgl(){
        Une fois par image, quel que soit le nombre de logos posés : les
        vignettes d'un lot se décodent ensemble, et chacune refaisait tous les
        noms du plan — treize fois en sept millisecondes sur Funexpo. */
-    LOGO_PRET.suis(() => {
+    LOGO_PRET.ecoute(() => {
       if (document.documentElement.classList.contains(CLASSE_LOGOS)) planifieWebgl();
     });
     let logosPrets = 0;
-    PANNEAU_PRET.suis(() => {
+    PANNEAU_PRET.ecoute(() => {
       if (logosPrets || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
       logosPrets = requestAnimationFrame(() => {
         logosPrets = 0;
@@ -416,7 +416,7 @@ function perdContexteWebgl(raison = "contexte perdu"){
      d'après — mais sous garde : un auditeur qui lève interromprait la
      fonction avant « GL.aRemonter », et le plan resterait déclaré actif
      sans contexte valide. */
-  try { CONTEXTE_PERDU.dis(raison); } catch (e) { console.warn("Rendu WebGL : un auditeur de la perte a échoué.", e); }
+  try { CONTEXTE_PERDU.emet(raison); } catch (e) { console.warn("Rendu WebGL : un auditeur de la perte a échoué.", e); }
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
@@ -643,7 +643,7 @@ function repeintWebgl(){
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
-  REPEINT_FINI.dis(GL.duree, n);
+  REPEINT_FINI.emet(GL.duree, n);
 }
 
 /** Les points d'écran que fait un mètre du plan, le long de ses x, à cet
@@ -1411,7 +1411,7 @@ function dedansAnneau(/** @type {number[][]} */ an, /** @type {number} */ x, /**
 /* Le trajet apparaît, change ou s'efface : le plan entier change de hauteur
    d'un coup — six cents stands en mouvement chacun dans sa couche coûteraient
    plus qu'ils ne montreraient. */
-TRAJET_CHANGE.suis(() => {
+TRAJET_CHANGE.ecoute(() => {
   if (!GL.actif || !GL.camera) return;
   GL.massif = true;
   toutRepeindreWebgl();
@@ -1419,7 +1419,7 @@ TRAJET_CHANGE.suis(() => {
 /* Le cap tourne : les images dressées face à l'œil (`imageDressee`) se
    retournent avec lui, et elles ne tiennent leur orientation que de la
    conversion. */
-CAMERA_CHANGEE.suis(() => { if (GL.actif && GL.camera) toutRepeindreWebgl(); });
+CAMERA_CHANGEE.ecoute(() => { if (GL.actif && GL.camera) toutRepeindreWebgl(); });
 
 /* L'itinéraire, un rien au-dessus du sol en vue immersive. Peint à même le
    sol, il en partageait la profondeur : vue de biais, la carte graphique ne

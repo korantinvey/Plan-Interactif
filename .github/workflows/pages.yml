@@ -43,7 +43,7 @@ jobs:
       # plus sévère qu'un `<script>` classique, il refuse les redéclarations —
       # la collision que l'espace de noms unique rend possible.
       - name: Contrôler la syntaxe des pages
-        run: node outils/controle.js
+        run: node outils/controles/controle.js
 
       # Toute phrase affichée doit exister en anglais : le contrôle relève les
       # chaînes visibles du gabarit et les cherche dans `outils/anglais/`.

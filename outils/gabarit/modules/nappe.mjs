@@ -5,7 +5,7 @@
    (`itineraire.mjs` `grille`), peinte sous le plan telle que le calcul la
    voit. Le visiteur ne la reçoit pas : seul `plan-admin.mjs` embarque ce
    module. Le montage d'un pavillon (`rendu.mjs`) refait la nappe sans
-   l'importer : ce module suit son annonce (`PAVILLON_MONTE`), que personne
+   l'importer : ce module écoute son événement (`PAVILLON_MONTE`), que personne
    n'écoute chez le visiteur.
 
    La lecture des jetons de couleur
@@ -39,7 +39,7 @@ import { PAVILLON_MONTE } from "./rendu.mjs";
  */
 let voirNappe = false;
 
-/** La porte de la case « voir la nappe » de la boîte à outils. */
+/** Le mutateur de la case « voir la nappe » de la boîte à outils. */
 export function poseNappe(v){ voirNappe = v; }
 
 function couleurNappe(){
@@ -79,4 +79,4 @@ export function rafraichitApercu(){
 }
 
 /* La nappe se refait au montage d'un pavillon, que le rendu annonce. */
-PAVILLON_MONTE.suis(rafraichitApercu);
+PAVILLON_MONTE.ecoute(rafraichitApercu);

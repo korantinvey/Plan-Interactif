@@ -1,7 +1,7 @@
 /**
  * Le salon de démonstration, écrit dans la base comme un vrai salon.
  *
- *   SUPABASE_SERVICE_ROLE_KEY=… node outils/salon-demo.js
+ *   SUPABASE_SERVICE_ROLE_KEY=… node outils/scripts/salon-demo.js
  *   (ou le workflow « Salon de démonstration », qui va chercher la clé)
  *
  * `web/demo.html` montre le salon inventé de `outils/demo.js`, mais figé : rien
@@ -35,8 +35,8 @@
  * en `.example`, qui ne mène nulle part, et que seule la vignette sert.
  */
 const crypto = require("crypto");
-const { PROJETS } = require("./projet.js");
-const { salonDemo, lisSource, logosFoodtrucks, lisLogos } = require("./demo.js");
+const { PROJETS } = require("../projet.js");
+const { salonDemo, lisSource, logosFoodtrucks, lisLogos } = require("../demo.js");
 
 const SLUG = "demo";
 

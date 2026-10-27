@@ -8,7 +8,7 @@
  * mordrait sur le stand d'à côté, et l'on ne le verrait qu'à l'écran. D'où un
  * îlot connu au centimètre, une allée, un stand d'en face, une zone.
  *
- *   node outils/essais/debord-allees.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/debord-allees.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

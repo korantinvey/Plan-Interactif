@@ -9,7 +9,7 @@
    sans boucle d'imports.
    ============================================================ */
 import { API } from "./salon.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { IMAGE_SURE } from "./sur.mjs";
 import { marquePrete } from "./marque.mjs";
 
@@ -72,7 +72,7 @@ export function vignettesLisibles(/** @type {any} */ d){
 }
 
 /** Un lot de vignettes vient d'arriver : qui en attendait peut les poser. */
-export const VIGNETTES_ARRIVEES = creeAnnonce();
+export const VIGNETTES_ARRIVEES = creeEvenement();
 
 /**
  * L'adresse d'une vignette fabriquée à la synchronisation.

@@ -15,7 +15,7 @@
    chez l'exploitant seul, l'écoute et le remplit.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
@@ -68,10 +68,10 @@ export function ordonneDom(){
 
 /** Le panneau des calques est à refaire : `pile.mjs` l'écoute chez
  *  l'exploitant ; chez le visiteur personne. */
-export const PANNEAU_A_REFAIRE = creeAnnonce();
+export const PANNEAU_A_REFAIRE = creeEvenement();
 
 /* Le plan public l'appelle sans s'en servir : il garde sa signature, et
    l'administration son contenu, dans `modules/pile.mjs`. */
 export function construitPanneau(){
-  PANNEAU_A_REFAIRE.dis();
+  PANNEAU_A_REFAIRE.emet();
 }

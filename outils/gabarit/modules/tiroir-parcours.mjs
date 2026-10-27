@@ -40,7 +40,7 @@ import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
 import { appliqueVueParcours, perimeJournee, oublieSejour, retireTraceJournee } from "./journee.mjs";
 import { select, ficheConf } from "./fiche.mjs";
-import { confieApresOption } from "./options.mjs";
+import { injecteApresOption } from "./options.mjs";
 const racine = document.documentElement;
 
 
@@ -267,12 +267,12 @@ const TIROIR_SUGG = { remplit: remplitParcours, branche: brancheParcours };
 
 /* Deux options du salon rouvrent ou ferment un bouton de ce tiroir : la
    journée organisée, la suggestion. Ce que chacune refait en changeant, ce
-   module le confie à la liste des options (`confieApresOption`), comme
+   module le confie à la liste des options (`injecteApresOption`), comme
    l'outil de dessin pour les siennes. Le bouton de la journée s'éteint par
    `rafraichitParcours`, qui l'éteint déjà sur une liste vide : la feuille de
    style seule le laissait prendre au clavier. */
-confieApresOption("journee", () => rafraichitParcours());
-confieApresOption("suggestion", () => rafraichitParcours());
+injecteApresOption("journee", () => rafraichitParcours());
+injecteApresOption("suggestion", () => rafraichitParcours());
 
 /* Ce que le tiroir refait quand la liste change d'un signet : lui-même, et
    les deux propositions qu'un ajout peut faire naître. Le geste — ajouter ou

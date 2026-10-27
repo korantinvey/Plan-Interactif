@@ -37,7 +37,7 @@ const API = "/api/plan";
  * feuille (`polices/<famille>.css`) : les déclarer toutes grossirait chaque
  * page pour des familles qu'un salon sur vingt emploie.
  */
-const POLICES_JSON = JSON.parse(fs.readFileSync(D + "/polices.json", "utf8"));
+const POLICES_JSON = JSON.parse(fs.readFileSync(D + "/donnees/polices.json", "utf8"));
 const POLICES = POLICES_JSON.faces.filter((f) => !f.aLaDemande);
 function feuillePolices(autonome) {
   return "<style>\n" + POLICES.map((f) =>
@@ -532,7 +532,7 @@ function annonceTot(html) {
 }
 /* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
    pages, elles, gardent la règle de Cloudflare — revalider à chaque fois.
-   deck.gl et les polices aussi portent la leur dans leur nom (`outils/deck.js`,
+   deck.gl et les polices aussi portent la leur dans leur nom (`outils/scripts/deck.js`,
    `outils/polices.js`) ; laissés à cette règle-là, ils coûtaient au visiteur
    qui revient une demande au serveur chacun. Des polices, seuls les fichiers :
    leurs feuilles, `polices/<famille>.css`, gardent un nom fixe. */
@@ -659,7 +659,7 @@ function poseCsp(html) {
     "default-src 'self'",
     /* Ni `eval`, ni WebAssembly : la bibliothèque entière de deck.gl
        compilait un décodeur, que sa version réduite au plan n'embarque plus
-       (`outils/deck.js`), et MapLibre n'en a pas. */
+       (`outils/scripts/deck.js`), et MapLibre n'en a pas. */
     "script-src 'self' " + MAPLIBRE + "js " + empreintes.join(" "),
     "style-src 'self' 'unsafe-inline' " + MAPLIBRE + "css",
     "img-src 'self' https: data: blob:",
@@ -688,7 +688,7 @@ fs.writeFileSync(W + "plan.html", poseCsp(annonceTot(sortScripts(
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
    n'en a que faire, elle ne part qu'avec l'administration. */
-const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
+const LIEUX = fs.readFileSync(D + "/donnees/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
 /* Versée en données, devant celles du plan : le point d'entrée de
    l'administration la lit au lancement (`plan-admin.mjs` `lieux`). La balise
    d'ouverture des données ne change pas, alors que leur contenu, lui, est vidé
@@ -707,13 +707,13 @@ fs.writeFileSync(W + "plan-admin.html", poseCsp(annonceTot(sortScripts(
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
-  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8")),
+  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/donnees/plans.json", "utf8")),
        { autonome: true, pleinEcran: true }));
 
 /* --- le salon de démonstration, figé : un vrai plan, des exposants inventés ---
    Celui-ci se montre à un prospect (`outils/demo.js`). Il est servi à `/demo`,
    et non à `/plan-demo` : ce chemin-là est le même salon écrit dans la base,
-   qui se règle en administration (`outils/salon-demo.js`). Seul `</script`
+   qui se règle en administration (`outils/scripts/salon-demo.js`). Seul `</script`
    est à neutraliser dans des données posées entre deux balises de script.
    Les images de ses produits sont servies à côté : la fiche n'accepte pour
    elles qu'une adresse, jamais des octets. */

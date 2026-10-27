@@ -28,7 +28,7 @@ import { pictoForme, nomTypeRepere, estPorte, ouvreEntrant, ouvreSortant } from 
 /* Ce que `tiroir-itineraire.mjs` confie, et rien avant qu'il l'ait fait : un appel
    arrivé trop tôt doit échouer bruyamment plutôt que de rendre un trajet faux. */
 /** @type {Record<string, any>} */
-let soude = {};
+let dependances = {};
 
 /**
  * Le branchement, appelé par `tiroir-itineraire.mjs` en se chargeant (et
@@ -39,11 +39,11 @@ let soude = {};
  *
  * @param {{ conf: () => any, dessins: () => any, instantConf: Function, finInstant: Function }} b
  */
-export function brancheItineraire(b){ soude = b; }
+export function brancheItineraire(b){ dependances = b; }
 
-const conf = () => soude.conf();
-const instantConf = (c) => soude.instantConf(c);
-const finInstant = (c) => soude.finInstant(c);
+const conf = () => dependances.conf();
+const instantConf = (c) => dependances.instantConf(c);
+const finInstant = (c) => dependances.finInstant(c);
 
 /**
  * Un visiteur cherche le G77 ; il est devant le E10 et n'a aucune idée du
@@ -214,7 +214,7 @@ export function oublieGrilles(){
 
 /** Les calques de dessin d'un pavillon quelconque, pas seulement l'affiché. */
 export const calquesDe = (p) => {
-  const D = soude.dessins();
+  const D = dependances.dessins();
   return (typeof D === "object" && D[p.id]) || [];
 };
 

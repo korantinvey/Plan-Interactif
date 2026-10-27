@@ -4,7 +4,7 @@
 # Il écrit, sous le slug `demo`, le salon inventé de `outils/demo.js` : il
 # paraît alors dans la console, se règle en administration
 # (`/plan-admin?plan=demo`) et se voit à `/plan-demo`. Relancé, il refait les
-# données sans toucher à ce qui a été réglé (`outils/salon-demo.js`).
+# données sans toucher à ce qui a été réglé (`outils/scripts/salon-demo.js`).
 #
 # La clé de service n'est rangée nulle part : elle est demandée à l'API de
 # gestion de Supabase avec le jeton qu'emploie déjà le déploiement, masquée
@@ -66,6 +66,6 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY=$cle" >> "$GITHUB_ENV"
 
       - name: Écrire le salon
-        run: node outils/salon-demo.js
+        run: node outils/scripts/salon-demo.js
         env:
           SUPABASE_URL: https://${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}.supabase.co

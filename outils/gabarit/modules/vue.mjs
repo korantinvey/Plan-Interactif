@@ -12,7 +12,7 @@
    (`cadrePlan`) vivent dans `vue-etat.mjs`, que le fond de carte et la carte
    graphique importent aussi, et ce module les réexporte. Les gestes
    remplacent la vue sans cesse, le cadrage sur un trajet aussi : elle se
-   remplace par sa porte, `changeVue(v)`. Les modules l'importent, ou la lisent
+   remplace par son mutateur, `changeVue(v)`. Les modules l'importent, ou la lisent
    par `vue()` ; seuls les essais la lisent encore dans la page, par un
    accesseur de `__essais` (`plan.mjs`). Le SVG est dans la page avant que les
    modules ne s'exécutent, et ne se remplace jamais.
@@ -24,11 +24,11 @@
    n'existe pas partout — les noms, les poignées de l'éditeur, les pastilles
    de l'itinéraire, les pointes de flèche, le point de la borne, le calage
    d'un hall — lui est confié par les modules qui le tiennent, en se chargeant
-   (`confieALaVue`).
+   (`injecteALaVue`).
    L'ordre des calques, elle l'importe (`ordre-trace.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, confieAuWebgl }
+import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, injecteAuWebgl }
   from "./webgl.mjs";
 import { recul, dessineFondCarte, DEBORD_VUE, vueLibre } from "./environs.mjs";
 import { svg, vue, changeVue, cadrePlan, oublieCadre, redresse, incline } from "./vue-etat.mjs";
@@ -43,7 +43,7 @@ import { signaleErreur } from "./erreurs.mjs";
    zoom : poignées de l'éditeur, pastilles de l'itinéraire, pointes de flèche,
    point de la borne, poignée du calage d'un hall. Elle ne peut les importer :
    chacun l'importe. Chacun le lui confie donc au chargement de son module
-   (`confieALaVue`), et ce que la page n'embarque pas — l'éditeur, la reprise
+   (`injecteALaVue`), et ce que la page n'embarque pas — l'éditeur, la reprise
    des emplacements, le calage, tous d'administration — reste sans effet.
    Les appels restent là où ils étaient, et dans le même ordre : c'est le
    chemin de chaque image pendant un geste. */
@@ -64,9 +64,9 @@ const prete = {
   rafraichitBouts: () => {}, rafraichitFleches: () => {}, rafraichitBorne: () => {}, calage: null,
 };
 
-/** La porte des modules qui confient à la vue ce qu'elle rappelle.
+/** L'injection des modules qui confient à la vue ce qu'elle rappelle.
  *  @param {Partial<PageVue>} o */
-export function confieALaVue(o){ Object.assign(prete, o); }
+export function injecteALaVue(o){ Object.assign(prete, o); }
 
 /* La vue, le SVG et le cadre vivent dans `vue-etat.mjs`, que le fond de carte
    et la carte graphique importent aussi ; les autres modules les importent
@@ -78,7 +78,7 @@ const libelles = () => prete.libelles();
 /** L'emprise du pavillon, posée au montage du plan. */
 /** @type {any} */
 export let emp;
-/** La porte de l'emprise : `rendu.mjs` `montePlan` la remplace à chaque pavillon. */
+/** Le mutateur de l'emprise : `rendu.mjs` `montePlan` la remplace à chaque pavillon. */
 export function poseEmprise(/** @type {any} */ e){ emp = e; }
 
 /* ============================================================
@@ -713,10 +713,10 @@ export function brancheVue(){
 /* Le rendu par la carte graphique et le fond de carte, que ce module importe,
    lisent la vue et ne peuvent l'importer : elle la leur confie en se
    chargeant — par des lecteurs, puisque chaque geste la remplace. */
-confieAuWebgl({ appliqueVue });
+injecteAuWebgl({ appliqueVue });
 
 /* Le plan se pose à plat avant que la carte graphique n'arrive, et c'est elle
    qui incline la vue : le hall cadré d'en haut se retrouvait petit au milieu
    de la scène. Il se recadre donc quand la caméra entre en jeu, en sort, ou
    que l'exploitant tourne le hall. */
-CAMERA_CHANGEE.suis(() => { if (emp && vue()) fit(); });
+CAMERA_CHANGEE.ecoute(() => { if (emp && vue()) fit(); });

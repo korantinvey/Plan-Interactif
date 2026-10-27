@@ -12,16 +12,16 @@
  * d'avant-validation, et un défaut qui n'apparaît qu'après la poussée est
  * trouvé trop tard.
  *
- *   node outils/verifie.js
+ *   node outils/controles/verifie.js
  */
 const { execFileSync } = require("child_process");
 const path = require("path");
 
-const racine = path.join(__dirname, "..");
+const racine = path.join(__dirname, "..", "..");
 const noeud = process.execPath;
 
 const lance = (script) =>
-  execFileSync(noeud, [path.join(__dirname, script)], { cwd: racine, stdio: "pipe" });
+  execFileSync(noeud, [path.join(__dirname, "..", script)], { cwd: racine, stdio: "pipe" });
 
 try {
   lance("assemble.js");
@@ -34,7 +34,7 @@ try {
 }
 
 try {
-  lance("controle.js");
+  lance("controles/controle.js");
 } catch (e) {
   console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
   process.exit(1);
@@ -50,12 +50,13 @@ try {
   process.exit(1);
 }
 
-/* La relecture par ESLint, le cliquet des types, puis celui des portes : ce
+/* La relecture par ESLint, la référence figée des types, puis celle des
+   injections : ce
    qu'un développeur attend d'un dépôt, ce qui voit une variable morte, un nom
    que rien ne déclare ou un appel faux là où la syntaxe ne regarde pas — et
-   une boucle d'imports ou une porte ouverte sans raison, par où le code se
-   ressouderait. Et le guide, qui ne doit citer que ce qui existe encore. */
-for (const script of ["relecture.js", "types.js", "portes.js", "guide.js"]) {
+   une boucle d'imports ou une injection ajoutée sans raison, par où le code se
+   recouplerait. Et le guide, qui ne doit citer que ce qui existe encore. */
+for (const script of ["controles/relecture.js", "controles/types.js", "controles/injections.js", "controles/guide.js"]) {
   try {
     lance(script);
   } catch (e) {

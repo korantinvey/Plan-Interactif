@@ -17,14 +17,14 @@
    changement d'attente s'annonce (`ATTENTE_CHANGEE`), et `enregistrement.mjs`
    l'écoute.
    ============================================================ */
-import { creeAnnonce } from "./annonce.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { P } from "./donnees.mjs";
 import { salonRange } from "./configuration.mjs";
 
 /** Un calque entre en attente d'envoi, ou en sort. Le bouton qui le dit est
  *  d'administration (`enregistrement.mjs`), seul à l'écouter. */
-export const ATTENTE_CHANGEE = creeAnnonce();
+export const ATTENTE_CHANGEE = creeEvenement();
 
 /* Un rangement par salon, et non plus un seul pour tous — la même règle que
    pour les réglages, et un dégât de plus.
@@ -182,7 +182,7 @@ export const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
 export function marqueAttente(id, oui){
   if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
   try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
-  ATTENTE_CHANGEE.dis();
+  ATTENTE_CHANGEE.emet();
 }
 
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris
@@ -200,7 +200,7 @@ inscritGesteTenu(() => enCours);
    le tracé ne changent que par l'outil de dessin (`modules/outil-dessin.mjs`). */
 export function poseCalqueActif(/** @type {any} */ id){ calqueActif = id; }
 export function poseOutil(/** @type {string} */ o){ outil = o; }
-/* Le tracé en cours est une ébauche : sa porte le dit ainsi, et non « en
+/* Le tracé en cours est une ébauche : son mutateur le dit ainsi, et non « en
    cours », que le relevé des phrases de la page (`outils/traductions.js`)
    prendrait pour du texte affiché. */
 export function poseEbauche(/** @type {any} */ t){ enCours = t; }
