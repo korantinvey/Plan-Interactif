@@ -189,25 +189,42 @@ async function condense(texte, octets) {
    L'entête la lit à chaque ouverture de page : la prendre dans la métadonnée du
    plan obligerait à en relire les cinq cents kilo-octets pour en tirer seize
    signes, et c'est précisément le temps qu'on cherche à rendre. Elle est écrite
-   avec le plan et retirée avec lui — voir `oublie`.
+   avec le plan et refaite avec lui — voir `oublie`.
 
-   Elle se garde un jour, et non la semaine de la garde. Rien d'autre ne la
-   refait : la page demande le plan sous la version annoncée, que rien ne
-   périme, et seul un enregistrement dans la console l'oublie. Un changement de
-   ce que la fonction produit — une mise à jour du code, sans que personne
-   n'enregistre — restait donc invisible une semaine, fenêtre privée comprise :
-   la galerie traversable de FUNEXPO n'arrivait pas aux visiteurs. Un jour,
-   c'est le délai du plan lui-même, et une lecture de la base par salon et par
-   jour.
+   Elle est fraîche un jour : un changement de ce que la fonction produit — une
+   mise à jour du code, sans que personne n'enregistre — restait sinon
+   invisible, et la galerie traversable de FUNEXPO n'arrivait pas aux
+   visiteurs. Mais elle se garde la semaine, comme le plan : quand elle
+   disparaissait au bout du jour, la visite qui la trouvait absente attendait
+   que la base refasse le plan entier pour apprendre cinquante octets — 2,8 et
+   5,8 secondes sur la démo, relevées par la sonde en octobre. Passé son jour,
+   elle est donc servie encore une fois et se refait derrière (`entete`).
+
+   `depuis` est l'instant où l'on a demandé le plan qui la porte. Deux
+   reconstructions peuvent se croiser — un enregistrement toutes les quelques
+   secondes, chacun suivi de la sienne (`oublie`) — et celle partie la
+   première, si elle finit la dernière, rangerait la version d'avant : elle
+   resterait annoncée jusqu'au lendemain. On ne remplace donc jamais une
+   version par une autre tirée d'un plan demandé plus tôt.
 
    Le « 2 » force chaque salon à la redemander au déploiement de ce relais :
    les entrées d'avant, gardées pour une semaine, taisaient justement ce
    changement. */
 const cleVersion = (slug) => "ver2:" + slug;
 
-/** Range la version à côté du plan, sans faire attendre la visite. */
-const rangeLaVersion = (cache, slug, v) =>
-  cache.put(cleVersion(slug), v, { expirationTtl: TTL_PLAN }).catch(() => {});
+/** La version qu'on garde, et l'instant où son plan a été demandé — `null` si rien. */
+const versionGardee = (cache, slug) =>
+  cache.getWithMetadata(cleVersion(slug)).catch(() => null);
+
+/** Range la version à côté du plan, sauf si l'on tient déjà plus récent. */
+async function rangeLaVersion(cache, slug, v, depuis) {
+  const la = await versionGardee(cache, slug);
+  if (la && la.value && (la.metadata?.depuis || 0) > depuis) return;
+  await cache.put(cleVersion(slug), v, {
+    expirationTtl: GARDE,
+    metadata: { depuis, frais: depuis + TTL_PLAN * 1000 },
+  }).catch(() => {});
+}
 
 /** La version, et rien d'autre : une cinquantaine d'octets.
  *
@@ -251,21 +268,33 @@ const range = (cache, cle, reponse, corps, immuable) =>
     metadata: meta(reponse, immuable ? null : Date.now() + TTL_PLAN * 1000),
   }).catch(() => {});   // un cache en panne ne doit pas casser une visite
 
+/** Range le plan sans version qu'on vient de redemander, et sa version avec lui.
+ *  Faux si un plan demandé après celui-ci est déjà rangé : ce qu'on tient est
+ *  plus ancien, et le ranger effacerait le sien. */
+async function rangeLePlan(cache, cle, slug, r, depuis) {
+  const la = slug ? await versionGardee(cache, slug) : null;
+  if (la && la.value && (la.metadata?.depuis || 0) > depuis) {
+    r.body?.cancel().catch(() => {});
+    return false;
+  }
+  /* Le plan qu'on vient de refaire ne porte pas forcément la même version :
+     sans ce geste, l'entête continuerait d'annoncer celle d'avant, et les
+     pages garderaient un plan que personne ne sert plus. */
+  const v = r.headers.get("X-Version");
+  if (v && slug) await rangeLaVersion(cache, slug, v, depuis);
+  await range(cache, cle, r, r.body, false);
+  return true;
+}
+
 /** Refait une entrée périmée, sans faire attendre la visite qui l'a trouvée. */
 function rafraichit(cache, cle, adresse, entetes) {
   if (_enVol.has(cle)) return Promise.resolve();
   _enVol.add(cle);
+  const depuis = Date.now();
   return fetch(adresse, { headers: entetes })
-    .then((r) => {
-      if (!gardable(cache, r)) return null;
-      /* Le plan qu'on vient de refaire ne porte pas forcément la même version :
-         sans ce geste, l'entête continuerait d'annoncer celle d'avant, et les
-         pages garderaient un plan que personne ne sert plus. */
-      const v = r.headers.get("X-Version");
-      const slug = new URL(adresse).searchParams.get("slug");
-      if (v && slug) rangeLaVersion(cache, slug, v);
-      return range(cache, cle, r, r.body, false);
-    })
+    .then((r) => gardable(cache, r)
+      ? rangeLePlan(cache, cle, new URL(adresse).searchParams.get("slug"), r, depuis)
+      : null)
     // l'amont muet laisse l'entrée périmée en place : elle resservira
     .catch(() => {})
     .finally(() => _enVol.delete(cle));
@@ -291,13 +320,22 @@ async function entete(url, env, ctx) {
   const slug = url.searchParams.get("slug") || "";
   if (!SLUG.test(slug)) return dit({ erreur: "Paramètre slug absent ou invalide." }, 400);
 
+  const amont = amontPour(new URLSearchParams({ slug }));
   const cache = cacheDe(env, url);
   if (cache) {
-    const v = await cache.get(cleVersion(slug)).catch(() => null);
-    if (v) return ditVersion(v);
+    const la = await versionGardee(cache, slug);
+    if (la && la.value) {
+      /* Passée son jour, elle se sert encore et se refait derrière : c'est le
+         plan entier qu'il faut redemander pour la connaître. Une entrée d'avant
+         sans métadonnée compte pour périmée. */
+      if (!(Date.now() <= la.metadata?.frais)) {
+        ctx.waitUntil(rafraichit(cache, cleDe(amont), amont.toString(), new Headers()));
+      }
+      return ditVersion(la.value);
+    }
   }
 
-  const amont = amontPour(new URLSearchParams({ slug }));
+  const depuis = Date.now();
   const rep = await fetch(amont.toString()).catch(() => null);
   if (!rep || !rep.ok) {
     return dit({ erreur: "Plan indisponible." }, rep ? rep.status : 502);
@@ -305,7 +343,7 @@ async function entete(url, env, ctx) {
   const neuve = rep.headers.get("X-Version");
   if (gardable(cache, rep) && neuve) {
     ctx.waitUntil(range(cache, cleDe(amont), rep, rep.body, false));
-    ctx.waitUntil(rangeLaVersion(cache, slug, neuve));
+    ctx.waitUntil(rangeLaVersion(cache, slug, neuve, depuis));
   } else {
     // rien à ranger : le corps ne doit pas rester en attente d'un lecteur
     rep.body?.cancel().catch(() => {});
@@ -324,11 +362,21 @@ async function entete(url, env, ctx) {
  * l'enregistrement se fait tout seul, plus personne ne pouvait deviner à partir
  * de quand regarder.
  *
- * La page le demande donc en finissant d'enregistrer. Oublier ne coûte qu'une
- * lecture de plus à la prochaine visite : c'est sans danger, mais pas anonyme
- * pour autant — il faut présenter une session de ce projet, sans quoi ce chemin
- * serait un moyen de vider le cache en boucle. Le fond de plan n'est pas
+ * La page le demande donc en finissant d'enregistrer. Ce n'est pas anonyme :
+ * il faut présenter une session de ce projet, sans quoi ce chemin serait un
+ * moyen de faire travailler la base en boucle. Le fond de plan n'est pas
  * concerné : son adresse porte sa version, et l'apparence entre dedans.
+ *
+ * Oublier, ce n'est plus effacer : c'est refaire. Effacé, le plan laissait la
+ * visite suivante attendre que la base le reconstruise pour qu'un entête de
+ * cinquante octets lui réponde — 0,8 seconde en médiane, jusqu'à cinq, relevées
+ * par la sonde pendant qu'on éditait FEP27. Le relais le redemande donc
+ * lui-même, avant de répondre : l'administration n'attend pas cette réponse.
+ * Réécrire coûte autant d'écritures au stockage qu'effacer, quand une visite
+ * devait ensuite tout ranger de nouveau ; et l'enregistrement automatique en
+ * appelle une à chaque repos de l'exploitant. Pendant la reconstruction, la
+ * version d'avant reste annoncée : quelques secondes, sous les trente que
+ * l'entête se garde déjà chez le visiteur.
  */
 async function oublie(requete, env) {
   if (requete.method !== "POST") {
@@ -349,18 +397,25 @@ async function oublie(requete, env) {
      depuis elle ne touche plus au cache de la production. */
   const cache = cacheDe(env, url);
   if (cache) {
-    /* Le plan, et ce que porte l'application installée : renommer un salon dans
-       la console, y déposer une icône doivent se voir au même moment que le
+    const amont = amontPour(new URLSearchParams({ slug }));
+    const depuis = Date.now();
+    const rep = await fetch(amont.toString()).catch(() => null);
+    const v = rep && rep.headers.get("X-Version");
+    /* Le plan refait, et sa version avec lui : les plans rangés sous une
+       version révolue restent, sans dommage — plus personne ne les demande,
+       et ils s'effacent d'eux-mêmes. Ce que porte l'application installée
+       s'efface, lui, et se refait à la demande : renommer un salon dans la
+       console, y déposer une icône doivent se voir au même moment que le
        reste. */
-    await Promise.all([
-      cache.delete(cleDe(amontPour(new URLSearchParams({ slug })))),
-      cache.delete(cleApp(slug)),
-      /* Et la version : c'est elle que les pages interrogent, et la garder
-         reviendrait à leur dire que rien n'a changé. Les plans rangés sous une
-         version révolue restent, sans dommage — plus personne ne les demande,
-         et ils s'effacent d'eux-mêmes. */
-      cache.delete(cleVersion(slug)),
-    ]).catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
+    const refait = rep && v && gardable(cache, rep)
+      ? [rangeLePlan(cache, cleDe(amont), slug, rep, depuis)]
+      /* La base n'a pas rendu de plan public : on efface comme avant, plutôt
+         que de laisser annoncer une version que l'exploitant vient de
+         dépasser. */
+      : (rep?.body?.cancel().catch(() => {}),
+         [cache.delete(cleDe(amont)), cache.delete(cleVersion(slug))]);
+    await Promise.all([...refait, cache.delete(cleApp(slug))])
+      .catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
   }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
@@ -1215,6 +1270,7 @@ async function aiguille(requete, env, ctx) {
     }
   }
 
+  const depuis = Date.now();
   const reponse = await fetch(amont.toString(), { headers: entetes });
   const sortie = new Response(reponse.body, reponse);
   sortie.headers.set("X-Cache", jeton ? "bypass" : cache ? "miss" : "absent");
@@ -1228,7 +1284,7 @@ async function aiguille(requete, env, ctx) {
        porte une disant seulement ce qu'il portait ce jour-là. */
     const v = reponse.headers.get("X-Version");
     const slug = amont.searchParams.get("slug");
-    if (v && slug && !immuable) ctx.waitUntil(rangeLaVersion(cache, slug, v));
+    if (v && slug && !immuable) ctx.waitUntil(rangeLaVersion(cache, slug, v, depuis));
   }
   return sortie;
 }
