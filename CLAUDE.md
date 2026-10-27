@@ -128,7 +128,7 @@ revenir :
   point d'entrée l'importe sans nom, avec un commentaire
   (`import "./edition-en-cours.mjs";`).
 - **Un module qui s'éprouve seul dans Node reçoit ses dépendances** au lieu de
-  les importer (`aimants.mjs`, `itineraire.mjs`, `sejour.mjs`) ; c'est le
+  les importer (`aimants.mjs`, `grille-marche.mjs`, `sejour.mjs`) ; c'est le
   module qui les tient qui les lui confie, comme les essais le font.
 - **Rien ne s'expose sur l'objet global.** ESLint refuse qu'un module y écrive
   (`eslint.config.js`), hors des noms en `__`. Ce que seuls les essais lisent va
@@ -254,7 +254,7 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
   la bonne ligne. Il ne peut pas mentir : `npm run verifie` le vérifie.
 - **`.ignore`** retire de la recherche `web/`, `tpl-multi.html` et `plans.json`,
   fabriqués ou figés.
-- **Aucun module ne dépasse 3400 lignes**, un seul passe 2500 (`itineraire.mjs`).
+- **Aucun module ne dépasse 3400 lignes**, un seul passe 1500 (`webgl.mjs`).
   On y entre par tranche (`sed -n '531,700p'`), jamais en entier.
 - **L'en-tête d'un module** dit ce qu'il fait, comment il se branche et ce qu'on
   lui confie.
@@ -300,7 +300,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | parcours, partage, copie gardée | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs` |
 | journée organisée, séjour, ordonnanceur | `modules/journee.mjs`, `modules/sejour.mjs`, `modules/ordonnanceur.mjs` |
 | seuil de concentration, charge annoncée | `modules/seuil.mjs`, `modules/charge-annoncee.mjs`, `modules/ordonnanceur.mjs` |
-| itinéraire | calcul `modules/itineraire.mjs`, tiroir et visée `modules/tiroir-itineraire.mjs`, tracé `modules/trace-itineraire.mjs` |
+| itinéraire | calcul `modules/itineraire.mjs`, l'entrée, rangé en couches qu'il nomme en tête (`grille-marche.mjs` → `recherche-chemin.mjs` → `abords-salles.mjs` → `trait-chemin.mjs` → `troncon.mjs` → `trajet.mjs`), tiroir et visée `modules/tiroir-itineraire.mjs`, tracé `modules/trace-itineraire.mjs` |
 | borne, code « Vous êtes ici » | `modules/borne.mjs`, `modules/vous-etes-ici.mjs`, `modules/ici.mjs`, `modules/affiche-ici.mjs` |
 | rappels de conférence | `modules/rappels.mjs`, `modules/notifications.mjs` ; serveur `supabase/functions/rappels/` |
 | programme saisi à la main (source « saisie ») | colonne `evenement.conferences_saisies`, lue par `_partage/programme-saisi.ts` ; anglais posé par `modules/index-salon.mjs` |

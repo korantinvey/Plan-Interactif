@@ -1,35 +1,8 @@
-/* `outils/gabarit/modules/itineraire.mjs` — le calcul de l'itinéraire : les
-   rôles des calques, les passages d'un plan à l'autre, les morceaux de trajet
-   qui n'ont pas pu être tracés, et les distances, les durées et les passages
-   tels que le trajet les dit. */
+/* `outils/gabarit/modules/itineraire.mjs` — l'entrée du calcul de
+   l'itinéraire : les distances, les durées et les passages tels que le trajet
+   les dit. Les rôles des calques, les liaisons et les morceaux non tracés ont
+   leur fichier : `grille-marche.js`, `abords-salles.js`, `trajet.js`. */
 module.exports = {
-  // le rôle d'un calque dans le calcul
-  "Aucun": "None",
-  "Infranchissable": "Impassable",
-  "Infranchissable en fauteuil": "Impassable in a wheelchair",
-  "Infranchissable sauf PMR": "Impassable except for reduced mobility",
-  "Où l'on peut marcher": "Where people can walk",
-
-  "salle de conférence": "conference room",
-  "repère": "landmark",
-
-  // les passages d'un plan à l'autre
-  "porte": "door",
-  "la porte": "the door",
-  "escalier": "stairs",
-  "l'escalier": "the stairs",
-  "escalator": "escalator",
-  "l'escalator": "the escalator",
-  "ascenseur": "lift",
-  "l'ascenseur": "the lift",
-
-  "Le chemin dans le {plan} n'a pas pu être tracé : cette partie du trajet manque à l'écran.":
-    "The path in {plan} could not be drawn: this part of the route is missing on screen.",
-  "La sortie du {plan} n'est pas repérée sur le plan : cette partie du trajet n'est pas tracée.":
-    "The exit from {plan} is not marked on the map: this part of the route is not drawn.",
-  "L'entrée du {plan} n'est pas repérée sur le plan : cette partie du trajet n'est pas tracée.":
-    "The entrance to {plan} is not marked on the map: this part of the route is not drawn.",
-
   // les distances et les durées : le nombre change d'écriture, « 1,2 km » devient « 1.2 km »
   "{n} m": "{n} m",
   "{n} km": "{n} km",
