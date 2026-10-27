@@ -37,7 +37,7 @@ import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./trace-itineraire.mjs";
 import { mesCalques } from "./calques-dessin.mjs";
 import { nomDeLaZone } from "./noms-zones.mjs";
-import { logoPose, cedeAuLogo } from "./logos-stands.mjs";
+import { logoPose, cedeAuLogo, nomTu } from "./logos-stands.mjs";
 import { boite } from "./forme-choisie.mjs";
 import { TYPES_MEUBLES } from "./decor.mjs";
 import { decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme, nomSurLePlan } from "./dessin.mjs";
@@ -330,6 +330,8 @@ export function libellesWebgl(){
       : s.id === state.sel && !decoupe;
     const vu = hote ? visibleSociete(hote, s.lien.soc) : visibleSurPlan(s);
     if ((!sel && !vu) || (!s.code && !s.nom)) continue;
+    // bien au-delà du seuil, son logo le couvre : rien à mesurer (`logos-stands.mjs` `nomTu`)
+    if (nomTu(s)) continue;
     // comme en SVG : la part libre d'un emplacement découpé, ou rien
     const lib = sel ? undefined : libres.get(s);
     if (lib === null) continue;
