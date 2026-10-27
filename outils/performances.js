@@ -42,7 +42,9 @@ select r.evenement_id, r.jour::text as jour, r.page, r.mobile, r.immersif, r.ver
        r.resume #>> '{appareil,systeme}' as famille,
        (r.resume #>> '{gpu,logos,octetsTexture}')::double precision as logos_octets,
        case when jsonb_typeof(r.resume #> '{chargement,lourds}') = 'array'
-            then (select jsonb_agg(jsonb_build_object('fichier', l ->> 'fichier', 'transfertKo', l -> 'transfertKo'))
+            then (select jsonb_agg(jsonb_build_object('fichier', l ->> 'fichier', 'sorte', l ->> 'sorte',
+                                                   'ms', l -> 'ms', 'tailleKo', l -> 'tailleKo',
+                                                   'transfertKo', l -> 'transfertKo'))
                     from jsonb_array_elements(r.resume #> '{chargement,lourds}') l)
        end as lourds
   from releve_perf r
@@ -69,19 +71,46 @@ function texteSur(s) {
    (`mesures-page.mjs` `fichier()`) : un nom libre — logo de stand, domaine tiers,
    `plan-<slug>` — peut porter un slug. On ne cite donc par leur nom que les fichiers
    versionnés de nos pages (point d'entrée + empreinte, tels que la construction les
-   pose sous `web/versions/`) et quelques noms connus ; le reste est regroupé par extension. */
+   pose sous `web/versions/`), nos bibliothèques et quelques noms connus ; le reste est
+   regroupé par extension.
+
+   L'empreinte tombe : elle change à chaque construction, et la fiche du 26 octobre
+   comptait `plan.aafddd7718.js` et `plan.b9000f1f87.js` pour deux fichiers, dont
+   aucun ne revenait dans la moitié des visites. */
 const ENTREES = "plan|plan-admin|anglais|langue|console|rapport|motdepasse|accueil";
 const FICHIER_VERSIONNE = new RegExp("^(" + ENTREES + ")\\.[0-9a-f]{8,}\\.(js|css)$");
-const FICHIER_CONNU = new Set(["plan", "config.js", "sw.js"]);
+const BIBLIOTHEQUE = /^(deck\.gl|maplibre-gl|avif-enc)\b/;
+const FICHIER_CONNU = new Set(["config.js", "sw.js", "manifeste.webmanifest"]);
 const EXTENSIONS = new Set(["js", "css", "json", "html", "svg", "png", "jpg", "jpeg", "webp", "avif", "gif", "woff", "woff2", "mp4"]);
 
-function fichierPropre(f) {
+/* Les appels de nos pages à leurs services, par leur nom : ce sont des noms de
+   fonctions ou de routes, sans rien d'un salon. Le plan en porte trois sous le
+   même nom, que la fiche doit distinguer — l'entête qui dit la version (une
+   cinquantaine d'octets), le plan lui-même, et les vignettes des logos. */
+const APPELS = new Set(["plan", "user", "token", "profil", "sonde", "sonde_admin", "mesure",
+  "erreur", "oublie", "rappels", "plan-de-visite", "lecture_perf"]);
+const SORTES_APPEL = new Set(["fetch", "xmlhttprequest", "beacon"]);
+const SORTES = new Set([...SORTES_APPEL, "script", "link", "css", "img", "other", "navigation", "audio", "video"]);
+
+function fichierPropre(f, sorte, tailleKo) {
   const nom = String(f || "").split(/[?#]/)[0].split("/").pop();
-  if (FICHIER_VERSIONNE.test(nom) || FICHIER_CONNU.has(nom)) return nom;
+  if (SORTES_APPEL.has(sorte)) {
+    if (!APPELS.has(nom)) return "autre appel";
+    return nom === "plan" && !(tailleKo > 0) ? "plan (entête)" : nom;
+  }
+  if (nom === "plan" && sorte === "img") return "plan (vignettes)";
+  const versionne = FICHIER_VERSIONNE.exec(nom);
+  if (versionne) return versionne[1] + "." + versionne[2];
+  const bibliotheque = BIBLIOTHEQUE.exec(nom);
+  if (bibliotheque) return bibliotheque[1] + "." + ((/\.(js|css|wasm)$/.exec(nom) || [])[1] || "js");
+  if (FICHIER_CONNU.has(nom)) return nom;
   const ext = /\.([A-Za-z0-9]{1,5})$/.exec(nom);
   const e = ext && ext[1].toLowerCase();
   return e && EXTENSIONS.has(e) ? "autre fichier ." + e : "autre fichier";
 }
+
+/** Un nombre venu d'un relevé, ou rien. */
+const nombre = (v) => typeof v === "number" && isFinite(v) ? v : null;
 
 /** Un relevé dont tout texte qui peut atteindre la fiche est assaini, une fois pour toutes. */
 const assaini = (r) => ({
@@ -90,7 +119,11 @@ const assaini = (r) => ({
   version: texteSur(r.version),
   famille: texteSur(r.famille) || "inconnue",
   lourds: Array.isArray(r.lourds)
-    ? r.lourds.filter(Boolean).map((x) => ({ fichier: fichierPropre(x.fichier), transfertKo: x.transfertKo }))
+    ? r.lourds.filter(Boolean).map((x) => {
+        const sorte = SORTES.has(x.sorte) ? x.sorte : "other";
+        return { fichier: fichierPropre(x.fichier, sorte, x.tailleKo), appel: SORTES_APPEL.has(sorte),
+                 ms: nombre(x.ms), tailleKo: nombre(x.tailleKo), transfertKo: nombre(x.transfertKo) };
+      })
     : r.lourds,
 });
 
@@ -169,17 +202,26 @@ function indicateurs(brut, au) {
   for (const [page, l] of parPage) {
     const m = new Map();
     for (const r of l) {
-      const vus = new Set();
+      /* Une visite compte une fois par nom ; quand un nom revient — deux
+         appels au même service —, on retient le plus lent. */
+      const parNom = new Map();
       for (const x of r.lourds || []) {
-        if (!x.fichier || vus.has(x.fichier)) continue;
-        vus.add(x.fichier);
-        if (!m.has(x.fichier)) m.set(x.fichier, []);
-        m.get(x.fichier).push(x.transfertKo);
+        if (!x.fichier) continue;
+        const deja = parNom.get(x.fichier);
+        if (!deja || (x.ms ?? 0) > (deja.ms ?? 0)) parNom.set(x.fichier, x);
+      }
+      for (const [nom, x] of parNom) {
+        if (!m.has(nom)) m.set(nom, []);
+        m.get(nom).push(x);
       }
     }
-    for (const [fichier, kos] of m) {
-      fichiers.push({ page, fichier, visites: kos.length, total: l.length,
-                      part: kos.length / l.length, ko_p50: mediane(kos) });
+    for (const [fichier, xs] of m) {
+      fichiers.push({ page, fichier, appel: xs.some((x) => x.appel), visites: xs.length, total: l.length,
+                      part: xs.length / l.length,
+                      ms_p50: mediane(xs.map((x) => x.ms)),
+                      taille_p50: mediane(xs.map((x) => x.tailleKo)),
+                      // ce qui a vraiment passé le réseau : zéro pour ce qui sort du cache
+                      transfert_p50: mediane(xs.map((x) => x.transfertKo)) });
     }
   }
 
