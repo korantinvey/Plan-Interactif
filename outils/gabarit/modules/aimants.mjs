@@ -27,35 +27,35 @@ import { sommets } from "./itineraire.mjs";
    forme choisie, le calque actif et l'image en attente sont des lecteurs :
    les gestes et la boîte à outils les remplacent sans cesse. */
 /** @type {Record<string, any>} */
-let soude = {};
+let dependances = {};
 
-const vue = () => soude.vue();
-const imageEnAttente = () => soude.imageEnAttente();
-const formeSel = () => soude.formeSel();
-const calqueActif = () => soude.calqueActif();
-const cadrePlan = () => soude.cadrePlan();
-const mesCalques = () => soude.mesCalques();
-const estCadre = (f) => soude.estCadre(f);
-const boite = (f) => soude.boite(f);
-const toleranceTrace = () => soude.toleranceTrace();
-const apercuGuide = (d) => soude.apercuGuide(d);
-const formeParId = (id) => soude.formeParId(id);
-const ajouteForme = (f) => soude.ajouteForme(f);
+const vue = () => dependances.vue();
+const imageEnAttente = () => dependances.imageEnAttente();
+const formeSel = () => dependances.formeSel();
+const calqueActif = () => dependances.calqueActif();
+const cadrePlan = () => dependances.cadrePlan();
+const mesCalques = () => dependances.mesCalques();
+const estCadre = (f) => dependances.estCadre(f);
+const boite = (f) => dependances.boite(f);
+const toleranceTrace = () => dependances.toleranceTrace();
+const apercuGuide = (d) => dependances.apercuGuide(d);
+const formeParId = (id) => dependances.formeParId(id);
+const ajouteForme = (f) => dependances.ajouteForme(f);
 /* Le choix d'une forme et ses poignées vivent dans `edition.mjs`, qui importe
    ce module-ci pour accrocher ses gestes : les importer en retour bouclerait.
    Ils restent donc confiés par `outil-dessin.mjs`, comme le reste du dessin. */
-const choisitForme = (id) => soude.choisitForme(id);
-const signale = (id) => soude.signale(id);
-const memorise = () => soude.memorise();
-const enregistreDessins = () => soude.enregistreDessins();
-const redessineForme = (f) => soude.redessineForme(f);
-const dessinePoignees = () => soude.dessinePoignees();
+const choisitForme = (id) => dependances.choisitForme(id);
+const signale = (id) => dependances.signale(id);
+const memorise = () => dependances.memorise();
+const enregistreDessins = () => dependances.enregistreDessins();
+const redessineForme = (f) => dependances.redessineForme(f);
+const dessinePoignees = () => dependances.dessinePoignees();
 
 /** Ce que l'outil de dessin confie au module, appelé par `outil-dessin.mjs`
  *  en se chargeant (et par l'essai dans Node). Rien ne s'y exécute : il n'y a
  *  qu'à retenir ce qui est confié. */
 export function brancheAimants(page){
-  soude = page;
+  dependances = page;
 }
 
 /* --- ce que le geste mesure --- */
@@ -83,7 +83,7 @@ export function montreCote(txt, p){
   if (!el){
     el = document.createElementNS("http://www.w3.org/2000/svg", "text");
     el.id = "cote";
-    soude.svg.appendChild(el);
+    dependances.svg.appendChild(el);
   }
   const r = cadrePlan();
   const u = vue().w / (r.width || 1);          // un pixel d'écran, en mètres
@@ -313,7 +313,7 @@ export function montreAimants(coins, opts){
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "aimantsVus";
-    soude.svg.appendChild(g);
+    dependances.svg.appendChild(g);
   }
   /* Le plafond n'est qu'un garde-fou. Les crans passent derrière les sommets,
      et plus discrets qu'eux : un coin de stand reste l'accrochage franc, un

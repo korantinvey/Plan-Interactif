@@ -8,7 +8,7 @@
 
    Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
    le reçoit jamais. Ce qu'il n'importe pas — le mode administrateur à
-   activer — suit son annonce (`ACCES_ACCORDE`), qu'écoute la bande de
+   activer — écoute son événement (`ACCES_ACCORDE`), qu'écoute la bande de
    l'outil. Il se branche par `brancheAcces`, que `plan-admin.mjs`
    place dans le dernier emplacement du lancement (`apresLeDemarrage`, après
    `brancheDemarrage`). Le profil du compte,

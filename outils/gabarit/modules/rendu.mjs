@@ -12,11 +12,11 @@
    tiroir de l'itinéraire l'importent, pour monter un pavillon ou y passer.
    Ce que l'administration y rattache — la nappe de la grille, le calage de
    la carte, l'éditeur à remettre au repos (emplacement repris, historique,
-   boîte à outils) — suit ses trois annonces (`MONTAGE_COMMENCE`,
+   boîte à outils) — écoute ses trois événements (`MONTAGE_COMMENCE`,
    `PAVILLON_MONTE`, `PAVILLON_QUITTE`) ; chez le visiteur personne n'écoute. Le panneau des calques s'importe de `ordre-trace.mjs`, qui n'en
    remplit le contenu que chez l'exploitant.
 
-   Le calque ouvert se referme par sa porte (`calques-dessin.mjs`
+   Le calque ouvert se referme par son mutateur (`calques-dessin.mjs`
    `poseCalqueActif`). Le drapeau `MONTE` ne change qu'ici : la police des
    noms, qui ne peut importer ce module, le lit par un lecteur que celui-ci
    lui confie en se chargeant (`injecteAuxPolices`).

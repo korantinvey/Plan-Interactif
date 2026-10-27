@@ -12,6 +12,6 @@
 /** @type {any} */
 export let TUTO = null;
 
-/** La porte de la visite en cours, que `tutoriel.mjs` ouvre et referme.
+/** Le mutateur de la visite en cours, que `tutoriel.mjs` ouvre et referme.
  *  @param {any} t */
 export function poseTuto(t){ TUTO = t; }

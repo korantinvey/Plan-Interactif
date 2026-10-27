@@ -7,7 +7,7 @@
    et `P_CODE`, vivent ici : les modules qui mesurent les noms les importent,
    et seul `posePoliceLibelles` les remplace. Ce qu'il faut retracer
    quand elles changent — les dessins, les libellés, la liste — et le plan
-   monté ou non lui sont confiés par la porte `injecteAuxPolices`, que chacun
+   monté ou non lui sont confiés par l'injection `injecteAuxPolices`, que chacun
    de ces modules ouvre en se chargeant.
 
    `npm run polices` et la construction relisent `POLICES_NOMS` dans ce
@@ -21,7 +21,7 @@ import { modeleRetenu } from "./modeles.mjs";
    (`libelles.mjs`), la liste (`recherche.mjs`). Les trois derniers importent
    ce module pour la police des noms et des numéros, et le montage
    (`rendu.mjs`) l'embarque en chemin : aucun ne peut s'importer d'ici. Chacun
-   ouvre donc la porte en se chargeant ; avant, le plan n'est pas monté, et
+   s'y injecte donc en se chargeant ; avant, le plan n'est pas monté, et
    rien ne se retrace. */
 /**
  * @typedef {object} PretePolices
@@ -34,7 +34,7 @@ import { modeleRetenu } from "./modeles.mjs";
 const prete = { monte: () => false, dessineDessins: () => {}, libelles: () => {}, liste: () => {} };
 
 /**
- * La porte de ce qui se retrace quand la police change, que `rendu.mjs`,
+ * L'injection de ce qui se retrace quand la police change, que `rendu.mjs`,
  * `dessin.mjs`, `libelles.mjs` et `recherche.mjs` ouvrent en se chargeant —
  * donc avant le lancement de la page.
  *

@@ -568,7 +568,7 @@ export function ficheConf(id, canal){
    insensible le temps qu'il passe, et seulement après un appui : à la souris,
    rien ne justifierait ce temps mort. */
 export let dernierAppuiTactile = false;
-/** La porte du dernier appui : les gestes la passent à chaque doigt posé. */
+/** Le mutateur du dernier appui : les gestes la passent à chaque doigt posé. */
 export function poseAppuiTactile(/** @type {boolean} */ v){ dernierAppuiTactile = v; }
 let degel = null;
 

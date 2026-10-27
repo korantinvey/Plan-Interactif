@@ -104,7 +104,7 @@ export function appliqueOptions(){
 }
 
 /**
- * La porte de ce qu'une option refait en se fermant, que le module qui le
+ * L'injection de ce qu'une option refait en se fermant, que le module qui le
  * sait ouvre en se chargeant — `tiroir-parcours.mjs`, `index-salon.mjs`, et
  * `outil-dessin.mjs`, que la page publique n'a pas : rien derrière les siennes.
  *

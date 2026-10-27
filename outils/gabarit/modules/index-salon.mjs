@@ -10,7 +10,7 @@
    Les calques dessinés, leur file d'attente et ce que la base en a confirmé
    s'importent (`calques-dessin.mjs`), comme l'oubli des repères
    (`points-interet.mjs`). Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`) suit ses deux annonces
+   (`modules/enregistrement.mjs`) écoute ses deux événements
    (`RESCAPES_TROUVES`, `REGLAGES_RECUS`) ; chez le visiteur personne
    n'écoute.
    ============================================================ */

@@ -13,7 +13,7 @@
    le rendu des calques marque la forme choisie, la fiche et l'itinéraire
    retrouvent un repère par son identifiant, et l'outil de dessin
    (`outil-dessin.mjs`) la relâche à plusieurs endroits. Le module l'importe,
-   et la change par sa porte (`poseFormeSel`).
+   et la change par son mutateur (`poseFormeSel`).
 
    Le calque actif et l'outil tenu (`calques-dessin.mjs`), le tracé des
    formes (`chemin-forme.mjs`, `dessin.mjs`), ce qu'un repère et un arrêt sont

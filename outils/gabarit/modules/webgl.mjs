@@ -233,7 +233,7 @@ export function monteWebgl(){
     },
   });
   GL.actif = true;
-  /* La caméra n'entre en jeu qu'une fois le dessin actif : son annonce fait
+  /* La caméra n'entre en jeu qu'une fois le dessin actif : son événement fait
      recadrer la vue, qui repasse par ici et remonterait le dessin. */
   metsEnJeu(GL.camera);
   /* La bibliothèque ne garde que trois atlas de police, et le plan en demande

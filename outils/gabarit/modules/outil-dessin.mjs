@@ -17,7 +17,7 @@
    l'emplacement que le lancement lui ouvre après l'habillage : les boutons
    et les champs de la boîte à outils, le dépôt d'une image sur le plan et son
    collage s'y branchent, à leur rang parmi les écouteurs de la page. Rien ne
-   lui est confié : la forme choisie dans l'éditeur et sa porte s'importent de
+   lui est confié : la forme choisie dans l'éditeur et son mutateur s'importent de
    `forme-choisie.mjs`, le panneau des calques de `ordre-trace.mjs`, le
    rangement des réglages de `configuration.mjs`.
 

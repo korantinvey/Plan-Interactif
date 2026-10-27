@@ -51,7 +51,7 @@ import { changePlan } from "./rendu.mjs";
    n'atteint plus ce tiroir depuis que le tracé vit à part ; la fiche et le
    parcours, qu'il referme en s'ouvrant, se referment par le registre des
    tiroirs exclusifs (`tiroirs-exclusifs.mjs`). La vue s'importe de `vue.mjs`,
-   sa porte comprise : les gestes la remplacent sans cesse, et le trajet la
+   son mutateur compris : les gestes la remplacent sans cesse, et le trajet la
    recadre. */
 const racine = document.documentElement;
 
@@ -79,7 +79,7 @@ function calculeRoute(){
   return r;
 }
 
-/* Le tracé sur le plan — l'état du trait (`TRACE`), sa porte, son dessin
+/* Le tracé sur le plan — l'état du trait (`TRACE`), son mutateur, son dessin
    animé, ses pastilles et le cadrage — vit dans `trace-itineraire.mjs` : le
    montage d'un pavillon le redessine sans importer ce tiroir. Il s'importe
    d'ici comme avant. */
@@ -398,7 +398,7 @@ function ecritResultat(etat){
  */
 export let visee = null;
 
-/** La porte de la visée : la borne et l'affiche du code l'arment pour elles,
+/** L'injection de la visée : la borne et l'affiche du code l'arment pour elles,
  *  la visite guidée l'éteint. */
 export function poseVisee(v){ visee = v; }
 

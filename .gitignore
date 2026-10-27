@@ -4,7 +4,7 @@ node_modules/
 # Ce que rapportent les scripts d'exploration de Klipso (`outils/scripts/klipso/`).
 outils/scripts/klipso/brut/
 outils/scripts/klipso/svg/
-# `outils/donnees/` et les cliquets de `outils/controles/` restent versionnés,
+# `outils/donnees/` et les références figées de `outils/controles/` restent versionnés,
 # eux : ils ne se régénèrent qu'avec le réseau ou une clé Klipso (plans.json,
 # polices.json, lieux.json, source-demo.json), dans Chromium (logos-demo.json),
 # ou font foi en intégration (types-acceptes.json, portes-acceptees.json).

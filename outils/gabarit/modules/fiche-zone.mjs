@@ -12,7 +12,7 @@
    qu'en administration (`fiche.mjs`, `ADMIN`), et leurs gestes, ce module
    les confie à la fiche en se chargeant (`injecteALaFiche`). La palette de
    la reprise d'un emplacement (`reprise-emplacements.mjs`), qui importe ce
-   module, suit son annonce (`ZONE_AJOUTEE_ENREGISTREE`) : il n'a plus de
+   module, écoute son événement (`ZONE_AJOUTEE_ENREGISTREE`) : il n'a plus de
    branchement. La configuration et son enregistrement, la liste de
    la recherche, les types de zone, le cartouche des points d'intérêt et le
    dessin des noms s'importent (`configuration.mjs`, `recherche.mjs`,

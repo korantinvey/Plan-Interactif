@@ -10,7 +10,7 @@ lance à part.
 | `gabarit/` | la source des pages ; `modules/` tout le JavaScript | — |
 | `anglais/` | le dictionnaire anglais, un fichier par module | la construction |
 | `donnees/` | les données figées que la construction relit (`plans.json`, `polices.json`, `lieux.json`, la démonstration) | la construction ; se refont par `scripts/` |
-| `controles/` | `verifie.js` et ce qu'il lance : syntaxe, ESLint, types, portes, guide, et leurs cliquets | `npm run verifie`, la CI |
+| `controles/` | `verifie.js` et ce qu'il lance : syntaxe, ESLint, types, injections, guide, et leurs références figées | `npm run verifie`, la CI |
 | `essais/` | les essais hors page, un fichier par essai ; `aides/` ce qu'ils partagent ; `navigateur/` le plan dans Chromium | `npm run essais`, `npm run navigateur` |
 | `bancs/` | les bancs de mesure longs | `npm run fep26`, `npm run charge` |
 | `scripts/` | le reste, lancé à la main ou par un workflow | voir plus bas |

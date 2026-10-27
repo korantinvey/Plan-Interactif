@@ -15,7 +15,7 @@
 
    La liste se resserre sur ce que la pastille met en avant
    (`retenusParPoi`) : ce module ne peut l'importer — elle l'importe pour le
-   relevé —, il annonce donc le choix (`POI_CHANGE`), qu'elle suit.
+   relevé —, il émet donc le choix (`POI_CHANGE`), qu'elle écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { DATA, parId, P, state, CONFERENCES } from "./donnees.mjs";

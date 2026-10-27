@@ -26,7 +26,7 @@ export let LIEU_BORNE = null;
 /** Le départ imposé, lu par l'itinéraire et par l'organisation de la journée. */
 export function pointBorne(){ return LIEU_BORNE; }
 
-/** La porte du départ imposé : la borne le pose, le code affiché dans le hall
+/** Le mutateur du départ imposé : la borne le pose, le code affiché dans le hall
  *  (`modules/ici.mjs`) le pose et l'éteint — une variable importée ne se
  *  réaffecte pas d'ailleurs que de son module. */
 export function poseLieuBorne(lieu){ LIEU_BORNE = lieu; }

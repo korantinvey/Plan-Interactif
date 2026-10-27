@@ -36,7 +36,7 @@ export let TRACE = null;
  *  connaître le tiroir de l'itinéraire. */
 export const TRACE_POSEE = creeEvenement();
 
-/** La porte du tracé : la journée organisée le prend pour elle, ou le rend. */
+/** Le mutateur du tracé : la journée organisée le prend pour elle, ou le rend. */
 export function poseTrace(t){ TRACE = t; TRACE_POSEE.emet(); }
 
 const marchesIci = () => (TRACE ? TRACE.etapes : [])

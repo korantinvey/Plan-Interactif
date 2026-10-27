@@ -9,7 +9,7 @@
    `plan-admin.mjs` embarque ce module, `plan.mjs` jamais.
 
    Ce que le visiteur en reçoit — les retouches et les ajouts versés dans le
-   pavillon, et le mode en cours, que ce module pose par sa porte
+   pavillon, et le mode en cours, que ce module pose par son mutateur
    (`poseSorteGeo`) — vit dans `modules/emplacements.mjs`, qui en dit le
    pourquoi.
 

@@ -200,7 +200,7 @@ inscritGesteTenu(() => enCours);
    le tracé ne changent que par l'outil de dessin (`modules/outil-dessin.mjs`). */
 export function poseCalqueActif(/** @type {any} */ id){ calqueActif = id; }
 export function poseOutil(/** @type {string} */ o){ outil = o; }
-/* Le tracé en cours est une ébauche : sa porte le dit ainsi, et non « en
+/* Le tracé en cours est une ébauche : son mutateur le dit ainsi, et non « en
    cours », que le relevé des phrases de la page (`outils/traductions.js`)
    prendrait pour du texte affiché. */
 export function poseEbauche(/** @type {any} */ t){ enCours = t; }

@@ -11,10 +11,10 @@
  * Le code n'a jamais été écrit pour lui : il en relève quelques centaines de
  * remarques, presque toutes des éléments du DOM qu'il ne sait pas plus précis
  * qu'un `Element`. Exiger zéro d'un coup aurait semé des annotations partout.
- * On tient donc un cliquet : les remarques d'aujourd'hui sont inscrites dans
+ * On tient donc une référence figée (*baseline*) : les remarques d'aujourd'hui sont inscrites dans
  * `outils/controles/types-acceptes.json`, et seule une remarque **nouvelle** fait
  * échouer. Le stock se résorbe module par module ; quand il baisse,
- * `npm run types -- --resserre` réinscrit l'état, et le cliquet se referme.
+ * `npm run types -- --resserre` réinscrit l'état, et la référence se resserre.
  *
  * Une remarque est repérée par son module, son code, son message et le texte
  * de sa ligne — pas par son numéro de ligne, qui bouge à chaque retouche au
@@ -159,5 +159,5 @@ if (require.main === module) {
   }
   const total = [...vues.values()].reduce((n, r) => n + r.n, 0);
   console.log("Types : " + total + " remarques connues, aucune nouvelle." +
-    (parties.length ? "\n" + parties.length + " ont disparu : `npm run types -- --resserre` referme le cliquet." : ""));
+    (parties.length ? "\n" + parties.length + " ont disparu : `npm run types -- --resserre` resserre la référence." : ""));
 }

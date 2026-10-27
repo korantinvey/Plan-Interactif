@@ -3,7 +3,7 @@
 #
 # `Pages` reconstruit les pages et contrôle leur syntaxe ; rien ne vérifiait
 # qu'elles marchent. Ce workflow lance ce qu'un contributeur lance chez lui :
-# la relecture ESLint, le cliquet des types, le typage des fonctions Supabase, les
+# la relecture ESLint, la référence figée des types, le typage des fonctions Supabase, les
 # douze cas du moteur de la journée organisée,
 # puis le plan dans un vrai navigateur — ouvert, cherché, lu en fiche, en
 # anglais, sur téléphone (`outils/essais/navigateur/`).
@@ -66,10 +66,10 @@ jobs:
       - name: Relecture par ESLint
         run: npm run lint
 
-      - name: Types (cliquet de outils/controles/types-acceptes.json)
+      - name: Types (référence figée outils/controles/types-acceptes.json)
         run: npm run types
 
-      - name: Portes et boucles d'imports (cliquet de outils/controles/injections-acceptees.json)
+      - name: Injections et boucles d'imports (référence figée outils/controles/injections-acceptees.json)
         run: npm run injections
 
       - name: Le guide ne cite que ce qui existe (CLAUDE.md)

@@ -28,7 +28,7 @@ import { libelleCritere, PREFIXE_PERSO } from "./corps-fiche.mjs";
 /* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
 
-/** La porte de la carte de chaleur, que `chaleur.mjs` ouvre en se chargeant.
+/** L'injection de la carte de chaleur, que `chaleur.mjs` remplit en se chargeant.
  *  @param {() => void} f */
 export function injecteChaleur(f){ coloreChaleur = f; }
 

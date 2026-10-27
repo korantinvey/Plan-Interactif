@@ -33,7 +33,7 @@
    (faux hors de l'administration). L'outil qui les écrit — le cadenas des
    couches, la palette, les poignées, le tracé d'un ajout — est d'exploitant :
    il vit dans `modules/reprise-emplacements.mjs`, que seul `plan-admin.mjs`
-   embarque, et pose le mode par la porte d'ici. Les réglages, les noms
+   embarque, et pose le mode par le mutateur d'ici. Les réglages, les noms
    anglais des zones et le nom d'une société sur le plan s'importent
    (`configuration.mjs`, `noms-zones.mjs`, `dessin.mjs`) : il n'a rien à
    se faire confier.
@@ -54,7 +54,7 @@ export const cleGeo = (id) => "_geo:" + id;
 /** @type {string | null} */
 export let SORTE_GEO = null;    // « stands », « zones », ou rien
 
-/** La porte du mode : l'outil de l'exploitant seul l'ouvre et le ferme
+/** Le mutateur du mode : l'outil de l'exploitant seul l'ouvre et le ferme
  *  (`modules/reprise-emplacements.mjs` `modeGeometrie`). */
 export function poseSorteGeo(sorte){
   SORTE_GEO = sorte;

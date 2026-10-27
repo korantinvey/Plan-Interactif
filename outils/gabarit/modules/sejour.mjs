@@ -22,7 +22,7 @@ import { CHARGE, chargeSuivie, chargeCellule, dilatationDuJour } from "./charge-
    `journee.mjs` confie : l'importer d'ici tirerait le tiroir et la page dans
    l'essai qui éprouve ce calcul seul, sous Node. */
 /** @type {Record<string, any>} */
-let soude = {};
+let dependances = {};
 
 /**
  * Le branchement, appelé par `journee.mjs` en se branchant lui-même
@@ -32,12 +32,12 @@ let soude = {};
  *   seuilConcentration: (o: any) => number, seuilImpose: () => boolean,
  *   iti: () => { pmr: boolean } }} b
  */
-export function brancheSejour(b){ soude = b; }
+export function brancheSejour(b){ dependances = b; }
 
-const minutesVisite = () => soude.minutesVisite();
-const horairesSalon = (jour) => soude.horairesSalon(jour);
-const seuilConcentration = (o) => soude.seuilConcentration(o);
-const seuilImpose = () => soude.seuilImpose();
+const minutesVisite = () => dependances.minutesVisite();
+const horairesSalon = (jour) => dependances.horairesSalon(jour);
+const seuilConcentration = (o) => dependances.seuilConcentration(o);
+const seuilImpose = () => dependances.seuilImpose();
 
 /**
  * Ce que coûte un changement de pavillon.
@@ -332,7 +332,7 @@ function derouleJournee(j, ctx){
  * Les deux chemins passent donc par ici, et le second continue seul.
  */
 export function prepareSejour(choix, fige){
-  const pmr = soude.iti().pmr;
+  const pmr = dependances.iti().pmr;
   const tv = minutesVisite();
   const allure = pmr ? ALLURE_PMR : ALLURE;
   const enMinutes = (m) => m / (allure * 60);

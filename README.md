@@ -2908,7 +2908,7 @@ npm run verifie      # construit, contrôle tout, signale un CARTE.md en retard
 npm run essai        # sert web/ sur http://localhost:4180
 npm run navigateur   # le plan dans Chromium, par Playwright
 npm run lint         # la relecture ESLint, ramenée aux modules du gabarit
-npm run types        # les types par TypeScript, en cliquet
+npm run types        # les types par TypeScript, contre une référence figée
 ```
 
 ### Les polices

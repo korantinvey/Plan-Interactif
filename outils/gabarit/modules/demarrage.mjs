@@ -15,8 +15,8 @@
    `ordre-trace.mjs`). Hors de l'administration, il retire en dernier les
    commandes de l'exploitant (`mode-admin.mjs` `retireAdmin`) : la page
    publique n'a plus à le demander. Ce qui n'existe qu'en administration
-   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) suit ses deux
-   annonces (`PLAN_DEMARRE`, `SESSION_REFUSEE`) ; chez le visiteur personne
+   (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) écoute ses deux
+   événements (`PLAN_DEMARRE`, `SESSION_REFUSEE`) ; chez le visiteur personne
    n'écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";

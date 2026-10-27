@@ -67,7 +67,7 @@ const admin = {
   apresLesGestes: () => {}, apresLHabillage: () => {}, apresLaMesure: () => {}, apresLeDemarrage: () => {},
 };
 
-/** La porte du point d'entrée de l'administration, ouverte avant de lancer.
+/** L'injection du point d'entrée de l'administration, remplie avant de lancer.
  *  @param {Partial<EtapesAdmin>} o */
 export function injecteLancementAdmin(o){ Object.assign(admin, o); }
 

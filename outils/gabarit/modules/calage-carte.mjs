@@ -303,7 +303,7 @@ async function calageEnregistre(){
    ------------------------------------------------------------ */
 
 /* Les bâtiments auxquels s'accrocher. Le calage en cours de réglage, lui,
-   vit dans `environs.mjs`, qui le dessine : on l'écrit par sa porte. */
+   vit dans `environs.mjs`, qui le dessine : on l'écrit par son mutateur. */
 let ENV_BATIS = [];
 let ENV_BATI = 0;
 

@@ -12,7 +12,7 @@
    (`cadrePlan`) vivent dans `vue-etat.mjs`, que le fond de carte et la carte
    graphique importent aussi, et ce module les réexporte. Les gestes
    remplacent la vue sans cesse, le cadrage sur un trajet aussi : elle se
-   remplace par sa porte, `changeVue(v)`. Les modules l'importent, ou la lisent
+   remplace par son mutateur, `changeVue(v)`. Les modules l'importent, ou la lisent
    par `vue()` ; seuls les essais la lisent encore dans la page, par un
    accesseur de `__essais` (`plan.mjs`). Le SVG est dans la page avant que les
    modules ne s'exécutent, et ne se remplace jamais.
@@ -64,7 +64,7 @@ const prete = {
   rafraichitBouts: () => {}, rafraichitFleches: () => {}, rafraichitBorne: () => {}, calage: null,
 };
 
-/** La porte des modules qui confient à la vue ce qu'elle rappelle.
+/** L'injection des modules qui confient à la vue ce qu'elle rappelle.
  *  @param {Partial<PageVue>} o */
 export function injecteALaVue(o){ Object.assign(prete, o); }
 
@@ -78,7 +78,7 @@ const libelles = () => prete.libelles();
 /** L'emprise du pavillon, posée au montage du plan. */
 /** @type {any} */
 export let emp;
-/** La porte de l'emprise : `rendu.mjs` `montePlan` la remplace à chaque pavillon. */
+/** Le mutateur de l'emprise : `rendu.mjs` `montePlan` la remplace à chaque pavillon. */
 export function poseEmprise(/** @type {any} */ e){ emp = e; }
 
 /* ============================================================

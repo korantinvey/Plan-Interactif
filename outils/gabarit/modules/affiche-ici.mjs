@@ -31,7 +31,7 @@ import { largeur } from "./texte-plan.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 
 /* La visée vient du tiroir de l'itinéraire : on la lit telle qu'elle est à
-   l'instant, et on l'arme par sa porte. */
+   l'instant, et on l'arme par son mutateur. */
 const visee = () => viseeIti;
 const vise = (v) => poseVisee(v);
 const racine = document.documentElement;

@@ -6,7 +6,7 @@
    qu'elle demande au parcours vit avec la liste (`parcours.mjs`) ; la
    fiche, les dates et les heures du salon et le seuil de concentration
    s'importent (`fiche.mjs`, `horaires.mjs`, `seuil.mjs`), le tracé de
-   l'itinéraire aussi, par sa porte. Le calcul — répartir, ordonner, dérouler — est dans
+   l'itinéraire aussi, par son mutateur. Le calcul — répartir, ordonner, dérouler — est dans
    `sejour.mjs`, que ce module branche à son tour.
    ============================================================ */
 import { $ } from "./dom.mjs";
@@ -30,7 +30,7 @@ import { seuilGere, seuilImpose, seuilConcentration } from "./seuil.mjs";
 
 /* Le tracé de l'itinéraire (`tiroir-itineraire.mjs` `TRACE`) est réaffecté
    là-bas comme ici : on le lit tel qu'il est à l'instant, et on le pose par
-   sa porte. */
+   son mutateur. */
 /* Le tiroir du parcours importe ce module pour y poser la journée : ce
    qu'elle lui demande — un rang, le signet basculé, le tiroir refait — vit
    donc avec la liste (`parcours.mjs`), qu'elle importe. */
