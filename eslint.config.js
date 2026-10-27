@@ -1,6 +1,6 @@
 /**
  * La relecture par ESLint. `npm run lint` la lance en entier : ce fichier pour
- * les outils, le Worker et les essais ; `outils/relecture.js` pour le code des
+ * les outils, le Worker et les essais ; `outils/controles/relecture.js` pour le code des
  * pages, qu'on ne peut relire que tel que la page l'assemble (il y explique
  * pourquoi), et qui reprend d'ici ses règles et ses globales.
  */
@@ -44,7 +44,7 @@ module.exports = [
       ".claude/**",
       "outils/tpl-multi.html", "outils/chk.js", "outils/brut/**", "outils/svg/**",
       "simulations/**", "test-results/**", "playwright-report/**",
-      // relus par `outils/relecture.js`, tels que la page les assemble
+      // relus par `outils/controles/relecture.js`, tels que la page les assemble
       "outils/gabarit/*.{html,css,js}", "!outils/gabarit/_sw.js",
     ],
   },

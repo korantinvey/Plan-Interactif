@@ -8,7 +8,7 @@
  * erreur, seulement un plan qui glisse de travers. On fait donc passer les
  * mêmes points par les trois.
  *
- *   node outils/essais/camera.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/camera.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

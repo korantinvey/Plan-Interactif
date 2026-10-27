@@ -56,7 +56,7 @@ const horodatage = [
   dd(d.getUTCSeconds()),
 ].join("");
 
-const dossier = path.join(__dirname, "..", "supabase", "migrations");
+const dossier = path.join(__dirname, "..", "..", "supabase", "migrations");
 const fichier = path.join(dossier, `${horodatage}_${nom}.sql`);
 if (fs.existsSync(fichier)) {
   console.error("Ce fichier existe déjà :", path.basename(fichier));
@@ -66,4 +66,4 @@ if (fs.existsSync(fichier)) {
 // Le « pourquoi » en tête : c'est la forme qu'ont toutes les migrations en
 // place, et la seule chose qu'on regrette de ne pas trouver six mois après.
 fs.writeFileSync(fichier, `-- ${titre}\n--\n-- Pourquoi : \n\n`);
-console.log("Migration créée :", path.relative(path.join(__dirname, ".."), fichier));
+console.log("Migration créée :", path.relative(path.join(__dirname, "..", ".."), fichier));

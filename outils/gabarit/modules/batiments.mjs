@@ -3,7 +3,7 @@
 
    Le contour d'un hall ne change pas d'un salon à l'autre, et on le retraçait
    pourtant à la main sur chaque plan : une après-midi, pour un tracé moins
-   juste que le cadastre. La bibliothèque (`outils/lieux.js`) garde les halls
+   juste que le cadastre. La bibliothèque (`outils/scripts/lieux.js`) garde les halls
    des lieux où l'on expose le plus souvent ; on les pose ici en calques de
    dessin ordinaires — un par hall, verrouillés, qu'on masque ou recolore
    comme les autres.

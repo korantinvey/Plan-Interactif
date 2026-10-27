@@ -12,16 +12,16 @@
  * d'avant-validation, et un défaut qui n'apparaît qu'après la poussée est
  * trouvé trop tard.
  *
- *   node outils/verifie.js
+ *   node outils/controles/verifie.js
  */
 const { execFileSync } = require("child_process");
 const path = require("path");
 
-const racine = path.join(__dirname, "..");
+const racine = path.join(__dirname, "..", "..");
 const noeud = process.execPath;
 
 const lance = (script) =>
-  execFileSync(noeud, [path.join(__dirname, script)], { cwd: racine, stdio: "pipe" });
+  execFileSync(noeud, [path.join(__dirname, "..", script)], { cwd: racine, stdio: "pipe" });
 
 try {
   lance("assemble.js");
@@ -34,7 +34,7 @@ try {
 }
 
 try {
-  lance("controle.js");
+  lance("controles/controle.js");
 } catch (e) {
   console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
   process.exit(1);
@@ -55,7 +55,7 @@ try {
    que rien ne déclare ou un appel faux là où la syntaxe ne regarde pas — et
    une boucle d'imports ou une porte ouverte sans raison, par où le code se
    ressouderait. Et le guide, qui ne doit citer que ce qui existe encore. */
-for (const script of ["relecture.js", "types.js", "portes.js", "guide.js"]) {
+for (const script of ["controles/relecture.js", "controles/types.js", "controles/portes.js", "controles/guide.js"]) {
   try {
     lance(script);
   } catch (e) {

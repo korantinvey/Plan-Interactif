@@ -11,7 +11,7 @@
  * conférence rattachée à ce qui existe, le même résultat d'une construction à
  * l'autre.
  *
- *   node outils/essais/demo.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/demo.js     (lancé par `npm run essais`)
  */
 const { salonDemo, lisSource, ORIGINE, DOSSIER_PRODUITS, imagesProduits } = require("../demo.js");
 

@@ -1,7 +1,7 @@
 /**
  * Assemble le gabarit du plan : les modules mis bout à bout, dans cet ordre.
  *
- * L'ordre est exporté plutôt que recopié : `outils/relecture.js` relit le
+ * L'ordre est exporté plutôt que recopié : `outils/controles/relecture.js` relit le
  * code tel que la page l'assemble, et ramène chaque remarque au module et à
  * la ligne qui la portent — il lui faut donc exactement la même suite.
  */

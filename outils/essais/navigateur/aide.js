@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const PLANS = fs.readFileSync(path.join(__dirname, "..", "..", "plans.json"), "utf8");
+const PLANS = fs.readFileSync(path.join(__dirname, "..", "..", "donnees", "plans.json"), "utf8");
 const DONNEES = JSON.parse(PLANS);
 const VERSION = "essai";
 

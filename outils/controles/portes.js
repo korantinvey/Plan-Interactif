@@ -12,7 +12,7 @@
  *   laquelle un module en reçoit au chargement une fonction qu'il ne peut
  *   importer — est le moyen sûr de contourner une boucle, et le plus facile :
  *   c'est par elles que le code se ressouderait. Il y en eut trente-huit ;
- *   il en reste celles de `outils/portes-acceptees.json`, chacune avec son
+ *   il en reste celles de `outils/controles/portes-acceptees.json`, chacune avec son
  *   genre et sa raison.
  *
  * C'est un cliquet, comme celui des types : une porte absente de la liste
@@ -33,7 +33,7 @@ const fs = require("fs");
 const path = require("path");
 const acorn = require("acorn");
 
-const DOSSIER = path.join(__dirname, "gabarit", "modules");
+const DOSSIER = path.join(__dirname, "..", "gabarit", "modules");
 const ACCEPTEES = path.join(__dirname, "portes-acceptees.json");
 const GENRES = ["partition", "rendu", "registre"];
 
@@ -104,14 +104,14 @@ for (const [nom, ou] of trouvees){
   if (!a){
     fautes.push(`porte nouvelle : ${nom} (modules/${ou.module}:${ou.ligne}) — ` +
       "défaites la boucle par un module neutre, ou inscrivez-la avec son genre et sa raison " +
-      "dans outils/portes-acceptees.json");
+      "dans outils/controles/portes-acceptees.json");
   } else if (a.module !== ou.module){
     fautes.push(`porte déplacée : ${nom} est dans modules/${ou.module}, la liste la dit dans ${a.module}`);
   }
 }
 for (const [nom, a] of Object.entries(acceptees)){
   if (!trouvees.has(nom))
-    fautes.push(`porte disparue : ${nom} n'existe plus — retirez-la de outils/portes-acceptees.json`);
+    fautes.push(`porte disparue : ${nom} n'existe plus — retirez-la de outils/controles/portes-acceptees.json`);
   if (!GENRES.includes(a.genre))
     fautes.push(`porte ${nom} : genre « ${a.genre} » inconnu (${GENRES.join(", ")})`);
   if (!a.raison || !String(a.raison).trim())

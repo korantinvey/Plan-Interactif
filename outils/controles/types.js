@@ -12,7 +12,7 @@
  * remarques, presque toutes des éléments du DOM qu'il ne sait pas plus précis
  * qu'un `Element`. Exiger zéro d'un coup aurait semé des annotations partout.
  * On tient donc un cliquet : les remarques d'aujourd'hui sont inscrites dans
- * `outils/types-acceptes.json`, et seule une remarque **nouvelle** fait
+ * `outils/controles/types-acceptes.json`, et seule une remarque **nouvelle** fait
  * échouer. Le stock se résorbe module par module ; quand il baisse,
  * `npm run types -- --resserre` réinscrit l'état, et le cliquet se referme.
  *
@@ -25,7 +25,7 @@ const os = require("os");
 const path = require("path");
 const ts = require("typescript");
 const { compose, PAGES } = require("./relecture.js");
-const modules = require("./modules.js");
+const modules = require("../modules.js");
 
 const ACCEPTES = path.join(__dirname, "types-acceptes.json");
 
@@ -141,7 +141,7 @@ if (require.main === module) {
     const etat = {};
     for (const [k, r] of [...vues].sort(([a], [b]) => a.localeCompare(b))) etat[k] = r.n;
     fs.writeFileSync(ACCEPTES, JSON.stringify(etat, null, 1) + "\n");
-    console.log("Cliquet resserré : " + vues.size + " remarques inscrites dans outils/types-acceptes.json.");
+    console.log("Cliquet resserré : " + vues.size + " remarques inscrites dans outils/controles/types-acceptes.json.");
     process.exit(0);
   }
 

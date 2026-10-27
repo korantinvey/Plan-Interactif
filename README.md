@@ -2931,7 +2931,7 @@ la seule liste — et ne se chargent qu'une fois choisies, par leur feuille
 
 Le téléchargement n'appartient pas à la construction, qui doit tourner sans
 réseau. On ne le relance que pour changer l'une des deux listes ; il écrit aussi
-`outils/polices.json`, que la construction relit. Deux garde-fous font échouer
+`outils/donnees/polices.json`, que la construction relit. Deux garde-fous font échouer
 `npm run construire` : une page qui demanderait encore une police à Google, et
 une police proposée dans l'onglet qui n'aurait pas été rapatriée sous sa
 graisse.
@@ -2965,7 +2965,7 @@ Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre 
 | Pages | `outils/gabarit/` → `web/` | reconstruites à la poussée |
 | Worker et cache | `src/index.mjs`, `wrangler.jsonc` | déployé à chaque poussée sur `main` |
 | Configuration livrée | `outils/gabarit/_config.js` → `web/config.js` | reconstruite à la poussée |
-| Données de démonstration | `outils/plans.json` → `web/plan-smcl.html` | reconstruites à la poussée |
+| Données de démonstration | `outils/donnees/plans.json` → `web/plan-smcl.html` | reconstruites à la poussée |
 | Automatisation | `.github/workflows/` | appliquée dès la fusion dans `main` |
 
 Les migrations sont rejouables : `db push` n'applique que celles qui manquent.

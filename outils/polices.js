@@ -29,7 +29,7 @@
  *   web/polices/<famille>-<style>-<graisse>-<sous-ensemble>-<empreinte>.woff2
  *   web/polices/<famille>.css — pour une page qui charge une famille à la
  *                               demande, ou qui n'est pas construite
- *   outils/polices.json       — les déclarations, que `genere.js` pose dans
+ *   outils/donnees/polices.json       — les déclarations, que `genere.js` pose dans
  *                               l'en-tête de chaque page pour les modèles
  *
  * L'empreinte dans le nom est ce qui permet de garder un fichier sans jamais le
@@ -197,7 +197,7 @@ if (require.main === module) (async () => {
     if (!ecrits.has(f) && /\.(woff2|css)$/.test(f)) fs.unlinkSync(path.join(DOSSIER, f));
   }
 
-  fs.writeFileSync(path.join(__dirname, "polices.json"),
+  fs.writeFileSync(path.join(__dirname, "donnees", "polices.json"),
     JSON.stringify({ sources, sousEnsembles: SOUS_ENSEMBLES, faces }, null, 2) + "\n");
 
   for (const aLaDemande of [false, true]) {

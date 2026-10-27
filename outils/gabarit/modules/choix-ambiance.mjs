@@ -10,7 +10,7 @@
 
    La page figée qui l'offre le dit par `data-choix-ambiance`, posé à la
    construction (`outils/genere.js` `page`). Le même salon écrit dans la base
-   (`outils/salon-demo.js`), servi par le plan public à `?plan=demo` ou
+   (`outils/scripts/salon-demo.js`), servi par le plan public à `?plan=demo` ou
    `/plan-demo`, se reconnaît à son nom : c'est lui qu'on règle, puis qu'on
    montre, et il doit garder le choix de la page figée. Pas en administration,
    où l'ambiance se choisit pour tous dans le volet « Apparence ». Ailleurs, le
@@ -24,7 +24,7 @@ import { ambianceRetenue, essaieAmbiance } from "./ambiance.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { SLUG, PLAN_ADMIN } from "./salon.mjs";
 
-/* Le slug du salon de démonstration écrit dans la base (`outils/salon-demo.js`). */
+/* Le slug du salon de démonstration écrit dans la base (`outils/scripts/salon-demo.js`). */
 const SALON_DEMO = "demo";
 
 const boite = $("choixAmbiance");

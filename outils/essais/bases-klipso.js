@@ -7,11 +7,11 @@
  * jamais pour l'administrateur qui l'a saisie, et rien du tout pour un
  * organisateur ni pour la clé publique.
  *
- *   node outils/essais/bases-klipso.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/bases-klipso.js     (lancé par `npm run essais`)
  */
 const fs = require("fs");
 const path = require("path");
-const { baseNeuve, commeCompte, MIGRATIONS } = require("./base.js");
+const { baseNeuve, commeCompte, MIGRATIONS } = require("./aides/base.js");
 
 let ko = 0;
 const dit = (ok, q, d) => {

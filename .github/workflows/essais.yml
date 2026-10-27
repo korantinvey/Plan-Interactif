@@ -20,7 +20,7 @@
 # le jour même, sans que chaque branche paie pour lui.
 #
 # Les essais du navigateur ne parlent jamais au réseau : les données du plan
-# sont servies depuis `outils/plans.json`. Une panne de la production ne peut
+# sont servies depuis `outils/donnees/plans.json`. Une panne de la production ne peut
 # donc pas faire rougir ce workflow, ni ce workflow peser sur la production.
 name: Essais
 
@@ -66,10 +66,10 @@ jobs:
       - name: Relecture par ESLint
         run: npm run lint
 
-      - name: Types (cliquet de outils/types-acceptes.json)
+      - name: Types (cliquet de outils/controles/types-acceptes.json)
         run: npm run types
 
-      - name: Portes et boucles d'imports (cliquet de outils/portes-acceptees.json)
+      - name: Portes et boucles d'imports (cliquet de outils/controles/portes-acceptees.json)
         run: npm run portes
 
       - name: Le guide ne cite que ce qui existe (CLAUDE.md)

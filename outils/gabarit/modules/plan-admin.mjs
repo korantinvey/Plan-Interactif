@@ -37,7 +37,7 @@ import "./pile.mjs";
 import { brancheGestesAdmin } from "./gestes-admin.mjs";
 
 /* La bibliothèque des halls de lieux connus, que la construction verse dans
-   cette page seule, en données (`genere.js`, `outils/lieux.json`). Lue au
+   cette page seule, en données (`genere.js`, `outils/donnees/lieux.json`). Lue au
    lancement : la balise précède le script des modules. */
 function lieux(){
   const el = document.getElementById("lieux");

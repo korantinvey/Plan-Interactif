@@ -5,7 +5,7 @@
  * mur, que la même graine rend la même foule — sans quoi elle sauterait d'une
  * image à l'autre —, qu'ils ne se marchent pas dessus, et que la borne tient.
  *
- *   node outils/essais/figurants.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/figurants.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

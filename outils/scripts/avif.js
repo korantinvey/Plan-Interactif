@@ -34,7 +34,7 @@ const VERSION = "2.1.1";
 
 /* Le nom porte l'empreinte du contenu : le site garde ce dossier un an sans
    revalider (`genere.js`, `_headers`). */
-const DOSSIER = path.join(__dirname, "..", "web", "bibliotheques");
+const DOSSIER = path.join(__dirname, "..", "..", "web", "bibliotheques");
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "avif-"));
 try {

@@ -11,7 +11,7 @@
  * rien planter : elle envoie le visiteur par le mauvais côté de l'allée, ou
  * lui annonce dix minutes pour cinq.
  *
- *   node outils/essais/itineraire.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/itineraire.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

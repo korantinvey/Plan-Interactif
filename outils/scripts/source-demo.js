@@ -19,7 +19,7 @@ const path = require("path");
 
 const SLUG = process.argv[2] || "fep27";
 const ORIGINE = process.env.PLAN_ADRESSE || "https://plan-interactif.interactiveplan.workers.dev";
-const SORTIE = path.join(__dirname, "source-demo.json");
+const SORTIE = path.join(__dirname, "..", "donnees", "source-demo.json");
 
 (async () => {
   const r = await fetch(ORIGINE + "/api/plan?slug=" + encodeURIComponent(SLUG));

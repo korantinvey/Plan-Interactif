@@ -7,7 +7,7 @@
  * mesurent — aller et retour, valeurs connues de l'ellipsoïde, réciproques —
  * plutôt que de rejouer le code.
  *
- *   node outils/essais/terre.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/terre.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

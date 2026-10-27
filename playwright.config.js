@@ -6,9 +6,9 @@
  * exposant, ouvre une fiche — on le contrôlait à la main, dans Chromium, à
  * chaque chantier. Ceci le fait à chaque poussée.
  *
- * Les pages sont servies par `outils/serve.js`, comme en essai local ; les
+ * Les pages sont servies par `outils/scripts/serve.js`, comme en essai local ; les
  * données du plan, elles, ne viennent jamais du réseau : chaque essai les
- * intercepte et sert `outils/plans.json` (voir `outils/essais/navigateur/aide.js`).
+ * intercepte et sert `outils/donnees/plans.json` (voir `outils/essais/navigateur/aide.js`).
  * Un essai ne dépend ainsi ni de la production, ni de son quota, ni d'une
  * synchronisation faite la veille.
  */
@@ -48,7 +48,7 @@ module.exports = defineConfig({
     { name: "telephone", use: { ...devices["Pixel 7"] }, grep: /@telephone/ },
   ],
   webServer: process.env.PLAN_ADRESSE ? undefined : {
-    command: "node outils/serve.js",
+    command: "node outils/scripts/serve.js",
     url: "http://localhost:4180/plan-smcl.html",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

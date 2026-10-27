@@ -42,7 +42,7 @@ const CLASSES = {
    ce dossier un an sans revalider (`genere.js`, `_headers`). Une classe de
    plus à la même version, sous le même nom, serait restée l'ancienne chez qui
    l'avait déjà — et, l'intégrité ne concordant plus, son plan en SVG. */
-const DOSSIER = path.join(__dirname, "..", "web", "bibliotheques");
+const DOSSIER = path.join(__dirname, "..", "..", "web", "bibliotheques");
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "deck-"));
 try {

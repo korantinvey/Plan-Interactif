@@ -7,11 +7,11 @@
  * pagination, et le fait que le jeton ne se retrouve jamais en clair dans la
  * base ni n'est émis par un autre rôle que le propriétaire.
  *
- *   node outils/essais/lecture-perf.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/lecture-perf.js     (lancé par `npm run essais`)
  */
 const fs = require("fs");
 const path = require("path");
-const { baseNeuve, MIGRATIONS } = require("./base.js");
+const { baseNeuve, MIGRATIONS } = require("./aides/base.js");
 
 let ko = 0;
 const dit = (ok, q, d) => {

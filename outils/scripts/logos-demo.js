@@ -12,7 +12,7 @@
  * Ils se dessinent dans Chromium, avec les polices de `web/polices/` : Node
  * ne sait pas écrire du texte dans une image, et la construction tourne chez
  * Cloudflare, sans navigateur. Le résultat est donc versionné, comme
- * `plans.json` : `outils/logos-demo.json`, en WebP sans fond, recadré au plus
+ * `plans.json` : `outils/donnees/logos-demo.json`, en WebP sans fond, recadré au plus
  * près. À relancer quand les noms changent (le sel de `demo.js`) —
  * `outils/essais/demo.js` le dit, en nommant les sociétés sans logo.
  */
@@ -21,10 +21,10 @@ const path = require("path");
 const crypto = require("crypto");
 const { pathToFileURL } = require("url");
 const { chromium } = require("@playwright/test");
-const { salonDemo, lisSource, FOODTRUCKS } = require("./demo.js");
+const { salonDemo, lisSource, FOODTRUCKS } = require("../demo.js");
 
 const D = __dirname;
-const SORTIE = path.join(D, "logos-demo.json");
+const SORTIE = path.join(D, "..", "donnees", "logos-demo.json");
 
 /* Des polices au caractère marqué, toutes servies par `web/polices/`. */
 const POLICES = [
@@ -183,7 +183,7 @@ function dessine(specs) {
     polices: POLICES.map(([, f, g]) => [f, g]),
   }));
 
-  const polices = path.join(D, "..", "web", "polices");
+  const polices = path.join(D, "..", "..", "web", "polices");
   const feuilles = POLICES.map(([f]) => '<link rel="stylesheet" href="' + pathToFileURL(path.join(polices, f + ".css")) + '">').join("");
   const echantillon = POLICES.map(([, f, g]) =>
     '<span style="font-family:\'' + f + '\';font-weight:' + g + '">Aa ÀÉéèçœ</span>').join("");

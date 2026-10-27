@@ -82,7 +82,7 @@ gestes qui l'empêchent de revenir :
   module de base appelle chez un module qui l'importe lui est confiée par ce
   dernier en se chargeant, par une porte `confie…` aux défauts sans effet. Il
   en reste huit, chacune inscrite avec son genre et sa raison dans
-  `outils/portes-acceptees.json` — `partition` (l'administration remplace ou
+  `outils/controles/portes-acceptees.json` — `partition` (l'administration remplace ou
   ajoute, au lieu de seulement réagir : `confieChaleur`, `confieALaFiche`,
   `confieLancementAdmin`), `rendu` (ce que chaque image d'un geste rappelle
   dans un ordre fixe), `registre`. Une porte qui ne fait que prévenir devient
@@ -167,10 +167,10 @@ commiter l'index sur la branche. `git pull --rebase`.
 ## Données figées
 
 `web/plan-smcl.html` embarque ses données au lieu d'appeler l'API : c'est la
-démonstration, publiable en artefact. Sa source, `outils/plans.json`, est
+démonstration, publiable en artefact. Sa source, `outils/donnees/plans.json`, est
 **versionnée** — sans elle la construction échoue sur un clone neuf, et elle ne
 se régénère qu'avec une clé Klipso. De même `web/polices/`,
-`outils/polices.json` (`npm run polices`) et `outils/lieux.json`
+`outils/donnees/polices.json` (`npm run polices`) et `outils/donnees/lieux.json`
 (`npm run lieux`), qui ne se refont qu'avec le réseau. **Aucune page ne demande
 ses polices à Google** — chaque visiteur lui transmettrait son adresse IP ;
 `npm run construire` échoue si une page le fait.
@@ -202,14 +202,18 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 | `outils/gabarit/` | la source des pages ; `modules/` tout le JavaScript |
 | `web/` | les pages construites — non versionnées, sauf `polices/` et `bibliotheques/` |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan`, mesures, erreurs, manifeste |
-| `outils/projet.js` | le projet Supabase des pages et du Worker, production ou recette |
+| `outils/*.js` | la chaîne de construction, et elle seule (`assemble.js`, `genere.js`, `carte.js`…) ; `outils/projet.js` le projet Supabase des pages et du Worker, production ou recette |
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso, API publique, rappels, comptes ; `_partage/` le commun |
 | `.github/workflows/` | construction, essais, déploiement Supabase, sauvegarde, correctifs |
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
-| `outils/essais/` | essais hors page — `npm run essais` ; l'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
+| `outils/essais/` | essais hors page — `npm run essais`, par `node --test` : **tout fichier `*.js` de ce dossier est un essai**, lancé dans son propre processus, en parallèle des autres, et compté en échec s'il sort en erreur ; une aide partagée va dans `aides/`. L'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
 | `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; seuls les essais `@base` (`npm run navigateur-base`) bloquent la pull request, le reste tourne sur `main` et chaque nuit — un essai neuf ne prend `@base` que s'il garde une page entière ou le parcours du visiteur ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
-| `outils/relecture.js`, `types.js`, `portes.js`, `guide.js` | ESLint, TypeScript (cliquet au stock vide), portes et boucles, ce guide — tous lancés par `npm run verifie` |
+| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, cliquet au stock vide), `portes.js` (portes et boucles), `guide.js` (ce guide) — et leurs cliquets `*.json` |
+| `outils/donnees/` | les données figées que relit la construction — versionnées, voir « Données figées » |
+| `outils/scripts/` | ce qui se lance à la main ou par un workflow, hors construction : serveur d'essai, migration, lieux, démonstration, fiche de performance ; `klipso/` l'exploration de l'API |
+| `outils/bancs/` | bancs de mesure longs (`npm run fep26`, `npm run charge`), que la CI ne lance pas |
+| `docs/` | notes d'étude (Eventmaker), défauts relevés pendant la sortie en modules |
 
 ## Chercher sans tout ouvrir
 
@@ -257,7 +261,7 @@ l'importe, ses portes : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
 | repères, transports en commun | `modules/reperes.mjs`, `modules/cartouche-poi.mjs`, `modules/points-interet.mjs` |
 | libellé placé à la main | `modules/libelle-place.mjs`, `modules/placement-libelles.mjs` |
 | ordre et panneau des calques, fond du plan | `modules/ordre-trace.mjs`, `modules/pile.mjs`, `modules/ordre-calques.mjs` |
-| halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/lieux.js` (`lieuOsm`, `lieuSaisi`) |
+| halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/scripts/lieux.js` (`lieuOsm`, `lieuSaisi`) |
 | fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` |
 | secteurs, distinctions, polices des noms | `modules/secteurs.mjs`, `modules/distinctions.mjs`, `modules/polices-plan.mjs` |
 | parcours, partage, copie gardée | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs` |

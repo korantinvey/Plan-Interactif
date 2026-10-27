@@ -8,7 +8,7 @@
  * dans le script servi — ramenée au module et à la ligne d'origine, car la
  * page n'a pas à décoder 600 Ko sur le téléphone qui vient de geler.
  *
- *   node outils/essais/sonde-worker.js     (chaîné dans `npm run essais`)
+ *   node outils/essais/sonde-worker.js     (lancé par `npm run essais`)
  */
 const path = require("path");
 const { pathToFileURL } = require("url");

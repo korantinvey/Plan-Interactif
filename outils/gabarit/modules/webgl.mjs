@@ -89,7 +89,7 @@ export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !==
 
    Réduite aux classes que ce module emprunte à `deck` : la bibliothèque
    entière pesait 470 Ko compressés, celle-ci 213. Elle se refait par
-   `npm run deck` (`outils/deck.js`), qui dit le nom et l'empreinte à
+   `npm run deck` (`outils/scripts/deck.js`), qui dit le nom et l'empreinte à
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {

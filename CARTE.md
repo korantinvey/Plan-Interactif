@@ -3541,17 +3541,17 @@ Portes :
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
 - `outils/icones.js` — dessine l'icône de l'application, et l'encode en PNG.
 - `outils/carte.js` — produit ce fichier.
-- `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.
-- `outils/controle.js` — analyse le script de chaque page construite, en module
+- `outils/controles/verifie.js` — reconstruit, et échoue si le versionné était en retard.
+- `outils/controles/controle.js` — analyse le script de chaque page construite, en module
   ES : une redéclaration y est une erreur, là où un `<script>` la tolère.
-- `outils/migration.js` — crée une migration horodatée à la seconde.
+- `outils/scripts/migration.js` — crée une migration horodatée à la seconde.
 - `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors
-  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.
+  construction (réseau requis) ; écrit `outils/donnees/polices.json`, relu par `genere.js`.
 - `outils/gabarit/_langue.js` — la version anglaise : posé en tête de chaque page, il
   traduit ce qu'elle affiche d'après le dictionnaire, et tient la bascule FR/EN.
 - `outils/anglais/` — le dictionnaire anglais, un fichier par module ; `serveur.js` et
   `donnees.js` pour ce qui arrive du serveur, `invisibles.js` pour les faux positifs.
 - `outils/traductions.js` — relève les chaînes visibles du gabarit, échoue sur celles
   qui n'ont pas de traduction ; choisit aussi ce que chaque page emporte du dictionnaire.
-- `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —
+- `outils/scripts/klipso/fetch-all.js`, `outils/scripts/klipso/build-all.js`, `outils/scripts/klipso/optim.js`, `outils/scripts/klipso/lire-pdf.js` —
   outils hors ligne de récupération et de préparation des plans (clé Klipso requise).
