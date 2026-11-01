@@ -44,10 +44,7 @@ concurrency:
 
 jobs:
   essais:
-    # Épinglé : `ubuntu-latest` est passé à 26.04, dont Playwright 1.56 ne sait
-    # pas installer les dépendances de Chromium (« does not support chromium on
-    # ubuntu26.04-x64 »). À relâcher quand une version de Playwright le connaîtra.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
@@ -100,7 +97,7 @@ jobs:
   # est celle de la tranche la plus longue.
   complet:
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04  # même raison que `essais`
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
