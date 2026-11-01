@@ -574,7 +574,14 @@ function glisseVersVise(){
     if (!vise) return;
     /* Le rapprochement se compte en millisecondes, non en images : sans quoi
        un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
-    const dt = Math.min(64, maintenant - precedent) || 16;
+    /* L'heure que reçoit l'image est celle où sa trame a commencé : elle peut
+       précéder le « performance.now() » pris au départ du geste, d'autant plus
+       que la trame est lente. Un écart négatif donnait un pas négatif, et la
+       vue repartait à l'envers au point de prendre une largeur négative —
+       relevé en CI, cadre de la vignette à −38 m. Un écart nul ou négatif
+       compte pour une image. */
+    const ecart = maintenant - precedent;
+    const dt = ecart > 0 ? Math.min(64, ecart) : 16;
     precedent = maintenant;
     figeTextes();
     const k = 1 - Math.pow(.5, dt / demiVie);
