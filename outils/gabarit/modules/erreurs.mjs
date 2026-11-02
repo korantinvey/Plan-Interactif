@@ -21,6 +21,11 @@
    sans rien d'autre) ne disent rien de nos pages. Cinq au plus par
    chargement, chacune une fois : une erreur dans une boucle d'animation se
    répéterait soixante fois par seconde, et la base n'en veut qu'un compte.
+
+   Ces comptes, la base les range par jour : ils ne disent pas quelle visite a
+   planté, ni si le gel et l'exception tombaient ensemble. La sonde
+   (`sonde.mjs`) joint donc à son relevé le bilan de la page (`bilanErreurs`) —
+   les répétitions et ce qui dépasse les cinq compris, qui ne partent pas ici.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN } from "./salon.mjs";
 import { mesureOuverte } from "./mesure.mjs";
@@ -33,6 +38,9 @@ const DELAI = 2000;
 const vues = new Set();
 let attente = [];
 let minuteur = null;
+// le bilan de la page, que la sonde joint à sa visite : tout ce qui vient de nous, même tu
+const BILAN = { n: 0, tues: 0, /** @type {any[]} */ premieres: [] };
+const PREMIERES = 3;
 
 /** Ce qui vient de notre script : un fichier servi d'ici, sous `versions/`. */
 function denous(fichier) {
@@ -62,14 +70,39 @@ function envoie() {
 }
 
 function signale(message, lieu) {
-  if (!ERREUR_API || !SLUG || !lieu || vues.size >= PAR_CHARGEMENT) return;
-  if (!PLAN_ADMIN && !mesureOuverte()) return;
+  if (!lieu) return;
   const m = String(message || "Erreur").slice(0, 300);
   const cle = m + " " + lieu.fichier + ":" + lieu.ligne + ":" + lieu.colonne;
+  retiens(m, lieu, cle);
+  if (!ERREUR_API || !SLUG || vues.size >= PAR_CHARGEMENT) return;
+  if (!PLAN_ADMIN && !mesureOuverte()) return;
   if (vues.has(cle)) return;
   vues.add(cle);
   attente.push({ message: m, ...lieu });
   if (!minuteur) minuteur = setTimeout(envoie, DELAI);
+}
+
+/** Compte l'erreur au bilan de la page ; seules les premières y gardent leur texte. */
+function retiens(/** @type {string} */ m, /** @type {any} */ lieu, /** @type {string} */ cle) {
+  BILAN.n++;
+  if (vues.size >= PAR_CHARGEMENT && !vues.has(cle)) BILAN.tues++;
+  if (BILAN.premieres.length >= PREMIERES || BILAN.premieres.some(p => p.cle === cle)) return;
+  let chemin = "";
+  // le chemin suffit au Worker pour lire la carte, et coûte moins au relevé que l'adresse entière
+  try { chemin = new URL(lieu.fichier, location.href).pathname; } catch (e) { /* illisible */ }
+  BILAN.premieres.push({ cle, message: m.slice(0, 120), fichier: chemin, ligne: lieu.ligne, colonne: lieu.colonne });
+}
+
+/**
+ * Le bilan des erreurs de la page, pour le relevé de la visite (`sonde.mjs`) :
+ * combien, combien que le plafond a tues, et les trois premières — leur texte
+ * et leur position dans le script servi, que le Worker ramène au module.
+ * Rien tant que la page n'a pas planté : le relevé n'en porte alors pas trace.
+ */
+export function bilanErreurs() {
+  if (!BILAN.n) return undefined;
+  return { n: BILAN.n, tues: BILAN.tues || undefined,
+    premieres: BILAN.premieres.map(({ message, fichier, ligne, colonne }) => ({ message, fichier, ligne, colonne })) };
 }
 
 /**

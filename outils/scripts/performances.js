@@ -46,7 +46,19 @@ select r.evenement_id, r.jour::text as jour, r.page, r.mobile, r.immersif, r.ver
                                                    'ms', l -> 'ms', 'tailleKo', l -> 'tailleKo',
                                                    'transfertKo', l -> 'transfertKo'))
                     from jsonb_array_elements(r.resume #> '{chargement,lourds}') l)
-       end as lourds
+       end as lourds,
+       -- ce qui a échoué : la sonde le joint au relevé (sonde.mjs, erreurs.mjs bilanErreurs)
+       r.resume ? 'chargement' as chargee,
+       sonde_nombre(r.resume -> 'duree')::double precision as duree_ms,
+       r.resume #>> '{chargement,panne,sorte}' as panne,
+       coalesce(r.resume #> '{chargement,cacheeAvant}' = 'true'::jsonb, false) as cachee,
+       sonde_nombre(r.resume #> '{erreurs,n}')::double precision as erreurs,
+       sonde_nombre(r.resume #> '{api,echecs}')::double precision as api_echecs,
+       /* Un navigateur piloté. Avant que la sonde ne le marque, il se
+          reconnaissait à son agent inconnu et à sa carte graphique logicielle. */
+       coalesce(r.resume #> '{appareil,robot}' = 'true'::jsonb
+         or (r.resume #>> '{appareil,navigateur,famille}' = 'autre'
+             and r.resume #>> '{appareil,carte,puce}' ilike '%swiftshader%'), false) as robot
   from releve_perf r
  where r.jour >= current_date - 14
 `;
@@ -109,6 +121,10 @@ function fichierPropre(f, sorte, tailleKo) {
   return e && EXTENSIONS.has(e) ? "autre fichier ." + e : "autre fichier";
 }
 
+/* Les raisons d'un plan qui n'a pas paru (`demarrage.mjs` `PLAN_EN_PANNE`) :
+   une liste fermée, car le texte vient d'un visiteur anonyme. */
+const PANNES = new Set(["reseau", "http", "vide", "session", "code"]);
+
 /** Un nombre venu d'un relevé, ou rien. */
 const nombre = (v) => typeof v === "number" && isFinite(v) ? v : null;
 
@@ -118,6 +134,8 @@ const assaini = (r) => ({
   page: texteSur(r.page) || "(sans page)",
   version: texteSur(r.version),
   famille: texteSur(r.famille) || "inconnue",
+  panne: PANNES.has(r.panne) ? r.panne : r.panne ? "autre" : null,
+  robot: r.robot === true,
   lourds: Array.isArray(r.lourds)
     ? r.lourds.filter(Boolean).map((x) => {
         const sorte = SORTES.has(x.sorte) ? x.sorte : "other";
@@ -145,6 +163,36 @@ function mediane(valeurs) {
 }
 
 const preparation = (r) => r.affiche_ms != null && r.donnees_ms != null ? r.affiche_ms - r.donnees_ms : null;
+
+/* Sans première image ni panne, une visite si brève est un départ, non un échec. */
+const DEPART_MS = 10000;
+
+/**
+ * Une visite dont le plan n'a pas paru, et qui le pouvait : la page n'était
+ * pas cachée, et elle a duré, ou le démarrage a dit sa panne. Une visite
+ * revenue du cache arrière (`chargee` faux) n'avait rien à afficher.
+ */
+const sansImage = (r) => r.chargee !== false && r.affiche_ms == null && !r.cachee &&
+  (r.panne != null || (r.duree_ms ?? 0) >= DEPART_MS);
+
+/** Ce qui a échoué dans la semaine : un plan absent, une erreur, un appel refusé. */
+function echecs(semaine) {
+  const pannes = {};
+  let sans = 0;
+  for (const r of semaine) {
+    if (!sansImage(r)) continue;
+    sans++;
+    const k = r.panne || "inconnue";
+    pannes[k] = (pannes[k] || 0) + 1;
+  }
+  const avecErreur = semaine.filter((r) => r.erreurs > 0);
+  return {
+    sansImage: sans, pannes,
+    avecErreur: avecErreur.length,
+    erreurs: avecErreur.reduce((t, r) => t + r.erreurs, 0),
+    avecEchecApi: semaine.filter((r) => r.api_echecs > 0).length,
+  };
+}
 
 /** Par page et support : ce que les règles et le tableau lisent. */
 function groupes(releves) {
@@ -188,8 +236,11 @@ function groupes(releves) {
  * précédent au dimanche.
  */
 function indicateurs(brut, au) {
-  const tous = brut.map(assaini);
+  const assainis = brut.map(assaini);
   const de = lundiMesure(au), a = plusJours(de, 7), avant = plusJours(de, -7);
+  /* Un navigateur piloté ne dit rien des visiteurs : hors des médianes, compté à part. */
+  const robots = assainis.filter((r) => r.robot && r.jour >= de && r.jour < a).length;
+  const tous = assainis.filter((r) => !r.robot);
   const semaine = tous.filter((r) => r.jour >= de && r.jour < a);
   const precedente = tous.filter((r) => r.jour >= avant && r.jour < de);
 
@@ -251,6 +302,8 @@ function indicateurs(brut, au) {
   return {
     de, a: plusJours(a, -1),
     visites: semaine.length,
+    robots,
+    echecs: echecs(semaine),
     groupes: groupes(semaine),
     precedente: groupes(precedente),
     fichiers: fichiers.sort((x, y) => y.part - x.part),
@@ -271,6 +324,9 @@ function indicateurs(brut, au) {
 const s1 = (v) => v == null ? "—" : (Math.round(v / 100) / 10).toFixed(1).replace(".", ",") + " s";
 const pc = (v) => v == null ? "—" : Math.round(v) + " %";
 
+const NOMS_PANNES = { reseau: "réseau injoignable", http: "réponse en erreur", vide: "salon sans pavillon",
+  session: "session refusée", code: "erreur de la page", inconnue: "sans raison dite", autre: "autre" };
+
 /** Le corps de l'issue, en Markdown. */
 function corps(ind) {
   const l = [];
@@ -285,6 +341,20 @@ function corps(ind) {
     l.push((i + 1) + ". **" + x.titre + "** — " + x.detail + " · gain " + x.gain);
     l.push("   " + x.levier);
   });
+  l.push("");
+  l.push("## Ce qui a échoué");
+  l.push("");
+  const e = ind.echecs;
+  const raisons = Object.entries(e.pannes).sort((x, y) => y[1] - x[1])
+    .map(([k, n]) => (NOMS_PANNES[k] || k) + " " + n).join(", ");
+  l.push("- Plan jamais affiché : " + e.sansImage + " visite" + (e.sansImage > 1 ? "s" : "") +
+    (raisons ? " (" + raisons + ")" : ""));
+  l.push("- Visites où la page a levé une erreur : " + e.avecErreur +
+    (e.erreurs ? " (" + e.erreurs + " erreur" + (e.erreurs > 1 ? "s" : "") + " en tout)" : ""));
+  l.push("- Visites dont un appel à nos services a répondu en erreur : " + e.avecEchecApi);
+  if (ind.robots) l.push("- Visites d'un navigateur piloté, écartées de toute la fiche : " + ind.robots);
+  l.push("");
+  l.push("Le texte et le module des erreurs se lisent par `outils/scripts/lecture-perf.js` (relevés et erreurs), jamais ici : un message peut nommer un salon.");
   l.push("");
   l.push("## D'une version à l'autre");
   l.push("");

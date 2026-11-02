@@ -172,6 +172,43 @@ dit(texteSur("@x ](http://e) <img> #12 | `a` ![i](u)").split("").every((c) => /[
   "texteSur ne garde que lettres, chiffres, espace et ._·+()-", texteSur("@x ](http://e) <img> #12 | `a` ![i](u)"));
 dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères");
 
+/* Ce qui a échoué : un plan absent, une erreur, un appel refusé — et les robots à part. */
+{
+  const base = serie(48, {});
+  const sans = (o) => releve({ affiche_ms: null, ...o });
+  const semaine = base.concat([
+    sans({ panne: "http" }), sans({ panne: "code", erreurs: 1 }),
+    sans({ duree_ms: 30000 }),
+    // partie trop tôt, ou cachée : un départ, non une panne
+    sans({ duree_ms: 3000 }), sans({ duree_ms: 30000, cachee: true }),
+    // revenue du cache arrière : rien à afficher
+    sans({ chargee: false, duree_ms: 30000 }),
+    releve({ erreurs: 3 }), releve({ api_echecs: 2 }),
+  ]);
+  const ind = indicateurs(semaine, AU);
+  dit(ind.echecs.sansImage === 3 && ind.echecs.pannes.http === 1 && ind.echecs.pannes.code === 1 &&
+    ind.echecs.pannes.inconnue === 1, "un plan absent compte, sauf départ, page cachée ou retour du cache",
+    JSON.stringify(ind.echecs));
+  dit(ind.echecs.avecErreur === 2 && ind.echecs.erreurs === 4 && ind.echecs.avecEchecApi === 1,
+    "les visites avec une erreur, et avec un appel en échec", JSON.stringify(ind.echecs));
+  const p = ids(semaine);
+  dit(p.includes("sans-image") && p.includes("erreurs-visites") && !p.includes("api-echecs"),
+    "deux règles se déclenchent, la troisième reste sous son seuil", JSON.stringify(p));
+  dit(!ids(base).some((x) => ["sans-image", "erreurs-visites", "api-echecs"].includes(x)), "rien sur des visites sans échec");
+  dit(ids(serie(5, { affiche_ms: null, panne: "reseau" })).length === 0, "sous dix visites, aucune règle");
+  const texte = corps(ind);
+  dit(/Plan jamais affiché : 3 visites \(.*réponse en erreur 1/.test(texte) && /erreur : 2 \(4 erreurs/.test(texte),
+    "la fiche dit ce qui a échoué", (texte.match(/## Ce qui a échoué[\s\S]*?\n\n[\s\S]*?\n\n/) || [""])[0]);
+  dit(indicateurs([releve({ panne: "<img src=x>", affiche_ms: null })], AU).echecs.pannes.autre === 1,
+    "une raison inconnue ne passe pas telle quelle");
+
+  const robots = base.concat(serie(10, { robot: true, affiche_ms: 11000, mobile: false }));
+  const r = indicateurs(robots, AU);
+  dit(r.visites === 48 && r.robots === 10 && r.groupes[0].affiche_p50 === 1800,
+    "les robots sortent des médianes, et se comptent à part", JSON.stringify({ v: r.visites, robots: r.robots }));
+  dit(corps(r).includes("navigateur piloté, écartées de toute la fiche : 10"), "la fiche le dit");
+}
+
 /* La requête du script, sur le vrai schéma : une colonne renommée dans la
    migration casserait la fiche du lundi sans qu'aucun autre essai le voie. */
 (async () => {
@@ -199,6 +236,23 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
   const ind = indicateurs(lignes, plusSept(r.jour));
   dit(ind.visites === 1, "ses rangées nourrissent les indicateurs", String(ind.visites));
   dit(!JSON.stringify(lignes).includes("fep27"), "elle ne lit pas le slug");
+  dit(r.chargee === true && r.robot === false && r.cachee === false && r.panne === null && r.erreurs === null,
+    "une visite sans échec n'en porte aucun", JSON.stringify({ c: r.chargee, r: r.robot, p: r.panne, e: r.erreurs }));
+  await db.query("delete from releve_perf");
+  const echouee = { ...resume, duree: 31000,
+    chargement: { jalons: { donnees: 900 }, panne: { sorte: "http", statut: 502 }, cacheeAvant: true },
+    erreurs: { n: 2, premieres: [{ message: "x", lieu: "modules/vue.mjs:1" }] }, api: { echecs: 1, statuts: { 502: 1 } },
+    appareil: { mobile: false, robot: true } };
+  const ancienRobot = { ...resume, appareil: { mobile: false, navigateur: { famille: "autre", version: 0 },
+    carte: { puce: "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)))" } } };
+  for (const x of [echouee, ancienRobot]) {
+    await db.query("select sonde_enregistre($1, 'plan', 'abc123', gen_random_uuid(), $2::jsonb)", [id, JSON.stringify(x)]);
+  }
+  const [e1, e2] = (await db.query(REQUETE)).rows.sort((a, b) => (b.erreurs ?? 0) - (a.erreurs ?? 0));
+  dit(e1 && e1.panne === "http" && e1.cachee === true && e1.erreurs === 2 && e1.api_echecs === 1 &&
+    e1.duree_ms === 31000 && e1.robot === true && e1.affiche_ms === null,
+    "elle lit la panne, la page cachée, les erreurs, les appels en échec et le robot", JSON.stringify(e1 && { p: e1.panne, c: e1.cachee, e: e1.erreurs, a: e1.api_echecs, d: e1.duree_ms, r: e1.robot }));
+  dit(e2 && e2.robot === true, "un navigateur sans écran d'avant le marquage se reconnaît encore", e2 && String(e2.robot));
   console.log(ko ? "\n" + ko + " échec(s)." : "\nTout passe.");
   process.exit(ko ? 1 : 0);
 })().catch((e) => { console.log("  ÉCHEC  " + e.stack); process.exit(1); });

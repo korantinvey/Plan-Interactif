@@ -144,6 +144,28 @@ const SCRIPT = "/versions/plan.0123456789.js";
       "une position invalide n'est pas résolue, et trois gels au plus sont relayés", q && JSON.stringify(q));
   }
 
+  // — les erreurs de la visite repartent avec leur module, comme les gels
+  {
+    parti.length = 0;
+    const attendu = require("fs").readFileSync(path.join(__dirname, "..", "gabarit", "modules", "donnees.mjs"), "utf8")
+      .split("\n").findIndex((x) => x.includes(PHRASE)) + 1;
+    const r = resume([]);
+    r.erreurs = { n: 7, tues: 2, premieres: [
+      { message: "TypeError: x est indéfini " + "z".repeat(200), fichier: SCRIPT, ligne: l + 1, colonne: colonne0 + 1 },
+      { message: "Error: ailleurs", fichier: "/versions/inconnu.js", ligne: 3, colonne: 4 },
+      "pas un objet", { message: "4" }, { message: "5" },
+    ] };
+    await appel(PRODUCTION, valide({ resume: r }));
+    const e = parti[0] && parti[0].corps.p_resume.erreurs;
+    dit(e && e.premieres[0].lieu === "modules/donnees.mjs:" + attendu, "une erreur de la visite est ramenée à son module",
+      e && e.premieres[0].lieu);
+    dit(e && e.premieres[0].message.length === 120 && e.premieres[0].fichier === undefined && e.premieres[0].ligne === undefined,
+      "son texte est borné, sa position brute retirée", e && JSON.stringify(e.premieres[0]).slice(0, 80));
+    dit(e && e.premieres[1].lieu === "versions/inconnu.js:3:4", "un fichier sans carte garde sa position", e && e.premieres[1].lieu);
+    dit(e && e.premieres.length === 2 && e.n === 7 && e.tues === 2, "trois au plus, ce qui n'est pas un objet tombe, les comptes restent",
+      e && JSON.stringify(e.premieres.map((x) => x.message.slice(0, 8))));
+  }
+
   // — ligne et colonne : début de fichier, début de ligne, fins de ligne CRLF (sans carte : le lieu est la position brute)
   {
     parti.length = 0;

@@ -770,22 +770,22 @@ Importé par :
 edition · libelles · outil-comptoir · outil-escalier · outil-foodtruck · reglage-comptoir
 reglage-foodtrucks · rendu · webgl
 
-### `modules/demarrage.mjs` — 338 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 378 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 66 · `demarre` 82 · `annonce` 146 · `panneDuChargement` 181
-`CLE_VERSION` 191 · `versionRetenue` 192 · `retientVersion` 195 · `demandePlan` 221
-`adresseAdmin` 249 · `demandeAdmin` 250 · `prechargeAdmin` 266 · `planAdmin` 279
-`charge` 288 · `brancheDemarrage` 320
+`recadreListePosee` 76 · `demarre` 92 · `annonce` 156 · `panneDuChargement` 191
+`panne` 201 · `echec` 214 · `CLE_VERSION` 226 · `versionRetenue` 227 · `retientVersion` 230
+`demandePlan` 256 · `adresseAdmin` 284 · `demandeAdmin` 285 · `prechargeAdmin` 301
+`planAdmin` 314 · `charge` 323 · `brancheDemarrage` 360
 
 Importe :
 
-affichage · borne · dom · donnees · evenement · fiche · ici · index-salon · installation
-mode-admin · parcours-recu · recherche · rendu · salon · sponsor · tutoriel · vignettes
-vue
+affichage · borne · dom · donnees · erreurs · evenement · fiche · ici · index-salon
+installation · mode-admin · parcours-recu · recherche · rendu · salon · sponsor · tutoriel
+vignettes · vue
 
 Importé par :
 
@@ -1086,14 +1086,14 @@ Importé par :
 
 calage-carte · dessin · gestes · vue
 
-### `modules/erreurs.mjs` — 109 l. → plan, plan-admin
+### `modules/erreurs.mjs` — 142 l. → plan, plan-admin
 
 - l.1 · Les erreurs de la page, signalées
 
 Fonctions :
 
-`denous` 38 · `lieuDansLaPile` 46 · `envoie` 52 · `signale` 64 · `signaleErreur` 84
-`brancheErreurs` 93
+`denous` 46 · `lieuDansLaPile` 54 · `envoie` 60 · `signale` 72 · `retiens` 86
+`bilanErreurs` 102 · `signaleErreur` 117 · `brancheErreurs` 126
 
 Importe :
 
@@ -1101,7 +1101,7 @@ mesure · salon
 
 Importé par :
 
-lancement · vue
+demarrage · lancement · sonde · vue
 
 ### `modules/essai-rappel.mjs` — 69 l. → plan-admin
 
@@ -2897,25 +2897,26 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 638 l. → plan, plan-admin
+### `modules/sonde.mjs` — 700 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 59 · `ms` 60 · `enCreux` 61 · `uuid` 64 · `echantillonne` 80 · `vue0` 91
-`nouvelleVisite` 99 · `vueDuMoment` 122 · `commence` 124 · `sorte` 134 · `clos` 136
-`relance` 152 · `image` 158 · `ecouteGestes` 185 · `nomDuScript` 222 · `gel` 229
-`ecouteNavigateur` 243 · `memoire` 274 · `contexteDuPlan` 287 · `lisAppareil` 299
-`finDesDonnees` 322 · `leChargement` 342 · `fluidite` 358 · `laCarte` 366
-`resumeSonde` 387 · `octets` 411 · `coupe` 414 · `tronque` 425 · `fraiche` 457
-`litLaFile` 460 · `ecritLaFile` 468 · `retire` 480 · `corps` 483 · `versionDesPages` 491
-`envoieUne` 502 · `pousse` 528 · `actif` 553 · `envoie` 557 · `brancheSonde` 582
-`demarre` 595
+`sur` 68 · `ms` 69 · `enCreux` 70 · `uuid` 73 · `echantillonne` 89 · `vue0` 100
+`nouvelleVisite` 115 · `vueDuMoment` 139 · `commence` 141 · `sorte` 151 · `clos` 153
+`relance` 169 · `image` 175 · `ecouteGestes` 202 · `nomDuScript` 239 · `gel` 246
+`ecouteNavigateur` 260 · `memoire` 291 · `contexteDuPlan` 304 · `lisAppareil` 316
+`finDesDonnees` 350 · `appelsEnEchec` 372 · `leChargement` 394 · `fluidite` 412
+`laCarte` 420 · `resumeSonde` 441 · `octets` 467 · `coupe` 470 · `tronque` 481
+`fraiche` 513 · `litLaFile` 516 · `ecritLaFile` 524 · `retire` 536 · `corps` 539
+`versionDesPages` 547 · `envoieUne` 558 · `pousse` 584 · `actif` 609 · `envoie` 613
+`brancheSonde` 638 · `demarre` 651
 
 Importe :
 
-affichage · demarrage · donnees · logos-stands · mesure · mesures-page · salon · webgl
+affichage · demarrage · donnees · erreurs · logos-stands · mesure · mesures-page · salon
+webgl
 
 Importé par :
 
@@ -3630,8 +3631,8 @@ Injections :
 
 ## Le reste
 
-- `src/index.mjs` — 1290 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 213 `versionGardee` 216 · `rangeLaVersion` 220 · `ditVersion` 234 · `meta` 243 · `gardable` 259 `range` 265 · `rangeLePlan` 274 · `rafraichit` 290 · `entete` 319 · `oublie` 381 `rappels` 478 · `cleApp` 523 · `cheminDuSalon` 554 · `pageDuSalon` 571 · `appDuSalon` 595 `iconesDuSalon` 641 · `manifeste` 681 · `iconeApp` 771 · `mesure` 815 · `carteDuScript` 904 `lieuDe` 917 · `erreur` 931 · `texteDuScript` 980 · `geleResolu` 993 · `sonde` 1020 `planDeVisite` 1064 · `chargePrevue` 1103 · `surete` 1139 · `aiguille` 1157
+- `src/index.mjs` — 1298 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 213 `versionGardee` 216 · `rangeLaVersion` 220 · `ditVersion` 234 · `meta` 243 · `gardable` 259 `range` 265 · `rangeLePlan` 274 · `rafraichit` 290 · `entete` 319 · `oublie` 381 `rappels` 478 · `cleApp` 523 · `cheminDuSalon` 554 · `pageDuSalon` 571 · `appDuSalon` 595 `iconesDuSalon` 641 · `manifeste` 681 · `iconeApp` 771 · `mesure` 815 · `carteDuScript` 904 `lieuDe` 917 · `erreur` 931 · `texteDuScript` 983 · `geleResolu` 996 · `sonde` 1023 `planDeVisite` 1072 · `chargePrevue` 1111 · `surete` 1147 · `aiguille` 1165
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
