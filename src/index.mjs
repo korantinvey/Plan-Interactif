@@ -970,6 +970,9 @@ async function erreur(requete, env) {
  * téléphone qui vient de geler coûterait une tâche longue de plus, alors que
  * le Worker lit déjà ces fichiers pour les cartes. C'est donc ici que la
  * position devient une ligne et une colonne, puis un module (`lieuDe`).
+ * Les erreurs que la visite a connues (`erreurs.mjs` `bilanErreurs`) arrivent
+ * avec leur ligne et leur colonne dans le script servi, et repartent de même
+ * avec leur module, comme celles du relais des erreurs.
  * La base borne le reste (`sonde_publique`, 4 Ko de résumé).
  */
 const PORTE_SONDE = BASE.replace("/functions/v1/", "/rest/v1/rpc/") + "sonde_publique";
@@ -1034,6 +1037,11 @@ async function sonde(requete, env) {
   if (resume.gels && Array.isArray(resume.gels.pires)) {
     const pires = await Promise.all(resume.gels.pires.slice(0, 3).map((g) => geleResolu(g, env, requete.url)));
     resume.gels.pires = pires.filter(Boolean);
+  }
+  if (resume.erreurs && typeof resume.erreurs === "object" && Array.isArray(resume.erreurs.premieres)) {
+    resume.erreurs.premieres = await Promise.all(resume.erreurs.premieres.slice(0, 3)
+      .filter((e) => e && typeof e === "object")
+      .map(async (e) => ({ message: String(e.message ?? "").slice(0, 120), lieu: await lieuDe(e, env, requete.url) })));
   }
   await fetch(PORTE_SONDE, {
     method: "POST",

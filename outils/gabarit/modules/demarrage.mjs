@@ -17,7 +17,8 @@
    publique n'a plus à le demander. Ce qui n'existe qu'en administration
    (`modules/enregistrement.mjs`, `modules/acces-admin.mjs`) écoute ses deux
    événements (`PLAN_DEMARRE`, `SESSION_REFUSEE`) ; chez le visiteur personne
-   n'écoute.
+   n'écoute. Le troisième, `PLAN_EN_PANNE`, dit à la sonde (`sonde.mjs`)
+   pourquoi un plan n'a pas paru.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { creeEvenement } from "./evenement.mjs";
@@ -37,6 +38,7 @@ import { accueilleInvitation } from "./installation.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { montePlan, chargeFond } from "./rendu.mjs";
 import { planAffiche } from "./affichage.mjs";
+import { signaleErreur } from "./erreurs.mjs";
 
 /* Ce que le démarrage annonce, et que seule l'administration écoute : le
    bouton d'enregistrement et le rattrapage d'un envoi en retard
@@ -47,6 +49,14 @@ export const PLAN_DEMARRE = creeEvenement();
  *  le visiteur, qui garde alors l'erreur ordinaire.
  *  @type {import("./evenement.mjs").Evenement<[string]>} */
 export const SESSION_REFUSEE = creeEvenement();
+/** Le plan ne paraîtra pas, et pourquoi : `reseau` (rien n'a répondu), `http`
+ *  (une réponse en erreur, son statut avec), `vide` (aucun pavillon),
+ *  `session` (l'exploitant doit se reconnecter), `code` (une exception de nos
+ *  modules, signalée aussi comme erreur). La sonde l'écoute : sans lui, un
+ *  relevé sans première image ne disait pas si la page avait planté ou si le
+ *  visiteur était simplement parti avant.
+ *  @type {import("./evenement.mjs").Evenement<[{ sorte: string, statut?: number }]>} */
+export const PLAN_EN_PANNE = creeEvenement();
 
 /* ------------------------------------------------------------------
    Démarrage : données figées si elles sont dans la page, sinon appel
@@ -178,11 +188,36 @@ export function annonce(/** @type {string} */ txt, /** @type {boolean=} */ erreu
  * l'interface, et vaut « en ligne » derrière un portail captif ou un serveur
  * muet, c'est-à-dire précisément là où l'on se croyait connecté.
  */
-function panneDuChargement(e){
-  return e.name === "TypeError"
-    ? "Plan indisponible : le réseau est injoignable, et ce salon n'a pas " +
-      "encore été ouvert sur cet appareil."
-    : "Plan indisponible : " + e.message;
+function panneDuChargement(/** @type {any} */ e){
+  if (e.sorte === "reseau")
+    return "Plan indisponible : le réseau est injoignable, et ce salon n'a pas " +
+      "encore été ouvert sur cet appareil.";
+  if (e.sorte === "code")
+    return "Plan indisponible : une erreur de la page l'a empêché de paraître. Rechargez-la.";
+  return "Plan indisponible : " + e.message;
+}
+
+/** Une panne nommée : ce qui n'en porte pas est une exception de notre code. */
+const panne = (/** @type {string} */ sorte, /** @type {string} */ message, /** @type {number=} */ statut) =>
+  Object.assign(new Error(message), { sorte, statut });
+
+/**
+ * Le chargement n'aboutit pas : on le dit au visiteur, et à la sonde.
+ *
+ * La demande, la lecture de la réponse et le montage du plan finissaient dans
+ * le même `catch`, où toute `TypeError` passait pour une coupure du réseau —
+ * or c'est aussi celle d'un `undefined` lu par erreur dans `demarre`. Le bug
+ * se montrait alors comme une panne réseau, et ne se signalait à personne.
+ * Les pannes sont désormais nommées là où elles se produisent ; ce qui arrive
+ * ici sans nom vient du code, et part comme une erreur.
+ */
+function echec(/** @type {any} */ e){
+  if (!e || !e.sorte){
+    signaleErreur(e);
+    e = panne("code", String(e && e.message || e));
+  }
+  PLAN_EN_PANNE.emet({ sorte: e.sorte, statut: e.statut });
+  annonce(panneDuChargement(e), true);
 }
 
 /* La version du plan qu'on avait la dernière fois, par salon : c'est elle qui
@@ -294,22 +329,27 @@ export function charge(){
   const depart = entetes.Authorization ? planAdmin(entetes) : demandePlan();
   window.__plan = window.__entete = null;
   return depart
+    // rien n'a répondu : `fetch` ne rejette que pour cela
+    .catch(e => Promise.reject(panne("reseau", e && e.message)))
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que
       // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
       if (r.status === 401 && SESSION_REFUSEE.ecoutee()){
         try { localStorage.removeItem("console-session"); } catch (e) {}
         SESSION_REFUSEE.emet("Session expirée, reconnectez-vous.");
-        return Promise.reject(new Error("Session expirée."));
+        return Promise.reject(panne("session", "Session expirée.", r.status));
       }
-      return r.ok ? r.json()
-                  : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status))));
+      /* Une page d'erreur du relais n'est pas du JSON : son statut reste ce
+         qu'il y a à dire, et non le « Unexpected token » de la lecture. */
+      if (!r.ok) return r.json().catch(() => ({}))
+        .then(j => Promise.reject(panne("http", j.erreur || ("HTTP " + r.status), r.status)));
+      return r.json().catch(() => Promise.reject(panne("http", "réponse illisible", r.status)));
     })
     .then(d => {
-      if (!d.plans?.length) throw new Error("Aucun pavillon : lancez une synchronisation depuis la console.");
+      if (!d.plans?.length) throw panne("vide", "Aucun pavillon : lancez une synchronisation depuis la console.");
       demarre(d);
     })
-    .catch(e => annonce(panneDuChargement(e), true));
+    .catch(echec);
 }
 
 /**

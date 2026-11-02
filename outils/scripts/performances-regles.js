@@ -41,6 +41,11 @@ const SEUILS = {
   partPertes: 0.02,
   // une version qui fait perdre un cinquième sur un indicateur
   regressionVersion: 0.2,
+  /* Ce qui échoue n'a pas la tolérance de ce qui est lent : une visite sur
+     cinquante sans plan, une sur cent qui plante, c'est déjà une piste. */
+  partSansImage: 0.02,
+  partAvecErreur: 0.01,
+  partEchecApi: 0.02,
 };
 
 const ms = (v) => Math.round(v) + " ms";
@@ -159,6 +164,30 @@ const REGLES = [
         detail: f.famille + " : " + f.avecPerte + " visites sur " + f.visites,
       })),
   },
+  ...[
+    { id: "sans-image", seuil: "partSansImage", cle: "sansImage",
+      titre: "Le plan ne paraît pas",
+      levier: "Lire la raison dite par le démarrage (`demarrage.mjs` `PLAN_EN_PANNE`) dans les relevés, et les erreurs du même jour.",
+      quoi: "visites sans plan affiché" },
+    { id: "erreurs-visites", seuil: "partAvecErreur", cle: "avecErreur",
+      titre: "La page lève des erreurs pendant les visites",
+      levier: "Les erreurs de la semaine, ramenées à leur module : `lecture-perf.js erreurs`, et `releves` pour la visite où chacune est tombée.",
+      quoi: "visites avec une erreur" },
+    { id: "api-echecs", seuil: "partEchecApi", cle: "avecEchecApi",
+      titre: "Nos services répondent en erreur",
+      levier: "Les statuts par visite (`api.statuts` des relevés), puis les journaux du Worker et des fonctions.",
+      quoi: "visites avec un appel en erreur" },
+  ].map((r) => ({
+    id: r.id, titre: r.titre, levier: r.levier,
+    applique: (ind) => {
+      const n = ind.echecs ? ind.echecs[r.cle] : 0;
+      const part = ind.visites ? n / ind.visites : 0;
+      if (ind.visites < MIN_VISITES || !(part > SEUILS[r.seuil])) return [];
+      return [{ touche: n, ecart: (part - SEUILS[r.seuil]) / SEUILS[r.seuil],
+        detail: n + " " + r.quoi + " sur " + ind.visites + " (" + Math.round(part * 100) + " %, seuil " +
+          Math.round(SEUILS[r.seuil] * 100) + " %)" }];
+    },
+  })),
 ];
 
 /** Les pistes de la semaine, la plus rentable d'abord. */

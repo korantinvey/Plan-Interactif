@@ -6,6 +6,9 @@ module.exports = {
   "Plan indisponible : le réseau est injoignable, et ce salon n'a pas encore été ouvert sur cet appareil.":
     "Map unavailable: the network cannot be reached, and this show has not been opened on this device yet.",
   "Plan indisponible : {raison}": "Map unavailable: {raison}",
+  "Plan indisponible : une erreur de la page l'a empêché de paraître. Rechargez-la.":
+    "Map unavailable: an error in the page kept it from appearing. Please reload it.",
+  "réponse illisible": "unreadable response",
   "Chargement du plan…": "Loading the map…",
   "Session expirée, reconnectez-vous.": "Session expired, please sign in again.",
   "Session expirée.": "Session expired.",

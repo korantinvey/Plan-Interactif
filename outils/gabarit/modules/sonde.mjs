@@ -28,11 +28,20 @@
 
    Une erreur de la sonde ne doit jamais devenir une erreur du plan : chaque
    écoute est sous garde.
+
+   Ce qui a échoué y a sa place, à côté de ce qui a été lent : les erreurs de
+   la page pendant la visite (`erreurs.mjs` `bilanErreurs`, que la base ne
+   comptait que par jour), la raison d'un plan qui n'a pas paru
+   (`demarrage.mjs` `PLAN_EN_PANNE`), si la page était cachée avant de
+   paraître — un départ, non une panne —, les appels à nos services qui ont
+   répondu en erreur, et les visites d'un navigateur piloté (`robot`), que la
+   fiche du lundi écarte de ses médianes.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
-import { PLAN_DEMARRE } from "./demarrage.mjs";
+import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
+import { bilanErreurs } from "./erreurs.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
 import { mesureOuverte, supportMesure } from "./mesure.mjs";
@@ -92,6 +101,13 @@ const vue0 = () => ({ gestes: 0, tranches: TRANCHES.map(() => 0), saccades: 0 })
 
 /** @type {any} */
 let V = null;
+/* Ce que l'ouverture de la page a connu avant de paraître : une page cachée
+   (un onglet ouvert en arrière-plan, une application quittée aussitôt) n'a
+   pas paru parce qu'on ne la regardait pas ; une panne, parce qu'elle ne le
+   pouvait pas. */
+let cacheeAvant = false;
+/** @type {{ sorte: string, statut?: number } | null} */
+let panne = null;
 
 /** Une visite neuve. `chargee` dit si elle commence avec la page : une borne
  *  qui change d'heure, une page revenue du cache arrière n'ont rien rechargé,
@@ -104,6 +120,7 @@ function nouvelleVisite(/** @type {boolean} */ chargee){
       survols: { n: 0, pireMs: 0 } },
     /** @type {number[]} */ repeints: [], nRepeints: 0, maxRepeint: 0,
     /** @type {any[]} */ deck: [], nDeck: 0, pertes: 0, picMo: 0 };
+  if (chargee && (document.hidden || /** @type {any} */ (document).prerendering)) cacheeAvant = true;
 }
 
 /* ------------------------------------------------------------
@@ -299,13 +316,24 @@ let carteLue = false;
 function lisAppareil(creux = false){
   if (!APPAREIL){
     // la taille de la fenêtre n'apprend rien sur l'appareil, et le distingue un peu plus
-    const a = appareil({ agentComplet: false, carte: false });
+    const a = /** @type {any} */ (appareil({ agentComplet: false, carte: false }));
     delete a.fenetre; delete a.carte;
+    /* Un navigateur piloté — nos essais, un robot d'aperçu, une surveillance —
+       ne dit rien du visiteur : le relevé part quand même (les essais le
+       lisent), marqué, et la fiche l'écarte. Ceux du 1er novembre 2026, sans
+       écran ni carte graphique, tiraient à eux seuls la médiane de
+       l'ouverture sur poste fixe à 11 s. */
+    if (navigator.webdriver || /Headless/.test(navigator.userAgent)) a.robot = true;
     APPAREIL = a;
   }
   if (!carteLue){
     const gl = contexteDuPlan();
-    if (gl || creux){ carteLue = true; APPAREIL.carte = carteGraphique(gl) || undefined; }
+    if (gl || creux){
+      carteLue = true;
+      APPAREIL.carte = carteGraphique(gl) || undefined;
+      // sans carte graphique, le navigateur dessine au processeur : une autre classe de machine
+      if (APPAREIL.carte && /SwiftShader|llvmpipe|Software/i.test(APPAREIL.carte.puce || "")) APPAREIL.carte.logiciel = true;
+    }
   }
   return APPAREIL;
 }
@@ -332,6 +360,30 @@ function finDesDonnees(/** @type {number} */ jusqua){
   return fin ? Math.round(fin) : undefined;
 }
 
+/**
+ * Les appels à nos services qui ont répondu en erreur, par statut.
+ *
+ * Le navigateur garde le statut de chaque ressource (`responseStatus`) ; le
+ * lire ne coûte rien et ne demande aucune écoute de `fetch`. Il manque là où
+ * le navigateur ne le donne pas (Safari) : rien n'y est alors compté, plutôt
+ * qu'un faux zéro. Une demande sans réponse du tout n'y figure pas — c'est
+ * `PLAN_EN_PANNE` qui la dit, pour celle qui compte.
+ */
+function appelsEnEchec(){
+  if (!API) return undefined;
+  const base = new URL(API.replace(/[^/]*$/, ""), location.href).href;
+  /** @type {Record<string, number>} */
+  const statuts = {};
+  let echecs = 0;
+  for (const e of performance.getEntriesByType("resource")){
+    const st = /** @type {any} */ (e).responseStatus;
+    if (!(st >= 400) || !e.name.startsWith(base)) continue;
+    echecs++;
+    if (Object.keys(statuts).length < 4 || statuts[st]) statuts[st] = (statuts[st] || 0) + 1;
+  }
+  return echecs ? { echecs, statuts } : undefined;
+}
+
 /** Le bilan de l'ouverture, figé dès que le plan est affiché : ce que la
  *  visite charge ensuite (vignettes, fonds) n'est plus l'ouverture, et le
  *  rapport le dit « téléchargé à l'ouverture du plan ». Tant que rien n'est
@@ -350,6 +402,8 @@ function leChargement(){
       "plan-demarre": J["plan-demarre"], donnees: finDesDonnees(jusqua), "plan-affiche": affiche, lcp: J.lcp },
     transfertKo: c.transfertKo, depuisCache: c.depuisCache,
     lourds: c.ressources.map(({ fichier, sorte, ms, transfertKo, tailleKo }) => ({ fichier, sorte, ms, transfertKo, tailleKo })),
+    cacheeAvant: cacheeAvant || undefined,
+    panne: panne || undefined,
   };
   if (affiche !== undefined) OUVERTURE = bilan;
   return bilan;
@@ -399,6 +453,8 @@ export function resumeSonde(){
         fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
         position: p.url && p.position >= 0 ? p.position : undefined })) },
     reactivite: { ...V.reactivite, survols: { ...V.reactivite.survols } },
+    erreurs: bilanErreurs(),
+    api: appelsEnEchec(),
     gpu: laCarte(),
     memoire: { picMo: V.picMo || undefined },
     appareil: lisAppareil(),
@@ -432,7 +488,7 @@ function tronque(/** @type {any} */ r){
   const lourds = r.chargement && r.chargement.lourds;
   while (lourds && lourds.length && octets(r) > PLAFOND) lourds.pop();
   if (octets(r) > PLAFOND) coupe(r, 60);
-  for (const [groupe, champ] of [["gpu", "logos"], ["gels", "pires"], ["appareil", "carte"], ["appareil", ""]]){
+  for (const [groupe, champ] of [["gpu", "logos"], ["gels", "pires"], ["erreurs", "premieres"], ["appareil", "carte"], ["appareil", ""]]){
     if (octets(r) <= PLAFOND) break;
     if (!champ) delete r[groupe];
     else if (r[groupe]) delete r[groupe][champ];
@@ -605,6 +661,11 @@ function demarre(){
   }));
   CONTEXTE_PERDU.ecoute(sur(() => { V.pertes++; }));
   PLAN_DEMARRE.ecoute(sur(() => { J["plan-demarre"] = Math.round(performance.now()); }));
+  // le plan ne paraîtra pas : inutile d'attendre `SANS_AFFICHAGE` pour le dire
+  PLAN_EN_PANNE.ecoute(sur((/** @type {{ sorte: string, statut?: number }} */ p) => {
+    panne = { sorte: p.sorte, statut: p.statut || undefined };
+    envoie();
+  }));
   quandAffiche(sur(() => {
     J["plan-affiche"] = Math.round(performance.now());
     setTimeout(sur(() => envoie()), PREMIER_ENVOI);
@@ -617,6 +678,7 @@ function demarre(){
 
   addEventListener("visibilitychange", sur(() => {
     if (document.visibilityState !== "hidden") return;
+    if (!estAffiche()) cacheeAvant = true;
     // un doigt resté posé quand la page s'est cachée ne se lèvera jamais pour elle
     doigts.clear();
     envoie(true);

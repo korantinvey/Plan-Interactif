@@ -323,6 +323,60 @@ test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", 
     const a = envois[0].resume.appareil;
     expect(typeof a.navigateur.famille).toBe("string");
     expect(typeof a.mobile).toBe("boolean");
+    // un départ, non une panne : la fiche ne le comptera pas parmi les plans absents
+    expect(envois[0].resume.chargement.cacheeAvant).toBe(true);
+    expect(envois[0].resume.chargement.panne).toBeUndefined();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("le serveur refuse le plan : la panne part sans attendre, nommée, et le robot se dit", async ({ page }) => {
+    await prepare(page);
+    const envois = await releve(page);
+    // la page d'erreur d'un relais n'est pas du JSON
+    await page.route("**/api/plan**", (r) => r.fulfill({ status: 502, contentType: "text/html", body: "<h1>502</h1>" }));
+    await page.goto(PLAN);
+    await expect(page.locator("#list .empty")).toContainText("Plan indisponible : HTTP 502");
+    // bien avant les trente secondes d'un plan qui ne paraît pas
+    await expect.poll(() => envois.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    const r = envois.at(-1).resume;
+    expect(r.chargement.panne).toEqual({ sorte: "http", statut: 502 });
+    expect(r.chargement.cacheeAvant).toBeUndefined();
+    expect(r.chargement.jalons["plan-affiche"]).toBeUndefined();
+    expect(r.api.echecs).toBeGreaterThan(0);
+    expect(r.api.statuts["502"]).toBeGreaterThan(0);
+    // Playwright pilote le navigateur : la fiche du lundi l'écartera
+    expect(r.appareil.robot).toBe(true);
+    expect(r.erreurs).toBeUndefined();
+  });
+
+  test("une exception au démarrage : signalée, jointe au relevé, et non prise pour le réseau", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    const signalees = [];
+    await page.route("**/api/erreur", (r) => {
+      signalees.push(JSON.parse(r.request().postData() || "null"));
+      return r.fulfill({ status: 204, body: "" });
+    });
+    // un pavillon vide : le montage lit ce qui n'existe pas
+    await page.route((u) => u.pathname === "/api/plan" && !u.searchParams.has("entete"),
+      (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ plans: [null] }) }));
+    await page.goto(PLAN);
+    await expect(page.locator("#list .empty")).toContainText("une erreur de la page");
+    await expect(page.locator("#list .empty")).not.toContainText("réseau");
+    await expect.poll(() => envois.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    const r = envois.at(-1).resume;
+    expect(r.chargement.panne.sorte).toBe("code");
+    expect(r.erreurs.n).toBeGreaterThan(0);
+    const e = r.erreurs.premieres[0];
+    expect(e.message).toMatch(/TypeError/);
+    // la position dans le script servi, que le Worker ramène au module
+    expect(e.fichier).toMatch(/^\/versions\/plan\.[0-9a-f]{10}\.js$/);
+    expect(e.ligne).toBeGreaterThan(0);
+    expect(e.colonne).toBeGreaterThan(0);
+    // et la même erreur part au relais des erreurs, comme avant la garde
+    await expect.poll(() => signalees.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    expect(signalees[0].erreurs[0].message).toBe(e.message);
+    // rattrapée par le démarrage, elle ne remonte pas jusqu'à la console
     expect(erreurs).toEqual([]);
   });
 

@@ -307,6 +307,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | suggestion, visite guidée, générique du sponsor | `modules/suggestion.mjs`, `modules/tutoriel.mjs`, `modules/sponsor.mjs` |
 | installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/index.mjs` `manifeste` |
 | mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/index.mjs` `mesure`, `erreur` |
+| sonde de performance, ce qui a échoué pendant une visite | `modules/sonde.mjs` (avec `modules/erreurs.mjs` `bilanErreurs`, `modules/demarrage.mjs` `PLAN_EN_PANNE`) ; relais `src/index.mjs` `sonde` ; fiche du lundi `outils/scripts/performances.js`, lecture `outils/scripts/lecture-perf.js` |
 | carte de chaleur, remise à zéro | `modules/chaleur.mjs` |
 | accès administrateur, session, bande d'administration | `modules/acces-admin.mjs`, `modules/session.mjs`, `modules/bande-admin.mjs`, `modules/mode-admin.mjs` |
 | console multi-événements | `modules/console.mjs`, `modules/ecran-console.mjs`, socle `modules/socle-console.mjs` |
