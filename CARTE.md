@@ -1406,14 +1406,14 @@ appels · batiments · calage-carte · calques-dessin · edition · enregistreme
 outil-comptoir · outil-escalier · outil-foodtruck · placement-libelles
 reprise-emplacements
 
-### `modules/gestes-admin.mjs` — 198 l. → plan-admin
+### `modules/gestes-admin.mjs` — 201 l. → plan-admin
 
 - l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
 
 Fonctions :
 
-`appui` 47 · `suit` 71 · `leve` 83 · `annuleGeste` 97 · `clavier` 106 · `echap` 154
-`apresEchap` 175 · `entree` 182 · `brancheGestesAdmin` 190
+`appui` 47 · `suit` 74 · `leve` 86 · `annuleGeste` 100 · `clavier` 109 · `echap` 157
+`apresEchap` 178 · `entree` 185 · `brancheGestesAdmin` 193
 
 Importe :
 
@@ -2063,16 +2063,16 @@ Importé par :
 bande-admin · batiments · calage-carte · dessin · enregistrement · ordre-calques
 outil-dessin · pile · rendu · reprise-emplacements · volets · vue
 
-### `modules/outil-comptoir.mjs` — 208 l. → plan-admin
+### `modules/outil-comptoir.mjs` — 220 l. → plan-admin
 
 - l.1 · Le comptoir d'un accueil, attrapé sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
-`aire` 42 · `anneauDe` 46 · `emprise` 52 · `reglageDe` 59 · `zoneDe` 71 · `lis` 75
-`metresParPixel` 84 · `vise` 87 · `choisitComptoir` 108 · `pose` 120 · `reglageCourant` 132
-`comptoirPointerDown` 139 · `comptoirPointerMove` 151 · `comptoirPointerUp` 170
-`lacheComptoir` 180 · `comptoirClavier` 186 · `relacheComptoir` 204
+`aire` 49 · `anneauDe` 53 · `emprise` 59 · `reglageDe` 66 · `zoneDe` 78 · `lis` 82
+`metresParPixel` 91 · `vise` 94 · `choisitComptoir` 115 · `pose` 127 · `reglageCourant` 139
+`comptoirPointerDown` 148 · `comptoirPointerMove` 162 · `comptoirPointerUp` 182
+`lacheComptoir` 192 · `comptoirClavier` 198 · `relacheComptoir` 216
 
 Importe :
 
@@ -2109,16 +2109,16 @@ Importé par :
 
 batiments · gestes-admin · ordre-calques · pile · plan-admin
 
-### `modules/outil-escalier.mjs` — 213 l. → plan-admin
+### `modules/outil-escalier.mjs` — 222 l. → plan-admin
 
 - l.1 · L'escalier d'un repère, attrapé sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
-`noeudDe` 49 · `metresParPixel` 53 · `lis` 56 · `dedans` 71 · `distance` 81 · `vise` 95
-`choisitEscalier` 113 · `refais` 124 · `angleBorne` 130 · `escalierPointerDown` 135
-`escalierPointerMove` 147 · `escalierPointerUp` 170 · `lacheEscalier` 180
-`escalierClavier` 186 · `relacheEscalier` 209
+`noeudDe` 54 · `metresParPixel` 58 · `lis` 61 · `dedans` 76 · `distance` 86 · `vise` 100
+`choisitEscalier` 118 · `refais` 129 · `angleBorne` 135 · `escalierPointerDown` 142
+`escalierPointerMove` 155 · `escalierPointerUp` 179 · `lacheEscalier` 189
+`escalierClavier` 195 · `relacheEscalier` 218
 
 Importe :
 
@@ -2128,16 +2128,16 @@ Importé par :
 
 gestes-admin
 
-### `modules/outil-foodtruck.mjs` — 193 l. → plan-admin
+### `modules/outil-foodtruck.mjs` — 195 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck, attrapés sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
 `zoneDe` 51 · `reglageDe` 55 · `lis` 61 · `metresParPixel` 69 · `vise` 73
-`choisitFoodtruck` 96 · `pose` 107 · `foodtruckPointerDown` 118 · `foodtruckPointerMove` 134
-`foodtruckPointerUp` 155 · `lacheFoodtruck` 165 · `foodtruckClavier` 171
-`relacheFoodtruck` 189
+`choisitFoodtruck` 96 · `pose` 107 · `foodtruckPointerDown` 120 · `foodtruckPointerMove` 136
+`foodtruckPointerUp` 157 · `lacheFoodtruck` 167 · `foodtruckClavier` 173
+`relacheFoodtruck` 191
 
 Importe :
 

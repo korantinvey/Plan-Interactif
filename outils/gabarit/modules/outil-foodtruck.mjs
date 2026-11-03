@@ -115,6 +115,8 @@ function pose(/** @type {{ id: string, an: number[][] }} */ z, /** @type {number
   ecritCamions(z.id, liste);
 }
 
+/** Rend « prend » si l'appui tient l'objet choisi, « choisit » s'il vient
+ *  seulement de le choisir — l'appui suit alors son cours —, faux sinon. */
 export function foodtruckPointerDown(/** @type {PointerEvent} */ e){
   if (!ADMIN || !cameraEnJeu() || !e.isPrimary) return false;
   const p = versPlan(e.clientX, e.clientY);
@@ -122,13 +124,13 @@ export function foodtruckPointerDown(/** @type {PointerEvent} */ e){
   if (!z){ choisitFoodtruck(null); return false; }
   /* Un camion qui n'était pas choisi l'est, et l'appui continue son chemin :
      il ne se déplace qu'au geste suivant, une fois choisi. */
-  if (!z.tenu){ choisitFoodtruck({ id: z.id, i: z.i }); return false; }
+  if (!z.tenu){ choisitFoodtruck({ id: z.id, i: z.i }); return "choisit"; }
   e.preventDefault();
   const c = z.c;
   geste = { genre: z.genre, id: z.id, i: z.i, dx: p[0] - c.cx, dy: p[1] - c.cy,
     x: e.clientX, y: e.clientY, bouge: false };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
-  return true;
+  return "prend";
 }
 
 export function foodtruckPointerMove(/** @type {PointerEvent} */ e){

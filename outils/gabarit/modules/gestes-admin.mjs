@@ -60,12 +60,15 @@ function appui(/** @type {PointerEvent} */ e){
      qu'on glisserait. */
   /* L'escalier d'un repère se prend de même, et avant le comptoir : posé sur
      un accueil, c'est lui qu'on vise. Tenir l'un relâche l'autre — un seul
-     objet sous la main, et sous les flèches. */
-  if (escalierPointerDown(e)){ relacheComptoir(); relacheFoodtruck(); return true; }
-  if (comptoirPointerDown(e)){ relacheFoodtruck(); return true; }
+     objet sous la main, et sous les flèches. Un objet qui n'était pas choisi
+     l'est sans retenir l'appui (« choisit ») : le plan glisse ou la fiche
+     s'ouvre comme ailleurs, et seul l'objet déjà choisi se déplace. */
+  const escalier = escalierPointerDown(e);
+  if (escalier){ relacheComptoir(); relacheFoodtruck(); return escalier === "prend"; }
+  const comptoir = comptoirPointerDown(e);
+  if (comptoir){ relacheFoodtruck(); return comptoir === "prend"; }
   // les camions d'un foodtruck, de même, en dernier : on ne les pose pas sur un accueil
-  if (foodtruckPointerDown(e)) return true;
-  return false;
+  return foodtruckPointerDown(e) === "prend";
 }
 
 function suit(/** @type {PointerEvent} */ e){
