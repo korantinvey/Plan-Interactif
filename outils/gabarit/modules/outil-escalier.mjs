@@ -5,9 +5,11 @@
    objet sous sa pastille (`decor.mjs` `objetRepere`). Ses marches montaient
    toujours vers le haut du plan, rarement dans le sens du bâtiment. Comme le
    comptoir d'un accueil (`outil-comptoir.mjs`), l'objet se prend donc à la
-   main : un appui dessus le choisit — il bleuit et sort sa poignée, dans le
-   sens où l'on monte —, le glisser le déplace avec sa pastille, la poignée
-   le tourne par pas de cinq degrés (Maj libère le pas). Les flèches le
+   main, en deux temps : un premier appui le choisit — il bleuit et sort sa
+   poignée, dans le sens où l'on monte — sans retenir l'appui, qui glisse le
+   plan ou ouvre la fiche comme ailleurs ; c'est seulement l'objet déjà
+   choisi que le glisser déplace avec sa pastille, après quelques pixels, et
+   que la poignée tourne par pas de cinq degrés (Maj libère le pas). Les flèches le
    déplacent au quart de mètre, au mètre Maj tenue ; R le tourne d'un quart de
    tour ; Échap ou un appui ailleurs le relâche.
 
@@ -38,10 +40,13 @@ import { redessineForme } from "./dessin.mjs";
 /* Le pas de l'angle sous la poignée : un escalier suit les murs, droit ou
    de biais, rarement entre deux. */
 const PAS_ANGLE = 5;
+/* Ce que la main parcourt, en pixels, avant que l'objet la suive : un appui
+   bref sur l'objet choisi ne doit pas le décaler d'un tremblement. */
+const SEUIL_GLISSER = 6;
 
 /** Le repère tenu : l'identifiant de sa forme, ou rien. */
 let choisi = /** @type {string | null} */ (null);
-/** @type {{ genre: string, id: string, dx: number, dy: number, bouge: boolean } | null} */
+/** @type {{ genre: string, id: string, dx: number, dy: number, x: number, y: number, bouge: boolean } | null} */
 let geste = null;
 // un escalier tenu sous le doigt : l'envoi au repos attend qu'on le lâche
 inscritGesteTenu(() => geste && geste.bouge);
@@ -132,20 +137,24 @@ const angleBorne = (/** @type {number} */ a) => {
   return b === -180 ? 180 : b;
 };
 
+/** Rend « prend » si l'appui tient l'objet choisi, « choisit » s'il vient
+ *  seulement de le choisir — l'appui suit alors son cours —, faux sinon. */
 export function escalierPointerDown(/** @type {PointerEvent} */ e){
   if (!ADMIN || !cameraEnJeu() || !e.isPrimary) return false;
   const p = versPlan(e.clientX, e.clientY);
   const z = vise(p);
   if (!z){ choisitEscalier(null); return false; }
+  // un objet qui n'était pas choisi l'est, sans retenir l'appui
+  if (z.id !== choisi){ choisitEscalier(z.id); return "choisit"; }
   e.preventDefault();
-  choisitEscalier(z.id);
-  geste = { genre: z.genre, id: z.id, dx: p[0], dy: p[1], bouge: false };
+  geste = { genre: z.genre, id: z.id, dx: p[0], dy: p[1], x: e.clientX, y: e.clientY, bouge: false };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
-  return true;
+  return "prend";
 }
 
 export function escalierPointerMove(/** @type {PointerEvent} */ e){
   if (!geste) return false;
+  if (!geste.bouge && Math.abs(e.clientX - geste.x) + Math.abs(e.clientY - geste.y) <= SEUIL_GLISSER) return true;
   const g = noeudDe(geste.id), z = g && lis(g);
   if (!z){ geste = null; return true; }
   const p = versPlan(e.clientX, e.clientY);

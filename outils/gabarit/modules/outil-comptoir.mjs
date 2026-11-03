@@ -2,9 +2,13 @@
    Le comptoir d'un accueil, attrapé sur le plan — l'outil de l'exploitant
 
    En vue immersive, le comptoir d'une zone « Accueil » (`decor.mjs`
-   `comptoir`) se prend à la main : un appui dessus le choisit — il bleuit et
-   sort sa poignée —, le glisser le déplace, la poignée ronde le tourne, par
-   pas de cinq degrés (Maj libère le pas). Les flèches l'ajustent au quart de
+   `comptoir`) se prend à la main, en deux temps : un premier appui le
+   choisit — il bleuit et sort sa poignée — sans le retenir, et c'est
+   seulement le comptoir déjà choisi que le glisser déplace et que la poignée
+   ronde tourne, par pas de cinq degrés (Maj libère le pas). En un temps,
+   chaque glisser de la vue qui partait de lui l'emportait : le premier appui
+   suit donc son cours, et même choisi, le comptoir n'obéit à la main
+   qu'après quelques pixels. Les flèches l'ajustent au quart de
    mètre, au mètre Maj tenue ; R le tourne d'un quart de tour ; Échap ou un
    appui ailleurs le relâche.
 
@@ -37,6 +41,9 @@ import { inscritGesteTenu } from "./geste-tenu.mjs";
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, ou de biais
    à quarante-cinq degrés, rarement entre deux. */
 const PAS_ANGLE = 5;
+/* Ce que la main parcourt, en pixels, avant que l'objet la suive : un appui
+   bref sur l'objet choisi ne doit pas le décaler d'un tremblement. */
+const SEUIL_GLISSER = 6;
 
 /** L'aire signée d'un anneau. */
 const aire = (/** @type {number[][]} */ an) =>
@@ -63,7 +70,7 @@ const reglageDe = (/** @type {string} */ id) => {
 
 /** Le comptoir choisi : l'identifiant de sa zone, ou rien. */
 let choisi = /** @type {string | null} */ (null);
-/** @type {{ genre: string, id: string, dx: number, dy: number, bouge: boolean } | null} */
+/** @type {{ genre: string, id: string, dx: number, dy: number, x: number, y: number, bouge: boolean } | null} */
 let geste = null;
 // un comptoir tenu sous le doigt : l'envoi au repos attend qu'on le lâche
 inscritGesteTenu(() => geste && geste.bouge);
@@ -136,20 +143,25 @@ function reglageCourant(/** @type {{ id: string, an: number[][], c: any }} */ z)
   return { u: (z.c.cx - e.x0) / e.w, v: (z.c.cy - e.y0) / e.h, a: z.c.angle };
 }
 
+/** Rend « prend » si l'appui tient l'objet choisi, « choisit » s'il vient
+ *  seulement de le choisir — l'appui suit alors son cours —, faux sinon. */
 export function comptoirPointerDown(/** @type {PointerEvent} */ e){
   if (!ADMIN || !cameraEnJeu() || !e.isPrimary) return false;
   const p = versPlan(e.clientX, e.clientY);
   const z = vise(p);
   if (!z){ choisitComptoir(null); return false; }
+  // un comptoir qui n'était pas choisi l'est, sans retenir l'appui
+  if (z.id !== choisi){ choisitComptoir(z.id); return "choisit"; }
   e.preventDefault();
-  choisitComptoir(z.id);
-  geste = { genre: z.genre, id: z.id, dx: p[0] - z.c.cx, dy: p[1] - z.c.cy, bouge: false };
+  geste = { genre: z.genre, id: z.id, dx: p[0] - z.c.cx, dy: p[1] - z.c.cy,
+    x: e.clientX, y: e.clientY, bouge: false };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
-  return true;
+  return "prend";
 }
 
 export function comptoirPointerMove(/** @type {PointerEvent} */ e){
   if (!geste) return false;
+  if (!geste.bouge && Math.abs(e.clientX - geste.x) + Math.abs(e.clientY - geste.y) <= SEUIL_GLISSER) return true;
   const g = zoneDe(geste.id), z = g && lis(g);
   if (!z){ geste = null; return true; }
   const p = versPlan(e.clientX, e.clientY), r = reglageCourant(z), em = emprise(z.an);
