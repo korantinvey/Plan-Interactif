@@ -3,9 +3,14 @@
 
    En vue immersive, chaque camion d'une zone « Foodtruck » (`decor.mjs`
    `camions`) se prend à la main, comme le comptoir d'un accueil
-   (`outil-comptoir.mjs`) : un appui dessus le choisit — il bleuit et sort sa
-   poignée au bout du capot —, le glisser le déplace, la poignée le tourne,
-   par pas de cinq degrés (Maj libère le pas). Les flèches l'ajustent au
+   (`outil-comptoir.mjs`), mais en deux temps : un premier appui le choisit —
+   il bleuit et sort sa poignée au bout du capot — sans le retenir, et c'est
+   seulement le camion déjà choisi que le glisser déplace et que la poignée
+   tourne, par pas de cinq degrés (Maj libère le pas). Les camions couvrent
+   leur zone, souvent au milieu du plan : en un temps, chaque glisser de la
+   vue qui partait de l'un d'eux l'emportait avec lui. Le premier appui suit
+   donc son cours — glisser le plan, ouvrir la fiche de la zone —, et même sur
+   le camion choisi, la main ne le déplace qu'après quelques pixels. Les flèches l'ajustent au
    quart de mètre, au mètre Maj tenue ; R le tourne d'un quart de tour ;
    Échap ou un appui ailleurs le relâche. Le nombre de camions, lui, se règle
    dans la fiche de la zone (`reglage-foodtrucks.mjs`).
@@ -33,10 +38,13 @@ import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 
 const PAS_ANGLE = 5;
+/* Ce que la main parcourt, en pixels, avant que le camion la suive : un appui
+   bref sur le camion choisi ne doit pas le décaler d'un tremblement. */
+const SEUIL_GLISSER = 6;
 
 /** Le camion choisi : sa zone et son rang, ou rien. */
 let choisi = /** @type {{ id: string, i: number } | null} */ (null);
-/** @type {{ genre: string, id: string, i: number, dx: number, dy: number, bouge: boolean } | null} */
+/** @type {{ genre: string, id: string, i: number, dx: number, dy: number, x: number, y: number, bouge: boolean } | null} */
 let geste = null;
 inscritGesteTenu(() => geste && geste.bouge);
 
@@ -112,16 +120,20 @@ export function foodtruckPointerDown(/** @type {PointerEvent} */ e){
   const p = versPlan(e.clientX, e.clientY);
   const z = vise(p);
   if (!z){ choisitFoodtruck(null); return false; }
+  /* Un camion qui n'était pas choisi l'est, et l'appui continue son chemin :
+     il ne se déplace qu'au geste suivant, une fois choisi. */
+  if (!z.tenu){ choisitFoodtruck({ id: z.id, i: z.i }); return false; }
   e.preventDefault();
-  choisitFoodtruck({ id: z.id, i: z.i });
   const c = z.c;
-  geste = { genre: z.genre, id: z.id, i: z.i, dx: p[0] - c.cx, dy: p[1] - c.cy, bouge: false };
+  geste = { genre: z.genre, id: z.id, i: z.i, dx: p[0] - c.cx, dy: p[1] - c.cy,
+    x: e.clientX, y: e.clientY, bouge: false };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
 
 export function foodtruckPointerMove(/** @type {PointerEvent} */ e){
   if (!geste) return false;
+  if (!geste.bouge && Math.abs(e.clientX - geste.x) + Math.abs(e.clientY - geste.y) <= SEUIL_GLISSER) return true;
   const g = zoneDe(geste.id), z = g && lis(g), c = z && z.liste[geste.i];
   if (!z || !c){ geste = null; return true; }
   const p = versPlan(e.clientX, e.clientY), em = emprise(z.an);

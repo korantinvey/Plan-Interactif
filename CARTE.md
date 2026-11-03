@@ -2128,16 +2128,16 @@ Importé par :
 
 gestes-admin
 
-### `modules/outil-foodtruck.mjs` — 181 l. → plan-admin
+### `modules/outil-foodtruck.mjs` — 193 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck, attrapés sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
-`zoneDe` 43 · `reglageDe` 47 · `lis` 53 · `metresParPixel` 61 · `vise` 65
-`choisitFoodtruck` 88 · `pose` 99 · `foodtruckPointerDown` 110 · `foodtruckPointerMove` 123
-`foodtruckPointerUp` 143 · `lacheFoodtruck` 153 · `foodtruckClavier` 159
-`relacheFoodtruck` 177
+`zoneDe` 51 · `reglageDe` 55 · `lis` 61 · `metresParPixel` 69 · `vise` 73
+`choisitFoodtruck` 96 · `pose` 107 · `foodtruckPointerDown` 118 · `foodtruckPointerMove` 134
+`foodtruckPointerUp` 155 · `lacheFoodtruck` 165 · `foodtruckClavier` 171
+`relacheFoodtruck` 189
 
 Importe :
 
