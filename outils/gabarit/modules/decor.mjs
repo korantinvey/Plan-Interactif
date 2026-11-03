@@ -36,7 +36,7 @@ const PIECES_MAX = 600;
  * @property {number[][]} polygon   le contour au sol, en mètres
  * @property {number} haut          la hauteur, en mètres
  * @property {string} role          plateau, assise, scene, ecran, comptoir, plante, portant,
- *                                  canape, tapis, carrosserie, habitacle, store,
+ *                                  canape, tapis, carrosserie, habitacle, store, enseigne,
  *                                  et sur un comptoir choisi : comptoir-choisi, tige, poignee
  */
 
@@ -385,6 +385,15 @@ export function poigneeCamion(c){
    de loin, et la devanture n'a plus de comptoir à laisser voir. */
 const DEVANTURE = { x: -.7, large: 4.6, z0: .15, z1: 2.6 };
 const TOIT = { x: -.7, y: -.25, large: 4.6, prof: 1.7 };
+/* L'enseigne dressée sur le toit, en volume. La devanture n'a qu'un flanc :
+   un camion garé de biais, ou dos à la vue, ne montrait son logo que de
+   très près en fuyant, ou pas du tout. Le panneau, entre le store et le
+   flanc fermé, porte le logo sur ses deux faces, et se lit de presque
+   partout — c'est ce que portent les vrais camions. Il pose sur le toit
+   (`HAUT_CAISSE`), le logo à `marge` de ses bords ; sa planche, montée du
+   sol comme toute pièce, ne paraît qu'au-dessus de la caisse qui la cache. */
+const HAUT_CAISSE = 2.7;
+const ENSEIGNE = { x: -.7, y: -.25, large: 3.4, haut: 1, marge: .08, demi: .03 };
 
 /**
  * Les logos des camions d'une zone, chacun par les quatre coins de l'image —
@@ -421,7 +430,50 @@ export function enseignesCamions(anneau, reglage, aPlat){
       // un rien devant le flanc de la caisse, pour ne pas s'y confondre ; vu de face, l'arrière est à gauche
       const y = 1.15 + .03, g = DEVANTURE.x - w / 2, d = DEVANTURE.x + w / 2;
       out.push({ logo, coins: [plan(g, y, z0), plan(g, y, z1), plan(d, y, z1), plan(d, y, z0)] });
+      /* Les deux faces de l'enseigne, un centimètre hors de sa planche :
+         chacune se lit à l'endroit depuis son côté — l'arrière à gauche vu du
+         comptoir, à droite vu du flanc fermé —, et la planche cache l'autre,
+         qui s'y lirait à l'envers. */
+      const e = enseigne(lr), ze0 = HAUT_CAISSE + ENSEIGNE.marge, ze1 = ze0 + e.h;
+      const ge = ENSEIGNE.x - e.w / 2, de = ENSEIGNE.x + e.w / 2, ecart = ENSEIGNE.demi + .01;
+      const yc = ENSEIGNE.y + ecart, yd = ENSEIGNE.y - ecart;
+      out.push({ logo, coins: [plan(ge, yc, ze0), plan(ge, yc, ze1), plan(de, yc, ze1), plan(de, yc, ze0)] });
+      out.push({ logo, coins: [plan(de, yd, ze0), plan(de, yd, ze1), plan(ge, yd, ze1), plan(ge, yd, ze0)] });
     }
+  });
+  return out;
+}
+
+/** Le logo sur l'enseigne : sa largeur et sa hauteur, en mètres à l'échelle 1. */
+function enseigne(/** @type {number} */ lr){
+  const w = Math.min(ENSEIGNE.large, ENSEIGNE.haut * lr);
+  return { w, h: w / lr };
+}
+
+/**
+ * Les planches des enseignes, en volume : une par camion qui porte un logo
+ * (`enseignesCamions` y imprime ses deux faces). Des pièces du décor, que le
+ * dessin peint avec le reste du mobilier.
+ * @param {number[][]} anneau
+ * @param {{ u: number, v: number, a: number, logo?: string, lr?: number }[] | null} reglage
+ * @returns {Piece[]}
+ */
+export function planchesEnseignes(anneau, reglage){
+  if (!reglageCamionsValide(reglage)) return [];
+  const regl = /** @type {any[]} */ (reglage);
+  /** @type {Piece[]} */
+  const out = [];
+  camions(anneau, reglage).forEach((c, i) => {
+    const r = regl[i];
+    if (!r || !r.logo) return;
+    const lr = Number.isFinite(r.lr) && r.lr > 0 ? Math.min(8, Math.max(.125, r.lr)) : 1;
+    const t = c.angle * Math.PI / 180, dx = Math.cos(t), dy = Math.sin(t), k = c.k;
+    const e = enseigne(lr), dl = e.w / 2 + ENSEIGNE.marge;
+    const haut = (HAUT_CAISSE + e.h + 2 * ENSEIGNE.marge) * k;
+    out.push({ haut, role: "enseigne", polygon: [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
+      const lx = (ENSEIGNE.x + u * dl) * k, ly = (ENSEIGNE.y + v * ENSEIGNE.demi) * k;
+      return [c.cx + lx * dx - ly * dy, c.cy + lx * dy + ly * dx];
+    }) });
   });
   return out;
 }
@@ -504,7 +556,7 @@ export function meuble(type, anneau, reglage = null, enMain = false){
         }) });
       };
       const tenu = enMain === i;
-      boite(-.7, 0, 2.4, 1.15, 2.7 * k, tenu ? "comptoir-choisi" : "carrosserie");
+      boite(-.7, 0, 2.4, 1.15, HAUT_CAISSE * k, tenu ? "comptoir-choisi" : "carrosserie");
       boite(2.4, 0, .7, 1.05, 2.2 * k, "habitacle");
       /* Le store s'arrête deux centimètres en deçà du flanc : monté du sol
          comme toute boîte, sa face dans le plan même de la caisse se

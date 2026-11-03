@@ -39,10 +39,11 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
-import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
+import { meuble, enseignesCamions, planchesEnseignes, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
-import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
+import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos, filtrage }
+  from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
 import { imageSure } from "./sur.mjs";
@@ -1514,6 +1515,8 @@ const TONS_DECOR = {
   tapis: [226, 214, 196, 255],
   // la cabine vitrée d'un foodtruck, et le store rouge qui le signale de loin
   habitacle: [192, 214, 230, 255], store: [214, 84, 72, 255],
+  // l'enseigne sur le toit d'un camion, blanche comme une plaque : le logo s'y lit sur tout fond
+  enseigne: [250, 249, 244, 255],
   marche: [236, 238, 241, 255], flanc: [72, 82, 96, 255], cabine: [192, 214, 230, 255],
 };
 
@@ -1748,7 +1751,9 @@ function meubleZone(el, polygon, couleur, acc){
       if (logo){ r.logo = logo; r.lr = Number(c.lr); }
     });
     for (const e of enseignesCamions(polygon[0], reglage, !cameraEnJeu()))
-      acc.images.push({ href: e.logo, bornes: e.coins, op: 1, el: null, prise: null });
+      acc.images.push({ href: e.logo, bornes: e.coins, op: 1, el: null, prise: null, net: true });
+    if (cameraEnJeu()) for (const p of planchesEnseignes(polygon[0], reglage))
+      acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR.enseigne });
   }
 }
 
@@ -2459,7 +2464,11 @@ function couchesDeBloc(acc, cle){
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
     { pickable: g.items.some(d => d.el || (acc.prises && d.prise)) }));
+  /* Un logo de camion se voit souvent de biais : filtré comme les toits des
+     stands, il ne se brouille pas en fuyant. */
+  const net = acc.images.some(d => d.net) ? filtrage(GL.deck && GL.deck.device) : undefined;
   acc.images.forEach((d, k) => out.push(new L.BitmapLayer({ id: cle + "-image-" + k, image: d.href,
+    ...(d.net ? { textureParameters: net } : {}),
     bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el || (acc.prises && d.prise)), el: d.el, prise: d.prise, ...plat })));
   return out;
 }

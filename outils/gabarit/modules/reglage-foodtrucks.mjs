@@ -69,6 +69,22 @@ export function ecritCamions(id, r){
   });
 }
 
+/* Un logo détouré dont les pixels gardés ne sont, en moyenne, pas plus
+   opaques que cela passe sur une plaque. Les logos francs, sur un aplat ou
+   au trait sombre, restent pleins (O'Cordon, l'esperluette de Funexpo : tout
+   à fait opaques) ; La mie tartine, gris clair et vert d'eau, n'en gardait
+   que la moitié. */
+const OPACITE_PLAQUE = .8;
+/** La marge de la plaque autour du logo, en part de son petit côté. */
+const MARGE_PLAQUE = .1;
+
+/** Le logo détouré est-il trop pâle pour s'imprimer à même la caisse ? */
+function plaqueVoulue(/** @type {Uint8ClampedArray} */ px){
+  let n = 0, somme = 0;
+  for (let i = 3; i < px.length; i += 4) if (px[i] > 16){ n++; somme += px[i]; }
+  return n > 0 && somme / n / 255 < OPACITE_PLAQUE;
+}
+
 /**
  * Le logo réduit, son fond blanc retiré et recadré au plus près — avec la
  * largeur sur la hauteur de ce qui reste.
@@ -78,6 +94,13 @@ export function ecritCamions(id, r){
  * Le même tri que pour le toit des stands (`detourage.mjs`) le retire ; un
  * logo qui n'a pas de fond passe tel quel. Le rapport se lit sur l'image
  * recadrée : la devanture s'y taille sans la déformer.
+ *
+ * Un logo pâle, dessiné pour un fond blanc, ne survit pas au tri : ses traits
+ * clairs y deviennent à demi transparents, et sur la caisse il n'en restait
+ * qu'un semis de points — La mie tartine, sur Funexpo, n'était plus qu'un
+ * cercle gris piqueté. Celui-là s'imprime sur une plaque blanche aux coins
+ * ronds, comme un autocollant : le tri ne sert plus qu'à recadrer, et ce
+ * qu'il a estompé retrouve sur le blanc la teinte qu'il avait sur le fichier.
  * @param {string} src
  * @returns {Promise<{ src: string, lr: number }>}
  */
@@ -102,13 +125,20 @@ function sansFond(src){
       if (x1 < 0) return tenu({ src, lr: w / h });
       ctx.putImageData(img, 0, 0);
       const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+      const m = plaqueVoulue(img.data) ? Math.round(MARGE_PLAQUE * Math.min(cw, ch)) : 0;
       const coupe = document.createElement("canvas");
-      coupe.width = cw; coupe.height = ch;
+      coupe.width = cw + 2 * m; coupe.height = ch + 2 * m;
       const cc = coupe.getContext("2d");
       if (!cc) return tenu({ src, lr: w / h });
-      cc.drawImage(c, x0, y0, cw, ch, 0, 0, cw, ch);
+      if (m){
+        cc.fillStyle = "#fff";
+        cc.beginPath();
+        cc.roundRect(0, 0, coupe.width, coupe.height, m);
+        cc.fill();
+      }
+      cc.drawImage(c, x0, y0, cw, ch, m, m, cw, ch);
       // webp garde la transparence ; un navigateur qui ne sait pas l'écrire répond en png
-      tenu({ src: coupe.toDataURL("image/webp", .85), lr: cw / ch });
+      tenu({ src: coupe.toDataURL("image/webp", .85), lr: coupe.width / coupe.height });
     };
     im.src = src;
   });

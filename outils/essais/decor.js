@@ -33,7 +33,7 @@ const rect = (x, y, w, h, deg = 0) => {
 
 (async () => {
   const { meuble, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, comptoir, poigneeComptoir, comptoirTient, rapprocheComptoir, poigneeObjet,
-    camions, figeCamions, ajouteCamion, camionsSeGenent, enseignesCamions } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
+    camions, figeCamions, ajouteCamion, camionsSeGenent, enseignesCamions, planchesEnseignes } = await import(pathToFileURL(path.join(__dirname, "..", "gabarit", "modules", "decor.mjs")));
 
   for (const deg of [0, 27]){
     console.log("Zones tournées de " + deg + "°");
@@ -149,8 +149,17 @@ const rect = (x, y, w, h, deg = 0) => {
     const logo = "data:image/png;base64,AAAA";
     const marque = [{ u: .5, v: .5, a: 0, logo, lr: 2 }, { u: .2, v: .2, a: 0 }];
     dit(figeCamions(parc, marque)[0].logo === logo && !figeCamions(parc, marque)[1].logo, "figé, un camion garde son logo");
-    const [dev] = enseignesCamions(parc, marque, false);
-    dit(enseignesCamions(parc, marque, false).length === 1 && dev.logo === logo, "un logo par camion qui en a un");
+    const [dev, face, dos] = enseignesCamions(parc, marque, false);
+    dit(enseignesCamions(parc, marque, false).length === 3 && [dev, face, dos].every(e => e.logo === logo),
+      "en volume, un camion qui a un logo le porte sur sa devanture et sur les deux faces de son enseigne");
+    dit(enseignesCamions(parc, marque, true).length === 1, "à plat, un seul logo par camion, sur le toit");
+    const [planche] = planchesEnseignes(parc, marque);
+    dit(planchesEnseignes(parc, marque).length === 1 && planche.role === "enseigne", "une planche d'enseigne par camion qui a un logo");
+    const zf = face.coins.map(p => p[2]);
+    dit(Math.min(...zf) > 2.7 && Math.max(...zf) < planche.haut, "le logo de l'enseigne se dresse au-dessus du toit, dans sa planche");
+    // vu du comptoir (y croissant vers l'écran), l'arrière à gauche ; vu du flanc fermé, à droite
+    dit(face.coins[1][1] > dos.coins[1][1] && face.coins[0][0] < face.coins[3][0] && dos.coins[0][0] > dos.coins[3][0],
+      "chaque face de l'enseigne se lit à l'endroit depuis son côté");
     // vu depuis le comptoir (en bas de l'écran, à angle nul), l'arrière à gauche, le haut en l'air
     dit(dev.coins.every(p => Math.abs(p[1] - (10 + 1.18)) < 1e-6) && dev.coins[0][0] < dev.coins[3][0] &&
       dev.coins[1][2] > dev.coins[0][2] && dev.coins[0][2] >= .15 - 1e-6 && dev.coins[1][2] <= 2.7, "en volume, le logo se dresse sur la devanture");

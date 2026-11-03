@@ -624,8 +624,10 @@ const IMPRIME = { ambient: 1, diffuse: 0, shininess: 1, specularColor: [0, 0, 0]
 const FILTRAGE = { minFilter: "linear", magFilter: "linear" };
 const ANISOTROPE = 8;
 /** Le filtrage, anisotrope si la carte graphique le sait faire. La question
- *  active l'extension, que la bibliothèque n'active pas d'elle-même. */
-const filtrage = (/** @type {any} */ appareil) => {
+ *  active l'extension, que la bibliothèque n'active pas d'elle-même. Les logos
+ *  des camions s'en servent aussi (`webgl.mjs`) : leur devanture se voit de
+ *  biais plus souvent qu'un toit. */
+export const filtrage = (/** @type {any} */ appareil) => {
   try {
     if (appareil && appareil.features && appareil.features.has("texture-filterable-anisotropic-webgl"))
       return { ...FILTRAGE, maxAnisotropy: ANISOTROPE };
