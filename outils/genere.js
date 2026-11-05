@@ -554,15 +554,22 @@ const UN_AN = "\n  Cache-Control: public, max-age=31536000, immutable\n";
    et `-Resource-Policy`) : les logos des exposants et MapLibre viennent
    d'ailleurs, et seraient refusés.
 
-   `Permissions-Policy` ne nomme que des fonctions que le plan n'emploie pas,
-   et que Chromium connaît — une inconnue écrit une erreur dans la console. Le
-   Worker pose les mêmes sur ce qu'il sert lui-même (`src/index.mjs`
-   `surete`), qui ne passe pas par ce fichier. */
+   `Permissions-Policy` ne nomme que des fonctions que Chromium connaît — une
+   inconnue écrit une erreur dans la console. Elle les refuse toutes, sauf la
+   caméra, permise au site lui-même (`self`) : le lecteur de codes du parcours
+   s'en sert (`modules/scan-parcours.mjs`). Écrite `camera=()`, elle la
+   refusait à nos propres pages — dans un onglet comme dans l'application
+   Eventmaker, le lecteur ne voyait jamais que « La caméra n'est pas
+   accessible ici », et rien ne le disait plus haut. `self` la refuse encore à
+   tout ce que le plan intégrerait ; et un cadre qui embarque le plan doit
+   toujours la lui déléguer (`allow="camera"`) pour qu'elle passe. Le Worker
+   pose les mêmes sur ce qu'il sert lui-même (`src/index.mjs` `surete`), qui
+   ne passe pas par ce fichier. */
 const SURETE = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  "Permissions-Policy": "camera=(self), microphone=(), geolocation=(), payment=(), usb=()",
   "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
 };
 /* Les pages de l'exploitant, sous leurs deux adresses : avec et sans `.html`. */
