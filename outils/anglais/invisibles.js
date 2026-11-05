@@ -14,6 +14,11 @@ module.exports = [
   // pour retomber sur le WebP — ni l'une ni l'autre ne s'affiche
   "sha384-05Hrg6MAEOyGEl+DBp138l7mH4bs/srHNfuLKY1bXS0R9WI/amgsW509B8FkaZWr",
   "encodeur AVIF indisponible",
+  // `modules/scan-parcours.mjs` : l'empreinte de jsQR, que le navigateur
+  // vérifie, et le message d'une erreur rattrapée — le visiteur lit à la
+  // place « La lecture des codes n'a pas pu se charger »
+  "sha384-l6zSlrX6P10T9s7xKWTK/RsXfiN3tMUuUwX6xkEtAW6KEj9Cd2D+SgUIfMxH+uGg",
+  "lecteur de codes QR indisponible",
   // `modules/recherche.mjs` : un morceau de l'adresse `data:` d'une vignette
   ";base64,",
   // `_environs.html` : le corps de la requête Overpass, qui part au serveur

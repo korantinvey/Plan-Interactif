@@ -72,6 +72,11 @@
 .pActs[hidden]{display:none}
 .pActs .jOrg,.pActs .jRefait{flex:1;min-width:0}
 .pActs .jPart{flex:none}
+/* Le lecteur de codes vient en dernier : il ne sert qu'à qui reçoit un
+   parcours, pas à qui compose le sien. Sur un écran étroit, il ne garde que
+   son pictogramme — la rangée porte déjà « Organiser ma journée » en entier. */
+.pActs .jScan{flex:none}
+@media (max-width:400px){ .pActs .jScan .lib{display:none} }
 /* La rangée sert les deux vues du tiroir : la liste s'organise, la journée se
    reprend, et le partage ne quitte jamais la tête — une journée organisée est
    justement ce qu'on veut donner à qui vient avec soi. Le bouton qui ne sert

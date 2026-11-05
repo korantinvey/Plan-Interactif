@@ -543,6 +543,44 @@ Ce qui s'envoie ainsi ne compte pas comme un partage : « huit parcours partagé
 doit se lire « huit visiteurs ont donné leur liste à quelqu'un », et une copie de
 sauvegarde n'est pas cela.
 
+### Lire un parcours depuis le plan
+
+Le code QR du partage s'ouvre d'ordinaire par l'appareil photo du téléphone,
+qui passe le lien au navigateur. Depuis un onglet, c'est parfait ; depuis le
+plan **embarqué dans une application** — celle d'Eventmaker, une coque de
+salon —, c'est la panne : le lien part dans Safari ou Chrome, loin de
+l'application où le visiteur tient sa liste, et le parcours s'ouvre sur un
+plan où il n'a rien.
+
+Le tiroir du parcours porte donc un bouton **« Scanner »**, qui lit le code
+sans quitter la page (`modules/scan-parcours.mjs`). Ce qui est lu suit le même
+chemin qu'un lien ouvert (`modules/parcours-recu.mjs` `proposeParcoursRecu`) :
+même fenêtre, même choix entre remplacer et ajouter, même canal de mesure. Le
+lecteur ne prend que le lien d'un parcours **de ce salon** — reconnu à son
+paramètre `plan` — et dit, sinon, ce qu'il a lu : un autre code, un parcours
+coupé, le plan d'un autre salon.
+
+Trois portes, parce qu'aucune ne s'ouvre partout :
+
+| porte | quand elle sert |
+|---|---|
+| la caméra en direct | quand le navigateur, ou l'application qui embarque la page, l'accorde |
+| une photo du code | quand la caméra est refusée : le sélecteur de fichiers du système passe souvent là où `getUserMedia` est bloqué |
+| le décodage | `BarcodeDetector` quand il sait les codes QR (Chrome sur Android), jsQR sinon — rapatrié par `npm run jsqr`, 128 Ko chargés à la première lecture seulement |
+
+**Ce qui ne dépend pas de nous.** Une vue web n'a la caméra que si
+l'application qui l'héberge la lui donne : sur Android, l'hôte doit répondre à
+la demande de permission de la page et ouvrir le sélecteur de fichiers ; sur
+iOS, déclarer l'usage de la caméra. Si l'application ne fait ni l'un ni
+l'autre, le bouton s'ouvre et dit que la caméra n'est pas accessible — rien de
+plus ne se peut depuis la page. À éprouver dans chaque application avant de le
+promettre sur une plaquette.
+
+Le bouton se retire depuis « Réglages du plan », par **« Proposer la lecture
+d'un code QR de parcours »** : un exploitant peut ne pas vouloir qu'un plan
+réclame la caméra. Le retirer ne touche pas au partage ; retirer le parcours
+le retire aussi, puisqu'il vit dans son tiroir. Une borne ne le montre jamais.
+
 ## Compléter une visite — la suggestion
 
 Un visiteur qui retient quatre enseignes du même secteur ne compose pas une liste

@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 652 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 659 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -74,11 +74,11 @@ l'endroit où l'on corrige quoi que ce soit.
 `#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis` · `#dPartage`
 `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd`
 `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours` · `#pEyebrow`
-`#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire` · `#btnPartage` · `#jJours`
-`#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRetour` · `#itineraire`
-`#poigneeItineraire` · `#closeItineraire` · `#iResume` · `#iCorps` · `#iDepart` · `#iViseA`
-`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
-`#videItineraire`
+`#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire` · `#btnPartage`
+`#btnScanParcours` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours`
+`#jPied` · `#jRetour` · `#itineraire` · `#poigneeItineraire` · `#closeItineraire`
+`#iResume` · `#iCorps` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee`
+`#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
@@ -120,11 +120,11 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1659 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1671 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 687 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 692 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1741 l. → demo.html, plan-smcl.html
 
@@ -292,7 +292,7 @@ Importé par :
 
 reglage-fiche · volets
 
-### `modules/apparence.mjs` — 234 l. → plan, plan-admin
+### `modules/apparence.mjs` — 242 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
@@ -300,7 +300,7 @@ Fonctions :
 
 `fondDe` 40 · `remplitCalque` 41 · `styleFond` 50 · `lisSous` 82 · `sousCalques` 84
 `styleDataGroupe` 101 · `appliqueCouleursData` 110 · `styleData` 149
-`appliqueApparence` 155 · `appliqueCommandes` 223
+`appliqueApparence` 155 · `appliqueCommandes` 231
 
 Importe :
 
@@ -890,8 +890,8 @@ glisse-fenetre · habillage · ici · index-salon · installation · journee · 
 ligne-liste · logos-stands · mesure · mode-admin · modeles · mot-de-passe · nappe
 ordre-calques · ordre-trace · outil-dessin · panneau-criteres · parcours · partage · pile
 placement-libelles · points-interet · rappels · rapport-utilisation · recherche · reglages
-rendu · reprise-emplacements · socle-console · socle-dessin · sponsor · suggestion
-synchronisation · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre
+rendu · reprise-emplacements · scan-parcours · socle-console · socle-dessin · sponsor
+suggestion · synchronisation · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre
 trace-itineraire · tutoriel · vous-etes-ici · vue · vue-etat · webgl
 
 ### `modules/donnees.mjs` — 105 l. → plan, plan-admin
@@ -1204,7 +1204,7 @@ Importé par :
 affiche-ici · batiments · borne · calage-carte · chaleur · enregistrement · fiche
 fiche-zone · installation · journee · lancement · mesure · ordre-calques · outil-dessin
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
-suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
+scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
 ### `modules/fiche-detail.mjs` — 1291 l. → console
 
@@ -1654,19 +1654,19 @@ Importé par :
 
 lancement · tiroir-parcours · tutoriel
 
-### `modules/lancement.mjs` — 132 l. → plan, plan-admin
+### `modules/lancement.mjs` — 134 l. → plan, plan-admin
 
 - l.1 · Le lancement du plan — ce que le script soudé faisait encore
 
 Fonctions :
 
-`injecteLancementAdmin` 72 · `lancePlan` 75
+`injecteLancementAdmin` 73 · `lancePlan` 76
 
 Importe :
 
 bandes · borne · demarrage · erreurs · fenetre · fiche · gestes · habillage · ici
-installation · journee · ligne-liste · mesure · partage · recherche · retour · sonde
-sponsor · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
+installation · journee · ligne-liste · mesure · partage · recherche · retour · scan-parcours
+sonde · sponsor · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre · vue · webgl
 
 Importé par :
 
@@ -1725,7 +1725,7 @@ Fonctions :
 
 Importé par :
 
-parcours-recu · partage
+parcours-recu · partage · scan-parcours
 
 ### `modules/ligne-liste.mjs` — 37 l. → plan, plan-admin
 
@@ -2176,13 +2176,13 @@ Importé par :
 
 recherche · tiroirs
 
-### `modules/parcours-recu.mjs` — 125 l. → plan, plan-admin
+### `modules/parcours-recu.mjs` — 140 l. → plan, plan-admin
 
 - l.1 · Le parcours reçu
 
 Fonctions :
 
-`accueilleParcoursPartage` 45 · `adoptePartage` 123
+`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 138
 
 Importe :
 
@@ -2190,7 +2190,7 @@ configuration · donnees · fenetre · lien-parcours · parcours
 
 Importé par :
 
-demarrage
+demarrage · scan-parcours
 
 ### `modules/parcours.mjs` — 595 l. → plan, plan-admin
 
@@ -2308,14 +2308,15 @@ acces-admin · affiche-ici · bande-admin · batiments · calage-carte · chaleu
 enregistrement · gestes-admin · lancement · nuancier · outil-dessin · pile
 placement-libelles · plan · reprise-emplacements
 
-### `modules/plan.mjs` — 63 l. → plan, plan-admin
+### `modules/plan.mjs` — 70 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
 Importe :
 
 appels · choix-ambiance · edition-en-cours · lancement · libelles · logos-stands
-mini-carte · polices-plan · releve · salon · sur · texte-plan · tutoriel · vue · webgl
+mini-carte · polices-plan · qr · releve · salon · scan-parcours · sur · texte-plan
+tutoriel · vue · webgl
 
 Importé par :
 
@@ -2397,7 +2398,7 @@ texte
 
 Importé par :
 
-affiche-ici · partage
+affiche-ici · partage · plan
 
 ### `modules/rappels.mjs` — 540 l. → plan, plan-admin
 
@@ -2785,7 +2786,24 @@ Importé par :
 affiche-ici · ambiance · application · borne · charge-annoncee · choix-ambiance
 configuration · demarrage · enregistrement · erreurs · essai-rappel · ici · installation
 mesure · notifications · parcours · partage · plan · rappels · recherche · releve · rendu
-retour · sonde · sponsor · tutoriel · vignettes
+retour · scan-parcours · sonde · sponsor · tutoriel · vignettes
+
+### `modules/scan-parcours.mjs` — 330 l. → plan, plan-admin
+
+- l.1 · Lire le code QR d'un parcours, depuis le plan
+
+Fonctions :
+
+`chargeJsQr` 66 · `decodeur` 84 · `surToile` 121 · `fragmentDuCode` 150
+`ouvreScanParcours` 173 · `brancheScanParcours` 325
+
+Importe :
+
+dom · fenetre · lien-parcours · parcours-recu · salon
+
+Importé par :
+
+lancement · plan
 
 ### `modules/secteurs.mjs` — 215 l. → plan, plan-admin
 

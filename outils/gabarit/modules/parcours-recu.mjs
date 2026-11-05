@@ -1,7 +1,8 @@
 /* ============================================================
    Le parcours reçu
 
-   Un lien de parcours ouvert : ce qu'il porte se relit, se confronte à ce que
+   Un lien de parcours ouvert — ou son code QR lu depuis le plan
+   (`scan-parcours.mjs`) : ce qu'il porte se relit, se confronte à ce que
    le salon connaît encore, et se propose au visiteur avant d'entrer dans sa
    liste. Le lien lui-même, la fenêtre de partage et la copie qu'on se garde
    vivent dans `partage.mjs`, le codage dans `lien-parcours.mjs`.
@@ -53,12 +54,25 @@ export function accueilleParcoursPartage(){
      mis en signet se réimposerait des semaines plus tard. Un cadre tiers cloisonné
      n'a pas le droit de réécrire l'adresse : le partage y marche quand même. */
   try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  proposeParcoursRecu(brut);
+}
+
+/**
+ * Un fragment de parcours, d'où qu'il vienne — l'adresse de la page, ou le
+ * code QR qu'on vient de lire sans la quitter (`scan-parcours.mjs`) — proposé
+ * au visiteur.
+ *
+ * Rend `false` quand le fragment ne dit rien qu'on sache lire : le lecteur de
+ * codes en dépend pour dire « ce n'est pas un parcours » au lieu de se taire.
+ * @param {string} brut le fragment, sans son « # », tel qu'il a été écrit
+ */
+export function proposeParcoursRecu(brut){
   // l'exploitant a pu retirer le parcours de ce salon : le lien n'a alors nulle
   // part où poser ce qu'il porte
-  if (conf("_parcours").visible === false) return;
+  if (conf("_parcours").visible === false) return false;
 
   const recu = litCodeParcours(brut);
-  if (!recu) return;
+  if (!recu) return false;
   const stands = recu.stands.filter(id => parId.has(id) && !dansParcours("stand", id));
   const confs = recu.confs.filter(id => CONFS.has(id) && !dansParcours("conf", id));
 
@@ -76,7 +90,7 @@ export function accueilleParcoursPartage(){
           "autre édition, ou les stands qu'il retenait ont été démontés depuis.";
       corps.appendChild(p);
     }, [{ libelle: "Fermer" }]);
-    return;
+    return true;
   }
 
   const sien = PARCOURS.stands.length + PARCOURS.confs.length;
@@ -113,6 +127,7 @@ export function accueilleParcoursPartage(){
     : [{ libelle: "Annuler" },
        { libelle: "Charger ce parcours", genre: "accent",
          action: () => adoptePartage(stands, confs, true) }]);
+  return true;
 }
 
 /**
