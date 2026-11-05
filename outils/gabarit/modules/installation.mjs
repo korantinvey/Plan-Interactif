@@ -79,7 +79,7 @@
    ou de l'autre laissait sans rien celui qui installe et regarde le plan sans
    y toucher : c'est-à-dire justement celui à qui le constat parlait.
    ============================================================ */
-import { $ } from "./dom.mjs";
+import { $, auDoigt } from "./dom.mjs";
 import { SLUG, BORNE } from "./salon.mjs";
 import { DATA } from "./donnees.mjs";
 import { supportMesure } from "./mesure.mjs";
@@ -137,17 +137,6 @@ const IOS_INSTALL = /iPhone|iPad|iPod/.test(UA_INSTALL) ||
    réveiller. Les deux choses qu'Android sait faire et qu'iOS ne sait pas
    tiennent à ce même test, et n'en font donc qu'un. */
 const ANDROID_INSTALL = /Android/.test(UA_INSTALL) && !/; wv\)/.test(UA_INSTALL);
-
-/**
- * Un téléphone ou une tablette : le pointeur principal est un doigt.
- *
- * La largeur de l'écran ne le dirait pas — une tablette en paysage est plus
- * large que bien des portables — et un portable à écran tactile se pilote
- * d'abord au pavé : il reste un ordinateur.
- */
-function auDoigt(){
-  try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; }
-}
 
 /* Tout ce qui ne bouge pas d'ici la fin de la page se juge une fois : ailleurs
    qu'au doigt, dans un navigateur, sur le plan public, le module ne pose pas

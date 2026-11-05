@@ -230,11 +230,14 @@ test.describe("la visite guidée", () => {
     // le toucher arrive au bouton, et la visite continue
     await touche("#btnParcours");
     await expect.poll(() => etape(page)).toBe("parcours:partage");
-    // puis le lecteur de codes, montré à côté du partage sans être touché
+    // puis le lecteur de codes, montré à côté du partage sans être touché —
+    // au doigt seulement : un ordinateur n'a pas le bouton, et passe outre
     await touche("#tutoSuite");
-    await expect.poll(() => etape(page)).toBe("parcours:scan");
-    expect(await cacheLElement(page, "#btnScanParcours")).toEqual({ aire: 0, auCentre: false });
-    await touche("#tutoSuite");
+    if (telephone) {
+      await expect.poll(() => etape(page)).toBe("parcours:scan");
+      expect(await cacheLElement(page, "#btnScanParcours")).toEqual({ aire: 0, auCentre: false });
+      await touche("#tutoSuite");
+    }
     await expect.poll(() => etape(page)).not.toMatch(/^parcours:/);
     expect(erreurs).toEqual([]);
   });

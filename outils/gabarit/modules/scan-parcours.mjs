@@ -26,13 +26,13 @@
    même canal de mesure.
 
    Il se retire par « Réglages du plan » (`apparence.mjs` `COMMANDES`,
-   `_scanParcours`), et ne se montre pas sur une borne : un écran fixe n'a
-   pas de liste à recevoir.
+   `_scanParcours`), et ne se montre ni sur une borne, ni sur un ordinateur
+   (`brancheScanParcours`).
 
    Il se branche par `brancheScanParcours`, que `lancement.mjs` `lancePlan`
    appelle après le partage.
    ============================================================ */
-import { $ } from "./dom.mjs";
+import { $, auDoigt } from "./dom.mjs";
 import { SLUG, BORNE } from "./salon.mjs";
 import { ouvreModale, poseAvantFermeture } from "./fenetre.mjs";
 import { CLE_LIEN_PARCOURS, litCodeParcours } from "./lien-parcours.mjs";
@@ -319,12 +319,15 @@ export function ouvreScanParcours(){
    Le branchement
    ------------------------------------------------------------ */
 /**
- * Appelé par `lancement.mjs` `lancePlan`, après le partage. Sur une borne, le
- * bouton s'efface : l'écran du hall n'a pas de liste à recevoir.
+ * Appelé par `lancement.mjs` `lancePlan`, après le partage. Le bouton s'efface
+ * sur une borne — l'écran du hall n'a pas de liste à recevoir — et sur un
+ * ordinateur : on n'y vise pas un téléphone avec sa webcam, et le lien d'un
+ * parcours s'y colle dans la barre d'adresse. Le lecteur sert au téléphone
+ * qui en regarde un autre, d'abord dans une application qui embarque le plan.
  */
 export function brancheScanParcours(){
   const b = $("btnScanParcours");
   if (!b) return;
-  if (BORNE){ b.remove(); return; }
+  if (BORNE || !auDoigt()){ b.remove(); return; }
   b.onclick = ouvreScanParcours;
 }
