@@ -147,6 +147,11 @@ const BRANCHE = "https://ma-branche-plan-interactif.interactiveplan.workers.dev"
     dit(salon.headers.get("Referrer-Policy") && !salon.headers.has("Content-Security-Policy") &&
         !salon.headers.has("X-Frame-Options"),
       "sûreté : le plan d'un salon garde ses en-têtes et reste intégrable");
+    /* Le lecteur de codes du parcours a besoin de la caméra : la lui refuser
+       ne se voyait qu'au téléphone, par « La caméra n'est pas accessible ». */
+    const permis = salon.headers.get("Permissions-Policy") || "";
+    dit(/(^|, )camera=\(self\)/.test(permis) && /(^|, )microphone=\(\)/.test(permis),
+      "sûreté : la caméra est permise au plan, le micro reste refusé", permis);
   }
 
   console.log(ko ? "\n" + ko + " échec(s)" : "\nune prévisualisation reste à l'écart de la production");
