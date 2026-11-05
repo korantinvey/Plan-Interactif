@@ -13,6 +13,10 @@ const { prepare, attendLaListe } = require("./aide.js");
 
 const PLAN = "/plan?plan=smcl-2026";
 
+/* Le lecteur ne se montre qu'au doigt (`dom.mjs` `auDoigt`) : chaque essai qui
+   s'en sert se fait sur un téléphone. */
+const TELEPHONE = { isMobile: true, hasTouch: true, viewport: { width: 412, height: 839 } };
+
 /** Le code QR de la fenêtre de partage, en PNG, tel qu'on le photographierait. */
 async function photoDuCode(page) {
   const url = await page.locator(".qrPlaque svg").evaluate(async (svg) => {
@@ -33,6 +37,7 @@ async function photoDuCode(page) {
 }
 
 test.describe("le parcours lu depuis le plan", () => {
+  test.use(TELEPHONE);
   test("un code photographié charge le parcours, sans quitter la page", async ({ page, browser }) => {
     test.slow();   // deux appareils, deux plans à ouvrir
     // celui qui partage : quelques stands retenus, et leur code
@@ -51,7 +56,7 @@ test.describe("le parcours lu depuis le plan", () => {
 
     // celui qui reçoit : un autre appareil, une liste vide, pas de caméra
     // le second appareil ne reçoit pas l'adresse de base de la configuration
-    const autre = await browser.newContext({ baseURL: new URL(page.url()).origin });
+    const autre = await browser.newContext({ ...TELEPHONE, baseURL: new URL(page.url()).origin });
     const page2 = await autre.newPage();
     const erreurs2 = await prepare(page2);
     await page2.goto(PLAN);
@@ -106,6 +111,9 @@ test.describe("le parcours lu depuis le plan", () => {
   });
 });
 
+test.describe("au doigt", () => {
+test.use(TELEPHONE);
+
 test("le lecteur ne prend que les parcours de ce salon", async ({ page }) => {
   await prepare(page);
   await page.goto(PLAN);
@@ -144,5 +152,18 @@ test("décoché dans les réglages, le lecteur disparaît et le parcours reste",
   await expect(page.locator("#parcours")).toHaveClass(/open/);
   await expect(page.locator("#btnPartage")).toBeVisible();
   await expect(page.locator("#btnScanParcours")).toBeHidden();
+  expect(erreurs).toEqual([]);
+});
+});
+
+/* Sur un ordinateur, on ne vise pas un téléphone avec sa webcam : le bouton
+   n'existe pas, et le partage reste. */
+test("sur un ordinateur, pas de lecteur", async ({ page }) => {
+  const erreurs = await prepare(page);
+  await page.goto(PLAN);
+  await attendLaListe(page);
+  await page.locator("#btnParcours").click();
+  await expect(page.locator("#btnPartage")).toBeVisible();
+  await expect(page.locator("#btnScanParcours")).toHaveCount(0);
   expect(erreurs).toEqual([]);
 });

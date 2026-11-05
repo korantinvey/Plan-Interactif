@@ -579,7 +579,10 @@ promettre sur une plaquette.
 Le bouton se retire depuis « Réglages du plan », par **« Proposer la lecture
 d'un code QR de parcours »** : un exploitant peut ne pas vouloir qu'un plan
 réclame la caméra. Le retirer ne touche pas au partage ; retirer le parcours
-le retire aussi, puisqu'il vit dans son tiroir. Une borne ne le montre jamais.
+le retire aussi, puisqu'il vit dans son tiroir. Une borne ne le montre jamais, ni
+un ordinateur : on n'y vise pas un téléphone avec sa webcam, et le lien s'y
+colle dans la barre d'adresse (`modules/dom.mjs` `auDoigt`, la règle qui juge
+aussi de l'invitation à installer).
 
 ## Compléter une visite — la suggestion
 

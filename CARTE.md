@@ -872,13 +872,13 @@ Importé par :
 apparence · fiche · points-interet · recherche · reglages · rendu · reprise-emplacements
 volets
 
-### `modules/dom.mjs` — 10 l. → plan, plan-admin, console, rapport, motdepasse
+### `modules/dom.mjs` — 23 l. → plan, plan-admin, console, rapport, motdepasse
 
 - l.1 · Le document : ce que tout le code demande à la page
 
 Fonctions :
 
-`$` 10
+`$` 10 · `auDoigt` 21
 
 Importé par :
 
@@ -1582,22 +1582,22 @@ Importé par :
 
 demarrage · enregistrement · fiche-zone
 
-### `modules/installation.mjs` — 821 l. → plan, plan-admin
+### `modules/installation.mjs` — 810 l. → plan, plan-admin
 
 - l.1 · L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 117 · `invitationVoulue` 118 · `auDoigt` 148 · `nommeApplication` 184
-`reponsesInstallation` 202 · `retientInstallation` 207 · `jourInstallation` 216
-`invitationEcartee` 219 · `refuseInstallation` 225 · `faconInstallation` 253
-`appliInstallee` 282 · `verifieApplication` 304 · `connaitLApplication` 314
-`faconRappel` 334 · `rappelEcarte` 342 · `refuseRappel` 348 · `relanceInvitation` 366
-`gesteInstallation` 371 · `doigtPose` 375 · `doigtLeve` 376 · `vueInstallation` 379
-`accueilleInvitation` 388 · `invitationRetenue` 414 · `suitLesGestes` 435
-`finInvitation` 443 · `rouvreInvitation` 465 · `essaieInvitation` 485
-`brancheInstallation` 528 · `teteInvitation` 621 · `poseGardeInstallation` 654
-`remplitInvitation` 677 · `ouvreInvitation` 707 · `ouvreRappel` 782
+`reglageInstallation` 117 · `invitationVoulue` 118 · `nommeApplication` 173
+`reponsesInstallation` 191 · `retientInstallation` 196 · `jourInstallation` 205
+`invitationEcartee` 208 · `refuseInstallation` 214 · `faconInstallation` 242
+`appliInstallee` 271 · `verifieApplication` 293 · `connaitLApplication` 303
+`faconRappel` 323 · `rappelEcarte` 331 · `refuseRappel` 337 · `relanceInvitation` 355
+`gesteInstallation` 360 · `doigtPose` 364 · `doigtLeve` 365 · `vueInstallation` 368
+`accueilleInvitation` 377 · `invitationRetenue` 403 · `suitLesGestes` 424
+`finInvitation` 432 · `rouvreInvitation` 454 · `essaieInvitation` 474
+`brancheInstallation` 517 · `teteInvitation` 610 · `poseGardeInstallation` 643
+`remplitInvitation` 666 · `ouvreInvitation` 696 · `ouvreRappel` 771
 
 Importe :
 
@@ -2788,14 +2788,14 @@ configuration · demarrage · enregistrement · erreurs · essai-rappel · ici �
 mesure · notifications · parcours · partage · plan · rappels · recherche · releve · rendu
 retour · scan-parcours · sonde · sponsor · tutoriel · vignettes
 
-### `modules/scan-parcours.mjs` — 330 l. → plan, plan-admin
+### `modules/scan-parcours.mjs` — 333 l. → plan, plan-admin
 
 - l.1 · Lire le code QR d'un parcours, depuis le plan
 
 Fonctions :
 
 `chargeJsQr` 66 · `decodeur` 84 · `surToile` 121 · `fragmentDuCode` 150
-`ouvreScanParcours` 173 · `brancheScanParcours` 325
+`ouvreScanParcours` 173 · `brancheScanParcours` 328
 
 Importe :
 
