@@ -211,6 +211,14 @@ export const COMMANDES = [
   { cle: "_parcours", sel: "#btnParcours", libelle: "Proposer le parcours de visite",
     // les signets des fiches et du programme suivent le bouton de la barre
     classe: "sans-parcours" },
+  /* Le lecteur de codes de parcours, dans le tiroir. Il sert d'abord au plan
+     embarqué dans une application (Eventmaker, une coque de salon) : là, le
+     code scanné par l'appareil photo s'ouvrirait dans le navigateur, hors de
+     l'application. Mais il demande la caméra, et un exploitant peut ne pas
+     vouloir qu'un plan la réclame : il se retire seul, et le parcours reste.
+     Retirer le parcours le retire aussi, puisqu'il vit dans son tiroir. */
+  { cle: "_scanParcours", sel: "#btnScanParcours",
+    libelle: "Proposer la lecture d'un code QR de parcours" },
   /* L'itinéraire se calcule sur ce que les données disent du hall : les
      emplacements, et les obstacles que l'exploitant a bien voulu dessiner.
      Sur un plan resté nu, le trajet reste juste mais n'évite que les stands —

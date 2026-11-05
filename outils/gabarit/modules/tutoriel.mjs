@@ -139,6 +139,9 @@ const cleTuto = () => "plan-tutoriel:" + (SLUG || (DATA && DATA.evenement) || ""
 
 const tutoOuvert = (id) => { const e = $(id); return !!e && e.classList.contains("open"); };
 const tutoModale = () => $("modale").classList.contains("open");
+/* Un bouton que la page montre : ni retiré par un réglage, ni ôté sur une
+   borne, ni caché avec son tiroir. La visite ne désigne que ce qu'on voit. */
+const tutoVisible = (id) => { const e = $(id); return !!e && e.getClientRects().length > 0; };
 
 /* Une fiche ouverte, et qui n'est pas en train de se refermer : sur un grand
    écran elle garde sa classe le temps de se replier, et la consigne parlerait
@@ -355,13 +358,29 @@ const CHAPITRES_TUTO = [
         cible: $("mCorps").querySelector(".qrPlaque") || $("mCorps").querySelector(".qrLien"),
         texte: "Faites photographier ce code à qui vous accompagne, ou envoyez-lui le " +
                "lien : son plan s'ouvrira sur le même parcours. Refermez la fenêtre pour continuer." };
-      if (m.retenu && tutoOuvert("parcours") && (m.partage || !$("btnPartage").getClientRects().length))
+      /* Le lecteur de codes, l'autre moitié du partage : celui qui reçoit. Sa
+         fenêtre ouverte, on ne la commente pas — la caméra est peut-être en
+         train de demander sa permission —, on dit seulement comment revenir. */
+      const fenetreScan = tutoModale() && $("modale").dataset.genre === "scan";
+      if (fenetreScan) m.scan = true;
+      if (m.retenu && fenetreScan) return { cle: "scan-fenetre", cible: $("mCorps"),
+        texte: "Visez le code QR que l'on vous montre : le parcours s'ouvrira ici. " +
+               "Refermez la fenêtre pour continuer." };
+      const partageFait = m.partage || !tutoVisible("btnPartage");
+      const scanFait = m.scan || !tutoVisible("btnScanParcours");
+      if (m.retenu && tutoOuvert("parcours") && partageFait && scanFait)
         return { fini: true };
-      if (m.retenu && tutoOuvert("parcours")) return { cle: "partage", cible: $("btnPartage"),
-        suite: true, apres: () => { m.partage = true; },
+      if (m.retenu && tutoOuvert("parcours") && !partageFait) return { cle: "partage",
+        cible: $("btnPartage"), suite: true, apres: () => { m.partage = true; },
         texte: "Vous venez à plusieurs ? « Partager » donne votre parcours à un autre " +
                "téléphone, par un code ou un lien — sans compte, et sans rien envoyer " +
                "sur nos serveurs." };
+      /* Montré, et non fait toucher : le lecteur réclame la caméra, et la
+         visite n'a pas à déclencher une demande de permission pour l'exemple. */
+      if (m.retenu && tutoOuvert("parcours")) return { cle: "scan",
+        cible: $("btnScanParcours"), suite: true, apres: () => { m.scan = true; },
+        texte: "On vous montre un parcours ? « Scanner » lit son code QR ici même, " +
+               "sans quitter le plan — y compris depuis l'application du salon." };
       if (m.retenu) return { cle: "liste", cible: $("btnParcours"),
         texte: "C'est noté. Touchez « Mon parcours », en haut de l'écran, pour " +
                "retrouver ce que vous avez retenu." };

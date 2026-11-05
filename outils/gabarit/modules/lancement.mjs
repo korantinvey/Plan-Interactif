@@ -40,6 +40,7 @@ import { brancheHabillage } from "./habillage.mjs";
 import { brancheFenetre } from "./fenetre.mjs";
 import { brancheTiroirParcours } from "./tiroir-parcours.mjs";
 import { branchePartage } from "./partage.mjs";
+import { brancheScanParcours } from "./scan-parcours.mjs";
 import { brancheTiroirItineraire } from "./tiroir-itineraire.mjs";
 import { brancheBorne } from "./borne.mjs";
 import { brancheIci } from "./ici.mjs";
@@ -112,6 +113,7 @@ export function lancePlan(){
   brancheFenetre();
   brancheTiroirParcours();
   branchePartage();
+  brancheScanParcours();
   brancheTiroirItineraire();
   brancheBorne();
   brancheIci();

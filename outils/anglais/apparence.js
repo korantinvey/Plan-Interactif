@@ -5,5 +5,6 @@ module.exports = {
   "Afficher les icônes de zoom": "Show the zoom buttons",
   "Afficher l'échelle": "Show the scale",
   "Proposer le parcours de visite": "Offer the visit plan",
+  "Proposer la lecture d'un code QR de parcours": "Offer scanning a visit plan QR code",
   "Proposer le calcul d'itinéraire": "Offer directions",
 };

@@ -297,7 +297,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/scripts/lieux.js` (`lieuOsm`, `lieuSaisi`) |
 | fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` |
 | secteurs, distinctions, polices des noms | `modules/secteurs.mjs`, `modules/distinctions.mjs`, `modules/polices-plan.mjs` |
-| parcours, partage, copie gardée | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs` |
+| parcours, partage, copie gardée, code QR lu depuis le plan | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs`, `modules/scan-parcours.mjs` |
 | journée organisée, séjour, ordonnanceur | `modules/journee.mjs`, `modules/sejour.mjs`, `modules/ordonnanceur.mjs` |
 | seuil de concentration, charge annoncée | `modules/seuil.mjs`, `modules/charge-annoncee.mjs`, `modules/ordonnanceur.mjs` |
 | itinéraire | calcul `modules/itineraire.mjs`, l'entrée, rangé en couches qu'il nomme en tête (`grille-marche.mjs` → `recherche-chemin.mjs` → `abords-salles.mjs` → `trait-chemin.mjs` → `troncon.mjs` → `trajet.mjs`), tiroir et visée `modules/tiroir-itineraire.mjs`, tracé `modules/trace-itineraire.mjs` |

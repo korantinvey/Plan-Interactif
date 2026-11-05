@@ -230,6 +230,39 @@ test.describe("la visite guidée", () => {
     // le toucher arrive au bouton, et la visite continue
     await touche("#btnParcours");
     await expect.poll(() => etape(page)).toBe("parcours:partage");
+    // puis le lecteur de codes, montré à côté du partage sans être touché
+    await touche("#tutoSuite");
+    await expect.poll(() => etape(page)).toBe("parcours:scan");
+    expect(await cacheLElement(page, "#btnScanParcours")).toEqual({ aire: 0, auCentre: false });
+    await touche("#tutoSuite");
+    await expect.poll(() => etape(page)).not.toMatch(/^parcours:/);
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Le réglage décoché retire le bouton : la visite n'a pas à désigner une
+     place vide, et passe du partage au chapitre suivant. */
+  test("sans le lecteur de codes, la visite saute son étape", async ({ page }) => {
+    test.slow();
+    await page.addInitScript(() => {
+      localStorage.setItem("plan-conf:smcl-2026", JSON.stringify({ _scanParcours: { visible: false } }));
+    });
+    const erreurs = await commenceLaVisite(page);
+    await expect.poll(() => etape(page)).toBe("itineraire:bouton");
+    await page.locator("#tutoAvance").click();
+    await expect.poll(() => etape(page)).toBe("parcours:presente");
+    await page.locator("#tutoSuite").click();
+    await expect.poll(() => etape(page)).toBe("parcours:stand");
+    const stand = await standLibre(page);
+    expect(stand).not.toBeNull();
+    await page.mouse.click(stand.x, stand.y);
+    await expect.poll(() => etape(page)).toBe("parcours:signet");
+    await page.locator("#dMarque").click();
+    await expect.poll(() => etape(page)).toBe("parcours:liste");
+    await page.locator("#btnParcours").click();
+    await expect.poll(() => etape(page)).toBe("parcours:partage");
+    await expect(page.locator("#btnScanParcours")).toBeHidden();
+    await page.locator("#tutoSuite").click();
+    await expect.poll(() => etape(page)).not.toMatch(/^parcours:/);
     expect(erreurs).toEqual([]);
   });
 });
