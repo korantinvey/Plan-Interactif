@@ -158,6 +158,9 @@ html.page-vitrine{--ground:#EEF1F4;--vitrine-marge:16px}
 .modele-vitrine .hdActs .marque,.modele-vitrine .detail-hd .close{width:34px;height:34px;
   display:grid;place-items:center;background:var(--surface-2);border-color:transparent;padding:0}
 .modele-vitrine .hdActs .marque[hidden]{display:none}
+.modele-vitrine .hdActs .marque.marqueTexte{width:auto;display:flex;padding:0 13px}
+.detail.modele-vitrine .detail-hd:has(.marqueTexte:not([hidden])){padding-top:58px}
+.modele-vitrine .hdActs .marque.marqueTexte[hidden]{display:none}
 .modele-vitrine .detail-bd{gap:0}
 /* Les champs se séparent d'un filet clair, et l'intitulé se tait en gris :
    c'est la valeur qu'on vient lire. */

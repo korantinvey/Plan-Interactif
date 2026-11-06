@@ -397,8 +397,8 @@ const CHAPITRES_TUTO = [
       if (societes) return { cle: "societes", cible: societes,
         texte: "Plusieurs sociétés partagent ce stand : choisissez celle qui vous intéresse." };
       if (surStand) return { cle: "signet", cible: sig,
-        texte: "Touchez le signet pour ajouter « " + $("dName").textContent +
-               " » à votre parcours." };
+        texte: "Touchez « Ajouter à mon parcours » pour retenir « " + $("dName").textContent +
+               " »." };
       return { cle: "stand", plan: true,
         texte: "Touchez sur le plan un stand qui vous intéresse." };
     },
@@ -435,8 +435,8 @@ const CHAPITRES_TUTO = [
       if (!(PARCOURS.stands.length + PARCOURS.confs.length)){
         const sig = $("dMarque");
         if (tutoFiche() && !sig.hidden && sig.dataset.mg === "stand") return { cle: "vide-signet",
-          cible: sig, texte: "Touchez le signet pour ajouter « " + $("dName").textContent +
-            " » à votre parcours : c'est lui que la journée met en ordre." };
+          cible: sig, texte: "Touchez « Ajouter à mon parcours » pour retenir « " + $("dName").textContent +
+            " » : c'est lui que la journée met en ordre." };
         return { cle: "vide", cible: $("btnParcours"), voile: "scene",
           texte: "« Organiser ma journée » met votre parcours en heures : les conférences " +
                  "retenues gardent la leur, les stands se glissent entre elles. Il lui " +

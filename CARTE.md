@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 659 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 663 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -120,15 +120,15 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1671 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1657 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 692 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 708 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1741 l. → demo.html, plan-smcl.html
 
-### `_styles-vitrine.css` — 193 l. → demo.html, plan-smcl.html
+### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
 
 ### `_sw.js` — 568 l.
 
