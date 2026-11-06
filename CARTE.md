@@ -1227,7 +1227,7 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 465 l. → console
+### `modules/fiche-evenement.mjs` — 471 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
@@ -1235,7 +1235,7 @@ Fonctions :
 
 `brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 307
 `ligneReglage` 323 · `champCle` 337 · `champInstance` 378 · `ouvreSources` 402
-`majIntegration` 448 · `majMsgSync` 455
+`majIntegration` 453 · `majMsgSync` 461
 
 Éléments :
 

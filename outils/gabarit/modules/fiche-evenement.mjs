@@ -445,11 +445,17 @@ export function ouvreSources(apres) {
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
 
+/* Un cadre n'hérite d'aucune de ces fonctions si le site qui l'intègre ne les
+   lui délègue pas : sans `allow`, le lecteur de codes du parcours ne voit pas la
+   caméra (`modules/scan-parcours.mjs`), « Copier le lien » n'écrit rien
+   (`modules/partage.mjs`) et la feuille de partage du système ne s'ouvre pas.
+   Le plan n'en dit rien au visiteur : seul ce fragment peut les accorder. */
 function majIntegration() {
   const e = courant(), t = $("fragment");
   if (!e || !t) return;
   t.value = '<iframe src="' + BASE_PAGES + 'plan?plan=' + (e.slug || "evenement") +
-    '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"></iframe>';
+    '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"' +
+    ' allow="camera; clipboard-write; web-share"></iframe>';
 }
 
 function majMsgSync(e) {
