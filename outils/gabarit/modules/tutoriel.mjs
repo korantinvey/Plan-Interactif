@@ -525,7 +525,12 @@ export function proposeTutoriel(){
         const b = document.createElement("b");
         b.textContent = c.titre;
         t.appendChild(b);
-        t.appendChild(document.createTextNode(" — " + c.resume));
+        // le résumé dans son propre nœud : collé au tiret, `_langue.js` ne le
+        // trouvait plus dans le dictionnaire et le laissait en français
+        t.appendChild(document.createTextNode(" — "));
+        const r = document.createElement("span");
+        r.textContent = c.resume;
+        t.appendChild(r);
         li.appendChild(n);
         li.appendChild(t);
         ul.appendChild(li);

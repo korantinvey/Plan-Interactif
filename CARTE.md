@@ -3288,7 +3288,7 @@ Importé par :
 
 itineraire · trajet
 
-### `modules/tutoriel.mjs` — 1051 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1056 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
@@ -3299,11 +3299,11 @@ Fonctions :
 `reglageTuto` 125 · `tutoPropose` 134 · `cleTuto` 138 · `tutoOuvert` 140 · `tutoModale` 141
 `tutoVisible` 144 · `tutoFicheOuverte` 150 · `tutoFiche` 153 · `tutoParcours` 155
 `tutoItineraire` 159 · `tutoJournee` 163 · `zoneDuTuto` 171 · `insecable` 188
-`phraseTrajetTuto` 194 · `chapitresTuto` 470 · `proposeTutoriel` 490 · `lanceTutoriel` 548
-`quitteTutoriel` 635 · `chapitreTuto` 646 · `battementTuto` 655 · `finTuto` 673
-`afficheTuto` 690 · `attendsTiroirs` 740 · `pxTuto` 765 · `boiteTuto` 778 · `repereTuto` 793
-`rameneTuto` 826 · `placeTuto` 864 · `voileTuto` 958 · `rafaleTuto` 975
-`marqueZoneTuto` 995 · `marqueLibelleTuto` 1034
+`phraseTrajetTuto` 194 · `chapitresTuto` 470 · `proposeTutoriel` 490 · `lanceTutoriel` 553
+`quitteTutoriel` 640 · `chapitreTuto` 651 · `battementTuto` 660 · `finTuto` 678
+`afficheTuto` 695 · `attendsTiroirs` 745 · `pxTuto` 770 · `boiteTuto` 783 · `repereTuto` 798
+`rameneTuto` 831 · `placeTuto` 869 · `voileTuto` 963 · `rafaleTuto` 980
+`marqueZoneTuto` 1000 · `marqueLibelleTuto` 1039
 
 Éléments :
 
