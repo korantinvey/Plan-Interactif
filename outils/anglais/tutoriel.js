@@ -105,8 +105,8 @@ module.exports = {
     "Tap “Plan my day”: the conferences you kept stay at their time, and the stands fit in between, in the order that means the least walking.",
   "Touchez « Ajouter à mon parcours » pour retenir « {nom} » : c'est lui que la journée met en ordre.":
     "Tap “Add to my visit plan” to keep “{nom}”: that is what your day is built from.",
-  "« Organiser ma journée » met votre parcours en heures : les conférences retenues gardent la leur, les stands se glissent entre elles. Il lui faut un parcours : touchez un stand sur le plan, puis son signet.":
-    "“Plan my day” turns your visit plan into a schedule: the conferences you kept stay at their time, and the stands fit in between. It needs a visit plan: tap a stand on the map, then its bookmark.",
+  "« Organiser ma journée » met votre parcours en heures : les conférences retenues gardent la leur, les stands se glissent entre elles. Il lui faut un parcours : touchez un stand sur le plan, puis « Ajouter à mon parcours ».":
+    "“Plan my day” turns your visit plan into a schedule: the conferences you kept stay at their time, and the stands fit in between. It needs a visit plan: tap a stand on the map, then “Add to my visit plan”.",
   "Indiquez votre heure d'arrivée, puis touchez « Organiser ».":
     "Enter your arrival time, then tap “Plan my day”.",
   "Voici votre journée : chaque étape a son heure, et le trajet est tracé sur le plan. Bonne visite !":

@@ -440,7 +440,7 @@ const CHAPITRES_TUTO = [
         return { cle: "vide", cible: $("btnParcours"), voile: "scene",
           texte: "« Organiser ma journée » met votre parcours en heures : les conférences " +
                  "retenues gardent la leur, les stands se glissent entre elles. Il lui " +
-                 "faut un parcours : touchez un stand sur le plan, puis son signet." };
+                 "faut un parcours : touchez un stand sur le plan, puis « Ajouter à mon parcours »." };
       }
       /* La reprise ne porte pas le même mot selon qu'on a retenu un jour ou
          plusieurs : le nommer de travers enverrait chercher un bouton qui

@@ -101,8 +101,8 @@ export function remplitParcours(){
        mois à l'avance sur un iPhone : le navigateur aura fait le ménage. On
        annonce donc ce qu'on tient — la liste reste ici — et le tiroir garni
        dit, lui, comment l'emporter ailleurs (`poseGardeParcours`). */
-    v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
-      "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
+    v.textContent = "Ouvrez la fiche d'un exposant et touchez « Ajouter à mon parcours », " +
+      "ou le signet d'une conférence dans le programme d'une zone. Votre parcours reste sur cet " +
       "appareil, et vous pourrez en garder une copie pour le jour du salon.";
     hote.appendChild(v);
     return;
