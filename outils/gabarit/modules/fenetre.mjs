@@ -50,6 +50,45 @@ let apresFermeture = null;
 /** Ce qui attend que la place se libère. */
 export const poseApresFermeture = (f) => { apresFermeture = f; };
 
+/* La part du cadre que le visiteur voit.
+ *
+ * Intégré dans le site d'un salon, le plan vit dans un cadre (`iframe`) plus
+ * haut que ce qui en paraît : souvent 80 % de l'écran, posé sous un titre, et
+ * dont le bas tombe sous le bord du téléphone. La fenêtre, posée au bas du
+ * cadre sur écran étroit, s'y ouvrait à moitié hors de vue — l'invitation à la
+ * visite guidée n'en montrait que le titre et deux lignes, sans ses boutons.
+ *
+ * Le cadre ne sait pas où le site l'a posé, ni lire le défilement d'une page
+ * d'une autre origine. Mais un `IntersectionObserver` sans racine mesure,
+ * même là, ce qui d'un élément tient dans l'écran de la page qui l'accueille :
+ * un témoin collé aux bords du cadre donne donc la bande visible, et la
+ * fenêtre s'y range — en bas de ce qu'on voit, et non du cadre. Les seuils, un
+ * par centième, la font suivre quand le visiteur fait défiler le site.
+ *
+ * Trop peu visible pour y tenir — le cadre à peine entré dans l'écran —, elle
+ * reprend le cadre entier : la tasser dans un liseré la rendrait illisible
+ * aussi, et le visiteur qui descend vers le plan l'y trouvera. Hors d'un cadre,
+ * rien de tout cela ne se pose. */
+const INTEGRE = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();
+let guet = null;
+function suisLaPartVisible(){
+  if (!INTEGRE || guet || typeof IntersectionObserver !== "function") return;
+  const temoin = document.createElement("div");
+  temoin.style.cssText = "position:fixed;inset:0;pointer-events:none;opacity:0";
+  temoin.setAttribute("aria-hidden", "true");
+  document.body.appendChild(temoin);
+  const seuils = Array.from({ length: 101 }, (_, i) => i / 100);
+  guet = new IntersectionObserver(entrees => {
+    const e = entrees[entrees.length - 1];
+    const r = e.intersectionRect;
+    const m = $("modale");
+    if (!e.isIntersecting || r.height < 200) { m.style.top = m.style.bottom = ""; return; }
+    m.style.top = Math.max(0, Math.round(r.top)) + "px";
+    m.style.bottom = Math.max(0, Math.round(innerHeight - r.bottom)) + "px";
+  }, { threshold: seuils });
+  guet.observe(temoin);
+}
+
 /**
  * Une fenêtre par-dessus le plan.
  *
@@ -76,6 +115,7 @@ export function ouvreModale(titre, remplitCorps, boutons, genre){
     el.onclick = () => { if (b.action) b.action(); if (b.ferme !== false) fermeModale(); };
     $("mPied").appendChild(el);
   });
+  suisLaPartVisible();
   $("modale").classList.add("open");
 }
 export function fermeModale(){

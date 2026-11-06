@@ -1185,15 +1185,15 @@ Importé par :
 avancement · comptes · duplication · ecran-console · fiche-detail · fiche-evenement
 provenance · socle-console
 
-### `modules/fenetre.mjs` — 124 l. → plan, plan-admin
+### `modules/fenetre.mjs` — 164 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
 Fonctions :
 
 `poseAvantFermeture` 19 · `retourAuxReglages` 34 · `verseModale` 36
-`poseApresFermeture` 51 · `ouvreModale` 61 · `fermeModale` 81 · `confirme` 91
-`brancheFenetre` 109
+`poseApresFermeture` 51 · `INTEGRE` 72 · `suisLaPartVisible` 74 · `ouvreModale` 100
+`fermeModale` 121 · `confirme` 131 · `brancheFenetre` 149
 
 Importe :
 
