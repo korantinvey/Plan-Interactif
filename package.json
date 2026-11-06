@@ -23,6 +23,7 @@
     "sup": "supabase",
     "essais": "node --test \"outils/essais/*.js\"",
     "performances": "node outils/scripts/performances.js",
+    "quotas": "node outils/scripts/quotas.js",
     "fep26": "node outils/bancs/fep26.js",
     "charge": "node outils/bancs/charge.js",
     "navigateur": "playwright test",

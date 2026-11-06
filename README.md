@@ -2848,6 +2848,46 @@ La référence du projet n'est pas un secret — c'est le sous-domaine de l'API.
 Elle est inscrite dans le workflow, et une variable de dépôt
 `SUPABASE_PROJECT_REF` la remplace si le projet change.
 
+### La surveillance des quotas
+
+Un salon ouvert brûle en une matinée ce que le reste de l'année étale sur des
+semaines, et un quota franchi en forfait gratuit bloque sans prévenir : le
+Worker répond par une erreur, la base se restreint. `.github/workflows/quotas.yml`
+relève donc **chaque heure** ce qui a été consommé, le compare aux limites du
+forfait et le projette au rythme du jour (`outils/scripts/quotas.js`) :
+
+- **Cloudflare** — requêtes du Worker, lectures, écritures, suppressions et
+  listes KV, place occupée dans KV. En gratuit, ces quotas sont **quotidiens**
+  et se remettent à zéro à minuit UTC ; le plus serré est celui des
+  **écritures KV, mille par jour**, que le cache du plan consomme à chaque
+  nouvelle version.
+- **Supabase** — état du projet (le gratuit se met en pause après une semaine
+  sans activité), forfait, taille de la base et du stockage, comptes actifs,
+  appels des fonctions et sortie estimée sur vingt-quatre heures, projetés sur
+  trente jours.
+
+Le résultat tient dans l'issue « Quotas Cloudflare et Supabase » (étiquette
+`quotas`), réécrite en silence à chaque passage ; **un commentaire, donc une
+notification, n'y arrive que lorsqu'un indicateur se dégrade** — orange dès
+70 % consommés ou 80 % projetés, rouge dès 90 % ou 100 %. Une API qui refuse
+fait échouer le passage, et GitHub l'envoie par courriel.
+
+Pour la partie Cloudflare, deux secrets de plus, et une variable :
+
+| | où le trouver |
+|---|---|
+| secret `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com/profile/api-tokens, « Create Token » → « Custom token », permission **Account → Account Analytics → Read**, et rien d'autre |
+| secret `CLOUDFLARE_ACCOUNT_ID` | dans le tableau de bord, colonne de droite de « Workers & Pages » |
+| variable `CLOUDFLARE_FORFAIT` | `payant` si le compte a l'offre Workers Paid ; `gratuit` sinon, valeur par défaut — le jeton d'analyse ne sait pas le lire |
+
+Sans eux, Cloudflare reste « non mesuré » dans l'issue, et le reste tourne.
+`SUPABASE_FORFAIT` (variable) remplace le forfait lu par l'API, si elle ne le
+donne pas. Pour voir la fiche sans rien publier :
+
+```bash
+npm run quotas -- --sec
+```
+
 Les secrets des fonctions — `KLIPSO_API_KEY`, `EVENTMAKER_TOKEN`,
 `ORIGINES_AUTORISEES` — restent posés côté Supabase par `npx supabase secrets
 set`. Ils n'ont pas à transiter par GitHub, et le déploiement ne les touche

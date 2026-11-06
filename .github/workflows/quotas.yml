@@ -1,0 +1,46 @@
+# La surveillance des quotas : chaque heure, la consommation Cloudflare (Worker,
+# KV) et Supabase (base, stockage, fonctions, sortie) est comparée aux limites
+# du forfait et projetée au rythme actuel. L'issue « Quotas Cloudflare et
+# Supabase », étiquette `quotas`, est réécrite en silence ; un commentaire —
+# donc une notification — n'y arrive que lorsqu'un indicateur se dégrade
+# (`outils/scripts/quotas.js`). Rien n'y nomme un compte ni un salon.
+name: Quotas
+
+on:
+  schedule:
+    # à la 23e minute de chaque heure : les quotas quotidiens de Cloudflare se
+    # remettent à zéro à minuit UTC, un salon les brûle en une matinée
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: quotas
+  cancel-in-progress: false
+
+jobs:
+  releve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}
+      # jeton à droit « Account Analytics : Read » seulement
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # `gratuit` ou `payant` : le jeton d'analyse ne lit pas le forfait Workers
+      CLOUDFLARE_FORFAIT: ${{ vars.CLOUDFLARE_FORFAIT || 'gratuit' }}
+      SUPABASE_FORFAIT: ${{ vars.SUPABASE_FORFAIT }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      # le script n'a besoin que de Node et de `gh` : aucune dépendance à installer
+      - run: node outils/scripts/quotas.js
