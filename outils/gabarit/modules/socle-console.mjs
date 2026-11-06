@@ -22,6 +22,7 @@
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, resteJeton, echangeSession, RESTE_JETON,
   initialesDe } from "./session.mjs";
+import { marqueAppareilEquipe } from "./appareil-equipe.mjs";
 import { ouvreModale, fermeModale, poseFenetre } from "./fenetre-console.mjs";
 
 /** Le projet — son adresse et sa clé publique —, puis la session ouverte. */
@@ -204,6 +205,7 @@ export function ecranConnexion(message) {
       }
       poseSession({ SESSION: j });
       localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION));
+      marqueAppareilEquipe();
       fermeModale();
       _page.demarre();
     } catch (e) {
@@ -341,6 +343,8 @@ export function brancheSocle(page) {
 
   try { poseSession({ CFG: JSON.parse(localStorage.getItem(CLE_CFG) || "null") }); } catch (e) {}
   try { poseSession({ SESSION: JSON.parse(localStorage.getItem(CLE_SESSION) || "null") }); } catch (e) {}
+  // le poste de l'exploitant ne compte plus parmi les visiteurs du plan public
+  if (SESSION) marqueAppareilEquipe();
   if (window.PLAN_CONFIG && !CFG) poseSession({ CFG: window.PLAN_CONFIG });
 
   poseFenetre();

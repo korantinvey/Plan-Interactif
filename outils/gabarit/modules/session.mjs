@@ -7,9 +7,12 @@
    fois : elle est ici, une fois, et l'une comme l'autre l'importe.
    ============================================================ */
 
-/* Les deux casiers, partagés par la console et le plan. */
+/* Les deux casiers, partagés par la console et le plan. Celui de la session
+   est nommé dans `appareil-equipe.mjs`, que le plan public lit aussi : il y
+   reconnaît le poste de l'équipe sans recevoir ce module. */
+import { CLE_SESSION } from "./appareil-equipe.mjs";
+export { CLE_SESSION };
 export const CLE_CFG = "console-config";
-export const CLE_SESSION = "console-session";
 
 /** Session et projet, tels que la console les a laissés sur le poste. */
 export function accesBase(){

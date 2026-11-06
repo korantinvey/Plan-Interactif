@@ -17,6 +17,7 @@
 import { $ } from "./dom.mjs";
 import { creeEvenement } from "./evenement.mjs";
 import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
+import { marqueAppareilEquipe } from "./appareil-equipe.mjs";
 import { charge, prechargeAdmin, SESSION_REFUSEE } from "./demarrage.mjs";
 
 /** L'accès est accordé : le mode administrateur s'ouvre. La bande de l'outil
@@ -24,6 +25,9 @@ import { charge, prechargeAdmin, SESSION_REFUSEE } from "./demarrage.mjs";
  *  importe ce module — l'importer d'ici les bouclerait). Le chargement du
  *  plan, lui, s'importe (`demarrage.mjs`). */
 export const ACCES_ACCORDE = creeEvenement();
+/* L'accès accordé fait de ce poste celui de l'équipe : le plan public ne le
+   comptera plus parmi les visiteurs (`appareil-equipe.mjs`). */
+ACCES_ACCORDE.ecoute(marqueAppareilEquipe);
 
 /* Le profil du compte : « admin » ou non. Il ne fait qu'ajouter l'onglet
    « Admin » aux réglages — la base, elle, ne distingue pas les deux profils

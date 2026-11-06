@@ -23,6 +23,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { CLE_CFG, CLE_SESSION } from "./session.mjs";
+import { marqueAppareilEquipe } from "./appareil-equipe.mjs";
 
 /** Le projet, tel que la console l'a laissé sur le poste. */
 let CFG = null;
@@ -42,6 +43,7 @@ function fragment() {
  *  console : on la lui laisse, et l'invité entre sans se reconnecter. */
 function garde(session) {
   try { localStorage.setItem(CLE_SESSION, JSON.stringify(session)); } catch (e) {}
+  marqueAppareilEquipe();
 }
 
 async function lit(reponse) {

@@ -7,7 +7,7 @@
    `ordonnanceur.mjs`.
    ============================================================ */
 import { API, SLUG, BORNE } from "./salon.mjs";
-import { mesureOuverte } from "./mesure.mjs";
+import { audienceComptee } from "./mesure.mjs";
 import { parId } from "./donnees.mjs";
 import { jourISO } from "./temps.mjs";
 import { SEUIL_PEINE, TRANCHES_JOUR, TRANCHES_MINI, trancheDe, dilatationPour }
@@ -75,10 +75,11 @@ let _chargeEnCours = false;
 let _reposPlan = null;
 
 /** La journée organisée doit-elle répartir ? Deux clés, et les deux doivent
- *  tourner : le réglage du salon, et le consentement du visiteur. */
+ *  tourner : le réglage du salon, et le consentement du visiteur — qui n'est
+ *  pas le poste de l'équipe : ses journées d'essai chargeraient les stands. */
 export const chargeSuivie = () =>
   typeof seuilGere === "function" && seuilGere() &&
-  mesureOuverte() &&
+  audienceComptee() &&
   !!SLUG && !BORNE;
 
 /** Le séjour, réduit à ce qu'il annonce : un stand, un jour, une demi-heure. */

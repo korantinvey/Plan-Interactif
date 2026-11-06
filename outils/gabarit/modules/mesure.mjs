@@ -48,6 +48,7 @@ import { $ } from "./dom.mjs";
 import { API, SLUG, BORNE } from "./salon.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { DATA } from "./donnees.mjs";
+import { estAppareilEquipe } from "./appareil-equipe.mjs";
 
 const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
 const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
@@ -64,6 +65,16 @@ const CLE_REFUS = "plan-mesure-refusee";
 let MESURE_REFUSEE = false;
 try { MESURE_REFUSEE = localStorage.getItem(CLE_REFUS) === "1"; } catch (e) {}
 export const mesureOuverte = () => MESURE_ACTIVE && !MESURE_REFUSEE;
+
+/* Le poste de l'équipe — il a ouvert l'administration ou la console
+   (`appareil-equipe.mjs`) — ne compte pas dans l'audience : le jour de
+   l'ouverture, les testeurs pesaient dans les visiteurs sans qu'on puisse les
+   en retirer. Ce n'est pas un refus : la sonde de performance et le relevé des
+   erreurs, qui lisent `mesureOuverte`, continuent de partir de ce poste, où ils
+   servent justement aux essais. Seul le comptage se tait. */
+const MESURE_EQUIPE = MESURE_ACTIVE && estAppareilEquipe();
+/** L'audience compte-t-elle ce poste : consentement donné, et pas l'équipe. */
+export const audienceComptee = () => mesureOuverte() && !MESURE_EQUIPE;
 
 /** Un jeton de quelques caractères, tiré du générateur du navigateur. */
 export function jetonMesure(){
@@ -226,14 +237,14 @@ const CLE_VISITEUR = "plan-visiteur:" + SLUG;
  * posé sur un site tiers, et le rapport sait la dire.
  */
 let MESURE_VISITEUR = "";
-if (mesureOuverte()){
+if (audienceComptee()){
   if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
   else MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
 }
 
 /** Le visiteur suivant d'une borne : un autre jeton, et une visite de plus. */
 export function renouvelleVisiteur(){
-  if (!mesureOuverte()) return;
+  if (!audienceComptee()) return;
   /* Ce qui attendait de partir appartient encore au visiteur précédent : le
      paquet s'en va sous son jeton, sinon ses gestes seraient mis au compte du
      suivant. */
@@ -413,7 +424,7 @@ let _pousseEnCours = false;
  * instant — en trente requêtes.
  */
 function pousseLaFile(dernier){
-  if (!mesureOuverte()) return;
+  if (!audienceComptee()) return;
   const f = litLaFile();
   /* La péremption s'applique même quand rien ne part : `litLaFile` l'écarte de
      ce qu'elle rend, cette écriture-ci l'efface de l'appareil. */
@@ -434,7 +445,7 @@ function pousseLaFile(dernier){
 function envoieMesures(dernier){
   clearTimeout(_envoiDiffere);
   _envoiDiffere = null;
-  if (!mesureOuverte()) return;
+  if (!audienceComptee()) return;
   if (_gestes.length){
     /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
        propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
@@ -469,7 +480,7 @@ function envoieMesures(dernier){
  * cible que l'événement ne porte pas est écartée de même.
  */
 export function mesure(genre, canal, cible, objet){
-  if (!mesureOuverte()) return;
+  if (!audienceComptee()) return;
   const g = { genre: genre };
   if (canal) g.canal = canal;
   if (cible) g.cible = cible;
@@ -497,7 +508,7 @@ function brancheLesEnvois(){
   let dejaVue = false;
   try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
   // un refus n'écrit rien, pas même la marque d'une visite qu'on ne compte pas
-  if (!dejaVue && mesureOuverte()){
+  if (!dejaVue && audienceComptee()){
     try { sessionStorage.setItem(CLE_VUE, "1"); } catch (e) {}
     mesure("visite");
   }
@@ -570,7 +581,7 @@ function refuseMesure(refus){
     ecritLaFile([]);
     MESURE_VISITEUR = "";
     effaceJetonsVisiteur();
-  } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
+  } else if (MESURE_ACTIVE && !MESURE_EQUIPE && !MESURE_VISITEUR){
     /* Comme au démarrage, et pour la même raison : sur une borne, un visiteur
        qui cochait le refus puis un suivant qui le décochait faisaient écrire un
        jeton durable sur un appareil partagé, et le disaient retenu — le rapport
@@ -625,6 +636,10 @@ function ouvreConfidentialite(){
     caseRefus.onchange = () => refuseMesure(caseRefus.checked);
     choix.append(caseRefus, document.createTextNode("Ne pas mesurer mes visites"));
     corps.appendChild(choix);
+    /* Le testeur doit pouvoir vérifier qu'il ne compte pas : sans cette ligne,
+       rien sur le plan public ne dirait que son poste est reconnu. */
+    if (MESURE_EQUIPE) texte("Cet appareil a servi à administrer un salon : " +
+      "ses visites ne sont pas comptées.", "noteRefus");
 
     texte("Ce choix est gardé sur cet appareil, et vaut pour tous les plans de ce " +
       "site. Pour toute question sur ces données, adressez-vous à l'organisateur " +
@@ -638,7 +653,9 @@ function brancheLaNotice(){
   if (!MESURE_ACTIVE) return;
   // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un
   // salon, et les paquets qu'un autre plan n'avait pas pu envoyer
-  if (MESURE_REFUSEE){ effaceJetonsVisiteur(); ecritLaFile([]); }
+  // le poste de l'équipe de même : ce qu'il a compté avant d'être reconnu
+  // n'a pas à partir, ni son jeton à rester
+  if (MESURE_REFUSEE || MESURE_EQUIPE){ effaceJetonsVisiteur(); ecritLaFile([]); }
   $("piedSide").hidden = false;
   $("btnConfidentialite").onclick = ouvreConfidentialite;
 }

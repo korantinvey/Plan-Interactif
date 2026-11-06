@@ -15,6 +15,8 @@ module.exports = {
   "Sans réseau, le plan reste consultable et ces mesures patientent sur votre appareil, le temps d'une reconnexion. Elles en repartent dès qu'elle a lieu, et s'effacent d'elles-mêmes au bout de {n} jours.":
     "Without a network connection the map stays usable, and these measurements wait on your device until you are back online. They are sent as soon as that happens, and delete themselves after {n} days.",
   "Ne pas mesurer mes visites": "Don't measure my visits",
+  "Cet appareil a servi à administrer un salon : ses visites ne sont pas comptées.":
+    "This device has been used to manage a show: its visits are not counted.",
   "Ce choix est gardé sur cet appareil, et vaut pour tous les plans de ce site. Pour toute question sur ces données, adressez-vous à l'organisateur du salon ; vous pouvez aussi saisir la CNIL.":
     "This choice is kept on this device, and applies to every map on this site. For any question about this data, contact the show's organiser; you can also lodge a complaint with the CNIL, the French data protection authority.",
 };

@@ -155,15 +155,15 @@ Importé par :
 
 itineraire · itineraire · troncon
 
-### `modules/acces-admin.mjs` — 253 l. → plan-admin
+### `modules/acces-admin.mjs` — 257 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
 Fonctions :
 
-`litLocal` 34 · `configuration` 39 · `normaliseUrlA` 43 · `sessionValide` 59
-`ecranAcces` 77 · `contenuDuJeton` 166 · `mailDuJeton` 167 · `litProfilA` 178
-`poseCompte` 193 · `brancheAcces` 218
+`litLocal` 38 · `configuration` 43 · `normaliseUrlA` 47 · `sessionValide` 63
+`ecranAcces` 81 · `contenuDuJeton` 170 · `mailDuJeton` 171 · `litProfilA` 182
+`poseCompte` 197 · `brancheAcces` 222
 
 Éléments :
 
@@ -171,7 +171,7 @@ Fonctions :
 
 Importe :
 
-demarrage · dom · evenement · session
+appareil-equipe · demarrage · dom · evenement · session
 
 Importé par :
 
@@ -291,6 +291,18 @@ corps-fiche · donnees · recherche · texte
 Importé par :
 
 reglage-fiche · volets
+
+### `modules/appareil-equipe.mjs` — 45 l. → plan, plan-admin, console, rapport, motdepasse
+
+- l.1 · L'appareil de l'équipe
+
+Fonctions :
+
+`estAppareilEquipe` 35 · `marqueAppareilEquipe` 43
+
+Importé par :
+
+acces-admin · mesure · mot-de-passe · session · socle-console
 
 ### `modules/apparence.mjs` — 242 l. → plan, plan-admin
 
@@ -582,15 +594,15 @@ Importé par :
 
 pile · plan-admin · reglage-suggestion · reglages
 
-### `modules/charge-annoncee.mjs` — 228 l. → plan, plan-admin
+### `modules/charge-annoncee.mjs` — 229 l. → plan, plan-admin
 
 - l.1 · La charge annoncée — ce que les autres journées ont déjà posé
 
 Fonctions :
 
 `seuilConcentration` 24 · `identifiantParcours` 26 · `parcours` 28 · `sejour` 30
-`brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
-`celluleUtile` 149 · `dilatationDuJour` 166 · `litLaCharge` 203 · `chargeCellule` 223
+`brancheCharge` 39 · `chargeSuivie` 80 · `etapesDuSejour` 86 · `annoncePlan` 114
+`celluleUtile` 150 · `dilatationDuJour` 167 · `litLaCharge` 204 · `chargeCellule` 224
 
 Importe :
 
@@ -1791,23 +1803,23 @@ Importé par :
 
 fiche · recherche · synchronisation · vignettes
 
-### `modules/mesure.mjs` — 654 l. → plan, plan-admin
+### `modules/mesure.mjs` — 671 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`mesureOuverte` 66 · `jetonMesure` 69 · `jourIso` 108 · `echeanceMesure` 109
-`jetonRetenu` 134 · `supportMesure` 183 · `renouvelleVisiteur` 235 · `fraisEnFile` 302
-`litLaFile` 306 · `ecritLaFile` 319 · `metEnFile` 334 · `retireDeLaFile` 345
-`chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
-`envoieMesures` 434 · `mesure` 471 · `brancheLesEnvois` 486 · `effaceJetonsVisiteur` 541
-`refuseMesure` 559 · `ouvreConfidentialite` 586 · `brancheLaNotice` 637
-`brancheMesure` 651
+`mesureOuverte` 67 · `audienceComptee` 77 · `jetonMesure` 80 · `jourIso` 119
+`echeanceMesure` 120 · `jetonRetenu` 145 · `supportMesure` 194 · `renouvelleVisiteur` 246
+`fraisEnFile` 313 · `litLaFile` 317 · `ecritLaFile` 330 · `metEnFile` 345
+`retireDeLaFile` 356 · `chargeDe` 367 · `envoiePaquet` 380 · `beaconne` 405
+`pousseLaFile` 426 · `envoieMesures` 445 · `mesure` 482 · `brancheLesEnvois` 497
+`effaceJetonsVisiteur` 552 · `refuseMesure` 570 · `ouvreConfidentialite` 597
+`brancheLaNotice` 652 · `brancheMesure` 668
 
 Importe :
 
-dom · donnees · fenetre · salon
+appareil-equipe · dom · donnees · fenetre · salon
 
 Importé par :
 
@@ -1890,18 +1902,18 @@ Importé par :
 
 outil-dessin · placement-libelles · reprise-emplacements
 
-### `modules/mot-de-passe.mjs` — 210 l. → motdepasse
+### `modules/mot-de-passe.mjs` — 212 l. → motdepasse
 
 - l.1 · Poser un mot de passe
 
 Fonctions :
 
-`dit` 30 · `fragment` 36 · `garde` 43 · `lit` 47 · `demandeLien` 59 · `ouvreSaisie` 68
-`brancheMotDePasse` 86
+`dit` 31 · `fragment` 37 · `garde` 44 · `lit` 49 · `demandeLien` 61 · `ouvreSaisie` 70
+`brancheMotDePasse` 88
 
 Importe :
 
-dom · session
+appareil-equipe · dom · session
 
 Importé par :
 
@@ -2848,14 +2860,18 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 150 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
 Fonctions :
 
-`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
-`initialesDe` 142
+`accesBase` 18 · `contenuJeton` 45 · `resteJeton` 55 · `echangeSession` 71 · `base` 95
+`initialesDe` 145
+
+Importe :
+
+appareil-equipe
 
 Importé par :
 
@@ -2879,19 +2895,19 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/socle-console.mjs` — 403 l. → console, rapport
+### `modules/socle-console.mjs` — 407 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`poseSession` 40 · `entetes` 63 · `renouvelle` 72 · `appel` 91 · `rest` 106
-`ecranConfig` 125 · `ecranConnexion` 157 · `deconnecte` 223 · `signale` 238 · `bloc` 262
-`grille` 280 · `idCompte` 297 · `themeSombre` 306 · `premierEcran` 324 · `brancheSocle` 339
+`poseSession` 41 · `entetes` 64 · `renouvelle` 73 · `appel` 92 · `rest` 107
+`ecranConfig` 126 · `ecranConnexion` 158 · `deconnecte` 225 · `signale` 240 · `bloc` 264
+`grille` 282 · `idCompte` 299 · `themeSombre` 308 · `premierEcran` 326 · `brancheSocle` 341
 
 Importe :
 
-dom · fenetre-console · session
+appareil-equipe · dom · fenetre-console · session
 
 Importé par :
 
