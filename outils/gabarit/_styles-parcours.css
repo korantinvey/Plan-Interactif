@@ -369,8 +369,14 @@
   font:inherit;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer}
 .hdActs .marque.marqueTexte[hidden]{display:none}
 .detail .detail-hd:has(.marqueTexte:not([hidden])){--coin-actes:0px;padding-top:52px}
-/* Les pictos d'action ne paraissent que sur écran étroit : au large, les
-   boutons du pied de la fiche tiennent dans la colonne sans qu'on déroule. */
+/* Les deux actions de la fiche vivent dans sa tête, en pictos, sur tous les
+   écrans. Au pied, elles arrivaient après les champs, le programme et le
+   catalogue : il fallait dérouler toute une fiche pour trouver « Itinéraire ».
+   Les boutons du pied s'en vont, pour ne pas dire deux fois la même commande ;
+   la tête, qui porte alors quatre boutons, s'écarte d'autant du nom. */
+.detail .pAct{display:inline-flex}
+.detail .acts{display:none}
+.detail .detail-hd{--coin-actes:130px}
 .pAct{display:none;flex:none;width:28px;height:28px;align-items:center;justify-content:center;
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink-2)}
 .pAct svg{width:15px;height:15px}

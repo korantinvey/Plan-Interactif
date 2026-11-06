@@ -120,11 +120,11 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1671 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1657 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 702 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 708 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1741 l. → demo.html, plan-smcl.html
 

@@ -1463,20 +1463,6 @@
   :is(.side,.detail,.parcours,.itineraire){touch-action:pan-x pan-y}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
-  /* Les deux actions passent du pied de la fiche à sa tête. Au pied, elles
-     arrivaient après les champs, le programme et le catalogue : il fallait
-     dérouler toute une fiche pour trouver « Itinéraire », et rien ne disait
-     qu'il y avait quelque chose plus bas. En tête, elles sont sous le pouce
-     dès l'ouverture — et à deux pictos, elles n'y prennent pas la ligne du
-     nom. Les boutons du pied s'en vont : les garder ferait deux fois la même
-     commande, à deux endroits, sur l'écran le plus étroit. */
-  .detail .pAct{display:inline-flex}
-  .detail .acts{display:none}
-  /* Le coin porte quatre boutons au lieu de deux : la ligne du type et celle
-     de la marque s'en écartent d'autant. Sans quoi le logo d'un exposant,
-     haut de trois lignes de titre, remontait dans leur bande et passait
-     dessous. */
-  .detail .detail-hd{--coin-actes:130px}
   .detail-hd{--titre:17px}
   .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
