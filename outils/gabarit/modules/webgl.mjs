@@ -2686,6 +2686,8 @@ let _survolDernier = 0;
 let _lectureDifferee = null;
 function lectureDifferee(){
   if (_lectureDifferee !== null) return _lectureDifferee;
+  // avant la carte graphique, la question ne se tranche pas : la figer à « non » l'ôtait pour la visite
+  if (!peutDesigner()) return false;
   _lectureDifferee = false;
   try {
     const d = GL.deck && GL.deck.device;
@@ -3225,11 +3227,19 @@ function logosSurLesToits(/** @type {any} */ c){
 /** Ce qui est sous un point de l'écran : l'élément qui ouvre une fiche, celui
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
+  if (!peutDesigner()) return null;
   const r = cadrePlan();
   return lisObjet(GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
 }
+/* La bibliothèque ne sait désigner qu'une fois la carte graphique prête — son
+   « onLoad », qui vient après coup — et plus du tout une fois défaite : entre
+   les deux, `pickObject` lève « deck.gl: assertion failed ». Un survol ou un
+   appui pendant le chargement du plan y tombait (Funexpo 2026, octobre et
+   novembre). Rien n'est alors sous le doigt. */
+function peutDesigner(){ return !!(GL.deck && GL.deck.isInitialized); }
 /** La même question, la réponse relue sans attendre la carte graphique. */
 async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
+  if (!peutDesigner()) return null;
   const r = cadrePlan();
   return lisObjet(await GL.deck.pickObjectAsync({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
 }
