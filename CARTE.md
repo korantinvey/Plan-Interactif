@@ -3646,6 +3646,7 @@ Injections :
 - `20261022082549_une_cle_par_base_klipso.sql` — base_klipso, prive.cle_klipso, fn enregistre_base_klipso, fn cle_klipso
 - `20261022110142_vignettes_lues_par_leurs_adresses_en_une_fois.sql` — fn vignettes_par_source
 - `20261022135740_les_erreurs_des_pages_lues_par_jeton.sql` — fn lecture_perf
+- `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
 
 ## Le reste
 
