@@ -535,6 +535,11 @@
           <button class="pAct itin" id="dItinIco" title="Itinéraire" aria-label="Itinéraire">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
           </button>
+          <!-- L'ajout au parcours, en toutes lettres : seul en pictogramme, le
+               signet passait pour un ornement, et l'on ne découvrait le
+               parcours qu'en le cherchant. Il garde la classe `marque`, pour
+               que chaque modèle de fiche l'habille comme avant. -->
+          <button class="marque marqueTexte" id="dMarque" hidden><span class="l"></span></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
         <div class="hdTete"><span class="pastDist" id="dPast"></span></div>
@@ -544,11 +549,6 @@
           <img class="logoZone" id="dLogo" alt="" hidden>
         </div>
         <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
-        <!-- L'ajout au parcours, en toutes lettres sous le nom : seul en pictogramme
-             près de la croix, le signet passait pour un ornement, et l'on
-             ne découvrait le parcours qu'en le cherchant. Il garde la classe
-             `marque`, pour que chaque modèle de fiche l'habille comme avant. -->
-        <button class="marque marqueTexte" id="dMarque" hidden><span class="l"></span></button>
       </div>
       <!-- Le coin corné, pour qui le préfère à la pastille. Il tient au coin
            du tiroir et non à celui de l'en-tête : posé dans l'en-tête, il

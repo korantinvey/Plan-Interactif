@@ -70,8 +70,8 @@ l'endroit où l'on corrige quoi que ce soit.
 `#geoSocL` · `#geoSoc` · `#geoTitreL` · `#geoTitre` · `#geoDim` · `#geoLargeur`
 `#geoHauteur` · `#geoOrigine` · `#geoFiche` · `#geoSupprime` · `#geoAide` · `#modale`
 `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail`
-`#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#closeDetail` · `#dPast`
-`#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis` · `#dPartage` · `#dMarque`
+`#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque` · `#closeDetail`
+`#dPast` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis` · `#dPartage`
 `#dCorne` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dOngProd`
 `#dOngNbProd` · `#dBody` · `#parcours` · `#poigneeParcours` · `#closeParcours` · `#pEyebrow`
 `#pTitre` · `#pResume` · `#pActs` · `#btnJournee` · `#jRefaire` · `#btnPartage`
@@ -128,7 +128,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-plan.css` — 1741 l. → demo.html, plan-smcl.html
 
-### `_styles-vitrine.css` — 193 l. → demo.html, plan-smcl.html
+### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
 
 ### `_sw.js` — 568 l.
 

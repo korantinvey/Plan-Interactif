@@ -362,13 +362,13 @@
 .hdActs .close{position:static;top:auto;right:auto}
 .hdActs .marque{width:28px;height:28px}
 .hdActs .marque[hidden]{display:none}
-/* Le signet de la fiche, nommé : c'est l'appel principal d'une fiche
-   d'exposant, il prend donc la largeur et le poids d'un bouton. */
-.detail-hd .marque.marqueTexte{width:auto;height:auto;display:flex;align-items:center;
-  justify-content:center;gap:8px;margin-top:12px;padding:9px 14px;font:inherit;
-  font-size:13.5px;font-weight:600;cursor:pointer}
-.detail-hd .marque.marqueTexte[hidden]{display:none}
-.detail-hd .marque.marqueTexte svg{width:15px;height:15px}
+/* Le signet de la fiche, nommé, garde sa place dans le coin des actions. Il
+   y prend presque toute la largeur d'une fiche : le nom passe dessous, à
+   pleine largeur, plutôt que de s'y tasser sur trois mots par ligne. */
+.hdActs .marque.marqueTexte{width:auto;display:flex;gap:6px;padding:0 10px;
+  font:inherit;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer}
+.hdActs .marque.marqueTexte[hidden]{display:none}
+.detail .detail-hd:has(.marqueTexte:not([hidden])){--coin-actes:0px;padding-top:52px}
 /* Les pictos d'action ne paraissent que sur écran étroit : au large, les
    boutons du pied de la fiche tiennent dans la colonne sans qu'on déroule. */
 .pAct{display:none;flex:none;width:28px;height:28px;align-items:center;justify-content:center;
