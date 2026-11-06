@@ -39,6 +39,7 @@ import { CONF, enregistreConf } from "./configuration.mjs";
 import { liste } from "./recherche.mjs";
 import { champComptoir } from "./reglage-comptoir.mjs";
 import { champFoodtrucks } from "./reglage-foodtrucks.mjs";
+import { COTES_ESTRADE } from "./decor.mjs";
 
 /* Les réglages (`CONF`, que le changement de salon remplace), importés, se
    lisent tels qu'ils sont à l'instant. */
@@ -149,9 +150,13 @@ export function champsZone(hote, o){
     "déborder de la zone, et se dressent ainsi dans la vue immersive — où ils se prennent " +
     "aussi directement sur le plan. Le camion choisi peut recevoir un logo, imprimé sur " +
     "sa devanture."), o);
+  /* L'estrade d'une salle, de même : rien ne dit où sont ses portes, et le
+     placement d'office la mettait parfois dans le dos de qui entre. */
+  const montreEstrade = champEstrade(hote, o);
   const suitType = () => {
     montreComptoir(type.value === "accueil");
     montreCamions(type.value === "foodtruck");
+    montreEstrade(type.value === "conferences");
   };
   type.addEventListener("change", suitType);
   suitType();
@@ -199,6 +204,45 @@ export function champsZone(hote, o){
                   description: riche.lit(), descriptionEn: richeEn.lit(), lien: lienZ.value,
                   traversable: traverse.checked,
                   salles: salles ? salles() : null });
+}
+
+/** Les côtés proposés pour l'estrade, dans l'ordre du menu. */
+const NOMS_COTES = [["", "Placement automatique"], ["haut", "En haut du plan"],
+  ["bas", "En bas du plan"], ["gauche", "À gauche du plan"], ["droite", "À droite du plan"]];
+
+/**
+ * Le côté où se tiennent l'estrade et l'écran d'une salle de conférence, que
+ * la vue immersive meuble (`decor.mjs` `COTES_ESTRADE`). Comme le comptoir
+ * d'un accueil, le réglage appartient à l'apparence du plan : il se range dans
+ * la configuration (`_estrades`, par zone), s'enregistre dès qu'on le choisit,
+ * et se pose en attribut sur la zone, que le dessin relit. Rend `montre(oui)`.
+ * @param {HTMLElement} hote
+ * @param {any} o la zone
+ */
+function champEstrade(hote, o){
+  const choix = champZone(hote, "Estrade et écran", document.createElement("select"),
+    "Le côté de la salle où se dressent l'estrade et l'écran, dans la vue " +
+    "immersive ; les rangées de sièges leur font face. Choisissez le côté " +
+    "opposé aux portes. En automatique, l'estrade se met au bout le plus " +
+    "haut sur le plan.");
+  choix.innerHTML = NOMS_COTES.map(([v, nom]) =>
+    '<option value="' + v + '">' + esc(nom) + "</option>").join("");
+  const actuel = (CONF._estrades || {})[o.id];
+  choix.value = Object.hasOwn(COTES_ESTRADE, actuel) ? actuel : "";
+  choix.addEventListener("change", () => {
+    const t = CONF._estrades = CONF._estrades || {};
+    if (choix.value) t[o.id] = choix.value;
+    else delete t[o.id];
+    if (!Object.keys(t).length) delete CONF._estrades;
+    enregistreConf();
+    // le plan relit l'attribut et se repeint ; la zone peut être d'un autre pavillon
+    document.querySelectorAll('#zones g[data-id="' + CSS.escape(String(o.id)) + '"]').forEach(g => {
+      if (choix.value) g.setAttribute("data-estrade", choix.value);
+      else g.removeAttribute("data-estrade");
+    });
+  });
+  const champ = /** @type {HTMLElement} */ (choix.closest(".champZ"));
+  return (/** @type {boolean} */ oui) => { champ.hidden = !oui; };
 }
 
 /**
