@@ -816,7 +816,7 @@
    classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
    forme courte — écrite après eux dans la feuille — les effacerait. */
 .mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
-  box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
+  box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:min(82vh,100%);
   display:flex;flex-direction:column;overflow:hidden}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
@@ -1347,7 +1347,7 @@
   .modale{padding:0;place-items:end stretch}
   /* Posée contre le bord de l'écran, la fenêtre y descend son fond et remonte
      ce qu'elle porte : son pied tombait sous la poignée de gestes. */
-  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none;
+  .mfen{width:100%;max-height:min(88dvh,100%);border-radius:14px 14px 0 0;border-bottom:none;
     padding-bottom:var(--sys-bas)}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
