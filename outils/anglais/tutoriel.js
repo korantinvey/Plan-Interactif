@@ -82,8 +82,8 @@ module.exports = {
   "Touchez sur le plan un stand qui vous intéresse.": "Tap a stand that interests you on the map.",
   "Plusieurs sociétés partagent ce stand : choisissez celle qui vous intéresse.":
     "Several companies share this stand: choose the one that interests you.",
-  "Touchez le signet pour ajouter « {nom} » à votre parcours.":
-    "Tap the bookmark to add “{nom}” to your visit plan.",
+  "Touchez « Ajouter à mon parcours » pour retenir « {nom} ».":
+    "Tap “Add to my visit plan” to keep “{nom}”.",
   "C'est noté. Touchez « Mon parcours », en haut de l'écran, pour retrouver ce que vous avez retenu.":
     "Noted. Tap “My visit” at the top of the screen to find what you have kept.",
 
@@ -103,8 +103,8 @@ module.exports = {
     "Your visit plan can become a planned day: open “My visit” at the top of the screen.",
   "Touchez « Organiser ma journée » : les conférences retenues gardent leur heure, et les stands se glissent entre elles dans l'ordre qui fait le moins de chemin.":
     "Tap “Plan my day”: the conferences you kept stay at their time, and the stands fit in between, in the order that means the least walking.",
-  "Touchez le signet pour ajouter « {nom} » à votre parcours : c'est lui que la journée met en ordre.":
-    "Tap the bookmark to add “{nom}” to your visit plan: that is what your day is built from.",
+  "Touchez « Ajouter à mon parcours » pour retenir « {nom} » : c'est lui que la journée met en ordre.":
+    "Tap “Add to my visit plan” to keep “{nom}”: that is what your day is built from.",
   "« Organiser ma journée » met votre parcours en heures : les conférences retenues gardent la leur, les stands se glissent entre elles. Il lui faut un parcours : touchez un stand sur le plan, puis son signet.":
     "“Plan my day” turns your visit plan into a schedule: the conferences you kept stay at their time, and the stands fit in between. It needs a visit plan: tap a stand on the map, then its bookmark.",
   "Indiquez votre heure d'arrivée, puis touchez « Organiser ».":

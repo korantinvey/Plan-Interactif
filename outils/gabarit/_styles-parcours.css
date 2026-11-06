@@ -11,6 +11,9 @@
   color:var(--ink-3);display:grid;place-items:center;background:var(--surface)}
 .marque svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linejoin:round;stroke-linecap:round}
+/* Nommé, le signet de la fiche se lit à l'encre pleine ; avant la règle du
+   signet pris, et sous celles des modèles, qui gardent la main. */
+.marque.marqueTexte{color:var(--ink)}
 .marque:hover{border-color:var(--line-strong);color:var(--ink)}
 .marque[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
 .marque[aria-pressed="true"] svg{fill:currentColor}
@@ -359,6 +362,13 @@
 .hdActs .close{position:static;top:auto;right:auto}
 .hdActs .marque{width:28px;height:28px}
 .hdActs .marque[hidden]{display:none}
+/* Le signet de la fiche, nommé : c'est l'appel principal d'une fiche
+   d'exposant, il prend donc la largeur et le poids d'un bouton. */
+.detail-hd .marque.marqueTexte{width:auto;height:auto;display:flex;align-items:center;
+  justify-content:center;gap:8px;margin-top:12px;padding:9px 14px;font:inherit;
+  font-size:13.5px;font-weight:600;cursor:pointer}
+.detail-hd .marque.marqueTexte[hidden]{display:none}
+.detail-hd .marque.marqueTexte svg{width:15px;height:15px}
 /* Les pictos d'action ne paraissent que sur écran étroit : au large, les
    boutons du pied de la fiche tiennent dans la colonne sans qu'on déroule. */
 .pAct{display:none;flex:none;width:28px;height:28px;align-items:center;justify-content:center;
