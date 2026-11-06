@@ -42,7 +42,7 @@ import { injecteAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { traceStand } from "./ambiance.mjs";
 import { CONF } from "./configuration.mjs";
-import { reglageComptoirValide, reglageCamionsValide } from "./decor.mjs";
+import { reglageComptoirValide, reglageCamionsValide, COTES_ESTRADE } from "./decor.mjs";
 
 /* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
@@ -96,6 +96,12 @@ function attributCamions(id){
   return reglageCamionsValide(r) ? ' data-foodtrucks="' + texteCamions(r) + '"' : "";
 }
 
+/** Le côté de l'estrade d'une salle, choisi à la main, en attribut, ou rien. */
+function attributEstrade(/** @type {string} */ id){
+  const c = (CONF._estrades || {})[id];
+  return Object.hasOwn(COTES_ESTRADE, c) ? ' data-estrade="' + c + '"' : "";
+}
+
 /* Le balisage d'une zone et d'un stand, sortis de « montePlan » pour qu'un
    emplacement ajouté à la main (`reprise-emplacements.mjs`) se pose dans le même
    groupe que ceux de la source, sans qu'on remonte tout le pavillon.
@@ -120,6 +126,8 @@ export const baliseZone = (z) =>
   attributComptoir(z.id) +
   // les camions d'un foodtruck, de même
   attributCamions(z.id) +
+  // le côté de l'estrade d'une salle de conférence
+  attributEstrade(z.id) +
   ' tabindex="0" role="button" aria-label="' +
   esc(z.nom || "zone") + '"><path d="' + traceStand(z.d) + '"/></g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :

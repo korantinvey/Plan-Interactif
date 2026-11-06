@@ -7,6 +7,13 @@
 module.exports = {
   "Comptoir d'accueil": "Reception desk",
   "Foodtrucks": "Food trucks",
+  "Estrade et écran": "Stage and screen",
+  "Le côté de la salle où se dressent l'estrade et l'écran, dans la vue immersive ; les rangées de sièges leur font face. Choisissez le côté opposé aux portes. En automatique, l'estrade se met au bout le plus haut sur le plan.":
+    "The side of the room where the stage and screen stand, in the immersive view; the rows of seats face them. Choose the side opposite the doors. On automatic, the stage goes at the end highest on the map.",
+  "En haut du plan": "At the top of the map",
+  "En bas du plan": "At the bottom of the map",
+  "À gauche du plan": "On the left of the map",
+  "À droite du plan": "On the right of the map",
   "Choisissez le nombre de camions, faites-les glisser pour les placer, choisissez-en un et tirez sa poignée ronde pour le tourner (Maj pour un angle libre) : le store rouge marque le côté qui sert. Ils peuvent déborder de la zone, et se dressent ainsi dans la vue immersive — où ils se prennent aussi directement sur le plan. Le camion choisi peut recevoir un logo, imprimé sur sa devanture.":
     "Choose the number of trucks, drag them to place them, select one and pull its round handle to turn it (Shift for a free angle): the red awning marks the serving side. They may overhang the area, and this is how they stand in the immersive view — where you can also grab them right on the map. The selected truck can take a logo, printed on its shopfront.",
   "Faites glisser le comptoir pour le placer, tirez sa poignée ronde pour le tourner (Maj pour un angle libre) : il reste dans la zone, et s'arrête contre son bord. Il se dresse ainsi dans la vue immersive, pour le visiteur comme pour vous — où il se prend aussi directement sur le plan.":

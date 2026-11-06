@@ -164,6 +164,31 @@ const rect = (x, y, w, h, deg = 0) => {
       meuble("foodtruck", parc, r, 2).filter(x => x.role === "comptoir-choisi").length === 1, "tenu, un camion sort sa poignée");
   }
 
+  console.log("Le côté de l'estrade");
+  {
+    // le centre de l'écran, et celui des sièges, sur le plan
+    const milieuDe = (pieces, role) => {
+      const pts = pieces.filter(x => x.role === role).flatMap(x => x.polygon);
+      return [pts.reduce((m, p) => m + p[0], 0) / pts.length, pts.reduce((m, p) => m + p[1], 0) / pts.length];
+    };
+    const attendu = { haut: [0, -1], bas: [0, 1], gauche: [-1, 0], droite: [1, 0] };
+    for (const deg of [0, 90, 20]){
+      const salle = rect(40, 60, 22, 14, deg);
+      for (const [cote, [dx, dy]] of Object.entries(attendu)){
+        const p = meuble("conferences", salle, cote);
+        const e = milieuDe(p, "ecran"), a = milieuDe(p, "assise");
+        dit(p.some(x => x.role === "scene") && (e[0] - a[0]) * dx + (e[1] - a[1]) * dy > 1,
+          "tournée de " + deg + "°, l'estrade " + cote + " : l'écran de ce côté, les sièges en face");
+        const deborde = p.filter(x => x.polygon.some(([u, v]) => !dedans(salle, u, v)));
+        dit(!deborde.length, "tournée de " + deg + "°, l'estrade " + cote + " : rien ne déborde");
+      }
+    }
+    // d'office comme avant : au bout le plus haut sur le plan
+    const p = meuble("conferences", rect(0, 0, 22, 14)), q = meuble("conferences", rect(0, 0, 22, 14), "inconnu");
+    dit(milieuDe(p, "ecran")[0] !== 0 && JSON.stringify(p) === JSON.stringify(q),
+      "un côté inconnu vaut le placement d'office");
+  }
+
   console.log("Une zone immense");
   const n = meuble("conferences", rect(0, 0, 400, 300)).length;
   dit(n <= 600, "le décor s'arrête à la borne", n + " pièces");

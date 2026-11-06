@@ -1731,6 +1731,9 @@ function meubleZone(el, polygon, couleur, acc){
     });
     const i = g.getAttribute("data-foodtruck-choisi");
     enMain = cameraEnJeu() && i !== null ? Number(i) : false;
+  } else if (type === "conferences"){
+    // le côté de l'estrade, choisi dans la fiche de la zone (`fiche-zone.mjs`)
+    reglage = g.getAttribute("data-estrade");
   } else {
     const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
     reglage = { u, v, a };

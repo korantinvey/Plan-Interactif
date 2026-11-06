@@ -426,12 +426,50 @@ export function enseignesCamions(anneau, reglage, aPlat){
   return out;
 }
 
+/** Les côtés où l'exploitant peut mettre l'estrade et l'écran d'une salle,
+ *  et la direction qu'ils regardent sur le plan (le haut est vers les y
+ *  petits). Sans réglage, le placement d'office. */
+export const COTES_ESTRADE = /** @type {Record<string, number[]>} */ ({
+  haut: [0, -1], bas: [0, 1], gauche: [-1, 0], droite: [1, 0] });
+
+/**
+ * Le fond d'une salle de conférence, dans le repère de la zone : l'axe qui va
+ * de l'entrée à l'estrade (`s`, ou `t` si `travers`), son sens, le bout où se
+ * tient l'estrade et celui d'où l'on entre, et l'étendue en travers.
+ *
+ * Le côté choisi se prend parmi les quatre bouts du repère — les deux du
+ * long côté, les deux du petit —, celui dont le dehors regarde le plus vers
+ * lui : une salle tournée garde ainsi son estrade du côté qu'on a dit, au plus
+ * près.
+ */
+function fondSalle(/** @type {ReturnType<typeof repere>} */ R, /** @type {any} */ cote){
+  const voulu = typeof cote === "string" ? COTES_ESTRADE[cote] : null;
+  const vx = -R.uy, vy = R.ux;
+  /* Les quatre bouts : leur axe, leur sens, et la direction de leur dehors
+     sur le plan. */
+  const bouts = [
+    { travers: false, sens: 1, dir: [R.ux, R.uy] }, { travers: false, sens: -1, dir: [-R.ux, -R.uy] },
+    { travers: true, sens: 1, dir: [vx, vy] }, { travers: true, sens: -1, dir: [-vx, -vy] }];
+  let choix;
+  if (voulu){
+    choix = bouts.reduce((m, b) =>
+      b.dir[0] * voulu[0] + b.dir[1] * voulu[1] > m.dir[0] * voulu[0] + m.dir[1] * voulu[1] ? b : m);
+  } else {
+    // d'office, celui des deux petits côtés qui est le plus haut sur le plan
+    choix = bouts[0].dir[1] <= bouts[1].dir[1] ? bouts[0] : bouts[1];
+  }
+  const [a0, a1, b0, b1] = choix.travers ? [R.t0, R.t1, R.s0, R.s1] : [R.s0, R.s1, R.t0, R.t1];
+  return { travers: choix.travers, sens: choix.sens,
+    bout: choix.sens > 0 ? a1 : a0, debut: choix.sens > 0 ? a0 : a1, b0, b1 };
+}
+
 /**
  * Le mobilier d'une zone.
  * @param {string} type       le type de la zone
  * @param {number[][]} anneau son contour, en mètres
  * @param {any} [reglage] le comptoir placé à la main, sur un accueil (`ReglageComptoir`) ;
- *                        les camions, sur un foodtruck (une liste de réglages)
+ *                        les camions, sur un foodtruck (une liste de réglages) ;
+ *                        le côté de l'estrade, sur une salle (`COTES_ESTRADE`)
  * @param {boolean | number} [enMain] le comptoir est choisi par l'exploitant, ou sur un
  *                        foodtruck le rang du camion tenu : il porte sa poignée
  * @returns {Piece[]}
@@ -465,7 +503,7 @@ export function meuble(type, anneau, reglage = null, enMain = false){
     }
     pieces.push({ polygon, haut, role });
   };
-  const L = R.s1 - R.s0, l = R.t1 - R.t0;
+  const l = R.t1 - R.t0;
 
   if (type === "restauration"){
     // des tables rondes à quatre chaises, sur une trame de deux mètres soixante
@@ -535,21 +573,28 @@ export function meuble(type, anneau, reglage = null, enMain = false){
         if (tient(a, tb, .45, .45, .2) && !gene(...R.plan(a, tb))) ronde(a, tb, .4, 1.1, "plateau");
   } else if (type === "conferences"){
     /* La scène au fond, sur toute la largeur, et l'écran qui la domine. Rien
-       ne dit par où l'on entre dans la salle : le fond est le bout le plus
-       haut sur le plan, celui qu'une vue de face montre au loin — la salle
-       regarde alors celui qui la regarde, au lieu de lui tourner le dos. */
-    const milieu = (R.t0 + R.t1) / 2;
-    const sens = R.plan(R.s0, milieu)[1] < R.plan(R.s1, milieu)[1] ? -1 : 1;
-    const bout = sens > 0 ? R.s1 : R.s0, debut = sens > 0 ? R.s0 : R.s1;
-    const prof = Math.min(3, Math.max(1.5, L * .18));
+       ne dit par où l'on entre dans la salle : d'office, le fond est celui
+       des deux petits côtés qui est le plus haut sur le plan, celui qu'une
+       vue de face montre au loin — la salle regarde alors celui qui la
+       regarde, au lieu de lui tourner le dos. L'exploitant, qui sait où sont
+       les portes, choisit le côté (`COTES_ESTRADE`) ; un long côté se prend
+       aussi, et les rangées courent alors dans l'autre sens. */
+    const f = fondSalle(R, reglage);
+    // une pièce posée dans le repère de la salle : « a » vers le fond, « b » en travers
+    const poseS = (/** @type {number} */ a, /** @type {number} */ b, /** @type {number} */ da,
+      /** @type {number} */ db, /** @type {number} */ haut, /** @type {string} */ role, marge = .25) =>
+      f.travers ? pose(b, a, db, da, haut, role, marge) : pose(a, b, da, db, haut, role, marge);
+    const { sens, bout, debut, b0, b1 } = f, prof0 = Math.abs(bout - debut), large = b1 - b0;
+    const milieu = (b0 + b1) / 2;
+    const prof = Math.min(3, Math.max(1.5, prof0 * .18));
     const fond = bout - sens * (.8 + prof / 2);
-    pose(fond, milieu, prof / 2, l / 2 - 1, .45, "scene", 0);
-    pose(bout - sens * .6, milieu, .08, Math.min(l * .3, 4), 2.8, "ecran", 0);
+    poseS(fond, milieu, prof / 2, large / 2 - 1, .45, "scene", 0);
+    poseS(bout - sens * .6, milieu, .08, Math.min(large * .3, 4), 2.8, "ecran", 0);
     // les rangées, de la scène vers l'entrée, une allée au milieu
     for (let a = fond - sens * (prof / 2 + 1.6); sens * (a - debut) >= .8; a -= sens * .95)
-      for (let b = R.t0 + .7; b <= R.t1 - .7; b += .62){
+      for (let b = b0 + .7; b <= b1 - .7; b += .62){
         if (Math.abs(b - milieu) < .7) continue;
-        pose(a, b, .24, .24, .45, "assise", .05);
+        poseS(a, b, .24, .24, .45, "assise", .05);
       }
   } else if (type === "accueil"){
     /* Un comptoir, et deux plantes à ses bouts. Placé à la main, il tient
