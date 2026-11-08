@@ -3406,7 +3406,7 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 722 l. → plan, plan-admin
+### `modules/vue.mjs` — 776 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.84 · 6. Vue
@@ -3415,12 +3415,13 @@ Fonctions :
 
 `injecteALaVue` 69 · `enEdition` 75 · `libelles` 76 · `poseEmprise` 82 · `figeTextes` 106
 `rendTextes` 114 · `cadrage` 153 · `peintLibelles` 158 · `repeintLibelles` 166
-`detacheLibelles` 170 · `rattacheLibelles` 182 · `etireLibelles` 200
-`poseFacteurTrait` 215 · `suitLaVue` 231 · `versScene` 240 · `retiensVue` 259
-`appliqueVue` 269 · `libellesDeLaVue` 343 · `rafraichitVue` 351 · `poseVue` 365
-`mesureBarre` 394 · `masqueHaut` 422 · `masque` 429 · `masqueDroite` 466 · `fit` 477
-`recadreIncline` 506 · `stoppeZoom` 548 · `glisseVersVise` 566 · `glisseVers` 612
-`rectVisee` 639 · `zoom` 659 · `echelle` 677 · `versPlan` 689 · `brancheVue` 701
+`detacheLibelles` 170 · `rattacheLibelles` 182 · `deplaceImage` 214 · `poseImage` 223
+`etireLibelles` 233 · `poseFacteurTrait` 248 · `suitLaVue` 264 · `versScene` 273
+`retiensVue` 292 · `appliqueVue` 302 · `libellesDeLaVue` 397 · `rafraichitVue` 405
+`poseVue` 419 · `mesureBarre` 448 · `masqueHaut` 476 · `masque` 483 · `masqueDroite` 520
+`fit` 531 · `recadreIncline` 560 · `stoppeZoom` 602 · `glisseVersVise` 620
+`glisseVers` 666 · `rectVisee` 693 · `zoom` 713 · `echelle` 731 · `versPlan` 743
+`brancheVue` 755
 
 Importe :
 

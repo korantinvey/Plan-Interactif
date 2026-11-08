@@ -196,6 +196,39 @@ function rattacheLibelles(){
   libPeints = libAvant = null;
 }
 
+/* Essai, sous « ?geste=image » : le plan entier, et non ses seuls noms, ne
+   se redessine plus pendant un geste. Réécrire la « viewBox » à chaque image
+   fait repeindre tout le hall — une affaire de carte graphique, que le
+   processeur seul, sur un poste qui n'en a pas, ne tient pas. Le SVG garde
+   donc l'image peinte à la dernière vue posée, et le compositeur la déplace
+   et l'étire comme il le fait du calque des noms ; la « viewBox » ne se
+   réécrit qu'à l'arrêt de la main. Le prix : un plan adouci en zoom avant,
+   et des bords vides en glissant loin, le temps du geste — c'est ce que
+   l'essai doit faire voir. */
+const IMAGE_GESTE = new URLSearchParams(location.search).get("geste") === "image";
+const POSE_IMAGE = 150;
+/** @type {any} */
+let imagePeinte = null, minuterieImage = 0, poseEnCours = false;
+
+/** La vue que l'écran montre amenée sur l'image peinte pour « imagePeinte ». */
+function deplaceImage(/** @type {any} */ view){
+  const r = cadrePlan();
+  const a = cadrage(imagePeinte, r), b = cadrage(view, r), k = b.s / a.s;
+  svg.style.transform =
+    "translate(" + ((imagePeinte.x - view.x) * b.s + b.x - a.x * k) + "px," +
+    ((imagePeinte.y - view.y) * b.s + b.y - a.y * k) + "px) scale(" + k + ")";
+}
+
+/** La main s'est arrêtée : le plan se redessine net, à la vue du moment. */
+function poseImage(){
+  clearTimeout(minuterieImage); minuterieImage = 0;
+  if (!imagePeinte) return;
+  imagePeinte = null;
+  svg.style.transform = svg.style.transformOrigin = svg.style.willChange = "";
+  poseEnCours = true;
+  try { appliqueVue(); } finally { poseEnCours = false; }
+}
+
 /** Amène ce que le calque a peint pour « libPeints » sur la vue écrite. */
 function etireLibelles(){
   const r = cadrePlan();
@@ -291,6 +324,27 @@ export const appliqueVue = (enGeste = false) => {
     if (GL.pret) return;
   }
   const view = vue();
+  /* La molette avance par petits trajets, et chacun se pose (`poseVue`) :
+     tant que l'image est en jeu, la pose attend elle aussi l'arrêt de la main,
+     sans quoi le plan se redessinait à chaque cran. */
+  if (IMAGE_GESTE && vueEcrite && !poseEnCours && (enGeste || imagePeinte)){
+    if (!imagePeinte){
+      imagePeinte = vueEcrite;
+      svg.style.transformOrigin = "0 0";
+      svg.style.willChange = "transform";
+    }
+    deplaceImage(view);
+    vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
+    if (libPeints) etireLibelles();
+    clearTimeout(minuterieImage);
+    minuterieImage = setTimeout(poseImage, POSE_IMAGE);
+    return;
+  }
+  if (imagePeinte){
+    clearTimeout(minuterieImage); minuterieImage = 0;
+    imagePeinte = null;
+    svg.style.transform = svg.style.transformOrigin = svg.style.willChange = "";
+  }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   poseFacteurTrait(view);
