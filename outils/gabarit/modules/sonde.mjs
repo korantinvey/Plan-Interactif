@@ -338,9 +338,36 @@ function lisAppareil(creux = false){
       APPAREIL.carte = carteGraphique(gl) || undefined;
       // sans carte graphique, le navigateur dessine au processeur : une autre classe de machine
       if (APPAREIL.carte && /SwiftShader|llvmpipe|Software/i.test(APPAREIL.carte.puce || "")) APPAREIL.carte.logiciel = true;
+      if (APPAREIL.carte && APPAREIL.carte.webgl2) APPAREIL.carte.handicap = handicapDeclare();
     }
   }
   return APPAREIL;
+}
+
+/**
+ * Le navigateur refuserait-il le WebGL à qui ne le veut pas au prix d'un gros
+ * handicap — imité par le processeur, ou une carte graphique qu'il écarte ?
+ *
+ * Le nom de la puce ne le dit qu'à moitié : « Microsoft Basic Render Driver »
+ * ne contient aucun des mots que `logiciel` cherche, et une carte écartée
+ * garde son nom. Le navigateur, lui, le sait. Sans carte graphique, le dessin
+ * tient une image par seconde et le plan met seize secondes à paraître, là où
+ * le SVG en tient près de soixante (banc à rendu logiciel, SMCL 2026,
+ * 8 novembre 2026). Avant d'y renvoyer ces postes, on regarde lesquels il
+ * désigne : rien ne change encore pour eux.
+ *
+ * Une toile à part, jetée aussitôt : la demande du plan n'en est pas
+ * touchée. Lue seulement quand le WebGL2 existe, sans quoi le refus ne dirait
+ * rien de plus. Rien quand on ne sait pas.
+ */
+function handicapDeclare(){
+  try {
+    const gl = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
+    if (!gl) return true;
+    const fin = gl.getExtension("WEBGL_lose_context");
+    if (fin) fin.loseContext();
+    return false;
+  } catch (e) { return undefined; }
 }
 
 /* ------------------------------------------------------------
