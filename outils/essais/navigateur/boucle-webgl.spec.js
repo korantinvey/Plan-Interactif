@@ -50,4 +50,41 @@ test.describe("la boucle d'images du dessin", () => {
 
     expect(erreurs).toEqual([]);
   });
+
+  /* Le plan intégré dans la page d'un salon, sorti de l'écran par le
+     défilement : Chrome ne lui donne plus d'images, sans le dire caché. La
+     boucle ne tourne plus, mais elle n'est pas morte — la garde ne doit rien
+     jeter. Rendues les images, une boucle vraiment arrêtée l'est, elle. */
+  test("sans image donnée par le navigateur, la garde ne jette rien", async ({ page }) => {
+    test.setTimeout(120_000);
+    const erreurs = await prepare(page);
+    await page.goto("/plan.html?plan=smcl-2026");
+    await attendLaListe(page);
+    const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
+      .then(() => true, () => false);
+    test.skip(!dessin, "pas de carte graphique : le plan reste en SVG");
+
+    await page.evaluate(() => {
+      window.__ancien = window.__essais.GL.deck;
+      // plus aucune image, pour personne : ce que fait Chrome d'un cadre hors de l'écran
+      window.__rafVrai = window.requestAnimationFrame;
+      window.requestAnimationFrame = () => 0;
+      window.__essais.GL.deck.animationLoop._cancelAnimationFrame();
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.waitForTimeout(2500);
+    expect(await page.evaluate(() => window.__essais.GL.deck === window.__ancien)).toBe(true);
+
+    // les images reviennent, la boucle reste arrêtée : le dessin remonte
+    await page.evaluate(() => {
+      window.requestAnimationFrame = window.__rafVrai;
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.waitForFunction(() => {
+      const GL = window.__essais.GL;
+      return GL.pret && GL.deck && GL.deck !== window.__ancien;
+    }, null, { timeout: 15_000 });
+
+    expect(erreurs).toEqual([]);
+  });
 });

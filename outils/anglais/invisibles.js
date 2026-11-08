@@ -54,8 +54,9 @@ module.exports = [
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
   // les noms des couches où les jetons se peignent ensemble
   "-jetons-plaques", "-jetons",
-  // pourquoi le dessin rend la main au SVG, dit à la console seule
+  // pourquoi le dessin rend la main au SVG, dit à la console et à la sonde, jamais affiché
   "la boucle d'images s'est arrêtée", "contexte perdu",
+  "contexte perdu, page cachée", "contexte perdu, vu au retour",
   // pourquoi le fond de carte vectoriel n'est plus remonté, gardé sans être montré
   "vue refusée",
   // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
