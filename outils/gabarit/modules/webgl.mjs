@@ -342,7 +342,7 @@ const ATTENTE_REMONTE = 600;
 function poseToileWebgl(){
   if (!GL.actif || GL.toile) return;
   GL.toile = (GL.deck.getCanvas && GL.deck.getCanvas()) || (GL.hote && GL.hote.querySelector("canvas"));
-  if (GL.toile) GL.toile.addEventListener("webglcontextlost", () => perdContexteWebgl());
+  if (GL.toile) GL.toile.addEventListener("webglcontextlost", () => perdContexteWebgl(document.hidden ? "contexte perdu, page cachée" : "contexte perdu"));
 }
 
 function guetteContexteWebgl(){
@@ -366,7 +366,7 @@ function verifieContexteWebgl(){
   if (document.visibilityState !== "visible") return;
   if (!GL.actif){ remonteWebgl(); return; }
   poseToileWebgl();
-  if (contextePerduWebgl()) perdContexteWebgl();
+  if (contextePerduWebgl()) perdContexteWebgl("contexte perdu, vu au retour");
   else guetteBoucleWebgl();
 }
 
@@ -390,6 +390,16 @@ function verifieContexteWebgl(){
    Le délai laisse passer la reconversion d'un plan entier, qui tient la main
    une demi-seconde sur un téléphone ; et la page cachée suspend la garde, ses
    images l'étant aussi.
+
+   Mais une page visible peut ne recevoir aucune image : le plan intégré dans
+   la page d'un salon, sorti de l'écran par le défilement, Chrome ne lui en
+   donne plus, sans la dire cachée. La boucle n'y est pour rien, et la garde
+   jetait un dessin sain — trois pertes relevées, toutes sur un même
+   téléphone Android, deux sur le plan intégré de Funexpo 2026 (sonde,
+   6 novembre 2026). La garde demande donc une image pour elle-même : si le
+   navigateur ne la lui a pas donnée non plus, rien n'est arrêté. Donnée, elle
+   passe après celle que la boucle avait demandée avant elle : une boucle
+   vivante aurait déjà remis son horloge à l'heure.
    ------------------------------------------------------------ */
 const BOUCLE_MUETTE = 1500;
 let _gardeBoucle = 0;
@@ -400,10 +410,15 @@ function guetteBoucleWebgl(){
   // une bibliothèque qui n'a plus cette horloge n'est pas gardée : mieux vaut rien qu'un faux arrêt
   if (!boucle || typeof boucle._lastFrameTime !== "number") return;
   const avant = boucle._lastFrameTime;
+  let imageDonnee = false;
+  const demande = requestAnimationFrame(() => { imageDonnee = true; });
   _gardeBoucle = setTimeout(() => {
     _gardeBoucle = 0;
+    cancelAnimationFrame(demande);
     if (!GL.actif || !GL.deck || GL.deck.animationLoop !== boucle) return;
     if (document.visibilityState !== "visible" || boucle._lastFrameTime !== avant) return;
+    // le navigateur ne donne d'images à personne : ce n'est pas la boucle
+    if (!imageDonnee) return;
     perdContexteWebgl("la boucle d'images s'est arrêtée");
   }, BOUCLE_MUETTE);
 }

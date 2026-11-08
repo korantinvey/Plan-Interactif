@@ -64,6 +64,11 @@ const HEURE = 3600000;
 const PLAFOND = 3500;
 // des échantillons, non des listes : au-delà, chaque valeur neuve en remplace une au hasard
 const ECHANTILLON = 300;
+/* Les pertes du dessin, chacune avec sa raison : un compte seul ne disait pas
+   si la carte graphique avait été reprise ou si la garde de la boucle avait
+   conclu à tort — trois pertes sur un même téléphone, sans moyen de trancher
+   (sonde, 6 novembre 2026). Les premières suffisent. */
+const PERTES_DITES = 3;
 
 const sur = (/** @type {Function} */ f) => (/** @type {any[]} */ ...a) => { try { return f(...a); } catch (e) { return undefined; } };
 const ms = (/** @type {number} */ x) => Math.round(x * 10) / 10;
@@ -119,7 +124,7 @@ function nouvelleVisite(/** @type {boolean} */ chargee){
     reactivite: { n: 0, pireMs: 0, pireType: /** @type {string | undefined} */ (undefined),
       survols: { n: 0, pireMs: 0 } },
     /** @type {number[]} */ repeints: [], nRepeints: 0, maxRepeint: 0,
-    /** @type {any[]} */ deck: [], nDeck: 0, pertes: 0, picMo: 0 };
+    /** @type {any[]} */ deck: [], nDeck: 0, pertes: 0, /** @type {any[]} */ raisons: [], picMo: 0 };
   if (chargee && (document.hidden || /** @type {any} */ (document).prerendering)) cacheeAvant = true;
 }
 
@@ -432,6 +437,7 @@ function laCarte(){
     gpuMsP95: p95("gpu"), cpuMsP95: p95("cpu"), fpsMin: fps.length ? Math.round(Math.min(...fps)) : undefined,
     densite: toile && toile.clientWidth ? Math.round(100 * toile.width / toile.clientWidth) / 100 : undefined,
     logos: bilanLogos(), pertesContexte: V.pertes,
+    raisonsPertes: V.raisons.length ? V.raisons.slice() : undefined,
     // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte
     basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif,
   };
@@ -659,7 +665,12 @@ function demarre(){
     V.maxRepeint = Math.max(V.maxRepeint, duree);
     echantillonne(V.repeints, V.nRepeints, duree);
   }));
-  CONTEXTE_PERDU.ecoute(sur(() => { V.pertes++; }));
+  CONTEXTE_PERDU.ecoute(sur((/** @type {string} */ raison) => {
+    V.pertes++;
+    if (V.raisons.length >= PERTES_DITES) return;
+    V.raisons.push({ raison: String(raison).slice(0, 40), s: Math.round((performance.now() - V.t0) / 1000),
+      cachee: document.hidden || undefined });
+  }));
   PLAN_DEMARRE.ecoute(sur(() => { J["plan-demarre"] = Math.round(performance.now()); }));
   // le plan ne paraîtra pas : inutile d'attendre `SANS_AFFICHAGE` pour le dire
   PLAN_EN_PANNE.ecoute(sur((/** @type {{ sorte: string, statut?: number }} */ p) => {
