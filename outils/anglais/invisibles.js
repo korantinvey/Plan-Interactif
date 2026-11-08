@@ -57,6 +57,8 @@ module.exports = [
   // pourquoi le dessin rend la main au SVG, dit à la console et à la sonde, jamais affiché
   "la boucle d'images s'est arrêtée", "contexte perdu",
   "contexte perdu, page cachée", "contexte perdu, vu au retour",
+  // pourquoi le dessin n'a pas été demandé, dit à la sonde seule
+  "sans carte graphique",
   // pourquoi le fond de carte vectoriel n'est plus remonté, gardé sans être montré
   "vue refusée",
   // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement

@@ -38,7 +38,7 @@
    fiche du lundi écarte de ses médianes.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, carteDuWebgl } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
 import { bilanErreurs } from "./erreurs.mjs";
@@ -339,6 +339,8 @@ function lisAppareil(creux = false){
       // sans carte graphique, le navigateur dessine au processeur : une autre classe de machine
       if (APPAREIL.carte && /SwiftShader|llvmpipe|Software/i.test(APPAREIL.carte.puce || "")) APPAREIL.carte.logiciel = true;
       if (APPAREIL.carte && APPAREIL.carte.webgl2) APPAREIL.carte.handicap = handicapDeclare();
+      // la puce du dessin, quand le plan est resté au SVG faute de carte graphique
+      if (APPAREIL.carte && GL.repli) APPAREIL.carte.repli = GL.repli;
     }
   }
   return APPAREIL;
@@ -347,27 +349,12 @@ function lisAppareil(creux = false){
 /**
  * Le navigateur refuserait-il le WebGL à qui ne le veut pas au prix d'un gros
  * handicap — imité par le processeur, ou une carte graphique qu'il écarte ?
- *
- * Le nom de la puce ne le dit qu'à moitié : « Microsoft Basic Render Driver »
- * ne contient aucun des mots que `logiciel` cherche, et une carte écartée
- * garde son nom. Le navigateur, lui, le sait. Sans carte graphique, le dessin
- * tient une image par seconde et le plan met seize secondes à paraître, là où
- * le SVG en tient près de soixante (banc à rendu logiciel, SMCL 2026,
- * 8 novembre 2026). Avant d'y renvoyer ces postes, on regarde lesquels il
- * désigne : rien ne change encore pour eux.
- *
- * Une toile à part, jetée aussitôt : la demande du plan n'en est pas
- * touchée. Lue seulement quand le WebGL2 existe, sans quoi le refus ne dirait
- * rien de plus. Rien quand on ne sait pas.
+ * La même lecture que celle qui renvoie ces postes au SVG (`webgl.mjs`
+ * `carteDuWebgl`), faite une fois pour les deux. Rien quand on ne sait pas.
  */
 function handicapDeclare(){
-  try {
-    const gl = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
-    if (!gl) return true;
-    const fin = gl.getExtension("WEBGL_lose_context");
-    if (fin) fin.loseContext();
-    return false;
-  } catch (e) { return undefined; }
+  const c = carteDuWebgl();
+  return c ? c.handicap : undefined;
 }
 
 /* ------------------------------------------------------------
@@ -465,8 +452,9 @@ function laCarte(){
     densite: toile && toile.clientWidth ? Math.round(100 * toile.width / toile.clientWidth) / 100 : undefined,
     logos: bilanLogos(), pertesContexte: V.pertes,
     raisonsPertes: V.raisons.length ? V.raisons.slice() : undefined,
-    // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte
-    basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif,
+    // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte —
+    // non le repli voulu des postes sans carte graphique, que dit `carte.repli`
+    basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif && !GL.repli,
   };
 }
 
