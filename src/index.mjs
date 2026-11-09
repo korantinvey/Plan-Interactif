@@ -1000,6 +1000,20 @@ async function geleResolu(g, env, origine) {
     geste: String(g.geste ?? "").slice(0, 40),
     fonction: String(g.fonction ?? "").slice(0, 80),
   };
+  /* Le moment du gel et ce que deck.gl a fait autour (`sonde.mjs`
+     `travauxDepuis`) : des nombres seulement, chacun borné — le corps vient
+     d'une page, et la base les garde. */
+  const entier = (x) => (Number.isFinite(x) && x >= 0 ? Math.min(Math.round(x), 1e9) : undefined);
+  if (entier(g.t) !== undefined) sortie.t = entier(g.t);
+  if (g.avantAffichage === true) sortie.avantAffichage = true;
+  if (g.travaux && typeof g.travaux === "object") {
+    const travaux = {};
+    for (const k of ["attrMs", "couches", "shaders", "programmes", "textures", "fenetreMs"]) {
+      const v = entier(g.travaux[k]);
+      if (v) travaux[k] = v;
+    }
+    sortie.travaux = travaux;
+  }
   let chemin = "";
   try { chemin = new URL(String(g.fichier || ""), "https://pages").pathname; } catch { /* illisible */ }
   const position = g.position;

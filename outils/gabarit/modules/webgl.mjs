@@ -76,7 +76,59 @@ const _page = { appliqueVue: () => {}, libelles: () => {},
    @param {Partial<PageWebgl>} o */
 export function injecteAuWebgl(o){ Object.assign(_page, o); }
 
-export const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !== "svg";
+const RENDU_DEMANDE = new URLSearchParams(location.search).get("rendu");
+export const RENDU_WEBGL = RENDU_DEMANDE !== "svg";
+
+/* Sans carte graphique, le navigateur imite le WebGL au processeur : le
+   dessin tient une image par seconde, et le plan met seize secondes à
+   paraître, là où le SVG en tient près de soixante (banc à rendu logiciel,
+   SMCL 2026, 8 novembre 2026). Ces postes restent donc au SVG, à plat — sans
+   la vue immersive, qu'ils ne pouvaient de toute façon pas tenir.
+
+   Deux signes, l'un suffit. Le nom de la puce, que les imitations portent ;
+   et le refus du navigateur, à qui l'on demande le WebGL sans « gros
+   handicap ». Pas le second seul : le Chromium des essais, qui imite pourtant
+   tout au processeur, ne s'en déclare aucun.
+
+   Deux exceptions. « ?rendu=webgl » garde le dessin à qui le demande. Et un
+   navigateur piloté le garde aussi : nos essais tournent sans carte
+   graphique, et n'éprouveraient plus que le SVG — celui qui veut éprouver le
+   repli se fait passer pour un visiteur. */
+const PUCE_IMITEE = /SwiftShader|llvmpipe|softpipe|Software|Basic Render|WARP/i;
+
+/** Ce que le navigateur dit du WebGL qu'il donnerait : la puce, imitée ou
+ *  non, et son refus d'un dessin à gros handicap. Lu une fois ; rien sans
+ *  WebGL2. Aussi relevé par la sonde (`sonde.mjs`). */
+/** @type {{ puce: string, imitee: boolean, handicap: boolean | undefined } | null | undefined} */
+let _carte;
+export function carteDuWebgl(){
+  if (_carte !== undefined) return _carte;
+  _carte = null;
+  try {
+    const gl = document.createElement("canvas").getContext("webgl2");
+    if (!gl) return _carte;
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const puce = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || "");
+    const jette = (/** @type {any} */ g) => { const f = g && g.getExtension("WEBGL_lose_context"); if (f) f.loseContext(); };
+    jette(gl);
+    let handicap;
+    try {
+      const sans = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
+      handicap = !sans;
+      jette(sans);
+    } catch (e) { handicap = undefined; }
+    _carte = { puce, imitee: PUCE_IMITEE.test(puce), handicap };
+  } catch (e) { _carte = null; }
+  return _carte;
+}
+
+/** Le dessin serait-il imité au processeur, et le plan doit-il rester au SVG ? */
+export function sansCarteGraphique(){
+  if (RENDU_DEMANDE === "webgl" || navigator.webdriver) return false;
+  const c = carteDuWebgl();
+  return Boolean(c && (c.imitee || c.handicap));
+}
+
 /* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
    nos pieds changerait le plan des visiteurs sans que rien ne soit publié.
    La 9.3 et non la 9.4 : sur la carte graphique d'essai, la 9.4.0 ne
@@ -106,8 +158,20 @@ export const REPEINT_FINI = creeEvenement();
  *  sonde, personne n'écoute.
  *  @type {import("./evenement.mjs").Evenement<[string]>} */
 export const CONTEXTE_PERDU = creeEvenement();
+/** deck.gl a tiré ses comptes de ses soixante dernières images, et va les
+ *  remettre à zéro : ses `metrics`. La sonde (`sonde.mjs`) les cumule, pour
+ *  dire ce qu'une longue image a fait ; chez le visiteur sans sonde,
+ *  personne n'écoute.
+ *  @type {import("./evenement.mjs").Evenement<[any]>} */
+export const COMPTES_DECK = creeEvenement();
+/** deck.gl vient de dessiner une image. La sonde y relève ses comptes, pour
+ *  dire ce qu'a fait l'image d'un gel ; chez le visiteur sans sonde,
+ *  personne n'écoute. */
+export const IMAGE_DECK = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
+  // pourquoi le dessin n'a pas été demandé, quand le navigateur l'avait (`chargeWebgl`)
+  repli: "",
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
@@ -139,6 +203,11 @@ function chargeWebgl(){
   let gl2 = null;
   try { gl2 = document.createElement("canvas").getContext("webgl2"); } catch (e) {}
   if (!gl2) return;
+  if (sansCarteGraphique()){
+    GL.repli = "sans carte graphique";
+    console.warn("Rendu WebGL : imité par le processeur, le plan reste en SVG.");
+    return;
+  }
   /* Le plan ne paraît qu'une fois. Montré d'abord en SVG puis remplacé par
      le dessin, il semblait se charger deux fois — les noms n'étant pas les
      mêmes d'un rendu à l'autre. Le SVG attend donc caché, et ne sert qu'en
@@ -219,10 +288,13 @@ export function monteWebgl(){
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
     onError: e => console.warn("Rendu WebGL :", e && e.message),
+    // ses comptes, lus avant qu'il ne les remette à zéro : `stats` est scellé, rien ne s'y greffe
+    _onMetrics: (/** @type {any} */ m) => COMPTES_DECK.emet(m),
     // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
     onLoad: poseToileWebgl,
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
     onAfterRender: () => {
+      IMAGE_DECK.emet();
       // la sorte de couche de cette image est prête : la suivante entre à l'image d'après
       if (GL.partielle){ planifieWebgl(); return; }
       if (GL.pret || !GL.deck.props.layers.length) return;

@@ -144,6 +144,22 @@ const SCRIPT = "/versions/plan.0123456789.js";
       "une position invalide n'est pas résolue, et trois gels au plus sont relayés", q && JSON.stringify(q));
   }
 
+  // — le moment du gel et les travaux de deck.gl passent, bornés à des nombres
+  {
+    parti.length = 0;
+    await appel(PRODUCTION, valide({ resume: resume([
+      { ms: 900, geste: "", fichier: "deck.gl.min.js", fonction: "_animationFrame", t: 2140.6, avantAffichage: true,
+        travaux: { attrMs: 412, couches: 18, shaders: 6, programmes: 3, textures: 0, fenetreMs: 480, inconnu: 5 } },
+      { ms: 300, t: -4, avantAffichage: "oui", travaux: { attrMs: "beaucoup", couches: Infinity, programmes: 2 } },
+    ]) }));
+    const p = parti[0] && parti[0].corps.p_resume.gels.pires;
+    dit(p && p[0].t === 2141 && p[0].avantAffichage === true, "le moment et la phase du gel passent", p && JSON.stringify(p[0]));
+    dit(p && JSON.stringify(p[0].travaux) === JSON.stringify({ attrMs: 412, couches: 18, shaders: 6, programmes: 3, fenetreMs: 480 }),
+      "les travaux passent sans zéro ni champ inconnu", p && JSON.stringify(p[0].travaux));
+    dit(p && p[1].t === undefined && p[1].avantAffichage === undefined && JSON.stringify(p[1].travaux) === JSON.stringify({ programmes: 2 }),
+      "ce qui n'est pas un nombre positif fini est écarté", p && JSON.stringify(p[1]));
+  }
+
   // — les erreurs de la visite repartent avec leur module, comme les gels
   {
     parti.length = 0;

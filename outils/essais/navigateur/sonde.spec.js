@@ -90,6 +90,29 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(erreurs).toEqual([]);
   });
 
+  /* Ce que le navigateur dit du WebGL, à côté du nom de la puce : rien ne
+     change encore pour le visiteur, on regarde d'abord qui serait renvoyé au
+     SVG. La réponse elle-même n'est pas éprouvée : le Chromium des essais,
+     qui imite pourtant la carte graphique au processeur, ne déclare aucun
+     handicap (SwiftShader choisi d'emblée, non subi). C'est la sonde, chez
+     les visiteurs, qui dira ce qu'elle vaut. */
+  test("la carte graphique dit si le navigateur refuserait le WebGL pour gros handicap", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    await page.goto("/plan?plan=smcl-2026");
+    await attendLaListe(page);
+    const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
+      .then(() => true, () => false);
+    test.skip(!dessin, "pas de WebGL : la question ne se pose pas");
+    await expect.poll(() => page.evaluate(() => window.__essais.sonde.resume.appareil.carte), { timeout: 15_000 })
+      .toBeTruthy();
+    const carte = await page.evaluate(() => window.__essais.sonde.resume.appareil.carte);
+    expect(typeof carte.handicap).toBe("boolean");
+    // la toile d'essai, jetée, n'a rien pris au plan
+    expect(await page.evaluate(() => window.__essais.GL.pret)).toBe(true);
+    expect(erreurs).toEqual([]);
+  });
+
   test("le bilan de l'ouverture est figé : une vignette chargée ensuite ne le déplace pas", async ({ page }) => {
     await prepare(page);
     const envois = await releve(page);
@@ -159,6 +182,43 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     const fige = await images();
     await page.waitForTimeout(1500);
     expect(await images()).toBe(fige);
+    expect(erreurs).toEqual([]);
+  });
+});
+
+test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
+  /* La longue image ne nomme que la boucle de deck.gl : la sonde y joint le
+     moment du gel et ce que deck.gl et la carte graphique ont fait. deck.gl
+     remet ses comptes à zéro toutes les soixante images ; le cumul de la
+     sonde, lui, ne doit jamais redescendre. */
+  test("un gel dit son moment, et les comptes de deck.gl ne font que croître", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    // les autres essais tournent en SVG ; celui-ci a besoin de deck.gl
+    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await attendLaListe(page);
+    await page.waitForFunction(() => document.documentElement.classList.contains("plan-affiche"));
+    const travaux = () => page.evaluate(() => window.__essais.sonde.travaux);
+    // deck.gl se charge après que le plan a paru : on attend son dessin
+    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
+    await expect.poll(async () => (await travaux() || {}).programmes || 0).toBeGreaterThan(0);
+    const avant = await travaux();
+    expect(avant.couches).toBeGreaterThan(0);
+    // deck.gl passe sa prochaine remise à zéro : ce qu'il tenait ne doit pas se perdre
+    const images = () => page.evaluate(() => window.__essais.GL.deck._metricsCounter);
+    const remise = Math.floor((await images() - 1) / 60) * 60 + 61;
+    await expect.poll(images, { timeout: 30_000 }).toBeGreaterThan(remise);
+    const apres = await travaux();
+    expect(apres.couches).toBeGreaterThanOrEqual(avant.couches);
+    expect(apres.attrMs).toBeGreaterThanOrEqual(avant.attrMs);
+    // une image tenue un tiers de seconde, le plan déjà paru
+    await page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => {
+      const t = performance.now();
+      while (performance.now() - t < 300) { /* l'image tenue */ }
+      ok();
+    })));
+    await expect.poll(() => page.evaluate(() => window.__essais.sonde.resume.gels.pires
+      .some((p) => p.ms >= 300 && p.t > 0 && !p.avantAffichage && p.travaux && typeof p.travaux === "object"))).toBe(true);
     expect(erreurs).toEqual([]);
   });
 });

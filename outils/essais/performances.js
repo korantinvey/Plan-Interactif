@@ -207,6 +207,16 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
   dit(r.visites === 48 && r.robots === 10 && r.groupes[0].affiche_p50 === 1800,
     "les robots sortent des médianes, et se comptent à part", JSON.stringify({ v: r.visites, robots: r.robots }));
   dit(corps(r).includes("navigateur piloté, écartées de toute la fiche : 10"), "la fiche le dit");
+
+  /* Le poste dont le navigateur refuserait le WebGL : nommé par sa puce, avec
+     ce qu'il a coûté, pour vérifier qu'aucune vraie carte graphique n'y est
+     prise avant de le renvoyer au SVG. Le nom passe par `texteSur`. */
+  const h = indicateurs(base.concat([releve({ handicap: true, repli: true, puce: "ANGLE (Microsoft, Microsoft Basic Render Driver <b>)",
+    affiche_ms: 6100, part_plus33_immersif: 29.1 })]), AU);
+  const ligne = corps(h).split("\n").find((x) => x.includes("Basic Render Driver"));
+  dit(h.handicaps.length === 1 && Boolean(ligne) && ligne.includes("6.1 s") && ligne.includes("29 %") && ligne.includes("renvoyé au SVG") && !ligne.includes("<"),
+    "un poste refusé pour gros handicap se liste, puce assainie", ligne);
+  dit(!corps(indicateurs(base, AU)).includes("sans carte graphique"), "sans lui, la fiche n'en dit rien");
 }
 
 /* La requête du script, sur le vrai schéma : une colonne renommée dans la
