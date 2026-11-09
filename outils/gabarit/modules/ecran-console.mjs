@@ -171,8 +171,8 @@ function majLiens(e) {
     adm.title = "Ouvrir le plan avec les calques et les outils de dessin" +
       (e.etat !== "publie" ? " — accessible même en brouillon" : "");
   }
-  // le rapport reste dans l'onglet : c'est une autre page de la console, pas
-  // une sortie vers le plan
+  // le rapport s'ouvre dans un autre onglet : on le lit à côté de la console
+  // sans perdre le salon ni le volet qu'on y avait ouverts
   const rap = $("lienRapport");
   if (rap) {
     rap.href = BASE_PAGES + "rapport" + q;
