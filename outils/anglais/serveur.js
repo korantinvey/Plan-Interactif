@@ -99,6 +99,7 @@ module.exports = {
   "Paramètres manquants.": "Missing parameters.",
   "Événement introuvable ou non publié.": "Event not found or not published.",
   "Paramètre slug manquant.": "Missing slug parameter.",
+  "Paramètre fond invalide.": "Invalid fond parameter.",
   "Session expirée : reconnectez-vous.": "Session expired: please sign in again.",
   "Événement introuvable.": "Event not found.",
   "Le salon de démonstration ne se synchronise pas : ses données viennent du workflow « Salon de démonstration ».":
