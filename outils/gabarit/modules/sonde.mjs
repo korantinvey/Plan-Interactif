@@ -38,7 +38,7 @@
    fiche du lundi écarte de ses médianes.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, carteDuWebgl } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
 import { bilanErreurs } from "./erreurs.mjs";
@@ -334,6 +334,51 @@ function travauxPendant(/** @type {number} */ debut, /** @type {number} */ fin){
   return r;
 }
 
+/* L'ouverture, image par image.
+
+   Avant que le plan paraisse, le dessin fait entrer une sorte de couche par
+   image (`webgl.mjs`, « Une sorte de couche par image ») : quatre ou cinq
+   images, de quatre cents millisecondes à plus d'une seconde chacune sur les
+   postes Windows, quelle que soit la carte graphique — et autant chez qui
+   revient, ses fichiers déjà en cache (sonde, 2 au 9 novembre 2026). Les
+   travaux de l'image disent qu'elle a créé un
+   programme, pas ce qu'il a coûté : la page a-t-elle attendu la compilation,
+   ou fait autre chose ? Le navigateur compile à part, dans le processus de
+   la carte graphique, et la page n'attend qu'en demandant le résultat — ce
+   que deck.gl fait aussitôt. On chronomètre donc ces demandes, sur le
+   contexte du dessin et jusqu'à l'affichage seulement : chaque image dit sa
+   durée depuis la précédente, et ce qu'elle a passé à attendre la carte
+   graphique. Puis le contexte retrouve ses fonctions d'origine. */
+const IMAGES_DITES = 8;
+/** [durée depuis l'image d'avant, attente de la compilation, programmes créés], en ms
+ *  @type {number[][]} */
+let imagesOuverture = [];
+let attenteCompilation = 0, imagePrecedente = 0, programmesAvant = 0;
+function guetteCompilation(/** @type {any} */ gl){
+  if (!gl || estAffiche()) return;
+  imagesOuverture = []; attenteCompilation = 0; programmesAvant = 0;
+  imagePrecedente = performance.now();
+  // d'où partent les images : ce qui sépare leur somme de « plan-affiche » est la peinture qui suit
+  J.toile = Math.round(imagePrecedente);
+  const noms = ["getShaderParameter", "getProgramParameter"];
+  for (const nom of noms){
+    const f = gl[nom];
+    if (typeof f !== "function") continue;
+    // posée sur ce contexte seul : la retirer rend celle de son prototype
+    gl[nom] = function (/** @type {any[]} */ ...a){
+      const t = performance.now();
+      try { return f.apply(this, a); } finally { attenteCompilation += performance.now() - t; }
+    };
+  }
+  quandAffiche(sur(() => { for (const nom of noms) delete gl[nom]; }));
+}
+function imageDOuverture(){
+  if (estAffiche() || !imagePrecedente || imagesOuverture.length >= IMAGES_DITES) return;
+  const t = performance.now(), v = travauxDeck(), p = v ? v.programmes : 0;
+  imagesOuverture.push([Math.round(t - imagePrecedente), Math.round(attenteCompilation), p - programmesAvant]);
+  imagePrecedente = t; attenteCompilation = 0; programmesAvant = p;
+}
+
 function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type {number} */ debut){
   const g = V.gels;
   g.n++; g.totalMs += duree; g.maxMs = Math.max(g.maxMs, duree);
@@ -511,11 +556,13 @@ function leChargement(){
   const c = chargement(5, jusqua);
   const bilan = {
     jalons: { reponse: c.page ? c.page.reponse : undefined, domPret: c.page ? c.page.domPret : undefined,
-      "plan-demarre": J["plan-demarre"], donnees: finDesDonnees(jusqua), "plan-affiche": affiche, lcp: J.lcp },
+      "plan-demarre": J["plan-demarre"], donnees: finDesDonnees(jusqua), toile: J.toile,
+      "plan-affiche": affiche, lcp: J.lcp },
     transfertKo: c.transfertKo, depuisCache: c.depuisCache,
     lourds: c.ressources.map(({ fichier, sorte, ms, transfertKo, tailleKo }) => ({ fichier, sorte, ms, transfertKo, tailleKo })),
     cacheeAvant: cacheeAvant || undefined,
     panne: panne || undefined,
+    images: imagesOuverture.length ? imagesOuverture.slice() : undefined,
   };
   if (affiche !== undefined) OUVERTURE = bilan;
   return bilan;
@@ -777,6 +824,8 @@ function demarre(){
     echantillonne(V.repeints, V.nRepeints, duree);
   }));
   IMAGE_DECK.ecoute(sur(releveInstant));
+  IMAGE_DECK.ecoute(sur(imageDOuverture));
+  TOILE_PRETE.ecoute(sur(guetteCompilation));
   COMPTES_DECK.ecoute(sur((/** @type {any} */ m) => {
     if (!GL.deck || !m) return;
     const c = cumulDeck(GL.deck);

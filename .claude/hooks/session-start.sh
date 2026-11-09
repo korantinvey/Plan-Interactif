@@ -28,6 +28,26 @@ fi
 # retrouvait sali à chaque ouverture de session. `ci` s'en tient au fichier.
 npm ci --no-audit --no-fund
 
+# Le conteneur préinstalle Chromium pour sa propre version de Playwright, et
+# celle qu'épingle le dépôt cherche le sien sous une autre révision : tout
+# essai dans le navigateur échouait sur « Executable doesn't exist », sans rien
+# dire du code. On donne au dossier attendu le navigateur déjà là, par un lien
+# — rien ne se télécharge. Lue dans `playwright-core`, la révision suit
+# l'épinglage sans qu'on ait à la recopier. Une marche de confort : elle ne
+# doit jamais empêcher la session de démarrer.
+NAVIGATEURS="${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}"
+if [ -d "$NAVIGATEURS" ]; then
+  for sorte in chromium chromium-headless-shell; do
+    dossier="${sorte//-/_}"
+    # le paquet n'exporte pas `browsers.json` : on le prend à côté de son `package.json`
+    revision=$(node -p "require(require('path').join(require.resolve('playwright-core/package.json'), '..', 'browsers.json')).browsers.find(b => b.name === '$sorte').revision" 2>/dev/null) || continue
+    voulu="$NAVIGATEURS/$dossier-$revision"
+    [ -e "$voulu" ] && continue
+    present=$(ls -d "$NAVIGATEURS/$dossier"-[0-9]* 2>/dev/null | sort -V | tail -1)
+    [ -n "$present" ] && ln -s "$present" "$voulu" 2>/dev/null || true
+  done
+fi
+
 # La chaîne de fabrication doit être opérationnelle, pas seulement installée.
 npm run construire >/dev/null
 echo "Plan interactif : dépendances installées, pages reconstruites."

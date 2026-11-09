@@ -67,12 +67,22 @@ async function glisse(page) {
   await page.mouse.up();
 }
 
+/* Le premier envoi part dix secondes après l'affichage (`sonde.mjs`
+   `PREMIER_ENVOI`), et l'affichage dépend de la machine : sous un dessin
+   imité au processeur, il vient en une seconde sur l'intégration, en six sur
+   un conteneur plus lent — et l'envoi manquait alors les quinze secondes
+   qu'on lui laissait après la liste. On attend donc le plan d'abord : le
+   délai de l'envoi ne mesure plus que l'envoi. */
+const affiche = (page) => page.waitForFunction(
+  () => document.documentElement.classList.contains("plan-affiche"), null, { timeout: 30_000 });
+
 test.describe("la sonde silencieuse", { tag: "@base" }, () => {
   test("après l'affichage, le résumé part, sans l'agent complet", async ({ page }) => {
     const erreurs = await prepare(page);
     const envois = await releve(page);
     await page.goto("/plan?plan=smcl-2026");
     await attendLaListe(page);
+    await affiche(page);
     await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
     const e = envois[0];
     expect(e.slug).toBe("smcl-2026");
@@ -128,6 +138,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     });
     await page.goto(PLAN);
     await attendLaListe(page);
+    await affiche(page);
     // une vignette part sous l'adresse de l'API, après l'affichage — et pèse autant que le plan
     const vignette = () => page.evaluate(() => fetch("/api/plan?vignette=0123456789abcdef").then(r => r.arrayBuffer()).then(() => 0));
     await vignette();
@@ -229,6 +240,7 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
     const envois = await releve(page);
     await page.goto(PLAN);
     await attendLaListe(page);
+    await affiche(page);
     await expect.poll(() => envois.length, { timeout: 15_000 }).toBe(1);
     await glisse(page);
     await page.waitForTimeout(600);
@@ -246,6 +258,7 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
     await page.clock.install();
     await page.goto(PLAN + "&borne");
     await attendLaListe(page);
+    await affiche(page);
     await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
     const premiere = envois[0].visite;
     expect(envois[0].page).toBe("borne");
@@ -276,6 +289,7 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
       }, longueur);
       await page.goto(PLAN);
       await attendLaListe(page);
+      await affiche(page);
       await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
       const r = envois[0].resume;
       expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
@@ -309,6 +323,7 @@ test.describe("la sonde silencieuse et le cache arrière", () => {
     await page.addInitScript(() => addEventListener("pageshow", (e) => { window.__persiste = e.persisted; }));
     await page.goto(PLAN);
     await attendLaListe(page);
+    await affiche(page);
     await expect.poll(() => envois.length, { timeout: 15_000 }).toBe(1);
     const premiere = envois[0].visite;
     await page.goto("/plan-smcl.html");
