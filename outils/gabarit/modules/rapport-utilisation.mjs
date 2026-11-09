@@ -705,4 +705,16 @@ export function brancheRapport() {
   $("btnRecharger").onclick = () => rafraichit();
   // ici l'export suit la période affichée ; dans la console, il prend tout
   $("btnExcel").onclick = (ev) => exporteExposants(ev.currentTarget, joursPeriode());
+  /* La console ouvre le rapport dans un onglet à lui : y revenir, c'est
+     refermer cet onglet, pas ouvrir une seconde console à côté de la première.
+     Le navigateur ne laisse fermer qu'un onglet sans historique ; s'il refuse
+     (rapport ouvert par son adresse, ou après une navigation), le lien mène
+     à la console comme avant. */
+  $("lienConsole").onclick = (ev) => {
+    if (history.length > 1 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button) return;
+    ev.preventDefault();
+    const adresse = ev.currentTarget.href;
+    window.close();
+    setTimeout(() => { location.href = adresse; }, 200);
+  };
 }
