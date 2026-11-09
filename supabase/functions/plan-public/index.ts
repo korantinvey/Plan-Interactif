@@ -39,6 +39,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
 import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
+import { identifiantDePavillon, sessionRefusee } from "../_partage/refus.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -458,6 +459,9 @@ async function rendIconeApp(
   const q = sb.from("evenement")
     .select("icone_app, icone_app_masque").eq("slug", slug);
   const { data, error } = await (identifie ? q : q.eq("etat", "publie")).maybeSingle();
+  if (error && identifie && sessionRefusee(error)) {
+    return new Response("Session expirée : reconnectez-vous.", { status: 401, headers: nu });
+  }
   if (error) return new Response("Icône indisponible.", { status: 503, headers: nu });
   const ligne = data as { icone_app: string | null; icone_app_masque: string | null } | null;
   const src = (masque ? ligne?.icone_app_masque : null) ?? ligne?.icone_app ?? "";
@@ -734,6 +738,9 @@ Deno.serve(async (req) => {
     if (new URL(req.url).searchParams.get("app") ||
         new URL(req.url).searchParams.get("nom")) {
       const { data: nomme, error: mal } = await appDuSalon(sb, slug, identifie);
+      if (mal && identifie && sessionRefusee(mal)) {
+        return repond({ erreur: "Session expirée : reconnectez-vous." }, 401);
+      }
       if (mal) return repond({ erreur: mal.message }, 500);
       if (!nomme) {
         return repond({ erreur: "Événement introuvable ou non publié." }, 404);
@@ -753,11 +760,11 @@ Deno.serve(async (req) => {
     // session est valide : la politique de sécurité tranche pour lui
     const { data: evt, error: err } = await salon(sb, slug, identifie);
 
-    // Un jeton périmé ne doit pas se traduire par « introuvable » : l'appelant
-    // a besoin de savoir qu'il lui suffit de se reconnecter.
+    // Un jeton périmé ou refusé ne doit pas se traduire par « introuvable » ni
+    // par une panne : l'appelant a besoin de savoir qu'il lui suffit de se
+    // reconnecter.
     if (err) {
-      const jwt = /jwt|token|expired/i.test(err.message ?? "");
-      if (identifie && jwt) {
+      if (identifie && sessionRefusee(err)) {
         return repond({ erreur: "Session expirée : reconnectez-vous." }, 401);
       }
       return repond({ erreur: err.message }, 500);
@@ -773,6 +780,9 @@ Deno.serve(async (req) => {
     // Second appel : uniquement le dessin d'un pavillon.
     const fond = new URL(req.url).searchParams.get("fond");
     if (fond) {
+      if (!identifiantDePavillon(fond)) {
+        return repond({ erreur: "Paramètre fond invalide." }, 400);
+      }
       const pl = await lu(
         publies(
           sb.from("plan").select("id")

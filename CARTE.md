@@ -3535,6 +3535,10 @@ Injections :
 `octets` 49 · `base64url` 57 · `colle` 63 · `texte` 71 · `cleDeSignature` 83
 `jetonVapid` 105 · `derive` 131 · `chiffre` 145 · `pousse` 201
 
+### `supabase/functions/_partage/refus.ts` — 39 l.
+
+`sessionRefusee` 23 · `identifiantDePavillon` 36
+
 ### `supabase/functions/_partage/svg.ts` — 216 l.
 
 `r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106 · `allege` 118 · `sansMasques` 196
@@ -3560,12 +3564,12 @@ Injections :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1180 l.
+### `supabase/functions/plan-public/index.ts` — 1190 l.
 
-`cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 123 · `avecVignette` 177
-`rendVignette` 221 · `rendGrande` 248 · `rendVignettes` 340 · `lu` 383 · `salon` 393
-`appDuSalon` 419 · `rendIconeApp` 450 · `retraits` 555 · `ampute` 582 · `masquesDe` 625
-`masquesDuPlan` 645
+`cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 124 · `avecVignette` 178
+`rendVignette` 222 · `rendGrande` 249 · `rendVignettes` 341 · `lu` 384 · `salon` 394
+`appDuSalon` 420 · `rendIconeApp` 451 · `retraits` 559 · `ampute` 586 · `masquesDe` 629
+`masquesDuPlan` 649
 
 ### `supabase/functions/rappels/index.ts` — 239 l.
 
