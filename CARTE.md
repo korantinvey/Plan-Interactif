@@ -2423,7 +2423,7 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 708 l. → rapport
+### `modules/rapport-utilisation.mjs` — 720 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
