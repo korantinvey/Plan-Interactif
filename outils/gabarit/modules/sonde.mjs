@@ -38,7 +38,7 @@
    fiche du lundi écarte de ses médianes.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, carteDuWebgl } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
 import { bilanErreurs } from "./erreurs.mjs";
@@ -248,15 +248,108 @@ function nomDuScript(/** @type {string} */ u){
   } catch (e) { return ""; }
 }
 
-function gel(/** @type {number} */ duree, /** @type {any} */ scripts){
+/* Ce que deck.gl et luma.gl ont fait, en comptes cumulés : le temps passé à
+   recalculer les attributs des couches et le nombre de couches remises à jour
+   (`deck.stats`), les shaders, les programmes et les textures créés
+   (`statsManager` de la carte graphique — un programme créé est un programme
+   compilé et lié). La longue image ne nomme que la boucle de deck.gl,
+   `_animationFrame`, par où le navigateur est entré : tout ce qu'elle fait
+   s'y range, et le gel ne disait pas si l'image avait compilé, recalculé ou
+   seulement dessiné — sur les postes Windows à carte graphique intégrée, des
+   gels d'une à quatre secondes restaient sans cause (sonde, FUNEXPO 2026,
+   9 novembre 2026). `deck.metrics` ne s'y prête pas : ses comptes ne se
+   refont que toutes les soixante images. */
+const TRAVAUX = /** @type {const} */ (["attrMs", "couches", "shaders", "programmes", "textures"]);
+const lu = (/** @type {any} */ st, /** @type {string} */ nom, /** @type {string} */ champ) => {
+  try { const x = st && st.get(nom); return x && Number(x[champ]) || 0; } catch (e) { return 0; }
+};
+/* deck.gl remet ses comptes à zéro toutes les soixante images, après en avoir
+   tiré `deck.metrics` : lus d'un gel à l'autre, ils ne disaient rien. Ce qu'il
+   en a tiré nous parvient avant la remise à zéro (`COMPTES_DECK`, posé sur
+   `_onMetrics`), et se cumule ici, par dessin ; ce qu'il tient depuis s'y
+   ajoute à la lecture. */
+/** @type {WeakMap<any, { attrMs: number, couches: number }>} */
+const cumulsDeck = new WeakMap();
+function cumulDeck(/** @type {any} */ d){
+  let c = cumulsDeck.get(d);
+  if (!c) cumulsDeck.set(d, c = { attrMs: 0, couches: 0 });
+  return c;
+}
+function travauxDeck(){
+  const d = /** @type {any} */ (GL.deck);
+  if (!d) return null;
+  const c = cumulDeck(d);
+  let res = null;
+  try { res = d.device && d.device.statsManager && d.device.statsManager.getStats("GPU Resource Counts"); } catch (e) { res = null; }
+  // en WebGL, le programme lié est la canalisation partagée : les autres l'enveloppent
+  return { attrMs: c.attrMs + lu(d.stats, "Update Attributes", "time"),
+    couches: c.couches + lu(d.stats, "Layer updates", "count"),
+    shaders: lu(res, "Shaders Created", "count"), programmes: lu(res, "SharedRenderPipelines Created", "count"),
+    textures: lu(res, "Textures Created", "count") };
+}
+/* Un gel n'est remis qu'après coup, par lots, et au démarrage — là où ils
+   comptent le plus — longtemps après : le fil est pris. Les comptes lus à la
+   remise ne disaient donc rien de l'image gelée ; lus pour le premier d'un
+   lot, ils lui attribuaient la mise en route du dessin, survenue après lui
+   (essai, 9 novembre 2026). Ils se relèvent à la place à chaque image que
+   deck.gl dessine (`IMAGE_DECK`), horodatés : le gel prend ce qui a changé
+   entre le dernier relevé d'avant son début et le dernier d'avant sa fin —
+   ce qu'a fait son image, et elle seule. Au repos, deck.gl ne dessine pas, et
+   rien ne se relève. */
+const INSTANTS_MAX = 300;
+/** @type {{ t: number, deck: any, v: Record<string, number> }[]} */
+const instants = [];
+// des relevés sont tombés du bout de la file : un gel plus ancien n'a plus d'avant
+let instantsPerdus = false;
+function releveInstant(){
+  const v = travauxDeck();
+  if (!v) return;
+  instants.push({ t: performance.now(), deck: GL.deck, v });
+  if (instants.length > INSTANTS_MAX){ instants.shift(); instantsPerdus = true; }
+}
+/** Ce que deck.gl a fait pendant l'image [debut, fin] — ou rien si l'on ne
+ *  peut plus le savoir. `fenetreMs` dit l'écart réel des deux relevés : il
+ *  couvre l'image, et la fin de celle d'avant. Le premier relevé d'un dessin
+ *  part de zéro, sa création : il porte la mise en route. */
+function travauxPendant(/** @type {number} */ debut, /** @type {number} */ fin){
+  const d = /** @type {any} */ (GL.deck);
+  if (!d || debut < 0) return undefined;
+  /** @type {any} */
+  let avant = null, apres = null;
+  for (const x of instants){
+    if (x.deck !== d) continue;
+    if (x.t <= debut) avant = x;
+    if (x.t <= fin) apres = x;
+  }
+  // rien de ce dessin avant le gel : il est né pendant, ou ses premiers relevés sont perdus
+  if (!avant && instantsPerdus) return undefined;
+  /** @type {Record<string, number>} */
+  const r = {};
+  if (!apres || apres === avant) return r;
+  for (const k of TRAVAUX){
+    const v = Math.round(apres.v[k] - (avant ? avant.v[k] : 0));
+    if (v > 0) r[k] = v;
+  }
+  if (avant) r.fenetreMs = Math.round(apres.t - avant.t);
+  return r;
+}
+
+function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type {number} */ debut){
   const g = V.gels;
   g.n++; g.totalMs += duree; g.maxMs = Math.max(g.maxMs, duree);
   if (g.pires.length >= 3 && duree <= g.pires[2].ms) return;
+  const travaux = travauxPendant(debut, debut + duree);
   // le premier fautif : le script qui a tenu l'image le plus longtemps
   const s = (scripts || []).reduce((/** @type {any} */ a, /** @type {any} */ b) => !a || b.duration > a.duration ? b : a, null);
+  /* Le moment, depuis le début de la visite, et s'il tombe avant que le plan
+     paraisse : une compilation se paie au démarrage, un recalcul de couches
+     tout au long de la visite. */
+  const t = debut >= 0 ? Math.round(debut - V.t0) : undefined;
+  const affiche = J["plan-affiche"];
   const p = { ms: Math.round(duree), geste: geste ? sorte(geste) : undefined,
     url: s ? s.sourceURL || "" : "", fonction: s && s.sourceFunctionName || undefined,
-    position: s && s.sourceCharPosition >= 0 ? s.sourceCharPosition : -1 };
+    position: s && s.sourceCharPosition >= 0 ? s.sourceCharPosition : -1,
+    t, avantAffichage: affiche === undefined || debut < affiche || undefined, travaux };
   g.pires.push(p);
   g.pires.sort((/** @type {any} */ a, /** @type {any} */ b) => b.ms - a.ms);
   g.pires.length = Math.min(g.pires.length, 3);
@@ -264,8 +357,8 @@ function gel(/** @type {number} */ duree, /** @type {any} */ scripts){
 
 function ecouteNavigateur(){
   observe("largest-contentful-paint", sur((/** @type {any} */ e) => { J.lcp = Math.round(e.startTime); }));
-  const loaf = observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts)));
-  if (!loaf) observe("longtask", sur((/** @type {any} */ e) => gel(e.duration, null)));
+  const loaf = observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts, e.startTime)));
+  if (!loaf) observe("longtask", sur((/** @type {any} */ e) => gel(e.duration, null, e.startTime)));
   /* La réactivité ne retient que ce que le visiteur a fait — appui, relâché,
      clic, touche : les événements qui portent un `interactionId`. Le
      navigateur rapporte aussi l'entrée et la sortie du pointeur d'un élément,
@@ -338,9 +431,23 @@ function lisAppareil(creux = false){
       APPAREIL.carte = carteGraphique(gl) || undefined;
       // sans carte graphique, le navigateur dessine au processeur : une autre classe de machine
       if (APPAREIL.carte && /SwiftShader|llvmpipe|Software/i.test(APPAREIL.carte.puce || "")) APPAREIL.carte.logiciel = true;
+      if (APPAREIL.carte && APPAREIL.carte.webgl2) APPAREIL.carte.handicap = handicapDeclare();
+      // la puce du dessin, quand le plan est resté au SVG faute de carte graphique
+      if (APPAREIL.carte && GL.repli) APPAREIL.carte.repli = GL.repli;
     }
   }
   return APPAREIL;
+}
+
+/**
+ * Le navigateur refuserait-il le WebGL à qui ne le veut pas au prix d'un gros
+ * handicap — imité par le processeur, ou une carte graphique qu'il écarte ?
+ * La même lecture que celle qui renvoie ces postes au SVG (`webgl.mjs`
+ * `carteDuWebgl`), faite une fois pour les deux. Rien quand on ne sait pas.
+ */
+function handicapDeclare(){
+  const c = carteDuWebgl();
+  return c ? c.handicap : undefined;
 }
 
 /* ------------------------------------------------------------
@@ -438,8 +545,9 @@ function laCarte(){
     densite: toile && toile.clientWidth ? Math.round(100 * toile.width / toile.clientWidth) / 100 : undefined,
     logos: bilanLogos(), pertesContexte: V.pertes,
     raisonsPertes: V.raisons.length ? V.raisons.slice() : undefined,
-    // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte
-    basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif,
+    // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte —
+    // non le repli voulu des postes sans carte graphique, que dit `carte.repli`
+    basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif && !GL.repli,
   };
 }
 
@@ -457,7 +565,8 @@ export function resumeSonde(){
     gels: { n: g.n, totalMs: Math.round(g.totalMs), maxMs: Math.round(g.maxMs),
       pires: g.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
         fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
-        position: p.url && p.position >= 0 ? p.position : undefined })) },
+        position: p.url && p.position >= 0 ? p.position : undefined,
+        t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux })) },
     reactivite: { ...V.reactivite, survols: { ...V.reactivite.survols } },
     erreurs: bilanErreurs(),
     api: appelsEnEchec(),
@@ -490,7 +599,9 @@ function tronque(/** @type {any} */ r){
      l'appareil gardé, et ce qu'un envoi trop gros retire manquerait sinon
      à tous les suivants. */
   r = JSON.parse(JSON.stringify(r));
-  r.gels.pires = r.gels.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste }));
+  // le moment et les travaux pèsent peu, et disent la cause mieux que le script
+  r.gels.pires = r.gels.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
+    t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux }));
   const lourds = r.chargement && r.chargement.lourds;
   while (lourds && lourds.length && octets(r) > PLAFOND) lourds.pop();
   if (octets(r) > PLAFOND) coupe(r, 60);
@@ -665,6 +776,13 @@ function demarre(){
     V.maxRepeint = Math.max(V.maxRepeint, duree);
     echantillonne(V.repeints, V.nRepeints, duree);
   }));
+  IMAGE_DECK.ecoute(sur(releveInstant));
+  COMPTES_DECK.ecoute(sur((/** @type {any} */ m) => {
+    if (!GL.deck || !m) return;
+    const c = cumulDeck(GL.deck);
+    c.attrMs += Number(m.updateAttributesTime) || 0;
+    c.couches += Number(m.updateLayersCount) || 0;
+  }));
   CONTEXTE_PERDU.ecoute(sur((/** @type {string} */ raison) => {
     V.pertes++;
     if (V.raisons.length >= PERTES_DITES) return;
@@ -707,5 +825,7 @@ function demarre(){
 
   const essais = /** @type {any} */ (globalThis).__essais;
   if (essais) essais.sonde = { get resume(){ return resumeSonde(); }, get images(){ return images; },
-    get visite(){ return V.id; } };
+    get visite(){ return V.id; },
+    // les comptes cumulés de deck.gl et de luma.gl, tels que le prochain gel les lirait
+    get travaux(){ return travauxDeck(); } };
 }

@@ -57,6 +57,8 @@ module.exports = [
   // pourquoi le dessin rend la main au SVG, dit à la console et à la sonde, jamais affiché
   "la boucle d'images s'est arrêtée", "contexte perdu",
   "contexte perdu, page cachée", "contexte perdu, vu au retour",
+  // pourquoi le dessin n'a pas été demandé, dit à la sonde seule
+  "sans carte graphique",
   // pourquoi le fond de carte vectoriel n'est plus remonté, gardé sans être montré
   "vue refusée",
   // la teinte des figurants, écrite en shader, et la raison d'un rafraîchissement
@@ -109,4 +111,8 @@ module.exports = [
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",
+  // `modules/sonde.mjs` : les noms des comptes de deck.gl et de luma.gl que la
+  // sonde lit pour dire ce qu'une longue image a fait — des clés, jamais à l'écran
+  "GPU Resource Counts", "Update Attributes", "Layer updates", "Shaders Created",
+  "SharedRenderPipelines Created", "Textures Created",
 ];
