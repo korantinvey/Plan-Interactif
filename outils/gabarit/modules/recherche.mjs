@@ -1003,6 +1003,40 @@ function chargeUnLot(lot){
     .catch(() => {});
 }
 
+/* Les polices arrivées depuis la dernière passe : leurs familles, en
+   minuscules et sans guillemets, ou null quand l'une n'a pas dit la sienne —
+   tout se remesure alors. */
+/** @type {Set<string> | null} */
+let familles = new Set();
+let passePrevue = 0;
+
+/** Une arrivée de polices. Il en vient plusieurs au chargement, une par lot,
+ *  et chacune remesurait tous les noms puis retraçait le plan, les libellés
+ *  et la liste, dans la tâche même de l'arrivée : près d'une seconde d'image
+ *  tenue sur un poste à carte graphique intégrée (sonde, FUNEXPO 2026,
+ *  9 novembre 2026). Les arrivées d'une même image se regroupent en une passe,
+ *  à l'image suivante, qui ne remesure que leurs familles. Demandée ici, elle
+ *  passe avant le peintre WebGL, que la même arrivée planifie après : il trouve
+ *  les libellés retaillés, et `libelles` le prévient de toute façon. */
+function policesArrivees(/** @type {any} */ e){
+  const faces = e && e.fontfaces;
+  if (familles && faces && faces.length){
+    for (const f of faces){
+      const nom = String(f.family || "").replace(/["']/g, "").trim().toLowerCase();
+      if (nom) familles.add(nom); else familles = null;
+      if (!familles) break;
+    }
+  } else familles = null;
+  if (passePrevue) return;
+  passePrevue = requestAnimationFrame(() => {
+    passePrevue = 0;
+    const l = familles ? [...familles] : null;
+    familles = new Set();
+    if (!remesureTextes(l) || !DATA || !view) return;
+    dessineDessins(); libelles(); liste();
+  });
+}
+
 /**
  * Le branchement, appelé par `lancement.mjs` `lancePlan` à son rang :
  * l'écoute de la liste s'y pose.
@@ -1015,12 +1049,10 @@ export function brancheRecherche(){
      l'une a changé — les repères et les stands dessinés portent leur nom dans
      leur forme, et la liste taille la case du numéro sur la même mesure.
      Posée ici, et non dans les libellés, parce que ce module les importe tous
-     deux ; elle passe toujours avant celle du rendu WebGL. */
+     deux ; elle s'écoute avant celle du rendu WebGL, et sa passe, à l'image
+     suivante, précède le repeint qu'elle planifie (`policesArrivees`). */
   if (document.fonts && document.fonts.addEventListener)
-    document.fonts.addEventListener("loadingdone", () => {
-      if (!remesureTextes() || !DATA || !view) return;
-      dessineDessins(); libelles(); liste();
-    });
+    document.fonts.addEventListener("loadingdone", policesArrivees);
   /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
      frappe, et aucune ne garderait le sien. */
   $("list").addEventListener("pointerdown", e => {
