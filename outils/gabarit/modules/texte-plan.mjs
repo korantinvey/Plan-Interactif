@@ -25,6 +25,10 @@ const _cvs = document.createElement("canvas").getContext("2d");
 export const _lg = new Map();
 function mesureTexte(police, txt){
   _cvs.font = police;
+  return mesureIci(txt);
+}
+// dans la police que le canevas tient déjà
+function mesureIci(txt){
   const v = _cvs.measureText(txt).width / 100;
   return v > 0 ? v : txt.length * .55;
 }
@@ -53,12 +57,36 @@ export function largeur(txt, police){
    `brancheRecherche`), qui refait les noms et la liste, parmi les premiers
    du lancement : elle passe ainsi avant celle du rendu WebGL, qui repeint à la même arrivée en relisant les
    libellés, et les trouve déjà retaillés. */
-export function remesureTextes(){
+/*
+   Seules les mesures prises dans une famille qui vient d'arriver se refont,
+   quand on sait laquelle (`familles`, en minuscules et sans guillemets) :
+   remesurer toute la table à chaque arrivée — il en vient plusieurs au
+   chargement, et la table compte des milliers de noms — tenait l'image près
+   d'une seconde sur un poste à carte graphique intégrée (sonde, FUNEXPO 2026,
+   9 novembre 2026). Et les mesures se refont police par police : changer la
+   police du canevas coûte plus que la mesure elle-même. */
+export function remesureTextes(/** @type {string[] | null} */ familles = null){
+  // une police écartée l'est une fois : null, plutôt que d'être réexaminée à chaque nom
+  /** @type {Map<string, string[] | null>} */
+  const parPolice = new Map();
+  for (const k of _lg.keys()){
+    const police = k.slice(0, k.indexOf("|"));
+    let l = parPolice.get(police);
+    if (l === undefined){
+      const p = police.toLowerCase();
+      l = !familles || familles.some(f => p.includes(f)) ? [] : null;
+      parPolice.set(police, l);
+    }
+    if (l) l.push(k);
+  }
   let change = false;
-  for (const [k, v] of _lg){
-    const i = k.indexOf("|");
-    const w = mesureTexte(k.slice(0, i), k.slice(i + 1));
-    if (w !== v){ _lg.set(k, w); change = true; }
+  for (const [police, cles] of parPolice){
+    if (!cles) continue;
+    _cvs.font = police;
+    for (const k of cles){
+      const w = mesureIci(k.slice(police.length + 1));
+      if (w !== _lg.get(k)){ _lg.set(k, w); change = true; }
+    }
   }
   return change;
 }

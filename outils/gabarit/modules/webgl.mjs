@@ -158,6 +158,16 @@ export const REPEINT_FINI = creeEvenement();
  *  sonde, personne n'écoute.
  *  @type {import("./evenement.mjs").Evenement<[string]>} */
 export const CONTEXTE_PERDU = creeEvenement();
+/** deck.gl a tiré ses comptes de ses soixante dernières images, et va les
+ *  remettre à zéro : ses `metrics`. La sonde (`sonde.mjs`) les cumule, pour
+ *  dire ce qu'une longue image a fait ; chez le visiteur sans sonde,
+ *  personne n'écoute.
+ *  @type {import("./evenement.mjs").Evenement<[any]>} */
+export const COMPTES_DECK = creeEvenement();
+/** deck.gl vient de dessiner une image. La sonde y relève ses comptes, pour
+ *  dire ce qu'a fait l'image d'un gel ; chez le visiteur sans sonde,
+ *  personne n'écoute. */
+export const IMAGE_DECK = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
   // pourquoi le dessin n'a pas été demandé, quand le navigateur l'avait (`chargeWebgl`)
@@ -278,10 +288,13 @@ export function monteWebgl(){
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
     onError: e => console.warn("Rendu WebGL :", e && e.message),
+    // ses comptes, lus avant qu'il ne les remette à zéro : `stats` est scellé, rien ne s'y greffe
+    _onMetrics: (/** @type {any} */ m) => COMPTES_DECK.emet(m),
     // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
     onLoad: poseToileWebgl,
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
     onAfterRender: () => {
+      IMAGE_DECK.emet();
       // la sorte de couche de cette image est prête : la suivante entre à l'image d'après
       if (GL.partielle){ planifieWebgl(); return; }
       if (GL.pret || !GL.deck.props.layers.length) return;

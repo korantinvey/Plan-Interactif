@@ -111,4 +111,8 @@ module.exports = [
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",
+  // `modules/sonde.mjs` : les noms des comptes de deck.gl et de luma.gl que la
+  // sonde lit pour dire ce qu'une longue image a fait — des clés, jamais à l'écran
+  "GPU Resource Counts", "Update Attributes", "Layer updates", "Shaders Created",
+  "SharedRenderPipelines Created", "Textures Created",
 ];

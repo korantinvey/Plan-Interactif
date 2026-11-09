@@ -186,6 +186,43 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
   });
 });
 
+test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
+  /* La longue image ne nomme que la boucle de deck.gl : la sonde y joint le
+     moment du gel et ce que deck.gl et la carte graphique ont fait. deck.gl
+     remet ses comptes à zéro toutes les soixante images ; le cumul de la
+     sonde, lui, ne doit jamais redescendre. */
+  test("un gel dit son moment, et les comptes de deck.gl ne font que croître", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    // les autres essais tournent en SVG ; celui-ci a besoin de deck.gl
+    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await attendLaListe(page);
+    await page.waitForFunction(() => document.documentElement.classList.contains("plan-affiche"));
+    const travaux = () => page.evaluate(() => window.__essais.sonde.travaux);
+    // deck.gl se charge après que le plan a paru : on attend son dessin
+    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
+    await expect.poll(async () => (await travaux() || {}).programmes || 0).toBeGreaterThan(0);
+    const avant = await travaux();
+    expect(avant.couches).toBeGreaterThan(0);
+    // deck.gl passe sa prochaine remise à zéro : ce qu'il tenait ne doit pas se perdre
+    const images = () => page.evaluate(() => window.__essais.GL.deck._metricsCounter);
+    const remise = Math.floor((await images() - 1) / 60) * 60 + 61;
+    await expect.poll(images, { timeout: 30_000 }).toBeGreaterThan(remise);
+    const apres = await travaux();
+    expect(apres.couches).toBeGreaterThanOrEqual(avant.couches);
+    expect(apres.attrMs).toBeGreaterThanOrEqual(avant.attrMs);
+    // une image tenue un tiers de seconde, le plan déjà paru
+    await page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => {
+      const t = performance.now();
+      while (performance.now() - t < 300) { /* l'image tenue */ }
+      ok();
+    })));
+    await expect.poll(() => page.evaluate(() => window.__essais.sonde.resume.gels.pires
+      .some((p) => p.ms >= 300 && p.t > 0 && !p.avantAffichage && p.travaux && typeof p.travaux === "object"))).toBe(true);
+    expect(erreurs).toEqual([]);
+  });
+});
+
 test.describe("la sonde silencieuse, au fil de la visite", () => {
   test("un glisser puis l'arrière-plan : la même visite repart, ses gestes comptés", async ({ page }) => {
     const erreurs = await prepare(page);
