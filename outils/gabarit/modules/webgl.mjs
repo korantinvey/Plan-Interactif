@@ -168,6 +168,11 @@ export const COMPTES_DECK = creeEvenement();
  *  dire ce qu'a fait l'image d'un gel ; chez le visiteur sans sonde,
  *  personne n'écoute. */
 export const IMAGE_DECK = creeEvenement();
+/** La carte graphique du dessin est prête, avant qu'aucune couche n'y entre :
+ *  son contexte. La sonde (`sonde.mjs`) y chronomètre ce que l'ouverture
+ *  attend de la compilation ; chez le visiteur sans sonde, personne n'écoute.
+ *  @type {import("./evenement.mjs").Evenement<[WebGL2RenderingContext | null]>} */
+export const TOILE_PRETE = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
   // pourquoi le dessin n'a pas été demandé, quand le navigateur l'avait (`chargeWebgl`)
@@ -290,8 +295,14 @@ export function monteWebgl(){
     onError: e => console.warn("Rendu WebGL :", e && e.message),
     // ses comptes, lus avant qu'il ne les remette à zéro : `stats` est scellé, rien ne s'y greffe
     _onMetrics: (/** @type {any} */ m) => COMPTES_DECK.emet(m),
-    // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
-    onLoad: poseToileWebgl,
+    /* La toile ne naît qu'avec la carte graphique, que la bibliothèque
+       prépare à part — et son contexte avec : « guetteContexteWebgl », plus
+       tôt, n'a encore que la toile. */
+    onLoad: () => {
+      poseToileWebgl();
+      const d = /** @type {any} */ (GL.deck);
+      TOILE_PRETE.emet(d && d.device && d.device.gl || null);
+    },
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
     onAfterRender: () => {
       IMAGE_DECK.emet();
