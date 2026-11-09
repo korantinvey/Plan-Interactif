@@ -58,7 +58,14 @@ select r.evenement_id, r.jour::text as jour, r.page, r.mobile, r.immersif, r.ver
           reconnaissait à son agent inconnu et à sa carte graphique logicielle. */
        coalesce(r.resume #> '{appareil,robot}' = 'true'::jsonb
          or (r.resume #>> '{appareil,navigateur,famille}' = 'autre'
-             and r.resume #>> '{appareil,carte,puce}' ilike '%swiftshader%'), false) as robot
+             and r.resume #>> '{appareil,carte,puce}' ilike '%swiftshader%'), false) as robot,
+       /* Le plan resté au SVG faute de carte graphique (webgl.mjs,
+          sansCarteGraphique), et ce que le navigateur dit du WebGL : refusé au
+          prix d'un gros handicap, imité d'après le nom de la puce. */
+       r.resume #> '{appareil,carte,handicap}' = 'true'::jsonb as handicap,
+       r.resume #> '{appareil,carte,repli}' is not null as repli,
+       coalesce(r.resume #> '{appareil,carte,logiciel}' = 'true'::jsonb, false) as logiciel,
+       r.resume #>> '{appareil,carte,puce}' as puce
   from releve_perf r
  where r.jour >= current_date - 14
 `;
@@ -136,6 +143,10 @@ const assaini = (r) => ({
   famille: texteSur(r.famille) || "inconnue",
   panne: PANNES.has(r.panne) ? r.panne : r.panne ? "autre" : null,
   robot: r.robot === true,
+  handicap: r.handicap === true,
+  repli: r.repli === true,
+  logiciel: r.logiciel === true,
+  puce: texteSur(r.puce) || "inconnue",
   lourds: Array.isArray(r.lourds)
     ? r.lourds.filter(Boolean).map((x) => {
         const sorte = SORTES.has(x.sorte) ? x.sorte : "other";
@@ -303,6 +314,12 @@ function indicateurs(brut, au) {
     de, a: plusJours(a, -1),
     visites: semaine.length,
     robots,
+    /* Les postes renvoyés au SVG faute de carte graphique, ou dont le
+       navigateur refuserait le WebGL au prix d'un gros handicap : on vérifie
+       un à un qu'aucune vraie carte graphique n'y est prise, et que le SVG
+       leur va. */
+    handicaps: semaine.filter((r) => r.repli || r.handicap).map((r) => ({ puce: r.puce, logiciel: r.logiciel, repli: r.repli,
+      affiche: nombre(r.affiche_ms), plus33: nombre(r.part_plus33_immersif) ?? nombre(r.part_plus33_classique) })),
     echecs: echecs(semaine),
     groupes: groupes(semaine),
     precedente: groupes(precedente),
@@ -353,6 +370,13 @@ function corps(ind) {
     (e.erreurs ? " (" + e.erreurs + " erreur" + (e.erreurs > 1 ? "s" : "") + " en tout)" : ""));
   l.push("- Visites dont un appel à nos services a répondu en erreur : " + e.avecEchecApi);
   if (ind.robots) l.push("- Visites d'un navigateur piloté, écartées de toute la fiche : " + ind.robots);
+  if (ind.handicaps.length){
+    l.push("- Visites sans carte graphique (WebGL imité, ou refusé pour gros handicap) : " + ind.handicaps.length);
+    for (const h of ind.handicaps)
+      l.push("  - " + h.puce + (h.logiciel ? " (imitation logicielle)" : "") + (h.repli ? ", renvoyé au SVG" : ", resté en WebGL") +
+        " : plan affiché en " + (h.affiche === null ? "?" : (h.affiche / 1000).toFixed(1) + " s") +
+        ", " + (h.plus33 === null ? "?" : Math.round(h.plus33) + " %") + " d'images lentes");
+  }
   l.push("");
   l.push("Le texte et le module des erreurs se lisent par `outils/scripts/lecture-perf.js` (relevés et erreurs), jamais ici : un message peut nommer un salon.");
   l.push("");

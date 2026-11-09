@@ -38,7 +38,7 @@
    fiche du lundi écarte de ses médianes.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, carteDuWebgl } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
 import { bilanErreurs } from "./erreurs.mjs";
@@ -338,9 +338,23 @@ function lisAppareil(creux = false){
       APPAREIL.carte = carteGraphique(gl) || undefined;
       // sans carte graphique, le navigateur dessine au processeur : une autre classe de machine
       if (APPAREIL.carte && /SwiftShader|llvmpipe|Software/i.test(APPAREIL.carte.puce || "")) APPAREIL.carte.logiciel = true;
+      if (APPAREIL.carte && APPAREIL.carte.webgl2) APPAREIL.carte.handicap = handicapDeclare();
+      // la puce du dessin, quand le plan est resté au SVG faute de carte graphique
+      if (APPAREIL.carte && GL.repli) APPAREIL.carte.repli = GL.repli;
     }
   }
   return APPAREIL;
+}
+
+/**
+ * Le navigateur refuserait-il le WebGL à qui ne le veut pas au prix d'un gros
+ * handicap — imité par le processeur, ou une carte graphique qu'il écarte ?
+ * La même lecture que celle qui renvoie ces postes au SVG (`webgl.mjs`
+ * `carteDuWebgl`), faite une fois pour les deux. Rien quand on ne sait pas.
+ */
+function handicapDeclare(){
+  const c = carteDuWebgl();
+  return c ? c.handicap : undefined;
 }
 
 /* ------------------------------------------------------------
@@ -438,8 +452,9 @@ function laCarte(){
     densite: toile && toile.clientWidth ? Math.round(100 * toile.width / toile.clientWidth) / 100 : undefined,
     logos: bilanLogos(), pertesContexte: V.pertes,
     raisonsPertes: V.raisons.length ? V.raisons.slice() : undefined,
-    // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte
-    basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif,
+    // voulu en WebGL, le plan est en SVG : faute de contexte, de bibliothèque, ou après une perte —
+    // non le repli voulu des postes sans carte graphique, que dit `carte.repli`
+    basculeSvg: RENDU_WEBGL && estAffiche() && !GL.actif && !GL.repli,
   };
 }
 
