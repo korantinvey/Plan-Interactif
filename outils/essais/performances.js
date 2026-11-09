@@ -217,7 +217,36 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
   dit(h.handicaps.length === 1 && Boolean(ligne) && ligne.includes("6.1 s") && ligne.includes("29 %") && ligne.includes("renvoyé au SVG") && !ligne.includes("<"),
     "un poste refusé pour gros handicap se liste, puce assainie", ligne);
   dit(!corps(indicateurs(base, AU)).includes("sans carte graphique"), "sans lui, la fiche n'en dit rien");
+
+  /* Les images lentes du bureau, séparées : lissage sous-pixel offert ou non,
+     et images où le dessin était revenu au repos. Des relevés d'avant, qui ne
+     le disent pas, n'y ajoutent rien. Ici, 100 images par visite, dont 10 au
+     repos : 6 lentes au repos, 4 en mouvement. */
+  const tranches = [80, 6, 4, 6, 2, 2, 0];
+  const lb = indicateurs(base.concat(
+    serie(6, { sous_pixel: true, part_plus33_classique: 30, tranches_classique: tranches, repos_classique: 10, lentes_repos_classique: 6 }),
+    serie(4, { sous_pixel: false, part_plus33_classique: 8 }),
+    serie(2, { sous_pixel: true, mobile: true, part_plus33_classique: 90 })), AU).lentesBureau;
+  dit(lb && lb.avecLissage.visites === 6 && lb.avecLissage.part_p50 === 30 && lb.sansLissage.visites === 4 &&
+    lb.sansLissage.part_p50 === 8, "le bureau se sépare selon le lissage, sans les téléphones", JSON.stringify(lb));
+  dit(lb && lb.repos && lb.repos.visites === 6 && lb.repos.images === 600 && lb.repos.partImages === 10 &&
+    lb.repos.lentesAuRepos === 60 && Math.round(lb.repos.lentesEnMouvement * 100) === 444 && lb.repos.partDesLentes === 60,
+    "les images au repos se comptent à part des images en mouvement", JSON.stringify(lb && lb.repos));
+  const texteLb = corps(indicateurs(base.concat(serie(6, { sous_pixel: true, tranches_classique: tranches,
+    repos_classique: 10, lentes_repos_classique: 6 })), AU));
+  dit(texteLb.includes("## Images lentes du bureau") && texteLb.includes("Le repos fait 60 %"),
+    "la fiche le dit", (texteLb.match(/## Images lentes[\s\S]*?\n\n[\s\S]*?\n\n/) || [""])[0]);
+  dit(indicateurs(base, AU).lentesBureau === null && !corps(indicateurs(base, AU)).includes("Images lentes du bureau"),
+    "sans relevé qui le dise, la section se tait");
+  dit(indicateurs(base.concat(serie(3, { sous_pixel: "oui", tranches_classique: [1, 2], repos_classique: 1 })), AU)
+    .lentesBureau === null, "un lissage ou des tranches mal formés ne comptent pas");
 }
+
+/* Les tranches de la sonde, que la fiche recompte pour séparer les images
+   lentes : changées d'un côté, elles mentiraient de l'autre. */
+import("../gabarit/modules/mesures-page.mjs").then(({ TRANCHES }) => {
+  dit(TRANCHES.length === 7 && TRANCHES[3] === 50, "la fiche connaît les tranches de la sonde", JSON.stringify(TRANCHES));
+}).catch(() => dit(false, "la fiche connaît les tranches de la sonde", "module illisible"));
 
 /* La requête du script, sur le vrai schéma : une colonne renommée dans la
    migration casserait la fiche du lundi sans qu'aucun autre essai le voie. */
@@ -229,9 +258,9 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
     format: "sonde-plan/1", page: "plan", support: "web",
     chargement: { jalons: { "plan-affiche": 2600, donnees: 1900 }, transfertKo: 812,
                   lourds: [{ fichier: "logos.webp", sorte: "img", ms: 300, transfertKo: 640, tailleKo: 700 }] },
-    fluidite: { classique: { partPlus33: 6 } },
+    fluidite: { classique: { partPlus33: 6, tranches: [90, 4, 0, 3, 3, 0, 0], auRepos: [8, 5] } },
     gpu: { repeints: { p95: 14 }, logos: { octetsTexture: 3 * 1048576 }, pertesContexte: 0 },
-    appareil: { mobile: true, systeme: "Android" }, plan: { immersifUtilise: false },
+    appareil: { mobile: true, systeme: "Android", carte: { puce: "Mali-G720", sousPixel: false } }, plan: { immersifUtilise: false },
   };
   await db.query("select sonde_enregistre($1, 'plan', 'abc123', gen_random_uuid(), $2::jsonb)",
     [id, JSON.stringify(resume)]);
@@ -243,6 +272,8 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
     "elle lit la sorte, la durée et la taille de chaque ressource", JSON.stringify(r.lourds));
   dit(r.famille === "Android" && r.logos_octets === 3 * 1048576 && r.lourds?.[0]?.fichier === "logos.webp" &&
     r.donnees_ms === 1900 && r.mobile === true, "elle rend ce que les règles lisent", JSON.stringify(r).slice(0, 200));
+  dit(r.sous_pixel === false && r.tranches_classique?.length === 7 && r.repos_classique === 8 && r.lentes_repos_classique === 5,
+    "elle lit le lissage sous-pixel et les images au repos", JSON.stringify({ s: r.sous_pixel, t: r.tranches_classique, r: r.repos_classique, l: r.lentes_repos_classique }));
   const ind = indicateurs(lignes, plusSept(r.jour));
   dit(ind.visites === 1, "ses rangées nourrissent les indicateurs", String(ind.visites));
   dit(!JSON.stringify(lignes).includes("fep27"), "elle ne lit pas le slug");
@@ -262,6 +293,8 @@ dit(texteSur("x".repeat(200)).length === 60, "texteSur coupe à 60 caractères")
   dit(e1 && e1.panne === "http" && e1.cachee === true && e1.erreurs === 2 && e1.api_echecs === 1 &&
     e1.duree_ms === 31000 && e1.robot === true && e1.affiche_ms === null,
     "elle lit la panne, la page cachée, les erreurs, les appels en échec et le robot", JSON.stringify(e1 && { p: e1.panne, c: e1.cachee, e: e1.erreurs, a: e1.api_echecs, d: e1.duree_ms, r: e1.robot }));
+  dit(e1 && e1.sous_pixel === null && e2 && e2.sous_pixel === null,
+    "une carte qui ne dit pas son lissage le rend vide", JSON.stringify({ e1: e1 && e1.sous_pixel, e2: e2 && e2.sous_pixel }));
   dit(e2 && e2.robot === true, "un navigateur sans écran d'avant le marquage se reconnaît encore", e2 && String(e2.robot));
   console.log(ko ? "\n" + ko + " échec(s)." : "\nTout passe.");
   process.exit(ko ? 1 : 0);

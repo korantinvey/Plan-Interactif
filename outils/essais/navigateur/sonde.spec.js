@@ -118,6 +118,8 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
       .toBeTruthy();
     const carte = await page.evaluate(() => window.__essais.sonde.resume.appareil.carte);
     expect(typeof carte.handicap).toBe("boolean");
+    // le lissage sous-pixel des petits textes, que la fiche sépare des images lentes du bureau
+    expect(typeof carte.sousPixel).toBe("boolean");
     // la toile d'essai, jetée, n'a rien pris au plan
     expect(await page.evaluate(() => window.__essais.GL.pret)).toBe(true);
     expect(erreurs).toEqual([]);
@@ -249,6 +251,15 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
     expect(envois[1].visite).toBe(envois[0].visite);
     expect(envois[1].resume.fluidite.classique.gestes).toBeGreaterThanOrEqual(1);
     expect(envois[1].resume.fluidite.classique.tranches.reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
+    /* Les images du geste où le dessin était revenu au repos : absentes en
+       SVG, ou si aucune image n'est tombée entre le retour au repos et la fin
+       du geste — sous un dessin imité au processeur, cela arrive. */
+    const repos = envois[1].resume.fluidite.classique.auRepos;
+    if (repos !== undefined) {
+      expect(repos).toHaveLength(2);
+      expect(repos[0]).toBeGreaterThan(0);
+      expect(repos[1]).toBeLessThanOrEqual(repos[0]);
+    }
     expect(erreurs).toEqual([]);
   });
 

@@ -38,7 +38,7 @@
    fiche du lundi écarte de ses médianes.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
-import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl } from "./webgl.mjs";
+import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
 import { bilanErreurs } from "./erreurs.mjs";
@@ -102,7 +102,17 @@ function echantillonne(l, n, v){
 // les jalons du chargement : ceux de la page, que la visite suivante d'une borne n'a pas refaits
 /** @type {Record<string, number>} */
 const J = {};
-const vue0 = () => ({ gestes: 0, tranches: TRANCHES.map(() => 0), saccades: 0 });
+/* Une image lente : au-delà de 33 ms, deux rafraîchissements manqués, que la main sent. */
+const LENTE = TRANCHES.indexOf(50);
+/* `repos` et `lentesRepos` comptent, parmi les images d'un geste, celles où le
+   dessin était revenu au repos (`webgl.mjs` `poseGeste`) : le texte entier,
+   sous-pixel et petit atlas compris, les logos dégelés. Le dessin y revient
+   250 ms après la dernière entrée, quand le geste ne se clôt qu'à 300
+   (`FIN_GESTE`) : l'image qui remet tout au complet se compte donc dans le
+   geste, et sur les tours de molette du bureau, courts, elle pèse lourd dans
+   la part des images lentes. Les tranches ne changent pas : la fiche reste
+   comparable d'une semaine à l'autre. */
+const vue0 = () => ({ gestes: 0, tranches: TRANCHES.map(() => 0), saccades: 0, repos: 0, lentesRepos: 0 });
 
 /** @type {any} */
 let V = null;
@@ -188,8 +198,11 @@ function image(/** @type {number} */ ts){
       // un retour d'arrière-plan n'est pas une saccade
       if (dt < 2000){
         const v = V.vues[vueDuMoment()];
-        v.tranches[TRANCHES.findIndex(b => dt <= b)]++;
+        const i = TRANCHES.findIndex(b => dt <= b);
+        v.tranches[i]++;
         if (dt > SACCADE) v.saccades++;
+        // l'état à la fin de l'intervalle : celui de l'image qu'il a attendue
+        if (GL.actif && !GL.geste){ v.repos++; if (i >= LENTE) v.lentesRepos++; }
       }
     }
     if (GL.camera) V.immersif = true;
@@ -479,6 +492,8 @@ function lisAppareil(creux = false){
       if (APPAREIL.carte && APPAREIL.carte.webgl2) APPAREIL.carte.handicap = handicapDeclare();
       // la puce du dessin, quand le plan est resté au SVG faute de carte graphique
       if (APPAREIL.carte && GL.repli) APPAREIL.carte.repli = GL.repli;
+      // le lissage au sous-pixel des petits textes, que seul le dessin connaît
+      if (APPAREIL.carte && GL.actif) APPAREIL.carte.sousPixel = sousPixelOffert();
     }
   }
   return APPAREIL;
@@ -570,10 +585,11 @@ function leChargement(){
 
 function fluidite(/** @type {any} */ v){
   const n = v.tranches.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
-  // au-delà de 33 ms, l'image a manqué deux rafraîchissements : la main le sent
-  const lentes = v.tranches.slice(TRANCHES.indexOf(50)).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+  const lentes = v.tranches.slice(LENTE).reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
   return { gestes: v.gestes, tranches: v.tranches.slice(), saccades: v.saccades,
-    partPlus33: n ? ms(100 * lentes / n) : null };
+    partPlus33: n ? ms(100 * lentes / n) : null,
+    // [images au repos, dont lentes] — rien en SVG, ni sans geste
+    auRepos: v.repos ? [v.repos, v.lentesRepos] : undefined };
 }
 
 function laCarte(){
