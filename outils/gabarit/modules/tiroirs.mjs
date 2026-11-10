@@ -316,15 +316,17 @@ function tiroirListe(){
  * @param prise   la poignée qui le hisse
  * @param cle     la variable CSS où déposer la hauteur repliée mesurée
  * @param demi    la part de l'écran qu'il occupe au cran du milieu
+ * @param ouvre   le cran où il s'ouvre — le milieu, sauf avis contraire
  */
-function tiroirCrante({ panneau, prise, cle, demi }){
+function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
   const tiroir = $(panneau), poignee = $(prise);
   if (!tiroir || !poignee) return;
   const etroit = ETROIT;
   const CRANS = ["replie", "demi", "plein"];
-  /* Le cran du milieu est celui d'avant les crans : un tiroir qu'on ouvre sans
-     rien demander occupe la place qu'il a toujours occupée. */
-  const cran = () => tiroir.dataset.cran || "demi";
+  /* Sans cran posé, c'est celui d'ouverture : le milieu pour le parcours et
+     l'itinéraire, la place qu'ils ont toujours occupée ; le plus haut pour la
+     fiche, qu'on ouvre pour la lire. */
+  const cran = () => tiroir.dataset.cran || ouvre;
 
   /* La hauteur repliée se mesure : l'en-tête de la fiche tient une ligne pour
      un numéro de stand, trois pour une enseigne longue suivie de ses
@@ -346,7 +348,27 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     tiroir.dataset.cran = nom;
     poignee.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
-  const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
+  /* La hauteur d'un cran n'est qu'un plafond : le tiroir ne monte pas plus
+     haut que ce qu'il porte. Une fiche de trois lignes a donc la même hauteur
+     au cran du milieu et au plus haut, et la pression qui passait de l'un à
+     l'autre ne faisait rien voir — ce qui se lit comme une panne. Le tour des
+     crans saute ceux qui ne changeraient rien. */
+  function naturelle(){
+    // ce que le corps garde sous son bord, en plus de ce que le tiroir montre
+    let deborde = 0;
+    for (const n of tiroir.children) deborde += Math.max(0, n.scrollHeight - n.clientHeight);
+    return tiroir.offsetHeight + deborde;
+  }
+  function bascule(){
+    const vue = c => Math.min(hauteur(c), naturelle());
+    const ici = vue(cran());
+    let i = CRANS.indexOf(cran());
+    for (let n = 1; n < CRANS.length; n++){
+      i = (i + 1) % CRANS.length;
+      if (Math.abs(vue(CRANS[i]) - ici) > GESTE_SEUIL) break;
+    }
+    pose(CRANS[i]);
+  }
 
   /* Descendre sur ordre d'ailleurs, et dire si l'on a bougé : centrer le plan
      depuis une fiche attend la fin de la descente pour mesurer ce que la fiche
@@ -395,7 +417,10 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     /* La poignée est elle-même un bouton : le garde-fou ne vaut que pour
        l'en-tête, où il protège les commandes qu'on y a posées. */
     if (e.currentTarget !== poignee && e.target.closest(INERTE)) return;
-    depart = { y: e.clientY, vu: hauteur(cran()), cran: cran() };
+    /* La hauteur de départ est celle qu'on voit, et non celle du cran : une
+       fiche courte ouverte au plus haut ne mesure que son contenu, et le doigt
+       aurait parcouru tout l'écart avant que rien ne bouge. */
+    depart = { y: e.clientY, vu: tiroir.offsetHeight, cran: cran() };
     geste.repart();
     geste.note(e.clientY);
     aGlisse = false;
@@ -461,15 +486,15 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     n.addEventListener("click", presse);
   });
 
-  /* Chaque ouverture repart du cran du milieu : le stand d'avant a pu demander
-     toute la hauteur, celui-ci tient peut-être en trois lignes, et le plan
-     qu'on vient de désigner doit rester en vue. Le tiroir s'ouvre depuis
-     plusieurs endroits — un stand, un repère de dessin, le bouton du
+  /* Chaque ouverture repart de son cran d'ouverture, et non de celui où l'on
+     avait laissé le tiroir d'avant : le stand d'avant a pu être replié pour
+     voir le plan, celui-ci se lit peut-être en entier. Le tiroir s'ouvre
+     depuis plusieurs endroits — un stand, un repère de dessin, le bouton du
      parcours — d'où la classe guettée plutôt qu'un appel posé dans chacun. */
   let ouvert = tiroir.classList.contains("open");
   new MutationObserver(() => {
     const o = tiroir.classList.contains("open");
-    if (o && !ouvert){ pose("demi"); mesure(); }
+    if (o && !ouvert){ pose(ouvre); mesure(); }
     ouvert = o;
   }).observe(tiroir, { attributes: true, attributeFilter: ["class"] });
 
@@ -485,7 +510,7 @@ function tiroirCrante({ panneau, prise, cle, demi }){
   /* Au retour vers un grand écran, le tiroir reprend sa colonne : ni hauteur
      posée en ligne ni cran, qui s'y appliqueraient encore. */
   addEventListener("resize", () => {
-    if (!etroit()){ tiroir.style.maxHeight = ""; pose("demi"); }
+    if (!etroit()){ tiroir.style.maxHeight = ""; pose(ouvre); }
     else mesure();
   });
 
@@ -502,7 +527,12 @@ export function brancheTiroirs(){
 
   tiroirListe();
 
-  tiroirCrante({ panneau: "detail", prise: "poigneeFiche", cle: "--fiche-replie", demi: .56 });
+  /* La fiche s'ouvre au plus haut. Ouverte au milieu, une fiche bien remplie
+     se lisait par une fente, et il fallait la hisser pour voir ses champs, son
+     programme, ses produits — ce qu'on était venu y chercher. Le plus haut
+     n'est qu'un plafond : une fiche courte ne prend que sa hauteur, et laisse
+     le plan en vue. Mieux vaut avoir à la réduire qu'à l'agrandir. */
+  tiroirCrante({ panneau: "detail", prise: "poigneeFiche", cle: "--fiche-replie", demi: .56, ouvre: "plein" });
   /* Le parcours monte plus haut au cran du milieu, et la feuille de style dit la
      même part : une liste de rangs se parcourt du regard, quand une fiche se lit
      ligne à ligne. */
