@@ -13,6 +13,10 @@
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe } = require("./aide.js");
+const { incoherences } = require("../../scripts/sonde-coherence.js");
+
+/** Le résumé ne contredit aucune règle de vraisemblance : une mesure faussée échoue ici. */
+const vraisemblable = (r) => expect(incoherences(r).map((x) => x.cle + " : " + x.detail)).toEqual([]);
 
 /* Playwright lance Chromium sans cache arrière : on le rend, comme chez un
    visiteur — l'essai du retour en arrière en dépend, et les autres n'y perdent rien. */
@@ -90,7 +94,14 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
+    expect(r.rev).toBe(2);
     expect(r.page).toBe("plan");
+    expect(r.visibleMs).toBeGreaterThan(0);
+    expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
+    // vue du début à la fin : rien d'invisible avant l'affichage, et le LCP dit
+    expect(r.chargement.invisibleAvantMs).toBeUndefined();
+    expect(r.chargement.horsVueAvant).toBeUndefined();
+    vraisemblable(r);
     expect(r.chargement.jalons["plan-affiche"]).toBeGreaterThan(0);
     expect(r.appareil.agent).toBeUndefined();
     expect(r.appareil.fenetre).toBeUndefined();
@@ -232,6 +243,14 @@ test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
     })));
     await expect.poll(() => page.evaluate(() => window.__essais.sonde.resume.gels.pires
       .some((p) => p.ms >= 300 && p.t > 0 && !p.avantAffichage && p.travaux && typeof p.travaux === "object"))).toBe(true);
+    /* Et où l'image a passé son temps : dans un rappel d'image, que le rendu
+       contient — non à la « ligne 1 » d'un paquet. */
+    const gel = await page.evaluate(() => window.__essais.sonde.resume.gels.pires.find((p) => p.ms >= 300 && !p.avantAffichage));
+    expect(gel.invocation).toBe("user-callback");
+    expect(gel.scriptsMs).toBeGreaterThanOrEqual(250);
+    expect(gel.renduMs).toBeGreaterThanOrEqual(250);
+    expect(gel.position).not.toBe(0);
+    vraisemblable(await page.evaluate(() => window.__essais.sonde.resume));
     expect(erreurs).toEqual([]);
   });
 });
@@ -291,6 +310,9 @@ test.describe("la sonde silencieuse, au fil de la visite", () => {
     expect(envois[1].visite).toBe(envois[0].visite);
     expect(envois[1].resume.fluidite.classique.gestes).toBeGreaterThanOrEqual(1);
     expect(envois[1].resume.fluidite.classique.tranches.reduce((a, b) => a + b, 0)).toBeGreaterThan(0);
+    // le glisser était sur le plan : rien hors de lui
+    expect(envois[1].resume.fluidite.horsPlan).toBeUndefined();
+    vraisemblable(envois[1].resume);
     /* Les images du geste où le dessin était revenu au repos : absentes en
        SVG, ou si aucune image n'est tombée entre le retour au repos et la fin
        du geste — sous un dessin imité au processeur, cela arrive. */
@@ -434,6 +456,51 @@ test.describe("la sonde de l'administration", () => {
   });
 });
 
+test.describe("la sonde silencieuse, ce qu'elle tient pour le plan", () => {
+  /* Taper dans la recherche, faire défiler la liste : des images que le plan
+     ne dessine pas. Elles comptaient dans sa fluidité. */
+  test("un geste hors du plan ne compte pas dans sa fluidité", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await affiche(page);
+    await page.locator("#q").click();
+    await page.keyboard.type("stand", { delay: 40 });
+    await page.waitForTimeout(600);
+    await cache(page);
+    await expect.poll(() => envois.length).toBeGreaterThan(0);
+    const f = envois[envois.length - 1].resume.fluidite;
+    expect(f.horsPlan && f.horsPlan.gestes).toBeGreaterThanOrEqual(1);
+    expect(f.classique.gestes).toBe(0);
+    expect(f.classique.tranches.reduce((a, b) => a + b, 0)).toBe(0);
+    vraisemblable(envois[envois.length - 1].resume);
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Un plan intégré plus bas que l'écran de la page hôte : le navigateur ne
+     lui donne plus d'images, et son ouverture dit quand on y est descendu.
+     Le relevé doit le dire, sans quoi la fiche le prend pour un plan lent. */
+  test("intégré hors de l'écran, l'ouverture se dit invisible et le LCP se tait", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.route("**/hote-essai", (r) => r.fulfill({ contentType: "text/html; charset=utf-8",
+      body: "<!doctype html><meta charset=utf-8><div style='height:5000px'></div>" +
+        "<iframe src='" + PLAN + "' style='width:800px;height:600px;border:0'></iframe>" }));
+    await page.goto("/hote-essai");
+    const cadre = page.frameLocator("iframe");
+    await cadre.locator("#list > *").first().waitFor();
+    await expect.poll(() => envois.length, { timeout: 25_000 }).toBeGreaterThan(0);
+    const r = envois[0].resume;
+    expect(r.support).toBe("integre");
+    expect(r.chargement.horsVueAvant).toBe(true);
+    expect(r.chargement.invisibleAvantMs).toBeGreaterThan(0);
+    expect(r.chargement.jalons.lcp).toBeUndefined();
+    vraisemblable(r);
+    expect(erreurs).toEqual([]);
+  });
+});
+
 test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", () => {
   test("cachée avant que le plan paraisse, la visite dit sur quoi elle tournait", async ({ page }) => {
     const erreurs = await prepare(page);
@@ -452,6 +519,9 @@ test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", 
     // un départ, non une panne : la fiche ne le comptera pas parmi les plans absents
     expect(envois[0].resume.chargement.cacheeAvant).toBe(true);
     expect(envois[0].resume.chargement.panne).toBeUndefined();
+    // le temps passé caché, que la fiche retire des délais d'ouverture
+    expect(envois[0].resume.chargement.invisibleAvantMs).toBeGreaterThan(0);
+    vraisemblable(envois[0].resume);
     expect(erreurs).toEqual([]);
   });
 

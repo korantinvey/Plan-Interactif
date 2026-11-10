@@ -1814,14 +1814,14 @@ Importé par :
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
 notifications · parcours · partage · sonde · tiroir-itineraire
 
-### `modules/mesures-page.mjs` — 161 l. → plan, plan-admin
+### `modules/mesures-page.mjs` — 204 l. → plan, plan-admin
 
 - l.1 · Les mesures de la page, partagées
 
 Fonctions :
 
-`centile` 26 · `fichier` 32 · `observe` 37 · `carteGraphique` 51 · `navigateur` 79
-`mobileDeRepli` 97 · `appareil` 110 · `chargement` 139
+`centile` 31 · `fichier` 37 · `observe` 42 · `carteGraphique` 56 · `navigateur` 84
+`mobileDeRepli` 102 · `appareil` 115 · `trajet` 157 · `chargement` 175
 
 Importé par :
 
@@ -2916,24 +2916,25 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 999 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1144 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 73 · `ms` 74 · `enCreux` 75 · `uuid` 78 · `echantillonne` 94 · `vue0` 115
-`nouvelleVisite` 130 · `vueDuMoment` 155 · `commence` 157 · `sorte` 168 · `clos` 170
-`relance` 186 · `image` 192 · `ecouteGestes` 222 · `nomDuScript` 259 · `lu` 278
-`cumulDeck` 288 · `travauxDeck` 293 · `releveInstant` 319 · `travauxPendant` 329
-`guetteCompilation` 376 · `imageDOuverture` 394 · `gel` 401 · `doitBattre` 451 · `bat` 460
-`battu` 467 · `ecouteBattement` 485 · `ecouteNavigateur` 500 · `memoire` 537
-`contexteDuPlan` 550 · `lisAppareil` 562 · `handicapDeclare` 598 · `finDesDonnees` 612
-`appelsEnEchec` 634 · `leChargement` 656 · `fluidite` 680 · `laCarte` 689
-`resumeSonde` 712 · `leBattement` 740 · `octets` 746 · `coupe` 749 · `tronque` 760
-`fraiche` 794 · `litLaFile` 797 · `ecritLaFile` 805 · `retire` 817 · `corps` 820
-`versionDesPages` 828 · `envoieUne` 839 · `pousse` 865 · `actif` 890 · `envoie` 894
-`brancheSonde` 919 · `demarre` 932
+`sur` 97 · `ms` 98 · `enCreux` 99 · `uuid` 102 · `echantillonne` 118 · `vue0` 139
+`nouvelleVisite` 154 · `cumuleVu` 195 · `poseVu` 207 · `invisibleAvantAffichage` 220
+`lcpVu` 227 · `vueDuMoment` 242 · `surLePlan` 249 · `commence` 254 · `sorte` 265
+`clos` 268 · `relance` 284 · `image` 290 · `ecouteGestes` 320 · `nomDuScript` 357 · `lu` 376
+`cumulDeck` 386 · `travauxDeck` 391 · `releveInstant` 417 · `travauxPendant` 427
+`guetteCompilation` 474 · `imageDOuverture` 492 · `decoupe` 515 · `gel` 525
+`doitBattre` 577 · `bat` 586 · `battu` 593 · `ecouteBattement` 611 · `ecouteNavigateur` 635
+`memoire` 673 · `contexteDuPlan` 686 · `lisAppareil` 698 · `handicapDeclare` 734
+`finDesDonnees` 748 · `appelsEnEchec` 770 · `leChargement` 792 · `fluidite` 821
+`laCarte` 830 · `resumeSonde` 853 · `leBattement` 885 · `octets` 891 · `coupe` 894
+`tronque` 905 · `fraiche` 939 · `litLaFile` 942 · `ecritLaFile` 950 · `retire` 962
+`corps` 965 · `versionDesPages` 973 · `envoieUne` 984 · `pousse` 1010 · `actif` 1035
+`envoie` 1039 · `brancheSonde` 1064 · `demarre` 1077
 
 Importe :
 
@@ -3661,8 +3662,8 @@ Injections :
 
 ## Le reste
 
-- `src/index.mjs` — 1312 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 213 `versionGardee` 216 · `rangeLaVersion` 220 · `ditVersion` 234 · `meta` 243 · `gardable` 259 `range` 265 · `rangeLePlan` 274 · `rafraichit` 290 · `entete` 319 · `oublie` 381 `rappels` 478 · `cleApp` 523 · `cheminDuSalon` 554 · `pageDuSalon` 571 · `appDuSalon` 595 `iconesDuSalon` 641 · `manifeste` 681 · `iconeApp` 771 · `mesure` 815 · `carteDuScript` 904 `lieuDe` 917 · `erreur` 931 · `texteDuScript` 983 · `geleResolu` 996 · `sonde` 1037 `planDeVisite` 1086 · `chargePrevue` 1125 · `surete` 1161 · `aiguille` 1179
+- `src/index.mjs` — 1318 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 213 `versionGardee` 216 · `rangeLaVersion` 220 · `ditVersion` 234 · `meta` 243 · `gardable` 259 `range` 265 · `rangeLePlan` 274 · `rafraichit` 290 · `entete` 319 · `oublie` 381 `rappels` 478 · `cleApp` 523 · `cheminDuSalon` 554 · `pageDuSalon` 571 · `appDuSalon` 595 `iconesDuSalon` 641 · `manifeste` 681 · `iconeApp` 771 · `mesure` 815 · `carteDuScript` 904 `lieuDe` 917 · `erreur` 931 · `texteDuScript` 983 · `geleResolu` 996 · `sonde` 1043 `planDeVisite` 1092 · `chargePrevue` 1131 · `surete` 1167 · `aiguille` 1185
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

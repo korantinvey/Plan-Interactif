@@ -119,4 +119,7 @@ module.exports = [
   // sonde lit pour dire ce qu'une longue image a fait — des clés, jamais à l'écran
   "GPU Resource Counts", "Update Attributes", "Layer updates", "Shaders Created",
   "SharedRenderPipelines Created", "Textures Created",
+  // `modules/sonde.mjs` : la marque d'un geste fait hors du plan, dans la sorte
+  // de geste que le résumé envoie avec un gel — jamais à l'écran
+  " hors plan",
 ];
