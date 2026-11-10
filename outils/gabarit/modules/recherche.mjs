@@ -643,6 +643,14 @@ const PLAFOND_SORTE = 500;
    près. */
 const HAUTEUR_LIGNE = 40, DUREE_CASCADE = 420;
 let cleCascade = "", debutCascade = -1e9;
+/* La hauteur de la liste, tenue par un observateur de taille et non lue à
+   l'écriture : la liste se réécrit juste après que le plan s'est monté, et
+   lire sa hauteur forçait le navigateur à mettre en page sur-le-champ tout le
+   plan qu'on venait de poser — 60 ms dans l'image où les données arrivent,
+   qui en refait la mise en page à sa fin de toute façon (sonde, découpage des
+   gels, 10 novembre 2026). L'observateur la reçoit après la mise en page,
+   où elle ne coûte rien. Elle ne sert qu'à compter les lignes de la cascade. */
+let hauteurListe = 0;
 
 /* Le premier bloc d'une ligne porte le numéro de stand ; une zone, une
    conférence et un repère n'en ont pas, et laisser la case vide effaçait
@@ -781,7 +789,7 @@ export function liste(){
      réécrit aussi pour une case cochée ou une langue, et ses lignes n'ont
      alors pas à revenir. Les lignes sont neuves à chaque écriture : leur
      animation part d'elle-même, sans rien remettre à zéro. */
-  const vues = Math.min(60, Math.ceil((box.clientHeight || 600) / HAUTEUR_LIGNE) + 1);
+  const vues = Math.min(60, Math.ceil((hauteurListe || 600) / HAUTEUR_LIGNE) + 1);
   const cle = montres.slice(0, vues).map(o => o.kind + o.id + "/" + (o.i ?? "")).join("|");
   /* Une frappe réécrit souvent la liste deux fois de suite, la seconde pour
      les mêmes résultats. Ses lignes neuves repartaient sans animation, et
@@ -1042,6 +1050,9 @@ function policesArrivees(/** @type {any} */ e){
  * l'écoute de la liste s'y pose.
  */
 export function brancheRecherche(){
+  // posé avant la première liste : la page s'est mise en page bien avant que les données arrivent
+  if (typeof ResizeObserver === "function")
+    new ResizeObserver(l => { hauteurListe = /** @type {HTMLElement} */ (l[l.length - 1].target).clientHeight; }).observe($("list"));
   // la pastille choisie ou relâchée resserre la liste, ou la rouvre
   POI_CHANGE.ecoute(() => { if (DATA) liste(); });
   /* Une police arrivée après la mesure la rendait fausse : les mesures gardées
