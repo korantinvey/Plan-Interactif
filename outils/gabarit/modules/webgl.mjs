@@ -145,8 +145,8 @@ export function sansCarteGraphique(){
    reporter ici — et une classe de plus employée ci-dessous doit d'abord s'y
    ajouter. */
 const DECK_WEBGL = {
-  src: "bibliotheques/deck.gl-9.3.11-plan-53efd7e8.min.js",
-  integrite: "sha384-RgImRMIyrd9hP0UaVP6ndqdVVIGUnZ7JVuk0LuYnVHqAYAOqHaGRzJPpuWdEDR1k",
+  src: "bibliotheques/deck.gl-9.3.11-plan-9b4b06b0.min.js",
+  integrite: "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
 };
 /** Un repeint vient de finir : sa durée en millisecondes, et combien de
  *  blocs il a refaits. Seul le relevé des performances l'écoute
@@ -193,6 +193,16 @@ export const GL = {
   /** @type {Set<string>} */
   entrees: new Set(),
   partielle: false,
+  /* La chauffe des programmes, avant la première image — voir « La
+     chauffe » : pas commencée (""), « partie » ou « faite » ; ses couches,
+     et les images que la bibliothèque en a dessinées. */
+  chauffe: "",
+  /** @type {any[] | null} */
+  couchesChauffe: null,
+  imagesChauffe: 0,
+  /** ce que la chauffe a duré et lancé, que la sonde relève ; rien sans chauffe
+   *  @type {[number, number] | null} [millisecondes, programmes] */
+  bilanChauffe: null,
   // le programme des logos, préparé au calme une fois le plan montré (`chauffeLogosWebgl`)
   logosChauds: false, chauffeLogos: false, chauffeDemandee: false,
   /** @type {number[] | null} le sol du hall, sur lequel un volume rend sa transparence */
@@ -369,10 +379,14 @@ export function monteWebgl(){
   GL.camera = enCamera();
   // une carte graphique neuve — la première, ou celle d'après un contexte perdu — n'a aucun programme
   GL.entrees = new Set(); GL.partielle = false;
+  GL.chauffe = ""; GL.couchesChauffe = null; GL.imagesChauffe = 0; GL.bilanChauffe = null;
   GL.logosChauds = false; GL.chauffeLogos = false; GL.chauffeDemandee = false;
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
-    ...TOILE,
+    /* La compilation en tâche de fond, que la bibliothèque coupe d'office, ne
+       s'ouvre que le temps de la chauffe ; le réglage est propre à cette carte
+       graphique — celui de la bibliothèque, partagé, ne se touche pas. */
+    deviceProps: { ...TOILE.deviceProps, _disabledFeatures: { [EN_TACHE_DE_FOND]: true } },
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
@@ -386,10 +400,14 @@ export function monteWebgl(){
       poseToileWebgl();
       const d = /** @type {any} */ (GL.deck);
       TOILE_PRETE.emet(d && d.device && d.device.gl || null);
+      // la chauffe attendait la carte graphique (« La chauffe »)
+      if (!GL.pret) planifieWebgl();
     },
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
     onAfterRender: () => {
       IMAGE_DECK.emet();
+      // les couches de la chauffe ont été créées : leurs programmes sont lancés
+      if (GL.chauffe === "partie") GL.imagesChauffe++;
       // la sorte de couche de cette image est prête : la suivante entre à l'image d'après
       if (GL.partielle){ planifieWebgl(); return; }
       if (GL.pret || !GL.deck.props.layers.length) return;
@@ -904,9 +922,10 @@ function assembleWebgl(enMouvement = false){
    que la carte graphique lie les programmes de cinq sortes de couches — 590,
    370, 175, 150 et 85 ms —, tous dans la même image (CDP, 24 octobre 2026).
    La sonde en relève jusqu'à 9,2 s chez un visiteur, sans le moindre geste.
-   La bibliothèque lie chaque programme d'un bloc, à la création de sa
-   couche : elle sait le faire en tâche de fond, mais l'a désactivé, et relit
-   aussitôt ce que le programme contient — l'attente ne s'éviterait pas.
+   La bibliothèque lie chaque programme à la création de sa couche, et relit
+   aussitôt ce qu'il contient : la page attend là, un programme après
+   l'autre. La chauffe, plus bas, les lance d'abord tous ensemble ; les
+   étapes ne portent plus ensuite que le reste du travail de chaque couche.
 
    Tant que le plan n'est pas montré (« gl-pret »), le dessin est invisible :
    chaque image y fait donc entrer une sorte de couche de plus, et les
@@ -920,11 +939,116 @@ const sorteDe = (/** @type {any} */ c) => (c.constructor && c.constructor.layerN
   (c.props.extensions || []).map((/** @type {any} */ e) => e && e.constructor && e.constructor.extensionName).join(",") +
   (c.props.extruded ? "|relief" : "");
 
+/* ------------------------------------------------------------
+   La chauffe
+
+   La carte graphique sait compiler plusieurs programmes à la fois, et la
+   page n'a pas à l'attendre pour autant : c'est la bibliothèque qui l'y
+   oblige, en relisant chaque programme dès qu'elle l'a lancé. Les étapes
+   découpaient cette attente en images sans la raccourcir : sur les postes
+   Windows, l'ouverture attendait encore la carte graphique une seconde et
+   demie, pour six images de deux secondes neuf en tout (sonde, FUNEXPO 2026,
+   10 novembre 2026).
+
+   Avant la première étape, une copie de chaque sorte de couche entre donc
+   seule, vide et invisible, pendant que la carte graphique porte le tableau
+   `__chauffe` : la bibliothèque, retouchée pour cela (`outils/scripts/deck.js`
+   `RETOUCHES`), y range chaque programme lancé sans le relire. On guette
+   ensuite qu'ils soient tous prêts, sans rien bloquer — la page reste libre —,
+   puis les vraies couches entrent par étapes, et reprennent ces programmes du
+   cache de la bibliothèque, qui les garde.
+
+   Les deux préparations se complètent. Celle d'avant les données (« Les
+   programmes préparés pendant que les données arrivent ») lie, sur une toile
+   jetable, les trois programmes que tout plan emploie, et le navigateur les
+   garde ; celle-ci, sur la vraie toile, lance ensemble tous ceux que ce
+   plan-ci demande — les façades de l'immersif comprises — et ceux que la
+   première a déjà liés n'y coûtent presque rien.
+
+   La copie garde tout ce qui choisit le programme — classe, extensions et
+   leurs options, relief — et ne perd que ses données. Une sorte qui
+   n'apparaît qu'après la première image (figurants, logos) se lie comme
+   avant, à son heure. Le navigateur qui ne compile pas en tâche de fond n'a
+   rien à y gagner : il ouvre par étapes, comme avant. Et un programme qui ne
+   dirait jamais être prêt n'est pas attendu au-delà de `CHAUFFE_MAX`.
+   ------------------------------------------------------------ */
+const CHAUFFE_MAX = 8000;
+/* Le nom que la bibliothèque donne à la compilation en tâche de fond. Elle
+   la coupe d'office : sans elle, elle relit le programme sitôt lancé — la
+   chauffe l'ouvre donc pour son temps à elle, et la recoupe après. Hors de
+   l'ouverture, une couche neuve se lie donc comme avant, d'un bloc : en tâche
+   de fond, elle sauterait son premier dessin, et rien ne dit qu'un autre
+   viendrait la montrer. */
+const EN_TACHE_DE_FOND = "compilation-status-async-webgl";
+
+const cleChauffe = (/** @type {any} */ c) => {
+  let options = "";
+  try { options = JSON.stringify((c.props.extensions || []).map((/** @type {any} */ e) => e && e.opts)); } catch (e) {}
+  return sorteDe(c) + "|" + options;
+};
+
+/** Les couches de cette image tant que dure la chauffe ; rien quand elle est
+ *  finie, ou qu'elle n'a pas lieu. */
+function chauffe(/** @type {any[]} */ couches){
+  if (GL.chauffe === "faite") return null;
+  const d = /** @type {any} */ (GL.deck);
+  const carte = d && d.device;
+  if (GL.chauffe === "partie") return GL.couchesChauffe;
+  /* La bibliothèque prépare la carte graphique à part, après sa création : rien
+     n'entre avant elle, qui ne serait pas chauffé — `onLoad` repeint. */
+  if (!carte || !carte.gl) return [];
+  const coupees = carte.features && carte.features.disabledFeatures;
+  let parallele = null;
+  try { parallele = carte.gl.getExtension("KHR_parallel_shader_compile"); } catch (e) {}
+  if (!parallele || !coupees){
+    GL.chauffe = "faite";
+    return null;
+  }
+  /** @type {Map<string, any>} */
+  const copies = new Map();
+  for (const c of couches){
+    if (!c || !c.props || typeof c.clone !== "function") continue;
+    const k = cleChauffe(c);
+    if (!copies.has(k)) copies.set(k, c.clone({ id: "chauffe-" + copies.size, data: [], visible: false }));
+  }
+  // rien encore à dessiner : la chauffe attend le premier assemblage qui porte des couches
+  if (!copies.size) return null;
+  coupees[EN_TACHE_DE_FOND] = false;
+  carte.__chauffe = [];
+  GL.chauffe = "partie"; GL.imagesChauffe = 0;
+  GL.couchesChauffe = [...copies.values()];
+  guetteChauffe(d, performance.now());
+  return GL.couchesChauffe;
+}
+
+/** À chaque image : les programmes sont-ils prêts ? C'est la bibliothèque
+ *  qui le dit, quand elle a vu chacun lié : une vraie couche qui reprendrait
+ *  un programme qu'elle croit encore en cours sauterait son dessin. La
+ *  chauffe finie, la carte graphique rend leurs attributs à qui les demande,
+ *  et les vraies couches entrent. */
+function guetteChauffe(/** @type {any} */ d, /** @type {number} */ debut){
+  requestAnimationFrame(() => {
+    // un contexte perdu, un dessin remonté : la chauffe est celle d'une autre carte graphique
+    if (GL.deck !== d || !GL.actif || GL.chauffe !== "partie") return;
+    const carte = d.device;
+    const lances = /** @type {any[]} */ (carte && carte.__chauffe || []);
+    const prets = GL.imagesChauffe > 0 && lances.every(p => p.destroyed || p.linkStatus !== "pending");
+    if (!prets && performance.now() - debut < CHAUFFE_MAX){ guetteChauffe(d, debut); return; }
+    carte.__chauffe = null;
+    carte.features.disabledFeatures[EN_TACHE_DE_FOND] = true;
+    GL.chauffe = "faite"; GL.couchesChauffe = null;
+    GL.bilanChauffe = [Math.round(performance.now() - debut), lances.length];
+    planifieWebgl();
+  });
+}
+
 /** Les couches de cette image : toutes une fois le plan montré, sinon celles
- *  des sortes déjà entrées, et une de plus. */
+ *  des sortes déjà entrées, et une de plus — après la chauffe. */
 function parEtapes(/** @type {any[]} */ couches){
   GL.partielle = false;
   if (GL.pret) return couches;
+  const chauffees = chauffe(couches);
+  if (chauffees){ GL.partielle = true; return chauffees; }
   let neuve = false;
   const out = couches.filter(c => {
     if (!c || !c.props) return true;

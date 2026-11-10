@@ -153,7 +153,7 @@ dit(textePropre.includes("`plan.js`"), "un fichier versionné de nos pages garde
 dit(textePropre.includes("autre fichier .png") && textePropre.includes("autre fichier .webp") &&
   textePropre.includes("autre fichier`"), "les autres sont regroupés par extension, ou sans");
 dit(fichierPropre("plan.1321f61dd3.js") === "plan.js" && fichierPropre("sw.js") === "sw.js" &&
-  fichierPropre("deck.gl-9.3.11-plan-53efd7e8.min.js", "link") === "deck.gl.js" &&
+  fichierPropre("deck.gl-9.3.11-plan-9b4b06b0.min.js", "link") === "deck.gl.js" &&
   fichierPropre("x.php") === "autre fichier" && fichierPropre(null) === "autre fichier",
   "fichierPropre : liste blanche, extension en liste fixe");
 dit(fichierPropre("plan", "fetch", 0) === "plan (entête)" && fichierPropre("plan", "fetch", 908) === "plan" &&
