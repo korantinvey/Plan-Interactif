@@ -42,6 +42,7 @@ import { cheminForme } from "./chemin-forme.mjs";
 import { vue, cadrePlan } from "./vue-etat.mjs";
 import { solIncline } from "./camera.mjs";
 import { apresAffichage } from "./affichage.mjs";
+import { creeEvenement } from "./evenement.mjs";
 
 const racine = document.documentElement;
 
@@ -415,6 +416,19 @@ function tuilesDeLaVue(cal, fond, vue, mParPx, zone){
 const MAPLIBRE_JS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js";
 const MAPLIBRE_CSS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css";
 
+/* Le montage de la carte vectorielle, étape par étape, pour la sonde
+   (`sonde.mjs`) : « demandee », « bibliotheque », « creee », « chargee »,
+   « echec ». Sur FUNEXPO 2026, dont l'unique pavillon est posé sur le fond
+   « maison », chaque visiteur monte la carte juste après l'affichage ; les
+   gels de MapLibre, de 0,4 à 5,4 s, ne ressortaient pourtant que sur cinq
+   postes NVIDIA, où la compilation de deck.gl ne les cachait pas (sonde,
+   10 novembre 2026). Rien ne disait donc combien de visiteurs payaient, ni
+   quoi : le téléchargement, la lecture de la bibliothèque, la création de la
+   carte ou ses tuiles. Le moment de chaque étape, c'est l'écouteur qui le
+   prend ; l'événement ne porte que ce qu'il ne pourrait pas savoir. */
+/** @type {import("./evenement.mjs").Evenement<[string, any?]>} */
+export const CARTE_ENVIRONS = creeEvenement();
+
 let _biblioGL = null;
 function chargeMapLibre(){
   if (_biblioGL) return _biblioGL;
@@ -643,6 +657,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
   /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
      demandée — et c'est la moitié du diagnostic. */
   ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
+  CARTE_ENVIRONS.emet("demandee", { fond: cal && cal.fond, deja: !!window.maplibregl });
   /* Ni la bibliothèque — huit cents kilo-octets à lire —, ni la carte et ses
      programmes à compiler, avant que le plan soit à l'écran : montée dans la
      foulée de la première image, la carte la retenait deux secondes sur un
@@ -655,6 +670,8 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
        posée, et tout montage suivant sortait à la première ligne — « Situer le
        salon » ne montait plus rien, sans un mot, jusqu'au rechargement. */
     if (gen !== _genGL){ _monteGL = false; return; }
+    CARTE_ENVIRONS.emet("bibliotheque", { adresse: MAPLIBRE_JS });
+    const t0 = performance.now();
     const v = vueGL(cal, etendue);
     _styleGL = sig;
     _etendueGL = etendue;
@@ -673,6 +690,8 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
       fadeDuration: 0,
     });
     _carteGL.setStyle(style, pose);
+    // la carte et son style, posés d'un bloc : ce que la page a attendu
+    CARTE_ENVIRONS.emet("creee", { ms: performance.now() - t0 });
     /* Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce
        qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
        Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
@@ -683,6 +702,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
     /* Et quand elle arrive, le dire aussi : sans ce mot, une carte pâlie par
        la discrétion et posée sous le plan peut passer pour absente. */
     _carteGL.on("load", () => {
+      CARTE_ENVIRONS.emet("chargee");
       clearTimeout(_guetGL);
       if (!_ditGL) ditCarte("Carte chargée.");
     });
@@ -696,6 +716,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
        l'aurait remplacée neuf secondes plus tard par un « service qui ne
        répond pas », qui accuse le fond quand c'est la bibliothèque qui manque. */
     clearTimeout(_guetGL);
+    CARTE_ENVIRONS.emet("echec", { message: String(e.message || e) });
     _echecGL = e.message;
     hote.hidden = true;
     ditCarte("Carte vectorielle indisponible (" + e.message +
