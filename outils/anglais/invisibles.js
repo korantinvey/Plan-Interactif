@@ -108,6 +108,10 @@ module.exports = [
   // des performances demande, et la pastille de l'instrument, `?perf`, que
   // seul celui qui mesure voit — « fps » se lit pareil dans les deux langues
   "WEBGL_debug_renderer_info", "WEBGL_lose_context", " fps · ",
+  // `modules/webgl.mjs` : l'empreinte de deck.gl, que le navigateur vérifie,
+  // et l'extension WebGL dont la chauffe des programmes s'enquiert
+  "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
+  "KHR_parallel_shader_compile",
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",

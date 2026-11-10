@@ -578,6 +578,10 @@ function leChargement(){
     cacheeAvant: cacheeAvant || undefined,
     panne: panne || undefined,
     images: imagesOuverture.length ? imagesOuverture.slice() : undefined,
+    /* La chauffe des programmes (`webgl.mjs`, « La chauffe ») : sa durée et
+       les programmes lancés d'un coup. Absente, elle n'a pas eu lieu — le
+       navigateur ne compile pas en tâche de fond, ou le plan est au SVG. */
+    chauffe: GL.bilanChauffe ? GL.bilanChauffe.slice() : undefined,
   };
   if (affiche !== undefined) OUVERTURE = bilan;
   return bilan;
