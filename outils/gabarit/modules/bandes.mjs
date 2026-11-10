@@ -27,12 +27,31 @@
 const BANDES = () => [...document.querySelectorAll(".bande")];
 
 /**
- * Marquer, sur chaque cadre, le bord par lequel il reste quelque chose.
+ * Marquer, sur chaque cadre, le bord par lequel il reste quelque chose — à
+ * l'image suivante, une fois la page mise en page.
  *
- * Le cadre plutôt que la bande : c'est lui qui porte les flèches, et le CSS ne
- * sait pas remonter d'un enfant à son voisin.
+ * On l'appelle juste après avoir écrit — les onglets posés, le cartouche
+ * rempli, la liste refaite —, et mesurer la largeur défilée forçait alors le
+ * navigateur à mettre en page sur-le-champ tout ce qu'on venait de poser :
+ * 50 à 60 ms dans l'image où les données arrivent, le plan entier compris, et
+ * autant dans celle où les dessins se tracent, chaque fois pour une mise en
+ * page que la fin de l'image refaisait (sonde, découpage des gels, 10 novembre
+ * 2026). La demande attend donc l'image suivante, puis la tâche qui suit son
+ * rendu : la mise en page y est faite, la mesure ne coûte rien. Plusieurs
+ * demandes de la même image n'en font qu'une. Un fondu en retard d'une image
+ * ne se voit pas.
  */
+let fonduDemande = false;
 export function majFondus(){
+  if (fonduDemande) return;
+  fonduDemande = true;
+  requestAnimationFrame(() => setTimeout(() => { fonduDemande = false; marqueFondus(); }, 0));
+}
+
+/* Le cadre plutôt que la bande : c'est lui qui porte les flèches, et le CSS ne
+   sait pas remonter d'un enfant à son voisin. Appelée directement au
+   défilement, où la page est déjà mise en page. */
+function marqueFondus(){
   BANDES().forEach(b => {
     const n = b.querySelector(".defile");
     if (!n) return;
@@ -49,7 +68,7 @@ export function majFondus(){
 export function brancheBandes(){
   BANDES().forEach(b => {
     const n = b.querySelector(".defile");
-    if (n) n.addEventListener("scroll", majFondus, { passive: true });
+    if (n) n.addEventListener("scroll", marqueFondus, { passive: true });
     /* Une pression avance d'un écran, moins une puce : celle qu'on avait sous
        les yeux reste en vue, et l'on garde le fil de ce qu'on parcourt. Le
        défilement doux fait défiler les événements, qui remarquent les bords. */

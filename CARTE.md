@@ -397,13 +397,13 @@ Importé par :
 
 plan-admin
 
-### `modules/bandes.mjs` — 66 l. → plan, plan-admin
+### `modules/bandes.mjs` — 85 l. → plan, plan-admin
 
 - l.1 · Les bandes qui défilent — fondu du bord, flèche qui avance
 
 Fonctions :
 
-`BANDES` 27 · `majFondus` 35 · `brancheBandes` 49
+`BANDES` 27 · `majFondus` 45 · `marqueFondus` 54 · `brancheBandes` 68
 
 Importé par :
 
@@ -2472,7 +2472,7 @@ Importé par :
 
 abords-salles · itineraire · trajet · troncon
 
-### `modules/recherche.mjs` — 1069 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1080 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
@@ -2484,9 +2484,9 @@ Fonctions :
 `majVideQ` 295 · `videRecherche` 308 · `nCriteres` 323 · `majCriteres` 332
 `remplitCriteres` 399 · `basculeCriteres` 538 · `ouvreCriteres` 543 · `marqueRetrait` 577
 `appliqueFiltre` 595 · `oublieRetrait` 611 · `reprendRecherche` 620 · `rangSorte` 633
-`codeCase` 662 · `caseNumero` 679 · `sousLigne` 699 · `liste` 713 · `marqueChoisie` 856
-`prechargeMarque` 882 · `prechargeLesVignettes` 933 · `chargeUnLot` 979
-`policesArrivees` 1021 · `brancheRecherche` 1044
+`codeCase` 670 · `caseNumero` 687 · `sousLigne` 707 · `liste` 721 · `marqueChoisie` 864
+`prechargeMarque` 890 · `prechargeLesVignettes` 941 · `chargeUnLot` 987
+`policesArrivees` 1029 · `brancheRecherche` 1052
 
 Importe :
 
