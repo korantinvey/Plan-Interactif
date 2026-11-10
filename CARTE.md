@@ -2916,23 +2916,24 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 896 l. → plan, plan-admin
+### `modules/sonde.mjs` — 991 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
 `sur` 73 · `ms` 74 · `enCreux` 75 · `uuid` 78 · `echantillonne` 94 · `vue0` 115
-`nouvelleVisite` 130 · `vueDuMoment` 154 · `commence` 156 · `sorte` 166 · `clos` 168
-`relance` 184 · `image` 190 · `ecouteGestes` 220 · `nomDuScript` 257 · `lu` 276
-`cumulDeck` 286 · `travauxDeck` 291 · `releveInstant` 317 · `travauxPendant` 327
-`guetteCompilation` 370 · `imageDOuverture` 388 · `gel` 395 · `ecouteNavigateur` 416
-`memoire` 447 · `contexteDuPlan` 460 · `lisAppareil` 472 · `handicapDeclare` 508
-`finDesDonnees` 522 · `appelsEnEchec` 544 · `leChargement` 566 · `fluidite` 586
-`laCarte` 595 · `resumeSonde` 618 · `octets` 645 · `coupe` 648 · `tronque` 659
-`fraiche` 693 · `litLaFile` 696 · `ecritLaFile` 704 · `retire` 716 · `corps` 719
-`versionDesPages` 727 · `envoieUne` 738 · `pousse` 764 · `actif` 789 · `envoie` 793
-`brancheSonde` 818 · `demarre` 831
+`nouvelleVisite` 130 · `vueDuMoment` 155 · `commence` 157 · `sorte` 168 · `clos` 170
+`relance` 186 · `image` 192 · `ecouteGestes` 222 · `nomDuScript` 259 · `lu` 278
+`cumulDeck` 288 · `travauxDeck` 293 · `releveInstant` 319 · `travauxPendant` 329
+`guetteCompilation` 372 · `imageDOuverture` 390 · `gel` 397 · `doitBattre` 447 · `bat` 456
+`battu` 463 · `ecouteBattement` 481 · `ecouteNavigateur` 496 · `memoire` 533
+`contexteDuPlan` 546 · `lisAppareil` 558 · `handicapDeclare` 594 · `finDesDonnees` 608
+`appelsEnEchec` 630 · `leChargement` 652 · `fluidite` 672 · `laCarte` 681
+`resumeSonde` 704 · `leBattement` 732 · `octets` 738 · `coupe` 741 · `tronque` 752
+`fraiche` 786 · `litLaFile` 789 · `ecritLaFile` 797 · `retire` 809 · `corps` 812
+`versionDesPages` 820 · `envoieUne` 831 · `pousse` 857 · `actif` 882 · `envoie` 886
+`brancheSonde` 911 · `demarre` 924
 
 Importe :
 

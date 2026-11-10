@@ -131,6 +131,7 @@ function nouvelleVisite(/** @type {boolean} */ chargee){
   V = { id: uuid(), debut: Date.now(), t0: chargee ? 0 : performance.now(), chargee,
     vues: { classique: vue0(), immersif: vue0() }, gesteDepuisEnvoi: false, immersif: false,
     gels: { n: 0, totalMs: 0, maxMs: 0, /** @type {any[]} */ pires: [] },
+    battement: { n: 0, totalMs: 0, maxMs: 0, avantAffichage: 0, pendantGeste: 0, couvertMs: 0 },
     reactivite: { n: 0, pireMs: 0, pireType: /** @type {string | undefined} */ (undefined),
       survols: { n: 0, pireMs: 0 } },
     /** @type {number[]} */ repeints: [], nRepeints: 0, maxRepeint: 0,
@@ -159,6 +160,7 @@ function commence(/** @type {string} */ type){
   if (geste) clos();
   geste = { type, doigts: 0, chemin: 0, dernier: t, vue: vueDuMoment() };
   relance();
+  bat();
   return geste;
 }
 
@@ -413,10 +415,94 @@ function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type 
   g.pires.length = Math.min(g.pires.length, 3);
 }
 
+/* ------------------------------------------------------------
+   Le battement : les gels que le navigateur ne dit pas
+
+   Safari, Firefox et tout navigateur d'iPhone n'ont ni `long-animation-frame`
+   ni `longtask` ; Chrome sur Android les a, mais ne les rapporte presque
+   jamais au plan intégré dans le site d'un salon — 4 visites sur 16, contre
+   9 sur 9 hors du cadre (sonde, FUNEXPO 2026, 10 novembre 2026) : le cadre y
+   vit dans le processus de la page hôte, à qui le navigateur rapporte la
+   longue image. « Zéro gel » sur mobile ne disait donc rien, quand la pire
+   image de l'ouverture y passait 700 ms.
+
+   Une minuterie de `BATTEMENT` ms, dont on mesure le retard : une tâche qui
+   tient la page la retarde d'autant, quel que soit le navigateur. Le compte
+   reste à part (`gels.battement`) : la colonne `gels` et la fiche du lundi
+   gardent la mesure du navigateur, et là où les deux existent — Chrome sur
+   le bureau — l'une étalonne l'autre.
+
+   Il ne bat que là où les gels se paient, et où le plan travaille de toute
+   façon : l'ouverture et sa traîne (`TRAINE_OUVERTURE`, les compilations
+   courent après l'affichage), puis chaque geste. Jamais au repos, ni page
+   cachée, ni cadre sorti de l'écran : Safari y espace les minuteries d'un
+   cadre étranger, et chaque battement retardé passerait pour un gel.
+   ------------------------------------------------------------ */
+const BATTEMENT = 50;
+// au-delà, une tâche a tenu la page : le seuil des longues tâches du navigateur
+const RETARD_GEL = 50;
+const TRAINE_OUVERTURE = 10000;
+let battant = 0, attendu = 0, battements = 0, cadreVisible = true;
+
+function doitBattre(){
+  if (document.hidden || !cadreVisible || !V) return false;
+  if (geste) return true;
+  if (!V.chargee) return false;
+  const affiche = J["plan-affiche"];
+  return performance.now() < (affiche === undefined ? SANS_AFFICHAGE : affiche + TRAINE_OUVERTURE);
+}
+
+/** Un battement — et le premier, d'où qu'on l'appelle : une chaîne seulement. */
+function bat(){
+  if (battant) return;
+  if (!doitBattre()){ attendu = 0; return; }
+  attendu = performance.now() + BATTEMENT;
+  battant = setTimeout(battu, BATTEMENT);
+}
+
+function battu(){
+  battant = 0;
+  battements++;
+  const t = performance.now();
+  // la page cachée entre-temps : son retard est celui du navigateur, non un gel
+  if (attendu && doitBattre()){
+    const b = V.battement, retard = t - attendu;
+    b.couvertMs += t - attendu + BATTEMENT;
+    if (retard >= RETARD_GEL){
+      b.n++; b.totalMs += retard; b.maxMs = Math.max(b.maxMs, retard);
+      if (J["plan-affiche"] === undefined) b.avantAffichage++;
+      if (geste) b.pendantGeste++;
+    }
+  }
+  attendu = 0;
+  bat();
+}
+
+function ecouteBattement(){
+  addEventListener("visibilitychange", sur(() => { if (!document.hidden) bat(); }));
+  // un cadre hors de l'écran : l'observateur sans racine le dit par rapport à la page hôte
+  if (window.top !== window.self && typeof IntersectionObserver === "function"){
+    new IntersectionObserver(sur((/** @type {IntersectionObserverEntry[]} */ l) => {
+      cadreVisible = l[l.length - 1].isIntersecting;
+      if (cadreVisible) bat();
+    })).observe(document.documentElement);
+  }
+  bat();
+}
+
+/** Ce que le navigateur offre pour dire les gels : sans rien, seul le battement les voit. */
+let API_GELS = "aucune";
+
 function ecouteNavigateur(){
   observe("largest-contentful-paint", sur((/** @type {any} */ e) => { J.lcp = Math.round(e.startTime); }));
-  const loaf = observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts, e.startTime)));
-  if (!loaf) observe("longtask", sur((/** @type {any} */ e) => gel(e.duration, null, e.startTime)));
+  /* Un type d'entrée inconnu ne lève pas : le navigateur l'ignore, et
+     `observe` se croyait inscrit — Safari passait pour un navigateur qui dit
+     ses longues images, et le repli sur `longtask` ne se tentait jamais. Ce
+     qu'il connaît, il le dit dans `supportedEntryTypes`. */
+  const connus = (typeof PerformanceObserver === "function" && PerformanceObserver.supportedEntryTypes) || [];
+  API_GELS = connus.includes("long-animation-frame") ? "loaf" : connus.includes("longtask") ? "longtask" : "aucune";
+  if (API_GELS === "loaf") observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts, e.startTime)));
+  else if (API_GELS === "longtask") observe("longtask", sur((/** @type {any} */ e) => gel(e.duration, null, e.startTime)));
   /* La réactivité ne retient que ce que le visiteur a fait — appui, relâché,
      clic, touche : les événements qui portent un `interactionId`. Le
      navigateur rapporte aussi l'entrée et la sortie du pointeur d'un élément,
@@ -629,7 +715,8 @@ export function resumeSonde(){
       pires: g.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
         fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
         position: p.url && p.position >= 0 ? p.position : undefined,
-        t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux })) },
+        t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux })),
+      api: API_GELS, battement: leBattement() },
     reactivite: { ...V.reactivite, survols: { ...V.reactivite.survols } },
     erreurs: bilanErreurs(),
     api: appelsEnEchec(),
@@ -640,6 +727,12 @@ export function resumeSonde(){
       immersifUtilise: V.immersif || GL.camera },
   };
   return tronque(r);
+}
+
+function leBattement(){
+  const b = V.battement;
+  return { n: b.n, totalMs: Math.round(b.totalMs), maxMs: Math.round(b.maxMs),
+    avantAffichage: b.avantAffichage, pendantGeste: b.pendantGeste, couvertMs: Math.round(b.couvertMs) };
 }
 
 const octets = (/** @type {any} */ o) => new TextEncoder().encode(JSON.stringify(o)).length;
@@ -834,6 +927,7 @@ function demarre(){
   nouvelleVisite(true);
   ecouteGestes();
   ecouteNavigateur();
+  ecouteBattement();
   REPEINT_FINI.ecoute(sur((/** @type {number} */ duree) => {
     V.nRepeints++;
     V.maxRepeint = Math.max(V.maxRepeint, duree);
@@ -890,6 +984,7 @@ function demarre(){
 
   const essais = /** @type {any} */ (globalThis).__essais;
   if (essais) essais.sonde = { get resume(){ return resumeSonde(); }, get images(){ return images; },
+    get battements(){ return battements; },
     get visite(){ return V.id; },
     // les comptes cumulés de deck.gl et de luma.gl, tels que le prochain gel les lirait
     get travaux(){ return travauxDeck(); } };
