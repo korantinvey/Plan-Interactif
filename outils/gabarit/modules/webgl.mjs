@@ -958,6 +958,13 @@ const sorteDe = (/** @type {any} */ c) => (c.constructor && c.constructor.layerN
    puis les vraies couches entrent par étapes, et reprennent ces programmes du
    cache de la bibliothèque, qui les garde.
 
+   Les deux préparations se complètent. Celle d'avant les données (« Les
+   programmes préparés pendant que les données arrivent ») lie, sur une toile
+   jetable, les trois programmes que tout plan emploie, et le navigateur les
+   garde ; celle-ci, sur la vraie toile, lance ensemble tous ceux que ce
+   plan-ci demande — les façades de l'immersif comprises — et ceux que la
+   première a déjà liés n'y coûtent presque rien.
+
    La copie garde tout ce qui choisit le programme — classe, extensions et
    leurs options, relief — et ne perd que ses données. Une sorte qui
    n'apparaît qu'après la première image (figurants, logos) se lie comme
