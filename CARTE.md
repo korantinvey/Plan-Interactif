@@ -1060,31 +1060,31 @@ Importé par :
 
 bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1106 l. → plan, plan-admin
+### `modules/environs.mjs` — 1127 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 54 · `styleSobre` 127 · `forceCarte` 221 · `vueLibre` 245
-`calagePose` 255 · `calageCourant` 267 · `fondCourant` 270 · `recul` 275 · `zoneDuFond` 293
-`bornesDuFond` 310 · `borneLeStyle` 324 · `adresseTuile` 336 · `tuilesDeLaVue` 346
-`chargeMapLibre` 419 · `vueGL` 451 · `vueGLValable` 474 · `styleDuFond` 490
-`guetteLaCarte` 518 · `recaleCarteGL` 552 · `redessineCarteGL` 572 · `poseCarteGL` 602
-`diagnostiqueGL` 719 · `relanceCarteGL` 739 · `retireCarteGL` 753 · `guetteRetourGL` 780
-`carteGLPerdue` 787 · `verifieCarteGL` 797 · `videCarteGL` 815 · `inclineFond` 849
-`dessineFondCarte` 897 · `cleMasqueCarte` 1017 · `masqueCarte` 1018
-`formesMasquantes` 1027 · `contourDuHall` 1049 · `cheminDuHall` 1056
-`poseMasqueCarte` 1074 · `ditCarte` 1089 · `refaitFondCarte` 1099
+`poseCalageEnCours` 55 · `styleSobre` 128 · `forceCarte` 222 · `vueLibre` 246
+`calagePose` 256 · `calageCourant` 268 · `fondCourant` 271 · `recul` 276 · `zoneDuFond` 294
+`bornesDuFond` 311 · `borneLeStyle` 325 · `adresseTuile` 337 · `tuilesDeLaVue` 347
+`chargeMapLibre` 433 · `vueGL` 465 · `vueGLValable` 488 · `styleDuFond` 504
+`guetteLaCarte` 532 · `recaleCarteGL` 566 · `redessineCarteGL` 586 · `poseCarteGL` 616
+`diagnostiqueGL` 740 · `relanceCarteGL` 760 · `retireCarteGL` 774 · `guetteRetourGL` 801
+`carteGLPerdue` 808 · `verifieCarteGL` 818 · `videCarteGL` 836 · `inclineFond` 870
+`dessineFondCarte` 918 · `cleMasqueCarte` 1038 · `masqueCarte` 1039
+`formesMasquantes` 1048 · `contourDuHall` 1070 · `cheminDuHall` 1077
+`poseMasqueCarte` 1095 · `ditCarte` 1110 · `refaitFondCarte` 1120
 
 Importe :
 
-affichage · calques-dessin · camera · chemin-forme · configuration · dom · donnees · terre
-texte · vue-etat
+affichage · calques-dessin · camera · chemin-forme · configuration · dom · donnees
+evenement · terre · texte · vue-etat
 
 Importé par :
 
-calage-carte · dessin · gestes · vue
+calage-carte · dessin · gestes · sonde · vue
 
 ### `modules/erreurs.mjs` — 142 l. → plan, plan-admin
 
@@ -1129,9 +1129,9 @@ Fonctions :
 
 Importé par :
 
-acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · fenetre
-fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire · vignettes
-webgl
+acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · environs
+fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire
+vignettes · webgl
 
 ### `modules/evenements.mjs` — 70 l. → console
 
@@ -2916,29 +2916,30 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 999 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1079 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 73 · `ms` 74 · `enCreux` 75 · `uuid` 78 · `echantillonne` 94 · `vue0` 115
-`nouvelleVisite` 130 · `vueDuMoment` 155 · `commence` 157 · `sorte` 168 · `clos` 170
-`relance` 186 · `image` 192 · `ecouteGestes` 222 · `nomDuScript` 259 · `lu` 278
-`cumulDeck` 288 · `travauxDeck` 293 · `releveInstant` 319 · `travauxPendant` 329
-`guetteCompilation` 376 · `imageDOuverture` 394 · `gel` 401 · `doitBattre` 451 · `bat` 460
-`battu` 467 · `ecouteBattement` 485 · `ecouteNavigateur` 500 · `memoire` 537
-`contexteDuPlan` 550 · `lisAppareil` 562 · `handicapDeclare` 598 · `finDesDonnees` 612
-`appelsEnEchec` 634 · `leChargement` 656 · `fluidite` 680 · `laCarte` 689
-`resumeSonde` 712 · `leBattement` 740 · `octets` 746 · `coupe` 749 · `tronque` 760
-`fraiche` 794 · `litLaFile` 797 · `ecritLaFile` 805 · `retire` 817 · `corps` 820
-`versionDesPages` 828 · `envoieUne` 839 · `pousse` 865 · `actif` 890 · `envoie` 894
-`brancheSonde` 919 · `demarre` 932
+`sur` 74 · `ms` 75 · `enCreux` 76 · `uuid` 79 · `echantillonne` 95 · `vue0` 116
+`nouvelleVisite` 131 · `vueDuMoment` 156 · `commence` 158 · `sorte` 169 · `clos` 171
+`relance` 187 · `image` 193 · `ecouteGestes` 223 · `nomDuScript` 260 · `lu` 279
+`cumulDeck` 289 · `travauxDeck` 294 · `releveInstant` 320 · `travauxPendant` 330
+`guetteCompilation` 377 · `imageDOuverture` 395 · `gel` 402 · `doitBattre` 453 · `bat` 462
+`battu` 469 · `ecouteBattement` 488 · `dansLaCarte` 522 · `gelPendantLaCarte` 528
+`etapeDeLaCarte` 534 · `laCarteDesEnvirons` 564 · `ecouteNavigateur` 578 · `memoire` 615
+`contexteDuPlan` 628 · `lisAppareil` 640 · `handicapDeclare` 676 · `finDesDonnees` 690
+`appelsEnEchec` 712 · `leChargement` 734 · `fluidite` 758 · `laCarte` 767
+`resumeSonde` 790 · `leBattement` 819 · `octets` 825 · `coupe` 828 · `tronque` 839
+`fraiche` 873 · `litLaFile` 876 · `ecritLaFile` 884 · `retire` 896 · `corps` 899
+`versionDesPages` 907 · `envoieUne` 918 · `pousse` 944 · `actif` 969 · `envoie` 973
+`brancheSonde` 998 · `demarre` 1011
 
 Importe :
 
-affichage · demarrage · donnees · erreurs · logos-stands · mesure · mesures-page · salon
-webgl
+affichage · demarrage · donnees · environs · erreurs · logos-stands · mesure · mesures-page
+salon · webgl
 
 Importé par :
 
