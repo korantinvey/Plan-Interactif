@@ -352,8 +352,12 @@ function travauxPendant(/** @type {number} */ debut, /** @type {number} */ fin){
    Avant que le plan paraisse, le dessin fait entrer une sorte de couche par
    image (`webgl.mjs`, « Une sorte de couche par image ») : quatre ou cinq
    images, de quatre cents millisecondes à plus d'une seconde chacune sur les
-   postes Windows, quelle que soit la carte graphique — et autant chez qui
-   revient, ses fichiers déjà en cache (sonde, 2 au 9 novembre 2026). Les
+   postes Windows, quelle que soit la carte graphique (sonde, 2 au 9 novembre
+   2026). Ce relevé a montré depuis que l'attente est celle d'une première
+   visite : le même poste revenu ne passe plus que 20 à 140 ms à lier, quand
+   la première lui en coûtait 1 à 1,7 s (FUNEXPO 2026, 10 novembre) — le
+   navigateur garde les programmes liés, ce dont `webgl.mjs` profite
+   (« Les programmes préparés pendant que les données arrivent »). Les
    travaux de l'image disent qu'elle a créé un
    programme, pas ce qu'il a coûté : la page a-t-elle attendu la compilation,
    ou fait autre chose ? Le navigateur compile à part, dans le processus de

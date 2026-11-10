@@ -573,8 +573,15 @@ function glisseVersVise(){
     imageZoom = null;
     if (!vise) return;
     /* Le rapprochement se compte en millisecondes, non en images : sans quoi
-       un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
-    const dt = Math.min(64, maintenant - precedent) || 16;
+       un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60.
+
+       Et jamais à rebours. L'heure d'une image est celle où elle a commencé :
+       livrée en retard à une page occupée, elle peut dater d'avant le geste,
+       donc d'avant « precedent ». Le pas devenait négatif, et la vue partait
+       à l'envers, bien au-delà de son but — en reculant, jusqu'à une largeur
+       négative (essai des logos, trois navigateurs en parallèle). Un temps
+       qui ne s'est pas écoulé compte pour une image, comme la première. */
+    const dt = Math.min(64, Math.max(0, maintenant - precedent)) || 16;
     precedent = maintenant;
     figeTextes();
     const k = 1 - Math.pow(.5, dt / demiVie);

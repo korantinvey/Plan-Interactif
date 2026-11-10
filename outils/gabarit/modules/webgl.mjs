@@ -241,9 +241,91 @@ function chargeWebgl(){
   setTimeout(echeance, 4000);
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
-  s.onload = () => { GL.charge = true; monteWebgl(); };
+  s.onload = () => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); };
   s.onerror = () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); };
   document.head.appendChild(s);
+}
+
+/* ------------------------------------------------------------
+   Les programmes préparés pendant que les données arrivent
+
+   À la première visite sur un poste, l'ouverture attend la carte graphique :
+   0,8 à 1,7 s à lier les programmes du dessin, près de 6 s sur une carte
+   Intel Iris Xe. Le même poste, revenu, n'y passe plus que 20 à 140 ms
+   (sonde, FUNEXPO 2026, 10 novembre 2026) : le navigateur garde les
+   programmes déjà liés, rangés d'après leur source, quelle que soit la toile
+   qui les a demandés.
+
+   Or la bibliothèque arrive d'ordinaire avant le plan, et la page attend
+   alors le réseau sans rien faire. Une toile jetable, invisible, y lie les
+   programmes que tout plan emploie ; la vraie, montée avec le plan, les
+   trouve prêts. Le travail n'est pas moindre : il tombe dans une attente qui
+   existait déjà, au lieu de s'y ajouter.
+
+   Trois programmes seulement : les aplats, les traits et les textes. Ce sont
+   ceux de la première image de tout plan, et leur source est la même à plat
+   qu'en immersif, lumière comprise — relevé dans Chromium, caractère pour
+   caractère. Les façades des volumes n'existent qu'en immersif, que seule la
+   configuration du salon annonce, avec les données : préparées au hasard,
+   elles coûteraient leur compilation à chaque plan qui n'en veut pas.
+
+   La source d'un programme tient à la sorte de couche et à ses extensions,
+   pas à ses données : des couches vides suffisent, pourvu qu'elles portent
+   les mêmes extensions que les vraies — les objets mêmes de `constTexte`.
+   Une sorte par tâche, pour que la page réponde entre deux, et l'on
+   s'arrête dès que le plan monte : il liera lui-même ce qui reste.
+   ------------------------------------------------------------ */
+/** @type {{ deck: any, hote: HTMLElement | null }} */
+const CHAUFFE = { deck: null, hote: null };
+
+function sortesDeChauffe(){
+  const K = constTexte();
+  return [
+    () => new deck.SolidPolygonLayer({ id: "chauffe-aplats", data: [], getPolygon: (/** @type {any} */ d) => d }),
+    () => new deck.PathLayer({ id: "chauffe-traits", data: [], getPath: (/** @type {any} */ d) => d, extensions: K.traits }),
+    () => new deck.TextLayer({ id: "chauffe-textes", data: [], characterSet: "a",
+      fontSettings: K.petit.atlas, extensions: K.petit.ext }),
+  ];
+}
+
+function chauffeAvantLesDonnees(){
+  if (vueDuPlan() || GL.actif || CHAUFFE.deck) return;
+  /** @type {(() => any)[]} */
+  let sortes;
+  try { sortes = sortesDeChauffe(); } catch (e) { return; }
+  const hote = document.createElement("div");
+  hote.setAttribute("aria-hidden", "true");
+  hote.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none";
+  (document.body || document.documentElement).appendChild(hote);
+  CHAUFFE.hote = hote;
+  /** @type {any[]} */
+  const couches = [];
+  const suivante = () => {
+    if (!CHAUFFE.deck) return;
+    if (vueDuPlan() || !sortes.length){ finisChauffe(); return; }
+    const fabrique = /** @type {() => any} */ (sortes.shift());
+    couches.push(fabrique());
+    // la couche neuve s'initialise ici même : c'est là que son programme se lie
+    try { CHAUFFE.deck.setProps({ layers: [...couches] }); } catch (e) { finisChauffe(); return; }
+    setTimeout(suivante, 0);
+  };
+  try {
+    CHAUFFE.deck = new deck.Deck({
+      parent: hote, controller: false, ...TOILE,
+      views: new deck.OrthographicView({ id: "chauffe" }), viewState: { target: [0, 0, 0], zoom: 0 },
+      layers: [],
+      // une préparation qui échoue ne prive le plan de rien : il liera lui-même
+      onError: () => {},
+      onLoad: () => setTimeout(suivante, 0),
+    });
+  } catch (e) { finisChauffe(); }
+}
+
+function finisChauffe(){
+  const d = CHAUFFE.deck, h = CHAUFFE.hote;
+  CHAUFFE.deck = null; CHAUFFE.hote = null;
+  try { if (d) d.finalize(); } catch (e) {}
+  if (h) h.remove();
 }
 
 /**
@@ -277,6 +359,8 @@ export function monteWebgl(){
      vue repasse par ici à chaque geste, et remonterait le dessin sur-le-champ
      — sur la mémoire qui vient justement de manquer. */
   if (GL.aRemonter || GL.attente || GL.abandon) return;
+  // la toile de la préparation cède la place : deux contextes ne se disputent pas la carte graphique
+  finisChauffe();
   const hote = document.createElement("div");
   hote.className = "plan-gl";
   hote.setAttribute("aria-hidden", "true");
