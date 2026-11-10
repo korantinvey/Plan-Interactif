@@ -12,7 +12,7 @@
  * `/api/sonde` et la RPC `sonde_admin` sont interceptés : rien ne sort.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe } = require("./aide.js");
+const { prepare, attendLaListe, DONNEES } = require("./aide.js");
 
 /* Playwright lance Chromium sans cache arrière : on le rend, comme chez un
    visiteur — l'essai du retour en arrière en dépend, et les autres n'y perdent rien. */
@@ -272,6 +272,44 @@ test.describe("la sonde silencieuse, là où le navigateur ne dit pas ses gels",
     // un geste le rallume
     await glisse(page);
     await expect.poll(battements).toBeGreaterThan(fige);
+    expect(erreurs).toEqual([]);
+  });
+});
+
+test.describe("la sonde silencieuse, la carte des environs", () => {
+  /* Un fond vectoriel monte MapLibre après l'affichage. Cette carte-ci tient
+     la page à sa création, puis dans son propre script avant de se dire
+     chargée : la sonde doit dater chaque étape et rendre ce gel à MapLibre. */
+  test("le montage de MapLibre, étape par étape, et ses gels", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0, fond: "maison" };
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await page.route("https://cdn.jsdelivr.net/npm/maplibre-gl@4/**", (r) => r.fulfill({
+      contentType: /\.css$/.test(r.request().url()) ? "text/css" : "application/javascript",
+      body: /\.css$/.test(r.request().url()) ? "" :
+        "const tiens = (ms) => { const t = performance.now(); while (performance.now() - t < ms) {} };" +
+        "window.maplibregl = { Map: class { constructor(o){ this.o = o; tiens(150); } " +
+        "on(ev, f){ if (ev === 'load') setTimeout(() => { tiens(200); f(); }, 100); return this; } " +
+        "jumpTo(){} setStyle(){} remove(){} resize(){} redraw(){} getCanvas(){ return null; } } };" }));
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await affiche(page);
+    const environs = () => page.evaluate(() => window.__essais.sonde.resume.environs);
+    await expect.poll(async () => (await environs() || {}).chargeeMs, { timeout: 15_000 }).toBeGreaterThan(0);
+    const e = await environs();
+    expect(e.fond).toBe("maison");
+    expect(e.demandeeMs).toBeGreaterThan(0);
+    expect(e.bibliothequeMs).toBeGreaterThanOrEqual(0);
+    expect(e.creationMs).toBeGreaterThanOrEqual(140);
+    expect(e.chargeeMs).toBeGreaterThan(e.bibliothequeMs);
+    // le gel du script de la carte, vu par le navigateur et rendu à MapLibre
+    await expect.poll(async () => (await environs()).gels.maplibreMs).toBeGreaterThanOrEqual(150);
+    expect((await environs()).gels.n).toBeGreaterThan(0);
     expect(erreurs).toEqual([]);
   });
 });

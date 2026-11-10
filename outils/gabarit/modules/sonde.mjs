@@ -41,6 +41,7 @@ import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
 import { quandAffiche, estAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE, PLAN_EN_PANNE } from "./demarrage.mjs";
+import { CARTE_ENVIRONS } from "./environs.mjs";
 import { bilanErreurs } from "./erreurs.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
@@ -399,6 +400,7 @@ function imageDOuverture(){
 }
 
 function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type {number} */ debut){
+  gelPendantLaCarte(duree, scripts, debut);
   const g = V.gels;
   g.n++; g.totalMs += duree; g.maxMs = Math.max(g.maxMs, duree);
   if (g.pires.length >= 3 && duree <= g.pires[2].ms) return;
@@ -476,6 +478,7 @@ function battu(){
       b.n++; b.totalMs += retard; b.maxMs = Math.max(b.maxMs, retard);
       if (J["plan-affiche"] === undefined) b.avantAffichage++;
       if (geste) b.pendantGeste++;
+      if (dansLaCarte(attendu)) CARTE.battementMs += retard;
     }
   }
   attendu = 0;
@@ -492,6 +495,81 @@ function ecouteBattement(){
     })).observe(document.documentElement);
   }
   bat();
+}
+
+/* ------------------------------------------------------------
+   La carte des environs
+
+   Un fond vectoriel monte MapLibre juste après l'affichage : huit cents
+   kilo-octets à lire, un second contexte WebGL et ses programmes, puis les
+   tuiles. Ses gels se perdaient parmi les autres — la sonde ne garde que les
+   trois pires, et la compilation de deck.gl passe devant sur la plupart des
+   postes (`environs.mjs` `CARTE_ENVIRONS`). On suit donc le montage à part :
+   chaque étape, en millisecondes depuis la demande, et ce que la page a gelé
+   entre la demande et la carte chargée, plus une seconde de traîne — en
+   tout, et dans les scripts de MapLibre seuls.
+
+   La carte est celle de la page, non de la visite : une borne qui change de
+   visite à l'heure ne la remonte pas, et ne la redit donc qu'une fois.
+   ------------------------------------------------------------ */
+const TRAINE_CARTE = 1000;
+// une carte qui ne se charge jamais ne tient pas la fenêtre ouverte toute la visite
+const CARTE_MAX = 30000;
+/** @type {any} */
+let CARTE = null;
+const DE_MAPLIBRE = /maplibre/i;
+
+function dansLaCarte(/** @type {number} */ t){
+  if (!CARTE || t < CARTE.t0) return false;
+  const fin = CARTE.chargeeA !== undefined ? CARTE.chargeeA + TRAINE_CARTE : CARTE.t0 + CARTE_MAX;
+  return t <= fin;
+}
+
+function gelPendantLaCarte(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type {number} */ debut){
+  if (!dansLaCarte(debut)) return;
+  CARTE.gelsN++; CARTE.gelsMs += duree;
+  for (const sc of scripts || []) if (DE_MAPLIBRE.test(sc.sourceURL || "")) CARTE.maplibreMs += sc.duration || 0;
+}
+
+function etapeDeLaCarte(/** @type {string} */ etape, /** @type {any} */ d = {}){
+  const t = performance.now();
+  if (etape === "demandee"){
+    // un second montage — un autre fond choisi — ne refait pas la mesure du premier
+    if (CARTE) return;
+    CARTE = { t0: t, fond: d.fond, deja: !!d.deja, gelsN: 0, gelsMs: 0, maplibreMs: 0, battementMs: 0 };
+    return;
+  }
+  if (!CARTE) return;
+  const depuis = Math.round(t - CARTE.t0);
+  if (etape === "bibliotheque" && CARTE.bibliothequeMs === undefined){
+    CARTE.bibliothequeMs = depuis;
+    /* Le fichier, tel que le navigateur l'a reçu : ce qui sépare sa fin de
+       réception de son `onload` est le temps de le lire. */
+    const e = /** @type {any} */ (performance.getEntriesByName(d.adresse || "")[0]);
+    if (e){
+      CARTE.telechargementMs = Math.round(e.duration);
+      if (e.transferSize !== undefined) CARTE.transfertKo = Math.round(e.transferSize / 1024);
+      if (e.responseEnd > 0) CARTE.lectureMs = Math.round(t - e.responseEnd);
+    }
+  } else if (etape === "creee" && CARTE.creationMs === undefined){
+    CARTE.creationMs = Math.round(d.ms || 0);
+  } else if (etape === "chargee" && CARTE.chargeeA === undefined){
+    CARTE.chargeeA = t;
+    CARTE.chargeeMs = depuis;
+  } else if (etape === "echec" && !CARTE.echec){
+    CARTE.echec = String(d.message || "").slice(0, 60);
+  }
+}
+
+function laCarteDesEnvirons(){
+  if (!CARTE || !V.chargee) return undefined;
+  const c = CARTE;
+  return { fond: c.fond, deja: c.deja || undefined,
+    demandeeMs: Math.round(c.t0 - V.t0), bibliothequeMs: c.bibliothequeMs,
+    telechargementMs: c.telechargementMs, transfertKo: c.transfertKo, lectureMs: c.lectureMs,
+    creationMs: c.creationMs, chargeeMs: c.chargeeMs, echec: c.echec,
+    gels: { n: c.gelsN, ms: Math.round(c.gelsMs), maplibreMs: Math.round(c.maplibreMs),
+      battementMs: Math.round(c.battementMs) } };
 }
 
 /** Ce que le navigateur offre pour dire les gels : sans rien, seul le battement les voit. */
@@ -729,6 +807,7 @@ export function resumeSonde(){
     erreurs: bilanErreurs(),
     api: appelsEnEchec(),
     gpu: laCarte(),
+    environs: laCarteDesEnvirons(),
     memoire: { picMo: V.picMo || undefined },
     appareil: lisAppareil(),
     plan: { emplacements: TOUS.length, noeudsDom: document.getElementsByTagName("*").length,
@@ -941,6 +1020,7 @@ function demarre(){
     V.maxRepeint = Math.max(V.maxRepeint, duree);
     echantillonne(V.repeints, V.nRepeints, duree);
   }));
+  CARTE_ENVIRONS.ecoute(sur(etapeDeLaCarte));
   IMAGE_DECK.ecoute(sur(releveInstant));
   IMAGE_DECK.ecoute(sur(imageDOuverture));
   TOILE_PRETE.ecoute(sur(guetteCompilation));
