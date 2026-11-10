@@ -65,7 +65,17 @@ select r.evenement_id, r.jour::text as jour, r.page, r.mobile, r.immersif, r.ver
        r.resume #> '{appareil,carte,handicap}' = 'true'::jsonb as handicap,
        r.resume #> '{appareil,carte,repli}' is not null as repli,
        coalesce(r.resume #> '{appareil,carte,logiciel}' = 'true'::jsonb, false) as logiciel,
-       r.resume #>> '{appareil,carte,puce}' as puce
+       r.resume #>> '{appareil,carte,puce}' as puce,
+       /* Les images lentes du bureau, à séparer : le lissage sous-pixel des
+          petits textes offert ou non, et les images où le dessin était revenu
+          au repos pendant le geste (sonde.mjs, « auRepos »). Absents des
+          relevés d'avant le 9 novembre 2026. */
+       case when jsonb_typeof(r.resume #> '{appareil,carte,sousPixel}') = 'boolean'
+            then (r.resume #>> '{appareil,carte,sousPixel}')::boolean end as sous_pixel,
+       case when jsonb_typeof(r.resume #> '{fluidite,classique,tranches}') = 'array'
+            then r.resume #> '{fluidite,classique,tranches}' end as tranches_classique,
+       sonde_nombre(r.resume #> '{fluidite,classique,auRepos,0}')::double precision as repos_classique,
+       sonde_nombre(r.resume #> '{fluidite,classique,auRepos,1}')::double precision as lentes_repos_classique
   from releve_perf r
  where r.jour >= current_date - 14
 `;
@@ -147,6 +157,11 @@ const assaini = (r) => ({
   repli: r.repli === true,
   logiciel: r.logiciel === true,
   puce: texteSur(r.puce) || "inconnue",
+  sous_pixel: typeof r.sous_pixel === "boolean" ? r.sous_pixel : null,
+  tranches_classique: Array.isArray(r.tranches_classique) && r.tranches_classique.length === TRANCHES_SONDE
+    ? r.tranches_classique.map((x) => nombre(x) ?? 0) : null,
+  repos_classique: nombre(r.repos_classique),
+  lentes_repos_classique: nombre(r.lentes_repos_classique),
   lourds: Array.isArray(r.lourds)
     ? r.lourds.filter(Boolean).map((x) => {
         const sorte = SORTES.has(x.sorte) ? x.sorte : "other";
@@ -185,6 +200,50 @@ const DEPART_MS = 10000;
  */
 const sansImage = (r) => r.chargee !== false && r.affiche_ms == null && !r.cachee &&
   (r.panne != null || (r.duree_ms ?? 0) >= DEPART_MS);
+
+/* Les tranches d'intervalle de la sonde (`mesures-page.mjs` `TRANCHES`) : sept,
+   dont les quatre dernières passent 33 ms — ce que `partPlus33` compte lent. */
+const TRANCHES_SONDE = 7, PREMIERE_LENTE = 3;
+
+/**
+ * D'où viennent les images lentes du bureau, en vue classique, sur le plan.
+ * Selon le lissage sous-pixel des petits textes : la médiane des visites qui
+ * l'avaient, et de celles qui ne l'avaient pas. Puis, toutes visites réunies,
+ * les images où le dessin était revenu au repos pendant le geste — fin de
+ * geste, appui — contre celles en mouvement : laquelle des deux est lente, et
+ * quelle part des images lentes vient du repos. Rien sans relevé qui le dise.
+ */
+function lentesDuBureau(semaine) {
+  const l = semaine.filter((r) => r.page === "plan" && !r.mobile && r.part_plus33_classique != null);
+  const parLissage = (oui) => {
+    const v = l.filter((r) => r.sous_pixel === oui);
+    return { visites: v.length, part_p50: mediane(v.map((r) => r.part_plus33_classique)) };
+  };
+  let images = 0, lentes = 0, repos = 0, lentesRepos = 0, visites = 0;
+  for (const r of l) {
+    if (!r.tranches_classique || r.repos_classique == null) continue;
+    const n = r.tranches_classique.reduce((a, b) => a + b, 0);
+    if (!n) continue;
+    visites++;
+    images += n;
+    lentes += r.tranches_classique.slice(PREMIERE_LENTE).reduce((a, b) => a + b, 0);
+    repos += Math.min(r.repos_classique, n);
+    lentesRepos += Math.min(r.lentes_repos_classique ?? 0, r.repos_classique);
+  }
+  const avec = parLissage(true), sans = parLissage(false);
+  if (!avec.visites && !sans.visites && !visites) return null;
+  const part = (a, b) => b > 0 ? 100 * a / b : null;
+  return {
+    avecLissage: avec, sansLissage: sans,
+    repos: visites ? {
+      visites, images,
+      partImages: part(repos, images),
+      lentesAuRepos: part(lentesRepos, repos),
+      lentesEnMouvement: part(lentes - lentesRepos, images - repos),
+      partDesLentes: part(lentesRepos, lentes),
+    } : null,
+  };
+}
 
 /** Ce qui a échoué dans la semaine : un plan absent, une erreur, un appel refusé. */
 function echecs(semaine) {
@@ -321,6 +380,7 @@ function indicateurs(brut, au) {
     handicaps: semaine.filter((r) => r.repli || r.handicap).map((r) => ({ puce: r.puce, logiciel: r.logiciel, repli: r.repli,
       affiche: nombre(r.affiche_ms), plus33: nombre(r.part_plus33_immersif) ?? nombre(r.part_plus33_classique) })),
     echecs: echecs(semaine),
+    lentesBureau: lentesDuBureau(semaine),
     groupes: groupes(semaine),
     precedente: groupes(precedente),
     fichiers: fichiers.sort((x, y) => y.part - x.part),
@@ -398,6 +458,22 @@ function corps(ind) {
       pc(g.vues.classique?.part_p50), pc(g.vues.immersif?.part_p50)].join(" | ") + " |");
   }
   l.push("");
+  const lb = ind.lentesBureau;
+  if (lb) {
+    l.push("## Images lentes du bureau, vue classique");
+    l.push("");
+    const lissage = (nom, x) => "- " + nom + " : " + x.visites + " visite" + (x.visites > 1 ? "s" : "") +
+      (x.visites ? ", " + pc(x.part_p50) + " d'images lentes en médiane" : "");
+    l.push(lissage("Petits textes lissés au sous-pixel", lb.avecLissage));
+    l.push(lissage("Sans ce lissage", lb.sansLissage));
+    if (lb.repos) {
+      const r = lb.repos;
+      l.push("- Toutes visites réunies (" + r.visites + ", " + r.images + " images de geste) : le dessin était revenu au repos — " +
+        "fin de geste, appui — pour " + pc(r.partImages) + " des images, dont " + pc(r.lentesAuRepos) + " lentes ; " +
+        "en mouvement, " + pc(r.lentesEnMouvement) + " lentes. Le repos fait " + pc(r.partDesLentes) + " des images lentes.");
+    }
+    l.push("");
+  }
   l.push("## Salons les plus lents à s'ouvrir");
   l.push("");
   l.push("Chaque salon est nommé par `salon-` et les quatre premiers caractères de `md5(evenement_id)`.");

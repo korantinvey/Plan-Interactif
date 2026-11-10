@@ -1173,7 +1173,9 @@ const PASSES_SOUS_PIXEL = [
   { canal: "-v", masque: [false, true, false, true], decalage: 0 },
   { canal: "-b", masque: [false, false, true, false], decalage: 1 / 3 },
 ];
-function sousPixelOffert(){
+/** Le lissage au sous-pixel des petits textes est-il offert ici ? La sonde
+ *  le relève, pour séparer les images lentes du bureau selon qu'il l'est. */
+export function sousPixelOffert(){
   if ((window.devicePixelRatio || 1) >= 2.5) return false;
   if (/Mac|iPhone|iPad|iPod/.test(navigator.platform || "")) return false;
   return !/Android|Mobi|iPhone|iPad/.test(navigator.userAgent || "");
