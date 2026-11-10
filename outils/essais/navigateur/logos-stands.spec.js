@@ -198,7 +198,8 @@ test("revenu de loin, chaque logo lit sa case et non la planche entière", async
    Ici, une clé par stand et des grandes assez lourdes pour qu'une quinzaine
    remplisse le budget. */
 test("au repos, les grandes des abords ne se redemandent pas sans fin", async ({ page }) => {
-  test.setTimeout(240_000);
+  // jusqu'à deux minutes pour que la première vague se taise, puis vingt secondes de constat
+  test.setTimeout(300_000);
   const erreurs = await prepare(page);
   const grande = Buffer.from(await page.evaluate(() => {
     const c = document.createElement("canvas"); c.width = 1200; c.height = 1200;
@@ -241,10 +242,23 @@ test("au repos, les grandes des abords ne se redemandent pas sans fin", async ({
   await page.evaluate(() => document.getElementById("zIn").click());
   await logosPoses(page);
 
-  // le temps que les grandes des abords arrivent ; ensuite, plus rien ne bouge
+  /* Le temps que les grandes des abords arrivent ; ensuite, plus rien ne
+     bouge. Elles arrivent par lots, d'autant plus lentement que la machine
+     est chargée : vingt-cinq secondes fixes suffisaient à un navigateur
+     seul, mais trois en parallèle recevaient les trente-six grandes de
+     l'essai en quarante secondes, chacune une seule fois — et la fin de
+     cette première vague se comptait comme une boucle. On attend donc
+     qu'aucune n'arrive plus pendant dix secondes. Une boucle, elle, ne se
+     tait jamais : l'attente bute sur sa borne, et le constat qui suit
+     échoue comme avant. */
   const recues = () => page.evaluate(() => window.__essais.COMPTES_LOGOS.vignettesRecues);
-  await page.waitForTimeout(25_000);
-  const avant = await recues();
+  let avant = await recues();
+  for (const fin = Date.now() + 120_000; Date.now() < fin;) {
+    await page.waitForTimeout(10_000);
+    const n = await recues();
+    if (n === avant) break;
+    avant = n;
+  }
   await page.waitForTimeout(20_000);
   const apres = await recues();
   const pire = Math.max(...demandes.values());
