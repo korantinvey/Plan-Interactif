@@ -236,6 +236,46 @@ test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
   });
 });
 
+test.describe("la sonde silencieuse, là où le navigateur ne dit pas ses gels", () => {
+  /* Safari et Firefox n'ont ni `long-animation-frame` ni `longtask` : le
+     battement mesure seul le gel, et se tait une fois l'ouverture passée. */
+  test("sans mesure du navigateur, le battement voit le gel, puis se tait", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    await page.addInitScript(() => {
+      const connus = PerformanceObserver.supportedEntryTypes
+        .filter((t) => t !== "long-animation-frame" && t !== "longtask");
+      Object.defineProperty(PerformanceObserver, "supportedEntryTypes", { configurable: true, get: () => connus });
+    });
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    await affiche(page);
+    // une tâche tenue un tiers de seconde, dans la traîne de l'ouverture
+    await page.evaluate(() => new Promise((ok) => setTimeout(() => {
+      const t = performance.now();
+      while (performance.now() - t < 300) { /* la page tenue */ }
+      ok();
+    }, 0)));
+    const gels = () => page.evaluate(() => window.__essais.sonde.resume.gels);
+    await expect.poll(async () => (await gels()).battement.maxMs).toBeGreaterThanOrEqual(200);
+    const g = await gels();
+    expect(g.api).toBe("aucune");
+    expect(g.n).toBe(0);
+    expect(g.battement.n).toBeGreaterThan(0);
+    expect(g.battement.couvertMs).toBeGreaterThan(0);
+    // la traîne passée, plus un battement au repos
+    const battements = () => page.evaluate(() => window.__essais.sonde.battements);
+    await page.waitForTimeout(11_000);
+    const fige = await battements();
+    await page.waitForTimeout(1500);
+    expect(await battements()).toBe(fige);
+    // un geste le rallume
+    await glisse(page);
+    await expect.poll(battements).toBeGreaterThan(fige);
+    expect(erreurs).toEqual([]);
+  });
+});
+
 test.describe("la sonde silencieuse, au fil de la visite", () => {
   test("un glisser puis l'arrière-plan : la même visite repart, ses gestes comptés", async ({ page }) => {
     const erreurs = await prepare(page);
