@@ -3654,6 +3654,7 @@ Injections :
 - `20261022110142_vignettes_lues_par_leurs_adresses_en_une_fois.sql` — fn vignettes_par_source
 - `20261022135740_les_erreurs_des_pages_lues_par_jeton.sql` — fn lecture_perf
 - `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
+- `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
 
 ## Le reste
 
