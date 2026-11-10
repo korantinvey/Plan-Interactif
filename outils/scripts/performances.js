@@ -29,6 +29,7 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 const { PROJETS } = require("../projet.js");
 const { pistes, regressions, SEUILS } = require("./performances-regles.js");
+const coherence = require("./sonde-coherence.js");
 
 const ETIQUETTE_ISSUE = "performances";
 
@@ -75,7 +76,11 @@ select r.evenement_id, r.jour::text as jour, r.page, r.mobile, r.immersif, r.ver
        case when jsonb_typeof(r.resume #> '{fluidite,classique,tranches}') = 'array'
             then r.resume #> '{fluidite,classique,tranches}' end as tranches_classique,
        sonde_nombre(r.resume #> '{fluidite,classique,auRepos,0}')::double precision as repos_classique,
-       sonde_nombre(r.resume #> '{fluidite,classique,auRepos,1}')::double precision as lentes_repos_classique
+       sonde_nombre(r.resume #> '{fluidite,classique,auRepos,1}')::double precision as lentes_repos_classique,
+       /* Le résumé entier, pour la seule vraisemblance (sonde-coherence.js) :
+          elle n'en rend que le nom de ses règles et des comptes, et le relevé
+          le perd dès qu'elle l'a lu (assaini). */
+       r.resume
   from releve_perf r
  where r.jour >= current_date - 14
 `;
@@ -145,9 +150,19 @@ const PANNES = new Set(["reseau", "http", "vide", "session", "code"]);
 /** Un nombre venu d'un relevé, ou rien. */
 const nombre = (v) => typeof v === "number" && isFinite(v) ? v : null;
 
-/** Un relevé dont tout texte qui peut atteindre la fiche est assaini, une fois pour toutes. */
-const assaini = (r) => ({
+/**
+ * Un relevé dont tout texte qui peut atteindre la fiche est assaini, une fois
+ * pour toutes. Le résumé entier n'en sort pas : on n'en garde que ce que la
+ * vraisemblance en dit (`sonde-coherence.js`) — les règles contredites, si
+ * l'ouverture s'est faite sans personne pour la voir, si le transfert est connu.
+ */
+const assaini = ({ resume, ...r }) => ({
   ...r,
+  rev: nombre(resume && resume.rev) ?? 1,
+  douteuses: coherence.incoherences(resume).map((x) => x.cle),
+  ouverture_invisible: r.cachee === true || coherence.ouvertureInvisible(resume),
+  // sous le service de second plan, le navigateur annonce zéro octet : rien ne s'en tire
+  transfert_ko: resume === undefined || coherence.transfertConnu(resume) ? r.transfert_ko : null,
   page: texteSur(r.page) || "(sans page)",
   version: texteSur(r.version),
   famille: texteSur(r.famille) || "inconnue",
@@ -189,6 +204,12 @@ function mediane(valeurs) {
 }
 
 const preparation = (r) => r.affiche_ms != null && r.donnees_ms != null ? r.affiche_ms - r.donnees_ms : null;
+
+/* Les délais de l'ouverture, sans celles qu'on n'a pas regardées : page
+   cachée ou cadre intégré hors de l'écran, le navigateur ne donne plus
+   d'images, et le plan « paraît » quand on revient — en 197 s, en 8 753 s
+   (sonde, 3 au 10 novembre 2026). Elles se comptent à part (`invisibles`). */
+const vues = (l) => l.filter((r) => !r.ouverture_invisible);
 
 /* Sans première image ni panne, une visite si brève est un départ, non un échec. */
 const DEPART_MS = 10000;
@@ -288,9 +309,9 @@ function groupes(releves) {
     const logos = l.filter((r) => r.logos_octets != null);
     return {
       page: l[0].page, mobile: Boolean(l[0].mobile), visites: l.length,
-      affiche_p50: mediane(l.map((r) => r.affiche_ms)),
-      donnees_p50: mediane(l.map((r) => r.donnees_ms)),
-      preparation_p50: mediane(l.map(preparation)),
+      affiche_p50: mediane(vues(l).map((r) => r.affiche_ms)),
+      donnees_p50: mediane(vues(l).map((r) => r.donnees_ms)),
+      preparation_p50: mediane(vues(l).map(preparation)),
       transfert_p50: mediane(l.map((r) => r.transfert_ko)),
       part_p50: mediane(l.map((r) => r.immersif ? r.part_plus33_immersif ?? r.part_plus33_classique : r.part_plus33_classique)),
       vues: { classique: vue("classique"), immersif: vue("immersif") },
@@ -298,6 +319,22 @@ function groupes(releves) {
       logos_mo_p50: mediane(logos.map((r) => r.logos_octets / 1048576)),
     };
   }).sort((a, b) => a.page.localeCompare(b.page) || Number(b.mobile) - Number(a.mobile));
+}
+
+/** Les règles de vraisemblance contredites, d'après ce qu'`assaini` en a gardé. */
+function douteux(l) {
+  const recente = Math.max(1, ...l.map((r) => r.rev));
+  const parRegle = new Map();
+  for (const r of l) for (const cle of r.douteuses) {
+    const x = parRegle.get(cle) || { cle, n: 0, recents: 0 };
+    x.n++;
+    if (r.rev === recente) x.recents++;
+    parRegle.set(cle, x);
+  }
+  const regles = new Map(coherence.REGLES.map((x) => [x.cle, x]));
+  return { releves: l.length, douteux: l.filter((r) => r.douteuses.length).length, revision: recente,
+    regles: [...parRegle.values()].map((x) => ({ ...x, texte: regles.get(x.cle).texte, corrigee: regles.get(x.cle).corrigee }))
+      .sort((a, b) => b.n - a.n) };
 }
 
 /**
@@ -373,6 +410,11 @@ function indicateurs(brut, au) {
     de, a: plusJours(a, -1),
     visites: semaine.length,
     robots,
+    invisibles: semaine.filter((r) => r.ouverture_invisible && r.affiche_ms != null).length,
+    /* Les relevés qui contredisent une règle de vraisemblance, règle par
+       règle : une règle corrigée qui en compte encore à la dernière révision
+       est un défaut revenu. Les robots en sont, eux aussi : ce sont nos essais. */
+    douteux: douteux(assainis.filter((r) => r.jour >= de && r.jour < a)),
     /* Les postes renvoyés au SVG faute de carte graphique, ou dont le
        navigateur refuserait le WebGL au prix d'un gros handicap : on vérifie
        un à un qu'aucune vraie carte graphique n'y est prise, et que le SVG
@@ -388,12 +430,12 @@ function indicateurs(brut, au) {
     versions: [...versions.values()].map((l) => ({
       version: l[0].version || "(sans version)", page: l[0].page, mobile: Boolean(l[0].mobile),
       visites: l.length, premier: l.map((r) => r.recu || r.jour).sort()[0],
-      affiche_p50: mediane(l.map((r) => r.affiche_ms)),
-      donnees_p50: mediane(l.map((r) => r.donnees_ms)),
+      affiche_p50: mediane(vues(l).map((r) => r.affiche_ms)),
+      donnees_p50: mediane(vues(l).map((r) => r.donnees_ms)),
       part_p50: mediane(l.map((r) => r.immersif ? r.part_plus33_immersif ?? r.part_plus33_classique : r.part_plus33_classique)),
     })),
     salons: [...salons].map(([e, l]) => ({ etiquette: e, visites: l.length,
-      affiche_p50: mediane(l.map((r) => r.affiche_ms)) }))
+      affiche_p50: mediane(vues(l).map((r) => r.affiche_ms)) }))
       .sort((x, y) => (y.affiche_p50 ?? 0) - (x.affiche_p50 ?? 0)),
   };
 }
@@ -439,6 +481,21 @@ function corps(ind) {
   }
   l.push("");
   l.push("Le texte et le module des erreurs se lisent par `outils/scripts/lecture-perf.js` (relevés et erreurs), jamais ici : un message peut nommer un salon.");
+  l.push("");
+  l.push("## Mesures douteuses");
+  l.push("");
+  const d = ind.douteux;
+  if (ind.invisibles) l.push("- Ouvertures faites page cachée ou cadre hors de l'écran, retirées des délais d'ouverture : " + ind.invisibles);
+  if (!d || !d.douteux) l.push("- Aucun relevé ne contredit les règles de vraisemblance (`outils/scripts/sonde-coherence.js`).");
+  else {
+    l.push("- " + d.douteux + " relevé" + (d.douteux > 1 ? "s" : "") + " sur " + d.releves +
+      " contredisent une règle de vraisemblance (`outils/scripts/sonde-coherence.js`) ; révision de la sonde la plus récente : " + d.revision + ".");
+    for (const x of d.regles) {
+      const revenu = x.corrigee && d.revision >= x.corrigee && x.recents;
+      l.push("  - " + x.texte + " : " + x.n + (x.corrigee ? " (corrigée en révision " + x.corrigee + ")" : "") +
+        (revenu ? " — **encore " + x.recents + " à la révision " + d.revision + "**" : ""));
+    }
+  }
   l.push("");
   l.push("## D'une version à l'autre");
   l.push("");

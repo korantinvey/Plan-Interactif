@@ -1001,11 +1001,17 @@ async function geleResolu(g, env, origine) {
     fonction: String(g.fonction ?? "").slice(0, 80),
   };
   /* Le moment du gel et ce que deck.gl a fait autour (`sonde.mjs`
-     `travauxDepuis`) : des nombres seulement, chacun borné — le corps vient
+     `travauxPendant`) : des nombres seulement, chacun borné — le corps vient
      d'une page, et la base les garde. */
   const entier = (x) => (Number.isFinite(x) && x >= 0 ? Math.min(Math.round(x), 1e9) : undefined);
   if (entier(g.t) !== undefined) sortie.t = entier(g.t);
   if (g.avantAffichage === true) sortie.avantAffichage = true;
+  /* Comment le navigateur est entré dans le script — un mot de sa liste —, et
+     où l'image a passé son temps (`sonde.mjs` `decoupe`). */
+  if (typeof g.invocation === "string" && /^[a-z-]{1,24}$/.test(g.invocation)) sortie.invocation = g.invocation;
+  for (const k of ["scriptsMs", "forceeMs", "renduMs", "miseEnPageMs"]) {
+    if (entier(g[k]) !== undefined) sortie[k] = entier(g[k]);
+  }
   if (g.travaux && typeof g.travaux === "object") {
     const travaux = {};
     for (const k of ["attrMs", "couches", "shaders", "programmes", "textures", "fenetreMs"]) {

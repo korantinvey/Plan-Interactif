@@ -33,7 +33,7 @@ import { quandAffiche } from "./affichage.mjs";
 import { PLAN_DEMARRE } from "./demarrage.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
-import { SACCADE, FIN_GESTE, TRANCHES, centile, fichier, observe, chargement, appareil } from "./mesures-page.mjs";
+import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe, chargement, appareil } from "./mesures-page.mjs";
 
 const ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
 
@@ -254,7 +254,7 @@ function synthese(){
   const resume = (/** @type {number[]} */ h) => {
     const n = h.reduce((a, b) => a + b, 0);
     return { images: n, tranchesMs: Object.fromEntries(TRANCHES.map((b, i) => [b === Infinity ? ">250" : "<=" + b, h[i]])),
-      partPlus33: n ? ms(100 * (h[4] + h[5] + h[6]) / n) : 0 };
+      partPlus33: n ? ms(100 * h.slice(PREMIERE_LENTE).reduce((a, b) => a + b, 0) / n) : 0 };
   };
   const reps = R.repeints.map(r => r.ms).sort((a, b) => a - b);
   return {

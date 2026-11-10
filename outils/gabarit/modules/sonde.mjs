@@ -36,6 +36,28 @@
    paraître — un départ, non une panne —, les appels à nos services qui ont
    répondu en erreur, et les visites d'un navigateur piloté (`robot`), que la
    fiche du lundi écarte de ses médianes.
+
+   Une mesure fausse se découvre après coup, dans les relevés : survols pris
+   pour des interactions, jalon des données négatif, Safari tenu pour un
+   navigateur qui dit ses gels. Chaque correction de ce que mesure un champ
+   avance donc `REVISION`, que le résumé porte (`rev`) : la fiche sépare les
+   relevés d'avant et d'après sans deviner la règle à la présence d'un champ.
+   Et ce qu'un relevé doit tenir pour être vraisemblable — jalons dans
+   l'ordre, parts bornées, pires gels triés — est écrit une fois, dans
+   `outils/scripts/sonde-coherence.js`, que les essais imposent à chaque
+   résumé et que la fiche du lundi applique à chaque relevé de la semaine.
+
+     1 — jusqu'au 10 novembre 2026, sans `rev`.
+     2 — 10 novembre 2026. Le transfert et la part du cache ne comptent plus
+         ce que le service de second plan a servi sans dire d'où
+         (`mesures-page.mjs` `trajet`) ; le temps passé caché ou hors de
+         l'écran avant l'affichage est dit (`invisibleAvantMs`), et le LCP
+         s'arrête au premier départ ; un geste fait hors du plan — la liste,
+         la recherche, une fiche — ne compte plus dans la fluidité du plan
+         (`fluidite.horsPlan`) ; un gel dit comment le navigateur est entré
+         dans son script, et ce que l'image a passé hors des scripts ; un
+         instant que la page n'a pas atteint, un aller-retour qu'elle ne
+         connaît pas, ne valent plus zéro ; `visibleMs` dit la durée vue.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
@@ -46,9 +68,11 @@ import { bilanErreurs } from "./erreurs.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
 import { mesureOuverte, supportMesure } from "./mesure.mjs";
-import { SACCADE, FIN_GESTE, TRANCHES, centile, fichier, observe, chargement, appareil, carteGraphique } from "./mesures-page.mjs";
+import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe, chargement, appareil, carteGraphique } from "./mesures-page.mjs";
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
+// ce que mesure chaque champ a changé : voir l'en-tête
+const REVISION = 2;
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
 const PAGE = PLAN_ADMIN ? "admin" : BORNE ? "borne" : "plan";
 
@@ -104,7 +128,7 @@ function echantillonne(l, n, v){
 /** @type {Record<string, number>} */
 const J = {};
 /* Une image lente : au-delà de 33 ms, deux rafraîchissements manqués, que la main sent. */
-const LENTE = TRANCHES.indexOf(50);
+const LENTE = PREMIERE_LENTE;
 /* `repos` et `lentesRepos` comptent, parmi les images d'un geste, celles où le
    dessin était revenu au repos (`webgl.mjs` `poseGeste`) : le texte entier,
    sous-pixel et petit atlas compris, les logos dégelés. Le dessin y revient
@@ -129,16 +153,79 @@ let panne = null;
  *  qui change d'heure, une page revenue du cache arrière n'ont rien rechargé,
  *  et répéter leur chargement le compterait plusieurs fois au bilan. */
 function nouvelleVisite(/** @type {boolean} */ chargee){
-  V = { id: uuid(), debut: Date.now(), t0: chargee ? 0 : performance.now(), chargee,
-    vues: { classique: vue0(), immersif: vue0() }, gesteDepuisEnvoi: false, immersif: false,
+  const maintenant = performance.now();
+  // la visite d'avant garde le temps vu jusqu'ici ; celle-ci part de son début
+  if (V) cumuleVu(maintenant);
+  V = { id: uuid(), debut: Date.now(), t0: chargee ? 0 : maintenant, chargee,
+    vues: { classique: vue0(), immersif: vue0() }, horsPlan: vue0(), gesteDepuisEnvoi: false, immersif: false,
+    visibleMs: 0,
     gels: { n: 0, totalMs: 0, maxMs: 0, /** @type {any[]} */ pires: [] },
     battement: { n: 0, totalMs: 0, maxMs: 0, avantAffichage: 0, pendantGeste: 0, couvertMs: 0 },
     reactivite: { n: 0, pireMs: 0, pireType: /** @type {string | undefined} */ (undefined),
       survols: { n: 0, pireMs: 0 } },
     /** @type {number[]} */ repeints: [], nRepeints: 0, maxRepeint: 0,
     /** @type {any[]} */ deck: [], nDeck: 0, pertes: 0, /** @type {any[]} */ raisons: [], picMo: 0 };
-  if (chargee && (document.hidden || /** @type {any} */ (document).prerendering)) cacheeAvant = true;
+  if (chargee && (document.hidden || /** @type {any} */ (document).prerendering)){
+    cacheeAvant = true;
+    // cachée dès l'ouverture : depuis le début de la navigation, non depuis le branchement
+    vu = false; vuDepuis = 0; premierDepart = 0;
+  } else { vu = !document.hidden && cadreVisible; vuDepuis = chargee ? 0 : maintenant; }
 }
+
+/* ------------------------------------------------------------
+   Vue ou non
+
+   Une page cachée, un cadre intégré sorti de l'écran, ne reçoivent plus
+   d'images : le navigateur les suspend. Ce que la sonde y mesure n'est plus
+   la page, mais l'absence de qui la regarde. Des plans intégrés y passaient
+   pour s'être affichés en 197 s, 441 s, 8 753 s — la dernière image de leur
+   ouverture durant à elle seule le temps qu'on mettait à revenir, et le
+   cadre hors de l'écran n'était marqué nulle part (sonde, 3 au 10 novembre
+   2026). Le LCP s'y précisait encore à 202 s, quand le cadre revenait dans
+   l'écran.
+
+   On cumule donc le temps vu (`visibleMs`), le temps passé invisible avant
+   l'affichage (`invisibleAvantMs`, que la fiche du lundi retire de ses
+   médianes d'ouverture), et l'instant du premier départ (`premierDepart`),
+   après lequel le LCP ne dit plus rien : la règle de `web-vitals`, qui
+   s'arrête à la première page cachée.
+   ------------------------------------------------------------ */
+let vu = true, vuDepuis = 0, invisibleAvant = 0, premierDepart = Infinity, horsVueAvant = false;
+
+/** Range le morceau de visite qui finit à `t`, vu ou non. */
+function cumuleVu(/** @type {number} */ t){
+  if (!V) return;
+  if (vu) V.visibleMs += Math.max(0, t - Math.max(vuDepuis, V.t0));
+  else {
+    const affiche = J["plan-affiche"];
+    const avant = Math.min(t, affiche === undefined ? Infinity : affiche) - vuDepuis;
+    if (V.chargee && avant > 0) invisibleAvant += avant;
+  }
+  vuDepuis = t;
+}
+
+/** Ce que la page vient d'apprendre : cachée ou non, cadre dans l'écran ou non. */
+function poseVu(){
+  const maintenant = !document.hidden && cadreVisible;
+  if (maintenant === vu) return;
+  const t = performance.now();
+  cumuleVu(t);
+  vu = maintenant;
+  if (!vu){
+    premierDepart = Math.min(premierDepart, t);
+    if (!estAffiche() && !document.hidden) horsVueAvant = true;
+  }
+}
+
+/** Le temps passé invisible avant l'affichage, morceau en cours compris tant que rien n'est affiché. */
+function invisibleAvantAffichage(){
+  const affiche = J["plan-affiche"];
+  const enCours = !vu ? Math.max(0, Math.min(performance.now(), affiche === undefined ? Infinity : affiche) - vuDepuis) : 0;
+  return Math.round(invisibleAvant + enCours) || undefined;
+}
+
+/** Le LCP, s'il précède le premier départ : ce qui vient après dit un retour, non l'ouverture. */
+const lcpVu = () => J.lcp !== undefined && J.lcp < premierDepart ? J.lcp : undefined;
 
 /* ------------------------------------------------------------
    Les gestes, et la boucle d'images qu'ils allument
@@ -155,24 +242,35 @@ let boucle = 0, precedente = 0, images = 0;
 
 const vueDuMoment = () => GL.camera ? "immersif" : "classique";
 
-function commence(/** @type {string} */ type){
+/* Un geste sur le plan part de `svg#plan`, où `gestes.mjs` écoute tous les
+   siens : la toile du dessin ne prend aucun pointeur. La sonde écoute la page
+   entière, et rangeait dans la fluidité du plan la liste qu'on fait défiler,
+   la recherche qu'on tape, la fiche qu'on parcourt — des images que le plan
+   ne dessinait pas. Elles se comptent à part (`horsPlan`). */
+const surLePlan = (/** @type {Event} */ e) => {
+  const c = /** @type {any} */ (e.target);
+  return !!(c && typeof c.closest === "function" && c.closest("#plan"));
+};
+
+function commence(/** @type {string} */ type, /** @type {boolean} */ plan){
   const t = performance.now();
-  if (geste && t - geste.dernier < FIN_GESTE && geste.type === type){ geste.dernier = t; return geste; }
+  if (geste && t - geste.dernier < FIN_GESTE && geste.type === type && geste.plan === plan){ geste.dernier = t; return geste; }
   if (geste) clos();
-  geste = { type, doigts: 0, chemin: 0, dernier: t, vue: vueDuMoment() };
+  geste = { type, plan, doigts: 0, chemin: 0, dernier: t, vue: vueDuMoment() };
   relance();
   bat();
   return geste;
 }
 
 /** La sorte du geste, telle qu'on la sait : un appui devient glisser ou pincer en chemin. */
-const sorte = (/** @type {any} */ g) => g.type !== "appui" ? g.type : g.doigts > 1 ? "pincer" : g.chemin > 10 ? "glisser" : "appui";
+const sorte = (/** @type {any} */ g) => (g.type !== "appui" ? g.type : g.doigts > 1 ? "pincer" : g.chemin > 10 ? "glisser" : "appui") +
+  (g.plan ? "" : " hors plan");
 
 function clos(){
   const g = geste;
   geste = null;
   if (!g) return;
-  V.vues[g.vue].gestes++;
+  (g.plan ? V.vues[g.vue] : V.horsPlan).gestes++;
   V.gesteDepuisEnvoi = true;
   // deck.gl ne refait ses comptes que toutes les soixante images : la fin d'un geste en a vu passer
   const d = GL.deck && /** @type {any} */ (GL.deck).metrics;
@@ -200,12 +298,12 @@ function image(/** @type {number} */ ts){
       const dt = ts - precedente;
       // un retour d'arrière-plan n'est pas une saccade
       if (dt < 2000){
-        const v = V.vues[vueDuMoment()];
+        const v = geste.plan ? V.vues[vueDuMoment()] : V.horsPlan;
         const i = TRANCHES.findIndex(b => dt <= b);
         v.tranches[i]++;
         if (dt > SACCADE) v.saccades++;
         // l'état à la fin de l'intervalle : celui de l'image qu'il a attendue
-        if (GL.actif && !GL.geste){ v.repos++; if (i >= LENTE) v.lentesRepos++; }
+        if (geste.plan && GL.actif && !GL.geste){ v.repos++; if (i >= LENTE) v.lentesRepos++; }
       }
     }
     if (GL.camera) V.immersif = true;
@@ -224,7 +322,7 @@ function ecouteGestes(){
   const o = { capture: true, passive: true };
   addEventListener("pointerdown", sur((/** @type {PointerEvent} */ e) => {
     doigts.set(e.pointerId, [e.clientX, e.clientY]);
-    const g = geste && geste.type === "appui" && doigts.size > 1 ? geste : commence("appui");
+    const g = geste && geste.type === "appui" && doigts.size > 1 ? geste : commence("appui", surLePlan(e));
     g.doigts = Math.max(g.doigts, doigts.size);
     g.dernier = performance.now();
   }), o);
@@ -243,8 +341,8 @@ function ecouteGestes(){
   });
   addEventListener("pointerup", leve, o);
   addEventListener("pointercancel", leve, o);
-  addEventListener("wheel", sur(() => commence("molette")), o);
-  addEventListener("keydown", sur(() => commence("clavier")), o);
+  addEventListener("wheel", sur((/** @type {WheelEvent} */ e) => commence("molette", surLePlan(e))), o);
+  addEventListener("keydown", sur((/** @type {KeyboardEvent} */ e) => commence("clavier", surLePlan(e))), o);
 }
 
 /* ------------------------------------------------------------
@@ -399,7 +497,33 @@ function imageDOuverture(){
   imagePrecedente = t; attenteCompilation = 0; programmesAvant = p;
 }
 
-function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type {number} */ debut){
+/* Comment le navigateur est entré dans le script : son évaluation, un
+   rappel d'image, un écouteur, une promesse. Un mot de sa liste, rien d'autre. */
+const INVOCATION = /^[a-z-]{1,24}$/;
+
+/**
+ * Ce que la longue image dit d'elle-même (`long-animation-frame`), au-delà de
+ * son script le plus long. Les plus gros gels de l'ouverture — une à quatre
+ * secondes et demie — se rangeaient à la ligne 1, colonne 1 du paquet, sans
+ * travaux de deck.gl (sonde, 3 au 10 novembre 2026) : la position zéro est
+ * celle de l'évaluation du module entier, où le point d'entrée lance le plan,
+ * et ne désigne aucune ligne. L'invocation le dit ; le temps des scripts,
+ * celui que le navigateur a passé à remettre la page en forme pour eux
+ * (`forcedStyleAndLayoutDuration`), et celui du rendu qui suit, disent où
+ * l'image a passé le reste — et si les travaux, relevés d'une image du dessin
+ * à la suivante, la couvrent.
+ */
+function decoupe(/** @type {any} */ e, /** @type {any[]} */ scripts, /** @type {any} */ s){
+  if (!e) return {};
+  const fin = e.startTime + e.duration;
+  const somme = (/** @type {string} */ k) => Math.round(scripts.reduce((a, x) => a + (Number(x[k]) || 0), 0));
+  const invocation = s && INVOCATION.test(s.invokerType || "") ? s.invokerType : undefined;
+  return { invocation, scriptsMs: somme("duration"), forceeMs: somme("forcedStyleAndLayoutDuration") || undefined,
+    renduMs: e.renderStart > 0 ? Math.round(fin - e.renderStart) : undefined,
+    miseEnPageMs: e.styleAndLayoutStart > 0 ? Math.round(fin - e.styleAndLayoutStart) : undefined };
+}
+
+function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type {number} */ debut, /** @type {any} */ entree = null){
   gelPendantLaCarte(duree, scripts, debut);
   const g = V.gels;
   g.n++; g.totalMs += duree; g.maxMs = Math.max(g.maxMs, duree);
@@ -414,8 +538,10 @@ function gel(/** @type {number} */ duree, /** @type {any} */ scripts, /** @type 
   const affiche = J["plan-affiche"];
   const p = { ms: Math.round(duree), geste: geste ? sorte(geste) : undefined,
     url: s ? s.sourceURL || "" : "", fonction: s && s.sourceFunctionName || undefined,
-    position: s && s.sourceCharPosition >= 0 ? s.sourceCharPosition : -1,
-    t, avantAffichage: affiche === undefined || debut < affiche || undefined, travaux };
+    // zéro : l'évaluation du script entier, que `decoupe` nomme, et non sa première ligne
+    position: s && s.sourceCharPosition > 0 ? s.sourceCharPosition : -1,
+    t, avantAffichage: affiche === undefined || debut < affiche || undefined, travaux,
+    ...decoupe(entree, scripts || [], s) };
   g.pires.push(p);
   g.pires.sort((/** @type {any} */ a, /** @type {any} */ b) => b.ms - a.ms);
   g.pires.length = Math.min(g.pires.length, 3);
@@ -486,11 +612,20 @@ function battu(){
 }
 
 function ecouteBattement(){
-  addEventListener("visibilitychange", sur(() => { if (!document.hidden) bat(); }));
+  addEventListener("visibilitychange", sur(() => { poseVu(); if (!document.hidden) bat(); }));
   // un cadre hors de l'écran : l'observateur sans racine le dit par rapport à la page hôte
   if (window.top !== window.self && typeof IntersectionObserver === "function"){
+    let premiere = true;
     new IntersectionObserver(sur((/** @type {IntersectionObserverEntry[]} */ l) => {
       cadreVisible = l[l.length - 1].isIntersecting;
+      /* La première réponse dit l'état de l'ouverture : un cadre posé plus bas
+         que l'écran de la page hôte l'était depuis le début, et non depuis
+         que l'observateur l'a dit. */
+      if (premiere && !cadreVisible && V && V.chargee && vu){
+        V.visibleMs = 0; vuDepuis = 0; vu = false; premierDepart = 0;
+        if (!estAffiche()) horsVueAvant = true;
+      } else poseVu();
+      premiere = false;
       if (cadreVisible) bat();
     })).observe(document.documentElement);
   }
@@ -576,14 +711,15 @@ function laCarteDesEnvirons(){
 let API_GELS = "aucune";
 
 function ecouteNavigateur(){
-  observe("largest-contentful-paint", sur((/** @type {any} */ e) => { J.lcp = Math.round(e.startTime); }));
+  // après le premier départ, une image plus grande dit seulement qu'on est revenu
+  observe("largest-contentful-paint", sur((/** @type {any} */ e) => { if (e.startTime < premierDepart) J.lcp = Math.round(e.startTime); }));
   /* Un type d'entrée inconnu ne lève pas : le navigateur l'ignore, et
      `observe` se croyait inscrit — Safari passait pour un navigateur qui dit
      ses longues images, et le repli sur `longtask` ne se tentait jamais. Ce
      qu'il connaît, il le dit dans `supportedEntryTypes`. */
   const connus = (typeof PerformanceObserver === "function" && PerformanceObserver.supportedEntryTypes) || [];
   API_GELS = connus.includes("long-animation-frame") ? "loaf" : connus.includes("longtask") ? "longtask" : "aucune";
-  if (API_GELS === "loaf") observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts, e.startTime)));
+  if (API_GELS === "loaf") observe("long-animation-frame", sur((/** @type {any} */ e) => gel(e.duration, e.scripts, e.startTime, e)));
   else if (API_GELS === "longtask") observe("longtask", sur((/** @type {any} */ e) => gel(e.duration, null, e.startTime)));
   /* La réactivité ne retient que ce que le visiteur a fait — appui, relâché,
      clic, touche : les événements qui portent un `interactionId`. Le
@@ -733,17 +869,22 @@ let OUVERTURE = null;
 
 function leChargement(){
   // le LCP, lui, peut encore se préciser jusqu'au premier geste : il reste vivant
-  if (OUVERTURE){ OUVERTURE.jalons.lcp = J.lcp; return OUVERTURE; }
+  if (OUVERTURE){ OUVERTURE.jalons.lcp = lcpVu(); return OUVERTURE; }
   const affiche = J["plan-affiche"];
   const jusqua = affiche === undefined ? Infinity : affiche;
   const c = chargement(5, jusqua);
   const bilan = {
     jalons: { reponse: c.page ? c.page.reponse : undefined, domPret: c.page ? c.page.domPret : undefined,
       "plan-demarre": J["plan-demarre"], donnees: finDesDonnees(jusqua), toile: J.toile,
-      "plan-affiche": affiche, lcp: J.lcp },
-    transfertKo: c.transfertKo, depuisCache: c.depuisCache,
+      "plan-affiche": affiche, lcp: lcpVu() },
+    // ce que le service de second plan a servi sans dire d'où n'est ni dans l'un ni dans l'autre
+    transfertKo: c.transfertKo, depuisCache: c.depuisCache, inconnus: c.inconnus || undefined,
+    parLeService: c.page && c.page.parLeService,
     lourds: c.ressources.map(({ fichier, sorte, ms, transfertKo, tailleKo }) => ({ fichier, sorte, ms, transfertKo, tailleKo })),
     cacheeAvant: cacheeAvant || undefined,
+    // le cadre intégré sorti de l'écran avant de paraître, et le temps passé invisible, caché ou hors de l'écran
+    horsVueAvant: horsVueAvant || undefined,
+    invisibleAvantMs: invisibleAvantAffichage(),
     panne: panne || undefined,
     images: imagesOuverture.length ? imagesOuverture.slice() : undefined,
     /* La chauffe des programmes (`webgl.mjs`, « La chauffe ») : sa durée et
@@ -793,15 +934,19 @@ export function resumeSonde(){
   const g = V.gels;
   /** @type {any} */
   const r = {
-    format: "sonde-plan/1", page: PAGE, support: SUPPORT,
+    format: "sonde-plan/1", rev: REVISION, page: PAGE, support: SUPPORT,
     debut: new Date(V.debut).toISOString(), duree: Math.round(performance.now() - V.t0),
+    // la durée, page cachée et cadre hors de l'écran retirés : une visite oubliée dans un onglet en dure cinq heures
+    visibleMs: Math.round(V.visibleMs + (vu ? performance.now() - Math.max(vuDepuis, V.t0) : 0)),
     chargement: V.chargee ? leChargement() : undefined,
-    fluidite: { classique: fluidite(V.vues.classique), immersif: fluidite(V.vues.immersif) },
+    fluidite: { classique: fluidite(V.vues.classique), immersif: fluidite(V.vues.immersif),
+      horsPlan: V.horsPlan.gestes ? fluidite(V.horsPlan) : undefined },
     gels: { n: g.n, totalMs: Math.round(g.totalMs), maxMs: Math.round(g.maxMs),
       pires: g.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
         fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
         position: p.url && p.position >= 0 ? p.position : undefined,
-        t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux })),
+        t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux, invocation: p.invocation,
+        scriptsMs: p.scriptsMs, forceeMs: p.forceeMs, renduMs: p.renduMs, miseEnPageMs: p.miseEnPageMs })),
       api: API_GELS, battement: leBattement() },
     reactivite: { ...V.reactivite, survols: { ...V.reactivite.survols } },
     erreurs: bilanErreurs(),
@@ -844,7 +989,7 @@ function tronque(/** @type {any} */ r){
   r = JSON.parse(JSON.stringify(r));
   // le moment et les travaux pèsent peu, et disent la cause mieux que le script
   r.gels.pires = r.gels.pires.map((/** @type {any} */ p) => ({ ms: p.ms, geste: p.geste,
-    t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux }));
+    t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux, invocation: p.invocation }));
   const lourds = r.chargement && r.chargement.lourds;
   while (lourds && lourds.length && octets(r) > PLAFOND) lourds.pop();
   if (octets(r) > PLAFOND) coupe(r, 60);
