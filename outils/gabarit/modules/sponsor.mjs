@@ -56,11 +56,18 @@ import { conf } from "./configuration.mjs";
  * fois. Il l'essaie depuis son volet de réglages, où un bouton le joue.
  */
 
-/* Ce que dure le générique, réglable entre ces bornes. Trois secondes par
-   défaut : le temps de reconnaître une marque, pas celui de s'impatienter.
-   Au-delà de dix, ce n'est plus un générique mais une page d'accueil — et le
-   visiteur qui a photographié un code à l'entrée du hall veut son plan. */
-const SPONSOR_DEFAUT = 3;
+/* Ce que dure le générique, réglable entre ces bornes. Six secondes par
+   défaut. Trois suffisaient à reconnaître une marque, mais le générique
+   partait alors avant le plan sur les postes Windows à puce graphique
+   intégrée — la moitié des visites : le dessin y paraît vers quatre ou cinq
+   secondes, après des gels d'une seconde que le logo ne couvrait plus, sur un
+   plan qui semblait prêt et ne suivait pas la molette (sonde, FUNEXPO 2026,
+   10 novembre 2026). Six les couvrent pour la plupart, et l'attente se compte
+   depuis l'ouverture : chez qui le plan est prêt avant, c'est le temps vendu
+   au sponsor. Au-delà de dix, ce n'est plus un générique mais une page
+   d'accueil — et le visiteur qui a photographié un code à l'entrée du hall
+   veut son plan. */
+const SPONSOR_DEFAUT = 6;
 export const SPONSOR_MIN = 2;
 export const SPONSOR_MAX = 10;
 

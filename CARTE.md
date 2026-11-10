@@ -2946,16 +2946,16 @@ Importé par :
 
 lancement
 
-### `modules/sponsor.mjs` — 398 l. → plan, plan-admin
+### `modules/sponsor.mjs` — 405 l. → plan, plan-admin
 
 - l.1 · Le sponsor — un logo le temps du chargement
 
 Fonctions :
 
-`reglageSponsor` 112 · `secondesSponsor` 115 · `modeSponsor` 128 · `sponsorRetenu` 147
-`cleSponsor` 178 · `sponsorEnCache` 181 · `retientSponsor` 196 · `ouvreSponsor` 221
-`suitSponsor` 314 · `resteSponsor` 339 · `fermeSponsor` 345 · `accueilleSponsor` 361
-`brancheSponsor` 393
+`reglageSponsor` 119 · `secondesSponsor` 122 · `modeSponsor` 135 · `sponsorRetenu` 154
+`cleSponsor` 185 · `sponsorEnCache` 188 · `retientSponsor` 203 · `ouvreSponsor` 228
+`suitSponsor` 321 · `resteSponsor` 346 · `fermeSponsor` 352 · `accueilleSponsor` 368
+`brancheSponsor` 400
 
 Importe :
 
