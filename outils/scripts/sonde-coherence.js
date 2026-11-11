@@ -135,6 +135,27 @@ const REGLES = [
     },
   },
   {
+    /* Les demandes qui ont fait attendre (`sonde.mjs`, « Ce qui a fait
+       attendre ») : chacune d'au moins une demi-milliseconde, et toutes
+       ensemble dans l'ouverture qui les a guettées. */
+    cle: "attentes-ouverture",
+    texte: "attentes de l'ouverture incohérentes",
+    test(r) {
+      const c = r && r.chargement, j = jalonsDe(r);
+      if (!c || c.attentes === undefined) return;
+      if (!Array.isArray(c.attentes)) return "attentes illisibles";
+      for (const x of c.attentes) {
+        if (!Array.isArray(x) || typeof x[0] !== "string") return "attente illisible";
+        if (!(n(x[2]) >= 1)) return "attente sans demande : " + x[0];
+        if (n(x[1]) < 0) return "attente négative : " + x[0];
+        if (n(x[1]) + 1 < 0.5 * n(x[2])) return "attente plus courte que ses demandes : " + x[0];
+      }
+      const t = n(j.toile), a = n(j["plan-affiche"]);
+      const total = somme(c.attentes.map((x) => x[1]));
+      if (t !== undefined && a !== undefined && total > a - t + 50) return "attentes " + total + " > ouverture " + (a - t);
+    },
+  },
+  {
     cle: "lcp-tardif",
     texte: "LCP longtemps après l'affichage",
     corrigee: 2,

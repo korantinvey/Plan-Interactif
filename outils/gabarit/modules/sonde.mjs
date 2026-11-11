@@ -472,23 +472,99 @@ const IMAGES_DITES = 8;
  *  @type {number[][]} */
 let imagesOuverture = [];
 let attenteCompilation = 0, imagePrecedente = 0, programmesAvant = 0;
+
+/* Ce qui a fait attendre, appel par appel.
+
+   Après la chauffe (`webgl.mjs`, « La chauffe »), les postes Windows gardent
+   deux ou trois images d'une seconde, presque toutes passées dans ces
+   demandes, sans aucun programme neuf (FUNEXPO 2026, 10 et 11 novembre). Le
+   navigateur ne répond à une demande qu'après avoir fini tout ce qu'on lui a
+   confié avant elle : l'attente peut être celle du programme demandé, ou d'un
+   dessin d'avant qu'ANGLE traduit pour Direct3D au moment de le tracer. Les
+   images ne le disent pas. Chaque demande qui fait attendre est donc notée
+   sous son nom, son paramètre, si le programme avait déjà été dit prêt
+   (`COMPLETION_STATUS_KHR`) et si la chauffe courait encore : « lien d'un
+   programme dit prêt, après la chauffe » accuse le dessin, et non le lien.
+
+   Toutes les demandes qui attendent une réponse sont guettées, pas seulement
+   les deux de la compilation : celle qui paie l'attente est celle qui vient
+   après, quelle qu'elle soit. Seules celles d'au moins `ATTENTE_NOTEE`
+   s'inscrivent — les autres ne font attendre personne, et ce tri épargne une
+   clé à fabriquer aux milliers de demandes de l'ouverture. `images` garde sa
+   mesure à lui, des deux demandes de la compilation seulement. */
+const ATTENTES_DITES = 5, ATTENTE_NOTEE = 0.5;
+const COMPLETION = 0x91B1;
+/** @type {Record<number, string>} */
+const PARAMETRES = { 0x8B80: "DELETE_STATUS", 0x8B81: "COMPILE_STATUS", 0x8B82: "LINK_STATUS",
+  0x8B83: "VALIDATE_STATUS", 0x8B85: "ATTACHED_SHADERS", 0x8B86: "ACTIVE_UNIFORMS",
+  0x8B89: "ACTIVE_ATTRIBUTES", 0x8A36: "ACTIVE_UNIFORM_BLOCKS", 0x8B4F: "SHADER_TYPE",
+  0x8C7F: "TF_BUFFER_MODE", 0x8C83: "TF_VARYINGS", [COMPLETION]: "COMPLETION_STATUS" };
+// celles dont le premier argument est un programme : on sait s'il était dit prêt
+const PAR_PROGRAMME = ["getProgramParameter", "getActiveAttrib", "getActiveUniform", "getAttribLocation",
+  "getUniformLocation", "getUniformBlockIndex", "getActiveUniforms", "getActiveUniformBlockParameter",
+  "getProgramInfoLog"];
+const SYNCHRONES = [...PAR_PROGRAMME, "getShaderParameter", "getShaderInfoLog", "getError", "getParameter",
+  "readPixels", "checkFramebufferStatus", "clientWaitSync", "getSyncParameter", "getBufferSubData",
+  "getQueryParameter"];
+/** [durée, nombre] par demande, en ms
+ *  @type {Map<string, number[]>} */
+let attentes = new Map();
+/** Les programmes que la carte graphique a dits prêts
+ *  @type {WeakSet<object>} */
+let ditsPrets = new WeakSet();
+
+function cleAttente(/** @type {string} */ nom, /** @type {any[]} */ a){
+  let cle = nom;
+  const p = nom === "getParameter" ? a[0] : nom === "getProgramParameter" || nom === "getShaderParameter" ? a[1] : undefined;
+  if (p !== undefined) cle += " " + (PARAMETRES[p] || "0x" + Number(p).toString(16));
+  if (a[0] && typeof a[0] === "object" && PAR_PROGRAMME.includes(nom) && ditsPrets.has(a[0])) cle += " pret";
+  // pendant la compilation de la chauffe, ou pendant le dessin de ses copies
+  if (GL.chauffe === "partie") cle += " chauffe";
+  else if (GL.chauffe === "dessin") cle += " dessin";
+  return cle;
+}
+
+/** Les demandes qui ont le plus fait attendre : [demande, ms, nombre]. */
+function lesAttentes(){
+  const l = [...attentes].map(([k, v]) => [k, Math.round(v[0]), v[1]])
+    .filter(x => /** @type {number} */ (x[1]) > 0)
+    .sort((x, y) => /** @type {number} */ (y[1]) - /** @type {number} */ (x[1]))
+    .slice(0, ATTENTES_DITES);
+  return l.length ? l : undefined;
+}
+
 function guetteCompilation(/** @type {any} */ gl){
   if (!gl || estAffiche()) return;
   imagesOuverture = []; attenteCompilation = 0; programmesAvant = 0;
+  attentes = new Map(); ditsPrets = new WeakSet();
   imagePrecedente = performance.now();
   // d'où partent les images : ce qui sépare leur somme de « plan-affiche » est la peinture qui suit
   J.toile = Math.round(imagePrecedente);
-  const noms = ["getShaderParameter", "getProgramParameter"];
-  for (const nom of noms){
+  /** @type {string[]} */
+  const posees = [];
+  for (const nom of SYNCHRONES){
     const f = gl[nom];
     if (typeof f !== "function") continue;
+    const compilation = nom === "getShaderParameter" || nom === "getProgramParameter";
+    posees.push(nom);
     // posée sur ce contexte seul : la retirer rend celle de son prototype
     gl[nom] = function (/** @type {any[]} */ ...a){
       const t = performance.now();
-      try { return f.apply(this, a); } finally { attenteCompilation += performance.now() - t; }
+      /** @type {any} */
+      let r;
+      try { r = f.apply(this, a); return r; } finally {
+        const d = performance.now() - t;
+        if (compilation) attenteCompilation += d;
+        if (nom === "getProgramParameter" && a[1] === COMPLETION && r === true && a[0]) ditsPrets.add(a[0]);
+        if (d >= ATTENTE_NOTEE){
+          const cle = cleAttente(nom, a);
+          const v = attentes.get(cle);
+          if (v){ v[0] += d; v[1]++; } else attentes.set(cle, [d, 1]);
+        }
+      }
     };
   }
-  quandAffiche(sur(() => { for (const nom of noms) delete gl[nom]; }));
+  quandAffiche(sur(() => { for (const nom of posees) delete gl[nom]; }));
 }
 function imageDOuverture(){
   if (estAffiche() || !imagePrecedente || imagesOuverture.length >= IMAGES_DITES) return;
@@ -889,8 +965,12 @@ function leChargement(){
     invisibleAvantMs: invisibleAvantAffichage(),
     panne: panne || undefined,
     images: imagesOuverture.length ? imagesOuverture.slice() : undefined,
-    /* La chauffe des programmes (`webgl.mjs`, « La chauffe ») : sa durée et
-       les programmes lancés d'un coup. Absente, elle n'a pas eu lieu — le
+    // les demandes à la carte graphique qui ont fait attendre (« Ce qui a fait attendre »)
+    attentes: lesAttentes(),
+    /* La chauffe des programmes (`webgl.mjs`, « La chauffe ») : sa durée,
+       les programmes lancés d'un coup, et ce que le dessin de leurs copies y
+       a pris — absent des relevés d'avant le 11 novembre 2026, nul quand
+       elles n'ont pas dessiné. Absente, elle n'a pas eu lieu — le
        navigateur ne compile pas en tâche de fond, ou le plan est au SVG. */
     chauffe: GL.bilanChauffe ? GL.bilanChauffe.slice() : undefined,
   };

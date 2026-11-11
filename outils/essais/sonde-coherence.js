@@ -66,6 +66,8 @@ const SAIN = {
     ["vu-plus-long", (r) => { r.visibleMs = 40000; }],
     ["ouverture-suspendue", (r) => { r.chargement.images.push([353736, 0, 0]); r.chargement.jalons["plan-affiche"] = 359987; }],
     ["images-ouverture", (r) => { r.chargement.images[1] = [100, 180, 1]; }],
+    // plus d'attente que l'ouverture qui l'a guettée
+    ["attentes-ouverture", (r) => { r.chargement.attentes = [["getProgramParameter LINK_STATUS pret", 900000, 3]]; }],
     ["lcp-tardif", (r) => { r.chargement.jalons.lcp = 202412; }],
     ["cache-sous-le-service", (r) => { r.chargement.depuisCache = 1; r.chargement.lourds[0] = { fichier: "plan", sorte: "fetch", ms: 974, transfertKo: 0, tailleKo: 536 }; }],
     ["part-cache-bornes", (r) => { r.chargement.depuisCache = 1.5; }],
