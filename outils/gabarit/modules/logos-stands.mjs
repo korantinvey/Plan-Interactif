@@ -1005,7 +1005,17 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
   /** @type {{ pl: Planche, fb: any } | null} */ source = null){
   const enJeu = new Set(voulues.map(t => t.dataset.cle || ""));
   let envoye = false;
-  for (const t of voulues){
+  /* De la plus haute à la plus basse. Rangées dans l'ordre de la vue, des
+     hauteurs mêlées ouvraient chacune son étagère — une étagère ne prend que
+     les toiles de six dixièmes de sa hauteur au moins —, et la pile en
+     passait le haut de la planche bien avant de la remplir : seize logos,
+     le tiers de ses pixels, ne tenaient pas dans la plus petite, même
+     rangée à neuf, et chaque pincement en recréait deux ou trois, l'ancienne
+     gardée le temps de la recopie (banc, téléphone à densité 2,6). Un
+     téléphone Android à 4 Go a perdu son contexte au moment de sa pose de
+     logos la plus lente (sonde, FUNEXPO, 11 novembre 2026). L'ordre de la vue
+     ne sert à rien ici : toutes doivent tenir, ou la planche se refait. */
+  for (const t of [...voulues].sort((a, b) => b.height - a.height)){
     const cle = t.dataset.cle || "";
     const deja = pl.cases.get(cle);
     if (deja){ deja.vu = poseN; continue; }
@@ -1346,7 +1356,7 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
   // le reste à la pose suivante — ou à la fin du geste
   if (attente) annoncePret();
   if (!data.length) return [];
-  // du centre vers les bords : les plus proches prennent les premières cases
+  // une toile par logo ; la planche les range par hauteur (`range`)
   const voulues = [...new Set(data.map(d => d.t))];
   const tp = performance.now();
   const gp = plancheGardee(appareil, voulues);
