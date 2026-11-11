@@ -3211,13 +3211,13 @@ Importé par :
 
 bande-admin · habillage · lancement
 
-### `modules/toucher.mjs` — 57 l. → plan, plan-admin
+### `modules/toucher.mjs` — 61 l. → plan, plan-admin
 
 - l.1 · Un toucher qui se sent — la vibration brève du téléphone
 
 Fonctions :
 
-`vibre` 34 · `interrupteur` 47
+`vibre` 38 · `interrupteur` 51
 
 Importé par :
 

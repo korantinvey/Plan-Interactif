@@ -35,9 +35,9 @@ const PAGE = `<!doctype html>
 <h1>Essai de vibration</h1>
 <p>Touchez chaque bouton, et notez ce que vous sentez. Une série chiffrée alterne vibration et pause, en millisecondes.</p>
 <h2>Le choix d'un stand, plus ou moins fort</h2>
-<button data-ms="30">30 ms — aujourd'hui</button>
+<button data-ms="30">30 ms — jusqu'ici</button>
 <button data-ms="25">25 ms</button>
-<button data-ms="20">20 ms</button>
+<button data-ms="20">20 ms — aujourd'hui</button>
 <button data-ms="15">15 ms</button>
 <button data-ms="10">10 ms</button>
 <h2>Hachée : une impulsion adoucie</h2>
