@@ -10,7 +10,8 @@
    (`rendu.mjs`), et le tiroir de l'itinéraire (`tiroir-itineraire.mjs`) le
    mène. Il vivait dans ce tiroir, et le rendu l'atteignait donc — le tiroir
    ne pouvait plus importer le rendu pour passer d'un pavillon à l'autre. Il
-   ne dépend que de la vue, des données, de l'écran et du calcul.
+   ne dépend que de la vue, des données, de l'écran, des couleurs et du
+   calcul.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { state } from "./donnees.mjs";
@@ -20,6 +21,7 @@ import { REDUIT } from "./ecran.mjs";
 import { mesureMarches, coupeMarche, distancesDesArrets } from "./itineraire.mjs";
 import { poseTrajet } from "./camera.mjs";
 import { creeEvenement } from "./evenement.mjs";
+import { trio, melange } from "./couleurs.mjs";
 
 /**
  * Ce que le plan montre en ce moment.
@@ -96,6 +98,22 @@ function arreteTracage(){
    ------------------------------------------------------------ */
 const NUANCES = 16;
 
+/* La nuance de chaque tronçon est calculée ici, et non confiée à un
+   « color-mix() » écrit dans son style : un navigateur qui ne connaît pas
+   cette fonction — Chromium d'avant 2023, que gardent encore le navigateur
+   de MIUI et les WebView non mises à jour — ne rejette pas la déclaration à
+   la lecture, puisqu'elle contient « var() ». Elle n'échoue qu'au calcul, le
+   trait perd alors toute couleur, et le style en ligne, qui l'emporte quand
+   même sur la feuille, empêche « #itin .iTrait » de le rattraper : sur un
+   Redmi Note 9, il ne restait du trajet que l'étincelle. Si l'un des deux
+   tons n'est pas lisible, aucun style n'est écrit, et la feuille reprend la
+   main avec l'accent plein. */
+function nuancier(){
+  const cs = getComputedStyle(document.documentElement);
+  const clair = cs.getPropertyValue("--accent-clair").trim(), fort = cs.getPropertyValue("--accent-fort").trim();
+  return trio(clair) && trio(fort) ? (/** @type {number} */ t) => melange(clair, fort, t) : null;
+}
+
 /** Une marche découpée aux bornes des tronçons du trajet entier : chaque
  *  morceau porte sa position, de 0 au départ à 1 à l'arrivée. */
 function tronconsDe(pts, cumuls, total){
@@ -131,6 +149,7 @@ function peintItineraire(p){
   const r = rayonBout();
   let out = "";
   let traits = "";
+  const nuance = nuancier();
   marches.forEach((e, j) => {
     const pts = fini ? e.pts : coupeMarche(e.pts, mes.cumuls[j], d);
     if (!pts) return;
@@ -141,8 +160,8 @@ function peintItineraire(p){
     const cu = mes.cumuls[j].slice(0, pts.length);
     if (!fini) cu[cu.length - 1] = Math.min(cu[cu.length - 1], d);
     for (const t of tronconsDe(pts, cu, mes.total))
-      traits += '<path class="iTrait" style="stroke:color-mix(in srgb,var(--accent-fort) ' +
-        Math.round(t.t * 100) + '%,var(--accent-clair))" d="' + traceDe(t.pts) + '"/>';
+      traits += '<path class="iTrait"' + (nuance ? ' style="stroke:' + nuance(t.t) + '"' : "") +
+        ' d="' + traceDe(t.pts) + '"/>';
   });
   out += traits;
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de

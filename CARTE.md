@@ -738,7 +738,8 @@ Fonctions :
 
 Importé par :
 
-apparence · distinctions · habillage · parcours · pile · reperes · secteurs · webgl
+apparence · distinctions · habillage · parcours · pile · reperes · secteurs
+trace-itineraire · webgl
 
 ### `modules/debord-allees.mjs` — 116 l. → plan, plan-admin
 
@@ -3240,20 +3241,20 @@ Importé par :
 
 recherche
 
-### `modules/trace-itineraire.mjs` — 374 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 393 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
-`poseTrace` 40 · `marchesIci` 42 · `rayonBout` 47 · `arreteTracage` 80 · `tronconsDe` 101
-`traceDe` 119 · `peintItineraire` 122 · `lanceEtincelle` 203 · `pointA` 224
-`courtEtincelle` 232 · `placePouls` 260 · `lanceTracage` 275 · `dessineItineraire` 300
-`rafraichitBouts` 326 · `cadreItineraire` 349
+`poseTrace` 42 · `marchesIci` 44 · `rayonBout` 49 · `arreteTracage` 82 · `nuancier` 111
+`tronconsDe` 119 · `traceDe` 137 · `peintItineraire` 140 · `lanceEtincelle` 222
+`pointA` 243 · `courtEtincelle` 251 · `placePouls` 279 · `lanceTracage` 294
+`dessineItineraire` 319 · `rafraichitBouts` 345 · `cadreItineraire` 368
 
 Importe :
 
-camera · dom · donnees · ecran · evenement · itineraire · vue
+camera · couleurs · dom · donnees · ecran · evenement · itineraire · vue
 
 Importé par :
 
