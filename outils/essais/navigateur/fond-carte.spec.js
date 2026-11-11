@@ -228,4 +228,149 @@ test.describe("le fond de carte", () => {
     expect(Math.abs(vu[1] - attendu[1])).toBeLessThan(1.5);
     expect(erreurs).toEqual([]);
   });
+
+  /* ------------------------------------------------------------
+     Le fond figé : des images posées d'avance, ni moteur ni tuiles
+     ------------------------------------------------------------ */
+
+  const SEAU = "https://seau.essai/storage/v1/object/public/environs/b0/lot1/";
+  const CALE = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0 };
+
+  /** Le lot figé qui vaut pour `cal` sur le premier pavillon, calculé par la
+   *  règle même que la page applique (`lot-fige.mjs`). */
+  async function lotPour(cal) {
+    const L = await import(require("url").pathToFileURL(require("path").join(__dirname,
+      "..", "..", "gabarit", "modules", "lot-fige.mjs")).href);
+    const zone = L.carreDuFond(DONNEES.plans[0].emprise);
+    return { source: L.sourceDuFige(cal, zone), adresse: SEAU, x0: zone.x0, y0: zone.y0,
+             cote: zone.x1 - zone.x0, px: L.PX_FIGE, niveaux: L.niveauxDuLot(zone.x1 - zone.x0),
+             ext: "png", le: "2026-11-11T12:00:00Z", images: 85, octets: 3e6 };
+  }
+
+  /** La page du visiteur, le premier pavillon calé sur `calage` ; le seau
+   *  répond par `seau`. Rend les erreurs, et ce que la page a demandé à qui. */
+  async function ouvrePublic(page, calage, seau, suite = "") {
+    const erreurs = await prepare(page);
+    const demandes = [];
+    page.on("request", (q) => demandes.push(q.url()));
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = calage;
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await page.route("https://tile.openstreetmap.org/**",
+      (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
+    await page.route("https://seau.essai/**", seau ||
+      ((r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL })));
+    await page.goto("/plan.html?plan=smcl-2026" + suite);
+    await attendLaListe(page);
+    return { erreurs, demandes };
+  }
+
+  test("un fond figé se pose sans moteur de carte ni tuiles", async ({ page }) => {
+    const cal = { ...CALE, fond: "maison" };
+    const { erreurs, demandes } = await ouvrePublic(page, { ...cal, fige: await lotPour(cal) });
+    const images = page.locator("#fondFige img");
+    await expect(images.first()).toBeAttached();
+    const adresses = await images.evaluateAll((l) => l.map((i) => i.getAttribute("src")));
+    expect(adresses.every((a) => a.startsWith(SEAU))).toBe(true);
+    // le niveau zéro reste dessous, pendant que les plus fins arrivent
+    expect(adresses[0]).toBe(SEAU + "0/0/0.png");
+    // hors du SVG des tuiles, qui ne porte plus que l'aplat du hall
+    await expect(page.locator("#fondCarte image")).toHaveCount(0);
+    await expect(page.locator("#creditCarte")).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(demandes.filter((u) => /maplibre|versatiles|openstreetmap/.test(u))).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("pendant un geste, le fond figé se déplace sans être reposé", async ({ page }) => {
+    /* Reposé à chaque image, le fond figé faisait rater une image sur deux à
+       un téléphone à 120 Hz : pendant le geste, son calque ne fait que se
+       translater et s'agrandir, et ses images ne bougent qu'à l'arrêt. */
+    const cal = { ...CALE, fond: "maison" };
+    // le plan en SVG : le calque du fond n'en dépend pas, et le geste reste vif sans carte graphique
+    const lotFige = await lotPour(cal);
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: lotFige }, null, "&rendu=svg");
+    await expect(page.locator("#fondFige img").first()).toBeAttached();
+    await page.waitForTimeout(600);
+    const lot = page.locator("#fondFige > div");
+    const boite = await page.locator("#plan").boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    await page.mouse.down();
+    const vus = [];
+    for (let i = 1; i <= 12; i++) {
+      await page.mouse.move(boite.x + boite.width / 2 + i * 8, boite.y + boite.height / 2 + i * 4);
+      vus.push(await lot.evaluate((d) => d.style.transform));
+    }
+    await page.mouse.up();
+    expect(vus.some((t) => /translate/.test(t))).toBe(true);
+    // à l'arrêt, les images reprennent leur place exacte, et le calque sa pose
+    await expect.poll(() => lot.evaluate((d) => d.style.transform)).toBe("");
+    /* Exacte : le coin du niveau zéro tombe là où le SVG des tuiles — celui
+       de l'aplat qui vide le hall — pose le même point du plan. */
+    const ecart = await page.evaluate((f) => {
+      const ns = "http://www.w3.org/2000/svg", m = document.createElementNS(ns, "rect");
+      m.setAttribute("x", String(f.x0)); m.setAttribute("y", String(f.y0));
+      m.setAttribute("width", String(f.cote)); m.setAttribute("height", String(f.cote));
+      document.getElementById("fondTuiles").appendChild(m);
+      const a = m.getBoundingClientRect(), b = document.querySelector("#fondFige img").getBoundingClientRect();
+      m.remove();
+      return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top), Math.abs(a.width - b.width / 1.001));
+    }, lotFige);
+    expect(ecart).toBeLessThan(1);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("un fond figé pour un autre calage repasse en direct", async ({ page }) => {
+    // le lot a été photographié avant que l'exploitant ne tourne le plan
+    const cal = { ...CALE, fond: "osm" };
+    const lot = await lotPour({ ...cal, angle: 0.2 });
+    await ouvrePublic(page, { ...cal, fige: lot });
+    await expect(page.locator("#fondCarte image[href*='openstreetmap']").first()).toBeAttached();
+    await expect(page.locator("#fondFige img")).toHaveCount(0);
+    await expect(page.locator("#fondFige")).toBeHidden();
+  });
+
+  test("un fond figé injoignable repasse en direct", async ({ page }) => {
+    const cal = { ...CALE, fond: "osm" };
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: await lotPour(cal) },
+      (r) => r.fulfill({ status: 404, body: "" }));
+    await expect(page.locator("#fondCarte image[href*='openstreetmap']").first()).toBeAttached();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("l'exploitant fige le fond, et les visiteurs le reçoivent", async ({ page }) => {
+    /* Une carte témoin : elle se charge, se pose au repos, et rend une toile
+       vide de la taille de son hôte — ce que la photographie découpe. */
+    const temoin = "window.maplibregl = { Map: class { " +
+      "constructor(o){ this.o = o; this.c = document.createElement('canvas'); this.resize(); } " +
+      "on(){ return this; } once(ev, f){ if (ev !== 'error') setTimeout(f, 0); return this; } " +
+      "jumpTo(){} setStyle(){} redraw(){} triggerRepaint(){} remove(){} " +
+      "resize(){ const h = this.o.container; this.c.width = h.clientWidth || 1; this.c.height = h.clientHeight || 1; } " +
+      "getCanvas(){ return this.c; } } };";
+    const { erreurs, ecritures } = await ouvreCale(page, "maison", (r) => r.request().url().endsWith(".css")
+      ? r.fulfill({ status: 200, contentType: "text/css", body: "" })
+      : r.fulfill({ status: 200, contentType: "text/javascript", body: temoin }));
+    await ouvreEnvirons(page);
+    const volet = page.locator(".voletReg:not([hidden])");
+    await expect(volet.locator(".envLot")).toContainText("pas encore figé");
+    await volet.locator("button", { hasText: "Figer le fond de nouveau" }).click();
+    await expect(volet.locator(".envEtat")).toContainText("Fond figé :", { timeout: 40_000 });
+
+    const lot = await lotPour({ ...CALE, fond: "maison" });
+    const envois = ecritures.filter((e) => e.methode === "POST" &&
+      /^\/storage\/v1\/object\/environs\/b0\/[^/]+\/\d\/\d+\/\d+\.(webp|jpg)$/.test(e.chemin));
+    expect(envois).toHaveLength(85);
+    const inscrit = ecritures.filter((e) => e.methode === "PATCH").map((e) => JSON.parse(e.corps).calage).pop();
+    expect(inscrit.fige.source).toBe(lot.source);
+    expect(inscrit.fige.adresse).toMatch(/^https:\/\/base\.essai\/storage\/v1\/object\/public\/environs\/b0\/[^/]+\/$/);
+    // les lots d'avant se cherchent, une fois le nouveau inscrit
+    expect(ecritures.some((e) => e.chemin === "/storage/v1/object/list/environs")).toBe(true);
+    await expect(volet.locator(".envLot")).toContainText("Fond figé le");
+    expect(erreurs).toEqual([]);
+  });
 });
+

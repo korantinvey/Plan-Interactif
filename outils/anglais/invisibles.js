@@ -67,7 +67,7 @@ module.exports = [
   "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]", "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]",
   "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]", "TeinteDesFigurants", "fin du geste",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
-  "FiltreZoom", "-petit", "-grand", "-pleins-", "-ombres-", "-volumes-", "-decor", "-decor-plat", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "|caches|", "-traits-z-", "-textes-", "-image-",
+  "FiltreZoom", "-petit", "-grand", "-pleins-", "-ombres-", "-volumes-", "-decor", "-decor-plat", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "labels-choisi|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "TiretsQuiDefilent", "if (uniteDefile > 0.0 && ",
   "-petit-halo-", "-phare-", "-jeton-", "-plaque", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
@@ -119,4 +119,10 @@ module.exports = [
   // sonde lit pour dire ce qu'une longue image a fait — des clés, jamais à l'écran
   "GPU Resource Counts", "Update Attributes", "Layer updates", "Shaders Created",
   "SharedRenderPipelines Created", "Textures Created",
+  // `modules/sonde.mjs` : la marque d'un geste fait hors du plan, dans la sorte
+  // de geste que le résumé envoie avec un gel — jamais à l'écran
+  " hors plan",
+  // `modules/environs.mjs` : le début de l'empreinte du fond figé posé, qui
+  // dit au calque des tuiles s'il a déjà ces images — jamais à l'écran
+  "fige|",
 ];

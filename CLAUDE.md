@@ -295,7 +295,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | libellé placé à la main | `modules/libelle-place.mjs`, `modules/placement-libelles.mjs` |
 | ordre et panneau des calques, fond du plan | `modules/ordre-trace.mjs`, `modules/pile.mjs`, `modules/ordre-calques.mjs` |
 | halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/scripts/lieux.js` (`lieuOsm`, `lieuSaisi`) |
-| fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` |
+| fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` ; fond figé — photographié par l'exploitant, posé en images chez le visiteur — `modules/fige-carte.mjs`, sa règle `modules/lot-fige.mjs`, seau Storage `environs` |
 | secteurs, distinctions, polices des noms | `modules/secteurs.mjs`, `modules/distinctions.mjs`, `modules/polices-plan.mjs` |
 | parcours, partage, copie gardée, code QR lu depuis le plan | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs`, `modules/scan-parcours.mjs` |
 | journée organisée, séjour, ordonnanceur | `modules/journee.mjs`, `modules/sejour.mjs`, `modules/ordonnanceur.mjs` |
@@ -307,7 +307,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | suggestion, visite guidée, générique du sponsor | `modules/suggestion.mjs`, `modules/tutoriel.mjs`, `modules/sponsor.mjs` |
 | installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/index.mjs` `manifeste` |
 | mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/index.mjs` `mesure`, `erreur` |
-| sonde de performance, ce qui a échoué pendant une visite | `modules/sonde.mjs` (avec `modules/erreurs.mjs` `bilanErreurs`, `modules/demarrage.mjs` `PLAN_EN_PANNE`) ; relais `src/index.mjs` `sonde` ; fiche du lundi `outils/scripts/performances.js`, lecture `outils/scripts/lecture-perf.js` |
+| sonde de performance, ce qui a échoué pendant une visite | `modules/sonde.mjs` (avec `modules/erreurs.mjs` `bilanErreurs`, `modules/demarrage.mjs` `PLAN_EN_PANNE`) ; relais `src/index.mjs` `sonde` ; fiche du lundi `outils/scripts/performances.js`, lecture `outils/scripts/lecture-perf.js` ; vraisemblance d'un relevé `outils/scripts/sonde-coherence.js` (`incoherences`), qu'essais et fiche imposent — une correction de ce que mesure un champ avance `modules/sonde.mjs` `REVISION` |
 | carte de chaleur, remise à zéro | `modules/chaleur.mjs` |
 | accès administrateur, session, bande d'administration | `modules/acces-admin.mjs`, `modules/session.mjs`, `modules/bande-admin.mjs`, `modules/mode-admin.mjs` |
 | console multi-événements | `modules/console.mjs`, `modules/ecran-console.mjs`, socle `modules/socle-console.mjs` |

@@ -21,6 +21,11 @@ export const SACCADE = 50;
 export const FIN_GESTE = 300;
 // les tranches d'intervalle entre deux images, en millisecondes
 export const TRANCHES = [17, 25, 33, 50, 100, 250, Infinity];
+/* La première tranche lente : au-delà de 33 ms, deux rafraîchissements
+   manqués, que la main sent. Le relevé comptait les siennes à partir de la
+   tranche suivante — sa « partPlus33 » était une part au-delà de 50 ms, et ne
+   se comparait pas à celle de la sonde. */
+export const PREMIERE_LENTE = TRANCHES.indexOf(50);
 
 /** Le centile `p` (0 à 1) d'une liste déjà triée. */
 export function centile(/** @type {number[]} */ tri, /** @type {number} */ p){
@@ -119,8 +124,12 @@ export function appareil(/** @type {{ agentComplet?: boolean, gl?: any, carte?: 
     fenetre: [innerWidth, innerHeight],
     coeurs: navigator.hardwareConcurrency,
     memoireGo: n.deviceMemory,
-    reseau: n.connection ? { type: n.connection.effectiveType, debitMbps: n.connection.downlink, rttMs: n.connection.rtt,
-      economie: n.connection.saveData } : undefined,
+    /* Ce que le navigateur en dit est arrondi exprès, et borné : le débit
+       plafonne à 10 Mb/s (un 10 dit « au moins »), et un temps d'aller-retour
+       nul veut dire qu'il ne le sait pas — 68 visites sur 342 du 3 au
+       10 novembre 2026. */
+    reseau: n.connection ? { type: n.connection.effectiveType, debitMbps: n.connection.downlink,
+      rttMs: n.connection.rtt > 0 ? n.connection.rtt : undefined, economie: n.connection.saveData } : undefined,
     carte: carte ? carteGraphique(gl) : undefined,
     mouvementReduit: matchMedia("(prefers-reduced-motion: reduce)").matches,
   };
@@ -130,32 +139,66 @@ export function appareil(/** @type {{ agentComplet?: boolean, gl?: any, carte?: 
    Le chargement
    ------------------------------------------------------------ */
 /**
+ * Ce que le navigateur sait du trajet d'une ressource : « garde » si elle sort
+ * d'un cache, « reseau » si elle a été transférée, « inconnu » sinon.
+ *
+ * Une ressource que le service de second plan a servie (`workerStart`) annonce
+ * zéro octet transféré et une livraison « cache », qu'il l'ait sortie de sa
+ * copie ou demandée au réseau : relevé dans Chromium, un entête de 200 Ko servi
+ * sans cache, venu du réseau en 300 ms, s'y dit « 0 octet, depuis le cache »
+ * (10 novembre 2026). Dès la deuxième visite, toute la page passe par lui :
+ * le transfert de l'ouverture tombait à quelques kilo-octets et la part servie
+ * par le cache à 100 %, sur des ouvertures d'une seconde et demie. Seule la
+ * livraison « cache-storage » dit qu'il l'a sortie de sa copie.
+ *
+ * Une ressource dont le corps est caché (autre domaine sans autorisation)
+ * annonce zéro partout : inconnue elle aussi, et non servie par le cache.
+ */
+export function trajet(/** @type {any} */ e){
+  if (e.workerStart > 0) return e.deliveryType === "cache-storage" ? "garde" : "inconnu";
+  if (!(e.transferSize > 0 || e.decodedBodySize > 0)) return "inconnu";
+  return e.transferSize === 0 ? "garde" : "reseau";
+}
+
+/**
  * Ce que la page a chargé : le document, les `max` ressources les plus lentes
  * ou les plus lourdes, le total transféré, et la part (0 à 1) des ressources
- * servies sans rien transférer, c'est-à-dire par le cache. `jusqua` borne aux
- * ressources parties avant cet instant (ms depuis l'ouverture) : la sonde fige
- * ainsi le bilan de l'ouverture, sans ce que la visite charge ensuite.
+ * servies par un cache. `jusqua` borne aux ressources parties avant cet
+ * instant (ms depuis l'ouverture) : la sonde fige ainsi le bilan de
+ * l'ouverture, sans ce que la visite charge ensuite.
+ *
+ * Le transfert et la part du cache ne comptent que ce dont le trajet est connu
+ * (`trajet`) ; `inconnus` dit combien n'y sont pas, et le transfert d'une
+ * ressource lourde au trajet inconnu est absent plutôt que nul. Sans rien de
+ * connu, la part du cache est absente : zéro aurait dit « tout du réseau ».
  */
 export function chargement(max = 40, jusqua = Infinity){
   const nav = /** @type {any} */ (performance.getEntriesByType("navigation")[0]);
   const toutes = performance.getEntriesByType("resource").map(e => /** @type {any} */ (e))
     .filter(e => e.startTime <= jusqua);
+  const ko = (/** @type {number} */ o) => Math.round((o || 0) / 1024);
   const lourdes = toutes
     .filter(e => e.duration > 150 || e.transferSize > 50000 || e.decodedBodySize > 200000)
     .sort((a, b) => b.duration - a.duration).slice(0, max)
     .map(e => ({ fichier: fichier(e.name), sorte: e.initiatorType, debut: Math.round(e.startTime),
-      ms: Math.round(e.duration), transfertKo: Math.round((e.transferSize || 0) / 1024),
-      tailleKo: Math.round((e.decodedBodySize || 0) / 1024) }));
-  // une ressource dont le corps est inconnu (autre domaine, sans autorisation) annonce 0 partout : ce n'est pas du cache
-  const lues = toutes.filter(e => e.transferSize > 0 || e.decodedBodySize > 0);
-  const servies = lues.filter(e => e.transferSize === 0).length;
-  const transfert = (nav ? nav.transferSize || 0 : 0) + toutes.reduce((a, e) => a + (e.transferSize || 0), 0);
+      ms: Math.round(e.duration), transfertKo: trajet(e) === "inconnu" ? undefined : ko(e.transferSize),
+      tailleKo: ko(e.decodedBodySize) }));
+  const trajets = toutes.map(trajet);
+  const connues = trajets.filter(t => t !== "inconnu").length;
+  const gardees = trajets.filter(t => t === "garde").length;
+  // le document, passé par le service lui aussi, ne dit rien de son transfert
+  const navConnue = nav && !(nav.workerStart > 0);
+  const transfert = (navConnue ? nav.transferSize || 0 : 0) +
+    toutes.reduce((a, e, i) => a + (trajets[i] === "inconnu" ? 0 : e.transferSize || 0), 0);
+  // un instant que la page n'a pas encore atteint vaut zéro : il n'a pas eu lieu
+  const instant = (/** @type {number} */ t) => t > 0 ? Math.round(t) : undefined;
   return {
-    page: nav ? { reponse: Math.round(nav.responseEnd), domPret: Math.round(nav.domContentLoadedEventEnd),
-      charge: Math.round(nav.loadEventEnd), transfertKo: Math.round((nav.transferSize || 0) / 1024),
-      type: nav.type } : null,
+    page: nav ? { reponse: instant(nav.responseEnd), domPret: instant(nav.domContentLoadedEventEnd),
+      charge: instant(nav.loadEventEnd), transfertKo: navConnue ? ko(nav.transferSize) : undefined,
+      type: nav.type, parLeService: nav.workerStart > 0 || undefined } : null,
     ressources: lourdes,
-    transfertKo: Math.round(transfert / 1024),
-    depuisCache: lues.length ? Math.round(100 * servies / lues.length) / 100 : 0,
+    transfertKo: ko(transfert),
+    depuisCache: connues ? Math.round(100 * gardees / connues) / 100 : undefined,
+    inconnus: toutes.length - connues,
   };
 }

@@ -160,6 +160,20 @@ const SCRIPT = "/versions/plan.0123456789.js";
       "ce qui n'est pas un nombre positif fini est écarté", p && JSON.stringify(p[1]));
   }
 
+  // — comment le navigateur est entré dans le script, et où l'image a passé son temps
+  {
+    parti.length = 0;
+    await appel(PRODUCTION, valide({ resume: resume([
+      { ms: 4415, fichier: SCRIPT, invocation: "module-script", scriptsMs: 4390.4, forceeMs: 1200, renduMs: 20, miseEnPageMs: 12 },
+      { ms: 300, invocation: "<img src=x>", scriptsMs: -3, renduMs: "long" },
+    ]) }));
+    const p = parti[0] && parti[0].corps.p_resume.gels.pires;
+    dit(p && p[0].invocation === "module-script" && p[0].scriptsMs === 4390 && p[0].forceeMs === 1200 &&
+      p[0].renduMs === 20 && p[0].miseEnPageMs === 12, "l'invocation et le découpage de l'image passent", p && JSON.stringify(p[0]));
+    dit(p && p[1].invocation === undefined && p[1].scriptsMs === undefined && p[1].renduMs === undefined,
+      "une invocation hors de sa forme, un nombre faux, sont écartés", p && JSON.stringify(p[1]));
+  }
+
   // — les erreurs de la visite repartent avec leur module, comme les gels
   {
     parti.length = 0;

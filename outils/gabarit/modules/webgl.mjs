@@ -179,6 +179,8 @@ export const GL = {
   repli: "",
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
+  // les noms du stand choisi, écrits à part (`libelles.mjs` `libellesWebgl`)
+  libellesChoisis: [], pastillesChoisies: [], cleChoisis: "", versionChoisis: 0,
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0,
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
@@ -636,7 +638,7 @@ function perdContexteWebgl(raison = "contexte perdu"){
   if (GL.hote) GL.hote.remove();
   GL.hote = null; GL.toile = null;
   GL.blocs.clear(); GL.sales.clear(); GL.groupes.clear();
-  GL.couchesLibelles = null; GL.cleLibelles = ""; GL.tout = true;
+  GL.couchesLibelles = null; GL.cleLibelles = ""; GL.cleChoisis = ""; GL.tout = true;
   /* Le SVG ne suivait plus la vue depuis la première image du dessin, et ses
      noms étaient éteints : il les retrouve pour la vue du moment. */
   if (typeof _page.appliqueVue === "function") _page.appliqueVue();
@@ -2889,20 +2891,23 @@ function couchesNoms(prefixe, groupes, o = {}){
 /* La pastille est un trait épais aux bouts arrondis : c'est la forme exacte
    d'une gélule, et un trait se montre ou se tait au zoom comme un texte. Son
    liseré est un second trait, un peu plus large, posé dessous. */
-function couchesPastilles(){
+/** @param {string} prefixe @param {any[]} pastilles @param {Set<string> | null} [masque] @param {string} [cleMasque] */
+function couchesPastilles(prefixe, pastilles, masque = null, cleMasque = ""){
   const K = constTexte();
-  const liste = GL.pastilles.filter(d => (GL.modeles.get(d.cls) || {}).visible);
+  const liste = pastilles.filter(d => (GL.modeles.get(d.cls) || {}).visible);
   if (!liste.length) return [];
   const commun = { data: liste, getPath: d => d.path, widthUnits: "common", capRounded: true,
-    extensions: K.traits, getZoomFiltre: d => [d.z0, d.z1, -100],
-    updateTriggers: { getColor: GL.versionModeles } };
+    extensions: K.traits, getZoomFiltre: d => masque && masque.has(d.lbl) ? PASTILLE_TUE : [d.z0, d.z1, -100],
+    updateTriggers: { getColor: GL.versionModeles, getZoomFiltre: cleMasque } };
   return [
-    new deck.PathLayer({ ...commun, id: "pastilles-trait", getWidth: d => d.largeur,
+    new deck.PathLayer({ ...commun, id: prefixe + "trait", getWidth: d => d.largeur,
       getColor: d => GL.modeles.get(d.cls).trait }),
-    new deck.PathLayer({ ...commun, id: "pastilles-fond", getWidth: d => d.largeur * .9,
+    new deck.PathLayer({ ...commun, id: prefixe + "fond", getWidth: d => d.largeur * .9,
       getColor: d => GL.modeles.get(d.cls).couleur }),
   ];
 }
+// un intervalle de zoom vide : la pastille se tait sans quitter sa couche
+const PASTILLE_TUE = [100, -100, -100];
 
 function couchesLibellesWebgl(){
   if (!GL.couchesLibelles){
@@ -2910,10 +2915,16 @@ function couchesLibellesWebgl(){
        hauteur d'arrivée : la boucle d'animation le décale d'image en image
        du même écart que son volume (`animeCouche`). Les autres restent
        ensemble — ce sont eux qu'on ne recalcule pas. */
+    /* Le stand choisi a ses noms à lui, écrits choisis (`libelles.mjs`
+       `libellesWebgl`) : ceux des couches de tous, écrits comme s'il ne
+       l'était pas, se taisent pour lui. Qui monte en étant choisi monte avec
+       ses noms de choisi. */
+    const choisis = new Set(GL.libellesChoisis.map(d => d.lbl));
+    const nomsDe = (/** @type {string} */ id) => (choisis.has(id) ? GL.libellesChoisis : GL.libelles).filter(d => d.lbl === id);
     /* Les noms des stands seulement : celui d'une zone flotte au-dessus de son
        mobilier, loin de son sol, et n'a pas à suivre ce qu'il monte. */
     const mobiles = new Map([...haussesParId()].filter(([id]) =>
-      GL.libelles.some(d => d.lbl === id && !(d.cls || "").startsWith("zn"))));
+      nomsDe(id).some(d => !(d.cls || "").startsWith("zn"))));
     const caches = nomsCaches(GL.libelles);
     /* Les noms qui montent, et ceux que le stand choisi cache, se taisent
        dans les couches de tous — ils n'en sortent plus. En sortir faisait
@@ -2921,17 +2932,30 @@ function couchesLibellesWebgl(){
        chaque appui remettait en page tous les noms du plan, deux fois de plus
        que nécessaire (FEP27, 14 octobre 2026). Masqués, seul leur filtre se
        recalcule. */
-    const masque = new Set([...mobiles.keys(), ...caches]);
-    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles),
-      { masque, cleMasque: [...masque].sort().join("|") })];
+    const masque = new Set([...mobiles.keys(), ...caches, ...choisis]);
+    const cleMasque = [...masque].sort().join("|");
+    /* Les pastilles n'ont pas de couche qui monte : celles d'un volume en
+       mouvement restent où elles sont, comme avant ; seul le choisi a les
+       siennes à part. */
+    GL.couchesLibelles = [...couchesPastilles("pastilles-", GL.pastilles, choisis, [...choisis].sort().join("|")),
+      ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles), { masque, cleMasque })];
+    /* Le choisi par-dessus les autres : forcé à tout zoom, son nom peut
+       empiéter sur un voisin, et c'est lui qu'on cherche. Ses groupes d'avant
+       s'oublient — une clé par sélection, sans quoi ils s'entassaient. */
+    const cleChoisi = "labels-choisi|" + GL.versionChoisis;
+    for (const k of [...GL.groupes.keys()]) if (k.startsWith("labels-choisi|") && k !== cleChoisi) GL.groupes.delete(k);
+    const fixes = GL.libellesChoisis.filter(d => !mobiles.has(d.lbl));
+    GL.couchesLibelles.push(...couchesPastilles("pastilles-choisi-", GL.pastillesChoisies));
+    if (fixes.length) GL.couchesLibelles.push(...couchesNoms("libelles-choisi-", groupesNoms(cleChoisi, fixes)));
     for (const [id, h] of mobiles){
       /* Posé à la hauteur d'arrivée du volume, et non à celle que ses
          classes diraient : le mouvement part au clic, avant que les noms
          n'aient appris la sélection. */
       if (caches.has(id)) continue;
-      const siens = GL.libelles.filter(d => d.lbl === id).map(d => ({ ...d, zHausse: h.vers }));
+      const siens = nomsDe(id).map(d => ({ ...d, zHausse: h.vers }));
+      const source = choisis.has(id) ? "c" + GL.versionChoisis : "";
       if (siens.length) GL.couchesLibelles.push(...couchesNoms("libelles-hausse-" + id + "-",
-        groupesNoms("labels-hausse|" + id + "|" + h.vers, siens), { seulGrand: true }).map(c => c.clone({ hausseTexte: h })));
+        groupesNoms("labels-hausse|" + id + "|" + h.vers + "|" + source, siens), { seulGrand: true }).map(c => c.clone({ hausseTexte: h })));
     }
   }
   return GL.couchesLibelles;
@@ -3536,8 +3560,39 @@ function logosSurLesToits(/** @type {any} */ c){
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
   if (!peutDesigner()) return null;
+  sansProfondeurDeDesignation();
   const r = cadrePlan();
   return lisObjet(GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
+}
+/* La désignation de la bibliothèque tient, à côté de son tampon de couleurs,
+   un tampon de profondeur à seize octets par pixel, à la taille de l'écran
+   en pixels réels : il ne sert qu'à situer en altitude le point désigné
+   (« unproject3D »), ce que ni le plan ni l'administration ne demandent.
+   Créé au premier appui, il pesait autour de quarante mégaoctets sur un
+   téléphone dense, la moitié de toutes les textures relevées sur un Android
+   récent (`?perf`, FUNEXPO, 11 novembre 2026) — sur un appareil à 4 Go qui
+   perdait son contexte le même jour, la mémoire graphique qui manquait.
+
+   La bibliothèque ne le crée que si la carte graphique sait rendre ce
+   format, et fait sans lui ailleurs. Le temps de créer ses tampons, elle
+   apprend donc qu'elle ne le sait pas ; ensuite, elle ne fait plus que les
+   retailler. Un dessin remonté après une perte de contexte a une
+   désignation neuve, qui repasse par ici. Qui voudra un jour l'altitude du
+   point désigné devra retirer ceci. */
+function sansProfondeurDeDesignation(){
+  const p = GL.deck && GL.deck.deckPicker;
+  if (!p || p.__sansProfondeur || typeof p._resizeBuffer !== "function") return;
+  p.__sansProfondeur = true;
+  const avant = p._resizeBuffer;
+  /** @this {any} */
+  p._resizeBuffer = function(/** @type {any[]} */ ...a){
+    const d = this.device;
+    if (this.pickingFBO || !d || typeof d.isTextureFormatRenderable !== "function") return avant.apply(this, a);
+    const propre = Object.prototype.hasOwnProperty.call(d, "isTextureFormatRenderable"), sait = d.isTextureFormatRenderable;
+    d.isTextureFormatRenderable = (/** @type {string} */ f) => f !== "rgba32float" && sait.call(d, f);
+    try { return avant.apply(this, a); }
+    finally { if (propre) d.isTextureFormatRenderable = sait; else delete d.isTextureFormatRenderable; }
+  };
 }
 /* La bibliothèque ne sait désigner qu'une fois la carte graphique prête — son
    « onLoad », qui vient après coup — et plus du tout une fois défaite : entre
@@ -3548,6 +3603,7 @@ function peutDesigner(){ return !!(GL.deck && GL.deck.isInitialized); }
 /** La même question, la réponse relue sans attendre la carte graphique. */
 async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
   if (!peutDesigner()) return null;
+  sansProfondeurDeDesignation();
   const r = cadrePlan();
   return lisObjet(await GL.deck.pickObjectAsync({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
 }
