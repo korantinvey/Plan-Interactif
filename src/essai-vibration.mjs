@@ -12,6 +12,10 @@
    dire que le téléphone a mangé la demande (mode silencieux, retour tactile
    coupé, économiseur de batterie). Le Worker ne la sert qu'à une adresse de
    prévisualisation (`index.mjs` `enApercu`) : la production n'en a rien.
+
+   Elle sert aussi à régler la force : le web ne règle que des durées, et une
+   impulsion plus courte, ou hachée, se sent plus douce — ce que seul un doigt
+   sur un vrai téléphone peut trancher.
    ============================================================ */
 
 const PAGE = `<!doctype html>
@@ -21,6 +25,7 @@ const PAGE = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Essai de vibration</title>
 <style>
+  h2 { font-size: 17px; margin: 22px 0 4px; }
   body { font: 18px/1.4 system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
   button { font: inherit; display: block; width: 100%; margin: 10px 0; padding: 18px; border-radius: 12px; border: 1px solid #888; background: #f2f2f2; }
   #journal { white-space: pre-wrap; font: 14px/1.4 ui-monospace, monospace; background: #f6f6f6; padding: 10px; border-radius: 8px; }
@@ -28,12 +33,20 @@ const PAGE = `<!doctype html>
 </head>
 <body>
 <h1>Essai de vibration</h1>
-<p>Touchez chaque bouton, et notez ce que vous sentez.</p>
-<button data-ms="30">30 ms — le choix d'un stand</button>
+<p>Touchez chaque bouton, et notez ce que vous sentez. Une série chiffrée alterne vibration et pause, en millisecondes.</p>
+<h2>Le choix d'un stand, plus ou moins fort</h2>
+<button data-ms="30">30 ms — aujourd'hui</button>
+<button data-ms="25">25 ms</button>
+<button data-ms="20">20 ms</button>
+<button data-ms="15">15 ms</button>
+<button data-ms="10">10 ms</button>
+<h2>Hachée : une impulsion adoucie</h2>
+<button data-ms="8,12,8">8 · 12 · 8</button>
+<button data-ms="5,15,5,15,5">5 · 15 · 5 · 15 · 5</button>
+<button data-ms="4,16,4,16,4,16,4">4 · 16 · 4 · 16 · 4 · 16 · 4</button>
+<h2>Pour comparer</h2>
 <button data-ms="45">45 ms — une butée</button>
-<button data-ms="100">100 ms</button>
 <button data-ms="300">300 ms</button>
-<button data-ms="200,100,200,100,200">Trois impulsions</button>
 <div id="journal"></div>
 <script>
   const journal = document.getElementById("journal");
