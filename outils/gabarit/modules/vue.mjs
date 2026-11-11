@@ -30,7 +30,8 @@
 import { $ } from "./dom.mjs";
 import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, injecteAuWebgl }
   from "./webgl.mjs";
-import { recul, dessineFondCarte, DEBORD_VUE, vueLibre } from "./environs.mjs";
+import { recul, dessineFondCarte, vueLibre } from "./environs.mjs";
+import { DEBORD_VUE } from "./lot-fige.mjs";
 import { svg, vue, changeVue, cadrePlan, oublieCadre, redresse, incline } from "./vue-etat.mjs";
 import { cameraEnJeu, ecranVersPlat, CAMERA_CHANGEE } from "./camera.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
