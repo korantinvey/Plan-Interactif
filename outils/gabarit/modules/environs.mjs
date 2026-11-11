@@ -439,6 +439,8 @@ const _enDecodage = new Map();
 /** @type {Set<string>} */
 let _voulues = new Set();
 let _poseFige = 0;
+/** Le lot dont la sonde a déjà appris qu'il était chargé. */
+let _chargeeDite = "";
 
 /** Le calque des images, recalé sur l'étendue `e` ; faux s'il faut reposer. */
 function recaleFige(/** @type {HTMLElement} */ lot, /** @type {any} */ e){
@@ -510,7 +512,14 @@ function poseFige(/** @type {any} */ f, /** @type {any} */ e, /** @type {string}
       // toutes là : les images d'avant que la vue ne demande plus s'en vont
       for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children]))
         if (!_voulues.has(im.dataset.src || "")) im.remove();
-      if (premiere) CARTE_ENVIRONS.emet("chargee");
+      /* « Chargée » à la première pose qui aboutit, et non seulement si la
+         toute première aboutit : un zoom lancé avant qu'elle finisse la
+         dépassait, et la suivante, qui n'était plus « la première », se
+         taisait. La sonde gardait alors ouverte la fenêtre de la carte trente
+         secondes, et lui comptait tous les gels des gestes — 13,9 s sur
+         17,8 s pour un Redmi Note 9 Pro (FUNEXPO 2026, 11 novembre 2026), qui
+         n'était pas le fond. */
+      if (_chargeeDite !== f.adresse){ _chargeeDite = f.adresse; CARTE_ENVIRONS.emet("chargee"); }
     };
     for (const q of liste){
       const src = adresseFigee(f, q.k, q.i, q.j);

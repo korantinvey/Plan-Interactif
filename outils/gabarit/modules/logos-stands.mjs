@@ -48,6 +48,7 @@ import { VIGNETTES, VIGNETTES_ARRIVEES, adresseGrande } from "./vignettes.mjs";
 import { detoure } from "./detourage.mjs";
 import { creeEvenement } from "./evenement.mjs";
 import { ETROIT } from "./ecran.mjs";
+import { densiteRendu } from "./densite-rendu.mjs";
 import { placementLogo, PLACE_LIBELLES, PREFIXE_LOGO } from "./libelle-place.mjs";
 
 /** La classe que la racine porte quand l'option est prise. */
@@ -83,13 +84,14 @@ const LARGEUR_MAX = 12;
    mètres et demi à cent vingt pixels, que la vue de près étalait sur deux
    cents pixels d'écran dense — le logo paraissait flou au moment même où il
    prenait la place du nom. Elle vaut donc les pixels d'écran par mètre, densité
-   comprise, majorés pour les stands du premier plan, que la perspective
+   comprise — celle que la toile peint (`densite-rendu.mjs`), et non celle
+   de l'écran : plus fins que la toile, les logos ne seraient que du poids —, majorés pour les stands du premier plan, que la perspective
    grossit au-delà de ce que dit le zoom du centre. Elle avance par demi-crans,
    pour qu'un pincement ne refasse pas les toiles à chaque image. Jamais plus
    que ce que la vignette porte : l'agrandir n'inventerait aucun détail. */
 const PIXELS_PAR_METRE_MIN = 50, PIXELS_MIN = 96, PREMIER_PLAN = 1.5;
 const finesse = (/** @type {number} */ zoom) => {
-  const voulue = 2 ** zoom * Math.min(3, window.devicePixelRatio || 1) * PREMIER_PLAN;
+  const voulue = 2 ** zoom * Math.min(3, densiteRendu()) * PREMIER_PLAN;
   return Math.max(PIXELS_PAR_METRE_MIN, 2 ** (Math.ceil(Math.log2(voulue) * 2) / 2));
 };
 /* La largeur d'une toile, d'après ce que le logo occupe à l'écran à sa
@@ -1285,7 +1287,7 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
   couvert = autour(MARGE_VUE);
   const loin = autour(MARGE_PRECHARGE);
   if (!gele || !finesseCouverte) finesseCouverte = finesse(zoom);
-  const enVolume = cameraEnJeu(), tasse = tassement(), densite = Math.min(3, window.devicePixelRatio || 1);
+  const enVolume = cameraEnJeu(), tasse = tassement(), densite = Math.min(3, densiteRendu());
   // du centre de la vue vers ses bords : les grandes se demandent dans cet ordre
   const vx = v.x + v.w / 2, vy = v.y + v.h / 2;
   const autourDeLaVue = (p.stands || []).filter((/** @type {any} */ s) => s.vignette && s.c && dedans(loin, s.c))

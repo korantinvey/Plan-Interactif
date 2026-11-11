@@ -47,6 +47,7 @@ import { DATA, P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
 import { imageSure } from "./sur.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
+import { pixelsDuDessin } from "./densite-rendu.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
 
@@ -327,7 +328,7 @@ function chauffeAvantLesDonnees(){
   };
   try {
     CHAUFFE.deck = new deck.Deck({
-      parent: hote, controller: false, ...TOILE,
+      parent: hote, controller: false, ...TOILE, useDevicePixels: pixelsDuDessin(),
       views: new deck.OrthographicView({ id: "chauffe" }), viewState: { target: [0, 0, 0], zoom: 0 },
       layers: [],
       // une préparation qui échoue ne prive le plan de rien : il liera lui-même
@@ -389,6 +390,8 @@ export function monteWebgl(){
   GL.logosChauds = false; GL.chauffeLogos = false; GL.chauffeDemandee = false;
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
+    // plafonnée sur un téléphone modeste (`densite-rendu.mjs`)
+    useDevicePixels: pixelsDuDessin(),
     /* La compilation en tâche de fond, que la bibliothèque coupe d'office, ne
        s'ouvre que le temps de la chauffe ; le réglage est propre à cette carte
        graphique — celui de la bibliothèque, partagé, ne se touche pas. */
