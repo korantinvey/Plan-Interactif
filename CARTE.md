@@ -3444,7 +3444,7 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3630 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3662 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3488,9 +3488,9 @@ Fonctions :
 `lueurDe` 3367 · `opacitePhare` 3405 · `echellePhare` 3406 · `couchesPhareNoms` 3409
 `palierDefile` 3434 · `periodeDe` 3439 · `phaseDe` 3441 · `instant` 3451
 `animeCouche` 3452 · `majAnimationWebgl` 3477 · `animeWebgl` 3485 · `reanime` 3522
-`logosSurLesToits` 3531 · `objetSous` 3561 · `peutDesigner` 3571 · `objetSousDiffere` 3573
-`viseEnAvance` 3588 · `lisObjet` 3596 · `cibleWebgl` 3601 · `priseWebgl` 3611
-`libelleSousWebgl` 3616 · `rectEcranWebgl` 3621
+`logosSurLesToits` 3531 · `objetSous` 3561 · `sansProfondeurDeDesignation` 3582
+`peutDesigner` 3602 · `objetSousDiffere` 3604 · `viseEnAvance` 3620 · `lisObjet` 3628
+`cibleWebgl` 3633 · `priseWebgl` 3643 · `libelleSousWebgl` 3648 · `rectEcranWebgl` 3653
 
 Importe :
 

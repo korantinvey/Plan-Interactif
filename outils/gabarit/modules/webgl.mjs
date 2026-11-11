@@ -3560,8 +3560,39 @@ function logosSurLesToits(/** @type {any} */ c){
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
   if (!peutDesigner()) return null;
+  sansProfondeurDeDesignation();
   const r = cadrePlan();
   return lisObjet(GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
+}
+/* La désignation de la bibliothèque tient, à côté de son tampon de couleurs,
+   un tampon de profondeur à seize octets par pixel, à la taille de l'écran
+   en pixels réels : il ne sert qu'à situer en altitude le point désigné
+   (« unproject3D »), ce que ni le plan ni l'administration ne demandent.
+   Créé au premier appui, il pesait autour de quarante mégaoctets sur un
+   téléphone dense, la moitié de toutes les textures relevées sur un Android
+   récent (`?perf`, FUNEXPO, 11 novembre 2026) — sur un appareil à 4 Go qui
+   perdait son contexte le même jour, la mémoire graphique qui manquait.
+
+   La bibliothèque ne le crée que si la carte graphique sait rendre ce
+   format, et fait sans lui ailleurs. Le temps de créer ses tampons, elle
+   apprend donc qu'elle ne le sait pas ; ensuite, elle ne fait plus que les
+   retailler. Un dessin remonté après une perte de contexte a une
+   désignation neuve, qui repasse par ici. Qui voudra un jour l'altitude du
+   point désigné devra retirer ceci. */
+function sansProfondeurDeDesignation(){
+  const p = GL.deck && GL.deck.deckPicker;
+  if (!p || p.__sansProfondeur || typeof p._resizeBuffer !== "function") return;
+  p.__sansProfondeur = true;
+  const avant = p._resizeBuffer;
+  /** @this {any} */
+  p._resizeBuffer = function(/** @type {any[]} */ ...a){
+    const d = this.device;
+    if (this.pickingFBO || !d || typeof d.isTextureFormatRenderable !== "function") return avant.apply(this, a);
+    const propre = Object.prototype.hasOwnProperty.call(d, "isTextureFormatRenderable"), sait = d.isTextureFormatRenderable;
+    d.isTextureFormatRenderable = (/** @type {string} */ f) => f !== "rgba32float" && sait.call(d, f);
+    try { return avant.apply(this, a); }
+    finally { if (propre) d.isTextureFormatRenderable = sait; else delete d.isTextureFormatRenderable; }
+  };
 }
 /* La bibliothèque ne sait désigner qu'une fois la carte graphique prête — son
    « onLoad », qui vient après coup — et plus du tout une fois défaite : entre
@@ -3572,6 +3603,7 @@ function peutDesigner(){ return !!(GL.deck && GL.deck.isInitialized); }
 /** La même question, la réponse relue sans attendre la carte graphique. */
 async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
   if (!peutDesigner()) return null;
+  sansProfondeurDeDesignation();
   const r = cadrePlan();
   return lisObjet(await GL.deck.pickObjectAsync({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
 }
