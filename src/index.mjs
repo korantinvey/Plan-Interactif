@@ -35,6 +35,7 @@
    (voir `outils/genere.js`). */
 import { VERSION_DES_PAGES, PROJET, APERCU, SURETE } from "./pages.mjs";
 import { lisCarte, source } from "./carte.mjs";
+import { essaiVibration } from "./essai-vibration.mjs";
 
 /* Le projet vient de la construction (`outils/projet.js`), seul endroit qui
    l'écrit : la production, ou la recette pour une prévisualisation. */
@@ -1190,6 +1191,10 @@ async function aiguille(requete, env, ctx) {
   /* Et l'icône que ce manifeste désigne : elle n'est pas un fichier de
      `web/` mais une colonne de la base, déposée salon par salon. */
   if (url.pathname === "/api/icone") return iconeApp(url);
+  /* Une page de diagnostic de la vibration, à une vraie adresse : Chrome ne
+     vibre ni dans une adresse `data:` ni dans un cadre d'une autre origine.
+     Prévisualisation seulement — la production n'en a rien. */
+  if (url.pathname === "/essai-vibration" && enApercu(url)) return essaiVibration();
   /* L'adresse propre à un salon, celle que son application ouvre. Elle ne
      nomme aucun fichier : c'est la page du plan qui s'y rend. */
   if (CHEMIN_SALON.test(url.pathname)) return pageDuSalon(requete, env);

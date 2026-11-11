@@ -3696,8 +3696,8 @@ Injections :
 
 ## Le reste
 
-- `src/index.mjs` — 1318 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 213 `versionGardee` 216 · `rangeLaVersion` 220 · `ditVersion` 234 · `meta` 243 · `gardable` 259 `range` 265 · `rangeLePlan` 274 · `rafraichit` 290 · `entete` 319 · `oublie` 381 `rappels` 478 · `cleApp` 523 · `cheminDuSalon` 554 · `pageDuSalon` 571 · `appDuSalon` 595 `iconesDuSalon` 641 · `manifeste` 681 · `iconeApp` 771 · `mesure` 815 · `carteDuScript` 904 `lieuDe` 917 · `erreur` 931 · `texteDuScript` 983 · `geleResolu` 996 · `sonde` 1043 `planDeVisite` 1092 · `chargePrevue` 1131 · `surete` 1167 · `aiguille` 1185
+- `src/index.mjs` — 1323 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `enApercu` 72 · `cacheDe` 82 · `ecritEnProduction` 89 · `ecartee` 92 · `dit` 153 `amontPour` 162 · `cleDe` 170 · `cleDeLot` 176 · `condense` 183 · `cleVersion` 214 `versionGardee` 217 · `rangeLaVersion` 221 · `ditVersion` 235 · `meta` 244 · `gardable` 260 `range` 266 · `rangeLePlan` 275 · `rafraichit` 291 · `entete` 320 · `oublie` 382 `rappels` 479 · `cleApp` 524 · `cheminDuSalon` 555 · `pageDuSalon` 572 · `appDuSalon` 596 `iconesDuSalon` 642 · `manifeste` 682 · `iconeApp` 772 · `mesure` 816 · `carteDuScript` 905 `lieuDe` 918 · `erreur` 932 · `texteDuScript` 984 · `geleResolu` 997 · `sonde` 1044 `planDeVisite` 1093 · `chargePrevue` 1132 · `surete` 1168 · `aiguille` 1186
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
