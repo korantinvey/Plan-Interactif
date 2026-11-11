@@ -37,9 +37,8 @@ module.exports = {
   "Le réglage se fait ensuite sur le plan lui-même, dans une palette posée à côté : on cale en regardant la carte glisser sous le pavillon, et cette fenêtre-ci serait devant.":
     "Adjusting is then done on the floor plan itself, in a palette set beside it: you align by watching the base map slide under the hall, and this window would be in the way.",
   "Coordonnées du centre du salon": "Coordinates of the centre of the show",
-  "Sur n'importe quelle carte, clic droit au milieu du bâtiment puis « copier les coordonnées ». À peu près suffit : l'accrochage au bâtiment fait le reste. À l'enregistrement du calage, le fond est photographié et figé : les visiteurs le reçoivent en images, sans moteur de carte ni tuiles à charger. La page à données figées, qui n'appelle rien au dehors, n'en affichera pas.":
-    "On any map, right-click in the middle of the building then “copy the coordinates”. Roughly is enough: snapping to the building does the rest. When the alignment is saved, the base map is captured and frozen: visitors receive it as images, with no map engine and no tiles to load. The frozen-data page, which calls nothing outside, will show none.",
-  "Figer le fond de nouveau": "Freeze the base map again",
+  "Sur n'importe quelle carte, clic droit au milieu du bâtiment puis « copier les coordonnées ». À peu près suffit : l'accrochage au bâtiment fait le reste. Les tuiles sont chargées pendant la visite et gardées par le navigateur une fois vues ; la page à données figées, qui n'appelle rien au dehors, n'en affichera pas.":
+    "On any map, right-click in the middle of the building then “copy the coordinates”. Roughly is enough: snapping to the building does the rest. Tiles are loaded during the visit and kept by the browser once seen; the frozen-data page, which calls nothing outside, will show none.",
   "Situer le salon": "Locate the show",
   "Régler sur le plan": "Adjust on the floor plan",
   "Retirer la carte": "Remove the base map",
@@ -61,13 +60,6 @@ module.exports = {
   "Retrait…": "Removing…",
   "La carte est retirée.": "The base map has been removed.",
   "Échec : {raison}": "Failed: {raison}",
-
-  // le fond figé, après l'enregistrement
-  "Les visiteurs voient la carte, déjà figée.": "Visitors can see the base map, already frozen.",
-  "Fond figé : {n} images. Les visiteurs le reçoivent tel quel.":
-    "Base map frozen: {n} images. Visitors receive it as is.",
-  "Le calage a bougé pendant la photographie : enregistrez-le de nouveau pour figer le fond.":
-    "The alignment moved during the capture: save it again to freeze the base map.",
 
   // ce qui empêche de caler
   "OpenStreetMap est injoignable depuis ce poste.":
