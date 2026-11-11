@@ -117,6 +117,14 @@ const FONDS_DE_CARTE = new Set([
  * La tuile d'un fond IGN ne se reconnaît pas au chemin : le service est un WMTS,
  * et sa case voyage dans les paramètres.
  */
+/* Le fond figé, rangé dans le seau public « environs » du projet Supabase
+   (voir `modules/lot-fige.mjs`). Son adresse porte son lot, son niveau et sa
+   case : elle ne change jamais de contenu, et se garde comme une tuile. Par
+   le chemin, et non par l'origine : le même projet sert la base, dont rien
+   ne doit se garder ici. L'adresse du projet est versée par la construction
+   (`outils/genere.js`). */
+const LOT_FIGE = "__URL_PROJET__/storage/v1/object/public/environs/";
+
 const TUILE_XYZ = /\/\d+\/\d+\/\d+(\.\w+)?$/;
 const GLYPHES = /\/glyphs\/[^/]+\/\d+-\d+\.pbf$/;
 const estUneTuile = (u) =>
@@ -494,6 +502,10 @@ self.addEventListener("fetch", (e) => {
   /* Le fond de carte, seule autre origine que ce service connaisse. Sans lui,
      le pavillon flottait sur du vide dès que le réseau manquait — le plan
      tenait, son décor non. */
+  if (adresse.href.startsWith(LOT_FIGE)) {
+    e.respondWith(tuileDeCarte(e, requete));
+    return;
+  }
   if (FONDS_DE_CARTE.has(adresse.origin)) {
     e.respondWith(estUneTuile(adresse)
       ? tuileDeCarte(e, requete)
