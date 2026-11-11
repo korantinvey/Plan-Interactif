@@ -1038,41 +1038,6 @@ function range(/** @type {Planche} */ pl, /** @type {HTMLCanvasElement[]} */ vou
 }
 
 /**
- * Les logos que la planche d'avant tenait sans que la vue les demande, repris
- * dans la neuve tant qu'il y reste de la place — du plus récemment vu au plus
- * ancien, d'une carte graphique à elle-même, sans rien renvoyer.
- *
- * Refaite, plus grande ou rangée à neuf, la planche ne recopiait que les
- * logos de la vue : tous ceux qu'on venait de quitter partaient avec
- * l'ancienne, alors que la neuve avait la place de les tenir, et le zoom
- * suivant les renvoyait un à un. Sur FUNEXPO 2026, les deux relevés où la
- * planche avait grandi deux fois renvoyaient tel quel près d'un logo sur
- * trois, pour six recopiés ; celui où elle n'avait grandi qu'une fois, aucun
- * (`?perf`, téléphone, 11 novembre 2026). Rien n'est cédé pour eux : ils ne
- * prennent que la place libre, et cèdent les premiers ensuite, étant les
- * moins récemment vus.
- */
-function reprendLesAutres(/** @type {Planche} */ pl, /** @type {{ pl: Planche, fb: any } | null} */ source){
-  if (!source) return;
-  const autres = [...source.pl.cases].filter(([k]) => !pl.cases.has(k)).sort((a, b) => b[1].vu - a[1].vu);
-  let repris = false;
-  for (const [k, v] of autres){
-    const c = place(pl, v.w, v.h);
-    // pas de place pour celui-ci : un plus petit tiendra peut-être
-    if (!c) continue;
-    if (!recopie(pl, c, source, v, v.w, v.h)){ libere(pl, c); break; }
-    pl.cases.set(k, { ...c, vu: v.vu });
-    repris = true;
-  }
-  if (repris){
-    // les niveaux réduits des cases reprises, sans quoi elles s'effacent de loin
-    const t0 = performance.now();
-    pl.tex.generateMipmapsWebGL(); COMPTES_LOGOS.niveauxReduits++;
-    COMPTES_LOGOS.msNiveaux += performance.now() - t0;
-  }
-}
-
-/**
  * La planche gardée, chaque toile voulue rangée dedans. Pleine même vidée,
  * elle se refait — rangée à neuf, puis plus grande — et tout se renvoie : le
  * seul cas où la pose coûte ce qu'elle coûtait toujours. Rien quand la carte
@@ -1109,7 +1074,7 @@ function plancheGardee(/** @type {any} */ appareil, /** @type {HTMLCanvasElement
     if (!pl) break;
     if (rang === avant.rang) COMPTES_LOGOS.rangements++;
     else COMPTES_LOGOS.agrandissements++;
-    if (range(pl, voulues, source)){ reprendLesAutres(pl, source); fin = pl; break; }
+    if (range(pl, voulues, source)){ fin = pl; break; }
     try { pl.tex.destroy(); } catch (e) { /* perdu */ }
   }
   if (source) try { source.fb.destroy(); } catch (e) { /* perdu */ }
