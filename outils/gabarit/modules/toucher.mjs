@@ -24,7 +24,7 @@
    dose. Dix millisecondes ne se sentaient pas sur un vrai téléphone Android
    — le moteur n'a pas le temps de démarrer —, et trente se sentaient trop
    fort au choix d'un stand, qu'on fait sans cesse ; vingt, essayées au doigt
-   parmi d'autres (`src/essai-vibration.mjs`), se sentent sans appuyer. La
+   parmi d'autres durées sur un vrai téléphone, se sentent sans appuyer. La
    butée reste plus marquée : elle dit que le plan ne suivra plus la main,
    pas qu'il a pris quelque chose. */
 export const PRISE = 20, BUTEE = 45;
