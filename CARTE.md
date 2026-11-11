@@ -1061,7 +1061,7 @@ Importé par :
 
 bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1292 l. → plan, plan-admin
+### `modules/environs.mjs` — 1325 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1070,14 +1070,14 @@ Fonctions :
 `poseCalageEnCours` 56 · `styleSobre` 129 · `forceCarte` 223 · `vueLibre` 230
 `calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
 `bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
-`figeCourant` 398 · `figeAJour` 407 · `recaleFige` 436 · `videFige` 449 · `poseFige` 457
-`chargeMapLibre` 577 · `vueGL` 609 · `vueGLValable` 632 · `styleDuFond` 648
-`styleDeLaCarte` 655 · `guetteLaCarte` 682 · `recaleCarteGL` 716 · `redessineCarteGL` 736
-`poseCarteGL` 766 · `diagnostiqueGL` 890 · `relanceCarteGL` 910 · `retireCarteGL` 924
-`guetteRetourGL` 951 · `carteGLPerdue` 958 · `verifieCarteGL` 968 · `videCarteGL` 986
-`inclineFond` 1020 · `dessineFondCarte` 1069 · `cleMasqueCarte` 1203 · `masqueCarte` 1204
-`formesMasquantes` 1213 · `contourDuHall` 1235 · `cheminDuHall` 1242
-`poseMasqueCarte` 1260 · `ditCarte` 1275 · `refaitFondCarte` 1285
+`figeCourant` 398 · `figeAJour` 407 · `recaleFige` 444 · `videFige` 457 · `poseFige` 466
+`placeFigee` 558 · `chargeMapLibre` 610 · `vueGL` 642 · `vueGLValable` 665
+`styleDuFond` 681 · `styleDeLaCarte` 688 · `guetteLaCarte` 715 · `recaleCarteGL` 749
+`redessineCarteGL` 769 · `poseCarteGL` 799 · `diagnostiqueGL` 923 · `relanceCarteGL` 943
+`retireCarteGL` 957 · `guetteRetourGL` 984 · `carteGLPerdue` 991 · `verifieCarteGL` 1001
+`videCarteGL` 1019 · `inclineFond` 1053 · `dessineFondCarte` 1102 · `cleMasqueCarte` 1236
+`masqueCarte` 1237 · `formesMasquantes` 1246 · `contourDuHall` 1268 · `cheminDuHall` 1275
+`poseMasqueCarte` 1293 · `ditCarte` 1308 · `refaitFondCarte` 1318
 
 Importe :
 
@@ -1763,7 +1763,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1380 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1415 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1778,10 +1778,10 @@ Fonctions :
 `CARRE` 595 · `filtrage` 628 · `plancheDe` 645 · `extensionPlanche` 681 · `bilanLogos` 792
 `rendPlanche` 811 · `taillesDe` 823 · `rangPour` 832 · `nouvellePlanche` 841 · `vaA` 859
 `videE` 860 · `place` 865 · `libere` 904 · `liberable` 926 · `envoie` 936
-`cedeLaPlace` 958 · `recopie` 989 · `range` 1004 · `plancheGardee` 1047
-`oubliePlancheBientot` 1092 · `pres` 1104 · `solVu` 1115 · `logosARevoir` 1132
-`groupe` 1148 · `oublie` 1159 · `annoncePoses` 1195 · `matriceDuToit` 1217
-`coucheDeChauffe` 1233 · `couchesLogos` 1243 · `poseLogos` 1264
+`cedeLaPlace` 958 · `recopie` 989 · `range` 1004 · `reprendLesAutres` 1055
+`plancheGardee` 1082 · `oubliePlancheBientot` 1127 · `pres` 1139 · `solVu` 1150
+`logosARevoir` 1167 · `groupe` 1183 · `oublie` 1194 · `annoncePoses` 1230
+`matriceDuToit` 1252 · `coucheDeChauffe` 1268 · `couchesLogos` 1278 · `poseLogos` 1299
 
 Importe :
 
