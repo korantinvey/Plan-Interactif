@@ -2,6 +2,7 @@
    La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { suisLeCadre } from "./cadre-visible.mjs";
 import { creeEvenement } from "./evenement.mjs";
 /* L'habillage du modèle retenu (`habilleModale`), que la fenêtre reprend à
    chaque ouverture. */
@@ -52,41 +53,22 @@ export const poseApresFermeture = (f) => { apresFermeture = f; };
 
 /* La part du cadre que le visiteur voit.
  *
- * Intégré dans le site d'un salon, le plan vit dans un cadre (`iframe`) plus
- * haut que ce qui en paraît : souvent 80 % de l'écran, posé sous un titre, et
- * dont le bas tombe sous le bord du téléphone. La fenêtre, posée au bas du
- * cadre sur écran étroit, s'y ouvrait à moitié hors de vue — l'invitation à la
- * visite guidée n'en montrait que le titre et deux lignes, sans ses boutons.
- *
- * Le cadre ne sait pas où le site l'a posé, ni lire le défilement d'une page
- * d'une autre origine. Mais un `IntersectionObserver` sans racine mesure,
- * même là, ce qui d'un élément tient dans l'écran de la page qui l'accueille :
- * un témoin collé aux bords du cadre donne donc la bande visible, et la
- * fenêtre s'y range — en bas de ce qu'on voit, et non du cadre. Les seuils, un
- * par centième, la font suivre quand le visiteur fait défiler le site.
- *
- * Trop peu visible pour y tenir — le cadre à peine entré dans l'écran —, elle
- * reprend le cadre entier : la tasser dans un liseré la rendrait illisible
- * aussi, et le visiteur qui descend vers le plan l'y trouvera. Hors d'un cadre,
- * rien de tout cela ne se pose. */
-const INTEGRE = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();
-let guet = null;
+ * Intégré dans le site d'un salon, le cadre est souvent plus haut que ce qui
+ * en paraît (`cadre-visible.mjs`). La fenêtre, posée au bas du cadre sur écran
+ * étroit, s'y ouvrait à moitié hors de vue — l'invitation à la visite guidée
+ * n'en montrait que le titre et deux lignes, sans ses boutons. Elle se range
+ * donc dans la bande visible, et reprend le cadre entier quand il n'y en a
+ * pas. Hors d'un cadre, rien de tout cela ne se pose. */
+let suivie = false;
 function suisLaPartVisible(){
-  if (!INTEGRE || guet || typeof IntersectionObserver !== "function") return;
-  const temoin = document.createElement("div");
-  temoin.style.cssText = "position:fixed;inset:0;pointer-events:none;opacity:0";
-  temoin.setAttribute("aria-hidden", "true");
-  document.body.appendChild(temoin);
-  const seuils = Array.from({ length: 101 }, (_, i) => i / 100);
-  guet = new IntersectionObserver(entrees => {
-    const e = entrees[entrees.length - 1];
-    const r = e.intersectionRect;
+  if (suivie) return;
+  suivie = true;
+  suisLeCadre(p => {
     const m = $("modale");
-    if (!e.isIntersecting || r.height < 200) { m.style.top = m.style.bottom = ""; return; }
-    m.style.top = Math.max(0, Math.round(r.top)) + "px";
-    m.style.bottom = Math.max(0, Math.round(innerHeight - r.bottom)) + "px";
-  }, { threshold: seuils });
-  guet.observe(temoin);
+    if (!m) return;
+    m.style.top = p ? p.haut + "px" : "";
+    m.style.bottom = p ? p.bas + "px" : "";
+  });
 }
 
 /**
