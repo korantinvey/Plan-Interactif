@@ -130,13 +130,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
 
-### `_sw.js` — 568 l.
+### `_sw.js` — 580 l.
 
 Fonctions :
 
-`estUneTuile` 122 · `range` 148 · `oublieLesVersionsDAvant` 174 · `dabordCache` 195
-`borneLesLots` 231 · `borneLesTuiles` 269 · `demandeTiers` 324 · `commePosee` 332
-`tuileDeCarte` 349 · `fondDeCarte` 385 · `dabordReseau` 412 · `navigation` 429
+`estUneTuile` 130 · `range` 156 · `oublieLesVersionsDAvant` 182 · `dabordCache` 203
+`borneLesLots` 239 · `borneLesTuiles` 277 · `demandeTiers` 332 · `commePosee` 340
+`tuileDeCarte` 357 · `fondDeCarte` 393 · `dabordReseau` 420 · `navigation` 437
 
 ### `modules/abords-salles.mjs` — 244 l. → plan, plan-admin
 
@@ -469,26 +469,27 @@ Importé par :
 
 affiche-ici · demarrage · gestes · ici · lancement
 
-### `modules/calage-carte.mjs` — 823 l. → plan-admin
+### `modules/calage-carte.mjs` — 887 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
 Fonctions :
 
-`emprisePavillon` 66 · `centrePavillon` 81 · `basculeMasqueCarte` 86
-`boutonMasqueCarte` 97 · `pictoMasque` 108 · `carreDeTerrain` 135 · `chercheBatiments` 151
-`empriseDesObjets` 179 · `batimentsCandidats` 197 · `caleSurBatiment` 218
-`retientLeHall` 244 · `manqueCalage` 266 · `enregistreCalage` 275 · `calageEnregistre` 292
-`oublieCalageEnCours` 313 · `litCoordonnees` 325 · `rafraichitCarte` 339 · `armeCalage` 378
-`pivotCalage` 389 · `glisseCarte` 393 · `cartePointerDown` 400 · `cartePointerMove` 414
-`cartePointerUp` 433 · `ditCalage` 441 · `majCalage` 450 · `appliqueCalage` 472
-`tourneCalage` 479 · `construitCalage` 485 · `ouvreCalage` 650 · `fermeCalage` 660
-`brancheCalageCarte` 672 · `voletEnvirons` 694
+`emprisePavillon` 68 · `centrePavillon` 83 · `basculeMasqueCarte` 88
+`boutonMasqueCarte` 99 · `pictoMasque` 110 · `carreDeTerrain` 137 · `chercheBatiments` 153
+`empriseDesObjets` 181 · `batimentsCandidats` 199 · `caleSurBatiment` 220
+`retientLeHall` 246 · `manqueCalage` 268 · `enregistreCalage` 277 · `figeEtEnregistre` 299
+`calageEnregistre` 327 · `oublieCalageEnCours` 348 · `litCoordonnees` 360
+`rafraichitCarte` 374 · `armeCalage` 413 · `pivotCalage` 424 · `glisseCarte` 428
+`cartePointerDown` 435 · `cartePointerMove` 449 · `cartePointerUp` 468 · `ditCalage` 476
+`majCalage` 485 · `appliqueCalage` 507 · `tourneCalage` 514 · `construitCalage` 520
+`ouvreCalage` 685 · `fermeCalage` 695 · `brancheCalageCarte` 707 · `voletEnvirons` 730
 
 Importe :
 
-configuration · dom · donnees · enregistrement · environs · fenetre · geste-tenu · gestes
-itineraire · mode-admin · ordre-trace · rendu · session · terre · vue
+configuration · dom · donnees · enregistrement · environs · fenetre · fige-carte
+geste-tenu · gestes · itineraire · lot-fige · mode-admin · ordre-trace · rendu · session
+terre · vue
 
 Importé par :
 
@@ -908,13 +909,13 @@ abords-salles · affiche-ici · aimants · ambiance · apercus · apparence · a
 application · bande-admin · batiments · borne · calage-carte · calques-dessin
 cartouche-poi · chaleur · charge-annoncee · configuration · corps-fiche · demarrage · dessin
 distinctions · edition · emplacements · enregistrement · environs · fiche · fiche-zone
-filtre · gestes · ici · index-salon · installation · journee · libelles · logos-stands
-mesure · mini-carte · nappe · noms-zones · ordre-trace · outil-dessin · parcours
-parcours-recu · partage · pile · placement-libelles · points-interet · rappels · recherche
-reglage-application · reglage-fiche · reglage-recherche · reglage-suggestion · reglages
-releve · rendu · reprise-emplacements · secteurs · sejour · seuil · sonde · sponsor
-suggestion · tiroir-itineraire · tiroir-parcours · tout-au-parcours · trace-itineraire
-trajet · tutoriel · volets · vous-etes-ici · webgl
+fige-carte · filtre · gestes · ici · index-salon · installation · journee · libelles
+logos-stands · mesure · mini-carte · nappe · noms-zones · ordre-trace · outil-dessin
+parcours · parcours-recu · partage · pile · placement-libelles · points-interet · rappels
+recherche · reglage-application · reglage-fiche · reglage-recherche · reglage-suggestion
+reglages · releve · rendu · reprise-emplacements · secteurs · sejour · seuil · sonde
+sponsor · suggestion · tiroir-itineraire · tiroir-parcours · tout-au-parcours
+trace-itineraire · trajet · tutoriel · volets · vous-etes-ici · webgl
 
 ### `modules/duplication.mjs` — 43 l. → console
 
@@ -1058,33 +1059,33 @@ mode-admin · nappe · ordre-trace · salon · secteurs · session
 
 Importé par :
 
-bande-admin · calage-carte · plan-admin · reglage-application · socle-dessin
+bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1127 l. → plan, plan-admin
+### `modules/environs.mjs` — 1203 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
-`poseCalageEnCours` 55 · `styleSobre` 128 · `forceCarte` 222 · `vueLibre` 246
-`calagePose` 256 · `calageCourant` 268 · `fondCourant` 271 · `recul` 276 · `zoneDuFond` 294
-`bornesDuFond` 311 · `borneLeStyle` 325 · `adresseTuile` 337 · `tuilesDeLaVue` 347
-`chargeMapLibre` 433 · `vueGL` 465 · `vueGLValable` 488 · `styleDuFond` 504
-`guetteLaCarte` 532 · `recaleCarteGL` 566 · `redessineCarteGL` 586 · `poseCarteGL` 616
-`diagnostiqueGL` 740 · `relanceCarteGL` 760 · `retireCarteGL` 774 · `guetteRetourGL` 801
-`carteGLPerdue` 808 · `verifieCarteGL` 818 · `videCarteGL` 836 · `inclineFond` 870
-`dessineFondCarte` 918 · `cleMasqueCarte` 1038 · `masqueCarte` 1039
-`formesMasquantes` 1048 · `contourDuHall` 1070 · `cheminDuHall` 1077
-`poseMasqueCarte` 1095 · `ditCarte` 1110 · `refaitFondCarte` 1120
+`poseCalageEnCours` 56 · `styleSobre` 129 · `forceCarte` 223 · `vueLibre` 230
+`calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
+`bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
+`figeCourant` 397 · `figeAJour` 406 · `poseFige` 411 · `chargeMapLibre` 495 · `vueGL` 527
+`vueGLValable` 550 · `styleDuFond` 566 · `styleDeLaCarte` 573 · `guetteLaCarte` 600
+`recaleCarteGL` 634 · `redessineCarteGL` 654 · `poseCarteGL` 684 · `diagnostiqueGL` 808
+`relanceCarteGL` 828 · `retireCarteGL` 842 · `guetteRetourGL` 869 · `carteGLPerdue` 876
+`verifieCarteGL` 886 · `videCarteGL` 904 · `inclineFond` 938 · `dessineFondCarte` 986
+`cleMasqueCarte` 1114 · `masqueCarte` 1115 · `formesMasquantes` 1124 · `contourDuHall` 1146
+`cheminDuHall` 1153 · `poseMasqueCarte` 1171 · `ditCarte` 1186 · `refaitFondCarte` 1196
 
 Importe :
 
 affichage · calques-dessin · camera · chemin-forme · configuration · dom · donnees
-evenement · terre · texte · vue-etat
+evenement · lot-fige · terre · texte · vue-etat
 
 Importé par :
 
-calage-carte · dessin · gestes · sonde · vue
+calage-carte · dessin · fige-carte · gestes · sonde · vue
 
 ### `modules/erreurs.mjs` — 142 l. → plan, plan-admin
 
@@ -1309,6 +1310,23 @@ tiroir-parcours · tutoriel
 Injections :
 
 - `injecteALaFiche` (partition) — la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration
+
+### `modules/fige-carte.mjs` — 255 l. → plan-admin
+
+- l.1 · 16 ter. Les environs — le fond figé, photographié par l'exploitant
+
+Fonctions :
+
+`toileMax` 45 · `styleEnImages` 61 · `auRepos` 71 · `decoupe` 81 · `contenu` 93
+`retireLesLots` 115 · `figeLeFond` 138 · `ditLot` 242
+
+Importe :
+
+donnees · enregistrement · environs · lot-fige · session
+
+Importé par :
+
+calage-carte
 
 ### `modules/figurants.mjs` — 481 l. → plan, plan-admin
 
@@ -1772,6 +1790,19 @@ vue-etat
 Importé par :
 
 ambiance · libelles · plan · releve · sonde · webgl
+
+### `modules/lot-fige.mjs` — 154 l. → plan, plan-admin
+
+- l.1 · Le lot du fond figé — la règle, sans la page
+
+Fonctions :
+
+`carreDuFond` 48 · `sourceDuFige` 68 · `imagesFigees` 83 · `niveauxDuLot` 117
+`blocsDeCapture` 132
+
+Importé par :
+
+calage-carte · environs · fige-carte · vue
 
 ### `modules/marque.mjs` — 335 l. → plan, plan-admin, console
 
@@ -2848,19 +2879,19 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 147 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 164 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
 Fonctions :
 
 `accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
-`initialesDe` 142
+`stockage` 102 · `appelle` 106 · `initialesDe` 159
 
 Importé par :
 
-acces-admin · calage-carte · chaleur · enregistrement · fiche-zone · mot-de-passe
-reglage-application · reglage-suggestion · socle-console
+acces-admin · calage-carte · chaleur · enregistrement · fiche-zone · fige-carte
+mot-de-passe · reglage-application · reglage-suggestion · socle-console
 
 ### `modules/seuil.mjs` — 179 l. → plan, plan-admin
 
@@ -2916,7 +2947,7 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1224 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1226 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
@@ -2930,12 +2961,12 @@ Fonctions :
 `guetteCompilation` 475 · `imageDOuverture` 493 · `decoupe` 516 · `gel` 526
 `doitBattre` 579 · `bat` 588 · `battu` 595 · `ecouteBattement` 614 · `dansLaCarte` 657
 `gelPendantLaCarte` 663 · `etapeDeLaCarte` 669 · `laCarteDesEnvirons` 699
-`ecouteNavigateur` 713 · `memoire` 751 · `contexteDuPlan` 764 · `lisAppareil` 776
-`handicapDeclare` 812 · `finDesDonnees` 826 · `appelsEnEchec` 848 · `leChargement` 870
-`fluidite` 899 · `laCarte` 908 · `resumeSonde` 931 · `leBattement` 964 · `octets` 970
-`coupe` 973 · `tronque` 984 · `fraiche` 1018 · `litLaFile` 1021 · `ecritLaFile` 1029
-`retire` 1041 · `corps` 1044 · `versionDesPages` 1052 · `envoieUne` 1063 · `pousse` 1089
-`actif` 1114 · `envoie` 1118 · `brancheSonde` 1143 · `demarre` 1156
+`ecouteNavigateur` 715 · `memoire` 753 · `contexteDuPlan` 766 · `lisAppareil` 778
+`handicapDeclare` 814 · `finDesDonnees` 828 · `appelsEnEchec` 850 · `leChargement` 872
+`fluidite` 901 · `laCarte` 910 · `resumeSonde` 933 · `leBattement` 966 · `octets` 972
+`coupe` 975 · `tronque` 986 · `fraiche` 1020 · `litLaFile` 1023 · `ecritLaFile` 1031
+`retire` 1043 · `corps` 1046 · `versionDesPages` 1054 · `envoieUne` 1065 · `pousse` 1091
+`actif` 1116 · `envoie` 1120 · `brancheSonde` 1145 · `demarre` 1158
 
 Importe :
 
@@ -3411,26 +3442,26 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 729 l. → plan, plan-admin
+### `modules/vue.mjs` — 730 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
-- l.84 · 6. Vue
+- l.85 · 6. Vue
 
 Fonctions :
 
-`injecteALaVue` 69 · `enEdition` 75 · `libelles` 76 · `poseEmprise` 82 · `figeTextes` 106
-`rendTextes` 114 · `cadrage` 153 · `peintLibelles` 158 · `repeintLibelles` 166
-`detacheLibelles` 170 · `rattacheLibelles` 182 · `etireLibelles` 200
-`poseFacteurTrait` 215 · `suitLaVue` 231 · `versScene` 240 · `retiensVue` 259
-`appliqueVue` 269 · `libellesDeLaVue` 343 · `rafraichitVue` 351 · `poseVue` 365
-`mesureBarre` 394 · `masqueHaut` 422 · `masque` 429 · `masqueDroite` 466 · `fit` 477
-`recadreIncline` 506 · `stoppeZoom` 548 · `glisseVersVise` 566 · `glisseVers` 619
-`rectVisee` 646 · `zoom` 666 · `echelle` 684 · `versPlan` 696 · `brancheVue` 708
+`injecteALaVue` 70 · `enEdition` 76 · `libelles` 77 · `poseEmprise` 83 · `figeTextes` 107
+`rendTextes` 115 · `cadrage` 154 · `peintLibelles` 159 · `repeintLibelles` 167
+`detacheLibelles` 171 · `rattacheLibelles` 183 · `etireLibelles` 201
+`poseFacteurTrait` 216 · `suitLaVue` 232 · `versScene` 241 · `retiensVue` 260
+`appliqueVue` 270 · `libellesDeLaVue` 344 · `rafraichitVue` 352 · `poseVue` 366
+`mesureBarre` 395 · `masqueHaut` 423 · `masque` 430 · `masqueDroite` 467 · `fit` 478
+`recadreIncline` 507 · `stoppeZoom` 549 · `glisseVersVise` 567 · `glisseVers` 620
+`rectVisee` 647 · `zoom` 667 · `echelle` 685 · `versPlan` 697 · `brancheVue` 709
 
 Importe :
 
-camera · chemin-forme · dom · ecran · environs · erreurs · ordre-trace · vue-etat · vue-etat
-webgl
+camera · chemin-forme · dom · ecran · environs · erreurs · lot-fige · ordre-trace · vue-etat
+vue-etat · webgl
 
 Importé par :
 
@@ -3660,6 +3691,7 @@ Injections :
 - `20261022135740_les_erreurs_des_pages_lues_par_jeton.sql` — fn lecture_perf
 - `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
 - `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
+- `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
 
 ## Le reste
 
