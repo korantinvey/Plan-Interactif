@@ -196,14 +196,18 @@ export const GL = {
   entrees: new Set(),
   partielle: false,
   /* La chauffe des programmes, avant la première image — voir « La
-     chauffe » : pas commencée (""), « partie » ou « faite » ; ses couches,
-     et les images que la bibliothèque en a dessinées. */
+     chauffe » : pas commencée (""), « partie » (les programmes se
+     compilent), « dessin » (leurs copies dessinent une fois) ou « faite » ;
+     ses couches, et les images que la bibliothèque en a dessinées. */
   chauffe: "",
   /** @type {any[] | null} */
   couchesChauffe: null,
+  /** les vraies couches dont la chauffe a fait des copies : leur donnée sert au dessin
+   *  @type {any[] | null} */
+  sourcesChauffe: null,
   imagesChauffe: 0,
   /** ce que la chauffe a duré et lancé, que la sonde relève ; rien sans chauffe
-   *  @type {[number, number] | null} [millisecondes, programmes] */
+   *  @type {[number, number, number] | null} [millisecondes, programmes, millisecondes du dessin] */
   bilanChauffe: null,
   // le programme des logos, préparé au calme une fois le plan montré (`chauffeLogosWebgl`)
   logosChauds: false, chauffeLogos: false, chauffeDemandee: false,
@@ -381,7 +385,7 @@ export function monteWebgl(){
   GL.camera = enCamera();
   // une carte graphique neuve — la première, ou celle d'après un contexte perdu — n'a aucun programme
   GL.entrees = new Set(); GL.partielle = false;
-  GL.chauffe = ""; GL.couchesChauffe = null; GL.imagesChauffe = 0; GL.bilanChauffe = null;
+  GL.chauffe = ""; GL.couchesChauffe = null; GL.sourcesChauffe = null; GL.imagesChauffe = 0; GL.bilanChauffe = null;
   GL.logosChauds = false; GL.chauffeLogos = false; GL.chauffeDemandee = false;
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
@@ -409,7 +413,7 @@ export function monteWebgl(){
     onAfterRender: () => {
       IMAGE_DECK.emet();
       // les couches de la chauffe ont été créées : leurs programmes sont lancés
-      if (GL.chauffe === "partie") GL.imagesChauffe++;
+      if (GL.chauffe === "partie" || GL.chauffe === "dessin") GL.imagesChauffe++;
       // la sorte de couche de cette image est prête : la suivante entre à l'image d'après
       if (GL.partielle){ planifieWebgl(); return; }
       if (GL.pret || !GL.deck.props.layers.length) return;
@@ -973,6 +977,22 @@ const sorteDe = (/** @type {any} */ c) => (c.constructor && c.constructor.layerN
    avant, à son heure. Le navigateur qui ne compile pas en tâche de fond n'a
    rien à y gagner : il ouvre par étapes, comme avant. Et un programme qui ne
    dirait jamais être prêt n'est pas attendu au-delà de `CHAUFFE_MAX`.
+
+   Un programme lié n'a pas encore dessiné. Sur les postes Windows, le
+   navigateur traduit chaque programme pour Direct3D (ANGLE), et une part de
+   ce travail attend le premier dessin, qui seul dit comment les sommets
+   arrivent : après la chauffe, l'ouverture y passait encore deux ou trois
+   images d'une seconde, sans aucun programme neuf (sonde, FUNEXPO 2026, 10
+   et 11 novembre). Les programmes prêts, chaque copie dessine donc une fois
+   (« dessin »), avec ses vrais attributs — ceux que la bibliothèque lui
+   taisait pendant la compilation, et qui décident de la traduction — et la
+   première donnée de sa couche : la toile est encore transparente
+   (« gl-pret »), rien ne se voit. Une barrière posée derrière ce dessin
+   (`fenceSync`) dit quand la carte graphique l'a fini, sans que la page
+   l'attende : se lit sans bloquer ce qui, demandé autrement, aurait fait
+   attendre la page — c'est ce que la sonde a relevé. Alors seulement les
+   vraies couches entrent. Une couche dont les données ne sont pas un tableau
+   ne dessine pas : elle ne serait pas recopiée fidèlement d'un seul élément.
    ------------------------------------------------------------ */
 const CHAUFFE_MAX = 8000;
 /* Le nom que la bibliothèque donne à la compilation en tâche de fond. Elle
@@ -995,7 +1015,7 @@ function chauffe(/** @type {any[]} */ couches){
   if (GL.chauffe === "faite") return null;
   const d = /** @type {any} */ (GL.deck);
   const carte = d && d.device;
-  if (GL.chauffe === "partie") return GL.couchesChauffe;
+  if (GL.chauffe === "partie" || GL.chauffe === "dessin") return GL.couchesChauffe;
   /* La bibliothèque prépare la carte graphique à part, après sa création : rien
      n'entre avant elle, qui ne serait pas chauffé — `onLoad` repeint. */
   if (!carte || !carte.gl) return [];
@@ -1008,10 +1028,15 @@ function chauffe(/** @type {any[]} */ couches){
   }
   /** @type {Map<string, any>} */
   const copies = new Map();
+  /** @type {any[]} */
+  const sources = [];
   for (const c of couches){
     if (!c || !c.props || typeof c.clone !== "function") continue;
     const k = cleChauffe(c);
-    if (!copies.has(k)) copies.set(k, c.clone({ id: "chauffe-" + copies.size, data: [], visible: false }));
+    if (!copies.has(k)){
+      copies.set(k, c.clone({ id: "chauffe-" + copies.size, data: [], visible: false }));
+      sources.push(c);
+    }
   }
   // rien encore à dessiner : la chauffe attend le premier assemblage qui porte des couches
   if (!copies.size) return null;
@@ -1019,29 +1044,88 @@ function chauffe(/** @type {any[]} */ couches){
   carte.__chauffe = [];
   GL.chauffe = "partie"; GL.imagesChauffe = 0;
   GL.couchesChauffe = [...copies.values()];
+  GL.sourcesChauffe = sources;
   guetteChauffe(d, performance.now());
   return GL.couchesChauffe;
 }
 
-/** À chaque image : les programmes sont-ils prêts ? C'est la bibliothèque
- *  qui le dit, quand elle a vu chacun lié : une vraie couche qui reprendrait
- *  un programme qu'elle croit encore en cours sauterait son dessin. La
- *  chauffe finie, la carte graphique rend leurs attributs à qui les demande,
- *  et les vraies couches entrent. */
+/** Ce que la chauffe retient d'une image à l'autre : son départ, ce que la
+ *  compilation a pris, l'image d'où le dessin part, et sa barrière. */
+const DESSIN_CHAUFFE = {
+  debut: 0, programmes: 0, compilation: 0, images: 0,
+  /** @type {any} */
+  barriere: null,
+};
+
+/** Les copies qui dessinent : un élément de chaque vraie couche, sans prise
+ *  au pointeur — rien ne se voit encore, et rien ne doit se désigner. */
+function copiesQuiDessinent(){
+  /** @type {any[]} */
+  const out = [];
+  for (const c of GL.sourcesChauffe || []){
+    const data = c.props.data;
+    if (!Array.isArray(data) || !data.length) continue;
+    try { out.push(c.clone({ id: "chauffe-dessin-" + out.length, data: [data[0]], visible: true, pickable: false })); }
+    catch (e) { /* une copie qui ne se fait pas : sa couche dessinera d'elle-même, comme avant */ }
+  }
+  return out;
+}
+
+/** À chaque image : où en est la chauffe ? D'abord les programmes : c'est la
+ *  bibliothèque qui dit chacun lié — une vraie couche qui reprendrait un
+ *  programme qu'elle croit encore en cours sauterait son dessin. La
+ *  compilation finie, la carte graphique rend leurs attributs à qui les
+ *  demande, et les copies dessinent une fois ; la barrière franchie, les
+ *  vraies couches entrent. */
 function guetteChauffe(/** @type {any} */ d, /** @type {number} */ debut){
   requestAnimationFrame(() => {
     // un contexte perdu, un dessin remonté : la chauffe est celle d'une autre carte graphique
-    if (GL.deck !== d || !GL.actif || GL.chauffe !== "partie") return;
+    if (GL.deck !== d || !GL.actif || (GL.chauffe !== "partie" && GL.chauffe !== "dessin")) return;
     const carte = d.device;
-    const lances = /** @type {any[]} */ (carte && carte.__chauffe || []);
-    const prets = GL.imagesChauffe > 0 && lances.every(p => p.destroyed || p.linkStatus !== "pending");
-    if (!prets && performance.now() - debut < CHAUFFE_MAX){ guetteChauffe(d, debut); return; }
-    carte.__chauffe = null;
-    carte.features.disabledFeatures[EN_TACHE_DE_FOND] = true;
-    GL.chauffe = "faite"; GL.couchesChauffe = null;
-    GL.bilanChauffe = [Math.round(performance.now() - debut), lances.length];
-    planifieWebgl();
+    const ecoule = performance.now() - debut;
+    if (GL.chauffe === "partie"){
+      const lances = /** @type {any[]} */ (carte && carte.__chauffe || []);
+      const prets = GL.imagesChauffe > 0 && lances.every(p => p.destroyed || p.linkStatus !== "pending");
+      if (!prets && ecoule < CHAUFFE_MAX){ guetteChauffe(d, debut); return; }
+      carte.__chauffe = null;
+      carte.features.disabledFeatures[EN_TACHE_DE_FOND] = true;
+      DESSIN_CHAUFFE.debut = debut; DESSIN_CHAUFFE.programmes = lances.length; DESSIN_CHAUFFE.compilation = ecoule;
+      const dessinent = prets && carte.gl && typeof carte.gl.fenceSync === "function" ? copiesQuiDessinent() : [];
+      if (!dessinent.length){ finisLaChauffe(); return; }
+      GL.chauffe = "dessin";
+      GL.couchesChauffe = dessinent;
+      DESSIN_CHAUFFE.images = GL.imagesChauffe; DESSIN_CHAUFFE.barriere = null;
+      planifieWebgl();
+      guetteChauffe(d, debut);
+      return;
+    }
+    const gl = carte.gl;
+    /* La barrière se pose derrière la première image des copies : posée plus
+       tôt, elle passerait avant leur dessin et ne dirait rien de lui. */
+    if (!DESSIN_CHAUFFE.barriere && GL.imagesChauffe > DESSIN_CHAUFFE.images){
+      try { DESSIN_CHAUFFE.barriere = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0); gl.flush(); }
+      catch (e) { finisLaChauffe(); return; }
+    }
+    const b = DESSIN_CHAUFFE.barriere;
+    let franchie = false;
+    if (b){
+      try { franchie = gl.getSyncParameter(b, gl.SYNC_STATUS) === gl.SIGNALED; } catch (e) { franchie = true; }
+    }
+    if (!franchie && ecoule < CHAUFFE_MAX){ guetteChauffe(d, debut); return; }
+    finisLaChauffe();
   });
+}
+
+/** La chauffe finie : les vraies couches entrent, et la sonde a son bilan —
+ *  sa durée entière, ses programmes, et ce que le dessin y a pris. */
+function finisLaChauffe(){
+  const d = /** @type {any} */ (GL.deck), gl = d && d.device && d.device.gl;
+  if (DESSIN_CHAUFFE.barriere && gl){ try { gl.deleteSync(DESSIN_CHAUFFE.barriere); } catch (e) {} }
+  const total = performance.now() - DESSIN_CHAUFFE.debut;
+  const dessin = GL.chauffe === "dessin" ? total - DESSIN_CHAUFFE.compilation : 0;
+  GL.bilanChauffe = [Math.round(total), DESSIN_CHAUFFE.programmes, Math.round(dessin)];
+  GL.chauffe = "faite"; GL.couchesChauffe = null; GL.sourcesChauffe = null; DESSIN_CHAUFFE.barriere = null;
+  planifieWebgl();
 }
 
 /** Les couches de cette image : toutes une fois le plan montré, sinon celles
