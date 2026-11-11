@@ -3174,7 +3174,7 @@ Importé par :
 
 apparence · fiche · parcours · points-interet · rendu · tiroir-itineraire · tiroir-parcours
 
-### `modules/tiroirs.mjs` — 514 l. → plan, plan-admin
+### `modules/tiroirs.mjs` — 544 l. → plan, plan-admin
 
 - l.1 · Les tiroirs des écrans étroits — la liste, et ceux que la hauteur mène
 - l.21 · Ce que les tiroirs lisent d'un geste
@@ -3184,8 +3184,8 @@ apparence · fiche · parcours · points-interet · rendu · tiroir-itineraire �
 Fonctions :
 
 `traceurDeGeste` 45 · `cranVoisin` 64 · `retraitBas` 90 · `mesureTiroir` 103
-`montreTiroir` 106 · `hisseTiroir` 110 · `tiroirListe` 117 · `tiroirCrante` 320
-`brancheTiroirs` 500
+`montreTiroir` 106 · `hisseTiroir` 110 · `tiroirListe` 117 · `tiroirCrante` 321
+`brancheTiroirs` 525
 
 Importe :
 
