@@ -122,4 +122,7 @@ module.exports = [
   // `modules/sonde.mjs` : la marque d'un geste fait hors du plan, dans la sorte
   // de geste que le résumé envoie avec un gel — jamais à l'écran
   " hors plan",
+  // `modules/environs.mjs` : le début de l'empreinte du fond figé posé, qui
+  // dit au calque des tuiles s'il a déjà ces images — jamais à l'écran
+  "fige|",
 ];
