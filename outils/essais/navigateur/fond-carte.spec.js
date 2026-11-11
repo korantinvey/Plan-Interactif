@@ -248,8 +248,10 @@ test.describe("le fond de carte", () => {
   }
 
   /** La page du visiteur, le premier pavillon calé sur `calage` ; le seau
-   *  répond par `seau`. Rend les erreurs, et ce que la page a demandé à qui. */
-  async function ouvrePublic(page, calage, seau, suite = "") {
+   *  répond par `seau`. Rend les erreurs, et ce que la page a demandé à qui.
+   *  `attente` : « domcontentloaded » quand le seau retient ses images, que
+   *  l'événement « load » attendrait. */
+  async function ouvrePublic(page, calage, seau, suite = "", attente = "load") {
     const erreurs = await prepare(page);
     const demandes = [];
     page.on("request", (q) => demandes.push(q.url()));
@@ -263,7 +265,7 @@ test.describe("le fond de carte", () => {
       (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
     await page.route("https://seau.essai/**", seau ||
       ((r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL })));
-    await page.goto("/plan.html?plan=smcl-2026" + suite);
+    await page.goto("/plan.html?plan=smcl-2026" + suite, { waitUntil: attente });
     await attendLaListe(page);
     return { erreurs, demandes };
   }
@@ -321,6 +323,46 @@ test.describe("le fond de carte", () => {
       return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top), Math.abs(a.width - b.width / 1.001));
     }, lotFige);
     expect(ecart).toBeLessThan(1);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("un fond figé dépassé par un zoom se dit tout de même chargé", async ({ page }) => {
+    /* Un zoom lancé avant que la première pose ait fini la dépassait, et la
+       sonde n'apprenait jamais que le fond était là : sa fenêtre restait
+       ouverte trente secondes et prêtait au fond les gels des gestes (sonde,
+       Redmi Note 9 Pro, FUNEXPO 2026, 11 novembre 2026). Les images sont
+       donc retenues jusqu'à ce que la vue ait changé de niveau. */
+    const cal = { ...CALE, fond: "maison" };
+    /** @type {(() => void)[]} */
+    const retenues = [];
+    let retient = true;
+    /* Trois niveaux, comme le lot de FUNEXPO 2026 : celui de la
+       démonstration n'en a qu'un, qu'aucun zoom ne quitte. */
+    const lot = { ...(await lotPour(cal)), niveaux: 3 };
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: lot }, (r) => {
+      const repond = () => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL });
+      if (retient) retenues.push(repond); else repond();
+    }, "&rendu=svg", "domcontentloaded");
+    // une vue posée qui demande d'autres images : la première pose est dépassée
+    const boite = await page.locator("#plan").boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    await expect.poll(() => retenues.length).toBeGreaterThan(0);
+    const largeur = () => page.evaluate(() => window.__essais.view.w);
+    const l0 = await largeur();
+    // en arrière : la vue d'ouverture est déjà au niveau le plus fin du lot
+    for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, 240); await page.waitForTimeout(40); }
+    /* Les images que la nouvelle vue demande attendent dans le navigateur, et
+       non ici : six connexions par hôte, que les retenues occupent. On
+       s'assure donc seulement que la vue a changé de niveau, et que la pose
+       d'après le geste a eu lieu. */
+    expect(await largeur()).toBeGreaterThan(l0 * 2);
+    await page.waitForTimeout(600);
+    retient = false;
+    for (const repond of retenues.splice(0)) repond();
+    const environs = () => page.evaluate(() => window.__essais.sonde.resume.environs);
+    await expect.poll(async () => (await environs() || {}).chargeeMs, { timeout: 10_000 }).toBeGreaterThan(0);
+    expect((await environs()).fige).toBe(true);
     expect(erreurs).toEqual([]);
   });
 
