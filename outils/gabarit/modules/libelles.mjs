@@ -281,7 +281,7 @@ function emplacementWebgl(s, xy, l, h0, sel, reg, noms, pastilles){
     pose([s.code], fc, g + past.wCode / 2, milieu, "cd" + c, z0, z1);
     pose([past.compte], fc, xp + past.wPast / 2, milieu, "coexN" + c, z0, z1);
     pastilles.push({ path: [pt(xp + hp / 2, yp), pt(xp + Math.max(past.wPast - hp / 2, hp / 2 + .001), yp)],
-      largeur: hp, cls: "coexPast" + c, z0, z1 });
+      largeur: hp, cls: "coexPast" + c, z0, z1, lbl: s.id });
   }
 }
 
@@ -316,6 +316,17 @@ export function libellesWebgl(){
       // une zone meublée n'est qu'un sol en vue immersive : son nom s'y pose (`webgl.mjs` `positionTexte`)
       ...(TYPES_MEUBLES.includes(z.type || "") ? { meuble: true } : {}) });
   }
+  /* Le stand choisi s'écrit à part. Sélectionner ne change que deux noms —
+     celui qu'on quitte, celui qu'on prend —, mais ils étaient mêlés aux
+     autres : la clé changeait, et la bibliothèque remettait en page les neuf
+     cents noms du pavillon, lettre par lettre, dans chacune de leurs cinq
+     couches — dix-huit millisecondes par sélection sur un poste de bureau,
+     plus que tout le reste de la reconversion (banc, SMCL 2026, 11 novembre
+     2026). Les noms de tous s'écrivent donc comme si rien n'était choisi, et
+     ne bougent plus ; le choisi y est tu (`webgl.mjs` `couchesLibellesWebgl`,
+     par le masque qui ne recalcule que le filtre de zoom), et s'écrit choisi
+     dans sa propre liste, que peint une petite couche à lui. */
+  const choisis = [], pastillesChoisies = [];
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
     /* Un stand ajouté et lié est choisi quand sa société l'est, et suit le
@@ -332,14 +343,20 @@ export function libellesWebgl(){
     if ((!sel && !vu) || (!s.code && !s.nom)) continue;
     // bien au-delà du seuil, son logo le couvre : rien à mesurer (`logos-stands.mjs` `nomTu`)
     if (nomTu(s)) continue;
+    const reg = placementLibelle(s);
+    /** @param {any} lib  la part libre, ou rien pour l'emplacement entier */
+    const poseNoms = (lib, choisi, noms, past) => {
+      const ps = lib ? lib.bb : place(s);
+      const avant = noms.length, avantPastilles = past.length;
+      emplacementWebgl(s, decaleLibelle(lib ? lib.c : ancre(s), reg), ps[0], ps[1], choisi, reg, noms, past);
+      // de près, le logo posé sur le toit tient lieu de nom (`logos-stands.mjs`)
+      if (logoPose(s)){ cedeAuLogo(noms, avant); cedeAuLogo(past, avantPastilles); }
+    };
     // comme en SVG : la part libre d'un emplacement découpé, ou rien
-    const lib = sel ? undefined : libres.get(s);
-    if (lib === null) continue;
-    const ps = lib ? lib.bb : place(s), reg = placementLibelle(s);
-    const avant = items.length, avantPastilles = pastilles.length;
-    emplacementWebgl(s, decaleLibelle(lib ? lib.c : ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
-    // de près, le logo posé sur le toit tient lieu de nom (`logos-stands.mjs`)
-    if (logoPose(s)){ cedeAuLogo(items, avant); cedeAuLogo(pastilles, avantPastilles); }
+    const lib = libres.get(s);
+    if (vu && lib !== null) poseNoms(lib, false, items, pastilles);
+    // choisi, il prend l'emplacement entier
+    if (sel) poseNoms(undefined, true, choisis, pastillesChoisies);
   }
   /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
      calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
@@ -362,15 +379,26 @@ export function libellesWebgl(){
     }
   }
   const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + (d.angle ? "^" + d.angle : "") + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "") + (d.meuble ? "m" : "");
-  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.path[0][1].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
+  const pastille = d => d.path[0][0].toFixed(2) + d.path[0][1].toFixed(2) + d.cls + d.z0.toFixed(3);
+  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(pastille).join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
-  if (cle === GL.cleLibelles) return;
-  GL.cleLibelles = cle;
-  GL.libelles = items.filter(d => !d.cls.endsWith(" phare"));
-  GL.libellesPhare = items.filter(d => d.cls.endsWith(" phare"));
-  GL.pastilles = pastilles;
-  GL.dessines = dessines;
-  GL.versionLibelles = (GL.versionLibelles || 0) + 1;
+  const cleChoisis = choisis.map(ecrit).join("|") + "#" + pastillesChoisies.map(pastille).join("|");
+  if (cle === GL.cleLibelles && cleChoisis === GL.cleChoisis) return;
+  if (cle !== GL.cleLibelles){
+    GL.cleLibelles = cle;
+    GL.libelles = items.filter(d => !d.cls.endsWith(" phare"));
+    GL.libellesPhare = items.filter(d => d.cls.endsWith(" phare"));
+    GL.pastilles = pastilles;
+    GL.dessines = dessines;
+    GL.versionLibelles = (GL.versionLibelles || 0) + 1;
+  }
+  // une sélection seule n'arrive qu'ici : les noms de tous gardent leur version, et leurs lettres
+  if (cleChoisis !== GL.cleChoisis){
+    GL.cleChoisis = cleChoisis;
+    GL.libellesChoisis = choisis;
+    GL.pastillesChoisies = pastillesChoisies;
+    GL.versionChoisis++;
+  }
   GL.couchesLibelles = null;
   planifieWebgl();
 }
