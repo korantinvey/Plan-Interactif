@@ -13,9 +13,13 @@
    plan.
    Le panneau des critères qu'un tiroir redescendu referme s'importe de
    `panneau-criteres.mjs` — et non de la recherche, qui importe ce module.
+   Les crans se comptent sur la part du cadre que le visiteur voit
+   (`cadre-visible.mjs`), et non sur la fenêtre : intégré dans le site d'un
+   salon, le bas du cadre est souvent sous le bord de l'écran.
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { ETROIT } from "./ecran.mjs";
+import { hauteurVue, suisLeCadre } from "./cadre-visible.mjs";
 import { fermeCriteres } from "./panneau-criteres.mjs";
 
 /* ============================================================
@@ -170,11 +174,11 @@ function tiroirListe(){
     parseFloat(getComputedStyle(document.body).getPropertyValue("--replie")) || 164;
 
   /* Hauteur visible du tiroir à un cran donné, en pixels. Le milieu suit la
-     règle du CSS — 46 % de la hauteur d'écran. Le plus bas montre ce qui a été
+     règle du CSS — 46 % de la hauteur vue. Le plus bas montre ce qui a été
      mesuré, posé au-dessus de la bande rendue au système. */
   function hauteur(nom){
     if (nom === "plein") return tiroir.offsetHeight;
-    if (nom === "demi")  return Math.round(innerHeight * .46);
+    if (nom === "demi")  return Math.round(hauteurVue() * .46);
     return replieePx() + retraitBas();
   }
 
@@ -389,8 +393,8 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
 
   /** Hauteur du tiroir à un cran donné, en pixels — les parts du CSS. */
   function hauteur(nom){
-    if (nom === "plein") return Math.round(innerHeight * .92);
-    if (nom === "demi")  return Math.round(innerHeight * demi);
+    if (nom === "plein") return Math.round(hauteurVue() * .92);
+    if (nom === "demi")  return Math.round(hauteurVue() * demi);
     // l'en-tête mesuré, plus la bande que le tiroir rend au système sous lui
     return replieePx() + retraitBas();
   }
@@ -522,8 +526,35 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
  * plan : la bande rendue au système d'abord, puis la liste, puis les trois
  * tiroirs menés par la hauteur.
  */
+/* Ce qui se pose au bas du cadre, et qui doit se poser au bas de ce qu'on en
+   voit : les quatre tiroirs, et les commandes du plan ancrées au-dessus de la
+   liste repliée.
+
+   Intégré dans le site de Funexpo 2026, le cadre dépassait le bas de l'écran :
+   la liste descendue à son cran le plus bas passait dessous, et l'on ne
+   pouvait plus la reprendre — le plan, qui garde le doigt pour ses gestes, ne
+   laissait pas non plus défiler le site pour aller la chercher.
+
+   La bande se donne en deux variables, posées sur chacun de ces éléments et
+   non sur la racine ni sur le corps : elle change à chaque centième du cadre
+   que le site fait défiler, et une variable héritée par toute la page ferait
+   alors recalculer le style de ses sept mille nœuds. */
+const ANCRES_EN_BAS = "#side,#detail,#parcours,#itineraire,.zoombar,.scalebar,.poi,.panel";
+function rangeDansLaPartVue(p){
+  for (const n of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll(ANCRES_EN_BAS))){
+    if (p){
+      n.style.setProperty("--cadre-bas", p.bas + "px");
+      n.style.setProperty("--cadre-vu", p.vu + "px");
+    } else {
+      n.style.removeProperty("--cadre-bas");
+      n.style.removeProperty("--cadre-vu");
+    }
+  }
+}
+
 export function brancheTiroirs(){
   addEventListener("resize", () => { _retraitBas = null; });
+  suisLeCadre(rangeDansLaPartVue);
 
   tiroirListe();
 

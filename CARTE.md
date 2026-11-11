@@ -120,7 +120,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1657 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1662 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
@@ -468,6 +468,18 @@ salon · sponsor · tiroir-itineraire · tiroir-parcours · vous-etes-ici · vue
 Importé par :
 
 affiche-ici · demarrage · gestes · ici · lancement
+
+### `modules/cadre-visible.mjs` — 79 l. → plan, plan-admin
+
+- l.1 · La part du cadre que le visiteur voit
+
+Fonctions :
+
+`INTEGRE` 28 · `hauteurVue` 46 · `suisLeCadre` 54
+
+Importé par :
+
+fenetre · tiroirs
 
 ### `modules/calage-carte.mjs` — 887 l. → plan-admin
 
@@ -1204,19 +1216,19 @@ Importé par :
 avancement · comptes · duplication · ecran-console · fiche-detail · fiche-evenement
 provenance · socle-console
 
-### `modules/fenetre.mjs` — 164 l. → plan, plan-admin
+### `modules/fenetre.mjs` — 146 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
 Fonctions :
 
-`poseAvantFermeture` 19 · `retourAuxReglages` 34 · `verseModale` 36
-`poseApresFermeture` 51 · `INTEGRE` 72 · `suisLaPartVisible` 74 · `ouvreModale` 100
-`fermeModale` 121 · `confirme` 131 · `brancheFenetre` 149
+`poseAvantFermeture` 20 · `retourAuxReglages` 35 · `verseModale` 37
+`poseApresFermeture` 52 · `suisLaPartVisible` 63 · `ouvreModale` 82 · `fermeModale` 103
+`confirme` 113 · `brancheFenetre` 131
 
 Importe :
 
-dom · evenement · modeles
+cadre-visible · dom · evenement · modeles
 
 Importé par :
 
@@ -3192,22 +3204,22 @@ Importé par :
 
 apparence · fiche · parcours · points-interet · rendu · tiroir-itineraire · tiroir-parcours
 
-### `modules/tiroirs.mjs` — 544 l. → plan, plan-admin
+### `modules/tiroirs.mjs` — 575 l. → plan, plan-admin
 
 - l.1 · Les tiroirs des écrans étroits — la liste, et ceux que la hauteur mène
-- l.21 · Ce que les tiroirs lisent d'un geste
-- l.67 · Le tiroir de la liste — écrans étroits
-- l.293 · Les tiroirs menés par la hauteur — écrans étroits
+- l.25 · Ce que les tiroirs lisent d'un geste
+- l.71 · Le tiroir de la liste — écrans étroits
+- l.297 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
-`traceurDeGeste` 45 · `cranVoisin` 64 · `retraitBas` 90 · `mesureTiroir` 103
-`montreTiroir` 106 · `hisseTiroir` 110 · `tiroirListe` 117 · `tiroirCrante` 321
-`brancheTiroirs` 525
+`traceurDeGeste` 49 · `cranVoisin` 68 · `retraitBas` 94 · `mesureTiroir` 107
+`montreTiroir` 110 · `hisseTiroir` 114 · `tiroirListe` 121 · `tiroirCrante` 325
+`rangeDansLaPartVue` 543 · `brancheTiroirs` 555
 
 Importe :
 
-dom · ecran · panneau-criteres
+cadre-visible · dom · ecran · panneau-criteres
 
 Importé par :
 

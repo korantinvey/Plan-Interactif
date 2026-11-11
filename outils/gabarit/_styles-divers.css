@@ -250,9 +250,9 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
   .app{min-height:0}
   /* Couché, le tiroir déplié ne laisserait que soixante-dix points de plan :
      on ne saurait plus de quoi la liste parle. Il rend la moitié de l'écran. */
-  .side{height:56dvh}
-  .side[data-cran="demi"]{transform:translateY(calc(100% - 34dvh))}
-  :is(.detail,.parcours,.itineraire).open[data-cran="plein"]{max-height:80dvh}
+  .side{height:calc(var(--cadre-vu,100dvh) * .56)}
+  .side[data-cran="demi"]{transform:translateY(calc(100% - var(--cadre-vu,100dvh) * .34))}
+  :is(.detail,.parcours,.itineraire).open[data-cran="plein"]{max-height:calc(var(--cadre-vu,100dvh) * .8)}
 }
 
 /* Le champ de saisie, et le zoom de Safari.

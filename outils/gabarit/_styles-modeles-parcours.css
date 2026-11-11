@@ -1304,9 +1304,14 @@
      sous un tiroir de couleur se verrait — mais ce qu'ils portent se retire de
      la poignée de gestes. La part qui dépasse au repos grandit d'autant, sans
      quoi la recherche serait passée dessous. */
+  /* Intégré dans le site d'un salon, le bas du cadre peut tomber sous le bord
+     de l'écran : les tiroirs et les commandes du plan se posent alors au bas de
+     ce qu'on en voit, et se mesurent sur cette part (« --cadre-bas »,
+     « --cadre-vu », posées par `tiroirs.mjs`). Hors d'un cadre, elles valent
+     le bord et la hauteur de l'écran. */
   .side{
-    position:fixed;left:0;right:0;bottom:0;z-index:12;
-    height:82vh;height:82dvh;
+    position:fixed;left:0;right:0;bottom:var(--cadre-bas,0px);z-index:12;
+    height:82vh;height:calc(var(--cadre-vu,100dvh) * .82);
     padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-right:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
@@ -1314,7 +1319,7 @@
     transform:translateY(calc(100% - var(--replie,164px) - var(--sys-bas)));
     transition:transform .28s cubic-bezier(.32,.72,0,1);
   }
-  .side[data-cran="demi"]{transform:translateY(calc(100% - 46dvh))}
+  .side[data-cran="demi"]{transform:translateY(calc(100% - var(--cadre-vu,100dvh) * .46))}
   .side[data-cran="plein"]{transform:translateY(0)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
@@ -1371,15 +1376,15 @@
 
   /* Les commandes du plan se posent au-dessus du tiroir replié : ancrées en
      bas comme elles l'étaient, il les recouvrait. */
-  .zoombar{bottom:calc(var(--replie,150px) + 14px);transition:opacity .2s ease}
+  .zoombar{bottom:calc(var(--replie,150px) + var(--cadre-bas,0px) + 14px);transition:opacity .2s ease}
   /* L'échelle passe au-dessus du cartouche, qui sur un écran étroit est assez
      large pour la traverser. Sa hauteur est mesurée, et vaut zéro en l'absence
      de repères : l'échelle reprend alors sa place. */
-  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px);
+  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + var(--cadre-bas,0px) + 18px);
     transition:opacity .2s ease}
   /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
   .sans-zoom .scalebar{left:14px}
-  .poi{bottom:calc(var(--replie,150px) + 12px);transition:opacity .2s ease}
+  .poi{bottom:calc(var(--replie,150px) + var(--cadre-bas,0px) + 12px);transition:opacity .2s ease}
   /* Le cartouche, l'échelle et les boutons de zoom sont posés au-dessus du
      tiroir replié. Le tiroir qui monte passe dessous sans les emporter : ils
      restaient devant la liste à désigner un plan devenu invisible. Ils
@@ -1396,8 +1401,8 @@
   html[data-tiroir="plein"] .scalebar{opacity:0;pointer-events:none}
   /* En tiroir, la pile est ancrée en bas et le cartouche en haut : sa hauteur
      se borne des deux côtés, sinon elle remonte sous lui. */
-  .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px;
-    max-height:calc(100% - var(--replie,150px) - var(--chalh,0px) - 36px)}
+  .panel{top:auto;bottom:calc(var(--replie,150px) + var(--cadre-bas,0px) + 12px);right:12px;
+    max-height:calc(100% - var(--replie,150px) - var(--cadre-bas,0px) - var(--chalh,0px) - 36px)}
   /* Le cartouche prend toute la largeur restante : à 272 px il laissait une
      colonne vide sans rien y gagner, et son palmarès se coupait au milieu des
      enseignes. Il partage ce coin avec la pile des calques, qui se referme
@@ -1416,8 +1421,8 @@
      voile, qui interceptait aussi les gestes. */
   .voile{display:none}
   .detail{
-    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
-    max-height:56dvh;
+    position:fixed;left:0;right:0;bottom:var(--cadre-bas,0px);top:auto;width:auto;
+    max-height:calc(var(--cadre-vu,100dvh) * .56);
     padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
@@ -1440,7 +1445,7 @@
   /* La hauteur repliée est celle de l'en-tête, mesurée : la bande rendue au
      système s'y ajoute, sinon c'est le nom du stand qui s'y perdrait. */
   .detail.open[data-cran="replie"]{max-height:calc(var(--fiche-replie,132px) + var(--sys-bas))}
-  .detail.open[data-cran="plein"]{max-height:92dvh}
+  .detail.open[data-cran="plein"]{max-height:calc(var(--cadre-vu,100dvh) * .92)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .detail.glisse{transition:none}
   /* L'en-tête ne se laisse pas comprimer au cran le plus bas : sans cela il
@@ -1497,8 +1502,8 @@
      crans. Son cran du milieu monte un peu plus haut — c'est une liste qu'on
      parcourt, pas une fiche qu'on lit — sans masquer le plan pour autant. */
   .parcours{
-    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
-    max-height:68dvh;
+    position:fixed;left:0;right:0;bottom:var(--cadre-bas,0px);top:auto;width:auto;
+    max-height:calc(var(--cadre-vu,100dvh) * .68);
     padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
@@ -1514,7 +1519,7 @@
   }
   .parcours.open{transform:translateY(0);pointer-events:auto}
   .parcours.open[data-cran="replie"]{max-height:calc(var(--parc-replie,132px) + var(--sys-bas))}
-  .parcours.open[data-cran="plein"]{max-height:92dvh}
+  .parcours.open[data-cran="plein"]{max-height:calc(var(--cadre-vu,100dvh) * .92)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .parcours.glisse{transition:none}
   /* Seul le corps se comprime : l'en-tête, les commandes et le pied gardent
@@ -1538,8 +1543,8 @@
      suffit, à condition que ce qu'il porte s'y resserre : c'est l'objet des
      règles qui suivent. */
   .itineraire{
-    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
-    max-height:50dvh;
+    position:fixed;left:0;right:0;bottom:var(--cadre-bas,0px);top:auto;width:auto;
+    max-height:calc(var(--cadre-vu,100dvh) * .5);
     padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
@@ -1554,7 +1559,7 @@
      voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
      liste des lieux proposés sous un champ. */
   .itineraire.open[data-cran="replie"]{max-height:calc(var(--itin-replie,64px) + var(--sys-bas))}
-  .itineraire.open[data-cran="plein"]{max-height:92dvh}
+  .itineraire.open[data-cran="plein"]{max-height:calc(var(--cadre-vu,100dvh) * .92)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .itineraire.glisse{transition:none}
   /* Seul le corps se comprime : la prise et l'en-tête gardent leur taille, et
