@@ -4,7 +4,8 @@
  * Pas de Docker sur ce poste : PGlite (Postgres compilé en WASM) rejoue la
  * chaîne des migrations telle qu'elle partira en production, avec ce que
  * Supabase fournit autour — les rôles `anon`, `authenticated`, `service_role`,
- * le schéma `auth` et `auth.uid()`. `pg_cron` n'existe pas ici : seuls les
+ * le schéma `auth` et `auth.uid()`, et du schéma `storage` les seaux et les
+ * objets. `pg_cron` n'existe pas ici : seuls les
  * chemins sous garde s'y éprouvent.
  *
  * Le premier compte inséré dans `auth.users` devient administrateur
@@ -33,6 +34,16 @@ async function baseNeuve() {
       as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
+    -- ce que le stockage de fichiers apporte, réduit à ce que les migrations
+    -- touchent : ses seaux, et ses objets sous politique
+    create schema storage;
+    create table storage.buckets (id text primary key, name text not null, public boolean default false,
+      file_size_limit bigint, allowed_mime_types text[]);
+    create table storage.objects (id uuid primary key default gen_random_uuid(),
+      bucket_id text references storage.buckets (id), name text, owner uuid);
+    alter table storage.objects enable row level security;
+    grant usage on schema storage to anon, authenticated, service_role;
+    grant select, insert, update, delete on storage.objects to authenticated;
   `);
   // Supabase accorde `execute` sur toute fonction du schéma public à ces rôles : sans cela
   // l'essai ne verrait pas une fonction `security definer` oubliée ouverte à tous.

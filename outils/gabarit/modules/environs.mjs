@@ -43,6 +43,7 @@ import { vue, cadrePlan } from "./vue-etat.mjs";
 import { solIncline } from "./camera.mjs";
 import { apresAffichage } from "./affichage.mjs";
 import { creeEvenement } from "./evenement.mjs";
+import { sourceDuFige, imagesFigees, adresseFigee, carreDuFond, RECUL_CARTE } from "./lot-fige.mjs";
 
 const racine = document.documentElement;
 
@@ -222,27 +223,10 @@ const FORCE_CARTE = 0.62;
 export const forceCarte = (cal) =>
   cal && isFinite(cal.force) ? Math.max(0.1, Math.min(1, cal.force)) : FORCE_CARTE;
 
-/* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
-   qu'il n'y a rien au-delà des murs, un peu plus dès qu'une carte s'y trouve —
-   c'est pour la voir qu'on l'a posée, et la vue s'arrêtait au bord de la
-   première rue. Un peu plus, et non huit fois comme d'abord : de si loin le
-   hall n'était plus qu'un timbre au milieu du quartier, et l'on regardait la
-   ville plutôt que le salon. Trois fois et un tiers montrent les abords —
-   parkings, entrées, rues qui y mènent — et s'arrêtent là. L'emprise, elle,
-   ne bouge pas : elle tient aussi la grille d'itinéraire, au demi-mètre. */
-const RECUL_CARTE = 3.3;
-
-/* Jusqu'où le milieu de la vue s'écarte du pavillon, en part de la vue : trois
-   vingtièmes de part et d'autre de son emprise. Le hall garde ainsi plus d'un
-   tiers de l'écran dans chaque sens, quel que soit le zoom — on peut regarder
-   ce qui le borde, non le perdre (`vue.mjs` `retiensVue`). Le double, essayé
-   d'abord, laissait encore glisser le hall jusqu'au bord de l'écran.
-
-   Pas sur le seul pavillon : le plan s'ajuste et se centre dans
-   la bande que le tiroir et la fiche laissent libre, et son milieu tombe
-   alors hors du hall — le retenir là défaisait le cadrage. Nul pendant qu'un
-   exploitant cale la carte, qui peut avoir à chercher loin. */
-export const DEBORD_VUE = 0.3;
+/* Jusqu'où l'on recule (`RECUL_CARTE`) et jusqu'où le milieu de la vue
+   s'écarte du pavillon (`DEBORD_VUE`) : `lot-fige.mjs`, avec le carré du fond
+   qu'ils bornent — le fond figé le photographie, et les essais le recomptent
+   sans page. */
 export const vueLibre = () => !!CALAGE_EN_COURS;
 
 /**
@@ -293,23 +277,14 @@ export function recul(){
  */
 function zoneDuFond(){
   if (CALAGE_EN_COURS) return null;
-  const p = DATA && DATA.plans ? P() : null, e = p && p.emprise;
-  if (!e) return null;
-  /* Le compte, pour la vue la plus large — `RECUL_CARTE` largeurs, deux fois
-     plus haute sur un téléphone — poussée au bout de ce que `DEBORD_VUE`
-     permet : son bord le plus lointain tombe à un demi-hall, plus
-     `DEBORD_VUE` + 0,5 fois sa hauteur, du centre. */
-  const t = Math.max(e.x1 - e.x0, e.y1 - e.y0);
-  const d = t * (0.5 + RECUL_CARTE * 2 * (DEBORD_VUE + 0.5));
-  const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
-  return { x0: cx - d, y0: cy - d, x1: cx + d, y1: cy + d };
+  const p = DATA && DATA.plans ? P() : null;
+  return p && p.emprise ? carreDuFond(p.emprise) : null;
 }
 
 /** Le même carré en longitudes et latitudes — `[ouest, sud, est, nord]`, ce
  *  que MapLibre prend pour borner une source —, ou nul. Arrondi au mètre près,
  *  pour qu'une empreinte puisse dire s'il a changé. */
-function bornesDuFond(cal){
-  const z = zoneDuFond();
+export function bornesDuFond(/** @type {any} */ cal, z = zoneDuFond()){
   if (!z || !cal) return null;
   const coins = [[z.x0, z.y0], [z.x1, z.y0], [z.x1, z.y1], [z.x0, z.y1]]
     .map(q => versTerre(q, cal));
@@ -322,7 +297,7 @@ function bornesDuFond(cal){
 /** Un style dont chaque source tuilée ne sert que le carré du hall : le
  *  moteur ne demande aucune tuile hors de ses bornes, et peint là son fond
  *  uni. Posées sur la source, elles l'emportent sur celles de son TileJSON. */
-function borneLeStyle(style, bornes){
+export function borneLeStyle(/** @type {any} */ style, /** @type {any} */ bornes){
   if (!bornes || !style || !style.sources) return style;
   const sources = {};
   for (const id in style.sources){
@@ -388,6 +363,93 @@ function tuilesDeLaVue(cal, fond, vue, mParPx, zone){
 }
 
 /* ------------------------------------------------------------
+   Le fond figé
+
+   Tout ce que dessine le fond est fixe : le carré autour du hall, son cap, son
+   style. Chaque visiteur recalculait pourtant la même image — et, pour un fond
+   vectoriel, montait MapLibre pour cela : huit cents kilo-octets de script, un
+   second contexte WebGL et ses programmes, des gels de 0,4 à 5,4 s relevés sur
+   FUNEXPO 2026 (sonde, 10 novembre 2026).
+
+   L'exploitant la calcule donc une fois, en enregistrant le calage
+   (`fige-carte.mjs`, administration seule) : le fond retenu, quel qu'il soit,
+   photographié orienté comme le plan, en une pyramide d'images carrées — le
+   carré entier au niveau zéro, coupé en quatre à chaque niveau suivant. Elles
+   se posent ici dans le calque des tuiles, en mètres du plan, sans rotation
+   ni moteur : orientées d'avance, leurs noms de rues sont déjà droits.
+
+   Le lot ne vaut que pour ce qui l'a produit. Son empreinte — le fond, le
+   style, le point, le cap, le carré — part avec lui ; un calage déplacé sans
+   être refigé ne la retrouve plus, et le fond repasse en direct plutôt que de
+   montrer un quartier décalé. Ce qui se pose par-dessus — la discrétion, le
+   trou sous le hall — n'en fait pas partie : cela se règle sans refiger.
+
+   La règle du lot — son empreinte, le choix des images d'une vue — vit dans
+   `lot-fige.mjs`, qui s'éprouve sans page.
+   ------------------------------------------------------------ */
+
+/* Un lot dont les images ne répondent pas — le seau absent, une adresse
+   coupée — ne laisse pas le hall sur du vide : le fond repasse en direct. */
+let _figeEnPanne = "";
+
+/** Le lot figé qui vaut pour ce calage, ou rien. Jamais pendant qu'un
+ *  exploitant cale : il cherche loin, et le lot ne couvre que le carré. */
+function figeCourant(/** @type {any} */ cal){
+  const f = cal && cal.fige;
+  if (!f || CALAGE_EN_COURS || _figeEnPanne === f.adresse) return null;
+  const z = zoneDuFond();
+  return z && f.adresse && f.source === sourceDuFige(cal, z) ? f : null;
+}
+
+/** Le calage porte-t-il un lot à jour ? Pour le volet de l'exploitant, qui
+ *  dit s'il reste à refiger. */
+export function figeAJour(/** @type {any} */ cal, /** @type {any} */ zone){
+  return !!(cal && cal.fige && zone && cal.fige.source === sourceDuFige(cal, zone));
+}
+
+/** Le lot posé dans le calque des tuiles, pour l'étendue `e`. */
+function poseFige(/** @type {Element} */ hote, /** @type {any} */ f, /** @type {any} */ e, /** @type {string} */ fond){
+  // les images sont en mètres du plan : le groupe n'a rien à tourner
+  if (hote.hasAttribute("transform")) hote.removeAttribute("transform");
+  const t = imagesFigees(f, e, e.mParPx);
+  const empreinte = "fige|" + f.adresse + "|" + t.k + "|" +
+    t.images.map(q => q.i + "," + q.j).join(";");
+  if (empreinte === _fondPose) return;
+  const premiere = !_fondPose.startsWith("fige|" + f.adresse);
+  /* La sonde suit le fond figé comme le montage de MapLibre : ce qu'on gagne
+     à figer se lit dans les mêmes champs (`sonde.mjs`). */
+  if (premiere) CARTE_ENVIRONS.emet("demandee", { fond: fond, fige: true });
+  _fondPose = empreinte;
+  _tuilesMuettes = 0;
+  /* Le niveau zéro reste toujours dessous : une seule image, déjà là, qui
+     tient la place pendant que les plus fines arrivent — le hall ne flotte
+     jamais sur du vide le temps d'un zoom. */
+  const liste = t.k > 0 ? [{ k: 0, i: 0, j: 0, x: f.x0, y: f.y0, c: f.cote }].concat(t.images) : t.images;
+  hote.innerHTML = liste.map(q => {
+    // le même cheveu de recouvrement que pour les tuiles, en mètres
+    const c = q.c * 1.001;
+    return '<image x="' + q.x + '" y="' + q.y + '" width="' + c + '" height="' + c +
+      '" preserveAspectRatio="none" href="' + esc(adresseFigee(f, q.k, q.i, q.j)) + '"/>';
+  }).join("");
+  let restent = liste.length;
+  hote.querySelectorAll("image").forEach(im => {
+    im.addEventListener("load", () => {
+      if (--restent === 0 && premiere) CARTE_ENVIRONS.emet("chargee");
+    }, { once: true });
+    im.onerror = () => {
+      im.remove();
+      /* Trois images perdues, c'est le lot : on le laisse, et le fond
+         repasse en direct — le dessiner coûte, mais vaut mieux que rien. */
+      if (++_tuilesMuettes === 3){
+        _figeEnPanne = f.adresse;
+        console.warn("Fond figé injoignable, le fond repasse en direct : " + f.adresse);
+        refaitFondCarte();
+      }
+    };
+  });
+}
+
+/* ------------------------------------------------------------
    Le rendu vectoriel
 
    Les tuiles d'images portent leur texte cuit : un plan tourné le tourne
@@ -430,7 +492,7 @@ const MAPLIBRE_CSS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-g
 export const CARTE_ENVIRONS = creeEvenement();
 
 let _biblioGL = null;
-function chargeMapLibre(){
+export function chargeMapLibre(){
   if (_biblioGL) return _biblioGL;
   _biblioGL = new Promise((ok, non) => {
     /* Une promesse rejetée se garde comme une autre : sans cet oubli, un
@@ -462,7 +524,7 @@ function chargeMapLibre(){
  * l'azimut −angle. L'échelle suit la convention du moteur, où le monde fait
  * 512 pixels au niveau zéro — d'où le 78 271 et non le 156 543 des tuiles.
  */
-function vueGL(cal, e){
+export function vueGL(/** @type {any} */ cal, /** @type {any} */ e){
   return {
     center: versTerre([e.x + e.w / 2, e.y + e.h / 2], cal),
     zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * e.mParPx)) / Math.LN2,
@@ -485,7 +547,7 @@ const LAT_MERCATOR = 85.051129;
  * maplibre-gl 4.7. L'étendue inclinée de la vue immersive va jusqu'à
  * l'horizon (`inclineFond`), et de loin son centre passe le pôle.
  */
-function vueGLValable(/** @type {any} */ v){
+export function vueGLValable(/** @type {any} */ v){
   return Number.isFinite(v.zoom) && Number.isFinite(v.bearing) &&
     Number.isFinite(v.center[0]) && Number.isFinite(v.center[1]) &&
     Math.abs(v.center[1]) <= LAT_MERCATOR;
@@ -504,6 +566,12 @@ function vueGLValable(/** @type {any} */ v){
 function styleDuFond(cal, fond){
   if (cal && cal.style) return cal.style;
   return (fond && fond.style) || "";
+}
+
+/** Ce que le moteur reçoit : l'adresse collée, sinon l'objet du fond, sinon
+ *  son adresse. La photographie du fond figé (`fige-carte.mjs`) prend le même. */
+export function styleDeLaCarte(/** @type {any} */ cal, /** @type {any} */ fond){
+  return (cal && cal.style) || (fond.objet ? fond.objet() : styleDuFond(cal, fond));
 }
 
 let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
@@ -619,7 +687,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
   /* Une adresse collée l'emporte sur tout ; sinon c'est l'objet du fond, ou son
      adresse. L'empreinte sert à savoir si le style a changé — un objet n'a pas
      d'adresse à comparer, on prend le nom du fond. */
-  const style = (cal && cal.style) || (fond.objet ? fond.objet() : styleDuFond(cal, fond));
+  const style = styleDeLaCarte(cal, fond);
   /* Les bornes entrent dans l'empreinte : un autre pavillon, un calage
      enregistré, et le style se repose sur le nouveau carré. */
   const bornes = bornesDuFond(cal);
@@ -954,6 +1022,14 @@ export function dessineFondCarte(enGeste = false){
   const cadre = $("fondTuiles");
   if (cadre) cadre.setAttribute("viewBox",
     etendue.x + " " + etendue.y + " " + etendue.w + " " + etendue.h);
+  /* Figé, le fond n'est plus que des images : ni moteur, ni tuiles d'un
+     tiers. */
+  const fige = figeCourant(cal);
+  if (fige){
+    videCarteGL();
+    poseFige(hote, fige, etendue, cal.fond);
+    return;
+  }
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
   if (fond.style || fond.objet){

@@ -89,8 +89,22 @@ export function echangeSession(cfg, ses){
   return echange;
 }
 
-export async function base(acces, chemin, options = {}){
-  const envoie = () => fetch(acces.cfg.url + "/rest/v1/" + chemin, {
+export function base(acces, chemin, options = {}){
+  return appelle(acces, "/rest/v1/" + chemin, options);
+}
+
+/**
+ * Le même appel, vers le stockage de fichiers du projet : le fond figé y
+ * range ses images (`fige-carte.mjs`). Le jeton s'y renouvelle de la même
+ * façon, et pour la même raison — figer un fond prend une minute, et la
+ * session peut finir au milieu.
+ */
+export function stockage(acces, chemin, options = {}){
+  return appelle(acces, "/storage/v1/" + chemin, options);
+}
+
+async function appelle(acces, chemin, options = {}){
+  const envoie = () => fetch(acces.cfg.url + chemin, {
     ...options,
     headers: {
       "apikey": acces.cfg.anonKey,
@@ -118,8 +132,11 @@ export async function base(acces, chemin, options = {}){
      en rond — l'exploitant dessinait une matinée entière sans que rien ne
      parte, puis fermait l'onglet. Le corps de la réponse tranche : lui seul
      distingue le jeton mort du droit qui manque vraiment. */
+  /* Le stockage de fichiers, lui, répond 400 — son corps porte le vrai code,
+     et « jwt expired » en toutes lettres. */
   const jetonMort = (etat, corps) => etat === 401 ||
-    (etat === 403 && /jwt|token|expir/i.test(corps));
+    (etat === 403 && /jwt|token|expir/i.test(corps)) ||
+    (etat === 400 && /jwt/i.test(corps));
   if (jetonMort(r.status, txt) && await echangeContre()){
     r = await envoie();
     txt = await r.text();

@@ -850,7 +850,9 @@ fs.writeFileSync(path.join(D, "..", "src", "pages.mjs"),
 if (PROJET.apercu) console.log("  construction de prévisualisation — projet « " + PROJET.nom + " »");
 
 fs.writeFileSync(W + "sw.js",
-  epureScript(fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version)));
+  epureScript(fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version)
+    // le seau du fond figé est chez le projet de cette construction
+    .replace("__URL_PROJET__", () => PROJET.url)));
 
 for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
   const s = fs.readFileSync(W + f, "utf8");
