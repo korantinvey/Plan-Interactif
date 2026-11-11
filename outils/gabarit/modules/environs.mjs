@@ -431,6 +431,14 @@ export function figeAJour(/** @type {any} */ cal, /** @type {any} */ zone){
 let _etendueFige = null;
 /** Le rattrapage d'un geste qui s'arrêterait sans repasser par la pose. @type {any} */
 let _releveFige = null;
+/* Les images qui se décodent avant de paraître, par adresse ; celles que la
+   dernière pose demande ; et son numéro, pour qu'une pose dépassée ne retire
+   rien de ce que la suivante a mis. */
+/** @type {Map<string, HTMLImageElement>} */
+const _enDecodage = new Map();
+/** @type {Set<string>} */
+let _voulues = new Set();
+let _poseFige = 0;
 
 /** Le calque des images, recalé sur l'étendue `e` ; faux s'il faut reposer. */
 function recaleFige(/** @type {HTMLElement} */ lot, /** @type {any} */ e){
@@ -449,6 +457,7 @@ function recaleFige(/** @type {HTMLElement} */ lot, /** @type {any} */ e){
 function videFige(){
   clearTimeout(_releveFige); _releveFige = null;
   _etendueFige = null;
+  _poseFige++; _voulues = new Set(); _enDecodage.clear();
   const hote = $("fondFige");
   if (hote && (!hote.hidden || hote.firstChild)){ hote.hidden = true; hote.innerHTML = ""; }
 }
@@ -482,53 +491,77 @@ function poseFige(/** @type {any} */ f, /** @type {any} */ e, /** @type {string}
     if (premiere) CARTE_ENVIRONS.emet("demandee", { fond: fond, fige: true });
     _fondPose = empreinte;
     _tuilesMuettes = 0;
+    const gen = ++_poseFige;
+    _voulues = new Set(liste.map(q => adresseFigee(f, q.k, q.i, q.j)));
     /* Les images déjà là sont gardées, déjà décodées : seules les nouvelles
-       se chargent, et l'ordre — le niveau zéro d'abord — se refait en les
-       déplaçant. */
+       se chargent. Et elles se décodent avant de paraître. Posées aussitôt,
+       elles se décodaient au moment d'être peintes, toutes d'un coup, au
+       premier repos après un pincement — des images de 67 à 112 ms sans un
+       script, quand le fond en direct n'en avait aucune (relevés `?perf` de
+       FUNEXPO 2026, 11 novembre 2026). Décodées à l'écart, elles entrent
+       prêtes ; d'ici là, les images d'avant restent à l'écran, et le niveau
+       zéro dessous. */
     /** @type {Map<string, HTMLImageElement>} */
     const deja = new Map();
     for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children])) deja.set(im.dataset.src || "", im);
-    let restent = 0;
+    let attendues = 0;
+    const finit = () => {
+      if (gen !== _poseFige || --attendues > 0) return;
+      // toutes là : les images d'avant que la vue ne demande plus s'en vont
+      for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children]))
+        if (!_voulues.has(im.dataset.src || "")) im.remove();
+      if (premiere) CARTE_ENVIRONS.emet("chargee");
+    };
     for (const q of liste){
       const src = adresseFigee(f, q.k, q.i, q.j);
-      let im = deja.get(src);
-      if (im) deja.delete(src);
-      else {
-        im = document.createElement("img");
-        im.alt = ""; im.decoding = "async"; im.draggable = false;
-        im.dataset.src = src;
-        restent++;
-        im.addEventListener("load", () => {
-          if (--restent === 0 && premiere) CARTE_ENVIRONS.emet("chargee");
-        }, { once: true });
-        im.onerror = () => {
-          im.remove();
-          /* Trois images perdues, c'est le lot : on le laisse, et le fond
-             repasse en direct — le dessiner coûte, mais vaut mieux que rien. */
-          if (++_tuilesMuettes === 3){
-            _figeEnPanne = f.adresse;
-            console.warn("Fond figé injoignable, le fond repasse en direct : " + f.adresse);
-            refaitFondCarte();
-          }
-        };
-        im.src = src;
+      const im = deja.get(src) || _enDecodage.get(src);
+      if (im){
+        Object.assign(im.dataset, { x: String(q.x), y: String(q.y), c: String(q.c) });
+        continue;
       }
-      Object.assign(im.dataset, { x: String(q.x), y: String(q.y), c: String(q.c) });
-      lot.appendChild(im);
+      const neuve = document.createElement("img");
+      neuve.alt = ""; neuve.draggable = false;
+      Object.assign(neuve.dataset, { src: src, x: String(q.x), y: String(q.y), c: String(q.c) });
+      neuve.onerror = () => {
+        neuve.remove();
+        /* Trois images perdues, c'est le lot : on le laisse, et le fond
+           repasse en direct — le dessiner coûte, mais vaut mieux que rien. */
+        if (++_tuilesMuettes === 3){
+          _figeEnPanne = f.adresse;
+          console.warn("Fond figé injoignable, le fond repasse en direct : " + f.adresse);
+          refaitFondCarte();
+        }
+      };
+      attendues++;
+      _enDecodage.set(src, neuve);
+      neuve.src = src;
+      neuve.decode().then(() => {
+        _enDecodage.delete(src);
+        /* Une vue plus récente ne la demande plus : elle ne paraît pas. Sinon
+           elle entre à sa place — le niveau zéro dessous, les plus fines
+           par-dessus —, posée sur l'étendue du dernier repos, que le
+           recalage d'un geste en cours déplace avec les autres. */
+        if (!_voulues.has(src) || !_etendueFige) return;
+        placeFigee(neuve, _etendueFige);
+        if (q.k === 0) lot.prepend(neuve); else lot.appendChild(neuve);
+      }, () => { _enDecodage.delete(src); }).then(finit);
     }
-    for (const im of deja.values()) im.remove();
+    if (!attendues){ attendues = 1; finit(); }
   }
   /* Au pixel près pour la vue posée, avec le même cheveu de recouvrement que
      les tuiles : deux bords calculés en virgule flottante laissent sinon
      passer un fil de fond. */
-  for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children])){
-    const x = +im.dataset.x, y = +im.dataset.y, c = +im.dataset.c;
-    const st = im.style;
-    st.left = (x - e.x) / e.mParPx + "px";
-    st.top = (y - e.y) / e.mParPxY + "px";
-    st.width = c * 1.001 / e.mParPx + "px";
-    st.height = c * 1.001 / e.mParPxY + "px";
-  }
+  for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children])) placeFigee(im, e);
+}
+
+/** Une image du lot à sa place sur l'étendue `e`, en pixels de l'hôte. */
+function placeFigee(/** @type {HTMLImageElement} */ im, /** @type {any} */ e){
+  const x = +(im.dataset.x || 0), y = +(im.dataset.y || 0), c = +(im.dataset.c || 0);
+  const st = im.style;
+  st.left = (x - e.x) / e.mParPx + "px";
+  st.top = (y - e.y) / e.mParPxY + "px";
+  st.width = c * 1.001 / e.mParPx + "px";
+  st.height = c * 1.001 / e.mParPxY + "px";
 }
 
 /* ------------------------------------------------------------
