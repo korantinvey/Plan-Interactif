@@ -157,6 +157,12 @@
          garde les libellés droits quand le plan est tourné. Elle ne reçoit
          aucun geste — tout passe par le SVG posé dessus. -->
     <div class="fondGL" id="fondCarteGL" hidden></div>
+    <!-- Le fond figé, en images posées d'avance (`modules/environs.mjs`
+         `poseFige`). Hors du SVG des tuiles : pendant un geste, ce calque se
+         déplace en CSS sans rien repeindre, là où le SVG repeignait chaque
+         image à chaque changement de sa « viewBox ». Sous l'aplat qui vide le
+         hall, qui vient après lui. -->
+    <div class="fondFige" id="fondFige" aria-hidden="true" hidden></div>
     <!-- Les tuiles d'images et l'aplat qui vide le hall, hors du plan.
          Longtemps ils vivaient dans « #couches », ce qui était plus simple :
          ils héritaient de sa « viewBox ». Le rendu par la carte graphique a

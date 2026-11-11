@@ -249,7 +249,7 @@ test.describe("le fond de carte", () => {
 
   /** La page du visiteur, le premier pavillon calé sur `calage` ; le seau
    *  répond par `seau`. Rend les erreurs, et ce que la page a demandé à qui. */
-  async function ouvrePublic(page, calage, seau) {
+  async function ouvrePublic(page, calage, seau, suite = "") {
     const erreurs = await prepare(page);
     const demandes = [];
     page.on("request", (q) => demandes.push(q.url()));
@@ -263,7 +263,7 @@ test.describe("le fond de carte", () => {
       (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
     await page.route("https://seau.essai/**", seau ||
       ((r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL })));
-    await page.goto("/plan.html?plan=smcl-2026");
+    await page.goto("/plan.html?plan=smcl-2026" + suite);
     await attendLaListe(page);
     return { erreurs, demandes };
   }
@@ -271,17 +271,56 @@ test.describe("le fond de carte", () => {
   test("un fond figé se pose sans moteur de carte ni tuiles", async ({ page }) => {
     const cal = { ...CALE, fond: "maison" };
     const { erreurs, demandes } = await ouvrePublic(page, { ...cal, fige: await lotPour(cal) });
-    const images = page.locator("#fondCarte image");
+    const images = page.locator("#fondFige img");
     await expect(images.first()).toBeAttached();
-    const adresses = await images.evaluateAll((l) => l.map((i) => i.getAttribute("href")));
+    const adresses = await images.evaluateAll((l) => l.map((i) => i.getAttribute("src")));
     expect(adresses.every((a) => a.startsWith(SEAU))).toBe(true);
     // le niveau zéro reste dessous, pendant que les plus fins arrivent
-    expect(adresses).toContain(SEAU + "0/0/0.png");
-    // en mètres du plan : rien à tourner
-    expect(await page.locator("#fondCarte").getAttribute("transform")).toBeNull();
+    expect(adresses[0]).toBe(SEAU + "0/0/0.png");
+    // hors du SVG des tuiles, qui ne porte plus que l'aplat du hall
+    await expect(page.locator("#fondCarte image")).toHaveCount(0);
     await expect(page.locator("#creditCarte")).toBeVisible();
     await page.waitForTimeout(500);
     expect(demandes.filter((u) => /maplibre|versatiles|openstreetmap/.test(u))).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("pendant un geste, le fond figé se déplace sans être reposé", async ({ page }) => {
+    /* Reposé à chaque image, le fond figé faisait rater une image sur deux à
+       un téléphone à 120 Hz : pendant le geste, son calque ne fait que se
+       translater et s'agrandir, et ses images ne bougent qu'à l'arrêt. */
+    const cal = { ...CALE, fond: "maison" };
+    // le plan en SVG : le calque du fond n'en dépend pas, et le geste reste vif sans carte graphique
+    const lotFige = await lotPour(cal);
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: lotFige }, null, "&rendu=svg");
+    await expect(page.locator("#fondFige img").first()).toBeAttached();
+    await page.waitForTimeout(600);
+    const lot = page.locator("#fondFige > div");
+    const boite = await page.locator("#plan").boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    await page.mouse.down();
+    const vus = [];
+    for (let i = 1; i <= 12; i++) {
+      await page.mouse.move(boite.x + boite.width / 2 + i * 8, boite.y + boite.height / 2 + i * 4);
+      vus.push(await lot.evaluate((d) => d.style.transform));
+    }
+    await page.mouse.up();
+    expect(vus.some((t) => /translate/.test(t))).toBe(true);
+    // à l'arrêt, les images reprennent leur place exacte, et le calque sa pose
+    await expect.poll(() => lot.evaluate((d) => d.style.transform)).toBe("");
+    /* Exacte : le coin du niveau zéro tombe là où le SVG des tuiles — celui
+       de l'aplat qui vide le hall — pose le même point du plan. */
+    const ecart = await page.evaluate((f) => {
+      const ns = "http://www.w3.org/2000/svg", m = document.createElementNS(ns, "rect");
+      m.setAttribute("x", String(f.x0)); m.setAttribute("y", String(f.y0));
+      m.setAttribute("width", String(f.cote)); m.setAttribute("height", String(f.cote));
+      document.getElementById("fondTuiles").appendChild(m);
+      const a = m.getBoundingClientRect(), b = document.querySelector("#fondFige img").getBoundingClientRect();
+      m.remove();
+      return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top), Math.abs(a.width - b.width / 1.001));
+    }, lotFige);
+    expect(ecart).toBeLessThan(1);
     expect(erreurs).toEqual([]);
   });
 
@@ -291,7 +330,8 @@ test.describe("le fond de carte", () => {
     const lot = await lotPour({ ...cal, angle: 0.2 });
     await ouvrePublic(page, { ...cal, fige: lot });
     await expect(page.locator("#fondCarte image[href*='openstreetmap']").first()).toBeAttached();
-    await expect(page.locator("#fondCarte image[href*='seau.essai']")).toHaveCount(0);
+    await expect(page.locator("#fondFige img")).toHaveCount(0);
+    await expect(page.locator("#fondFige")).toBeHidden();
   });
 
   test("un fond figé injoignable repasse en direct", async ({ page }) => {

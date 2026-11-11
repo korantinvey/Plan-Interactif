@@ -375,8 +375,9 @@ function tuilesDeLaVue(cal, fond, vue, mParPx, zone){
    (`fige-carte.mjs`, administration seule) : le fond retenu, quel qu'il soit,
    photographié orienté comme le plan, en une pyramide d'images carrées — le
    carré entier au niveau zéro, coupé en quatre à chaque niveau suivant. Elles
-   se posent ici dans le calque des tuiles, en mètres du plan, sans rotation
-   ni moteur : orientées d'avance, leurs noms de rues sont déjà droits.
+   se posent ici dans leur propre calque (`#fondFige`, voir plus bas), sans
+   rotation ni moteur : orientées d'avance, leurs noms de rues sont déjà
+   droits.
 
    Le lot ne vaut que pour ce qui l'a produit. Son empreinte — le fond, le
    style, le point, le cap, le carré — part avec lui ; un calage déplacé sans
@@ -407,46 +408,127 @@ export function figeAJour(/** @type {any} */ cal, /** @type {any} */ zone){
   return !!(cal && cal.fige && zone && cal.fige.source === sourceDuFige(cal, zone));
 }
 
-/** Le lot posé dans le calque des tuiles, pour l'étendue `e`. */
-function poseFige(/** @type {Element} */ hote, /** @type {any} */ f, /** @type {any} */ e, /** @type {string} */ fond){
-  // les images sont en mètres du plan : le groupe n'a rien à tourner
-  if (hote.hasAttribute("transform")) hote.removeAttribute("transform");
+/* ------------------------------------------------------------
+   Le fond figé pendant un geste
+
+   Posées dans le SVG des tuiles, les images figées se repeignaient à chaque
+   image d'un zoom : sa « viewBox » change à chaque fois, et le navigateur
+   reprenait chaque image et l'opacité du fond par-dessus. Sur un téléphone à
+   120 Hz, la page visiteur ne tenait plus que 60 images par seconde pendant
+   un pincement, quand le fond en direct en tenait 120 (relevés `?perf` de
+   FUNEXPO 2026, Mali-G720, 11 novembre 2026).
+
+   Elles vivent donc dans un calque HTML à elles (`#fondFige`), sous l'aplat
+   qui vide le hall, l'opacité posée sur le calque entier. Au repos, chaque
+   image est placée au pixel près pour la vue. Pendant un geste, rien n'est
+   repeint : le calque des images est seulement translaté et agrandi en CSS,
+   comme la toile de MapLibre (`recaleCarteGL`), et le navigateur ne fait que
+   déplacer ce qu'il a déjà peint. Le niveau zéro, qui couvre tout le carré,
+   reste dessous : un glissement ne découvre jamais de vide, seulement une
+   image moins fine, jusqu'à ce que la vue se pose.
+   ------------------------------------------------------------ */
+/** L'étendue sur laquelle les images sont posées au pixel près. @type {any} */
+let _etendueFige = null;
+/** Le rattrapage d'un geste qui s'arrêterait sans repasser par la pose. @type {any} */
+let _releveFige = null;
+
+/** Le calque des images, recalé sur l'étendue `e` ; faux s'il faut reposer. */
+function recaleFige(/** @type {HTMLElement} */ lot, /** @type {any} */ e){
+  const e0 = _etendueFige;
+  if (!e0 || e0.px !== e.px || e0.py !== e.py) return false;
+  // un pixel de l'hôte montrait le mètre e0.x + u·e0.mParPx ; il doit tomber en u'
+  const sx = e0.mParPx / e.mParPx, sy = e0.mParPxY / e.mParPxY;
+  // trop agrandies, les images se brouillent : on repose, à la finesse qu'il faut
+  if (sx > ETIREMENT_MAX || sy > ETIREMENT_MAX) return false;
+  const tx = (e0.x - e.x) / e.mParPx, ty = (e0.y - e.y) / e.mParPxY;
+  lot.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + sx + "," + sy + ")";
+  return true;
+}
+
+/** Le fond figé retiré : son calque se vide et se cache. */
+function videFige(){
+  clearTimeout(_releveFige); _releveFige = null;
+  _etendueFige = null;
+  const hote = $("fondFige");
+  if (hote && (!hote.hidden || hote.firstChild)){ hote.hidden = true; hote.innerHTML = ""; }
+}
+
+/** Le lot posé dans son calque, pour l'étendue `e`. */
+function poseFige(/** @type {any} */ f, /** @type {any} */ e, /** @type {string} */ fond, enGeste = false){
+  const hote = $("fondFige");
+  if (!hote) return;
+  hote.hidden = false;
+  const lot = /** @type {HTMLElement} */ (hote.firstElementChild ||
+    hote.appendChild(document.createElement("div")));
+  if (enGeste && recaleFige(lot, e)){
+    clearTimeout(_releveFige);
+    _releveFige = setTimeout(() => { _releveFige = null; dessineFondCarte(); }, 250);
+    return;
+  }
+  clearTimeout(_releveFige); _releveFige = null;
+  lot.style.removeProperty("transform");
+  _etendueFige = e;
+
   const t = imagesFigees(f, e, e.mParPx);
-  const empreinte = "fige|" + f.adresse + "|" + t.k + "|" +
-    t.images.map(q => q.i + "," + q.j).join(";");
-  if (empreinte === _fondPose) return;
-  const premiere = !_fondPose.startsWith("fige|" + f.adresse);
-  /* La sonde suit le fond figé comme le montage de MapLibre : ce qu'on gagne
-     à figer se lit dans les mêmes champs (`sonde.mjs`). */
-  if (premiere) CARTE_ENVIRONS.emet("demandee", { fond: fond, fige: true });
-  _fondPose = empreinte;
-  _tuilesMuettes = 0;
   /* Le niveau zéro reste toujours dessous : une seule image, déjà là, qui
      tient la place pendant que les plus fines arrivent — le hall ne flotte
-     jamais sur du vide le temps d'un zoom. */
+     jamais sur du vide le temps d'un zoom ni d'un glissement. */
   const liste = t.k > 0 ? [{ k: 0, i: 0, j: 0, x: f.x0, y: f.y0, c: f.cote }].concat(t.images) : t.images;
-  hote.innerHTML = liste.map(q => {
-    // le même cheveu de recouvrement que pour les tuiles, en mètres
-    const c = q.c * 1.001;
-    return '<image x="' + q.x + '" y="' + q.y + '" width="' + c + '" height="' + c +
-      '" preserveAspectRatio="none" href="' + esc(adresseFigee(f, q.k, q.i, q.j)) + '"/>';
-  }).join("");
-  let restent = liste.length;
-  hote.querySelectorAll("image").forEach(im => {
-    im.addEventListener("load", () => {
-      if (--restent === 0 && premiere) CARTE_ENVIRONS.emet("chargee");
-    }, { once: true });
-    im.onerror = () => {
-      im.remove();
-      /* Trois images perdues, c'est le lot : on le laisse, et le fond
-         repasse en direct — le dessiner coûte, mais vaut mieux que rien. */
-      if (++_tuilesMuettes === 3){
-        _figeEnPanne = f.adresse;
-        console.warn("Fond figé injoignable, le fond repasse en direct : " + f.adresse);
-        refaitFondCarte();
+  const empreinte = "fige|" + f.adresse + "|" + t.k + "|" + t.images.map(q => q.i + "," + q.j).join(";");
+  if (empreinte !== _fondPose){
+    const premiere = !_fondPose.startsWith("fige|" + f.adresse);
+    /* La sonde suit le fond figé comme le montage de MapLibre : ce qu'on gagne
+       à figer se lit dans les mêmes champs (`sonde.mjs`). */
+    if (premiere) CARTE_ENVIRONS.emet("demandee", { fond: fond, fige: true });
+    _fondPose = empreinte;
+    _tuilesMuettes = 0;
+    /* Les images déjà là sont gardées, déjà décodées : seules les nouvelles
+       se chargent, et l'ordre — le niveau zéro d'abord — se refait en les
+       déplaçant. */
+    /** @type {Map<string, HTMLImageElement>} */
+    const deja = new Map();
+    for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children])) deja.set(im.dataset.src || "", im);
+    let restent = 0;
+    for (const q of liste){
+      const src = adresseFigee(f, q.k, q.i, q.j);
+      let im = deja.get(src);
+      if (im) deja.delete(src);
+      else {
+        im = document.createElement("img");
+        im.alt = ""; im.decoding = "async"; im.draggable = false;
+        im.dataset.src = src;
+        restent++;
+        im.addEventListener("load", () => {
+          if (--restent === 0 && premiere) CARTE_ENVIRONS.emet("chargee");
+        }, { once: true });
+        im.onerror = () => {
+          im.remove();
+          /* Trois images perdues, c'est le lot : on le laisse, et le fond
+             repasse en direct — le dessiner coûte, mais vaut mieux que rien. */
+          if (++_tuilesMuettes === 3){
+            _figeEnPanne = f.adresse;
+            console.warn("Fond figé injoignable, le fond repasse en direct : " + f.adresse);
+            refaitFondCarte();
+          }
+        };
+        im.src = src;
       }
-    };
-  });
+      Object.assign(im.dataset, { x: String(q.x), y: String(q.y), c: String(q.c) });
+      lot.appendChild(im);
+    }
+    for (const im of deja.values()) im.remove();
+  }
+  /* Au pixel près pour la vue posée, avec le même cheveu de recouvrement que
+     les tuiles : deux bords calculés en virgule flottante laissent sinon
+     passer un fil de fond. */
+  for (const im of /** @type {HTMLImageElement[]} */ ([...lot.children])){
+    const x = +im.dataset.x, y = +im.dataset.y, c = +im.dataset.c;
+    const st = im.style;
+    st.left = (x - e.x) / e.mParPx + "px";
+    st.top = (y - e.y) / e.mParPxY + "px";
+    st.width = c * 1.001 / e.mParPx + "px";
+    st.height = c * 1.001 / e.mParPxY + "px";
+  }
 }
 
 /* ------------------------------------------------------------
@@ -943,7 +1025,8 @@ function inclineFond(/** @type {DOMRect} */ r){
     _sol = sol;
     // l'hôte change de taille : l'image gardée pour le geste ne vaut plus
     _etendueGL = null;
-    for (const id of ["fondTuiles", "fondCarteGL"]){
+    _etendueFige = null;
+    for (const id of ["fondTuiles", "fondCarteGL", "fondFige"]){
       const el = $(id);
       if (!el) continue;
       const st = el.style;
@@ -997,6 +1080,7 @@ export function dessineFondCarte(enGeste = false){
       hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
     }
     videCarteGL();
+    videFige();
     _calagePose = "";
     if (credit) credit.hidden = true;
     return;
@@ -1027,9 +1111,14 @@ export function dessineFondCarte(enGeste = false){
   const fige = figeCourant(cal);
   if (fige){
     videCarteGL();
-    poseFige(hote, fige, etendue, cal.fond);
+    // le groupe des tuiles se vide : les images figées ont leur calque à elles
+    if (hote.firstChild || hote.hasAttribute("transform")){
+      hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = "";
+    }
+    poseFige(fige, etendue, cal.fond, enGeste);
     return;
   }
+  videFige();
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
   if (fond.style || fond.objet){

@@ -35,7 +35,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_entete.html` — 6 l.
 
-### `_head.html` — 663 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
+### `_head.html` — 669 l. → demo.html, plan-admin.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -45,29 +45,29 @@ l'endroit où l'on corrige quoi que ce soit.
 `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side` · `#poignee` · `#q` · `#videQ`
 `#btnFiltres` · `#nFiltres` · `#panCrit` · `#critCorps` · `#critPied` · `#critVider`
 `#critVoir` · `#actifs` · `#count` · `#countTxt` · `#list` · `#piedSide`
-`#btnConfidentialite` · `#stage` · `#fondCarteGL` · `#fondTuiles` · `#fondCarte`
-`#trouDuFond` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#calqueLibelles`
-`#zIn` · `#zOut` · `#zFit` · `#choixAmbiance` · `#scaleBar` · `#scaleTxt` · `#creditCarte`
-`#mentionOsm` · `#poi` · `#poiDefile` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#routeRappel` · `#routeVoir` · `#routeResume` · `#routeEfface` · `#calageBat`
-`#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel`
-`#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
-`#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
-`#outilsCalque` · `#renommeOutils` · `#replieOutils` · `#fermeOutils` · `#roleIti`
-`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
-`#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
-`#texteADessiner` · `#repereType` · `#repereTransport` · `#repereMode` · `#repereLigne`
-`#repereCouleur` · `#repereTexte` · `#imageSoc` · `#standSoc` · `#listeSoc`
-`#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
-`#elemSupprimer` · `#elemPicto` · `#elemTransport` · `#elemMode` · `#elemLigne`
-`#elemCouleur` · `#elemTexte` · `#elemLiens` · `#elemLiensListe` · `#elemLienAjout`
-`#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur` · `#elemTailleBloc`
-`#elemTaille` · `#elemRotationBloc` · `#elemRotation` · `#elemRotationQuart`
-`#elemRayonBloc` · `#elemRayon` · `#elemTraitReg` · `#elemEpaisseur` · `#elemStyle`
-`#elemFleche` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
-`#libFerme` · `#libTaille` · `#libAngleChamp` · `#libAngle` · `#libAngleVal` · `#libAuto`
-`#libAide` · `#geoReg` · `#geoNom` · `#geoFerme` · `#geoInfos` · `#geoCodeL` · `#geoCode`
-`#geoSocL` · `#geoSoc` · `#geoTitreL` · `#geoTitre` · `#geoDim` · `#geoLargeur`
+`#btnConfidentialite` · `#stage` · `#fondCarteGL` · `#fondFige` · `#fondTuiles`
+`#fondCarte` · `#trouDuFond` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels`
+`#calqueLibelles` · `#zIn` · `#zOut` · `#zFit` · `#choixAmbiance` · `#scaleBar`
+`#scaleTxt` · `#creditCarte` · `#mentionOsm` · `#poi` · `#poiDefile` · `#viseur`
+`#viseurTxt` · `#viseurStop` · `#routeRappel` · `#routeVoir` · `#routeResume`
+`#routeEfface` · `#calageBat` · `#calageAngle` · `#calageQuart` · `#calageStop`
+`#calageValide` · `#iciRappel` · `#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser`
+`#calage` · `#calageFerme` · `#calageCorps` · `#calageCarte` · `#calageEtat`
+`#calageGarde` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#replieOutils`
+`#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas`
+`#contourReg` · `#contourRayon` · `#contourAimant` · `#traitReg` · `#traitEpaisseur`
+`#traitStyle` · `#traitFleche` · `#texteADessiner` · `#repereType` · `#repereTransport`
+`#repereMode` · `#repereLigne` · `#repereCouleur` · `#repereTexte` · `#imageSoc`
+`#standSoc` · `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel`
+`#elemType` · `#elemSupprimer` · `#elemPicto` · `#elemTransport` · `#elemMode`
+`#elemLigne` · `#elemCouleur` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
+`#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur`
+`#elemTailleBloc` · `#elemTaille` · `#elemRotationBloc` · `#elemRotation`
+`#elemRotationQuart` · `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg` · `#elemEpaisseur`
+`#elemStyle` · `#elemFleche` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg`
+`#libNom` · `#libFerme` · `#libTaille` · `#libAngleChamp` · `#libAngle` · `#libAngleVal`
+`#libAuto` · `#libAide` · `#geoReg` · `#geoNom` · `#geoFerme` · `#geoInfos` · `#geoCodeL`
+`#geoCode` · `#geoSocL` · `#geoSoc` · `#geoTitreL` · `#geoTitre` · `#geoDim` · `#geoLargeur`
 `#geoHauteur` · `#geoOrigine` · `#geoFiche` · `#geoSupprime` · `#geoAide` · `#modale`
 `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail`
 `#poigneeFiche` · `#dRubans` · `#dGoIco` · `#dItinIco` · `#dMarque` · `#closeDetail`
@@ -126,7 +126,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 708 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1741 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1750 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
 
@@ -1061,7 +1061,7 @@ Importé par :
 
 bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1203 l. → plan, plan-admin
+### `modules/environs.mjs` — 1292 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1070,13 +1070,14 @@ Fonctions :
 `poseCalageEnCours` 56 · `styleSobre` 129 · `forceCarte` 223 · `vueLibre` 230
 `calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
 `bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
-`figeCourant` 397 · `figeAJour` 406 · `poseFige` 411 · `chargeMapLibre` 495 · `vueGL` 527
-`vueGLValable` 550 · `styleDuFond` 566 · `styleDeLaCarte` 573 · `guetteLaCarte` 600
-`recaleCarteGL` 634 · `redessineCarteGL` 654 · `poseCarteGL` 684 · `diagnostiqueGL` 808
-`relanceCarteGL` 828 · `retireCarteGL` 842 · `guetteRetourGL` 869 · `carteGLPerdue` 876
-`verifieCarteGL` 886 · `videCarteGL` 904 · `inclineFond` 938 · `dessineFondCarte` 986
-`cleMasqueCarte` 1114 · `masqueCarte` 1115 · `formesMasquantes` 1124 · `contourDuHall` 1146
-`cheminDuHall` 1153 · `poseMasqueCarte` 1171 · `ditCarte` 1186 · `refaitFondCarte` 1196
+`figeCourant` 398 · `figeAJour` 407 · `recaleFige` 436 · `videFige` 449 · `poseFige` 457
+`chargeMapLibre` 577 · `vueGL` 609 · `vueGLValable` 632 · `styleDuFond` 648
+`styleDeLaCarte` 655 · `guetteLaCarte` 682 · `recaleCarteGL` 716 · `redessineCarteGL` 736
+`poseCarteGL` 766 · `diagnostiqueGL` 890 · `relanceCarteGL` 910 · `retireCarteGL` 924
+`guetteRetourGL` 951 · `carteGLPerdue` 958 · `verifieCarteGL` 968 · `videCarteGL` 986
+`inclineFond` 1020 · `dessineFondCarte` 1069 · `cleMasqueCarte` 1203 · `masqueCarte` 1204
+`formesMasquantes` 1213 · `contourDuHall` 1235 · `cheminDuHall` 1242
+`poseMasqueCarte` 1260 · `ditCarte` 1275 · `refaitFondCarte` 1285
 
 Importe :
 
