@@ -19,11 +19,15 @@
    toujours un geste qui l'appelle ici.
    ============================================================ */
 
-/* Assez pour se sentir, trop peu pour s'entendre sur une table. Dix
-   millisecondes suffisaient sur le papier, et ne se sentaient pas sur un
-   vrai téléphone Android : le petit moteur à balourd de la plupart d'entre
-   eux n'a pas le temps de démarrer. En deçà d'une trentaine, rien ne bouge. */
-export const PRISE = 30, BUTEE = 45;
+/* Assez pour se sentir, trop peu pour s'entendre sur une table. Le web ne
+   règle pas la force d'une vibration, seulement sa durée : c'est elle qui
+   dose. Dix millisecondes ne se sentaient pas sur un vrai téléphone Android
+   — le moteur n'a pas le temps de démarrer —, et trente se sentaient trop
+   fort au choix d'un stand, qu'on fait sans cesse ; vingt, essayées au doigt
+   parmi d'autres durées sur un vrai téléphone, se sentent sans appuyer. La
+   butée reste plus marquée : elle dit que le plan ne suivra plus la main,
+   pas qu'il a pris quelque chose. */
+export const PRISE = 20, BUTEE = 45;
 
 /**
  * Vibre `ms` millisecondes, si l'appareil sait le faire et que c'est un doigt
