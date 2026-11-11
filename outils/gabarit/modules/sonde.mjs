@@ -671,7 +671,7 @@ function etapeDeLaCarte(/** @type {string} */ etape, /** @type {any} */ d = {}){
   if (etape === "demandee"){
     // un second montage — un autre fond choisi — ne refait pas la mesure du premier
     if (CARTE) return;
-    CARTE = { t0: t, fond: d.fond, deja: !!d.deja, gelsN: 0, gelsMs: 0, maplibreMs: 0, battementMs: 0 };
+    CARTE = { t0: t, fond: d.fond, deja: !!d.deja, fige: !!d.fige, gelsN: 0, gelsMs: 0, maplibreMs: 0, battementMs: 0 };
     return;
   }
   if (!CARTE) return;
@@ -699,7 +699,9 @@ function etapeDeLaCarte(/** @type {string} */ etape, /** @type {any} */ d = {}){
 function laCarteDesEnvirons(){
   if (!CARTE || !V.chargee) return undefined;
   const c = CARTE;
-  return { fond: c.fond, deja: c.deja || undefined,
+  /* `fige` : le fond était le lot d'images de l'exploitant, sans MapLibre —
+     ses étapes de bibliothèque et de création restent alors vides. */
+  return { fond: c.fond, deja: c.deja || undefined, fige: c.fige || undefined,
     demandeeMs: Math.round(c.t0 - V.t0), bibliothequeMs: c.bibliothequeMs,
     telechargementMs: c.telechargementMs, transfertKo: c.transfertKo, lectureMs: c.lectureMs,
     creationMs: c.creationMs, chargeeMs: c.chargeeMs, echec: c.echec,

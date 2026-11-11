@@ -27,7 +27,9 @@ import { DEG, versTerre, versLePlan, reancre, aireDuContour, centreDuContour, ax
   from "./terre.mjs";
 import { CARTES, forceCarte, calagePose, calageCourant, fondCourant, relanceCarteGL, dessineFondCarte,
   cleMasqueCarte, masqueCarte, contourDuHall, poseMasqueCarte, refaitFondCarte,
-  CALAGE_EN_COURS as ENV_CAL, poseCalageEnCours } from "./environs.mjs";
+  CALAGE_EN_COURS as ENV_CAL, poseCalageEnCours, figeAJour } from "./environs.mjs";
+import { sourceDuFige, carreDuFond } from "./lot-fige.mjs";
+import { figeLeFond, retireLesLots, ditLot } from "./fige-carte.mjs";
 import { identifiants, oublieCache } from "./enregistrement.mjs";
 import { vue, svg, versPlan, poseVue } from "./vue.mjs";
 import { MONTE, PAVILLON_QUITTE } from "./rendu.mjs";
@@ -284,6 +286,39 @@ async function enregistreCalage(cal){
   }).catch(e => { throw manqueCalage(e); });
   P().calage = cal;
   oublieCache(acces);
+}
+
+/**
+ * Le fond figé après l'enregistrement : photographié s'il a changé depuis la
+ * dernière fois — ou si `encore` le demande, quand OpenStreetMap a bougé —,
+ * puis inscrit dans le calage, et les lots d'avant retirés.
+ *
+ * Le calage est enregistré d'abord, tel quel : le visiteur voit le nouveau
+ * réglage tout de suite, en direct, le temps que la photographie se fasse.
+ */
+async function figeEtEnregistre(/** @type {(txt: string, mal?: boolean) => void} */ dit, encore = false){
+  const cal = ENV_CAL, p = P();
+  if (!cal || !cal.fond || !p.emprise) return;
+  const zone = carreDuFond(p.emprise);
+  if (!encore && figeAJour(cal, zone)){
+    dit("Les visiteurs voient la carte, déjà figée.");
+    return;
+  }
+  const photo = Object.assign({}, cal);
+  delete photo.fige;
+  const r = await figeLeFond(photo, dit);
+  /* La photographie prend une minute, et la palette reste ouverte : un
+     calage déplacé entre-temps ne correspond plus au lot, qui part. */
+  if (!ENV_CAL || sourceDuFige(ENV_CAL, zone) !== r.fige.source){
+    retireLesLots({ seul: r.nom }).catch(e => console.warn("Lot caduc non retiré : " + e.message));
+    dit("Le calage a bougé pendant la photographie : enregistrez-le de nouveau pour figer le fond.", true);
+    return;
+  }
+  ENV_CAL.fige = r.fige;
+  await enregistreCalage(ENV_CAL);
+  retireLesLots({ garde: r.nom }).catch(e => console.warn("Lots d'avant non retirés : " + e.message));
+  rafraichitCarte();
+  dit("Fond figé : " + r.fige.images + " images. Les visiteurs le reçoivent tel quel.");
 }
 
 /** Le calage déjà enregistré, s'il y en a un. Sans rattrapage : l'appelant
@@ -680,6 +715,7 @@ export function brancheCalageCarte(){
     try {
       await enregistreCalage(ENV_CAL);
       ditCalage("Les visiteurs voient la carte.");
+      await figeEtEnregistre(ditCalage);
     } catch (e) { ditCalage("Échec : " + e.message, true); }
     b.disabled = false;
   };
@@ -718,9 +754,10 @@ export function voletEnvirons(hote){
     '<input type="text" inputmode="decimal" placeholder="48.830212, 2.287851">' +
     '<span class="aide">Sur n\'importe quelle carte, clic droit au milieu du ' +
     'bâtiment puis « copier les coordonnées ». À peu près suffit : ' +
-    'l\'accrochage au bâtiment fait le reste. Les tuiles sont chargées pendant ' +
-    'la visite et gardées par le navigateur une fois vues ; la page à données ' +
-    'figées, qui n\'appelle rien au dehors, n\'en affichera pas.</span>';
+    'l\'accrochage au bâtiment fait le reste. À l\'enregistrement du calage, ' +
+    'le fond est photographié et figé : les visiteurs le reçoivent en images, ' +
+    'sans moteur de carte ni tuiles à charger. La page à données figées, qui ' +
+    'n\'appelle rien au dehors, n\'en affichera pas.</span>';
   const champ = bloc.querySelector("input");
   hote.appendChild(bloc);
 
@@ -738,15 +775,38 @@ export function voletEnvirons(hote){
   bEfface.type = "button";
   bEfface.className = "btn danger";
   bEfface.textContent = "Retirer la carte";
+  /* Refiger sans rien changer : OpenStreetMap se corrige, et la photographie
+     d'il y a six mois montre un rond-point qui n'existe plus. */
+  const bFige = document.createElement("button");
+  bFige.type = "button";
+  bFige.className = "btn";
+  bFige.textContent = "Figer le fond de nouveau";
   acts.appendChild(bSitue);
   acts.appendChild(bRegle);
+  acts.appendChild(bFige);
   acts.appendChild(bEfface);
   hote.appendChild(acts);
+  // ce que le visiteur reçoit : le fond figé, ou le dessin en direct
+  const lot = document.createElement("p");
+  lot.className = "envLot";
+  hote.appendChild(lot);
   hote.appendChild(etat);
 
   const maj = () => {
     bRegle.hidden = !ENV_CAL;
-    bEfface.hidden = !calagePose();
+    const pose = calagePose();
+    bEfface.hidden = !pose;
+    bFige.hidden = !(pose && pose.fond);
+    lot.textContent = ditLot(pose);
+  };
+
+  bFige.onclick = async () => {
+    if (!ENV_CAL) poseCalageEnCours(Object.assign({}, calagePose()));
+    bFige.disabled = true;
+    try { await figeEtEnregistre(dit, true); }
+    catch (e) { dit("Échec : " + e.message, true); }
+    bFige.disabled = false;
+    maj();
   };
 
   bSitue.onclick = async () => {
@@ -788,7 +848,11 @@ export function voletEnvirons(hote){
     bEfface.disabled = true;
     dit("Retrait…");
     try {
+      const avait = calagePose();
       await enregistreCalage(null);
+      // plus de calage, plus de fond à servir : ses images partent avec lui
+      if (avait && avait.fige)
+        retireLesLots().catch(e => console.warn("Fond figé non retiré : " + e.message));
       poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
       champ.value = "";
       fermeCalage();
