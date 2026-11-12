@@ -48,6 +48,14 @@ test("intégré dans un cadre plus haut que l'écran, la liste repliée reste en
     const p = await poigneeVue(page, cadre);
     return p.haut >= 0 && p.bas <= p.ecran;
   }).toBe(true);
+  /* Les tiroirs fermés, eux, sortent du cadre entier, et non de la seule part
+     vue : dans l'application de Funexpo, la bande que la mesure croit cachée
+     se peint sous la barre d'accueil, et la fiche fermée y dépassait sous la
+     liste, comme un second tiroir. */
+  for (const id of ["#detail", "#parcours", "#itineraire"]) {
+    const ecart = await cadre.locator(id).evaluate((n) => n.getBoundingClientRect().top - innerHeight);
+    expect(ecart, id + " fermé reste sous le bas du cadre").toBeGreaterThanOrEqual(-1);
+  }
 
   /* On la hisse, puis on la redescend d'un geste poussé bien au-delà du bas :
      elle s'arrête à son cran le plus bas, toujours en vue, et se reprend. */
