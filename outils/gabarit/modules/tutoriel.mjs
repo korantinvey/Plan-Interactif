@@ -379,7 +379,7 @@ const CHAPITRES_TUTO = [
          visite n'a pas à déclencher une demande de permission pour l'exemple. */
       if (m.retenu && tutoOuvert("parcours")) return { cle: "scan",
         cible: $("btnScanParcours"), suite: true, apres: () => { m.scan = true; },
-        texte: "On vous montre un parcours ? « Scanner » lit son code QR ici même, " +
+        texte: "On vous montre un parcours ? « Scanner le code QR » le lit ici même, " +
                "sans quitter le plan — y compris depuis l'application du salon." };
       if (m.retenu) return { cle: "liste", cible: $("btnParcours"),
         texte: "C'est noté. Touchez « Mon parcours », en haut de l'écran, pour " +
