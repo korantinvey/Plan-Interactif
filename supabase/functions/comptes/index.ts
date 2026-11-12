@@ -130,7 +130,22 @@ Deno.serve(async (req) => {
       const { data: profils, error } = await db
         .from("profil").select("id,email,nom,prenom,role,cree_le").order("cree_le");
       if (error) throw new Error(error.message);
-      const { data: liens } = await db.from("acces").select("profil_id,evenement_id");
+      /* Lus par tranches, et leur échec dit : une lecture refusée donnait à
+         chaque compte une liste vide, une table au-delà du plafond de
+         PostgREST (mille lignes) une liste tronquée, sans un mot. Et la
+         console renvoie cette liste à l'enregistrement suivant :
+         `remplace_acces` effaçait alors les salons manquants. */
+      const liens: { profil_id: string; evenement_id: string }[] = [];
+      for (let debut = 0; ; debut += 1000) {
+        const { data: tranche, error: refus } = await db.from("acces")
+          .select("profil_id,evenement_id")
+          .order("profil_id").order("evenement_id")
+          .range(debut, debut + 999);
+        if (refus) throw new Error(refus.message);
+        if (!tranche || !tranche.length) break;
+        liens.push(...tranche);
+        if (tranche.length < 1000) break;
+      }
 
       /* Une invitation partie mais jamais ouverte se voit ici, et nulle part
          ailleurs : c'est ce qui distingue « compte créé » de « compte actif ».

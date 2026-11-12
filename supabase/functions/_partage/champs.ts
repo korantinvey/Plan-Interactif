@@ -232,7 +232,13 @@ const aplani = (v: unknown): string =>
  * déclencher.
  */
 export const vrai = (v: unknown, attendues?: string[] | null): boolean => {
-  if (v === null || v === undefined || typeof v === "object") return false;
+  if (v === null || v === undefined) return false;
+  /* Klipso et les thématiques d'Eventmaker rendent un champ à choix multiple
+     en tableau (`lit`) : refusé d'office, un exposant réglé « exclu » sur une
+     de ses valeurs restait sur le plan public. Ses entrées restent entières,
+     comme `lit` les rend. */
+  const liste = Array.isArray(v);
+  if (!liste && typeof v === "object") return false;
   if (attendues && attendues.length) {
     /* Un champ à choix multiple ne porte pas une valeur mais plusieurs, jointes
        dans une seule chaîne par un point-virgule — « Nouveaux exposants;
@@ -240,11 +246,14 @@ export const vrai = (v: unknown, attendues?: string[] | null): boolean => {
        l'exposant qui n'a qu'une seule catégorie ; la comparaison se fait donc
        valeur par valeur, et des deux côtés — une valeur retenue avant ce
        découpage porte encore la chaîne entière. */
-    const portees = separeValeurs(v).map(aplani);
+    const portees = (liste
+      ? (v as unknown[]).map((x) => String(x ?? "").trim()).filter(Boolean)
+      : separeValeurs(v)).map(aplani);
     const veut = separeValeurs(attendues).map(aplani);
     return portees.some((x) => veut.includes(x));
   }
-  return v === true || ACCORDS.has(aplani(v));
+  // sans valeur attendue, un tableau n'est pas un oui
+  return !liste && (v === true || ACCORDS.has(aplani(v)));
 };
 
 /**

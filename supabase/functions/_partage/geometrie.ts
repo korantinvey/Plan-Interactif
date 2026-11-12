@@ -131,8 +131,17 @@ export function boite(a: Anneau[]): Boite {
   const bb: Point = [r2(x1 - x0), r2(y1 - y0)];
 
   /* Un rectangle n'a rien à corriger : son centre est déjà le meilleur
-     ancrage, et sa boîte englobante décrit exactement sa place. */
-  const rectangle = a.length === 1 && a[0].length <= 5 && dedans(c, a[0]);
+     ancrage, et sa boîte englobante décrit exactement sa place. Droit sur les
+     axes seulement : un carré tourné de 45°, un losange ou un trapèze ont
+     quatre sommets aussi, et le nom, mesuré sur leur boîte, débordait sur
+     l'allée par les coins. (Règle tenue des deux côtés : `modules/forme.mjs`,
+     `_partage/geometrie.ts`.) */
+  const r0 = a[0];
+  const droit = r0.every((q, i) => {
+    const s = r0[(i + 1) % r0.length];
+    return Math.abs(q[0] - s[0]) < 1e-6 || Math.abs(q[1] - s[1]) < 1e-6;
+  });
+  const rectangle = a.length === 1 && r0.length <= 5 && droit && dedans(c, r0);
   if (rectangle) return { c, bb };
 
   const p = poleInterieur(a, x0, y0, x1, y1);

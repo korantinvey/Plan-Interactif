@@ -111,7 +111,12 @@ async function enregistre(req: Request) {
     .slice(0, RANGS_MAX)
     .map((r) => ({
       conf: String(r?.conf ?? "").slice(0, 200),
-      envoi_a: String(r?.envoi_a ?? ""),
+      /* Réécrite ici en ISO : `Date.parse` accepte « 1 » ou « Jan 1 », que
+         Postgres refuse — et son refus rendait 500 pour tout le lot. */
+      envoi_a: (() => {
+        const t = Date.parse(String(r?.envoi_a ?? "").slice(0, 80));
+        return Number.isNaN(t) ? "" : new Date(t).toISOString();
+      })(),
       titre: String(r?.titre ?? "").slice(0, 200),
       corps: String(r?.corps ?? "").slice(0, 400),
       adresse: String(r?.adresse ?? "").slice(0, 500),
@@ -126,7 +131,9 @@ async function enregistre(req: Request) {
          programme qui a bougé sous un rappel déjà posé. */
       debut_vu: String(r?.debut_vu ?? "").slice(0, 80),
     }))
-    .filter((r) => r.conf && r.titre && !Number.isNaN(Date.parse(r.envoi_a)));
+    .filter((r) => r.conf && r.titre && r.envoi_a)
+    .map(borneCharge)
+    .filter((r): r is NonNullable<typeof r> => r !== null);
 
   const { data, error } = await client().rpc("enregistre_rappels", {
     p_slug: slug,
@@ -201,6 +208,20 @@ async function envoie() {
 }
 
 /* ------------------------------------------------------------------ */
+/* La charge chiffrée tient dans un seul enregistrement de 4 096 octets
+   (`_partage/push.ts`), délimiteur et étiquette compris. Les bornes en
+   caractères n'y suffisent pas : un titre de caractères de commande triple en
+   s'échappant dans le JSON. Trop lourde, la charge était refusée à l'envoi —
+   après que `rappels_dus` eut marqué le rappel comme pris : perdu. On la
+   mesure donc en octets ici, et l'on raccourcit le corps d'abord. */
+const CHARGE_MAX = 3800;
+const poidsCharge = (r: { titre: string; corps: string; adresse: string }) =>
+  new TextEncoder().encode(JSON.stringify({ titre: r.titre, corps: r.corps, adresse: r.adresse })).length;
+function borneCharge<T extends { titre: string; corps: string; adresse: string }>(r: T): T | null {
+  while (poidsCharge(r) > CHARGE_MAX && r.corps) r.corps = r.corps.slice(0, Math.floor(r.corps.length / 2));
+  return poidsCharge(r) > CHARGE_MAX ? null : r;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 

@@ -20,7 +20,8 @@
  *   `authenticated`, que Supabase sert directement et que `public` ne couvre
  *   pas ;
  * - un rappel ne se pose pas au-delà d'un an ;
- * - la porte publique des erreurs reste ouverte au visiteur, verrou compris.
+ * - la porte publique des erreurs reste ouverte au visiteur, verrou compris ;
+ * - des pertes de contexte négatives ne font pas échouer le bilan.
  *
  *   node outils/essais/revue-droits.js     (lancé par `npm run essais`)
  */
@@ -88,6 +89,16 @@ async function main() {
   const sans = await un("select pertes_contexte from perf_bilan where evenement_id = $1 and page = 'borne'", [A]);
   dit(sans && sans.pertes_contexte === null, "un groupe sans perte mesurée reste sans valeur",
     sans && String(sans.pertes_contexte));
+
+  // et par le bas : des relevés négatifs, que la porte publique accepte
+  for (const v of [4, 5, 6].map((n) => "00000000-0000-4000-8000-00000000000" + n)) {
+    await db.query(`insert into releve_perf (evenement_id, visite, jour, page, pertes_contexte, resume)
+      values ($1, $2, current_date - 1, 'plan', -1000000000, '{}')`, [A, v]);
+  }
+  const bas = await leve(db, "select bilan_perf(current_date - 1)");
+  dit(!bas, "trois relevés négatifs ne font pas échouer le bilan", bas && bas.message);
+  const zero = await un("select pertes_contexte from perf_bilan where evenement_id = $1 and jour = current_date - 1", [A]);
+  dit(zero && zero.pertes_contexte === 0, "une perte négative compte pour rien", zero && String(zero.pertes_contexte));
 
   // --------------------------------------------- les droits d'un compte remplacés
   const B = (await un("insert into evenement (nom, slug, instance) values ('B', 'b', 'client1') returning id")).id;

@@ -32,6 +32,7 @@ const wkt = (...anneaux) => "MULTIPOLYGON(" + anneaux.map((a) =>
 const FORMES = {
   "un rectangle": wkt([[0, 0], [6, 0], [6, 3], [0, 3]]),
   "un rectangle de biais": wkt([[0, 0], [5, 2], [3, 7], [-2, 5]]),
+  "un carré tourné de 45°": wkt([[5, 0], [10, 5], [5, 10], [0, 5]]),
   "un L": wkt([[0, 0], [10, 0], [10, 4], [4, 4], [4, 10], [0, 10]]),
   "un U": wkt([[0, 0], [12, 0], [12, 9], [9, 9], [9, 3], [3, 3], [3, 9], [0, 9]]),
   "un stand en deux morceaux": wkt([[0, 0], [5, 0], [5, 5], [0, 5]], [[8, 0], [12, 0], [12, 3], [8, 3]]),
@@ -58,6 +59,16 @@ const FORMES = {
     dit(JSON.stringify(page) === JSON.stringify(serveur), nom,
       serveur.lc ? "nom en " + serveur.lc.join(", ") : "nom au centre");
   }
+
+  /* Quatre sommets ne font pas un rectangle : de biais, sa boîte déborde la
+     forme, et le nom mesuré sur elle débordait sur l'allée par les coins. */
+  for (const nom of ["un rectangle de biais", "un carré tourné de 45°"]) {
+    const b = S.boite(S.versAnneaux(FORMES[nom]));
+    dit(Boolean(b.lb) && b.lb[0] < b.bb[0], nom + " : le nom tient dans la forme, pas dans sa boîte",
+      b.lb ? "place " + b.lb.join(" × ") + " pour une boîte " + b.bb.join(" × ") : "raccourci du rectangle");
+  }
+  const droit = S.boite(S.versAnneaux(FORMES["un rectangle"]));
+  dit(!droit.lb, "un rectangle droit garde son raccourci");
 
   console.log("\n=== 2. Le tracé, et son retour en anneaux ===");
   const l = S.versAnneaux(FORMES["un L"]);
