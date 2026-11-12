@@ -28,3 +28,17 @@ export const separeValeurs = (v) => [].concat(v)
    `localeCompare` avec des options en rebâtit un à chaque appel : sur les
    milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
 export const COLLATION = new Intl.Collator("fr", { numeric: true });
+
+/**
+ * Un texte tel que la recherche le compare : en minuscules et sans accents.
+ *
+ * Le visiteur tape « cafe » sur un téléphone, ou « elec » faute de trouver
+ * l'accent, et attend « Café » ou « Électricité » : la recherche ne doit pas
+ * dépendre d'un accent oublié — ni d'un accent ajouté. Les deux côtés passent
+ * donc par ici, le mot tapé comme ce qu'on y cherche. La décomposition (NFD)
+ * sépare chaque lettre de ses signes, qu'on retire ; les ligatures, qui n'en
+ * ont pas, se défont à la main — « oeuvre » trouve « Œuvre ».
+ */
+export const pourRecherche = (s) => String(s == null ? "" : s).toLowerCase()
+  .normalize("NFD").replace(/\p{M}/gu, "")
+  .replace(/œ/g, "oe").replace(/æ/g, "ae").replace(/ß/g, "ss");

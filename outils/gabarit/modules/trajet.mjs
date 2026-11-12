@@ -7,7 +7,7 @@
    qui les enchaîne (`routeEntre`), tronçon par tronçon.
    ============================================================ */
 import { DATA, TOUS } from "./donnees.mjs";
-import { COLLATION } from "./texte.mjs";
+import { COLLATION, pourRecherche } from "./texte.mjs";
 import { pictoForme, nomTypeRepere, estPorte, ouvreEntrant, ouvreSortant } from "./reperes.mjs";
 import { ALLURE, ALLURE_PMR, PAS_GRILLE, accroche, calquesDe, grille, reperesDe } from "./grille-marche.mjs";
 import { distancesDepuis } from "./recherche-chemin.mjs";
@@ -41,7 +41,7 @@ export function pointRepere(f, p){
 /** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
  *  stands en vrac n'aideraient personne, une entrée si. */
 export function candidats(q){
-  const v = q.trim().toLowerCase();
+  const v = pourRecherche(q.trim());
   const out = [];
   DATA.plans.forEach(p => reperesDe(p).forEach(f => {
     /* Sous le nom que l'écran montre — donc traduit —, et aussi sous celui des
@@ -50,17 +50,17 @@ export function candidats(q){
        porte ce nom » alors qu'il était là, et la saisie passant par ici, aucun
        trajet ne se calculait. Choisir dans la liste marchait encore ; taper
        non, et sur un téléphone on tape. */
-    const nom = nomRepere(f).toLowerCase();
+    const nom = pourRecherche(nomRepere(f));
     if (!v || nom.indexOf(v) >= 0 ||
-        String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
+        pourRecherche(f.txt).indexOf(v) >= 0) out.push(pointRepere(f, p));
   }));
   if (!v) return out.slice(0, 12);
 
   const notes = [];
   for (const o of TOUS){
     if (o.kind === "zone" && !o.nom) continue;
-    const code = String(o.code || "").toLowerCase();
-    const nom = String(o.nom || o.plan || "").toLowerCase();
+    const code = pourRecherche(o.code || "");
+    const nom = pourRecherche(o.nom || o.plan || "");
     let r = -1;
     if (code === v) r = 0;
     else if (code.indexOf(v) === 0) r = 1;
@@ -76,8 +76,13 @@ export function candidats(q){
 /** Ce que désigne une saisie laissée telle quelle, si c'est sans ambiguïté. */
 export function pointSaisi(txt){
   const l = candidats(txt);
-  const v = txt.trim().toLowerCase();
-  return l.find(x => x.nom.toLowerCase() === v) || (l.length === 1 ? l[0] : null);
+  /* Le nom tapé tel qu'il s'écrit l'emporte sur celui qui ne s'en distingue
+     que par un accent : « Entrée » et « Entree » peuvent coexister, et taper
+     l'un ne doit pas mener à l'autre. Sans accent, le premier venu. */
+  const exact = txt.trim().toLowerCase();
+  const v = pourRecherche(exact);
+  return l.find(x => String(x.nom).toLowerCase() === exact) ||
+    l.find(x => pourRecherche(x.nom) === v) || (l.length === 1 ? l[0] : null);
 }
 
 /* ------------------------------------------------------------

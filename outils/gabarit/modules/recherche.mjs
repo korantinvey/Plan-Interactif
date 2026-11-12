@@ -33,7 +33,7 @@
    importent aussi.
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { esc, separeValeurs, COLLATION } from "./texte.mjs";
+import { esc, separeValeurs, COLLATION, pourRecherche } from "./texte.mjs";
 import { DATA, TOUS, parId, HEBERGES, CONFERENCES, state, P } from "./donnees.mjs";
 import { API, PLAN_ADMIN } from "./salon.mjs";
 import { JOURS, momentLocal } from "./temps.mjs";
@@ -219,7 +219,7 @@ export function texteCriteres(o){
  */
 export function texteAnglaisPerso(o){
   const l = Object.values(o.perso_en || {}).flatMap(v => separeValeurs(v));
-  return l.length ? " " + l.join(" ").toLowerCase() : "";
+  return l.length ? " " + pourRecherche(l.join(" ")) : "";
 }
 
 /**
@@ -468,8 +468,8 @@ function remplitCriteres(){
 
     const dessine = (tamis) => {
       puces.innerHTML = "";
-      const t = (tamis || "").trim().toLowerCase();
-      const vues = t ? offertes.filter(x => x.v.toLowerCase().includes(t)) : offertes;
+      const t = pourRecherche((tamis || "").trim());
+      const vues = t ? offertes.filter(x => pourRecherche(x.v).includes(t)) : offertes;
       if (!vues.length){
         const vide = document.createElement("span");
         vide.className = "aucune";
