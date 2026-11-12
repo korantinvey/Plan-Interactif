@@ -66,6 +66,9 @@ module.exports = [
   "const vec3 ", "] = vec3[", "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]",
   "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]", "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]",
   "  : partie == 3 ? FIG_PEAU[int(instanceFigurant.y)]", "TeinteDesFigurants", "fin du geste",
+  // toutes les allures d'une couche, lues dans une texture : du code de shader, le
+  // nom de la couche et celui de sa texture
+  "instanceModelMatrix * figPos", "instanceModelMatrix * figNor", "CoucheFigurants", "-formes",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-ombres-", "-volumes-", "-decor", "-decor-plat", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "labels-choisi|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",

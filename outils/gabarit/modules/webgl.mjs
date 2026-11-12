@@ -40,7 +40,7 @@ import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, maillageReuni, formesEnTexture, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
@@ -2203,7 +2203,8 @@ function dansLeHall(/** @type {any} */ p){
 /* La teinte de chaque partie d'un figurant, choisie dans le shader.
 
    Les parties d'une allure ne font qu'un maillage (`maillageReuni`), dont
-   chaque sommet dit sa partie ; chaque figurant porte ses quatre choix —
+   chaque sommet dit sa partie — lue dans la texture des allures, avec sa
+   forme (`CoucheFigurants`) ; chaque figurant porte ses quatre choix —
    tenue, peau, cheveux, chaussures — et le shader lit la couleur dans les
    palettes, écrites en dur dans son source. La lumière s'applique ensuite,
    dans le fragment, comme pour une couleur ordinaire. */
@@ -2222,8 +2223,9 @@ function teinteDesFigurants(){
       return { inject: {
         "vs:#decl": decl,
         // l'ordre de `PARTIES` : bas, chaussures, haut, peau, cheveux
+        // la partie, lue avec la forme dans la texture des allures (`CoucheFigurants`)
         "vs:#main-end":
-          "int partie = int(colors.r + 0.5);\n" +
+          "int partie = int(figPartie + 0.5);\n" +
           "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]\n" +
           "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]\n" +
           "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]\n" +
@@ -2240,6 +2242,57 @@ function teinteDesFigurants(){
   TeinteDesFigurants.extensionName = "TeinteDesFigurants";
   TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] } };
   return (_teinteFigurants = new TeinteDesFigurants());
+}
+
+/* Toutes les allures dans une seule couche : chaque figurant lit la sienne
+   dans une texture (`figurants.mjs` `formesEnTexture`), au rang du sommet
+   que la carte graphique dessine. Le maillage que reçoit la couche n'a que la
+   largeur d'une allure, et rien dedans : il ne fait que compter les sommets.
+   Le shader de la bibliothèque prend la forme et la normale de ses
+   attributs ; on les y remplace par ce que dit la texture. La bibliothèque
+   est épinglée : si son shader changeait, la couche le dirait au lieu de
+   dessiner des figurants informes. */
+/** @type {any} */
+let _CoucheFigurants = null;
+function coucheFigurants(){
+  if (_CoucheFigurants) return _CoucheFigurants;
+  const ENTREE = "void main(void) {";
+  const LECTURE = "uniform highp sampler2D figForme;\nin float instanceAllure;\n" + ENTREE + "\n" +
+    "ivec2 figRang = ivec2(gl_VertexID, int(instanceAllure + 0.5) * 2);\n" +
+    "vec4 figSommet = texelFetch(figForme, figRang, 0);\n" +
+    "vec3 figPos = figSommet.xyz;\nfloat figPartie = figSommet.w;\n" +
+    "vec3 figNor = texelFetch(figForme, figRang + ivec2(0, 1), 0).xyz;\n";
+  class CoucheFigurants extends deck.SimpleMeshLayer {
+    getShaders(){
+      const s = super.getShaders();
+      const vs = s.vs.replace(ENTREE, LECTURE)
+        .replace(/instanceModelMatrix \* positions/g, "instanceModelMatrix * figPos")
+        .replace(/instanceModelMatrix \* normals/g, "instanceModelMatrix * figNor");
+      if (vs === s.vs || /\* (positions|normals)\b/.test(vs)) throw new Error("figurants : le shader des maillages a changé");
+      return { ...s, vs };
+    }
+    initializeState(){
+      super.initializeState();
+      const am = this.getAttributeManager();
+      if (am) am.addInstanced({ instanceAllure: { size: 1, accessor: "getAllure" } });
+      const f = this.props.formes;
+      this.setState({ texture: this.context.device.createTexture({ id: this.props.id + "-formes", format: "rgba32float",
+        width: f.largeur, height: f.hauteur, data: f.donnees,
+        sampler: { minFilter: "nearest", magFilter: "nearest", addressModeU: "clamp-to-edge", addressModeV: "clamp-to-edge" } }) });
+    }
+    getModel(/** @type {any} */ mesh){
+      const m = super.getModel(mesh);
+      m.setBindings({ figForme: this.state.texture });
+      return m;
+    }
+    finalizeState(/** @type {any} */ c){
+      super.finalizeState(c);
+      if (this.state.texture) this.state.texture.destroy();
+    }
+  }
+  CoucheFigurants.layerName = "CoucheFigurants";
+  CoucheFigurants.defaultProps = { getAllure: { type: "accessor", value: 0 }, formes: { type: "object", value: null, compare: false } };
+  return (_CoucheFigurants = CoucheFigurants);
 }
 
 /* De combien un figurant se couche vers le haut de l'écran, à plat : assez
@@ -2278,7 +2331,11 @@ function couchesFigurants(){
     FIGURANTS.plat = plat;
     if (!FIGURANTS.maillages){
       const M = maillagesFigurant();
-      FIGURANTS.maillages = { ombre: M.ombre, modeles: M.modeles.map(maillageReuni) };
+      const formes = formesEnTexture(M.modeles.map(maillageReuni));
+      // un maillage vide, de la largeur d'une allure : la couche n'y compte que les sommets
+      const vide = new Float32Array(formes.largeur * 3);
+      FIGURANTS.maillages = { ombre: M.ombre, formes,
+        gabarit: { attributes: { positions: { value: vide, size: 3 }, normals: { value: vide, size: 3 } } } };
     }
     const M = FIGURANTS.maillages;
     const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id), dansLeHall(p));
@@ -2290,13 +2347,11 @@ function couchesFigurants(){
     FIGURANTS.couches = [
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
         getColor: OMBRE, getScale: [1, 1, 1], getTransformMatrix: [], parameters: { depthWriteEnabled: false } }),
-      // une couche par allure : chacune ne répète que les siens, et les teint toutes parties
-      ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
-        const siens = data.filter(f => f.modele === k);
-        return siens.length ? [new deck.SimpleMeshLayer({ ...commun, data: siens, id: "figurants-" + k,
-          mesh: mod, getColor: [255, 255, 255], extensions: [teinteDesFigurants()],
-          getFigurant: (/** @type {any} */ f) => [f.tenue, f.peau, f.cheveux, f.chaussures] })] : [];
-      }),
+      // une couche pour toutes les allures : chacun lit la sienne, et se teint toutes parties
+      ...(data.length ? [new (coucheFigurants())({ ...commun, id: "figurants",
+        mesh: M.gabarit, formes: M.formes, getColor: [255, 255, 255], extensions: [teinteDesFigurants()],
+        getAllure: (/** @type {any} */ f) => f.modele,
+        getFigurant: (/** @type {any} */ f) => [f.tenue, f.peau, f.cheveux, f.chaussures] })] : []),
     ];
   }
   return FIGURANTS.couches;
