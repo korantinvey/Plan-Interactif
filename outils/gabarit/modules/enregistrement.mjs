@@ -567,8 +567,11 @@ export async function pousseConfiguration(auto){
     else if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
   } catch (e) {
     publication = false;
-    // le clic attendu repartira avec la reprise, et l'état dit déjà l'échec
-    clicAttendu = false;
+    /* Le clic attendu pendant cet envoi raté se dit raté lui aussi : relancé
+       en douce, il serait parti en reprise automatique, qui ne réécrit pas
+       tout, et se serait annoncé réussi sans avoir réparé. Le bouton reste
+       là pour le redemander. */
+    if (clicAttendu){ clicAttendu = false; if (auto) annonce("Enregistrement impossible : " + e.message, true); }
     if (!auto) annonce("Enregistrement impossible : " + e.message, true);
     /* Rien n'est perdu : le poste garde sa copie et la marque d'attente. On
        retente de loin en loin, et le bouton dit pourquoi en attendant. L'état se

@@ -137,6 +137,8 @@ function montreSugg(r){
   }
   z.hidden = false;
   champIti(r).setAttribute("aria-expanded", "true");
+  // les options viennent d'être refaites : aucune n'est plus désignée
+  champIti(r).removeAttribute("aria-activedescendant");
 }
 
 function choisitPoint(r, pt){

@@ -499,7 +499,10 @@ export function monteWebgl(){
       /* Des couches à peindre et aucune peinte : le moteur a échoué sur toutes.
          Le SVG reste, plutôt qu'un plan vide. deck.gl, le recours, ne compte
          pas : son image vaut pour peinte. */
-      if (image && image.couches > 0 && image.peintes === 0) return;
+      /* Des couches à peindre ici (la garde d'au-dessus) et aucune peinte —
+         préparées puis ratées, ou ratées dès la préparation, qui laisse le
+         moteur sans couche à compter : dans les deux cas, le SVG reste. */
+      if (image && typeof image.peintes === "number" && image.peintes === 0) return;
       GL.pret = true;
       document.documentElement.classList.add("gl-pret");
       document.documentElement.classList.remove("gl-attente");

@@ -24,6 +24,7 @@ import { $ } from "./dom.mjs";
 import { fonction } from "./appel-fonction.mjs";
 import { EVTS } from "./evenements.mjs";
 import { ouvreModale } from "./fenetre-console.mjs";
+import { prendLeFocus } from "./focus-fenetre.mjs";
 import { grille, rest, idCompte, PAGE_MDP } from "./socle-console.mjs";
 
 /**
@@ -110,6 +111,13 @@ const cochés = (zone) =>
    ------------------------------------------------------------------ */
 export function ouvreComptes(message) {
   let hote = null;
+  /* Redessinée, la liste emporte le bouton qui avait le focus : il tombait
+     alors sur la page, derrière la fenêtre, et Tab en sortait. La fenêtre le
+     reprend, et le laisse où il est s'il y est resté. */
+  const redessine = (/** @type {HTMLElement} */ h) => {
+    rendu(h);
+    prendLeFocus(/** @type {HTMLElement} */ ($("modale").querySelector(".mfen")));
+  };
   let mot = { texte: message || "Chargement…", erreur: !!(message && message.erreur) };
 
   function ligne(c) {
@@ -186,11 +194,11 @@ export function ouvreComptes(message) {
         // le message d'ouverture (« Invitation envoyée… ») survit au rechargement de la liste
         mot = message ? { texte: message, erreur: false }
           : { texte: COMPTES.length ? "" : "Aucun compte.", erreur: false };
-        if (hote) rendu(hote);
+        if (hote) redessine(hote);
       })
       .catch((e) => {
         mot = { texte: e.message, erreur: true };
-        if (hote) rendu(hote);
+        if (hote) redessine(hote);
       });
   }, [{ libelle: "Fermer" },
       { libelle: "Inviter quelqu'un", genre: "primaire",

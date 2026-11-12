@@ -124,7 +124,12 @@ function points(balise: string, element: string): [number, number][] | null {
     for (let i = 0; i < jetons.length;) {
       const j = jetons[i];
       if (isNaN(Number(j))) {
-        c = j.toUpperCase();
+        /* Seules les commandes absolues se lisent ici : une relative (`m`, `l`,
+           `a`) part du point courant, et ses nombres pris pour des coordonnées
+           faisaient d'un arc un point — qu'on écartait comme vide. Inconnue,
+           elle rend la main, et l'élément reste. */
+        if (j !== j.toUpperCase()) return null;
+        c = j;
         if (c !== "M" && c !== "L" && c !== "A") return null;
         i++;
         continue;

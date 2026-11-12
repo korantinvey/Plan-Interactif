@@ -501,7 +501,7 @@ export function fit(){
               des deux. */
            y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height });
-  if (cameraEnJeu()) recadreIncline(r, haut, cache);
+  if (cameraEnJeu()) recadreIncline(r, haut, cache, droite);
   poseVue();
 }
 
@@ -515,9 +515,10 @@ export function fit(){
  * ramenant leur milieu au centre de la bande visible. La fuite ne dépend pas
  * du zoom mais de la scène : quelques passes suffisent à tomber juste.
  */
-function recadreIncline(/** @type {DOMRect} */ r, /** @type {number} */ haut, /** @type {number} */ cache){
+function recadreIncline(/** @type {DOMRect} */ r, /** @type {number} */ haut, /** @type {number} */ cache, droite = 0){
   const MARGE = 28;
-  const bx0 = MARGE, bx1 = r.width - MARGE, by0 = haut + MARGE, by1 = r.height - cache - MARGE;
+  // la bande visible, volet droit déduit comme dans `fit`
+  const bx0 = MARGE, bx1 = r.width - droite - MARGE, by0 = haut + MARGE, by1 = r.height - cache - MARGE;
   if (bx1 - bx0 < 60 || by1 - by0 < 60) return;
   const coins = [[emp.x0, emp.y0], [emp.x1, emp.y0], [emp.x1, emp.y1], [emp.x0, emp.y1]];
   for (let passe = 0; passe < 4; passe++){
