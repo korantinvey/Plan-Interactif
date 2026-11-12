@@ -2,6 +2,7 @@
    La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { prendLeFocus, rendLeFocus, gardeLeFocus } from "./focus-fenetre.mjs";
 import { suisLeCadre } from "./cadre-visible.mjs";
 import { creeEvenement } from "./evenement.mjs";
 /* L'habillage du modèle retenu (`habilleModale`), que la fenêtre reprend à
@@ -99,10 +100,13 @@ export function ouvreModale(titre, remplitCorps, boutons, genre){
   });
   suisLaPartVisible();
   $("modale").classList.add("open");
+  prendLeFocus(/** @type {HTMLElement} */ ($("modale").querySelector(".mfen")));
 }
 export function fermeModale(){
   verseModale();
   $("modale").classList.remove("open");
+  // avant ce qui attendait la place : une fenêtre qui s'ouvre à la suite repart d'ici
+  rendLeFocus();
   /* Après le retrait, et non avant : ce qui attendait la place ouvre sa propre
      fenêtre, et la trouverait sinon encore occupée. */
   const f = apresFermeture;
@@ -131,6 +135,12 @@ export function confirme(titre, message, libelleOui, action){
 export function brancheFenetre(){
   $("mFermer").onclick = fermeModale;
   $("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
+  /* Tab reste dans la fenêtre qui attend une réponse ; celle qu'on pose de
+     côté pour regarder le plan en même temps (« cote ») le laisse en sortir. */
+  $("modale").addEventListener("keydown", e => {
+    if ($("modale").classList.contains("open") && $("modale").dataset.genre !== "cote")
+      gardeLeFocus(/** @type {HTMLElement} */ ($("modale").querySelector(".mfen")), e);
+  });
   /* La fenêtre est devant tout : « Échap » est à elle, et à elle seule. Les
      autres écoutes de la touche demandaient bien « pas de fenêtre ouverte ? »,
      mais après celle-ci, qui venait de la fermer : la fiche (sur `document`)

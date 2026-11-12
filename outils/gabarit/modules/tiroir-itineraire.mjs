@@ -97,7 +97,10 @@ function fermeSugg(){
   champSugg = null; survolSugg = -1;
   const z = $("iSugg");
   z.hidden = true; z.innerHTML = "";
-  [$("iDepart"), $("iArrivee")].forEach(c => c.setAttribute("aria-expanded", "false"));
+  [$("iDepart"), $("iArrivee")].forEach(c => {
+    c.setAttribute("aria-expanded", "false");
+    c.removeAttribute("aria-activedescendant");
+  });
 }
 
 function montreSugg(r){
@@ -122,6 +125,8 @@ function montreSugg(r){
       b.type = "button";
       b.className = "iSug" + (pt.genre === "repere" ? " rep" : "");
       b.setAttribute("role", "option");
+      // de quoi désigner l'option au champ (`aria-activedescendant`)
+      b.id = "iSug" + i;
       b.dataset.i = String(i);
       b.innerHTML = '<span class="n"></span><span class="s"></span>';
       b.querySelector(".n").textContent = pt.nom;
@@ -636,8 +641,14 @@ export function brancheTiroirItineraire(){
         if (!opts.length) return;
         e.preventDefault();
         survolSugg = (survolSugg + (e.key === "ArrowDown" ? 1 : opts.length - 1) + opts.length) % opts.length;
-        opts.forEach((o, i) => o.classList.toggle("vis", i === survolSugg));
+        opts.forEach((o, i) => {
+          o.classList.toggle("vis", i === survolSugg);
+          o.setAttribute("aria-selected", String(i === survolSugg));
+        });
         opts[survolSugg].scrollIntoView({ block: "nearest" });
+        /* Le focus reste dans le champ, où l'on tape : c'est lui qui dit à la
+           lecture d'écran quelle suggestion les flèches désignent. */
+        c.setAttribute("aria-activedescendant", opts[survolSugg].id);
       } else if (e.key === "Enter"){
         e.preventDefault();
         if (opts[survolSugg]) opts[survolSugg].click();

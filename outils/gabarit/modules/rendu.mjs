@@ -147,6 +147,10 @@ export const baliseStand = (s) =>
 
 export function montePlan(){
   const p = P();
+  /* Le nom que la lecture d'écran donne au plan : celui du pavillon monté. Le
+     balisage n'en porte qu'un neutre, faute de savoir lequel viendra. Le
+     moteur de langue traduit l'attribut comme le texte. */
+  $("plan").setAttribute("aria-label", "Plan : " + p.libelle);
   $("zones").innerHTML = p.zones.map(baliseZone).join("");
   $("stands").innerHTML = p.stands.map(baliseStand).join("");
   poseEmprise(p.emprise);

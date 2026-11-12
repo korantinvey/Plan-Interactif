@@ -29,9 +29,9 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console.css` — 745 l. → console.css
+### `_console.css` — 748 l. → console.css
 
-- l.670 · Page de rapport
+- l.673 · Page de rapport
 
 ### `_entete.html` — 6 l.
 
@@ -120,7 +120,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1668 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1671 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
@@ -1198,37 +1198,37 @@ Importé par :
 
 console · ecran-console · rapport · rapport-utilisation
 
-### `modules/fenetre-console.mjs` — 143 l. → console, rapport
+### `modules/fenetre-console.mjs` — 151 l. → console, rapport
 
 - l.1 · La fenêtre de la console et du rapport
 
 Fonctions :
 
-`verseModale` 30 · `ouvreModale` 42 · `verrouilleModale` 66 · `fermeModale` 68
-`poseFenetre` 76 · `gardeLaPlace` 98 · `demande` 109 · `confirme` 137
+`verseModale` 31 · `ouvreModale` 43 · `verrouilleModale` 68 · `fermeModale` 70
+`poseFenetre` 79 · `gardeLaPlace` 106 · `demande` 117 · `confirme` 145
 
 Importe :
 
-dom
+dom · focus-fenetre
 
 Importé par :
 
 avancement · comptes · duplication · ecran-console · fiche-detail · fiche-evenement
 provenance · socle-console
 
-### `modules/fenetre.mjs` — 146 l. → plan, plan-admin
+### `modules/fenetre.mjs` — 156 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
 Fonctions :
 
-`poseAvantFermeture` 20 · `retourAuxReglages` 35 · `verseModale` 37
-`poseApresFermeture` 52 · `suisLaPartVisible` 63 · `ouvreModale` 82 · `fermeModale` 103
-`confirme` 113 · `brancheFenetre` 131
+`poseAvantFermeture` 21 · `retourAuxReglages` 36 · `verseModale` 38
+`poseApresFermeture` 53 · `suisLaPartVisible` 64 · `ouvreModale` 83 · `fermeModale` 105
+`confirme` 117 · `brancheFenetre` 135
 
 Importe :
 
-cadre-visible · dom · evenement · modeles
+cadre-visible · dom · evenement · focus-fenetre · modeles
 
 Importé par :
 
@@ -1389,6 +1389,18 @@ configuration · corps-fiche · donnees · texte
 Importé par :
 
 appels · dessin · libelles · recherche · secteurs · tout-au-parcours · volets
+
+### `modules/focus-fenetre.mjs` — 59 l. → plan, plan-admin, console, rapport
+
+- l.1 · Le focus d'une fenêtre — où il va quand elle s'ouvre, et d'où il revient
+
+Fonctions :
+
+`prendLeFocus` 31 · `rendLeFocus` 40 · `gardeLeFocus` 51
+
+Importé par :
+
+fenetre · fenetre-console
 
 ### `modules/forme-choisie.mjs` — 39 l. → plan, plan-admin
 
@@ -2844,7 +2856,7 @@ Importé par :
 
 plan
 
-### `modules/rendu.mjs` — 259 l. → plan, plan-admin
+### `modules/rendu.mjs` — 263 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
@@ -2852,7 +2864,7 @@ Fonctions :
 
 `monteHabillage` 65 · `attributComptoir` 82 · `texteCamions` 91 · `attributCamions` 94
 `attributEstrade` 100 · `baliseZone` 117 · `baliseStand` 138 · `montePlan` 148
-`onglets` 180 · `chargeFond` 214 · `changePlan` 246
+`onglets` 184 · `chargeFond` 218 · `changePlan` 250
 
 Importe :
 
@@ -3258,19 +3270,19 @@ parcours · pile · points-interet · qr · rapport-utilisation · recherche · 
 reglage-suggestion · rendu · secteurs · socle-dessin · suggestion · sur · texte-plan
 trajet
 
-### `modules/tiroir-itineraire.mjs` — 708 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 719 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir et la visée
 
 Fonctions :
 
-`calculeRoute` 74 · `champIti` 92 · `fermeSugg` 96 · `montreSugg` 103 · `choisitPoint` 137
-`valideSaisie` 146 · `effaceItineraire` 158 · `relance` 196 · `montreResultat` 242
-`majRappelRoute` 260 · `ecritResultat` 271 · `poseVisee` 415 · `injecteVisee` 428
-`suitLaVisee` 430 · `bandeauVisee` 432 · `armeVisee` 455 · `finVisee` 473
-`viseItineraire` 489 · `visePoi` 495 · `visePoint` 501 · `ouvreItineraire` 529
-`fermeItineraire` 564 · `quitteItineraire` 581 · `versItineraire` 588
-`versItineraireDe` 591 · `brancheTiroirItineraire` 618
+`calculeRoute` 74 · `champIti` 92 · `fermeSugg` 96 · `montreSugg` 106 · `choisitPoint` 142
+`valideSaisie` 151 · `effaceItineraire` 163 · `relance` 201 · `montreResultat` 247
+`majRappelRoute` 265 · `ecritResultat` 276 · `poseVisee` 420 · `injecteVisee` 433
+`suitLaVisee` 435 · `bandeauVisee` 437 · `armeVisee` 460 · `finVisee` 478
+`viseItineraire` 494 · `visePoi` 500 · `visePoint` 506 · `ouvreItineraire` 534
+`fermeItineraire` 569 · `quitteItineraire` 586 · `versItineraire` 593
+`versItineraireDe` 596 · `brancheTiroirItineraire` 623
 
 Importe :
 

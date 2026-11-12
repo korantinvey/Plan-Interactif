@@ -12,6 +12,7 @@
    place qu'ils tenaient, en se branchant.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { prendLeFocus, rendLeFocus, gardeLeFocus } from "./focus-fenetre.mjs";
 
 /* ------------------------------------------------------------------
    Fenêtres
@@ -55,6 +56,7 @@ export function ouvreModale(titre, remplit, boutons, apres) {
     $("mPied").appendChild(el);
   });
   $("modale").classList.add("open");
+  prendLeFocus(/** @type {HTMLElement} */ ($("modale").querySelector(".mfen")));
 }
 /* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
    à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
@@ -68,6 +70,7 @@ export const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
 export const fermeModale = () => {
   modaleVerrou = false;
   $("modale").classList.remove("open");
+  rendLeFocus();
   verseModale();
 };
 
@@ -77,6 +80,11 @@ export function poseFenetre() {
   $("mFermer").onclick = fermeModale;
   $("modale").addEventListener("click", (e) => {
     if (e.target === $("modale") && !modaleVerrou) fermeModale();
+  });
+  // Tab reste dans la fenêtre ouverte (`focus-fenetre.mjs`)
+  $("modale").addEventListener("keydown", (e) => {
+    if ($("modale").classList.contains("open"))
+      gardeLeFocus(/** @type {HTMLElement} */ ($("modale").querySelector(".mfen")), e);
   });
   addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !modaleVerrou) fermeModale();

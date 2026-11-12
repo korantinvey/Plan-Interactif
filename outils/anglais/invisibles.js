@@ -146,4 +146,8 @@ module.exports = [
   // `modules/environs.mjs` : le début de l'empreinte du fond figé posé, qui
   // dit au calque des tuiles s'il a déjà ces images — jamais à l'écran
   "fige|",
+  // `modules/focus-fenetre.mjs` : le sélecteur de ce qui se tabule dans une
+  // fenêtre, que le code lit et que personne ne voit
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ',
+  'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
 ];

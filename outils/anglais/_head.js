@@ -30,7 +30,6 @@ module.exports = {
   "Revenir au début": "Back to the start",
   "Voir la suite": "See more",
 
-  "Plan du pavillon 7.1": "Map of hall 7.1",
   "Zoom avant": "Zoom in",
   "Zoom arrière": "Zoom out",
   "Ajuster": "Fit to screen",
