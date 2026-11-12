@@ -423,6 +423,18 @@ export function ouvreSources(apres) {
           : c.colonne === "instance" ? champInstance()
           : champ(c.colonne, c.libelle, c.aide, 'spellcheck="false"'));
       });
+      /* Ces identifiants désignent chez le fournisseur ce que la synchronisation
+         ira lire, avec la clé du projet ou celle de la base : les changer, c'est
+         choisir les données d'un autre client. La base le refuse à un
+         organisateur ; la fenêtre le lui montre plutôt que de le laisser saisir
+         pour rien. */
+      if (MOI?.role !== "admin") {
+        g.querySelectorAll("input").forEach((x) => { x.disabled = true; });
+        const reserve = document.createElement("p");
+        reserve.className = "aide";
+        reserve.textContent = "Seul l'administrateur du projet change ces identifiants.";
+        pan.appendChild(reserve);
+      }
       pan.appendChild(g);
 
       const sert = DOMAINES.filter(([d]) => source(e, d) === f.cle).map(([, lib]) => lib);

@@ -151,9 +151,9 @@ function traceForme(f){
     : f.t === "stand"
     ? traceStandDessine(f)
     : f.t === "texte"
-    ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
+    ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + esc(f.id) + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
       '" font-size="' + (f.taille || 2) + '"' + rotationTexte(f) + '>' + esc(f.txt) + '</text></g>'
-    : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
+    : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + esc(f.id) +
       '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
       marqueFleche(f) + '</g>';
 }
@@ -306,7 +306,7 @@ function traceRepere(f){
   const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
                (anneau ? " anneau" : "") +
                (f.id === formeSel ? " pick" : "") +
-               '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
+               '" data-f="' + esc(f.id) + '" data-poi="' + esc(f.id) +
                /* Le pictogramme, que la vue immersive lit pour monter un
                   escalier ou un ascenseur sous la pastille (`decor.mjs`). */
                '" data-glyphe="' + esc(glypheRepere(f) || "") +
@@ -520,10 +520,10 @@ function traceImage(f){
      pour le titulaire au nom d'un choix que personne n'a fait. */
   const rang = Number.isInteger(f.soc) ? ' data-soc="' + f.soc + '"' : "";
   return '<g class="forme' + (f.id === formeSel ? " pick" : "") + (l ? " lie" : "") +
-    '" data-f="' + f.id + '"' +
+    '" data-f="' + esc(f.id) + '"' +
     (l ? ' data-id="' + esc(l.o.id) + '"' + rang +
          ' aria-label="' + esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
-    '><image href="' + f.src + '" x="' + f.pts[0][0] +
+    '><image href="' + esc(f.src) + '" x="' + f.pts[0][0] +
     '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
     '" height="' + (f.pts[1][1] - f.pts[0][1]) +
     '" preserveAspectRatio="xMidYMid meet"/></g>';
@@ -541,7 +541,7 @@ function traceStandDessine(f){
   const sel = l && l.o.id === state.sel && l.i === state.selSoc;
   const nom = l ? nomSurLePlan(l.soc) : "";
   return '<g class="forme sdes' + (f.id === formeSel ? " pick" : "") +
-    (l ? " lie" : "") + (sel ? " sel" : "") + '" data-f="' + f.id + '"' +
+    (l ? " lie" : "") + (sel ? " sel" : "") + '" data-f="' + esc(f.id) + '"' +
     (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
          '" tabindex="0" role="button" aria-label="' +
          esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +

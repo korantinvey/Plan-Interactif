@@ -16,6 +16,10 @@ import { cleApp } from "./application.mjs";
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
 const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
+/* Et le droit sur ce salon-là, demandé à la base avec la session même : la
+   lecture d'`evenement` ne rend à un compte connecté que les salons
+   qu'`acces_salon()` lui ouvre. */
+const SALONS = BASE.replace("/functions/v1/", "/rest/v1/") + "evenement";
 const PARAMS = ["slug", "fond", "v", "vignette", "vignettes", "grande"];
 
 
@@ -275,6 +279,14 @@ export async function oublie(requete, env) {
   const qui = await fetch(AUTH, { headers: { "Authorization": jeton, apikey } })
     .catch(() => null);
   if (!qui || !qui.ok) return dit({ erreur: "Session refusée." }, 401);
+  /* Une session ne suffit pas : n'importe quel compte connecté faisait refaire
+     le plan de n'importe quel salon — de quoi faire travailler la base en
+     boucle, ce que l'en-tête refuse plus haut. Il faut que ce salon soit le
+     sien. */
+  const sien = await fetch(SALONS + "?select=id&limit=1&slug=eq." + encodeURIComponent(slug),
+    { headers: { "Authorization": jeton, apikey } }).catch(() => null);
+  const lignes = sien && sien.ok ? await sien.json().catch(() => null) : null;
+  if (!Array.isArray(lignes) || !lignes.length) return dit({ erreur: "Salon inaccessible." }, 403);
 
   /* Une prévisualisation n'oublie que ce qu'elle garde elle-même : enregistrer
      depuis elle ne touche plus au cache de la production. */

@@ -507,7 +507,7 @@ Importé par :
 
 gestes-admin · pile · plan-admin · reglages
 
-### `modules/calques-dessin.mjs` — 209 l. → plan, plan-admin
+### `modules/calques-dessin.mjs` — 233 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — ce que le poste en garde
 
@@ -515,8 +515,8 @@ Fonctions :
 
 `enAttente` 63 · `litRange` 90 · `ouvreDessins` 102 · `reprendCommun` 127
 `notePubliees` 153 · `rangeDessins` 171 · `dejaPubliee` 176 · `marqueAttente` 182
-`mesCalques` 190 · `poseCalqueActif` 201 · `poseOutil` 202 · `poseEbauche` 206
-`trouveCalque` 208 · `nouvelId` 209
+`mesCalques` 190 · `calquesSurs` 203 · `poseCalqueActif` 225 · `poseOutil` 226
+`poseEbauche` 230 · `trouveCalque` 232 · `nouvelId` 233
 
 Importe :
 
@@ -1258,7 +1258,7 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 465 l. → console
+### `modules/fiche-evenement.mjs` — 477 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
@@ -1266,7 +1266,7 @@ Fonctions :
 
 `brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 307
 `ligneReglage` 323 · `champCle` 337 · `champInstance` 378 · `ouvreSources` 402
-`majIntegration` 448 · `majMsgSync` 455
+`majIntegration` 460 · `majMsgSync` 467
 
 Éléments :
 
@@ -3722,10 +3722,10 @@ Injections :
 
 `programmeSaisi` 52
 
-### `supabase/functions/_partage/push.ts` — 229 l.
+### `supabase/functions/_partage/push.ts` — 256 l.
 
 `octets` 49 · `base64url` 57 · `colle` 63 · `texte` 71 · `cleDeSignature` 83
-`jetonVapid` 105 · `derive` 131 · `chiffre` 145 · `pousse` 201
+`jetonVapid` 105 · `derive` 131 · `chiffre` 145 · `destinationPermise` 199 · `pousse` 223
 
 ### `supabase/functions/_partage/refus.ts` — 39 l.
 
@@ -3763,9 +3763,9 @@ Injections :
 `appDuSalon` 420 · `rendIconeApp` 451 · `retraits` 559 · `ampute` 586 · `masquesDe` 629
 `masquesDuPlan` 649
 
-### `supabase/functions/rappels/index.ts` — 239 l.
+### `supabase/functions/rappels/index.ts` — 236 l.
 
-`client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
+`client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 146
 
 ### `supabase/functions/sync-evenement/index.ts` — 1963 l.
 
@@ -3848,6 +3848,7 @@ Injections :
 - `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
 - `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
 - `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
+- `20261112182349_les_droits_et_les_bornes_que_la_revue_a_releves.sql` — fn source_du_salon_reservee, fn bilan_perf, fn rappels_dus, fn pose_plan_de_visite
 
 ## Le reste
 
@@ -3861,8 +3862,8 @@ Injections :
   `enApercu` 39 · `cacheDe` 49 · `ecritEnProduction` 56 · `ecartee` 59 · `dit` 69 `condense` 78
 - `src/mesures.mjs` — 309 l. · Ce que les pages font remonter : mesures d'usage (`/api/mesure`), erreurs (`/api/erreur`) et relevés de performance (`/api/sonde`).
   `mesure` 44 · `carteDuScript` 133 · `lieuDe` 146 · `erreur` 160 · `texteDuScript` 212 `geleResolu` 225 · `sonde` 272
-- `src/plan.mjs` — 401 l. · Le plan d'un salon : relais de `/api/plan` vers la fonction `plan-public`, gardé dans le stockage KV, et ce qui le fait oublier (`/api/oublie`).
-  `amontPour` 53 · `cleDe` 61 · `cleDeLot` 67 · `cleVersion` 96 · `versionGardee` 99 `rangeLaVersion` 103 · `ditVersion` 117 · `meta` 126 · `gardable` 142 · `range` 148 `rangeLePlan` 157 · `rafraichit` 173 · `entete` 202 · `oublie` 264 · `relaiePlan` 307
+- `src/plan.mjs` — 413 l. · Le plan d'un salon : relais de `/api/plan` vers la fonction `plan-public`, gardé dans le stockage KV, et ce qui le fait oublier (`/api/oublie`).
+  `amontPour` 57 · `cleDe` 65 · `cleDeLot` 71 · `cleVersion` 100 · `versionGardee` 103 `rangeLaVersion` 107 · `ditVersion` 121 · `meta` 130 · `gardable` 146 · `range` 152 `rangeLePlan` 161 · `rafraichit` 177 · `entete` 206 · `oublie` 268 · `relaiePlan` 319
 - `src/visite.mjs` — 163 l. · Ce que le visiteur prépare : ses rappels de conférence (`/api/rappels`), son plan de visite annoncé (`/api/plan-de-visite`) et la charge qu'annoncent ceux des autres (`/api/charge`).
   `rappels` 60 · `planDeVisite` 101 · `chargePrevue` 140
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.

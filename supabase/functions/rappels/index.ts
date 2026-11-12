@@ -35,7 +35,7 @@
  * plus qu'aucun journal ne le nommerait.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { pousse } from "../_partage/push.ts";
+import { destinationPermise, pousse } from "../_partage/push.ts";
 
 /*
  * Toutes les origines, comme `mesure`, et pour la même raison : un plan posé
@@ -103,12 +103,9 @@ async function enregistre(req: Request) {
   const auth = String(corps.abonnement?.keys?.auth ?? "").slice(0, 100);
   if (!slug || !point || !p256dh || !auth) return refus("Paramètres manquants.");
   /* L'abonnement est une adresse, et elle sert telle quelle à poster : on
-     refuse ici ce qui n'en est pas une, plutôt que de le découvrir à l'envoi. */
-  try {
-    if (new URL(point).protocol !== "https:") return refus("Abonnement invalide.");
-  } catch (_e) {
-    return refus("Abonnement invalide.");
-  }
+     refuse ici ce qui n'est pas celle d'un service de poussée, plutôt que de
+     le découvrir à l'envoi (`destinationPermise`). */
+  if (!destinationPermise(point)) return refus("Abonnement invalide.");
 
   const rappels = (Array.isArray(corps.rappels) ? corps.rappels : [])
     .slice(0, RANGS_MAX)

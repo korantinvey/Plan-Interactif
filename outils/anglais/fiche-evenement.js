@@ -57,4 +57,6 @@ module.exports = {
   "Jamais synchronisé.": "Never synchronised.",
   // la base Klipso choisie dans « Sources de données »
   "Base Klipso du salon : {instance}.": "Show's Klipso database: {instance}.",
+  // « Sources de données » ouverte par un organisateur
+  "Seul l'administrateur du projet change ces identifiants.": "Only the project administrator can change these identifiers.",
 };

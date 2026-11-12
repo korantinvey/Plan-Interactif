@@ -32,7 +32,7 @@ import { chargeParcours } from "./parcours.mjs";
 import { rafraichitParcours } from "./tiroir-parcours.mjs";
 import { injecteApresOption } from "./options.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
-import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubliees, rangeDessins }
+import { DESSINS, ouvreDessins, enAttente, dejaPubliee, marqueAttente, notePubliees, rangeDessins, calquesSurs }
   from "./calques-dessin.mjs";
 import { oublieReperes } from "./cartouche-poi.mjs";
 
@@ -186,7 +186,7 @@ export function indexe(/** @type {any} */ d){
        n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
        données figées n'en porte pas du tout : on n'y touche à rien. */
     if (Array.isArray(p.dessins)){
-      const deLaBase = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      const deLaBase = calquesSurs(p.dessins);
       if (ADMIN && enAttente(p.id)){
         /* Un travail que ce poste n'a pas encore publié : il l'emporte, la base
            ne l'a pas vu passer. Ce que la base a de plus s'y ajoute pourtant —

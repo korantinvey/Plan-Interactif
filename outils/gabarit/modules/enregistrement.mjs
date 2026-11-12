@@ -44,7 +44,7 @@ import { confirme } from "./fenetre.mjs";
 import { ecranAcces } from "./acces-admin.mjs";
 import { annonce, PLAN_DEMARRE } from "./demarrage.mjs";
 import { DESSINS, ATTENTE, PUBLIES, enAttente, notePubliees, marqueAttente,
-  ATTENTE_CHANGEE, cleDessins } from "./calques-dessin.mjs";
+  ATTENTE_CHANGEE, cleDessins, calquesSurs } from "./calques-dessin.mjs";
 import { oublieGrilles, oublieLiaisons } from "./itineraire.mjs";
 import { rafraichitApercu } from "./nappe.mjs";
 import { oublieAimants } from "./aimants.mjs";
@@ -644,7 +644,7 @@ function appliqueSauvegarde(s){
     if (!connus.has(id)){ ignores++; return; }
     const v = s.pavillons[id] || {};
     if (Array.isArray(v.dessins)){
-      DESSINS[id] = v.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      DESSINS[id] = calquesSurs(v.dessins);
       calques += DESSINS[id].length;
       /* Le fichier l'emporte sur la base : c'est ce qu'on vient de demander.
          La marque le dit au chargement suivant, le temps que l'envoi aboutisse. */

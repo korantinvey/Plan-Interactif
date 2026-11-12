@@ -189,6 +189,30 @@ export function marqueAttente(id, oui){
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 export const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 
+/**
+ * Des calques reçus d'ailleurs, ramenés à ce que le tracé sait écrire.
+ *
+ * Le dessin compose son SVG en concaténant les sommets d'une forme : un
+ * sommet qui n'est pas un nombre y entrerait tel quel, et ce qu'on sait écrire
+ * dans une valeur de la base — un organisateur, sur son salon — ou dans un
+ * fichier de sauvegarde deviendrait du balisage chez chaque visiteur, et chez
+ * l'administrateur qui ouvre ce salon. On ne garde donc que des sommets faits
+ * de deux nombres finis ; une forme qui n'en a pas ne se dessinerait de toute
+ * façon pas, elle s'écarte. Le reste du texte passe par `esc()` au tracé.
+ */
+export function calquesSurs(/** @type {any[]} */ liste){
+  const sommet = (/** @type {any} */ s) => Array.isArray(s) && s.length >= 2 &&
+    Number.isFinite(+s[0]) && Number.isFinite(+s[1]) ? [+s[0], +s[1]] : null;
+  return (Array.isArray(liste) ? liste : []).filter(c => c && typeof c === "object").map(c => ({
+    ...c,
+    formes: (Array.isArray(c.formes) ? c.formes : []).flatMap((/** @type {any} */ f) => {
+      if (!f || typeof f !== "object" || !Array.isArray(f.pts)) return [];
+      const pts = f.pts.map(sommet);
+      return pts.length && pts.every(Boolean) ? [{ ...f, pts }] : [];
+    }),
+  }));
+}
+
 export let calqueActif = null;   // id du calque en cours d'édition
 export let outil = "main";
 export let enCours = null;       // tracé en construction
