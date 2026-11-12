@@ -294,12 +294,16 @@ function caseFiche(type, cle, libelle, aide, apres) {
   i.checked = paraitSurFiche(e, type, cle);
   if (!libelle) i.setAttribute("aria-label", "Afficher ce champ sur la fiche");
   if (apres) apres(i.checked);
+  /* La case revenait en cas d'échec, mais la fiche du salon gardait le
+     changement refusé : la prochaine écriture l'aurait envoyé quand même. */
   i.onchange = async () => {
+    const avant = e.fiche;
     e.fiche = { ...(e.fiche || {}) };
     e.fiche[type] = { ...(e.fiche[type] || {}), [cle]: i.checked };
     if (apres) apres(i.checked);
     try { await majEvenement(e.id, { fiche: e.fiche }); }
     catch (err) {
+      e.fiche = avant;
       signale(err.message, true);
       i.checked = !i.checked;
       if (apres) apres(i.checked);
@@ -742,8 +746,8 @@ function cadreCategories(src) {
     else delete part.categories;
     corr[src] = part;
     e2.correspondances = corr;
-    try { await majEvenement(e2.id, { correspondances: corr }); }
-    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+    try { await majEvenement(e2.id, { correspondances: corr }); return true; }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); return false; }
   };
 
   catalogue.forEach((c) => {
@@ -761,12 +765,19 @@ function cadreCategories(src) {
       : "aucune fiche de cette catégorie ne portait de numéro de stand";
     const i = l.querySelector("input");
     i.checked = choisies.indexOf(id) >= 0;
-    i.onchange = () => {
+    i.onchange = async () => {
       const k = choisies.indexOf(id);
       if (i.checked && k < 0) choisies.push(id);
       if (!i.checked && k >= 0) choisies.splice(k, 1);
-      enregistre();
       dis();
+      // refusé, la catégorie revient à ce que la base garde, case et note avec
+      if (!(await enregistre())) {
+        const j = choisies.indexOf(id);
+        if (i.checked && j >= 0) choisies.splice(j, 1);
+        if (!i.checked && j < 0) choisies.push(id);
+        i.checked = !i.checked;
+        dis();
+      }
     };
     zone.appendChild(l);
   });

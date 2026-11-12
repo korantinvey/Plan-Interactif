@@ -113,11 +113,15 @@ function ligneSource(dom, libelle, offerts, aide) {
     '</select><span class="aide"></span>';
   l.querySelector("span").textContent = libelle;
   l.querySelector(".aide").textContent = aide;
+  // les sources ne changent qu'une fois la base d'accord ; refusé, le menu revient
   l.querySelector("select").onchange = async (ev) => {
-    e.sources = { ...(e.sources || {}) };
-    e.sources[dom] = { fournisseur: ev.target.value };
-    try { await majEvenement(e.id, { sources: e.sources }); }
-    catch (err) { signale(err.message, true); }
+    const menu = ev.target;
+    const sources = { ...(e.sources || {}), [dom]: { fournisseur: menu.value } };
+    try { await majEvenement(e.id, { sources }); e.sources = sources; }
+    catch (err) {
+      menu.value = ((e.sources || {})[dom] || {}).fournisseur || choisi;
+      signale(err.message, true);
+    }
   };
   return l;
 }

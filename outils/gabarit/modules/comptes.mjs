@@ -183,7 +183,9 @@ export function ouvreComptes(message) {
     rendu(corps);
     litComptes()
       .then(() => {
-        mot = { texte: COMPTES.length ? "" : "Aucun compte.", erreur: false };
+        // le message d'ouverture (« Invitation envoyée… ») survit au rechargement de la liste
+        mot = message ? { texte: message, erreur: false }
+          : { texte: COMPTES.length ? "" : "Aucun compte.", erreur: false };
         if (hote) rendu(hote);
       })
       .catch((e) => {

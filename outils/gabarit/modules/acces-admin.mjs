@@ -75,6 +75,14 @@ async function sessionValide(cfg, session){
  * @param {string} [message]
  */
 export function ecranAcces(message){
+  /* Plusieurs requêtes refusées d'un coup la rouvraient chacune : autant de
+     fenêtres empilées, aux mêmes identifiants, dont une seule répondait. La
+     fenêtre ouverte reçoit le message, et c'est tout. */
+  const ouverte = document.getElementById("acces");
+  if (ouverte){
+    if (message) $("accesMsg").textContent = message;
+    return;
+  }
   const cfg = configuration() || {};
   const voile = document.createElement("div");
   voile.className = "modale open";
@@ -113,7 +121,19 @@ export function ecranAcces(message){
   $("aPublic").href = "plan" + location.search;
   setTimeout(() => ($("aUrl").value ? $("aMail") : $("aUrl")).focus(), 40);
 
+  // une connexion à la fois : Entrée répétée ou double clic en lançaient plusieurs
+  let enCours = false;
   const tente = async () => {
+    if (enCours) return;
+    enCours = true;
+    $("aOk").disabled = true;
+    try { await essaie(); }
+    finally {
+      enCours = false;
+      if ($("aOk")) $("aOk").disabled = false;
+    }
+  };
+  const essaie = async () => {
     const url = normaliseUrlA($("aUrl").value);
     const anonKey = $("aCle").value.trim();
     $("aUrl").value = url;

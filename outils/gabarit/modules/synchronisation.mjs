@@ -148,7 +148,9 @@ export async function synchronise(e) {
        peut durer plusieurs minutes sur un gros salon. Elle se suit dans la
        barre du haut, et s'arrête si l'on quitte la console — le lot suivant
        reprendra où celui-ci s'est arrêté. */
-    fabriqueLesVignettes(e);
+    // non attendue, son échec ne passait par aucun `catch` : il se dit ici
+    fabriqueLesVignettes(e).catch((err) =>
+      signale(t("Préparation des logos impossible : {e}", { e: err.message }), true));
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
     if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });

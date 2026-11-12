@@ -212,10 +212,17 @@ export function dessineFiche() {
   rythme.setAttribute("aria-label", "Rythme de rafraîchissement");
   rythme.innerHTML = RYTHMES.map((r) => '<option value="' + r[0] + '"' +
     (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("");
+  /* Un refus de la base remet le menu et le salon à ce qu'ils étaient : le
+     rythme affiché doit être celui qui s'applique. */
   rythme.onchange = async (ev) => {
+    const avant = e.rythme_min;
     e.rythme_min = +(/** @type {HTMLSelectElement} */ (ev.target)).value;
     try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
-    catch (err) { signale(err.message, true); }
+    catch (err) {
+      e.rythme_min = avant;
+      rythme.value = String(avant);
+      signale(err.message, true);
+    }
   };
   const bsync = document.createElement("button");
   bsync.className = "btn petit";

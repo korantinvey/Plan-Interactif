@@ -37,7 +37,13 @@ export function dupliquer(e) {
           fuseau_choisi: e.fuseau_choisi ?? null,
         }),
       });
-      await _console.charge();
-    } catch (err) { signale(err.message, true); }
+    } catch (err) { signale(err.message, true); return; }
+    /* La copie existe dès que le POST a répondu. Un rechargement de la liste
+       qui échoue ensuite ne doit pas le faire croire raté : on la redemanderait,
+       et on aurait deux copies. */
+    try { await _console.charge(); }
+    catch (err) {
+      signale("La copie est créée, mais la liste n'a pas pu se recharger : " + err.message, true);
+    }
   });
 }

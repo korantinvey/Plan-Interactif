@@ -641,8 +641,10 @@ export function verseFicheZone(){
        alors sur le plan, seul endroit encore sous les yeux. */
     if (!$("modale").classList.contains("open"))
       annonce("Enregistrement de la zone impossible : " + e.message, true);
-    // ce qui n'est pas passé reste à écrire : la prochaine sortie réessaiera
-    if (f.depart === v) f.depart = null;
+    /* Ce qui n'est pas passé reste à écrire : la prochaine sortie réessaiera,
+       comparée à ce que la base garde encore — et non à rien, qui réécrivait
+       chaque champ, y compris ceux qu'un collègue avait changés depuis. */
+    if (f.depart === v) f.depart = depart;
   });
 }
 

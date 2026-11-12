@@ -188,9 +188,15 @@ Deno.serve(async (req) => {
       /* Le déclencheur a posé le profil ; on écrit ensuite ce que le
          déclencheur ne pouvait pas savoir seul — et on le réaffirme, parce
          qu'un tout premier compte naît administrateur quoi qu'on demande. */
-      await db.from("profil")
+      /* Son échec se dit : sans quoi l'invitation répondait « faite » d'un
+         compte resté organisateur quand on l'avait voulu administrateur. */
+      const { error: profilRefuse } = await db.from("profil")
         .update({ nom, prenom, role, email, modifie_le: new Date().toISOString() })
         .eq("id", id);
+      if (profilRefuse) {
+        return repond({ erreur: "Invitation envoyée, mais le profil n'a pas pu être réglé : " +
+          profilRefuse.message }, 500);
+      }
       await ecritAcces(id, corps.evenements);
       return repond({ ok: true, id });
     }
