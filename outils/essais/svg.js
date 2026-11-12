@@ -36,6 +36,10 @@ const dit = (ok, q, d) => {
     ["un lien", '<path d="M0 0L10 10" href="javascript:alert(1)" xlink:href="javascript:alert(1)"/>', /href|javascript/],
     ["une adresse dans un attribut permis", '<path d="M0 0L10 10" stroke-dasharray="url(https://x/y)"/>', /url\(/],
     ["du javascript: dans un attribut permis", '<path d="M0 0L10 10" transform="javascript:alert(1)"/>', /javascript/],
+    /* Relevés par la revue de la pull request #525 : `url(` écrit sans ses
+       lettres, que le navigateur reconstitue avant de lire la valeur. */
+    ["une adresse en échappement CSS, entre apostrophes", "<circle cx=\"1\" cy=\"2\" r=\"3\" fill='u\\72l(https://x/p.svg#p)'/>", /72l|https/],
+    ["une adresse en entité HTML", '<circle cx="1" cy="2" r="3" fill="u&#114;l(https://x/p.svg#p)"/>', /#114|https/],
   ];
   for (const [q, corps, interdit] of PIEGES) {
     const { svg, ecartes } = allege(calque(corps));
@@ -50,6 +54,14 @@ const dit = (ok, q, d) => {
     const { svg } = allege(calque('<text x="1" y="2" font-size="0.6" text-anchor="start" onclick="z">Salle &amp; bar</text>'));
     dit(svg.includes('<text x="1" y="2" font-size="0.6" text-anchor="start">Salle &amp; bar</text>'),
       "un texte garde sa place, sa taille et ses mots", svg);
+  }
+  {
+    /* La couleur d'un groupe, que la page repose en `fill` : seulement une
+       couleur (revue de la pull request #525). */
+    const { svg, ecartes } = allege('<svg><g id="A"><g fill="url(https://x/p.svg#p)" stroke="rgb(1,2,3)">' +
+      '<circle cx="1" cy="2" r="3"/></g></svg>');
+    dit(!/https/.test(svg) && svg.includes('data-s="rgb(1,2,3)"') && ecartes.includes("g@fill"),
+      "la couleur d'un groupe n'est qu'une couleur", svg);
   }
   {
     const { ecartes } = allege(calque('<path d="M0 0L9 9" onload="a"/><circle cx="1" cy="1" r="1" onload="b" style="c"/>'));

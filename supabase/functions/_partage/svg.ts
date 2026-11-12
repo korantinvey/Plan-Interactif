@@ -50,8 +50,17 @@ const PERMIS: Record<string, Set<string>> = {
   text: new Set(["x", "y", "dx", "dy", "font-size", "font-weight", "font-style", "font-family",
     "text-anchor", "dominant-baseline", "letter-spacing", ...TRAIT]),
 };
-/* Une valeur ne charge rien : ni adresse, ni ressource hors du document. */
-const VALEUR_SURE = /^(?![\s\S]*(?:javascript:|data:|url\(\s*(?!#)))[^<>]*$/i;
+/* Une valeur ne charge rien : ni adresse, ni ressource hors du document.
+   Ni `\` ni `&` non plus : le navigateur décode une entité (`u&#114;l(`) avant
+   de lire la valeur, et le CSS d'un attribut de présentation un échappement
+   (`u\72l(`) — l'un et l'autre écriraient `url(` sans que le motif le voie.
+   Un tracé, une couleur, une taille n'en ont jamais l'usage. */
+const VALEUR_SURE = /^(?![\s\S]*(?:javascript:|data:|url\(\s*(?!#)))[^<>\\&]*$/i;
+
+/* La couleur d'un groupe, que la page repose en `fill` ou en trait
+   (`modules/apparence.mjs`) : une couleur écrite, et rien qui désigne autre
+   chose. Les plans de Klipso n'y mettent que `rgb(…)` ou `none`. */
+const COULEUR = /^(?:none|currentColor|#[0-9a-f]{3,8}|[a-z]{3,20}|rgba?\(\s*[\d.]+%?(?:\s*,\s*[\d.]+%?){2,3}\s*\))$/i;
 
 /** Les attributs d'un élément, réduits à ceux qui dessinent ; ce qu'on écarte
  *  est noté dans `ecartes`.
@@ -230,10 +239,16 @@ export function allege(source: string): { svg: string; sousCalques: SousCalque[]
 
     const st = /<g[^>]*\bstroke="([^"]+)"/.exec(corps);
     const fi = /<g[^>]*\bfill="([^"]+)"/.exec(corps);
+    const couleur = (m: RegExpExecArray | null, nom: string) => {
+      if (!m) return "";
+      if (COULEUR.test(m[1].trim())) return m[1];
+      ecartes.add("g@" + nom);
+      return "";
+    };
     groupes.push({
       id,
-      trait: st ? st[1] : "",
-      remplissage: fi ? fi[1] : "",
+      trait: couleur(st, "stroke"),
+      remplissage: couleur(fi, "fill"),
       contenu: (segments.length ? `<path d="${segments.join("")}"/>` : "") + autres.join(""),
     });
   }

@@ -3703,10 +3703,10 @@ Injections :
 
 `sessionRefusee` 23 · `identifiantDePavillon` 36
 
-### `supabase/functions/_partage/svg.ts` — 276 l.
+### `supabase/functions/_partage/svg.ts` — 291 l.
 
-`attributsDeDessin` 66 · `r2` 83 · `points` 103 · `boite` 142 · `neDessineRien` 165
-`allege` 177 · `sansMasques` 256 · `textes` 267
+`attributsDeDessin` 75 · `r2` 92 · `points` 112 · `boite` 151 · `neDessineRien` 174
+`allege` 186 · `sansMasques` 271 · `textes` 282
 
 ### `supabase/functions/_partage/version.ts` — 100 l.
 
