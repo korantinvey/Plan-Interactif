@@ -22,6 +22,7 @@ import { ouvre } from "./fiche.mjs";
 import { coexChoisit } from "./libelles.mjs";
 import { modeleRetenu } from "./modeles.mjs";
 import { ecritColonneEvenement } from "./fiche-zone.mjs";
+import { creeFileEcritures } from "./ecritures-en-file.mjs";
 
 /* ------------------------------------------------------------------
    Ce que la fiche montre, dans quel ordre, et sous quels titres
@@ -164,16 +165,12 @@ export function voletOrdre(hote){
 
   /* Les écritures s'enchaînent plutôt que de partir ensemble : chacune relit la
      colonne avant de la réécrire, et deux qui se croisent perdraient la
-     première. */
-  let file = Promise.resolve();
-  // seule la réponse de la dernière écriture remplace la fiche du poste
-  let derniere = 0;
-  /* La dernière fiche que la base a confirmée, même quand sa réponse n'a pas
-     été affichée parce qu'une écriture plus récente était en route : c'est à
-     elle que l'on revient si cette dernière échoue. */
-  /* Celle de l'ouverture du volet, au départ : si la toute première écriture
-     échoue, c'est à elle qu'on revient. */
-  let confirmee = structuredClone(DATA.fiche || {});
+     première. Seule la réponse de la dernière remplace la fiche du poste ;
+     refusée, elle ramène à la dernière fiche que la base a confirmée — même
+     celle dont la réponse n'a pas été affichée, parce qu'une écriture plus
+     récente était en route ; celle de l'ouverture du volet, au départ
+     (`ecritures-en-file.mjs`). */
+  const file = creeFileEcritures(DATA.fiche || {});
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -249,8 +246,7 @@ export function voletOrdre(hote){
        précédente, arrivée entre-temps, remplace la fiche du poste par ce que la
        base relisait — sans ce geste-ci, que l'écriture aurait alors perdu. */
     const voulu = structuredClone(DATA.fiche);
-    const n = ++derniere;
-    file = file.then(() => ecritColonneEvenement("fiche", voulu, t => {
+    file.ecrit(() => ecritColonneEvenement("fiche", voulu, t => {
       // la colonne relue peut porter un absent que le poste n'avait pas : une
       // autre console a pu créer le champ pendant qu'on rangeait celle-ci
       t.ordre = ordreGarde(voulu.ordre || [], t.ordre || []);
@@ -264,25 +260,25 @@ export function voletOrdre(hote){
       toutes.forEach(c => { t.stand[c] = (voulu.stand || {})[c]; });
       const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
-    })).then(t => {
-      /* Une copie à part : `DATA.fiche` reçoit le même objet, que le clic
-         suivant modifie en place — la restauration aurait gardé le refusé. */
-      confirmee = structuredClone(t);
-      if (n !== derniere) return;
-      DATA.fiche = t; dit("Enregistré.");
-    }).catch(e => {
-      dit("Échec : " + e.message, true);
+    })).then(({ ok, dernier, confirme, erreur }) => {
+      if (!ok) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
+      if (!dernier) return;
+      if (ok){ DATA.fiche = confirme; dit("Enregistré."); return; }
       /* La dernière demande refusée : le volet et la fiche du poste reviennent
          à ce que la base tient, au lieu de garder le réglage refusé, qu'une
-         réouverture aurait encore montré comme acquis. */
-      if (n === derniere){
-        DATA.fiche = structuredClone(confirmee);
-        /* Les intitulés vivent aussi dans le volet : `rendu` les reposerait
-           sinon dans la fiche, refusés compris. */
-        for (const k of Object.keys(intitules)) delete intitules[k];
-        Object.assign(intitules, (DATA.fiche || {}).intitules || {});
-        litReglage(); rendu();
-      }
+         réouverture aurait encore montré comme acquis. Seul ce que ce volet
+         règle revient : le volet des zones écrit la même colonne et confirme
+         de son côté, et reposer toute la fiche d'ici ramenait ses réglages
+         d'avant. Les intitulés vivent aussi dans le volet : `rendu` les
+         reposerait sinon dans la fiche, refusés compris. */
+      const f = { ...(DATA.fiche || {}) };
+      ["ordre", "groupes", "stand", "intitules"].forEach(k => {
+        if ((confirme || {})[k] === undefined) delete f[k]; else f[k] = confirme[k];
+      });
+      DATA.fiche = f;
+      for (const k of Object.keys(intitules)) delete intitules[k];
+      Object.assign(intitules, (DATA.fiche || {}).intitules || {});
+      litReglage(); rendu();
     });
   };
 

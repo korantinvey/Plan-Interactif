@@ -34,4 +34,6 @@ module.exports = {
   "raccordement {sources} incomplet": "{sources} connection incomplete",
   "Klipso pour tout": "Klipso for everything",
   "Nom des stands : {source}": "Booth names: {source}",
+  // une écriture de source différée dont le salon a quitté la liste
+  "Ce salon n'est plus chargé : source non enregistrée.": "This show is no longer loaded: source not saved.",
 };

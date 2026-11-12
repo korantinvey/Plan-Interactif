@@ -28,6 +28,7 @@ import { DATA, TOUS, parId, state, CONFERENCES } from "./donnees.mjs";
 import { ouvreModale, APERCU_QUITTE } from "./fenetre.mjs";
 import { PROFIL_ADMIN } from "./acces-admin.mjs";
 import { champsZone, suitFicheZone, verseFicheZone, ecritColonneEvenement } from "./fiche-zone.mjs";
+import { creeFileEcritures } from "./ecritures-en-file.mjs";
 import { voletAdmin, blocHoraires, voletParcours, sallesSituees, voletPmr, MAJ_COIN, voletDist,
   voletApparence } from "./volets.mjs";
 import { voletOrdre } from "./reglage-fiche.mjs";
@@ -330,12 +331,10 @@ function champsFicheZone(hote){
 
   /* Les écritures s'enchaînent plutôt que de partir ensemble : chacune relit
      la colonne avant de la réécrire, et deux qui se croisent perdraient la
-     première. */
-  let file = Promise.resolve();
-  /* Le numéro de la dernière écriture demandée : seule sa réponse remplace la
-     fiche du poste. Celle d'une écriture antérieure, arrivée pendant qu'on
-     cochait la suivante, aurait repris l'état d'avant ce clic-là. */
-  let derniere = 0;
+     première. Seule la réponse de la dernière remplace la fiche du poste ;
+     refusée, elle ramène à la fiche que la base a confirmée en dernier — celle
+     du chargement, au départ (`ecritures-en-file.mjs`). */
+  const file = creeFileEcritures(DATA.fiche || {});
   const dit = (txt, mal) => { etat.textContent = txt; etat.dataset.mal = String(!!mal); };
 
   const bloc = document.createElement("div");
@@ -345,9 +344,6 @@ function champsFicheZone(hote){
      celle d'après reprenne son changement. */
   /** @type {Array<[HTMLInputElement, string]>} */
   const cases = [];
-  /* Le réglage tel que chargé, copié à part : le premier clic le modifie en
-     place, et sans copie un premier refus n'avait rien où revenir. */
-  let confirmee = structuredClone(DATA.fiche || {});
   const recale = () => {
     cases.forEach(([x, k]) => { x.checked = montre("zone", k); });
     const o = state.sel && parId.get(state.sel);
@@ -376,22 +372,18 @@ function champsFicheZone(hote){
       dit("Enregistrement…");
       /* Ce clic-ci, figé : la seule clé qu'il touche, et sa valeur. Reposer la
          zone d'un bloc effaçait ce qu'une autre console y avait réglé. */
-      const cle = c.cle, voulu = i.checked, n = ++derniere;
-      file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
+      const cle = c.cle, voulu = i.checked;
+      file.ecrit(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
         t.zone = { ...(t.zone || {}), [cle]: voulu };
-      })).then(t => {
-        confirmee = structuredClone(t);
-        if (n !== derniere) return;
-        DATA.fiche = t; recale(); dit("Enregistré.");
-      }).catch(e => {
-        dit("Échec : " + e.message, true);
+      })).then(({ ok, dernier, confirme, erreur }) => {
+        if (!ok) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
+        if (!dernier) return;
+        if (ok){ DATA.fiche = confirme; dit("Enregistré."); }
         /* Seule la part des zones revient : le volet des stands écrit la même
            colonne et confirme de son côté, et reposer toute la fiche d'ici
            ramenait ses réglages d'avant. */
-        if (n === derniere){
-          DATA.fiche = { ...(DATA.fiche || {}), zone: structuredClone((confirmee || {}).zone || {}) };
-          recale();
-        }
+        else DATA.fiche = { ...(DATA.fiche || {}), zone: (confirme || {}).zone || {} };
+        recale();
       });
     };
     bloc.appendChild(l);

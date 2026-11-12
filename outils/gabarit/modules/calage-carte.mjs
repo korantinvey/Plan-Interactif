@@ -341,6 +341,13 @@ async function calageEnregistre(p = P()){
 
 /* Les bâtiments auxquels s'accrocher. Le calage en cours de réglage, lui,
    vit dans `environs.mjs`, qui le dessine : on l'écrit par son mutateur. */
+/* Un numéro par calage commencé : un retrait qui répond tard ne remet l'écran
+   à zéro que si personne n'a recommencé à caler entre-temps — même pavillon ne
+   suffit pas, « Situer le salon » relancé pendant l'écriture y poserait un
+   calage neuf, que la réponse effaçait. Tenu ici, et non dans le volet : un
+   volet fermé puis rouvert avant la réponse repartait d'un compteur neuf, et
+   l'ancien retrait n'y voyait rien. */
+let calagesLances = 0;
 let ENV_BATIS = [];
 let ENV_BATI = 0;
 
@@ -808,12 +815,6 @@ export function voletEnvirons(hote){
     bFige.hidden = !(pose && pose.fond);
     lot.textContent = ditLot(pose);
   };
-
-  /* Un numéro par calage commencé depuis ce volet : un retrait qui répond
-     tard ne remet l'écran à zéro que si personne n'a recommencé à caler
-     entre-temps — même pavillon ne suffit pas, « Situer le salon » relancé
-     pendant l'écriture y poserait un calage neuf, que la réponse effaçait. */
-  let calagesLances = 0;
 
   bFige.onclick = async () => {
     if (!ENV_CAL){ calagesLances++; poseCalageEnCours(Object.assign({}, calagePose())); }

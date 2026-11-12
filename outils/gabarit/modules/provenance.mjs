@@ -12,7 +12,8 @@
    console (`fenetre-console.mjs`, `socle-console.mjs`). Le salon ouvert et
    son écriture viennent de `evenements.mjs`.
    ============================================================ */
-import { courant, majEvenement } from "./evenements.mjs";
+import { courant, evenementParId, majEvenement, poseSurSalon } from "./evenements.mjs";
+import { creeFileEcritures } from "./ecritures-en-file.mjs";
 import { ouvreModale } from "./fenetre-console.mjs";
 import { grille, signale } from "./socle-console.mjs";
 
@@ -22,8 +23,10 @@ import { grille, signale } from "./socle-console.mjs";
    la géométrie du plan ne vient que de Klipso, le reste pourra venir
    d'ailleurs. La clé d'identification reste celle de l'événement.
    ============================================================ */
-/** La file des écritures de sources, commune à tous les menus d'un salon. */
-let fileSources = Promise.resolve();
+/* La file des écritures de sources, commune à tous les menus d'un salon.
+   L'état confirmé est celui du salon dans la liste : la file dit l'ordre, et
+   quel changement d'un menu a le dernier mot (`ecritures-en-file.mjs`). */
+const fileSources = creeFileEcritures();
 
 /* Par domaine : sa clé, son nom, les sources qui savent le servir, ce qu'il porte. */
 /** @type {[string, string, string[], string][]} */
@@ -120,21 +123,24 @@ function ligneSource(dom, libelle, offerts, aide) {
   /* Les sources ne changent qu'une fois la base d'accord ; refusé, le menu
      revient. Les menus de tous les domaines partagent une file : chaque
      écriture part de ce que la précédente a confirmé, sans quoi la seconde
-     renvoyait l'ancienne source de la première. */
-  /* Un numéro par changement : comparer la valeur ne suffisait pas —
-     klipso, eventmaker, klipso ramène la même, et le refus du premier
-     remettait le menu sur l'ancienne source pendant que la base prenait
-     la dernière. Seul le refus du dernier changement recale le menu. */
-  let dernier = 0;
+     renvoyait l'ancienne source de la première. Seul le refus du dernier
+     changement de ce menu le recale : comparer la valeur ne suffisait pas —
+     klipso, eventmaker, klipso ramène la même. Le salon se retrouve par son
+     identifiant quand l'écriture part : la liste a pu être rechargée. */
   l.querySelector("select").onchange = (ev) => {
-    const menu = ev.target, voulu = menu.value, n = ++dernier;
-    fileSources = fileSources.then(async () => {
-      const sources = { ...(e.sources || {}), [dom]: { fournisseur: voulu } };
-      try { await majEvenement(e.id, { sources }); e.sources = sources; }
-      catch (err) {
-        if (n === dernier) menu.value = ((e.sources || {})[dom] || {}).fournisseur || choisi;
-        signale(err.message, true);
-      }
+    const menu = /** @type {HTMLSelectElement} */ (ev.target), voulu = menu.value;
+    fileSources.ecrit(async () => {
+      const e2 = evenementParId(e.id);
+      if (!e2) throw new Error("Ce salon n'est plus chargé : source non enregistrée.");
+      const sources = { ...(e2.sources || {}), [dom]: { fournisseur: voulu } };
+      await majEvenement(e2.id, { sources });
+      e2.sources = sources;
+      // la liste a pu être rechargée pendant la requête (`poseSurSalon`)
+      poseSurSalon(e2.id, { sources });
+    }, dom).then(({ ok, dernier, erreur }) => {
+      if (ok) return;
+      if (dernier) menu.value = (((evenementParId(e.id) || e).sources || {})[dom] || {}).fournisseur || choisi;
+      signale(/** @type {Error} */ (erreur).message, true);
     });
   };
   return l;

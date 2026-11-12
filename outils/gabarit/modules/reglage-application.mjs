@@ -47,6 +47,7 @@ import { oublieCache, REPOS } from "./enregistrement.mjs";
    champ intitulé des volets, de `fiche-zone.mjs` : rien ne lui est
    confié. */
 import { champZone } from "./fiche-zone.mjs";
+import { creeFileEcritures } from "./ecritures-en-file.mjs";
 
 /* Un nom d'application tient en une ligne — le relais le borne pareil, et les
    systèmes coupent bien avant. */
@@ -292,20 +293,20 @@ export function blocApplication(hote){
   let minuteurNom = null;
   /* Les écritures se suivent : une saisie reprise pendant qu'une autre était
      en route en lançait une seconde, et la plus lente l'emportait — l'ancien
-     nom pouvait rester. Seule la dernière dit où l'on en est. */
-  let fileNom = Promise.resolve(), saisie = 0;
+     nom pouvait rester. Seule la dernière dit où l'on en est
+     (`ecritures-en-file.mjs`). */
+  const fileNom = creeFileEcritures();
   nom.oninput = () => {
     clearTimeout(minuteurNom);
     ditNom.dataset.mal = "false";
     ditNom.textContent = "Enregistrement…";
     minuteurNom = setTimeout(() => {
       const ecrit = nom.value.trim().slice(0, NOM_APP_MAX);
-      const n = ++saisie;
-      fileNom = fileNom.then(() => ecritApplication({ nom_app: ecrit || null }))
-        .then(() => { if (n === saisie) ditNom.textContent = ecrit ? "Enregistré." : "Nom par défaut."; })
-        .catch(err => {
-          if (n !== saisie) return;
-          ditNom.textContent = "Échec : " + err.message;
+      fileNom.ecrit(async () => { await ecritApplication({ nom_app: ecrit || null }); })
+        .then(({ ok, dernier, erreur }) => {
+          if (!dernier) return;
+          if (ok){ ditNom.textContent = ecrit ? "Enregistré." : "Nom par défaut."; return; }
+          ditNom.textContent = "Échec : " + /** @type {Error} */ (erreur).message;
           ditNom.dataset.mal = "true";
         });
     }, REPOS);

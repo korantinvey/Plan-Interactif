@@ -180,4 +180,5 @@ module.exports = {
   // une écriture de catégories différée dont le salon a quitté la liste
   "Ce salon n'est plus chargé : catégories non enregistrées.": "This show is no longer loaded: categories not saved.",
   "Ce salon n'est plus chargé : fiche non enregistrée.": "This show is no longer loaded: card not saved.",
+  "Ce salon n'est plus chargé : correspondance non enregistrée.": "This show is no longer loaded: mapping not saved.",
 };
