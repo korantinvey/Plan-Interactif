@@ -102,7 +102,7 @@ export const adresseVignette = (/** @type {any} */ cle) =>
  * immuable qu'elle ; rien sans API — la démonstration n'a que ses petites.
  *
  * « d=1 » ne dit rien au service — le relais ne transmet que les paramètres
- * qu'il connaît (`src/index.mjs` `amontPour`) — mais change l'adresse. La
+ * qu'il connaît (`src/plan.mjs` `amontPour`) — mais change l'adresse. La
  * grande a changé sous sa clé quand la synchronisation s'est mise à la
  * détourer, et l'ancienne, au fond blanc, se gardait sans fin au navigateur
  * et au service worker : sans ce paramètre, les visiteurs d'avant l'auraient

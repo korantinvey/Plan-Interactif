@@ -3,7 +3,7 @@
  *
  * Cloudflare sert chaque branche poussée avec les liaisons de la production :
  * le même stockage KV, la même base. Le Worker s'en tient donc à l'écart
- * (`src/index.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`). Rien ne se
+ * (`src/commun.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`). Rien ne se
  * verrait s'il cessait de le faire : le cache des visiteurs se remplirait de
  * réponses d'essai, l'audience des salons de clics de mise au point. On le
  * vérifie donc ici, sur le vrai Worker, avec un stockage et un réseau prêtés :

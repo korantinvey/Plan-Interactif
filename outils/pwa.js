@@ -33,7 +33,7 @@
  *
  * Le manifeste part donc avec l'adresse nue — `plan`, le salon par défaut — et
  * la page, elle, nomme le sien : `manifeste.webmanifest?salon=…`. Le relais
- * (`src/index.mjs`) reprend alors ce même fichier et y écrit l'adresse du
+ * (`src/application.mjs`) reprend alors ce même fichier et y écrit l'adresse du
  * salon. Un seul manifeste à tenir, aucun à fabriquer par salon. Sans
  * JavaScript, le fichier nu reste installable.
  *
@@ -59,7 +59,7 @@
  * Plan SMCL by Event2Map » — non le produit qui le sert. La page ne peut pas
  * le dire : le manifeste est lu avant qu'elle ait reçu quoi que ce soit de
  * l'API. Elle nomme donc le salon, `salon=<slug>`, et c'est le relais qui va
- * chercher son nom et l'écrit (`src/index.mjs` `manifeste`) — ou celui que
+ * chercher son nom et l'écrit (`src/application.mjs` `manifeste`) — ou celui que
  * l'exploitant a écrit pour son application, qui l'emporte. Le slug, lui, est
  * connu dès l'en-tête : il est dans l'adresse, ou c'est celui du salon par
  * défaut, que la construction pose ici.
@@ -94,7 +94,7 @@ function manifeste() {
   return JSON.stringify({
     /* Le nom du produit, pour le seul cas où le relais n'a pas su nommer le
        salon : un manifeste demandé sans slug, ou une base muette. Autrement
-       c'est « Plan <salon> by Event2Map » qui part (`src/index.mjs`). */
+       c'est « Plan <salon> by Event2Map » qui part (`src/application.mjs`). */
     name: "Plan interactif",
     /* Ce que le système écrit sous l'icône : place pour une douzaine de signes.
        Le relais y met le salon seul — c'est lui qu'on y cherche du regard, et
@@ -153,7 +153,7 @@ function manifeste() {
        L'adresse est relative, et le relais la remplace par celle du manifeste
        qu'on lui a demandé — paramètres compris : l'application installée est
        identifiée par l'adresse d'où elle l'a été, et `manifeste.webmanifest`
-       tout court n'est celle de personne (`src/index.mjs`).
+       tout court n'est celle de personne (`src/application.mjs`).
 
        `prefer_related_applications` est écrit alors qu'il vaut déjà faux : à
        vrai, il ferait de cette parenté une raison de ne plus proposer

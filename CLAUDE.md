@@ -234,7 +234,7 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 |---|---|
 | `outils/gabarit/` | la source des pages ; `modules/` tout le JavaScript |
 | `web/` | les pages construites — non versionnées, sauf `polices/` et `bibliotheques/` |
-| `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan`, mesures, erreurs, manifeste |
+| `src/` | Worker Cloudflare, un module par domaine : `index.mjs` l'aiguillage, `plan.mjs` relais et cache de `/api/plan`, `mesures.mjs` mesures et erreurs, `application.mjs` manifeste, `visite.mjs` rappels et plan de visite, `commun.mjs` la règle de la prévisualisation |
 | `outils/*.js` | la chaîne de construction, et elle seule (`assemble.js`, `genere.js`, `carte.js`…) ; `outils/projet.js` le projet Supabase des pages et du Worker, production ou recette |
 | `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso, API publique, rappels, comptes ; `_partage/` le commun |
@@ -242,7 +242,7 @@ l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en frança
 | `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 | `outils/essais/` | essais hors page — `npm run essais`, par `node --test` : **tout fichier `*.js` de ce dossier est un essai**, lancé dans son propre processus, en parallèle des autres, et compté en échec s'il sort en erreur ; une aide partagée va dans `aides/`. L'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
 | `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; seuls les essais `@base` (`npm run navigateur-base`) bloquent la pull request, le reste tourne sur `main` et chaque nuit — un essai neuf ne prend `@base` que s'il garde une page entière ou le parcours du visiteur ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
-| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, référence figée au stock vide), `injections.js` (injections et boucles), `guide.js` (ce guide) — et leurs références figées `*.json` (*baseline*) |
+| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, référence figée au stock vide), `injections.js` (injections et boucles), `html.js` (HTML échappé, règle `regle-html.js`), `guide.js` (ce guide) — et leurs références figées `*.json` (*baseline*) |
 | `outils/donnees/` | les données figées que relit la construction — versionnées, voir « Données figées » |
 | `outils/scripts/` | ce qui se lance à la main ou par un workflow, hors construction : serveur d'essai, migration, lieux, démonstration, fiche de performance ; `klipso/` l'exploration de l'API |
 | `outils/bancs/` | bancs de mesure longs (`npm run fep26`, `npm run charge`), que la CI ne lance pas |
@@ -305,9 +305,9 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | rappels de conférence | `modules/rappels.mjs`, `modules/notifications.mjs` ; serveur `supabase/functions/rappels/` |
 | programme saisi à la main (source « saisie ») | colonne `evenement.conferences_saisies`, lue par `_partage/programme-saisi.ts` ; anglais posé par `modules/index-salon.mjs` |
 | suggestion, visite guidée, générique du sponsor | `modules/suggestion.mjs`, `modules/tutoriel.mjs`, `modules/sponsor.mjs` |
-| installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/index.mjs` `manifeste` |
-| mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/index.mjs` `mesure`, `erreur` |
-| sonde de performance, ce qui a échoué pendant une visite | `modules/sonde.mjs` (avec `modules/erreurs.mjs` `bilanErreurs`, `modules/demarrage.mjs` `PLAN_EN_PANNE`) ; relais `src/index.mjs` `sonde` ; fiche du lundi `outils/scripts/performances.js`, lecture `outils/scripts/lecture-perf.js` ; vraisemblance d'un relevé `outils/scripts/sonde-coherence.js` (`incoherences`), qu'essais et fiche imposent — une correction de ce que mesure un champ avance `modules/sonde.mjs` `REVISION` |
+| installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/application.mjs` `manifeste` |
+| mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/mesures.mjs` (`mesure`, `erreur`) |
+| sonde de performance, ce qui a échoué pendant une visite | `modules/sonde.mjs` (avec `modules/erreurs.mjs` `bilanErreurs`, `modules/demarrage.mjs` `PLAN_EN_PANNE`) ; relais `src/mesures.mjs` `sonde` ; fiche du lundi `outils/scripts/performances.js`, lecture `outils/scripts/lecture-perf.js` ; vraisemblance d'un relevé `outils/scripts/sonde-coherence.js` (`incoherences`), qu'essais et fiche imposent — une correction de ce que mesure un champ avance `modules/sonde.mjs` `REVISION` |
 | carte de chaleur, remise à zéro | `modules/chaleur.mjs` |
 | accès administrateur, session, bande d'administration | `modules/acces-admin.mjs`, `modules/session.mjs`, `modules/bande-admin.mjs`, `modules/mode-admin.mjs` |
 | console multi-événements | `modules/console.mjs`, `modules/ecran-console.mjs`, socle `modules/socle-console.mjs` |
@@ -320,7 +320,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | ce qui vient d'ailleurs, relu avant d'être affiché | `modules/sur.mjs` |
 | fenêtre commune par-dessus le plan | `modules/fenetre.mjs` |
 | ce que la page sait d'elle-même — API, salon, borne, administration | `modules/salon.mjs` |
-| API publique du plan, cache, fraîcheur | `supabase/functions/plan-public/`, `src/index.mjs` |
+| API publique du plan, cache, fraîcheur | `supabase/functions/plan-public/`, `src/plan.mjs` |
 | politique de sécurité, commentaires retirés | `outils/genere.js` `poseCsp`, `epure` |
 | hors ligne | `outils/gabarit/_sw.js` |
 | faire écrire un correctif depuis GitHub | `.github/workflows/correctif.yml` |
@@ -346,6 +346,12 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   `modules/vue.mjs` `appliqueVue` rappelle à chaque image d'un geste aussi. Pendant un
   geste, on ne refait que la forme tirée (`modules/dessin.mjs` `redessineForme`) :
   `dessineDessins` est trop lourd pour une rafale de `pointermove`.
+- **Du HTML ne s'écrit que de morceaux prouvés sûrs.** `innerHTML`,
+  `outerHTML` et `insertAdjacentHTML` reçoivent du texte fixe, des nombres, ou
+  ce qui passe par `esc()` (`modules/texte.mjs`) ou `modules/sur.mjs` ; une
+  donnée venue d'ailleurs non échappée, c'est un script exécuté chez chaque
+  visiteur. `npm run html` refuse toute écriture nouvelle qu'il ne sait pas
+  prouver ; l'existant est dans sa référence figée `html-acceptes.json`.
 - **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
   dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
 - **Deux moteurs peignent le plan, qui parlent la même langue** : le moteur du
@@ -387,7 +393,7 @@ pourtant les liaisons. La construction sait quelle branche elle construit
 (`WORKERS_CI_BRANCH`, `outils/projet.js`) ; le Worker, qui se reconnaît aussi à
 son adresse, n'y lit ni n'écrit le cache `CACHE` des visiteurs — seulement
 `CACHE_APERCU` s'il est déclaré — et n'y relaie ni mesures, ni erreurs, ni
-plans de visite (`src/index.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`,
+plans de visite (`src/commun.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`,
 éprouvés par `outils/essais/apercu.js`). **Mais l'administration ouverte en
 prévisualisation écrit toujours dans la base de production** : c'est la page
 qui lui parle, avec la session de l'exploitant. Seul un projet de recette l'en

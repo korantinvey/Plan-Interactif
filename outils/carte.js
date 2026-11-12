@@ -279,11 +279,22 @@ for (const f of fs.readdirSync(MIG).filter((f) => f.endsWith(".sql")).sort()) {
 ecrit("");
 
 ecrit("## Le reste", "");
-const worker = lis(path.join(RACINE, "src", "index.mjs"));
-const ls = lignes(worker);
+/* Le Worker, un module par domaine : `index.mjs` n'est que l'aiguillage. Ce que
+   dit chacun vient de la première phrase de son en-tête, comme pour les
+   modules des pages ; `pages.mjs`, écrit par la construction, n'en a pas. */
+const MODULES_WORKER = fs.readdirSync(path.join(RACINE, "src"))
+  .filter((f) => f.endsWith(".mjs") && f !== "pages.mjs").sort((a, b) =>
+    (a === "index.mjs" ? -1 : b === "index.mjs" ? 1 : a.localeCompare(b)));
+for (const f of MODULES_WORKER) {
+  const texte = lis(path.join(RACINE, "src", f));
+  const ls = lignes(texte);
+  const dit = (texte.match(/^\/\*\*\s*\n((?:\s*\*.*\n)+?)\s*\*\s*\n/) || ["", ""])[1]
+    .split("\n").map((l) => l.replace(/^\s*\*\s?/, "").trim()).filter(Boolean).join(" ");
+  ecrit(
+    `- \`src/${f}\` — ${compte(texte)} l. · ${dit.split(/(?<=\.)\s/)[0] || "Worker Cloudflare."}`,
+    "  " + enveloppe(fonctions(ls).map((fn) => `\`${fn.nom}\` ${fn.l}`)).join(" "));
+}
 ecrit(
-  `- \`src/index.mjs\` — ${compte(worker)} l. · Worker Cloudflare : relais et cache de \`/api/plan\`.`,
-  "  " + enveloppe(fonctions(ls).map((f) => `\`${f.nom}\` ${f.l}`)).join(" "),
   "- `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.",
   "- `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.",
   "- `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.",

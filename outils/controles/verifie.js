@@ -55,8 +55,9 @@ try {
    qu'un développeur attend d'un dépôt, ce qui voit une variable morte, un nom
    que rien ne déclare ou un appel faux là où la syntaxe ne regarde pas — et
    une boucle d'imports ou une injection ajoutée sans raison, par où le code se
-   recouplerait. Et le guide, qui ne doit citer que ce qui existe encore. */
-for (const script of ["controles/relecture.js", "controles/types.js", "controles/injections.js", "controles/guide.js"]) {
+   recouplerait ; du HTML écrit avec un morceau qu'on ne sait pas prouver
+   échappé. Et le guide, qui ne doit citer que ce qui existe encore. */
+for (const script of ["controles/relecture.js", "controles/types.js", "controles/injections.js", "controles/html.js", "controles/guide.js"]) {
   try {
     lance(script);
   } catch (e) {

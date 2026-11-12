@@ -6,7 +6,7 @@
    module écoute les erreurs du script et les promesses rejetées sans
    traitement, et les signale au Worker (`/api/erreur`), qui les ramène au
    module et à la ligne d'origine par la carte du script minifié, puis les
-   compte par salon et par jour (`src/index.mjs` `erreur`, migration
+   compte par salon et par jour (`src/mesures.mjs` `erreur`, migration
    `les_erreurs_des_pages_du_plan`). Le rapport d'utilisation les montre.
 
    Ce qui part ne dit rien du visiteur : un message, un fichier, une ligne et

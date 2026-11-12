@@ -13,7 +13,7 @@
  * ses réponses dans le cache que lisent les visiteurs, consommait son quota
  * d'écritures, et comptait ses clics dans l'audience des salons. La branche
  * construite se lit dans `WORKERS_CI_BRANCH`, que Cloudflare pose pendant la
- * construction ; `src/index.mjs` en tire `APERCU` et se tient à l'écart.
+ * construction ; `src/commun.mjs` en tire `APERCU` et se tient à l'écart.
  *
  * `recette` attend un second projet Supabase. Tant qu'il n'existe pas, une
  * prévisualisation lit la base de production — elle n'a rien d'autre à lire —,
@@ -56,7 +56,7 @@ function projetDeLaConstruction(env = process.env) {
   /* Une branche inconnue compte pour la production : le doute ne doit pas
      priver le site en ligne de son cache et de sa mesure. Une prévisualisation
      que la construction n'aurait pas reconnue, le Worker la reconnaît encore à
-     son adresse (`src/index.mjs` `enApercu`). */
+     son adresse (`src/commun.mjs` `enApercu`). */
   const branche = (env.WORKERS_CI && env.WORKERS_CI_BRANCH) || BRANCHE_DE_PRODUCTION;
   const apercu = branche !== BRANCHE_DE_PRODUCTION;
   const nom = apercu && PROJETS.recette ? "recette" : "production";

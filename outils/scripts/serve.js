@@ -36,7 +36,7 @@ const TYPES = {
 http.createServer((q, s) => {
   let u = q.url.split("?")[0];
 
-  /* L'entête du plan, rendu ici comme le Worker le rend (`src/index.mjs`) : la
+  /* L'entête du plan, rendu ici comme le Worker le rend (`src/plan.mjs`) : la
      fonction ne connaît pas ce paramètre — c'est le relais qui répond, de son
      stockage. Sans ce détour, l'essai local recevrait le plan entier là où la
      page attend sa version, et le seul geste qu'on voulait éprouver ne
@@ -94,7 +94,7 @@ http.createServer((q, s) => {
     return;
   }
 
-  /* Le manifeste est complété en production par le Worker (`src/index.mjs`) :
+  /* Le manifeste est complété en production par le Worker (`src/application.mjs`) :
      il y reçoit le salon d'où l'on installe, dont il tire le nom de
      l'application et l'adresse qu'elle rouvrira. Sans ce même geste ici,
      l'essai local montrerait une application au nom du produit, qui rouvre

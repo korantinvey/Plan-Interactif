@@ -2,7 +2,7 @@
  * L'entête du plan répond du stockage, sans attendre la base.
  *
  * Chaque ouverture de page demande au relais quelle version du plan se sert
- * (`src/index.mjs` `entete`), et la page attend sa réponse avant de prendre le
+ * (`src/plan.mjs` `entete`), et la page attend sa réponse avant de prendre le
  * plan. Quand le relais ne la gardait plus — effacée par un enregistrement de
  * l'administration, ou expirée au bout d'un jour —, la visite attendait que la
  * base refasse le plan entier : 0,8 seconde en médiane, jusqu'à 5,8, relevées

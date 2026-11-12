@@ -3822,8 +3822,20 @@ Injections :
 
 ## Le reste
 
-- `src/index.mjs` — 1318 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `enApercu` 71 · `cacheDe` 81 · `ecritEnProduction` 88 · `ecartee` 91 · `dit` 152 `amontPour` 161 · `cleDe` 169 · `cleDeLot` 175 · `condense` 182 · `cleVersion` 213 `versionGardee` 216 · `rangeLaVersion` 220 · `ditVersion` 234 · `meta` 243 · `gardable` 259 `range` 265 · `rangeLePlan` 274 · `rafraichit` 290 · `entete` 319 · `oublie` 381 `rappels` 478 · `cleApp` 523 · `cheminDuSalon` 554 · `pageDuSalon` 571 · `appDuSalon` 595 `iconesDuSalon` 641 · `manifeste` 681 · `iconeApp` 771 · `mesure` 815 · `carteDuScript` 904 `lieuDe` 917 · `erreur` 931 · `texteDuScript` 983 · `geleResolu` 996 · `sonde` 1043 `planDeVisite` 1092 · `chargePrevue` 1131 · `surete` 1167 · `aiguille` 1185
+- `src/index.mjs` — 126 l. · Worker Cloudflare : sert les pages, relaie les lectures du plan et les mesures d'utilisation.
+  `surete` 67 · `aiguille` 85
+- `src/application.mjs` — 292 l. · L'application installée d'un salon : son adresse propre (`/plan-<salon>`), son manifeste et son icône.
+  `cleApp` 26 · `cheminDuSalon` 57 · `pageDuSalon` 74 · `appDuSalon` 98 · `iconesDuSalon` 144 `manifeste` 184 · `iconeApp` 274
+- `src/carte.mjs` — 82 l. · Ramener une position du script minifié à sa source.
+  `nombres` 23 · `lisCarte` 43 · `source` 68
+- `src/commun.mjs` — 112 l. · Ce que tous les chemins du Worker partagent : l'adresse du projet, la distinction entre production et prévisualisation, le contrôle d'un slug, la réponse de service et les en-têtes CORS des relais ouverts.
+  `enApercu` 39 · `cacheDe` 49 · `ecritEnProduction` 56 · `ecartee` 59 · `dit` 69 `condense` 78
+- `src/mesures.mjs` — 309 l. · Ce que les pages font remonter : mesures d'usage (`/api/mesure`), erreurs (`/api/erreur`) et relevés de performance (`/api/sonde`).
+  `mesure` 44 · `carteDuScript` 133 · `lieuDe` 146 · `erreur` 160 · `texteDuScript` 212 `geleResolu` 225 · `sonde` 272
+- `src/plan.mjs` — 401 l. · Le plan d'un salon : relais de `/api/plan` vers la fonction `plan-public`, gardé dans le stockage KV, et ce qui le fait oublier (`/api/oublie`).
+  `amontPour` 53 · `cleDe` 61 · `cleDeLot` 67 · `cleVersion` 96 · `versionGardee` 99 `rangeLaVersion` 103 · `ditVersion` 117 · `meta` 126 · `gardable` 142 · `range` 148 `rangeLePlan` 157 · `rafraichit` 173 · `entete` 202 · `oublie` 264 · `relaiePlan` 307
+- `src/visite.mjs` — 163 l. · Ce que le visiteur prépare : ses rappels de conférence (`/api/rappels`), son plan de visite annoncé (`/api/plan-de-visite`) et la charge qu'annoncent ceux des autres (`/api/charge`).
+  `rappels` 60 · `planDeVisite` 101 · `chargePrevue` 140
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
