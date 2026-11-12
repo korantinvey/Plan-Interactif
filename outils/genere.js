@@ -722,9 +722,13 @@ fs.writeFileSync(W + "plan-admin.html", poseCsp(annonceTot(sortScripts(
   page(poseLieux(lieFeuille(connecte(tplAdmin))),
        { role: "admin", tete: PRECHARGE_ADMIN, pleinEcran: true, salon: SLUG_DEFAUT })))));
 
-/* --- démonstration à données figées, publiable en artefact --- */
+/* --- démonstration à données figées, publiable en artefact ---
+   Les données viennent de Klipso, posées entre deux balises de script : un nom
+   d'exposant qui contiendrait `</script` fermerait la balise et ferait du
+   reste du balisage. `<\/` se relit en JSON comme `</`. */
 fs.writeFileSync(W + "plan-smcl.html",
-  page(tplPublic.replace("/*__DATA__*/", () => fs.readFileSync(D + "/donnees/plans.json", "utf8")),
+  page(tplPublic.replace("/*__DATA__*/", () =>
+    fs.readFileSync(D + "/donnees/plans.json", "utf8").replace(/<\/(script)/gi, "<\\/$1")),
        { autonome: true, pleinEcran: true }));
 
 /* --- le salon de démonstration, figé : un vrai plan, des exposants inventés ---

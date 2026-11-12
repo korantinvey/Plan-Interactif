@@ -67,6 +67,18 @@ let echange = null;
  */
 export function echangeSession(cfg, ses){
   if (!ses?.refresh_token) return Promise.resolve(null);
+  /* Un autre onglet a peut-être déjà échangé : le casier tient alors une
+     session neuve, sous un autre jeton de renouvellement. Renvoyer le nôtre,
+     déjà consommé, c'est ce que le service d'authentification prend pour un
+     jeton volé — il révoque toute la famille, et l'exploitant se retrouve
+     déconnecté partout. On prend la sienne. */
+  try {
+    const rangee = JSON.parse(localStorage.getItem(CLE_SESSION) || "null");
+    if (rangee?.refresh_token && rangee.refresh_token !== ses.refresh_token &&
+        rangee.access_token && resteJeton(rangee.access_token) >= RESTE_JETON) {
+      return Promise.resolve(rangee);
+    }
+  } catch (e) { /* casier illisible : on échange comme avant */ }
   if (!echange){
     echange = (async () => {
       try {

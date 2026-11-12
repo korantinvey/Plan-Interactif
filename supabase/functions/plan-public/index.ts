@@ -454,6 +454,7 @@ async function rendIconeApp(
   masque: boolean,
   identifie: boolean,
   entetes: Record<string, string>,
+  versionnee = false,
 ) {
   const nu = { ...entetes, "Cache-Control": "no-store" };
   const q = sb.from("evenement")
@@ -471,7 +472,10 @@ async function rendIconeApp(
     headers: {
       ...entetes,
       "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=31536000, immutable",
+      /* Immuable seulement sous une adresse qui porte la version : sans elle,
+         la même adresse rendra une autre image au prochain dépôt, et un cache
+         en chemin aurait gardé l'ancienne pour un an. */
+      "Cache-Control": versionnee ? "public, max-age=31536000, immutable" : "no-store",
     },
   });
 }
@@ -726,7 +730,8 @@ Deno.serve(async (req) => {
        doit rien lire du plan pour partir. */
     if (new URL(req.url).searchParams.get("icone")) {
       const masque = Boolean(new URL(req.url).searchParams.get("masque"));
-      return await rendIconeApp(sb, slug, masque, identifie, CORS);
+      const v = new URL(req.url).searchParams.get("v") ?? "";
+      return await rendIconeApp(sb, slug, masque, identifie, CORS, /^[0-9a-f]{8,32}$/.test(v));
     }
 
     /* De quoi nommer et habiller l'application installée : avant la lecture

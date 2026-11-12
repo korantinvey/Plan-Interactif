@@ -105,13 +105,19 @@ export async function appel(url, options = {}) {
  */
 export async function rest(chemin, options = {}) {
   const r = await appel(CFG.url + "/rest/v1/" + chemin, options);
-  if (r.status === 401 || r.status === 403) {
+  /* 401 seul dit une session perdue. 403 est un refus de droit — une
+     politique, un déclencheur qui réserve un geste à l'administrateur : la
+     session est bonne, et la déconnecter faisait perdre l'écran pour un
+     message qu'on ne lisait jamais. Il tombe avec les autres erreurs, et dit
+     ce que la base a répondu. */
+  if (r.status === 401) {
     deconnecte("Session expirée, reconnectez-vous.");
     throw new Error("Non autorisé.");
   }
   const txt = await r.text();
   let corps = null;
   try { corps = txt ? JSON.parse(txt) : null; } catch (e) { corps = { message: txt }; }
+  if (r.status === 403 && !corps?.message) throw new Error("Action non autorisée pour ce compte.");
   if (!r.ok) {
     const d = [corps?.message, corps?.details, corps?.hint].filter(Boolean).join(" — ");
     throw new Error(d || "Erreur " + r.status + " sur " + chemin);

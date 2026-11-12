@@ -277,8 +277,11 @@ export async function iconeApp(url) {
   if (!SLUG.test(salon)) {
     return new Response("Paramètre salon absent ou invalide.", { status: 400, headers: nu });
   }
+  const v = url.searchParams.get("v") ?? "";
   const amont = AMONT + "?slug=" + encodeURIComponent(salon) + "&icone=1" +
-    (url.searchParams.get("masque") ? "&masque=1" : "");
+    (url.searchParams.get("masque") ? "&masque=1" : "") +
+    // la version suit jusqu'à la fonction, qui ne promet l'immuable qu'avec elle
+    (EMPREINTE.test(v) ? "&v=" + encodeURIComponent(v) : "");
   const rep = await fetch(amont).catch(() => null);
   if (!rep) return new Response("Icône indisponible.", { status: 502, headers: nu });
   const versionnee = rep.ok && EMPREINTE.test(url.searchParams.get("v") ?? "");
