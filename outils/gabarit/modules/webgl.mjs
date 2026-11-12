@@ -43,7 +43,7 @@ import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
 import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
-import { placeFigurants, maillagesFigurant, maillageReuni, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
+import { placeFigurants, maillagesFigurant, maillageReuni, formesEnTexture, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
@@ -996,7 +996,114 @@ function assembleWebgl(enMouvement = false){
     out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
   demandeChauffeLogos(out);
-  return parEtapes(out);
+  return parEtapes(reunisCalques(reunisVolumes(out)));
+}
+
+/* Les textes et les traits ordinaires d'un calque — ni noms, ni liserés, ni
+   tirets qui défilent, ni itinéraire —, que la réunion peut prendre. */
+const TEXTE_DE_CALQUE = /-textes-\d+-(petit|grand)$/, TRAIT_DE_CALQUE = /-traits-px-\d+$/;
+/** Deux listes des mêmes éléments, dans le même ordre : un bloc qui n'a pas
+ *  été reconverti rend les siens tels quels. */
+function memesElements(/** @type {any} */ neuves, /** @type {any} */ avant){
+  if (neuves === avant) return true;
+  if (!Array.isArray(neuves) || !Array.isArray(avant) || neuves.length !== avant.length) return false;
+  for (let i = 0; i < neuves.length; i++) if (neuves[i] !== avant[i]) return false;
+  return true;
+}
+/** Ce qui doit être pareil pour que deux couches se réunissent sans que rien
+ *  ne change à l'image. */
+function cleReunion(/** @type {any} */ c){
+  const p = c.props;
+  if (TEXTE_DE_CALQUE.test(c.id) && !p.passeSousPixel)
+    return ["t", c.id.replace(/^.*-/, ""), p.fontFamily, p.fontWeight, p.pickable, p.modeFiltre, p.muetALEcran,
+      p.billboard, p.etireAPlat, p.lineHeight, JSON.stringify(p.parameters || {})].join("|");
+  if (TRAIT_DE_CALQUE.test(c.id) && !p.defile && !p.billboard)
+    return ["p", p.pickable, p.widthUnits, p.widthMinPixels, JSON.stringify(p.parameters || {})].join("|");
+  return null;
+}
+
+/**
+ * Les textes et les traits de calques voisins réunis par sorte : un plan
+ * importé en compte un de chaque par calque d'habillage — quatre traits et
+ * quatre textes sur le salon d'essai, la moitié des couches d'une image de
+ * geste après les noms.
+ *
+ * Seulement entre deux aplats : un aplat d'un calque suivant recouvre ce qui
+ * le précède, et peindre plus tard un texte qu'il cachait le ferait
+ * paraître. Entre deux aplats, il n'y a que des textes et des traits ; les
+ * textes réunis se peignent à la place du dernier, les traits à celle du
+ * premier : un trait passe sous un texte, jamais dessus, et reste au-dessus
+ * des aplats qui le précédaient. Les formes ne se relisent pas tant qu'aucun
+ * des blocs n'a été reconverti (`memesElements`).
+ * @param {any[]} out
+ */
+function reunisCalques(out){
+  /** @type {any[]} */
+  const res = [];
+  /** @type {any[]} */
+  let troncon = [];
+  const vide = () => {
+    /** @type {Map<string, any[]>} */
+    const groupes = new Map();
+    troncon.forEach(c => { const k = cleReunion(c); if (k){ if (!groupes.has(k)) groupes.set(k, []); groupes.get(k).push(c); } });
+    /** @type {Map<any, any>} */
+    const place = new Map();
+    for (const [k, l] of groupes){
+      if (l.length < 2) continue;
+      const texte = k.startsWith("t|"), modele = texte ? l[l.length - 1] : l[0];
+      const declencheurs = /** @type {Record<string, string>} */ ({});
+      for (const c of l) for (const [n, v] of Object.entries(c.props.updateTriggers || {}))
+        declencheurs[n] = (declencheurs[n] === undefined ? "" : declencheurs[n] + "/") + JSON.stringify(v);
+      const reunie = modele.clone({ id: "reunis-" + (texte ? "textes-" : "traits-") + k.replace(/[^\w|]/g, "").slice(0, 60),
+        data: l.flatMap(c => c.props.data), dataComparator: memesElements, updateTriggers: declencheurs,
+        ...(texte ? { characterSet: [...new Set(l.flatMap(c => [...(c.props.characterSet || "")]))].join("") } : {}) });
+      l.forEach(c => place.set(c, null));
+      place.set(modele, reunie);
+    }
+    for (const c of troncon) res.push(place.has(c) ? place.get(c) : c);
+    troncon = [];
+  };
+  for (const c of out){
+    if (c && cleReunion(c)) troncon.push(c);
+    else { vide(); res.push(c); }
+  }
+  vide();
+  return res.filter(Boolean);
+}
+
+/**
+ * Les grandes couches des volumes de chaque bloc — les zones, les stands —
+ * réunies en une seule, à la place de la première.
+ *
+ * Chaque couche coûte à la bibliothèque une à deux millisecondes par image
+ * sur un téléphone d'entrée de gamme, quelle que soit sa taille, et ces
+ * téléphones passaient vingt-cinq millisecondes par image de geste (sonde, 29
+ * octobre au 12 novembre 2026). Les blocs gardent leurs couches à eux — un
+ * stand choisi ne reconvertit que le sien, et sa montée les relit
+ * (`masqueVolumes`) ; la réunion se fait à l'assemblage, et ne coûte qu'une
+ * liste mise bout à bout : les formes, comparées une à une (`memesFormes`),
+ * ne se retriangulent pas, et seul ce qui a changé dans l'une des couches —
+ * couleurs, hauteurs — se recalcule.
+ *
+ * L'ordre ne change rien à l'image : les volumes se départagent à la
+ * profondeur, et ce qui est à plat entre eux s'y mesure sans l'écrire
+ * (`aPlat`) — peint avant ou après un stand, le sol qu'il couvre reste caché.
+ * Les copies d'un volume en mouvement, le survol et le focus gardent leurs
+ * couches.
+ * @param {any[]} out
+ */
+function reunisVolumes(out){
+  const rangs = [];
+  out.forEach((c, i) => { if (c && /-volumes-0$/.test(c.id) && c.props.extruded && Array.isArray(c.props.data)) rangs.push(i); });
+  if (rangs.length < 2) return out;
+  const couches = rangs.map(i => out[i]);
+  const partis = new Set(couches.flatMap(c => [...(c.props.partis || [])]));
+  const signe = (/** @type {string} */ k) => couches.map(c => (c.props.updateTriggers || {})[k] || "").join("/");
+  out[rangs[0]] = couches[0].clone({ id: "reunis-volumes-0", data: couches.flatMap(c => c.props.data), partis,
+    getElevation: (/** @type {any} */ d) => partis.has(d.el) ? 0 : d.haut,
+    updateTriggers: { getFillColor: signe("getFillColor"), getElevation: signe("getElevation") } });
+  const retires = new Set(rangs.slice(1));
+  return out.filter((_, i) => !retires.has(i));
 }
 
 /* ------------------------------------------------------------
@@ -2282,7 +2389,8 @@ function dansLeHall(/** @type {any} */ p){
 /* La teinte de chaque partie d'un figurant, choisie dans le shader.
 
    Les parties d'une allure ne font qu'un maillage (`maillageReuni`), dont
-   chaque sommet dit sa partie ; chaque figurant porte ses quatre choix —
+   chaque sommet dit sa partie — lue dans la texture des allures, avec sa
+   forme (`CoucheFigurants`) ; chaque figurant porte ses quatre choix —
    tenue, peau, cheveux, chaussures — et le shader lit la couleur dans les
    palettes, écrites en dur dans son source. La lumière s'applique ensuite,
    dans le fragment, comme pour une couleur ordinaire. */
@@ -2301,8 +2409,9 @@ function teinteDesFigurants(){
       return { inject: {
         "vs:#decl": decl,
         // l'ordre de `PARTIES` : bas, chaussures, haut, peau, cheveux
+        // la partie, lue avec la forme dans la texture des allures (`CoucheFigurants`)
         "vs:#main-end":
-          "int partie = int(colors.r + 0.5);\n" +
+          "int partie = int(figPartie + 0.5);\n" +
           "vec3 teinte = partie == 0 ? FIG_BAS[int(instanceFigurant.x)]\n" +
           "  : partie == 1 ? FIG_CHAUSSURES[int(instanceFigurant.w)]\n" +
           "  : partie == 2 ? FIG_HAUT[int(instanceFigurant.x)]\n" +
@@ -2323,6 +2432,57 @@ function teinteDesFigurants(){
     palettesFigurants: { bas: TENUES.map(t => t.bas), chaussures: CHAUSSURES, haut: TENUES.map(t => t.haut),
       peau: TEINTS, cheveux: CHEVEUX } };
   return (_teinteFigurants = new TeinteDesFigurants());
+}
+
+/* Toutes les allures dans une seule couche : chaque figurant lit la sienne
+   dans une texture (`figurants.mjs` `formesEnTexture`), au rang du sommet
+   que la carte graphique dessine. Le maillage que reçoit la couche n'a que la
+   largeur d'une allure, et rien dedans : il ne fait que compter les sommets.
+   Le shader de la bibliothèque prend la forme et la normale de ses
+   attributs ; on les y remplace par ce que dit la texture. La bibliothèque
+   est épinglée : si son shader changeait, la couche le dirait au lieu de
+   dessiner des figurants informes. */
+/** @type {any} */
+let _CoucheFigurants = null;
+function coucheFigurants(){
+  if (_CoucheFigurants) return _CoucheFigurants;
+  const ENTREE = "void main(void) {";
+  const LECTURE = "uniform highp sampler2D figForme;\nin float instanceAllure;\n" + ENTREE + "\n" +
+    "ivec2 figRang = ivec2(gl_VertexID, int(instanceAllure + 0.5) * 2);\n" +
+    "vec4 figSommet = texelFetch(figForme, figRang, 0);\n" +
+    "vec3 figPos = figSommet.xyz;\nfloat figPartie = figSommet.w;\n" +
+    "vec3 figNor = texelFetch(figForme, figRang + ivec2(0, 1), 0).xyz;\n";
+  class CoucheFigurants extends deck.SimpleMeshLayer {
+    getShaders(){
+      const s = super.getShaders();
+      const vs = s.vs.replace(ENTREE, LECTURE)
+        .replace(/instanceModelMatrix \* positions/g, "instanceModelMatrix * figPos")
+        .replace(/instanceModelMatrix \* normals/g, "instanceModelMatrix * figNor");
+      if (vs === s.vs || /\* (positions|normals)\b/.test(vs)) throw new Error("figurants : le shader des maillages a changé");
+      return { ...s, vs };
+    }
+    initializeState(){
+      super.initializeState();
+      const am = this.getAttributeManager();
+      if (am) am.addInstanced({ instanceAllure: { size: 1, accessor: "getAllure" } });
+      const f = this.props.formes;
+      this.setState({ texture: this.context.device.createTexture({ id: this.props.id + "-formes", format: "rgba32float",
+        width: f.largeur, height: f.hauteur, data: f.donnees,
+        sampler: { minFilter: "nearest", magFilter: "nearest", addressModeU: "clamp-to-edge", addressModeV: "clamp-to-edge" } }) });
+    }
+    getModel(/** @type {any} */ mesh){
+      const m = super.getModel(mesh);
+      m.setBindings({ figForme: this.state.texture });
+      return m;
+    }
+    finalizeState(/** @type {any} */ c){
+      super.finalizeState(c);
+      if (this.state.texture) this.state.texture.destroy();
+    }
+  }
+  CoucheFigurants.layerName = "CoucheFigurants";
+  CoucheFigurants.defaultProps = { getAllure: { type: "accessor", value: 0 }, formes: { type: "object", value: null, compare: false } };
+  return (_CoucheFigurants = CoucheFigurants);
 }
 
 /* De combien un figurant se couche vers le haut de l'écran, à plat : assez
@@ -2361,7 +2521,11 @@ function couchesFigurants(){
     FIGURANTS.plat = plat;
     if (!FIGURANTS.maillages){
       const M = maillagesFigurant();
-      FIGURANTS.maillages = { ombre: M.ombre, modeles: M.modeles.map(maillageReuni) };
+      const formes = formesEnTexture(M.modeles.map(maillageReuni));
+      // un maillage vide, de la largeur d'une allure : la couche n'y compte que les sommets
+      const vide = new Float32Array(formes.largeur * 3);
+      FIGURANTS.maillages = { ombre: M.ombre, formes,
+        gabarit: { attributes: { positions: { value: vide, size: 3 }, normals: { value: vide, size: 3 } } } };
     }
     const M = FIGURANTS.maillages;
     const data = placeFigurants(g, PAS_GRILLE, graineDe(p.id), dansLeHall(p));
@@ -2373,13 +2537,11 @@ function couchesFigurants(){
     FIGURANTS.couches = [
       new deck.SimpleMeshLayer({ ...commun, id: "figurants-ombre", mesh: M.ombre,
         getColor: OMBRE, getScale: [1, 1, 1], getTransformMatrix: [], parameters: { depthWriteEnabled: false } }),
-      // une couche par allure : chacune ne répète que les siens, et les teint toutes parties
-      ...M.modeles.flatMap((/** @type {any} */ mod, /** @type {number} */ k) => {
-        const siens = data.filter(f => f.modele === k);
-        return siens.length ? [new deck.SimpleMeshLayer({ ...commun, data: siens, id: "figurants-" + k,
-          mesh: mod, getColor: [255, 255, 255], extensions: [teinteDesFigurants()],
-          getFigurant: (/** @type {any} */ f) => [f.tenue, f.peau, f.cheveux, f.chaussures] })] : [];
-      }),
+      // une couche pour toutes les allures : chacun lit la sienne, et se teint toutes parties
+      ...(data.length ? [new (coucheFigurants())({ ...commun, id: "figurants",
+        mesh: M.gabarit, formes: M.formes, getColor: [255, 255, 255], extensions: [teinteDesFigurants()],
+        getAllure: (/** @type {any} */ f) => f.modele,
+        getFigurant: (/** @type {any} */ f) => [f.tenue, f.peau, f.cheveux, f.chaussures] })] : []),
     ];
   }
   return FIGURANTS.couches;
