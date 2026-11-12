@@ -98,7 +98,7 @@ const FONDS_DE_CARTE = new Set([
   "https://tile.openstreetmap.org",   // OpenStreetMap en recours, hors de France
   "https://tiles.versatiles.org",     // les tuiles vectorielles de notre style, et ses glyphes
   "https://tiles.openfreemap.org",    // les styles vectoriels du commerce, en option
-  "https://cdn.jsdelivr.net",         // MapLibre, chargé à la demande
+  // MapLibre n'y est plus : servi d'ici (`bibliotheques/`), il se garde comme deck.gl
 ]);
 
 /**
@@ -109,8 +109,8 @@ const FONDS_DE_CARTE = new Set([
  * à eux : une tuile est nommée par son niveau et sa case, un lot de glyphes par
  * sa police et sa plage de caractères. Tout cela se garde et se ressert.
  *
- * Le reste — un style, la bibliothèque, dont l'adresse ne nomme qu'une majeure
- * — suit la règle commune : le réseau d'abord, la copie en secours. Un style
+ * Le reste — un style, dont l'adresse ne nomme pas de version — suit la
+ * règle commune : le réseau d'abord, la copie en secours. Un style
  * corrigé chez son éditeur arrive donc au chargement suivant, comme nos propres
  * pages.
  *
