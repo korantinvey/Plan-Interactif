@@ -130,13 +130,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
 
-### `_sw.js` — 580 l.
+### `_sw.js` — 579 l.
 
 Fonctions :
 
-`estUneTuile` 130 · `range` 156 · `oublieLesVersionsDAvant` 182 · `dabordCache` 203
-`borneLesLots` 239 · `borneLesTuiles` 277 · `demandeTiers` 332 · `commePosee` 340
-`tuileDeCarte` 357 · `fondDeCarte` 393 · `dabordReseau` 420 · `navigation` 437
+`estUneTuile` 129 · `range` 155 · `oublieLesVersionsDAvant` 181 · `dabordCache` 202
+`borneLesLots` 238 · `borneLesTuiles` 276 · `demandeTiers` 331 · `commePosee` 339
+`tuileDeCarte` 356 · `fondDeCarte` 392 · `dabordReseau` 419 · `navigation` 436
 
 ### `modules/abords-salles.mjs` — 244 l. → plan, plan-admin
 
@@ -1090,7 +1090,7 @@ Importé par :
 
 bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1334 l. → plan, plan-admin
+### `modules/environs.mjs` — 1339 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1100,13 +1100,13 @@ Fonctions :
 `calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
 `bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
 `figeCourant` 398 · `figeAJour` 407 · `recaleFige` 446 · `videFige` 459 · `poseFige` 468
-`placeFigee` 567 · `chargeMapLibre` 619 · `vueGL` 651 · `vueGLValable` 674
-`styleDuFond` 690 · `styleDeLaCarte` 697 · `guetteLaCarte` 724 · `recaleCarteGL` 758
-`redessineCarteGL` 778 · `poseCarteGL` 808 · `diagnostiqueGL` 932 · `relanceCarteGL` 952
-`retireCarteGL` 966 · `guetteRetourGL` 993 · `carteGLPerdue` 1000 · `verifieCarteGL` 1010
-`videCarteGL` 1028 · `inclineFond` 1062 · `dessineFondCarte` 1111 · `cleMasqueCarte` 1245
-`masqueCarte` 1246 · `formesMasquantes` 1255 · `contourDuHall` 1277 · `cheminDuHall` 1284
-`poseMasqueCarte` 1302 · `ditCarte` 1317 · `refaitFondCarte` 1327
+`placeFigee` 567 · `chargeMapLibre` 622 · `vueGL` 656 · `vueGLValable` 679
+`styleDuFond` 695 · `styleDeLaCarte` 702 · `guetteLaCarte` 729 · `recaleCarteGL` 763
+`redessineCarteGL` 783 · `poseCarteGL` 813 · `diagnostiqueGL` 937 · `relanceCarteGL` 957
+`retireCarteGL` 971 · `guetteRetourGL` 998 · `carteGLPerdue` 1005 · `verifieCarteGL` 1015
+`videCarteGL` 1033 · `inclineFond` 1067 · `dessineFondCarte` 1116 · `cleMasqueCarte` 1250
+`masqueCarte` 1251 · `formesMasquantes` 1260 · `contourDuHall` 1282 · `cheminDuHall` 1289
+`poseMasqueCarte` 1307 · `ditCarte` 1322 · `refaitFondCarte` 1332
 
 Importe :
 
@@ -3224,13 +3224,13 @@ Importé par :
 affiche-ici · appels · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
 recherche
 
-### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
+### `modules/texte.mjs` — 30 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 
 Fonctions :
 
-`esc` 6 · `separeValeurs` 17
+`esc` 11 · `separeValeurs` 22
 
 Importé par :
 
@@ -3819,6 +3819,7 @@ Injections :
 - `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
 - `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
 - `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
+- `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
 
 ## Le reste
 
