@@ -19,6 +19,10 @@ module.exports = [
   // place « La lecture des codes n'a pas pu se charger »
   "sha384-l6zSlrX6P10T9s7xKWTK/RsXfiN3tMUuUwX6xkEtAW6KEj9Cd2D+SgUIfMxH+uGg",
   "lecteur de codes QR indisponible",
+  // `modules/environs.mjs` : les empreintes de MapLibre, script et feuille de
+  // style, que le navigateur vérifie avant de les appliquer
+  "sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj",
+  "sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V",
   // `modules/recherche.mjs` : un morceau de l'adresse `data:` d'une vignette
   ";base64,",
   // `_environs.html` : le corps de la requête Overpass, qui part au serveur

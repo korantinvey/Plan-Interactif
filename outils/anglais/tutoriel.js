@@ -91,8 +91,8 @@ module.exports = {
     "Visiting with others? “Share” passes your visit plan to another phone, with a code or a link — no account, and nothing sent to our servers.",
   "Faites photographier ce code à qui vous accompagne, ou envoyez-lui le lien : son plan s'ouvrira sur le même parcours. Refermez la fenêtre pour continuer.":
     "Let whoever is with you photograph this code, or send them the link: their map will open on the same visit plan. Close the window to carry on.",
-  "On vous montre un parcours ? « Scanner » lit son code QR ici même, sans quitter le plan — y compris depuis l'application du salon.":
-    "Someone showing you their visit plan? “Scan” reads its QR code right here, without leaving the map — even inside the show's app.",
+  "On vous montre un parcours ? « Scanner le code QR » le lit ici même, sans quitter le plan — y compris depuis l'application du salon.":
+    "Someone showing you their visit plan? “Scan the QR code” reads it right here, without leaving the map — even inside the show's app.",
   "Visez le code QR que l'on vous montre : le parcours s'ouvrira ici. Refermez la fenêtre pour continuer.":
     "Point at the QR code you're shown: the visit plan will open here. Close the window to carry on.",
 
