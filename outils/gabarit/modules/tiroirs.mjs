@@ -68,6 +68,100 @@ function traceurDeGeste(){
 const cranVoisin = (crans, nom, sens) =>
   crans[Math.min(crans.length - 1, Math.max(0, crans.indexOf(nom) + sens))];
 
+/* Ce que le doigt doit pouvoir manier sans emporter le tiroir : un curseur
+   qu'il fait glisser, une liste qui déroule, un texte long qui défile.
+
+   Un champ d'une ligne, lui, ne retient pas le tiroir. Replié, celui de la
+   liste ne montre que sa pastille et la recherche, qui en prend toute la
+   largeur : l'exclure ne laissait presque rien à saisir. Une pression y met
+   toujours le curseur ; un doigt qui glisse ne fait pas de clic, et ne l'y met
+   donc pas. */
+const SAISIE = "input[type=range],select,textarea,[contenteditable]";
+/* Ce qu'un doigt doit parcourir avant qu'on sache s'il glisse en long ou en
+   travers. Sous le seuil où le navigateur commence à défiler : passé celui-ci,
+   le geste lui appartient et ne se reprend plus. */
+const GESTE_SENS = 4;
+
+/** Rien de ce que le doigt touche n'a défilé : la liste est revenue en haut. */
+function enHaut(cible, tiroir){
+  for (let n = cible; n && n !== tiroir; n = n.parentElement)
+    if (n.scrollTop > 0) return false;
+  return true;
+}
+
+/** Quelque chose, de la cible au tiroir, mène déjà son propre geste. */
+function aSonGeste(cible, tiroir){
+  for (let n = cible; n && n !== tiroir; n = n.parentElement)
+    if (getComputedStyle(n).touchAction === "none") return true;
+  return false;
+}
+
+/**
+ * Mène un tiroir depuis tout ce qu'il porte, et non plus seulement sa prise.
+ *
+ * La prise ne se trouvait pas au doigt : une pastille au bord d'un tiroir qui
+ * en fait toute la largeur, et le glissement posé ailleurs faisait défiler la
+ * liste au lieu de monter le tiroir — ce qu'aucune application de téléphone ne
+ * fait. Le tiroir suit donc le doigt d'où qu'il parte, tant qu'il a où aller :
+ * vers le haut tant qu'il n'est pas au plus haut, vers le bas une fois ce qu'il
+ * porte revenu en haut. Le reste du temps, c'est le corps qui défile.
+ *
+ * Par les événements tactiles, et non par ceux du pointeur : le corps défile,
+ * et seul `touchmove` peut encore le lui refuser au premier mouvement — le
+ * pointeur, lui, apprend par `pointercancel` que le navigateur l'a pris.
+ * Ce qui mène déjà son propre geste (la prise, l'en-tête, refusant tous deux
+ * le geste au navigateur) et ce qui se saisit gardent leurs appuis.
+ *
+ * @param tiroir le tiroir
+ * @param mene   `prend(sens)` dit s'il peut aller vers le haut (+1) ou le bas
+ *               (-1) ; `debut`, `bouge`, `lache` le mènent d'une ordonnée, et
+ *               `lache` dit si le doigt a vraiment glissé
+ */
+function meneParLeCorps(tiroir, mene){
+  let suivi = null, avale = 0;
+  function lache(){
+    if (suivi && suivi.pris && mene.lache(suivi.y)) avale = performance.now();
+    suivi = null;
+  }
+  tiroir.addEventListener("touchstart", e => {
+    // un second doigt n'est plus un glissement : le tiroir se pose où il est
+    if (e.touches.length !== 1){ lache(); return; }
+    const cible = /** @type {Element} */ (e.target);
+    if (!ETROIT() || cible.closest(SAISIE) || aSonGeste(cible, tiroir)){ suivi = null; return; }
+    const t = e.touches[0];
+    suivi = { x: t.clientX, y0: t.clientY, y: t.clientY, cible: cible, pris: null };
+  }, { passive: true });
+  tiroir.addEventListener("touchmove", e => {
+    if (!suivi || suivi.pris === false) return;
+    const t = e.touches[0];
+    suivi.y = t.clientY;
+    if (suivi.pris === null){
+      const dx = t.clientX - suivi.x, dy = t.clientY - suivi.y0;
+      if (Math.abs(dx) < GESTE_SENS && Math.abs(dy) < GESTE_SENS) return;
+      /* Un geste en travers fait défiler les bandes de puces ; un geste que le
+         navigateur a déjà pris ne se reprend pas. */
+      suivi.pris = e.cancelable && Math.abs(dy) > Math.abs(dx) &&
+        (dy < 0 ? mene.prend(1) : enHaut(suivi.cible, tiroir) && mene.prend(-1));
+      if (!suivi.pris) return;
+      /* Le tiroir part d'où le doigt s'est posé, non d'où on l'a reconnu : il
+         rattrape les pixels du seuil, au lieu de traîner derrière le doigt. */
+      mene.debut(suivi.y0);
+    }
+    e.preventDefault();
+    mene.bouge(t.clientY);
+  }, { passive: false });
+  tiroir.addEventListener("touchend", lache);
+  tiroir.addEventListener("touchcancel", lache);
+  /* Le doigt qui a mené le tiroir s'est levé sur une ligne, un bouton : le clic
+     qui suit n'est pas un choix. Sur la liste, il l'aurait même refermée. */
+  tiroir.addEventListener("click", e => {
+    if (performance.now() - avale > 500) return;
+    avale = 0;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+}
+
 /* ============================================================
    Le tiroir de la liste — écrans étroits
 
@@ -191,19 +285,19 @@ function tiroirListe(){
 
   const geste = traceurDeGeste();
 
-  prise.addEventListener("pointerdown", e => {
-    if (!etroit()) return;
-    depart = { y: e.clientY, vu: hauteur(cran()), cran: cran() };
+  /* Le geste se mène d'une ordonnée : la prise le lit du pointeur, le corps
+     du toucher (`meneParLeCorps`). */
+  function debut(y){
+    depart = { y: y, vu: hauteur(cran()), cran: cran() };
     geste.repart();
-    geste.note(e.clientY);
+    geste.note(y);
     aGlisse = false;
     tiroir.classList.add("glisse");
-    prise.setPointerCapture(e.pointerId);
-  });
+  }
 
   /** Hauteur visible pendant le geste, bornée aux deux crans extrêmes. */
-  const suit = e =>
-    Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
+  const suit = y =>
+    Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (y - depart.y)));
 
   /** Le cran dont la hauteur visible est la plus proche de celle atteinte. */
   function proche(vu){
@@ -215,32 +309,53 @@ function tiroirListe(){
     return choix;
   }
 
-  prise.addEventListener("pointermove", e => {
+  function bouge(y){
     if (!depart) return;
-    if (Math.abs(e.clientY - depart.y) > GESTE_SEUIL) aGlisse = true;
-    geste.note(e.clientY);
-    const vu = suit(e);
+    if (Math.abs(y - depart.y) > GESTE_SEUIL) aGlisse = true;
+    geste.note(y);
+    const vu = suit(y);
     tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
     /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
        s'arrêterait, sans attendre qu'il lâche. */
     annonce(proche(vu));
-  });
+  }
 
-  function relache(e){
-    if (!depart) return;
-    const vu = suit(e);
+  /** Pose le tiroir au cran visé, et dit si le doigt a vraiment glissé. */
+  function lache(y){
+    if (!depart) return false;
+    const vu = suit(y);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
-    geste.note(e.clientY);
+    geste.note(y);
     const v = geste.vitesse();
     // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
     pose(!aGlisse ? cran()
        : Math.abs(v) > GESTE_VIF ? cranVoisin(CRANS, depart.cran, v < 0 ? 1 : -1)
        : proche(vu));
     depart = null;
+    return aGlisse;
   }
-  prise.addEventListener("pointerup", relache);
-  prise.addEventListener("pointercancel", relache);
+
+  prise.addEventListener("pointerdown", e => {
+    if (!etroit()) return;
+    debut(e.clientY);
+    prise.setPointerCapture(e.pointerId);
+  });
+  prise.addEventListener("pointermove", e => bouge(e.clientY));
+  prise.addEventListener("pointerup", e => { lache(e.clientY); });
+  prise.addEventListener("pointercancel", e => { lache(e.clientY); });
+
+  /* Et tout le reste du tiroir : la bande de recherche, le compte, la liste.
+     Replié ou au milieu, le tiroir monte d'où qu'on le pousse — au milieu, la
+     fin de la liste est sous le bord de l'écran, et la faire défiler là ne
+     montrait rien. Il descend une fois la liste revenue en haut. */
+  meneParLeCorps(tiroir, {
+    prend: sens => sens > 0 ? cran() !== "plein" : cran() !== "replie",
+    debut: debut, bouge: bouge,
+    /* Le clic que ce glissement aurait suivi est avalé là-bas : la pastille,
+       elle, ne doit pas ignorer sa prochaine pression. */
+    lache: y => { const g = lache(y); aGlisse = false; return g; },
+  });
 
   /* Une pression bascule. Le clic sert aussi le clavier — la poignée est un
      bouton — mais il suit tout glissement : on l'ignore dans ce cas. */
@@ -358,13 +473,16 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
      l'autre ne faisait rien voir — ce qui se lit comme une panne. Le tour des
      crans saute ceux qui ne changeraient rien. */
   function naturelle(){
-    // ce que le corps garde sous son bord, en plus de ce que le tiroir montre
+    /* Ce que le tiroir porte, coupé ou non par son bord — au cran le plus bas,
+       les commandes et le pied du parcours passent dessous —, plus ce que son
+       corps garde sous le sien, et la bordure que la mesure du contenu omet. */
     let deborde = 0;
     for (const n of tiroir.children) deborde += Math.max(0, n.scrollHeight - n.clientHeight);
-    return tiroir.offsetHeight + deborde;
+    return tiroir.scrollHeight + (tiroir.offsetHeight - tiroir.clientHeight) + deborde;
   }
+  /* Ce qu'un cran montre : sa hauteur, plafonnée par ce que le tiroir porte. */
+  const vue = c => Math.min(hauteur(c), naturelle());
   function bascule(){
-    const vue = c => Math.min(hauteur(c), naturelle());
     const ici = vue(cran());
     let i = CRANS.indexOf(cran());
     for (let n = 1; n < CRANS.length; n++){
@@ -416,57 +534,81 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
 
   const geste = traceurDeGeste();
 
+  /* Le geste se mène d'une ordonnée : la prise et l'en-tête le lisent du
+     pointeur, le corps du toucher (`meneParLeCorps`). */
+  function debut(y){
+    /* La hauteur de départ est celle qu'on voit, et non celle du cran : une
+       fiche courte ouverte au plus haut ne mesure que son contenu, et le doigt
+       aurait parcouru tout l'écart avant que rien ne bouge. Les crans se
+       comparent de même sur ce qu'ils montrent, mesuré avant que le doigt ne
+       pose sa hauteur. */
+    const vus = {};
+    for (const c of CRANS) vus[c] = vue(c);
+    depart = { y: y, vu: tiroir.offsetHeight, cran: cran(), vus: vus };
+    geste.repart();
+    geste.note(y);
+    aGlisse = false;
+    tiroir.classList.add("glisse");
+  }
+
   function saisit(e){
     if (!etroit()) return;
     /* La poignée est elle-même un bouton : le garde-fou ne vaut que pour
        l'en-tête, où il protège les commandes qu'on y a posées. */
     if (e.currentTarget !== poignee && e.target.closest(INERTE)) return;
-    /* La hauteur de départ est celle qu'on voit, et non celle du cran : une
-       fiche courte ouverte au plus haut ne mesure que son contenu, et le doigt
-       aurait parcouru tout l'écart avant que rien ne bouge. */
-    depart = { y: e.clientY, vu: tiroir.offsetHeight, cran: cran() };
-    geste.repart();
-    geste.note(e.clientY);
-    aGlisse = false;
-    tiroir.classList.add("glisse");
+    debut(e.clientY);
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
-  /** Hauteur pendant le geste, bornée aux deux crans extrêmes. */
-  const suit = e =>
-    Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
+  /** Hauteur pendant le geste, bornée à ce que montrent les crans extrêmes. */
+  const suit = y =>
+    Math.min(depart.vus.plein, Math.max(depart.vus.replie, depart.vu - (y - depart.y)));
 
-  /** Le cran dont la hauteur est la plus proche de celle atteinte. */
+  /** Le cran qui montre la hauteur la plus proche de celle atteinte — à égalité,
+      celui d'où l'on part : une fiche courte, au milieu comme au plus haut,
+      ne change pas de cran pour rien. */
   function proche(vu){
-    let choix = CRANS[0], ecart = Infinity;
+    let choix = depart.cran, ecart = Math.abs(depart.vus[depart.cran] - vu);
     for (const c of CRANS){
-      const d = Math.abs(hauteur(c) - vu);
-      if (d < ecart){ ecart = d; choix = c; }
+      const d = Math.abs(depart.vus[c] - vu);
+      if (d < ecart - 1){ ecart = d; choix = c; }
     }
     return choix;
   }
 
-  function bouge(e){
-    if (!depart) return;
-    if (Math.abs(e.clientY - depart.y) > GESTE_SEUIL) aGlisse = true;
-    geste.note(e.clientY);
-    tiroir.style.maxHeight = suit(e) + "px";
+  /* Le premier cran, dans le sens du coup, qui change ce qu'on voit. Le voisin
+     ne suffisait pas : au plus haut, une fiche courte a déjà la hauteur du
+     milieu, et le coup vers le bas la reposait là où elle était. */
+  function vise(sens){
+    const ici = depart.vus[depart.cran];
+    for (let i = CRANS.indexOf(depart.cran) + sens; i >= 0 && i < CRANS.length; i += sens)
+      if (Math.abs(depart.vus[CRANS[i]] - ici) > GESTE_SEUIL) return CRANS[i];
+    return depart.cran;
   }
 
-  function relache(e){
+  function bouge(y){
     if (!depart) return;
-    const vu = suit(e);
+    if (Math.abs(y - depart.y) > GESTE_SEUIL) aGlisse = true;
+    geste.note(y);
+    tiroir.style.maxHeight = suit(y) + "px";
+  }
+
+  /** Pose le tiroir au cran visé, et dit si le doigt a vraiment glissé. */
+  function lache(y){
+    if (!depart) return false;
+    const vu = suit(y);
     tiroir.classList.remove("glisse");
     /* La hauteur repasse au CSS, qui la tient du cran : gardée en ligne, elle
        aurait survécu à la fermeture et figé le tiroir suivant. */
     tiroir.style.maxHeight = "";
-    geste.note(e.clientY);
+    geste.note(y);
     const v = geste.vitesse();
     // un geste avorté laisse le cran d'avant ; le clic qui suit fera le tour
     pose(!aGlisse ? cran()
-       : Math.abs(v) > GESTE_VIF ? cranVoisin(CRANS, depart.cran, v < 0 ? 1 : -1)
+       : Math.abs(v) > GESTE_VIF ? vise(v < 0 ? 1 : -1)
        : proche(vu));
     depart = null;
+    return aGlisse;
   }
 
   /* Une pression fait le tour des crans — sur la pastille comme sur l'en-tête,
@@ -484,10 +626,22 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
 
   prises.forEach(n => {
     n.addEventListener("pointerdown", saisit);
-    n.addEventListener("pointermove", bouge);
-    n.addEventListener("pointerup", relache);
-    n.addEventListener("pointercancel", relache);
+    n.addEventListener("pointermove", e => bouge(e.clientY));
+    n.addEventListener("pointerup", e => { lache(e.clientY); });
+    n.addEventListener("pointercancel", e => { lache(e.clientY); });
     n.addEventListener("click", presse);
+  });
+
+  /* Et par son corps, comme la liste : vers le haut tant que le tiroir a de
+     quoi grandir, vers le bas une fois son corps revenu en haut. Seul ce que
+     montre le tiroir compte — une fiche courte au plus haut ne grandit plus,
+     et c'est alors son corps qui défile. */
+  meneParLeCorps(tiroir, {
+    prend: sens => tiroir.classList.contains("open") && (sens > 0
+      ? vue("plein") > tiroir.offsetHeight + GESTE_SEUIL
+      : tiroir.offsetHeight > vue("replie") + GESTE_SEUIL),
+    debut: debut, bouge: bouge,
+    lache: y => { const g = lache(y); aGlisse = false; return g; },
   });
 
   /* Chaque ouverture repart de son cran d'ouverture, et non de celui où l'on
