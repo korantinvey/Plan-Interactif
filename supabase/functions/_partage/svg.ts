@@ -115,18 +115,29 @@ function points(balise: string, element: string): [number, number][] | null {
     const d = /\sd="([^"]*)"/.exec(element);
     if (!d) return null;
     const jetons = d[1].match(/[A-Za-z]|-?\d+(?:\.\d+)?/g) ?? [];
-    for (let i = 0; i < jetons.length; i++) {
+    /* Une commande vaut pour toutes les coordonnées qui la suivent sans lettre
+       nouvelle : `M0 0 10 10 20 0` trace deux segments après son départ. On ne
+       lisait que la première paire, et un élément ainsi écrit perdait des
+       points — sa boîte avec, au point de passer pour vide. Après `M`, les
+       paires suivantes sont des `L`. */
+    let c = "";
+    for (let i = 0; i < jetons.length;) {
       const j = jetons[i];
-      if (!isNaN(Number(j))) continue;               // nombre : déjà pris
-      const c = j.toUpperCase();
+      if (isNaN(Number(j))) {
+        c = j.toUpperCase();
+        if (c !== "M" && c !== "L" && c !== "A") return null;
+        i++;
+        continue;
+      }
       if (c === "M" || c === "L") {
-        lus.push([Number(jetons[i + 1]), Number(jetons[i + 2])]);
+        lus.push([Number(jetons[i]), Number(jetons[i + 1])]);
         i += 2;
+        if (c === "M") c = "L";
       } else if (c === "A") {
         // après un arc viennent cinq paramètres avant le point d'arrivée : les
         // lire comme des coordonnées ferait croire à un dessin qui passe par
         // l'origine, et un arc de rayon nul paraîtrait immense
-        lus.push([Number(jetons[i + 6]), Number(jetons[i + 7])]);
+        lus.push([Number(jetons[i + 5]), Number(jetons[i + 6])]);
         i += 7;
       } else return null;
     }

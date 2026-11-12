@@ -639,8 +639,11 @@ export function voletOrdre(hote){
       ? blocSection(b, i) : ligneFiche(b.cle, i, null)));
     majBouts();
     if (!focus) return;
-    const el = liste.querySelector('[data-cle="' + focus.cle + '"]') ||
-      liste.querySelector('[data-ref="' + focus.cle + '"]');
+    /* La clé d'un champ vient des données : un guillemet y faisait lever le
+       sélecteur, et le réglage se fermait sur une erreur. */
+    const k = CSS.escape(String(focus.cle));
+    const el = liste.querySelector('[data-cle="' + k + '"]') ||
+      liste.querySelector('[data-ref="' + k + '"]');
     if (!el) return;
     const b = (el.querySelector(".grpTete") || el).querySelectorAll("button.fleche");
     if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();

@@ -98,7 +98,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#data`
 
-### `_langue.js` — 877 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
+### `_langue.js` — 888 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -726,7 +726,7 @@ Importé par :
 apercus · distinctions · fiche · filtre · recherche · reglage-fiche · reglage-recherche
 reglages · secteurs · tutoriel · volets
 
-### `modules/correspondance.mjs` — 122 l. → console
+### `modules/correspondance.mjs` — 127 l. → console
 
 - l.1 · Correspondance des champs d'origine — le vocabulaire du réglage
 
@@ -1065,20 +1065,20 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 716 l. → plan-admin
+### `modules/enregistrement.mjs` — 723 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.575 · La sauvegarde emportée
+- l.582 · La sauvegarde emportée
 
 Fonctions :
 
-`enregistreDessins` 69 · `autoDispo` 146 · `enRetard` 149 · `etatCourant` 162
-`majAttente` 173 · `compteRescapes` 187 · `ditAlerte` 200 · `ditEtat` 243
-`programmeEnvoi` 250 · `programmePublication` 264 · `rattrapeRetard` 277 · `envoie` 283
-`apresGeste` 295 · `presse` 305 · `brancheEnregistrement` 313 · `identifiants` 336
-`reglagesSeuls` 351 · `noteReglagesCharges` 362 · `oublieCache` 376
-`pousseConfiguration` 395 · `sauvegardeCourante` 595 · `telechargeSauvegarde` 617
-`appliqueSauvegarde` 640 · `litSauvegarde` 676 · `brancheSauvegarde` 698
+`enregistreDessins` 69 · `autoDispo` 150 · `enRetard` 153 · `etatCourant` 166
+`majAttente` 177 · `compteRescapes` 191 · `ditAlerte` 204 · `ditEtat` 247
+`programmeEnvoi` 254 · `programmePublication` 268 · `rattrapeRetard` 281 · `envoie` 287
+`apresGeste` 299 · `presse` 309 · `brancheEnregistrement` 317 · `identifiants` 340
+`reglagesSeuls` 355 · `noteReglagesCharges` 366 · `oublieCache` 380
+`pousseConfiguration` 399 · `sauvegardeCourante` 602 · `telechargeSauvegarde` 624
+`appliqueSauvegarde` 647 · `litSauvegarde` 683 · `brancheSauvegarde` 705
 
 Importe :
 
@@ -2086,7 +2086,7 @@ Importé par :
 
 enregistrement · outil-dessin
 
-### `modules/nom-emplacement.mjs` — 331 l. → plan, plan-admin
+### `modules/nom-emplacement.mjs` — 340 l. → plan, plan-admin
 
 - l.1 · Le nom d'un emplacement sur le plan — l'enseigne, son numéro, ses hébergés
 
@@ -2094,8 +2094,8 @@ Fonctions :
 
 `coexComptes` 36 · `coexChoisit` 37 · `ligneCode` 53 · `decaleLibelle` 87
 `facteurLibelle` 88 · `libelleForce` 89 · `libelleEmplacement` 100 · `nomsPivotes` 124
-`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 212 · `placesDuNom` 240
-`tailleMax` 254 · `cibleDe` 269 · `habilleNom` 296 · `libelleDroit` 310
+`nomCouche` 126 · `nomsUniformes` 170 · `posePaliers` 214 · `placesDuNom` 249
+`tailleMax` 263 · `cibleDe` 278 · `habilleNom` 305 · `libelleDroit` 319
 
 Importe :
 
@@ -2687,7 +2687,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 657 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 660 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
@@ -3598,7 +3598,7 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 730 l. → plan, plan-admin
+### `modules/vue.mjs` — 741 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.85 · 6. Vue
@@ -3610,9 +3610,9 @@ Fonctions :
 `detacheLibelles` 171 · `rattacheLibelles` 183 · `etireLibelles` 201
 `poseFacteurTrait` 216 · `suitLaVue` 232 · `versScene` 241 · `retiensVue` 260
 `appliqueVue` 270 · `libellesDeLaVue` 344 · `rafraichitVue` 352 · `poseVue` 366
-`mesureBarre` 395 · `masqueHaut` 423 · `masque` 430 · `masqueDroite` 467 · `fit` 478
-`recadreIncline` 507 · `stoppeZoom` 549 · `glisseVersVise` 567 · `glisseVers` 620
-`rectVisee` 647 · `zoom` 667 · `echelle` 685 · `versPlan` 697 · `brancheVue` 709
+`mesureBarre` 395 · `masqueHaut` 429 · `masque` 436 · `masqueDroite` 473 · `fit` 484
+`recadreIncline` 518 · `stoppeZoom` 560 · `glisseVersVise` 578 · `glisseVers` 631
+`rectVisee` 658 · `zoom` 678 · `echelle` 696 · `versPlan` 708 · `brancheVue` 720
 
 Importe :
 
@@ -3721,7 +3721,7 @@ Injections :
 
 `octetsDeVignette` 12 · `typeDeVignette` 27
 
-### `supabase/functions/_partage/programme-saisi.ts` — 84 l.
+### `supabase/functions/_partage/programme-saisi.ts` — 89 l.
 
 `programmeSaisi` 52
 
@@ -3734,10 +3734,10 @@ Injections :
 
 `sessionRefusee` 23 · `identifiantDePavillon` 36
 
-### `supabase/functions/_partage/svg.ts` — 291 l.
+### `supabase/functions/_partage/svg.ts` — 302 l.
 
-`attributsDeDessin` 75 · `r2` 92 · `points` 112 · `boite` 151 · `neDessineRien` 174
-`allege` 186 · `sansMasques` 271 · `textes` 282
+`attributsDeDessin` 75 · `r2` 92 · `points` 112 · `boite` 162 · `neDessineRien` 185
+`allege` 197 · `sansMasques` 282 · `textes` 293
 
 ### `supabase/functions/_partage/version.ts` — 100 l.
 

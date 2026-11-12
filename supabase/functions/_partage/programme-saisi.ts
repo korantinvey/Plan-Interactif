@@ -51,9 +51,14 @@ const texte = (v: unknown): string | null => {
  */
 export function programmeSaisi(brut: unknown): ProgrammeSaisi {
   const out: ProgrammeSaisi = { conferences: [], stands: new Map(), intervenants: new Map() };
+  /* Un identifiant ne vaut qu'une fois : la seconde conférence du même nom
+     aurait recouvert les stands et les intervenants de la première, et les
+     rappels de l'une seraient partis pour l'autre. La première saisie reste. */
+  const vus = new Set<string>();
   for (const c of Array.isArray(brut) ? brut : []) {
     const id = texte(c?.id), nom = texte(c?.nom);
-    if (!id || !nom) continue;
+    if (!id || !nom || vus.has(id)) continue;
+    vus.add(id);
     const salle = texte(c.salle);
     out.conferences.push({
       id, nom,

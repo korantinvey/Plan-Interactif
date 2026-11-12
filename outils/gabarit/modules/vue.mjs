@@ -402,7 +402,13 @@ function mesureBarre(){
      texte s'y rejouait entre deux rangées au lieu d'une. Au supérieur, pour
      ne jamais rogner ce que la barre porte : c'est son contenu qui commande
      sa hauteur, on ne fait que la finir sur un pixel entier. */
+  /* Mesurée sans la hauteur posée la dernière fois : sinon elle ne pouvait que
+     croître, et la barre d'un nom revenu sur une ligne gardait la hauteur de
+     deux. */
+  const avant = b.style.minHeight;
+  b.style.minHeight = "";
   const px = Math.ceil(b.getBoundingClientRect().height) + "px";
+  b.style.minHeight = avant;
   if (b.style.minHeight !== px) b.style.minHeight = px;
   if (document.body.style.getPropertyValue("--barre") !== px)
     document.body.style.setProperty("--barre", px);
@@ -481,9 +487,14 @@ export function fit(){
   const r = cadrePlan();
   const cache = masque(), haut = masqueHaut();
   const hUtile = Math.max(60, r.height - cache - haut);
+  /* Le volet ouvert à droite, sur grand écran, mange la largeur comme le
+     tiroir mange la hauteur : le pavillon se cadre dans ce qui reste, sans
+     quoi sa moitié droite passait dessous. */
+  const droite = masqueDroite();
+  const wUtile = Math.max(60, (r.width || 1) - droite);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
-  const k = Math.max(w / (r.width || 1), h / hUtile);
-  changeVue({ x: emp.x0 + w / 2 - (k * r.width) / 2,
+  const k = Math.max(w / wUtile, h / hUtile);
+  changeVue({ x: emp.x0 + w / 2 - (k * wUtile) / 2,
            /* Le plan se centre dans la bande visible, pas dans le cadre
               entier : le tiroir en mange le bas, la barre du salon le haut
               depuis qu'elle se pose dessus, et le décalage est la différence

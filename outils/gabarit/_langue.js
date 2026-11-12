@@ -332,6 +332,8 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
    *   "entiere"   la chaîne d'un seul tenant — une clé, un modèle, une date.
    */
   function cherche(t, profondeur, mode) {
+    // une chaîne vide n'a rien à traduire, et `t[0]` plus loin n'existerait pas
+    if (!t) return null;
     if (!sansProtection && PROTEGES.size && PROTEGES.has(t.toLowerCase())) return null;
     for (const table of DONNEES.values()) {
       const v = table.get(t);
@@ -607,10 +609,14 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   function brancheMesures() {
     if (mesuresBranchees) return;
     mesuresBranchees = true;
+    /* Ceci passe dans chaque mesure de la page : une erreur de traduction
+       n'y doit pas faire échouer la mesure elle-même. */
     const vide = () => {
       if (courante !== "en") return;
-      const r = observateur.takeRecords();
-      if (r.length) surMutations(r);
+      try {
+        const r = observateur.takeRecords();
+        if (r.length) surMutations(r);
+      } catch (e) { console.warn("Traduction :", e); }
     };
     const methode = (proto, nom) => {
       const f = proto && proto[nom];
@@ -676,10 +682,15 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   /* ------------------------------------------------------------------
      Passer de l'une à l'autre
      ------------------------------------------------------------------ */
+  let voulue = null;   // la dernière langue demandée
   function applique(langue, premiere) {
-    // l'anglais attend son dictionnaire ; la page reste en français d'ici là
+    voulue = langue;
+    /* L'anglais attend son dictionnaire ; la page reste en français d'ici là.
+       Revenu au français pendant l'attente, on y reste : le dictionnaire
+       arrivé ensuite rebasculait la page dans la langue qu'on venait de
+       quitter. */
     if (langue === "en" && SOURCE == null && DICO_A_PART) {
-      chargeDico().then(() => applique(langue, premiere), () => {});
+      chargeDico().then(() => { if (voulue === "en") applique(langue, premiere); }, () => {});
       return;
     }
     courante = langue;
