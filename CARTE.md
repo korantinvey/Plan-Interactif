@@ -547,21 +547,21 @@ Importé par :
 ambiance · environs · libelles · logos-stands · outil-comptoir · outil-escalier
 outil-foodtruck · trace-itineraire · vue · vue-etat · webgl
 
-### `modules/cartouche-poi.mjs` — 339 l. → plan, plan-admin
+### `modules/cartouche-poi.mjs` — 340 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt sur le plan — le cartouche, la mise en avant, le
 
 Fonctions :
 
-`oublieReperes` 50 · `reperesCherchables` 52 · `clePoi` 129 · `cartouchePoi` 131
-`mesureCartouche` 245 · `pharePoi` 261 · `phareRepere` 265 · `phareZone` 267
-`eclairePoi` 273 · `poiActif` 292 · `libellePoiChoisi` 293 · `retenusParPoi` 308
-`oublieChoixPoi` 334
+`oublieReperes` 51 · `reperesCherchables` 53 · `clePoi` 130 · `cartouchePoi` 132
+`mesureCartouche` 246 · `pharePoi` 262 · `phareRepere` 266 · `phareZone` 268
+`eclairePoi` 274 · `poiActif` 293 · `libellePoiChoisi` 294 · `retenusParPoi` 309
+`oublieChoixPoi` 335
 
 Importe :
 
 bandes · calques-dessin · configuration · dom · donnees · evenement · forme-choisie
-itineraire · reperes · vue
+itineraire · reperes · texte · vue
 
 Importé par :
 
@@ -1033,20 +1033,20 @@ Importé par :
 
 gestes-admin · outil-dessin
 
-### `modules/emplacements.mjs` — 289 l. → plan, plan-admin
+### `modules/emplacements.mjs` — 290 l. → plan, plan-admin
 
 - l.1 · Reprendre à la main la géométrie d'un emplacement — ce que le plan
 
 Fonctions :
 
-`cleGeo` 50 · `poseSorteGeo` 59 · `geometrieSource` 72 · `reposeSource` 81
-`poseGeometrie` 90 · `retoucheGeo` 104 · `elargitEmprise` 117 · `appliqueGeometries` 138
-`cleAjout` 179 · `estLie` 192 · `anneauxValides` 196 · `rechAjout` 201 · `objetAjoute` 210
-`poseLien` 229 · `appliqueAjouts` 257
+`cleGeo` 51 · `poseSorteGeo` 60 · `geometrieSource` 73 · `reposeSource` 82
+`poseGeometrie` 91 · `retoucheGeo` 105 · `elargitEmprise` 118 · `appliqueGeometries` 139
+`cleAjout` 180 · `estLie` 193 · `anneauxValides` 197 · `rechAjout` 202 · `objetAjoute` 211
+`poseLien` 230 · `appliqueAjouts` 258
 
 Importe :
 
-configuration · dessin · donnees · forme · mode-admin · noms-zones
+configuration · dessin · donnees · forme · mode-admin · noms-zones · texte
 
 Importé par :
 
@@ -1474,23 +1474,23 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 632 l. → plan, plan-admin
+### `modules/gestes.mjs` — 633 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
-- l.73 · 8. Interactions du plan
+- l.74 · 8. Interactions du plan
 
 Fonctions :
 
-`poseGestesAdmin` 71 · `milieu` 103 · `commencePince` 109 · `suitPince` 123
-`noteGlisser` 207 · `stoppeElan` 213 · `lanceElan` 219 · `plieLesBandes` 251
-`saisitPlan` 265 · `cibleElargie` 302 · `planifieFiltre` 345 · `brancheGestes` 359
-`brancheLangue` 615
+`poseGestesAdmin` 72 · `milieu` 104 · `commencePince` 110 · `suitPince` 124
+`noteGlisser` 208 · `stoppeElan` 214 · `lanceElan` 220 · `plieLesBandes` 252
+`saisitPlan` 266 · `cibleElargie` 303 · `planifieFiltre` 346 · `brancheGestes` 360
+`brancheLangue` 616
 
 Importe :
 
 borne · dessin · dom · donnees · ecran · environs · fiche · geste-tenu · libelles · mesure
-noms-zones · points-interet · recherche · texte-plan · tiroir-itineraire · toucher · vue
-webgl
+noms-zones · points-interet · recherche · texte · texte-plan · tiroir-itineraire · toucher
+vue · webgl
 
 Importé par :
 
@@ -1618,14 +1618,14 @@ fiche-evenement
 
 Fonctions :
 
-`texteProduits` 53 · `indexe` 57 · `chronoConf` 310 · `confsDuPlan` 315
-`indexeConferences` 333 · `rangeConferences` 411 · `poseFavicon` 458 · `poseLogoSalon` 484
+`texteProduits` 54 · `indexe` 58 · `chronoConf` 311 · `confsDuPlan` 316
+`indexeConferences` 334 · `rangeConferences` 411 · `poseFavicon` 458 · `poseLogoSalon` 484
 
 Importe :
 
 calques-dessin · cartouche-poi · configuration · dom · donnees · emplacements · evenement
 installation · itineraire · mode-admin · modeles · noms-zones · options · parcours
-polices-plan · recherche · secteurs · sur · tiroir-parcours
+polices-plan · recherche · secteurs · sur · texte · tiroir-parcours
 
 Importé par :
 
@@ -3224,21 +3224,22 @@ Importé par :
 affiche-ici · appels · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
 recherche
 
-### `modules/texte.mjs` — 30 l. → plan, plan-admin, console, rapport
+### `modules/texte.mjs` — 44 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 
 Fonctions :
 
-`esc` 11 · `separeValeurs` 22
+`esc` 11 · `separeValeurs` 22 · `pourRecherche` 42
 
 Importé par :
 
-affiche-ici · apercus · classeur · corps-fiche · dessin · distinctions · ecran-console
-edition · environs · fiche · fiche-detail · fiche-zone · filtre · fuseau · libelles
-nom-emplacement · outil-dessin · parcours · pile · points-interet · qr · rapport-utilisation
-recherche · reglage-fiche · reglage-suggestion · rendu · secteurs · socle-dessin
-suggestion · sur · texte-plan · trajet
+affiche-ici · apercus · cartouche-poi · classeur · corps-fiche · dessin · distinctions
+ecran-console · edition · emplacements · environs · fiche · fiche-detail · fiche-zone
+filtre · fuseau · gestes · index-salon · libelles · nom-emplacement · outil-dessin
+parcours · pile · points-interet · qr · rapport-utilisation · recherche · reglage-fiche
+reglage-suggestion · rendu · secteurs · socle-dessin · suggestion · sur · texte-plan
+trajet
 
 ### `modules/tiroir-itineraire.mjs` — 695 l. → plan, plan-admin
 

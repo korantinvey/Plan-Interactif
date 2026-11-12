@@ -18,6 +18,7 @@
    relevé —, il émet donc le choix (`POI_CHANGE`), qu'elle écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { pourRecherche } from "./texte.mjs";
 import { DATA, parId, P, state, CONFERENCES } from "./donnees.mjs";
 import { creeEvenement } from "./evenement.mjs";
 import { conf } from "./configuration.mjs";
@@ -71,7 +72,7 @@ export function reperesCherchables(){
         // la forme part avec la ligne : la mise en avant du cartouche la relit
         REPERES.push({
           kind: "poi", id: f.id, p: i, nom: nom, type: ajout, forme: f,
-          rech: (nom + " " + ajout).toLowerCase(),
+          rech: pourRecherche(nom + " " + ajout),
         });
       });
     });

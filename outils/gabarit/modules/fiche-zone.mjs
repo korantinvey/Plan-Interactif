@@ -20,7 +20,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { creeEvenement } from "./evenement.mjs";
-import { esc } from "./texte.mjs";
+import { esc, pourRecherche } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { accesBase, base } from "./session.mjs";
 import { adresseSure, imageSure, assainitRiche } from "./sur.mjs";
@@ -779,7 +779,7 @@ async function enregistreZone(o, v, depart){
   o.type = genre;
   marqueType(o);
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
-  o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
+  o.rech = pourRecherche(String(o.nom || "") + " " + String(o.nom_en || ""));
   libelles(); liste();
   // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
   cartouchePoi();

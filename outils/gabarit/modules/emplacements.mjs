@@ -39,6 +39,7 @@
    se faire confier.
    ============================================================ */
 import { DATA } from "./donnees.mjs";
+import { pourRecherche } from "./texte.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { arrondiGeo, empreinteGeo, anneauxGeo, traceGeo, boiteGeo } from "./forme.mjs";
 import { nomsAnglaisDesZones } from "./noms-zones.mjs";
@@ -199,9 +200,9 @@ export const anneauxValides = (a) => Array.isArray(a) && a.length > 0 && a.every
 
 /** Ce sur quoi porte la recherche, comme `indexe` l'assemble pour la source. */
 export function rechAjout(o){
-  o.rech = (o.kind === "zone"
+  o.rech = pourRecherche(o.kind === "zone"
     ? String(o.nom || "") + " " + String(o.nom_en || "")
-    : String(o.nom || "") + " " + String(o.code || "")).toLowerCase();
+    : String(o.nom || "") + " " + String(o.code || ""));
   if (o.kind === "stand") o.rechProd = "";
 }
 
