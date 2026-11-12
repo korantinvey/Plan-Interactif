@@ -124,19 +124,19 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 708 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 711 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1750 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
 
-### `_sw.js` — 579 l.
+### `_sw.js` — 580 l.
 
 Fonctions :
 
-`estUneTuile` 129 · `range` 155 · `oublieLesVersionsDAvant` 181 · `dabordCache` 202
-`borneLesLots` 238 · `borneLesTuiles` 276 · `demandeTiers` 331 · `commePosee` 339
-`tuileDeCarte` 356 · `fondDeCarte` 392 · `dabordReseau` 419 · `navigation` 436
+`estUneTuile` 130 · `range` 156 · `oublieLesVersionsDAvant` 182 · `dabordCache` 203
+`borneLesLots` 239 · `borneLesTuiles` 277 · `demandeTiers` 332 · `commePosee` 340
+`tuileDeCarte` 357 · `fondDeCarte` 393 · `dabordReseau` 420 · `navigation` 437
 
 ### `modules/abords-salles.mjs` — 244 l. → plan, plan-admin
 
@@ -1090,7 +1090,7 @@ Importé par :
 
 bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1339 l. → plan, plan-admin
+### `modules/environs.mjs` — 1343 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1100,13 +1100,13 @@ Fonctions :
 `calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
 `bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
 `figeCourant` 398 · `figeAJour` 407 · `recaleFige` 446 · `videFige` 459 · `poseFige` 468
-`placeFigee` 567 · `chargeMapLibre` 622 · `vueGL` 656 · `vueGLValable` 679
-`styleDuFond` 695 · `styleDeLaCarte` 702 · `guetteLaCarte` 729 · `recaleCarteGL` 763
-`redessineCarteGL` 783 · `poseCarteGL` 813 · `diagnostiqueGL` 937 · `relanceCarteGL` 957
-`retireCarteGL` 971 · `guetteRetourGL` 998 · `carteGLPerdue` 1005 · `verifieCarteGL` 1015
-`videCarteGL` 1033 · `inclineFond` 1067 · `dessineFondCarte` 1116 · `cleMasqueCarte` 1250
-`masqueCarte` 1251 · `formesMasquantes` 1260 · `contourDuHall` 1282 · `cheminDuHall` 1289
-`poseMasqueCarte` 1307 · `ditCarte` 1322 · `refaitFondCarte` 1332
+`placeFigee` 567 · `chargeMapLibre` 626 · `vueGL` 660 · `vueGLValable` 683
+`styleDuFond` 699 · `styleDeLaCarte` 706 · `guetteLaCarte` 733 · `recaleCarteGL` 767
+`redessineCarteGL` 787 · `poseCarteGL` 817 · `diagnostiqueGL` 941 · `relanceCarteGL` 961
+`retireCarteGL` 975 · `guetteRetourGL` 1002 · `carteGLPerdue` 1009 · `verifieCarteGL` 1019
+`videCarteGL` 1037 · `inclineFond` 1071 · `dessineFondCarte` 1120 · `cleMasqueCarte` 1254
+`masqueCarte` 1255 · `formesMasquantes` 1264 · `contourDuHall` 1286 · `cheminDuHall` 1293
+`poseMasqueCarte` 1311 · `ditCarte` 1326 · `refaitFondCarte` 1336
 
 Importe :
 
