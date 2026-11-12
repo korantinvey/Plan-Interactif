@@ -70,16 +70,19 @@
 
    « Organiser » prend la place qui reste : c'est la commande longue, et celle
    pour laquelle la liste a été faite. */
-.pActs{flex:none;display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
+.pActs{flex:none;display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;padding:12px 18px 13px;
   border-bottom:1px solid var(--line)}
 .pActs[hidden]{display:none}
 .pActs .jOrg,.pActs .jRefait{flex:1;min-width:0}
 .pActs .jPart{flex:none}
-/* Le lecteur de codes vient en dernier : il ne sert qu'à qui reçoit un
-   parcours, pas à qui compose le sien. Sur un écran étroit, il ne garde que
-   son pictogramme — la rangée porte déjà « Organiser ma journée » en entier. */
-.pActs .jScan{flex:none}
-@media (max-width:400px){ .pActs .jScan .lib{display:none} }
+/* Le lecteur de codes vient en dernier, sur sa propre ligne : il ne sert qu'à
+   qui reçoit un parcours, pas à qui compose le sien. Réduit à son pictogramme
+   au bout de la rangée, il ne disait pas ce qu'il lisait — un cadre de visée
+   ne se lit pas comme « on vous montre un code, visez-le ». Il n'existe que
+   sur téléphone (`scan-parcours.mjs`), où la rangée n'a de place que pour
+   deux libellés : la ligne entière lui rend les siens. Plus discret que les
+   deux autres, il ne leur dispute pas l'œil. */
+.pActs .jScan{flex:1 0 100%;border-style:dashed;color:var(--ink-2)}
 /* La rangée sert les deux vues du tiroir : la liste s'organise, la journée se
    reprend, et le partage ne quitte jamais la tête — une journée organisée est
    justement ce qu'on veut donner à qui vient avec soi. Le bouton qui ne sert

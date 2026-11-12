@@ -19,6 +19,7 @@
     "deck": "node outils/scripts/deck.js",
     "avif": "node outils/scripts/avif.js",
     "jsqr": "node outils/scripts/jsqr.js",
+    "maplibre": "node outils/scripts/maplibre.js",
     "bd": "supabase db push",
     "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
     "sup": "supabase",
