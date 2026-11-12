@@ -32,7 +32,8 @@
    à tomber, la page resterait en français plutôt que de tomber avec lui. */
 window.traduit = String;
 window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
-  bascule() {}, offre() {}, ajoute() {}, protege() {}, donnees() {}, manques: () => null };
+  bascule() {}, offre() {}, ajoute() {}, protege() {}, donnees() {}, manques: () => null,
+  dictionnaire: () => Promise.resolve({}) };
 
 (function () {
   "use strict";
@@ -176,6 +177,10 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   const DONNEES = new Map();   // origine → Map : phrase → traduction
 
   let SOURCE_VERSEE = false;
+  let TABLE = null;   // le dictionnaire lu, tel que `dictionnaire()` le confie
+  // rien n'est retenu tant que le dictionnaire à part n'est pas arrivé
+  const lisSource = () => SOURCE == null ? {} :
+    TABLE || (TABLE = typeof SOURCE === "string" ? JSON.parse(SOURCE) : SOURCE);
   function prepare() {
     if (!EXACT) {
       EXACT = new Map();
@@ -185,7 +190,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     // le dictionnaire à part arrive après coup : il se verse alors, une fois
     if (!SOURCE_VERSEE && SOURCE != null) {
       SOURCE_VERSEE = true;
-      ajouteEntrees(typeof SOURCE === "string" ? JSON.parse(SOURCE) : SOURCE);
+      ajouteEntrees(lisSource());
     }
   }
 
@@ -838,6 +843,14 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
       ajouteEntrees(table || {});
       if (courante === "en") parcourt(document);
     },
+    /**
+     * Le dictionnaire de la page, `{ français: anglais }`, chargé s'il est à
+     * part — pour `modules/traduction.mjs`, qui le donne à i18next. Un seul
+     * dictionnaire pour les deux tant que la migration dure : ce que l'un sait
+     * traduire, l'autre le sait aussi. Un échec de chargement rend une table
+     * vide, et la page reste en français, comme ici.
+     */
+    dictionnaire: () => chargeDico().then(lisSource, () => ({})),
     manques: () => MANQUES ? [...MANQUES].sort((a, b) => b[1].n - a[1].n)
       .map(([t, e]) => e.n + " × " + t + (e.ou ? "   (" + e.ou + ")" : "")) : null,
   };

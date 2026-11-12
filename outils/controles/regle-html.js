@@ -131,6 +131,22 @@ const regle = {
       if (c.type === "Identifier") {
         if (ECHAPPENT.has(c.name) || NUMERIQUES.has(c.name)) return { sur: true };
         const v = variableDe(c);
+        /* `t("…")` (`modules/traduction.mjs`) rend une phrase de notre
+           dictionnaire, ses trous remplis tels quels : sûre si la phrase est
+           écrite en toutes lettres et si chaque valeur l'est. */
+        if (v && v.defs.some((d) => d.type === "ImportBinding" &&
+            /(^|\/)traduction\.mjs$/.test(d.parent.source.value))) {
+          const [phrase, valeurs] = n.arguments;
+          if (!phrase || phrase.type !== "Literal") return { sur: false, morceau: n };
+          if (!valeurs) return { sur: true };
+          if (valeurs.type !== "ObjectExpression") return { sur: false, morceau: valeurs };
+          for (const p of valeurs.properties) {
+            if (p.type !== "Property") return { sur: false, morceau: p };
+            const r = estSur(p.value);
+            if (!r.sur) return r;
+          }
+          return { sur: true };
+        }
         // une fonction importée n'a pas son corps ici : `esc` et les siens sont nommés plus haut
         if (v && v.defs.every((d) => d.type !== "ImportBinding") && variableSure(v)) return { sur: true };
         return { sur: false, morceau: n };
