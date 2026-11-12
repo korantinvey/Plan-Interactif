@@ -122,6 +122,8 @@ module.exports = [
   "BitmapLayer", "SimpleMeshLayer", "WebGL2 indisponible",
   // et les paquets qu'il importe, qu'esbuild résout à la construction
   "@mapbox/tiny-sdf",
+  // une extension WebGL que le moteur demande à la carte graphique
+  "EXT_texture_filter_anisotropic",
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",

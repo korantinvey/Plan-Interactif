@@ -701,7 +701,9 @@ function extensionPlanche(/** @type {any} */ L){
     }
   }
   CasesEtFondu.extensionName = "CasesEtFondu";
-  CasesEtFondu.defaultProps = { getCaseLogo: { type: "accessor", value: [0, 0, 1, 1] } };
+  /* Le fondu, dit aussi en nombres : le moteur du plan (`moteur-gl-objets.mjs`) ne
+     lit pas le GLSL ci-dessus, et deck.gl ignore ce réglage. */
+  CasesEtFondu.defaultProps = { getCaseLogo: { type: "accessor", value: [0, 0, 1, 1] }, fonduZoom: [ZOOM_FONDU, ZOOM_LOGO] };
   return (PLANCHE_EXT = [new CasesEtFondu()]);
 }
 

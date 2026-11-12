@@ -37,7 +37,7 @@ import { Viewport, View, OrthographicView, rapporte, IDENTITE, mul4, translation
 import { Couche, LayerExtension, PathStyleExtension, Programme, nomExtension } from "./moteur-gl-couche.mjs";
 import { SolidPolygonLayer, PathLayer } from "./moteur-gl-formes.mjs";
 import { TextLayer } from "./moteur-gl-texte.mjs";
-import { BitmapLayer, SimpleMeshLayer } from "./moteur-gl-objets.mjs";
+import { BitmapLayer, SimpleMeshLayer, appareil } from "./moteur-gl-objets.mjs";
 
 /* ------------------------------------------------------------
    Les lumières, comme celles de deck.gl
@@ -135,7 +135,8 @@ export class Deck {
       return;
     }
     this.gl = gl;
-    this.device = { gl, type: "moteur-gl" };
+    // la carte graphique, telle que `logos-stands.mjs` y range sa planche
+    this.device = appareil(gl);
     // tous les programmes partent compiler ensemble, sans que la page les attende
     /** @type {Map<string, Programme>} */
     this.programmes = new Map();

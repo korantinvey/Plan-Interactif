@@ -2266,7 +2266,11 @@ function teinteDesFigurants(){
     }
   }
   TeinteDesFigurants.extensionName = "TeinteDesFigurants";
-  TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] } };
+  /* Les palettes, dites aussi en nombres : le moteur du plan (`moteur-gl-objets.mjs`)
+     ne lit pas le GLSL ci-dessus, et deck.gl ignore ce réglage. */
+  TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] },
+    palettesFigurants: { bas: TENUES.map(t => t.bas), chaussures: CHAUSSURES, haut: TENUES.map(t => t.haut),
+      peau: TEINTS, cheveux: CHEVEUX } };
   return (_teinteFigurants = new TeinteDesFigurants());
 }
 
