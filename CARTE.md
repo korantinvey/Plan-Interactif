@@ -3703,10 +3703,10 @@ Injections :
 
 `sessionRefusee` 23 · `identifiantDePavillon` 36
 
-### `supabase/functions/_partage/svg.ts` — 216 l.
+### `supabase/functions/_partage/svg.ts` — 291 l.
 
-`r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106 · `allege` 118 · `sansMasques` 196
-`textes` 207
+`attributsDeDessin` 75 · `r2` 92 · `points` 112 · `boite` 151 · `neDessineRien` 174
+`allege` 186 · `sansMasques` 271 · `textes` 282
 
 ### `supabase/functions/_partage/version.ts` — 100 l.
 
@@ -3739,12 +3739,12 @@ Injections :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1957 l.
+### `supabase/functions/sync-evenement/index.ts` — 1963 l.
 
 `cors` 45 · `bourre` 118 · `client` 128 · `ecrit` 150 · `gaia` 158 · `cleKlipso` 169
 `libellesChoix` 188 · `retiensAnglais` 215 · `fournisseur` 233 · `raccourci` 241
-`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1905 · `nettoieUrl` 1933
-`groupeTextes` 1943
+`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1911 · `nettoieUrl` 1939
+`groupeTextes` 1949
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 

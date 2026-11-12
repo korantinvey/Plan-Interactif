@@ -1233,7 +1233,13 @@ Deno.serve(async (req) => {
           const lus = textes(brut);
           tousTextes.push(...lus);
           if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...lus);
-          const { svg } = allege(brut);
+          const { svg, ecartes } = allege(brut);
+          /* Un attribut que le dessin n'a pas gardé : attendu pour un piège,
+             à ajouter à `PERMIS` (`_partage/svg.ts`) si c'est un trait que le
+             plan devrait montrer. Le journal de la fonction est là où le voir. */
+          if (ecartes.length) {
+            console.log("Calque « " + c.Libelle + " » : attributs écartés du dessin — " + ecartes.join(", "));
+          }
           await ecrit(db.from("calque").upsert({
             plan_id: planId,
             id_klipso: c.Id,
