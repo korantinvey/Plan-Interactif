@@ -21,7 +21,7 @@ import { DATA } from "./donnees.mjs";
  * des chemins du même relais, et un déploiement ailleurs n'a ainsi qu'un
  * réglage à changer. L'empreinte que la base calcule entre dans l'adresse —
  * une icône remplacée change donc d'adresse, et tout ce qui garde celle-ci
- * peut la garder pour toujours (`src/index.mjs` `iconeApp`).
+ * peut la garder pour toujours (`src/application.mjs` `iconeApp`).
  */
 function adresseIconeApp(empreinte, masque){
   if (!API || !empreinte || !DATA || !DATA.slug) return "";

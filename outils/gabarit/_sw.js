@@ -21,7 +21,7 @@
  * dixièmes, au prix d'un rechargement de retard sur chaque mise en ligne —
  * une console repeinte par la feuille de style de la veille, par exemple.
  *
- * Trois règles ensuite, qui reprennent celles du relais (`src/index.mjs`)
+ * Trois règles ensuite, qui reprennent celles du relais (`src/plan.mjs`)
  * parce que c'est le même document qui passe :
  *   — une demande porteuse d'une identité n'est ni lue ni écrite dans le
  *     cache : elle peut rendre un brouillon, qui n'appartient qu'à son

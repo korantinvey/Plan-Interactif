@@ -3,12 +3,45 @@
 Plans de salon interactifs alimentés par Klipso (API GAIA), avec une console
 d'administration multi-événements.
 
+## Où est le code
+
+**L'application n'est pas dans `src/`.** Elle est dans
+`outils/gabarit/modules/` — environ deux cents modules ES, d'où la construction
+tire les pages de `web/`. Le nom `outils/` vient de ce que les pages y sont
+*fabriquées* : le gabarit et les modules sont leur source, et `web/` n'en est
+que le produit, ni écrit à la main, ni versionné.
+
 ```
-web/                     pages publiques et console
-supabase/migrations/     schéma de la base
-supabase/functions/      synchronisation et API publique
-outils/                  scripts de récupération et d'allègement des SVG
+outils/gabarit/modules/   tout le JavaScript des pages : plan, administration, console
+outils/gabarit/           le balisage et les feuilles de style des pages
+src/                      le Worker Cloudflare, un module par domaine
+                            index.mjs        l'aiguillage des chemins, et rien d'autre
+                            plan.mjs         relais et cache de /api/plan
+                            application.mjs  adresse propre d'un salon, manifeste, icône
+                            mesures.mjs      mesures d'usage, erreurs, sonde
+                            visite.mjs       rappels, plan de visite, charge annoncée
+                            commun.mjs       ce qu'ils partagent, dont la règle de la prévisualisation
+supabase/migrations/      le schéma de la base, migrations horodatées et rejouables
+supabase/functions/       fonctions serveur (Deno, TypeScript) : synchronisation Klipso,
+                          API publique, rappels, comptes, vignettes
+outils/*.js               la chaîne de construction (assemble.js, genere.js, carte.js…)
+outils/essais/            essais hors page (node --test) ; navigateur/ dans Chromium (Playwright)
+outils/controles/         les contrôles de npm run verifie et leurs références figées
+outils/anglais/           le dictionnaire anglais, un fichier par module
+.github/workflows/        essais, déploiement Supabase, sauvegarde de nuit
+web/                      les pages construites — non versionnées, sauf polices/ et bibliotheques/
 ```
+
+Trois points d'entrée pour lire sans tout ouvrir :
+
+- **`CARTE.md`** — l'index du code, refait à chaque construction : pour chaque
+  module, ses fonctions avec leur ligne, ce qu'il importe et qui l'importe.
+- **`CLAUDE.md`** — les règles de travail, et pour chaque intention (« la
+  recherche », « l'itinéraire », « le cache du plan ») le module où entrer.
+- **L'en-tête de chaque module**, qui dit ce qu'il fait et pourquoi.
+
+Et pour s'assurer que tout tient : `npm ci && npm run verifie` construit les
+pages et passe tous les contrôles ; `npm run essais` lance les essais hors page.
 
 ## Ce que fait le système
 
@@ -3004,7 +3037,7 @@ Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre 
 | Secrets Supabase | nulle part — c'est voulu | `npx supabase secrets set …` |
 | Secrets GitHub | nulle part — c'est voulu | Settings → Secrets and variables → Actions |
 | Pages | `outils/gabarit/` → `web/` | reconstruites à la poussée |
-| Worker et cache | `src/index.mjs`, `wrangler.jsonc` | déployé à chaque poussée sur `main` |
+| Worker et cache | `src/`, `wrangler.jsonc` | déployé à chaque poussée sur `main` |
 | Configuration livrée | `outils/gabarit/_config.js` → `web/config.js` | reconstruite à la poussée |
 | Données de démonstration | `outils/donnees/plans.json` → `web/plan-smcl.html` | reconstruites à la poussée |
 | Automatisation | `.github/workflows/` | appliquée dès la fusion dans `main` |

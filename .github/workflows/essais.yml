@@ -72,6 +72,9 @@ jobs:
       - name: Injections et boucles d'imports (référence figée outils/controles/injections-acceptees.json)
         run: npm run injections
 
+      - name: HTML échappé (référence figée outils/controles/html-acceptes.json)
+        run: npm run html
+
       - name: Le guide ne cite que ce qui existe (CLAUDE.md)
         run: npm run guide
 
