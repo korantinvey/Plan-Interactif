@@ -1,0 +1,299 @@
+/* ============================================================
+   Synchronisation d'un salon — lancement, suivi, vignettes des logos
+
+   Le bouton « Synchroniser maintenant » de la fiche aboutit ici : on prévoit
+   les étapes avant que le serveur ne les annonce, on suit son flux dans la
+   fenêtre d'avancement (`modules/avancement.mjs`), et, la synchronisation
+   finie, on fabrique les vignettes des logos qu'elle a relevés. L'appel des
+   fonctions vient de `modules/appel-fonction.mjs`, le recadrage des logos de
+   `modules/marque.mjs` — celui du plan.
+
+   Les pavillons que la console tient en mémoire viennent de
+   `evenements.mjs`, relus à chaque lancement puisque le rechargement les
+   remplace, et le fournisseur retenu par domaine de `provenance.mjs` ; le
+   flux qui la raconte (`fluxFonction`) de `appel-fonction.mjs`, la barre
+   d'état du socle (`socle-console.mjs`). Le rechargement de la console une
+   fois la synchronisation finie lui est confié par l'écran de la console
+   (`brancheSynchronisation`, `ecran-console.mjs`), qui l'importe : l'importer
+   ici bouclerait.
+
+   Premier module passé à i18next (`modules/traduction.mjs` `t`) : il écrit
+   ses phrases dans la langue de la page au lieu de les laisser à
+   l'observateur de `_langue.js`. Le pluriel s'y faisait à la main —
+   `" pavillon" + (n > 1 ? "s" : "")`, et « 1 logos préparés » — et des phrases
+   s'y recollaient par `traduit(…).replace("{n}", …)` ; le nombre accorde
+   désormais la phrase, dans chaque langue, et s'écrit à sa façon. Le bilan
+   resté à l'écran se redit quand la langue change (`LANGUE_CHANGEE`).
+   ============================================================ */
+import { $ } from "./dom.mjs";
+import { fenetreAvancement, suitAuServeur } from "./avancement.mjs";
+import { fonction, fluxFonction } from "./appel-fonction.mjs";
+import { vignetteDeLogo } from "./marque.mjs";
+import { encodeurAvif, avif64 } from "./encodeur-avif.mjs";
+import { PLANS } from "./evenements.mjs";
+import { source } from "./provenance.mjs";
+import { signale, appel } from "./socle-console.mjs";
+import { t, LANGUE_CHANGEE } from "./traduction.mjs";
+
+/** @type {{ charge: () => Promise<void> }} */
+let _console = {
+  charge: async () => {},
+};
+
+/** Ce que la console confie à la synchronisation : voir `_console`. */
+export function brancheSynchronisation(branche) {
+  _console = branche;
+}
+
+/**
+ * Les étapes telles qu'on les attend, avant que le serveur ne les annonce.
+ *
+ * La fenêtre s'ouvre au clic, mais la première ligne du flux ne vient qu'après
+ * la connexion, le contrôle des droits et deux lectures en base. Sans cette
+ * prévision, on regarderait une barre vide pendant tout ce temps — et une
+ * barre vide se lit comme un blocage.
+ *
+ * Elle se calcule ici comme là-bas, et à partir des mêmes éléments : les
+ * sources réglées sur le salon, et les emplacements du dernier passage, que la
+ * console a déjà en mémoire pour les afficher. Les deux listes coïncident donc
+ * en pratique ; si elles divergeaient, c'est celle du serveur qui ferait foi,
+ * puisqu'elle remplace celle-ci dès son arrivée.
+ */
+function etapesPressenties(e) {
+  const emplacements =
+    (PLANS[e.id] || []).reduce((a, p) => a + (p.nb_stands || 0), 0) || 300;
+  const stands = source(e, "stands"), conf = source(e, "conferences");
+  return [
+    { cle: "exposants", libelle: "Exposants", source: stands,
+      poids: stands === "eventmaker" ? emplacements : 20 },
+    { cle: "conferences", libelle: "Conférences", source: conf,
+      poids: conf === "eventmaker" ? Math.round(emplacements / 4) : 0 },
+    { cle: "produits", libelle: "Produits", source: source(e, "produits"),
+      poids: source(e, "produits") === "eventmaker" ? Math.round(emplacements / 20) : 0 },
+    { cle: "plan", libelle: "Plan", source: source(e, "plan"), poids: emplacements },
+  ];
+}
+
+/* Le dernier bilan montré, pour le redire si la langue change pendant que la
+   fenêtre est ouverte ; la barre d'état, elle, passe au message suivant, qui
+   parlera la bonne langue. */
+let dernierBilan = null;
+LANGUE_CHANGEE.ecoute(() => { if (dernierBilan) dernierBilan.vue.redit(dernierBilan.bilan()); });
+
+export async function synchronise(e) {
+  dernierBilan = null;
+  const b = $("btnSync");
+  if (b) b.disabled = true;
+  /* La fenêtre s'ouvre avant le premier octet, et non à la première ligne du
+     flux : entre le clic et la réponse du serveur il s'écoule quelques
+     secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
+  const vue = fenetreAvancement(t("Synchronisation — {salon}", { salon: e.nom || t("salon") }), e.nom);
+  vue.ouvre(etapesPressenties(e), true);
+  let enCours = null;
+  // ce qu'une ligne change à la fenêtre, qu'elle vienne du flux ou du relevé
+  const suit = (o) => {
+    if (o.etapes) vue.ouvre(o.etapes);
+    else if (o.chiffres) vue.chiffres(o.chiffres);
+    else if (o.etape) {
+      if (o.etat === "encours") enCours = o.etape;
+      vue.pas(o);
+    }
+  };
+  /* Le secours est armé dès le départ et se tait tant que le flux coule : là
+     où celui-ci passe, il n'aura pas lu une seule fois. */
+  const jeton = (crypto.randomUUID && crypto.randomUUID()) ||
+    String(Date.now()) + String(Math.random()).slice(2);
+  const releve = suitAuServeur(e.id, jeton, suit, vue);
+  /* Ce qui tient le flux pour vivant, ce sont ses octets et non ses lignes :
+     une étape muette pendant une minute continue de recevoir le remplissage
+     que la fonction pousse toutes les deux secondes. */
+  const trace = (o) => {
+    if (o.evt === "troncon" || o.evt === "reponse") releve.signeDeVie();
+    vue.trace(o);
+  };
+  signale(t("Synchronisation en cours…"));
+  try {
+    const j = await fluxFonction("sync-evenement", { evenementId: e.id, jeton },
+      suit, trace);
+    if (!j) throw new Error(t("Synchronisation interrompue avant la fin."));
+    const pav = j.pavillons || [];
+    const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
+    /* Combien de stands ont trouvé leur fiche chez le fournisseur d'exposants.
+       C'est le chiffre qui dit si l'appariement tient : il ne paraît que quand
+       les exposants viennent d'ailleurs que du plan, seul cas où il existe.
+       « Apparié » n'est pas « nommé » — une fiche trouvée mais exclue du
+       catalogue laisse le stand sans nom, et compte quand même ici. */
+    const apparies = pav.some((p) => p.apparies !== undefined)
+      ? pav.reduce((a, p) => a + (p.apparies || 0), 0)
+      : null;
+    // sans libellés, la nomenclature s'affiche en codes : le dire tout de
+    // suite plutôt que de laisser découvrir des « FEP26_NOM10201 » sur le plan
+    const n = j.nomenclature || {};
+    /* Le bilan s'écrit par une fonction, et non une fois : il se redit dans
+       l'autre langue tant que la fenêtre le montre (`redisLeBilan`). */
+    const bilan = () => (apparies !== null
+      ? t("{n} pavillon, {n2} emplacements, {n3} appariés.", { n: pav.length, n2: total, n3: apparies })
+      : t("{n} pavillon, {n2} emplacements.", { n: pav.length, n2: total })) +
+      (n.erreur ? " " + t("Nomenclature en codes : {raison}", { raison: n.erreur })
+        : n.libelles ? " " + t("{n} libellé de nomenclature.", { n: n.libelles }) : "");
+    const mot = bilan();
+    vue.fini(mot, n.erreur ? "alerte" : "ok");
+    dernierBilan = { vue, bilan };
+    signale(mot, !!n.erreur);
+    await _console.charge();
+    // le plan qu'elle vient d'écrire, et non celui que le relais gardait
+    oublieLePlan(e);
+    /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
+       elles ne font pas partie du plan, rien ne les attend, et leur fabrication
+       peut durer plusieurs minutes sur un gros salon. Elle se suit dans la
+       barre du haut, et s'arrête si l'on quitte la console — le lot suivant
+       reprendra où celui-ci s'est arrêté. */
+    // non attendue, son échec ne passait par aucun `catch` : il se dit ici
+    fabriqueLesVignettes(e).catch((err) =>
+      signale(t("Préparation des logos impossible : {e}", { e: err.message }), true));
+  } catch (err) {
+    // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
+    if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });
+    vue.fini(err.message, "echec");
+    signale(err.message, true);
+  } finally {
+    releve.arrete();
+    if ($("btnSync")) $("btnSync").disabled = false;
+  }
+}
+
+/**
+ * Les vignettes des logos, fabriquées ici, après la synchronisation.
+ *
+ * Elles se faisaient au serveur : la plateforme n'accorde pas à une fonction
+ * le temps de calcul qu'il faut pour décoder des images, et elle refusait
+ * l'appel avant même le premier logo. Ce navigateur, lui, a la puissance — et
+ * il ne le fait qu'une fois par salon, pour tous les visiteurs qui suivront.
+ *
+ * Le recadrage est celui du plan, emprunté au même module : une vignette doit
+ * être cadrée comme la page l'aurait fait, puisqu'elle prend sa place.
+ *
+ * La fonction ne fait que dire ce qui manque et enregistrer ce qu'on lui rend.
+ * On lui renvoie par paquets plutôt qu'un par un : chaque envoi est un
+ * aller-retour, et cent allers-retours pour cent logos doubleraient la durée.
+ *
+ * Rien n'attend ces vignettes. Un logo qui n'en a pas se charge chez sa
+ * source, comme il l'a toujours fait, et fermer la console ne fait que
+ * repousser le reste à la prochaine synchronisation.
+ */
+const PAQUET_VIGNETTES = 8;
+/* Une garde, non une limite du salon : un serveur qui répondrait toujours
+   « il en reste » ferait tourner cette boucle sans fin. */
+const TOURS_VIGNETTES = 200;
+
+async function fabriqueLesVignettes(e) {
+  let faites = 0, total = 0, deja = null;
+  /* Un logo illisible chez sa source n'est jamais enregistré : sans cette
+     mémoire, le serveur le rendrait à chaque tour, il serait retéléchargé et
+     recompté autant de fois — un compte qui dépassait son total de loin. On
+     les lui renvoie pour qu'il les écarte de ce qui reste à faire. */
+  const ecartees = new Set();
+  /* L'encodeur AVIF, s'il se charge. Le serveur l'apprend à chaque demande :
+     une console qui sait le faire refait une fois les logos qui n'ont qu'une
+     vignette WebP ; une console qui ne le sait pas s'en tient à ce qui manque,
+     sans quoi elle referait chaque fois le même WebP. */
+  const enc = await encodeurAvif();
+  const avif = enc ? (/** @type {HTMLCanvasElement} */ t) => avif64(enc, t) : null;
+  const format = avif ? "avif" : "webp";
+  /* Les logos que l'AVIF n'a pas su faire, rangés en WebP : le serveur les
+     dirait encore à faire, et chaque tour les referait. On les lui écarte
+     comme les illisibles, sans les compter avec eux — ils sont préparés. */
+  const enWebp = new Set();
+  const compte = () => signale(t("Préparation des logos : {n} sur {t}…",
+    { n: Math.min(total, (deja || 0) + faites + ecartees.size), t: total }));
+  for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
+    let lot;
+    try {
+      /* « detoure » : la grande part sans son fond (`marque.mjs`
+         `vignetteDeLogo`), et celles d'avant, au fond blanc, sont à refaire. */
+      lot = await fonction("vignettes", { evenementId: e.id, format, detoure: true,
+        ecartees: [...ecartees, ...enWebp] });
+    } catch (err) {
+      /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
+         qui ne commence jamais sans rien annoncer laisse chercher du mauvais
+         côté. */
+      signale(t("Préparation des logos impossible : {e}", { e: err.message }), true);
+      return;
+    }
+    total = lot.total || total;
+    /* Ce que les synchronisations d'avant ont déjà fait compte dans
+       l'avancement : sans quoi le compte partirait de zéro vers un total qui
+       les inclut. */
+    if (deja === null) deja = Math.max(0, total - (lot.reste || 0));
+    /* Un serveur d'avant ignore la liste des écartées et les rend encore :
+       on ne retente pas ce qui a déjà échoué, et un lot qui n'en contient
+       plus d'autres met fin à la préparation. */
+    const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s) && !enWebp.has(s));
+    if (!aFaire.length) break;
+
+    const paquet = [];
+    for (const source of aFaire) {
+      const v = await vignetteDeLogo(source, avif);
+      if (v) paquet.push(v);
+      else ecartees.add(source);
+      if (v && v.format !== format) enWebp.add(source);
+      if (paquet.length >= PAQUET_VIGNETTES) {
+        faites += await envoieVignettes(e, paquet);
+        paquet.length = 0;
+        compte();
+      }
+    }
+    if (paquet.length) faites += await envoieVignettes(e, paquet);
+    compte();
+  }
+  const refusees = ecartees.size;
+
+  /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
+     premier cas surprend quand on attend le contraire — un champ de logo non
+     désigné dans la correspondance, et pas une fiche n'en porte — et le taire
+     laisse chercher du côté de la fabrication ce qui se règle du côté des
+     sources. */
+  if (!total) { signale(t("Aucun logo à préparer sur ce salon.")); return; }
+  if (!faites && !refusees) return;
+  /* Les vignettes ne sont portées que par le plan que l'API refait : le relais,
+     qui a pu garder celui d'avant elles — une visite entre la fin de la
+     synchronisation et celle des logos suffit —, le servirait sans elles un
+     jour durant, et pas un logo ne paraîtrait sur le plan. */
+  if (faites) oublieLePlan(e);
+  /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
+     un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
+     qui n'atteint jamais son total sans explication en serait une. */
+  const mot = refusees
+    ? t("{n} logo préparé, {r} illisibles chez leur source.", { n: faites, r: refusees })
+    : t("{n} logo préparé pour les fiches.", { n: faites });
+  signale(mot);
+}
+
+/**
+ * Demande au relais d'oublier le plan public de ce salon, comme le fait
+ * l'enregistrement depuis le plan (`enregistrement.mjs` `oublieCache`).
+ *
+ * Le relais sert le plan sous une version prise sur son contenu, et ne le
+ * refait de lui-même qu'au bout d'un jour. Or chaque synchronisation Eventmaker
+ * signe à nouveau l'adresse de chaque logo : la vignette, retrouvée par cette
+ * adresse exacte, n'apparaît que dans un plan refait après sa fabrication.
+ *
+ * Sans réponse attendue : la console servie hors du relais — un essai en
+ * local — n'a rien à oublier, et ce n'est qu'un cache.
+ */
+function oublieLePlan(e) {
+  if (!e?.slug) return;
+  appel(location.origin + "/api/oublie?slug=" + encodeURIComponent(e.slug),
+    { method: "POST" }).catch(() => {});
+}
+
+/** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son
+ *  paquet : le tour suivant redemandera les mêmes adresses. */
+async function envoieVignettes(e, paquet) {
+  try {
+    const r = await fonction("vignettes", { evenementId: e.id, vignettes: paquet });
+    return r.enregistrees || 0;
+  } catch (err) {
+    return 0;
+  }
+}
