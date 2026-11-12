@@ -16,6 +16,14 @@
    fois la synchronisation finie lui est confié par l'écran de la console
    (`brancheSynchronisation`, `ecran-console.mjs`), qui l'importe : l'importer
    ici bouclerait.
+
+   Premier module passé à i18next (`modules/traduction.mjs` `t`) : il écrit
+   ses phrases dans la langue de la page au lieu de les laisser à
+   l'observateur de `_langue.js`. Le pluriel s'y faisait à la main —
+   `" pavillon" + (n > 1 ? "s" : "")`, et « 1 logos préparés » — et des phrases
+   s'y recollaient par `traduit(…).replace("{n}", …)` ; le nombre accorde
+   désormais la phrase, dans chaque langue, et s'écrit à sa façon. Le bilan
+   resté à l'écran se redit quand la langue change (`LANGUE_CHANGEE`).
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { fenetreAvancement, suitAuServeur } from "./avancement.mjs";
@@ -25,6 +33,7 @@ import { encodeurAvif, avif64 } from "./encodeur-avif.mjs";
 import { PLANS } from "./evenements.mjs";
 import { source } from "./provenance.mjs";
 import { signale, appel } from "./socle-console.mjs";
+import { t, LANGUE_CHANGEE } from "./traduction.mjs";
 
 /** @type {{ charge: () => Promise<void> }} */
 let _console = {
@@ -65,13 +74,20 @@ function etapesPressenties(e) {
   ];
 }
 
+/* Le dernier bilan montré, pour le redire si la langue change pendant que la
+   fenêtre est ouverte ; la barre d'état, elle, passe au message suivant, qui
+   parlera la bonne langue. */
+let dernierBilan = null;
+LANGUE_CHANGEE.ecoute(() => { if (dernierBilan) dernierBilan.vue.redit(dernierBilan.bilan()); });
+
 export async function synchronise(e) {
+  dernierBilan = null;
   const b = $("btnSync");
   if (b) b.disabled = true;
   /* La fenêtre s'ouvre avant le premier octet, et non à la première ligne du
      flux : entre le clic et la réponse du serveur il s'écoule quelques
      secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
-  const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"), e.nom);
+  const vue = fenetreAvancement(t("Synchronisation — {salon}", { salon: e.nom || t("salon") }), e.nom);
   vue.ouvre(etapesPressenties(e), true);
   let enCours = null;
   // ce qu'une ligne change à la fenêtre, qu'elle vienne du flux ou du relevé
@@ -95,11 +111,11 @@ export async function synchronise(e) {
     if (o.evt === "troncon" || o.evt === "reponse") releve.signeDeVie();
     vue.trace(o);
   };
-  signale("Synchronisation en cours…");
+  signale(t("Synchronisation en cours…"));
   try {
     const j = await fluxFonction("sync-evenement", { evenementId: e.id, jeton },
       suit, trace);
-    if (!j) throw new Error("Synchronisation interrompue avant la fin.");
+    if (!j) throw new Error(t("Synchronisation interrompue avant la fin."));
     const pav = j.pavillons || [];
     const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
     /* Combien de stands ont trouvé leur fiche chez le fournisseur d'exposants.
@@ -107,18 +123,22 @@ export async function synchronise(e) {
        les exposants viennent d'ailleurs que du plan, seul cas où il existe.
        « Apparié » n'est pas « nommé » — une fiche trouvée mais exclue du
        catalogue laisse le stand sans nom, et compte quand même ici. */
-    const app = pav.some((p) => p.apparies !== undefined)
-      ? ", " + pav.reduce((a, p) => a + (p.apparies || 0), 0) + " appariés"
-      : "";
+    const apparies = pav.some((p) => p.apparies !== undefined)
+      ? pav.reduce((a, p) => a + (p.apparies || 0), 0)
+      : null;
     // sans libellés, la nomenclature s'affiche en codes : le dire tout de
     // suite plutôt que de laisser découvrir des « FEP26_NOM10201 » sur le plan
     const n = j.nomenclature || {};
-    const suite = n.erreur
-      ? " Nomenclature en codes : " + n.erreur
-      : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
-    const mot = pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
-      total + " emplacements" + app + "." + suite;
+    /* Le bilan s'écrit par une fonction, et non une fois : il se redit dans
+       l'autre langue tant que la fenêtre le montre (`redisLeBilan`). */
+    const bilan = () => (apparies !== null
+      ? t("{n} pavillon, {n2} emplacements, {n3} appariés.", { n: pav.length, n2: total, n3: apparies })
+      : t("{n} pavillon, {n2} emplacements.", { n: pav.length, n2: total })) +
+      (n.erreur ? " " + t("Nomenclature en codes : {raison}", { raison: n.erreur })
+        : n.libelles ? " " + t("{n} libellé de nomenclature.", { n: n.libelles }) : "");
+    const mot = bilan();
     vue.fini(mot, n.erreur ? "alerte" : "ok");
+    dernierBilan = { vue, bilan };
     signale(mot, !!n.erreur);
     await _console.charge();
     // le plan qu'elle vient d'écrire, et non celui que le relais gardait
@@ -182,9 +202,8 @@ async function fabriqueLesVignettes(e) {
      dirait encore à faire, et chaque tour les referait. On les lui écarte
      comme les illisibles, sans les compter avec eux — ils sont préparés. */
   const enWebp = new Set();
-  const compte = () => signale(traduit("Préparation des logos : {n} sur {t}…")
-    .replace("{n}", String(Math.min(total, (deja || 0) + faites + ecartees.size)))
-    .replace("{t}", String(total)));
+  const compte = () => signale(t("Préparation des logos : {n} sur {t}…",
+    { n: Math.min(total, (deja || 0) + faites + ecartees.size), t: total }));
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
     let lot;
     try {
@@ -196,8 +215,7 @@ async function fabriqueLesVignettes(e) {
       /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
          qui ne commence jamais sans rien annoncer laisse chercher du mauvais
          côté. */
-      signale(traduit("Préparation des logos impossible : {e}")
-        .replace("{e}", err.message), true);
+      signale(t("Préparation des logos impossible : {e}", { e: err.message }), true);
       return;
     }
     total = lot.total || total;
@@ -233,7 +251,7 @@ async function fabriqueLesVignettes(e) {
      désigné dans la correspondance, et pas une fiche n'en porte — et le taire
      laisse chercher du côté de la fabrication ce qui se règle du côté des
      sources. */
-  if (!total) { signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
+  if (!total) { signale(t("Aucun logo à préparer sur ce salon.")); return; }
   if (!faites && !refusees) return;
   /* Les vignettes ne sont portées que par le plan que l'API refait : le relais,
      qui a pu garder celui d'avant elles — une visite entre la fin de la
@@ -244,9 +262,8 @@ async function fabriqueLesVignettes(e) {
      un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
      qui n'atteint jamais son total sans explication en serait une. */
   const mot = refusees
-    ? traduit("{n} logos préparés, {r} illisibles chez leur source.")
-      .replace("{n}", String(faites)).replace("{r}", String(refusees))
-    : traduit("{n} logos préparés pour les fiches.").replace("{n}", String(faites));
+    ? t("{n} logo préparé, {r} illisibles chez leur source.", { n: faites, r: refusees })
+    : t("{n} logo préparé pour les fiches.", { n: faites });
   signale(mot);
 }
 

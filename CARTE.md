@@ -98,7 +98,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#data`
 
-### `_langue.js` — 864 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
+### `_langue.js` — 877 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -360,13 +360,13 @@ Importé par :
 
 installation · reglage-application
 
-### `modules/avancement.mjs` — 416 l. → console
+### `modules/avancement.mjs` — 427 l. → console
 
 - l.1 · L'avancement d'une synchronisation — la fenêtre, et son secours
 
 Fonctions :
 
-`fenetreAvancement` 44 · `suitAuServeur` 376
+`fenetreAvancement` 44 · `suitAuServeur` 387
 
 Importe :
 
@@ -1150,7 +1150,7 @@ Importé par :
 
 reglage-rappel
 
-### `modules/evenement.mjs` — 46 l. → plan, plan-admin
+### `modules/evenement.mjs` — 46 l. → plan, plan-admin, console
 
 - l.1 · Un événement — dire ce qui vient de se passer, sans savoir qui écoute
 
@@ -1162,7 +1162,7 @@ Importé par :
 
 acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · environs
 fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire
-vignettes · webgl
+traduction · vignettes · webgl
 
 ### `modules/evenements.mjs` — 70 l. → console
 
@@ -2913,6 +2913,18 @@ Importé par :
 
 gestes-admin · outil-dessin · pile · plan-admin
 
+### `modules/ressources-langue.mjs` — 91 l. → console
+
+- l.1 · Le dictionnaire, dans la forme qu'i18next lit
+
+Fonctions :
+
+`normalise` 31 · `sansPluriel` 38 · `ressources` 54
+
+Importé par :
+
+traduction
+
 ### `modules/retour.mjs` — 63 l. → plan, plan-admin
 
 - l.1 · Le retour sur une page restée ouverte
@@ -3158,19 +3170,19 @@ Importé par :
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · reglage-foodtrucks
 sponsor · vignettes · webgl
 
-### `modules/synchronisation.mjs` — 280 l. → console
+### `modules/synchronisation.mjs` — 297 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
-`brancheSynchronisation` 35 · `etapesPressenties` 53 · `synchronise` 68
-`fabriqueLesVignettes` 167 · `oublieLePlan` 265 · `envoieVignettes` 273
+`brancheSynchronisation` 44 · `etapesPressenties` 62 · `synchronise` 83
+`fabriqueLesVignettes` 187 · `oublieLePlan` 282 · `envoieVignettes` 290
 
 Importe :
 
 appel-fonction · avancement · dom · encodeur-avif · evenements · marque · provenance
-socle-console
+socle-console · traduction
 
 Importé par :
 
@@ -3394,6 +3406,22 @@ Fonctions :
 Importé par :
 
 outil-comptoir · webgl
+
+### `modules/traduction.mjs` — 150 l. → console
+
+- l.1 · La traduction par i18next — `t()`, pour les modules migrés
+
+Fonctions :
+
+`moteur` 49 · `langueDeT` 90 · `t` 102 · `verseAnglais` 122 · `suis` 134
+
+Importe :
+
+evenement · ressources-langue
+
+Importé par :
+
+synchronisation
 
 ### `modules/trait-chemin.mjs` — 377 l. → plan, plan-admin
 

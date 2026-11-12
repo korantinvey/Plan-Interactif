@@ -11,11 +11,17 @@ module.exports = {
   "{n} pavillon, {n2} emplacements.": "{n} hall, {n2} stands.",
   "Nomenclature en codes : {raison}": "Categories left as codes: {raison}",
   "{n} libellés de nomenclature.": "{n} category labels.",
+  /* Les singuliers que le code ne savait pas écrire — « 1 logos préparés » —
+     et que `t()` choisit désormais d'après le nombre (`modules/traduction.mjs`). */
+  "{n} libellé de nomenclature.": "{n} category label.",
   // les vignettes des logos
   "{n} logos préparés pour les fiches.": "{n} logos prepared for the cards.",
+  "{n} logo préparé pour les fiches.": "{n} logo prepared for the cards.",
   "Préparation des logos : {n} sur {t}…": "Preparing logos: {n} of {t}…",
   "{n} logos préparés, {r} illisibles chez leur source.":
     "{n} logos prepared, {r} unreadable at their source.",
+  "{n} logo préparé, {r} illisibles chez leur source.":
+    "{n} logo prepared, {r} unreadable at their source.",
   "Préparation des logos impossible : {e}": "Cannot prepare logos: {e}",
   "Aucun logo à préparer sur ce salon.": "No logos to prepare for this event.",
 };

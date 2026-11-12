@@ -80,13 +80,21 @@ module.exports = [
       // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
       MARQUE_PRODUIT: "readonly",
       // le script du travailleur qui détoure les logos, versé de même
-      TRAVAIL_DETOURAGE: "readonly" } },
+      TRAVAIL_DETOURAGE: "readonly",
+      // les pluriels français des phrases chiffrées, pour `traduction.mjs` `t`
+      PLURIELS_FR: "readonly" } },
     rules: { ...REGLES, "no-restricted-syntax": ["error",
       { selector: "CallExpression[callee.object.name='Object'][arguments.0.name=/^(globalThis|window|self)$/]",
         message: "Rien ne se pose sur l'objet global : importez, ou confiez par une porte." },
       { selector: "AssignmentExpression[left.object.name=/^(globalThis|window|self)$/]" +
           ":not([left.property.name=/^__/])",
         message: "Rien ne se pose sur l'objet global : importez, ou confiez par une porte." },
+      /* La phrase d'un `t()` se lit dans le code : c'est là que le contrôle des
+         traductions (`outils/traductions.js`) la trouve et exige son anglais.
+         Une phrase tirée d'une variable lui échapperait, et resterait en
+         français sans que rien le dise. */
+      { selector: "CallExpression[callee.name='t'][arguments.0.type!='Literal']",
+        message: "La phrase d'un t() s'écrit en toutes lettres : t(\"…\"), jamais t(variable)." },
     ] },
   },
   {

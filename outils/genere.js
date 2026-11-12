@@ -414,8 +414,22 @@ function connecte(t) {
    la carte de correspondance. */
 /* Le script du travailleur qui détoure les logos (`modules/detourage-travail.mjs`)
    y entre de même, en chaîne : la page le lance depuis une adresse « blob: ». */
+/* Les pluriels français des phrases chiffrées, `{ singulier: pluriel }`, pour
+   `modules/traduction.mjs` : un module migré écrit `t("{n} fiche ouverte", { n })`
+   et la page doit savoir, en français, qu'à deux on écrit « fiches ouvertes ».
+   Le dictionnaire, qui le dit, ne se charge qu'en anglais ; ses trente et
+   quelques paires, elles, voyagent avec le script — quelques kilo-octets. La
+   règle qui les rapproche est celle de `modules/ressources-langue.mjs`. */
+const PLURIELS_FR = (() => {
+  const { ressources } = require("./gabarit/modules/ressources-langue.mjs");
+  const { fr } = ressources(Object.fromEntries([...DICTIONNAIRE.entrees].map(([k, e]) => [k, e.en])));
+  const paires = {};
+  for (const cle of Object.keys(fr)) if (cle.endsWith("_one")) paires[fr[cle]] = fr[cle.slice(0, -4) + "_other"];
+  return paires;
+})();
 const DEFINIS = { MARQUE_PRODUIT: JSON.stringify(uneLigne(icones.svgPage())),
-  TRAVAIL_DETOURAGE: JSON.stringify(modules.travail("detourage-travail.mjs")) };
+  TRAVAIL_DETOURAGE: JSON.stringify(modules.travail("detourage-travail.mjs")),
+  PLURIELS_FR: JSON.stringify(PLURIELS_FR) };
 const scriptDesModules = (entree) =>
   '<script data-modules="' + entree + '">\n' + modules.assemble(entree, DEFINIS) + "</script>\n";
 /* Le script des modules se pose après tout le balisage et les données : la
