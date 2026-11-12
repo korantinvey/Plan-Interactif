@@ -48,6 +48,7 @@ import { CONF } from "./configuration.mjs";
 import { imageSure } from "./sur.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { pixelsDuDessin } from "./densite-rendu.mjs";
+import { MOTEUR_GL } from "./moteur-gl.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
 
@@ -79,6 +80,24 @@ export function injecteAuWebgl(o){ Object.assign(_page, o); }
 
 const RENDU_DEMANDE = new URLSearchParams(location.search).get("rendu");
 export const RENDU_WEBGL = RENDU_DEMANDE !== "svg";
+
+/* Qui peint le plan : le moteur du plan (`moteur-gl.mjs`), écrit pour lui
+   en WebGL2, ou deck.gl, la bibliothèque qui le peignait avant lui. Les deux
+   parlent la même langue — mêmes classes, mêmes réglages —, et ce module les
+   reçoit sous le même nom, `deck` : rien ici ne dépend de celui qui dessine.
+
+   deck.gl reste le recours en cas de souci : « ?moteur=deck » le charge,
+   comme avant, depuis `web/bibliotheques/`. Le moteur du plan, lui, voyage
+   dans le script du plan, et n'a rien à télécharger.
+
+   Pendant que le moteur reprend ce que deck.gl peignait, deck.gl reste le
+   défaut, et « ?moteur=gl2 » essaie le moteur. */
+const MOTEUR_DEMANDE = new URLSearchParams(location.search).get("moteur");
+/** Le moteur qui peint le plan : « gl2 », celui du plan, ou « deck », deck.gl. */
+export const MOTEUR = MOTEUR_DEMANDE === "gl2" ? "gl2" : "deck";
+/** Les classes du moteur qui peint — celles de deck.gl, ou leurs pareilles du moteur du plan. Rien avant son arrivée. */
+/** @type {any} */
+let deck = null;
 
 /* Sans carte graphique, le navigateur imite le WebGL au processeur : le
    dessin tient une image par seconde, et le plan met seize secondes à
@@ -176,6 +195,8 @@ export const IMAGE_DECK = creeEvenement();
 export const TOILE_PRETE = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
+  /** le moteur qui peint — « gl2 » ou « deck » (`MOTEUR`) ; rien tant que le dessin n'est pas demandé */
+  moteur: "",
   // pourquoi le dessin n'a pas été demandé, quand le navigateur l'avait (`chargeWebgl`)
   repli: "",
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -256,9 +277,16 @@ function chargeWebgl(){
     secours();
   };
   setTimeout(echeance, 4000);
+  GL.moteur = MOTEUR;
+  if (MOTEUR === "gl2"){
+    // rien à télécharger : le moteur est déjà là, et monte à la tâche suivante, comme une bibliothèque arrivée
+    deck = MOTEUR_GL;
+    setTimeout(() => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); }, 0);
+    return;
+  }
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
-  s.onload = () => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); };
+  s.onload = () => { deck = /** @type {any} */ (window).deck; GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); };
   s.onerror = () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); };
   document.head.appendChild(s);
 }
@@ -371,7 +399,7 @@ const TOILE = { deviceProps: { webgl: { preserveDrawingBuffer: false } } };
  *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
  *  posée. */
 export function monteWebgl(){
-  if (GL.actif || !GL.charge || !window.deck || !vueDuPlan()) return;
+  if (GL.actif || !GL.charge || !deck || !vueDuPlan()) return;
   /* Après une perte de contexte, c'est « remonteWebgl » qui dit quand : la
      vue repasse par ici à chaque geste, et remonterait le dessin sur-le-champ
      — sur la mémoire qui vient justement de manquer. */
@@ -3107,6 +3135,8 @@ function lectureDifferee(){
   if (_lectureDifferee !== null) return _lectureDifferee;
   // avant la carte graphique, la question ne se tranche pas : la figer à « non » l'ôtait pour la visite
   if (!peutDesigner()) return false;
+  // le moteur du plan la sait d'origine (`moteur-gl.mjs` `pickObjectAsync`)
+  if (GL.deck && /** @type {any} */ (GL.deck).designationDifferee) return (_lectureDifferee = true);
   _lectureDifferee = false;
   try {
     const d = GL.deck && GL.deck.device;

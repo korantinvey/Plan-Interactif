@@ -34,7 +34,6 @@ const ACCEPTES = path.join(__dirname, "types-acceptes.json");
 const DECLARATIONS = [
   "declare var LANGUE: any;",
   "declare function traduit(phrase: string): string;",
-  "declare var deck: any;",
   "declare var __DICTIONNAIRE__: any;",
   // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
   "declare const MARQUE_PRODUIT: string;",

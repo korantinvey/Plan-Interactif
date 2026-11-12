@@ -115,6 +115,11 @@ module.exports = [
   // et l'extension WebGL dont la chauffe des programmes s'enquiert
   "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
   "KHR_parallel_shader_compile",
+  // `modules/moteur-gl*.mjs` : les noms des classes du moteur du plan, ceux de
+  // deck.gl que `webgl.mjs` reconnaît, et le message d'une erreur que la
+  // console seule reçoit — rien de cela ne s'affiche
+  "Layer", "LayerExtension", "PathStyleExtension", "SolidPolygonLayer", "PathLayer", "TextLayer",
+  "BitmapLayer", "SimpleMeshLayer", "WebGL2 indisponible",
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",
