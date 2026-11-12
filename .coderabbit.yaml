@@ -3,7 +3,7 @@
 # fabrique ou que le réseau seul refait : le relire ne dirait rien du code.
 language: fr-FR
 reviews:
-  profile: chill
+  profile: assertive
   path_filters:
     - "!web/**"
     - "!CARTE.md"
