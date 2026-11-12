@@ -38,9 +38,11 @@ export function pointRepere(f, p){
            detail: p.libelle + " · " + (type ? nomTypeRepere(type).toLowerCase() : "repère") };
 }
 
-/** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
- *  stands en vrac n'aideraient personne, une entrée si. */
-export function candidats(q){
+/** Tout ce qui répond à une saisie, sans limite : les repères, puis les
+ *  emplacements rangés du plus proche au plus lointain. La liste proposée
+ *  n'en montre qu'une part (`candidats`) ; la saisie laissée telle quelle
+ *  cherche dans le tout (`pointSaisi`). */
+function repondants(q){
   const v = pourRecherche(q.trim());
   const out = [];
   DATA.plans.forEach(p => reperesDe(p).forEach(f => {
@@ -54,9 +56,8 @@ export function candidats(q){
     if (!v || nom.indexOf(v) >= 0 ||
         pourRecherche(f.txt).indexOf(v) >= 0) out.push(pointRepere(f, p));
   }));
-  if (!v) return out.slice(0, 12);
-
   const notes = [];
+  if (!v) return { v, out, notes };
   for (const o of TOUS){
     if (o.kind === "zone" && !o.nom) continue;
     const code = pourRecherche(o.code || "");
@@ -70,19 +71,30 @@ export function candidats(q){
   }
   notes.sort((a, b) => a.r - b.r || a.o.p - b.o.p ||
     COLLATION.compare(String(a.o.nom || a.o.code || ""), String(b.o.nom || b.o.code || "")));
+  return { v, out, notes };
+}
+
+/** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
+ *  stands en vrac n'aideraient personne, une entrée si. */
+export function candidats(q){
+  const { v, out, notes } = repondants(q);
+  if (!v) return out.slice(0, 12);
   return out.concat(notes.slice(0, 12).map(x => pointObjet(x.o))).slice(0, 14);
 }
 
 /** Ce que désigne une saisie laissée telle quelle, si c'est sans ambiguïté. */
 export function pointSaisi(txt){
-  const l = candidats(txt);
   /* Le nom tapé tel qu'il s'écrit l'emporte sur celui qui ne s'en distingue
      que par un accent : « Entrée » et « Entree » peuvent coexister, et taper
-     l'un ne doit pas mener à l'autre. Sans accent, le premier venu. */
+     l'un ne doit pas mener à l'autre. Sans accent, le premier venu. Les deux
+     se cherchent dans tout ce qui répond, et non dans les quatorze proposés :
+     quinze repères « Cote nord… » rangés avant « Côte » l'en auraient chassé,
+     et le premier « Cote » aurait pris sa place. */
   const exact = txt.trim().toLowerCase();
-  const v = pourRecherche(exact);
-  return l.find(x => String(x.nom).toLowerCase() === exact) ||
-    l.find(x => pourRecherche(x.nom) === v) || (l.length === 1 ? l[0] : null);
+  const { v, out, notes } = repondants(txt);
+  const tous = out.concat(notes.map(x => pointObjet(x.o)));
+  return tous.find(x => String(x.nom).toLowerCase() === exact) ||
+    tous.find(x => pourRecherche(x.nom) === v) || (tous.length === 1 ? tous[0] : null);
 }
 
 /* ------------------------------------------------------------

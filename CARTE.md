@@ -3441,18 +3441,18 @@ Importé par :
 
 itineraire · troncon
 
-### `modules/trajet.mjs` — 524 l. → plan, plan-admin
+### `modules/trajet.mjs` — 536 l. → plan, plan-admin
 
 - l.1 · Le trajet complet — points désignables, liaisons, passage d'un plan à l'autre
 
 Fonctions :
 
-`pointObjet` 27 · `pointRepere` 34 · `candidats` 43 · `pointSaisi` 77 · `portesDe` 94
-`versPorte` 101 · `typeLiaison` 162 · `nomRepere` 170 · `oublieLiaisons` 188
-`lienEcrits` 200 · `ecritLiens` 209 · `annuaireLiaisons` 214 · `liensDe` 246
-`coutLiaison` 266 · `passagePraticable` 273 · `passagesDe` 281 · `sortiesDe` 291
-`plansRelies` 299 · `oublieBalayages` 323 · `balayage` 324 · `distanceDepuis` 342
-`cheminLiaisons` 369 · `routeParLiaisons` 455 · `routeEntre` 493
+`pointObjet` 27 · `pointRepere` 34 · `repondants` 45 · `candidats` 79 · `pointSaisi` 86
+`portesDe` 106 · `versPorte` 113 · `typeLiaison` 174 · `nomRepere` 182
+`oublieLiaisons` 200 · `lienEcrits` 212 · `ecritLiens` 221 · `annuaireLiaisons` 226
+`liensDe` 258 · `coutLiaison` 278 · `passagePraticable` 285 · `passagesDe` 293
+`sortiesDe` 303 · `plansRelies` 311 · `oublieBalayages` 335 · `balayage` 336
+`distanceDepuis` 354 · `cheminLiaisons` 381 · `routeParLiaisons` 467 · `routeEntre` 505
 
 Importe :
 
