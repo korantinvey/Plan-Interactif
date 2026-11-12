@@ -548,10 +548,15 @@ function construitCalage(){
      premières répondraient sur une adresse en cours d'écriture. */
   let attente = null;
   const plusTard = (f) => { clearTimeout(attente); attente = setTimeout(f, 600); };
-  iStyle.oninput = () => plusTard(() => {
-    ENV_CAL.style = iStyle.value.trim() || undefined;
-    relanceCarteGL();
-  });
+  iStyle.oninput = () => {
+    // le style va au calage qu'on réglait en tapant, pas à celui d'un pavillon rejoint depuis
+    const cal = ENV_CAL;
+    plusTard(() => {
+      if (!cal || ENV_CAL !== cal) return;
+      cal.style = iStyle.value.trim() || undefined;
+      relanceCarteGL();
+    });
+  };
 
   const aideAvance = avance.querySelector(".cAide");
   const majAvance = () => {

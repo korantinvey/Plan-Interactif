@@ -215,9 +215,12 @@ export function synchroniseRappels(){
   if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
   clearTimeout(_syncRappels);
   _syncRappels = setTimeout(async () => {
+    /* Éteints entre-temps, ils ne repartent pas : l'envoi différé posait sinon,
+       après l'effacement, la liste que le visiteur venait de refuser. */
+    if (!RAPPELS_ACTIFS) return;
     try {
       const ab = await abonnementCourant();
-      if (!ab) return;
+      if (!ab || !RAPPELS_ACTIFS) return;
       await fetch(RAPPELS_API, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -235,6 +238,9 @@ export function synchroniseRappels(){
  *  qu'il gardait. Dans cet ordre — un abonnement rendu avant l'effacement
  *  laisserait des rangs qu'on ne saurait plus nommer. */
 async function eteintRappels(){
+  // avant toute attente : un envoi différé ne doit plus partir
+  clearTimeout(_syncRappels);
+  RAPPELS_ACTIFS = false;
   const ab = await abonnementCourant().catch(() => null);
   if (ab){
     try {

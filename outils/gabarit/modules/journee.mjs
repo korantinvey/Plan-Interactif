@@ -770,6 +770,12 @@ export function perimeJournee(){
  * exposants qu'il vient d'oublier. Les jours qu'il avait refusés aussi — la
  * conférence qui motivait le refus n'est plus au parcours.
  */
+/** Revenir à la liste, sans rien oublier de la journée organisée. */
+export function montreLaListe(){
+  vueJournee = false;
+  retireTraceJournee();
+}
+
 export function oublieSejour(){
   retireTraceJournee();
   SEJOUR = null;
@@ -1262,8 +1268,7 @@ export function brancheJournee(){
   $("btnJournee").onclick = ouvreOrganisation;
   $("jRefaire").onclick = ouvreOrganisation;
   $("jRetour").onclick = () => {
-    vueJournee = false;
-    retireTraceJournee();
+    montreLaListe();
     appliqueVueParcours();
   };
 }

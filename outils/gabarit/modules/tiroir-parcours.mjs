@@ -38,7 +38,7 @@ import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
 import { synchroniseRappels, reprendRappels, poseRappels, fenetreRappel }
   from "./rappels.mjs";
-import { appliqueVueParcours, perimeJournee, oublieSejour, retireTraceJournee } from "./journee.mjs";
+import { appliqueVueParcours, perimeJournee, oublieSejour, retireTraceJournee, montreLaListe } from "./journee.mjs";
 import { select, ficheConf } from "./fiche.mjs";
 import { injecteApresOption } from "./options.mjs";
 const racine = document.documentElement;
@@ -291,8 +291,10 @@ injecteApresOption("suggestion", () => rafraichitParcours());
    recevoir porte déjà l'interrupteur, en tête de ses conférences. */
 suitLeParcours((quoi, ajout) => {
   rafraichitParcours();
-  // un lot ouvre le tiroir sur ce qu'il vient d'y verser
-  if (quoi === "lot"){ ouvreParcours(); return; }
+  /* Un lot ouvre le tiroir sur ce qu'il vient d'y verser — la liste, donc :
+     rouvert sur la journée organisée qu'on regardait, il cachait ce qu'il
+     venait d'ajouter. */
+  if (quoi === "lot"){ montreLaListe(); ouvreParcours(); return; }
   if (ajout && quoi === "stand") fenetreSuggestion(TIROIR_SUGG);
   if (ajout && quoi === "conf") fenetreRappel(rafraichitParcours);
 });

@@ -59,7 +59,8 @@ export function indexe(/** @type {any} */ d){
   poseDonnees({ DATA: d });
   DATA.plans.forEach((p, i) => {
     p.i = i;
-    p.court = String(p.libelle).replace(/^Pavillons*/i, "");
+    // « Pavillon 3 » → « 3 » : le mot, son pluriel éventuel, et l'espace qui suit
+    p.court = String(p.libelle).replace(/^Pavillons?\s*/i, "");
     p.zones = p.zones || [];
     p.stands = p.stands || [];
     p.fond = p.fond || [];

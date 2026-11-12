@@ -143,7 +143,7 @@ function textureDe(/** @type {WebGL2RenderingContext} */ gl, /** @type {any} */ 
 
 /* Les images données par leur adresse, chargées une fois pour toute la page :
    deck.gl les demandait au réseau, et ne les montrait qu'arrivées. */
-/** @type {Map<string, { image: HTMLImageElement | null, attente: Set<() => void> }>} */
+/** @type {Map<string, { image: HTMLImageElement | null, attente: Set<() => void>, echec?: boolean }>} */
 const IMAGES = new Map();
 function imageDe(/** @type {string} */ adresse, /** @type {() => void} */ arrivee){
   let e = IMAGES.get(adresse);
@@ -151,14 +151,17 @@ function imageDe(/** @type {string} */ adresse, /** @type {() => void} */ arrive
     const img = new Image();
     // comme la demande de deck.gl : une image d'ailleurs n'est lisible que si son serveur l'autorise
     if (!/^(data|blob):/.test(adresse)) img.crossOrigin = "anonymous";
-    const n = { image: /** @type {HTMLImageElement | null} */ (null), attente: new Set([arrivee]) };
+    const n = { image: /** @type {HTMLImageElement | null} */ (null), attente: new Set([arrivee]), echec: false };
     IMAGES.set(adresse, n);
     img.onload = () => { n.image = img; for (const f of n.attente) f(); n.attente.clear(); };
-    img.onerror = () => { n.attente.clear(); };
+    /* Une image en échec le reste : chaque image du plan lui ajoutait sinon un
+       rappel que rien ne viderait plus. On ne la redemande pas non plus — ce
+       serait une requête par image peinte. */
+    img.onerror = () => { n.echec = true; n.attente.clear(); };
     img.src = adresse;
     return null;
   }
-  if (!e.image) e.attente.add(arrivee);
+  if (!e.image && !e.echec) e.attente.add(arrivee);
   return e.image;
 }
 

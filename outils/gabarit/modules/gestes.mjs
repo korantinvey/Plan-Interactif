@@ -382,7 +382,10 @@ export function brancheGestes(){
        ce qu'elle voit, volumes compris. */
     const [ex, ey] = redresse(e.clientX, e.clientY);
     doigts.set(e.pointerId, { x: ex, y: ey });
-    if (doigts.size === 2){ commencePince(); return; }
+    /* Le second doigt fait un pincement : ce qu'un outil de l'exploitant tenait
+       sous le premier se lâche, sans quoi le doigt resté sur l'écran aurait
+       continué de déplacer la forme une fois le pincement fini. */
+    if (doigts.size === 2){ admin.annule(); commencePince(); return; }
     if (doigts.size > 2) return;
     /* Les outils de l'exploitant passent avant le glisser : le calage de la
        carte, le libellé, l'emplacement repris, le hall qu'on cale, le dessin —

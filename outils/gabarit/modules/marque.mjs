@@ -98,17 +98,24 @@ async function marqueRecadree(src){
   /* L'image ne sert ici qu'à donner ses dimensions — l'analyse a besoin de
      savoir dans quel sens réduire — et de recours si le décodeur refuse de
      découper lui-même. */
-  const im = await imageChargee(adresse);
-  if (!im) return src;
-  const boite = await boiteMarque(octets, im);
-  // rien à retirer : les octets déjà en main valent mieux qu'un second voyage
-  if (!boite) return adresse;
-  const toile = await toileMarque(octets, im, boite);
-  const b = toile && await new Promise(f => toile.toBlob(f, "image/webp"));
-  if (!b) return adresse;
-  // l'original ne sert plus : le garder doublerait la mémoire de chaque logo
-  URL.revokeObjectURL(adresse);
-  return URL.createObjectURL(b);
+  /* L'adresse en mémoire se rend dès qu'elle ne sert plus : sur chaque chemin
+     qui ne la renvoie pas, échec compris, sans quoi les octets du logo
+     restaient retenus pour toute la visite. */
+  let rendue = false;
+  try {
+    const im = await imageChargee(adresse);
+    if (!im) return src;
+    const boite = await boiteMarque(octets, im);
+    // rien à retirer : les octets déjà en main valent mieux qu'un second voyage
+    if (!boite){ rendue = true; return adresse; }
+    const toile = await toileMarque(octets, im, boite);
+    const b = toile && await new Promise(f => toile.toBlob(f, "image/webp"));
+    if (!b){ rendue = true; return adresse; }
+    // l'original ne sert plus : le garder doublerait la mémoire de chaque logo
+    return URL.createObjectURL(b);
+  } finally {
+    if (!rendue) URL.revokeObjectURL(adresse);
+  }
 }
 
 /** Une image chargée, ou `null` — jamais un rejet, l'appelant n'en ferait rien. */
