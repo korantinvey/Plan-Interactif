@@ -182,7 +182,11 @@ const ATTR_POLYGONE = {
 const GEO_POLYGONE = ["a_p", "a_n", "a_dessus", "a_objet"];
 const LISTE_POLYGONE = numerote(GEO_POLYGONE, ATTR_POLYGONE);
 
+/* La position est invariante : deux volumes des mêmes formes et de la même
+   hauteur — un stand et la teinte de son survol — tombent à la même
+   profondeur au bit près, et le second passe devant le premier sans rayures. */
 const VS_POLYGONE = ENTETE_SOMMETS + GLSL_LUMIERE + `
+invariant gl_Position;
 in vec3 a_p; in vec3 a_n; in float a_dessus; in float a_objet; in vec4 a_c; in float a_haut;
 uniform float u_elevation;
 uniform float u_relief;

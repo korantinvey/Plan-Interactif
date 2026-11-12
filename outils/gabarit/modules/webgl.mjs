@@ -3455,13 +3455,15 @@ function coucheSurvol(couche){
    ou l'arrivée d'un itinéraire se faisait à l'aveugle. Le volume visé est
    redessiné teinté de la couleur du survol, un rien plus haut que lui pour
    ne pas s'y confondre. */
-/* La teinte du survol est un second volume, posé sur le premier : ses façades
-   tombent dans le plan même des siennes. La carte graphique ne sait alors
-   lequel est devant, et la teinte se mêlait aux façades en rayures, surtout
-   aux coins arrondis faits de facettes fines — et clignotait le long d'un
-   stand qui monte. Elle est donc avancée vers l'œil, en profondeur seulement :
-   rien ne bouge à l'écran. */
-const SURVOL_DEVANT = { depthBias: -2, depthBiasSlopeScale: -1 };
+/* La teinte du survol est un second volume, posé exactement sur le premier :
+   mêmes formes, même hauteur, mêmes calculs, donc la même profondeur au bit
+   près — et le test « inférieur ou égal » la fait passer devant lui, façades
+   comprises. Posée trois centimètres plus haut, comme avant, ses façades
+   tombaient dans le plan des siennes sans les recouvrir : le moteur du plan
+   les départageait au hasard, en rayures aux coins arrondis, et un stand qui
+   monte clignotait. Avancée vers l'œil pour y parer, elle passait devant le
+   logo posé sur le toit, qui disparaissait au survol. À sa juste hauteur, le
+   logo, cinq centimètres plus haut, reste devant elle. */
 function coucheSurvolVolume(c){
   // la plaque d’un jeton, dressée par sa matrice : son aplat de face porte déjà le survol
   if (c.props.modelMatrix) return [];
@@ -3485,16 +3487,17 @@ function coucheSurvolVolume(c){
      son dessus clignotait le temps que les deux se croisent. */
   const h = c.props.hausse;
   if (h){
-    const data = siens.map(d => ({ ...d, haut: d.haut + .03, couleur: teinte(d.couleur) }));
+    const data = siens.map(d => ({ ...d, couleur: teinte(d.couleur) }));
     return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
-      hausse: h, elevationScale: echelleHausse(h, instant()), parameters: SURVOL_DEVANT })];
+      hausse: h, elevationScale: echelleHausse(h, instant()) })];
   }
   const e = c.props.elevationScale || 1;
-  const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
+  // la même échelle que le volume, comme réglage de la couche : le produit se fait dans le même ordre, au bit près
+  const data = siens.map(d => ({ ...d, couleur: teinte(d.couleur) }));
   return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
     getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
-    parameters: SURVOL_DEVANT })];
+    elevationScale: e })];
 }
 
 function coucheFocus(couches){
