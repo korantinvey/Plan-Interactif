@@ -254,7 +254,8 @@ Migrer un module :
   ne sait pas rendre au français ce que `t()` a écrit en anglais. Un message
   passager n'en a pas besoin, le suivant parlera la bonne langue.
 - `npm run export-langues` écrit le dictionnaire au format i18next
-  (`traductions/`, non versionné), pour un outil de traduction.
+  (dans un dossier « traductions », que le dépôt ne versionne pas), pour un
+  outil de traduction.
 
 ## Où vit quoi
 

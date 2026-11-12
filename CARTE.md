@@ -120,11 +120,11 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1662 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1668 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 708 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 711 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1750 l. → demo.html, plan-smcl.html
 
@@ -1090,7 +1090,7 @@ Importé par :
 
 bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1334 l. → plan, plan-admin
+### `modules/environs.mjs` — 1343 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1100,13 +1100,13 @@ Fonctions :
 `calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
 `bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
 `figeCourant` 398 · `figeAJour` 407 · `recaleFige` 446 · `videFige` 459 · `poseFige` 468
-`placeFigee` 567 · `chargeMapLibre` 619 · `vueGL` 651 · `vueGLValable` 674
-`styleDuFond` 690 · `styleDeLaCarte` 697 · `guetteLaCarte` 724 · `recaleCarteGL` 758
-`redessineCarteGL` 778 · `poseCarteGL` 808 · `diagnostiqueGL` 932 · `relanceCarteGL` 952
-`retireCarteGL` 966 · `guetteRetourGL` 993 · `carteGLPerdue` 1000 · `verifieCarteGL` 1010
-`videCarteGL` 1028 · `inclineFond` 1062 · `dessineFondCarte` 1111 · `cleMasqueCarte` 1245
-`masqueCarte` 1246 · `formesMasquantes` 1255 · `contourDuHall` 1277 · `cheminDuHall` 1284
-`poseMasqueCarte` 1302 · `ditCarte` 1317 · `refaitFondCarte` 1327
+`placeFigee` 567 · `chargeMapLibre` 626 · `vueGL` 660 · `vueGLValable` 683
+`styleDuFond` 699 · `styleDeLaCarte` 706 · `guetteLaCarte` 733 · `recaleCarteGL` 767
+`redessineCarteGL` 787 · `poseCarteGL` 817 · `diagnostiqueGL` 941 · `relanceCarteGL` 961
+`retireCarteGL` 975 · `guetteRetourGL` 1002 · `carteGLPerdue` 1009 · `verifieCarteGL` 1019
+`videCarteGL` 1037 · `inclineFond` 1071 · `dessineFondCarte` 1120 · `cleMasqueCarte` 1254
+`masqueCarte` 1255 · `formesMasquantes` 1264 · `contourDuHall` 1286 · `cheminDuHall` 1293
+`poseMasqueCarte` 1311 · `ditCarte` 1326 · `refaitFondCarte` 1336
 
 Importe :
 
@@ -3236,13 +3236,13 @@ Importé par :
 affiche-ici · appels · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
 recherche
 
-### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
+### `modules/texte.mjs` — 30 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 
 Fonctions :
 
-`esc` 6 · `separeValeurs` 17
+`esc` 11 · `separeValeurs` 22
 
 Importé par :
 
@@ -3731,10 +3731,10 @@ Injections :
 
 `sessionRefusee` 23 · `identifiantDePavillon` 36
 
-### `supabase/functions/_partage/svg.ts` — 216 l.
+### `supabase/functions/_partage/svg.ts` — 291 l.
 
-`r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106 · `allege` 118 · `sansMasques` 196
-`textes` 207
+`attributsDeDessin` 75 · `r2` 92 · `points` 112 · `boite` 151 · `neDessineRien` 174
+`allege` 186 · `sansMasques` 271 · `textes` 282
 
 ### `supabase/functions/_partage/version.ts` — 100 l.
 
@@ -3767,12 +3767,12 @@ Injections :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1957 l.
+### `supabase/functions/sync-evenement/index.ts` — 1963 l.
 
 `cors` 45 · `bourre` 118 · `client` 128 · `ecrit` 150 · `gaia` 158 · `cleKlipso` 169
 `libellesChoix` 188 · `retiensAnglais` 215 · `fournisseur` 233 · `raccourci` 241
-`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1905 · `nettoieUrl` 1933
-`groupeTextes` 1943
+`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1911 · `nettoieUrl` 1939
+`groupeTextes` 1949
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
@@ -3847,6 +3847,7 @@ Injections :
 - `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
 - `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
 - `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
+- `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
 
 ## Le reste
 
