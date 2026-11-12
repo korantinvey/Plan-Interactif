@@ -147,6 +147,10 @@ export const baliseStand = (s) =>
 
 export function montePlan(){
   const p = P();
+  /* Le nom que la lecture d'écran donne au plan : celui du pavillon monté. Le
+     balisage n'en porte qu'un neutre, faute de savoir lequel viendra. Le
+     moteur de langue traduit l'attribut comme le texte. */
+  $("plan").setAttribute("aria-label", "Plan : " + p.libelle);
   $("zones").innerHTML = p.zones.map(baliseZone).join("");
   $("stands").innerHTML = p.stands.map(baliseStand).join("");
   poseEmprise(p.emprise);
@@ -206,12 +210,16 @@ function onglets(){
  * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
  * le redemande que lorsque le dessin servi n'est plus le même.
  */
-const _fonds = new Map();
+/* Rangées par pavillon, l'objet lui-même : un salon rechargé apporte des
+   pavillons neufs sous les mêmes identifiants, et une table par identifiant
+   leur resservait la promesse — déjà tenue — de l'ancien, dont le fond
+   n'arrivait donc jamais. */
+const _fonds = new WeakMap();
 export function chargeFond(/** @type {number} */ i){
   const p = DATA?.plans?.[i];
   if (!p || !API) return Promise.resolve();
   if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
-  if (_fonds.has(p.id)) return _fonds.get(p.id);
+  if (_fonds.has(p)) return _fonds.get(p);
 
   /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
      l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
@@ -232,10 +240,10 @@ export function chargeFond(/** @type {number} */ i){
       if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
     })
     .catch(e => {
-      _fonds.delete(p.id);          // une panne réseau ne doit pas être définitive
+      _fonds.delete(p);             // une panne réseau ne doit pas être définitive
       console.warn("Fond de plan indisponible :", e.message);
     });
-  _fonds.set(p.id, promesse);
+  _fonds.set(p, promesse);
   return promesse;
 }
 

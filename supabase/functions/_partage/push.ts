@@ -251,6 +251,10 @@ export async function pousse(
     body: corps,
     // un service de poussée répond, il ne renvoie pas ailleurs
     redirect: "manual",
+    /* Les envois d'une minute partent ensemble : un service qui ne répond pas
+       retenait tout le lot, et la minute suivante avec lui. Dix secondes, puis
+       l'envoi compte pour un échec, comme une coupure. */
+    signal: AbortSignal.timeout(10_000),
   });
   return { parti: r.ok, statut: r.status, perime: r.status === 404 || r.status === 410 };
 }

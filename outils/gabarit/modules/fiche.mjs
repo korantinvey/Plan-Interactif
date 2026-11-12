@@ -48,7 +48,7 @@ import { baisseTiroir } from "./tiroirs.mjs";
 import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
 import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
-import { montePlan } from "./rendu.mjs";
+import { montePlan, chargeFond, PAVILLON_QUITTE } from "./rendu.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
@@ -176,7 +176,13 @@ export function select(id, recentrer, canal, iSoc){
      sa marque. */
   const ailleurs = o.p !== state.plan;
   if (ailleurs){
-    state.plan = o.p; montePlan(); fit();
+    /* Le même passage que `changePlan` (`rendu.mjs`), hors ce que la fiche
+       refait elle-même : on quitte un pavillon — ce qu'on y calait n'est plus
+       à lui —, et le suivant a son fond à charger. */
+    state.plan = o.p;
+    PAVILLON_QUITTE.emet();
+    montePlan(); fit();
+    chargeFond(o.p);
   }
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = id;

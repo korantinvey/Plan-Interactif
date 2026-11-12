@@ -41,6 +41,11 @@ inscritGesteTenu(() => glisseLib);
 
 /** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheLibelle(){
+  /* Le libellé a déjà bougé dans la configuration (`posePlacement`) : lâché
+     sans l'enregistrer, il restait déplacé à l'écran sans que rien parte en
+     base — et le prochain envoi l'aurait emporté sans le dire. Comme les
+     autres outils, ce qui a bougé s'enregistre. */
+  if (glisseLib && glisseLib.bouge) enregistreConf();
   glisseLib = null;
 }
 
@@ -189,6 +194,7 @@ export function libellePointerMove(e){
   const p = versPlan(e.clientX, e.clientY);
   const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
   const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
+  glisseLib.bouge = true;
   posePlacement(glisseLib.c, n => { n.dx = dx; n.dy = dy; });
   return true;
 }

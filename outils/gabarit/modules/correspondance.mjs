@@ -115,8 +115,13 @@ function memeStyle(modele, mot) {
 export function autreFace(valeurs) {
   const vues = valeurs.map(aplani);
   if (!vues.length) return [];
-  const paire = FACES.find((f) => vues.every((v) => f.indexOf(v) >= 0));
-  if (!paire) return [];
-  return paire.filter((f) => vues.indexOf(f) < 0)
-    .map((f) => memeStyle(valeurs[0], f));
+  /* Une valeur que deux paires partagent — « n », de « o/n » comme de « y/n » —
+     ne choisit pas entre elles : la première trouvée l'emportait, et l'on
+     proposait « o » comme une certitude. Chaque paire possible offre sa face. */
+  const paires = FACES.filter((f) => vues.every((v) => f.indexOf(v) >= 0));
+  const faces = [];
+  for (const p of paires) for (const f of p) {
+    if (vues.indexOf(f) < 0 && faces.indexOf(f) < 0) faces.push(f);
+  }
+  return faces.map((f) => memeStyle(valeurs[0], f));
 }

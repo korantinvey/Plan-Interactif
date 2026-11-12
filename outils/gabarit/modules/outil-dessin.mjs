@@ -803,6 +803,11 @@ export function brancheOutilDessin(){
   });
   addEventListener("paste", e => {
     if (!ADMIN) return;
+    /* Coller dans un champ, c'est coller du texte : une page copiée porte
+       souvent une image avec, et l'on se retrouvait à en poser une sur le plan
+       en renommant un calque. */
+    const c = /** @type {HTMLElement | null} */ (e.target instanceof HTMLElement ? e.target : null);
+    if (c && (c.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(c.tagName))) return;
     const it = [...(e.clipboardData ? e.clipboardData.items : [])]
       .find(x => x.type.indexOf("image/") === 0);
     if (it) importeImage(it.getAsFile());

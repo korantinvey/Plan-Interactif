@@ -257,7 +257,16 @@ export class Eventmaker {
   }
 
   private async json<T>(chemin: string, params?: Record<string, string | number>): Promise<T> {
-    const r = await fetch(this.adresse(chemin, params), { redirect: "follow" });
+    /* Le jeton voyage dans l'adresse, et une panne réseau la recopie dans son
+       message (« error sending request for url (…?auth_token=…) ») : ce
+       message finit dans `derniere_err`, que l'organisateur lit dans la
+       console. On n'en garde que le chemin. */
+    let r: Response;
+    try {
+      r = await fetch(this.adresse(chemin, params), { redirect: "follow" });
+    } catch (_e) {
+      throw new Error(`Eventmaker ${chemin} : injoignable`);
+    }
     if (!r.ok) {
       const t = await r.text();
       throw new Error(`Eventmaker ${chemin} : ${r.status} ${t.slice(0, 160)}`);

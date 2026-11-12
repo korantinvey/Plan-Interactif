@@ -73,15 +73,20 @@ export function proposeParcoursRecu(brut){
 
   const recu = litCodeParcours(brut);
   if (!recu) return false;
-  const stands = recu.stands.filter(id => parId.has(id) && !dansParcours("stand", id));
-  const confs = recu.confs.filter(id => CONFS.has(id) && !dansParcours("conf", id));
+  /* Deux listes : ce que le lien porte de ce salon, et ce qui manque au
+     parcours du visiteur. « Ajouter au mien » ne verse que le manquant ;
+     « Remplacer le mien » doit tout prendre — filtré lui aussi, il perdait
+     justement ce que les deux parcours avaient en commun. */
+  const tousStands = recu.stands.filter(id => parId.has(id));
+  const toutesConfs = recu.confs.filter(id => CONFS.has(id));
+  const stands = tousStands.filter(id => !dansParcours("stand", id));
+  const confs = toutesConfs.filter(id => !dansParcours("conf", id));
 
   if (!stands.length && !confs.length){
     /* Deux raisons de n'avoir rien à proposer, et elles ne se disent pas
        pareil : le parcours est déjà là — on a rouvert son propre lien, ou
        cliqué deux fois dessus — ou bien il ne parle pas de ce salon. */
-    const connus = recu.stands.filter(id => parId.has(id)).length +
-                   recu.confs.filter(id => CONFS.has(id)).length;
+    const connus = tousStands.length + toutesConfs.length;
     ouvreModale("Parcours partagé", corps => {
       const p = document.createElement("p");
       p.textContent = connus
@@ -96,14 +101,18 @@ export function proposeParcoursRecu(brut){
   const sien = PARCOURS.stands.length + PARCOURS.confs.length;
   ouvreModale("Un parcours partagé", corps => {
     const p = document.createElement("p");
+    /* Le contenu du lien en entier : c'est lui que « Remplacer le mien »
+       charge. Réduit à ce qui manque, il taisait les communs, et le visiteur
+       ne savait pas ce qu'il garderait. « Ajouter au mien » ne verse, lui, que
+       ce qui manque — ce qui revient au même. */
     p.textContent = "Le parcours qui vous a été partagé contient " +
-      contenuParcours(stands.length, confs.length) + ".";
+      contenuParcours(tousStands.length, toutesConfs.length) + ".";
     corps.appendChild(p);
 
     const ul = document.createElement("ul");
     ul.className = "partListe";
-    const noms = stands.map(id => nomDeStand(parId.get(id)))
-      .concat(confs.map(id => CONFS.get(id).nom));
+    const noms = tousStands.map(id => nomDeStand(parId.get(id)))
+      .concat(toutesConfs.map(id => CONFS.get(id).nom));
     noms.slice(0, PARTAGE_APERCU).forEach(n => {
       const li = document.createElement("li");
       li.textContent = n;
@@ -121,7 +130,7 @@ export function proposeParcoursRecu(brut){
        proposée d'abord, c'est elle qui ne perd rien. */
     ? [{ libelle: "Annuler" },
        { libelle: "Remplacer le mien", genre: "danger",
-         action: () => adoptePartage(stands, confs, true) },
+         action: () => adoptePartage(tousStands, toutesConfs, true) },
        { libelle: "Ajouter au mien", genre: "accent",
          action: () => adoptePartage(stands, confs, false) }]
     : [{ libelle: "Annuler" },

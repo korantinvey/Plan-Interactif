@@ -590,6 +590,9 @@ tr.eteint td{opacity:.45}
 .modale{position:fixed;inset:0;background:rgba(4,12,22,.55);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
+/* La fenêtre reçoit le focus à l'ouverture, pour être annoncée : ce n'est
+   pas une commande, et un anneau tout autour ne désignerait rien. */
+.mfen:focus{outline:none}
 .mfen{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-bloc);
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(440px,100%);max-height:84vh;
   display:flex;flex-direction:column;overflow:hidden}

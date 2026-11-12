@@ -181,6 +181,8 @@ export function choixBase({ bases, valeur = "", surChoix }) {
   }
 
   menu.onchange = () => {
+    // une clé tapée pour une base ne doit pas partir avec la suivante
+    cle.value = "";
     remplaceCle = false;
     montre();
     if (menu.value === NOUVELLE) { instance.focus(); return; }

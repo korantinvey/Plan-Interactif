@@ -22,8 +22,12 @@ import { grille, signale } from "./socle-console.mjs";
    la géométrie du plan ne vient que de Klipso, le reste pourra venir
    d'ailleurs. La clé d'identification reste celle de l'événement.
    ============================================================ */
+/** La file des écritures de sources, commune à tous les menus d'un salon. */
+let fileSources = Promise.resolve();
+
 /* Par domaine : sa clé, son nom, les sources qui savent le servir, ce qu'il porte. */
 /** @type {[string, string, string[], string][]} */
+
 export const DOMAINES = [
   ["plan",        "Plan",        ["klipso"],
    "La géométrie des pavillons et des calques."],
@@ -113,11 +117,25 @@ function ligneSource(dom, libelle, offerts, aide) {
     '</select><span class="aide"></span>';
   l.querySelector("span").textContent = libelle;
   l.querySelector(".aide").textContent = aide;
-  l.querySelector("select").onchange = async (ev) => {
-    e.sources = { ...(e.sources || {}) };
-    e.sources[dom] = { fournisseur: ev.target.value };
-    try { await majEvenement(e.id, { sources: e.sources }); }
-    catch (err) { signale(err.message, true); }
+  /* Les sources ne changent qu'une fois la base d'accord ; refusé, le menu
+     revient. Les menus de tous les domaines partagent une file : chaque
+     écriture part de ce que la précédente a confirmé, sans quoi la seconde
+     renvoyait l'ancienne source de la première. */
+  /* Un numéro par changement : comparer la valeur ne suffisait pas —
+     klipso, eventmaker, klipso ramène la même, et le refus du premier
+     remettait le menu sur l'ancienne source pendant que la base prenait
+     la dernière. Seul le refus du dernier changement recale le menu. */
+  let dernier = 0;
+  l.querySelector("select").onchange = (ev) => {
+    const menu = ev.target, voulu = menu.value, n = ++dernier;
+    fileSources = fileSources.then(async () => {
+      const sources = { ...(e.sources || {}), [dom]: { fournisseur: voulu } };
+      try { await majEvenement(e.id, { sources }); e.sources = sources; }
+      catch (err) {
+        if (n === dernier) menu.value = ((e.sources || {})[dom] || {}).fournisseur || choisi;
+        signale(err.message, true);
+      }
+    });
   };
   return l;
 }

@@ -17,7 +17,7 @@ import { $ } from "./dom.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { PAS_GRILLE, grille } from "./itineraire.mjs";
-import { ITI } from "./tiroir-itineraire.mjs";
+import { ITI, ACCESSIBLE_CHANGE } from "./tiroir-itineraire.mjs";
 import { jeton } from "./configuration.mjs";
 import { svg } from "./vue.mjs";
 import { PAVILLON_MONTE } from "./rendu.mjs";
@@ -80,3 +80,5 @@ export function rafraichitApercu(){
 
 /* La nappe se refait au montage d'un pavillon, que le rendu annonce. */
 PAVILLON_MONTE.ecoute(rafraichitApercu);
+// la nappe d'un visiteur en fauteuil n'est pas celle d'un piéton
+ACCESSIBLE_CHANGE.ecoute(rafraichitApercu);

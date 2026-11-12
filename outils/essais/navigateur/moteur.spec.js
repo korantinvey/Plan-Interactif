@@ -40,31 +40,38 @@ async function ouvre(page, donnees, requete = "") {
   });
   await page.goto("/plan?plan=smcl-2026" + requete);
   await attendLaListe(page);
+  /* L'absence de carte graphique est la seule raison de passer : elle se
+     demande à part. Déduite de « rien n'a peint », elle faisait d'une panne du
+     moteur un essai sauté, et une régression passait au vert. */
+  const webgl2 = await page.evaluate(() => !!document.createElement("canvas").getContext("webgl2"));
   const peint = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 30_000 })
     .then(() => true, () => false);
-  return { erreurs, envois, demandes, peint };
+  return { erreurs, envois, demandes, peint, webgl2 };
 }
 
 test.describe("le moteur qui peint le plan", () => {
   test("un salon réglé sur deck.gl est peint par deck.gl", async ({ page }) => {
-    const { erreurs, demandes, peint } = await ouvre(page, avecReglage({ _rendu: { moteur: "deck" } }));
-    test.skip(!peint, "pas de carte graphique : le plan reste en SVG");
+    const { erreurs, demandes, peint, webgl2 } = await ouvre(page, avecReglage({ _rendu: { moteur: "deck" } }));
+    test.skip(!webgl2, "pas de carte graphique : le plan reste en SVG");
+    expect(peint, "le moteur a peint le plan").toBe(true);
     expect(await page.evaluate(() => window.__essais.GL.moteur)).toBe("deck");
     expect(demandes.length, "deck.gl demandé").toBeGreaterThan(0);
     expect(erreurs).toEqual([]);
   });
 
   test("l'adresse l'emporte sur le réglage du salon, et le défaut ne demande pas deck.gl", async ({ page }) => {
-    const { erreurs, demandes, peint } = await ouvre(page, avecReglage({ _rendu: { moteur: "deck" } }), "&moteur=gl2");
-    test.skip(!peint, "pas de carte graphique : le plan reste en SVG");
+    const { erreurs, demandes, peint, webgl2 } = await ouvre(page, avecReglage({ _rendu: { moteur: "deck" } }), "&moteur=gl2");
+    test.skip(!webgl2, "pas de carte graphique : le plan reste en SVG");
+    expect(peint, "le moteur a peint le plan").toBe(true);
     expect(await page.evaluate(() => window.__essais.GL.moteur)).toBe("gl2");
     expect(demandes, "deck.gl jamais demandé").toEqual([]);
     expect(erreurs).toEqual([]);
   });
 
   test("un raté du moteur part au relais des erreurs, une seule fois", async ({ page }) => {
-    const { envois, peint } = await ouvre(page, DONNEES);
-    test.skip(!peint, "pas de carte graphique : le plan reste en SVG");
+    const { envois, peint, webgl2 } = await ouvre(page, DONNEES);
+    test.skip(!webgl2, "pas de carte graphique : le plan reste en SVG");
+    expect(peint, "le moteur a peint le plan").toBe(true);
     expect(await page.evaluate(() => window.__essais.GL.moteur)).toBe("gl2");
     // une couche dont la forme ne se lit pas, remise trois fois
     await page.evaluate(() => {

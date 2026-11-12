@@ -693,7 +693,10 @@ export function nappePrincipale(g){
   let gagnante = -1, mieux = 0;
   tailles.forEach((t, i) => { if (t > mieux){ mieux = t; gagnante = i; } });
   const nappe = new Uint8Array(n);
-  for (let i = 0; i < n; i++) if (marque[i] === gagnante) nappe[i] = 1;
+  /* Sans case libre, aucune nappe ne gagne : `gagnante` vaut -1, comme toute
+     case jamais marquée, et l'on aurait déclaré libre tout le hall, murs
+     compris. */
+  if (gagnante >= 0) for (let i = 0; i < n; i++) if (marque[i] === gagnante) nappe[i] = 1;
   return nappe;
 }
 

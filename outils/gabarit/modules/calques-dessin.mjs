@@ -180,7 +180,10 @@ export const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
    pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
    ce que la base, qui ne l'avait pas reçu, en disait. */
 export function marqueAttente(id, oui){
-  if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
+  /* Toujours plus grand que la marque précédente : deux gestes dans la même
+     milliseconde posaient la même, et l'envoi du premier effaçait celle du
+     second en la croyant inchangée. */
+  if (oui) ATTENTE[id] = Math.max(Date.now(), (ATTENTE[id] || 0) + 1); else delete ATTENTE[id];
   try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
   ATTENTE_CHANGEE.emet();
 }

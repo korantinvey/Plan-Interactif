@@ -651,9 +651,14 @@ function dessineBarre() {
    Chargement et démarrage
    ------------------------------------------------------------------ */
 let _occupe = false;
+/* Un salon ou une période changés pendant un chargement : ignorée, la demande
+   laissait sous l'en-tête du nouveau choix les chiffres de l'ancien. Elle se
+   retient, et le chargement suivant part dès que celui-ci se termine. */
+let _redemande = false;
 async function rafraichit() {
-  if (_occupe) return;
+  if (_occupe) { _redemande = true; return; }
   _occupe = true;
+  _redemande = false;
   $("btnRecharger").disabled = true;
   try {
     await chargeRapport();
@@ -664,8 +669,8 @@ async function rafraichit() {
   } finally {
     _occupe = false;
     $("btnRecharger").disabled = false;
-    dessineBarre();
-    dessineRapport();
+    if (_redemande) rafraichit();
+    else { dessineBarre(); dessineRapport(); }
   }
 }
 

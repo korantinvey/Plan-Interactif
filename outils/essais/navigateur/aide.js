@@ -35,16 +35,20 @@ async function prepare(page, { premiereVisite = false } = {}) {
       }
     });
   }
+  // l'origine des pages éprouvées (`PLAN_ADRESSE`, à défaut le serveur local)
+  const chez = new URL(process.env.PLAN_ADRESSE || "http://localhost:4180").origin;
   page.on("pageerror", (e) => erreurs.push("exception : " + e.message));
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const t = m.text();
+    /* Un chargement refusé se tait : les essais en provoquent exprès, vers
+       ailleurs comme chez soi — la bibliothèque de carte coupée, des logos en
+       404. Une page incomplète se voit à ce que chaque essai vérifie d'elle. */
     if (/Failed to load resource|net::ERR_/.test(t)) return;
     erreurs.push("console : " + t.slice(0, 200));
   });
 
   // tout ce qui ne va pas vers les pages éprouvées (`PLAN_ADRESSE`, à défaut le serveur local)
-  const chez = new URL(process.env.PLAN_ADRESSE || "http://localhost:4180").origin;
   await page.route((url) => url.origin !== chez, (r) => r.abort());
   await page.route("**/api/**", (r) => {
     const url = new URL(r.request().url());
@@ -66,9 +70,11 @@ async function prepare(page, { premiereVisite = false } = {}) {
 
 /** La liste des exposants, une fois remplie. */
 async function attendLaListe(page) {
-  const lignes = page.locator("#list > *");
-  await lignes.first().waitFor();
-  return lignes;
+  /* Une ligne d'exposant, et non n'importe quel enfant : une recherche qui ne
+     retient rien écrit aussi dans `#list`, et l'essai serait reparti sur un
+     plan vide. Ce qui suit lit toujours toute la liste. */
+  await page.locator("#list .row").first().waitFor();
+  return page.locator("#list > *");
 }
 
 /* Les deux empreintes d'intégrité de MapLibre, relues là où la page les tient

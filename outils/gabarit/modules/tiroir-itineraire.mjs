@@ -32,6 +32,7 @@
    Node. Ce module, qui le mène et peut tout importer, les lui confie en se
    chargeant (`brancheItineraire`, au bas du module).
    ============================================================ */
+import { creeEvenement } from "./evenement.mjs";
 import { $ } from "./dom.mjs";
 import { TRACE, TRACE_POSEE, poseTrace, dessineItineraire, rafraichitBouts, cadreItineraire } from "./trace-itineraire.mjs";
 import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusifs.mjs";
@@ -96,7 +97,10 @@ function fermeSugg(){
   champSugg = null; survolSugg = -1;
   const z = $("iSugg");
   z.hidden = true; z.innerHTML = "";
-  [$("iDepart"), $("iArrivee")].forEach(c => c.setAttribute("aria-expanded", "false"));
+  [$("iDepart"), $("iArrivee")].forEach(c => {
+    c.setAttribute("aria-expanded", "false");
+    c.removeAttribute("aria-activedescendant");
+  });
 }
 
 function montreSugg(r){
@@ -121,6 +125,8 @@ function montreSugg(r){
       b.type = "button";
       b.className = "iSug" + (pt.genre === "repere" ? " rep" : "");
       b.setAttribute("role", "option");
+      // de quoi désigner l'option au champ (`aria-activedescendant`)
+      b.id = "iSug" + i;
       b.dataset.i = String(i);
       b.innerHTML = '<span class="n"></span><span class="s"></span>';
       b.querySelector(".n").textContent = pt.nom;
@@ -131,6 +137,8 @@ function montreSugg(r){
   }
   z.hidden = false;
   champIti(r).setAttribute("aria-expanded", "true");
+  // les options viennent d'être refaites : aucune n'est plus désignée
+  champIti(r).removeAttribute("aria-activedescendant");
 }
 
 function choisitPoint(r, pt){
@@ -158,6 +166,9 @@ export function effaceItineraire(){
   /* Effacer, sur une borne, c'est revenir à elle : son départ n'a jamais été
      saisi, et le vider laisserait l'écran incapable de dire d'où l'on part. */
   const borne = pointBorne();
+  /* Un calcul encore en attente aurait reposé, trente millisecondes plus tard,
+     le trajet qu'on vient d'effacer. */
+  clearTimeout(attente); attente = null;
   ITI.a = borne; ITI.b = null;
   ROUTE = null; poseTrace(null);
   /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
@@ -182,6 +193,12 @@ export function effaceItineraire(){
  * affiche d'abord, on calcule ensuite.
  */
 export let attente = null;
+
+/* La case « accessible » vient de changer. Le calcul s'en charge ici ; ce
+   qui en dépend chez l'exploitant — l'aperçu de la nappe de marche, qui ne
+   montrait sinon que la grille d'avant — l'écoute, sans que la page publique
+   ait à le nommer. */
+export const ACCESSIBLE_CHANGE = creeEvenement();
 let _dernierTrajet = "";
 export function relance(){
   clearTimeout(attente);
@@ -215,6 +232,8 @@ export function relance(){
       console.warn("Itinéraire :", e);
       ROUTE = { pmr: ITI.pmr, etapes: [], m: 0, panne: true };
     }
+    // un bout manquait : rien à tracer, et `ROUTE.etapes` n'existe pas
+    if (!ROUTE){ poseTrace(null); dessineItineraire(); montreResultat(); return; }
     // demander un itinéraire, c'est renoncer à voir la journée sur le plan
     poseTrace(ROUTE);
     /* Le trajet commence dans le pavillon du départ : c'est celui qu'il faut
@@ -624,8 +643,14 @@ export function brancheTiroirItineraire(){
         if (!opts.length) return;
         e.preventDefault();
         survolSugg = (survolSugg + (e.key === "ArrowDown" ? 1 : opts.length - 1) + opts.length) % opts.length;
-        opts.forEach((o, i) => o.classList.toggle("vis", i === survolSugg));
+        opts.forEach((o, i) => {
+          o.classList.toggle("vis", i === survolSugg);
+          o.setAttribute("aria-selected", String(i === survolSugg));
+        });
         opts[survolSugg].scrollIntoView({ block: "nearest" });
+        /* Le focus reste dans le champ, où l'on tape : c'est lui qui dit à la
+           lecture d'écran quelle suggestion les flèches désignent. */
+        c.setAttribute("aria-activedescendant", opts[survolSugg].id);
       } else if (e.key === "Enter"){
         e.preventDefault();
         if (opts[survolSugg]) opts[survolSugg].click();
@@ -656,6 +681,7 @@ export function brancheTiroirItineraire(){
     // celui qui en a besoin en a besoin à chaque visite
     try { localStorage.setItem(CLE_PMR, ITI.pmr ? "1" : "0"); } catch (err) {}
     relance();
+    ACCESSIBLE_CHANGE.emet();
   };
 
   /* Tout le calcul repose sur le canevas : c'est lui qui remplit les contours et

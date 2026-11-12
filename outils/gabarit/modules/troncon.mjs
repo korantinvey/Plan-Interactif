@@ -56,8 +56,12 @@ function facesLibres(p, o){
   }
 
   const out = [];
-  for (let i = 0; i + 1 < s.length; i++){
-    const A = s[i], B = s[i + 1];
+  /* Tous les côtés, celui qui referme le contour compris : le tracé d'une
+     emprise finit sur « Z », sans répéter son premier sommet, et le dernier
+     côté manquait — un stand d'angle perdait la façade par laquelle on
+     l'aborde. Un contour déjà refermé rend un côté nul, que le seuil écarte. */
+  for (let i = 0; s.length > 2 && i < s.length; i++){
+    const A = s[i], B = s[(i + 1) % s.length];
     const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
     if (l < .8) continue;                    // un chanfrein n'est pas une façade
     // la normale qui sort : celle dont un pas ne retombe pas dans l'emprise

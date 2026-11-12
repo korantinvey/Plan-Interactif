@@ -131,7 +131,7 @@ async function chargeChaleur(){
   });
   const cibles = r?.cibles || [];
   const par = new Map(cibles.map(c => [c.id, Number(c.n) || 0]));
-  CHALEUR = {
+  return {
     par: par,
     max: cibles.length ? Number(cibles[0].n) || 0 : 0,
     total: Number(r?.total) || 0,
@@ -448,11 +448,19 @@ function phraseChaleur(){
       new Date(CHALEUR.depuis + "T00:00:00").toLocaleDateString("fr-FR") + "." : "");
 }
 
+/* Le numéro de la dernière lecture demandée : changer de période pendant une
+   lecture en lançait une seconde, et la plus lente l'emportait — l'écran
+   montrait alors la période qu'on venait de quitter. Seule la dernière écrit. */
+let _lectureChaleur = 0;
 async function rafraichitChaleur(){
+  const n = ++_lectureChaleur;
   ecritEtatChaleur("Lecture des compteurs…");
   try {
-    await chargeChaleur();
+    const lu = await chargeChaleur();
+    if (n !== _lectureChaleur) return;
+    CHALEUR = lu;
   } catch (e) {
+    if (n !== _lectureChaleur) return;
     CHALEUR = null;
     coloreChaleur();
     $("chalEch").hidden = true;

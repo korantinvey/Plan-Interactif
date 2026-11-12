@@ -815,6 +815,9 @@
    l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
    classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
    forme courte — écrite après eux dans la feuille — les effacerait. */
+/* La fenêtre reçoit le focus à l'ouverture, pour être annoncée : ce n'est
+   pas une commande, et un anneau tout autour ne désignerait rien. */
+.mfen:focus{outline:none}
 .mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:min(82vh,100%);
   display:flex;flex-direction:column;overflow:hidden}

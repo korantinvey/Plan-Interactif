@@ -4,6 +4,7 @@
    « Valider » sont déjà au dictionnaire du plan. */
 module.exports = {
   "Non autorisé.": "Not authorised.",
+  "Action non autorisée pour ce compte.": "Action not allowed for this account.",
   "Erreur {code}": "Error {code}",
   "Erreur {code} sur {chemin}": "Error {code} on {chemin}",
   "Connexion au projet": "Connect to the project",

@@ -489,13 +489,20 @@ export function monteWebgl(){
       if (!GL.pret) planifieWebgl();
     },
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
-    onAfterRender: () => {
+    onAfterRender: (/** @type {any} */ image) => {
       IMAGE_DECK.emet();
       // les couches de la chauffe ont été créées : leurs programmes sont lancés
       if (GL.chauffe === "partie" || GL.chauffe === "dessin") GL.imagesChauffe++;
       // la sorte de couche de cette image est prête : la suivante entre à l'image d'après
       if (GL.partielle){ planifieWebgl(); return; }
       if (GL.pret || !GL.deck.props.layers.length) return;
+      /* Des couches à peindre et aucune peinte : le moteur a échoué sur toutes.
+         Le SVG reste, plutôt qu'un plan vide. deck.gl, le recours, ne compte
+         pas : son image vaut pour peinte. */
+      /* Des couches à peindre ici (la garde d'au-dessus) et aucune peinte —
+         préparées puis ratées, ou ratées dès la préparation, qui laisse le
+         moteur sans couche à compter : dans les deux cas, le SVG reste. */
+      if (image && typeof image.peintes === "number" && image.peintes === 0) return;
       GL.pret = true;
       document.documentElement.classList.add("gl-pret");
       document.documentElement.classList.remove("gl-attente");

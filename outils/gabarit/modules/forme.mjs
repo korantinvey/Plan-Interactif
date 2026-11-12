@@ -96,13 +96,24 @@ export function distSegmentGeo(p, a, b){
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
 }
 
+/* Dedans, au sens pair-impair sur tous les anneaux : ils sont dépliés sans
+   dire lequel est un morceau et lequel une cour. Seul le premier comptait —
+   le second morceau d'un stand passait pour dehors, la cour d'un îlot pour
+   dedans, et le nom pouvait s'y écrire. Règle tenue des deux côtés
+   (`modules/forme.mjs`, `_partage/geometrie.ts`). */
+function dansForme(p, a){
+  let n = 0;
+  for (const anneau of a) if (dansAnneau(p, anneau)) n++;
+  return n % 2 === 1;
+}
+
 /** Distance au bord, négative à l'extérieur : c'est ce qu'on maximise. */
 function distBordGeo(p, a){
   let d = Infinity;
   for (const anneau of a)
     for (let i = 0, j = anneau.length - 1; i < anneau.length; j = i++)
       d = Math.min(d, distSegmentGeo(p, anneau[j], anneau[i]));
-  return dansAnneau(p, a[0]) ? d : -d;
+  return dansForme(p, a) ? d : -d;
 }
 
 /** Le point intérieur le plus éloigné des bords, par une grille qu'on
@@ -129,7 +140,7 @@ function poleGeo(a, x0, y0, x1, y1){
 function porteeGeo(p, a, ux, uy, max){
   const pas = max / 24;
   let d = 0;
-  while (d + pas <= max && dansAnneau([p[0] + (d + pas) * ux, p[1] + (d + pas) * uy], a[0])) d += pas;
+  while (d + pas <= max && dansForme([p[0] + (d + pas) * ux, p[1] + (d + pas) * uy], a)) d += pas;
   return d;
 }
 
@@ -146,8 +157,17 @@ export function boiteGeo(a){
   const p = poleGeo(a, x0, y0, x1, y1);
   const g = porteeGeo(p, a, -1, 0, bb[0]), d = porteeGeo(p, a, 1, 0, bb[0]);
   const h = porteeGeo(p, a, 0, -1, bb[1]), b = porteeGeo(p, a, 0, 1, bb[1]);
-  const lc = [arrondiGeo(p[0] + (d - g) / 2), arrondiGeo(p[1] + (b - h) / 2)];
-  const lb = [arrondiGeo(Math.min(g + d, bb[0])), arrondiGeo(Math.min(h + b, bb[1]))];
+  let lc = [arrondiGeo(p[0] + (d - g) / 2), arrondiGeo(p[1] + (b - h) / 2)];
+  let lb = [arrondiGeo(Math.min(g + d, bb[0])), arrondiGeo(Math.min(h + b, bb[1]))];
+  /* Le milieu des deux traversées peut tomber hors de la forme : un îlot
+     percé d'une cour, traversé de part en part au-dessus d'elle, se
+     recentrait au milieu de la cour. Le nom s'écrit alors sur le point
+     trouvé, avec la place qu'il a de chaque côté. (Règle tenue des deux
+     côtés : `modules/forme.mjs`, `_partage/geometrie.ts`.) */
+  if (!dansForme(lc, a)){
+    lc = [arrondiGeo(p[0]), arrondiGeo(p[1])];
+    lb = [arrondiGeo(Math.min(2 * Math.min(g, d), bb[0])), arrondiGeo(Math.min(2 * Math.min(h, b), bb[1]))];
+  }
   // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
   return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5
     ? { c: c, bb: bb, lc: lc, lb: lb } : { c: c, bb: bb };

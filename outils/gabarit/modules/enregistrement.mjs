@@ -123,6 +123,10 @@ const OUBLI = API ? API.replace(/\/[^/]*$/, "/oublie") : "";
 let minuteur = null;      // envoi programmé, pas encore parti
 let publication = false;  // envoi en cours
 let rejoue = false;       // une modification est arrivée pendant l'envoi
+/* Un clic arrivé pendant un envoi automatique : réduit à `rejoue`, il
+   devenait l'envoi suivant — silencieux, et ne réécrivant que ce qui a
+   bougé —, alors qu'on demandait la réparation entière, et qu'on l'entende. */
+let clicAttendu = false;
 let souci = "";           // la dernière erreur, dite par l'infobulle
 
 /* Ce que le bouton raconte, quand il y a quelque chose à raconter :
@@ -393,7 +397,7 @@ export function oublieCache(acces){
  * en retard.
  */
 export async function pousseConfiguration(auto){
-  if (publication){ rejoue = true; return; }
+  if (publication){ rejoue = true; if (!auto) clicAttendu = true; return; }
   const acces = accesBase();
   if (!acces){
     const dit = "Session absente : reconnectez-vous pour enregistrer.";
@@ -559,9 +563,15 @@ export async function pousseConfiguration(auto){
     /* Une retouche arrivée pendant l'envoi part à son tour. On s'en remet au
        compteur, et non aux marques d'attente : celles d'un pavillon qu'on vient
        de sauter tourneraient en rond. */
-    if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
+    if (clicAttendu){ clicAttendu = false; pousseConfiguration(false); }
+    else if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
   } catch (e) {
     publication = false;
+    /* Le clic attendu pendant cet envoi raté se dit raté lui aussi : relancé
+       en douce, il serait parti en reprise automatique, qui ne réécrit pas
+       tout, et se serait annoncé réussi sans avoir réparé. Le bouton reste
+       là pour le redemander. */
+    if (clicAttendu){ clicAttendu = false; if (auto) annonce("Enregistrement impossible : " + e.message, true); }
     if (!auto) annonce("Enregistrement impossible : " + e.message, true);
     /* Rien n'est perdu : le poste garde sa copie et la marque d'attente. On
        retente de loin en loin, et le bouton dit pourquoi en attendant. L'état se

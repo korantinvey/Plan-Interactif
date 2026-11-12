@@ -104,10 +104,17 @@ function majBarre() {
 
   majLiens(e);
   $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier l'événement";
+  /* L'état ne change ici qu'une fois la base d'accord : basculé d'avance, un
+     refus laissait l'écran dire « publié » d'un salon resté brouillon. Le
+     bouton se tait pendant l'écriture — deux clics rapides envoyaient deux
+     bascules, dont la seconde annulait la première. */
   $("btnEtat").onclick = async () => {
-    e.etat = e.etat === "publie" ? "brouillon" : "publie";
-    try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
+    const b = $("btnEtat");
+    const voulu = e.etat === "publie" ? "brouillon" : "publie";
+    b.disabled = true;
+    try { await majEvenement(e.id, { etat: voulu }); e.etat = voulu; dessine(); }
     catch (err) { signale(err.message, true); }
+    finally { b.disabled = false; }
   };
   $("btnSources").onclick = () => ouvreSources(() => dessine());
   // dupliquer, c'est créer un salon : réservé à l'administrateur, comme

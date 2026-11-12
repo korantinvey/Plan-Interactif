@@ -54,7 +54,11 @@ export const slugifie = (t) => String(t).toLowerCase().normalize("NFD")
   .replace(/\p{Diacritic}/gu, "").replace(/[^a-z0-9]+/g, "-")
   .replace(/^-|-$/g, "").slice(0, 40);
 
-export const courant = () => EVTS.find((e) => e.id === selection);
+/** Un salon de la liste, par son identifiant — celui qu'avait un geste,
+ *  pour qu'une écriture différée vise encore ce salon-là. */
+export const evenementParId = (id) => EVTS.find((e) => e.id === id);
+
+export const courant = () => evenementParId(selection);
 
 export async function chargePlans(id) {
   PLANS[id] = await rest("plan?evenement_id=eq." + id +

@@ -143,4 +143,6 @@ module.exports = {
   "Instance Klipso invalide : le sous-domaine seul, lettres, chiffres et tirets.":
     "Invalid Klipso instance: the subdomain only, letters, digits and hyphens.",
   "La clé de la base Klipso est vide.": "The Klipso database key is empty.",
+  "Seul un administrateur change la base Klipso ou les identifiants d'un salon.":
+    "Only an administrator can change a show's Klipso database or identifiers.",
 };

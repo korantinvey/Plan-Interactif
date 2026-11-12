@@ -191,6 +191,8 @@ let decoupes = new Map();
    que si le pavillon a changé — un autre pavillon, un stand repris ou
    déplacé —, et non à chaque arrêt de la vue. */
 let cleDebords = "";
+/** Les stands sur lesquels `debords` a été calculée, débords ou non. */
+let mesures = new WeakSet();
 
 /**
  * Fixe les paliers des noms d'après les stands d'un pavillon. Chaque nom se
@@ -216,7 +218,14 @@ export function posePaliers(stands, zones, tasse = [1, 1], libres = new Map()){
   if (!nomsUniformes()){ debords = new Map(); cleDebords = ""; return; }
   let cle = stands.length + ":" + zones.length;
   for (const o of [...stands, ...zones]) if (o.c && o.bb) cle += "|" + o.c.join(",") + "," + o.bb.join(",");
-  if (cle !== cleDebords){ debords = debordsAuxAllees(stands, zones); cleDebords = cle; }
+  /* La table des débords est rangée par objet : des stands neufs à la même
+     place — un salon rechargé, un pavillon remonté — donnaient la même clé et
+     relisaient une table où aucun d'eux ne se trouvait. Elle se refait donc
+     aussi quand le premier stand n'est pas de ceux qu'elle a mesurés. */
+  if (cle !== cleDebords || (stands.length && !mesures.has(stands[0]))){
+    debords = debordsAuxAllees(stands, zones); cleDebords = cle;
+    mesures = new WeakSet(stands);
+  }
   const tailles = [];
   for (const s of stands){
     // un emplacement entièrement découpé n'écrit pas son nom : il ne compte pas

@@ -53,7 +53,9 @@
 import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
 import { BORNE } from "./salon.mjs";
-import { lieuBorne, lieuNomme, poseDepartImpose } from "./borne.mjs";
+import { lieuBorne, poseDepartImpose } from "./borne.mjs";
+import { repondants, pointObjet } from "./trajet.mjs";
+import { pourRecherche } from "./texte.mjs";
 import { LIEU_BORNE, poseLieuBorne, ecritDepartBorne, dessineBorne } from "./vous-etes-ici.mjs";
 import { ITI, relance, suitLaVisee } from "./tiroir-itineraire.mjs";
 
@@ -78,6 +80,27 @@ export let ICI_ACTIF = false;
    fait taire. */
 let ICI_PERDU = false;
 
+/**
+ * Le lieu qu'un code nomme exactement — un repère par son nom, un stand par
+ * son nom ou son code —, et un seul.
+ *
+ * La borne prend le mieux classé des candidats (`borne.mjs` `lieuNomme`) :
+ * l'exploitant vient d'écrire son adresse, et la voit. Une affiche, elle,
+ * survit au stand qu'elle nommait : « A1 » retiré du plan menait au premier
+ * venu qui commence par « A1 », et le visiteur se croyait au stand A15. Rien
+ * d'exact, ou deux lieux du même nom, et l'on rend la main.
+ */
+function lieuExact(v){
+  const n = pourRecherche(v);
+  /* Dans tout ce qui répond, et non dans les quatorze que propose la saisie :
+     tronquée, la liste pouvait taire le seul lieu exact, ou l'un de deux. */
+  const { out, notes } = repondants(v);
+  const tous = out.concat(notes.map(x => pointObjet(x.o)));
+  const justes = tous.filter(x => pourRecherche(x.nom) === n ||
+    (x.genre === "objet" && x.obj && pourRecherche(x.obj.code || "") === n));
+  return justes.length === 1 ? justes[0] : null;
+}
+
 /* ------------------------------------------------------------
    Ce que l'adresse relit
    ------------------------------------------------------------ */
@@ -90,7 +113,7 @@ let ICI_PERDU = false;
 function litCodeIci(txt){
   const v = String(txt || "").trim();
   if (!v) return null;
-  if (v[0] !== ICI_LIBRE) return lieuNomme(v);
+  if (v[0] !== ICI_LIBRE) return lieuExact(v);
   const m = /^.([0-9a-f]+),(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/i.exec(v);
   if (!m) return null;
   const d = m[1].toLowerCase();

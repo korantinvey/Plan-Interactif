@@ -131,14 +131,15 @@ export function brancheMotDePasse() {
     dit("Envoi…");
     $("envoyer").disabled = true;
     try {
-      const r = await fetch(CFG.url + "/auth/v1/recover", {
+      /* Le lien doit revenir ici, et nulle part ailleurs. Le service
+         d'authentification lit cette adresse dans la requête, pas dans le
+         corps : posée là, elle n'était entendue que par l'en-tête Referer,
+         quand le navigateur voulait bien l'envoyer. */
+      const retour = encodeURIComponent(location.origin + location.pathname);
+      const r = await fetch(CFG.url + "/auth/v1/recover?redirect_to=" + retour, {
         method: "POST",
         headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: adresse,
-          // le lien doit revenir ici, et nulle part ailleurs
-          redirect_to: location.origin + location.pathname,
-        }),
+        body: JSON.stringify({ email: adresse }),
       });
       const j = await lit(r);
       if (!r.ok) throw new Error(j.error_description || j.msg || j.message || "Envoi refusé.");

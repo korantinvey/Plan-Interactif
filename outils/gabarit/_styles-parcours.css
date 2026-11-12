@@ -279,6 +279,9 @@
   background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink)}
 .jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
+/* Un curseur n'a pas de bordure qui change de couleur : sans contour, rien ne
+   disait au clavier qu'il avait le focus. */
+.jForm input[type="range"]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .jSansPorte,.jHeures{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
 /* Les jours de venue : une case par jour, pas une liste déroulante. On en coche
    deux, et il faut voir d'un coup ceux qu'on a pris. */
@@ -416,6 +419,10 @@
 .iVise{position:absolute;right:3px;bottom:3px;width:28px;height:28px;display:grid;
   place-items:center;border-radius:var(--radius);color:var(--ink-3)}
 .iVise:hover{color:var(--ink);background:var(--line)}
+/* Vingt-huit pixels se voient, mais se touchent mal : la zone qu'on touche
+   déborde de huit pixels de chaque côté, quarante-quatre en tout, sans rien
+   changer au dessin ni au champ qu'il borde. */
+.iVise::before{content:"";position:absolute;inset:-8px}
 .iVise[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent)}
 .iVise svg{width:15px;height:15px}
 .iEchange{grid-column:2;grid-row:1/3;align-self:center;width:34px;height:34px;
@@ -704,7 +711,11 @@ html:not(.mode-admin).sans-journee #btnJournee{display:none}
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
    resterait des signets sans destination. Ce que le visiteur avait retenu
    n'est pas effacé pour autant : le réglage peut se rouvrir. */
-html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
+/* « !important » : la barre en texte (`.hdActs .marque.marqueTexte`), et
+   plus encore celle du modèle Vitrine, pose « display:flex » d'une règle
+   plus précise que celle-ci, et le signet restait affiché. Retiré, il l'est
+   partout. */
+html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none !important}
 /* « .iconbtn » déclare « display:grid » : sans cette règle, « hidden » n'y
    masquerait rien — le même piège que la barre de zoom et l'échelle. */
 .iconbtn[hidden]{display:none}

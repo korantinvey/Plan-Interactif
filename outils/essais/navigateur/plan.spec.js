@@ -549,22 +549,29 @@ test.describe("le salon que nomme l'adresse", { tag: "@base" }, () => {
     expect(await page.evaluate(() => /** @type {any} */ (window).LANGUE.code)).toBe("fr");
   });
 
-  test("le service de second plan range l'administration à part", async ({ page, context }) => {
-    await prepare(page);
-    /* Les demandes que le service fait lui-même échappent à la page : elles
-       se refusent au contexte, pour que l'essai ne doive rien au réseau. */
-    await context.route("**/api/**", (r) => r.fulfill({ status: 204, body: "" }));
-    // le plan public inscrit le service, qui vaut ensuite pour tout le domaine
-    await page.goto(PLAN);
-    await page.evaluate(() => navigator.serviceWorker.ready);
-    await page.goto("/plan-admin");
-    await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-    const rangee = (chemin) => page.evaluate(async (c) => {
-      const r = await caches.match(c);
-      return r ? (await r.text()).includes('data-role="admin"') : null;
-    }, chemin);
-    // rangée sous son propre chemin, jamais sous celui du plan public
-    await expect.poll(() => rangee("/plan-admin")).toBe(true);
-    expect(await rangee("/plan")).not.toBe(true);
+  /* Le seul essai qui laisse vivre le service de second plan : c'est lui
+     qu'il éprouve. Partout ailleurs, la configuration le bloque — il
+     servirait sinon sans passer par les routes de l'essai. */
+  test.describe("avec son service de second plan", () => {
+    test.use({ serviceWorkers: "allow" });
+
+    test("le service de second plan range l'administration à part", async ({ page, context }) => {
+      await prepare(page);
+      /* Les demandes que le service fait lui-même échappent à la page : elles
+         se refusent au contexte, pour que l'essai ne doive rien au réseau. */
+      await context.route("**/api/**", (r) => r.fulfill({ status: 204, body: "" }));
+      // le plan public inscrit le service, qui vaut ensuite pour tout le domaine
+      await page.goto(PLAN);
+      await page.evaluate(() => navigator.serviceWorker.ready);
+      await page.goto("/plan-admin");
+      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      const rangee = (chemin) => page.evaluate(async (c) => {
+        const r = await caches.match(c);
+        return r ? (await r.text()).includes('data-role="admin"') : null;
+      }, chemin);
+      // rangée sous son propre chemin, jamais sous celui du plan public
+      await expect.poll(() => rangee("/plan-admin")).toBe(true);
+      expect(await rangee("/plan")).not.toBe(true);
+    });
   });
 });

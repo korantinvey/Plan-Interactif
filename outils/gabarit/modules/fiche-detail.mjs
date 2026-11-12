@@ -18,7 +18,7 @@
 import { separeValeurs } from "./texte.mjs";
 import { DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
   ACCORDS, aplani, autreFace } from "./correspondance.mjs";
-import { courant, majEvenement, slugifie } from "./evenements.mjs";
+import { courant, evenementParId, majEvenement, slugifie } from "./evenements.mjs";
 import { FOURNISSEURS, SOURCES_NOM, source, sourceNom } from "./provenance.mjs";
 import { ouvreModale, demande, confirme, gardeLaPlace } from "./fenetre-console.mjs";
 import { signale } from "./socle-console.mjs";
@@ -237,6 +237,10 @@ const LIGNES_RATTACHEMENT = {
    taire, sans quoi on croirait le champ déjà repris. */
 const FICHE_INERTE = [];
 
+/** Les écritures de la fiche d'un salon, l'une après l'autre.
+ *  @type {Promise<unknown>} */
+let fileFiche = Promise.resolve();
+
 export function resumeFiche(e) {
   const caches = LIGNES_FICHE
     .filter((l) => l.cle && !paraitSurFiche(e, "stand", l.cle)).map((l) => l.libelle);
@@ -294,16 +298,24 @@ function caseFiche(type, cle, libelle, aide, apres) {
   i.checked = paraitSurFiche(e, type, cle);
   if (!libelle) i.setAttribute("aria-label", "Afficher ce champ sur la fiche");
   if (apres) apres(i.checked);
-  i.onchange = async () => {
-    e.fiche = { ...(e.fiche || {}) };
-    e.fiche[type] = { ...(e.fiche[type] || {}), [cle]: i.checked };
-    if (apres) apres(i.checked);
-    try { await majEvenement(e.id, { fiche: e.fiche }); }
-    catch (err) {
-      signale(err.message, true);
-      i.checked = !i.checked;
-      if (apres) apres(i.checked);
-    }
+  /* Les écritures de la fiche se suivent, et chacune part de ce que la
+     précédente a confirmé : lancées de front, un refus tardif remettait la
+     fiche entière à un état d'avant, effaçant un changement confirmé depuis.
+     La fiche du salon ne change qu'une fois la base d'accord ; refusée, la
+     case reprend ce que la base tient — si c'était le dernier geste. Défaire
+     le geste refusé ne suffisait pas : deux refus de suite, l'un cochant,
+     l'autre décochant, laissaient la case à l'inverse de la base. */
+  let dernier = 0;
+  i.onchange = () => {
+    const voulu = i.checked, n = ++dernier;
+    if (apres) apres(voulu);
+    ecritFiche(e, (s) => ({ [type]: { ...((s.fiche || {})[type] || {}), [cle]: voulu } }))
+      .then((ok) => {
+        if (ok || n !== dernier) return;
+        const tenu = paraitSurFiche(evenementParId(e.id) || e, type, cle);
+        i.checked = tenu;
+        if (apres) apres(tenu);
+      });
   };
   return l;
 }
@@ -340,12 +352,31 @@ const champsPersos = (e) => {
 /** Les cibles retenues comme critères de recherche, jamais nul. */
 const criteres = (e) => (e.fiche && e.fiche.criteres) || {};
 
-/** Écrit la fiche d'un trait, et la remet en place si le service refuse. */
-async function ecritFiche(e, part) {
-  const avant = e.fiche;
-  e.fiche = { ...(e.fiche || {}), ...part };
-  try { await majEvenement(e.id, { fiche: e.fiche }); }
-  catch (err) { e.fiche = avant; signale(err.message, true); }
+/**
+ * Écrit la fiche d'un trait, dans la file des écritures de la fiche.
+ *
+ * `part` se calcule au moment où l'écriture part (une fonction), sur la fiche
+ * que la précédente a confirmée : calculée avant, elle pouvait reposer l'état
+ * d'avant une écriture encore en route. La fiche du salon ne change qu'une
+ * fois la base d'accord ; refusée, rien n'est à défaire.
+ *
+ * Le salon se retrouve par son identifiant quand l'écriture part, et `part`
+ * le reçoit : la console a pu recharger sa liste entre-temps, et l'objet du
+ * geste, périmé, aurait reçu la fiche à la place de celui qu'elle affiche.
+ * La promesse dit si la base a pris l'écriture : ce qui suit n'a lieu qu'alors.
+ *
+ * @returns {Promise<boolean>}
+ */
+function ecritFiche(e, part) {
+  const tache = fileFiche.then(async () => {
+    const e2 = evenementParId(e.id);
+    if (!e2) { signale("Ce salon n'est plus chargé : fiche non enregistrée.", true); return false; }
+    const fiche = { ...(e2.fiche || {}), ...(typeof part === "function" ? part(e2) : part) };
+    try { await majEvenement(e2.id, { fiche }); e2.fiche = fiche; return true; }
+    catch (err) { signale(err.message, true); return false; }
+  });
+  fileFiche = tache;
+  return tache;
 }
 
 /**
@@ -365,10 +396,13 @@ function caseCritere(cle, apres) {
   i.checked = criteres(e)[cle] === true;
   i.setAttribute("aria-label", "Proposer ce champ dans les critères de recherche");
   i.onchange = async () => {
-    const c = { ...criteres(e) };
-    if (i.checked) c[cle] = true; else delete c[cle];
-    await ecritFiche(e, { criteres: c });
-    i.checked = criteres(courant())[cle] === true;
+    const voulu = i.checked;
+    await ecritFiche(e, (s) => {
+      const c = { ...criteres(s) };
+      if (voulu) c[cle] = true; else delete c[cle];
+      return { criteres: c };
+    });
+    i.checked = criteres(evenementParId(e.id) || e)[cle] === true;
     if (apres) apres(i.checked);
   };
   return l;
@@ -387,8 +421,7 @@ function ajouteChampPerso(redessine) {
   const e = courant();
   demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
     "", async (libelle) => {
-      const perso = champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]);
-      await ecritFiche(e, { perso });
+      await ecritFiche(e, (s) => ({ perso: champsPersos(s).concat([{ cle: clePerso(s, libelle), libelle }]) }));
       redessine();
     });
 }
@@ -418,13 +451,13 @@ function renommeChampPerso(cle, redessine) {
   const valide = async () => {
     const libelle = fr.value.trim();
     const libelleEn = en.value.trim();
-    const perso = champsPersos(e).map((c) => {
+    const perso = (s) => champsPersos(s).map((c) => {
       if (c.cle !== cle) return c;
       const n = { ...c, libelle };
       if (libelleEn) n.libelle_en = libelleEn; else delete n.libelle_en;
       return n;
     });
-    await ecritFiche(e, { perso });
+    await ecritFiche(e, (s) => ({ perso: perso(s) }));
     redessine();
   };
   ouvreModale("Renommer le champ", (corps) => {
@@ -456,30 +489,36 @@ function retireChampPerso(cle, libelle, redessine) {
     "Le champ, son origine et son réglage de recherche sont effacés. Les " +
     "valeurs déjà synchronisées disparaîtront de la fiche à la prochaine " +
     "synchronisation.", "Retirer", async () => {
-      const stand = { ...((e.fiche || {}).stand || {}) };
-      const crit = { ...criteres(e) };
+      const ecrite = await ecritFiche(e, (s) => {
+      const stand = { ...((s.fiche || {}).stand || {}) };
+      const crit = { ...criteres(s) };
       delete stand[cible];
       delete crit[cible];
-      await ecritFiche(e, {
-        perso: champsPersos(e).filter((c) => c.cle !== cle),
+      return {
+        perso: champsPersos(s).filter((c) => c.cle !== cle),
         stand, criteres: crit,
         /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
            sous le même intitulé à la place qu'occupait le premier. Et avec lui
            la section qui le réunissait et le sort réservé à son intitulé, qui
            ne décrivent plus rien. */
-        ordre: (((e.fiche || {}).ordre) || []).filter((c) => c !== cible),
-        groupes: (((e.fiche || {}).groupes) || [])
+        ordre: (((s.fiche || {}).ordre) || []).filter((c) => c !== cible),
+        groupes: (((s.fiche || {}).groupes) || [])
           .map((g) => ({ ...g, cles: (g.cles || []).filter((c) => c !== cible) }))
           .filter((g) => g.cles.length),
         intitules: (() => {
-          const i = { ...((e.fiche || {}).intitules || {}) };
+          const i = { ...((s.fiche || {}).intitules || {}) };
           delete i[cible];
           return i;
         })(),
+      };
       });
+      /* Fiche refusée : le champ y reste, sa correspondance aussi — sans
+         quoi la fiche garderait un champ que rien n'alimente plus. */
+      const e2 = ecrite && evenementParId(e.id);
+      if (!e2) { redessine(); return; }
       /* La correspondance se nettoie de son côté : elle est rangée par
          fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
-      const corr = { ...(e.correspondances || {}) };
+      const corr = { ...(e2.correspondances || {}) };
       let touche = false;
       Object.keys(corr).forEach((src) => {
         const bloc = { ...(corr[src] || {}) };
@@ -495,8 +534,8 @@ function retireChampPerso(cle, libelle, redessine) {
         corr[src] = bloc;
       });
       if (touche) {
-        e.correspondances = corr;
-        try { await majEvenement(e.id, { correspondances: corr }); }
+        e2.correspondances = corr;
+        try { await majEvenement(e2.id, { correspondances: corr }); }
         catch (err) { signale(err.message, true); }
       }
       redessine();
@@ -733,17 +772,34 @@ function cadreCategories(src) {
       : AUTO + ", et la dernière n'en a retenu aucune.";
   };
 
-  const enregistre = async () => {
-    const e2 = courant();
+  /* Ce que la base tient, d'après la dernière écriture réussie : un refus
+     y ramène le groupe entier. Défaire le seul geste refusé décochait une
+     catégorie qu'une écriture précédente avait déjà enregistrée — et
+     l'écriture suivante l'effaçait de la base. */
+  let confirmees = [...choisies];
+  /** Le numéro du dernier geste sur le groupe : seul son refus recale les cases. */
+  let dernier = 0;
+  /** @type {Map<string, HTMLInputElement>} */
+  const cases = new Map();
+
+  /* Le salon se retrouve par l'identifiant qu'avait le geste, au moment
+     d'écrire : `poseEvenements` remplace la liste, l'objet d'alors peut être
+     périmé, et le salon courant n'est peut-être plus celui qu'on réglait. */
+  const enregistre = async (idSalon, envoyees) => {
+    const e2 = evenementParId(idSalon);
+    if (!e2) { signale("Ce salon n'est plus chargé : catégories non enregistrées.", true); return false; }
     const avant = e2.correspondances;
     const corr = { ...(e2.correspondances || {}) };
     const part = { ...(corr[src] || {}) };
-    if (choisies.length) part.categories = [...choisies];
+    if (envoyees.length) part.categories = envoyees;
     else delete part.categories;
     corr[src] = part;
     e2.correspondances = corr;
-    try { await majEvenement(e2.id, { correspondances: corr }); }
-    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+    try {
+      await majEvenement(e2.id, { correspondances: corr });
+      confirmees = envoyees;
+      return true;
+    } catch (err) { e2.correspondances = avant; signale(err.message, true); return false; }
   };
 
   catalogue.forEach((c) => {
@@ -761,12 +817,24 @@ function cadreCategories(src) {
       : "aucune fiche de cette catégorie ne portait de numéro de stand";
     const i = l.querySelector("input");
     i.checked = choisies.indexOf(id) >= 0;
+    cases.set(id, i);
+    /* Les écritures du groupe se suivent, chacune avec la liste figée au
+       moment de son geste. Le refus du dernier geste remet le groupe sur ce
+       que la base a confirmé ; celui d'un geste antérieur laisse la main au
+       suivant, qui fera foi. */
     i.onchange = () => {
+      const voulu = i.checked, n = ++dernier, idSalon = courant().id;
       const k = choisies.indexOf(id);
-      if (i.checked && k < 0) choisies.push(id);
-      if (!i.checked && k >= 0) choisies.splice(k, 1);
-      enregistre();
+      if (voulu && k < 0) choisies.push(id);
+      if (!voulu && k >= 0) choisies.splice(k, 1);
+      const envoyees = [...choisies];
       dis();
+      fileFiche = fileFiche.then(async () => {
+        if (await enregistre(idSalon, envoyees) || n !== dernier) return;
+        choisies.splice(0, choisies.length, ...confirmees);
+        cases.forEach((x, cid) => { x.checked = choisies.indexOf(cid) >= 0; });
+        dis();
+      });
     };
     zone.appendChild(l);
   });

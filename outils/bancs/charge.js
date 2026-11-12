@@ -146,7 +146,12 @@ function bilan(enCourse) {
   for (const [sorte, r] of Object.entries(releves)) {
     const n = r.durees.length;
     const pannes = Object.values(r.pannes).reduce((a, b) => a + b, 0);
-    const erreurs = Object.entries(r.codes).filter(([c]) => c >= 500 || c == 429).reduce((a, [, n]) => a + n, 0);
+    /* Tout refus compte : un 400 ou un 403 sur `/api/mesure` laissait le bilan
+       annoncer des mesures « écrites » qui ne l'avaient pas été. Seul le 404
+       d'un salon inexistant, voulu quand rien ne doit s'écrire, se tait. */
+    const erreurs = Object.entries(r.codes)
+      .filter(([c]) => c >= 400 && !(c == 404 && !ECRIRE))
+      .reduce((a, [, n]) => a + n, 0);
     l.push(`${sorte.padEnd(7)} ${String(n).padStart(6)} appels  premier octet : médiane ${ms(centile(r.premier, 50)).padStart(8)}  p95 ${ms(centile(r.premier, 95)).padStart(8)}  p99 ${ms(centile(r.premier, 99)).padStart(8)}`);
     l.push(`                      fin : médiane ${ms(centile(r.durees, 50)).padStart(8)}  p95 ${ms(centile(r.durees, 95)).padStart(8)}  max ${ms(centile(r.durees, 100)).padStart(8)}`);
     l.push(`        codes ${JSON.stringify(r.codes)}` +

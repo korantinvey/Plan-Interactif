@@ -104,8 +104,14 @@ function placePouls(){
     svg.after(pouls);
   }
   // par « textContent » : le moteur de langue le traduit, comme le titre
-  const nom = pouls.querySelector(".iciNom");
-  if (nom.textContent !== LIEU_BORNE.nom) nom.textContent = LIEU_BORNE.nom;
+  /* Comparé à ce qu'on a écrit, non à ce qui s'affiche : traduit, le texte ne
+     ressemble plus au nom, et on le réécrivait à chaque image — autant de
+     traductions relancées pendant un glisser. */
+  const nom = /** @type {HTMLElement} */ (pouls.querySelector(".iciNom"));
+  if (nom.dataset.ecrit !== LIEU_BORNE.nom){
+    nom.dataset.ecrit = LIEU_BORNE.nom;
+    nom.textContent = LIEU_BORNE.nom;
+  }
   const [x, y] = versScene(LIEU_BORNE.xy[0], LIEU_BORNE.xy[1]);
   pouls.hidden = false;
   pouls.style.transform = "translate(" + x.toFixed(1) + "px," + y.toFixed(1) + "px)";

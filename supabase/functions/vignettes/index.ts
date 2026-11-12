@@ -81,12 +81,17 @@ async function adressesDuSalon(
   const garde = memoireDesAdresses.get(evenementId);
   if (garde && Date.now() - garde.le < VIE_ADRESSES) return garde.adresses;
 
-  const { data: plans } = await db.from("plan")
+  /* Une lecture qui échoue n'est pas une liste vide : retenue comme telle,
+     elle refusait tous les logos du salon pendant toute la durée de la
+     mémoire. L'erreur remonte, et rien ne se retient. */
+  const { data: plans, error: e1 } = await db.from("plan")
     .select("id").eq("evenement_id", evenementId);
+  if (e1) throw new Error("Pavillons illisibles : " + e1.message);
   const ids = (plans ?? []).map((p) => (p as { id: string }).id);
   if (!ids.length) return [];
-  const { data: instantanes } = await db.from("instantane")
+  const { data: instantanes, error: e2 } = await db.from("instantane")
     .select("charge").in("plan_id", ids);
+  if (e2) throw new Error("Instantanés illisibles : " + e2.message);
   const adresses = adressesDeLogos((instantanes ?? []) as { charge: unknown }[]);
   memoireDesAdresses.set(evenementId, { le: Date.now(), adresses });
   return adresses;

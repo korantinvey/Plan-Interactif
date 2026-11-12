@@ -43,7 +43,8 @@ if [ -d "$NAVIGATEURS" ]; then
     revision=$(node -p "require(require('path').join(require.resolve('playwright-core/package.json'), '..', 'browsers.json')).browsers.find(b => b.name === '$sorte').revision" 2>/dev/null) || continue
     voulu="$NAVIGATEURS/$dossier-$revision"
     [ -e "$voulu" ] && continue
-    present=$(ls -d "$NAVIGATEURS/$dossier"-[0-9]* 2>/dev/null | sort -V | tail -1)
+    # sans correspondance, `ls` échoue : sous `pipefail`, le hook s'arrêtait là
+    present=$(ls -d "$NAVIGATEURS/$dossier"-[0-9]* 2>/dev/null | sort -V | tail -1 || true)
     [ -n "$present" ] && ln -s "$present" "$voulu" 2>/dev/null || true
   done
 fi

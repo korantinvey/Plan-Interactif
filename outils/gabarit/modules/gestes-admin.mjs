@@ -98,6 +98,10 @@ function leve(/** @type {PointerEvent} */ e){
 /* Le geste annulé : le libellé qu'on glissait à la main, la forme qu'on
    reprenait. */
 function annuleGeste(){
+  // le hall qu'on calait se lâche comme le reste : son geste tenait sinon l'envoi au repos
+  calagePointerUp();
+  // et la carte qu'on glissait sous le premier : reprise après le pincement, elle sautait
+  cartePointerUp(/** @type {any} */ ({}));
   lacheLibelle();
   lacheGeo();
   lacheComptoir();

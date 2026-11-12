@@ -570,7 +570,7 @@ export function editionPointerDown(e){
   if (pgn && formeSel && pgn.dataset.i === "rot"){
     const cible = formeParId(formeSel);
     if (cible && cible.f.t === "texte"){
-      memorise();
+      aMemoriser = true;
       const f = cible.f, c = f.pts[0];
       const r = cadrePlan();
       const h = poigneeRotation(f, Math.max(.15, vue().w / (r.width || 1) * 5));
@@ -584,7 +584,7 @@ export function editionPointerDown(e){
   if (pgn && formeSel){
     const cible = formeParId(formeSel);
     if (cible){
-      memorise();
+      aMemoriser = true;
       geste = { type: "poignee", i: +pgn.dataset.i, depart: p,
                 pts: cible.f.pts.map(q => q.slice()), f: cible.f };
       svg.style.cursor = curseurPoignee(cible.f, geste.i);
@@ -609,7 +609,7 @@ export function editionPointerDown(e){
 
     if (id !== formeSel) choisitForme(id);
     if (cible){
-      memorise();
+      aMemoriser = true;
       geste = { type: "deplace", depart: p, pts: cible.f.pts.map(q => q.slice()), f: cible.f };
       svg.style.cursor = "move";
       try { svg.setPointerCapture(e.pointerId); } catch (err) {}
@@ -621,8 +621,14 @@ export function editionPointerDown(e){
   return false;    // rien sous le pointeur : on laisse le déplacement de la vue
 }
 
+/* La copie qu'annule Ctrl+Z ne se prend qu'au premier mouvement : un simple
+   clic pour choisir une forme en déposait une à chaque fois, et il fallait
+   ensuite autant d'annulations à vide pour revenir au dernier vrai geste. */
+let aMemoriser = false;
+
 export function editionPointerMove(e){
   if (!geste) return false;
+  if (aMemoriser){ memorise(); aMemoriser = false; geste.bouge = true; }
   const p = versPlan(e.clientX, e.clientY);
   if (geste.type === "rotation"){ tourneTexte(geste, p, e); return true; }
   let dx = p[0] - geste.depart[0], dy = p[1] - geste.depart[1];
@@ -702,13 +708,17 @@ function tourneTexte(g, p, e){
 
 export function editionPointerUp(e){
   if (!geste) return false;
-  const f = geste.f;
+  const f = geste.f, bouge = !!geste.bouge;
   geste = null;
+  aMemoriser = false;
   svg.style.cursor = "";
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   apercuGuide(null); montreCote(null); montreAimants(null);
-  retientTaille(f);
-  enregistreDessins();
+  // un clic sans mouvement n'a rien changé : rien à retenir ni à envoyer
+  if (bouge){
+    retientTaille(f);
+    enregistreDessins();
+  }
   degageOutils();
   return true;
 }

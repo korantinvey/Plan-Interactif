@@ -42,7 +42,7 @@ export function pointRepere(f, p){
  *  emplacements rangés du plus proche au plus lointain. La liste proposée
  *  n'en montre qu'une part (`candidats`) ; la saisie laissée telle quelle
  *  cherche dans le tout (`pointSaisi`). */
-function repondants(q){
+export function repondants(q){
   const v = pourRecherche(q.trim());
   const out = [];
   DATA.plans.forEach(p => reperesDe(p).forEach(f => {

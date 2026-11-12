@@ -31,7 +31,10 @@
 :is(.modele-vitrine,.liste-vitrine,.bandeau-vitrine),html.page-vitrine{
   --surface:#FFFFFF;--surface-2:#F2F4F6;
   --line:#E2E6EA;--line-strong:#C8CFD5;
-  --ink:#14222B;--ink-2:#46555F;--ink-3:#7A8790;
+  /* L'encre tertiaire porte des aides et des invites : à #7A8790, elle ne
+     tenait que 3,7:1 sur le blanc et 3,3:1 sur la surface grise, sous le
+     4,5:1 qu'un texte demande. #64717A les tient tous deux (5,0 et 4,55). */
+  --ink:#14222B;--ink-2:#46555F;--ink-3:#64717A;
   --radius:12px;
   --ombre-carte:0 1px 2px rgba(16,32,42,.05),0 18px 44px -20px rgba(16,32,42,.32)}
 html.page-vitrine{--ground:#EEF1F4;--vitrine-marge:16px}

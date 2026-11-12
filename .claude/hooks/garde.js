@@ -95,7 +95,11 @@ const examine = (r) => {
  * la cible de `cp`/`mv`, plus toute source d'un `mv`/`rm` pour les migrations.
  */
 const examineCommande = (commande, cwd) => {
-  if (/\bgit\s+push\b[^;&|]*?(\s--force\b|\s--force-with-lease\b|\s--force-if-includes\b|\s-[a-zA-Z]*f[a-zA-Z]*\b|\s\+[^\s]+)/.test(commande)) {
+  /* Des options globales peuvent précéder `push` — `git -C dossier push`,
+     `git -c clé=valeur push` — et la règle ne voyait alors rien. Leur valeur
+     peut être entre guillemets (`-C "mon dossier"`) : un mot nu s'arrêtait à
+     l'espace, et la poussée passait. */
+  if (/\bgit\b(?:\s+(?:-[Cc]\s+(?:"[^"]*"|'[^']*'|\S+)|--[a-z-]+(?:=(?:"[^"]*"|'[^']*'|\S+))?|-[a-zA-Z]+))*\s+push\b[^;&|]*?(\s--force\b|\s--force-with-lease\b|\s--force-if-includes\b|\s-[a-zA-Z]*f[a-zA-Z]*\b|\s\+[^\s]+)/.test(commande)) {
     refuse(
       "Pas de poussée forcée dans ce dépôt : le workflow `Pages` a peut-être commité " +
         "sur la branche depuis le dernier tirage, et --force effacerait ce commit. " +

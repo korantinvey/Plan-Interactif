@@ -150,7 +150,8 @@ function retire(/** @type {number[][]} */ pts, /** @type {number} */ g){
 
 function arrondi(d){
   const an = anneaux(d);
-  if (!an) return d;
+  // rien d'arrondissable : le tracé reste, plutôt qu'une forme effacée
+  if (!an || !an.length) return d;
   return an.map(brut => {
     const pts = retire(brut, RETRAIT);
     const vers = (p, q, r) => {

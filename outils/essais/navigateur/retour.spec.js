@@ -26,17 +26,22 @@ test("au retour, la page suit la construction mise en ligne", async ({ page }) =
   const erreurs = await prepare(page);
   await page.goto("/plan.html?plan=smcl-2026");
   await attendLaListe(page);
+  /* Le chemin où la page a fini : servie par Cloudflare (`PLAN_ADRESSE`),
+     `/plan.html` est redirigé vers `/plan`, et c'est cette adresse-là que la
+     page relit (`modules/retour.mjs`). Le serveur local, lui, garde la
+     première. */
+  const chemin = new URL(page.url()).pathname;
   await page.evaluate(() => { window.__toujours = true; });
 
   // la même construction en ligne : la page reste telle quelle
-  let relue = page.waitForResponse((r) => r.url().includes("/plan.html") && r.request().resourceType() === "fetch");
+  let relue = page.waitForResponse((r) => new URL(r.url()).pathname === chemin && r.request().resourceType() === "fetch");
   await absence(page);
   await relue;
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => window.__toujours)).toBe(true);
 
   // une autre : elle se recharge
-  await page.route((u) => u.pathname === "/plan.html", async (r) => {
+  await page.route((u) => u.pathname === chemin, async (r) => {
     if (r.request().resourceType() !== "fetch") return r.continue();
     const rep = await r.fetch();
     const corps = (await rep.text()).replace(/versions\/plan\.[0-9a-f]+\.js/, "versions/plan.0000000000.js");

@@ -166,6 +166,14 @@ export function voletOrdre(hote){
      colonne avant de la réécrire, et deux qui se croisent perdraient la
      première. */
   let file = Promise.resolve();
+  // seule la réponse de la dernière écriture remplace la fiche du poste
+  let derniere = 0;
+  /* La dernière fiche que la base a confirmée, même quand sa réponse n'a pas
+     été affichée parce qu'une écriture plus récente était en route : c'est à
+     elle que l'on revient si cette dernière échoue. */
+  /* Celle de l'ouverture du volet, au départ : si la toute première écriture
+     échoue, c'est à elle qu'on revient. */
+  let confirmee = structuredClone(DATA.fiche || {});
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -237,22 +245,45 @@ export function voletOrdre(hote){
     const o = state.sel && parId.get(state.sel);
     if (o && !(o.coex && o.coex.length && coexChoisit())) ouvre(o, null);
     dit("Enregistrement…");
-    file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
+    /* Ce que ce geste voulait, figé maintenant : la réponse d'une écriture
+       précédente, arrivée entre-temps, remplace la fiche du poste par ce que la
+       base relisait — sans ce geste-ci, que l'écriture aurait alors perdu. */
+    const voulu = structuredClone(DATA.fiche);
+    const n = ++derniere;
+    file = file.then(() => ecritColonneEvenement("fiche", voulu, t => {
       // la colonne relue peut porter un absent que le poste n'avait pas : une
       // autre console a pu créer le champ pendant qu'on rangeait celle-ci
-      t.ordre = ordreGarde(DATA.fiche.ordre || [], t.ordre || []);
-      const g = DATA.fiche.groupes || [];
+      t.ordre = ordreGarde(voulu.ordre || [], t.ordre || []);
+      const g = voulu.groupes || [];
       // un salon qui n'a plus de section n'en garde pas la trace en creux
       if (g.length) t.groupes = g; else delete t.groupes;
       /* La visibilité se repose champ par champ : la même colonne porte ce qui
          ne se range pas ici — l'en-tête, les conférences, les fiches de zone —
          et l'écraser d'un bloc effacerait ce que la console y règle. */
       t.stand = { ...(t.stand || {}) };
-      toutes.forEach(c => { t.stand[c] = DATA.fiche.stand[c]; });
-      const i = DATA.fiche.intitules || {};
+      toutes.forEach(c => { t.stand[c] = (voulu.stand || {})[c]; });
+      const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
-    })).then(t => { DATA.fiche = t; dit("Enregistré."); })
-      .catch(e => dit("Échec : " + e.message, true));
+    })).then(t => {
+      /* Une copie à part : `DATA.fiche` reçoit le même objet, que le clic
+         suivant modifie en place — la restauration aurait gardé le refusé. */
+      confirmee = structuredClone(t);
+      if (n !== derniere) return;
+      DATA.fiche = t; dit("Enregistré.");
+    }).catch(e => {
+      dit("Échec : " + e.message, true);
+      /* La dernière demande refusée : le volet et la fiche du poste reviennent
+         à ce que la base tient, au lieu de garder le réglage refusé, qu'une
+         réouverture aurait encore montré comme acquis. */
+      if (n === derniere){
+        DATA.fiche = structuredClone(confirmee);
+        /* Les intitulés vivent aussi dans le volet : `rendu` les reposerait
+           sinon dans la fiche, refusés compris. */
+        for (const k of Object.keys(intitules)) delete intitules[k];
+        Object.assign(intitules, (DATA.fiche || {}).intitules || {});
+        litReglage(); rendu();
+      }
+    });
   };
 
   /* Les champs en réserve se rangent par intitulé : leur ordre ne décide de
@@ -630,8 +661,11 @@ export function voletOrdre(hote){
       ? blocSection(b, i) : ligneFiche(b.cle, i, null)));
     majBouts();
     if (!focus) return;
-    const el = liste.querySelector('[data-cle="' + focus.cle + '"]') ||
-      liste.querySelector('[data-ref="' + focus.cle + '"]');
+    /* La clé d'un champ vient des données : un guillemet y faisait lever le
+       sélecteur, et le réglage se fermait sur une erreur. */
+    const k = CSS.escape(String(focus.cle));
+    const el = liste.querySelector('[data-cle="' + k + '"]') ||
+      liste.querySelector('[data-ref="' + k + '"]');
     if (!el) return;
     const b = (el.querySelector(".grpTete") || el).querySelectorAll("button.fleche");
     if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();

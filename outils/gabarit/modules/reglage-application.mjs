@@ -290,15 +290,21 @@ export function blocApplication(hote){
      base à chaque frappe ferait une requête par lettre, et un champ vidé le
      temps de le retaper aurait enregistré le vide au passage. */
   let minuteurNom = null;
+  /* Les écritures se suivent : une saisie reprise pendant qu'une autre était
+     en route en lançait une seconde, et la plus lente l'emportait — l'ancien
+     nom pouvait rester. Seule la dernière dit où l'on en est. */
+  let fileNom = Promise.resolve(), saisie = 0;
   nom.oninput = () => {
     clearTimeout(minuteurNom);
     ditNom.dataset.mal = "false";
     ditNom.textContent = "Enregistrement…";
     minuteurNom = setTimeout(() => {
       const ecrit = nom.value.trim().slice(0, NOM_APP_MAX);
-      ecritApplication({ nom_app: ecrit || null })
-        .then(() => { ditNom.textContent = ecrit ? "Enregistré." : "Nom par défaut."; })
+      const n = ++saisie;
+      fileNom = fileNom.then(() => ecritApplication({ nom_app: ecrit || null }))
+        .then(() => { if (n === saisie) ditNom.textContent = ecrit ? "Enregistré." : "Nom par défaut."; })
         .catch(err => {
+          if (n !== saisie) return;
           ditNom.textContent = "Échec : " + err.message;
           ditNom.dataset.mal = "true";
         });
