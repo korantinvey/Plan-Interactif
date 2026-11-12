@@ -91,6 +91,9 @@ module.exports = [
   // `_js.html` : le sélecteur qui reconnaît, dans l'en-tête d'un tiroir, ce qui
   // se clique — et que la prise du tiroir doit donc laisser tranquille
   "button,a,input,select,textarea,label,[role=tab]",
+  // `modules/tiroirs.mjs` : le sélecteur de ce qui, dans le corps d'un tiroir,
+  // garde le glissement du doigt pour soi au lieu de mener le tiroir
+  "input[type=range],select,textarea,[contenteditable]",
   // `_admin1.html` : les suffixes des jetons de teinte d'une distinction,
   // « --d-neuf-doux » et « --d-neuf-ink », composés nom par nom
   "-doux", "-ink",
