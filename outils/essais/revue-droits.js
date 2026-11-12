@@ -68,11 +68,17 @@ async function main() {
     await db.query(`insert into releve_perf (evenement_id, visite, jour, page, pertes_contexte, resume)
       values ($1, $2, current_date, 'plan', 1000000000, '{}')`, [A, v]);
   }
+  // et un groupe sans aucune perte mesurée — une autre page du même salon
+  await db.query(`insert into releve_perf (evenement_id, visite, jour, page, resume)
+    values ($1, '00000000-0000-4000-8000-000000000009', current_date, 'borne', '{}')`, [A]);
   const bilan = await leve(db, "select purge_perf()");
   dit(!bilan, "trois relevés extrêmes ne font plus échouer le bilan ni la purge", bilan && bilan.message);
-  const pertes = await un("select pertes_contexte from perf_bilan where evenement_id = $1", [A]);
+  const pertes = await un("select pertes_contexte from perf_bilan where evenement_id = $1 and page = 'plan'", [A]);
   dit(pertes && pertes.pertes_contexte === 2147483647, "la somme se borne au plus grand entier",
     pertes && String(pertes.pertes_contexte));
+  const sans = await un("select pertes_contexte from perf_bilan where evenement_id = $1 and page = 'borne'", [A]);
+  dit(sans && sans.pertes_contexte === null, "un groupe sans perte mesurée reste sans valeur",
+    sans && String(sans.pertes_contexte));
 
   // --------------------------------------------------- les rappels périmés
   await db.query(`insert into rappel_de_conference

@@ -507,7 +507,7 @@ Importé par :
 
 gestes-admin · pile · plan-admin · reglages
 
-### `modules/calques-dessin.mjs` — 233 l. → plan, plan-admin
+### `modules/calques-dessin.mjs` — 246 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — ce que le poste en garde
 
@@ -515,8 +515,8 @@ Fonctions :
 
 `enAttente` 63 · `litRange` 90 · `ouvreDessins` 102 · `reprendCommun` 127
 `notePubliees` 153 · `rangeDessins` 171 · `dejaPubliee` 176 · `marqueAttente` 182
-`mesCalques` 190 · `calquesSurs` 203 · `poseCalqueActif` 225 · `poseOutil` 226
-`poseEbauche` 230 · `trouveCalque` 232 · `nouvelId` 233
+`mesCalques` 190 · `calquesSurs` 203 · `poseCalqueActif` 238 · `poseOutil` 239
+`poseEbauche` 243 · `trouveCalque` 245 · `nouvelId` 246
 
 Importe :
 

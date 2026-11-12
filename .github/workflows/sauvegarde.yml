@@ -31,11 +31,14 @@
 # rejouable, et c'est justement à quoi servent les migrations. Restaurer, c'est
 # donc appliquer les migrations sur une base neuve, puis y verser ce fichier :
 #
+#   set -o pipefail
 #   gpg --decrypt donnees-AAAA-MM-JJ.sql.gz.gpg | gunzip -c |
-#     psql -v ON_ERROR_STOP=1 "<chaîne de connexion>"
+#     psql -v ON_ERROR_STOP=1 --single-transaction "<chaîne de connexion>"
 #
-# `ON_ERROR_STOP` arrête la restauration à la première erreur, au lieu d'en
-# verser le reste sur une base à moitié remplie.
+# `ON_ERROR_STOP` arrête la restauration à la première erreur, et
+# `--single-transaction` l'annule alors en entier, au lieu de laisser une base
+# à moitié remplie. `pipefail` fait d'une phrase fausse ou d'un fichier abîmé
+# un échec, et non une restauration vide qui se dirait réussie.
 #
 # Les identifiants de connexion (schéma « auth ») restent chez Supabase : les
 # profils et les droits sont ici, les mots de passe non. Après un sinistre

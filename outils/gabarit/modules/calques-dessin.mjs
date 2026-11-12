@@ -208,10 +208,23 @@ export function calquesSurs(/** @type {any[]} */ liste){
     formes: (Array.isArray(c.formes) ? c.formes : []).flatMap((/** @type {any} */ f) => {
       if (!f || typeof f !== "object" || !Array.isArray(f.pts)) return [];
       const pts = f.pts.map(sommet);
-      return pts.length && pts.every(Boolean) ? [{ ...f, pts }] : [];
+      // un cadre se tient par deux coins, un trait par deux points : moins, le
+      // tracé lirait un sommet absent et s'arrêterait sur toute la page
+      if (pts.length < (SOMMETS_MIN[f.t] || 1) || !pts.every(Boolean)) return [];
+      const sure = { ...f, pts };
+      /* Les mesures d'une forme s'écrivent elles aussi dans le balisage : un
+         nombre ou rien — absente, chacune a sa valeur par défaut au tracé. */
+      for (const k of MESURES) {
+        if (!(k in sure)) continue;
+        if (Number.isFinite(+sure[k]) && sure[k] !== null && sure[k] !== "") sure[k] = +sure[k];
+        else delete sure[k];
+      }
+      return [sure];
     }),
   }));
 }
+const SOMMETS_MIN = { rect: 2, image: 2, stand: 2, ligne: 2, poly: 2 };
+const MESURES = ["taille", "r", "ep", "rot"];
 
 export let calqueActif = null;   // id du calque en cours d'édition
 export let outil = "main";

@@ -77,7 +77,9 @@ begin
              avg(r.gels) as gels_moy,
              -- la somme d'un groupe se borne : chaque relevé en accepte jusqu'à un
              -- milliard, et trois suffisaient à faire déborder un entier
-             least(sum(r.pertes_contexte), 2147483647)::int as pertes
+             -- (« least » ignore un NULL : un groupe sans mesure le reste ainsi)
+             case when sum(r.pertes_contexte) is null then null
+                  else least(sum(r.pertes_contexte), 2147483647) end::int as pertes
         from releve_perf r
        where r.jour = p_jour
        group by r.evenement_id, r.page, coalesce(r.mobile, false)
