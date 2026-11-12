@@ -335,6 +335,17 @@ export function fenetreAvancement(titre, etiquette) {
         pctTxt.textContent = "100 %";
       }
     },
+
+    /**
+     * Le mot de la fin, redit dans une autre langue — sans rien refaire de ce
+     * que `fini` a fait. Un module passé à `t()` (`modules/traduction.mjs`)
+     * écrit son bilan dans la langue de la page, que l'observateur de
+     * `_langue.js` ne sait pas rendre au français ; c'est donc au module de le
+     * redire quand la langue change, et la fenêtre reste ouverte pour le lire.
+     */
+    redit(message) {
+      if (bilan && sous.dataset.etat === "fini") bilan.textContent = message;
+    },
   };
 }
 

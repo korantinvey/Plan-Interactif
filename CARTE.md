@@ -98,7 +98,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 `#data`
 
-### `_langue.js` — 864 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
+### `_langue.js` — 877 l. → admin-plans.html, demo.html, hors-ligne.html, index.html, motdepasse.html, plan-smcl.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 708 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 711 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1750 l. → demo.html, plan-smcl.html
 
@@ -360,13 +360,13 @@ Importé par :
 
 installation · reglage-application
 
-### `modules/avancement.mjs` — 416 l. → console
+### `modules/avancement.mjs` — 427 l. → console
 
 - l.1 · L'avancement d'une synchronisation — la fenêtre, et son secours
 
 Fonctions :
 
-`fenetreAvancement` 44 · `suitAuServeur` 376
+`fenetreAvancement` 44 · `suitAuServeur` 387
 
 Importe :
 
@@ -1150,7 +1150,7 @@ Importé par :
 
 reglage-rappel
 
-### `modules/evenement.mjs` — 46 l. → plan, plan-admin
+### `modules/evenement.mjs` — 46 l. → plan, plan-admin, console
 
 - l.1 · Un événement — dire ce qui vient de se passer, sans savoir qui écoute
 
@@ -1162,7 +1162,7 @@ Importé par :
 
 acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · environs
 fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire
-vignettes · webgl
+traduction · vignettes · webgl
 
 ### `modules/evenements.mjs` — 70 l. → console
 
@@ -2913,6 +2913,18 @@ Importé par :
 
 gestes-admin · outil-dessin · pile · plan-admin
 
+### `modules/ressources-langue.mjs` — 91 l. → console
+
+- l.1 · Le dictionnaire, dans la forme qu'i18next lit
+
+Fonctions :
+
+`normalise` 31 · `sansPluriel` 38 · `ressources` 54
+
+Importé par :
+
+traduction
+
 ### `modules/retour.mjs` — 63 l. → plan, plan-admin
 
 - l.1 · Le retour sur une page restée ouverte
@@ -3158,19 +3170,19 @@ Importé par :
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · reglage-foodtrucks
 sponsor · vignettes · webgl
 
-### `modules/synchronisation.mjs` — 280 l. → console
+### `modules/synchronisation.mjs` — 297 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
-`brancheSynchronisation` 35 · `etapesPressenties` 53 · `synchronise` 68
-`fabriqueLesVignettes` 167 · `oublieLePlan` 265 · `envoieVignettes` 273
+`brancheSynchronisation` 44 · `etapesPressenties` 62 · `synchronise` 83
+`fabriqueLesVignettes` 187 · `oublieLePlan` 282 · `envoieVignettes` 290
 
 Importe :
 
 appel-fonction · avancement · dom · encodeur-avif · evenements · marque · provenance
-socle-console
+socle-console · traduction
 
 Importé par :
 
@@ -3224,13 +3236,13 @@ Importé par :
 affiche-ici · appels · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
 recherche
 
-### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
+### `modules/texte.mjs` — 30 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 
 Fonctions :
 
-`esc` 6 · `separeValeurs` 17
+`esc` 11 · `separeValeurs` 22
 
 Importé par :
 
@@ -3394,6 +3406,22 @@ Fonctions :
 Importé par :
 
 outil-comptoir · webgl
+
+### `modules/traduction.mjs` — 150 l. → console
+
+- l.1 · La traduction par i18next — `t()`, pour les modules migrés
+
+Fonctions :
+
+`moteur` 49 · `langueDeT` 90 · `t` 102 · `verseAnglais` 122 · `suis` 134
+
+Importe :
+
+evenement · ressources-langue
+
+Importé par :
+
+synchronisation
 
 ### `modules/trait-chemin.mjs` — 377 l. → plan, plan-admin
 
@@ -3703,10 +3731,10 @@ Injections :
 
 `sessionRefusee` 23 · `identifiantDePavillon` 36
 
-### `supabase/functions/_partage/svg.ts` — 216 l.
+### `supabase/functions/_partage/svg.ts` — 291 l.
 
-`r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106 · `allege` 118 · `sansMasques` 196
-`textes` 207
+`attributsDeDessin` 75 · `r2` 92 · `points` 112 · `boite` 151 · `neDessineRien` 174
+`allege` 186 · `sansMasques` 271 · `textes` 282
 
 ### `supabase/functions/_partage/version.ts` — 100 l.
 
@@ -3739,12 +3767,12 @@ Injections :
 
 `client` 68 · `cles` 75 · `json` 81 · `refus` 87 · `enregistre` 92 · `envoie` 149
 
-### `supabase/functions/sync-evenement/index.ts` — 1957 l.
+### `supabase/functions/sync-evenement/index.ts` — 1963 l.
 
 `cors` 45 · `bourre` 118 · `client` 128 · `ecrit` 150 · `gaia` 158 · `cleKlipso` 169
 `libellesChoix` 188 · `retiensAnglais` 215 · `fournisseur` 233 · `raccourci` 241
-`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1905 · `nettoieUrl` 1933
-`groupeTextes` 1943
+`enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1911 · `nettoieUrl` 1939
+`groupeTextes` 1949
 
 ### `supabase/functions/vignettes/index.ts` — 253 l.
 
@@ -3819,6 +3847,7 @@ Injections :
 - `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
 - `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
 - `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
+- `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
 
 ## Le reste
 

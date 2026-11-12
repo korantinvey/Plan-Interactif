@@ -2,9 +2,14 @@
    Le texte : l'écrire dans la page, le découper, le ranger
    ============================================================ */
 
-/** Un texte rendu inoffensif avant d'entrer dans du balisage. */
-export const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
-  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+/** Un texte rendu inoffensif avant d'entrer dans du balisage.
+ *
+ *  L'apostrophe aussi, bien qu'aucun attribut du dépôt ne s'écrive entre
+ *  apostrophes : `npm run html` prouve un morceau sûr dès qu'il passe par ici,
+ *  sans regarder les guillemets qui l'entourent. Un `title='…'` écrit demain
+ *  aurait été prouvé sûr à tort. */
+export const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 /**
  * Les valeurs d'un champ à choix, une par entrée, points-virgules défaits.

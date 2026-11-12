@@ -41,3 +41,6 @@ simulations/
 # Ce que laissent les essais du navigateur : traces et rapport d'un échec.
 test-results/
 playwright-report/
+
+# le dictionnaire au format i18next, tiré de outils/anglais/ (npm run export-langues)
+traductions/

@@ -228,6 +228,35 @@ Deux pièges. Un code qui relit le texte d'un bouton lira l'anglais : comparez �
 `traduit("…")`, ou mieux à un état. Et le contrôle lit les sources, pas
 l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en français.
 
+### La migration vers i18next, module par module
+
+Le dépôt passe de l'observateur à i18next : un module migré écrit lui-même
+sa phrase dans la langue de la page, par `t("…")` (`modules/traduction.mjs`).
+Les deux voies vivent ensemble — un seul dictionnaire, `outils/anglais/`, dont
+la phrase française reste la clé (`modules/ressources-langue.mjs` `ressources`
+le convertit, rien ne se retraduit) ; un seul choix de langue, celui de
+`_langue.js`. `synchronisation.mjs` est le premier migré : c'est le modèle.
+
+Migrer un module :
+
+- **Chaque phrase affichée passe par `t()`**, écrite en toutes lettres
+  (ESLint refuse `t(variable)`, que le contrôle des traductions ne verrait
+  pas). Les trous gardent leurs noms : `t("{n} exposants ici", { n })`. Plus de
+  `traduit(…).replace("{n}", …)`.
+- **Le nombre accorde la phrase** : passez `n` en nombre, et écrivez la forme
+  au singulier ; ajoutez au dictionnaire la forme qui manque, les deux formes
+  se rapprochent d'elles-mêmes (règle `sansPluriel`, celle du moteur). Les
+  pluriels français partent avec le script (`genere.js` `PLURIELS_FR`).
+- **Les valeurs ne sont ni traduites ni échappées** : une valeur qui est une
+  phrase passe par son propre `t()`, une donnée qui part dans du HTML par
+  `esc()` — `npm run html` le vérifie.
+- **Ce qui reste à l'écran se redessine sur `LANGUE_CHANGEE`** : l'observateur
+  ne sait pas rendre au français ce que `t()` a écrit en anglais. Un message
+  passager n'en a pas besoin, le suivant parlera la bonne langue.
+- `npm run export-langues` écrit le dictionnaire au format i18next
+  (dans un dossier « traductions », que le dépôt ne versionne pas), pour un
+  outil de traduction.
+
 ## Où vit quoi
 
 | | |
@@ -317,6 +346,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | rapport d'utilisation, export tableur | `modules/rapport-utilisation.mjs`, `modules/export.mjs` |
 | comptes, mot de passe | `modules/comptes.mjs`, `modules/mot-de-passe.mjs` |
 | utilitaires — `$`, `esc`, couleurs, heures, QR | `modules/dom.mjs`, `modules/texte.mjs`, `modules/couleurs.mjs`, `modules/temps.mjs`, `modules/qr.mjs` |
+| traduction par i18next — `t`, pluriels, changement de langue | `modules/traduction.mjs` (`t`, `LANGUE_CHANGEE`), conversion du dictionnaire `modules/ressources-langue.mjs` ; l'observateur d'avant `outils/gabarit/_langue.js` |
 | ce qui vient d'ailleurs, relu avant d'être affiché | `modules/sur.mjs` |
 | fenêtre commune par-dessus le plan | `modules/fenetre.mjs` |
 | ce que la page sait d'elle-même — API, salon, borne, administration | `modules/salon.mjs` |
