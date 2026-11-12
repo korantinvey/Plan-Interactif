@@ -1,0 +1,417 @@
+/**
+ * Le fond de carte sous le pavillon, en administration : poser, retirer, et ce
+ * qu'on dit quand il ne vient pas.
+ *
+ * Rien ne sort sur le réseau. La session de l'exploitant et la base sont
+ * simulées, les tuiles d'images rendues par un pixel, et la bibliothèque
+ * MapLibre — chargée d'un CDN dans la vraie page — soit refusée, soit
+ * remplacée par une carte qui ne charge jamais : c'est tout ce que ces essais
+ * ont besoin d'elle.
+ */
+const { test, expect } = require("@playwright/test");
+const { prepare, attendLaListe, remplaceMapLibre, DONNEES } = require("./aide");
+
+const BASE = "https://base.essai";
+// un pixel transparent : une tuile qui arrive, sans rien demander à personne
+const PIXEL = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+  "base64");
+/* Une carte qui se monte, demande son style, et n'entend jamais rien en
+   retour : ni « load », ni « error ». C'est ce que fait un service muet. */
+const MAPLIBRE_MUETTE = "window.maplibregl = { Map: class { constructor(o){ this.o = o; } " +
+  "on(){ return this; } jumpTo(){} setStyle(){} remove(){} } };";
+
+/**
+ * Le plan d'administration ouvert sur un premier pavillon calé sur le fond
+ * `fond`, une session admise et une base qui accepte tout. `bibliotheque`,
+ * s'il est donné, répond à la place de MapLibre (`remplaceMapLibre`) : posé après les
+ * interceptions de `prepare`, il passe avant elles — Playwright essaie la
+ * dernière posée d'abord.
+ *
+ * Rend les erreurs relevées et les écritures faites en base.
+ */
+async function ouvreCale(page, fond, bibliotheque) {
+  const erreurs = await prepare(page);
+  const ecritures = [];
+  await page.addInitScript((base) => {
+    localStorage.setItem("console-config", JSON.stringify({ url: base, anonKey: "anon" }));
+    localStorage.setItem("console-session", JSON.stringify({ access_token: "a.b.c" }));
+  }, BASE);
+
+  /* Le pavillon regardé porte un calage : celui que la base servirait après
+     un « Enregistrer pour tous ». Les autres restent sans carte. */
+  const donnees = JSON.parse(JSON.stringify(DONNEES));
+  donnees.plans[0].calage = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0, fond: fond };
+  await page.route("**/api/plan*", (r) => {
+    const url = new URL(r.request().url());
+    if (url.searchParams.get("entete")) return r.fulfill({ json: { v: "essai-carte" } });
+    if (url.searchParams.get("fond")) return r.fulfill({ json: { calques: [] } });
+    return r.fulfill({ status: 200, contentType: "application/json",
+                       headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) });
+  });
+
+  await page.route(BASE + "/**", (r) => {
+    const req = r.request();
+    const url = new URL(req.url());
+    if (url.pathname === "/auth/v1/user") return r.fulfill({ json: { id: "u1" } });
+    if (url.pathname === "/rest/v1/profil") return r.fulfill({ json: [{ role: "admin" }] });
+    if (url.pathname === "/rest/v1/evenement") return r.fulfill({ json: [{ id: "e1" }] });
+    if (req.method() !== "GET") {
+      ecritures.push({ methode: req.method(), chemin: url.pathname + url.search,
+                       corps: req.postData() });
+      return r.fulfill({ status: 204, body: "" });
+    }
+    if (url.pathname === "/rest/v1/plan" && /id_klipso/.test(url.search)) {
+      return r.fulfill({ json: donnees.plans.map((p, i) => ({ id: "b" + i, id_klipso: p.id })) });
+    }
+    return r.fulfill({ json: [] });
+  });
+  await page.route("https://tile.openstreetmap.org/**",
+    (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
+  if (bibliotheque) await remplaceMapLibre(page, bibliotheque);
+
+  await page.goto("/plan-admin.html?plan=smcl-2026");
+  await attendLaListe(page);
+  return { erreurs, ecritures };
+}
+
+/** La fenêtre des réglages, ouverte sur l'onglet « Environs ». */
+async function ouvreEnvirons(page) {
+  await page.locator("#btnReglages").click();
+  await page.locator(".ongReg button", { hasText: "Environs" }).click();
+}
+
+/** La palette de calage ouverte sur le plan, et un autre fond choisi : le
+ *  montage de la carte part de ce geste, et non du chargement de la page, dont
+ *  la durée varie d'une machine à l'autre. */
+async function choisitFond(page, fond) {
+  await ouvreEnvirons(page);
+  await page.locator(".voletReg:not([hidden]) button", { hasText: "Régler sur le plan" }).click();
+  await page.locator("#calage .cFond").selectOption(fond);
+}
+
+test.describe("le fond de carte", () => {
+  test("« Retirer la carte » retire aussi les tuiles", async ({ page }) => {
+    const { erreurs, ecritures } = await ouvreCale(page, "osm");
+    const tuiles = page.locator("#fondCarte image");
+    await expect(tuiles.first()).toBeAttached();
+    expect(await page.locator("#fondCarte").getAttribute("transform")).toBeTruthy();
+
+    await ouvreEnvirons(page);
+    await page.locator(".voletReg:not([hidden]) button", { hasText: "Retirer la carte" }).click();
+    await expect(page.locator(".voletReg:not([hidden]) .envEtat")).toHaveText("La carte est retirée.");
+
+    expect(ecritures).toEqual([
+      { methode: "PATCH", chemin: "/rest/v1/plan?id=eq.b0", corps: JSON.stringify({ calage: null }) },
+    ]);
+    // le trou s'en allait déjà ; les tuiles et leur matrice restaient
+    await expect(page.locator("#trouDuFond")).toHaveAttribute("d", "");
+    await expect(tuiles).toHaveCount(0);
+    expect(await page.locator("#fondCarte").getAttribute("transform")).toBeNull();
+    await expect(page.locator("#creditCarte")).toBeHidden();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("une bibliothèque de carte injoignable le reste dit", async ({ page }) => {
+    // `prepare` refuse déjà tout ce qui sort ; on le redit ici
+    const { erreurs } = await ouvreCale(page, "osm", (r) => r.abort());
+    await choisitFond(page, "maison");
+    const etat = page.locator("#calageCarte");
+    const panne = "Carte vectorielle indisponible (bibliothèque de carte injoignable)";
+    await expect(etat).toContainText(panne);
+    /* La minuterie du silence dure neuf secondes, comptées depuis le choix du
+       fond : passé ce délai, la panne de la bibliothèque laissait place à un
+       « service qui ne répond pas », qui accusait le fond au lieu du
+       chargement. */
+    await page.waitForTimeout(9500);
+    await expect(etat).toContainText(panne);
+    await expect(etat).toHaveClass(/alerte/);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("un service de carte muet se dit muet", async ({ page }) => {
+    const { erreurs } = await ouvreCale(page, "osm", (r) => r.request().url().endsWith(".css")
+      ? r.fulfill({ status: 200, contentType: "text/css", body: "" })
+      : r.fulfill({ status: 200, contentType: "text/javascript", body: MAPLIBRE_MUETTE }));
+    await choisitFond(page, "maison");
+    const etat = page.locator("#calageCarte");
+    // les neuf secondes de la minuterie, et de la marge pour une machine chargée
+    await expect(etat).toContainText("Ce service ne répond pas", { timeout: 20_000 });
+    await expect(etat).toHaveClass(/alerte/);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("une carte qui refuse sa vue ne fige pas le plan", async ({ page }) => {
+    /* MapLibre levait « failed to invert matrix » à chaque recadrage une fois
+       sa matrice faussée, et `appliqueVue`, qui peint le fond avant le plan,
+       s'arrêtait là : le plan ne suivait plus la vue, et il fallait recharger
+       (démo de fep27, le 22 octobre 2026). Cette carte-ci refuse tout. */
+    const erreurs = await prepare(page);
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0, fond: "maison" };
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await remplaceMapLibre(page, (r) => r.fulfill({ contentType: "application/javascript",
+      body: "window.__montages = 0; window.maplibregl = { Map: class { " +
+        "constructor(o){ this.o = o; window.__montages++; } on(){ return this; } " +
+        "jumpTo(){ throw new Error('failed to invert matrix'); } setStyle(){} remove(){} " +
+        "resize(){} redraw(){} getCanvas(){ return null; } } };" }));
+    // en SVG, la « viewBox » dit sans ambiguïté si le plan a suivi la vue
+    await page.goto("/plan.html?plan=smcl-2026&rendu=svg");
+    await attendLaListe(page);
+    await page.waitForFunction(() => window.__montages >= 1, null, { timeout: 10_000 });
+
+    const plan = page.locator("#plan");
+    const boite = await plan.boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    for (let i = 0; i < 6; i++) { await page.mouse.wheel(0, -240); await page.waitForTimeout(120); }
+    await page.waitForTimeout(400);
+
+    const { suit, montages } = await page.evaluate(() => {
+      const v = window.__essais.view;
+      const b = document.getElementById("plan").getAttribute("viewBox").split(" ").map(Number);
+      const proche = (a, c) => Math.abs(a - c) <= Math.abs(c) * 1e-6 + 1e-6;
+      return { suit: proche(b[0], v.x) && proche(b[1], v.y) && proche(b[2], v.w) && proche(b[3], v.h),
+               montages: window.__montages };
+    });
+    expect(suit).toBe(true);
+    // retirée puis remontée après chaque refus, mais pas sans fin
+    expect(montages).toBeLessThanOrEqual(5);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("en vue immersive, la carte s'incline avec le plan", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0, fond: "osm" };
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await page.route("https://tile.openstreetmap.org/**",
+      (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
+    const CAP = 30;
+    await page.goto("/plan.html?plan=smcl-2026&ambiance=immersif&cap=" + CAP);
+    await attendLaListe(page);
+    await expect(page.locator("#fondCarte image").first()).toBeAttached();
+    const camera = await page.waitForFunction(() => window.__essais.GL.camera, null, { timeout: 10_000 })
+      .then(() => true, () => false);
+    test.skip(!camera, "pas de carte graphique : le plan reste à plat");
+
+    /* Un point de la carte, pris loin du centre — vers le fond, où l'écart se
+       voyait le plus —, doit tomber là où la caméra pose le même point du
+       sol. La projection est récrite ici à partir de ses constantes
+       (`camera.mjs`) : c'est la pose de la matrice — origine, agrandissement,
+       « viewBox » — que l'essai éprouve. */
+    const { vu, attendu } = await page.evaluate((cap) => {
+      const v = window.__essais.view, r = document.getElementById("plan").getBoundingClientRect();
+      const px = v.x + v.w * .2, py = v.y + v.h * .1;
+      const ns = "http://www.w3.org/2000/svg", fond = document.getElementById("fondTuiles");
+      const m = document.createElementNS(ns, "rect");
+      m.setAttribute("x", String(px - v.w / 2000)); m.setAttribute("y", String(py - v.w / 2000));
+      m.setAttribute("width", String(v.w / 1000)); m.setAttribute("height", String(v.w / 1000));
+      fond.appendChild(m);
+      const b = m.getBoundingClientRect();
+      const W = r.width, H = r.height, D = Math.PI / 180;
+      const cc = Math.cos(cap * D), sc = Math.sin(cap * D), ct = Math.cos(50 * D), st = Math.sin(50 * D);
+      const P = 1.5 * Math.hypot(W, H);
+      const X = (px - v.x) / v.w * W - W / 2, Y = (py - v.y) / v.h * H - H / 2;
+      const x1 = X * cc - Y * sc, y1 = X * sc + Y * cc, w = 1 - y1 * st / P;
+      return { vu: [b.x + b.width / 2, b.y + b.height / 2],
+               attendu: [r.left + W / 2 + x1 / w, r.top + H / 2 + y1 * ct / w] };
+    }, CAP);
+    expect(Math.abs(vu[0] - attendu[0])).toBeLessThan(1.5);
+    expect(Math.abs(vu[1] - attendu[1])).toBeLessThan(1.5);
+    expect(erreurs).toEqual([]);
+  });
+
+  /* ------------------------------------------------------------
+     Le fond figé : des images posées d'avance, ni moteur ni tuiles
+     ------------------------------------------------------------ */
+
+  const SEAU = "https://seau.essai/storage/v1/object/public/environs/b0/lot1/";
+  const CALE = { lon: 2.287851, lat: 48.830212, x: 0, y: 0, angle: 0 };
+
+  /** Le lot figé qui vaut pour `cal` sur le premier pavillon, calculé par la
+   *  règle même que la page applique (`lot-fige.mjs`). */
+  async function lotPour(cal) {
+    const L = await import(require("url").pathToFileURL(require("path").join(__dirname,
+      "..", "..", "gabarit", "modules", "lot-fige.mjs")).href);
+    const zone = L.carreDuFond(DONNEES.plans[0].emprise);
+    return { source: L.sourceDuFige(cal, zone), adresse: SEAU, x0: zone.x0, y0: zone.y0,
+             cote: zone.x1 - zone.x0, px: L.PX_FIGE, niveaux: L.niveauxDuLot(zone.x1 - zone.x0),
+             ext: "png", le: "2026-11-11T12:00:00Z", images: 85, octets: 3e6 };
+  }
+
+  /** La page du visiteur, le premier pavillon calé sur `calage` ; le seau
+   *  répond par `seau`. Rend les erreurs, et ce que la page a demandé à qui.
+   *  `attente` : « domcontentloaded » quand le seau retient ses images, que
+   *  l'événement « load » attendrait. */
+  async function ouvrePublic(page, calage, seau, suite = "", attente = "load") {
+    const erreurs = await prepare(page);
+    const demandes = [];
+    page.on("request", (q) => demandes.push(q.url()));
+    const donnees = JSON.parse(JSON.stringify(DONNEES));
+    donnees.plans[0].calage = calage;
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-carte" } })
+      : r.fulfill({ status: 200, contentType: "application/json",
+                    headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
+    await page.route("https://tile.openstreetmap.org/**",
+      (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
+    await page.route("https://seau.essai/**", seau ||
+      ((r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL })));
+    await page.goto("/plan.html?plan=smcl-2026" + suite, { waitUntil: attente });
+    await attendLaListe(page);
+    return { erreurs, demandes };
+  }
+
+  test("un fond figé se pose sans moteur de carte ni tuiles", async ({ page }) => {
+    const cal = { ...CALE, fond: "maison" };
+    const { erreurs, demandes } = await ouvrePublic(page, { ...cal, fige: await lotPour(cal) });
+    const images = page.locator("#fondFige img");
+    await expect(images.first()).toBeAttached();
+    const adresses = await images.evaluateAll((l) => l.map((i) => i.getAttribute("src")));
+    expect(adresses.every((a) => a.startsWith(SEAU))).toBe(true);
+    // le niveau zéro reste dessous, pendant que les plus fins arrivent
+    expect(adresses[0]).toBe(SEAU + "0/0/0.png");
+    // hors du SVG des tuiles, qui ne porte plus que l'aplat du hall
+    await expect(page.locator("#fondCarte image")).toHaveCount(0);
+    await expect(page.locator("#creditCarte")).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(demandes.filter((u) => /maplibre|versatiles|openstreetmap/.test(u))).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("pendant un geste, le fond figé se déplace sans être reposé", async ({ page }) => {
+    /* Reposé à chaque image, le fond figé faisait rater une image sur deux à
+       un téléphone à 120 Hz : pendant le geste, son calque ne fait que se
+       translater et s'agrandir, et ses images ne bougent qu'à l'arrêt. */
+    const cal = { ...CALE, fond: "maison" };
+    // le plan en SVG : le calque du fond n'en dépend pas, et le geste reste vif sans carte graphique
+    const lotFige = await lotPour(cal);
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: lotFige }, null, "&rendu=svg");
+    await expect(page.locator("#fondFige img").first()).toBeAttached();
+    await page.waitForTimeout(600);
+    const lot = page.locator("#fondFige > div");
+    const boite = await page.locator("#plan").boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    await page.mouse.down();
+    const vus = [];
+    for (let i = 1; i <= 12; i++) {
+      await page.mouse.move(boite.x + boite.width / 2 + i * 8, boite.y + boite.height / 2 + i * 4);
+      vus.push(await lot.evaluate((d) => d.style.transform));
+    }
+    await page.mouse.up();
+    expect(vus.some((t) => /translate/.test(t))).toBe(true);
+    // à l'arrêt, les images reprennent leur place exacte, et le calque sa pose
+    await expect.poll(() => lot.evaluate((d) => d.style.transform)).toBe("");
+    /* Exacte : le coin du niveau zéro tombe là où le SVG des tuiles — celui
+       de l'aplat qui vide le hall — pose le même point du plan. */
+    const ecart = await page.evaluate((f) => {
+      const ns = "http://www.w3.org/2000/svg", m = document.createElementNS(ns, "rect");
+      m.setAttribute("x", String(f.x0)); m.setAttribute("y", String(f.y0));
+      m.setAttribute("width", String(f.cote)); m.setAttribute("height", String(f.cote));
+      document.getElementById("fondTuiles").appendChild(m);
+      const a = m.getBoundingClientRect(), b = document.querySelector("#fondFige img").getBoundingClientRect();
+      m.remove();
+      return Math.max(Math.abs(a.left - b.left), Math.abs(a.top - b.top), Math.abs(a.width - b.width / 1.001));
+    }, lotFige);
+    expect(ecart).toBeLessThan(1);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("un fond figé dépassé par un zoom se dit tout de même chargé", async ({ page }) => {
+    /* Un zoom lancé avant que la première pose ait fini la dépassait, et la
+       sonde n'apprenait jamais que le fond était là : sa fenêtre restait
+       ouverte trente secondes et prêtait au fond les gels des gestes (sonde,
+       Redmi Note 9 Pro, FUNEXPO 2026, 11 novembre 2026). Les images sont
+       donc retenues jusqu'à ce que la vue ait changé de niveau. */
+    const cal = { ...CALE, fond: "maison" };
+    /** @type {(() => void)[]} */
+    const retenues = [];
+    let retient = true;
+    /* Trois niveaux, comme le lot de FUNEXPO 2026 : celui de la
+       démonstration n'en a qu'un, qu'aucun zoom ne quitte. */
+    const lot = { ...(await lotPour(cal)), niveaux: 3 };
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: lot }, (r) => {
+      const repond = () => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL });
+      if (retient) retenues.push(repond); else repond();
+    }, "&rendu=svg", "domcontentloaded");
+    // une vue posée qui demande d'autres images : la première pose est dépassée
+    const boite = await page.locator("#plan").boundingBox();
+    if (!boite) throw new Error("pas de plan à l'écran");
+    await page.mouse.move(boite.x + boite.width / 2, boite.y + boite.height / 2);
+    await expect.poll(() => retenues.length).toBeGreaterThan(0);
+    const largeur = () => page.evaluate(() => window.__essais.view.w);
+    const l0 = await largeur();
+    // en arrière : la vue d'ouverture est déjà au niveau le plus fin du lot
+    for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, 240); await page.waitForTimeout(40); }
+    /* Les images que la nouvelle vue demande attendent dans le navigateur, et
+       non ici : six connexions par hôte, que les retenues occupent. On
+       s'assure donc seulement que la vue a changé de niveau, et que la pose
+       d'après le geste a eu lieu. */
+    expect(await largeur()).toBeGreaterThan(l0 * 2);
+    await page.waitForTimeout(600);
+    retient = false;
+    for (const repond of retenues.splice(0)) repond();
+    const environs = () => page.evaluate(() => window.__essais.sonde.resume.environs);
+    await expect.poll(async () => (await environs() || {}).chargeeMs, { timeout: 10_000 }).toBeGreaterThan(0);
+    expect((await environs()).fige).toBe(true);
+    expect(erreurs).toEqual([]);
+  });
+
+  test("un fond figé pour un autre calage repasse en direct", async ({ page }) => {
+    // le lot a été photographié avant que l'exploitant ne tourne le plan
+    const cal = { ...CALE, fond: "osm" };
+    const lot = await lotPour({ ...cal, angle: 0.2 });
+    await ouvrePublic(page, { ...cal, fige: lot });
+    await expect(page.locator("#fondCarte image[href*='openstreetmap']").first()).toBeAttached();
+    await expect(page.locator("#fondFige img")).toHaveCount(0);
+    await expect(page.locator("#fondFige")).toBeHidden();
+  });
+
+  test("un fond figé injoignable repasse en direct", async ({ page }) => {
+    const cal = { ...CALE, fond: "osm" };
+    const { erreurs } = await ouvrePublic(page, { ...cal, fige: await lotPour(cal) },
+      (r) => r.fulfill({ status: 404, body: "" }));
+    await expect(page.locator("#fondCarte image[href*='openstreetmap']").first()).toBeAttached();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("l'exploitant fige le fond, et les visiteurs le reçoivent", async ({ page }) => {
+    /* Une carte témoin : elle se charge, se pose au repos, et rend une toile
+       vide de la taille de son hôte — ce que la photographie découpe. */
+    const temoin = "window.maplibregl = { Map: class { " +
+      "constructor(o){ this.o = o; this.c = document.createElement('canvas'); this.resize(); } " +
+      "on(){ return this; } once(ev, f){ if (ev !== 'error') setTimeout(f, 0); return this; } " +
+      "jumpTo(){} setStyle(){} redraw(){} triggerRepaint(){} remove(){} " +
+      "resize(){ const h = this.o.container; this.c.width = h.clientWidth || 1; this.c.height = h.clientHeight || 1; } " +
+      "getCanvas(){ return this.c; } } };";
+    const { erreurs, ecritures } = await ouvreCale(page, "maison", (r) => r.request().url().endsWith(".css")
+      ? r.fulfill({ status: 200, contentType: "text/css", body: "" })
+      : r.fulfill({ status: 200, contentType: "text/javascript", body: temoin }));
+    await ouvreEnvirons(page);
+    const volet = page.locator(".voletReg:not([hidden])");
+    await expect(volet.locator(".envLot")).toContainText("pas encore figé");
+    await volet.locator("button", { hasText: "Figer le fond de nouveau" }).click();
+    await expect(volet.locator(".envEtat")).toContainText("Fond figé :", { timeout: 40_000 });
+
+    const lot = await lotPour({ ...CALE, fond: "maison" });
+    const envois = ecritures.filter((e) => e.methode === "POST" &&
+      /^\/storage\/v1\/object\/environs\/b0\/[^/]+\/\d\/\d+\/\d+\.(webp|jpg)$/.test(e.chemin));
+    expect(envois).toHaveLength(85);
+    const inscrit = ecritures.filter((e) => e.methode === "PATCH").map((e) => JSON.parse(e.corps).calage).pop();
+    expect(inscrit.fige.source).toBe(lot.source);
+    expect(inscrit.fige.adresse).toMatch(/^https:\/\/base\.essai\/storage\/v1\/object\/public\/environs\/b0\/[^/]+\/$/);
+    // les lots d'avant se cherchent, une fois le nouveau inscrit
+    expect(ecritures.some((e) => e.chemin === "/storage/v1/object/list/environs")).toBe(true);
+    await expect(volet.locator(".envLot")).toContainText("Fond figé le");
+    expect(erreurs).toEqual([]);
+  });
+});
+

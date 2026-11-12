@@ -1,0 +1,37 @@
+/* `outils/gabarit/modules/comptes.mjs` — l'annuaire des comptes et la fiche
+   d'une personne. */
+module.exports = {
+  "Administrateur": "Administrator",
+  "Organisateur": "Organiser",
+  "Tous les salons, y compris ceux créés plus tard.": "All shows, including those created later.",
+  "Aucun salon à affecter pour l'instant.": "No shows to assign yet.",
+  "En attente": "Pending",
+  "Vous": "You",
+  "Nom": "Surname",
+  "Prénom": "First name",
+  "E-mail": "Email",
+  "Profil": "Role",
+  "Aucun compte.": "No accounts.",
+  "Inviter quelqu'un": "Invite someone",
+  "Compte enregistré.": "Account saved.",
+  "Adresse incomplète.": "Incomplete address.",
+  "Envoi de l'invitation…": "Sending the invitation…",
+  "Invitation envoyée à {adresse}.": "Invitation sent to {adresse}.",
+  "Envoi…": "Sending…",
+  "Lien envoyé à {adresse}.": "Link sent to {adresse}.",
+  "Cliquez à nouveau sur « Supprimer » pour confirmer.": "Click “Delete” again to confirm.",
+  "Suppression…": "Deleting…",
+  "Compte supprimé.": "Account deleted.",
+  "Retour": "Back",
+  "Envoyer l'invitation": "Send the invitation",
+  "Envoyer un lien de mot de passe": "Send a password link",
+  "Enregistrer": "Save",
+  "Modifier le compte": "Edit account",
+  "Le compte est créé sans mot de passe : l'invité en reçoit un lien par courriel, et le choisit lui-même.":
+    "The account is created without a password: the invitee receives a link by email and chooses it themselves.",
+  "L'adresse ne se change pas : c'est elle qui ouvre la session.": "The address cannot be changed: it is what signs the account in.",
+  "Vous ne pouvez pas retirer votre propre rôle.": "You cannot remove your own role.",
+  "Salons": "Shows",
+  // le bouton de chaque ligne de l'annuaire ; la console le dit aussi ailleurs
+  "Modifier": "Edit",
+};
