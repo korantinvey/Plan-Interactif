@@ -34,6 +34,7 @@ export class TextureMoteur {
     this.width = o.width; this.height = o.height;
     this.niveaux = Math.max(1, o.mipLevels || 1);
     this.handle = /** @type {WebGLTexture} */ (gl.createTexture());
+    compteCree(gl, "Textures Created");
     gl.bindTexture(gl.TEXTURE_2D, this.handle);
     gl.texStorage2D(gl.TEXTURE_2D, this.niveaux, gl.RGBA8, o.width, o.height);
     reglePrise(gl, o.sampler || {}, this.niveaux > 1);
@@ -71,7 +72,18 @@ function reglePrise(/** @type {WebGL2RenderingContext} */ gl, /** @type {any} */
   if (ani) gl.texParameterf(gl.TEXTURE_2D, ani.TEXTURE_MAX_ANISOTROPY_EXT, s.maxAnisotropy);
 }
 
-/** La carte graphique, telle que `logos-stands.mjs` l'interroge. */
+/* Ce que la carte graphique a créé, que la sonde relève comme elle relevait
+   ceux de luma.gl (`sonde.mjs` `travauxDeck`), par contexte. */
+/** @type {WeakMap<WebGL2RenderingContext, Record<string, number>>} */
+const CREES = new WeakMap();
+/** Compte une création sur cette carte graphique : « Shaders Created », « Textures Created »… */
+export function compteCree(/** @type {WebGL2RenderingContext} */ gl, /** @type {string} */ nom, n = 1){
+  let c = CREES.get(gl);
+  if (!c) CREES.set(gl, c = {});
+  c[nom] = (c[nom] || 0) + n;
+}
+
+/** La carte graphique, telle que `logos-stands.mjs` l'interroge, et ses comptes tels que la sonde les lit. */
 export function appareil(/** @type {WebGL2RenderingContext} */ gl){
   const features = new Set();
   if (gl.getExtension("EXT_texture_filter_anisotropic")) features.add("texture-filterable-anisotropic-webgl");
@@ -102,6 +114,10 @@ export function appareil(/** @type {WebGL2RenderingContext} */ gl){
       };
     },
     submit(){},
+    statsManager: {
+      getStats: (/** @type {string} */ nom) => nom !== "GPU Resource Counts" ? null
+        : { get: (/** @type {string} */ k) => ({ count: (CREES.get(gl) || {})[k] || 0 }) },
+    },
   };
 }
 

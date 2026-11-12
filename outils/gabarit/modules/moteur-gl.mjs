@@ -37,7 +37,7 @@ import { Viewport, View, OrthographicView, rapporte, IDENTITE, mul4, translation
 import { Couche, LayerExtension, PathStyleExtension, Programme, nomExtension } from "./moteur-gl-couche.mjs";
 import { SolidPolygonLayer, PathLayer } from "./moteur-gl-formes.mjs";
 import { TextLayer } from "./moteur-gl-texte.mjs";
-import { BitmapLayer, SimpleMeshLayer, appareil } from "./moteur-gl-objets.mjs";
+import { BitmapLayer, SimpleMeshLayer, appareil, compteCree } from "./moteur-gl-objets.mjs";
 
 /* ------------------------------------------------------------
    Les lumières, comme celles de deck.gl
@@ -115,8 +115,16 @@ export class Deck {
     this.vue = null;
     this.debutProgrammes = performance.now();
     /** les comptes de la sonde : ce que deck.gl appelait `metrics` */
-    this.metrics = { fps: 0, cpuTimePerFrame: 0, gpuTimePerFrame: 0, layersCount: 0, drawLayersCount: 0, framesRedrawn: 0 };
-    this._comptes = { images: 0, cpu: 0, debut: performance.now() };
+    this.metrics = { fps: 0, cpuTimePerFrame: 0, gpuTimePerFrame: 0, layersCount: 0, drawLayersCount: 0, framesRedrawn: 0,
+      updateAttributesTime: 0, updateLayersCount: 0 };
+    this._comptes = { images: 0, cpu: 0, debut: performance.now(), attrMs: 0, couches: 0 };
+    /* Les comptes que la sonde lisait chez deck.gl sous ces noms : le temps
+       passé à refaire les attributs, et les couches refaites, depuis les
+       derniers `metrics` — remis à zéro avec eux, comme chez deck.gl. */
+    this.stats = {
+      get: (/** @type {string} */ nom) => nom === "Update Attributes" ? { time: this._comptes.attrMs }
+        : nom === "Layer updates" ? { count: this._comptes.couches } : null,
+    };
     const toile = props.canvas || document.createElement("canvas");
     if (!props.canvas){
       toile.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;display:block";
@@ -144,6 +152,8 @@ export class Deck {
       const d = /** @type {any} */ (S).programme();
       this.programmes.set(d.nom, new Programme(gl, d.nom, d.vs, d.fs, d.attributs));
     }
+    compteCree(gl, "Shaders Created", 2 * SORTES.length);
+    compteCree(gl, "SharedRenderPipelines Created", SORTES.length);
     this.isInitialized = true;
     toile.addEventListener("webglcontextlost", (e) => { e.preventDefault(); this.perdu = true; });
     // après le constructeur, comme chez deck.gl : qui l'a créé le tient déjà
@@ -232,6 +242,7 @@ export class Deck {
 
   /** Les couches neuves prennent la place des anciennes de même identifiant. */
   _reconcilie(/** @type {any} */ ctx){
+    const t0 = performance.now();
     const neuves = this._aplatis(this.props.layers), vues = new Set(), ordre = [];
     for (const c of neuves){
       if (!(c instanceof Couche) || vues.has(c.id)) continue;
@@ -246,6 +257,7 @@ export class Deck {
           else for (const e of c.props.extensions || []) if (e && typeof e.initializeState === "function")
             try { e.initializeState.call(c, {}, e); } catch (x) { /* une extension sans attributs à elle */ }
           c.prepare(ctx, meme ? avant : null);
+          this._comptes.couches++;
         }
         this.couches.set(c.id, c);
         ordre.push(c);
@@ -257,6 +269,7 @@ export class Deck {
     for (const [id, c] of this.couches) if (!vues.has(id)){ try { c.detruit(); } catch (e) { /* déjà défaite */ } this.couches.delete(id); }
     this.ordre = ordre;
     this.sales = false;
+    this._comptes.attrMs += performance.now() - t0;
   }
 
   /** Le contexte de dessin commun à toutes les couches d'une passe. */
@@ -365,14 +378,18 @@ export class Deck {
   _compte(/** @type {number} */ cpu, /** @type {number} */ nCouches, /** @type {number} */ nPeintes){
     const k = this._comptes;
     k.images++; k.cpu += cpu;
+    // les images peintes depuis la création, comme le compteur de deck.gl que les essais lisent
+    this._metricsCounter = (this._metricsCounter || 0) + 1;
     this.metrics.layersCount = nCouches; this.metrics.drawLayersCount = nPeintes;
     this.metrics.framesRedrawn++;
     if (k.images < 60) return;
     const duree = performance.now() - k.debut;
     this.metrics.fps = duree > 0 ? k.images / duree * 1000 : 0;
     this.metrics.cpuTimePerFrame = k.cpu / k.images;
+    this.metrics.updateAttributesTime = k.attrMs;
+    this.metrics.updateLayersCount = k.couches;
     if (this.props._onMetrics) this.props._onMetrics(this.metrics);
-    this._comptes = { images: 0, cpu: 0, debut: performance.now() };
+    this._comptes = { images: 0, cpu: 0, debut: performance.now(), attrMs: 0, couches: 0 };
   }
 
   /* ----------------------------------------------------------

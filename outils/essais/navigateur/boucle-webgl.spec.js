@@ -7,6 +7,11 @@
  * suivante n'est jamais demandée —, revient sur la page, et attend que le
  * dessin remonte sur une toile neuve. Une boucle qui tourne, elle, ne doit
  * rien remonter.
+ *
+ * La boucle est celle de deck.gl, le moteur de recours (`?moteur=deck`). Le
+ * moteur du plan (`moteur-gl.mjs`) n'en tient pas : il demande une image à
+ * chaque changement, et la demande suivante ne dépend pas de la réussite de
+ * celle d'avant — il n'a rien qui puisse s'arrêter ainsi.
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe } = require("./aide");
@@ -15,7 +20,7 @@ test.describe("la boucle d'images du dessin", () => {
   test("arrêtée en arrière-plan, le dessin remonte au retour", async ({ page }) => {
     test.setTimeout(120_000);
     const erreurs = await prepare(page);
-    await page.goto("/plan.html?plan=smcl-2026");
+    await page.goto("/plan.html?plan=smcl-2026&moteur=deck");
     await attendLaListe(page);
     const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
       .then(() => true, () => false);
@@ -58,7 +63,7 @@ test.describe("la boucle d'images du dessin", () => {
   test("sans image donnée par le navigateur, la garde ne jette rien", async ({ page }) => {
     test.setTimeout(120_000);
     const erreurs = await prepare(page);
-    await page.goto("/plan.html?plan=smcl-2026");
+    await page.goto("/plan.html?plan=smcl-2026&moteur=deck");
     await attendLaListe(page);
     const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
       .then(() => true, () => false);

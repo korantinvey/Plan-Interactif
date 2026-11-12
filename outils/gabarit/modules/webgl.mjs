@@ -86,15 +86,13 @@ export const RENDU_WEBGL = RENDU_DEMANDE !== "svg";
    parlent la même langue — mêmes classes, mêmes réglages —, et ce module les
    reçoit sous le même nom, `deck` : rien ici ne dépend de celui qui dessine.
 
-   deck.gl reste le recours en cas de souci : « ?moteur=deck » le charge,
-   comme avant, depuis `web/bibliotheques/`. Le moteur du plan, lui, voyage
-   dans le script du plan, et n'a rien à télécharger.
-
-   Pendant que le moteur reprend ce que deck.gl peignait, deck.gl reste le
-   défaut, et « ?moteur=gl2 » essaie le moteur. */
+   Le moteur du plan peint par défaut. deck.gl reste le recours en cas de
+   souci : « ?moteur=deck » le charge, comme avant, depuis
+   `web/bibliotheques/`. Le moteur du plan, lui, voyage dans le script du
+   plan, et n'a rien à télécharger. */
 const MOTEUR_DEMANDE = new URLSearchParams(location.search).get("moteur");
 /** Le moteur qui peint le plan : « gl2 », celui du plan, ou « deck », deck.gl. */
-export const MOTEUR = MOTEUR_DEMANDE === "gl2" ? "gl2" : "deck";
+export const MOTEUR = MOTEUR_DEMANDE === "deck" ? "deck" : "gl2";
 /** Les classes du moteur qui peint — celles de deck.gl, ou leurs pareilles du moteur du plan. Rien avant son arrivée. */
 /** @type {any} */
 let deck = null;

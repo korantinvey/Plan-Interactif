@@ -20,22 +20,42 @@ test("choisir un stand ne retriangule pas le hall", async ({ page }) => {
   const camera = await page.waitForFunction(() => window.__essais.GL.camera && window.__essais.GL.deck, null,
     { timeout: 15_000 }).then(() => true, () => false);
   test.skip(!camera, "pas de carte graphique : le plan reste à plat");
-  // la grande couche des volumes, montée et triangulée une première fois
-  await page.waitForFunction(() => window.__essais.GL.deck.layerManager.getLayers()
-    .some((l) => /-volumes-\d+$/.test(l.id) && l.state && l.state.polygonTesselator), null, { timeout: 60_000 });
+  /* La grande couche des volumes, montée et triangulée une première fois. Le
+     moteur du plan (`moteur-gl.mjs`) garde ses couches par identifiant, et
+     triangule dans `geometrie` ; deck.gl, le recours, dans son
+     `polygonTesselator`. L'essai épie celui qui peint. */
+  await page.evaluate(() => {
+    window.__volumes = () => {
+      const G = window.__essais.GL;
+      if (G.moteur === "gl2") return [...G.deck.couches.values()].find((l) => /-volumes-\d+$/.test(l.id) && l.etat);
+      return G.deck.layerManager.getLayers().find((l) => /-volumes-\d+$/.test(l.id) && l.state && l.state.polygonTesselator);
+    };
+  });
+  await page.waitForFunction(() => window.__volumes(), null, { timeout: 60_000 });
   await page.waitForTimeout(1500);
 
-  // chaque triangulation, et le nombre de formes qu'elle a reprises
+  // chaque triangulation, et le nombre de formes qu'elle a reprises ; chaque couche qui naît pendant le choix
   await page.evaluate(() => {
-    const c = window.__essais.GL.deck.layerManager.getLayers()
-      .find((l) => /-volumes-\d+$/.test(l.id) && l.state && l.state.polygonTesselator);
-    const proto = Object.getPrototypeOf(c.state.polygonTesselator), avant = proto.updateGeometry;
+    const c = window.__volumes(), G = window.__essais.GL;
     window.__triangulees = [];
-    // chaque couche qui naît pendant le choix
+    window.__nees = [];
+    if (G.moteur === "gl2"){
+      const S = Object.getPrototypeOf(c), geometrie = S.geometrie;
+      S.geometrie = function (/** @type {any[]} */ ...a){ window.__triangulees.push(this.props.data.length); return geometrie.apply(this, a); };
+      // une couche naît quand rien ne la précède sous son identifiant
+      for (const proto of new Set([...G.deck.couches.values()].map((l) => Object.getPrototypeOf(l)))){
+        const prepare = proto.prepare;
+        proto.prepare = function (/** @type {any} */ ctx, /** @type {any} */ avant){
+          if (!avant) window.__nees.push(this.id);
+          return prepare.apply(this, [ctx, avant]);
+        };
+      }
+      return;
+    }
+    const proto = Object.getPrototypeOf(c.state.polygonTesselator), avant = proto.updateGeometry;
     let base = Object.getPrototypeOf(c);
     while (base && !Object.prototype.hasOwnProperty.call(base, "_initialize")) base = Object.getPrototypeOf(base);
     const init = base._initialize;
-    window.__nees = [];
     base._initialize = function () { window.__nees.push(this.id); return init.apply(this, arguments); };
     proto.updateGeometry = function (o) {
       window.__triangulees.push(o && o.data && o.data.length !== undefined ? o.data.length : -1);

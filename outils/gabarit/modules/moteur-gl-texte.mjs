@@ -23,6 +23,7 @@
 import TinySDF from "@mapbox/tiny-sdf";
 import { Couche, ENTETE_SOMMETS, ENTETE_FRAGMENTS, aRefaire } from "./moteur-gl-couche.mjs";
 import { Assemblage, coins, remplisAttributs, numerote, GLSL_FILTRE, reglageFiltre, ATTRIBUT_FILTRE } from "./moteur-gl-formes.mjs";
+import { compteCree } from "./moteur-gl-objets.mjs";
 
 /* ------------------------------------------------------------
    Les atlas — ceux de deck.gl (`FontAtlasManager`), mêmes mesures
@@ -133,7 +134,7 @@ function textureDe(/** @type {WebGL2RenderingContext} */ gl, /** @type {any} */ 
   if (!m){ m = new Map(); TEXTURES.set(gl, m); }
   let t = m.get(a.cle);
   if (t && t.version === a.version && t.atlas === a) return t;
-  if (!t){ t = { tex: gl.createTexture(), version: -1, atlas: a }; m.set(a.cle, t); }
+  if (!t){ t = { tex: gl.createTexture(), version: -1, atlas: a }; m.set(a.cle, t); compteCree(gl, "Textures Created"); }
   gl.bindTexture(gl.TEXTURE_2D, t.tex);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
