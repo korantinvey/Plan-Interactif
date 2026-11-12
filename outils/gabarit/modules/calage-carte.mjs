@@ -549,11 +549,13 @@ function construitCalage(){
   let attente = null;
   const plusTard = (f) => { clearTimeout(attente); attente = setTimeout(f, 600); };
   iStyle.oninput = () => {
-    // le style va au calage qu'on réglait en tapant, pas à celui d'un pavillon rejoint depuis
-    const cal = ENV_CAL;
+    /* Le style va au calage du pavillon où l'on tapait. Pas à l'objet même :
+       tourner le calage le remplace par un autre (`reancre`), et le style
+       saisi juste avant se perdait. Un pavillon quitté entre-temps, si. */
+    const p = P();
     plusTard(() => {
-      if (!cal || ENV_CAL !== cal) return;
-      cal.style = iStyle.value.trim() || undefined;
+      if (P() !== p || !ENV_CAL) return;
+      ENV_CAL.style = iStyle.value.trim() || undefined;
       relanceCarteGL();
     });
   };
@@ -864,11 +866,16 @@ export function voletEnvirons(hote){
       // plus de calage, plus de fond à servir : ses images partent avec lui
       if (avait && avait.fige)
         retireLesLots({ pavillon: p.id }).catch(e => console.warn("Fond figé non retiré : " + e.message));
-      poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
-      champ.value = "";
-      fermeCalage();
-      rafraichitCarte();
-      poseVue();
+      /* L'écran n'est remis à zéro que si l'on regarde encore ce pavillon : passé
+         à un autre pendant l'écriture, on y calait peut-être déjà, et ce travail
+         n'a rien à voir avec la carte qu'on vient de retirer ici. */
+      if (P() === p){
+        poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
+        champ.value = "";
+        fermeCalage();
+        rafraichitCarte();
+        poseVue();
+      }
       dit("La carte est retirée.");
     } catch (e) { dit("Échec : " + e.message, true); }
     bEfface.disabled = false;

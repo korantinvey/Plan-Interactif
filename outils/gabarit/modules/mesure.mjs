@@ -559,11 +559,19 @@ function effaceJetonsVisiteur(){
  * ne le relie plus à celui d'avant.
  */
 function refuseMesure(refus){
-  MESURE_REFUSEE = !!refus;
   try {
     if (refus) localStorage.setItem(CLE_REFUS, "1");
     else localStorage.removeItem(CLE_REFUS);
   } catch (e) {}
+  appliqueRefus(refus);
+}
+
+/* Ce que le refus change sur cette page, sans le réécrire : l'écoute des
+   autres onglets s'en sert, et réécrire la clé qu'elle vient de recevoir
+   relançait l'événement chez l'onglet d'en face — deux onglets s'y
+   répondaient sans fin. */
+function appliqueRefus(refus){
+  MESURE_REFUSEE = !!refus;
   if (refus){
     clearTimeout(_envoiDiffere);
     _envoiDiffere = null;
@@ -642,7 +650,7 @@ if (typeof addEventListener === "function") {
   addEventListener("storage", (e) => {
     if (e.key !== CLE_REFUS) return;
     const refus = e.newValue === "1";
-    if (refus !== MESURE_REFUSEE) refuseMesure(refus);
+    if (refus !== MESURE_REFUSEE) appliqueRefus(refus);
   });
 }
 

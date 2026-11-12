@@ -614,7 +614,10 @@ const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
 
 /** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
 export function suitFicheZone(o, valeurs, etat, apres){
-  ficheZoneEnCours = { o, valeurs, etat, apres, depart: valeurs() };
+  /* `base` : la dernière fiche que la base a confirmée ; `envois` : la file
+     des écritures de cette fiche, qui partent l'une après l'autre. */
+  const ouverte = valeurs();
+  ficheZoneEnCours = { o, valeurs, etat, apres, depart: ouverte, base: ouverte, envois: Promise.resolve() };
   /* La fenêtre peut se fermer de quatre façons, et par une cinquième quand une
      autre prend sa place : toutes passent par « verseModale ». */
   poseAvantFermeture(() => { verseFicheZone(); ficheZoneEnCours = null; });
@@ -629,10 +632,14 @@ export function verseFicheZone(){
   /* Ce qui part devient l'état de départ tout de suite : la fenêtre se ferme
      avant que la base ait répondu, et deux sorties ne doivent pas envoyer deux
      fois la même chose. Un échec le remet en jeu. */
-  const depart = f.depart;
   f.depart = v;
   if (f.etat){ f.etat.textContent = "Enregistrement…"; f.etat.dataset.mal = "false"; }
-  enregistreZone(f.o, v, depart).then(() => {
+  /* Les écritures d'une même fiche se suivent, et chacune se compare à ce que
+     la précédente a confirmé — lue au moment où elle part. Lancées de front,
+     la seconde comparait à une valeur peut-être jamais écrite, et taisait un
+     champ que l'échec de la première laissait perdu. */
+  f.envois = f.envois.then(() => enregistreZone(f.o, v, f.base)).then(() => {
+    f.base = v;
     if (f.etat) f.etat.textContent = "Enregistré.";
     if (f.apres) f.apres();
   }).catch(e => {
@@ -644,7 +651,7 @@ export function verseFicheZone(){
     /* Ce qui n'est pas passé reste à écrire : la prochaine sortie réessaiera,
        comparée à ce que la base garde encore — et non à rien, qui réécrivait
        chaque champ, y compris ceux qu'un collègue avait changés depuis. */
-    if (f.depart === v) f.depart = depart;
+    if (f.depart === v) f.depart = f.base;
   });
 }
 

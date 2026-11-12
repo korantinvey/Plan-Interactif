@@ -237,6 +237,9 @@ const LIGNES_RATTACHEMENT = {
    taire, sans quoi on croirait le champ déjà repris. */
 const FICHE_INERTE = [];
 
+/** Les écritures de la fiche d'un salon, l'une après l'autre. */
+let fileFiche = Promise.resolve();
+
 export function resumeFiche(e) {
   const caches = LIGNES_FICHE
     .filter((l) => l.cle && !paraitSurFiche(e, "stand", l.cle)).map((l) => l.libelle);
@@ -294,20 +297,23 @@ function caseFiche(type, cle, libelle, aide, apres) {
   i.checked = paraitSurFiche(e, type, cle);
   if (!libelle) i.setAttribute("aria-label", "Afficher ce champ sur la fiche");
   if (apres) apres(i.checked);
-  /* La case revenait en cas d'échec, mais la fiche du salon gardait le
-     changement refusé : la prochaine écriture l'aurait envoyé quand même. */
-  i.onchange = async () => {
-    const avant = e.fiche;
-    e.fiche = { ...(e.fiche || {}) };
-    e.fiche[type] = { ...(e.fiche[type] || {}), [cle]: i.checked };
-    if (apres) apres(i.checked);
-    try { await majEvenement(e.id, { fiche: e.fiche }); }
-    catch (err) {
-      e.fiche = avant;
-      signale(err.message, true);
-      i.checked = !i.checked;
-      if (apres) apres(i.checked);
-    }
+  /* Les écritures de la fiche se suivent, et chacune part de ce que la
+     précédente a confirmé : lancées de front, un refus tardif remettait la
+     fiche entière à un état d'avant, effaçant un changement confirmé depuis.
+     La fiche du salon ne change qu'une fois la base d'accord ; refusée, la
+     case revient — si personne ne l'a touchée depuis. */
+  i.onchange = () => {
+    const voulu = i.checked;
+    if (apres) apres(voulu);
+    fileFiche = fileFiche.then(async () => {
+      const fiche = { ...(e.fiche || {}) };
+      fiche[type] = { ...(fiche[type] || {}), [cle]: voulu };
+      try { await majEvenement(e.id, { fiche }); e.fiche = fiche; }
+      catch (err) {
+        signale(err.message, true);
+        if (i.checked === voulu){ i.checked = !voulu; if (apres) apres(!voulu); }
+      }
+    });
   };
   return l;
 }
@@ -765,19 +771,23 @@ function cadreCategories(src) {
       : "aucune fiche de cette catégorie ne portait de numéro de stand";
     const i = l.querySelector("input");
     i.checked = choisies.indexOf(id) >= 0;
-    i.onchange = async () => {
+    /* Les écritures du groupe se suivent ; un refus ne défait que son propre
+       geste, et seulement si la case n'a pas bougé depuis — sinon c'est le
+       geste suivant qui fait foi. */
+    i.onchange = () => {
+      const voulu = i.checked;
       const k = choisies.indexOf(id);
-      if (i.checked && k < 0) choisies.push(id);
-      if (!i.checked && k >= 0) choisies.splice(k, 1);
+      if (voulu && k < 0) choisies.push(id);
+      if (!voulu && k >= 0) choisies.splice(k, 1);
       dis();
-      // refusé, la catégorie revient à ce que la base garde, case et note avec
-      if (!(await enregistre())) {
+      fileFiche = fileFiche.then(async () => {
+        if (await enregistre() || i.checked !== voulu) return;
         const j = choisies.indexOf(id);
-        if (i.checked && j >= 0) choisies.splice(j, 1);
-        if (!i.checked && j < 0) choisies.push(id);
-        i.checked = !i.checked;
+        if (voulu && j >= 0) choisies.splice(j, 1);
+        if (!voulu && j < 0) choisies.push(id);
+        i.checked = !voulu;
         dis();
-      }
+      });
     };
     zone.appendChild(l);
   });

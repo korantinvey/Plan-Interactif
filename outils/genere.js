@@ -725,10 +725,14 @@ fs.writeFileSync(W + "plan-admin.html", poseCsp(annonceTot(sortScripts(
 /* --- démonstration à données figées, publiable en artefact ---
    Les données viennent de Klipso, posées entre deux balises de script : un nom
    d'exposant qui contiendrait `</script` fermerait la balise et ferait du
-   reste du balisage. `<\/` se relit en JSON comme `</`. */
+   reste du balisage — et `<!--` suivi de `<script`, sans même de fermeture,
+   avale la balise qui suit. Ces `<`-là s'écrivent donc `\u003c`, que le JSON
+   relit à l'identique ; les autres — trente-cinq mille, dans les calques —
+   restent, faute de quoi la page grossissait de 3 %. */
+const SEUILS_DE_SCRIPT = /<(?=!--|\/?script)/gi;
 fs.writeFileSync(W + "plan-smcl.html",
   page(tplPublic.replace("/*__DATA__*/", () =>
-    fs.readFileSync(D + "/donnees/plans.json", "utf8").replace(/<\/(script)/gi, "<\\/$1")),
+    fs.readFileSync(D + "/donnees/plans.json", "utf8").replace(SEUILS_DE_SCRIPT, "\\u003c")),
        { autonome: true, pleinEcran: true }));
 
 /* --- le salon de démonstration, figé : un vrai plan, des exposants inventés ---
@@ -743,7 +747,7 @@ fs.writeFileSync(W + "plan-smcl.html",
   if (sansLogo) console.warn("démonstration : " + sansLogo + " société(s) sans logo — npm run logos-demo");
   fs.writeFileSync(W + "demo.html",
     page(tplPublic.replace("/*__DATA__*/", () =>
-      JSON.stringify(salon).replace(/<\/(script)/gi, "<\\/$1")),
+      JSON.stringify(salon).replace(SEUILS_DE_SCRIPT, "\\u003c")),
          { autonome: true, pleinEcran: true, choixAmbiance: true }));
   fs.mkdirSync(W + DOSSIER_PRODUITS, { recursive: true });
   for (const [nom, svg] of Object.entries(imagesProduits())) fs.writeFileSync(W + DOSSIER_PRODUITS + "/" + nom, svg);

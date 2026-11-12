@@ -284,7 +284,10 @@ export async function iconeApp(url) {
     (EMPREINTE.test(v) ? "&v=" + encodeURIComponent(v) : "");
   const rep = await fetch(amont).catch(() => null);
   if (!rep) return new Response("Icône indisponible.", { status: 502, headers: nu });
-  const versionnee = rep.ok && EMPREINTE.test(url.searchParams.get("v") ?? "");
+  /* La fonction sait si l'icône servie est bien celle de la version demandée,
+     et si la demande venait d'un exploitant : son « Cache-Control » fait foi. */
+  const versionnee = rep.ok && EMPREINTE.test(url.searchParams.get("v") ?? "") &&
+    /immutable/.test(rep.headers.get("Cache-Control") || "");
   return new Response(rep.body, {
     status: rep.status,
     headers: {

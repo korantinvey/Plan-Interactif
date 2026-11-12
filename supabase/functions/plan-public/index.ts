@@ -454,17 +454,19 @@ async function rendIconeApp(
   masque: boolean,
   identifie: boolean,
   entetes: Record<string, string>,
-  versionnee = false,
+  version = "",
 ) {
   const nu = { ...entetes, "Cache-Control": "no-store" };
   const q = sb.from("evenement")
-    .select("icone_app, icone_app_masque").eq("slug", slug);
+    .select("icone_app, icone_app_masque, icone_app_version").eq("slug", slug);
   const { data, error } = await (identifie ? q : q.eq("etat", "publie")).maybeSingle();
   if (error && identifie && sessionRefusee(error)) {
     return new Response("Session expirée : reconnectez-vous.", { status: 401, headers: nu });
   }
   if (error) return new Response("Icône indisponible.", { status: 503, headers: nu });
-  const ligne = data as { icone_app: string | null; icone_app_masque: string | null } | null;
+  const ligne = data as {
+    icone_app: string | null; icone_app_masque: string | null; icone_app_version: string | null;
+  } | null;
   const src = (masque ? ligne?.icone_app_masque : null) ?? ligne?.icone_app ?? "";
   const base64 = src.startsWith(PREFIXE_PNG) ? src.slice(PREFIXE_PNG.length) : "";
   if (!base64) return new Response("Ce salon n'a pas d'icône.", { status: 404, headers: nu });
@@ -472,10 +474,13 @@ async function rendIconeApp(
     headers: {
       ...entetes,
       "Content-Type": "image/png",
-      /* Immuable seulement sous une adresse qui porte la version : sans elle,
-         la même adresse rendra une autre image au prochain dépôt, et un cache
-         en chemin aurait gardé l'ancienne pour un an. */
-      "Cache-Control": versionnee ? "public, max-age=31536000, immutable" : "no-store",
+      /* Immuable seulement sous l'adresse de la version qu'on sert : une
+         adresse d'avant, encore citée par un manifeste gardé, aurait sinon
+         gardé pour un an l'icône d'après. Et jamais pour un exploitant : il
+         voit celle d'un salon non publié, qu'aucun cache partagé ne doit
+         ensuite rendre à un visiteur. */
+      "Cache-Control": !identifie && version && version === ligne?.icone_app_version
+        ? "public, max-age=31536000, immutable" : "no-store",
     },
   });
 }
@@ -731,7 +736,7 @@ Deno.serve(async (req) => {
     if (new URL(req.url).searchParams.get("icone")) {
       const masque = Boolean(new URL(req.url).searchParams.get("masque"));
       const v = new URL(req.url).searchParams.get("v") ?? "";
-      return await rendIconeApp(sb, slug, masque, identifie, CORS, /^[0-9a-f]{8,32}$/.test(v));
+      return await rendIconeApp(sb, slug, masque, identifie, CORS, v);
     }
 
     /* De quoi nommer et habiller l'application installée : avant la lecture

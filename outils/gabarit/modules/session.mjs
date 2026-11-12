@@ -74,8 +74,13 @@ export function echangeSession(cfg, ses){
      déconnecté partout. On prend la sienne. */
   try {
     const rangee = JSON.parse(localStorage.getItem(CLE_SESSION) || "null");
+    /* Et seulement la session du même compte, du même projet : un autre
+       onglet a pu se connecter sous un autre nom, et la reprendre ici aurait
+       fait écrire au nom du second des données lues sous le premier. */
+    const lui = contenuJeton(rangee?.access_token), moi = contenuJeton(ses.access_token);
     if (rangee?.refresh_token && rangee.refresh_token !== ses.refresh_token &&
-        rangee.access_token && resteJeton(rangee.access_token) >= RESTE_JETON) {
+        rangee.access_token && resteJeton(rangee.access_token) >= RESTE_JETON &&
+        lui && moi && lui.sub === moi.sub && lui.iss === moi.iss) {
       return Promise.resolve(rangee);
     }
   } catch (e) { /* casier illisible : on échange comme avant */ }

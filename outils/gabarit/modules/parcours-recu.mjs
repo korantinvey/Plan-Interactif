@@ -101,14 +101,18 @@ export function proposeParcoursRecu(brut){
   const sien = PARCOURS.stands.length + PARCOURS.confs.length;
   ouvreModale("Un parcours partagé", corps => {
     const p = document.createElement("p");
+    /* Le contenu du lien en entier : c'est lui que « Remplacer le mien »
+       charge. Réduit à ce qui manque, il taisait les communs, et le visiteur
+       ne savait pas ce qu'il garderait. « Ajouter au mien » ne verse, lui, que
+       ce qui manque — ce qui revient au même. */
     p.textContent = "Le parcours qui vous a été partagé contient " +
-      contenuParcours(stands.length, confs.length) + ".";
+      contenuParcours(tousStands.length, toutesConfs.length) + ".";
     corps.appendChild(p);
 
     const ul = document.createElement("ul");
     ul.className = "partListe";
-    const noms = stands.map(id => nomDeStand(parId.get(id)))
-      .concat(confs.map(id => CONFS.get(id).nom));
+    const noms = tousStands.map(id => nomDeStand(parId.get(id)))
+      .concat(toutesConfs.map(id => CONFS.get(id).nom));
     noms.slice(0, PARTAGE_APERCU).forEach(n => {
       const li = document.createElement("li");
       li.textContent = n;

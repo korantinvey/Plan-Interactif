@@ -168,6 +168,10 @@ export function voletOrdre(hote){
   let file = Promise.resolve();
   // seule la réponse de la dernière écriture remplace la fiche du poste
   let derniere = 0;
+  /* La dernière fiche que la base a confirmée, même quand sa réponse n'a pas
+     été affichée parce qu'une écriture plus récente était en route : c'est à
+     elle que l'on revient si cette dernière échoue. */
+  let confirmee = null;
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -259,9 +263,16 @@ export function voletOrdre(hote){
       const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
     })).then(t => {
+      confirmee = t;
       if (n !== derniere) return;
       DATA.fiche = t; dit("Enregistré.");
-    }).catch(e => dit("Échec : " + e.message, true));
+    }).catch(e => {
+      dit("Échec : " + e.message, true);
+      /* La dernière demande refusée : le volet et la fiche du poste reviennent
+         à ce que la base tient, au lieu de garder le réglage refusé, qu'une
+         réouverture aurait encore montré comme acquis. */
+      if (n === derniere && confirmee){ DATA.fiche = confirmee; litReglage(); rendu(); }
+    });
   };
 
   /* Les champs en réserve se rangent par intitulé : leur ordre ne décide de

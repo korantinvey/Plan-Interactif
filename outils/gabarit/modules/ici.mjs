@@ -54,7 +54,7 @@ import { $ } from "./dom.mjs";
 import { DATA } from "./donnees.mjs";
 import { BORNE } from "./salon.mjs";
 import { lieuBorne, poseDepartImpose } from "./borne.mjs";
-import { candidats } from "./itineraire.mjs";
+import { repondants, pointObjet } from "./trajet.mjs";
 import { pourRecherche } from "./texte.mjs";
 import { LIEU_BORNE, poseLieuBorne, ecritDepartBorne, dessineBorne } from "./vous-etes-ici.mjs";
 import { ITI, relance, suitLaVisee } from "./tiroir-itineraire.mjs";
@@ -92,7 +92,11 @@ let ICI_PERDU = false;
  */
 function lieuExact(v){
   const n = pourRecherche(v);
-  const justes = candidats(v).filter(x => pourRecherche(x.nom) === n ||
+  /* Dans tout ce qui répond, et non dans les quatorze que propose la saisie :
+     tronquée, la liste pouvait taire le seul lieu exact, ou l'un de deux. */
+  const { out, notes } = repondants(v);
+  const tous = out.concat(notes.map(x => pointObjet(x.o)));
+  const justes = tous.filter(x => pourRecherche(x.nom) === n ||
     (x.genre === "objet" && x.obj && pourRecherche(x.obj.code || "") === n));
   return justes.length === 1 ? justes[0] : null;
 }

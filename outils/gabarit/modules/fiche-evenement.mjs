@@ -217,12 +217,14 @@ export function dessineFiche() {
   rythme.onchange = async (ev) => {
     const avant = e.rythme_min;
     e.rythme_min = +(/** @type {HTMLSelectElement} */ (ev.target)).value;
+    // un seul changement à la fois : un refus tardif aurait sinon défait le suivant
+    rythme.disabled = true;
     try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
     catch (err) {
       e.rythme_min = avant;
       rythme.value = String(avant);
       signale(err.message, true);
-    }
+    } finally { rythme.disabled = false; }
   };
   const bsync = document.createElement("button");
   bsync.className = "btn petit";
@@ -263,8 +265,12 @@ export function dessineFiche() {
         '<td class="num">' + (p.nb_zones ?? "—") + '</td>';
       tr.querySelector(".nomplan").textContent = p.libelle;
       tr.querySelector(".hall").textContent = p.hall || "—";
+      /* Refusée, la case revient : un 403 ne déconnecte plus, et l'écran
+         serait resté sur une publication que la base n'a pas prise. */
       tr.querySelector("input").onchange = async (ev) => {
-        p.publie = ev.target.checked;
+        const caseP = ev.target, avant = p.publie;
+        p.publie = caseP.checked;
+        caseP.disabled = true;
         try {
           await rest("plan?id=eq." + p.id, {
             method: "PATCH",
@@ -272,7 +278,11 @@ export function dessineFiche() {
             body: JSON.stringify({ publie: p.publie }),
           });
           _console.dessine();
-        } catch (err) { signale(err.message, true); }
+        } catch (err) {
+          p.publie = avant;
+          caseP.checked = !!avant;
+          signale(err.message, true);
+        } finally { caseP.disabled = false; }
       };
       tb.appendChild(tr);
     });

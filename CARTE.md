@@ -481,7 +481,7 @@ Importé par :
 
 fenetre · tiroirs
 
-### `modules/calage-carte.mjs` — 901 l. → plan-admin
+### `modules/calage-carte.mjs` — 908 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
@@ -495,7 +495,7 @@ Fonctions :
 `rafraichitCarte` 376 · `armeCalage` 415 · `pivotCalage` 426 · `glisseCarte` 430
 `cartePointerDown` 437 · `cartePointerMove` 451 · `cartePointerUp` 470 · `ditCalage` 478
 `majCalage` 487 · `appliqueCalage` 509 · `tourneCalage` 516 · `construitCalage` 522
-`ouvreCalage` 692 · `fermeCalage` 702 · `brancheCalageCarte` 714 · `voletEnvirons` 737
+`ouvreCalage` 694 · `fermeCalage` 704 · `brancheCalageCarte` 716 · `voletEnvirons` 739
 
 Importe :
 
@@ -1237,18 +1237,18 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1302 l. → console
+### `modules/fiche-detail.mjs` — 1312 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
 - l.26 · Contenu de la fiche détail
 
 Fonctions :
 
-`paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 240
-`caseFiche` 285 · `cibleEn` 337 · `champsPersos` 339 · `criteres` 345 · `ecritFiche` 348
-`caseCritere` 363 · `clePerso` 382 · `ajouteChampPerso` 390 · `renommeChampPerso` 408
-`retireChampPerso` 456 · `lignesPerso` 517 · `cadreFiche` 540 · `ouvreFiche` 570
-`cadreCategories` 710 · `sousTitre` 796 · `tableauChamps` 811 · `champOrigine` 1037
+`paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 243
+`caseFiche` 288 · `cibleEn` 343 · `champsPersos` 345 · `criteres` 351 · `ecritFiche` 354
+`caseCritere` 369 · `clePerso` 388 · `ajouteChampPerso` 396 · `renommeChampPerso` 414
+`retireChampPerso` 462 · `lignesPerso` 523 · `cadreFiche` 546 · `ouvreFiche` 576
+`cadreCategories` 716 · `sousTitre` 806 · `tableauChamps` 821 · `champOrigine` 1047
 
 Importe :
 
@@ -1258,15 +1258,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 484 l. → console
+### `modules/fiche-evenement.mjs` — 494 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 314
-`ligneReglage` 330 · `champCle` 344 · `champInstance` 385 · `ouvreSources` 409
-`majIntegration` 467 · `majMsgSync` 474
+`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 324
+`ligneReglage` 340 · `champCle` 354 · `champInstance` 395 · `ouvreSources` 419
+`majIntegration` 477 · `majMsgSync` 484
 
 Éléments :
 
@@ -1281,19 +1281,19 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 954 l. → plan-admin
+### `modules/fiche-zone.mjs` — 961 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.51 · La fiche d'une zone organisateur
-- l.854 · Masquer une zone organisateur
+- l.861 · Masquer une zone organisateur
 
 Fonctions :
 
 `champZone` 77 · `champsZone` 102 · `champEstrade` 222 · `champSalles` 264 · `nomDeZone` 316
 `cadreLogo` 342 · `champLogo` 414 · `editeurRiche` 452 · `memeFicheZone` 609
-`suitFicheZone` 616 · `verseFicheZone` 624 · `ficheZone` 652 · `marqueType` 681
-`enregistreZone` 687 · `enregistreZoneAjoutee` 801 · `basculeAffichageZone` 865
-`marqueZonesMasquees` 893 · `ecritColonnesEvenement` 913 · `ecritColonneEvenement` 947
+`suitFicheZone` 616 · `verseFicheZone` 627 · `ficheZone` 659 · `marqueType` 688
+`enregistreZone` 694 · `enregistreZoneAjoutee` 808 · `basculeAffichageZone` 872
+`marqueZonesMasquees` 900 · `ecritColonnesEvenement` 920 · `ecritColonneEvenement` 954
 
 Importe :
 
@@ -1419,15 +1419,15 @@ Importé par :
 affiche-ici · borne · cartouche-poi · dessin · edition · fiche · gestes-admin · libelles
 outil-dessin · outil-escalier · points-interet · tiroir-itineraire · tutoriel
 
-### `modules/forme.mjs` — 154 l. → plan, plan-admin
+### `modules/forme.mjs` — 174 l. → plan, plan-admin
 
 - l.1 · La forme d'un emplacement — anneaux, tracé, empreinte, ancrage du nom
 
 Fonctions :
 
 `arrondiGeo` 14 · `empreinteGeo` 25 · `anneauxGeo` 45 · `traceGeo` 58 · `boiteAnneaux` 62
-`dansAnneau` 80 · `distSegmentGeo` 91 · `distBordGeo` 100 · `poleGeo` 110 · `porteeGeo` 129
-`boiteGeo` 137
+`dansAnneau` 80 · `distSegmentGeo` 91 · `dansForme` 104 · `distBordGeo` 111 · `poleGeo` 121
+`porteeGeo` 140 · `boiteGeo` 148
 
 Importé par :
 
@@ -1467,14 +1467,14 @@ appels · batiments · calage-carte · calques-dessin · edition · enregistreme
 outil-comptoir · outil-escalier · outil-foodtruck · placement-libelles
 reprise-emplacements
 
-### `modules/gestes-admin.mjs` — 203 l. → plan-admin
+### `modules/gestes-admin.mjs` — 205 l. → plan-admin
 
 - l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
 
 Fonctions :
 
-`appui` 47 · `suit` 74 · `leve` 86 · `annuleGeste` 100 · `clavier` 111 · `echap` 159
-`apresEchap` 180 · `entree` 187 · `brancheGestesAdmin` 195
+`appui` 47 · `suit` 74 · `leve` 86 · `annuleGeste` 100 · `clavier` 113 · `echap` 161
+`apresEchap` 182 · `entree` 189 · `brancheGestesAdmin` 197
 
 Importe :
 
@@ -1579,18 +1579,18 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/ici.mjs` — 271 l. → plan, plan-admin
+### `modules/ici.mjs` — 275 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
 
 Fonctions :
 
-`lieuExact` 93 · `litCodeIci` 109 · `poseIci` 132 · `retireIci` 159
-`oublieIciDeLAdresse` 189 · `montreBandeauIci` 205 · `demarreIci` 239 · `brancheIci` 259
+`lieuExact` 93 · `litCodeIci` 113 · `poseIci` 136 · `retireIci` 163
+`oublieIciDeLAdresse` 193 · `montreBandeauIci` 209 · `demarreIci` 243 · `brancheIci` 263
 
 Importe :
 
-borne · dom · donnees · itineraire · salon · texte · tiroir-itineraire · vous-etes-ici
+borne · dom · donnees · salon · texte · tiroir-itineraire · trajet · vous-etes-ici
 
 Importé par :
 
@@ -1690,7 +1690,7 @@ temps · trait-chemin · trajet · trajet · troncon
 Importé par :
 
 affiche-ici · aimants · borne · calage-carte · cartouche-poi · dessin · edition
-enregistrement · fiche-zone · ici · index-salon · journee · nappe · outil-dessin · pile
+enregistrement · fiche-zone · index-salon · journee · nappe · outil-dessin · pile
 points-interet · reprise-emplacements · sejour · seuil · tiroir-itineraire
 trace-itineraire · tutoriel · volets · webgl
 
@@ -1868,7 +1868,7 @@ Importé par :
 
 fiche · recherche · synchronisation · vignettes
 
-### `modules/mesure.mjs` — 668 l. → plan, plan-admin
+### `modules/mesure.mjs` — 676 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -1879,8 +1879,8 @@ Fonctions :
 `litLaFile` 306 · `ecritLaFile` 319 · `metEnFile` 334 · `retireDeLaFile` 345
 `chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
 `envoieMesures` 436 · `mesure` 473 · `brancheLesEnvois` 488 · `effaceJetonsVisiteur` 543
-`refuseMesure` 561 · `ouvreConfidentialite` 588 · `brancheLaNotice` 651
-`brancheMesure` 665
+`refuseMesure` 561 · `appliqueRefus` 573 · `ouvreConfidentialite` 596
+`brancheLaNotice` 659 · `brancheMesure` 673
 
 Importe :
 
@@ -2348,13 +2348,13 @@ Importé par :
 
 recherche · tiroirs
 
-### `modules/parcours-recu.mjs` — 145 l. → plan, plan-admin
+### `modules/parcours-recu.mjs` — 149 l. → plan, plan-admin
 
 - l.1 · Le parcours reçu
 
 Fonctions :
 
-`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 143
+`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 147
 
 Importe :
 
@@ -2537,15 +2537,15 @@ Injections :
 
 - `injecteAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
-### `modules/provenance.mjs` — 168 l. → console
+### `modules/provenance.mjs` — 177 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
 - l.19 · Provenance des données
 
 Fonctions :
 
-`fournisseurUtilise` 86 · `sourceNom` 96 · `source` 100 · `ligneSource` 104
-`resumeProvenance` 131 · `ouvreProvenance` 152
+`fournisseurUtilise` 90 · `sourceNom` 100 · `source` 104 · `ligneSource` 108
+`resumeProvenance` 140 · `ouvreProvenance` 161
 
 Importe :
 
@@ -2703,7 +2703,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 660 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 671 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
@@ -2818,14 +2818,14 @@ Importé par :
 
 reglages
 
-### `modules/reglages.mjs` — 517 l. → plan-admin
+### `modules/reglages.mjs` — 533 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 392
-`voletPlan` 410 · `voletCoexposants` 449
+`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 408
+`voletPlan` 426 · `voletCoexposants` 465
 
 Importe :
 
@@ -3032,14 +3032,14 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 176 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 181 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
 Fonctions :
 
-`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 104
-`stockage` 114 · `appelle` 118 · `initialesDe` 171
+`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 109
+`stockage` 119 · `appelle` 123 · `initialesDe` 176
 
 Importé par :
 
@@ -3478,7 +3478,7 @@ donnees · grille-marche · recherche-chemin · reperes · texte · troncon
 
 Importé par :
 
-itineraire · itineraire
+ici · itineraire · itineraire
 
 ### `modules/troncon.mjs` — 363 l. → plan, plan-admin
 
@@ -3728,10 +3728,11 @@ Injections :
 
 `aplatit` 266 · `egal` 300
 
-### `supabase/functions/_partage/geometrie.ts` — 163 l.
+### `supabase/functions/_partage/geometrie.ts` — 183 l.
 
-`r2` 23 · `versAnneaux` 26 · `versTrace` 44 · `distSegment` 55 · `distBord` 64
-`poleInterieur` 83 · `portee` 104 · `boite` 113 · `emprise` 144 · `dedans` 155
+`r2` 23 · `versAnneaux` 26 · `versTrace` 44 · `distSegment` 55 · `dansForme` 68
+`distBord` 75 · `poleInterieur` 94 · `portee` 115 · `boite` 124 · `emprise` 164
+`dedans` 175
 
 ### `supabase/functions/_partage/octets.ts` — 31 l.
 
@@ -3763,7 +3764,7 @@ Injections :
 
 `cleDeVignette` 28
 
-### `supabase/functions/comptes/index.ts` — 269 l.
+### `supabase/functions/comptes/index.ts` — 264 l.
 
 `cors` 39 · `service` 49 · `retourValide` 68
 
@@ -3775,12 +3776,12 @@ Injections :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1195 l.
+### `supabase/functions/plan-public/index.ts` — 1200 l.
 
 `cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 124 · `avecVignette` 178
 `rendVignette` 222 · `rendGrande` 249 · `rendVignettes` 341 · `lu` 384 · `salon` 394
-`appDuSalon` 420 · `rendIconeApp` 451 · `retraits` 563 · `ampute` 590 · `masquesDe` 633
-`masquesDuPlan` 653
+`appDuSalon` 420 · `rendIconeApp` 451 · `retraits` 568 · `ampute` 595 · `masquesDe` 638
+`masquesDuPlan` 658
 
 ### `supabase/functions/rappels/index.ts` — 236 l.
 
@@ -3868,12 +3869,13 @@ Injections :
 - `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
 - `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
 - `20261112182349_les_droits_et_les_bornes_que_la_revue_a_releves.sql` — fn source_du_salon_reservee, fn bilan_perf, fn rappels_dus, fn pose_plan_de_visite
+- `20261112192358_les_droits_d_un_compte_remplaces_d_un_seul_geste.sql` — fn remplace_acces
 
 ## Le reste
 
 - `src/index.mjs` — 126 l. · Worker Cloudflare : sert les pages, relaie les lectures du plan et les mesures d'utilisation.
   `surete` 67 · `aiguille` 85
-- `src/application.mjs` — 295 l. · L'application installée d'un salon : son adresse propre (`/plan-<salon>`), son manifeste et son icône.
+- `src/application.mjs` — 298 l. · L'application installée d'un salon : son adresse propre (`/plan-<salon>`), son manifeste et son icône.
   `cleApp` 26 · `cheminDuSalon` 57 · `pageDuSalon` 74 · `appDuSalon` 98 · `iconesDuSalon` 144 `manifeste` 184 · `iconeApp` 274
 - `src/carte.mjs` — 82 l. · Ramener une position du script minifié à sa source.
   `nombres` 23 · `lisCarte` 43 · `source` 68

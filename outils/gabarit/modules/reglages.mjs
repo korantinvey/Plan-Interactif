@@ -340,12 +340,24 @@ function champsFicheZone(hote){
 
   const bloc = document.createElement("div");
   bloc.className = "reglages";
+  /* Les cases et leurs clés : après la dernière réponse, elles se recalent
+     sur ce que la base tient — une écriture d'avant a pu échouer sans que
+     celle d'après reprenne son changement. */
+  /** @type {Array<[HTMLInputElement, string]>} */
+  const cases = [];
+  let confirmee = null;
+  const recale = () => {
+    cases.forEach(([x, k]) => { x.checked = montre("zone", k); });
+    const o = state.sel && parId.get(state.sel);
+    if (o && o.kind === "zone") ouvre(o, null);
+  };
   CHAMPS_FICHE_ZONE.forEach(c => {
     const l = document.createElement("label");
     l.innerHTML = '<input type="checkbox"><span></span>';
     l.querySelector("span").textContent = c.libelle;
     const i = l.querySelector("input");
     i.checked = montre("zone", c.cle);
+    cases.push([i, c.cle]);
     /* Éteinte, et non décochée, quand rien ne l'alimente : la case montre ce
        qui est réglé, et le réglage vaudra le jour où le programme sera
        synchronisé. C'est aussi ce que la console disait de son côté, par la
@@ -366,9 +378,13 @@ function champsFicheZone(hote){
       file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
         t.zone = { ...(t.zone || {}), [cle]: voulu };
       })).then(t => {
+        confirmee = t;
         if (n !== derniere) return;
-        DATA.fiche = t; dit("Enregistré.");
-      }).catch(e => dit("Échec : " + e.message, true));
+        DATA.fiche = t; recale(); dit("Enregistré.");
+      }).catch(e => {
+        dit("Échec : " + e.message, true);
+        if (n === derniere && confirmee){ DATA.fiche = confirmee; recale(); }
+      });
     };
     bloc.appendChild(l);
 
