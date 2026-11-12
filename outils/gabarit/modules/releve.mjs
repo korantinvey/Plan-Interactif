@@ -273,7 +273,9 @@ function releve(){
     salon: SLUG || null, administration: PLAN_ADMIN, adresse: location.pathname + location.search,
     ouvert: new Date(R.ouvert).toISOString(), duree: Math.round(performance.now()),
     versions,
-    rendu: { webglVoulu: RENDU_WEBGL, webglActif: GL.actif, immersif: GL.camera, blocs: GL.blocs.size },
+    // qui peint : le moteur du plan (« gl2 ») ou deck.gl, son recours (« deck ») — deux relevés se comparent ainsi
+    rendu: { webglVoulu: RENDU_WEBGL, webglActif: GL.actif, moteur: GL.actif ? GL.moteur : "svg", immersif: GL.camera,
+      blocs: GL.blocs.size },
     plan: { emplacements: TOUS.length, noeudsDom: document.getElementsByTagName("*").length },
     appareil: appareil(),
     jalons: R.jalons,
@@ -296,10 +298,15 @@ function releve(){
 /** @type {HTMLElement | null} */
 let compteur = null;
 
+/* La pastille dit aussi qui peint et en combien de temps le plan a paru :
+   deux visites, l'une par le moteur du plan, l'autre par `?moteur=deck`, se
+   comparent d'un coup d'œil, sans échanger leurs relevés. */
 function affiche(){
   if (!compteur) return;
   const s = R.saccades.length + (R.perdus.saccades || 0);
-  compteur.textContent = ips + " fps · " + s + " ⚠";
+  const ouvert = R.jalons["plan-affiche"];
+  compteur.textContent = (GL.actif ? GL.moteur : "svg") +
+    (ouvert ? " · ⏱ " + (ouvert / 1000).toFixed(1).replace(".", ",") + " s" : "") + " · " + ips + " fps · " + s + " ⚠";
   compteur.style.color = ips >= 50 ? "#7CFC9A" : ips >= 30 ? "#FFD166" : "#FF6B6B";
 }
 
