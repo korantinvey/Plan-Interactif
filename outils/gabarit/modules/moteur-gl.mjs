@@ -397,7 +397,9 @@ export class Deck {
     gl.colorMask(true, true, true, true);
     const t2 = performance.now();
     this._compte(t2 - t0, couches.length, n, t2 - t1);
-    if (this.props.onAfterRender) this.props.onAfterRender({ device: this.device, gl });
+    /* Ce qui a été peint suit avec l'image : une image où aucune couche n'a pu
+       se peindre ne doit pas passer pour la première, qui retire le SVG. */
+    if (this.props.onAfterRender) this.props.onAfterRender({ device: this.device, gl, peintes: n, couches: couches.length });
   }
 
   _comptesVides(){ return { images: 0, cpu: 0, dessin: 0, debut: performance.now(), attrMs: 0, couches: 0, designation: 0, designations: 0 }; }

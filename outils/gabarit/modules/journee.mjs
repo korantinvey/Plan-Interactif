@@ -783,6 +783,11 @@ export function oublieSejour(){
   vueJournee = false;
   PLACES.clear();
   REFUS.clear();
+  /* Le serveur gardait sinon le plan d'avant, et le comptait dans la charge
+     prévue des stands : un plan vide, annoncé sous le même identifiant, l'y
+     efface. Rien ne part si le visiteur a refusé la mesure, ni si rien
+     n'avait été annoncé (`annoncePlan` compare à ce qui l'a été). */
+  annoncePlan();
 }
 
 /* ------------------------------------------------------------
