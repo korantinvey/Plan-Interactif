@@ -42,6 +42,12 @@ module.exports = defineConfig({
     trace: "retain-on-failure",
     locale: "fr-FR",
     timezoneId: "Europe/Paris",
+    /* Le plan inscrit un service de second plan, qui intercepte `/api/plan` :
+       après lui, un rechargement pouvait passer par lui plutôt que par les
+       routes de l'essai, et le serveur local relayer la demande au vrai
+       service au lieu de rendre `plans.json`. Bloqué partout ; l'essai qui
+       l'éprouve le laisse vivre (`plan.spec.js`). */
+    serviceWorkers: "block",
   },
   projects: [
     { name: "bureau", use: { ...devices["Desktop Chrome"], viewport: { width: 1400, height: 900 } } },

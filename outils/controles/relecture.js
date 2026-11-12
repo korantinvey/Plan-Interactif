@@ -140,8 +140,11 @@ function relitLesPages() {
       vues.get(cle).pages.add(page);
     }
   }
+  /* Une variable inutile sur une page peut servir sur une autre : elle n'est
+     signalée que si aucune ne s'en sert. Un nom inconnu, non — sur la page où
+     il manque, il lève à l'exécution, quoi qu'en disent les autres. */
   return [...vues.values()].filter((r) =>
-    !["no-unused-vars", "no-undef"].includes(r.regle) || r.pages.size === (pagesDe.get(r.fichier) || new Set()).size
+    r.regle !== "no-unused-vars" || r.pages.size === (pagesDe.get(r.fichier) || new Set()).size
   ).sort((a, b) =>
     a.fichier.localeCompare(b.fichier) || a.ligne - b.ligne);
 }

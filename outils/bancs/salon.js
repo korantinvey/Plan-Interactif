@@ -329,7 +329,11 @@ function simuleSalon(o){
   const t0 = Date.now();
   const parcours = [];
   for (const g of visiteurs){
-    photo = new Map(charge);
+    /* La charge elle-même, et non sa copie : `rangeSejour` est synchrone, et
+       ce visiteur n'y écrit qu'après — la lecture reste figée le temps du
+       calcul. Recopier toute la table à chaque visiteur coûtait autant que
+       le reste, et faussait les temps que le banc compare. */
+    photo = charge;
     jourCourant = g.jour;
     const j = { cle: "J" + g.jour, poids: 1, creneaux: creneauxDe(g) };
     const restants = g.stands.slice();
