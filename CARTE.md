@@ -2052,13 +2052,13 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl.mjs` — 544 l. → plan, plan-admin
+### `modules/moteur-gl.mjs` — 552 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — WebGL2, écrit pour lui
 
 Fonctions :
 
-`lumieresDe` 65 · `objetDe` 501 · `retourne` 507
+`lumieresDe` 65 · `objetDe` 509 · `retourne` 515
 
 Importe :
 
@@ -3599,7 +3599,7 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 3784 l. → plan, plan-admin
+### `modules/webgl.mjs` — 3792 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3639,13 +3639,13 @@ Fonctions :
 `poseSurvolWebgl` 3232 · `enTuiles` 3269 · `hauteurTuile` 3282 · `visePour` 3288
 `suisChoisies` 3298 · `gonfleSurvol` 3306 · `coucheTuileSoulevee` 3329
 `couchesTuiles` 3360 · `poseCurseurWebgl` 3373 · `poseFocusWebgl` 3382 · `aplatsDe` 3389
-`coucheSurvol` 3392 · `coucheSurvolVolume` 3408 · `coucheFocus` 3442 · `couchesPhare` 3472
-`lueurDe` 3489 · `opacitePhare` 3527 · `echellePhare` 3528 · `couchesPhareNoms` 3531
-`palierDefile` 3556 · `periodeDe` 3561 · `phaseDe` 3563 · `instant` 3573
-`animeCouche` 3574 · `majAnimationWebgl` 3599 · `animeWebgl` 3607 · `reanime` 3644
-`logosSurLesToits` 3653 · `objetSous` 3683 · `sansProfondeurDeDesignation` 3704
-`peutDesigner` 3724 · `objetSousDiffere` 3726 · `viseEnAvance` 3742 · `lisObjet` 3750
-`cibleWebgl` 3755 · `priseWebgl` 3765 · `libelleSousWebgl` 3770 · `rectEcranWebgl` 3775
+`coucheSurvol` 3392 · `coucheSurvolVolume` 3415 · `coucheFocus` 3450 · `couchesPhare` 3480
+`lueurDe` 3497 · `opacitePhare` 3535 · `echellePhare` 3536 · `couchesPhareNoms` 3539
+`palierDefile` 3564 · `periodeDe` 3569 · `phaseDe` 3571 · `instant` 3581
+`animeCouche` 3582 · `majAnimationWebgl` 3607 · `animeWebgl` 3615 · `reanime` 3652
+`logosSurLesToits` 3661 · `objetSous` 3691 · `sansProfondeurDeDesignation` 3712
+`peutDesigner` 3732 · `objetSousDiffere` 3734 · `viseEnAvance` 3750 · `lisObjet` 3758
+`cibleWebgl` 3763 · `priseWebgl` 3773 · `libelleSousWebgl` 3778 · `rectEcranWebgl` 3783
 
 Importe :
 

@@ -322,6 +322,14 @@ export class Deck {
     const r = p.parameters || {};
     gl.depthFunc(/** @type {any} */ (COMPARE)[r.depthCompare] || gl.LEQUAL);
     gl.depthMask(r.depthWriteEnabled === undefined ? true : Boolean(r.depthWriteEnabled));
+    /* Un décalage de profondeur (`depthBias`, `depthBiasSlopeScale`, les noms
+       de luma.gl) : ce qui se peint dans le plan même d'une autre surface —
+       la teinte du survol sur les façades d'un volume — passe devant elle au
+       lieu de s'y mêler en rayures. */
+    if (r.depthBias || r.depthBiasSlopeScale){
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      gl.polygonOffset(r.depthBiasSlopeScale || 0, r.depthBias || 0);
+    } else gl.disable(gl.POLYGON_OFFSET_FILL);
     if (!ctx.designe){
       const m = r.colorMask;
       if (Array.isArray(m)) gl.colorMask(Boolean(m[0]), Boolean(m[1]), Boolean(m[2]), Boolean(m[3]));
