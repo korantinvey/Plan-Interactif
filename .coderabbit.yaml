@@ -1,0 +1,18 @@
+# Configuration de CodeRabbit.
+# Les remarques en français, comme le code ; et rien de ce que la construction
+# fabrique ou que le réseau seul refait : le relire ne dirait rien du code.
+language: fr-FR
+reviews:
+  profile: chill
+  path_filters:
+    - "!web/**"
+    - "!CARTE.md"
+    - "!outils/tpl-multi.html"
+    - "!src/pages.mjs"
+    - "!outils/donnees/**"
+    - "!package-lock.json"
+  auto_review:
+    enabled: true
+    # La revue du dépôt entier passe par une PR vers une base orpheline vide.
+    base_branches:
+      - "revue-coderabbit-.*"
