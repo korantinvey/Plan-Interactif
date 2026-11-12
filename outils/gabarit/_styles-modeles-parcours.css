@@ -1309,6 +1309,12 @@
      ce qu'on en voit, et se mesurent sur cette part (« --cadre-bas »,
      « --cadre-vu », posées par `tiroirs.mjs`). Hors d'un cadre, elles valent
      le bord et la hauteur de l'écran. */
+  /* Ce qui est rangé descend, lui, sous le bas du cadre et non sous celui de
+     la part vue : la bande qu'on croit cachée ne l'est pas toujours. Dans
+     l'application de Funexpo, la page du salon s'arrête au-dessus de la
+     barre d'accueil de l'iPhone, mais le cadre se peint encore dessous — la
+     mesure la comptait hors de vue, et la fiche, le parcours et l'itinéraire
+     fermés y dépassaient sous la liste, comme un second tiroir. */
   .side{
     position:fixed;left:0;right:0;bottom:var(--cadre-bas,0px);z-index:12;
     height:82vh;height:calc(var(--cadre-vu,100dvh) * .82);
@@ -1329,7 +1335,7 @@
      lui — deux bords arrondis, deux prises, et rien pour dire laquelle mène
      quoi. Il cède donc la bande tout entière, et la reprend en se refermant
      (voir `_js.html`). */
-  .side.cede{transform:translateY(100%)}
+  .side.cede{transform:translateY(calc(100% + var(--cadre-bas,0px)))}
   /* Et il s'efface aussi le temps qu'on manœuvre le plan, comme la barre du
      salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
      bande de recherche en occupe le bas. Il revient au doigt levé, à son cran
@@ -1432,7 +1438,7 @@
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     /* au-dessus du tiroir de la liste, qui se replie quand elle s'ouvre */
     z-index:13;
-    transform:translateY(100%);opacity:1;pointer-events:none;will-change:transform;
+    transform:translateY(calc(100% + var(--cadre-bas,0px)));opacity:1;pointer-events:none;will-change:transform;
     transition:transform .28s cubic-bezier(.32,.72,0,1),
                max-height .28s cubic-bezier(.32,.72,0,1);
   }
@@ -1509,7 +1515,7 @@
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
-    transform:translateY(100%);pointer-events:none;
+    transform:translateY(calc(100% + var(--cadre-bas,0px)));pointer-events:none;
     /* Descendu au plus bas, le tiroir ne garde que son en-tête : la rangée de
        commandes et le pied passent sous le bord de l'écran, et le bord du
        tiroir les y coupe net plutôt que de les laisser dépasser dessous. */
@@ -1550,7 +1556,7 @@
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
-    transform:translateY(100%);pointer-events:none;
+    transform:translateY(calc(100% + var(--cadre-bas,0px)));pointer-events:none;
     transition:transform .28s cubic-bezier(.32,.72,0,1),
                max-height .28s cubic-bezier(.32,.72,0,1);
   }
