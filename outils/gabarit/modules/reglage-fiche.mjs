@@ -171,7 +171,9 @@ export function voletOrdre(hote){
   /* La dernière fiche que la base a confirmée, même quand sa réponse n'a pas
      été affichée parce qu'une écriture plus récente était en route : c'est à
      elle que l'on revient si cette dernière échoue. */
-  let confirmee = null;
+  /* Celle de l'ouverture du volet, au départ : si la toute première écriture
+     échoue, c'est à elle qu'on revient. */
+  let confirmee = structuredClone(DATA.fiche || {});
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -271,7 +273,14 @@ export function voletOrdre(hote){
       /* La dernière demande refusée : le volet et la fiche du poste reviennent
          à ce que la base tient, au lieu de garder le réglage refusé, qu'une
          réouverture aurait encore montré comme acquis. */
-      if (n === derniere && confirmee){ DATA.fiche = confirmee; litReglage(); rendu(); }
+      if (n === derniere){
+        DATA.fiche = structuredClone(confirmee);
+        /* Les intitulés vivent aussi dans le volet : `rendu` les reposerait
+           sinon dans la fiche, refusés compris. */
+        for (const k of Object.keys(intitules)) delete intitules[k];
+        Object.assign(intitules, (DATA.fiche || {}).intitules || {});
+        litReglage(); rendu();
+      }
     });
   };
 

@@ -1237,7 +1237,7 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1312 l. → console
+### `modules/fiche-detail.mjs` — 1331 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
 - l.26 · Contenu de la fiche détail
@@ -1245,10 +1245,10 @@ scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel �
 Fonctions :
 
 `paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 243
-`caseFiche` 288 · `cibleEn` 343 · `champsPersos` 345 · `criteres` 351 · `ecritFiche` 354
-`caseCritere` 369 · `clePerso` 388 · `ajouteChampPerso` 396 · `renommeChampPerso` 414
-`retireChampPerso` 462 · `lignesPerso` 523 · `cadreFiche` 546 · `ouvreFiche` 576
-`cadreCategories` 716 · `sousTitre` 806 · `tableauChamps` 821 · `champOrigine` 1047
+`caseFiche` 288 · `cibleEn` 343 · `champsPersos` 345 · `criteres` 351 · `ecritFiche` 361
+`caseCritere` 378 · `clePerso` 400 · `ajouteChampPerso` 408 · `renommeChampPerso` 425
+`retireChampPerso` 473 · `lignesPerso` 536 · `cadreFiche` 559 · `ouvreFiche` 589
+`cadreCategories` 729 · `sousTitre` 825 · `tableauChamps` 840 · `champOrigine` 1066
 
 Importe :
 
@@ -2703,7 +2703,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 671 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 680 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 

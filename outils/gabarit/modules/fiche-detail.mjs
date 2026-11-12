@@ -350,12 +350,21 @@ const champsPersos = (e) => {
 /** Les cibles retenues comme critères de recherche, jamais nul. */
 const criteres = (e) => (e.fiche && e.fiche.criteres) || {};
 
-/** Écrit la fiche d'un trait, et la remet en place si le service refuse. */
-async function ecritFiche(e, part) {
-  const avant = e.fiche;
-  e.fiche = { ...(e.fiche || {}), ...part };
-  try { await majEvenement(e.id, { fiche: e.fiche }); }
-  catch (err) { e.fiche = avant; signale(err.message, true); }
+/**
+ * Écrit la fiche d'un trait, dans la file des écritures de la fiche.
+ *
+ * `part` se calcule au moment où l'écriture part (une fonction), sur la fiche
+ * que la précédente a confirmée : calculée avant, elle pouvait reposer l'état
+ * d'avant une écriture encore en route. La fiche du salon ne change qu'une
+ * fois la base d'accord ; refusée, rien n'est à défaire.
+ */
+function ecritFiche(e, part) {
+  fileFiche = fileFiche.then(async () => {
+    const fiche = { ...(e.fiche || {}), ...(typeof part === "function" ? part() : part) };
+    try { await majEvenement(e.id, { fiche }); e.fiche = fiche; }
+    catch (err) { signale(err.message, true); }
+  });
+  return fileFiche;
 }
 
 /**
@@ -375,9 +384,12 @@ function caseCritere(cle, apres) {
   i.checked = criteres(e)[cle] === true;
   i.setAttribute("aria-label", "Proposer ce champ dans les critères de recherche");
   i.onchange = async () => {
-    const c = { ...criteres(e) };
-    if (i.checked) c[cle] = true; else delete c[cle];
-    await ecritFiche(e, { criteres: c });
+    const voulu = i.checked;
+    await ecritFiche(e, () => {
+      const c = { ...criteres(e) };
+      if (voulu) c[cle] = true; else delete c[cle];
+      return { criteres: c };
+    });
     i.checked = criteres(courant())[cle] === true;
     if (apres) apres(i.checked);
   };
@@ -397,8 +409,7 @@ function ajouteChampPerso(redessine) {
   const e = courant();
   demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
     "", async (libelle) => {
-      const perso = champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]);
-      await ecritFiche(e, { perso });
+      await ecritFiche(e, () => ({ perso: champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]) }));
       redessine();
     });
 }
@@ -428,13 +439,13 @@ function renommeChampPerso(cle, redessine) {
   const valide = async () => {
     const libelle = fr.value.trim();
     const libelleEn = en.value.trim();
-    const perso = champsPersos(e).map((c) => {
+    const perso = () => champsPersos(e).map((c) => {
       if (c.cle !== cle) return c;
       const n = { ...c, libelle };
       if (libelleEn) n.libelle_en = libelleEn; else delete n.libelle_en;
       return n;
     });
-    await ecritFiche(e, { perso });
+    await ecritFiche(e, () => ({ perso: perso() }));
     redessine();
   };
   ouvreModale("Renommer le champ", (corps) => {
@@ -466,11 +477,12 @@ function retireChampPerso(cle, libelle, redessine) {
     "Le champ, son origine et son réglage de recherche sont effacés. Les " +
     "valeurs déjà synchronisées disparaîtront de la fiche à la prochaine " +
     "synchronisation.", "Retirer", async () => {
+      await ecritFiche(e, () => {
       const stand = { ...((e.fiche || {}).stand || {}) };
       const crit = { ...criteres(e) };
       delete stand[cible];
       delete crit[cible];
-      await ecritFiche(e, {
+      return {
         perso: champsPersos(e).filter((c) => c.cle !== cle),
         stand, criteres: crit,
         /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
@@ -486,6 +498,7 @@ function retireChampPerso(cle, libelle, redessine) {
           delete i[cible];
           return i;
         })(),
+      };
       });
       /* La correspondance se nettoie de son côté : elle est rangée par
          fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
@@ -756,6 +769,8 @@ function cadreCategories(src) {
     catch (err) { e2.correspondances = avant; signale(err.message, true); return false; }
   };
 
+  /** Le dernier geste porté sur chaque case, par identifiant de catégorie. */
+  const gestes = new Map();
   catalogue.forEach((c) => {
     const id = String(c.id);
     const l = document.createElement("label");
@@ -775,13 +790,17 @@ function cadreCategories(src) {
        geste, et seulement si la case n'a pas bougé depuis — sinon c'est le
        geste suivant qui fait foi. */
     i.onchange = () => {
-      const voulu = i.checked;
+      /* Un numéro par geste sur cette case : cocher, décocher puis recocher
+         pendant une écriture ramène la même valeur, et seul le numéro dit
+         qu'un geste plus récent a pris le relais. */
+      const voulu = i.checked, n = (gestes.get(id) || 0) + 1;
+      gestes.set(id, n);
       const k = choisies.indexOf(id);
       if (voulu && k < 0) choisies.push(id);
       if (!voulu && k >= 0) choisies.splice(k, 1);
       dis();
       fileFiche = fileFiche.then(async () => {
-        if (await enregistre() || i.checked !== voulu) return;
+        if (await enregistre() || gestes.get(id) !== n) return;
         const j = choisies.indexOf(id);
         if (voulu && j >= 0) choisies.splice(j, 1);
         if (!voulu && j < 0) choisies.push(id);
