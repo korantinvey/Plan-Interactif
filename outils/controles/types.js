@@ -39,6 +39,8 @@ const DECLARATIONS = [
   "declare const MARQUE_PRODUIT: string;",
   // le script du travailleur qui détoure les logos, versé de même ; absent des essais
   "declare const TRAVAIL_DETOURAGE: string | undefined;",
+  // les pluriels français des phrases chiffrées, versés de même (`modules/traduction.mjs`)
+  "declare const PLURIELS_FR: Record<string, string>;",
   /* Un élément cherché par sélecteur, rendu sans type précis — la règle de
      `$` (`modules/dom.mjs`), pour la même raison : la bibliothèque rend un
      `Element` nu, sans `dataset`, `value` ni `onclick`, et chaque recherche

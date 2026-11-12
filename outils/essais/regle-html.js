@@ -25,7 +25,8 @@ const releve = (code) => linter.verify(code, [{
   rules: { "plan/html-echappe": "error" },
 }]).map((m) => m.message);
 
-const ENTETE = 'import { esc } from "./texte.mjs"; import { lien } from "./sur.mjs"; import { ailleurs } from "./x.mjs";\n';
+const ENTETE = 'import { esc } from "./texte.mjs"; import { lien } from "./sur.mjs"; import { ailleurs } from "./x.mjs"; ' +
+  'import { t } from "./traduction.mjs";\n';
 
 console.log("\n=== 1. Ce qui est sûr passe ===");
 const SURS = [
@@ -41,6 +42,8 @@ const SURS = [
   ["une fonction du module qui échappe", "function ligne(x) { return '<td>' + esc(x) + '</td>'; } export function f(el, x) { el.innerHTML = ligne(x); }"],
   ["une variable bâtie de morceaux sûrs", "export function f(el, l) { let h = '<ul>'; for (const x of l) h += '<li>' + esc(x) + '</li>'; el.innerHTML = h; }"],
   ["insertAdjacentHTML échappé", "export function f(el, x) { el.insertAdjacentHTML('beforeend', '<span>' + esc(x) + '</span>'); }"],
+  ["une phrase traduite par t()", "export function f(el) { el.innerHTML = '<b>' + t('Centrer sur le plan') + '</b>'; }"],
+  ["une phrase traduite aux valeurs sûres", "export function f(el, n, x) { el.innerHTML = t('{n} exposants dans {x}', { n: Number(n), x: esc(x) }); }"],
 ];
 for (const [q, code] of SURS) {
   const r = releve(ENTETE + code);
@@ -58,6 +61,8 @@ const NON_PROUVES = [
   ["une variable qu'on salit plus loin", "export function f(el, x) { let h = '<p>'; h += x; el.innerHTML = h; }"],
   ["une fonction du module qui n'échappe pas", "function ligne(x) { return '<td>' + x + '</td>'; } export function f(el, x) { el.innerHTML = ligne(x); }"],
   ["une alternative dont une branche est sale", "export function f(el, ok, x) { el.innerHTML = ok ? '<b>Oui</b>' : x; }"],
+  ["une phrase traduite dont une valeur n'est pas échappée", "export function f(el, e) { el.innerHTML = t('Échec : {raison}', { raison: e.message }); }"],
+  ["un t() local, qui n'est pas celui de traduction.mjs", "function t2(x) { return x; } export function f(el, x) { const t = t2; el.innerHTML = t(x); }"],
 ];
 for (const [q, code] of NON_PROUVES) {
   const r = releve(ENTETE + code);
