@@ -76,8 +76,13 @@ export function candidats(q){
 /** Ce que désigne une saisie laissée telle quelle, si c'est sans ambiguïté. */
 export function pointSaisi(txt){
   const l = candidats(txt);
-  const v = pourRecherche(txt.trim());
-  return l.find(x => pourRecherche(x.nom) === v) || (l.length === 1 ? l[0] : null);
+  /* Le nom tapé tel qu'il s'écrit l'emporte sur celui qui ne s'en distingue
+     que par un accent : « Entrée » et « Entree » peuvent coexister, et taper
+     l'un ne doit pas mener à l'autre. Sans accent, le premier venu. */
+  const exact = txt.trim().toLowerCase();
+  const v = pourRecherche(exact);
+  return l.find(x => String(x.nom).toLowerCase() === exact) ||
+    l.find(x => pourRecherche(x.nom) === v) || (l.length === 1 ? l[0] : null);
 }
 
 /* ------------------------------------------------------------
