@@ -115,9 +115,14 @@ export class Deck {
     this.vue = null;
     this.debutProgrammes = performance.now();
     /** les comptes de la sonde : ce que deck.gl appelait `metrics` */
+    /* Au-delà des noms de deck.gl, ce que vaut chaque étape d'une image — la
+       mise à jour des couches (`attributesTimePerFrame`), leur dessin
+       (`drawTimePerFrame`) —, la désignation (`pickTime`, `pickCount`) et la
+       chauffe (`chauffeMs`) : le relevé ?perf les garde tels quels. */
     this.metrics = { fps: 0, cpuTimePerFrame: 0, gpuTimePerFrame: 0, layersCount: 0, drawLayersCount: 0, framesRedrawn: 0,
-      updateAttributesTime: 0, updateLayersCount: 0 };
-    this._comptes = { images: 0, cpu: 0, debut: performance.now(), attrMs: 0, couches: 0 };
+      updateAttributesTime: 0, updateLayersCount: 0, attributesTimePerFrame: 0, drawTimePerFrame: 0, pickTime: 0, pickCount: 0,
+      chauffeMs: 0 };
+    this._comptes = this._comptesVides();
     /* Les comptes que la sonde lisait chez deck.gl sous ces noms : le temps
        passé à refaire les attributs, et les couches refaites, depuis les
        derniers `metrics` — remis à zéro avec eux, comme chez deck.gl. */
@@ -356,10 +361,13 @@ export class Deck {
     const { w, h, W, H, dpr } = this._taille();
     const vp = this._vue(w, h);
     const ctx = this._contexte(vp, w, h, dpr);
+    // la chauffe, sur une image à elle, avant toute image qui se montre
+    if (!this.chaud){ this._chauffe(ctx); this._planifie(); return; }
     if (this.sales) this._reconcilie(ctx);
     const couches = this._peintes(vp, false);
     // une image à moitié peinte ne se montre pas : elle attend ses programmes
     if (!this._prets(couches)){ this._planifie(); return; }
+    const t1 = performance.now();
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, W, H);
     gl.colorMask(true, true, true, true);
@@ -378,14 +386,56 @@ export class Deck {
     }
     gl.bindVertexArray(null);
     gl.colorMask(true, true, true, true);
-    this._compte(performance.now() - t0, couches.length, n);
+    const t2 = performance.now();
+    this._compte(t2 - t0, couches.length, n, t2 - t1);
     if (this.props.onAfterRender) this.props.onAfterRender({ device: this.device, gl });
   }
 
+  _comptesVides(){ return { images: 0, cpu: 0, dessin: 0, debut: performance.now(), attrMs: 0, couches: 0, designation: 0, designations: 0 }; }
+
+  /* ----------------------------------------------------------
+     La chauffe
+
+     Sous Windows, le navigateur traduit chaque programme pour Direct3D
+     (ANGLE), et une part de ce travail attend le premier dessin, qui seul dit
+     sous quelle forme arrivent les sommets : la première image du plan le
+     payait pour tous ses programmes à la fois — 405 ms sur un PC à carte
+     graphique intégrée (relevé ?perf, FEP27, 12 novembre 2026). deck.gl avait
+     sa chauffe pour cela (`webgl.mjs`, « La chauffe »).
+
+     Ici, sitôt les programmes compilés, une couche de chaque sorte, d'un seul
+     objet, aux mêmes formats d'attributs que les vraies, se dessine dans un
+     seul pixel, couleur et profondeur masquées : rien ne se voit, et la
+     traduction se paie sur une image à elle. La toile jetable que `webgl.mjs`
+     prépare pendant que les données arrivent la fait aussi : le navigateur
+     garde le travail, et la vraie toile le retrouve fait.
+     ---------------------------------------------------------- */
+  _chauffe(/** @type {any} */ ctx){
+    const progs = [...this.programmes.values()];
+    for (const p of progs) p.pret();
+    if (progs.some(p => !p.lie) && performance.now() - this.debutProgrammes < ATTENTE_PROGRAMMES) return;
+    const gl = /** @type {WebGL2RenderingContext} */ (this.gl), t0 = performance.now();
+    this.chaud = true;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(0, 0, 1, 1);
+    gl.enable(gl.DEPTH_TEST);
+    for (const c of couchesDeChauffe()){
+      try { c.prepare(ctx, null); this._peins(ctx, c, 0); }
+      catch (e) { /* une sorte qui ne chauffe pas : elle se traduira à son premier dessin, comme avant */ }
+      finally { try { c.detruit(); } catch (e) { /* déjà défaite */ } }
+    }
+    gl.bindVertexArray(null);
+    gl.disable(gl.SCISSOR_TEST);
+    gl.colorMask(true, true, true, true);
+    gl.depthMask(true);
+    this.metrics.chauffeMs = Math.round(performance.now() - t0);
+  }
+
   /** Les comptes de la sonde, tirés toutes les soixante images, comme deck.gl. */
-  _compte(/** @type {number} */ cpu, /** @type {number} */ nCouches, /** @type {number} */ nPeintes){
+  _compte(/** @type {number} */ cpu, /** @type {number} */ nCouches, /** @type {number} */ nPeintes, dessin = 0){
     const k = this._comptes;
-    k.images++; k.cpu += cpu;
+    k.images++; k.cpu += cpu; k.dessin += dessin;
     // les images peintes depuis la création, comme le compteur de deck.gl que les essais lisent
     this._metricsCounter = (this._metricsCounter || 0) + 1;
     this.metrics.layersCount = nCouches; this.metrics.drawLayersCount = nPeintes;
@@ -396,8 +446,12 @@ export class Deck {
     this.metrics.cpuTimePerFrame = k.cpu / k.images;
     this.metrics.updateAttributesTime = k.attrMs;
     this.metrics.updateLayersCount = k.couches;
+    this.metrics.attributesTimePerFrame = k.attrMs / k.images;
+    this.metrics.drawTimePerFrame = k.dessin / k.images;
+    this.metrics.pickTime = k.designation;
+    this.metrics.pickCount = k.designations;
     if (this.props._onMetrics) this.props._onMetrics(this.metrics);
-    this._comptes = { images: 0, cpu: 0, debut: performance.now(), attrMs: 0, couches: 0 };
+    this._comptes = this._comptesVides();
   }
 
   /* ----------------------------------------------------------
@@ -461,18 +515,23 @@ export class Deck {
 
   /** Ce qui est sous le point, la réponse attendue de la carte graphique. */
   pickObject(/** @type {{ x: number, y: number, radius?: number }} */ o){
+    const t0 = performance.now();
     const passe = this._peintDesignation(o);
     if (!passe) return null;
     const gl = /** @type {WebGL2RenderingContext} */ (this.gl), px = new Uint8Array(passe.cote * passe.cote * 4);
     gl.bindFramebuffer(gl.FRAMEBUFFER, passe.D.fbo);
     gl.readPixels(0, 0, passe.cote, passe.cote, gl.RGBA, gl.UNSIGNED_BYTE, px);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // la relecture attend la carte graphique : elle compte dans la désignation
+    this._comptes.designation += performance.now() - t0; this._comptes.designations++;
     return this._lis(passe, retourne(px, passe.cote));
   }
 
   /** La même question, la réponse lue sans que la page attende la carte graphique. */
   async pickObjectAsync(/** @type {{ x: number, y: number, radius?: number }} */ o){
+    const t0 = performance.now();
     const passe = this._peintDesignation(o);
+    this._comptes.designation += performance.now() - t0; this._comptes.designations++;
     if (!passe) return null;
     const gl = /** @type {WebGL2RenderingContext} */ (this.gl), n = passe.cote * passe.cote * 4;
     const pbo = /** @type {WebGLBuffer} */ (gl.createBuffer());
@@ -488,8 +547,11 @@ export class Deck {
       await new Promise((ok) => {
         const guette = () => {
           if (this.finalise || gl.isContextLost()){ ok(null); return; }
-          const s = gl.clientWaitSync(/** @type {WebGLSync} */ (barriere), 0, 0);
-          if (s === gl.TIMEOUT_EXPIRED){ setTimeout(guette, 4); return; }
+          /* L'état de la barrière, lu sans rien attendre — comme luma.gl. Sur
+             un poste Windows, « clientWaitSync » même sans délai faisait
+             attendre la page jusqu'à cent millisecondes à chaque survol
+             (relevé ?perf, FEP27, 12 novembre 2026). */
+          if (gl.getSyncParameter(/** @type {WebGLSync} */ (barriere), gl.SYNC_STATUS) !== gl.SIGNALED){ setTimeout(guette, 4); return; }
           ok(null);
         };
         guette();
@@ -503,6 +565,32 @@ export class Deck {
     gl.deleteBuffer(pbo);
     return this._lis(passe, retourne(px, passe.cote));
   }
+}
+
+/** Les couches de la chauffe : une de chaque sorte, d'un seul objet, ses
+ *  attributs remplis par des fonctions comme ceux des vraies couches — c'est
+ *  leur format qui décide de la traduction —, et rien qui se voie. */
+function couchesDeChauffe(){
+  const muet = { parameters: { colorMask: [false, false, false, false], depthWriteEnabled: false } };
+  const carre = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  const rien = () => [0, 0, 0, 0], un = () => 1, zoom = () => [-100, 100, -100];
+  const toile = document.createElement("canvas");
+  toile.width = toile.height = 1;
+  const tri = (/** @type {number[]} */ v) => ({ value: new Float32Array(v), size: v.length / 3 === 3 ? 3 : 2 });
+  return [
+    new SolidPolygonLayer({ id: "chauffe-aplat", data: [carre], getPolygon: (/** @type {any} */ d) => d, getFillColor: rien,
+      getElevation: un, extruded: true, ...muet }),
+    new PathLayer({ id: "chauffe-trait", data: [carre], getPath: (/** @type {any} */ d) => d, getColor: rien, getWidth: un,
+      getDashArray: () => [0, 0], getZoomFiltre: zoom, widthUnits: "pixels", ...muet }),
+    new TextLayer({ id: "chauffe-texte", data: [0], getText: () => "a", getPosition: () => [0, 0, 0], getColor: rien,
+      getSize: un, getAngle: () => 0, getPixelOffset: () => [0, 0], getTextAnchor: () => "middle", getZoomFiltre: zoom,
+      characterSet: "a", fontSettings: { fontSize: 24, buffer: 4 }, ...muet }),
+    new BitmapLayer({ id: "chauffe-image", image: toile, bounds: [0, 0, 1, 1], ...muet }),
+    new SimpleMeshLayer({ id: "chauffe-maillage", data: [0], getPosition: () => [0, 0, 0], getColor: rien,
+      getCaseLogo: () => [0, 0, 1, 1], getFigurant: rien,
+      mesh: { attributes: { positions: tri([0, 0, 0, 1, 0, 0, 0, 1, 0]), normals: tri([0, 0, 1, 0, 0, 1, 0, 0, 1]),
+        texCoords: { value: new Float32Array([0, 0, 1, 0, 0, 1]), size: 2 } } }, ...muet }),
+  ];
 }
 
 /** L'objet désigné : la donnée de la couche, comme deck.gl la rend. */

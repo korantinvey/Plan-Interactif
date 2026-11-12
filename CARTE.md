@@ -2052,13 +2052,13 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl.mjs` — 552 l. → plan, plan-admin
+### `modules/moteur-gl.mjs` — 640 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — WebGL2, écrit pour lui
 
 Fonctions :
 
-`lumieresDe` 65 · `objetDe` 509 · `retourne` 515
+`lumieresDe` 65 · `couchesDeChauffe` 573 · `objetDe` 597 · `retourne` 603
 
 Importe :
 
