@@ -280,12 +280,16 @@ export function ouvreSponsor(s, horsDemarrage){
      de la page ferme aussi celle-ci — et elle seule. Le générique est ce qui
      est devant : posée sur `document`, l'écoute passe avant celle de la page,
      qui refermerait du même coup la fiche qu'un lien vient d'ouvrir dessous. */
+  /* À la capture, et en arrêtant tout : les écoutes de la page posées plus tôt
+     sur `document` passaient avant celle-ci au même rang, et `stopPropagation`
+     n'arrête pas celles d'un même nœud. La fenêtre commune, prise à la
+     capture sur `window`, reste devant. */
   const touche = e => {
     if (e.key !== "Escape") return;
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     fermeSponsor();
   };
-  document.addEventListener("keydown", touche);
+  document.addEventListener("keydown", touche, true);
 
   hote.appendChild(boite);
   const pose = performance.now();
@@ -347,7 +351,7 @@ export function fermeSponsor(){
   if (!s) return;
   SPONSOR = null;
   clearTimeout(s.minuteur);
-  document.removeEventListener("keydown", s.touche);
+  document.removeEventListener("keydown", s.touche, true);
   s.boite.classList.add("part");
   setTimeout(() => s.boite.remove(), SPONSOR_ESTOMPE);
 }

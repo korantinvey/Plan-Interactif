@@ -124,11 +124,11 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 711 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 722 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1750 l. → demo.html, plan-smcl.html
 
-### `_styles-vitrine.css` — 196 l. → demo.html, plan-smcl.html
+### `_styles-vitrine.css` — 199 l. → demo.html, plan-smcl.html
 
 ### `_sw.js` — 580 l.
 
@@ -3131,7 +3131,7 @@ Importé par :
 
 lancement
 
-### `modules/sponsor.mjs` — 398 l. → plan, plan-admin
+### `modules/sponsor.mjs` — 402 l. → plan, plan-admin
 
 - l.1 · Le sponsor — un logo le temps du chargement
 
@@ -3139,8 +3139,8 @@ Fonctions :
 
 `reglageSponsor` 112 · `secondesSponsor` 115 · `modeSponsor` 128 · `sponsorRetenu` 147
 `cleSponsor` 178 · `sponsorEnCache` 181 · `retientSponsor` 196 · `ouvreSponsor` 221
-`suitSponsor` 314 · `resteSponsor` 339 · `fermeSponsor` 345 · `accueilleSponsor` 361
-`brancheSponsor` 393
+`suitSponsor` 318 · `resteSponsor` 343 · `fermeSponsor` 349 · `accueilleSponsor` 365
+`brancheSponsor` 397
 
 Importe :
 
