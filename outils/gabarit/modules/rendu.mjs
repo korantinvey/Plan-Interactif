@@ -115,7 +115,7 @@ function attributEstrade(/** @type {string} */ id){
    (`groupeGeo`) retrouve un ajout. Sans lui, la forme retouchée
    s'enregistrait mais le tracé restait à sa taille de naissance. */
 export const baliseZone = (z) =>
-  '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id + '"' +
+  '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + esc(z.id) + '"' +
   (z.ajout ? ' data-aj="' + esc(z.id) + '"' : "") +
   /* Son type, dont le plan meuble la zone (`decor.mjs`) : rien d'autre ne le
      lit sur le plan. */

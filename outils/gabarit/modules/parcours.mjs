@@ -397,8 +397,10 @@ export function dessineMarques(){
     if (!p) return;
     /* Une zone garde son trait discontinu jusque dans sa sélection — c'est ce
        qui la distingue d'un stand. Le parcours, lui, se veut continu partout :
-       il dit qu'on a retenu l'endroit, pas ce qu'il est. */
-    const d = ' d="' + p.getAttribute("d") + '"/>';
+       il dit qu'on a retenu l'endroit, pas ce qu'il est. Le tracé relu est
+       décodé : un guillemet y fermerait l'attribut, et le reste deviendrait
+       du balisage — il repasse par `esc()`. */
+    const d = ' d="' + esc(p.getAttribute("d")) + '"/>';
     if (g.classList.contains("enparcours")) parc += '<path class="parc"' + d;
     if (g.classList.contains("sel"))
       sel += '<path class="sel' + (g.parentNode.id === "zones" ? " zn" : "") + '"' + traitTuile(p) + d;

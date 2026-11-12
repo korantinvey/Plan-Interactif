@@ -11,7 +11,16 @@
  * - trois relevés de performance extrêmes ne font plus échouer le bilan, ni la
  *   purge qui l'appelle ;
  * - un rappel passé sa durée de vie ne part plus ;
- * - un plan de visite ne se pose pas au-delà d'un an.
+ * - un plan de visite ne se pose pas au-delà d'un an ;
+ *
+ * et ce que la seconde revue a relevé
+ * (`…_la_seconde_revue_de_securite_bornes_droits_et_purges_verifiees.sql`) :
+ *
+ * - les fonctions réservées à la clé de service sont fermées à `anon` et
+ *   `authenticated`, que Supabase sert directement et que `public` ne couvre
+ *   pas ;
+ * - un rappel ne se pose pas au-delà d'un an ;
+ * - la porte publique des erreurs reste ouverte au visiteur, verrou compris.
  *
  *   node outils/essais/revue-droits.js     (lancé par `npm run essais`)
  */
@@ -108,6 +117,38 @@ async function main() {
     [JSON.stringify([{ jour: loin, tranche: "20", cible: "s1" }, { jour: pres, tranche: "20", cible: "s1" }])]);
   const jours = (await db.query("select jour::text as j from plan_de_visite where plan = 'p1'")).rows.map((r) => r.j);
   dit(jours.length === 1 && jours[0] === pres, "un plan de visite ne se pose pas au-delà d'un an", jours.join(", "));
+
+  // ------------------------------------- les fonctions de la clé de service
+  const sous = async (role, sql) => {
+    await db.exec("set role " + role);
+    try { return await leve(db, sql); } finally { await db.exec("reset role"); }
+  };
+  for (const role of ["anon", "authenticated"]) {
+    for (const [nomF, sql] of [
+      ["rappels_dus", "select * from rappels_dus(1)"],
+      ["pose_plan_de_visite", "select pose_plan_de_visite('a', 'p2', '[]'::jsonb)"],
+      ["enregistre_rappels", "select enregistre_rappels('a', 'https://fcm.googleapis.com/x', 'p', 'k', '[]'::jsonb)"],
+    ]) {
+      const e = await sous(role, sql);
+      dit(e && /permission denied|droit refusé/i.test(e.message), role + " n'exécute pas " + nomF,
+        e ? e.message : "accepté");
+    }
+  }
+
+  // ------------------------------------------------- l'horizon des rappels
+  const dans = (jours) => new Date(Date.now() + jours * 864e5).toISOString();
+  await db.query("select enregistre_rappels('a', 'https://fcm.googleapis.com/h', 'p', 'k', $1::jsonb)",
+    [JSON.stringify([{ conf: "loin", titre: "t", envoi_a: dans(400) }, { conf: "pres", titre: "t", envoi_a: dans(10) }])]);
+  const poses = (await db.query("select conference from rappel_de_conference where abonnement = 'https://fcm.googleapis.com/h'"))
+    .rows.map((r) => r.conference);
+  dit(poses.length === 1 && poses[0] === "pres", "un rappel ne se pose pas au-delà d'un an", poses.join(", "));
+
+  // --------------------------------------------- la porte publique des erreurs
+  const porte = await sous("anon",
+    `select erreur_publique('a', 'plan', 'abc', '[{"message":"Erreur d''essai","lieu":"plan.js:1"}]'::jsonb)`);
+  dit(!porte, "le visiteur dépose toujours ses erreurs, verrou compris", porte && porte.message);
+  const notee = await un("select count(*)::int as n from erreur_page where evenement_id = $1", [A]);
+  dit(notee && notee.n === 1, "et l'erreur est notée", notee && String(notee.n));
 }
 
 main().then(() => {

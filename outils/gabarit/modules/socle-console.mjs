@@ -71,8 +71,11 @@ function entetes(json) {
  *  la session qu'il rend est celle de cette page. */
 function renouvelle() {
   if (!SESSION?.refresh_token) return Promise.resolve(false);
+  const depart = SESSION;
   return echangeSession(CFG, SESSION).then((neuve) => {
-    if (!neuve) return false;
+    /* La session a pu se fermer, ou un autre compte se connecter, pendant
+       l'échange : la réponse ne remplace que celle qui l'a demandée. */
+    if (!neuve || SESSION !== depart) return false;
     poseSession({ SESSION: neuve });
     return true;
   });
@@ -150,6 +153,23 @@ export function ecranConfig() {
   }, [{ libelle: "Valider", genre: "primaire", action: () => {
     const u = url.value.trim().replace(/\/+$/, ""), k = cle.value.trim();
     if (!u || !k) return false;
+    /* L'adresse porte l'e-mail et le mot de passe de la connexion : en clair,
+       ils passeraient lisibles sur le réseau. Seul un projet local, sur cette
+       machine, se passe de chiffrement. */
+    if (!/^https:\/\//i.test(u) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(u)) {
+      url.setCustomValidity("L'adresse du projet doit commencer par https://");
+      url.reportValidity();
+      url.oninput = () => url.setCustomValidity("");
+      return false;
+    }
+    /* Un autre projet : la session de l'ancien ne le suit pas. Gardée, elle
+       partait dans l'en-tête du premier appel vers la nouvelle adresse —
+       son jeton remis à qui tient celle-ci. */
+    if (CFG?.url && CFG.url !== u) {
+      poseSession({ SESSION: null });
+      try { localStorage.removeItem(CLE_SESSION); } catch (e) {}
+      if (typeof _page.videEcran === "function") _page.videEcran();
+    }
     poseSession({ CFG: { url: u, anonKey: k } });
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();

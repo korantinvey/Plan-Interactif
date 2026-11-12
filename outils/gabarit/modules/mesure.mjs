@@ -609,10 +609,20 @@ function ouvreConfidentialite(){
     texte((salon ? "L'organisateur de « " + salon + " »" : "L'organisateur du salon") +
       " mesure l'usage de ce plan pour savoir s'il sert : ouvertures du plan, " +
       "recherches, fiches consultées, itinéraires, parcours composés et partagés.");
-    texte("Aucun cookie n'est posé, et ni votre adresse IP ni votre navigateur ne " +
-      "sont enregistrés avec ces mesures. Pour compter chaque visiteur une seule " +
-      "fois, votre appareil garde un numéro tiré au hasard, propre à ce salon : il " +
-      "ne dit pas qui vous êtes, et ne vous suit nulle part ailleurs.");
+    texte("Aucun cookie n'est posé, et votre adresse IP n'est pas enregistrée avec " +
+      "ces mesures. Pour compter chaque visiteur une seule fois, votre appareil " +
+      "garde un numéro tiré au hasard, propre à ce salon : il ne dit pas qui vous " +
+      "êtes, et ne vous suit nulle part ailleurs.");
+    /* La sonde (`sonde.mjs`) et les erreurs (`erreurs.mjs`) partent sous la même
+       condition que les mesures : la notice disait qu'aucun navigateur n'était
+       noté, alors que la sonde en envoie la famille et la version majeure, avec
+       ce que l'appareil peut. Une notice qui tait une part de ce qui part ne
+       vaut pas pour cette part. */
+    texte("Pour savoir si le plan s'affiche vite et sans panne, chaque visite envoie " +
+      "aussi un relevé technique : le temps qu'il a mis à paraître, les erreurs " +
+      "rencontrées, le type de navigateur et sa version, sans plus de détail, et ce " +
+      "que peut l'appareil (écran, processeur, mémoire, carte graphique). Ce relevé " +
+      "ne porte pas le numéro de visiteur, et ne dit pas qui vous êtes.");
     texte("Ce numéro est remplacé au bout de " + MESURE_VIE_MOIS + " mois. Ce qui a " +
       "été enregistré avec lui est effacé au bout de " + MESURE_CONSERVATION_JOURS +
       " jours : seuls restent des totaux anonymes.");

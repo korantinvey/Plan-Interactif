@@ -656,14 +656,14 @@ Importé par :
 
 export
 
-### `modules/comptes.mjs` — 364 l. → console
+### `modules/comptes.mjs` — 377 l. → console
 
 - l.1 · Comptes et accès — l'annuaire, et la fiche d'une personne
 
 Fonctions :
 
-`poseComptes` 36 · `litMonProfil` 50 · `RETOUR_MDP` 61 · `litComptes` 63 · `ligneMessage` 72
-`casesSalons` 82 · `ouvreComptes` 112 · `ouvreFicheCompte` 213
+`poseComptes` 37 · `litMonProfil` 58 · `RETOUR_MDP` 69 · `litComptes` 71 · `ligneMessage` 84
+`casesSalons` 94 · `ouvreComptes` 124 · `ouvreFicheCompte` 226
 
 Importe :
 
@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 335 l. → console
+### `modules/ecran-console.mjs` — 338 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
 `charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 136
-`majLiens` 153 · `videEcran` 194 · `dessine` 199 · `demarre` 214 · `brancheConsole` 232
+`majLiens` 153 · `videEcran` 194 · `dessine` 202 · `demarre` 217 · `brancheConsole` 235
 
 Importe :
 
@@ -1882,7 +1882,7 @@ Importé par :
 
 fiche · recherche · synchronisation · vignettes
 
-### `modules/mesure.mjs` — 676 l. → plan, plan-admin
+### `modules/mesure.mjs` — 686 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -1894,7 +1894,7 @@ Fonctions :
 `chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
 `envoieMesures` 436 · `mesure` 473 · `brancheLesEnvois` 488 · `effaceJetonsVisiteur` 543
 `refuseMesure` 561 · `appliqueRefus` 573 · `ouvreConfidentialite` 596
-`brancheLaNotice` 659 · `brancheMesure` 673
+`brancheLaNotice` 669 · `brancheMesure` 683
 
 Importe :
 
@@ -2378,7 +2378,7 @@ Importé par :
 
 demarrage · scan-parcours
 
-### `modules/parcours.mjs` — 595 l. → plan, plan-admin
+### `modules/parcours.mjs` — 597 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -2391,10 +2391,10 @@ Fonctions :
 `parcoursAEcrire` 229 · `enregistreParcours` 245 · `tientLeStockage` 274
 `plurielParcours` 288 · `contenuParcours` 297 · `signetParcours` 308 · `boutonParcours` 314
 `rafraichitMarque` 319 · `calqueMarques` 352 · `traitTuile` 379 · `dessineMarques` 386
-`marqueParcours` 416 · `instantConf` 434 · `cleTemps` 438 · `nomDeStand` 448
-`groupeParcours` 450 · `fermeParcours` 464 · `apresBascule` 484 · `suitLeParcours` 486
-`basculeParcours` 496 · `brancheParcours` 520 · `verseAuParcours` 543 · `rangParcours` 572
-`refaitParcours` 595
+`marqueParcours` 418 · `instantConf` 436 · `cleTemps` 440 · `nomDeStand` 450
+`groupeParcours` 452 · `fermeParcours` 466 · `apresBascule` 486 · `suitLeParcours` 488
+`basculeParcours` 498 · `brancheParcours` 522 · `verseAuParcours` 545 · `rangParcours` 574
+`refaitParcours` 597
 
 Importe :
 
@@ -3047,14 +3047,14 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 181 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 193 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
 Fonctions :
 
-`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 109
-`stockage` 119 · `appelle` 123 · `initialesDe` 176
+`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `casierTient` 69
+`echangeSession` 74 · `base` 121 · `stockage` 131 · `appelle` 135 · `initialesDe` 188
 
 Importé par :
 
@@ -3078,15 +3078,15 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/socle-console.mjs` — 409 l. → console, rapport
+### `modules/socle-console.mjs` — 429 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`poseSession` 40 · `entetes` 63 · `renouvelle` 72 · `appel` 91 · `rest` 106
-`ecranConfig` 131 · `ecranConnexion` 163 · `deconnecte` 229 · `signale` 244 · `bloc` 268
-`grille` 286 · `idCompte` 303 · `themeSombre` 312 · `premierEcran` 330 · `brancheSocle` 345
+`poseSession` 40 · `entetes` 63 · `renouvelle` 72 · `appel` 94 · `rest` 109
+`ecranConfig` 134 · `ecranConnexion` 183 · `deconnecte` 249 · `signale` 264 · `bloc` 288
+`grille` 306 · `idCompte` 323 · `themeSombre` 332 · `premierEcran` 350 · `brancheSocle` 365
 
 Importe :
 
@@ -3885,6 +3885,7 @@ Injections :
 - `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
 - `20261112182349_les_droits_et_les_bornes_que_la_revue_a_releves.sql` — fn source_du_salon_reservee, fn bilan_perf, fn rappels_dus, fn pose_plan_de_visite
 - `20261112192358_les_droits_d_un_compte_remplaces_d_un_seul_geste.sql` — fn remplace_acces
+- `20261112212202_la_seconde_revue_de_securite_bornes_droits_et_purges_verifiees.sql` — fn enregistre_rappels, fn erreur_publique
 
 ## Le reste
 

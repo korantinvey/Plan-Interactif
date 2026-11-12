@@ -192,7 +192,10 @@ function majLiens(e) {
    ------------------------------------------------------------------ */
 /** Fin de session : la console n'a plus d'événements à montrer. */
 export function videEcran() {
-  poseEvenements({ EVTS: [], selection: null }); poseComptes({ MOI: null });
+  /* Tout ce que la session avait lu part avec elle : les plans aussi, sans
+     quoi « Copier les données (JSON) » du compte suivant emportait ceux des
+     salons de l'ancien. */
+  poseEvenements({ EVTS: [], selection: null, PLANS: {} }); poseComptes({ MOI: null, COMPTES: [] });
   dessine();
 }
 
