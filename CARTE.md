@@ -993,6 +993,18 @@ Importé par :
 dessin · fiche · gestes · glisse-fenetre · logos-stands · mini-carte · recherche
 tiroir-itineraire · tiroirs · trace-itineraire · tutoriel · vue
 
+### `modules/ecritures-en-file.mjs` — 95 l. → plan-admin, console
+
+- l.1 · Les écritures en file — l'écran change au clic, la base dit le dernier mot
+
+Fonctions :
+
+`creeFileEcritures` 50
+
+Importé par :
+
+fiche-detail · provenance · reglage-application · reglage-fiche · reglages
+
 ### `modules/edition-en-cours.mjs` — 43 l. → plan, plan-admin
 
 - l.1 · L'édition en cours — le plan est-il sous un outil de l'exploitant ?
@@ -1238,22 +1250,23 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1359 l. → console
+### `modules/fiche-detail.mjs` — 1365 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
-- l.26 · Contenu de la fiche détail
+- l.27 · Contenu de la fiche détail
 
 Fonctions :
 
-`paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 244
-`caseFiche` 289 · `cibleEn` 345 · `champsPersos` 347 · `criteres` 353 · `ecritFiche` 370
-`caseCritere` 390 · `clePerso` 412 · `ajouteChampPerso` 420 · `renommeChampPerso` 437
-`retireChampPerso` 485 · `lignesPerso` 552 · `cadreFiche` 575 · `ouvreFiche` 605
-`cadreCategories` 745 · `sousTitre` 853 · `tableauChamps` 868 · `champOrigine` 1094
+`paraitSurFiche` 164 · `origineConferences` 170 · `origineProduits` 177 · `resumeFiche` 247
+`caseFiche` 292 · `cibleEn` 348 · `champsPersos` 350 · `criteres` 356 · `ecritFiche` 375
+`caseCritere` 396 · `clePerso` 418 · `ajouteChampPerso` 426 · `renommeChampPerso` 443
+`retireChampPerso` 491 · `lignesPerso` 558 · `cadreFiche` 581 · `ouvreFiche` 611
+`cadreCategories` 751 · `sousTitre` 859 · `tableauChamps` 874 · `champOrigine` 1100
 
 Importe :
 
-correspondance · evenements · fenetre-console · provenance · socle-console · texte
+correspondance · ecritures-en-file · evenements · fenetre-console · provenance
+socle-console · texte
 
 Importé par :
 
@@ -2538,19 +2551,19 @@ Injections :
 
 - `injecteAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
-### `modules/provenance.mjs` — 182 l. → console
+### `modules/provenance.mjs` — 186 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
-- l.19 · Provenance des données
+- l.20 · Provenance des données
 
 Fonctions :
 
-`fournisseurUtilise` 90 · `sourceNom` 100 · `source` 104 · `ligneSource` 108
-`resumeProvenance` 145 · `ouvreProvenance` 166
+`fournisseurUtilise` 93 · `sourceNom` 103 · `source` 107 · `ligneSource` 111
+`resumeProvenance` 149 · `ouvreProvenance` 170
 
 Importe :
 
-evenements · fenetre-console · socle-console
+ecritures-en-file · evenements · fenetre-console · socle-console
 
 Importé par :
 
@@ -2672,17 +2685,18 @@ apercus · apparence · borne · demarrage · fiche · fiche-zone · gestes · i
 lancement · reglage-fiche · reglage-recherche · reglage-suggestion · rendu
 reprise-emplacements · suggestion · volets
 
-### `modules/reglage-application.mjs` — 321 l. → plan-admin
+### `modules/reglage-application.mjs` — 322 l. → plan-admin
 
 - l.1 · L'application installée — son icône et son nom, le réglage de l'exploitant
 
 Fonctions :
 
-`nomAppDefaut` 68 · `ecritApplication` 83 · `blocApplication` 124
+`nomAppDefaut` 69 · `ecritApplication` 84 · `blocApplication` 125
 
 Importe :
 
-application · donnees · enregistrement · fiche-zone · icone-app · session
+application · donnees · ecritures-en-file · enregistrement · fiche-zone · icone-app
+session
 
 Importé par :
 
@@ -2704,18 +2718,18 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 682 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 678 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
 Fonctions :
 
-`clesFiche` 48 · `voletOrdre` 65
+`clesFiche` 49 · `voletOrdre` 66
 
 Importe :
 
-apercus · corps-fiche · donnees · fiche · fiche-zone · libelles · modeles · recherche
-texte
+apercus · corps-fiche · donnees · ecritures-en-file · fiche · fiche-zone · libelles
+modeles · recherche · texte
 
 Importé par :
 
@@ -2819,20 +2833,20 @@ Importé par :
 
 reglages
 
-### `modules/reglages.mjs` — 541 l. → plan-admin
+### `modules/reglages.mjs` — 533 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 416
-`voletPlan` 434 · `voletCoexposants` 473
+`ouvreReglages` 84 · `voletZones` 212 · `champsFicheZone` 314 · `ficheZoneEnPlace` 408
+`voletPlan` 426 · `voletCoexposants` 465
 
 Importe :
 
 acces-admin · calage-carte · chaleur · configuration · corps-fiche · distinctions · dom
-donnees · fenetre · fiche · fiche-zone · glisse-fenetre · horaires · libelles
-reglage-fiche · reglage-recherche · reglage-suggestion · seuil · volets
+donnees · ecritures-en-file · fenetre · fiche · fiche-zone · glisse-fenetre · horaires
+libelles · reglage-fiche · reglage-recherche · reglage-suggestion · seuil · volets
 
 Importé par :
 
