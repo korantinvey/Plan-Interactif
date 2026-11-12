@@ -5,7 +5,8 @@
  * 2,9 Mo dont l'essentiel est du hachurage — des dizaines de milliers de
  * segments de quatre centimètres, invisibles à tout zoom raisonnable.
  *
- * Six opérations, dans cet ordre :
+ * Sept opérations, dans cet ordre :
+ *   0. ne garder des éléments que les attributs de dessin (`PERMIS`) ;
  *   1. écarter les segments plus courts que le seuil (le hachurage) ;
  *   2. arrondir les coordonnées au centimètre ;
  *   3. remplacer les couleurs figées sur les éléments par `currentColor` ;
@@ -20,6 +21,64 @@
  */
 
 const SEUIL = 0.5;   // mètres : au-dessous, un segment est du hachurage
+
+/* Ce que le plan garde d'un élément : de quoi le dessiner, et rien d'autre.
+
+   Le dessin part tel quel dans la page de chaque visiteur (`innerHTML`, dans
+   `modules/apparence.mjs`) : un attribut recopié de l'export est un attribut
+   posé chez lui. Les éléments, eux, étaient déjà reconstruits un à un — seules
+   les balises qu'on sait lire survivent —, mais leurs attributs passaient en
+   bloc, et un `onmouseover="…"` glissé dans un export, par erreur ou par un
+   tiers qui aurait eu la main sur la source, serait arrivé jusqu'à la page. La
+   CSP du plan refuse de l'exécuter ; ce n'est pas une raison pour l'écrire.
+
+   Liste fermée plutôt que liste de ce qu'on refuse : les attributs dangereux
+   sont innombrables (tout `on…`, `href`, `style`, `xlink:*`…), ceux qui
+   dessinent tiennent en une ligne. Ce que les plans de Klipso emploient y est
+   tout entier (relevé sur l'instantané de `outils/donnees/plans.json`) ; le
+   reste n'est que la grammaire voisine du trait et du texte. Ce qui en sort
+   est nommé dans `ecartes`, que la synchronisation écrit à son journal : un
+   attribut légitime qu'on aurait oublié se voit là, au lieu de manquer en
+   silence au dessin d'un salon. */
+const TRAIT = ["fill", "fill-opacity", "fill-rule", "stroke", "stroke-width", "stroke-dasharray",
+  "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
+  "opacity", "transform", "vector-effect"];
+const PERMIS: Record<string, Set<string>> = {
+  path: new Set(["d", ...TRAIT]),
+  polyline: new Set(["points", ...TRAIT]),
+  circle: new Set(["cx", "cy", "r", ...TRAIT]),
+  text: new Set(["x", "y", "dx", "dy", "font-size", "font-weight", "font-style", "font-family",
+    "text-anchor", "dominant-baseline", "letter-spacing", ...TRAIT]),
+};
+/* Une valeur ne charge rien : ni adresse, ni ressource hors du document. */
+const VALEUR_SURE = /^(?![\s\S]*(?:javascript:|data:|url\(\s*(?!#)))[^<>]*$/i;
+
+/** Les attributs d'un élément, réduits à ceux qui dessinent ; ce qu'on écarte
+ *  est noté dans `ecartes`.
+ *
+ *  Ce qu'on garde est recopié tel que la source l'écrit, espaces comprises, et
+ *  non réécrit : Klipso écrit `stroke-width ="0.03"`, et les règles qui suivent
+ *  (`currentColor`, le retrait de `font-family` sur les textes) se sont réglées
+ *  sur cette écriture-là. La normaliser ici changerait ce qu'elles attrapent —
+ *  et l'apparence de plans déjà réglés. Un plan sans attribut de trop sort donc
+ *  à l'octet près. Une valeur sans guillemets n'est gardée que faite de
+ *  caractères qui ne peuvent rien ouvrir. */
+function attributsDeDessin(balise: string, attrs: string, ecartes: Set<string>): string {
+  const permis = PERMIS[balise];
+  let sortie = "";
+  let fin = 0;
+  for (const a of attrs.matchAll(/(\s*)([^\s=/>]+)(?:(\s*=\s*)(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)) {
+    const nom = a[2].toLowerCase();
+    const valeur = a[4] ?? a[5] ?? a[6];
+    const sure = valeur !== undefined && VALEUR_SURE.test(valeur) &&
+      (a[6] === undefined || /^[\w.,#%+-]+$/.test(a[6]));
+    if (sure && permis.has(nom)) sortie += a[0];
+    else ecartes.add(balise + "@" + nom);
+    fin = (a.index ?? 0) + a[0].length;
+  }
+  // ce qui suit le dernier attribut — l'espace avant « /> » — reste comme il était
+  return sortie + attrs.slice(fin);
+}
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -115,8 +174,9 @@ export interface SousCalque {
   contenu: string;
 }
 
-export function allege(source: string): { svg: string; sousCalques: SousCalque[] } {
+export function allege(source: string): { svg: string; sousCalques: SousCalque[]; ecartes: string[] } {
   const groupes: SousCalque[] = [];
+  const ecartes = new Set<string>();
   const reG = /<g id="([^"]+)"\s*>([\s\S]*?)(?=<g id="|<\/g>\s*<\/svg>|$)/g;
   let m: RegExpExecArray | null;
 
@@ -141,7 +201,7 @@ export function allege(source: string): { svg: string; sousCalques: SousCalque[]
     const reP = /<(polyline|path|circle)\b([^>]*)\/>/g;
     let p: RegExpExecArray | null;
     while ((p = reP.exec(corps))) {
-      const attrs = p[2]
+      const attrs = attributsDeDessin(p[1], p[2], ecartes)
         .replace(/-?\d+\.\d+/g, (s) => String(r2(+s)))
         .replace(/\b(fill|stroke)="(?!none\b)[^"]*"/g, '$1="currentColor"');
       const element = `<${p[1]}${attrs}/>`;
@@ -154,7 +214,7 @@ export function allege(source: string): { svg: string; sousCalques: SousCalque[]
     const reT = /<text\b([^>]*)>([^<]*)<\/text>/g;
     let t: RegExpExecArray | null;
     while ((t = reT.exec(corps))) {
-      const attrs = t[1]
+      const attrs = attributsDeDessin("text", t[1], ecartes)
         .replace(/-?\d+\.\d+/g, (s) => String(r2(+s)))
         .replace(/\s*(stroke|fill|font-family)="[^"]*"/g, "")
         // un tour complet, ou pas de tour du tout : le texte est droit, et
@@ -181,7 +241,7 @@ export function allege(source: string): { svg: string; sousCalques: SousCalque[]
   const svg = groupes
     .map((g) => `<g id="${g.id}" data-s="${g.trait}" data-f="${g.remplissage}">${g.contenu}</g>`)
     .join("");
-  return { svg, sousCalques: groupes.map((g) => ({ ...g, contenu: "" })) };
+  return { svg, sousCalques: groupes.map((g) => ({ ...g, contenu: "" })), ecartes: [...ecartes].sort() };
 }
 
 /**
