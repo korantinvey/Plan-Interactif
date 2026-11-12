@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 350 l. → console
+### `modules/ecran-console.mjs` — 353 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 42 · `selonAdresse` 75 · `majAdresse` 83 · `majBarre` 98 · `dessineChoix` 147
-`majLiens` 164 · `videEcran` 205 · `dessine` 214 · `demarre` 229 · `brancheConsole` 247
+`charge` 42 · `selonAdresse` 78 · `majAdresse` 86 · `majBarre` 101 · `dessineChoix` 150
+`majLiens` 167 · `videEcran` 208 · `dessine` 217 · `demarre` 232 · `brancheConsole` 250
 
 Importe :
 
@@ -3078,16 +3078,16 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/socle-console.mjs` — 443 l. → console, rapport
+### `modules/socle-console.mjs` — 451 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
 `poseSession` 40 · `entetes` 63 · `memeCompte` 71 · `renouvelle` 78 · `appel` 104
-`rest` 119 · `ecranConfig` 144 · `ecranConnexion` 193 · `deconnecte` 263 · `signale` 278
-`bloc` 302 · `grille` 320 · `idCompte` 337 · `themeSombre` 346 · `premierEcran` 364
-`brancheSocle` 379
+`rest` 127 · `ecranConfig` 152 · `ecranConnexion` 201 · `deconnecte` 271 · `signale` 286
+`bloc` 310 · `grille` 328 · `idCompte` 345 · `themeSombre` 354 · `premierEcran` 372
+`brancheSocle` 387
 
 Importe :
 

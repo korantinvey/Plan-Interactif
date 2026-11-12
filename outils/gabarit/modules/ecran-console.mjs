@@ -56,7 +56,10 @@ async function charge() {
     poseEvenements({ selection: (selonAdresse() || EVTS[0])?.id ?? null });
   }
   if (selection) await chargePlans(selection);
-  if (g !== generation) { poseEvenements({ PLANS: {} }); return; }
+  /* Rien à défaire : `videEcran` a déjà posé un `PLANS` neuf, et la lecture
+     périmée a écrit dans l'ancien. L'effacer ici videait celui de la session
+     suivante. */
+  if (g !== generation) return;
   dessine();
 }
 

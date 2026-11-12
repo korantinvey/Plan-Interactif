@@ -21,4 +21,6 @@ module.exports = {
   "Thème clair": "Light theme",
   // l'adresse du projet refusée en clair : elle porterait le mot de passe
   "L'adresse du projet doit commencer par https://": "The project address must start with https://",
+  // un appel parti vers un projet que l'on a quitté entre-temps
+  "Le projet a changé pendant l'appel.": "The project changed during the call.",
 };

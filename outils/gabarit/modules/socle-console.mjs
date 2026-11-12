@@ -102,10 +102,18 @@ function renouvelle() {
  * @param {RequestInit} [options]
  */
 export async function appel(url, options = {}) {
-  const envoie = () => fetch(url, {
-    ...options,
-    headers: { ...entetes(!!options.body), ...(options.headers || {}) },
-  });
+  /* Le projet de l'appel, retenu au départ et vérifié juste avant chaque
+     envoi — sans attente entre les deux. Les en-têtes se lisent à l'envoi :
+     passé à un autre projet pendant un renouvellement, et connecté, on
+     envoyait la clé et le jeton du nouveau à l'adresse de l'ancien. */
+  const projet = CFG?.url;
+  const envoie = () => {
+    if (CFG?.url !== projet) return Promise.reject(new Error("Le projet a changé pendant l'appel."));
+    return fetch(url, {
+      ...options,
+      headers: { ...entetes(!!options.body), ...(options.headers || {}) },
+    });
+  };
   if (SESSION?.access_token && resteJeton(SESSION.access_token) < RESTE_JETON) await renouvelle();
   const r = await envoie();
   if (r.status !== 401 || !SESSION?.refresh_token) return r;
