@@ -469,6 +469,46 @@ export function maillageReuni(mod){
 }
 
 /**
+ * Les allures réunies rangées dans une texture, pour qu'une seule couche les
+ * dessine toutes : chaque figurant y lit la sienne, sommet par sommet.
+ *
+ * Quatre allures faisaient encore quatre couches, et c'est le nombre de
+ * couches qui fait le prix d'une image de geste : chacune coûte à la
+ * bibliothèque une à deux millisecondes sur un téléphone d'entrée de gamme,
+ * qu'elle porte deux cents stands ou soixante figurants. Ces téléphones y
+ * passaient vingt-cinq millisecondes par image, et perdaient une image sur
+ * trois (sonde, 29 octobre au 12 novembre 2026). Réunir les quatre allures en
+ * un seul maillage aurait fait répéter à chaque figurant les sommets des
+ * quatre — quatre fois le travail de la carte graphique, sur ces mêmes
+ * téléphones. Rangées ici, une couche n'en dessine que la largeur d'une
+ * allure : le shader lit, au rang du sommet, la position, la partie et la
+ * normale dans la rangée de l'allure du figurant (`webgl.mjs`
+ * `CoucheFigurants`).
+ *
+ * Rangée `2k` : la position du sommet et sa partie, dans l'ordre de
+ * `PARTIES` ; rangée `2k + 1` : sa normale. Une allure plus courte que la
+ * plus longue finit en sommets nuls — des triangles sans surface, que la
+ * carte graphique écarte avant de rien peindre. La largeur reste un multiple
+ * de trois : un triangle ne chevauche jamais deux allures.
+ * @param {any[]} reunis les allures, chacune réunie (`maillageReuni`)
+ * @returns {{ donnees: Float32Array, largeur: number, hauteur: number }}
+ */
+export function formesEnTexture(reunis){
+  const sommets = reunis.map(m => m.attributes.positions.value.length / 3);
+  const largeur = Math.ceil(Math.max(...sommets) / 3) * 3;
+  const donnees = new Float32Array(largeur * reunis.length * 2 * 4);
+  reunis.forEach((m, k) => {
+    const pos = m.attributes.positions.value, nor = m.attributes.normals.value, cou = m.attributes.colors.value;
+    const forme = 2 * k * largeur * 4, normale = forme + largeur * 4;
+    for (let v = 0; v < sommets[k]; v++){
+      donnees.set([pos[3 * v], pos[3 * v + 1], pos[3 * v + 2], cou[3 * v]], forme + 4 * v);
+      donnees.set([nor[3 * v], nor[3 * v + 1], nor[3 * v + 2], 0], normale + 4 * v);
+    }
+  });
+  return { donnees, largeur, hauteur: reunis.length * 2 };
+}
+
+/**
  * L'ombre, commune à tous, et les maillages de chaque allure, dans l'ordre
  * de `MODELES`.
  */
