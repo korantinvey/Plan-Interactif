@@ -1,0 +1,669 @@
+</style>
+
+<div class="app">
+  <!-- @admin — la bande de l'outil -->
+  <!-- La bande de l'outil, au-dessus de celle du salon. Elle ne paraît qu'une
+       fois l'identité vérifiée — `activeAdmin` y range les commandes
+       d'édition — et la page publique la retire du document. -->
+  <div class="bandeAdmin" id="bandeAdmin" hidden>
+    <span class="bandeMarque"><!--__MARQUE_NU__--></span>
+    <span class="bandeNom">Administration</span>
+    <div class="bandeActs" id="bandeActs"></div>
+  </div>
+  <!-- @fin-admin -->
+
+  <header class="topbar" id="bandeau">
+    <div class="brand">
+      <!-- Le logo du salon, posé par `poseLogoSalon` (modules/index-salon.mjs) : il n'a de
+           place que dans la bande réduite d'un téléphone, et reste caché
+           partout ailleurs. -->
+      <img class="logoSalon" id="logoSalon" alt="" hidden>
+      <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
+           celui d'un salon annoncerait le mauvais pendant tout le
+           chargement d'un autre. Un intitulé neutre, grisé tant qu'il n'est
+           pas le vrai, réserve la place sans rien affirmer. -->
+      <h1 id="titre" class="attente">Plan du salon</h1>
+    </div>
+    <!-- Les pavillons ne tiennent pas toujours sur la largeur : trois halls
+         nommés « Galerie Diaghilev » en débordent sur un téléphone. Ils
+         défilent donc par le côté, et la bande dit par quel bord il en reste —
+         voir « Une bande qui défile ne le dit pas d'elle-même ». -->
+    <div class="bande halls-bande" id="hallsBande" hidden>
+      <nav class="halls defile" id="halls" aria-label="Pavillons"></nav>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+    <div class="tools">
+      <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
+           le drapeau de la langue vers laquelle il mène — c'est ce que
+           cherche des yeux quelqu'un qui ne lit pas la page. -->
+      <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
+      <button class="iconbtn" id="btnParcours" aria-pressed="false"
+        title="Mon parcours de visite" aria-label="Mon parcours de visite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
+        <span class="compteur" id="nParcours" hidden>0</span>
+      </button>
+      <!-- @admin — les calques et les réglages -->
+      <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+      </button>
+      <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
+      <!-- @fin-admin -->
+      <button class="iconbtn" id="btnItineraire" aria-pressed="false"
+        title="Calculer un itinéraire" aria-label="Calculer un itinéraire">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
+      </button>
+      <!-- @admin — le compte de l'exploitant -->
+      <!-- L'exploitant connecté, et par où sortir. -->
+      <details class="compte" id="menuCompte" hidden>
+        <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
+        <div class="compte-pan">
+          <div class="qui" id="compteMail">—</div>
+          <button class="sortie" id="btnSortir">Se déconnecter</button>
+        </div>
+      </details>
+      <!-- @fin-admin -->
+    </div>
+  </header>
+
+  <!-- Un enregistrement qui n'aboutit pas ne peut pas s'annoncer au fond d'un
+       panneau fermé : il passe devant le bandeau, et propose son recours. En
+       dehors du flux de la grille, il ne déplace rien. -->
+  <div class="alerte-enr" id="alerteEnr" role="status" hidden>
+    <span id="alerteTxt"></span>
+    <button id="alerteAct" type="button"></button>
+  </div>
+
+  <aside class="side" id="side">
+    <button class="poignee" id="poignee" aria-expanded="false" aria-controls="list"
+      aria-label="Afficher la liste des stands"></button>
+    <div class="search">
+      <div class="search-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
+        <!-- Défaire la recherche d'une pression : sans mot-clé la liste et le
+             plan reviennent entiers, et c'est le geste qu'on cherche quand on
+             ne trouve rien. Elle ne paraît qu'une fois le champ rempli. -->
+        <button class="vide-q" id="videQ" type="button" hidden
+          title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
+      </div>
+      <!-- Les critères tiennent derrière ce bouton : dépliés d'office, ils
+           prendraient sur un téléphone la place du plan. Il les déplie et les
+           replie juste dessous, dans la colonne, et n'existe que si
+           l'exploitant a désigné des champs à proposer. -->
+      <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
+        aria-expanded="false" aria-controls="panCrit"
+        title="Critères de recherche" aria-label="Critères de recherche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
+        <span class="compteur" id="nFiltres" hidden>0</span>
+      </button>
+    </div>
+    <!-- Le panneau des critères, déplié dans la colonne même, sous le mot-clé
+         qu'il complète. Une fenêtre posée à côté du bouton recouvrait la liste
+         dont elle décide : on cochait sans voir ce qu'il restait. -->
+    <div class="pan-crit" id="panCrit" role="group"
+      aria-label="Critères de recherche" hidden>
+      <div class="crit-corps" id="critCorps"></div>
+      <!-- Le pied ne défile pas avec les valeurs : ce que la recherche retient
+           se lit pendant qu'on coche, et refermer est la sortie — on ne la
+           cherche pas au bout de cent puces. -->
+      <div class="crit-pied">
+        <div id="critPied"></div>
+        <div class="crit-actes">
+          <button class="btn" type="button" id="critVider">Tout effacer</button>
+          <button class="btn accent" type="button" id="critVoir">Voir les résultats</button>
+        </div>
+      </div>
+    </div>
+    <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
+         pourquoi la liste est si courte, le panneau étant refermé. -->
+    <!-- Chaque bande de puces vit dans un cadre qui ne sert qu'à porter ses
+         flèches : la bande elle-même est estompée sur son bord, et une flèche
+         posée dedans s'estomperait avec. -->
+    <div class="bande">
+      <div class="actifs defile" id="actifs" role="group" aria-label="Critères retenus" hidden></div>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+    <!-- Le compte ne paraît qu'en recherche : hors recherche la liste est le
+         sommaire du pavillon, et n'a pas de résultat à annoncer. -->
+    <div class="count" id="count" hidden><span id="countTxt">—</span></div>
+    <div class="list" id="list"></div>
+    <!-- Ce que la mesure fait d'une visite, et le moyen de la refuser. Il ne
+         paraît que sur une page qui mesure (voir `modules/mesure.mjs`). -->
+    <footer class="side-pied" id="piedSide" hidden>
+      <button type="button" class="lien-discret" id="btnConfidentialite"
+        aria-haspopup="dialog">Confidentialité</button>
+    </footer>
+  </aside>
+
+  <main class="stage" id="stage">
+    <!-- La carte vectorielle, quand c'est elle qu'on a choisie. Hors du SVG :
+         MapLibre peint sur sa propre toile WebGL, et c'est justement ce qui
+         garde les libellés droits quand le plan est tourné. Elle ne reçoit
+         aucun geste — tout passe par le SVG posé dessus. -->
+    <div class="fondGL" id="fondCarteGL" hidden></div>
+    <!-- Le fond figé, en images posées d'avance (`modules/environs.mjs`
+         `poseFige`). Hors du SVG des tuiles : pendant un geste, ce calque se
+         déplace en CSS sans rien repeindre, là où le SVG repeignait chaque
+         image à chaque changement de sa « viewBox ». Sous l'aplat qui vide le
+         hall, qui vient après lui. -->
+    <div class="fondFige" id="fondFige" aria-hidden="true" hidden></div>
+    <!-- Les tuiles d'images et l'aplat qui vide le hall, hors du plan.
+         Longtemps ils vivaient dans « #couches », ce qui était plus simple :
+         ils héritaient de sa « viewBox ». Le rendu par la carte graphique a
+         tranché autrement — il reprend chaque enfant de « #couches » pour en
+         faire une couche de dessin, et masque le SVG qu'il remplace. Un fond
+         n'a rien à y faire : il se pose dans la scène, sous le plan, quel que
+         soit le rendu de celui-ci. -->
+    <svg class="fondTuiles" id="fondTuiles" aria-hidden="true">
+      <g id="fondCarte"></g>
+      <!-- Ce qui rend le hall vide : un aplat de la couleur du fond, posé
+           par-dessus la carte et sous le plan. Un aplat et non un découpage —
+           il n'y a rien derrière la carte que ce fond-là, le rendu est le
+           même, et il vaut pour les tuiles comme pour la toile WebGL de la
+           carte vectorielle, qu'aucun découpage du SVG n'atteindrait. -->
+      <path id="trouDuFond"></path>
+    </svg>
+    <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
+      <g id="couches">
+        <!-- Le fond de carte, sous tout le reste. Il ne participe pas à la
+             pile des calques : `ordonneDom` n'y déplace que ce qu'elle connaît,
+             et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
+             contenu est refait à chaque changement de vue et ne s'enregistre
+             nulle part — ce sont des tuiles, pas un dessin. -->
+        <g id="zones"></g>
+        <g id="stands"></g>
+        <g id="labels"></g>
+      </g>
+    </svg>
+    <!-- Les libellés le temps d'un zoom : le compositeur étire ce calque au
+         lieu de les repeindre à chaque image. Voir « detacheLibelles ». -->
+    <div class="calque-libelles" id="calqueLibelles" aria-hidden="true" hidden><svg></svg></div>
+
+    <div class="zoombar">
+      <button id="zIn" aria-label="Zoom avant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button id="zOut" aria-label="Zoom arrière"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+      <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
+    </div>
+    <!-- Le choix de l'ambiance, offert au visiteur de la démonstration
+         seulement (`modules/choix-ambiance.mjs`) : partout ailleurs, c'est
+         l'exploitant qui la choisit, pour tous. -->
+    <div class="choixAmbiance" id="choixAmbiance" role="group" aria-label="Ambiance du plan" hidden>
+      <button type="button" data-ambiance="classique" aria-pressed="false">Classique</button>
+      <button type="button" data-ambiance="tuiles" aria-pressed="false">Tuiles</button>
+      <button type="button" data-ambiance="immersif" aria-pressed="false">Immersif</button>
+    </div>
+    <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+    <!-- Le fond de carte se cite. C'est la contrepartie de tuiles qu'on
+         n'a pas dessinées, et elle ne paraît que lorsqu'il y en a. -->
+    <div class="creditCarte" id="creditCarte" hidden></div>
+    <div class="mention-osm" id="mentionOsm" hidden>© les contributeurs d'OpenStreetMap</div>
+    <!-- Le cartouche des points d'intérêt est une bande de pastilles dans un
+         cadre, comme les critères retenus : le cadre ne défile pas, c'est lui
+         qui porte les flèches. Elles sont hors de la bande, sinon le fondu les
+         effacerait avec les pastilles qu'elles surmontent. Voir « .bande » et
+         « majFondus ». -->
+    <div class="poi bande" id="poi" hidden>
+      <div class="poiDefile defile" id="poiDefile"></div>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+    <div class="viseur" id="viseur" hidden>
+      <span id="viseurTxt"></span>
+      <button type="button" id="viseurStop">Annuler</button>
+    </div>
+    <!-- Le trajet resté sur le plan une fois son tiroir refermé. L'effacer ne
+         doit pas obliger à rouvrir le tiroir : le trait se voit sur le plan, le
+         geste qui l'ôte se voit à côté. Même place que le bandeau de visée,
+         avec lequel il ne paraît jamais. Voir « majRappelRoute ». -->
+    <div class="viseur routeRappel" id="routeRappel" hidden>
+      <button type="button" class="routeVoir" id="routeVoir"
+        title="Revoir le détail du trajet"><b>Itinéraire</b><span id="routeResume"></span></button>
+      <button type="button" class="routeEfface" id="routeEfface" aria-label="Effacer l'itinéraire"
+        title="Effacer l'itinéraire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg><span>Effacer</span></button>
+    </div>
+    <!-- @admin — le calage d'un hall -->
+    <!-- Le calage d'un bâtiment de la bibliothèque : le geste, l'angle au
+         quart de degré près, et les deux issues. Voir « _batiments.html ». -->
+    <div class="viseur calage" id="calageBat" hidden>
+      <span>Glissez le contour à sa place, et sa poignée ronde pour le faire pivoter.</span>
+      <label class="calageAngle"><input type="number" id="calageAngle" step="0.25"
+        aria-label="Angle du contour, en degrés"> °</label>
+      <button type="button" id="calageQuart" title="Pivoter d'un quart de tour">↻ 90°</button>
+      <button type="button" id="calageStop">Annuler</button>
+      <button type="button" class="fort" id="calageValide">Valider</button>
+    </div>
+    <!-- @fin-admin -->
+    <!-- Ce que le plan sait de la position du visiteur quand il est arrivé par
+         un code affiché dans le hall, et le seul endroit où l'éteindre. Il ne
+         s'efface pas une fois lu : il est l'état du mode. Voir « _ici.html ». -->
+    <div class="bornePose iciRappel" id="iciRappel" hidden>
+      <span id="iciRappelTxt"></span>
+      <button type="button" id="iciStop">Désactiver</button>
+    </div>
+    <!-- Une borne interactive qui ne sait pas encore où elle est posée. Elle
+         s'efface dès qu'elle le sait, et ne reparaît plus. -->
+    <div class="bornePose" id="bornePose" hidden>
+      <span>Mode borne : cet écran ne sait pas encore où il est posé.</span>
+      <button type="button" id="bornePoser">Poser la borne</button>
+    </div>
+
+    <!-- La palette de calage. Elle flotte sur le plan plutôt que d'occuper une
+         fenêtre : on cale en regardant la carte glisser sous le pavillon, et
+         une modale posée devant rend le réglage aveugle. Même place et même
+         allure que la palette de dessin, dont elle prend le tour de rôle. -->
+    <div class="outils calage" id="calage" hidden>
+      <div class="outilsTete">
+        <strong>Caler la carte</strong>
+        <div class="outilsActs"><button type="button" id="calageFerme" aria-label="Fermer">×</button></div>
+      </div>
+      <div id="calageCorps"></div>
+      <!-- Deux lignes, et non une. L'état de la carte et celui d'un
+           enregistrement ne se remplacent pas : le second masquait le premier,
+           et l'on cherchait pourquoi la carte manquait en lisant un message
+           qui parlait de la base. -->
+      <p class="calageEtat" id="calageCarte"></p>
+      <p class="calageEtat" id="calageEtat"></p>
+      <div class="acts">
+        <button type="button" class="btn" id="calageGarde">Enregistrer pour tous</button>
+      </div>
+    </div>
+
+    <!-- @admin — la boîte à outils du dessin et le panneau « Élément » -->
+    <div class="outils" id="outils">
+      <div class="outilsTete">
+        <span class="eyebrow" id="outilsCalque"></span>
+        <span class="outilsActs">
+          <button id="renommeOutils" title="Renommer le calque" aria-label="Renommer le calque">&#9998;</button>
+          <button id="replieOutils" title="Replier" aria-label="Replier la boîte à outils" aria-expanded="true">&#8211;</button>
+          <button id="fermeOutils" title="Fermer — Échap" aria-label="Fermer la barre de dessin">&times;</button>
+        </span>
+      </div>
+      <label class="outilsRole"><span class="eyebrow">Rôle dans les itinéraires</span>
+        <select id="roleIti"></select><i id="roleAide"></i></label>
+      <label class="outilsVoir"><input type="checkbox" id="voirNappe">
+        <span>Voir ce qui est praticable</span></label>
+      <label class="outilsVoir"><input type="checkbox" id="aimants" checked>
+        <span>Accrocher aux stands et aux zones — Alt pour relâcher</span></label>
+      <label class="elemChamp"><span>Pas de la grille</span>
+        <select id="aimantPas">
+          <option value="0.25">25 cm</option>
+          <option value="0.5" selected>50 cm</option>
+          <option value="0.75">75 cm</option>
+          <option value="1">1 m</option>
+        </select></label>
+      <div class="outilsBtns">
+        <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
+        <button data-o="rect" title="Rectangle">&#9645;</button>
+        <button data-o="poly" title="Polygone — clic pour chaque sommet, Entrée pour fermer">&#11040;</button>
+        <button data-o="contour" title="Contour de hall — un clic par angle, segments redressés, Entrée pour fermer">&#8978;</button>
+        <button data-o="ligne" title="Ligne — clic pour chaque point, Entrée pour terminer">&#9585;</button>
+        <button data-o="texte" title="Texte">T</button>
+        <button data-o="image" title="Image">&#9634;&#8598;</button>
+        <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
+        <button data-o="stand" title="Stand — matérialiser un exposant ou un co-exposant sur son emplacement">&#9707;</button>
+      </div>
+      <div id="contourReg">
+        <label class="elemChamp"><span>Arrondi</span>
+          <input id="contourRayon" type="number" min="0" max="10" step="0.5" value="2"></label>
+        <label class="outilsVoir"><input type="checkbox" id="contourAimant" checked>
+          <span>Redresser les segments</span></label>
+      </div>
+      <div id="traitReg">
+        <label class="elemChamp"><span>Épaisseur</span>
+          <select id="traitEpaisseur">
+            <option value="1">Fin</option>
+            <option value="2" selected>Normal</option>
+            <option value="3">Épais</option>
+            <option value="5">Très épais</option>
+          </select></label>
+        <label class="elemChamp"><span>Style</span>
+          <select id="traitStyle">
+            <option value="plein">Continu</option>
+            <option value="pointille">Pointillé</option>
+          </select></label>
+        <label class="elemChamp"><span>Flèche</span>
+          <select id="traitFleche">
+            <option value="">Aucune</option>
+            <option value="fin">Au bout</option>
+            <option value="debut">Au départ</option>
+            <option value="deux">Aux deux bouts</option>
+          </select></label>
+      </div>
+      <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
+      <select id="repereType" title="Ce que le repère est"></select>
+      <div id="repereTransport">
+        <label class="elemChamp"><span>Mode</span>
+          <select id="repereMode" title="Ce qui passe à cet arrêt"></select></label>
+        <label class="elemChamp"><span>Ligne</span>
+          <input id="repereLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+            title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+        <label class="elemChamp"><span>Couleur</span>
+          <input type="color" class="cc" id="repereCouleur"
+            title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+      </div>
+      <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
+      <input id="imageSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+        placeholder="Exposant dont l'image ouvre la fiche — facultatif">
+      <input id="standSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+        placeholder="Exposant à matérialiser">
+      <datalist id="listeSoc"></datalist>
+      <input type="file" id="fichierImage" accept="image/*" hidden>
+      <button class="choix" id="choisirImage">Choisir une image…</button>
+      <div id="vignette" hidden></div>
+      <div class="elem" id="elemSel" hidden>
+        <div class="elemTete"><span class="eyebrow" id="elemType"></span>
+          <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
+        <select id="elemPicto" title="Ce que le repère est" hidden></select>
+        <div id="elemTransport" hidden>
+          <label class="elemChamp"><span>Mode</span>
+            <select id="elemMode" title="Ce qui passe à cet arrêt"></select></label>
+          <label class="elemChamp"><span>Ligne</span>
+            <input id="elemLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+              title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+          <label class="elemChamp"><span>Couleur</span>
+            <input type="color" class="cc" id="elemCouleur"
+              title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+        </div>
+        <input id="elemTexte" placeholder="Texte" hidden>
+        <div class="elemLiens" id="elemLiens" hidden>
+          <span class="eyebrow">Passages vers d'autres plans</span>
+          <div class="lienListe" id="elemLiensListe"></div>
+          <select id="elemLienAjout"></select>
+          <i id="elemLienAide"></i>
+        </div>
+        <div id="elemDim" hidden>
+          <label class="elemChamp"><span>Largeur</span>
+            <input id="elemLargeur" type="number" min="0.1" max="999" step="0.5"></label>
+          <label class="elemChamp"><span>Hauteur</span>
+            <input id="elemHauteur" type="number" min="0.1" max="999" step="0.5"></label>
+        </div>
+        <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
+          <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
+        <label class="elemChamp" id="elemRotationBloc" hidden><span>Rotation</span>
+          <input id="elemRotation" type="number" min="-180" max="180" step="5">
+          <button type="button" class="quart" id="elemRotationQuart"
+            title="Tourner d'un quart de tour">&#8635; 90°</button></label>
+        <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
+          <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
+        <div id="elemTraitReg" hidden>
+          <label class="elemChamp"><span>Épaisseur</span>
+            <select id="elemEpaisseur">
+              <option value="1">Fin</option>
+              <option value="2">Normal</option>
+              <option value="3">Épais</option>
+              <option value="5">Très épais</option>
+            </select></label>
+          <label class="elemChamp"><span>Style</span>
+            <select id="elemStyle">
+              <option value="plein">Continu</option>
+              <option value="pointille">Pointillé</option>
+            </select></label>
+          <label class="elemChamp"><span>Flèche</span>
+            <select id="elemFleche">
+              <option value="">Aucune</option>
+              <option value="fin">Au bout</option>
+              <option value="debut">Au départ</option>
+              <option value="deux">Aux deux bouts</option>
+            </select></label>
+        </div>
+        <input id="elemSoc" list="listeSoc" spellcheck="false" hidden
+          placeholder="Exposant — numéro ou nom">
+      </div>
+      <div class="outilsPied">
+        <span id="outilsAide"></span>
+        <button class="reset" id="annuleDernier">Annuler &nbsp;·&nbsp; Ctrl+Z</button>
+      </div>
+    </div>
+    <!-- @fin-admin -->
+
+    <!-- @admin — la palette des libellés -->
+    <div class="outils libreg" id="libReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="libNom"></span>
+        <span class="outilsActs">
+          <button id="libFerme" title="Terminer — Échap"
+            aria-label="Terminer le placement des libellés">&times;</button>
+        </span>
+      </div>
+      <label class="elemChamp"><span>Taille</span>
+        <input id="libTaille" type="range" min="0.4" max="3" step="0.05" value="1"></label>
+      <!-- un logo seul se tourne : le nom suit le fil de la lecture -->
+      <label class="elemChamp" id="libAngleChamp" hidden><span>Angle</span>
+        <input id="libAngle" type="range" min="-180" max="180" step="1" value="0">
+        <output id="libAngleVal">0°</output></label>
+      <button class="auto" id="libAuto">Placement automatique</button>
+      <div class="outilsPied"><span id="libAide"></span></div>
+    </div>
+    <!-- @fin-admin -->
+
+    <!-- @admin — la palette des emplacements -->
+    <!-- Reprendre la géométrie d'un emplacement. La palette s'ouvre avec le
+         mode, avant même qu'une forme soit choisie : c'est elle qui dit qu'on
+         y est, et par où en sortir. -->
+    <div class="outils libreg" id="geoReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="geoNom"></span>
+        <span class="outilsActs">
+          <button id="geoFerme" title="Terminer — Échap"
+            aria-label="Terminer la reprise des géométries">&times;</button>
+        </span>
+      </div>
+      <!-- Ajouter à la couche ce que la source n'a pas : un stand de dernière
+           minute, une zone que le salon n'a pas dessinée. -->
+      <div class="outilsBtns geoOutils">
+        <button data-g="" title="Choisir une forme pour la reprendre" aria-pressed="true">&#9099;</button>
+        <button data-g="rect" title="Ajouter un rectangle">&#9645;</button>
+        <button data-g="poly" title="Ajouter un polygone — clic pour chaque sommet, Entrée pour fermer">&#11040;</button>
+      </div>
+      <div id="geoInfos" hidden>
+        <label class="elemChamp" id="geoCodeL"><span>Numéro</span>
+          <input id="geoCode" type="text" maxlength="20" placeholder="B42"></label>
+        <label class="elemChamp" id="geoSocL"><span>Exposant</span>
+          <input id="geoSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+            placeholder="Facultatif — ouvre sa fiche"></label>
+        <label class="elemChamp" id="geoTitreL"><span>Nom</span>
+          <input id="geoTitre" type="text" maxlength="120"></label>
+      </div>
+      <div id="geoDim" hidden>
+        <label class="elemChamp"><span>Largeur</span>
+          <input id="geoLargeur" type="number" min="0.1" max="999" step="0.5"></label>
+        <label class="elemChamp"><span>Hauteur</span>
+          <input id="geoHauteur" type="number" min="0.1" max="999" step="0.5"></label>
+      </div>
+      <button class="auto" id="geoOrigine">Géométrie d'origine</button>
+      <button class="auto" id="geoFiche" hidden>Fiche de la zone…</button>
+      <button class="auto" id="geoSupprime" hidden>Supprimer</button>
+      <div class="outilsPied"><span id="geoAide"></span></div>
+    </div>
+    <!-- @fin-admin -->
+
+    <div class="modale" id="modale">
+      <div class="mfen" role="dialog" aria-modal="true">
+        <header><h2 id="mTitre"></h2><button id="mFermer" aria-label="Fermer">&times;</button></header>
+        <div class="mcorps" id="mCorps"></div>
+        <footer id="mPied"></footer>
+      </div>
+    </div>
+
+    <!-- @admin — le panneau des calques -->
+    <div class="panel" id="panel">
+      <span class="eyebrow">Ordre des calques</span>
+      <div id="pile"></div>
+    </div>
+    <!-- @fin-admin -->
+
+    <div class="voile" id="voile"></div>
+    <section class="detail" id="detail" aria-live="polite">
+      <!-- La fiche se hisse comme la liste : même prise, même geste. Sur un
+           téléphone elle ne montrait que la moitié basse de l'écran, et une
+           fiche bien remplie s'y lisait par le trou d'une serrure. -->
+      <button class="poignee" id="poigneeFiche" aria-expanded="false" aria-controls="dBody"
+        aria-label="Agrandir la fiche"></button>
+      <!-- Les bandeaux des distinctions se posent au-dessus de la tête de
+           fiche, et non dedans : c'est toute la largeur qu'ils prennent, et le
+           logo de l'exposant occupe déjà le coin où les deux autres marques
+           vont. Ils s'empilent — un nouvel adhérent en porte deux. -->
+      <div class="rubansDist" id="dRubans"></div>
+      <div class="detail-hd">
+        <div class="hdActs">
+          <!-- Les deux actions de la fiche, en pictos, pour l'écran étroit :
+               au pied du corps elles se trouvaient sous les champs, le
+               programme et le catalogue, et il fallait dérouler une fiche
+               entière pour tomber sur « Itinéraire ». En tête, elles sont là
+               dès que la fiche s'ouvre. Au large, les boutons du pied
+               suffisent — ils s'y voient sans rien dérouler. -->
+          <button class="pAct" id="dGoIco" title="Centrer sur le plan" aria-label="Centrer sur le plan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+          <button class="pAct itin" id="dItinIco" title="Itinéraire" aria-label="Itinéraire">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
+          </button>
+          <!-- L'ajout au parcours, en toutes lettres : seul en pictogramme, le
+               signet passait pour un ornement, et l'on ne découvrait le
+               parcours qu'en le cherchant. Il garde la classe `marque`, pour
+               que chaque modèle de fiche l'habille comme avant. -->
+          <button class="marque marqueTexte" id="dMarque" hidden><span class="l"></span></button>
+          <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="hdTete"><span class="pastDist" id="dPast"></span></div>
+        <div class="hdNom">
+          <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
+            title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
+          <img class="logoZone" id="dLogo" alt="" hidden>
+        </div>
+        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
+      </div>
+      <!-- Le coin corné, pour qui le préfère à la pastille. Il tient au coin
+           du tiroir et non à celui de l'en-tête : posé dans l'en-tête, il
+           commençait sous la prise du tiroir sur l'écran étroit, et laissait
+           au-dessus de lui une bande pleine ; le modèle « grille », qui rogne
+           sa tête de fiche, l'y aurait coupé net. Il vient donc après elle,
+           pour se peindre par-dessus son fond — la croix de fermeture occupe
+           l'autre bord, loin de lui. Le script l'y renvoie quand un bandeau
+           occupe le haut du tiroir. Une seule distinction l'occupe : deux
+           coins au même angle n'en feraient qu'un. -->
+      <div class="corneDist" id="dCorne" hidden aria-hidden="true"></div>
+      <div class="onglets" id="dOnglets" role="tablist" hidden>
+        <button type="button" class="ong" id="dOngInfo" role="tab"
+          aria-controls="dPaneInfos" aria-selected="true">Détail</button>
+        <button type="button" class="ong" id="dOngProg" role="tab"
+          aria-controls="dPaneConf" aria-selected="false">Programme<span class="n" id="dOngNb"></span></button>
+        <button type="button" class="ong" id="dOngProd" role="tab"
+          aria-controls="dPaneProd" aria-selected="false">Produits<span class="n" id="dOngNbProd"></span></button>
+      </div>
+      <div class="detail-bd" id="dBody"></div>
+    </section>
+
+    <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <!-- Le parcours se hisse comme la fiche : même prise, même geste. Il
+           porte deux choses sur un téléphone — la liste retenue et la journée
+           organisée — et une hauteur figée ne pouvait convenir aux deux. -->
+      <button class="poignee" id="poigneeParcours" aria-expanded="false" aria-controls="pCorps jCorps"
+        aria-label="Agrandir le parcours"></button>
+      <div class="detail-hd">
+        <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
+        <span class="eyebrow" id="pEyebrow">Mon parcours</span>
+        <h2 id="pTitre">Parcours de visite</h2>
+        <span class="badge" id="pResume"></span>
+      </div>
+      <div class="pActs" id="pActs">
+        <button class="btn jOrg" id="btnJournee" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+          Organiser ma journée</button>
+        <button class="btn jRefait" id="jRefaire" type="button" hidden>Changer l'heure d'arrivée</button>
+        <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
+          Partager</button>
+        <!-- Lire le code d'un parcours sans quitter la page : dans une
+             application qui embarque le plan, l'appareil photo du téléphone
+             ouvrirait le lien dans le navigateur, loin de la liste.
+             Réglage « Proposer la lecture d'un code QR de parcours ». -->
+        <button class="btn jScan" id="btnScanParcours" type="button" title="Scanner un parcours partagé" aria-label="Scanner un parcours partagé">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M7 12h10"/></svg>
+          <span class="lib">Scanner</span></button>
+      </div>
+      <div class="jJours" id="jJours" hidden></div>
+      <div class="pCorps" id="pCorps"></div>
+      <div class="pCorps" id="jCorps" hidden></div>
+      <div class="pPied" id="pPied">
+        <button class="vider" id="videParcours">Vider le parcours</button>
+      </div>
+      <div class="pPied" id="jPied" hidden>
+        <button class="vider retour" id="jRetour">Revenir à ma liste</button>
+      </div>
+    </section>
+
+    <section class="itineraire" id="itineraire" aria-label="Itinéraire">
+      <!-- La prise de la fiche et du parcours. Celui-ci se juge plus que les
+           autres sur le plan : le baisser rend à l'œil le trajet qu'il
+           vient d'y tracer. -->
+      <button class="poignee" id="poigneeItineraire" aria-expanded="false" aria-controls="iCorps"
+        aria-label="Agrandir l'itinéraire"></button>
+      <div class="detail-hd">
+        <button class="close" id="closeItineraire" aria-label="Fermer">&times;</button>
+        <span class="eyebrow">Se rendre</span>
+        <h2>Itinéraire</h2>
+        <span class="badge" id="iResume">à définir</span>
+      </div>
+      <div class="iCorps" id="iCorps">
+        <div class="iChamps">
+          <div class="iChamp">
+            <label class="eyebrow" for="iDepart">Départ</label>
+            <input id="iDepart" type="text" autocomplete="off" role="combobox"
+              aria-autocomplete="list" aria-expanded="false" aria-controls="iSugg"
+              placeholder="Entrée, stand, zone…">
+            <button class="iVise" id="iViseA" type="button" aria-pressed="false"
+              title="Choisir le départ sur le plan" aria-label="Choisir le départ sur le plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>
+            </button>
+            <div class="iSugg" id="iSugg" role="listbox" hidden></div>
+          </div>
+          <button class="iEchange" id="iEchange" title="Inverser le départ et l'arrivée"
+            aria-label="Inverser le départ et l'arrivée">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></svg>
+          </button>
+          <div class="iChamp">
+            <label class="eyebrow" for="iArrivee">Arrivée</label>
+            <input id="iArrivee" type="text" autocomplete="off" role="combobox"
+              aria-autocomplete="list" aria-expanded="false" aria-controls="iSugg"
+              placeholder="Nom ou numéro de stand">
+            <button class="iVise" id="iViseB" type="button" aria-pressed="false"
+              title="Choisir l'arrivée sur le plan" aria-label="Choisir l'arrivée sur le plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>
+            </button>
+          </div>
+        </div>
+        <label class="iPmr"><input type="checkbox" id="iPmr">
+          <span><b>Itinéraire accessible</b><span class="quoi">Évite les escaliers
+          et les escalators, les obstacles signalés, et les passages de moins d'un
+          mètre quarante.</span></span></label>
+        <div class="iResultat" id="iResultat"></div>
+        <button class="vider iVider" id="videItineraire" type="button">Effacer l'itinéraire</button>
+      </div>
+    </section>
+  </main>
+</div>
+

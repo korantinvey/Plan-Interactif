@@ -1,0 +1,201 @@
+/* ============================================================
+   Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
+
+   Chaque outil de l'exploitant tient ses propres gestes : le calage de la
+   carte (`calage-carte.mjs`), le placement d'un libellé
+   (`placement-libelles.mjs`), la reprise d'un emplacement
+   (`reprise-emplacements.mjs`), le calage d'un hall (`batiments.mjs`), le
+   dessin (`outil-dessin.mjs`). Ce module ne dit que leur ordre, et celui des
+   touches de l'éditeur : il les insère dans la chaîne des appuis et du clavier
+   de `modules/gestes.mjs` par `poseGestesAdmin`, au rang qu'ils tenaient
+   dans le script d'avant.
+
+   Un module de l'administration : `plan-admin.mjs` l'embarque, le visiteur ne
+   le reçoit jamais. Il se branche par `brancheGestesAdmin`, que
+   `plan-admin.mjs` place dans le premier emplacement du lancement
+   (`lancement.mjs`, `apresLesGestes`), juste après les gestes du plan. La forme dessinée choisie, il l'importe
+   (`forme-choisie.mjs`), et la lit telle qu'elle est à l'instant.
+   ============================================================ */
+import { $ } from "./dom.mjs";
+import { ADMIN } from "./mode-admin.mjs";
+import { PLACE_LIBELLES, libSel } from "./libelle-place.mjs";
+import { SORTE_GEO } from "./emplacements.mjs";
+import { enCours, calqueActif } from "./calques-dessin.mjs";
+import { poseGestesAdmin } from "./gestes.mjs";
+import { cartePointerDown, cartePointerMove, cartePointerUp } from "./calage-carte.mjs";
+import { lacheLibelle, modePlacementLibelles, pousseLibelle, libellePointerDown, libellePointerMove,
+  libellePointerUp } from "./placement-libelles.mjs";
+import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, pousseGeometrie, choisitOutilGeo,
+  fermeAjout, geometriePointerDown, geometriePointerMove, geometriePointerUp } from "./reprise-emplacements.mjs";
+import { calagePointerDown, calagePointerMove, calagePointerUp } from "./batiments.mjs";
+import { annule, refais, dessinPointerDown, dessinPointerMove, dessinPointerUp, termineTrace, activeCalque }
+  from "./outil-dessin.mjs";
+import { choisitForme, supprimeForme } from "./edition.mjs";
+import { dupliqueForme, pousseForme } from "./aimants.mjs";
+import { codeIciAuPoint } from "./affiche-ici.mjs";
+import { formeSel } from "./forme-choisie.mjs";
+import { comptoirPointerDown, comptoirPointerMove, comptoirPointerUp, lacheComptoir, comptoirClavier,
+  relacheComptoir } from "./outil-comptoir.mjs";
+import { foodtruckPointerDown, foodtruckPointerMove, foodtruckPointerUp, lacheFoodtruck, foodtruckClavier,
+  relacheFoodtruck } from "./outil-foodtruck.mjs";
+import { escalierPointerDown, escalierPointerMove, escalierPointerUp, lacheEscalier, escalierClavier,
+  relacheEscalier } from "./outil-escalier.mjs";
+
+/* Le doigt posé. Caler la carte passe avant tout : tant qu'un mode est armé,
+   la main saisit le fond et non le plan — c'est le seul geste que la palette
+   attend. */
+function appui(/** @type {PointerEvent} */ e){
+  if (cartePointerDown(e)) return true;
+  /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
+     l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  if (libellePointerDown(e)) return true;
+  /* Reprendre la forme d'un emplacement passe avant sa fiche : le geste vise
+     la géométrie, pas l'exposant qui la loue. */
+  if (geometriePointerDown(e)) return true;
+  // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
+  if (calagePointerDown(e)) return true;
+  if (dessinPointerDown(e)) return true;
+  /* Le comptoir d'un accueil ne se prend qu'en vue immersive, où aucun des
+     outils d'avant n'est ouvert : il passe en dernier, juste avant le plan
+     qu'on glisserait. */
+  /* L'escalier d'un repère se prend de même, et avant le comptoir : posé sur
+     un accueil, c'est lui qu'on vise. Tenir l'un relâche l'autre — un seul
+     objet sous la main, et sous les flèches. Un objet qui n'était pas choisi
+     l'est sans retenir l'appui (« choisit ») : le plan glisse ou la fiche
+     s'ouvre comme ailleurs, et seul l'objet déjà choisi se déplace. */
+  const escalier = escalierPointerDown(e);
+  if (escalier){ relacheComptoir(); relacheFoodtruck(); return escalier === "prend"; }
+  const comptoir = comptoirPointerDown(e);
+  if (comptoir){ relacheFoodtruck(); return comptoir === "prend"; }
+  // les camions d'un foodtruck, de même, en dernier : on ne les pose pas sur un accueil
+  return foodtruckPointerDown(e) === "prend";
+}
+
+function suit(/** @type {PointerEvent} */ e){
+  if (cartePointerMove(e)) return true;
+  if (libellePointerMove(e)) return true;
+  if (geometriePointerMove(e)) return true;
+  if (calagePointerMove(e)) return true;
+  if (dessinPointerMove(e)) return true;
+  if (escalierPointerMove(e)) return true;
+  if (comptoirPointerMove(e)) return true;
+  if (foodtruckPointerMove(e)) return true;
+  return false;
+}
+
+function leve(/** @type {PointerEvent} */ e){
+  if (cartePointerUp(e)) return true;
+  if (libellePointerUp(e)) return true;
+  if (geometriePointerUp(e)) return true;
+  if (dessinPointerUp(e)) return true;
+  if (calagePointerUp()) return true;
+  if (escalierPointerUp(e)) return true;
+  if (comptoirPointerUp(e)) return true;
+  if (foodtruckPointerUp(e)) return true;
+  return false;
+}
+
+/* Le geste annulé : le libellé qu'on glissait à la main, la forme qu'on
+   reprenait. */
+function annuleGeste(){
+  lacheLibelle();
+  lacheGeo();
+  lacheComptoir();
+  lacheFoodtruck();
+  lacheEscalier();
+}
+
+/* Les raccourcis et les flèches de l'éditeur, avant tout le reste du clavier. */
+function clavier(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
+  if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
+    const t = e.key.toLowerCase();
+    if (t === "z" && !e.shiftKey){ e.preventDefault(); annule(); return true; }
+    if (t === "y" || (t === "z" && e.shiftKey)){ e.preventDefault(); refais(); return true; }
+    /* Répéter plutôt que redessiner : c'est ainsi qu'une rangée de stands
+       identiques se déroule, la copie prenant la place de la sélection. */
+    if (t === "d" && formeSel){ e.preventDefault(); dupliqueForme(); return true; }
+  }
+  if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
+    e.preventDefault(); supprimeForme(); return true;
+  }
+  /* Le clavier ajuste au quart de mètre ce que la main pose approximativement,
+     et au mètre touche majuscule tenue : c'est la finition d'un placement,
+     après le glisser qui l'a amené à peu près là. */
+  if (PLACE_LIBELLES && libSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseLibelle(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                  e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return true;
+  }
+  /* Un emplacement repris se règle du même pas, pour la même raison : la main
+     l'a posé à peu près, le clavier l'ajuste. */
+  if (SORTE_GEO && geoSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseGeometrie(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                    e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return true;
+  }
+  // le comptoir choisi d'un accueil ou le camion d'un foodtruck, du même pas, et R pour le quart de tour
+  if (ADMIN && !saisie && !e.ctrlKey && !e.metaKey && !e.altKey && (escalierClavier(e) || comptoirClavier(e) || foodtruckClavier(e)))
+    return true;
+  /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
+     voisine, le clavier lui donne l'allée qui les sépare. */
+  if (ADMIN && formeSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseForme(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return true;
+  }
+  return false;
+}
+
+/* Échap referme d'abord les modes de l'éditeur, un cran par touche ; ce n'est
+   qu'une fois tous refermés qu'elle ferme la fiche. */
+function echap(){
+  if (PLACE_LIBELLES){ modePlacementLibelles(false); return true; }
+  /* Un tracé d'emplacement s'abandonne d'abord, puis l'outil qui l'a
+     commencé : on renonce à une forme sans quitter la couche. */
+  if (SORTE_GEO && traceAjout){ fermeAjout(false); return true; }
+  if (SORTE_GEO && outilGeo){ choisitOutilGeo(""); return true; }
+  /* Une forme choisie se relâche d'abord, le mode ensuite : deux crans pour
+     une même touche, comme ailleurs sur le plan. */
+  if (SORTE_GEO && geoSel){ choisitGeo(null); return true; }
+  if (SORTE_GEO){ modeGeometrie(null); return true; }
+  if (enCours){ termineTrace(false); return true; }
+  if (formeSel){ choisitForme(null); return true; }
+  if (calqueActif){ activeCalque(calqueActif); return true; }
+  if (relacheEscalier()) return true;
+  if (relacheComptoir()) return true;
+  if (relacheFoodtruck()) return true;
+  return false;
+}
+
+/* Le panneau des calques n'existe qu'en administration : Échap le referme
+   avec la fiche. */
+function apresEchap(){
+  if ($("panel")) $("panel").classList.remove("open");
+}
+
+/* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un
+   outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
+   défairait la forme à l'instant posée. */
+function entree(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
+  if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
+  if (e.key === "Enter" && !saisie && traceAjout){ e.preventDefault(); fermeAjout(true); }
+}
+
+/**
+ * Insère les gestes de l'exploitant dans la chaîne du plan.
+ */
+export function brancheGestesAdmin(){
+  poseGestesAdmin({
+    appui, suit, leve, annule: annuleGeste,
+    /* Désigner l'endroit d'un code « Vous êtes ici » : geste d'exploitant, que
+       la page publique n'a pas. */
+    codeIci: (x, y, cible) => codeIciAuPoint(x, y, cible),
+    clavier, echap, apresEchap, entree,
+  });
+}

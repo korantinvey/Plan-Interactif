@@ -1,0 +1,450 @@
+/* ============================================================
+   Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
+
+   Un salon qui distingue certains de ses exposants le
+   dit par un champ que la synchronisation pose sur la fiche. Ce qu'on en
+   montre se règle surface par surface, depuis les onglets « Nouveaux » et
+   « Adhérents » des réglages : la marque qui se lit bien sur une fiche qu'on
+   ouvre — un mot — ne tient pas sur un stand qu'on survole, où le rendu WebGL
+   ne rejoue que des formes.
+
+   Les deux se cumulent, et c'est la règle qui commande tout ce qui suit : un
+   nouvel adhérent porte les deux marques, aux trois endroits, et aucune ne
+   passe devant l'autre. D'où une table plutôt que deux jeux de fonctions — en
+   ajouter une troisième ne doit être qu'une ligne de plus — et le rang, qui
+   décide du coin où la marque se pose pour que deux ne se recouvrent pas.
+
+   Il n'a rien à recevoir : tout ce qu'il lit s'importe. Le mode et la
+   teinte de chaque marque se règlent ici aussi (§ Les distinctions — ce que
+   le plan en montre), et l'apparence les pose par `appliqueDists`. Il ne
+   dépend ni de la liste ni de la fiche — les sociétés d'un stand se lisent
+   dans les données (`donnees.mjs` `societes`) — et toutes deux l'importent
+   (`recherche.mjs`, `fiche.mjs`).
+   ============================================================ */
+import { $ } from "./dom.mjs";
+import { esc } from "./texte.mjs";
+import { DATA, parId, state, societes } from "./donnees.mjs";
+import { conf } from "./configuration.mjs";
+import { montre } from "./corps-fiche.mjs";
+import { trio, melange, luminance } from "./couleurs.mjs";
+import { rayonTuile } from "./ambiance.mjs";
+
+export const DISTINCTIONS = [
+  /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
+     « promotion », et c'est la phrase à côté qui la dit « nouvel exposant ».
+     Une adhésion n'a pas d'image évidente, et l'étincelle en ferait une
+     réclame — d'où la pastille nue. */
+  { cle: "neuf", champ: "neuf", cible: "nouveau", reglage: "_neuf",
+    onglet: "Nouveaux", texte: "Nouvel exposant", court: "Nouveau", picto: true,
+    nomChamp: "Nouvel exposant",
+    quoi: "les fiches des salons qui distinguent leurs nouveaux venus" },
+  { cle: "adherent", champ: "adh", cible: "adherent", reglage: "_adherent",
+    onglet: "Adhérents", texte: "Adhérent syndicat", court: "Adhérent",
+    nomChamp: "Adhérent syndicat",
+    quoi: "les fiches des salons dont le syndicat tient la liste de ses membres" },
+];
+
+/** Le texte d'une marque, celui de l'exploitant s'il en a saisi un.
+ *
+ *  Il vaut pour les deux langues : ce qu'un salon écrit là est une donnée,
+ *  comme le nom d'un exposant, et le dictionnaire ne le connaît pas. Un
+ *  syndicat porte son nom à lui — « Adhérent UNAM » —, qui ne se traduit pas
+ *  davantage. */
+const texteDist = (d) => String(conf(d.reglage).texte || "").trim() || d.texte;
+
+/** La même chose en court : un coin corné et un cartouche ne tiennent pas une
+ *  phrase. Un texte saisi n'en a qu'une version — à l'exploitant de le faire
+ *  court, et les vignettes des réglages le lui montrent. */
+const texteCourtDist = (d) =>
+  String(conf(d.reglage).texte || "").trim() || d.court;
+
+/** Cette société porte-t-elle cette distinction, et le salon la montre-t-il ? */
+export const porteDist = (x, d) => Boolean(x && x[d.champ]) && montre("stand", d.cible);
+
+/** Un emplacement dont le titulaire ou l'un de ses hébergés la porte.
+ *  Une zone organisateur n'en porte jamais : elle n'est pas un exposant. */
+export const standPorte = (o, d) => Boolean(o) && o.kind !== "zone" &&
+  societes(o).some(s => porteDist(s.soc, d));
+
+/* Les marques du plan vivent hors du groupe des stands, comme les liserés de
+   la sélection et du parcours et pour la même raison : posée dans le groupe du
+   stand, une marque se faisait recouvrir par la cloison du voisin, tracé
+   après lui. Mais elles suivent le calque des stands au lieu de coiffer tout
+   le plan : un coin corné posé au sommet passait devant le nom du stand et
+   en mangeait les lettres. Les textes, plus haut dans la pile, passent donc
+   devant elles — en SVG comme en WebGL, qui peint dans l'ordre du DOM.
+   `ordre-trace.mjs` `ordonneDom` l'y ramène quand la pile bouge. Il ne
+   reçoit aucun clic — c'est le stand qu'on désigne, pas sa marque. */
+function calqueDists(){
+  let g = $("dists");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "dists";
+    g.setAttribute("aria-hidden", "true");
+  }
+  const st = $("stands");
+  if (st.nextSibling !== g) st.after(g);
+  return g;
+}
+
+/* L'étincelle de la pastille, redessinée sur le plan. Le même tracé que celui
+   de la feuille de style — c'est la même distinction, et deux dessins pour
+   elle en feraient deux. */
+export const ETOILE_DIST =
+  '<path d="M9.8 0.2C9.8 5.9 13.9 10 19.6 10C13.9 10 9.8 14.1 9.8 19.8' +
+  'C9.8 14.1 5.7 10 0 10C5.7 10 9.8 5.9 9.8 0.2Z"/>' +
+  '<path d="M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6' +
+  'C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z"/>';
+
+/**
+ * La marque d'un stand, dans le mode retenu et au rang de sa distinction.
+ *
+ * Sa taille suit celle du stand, entre deux bornes : un demi-mètre sur une
+ * échoppe de trois mètres de côté reste visible, et la même marque à l'échelle
+ * d'un stand de cent mètres carrés en couvrirait le nom.
+ *
+ * Elle se pose sur un vrai coin du tracé (`coinDuTrace`), celui qui avance le
+ * plus vers le haut droit — ou le haut gauche pour la seconde.
+ */
+function traceDist(mode, p, b, rang, deuxLiseres){
+  /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
+     recouvrait le premier et le stand n'en montrait qu'un. Le premier s'élargit
+     donc, et le second se pose dessus — un halo d'une couleur, un trait de
+     l'autre. Seul, il garde son épaisseur d'origine : c'est le liseré des
+     salons déjà en ligne, et il n'a pas à grossir. */
+  if (mode === "lisere")
+    return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" d="' +
+      p.getAttribute("d") + '"/>';
+  if (!b || !(b.width > 0) || !(b.height > 0)) return "";
+  const c = Math.min(Math.max(Math.min(b.width, b.height) * .34, .5), 1.6);
+  const n = (v) => v.toFixed(2);
+  /* La première marque prend le coin haut droit, la suivante le coin haut
+     gauche : au même coin, la seconde recouvrait la première et le stand n'en
+     montrait plus qu'une. */
+  const droite = rang % 2 === 0;
+  const tuiles = document.documentElement.classList.contains("ambiance-tuiles");
+  const k = coinDuTrace(p.getAttribute("d") || "", droite, tuiles) || coinDeBoite(b, droite);
+  const [x, y] = k.p, [ux, uy] = k.u, [vx, vy] = k.v;
+  // un point de l'angle, à « a » le long d'un côté et « e » le long de l'autre
+  const pt = (a, e) => [x + ux * a + vx * e, y + uy * a + vy * e];
+  const en = (a, e) => pt(a, e).map(n).join(" ");
+  if (mode === "corne"){
+    /* Sur une tuile, l'angle est arrondi : une corne droite en dépassait d'un
+       triangle posé dans le vide. Elle suit donc l'arrondi du coin, du même
+       rayon que la tuile (`ambiance.mjs` `rayonTuile`), et s'allonge
+       d'autant pour rester lisible. */
+    if (tuiles){
+      const r = rayonTuile(k.lu, k.lv), cc = Math.max(c, r * 1.7);
+      return '<path class="dPlein" d="M' + en(cc, 0) + 'L' + en(r, 0) +
+        'Q' + en(0, 0) + ' ' + en(0, r) + 'L' + en(0, cc) + 'Z"/>';
+    }
+    return '<path class="dPlein" d="M' + en(c, 0) + 'L' + en(0, 0) + 'L' + en(0, c) + 'Z"/>';
+  }
+  /* La pastille et l'étincelle se posent dans l'angle, à égale distance de
+     ses deux côtés ; l'étincelle garde l'aplomb de son dessin. */
+  const [cx, cy] = pt(c * .58, c * .58);
+  if (mode === "point")
+    return '<circle class="dPlein" cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(c * .34) + '"/>';
+  return '<g class="dPlein" transform="translate(' + n(cx - c * .5) + ' ' + n(cy - c * .5) +
+    ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_DIST + '</g>';
+}
+
+/**
+ * Le sommet du tracé qui fait le coin haut droit — ou haut gauche — du stand,
+ * et la direction de ses deux côtés.
+ *
+ * La boîte du tracé ne suffit pas : un stand un peu de biais, ou dont un côté
+ * fuit, n'a pas de sommet à l'angle de sa boîte, et la corne s'y posait dans
+ * le vide, à côté du vrai coin. On prend donc le sommet le plus avancé vers
+ * cet angle — toujours un coin saillant, jamais le creux d'un L — et la
+ * marque longe les deux côtés qui s'y rejoignent.
+ *
+ * Sur une tuile, le tracé n'a plus de sommets mais des arrondis : le point de
+ * contrôle de chaque arrondi est le coin, retiré comme la tuile. Un tracé
+ * courbe — une rotonde — n'a pas de coin : la boîte reprend la main.
+ */
+function coinDuTrace(d, droite, tuiles){
+  const nb = "(-?\\d*\\.?\\d+(?:e[-+]?\\d+)?)";
+  const anneaux = [];
+  if (tuiles){
+    if (!/^[\sMLQZ0-9.,eE+-]+$/.test(d)) return null;
+    for (const sous of d.split(/(?=M)/)){
+      const pts = [...sous.matchAll(new RegExp("Q\\s*" + nb + "[\\s,]+" + nb, "gi"))]
+        .map(m => [Number(m[1]), Number(m[2])]);
+      if (pts.length >= 3) anneaux.push(pts);
+    }
+  } else {
+    if (!/^[\sMLZ0-9.,eE+-]+$/.test(d)) return null;
+    for (const sous of d.split(/(?=M)/)){
+      const v = (sous.match(new RegExp(nb, "gi")) || []).map(Number), pts = [];
+      for (let i = 0; i + 1 < v.length; i += 2) pts.push([v[i], v[i + 1]]);
+      const a0 = pts[0], z = pts[pts.length - 1];
+      if (pts.length > 1 && a0[0] === z[0] && a0[1] === z[1]) pts.pop();
+      if (pts.length >= 3) anneaux.push(pts);
+    }
+  }
+  // l'angle haut droit tire vers +x et −y, le haut gauche vers −x et −y
+  const sx = droite ? 1 : -1;
+  /** @type {{ an: number[][], i: number } | null} */
+  let mieux = null;
+  let score = -Infinity;
+  for (const an of anneaux) an.forEach((q, i) => {
+    const t = sx * q[0] - q[1];
+    if (t > score + 1e-6){ score = t; mieux = { an, i }; }
+  });
+  if (!mieux) return null;
+  const { an, i } = mieux, q = an[i];
+  const vers = (r) => {
+    const dx = r[0] - q[0], dy = r[1] - q[1], l = Math.hypot(dx, dy);
+    return l > 1e-6 ? { u: [dx / l, dy / l], l } : null;
+  };
+  const a = vers(an[(i + an.length - 1) % an.length]), z = vers(an[(i + 1) % an.length]);
+  if (!a || !z) return null;
+  return { p: q, u: a.u, v: z.u, lu: a.l, lv: z.l };
+}
+
+/** L'angle de la boîte, pour un tracé qui n'a pas de coin à offrir. */
+function coinDeBoite(b, droite){
+  const s = droite ? -1 : 1;
+  return { p: [droite ? b.x + b.width : b.x, b.y], u: [s, 0], v: [0, 1],
+    lu: b.width, lv: b.height };
+}
+
+/* Le relevé demande la boîte de chaque forme, que seul le navigateur sait
+   rendre : il coûte une mise en page. On le garde donc d'un geste à l'autre,
+   et on ne le refait qu'au changement de pavillon ou de mode — le retrait
+   d'une recherche, lui, ne déplace rien. */
+let DISTS_VUES = { plan: -1, modes: "", traces: [] };
+export const oublieDists = () => { DISTS_VUES = { plan: -1, modes: "", traces: [] }; };
+
+/** Les modes du plan réunis en une clé : c'est ce qui décide si le relevé garde
+ *  sa valeur, et il en faut autant que de distinctions. */
+const modesDuPlan = () => DISTINCTIONS.map(d => modeDist(d, "plan")).join("|") +
+  // les tuiles changent la boîte des stands et la forme des cornes
+  (document.documentElement.classList.contains("ambiance-tuiles") ? "|tuiles" : "");
+
+function releveDists(){
+  const traces = [];
+  const actives = DISTINCTIONS
+    .map((d, rang) => ({ d, rang, mode: modeDist(d, "plan") }))
+    .filter(x => x.mode !== "aucun");
+  const deuxLiseres = actives.filter(x => x.mode === "lisere").length > 1;
+  $("stands").querySelectorAll("g.stand").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    const p = o && g.querySelector("path");
+    if (!p) return;
+    // une seule mise en page par stand, même quand il porte les deux marques
+    let b = null;
+    actives.forEach(({ d, rang, mode }) => {
+      if (!standPorte(o, d)) return;
+      if (mode !== "lisere" && !b) b = p.getBBox();
+      const t = traceDist(mode, p, b, rang, deuxLiseres);
+      if (t) traces.push({ id: g.dataset.id, cle: d.cle, d: t });
+    });
+  });
+  DISTS_VUES = { plan: state.plan, modes: modesDuPlan(), traces };
+}
+
+/**
+ * Les marques des distinctions, posées sur le plan.
+ *
+ * Elles suivent le retrait d'une recherche comme les stands qu'elles
+ * désignent : une marque restée à pleine force au milieu d'un hall effacé se
+ * lirait comme un résultat.
+ */
+export function dessineDists(){
+  if (!DATA) return;
+  const g = calqueDists();
+  const eteint = $("stands").style.display === "none";
+  if (eteint || DISTINCTIONS.every(d => modeDist(d, "plan") === "aucun")){
+    if (g.firstChild) g.textContent = "";
+    return;
+  }
+  if (DISTS_VUES.plan !== state.plan || DISTS_VUES.modes !== modesDuPlan())
+    releveDists();
+  const dim = new Set();
+  $("stands").querySelectorAll("g.dim").forEach(x => dim.add(x.dataset.id));
+  /* La classe de la distinction porte sa teinte, qu'un jeton de la racine lui
+     donne : une couleur changée repeint alors les marques sans qu'on les
+     réécrive, sur le plan comme dans les neuf cents lignes de la liste. */
+  /* Chaque marque nomme son stand : la vue immersive (`webgl.mjs`) la pose
+     sur le dessus de son volume, qu'elle ne saurait pas trouver sans lui. Pas
+     « data-id », qui la ferait désigner au clic à la place du stand. */
+  g.innerHTML = DISTS_VUES.traces.map(t =>
+    '<g class="dM d-' + t.cle + (dim.has(t.id) ? " dim" : "") + '" data-sur="' + esc(t.id) + '">' +
+    t.d + '</g>').join("");
+}
+
+/**
+ * Les marques d'une ligne de la liste, en trois morceaux : ce qui précède le
+ * nom, ce qui le suit, et ce qui descend sous lui. Les distinctions s'y
+ * cumulent dans l'ordre de la table, et deux mentions sous le nom se joignent
+ * comme le reste de la seconde ligne.
+ */
+export function marquesListe(porte){
+  let avant = "", apres = "";
+  const sous = [];
+  DISTINCTIONS.forEach(d => {
+    if (!porte(d)) return;
+    const mode = modeDist(d, "liste");
+    const c = " d-" + d.cle;
+    if (mode === "point")
+      avant += '<span class="nPoint' + c + '" title="' +
+        esc(texteDist(d)) + '"></span>';
+    else if (mode === "cartouche")
+      apres += '<span class="nCart' + c + '">' + esc(texteCourtDist(d)) + '</span>';
+    else if (mode === "sousligne")
+      sous.push('<span class="nSous' + c + '">' + esc(texteDist(d)) + '</span>');
+  });
+  return { avant, apres, sous: sous.join(" · ") };
+}
+
+/* La société dont la fiche est ouverte, gardée pour la seule raison qu'un
+   réglage changé doit se voir sans rouvrir la fiche. */
+let SOC_FICHE = null;
+
+/**
+ * Les marques en tête de la fiche ouverte.
+ *
+ * Trois places, et une seule qui ne se partage pas : le coin. La pastille se
+ * range à côté de sa voisine, les bandeaux s'empilent, mais deux coins cornés
+ * au même angle n'en font qu'un — le second reprend donc sa pastille, et le
+ * volet des réglages le dit à qui vient de le choisir.
+ */
+export function poseDistsFiche(soc){
+  SOC_FICHE = soc || null;
+  const past = $("dPast"), rubans = $("dRubans"), corne = $("dCorne");
+  past.textContent = rubans.textContent = corne.textContent = "";
+  corne.hidden = true;
+  DISTINCTIONS.forEach(d => {
+    if (!porteDist(SOC_FICHE, d)) return;
+    /* La teinte choisie doit passer devant celle que le modèle de fiche donne
+       à la pastille : la classe le dit, la feuille de style s'en sert pour
+       peser un cran de plus que les onze modèles. */
+    const c = " d-" + d.cle + (couleurDist(d) ? " teinte" : "") +
+      (d.picto ? " pic" : "");
+    let mode = modeDist(d, "fiche");
+    if (mode === "corne" && !corne.hidden) mode = "pastille";
+    if (mode === "pastille")
+      past.insertAdjacentHTML("beforeend",
+        '<span class="badge dist' + c + '">' + esc(texteDist(d)) + '</span>');
+    else if (mode === "bandeau")
+      rubans.insertAdjacentHTML("beforeend",
+        '<div class="rubanDist' + c + '">' + esc(texteDist(d)) + '</div>');
+    else if (mode === "corne"){
+      corne.hidden = false;
+      corne.className = "corneDist d-" + d.cle;
+      corne.innerHTML = '<span>' + esc(texteCourtDist(d)) + '</span>';
+    }
+  });
+  /* La tête de fiche réserve sa gauche au coin corné, comme elle réserve sa
+     droite aux actions. La réserve ne vaut que s'il y en a un. */
+  $("detail").classList.toggle("avecCorne", !corne.hidden);
+  /* Le coin corné tient au coin de la fiche entière : sur l'écran étroit il
+     monte ainsi jusqu'au haut du tiroir, au lieu de commencer sous la prise
+     qui le coiffe. Sauf si un bandeau occupe déjà ce haut — les distinctions
+     se cumulent, et aucune ne passe devant l'autre : la marque rentre alors
+     dans la tête de fiche, dont elle retrouve le coin, et laisse le bandeau
+     au-dessus d'elle. */
+  const tete = $("detail").querySelector(".detail-hd");
+  if (rubans.children.length) tete.append(corne); else tete.after(corne);
+}
+
+/** La fiche ouverte, remarquée à neuf : un réglage vient de changer. */
+export const refaitDistsFiche = () => poseDistsFiche(SOC_FICHE);
+
+
+/* ------------------------------------------------------------
+   Les distinctions — ce que le plan en montre
+
+   Deux champs viennent de la synchronisation : le nouvel exposant, et
+   l'adhérent du syndicat du salon. Ce qu'on en fait voir se règle ici, un
+   onglet chacun et la même mécanique pour les deux.
+
+   Trois questions par distinction plutôt qu'une, parce que la même marque ne
+   tient pas aux trois endroits : un mot se lit sur une fiche qu'on ouvre, pas
+   sur un stand qu'on survole — où le rendu WebGL ne rejoue que des formes.
+
+   Les défauts ne changent rien aux salons déjà en ligne : la fiche garde la
+   pastille qu'elle portait, le plan et la liste restent nus tant que
+   l'exploitant n'a pas choisi.
+   ------------------------------------------------------------ */
+
+const racine = document.documentElement;
+
+export const MARQUES_DIST = {
+  plan: [
+    { cle: "aucun",  nom: "Aucune" },
+    { cle: "point",  nom: "Point d'angle" },
+    { cle: "corne",  nom: "Coin corné" },
+    { cle: "etoile", nom: "Étincelle" },
+    { cle: "lisere", nom: "Liseré" },
+  ],
+  liste: [
+    { cle: "aucun",     nom: "Aucune" },
+    { cle: "point",     nom: "Point devant le nom" },
+    { cle: "cartouche", nom: "Cartouche" },
+    { cle: "sousligne", nom: "Mention sous le nom" },
+  ],
+  fiche: [
+    { cle: "aucun",    nom: "Aucune" },
+    { cle: "pastille", nom: "Pastille" },
+    { cle: "corne",    nom: "Coin corné" },
+    { cle: "bandeau",  nom: "Bandeau" },
+  ],
+};
+const DIST_DEFAUT = { plan: "aucun", liste: "aucun", fiche: "pastille" };
+
+/** La marque retenue pour une surface. Une valeur inconnue — un réglage d'une
+ *  version qui proposait autre chose — retombe sur le défaut. */
+export function modeDist(d, surface){
+  const v = conf(d.reglage)[surface];
+  return MARQUES_DIST[surface].some(m => m.cle === v) ? v : DIST_DEFAUT[surface];
+}
+
+/** La teinte des marques d'une distinction, ou rien — auquel cas la feuille de
+ *  style reprend la main, et avec elle l'accent du salon.
+ *
+ *  Une seule pour les trois surfaces d'une distinction : ce sont trois façons
+ *  de dire la même chose, et trois teintes en auraient fait trois distinctions.
+ *  Une par distinction en revanche, et c'est tout le sujet : deux marques de la
+ *  même couleur sur un stand ne se distinguent plus l'une de l'autre. */
+export const couleurDist = (d) => {
+  const v = conf(d.reglage).couleur;
+  return trio(v) ? v : "";
+};
+
+/**
+ * Les teintes des distinctions, posées en jetons sur la racine.
+ *
+ * Trois par distinction : sa teinte, l'aplat doux de la pastille et l'encre
+ * qui se lit dessus. La pastille se peint des deux, comme l'accent dont elle
+ * les tenait — une teinte choisie doit rendre les deux, sans quoi le mot
+ * disparaîtrait sur son propre fond.
+ *
+ * En haut plutôt que sur chaque marque : une couleur changée repeint alors les
+ * neuf cents lignes de la liste sans qu'on les réécrive, et la classe de la
+ * distinction va chercher les siens (voir `_head.html`, « .d-neuf »).
+ *
+ * Le plan, lui, ne se déduit d'aucun jeton : ses marques sont des formes à
+ * tracer, et « dessineDists » les refait. La tête de la fiche ouverte non plus,
+ * depuis qu'elles sont deux : c'est le script qui décide laquelle occupe le
+ * coin, et « refaitDistsFiche » la repose.
+ */
+export function appliqueDists(){
+  DISTINCTIONS.forEach(d => {
+    const v = couleurDist(d);
+    const n = "--d-" + d.cle;
+    if (v){
+      racine.style.setProperty(n, v);
+      racine.style.setProperty(n + "-doux", melange(v, "#FFFFFF", 0.86));
+      racine.style.setProperty(n + "-ink",
+        luminance(trio(v)) > 0.42 ? "#0E1113" : "#FFFFFF");
+    } else {
+      [n, n + "-doux", n + "-ink"].forEach(x => racine.style.removeProperty(x));
+    }
+  });
+  dessineDists();
+  refaitDistsFiche();
+}
+

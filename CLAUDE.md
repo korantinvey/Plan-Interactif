@@ -1,0 +1,430 @@
+# Plan interactif — repères de travail
+
+Plans de salon interactifs alimentés par Klipso (API GAIA), avec une console
+d'administration multi-événements. Le `README.md` décrit le système et son
+déploiement ; ce fichier ne retient que ce qui se paie cher quand on l'ignore.
+
+**Ce fichier dit les règles ; `CARTE.md` dit où sont les choses.** La carte est
+produite à chaque construction : pour chaque module, ses sections, ses
+fonctions avec leur ligne, les éléments qu'il désigne, ce qu'il importe, qui
+l'importe, et ses injections. Ce que ce guide en recopiait en prose a vieilli plus
+vite qu'on ne le corrigeait — près d'un commit sur deux le retouchait. Il ne
+nomme donc plus, par intention, que le module par où entrer, et chaque module
+dit en tête ce qu'il fait et pourquoi. `npm run guide` vérifie que tout fichier
+et toute fonction cités ici existent encore.
+
+## Glossaire
+
+Le code est en français ; ses noms d'architecture sont les termes courants.
+Restent quelques mots du métier, et quelques mots du dépôt :
+
+| mot | sens |
+|---|---|
+| salon, événement | un salon professionnel, une ligne de la table `evenement` |
+| pavillon | un plan du salon — un hall, un étage ; `P` le pavillon affiché |
+| exploitant | qui administre le salon (page `plan-admin.html`), par opposition au visiteur |
+| emplacement | un stand ou une zone, tels que Klipso les dessine |
+| calque | une couche du plan : celles de Klipso (habillage) ou celles dessinées à la main |
+| journée organisée | le parcours de visite rangé par l'ordonnanceur, heure par heure |
+| borne | un écran fixe dans le hall, qui sait où il est (« Vous êtes ici ») |
+| événement (code) | publication / abonnement : `creeEvenement`, `emet`, `ecoute` (`modules/evenement.mjs`) |
+| injection | inversion de dépendance par une fonction `injecte…` exportée, listée dans `injections-acceptees.json` |
+| mutateur | la seule fonction qui réaffecte un état exporté (`pose…`, `changeVue`) |
+| registre | une liste où plusieurs modules s'inscrivent en se chargeant |
+| tranche | un bloc `@admin` du balisage, retiré de la page publique |
+| référence figée | *baseline* : ce qu'un contrôle tolère encore, qui ne peut que diminuer |
+| essai, banc | un test ; un banc de mesure (*benchmark*) |
+| construire, éprouver | *build* ; tester |
+| carte | `CARTE.md`, l'index du code, régénéré à chaque construction |
+
+## La chaîne de fabrication
+
+Les pages de `web/` ne sont pas écrites à la main : elles sont **assemblées**
+depuis `outils/gabarit/`, et **ne sont pas versionnées**. Cloudflare les
+construit à chaque déploiement (`wrangler.jsonc` `build`), la CI pour ses
+contrôles, chacun chez soi par `npm run construire`. Seuls `web/polices/` et
+`web/bibliotheques/`, qui ne se refont qu'avec le réseau, restent dans le dépôt.
+
+```
+outils/gabarit/*.html, *.css → outils/tpl-multi.html → web/*.html
+outils/gabarit/modules/*.mjs  → esbuild, un script par point d'entrée → posé dans web/*.html
+outils/gabarit/_styles-*.css                  → web/versions/plan.<empreinte>.css
+script des modules et moteur de langue        → web/versions/<entrée|langue>.<empreinte>.js
+dictionnaire anglais de chaque page du plan   → web/versions/anglais.<empreinte>.js, chargé à la demande
+outils/gabarit/_console.css                   → web/console.css
+outils/gabarit/_sw.js + outils/pwa.js         → web/sw.js, manifeste, icônes
+outils/projet.js                              → web/config.js, src/pages.mjs (projet Supabase)
+outils/gabarit/** + supabase/**               → CARTE.md
+```
+
+Un déploiement sans construction ne peut pas passer : `genere.js` écrit
+`src/pages.mjs` (non versionné), que le Worker importe — s'il manque, le Worker
+ne s'empaquette pas, et la production garde la version d'avant au lieu d'un
+site vide. `/api/pages` dit quelle construction est en ligne.
+
+```bash
+npm run construire   # construit web/ pour essayer chez soi (npm run essai)
+npm run verifie      # construit, contrôle tout, et dit si CARTE.md était en retard
+```
+
+`CARTE.md` reste versionné — on le lit sans rien construire. Lancez
+`npm run verifie` avant de valider : il le refait et signale s'il bougeait.
+
+## Les modules
+
+Tout le JavaScript vit dans `outils/gabarit/modules/*.mjs` ; le gabarit n'est
+plus que du balisage (`_head.html`, et la balise des données dans `_js.html`).
+esbuild (version épinglée) les réunit par point d'entrée : `plan.mjs` (plan
+public et démonstration), `plan-admin.mjs` (administration), `console.mjs`,
+`rapport.mjs`, `motdepasse.mjs`, `accueil.mjs`. Le script du plan public et de
+l'administration est minifié, avec sa carte de correspondance à côté (sans les
+sources) ; `PLAN_LISIBLE=1 npm run construire` le rend lisible. Ce que la
+construction verse dans le code passe par `define` (`genere.js` `DEFINIS`),
+jamais par une substitution après coup, qui décalerait la carte.
+
+Ce code a longtemps été un seul script par page, des morceaux mis bout à bout
+où chacun appelait les fonctions de tous les autres — un couplage fort que
+l'histoire du dépôt appelle le « code soudé ». Les gestes qui l'empêchent de
+revenir :
+
+- **Une fonction s'importe.** Une fonction recopiée dans deux pages devient un
+  seul module importé deux fois. Ce qui ne sert qu'au module n'est pas exporté.
+- **Une boucle d'imports se défait d'abord par un module neutre** : la donnée
+  ou le dessin rangés dans un module d'interface en sortent (`filtre.mjs`,
+  `cartouche-poi.mjs`, `trace-itineraire.mjs`). Une règle que plusieurs
+  modules appliquaient chacun pour soi devient un **registre** où ils
+  s'inscrivent (`tiroirs-exclusifs.mjs`, `modes-edition.mjs`, et
+  `geste-tenu.mjs` : aucun envoi au repos pendant qu'un outil tient un geste).
+- **Un module de base qui doit dire ce qui vient de changer émet un
+  événement** (publication / abonnement). Il exporte, sous le nom du fait, un
+  événement fait par `modules/evenement.mjs` `creeEvenement`
+  (`PAVILLON_MONTE`, `SESSION_REFUSEE`), qu'il `emet`, et que les autres
+  `ecoute`nt en se chargeant. C'est la voie de la partition : la page publique
+  dit ce qui s'est passé sans nommer la fonction de l'exploitant qui l'écoute,
+  et chez le visiteur personne n'écoute. Les écouteurs s'appellent dans
+  l'ordre de leur chargement : un événement ne sert donc qu'à ce dont l'ordre
+  ne compte pas, ou qui n'a qu'un écouteur.
+- **Une injection de dépendance, en dernier recours, et avec sa raison.** Une
+  fonction qu'un module de base appelle chez un module qui l'importe lui est
+  injectée par ce dernier en se chargeant, par une fonction `injecte…` aux
+  défauts sans effet — une inversion de dépendance. Il en reste huit, chacune
+  inscrite avec son genre et sa raison dans
+  `outils/controles/injections-acceptees.json` — `partition` (l'administration
+  remplace ou ajoute, au lieu de seulement réagir : `injecteChaleur`,
+  `injecteALaFiche`, `injecteLancementAdmin`), `rendu` (ce que chaque image
+  d'un geste rappelle dans un ordre fixe), `registre`. Une injection qui ne
+  fait que prévenir devient un événement ; une injection qui ne fait que lire
+  un état devient cet état, posé dans le module qui le lit ou dans un
+  registre. `npm run injections` fait échouer une injection absente de la
+  liste, une injection de la liste qui n'existe plus, et **toute boucle
+  d'imports**, nommée module par module : esbuild en accepte une sans rien
+  dire, et l'ordre de chargement devient celui du hasard. Pour savoir si un
+  module peut en importer un autre, regardez dans `CARTE.md` si le second
+  atteint déjà le premier.
+- **Un état exporté ne se réaffecte que par son mutateur** (`poseFormeSel`,
+  `changeVue`, `poseDonnees`) : une variable importée ne se réaffecte pas
+  hors de son module.
+- **Un module que plus rien n'importe mais qui s'inscrit reste chargé** : le
+  point d'entrée l'importe sans nom, avec un commentaire
+  (`import "./edition-en-cours.mjs";`).
+- **Un module qui s'éprouve seul dans Node reçoit ses dépendances** au lieu de
+  les importer (`aimants.mjs`, `grille-marche.mjs`, `sejour.mjs`) ; c'est le
+  module qui les tient qui les lui confie, comme les essais le font.
+- **Rien ne s'expose sur l'objet global.** ESLint refuse qu'un module y écrive
+  (`eslint.config.js`), hors des noms en `__`. Ce que seuls les essais lisent va
+  dans `globalThis.__essais` (`plan.mjs`).
+
+**Le lancement, et son ordre.** `modules/lancement.mjs` `lancePlan` pose les
+écoutes de chaque domaine dans un ordre fixe, et **l'ordre est le
+comportement** : « Échap » referme la fenêtre avant le tiroir parce que l'une
+s'écoute avant l'autre. Un branchement ne change de rang qu'en sachant ce qu'il
+déplace. L'administration remplit quatre emplacements avant de lancer
+(`injecteLancementAdmin`) ; chaque point d'entrée lance lui-même, à la fin de
+son chargement.
+
+## Ce que le visiteur ne reçoit pas
+
+**Le JavaScript, par le point d'entrée.** `plan-admin.mjs` reprend `plan.mjs`
+en entier et y ajoute les modules de l'exploitant — un seul script par page,
+sans quoi deux exemplaires d'un module partagé auraient deux états. **Un module
+d'exploitant s'importe dans `plan-admin.mjs`, jamais dans `plan.mjs`** ; ce que
+la page publique doit faire savoir à l'administration, elle l'**émet en
+événement**, et le module d'exploitant l'écoute en se chargeant (`modules/rendu.mjs`
+`PAVILLON_MONTE`, `modules/demarrage.mjs` `PLAN_DEMARRE`). Une fonction que le
+public appelle sans s'en servir garde son nom dans un module public, qui
+émet ce qu'elle demande (`modules/ordre-trace.mjs` `PANNEAU_A_REFAIRE`,
+écouté par `pile.mjs`).
+
+**Le balisage, par des blocs conditionnels** de `_head.html` (une compilation
+conditionnelle, que le dépôt appelle « tranches »), bornés sur des lignes
+entières :
+
+```
+<!-- @admin — pourquoi -->
+…
+<!-- @fin-admin -->
+```
+
+`plan.html` et `plan-smcl.html` perdent ces tranches entières ; `plan-admin.html`
+ne perd que les marqueurs. **Un volet, une fenêtre, un bouton d'exploitant
+s'écrit dans une tranche.** `outils/reserve.js` fait échouer la construction si
+la page publique cite encore un `$("id")` qu'on lui a retiré. La feuille de
+style n'a pas encore de tranche, faute de pouvoir prouver qu'une règle ne sert
+plus au visiteur.
+
+## Ne jamais modifier directement
+
+Les sorties de la construction — `web/` hors `polices/` et `bibliotheques/`,
+`outils/tpl-multi.html`, `CARTE.md`, `src/pages.mjs` — et toute migration déjà
+sur `main`. `.claude/hooks/garde.js` refuse ces écritures dans une session
+Claude Code et nomme la source à corriger ; la règle vaut aussi hors de lui.
+
+## Plusieurs sessions en parallèle
+
+**Après toute fusion ou rebasage, `npm run construire`.** `CARTE.md` est marqué
+`merge=ours` : git garde la version en place au lieu de mélanger deux index, et
+la construction la refait depuis les sources fusionnées. Le workflow `Pages` le
+rattrape sinon — un commit plus tard, à tirer avant la poussée suivante.
+
+**Les migrations sont horodatées à la seconde** : `npm run migration -- "Titre"`
+produit `<horodatage>_titre.sql`, à la seconde. Une migration **appliquée** ne se renomme
+jamais : elle rejouerait sous le nouveau nom. **Avant de fusionner une branche
+qui a vieilli, comparez sa migration à la dernière de `main`** : `supabase db
+push` refuse d'en insérer une avant la dernière posée, et l'échec n'arrive
+qu'après la fusion. Réhorodatez-la tant qu'elle n'a jamais été appliquée — le
+journal du déploiement le dit.
+
+**Jamais de poussée forcée** — le garde la refuse : le workflow `Pages` a pu
+commiter l'index sur la branche. `git pull --rebase`.
+
+## Données figées
+
+`web/plan-smcl.html` embarque ses données au lieu d'appeler l'API : c'est la
+démonstration, publiable en artefact. Sa source, `outils/donnees/plans.json`, est
+**versionnée** — sans elle la construction échoue sur un clone neuf, et elle ne
+se régénère qu'avec une clé Klipso. De même `web/polices/`,
+`outils/donnees/polices.json` (`npm run polices`) et `outils/donnees/lieux.json`
+(`npm run lieux`), qui ne se refont qu'avec le réseau. **Aucune page ne demande
+ses polices à Google** — chaque visiteur lui transmettrait son adresse IP ;
+`npm run construire` échoue si une page le fait.
+
+## La version anglaise
+
+Toute page existe en français et en anglais ; le drapeau passe de l'une à
+l'autre sans recharger, `?lang=en` l'impose. Le code reste en français :
+`_langue.js` traduit ce que la page affiche en cherchant chaque phrase dans
+`outils/anglais/`. Les modules n'appellent donc aucune fonction de traduction —
+sauf pour ce qui quitte la page (export, partage) ou ce que le code compare :
+là, `traduit("…")`.
+
+**Une phrase affichée s'ajoute avec sa traduction**, dans
+`outils/anglais/<module>.js` ; `npm run verifie` refuse une chaîne visible qui
+n'en a pas, et nomme le fichier et la ligne. Une phrase composée se traduit par
+un modèle : `"{n} exposants retenus": "{n} exhibitors match"`. Ce que le serveur
+écrit va dans `serveur.js` ; une chaîne que le contrôle croit visible à tort,
+dans `invisibles.js`.
+
+Deux pièges. Un code qui relit le texte d'un bouton lira l'anglais : comparez à
+`traduit("…")`, ou mieux à un état. Et le contrôle lit les sources, pas
+l'écran : `?lang=en&manques` relève dans le navigateur ce qui reste en français.
+
+## Où vit quoi
+
+| | |
+|---|---|
+| `outils/gabarit/` | la source des pages ; `modules/` tout le JavaScript |
+| `web/` | les pages construites — non versionnées, sauf `polices/` et `bibliotheques/` |
+| `src/` | Worker Cloudflare, un module par domaine : `index.mjs` l'aiguillage, `plan.mjs` relais et cache de `/api/plan`, `mesures.mjs` mesures et erreurs, `application.mjs` manifeste, `visite.mjs` rappels et plan de visite, `commun.mjs` la règle de la prévisualisation |
+| `outils/*.js` | la chaîne de construction, et elle seule (`assemble.js`, `genere.js`, `carte.js`…) ; `outils/projet.js` le projet Supabase des pages et du Worker, production ou recette |
+| `supabase/migrations/` | schéma de la base — horodatées, rejouables |
+| `supabase/functions/` | synchronisation Klipso, API publique, rappels, comptes ; `_partage/` le commun |
+| `.github/workflows/` | construction, essais, déploiement Supabase, sauvegarde, correctifs |
+| `outils/anglais/` | le dictionnaire anglais, un fichier par module |
+| `outils/essais/` | essais hors page — `npm run essais`, par `node --test` : **tout fichier `*.js` de ce dossier est un essai**, lancé dans son propre processus, en parallèle des autres, et compté en échec s'il sort en erreur ; une aide partagée va dans `aides/`. L'ordonnanceur et les modules purs y sont importés tels que la page les reçoit, jamais recopiés |
+| `outils/essais/navigateur/` | le plan dans Chromium — `npm run navigateur` ; seuls les essais `@base` (`npm run navigateur-base`) bloquent la pull request, le reste tourne sur `main` et chaque nuit — un essai neuf ne prend `@base` que s'il garde une page entière ou le parcours du visiteur ; données de `plans.json` interceptées (`aide.js`), rien ne doit au réseau ; `PLAN_ADRESSE=<prévisualisation>` éprouve un déploiement |
+| `outils/controles/` | `verifie.js` et ce qu'il lance : `controle.js` (syntaxe), `relecture.js` (ESLint), `types.js` (TypeScript, référence figée au stock vide), `injections.js` (injections et boucles), `html.js` (HTML échappé, règle `regle-html.js`), `guide.js` (ce guide) — et leurs références figées `*.json` (*baseline*) |
+| `outils/donnees/` | les données figées que relit la construction — versionnées, voir « Données figées » |
+| `outils/scripts/` | ce qui se lance à la main ou par un workflow, hors construction : serveur d'essai, migration, lieux, démonstration, fiche de performance ; `klipso/` l'exploration de l'API |
+| `outils/bancs/` | bancs de mesure longs (`npm run fep26`, `npm run charge`), que la CI ne lance pas |
+| `docs/` | notes d'étude (Eventmaker), défauts relevés pendant la sortie en modules |
+
+## Chercher sans tout ouvrir
+
+- **`CARTE.md` d'abord** — souvent le seul fichier à lire avant d'aller droit à
+  la bonne ligne. Il ne peut pas mentir : `npm run verifie` le vérifie.
+- **`.ignore`** retire de la recherche `web/`, `tpl-multi.html` et `plans.json`,
+  fabriqués ou figés.
+- **Aucun module ne dépasse 3400 lignes**, un seul passe 1500 (`webgl.mjs`).
+  On y entre par tranche (`sed -n '531,700p'`), jamais en entier.
+- **L'en-tête d'un module** dit ce qu'il fait, comment il se branche et ce qu'on
+  lui confie.
+
+### Par intention : le module où entrer
+
+Un chemin `modules/…` se lit sous `outils/gabarit/`. Ce qu'il importe, qui
+l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.js`.
+
+| intention | entrer par |
+|---|---|
+| données du salon (`DATA`, `TOUS`, `parId`…), état de la vue `state`, pavillon `P` | `modules/donnees.mjs`, posées par `modules/index-salon.mjs` `indexe` au travers de `poseDonnees`, seul mutateur |
+| démarrage, appel de l'API, panne réseau, version du plan | `modules/demarrage.mjs` (`demarre`, `charge`, `demandePlan`) |
+| recherche, liste, panneau des critères | `modules/recherche.mjs` ; la question posée, sans écran, `modules/filtre.mjs` ; ce qu'ouvre une ligne `modules/ligne-liste.mjs` |
+| sortes cherchées, ordre des critères (réglages) | `modules/reglage-recherche.mjs` |
+| montage d'un pavillon, onglets, passage de l'un à l'autre | `modules/rendu.mjs` (`montePlan`, `changePlan`) |
+| libellés, nom d'un emplacement, mesure du texte | `modules/libelles.mjs`, `modules/nom-emplacement.mjs`, `modules/texte-plan.mjs` |
+| sélection, fiche d'un stand, d'une conférence, d'un produit | `modules/fiche.mjs` (`select`, `ouvre`, `ferme`) ; ce qu'elle montre `modules/corps-fiche.mjs` ; logo `modules/marque.mjs` |
+| réglage de la fiche (champs, sections, intitulés) | `modules/reglage-fiche.mjs` `voletOrdre`, aperçus `modules/apercus.mjs` |
+| vue, zoom, cadrage, passage écran → plan | `modules/vue.mjs` ; l'état seul `modules/vue-etat.mjs` (`changeVue`) |
+| gestes — glisser, pincer, molette, clavier | `modules/gestes.mjs` `brancheGestes` ; ceux de l'exploitant `modules/gestes-admin.mjs` |
+| tiroirs du bas sur écran étroit | `modules/tiroirs.mjs` ; un seul ouvert à la fois `modules/tiroirs-exclusifs.mjs` |
+| dessin WebGL | ce qui se peint `modules/webgl.mjs` ; qui le peint, le moteur du plan `modules/moteur-gl.mjs` (couches `moteur-gl-formes.mjs`, `moteur-gl-texte.mjs`, `moteur-gl-objets.mjs`) — deck.gl en recours par `?moteur=deck`, refait par `npm run deck` ; lecture du SVG `modules/trace.mjs` |
+| configuration (`CONF`, `conf`, `enregistreConf`), options vendues à part | `modules/configuration.mjs`, `modules/options.mjs` |
+| apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
+| ambiance du plan — Classique, Tuiles | `modules/ambiance.mjs` |
+| mini-carte de situation, zoomé | `modules/mini-carte.mjs` |
+| noms en appel — stands cherchés ou choisis trop petits | `modules/appels.mjs` |
+| vibration au toucher | `modules/toucher.mjs`, appelé par `modules/gestes.mjs` |
+| fenêtre des réglages et ses volets | `modules/reglages.mjs` `ouvreReglages`, `modules/volets.mjs` |
+| enregistrement pour tous, publication, oubli du cache | `modules/enregistrement.mjs` ; retenu pendant un geste par `modules/geste-tenu.mjs` (`inscritGesteTenu`) |
+| calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` |
+| choisir, déplacer, tourner une forme | `modules/edition.mjs` ; forme choisie `modules/forme-choisie.mjs` |
+| cote, aimants, grille, duplication | `modules/aimants.mjs` |
+| reprendre ou ajouter un stand, une zone | `modules/emplacements.mjs` (ce que le visiteur reçoit), `modules/reprise-emplacements.mjs` (l'outil) |
+| fiche d'une zone, salles, masquage | `modules/fiche-zone.mjs` ; nom d'une zone `modules/noms-zones.mjs` |
+| repères, transports en commun | `modules/reperes.mjs`, `modules/cartouche-poi.mjs`, `modules/points-interet.mjs` |
+| libellé placé à la main | `modules/libelle-place.mjs`, `modules/placement-libelles.mjs` |
+| ordre et panneau des calques, fond du plan | `modules/ordre-trace.mjs`, `modules/pile.mjs`, `modules/ordre-calques.mjs` |
+| halls d'un lieu connu, bibliothèque des lieux | `modules/batiments.mjs` ; `outils/scripts/lieux.js` (`lieuOsm`, `lieuSaisi`) |
+| fond de carte, calage sur la Terre | `modules/environs.mjs`, `modules/calage-carte.mjs`, calculs `modules/terre.mjs` ; fond figé — photographié par l'exploitant, posé en images chez le visiteur — `modules/fige-carte.mjs`, sa règle `modules/lot-fige.mjs`, seau Storage `environs` |
+| secteurs, distinctions, polices des noms | `modules/secteurs.mjs`, `modules/distinctions.mjs`, `modules/polices-plan.mjs` |
+| parcours, partage, copie gardée, code QR lu depuis le plan | `modules/parcours.mjs`, `modules/tiroir-parcours.mjs`, `modules/partage.mjs`, `modules/lien-parcours.mjs`, `modules/parcours-recu.mjs`, `modules/scan-parcours.mjs` |
+| journée organisée, séjour, ordonnanceur | `modules/journee.mjs`, `modules/sejour.mjs`, `modules/ordonnanceur.mjs` |
+| seuil de concentration, charge annoncée | `modules/seuil.mjs`, `modules/charge-annoncee.mjs`, `modules/ordonnanceur.mjs` |
+| itinéraire | calcul `modules/itineraire.mjs`, l'entrée, rangé en couches qu'il nomme en tête (`grille-marche.mjs` → `recherche-chemin.mjs` → `abords-salles.mjs` → `trait-chemin.mjs` → `troncon.mjs` → `trajet.mjs`), tiroir et visée `modules/tiroir-itineraire.mjs`, tracé `modules/trace-itineraire.mjs` |
+| borne, code « Vous êtes ici » | `modules/borne.mjs`, `modules/vous-etes-ici.mjs`, `modules/ici.mjs`, `modules/affiche-ici.mjs` |
+| rappels de conférence | `modules/rappels.mjs`, `modules/notifications.mjs` ; serveur `supabase/functions/rappels/` |
+| programme saisi à la main (source « saisie ») | colonne `evenement.conferences_saisies`, lue par `_partage/programme-saisi.ts` ; anglais posé par `modules/index-salon.mjs` |
+| suggestion, visite guidée, générique du sponsor | `modules/suggestion.mjs`, `modules/tutoriel.mjs`, `modules/sponsor.mjs` |
+| installation, application d'un salon | `modules/installation.mjs`, `modules/application.mjs` ; `outils/pwa.js`, `src/application.mjs` `manifeste` |
+| mesure d'usage, erreurs des pages | `modules/mesure.mjs`, `modules/erreurs.mjs` ; relais `src/mesures.mjs` (`mesure`, `erreur`) |
+| sonde de performance, ce qui a échoué pendant une visite | `modules/sonde.mjs` (avec `modules/erreurs.mjs` `bilanErreurs`, `modules/demarrage.mjs` `PLAN_EN_PANNE`) ; relais `src/mesures.mjs` `sonde` ; fiche du lundi `outils/scripts/performances.js`, lecture `outils/scripts/lecture-perf.js` ; vraisemblance d'un relevé `outils/scripts/sonde-coherence.js` (`incoherences`), qu'essais et fiche imposent — une correction de ce que mesure un champ avance `modules/sonde.mjs` `REVISION` |
+| carte de chaleur, remise à zéro | `modules/chaleur.mjs` |
+| accès administrateur, session, bande d'administration | `modules/acces-admin.mjs`, `modules/session.mjs`, `modules/bande-admin.mjs`, `modules/mode-admin.mjs` |
+| console multi-événements | `modules/console.mjs`, `modules/ecran-console.mjs`, socle `modules/socle-console.mjs` |
+| fiche d'un salon, provenance, correspondance des champs | `modules/fiche-evenement.mjs`, `modules/provenance.mjs`, `modules/fiche-detail.mjs`, `modules/correspondance.mjs` |
+| bases Klipso et leur clé, choisies à la création d'un salon | `modules/bases-klipso.mjs` ; clés dans `prive.cle_klipso`, lues par `supabase/functions/sync-evenement/` `cleKlipso` |
+| synchronisation et son avancement | `supabase/functions/sync-evenement/`, `modules/synchronisation.mjs`, `modules/avancement.mjs` |
+| rapport d'utilisation, export tableur | `modules/rapport-utilisation.mjs`, `modules/export.mjs` |
+| comptes, mot de passe | `modules/comptes.mjs`, `modules/mot-de-passe.mjs` |
+| utilitaires — `$`, `esc`, couleurs, heures, QR | `modules/dom.mjs`, `modules/texte.mjs`, `modules/couleurs.mjs`, `modules/temps.mjs`, `modules/qr.mjs` |
+| ce qui vient d'ailleurs, relu avant d'être affiché | `modules/sur.mjs` |
+| fenêtre commune par-dessus le plan | `modules/fenetre.mjs` |
+| ce que la page sait d'elle-même — API, salon, borne, administration | `modules/salon.mjs` |
+| API publique du plan, cache, fraîcheur | `supabase/functions/plan-public/`, `src/plan.mjs` |
+| politique de sécurité, commentaires retirés | `outils/genere.js` `poseCsp`, `epure` |
+| hors ligne | `outils/gabarit/_sw.js` |
+| faire écrire un correctif depuis GitHub | `.github/workflows/correctif.yml` |
+
+## Pièges
+
+Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
+
+- **Deux règles tenues en deux langages — qui change l'un change l'autre.** La
+  forme d'un emplacement : `modules/forme.mjs` et `_partage/geometrie.ts`
+  (`outils/essais/forme.js`). Les accords des champs : `modules/correspondance.mjs`
+  `ACCORDS` et `_partage/champs.ts`. L'empreinte d'une conférence :
+  `modules/notifications.mjs` `empreinteDebut` et la fonction SQL `empreinte_debut`.
+  Le type d'une vignette lu dans ses octets : `modules/recherche.mjs`
+  `chargeUnLot` et `_partage/octets.ts` `typeDeVignette`.
+- **Le seuil de concentration n'est pas une capacité** : le compteur ne voit
+  que les journées organisées depuis le plan. C'est un prix, jamais un refus
+  (`modules/ordonnanceur.mjs` `peineDeCharge`). La clé de configuration
+  `_capacite` garde son nom : la renommer perdrait le réglage des salons en
+  production.
+- **Les gestes ont un ordre de priorité** — pincement, outils de l'exploitant,
+  puis glisser et appui du visiteur (`modules/gestes.mjs`) — et ce que
+  `modules/vue.mjs` `appliqueVue` rappelle à chaque image d'un geste aussi. Pendant un
+  geste, on ne refait que la forme tirée (`modules/dessin.mjs` `redessineForme`) :
+  `dessineDessins` est trop lourd pour une rafale de `pointermove`.
+- **Du HTML ne s'écrit que de morceaux prouvés sûrs.** `innerHTML`,
+  `outerHTML` et `insertAdjacentHTML` reçoivent du texte fixe, des nombres, ou
+  ce qui passe par `esc()` (`modules/texte.mjs`) ou `modules/sur.mjs` ; une
+  donnée venue d'ailleurs non échappée, c'est un script exécuté chez chaque
+  visiteur. `npm run html` refuse toute écriture nouvelle qu'il ne sait pas
+  prouver ; l'existant est dans sa référence figée `html-acceptes.json`.
+- **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
+  dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
+- **Deux moteurs peignent le plan, qui parlent la même langue** : le moteur du
+  plan (`modules/moteur-gl.mjs`), par défaut, et deck.gl, le recours
+  (`?moteur=deck`). `webgl.mjs` les reçoit sous le même nom, `deck`. Une classe,
+  un réglage de couche ou une méthode de deck.gl qu'on se met à employer doit
+  exister dans le moteur ; et une extension (`LayerExtension`) n'y apporte pas
+  son GLSL — le moteur la reconnaît à son `extensionName` et refait son effet
+  dans ses propres shaders, réglé par ce qu'elle déclare en nombres
+  (`fonduZoom`, `palettesFigurants`). Une extension neuve se refait donc aussi
+  dans `moteur-gl-*.mjs`, sans quoi elle ne fait rien hors de `?moteur=deck`.
+- **Une ressource d'une origine neuve** (police, script tiers) s'ajoute à
+  `outils/genere.js` `poseCsp`, sans quoi la page la refuse et les essais
+  échouent sur l'erreur de console. Un script en ligne y est permis par son
+  empreinte, recalculée à chaque construction.
+- **N'écrivez jamais `rel="manifest"` entre guillemets** dans
+  `modules/installation.mjs` : la construction y reconnaît la page installable.
+- **Un plan n'a qu'un calage sur la Terre par pavillon**, colonne `plan.calage`.
+- **Une zone ajoutée à la main** range sa fiche dans son entrée `_ajout:<id>` :
+  le serveur n'applique les colonnes de l'événement qu'aux zones de
+  l'instantané (`modules/fiche-zone.mjs` `enregistreZoneAjoutee`).
+- **Le thème du plan est le clair, seul** ; la nuit ne vit que dans la console.
+
+## Déploiement
+
+Rien ne se déploie à la main. Une poussée sur `main` applique les migrations et
+redéploie les fonctions (`supabase.yml`) ; Cloudflare suit le dépôt, construit
+les pages et déploie le Worker — en production pour `main`, en
+prévisualisation pour toute autre branche, à
+`<branche>-plan-interactif.interactiveplan.workers.dev`. Il construit sous
+Node 22, fixé par `.nvmrc`. Toute poussée lance aussi `pages.yml` et
+`essais.yml`.
+
+**Une migration poussée sur `main` part en production.** Les migrations sont
+rejouables et jamais réécrites : une correction est une migration de plus.
+
+**Une prévisualisation se tient à l'écart de la production**, dont elle partage
+pourtant les liaisons. La construction sait quelle branche elle construit
+(`WORKERS_CI_BRANCH`, `outils/projet.js`) ; le Worker, qui se reconnaît aussi à
+son adresse, n'y lit ni n'écrit le cache `CACHE` des visiteurs — seulement
+`CACHE_APERCU` s'il est déclaré — et n'y relaie ni mesures, ni erreurs, ni
+plans de visite (`src/commun.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`,
+éprouvés par `outils/essais/apercu.js`). **Mais l'administration ouverte en
+prévisualisation écrit toujours dans la base de production** : c'est la page
+qui lui parle, avec la session de l'exploitant. Seul un projet de recette l'en
+séparera — il se branche en remplissant `PROJETS.recette`.
+
+## Secrets
+
+Aucune clé dans le dépôt. `.env` est exclu ; les clés serveur vivent dans les
+secrets Supabase (`npx supabase secrets set …`). Les clés Klipso font
+exception : une par base, saisie dans la console, rangée dans
+`prive.cle_klipso` — un schéma que l'API ne publie pas et que la sauvegarde
+n'emporte pas ; `KLIPSO_API_KEY` ne sert plus qu'aux bases sans clé propre.
+La clé `service_role` et les clés Klipso ne doivent jamais atteindre une page
+ni un commit. La clé
+« publishable » de `outils/projet.js` est faite pour circuler.
+
+Toute nouvelle adresse de déploiement doit être ajoutée à
+`ORIGINES_AUTORISEES`, sans quoi les fonctions refusent ses appels — sauf
+`mesure`, ouverte à toutes les origines.
+
+## Tenir au courant pendant le travail
+
+Un long silence se lit comme une panne. Pendant la réflexion comme pendant la
+construction, un point d'avancement **toutes les deux minutes environ** : une
+ou deux phrases sur ce qui vient d'être fait et ce qui se fait maintenant, même
+sans résultat neuf. Ils s'ajoutent à la liste d'étapes, tenue à jour. Et **un
+travail long s'annonce avant d'être lancé** — construction, essais,
+synchronisation, mesure.
+
+## Conventions
+
+Le code, les commentaires et les messages de commit sont en **français
+accentué**. Les commentaires expliquent *pourquoi*, pas *quoi* — c'est le ton
+en place dans tout le dépôt, gardez-le.

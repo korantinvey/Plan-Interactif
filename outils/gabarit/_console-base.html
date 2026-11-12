@@ -1,0 +1,11 @@
+<!-- Le balisage commun de la console et du rapport : la fenêtre du socle
+     (`modules/fenetre-console.mjs`). Le script de chaque point d'entrée se
+     pose juste après (`genere.js` `poseModulesSeuls`) : il n'y a plus de code
+     soudé, et le socle trouve la fenêtre en se branchant. -->
+<div class="modale" id="modale">
+  <div class="mfen" role="dialog" aria-modal="true">
+    <header><h3 id="mTitre"></h3><button id="mFermer" aria-label="Fermer">&times;</button></header>
+    <div class="mcorps" id="mCorps"></div>
+    <footer id="mPied"></footer>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+<title>Hors ligne — Plan interactif</title>
+<meta name="robots" content="noindex">
+
+<style>
+/* Aucune police distante, aucune feuille de style tierce : cette page-ci
+   s'affiche précisément quand rien ne peut plus être téléchargé. Elle ne
+   dépend donc que d'elle-même, et des polices déjà présentes sur l'appareil.
+   Un seul jeu de tons, le clair : elle tient lieu de plan quand le réseau
+   manque, et le plan n'en a pas d'autre. */
+:root{ --ground:#E9EAE4; --surface:#FBFBF8; --line:#D2D5CB;
+  --ink:#15181A; --ink-3:#7C8285; --accent:#2F49D1; --accent-ink:#FFFFFF }
+body{margin:0;min-height:100vh;min-height:100dvh;background:var(--ground);color:var(--ink-3);
+  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.5;
+  display:grid;place-items:center;padding:24px}
+.bloc{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:28px 26px;max-width:380px;text-align:center}
+h1{font-size:17px;font-weight:600;color:var(--ink);margin:0 0 8px}
+p{margin:0 0 18px}
+button{font:inherit;font-weight:500;cursor:pointer;padding:9px 18px;border:0;border-radius:6px;
+  background:var(--accent);color:var(--accent-ink)}
+/* La langue se reprend ici aussi : cette page ne connaît que ce que
+   l'appareil a retenu, et un visiteur arrivé sans réseau n'a pas encore vu le
+   bouton du plan. */
+.bloc{position:relative}
+button.langue{position:absolute;top:10px;right:10px;padding:5px 6px;line-height:0;
+  background:none;border:1px solid var(--line)}
+</style>
+
+<div class="bloc">
+  <button class="langue" type="button" data-langue></button>
+  <h1>Plan hors ligne</h1>
+  <!-- Ce que le visiteur peut faire, et non ce qui a échoué : il est devant un
+       stand, pas devant un journal d'erreurs. Un plan déjà ouvert une fois
+       reste consultable — c'est la première chose à lui dire. -->
+  <p>Le réseau est injoignable. Les plans déjà consultés sur cet appareil
+  restent disponibles : rouvrez-les depuis leur adresse habituelle.</p>
+  <button id="reessaie" type="button">Réessayer</button>
+</div>
+
+<script>
+document.getElementById("reessaie").addEventListener("click", () => location.reload());
+/* Le réseau revient rarement pendant qu'on regarde cette page, mais quand il
+   revient il n'y a plus rien à demander : on repart tout seul. */
+addEventListener("online", () => location.reload());
+</script>
