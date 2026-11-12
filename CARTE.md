@@ -3224,13 +3224,13 @@ Importé par :
 affiche-ici · appels · dessin · gestes · libelle-place · libelles · nom-emplacement · plan
 recherche
 
-### `modules/texte.mjs` — 25 l. → plan, plan-admin, console, rapport
+### `modules/texte.mjs` — 30 l. → plan, plan-admin, console, rapport
 
 - l.1 · Le texte : l'écrire dans la page, le découper, le ranger
 
 Fonctions :
 
-`esc` 6 · `separeValeurs` 17
+`esc` 11 · `separeValeurs` 22
 
 Importé par :
 
@@ -3819,6 +3819,7 @@ Injections :
 - `20261106112458_funexpo_2026_la_conference_de_requiem_memory.sql` — —
 - `20261110160353_funexpo_2026_les_visites_d_avant_le_10_novembre_16_h_retirees.sql` — —
 - `20261111120704_le_fond_de_carte_fige.sql` — fn environs_accessible
+- `20261112170643_la_lecture_des_presences_bornee_au_salon.sql` — —
 
 ## Le reste
 

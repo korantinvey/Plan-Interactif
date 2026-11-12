@@ -55,17 +55,22 @@ jobs:
   corriger:
     runs-on: ubuntu-latest
     # Sur un commentaire, seul `@claude` réveille la tâche — sans quoi elle
-    # partirait à chaque phrase écrite sous une issue.
+    # partirait à chaque phrase écrite sous une issue. Et seulement sous la
+    # plume de qui écrit déjà sur le dépôt : l'action refuse bien les autres,
+    # mais après que les étapes d'avant ont tourné. Le dépôt est public, et un
+    # inconnu n'a pas à faire démarrer une machine qui tient des secrets.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      contains(github.event.comment.body, '@claude')
+      (contains(github.event.comment.body, '@claude') &&
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+                github.event.comment.author_association))
     permissions:
       contents: write
       pull-requests: write
       issues: write
-    env:
-      JETON: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      CLE: ${{ secrets.ANTHROPIC_API_KEY }}
+    # Aucun secret au niveau de la tâche : chaque étape n'en voit que ce dont
+    # elle a besoin. Posés ici, ils se liraient aussi dans `npm ci` et dans
+    # tout ce qu'il lance.
     steps:
       # Sans authentification, la tâche s'arrête en vert plutôt que de rougir :
       # un garde-fou qu'on n'a pas branché n'est pas un défaut du dépôt, et une
@@ -73,6 +78,9 @@ jobs:
       # journal nomme la voie retenue quand il y en a une.
       - name: Vérifier qu'une authentification est posée
         id: acces
+        env:
+          JETON: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLE: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -n "$JETON" ]; then
             echo 'Authentification par abonnement (CLAUDE_CODE_OAUTH_TOKEN).'
@@ -88,20 +96,28 @@ jobs:
             echo 'posee=non' >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v5
+      # Les actions sont pincées par empreinte de commit, non par étiquette :
+      # une étiquette se déplace, et celle d'une action compromise mènerait du
+      # code inconnu jusqu'au jeton d'écriture. Monter de version, c'est
+      # changer l'empreinte et l'étiquette en commentaire ensemble.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         if: steps.acces.outputs.posee == 'oui'
         with:
           # Tout l'historique : comparer l'horodatage d'une migration à la
           # dernière de `main` demande de connaître `main`.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         if: steps.acces.outputs.posee == 'oui'
         with:
           node-version: '22'
           cache: npm
 
-      - run: npm ci
+      # Sans scripts d'installation : esbuild et workerd, les seuls à en
+      # porter, n'y font que vérifier leur binaire, déjà livré par un paquet
+      # propre à la plateforme. Une dépendance compromise n'a ainsi plus de
+      # point d'entrée à l'installation.
+      - run: npm ci --ignore-scripts
         if: steps.acces.outputs.posee == 'oui'
 
       # La branche est ouverte ici, et son nom n'est pas négociable : c'est
@@ -116,7 +132,7 @@ jobs:
           git checkout -b "$nom"
           echo "nom=$nom" >> "$GITHUB_OUTPUT"
 
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
         id: corriger
         if: steps.acces.outputs.posee == 'oui'
         # Vingt-cinq minutes : corriger demande de lire, d'écrire, puis de
