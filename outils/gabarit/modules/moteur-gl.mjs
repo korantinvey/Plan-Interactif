@@ -125,8 +125,10 @@ export class Deck {
     this.canvas = toile;
     const webgl = (props.deviceProps && props.deviceProps.webgl) || {};
     /** @type {WebGL2RenderingContext | null} */
+    // les attributs du contexte de deck.gl : refusé là où il l'était, sans gros handicap
     const gl = toile.getContext("webgl2", { alpha: true, antialias: true, premultipliedAlpha: true, depth: true,
-      stencil: false, preserveDrawingBuffer: Boolean(webgl.preserveDrawingBuffer), powerPreference: "high-performance" });
+      stencil: false, preserveDrawingBuffer: Boolean(webgl.preserveDrawingBuffer), powerPreference: "high-performance",
+      failIfMajorPerformanceCaveat: true });
     if (!gl){
       this.device = null;
       setTimeout(() => this.props.onError && this.props.onError(new Error("WebGL2 indisponible")), 0);

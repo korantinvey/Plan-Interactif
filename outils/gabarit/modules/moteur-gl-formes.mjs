@@ -322,22 +322,31 @@ const ATTR_TRAIT = {
   a_tiret: { accessor: "getDashArray", taille: 2, type: /** @type {"f32"} */ ("f32"), defaut: [0, 0] },
   a_zf: ATTRIBUT_FILTRE,
 };
-const GEO_TRAIT = ["a_coin", "a_a", "a_b", "a_dist", "a_bouts", "a_objet"];
+const GEO_TRAIT = ["a_coin", "a_a", "a_b", "a_dist", "a_bouts", "a_objet", "a_coupe"];
 const LISTE_TRAIT = numerote(GEO_TRAIT, ATTR_TRAIT);
 
 /* Un segment, une gélule. Couché, il s'élargit dans le plan du sol, d'une
    demi-largeur comptée en mètres à l'échelle du centre de la vue — comme
    deck.gl, qui le couche aussi : vu de biais, un trait lointain s'amincit.
    Face à l'œil (`billboard`), il s'élargit à l'écran. Un pixel de plus de
-   chaque côté porte le lissage du bord. */
+   chaque côté porte le lissage du bord.
+
+   Deux gélules voisines se recouvrent autour de leur jointure : un trait
+   translucide — le contour gris des chaises — y foncerait, un point plus
+   sombre à chaque coin. Chaque jointure se partage donc par sa bissectrice
+   (`a_coupe`, dans le repère du segment) : de part et d'autre, un seul
+   segment peint, et le trait garde partout la même teinte, comme chez
+   deck.gl. Face à l'œil, le repère n'est plus celui du sol, et le partage
+   ne se fait pas : seul l'itinéraire s'y dresse, d'une couleur pleine. */
 const VS_TRAIT = ENTETE_SOMMETS + GLSL_FILTRE + `
-in vec2 a_coin; in vec3 a_a; in vec3 a_b; in float a_dist; in vec2 a_bouts; in float a_objet;
+in vec2 a_coin; in vec3 a_a; in vec3 a_b; in float a_dist; in vec2 a_bouts; in float a_objet; in vec4 a_coupe;
 in vec4 a_c; in float a_l; in vec2 a_tiret; in vec3 a_zf;
 uniform vec4 u_largeur;
 uniform float u_face;
 uniform float u_opacite;
-out vec4 v_c; out vec2 v_q; out float v_lg; out float v_r; out float v_pos; out vec2 v_tiret; out vec2 v_bouts;
+out vec4 v_c; out vec2 v_q; out float v_lg; out float v_r; out float v_pos; out vec2 v_tiret; out vec2 v_bouts; out vec4 v_coupe;
 void main(){
+  v_coupe = u_face > 0.5 ? vec4(0.0) : a_coupe;
   float px = a_l * u_largeur.y * (u_largeur.x > 0.5 ? 1.0 : u_echelle);
   px = clamp(px, u_largeur.z, u_largeur.w);
   float r = px * 0.5, m = r + 1.0;
@@ -367,17 +376,21 @@ void main(){
   gl_Position = recadre(u_vp * vec4(p, 1.0));
 }`;
 const FS_TRAIT = ENTETE_FRAGMENTS + `
-in vec4 v_c; in vec2 v_q; in float v_lg; in float v_r; in float v_pos; in vec2 v_tiret; in vec2 v_bouts;
+in vec4 v_c; in vec2 v_q; in float v_lg; in float v_r; in float v_pos; in vec2 v_tiret; in vec2 v_bouts; in vec4 v_coupe;
 uniform vec3 u_defile;
 void main(){
   // les bouts du trait sont droits : seules les jointures s'arrondissent
   if ((v_q.x < 0.0 && v_bouts.x > 0.5) || (v_q.x > v_lg && v_bouts.y > 0.5)) discard;
+  // chaque jointure partagée par sa bissectrice : de l'autre côté, c'est le segment voisin qui peint
+  if (dot(v_q, v_coupe.xy) < 0.0) discard;
+  if (dot(v_q - vec2(v_lg, 0.0), v_coupe.zw) > 0.0) discard;
   if (v_tiret.y > 0.0 && mod(v_pos, v_tiret.x + v_tiret.y) > v_tiret.x) discard;
   float unite = u_defile.x + u_defile.y;
   if (unite > 0.0 && mod(v_pos + u_defile.z, unite) > u_defile.x) discard;
   float x = clamp(v_q.x, 0.0, v_lg);
   float d = length(vec2(v_q.x - x, v_q.y));
-  float a = clamp(v_r - d + 0.5, 0.0, 1.0);
+  // la part du pixel que le trait couvre : un trait d'un demi-pixel n'en couvre que la moitié
+  float a = clamp(min(d + 0.5, v_r) - max(d - 0.5, -v_r), 0.0, 1.0);
   if (u_designe > 0.5){ if (d > v_r) discard; fragColor = v_c; return; }
   if (a <= 0.0) discard;
   fragColor = vec4(v_c.rgb, v_c.a * a);
@@ -399,19 +412,39 @@ export class PathLayer extends Couche {
       chemins.push(c); comptes[i] = c.length - 1; n += c.length - 1;
     }
     const ab = new Float32Array(n * 6), dist = new Float32Array(n), bouts = new Float32Array(n * 2), obj = new Float32Array(n);
+    const coupe = new Float32Array(n * 4);
     let s = 0;
     chemins.forEach((c, i) => {
       if (!c) return;
+      const m = c.length - 1;
+      // la direction de chaque segment, à plat ; un chemin fermé se rejoint à son départ
+      const dirs = [];
+      for (let k = 0; k < m; k++){
+        const dx = c[k + 1][0] - c[k][0], dy = c[k + 1][1] - c[k][1], l = Math.hypot(dx, dy);
+        dirs.push(l > 0 ? [dx / l, dy / l] : null);
+      }
+      const ferme = m > 1 && c[0][0] === c[m][0] && c[0][1] === c[m][1];
+      /** La bissectrice entre deux directions, dans le repère du segment de direction `u`. */
+      const bissectrice = (/** @type {number[] | null} */ a, /** @type {number[] | null} */ b, /** @type {number[] | null} */ u) => {
+        if (!a || !b || !u) return [0, 0];
+        let x = a[0] + b[0], y = a[1] + b[1];
+        const l = Math.hypot(x, y);
+        if (l < 1e-9){ x = u[0]; y = u[1]; } else { x /= l; y /= l; }
+        return [x * u[0] + y * u[1], -x * u[1] + y * u[0]];
+      };
       let d = 0;
-      for (let k = 0; k + 1 < c.length; k++, s++){
+      for (let k = 0; k < m; k++, s++){
         const u = c[k], v = c[k + 1];
         ab.set([u[0] - ox, u[1] - oy, (u[2] || 0) - oz, v[0] - ox, v[1] - oy, (v[2] || 0) - oz], s * 6);
         dist[s] = d; obj[s] = i;
-        bouts[2 * s] = k === 0 ? 1 : 0; bouts[2 * s + 1] = k + 2 === c.length ? 1 : 0;
+        bouts[2 * s] = k === 0 && !ferme ? 1 : 0; bouts[2 * s + 1] = k + 1 === m && !ferme ? 1 : 0;
+        const avant = k > 0 ? dirs[k - 1] : ferme ? dirs[m - 1] : null;
+        const apres = k + 1 < m ? dirs[k + 1] : ferme ? dirs[0] : null;
+        coupe.set([...bissectrice(avant, dirs[k], dirs[k]), ...bissectrice(dirs[k], apres, dirs[k])], s * 4);
         d += Math.hypot(v[0] - u[0], v[1] - u[1], (v[2] || 0) - (u[2] || 0));
       }
     });
-    return { comptes, total: n, ab, dist, bouts, obj };
+    return { comptes, total: n, ab, dist, bouts, obj, coupe };
   }
 
   prepare(/** @type {any} */ ctx, /** @type {any} */ ancienne){
@@ -431,6 +464,7 @@ export class PathLayer extends Couche {
       a.pose(3, { donnees: g.dist }, 1, "f32", 1);
       a.pose(4, { donnees: g.bouts }, 2, "f32", 1);
       a.pose(5, { donnees: g.obj }, 1, "f32", 1);
+      a.pose(6, { donnees: g.coupe }, 4, "f32", 1);
       e = { a, comptes: g.comptes, total: g.total };
       remplisAttributs(this, a, ATTR_TRAIT, e.comptes, e.total, 1, null);
     } else if (r.acces.size) remplisAttributs(this, e.a, ATTR_TRAIT, e.comptes, e.total, 1, r.acces);

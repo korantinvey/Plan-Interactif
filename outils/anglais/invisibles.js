@@ -120,6 +120,8 @@ module.exports = [
   // console seule reçoit — rien de cela ne s'affiche
   "Layer", "LayerExtension", "PathStyleExtension", "SolidPolygonLayer", "PathLayer", "TextLayer",
   "BitmapLayer", "SimpleMeshLayer", "WebGL2 indisponible",
+  // et les paquets qu'il importe, qu'esbuild résout à la construction
+  "@mapbox/tiny-sdf",
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",

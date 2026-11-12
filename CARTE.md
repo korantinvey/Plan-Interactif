@@ -1989,7 +1989,7 @@ Importé par :
 
 moteur-gl · moteur-gl-formes · moteur-gl-objets · moteur-gl-texte
 
-### `modules/moteur-gl-formes.mjs` — 459 l. → plan, plan-admin
+### `modules/moteur-gl-formes.mjs` — 493 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les aplats et les traits
 
@@ -2004,9 +2004,9 @@ moteur-gl-couche
 
 Importé par :
 
-moteur-gl
+moteur-gl · moteur-gl-texte
 
-### `modules/moteur-gl-matrices.mjs` — 148 l. → plan, plan-admin
+### `modules/moteur-gl-matrices.mjs` — 152 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les matrices et les vues
 
@@ -2030,25 +2030,30 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl-texte.mjs` — 15 l. → plan, plan-admin
+### `modules/moteur-gl-texte.mjs` — 394 l. → plan, plan-admin
 
-- l.1 · Le moteur du plan — les textes (en préparation)
+- l.1 · Le moteur du plan — les textes
+
+Fonctions :
+
+`cleAtlas` 38 · `stylePolice` 46 · `mesure` 52 · `atlasDe` 70 · `textureDe` 131
+`metsEnPage` 160 · `attributsTexte` 192 · `jeuDe` 284
 
 Importe :
 
-moteur-gl-couche
+moteur-gl-couche · moteur-gl-formes
 
 Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl.mjs` — 524 l. → plan, plan-admin
+### `modules/moteur-gl.mjs` — 526 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — WebGL2, écrit pour lui
 
 Fonctions :
 
-`lumieresDe` 65 · `objetDe` 481 · `retourne` 487
+`lumieresDe` 65 · `objetDe` 483 · `retourne` 489
 
 Importe :
 

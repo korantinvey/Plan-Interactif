@@ -78,6 +78,8 @@ export class Viewport {
       translation4(-this.position[0], -this.position[1], -this.position[2]));
     /** la vue est-elle en perspective ? — la fuite change la taille d'un pixel d'un point à l'autre */
     this.perspective = this.viewProjectionMatrix[3] !== 0 || this.viewProjectionMatrix[7] !== 0 || this.viewProjectionMatrix[11] !== 0;
+    /** une vue faite de matrices garde l'axe que ses matrices lui donnent */
+    this.flipY = false;
   }
 
   /** Où un point du monde tombe à l'écran : pixels CSS depuis le coin haut gauche, et sa profondeur. */
@@ -117,6 +119,8 @@ export class OrthographicViewport extends Viewport {
     // une hauteur positive vient vers l'œil : plus près, donc moins profonde
     const projection = [2 / W, 0, 0, 0, 0, sy, 0, 0, 0, 0, -2 / (far - near), 0, 0, 0, -(far + near) / (far - near), 1];
     super({ ...p, position: p.target || [0, 0, 0], viewMatrix: vue, projectionMatrix: projection });
+    /** l'axe des y vers le bas : les textes couchés le retournent, comme chez deck.gl */
+    this.flipY = p.flipY !== false;
   }
 }
 
