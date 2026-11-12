@@ -155,15 +155,15 @@ Importé par :
 
 itineraire · itineraire · troncon
 
-### `modules/acces-admin.mjs` — 253 l. → plan-admin
+### `modules/acces-admin.mjs` — 273 l. → plan-admin
 
 - l.1 · Accès à l'administration du plan
 
 Fonctions :
 
 `litLocal` 34 · `configuration` 39 · `normaliseUrlA` 43 · `sessionValide` 59
-`ecranAcces` 77 · `contenuDuJeton` 166 · `mailDuJeton` 167 · `litProfilA` 178
-`poseCompte` 193 · `brancheAcces` 218
+`ecranAcces` 77 · `contenuDuJeton` 186 · `mailDuJeton` 187 · `litProfilA` 198
+`poseCompte` 213 · `brancheAcces` 238
 
 Éléments :
 
@@ -256,7 +256,7 @@ Importé par :
 
 edition · enregistrement · gestes-admin · outil-dessin · reprise-emplacements
 
-### `modules/ambiance.mjs` — 224 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 225 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles, Immersif
 
@@ -264,8 +264,8 @@ Fonctions :
 
 `figurantsRetenus` 61 · `nomsAPlatRetenus` 68 · `logosRetenus` 74 · `capRetenu` 79
 `ambianceRetenue` 86 · `anneaux` 92 · `f3` 104 · `rayonTuile` 131 · `retire` 136
-`arrondi` 151 · `traceStand` 177 · `tuilesPosees` 182 · `essaieAmbiance` 187
-`appliqueAmbiance` 192
+`arrondi` 151 · `traceStand` 178 · `tuilesPosees` 183 · `essaieAmbiance` 188
+`appliqueAmbiance` 193
 
 Importe :
 
@@ -409,7 +409,7 @@ Importé par :
 
 cartouche-poi · lancement · recherche · rendu
 
-### `modules/bases-klipso.mjs` — 211 l. → console
+### `modules/bases-klipso.mjs` — 213 l. → console
 
 - l.1 · Bases Klipso — le menu des bases connues, et la saisie d'une base neuve
 
@@ -425,25 +425,25 @@ Importé par :
 
 ecran-console · fiche-evenement
 
-### `modules/batiments.mjs` — 597 l. → plan-admin
+### `modules/batiments.mjs` — 603 l. → plan-admin
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
-`CLE_CALAGE` 65 · `bibliothequeDispo` 66 · `refBatiment` 83 · `refForme` 87
-`marqueBatiment` 90 · `batimentsPoses` 93 · `estBatiment` 100 · `hallsPoses` 103
-`lieuDuCalque` 109 · `poseCalage` 115 · `ouvreBibliotheque` 124 · `vueDuLieu` 220
-`lanceCalage` 262 · `effaceLeTempsDuCalage` 290 · `cadreCalage` 309 · `finCalage` 322
-`pivoteCalage` 333 · `degresCalage` 349 · `dessineCalage` 354 · `calagePointerDown` 377
-`calagePointerMove` 390 · `calagePointerUp` 406 · `reposeBatiment` 419
-`ajouteBatiments` 435 · `brancheBatiments` 488 · `boutonRecale` 530 · `pictoRecale` 539
-`calageRelu` 556 · `rouvreCalage` 582
+`CLE_CALAGE` 66 · `bibliothequeDispo` 67 · `refBatiment` 84 · `refForme` 88
+`marqueBatiment` 91 · `batimentsPoses` 94 · `estBatiment` 101 · `hallsPoses` 104
+`lieuDuCalque` 110 · `poseCalage` 116 · `ouvreBibliotheque` 125 · `vueDuLieu` 221
+`lanceCalage` 263 · `effaceLeTempsDuCalage` 291 · `cadreCalage` 310 · `finCalage` 323
+`pivoteCalage` 334 · `degresCalage` 350 · `dessineCalage` 355 · `calagePointerDown` 378
+`calagePointerMove` 391 · `calagePointerUp` 407 · `reposeBatiment` 420
+`ajouteBatiments` 436 · `brancheBatiments` 489 · `boutonRecale` 531 · `pictoRecale` 540
+`calageRelu` 557 · `rouvreCalage` 583
 
 Importe :
 
 calques-dessin · configuration · dessin · dom · donnees · fenetre · geste-tenu · mode-admin
-ordre-trace · outil-dessin · vue · webgl
+ordre-trace · outil-dessin · rendu · vue · webgl
 
 Importé par :
 
@@ -481,7 +481,7 @@ Importé par :
 
 fenetre · tiroirs
 
-### `modules/calage-carte.mjs` — 887 l. → plan-admin
+### `modules/calage-carte.mjs` — 901 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
@@ -490,12 +490,12 @@ Fonctions :
 `emprisePavillon` 68 · `centrePavillon` 83 · `basculeMasqueCarte` 88
 `boutonMasqueCarte` 99 · `pictoMasque` 110 · `carreDeTerrain` 137 · `chercheBatiments` 153
 `empriseDesObjets` 181 · `batimentsCandidats` 199 · `caleSurBatiment` 220
-`retientLeHall` 246 · `manqueCalage` 268 · `enregistreCalage` 277 · `figeEtEnregistre` 299
-`calageEnregistre` 327 · `oublieCalageEnCours` 348 · `litCoordonnees` 360
-`rafraichitCarte` 374 · `armeCalage` 413 · `pivotCalage` 424 · `glisseCarte` 428
-`cartePointerDown` 435 · `cartePointerMove` 449 · `cartePointerUp` 468 · `ditCalage` 476
-`majCalage` 485 · `appliqueCalage` 507 · `tourneCalage` 514 · `construitCalage` 520
-`ouvreCalage` 685 · `fermeCalage` 695 · `brancheCalageCarte` 707 · `voletEnvirons` 730
+`retientLeHall` 246 · `manqueCalage` 268 · `enregistreCalage` 277 · `figeEtEnregistre` 300
+`calageEnregistre` 329 · `oublieCalageEnCours` 350 · `litCoordonnees` 362
+`rafraichitCarte` 376 · `armeCalage` 415 · `pivotCalage` 426 · `glisseCarte` 430
+`cartePointerDown` 437 · `cartePointerMove` 451 · `cartePointerUp` 470 · `ditCalage` 478
+`majCalage` 487 · `appliqueCalage` 509 · `tourneCalage` 516 · `construitCalage` 522
+`ouvreCalage` 692 · `fermeCalage` 702 · `brancheCalageCarte` 714 · `voletEnvirons` 737
 
 Importe :
 
@@ -507,7 +507,7 @@ Importé par :
 
 gestes-admin · pile · plan-admin · reglages
 
-### `modules/calques-dessin.mjs` — 251 l. → plan, plan-admin
+### `modules/calques-dessin.mjs` — 254 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — ce que le poste en garde
 
@@ -515,8 +515,8 @@ Fonctions :
 
 `enAttente` 63 · `litRange` 90 · `ouvreDessins` 102 · `reprendCommun` 127
 `notePubliees` 153 · `rangeDessins` 171 · `dejaPubliee` 176 · `marqueAttente` 182
-`mesCalques` 190 · `calquesSurs` 203 · `poseCalqueActif` 243 · `poseOutil` 244
-`poseEbauche` 248 · `trouveCalque` 250 · `nouvelId` 251
+`mesCalques` 193 · `calquesSurs` 206 · `poseCalqueActif` 246 · `poseOutil` 247
+`poseEbauche` 251 · `trouveCalque` 253 · `nouvelId` 254
 
 Importe :
 
@@ -568,10 +568,10 @@ Importé par :
 dessin · enregistrement · fiche-zone · index-salon · libelles · points-interet · recherche
 reglage-recherche
 
-### `modules/chaleur.mjs` — 762 l. → plan-admin
+### `modules/chaleur.mjs` — 770 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.536 · Remise à zéro des compteurs
+- l.544 · Remise à zéro des compteurs
 
 Fonctions :
 
@@ -579,9 +579,9 @@ Fonctions :
 `chargeChaleur` 115 · `coloreChaleur` 161 · `dessineHalos` 222 · `cartoucheChaleur` 262
 `mesureCartoucheChaleur` 339 · `replieChaleur` 345 · `ecritEtatChaleur` 356
 `dessineEchelleChaleur` 364 · `dessineTopChaleur` 384 · `phraseChaleur` 426
-`rafraichitChaleur` 451 · `montreChaleur` 485 · `rangChaleur` 518 · `aplati` 558
-`voletMesure` 567 · `evenementCourant` 593 · `ouvreRemiseAZero` 613 · `lanceRemiseAZero` 707
-`brancheChaleur` 752
+`rafraichitChaleur` 455 · `montreChaleur` 493 · `rangChaleur` 526 · `aplati` 566
+`voletMesure` 575 · `evenementCourant` 601 · `ouvreRemiseAZero` 621 · `lanceRemiseAZero` 715
+`brancheChaleur` 760
 
 Éléments :
 
@@ -595,7 +595,7 @@ Importé par :
 
 pile · plan-admin · reglage-suggestion · reglages
 
-### `modules/charge-annoncee.mjs` — 228 l. → plan, plan-admin
+### `modules/charge-annoncee.mjs` — 231 l. → plan, plan-admin
 
 - l.1 · La charge annoncée — ce que les autres journées ont déjà posé
 
@@ -603,7 +603,7 @@ Fonctions :
 
 `seuilConcentration` 24 · `identifiantParcours` 26 · `parcours` 28 · `sejour` 30
 `brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
-`celluleUtile` 149 · `dilatationDuJour` 166 · `litLaCharge` 203 · `chargeCellule` 223
+`celluleUtile` 152 · `dilatationDuJour` 169 · `litLaCharge` 206 · `chargeCellule` 226
 
 Importe :
 
@@ -656,14 +656,14 @@ Importé par :
 
 export
 
-### `modules/comptes.mjs` — 354 l. → console
+### `modules/comptes.mjs` — 356 l. → console
 
 - l.1 · Comptes et accès — l'annuaire, et la fiche d'une personne
 
 Fonctions :
 
 `poseComptes` 35 · `litMonProfil` 49 · `RETOUR_MDP` 60 · `litComptes` 62 · `ligneMessage` 71
-`casesSalons` 81 · `ouvreComptes` 111 · `ouvreFicheCompte` 203
+`casesSalons` 81 · `ouvreComptes` 111 · `ouvreFicheCompte` 205
 
 Importe :
 
@@ -946,7 +946,7 @@ reglages · releve · rendu · reprise-emplacements · secteurs · sejour · seu
 sponsor · suggestion · tiroir-itineraire · tiroir-parcours · tout-au-parcours
 trace-itineraire · trajet · tutoriel · volets · vous-etes-ici · webgl
 
-### `modules/duplication.mjs` — 43 l. → console
+### `modules/duplication.mjs` — 49 l. → console
 
 - l.1 · Dupliquer un salon — l'édition suivante, sans ce qui n'est qu'à celle-ci
 
@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 328 l. → console
+### `modules/ecran-console.mjs` — 335 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 129
-`majLiens` 146 · `videEcran` 187 · `dessine` 192 · `demarre` 207 · `brancheConsole` 225
+`charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 136
+`majLiens` 153 · `videEcran` 194 · `dessine` 199 · `demarre` 214 · `brancheConsole` 232
 
 Importe :
 
@@ -1009,7 +1009,7 @@ Importé par :
 
 plan
 
-### `modules/edition.mjs` — 720 l. → plan-admin
+### `modules/edition.mjs` — 730 l. → plan-admin
 
 - l.1 · Édition des formes existantes
 
@@ -1021,8 +1021,8 @@ Fonctions :
 `changeLien` 334 · `changeDureeLien` 350 · `majLiens` 367 · `appliqueSociete` 419
 `appliqueTexte` 435 · `repereAObjet` 445 · `appliqueRotation` 450 · `appliqueRayon` 464
 `appliqueTrait` 477 · `appliqueTransport` 505 · `appliquePicto` 528 · `supprimeForme` 554
-`editionPointerDown` 564 · `editionPointerMove` 624 · `tourneTexte` 687
-`editionPointerUp` 703
+`editionPointerDown` 564 · `editionPointerMove` 629 · `tourneTexte` 693
+`editionPointerUp` 709
 
 Importe :
 
@@ -1033,16 +1033,16 @@ Importé par :
 
 gestes-admin · outil-dessin
 
-### `modules/emplacements.mjs` — 290 l. → plan, plan-admin
+### `modules/emplacements.mjs` — 293 l. → plan, plan-admin
 
 - l.1 · Reprendre à la main la géométrie d'un emplacement — ce que le plan
 
 Fonctions :
 
 `cleGeo` 51 · `poseSorteGeo` 60 · `geometrieSource` 73 · `reposeSource` 82
-`poseGeometrie` 91 · `retoucheGeo` 105 · `elargitEmprise` 118 · `appliqueGeometries` 139
-`cleAjout` 180 · `estLie` 193 · `anneauxValides` 197 · `rechAjout` 202 · `objetAjoute` 211
-`poseLien` 230 · `appliqueAjouts` 258
+`poseGeometrie` 91 · `retoucheGeo` 105 · `elargitEmprise` 121 · `appliqueGeometries` 142
+`cleAjout` 183 · `estLie` 196 · `anneauxValides` 200 · `rechAjout` 205 · `objetAjoute` 214
+`poseLien` 233 · `appliqueAjouts` 261
 
 Importe :
 
@@ -1161,8 +1161,8 @@ Fonctions :
 Importé par :
 
 acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · environs
-fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · trace-itineraire
-traduction · vignettes · webgl
+fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · tiroir-itineraire
+trace-itineraire · traduction · vignettes · webgl
 
 ### `modules/evenements.mjs` — 70 l. → console
 
@@ -1237,7 +1237,7 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1291 l. → console
+### `modules/fiche-detail.mjs` — 1302 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
 - l.26 · Contenu de la fiche détail
@@ -1245,10 +1245,10 @@ scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel �
 Fonctions :
 
 `paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 240
-`caseFiche` 285 · `cibleEn` 333 · `champsPersos` 335 · `criteres` 341 · `ecritFiche` 344
-`caseCritere` 359 · `clePerso` 378 · `ajouteChampPerso` 386 · `renommeChampPerso` 404
-`retireChampPerso` 452 · `lignesPerso` 513 · `cadreFiche` 536 · `ouvreFiche` 566
-`cadreCategories` 706 · `sousTitre` 785 · `tableauChamps` 800 · `champOrigine` 1026
+`caseFiche` 285 · `cibleEn` 337 · `champsPersos` 339 · `criteres` 345 · `ecritFiche` 348
+`caseCritere` 363 · `clePerso` 382 · `ajouteChampPerso` 390 · `renommeChampPerso` 408
+`retireChampPerso` 456 · `lignesPerso` 517 · `cadreFiche` 540 · `ouvreFiche` 570
+`cadreCategories` 710 · `sousTitre` 796 · `tableauChamps` 811 · `champOrigine` 1037
 
 Importe :
 
@@ -1258,15 +1258,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 477 l. → console
+### `modules/fiche-evenement.mjs` — 484 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 307
-`ligneReglage` 323 · `champCle` 337 · `champInstance` 378 · `ouvreSources` 402
-`majIntegration` 460 · `majMsgSync` 467
+`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 314
+`ligneReglage` 330 · `champCle` 344 · `champInstance` 385 · `ouvreSources` 409
+`majIntegration` 467 · `majMsgSync` 474
 
 Éléments :
 
@@ -1281,19 +1281,19 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 952 l. → plan-admin
+### `modules/fiche-zone.mjs` — 954 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.51 · La fiche d'une zone organisateur
-- l.852 · Masquer une zone organisateur
+- l.854 · Masquer une zone organisateur
 
 Fonctions :
 
 `champZone` 77 · `champsZone` 102 · `champEstrade` 222 · `champSalles` 264 · `nomDeZone` 316
 `cadreLogo` 342 · `champLogo` 414 · `editeurRiche` 452 · `memeFicheZone` 609
-`suitFicheZone` 616 · `verseFicheZone` 624 · `ficheZone` 650 · `marqueType` 679
-`enregistreZone` 685 · `enregistreZoneAjoutee` 799 · `basculeAffichageZone` 863
-`marqueZonesMasquees` 891 · `ecritColonnesEvenement` 911 · `ecritColonneEvenement` 945
+`suitFicheZone` 616 · `verseFicheZone` 624 · `ficheZone` 652 · `marqueType` 681
+`enregistreZone` 687 · `enregistreZoneAjoutee` 801 · `basculeAffichageZone` 865
+`marqueZonesMasquees` 893 · `ecritColonnesEvenement` 913 · `ecritColonneEvenement` 947
 
 Importe :
 
@@ -1307,7 +1307,7 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1193 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1199 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.73 · 7. Sélection et fiche
@@ -1315,11 +1315,11 @@ reprise-emplacements · volets
 Fonctions :
 
 `injecteALaFiche` 71 · `anime` 105 · `noeud` 143 · `canalPlan` 153 · `rangSociete` 161
-`select` 170 · `centre` 195 · `brancheActesFiche` 206 · `centreEtBaisseLaFiche` 222
-`centrePoint` 240 · `programme` 272 · `produits` 321 · `ficheProduit` 349 · `ficheConf` 419
-`poseAppuiTactile` 572 · `ecarteClicFantome` 575 · `nomSociete` 584 · `choisitExposant` 598
-`poseMarque` 636 · `montreMarque` 696 · `poseCode` 719 · `rangeMarque` 760 · `ouvre` 816
-`ferme` 1141 · `onglet` 1159 · `brancheFiche` 1177
+`select` 170 · `centre` 201 · `brancheActesFiche` 212 · `centreEtBaisseLaFiche` 228
+`centrePoint` 246 · `programme` 278 · `produits` 327 · `ficheProduit` 355 · `ficheConf` 425
+`poseAppuiTactile` 578 · `ecarteClicFantome` 581 · `nomSociete` 590 · `choisitExposant` 604
+`poseMarque` 642 · `montreMarque` 702 · `poseCode` 725 · `rangeMarque` 766 · `ouvre` 822
+`ferme` 1147 · `onglet` 1165 · `brancheFiche` 1183
 
 Éléments :
 
@@ -1341,14 +1341,14 @@ Injections :
 
 - `injecteALaFiche` (partition) — la fiche, publique, porte le crayon et la pastille d'une zone, dont les gestes sont d'administration
 
-### `modules/fige-carte.mjs` — 255 l. → plan-admin
+### `modules/fige-carte.mjs` — 259 l. → plan-admin
 
 - l.1 · 16 ter. Les environs — le fond figé, photographié par l'exploitant
 
 Fonctions :
 
 `toileMax` 45 · `styleEnImages` 61 · `auRepos` 71 · `decoupe` 81 · `contenu` 93
-`retireLesLots` 115 · `figeLeFond` 138 · `ditLot` 242
+`retireLesLots` 115 · `figeLeFond` 142 · `ditLot` 246
 
 Importe :
 
@@ -1455,14 +1455,14 @@ appels · batiments · calage-carte · calques-dessin · edition · enregistreme
 outil-comptoir · outil-escalier · outil-foodtruck · placement-libelles
 reprise-emplacements
 
-### `modules/gestes-admin.mjs` — 201 l. → plan-admin
+### `modules/gestes-admin.mjs` — 203 l. → plan-admin
 
 - l.1 · Les gestes de l'exploitant sur le plan — leur rang dans la chaîne
 
 Fonctions :
 
-`appui` 47 · `suit` 74 · `leve` 86 · `annuleGeste` 100 · `clavier` 109 · `echap` 157
-`apresEchap` 178 · `entree` 185 · `brancheGestesAdmin` 193
+`appui` 47 · `suit` 74 · `leve` 86 · `annuleGeste` 100 · `clavier` 111 · `echap` 159
+`apresEchap` 180 · `entree` 187 · `brancheGestesAdmin` 195
 
 Importe :
 
@@ -1474,7 +1474,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 633 l. → plan, plan-admin
+### `modules/gestes.mjs` — 636 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.74 · 8. Interactions du plan
@@ -1484,7 +1484,7 @@ Fonctions :
 `poseGestesAdmin` 72 · `milieu` 104 · `commencePince` 110 · `suitPince` 124
 `noteGlisser` 208 · `stoppeElan` 214 · `lanceElan` 220 · `plieLesBandes` 252
 `saisitPlan` 266 · `cibleElargie` 303 · `planifieFiltre` 346 · `brancheGestes` 360
-`brancheLangue` 616
+`brancheLangue` 619
 
 Importe :
 
@@ -1512,7 +1512,7 @@ Importé par :
 
 reglage-sponsor · reglage-suggestion · reglages
 
-### `modules/grille-marche.mjs` — 935 l. → plan, plan-admin
+### `modules/grille-marche.mjs` — 938 l. → plan, plan-admin
 
 - l.1 · La grille de marche — le sol d'un pavillon, case par case
 
@@ -1523,8 +1523,8 @@ Fonctions :
 `zoneTraversee` 293 · `zonesDuTerrain` 302 · `cleRoleIti` 305 · `roleIti` 306
 `nomRoleIti` 307 · `estCirculation` 310 · `formesRole` 335 · `anglePlan` 367
 `dansGrille` 406 · `horsGrille` 407 · `grille` 417 · `distanceAuMur` 606 · `cretes` 649
-`nappePrincipale` 667 · `celluleDe` 702 · `caseDe` 706 · `centreCase` 711 · `empriseDe` 754
-`accrocheDepuis` 816 · `versLeMilieu` 889 · `accroche` 924
+`nappePrincipale` 667 · `celluleDe` 705 · `caseDe` 709 · `centreCase` 714 · `empriseDe` 757
+`accrocheDepuis` 819 · `versLeMilieu` 892 · `accroche` 927
 
 Importe :
 
@@ -1567,18 +1567,18 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/ici.mjs` — 252 l. → plan, plan-admin
+### `modules/ici.mjs` — 271 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
 
 Fonctions :
 
-`litCodeIci` 90 · `poseIci` 113 · `retireIci` 140 · `oublieIciDeLAdresse` 170
-`montreBandeauIci` 186 · `demarreIci` 220 · `brancheIci` 240
+`lieuExact` 93 · `litCodeIci` 109 · `poseIci` 132 · `retireIci` 159
+`oublieIciDeLAdresse` 189 · `montreBandeauIci` 205 · `demarreIci` 239 · `brancheIci` 259
 
 Importe :
 
-borne · dom · donnees · salon · tiroir-itineraire · vous-etes-ici
+borne · dom · donnees · itineraire · salon · texte · tiroir-itineraire · vous-etes-ici
 
 Importé par :
 
@@ -1612,14 +1612,14 @@ Importé par :
 
 fiche-evenement
 
-### `modules/index-salon.mjs` — 498 l. → plan, plan-admin
+### `modules/index-salon.mjs` — 499 l. → plan, plan-admin
 
 - l.1 · 1. L'index du salon — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`texteProduits` 54 · `indexe` 58 · `chronoConf` 311 · `confsDuPlan` 316
-`indexeConferences` 334 · `rangeConferences` 411 · `poseFavicon` 458 · `poseLogoSalon` 484
+`texteProduits` 54 · `indexe` 58 · `chronoConf` 312 · `confsDuPlan` 317
+`indexeConferences` 335 · `rangeConferences` 412 · `poseFavicon` 459 · `poseLogoSalon` 485
 
 Importe :
 
@@ -1674,11 +1674,11 @@ temps · trait-chemin · trajet · trajet · troncon
 Importé par :
 
 affiche-ici · aimants · borne · calage-carte · cartouche-poi · dessin · edition
-enregistrement · fiche-zone · index-salon · journee · nappe · outil-dessin · pile
+enregistrement · fiche-zone · ici · index-salon · journee · nappe · outil-dessin · pile
 points-interet · reprise-emplacements · sejour · seuil · tiroir-itineraire
 trace-itineraire · tutoriel · volets · webgl
 
-### `modules/journee.mjs` — 1269 l. → plan, plan-admin
+### `modules/journee.mjs` — 1274 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
 
@@ -1689,9 +1689,9 @@ Fonctions :
 `arretJournee` 255 · `remplitOnglets` 302 · `jourDuStand` 331 · `ouvreChoixJour` 343
 `figeLaVisite` 400 · `placeSurJour` 409 · `rendAuPlan` 417 · `retireDuSejour` 423
 `remplitJournee` 433 · `ecritApercu` 646 · `appliqueVueParcours` 676 · `traceJournee` 718
-`retireTraceJournee` 735 · `montreLeJour` 743 · `perimeJournee` 758 · `oublieSejour` 773
-`ouvreOrganisation` 785 · `essaieSejour` 1165 · `lanceSejour` 1195 · `refaitSejour` 1234
-`brancheJournee` 1249
+`retireTraceJournee` 735 · `montreLeJour` 743 · `perimeJournee` 758 · `montreLaListe` 774
+`oublieSejour` 779 · `ouvreOrganisation` 791 · `essaieSejour` 1171 · `lanceSejour` 1201
+`refaitSejour` 1240 · `brancheJournee` 1255
 
 Importe :
 
@@ -1834,15 +1834,15 @@ Importé par :
 
 calage-carte · environs · fige-carte · vue
 
-### `modules/marque.mjs` — 335 l. → plan, plan-admin, console
+### `modules/marque.mjs` — 342 l. → plan, plan-admin, console
 
 - l.1 · La marque sans le vide qui l'entoure
 
 Fonctions :
 
-`marquePrete` 56 · `recadreMarque` 60 · `marqueRecadree` 86 · `imageChargee` 115
-`vignetteMarque` 131 · `webp64` 171 · `boiteMarque` 189 · `toileMarque` 255 · `sansFond` 271
-`vignetteDeLogo` 298
+`marquePrete` 56 · `recadreMarque` 60 · `marqueRecadree` 86 · `imageChargee` 122
+`vignetteMarque` 138 · `webp64` 178 · `boiteMarque` 196 · `toileMarque` 262 · `sansFond` 278
+`vignetteDeLogo` 305
 
 Importe :
 
@@ -1852,7 +1852,7 @@ Importé par :
 
 fiche · recherche · synchronisation · vignettes
 
-### `modules/mesure.mjs` — 654 l. → plan, plan-admin
+### `modules/mesure.mjs` — 668 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -1862,9 +1862,9 @@ Fonctions :
 `jetonRetenu` 134 · `supportMesure` 183 · `renouvelleVisiteur` 235 · `fraisEnFile` 302
 `litLaFile` 306 · `ecritLaFile` 319 · `metEnFile` 334 · `retireDeLaFile` 345
 `chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
-`envoieMesures` 434 · `mesure` 471 · `brancheLesEnvois` 486 · `effaceJetonsVisiteur` 541
-`refuseMesure` 559 · `ouvreConfidentialite` 586 · `brancheLaNotice` 637
-`brancheMesure` 651
+`envoieMesures` 436 · `mesure` 473 · `brancheLesEnvois` 488 · `effaceJetonsVisiteur` 543
+`refuseMesure` 561 · `ouvreConfidentialite` 588 · `brancheLaNotice` 651
+`brancheMesure` 665
 
 Importe :
 
@@ -1951,7 +1951,7 @@ Importé par :
 
 outil-dessin · placement-libelles · reprise-emplacements
 
-### `modules/mot-de-passe.mjs` — 210 l. → motdepasse
+### `modules/mot-de-passe.mjs` — 211 l. → motdepasse
 
 - l.1 · Poser un mot de passe
 
@@ -2018,15 +2018,15 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl-objets.mjs` — 472 l. → plan, plan-admin
+### `modules/moteur-gl-objets.mjs` — 475 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les images, les objets, les textures
 
 Fonctions :
 
 `reglePrise` 61 · `compteCree` 80 · `appareil` 87 · `textureDe` 128 · `imageDe` 148
-`coinsImage` 186 · `ATTR_MAILLAGE` 239 · `matriceExemplaire` 318 · `textureFormes` 343
-`attributsMaillage` 358
+`coinsImage` 189 · `ATTR_MAILLAGE` 242 · `matriceExemplaire` 321 · `textureFormes` 346
+`attributsMaillage` 361
 
 Importe :
 
@@ -2070,7 +2070,7 @@ Importé par :
 
 webgl
 
-### `modules/nappe.mjs` — 82 l. → plan-admin
+### `modules/nappe.mjs` — 84 l. → plan-admin
 
 - l.1 · Itinéraire — la nappe de la grille de marche
 
@@ -2238,7 +2238,7 @@ Importé par :
 
 gestes-admin · outil-foodtruck · reglage-comptoir · reglage-foodtrucks
 
-### `modules/outil-dessin.mjs` — 938 l. → plan-admin
+### `modules/outil-dessin.mjs` — 943 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
@@ -2332,13 +2332,13 @@ Importé par :
 
 recherche · tiroirs
 
-### `modules/parcours-recu.mjs` — 140 l. → plan, plan-admin
+### `modules/parcours-recu.mjs` — 145 l. → plan, plan-admin
 
 - l.1 · Le parcours reçu
 
 Fonctions :
 
-`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 138
+`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 143
 
 Importe :
 
@@ -2430,16 +2430,16 @@ Importé par :
 
 libelles
 
-### `modules/placement-libelles.mjs` — 234 l. → plan-admin
+### `modules/placement-libelles.mjs` — 240 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
-`lacheLibelle` 43 · `choisi` 52 · `repeint` 65 · `posePlacement` 75
-`libelleAutomatique` 97 · `modePlacementLibelles` 106 · `majPaletteLibelle` 125
-`choisitLibelle` 150 · `pousseLibelle` 157 · `libellePointerDown` 165
-`libellePointerMove` 187 · `libellePointerUp` 196 · `branchePlacementLibelles` 209
+`lacheLibelle` 43 · `choisi` 57 · `repeint` 70 · `posePlacement` 80
+`libelleAutomatique` 102 · `modePlacementLibelles` 111 · `majPaletteLibelle` 130
+`choisitLibelle` 155 · `pousseLibelle` 162 · `libellePointerDown` 170
+`libellePointerMove` 192 · `libellePointerUp` 202 · `branchePlacementLibelles` 215
 
 Importe :
 
@@ -2521,7 +2521,7 @@ Injections :
 
 - `injecteAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
-### `modules/provenance.mjs` — 164 l. → console
+### `modules/provenance.mjs` — 168 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
 - l.19 · Provenance des données
@@ -2529,7 +2529,7 @@ Injections :
 Fonctions :
 
 `fournisseurUtilise` 86 · `sourceNom` 96 · `source` 100 · `ligneSource` 104
-`resumeProvenance` 127 · `ouvreProvenance` 148
+`resumeProvenance` 131 · `ouvreProvenance` 152
 
 Importe :
 
@@ -2556,7 +2556,7 @@ Importé par :
 
 affiche-ici · partage · plan
 
-### `modules/rappels.mjs` — 540 l. → plan, plan-admin
+### `modules/rappels.mjs` — 546 l. → plan, plan-admin
 
 - l.1 · Le rappel avant une conférence
 
@@ -2565,9 +2565,9 @@ Fonctions :
 `reglageRappel` 87 · `rappelsVoulus` 88 · `minutesRappel` 89 · `cleRappels` 103
 `chargeRappels` 106 · `retientRappels` 110 · `rappelsOfferts` 121 · `instantAbsolu` 151
 `confsARappeler` 159 · `rappelsDuParcours` 176 · `synchroniseRappels` 214
-`eteintRappels` 237 · `allumeRappels` 252 · `aideRappel` 269 · `poseRappels` 285
-`cleInviteRappel` 406 · `inviteRappelFaite` 409 · `retientInviteRappel` 414
-`fenetreRappel` 450 · `proposeRappels` 486 · `reprendRappels` 529
+`eteintRappels` 240 · `allumeRappels` 258 · `aideRappel` 275 · `poseRappels` 291
+`cleInviteRappel` 412 · `inviteRappelFaite` 415 · `retientInviteRappel` 420
+`fenetreRappel` 456 · `proposeRappels` 492 · `reprendRappels` 535
 
 Importe :
 
@@ -2578,7 +2578,7 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 720 l. → rapport
+### `modules/rapport-utilisation.mjs` — 725 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
@@ -2588,8 +2588,8 @@ Fonctions :
 `secondes` 127 · `fini` 128 · `lentes` 129 · `pese` 140 · `reunit` 150 · `ligne` 164
 `sousTitre` 174 · `jourDuSalon` 184 · `performances` 198 · `erreurs` 295 · `chiffre` 318
 `barres` 337 · `portes` 377 · `jours` 428 · `dessineRapport` 449 · `blocPerformances` 619
-`dessineBarre` 631 · `rafraichit` 654 · `videEcran` 673 · `demarre` 679
-`brancheRapport` 698
+`dessineBarre` 631 · `rafraichit` 658 · `videEcran` 678 · `demarre` 684
+`brancheRapport` 703
 
 Éléments :
 
@@ -2655,7 +2655,7 @@ apercus · apparence · borne · demarrage · fiche · fiche-zone · gestes · i
 lancement · reglage-fiche · reglage-recherche · reglage-suggestion · rendu
 reprise-emplacements · suggestion · volets
 
-### `modules/reglage-application.mjs` — 315 l. → plan-admin
+### `modules/reglage-application.mjs` — 321 l. → plan-admin
 
 - l.1 · L'application installée — son icône et son nom, le réglage de l'exploitant
 
@@ -2687,7 +2687,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 648 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 657 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
@@ -2802,14 +2802,14 @@ Importé par :
 
 reglages
 
-### `modules/reglages.mjs` — 508 l. → plan-admin
+### `modules/reglages.mjs` — 517 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 383
-`voletPlan` 401 · `voletCoexposants` 440
+`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 392
+`voletPlan` 410 · `voletCoexposants` 449
 
 Importe :
 
@@ -2840,7 +2840,7 @@ Importé par :
 
 plan
 
-### `modules/rendu.mjs` — 255 l. → plan, plan-admin
+### `modules/rendu.mjs` — 259 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
@@ -2848,7 +2848,7 @@ Fonctions :
 
 `monteHabillage` 65 · `attributComptoir` 82 · `texteCamions` 91 · `attributCamions` 94
 `attributEstrade` 100 · `baliseZone` 117 · `baliseStand` 138 · `montePlan` 148
-`onglets` 180 · `chargeFond` 210 · `changePlan` 242
+`onglets` 180 · `chargeFond` 214 · `changePlan` 246
 
 Importe :
 
@@ -2859,8 +2859,9 @@ vous-etes-ici · vue
 
 Importé par :
 
-bande-admin · borne · calage-carte · demarrage · fiche · journee · nappe · outil-dessin
-points-interet · reglage-foodtrucks · reprise-emplacements · tiroir-itineraire · tutoriel
+bande-admin · batiments · borne · calage-carte · demarrage · fiche · journee · nappe
+outil-dessin · points-interet · reglage-foodtrucks · reprise-emplacements
+tiroir-itineraire · tutoriel
 
 ### `modules/reperes.mjs` — 447 l. → plan, plan-admin
 
@@ -3015,14 +3016,14 @@ Importé par :
 
 journee · tiroir-itineraire
 
-### `modules/session.mjs` — 164 l. → plan-admin, console, rapport, motdepasse
+### `modules/session.mjs` — 176 l. → plan-admin, console, rapport, motdepasse
 
 - l.1 · La session de l'exploitant, et l'appel à la base
 
 Fonctions :
 
-`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 92
-`stockage` 102 · `appelle` 106 · `initialesDe` 159
+`accesBase` 15 · `contenuJeton` 42 · `resteJeton` 52 · `echangeSession` 68 · `base` 104
+`stockage` 114 · `appelle` 118 · `initialesDe` 171
 
 Importé par :
 
@@ -3046,15 +3047,15 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/socle-console.mjs` — 403 l. → console, rapport
+### `modules/socle-console.mjs` — 409 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
 `poseSession` 40 · `entetes` 63 · `renouvelle` 72 · `appel` 91 · `rest` 106
-`ecranConfig` 125 · `ecranConnexion` 157 · `deconnecte` 223 · `signale` 238 · `bloc` 262
-`grille` 280 · `idCompte` 297 · `themeSombre` 306 · `premierEcran` 324 · `brancheSocle` 339
+`ecranConfig` 131 · `ecranConnexion` 163 · `deconnecte` 229 · `signale` 244 · `bloc` 268
+`grille` 286 · `idCompte` 303 · `themeSombre` 312 · `premierEcran` 330 · `brancheSocle` 345
 
 Importe :
 
@@ -3170,14 +3171,14 @@ Importé par :
 corps-fiche · fiche · fiche-zone · index-salon · plan · recherche · reglage-foodtrucks
 sponsor · vignettes · webgl
 
-### `modules/synchronisation.mjs` — 297 l. → console
+### `modules/synchronisation.mjs` — 299 l. → console
 
 - l.1 · Synchronisation d'un salon — lancement, suivi, vignettes des logos
 
 Fonctions :
 
 `brancheSynchronisation` 44 · `etapesPressenties` 62 · `synchronise` 83
-`fabriqueLesVignettes` 187 · `oublieLePlan` 282 · `envoieVignettes` 290
+`fabriqueLesVignettes` 189 · `oublieLePlan` 284 · `envoieVignettes` 292
 
 Importe :
 
@@ -3248,29 +3249,30 @@ Importé par :
 
 affiche-ici · apercus · cartouche-poi · classeur · corps-fiche · dessin · distinctions
 ecran-console · edition · emplacements · environs · fiche · fiche-detail · fiche-zone
-filtre · fuseau · gestes · index-salon · libelles · nom-emplacement · outil-dessin
+filtre · fuseau · gestes · ici · index-salon · libelles · nom-emplacement · outil-dessin
 parcours · pile · points-interet · qr · rapport-utilisation · recherche · reglage-fiche
 reglage-suggestion · rendu · secteurs · socle-dessin · suggestion · sur · texte-plan
 trajet
 
-### `modules/tiroir-itineraire.mjs` — 695 l. → plan, plan-admin
+### `modules/tiroir-itineraire.mjs` — 708 l. → plan, plan-admin
 
 - l.1 · Itinéraire — le tiroir et la visée
 
 Fonctions :
 
-`calculeRoute` 73 · `champIti` 91 · `fermeSugg` 95 · `montreSugg` 102 · `choisitPoint` 136
-`valideSaisie` 145 · `effaceItineraire` 157 · `relance` 186 · `montreResultat` 230
-`majRappelRoute` 248 · `ecritResultat` 259 · `poseVisee` 403 · `injecteVisee` 416
-`suitLaVisee` 418 · `bandeauVisee` 420 · `armeVisee` 443 · `finVisee` 461
-`viseItineraire` 477 · `visePoi` 483 · `visePoint` 489 · `ouvreItineraire` 517
-`fermeItineraire` 552 · `quitteItineraire` 569 · `versItineraire` 576
-`versItineraireDe` 579 · `brancheTiroirItineraire` 606
+`calculeRoute` 74 · `champIti` 92 · `fermeSugg` 96 · `montreSugg` 103 · `choisitPoint` 137
+`valideSaisie` 146 · `effaceItineraire` 158 · `relance` 196 · `montreResultat` 242
+`majRappelRoute` 260 · `ecritResultat` 271 · `poseVisee` 415 · `injecteVisee` 428
+`suitLaVisee` 430 · `bandeauVisee` 432 · `armeVisee` 455 · `finVisee` 473
+`viseItineraire` 489 · `visePoi` 495 · `visePoint` 501 · `ouvreItineraire` 529
+`fermeItineraire` 564 · `quitteItineraire` 581 · `versItineraire` 588
+`versItineraireDe` 591 · `brancheTiroirItineraire` 618
 
 Importe :
 
-calques-dessin · configuration · dom · donnees · ecran · forme-choisie · itineraire · mesure
-parcours · rendu · sejour · tiroirs-exclusifs · trace-itineraire · vous-etes-ici
+calques-dessin · configuration · dom · donnees · ecran · evenement · forme-choisie
+itineraire · mesure · parcours · rendu · sejour · tiroirs-exclusifs · trace-itineraire
+vous-etes-ici
 
 Importé par :
 
@@ -3281,7 +3283,7 @@ Injections :
 
 - `injecteVisee` (registre) — la borne et le code « Vous êtes ici » y inscrivent leur propre visée ; la page publique n'a pas la seconde
 
-### `modules/tiroir-parcours.mjs` — 298 l. → plan, plan-admin
+### `modules/tiroir-parcours.mjs` — 300 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite — le geste et le tiroir
 
@@ -3462,14 +3464,14 @@ Importé par :
 
 itineraire · itineraire
 
-### `modules/troncon.mjs` — 359 l. → plan, plan-admin
+### `modules/troncon.mjs` — 363 l. → plan, plan-admin
 
 - l.1 · Le tronçon — d'un point à un autre dans un même pavillon
 
 Fonctions :
 
-`oublieFaces` 32 · `facesLibres` 34 · `amorce` 131 · `faceDeSortie` 166 · `raccordTient` 212
-`accesDe` 242 · `couplesAcces` 294 · `troncon` 327
+`oublieFaces` 32 · `facesLibres` 34 · `amorce` 135 · `faceDeSortie` 170 · `raccordTient` 216
+`accesDe` 246 · `couplesAcces` 298 · `troncon` 331
 
 Importe :
 
@@ -3563,14 +3565,14 @@ Importé par :
 
 reglages
 
-### `modules/vous-etes-ici.mjs` — 138 l. → plan, plan-admin
+### `modules/vous-etes-ici.mjs` — 144 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le départ imposé, et son point sur le plan
 
 Fonctions :
 
 `pointBorne` 27 · `poseLieuBorne` 32 · `ecritDepartBorne` 42 · `rayonBorne` 54
-`dessineBorne` 59 · `placePouls` 89 · `rafraichitBorne` 116 · `rempliBorne` 121
+`dessineBorne` 59 · `placePouls` 89 · `rafraichitBorne` 122 · `rempliBorne` 127
 
 Importe :
 
@@ -3702,9 +3704,9 @@ Injections :
 `valeursDe` 337 · `cibleEn` 380 · `champsPerso` 397 · `cibles` 423 · `separeValeurs` 453
 `noteValeurs` 491 · `valeursRelevees` 512 · `valeurPerso` 535
 
-### `supabase/functions/_partage/eventmaker.ts` — 1208 l.
+### `supabase/functions/_partage/eventmaker.ts` — 1217 l.
 
-`grapheJson` 233 · `enParallele` 1016 · `texteSeul` 1036 · `champs` 1173
+`grapheJson` 233 · `enParallele` 1025 · `texteSeul` 1045 · `champs` 1182
 
 ### `supabase/functions/_partage/gaia.ts` — 305 l.
 
@@ -3723,7 +3725,7 @@ Injections :
 
 `programmeSaisi` 52
 
-### `supabase/functions/_partage/push.ts` — 256 l.
+### `supabase/functions/_partage/push.ts` — 260 l.
 
 `octets` 49 · `base64url` 57 · `colle` 63 · `texte` 71 · `cleDeSignature` 83
 `jetonVapid` 105 · `derive` 131 · `chiffre` 145 · `destinationPermise` 199 · `pousse` 223
@@ -3745,7 +3747,7 @@ Injections :
 
 `cleDeVignette` 28
 
-### `supabase/functions/comptes/index.ts` — 263 l.
+### `supabase/functions/comptes/index.ts` — 269 l.
 
 `cors` 39 · `service` 49 · `retourValide` 68
 
@@ -3757,12 +3759,12 @@ Injections :
 
 `jeton` 57 · `client` 60 · `json` 67
 
-### `supabase/functions/plan-public/index.ts` — 1190 l.
+### `supabase/functions/plan-public/index.ts` — 1195 l.
 
 `cors` 53 · `db` 87 · `service` 102 · `vignettesParAdresse` 124 · `avecVignette` 178
 `rendVignette` 222 · `rendGrande` 249 · `rendVignettes` 341 · `lu` 384 · `salon` 394
-`appDuSalon` 420 · `rendIconeApp` 451 · `retraits` 559 · `ampute` 586 · `masquesDe` 629
-`masquesDuPlan` 649
+`appDuSalon` 420 · `rendIconeApp` 451 · `retraits` 563 · `ampute` 590 · `masquesDe` 633
+`masquesDuPlan` 653
 
 ### `supabase/functions/rappels/index.ts` — 236 l.
 
@@ -3775,7 +3777,7 @@ Injections :
 `enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1911 · `nettoieUrl` 1939
 `groupeTextes` 1949
 
-### `supabase/functions/vignettes/index.ts` — 253 l.
+### `supabase/functions/vignettes/index.ts` — 258 l.
 
 `cors` 27 · `service` 43 · `adressesDeLogos` 52 · `adressesDuSalon` 77
 
@@ -3855,7 +3857,7 @@ Injections :
 
 - `src/index.mjs` — 126 l. · Worker Cloudflare : sert les pages, relaie les lectures du plan et les mesures d'utilisation.
   `surete` 67 · `aiguille` 85
-- `src/application.mjs` — 292 l. · L'application installée d'un salon : son adresse propre (`/plan-<salon>`), son manifeste et son icône.
+- `src/application.mjs` — 295 l. · L'application installée d'un salon : son adresse propre (`/plan-<salon>`), son manifeste et son icône.
   `cleApp` 26 · `cheminDuSalon` 57 · `pageDuSalon` 74 · `appDuSalon` 98 · `iconesDuSalon` 144 `manifeste` 184 · `iconeApp` 274
 - `src/carte.mjs` — 82 l. · Ramener une position du script minifié à sa source.
   `nombres` 23 · `lisCarte` 43 · `source` 68
