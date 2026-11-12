@@ -25,7 +25,7 @@
 
    Ce module dit quoi peindre ; le moteur du plan (`moteur-gl.mjs`) le peint,
    ou deck.gl, son recours (`?moteur=deck`), qui parle la même langue — voir
-   `MOTEUR`.
+   `moteurVoulu`.
 
    Ce module lit la vue, le SVG et son cadre dans `vue-etat.mjs` ; le reste,
    les modules qui l'importent le lui confient en se chargeant
@@ -48,6 +48,7 @@ import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.
 import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
+import { signaleErreur } from "./erreurs.mjs";
 import { imageSure } from "./sur.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { pixelsDuDessin } from "./densite-rendu.mjs";
@@ -90,12 +91,19 @@ export const RENDU_WEBGL = RENDU_DEMANDE !== "svg";
    reçoit sous le même nom, `deck` : rien ici ne dépend de celui qui dessine.
 
    Le moteur du plan peint par défaut. deck.gl reste le recours en cas de
-   souci : « ?moteur=deck » le charge, comme avant, depuis
-   `web/bibliotheques/`. Le moteur du plan, lui, voyage dans le script du
-   plan, et n'a rien à télécharger. */
+   souci, chargé à la demande depuis `web/bibliotheques/` :
+   - pour tout un salon, par l'exploitant (Réglages › Apparence, « Dessiner
+     avec l'ancien moteur ») : un réglage du salon, `_rendu.moteur`, que ses
+     visiteurs reçoivent avec ses données, au chargement suivant ;
+   - pour soi seul, par « ?moteur=deck » — ou « ?moteur=gl2 » pour essayer le
+     moteur du plan sur un salon qui l'a écarté. L'adresse l'emporte. */
 const MOTEUR_DEMANDE = new URLSearchParams(location.search).get("moteur");
-/** Le moteur qui peint le plan : « gl2 », celui du plan, ou « deck », deck.gl. */
-export const MOTEUR = MOTEUR_DEMANDE === "deck" ? "deck" : "gl2";
+/** Le moteur que demandent l'adresse, puis le salon : « gl2 », celui du plan, ou « deck », deck.gl.
+ *  Le réglage du salon n'est connu qu'avec ses données. */
+export function moteurVoulu(){
+  if (MOTEUR_DEMANDE === "deck" || MOTEUR_DEMANDE === "gl2") return MOTEUR_DEMANDE;
+  return CONF._rendu && CONF._rendu.moteur === "deck" && !GL.deckIndisponible ? "deck" : "gl2";
+}
 /** Les classes du moteur qui peint — celles de deck.gl, ou leurs pareilles du moteur du plan. Rien avant son arrivée. */
 /** @type {any} */
 let deck = null;
@@ -196,8 +204,10 @@ export const IMAGE_DECK = creeEvenement();
 export const TOILE_PRETE = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
-  /** le moteur qui peint — « gl2 » ou « deck » (`MOTEUR`) ; rien tant que le dessin n'est pas demandé */
+  /** le moteur qui peint — « gl2 » ou « deck » (`moteurVoulu`) ; rien tant que le dessin n'est pas demandé */
   moteur: "",
+  // deck.gl demandé par le salon, et attendu ; ou qui n'a pas pu se charger : le moteur du plan le remplace
+  attenteDeck: false, deckIndisponible: false,
   // pourquoi le dessin n'a pas été demandé, quand le navigateur l'avait (`chargeWebgl`)
   repli: "",
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -278,18 +288,40 @@ function chargeWebgl(){
     secours();
   };
   setTimeout(echeance, 4000);
-  GL.moteur = MOTEUR;
-  if (MOTEUR === "gl2"){
-    // rien à télécharger : le moteur est déjà là, et monte à la tâche suivante, comme une bibliothèque arrivée
-    deck = MOTEUR_GL;
-    setTimeout(() => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); }, 0);
+  if (MOTEUR_DEMANDE === "deck"){
+    chargeDeck(() => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); },
+      () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); });
     return;
   }
+  /* Rien à télécharger : le moteur du plan est déjà là, et monte à la tâche
+     suivante, comme une bibliothèque arrivée. Le salon peut encore demander
+     deck.gl : on le saura avec ses données (`monteWebgl`). */
+  deck = MOTEUR_GL; GL.moteur = "gl2";
+  setTimeout(() => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); }, 0);
+}
+
+/** deck.gl, chargé à la demande : le recours. */
+function chargeDeck(/** @type {() => void} */ arrive, /** @type {() => void} */ rate){
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
-  s.onload = () => { deck = /** @type {any} */ (window).deck; GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); };
-  s.onerror = () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); };
+  s.onload = () => { deck = /** @type {any} */ (window).deck; GL.moteur = "deck"; arrive(); };
+  s.onerror = rate;
   document.head.appendChild(s);
+}
+
+/* Les ratés du dessin remontent au relais des erreurs (`erreurs.mjs`) : une
+   couche qui ne se peint pas, un programme refusé laissaient un plan
+   incomplet que seule la console voyait. Une fois chacun : un raté qui se
+   répète à chaque image ne doit pas épuiser à lui seul le plafond du relais. */
+const RATES_DITS = new Set();
+function signaleRate(/** @type {any} */ e){
+  const m = (GL.moteur === "deck" ? "deck.gl : " : "Moteur du plan : ") + (e && e.message ? e.message : String(e));
+  console.warn("Rendu WebGL :", m);
+  if (RATES_DITS.has(m)) return;
+  RATES_DITS.add(m);
+  const x = new Error(m);
+  if (e && e.stack) x.stack = e.stack;
+  signaleErreur(x);
 }
 
 /* ------------------------------------------------------------
@@ -405,6 +437,21 @@ export function monteWebgl(){
      vue repasse par ici à chaque geste, et remonterait le dessin sur-le-champ
      — sur la mémoire qui vient justement de manquer. */
   if (GL.aRemonter || GL.attente || GL.abandon) return;
+  /* Le salon demande deck.gl (Réglages › Apparence) : son réglage n'est connu
+     qu'avec ses données, c'est-à-dire ici. La bibliothèque se charge, puis le
+     dessin monte avec elle ; si elle ne vient pas, le moteur du plan le fait. */
+  if (moteurVoulu() === "deck" && GL.moteur !== "deck"){
+    if (!GL.attenteDeck){
+      GL.attenteDeck = true;
+      finisChauffe();
+      chargeDeck(() => { GL.attenteDeck = false; monteWebgl(); }, () => {
+        GL.attenteDeck = false; GL.deckIndisponible = true;
+        signaleRate(new Error("deck.gl demandé par le salon, introuvable : le moteur du plan le remplace"));
+        monteWebgl();
+      });
+    }
+    return;
+  }
   // la toile de la préparation cède la place : deux contextes ne se disputent pas la carte graphique
   finisChauffe();
   const hote = document.createElement("div");
@@ -428,7 +475,7 @@ export function monteWebgl(){
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
-    onError: e => console.warn("Rendu WebGL :", e && e.message),
+    onError: signaleRate,
     // ses comptes, lus avant qu'il ne les remette à zéro : `stats` est scellé, rien ne s'y greffe
     _onMetrics: (/** @type {any} */ m) => COMPTES_DECK.emet(m),
     /* La toile ne naît qu'avec la carte graphique, que la bibliothèque
@@ -1238,7 +1285,9 @@ const largeurLisere = (/** @type {number} */ em) => Math.min(.9 * RAYON_SDF, em 
 
 let CONST_TEXTE = null;
 function constTexte(){
-  if (CONST_TEXTE) return CONST_TEXTE;
+  /* Faites pour le moteur qui les a vues naître : la toile jetable de l'attente
+     les fait avec le moteur du plan, et le salon peut ensuite demander deck.gl. */
+  if (CONST_TEXTE && CONST_TEXTE.pour === deck) return CONST_TEXTE;
   /* Le choix de l'atlas passe en réglage — 0 pour ce qui n'en a pas, 1 pour
      les petits textes, 2 pour les grands — et non en variante du shader :
      chaque variante est un programme que la carte graphique prépare avant la
@@ -1407,6 +1456,7 @@ function constTexte(){
      régénérer l'atlas des polices et recompiler ses shaders. */
   const textes = [new FiltreZoom(), new LissageSdf()];
   return (CONST_TEXTE = {
+    pour: deck,
     /* Quatre points de marge autour de chaque glyphe, et non deux : dans les
        réductions de l'atlas où lisent les petits textes, deux points n'en
        valaient plus qu'un demi, et la lettre d'à côté s'invitait. */

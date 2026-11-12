@@ -124,6 +124,8 @@ module.exports = [
   "@mapbox/tiny-sdf",
   // une extension WebGL que le moteur demande à la carte graphique
   "EXT_texture_filter_anisotropic",
+  // les ratés du moteur, que le relais des erreurs reçoit et que personne ne lit à l'écran
+  "la couche « ", " » n'a pas pu se préparer : ", " » n'a pas pu se peindre : ", "programme refusé — ",
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",

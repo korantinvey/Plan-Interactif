@@ -196,6 +196,12 @@ module.exports = {
   "Des silhouettes de visiteurs, semées dans les allées pour donner l'échelle et la vie du salon. Elles ne disent rien de la fréquentation réelle.":
     "Visitor figures scattered in the aisles to give a sense of scale and a lively show. They say nothing about actual attendance.",
   "Noms des exposants à plat sur les stands": "Exhibitor names flat on the stands",
+  "Dessiner avec l'ancien moteur (deck.gl)": "Draw with the former engine (deck.gl)",
+  "Le recours si le plan s'affiche mal chez des visiteurs. Prend effet au prochain chargement du plan.":
+    "The fallback if the map displays badly for visitors. Takes effect the next time the map loads.",
+  "En ce moment, le plan est dessiné en SVG.": "The map is currently drawn as SVG.",
+  "En ce moment, le plan est dessiné par deck.gl.": "The map is currently drawn by deck.gl.",
+  "En ce moment, le plan est dessiné par le moteur du plan.": "The map is currently drawn by the map's own engine.",
   "Le nom est imprimé sur le toit du stand, comme un logo, au lieu de se dresser face à vous.":
     "The name is printed on the stand's roof, like a logo, instead of standing up to face you.",
   "Quand on s'approche, le logo se pose sur le stand, à la place de son nom. Les exposants dont le logo n'est pas connu gardent leur nom.":

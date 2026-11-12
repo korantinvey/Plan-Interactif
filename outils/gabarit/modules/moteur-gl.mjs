@@ -267,8 +267,7 @@ export class Deck {
         this.couches.set(c.id, c);
         ordre.push(c);
       } catch (e){
-        console.warn("Moteur du plan : la couche « " + c.id + " » n'a pas pu se préparer.", e);
-        if (this.props.onError) this.props.onError(e);
+        this._rate(new Error("la couche « " + c.id + " » n'a pas pu se préparer : " + (/** @type {any} */ (e).message || e)));
       }
     }
     for (const [id, c] of this.couches) if (!vues.has(id)){ try { c.detruit(); } catch (e) { /* déjà défaite */ } this.couches.delete(id); }
@@ -315,10 +314,20 @@ export class Deck {
     return tous || performance.now() - this.debutProgrammes > ATTENTE_PROGRAMMES;
   }
 
+  /** Un raté du dessin, dit à qui a créé le moteur (`onError`) — une fois par raté. */
+  _rate(/** @type {any} */ e){
+    const m = e && e.message ? e.message : String(e);
+    const dits = this._rates || (this._rates = new Set());
+    if (dits.has(m)) return;
+    dits.add(m);
+    if (this.props.onError) this.props.onError(e);
+  }
+
   /** Peint une couche : ses réglages, ses extensions, son programme. */
   _peins(/** @type {any} */ ctx, /** @type {any} */ c, /** @type {number} */ rang){
     const gl = ctx.gl, p = c.props;
     const prog = this.programmes.get(c.constructor.programme().nom);
+    if (prog && prog.erreur && !ctx.chauffe) this._rate(new Error("programme refusé — " + prog.erreur));
     if (!prog || !prog.lie || prog.erreur) return false;
     // les extensions règlent ce que les shaders liront (`setShaderModuleProps`)
     for (const e of p.extensions || []) if (e && typeof e.draw === "function"){
@@ -382,7 +391,7 @@ export class Deck {
     let n = 0;
     for (const c of couches){
       try { if (this._peins(ctx, c, 0)) n++; }
-      catch (e){ console.warn("Moteur du plan : la couche « " + c.id + " » n'a pas pu se peindre.", e); }
+      catch (e){ this._rate(new Error("la couche « " + c.id + " » n'a pas pu se peindre : " + (/** @type {any} */ (e).message || e))); }
     }
     gl.bindVertexArray(null);
     gl.colorMask(true, true, true, true);
@@ -420,6 +429,7 @@ export class Deck {
     gl.enable(gl.SCISSOR_TEST);
     gl.scissor(0, 0, 1, 1);
     gl.enable(gl.DEPTH_TEST);
+    ctx.chauffe = true;
     for (const c of couchesDeChauffe()){
       try { c.prepare(ctx, null); this._peins(ctx, c, 0); }
       catch (e) { /* une sorte qui ne chauffe pas : elle se traduira à son premier dessin, comme avant */ }
