@@ -920,7 +920,42 @@ function assembleWebgl(enMouvement = false){
     out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
   demandeChauffeLogos(out);
-  return parEtapes(out);
+  return parEtapes(reunisVolumes(out));
+}
+
+/**
+ * Les grandes couches des volumes de chaque bloc — les zones, les stands —
+ * réunies en une seule, à la place de la première.
+ *
+ * Chaque couche coûte à la bibliothèque une à deux millisecondes par image
+ * sur un téléphone d'entrée de gamme, quelle que soit sa taille, et ces
+ * téléphones passaient vingt-cinq millisecondes par image de geste (sonde, 29
+ * octobre au 12 novembre 2026). Les blocs gardent leurs couches à eux — un
+ * stand choisi ne reconvertit que le sien, et sa montée les relit
+ * (`masqueVolumes`) ; la réunion se fait à l'assemblage, et ne coûte qu'une
+ * liste mise bout à bout : les formes, comparées une à une (`memesFormes`),
+ * ne se retriangulent pas, et seul ce qui a changé dans l'une des couches —
+ * couleurs, hauteurs — se recalcule.
+ *
+ * L'ordre ne change rien à l'image : les volumes se départagent à la
+ * profondeur, et ce qui est à plat entre eux s'y mesure sans l'écrire
+ * (`aPlat`) — peint avant ou après un stand, le sol qu'il couvre reste caché.
+ * Les copies d'un volume en mouvement, le survol et le focus gardent leurs
+ * couches.
+ * @param {any[]} out
+ */
+function reunisVolumes(out){
+  const rangs = [];
+  out.forEach((c, i) => { if (c && /-volumes-0$/.test(c.id) && c.props.extruded && Array.isArray(c.props.data)) rangs.push(i); });
+  if (rangs.length < 2) return out;
+  const couches = rangs.map(i => out[i]);
+  const partis = new Set(couches.flatMap(c => [...(c.props.partis || [])]));
+  const signe = (/** @type {string} */ k) => couches.map(c => (c.props.updateTriggers || {})[k] || "").join("/");
+  out[rangs[0]] = couches[0].clone({ id: "reunis-volumes-0", data: couches.flatMap(c => c.props.data), partis,
+    getElevation: (/** @type {any} */ d) => partis.has(d.el) ? 0 : d.haut,
+    updateTriggers: { getFillColor: signe("getFillColor"), getElevation: signe("getElevation") } });
+  const retires = new Set(rangs.slice(1));
+  return out.filter((_, i) => !retires.has(i));
 }
 
 /* ------------------------------------------------------------
