@@ -71,4 +71,38 @@ async function attendLaListe(page) {
   return lignes;
 }
 
-module.exports = { prepare, attendLaListe, DONNEES, PREMIER };
+/* Les deux empreintes d'intégrité de MapLibre, relues là où la page les tient
+   (`modules/environs.mjs` `MAPLIBRE`) : jamais recopiées, elles changent à
+   chaque `npm run maplibre`. */
+const ENVIRONS = fs.readFileSync(path.join(__dirname, "..", "..", "gabarit", "modules", "environs.mjs"), "utf8");
+const EMPREINTES_MAPLIBRE = ["integriteScript", "integriteStyle"].map((cle) => {
+  const m = ENVIRONS.match(new RegExp(cle + ': "(sha384-[^"]+)"'));
+  if (!m) throw new Error("environs.mjs : " + cle + " introuvable dans MAPLIBRE");
+  return m[1];
+});
+
+/**
+ * Remplace MapLibre par ce que rend `reponse` — une carte muette, une carte
+ * qui gèle, une carte qui refuse sa vue.
+ *
+ * La page charge la bibliothèque avec son empreinte d'intégrité, et c'est bien
+ * ce qui doit refuser un fichier qui n'est pas le vrai : la doublure de l'essai
+ * serait refusée de même. On n'efface donc que ces deux empreintes-là, et dans
+ * cette page seulement ; celles du lecteur de QR et de l'encodeur AVIF restent
+ * vérifiées. Que les vraies correspondent aux fichiers servis, c'est
+ * `outils/essais/bibliotheques.js` qui le garde.
+ */
+async function remplaceMapLibre(page, reponse) {
+  await page.addInitScript((empreintes) => {
+    for (const Element of [HTMLScriptElement, HTMLLinkElement]) {
+      const d = Object.getOwnPropertyDescriptor(Element.prototype, "integrity");
+      Object.defineProperty(Element.prototype, "integrity", {
+        ...d,
+        set(v) { if (!empreintes.includes(v)) d.set.call(this, v); },
+      });
+    }
+  }, EMPREINTES_MAPLIBRE);
+  await page.route("**/bibliotheques/maplibre-gl-*", reponse);
+}
+
+module.exports = { prepare, attendLaListe, remplaceMapLibre, DONNEES, PREMIER };

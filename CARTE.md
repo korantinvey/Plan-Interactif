@@ -1090,7 +1090,7 @@ Importé par :
 
 bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
 
-### `modules/environs.mjs` — 1334 l. → plan, plan-admin
+### `modules/environs.mjs` — 1343 l. → plan, plan-admin
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -1100,13 +1100,13 @@ Fonctions :
 `calagePose` 240 · `calageCourant` 252 · `fondCourant` 255 · `recul` 260 · `zoneDuFond` 278
 `bornesDuFond` 287 · `borneLeStyle` 300 · `adresseTuile` 312 · `tuilesDeLaVue` 322
 `figeCourant` 398 · `figeAJour` 407 · `recaleFige` 446 · `videFige` 459 · `poseFige` 468
-`placeFigee` 567 · `chargeMapLibre` 619 · `vueGL` 651 · `vueGLValable` 674
-`styleDuFond` 690 · `styleDeLaCarte` 697 · `guetteLaCarte` 724 · `recaleCarteGL` 758
-`redessineCarteGL` 778 · `poseCarteGL` 808 · `diagnostiqueGL` 932 · `relanceCarteGL` 952
-`retireCarteGL` 966 · `guetteRetourGL` 993 · `carteGLPerdue` 1000 · `verifieCarteGL` 1010
-`videCarteGL` 1028 · `inclineFond` 1062 · `dessineFondCarte` 1111 · `cleMasqueCarte` 1245
-`masqueCarte` 1246 · `formesMasquantes` 1255 · `contourDuHall` 1277 · `cheminDuHall` 1284
-`poseMasqueCarte` 1302 · `ditCarte` 1317 · `refaitFondCarte` 1327
+`placeFigee` 567 · `chargeMapLibre` 626 · `vueGL` 660 · `vueGLValable` 683
+`styleDuFond` 699 · `styleDeLaCarte` 706 · `guetteLaCarte` 733 · `recaleCarteGL` 767
+`redessineCarteGL` 787 · `poseCarteGL` 817 · `diagnostiqueGL` 941 · `relanceCarteGL` 961
+`retireCarteGL` 975 · `guetteRetourGL` 1002 · `carteGLPerdue` 1009 · `verifieCarteGL` 1019
+`videCarteGL` 1037 · `inclineFond` 1071 · `dessineFondCarte` 1120 · `cleMasqueCarte` 1254
+`masqueCarte` 1255 · `formesMasquantes` 1264 · `contourDuHall` 1286 · `cheminDuHall` 1293
+`poseMasqueCarte` 1311 · `ditCarte` 1326 · `refaitFondCarte` 1336
 
 Importe :
 
