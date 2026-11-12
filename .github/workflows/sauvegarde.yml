@@ -19,11 +19,28 @@
 # supprimé ni une erreur vieille de trois semaines, et des données de production
 # n'ont rien à faire dans l'historique du dépôt.
 #
+# Il part chiffré. Le dépôt est public, et l'artefact d'un dépôt public se
+# télécharge par tout compte GitHub pendant ses quatre-vingt-dix jours : en
+# clair, c'étaient les profils, les droits et l'historique d'usage de tous les
+# salons, offerts à qui les cherchait. Le chiffrement est symétrique (gpg,
+# AES-256), sous la phrase du secret `SAUVEGARDE_PHRASE` ; sans elle, la tâche
+# échoue plutôt que de publier en clair. La phrase se garde aussi hors de
+# GitHub : c'est elle qui rouvre la sauvegarde le jour où GitHub manque.
+#
 # Le schéma, lui, n'est pas sauvegardé : il est dans `supabase/migrations/`,
 # rejouable, et c'est justement à quoi servent les migrations. Restaurer, c'est
 # donc appliquer les migrations sur une base neuve, puis y verser ce fichier :
 #
-#   gunzip -c donnees-AAAA-MM-JJ.sql.gz | psql "<chaîne de connexion>"
+#   gpg --decrypt --output donnees.sql.gz donnees-AAAA-MM-JJ.sql.gz.gpg &&
+#   gunzip --test donnees.sql.gz &&
+#   gunzip -c donnees.sql.gz |
+#     psql -v ON_ERROR_STOP=1 --single-transaction "<chaîne de connexion>"
+#
+# Le fichier se déchiffre et se vérifie en entier avant que rien n'entre en
+# base : un fichier tronqué rendrait sinon un début valide, que la transaction
+# aurait validé avant que la suite n'échoue. `ON_ERROR_STOP` arrête ensuite à
+# la première erreur SQL, et `--single-transaction` annule alors tout. Le
+# fichier déchiffré s'efface après usage.
 #
 # Les identifiants de connexion (schéma « auth ») restent chez Supabase : les
 # profils et les droits sont ici, les mots de passe non. Après un sinistre
@@ -42,6 +59,10 @@ on:
 concurrency:
   group: sauvegarde
   cancel-in-progress: false
+
+# Le jeton du dépôt n'écrit rien ici : il ne reçoit que la lecture.
+permissions:
+  contents: read
 
 jobs:
   sauvegarder:
@@ -97,10 +118,25 @@ jobs:
             { echo "::error::sauvegarde anormalement courte"; exit 1; }
           gzip -9 "$f"
 
+      # Le fichier en clair ne quitte jamais la machine : seul le chiffré est
+      # déposé. La phrase passe par un descripteur, jamais par la ligne de
+      # commande, que le journal pourrait montrer.
+      - name: Chiffrer la sauvegarde
+        env:
+          PHRASE: ${{ secrets.SAUVEGARDE_PHRASE }}
+        run: |
+          [ -n "$PHRASE" ] ||
+            { echo "::error::secret SAUVEGARDE_PHRASE absent : la sauvegarde ne part pas en clair"; exit 1; }
+          f="sauvegarde/donnees-${{ steps.jour.outputs.jour }}.sql.gz"
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+            --symmetric --cipher-algo AES256 --output "$f.gpg" "$f" 3<<<"$PHRASE"
+          shred -u "$f" 2>/dev/null || rm -f "$f"
+          ls -l sauvegarde/
+
       - uses: actions/upload-artifact@v4
         with:
           name: sauvegarde-${{ steps.jour.outputs.jour }}
-          path: sauvegarde/
+          path: sauvegarde/*.gpg
           # Le maximum que GitHub accorde. Au-delà, il faudrait un stockage à
           # soi — et une clé de plus à garder.
           retention-days: 90

@@ -189,6 +189,48 @@ export function marqueAttente(id, oui){
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 export const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 
+/**
+ * Des calques reçus d'ailleurs, ramenés à ce que le tracé sait écrire.
+ *
+ * Le dessin compose son SVG en concaténant les sommets d'une forme : un
+ * sommet qui n'est pas un nombre y entrerait tel quel, et ce qu'on sait écrire
+ * dans une valeur de la base — un organisateur, sur son salon — ou dans un
+ * fichier de sauvegarde deviendrait du balisage chez chaque visiteur, et chez
+ * l'administrateur qui ouvre ce salon. On ne garde donc que des sommets faits
+ * de deux nombres finis ; une forme qui n'en a pas ne se dessinerait de toute
+ * façon pas, elle s'écarte. Le reste du texte passe par `esc()` au tracé.
+ */
+export function calquesSurs(/** @type {any[]} */ liste){
+  /* Un nombre, ou une chaîne qui en écrit un ; rien d'autre ne se convertit —
+     un objet dont `valueOf` est nul fait lever `+v`, et c'est tout le chargement
+     qui s'arrêtait. */
+  const nombre = (/** @type {any} */ v) =>
+    typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? +v : NaN;
+  const sommet = (/** @type {any} */ s) => Array.isArray(s) && s.length >= 2 &&
+    Number.isFinite(nombre(s[0])) && Number.isFinite(nombre(s[1])) ? [nombre(s[0]), nombre(s[1])] : null;
+  return (Array.isArray(liste) ? liste : []).filter(c => c && typeof c === "object").map(c => ({
+    ...c,
+    formes: (Array.isArray(c.formes) ? c.formes : []).flatMap((/** @type {any} */ f) => {
+      if (!f || typeof f !== "object" || !Array.isArray(f.pts)) return [];
+      const pts = f.pts.map(sommet);
+      // un cadre se tient par deux coins, un trait par deux points : moins, le
+      // tracé lirait un sommet absent et s'arrêterait sur toute la page
+      if (pts.length < (SOMMETS_MIN[f.t] || 1) || !pts.every(Boolean)) return [];
+      const sure = { ...f, pts };
+      /* Les mesures d'une forme s'écrivent elles aussi dans le balisage : un
+         nombre ou rien — absente, chacune a sa valeur par défaut au tracé. */
+      for (const k of MESURES) {
+        if (!(k in sure)) continue;
+        if (Number.isFinite(nombre(sure[k]))) sure[k] = nombre(sure[k]);
+        else delete sure[k];
+      }
+      return [sure];
+    }),
+  }));
+}
+const SOMMETS_MIN = { rect: 2, image: 2, stand: 2, ligne: 2, poly: 2 };
+const MESURES = ["taille", "r", "ep", "rot"];
+
 export let calqueActif = null;   // id du calque en cours d'édition
 export let outil = "main";
 export let enCours = null;       // tracé en construction

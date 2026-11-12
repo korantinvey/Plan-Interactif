@@ -182,6 +182,28 @@ export type Cles = { publique: string; privee: string; sujet: string };
 
 export type Issue = { parti: boolean; statut: number; perime: boolean };
 
+/*
+ * Les services de poussée des navigateurs, seuls destinataires possibles.
+ *
+ * L'adresse d'un abonnement vient du visiteur, et le serveur la poste telle
+ * quelle : sans liste, n'importe quelle adresse https devenait une cible que la
+ * fonction appelait à la minute pour qui le demandait — un relais gratuit, et
+ * une porte vers ce que le réseau des fonctions sait atteindre. Un vrai
+ * abonnement ne vient que de l'un de ces services : Chrome, Edge et Android
+ * (Google, Microsoft), Firefox (Mozilla), Safari (Apple).
+ */
+const POUSSEE_HOTES = ["fcm.googleapis.com", "android.googleapis.com", "web.push.apple.com"];
+const POUSSEE_DOMAINES = [".notify.windows.com", ".push.services.mozilla.com", ".push.apple.com"];
+
+/** L'adresse est-elle celle d'un service de poussée connu ? */
+export function destinationPermise(adresse: string): boolean {
+  let u: URL;
+  try { u = new URL(adresse); } catch (_e) { return false; }
+  if (u.protocol !== "https:" || u.port !== "" || u.username || u.password) return false;
+  const h = u.hostname.toLowerCase();
+  return POUSSEE_HOTES.includes(h) || POUSSEE_DOMAINES.some((d) => h.endsWith(d));
+}
+
 /**
  * Poster un message, et dire ce qu'il en advient.
  *
@@ -204,6 +226,9 @@ export async function pousse(
   cles: Cles,
   vie: number,
 ): Promise<Issue> {
+  /* Les abonnements enregistrés avant la liste repassent ici : on ne poste
+     pas plus à un hôte inconnu qu'on ne l'enregistre. 404 le fait oublier. */
+  if (!destinationPermise(abonnement.endpoint)) return { parti: false, statut: 404, perime: true };
   const origine = new URL(abonnement.endpoint).origin;
   const publique = octets(cles.publique);
   const corps = await chiffre(
@@ -224,6 +249,8 @@ export async function pousse(
       "Urgency": "high",
     },
     body: corps,
+    // un service de poussée répond, il ne renvoie pas ailleurs
+    redirect: "manual",
   });
   return { parti: r.ok, statut: r.status, perime: r.status === 404 || r.status === 410 };
 }

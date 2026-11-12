@@ -64,6 +64,11 @@ globalThis.fetch = async (adresse) => {
     }
     return rend();
   }
+  // les salons de l'exploitant : fep26 est le sien, aucun autre
+  if (u.includes("/rest/v1/evenement")) {
+    return new Response(u.includes("slug=eq.fep26") ? '[{"id":"e1"}]' : "[]",
+      { status: 200, headers: { "Content-Type": "application/json" } });
+  }
   // la session de l'exploitant, et tout le reste
   return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
 };
@@ -127,6 +132,17 @@ const SESSION = { method: "POST", headers: { Authorization: "Bearer x", apikey: 
     const plan = e.CACHE.lis("v1?slug=fep26");
     dit(plan && plan.v === '{"plan":"v2"}' && plan.meta?.v === "v2",
       "le plan sans version est refait avec elle", plan && plan.v);
+  }
+
+  // — l'oubli d'un salon qui n'est pas le sien : refusé, rien n'est refait
+  {
+    const e = env();
+    const n = appelsPlan();
+    const { r, derriere } = await sert(e, "/api/oublie?slug=autre", SESSION);
+    await derriere();
+    dit(r.status === 403, "l'oubli d'un salon d'un autre est refusé", r.status);
+    dit(appelsPlan() === n && e.CACHE.ecritures === 0, "et rien n'est redemandé ni écrit",
+      (appelsPlan() - n) + " appel(s), " + e.CACHE.ecritures + " écriture(s)");
   }
 
   // — la base en panne : l'oubli efface, comme avant, plutôt que de taire la modification

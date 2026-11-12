@@ -18,6 +18,10 @@ concurrency:
   group: salon-demo
   cancel-in-progress: false
 
+# Le jeton du dépôt n'écrit rien ici : il ne reçoit que la lecture.
+permissions:
+  contents: read
+
 jobs:
   ecrire:
     runs-on: ubuntu-latest
