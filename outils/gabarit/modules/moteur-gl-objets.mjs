@@ -242,6 +242,7 @@ const ATTR_MAILLAGE = (/** @type {number[]} */ o) => ({
   a_icol: { accessor: "getColor", taille: 4, type: /** @type {"u8n"} */ ("u8n"), defaut: [0, 0, 0, 255] },
   a_case: { accessor: "getCaseLogo", taille: 4, type: /** @type {"f32"} */ ("f32"), defaut: [0, 0, 1, 1] },
   a_fig: { accessor: "getFigurant", taille: 4, type: /** @type {"f32"} */ ("f32"), defaut: [0, 0, 0, 0] },
+  a_allure: { accessor: "getAllure", taille: 1, type: /** @type {"f32"} */ ("f32"), defaut: [0] },
 });
 const GEO_MAILLAGE = ["a_p", "a_n", "a_col", "a_uv", "a_m0", "a_m1", "a_m2", "a_t", "a_objet"];
 const LISTE_MAILLAGE = numerote(GEO_MAILLAGE, ATTR_MAILLAGE([0, 0, 0]));
@@ -254,8 +255,10 @@ const TAILLE_PALETTE = 16;
 
 const VS_MAILLAGE = ENTETE_SOMMETS + `
 in vec3 a_p; in vec3 a_n; in vec3 a_col; in vec2 a_uv; in vec3 a_m0; in vec3 a_m1; in vec3 a_m2; in vec3 a_t; in float a_objet;
-in vec3 a_ipos; in vec4 a_icol; in vec4 a_case; in vec4 a_fig;
+in vec3 a_ipos; in vec4 a_icol; in vec4 a_case; in vec4 a_fig; in float a_allure;
 uniform float u_taille;
+uniform float u_parFormes;
+uniform highp sampler2D u_formes;
 uniform float u_cases;
 uniform float u_figurants;
 uniform vec3 u_palettes[80];
@@ -263,10 +266,18 @@ uniform vec2 u_fondu;
 out vec2 v_uv; out vec3 v_n; out vec3 v_p; out vec4 v_c; out float v_fondu;
 void main(){
   mat3 m = mat3(a_m0, a_m1, a_m2);
-  vec3 p = (m * a_p) * u_taille + a_t;
+  // les allures rangées en texture : le sommet, sa partie et sa normale, au rang que la carte dessine
+  vec3 sp = a_p, sn = a_n; float partie0 = a_col.r;
+  if (u_parFormes > 0.5){
+    ivec2 rang = ivec2(gl_VertexID, int(a_allure + 0.5) * 2);
+    vec4 f = texelFetch(u_formes, rang, 0);
+    sp = f.xyz; partie0 = f.w;
+    sn = texelFetch(u_formes, rang + ivec2(0, 1), 0).xyz;
+  }
+  vec3 p = (m * sp) * u_taille + a_t;
   vec4 w = u_modele * vec4(p + a_ipos, 1.0);
   v_p = w.xyz;
-  v_n = mat3(u_modele) * (m * a_n);
+  v_n = mat3(u_modele) * (m * sn);
   v_uv = a_uv;
   v_c = vec4(a_col * a_icol.rgb, a_icol.a);
   v_fondu = 1.0;
@@ -275,7 +286,7 @@ void main(){
     v_fondu = smoothstep(u_fondu.x, u_fondu.y, zoomVue());
   }
   if (u_figurants > 0.5){
-    int partie = int(a_col.r + 0.5);
+    int partie = int(partie0 + 0.5);
     int k = partie == 0 ? int(a_fig.x) : partie == 1 ? int(a_fig.w) : partie == 2 ? int(a_fig.x)
       : partie == 3 ? int(a_fig.y) : int(a_fig.z);
     v_c = vec4(u_palettes[clamp(partie, 0, 4) * 16 + clamp(k, 0, 15)], v_c.a);
@@ -319,6 +330,30 @@ function matriceExemplaire(/** @type {any} */ o, /** @type {any} */ s, /** @type
   return out;
 }
 
+/**
+ * La texture des allures, quand une couche en porte (`formes`, `webgl.mjs`
+ * `CoucheFigurants`) : toutes les allures des figurants dans une seule
+ * couche, chacun lisant la sienne au rang du sommet (`figurants.mjs`
+ * `formesEnTexture`). La couche de `webgl.mjs` réécrit le shader de deck.gl
+ * pour cela, que ce moteur n'emploie pas : il fait la même lecture dans le
+ * sien, sans quoi les figurants se dessineraient sur le maillage vide qui ne
+ * sert qu'à compter les sommets.
+ * @returns {any}
+ */
+function textureFormes(/** @type {WebGL2RenderingContext} */ gl, /** @type {any} */ f){
+  if (!f) return null;
+  const handle = /** @type {WebGLTexture} */ (gl.createTexture());
+  gl.bindTexture(gl.TEXTURE_2D, handle);
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, f.largeur, f.hauteur, 0, gl.RGBA, gl.FLOAT, f.donnees);
+  // des nombres lus au texel près : rien ne se filtre, et une texture flottante ne le pourrait pas partout
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.NEAREST], [gl.TEXTURE_MAG_FILTER, gl.NEAREST],
+    [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  compteCree(gl, "Textures Created");
+  return { handle, destroy(){ gl.deleteTexture(handle); } };
+}
+
 /** Les attributs d'un maillage, ceux qu'il ne donne pas posés comme deck.gl les pose. */
 function attributsMaillage(/** @type {any} */ mesh){
   const a = mesh && (mesh.attributes || mesh) || {};
@@ -340,13 +375,14 @@ export class SimpleMeshLayer extends Couche {
     numerote(GEO_MAILLAGE, specs);
     let e = ancienne && ancienne.etat;
     const r = aRefaire(this, e ? ancienne : null, ["getOrientation", "getScale", "getTranslation", "getTransformMatrix"]);
-    if (e && (ancienne.props.mesh !== p.mesh)) r.tout = true;
+    if (e && (ancienne.props.mesh !== p.mesh || ancienne.props.formes !== p.formes)) r.tout = true;
     if (r.tout || !e){
       if (e) e.a.detruit();
       const M = attributsMaillage(p.mesh);
       const a = new Assemblage(gl);
       const comptes = new Int32Array(data.length).fill(1);
-      e = { a, M, comptes, total: data.length, tex: e ? e.tex : null, source: e ? e.source : null };
+      e = { a, M, comptes, total: data.length, tex: e ? e.tex : null, source: e ? e.source : null,
+        formes: e && ancienne.props.formes === p.formes ? e.formes : (e && e.formes && e.formes.destroy(), textureFormes(gl, p.formes)) };
       if (M){
         a.pose(0, { donnees: new Float32Array(M.pos) }, 3, "f32", 0);
         a.pose(1, { donnees: new Float32Array(M.nor) }, 3, "f32", 0);
@@ -393,6 +429,13 @@ export class SimpleMeshLayer extends Couche {
       gl.uniform1i(prog.u("u_image"), 0);
     } else if (p.texture) return;
     gl.uniform1f(prog.u("u_taille"), p.sizeScale ?? 1);
+    gl.uniform1f(prog.u("u_parFormes"), e.formes ? 1 : 0);
+    if (e.formes){
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, e.formes.handle);
+      gl.uniform1i(prog.u("u_formes"), 1);
+      gl.activeTexture(gl.TEXTURE0);
+    }
     gl.uniform1f(prog.u("u_plat"), e.M.plat ? 1 : 0);
     const cases = this.extension("CasesEtFondu");
     gl.uniform1f(prog.u("u_cases"), cases ? 1 : 0);
@@ -419,6 +462,7 @@ export class SimpleMeshLayer extends Couche {
     this.etat.a.detruit();
     // la texture d'une toile, la couche l'a faite ; celle de la planche est à `logos-stands.mjs`
     if (this.etat.tex) this.etat.tex.destroy();
+    if (this.etat.formes) this.etat.formes.destroy();
     this.etat = null;
   }
 }
