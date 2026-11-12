@@ -18,7 +18,7 @@
 import { separeValeurs } from "./texte.mjs";
 import { DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
   ACCORDS, aplani, autreFace } from "./correspondance.mjs";
-import { courant, majEvenement, slugifie } from "./evenements.mjs";
+import { courant, evenementParId, majEvenement, slugifie } from "./evenements.mjs";
 import { FOURNISSEURS, SOURCES_NOM, source, sourceNom } from "./provenance.mjs";
 import { ouvreModale, demande, confirme, gardeLaPlace } from "./fenetre-console.mjs";
 import { signale } from "./socle-console.mjs";
@@ -301,9 +301,12 @@ function caseFiche(type, cle, libelle, aide, apres) {
      précédente a confirmé : lancées de front, un refus tardif remettait la
      fiche entière à un état d'avant, effaçant un changement confirmé depuis.
      La fiche du salon ne change qu'une fois la base d'accord ; refusée, la
-     case revient — si personne ne l'a touchée depuis. */
+     case reprend ce que la base tient — si c'était le dernier geste. Défaire
+     le geste refusé ne suffisait pas : deux refus de suite, l'un cochant,
+     l'autre décochant, laissaient la case à l'inverse de la base. */
+  let dernier = 0;
   i.onchange = () => {
-    const voulu = i.checked;
+    const voulu = i.checked, n = ++dernier;
     if (apres) apres(voulu);
     fileFiche = fileFiche.then(async () => {
       const fiche = { ...(e.fiche || {}) };
@@ -311,7 +314,10 @@ function caseFiche(type, cle, libelle, aide, apres) {
       try { await majEvenement(e.id, { fiche }); e.fiche = fiche; }
       catch (err) {
         signale(err.message, true);
-        if (i.checked === voulu){ i.checked = !voulu; if (apres) apres(!voulu); }
+        if (n !== dernier) return;
+        const tenu = paraitSurFiche(e, type, cle);
+        i.checked = tenu;
+        if (apres) apres(tenu);
       }
     });
   };
@@ -756,21 +762,36 @@ function cadreCategories(src) {
       : AUTO + ", et la dernière n'en a retenu aucune.";
   };
 
-  const enregistre = async () => {
-    const e2 = courant();
+  /* Ce que la base tient, d'après la dernière écriture réussie : un refus
+     y ramène le groupe entier. Défaire le seul geste refusé décochait une
+     catégorie qu'une écriture précédente avait déjà enregistrée — et
+     l'écriture suivante l'effaçait de la base. */
+  let confirmees = [...choisies];
+  /** Le numéro du dernier geste sur le groupe : seul son refus recale les cases. */
+  let dernier = 0;
+  /** @type {Map<string, HTMLInputElement>} */
+  const cases = new Map();
+
+  /* Le salon se retrouve par l'identifiant qu'avait le geste, au moment
+     d'écrire : `poseEvenements` remplace la liste, l'objet d'alors peut être
+     périmé, et le salon courant n'est peut-être plus celui qu'on réglait. */
+  const enregistre = async (idSalon, envoyees) => {
+    const e2 = evenementParId(idSalon);
+    if (!e2) { signale("Ce salon n'est plus chargé : catégories non enregistrées.", true); return false; }
     const avant = e2.correspondances;
     const corr = { ...(e2.correspondances || {}) };
     const part = { ...(corr[src] || {}) };
-    if (choisies.length) part.categories = [...choisies];
+    if (envoyees.length) part.categories = envoyees;
     else delete part.categories;
     corr[src] = part;
     e2.correspondances = corr;
-    try { await majEvenement(e2.id, { correspondances: corr }); return true; }
-    catch (err) { e2.correspondances = avant; signale(err.message, true); return false; }
+    try {
+      await majEvenement(e2.id, { correspondances: corr });
+      confirmees = envoyees;
+      return true;
+    } catch (err) { e2.correspondances = avant; signale(err.message, true); return false; }
   };
 
-  /** Le dernier geste porté sur chaque case, par identifiant de catégorie. */
-  const gestes = new Map();
   catalogue.forEach((c) => {
     const id = String(c.id);
     const l = document.createElement("label");
@@ -786,25 +807,22 @@ function cadreCategories(src) {
       : "aucune fiche de cette catégorie ne portait de numéro de stand";
     const i = l.querySelector("input");
     i.checked = choisies.indexOf(id) >= 0;
-    /* Les écritures du groupe se suivent ; un refus ne défait que son propre
-       geste, et seulement si la case n'a pas bougé depuis — sinon c'est le
-       geste suivant qui fait foi. */
+    cases.set(id, i);
+    /* Les écritures du groupe se suivent, chacune avec la liste figée au
+       moment de son geste. Le refus du dernier geste remet le groupe sur ce
+       que la base a confirmé ; celui d'un geste antérieur laisse la main au
+       suivant, qui fera foi. */
     i.onchange = () => {
-      /* Un numéro par geste sur cette case : cocher, décocher puis recocher
-         pendant une écriture ramène la même valeur, et seul le numéro dit
-         qu'un geste plus récent a pris le relais. */
-      const voulu = i.checked, n = (gestes.get(id) || 0) + 1;
-      gestes.set(id, n);
+      const voulu = i.checked, n = ++dernier, idSalon = courant().id;
       const k = choisies.indexOf(id);
       if (voulu && k < 0) choisies.push(id);
       if (!voulu && k >= 0) choisies.splice(k, 1);
+      const envoyees = [...choisies];
       dis();
       fileFiche = fileFiche.then(async () => {
-        if (await enregistre() || gestes.get(id) !== n) return;
-        const j = choisies.indexOf(id);
-        if (voulu && j >= 0) choisies.splice(j, 1);
-        if (!voulu && j < 0) choisies.push(id);
-        i.checked = !voulu;
+        if (await enregistre(idSalon, envoyees) || n !== dernier) return;
+        choisies.splice(0, choisies.length, ...confirmees);
+        cases.forEach((x, cid) => { x.checked = choisies.indexOf(cid) >= 0; });
         dis();
       });
     };

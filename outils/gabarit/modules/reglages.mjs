@@ -345,7 +345,9 @@ function champsFicheZone(hote){
      celle d'après reprenne son changement. */
   /** @type {Array<[HTMLInputElement, string]>} */
   const cases = [];
-  let confirmee = null;
+  /* Le réglage tel que chargé, copié à part : le premier clic le modifie en
+     place, et sans copie un premier refus n'avait rien où revenir. */
+  let confirmee = structuredClone(DATA.fiche || {});
   const recale = () => {
     cases.forEach(([x, k]) => { x.checked = montre("zone", k); });
     const o = state.sel && parId.get(state.sel);
@@ -383,7 +385,7 @@ function champsFicheZone(hote){
         DATA.fiche = t; recale(); dit("Enregistré.");
       }).catch(e => {
         dit("Échec : " + e.message, true);
-        if (n === derniere && confirmee){ DATA.fiche = confirmee; recale(); }
+        if (n === derniere){ DATA.fiche = structuredClone(confirmee); recale(); }
       });
     };
     bloc.appendChild(l);

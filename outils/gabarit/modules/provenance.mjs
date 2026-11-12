@@ -121,13 +121,18 @@ function ligneSource(dom, libelle, offerts, aide) {
      revient. Les menus de tous les domaines partagent une file : chaque
      écriture part de ce que la précédente a confirmé, sans quoi la seconde
      renvoyait l'ancienne source de la première. */
+  /* Un numéro par changement : comparer la valeur ne suffisait pas —
+     klipso, eventmaker, klipso ramène la même, et le refus du premier
+     remettait le menu sur l'ancienne source pendant que la base prenait
+     la dernière. Seul le refus du dernier changement recale le menu. */
+  let dernier = 0;
   l.querySelector("select").onchange = (ev) => {
-    const menu = ev.target, voulu = menu.value;
+    const menu = ev.target, voulu = menu.value, n = ++dernier;
     fileSources = fileSources.then(async () => {
       const sources = { ...(e.sources || {}), [dom]: { fournisseur: voulu } };
       try { await majEvenement(e.id, { sources }); e.sources = sources; }
       catch (err) {
-        if (menu.value === voulu) menu.value = ((e.sources || {})[dom] || {}).fournisseur || choisi;
+        if (n === dernier) menu.value = ((e.sources || {})[dom] || {}).fournisseur || choisi;
         signale(err.message, true);
       }
     });

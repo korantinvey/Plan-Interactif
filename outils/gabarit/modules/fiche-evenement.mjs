@@ -47,6 +47,16 @@ export function brancheFiche(branche) {
   _console = branche;
 }
 
+/* Les pavillons dont la publication part encore, par identifiant. L'état
+   tenait sur la case elle-même ; or la fiche se redessine au succès d'un
+   autre pavillon, et la case recréée repartait active : une seconde bascule
+   croisait la première, et deux refus de suite laissaient l'écran sur une
+   valeur que la base n'avait jamais prise. */
+const publicationsEnCours = new Set();
+/** La case de ce pavillon telle qu'elle est affichée maintenant, s'il y en a une. */
+const caseDuPavillon = (id) =>
+  /** @type {HTMLInputElement | null} */ (document.querySelector('tr[data-plan="' + CSS.escape(String(id)) + '"] input'));
+
 const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
                  [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
                  [1440, "Une fois par jour"]];
@@ -257,6 +267,7 @@ export function dessineFiche() {
     const tb = t.querySelector("tbody");
     plans.forEach((p) => {
       const tr = document.createElement("tr");
+      tr.dataset.plan = String(p.id);
       if (!p.publie) tr.className = "eteint";
       tr.innerHTML = '<td><label class="coche"><input type="checkbox"' +
         (p.publie ? " checked" : "") + '></label></td>' +
@@ -267,22 +278,34 @@ export function dessineFiche() {
       tr.querySelector(".hall").textContent = p.hall || "—";
       /* Refusée, la case revient : un 403 ne déconnecte plus, et l'écran
          serait resté sur une publication que la base n'a pas prise. */
-      tr.querySelector("input").onchange = async (ev) => {
-        const caseP = ev.target, avant = p.publie;
+      const caseP = /** @type {HTMLInputElement} */ (tr.querySelector("input"));
+      caseP.disabled = publicationsEnCours.has(p.id);
+      caseP.onchange = async () => {
+        if (publicationsEnCours.has(p.id)) return;
+        const avant = p.publie;
         p.publie = caseP.checked;
+        publicationsEnCours.add(p.id);
         caseP.disabled = true;
+        let refus = null;
         try {
           await rest("plan?id=eq." + p.id, {
             method: "PATCH",
             headers: { "Prefer": "return=minimal" },
             body: JSON.stringify({ publie: p.publie }),
           });
-          _console.dessine();
         } catch (err) {
           p.publie = avant;
-          caseP.checked = !!avant;
-          signale(err.message, true);
-        } finally { caseP.disabled = false; }
+          refus = err;
+        }
+        publicationsEnCours.delete(p.id);
+        if (refus) {
+          const c = caseDuPavillon(p.id);
+          if (c) {
+            c.checked = !!avant; c.disabled = false;
+            c.closest("tr")?.classList.toggle("eteint", !avant);
+          }
+          signale(refus.message, true);
+        } else _console.dessine();
       };
       tb.appendChild(tr);
     });

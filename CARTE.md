@@ -1164,13 +1164,14 @@ acces-admin · calques-dessin · camera · cartouche-poi · configuration · dem
 fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · tiroir-itineraire
 trace-itineraire · traduction · vignettes · webgl
 
-### `modules/evenements.mjs` — 70 l. → console
+### `modules/evenements.mjs` — 74 l. → console
 
 - l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
 
 Fonctions :
 
-`poseEvenements` 42 · `slugifie` 53 · `courant` 57 · `chargePlans` 59 · `majEvenement` 64
+`poseEvenements` 42 · `slugifie` 53 · `evenementParId` 59 · `courant` 61 · `chargePlans` 63
+`majEvenement` 68
 
 Importe :
 
@@ -1237,7 +1238,7 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1331 l. → console
+### `modules/fiche-detail.mjs` — 1349 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
 - l.26 · Contenu de la fiche détail
@@ -1245,10 +1246,10 @@ scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel �
 Fonctions :
 
 `paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 243
-`caseFiche` 288 · `cibleEn` 343 · `champsPersos` 345 · `criteres` 351 · `ecritFiche` 361
-`caseCritere` 378 · `clePerso` 400 · `ajouteChampPerso` 408 · `renommeChampPerso` 425
-`retireChampPerso` 473 · `lignesPerso` 536 · `cadreFiche` 559 · `ouvreFiche` 589
-`cadreCategories` 729 · `sousTitre` 825 · `tableauChamps` 840 · `champOrigine` 1066
+`caseFiche` 288 · `cibleEn` 349 · `champsPersos` 351 · `criteres` 357 · `ecritFiche` 367
+`caseCritere` 384 · `clePerso` 406 · `ajouteChampPerso` 414 · `renommeChampPerso` 431
+`retireChampPerso` 479 · `lignesPerso` 542 · `cadreFiche` 565 · `ouvreFiche` 595
+`cadreCategories` 735 · `sousTitre` 843 · `tableauChamps` 858 · `champOrigine` 1084
 
 Importe :
 
@@ -1258,15 +1259,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 494 l. → console
+### `modules/fiche-evenement.mjs` — 517 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 46 · `champ` 57 · `champFavicon` 100 · `dessineFiche` 177 · `ligneOutil` 324
-`ligneReglage` 340 · `champCle` 354 · `champInstance` 395 · `ouvreSources` 419
-`majIntegration` 477 · `majMsgSync` 484
+`brancheFiche` 46 · `caseDuPavillon` 57 · `champ` 67 · `champFavicon` 110
+`dessineFiche` 187 · `ligneOutil` 347 · `ligneReglage` 363 · `champCle` 377
+`champInstance` 418 · `ouvreSources` 442 · `majIntegration` 500 · `majMsgSync` 507
 
 Éléments :
 
@@ -2537,7 +2538,7 @@ Injections :
 
 - `injecteAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
-### `modules/provenance.mjs` — 177 l. → console
+### `modules/provenance.mjs` — 182 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
 - l.19 · Provenance des données
@@ -2545,7 +2546,7 @@ Injections :
 Fonctions :
 
 `fournisseurUtilise` 90 · `sourceNom` 100 · `source` 104 · `ligneSource` 108
-`resumeProvenance` 140 · `ouvreProvenance` 161
+`resumeProvenance` 145 · `ouvreProvenance` 166
 
 Importe :
 
@@ -2818,14 +2819,14 @@ Importé par :
 
 reglages
 
-### `modules/reglages.mjs` — 533 l. → plan-admin
+### `modules/reglages.mjs` — 535 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 408
-`voletPlan` 426 · `voletCoexposants` 465
+`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 410
+`voletPlan` 428 · `voletCoexposants` 467
 
 Importe :
 
