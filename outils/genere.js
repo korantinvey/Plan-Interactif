@@ -478,25 +478,22 @@ function poseVersion(radical, extension, contenu, queue = () => "") {
   return nom;
 }
 const NOM_FEUILLE = poseVersion("plan", ".css", FEUILLE_PLAN);
-/* deck.gl, annoncé dès la tête de la page.
+/* deck.gl, le moteur de recours (`?moteur=deck`), n'est plus annoncé en tête.
 
-   C'est le plus lourd de ce que reçoit le visiteur, et le plan attend après
-   lui pour paraître (`modules/webgl.mjs`, `gl-attente`). Or rien ne le
-   demandait avant que le script des modules, posé au bas de la page, se soit
-   exécuté : les deux se téléchargeaient l'un après l'autre. Annoncé ici, il
-   part avec la feuille de style — en priorité basse : mesuré en 3G, annoncé
-   à la priorité ordinaire, il prenait son débit à la feuille (+0,8 s avant
-   le premier trait) et au script (+1,5 s avant la liste) pour un plan dessiné
-   0,5 s plus tôt. Sous HTTP/2, la priorité basse ne lui laisse que le débit
-   dont les deux autres n'ont pas l'usage. Nom et intégrité sont lus dans le module
-   même, pour qu'une bibliothèque refaite (`npm run deck`) ne laisse pas la
-   page en annoncer une autre — qui partirait pour rien, et en double. */
+   Il l'était quand il peignait le plan : le plus lourd de ce que recevait le
+   visiteur, que le plan attendait pour paraître. Le moteur du plan
+   (`modules/moteur-gl.mjs`) voyage désormais dans le script du plan, et
+   l'annonce faisait télécharger 733 Ko — 213 compressés — à chaque visiteur
+   pour rien (relevé `?perf`, FEP27, téléphone, 12 novembre 2026). Qui demande
+   deck.gl l'attend à son heure, comme avant l'annonce.
+
+   On vérifie toujours qu'il est là, sous le nom que le module demande : le
+   recours doit rester prêt, et une bibliothèque refaite (`npm run deck`) sous
+   un autre nom le laisserait introuvable. */
 const DECK = fs.readFileSync(D + "/gabarit/modules/webgl.mjs", "utf8")
   .match(/const DECK_WEBGL = \{\s*src: "([^"]+)",\s*integrite: "([^"]+)"/);
 if (!DECK) throw new Error("DECK_WEBGL introuvable dans modules/webgl.mjs");
 if (!fs.existsSync(W + DECK[1])) throw new Error("deck.gl absent : " + DECK[1]);
-const ANNONCE_DECK = '<link rel="preload" as="script" fetchpriority="low" href="/' + DECK[1] +
-  '" integrity="' + DECK[2] + '">\n';
 const lieFeuille = (t) =>
   t.replace(STYLE_PLAN, () => '<link rel="stylesheet" href="/' + NOM_FEUILLE + '">\n');
 
@@ -506,8 +503,7 @@ const lieFeuille = (t) =>
    scripts bloquants : mesuré en 4G, le navigateur ne la demandait qu'une fois
    ces deux-là reçus l'un après l'autre — six cents millisecondes pendant
    lesquelles rien ne pouvait s'afficher. Annoncée en tête, elle part avec la
-   page ; sa balise reste où elle est, et la cascade avec elle. deck.gl
-   l'accompagne, en priorité basse.
+   page ; sa balise reste où elle est, et la cascade avec elle.
 
    La configuration, elle, entre dans la page : deux constantes, qui coûtaient
    un aller-retour bloquant à elles seules. La console et le rapport gardent
@@ -528,7 +524,7 @@ function annonceTot(html) {
   const premier = html.indexOf("<script"), feuille = html.indexOf('<link rel="stylesheet" href="/' + NOM_FEUILLE);
   if (premier < 0 || feuille < 0 || premier > feuille) throw new Error("aucun script avant la feuille du plan");
   return html.slice(0, premier) +
-    '<link rel="preload" as="style" href="/' + NOM_FEUILLE + '">\n' + ANNONCE_DECK + html.slice(premier);
+    '<link rel="preload" as="style" href="/' + NOM_FEUILLE + '">\n' + html.slice(premier);
 }
 /* Ce qui porte son empreinte ne change jamais : un an, sans revalidation. Les
    pages, elles, gardent la règle de Cloudflare — revalider à chaque fois.
