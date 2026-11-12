@@ -19,10 +19,13 @@
    les gestes restent au SVG, transparent au-dessus du dessin : le zoom, le
    pincement, la glissade n'ont pas été touchés.
 
-   C'est le rendu par défaut, dès que le navigateur a WebGL2 et que la
-   bibliothèque arrive. Sinon le plan reste en SVG : c'est le repli des
-   appareils qui ne l'ont pas. `?rendu=svg` le force, pour comparer ou pour
-   écarter le dessin le temps d'un dépannage.
+   C'est le rendu par défaut, dès que le navigateur a WebGL2. Sinon le plan
+   reste en SVG : c'est le repli des appareils qui ne l'ont pas. `?rendu=svg`
+   le force, pour comparer ou pour écarter le dessin le temps d'un dépannage.
+
+   Ce module dit quoi peindre ; le moteur du plan (`moteur-gl.mjs`) le peint,
+   ou deck.gl, son recours (`?moteur=deck`), qui parle la même langue — voir
+   `MOTEUR`.
 
    Ce module lit la vue, le SVG et son cadre dans `vue-etat.mjs` ; le reste,
    les modules qui l'importent le lui confient en se chargeant

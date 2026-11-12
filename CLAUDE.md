@@ -277,7 +277,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | vue, zoom, cadrage, passage écran → plan | `modules/vue.mjs` ; l'état seul `modules/vue-etat.mjs` (`changeVue`) |
 | gestes — glisser, pincer, molette, clavier | `modules/gestes.mjs` `brancheGestes` ; ceux de l'exploitant `modules/gestes-admin.mjs` |
 | tiroirs du bas sur écran étroit | `modules/tiroirs.mjs` ; un seul ouvert à la fois `modules/tiroirs-exclusifs.mjs` |
-| dessin WebGL | `modules/webgl.mjs` ; lecture du SVG `modules/trace.mjs` ; bibliothèque `npm run deck` |
+| dessin WebGL | ce qui se peint `modules/webgl.mjs` ; qui le peint, le moteur du plan `modules/moteur-gl.mjs` (couches `moteur-gl-formes.mjs`, `moteur-gl-texte.mjs`, `moteur-gl-objets.mjs`) — deck.gl en recours par `?moteur=deck`, refait par `npm run deck` ; lecture du SVG `modules/trace.mjs` |
 | configuration (`CONF`, `conf`, `enregistreConf`), options vendues à part | `modules/configuration.mjs`, `modules/options.mjs` |
 | apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
 | ambiance du plan — Classique, Tuiles | `modules/ambiance.mjs` |
@@ -348,6 +348,15 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   `dessineDessins` est trop lourd pour une rafale de `pointermove`.
 - **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
   dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
+- **Deux moteurs peignent le plan, qui parlent la même langue** : le moteur du
+  plan (`modules/moteur-gl.mjs`), par défaut, et deck.gl, le recours
+  (`?moteur=deck`). `webgl.mjs` les reçoit sous le même nom, `deck`. Une classe,
+  un réglage de couche ou une méthode de deck.gl qu'on se met à employer doit
+  exister dans le moteur ; et une extension (`LayerExtension`) n'y apporte pas
+  son GLSL — le moteur la reconnaît à son `extensionName` et refait son effet
+  dans ses propres shaders, réglé par ce qu'elle déclare en nombres
+  (`fonduZoom`, `palettesFigurants`). Une extension neuve se refait donc aussi
+  dans `moteur-gl-*.mjs`, sans quoi elle ne fait rien hors de `?moteur=deck`.
 - **Une ressource d'une origine neuve** (police, script tiers) s'ajoute à
   `outils/genere.js` `poseCsp`, sans quoi la page la refuse et les essais
   échouent sur l'erreur de console. Un script en ligne y est permis par son
