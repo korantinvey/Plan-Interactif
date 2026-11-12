@@ -31,4 +31,7 @@ module.exports = {
   "Créer": "Create",
   "Données rechargées.": "Data reloaded.",
   "Chargement impossible : {raison}": "Could not load: {raison}",
+  // la création a réussi, le rechargement de la liste non (`ecran-console.mjs`)
+  "L'événement est créé, mais la liste n'a pas pu se recharger : {raison}":
+    "The event is created, but the list could not reload: {raison}",
 };

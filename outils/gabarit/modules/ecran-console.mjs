@@ -157,9 +157,21 @@ function dessineChoix() {
   sel.innerHTML = EVTS.map((e) =>
     '<option value="' + e.id + '"' + (e.id === selection ? " selected" : "") + '>' +
     esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
+  /* Les plans du salon choisi se lisent avant de le montrer. Une lecture
+     refusée laissait le nouveau salon choisi et l'ancien à l'écran, sans un
+     mot : le choix revient alors à celui d'avant, et l'erreur se dit. */
   sel.onchange = async () => {
+    const avant = selection;
     poseEvenements({ selection: sel.value });
-    if (!PLANS[selection]) await chargePlans(selection);
+    if (!PLANS[selection]) {
+      try { await chargePlans(selection); }
+      catch (err) {
+        poseEvenements({ selection: avant });
+        sel.value = avant || "";
+        signale(err.message, true);
+        return;
+      }
+    }
     dessine();
   };
 }
@@ -282,9 +294,14 @@ export function brancheConsole() {
         });
         const cree = Array.isArray(rep) ? rep[0] : rep;
         if (cree?.id) poseEvenements({ selection: cree.id });
-        await charge();
-        signale("Événement créé.");
-      } catch (err) { signale(err.message, true); }
+      } catch (err) { signale(err.message, true); return; }
+      /* Le salon existe dès que le POST a répondu. Un rechargement qui échoue
+         ensuite ne doit pas le faire croire raté : on le recréerait, comme le
+         dit la duplication (`duplication.mjs`). */
+      try { await charge(); signale("Événement créé."); }
+      catch (err) {
+        signale("L'événement est créé, mais la liste n'a pas pu se recharger : " + err.message, true);
+      }
     };
     ouvreModale("Nouvel événement", (corps) => {
       const l = document.createElement("label");

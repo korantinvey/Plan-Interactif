@@ -29,6 +29,7 @@ import { DOMAINES, FOURNISSEURS_CONF, fournisseurUtilise, source, resumeProvenan
 import { resumeFiche, ouvreFiche } from "./fiche-detail.mjs";
 import { ouvreModale } from "./fenetre-console.mjs";
 import { chargeBases, choixBase } from "./bases-klipso.mjs";
+import { creeFileEcritures } from "./ecritures-en-file.mjs";
 import { SESSION, bloc, grille, signale, rest, BASE_PAGES } from "./socle-console.mjs";
 
 /** @type {{
@@ -72,17 +73,31 @@ function champ(cle, libelle, aide, attrs) {
   if (aide) l.querySelector(".aide").textContent = aide;
   const i = l.querySelector("input");
   i.value = e[cle] == null ? "" : e[cle];
+  /* Les écritures du champ se suivent (`ecritures-en-file.mjs`), et un refus
+     revient à la valeur que la base tient, à l'écran comme dans le salon. Un
+     identifiant d'adresse déjà pris par un autre salon restait sinon dans le
+     salon : le fragment d'intégration, l'adresse affichée, et la tentative
+     suivante pointaient vers une adresse qui n'existe pas. */
+  const file = creeFileEcritures(e[cle]);
+  const suit = () => {
+    if (cle === "nom") _console.dessineChoix();
+    if (cle === "slug") { majIntegration(); _console.majAdresse(); }
+  };
   let attente;
   i.oninput = () => {
     e[cle] = i.value;
     if (cle === "slug") e.slug = slugifie(i.value);
     clearTimeout(attente);
-    attente = setTimeout(async () => {
-      try {
-        await majEvenement(e.id, { [cle]: e[cle] });
-        if (cle === "nom") _console.dessineChoix();
-        if (cle === "slug") { i.value = e.slug; majIntegration(); _console.majAdresse(); }
-      } catch (err) { signale(err.message, true); }
+    attente = setTimeout(() => {
+      const voulu = e[cle];
+      file.ecrit(async () => { await majEvenement(e.id, { [cle]: voulu }); return voulu; })
+        .then(({ ok, dernier, confirme, erreur }) => {
+          if (!ok) signale(/** @type {Error} */ (erreur).message, true);
+          if (!dernier) return;
+          if (!ok) e[cle] = confirme;
+          if (cle === "slug" || !ok) i.value = e[cle] == null ? "" : e[cle];
+          suit();
+        });
     }, 500);
   };
   return l;
@@ -372,6 +387,10 @@ function ligneReglage(titre, resume, ouvre) {
   return d;
 }
 
+/* Les clés de tous les fournisseurs vivent dans la même colonne, écrite d'un
+   bloc : leurs écritures partagent une file. */
+const fileCles = creeFileEcritures();
+
 /** Champ de clé. Il n'est pas caché quand le fournisseur n'est pas encore
  *  retenu : on saisit souvent l'identifiant avant de basculer la source. */
 function champCle(cle, libelle, aide, forme, exemple) {
@@ -393,16 +412,26 @@ function champCle(cle, libelle, aide, forme, exemple) {
   };
   dit();
 
+  /* Les clés du salon ne changent qu'une fois la base d'accord, et partent
+     de ce qu'elle tient quand l'écriture part : changées d'avance et jamais
+     rendues, une clé refusée restait dans le salon, et le résumé de la
+     provenance taisait le raccordement incomplet que la base tenait. */
   let attente;
   i.oninput = () => {
     dit();
     clearTimeout(attente);
-    attente = setTimeout(async () => {
-      e.cles = { ...(e.cles || {}) };
+    attente = setTimeout(() => {
       const v = i.value.trim();
-      if (v) e.cles[cle] = v; else delete e.cles[cle];
-      try { await majEvenement(e.id, { cles: e.cles }); }
-      catch (err) { signale(err.message, true); }
+      fileCles.ecrit(async () => {
+        const cles = { ...(e.cles || {}) };
+        if (v) cles[cle] = v; else delete cles[cle];
+        await majEvenement(e.id, { cles });
+        e.cles = cles;
+      }, cle).then(({ ok, dernier, erreur }) => {
+        if (ok) return;
+        signale(/** @type {Error} */ (erreur).message, true);
+        if (dernier) { i.value = (e.cles || {})[cle] || ""; dit(); }
+      });
     }, 500);
   };
   return l;
@@ -419,17 +448,29 @@ function champInstance() {
   const libre = champ("instance", "Instance", "Le sous-domaine Klipso.", 'spellcheck="false"');
   if (MOI?.role !== "admin") return libre;
   const e = courant();
+  /* Les choix se suivent : B puis C, vite, lançaient deux écritures, et celle
+     de B pouvait finir la dernière — l'écran sur C, la base sur B. Le salon ne
+     change qu'une fois la base d'accord, et un refus recale le menu. */
+  const file = creeFileEcritures(e.instance || "");
   chargeBases().then((bases) => {
     if (!libre.isConnected) return;
-    libre.replaceWith(choixBase({
+    const choix = choixBase({
       bases, valeur: e.instance || "",
-      surChoix: async (instance) => {
-        if (instance === e.instance) return;
-        e.instance = instance;
-        try { await majEvenement(e.id, { instance }); signale("Base Klipso du salon : " + instance + "."); }
-        catch (err) { signale(err.message, true); }
+      surChoix: (instance) => {
+        file.ecrit(async (tenue) => {
+          if (instance === tenue) return;
+          await majEvenement(e.id, { instance });
+          e.instance = instance;
+          return instance;
+        }).then(({ ok, dernier, confirme, erreur }) => {
+          if (ok) { if (dernier && confirme === instance) signale("Base Klipso du salon : " + instance + "."); return; }
+          signale(/** @type {Error} */ (erreur).message, true);
+          const menu = choix.element.querySelector("select");
+          if (dernier && menu) menu.value = confirme;
+        });
       },
-    }).element);
+    });
+    libre.replaceWith(choix.element);
   }).catch(() => {});
   return libre;
 }

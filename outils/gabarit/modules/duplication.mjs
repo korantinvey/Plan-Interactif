@@ -32,7 +32,9 @@ export function dupliquer(e) {
         method: "POST",
         headers: { "Prefer": "return=representation" },
         body: JSON.stringify({
-          nom, slug: slugifie(nom), instance: e.instance,
+          // un nom sans lettre latine (« 東京 ») ne donne aucun identifiant :
+          // le même repli que la création (`ecran-console.mjs`)
+          nom, slug: slugifie(nom) || "evenement", instance: e.instance,
           rythme_min: e.rythme_min, etat: "brouillon",
           fuseau_choisi: e.fuseau_choisi ?? null,
         }),

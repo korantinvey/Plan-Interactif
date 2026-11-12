@@ -140,7 +140,14 @@ export async function synchronise(e) {
     vue.fini(mot, n.erreur ? "alerte" : "ok");
     dernierBilan = { vue, bilan };
     signale(mot, !!n.erreur);
-    await _console.charge();
+    /* La synchronisation est faite dès que le serveur l'a dite : un
+       rechargement de la liste qui échoue ensuite ne la change pas en échec,
+       et n'empêche ni l'oubli du plan ni la préparation des logos. */
+    try { await _console.charge(); }
+    catch (err) {
+      signale(t("Synchronisation faite, mais la liste n'a pas pu se recharger : {raison}",
+        { raison: err.message }), true);
+    }
     // le plan qu'elle vient d'écrire, et non celui que le relais gardait
     oublieLePlan(e);
     /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
@@ -185,6 +192,9 @@ const PAQUET_VIGNETTES = 8;
 /* Une garde, non une limite du salon : un serveur qui répondrait toujours
    « il en reste » ferait tourner cette boucle sans fin. */
 const TOURS_VIGNETTES = 200;
+/* Un envoi qui échoue ne perd que son paquet : le tour suivant redemandera les
+   mêmes adresses. Trois de suite, et la préparation s'arrête en le disant. */
+const ECHECS_ENVOI = 3;
 
 async function fabriqueLesVignettes(e) {
   let faites = 0, total = 0, deja = null;
@@ -204,69 +214,93 @@ async function fabriqueLesVignettes(e) {
      dirait encore à faire, et chaque tour les referait. On les lui écarte
      comme les illisibles, sans les compter avec eux — ils sont préparés. */
   const enWebp = new Set();
+  /* Un logo n'est rangé dans `enWebp` qu'une fois son paquet enregistré en
+     entier : écarté dès l'encodage, un envoi refusé le laissait non fait, et
+     le tour suivant ne le redemandait plus. Et des envois qui échouent de
+     suite arrêtent la préparation, qui le dit : sans quoi les mêmes logos se
+     retéléchargeaient et se réencodaient deux cents tours durant. */
+  let echecsDeSuite = 0;
+  const envoie = async (paquet, webp) => {
+    try {
+      const r = await fonction("vignettes", { evenementId: e.id, vignettes: paquet });
+      echecsDeSuite = 0;
+      const n = r.enregistrees || 0;
+      if (n >= paquet.length) webp.forEach((s) => enWebp.add(s));
+      return n;
+    } catch (err) {
+      if (++echecsDeSuite >= ECHECS_ENVOI) throw err;
+      return 0;
+    }
+  };
   const compte = () => signale(t("Préparation des logos : {n} sur {t}…",
     { n: Math.min(total, (deja || 0) + faites + ecartees.size), t: total }));
-  for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
-    let lot;
-    try {
-      /* « detoure » : la grande part sans son fond (`marque.mjs`
-         `vignetteDeLogo`), et celles d'avant, au fond blanc, sont à refaire. */
-      lot = await fonction("vignettes", { evenementId: e.id, format, detoure: true,
-        ecartees: [...ecartees, ...enWebp] });
-    } catch (err) {
-      /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
-         qui ne commence jamais sans rien annoncer laisse chercher du mauvais
-         côté. */
-      signale(t("Préparation des logos impossible : {e}", { e: err.message }), true);
-      return;
-    }
-    total = lot.total || total;
-    /* Ce que les synchronisations d'avant ont déjà fait compte dans
-       l'avancement : sans quoi le compte partirait de zéro vers un total qui
-       les inclut. */
-    if (deja === null) deja = Math.max(0, total - (lot.reste || 0));
-    /* Un serveur d'avant ignore la liste des écartées et les rend encore :
-       on ne retente pas ce qui a déjà échoué, et un lot qui n'en contient
-       plus d'autres met fin à la préparation. */
-    const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s) && !enWebp.has(s));
-    if (!aFaire.length) break;
-
-    const paquet = [];
-    for (const source of aFaire) {
-      const v = await vignetteDeLogo(source, avif);
-      if (v) paquet.push(v);
-      else ecartees.add(source);
-      if (v && v.format !== format) enWebp.add(source);
-      if (paquet.length >= PAQUET_VIGNETTES) {
-        faites += await envoieVignettes(e, paquet);
-        paquet.length = 0;
-        compte();
+  /* Des vignettes enregistrées ne sont portées que par le plan que l'API
+     refait : le relais l'oublie quelle que soit la sortie — une demande de lot
+     refusée en cours de route laissait sinon le plan d'avant elles un jour
+     durant. */
+  try {
+    for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
+      let lot;
+      try {
+        /* « detoure » : la grande part sans son fond (`marque.mjs`
+           `vignetteDeLogo`), et celles d'avant, au fond blanc, sont à refaire. */
+        lot = await fonction("vignettes", { evenementId: e.id, format, detoure: true,
+          ecartees: [...ecartees, ...enWebp] });
+      } catch (err) {
+        /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
+           qui ne commence jamais sans rien annoncer laisse chercher du mauvais
+           côté. */
+        signale(t("Préparation des logos impossible : {e}", { e: err.message }), true);
+        return;
       }
-    }
-    if (paquet.length) faites += await envoieVignettes(e, paquet);
-    compte();
-  }
-  const refusees = ecartees.size;
+      total = lot.total || total;
+      /* Ce que les synchronisations d'avant ont déjà fait compte dans
+         l'avancement : sans quoi le compte partirait de zéro vers un total qui
+         les inclut. */
+      if (deja === null) deja = Math.max(0, total - (lot.reste || 0));
+      /* Un serveur d'avant ignore la liste des écartées et les rend encore :
+         on ne retente pas ce qui a déjà échoué, et un lot qui n'en contient
+         plus d'autres met fin à la préparation. */
+      const aFaire = (lot.aFaire || []).filter((s) => !ecartees.has(s) && !enWebp.has(s));
+      if (!aFaire.length) break;
 
-  /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
-     premier cas surprend quand on attend le contraire — un champ de logo non
-     désigné dans la correspondance, et pas une fiche n'en porte — et le taire
-     laisse chercher du côté de la fabrication ce qui se règle du côté des
-     sources. */
-  if (!total) { signale(t("Aucun logo à préparer sur ce salon.")); return; }
-  if (!faites && !refusees) return;
-  /* Les vignettes ne sont portées que par le plan que l'API refait : le relais,
-     qui a pu garder celui d'avant elles — une visite entre la fin de la
-     synchronisation et celle des logos suffit —, le servirait sans elles un
-     jour durant, et pas un logo ne paraîtrait sur le plan. */
-  if (faites) oublieLePlan(e);
-  /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
-     un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
-     qui n'atteint jamais son total sans explication en serait une. */
-  const mot = refusees
-    ? t("{n} logo préparé, {r} illisibles chez leur source.", { n: faites, r: refusees })
-    : t("{n} logo préparé pour les fiches.", { n: faites });
-  signale(mot);
+      const paquet = [], webp = [];
+      for (const source of aFaire) {
+        const v = await vignetteDeLogo(source, avif);
+        if (v) paquet.push(v);
+        else ecartees.add(source);
+        if (v && v.format !== format) webp.push(source);
+        if (paquet.length >= PAQUET_VIGNETTES) {
+          faites += await envoie(paquet, webp);
+          paquet.length = 0; webp.length = 0;
+          compte();
+        }
+      }
+      if (paquet.length) faites += await envoie(paquet, webp);
+      compte();
+    }
+    const refusees = ecartees.size;
+
+    /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
+       premier cas surprend quand on attend le contraire — un champ de logo non
+       désigné dans la correspondance, et pas une fiche n'en porte — et le taire
+       laisse chercher du côté de la fabrication ce qui se règle du côté des
+       sources. */
+    if (!total) { signale(t("Aucun logo à préparer sur ce salon.")); return; }
+    if (!faites && !refusees) return;
+    /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
+       un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
+       qui n'atteint jamais son total sans explication en serait une. */
+    const mot = refusees
+      ? t("{n} logo préparé, {r} illisibles chez leur source.", { n: faites, r: refusees })
+      : t("{n} logo préparé pour les fiches.", { n: faites });
+    signale(mot);
+  } finally {
+    /* Le relais a pu garder le plan d'avant elles — une visite entre la fin
+       de la synchronisation et celle des logos suffit — et le servirait sans
+       elles un jour durant : pas un logo ne paraîtrait sur le plan. */
+    if (faites) oublieLePlan(e);
+  }
 }
 
 /**
@@ -287,13 +321,4 @@ function oublieLePlan(e) {
     { method: "POST" }).catch(() => {});
 }
 
-/** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son
- *  paquet : le tour suivant redemandera les mêmes adresses. */
-async function envoieVignettes(e, paquet) {
-  try {
-    const r = await fonction("vignettes", { evenementId: e.id, vignettes: paquet });
-    return r.enregistrees || 0;
-  } catch (err) {
-    return 0;
-  }
-}
+

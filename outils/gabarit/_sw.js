@@ -134,9 +134,19 @@ self.addEventListener("install", (e) => {
   /* La seule chose mise de côté d'avance : la page qui s'affiche quand tout le
      reste manque. Elle pèse deux kilo-octets, et c'est la seule qu'on ne peut
      pas avoir déjà visitée au moment où l'on en a besoin. */
+  /* Rangée telle quelle, elle gardait la marque d'une redirection — Cloudflare
+     mène `hors-ligne.html` à `/hors-ligne` —, et une navigation refuse une
+     réponse redirigée : le navigateur montrait sa propre erreur à la place de
+     la page de secours. Une redirection est donc recomposée en réponse nue. */
   e.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.add(new Request(HORS_LIGNE, { cache: "reload" })))
+      .then(async (c) => {
+        const r = await fetch(new Request(HORS_LIGNE, { cache: "reload" }));
+        if (!r.ok) return;
+        await c.put(HORS_LIGNE, r.redirected
+          ? new Response(await r.blob(), { status: r.status, statusText: r.statusText, headers: r.headers })
+          : r);
+      })
       .catch(() => {})
       .then(() => self.skipWaiting()));
 });

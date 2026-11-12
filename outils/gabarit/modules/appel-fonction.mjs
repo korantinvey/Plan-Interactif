@@ -79,6 +79,23 @@ export async function fluxFonction(nom, corps, surLigne, trace) {
   const dec = new TextDecoder();
   const FIN = String.fromCharCode(10);
   let reste = "", dernier = null;
+  const traite = (brute) => {
+    const ligne = brute.trim();
+    // le remplissage du flux est un commentaire : deux points en tête
+    if (!ligne || ligne[0] === ":") return;
+    /* On accepte les deux habillages. Les pages et les fonctions ne se
+       déploient pas ensemble — Cloudflare suit le dépôt, Supabase a son
+       propre workflow — et pendant quelques minutes une page neuve parle à
+       l'ancienne fonction, ou l'inverse. */
+    const utile = ligne.slice(0, 5) === "data:" ? ligne.slice(5).trim() : ligne;
+    if (!utile) return;
+    let o;
+    try { o = JSON.parse(utile); } catch (e) { return; }
+    dit({ evt: "ligne", ligne: o });
+    if (o.erreur) throw new Error(o.erreur);
+    surLigne(o);
+    if (o.ok) dernier = o;
+  };
   /* Le flux se referme quoi qu'il arrive. Une erreur annoncée par le serveur
      sortait d'ici par une exception, en laissant la connexion ouverte : le
      navigateur la tenait jusqu'au ramassage, et une synchronisation relancée
@@ -86,7 +103,13 @@ export async function fluxFonction(nom, corps, surLigne, trace) {
   try {
     for (;;) {
       const { done, value } = await lecteur.read();
-      if (done) { dit({ evt: "flux-fini" }); break; }
+      if (done) {
+        /* La dernière ligne n'a pas toujours son saut : sans lui, le bilan
+           restait dans le reliquat, et la synchronisation passait pour muette. */
+        traite(reste + dec.decode());
+        dit({ evt: "flux-fini" });
+        break;
+      }
       /* Le poids de chaque tronçon, et l'instant où il arrive. C'est là que se
          lit un tampon : une synchronisation servie au fil de l'eau rend des
          dizaines de tronçons étalés sur une minute, une réponse retenue n'en
@@ -95,22 +118,9 @@ export async function fluxFonction(nom, corps, surLigne, trace) {
       reste += dec.decode(value, { stream: true });
       let i;
       while ((i = reste.indexOf(FIN)) >= 0) {
-        const ligne = reste.slice(0, i).trim();
+        const ligne = reste.slice(0, i);
         reste = reste.slice(i + 1);
-        // le remplissage du flux est un commentaire : deux points en tête
-        if (!ligne || ligne[0] === ":") continue;
-        /* On accepte les deux habillages. Les pages et les fonctions ne se
-           déploient pas ensemble — Cloudflare suit le dépôt, Supabase a son
-           propre workflow — et pendant quelques minutes une page neuve parle à
-           l'ancienne fonction, ou l'inverse. */
-        const utile = ligne.slice(0, 5) === "data:" ? ligne.slice(5).trim() : ligne;
-        if (!utile) continue;
-        let o;
-        try { o = JSON.parse(utile); } catch (e) { continue; }
-        dit({ evt: "ligne", ligne: o });
-        if (o.erreur) throw new Error(o.erreur);
-        surLigne(o);
-        if (o.ok) dernier = o;
+        traite(ligne);
       }
     }
   } finally {
