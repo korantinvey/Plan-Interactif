@@ -481,7 +481,7 @@ Importé par :
 
 fenetre · tiroirs
 
-### `modules/calage-carte.mjs` — 916 l. → plan-admin
+### `modules/calage-carte.mjs` — 917 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
@@ -491,11 +491,11 @@ Fonctions :
 `boutonMasqueCarte` 99 · `pictoMasque` 110 · `carreDeTerrain` 137 · `chercheBatiments` 153
 `empriseDesObjets` 181 · `batimentsCandidats` 199 · `caleSurBatiment` 220
 `retientLeHall` 246 · `manqueCalage` 268 · `enregistreCalage` 277 · `figeEtEnregistre` 300
-`calageEnregistre` 329 · `oublieCalageEnCours` 350 · `litCoordonnees` 362
-`rafraichitCarte` 376 · `armeCalage` 415 · `pivotCalage` 426 · `glisseCarte` 430
-`cartePointerDown` 437 · `cartePointerMove` 451 · `cartePointerUp` 470 · `ditCalage` 478
-`majCalage` 487 · `appliqueCalage` 509 · `tourneCalage` 516 · `construitCalage` 522
-`ouvreCalage` 694 · `fermeCalage` 704 · `brancheCalageCarte` 716 · `voletEnvirons` 739
+`calageEnregistre` 329 · `oublieCalageEnCours` 357 · `litCoordonnees` 369
+`rafraichitCarte` 383 · `armeCalage` 422 · `pivotCalage` 433 · `glisseCarte` 437
+`cartePointerDown` 444 · `cartePointerMove` 458 · `cartePointerUp` 477 · `ditCalage` 485
+`majCalage` 494 · `appliqueCalage` 516 · `tourneCalage` 523 · `construitCalage` 529
+`ouvreCalage` 701 · `fermeCalage` 711 · `brancheCalageCarte` 723 · `voletEnvirons` 746
 
 Importe :
 
@@ -1176,14 +1176,14 @@ acces-admin · calques-dessin · camera · cartouche-poi · configuration · dem
 fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · tiroir-itineraire
 trace-itineraire · traduction · vignettes · webgl
 
-### `modules/evenements.mjs` — 74 l. → console
+### `modules/evenements.mjs` — 89 l. → console
 
 - l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
 
 Fonctions :
 
-`poseEvenements` 42 · `slugifie` 53 · `evenementParId` 59 · `courant` 61 · `chargePlans` 63
-`majEvenement` 68
+`poseEvenements` 42 · `slugifie` 53 · `evenementParId` 59 · `courant` 61 · `poseSurSalon` 73
+`chargePlans` 78 · `majEvenement` 83
 
 Importe :
 
@@ -1250,7 +1250,7 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1365 l. → console
+### `modules/fiche-detail.mjs` — 1382 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
 - l.27 · Contenu de la fiche détail
@@ -1259,9 +1259,9 @@ Fonctions :
 
 `paraitSurFiche` 164 · `origineConferences` 170 · `origineProduits` 177 · `resumeFiche` 247
 `caseFiche` 292 · `cibleEn` 348 · `champsPersos` 350 · `criteres` 356 · `ecritFiche` 375
-`caseCritere` 396 · `clePerso` 418 · `ajouteChampPerso` 426 · `renommeChampPerso` 443
-`retireChampPerso` 491 · `lignesPerso` 558 · `cadreFiche` 581 · `ouvreFiche` 611
-`cadreCategories` 751 · `sousTitre` 859 · `tableauChamps` 874 · `champOrigine` 1100
+`caseCritere` 398 · `clePerso` 420 · `ajouteChampPerso` 428 · `renommeChampPerso` 445
+`retireChampPerso` 493 · `lignesPerso` 565 · `cadreFiche` 588 · `ouvreFiche` 618
+`cadreCategories` 758 · `sousTitre` 867 · `tableauChamps` 882 · `champOrigine` 1108
 
 Importe :
 
@@ -2551,7 +2551,7 @@ Injections :
 
 - `injecteAuxPolices` (rendu) — une police arrivée fait retracer le plan, les calques, les noms et la liste, qui tous importent les polices
 
-### `modules/provenance.mjs` — 186 l. → console
+### `modules/provenance.mjs` — 188 l. → console
 
 - l.1 · Provenance des données d'un salon — domaines, fournisseurs, réglage
 - l.20 · Provenance des données
@@ -2559,7 +2559,7 @@ Injections :
 Fonctions :
 
 `fournisseurUtilise` 93 · `sourceNom` 103 · `source` 107 · `ligneSource` 111
-`resumeProvenance` 149 · `ouvreProvenance` 170
+`resumeProvenance` 151 · `ouvreProvenance` 172
 
 Importe :
 

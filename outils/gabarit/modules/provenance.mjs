@@ -12,7 +12,7 @@
    console (`fenetre-console.mjs`, `socle-console.mjs`). Le salon ouvert et
    son écriture viennent de `evenements.mjs`.
    ============================================================ */
-import { courant, evenementParId, majEvenement } from "./evenements.mjs";
+import { courant, evenementParId, majEvenement, poseSurSalon } from "./evenements.mjs";
 import { creeFileEcritures } from "./ecritures-en-file.mjs";
 import { ouvreModale } from "./fenetre-console.mjs";
 import { grille, signale } from "./socle-console.mjs";
@@ -135,6 +135,8 @@ function ligneSource(dom, libelle, offerts, aide) {
       const sources = { ...(e2.sources || {}), [dom]: { fournisseur: voulu } };
       await majEvenement(e2.id, { sources });
       e2.sources = sources;
+      // la liste a pu être rechargée pendant la requête (`poseSurSalon`)
+      poseSurSalon(e2.id, { sources });
     }, dom).then(({ ok, dernier, erreur }) => {
       if (ok) return;
       if (dernier) menu.value = (((evenementParId(e.id) || e).sources || {})[dom] || {}).fournisseur || choisi;

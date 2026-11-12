@@ -18,7 +18,7 @@
 import { separeValeurs } from "./texte.mjs";
 import { DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
   ACCORDS, aplani, autreFace } from "./correspondance.mjs";
-import { courant, evenementParId, majEvenement, slugifie } from "./evenements.mjs";
+import { courant, evenementParId, majEvenement, poseSurSalon, slugifie } from "./evenements.mjs";
 import { FOURNISSEURS, SOURCES_NOM, source, sourceNom } from "./provenance.mjs";
 import { ouvreModale, demande, confirme, gardeLaPlace } from "./fenetre-console.mjs";
 import { signale } from "./socle-console.mjs";
@@ -379,6 +379,8 @@ function ecritFiche(e, part, cle) {
     const fiche = { ...(e2.fiche || {}), ...(typeof part === "function" ? part(e2) : part) };
     await majEvenement(e2.id, { fiche });
     e2.fiche = fiche;
+    // la liste a pu être rechargée pendant la requête (`poseSurSalon`)
+    poseSurSalon(e2.id, { fiche });
   }, cle).then((r) => {
     if (!r.ok) signale(/** @type {Error} */ (r.erreur).message, true);
     return r;
@@ -539,10 +541,15 @@ function retireChampPerso(cle, libelle, redessine) {
         });
         corr[src] = bloc;
       });
+      /* Dans la file, comme les catégories : la même colonne, écrite d'un bloc,
+         et deux écritures croisées perdaient la première. */
       if (touche) {
-        e2.correspondances = corr;
-        try { await majEvenement(e2.id, { correspondances: corr }); }
-        catch (err) { signale(err.message, true); }
+        const r = await fileFiche.ecrit(async () => {
+          await majEvenement(e2.id, { correspondances: corr });
+          e2.correspondances = corr;
+          poseSurSalon(e2.id, { correspondances: corr });
+        });
+        if (!r.ok) signale(/** @type {Error} */ (r.erreur).message, true);
       }
       redessine();
     });
@@ -801,6 +808,7 @@ function cadreCategories(src) {
     e2.correspondances = corr;
     try { await majEvenement(e2.id, { correspondances: corr }); }
     catch (err) { e2.correspondances = avant; throw err; }
+    poseSurSalon(e2.id, { correspondances: corr });
     confirmees = envoyees;
   };
 
@@ -1187,14 +1195,23 @@ function champOrigine(src, cible, apres, ouiNon, sansChamp) {
 
   /* Le champ retenu et les valeurs qui le font compter vivent dans le même
      bloc : c'est un seul réglage en deux temps, et il s'enregistre d'un coup. */
-  const enregistre = async (part) => {
-    const e2 = courant();
-    const avant = e2.correspondances;
-    const corr = { ...(e2.correspondances || {}) };
-    corr[src] = { ...(corr[src] || {}), ...part };
-    e2.correspondances = corr;
-    try { await majEvenement(e2.id, { correspondances: corr }); }
-    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+  /* Dans la file des écritures du salon : les catégories et le retrait d'un
+     champ réécrivent la même colonne d'un bloc, et chacune doit partir de ce
+     que la précédente a fait confirmer. Le salon est celui du geste, retrouvé
+     par son identifiant quand l'écriture part. */
+  const enregistre = (part) => {
+    const id = courant().id;
+    return fileFiche.ecrit(async () => {
+      const e2 = evenementParId(id);
+      if (!e2) throw new Error("Ce salon n'est plus chargé : correspondance non enregistrée.");
+      const avant = e2.correspondances;
+      const corr = { ...(e2.correspondances || {}) };
+      corr[src] = { ...(corr[src] || {}), ...part };
+      e2.correspondances = corr;
+      try { await majEvenement(e2.id, { correspondances: corr }); }
+      catch (err) { e2.correspondances = avant; throw err; }
+      poseSurSalon(e2.id, { correspondances: corr });
+    }).then((r) => { if (!r.ok) signale(/** @type {Error} */ (r.erreur).message, true); });
   };
 
   sel.onchange = () => {

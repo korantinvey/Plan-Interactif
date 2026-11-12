@@ -60,6 +60,21 @@ export const evenementParId = (id) => EVTS.find((e) => e.id === id);
 
 export const courant = () => evenementParId(selection);
 
+/**
+ * Ce que la base vient de prendre, rangé dans le salon tel qu'il est dans la
+ * liste maintenant. Une écriture garde l'objet qu'elle a trouvé au départ ;
+ * si la console a rechargé ses salons pendant la requête, cet objet n'est
+ * plus affiché, et la valeur confirmée s'y perdait — l'écran restait sur
+ * l'ancienne, et l'écriture suivante, partie de celle-là, l'effaçait.
+ *
+ * @param {string} id
+ * @param {Record<string, unknown>} champs
+ */
+export function poseSurSalon(id, champs) {
+  const e = evenementParId(id);
+  if (e) Object.assign(e, champs);
+}
+
 export async function chargePlans(id) {
   PLANS[id] = await rest("plan?evenement_id=eq." + id +
     "&select=id,id_klipso,libelle,hall,publie,nb_stands,nb_zones&order=libelle.asc");
