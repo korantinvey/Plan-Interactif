@@ -591,16 +591,23 @@ function placeFigee(/** @type {HTMLImageElement} */ im, /** @type {any} */ e){
 
 /* La bibliothèque n'est chargée que lorsqu'un fond vectoriel est retenu : deux
    cent sept kilo-octets compressés qu'un salon sans carte n'a pas à
-   télécharger. Une version majeure plutôt qu'exacte — le CDN résout alors
-   toujours vers quelque chose qui existe, là où un numéro de correctif mal
-   deviné ne rendrait qu'un 404 silencieux.
+   télécharger.
 
-   La quatre, et pas au-delà : à partir de la six le paquet ne publie plus de
-   « maplibre-gl.js », seulement des modules. Monter de majeure sans changer
-   aussi le nom du fichier ferait donc disparaître la carte en silence — le
-   404 d'un script ajouté à la main ne se remarque nulle part. */
-const MAPLIBRE_JS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js";
-const MAPLIBRE_CSS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css";
+   Servie d'ici, et non plus de jsDelivr : le CDN rendait la dernière 4.x
+   publiée, quelle qu'elle soit, sans que rien vérifie ce qui arrivait, et la
+   CSP la laissait s'exécuter — un paquet piégé aurait tourné chez chaque
+   visiteur. Version exacte, nom qui porte l'empreinte du contenu, et empreinte
+   d'intégrité que le navigateur vérifie avant d'exécuter ou d'appliquer quoi
+   que ce soit : un fichier altéré ne se charge pas, la carte retombe sur le fond
+   sans tuiles, comme pour un réseau absent. Les deux fichiers et leurs
+   empreintes viennent de `outils/scripts/maplibre.js` (`npm run maplibre`), qui
+   dit aussi pourquoi l'on reste à la quatre. */
+const MAPLIBRE = {
+  script: "bibliotheques/maplibre-gl-4.7.1-be9633c4.js",
+  integriteScript: "sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj",
+  style: "bibliotheques/maplibre-gl-4.7.1-576b085f.css",
+  integriteStyle: "sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V",
+};
 
 /* Le montage de la carte vectorielle, étape par étape, pour la sonde
    (`sonde.mjs`) : « demandee », « bibliotheque », « creee », « chargee »,
@@ -626,10 +633,12 @@ export function chargeMapLibre(){
     if (window.maplibregl) return ok(window.maplibregl);
     const css = document.createElement("link");
     css.rel = "stylesheet";
-    css.href = MAPLIBRE_CSS;
+    css.integrity = MAPLIBRE.integriteStyle;
+    css.href = MAPLIBRE.style;
     document.head.appendChild(css);
     const js = document.createElement("script");
-    js.src = MAPLIBRE_JS;
+    js.integrity = MAPLIBRE.integriteScript;
+    js.src = MAPLIBRE.script;
     js.onload = () => window.maplibregl
       ? ok(window.maplibregl)
       : non(new Error("bibliothèque chargée mais introuvable"));
@@ -862,7 +871,7 @@ function poseCarteGL(cal, fond, etendue, enGeste = false){
        posée, et tout montage suivant sortait à la première ligne — « Situer le
        salon » ne montait plus rien, sans un mot, jusqu'au rechargement. */
     if (gen !== _genGL){ _monteGL = false; return; }
-    CARTE_ENVIRONS.emet("bibliotheque", { adresse: MAPLIBRE_JS });
+    CARTE_ENVIRONS.emet("bibliotheque", { adresse: MAPLIBRE.script });
     const t0 = performance.now();
     const v = vueGL(cal, etendue);
     _styleGL = sig;

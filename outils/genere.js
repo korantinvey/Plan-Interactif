@@ -640,8 +640,9 @@ function sortScripts(html) {
    Ce qu'elle garde, c'est le script : une description d'exposant, un nom de
    zone, un logo viennent d'ailleurs, et `modules/sur.mjs` les relit avant de
    les poser ; si une injection passait quand même, elle ne pourrait rien
-   exécuter. N'est permis que ce que la page sert elle-même, MapLibre à son
-   adresse exacte, et les quelques scripts restés en ligne, chacun par son
+   exécuter. N'est permis que ce que la page sert elle-même — MapLibre
+   compris, servi d'ici depuis qu'il ne vient plus d'un CDN —, et les quelques
+   scripts restés en ligne, chacun par son
    empreinte — calculée ici, sur ce qui part vraiment. Le reste est large à
    dessein : les logos et les tuiles viennent de partout (`img-src https:`),
    l'administration parle au projet Supabase que la console lui a donné
@@ -652,7 +653,6 @@ function sortScripts(html) {
    fichiers statiques comme par le relais (`/plan-<salon>`), et la balise la
    suit partout. Elle vient juste après le jeu de caractères, avant tout script
    — elle ne protège que ce qui la suit. */
-const MAPLIBRE = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.";
 const EN_LIGNE = /<script((?:(?!\bsrc=)[^>])*)>([\s\S]*?)<\/script>/g;
 function poseCsp(html) {
   const empreintes = [...html.matchAll(EN_LIGNE)]
@@ -663,8 +663,8 @@ function poseCsp(html) {
     /* Ni `eval`, ni WebAssembly : la bibliothèque entière de deck.gl
        compilait un décodeur, que sa version réduite au plan n'embarque plus
        (`outils/scripts/deck.js`), et MapLibre n'en a pas. */
-    "script-src 'self' " + MAPLIBRE + "js " + empreintes.join(" "),
-    "style-src 'self' 'unsafe-inline' " + MAPLIBRE + "css",
+    "script-src 'self' " + empreintes.join(" "),
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https: data: blob:",
     "font-src 'self' data:",
     "connect-src 'self' https: data: blob:",

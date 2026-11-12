@@ -12,7 +12,7 @@
  * `/api/sonde` et la RPC `sonde_admin` sont interceptés : rien ne sort.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, DONNEES } = require("./aide.js");
+const { prepare, attendLaListe, remplaceMapLibre, DONNEES } = require("./aide.js");
 const { incoherences } = require("../../scripts/sonde-coherence.js");
 
 /** Le résumé ne contredit aucune règle de vraisemblance : une mesure faussée échoue ici. */
@@ -317,7 +317,7 @@ test.describe("la sonde silencieuse, la carte des environs", () => {
       ? r.fulfill({ json: { v: "essai-carte" } })
       : r.fulfill({ status: 200, contentType: "application/json",
                     headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
-    await page.route("https://cdn.jsdelivr.net/npm/maplibre-gl@4/**", (r) => r.fulfill({
+    await remplaceMapLibre(page, (r) => r.fulfill({
       contentType: /\.css$/.test(r.request().url()) ? "text/css" : "application/javascript",
       body: /\.css$/.test(r.request().url()) ? "" :
         "const tiens = (ms) => { const t = performance.now(); while (performance.now() - t < ms) {} };" +
