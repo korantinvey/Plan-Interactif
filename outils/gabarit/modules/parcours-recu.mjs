@@ -73,15 +73,20 @@ export function proposeParcoursRecu(brut){
 
   const recu = litCodeParcours(brut);
   if (!recu) return false;
-  const stands = recu.stands.filter(id => parId.has(id) && !dansParcours("stand", id));
-  const confs = recu.confs.filter(id => CONFS.has(id) && !dansParcours("conf", id));
+  /* Deux listes : ce que le lien porte de ce salon, et ce qui manque au
+     parcours du visiteur. « Ajouter au mien » ne verse que le manquant ;
+     « Remplacer le mien » doit tout prendre — filtré lui aussi, il perdait
+     justement ce que les deux parcours avaient en commun. */
+  const tousStands = recu.stands.filter(id => parId.has(id));
+  const toutesConfs = recu.confs.filter(id => CONFS.has(id));
+  const stands = tousStands.filter(id => !dansParcours("stand", id));
+  const confs = toutesConfs.filter(id => !dansParcours("conf", id));
 
   if (!stands.length && !confs.length){
     /* Deux raisons de n'avoir rien à proposer, et elles ne se disent pas
        pareil : le parcours est déjà là — on a rouvert son propre lien, ou
        cliqué deux fois dessus — ou bien il ne parle pas de ce salon. */
-    const connus = recu.stands.filter(id => parId.has(id)).length +
-                   recu.confs.filter(id => CONFS.has(id)).length;
+    const connus = tousStands.length + toutesConfs.length;
     ouvreModale("Parcours partagé", corps => {
       const p = document.createElement("p");
       p.textContent = connus
@@ -121,7 +126,7 @@ export function proposeParcoursRecu(brut){
        proposée d'abord, c'est elle qui ne perd rien. */
     ? [{ libelle: "Annuler" },
        { libelle: "Remplacer le mien", genre: "danger",
-         action: () => adoptePartage(stands, confs, true) },
+         action: () => adoptePartage(tousStands, toutesConfs, true) },
        { libelle: "Ajouter au mien", genre: "accent",
          action: () => adoptePartage(stands, confs, false) }]
     : [{ libelle: "Annuler" },

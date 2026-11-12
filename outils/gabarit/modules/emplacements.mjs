@@ -104,7 +104,10 @@ export function poseGeometrie(o, anneaux){
 /** La retouche retenue, si elle décrit encore ce que la source sert. */
 function retoucheGeo(o){
   const r = CONF[cleGeo(o.id)];
-  return r && Array.isArray(r.p) && r.p.length &&
+  /* Des anneaux de nombres, comme pour un emplacement ajouté : la retouche vient
+     de la configuration, et ses sommets entrent tels quels dans le tracé que
+     reçoit chaque visiteur. Illisible, elle s'écarte et la source reste. */
+  return r && anneauxValides(r.p) &&
          r.e === empreinteGeo(geometrieSource(o)) ? r : null;
 }
 
