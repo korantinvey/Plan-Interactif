@@ -60,6 +60,17 @@ function distSegment(p: Point, a: Point, b: Point): number {
   return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
 }
 
+/* Dedans, au sens pair-impair sur tous les anneaux : ils sont dépliés sans
+   dire lequel est un morceau et lequel une cour. Seul le premier comptait —
+   le second morceau d'un stand passait pour dehors, la cour d'un îlot pour
+   dedans, et le nom pouvait s'y écrire. Règle tenue des deux côtés
+   (`modules/forme.mjs`, `_partage/geometrie.ts`). */
+function dansForme(p: Point, a: Anneau[]): boolean {
+  let n = 0;
+  for (const anneau of a) if (dedans(p, anneau)) n++;
+  return n % 2 === 1;
+}
+
 /** Distance au bord, négative à l'extérieur : c'est ce qu'on maximise. */
 function distBord(p: Point, a: Anneau[]): number {
   let d = Infinity;
@@ -68,7 +79,7 @@ function distBord(p: Point, a: Anneau[]): number {
       d = Math.min(d, distSegment(p, anneau[j], anneau[i]));
     }
   }
-  return dedans(p, a[0]) ? d : -d;
+  return dansForme(p, a) ? d : -d;
 }
 
 /**
@@ -104,7 +115,7 @@ function poleInterieur(a: Anneau[], x0: number, y0: number, x1: number, y1: numb
 function portee(p: Point, a: Anneau[], ux: number, uy: number, max: number): number {
   const pas = max / 24;
   let d = 0;
-  while (d + pas <= max && dedans([p[0] + (d + pas) * ux, p[1] + (d + pas) * uy], a[0])) {
+  while (d + pas <= max && dansForme([p[0] + (d + pas) * ux, p[1] + (d + pas) * uy], a)) {
     d += pas;
   }
   return d;
@@ -131,8 +142,17 @@ export function boite(a: Anneau[]): Boite {
   /* On recentre le libellé dans l'espace libre trouvé, puis on ne retient que
      la moitié la plus courte de chaque côté : le texte est centré sur son
      ancrage, il déborderait sinon du côté le plus étroit. */
-  const lc: Point = [r2(p[0] + (d - g) / 2), r2(p[1] + (b - h) / 2)];
-  const lb: Point = [r2(Math.min(g + d, bb[0])), r2(Math.min(h + b, bb[1]))];
+  let lc: Point = [r2(p[0] + (d - g) / 2), r2(p[1] + (b - h) / 2)];
+  let lb: Point = [r2(Math.min(g + d, bb[0])), r2(Math.min(h + b, bb[1]))];
+  /* Le milieu des deux traversées peut tomber hors de la forme : un îlot
+     percé d'une cour, traversé de part en part au-dessus d'elle, se
+     recentrait au milieu de la cour. Le nom s'écrit alors sur le point
+     trouvé, avec la place qu'il a de chaque côté. (Règle tenue des deux
+     côtés : `modules/forme.mjs`, `_partage/geometrie.ts`.) */
+  if (!dansForme(lc, a)) {
+    lc = [r2(p[0]), r2(p[1])];
+    lb = [r2(Math.min(2 * Math.min(g, d), bb[0])), r2(Math.min(2 * Math.min(h, b), bb[1]))];
+  }
 
   // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
   return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5 ? { c, bb, lc, lb } : { c, bb };
