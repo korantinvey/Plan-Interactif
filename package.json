@@ -16,6 +16,7 @@
     "logos-demo": "node outils/scripts/logos-demo.js",
     "salon-demo": "node outils/scripts/salon-demo.js",
     "deck": "node outils/scripts/deck.js",
+    "maplibre": "node outils/scripts/maplibre.js",
     "avif": "node outils/scripts/avif.js",
     "jsqr": "node outils/scripts/jsqr.js",
     "bd": "supabase db push",
