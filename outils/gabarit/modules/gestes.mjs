@@ -25,6 +25,7 @@
    ============================================================ */
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
+import { pourRecherche } from "./texte.mjs";
 import { DATA, parId, state } from "./donnees.mjs";
 import { ETROIT, REDUIT } from "./ecran.mjs";
 import { mesure } from "./mesure.mjs";
@@ -573,7 +574,7 @@ export function brancheGestes(){
   $("zFit").onclick = fit;
   $("q").addEventListener("input", e => {
     state.q = e.target.value;
-    state.qn = state.q.trim().toLowerCase();
+    state.qn = pourRecherche(state.q.trim());
     majVideQ();
     planifieFiltre();
     clearTimeout(_rechAttente);

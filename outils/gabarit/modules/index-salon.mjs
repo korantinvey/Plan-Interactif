@@ -15,6 +15,7 @@
    n'écoute.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { pourRecherche } from "./texte.mjs";
 import { creeEvenement } from "./evenement.mjs";
 import { DATA, parId, CONFS, EXPOSANTS, HEBERGES, CONFERENCES, poseDonnees } from "./donnees.mjs";
 import { imageSure } from "./sur.mjs";
@@ -50,9 +51,9 @@ export const REGLAGES_RECUS = creeEvenement();
    dehors : elle porte du balisage, pèse dix lignes par produit, et un mot-clé
    qui y répondrait retiendrait un exposant sans que rien à l'écran dise
    pourquoi. */
-const texteProduits = (l) => (l || [])
+const texteProduits = (l) => pourRecherche((l || [])
   .map(p => (p.nom || "") + " " + (p.themes || []).join(" "))
-  .join(" ").toLowerCase();
+  .join(" "));
 
 export function indexe(/** @type {any} */ d){
   poseDonnees({ DATA: d });
@@ -69,7 +70,7 @@ export function indexe(/** @type {any} */ d){
     p.zones.forEach(z => {
       z.kind = "zone"; z.p = i;
       // son libellé anglais aussi : un visiteur étranger tape celui qu'il lit
-      z.rech = (String(z.nom || "") + " " + String(z.nom_en || "")).toLowerCase();
+      z.rech = pourRecherche(String(z.nom || "") + " " + String(z.nom_en || ""));
     });
     /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
        toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
@@ -85,16 +86,16 @@ export function indexe(/** @type {any} */ d){
          dès lors qu'elles paraissent sur la fiche, ce qu'on y lit doit se
          retrouver en le tapant. Elles s'y répètent quand elles en sont un,
          ce dont une recherche par sous-chaîne ne s'aperçoit pas. */
-      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
+      s.rech = pourRecherche((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
                 " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
-                " " + texteCriteres(s)).toLowerCase();
+                " " + texteCriteres(s));
       /* Et l'anglais de ces valeurs, quand la source le donne : un visiteur
          qui lit « Construction » tape « construction », pas « bâtiment ». */
       const anglais = d.anglais || {};
       const traduites = [s.sect].concat(s.themes || [], s.nomencl || [],
         clesCriteres().flatMap(c => valeursCritere(s, c)))
         .map(v => anglais[v]).filter(Boolean);
-      if (traduites.length) s.rech += " " + traduites.join(" ").toLowerCase();
+      if (traduites.length) s.rech += " " + pourRecherche(traduites.join(" "));
       /* L'anglais des champs propres au salon ne vient pas du dictionnaire
          mais de la source, par la seconde origine que l'exploitant lui a
          désignée : il est déjà sur la fiche, il n'a qu'à entrer dans ce qu'on
@@ -280,9 +281,9 @@ export function indexe(/** @type {any} */ d){
         nomencl: x.nomencl, themes: x.themes, perso: x.perso,
         perso_en: x.perso_en, neuf: x.neuf, adh: x.adh,
       };
-      h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
+      h.rech = pourRecherche((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
                 " " + (s.sect || "") + " " + (x.themes || []).join(" ") +
-                " " + texteCriteres(h)).toLowerCase() + texteAnglaisPerso(h);
+                " " + texteCriteres(h)) + texteAnglaisPerso(h);
       // son catalogue est à elle, comme ses thématiques et ses rubriques
       h.rechProd = texteProduits(x.produits);
       return h;
@@ -382,10 +383,9 @@ export function indexeConferences(){
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
-    c.rech = ((c.nom || "") + " " + (c.salle || "") + " " + (c.type || "") +
+    c.rech = pourRecherche((c.nom || "") + " " + (c.salle || "") + " " + (c.type || "") +
               " " + (c.theme || "") + " " + dits + " " +
-              tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
-             ).toLowerCase();
+              tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" "));
   });
   rangeConferences();
 }
