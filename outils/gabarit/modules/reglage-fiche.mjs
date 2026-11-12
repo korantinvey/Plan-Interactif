@@ -265,7 +265,9 @@ export function voletOrdre(hote){
       const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
     })).then(t => {
-      confirmee = t;
+      /* Une copie à part : `DATA.fiche` reçoit le même objet, que le clic
+         suivant modifie en place — la restauration aurait gardé le refusé. */
+      confirmee = structuredClone(t);
       if (n !== derniere) return;
       DATA.fiche = t; dit("Enregistré.");
     }).catch(e => {

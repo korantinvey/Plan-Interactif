@@ -237,7 +237,8 @@ const LIGNES_RATTACHEMENT = {
    taire, sans quoi on croirait le champ déjà repris. */
 const FICHE_INERTE = [];
 
-/** Les écritures de la fiche d'un salon, l'une après l'autre. */
+/** Les écritures de la fiche d'un salon, l'une après l'autre.
+ *  @type {Promise<unknown>} */
 let fileFiche = Promise.resolve();
 
 export function resumeFiche(e) {
@@ -308,18 +309,13 @@ function caseFiche(type, cle, libelle, aide, apres) {
   i.onchange = () => {
     const voulu = i.checked, n = ++dernier;
     if (apres) apres(voulu);
-    fileFiche = fileFiche.then(async () => {
-      const fiche = { ...(e.fiche || {}) };
-      fiche[type] = { ...(fiche[type] || {}), [cle]: voulu };
-      try { await majEvenement(e.id, { fiche }); e.fiche = fiche; }
-      catch (err) {
-        signale(err.message, true);
-        if (n !== dernier) return;
-        const tenu = paraitSurFiche(e, type, cle);
+    ecritFiche(e, (s) => ({ [type]: { ...((s.fiche || {})[type] || {}), [cle]: voulu } }))
+      .then((ok) => {
+        if (ok || n !== dernier) return;
+        const tenu = paraitSurFiche(evenementParId(e.id) || e, type, cle);
         i.checked = tenu;
         if (apres) apres(tenu);
-      }
-    });
+      });
   };
   return l;
 }
@@ -363,14 +359,24 @@ const criteres = (e) => (e.fiche && e.fiche.criteres) || {};
  * que la précédente a confirmée : calculée avant, elle pouvait reposer l'état
  * d'avant une écriture encore en route. La fiche du salon ne change qu'une
  * fois la base d'accord ; refusée, rien n'est à défaire.
+ *
+ * Le salon se retrouve par son identifiant quand l'écriture part, et `part`
+ * le reçoit : la console a pu recharger sa liste entre-temps, et l'objet du
+ * geste, périmé, aurait reçu la fiche à la place de celui qu'elle affiche.
+ * La promesse dit si la base a pris l'écriture : ce qui suit n'a lieu qu'alors.
+ *
+ * @returns {Promise<boolean>}
  */
 function ecritFiche(e, part) {
-  fileFiche = fileFiche.then(async () => {
-    const fiche = { ...(e.fiche || {}), ...(typeof part === "function" ? part() : part) };
-    try { await majEvenement(e.id, { fiche }); e.fiche = fiche; }
-    catch (err) { signale(err.message, true); }
+  const tache = fileFiche.then(async () => {
+    const e2 = evenementParId(e.id);
+    if (!e2) { signale("Ce salon n'est plus chargé : fiche non enregistrée.", true); return false; }
+    const fiche = { ...(e2.fiche || {}), ...(typeof part === "function" ? part(e2) : part) };
+    try { await majEvenement(e2.id, { fiche }); e2.fiche = fiche; return true; }
+    catch (err) { signale(err.message, true); return false; }
   });
-  return fileFiche;
+  fileFiche = tache;
+  return tache;
 }
 
 /**
@@ -391,12 +397,12 @@ function caseCritere(cle, apres) {
   i.setAttribute("aria-label", "Proposer ce champ dans les critères de recherche");
   i.onchange = async () => {
     const voulu = i.checked;
-    await ecritFiche(e, () => {
-      const c = { ...criteres(e) };
+    await ecritFiche(e, (s) => {
+      const c = { ...criteres(s) };
       if (voulu) c[cle] = true; else delete c[cle];
       return { criteres: c };
     });
-    i.checked = criteres(courant())[cle] === true;
+    i.checked = criteres(evenementParId(e.id) || e)[cle] === true;
     if (apres) apres(i.checked);
   };
   return l;
@@ -415,7 +421,7 @@ function ajouteChampPerso(redessine) {
   const e = courant();
   demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
     "", async (libelle) => {
-      await ecritFiche(e, () => ({ perso: champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]) }));
+      await ecritFiche(e, (s) => ({ perso: champsPersos(s).concat([{ cle: clePerso(s, libelle), libelle }]) }));
       redessine();
     });
 }
@@ -445,13 +451,13 @@ function renommeChampPerso(cle, redessine) {
   const valide = async () => {
     const libelle = fr.value.trim();
     const libelleEn = en.value.trim();
-    const perso = () => champsPersos(e).map((c) => {
+    const perso = (s) => champsPersos(s).map((c) => {
       if (c.cle !== cle) return c;
       const n = { ...c, libelle };
       if (libelleEn) n.libelle_en = libelleEn; else delete n.libelle_en;
       return n;
     });
-    await ecritFiche(e, () => ({ perso: perso() }));
+    await ecritFiche(e, (s) => ({ perso: perso(s) }));
     redessine();
   };
   ouvreModale("Renommer le champ", (corps) => {
@@ -483,32 +489,36 @@ function retireChampPerso(cle, libelle, redessine) {
     "Le champ, son origine et son réglage de recherche sont effacés. Les " +
     "valeurs déjà synchronisées disparaîtront de la fiche à la prochaine " +
     "synchronisation.", "Retirer", async () => {
-      await ecritFiche(e, () => {
-      const stand = { ...((e.fiche || {}).stand || {}) };
-      const crit = { ...criteres(e) };
+      const ecrite = await ecritFiche(e, (s) => {
+      const stand = { ...((s.fiche || {}).stand || {}) };
+      const crit = { ...criteres(s) };
       delete stand[cible];
       delete crit[cible];
       return {
-        perso: champsPersos(e).filter((c) => c.cle !== cle),
+        perso: champsPersos(s).filter((c) => c.cle !== cle),
         stand, criteres: crit,
         /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
            sous le même intitulé à la place qu'occupait le premier. Et avec lui
            la section qui le réunissait et le sort réservé à son intitulé, qui
            ne décrivent plus rien. */
-        ordre: (((e.fiche || {}).ordre) || []).filter((c) => c !== cible),
-        groupes: (((e.fiche || {}).groupes) || [])
+        ordre: (((s.fiche || {}).ordre) || []).filter((c) => c !== cible),
+        groupes: (((s.fiche || {}).groupes) || [])
           .map((g) => ({ ...g, cles: (g.cles || []).filter((c) => c !== cible) }))
           .filter((g) => g.cles.length),
         intitules: (() => {
-          const i = { ...((e.fiche || {}).intitules || {}) };
+          const i = { ...((s.fiche || {}).intitules || {}) };
           delete i[cible];
           return i;
         })(),
       };
       });
+      /* Fiche refusée : le champ y reste, sa correspondance aussi — sans
+         quoi la fiche garderait un champ que rien n'alimente plus. */
+      const e2 = ecrite && evenementParId(e.id);
+      if (!e2) { redessine(); return; }
       /* La correspondance se nettoie de son côté : elle est rangée par
          fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
-      const corr = { ...(e.correspondances || {}) };
+      const corr = { ...(e2.correspondances || {}) };
       let touche = false;
       Object.keys(corr).forEach((src) => {
         const bloc = { ...(corr[src] || {}) };
@@ -524,8 +534,8 @@ function retireChampPerso(cle, libelle, redessine) {
         corr[src] = bloc;
       });
       if (touche) {
-        e.correspondances = corr;
-        try { await majEvenement(e.id, { correspondances: corr }); }
+        e2.correspondances = corr;
+        try { await majEvenement(e2.id, { correspondances: corr }); }
         catch (err) { signale(err.message, true); }
       }
       redessine();

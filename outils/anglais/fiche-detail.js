@@ -179,4 +179,5 @@ module.exports = {
     "Marks the exhibitor as a member of the show's trade body. The field rarely carries a yes: tick below it whichever of its values count as membership. What the map makes of it is set from the map's gear, \u201cMembers\u201d tab.",
   // une écriture de catégories différée dont le salon a quitté la liste
   "Ce salon n'est plus chargé : catégories non enregistrées.": "This show is no longer loaded: categories not saved.",
+  "Ce salon n'est plus chargé : fiche non enregistrée.": "This show is no longer loaded: card not saved.",
 };

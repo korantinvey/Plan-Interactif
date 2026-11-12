@@ -380,12 +380,18 @@ function champsFicheZone(hote){
       file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
         t.zone = { ...(t.zone || {}), [cle]: voulu };
       })).then(t => {
-        confirmee = t;
+        confirmee = structuredClone(t);
         if (n !== derniere) return;
         DATA.fiche = t; recale(); dit("Enregistré.");
       }).catch(e => {
         dit("Échec : " + e.message, true);
-        if (n === derniere){ DATA.fiche = structuredClone(confirmee); recale(); }
+        /* Seule la part des zones revient : le volet des stands écrit la même
+           colonne et confirme de son côté, et reposer toute la fiche d'ici
+           ramenait ses réglages d'avant. */
+        if (n === derniere){
+          DATA.fiche = { ...(DATA.fiche || {}), zone: structuredClone((confirmee || {}).zone || {}) };
+          recale();
+        }
       });
     };
     bloc.appendChild(l);

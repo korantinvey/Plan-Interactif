@@ -481,7 +481,7 @@ Importé par :
 
 fenetre · tiroirs
 
-### `modules/calage-carte.mjs` — 908 l. → plan-admin
+### `modules/calage-carte.mjs` — 916 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
@@ -1238,18 +1238,18 @@ fiche-zone · installation · journee · lancement · mesure · ordre-calques ·
 parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
 scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
 
-### `modules/fiche-detail.mjs` — 1349 l. → console
+### `modules/fiche-detail.mjs` — 1359 l. → console
 
 - l.1 · Fiche détail d'un salon — ce qu'elle montre, et d'où vient chaque champ
 - l.26 · Contenu de la fiche détail
 
 Fonctions :
 
-`paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 243
-`caseFiche` 288 · `cibleEn` 349 · `champsPersos` 351 · `criteres` 357 · `ecritFiche` 367
-`caseCritere` 384 · `clePerso` 406 · `ajouteChampPerso` 414 · `renommeChampPerso` 431
-`retireChampPerso` 479 · `lignesPerso` 542 · `cadreFiche` 565 · `ouvreFiche` 595
-`cadreCategories` 735 · `sousTitre` 843 · `tableauChamps` 858 · `champOrigine` 1084
+`paraitSurFiche` 163 · `origineConferences` 169 · `origineProduits` 176 · `resumeFiche` 244
+`caseFiche` 289 · `cibleEn` 345 · `champsPersos` 347 · `criteres` 353 · `ecritFiche` 370
+`caseCritere` 390 · `clePerso` 412 · `ajouteChampPerso` 420 · `renommeChampPerso` 437
+`retireChampPerso` 485 · `lignesPerso` 552 · `cadreFiche` 575 · `ouvreFiche` 605
+`cadreCategories` 745 · `sousTitre` 853 · `tableauChamps` 868 · `champOrigine` 1094
 
 Importe :
 
@@ -2704,7 +2704,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 680 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 682 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
@@ -2819,14 +2819,14 @@ Importé par :
 
 reglages
 
-### `modules/reglages.mjs` — 535 l. → plan-admin
+### `modules/reglages.mjs` — 541 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 410
-`voletPlan` 428 · `voletCoexposants` 467
+`ouvreReglages` 83 · `voletZones` 211 · `champsFicheZone` 313 · `ficheZoneEnPlace` 416
+`voletPlan` 434 · `voletCoexposants` 473
 
 Importe :
 

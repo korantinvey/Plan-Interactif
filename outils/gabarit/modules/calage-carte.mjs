@@ -809,8 +809,14 @@ export function voletEnvirons(hote){
     lot.textContent = ditLot(pose);
   };
 
+  /* Un numéro par calage commencé depuis ce volet : un retrait qui répond
+     tard ne remet l'écran à zéro que si personne n'a recommencé à caler
+     entre-temps — même pavillon ne suffit pas, « Situer le salon » relancé
+     pendant l'écriture y poserait un calage neuf, que la réponse effaçait. */
+  let calagesLances = 0;
+
   bFige.onclick = async () => {
-    if (!ENV_CAL) poseCalageEnCours(Object.assign({}, calagePose()));
+    if (!ENV_CAL){ calagesLances++; poseCalageEnCours(Object.assign({}, calagePose())); }
     bFige.disabled = true;
     try { await figeEtEnregistre(dit, true); }
     catch (e) { dit("Échec : " + e.message, true); }
@@ -823,6 +829,7 @@ export function voletEnvirons(hote){
     if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
     const centre = centrePavillon();
     const fond = ENV_CAL && ENV_CAL.fond ? ENV_CAL.fond : "plan";
+    calagesLances++;
     poseCalageEnCours({ lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0, fond: fond });
     const bbox = carreDeTerrain(ENV_CAL, TERRAIN_BATIS);
     if (!bbox) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
@@ -855,21 +862,22 @@ export function voletEnvirons(hote){
     maj();
   };
 
-  bRegle.onclick = () => { ouvreCalage(); appliqueCalage(); };
+  bRegle.onclick = () => { calagesLances++; ouvreCalage(); appliqueCalage(); };
 
   bEfface.onclick = async () => {
     bEfface.disabled = true;
     dit("Retrait…");
     try {
-      const avait = calagePose(), p = P();
+      const avait = calagePose(), p = P(), lance = calagesLances;
       await enregistreCalage(null, p);
       // plus de calage, plus de fond à servir : ses images partent avec lui
       if (avait && avait.fige)
         retireLesLots({ pavillon: p.id }).catch(e => console.warn("Fond figé non retiré : " + e.message));
       /* L'écran n'est remis à zéro que si l'on regarde encore ce pavillon : passé
          à un autre pendant l'écriture, on y calait peut-être déjà, et ce travail
-         n'a rien à voir avec la carte qu'on vient de retirer ici. */
-      if (P() === p){
+         n'a rien à voir avec la carte qu'on vient de retirer ici. De même si
+         l'on a recommencé à caler celui-ci (`calagesLances`). */
+      if (P() === p && calagesLances === lance){
         poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
         champ.value = "";
         fermeCalage();
