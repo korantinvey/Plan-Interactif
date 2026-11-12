@@ -920,7 +920,79 @@ function assembleWebgl(enMouvement = false){
     out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
   demandeChauffeLogos(out);
-  return parEtapes(reunisVolumes(out));
+  return parEtapes(reunisCalques(reunisVolumes(out)));
+}
+
+/* Les textes et les traits ordinaires d'un calque — ni noms, ni liserés, ni
+   tirets qui défilent, ni itinéraire —, que la réunion peut prendre. */
+const TEXTE_DE_CALQUE = /-textes-\d+-(petit|grand)$/, TRAIT_DE_CALQUE = /-traits-px-\d+$/;
+/** Deux listes des mêmes éléments, dans le même ordre : un bloc qui n'a pas
+ *  été reconverti rend les siens tels quels. */
+function memesElements(/** @type {any} */ neuves, /** @type {any} */ avant){
+  if (neuves === avant) return true;
+  if (!Array.isArray(neuves) || !Array.isArray(avant) || neuves.length !== avant.length) return false;
+  for (let i = 0; i < neuves.length; i++) if (neuves[i] !== avant[i]) return false;
+  return true;
+}
+/** Ce qui doit être pareil pour que deux couches se réunissent sans que rien
+ *  ne change à l'image. */
+function cleReunion(/** @type {any} */ c){
+  const p = c.props;
+  if (TEXTE_DE_CALQUE.test(c.id) && !p.passeSousPixel)
+    return ["t", c.id.replace(/^.*-/, ""), p.fontFamily, p.fontWeight, p.pickable, p.modeFiltre, p.muetALEcran,
+      p.billboard, p.etireAPlat, p.lineHeight, JSON.stringify(p.parameters || {})].join("|");
+  if (TRAIT_DE_CALQUE.test(c.id) && !p.defile && !p.billboard)
+    return ["p", p.pickable, p.widthUnits, p.widthMinPixels, JSON.stringify(p.parameters || {})].join("|");
+  return null;
+}
+
+/**
+ * Les textes et les traits de calques voisins réunis par sorte : un plan
+ * importé en compte un de chaque par calque d'habillage — quatre traits et
+ * quatre textes sur le salon d'essai, la moitié des couches d'une image de
+ * geste après les noms.
+ *
+ * Seulement entre deux aplats : un aplat d'un calque suivant recouvre ce qui
+ * le précède, et peindre plus tard un texte qu'il cachait le ferait
+ * paraître. Entre deux aplats, il n'y a que des textes et des traits ; les
+ * textes réunis se peignent à la place du dernier, les traits à celle du
+ * premier : un trait passe sous un texte, jamais dessus, et reste au-dessus
+ * des aplats qui le précédaient. Les formes ne se relisent pas tant qu'aucun
+ * des blocs n'a été reconverti (`memesElements`).
+ * @param {any[]} out
+ */
+function reunisCalques(out){
+  /** @type {any[]} */
+  const res = [];
+  /** @type {any[]} */
+  let troncon = [];
+  const vide = () => {
+    /** @type {Map<string, any[]>} */
+    const groupes = new Map();
+    troncon.forEach(c => { const k = cleReunion(c); if (k){ if (!groupes.has(k)) groupes.set(k, []); groupes.get(k).push(c); } });
+    /** @type {Map<any, any>} */
+    const place = new Map();
+    for (const [k, l] of groupes){
+      if (l.length < 2) continue;
+      const texte = k.startsWith("t|"), modele = texte ? l[l.length - 1] : l[0];
+      const declencheurs = /** @type {Record<string, string>} */ ({});
+      for (const c of l) for (const [n, v] of Object.entries(c.props.updateTriggers || {}))
+        declencheurs[n] = (declencheurs[n] === undefined ? "" : declencheurs[n] + "/") + JSON.stringify(v);
+      const reunie = modele.clone({ id: "reunis-" + (texte ? "textes-" : "traits-") + k.replace(/[^\w|]/g, "").slice(0, 60),
+        data: l.flatMap(c => c.props.data), dataComparator: memesElements, updateTriggers: declencheurs,
+        ...(texte ? { characterSet: [...new Set(l.flatMap(c => [...(c.props.characterSet || "")]))].join("") } : {}) });
+      l.forEach(c => place.set(c, null));
+      place.set(modele, reunie);
+    }
+    for (const c of troncon) res.push(place.has(c) ? place.get(c) : c);
+    troncon = [];
+  };
+  for (const c of out){
+    if (c && cleReunion(c)) troncon.push(c);
+    else { vide(); res.push(c); }
+  }
+  vide();
+  return res.filter(Boolean);
 }
 
 /**
