@@ -118,6 +118,17 @@ module.exports = [
   // et l'extension WebGL dont la chauffe des programmes s'enquiert
   "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
   "KHR_parallel_shader_compile",
+  // `modules/moteur-gl*.mjs` : les noms des classes du moteur du plan, ceux de
+  // deck.gl que `webgl.mjs` reconnaît, et le message d'une erreur que la
+  // console seule reçoit — rien de cela ne s'affiche
+  "Layer", "LayerExtension", "PathStyleExtension", "SolidPolygonLayer", "PathLayer", "TextLayer",
+  "BitmapLayer", "SimpleMeshLayer", "WebGL2 indisponible",
+  // et les paquets qu'il importe, qu'esbuild résout à la construction
+  "@mapbox/tiny-sdf",
+  // une extension WebGL que le moteur demande à la carte graphique
+  "EXT_texture_filter_anisotropic",
+  // les ratés du moteur, que le relais des erreurs reçoit et que personne ne lit à l'écran
+  "la couche « ", " » n'a pas pu se préparer : ", " » n'a pas pu se peindre : ", "programme refusé — ",
   // `modules/mesures-page.mjs` : les familles de navigateur que le relevé et
   // la sonde écrivent dans ce qu'ils envoient — des noms propres, jamais à l'écran
   "Edge", "Opera", "Samsung", "Firefox", "Chrome", "Safari",

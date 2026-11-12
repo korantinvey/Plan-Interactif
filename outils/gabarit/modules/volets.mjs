@@ -36,6 +36,7 @@ import { COMMANDES, appliqueCommandes } from "./apparence.mjs";
 import { appliqueAccent, modeBarre, appliqueBarre, appliqueModele } from "./habillage.mjs";
 import { AMBIANCES, ambianceRetenue, appliqueAmbiance, capRetenu, logosRetenus, nomsAPlatRetenus, figurantsRetenus } from "./ambiance.mjs";
 import { MODELES, modeleRetenu } from "./modeles.mjs";
+import { GL } from "./webgl.mjs";
 import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePolice, posePoliceLibelles }
   from "./polices-plan.mjs";
 import { REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil } from "./seuil.mjs";
@@ -1326,6 +1327,33 @@ export function voletApparence(hote){
   majLev();
   majFig();
   majNap();
+
+  /* Le moteur qui dessine le plan : celui du plan, par défaut, ou deck.gl,
+     l'ancien, gardé en recours (`webgl.mjs` `moteurVoulu`). Le réglage vaut
+     pour tous les visiteurs du salon, au chargement suivant : un plan qui
+     s'afficherait mal chez eux revient ainsi à ce qu'il était, sans attendre
+     un nouveau déploiement. La ligne d'état dit qui dessine en ce moment —
+     l'adresse (« ?moteur= ») peut l'emporter sur le réglage. */
+  const mot = document.createElement("div");
+  mot.className = "reglages logos-stands";
+  mot.innerHTML = '<label><input type="checkbox"><span></span></label><p class="aideR"></p><p class="aideR etat"></p>';
+  /** @type {HTMLElement} */ (mot.querySelector("span")).textContent = "Dessiner avec l'ancien moteur (deck.gl)";
+  /** @type {HTMLElement} */ (mot.querySelector(".aideR")).textContent =
+    "Le recours si le plan s'affiche mal chez des visiteurs. Prend effet au prochain chargement du plan.";
+  const motIn = /** @type {HTMLInputElement} */ (mot.querySelector("input"));
+  const motEtat = /** @type {HTMLElement} */ (mot.querySelector(".etat"));
+  const majMot = () => {
+    motIn.checked = conf("_rendu").moteur === "deck";
+    motEtat.textContent = !GL.actif ? "En ce moment, le plan est dessiné en SVG."
+      : GL.moteur === "deck" ? "En ce moment, le plan est dessiné par deck.gl."
+      : "En ce moment, le plan est dessiné par le moteur du plan.";
+  };
+  motIn.onchange = () => {
+    if (motIn.checked) conf("_rendu").moteur = "deck"; else delete conf("_rendu").moteur;
+    enregistreConf(); majMot();
+  };
+  hote.appendChild(mot);
+  majMot();
 
   blocDecoupage(hote);
 

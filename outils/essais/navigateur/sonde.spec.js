@@ -231,6 +231,15 @@ test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
     // deck.gl passe sa prochaine remise à zéro : ce qu'il tenait ne doit pas se perdre
     const images = () => page.evaluate(() => window.__essais.GL.deck._metricsCounter);
     const remise = Math.floor((await images() - 1) / 60) * 60 + 61;
+    /* deck.gl compte une image à chaque trame, même au repos, et passe seul
+       sa remise à zéro ; le moteur du plan ne compte que ce qu'il peint, et
+       ne peint que ce qui change. L'essai y fait donc tourner le compte des
+       images (`_compte`) jusqu'à la remise — les peindre vraiment coûterait
+       une seconde chacune à la carte graphique imitée des essais. */
+    await page.evaluate((n) => {
+      const G = window.__essais.GL;
+      if (G.moteur === "gl2") for (let i = 0; i < n; i++) G.deck._compte(0, 0, 0);
+    }, remise - await images() + 1);
     await expect.poll(images, { timeout: 30_000 }).toBeGreaterThan(remise);
     const apres = await travaux();
     expect(apres.couches).toBeGreaterThanOrEqual(avant.couches);

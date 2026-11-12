@@ -23,6 +23,11 @@
  * et que le plan montre les mêmes couches qu'à l'ouverture sans chauffe. Et,
  * sans compilation en tâche de fond, que la sonde dit quelle demande a fait
  * attendre la page (`sonde.mjs`, « Ce qui a fait attendre »).
+ *
+ * La chauffe est celle de deck.gl, le moteur de recours (`?moteur=deck`) :
+ * le moteur du plan (`moteur-gl.mjs`) lance ses programmes ensemble de
+ * lui-même, sans rien à retoucher. L'essai éprouve donc deck.gl, qu'on
+ * garde prêt à servir.
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe } = require("./aide");
@@ -131,7 +136,7 @@ async function carteDePosteWindows(page, { parallele = true } = {}) {
  *  figurants : ils n'entrent qu'après l'affichage, à leur heure, et ne sont
  *  pas de l'ouverture. */
 async function ouvre(page, ambiance) {
-  await page.goto("/plan.html?plan=smcl-2026&ambiance=" + ambiance);
+  await page.goto("/plan.html?plan=smcl-2026&moteur=deck&ambiance=" + ambiance);
   await attendLaListe(page);
   const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 60_000 })
     .then(() => true, () => false);

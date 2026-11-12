@@ -19,10 +19,13 @@
    les gestes restent au SVG, transparent au-dessus du dessin : le zoom, le
    pincement, la glissade n'ont pas été touchés.
 
-   C'est le rendu par défaut, dès que le navigateur a WebGL2 et que la
-   bibliothèque arrive. Sinon le plan reste en SVG : c'est le repli des
-   appareils qui ne l'ont pas. `?rendu=svg` le force, pour comparer ou pour
-   écarter le dessin le temps d'un dépannage.
+   C'est le rendu par défaut, dès que le navigateur a WebGL2. Sinon le plan
+   reste en SVG : c'est le repli des appareils qui ne l'ont pas. `?rendu=svg`
+   le force, pour comparer ou pour écarter le dessin le temps d'un dépannage.
+
+   Ce module dit quoi peindre ; le moteur du plan (`moteur-gl.mjs`) le peint,
+   ou deck.gl, son recours (`?moteur=deck`), qui parle la même langue — voir
+   `moteurVoulu`.
 
    Ce module lit la vue, le SVG et son cadre dans `vue-etat.mjs` ; le reste,
    les modules qui l'importent le lui confient en se chargeant
@@ -45,9 +48,11 @@ import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.
 import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { CONF } from "./configuration.mjs";
+import { signaleErreur } from "./erreurs.mjs";
 import { imageSure } from "./sur.mjs";
 import { planAffiche, estAffiche, quandAffiche } from "./affichage.mjs";
 import { pixelsDuDessin } from "./densite-rendu.mjs";
+import { MOTEUR_GL } from "./moteur-gl.mjs";
 import { CAMERA_CHANGEE, cameraVoulue, cleCamera, metsEnJeu, cameraEnJeu, matricesCamera, HAUTEUR_STAND, HAUTEUR_LIBRE,
   HAUTEUR_ZONE, HAUSSE_CHOIX, SINUS_INCLINAISON, TRAJET_CHANGE, boutsDuTrajet, HAUTEUR_ABAISSEE, capCamera, CLASSE_NOMS_A_PLAT } from "./camera.mjs";
 
@@ -79,6 +84,29 @@ export function injecteAuWebgl(o){ Object.assign(_page, o); }
 
 const RENDU_DEMANDE = new URLSearchParams(location.search).get("rendu");
 export const RENDU_WEBGL = RENDU_DEMANDE !== "svg";
+
+/* Qui peint le plan : le moteur du plan (`moteur-gl.mjs`), écrit pour lui
+   en WebGL2, ou deck.gl, la bibliothèque qui le peignait avant lui. Les deux
+   parlent la même langue — mêmes classes, mêmes réglages —, et ce module les
+   reçoit sous le même nom, `deck` : rien ici ne dépend de celui qui dessine.
+
+   Le moteur du plan peint par défaut. deck.gl reste le recours en cas de
+   souci, chargé à la demande depuis `web/bibliotheques/` :
+   - pour tout un salon, par l'exploitant (Réglages › Apparence, « Dessiner
+     avec l'ancien moteur ») : un réglage du salon, `_rendu.moteur`, que ses
+     visiteurs reçoivent avec ses données, au chargement suivant ;
+   - pour soi seul, par « ?moteur=deck » — ou « ?moteur=gl2 » pour essayer le
+     moteur du plan sur un salon qui l'a écarté. L'adresse l'emporte. */
+const MOTEUR_DEMANDE = new URLSearchParams(location.search).get("moteur");
+/** Le moteur que demandent l'adresse, puis le salon : « gl2 », celui du plan, ou « deck », deck.gl.
+ *  Le réglage du salon n'est connu qu'avec ses données. */
+export function moteurVoulu(){
+  if (MOTEUR_DEMANDE === "deck" || MOTEUR_DEMANDE === "gl2") return MOTEUR_DEMANDE;
+  return CONF._rendu && CONF._rendu.moteur === "deck" && !GL.deckIndisponible ? "deck" : "gl2";
+}
+/** Les classes du moteur qui peint — celles de deck.gl, ou leurs pareilles du moteur du plan. Rien avant son arrivée. */
+/** @type {any} */
+let deck = null;
 
 /* Sans carte graphique, le navigateur imite le WebGL au processeur : le
    dessin tient une image par seconde, et le plan met seize secondes à
@@ -176,6 +204,10 @@ export const IMAGE_DECK = creeEvenement();
 export const TOILE_PRETE = creeEvenement();
 export const GL = {
   charge: false, actif: false, deck: null, geste: false,
+  /** le moteur qui peint — « gl2 » ou « deck » (`moteurVoulu`) ; rien tant que le dessin n'est pas demandé */
+  moteur: "",
+  // deck.gl demandé par le salon, et attendu ; ou qui n'a pas pu se charger : le moteur du plan le remplace
+  attenteDeck: false, deckIndisponible: false,
   // pourquoi le dessin n'a pas été demandé, quand le navigateur l'avait (`chargeWebgl`)
   repli: "",
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
@@ -256,11 +288,40 @@ function chargeWebgl(){
     secours();
   };
   setTimeout(echeance, 4000);
+  if (MOTEUR_DEMANDE === "deck"){
+    chargeDeck(() => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); },
+      () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); });
+    return;
+  }
+  /* Rien à télécharger : le moteur du plan est déjà là, et monte à la tâche
+     suivante, comme une bibliothèque arrivée. Le salon peut encore demander
+     deck.gl : on le saura avec ses données (`monteWebgl`). */
+  deck = MOTEUR_GL; GL.moteur = "gl2";
+  setTimeout(() => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); }, 0);
+}
+
+/** deck.gl, chargé à la demande : le recours. */
+function chargeDeck(/** @type {() => void} */ arrive, /** @type {() => void} */ rate){
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
-  s.onload = () => { GL.charge = true; chauffeAvantLesDonnees(); monteWebgl(); };
-  s.onerror = () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); };
+  s.onload = () => { deck = /** @type {any} */ (window).deck; GL.moteur = "deck"; arrive(); };
+  s.onerror = rate;
   document.head.appendChild(s);
+}
+
+/* Les ratés du dessin remontent au relais des erreurs (`erreurs.mjs`) : une
+   couche qui ne se peint pas, un programme refusé laissaient un plan
+   incomplet que seule la console voyait. Une fois chacun : un raté qui se
+   répète à chaque image ne doit pas épuiser à lui seul le plafond du relais. */
+const RATES_DITS = new Set();
+function signaleRate(/** @type {any} */ e){
+  const m = (GL.moteur === "deck" ? "deck.gl : " : "Moteur du plan : ") + (e && e.message ? e.message : String(e));
+  console.warn("Rendu WebGL :", m);
+  if (RATES_DITS.has(m)) return;
+  RATES_DITS.add(m);
+  const x = new Error(m);
+  if (e && e.stack) x.stack = e.stack;
+  signaleErreur(x);
 }
 
 /* ------------------------------------------------------------
@@ -371,11 +432,26 @@ const TOILE = { deviceProps: { webgl: { preserveDrawingBuffer: false } } };
  *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
  *  posée. */
 export function monteWebgl(){
-  if (GL.actif || !GL.charge || !window.deck || !vueDuPlan()) return;
+  if (GL.actif || !GL.charge || !deck || !vueDuPlan()) return;
   /* Après une perte de contexte, c'est « remonteWebgl » qui dit quand : la
      vue repasse par ici à chaque geste, et remonterait le dessin sur-le-champ
      — sur la mémoire qui vient justement de manquer. */
   if (GL.aRemonter || GL.attente || GL.abandon) return;
+  /* Le salon demande deck.gl (Réglages › Apparence) : son réglage n'est connu
+     qu'avec ses données, c'est-à-dire ici. La bibliothèque se charge, puis le
+     dessin monte avec elle ; si elle ne vient pas, le moteur du plan le fait. */
+  if (moteurVoulu() === "deck" && GL.moteur !== "deck"){
+    if (!GL.attenteDeck){
+      GL.attenteDeck = true;
+      finisChauffe();
+      chargeDeck(() => { GL.attenteDeck = false; monteWebgl(); }, () => {
+        GL.attenteDeck = false; GL.deckIndisponible = true;
+        signaleRate(new Error("deck.gl demandé par le salon, introuvable : le moteur du plan le remplace"));
+        monteWebgl();
+      });
+    }
+    return;
+  }
   // la toile de la préparation cède la place : deux contextes ne se disputent pas la carte graphique
   finisChauffe();
   const hote = document.createElement("div");
@@ -399,7 +475,7 @@ export function monteWebgl(){
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
-    onError: e => console.warn("Rendu WebGL :", e && e.message),
+    onError: signaleRate,
     // ses comptes, lus avant qu'il ne les remette à zéro : `stats` est scellé, rien ne s'y greffe
     _onMetrics: (/** @type {any} */ m) => COMPTES_DECK.emet(m),
     /* La toile ne naît qu'avec la carte graphique, que la bibliothèque
@@ -1316,7 +1392,9 @@ const largeurLisere = (/** @type {number} */ em) => Math.min(.9 * RAYON_SDF, em 
 
 let CONST_TEXTE = null;
 function constTexte(){
-  if (CONST_TEXTE) return CONST_TEXTE;
+  /* Faites pour le moteur qui les a vues naître : la toile jetable de l'attente
+     les fait avec le moteur du plan, et le salon peut ensuite demander deck.gl. */
+  if (CONST_TEXTE && CONST_TEXTE.pour === deck) return CONST_TEXTE;
   /* Le choix de l'atlas passe en réglage — 0 pour ce qui n'en a pas, 1 pour
      les petits textes, 2 pour les grands — et non en variante du shader :
      chaque variante est un programme que la carte graphique prépare avant la
@@ -1485,6 +1563,7 @@ function constTexte(){
      régénérer l'atlas des polices et recompiler ses shaders. */
   const textes = [new FiltreZoom(), new LissageSdf()];
   return (CONST_TEXTE = {
+    pour: deck,
     /* Quatre points de marge autour de chaque glyphe, et non deux : dans les
        réductions de l'atlas où lisent les petits textes, deux points n'en
        valaient plus qu'un demi, et la lettre d'à côté s'invitait. */
@@ -2347,7 +2426,11 @@ function teinteDesFigurants(){
     }
   }
   TeinteDesFigurants.extensionName = "TeinteDesFigurants";
-  TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] } };
+  /* Les palettes, dites aussi en nombres : le moteur du plan (`moteur-gl-objets.mjs`)
+     ne lit pas le GLSL ci-dessus, et deck.gl ignore ce réglage. */
+  TeinteDesFigurants.defaultProps = { getFigurant: { type: "accessor", value: [0, 0, 0, 0] },
+    palettesFigurants: { bas: TENUES.map(t => t.bas), chaussures: CHAUSSURES, haut: TENUES.map(t => t.haut),
+      peau: TEINTS, cheveux: CHEVEUX } };
   return (_teinteFigurants = new TeinteDesFigurants());
 }
 
@@ -3269,6 +3352,8 @@ function lectureDifferee(){
   if (_lectureDifferee !== null) return _lectureDifferee;
   // avant la carte graphique, la question ne se tranche pas : la figer à « non » l'ôtait pour la visite
   if (!peutDesigner()) return false;
+  // le moteur du plan la sait d'origine (`moteur-gl.mjs` `pickObjectAsync`)
+  if (GL.deck && /** @type {any} */ (GL.deck).designationDifferee) return (_lectureDifferee = true);
   _lectureDifferee = false;
   try {
     const d = GL.deck && GL.deck.device;
@@ -3532,6 +3617,15 @@ function coucheSurvol(couche){
    ou l'arrivée d'un itinéraire se faisait à l'aveugle. Le volume visé est
    redessiné teinté de la couleur du survol, un rien plus haut que lui pour
    ne pas s'y confondre. */
+/* La teinte du survol est un second volume, posé exactement sur le premier :
+   mêmes formes, même hauteur, mêmes calculs, donc la même profondeur au bit
+   près — et le test « inférieur ou égal » la fait passer devant lui, façades
+   comprises. Posée trois centimètres plus haut, comme avant, ses façades
+   tombaient dans le plan des siennes sans les recouvrir : le moteur du plan
+   les départageait au hasard, en rayures aux coins arrondis, et un stand qui
+   monte clignotait. Avancée vers l'œil pour y parer, elle passait devant le
+   logo posé sur le toit, qui disparaissait au survol. À sa juste hauteur, le
+   logo, cinq centimètres plus haut, reste devant elle. */
 function coucheSurvolVolume(c){
   // la plaque d’un jeton, dressée par sa matrice : son aplat de face porte déjà le survol
   if (c.props.modelMatrix) return [];
@@ -3555,15 +3649,17 @@ function coucheSurvolVolume(c){
      son dessus clignotait le temps que les deux se croisent. */
   const h = c.props.hausse;
   if (h){
-    const data = siens.map(d => ({ ...d, haut: d.haut + .03, couleur: teinte(d.couleur) }));
+    const data = siens.map(d => ({ ...d, couleur: teinte(d.couleur) }));
     return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
       hausse: h, elevationScale: echelleHausse(h, instant()) })];
   }
   const e = c.props.elevationScale || 1;
-  const data = siens.map(d => ({ ...d, haut: d.haut * e + .03, couleur: teinte(d.couleur) }));
+  // la même échelle que le volume, comme réglage de la couche : le produit se fait dans le même ordre, au bit près
+  const data = siens.map(d => ({ ...d, couleur: teinte(d.couleur) }));
   return [new deck.SolidPolygonLayer({ id: "survol-volume", data, extruded: true, pickable: false,
-    getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE })];
+    getPolygon: d => d.polygon, getFillColor: d => d.couleur, getElevation: d => d.haut, material: MATIERE,
+    elevationScale: e })];
 }
 
 function coucheFocus(couches){

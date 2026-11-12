@@ -27,8 +27,6 @@ const GLOBALES_PAGE = {
   // posés sur `window` par le moteur de langue, `_langue.js`
   LANGUE: "readonly",
   traduit: "readonly",
-  // deck.gl, chargé à la demande depuis `web/bibliotheques/` par `modules/webgl.mjs`
-  deck: "readonly",
   // la place du dictionnaire anglais dans `_langue.js`, que `genere.js` remplit
   __DICTIONNAIRE__: "readonly",
 };
@@ -63,9 +61,9 @@ module.exports = [
   },
   /* Les modules du gabarit : de vrais modules, relus seuls. Le moteur de
      langue est posé avant tout script de la page : un module peut s'en
-     servir pour ce qui quitte la page traduit. deck.gl arrive plus tard,
-     chargée à la demande : le rendu par la carte graphique (`webgl.mjs`) ne
-     la lit qu'une fois là.
+     servir pour ce qui quitte la page traduit. deck.gl, le moteur de recours
+     (`?moteur=deck`), se pose aussi sur `window` en arrivant : `webgl.mjs` l'y
+     reprend une fois, dans sa propre variable, et personne ne le lit ailleurs.
 
      Et rien ne se pose sur l'objet global : c'est ainsi que le code des
      pages s'était soudé en un seul espace de noms, chacun appelant les
@@ -79,7 +77,6 @@ module.exports = [
     files: ["outils/gabarit/modules/**/*.mjs"],
     languageOptions: { ecmaVersion: "latest", sourceType: "module", globals: {
       ...globals.browser, LANGUE: GLOBALES_PAGE.LANGUE, traduit: GLOBALES_PAGE.traduit,
-      deck: GLOBALES_PAGE.deck,
       // la marque du produit, qu'esbuild remplace à la construction (`genere.js` `DEFINIS`)
       MARQUE_PRODUIT: "readonly",
       // le script du travailleur qui détoure les logos, versé de même

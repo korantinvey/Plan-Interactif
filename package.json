@@ -38,8 +38,10 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "@eslint/js": "^9.17.0",
+    "@mapbox/tiny-sdf": "2.3.0",
     "@playwright/test": "^1.64.1",
     "acorn": "8.14.0",
+    "earcut": "3.0.1",
     "esbuild": "0.28.2",
     "eslint": "^9.17.0",
     "globals": "^15.14.0",
