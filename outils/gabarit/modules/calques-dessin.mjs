@@ -201,8 +201,13 @@ export const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
  * façon pas, elle s'écarte. Le reste du texte passe par `esc()` au tracé.
  */
 export function calquesSurs(/** @type {any[]} */ liste){
+  /* Un nombre, ou une chaîne qui en écrit un ; rien d'autre ne se convertit —
+     un objet dont `valueOf` est nul fait lever `+v`, et c'est tout le chargement
+     qui s'arrêtait. */
+  const nombre = (/** @type {any} */ v) =>
+    typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? +v : NaN;
   const sommet = (/** @type {any} */ s) => Array.isArray(s) && s.length >= 2 &&
-    Number.isFinite(+s[0]) && Number.isFinite(+s[1]) ? [+s[0], +s[1]] : null;
+    Number.isFinite(nombre(s[0])) && Number.isFinite(nombre(s[1])) ? [nombre(s[0]), nombre(s[1])] : null;
   return (Array.isArray(liste) ? liste : []).filter(c => c && typeof c === "object").map(c => ({
     ...c,
     formes: (Array.isArray(c.formes) ? c.formes : []).flatMap((/** @type {any} */ f) => {
@@ -216,7 +221,7 @@ export function calquesSurs(/** @type {any[]} */ liste){
          nombre ou rien — absente, chacune a sa valeur par défaut au tracé. */
       for (const k of MESURES) {
         if (!(k in sure)) continue;
-        if (Number.isFinite(+sure[k]) && sure[k] !== null && sure[k] !== "") sure[k] = +sure[k];
+        if (Number.isFinite(nombre(sure[k]))) sure[k] = nombre(sure[k]);
         else delete sure[k];
       }
       return [sure];
