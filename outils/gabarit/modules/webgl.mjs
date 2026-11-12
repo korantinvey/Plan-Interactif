@@ -962,6 +962,9 @@ let posesSurLePlan = null;
  * couches neuves, en recomptait les attributs.
  */
 function assembleWebgl(enMouvement = false){
+  return aUnInstant(() => assembleCouches(enMouvement));
+}
+function assembleCouches(/** @type {boolean} */ enMouvement){
   const out = [];
   /* Une seule fois, et non pour chacun des blocs : sur tout le document,
      cette recherche a coûté plus d'une seconde en quinze de survol en vue
@@ -3792,8 +3795,22 @@ const phaseDe = (c, t) => {
 /* L'instant de l'image : l'heure qu'il est, toujours. Celle de la dernière
    image de la boucle datait dès que le plan travaillait entre deux images —
    une reconversion, une fiche qui s'ouvre — et le volume repeint à ce
-   moment-là reculait à ce qu'il était alors. */
-const instant = () => performance.now();
+   moment-là reculait à ce qu'il était alors.
+
+   Mais une seule heure pour toute l'image (`aUnInstant`) : chaque couche la
+   lisait pour soi, et un stand qui montait survolé recevait une hauteur, sa
+   teinte de survol une autre, de quelques microsecondes de course plus loin.
+   Leurs façades, qui doivent tomber au bit près l'une sur l'autre, se
+   croisaient alors en rayures le temps du mouvement. */
+/** @type {number | null} */
+let INSTANT_IMAGE = null;
+const instant = () => INSTANT_IMAGE ?? performance.now();
+/** Fait `f` à une seule heure, celle de son début, que toutes les couches lisent. */
+function aUnInstant(/** @type {() => any} */ f){
+  if (INSTANT_IMAGE !== null) return f();
+  INSTANT_IMAGE = performance.now();
+  try { return f(); } finally { INSTANT_IMAGE = null; }
+}
 function animeCouche(c){
   if (c.props.marques) return marquesSurLesToits(c);
   if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
@@ -3858,7 +3875,7 @@ function animeWebgl(now){
        téléphone Android récent (`?perf`, le 13 octobre 2026). Les couches
        qui ne bougent pas gardent leur objet, et la bibliothèque les passe.
        Un volume arrivé change les couches elles-mêmes : là, on réassemble. */
-    GL.deck.setProps({ layers: arrive ? assembleWebgl() : reanime(GL.deck.props.layers) });
+    GL.deck.setProps({ layers: arrive ? assembleWebgl() : aUnInstant(() => reanime(GL.deck.props.layers)) });
   }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
