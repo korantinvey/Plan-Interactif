@@ -67,15 +67,25 @@ function entetes(json) {
   return h;
 }
 
+/** Deux sessions du même compte, sur le même projet. */
+function memeCompte(a, b) {
+  const x = contenuJeton(a?.access_token), y = contenuJeton(b?.access_token);
+  return Boolean(x && y && x.sub === y.sub && x.iss === y.iss);
+}
+
 /** Renouvelle la session de la console : l'échange est commun avec le plan,
  *  la session qu'il rend est celle de cette page. */
 function renouvelle() {
   if (!SESSION?.refresh_token) return Promise.resolve(false);
   const depart = SESSION;
   return echangeSession(CFG, SESSION).then((neuve) => {
-    /* La session a pu se fermer, ou un autre compte se connecter, pendant
-       l'échange : la réponse ne remplace que celle qui l'a demandée. */
-    if (!neuve || SESSION !== depart) return false;
+    /* La session a changé pendant l'échange. Deux cas, qu'il ne faut pas
+       confondre. Un autre appel du même compte l'a renouvelée — deux requêtes
+       refusées ensemble partagent l'échange : c'est un succès, et le dire un
+       échec déconnectait l'exploitant. Elle a été fermée, ou un autre compte
+       s'est connecté : la réponse ne remplace rien. */
+    if (SESSION !== depart) return memeCompte(SESSION, depart);
+    if (!neuve) return false;
     poseSession({ SESSION: neuve });
     return true;
   });
@@ -228,6 +238,10 @@ export function ecranConnexion(message) {
         throw new Error("Réponse inattendue de " + url + " — HTTP " + r.status +
           (txt ? "" : ", corps vide") + ". Vérifiez l'adresse du projet.");
       }
+      /* Le projet a pu changer pendant la connexion (« Changer de projet »
+         reste ouvert) : installée, la session de l'ancien serait partie, à son
+         premier renouvellement, vers l'adresse du nouveau. */
+      if (CFG?.url !== url) return;
       poseSession({ SESSION: j });
       localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION));
       fermeModale();

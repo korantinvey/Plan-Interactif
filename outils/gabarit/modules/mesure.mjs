@@ -619,8 +619,9 @@ function ouvreConfidentialite(){
        ce que l'appareil peut. Une notice qui tait une part de ce qui part ne
        vaut pas pour cette part. */
     texte("Pour savoir si le plan s'affiche vite et sans panne, chaque visite envoie " +
-      "aussi un relevé technique : le temps qu'il a mis à paraître, les erreurs " +
-      "rencontrées, le type de navigateur et sa version, sans plus de détail, et ce " +
+      "aussi un relevé technique : le temps qu'il a mis à paraître, l'heure de " +
+      "début et la durée de la visite, les erreurs rencontrées, le type de " +
+      "navigateur et sa version, sans plus de détail, et ce " +
       "que peut l'appareil (écran, processeur, mémoire, carte graphique). Ce relevé " +
       "ne porte pas le numéro de visiteur, et ne dit pas qui vous êtes.");
     texte("Ce numéro est remplacé au bout de " + MESURE_VIE_MOIS + " mois. Ce qui a " +

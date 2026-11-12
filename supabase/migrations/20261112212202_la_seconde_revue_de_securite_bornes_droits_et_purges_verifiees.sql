@@ -32,9 +32,10 @@
  * Inchangée, sauf deux bornes. La date d'envoi ne passe pas l'année qui vient :
  * un salon se prépare des mois à l'avance, pas des années. Et les rappels en
  * attente, tous salons confondus, ont un plafond : une borne par appareil ne
- * suffirait pas, un appelant en fabrique autant qu'il veut. Le plafond refuse
- * sans rien effacer ; il est haut — des centaines de salons pleins — et ne se
- * touche qu'en cas d'abus.
+ * suffirait pas, un appelant en fabrique autant qu'il veut. Plafond atteint,
+ * ce qui ne tient plus n'est pas posé, sans rien refuser d'autre : l'appel
+ * réussit, l'effacement aussi. Il est haut — des centaines de salons pleins —
+ * et ne se touche qu'en cas d'abus.
  */
 create or replace function enregistre_rappels(
   p_slug       text,
@@ -51,24 +52,29 @@ declare
   RANGS_MAX     constant int := 60;      -- un parcours raisonnable, et une borne ferme
   HORIZON_JOURS constant int := 366;     -- comme les plans de visite
   ATTENTE_MAX   constant int := 200000;  -- tous salons confondus
-  v_evt uuid;
+  v_evt   uuid;
+  v_place int;
 begin
   select e.id into v_evt
     from evenement e
    where e.slug = p_slug and e.etat = 'publie';
   if v_evt is null then return false; end if;
 
-  -- compté sur l'index des rappels en attente, et borné : le compte ne coûte
-  -- jamais plus que le plafond
-  if (select count(*) from (select 1 from rappel_de_conference
-                             where envoye_a is null limit ATTENTE_MAX) s) >= ATTENTE_MAX then
-    return false;
-  end if;
+  /* Le plafond se compte et se respecte sous un verrou commun : comptés à
+     part, deux appels lisaient le même total et le dépassaient ensemble. Il ne
+     borne que ce qui s'ajoute — l'effacement passe d'abord, et un appareil
+     peut toujours retirer ses rappels, plafond atteint ou non. */
+  perform pg_advisory_xact_lock(hashtextextended('rappels:plafond', 0));
 
   -- Ce qui vaut pour cet appareil et ce salon repart de zéro. On ne touche pas
   -- à ce qu'il a posé sur un autre salon : un même téléphone en ouvre plusieurs.
   delete from rappel_de_conference
    where abonnement = p_abonnement and evenement = v_evt;
+
+  -- la place qui reste, comptée sur l'index des rappels en attente et bornée :
+  -- le compte ne coûte jamais plus que le plafond
+  v_place := ATTENTE_MAX - (select count(*) from (select 1 from rappel_de_conference
+                                                    where envoye_a is null limit ATTENTE_MAX) s);
 
   -- Le tri et la borne se prennent à part : ce qui dépasse est ce qui vient le
   -- plus tard, et non ce qui se trouvait en fin de liste.
@@ -82,7 +88,7 @@ begin
        and (r->>'envoi_a')::timestamptz > now()
        and (r->>'envoi_a')::timestamptz <= now() + make_interval(days => HORIZON_JOURS)
      order by (r->>'envoi_a')::timestamptz
-     limit RANGS_MAX)
+     limit greatest(0, least(RANGS_MAX, v_place)))
   insert into rappel_de_conference
          (evenement, abonnement, p256dh, auth, conference, envoi_a, titre, corps, adresse, vie,
           debut_vu)

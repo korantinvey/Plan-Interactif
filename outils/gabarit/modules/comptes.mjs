@@ -60,6 +60,8 @@ export async function litMonProfil() {
   MOI = null;
   if (!id) return;
   const r = await rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
+  // un autre compte a pu se connecter, ou la session se fermer, pendant la lecture
+  if (idCompte() !== id) return;
   MOI = (Array.isArray(r) ? r[0] : null) || null;
 }
 

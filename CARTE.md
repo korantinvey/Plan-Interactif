@@ -656,14 +656,14 @@ Importé par :
 
 export
 
-### `modules/comptes.mjs` — 377 l. → console
+### `modules/comptes.mjs` — 379 l. → console
 
 - l.1 · Comptes et accès — l'annuaire, et la fiche d'une personne
 
 Fonctions :
 
-`poseComptes` 37 · `litMonProfil` 58 · `RETOUR_MDP` 69 · `litComptes` 71 · `ligneMessage` 84
-`casesSalons` 94 · `ouvreComptes` 124 · `ouvreFicheCompte` 226
+`poseComptes` 37 · `litMonProfil` 58 · `RETOUR_MDP` 71 · `litComptes` 73 · `ligneMessage` 86
+`casesSalons` 96 · `ouvreComptes` 126 · `ouvreFicheCompte` 228
 
 Importe :
 
@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 338 l. → console
+### `modules/ecran-console.mjs` — 350 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 37 · `selonAdresse` 64 · `majAdresse` 72 · `majBarre` 87 · `dessineChoix` 136
-`majLiens` 153 · `videEcran` 194 · `dessine` 202 · `demarre` 217 · `brancheConsole` 235
+`charge` 42 · `selonAdresse` 75 · `majAdresse` 83 · `majBarre` 98 · `dessineChoix` 147
+`majLiens` 164 · `videEcran` 205 · `dessine` 214 · `demarre` 229 · `brancheConsole` 247
 
 Importe :
 
@@ -1882,7 +1882,7 @@ Importé par :
 
 fiche · recherche · synchronisation · vignettes
 
-### `modules/mesure.mjs` — 686 l. → plan, plan-admin
+### `modules/mesure.mjs` — 687 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -1894,7 +1894,7 @@ Fonctions :
 `chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
 `envoieMesures` 436 · `mesure` 473 · `brancheLesEnvois` 488 · `effaceJetonsVisiteur` 543
 `refuseMesure` 561 · `appliqueRefus` 573 · `ouvreConfidentialite` 596
-`brancheLaNotice` 669 · `brancheMesure` 683
+`brancheLaNotice` 670 · `brancheMesure` 684
 
 Importe :
 
@@ -3078,15 +3078,16 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/socle-console.mjs` — 429 l. → console, rapport
+### `modules/socle-console.mjs` — 443 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`poseSession` 40 · `entetes` 63 · `renouvelle` 72 · `appel` 94 · `rest` 109
-`ecranConfig` 134 · `ecranConnexion` 183 · `deconnecte` 249 · `signale` 264 · `bloc` 288
-`grille` 306 · `idCompte` 323 · `themeSombre` 332 · `premierEcran` 350 · `brancheSocle` 365
+`poseSession` 40 · `entetes` 63 · `memeCompte` 71 · `renouvelle` 78 · `appel` 104
+`rest` 119 · `ecranConfig` 144 · `ecranConnexion` 193 · `deconnecte` 263 · `signale` 278
+`bloc` 302 · `grille` 320 · `idCompte` 337 · `themeSombre` 346 · `premierEcran` 364
+`brancheSocle` 379
 
 Importe :
 
