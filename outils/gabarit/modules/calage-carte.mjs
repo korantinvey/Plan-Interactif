@@ -274,17 +274,18 @@ function manqueCalage(e){
 
 /** Le calage, enregistré pour tous. Une ligne, et rien d'autre : le fond n'est
  *  pas un dessin qu'on stocke, ce sont des tuiles qu'on va chercher. */
-async function enregistreCalage(cal){
+async function enregistreCalage(cal, p = P()){
   const acces = accesBase();
   if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
   /* La page ne connaît les pavillons que par leur identifiant Klipso ;
-     `identifiants` donne celui de la base, qui seul s'écrit. */
-  const planId = (await identifiants(acces))[P().id];
+     `identifiants` donne celui de la base, qui seul s'écrit. Le pavillon est
+     celui du geste, fixé avant d'attendre : on a pu en changer depuis. */
+  const planId = (await identifiants(acces))[p.id];
   if (!planId) throw new Error("ce pavillon n'est pas encore en base : enregistrez la configuration d'abord.");
   await base(acces, "plan?id=eq." + planId, {
     method: "PATCH", body: JSON.stringify({ calage: cal }),
   }).catch(e => { throw manqueCalage(e); });
-  P().calage = cal;
+  p.calage = cal;
   oublieCache(acces);
 }
 
@@ -308,15 +309,16 @@ async function figeEtEnregistre(/** @type {(txt: string, mal?: boolean) => void}
   delete photo.fige;
   const r = await figeLeFond(photo, dit);
   /* La photographie prend une minute, et la palette reste ouverte : un
-     calage déplacé entre-temps ne correspond plus au lot, qui part. */
-  if (!ENV_CAL || sourceDuFige(ENV_CAL, zone) !== r.fige.source){
-    retireLesLots({ seul: r.nom }).catch(e => console.warn("Lot caduc non retiré : " + e.message));
+     calage déplacé entre-temps ne correspond plus au lot, qui part — comme un
+     pavillon quitté, dont le calage en cours n'est plus celui qu'on règle. */
+  if (P() !== p || !ENV_CAL || sourceDuFige(ENV_CAL, zone) !== r.fige.source){
+    retireLesLots({ seul: r.nom, pavillon: p.id }).catch(e => console.warn("Lot caduc non retiré : " + e.message));
     dit("Le calage a bougé pendant la photographie : enregistrez-le de nouveau pour figer le fond.", true);
     return;
   }
   ENV_CAL.fige = r.fige;
-  await enregistreCalage(ENV_CAL);
-  retireLesLots({ garde: r.nom }).catch(e => console.warn("Lots d'avant non retirés : " + e.message));
+  await enregistreCalage(ENV_CAL, p);
+  retireLesLots({ garde: r.nom, pavillon: p.id }).catch(e => console.warn("Lots d'avant non retirés : " + e.message));
   rafraichitCarte();
   dit("Fond figé : " + r.fige.images + " images. Les visiteurs le reçoivent tel quel.");
 }
@@ -324,10 +326,10 @@ async function figeEtEnregistre(/** @type {(txt: string, mal?: boolean) => void}
 /** Le calage déjà enregistré, s'il y en a un. Sans rattrapage : l'appelant
  *  l'ignore, et une base qui ne connaît pas encore la colonne ne doit pas
  *  empêcher d'ouvrir le volet — on y vient pour poser ce qui manque. */
-async function calageEnregistre(){
+async function calageEnregistre(p = P()){
   const acces = accesBase();
   if (!acces) return null;
-  const planId = (await identifiants(acces))[P().id];
+  const planId = (await identifiants(acces))[p.id];
   if (!planId) return null;
   const l = await base(acces, "plan?select=calage&id=eq." + planId);
   return l && l.length ? l[0].calage : null;
@@ -823,8 +825,12 @@ export function voletEnvirons(hote){
        posée, et l'on voit sans attendre si l'on est au bon endroit du monde. */
     ouvreCalage();
     appliqueCalage();
+    // la recherche prend du temps : ce qu'elle rend vaut pour ce pavillon et ce calage-ci
+    const p = P(), cal = ENV_CAL;
     try {
-      ENV_BATIS = batimentsCandidats(await chercheBatiments(bbox), ENV_CAL, P());
+      const trouves = await chercheBatiments(bbox);
+      if (P() !== p || ENV_CAL !== cal){ bSitue.disabled = false; return; }
+      ENV_BATIS = batimentsCandidats(trouves, ENV_CAL, P());
       ENV_BATI = 0;
       if (ENV_BATIS.length){
         caleSurBatiment(ENV_BATIS[0], P());
@@ -848,11 +854,11 @@ export function voletEnvirons(hote){
     bEfface.disabled = true;
     dit("Retrait…");
     try {
-      const avait = calagePose();
-      await enregistreCalage(null);
+      const avait = calagePose(), p = P();
+      await enregistreCalage(null, p);
       // plus de calage, plus de fond à servir : ses images partent avec lui
       if (avait && avait.fige)
-        retireLesLots().catch(e => console.warn("Fond figé non retiré : " + e.message));
+        retireLesLots({ pavillon: p.id }).catch(e => console.warn("Fond figé non retiré : " + e.message));
       poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
       champ.value = "";
       fermeCalage();
@@ -872,8 +878,11 @@ export function voletEnvirons(hote){
     poseCalageEnCours(Object.assign({}, pose));
   }
   maj();
-  calageEnregistre().then(cal => {
-    if (!cal || ENV_CAL) return;
+  /* La réponse appartient au pavillon qu'on regardait en la demandant : passé
+     à un autre entre-temps, elle y poserait un calage qui n'est pas le sien. */
+  const ouvert = P();
+  calageEnregistre(ouvert).then(cal => {
+    if (P() !== ouvert || !cal || ENV_CAL) return;
     champ.value = cal.lat.toFixed(6) + ", " + cal.lon.toFixed(6);
     poseCalageEnCours(cal);
     rafraichitCarte();

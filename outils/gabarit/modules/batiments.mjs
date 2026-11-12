@@ -35,6 +35,7 @@
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
+import { PAVILLON_QUITTE } from "./rendu.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, priseWebgl } from "./webgl.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, injecteALaVue } from "./vue.mjs";
@@ -595,3 +596,8 @@ export function rouvreCalage(c){
    importe, la refait pendant le geste et à sa fin — il la lui confie en se
    chargeant, et elle ne se dessine que pendant un calage. */
 injecteALaVue({ calage: () => { if (CALAGE) dessineCalage(); } });
+
+/* Un calage se règle sur le pavillon où il a commencé : quitté en cours de
+   route, il se serait validé sur le suivant, et ses halls y auraient été
+   posés dans un repère qui n'est pas le sien. On l'abandonne. */
+PAVILLON_QUITTE.ecoute(() => { if (CALAGE) finCalage(); });

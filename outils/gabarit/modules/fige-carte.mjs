@@ -112,10 +112,14 @@ async function contenu(/** @type {any} */ acces, /** @type {string} */ prefixe){
  * quelques mégaoctets derrière lui ; et un lot ne se retire qu'une fois le
  * suivant inscrit, pour que le visiteur ait toujours un fond à poser.
  */
-export async function retireLesLots(/** @type {{garde?: string, seul?: string}} */ quoi = {}){
+export async function retireLesLots(/** @type {{garde?: string, seul?: string, pavillon?: string}} */ quoi = {}){
   const acces = accesBase();
   if (!acces) return;
-  const planId = (await identifiants(acces))[P().id];
+  /* Le pavillon se fixe avant d'attendre le réseau, ou se reçoit de
+     l'appelant : relu après, il pouvait être celui où l'exploitant venait de
+     passer — et c'est son fond à lui qui partait. */
+  const pavillon = quoi.pavillon ?? P().id;
+  const planId = (await identifiants(acces))[pavillon];
   if (!planId) return;
   const racine = planId + "/" + (quoi.seul ? quoi.seul + "/" : "");
   const partent = (await contenu(acces, racine))

@@ -332,6 +332,10 @@ function champsFicheZone(hote){
      la colonne avant de la réécrire, et deux qui se croisent perdraient la
      première. */
   let file = Promise.resolve();
+  /* Le numéro de la dernière écriture demandée : seule sa réponse remplace la
+     fiche du poste. Celle d'une écriture antérieure, arrivée pendant qu'on
+     cochait la suivante, aurait repris l'état d'avant ce clic-là. */
+  let derniere = 0;
   const dit = (txt, mal) => { etat.textContent = txt; etat.dataset.mal = String(!!mal); };
 
   const bloc = document.createElement("div");
@@ -356,10 +360,15 @@ function champsFicheZone(hote){
       const o = state.sel && parId.get(state.sel);
       if (o && o.kind === "zone") ouvre(o, null);
       dit("Enregistrement…");
+      /* Ce clic-ci, figé : la seule clé qu'il touche, et sa valeur. Reposer la
+         zone d'un bloc effaçait ce qu'une autre console y avait réglé. */
+      const cle = c.cle, voulu = i.checked, n = ++derniere;
       file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
-        t.zone = { ...DATA.fiche.zone };
-      })).then(t => { DATA.fiche = t; dit("Enregistré."); })
-        .catch(e => dit("Échec : " + e.message, true));
+        t.zone = { ...(t.zone || {}), [cle]: voulu };
+      })).then(t => {
+        if (n !== derniere) return;
+        DATA.fiche = t; dit("Enregistré.");
+      }).catch(e => dit("Échec : " + e.message, true));
     };
     bloc.appendChild(l);
 

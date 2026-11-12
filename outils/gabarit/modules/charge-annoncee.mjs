@@ -114,6 +114,8 @@ export function annoncePlan(){
   if (!PLAN_API || !chargeSuivie()) return;
   clearTimeout(_reposPlan);
   _reposPlan = setTimeout(() => {
+    // le visiteur a pu refuser la mesure pendant l'attente : son refus l'emporte
+    if (!chargeSuivie()) return;
     const etapes = etapesDuSejour();
     const empreinte = JSON.stringify(etapes);
     let pose = "";
@@ -121,15 +123,16 @@ export function annoncePlan(){
     // rien n'a bougé : le serveur porte déjà ce plan-là
     if (empreinte === pose) return;
     try { localStorage.setItem(CLE_POSE + ":" + SLUG, empreinte); } catch (e) {}
+    /* L'empreinte se défait sur tout échec : sans cela un plan qui n'est
+       jamais parti passerait pour posé, et ne serait plus jamais réannoncé.
+       Un refus du serveur en est un, comme une coupure — `fetch` ne le
+       signale pas de lui-même. */
+    const defais = () => { try { localStorage.removeItem(CLE_POSE + ":" + SLUG); } catch (e) {} };
     fetch(PLAN_API, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug: SLUG, plan: identifiantParcours(), etapes: etapes }),
       keepalive: true,
-    }).catch(() => {
-      /* L'empreinte se défait : sans cela un plan qui n'est jamais parti
-         passerait pour posé, et ne serait plus jamais réannoncé. */
-      try { localStorage.removeItem(CLE_POSE + ":" + SLUG); } catch (e) {}
-    });
+    }).then(r => { if (!r.ok) defais(); }, defais);
   }, REPOS_PLAN);
 }
 

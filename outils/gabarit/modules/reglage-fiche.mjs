@@ -166,6 +166,8 @@ export function voletOrdre(hote){
      colonne avant de la réécrire, et deux qui se croisent perdraient la
      première. */
   let file = Promise.resolve();
+  // seule la réponse de la dernière écriture remplace la fiche du poste
+  let derniere = 0;
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -237,22 +239,29 @@ export function voletOrdre(hote){
     const o = state.sel && parId.get(state.sel);
     if (o && !(o.coex && o.coex.length && coexChoisit())) ouvre(o, null);
     dit("Enregistrement…");
-    file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
+    /* Ce que ce geste voulait, figé maintenant : la réponse d'une écriture
+       précédente, arrivée entre-temps, remplace la fiche du poste par ce que la
+       base relisait — sans ce geste-ci, que l'écriture aurait alors perdu. */
+    const voulu = structuredClone(DATA.fiche);
+    const n = ++derniere;
+    file = file.then(() => ecritColonneEvenement("fiche", voulu, t => {
       // la colonne relue peut porter un absent que le poste n'avait pas : une
       // autre console a pu créer le champ pendant qu'on rangeait celle-ci
-      t.ordre = ordreGarde(DATA.fiche.ordre || [], t.ordre || []);
-      const g = DATA.fiche.groupes || [];
+      t.ordre = ordreGarde(voulu.ordre || [], t.ordre || []);
+      const g = voulu.groupes || [];
       // un salon qui n'a plus de section n'en garde pas la trace en creux
       if (g.length) t.groupes = g; else delete t.groupes;
       /* La visibilité se repose champ par champ : la même colonne porte ce qui
          ne se range pas ici — l'en-tête, les conférences, les fiches de zone —
          et l'écraser d'un bloc effacerait ce que la console y règle. */
       t.stand = { ...(t.stand || {}) };
-      toutes.forEach(c => { t.stand[c] = DATA.fiche.stand[c]; });
-      const i = DATA.fiche.intitules || {};
+      toutes.forEach(c => { t.stand[c] = (voulu.stand || {})[c]; });
+      const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
-    })).then(t => { DATA.fiche = t; dit("Enregistré."); })
-      .catch(e => dit("Échec : " + e.message, true));
+    })).then(t => {
+      if (n !== derniere) return;
+      DATA.fiche = t; dit("Enregistré.");
+    }).catch(e => dit("Échec : " + e.message, true));
   };
 
   /* Les champs en réserve se rangent par intitulé : leur ordre ne décide de

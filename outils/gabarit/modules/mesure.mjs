@@ -424,6 +424,8 @@ function pousseLaFile(dernier){
   _pousseEnCours = true;
   (async () => {
     for (const e of f){
+      // un refus donné pendant l'envoi arrête ce qui restait à partir
+      if (!mesureOuverte()) break;
       if (!await envoiePaquet(e)) break;
       retireDeLaFile(e.id);
     }
@@ -630,6 +632,18 @@ function ouvreConfidentialite(){
       "site. Pour toute question sur ces données, adressez-vous à l'organisateur " +
       "du salon ; vous pouvez aussi saisir la CNIL.", "noteRefus");
   }, [{ libelle: "Fermer" }]);
+}
+
+/* Un refus donné dans un autre onglet vaut ici aussi : la clé est commune,
+   mais cet onglet-ci l'avait lue à son ouverture, et aurait continué d'envoyer
+   ce que le visiteur venait de refuser. L'événement `storage` ne part que vers
+   les autres onglets — jamais vers celui qui écrit. */
+if (typeof addEventListener === "function") {
+  addEventListener("storage", (e) => {
+    if (e.key !== CLE_REFUS) return;
+    const refus = e.newValue === "1";
+    if (refus !== MESURE_REFUSEE) refuseMesure(refus);
+  });
 }
 
 /* Ce que la page fait au branchement, au rang que le lancement lui donne : le
