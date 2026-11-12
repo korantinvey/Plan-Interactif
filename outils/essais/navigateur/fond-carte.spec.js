@@ -9,13 +9,14 @@
  * ont besoin d'elle.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, DONNEES, MAPLIBRE, maplibreFactice } = require("./aide");
+const { prepare, attendLaListe, DONNEES } = require("./aide");
 
 const BASE = "https://base.essai";
 // un pixel transparent : une tuile qui arrive, sans rien demander à personne
 const PIXEL = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
   "base64");
+const MAPLIBRE = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/**";
 /* Une carte qui se monte, demande son style, et n'entend jamais rien en
    retour : ni « load », ni « error ». C'est ce que fait un service muet. */
 const MAPLIBRE_MUETTE = "window.maplibregl = { Map: class { constructor(o){ this.o = o; } " +
@@ -24,7 +25,7 @@ const MAPLIBRE_MUETTE = "window.maplibregl = { Map: class { constructor(o){ this
 /**
  * Le plan d'administration ouvert sur un premier pavillon calé sur le fond
  * `fond`, une session admise et une base qui accepte tout. `bibliotheque`,
- * s'il est donné, répond à la place des fichiers de MapLibre : posé après les
+ * s'il est donné, répond à la place du CDN de MapLibre : posé après les
  * interceptions de `prepare`, il passe avant elles — Playwright essaie la
  * dernière posée d'abord.
  *
@@ -68,7 +69,7 @@ async function ouvreCale(page, fond, bibliotheque) {
   });
   await page.route("https://tile.openstreetmap.org/**",
     (r) => r.fulfill({ status: 200, contentType: "image/png", body: PIXEL }));
-  if (bibliotheque) { await maplibreFactice(page); await page.route(MAPLIBRE, bibliotheque); }
+  if (bibliotheque) await page.route(MAPLIBRE, bibliotheque);
 
   await page.goto("/plan-admin.html?plan=smcl-2026");
   await attendLaListe(page);
@@ -153,7 +154,6 @@ test.describe("le fond de carte", () => {
       ? r.fulfill({ json: { v: "essai-carte" } })
       : r.fulfill({ status: 200, contentType: "application/json",
                     headers: { "X-Version": "essai-carte" }, body: JSON.stringify(donnees) }));
-    await maplibreFactice(page);
     await page.route(MAPLIBRE, (r) => r.fulfill({ contentType: "application/javascript",
       body: "window.__montages = 0; window.maplibregl = { Map: class { " +
         "constructor(o){ this.o = o; window.__montages++; } on(){ return this; } " +

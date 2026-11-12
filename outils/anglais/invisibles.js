@@ -118,10 +118,6 @@ module.exports = [
   // et l'extension WebGL dont la chauffe des programmes s'enquiert
   "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
   "KHR_parallel_shader_compile",
-  // `modules/environs.mjs` : les empreintes de MapLibre, que le navigateur
-  // vérifie (`npm run maplibre` les refait)
-  "sha384-bjfa/AtNYvqAA/nKUNjYpgknFswtRY5llYeC8tEwIQ0zKRLKcm3Pbxl0XJgcS0qt",
-  "sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V",
   // `modules/moteur-gl*.mjs` : les noms des classes du moteur du plan, ceux de
   // deck.gl que `webgl.mjs` reconnaît, et le message d'une erreur que la
   // console seule reçoit — rien de cela ne s'affiche

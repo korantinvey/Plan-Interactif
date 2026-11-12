@@ -22,8 +22,6 @@ const PREMIER = DONNEES.plans[0].stands.length;
  * Rend la liste des erreurs relevées : exceptions non rattrapées et messages
  * d'erreur de la console. Les échecs de chargement refusés exprès n'en sont pas.
  */
-const MAPLIBRE = "**/bibliotheques/maplibre-gl-*";
-
 async function prepare(page, { premiereVisite = false } = {}) {
   const erreurs = [];
   /* Un visiteur neuf se voit proposer la visite guidée, puis l'installation :
@@ -48,10 +46,6 @@ async function prepare(page, { premiereVisite = false } = {}) {
   // tout ce qui ne va pas vers les pages éprouvées (`PLAN_ADRESSE`, à défaut le serveur local)
   const chez = new URL(process.env.PLAN_ADRESSE || "http://localhost:4180").origin;
   await page.route((url) => url.origin !== chez, (r) => r.abort());
-  /* MapLibre restait au CDN, coupé par la ligne d'au-dessus ; servi désormais
-     par le site, il reste injoignable par défaut, comme avant : un essai qui
-     le veut pose sa bibliothèque (`maplibreFactice`), et passe devant. */
-  await page.route(MAPLIBRE, (r) => r.abort());
   await page.route("**/api/**", (r) => {
     const url = new URL(r.request().url());
     if (url.pathname === "/api/plan") {
@@ -77,26 +71,4 @@ async function attendLaListe(page) {
   return lignes;
 }
 
-/**
- * MapLibre, servi par le site (`modules/environs.mjs` `MAPLIBRE`), et ce qui
- * permet aux essais de le remplacer.
- *
- * La page charge ses deux fichiers avec leur empreinte d'intégrité : une
- * bibliothèque factice, servie à leur place, serait refusée par le navigateur.
- * `maplibreFactice` fait ignorer l'intégrité de ces deux fichiers-là, et
- * d'eux seuls, dans la page éprouvée — le code livré n'en sait rien, et
- * deck.gl garde la sienne. À poser avant `page.goto`.
- */
-async function maplibreFactice(page) {
-  await page.addInitScript(() => {
-    for (const Classe of [HTMLScriptElement, HTMLLinkElement]) {
-      const d = Object.getOwnPropertyDescriptor(Classe.prototype, "integrity");
-      Object.defineProperty(Classe.prototype, "integrity", {
-        configurable: true, get: d.get,
-        set(v) { if (!/maplibre-gl-/.test(this.src || this.href || "")) d.set.call(this, v); },
-      });
-    }
-  });
-}
-
-module.exports = { prepare, attendLaListe, DONNEES, PREMIER, MAPLIBRE, maplibreFactice };
+module.exports = { prepare, attendLaListe, DONNEES, PREMIER };
