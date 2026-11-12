@@ -80,6 +80,15 @@ async function main() {
   dit(sans && sans.pertes_contexte === null, "un groupe sans perte mesurée reste sans valeur",
     sans && String(sans.pertes_contexte));
 
+  // --------------------------------------------- les droits d'un compte remplacés
+  const B = (await un("insert into evenement (nom, slug, instance) values ('B', 'b', 'client1') returning id")).id;
+  await db.query("select remplace_acces($1, $2::uuid[])", [ORGA, [B]]);
+  const ouverts = (await db.query("select evenement_id from acces where profil_id = $1", [ORGA])).rows
+    .map((r) => r.evenement_id);
+  dit(ouverts.length === 1 && ouverts[0] === B, "les salons d'un compte se remplacent en entier",
+    ouverts.join(", "));
+  await db.query("select remplace_acces($1, $2::uuid[])", [ORGA, [A]]);
+
   // --------------------------------------------------- les rappels périmés
   await db.query(`insert into rappel_de_conference
       (evenement, abonnement, p256dh, auth, conference, envoi_a, titre, corps, adresse, vie)

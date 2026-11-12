@@ -117,17 +117,12 @@ Deno.serve(async (req) => {
     const ecritAcces = async (profilId: string, evenements: unknown) => {
       if (!Array.isArray(evenements)) return;
       const voulus = evenements.map((e) => String(e)).filter(Boolean);
-      /* L'effacement d'abord, et son échec compte autant que celui de l'ajout.
-         Tu, il laissait au profil les salons qu'on venait justement de lui
-         retirer, pendant que la console affichait la liste voulue : un droit
-         qu'on croit repris ne doit jamais rester ouvert en silence. */
-      const { error: eVieux } = await db.from("acces").delete().eq("profil_id", profilId);
-      if (eVieux) throw new Error(eVieux.message);
-      if (voulus.length) {
-        const { error } = await db.from("acces").insert(
-          voulus.map((evenement_id) => ({ profil_id: profilId, evenement_id })));
-        if (error) throw new Error(error.message);
-      }
+      /* Effacer puis poser, dans une seule transaction (`remplace_acces`) :
+         en deux requêtes, deux administrateurs qui modifiaient le même compte
+         lui laissaient l'union de leurs listes, et un salon retiré restait
+         ouvert sans que personne le sache. Un échec n'y change rien du tout. */
+      const { error } = await db.rpc("remplace_acces", { p_profil: profilId, p_evenements: voulus });
+      if (error) throw new Error(error.message);
     };
 
     /* ---------------------------------------------------------- liste */
