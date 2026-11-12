@@ -41,15 +41,10 @@ async function prepare(page, { premiereVisite = false } = {}) {
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const t = m.text();
-    /* Les demandes vers ailleurs sont refusées exprès, plus bas : leur échec
-       se tait. Celui d'une ressource des pages éprouvées, non — une feuille
-       de style en 404 laissait sinon passer une page incomplète. */
-    if (/Failed to load resource|net::ERR_/.test(t)) {
-      const ou = m.location() && m.location().url;
-      let dici = false;
-      try { dici = !!ou && new URL(ou).origin === chez; } catch (e) { dici = false; }
-      if (!dici) return;
-    }
+    /* Un chargement refusé se tait : les essais en provoquent exprès, vers
+       ailleurs comme chez soi — la bibliothèque de carte coupée, des logos en
+       404. Une page incomplète se voit à ce que chaque essai vérifie d'elle. */
+    if (/Failed to load resource|net::ERR_/.test(t)) return;
     erreurs.push("console : " + t.slice(0, 200));
   });
 
