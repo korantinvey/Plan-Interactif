@@ -59,6 +59,7 @@ import { RAPPELS_API, poussePossible, iOSsansInstallation, adresseDuRappel, empr
 import { ouvreModale, poseAvantFermeture, poseApresFermeture, retourAuxReglages } from "./fenetre.mjs";
 import { conf } from "./configuration.mjs";
 import { TUTO } from "./visite-guidee.mjs";
+import { creeFileEcritures } from "./ecritures-en-file.mjs";
 
 /* La visite guidée en cours se lit dans `visite-guidee.mjs` — la visite
    elle-même (`tutoriel.mjs`) atteint ce module par le tiroir du parcours, et
@@ -111,6 +112,22 @@ function retientRappels(){
   try {
     if (RAPPELS_ACTIFS) localStorage.setItem(cleRappels(), "1");
     else localStorage.removeItem(cleRappels());
+  } catch (e) {}
+}
+
+/* Un effacement qui n'a pas abouti — hors ligne, serveur en panne. Le visiteur
+   a éteint les rappels, et l'interrupteur le dit ; mais l'abonnement reste
+   valide (il est commun aux salons), et le serveur garderait de quoi réveiller
+   le téléphone. La marque survit à la page, et l'ouverture suivante reprend
+   l'effacement (`reprendRappels`). */
+const cleEffacement = () => "plan-rappels-effacer:" + (SLUG || (DATA && DATA.evenement) || "");
+function effacementDu(){
+  try { return localStorage.getItem(cleEffacement()) === "1"; } catch (e) { return false; }
+}
+function marqueEffacement(/** @type {boolean} */ du){
+  try {
+    if (du) localStorage.setItem(cleEffacement(), "1");
+    else localStorage.removeItem(cleEffacement());
   } catch (e) {}
 }
 
@@ -211,51 +228,68 @@ let _syncRappels = null;
  * rafraîchissement du parcours, qui peut se produire trois fois de suite pour
  * un seul geste.
  */
+/* Les envois au serveur passent l'un après l'autre (`ecritures-en-file.mjs`).
+   Lancés de front, une liste partie avant l'extinction pouvait arriver après
+   l'effacement et rétablir les rappels qu'on venait d'éteindre ; et deux
+   listes successives, arriver dans le désordre. En file, ce qui est demandé
+   en dernier arrive en dernier. */
+const fileRappels = creeFileEcritures(null);
+
+/** Une liste pour ce salon, et l'erreur si le serveur ne la prend pas. */
+async function envoieListe(/** @type {PushSubscription} */ ab, /** @type {any[]} */ rappels){
+  const r = await fetch(RAPPELS_API, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug: SLUG, abonnement: ab.toJSON(), rappels }),
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+}
+
 export function synchroniseRappels(){
   if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
   clearTimeout(_syncRappels);
-  _syncRappels = setTimeout(async () => {
-    /* Éteints entre-temps, ils ne repartent pas : l'envoi différé posait sinon,
-       après l'effacement, la liste que le visiteur venait de refuser. */
-    if (!RAPPELS_ACTIFS) return;
-    try {
+  _syncRappels = setTimeout(() => {
+    fileRappels.ecrit(async () => {
+      /* Éteints entre-temps — avant le départ de cet envoi, la file ayant pu
+         le retenir —, ils ne repartent pas : la liste se poserait après
+         l'effacement. */
+      if (!RAPPELS_ACTIFS) return;
       const ab = await abonnementCourant();
       if (!ab || !RAPPELS_ACTIFS) return;
-      await fetch(RAPPELS_API, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug: SLUG, abonnement: ab.toJSON(), rappels: rappelsDuParcours() }),
-      });
-    } catch (e) {
-      /* Une panne réseau ne se dit pas : le visiteur n'y peut rien, et ce qu'il
-         a demandé reste demandé — la prochaine ouverture du plan renverra la
-         liste. Le pire cas est un rappel qui ne part pas, pas une visite gâchée. */
-    }
+      await envoieListe(ab, rappelsDuParcours());
+    });
+    /* Un échec ne se dit pas : le visiteur n'y peut rien, et ce qu'il a
+       demandé reste demandé — la prochaine ouverture du plan renverra la
+       liste. Le pire cas est un rappel qui ne part pas, pas une visite gâchée. */
   }, 400);
 }
 
-/** Éteindre : l'abonnement est rendu au navigateur, et le serveur oublie ce
- *  qu'il gardait. Dans cet ordre — un abonnement rendu avant l'effacement
- *  laisserait des rangs qu'on ne saurait plus nommer. */
+/** L'effacement de ce salon sur le serveur, à son rang dans la file ; rend
+ *  vrai s'il a abouti, ou s'il n'y avait rien à effacer. */
+async function effaceRappels(){
+  const { ok } = await fileRappels.ecrit(async () => {
+    const ab = await abonnementCourant();
+    // plus d'abonnement : le serveur n'a plus rien pour réveiller l'appareil
+    if (ab) await envoieListe(ab, []);
+  });
+  marqueEffacement(!ok);
+  return ok;
+}
+
+/** Éteindre : le serveur oublie ce qu'il gardait pour ce salon. Rend faux si
+ *  l'effacement n'a pas abouti — il sera repris à la prochaine ouverture.
+ *
+ *  L'abonnement n'est pas défait : tous les salons ouverts dans ce navigateur
+ *  partagent le même service de second plan, donc le même abonnement. Le
+ *  défaire ici éteignait aussi les rappels d'un autre salon, dont la
+ *  préférence restait allumée. Seuls ceux de ce salon partent. */
 async function eteintRappels(){
   // avant toute attente : un envoi différé ne doit plus partir
   clearTimeout(_syncRappels);
   RAPPELS_ACTIFS = false;
-  const ab = await abonnementCourant().catch(() => null);
-  if (ab){
-    try {
-      await fetch(RAPPELS_API, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: SLUG, abonnement: ab.toJSON(), rappels: [] }),
-      });
-    } catch (e) {}
-    /* L'abonnement n'est pas défait : tous les salons ouverts dans ce
-       navigateur partagent le même service de second plan, donc le même
-       abonnement. Le défaire ici éteignait aussi les rappels d'un autre salon,
-       dont la préférence restait allumée. Seuls ceux de ce salon partent. */
-  }
-  RAPPELS_ACTIFS = false;
   retientRappels();
+  // marqué d'avance : une page fermée pendant l'envoi le reprendra aussi
+  marqueEffacement(true);
+  return effaceRappels();
 }
 
 async function allumeRappels(){
@@ -267,6 +301,8 @@ async function allumeRappels(){
   await abonne();
   RAPPELS_ACTIFS = true;
   retientRappels();
+  // la liste qui part remplace ce qu'un effacement manqué devait retirer
+  marqueEffacement(false);
   synchroniseRappels();
   return true;
 }
@@ -374,10 +410,13 @@ export function poseRappels(hote){
           aide.textContent = "Une notification par conférence retenue, même plan fermé.";
         }
       } else {
-        await eteintRappels();
-        aide.textContent = "Une notification par conférence retenue, même plan fermé. " +
-          "Les heures et les titres retenus partent alors sur nos serveurs, et " +
-          "s'effacent après le salon.";
+        const efface = await eteintRappels();
+        aide.textContent = efface
+          ? "Une notification par conférence retenue, même plan fermé. " +
+            "Les heures et les titres retenus partent alors sur nos serveurs, et " +
+            "s'effacent après le salon."
+          : "Les rappels sont éteints, mais le serveur n'a pas pu les effacer. " +
+            "Ce sera refait à la prochaine ouverture du plan.";
       }
     } catch (e) {
       case_.checked = false;
@@ -537,7 +576,10 @@ export function proposeRappels(apercu, rafraichitParcours = () => {}){
  */
 export async function reprendRappels(){
   chargeRappels();
-  if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
+  if (!rappelsOfferts() || !poussePossible()) return;
+  // un effacement resté en suspens la dernière fois : le reprendre d'abord
+  if (!RAPPELS_ACTIFS && effacementDu()){ await effaceRappels(); return; }
+  if (!RAPPELS_ACTIFS) return;
   if (Notification.permission !== "granted"){
     // l'autorisation a été retirée depuis : l'interrupteur ne ment pas
     RAPPELS_ACTIFS = false;
