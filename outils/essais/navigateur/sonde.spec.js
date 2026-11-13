@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(2);
+    expect(r.rev).toBe(3);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -106,6 +106,8 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(r.appareil.agent).toBeUndefined();
     expect(r.appareil.fenetre).toBeUndefined();
     expect(typeof r.appareil.navigateur.famille).toBe("string");
+    // révision 3 : le système se dit aussi hors de `userAgentData` (`mesures-page.mjs` `systemeDeRepli`)
+    expect(typeof r.appareil.systeme).toBe("string");
     expect(r.fluidite.classique.tranches).toHaveLength(7);
     expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
     expect(erreurs).toEqual([]);

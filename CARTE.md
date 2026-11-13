@@ -785,16 +785,16 @@ Importé par :
 edition · fiche-zone · libelles · outil-comptoir · outil-escalier · outil-foodtruck
 reglage-comptoir · reglage-foodtrucks · rendu · webgl
 
-### `modules/demarrage.mjs` — 383 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 397 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 76 · `demarre` 92 · `annonce` 161 · `panneDuChargement` 196
-`panne` 206 · `echec` 219 · `CLE_VERSION` 231 · `versionRetenue` 232 · `retientVersion` 235
-`demandePlan` 261 · `adresseAdmin` 289 · `demandeAdmin` 290 · `prechargeAdmin` 306
-`planAdmin` 319 · `charge` 328 · `brancheDemarrage` 365
+`recadreListePosee` 85 · `demarre` 106 · `annonce` 175 · `panneDuChargement` 210
+`panne` 220 · `echec` 233 · `CLE_VERSION` 245 · `versionRetenue` 246 · `retientVersion` 249
+`demandePlan` 275 · `adresseAdmin` 303 · `demandeAdmin` 304 · `prechargeAdmin` 320
+`planAdmin` 333 · `charge` 342 · `brancheDemarrage` 379
 
 Importe :
 
@@ -1913,14 +1913,15 @@ Importé par :
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
 notifications · parcours · partage · sonde · tiroir-itineraire
 
-### `modules/mesures-page.mjs` — 204 l. → plan, plan-admin
+### `modules/mesures-page.mjs` — 222 l. → plan, plan-admin
 
 - l.1 · Les mesures de la page, partagées
 
 Fonctions :
 
 `centile` 31 · `fichier` 37 · `observe` 42 · `carteGraphique` 56 · `navigateur` 84
-`mobileDeRepli` 102 · `appareil` 115 · `trajet` 157 · `chargement` 175
+`mobileDeRepli` 102 · `systemeDeRepli` 115 · `appareil` 133 · `trajet` 175
+`chargement` 193
 
 Importé par :
 
@@ -3126,27 +3127,27 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1306 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1310 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 98 · `ms` 99 · `enCreux` 100 · `uuid` 103 · `echantillonne` 119 · `vue0` 140
-`nouvelleVisite` 155 · `cumuleVu` 196 · `poseVu` 208 · `invisibleAvantAffichage` 221
-`lcpVu` 228 · `vueDuMoment` 243 · `surLePlan` 250 · `commence` 255 · `sorte` 266
-`clos` 269 · `relance` 285 · `image` 291 · `ecouteGestes` 321 · `nomDuScript` 358 · `lu` 377
-`cumulDeck` 387 · `travauxDeck` 392 · `releveInstant` 418 · `travauxPendant` 428
-`cleAttente` 516 · `lesAttentes` 528 · `guetteCompilation` 536 · `imageDOuverture` 569
-`decoupe` 592 · `gel` 602 · `doitBattre` 655 · `bat` 664 · `battu` 671
-`ecouteBattement` 690 · `dansLaCarte` 733 · `gelPendantLaCarte` 739 · `etapeDeLaCarte` 745
-`laCarteDesEnvirons` 775 · `ecouteNavigateur` 791 · `memoire` 829 · `contexteDuPlan` 842
-`lisAppareil` 854 · `handicapDeclare` 890 · `finDesDonnees` 904 · `appelsEnEchec` 926
-`leChargement` 948 · `fluidite` 981 · `laCarte` 990 · `resumeSonde` 1013
-`leBattement` 1046 · `octets` 1052 · `coupe` 1055 · `tronque` 1066 · `fraiche` 1100
-`litLaFile` 1103 · `ecritLaFile` 1111 · `retire` 1123 · `corps` 1126
-`versionDesPages` 1134 · `envoieUne` 1145 · `pousse` 1171 · `actif` 1196 · `envoie` 1200
-`brancheSonde` 1225 · `demarre` 1238
+`sur` 102 · `ms` 103 · `enCreux` 104 · `uuid` 107 · `echantillonne` 123 · `vue0` 144
+`nouvelleVisite` 159 · `cumuleVu` 200 · `poseVu` 212 · `invisibleAvantAffichage` 225
+`lcpVu` 232 · `vueDuMoment` 247 · `surLePlan` 254 · `commence` 259 · `sorte` 270
+`clos` 273 · `relance` 289 · `image` 295 · `ecouteGestes` 325 · `nomDuScript` 362 · `lu` 381
+`cumulDeck` 391 · `travauxDeck` 396 · `releveInstant` 422 · `travauxPendant` 432
+`cleAttente` 520 · `lesAttentes` 532 · `guetteCompilation` 540 · `imageDOuverture` 573
+`decoupe` 596 · `gel` 606 · `doitBattre` 659 · `bat` 668 · `battu` 675
+`ecouteBattement` 694 · `dansLaCarte` 737 · `gelPendantLaCarte` 743 · `etapeDeLaCarte` 749
+`laCarteDesEnvirons` 779 · `ecouteNavigateur` 795 · `memoire` 833 · `contexteDuPlan` 846
+`lisAppareil` 858 · `handicapDeclare` 894 · `finDesDonnees` 908 · `appelsEnEchec` 930
+`leChargement` 952 · `fluidite` 985 · `laCarte` 994 · `resumeSonde` 1017
+`leBattement` 1050 · `octets` 1056 · `coupe` 1059 · `tronque` 1070 · `fraiche` 1104
+`litLaFile` 1107 · `ecritLaFile` 1115 · `retire` 1127 · `corps` 1130
+`versionDesPages` 1138 · `envoieUne` 1149 · `pousse` 1175 · `actif` 1200 · `envoie` 1204
+`brancheSonde` 1229 · `demarre` 1242
 
 Importe :
 
