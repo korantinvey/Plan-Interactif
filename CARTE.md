@@ -481,7 +481,7 @@ Importé par :
 
 fenetre · tiroirs
 
-### `modules/calage-carte.mjs` — 923 l. → plan-admin
+### `modules/calage-carte.mjs` — 926 l. → plan-admin
 
 - l.1 · 16 bis. Les environs — le calage de la carte sous le pavillon
 
@@ -490,12 +490,12 @@ Fonctions :
 `emprisePavillon` 68 · `centrePavillon` 83 · `basculeMasqueCarte` 88
 `boutonMasqueCarte` 99 · `pictoMasque` 110 · `carreDeTerrain` 137 · `chercheBatiments` 153
 `empriseDesObjets` 181 · `batimentsCandidats` 199 · `caleSurBatiment` 220
-`retientLeHall` 246 · `manqueCalage` 268 · `enregistreCalage` 277 · `figeEtEnregistre` 302
-`calageEnregistre` 331 · `oublieCalageEnCours` 359 · `litCoordonnees` 373
-`rafraichitCarte` 387 · `armeCalage` 426 · `pivotCalage` 437 · `glisseCarte` 441
-`cartePointerDown` 448 · `cartePointerMove` 462 · `cartePointerUp` 481 · `ditCalage` 489
-`majCalage` 498 · `appliqueCalage` 520 · `tourneCalage` 527 · `construitCalage` 533
-`ouvreCalage` 705 · `fermeCalage` 715 · `brancheCalageCarte` 727 · `voletEnvirons` 752
+`retientLeHall` 246 · `manqueCalage` 268 · `enregistreCalage` 277 · `figeEtEnregistre` 305
+`calageEnregistre` 334 · `oublieCalageEnCours` 362 · `litCoordonnees` 376
+`rafraichitCarte` 390 · `armeCalage` 429 · `pivotCalage` 440 · `glisseCarte` 444
+`cartePointerDown` 451 · `cartePointerMove` 465 · `cartePointerUp` 484 · `ditCalage` 492
+`majCalage` 501 · `appliqueCalage` 523 · `tourneCalage` 530 · `construitCalage` 536
+`ouvreCalage` 708 · `fermeCalage` 718 · `brancheCalageCarte` 730 · `voletEnvirons` 755
 
 Importe :
 
@@ -568,7 +568,7 @@ Importé par :
 dessin · enregistrement · fiche-zone · index-salon · libelles · points-interet · recherche
 reglage-recherche
 
-### `modules/chaleur.mjs` — 792 l. → plan-admin
+### `modules/chaleur.mjs` — 797 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.544 · Remise à zéro des compteurs
@@ -581,7 +581,7 @@ Fonctions :
 `dessineEchelleChaleur` 364 · `dessineTopChaleur` 384 · `phraseChaleur` 426
 `rafraichitChaleur` 455 · `montreChaleur` 493 · `rangChaleur` 526 · `aplati` 566
 `voletMesure` 575 · `evenementCourant` 601 · `relitRaz` 627 · `ouvreRemiseAZero` 630
-`lanceRemiseAZero` 728 · `brancheChaleur` 782
+`lanceRemiseAZero` 728 · `brancheChaleur` 787
 
 Éléments :
 
@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 370 l. → console
+### `modules/ecran-console.mjs` — 377 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 42 · `selonAdresse` 78 · `majAdresse` 86 · `majBarre` 101 · `dessineChoix` 150
-`majLiens` 179 · `videEcran` 220 · `dessine` 229 · `demarre` 244 · `brancheConsole` 262
+`charge` 42 · `selonAdresse` 78 · `majAdresse` 86 · `majBarre` 101 · `dessineChoix` 153
+`majLiens` 186 · `videEcran` 227 · `dessine` 236 · `demarre` 251 · `brancheConsole` 269
 
 Importe :
 
@@ -1021,7 +1021,7 @@ Importé par :
 
 plan
 
-### `modules/edition.mjs` — 737 l. → plan-admin
+### `modules/edition.mjs` — 739 l. → plan-admin
 
 - l.1 · Édition des formes existantes
 
@@ -1033,8 +1033,8 @@ Fonctions :
 `changeLien` 337 · `changeDureeLien` 353 · `majLiens` 370 · `appliqueSociete` 422
 `appliqueTexte` 438 · `repereAObjet` 448 · `appliqueRotation` 453 · `appliqueRayon` 467
 `appliqueTrait` 480 · `appliqueTransport` 508 · `appliquePicto` 531 · `supprimeForme` 557
-`editionPointerDown` 567 · `editionPointerMove` 632 · `tourneTexte` 700
-`editionPointerUp` 716
+`editionPointerDown` 567 · `editionPointerMove` 632 · `tourneTexte` 702
+`editionPointerUp` 718
 
 Importe :
 
@@ -1077,7 +1077,7 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 739 l. → plan-admin
+### `modules/enregistrement.mjs` — 747 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
 - l.585 · La sauvegarde emportée
@@ -1090,7 +1090,7 @@ Fonctions :
 `apresGeste` 299 · `presse` 309 · `brancheEnregistrement` 317 · `identifiants` 340
 `reglagesSeuls` 355 · `noteReglagesCharges` 366 · `oublieCache` 380
 `pousseConfiguration` 399 · `sauvegardeCourante` 605 · `telechargeSauvegarde` 627
-`appliqueSauvegarde` 656 · `litSauvegarde` 699 · `brancheSauvegarde` 721
+`appliqueSauvegarde` 656 · `litSauvegarde` 707 · `brancheSauvegarde` 729
 
 Importe :
 
@@ -1272,15 +1272,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 558 l. → console
+### `modules/fiche-evenement.mjs` — 568 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 47 · `caseDuPavillon` 58 · `champ` 68 · `champFavicon` 125
-`dessineFiche` 202 · `ligneOutil` 362 · `ligneReglage` 378 · `champCle` 396
-`champInstance` 447 · `ouvreSources` 483 · `majIntegration` 541 · `majMsgSync` 548
+`brancheFiche` 47 · `caseDuPavillon` 58 · `champ` 68 · `champFavicon` 131
+`dessineFiche` 208 · `ligneOutil` 368 · `ligneReglage` 384 · `champCle` 402
+`champInstance` 453 · `ouvreSources` 493 · `majIntegration` 551 · `majMsgSync` 558
 
 Éléments :
 
@@ -1295,11 +1295,11 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 979 l. → plan-admin
+### `modules/fiche-zone.mjs` — 987 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.51 · La fiche d'une zone organisateur
-- l.879 · Masquer une zone organisateur
+- l.887 · Masquer une zone organisateur
 
 Fonctions :
 
@@ -1307,8 +1307,8 @@ Fonctions :
 `cadreLogo` 342 · `champLogo` 414 · `editeurRiche` 452 · `memeFicheZone` 609
 `suitFicheZone` 616 · `verseFicheZone` 627 · `ficheZone` 659 · `marqueType` 688
 `rattacheSallesA` 700 · `champsFicheZone` 715 · `enregistreZone` 726
-`enregistreZoneAjoutee` 832 · `basculeAffichageZone` 890 · `marqueZonesMasquees` 918
-`ecritColonnesEvenement` 938 · `ecritColonneEvenement` 972
+`enregistreZoneAjoutee` 840 · `basculeAffichageZone` 898 · `marqueZonesMasquees` 926
+`ecritColonnesEvenement` 946 · `ecritColonneEvenement` 980
 
 Importe :
 
@@ -2297,7 +2297,7 @@ Importé par :
 
 batiments · gestes-admin · ordre-calques · outil-escalier · pile · plan-admin
 
-### `modules/outil-escalier.mjs` — 226 l. → plan-admin
+### `modules/outil-escalier.mjs` — 229 l. → plan-admin
 
 - l.1 · L'escalier d'un repère, attrapé sur le plan — l'outil de l'exploitant
 
@@ -2305,8 +2305,8 @@ Fonctions :
 
 `noeudDe` 55 · `metresParPixel` 59 · `lis` 62 · `dedans` 78 · `distance` 88 · `vise` 102
 `choisitEscalier` 120 · `refais` 131 · `angleBorne` 137 · `escalierPointerDown` 144
-`escalierPointerMove` 157 · `escalierPointerUp` 181 · `lacheEscalier` 191
-`escalierClavier` 197 · `relacheEscalier` 222
+`escalierPointerMove` 157 · `escalierPointerUp` 184 · `lacheEscalier` 194
+`escalierClavier` 200 · `relacheEscalier` 225
 
 Importe :
 
@@ -3224,14 +3224,15 @@ Importé par :
 
 ecran-console · fiche-evenement
 
-### `modules/temps.mjs` — 137 l. → plan, plan-admin
+### `modules/temps.mjs` — 146 l. → plan, plan-admin
 
 - l.1 · Les dates et les heures du salon
 
 Fonctions :
 
-`momentLocal` 32 · `jourLong` 63 · `jourCourt` 70 · `dateDeCle` 77 · `jourBref` 83
-`jourISO` 90 · `instantMural` 111 · `minutesDe` 125 · `ecritHeure` 127 · `ecritMinutes` 132
+`possible` 26 · `momentLocal` 41 · `jourLong` 72 · `jourCourt` 79 · `dateDeCle` 86
+`jourBref` 92 · `jourISO` 99 · `instantMural` 120 · `minutesDe` 134 · `ecritHeure` 136
+`ecritMinutes` 141
 
 Importé par :
 
@@ -3783,7 +3784,7 @@ Injections :
 
 `cleDeVignette` 28
 
-### `supabase/functions/comptes/index.ts` — 279 l.
+### `supabase/functions/comptes/index.ts` — 291 l.
 
 `cors` 39 · `service` 49 · `retourValide` 68
 

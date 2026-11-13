@@ -20,6 +20,15 @@ export const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendre
 export const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet",
                      "août", "septembre", "octobre", "novembre", "décembre"];
 
+/* Une date lue au motif, que rien d'autre ne contrôle : « 25:61 » ou un
+   31 février passaient, et la valeur non nulle empêchait l'appelant de se
+   replier sur une autre forme de l'heure (`parcours.mjs`). */
+function possible(/** @type {{ jour: number, mois: number, an: number, h: string, min: string, cle: string }} */ r){
+  const jours = new Date(Date.UTC(r.an, r.mois, 0)).getUTCDate();
+  return r.mois >= 1 && r.mois <= 12 && r.jour >= 1 && r.jour <= jours
+    && +r.h <= 23 && +r.min <= 59 ? r : null;
+}
+
 /**
  * L'heure d'une conférence, dans le fuseau du salon.
  *
@@ -33,16 +42,16 @@ export function momentLocal(v, fuseau){
   const t = String(v || "");
   const m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})/.exec(t);
   if (m){
-    return { jour: +m[2], mois: +m[1], an: +m[3], h: m[4].padStart(2, "0"), min: m[5],
-             cle: m[3] + m[1] + m[2] };
+    return possible({ jour: +m[2], mois: +m[1], an: +m[3], h: m[4].padStart(2, "0"), min: m[5],
+             cle: m[3] + m[1] + m[2] });
   }
   /* Une forme ISO sans décalage est déjà l'heure murale du salon : relue par
      `Date`, elle passait par le fuseau du visiteur — décalée de l'écart entre
      les deux, et une date seule tombait sur la veille. */
   const n = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?$/.exec(t);
   if (n){
-    return { jour: +n[3], mois: +n[2], an: +n[1], h: (n[4] || "0").padStart(2, "0"),
-             min: n[5] || "00", cle: n[1] + n[2] + n[3] };
+    return possible({ jour: +n[3], mois: +n[2], an: +n[1], h: (n[4] || "0").padStart(2, "0"),
+             min: n[5] || "00", cle: n[1] + n[2] + n[3] });
   }
   const d = new Date(t);
   if (isNaN(d.getTime())) return null;

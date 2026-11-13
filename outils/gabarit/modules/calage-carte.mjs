@@ -274,7 +274,12 @@ function manqueCalage(e){
 
 /** Le calage, enregistré pour tous. Une ligne, et rien d'autre : le fond n'est
  *  pas un dessin qu'on stocke, ce sont des tuiles qu'on va chercher. */
-async function enregistreCalage(cal, p = P()){
+async function enregistreCalage(enCours, p = P()){
+  /* Une copie, prise avant toute attente : le calage en cours de réglage
+     continue de bouger, et la page aurait montré comme publiée une position
+     que rien n'a écrite. Le corps envoyé et ce que la page retient sont la
+     même copie. */
+  const cal = enCours ? Object.assign({}, enCours) : enCours;
   const acces = accesBase();
   if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
   /* La page ne connaît les pavillons que par leur identifiant Klipso ;
@@ -285,9 +290,7 @@ async function enregistreCalage(cal, p = P()){
   await base(acces, "plan?id=eq." + planId, {
     method: "PATCH", body: JSON.stringify({ calage: cal }),
   }).catch(e => { throw manqueCalage(e); });
-  /* Une copie : le calage en cours de réglage continue de bouger, et le même
-     objet aurait montré comme publiée une position que rien n'a écrite. */
-  p.calage = cal ? Object.assign({}, cal) : cal;
+  p.calage = cal;
   oublieCache(acces);
 }
 

@@ -660,9 +660,11 @@ export function editionPointerMove(e){
       mx += correction([[mx, my]], acc)[0];
       /* Une largeur nulle — la poignée amenée sur le coin opposé — rendait
          une image dégénérée, dont le ratio nul donnait au geste suivant une
-         hauteur infinie. Les deux bornent au centimètre. */
+         hauteur infinie. Les deux bornent au centimètre — la hauteur aussi,
+         après le ratio : une image dix fois plus large que haute, ramenée au
+         centimètre de large, s'arrondissait à une hauteur nulle. */
       const ratio = Math.max(.01, b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
-      const l = Math.max(.01, Math.abs(mx - fixe[0]));
+      const l = Math.max(.01, .01 * ratio, Math.abs(mx - fixe[0]));
       mx = fixe[0] + Math.sign(mx - fixe[0] || 1) * l;
       my = fixe[1] + Math.sign(my - fixe[1] || 1) * (l / ratio);
     } else {

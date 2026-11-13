@@ -746,8 +746,11 @@ async function lanceRemiseAZero(){
        qui ne reposent plus sur rien. */
     if (chalOuvert) rafraichitChaleur();
     effacementEnCours = false;
-    // la confirmation a été fermée entre-temps : son compte rendu n'a plus de place
-    if (ici !== confirmationRaz || !$("mCorps").querySelector(".etatRaz")) return;
+    /* La confirmation a été fermée, ou remplacée, entre-temps : son compte
+       rendu n'a plus de place. Celle qui l'a remplacée gardait son bouton
+       éteint tant que l'effacement courait ; elle le relit maintenant, sans
+       quoi un mot déjà juste devait être retapé pour le rallumer. */
+    if (ici !== confirmationRaz || !$("mCorps").querySelector(".etatRaz")){ relitRaz(); return; }
 
     $("mCorps").innerHTML = "";
     const p = document.createElement("p");
@@ -769,8 +772,10 @@ async function lanceRemiseAZero(){
     }
     effacementEnCours = false;
     if (b) b.textContent = "Réinitialiser";
-    // le bouton revient selon le mot saisi, et non rallumé d'office
-    if (ici === confirmationRaz) relitRaz();
+    /* Le bouton revient selon le mot saisi, et non rallumé d'office — celui
+       de la confirmation ouverte, fût-elle une autre (`relitRaz` suit la
+       dernière, et ne touche à rien si elle est fermée). */
+    relitRaz();
   }
 }
 

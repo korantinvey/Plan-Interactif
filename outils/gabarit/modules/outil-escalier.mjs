@@ -158,7 +158,10 @@ export function escalierPointerMove(/** @type {PointerEvent} */ e){
   if (!geste) return false;
   if (!geste.bouge && Math.abs(e.clientX - geste.x) + Math.abs(e.clientY - geste.y) <= SEUIL_GLISSER) return true;
   const g = noeudDe(geste.id), z = g && lis(g);
-  if (!z){ geste = null; return true; }
+  /* Le calque verrouillé en plein geste (le cadenas de la pile reste à portée
+     d'un autre doigt) : ce qui a déjà bougé s'enregistre avant que le geste
+     ne s'efface, sans quoi le lâcher ne trouvait plus rien à écrire. */
+  if (!z){ lacheEscalier(); return true; }
   const p = versPlan(e.clientX, e.clientY);
   // le premier mouvement ouvre une entrée d'historique : Ctrl+Z défait le geste entier
   if (!geste.bouge) memorise();

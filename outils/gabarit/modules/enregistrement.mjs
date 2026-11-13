@@ -655,6 +655,14 @@ function telechargeSauvegarde(){
  */
 function appliqueSauvegarde(s){
   const connus = new Set((DATA?.plans || []).map(p => p.id));
+  /* Un fichier qui ne nomme aucun pavillon d'ici ne restaure rien, et ne
+     touche donc à rien : ses réglages remplaçaient quand même ceux du salon,
+     alors que la confirmation promettait de n'agir que sur les pavillons
+     d'ici. */
+  if (!Object.keys(s.pavillons || {}).some(id => connus.has(id))){
+    annonce("Cette sauvegarde ne nomme aucun pavillon de ce salon : rien n'a été restauré.", true);
+    return;
+  }
   let pavillons = 0, calques = 0, ignores = 0;
   Object.keys(s.pavillons || {}).forEach(id => {
     if (!connus.has(id)){ ignores++; return; }

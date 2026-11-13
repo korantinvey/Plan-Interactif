@@ -147,6 +147,9 @@ function majBarre() {
     });
 }
 
+/** Le rang du dernier choix de salon dans le menu : seule sa lecture décide. */
+let choixEnCours = 0;
+
 function dessineChoix() {
   const sel = $("choixEvt");
   // rien à choisir : la liste vide n'aurait rien à dire que la fiche ne dise
@@ -161,11 +164,15 @@ function dessineChoix() {
      refusée laissait le nouveau salon choisi et l'ancien à l'écran, sans un
      mot : le choix revient alors à celui d'avant, et l'erreur se dit. */
   sel.onchange = async () => {
-    const avant = selection;
+    const avant = selection, ici = ++choixEnCours;
     poseEvenements({ selection: sel.value });
     if (!PLANS[selection]) {
       try { await chargePlans(selection); }
       catch (err) {
+        /* Un autre choix est venu pendant la lecture : c'est lui qui vaut.
+           Revenir à « avant » aurait remis le menu sur l'ancien salon sous la
+           fiche du nouveau. */
+        if (ici !== choixEnCours) return;
         poseEvenements({ selection: avant });
         sel.value = avant || "";
         signale(err.message, true);

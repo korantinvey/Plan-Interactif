@@ -65,7 +65,7 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
 /* ------------------------------------------------------------------
    Fiche
    ------------------------------------------------------------------ */
-function champ(cle, libelle, aide, attrs) {
+function champ(cle, libelle, aide, attrs, fileDonnee) {
   const e = courant();
   const l = document.createElement("label");
   l.innerHTML = '<span></span><input ' + (attrs || "") + '>' + (aide ? '<span class="aide"></span>' : "");
@@ -78,22 +78,28 @@ function champ(cle, libelle, aide, attrs) {
      identifiant d'adresse déjà pris par un autre salon restait sinon dans le
      salon : le fragment d'intégration, l'adresse affichée, et la tentative
      suivante pointaient vers une adresse qui n'existe pas. */
-  const file = creeFileEcritures(e[cle]);
+  const file = fileDonnee || creeFileEcritures(e[cle]);
   const suit = () => {
     if (cle === "nom") _console.dessineChoix();
     if (cle === "slug") { majIntegration(); _console.majAdresse(); }
   };
-  let attente;
+  /* Le rang de la dernière frappe. Une réponse qui revient pendant qu'une
+     saisie plus récente attend son tour n'est pas la dernière, même si la
+     file ne la connaît pas encore : un refus remettait sinon la valeur
+     confirmée dans le champ, que le minuteur de la saisie relisait ensuite
+     — la frappe était perdue. La valeur à écrire se prend à la frappe, et
+     non dans le salon, qu'un refus peut avoir changé entre-temps. */
+  let attente, frappe = 0;
   i.oninput = () => {
-    e[cle] = i.value;
-    if (cle === "slug") e.slug = slugifie(i.value);
+    const ici = ++frappe;
+    const voulu = cle === "slug" ? slugifie(i.value) : i.value;
+    e[cle] = voulu;
     clearTimeout(attente);
     attente = setTimeout(() => {
-      const voulu = e[cle];
       file.ecrit(async () => { await majEvenement(e.id, { [cle]: voulu }); return voulu; })
         .then(({ ok, dernier, confirme, erreur }) => {
           if (!ok) signale(/** @type {Error} */ (erreur).message, true);
-          if (!dernier) return;
+          if (!dernier || ici !== frappe) return;
           if (!ok) e[cle] = confirme;
           if (cle === "slug" || !ok) i.value = e[cle] == null ? "" : e[cle];
           suit();
@@ -445,13 +451,17 @@ function champCle(cle, libelle, aide, forme, exemple) {
  * tient la place en attendant, et la reprend si la liste ne vient pas.
  */
 function champInstance() {
-  const libre = champ("instance", "Instance", "Le sous-domaine Klipso.", 'spellcheck="false"');
-  if (MOI?.role !== "admin") return libre;
   const e = courant();
   /* Les choix se suivent : B puis C, vite, lançaient deux écritures, et celle
      de B pouvait finir la dernière — l'écran sur C, la base sur B. Le salon ne
-     change qu'une fois la base d'accord, et un refus recale le menu. */
+     change qu'une fois la base d'accord, et un refus recale le menu. La file
+     est celle du champ libre aussi : il reste modifiable tant que les bases
+     se lisent, et une saisie confirmée là devait l'être pour le menu — sans
+     quoi revenir à l'ancienne valeur passait pour une écriture inutile, et
+     le menu l'annonçait quand la base gardait l'autre. */
   const file = creeFileEcritures(e.instance || "");
+  const libre = champ("instance", "Instance", "Le sous-domaine Klipso.", 'spellcheck="false"', file);
+  if (MOI?.role !== "admin") return libre;
   chargeBases().then((bases) => {
     if (!libre.isConnected) return;
     const choix = choixBase({

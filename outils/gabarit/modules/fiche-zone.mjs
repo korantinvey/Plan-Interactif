@@ -753,6 +753,8 @@ async function enregistreZone(o, v, depart){
   const traverse = !!v.traversable;
   const ouvre_ = !depart || !!depart.traversable !== traverse;
   const rattacheSalles = rattacheSallesA(o, salles);
+  const voulu = champsFicheZone(v), avant = depart ? champsFicheZone(depart) : null;
+  const touches = Object.keys(voulu).filter(k => !avant || voulu[k] !== avant[k]);
   /* La fiche de la zone suivante s'ouvre avant que la base ait répondu, et le
      plan se redessine dans la foulée : tous deux doivent lire le rattachement
      qu'on vient de choisir, pas celui d'avant. L'écriture dira le dernier mot,
@@ -768,12 +770,8 @@ async function enregistreZone(o, v, depart){
        qu'on avait chargée. (Un champ qu'on n'a pas touché ne touche donc pas
        à sa colonne.) */
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
-        const voulu = champsFicheZone(v), avant = depart ? champsFicheZone(depart) : null;
         const fiche = { ...(t[o.id] || {}) };
-        Object.keys(voulu).forEach(k => {
-          if (avant && voulu[k] === avant[k]) return;
-          if (voulu[k]) fiche[k] = voulu[k]; else delete fiche[k];
-        });
+        touches.forEach(k => { if (voulu[k]) fiche[k] = voulu[k]; else delete fiche[k]; });
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
@@ -803,13 +801,23 @@ async function enregistreZone(o, v, depart){
     if (o.origine === undefined) o.origine = o.nom;
     o.nom = nom || o.origine || null;
   }
-  o.description = description;
-  o.nom_en = nomEn || undefined;
-  o.description_en = descriptionEn || undefined;
+  /* Ce qu'on n'a pas touché vaut ce que la base a gardé : un autre poste a
+     pu le changer pendant que la fiche était ouverte, et la fiche fusionnée
+     le tient. Le reprendre du formulaire réaffichait l'ancienne valeur
+     au-dessus d'une base qui avait la nouvelle. La règle est celle du
+     serveur : une entrée de la fiche l'emporte sur la source, une entrée
+     absente la laisse. */
+  const fusion = (DATA.fichesZones || {})[o.id] || {};
+  const tient = (/** @type {string} */ k, /** @type {any} */ mien) =>
+    touches.includes(k) || fusion[k] === undefined ? mien : fusion[k];
+  o.description = tient("description", description);
+  o.nom_en = tient("nom_en", nomEn) || undefined;
+  o.description_en = tient("description_en", descriptionEn) || undefined;
   nomsAnglaisDesZones();
-  o.lien = adresse;
-  o.logo = blason;
-  o.type = genre;
+  // relus comme à la saisie : ce qui vient de la base passe les mêmes filtres
+  o.lien = adresseSure(tient("lien", adresse));
+  o.logo = imageSure(tient("logo", blason));
+  o.type = champsFicheZone({ type: tient("type", genre) }).type;
   marqueType(o);
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
   o.rech = pourRecherche(String(o.nom || "") + " " + String(o.nom_en || ""));

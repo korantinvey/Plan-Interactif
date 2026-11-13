@@ -134,17 +134,29 @@ Deno.serve(async (req) => {
          chaque compte une liste vide, une table au-delà du plafond de
          PostgREST (mille lignes) une liste tronquée, sans un mot. Et la
          console renvoie cette liste à l'enregistrement suivant :
-         `remplace_acces` effaçait alors les salons manquants. */
+         `remplace_acces` effaçait alors les salons manquants.
+
+         Chaque tranche reprend après la dernière ligne lue, et non à un rang :
+         les tranches ne partagent pas d'instantané, et une ligne effacée avant
+         le rang (`remplace_acces` efface puis repose) faisait reculer la
+         suivante d'un cran — jamais lue. Les identifiants sont des uuid : ils
+         se posent tels quels dans le filtre. */
       const liens: { profil_id: string; evenement_id: string }[] = [];
-      for (let debut = 0; ; debut += 1000) {
-        const { data: tranche, error: refus } = await db.from("acces")
+      let apres: { profil_id: string; evenement_id: string } | null = null;
+      for (;;) {
+        let requete = db.from("acces")
           .select("profil_id,evenement_id")
           .order("profil_id").order("evenement_id")
-          .range(debut, debut + 999);
+          .limit(1000);
+        if (apres) {
+          requete = requete.or(`profil_id.gt.${apres.profil_id},and(profil_id.eq.${apres.profil_id},evenement_id.gt.${apres.evenement_id})`);
+        }
+        const { data: tranche, error: refus } = await requete;
         if (refus) throw new Error(refus.message);
         if (!tranche || !tranche.length) break;
         liens.push(...tranche);
         if (tranche.length < 1000) break;
+        apres = tranche[tranche.length - 1];
       }
 
       /* Une invitation partie mais jamais ouverte se voit ici, et nulle part
