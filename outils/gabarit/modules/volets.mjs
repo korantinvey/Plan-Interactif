@@ -522,8 +522,11 @@ export function blocHoraires(hote){
       const c = {};
       if (lueHeure(de.value) !== null) c.ouverture = de.value;
       if (lueHeure(a.value) !== null) c.fermeture = a.value;
-      // un jour sans heures ne laisse pas de casier vide derrière lui
-      if (Object.keys(c).length) t.jours[j.cle] = c; else delete t.jours[j.cle];
+      /* Un jour vidé garde son casier, vide : c'est ce qui le distingue d'un
+         jour jamais réglé. Retiré, il redevenait un jour neuf, et prolonger
+         les dates du salon y recopiait les heures de la veille — l'effacement
+         était défait sans un mot. */
+      t.jours[j.cle] = c;
       enregistreConf();
       majEfface();
       majAlerte();
@@ -558,8 +561,10 @@ export function blocHoraires(hote){
       ? { ouverture: t.ouverture, fermeture: t.fermeture } : null;
     const jours = datesSalon();
     jours.forEach(j => {
-      if (t.jours[j.cle]) veille = t.jours[j.cle];
-      else if (veille) t.jours[j.cle] = Object.assign({}, veille);
+      // un jour déjà réglé, fût-il vidé, garde ce qu'on y a mis
+      if (j.cle in t.jours){
+        if (Object.keys(t.jours[j.cle]).length) veille = t.jours[j.cle];
+      } else if (veille) t.jours[j.cle] = Object.assign({}, veille);
     });
     if (jours.length){ delete t.ouverture; delete t.fermeture; }
   };
@@ -1443,6 +1448,8 @@ export function voletApparence(hote){
   // le même contenu pour les onze : c'est en comparant les mêmes liste et
   // fiche à elles-mêmes qu'on choisit leur habillage
   const vu = contenuApercu();
+  /** @type {{ cle: string, vue: Element }[]} */
+  const vues = [];
   MODELES.forEach(m => {
     const b = document.createElement("button");
     b.type = "button";
@@ -1454,6 +1461,7 @@ export function voletApparence(hote){
     b.querySelector(".nom .t").textContent = m.nom;
     b.querySelector(".resume").textContent = m.resume;
     b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
+    vues.push({ cle: m.cle, vue: /** @type {Element} */ (b.querySelector(".vue")) });
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
       /* Choisir un modèle, c'est choisir sa police : celle qu'on avait
@@ -1467,5 +1475,12 @@ export function voletApparence(hote){
     grille.appendChild(b);
   });
   hote.appendChild(grille);
+  /* Les onglets se bâtissent tous à l'ouverture : un champ masqué ou déplacé
+     ensuite dans « Fiche » laissait aux vignettes la fiche d'avant. Elles se
+     refont en reparaissant, comme l'aperçu du rangement (`reglages.mjs`). */
+  /** @type {any} */ (hote).rafraichit = () => {
+    const neuf = contenuApercu();
+    vues.forEach(({ cle, vue }) => vue.replaceChildren(apercuDuo(cle, neuf)));
+  };
 }
 
