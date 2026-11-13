@@ -658,8 +658,16 @@ export async function pousseConfiguration(auto){
     else if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
   } catch (e) {
     publication = false;
-    /* L'envoi n'a pas abouti : on ne sait pas ce qui en est arrivé, et ce
-       poste reprend pour référence ce qu'il avait chargé. */
+    /* L'envoi n'a pas abouti, mais il a pu passer sur une partie des
+       pavillons : ce qu'il portait n'est plus sûr nulle part. Ses clés ne
+       comptent donc plus pour chargées (`NON_CONFIRME`) — revenir à
+       l'ancienne valeur pendant cet envoi reste en attente et repart, au
+       lieu de s'effacer devant une référence que la base ne tient peut-être
+       plus. */
+    if (enVol){
+      Object.keys(enVol.posees).forEach(k => { REGLAGES_CHARGES[k] = NON_CONFIRME; });
+      enVol.retirees.forEach(k => { REGLAGES_CHARGES[k] = NON_CONFIRME; });
+    }
     enVol = null;
     noteAttenteReglages();
     /* Le clic attendu pendant cet envoi raté se dit raté lui aussi : relancé
