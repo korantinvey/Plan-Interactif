@@ -68,8 +68,6 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
 /** L'envoi qu'un champ tient encore sous son minuteur, à faire partir tout de
  *  suite : `champInstance` le demande avant de remplacer le champ libre. */
 const envoisEnAttente = /** @type {WeakMap<Element, () => void>} */ (new WeakMap());
-/** Ce qui a remplacé un champ à l'écran, à recaler sur un refus du champ. */
-const remplacants = /** @type {WeakMap<Element, (v: any) => void>} */ (new WeakMap());
 
 function champ(cle, libelle, aide, attrs, fileDonnee) {
   const e = courant();
@@ -108,14 +106,7 @@ function champ(cle, libelle, aide, attrs, fileDonnee) {
         .then(({ ok, dernier, confirme, erreur }) => {
           if (!ok) signale(/** @type {Error} */ (erreur).message, true);
           if (!dernier || ici !== frappe) return;
-          if (!ok){
-            e[cle] = confirme;
-            /* Le champ a pu être remplacé entre-temps (le menu Klipso prend
-               la place du champ libre) : c'est lui qui montre la valeur, et
-               il restait sur la saisie refusée. */
-            const r = remplacants.get(l);
-            if (r) r(confirme);
-          }
+          if (!ok) e[cle] = confirme;
           if (cle === "slug" || !ok) i.value = e[cle] == null ? "" : e[cle];
           suit();
         });
@@ -478,10 +469,24 @@ function champInstance() {
   const file = creeFileEcritures(e.instance || "");
   const libre = champ("instance", "Instance", "Le sous-domaine Klipso.", 'spellcheck="false"', file);
   if (MOI?.role !== "admin") return libre;
-  chargeBases().then((bases) => {
+  chargeBases().then(async (bases) => {
+    if (!libre.isConnected) return;
+    /* Le menu ne prend la place du champ libre qu'une fois ses écritures
+       finies, et part de la valeur que la base tient. Remplacé plus tôt, il
+       montrait une saisie pas encore confirmée, et un refus de celle-ci
+       devait le recaler de l'extérieur — sur une valeur parfois absente de
+       ses options, ou pendant qu'on y saisissait une base neuve, dont la clé
+       partait alors avec l'ancienne instance. La saisie encore sous son
+       minuteur part d'abord, dans la file commune ; le champ se fige le
+       temps qu'elle réponde. */
+    const part = envoisEnAttente.get(libre);
+    if (part) part();
+    const saisie = libre.querySelector("input");
+    if (saisie) saisie.disabled = true;
+    await file.vide();
     if (!libre.isConnected) return;
     const choix = choixBase({
-      bases, valeur: e.instance || "",
+      bases, valeur: file.confirme() || "",
       surChoix: (instance) => {
         file.ecrit(async (tenue) => {
           if (instance === tenue) return;
@@ -496,16 +501,6 @@ function champInstance() {
         });
       },
     });
-    /* Une saisie du champ libre encore sous son minuteur part maintenant,
-       dans la file commune : laissée à son minuteur, elle s'écrivait après un
-       choix fait entre-temps dans le menu, et la base gardait l'ancienne
-       saisie sous le menu qui montrait le choix. */
-    remplacants.set(libre, (v) => {
-      const menu = choix.element.querySelector("select");
-      if (menu) menu.value = v == null ? "" : v;
-    });
-    const part = envoisEnAttente.get(libre);
-    if (part) part();
     libre.replaceWith(choix.element);
   }).catch(() => {});
   return libre;
