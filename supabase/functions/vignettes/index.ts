@@ -192,7 +192,8 @@ Deno.serve(async (req) => {
           continue;
         }
         lignes.push({
-          cle: await cleDeVignette(v.source, format),
+          cle: await cleDeVignette(v.source, format, v.image,
+            typeof v.grande === "string" ? v.grande : ""),
           source: v.source,
           format,
           image: v.image,
@@ -212,6 +213,19 @@ Deno.serve(async (req) => {
       const { error } = await db.from("vignette_de_logo")
         .upsert(lignes, { onConflict: "cle" });
       if (error) return repond({ erreur: error.message }, 500);
+      /* La clé suit le contenu : une vignette refaite en porte une neuve, et
+         l'ancienne ligne du même logo, au même format, s'en va — le plan n'en
+         citerait sinon qu'une au hasard. Seulement les plus anciennes : deux
+         consoles qui refont le même logo au même moment n'effacent pas
+         chacune la ligne de l'autre, et la plus récente reste. Un plan gardé
+         qui cite l'ancienne clé ne perd que la vignette, jusqu'à expirer : le
+         logo se charge alors chez sa source. */
+      for (const l of lignes) {
+        const { error: e } = await db.from("vignette_de_logo").delete()
+          .eq("source", l.source).eq("format", l.format)
+          .neq("cle", l.cle).lt("pose", l.pose);
+        if (e) console.error("ancienne vignette restée :", e.message);
+      }
       return repond({ enregistrees: lignes.length, refusees });
     }
 

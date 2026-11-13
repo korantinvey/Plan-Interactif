@@ -3791,9 +3791,9 @@ Injections :
 
 `versionFond` 47 · `versionDuPlan` 92 · `condense` 96
 
-### `supabase/functions/_partage/vignette.ts` — 36 l.
+### `supabase/functions/_partage/vignette.ts` — 41 l.
 
-`cleDeVignette` 28
+`cleDeVignette` 31
 
 ### `supabase/functions/comptes/index.ts` — 291 l.
 
@@ -3826,7 +3826,7 @@ Injections :
 `enClair` 278 · `range` 304 · `champsKlipso` 325 · `hebergee` 1911 · `nettoieUrl` 1939
 `groupeTextes` 1949
 
-### `supabase/functions/vignettes/index.ts` — 258 l.
+### `supabase/functions/vignettes/index.ts` — 272 l.
 
 `cors` 27 · `service` 43 · `adressesDeLogos` 52 · `adressesDuSalon` 77
 

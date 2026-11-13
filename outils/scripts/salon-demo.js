@@ -103,8 +103,8 @@ function uuid(cle) {
 }
 
 /** La clé d'une vignette, comme la calcule le serveur (`_partage/vignette.ts` `cleDeVignette`). */
-const cleDeVignette = (source) =>
-  crypto.createHash("sha256").update(source).digest().subarray(0, 12).toString("hex");
+const cleDeVignette = (source, format, image, grande = "") =>
+  crypto.createHash("sha256").update([format, source, image, grande].join("\n")).digest().subarray(0, 12).toString("hex");
 
 /** Largeur et hauteur d'un WebP, lues dans son en-tête. */
 function tailleWebp(b) {
@@ -130,7 +130,7 @@ function tailleWebp(b) {
     const image = salon.vignettes[soc.vignette].replace(/^data:image\/webp;base64,/, "");
     const [largeur, hauteur] = tailleWebp(Buffer.from(image, "base64"));
     vignettes.set(source, {
-      cle: cleDeVignette(source), source, format: "webp", image, largeur, hauteur,
+      cle: cleDeVignette(source, "webp", image, image), source, format: "webp", image, largeur, hauteur,
       // la même pour le toit vu de près : elle est déjà sans fond
       grande: image, grande_detouree: true, pose: new Date().toISOString(),
     });
