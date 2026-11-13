@@ -12,7 +12,7 @@
    donc avec la liste (`parcours.mjs`) : le signet basculé, le lot versé, le
    rang qu'on rend, et l'ordre de refaire le tiroir (`basculeParcours`,
    `verseAuParcours`, `rangParcours`, `refaitParcours`) ; la liste annonce au
-   tiroir ce qui vient de changer (`suitLeParcours`, au bas du module). Le
+   tiroir ce qui vient de changer (`PARCOURS_CHANGE`, écouté au bas du module). Le
    bouton qui prend tout ce que la recherche retient vit à part
    (`tout-au-parcours.mjs`). La suggestion et les rappels, qu'il est seul à
    appeler, reçoivent ce qu'il leur faut en argument (`TIROIR_SUGG`,
@@ -32,7 +32,7 @@ import { confirme } from "./fenetre.mjs";
 import { momentLocal, jourCourt } from "./temps.mjs";
 import { PARCOURS, poseParcours, brancheListeParcours, enregistreParcours, plurielParcours,
   rafraichitMarque, marqueParcours, instantConf, cleTemps, nomDeStand, groupeParcours,
-  fermeParcours, basculeParcours, brancheParcours, suitLeParcours, rangParcours } from "./parcours.mjs";
+  fermeParcours, basculeParcours, brancheParcours, PARCOURS_CHANGE, rangParcours } from "./parcours.mjs";
 import { poseGardeParcours } from "./partage.mjs";
 import { SUGG_ECARTES, SUGG_MONTREES, poseSuggestion, fenetreSuggestion }
   from "./suggestion.mjs";
@@ -289,7 +289,7 @@ injecteApresOption("suggestion", () => rafraichitParcours());
    est le seul à qui la question se pose. Un lot versé n'y passe pas
    davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on vient de
    recevoir porte déjà l'interrupteur, en tête de ses conférences. */
-suitLeParcours((quoi, ajout) => {
+PARCOURS_CHANGE.ecoute((quoi, ajout) => {
   rafraichitParcours();
   /* Un lot ouvre le tiroir sur ce qu'il vient d'y verser — la liste, donc :
      rouvert sur la journée organisée qu'on regardait, il cachait ce qu'il
