@@ -69,6 +69,7 @@ test.describe("le moteur qui peint le plan", () => {
   });
 
   test("un raté du moteur part au relais des erreurs, une seule fois", async ({ page }) => {
+    test.setTimeout(90_000); // l'ouverture et le rapport, peints en logiciel
     const { envois, peint, webgl2 } = await ouvre(page, DONNEES);
     test.skip(!webgl2, "pas de carte graphique : le plan reste en SVG");
     expect(peint, "le moteur a peint le plan").toBe(true);
@@ -83,7 +84,12 @@ test.describe("le moteur qui peint le plan", () => {
         d.redraw("essai");
       }
     });
-    await expect.poll(() => envois.length, { timeout: 10_000 }).toBeGreaterThan(0);
+    /* Le rapport part plusieurs secondes après l'erreur : Chromium sans carte
+       graphique peint la page en logiciel, et la première image qui suit la
+       couche cassée lui prend jusqu'à 8 s de travail natif — un profil n'y
+       trouve presque aucun JavaScript, ni dans le moteur ni dans le relais.
+       L'essai dit ce qui part, non en combien de temps. */
+    await expect.poll(() => envois.length, { timeout: 25_000 }).toBeGreaterThan(0);
     await page.waitForTimeout(2500);
     const rates = envois.flatMap((e) => e.erreurs).filter((e) => /essai-casse/.test(e.message));
     expect(rates).toHaveLength(1);

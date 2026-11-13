@@ -144,6 +144,29 @@ function porteeGeo(p, a, ux, uy, max){
   return d;
 }
 
+/* Le rectangle des deux traversées n'est pas forcément dans la forme : il
+   prend la plus grande largeur et la plus grande hauteur passant par un même
+   point, et un carré tourné de 45° les a toutes deux pleines — le nom,
+   mesuré ainsi, débordait par les coins. On le réduit autour de son centre,
+   en gardant ses proportions, jusqu'à ce que son contour tienne dans la
+   forme : neuf points par côté, coins compris. (Règle tenue des deux côtés :
+   `modules/forme.mjs`, `_partage/geometrie.ts`.) */
+function reduitDedansGeo(lc, lb, a){
+  const tient = (s) => {
+    const w = lb[0] * s / 2, h = lb[1] * s / 2;
+    for (let i = 0; i <= 8; i++){
+      const t = -1 + i / 4;
+      if (!dansForme([lc[0] + t * w, lc[1] - h], a) || !dansForme([lc[0] + t * w, lc[1] + h], a) ||
+          !dansForme([lc[0] - w, lc[1] + t * h], a) || !dansForme([lc[0] + w, lc[1] + t * h], a)) return false;
+    }
+    return true;
+  };
+  if (tient(1)) return lb;
+  let bas = 0, haut = 1;
+  for (let k = 0; k < 12; k++){ const m = (bas + haut) / 2; if (tient(m)) bas = m; else haut = m; }
+  return [arrondiGeo(lb[0] * bas), arrondiGeo(lb[1] * bas)];
+}
+
 /** Le centre, la place, et l'ancrage du libellé quand le centre n'en est pas un. */
 export function boiteGeo(a){
   const [x0, y0, x1, y1] = boiteAnneaux(a);
@@ -177,7 +200,12 @@ export function boiteGeo(a){
     lc = [arrondiGeo(p[0]), arrondiGeo(p[1])];
     lb = [arrondiGeo(Math.min(2 * Math.min(g, d), bb[0])), arrondiGeo(Math.min(2 * Math.min(h, b), bb[1]))];
   }
-  // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
-  return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5
+  /* En deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on
+     renonce. Jugé avant la réduction : réduit, le nom d'un rectangle penché
+     passait sous le seuil, et la forme retombait sur sa boîte englobante —
+     celle-là même qui débordait par les coins. */
+  const fiable = lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5;
+  lb = reduitDedansGeo(lc, lb, a);
+  return fiable
     ? { c: c, bb: bb, lc: lc, lb: lb } : { c: c, bb: bb };
 }

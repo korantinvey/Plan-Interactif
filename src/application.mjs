@@ -23,7 +23,7 @@ const EMPREINTE = /^[0-9a-f]{8,32}$/;
 /** Où l'on garde ce que porte l'application d'un salon. Le rang change quand ce
  *  qui est rangé dessous ne vaut plus : les entrées d'avant vivent leur vie et
  *  s'effacent seules, sans que personne ait à les attendre. */
-export const cleApp = (slug) => "app2:" + slug;
+export const cleApp = (slug) => "app3:" + slug;
 
 /* Combien de temps on garde ce que porte l'application — son nom, l'empreinte
    de son icône. Bien moins que le plan, et pour une raison qui n'a rien à voir
@@ -114,6 +114,9 @@ async function appDuSalon(slug, cache, ctx) {
        qui l'emporte, et vide c'est le tour de phrase d'ici qui vaut. */
     choisi: String(corps?.app ?? "").trim().slice(0, NOM_MAX),
     icone: EMPREINTE.test(empreinte) ? empreinte : "",
+    // la largeur réelle des deux images, que la console réduit quand elles pèsent trop
+    taille: Number.isInteger(corps?.taille) && corps.taille >= 48 && corps.taille <= 4096
+      ? corps.taille : 512,
   };
   if (cache) {
     ctx.waitUntil(cache.put(cle, JSON.stringify(app), { expirationTtl: TTL_APP })
@@ -130,10 +133,11 @@ async function appDuSalon(slug, cache, ctx) {
  * libres, sans quoi le rognage y mange le logo. Elles sortent du même fichier
  * déposé (`modules/reglage-application.mjs`), et la base en tient les deux versions.
  *
- * Une seule taille déclarée, et c'est la vraie : cinq cent douze pixels, ce
- * qu'un système demande au plus et bien au-delà du minimum qui rend une page
- * installable. Annoncer la même image en 192 pour faire nombre aurait été
- * déclarer une taille qu'elle n'a pas.
+ * Une seule taille déclarée, et c'est la vraie : celle de l'image, que la
+ * base relit dans son en-tête — cinq cent douze pixels d'ordinaire, moins
+ * quand la console a dû la réduire pour qu'elle tienne. Annoncer 512 pour
+ * une image de 384 donnait aux systèmes une taille fausse, et annoncer la
+ * même image en 192 pour faire nombre en aurait déclaré une de plus.
  *
  * L'empreinte dans l'adresse n'est pas un ornement : c'est elle qui fait
  * qu'une icône remplacée se voit. Le navigateur d'un visiteur qui a déjà
@@ -141,12 +145,12 @@ async function appDuSalon(slug, cache, ctx) {
  * pas, et va chercher l'image — là où une adresse fixe lui aurait laissé
  * l'ancienne, gardée pour toujours puisqu'elle est déclarée immuable.
  */
-function iconesDuSalon(slug, empreinte) {
+function iconesDuSalon(slug, empreinte, taille = 512) {
   const adresse = (masque) => "/api/icone?salon=" + encodeURIComponent(slug) +
     (masque ? "&masque=1" : "") + "&v=" + empreinte;
   return [
-    { src: adresse(false), sizes: "512x512", type: "image/png", purpose: "any" },
-    { src: adresse(true), sizes: "512x512", type: "image/png", purpose: "maskable" },
+    { src: adresse(false), sizes: taille + "x" + taille, type: "image/png", purpose: "any" },
+    { src: adresse(true), sizes: taille + "x" + taille, type: "image/png", purpose: "maskable" },
   ];
 }
 
@@ -215,7 +219,7 @@ export async function manifeste(requete, env, ctx) {
        le reste du tour de phrase n'y tiendrait pas. Un nom écrit par
        l'exploitant, lui, est déjà celui qu'il veut y lire. */
     contenu.short_name = app.choisi || app.nom;
-    if (app.icone) contenu.icons = iconesDuSalon(salon, app.icone);
+    if (app.icone) contenu.icons = iconesDuSalon(salon, app.icone, app.taille);
   }
   /* L'application se nomme elle-même dans `related_applications`, et c'est ce
      qui permet à la page de savoir, plus tard, qu'elle est installée
