@@ -12,7 +12,7 @@
    (`socle-console.mjs`).
    ============================================================ */
 import { esc } from "./texte.mjs";
-import { courant, noteEcriture } from "./evenements.mjs";
+import { courant, confirmeEcriture } from "./evenements.mjs";
 import { rest, signale } from "./socle-console.mjs";
 
 const FUSEAU_DEFAUT = "Europe/Paris";
@@ -75,9 +75,6 @@ export function champFuseau() {
       aide.textContent = "« " + saisi + " » n'est pas un fuseau connu : choisissez-le dans la liste.";
       return;
     }
-    // le relevé des écritures, que la relecture des salons respecte (`evenements.mjs`)
-    const ecrits = { fuseau: 1, fuseau_source: 1, fuseau_choisi: 1 };
-    noteEcriture(e.id, ecrits);
     try {
       const [r] = await rest("evenement?id=eq." + e.id +
         "&select=fuseau,fuseau_source,fuseau_choisi", {
@@ -87,6 +84,10 @@ export function champFuseau() {
       });
       if (!r) throw new Error("modification refusée");
       Object.assign(e, r);
+      /* Et sur le salon de la liste d'à présent, que la relecture des salons
+         respectera (`evenements.mjs`) : elle a pu remplacer « e » pendant
+         l'écriture. */
+      confirmeEcriture(e.id, r);
       /* La base traduit à son tour, et rend nul ce qu'elle ne sait pas lire —
          un nom trop récent pour son répertoire de fuseaux. Le taire laisserait
          croire que le choix a pris. */
@@ -96,8 +97,6 @@ export function champFuseau() {
     } catch (err) {
       peint();
       signale(err.message, true);
-    } finally {
-      noteEcriture(e.id, ecrits);
     }
   };
 

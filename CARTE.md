@@ -1177,15 +1177,15 @@ acces-admin · calques-dessin · camera · cartouche-poi · configuration · dem
 fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · parcours · rendu
 tiroir-itineraire · trace-itineraire · traduction · vignettes · webgl
 
-### `modules/evenements.mjs` — 141 l. → console
+### `modules/evenements.mjs` — 142 l. → console
 
 - l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
 
 Fonctions :
 
 `poseEvenements` 42 · `slugifie` 53 · `evenementParId` 59 · `courant` 61 · `poseSurSalon` 73
-`chargePlans` 78 · `noteEcriture` 102 · `rangDesEcritures` 110 · `gardeEcrits` 119
-`majEvenement` 128
+`chargePlans` 78 · `confirmeEcriture` 106 · `rangDesEcritures` 117 · `gardeEcrits` 126
+`majEvenement` 135
 
 Importe :
 
@@ -1450,7 +1450,7 @@ Importé par :
 
 emplacements · reprise-emplacements
 
-### `modules/fuseau.mjs` — 106 l. → console
+### `modules/fuseau.mjs` — 105 l. → console
 
 - l.1 · Fuseau horaire du salon — le champ de la console
 
@@ -2590,7 +2590,7 @@ Importé par :
 
 affiche-ici · partage · plan
 
-### `modules/rappels.mjs` — 591 l. → plan, plan-admin
+### `modules/rappels.mjs` — 596 l. → plan, plan-admin
 
 - l.1 · Le rappel avant une conférence
 

@@ -576,10 +576,15 @@ export function proposeRappels(apercu, rafraichitParcours = () => {}){
  */
 export async function reprendRappels(){
   chargeRappels();
-  if (!rappelsOfferts() || !poussePossible()) return;
-  // un effacement resté en suspens la dernière fois : le reprendre d'abord
-  if (!RAPPELS_ACTIFS && effacementDu()){ await effaceRappels(); return; }
-  if (!RAPPELS_ACTIFS) return;
+  /* Un effacement resté en suspens la dernière fois se reprend d'abord, et
+     même si le salon ne propose plus les rappels : l'exploitant a pu les
+     fermer depuis, et le serveur garderait sinon de quoi réveiller
+     l'appareil. Il ne lui faut que de quoi joindre le serveur. */
+  if (!RAPPELS_ACTIFS && effacementDu()){
+    if (RAPPELS_API && SLUG && poussePossible()) await effaceRappels();
+    return;
+  }
+  if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
   if (Notification.permission !== "granted"){
     // l'autorisation a été retirée depuis : l'interrupteur ne ment pas
     RAPPELS_ACTIFS = false;
