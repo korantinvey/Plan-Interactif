@@ -56,6 +56,12 @@ const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso
    neuf ne se bâtisse — il part alors de l'état à jour. */
 const titresEnAttente = /** @type {Set<() => void>} */ (new Set());
 const presseTitres = () => [...titresEnAttente].forEach(f => f());
+/* La file du dernier volet bâti. Un volet neuf attend que celle de l'ancien
+   soit vide avant d'écrire, et la réponse de l'ancien ne touche plus à rien :
+   arrivée après celles du nouveau, elle remettait sinon la fiche du poste à
+   son état d'avant. */
+/** @type {ReturnType<typeof creeFileEcritures> | null} */
+let fileCourante = null;
 
 /**
  * Le volet de la fiche d'un stand.
@@ -181,6 +187,8 @@ export function voletOrdre(hote){
      récente était en route ; celle de l'ouverture du volet, au départ
      (`ecritures-en-file.mjs`). */
   const file = creeFileEcritures(DATA.fiche || {});
+  const precedente = fileCourante;
+  fileCourante = file;
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -256,7 +264,7 @@ export function voletOrdre(hote){
        précédente, arrivée entre-temps, remplace la fiche du poste par ce que la
        base relisait — sans ce geste-ci, que l'écriture aurait alors perdu. */
     const voulu = structuredClone(DATA.fiche);
-    file.ecrit(() => ecritColonneEvenement("fiche", voulu, t => {
+    file.ecrit(async () => { if (precedente) await precedente.vide(); return ecritColonneEvenement("fiche", voulu, t => {
       // la colonne relue peut porter un absent que le poste n'avait pas : une
       // autre console a pu créer le champ pendant qu'on rangeait celle-ci
       t.ordre = ordreGarde(voulu.ordre || [], t.ordre || []);
@@ -270,9 +278,10 @@ export function voletOrdre(hote){
       toutes.forEach(c => { t.stand[c] = (voulu.stand || {})[c]; });
       const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
-    })).then(({ ok, dernier, confirme, erreur }) => {
+    }); }).then(({ ok, dernier, confirme, erreur }) => {
       if (!ok) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
-      if (!dernier) return;
+      // un volet remplacé depuis ne parle plus : le nouveau tient l'écran
+      if (!dernier || file !== fileCourante) return;
       if (ok){ DATA.fiche = confirme; dit("Enregistré."); return; }
       /* La dernière demande refusée : le volet et la fiche du poste reviennent
          à ce que la base tient, au lieu de garder le réglage refusé, qu'une

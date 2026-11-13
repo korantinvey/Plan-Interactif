@@ -1079,20 +1079,20 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 766 l. → plan-admin
+### `modules/enregistrement.mjs` — 773 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.594 · La sauvegarde emportée
+- l.601 · La sauvegarde emportée
 
 Fonctions :
 
-`enregistreDessins` 70 · `autoDispo` 151 · `enRetard` 154 · `etatCourant` 167
-`majAttente` 178 · `compteRescapes` 192 · `ditAlerte` 205 · `ditEtat` 256
-`programmeEnvoi` 263 · `programmePublication` 277 · `rattrapeRetard` 290 · `envoie` 296
-`apresGeste` 308 · `presse` 318 · `brancheEnregistrement` 326 · `identifiants` 349
-`reglagesSeuls` 364 · `noteReglagesCharges` 375 · `oublieCache` 389
-`pousseConfiguration` 408 · `sauvegardeCourante` 614 · `telechargeSauvegarde` 636
-`appliqueSauvegarde` 670 · `litSauvegarde` 726 · `brancheSauvegarde` 748
+`posteTient` 74 · `enregistreDessins` 76 · `autoDispo` 158 · `enRetard` 161
+`etatCourant` 174 · `majAttente` 185 · `compteRescapes` 199 · `ditAlerte` 212
+`ditEtat` 263 · `programmeEnvoi` 270 · `programmePublication` 284 · `rattrapeRetard` 297
+`envoie` 303 · `apresGeste` 315 · `presse` 325 · `brancheEnregistrement` 333
+`identifiants` 356 · `reglagesSeuls` 371 · `noteReglagesCharges` 382 · `oublieCache` 396
+`pousseConfiguration` 415 · `sauvegardeCourante` 621 · `telechargeSauvegarde` 643
+`appliqueSauvegarde` 677 · `litSauvegarde` 733 · `brancheSauvegarde` 755
 
 Importe :
 
@@ -1452,13 +1452,13 @@ Importé par :
 
 emplacements · reprise-emplacements
 
-### `modules/fuseau.mjs` — 114 l. → console
+### `modules/fuseau.mjs` — 119 l. → console
 
 - l.1 · Fuseau horaire du salon — le champ de la console
 
 Fonctions :
 
-`fuseauConnu` 28 · `champFuseau` 40
+`fuseauConnu` 31 · `champFuseau` 43
 
 Éléments :
 
@@ -2725,13 +2725,13 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 700 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 709 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
 Fonctions :
 
-`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 74
+`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 80
 
 Importe :
 
