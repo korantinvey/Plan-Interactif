@@ -147,8 +147,12 @@ function majBarre() {
     });
 }
 
-/** Le rang du dernier choix de salon dans le menu : seule sa lecture décide. */
+/** Le rang du dernier choix de salon dans le menu : seule sa lecture décide.
+ *  Un changement de compte l'avance aussi (`videEcran`) : une lecture de la
+ *  session d'avant n'a plus rien à rétablir. */
 let choixEnCours = 0;
+/** Le salon dont la fiche est à l'écran, posé par `dessine`. */
+let salonAffiche = /** @type {string | null} */ (null);
 
 function dessineChoix() {
   const sel = $("choixEvt");
@@ -164,7 +168,7 @@ function dessineChoix() {
      refusée laissait le nouveau salon choisi et l'ancien à l'écran, sans un
      mot : le choix revient alors à celui d'avant, et l'erreur se dit. */
   sel.onchange = async () => {
-    const avant = selection, ici = ++choixEnCours;
+    const ici = ++choixEnCours;
     poseEvenements({ selection: sel.value });
     if (!PLANS[selection]) {
       try { await chargePlans(selection); }
@@ -173,8 +177,10 @@ function dessineChoix() {
            Revenir à « avant » aurait remis le menu sur l'ancien salon sous la
            fiche du nouveau. */
         if (ici !== choixEnCours) return;
-        poseEvenements({ selection: avant });
-        sel.value = avant || "";
+        /* Le salon à retrouver est celui dont la fiche est à l'écran, et non
+           le choix d'avant : celui-ci pouvait n'avoir jamais fini de se lire. */
+        poseEvenements({ selection: salonAffiche });
+        sel.value = salonAffiche || "";
         signale(err.message, true);
         return;
       }
@@ -226,6 +232,8 @@ function majLiens(e) {
 /** Fin de session : la console n'a plus d'événements à montrer. */
 export function videEcran() {
   generation++;
+  choixEnCours++;
+  salonAffiche = null;
   /* Tout ce que la session avait lu part avec elle : les plans aussi, sans
      quoi « Copier les données (JSON) » du compte suivant emportait ceux des
      salons de l'ancien. */
@@ -245,6 +253,7 @@ function dessine() {
   dessineChoix();
   majBarre();
   dessineFiche();
+  salonAffiche = selection;
   majAdresse();
 }
 

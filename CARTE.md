@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 377 l. → console
+### `modules/ecran-console.mjs` — 386 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 42 · `selonAdresse` 78 · `majAdresse` 86 · `majBarre` 101 · `dessineChoix` 153
-`majLiens` 186 · `videEcran` 227 · `dessine` 236 · `demarre` 251 · `brancheConsole` 269
+`charge` 42 · `selonAdresse` 78 · `majAdresse` 86 · `majBarre` 101 · `dessineChoix` 157
+`majLiens` 192 · `videEcran` 233 · `dessine` 244 · `demarre` 260 · `brancheConsole` 278
 
 Importe :
 
@@ -1272,15 +1272,15 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 568 l. → console
+### `modules/fiche-evenement.mjs` — 581 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
 Fonctions :
 
-`brancheFiche` 47 · `caseDuPavillon` 58 · `champ` 68 · `champFavicon` 131
-`dessineFiche` 208 · `ligneOutil` 368 · `ligneReglage` 384 · `champCle` 402
-`champInstance` 453 · `ouvreSources` 493 · `majIntegration` 551 · `majMsgSync` 558
+`brancheFiche` 47 · `caseDuPavillon` 58 · `champ` 72 · `champFavicon` 138
+`dessineFiche` 215 · `ligneOutil` 375 · `ligneReglage` 391 · `champCle` 409
+`champInstance` 460 · `ouvreSources` 506 · `majIntegration` 564 · `majMsgSync` 571
 
 Éléments :
 

@@ -65,6 +65,10 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
 /* ------------------------------------------------------------------
    Fiche
    ------------------------------------------------------------------ */
+/** L'envoi qu'un champ tient encore sous son minuteur, à faire partir tout de
+ *  suite : `champInstance` le demande avant de remplacer le champ libre. */
+const envoisEnAttente = /** @type {WeakMap<Element, () => void>} */ (new WeakMap());
+
 function champ(cle, libelle, aide, attrs, fileDonnee) {
   const e = courant();
   const l = document.createElement("label");
@@ -89,13 +93,15 @@ function champ(cle, libelle, aide, attrs, fileDonnee) {
      confirmée dans le champ, que le minuteur de la saisie relisait ensuite
      — la frappe était perdue. La valeur à écrire se prend à la frappe, et
      non dans le salon, qu'un refus peut avoir changé entre-temps. */
-  let attente, frappe = 0;
+  let attente, frappe = 0, enAttente = /** @type {(() => void) | null} */ (null);
+  const part = () => { clearTimeout(attente); const f = enAttente; enAttente = null; if (f) f(); };
+  envoisEnAttente.set(l, part);
   i.oninput = () => {
     const ici = ++frappe;
     const voulu = cle === "slug" ? slugifie(i.value) : i.value;
     e[cle] = voulu;
     clearTimeout(attente);
-    attente = setTimeout(() => {
+    enAttente = () => {
       file.ecrit(async () => { await majEvenement(e.id, { [cle]: voulu }); return voulu; })
         .then(({ ok, dernier, confirme, erreur }) => {
           if (!ok) signale(/** @type {Error} */ (erreur).message, true);
@@ -104,7 +110,8 @@ function champ(cle, libelle, aide, attrs, fileDonnee) {
           if (cle === "slug" || !ok) i.value = e[cle] == null ? "" : e[cle];
           suit();
         });
-    }, 500);
+    };
+    attente = setTimeout(part, 500);
   };
   return l;
 }
@@ -480,6 +487,12 @@ function champInstance() {
         });
       },
     });
+    /* Une saisie du champ libre encore sous son minuteur part maintenant,
+       dans la file commune : laissée à son minuteur, elle s'écrivait après un
+       choix fait entre-temps dans le menu, et la base gardait l'ancienne
+       saisie sous le menu qui montrait le choix. */
+    const part = envoisEnAttente.get(libre);
+    if (part) part();
     libre.replaceWith(choix.element);
   }).catch(() => {});
   return libre;
