@@ -35,6 +35,12 @@ declare
   vues integer;
   avant integer;
 begin
+  /* Le compte, la lecture du compte d'avant et son écriture sous un même
+     verrou : deux synchronisations croisées du même salon pouvaient sinon
+     laisser en place le compte d'une lecture tronquée, et la garde suivante
+     comparait au mauvais. */
+  perform pg_advisory_xact_lock(hashtextextended('rappels:' || p_evenement::text, 0));
+
   select count(distinct c->>'id')
     into vues
     from instantane i

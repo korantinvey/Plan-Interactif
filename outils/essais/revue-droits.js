@@ -133,7 +133,11 @@ async function main() {
      comme à Kiritimati (UTC+14), le jour local s'écarte presque toujours du
      jour UTC, et le plan du jour même était refusé ou effacé. */
   for (const fuseau of ["Pacific/Pago_Pago", "Pacific/Kiritimati"]) {
-    await db.query("update evenement set fuseau = $1 where id = $2", [fuseau, A]);
+    /* Par `fuseau_choisi` : le déclencheur `evenement_fuseau_iana` réécrit
+       `fuseau` d'après lui, et une écriture directe ne tenait pas. */
+    await db.query("update evenement set fuseau_choisi = $1 where id = $2", [fuseau, A]);
+    const tenu = (await un("select fuseau from evenement where id = $1", [A])).fuseau;
+    dit(tenu === fuseau, "  le salon est bien en " + fuseau, tenu);
     const local = (await un("select (now() at time zone $1)::date::text as j", [fuseau])).j;
     await db.query("select pose_plan_de_visite('a', 'p3', $1::jsonb)",
       [JSON.stringify([{ jour: local, tranche: "20", cible: "s1" }])]);

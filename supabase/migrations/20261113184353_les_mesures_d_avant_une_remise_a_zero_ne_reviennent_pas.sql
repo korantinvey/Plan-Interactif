@@ -61,13 +61,17 @@ declare
   v_gestes  jsonb;
   v_remis   timestamptz;
 begin
-  select e.id, e.fuseau, e.compteurs_remis_le into v_evt, v_tz, v_remis
+  select e.id, e.fuseau into v_evt, v_tz
     from evenement e
    where e.slug = p_slug and e.etat = 'publie';
   if v_evt is null then return false; end if;
 
   -- en file avec la remise à zéro du même salon (`reinitialise_compteurs`)
   perform pg_advisory_xact_lock(hashtextextended('mesure:' || v_evt::text, 0));
+  /* La borne de la remise se lit sous le verrou : lue avant, elle pouvait
+     dater d'avant une remise qui le tenait encore, et laisser passer les
+     gestes que celle-ci venait d'effacer. */
+  select e.compteurs_remis_le into v_remis from evenement e where e.id = v_evt;
 
   -- L'instant du geste : maintenant, moins ce que le paquet a attendu.
   v_quand := now() - least(greatest(coalesce(p_recul, 0), 0), RECUL_MAX)
@@ -214,8 +218,10 @@ begin
   get diagnostics n_plan = row_count;
   /* L'instant de la remise, que `enregistre_mesures` compare à l'heure des
      gestes : un paquet d'avant, arrivé après, ne revient pas gonfler les
-     compteurs qu'on vient d'effacer. */
-  update evenement set compteurs_remis_le = now() where id = p_evenement;
+     compteurs qu'on vient d'effacer. L'heure effective, et non celle du début
+     de la transaction : une remise qui a attendu le verrou effaçait des
+     gestes plus récents que l'heure qu'elle aurait retenue. */
+  update evenement set compteurs_remis_le = clock_timestamp() where id = p_evenement;
 
   return jsonb_build_object(
     'compteurs', n_compteur,
