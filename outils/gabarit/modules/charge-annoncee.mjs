@@ -122,6 +122,9 @@ export function annoncePlan(){
     try { pose = localStorage.getItem(CLE_POSE + ":" + SLUG) || ""; } catch (e) {}
     // rien n'a bougé : le serveur porte déjà ce plan-là
     if (empreinte === pose) return;
+    /* Rien n'a jamais été annoncé : un plan vide n'a rien à effacer, et
+       l'annoncer tirait l'identifiant du parcours pour rien. */
+    if (!pose && !etapes.length) return;
     try { localStorage.setItem(CLE_POSE + ":" + SLUG, empreinte); } catch (e) {}
     /* L'empreinte se défait sur tout échec : sans cela un plan qui n'est
        jamais parti passerait pour posé, et ne serait plus jamais réannoncé.

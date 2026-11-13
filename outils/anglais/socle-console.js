@@ -23,4 +23,6 @@ module.exports = {
   "L'adresse du projet doit commencer par https://": "The project address must start with https://",
   // un appel parti vers un projet que l'on a quitté entre-temps
   "Le projet a changé pendant l'appel.": "The project changed during the call.",
+  // un appel dont la session a changé de compte pendant son renouvellement
+  "La session a changé pendant l'appel.": "The session changed during the call.",
 };

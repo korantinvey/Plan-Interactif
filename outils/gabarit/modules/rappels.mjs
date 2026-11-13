@@ -249,7 +249,10 @@ async function eteintRappels(){
         body: JSON.stringify({ slug: SLUG, abonnement: ab.toJSON(), rappels: [] }),
       });
     } catch (e) {}
-    try { await ab.unsubscribe(); } catch (e) {}
+    /* L'abonnement n'est pas défait : tous les salons ouverts dans ce
+       navigateur partagent le même service de second plan, donc le même
+       abonnement. Le défaire ici éteignait aussi les rappels d'un autre salon,
+       dont la préférence restait allumée. Seuls ceux de ce salon partent. */
   }
   RAPPELS_ACTIFS = false;
   retientRappels();

@@ -1196,9 +1196,16 @@ function oublie(/** @type {{ t: HTMLCanvasElement }[]} */ data, voulues = new Se
     detourees.delete(cle);
     if (!t) continue;
     pixels -= t.width * t.height;
-    if (t instanceof HTMLCanvasElement) continue;
-    t.close();
-    if (cle.endsWith("+g")){ grandes.delete(cle.slice(0, -2)); cedeesAuBudget.add(cle.slice(0, -2)); }
+    if (!(t instanceof HTMLCanvasElement)) t.close();
+    /* La grande détourée cède sa toile, et la grande d'origine son image
+       décodée avec elle : la toile sortait par `continue` sans relâcher le
+       bitmap, que le budget ne comptait pas — un toit vu de près le gardait
+       toute la visite, des centaines de mégaoctets sur un grand salon. */
+    if (cle.endsWith("+g")){
+      const base = cle.slice(0, -2), g = grandes.get(base);
+      if (g && g !== t && typeof ImageBitmap !== "undefined" && g instanceof ImageBitmap) g.close();
+      grandes.delete(base); cedeesAuBudget.add(base);
+    }
   }
 }
 

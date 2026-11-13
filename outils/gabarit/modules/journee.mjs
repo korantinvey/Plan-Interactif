@@ -1179,6 +1179,7 @@ function essaieSejour(choix, cleAffichee, fige){
     s = calculeSejour(choix, fige);
   } catch (e){
     console.warn("Visite :", e);
+    retireTraceJournee();
     SEJOUR = null;
     JOURNEE = null;
     $("pResume").textContent = "—";
@@ -1205,6 +1206,8 @@ function essaieSejour(choix, cleAffichee, fige){
  */
 function lanceSejour(choix){
   vueJournee = true;
+  // le trait se retire tant qu'on sait lequel : sans `SEJOUR`, plus rien ne le pourrait
+  retireTraceJournee();
   SEJOUR = null;
   JOURNEE = null;
   $("pCorps").hidden = $("pPied").hidden = $("btnJournee").hidden = true;

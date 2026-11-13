@@ -170,15 +170,22 @@ function suggestionCourante(){
 function exposantPropose(cle, v){
   const r = reglageSugg();
   const pris = new Set(PARCOURS.stands.map(String));
+  /* Une propriété propre, et une liste : « constructor » est aussi une valeur
+     de critère possible, et la lire sur un objet ordinaire rendait la fonction
+     `Object` — le tiroir du parcours ne s'ouvrait plus. */
+  const propre = (t) => t && Object.prototype.hasOwnProperty.call(t, v) ? t[v] : undefined;
+  const auto = propre(r.auto);
   const ids = r.source === "fixe"
-    ? [(r.fixes || {})[v]]
-    : ((r.auto || {})[v] || []);
+    ? [propre(r.fixes)]
+    : (Array.isArray(auto) ? auto : []);
   for (const id of ids){
     const o = id ? parId.get(String(id)) : null;
     /* Déjà dans la liste, il ne la compléterait pas ; démonté depuis le
-       relevé, il n'est plus nulle part ; écarté, on vient de le dire. */
+       relevé, il n'est plus nulle part ; écarté, on vient de le dire ; passé
+       à une autre valeur depuis, il ne répond plus à celle qu'on annonce. */
     if (o && o.kind === "stand" && o.nom &&
-        !pris.has(String(o.id)) && !SUGG_ECARTES.has(String(o.id))) return o;
+        !pris.has(String(o.id)) && !SUGG_ECARTES.has(String(o.id)) &&
+        valeursCritere(o, cle).includes(v)) return o;
   }
   return null;
 }

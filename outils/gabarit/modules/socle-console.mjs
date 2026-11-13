@@ -67,6 +67,11 @@ function entetes(json) {
   return h;
 }
 
+/** Une adresse de projet qui ne fait pas passer l'e-mail et le mot de passe en
+ *  clair : en https, sauf un projet local, sur cette machine. */
+const adresseSure = (/** @type {unknown} */ u) =>
+  /^https:\/\//i.test(String(u || "")) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(String(u || ""));
+
 /** Deux sessions du même compte, sur le même projet. */
 function memeCompte(a, b) {
   const x = contenuJeton(a?.access_token), y = contenuJeton(b?.access_token);
@@ -114,7 +119,17 @@ export async function appel(url, options = {}) {
       headers: { ...entetes(!!options.body), ...(options.headers || {}) },
     });
   };
-  if (SESSION?.access_token && resteJeton(SESSION.access_token) < RESTE_JETON) await renouvelle();
+  if (SESSION?.access_token && resteJeton(SESSION.access_token) < RESTE_JETON) {
+    /* Un autre compte a pu se connecter pendant ce renouvellement — passé à un
+       autre projet puis revenu, l'adresse est la même : l'écriture lancée
+       sous le premier serait partie sous l'identité du second. Le même compte,
+       renouvelé par un appel voisin, ne change rien. */
+    const avant = SESSION;
+    await renouvelle();
+    if (SESSION !== avant && !memeCompte(SESSION, avant)) {
+      throw new Error("La session a changé pendant l'appel.");
+    }
+  }
   const r = await envoie();
   if (r.status !== 401 || !SESSION?.refresh_token) return r;
   return (await renouvelle()) ? envoie() : r;
@@ -174,7 +189,7 @@ export function ecranConfig() {
     /* L'adresse porte l'e-mail et le mot de passe de la connexion : en clair,
        ils passeraient lisibles sur le réseau. Seul un projet local, sur cette
        machine, se passe de chiffrement. */
-    if (!/^https:\/\//i.test(u) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(u)) {
+    if (!adresseSure(u)) {
       url.setCustomValidity("L'adresse du projet doit commencer par https://");
       url.reportValidity();
       url.oninput = () => url.setCustomValidity("");
@@ -387,9 +402,15 @@ export function premierEcran() {
 export function brancheSocle(page) {
   _page = page;
 
-  try { poseSession({ CFG: JSON.parse(localStorage.getItem(CLE_CFG) || "null") }); } catch (e) {}
+  /* Le même contrôle qu'à la saisie (`adresseSure`) : une adresse en clair
+     enregistrée avant lui, ou par une autre voie, restait active, et le mot
+     de passe passait lisible sur le réseau. */
+  try {
+    const enregistree = JSON.parse(localStorage.getItem(CLE_CFG) || "null");
+    if (enregistree && adresseSure(enregistree.url)) poseSession({ CFG: enregistree });
+  } catch (e) {}
   try { poseSession({ SESSION: JSON.parse(localStorage.getItem(CLE_SESSION) || "null") }); } catch (e) {}
-  if (window.PLAN_CONFIG && !CFG) poseSession({ CFG: window.PLAN_CONFIG });
+  if (window.PLAN_CONFIG && !CFG && adresseSure(window.PLAN_CONFIG.url)) poseSession({ CFG: window.PLAN_CONFIG });
 
   poseFenetre();
 

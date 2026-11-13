@@ -595,7 +595,7 @@ Importé par :
 
 pile · plan-admin · reglage-suggestion · reglages
 
-### `modules/charge-annoncee.mjs` — 231 l. → plan, plan-admin
+### `modules/charge-annoncee.mjs` — 234 l. → plan, plan-admin
 
 - l.1 · La charge annoncée — ce que les autres journées ont déjà posé
 
@@ -603,7 +603,7 @@ Fonctions :
 
 `seuilConcentration` 24 · `identifiantParcours` 26 · `parcours` 28 · `sejour` 30
 `brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
-`celluleUtile` 152 · `dilatationDuJour` 169 · `litLaCharge` 206 · `chargeCellule` 226
+`celluleUtile` 155 · `dilatationDuJour` 172 · `litLaCharge` 209 · `chargeCellule` 229
 
 Importe :
 
@@ -783,16 +783,16 @@ Importé par :
 edition · fiche-zone · libelles · outil-comptoir · outil-escalier · outil-foodtruck
 reglage-comptoir · reglage-foodtrucks · rendu · webgl
 
-### `modules/demarrage.mjs` — 378 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 383 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 76 · `demarre` 92 · `annonce` 156 · `panneDuChargement` 191
-`panne` 201 · `echec` 214 · `CLE_VERSION` 226 · `versionRetenue` 227 · `retientVersion` 230
-`demandePlan` 256 · `adresseAdmin` 284 · `demandeAdmin` 285 · `prechargeAdmin` 301
-`planAdmin` 314 · `charge` 323 · `brancheDemarrage` 360
+`recadreListePosee` 76 · `demarre` 92 · `annonce` 161 · `panneDuChargement` 196
+`panne` 206 · `echec` 219 · `CLE_VERSION` 231 · `versionRetenue` 232 · `retientVersion` 235
+`demandePlan` 261 · `adresseAdmin` 289 · `demandeAdmin` 290 · `prechargeAdmin` 306
+`planAdmin` 319 · `charge` 328 · `brancheDemarrage` 365
 
 Importe :
 
@@ -1229,15 +1229,15 @@ Importé par :
 avancement · comptes · duplication · ecran-console · fiche-detail · fiche-evenement
 provenance · socle-console
 
-### `modules/fenetre.mjs` — 156 l. → plan, plan-admin
+### `modules/fenetre.mjs` — 167 l. → plan, plan-admin
 
 - l.1 · La fenêtre commune : par-dessus le plan, pour confirmer, régler, lire
 
 Fonctions :
 
 `poseAvantFermeture` 21 · `retourAuxReglages` 36 · `verseModale` 38
-`poseApresFermeture` 53 · `suisLaPartVisible` 64 · `ouvreModale` 83 · `fermeModale` 105
-`confirme` 117 · `brancheFenetre` 135
+`poseApresFermeture` 53 · `suisLaPartVisible` 64 · `ouvreModale` 88 · `fermeModale` 116
+`confirme` 128 · `brancheFenetre` 146
 
 Importe :
 
@@ -1579,13 +1579,13 @@ Importé par :
 
 apparence · lancement · pile · volets
 
-### `modules/horaires.mjs` — 89 l. → plan, plan-admin
+### `modules/horaires.mjs` — 94 l. → plan, plan-admin
 
 - l.1 · La journée du salon — ses dates, ses heures, le temps passé sur un stand
 
 Fonctions :
 
-`minutesVisite` 28 · `lueHeure` 55 · `lueDate` 59 · `datesSalon` 66 · `horairesSalon` 80
+`minutesVisite` 28 · `lueHeure` 55 · `lueDate` 59 · `datesSalon` 71 · `horairesSalon` 85
 
 Importe :
 
@@ -1595,14 +1595,14 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/ici.mjs` — 278 l. → plan, plan-admin
+### `modules/ici.mjs` — 282 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le code affiché dans le hall, côté visiteur
 
 Fonctions :
 
-`lieuExact` 93 · `litCodeIci` 113 · `poseIci` 139 · `retireIci` 166
-`oublieIciDeLAdresse` 196 · `montreBandeauIci` 212 · `demarreIci` 246 · `brancheIci` 266
+`lieuExact` 93 · `litCodeIci` 113 · `poseIci` 143 · `retireIci` 170
+`oublieIciDeLAdresse` 200 · `montreBandeauIci` 216 · `demarreIci` 250 · `brancheIci` 270
 
 Importe :
 
@@ -1663,7 +1663,7 @@ Importé par :
 
 demarrage · enregistrement · fiche-zone
 
-### `modules/installation.mjs` — 810 l. → plan, plan-admin
+### `modules/installation.mjs` — 812 l. → plan, plan-admin
 
 - l.1 · L'invitation à installer le plan
 
@@ -1677,8 +1677,8 @@ Fonctions :
 `gesteInstallation` 360 · `doigtPose` 364 · `doigtLeve` 365 · `vueInstallation` 368
 `accueilleInvitation` 377 · `invitationRetenue` 403 · `suitLesGestes` 424
 `finInvitation` 432 · `rouvreInvitation` 454 · `essaieInvitation` 474
-`brancheInstallation` 517 · `teteInvitation` 610 · `poseGardeInstallation` 643
-`remplitInvitation` 666 · `ouvreInvitation` 696 · `ouvreRappel` 771
+`brancheInstallation` 519 · `teteInvitation` 612 · `poseGardeInstallation` 645
+`remplitInvitation` 668 · `ouvreInvitation` 698 · `ouvreRappel` 773
 
 Importe :
 
@@ -1710,7 +1710,7 @@ enregistrement · fiche-zone · index-salon · journee · nappe · outil-dessin 
 points-interet · reprise-emplacements · sejour · seuil · tiroir-itineraire
 trace-itineraire · tutoriel · volets · webgl
 
-### `modules/journee.mjs` — 1279 l. → plan, plan-admin
+### `modules/journee.mjs` — 1282 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
 
@@ -1722,8 +1722,8 @@ Fonctions :
 `figeLaVisite` 400 · `placeSurJour` 409 · `rendAuPlan` 417 · `retireDuSejour` 423
 `remplitJournee` 433 · `ecritApercu` 646 · `appliqueVueParcours` 676 · `traceJournee` 718
 `retireTraceJournee` 735 · `montreLeJour` 743 · `perimeJournee` 758 · `montreLaListe` 774
-`oublieSejour` 779 · `ouvreOrganisation` 796 · `essaieSejour` 1176 · `lanceSejour` 1206
-`refaitSejour` 1245 · `brancheJournee` 1260
+`oublieSejour` 779 · `ouvreOrganisation` 796 · `essaieSejour` 1176 · `lanceSejour` 1207
+`refaitSejour` 1248 · `brancheJournee` 1263
 
 Importe :
 
@@ -1824,7 +1824,7 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1394 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1401 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
@@ -1841,8 +1841,8 @@ Fonctions :
 `videE` 864 · `place` 869 · `libere` 908 · `liberable` 930 · `envoie` 940
 `cedeLaPlace` 962 · `recopie` 993 · `range` 1008 · `plancheGardee` 1061
 `oubliePlancheBientot` 1106 · `pres` 1118 · `solVu` 1129 · `logosARevoir` 1146
-`groupe` 1162 · `oublie` 1173 · `annoncePoses` 1209 · `matriceDuToit` 1231
-`coucheDeChauffe` 1247 · `couchesLogos` 1257 · `poseLogos` 1278
+`groupe` 1162 · `oublie` 1173 · `annoncePoses` 1216 · `matriceDuToit` 1238
+`coucheDeChauffe` 1254 · `couchesLogos` 1264 · `poseLogos` 1285
 
 Importe :
 
@@ -2155,14 +2155,14 @@ Importé par :
 emplacements · fiche · fiche-zone · gestes · index-salon · libelles · recherche
 reprise-emplacements
 
-### `modules/notifications.mjs` — 89 l. → plan, plan-admin
+### `modules/notifications.mjs` — 93 l. → plan, plan-admin
 
 - l.1 · Les notifications — ce que l'appareil sait recevoir, et l'abonnement
 
 Fonctions :
 
-`poussePossible` 19 · `iOSsansInstallation` 24 · `adresseDuRappel` 30 · `heureVue` 54
-`empreinteDebut` 55 · `octetsDeCle` 59 · `abonnementCourant` 67 · `abonne` 76
+`poussePossible` 19 · `iOSsansInstallation` 24 · `adresseDuRappel` 30 · `heureVue` 58
+`empreinteDebut` 59 · `octetsDeCle` 63 · `abonnementCourant` 71 · `abonne` 80
 
 Importe :
 
@@ -2365,13 +2365,13 @@ Importé par :
 
 recherche · tiroirs
 
-### `modules/parcours-recu.mjs` — 149 l. → plan, plan-admin
+### `modules/parcours-recu.mjs` — 159 l. → plan, plan-admin
 
 - l.1 · Le parcours reçu
 
 Fonctions :
 
-`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 147
+`accueilleParcoursPartage` 46 · `proposeParcoursRecu` 69 · `adoptePartage` 157
 
 Importe :
 
@@ -2381,7 +2381,7 @@ Importé par :
 
 demarrage · scan-parcours
 
-### `modules/parcours.mjs` — 597 l. → plan, plan-admin
+### `modules/parcours.mjs` — 598 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -2391,13 +2391,13 @@ Fonctions :
 `brancheListeParcours` 107 · `cleParcours` 120 · `identifiantParcours` 157
 `casierParcours` 165 · `dansParcours` 166 · `jourParcours` 169
 `attenduDepuisTropLongtemps` 174 · `trieParcours` 185 · `chargeParcours` 195
-`parcoursAEcrire` 229 · `enregistreParcours` 245 · `tientLeStockage` 274
-`plurielParcours` 288 · `contenuParcours` 297 · `signetParcours` 308 · `boutonParcours` 314
-`rafraichitMarque` 319 · `calqueMarques` 352 · `traitTuile` 379 · `dessineMarques` 386
-`marqueParcours` 418 · `instantConf` 436 · `cleTemps` 440 · `nomDeStand` 450
-`groupeParcours` 452 · `fermeParcours` 466 · `apresBascule` 486 · `suitLeParcours` 488
-`basculeParcours` 498 · `brancheParcours` 522 · `verseAuParcours` 545 · `rangParcours` 574
-`refaitParcours` 597
+`parcoursAEcrire` 230 · `enregistreParcours` 246 · `tientLeStockage` 275
+`plurielParcours` 289 · `contenuParcours` 298 · `signetParcours` 309 · `boutonParcours` 315
+`rafraichitMarque` 320 · `calqueMarques` 353 · `traitTuile` 380 · `dessineMarques` 387
+`marqueParcours` 419 · `instantConf` 437 · `cleTemps` 441 · `nomDeStand` 451
+`groupeParcours` 453 · `fermeParcours` 467 · `apresBascule` 487 · `suitLeParcours` 489
+`basculeParcours` 499 · `brancheParcours` 523 · `verseAuParcours` 546 · `rangParcours` 575
+`refaitParcours` 598
 
 Importe :
 
@@ -2409,15 +2409,15 @@ apparence · fiche · index-salon · journee · parcours-recu · partage · rapp
 reprise-emplacements · sejour · suggestion · tiroir-itineraire · tiroir-parcours
 tout-au-parcours · tutoriel
 
-### `modules/partage.mjs` — 293 l. → plan, plan-admin
+### `modules/partage.mjs` — 294 l. → plan, plan-admin
 
 - l.1 · Partager son parcours, et en garder une copie
 
 Fonctions :
 
-`lienParcours` 50 · `ouvrePartageParcours` 66 · `boutonsPartage` 122 · `parcoursACopier` 209
-`ouvreGardeParcours` 224 · `demandeGardeParcours` 254 · `poseGardeParcours` 267
-`branchePartage` 291
+`lienParcours` 50 · `ouvrePartageParcours` 66 · `boutonsPartage` 122 · `parcoursACopier` 210
+`ouvreGardeParcours` 225 · `demandeGardeParcours` 255 · `poseGardeParcours` 268
+`branchePartage` 292
 
 Importe :
 
@@ -2589,7 +2589,7 @@ Importé par :
 
 affiche-ici · partage · plan
 
-### `modules/rappels.mjs` — 546 l. → plan, plan-admin
+### `modules/rappels.mjs` — 549 l. → plan, plan-admin
 
 - l.1 · Le rappel avant une conférence
 
@@ -2598,9 +2598,9 @@ Fonctions :
 `reglageRappel` 87 · `rappelsVoulus` 88 · `minutesRappel` 89 · `cleRappels` 103
 `chargeRappels` 106 · `retientRappels` 110 · `rappelsOfferts` 121 · `instantAbsolu` 151
 `confsARappeler` 159 · `rappelsDuParcours` 176 · `synchroniseRappels` 214
-`eteintRappels` 240 · `allumeRappels` 258 · `aideRappel` 275 · `poseRappels` 291
-`cleInviteRappel` 412 · `inviteRappelFaite` 415 · `retientInviteRappel` 420
-`fenetreRappel` 456 · `proposeRappels` 492 · `reprendRappels` 535
+`eteintRappels` 240 · `allumeRappels` 261 · `aideRappel` 278 · `poseRappels` 294
+`cleInviteRappel` 415 · `inviteRappelFaite` 418 · `retientInviteRappel` 423
+`fenetreRappel` 459 · `proposeRappels` 495 · `reprendRappels` 538
 
 Importe :
 
@@ -2991,14 +2991,14 @@ configuration · demarrage · enregistrement · erreurs · essai-rappel · ici �
 mesure · notifications · parcours · partage · plan · rappels · recherche · releve · rendu
 retour · scan-parcours · sonde · sponsor · tutoriel · vignettes
 
-### `modules/scan-parcours.mjs` — 333 l. → plan, plan-admin
+### `modules/scan-parcours.mjs` — 340 l. → plan, plan-admin
 
 - l.1 · Lire le code QR d'un parcours, depuis le plan
 
 Fonctions :
 
 `chargeJsQr` 66 · `decodeur` 84 · `surToile` 121 · `fragmentDuCode` 150
-`ouvreScanParcours` 173 · `brancheScanParcours` 328
+`ouvreScanParcours` 173 · `brancheScanParcours` 335
 
 Importe :
 
@@ -3081,16 +3081,16 @@ Importé par :
 
 journee · reglages · volets
 
-### `modules/socle-console.mjs` — 451 l. → console, rapport
+### `modules/socle-console.mjs` — 472 l. → console, rapport
 
 - l.1 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`poseSession` 40 · `entetes` 63 · `memeCompte` 71 · `renouvelle` 78 · `appel` 104
-`rest` 127 · `ecranConfig` 152 · `ecranConnexion` 201 · `deconnecte` 271 · `signale` 286
-`bloc` 310 · `grille` 328 · `idCompte` 345 · `themeSombre` 354 · `premierEcran` 372
-`brancheSocle` 387
+`poseSession` 40 · `entetes` 63 · `adresseSure` 72 · `memeCompte` 76 · `renouvelle` 83
+`appel` 109 · `rest` 142 · `ecranConfig` 167 · `ecranConnexion` 216 · `deconnecte` 286
+`signale` 301 · `bloc` 325 · `grille` 343 · `idCompte` 360 · `themeSombre` 369
+`premierEcran` 387 · `brancheSocle` 402
 
 Importe :
 
@@ -3150,7 +3150,7 @@ Importé par :
 
 lancement
 
-### `modules/sponsor.mjs` — 402 l. → plan, plan-admin
+### `modules/sponsor.mjs` — 413 l. → plan, plan-admin
 
 - l.1 · Le sponsor — un logo le temps du chargement
 
@@ -3159,7 +3159,7 @@ Fonctions :
 `reglageSponsor` 112 · `secondesSponsor` 115 · `modeSponsor` 128 · `sponsorRetenu` 147
 `cleSponsor` 178 · `sponsorEnCache` 181 · `retientSponsor` 196 · `ouvreSponsor` 221
 `suitSponsor` 318 · `resteSponsor` 343 · `fermeSponsor` 349 · `accueilleSponsor` 365
-`brancheSponsor` 397
+`brancheSponsor` 404
 
 Importe :
 
@@ -3169,16 +3169,16 @@ Importé par :
 
 borne · demarrage · installation · lancement · reglage-sponsor · tutoriel
 
-### `modules/suggestion.mjs` — 329 l. → plan, plan-admin
+### `modules/suggestion.mjs` — 336 l. → plan, plan-admin
 
 - l.1 · La suggestion — un exposant de plus, pour compléter la visite
 
 Fonctions :
 
 `reglageSugg` 80 · `seuilSugg` 82 · `presentationsSugg` 106 · `presenteSugg` 112
-`critereSugg` 117 · `suggestionCourante` 134 · `exposantPropose` 170 · `nomValeurSugg` 188
-`phraseSuggestion` 209 · `carteSuggestion` 238 · `poseSuggestion` 288
-`fenetreSuggestion` 303
+`critereSugg` 117 · `suggestionCourante` 134 · `exposantPropose` 170 · `nomValeurSugg` 195
+`phraseSuggestion` 216 · `carteSuggestion` 245 · `poseSuggestion` 295
+`fenetreSuggestion` 310
 
 Importe :
 
@@ -3224,14 +3224,14 @@ Importé par :
 
 ecran-console · fiche-evenement
 
-### `modules/temps.mjs` — 129 l. → plan, plan-admin
+### `modules/temps.mjs` — 137 l. → plan, plan-admin
 
 - l.1 · Les dates et les heures du salon
 
 Fonctions :
 
-`momentLocal` 32 · `jourLong` 55 · `jourCourt` 62 · `dateDeCle` 69 · `jourBref` 75
-`jourISO` 82 · `instantMural` 103 · `minutesDe` 117 · `ecritHeure` 119 · `ecritMinutes` 124
+`momentLocal` 32 · `jourLong` 63 · `jourCourt` 70 · `dateDeCle` 77 · `jourBref` 83
+`jourISO` 90 · `instantMural` 111 · `minutesDe` 125 · `ecritHeure` 127 · `ecritMinutes` 132
 
 Importé par :
 

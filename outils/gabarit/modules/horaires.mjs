@@ -58,7 +58,12 @@ export function lueHeure(s){
 }
 export function lueDate(s){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
-  return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+  if (!m) return null;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  /* Un 31 février devient un jour de mars sans rien dire : une date qui change
+     en se lisant n'en est pas une. */
+  return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3]
+    ? d : null;
 }
 
 /** Les jours du salon, dans l'ordre ; vide tant que les dates n'en disent

@@ -128,7 +128,12 @@ function demarre(/** @type {any} */ d){
      de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait
      un stand dont le code serait tout le parcours. */
   accueilleParcoursPartage();
-  const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
+  /* Un fragment mal encodé (« #100% », un lien tronqué) ne désigne aucun
+     stand : non rattrapé, il faisait échouer le démarrage après le dessin du
+     plan, et la liste annonçait une panne au-dessus d'un plan affiché. */
+  let v = "";
+  try { v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase(); }
+  catch (e) { v = ""; }
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
