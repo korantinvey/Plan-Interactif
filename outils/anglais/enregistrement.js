@@ -56,4 +56,6 @@ module.exports = {
     "The current layers and appearance will be replaced, insofar as it names halls from this show.",
   "Restaurer": "Restore",
   "Fichier illisible.": "Unreadable file.",
+  // une sauvegarde demandée avant que le plan soit là
+  "Le plan n'est pas encore chargé : rien à sauvegarder.": "The map has not loaded yet: nothing to back up.",
 };

@@ -73,6 +73,10 @@ inscritGesteTenu(() => glisseGeo || traceAjout);
 
 /** Le geste abandonné : le pointeur annulé ne relâchera rien (`gestes-admin.mjs`). */
 export function lacheGeo(){
+  /* La forme a déjà bougé pendant le geste, sans rien d'enregistré : abandonnée
+     là, elle restait déplacée à l'écran, se perdait au rechargement, et la
+     flèche suivante l'enregistrait. Elle revient où elle était. */
+  if (glisseGeo){ poseGeometrie(glisseGeo.o, glisseGeo.a); retraceGeo(glisseGeo.o); dessinePoigneesGeo(); }
   glisseGeo = null;
 }
 
@@ -488,6 +492,8 @@ function lieAjout(texte){
 
 /** Les champs d'un emplacement ajouté. On n'écrit que ce qui change : réécrire
  *  un champ qu'on remplit y replacerait le curseur. */
+/** L'emplacement dont les champs d'ajout montrent les valeurs. */
+let infosDe = null;
 function ecritInfosAjout(o){
   const z = $("geoInfos");
   if (!z) return;
@@ -502,7 +508,12 @@ function ecritInfosAjout(o){
      ferme comme celui du calque de dessin, et ce qui est déjà lié le reste. */
   $("geoSoc").disabled = !optionActive("dessinStand");
   const r = CONF[cleAjout(o.id)] || {};
-  const met = (id, v) => { const c = $(id); if (c.value !== v && document.activeElement !== c) c.value = v; };
+  /* Le champ qu'on remplit garde sa saisie — mais seulement pour le même
+     emplacement : passé à un autre, le champ au focus montrait encore la
+     valeur du précédent, et la saisie suivante l'écrivait dans le nouveau. */
+  const autre = o.id !== infosDe;
+  infosDe = o.id;
+  const met = (id, v) => { const c = $(id); if (c.value !== v && (autre || document.activeElement !== c)) c.value = v; };
   met("geoCode", String(r.code || (o.lien ? "" : o.code) || ""));
   $("geoCode").placeholder = o.lien ? String(o.code || "B42") : "B42";
   met("geoTitre", String(o.nom || ""));

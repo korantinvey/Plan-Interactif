@@ -114,7 +114,9 @@ export function modePlacementLibelles(on){
   /* Le placement, le dessin et la reprise d'une géométrie se disputeraient le
      glisser : entrer dans l'un referme les autres (`modes-edition.mjs`). */
   if (PLACE_LIBELLES) quitteLesAutres("libelles");
-  if (!PLACE_LIBELLES){ poseLibelleChoisi(null); glisseLib = null; }
+  /* Échap en plein glissement : le libellé a déjà bougé dans la configuration,
+     et l'effacer sans l'enregistrer le perdait au rechargement. */
+  if (!PLACE_LIBELLES){ lacheLibelle(); poseLibelleChoisi(null); }
   /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
      touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se
      rallume ou s'éteint donc ici, une fois pour tous, plutôt que dans chacun. */
@@ -183,14 +185,15 @@ export function libellePointerDown(e){
   e.preventDefault();
   if (c.logo && !dejaChoisi) return true;
   const r = c.lu(c.o);
+  // le geste appartient au pointeur qui l'a commencé : un second doigt n'y touche pas
   glisseLib = { c, depart: versPlan(e.clientX, e.clientY),
-                dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
+                dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, pointeur: e.pointerId };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
 
 export function libellePointerMove(e){
-  if (!glisseLib) return false;
+  if (!glisseLib || e.pointerId !== glisseLib.pointeur) return false;
   const p = versPlan(e.clientX, e.clientY);
   const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
   const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
@@ -200,7 +203,7 @@ export function libellePointerMove(e){
 }
 
 export function libellePointerUp(e){
-  if (!glisseLib) return false;
+  if (!glisseLib || e.pointerId !== glisseLib.pointeur) return false;
   glisseLib = null;
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   enregistreConf();
@@ -224,12 +227,17 @@ export function branchePlacementLibelles(){
   }
   if ($("libAngle")){
     /* Un logo couché de travers se remet d'aplomb sans viser au degré près :
-       à moins de trois degrés d'un quart de tour, le curseur s'y pose. */
+       à moins de trois degrés d'un quart de tour, le curseur s'y pose — à la
+       main seulement. Au clavier, chaque flèche avance d'un degré : accroché,
+       le premier pas revenait au quart de tour, et l'angle ne bougeait plus. */
+    let clavierAngle = false;
+    $("libAngle").onkeydown = () => { clavierAngle = true; };
+    $("libAngle").onpointerdown = () => { clavierAngle = false; };
     $("libAngle").oninput = e => {
       const c = choisi();
       if (!c || !c.logo) return;
       const a = +e.target.value, quart = Math.round(a / 90) * 90;
-      posePlacement(c, n => { n.a = Math.abs(a - quart) < 3 ? quart : a; });
+      posePlacement(c, n => { n.a = !clavierAngle && Math.abs(a - quart) < 3 ? quart : a; });
     };
     $("libAngle").onchange = enregistreConf;
   }

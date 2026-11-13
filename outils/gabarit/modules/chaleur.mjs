@@ -617,9 +617,19 @@ export async function evenementCourant(acces){
  * cela met un nombre sur ce qu'on s'apprête à perdre, et cela prouve au
  * passage que la base répond, plutôt que de le découvrir après avoir tapé.
  */
+/* La fenêtre de confirmation se réutilise : une lecture ou un effacement
+   d'une confirmation précédente, revenus après « Annuler » et une nouvelle
+   ouverture, rallumaient le bouton de la suivante ou vidaient son contenu.
+   Chacune a son numéro, et un effacement en cours garde le bouton éteint. */
+let confirmationRaz = 0;
+let effacementEnCours = false;
+/** Le recalcul du bouton de la confirmation ouverte. */
+let relitRaz = () => {};
+
 /** @param {(volet: string) => void} rouvre */
 function ouvreRemiseAZero(rouvre){
   let tally = null;
+  const ici = ++confirmationRaz;
 
   ouvreModale("Réinitialiser les compteurs", corps => {
     const perd = document.createElement("p");
@@ -659,9 +669,11 @@ function ouvreRemiseAZero(rouvre){
        autant que l'original, qui reste accepté — on demande une intention. */
     const motJuste = (v) => [MOT_RAZ, traduit(MOT_RAZ)].some(m => aplati(v) === aplati(m));
     const relit = () => {
+      if (ici !== confirmationRaz) return;
       const b = bouton();
-      if (b) b.disabled = !motJuste(saisie.value) || !tally;
+      if (b) b.disabled = effacementEnCours || !motJuste(saisie.value) || !tally;
     };
+    relitRaz = relit;
     saisie.oninput = relit;
     saisie.onkeydown = (e) => {
       const b = bouton();
@@ -680,6 +692,7 @@ function ouvreRemiseAZero(rouvre){
         body: JSON.stringify({ p_evenement: evt }),
       });
     })().then(r => {
+      if (ici !== confirmationRaz) return;
       tally = r || {};
       const n = (v) => nbChal(v);
       etat.textContent = tally.depuis
@@ -713,9 +726,12 @@ function ouvreRemiseAZero(rouvre){
 
 /** L'effacement lui-même, et le compte rendu de ce qui est parti. */
 async function lanceRemiseAZero(){
+  if (effacementEnCours) return;
+  const ici = confirmationRaz;
   const b = $("mPied").querySelector(".danger");
   const etat = $("mCorps").querySelector(".etatRaz");
   if (b){ b.disabled = true; b.textContent = "Effacement…"; }
+  effacementEnCours = true;
   try {
     const acces = accesBase();
     if (!acces) throw new Error("session absente, reconnectez-vous");
@@ -729,6 +745,9 @@ async function lanceRemiseAZero(){
     /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
        qui ne reposent plus sur rien. */
     if (chalOuvert) rafraichitChaleur();
+    effacementEnCours = false;
+    // la confirmation a été fermée entre-temps : son compte rendu n'a plus de place
+    if (ici !== confirmationRaz || !$("mCorps").querySelector(".etatRaz")) return;
 
     $("mCorps").innerHTML = "";
     const p = document.createElement("p");
@@ -748,7 +767,10 @@ async function lanceRemiseAZero(){
       etat.textContent = "Remise à zéro impossible : " + e.message;
       etat.classList.add("err");
     }
-    if (b){ b.disabled = false; b.textContent = "Réinitialiser"; }
+    effacementEnCours = false;
+    if (b) b.textContent = "Réinitialiser";
+    // le bouton revient selon le mot saisi, et non rallumé d'office
+    if (ici === confirmationRaz) relitRaz();
   }
 }
 

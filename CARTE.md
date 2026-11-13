@@ -568,7 +568,7 @@ Importé par :
 dessin · enregistrement · fiche-zone · index-salon · libelles · points-interet · recherche
 reglage-recherche
 
-### `modules/chaleur.mjs` — 770 l. → plan-admin
+### `modules/chaleur.mjs` — 792 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.544 · Remise à zéro des compteurs
@@ -580,8 +580,8 @@ Fonctions :
 `mesureCartoucheChaleur` 339 · `replieChaleur` 345 · `ecritEtatChaleur` 356
 `dessineEchelleChaleur` 364 · `dessineTopChaleur` 384 · `phraseChaleur` 426
 `rafraichitChaleur` 455 · `montreChaleur` 493 · `rangChaleur` 526 · `aplati` 566
-`voletMesure` 575 · `evenementCourant` 601 · `ouvreRemiseAZero` 621 · `lanceRemiseAZero` 715
-`brancheChaleur` 760
+`voletMesure` 575 · `evenementCourant` 601 · `relitRaz` 627 · `ouvreRemiseAZero` 630
+`lanceRemiseAZero` 728 · `brancheChaleur` 782
 
 Éléments :
 
@@ -1077,7 +1077,7 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 726 l. → plan-admin
+### `modules/enregistrement.mjs` — 739 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
 - l.585 · La sauvegarde emportée
@@ -1090,7 +1090,7 @@ Fonctions :
 `apresGeste` 299 · `presse` 309 · `brancheEnregistrement` 317 · `identifiants` 340
 `reglagesSeuls` 355 · `noteReglagesCharges` 366 · `oublieCache` 380
 `pousseConfiguration` 399 · `sauvegardeCourante` 605 · `telechargeSauvegarde` 627
-`appliqueSauvegarde` 650 · `litSauvegarde` 686 · `brancheSauvegarde` 708
+`appliqueSauvegarde` 656 · `litSauvegarde` 699 · `brancheSauvegarde` 721
 
 Importe :
 
@@ -1146,13 +1146,13 @@ Importé par :
 
 demarrage · lancement · sonde · vue · webgl
 
-### `modules/essai-rappel.mjs` — 69 l. → plan-admin
+### `modules/essai-rappel.mjs` — 75 l. → plan-admin
 
 - l.1 · L'essai d'un vrai rappel, depuis les réglages
 
 Fonctions :
 
-`essaieRappelReel` 37
+`essaieRappelReel` 41
 
 Importe :
 
@@ -1502,7 +1502,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 636 l. → plan, plan-admin
+### `modules/gestes.mjs` — 640 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.74 · 8. Interactions du plan
@@ -1512,7 +1512,7 @@ Fonctions :
 `poseGestesAdmin` 72 · `milieu` 104 · `commencePince` 110 · `suitPince` 124
 `noteGlisser` 208 · `stoppeElan` 214 · `lanceElan` 220 · `plieLesBandes` 252
 `saisitPlan` 266 · `cibleElargie` 303 · `planifieFiltre` 346 · `brancheGestes` 360
-`brancheLangue` 619
+`brancheLangue` 623
 
 Importe :
 
@@ -2217,13 +2217,13 @@ Importé par :
 
 charge-annoncee · sejour
 
-### `modules/ordre-calques.mjs` — 126 l. → plan-admin
+### `modules/ordre-calques.mjs` — 132 l. → plan-admin
 
 - l.1 · L'ordre des calques — la fenêtre de l'exploitant
 
 Fonctions :
 
-`deplaceVers` 27 · `versExtremite` 39 · `remplitOrdre` 47 · `ouvreOrdre` 117
+`deplaceVers` 27 · `versExtremite` 39 · `remplitOrdre` 53 · `ouvreOrdre` 123
 
 Importe :
 
@@ -2427,18 +2427,18 @@ Importé par :
 
 installation · lancement · tiroir-parcours
 
-### `modules/pile.mjs` — 556 l. → plan-admin
+### `modules/pile.mjs` — 560 l. → plan-admin
 
 - l.1 · Le panneau des calques
 - l.65 · Panneau : deux sections, chacune rangée par nom
-- l.360 · Repères
-- l.419 · Fond du plan
+- l.362 · Repères
+- l.421 · Fond du plan
 
 Fonctions :
 
 `secteurs` 53 · `joli` 56 · `nature` 83 · `boutonAjout` 90 · `boutonVerrou` 110
-`intertitre` 118 · `remplitPanneau` 128 · `sectionSelection` 376 · `sectionFond` 439
-`ligneCouleur` 497 · `rangSecteur` 517 · `rangSous` 530 · `defautCouleur` 552
+`intertitre` 118 · `remplitPanneau` 128 · `sectionSelection` 378 · `sectionFond` 441
+`ligneCouleur` 499 · `rangSecteur` 520 · `rangSous` 533 · `defautCouleur` 556
 
 Importe :
 
@@ -2463,16 +2463,16 @@ Importé par :
 
 libelles
 
-### `modules/placement-libelles.mjs` — 240 l. → plan-admin
+### `modules/placement-libelles.mjs` — 248 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
 `lacheLibelle` 43 · `choisi` 57 · `repeint` 70 · `posePlacement` 80
-`libelleAutomatique` 102 · `modePlacementLibelles` 111 · `majPaletteLibelle` 130
-`choisitLibelle` 155 · `pousseLibelle` 162 · `libellePointerDown` 170
-`libellePointerMove` 192 · `libellePointerUp` 202 · `branchePlacementLibelles` 215
+`libelleAutomatique` 102 · `modePlacementLibelles` 111 · `majPaletteLibelle` 132
+`choisitLibelle` 157 · `pousseLibelle` 164 · `libellePointerDown` 172
+`libellePointerMove` 195 · `libellePointerUp` 205 · `branchePlacementLibelles` 218
 
 Importe :
 
@@ -2688,13 +2688,13 @@ apercus · apparence · borne · demarrage · fiche · fiche-zone · gestes · i
 lancement · reglage-fiche · reglage-recherche · reglage-suggestion · rendu
 reprise-emplacements · suggestion · volets
 
-### `modules/reglage-application.mjs` — 322 l. → plan-admin
+### `modules/reglage-application.mjs` — 333 l. → plan-admin
 
 - l.1 · L'application installée — son icône et son nom, le réglage de l'exploitant
 
 Fonctions :
 
-`nomAppDefaut` 69 · `ecritApplication` 84 · `blocApplication` 125
+`nomAppDefaut` 69 · `ecritApplication` 84 · `fileNomDuSalon` 130 · `blocApplication` 136
 
 Importe :
 
@@ -2721,7 +2721,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 678 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 682 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
@@ -2770,7 +2770,7 @@ Importé par :
 
 volets
 
-### `modules/reglage-rappel.mjs` — 159 l. → plan-admin
+### `modules/reglage-rappel.mjs` — 161 l. → plan-admin
 
 - l.1 · Le rappel avant une conférence, dans l'onglet « Admin » des réglages
 
@@ -2786,13 +2786,13 @@ Importé par :
 
 volets
 
-### `modules/reglage-recherche.mjs` — 309 l. → plan-admin
+### `modules/reglage-recherche.mjs` — 314 l. → plan-admin
 
 - l.1 · L'onglet « Recherche » des réglages — l'exploitant seul
 
 Fonctions :
 
-`catalogueTenu` 25 · `voletRecherche` 94 · `blocOrdreCriteres` 155
+`catalogueTenu` 25 · `voletRecherche` 94 · `blocOrdreCriteres` 156
 
 Importe :
 
@@ -2818,14 +2818,14 @@ Importé par :
 
 volets
 
-### `modules/reglage-suggestion.mjs` — 413 l. → plan-admin
+### `modules/reglage-suggestion.mjs` — 437 l. → plan-admin
 
 - l.1 · La suggestion — le volet de l'exploitant
 
 Fonctions :
 
-`indexSugg` 42 · `valeursSugg` 67 · `relevePalmares` 85 · `etiquetteSugg` 105
-`voletSuggestion` 115
+`indexSugg` 44 · `valeursSugg` 69 · `relevePalmares` 87 · `etiquetteSugg` 107
+`voletSuggestion` 117
 
 Importe :
 
@@ -2836,14 +2836,14 @@ Importé par :
 
 reglages
 
-### `modules/reglages.mjs` — 533 l. → plan-admin
+### `modules/reglages.mjs` — 546 l. → plan-admin
 
 - l.1 · La fenêtre des réglages du plan — l'exploitant seul
 
 Fonctions :
 
-`ouvreReglages` 84 · `voletZones` 212 · `champsFicheZone` 314 · `ficheZoneEnPlace` 408
-`voletPlan` 426 · `voletCoexposants` 465
+`ouvreReglages` 96 · `voletZones` 225 · `champsFicheZone` 327 · `ficheZoneEnPlace` 421
+`voletPlan` 439 · `voletCoexposants` 478
 
 Importe :
 
@@ -2919,23 +2919,23 @@ Importé par :
 cartouche-poi · dessin · edition · fiche-zone · itineraire · outil-dessin · points-interet
 socle-dessin · trajet · webgl
 
-### `modules/reprise-emplacements.mjs` — 763 l. → plan-admin
+### `modules/reprise-emplacements.mjs` — 774 l. → plan-admin
 
 - l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
 
 Fonctions :
 
-`lacheGeo` 75 · `cleVerrouGeo` 95 · `geoVerrouille` 96 · `basculeVerrouGeo` 98
-`boutonVerrouGeo` 113 · `modeGeometrie` 124 · `objetGeoSous` 148 · `groupeGeo` 158
-`choisitGeo` 166 · `cadreGeo` 181 · `prisesGeo` 201 · `curseurGeo` 213
-`dessinePoigneesGeo` 216 · `ecritDimensionsGeo` 244 · `nomSorteGeo` 256
-`majPaletteGeo` 258 · `finGesteGeo` 297 · `enregistreGeo` 315 · `geometrieOrigine` 329
-`retraceGeo` 344 · `pousseGeometrie` 355 · `appliqueDimensionGeo` 372
-`enregistreAjout` 387 · `ajouteEmplacement` 402 · `renommeAjout` 430 · `lieAjout` 462
-`ecritInfosAjout` 491 · `supprimeAjout` 518 · `choisitOutilGeo` 547 · `aideAjout` 554
-`fermeAjout` 564 · `ajoutPointerDown` 573 · `ajoutPointerMove` 589 · `ajoutPointerUp` 611
-`geometriePointerDown` 631 · `accrocheGeo` 662 · `geometriePointerMove` 664
-`geometriePointerUp` 715 · `brancheRepriseEmplacements` 732
+`lacheGeo` 75 · `cleVerrouGeo` 99 · `geoVerrouille` 100 · `basculeVerrouGeo` 102
+`boutonVerrouGeo` 117 · `modeGeometrie` 128 · `objetGeoSous` 152 · `groupeGeo` 162
+`choisitGeo` 170 · `cadreGeo` 185 · `prisesGeo` 205 · `curseurGeo` 217
+`dessinePoigneesGeo` 220 · `ecritDimensionsGeo` 248 · `nomSorteGeo` 260
+`majPaletteGeo` 262 · `finGesteGeo` 301 · `enregistreGeo` 319 · `geometrieOrigine` 333
+`retraceGeo` 348 · `pousseGeometrie` 359 · `appliqueDimensionGeo` 376
+`enregistreAjout` 391 · `ajouteEmplacement` 406 · `renommeAjout` 434 · `lieAjout` 466
+`ecritInfosAjout` 497 · `supprimeAjout` 529 · `choisitOutilGeo` 558 · `aideAjout` 565
+`fermeAjout` 575 · `ajoutPointerDown` 584 · `ajoutPointerMove` 600 · `ajoutPointerUp` 622
+`geometriePointerDown` 642 · `accrocheGeo` 673 · `geometriePointerMove` 675
+`geometriePointerUp` 726 · `brancheRepriseEmplacements` 743
 
 Importe :
 

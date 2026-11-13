@@ -42,6 +42,12 @@ function versExtremite(k, devant){
   CONF[clePile()] = liste;
   enregistreConf();
   ordonneDom(); construitPanneau(); remplitOrdre();
+  /* La liste refaite emporte le bouton qu'on venait d'activer : au clavier, le
+     focus tombait hors de la fenêtre, qui ne le gardait plus. Il revient au
+     même bouton, sur la ligne du même calque. */
+  const ul = $("mCorps").querySelector(".ordre");
+  const b = ul && ul.querySelector('li[data-k="' + CSS.escape(k) + '"] button[data-h="' + (devant ? "1" : "0") + '"]');
+  if (b) /** @type {HTMLElement} */ (b).focus();
 }
 
 function remplitOrdre(hote){

@@ -664,7 +664,11 @@ export function voletOrdre(hote){
       liste.querySelector('[data-ref="' + k + '"]');
     if (!el) return;
     const b = (el.querySelector(".grpTete") || el).querySelectorAll("button.fleche");
-    if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();
+    /* Arrivé en bout de liste, la flèche demandée s'éteint : l'autre prend le
+       focus, sans quoi le rangement au clavier n'avait plus de point de départ. */
+    const vise = b[focus.sens] && !b[focus.sens].disabled ? b[focus.sens]
+      : [...b].find(x => !x.disabled);
+    if (vise) vise.focus();
   };
 
   /* On revient ici après avoir touché au modèle dans l'onglet d'à côté :

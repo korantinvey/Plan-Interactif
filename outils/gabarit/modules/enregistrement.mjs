@@ -625,6 +625,12 @@ function sauvegardeCourante(){
 /** Le fichier, nommé par le salon et le jour : deux sauvegardes d'un même
  *  salon ne se recouvrent pas, et on lit la date sans ouvrir le fichier. */
 function telechargeSauvegarde(){
+  /* Le bouton peut paraître avant le plan : la sauvegarde était alors un
+     fichier sans salon ni pavillon, annoncé comme réussi. */
+  if (!DATA || !(DATA.plans || []).length){
+    annonce("Le plan n'est pas encore chargé : rien à sauvegarder.");
+    return;
+  }
   const s = sauvegardeCourante();
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(s, null, 1)],
@@ -663,7 +669,14 @@ function appliqueSauvegarde(s){
     if (Array.isArray(v.pile)) CONF["_pile:" + id] = v.pile;
     pavillons++;
   });
-  if (s.reglages) Object.assign(CONF, reglagesDuSalon(s.reglages));
+  /* Les réglages du salon sont remplacés, et non complétés : une clé posée
+     après la sauvegarde y survivait, et l'enregistrement suivant la gardait.
+     Ceux des autres salons et les piles, rangées à part, ne bougent pas. */
+  if (s.reglages){
+    const voulus = reglagesDuSalon(s.reglages);
+    Object.keys(reglagesDuSalon(CONF)).forEach(k => { if (!(k in voulus)) delete CONF[k]; });
+    Object.assign(CONF, voulus);
+  }
   // la sauvegarde peut colorer le plan sur un autre champ que celui en place
   indexeSecteurs();
   enregistreConf();
