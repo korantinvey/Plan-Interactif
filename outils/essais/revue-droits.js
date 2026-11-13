@@ -129,6 +129,19 @@ async function main() {
   const jours = (await db.query("select jour::text as j from plan_de_visite where plan = 'p1'")).rows.map((r) => r.j);
   dit(jours.length === 1 && jours[0] === pres, "un plan de visite ne se pose pas au-delà d'un an", jours.join(", "));
 
+  /* Le jour d'un plan se compte dans le fuseau du salon : à Pago Pago (UTC−11)
+     comme à Kiritimati (UTC+14), le jour local s'écarte presque toujours du
+     jour UTC, et le plan du jour même était refusé ou effacé. */
+  for (const fuseau of ["Pacific/Pago_Pago", "Pacific/Kiritimati"]) {
+    await db.query("update evenement set fuseau = $1 where id = $2", [fuseau, A]);
+    const local = (await un("select (now() at time zone $1)::date::text as j", [fuseau])).j;
+    await db.query("select pose_plan_de_visite('a', 'p3', $1::jsonb)",
+      [JSON.stringify([{ jour: local, tranche: "20", cible: "s1" }])]);
+    const pose = (await db.query("select jour::text as j from plan_de_visite where plan = 'p3'")).rows.map((r) => r.j);
+    dit(pose.length === 1 && pose[0] === local, "un plan du jour même se pose, fuseau " + fuseau,
+      "jour local " + local + ", posé " + pose.join(", "));
+  }
+
   // ------------------------------------- les fonctions de la clé de service
   const sous = async (role, sql) => {
     await db.exec("set role " + role);

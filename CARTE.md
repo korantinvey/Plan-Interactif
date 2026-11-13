@@ -3905,6 +3905,9 @@ Injections :
 - `20261112212202_la_seconde_revue_de_securite_bornes_droits_et_purges_verifiees.sql` — fn enregistre_rappels, fn erreur_publique
 - `20261112214003_la_seconde_revue_suite_droits_du_service_bilans_et_remise_a_zero.sql` — fn enregistre_mesures, fn reinitialise_compteurs, fn bilan_perf, fn sonde_detail
 - `20261113150934_les_reglages_d_apparence_fusionnes_cle_par_cle_en_base.sql` — fn fusionne_apparence
+- `20261113184112_les_rappels_ne_s_oublient_pas_sur_un_programme_tronque.sql` — evenement, fn oublie_rappels_perimes
+- `20261113184247_le_jour_d_un_plan_de_visite_dans_le_fuseau_du_salon.sql` — fn pose_plan_de_visite
+- `20261113184353_les_mesures_d_avant_une_remise_a_zero_ne_reviennent_pas.sql` — evenement, fn enregistre_mesures, fn reinitialise_compteurs
 
 ## Le reste
 
