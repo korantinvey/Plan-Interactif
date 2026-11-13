@@ -388,7 +388,7 @@ let REGLAGES_CHARGES = {};
    écrit avant le chargement passerait pour neuf, et toute la configuration
    avec lui. */
 let chargesNotes = false;
-export function noteReglagesCharges(enBase){
+export function noteReglagesCharges(enBase, parPavillon){
   REGLAGES_CHARGES = {};
   Object.keys(enBase || {}).forEach(k => {
     REGLAGES_CHARGES[k] = JSON.stringify(enBase[k]);
@@ -400,12 +400,26 @@ export function noteReglagesCharges(enBase){
      le compter en attente lançait un envoi que rien n'avait demandé. */
   /** @type {Record<string, string | null>} */
   const l = {};
+  /* Et seulement si chaque pavillon la porte : un envoi réussi sur l'un,
+     refusé sur l'autre, laisse la valeur neuve dans le bloc le plus récent,
+     que la référence réunie retient — l'autre pavillon garde l'ancienne, et
+     la clé doit rester en attente pour l'y porter. */
+  const blocs = Array.isArray(parPavillon) && parPavillon.length ? parPavillon : [enBase || {}];
   Object.entries(REGLAGES_EN_ATTENTE).forEach(([k, texte]) => {
-    const tenu = REGLAGES_CHARGES[k];
-    if (texte === null ? tenu !== undefined : texte !== tenu) l[k] = texte;
+    const confirme = blocs.every(b => texte === null ? !(k in b) : JSON.stringify(b[k]) === texte);
+    if (!confirme) l[k] = texte;
   });
   poseReglagesEnAttente(l);
 }
+
+/* L'envoi en cours : ce qu'il pose et ce qu'il retire. La base le tiendra
+   peut-être avant que la page en reçoive la réponse — un rechargement qui
+   tombe entre les deux. Le réglage qu'on retouche pendant ce temps se compare
+   donc à ce qui part, et non à ce qu'on avait chargé : revenir à l'ancienne
+   couleur pendant l'envoi de la neuve reste en attente, sans quoi le
+   chargement reprendrait la neuve et le retour serait perdu. */
+/** @type {{ posees: Record<string, string>, retirees: Set<string> } | null} */
+let enVol = null;
 
 /* Ce que ce poste a changé et que la base n'a pas encore reçu, rangé sur le
    poste à chaque écriture (`configuration.mjs` `REGLAGES_EN_ATTENTE`) : un
@@ -416,11 +430,15 @@ function noteAttenteReglages(){
   const reglages = reglagesSeuls();
   /** @type {Record<string, string | null>} */
   const l = {};
+  const reference = (/** @type {string} */ k) =>
+    enVol && k in enVol.posees ? enVol.posees[k]
+      : enVol && enVol.retirees.has(k) ? undefined : REGLAGES_CHARGES[k];
   Object.keys(reglages).forEach(k => {
     const texte = JSON.stringify(reglages[k]);
-    if (texte !== REGLAGES_CHARGES[k]) l[k] = texte;
+    if (texte !== reference(k)) l[k] = texte;
   });
-  Object.keys(REGLAGES_CHARGES).forEach(k => { if (!(k in reglages)) l[k] = null; });
+  new Set([...Object.keys(REGLAGES_CHARGES), ...Object.keys(enVol ? enVol.posees : {})])
+    .forEach(k => { if (!(k in reglages) && reference(k) !== undefined) l[k] = null; });
   poseReglagesEnAttente(l);
 }
 
@@ -482,6 +500,7 @@ export async function pousseConfiguration(auto){
        minutes plus tard, et l'accent de A disparaît pour tout le monde. Les
        deux voisins prenaient déjà cette précaution — `calque_dessin` n'efface
        que ce qu'il a vu en base, `ecritColonnesEvenement` relit la colonne. */
+    /** @type {Record<string, string>} */
     const changees = {};
     Object.keys(reglages).forEach(k => {
       /* La valeur est figée en texte ici, et c'est elle qu'on écrira : une
@@ -494,6 +513,7 @@ export async function pousseConfiguration(auto){
     const retirees = Object.keys(REGLAGES_CHARGES).filter(k => !(k in reglages));
     const posees = Object.fromEntries(
       Object.entries(changees).map(([k, texte]) => [k, JSON.parse(texte)]));
+    enVol = { posees: changees, retirees: new Set(retirees) };
     const parKlipso = await identifiants(acces);
 
     /* Les blocs que la base tient à l'instant, pour tous les pavillons d'un
@@ -595,6 +615,7 @@ export async function pousseConfiguration(auto){
 
     revisionEnvoyee = cible;
     publication = false;
+    enVol = null;
     /* Tout est posé : ce que ce poste a changé est maintenant ce que la base
        tient, et n'a plus à être reposé par-dessus un réglage venu d'ailleurs.
        Un pavillon absent laisse au contraire ces clés en attente — le geste de
@@ -626,6 +647,10 @@ export async function pousseConfiguration(auto){
     else if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
   } catch (e) {
     publication = false;
+    /* L'envoi n'a pas abouti : on ne sait pas ce qui en est arrivé, et ce
+       poste reprend pour référence ce qu'il avait chargé. */
+    enVol = null;
+    noteAttenteReglages();
     /* Le clic attendu pendant cet envoi raté se dit raté lui aussi : relancé
        en douce, il serait parti en reprise automatique, qui ne réécrit pas
        tout, et se serait annoncé réussi sans avoir réparé. Le bouton reste

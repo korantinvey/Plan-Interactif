@@ -42,8 +42,9 @@ import { oublieReperes } from "./cartouche-poi.mjs";
 /** Des calques que ce poste seul connaît ont été repris : combien.
  *  @type {import("./evenement.mjs").Evenement<[number]>} */
 export const RESCAPES_TROUVES = creeEvenement();
-/** Les réglages tels que la base les a rendus.
- *  @type {import("./evenement.mjs").Evenement<[any]>} */
+/** Les réglages tels que la base les a rendus : réunis, puis pavillon par
+ *  pavillon — un envoi interrompu laisse les pavillons en désaccord.
+ *  @type {import("./evenement.mjs").Evenement<[any, any[]]>} */
 export const REGLAGES_RECUS = creeEvenement();
 
 /* Ce qu'un catalogue donne à chercher : le nom de chaque produit et ses
@@ -247,7 +248,8 @@ export function indexe(/** @type {any} */ d){
      poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
      resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
      repart au prochain envoi — ce navigateur est le seul endroit où il est. */
-  if (ADMIN) REGLAGES_RECUS.emet(reglagesEnBase);
+  if (ADMIN) REGLAGES_RECUS.emet(reglagesEnBase,
+    DATA.plans.map(p => reglagesDuSalon(p.apparence?.reglages || {})));
 
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de

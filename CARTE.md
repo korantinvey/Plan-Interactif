@@ -1080,10 +1080,10 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 816 l. → plan-admin
+### `modules/enregistrement.mjs` — 841 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.644 · La sauvegarde emportée
+- l.669 · La sauvegarde emportée
 
 Fonctions :
 
@@ -1092,9 +1092,9 @@ Fonctions :
 `ditEtat` 267 · `programmeEnvoi` 274 · `programmePublication` 288 · `rattrapeRetard` 302
 `envoie` 308 · `apresGeste` 320 · `presse` 330 · `brancheEnregistrement` 338
 `identifiants` 361 · `reglagesSeuls` 376 · `noteReglagesCharges` 391
-`noteAttenteReglages` 414 · `oublieCache` 434 · `pousseConfiguration` 453
-`sauvegardeCourante` 664 · `telechargeSauvegarde` 686 · `appliqueSauvegarde` 720
-`litSauvegarde` 776 · `brancheSauvegarde` 798
+`noteAttenteReglages` 428 · `oublieCache` 452 · `pousseConfiguration` 471
+`sauvegardeCourante` 689 · `telechargeSauvegarde` 711 · `appliqueSauvegarde` 745
+`litSauvegarde` 801 · `brancheSauvegarde` 823
 
 Importe :
 
@@ -1650,14 +1650,14 @@ Importé par :
 
 fiche-evenement
 
-### `modules/index-salon.mjs` — 513 l. → plan, plan-admin
+### `modules/index-salon.mjs` — 515 l. → plan, plan-admin
 
 - l.1 · 1. L'index du salon — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`texteProduits` 54 · `indexe` 58 · `chronoConf` 326 · `confsDuPlan` 331
-`indexeConferences` 349 · `rangeConferences` 426 · `poseFavicon` 473 · `poseLogoSalon` 499
+`texteProduits` 55 · `indexe` 59 · `chronoConf` 328 · `confsDuPlan` 333
+`indexeConferences` 351 · `rangeConferences` 428 · `poseFavicon` 475 · `poseLogoSalon` 501
 
 Importe :
 

@@ -82,6 +82,10 @@ async function main() {
     catch (x) { return x; } finally { await db.exec("reset role"); }
   })();
   dit(Boolean(anon), "un visiteur n'appelle pas la fusion", anon ? anon.message : "accepté");
+  /* Et le droit lui-même, pas seulement l'échec : sans la révocation, l'appel
+     échouerait encore, mais plus loin, sur les droits de la table. */
+  const droit = await un("select has_function_privilege('anon', 'public.fusionne_apparence(uuid,jsonb,jsonb,text[])', 'EXECUTE') as ok");
+  dit(droit && droit.ok === false, "  anon n'a pas le droit d'exécuter la fonction", droit && String(droit.ok));
 
   await db.close();
   if (ko) { console.log("\n" + ko + " échec(s)"); process.exit(1); }
