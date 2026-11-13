@@ -426,9 +426,9 @@ const NON_CONFIRME = "\u0000";
 /* L'envoi en cours : ce qu'il pose et ce qu'il retire. La base le tiendra
    peut-être avant que la page en reçoive la réponse — un rechargement qui
    tombe entre les deux. Le réglage qu'on retouche pendant ce temps se compare
-   donc à ce qui part, et non à ce qu'on avait chargé : revenir à l'ancienne
-   couleur pendant l'envoi de la neuve reste en attente, sans quoi le
-   chargement reprendrait la neuve et le retour serait perdu. */
+   donc aussi à ce qui part : revenir à l'ancienne couleur pendant l'envoi de
+   la neuve reste en attente, sans quoi le chargement reprendrait la neuve et
+   le retour serait perdu. */
 /** @type {{ posees: Record<string, string>, retirees: Set<string> } | null} */
 let enVol = null;
 
@@ -441,15 +441,21 @@ function noteAttenteReglages(){
   const reglages = reglagesSeuls();
   /** @type {Record<string, string | null>} */
   const l = {};
-  const reference = (/** @type {string} */ k) =>
+  /* Deux références, et l'écart à l'une ou à l'autre garde la clé : ce que
+     la base tenait au chargement — la valeur qui part n'est pas confirmée
+     tant que l'envoi n'a pas répondu — et ce qui part — y revenir pendant
+     l'envoi doit repartir après lui. */
+  const enCours = (/** @type {string} */ k) =>
     enVol && k in enVol.posees ? enVol.posees[k]
       : enVol && enVol.retirees.has(k) ? undefined : REGLAGES_CHARGES[k];
   Object.keys(reglages).forEach(k => {
     const texte = JSON.stringify(reglages[k]);
-    if (texte !== reference(k)) l[k] = texte;
+    if (texte !== REGLAGES_CHARGES[k] || texte !== enCours(k)) l[k] = texte;
   });
   new Set([...Object.keys(REGLAGES_CHARGES), ...Object.keys(enVol ? enVol.posees : {})])
-    .forEach(k => { if (!(k in reglages) && reference(k) !== undefined) l[k] = null; });
+    .forEach(k => {
+      if (!(k in reglages) && (REGLAGES_CHARGES[k] !== undefined || enCours(k) !== undefined)) l[k] = null;
+    });
   poseReglagesEnAttente(l);
 }
 
