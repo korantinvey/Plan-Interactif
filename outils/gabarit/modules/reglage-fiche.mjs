@@ -285,7 +285,10 @@ export function voletOrdre(hote){
       // un volet remplacé depuis ne parle plus à l'écran : le nouveau le tient
       const affiche = ceVolet === voletAffiche;
       if (!ok && affiche) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
-      if (!dernier) return;
+      /* Un titre encore sous son minuteur n'est pas dans la file : cette
+         réponse s'y croit la dernière, et remettait la fiche du poste à l'état
+         d'avant ce titre. Il réécrira la fiche en partant. */
+      if (!dernier || titresEnAttente.size) return;
       if (ok){ DATA.fiche = confirme; if (affiche) dit("Enregistré."); return; }
       /* La dernière demande refusée : le volet et la fiche du poste reviennent
          à ce que la base tient, au lieu de garder le réglage refusé, qu'une

@@ -2725,7 +2725,7 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 715 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 718 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
