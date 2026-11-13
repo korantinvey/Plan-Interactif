@@ -323,7 +323,7 @@ function ecritDesDeuxCotes(idAutre, change){
   const cible = formeSel && formeParId(formeSel);
   const autre = annuaireLiaisons().par.get(idAutre);
   if (!cible || !autre || !typeLiaison(cible.f)) return;
-  memorise();
+  memorise("", autre.p && autre.p.id ? [autre.p.id] : []);
   ecritLiens(cible.f, change(lienEcrits(cible.f), idAutre));
   ecritLiens(autre.f, change(lienEcrits(autre.f), cible.f.id));
   /* L'envoi automatique n'écrit que les plans marqués : le second côté, dans

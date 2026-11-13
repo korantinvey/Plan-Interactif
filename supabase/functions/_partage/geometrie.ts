@@ -121,6 +121,29 @@ function portee(p: Point, a: Anneau[], ux: number, uy: number, max: number): num
   return d;
 }
 
+/* Le rectangle des deux traversées n'est pas forcément dans la forme : il
+   prend la plus grande largeur et la plus grande hauteur passant par un même
+   point, et un carré tourné de 45° les a toutes deux pleines — le nom,
+   mesuré ainsi, débordait par les coins. On le réduit autour de son centre,
+   en gardant ses proportions, jusqu'à ce que son contour tienne dans la
+   forme : neuf points par côté, coins compris. (Règle tenue des deux côtés :
+   `modules/forme.mjs`, `_partage/geometrie.ts`.) */
+function reduitDedans(lc: Point, lb: Point, a: Anneau[]): Point {
+  const tient = (s: number) => {
+    const w = lb[0] * s / 2, h = lb[1] * s / 2;
+    for (let i = 0; i <= 8; i++) {
+      const t = -1 + i / 4;
+      if (!dansForme([lc[0] + t * w, lc[1] - h], a) || !dansForme([lc[0] + t * w, lc[1] + h], a) ||
+          !dansForme([lc[0] - w, lc[1] + t * h], a) || !dansForme([lc[0] + w, lc[1] + t * h], a)) return false;
+    }
+    return true;
+  };
+  if (tient(1)) return lb;
+  let bas = 0, haut = 1;
+  for (let k = 0; k < 12; k++) { const m = (bas + haut) / 2; if (tient(m)) bas = m; else haut = m; }
+  return [r2(lb[0] * bas), r2(lb[1] * bas)];
+}
+
 export function boite(a: Anneau[]): Boite {
   const pts = a.flat();
   const xs = pts.map((p) => p[0]);
@@ -162,6 +185,7 @@ export function boite(a: Anneau[]): Boite {
     lc = [r2(p[0]), r2(p[1])];
     lb = [r2(Math.min(2 * Math.min(g, d), bb[0])), r2(Math.min(2 * Math.min(h, b), bb[1]))];
   }
+  lb = reduitDedans(lc, lb, a);
 
   // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
   return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5 ? { c, bb, lc, lb } : { c, bb };

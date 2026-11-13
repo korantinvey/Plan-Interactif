@@ -16,10 +16,11 @@
    Un module de l'administration : le visiteur ne le reçoit jamais.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { P } from "./donnees.mjs";
 import { esc } from "./texte.mjs";
 import { vue, cadrePlan } from "./vue-etat.mjs";
 import { enregistreDessins } from "./enregistrement.mjs";
-import { mesCalques } from "./calques-dessin.mjs";
+import { DESSINS, mesCalques } from "./calques-dessin.mjs";
 import { nomSurLePlan, societesDuPlan } from "./dessin.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 
@@ -40,10 +41,21 @@ export { enregistreDessins };
    Les points, eux, sont toujours remplacés par un tableau neuf, jamais écrits
    en place : en copier la liste suffit, et `src` d'une image reste partagé. */
 export const HIST = [], REFAIRE = [];
-export const instantane = () => mesCalques().map(c => Object.assign({}, c, {
+const copieCalques = (calques) => (calques || []).map(c => Object.assign({}, c, {
   formes: c.formes.map(f => Object.assign({}, f,
     f.pts ? { pts: f.pts.slice() } : null)),
 }));
+/* Une liaison s'écrit des deux côtés, et le second peut être dans un autre
+   pavillon : l'instantané du seul pavillon affiché ne défaisait qu'un côté,
+   et l'autre gardait un passage que plus rien ne rejoignait. L'instantané
+   emporte alors, sous `autres`, les calques de ces pavillons-là. */
+export function instantane(autres){
+  const s = /** @type {any} */ (copieCalques(mesCalques()));
+  const ici = P().id;
+  const ids = (autres || []).filter(id => id && id !== ici);
+  if (ids.length) s.autres = Object.fromEntries(ids.map(id => [id, copieCalques(DESSINS[id])]));
+  return s;
+}
 /* Une salve ne mémorise qu'à son premier événement. Un champ de saisie en
    envoie un par frappe, et chacun mémorisait un état : les cinquante
    emplacements se remplissaient de variantes du même mot, et les gestes d'avant
@@ -52,14 +64,14 @@ export const instantane = () => mesCalques().map(c => Object.assign({}, c, {
    drapeau `couleurEnCours`. */
 let salveEnCours = "";
 export const clotSalve = () => { salveEnCours = ""; };
-export function memorise(salve){
+export function memorise(salve, autres){
   if (salve){
     if (salveEnCours === salve) return;
     salveEnCours = salve;
   } else {
     salveEnCours = "";
   }
-  HIST.push(instantane());
+  HIST.push(instantane(autres));
   if (HIST.length > 50) HIST.shift();
   REFAIRE.length = 0;
 }

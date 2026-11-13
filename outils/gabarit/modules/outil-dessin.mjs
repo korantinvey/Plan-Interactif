@@ -49,7 +49,7 @@ import { ecritMetres, coteCadre, montreCote, montreAimants, aimante, DERNIERE,
 import { geste, dessinePoignees, majElement, changeLien, appliqueSociete, appliqueTexte, appliqueRotation,
   appliqueRayon, appliqueTrait, appliqueTransport, appliquePicto, supprimeForme, editionPointerDown,
   editionPointerMove, editionPointerUp, replieOutils, choisitForme } from "./edition.mjs";
-import { DESSINS, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
+import { DESSINS, marqueAttente, mesCalques, trouveCalque, nouvelId, calqueActif, outil,
   enCours, poseCalqueActif, poseOutil, poseEbauche } from "./calques-dessin.mjs";
 import { cheminForme, estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { TYPES_REPERE, estTransport, couleurLigne, couleurEcrite, libelleDoffice }
@@ -77,8 +77,15 @@ function restaure(source, autre){
      remplacer laissait le geste écrire dans un objet que plus rien ne lit. On
      défait une fois la main levée. */
   if (geste) return false;
-  autre.push(instantane());
-  DESSINS[P().id] = source.pop();
+  const etat = source.pop();
+  const autres = etat.autres || {};
+  delete etat.autres;
+  // l'état qu'on quitte emporte les mêmes pavillons, pour qu'on le refasse en entier
+  autre.push(instantane(Object.keys(autres)));
+  DESSINS[P().id] = etat;
+  /* L'autre côté d'une liaison : rendu à son état, et marqué pour l'envoi —
+     l'envoi automatique n'écrit que les plans marqués. */
+  for (const id of Object.keys(autres)){ DESSINS[id] = autres[id]; marqueAttente(id, true); }
   if (calqueActif && !trouveCalque(calqueActif)) activeCalque(null);
   /* La forme choisie a pu partir avec l'état qu'on vient de défaire : Ctrl+D
      puis Ctrl+Z retirait la copie du calque, et laissait son cadre et ses

@@ -69,6 +69,19 @@ const FORMES = {
   }
   const droit = S.boite(S.versAnneaux(FORMES["un rectangle"]));
   dit(!droit.lb, "un rectangle droit garde son raccourci");
+  /* Le rectangle du nom tient dans la forme, coins compris : un carré tourné
+     de 45° (diagonale 10) n'offre qu'un carré droit de 5 de côté. */
+  {
+    const anneaux = S.versAnneaux(FORMES["un carré tourné de 45°"]);
+    const b = S.boite(anneaux);
+    const coins = b.lb ? [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) =>
+      [b.lc[0] + i * b.lb[0] / 2, b.lc[1] + j * b.lb[1] / 2]) : [];
+    // le losange de centre (5, 5) et de demi-diagonale 5, relu en Y inversé par le serveur
+    const tous = coins.length && coins.every(([x, y]) => Math.abs(x - 5) + Math.abs(Math.abs(y) - 5) <= 5 + 1e-6);
+    dit(Boolean(b.lb) && b.lb[0] <= 5.01 && b.lb[0] > 4.5 && b.lb[1] <= 5.01 && b.lb[1] > 4.5,
+      "un carré tourné de 45° : le nom tient dans un carré de 5", b.lb ? b.lb.join(" × ") : "rien");
+    dit(Boolean(tous), "  ses coins sont dans la forme");
+  }
 
   console.log("\n=== 2. Le tracé, et son retour en anneaux ===");
   const l = S.versAnneaux(FORMES["un L"]);
