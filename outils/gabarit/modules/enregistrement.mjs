@@ -407,10 +407,21 @@ export function noteReglagesCharges(enBase, parPavillon){
   const blocs = Array.isArray(parPavillon) && parPavillon.length ? parPavillon : [enBase || {}];
   Object.entries(REGLAGES_EN_ATTENTE).forEach(([k, texte]) => {
     const confirme = blocs.every(b => texte === null ? !(k in b) : JSON.stringify(b[k]) === texte);
-    if (!confirme) l[k] = texte;
+    if (confirme) return;
+    l[k] = texte;
+    /* Et elle ne compte pas pour chargée : comparée à la référence réunie,
+       qui porte déjà la valeur neuve, elle ne serait ni renvoyée — l'envoi
+       ne pose que ce qui diffère — ni gardée au recalcul suivant. Une
+       référence qu'aucune valeur n'égale la fait repartir vers chaque
+       pavillon, et elle n'est confirmée qu'une fois l'envoi réussi. */
+    REGLAGES_CHARGES[k] = NON_CONFIRME;
   });
   poseReglagesEnAttente(l);
 }
+
+/** Ce qu'aucune valeur rendue en texte n'égale : un réglage qu'un pavillon
+ *  au moins ne porte pas encore. */
+const NON_CONFIRME = "\u0000";
 
 /* L'envoi en cours : ce qu'il pose et ce qu'il retire. La base le tiendra
    peut-être avant que la page en reçoive la réponse — un rechargement qui
