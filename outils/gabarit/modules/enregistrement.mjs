@@ -632,12 +632,14 @@ export async function pousseConfiguration(auto){
 
     revisionEnvoyee = cible;
     publication = false;
-    enVol = null;
     /* Tout est posé : ce que ce poste a changé est maintenant ce que la base
        tient, et n'a plus à être reposé par-dessus un réglage venu d'ailleurs.
        Un pavillon absent laisse au contraire ces clés en attente — le geste de
        réparation doit pouvoir les remettre là où elles manquent. */
+    /* Un pavillon absent fait échouer l'envoi plus bas : `enVol` reste posé
+       jusque-là, pour que l'échec sache ce qui est parti vers les autres. */
     if (!inconnus){
+      enVol = null;
       Object.keys(changees).forEach(k => { REGLAGES_CHARGES[k] = changees[k]; });
       retirees.forEach(k => { delete REGLAGES_CHARGES[k]; });
       /* Ce qui reste en attente : ce qu'on a retouché pendant l'envoi, et

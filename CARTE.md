@@ -1080,10 +1080,10 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 866 l. → plan-admin
+### `modules/enregistrement.mjs` — 868 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.694 · La sauvegarde emportée
+- l.696 · La sauvegarde emportée
 
 Fonctions :
 
@@ -1093,8 +1093,8 @@ Fonctions :
 `envoie` 308 · `apresGeste` 320 · `presse` 330 · `brancheEnregistrement` 338
 `identifiants` 361 · `reglagesSeuls` 376 · `noteReglagesCharges` 391
 `noteAttenteReglages` 439 · `oublieCache` 469 · `pousseConfiguration` 488
-`sauvegardeCourante` 714 · `telechargeSauvegarde` 736 · `appliqueSauvegarde` 770
-`litSauvegarde` 826 · `brancheSauvegarde` 848
+`sauvegardeCourante` 716 · `telechargeSauvegarde` 738 · `appliqueSauvegarde` 772
+`litSauvegarde` 828 · `brancheSauvegarde` 850
 
 Importe :
 
