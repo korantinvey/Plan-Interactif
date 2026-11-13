@@ -67,11 +67,24 @@ function entetes(json) {
   return h;
 }
 
+/** Deux sessions du même compte, sur le même projet. */
+function memeCompte(a, b) {
+  const x = contenuJeton(a?.access_token), y = contenuJeton(b?.access_token);
+  return Boolean(x && y && x.sub === y.sub && x.iss === y.iss);
+}
+
 /** Renouvelle la session de la console : l'échange est commun avec le plan,
  *  la session qu'il rend est celle de cette page. */
 function renouvelle() {
   if (!SESSION?.refresh_token) return Promise.resolve(false);
+  const depart = SESSION;
   return echangeSession(CFG, SESSION).then((neuve) => {
+    /* La session a changé pendant l'échange. Deux cas, qu'il ne faut pas
+       confondre. Un autre appel du même compte l'a renouvelée — deux requêtes
+       refusées ensemble partagent l'échange : c'est un succès, et le dire un
+       échec déconnectait l'exploitant. Elle a été fermée, ou un autre compte
+       s'est connecté : la réponse ne remplace rien. */
+    if (SESSION !== depart) return memeCompte(SESSION, depart);
     if (!neuve) return false;
     poseSession({ SESSION: neuve });
     return true;
@@ -89,10 +102,18 @@ function renouvelle() {
  * @param {RequestInit} [options]
  */
 export async function appel(url, options = {}) {
-  const envoie = () => fetch(url, {
-    ...options,
-    headers: { ...entetes(!!options.body), ...(options.headers || {}) },
-  });
+  /* Le projet de l'appel, retenu au départ et vérifié juste avant chaque
+     envoi — sans attente entre les deux. Les en-têtes se lisent à l'envoi :
+     passé à un autre projet pendant un renouvellement, et connecté, on
+     envoyait la clé et le jeton du nouveau à l'adresse de l'ancien. */
+  const projet = CFG?.url;
+  const envoie = () => {
+    if (CFG?.url !== projet) return Promise.reject(new Error("Le projet a changé pendant l'appel."));
+    return fetch(url, {
+      ...options,
+      headers: { ...entetes(!!options.body), ...(options.headers || {}) },
+    });
+  };
   if (SESSION?.access_token && resteJeton(SESSION.access_token) < RESTE_JETON) await renouvelle();
   const r = await envoie();
   if (r.status !== 401 || !SESSION?.refresh_token) return r;
@@ -150,6 +171,23 @@ export function ecranConfig() {
   }, [{ libelle: "Valider", genre: "primaire", action: () => {
     const u = url.value.trim().replace(/\/+$/, ""), k = cle.value.trim();
     if (!u || !k) return false;
+    /* L'adresse porte l'e-mail et le mot de passe de la connexion : en clair,
+       ils passeraient lisibles sur le réseau. Seul un projet local, sur cette
+       machine, se passe de chiffrement. */
+    if (!/^https:\/\//i.test(u) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(u)) {
+      url.setCustomValidity("L'adresse du projet doit commencer par https://");
+      url.reportValidity();
+      url.oninput = () => url.setCustomValidity("");
+      return false;
+    }
+    /* Un autre projet : la session de l'ancien ne le suit pas. Gardée, elle
+       partait dans l'en-tête du premier appel vers la nouvelle adresse —
+       son jeton remis à qui tient celle-ci. */
+    if (CFG?.url && CFG.url !== u) {
+      poseSession({ SESSION: null });
+      try { localStorage.removeItem(CLE_SESSION); } catch (e) {}
+      if (typeof _page.videEcran === "function") _page.videEcran();
+    }
     poseSession({ CFG: { url: u, anonKey: k } });
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();
@@ -208,6 +246,10 @@ export function ecranConnexion(message) {
         throw new Error("Réponse inattendue de " + url + " — HTTP " + r.status +
           (txt ? "" : ", corps vide") + ". Vérifiez l'adresse du projet.");
       }
+      /* Le projet a pu changer pendant la connexion (« Changer de projet »
+         reste ouvert) : installée, la session de l'ancien serait partie, à son
+         premier renouvellement, vers l'adresse du nouveau. */
+      if (CFG?.url !== url) return;
       poseSession({ SESSION: j });
       localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION));
       fermeModale();

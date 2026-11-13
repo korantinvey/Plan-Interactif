@@ -34,18 +34,32 @@ import { exporteExposants } from "./export.mjs";
 /* ------------------------------------------------------------------
    Données
    ------------------------------------------------------------------ */
+/* Avance à chaque déconnexion. Une lecture commencée avant s'arrête si elle
+   a changé à son retour : sans quoi la réponse de l'ancien compte remettait
+   ses salons — et ses plans — dans l'écran qu'on venait de vider. */
+let generation = 0;
+
 async function charge() {
+  const g = generation;
+  const perimee = () => g !== generation;
   // le rôle avant les salons : c'est lui qui dit ce que la console propose,
   // et la liste des salons n'est déjà plus la même d'un profil à l'autre
   await litMonProfil();
+  if (perimee()) return;
   /* La base ne renvoie que les salons du compte : un organisateur n'en reçoit
      que les siens, un administrateur les reçoit tous. Le tri par date de
      modification met en tête celui qu'on vient de toucher. */
-  poseEvenements({ EVTS: await rest("evenement?select=*&order=modifie_le.desc") });
+  const evts = await rest("evenement?select=*&order=modifie_le.desc");
+  if (perimee()) return;
+  poseEvenements({ EVTS: evts });
   if (!EVTS.some((e) => e.id === selection)) {
     poseEvenements({ selection: (selonAdresse() || EVTS[0])?.id ?? null });
   }
   if (selection) await chargePlans(selection);
+  /* Rien à défaire : `videEcran` a déjà posé un `PLANS` neuf, et la lecture
+     périmée a écrit dans l'ancien. L'effacer ici videait celui de la session
+     suivante. */
+  if (g !== generation) return;
   dessine();
 }
 
@@ -192,7 +206,11 @@ function majLiens(e) {
    ------------------------------------------------------------------ */
 /** Fin de session : la console n'a plus d'événements à montrer. */
 export function videEcran() {
-  poseEvenements({ EVTS: [], selection: null }); poseComptes({ MOI: null });
+  generation++;
+  /* Tout ce que la session avait lu part avec elle : les plans aussi, sans
+     quoi « Copier les données (JSON) » du compte suivant emportait ceux des
+     salons de l'ancien. */
+  poseEvenements({ EVTS: [], selection: null, PLANS: {} }); poseComptes({ MOI: null, COMPTES: [] });
   dessine();
 }
 

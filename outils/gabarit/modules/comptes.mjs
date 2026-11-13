@@ -29,14 +29,17 @@ import { grille, rest, idCompte, PAGE_MDP } from "./socle-console.mjs";
 
 /**
  * Le mutateur du profil connecté : les modules l'importent, et l'écran le
- * remplace par ici — `poseComptes({ MOI: null })` en fin de session.
+ * remplace par ici — `poseComptes({ MOI: null, COMPTES: [] })` en fin de
+ * session.
  *
- * @param {{ MOI?: any }} valeurs
+ * @param {{ MOI?: any, COMPTES?: any[] }} valeurs
  */
 export function poseComptes(valeurs) {
   for (const [nom, v] of Object.entries(valeurs)) {
     switch (nom) {
       case "MOI": MOI = v; break;
+      // la déconnexion vide l'annuaire avec le reste (`ecran-console.mjs` `videEcran`)
+      case "COMPTES": COMPTES = v; COMPTES_DE = null; break;
       default: throw new Error("poseComptes : « " + nom + " » n'est pas un état du profil connecté");
     }
   }
@@ -44,6 +47,11 @@ export function poseComptes(valeurs) {
 
 export let MOI = null;
 let COMPTES = [];
+/* Le compte qui a lu cet annuaire. La fenêtre s'ouvre sur la liste déjà lue,
+   le temps que la nouvelle arrive ; après un changement de compte ou de
+   projet dans le même navigateur, c'était celle de l'administrateur d'avant,
+   noms et adresses compris. */
+let COMPTES_DE = null;
 
 /** Le rôle du compte connecté. Il décide de ce que la console propose ; ce
  *  qu'elle obtient, c'est la base qui le décide. */
@@ -52,6 +60,8 @@ export async function litMonProfil() {
   MOI = null;
   if (!id) return;
   const r = await rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
+  // un autre compte a pu se connecter, ou la session se fermer, pendant la lecture
+  if (idCompte() !== id) return;
   MOI = (Array.isArray(r) ? r[0] : null) || null;
 }
 
@@ -61,8 +71,12 @@ const NOM_ROLE = { admin: "Administrateur", organisateur: "Organisateur" };
 const RETOUR_MDP = () => PAGE_MDP;
 
 async function litComptes() {
+  const lecteur = idCompte();
   const r = await fonction("comptes", { action: "liste" });
+  // un autre compte a pu se connecter pendant la lecture : sa liste n'est pas celle-ci
+  if (lecteur !== idCompte()) return COMPTES;
   COMPTES = r.profils || [];
+  COMPTES_DE = lecteur;
   return COMPTES;
 }
 
@@ -186,6 +200,7 @@ export function ouvreComptes(message) {
     ligneMessage(corps, "comptesMsg", mot);
   }
 
+  if (COMPTES_DE !== idCompte()) { COMPTES = []; COMPTES_DE = null; }
   ouvreModale("Comptes et accès", (corps) => {
     hote = corps;
     rendu(corps);

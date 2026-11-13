@@ -65,6 +65,12 @@ let echange = null;
  * doivent y lire la même chose. Rend la session, ou rien si elle est bel et
  * bien finie.
  */
+/** Le casier tient-il la session de ce jeton de renouvellement ? */
+function casierTient(refresh){
+  try { return JSON.parse(localStorage.getItem(CLE_SESSION) || "null")?.refresh_token === refresh; }
+  catch (e) { return false; }
+}
+
 export function echangeSession(cfg, ses){
   if (!ses?.refresh_token) return Promise.resolve(null);
   /* Un autre onglet a peut-être déjà échangé : le casier tient alors une
@@ -85,6 +91,11 @@ export function echangeSession(cfg, ses){
     }
   } catch (e) { /* casier illisible : on échange comme avant */ }
   if (!echange){
+    /* Le casier tenait-il notre session au départ ? Si oui, et qu'il ne la
+       tient plus à la réponse, elle a été fermée ou remplacée pendant
+       l'échange — déconnexion, autre compte : la réponse ne la rétablit pas.
+       S'il ne la tenait pas (stockage refusé), on garde la règle d'avant. */
+    const tenueAuDepart = casierTient(ses.refresh_token);
     echange = (async () => {
       try {
         const r = await fetch(cfg.url + "/auth/v1/token?grant_type=refresh_token", {
@@ -94,6 +105,7 @@ export function echangeSession(cfg, ses){
         });
         const j = await r.json().catch(() => null);
         if (!r.ok || !j?.access_token) return null;
+        if (tenueAuDepart && !casierTient(ses.refresh_token)) return null;
         // un stockage refusé ne doit pas coûter la session en cours
         try { localStorage.setItem(CLE_SESSION, JSON.stringify(j)); } catch (e) {}
         return j;
