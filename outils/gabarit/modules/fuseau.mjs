@@ -66,7 +66,12 @@ export function champFuseau() {
       (mot ? "" : " Il date les jours du rapport et l'heure du plan.");
   };
 
-  i.onchange = async () => {
+  /* Les choix se suivent : deux PATCH partis de front pouvaient répondre dans
+     le désordre, et la confirmation tardive du premier, posée sur le salon
+     courant (`confirmeEcriture`), remplaçait le second — l'écran sur l'un, la
+     base sur l'autre. Chaque choix attend la réponse du précédent. */
+  let suite = Promise.resolve();
+  i.onchange = () => {
     const saisi = i.value.trim();
     const nom = saisi ? fuseauConnu(saisi, connus) : null;
     if (saisi && !nom) {
@@ -75,6 +80,10 @@ export function champFuseau() {
       aide.textContent = "« " + saisi + " » n'est pas un fuseau connu : choisissez-le dans la liste.";
       return;
     }
+    suite = suite.then(() => ecrit(nom));
+  };
+
+  const ecrit = async (/** @type {string | null} */ nom) => {
     try {
       const [r] = await rest("evenement?id=eq." + e.id +
         "&select=fuseau,fuseau_source,fuseau_choisi", {

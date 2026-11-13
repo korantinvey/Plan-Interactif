@@ -1452,7 +1452,7 @@ Importé par :
 
 emplacements · reprise-emplacements
 
-### `modules/fuseau.mjs` — 105 l. → console
+### `modules/fuseau.mjs` — 114 l. → console
 
 - l.1 · Fuseau horaire du salon — le champ de la console
 
