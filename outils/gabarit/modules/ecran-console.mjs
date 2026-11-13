@@ -305,7 +305,8 @@ export function brancheConsole() {
     const cree = async (/** @type {string} */ n, /** @type {{ instance: string, cle: string }} */ choix) => {
       signale("Création…");
       try {
-        const instance = await base.enregistre(choix);
+        // la base demandée à la création, même si le menu a bougé pendant l'envoi
+        const instance = (await base.enregistre(choix)) ?? choix.instance;
         const rep = await rest("evenement", {
           method: "POST",
           headers: { "Prefer": "return=representation" },

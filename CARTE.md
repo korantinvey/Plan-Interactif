@@ -409,7 +409,7 @@ Importé par :
 
 cartouche-poi · lancement · recherche · rendu
 
-### `modules/bases-klipso.mjs` — 236 l. → console
+### `modules/bases-klipso.mjs` — 243 l. → console
 
 - l.1 · Bases Klipso — le menu des bases connues, et la saisie d'une base neuve
 
@@ -962,7 +962,7 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 391 l. → console
+### `modules/ecran-console.mjs` — 392 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 

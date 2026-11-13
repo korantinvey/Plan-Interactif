@@ -175,13 +175,20 @@ export function choixBase({ bases, valeur = "", surChoix, vide = false }) {
   }
 
   /** Enregistre la base ou sa clé quand il y en a une à enregistrer, et rend
-   *  l'instance retenue. @param {{ instance: string, cle: string }} choix */
+   *  l'instance retenue — ou null quand un geste est venu pendant l'envoi :
+   *  la base est enregistrée, mais ce n'est plus elle qu'on a choisie.
+   *  @param {{ instance: string, cle: string }} choix */
   async function enregistre(choix) {
     if (!choix.cle) return choix.instance;
+    const depuis = geste;
     const ligne = await enregistreBase(choix.instance, choix.cle);
     const k = liste.findIndex((b) => b.instance === ligne.instance);
     if (k < 0) liste.push(ligne); else liste[k] = ligne;
     liste.sort((a, b) => a.instance.localeCompare(b.instance));
+    /* Connue désormais, et proposée au menu ; mais le menu et le formulaire
+       restent à ce qu'on y a fait depuis — « Aucune base Klipso » choisi
+       pendant l'envoi se voyait sinon remplacé par la base enregistrée. */
+    if (depuis !== geste) return null;
     cle.value = "";
     instance.value = "";
     remplaceCle = false;
@@ -211,7 +218,7 @@ export function choixBase({ bases, valeur = "", surChoix, vide = false }) {
     bouton.disabled = true;
     try {
       const retenue = await enregistre(choix);
-      if (surChoix) await surChoix(retenue);
+      if (retenue !== null && surChoix) await surChoix(retenue);
     } catch (err) {
       dit(err.message);
     } finally {
