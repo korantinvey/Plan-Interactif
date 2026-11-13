@@ -673,16 +673,17 @@ Importé par :
 
 ecran-console · fiche-evenement
 
-### `modules/configuration.mjs` — 147 l. → plan, plan-admin
+### `modules/configuration.mjs` — 185 l. → plan, plan-admin
 
 - l.1 · La configuration du plan — ce que l'exploitant a réglé
 
 Fonctions :
 
-`salonRange` 30 · `cleConf` 32 · `ouvreConf` 36 · `reglagesDuSalon` 57 · `enregistreConf` 90
-`copieLocaleTient` 101 · `conf` 104 · `jeton` 105 · `sousCle` 107 · `optionActive` 113
-`programmeOffert` 118 · `suggestionOfferte` 119 · `langueOfferte` 139 · `appliqueLangue` 141
-`chercheSorte` 146
+`salonRange` 30 · `cleConf` 32 · `cleAttenteConf` 43 · `poseReglagesEnAttente` 49
+`reposeReglagesEnAttente` 59 · `ouvreConf` 67 · `reglagesDuSalon` 95 · `enregistreConf` 128
+`copieLocaleTient` 139 · `conf` 142 · `jeton` 143 · `sousCle` 145 · `optionActive` 151
+`programmeOffert` 156 · `suggestionOfferte` 157 · `langueOfferte` 177 · `appliqueLangue` 179
+`chercheSorte` 184
 
 Importe :
 
@@ -1079,20 +1080,21 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 774 l. → plan-admin
+### `modules/enregistrement.mjs` — 868 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.602 · La sauvegarde emportée
+- l.696 · La sauvegarde emportée
 
 Fonctions :
 
-`posteTient` 74 · `enregistreDessins` 76 · `autoDispo` 159 · `enRetard` 162
-`etatCourant` 175 · `majAttente` 186 · `compteRescapes` 200 · `ditAlerte` 213
-`ditEtat` 264 · `programmeEnvoi` 271 · `programmePublication` 285 · `rattrapeRetard` 298
-`envoie` 304 · `apresGeste` 316 · `presse` 326 · `brancheEnregistrement` 334
-`identifiants` 357 · `reglagesSeuls` 372 · `noteReglagesCharges` 383 · `oublieCache` 397
-`pousseConfiguration` 416 · `sauvegardeCourante` 622 · `telechargeSauvegarde` 644
-`appliqueSauvegarde` 678 · `litSauvegarde` 734 · `brancheSauvegarde` 756
+`posteTient` 75 · `enregistreDessins` 77 · `autoDispo` 160 · `enRetard` 163
+`etatCourant` 178 · `majAttente` 189 · `compteRescapes` 203 · `ditAlerte` 216
+`ditEtat` 267 · `programmeEnvoi` 274 · `programmePublication` 288 · `rattrapeRetard` 302
+`envoie` 308 · `apresGeste` 320 · `presse` 330 · `brancheEnregistrement` 338
+`identifiants` 361 · `reglagesSeuls` 376 · `noteReglagesCharges` 391
+`noteAttenteReglages` 439 · `oublieCache` 469 · `pousseConfiguration` 488
+`sauvegardeCourante` 716 · `telechargeSauvegarde` 738 · `appliqueSauvegarde` 772
+`litSauvegarde` 828 · `brancheSauvegarde` 850
 
 Importe :
 
@@ -1648,14 +1650,14 @@ Importé par :
 
 fiche-evenement
 
-### `modules/index-salon.mjs` — 510 l. → plan, plan-admin
+### `modules/index-salon.mjs` — 515 l. → plan, plan-admin
 
 - l.1 · 1. L'index du salon — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`texteProduits` 54 · `indexe` 58 · `chronoConf` 323 · `confsDuPlan` 328
-`indexeConferences` 346 · `rangeConferences` 423 · `poseFavicon` 470 · `poseLogoSalon` 496
+`texteProduits` 55 · `indexe` 59 · `chronoConf` 328 · `confsDuPlan` 333
+`indexeConferences` 351 · `rangeConferences` 428 · `poseFavicon` 475 · `poseLogoSalon` 501
 
 Importe :
 
@@ -3902,6 +3904,7 @@ Injections :
 - `20261112192358_les_droits_d_un_compte_remplaces_d_un_seul_geste.sql` — fn remplace_acces
 - `20261112212202_la_seconde_revue_de_securite_bornes_droits_et_purges_verifiees.sql` — fn enregistre_rappels, fn erreur_publique
 - `20261112214003_la_seconde_revue_suite_droits_du_service_bilans_et_remise_a_zero.sql` — fn enregistre_mesures, fn reinitialise_compteurs, fn bilan_perf, fn sonde_detail
+- `20261113150934_les_reglages_d_apparence_fusionnes_cle_par_cle_en_base.sql` — fn fusionne_apparence
 
 ## Le reste
 

@@ -53,7 +53,8 @@ import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { indexeSecteurs } from "./secteurs.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE, copieLocaleTient } from "./configuration.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE, copieLocaleTient,
+  REGLAGES_EN_ATTENTE, poseReglagesEnAttente } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { RESCAPES_TROUVES, REGLAGES_RECUS } from "./index-salon.mjs";
@@ -160,7 +161,9 @@ const autoDispo = () => ADMIN && !!DATA?.plans?.length && !!accesBase();
 
 /** Reste-t-il quelque chose qui ne soit que sur ce poste ? */
 const enRetard = () => revision !== revisionEnvoyee ||
-  (DATA?.plans || []).some(p => enAttente(p.id));
+  (DATA?.plans || []).some(p => enAttente(p.id)) ||
+  // un réglage qu'une session précédente n'a pas réussi à envoyer
+  Object.keys(REGLAGES_EN_ATTENTE).length > 0;
 
 /* Ce que dit le bouton dans chaque état, et son infobulle. */
 const DITS = {
@@ -284,6 +287,7 @@ function programmeEnvoi(delai, etiquette){
  */
 export function programmePublication(){
   revision++;
+  noteAttenteReglages();
   programmeEnvoi(REPOS);
 }
 
@@ -380,11 +384,79 @@ function reglagesSeuls(){
    Retenu tant qu'un envoi n'a pas tout posé : un pavillon laissé en retard
    redemande donc la même clé au geste de réparation. */
 let REGLAGES_CHARGES = {};
-export function noteReglagesCharges(enBase){
+/* Tant que la base n'a rien dit, il n'y a rien à quoi comparer : un réglage
+   écrit avant le chargement passerait pour neuf, et toute la configuration
+   avec lui. */
+let chargesNotes = false;
+export function noteReglagesCharges(enBase, parPavillon){
   REGLAGES_CHARGES = {};
   Object.keys(enBase || {}).forEach(k => {
     REGLAGES_CHARGES[k] = JSON.stringify(enBase[k]);
   });
+  chargesNotes = true;
+  /* Une clé que la base tient déjà telle quelle n'est plus en attente. On ne
+     fait qu'en retirer : un écart que le chargement découvre — un défaut du
+     poste, une vieille copie locale — n'est pas un geste de l'exploitant, et
+     le compter en attente lançait un envoi que rien n'avait demandé. */
+  /** @type {Record<string, string | null>} */
+  const l = {};
+  /* Et seulement si chaque pavillon la porte : un envoi réussi sur l'un,
+     refusé sur l'autre, laisse la valeur neuve dans le bloc le plus récent,
+     que la référence réunie retient — l'autre pavillon garde l'ancienne, et
+     la clé doit rester en attente pour l'y porter. */
+  const blocs = Array.isArray(parPavillon) && parPavillon.length ? parPavillon : [enBase || {}];
+  Object.entries(REGLAGES_EN_ATTENTE).forEach(([k, texte]) => {
+    const confirme = blocs.every(b => texte === null ? !(k in b) : JSON.stringify(b[k]) === texte);
+    if (confirme) return;
+    l[k] = texte;
+    /* Et elle ne compte pas pour chargée : comparée à la référence réunie,
+       qui porte déjà la valeur neuve, elle ne serait ni renvoyée — l'envoi
+       ne pose que ce qui diffère — ni gardée au recalcul suivant. Une
+       référence qu'aucune valeur n'égale la fait repartir vers chaque
+       pavillon, et elle n'est confirmée qu'une fois l'envoi réussi. */
+    REGLAGES_CHARGES[k] = NON_CONFIRME;
+  });
+  poseReglagesEnAttente(l);
+}
+
+/** Ce qu'aucune valeur rendue en texte n'égale : un réglage qu'un pavillon
+ *  au moins ne porte pas encore. */
+const NON_CONFIRME = "\u0000";
+
+/* L'envoi en cours : ce qu'il pose et ce qu'il retire. La base le tiendra
+   peut-être avant que la page en reçoive la réponse — un rechargement qui
+   tombe entre les deux. Le réglage qu'on retouche pendant ce temps se compare
+   donc aussi à ce qui part : revenir à l'ancienne couleur pendant l'envoi de
+   la neuve reste en attente, sans quoi le chargement reprendrait la neuve et
+   le retour serait perdu. */
+/** @type {{ posees: Record<string, string>, retirees: Set<string> } | null} */
+let enVol = null;
+
+/* Ce que ce poste a changé et que la base n'a pas encore reçu, rangé sur le
+   poste à chaque écriture (`configuration.mjs` `REGLAGES_EN_ATTENTE`) : un
+   rechargement le repose sur la base au lieu de le perdre. Le même écart que
+   l'envoi calcule, et pour la même raison clé par clé. */
+function noteAttenteReglages(){
+  if (!chargesNotes) return;
+  const reglages = reglagesSeuls();
+  /** @type {Record<string, string | null>} */
+  const l = {};
+  /* Deux références, et l'écart à l'une ou à l'autre garde la clé : ce que
+     la base tenait au chargement — la valeur qui part n'est pas confirmée
+     tant que l'envoi n'a pas répondu — et ce qui part — y revenir pendant
+     l'envoi doit repartir après lui. */
+  const enCours = (/** @type {string} */ k) =>
+    enVol && k in enVol.posees ? enVol.posees[k]
+      : enVol && enVol.retirees.has(k) ? undefined : REGLAGES_CHARGES[k];
+  Object.keys(reglages).forEach(k => {
+    const texte = JSON.stringify(reglages[k]);
+    if (texte !== REGLAGES_CHARGES[k] || texte !== enCours(k)) l[k] = texte;
+  });
+  new Set([...Object.keys(REGLAGES_CHARGES), ...Object.keys(enVol ? enVol.posees : {})])
+    .forEach(k => {
+      if (!(k in reglages) && (REGLAGES_CHARGES[k] !== undefined || enCours(k) !== undefined)) l[k] = null;
+    });
+  poseReglagesEnAttente(l);
 }
 
 /**
@@ -445,6 +517,7 @@ export async function pousseConfiguration(auto){
        minutes plus tard, et l'accent de A disparaît pour tout le monde. Les
        deux voisins prenaient déjà cette précaution — `calque_dessin` n'efface
        que ce qu'il a vu en base, `ecritColonnesEvenement` relit la colonne. */
+    /** @type {Record<string, string>} */
     const changees = {};
     Object.keys(reglages).forEach(k => {
       /* La valeur est figée en texte ici, et c'est elle qu'on écrira : une
@@ -457,6 +530,7 @@ export async function pousseConfiguration(auto){
     const retirees = Object.keys(REGLAGES_CHARGES).filter(k => !(k in reglages));
     const posees = Object.fromEntries(
       Object.entries(changees).map(([k, texte]) => [k, JSON.parse(texte)]));
+    enVol = { posees: changees, retirees: new Set(retirees) };
     const parKlipso = await identifiants(acces);
 
     /* Les blocs que la base tient à l'instant, pour tous les pavillons d'un
@@ -484,22 +558,24 @@ export async function pousseConfiguration(auto){
          n'en voit changer que les clés que ce poste a changées.
          `reglagesDuSalon` au passage : un enregistrement d'avant le
          cloisonnement porte des clés d'autres salons, que le plein
-         remplacement retirait au premier envoi. */
-      const bloc = tenus[planId]
-        ? reglagesDuSalon({ ...tenus[planId] })
-        : { ...reglages };
-      retirees.forEach(k => { delete bloc[k]; });
-      Object.keys(posees).forEach(k => { bloc[k] = posees[k]; });
+         remplacement retirait au premier envoi — on les retire nommément.
 
-      await base(acces, "apparence?on_conflict=plan_id", {
+         La fusion se fait en base (`fusionne_apparence`), dans l'écriture
+         même : le bloc lu plus haut ne sert qu'à savoir ce qu'il y a à
+         retirer. Le réécrire en entier, comme avant, écrasait le réglage
+         qu'un autre administrateur avait posé entre la lecture et
+         l'écriture. */
+      const tenu = tenus[planId];
+      const dici = tenu ? reglagesDuSalon(tenu) : null;
+      const etrangeres = tenu ? Object.keys(tenu).filter(k => !(k in /** @type {any} */ (dici))) : [];
+      await base(acces, "rpc/fusionne_apparence", {
         method: "POST",
-        headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify([{
-          plan_id: planId,
-          pile: CONF["_pile:" + p.id] || [],
-          reglages: bloc,
-          modifie_le: new Date().toISOString(),
-        }]),
+        body: JSON.stringify({
+          p_plan_id: planId,
+          p_pile: CONF["_pile:" + p.id] || [],
+          p_posees: tenu ? posees : reglages,
+          p_retirees: tenu ? retirees.concat(etrangeres) : [],
+        }),
       });
 
       /* Les dessins d'un pavillon qui n'a pas bougé sont déjà en base : les
@@ -560,9 +636,15 @@ export async function pousseConfiguration(auto){
        tient, et n'a plus à être reposé par-dessus un réglage venu d'ailleurs.
        Un pavillon absent laisse au contraire ces clés en attente — le geste de
        réparation doit pouvoir les remettre là où elles manquent. */
+    /* Un pavillon absent fait échouer l'envoi plus bas : `enVol` reste posé
+       jusque-là, pour que l'échec sache ce qui est parti vers les autres. */
     if (!inconnus){
+      enVol = null;
       Object.keys(changees).forEach(k => { REGLAGES_CHARGES[k] = changees[k]; });
       retirees.forEach(k => { delete REGLAGES_CHARGES[k]; });
+      /* Ce qui reste en attente : ce qu'on a retouché pendant l'envoi, et
+         rien d'autre. */
+      noteAttenteReglages();
     }
     /* La base a la configuration ; le relais garde encore l'ancienne version du
        plan public. On le lui dit tout de suite, sans quoi l'administration et le
@@ -584,6 +666,18 @@ export async function pousseConfiguration(auto){
     else if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
   } catch (e) {
     publication = false;
+    /* L'envoi n'a pas abouti, mais il a pu passer sur une partie des
+       pavillons : ce qu'il portait n'est plus sûr nulle part. Ses clés ne
+       comptent donc plus pour chargées (`NON_CONFIRME`) — revenir à
+       l'ancienne valeur pendant cet envoi reste en attente et repart, au
+       lieu de s'effacer devant une référence que la base ne tient peut-être
+       plus. */
+    if (enVol){
+      Object.keys(enVol.posees).forEach(k => { REGLAGES_CHARGES[k] = NON_CONFIRME; });
+      enVol.retirees.forEach(k => { REGLAGES_CHARGES[k] = NON_CONFIRME; });
+    }
+    enVol = null;
+    noteAttenteReglages();
     /* Le clic attendu pendant cet envoi raté se dit raté lui aussi : relancé
        en douce, il serait parti en reprise automatique, qui ne réécrit pas
        tout, et se serait annoncé réussi sans avoir réparé. Le bouton reste
