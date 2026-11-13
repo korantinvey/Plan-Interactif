@@ -80,10 +80,63 @@ export async function chargePlans(id) {
     "&select=id,id_klipso,libelle,hall,publie,nb_stands,nb_zones&order=libelle.asc");
 }
 
+/* ------------------------------------------------------------------
+   Les écritures et les relectures
+
+   La console relit toute la liste des salons (`ecran-console.mjs` `charge`)
+   après une création, une suppression, un rechargement. Une écriture partie
+   ou confirmée pendant cette lecture n'est pas forcément dans sa réponse, et
+   la réponse remplaçait la liste : la valeur confirmée revenait à l'ancienne,
+   et l'écriture suivante, qui repart de ce que la page tient — la carte des
+   correspondances s'envoie entière —, la réécrivait en base.
+
+   Chaque écriture confirmée retient donc ses valeurs, d'un rang qui ne fait
+   que croître, et les pose sur le salon tel qu'il est dans la liste à ce
+   moment-là ; une relecture note le rang à son départ, et reprend, pour les
+   champs confirmés depuis, la valeur confirmée. Seule la confirmation
+   compte : ce que la page tenait au départ d'une écriture n'était souvent
+   que l'ancienne valeur — le fuseau ne change qu'à la réponse —, et une
+   écriture encore en vol posera la sienne quand elle répondra.
+   ------------------------------------------------------------------ */
+let rangEcritures = 0;
+/** Par salon, pour chaque champ, la dernière valeur confirmée et son rang. */
+const champsEcrits = /** @type {Map<string, Map<string, { rang: number, valeur: unknown }>>} */ (new Map());
+
+/** Une écriture que la base a prise : retenue, et posée sur le salon courant. */
+export function confirmeEcriture(/** @type {string} */ id, /** @type {Record<string, unknown>} */ champs) {
+  rangEcritures++;
+  let m = champsEcrits.get(id);
+  if (!m) champsEcrits.set(id, (m = new Map()));
+  for (const [k, v] of Object.entries(champs)) m.set(k, { rang: rangEcritures, valeur: structuredClone(v) });
+  // le salon de la liste d'à présent : une relecture a pu remplacer celui du départ
+  const e = evenementParId(id);
+  if (e) for (const [k, v] of Object.entries(champs)) e[k] = structuredClone(v);
+}
+
+/** Le rang à noter au départ d'une relecture (`gardeEcrits`). */
+export const rangDesEcritures = () => rangEcritures;
+
+/**
+ * Une liste relue, où les champs confirmés depuis `depuis` reprennent leur
+ * valeur confirmée : la réponse ne la connaissait peut-être pas encore.
+ *
+ * @param {any[]} relus
+ * @param {number} depuis
+ */
+export function gardeEcrits(relus, depuis) {
+  for (const e of relus || []) {
+    const m = champsEcrits.get(e.id);
+    if (!m) continue;
+    for (const [k, { rang, valeur }] of m) if (rang > depuis) e[k] = structuredClone(valeur);
+  }
+  return relus;
+}
+
 export async function majEvenement(id, champs) {
   await rest("evenement?id=eq." + id, {
     method: "PATCH",
     headers: { "Prefer": "return=minimal" },
     body: JSON.stringify({ ...champs, modifie_le: new Date().toISOString() }),
   });
+  confirmeEcriture(id, champs);
 }

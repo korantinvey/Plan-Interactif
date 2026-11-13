@@ -344,6 +344,25 @@ function metEnFile(paquet){
 
 const retireDeLaFile = (id) => ecritLaFile(litLaFile().filter(e => e.id !== id));
 
+/* Un paquet en cours d'envoi reste en file jusqu'à la réponse : s'il se
+   perd, il doit repartir. Mais la balise du départ de la page, ou un autre
+   onglet — tous partagent la file —, le relisait là et le renvoyait pendant
+   que `fetch` le portait encore, et le serveur le comptait deux fois. Il est
+   donc marqué en vol, dans la file même, le temps de l'envoi. La marque
+   expire d'elle-même : un onglet fermé en plein envoi ne l'ôtera jamais, et
+   ce qu'il portait — `keepalive` le laisse finir — repartira au pire une
+   minute plus tard, si rien ne l'a retiré. */
+const EN_VOL_MS = 60000;
+const enVol = (/** @type {any} */ e) => typeof e.envoi === "number" && Date.now() - e.envoi < EN_VOL_MS;
+function marqueEnVol(/** @type {string} */ id, /** @type {boolean} */ oui){
+  ecritLaFile(litLaFile().map(e => {
+    if (e.id !== id) return e;
+    const reste = { ...e };
+    delete reste.envoi;
+    return oui ? { ...reste, envoi: Date.now() } : reste;
+  }));
+}
+
 /**
  * Le paquet tel qu'il part, avec le temps qu'il a attendu.
  *
@@ -395,6 +414,8 @@ function beaconne(){
   if (!navigator.sendBeacon || navigator.onLine === false) return;
   const restants = [];
   for (const e of litLaFile()){
+    // déjà porté par `fetch`, ici ou dans un autre onglet : il arrivera sans elle
+    if (enVol(e)){ restants.push(e); continue; }
     let parti = false;
     // le navigateur borne ce qu'il accepte de garder : au-delà, il refuse
     try { parti = navigator.sendBeacon(MESURE_API, chargeDe(e)); } catch (err) {}
@@ -423,10 +444,16 @@ function pousseLaFile(dernier){
   if (_pousseEnCours) return;
   _pousseEnCours = true;
   (async () => {
-    for (const e of f){
+    for (const pris of f){
       // un refus donné pendant l'envoi arrête ce qui restait à partir
       if (!mesureOuverte()) break;
-      if (!await envoiePaquet(e)) break;
+      /* Relu à chaque tour, et non pris de la copie du départ : la balise ou
+         un autre onglet a pu l'envoyer entre-temps, ou être en train de le
+         faire. */
+      const e = litLaFile().find(x => x.id === pris.id);
+      if (!e || enVol(e)) continue;
+      marqueEnVol(e.id, true);
+      if (!await envoiePaquet(e)){ marqueEnVol(e.id, false); break; }
       retireDeLaFile(e.id);
     }
     _pousseEnCours = false;

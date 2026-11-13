@@ -73,36 +73,9 @@ export function indexe(/** @type {any} */ d){
       // son libellé anglais aussi : un visiteur étranger tape celui qu'il lit
       z.rech = pourRecherche(String(z.nom || "") + " " + String(z.nom_en || ""));
     });
-    /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
-       toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
-       reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
+    // ce qu'on tape pour trouver un stand se calcule plus bas, après les réglages
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
-      /* Les thématiques y entrent comme le reste — un visiteur qui tape
-         « robotique » n'a pas à savoir que c'est un rangement d'exposants et
-         non un nom d'enseigne — et les champs retenus comme critères de même :
-         un exploitant qui désigne « Gamme de produits » comme critère veut
-         qu'on trouve « bio » en le tapant, pas seulement en dépliant un
-         filtre. Les thématiques y entrent qu'elles soient un critère ou non :
-         dès lors qu'elles paraissent sur la fiche, ce qu'on y lit doit se
-         retrouver en le tapant. Elles s'y répètent quand elles en sont un,
-         ce dont une recherche par sous-chaîne ne s'aperçoit pas. */
-      s.rech = pourRecherche((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
-                " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
-                " " + texteCriteres(s));
-      /* Et l'anglais de ces valeurs, quand la source le donne : un visiteur
-         qui lit « Construction » tape « construction », pas « bâtiment ». */
-      const anglais = d.anglais || {};
-      const traduites = [s.sect].concat(s.themes || [], s.nomencl || [],
-        clesCriteres().flatMap(c => valeursCritere(s, c)))
-        .map(v => anglais[v]).filter(Boolean);
-      if (traduites.length) s.rech += " " + pourRecherche(traduites.join(" "));
-      /* L'anglais des champs propres au salon ne vient pas du dictionnaire
-         mais de la source, par la seconde origine que l'exploitant lui a
-         désignée : il est déjà sur la fiche, il n'a qu'à entrer dans ce qu'on
-         cherche. Sans quoi un visiteur taperait un mot qu'il vient de lire
-         sans rien trouver. */
-      s.rech += texteAnglaisPerso(s);
       /* Le catalogue se range à part, et non dans « rech » : l'exploitant le
          retire ou le remet depuis l'onglet « Recherche » sans que rien ne
          soit réindexé, et le mot-clé n'y répond que si la case est cochée. */
@@ -179,6 +152,44 @@ export function indexe(/** @type {any} */ d){
   /* Les secteurs se relèvent après les réglages, et non avant : ce sont eux
      qui disent sur quel champ le plan se découpe en couleurs. */
   indexeSecteurs();
+
+  /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
+     toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
+     reconstruisait jusqu'ici la même chaîne pour chacun d'eux.
+
+     Après les réglages du salon, et non
+     avec le reste : les critères qu'on y range se lisent dans `CONF` (le
+     champ qui découpe le plan, les secteurs montrés), que les réglages du
+     salon viennent seulement de compléter. Calculé plus tôt, un champ propre
+     au salon choisi pour découper le plan n'y entrait pas, et le visiteur qui
+     tapait l'une de ses valeurs ne trouvait pas le stand. */
+  DATA.plans.forEach(p => p.stands.forEach(s => {
+    /* Les thématiques y entrent comme le reste — un visiteur qui tape
+       « robotique » n'a pas à savoir que c'est un rangement d'exposants et
+       non un nom d'enseigne — et les champs retenus comme critères de même :
+       un exploitant qui désigne « Gamme de produits » comme critère veut
+       qu'on trouve « bio » en le tapant, pas seulement en dépliant un
+       filtre. Les thématiques y entrent qu'elles soient un critère ou non :
+       dès lors qu'elles paraissent sur la fiche, ce qu'on y lit doit se
+       retrouver en le tapant. Elles s'y répètent quand elles en sont un,
+       ce dont une recherche par sous-chaîne ne s'aperçoit pas. */
+    s.rech = pourRecherche((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
+              " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
+              " " + texteCriteres(s));
+    /* Et l'anglais de ces valeurs, quand la source le donne : un visiteur
+       qui lit « Construction » tape « construction », pas « bâtiment ». */
+    const anglais = d.anglais || {};
+    const traduites = [s.sect].concat(s.themes || [], s.nomencl || [],
+      clesCriteres().flatMap(c => valeursCritere(s, c)))
+      .map(v => anglais[v]).filter(Boolean);
+    if (traduites.length) s.rech += " " + pourRecherche(traduites.join(" "));
+    /* L'anglais des champs propres au salon ne vient pas du dictionnaire
+       mais de la source, par la seconde origine que l'exploitant lui a
+       désignée : il est déjà sur la fiche, il n'a qu'à entrer dans ce qu'on
+       cherche. Sans quoi un visiteur taperait un mot qu'il vient de lire
+       sans rien trouver. */
+    s.rech += texteAnglaisPerso(s);
+  }));
 
   DATA.plans.forEach(p => {
     const a = p.apparence || {};

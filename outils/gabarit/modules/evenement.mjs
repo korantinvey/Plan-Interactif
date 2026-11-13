@@ -13,7 +13,6 @@
    Un événement renverse cela. Le module public émet le fait
    (`PAVILLON_MONTE.emet()`), l'administration l'écoute en se chargeant
    (`ecoute`) ; chez le visiteur, personne n'écoute, et rien ne se passe.
-   C'est le motif de `parcours.mjs` `suitLeParcours`, rendu commun.
 
    Les écouteurs s'appellent dans l'ordre de leur chargement. Un événement ne
    convient donc qu'à ce dont l'ordre ne compte pas, ou qui n'a qu'un

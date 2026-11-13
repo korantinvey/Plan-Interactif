@@ -16,6 +16,8 @@ module.exports = {
   "Me prévenir {n} min avant": "Remind me {n} min before",
   "Une notification par conférence retenue, même plan fermé.":
     "One notification per conference you picked, even with the map closed.",
+  "Les rappels sont éteints, mais le serveur n'a pas pu les effacer. Ce sera refait à la prochaine ouverture du plan.":
+    "Reminders are off, but the server could not erase them. This will be retried the next time you open the map.",
   "Une notification par conférence retenue, même plan fermé. Les heures et les titres retenus partent alors sur nos serveurs, et s'effacent après le salon.":
     "One notification per conference you picked, even with the map closed. The times and titles you picked then go to our servers, and are erased after the show.",
 

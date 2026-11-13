@@ -11,6 +11,7 @@
    (`tiroir-parcours.mjs`) la remplace.
    ============================================================ */
 import { $ } from "./dom.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { avive } from "./couleurs.mjs";
 import { inscritTiroirExclusif } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
@@ -478,15 +479,16 @@ inscritTiroirExclusif("parcours", fermeParcours);
 /* ------------------------------------------------------------
    La marque, partout la même — et le geste qu'elle porte
    ------------------------------------------------------------ */
-/* Ce que le tiroir du parcours refait quand un signet ou un lot change la
-   liste : il s'y inscrit en se chargeant (`tiroir-parcours.mjs`). Le geste
-   vit ici, avec la liste, pour que la fiche, la journée, la recherche et le
-   parcours reçu l'importent sans passer par le tiroir, qui les importe.
-   `quoi` vaut "stand" ou "conf" pour un signet, "lot" pour un lot versé. */
-/** @type {(quoi: string, ajout: boolean) => void} */
-let apresBascule = () => {};
-/** @param {(quoi: string, ajout: boolean) => void} f */
-export function suitLeParcours(f){ apresBascule = f; }
+/* La liste vient de changer — un signet, un lot, ou l'ordre de refaire le
+   tiroir. Le tiroir du parcours l'écoute en se chargeant
+   (`tiroir-parcours.mjs`) : le geste vit ici, avec la liste, pour que la
+   fiche, la journée, la recherche et le parcours reçu l'importent sans
+   passer par le tiroir, qui les importe. Un événement, et non plus une
+   fonction posée par le tiroir : il ne fait que prévenir.
+   `quoi` vaut "stand" ou "conf" pour un signet, "lot" pour un lot versé,
+   "vue" pour un tiroir à refaire. */
+/** @type {import("./evenement.mjs").Evenement<[quoi: string, ajout: boolean]>} */
+export const PARCOURS_CHANGE = creeEvenement();
 
 /**
  * Retenir un rang, ou le retirer.
@@ -511,7 +513,7 @@ export function basculeParcours(genre, id, canal){
   mesure("parcours", canal || "", i < 0 ? k : "",
          genre === "conf" ? "fiche_conf" : "fiche_stand");
   // le tiroir se refait, et propose ce qu'un ajout fait naître
-  apresBascule(genre, i < 0);
+  PARCOURS_CHANGE.emet(genre, i < 0);
   /* Et, dès qu'il y a quelque chose à perdre, le geste qui l'en empêche : le
      navigateur prié de tenir. La copie ne s'invite pas ici — une liste qu'on
      est en train de composer n'a pas encore de quoi valoir un lien gardé. */
@@ -562,7 +564,7 @@ export function verseAuParcours(stands, confs, canal, remplace){
   enregistreParcours();
   /* Le tiroir se refait et s'ouvre sur ce qui vient d'arriver : sans cela le
      visiteur n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
-  apresBascule("lot", true);
+  PARCOURS_CHANGE.emet("lot", true);
   tientLeStockage();
 }
 
@@ -595,4 +597,4 @@ export function rangParcours(hote, r){
 /** Le tiroir à refaire sur la liste telle qu'elle est — la journée, quand
  *  elle rend la place au parcours. Rien n'a changé : ni suggestion ni rappel
  *  à proposer. */
-export function refaitParcours(){ apresBascule("vue", false); }
+export function refaitParcours(){ PARCOURS_CHANGE.emet("vue", false); }

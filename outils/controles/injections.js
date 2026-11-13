@@ -29,7 +29,7 @@
  * émet un fait sans savoir qui l'écoute, plutôt que d'appeler une fonction
  * qu'on lui injecte. Ils sont comptés à part, sans liste à tenir. Les
  * registres où plusieurs modules s'inscrivent (`inscritMode`,
- * `inscritTiroirExclusif`, `suitLeParcours`) portent un autre nom parce qu'ils
+ * `inscritTiroirExclusif`) portent un autre nom parce qu'ils
  * sont une autre chose : une règle commune, non une fonction qu'un seul module
  * injecte dans un seul autre.
  */

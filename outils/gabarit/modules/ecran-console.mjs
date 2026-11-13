@@ -23,7 +23,8 @@ import { esc } from "./texte.mjs";
 import { rest, signale, BASE_PAGES, ecranConfig } from "./socle-console.mjs";
 import { confirme, ouvreModale } from "./fenetre-console.mjs";
 import { chargeBases, choixBase } from "./bases-klipso.mjs";
-import { EVTS, selection, PLANS, poseEvenements, courant, chargePlans, majEvenement, slugifie }
+import { EVTS, selection, PLANS, poseEvenements, courant, chargePlans, majEvenement, slugifie,
+  rangDesEcritures, gardeEcrits }
   from "./evenements.mjs";
 import { MOI, poseComptes, litMonProfil, ouvreComptes } from "./comptes.mjs";
 import { brancheFiche, dessineFiche, ouvreSources } from "./fiche-evenement.mjs";
@@ -49,9 +50,11 @@ async function charge() {
   /* La base ne renvoie que les salons du compte : un organisateur n'en reçoit
      que les siens, un administrateur les reçoit tous. Le tri par date de
      modification met en tête celui qu'on vient de toucher. */
+  const depuis = rangDesEcritures();
   const evts = await rest("evenement?select=*&order=modifie_le.desc");
   if (perimee()) return;
-  poseEvenements({ EVTS: evts });
+  // une écriture partie ou confirmée pendant la lecture garde sa valeur
+  poseEvenements({ EVTS: gardeEcrits(evts, depuis) });
   if (!EVTS.some((e) => e.id === selection)) {
     poseEvenements({ selection: (selonAdresse() || EVTS[0])?.id ?? null });
   }
