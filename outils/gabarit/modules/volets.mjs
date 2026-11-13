@@ -41,7 +41,7 @@ import { GENRES_POLICE, POLICES_NOMS, policeChoisie, policeDuModele, feuillePoli
   from "./polices-plan.mjs";
 import { REGLAGES_SEUIL, seuilGere, regleSeuil, phraseSeuil } from "./seuil.mjs";
 import { JOURS_SALON_MAX, lueHeure, lueDate, datesSalon, horairesSalon } from "./horaires.mjs";
-import { REPOS_NUANCIER, suitNuancier } from "./nuancier.mjs";
+import { suitNuancier, suitRepos } from "./nuancier.mjs";
 import { SECTEURS, champDecoupage, champsDecoupables, indexeSecteurs }
   from "./secteurs.mjs";
 import { appliqueSecteurs, appliqueFiltre, refaitCriteres, liste } from "./recherche.mjs";
@@ -1073,18 +1073,16 @@ export function voletDist(hote, d){
   champ.placeholder = d.texte;
   champ.value = conf(d.reglage).texte || "";
   /* Après un temps de repos, et non à chaque frappe : réécrire les neuf cents
-     lignes de la liste lettre par lettre se sentait sous les doigts. */
-  let minuteur = null;
-  champ.oninput = () => {
-    clearTimeout(minuteur);
-    minuteur = setTimeout(() => {
-      const t = champ.value.trim();
-      if (t) conf(d.reglage).texte = t; else delete conf(d.reglage).texte;
-      enregistreConf();
-      appliqueDists();
-      liste();
-    }, REPOS_NUANCIER);
-  };
+     lignes de la liste lettre par lettre se sentait sous les doigts. Le repos
+     suit la règle des nuanciers (`suitRepos`) : ce qui attend part quand on
+     quitte le champ, et avant que la page ne s'en aille. */
+  suitRepos(champ, () => {
+    const t = champ.value.trim();
+    if (t) conf(d.reglage).texte = t; else delete conf(d.reglage).texte;
+    enregistreConf();
+    appliqueDists();
+    liste();
+  });
 }
 
 /**

@@ -11,7 +11,21 @@ import { RAPPEL_MIN, RAPPEL_MAX, reglageRappel, rappelsVoulus, minutesRappel, pr
 import { essaieRappelReel } from "./essai-rappel.mjs";
 /* L'option du programme et l'enregistrement de la configuration
    s'importent : rien ne lui est confié. */
-import { programmeOffert, enregistreConf } from "./configuration.mjs";
+import { programmeOffert, enregistreConf, CONF_ECRITE } from "./configuration.mjs";
+
+/* Le bloc affiché, et l'option qu'il a vue. Ouvrir le programme dans le même
+   onglet laissait la case éteinte et l'essai absent, jusqu'à rouvrir les
+   réglages : le bloc se refait quand l'option change. Une seule écoute pour
+   le module — les réglages se rouvrent souvent, et les événements n'ont pas
+   de désabonnement. */
+/** @type {{ zone: HTMLElement, offert: boolean } | null} */
+let affiche = null;
+CONF_ECRITE.ecoute(() => {
+  if (!affiche || !affiche.zone.isConnected || programmeOffert() === affiche.offert) return;
+  const { zone } = affiche;
+  zone.textContent = "";
+  remplitRappel(zone);
+});
 
 /**
  * Le rappel avant une conférence.
@@ -32,10 +46,20 @@ import { programmeOffert, enregistreConf } from "./configuration.mjs";
  * ses voisines.
  */
 export function blocRappel(hote){
+  // sans boîte à l'écran : le volet garde la mise en page de ses enfants
+  const zone = document.createElement("div");
+  zone.style.display = "contents";
+  hote.appendChild(zone);
+  remplitRappel(zone);
+}
+
+/** Le contenu du bloc, selon l'option du programme telle qu'elle est. */
+function remplitRappel(/** @type {HTMLElement} */ hote){
   /* Sans programme, il n'y a pas d'heure à rappeler. La case reste, éteinte
      plutôt que décochée, comme les sortes de la recherche : le choix fait
      vaudra le jour où l'option se rouvrira. */
   const offert = programmeOffert();
+  affiche = { zone: hote, offert };
   const bloc = document.createElement("div");
   bloc.className = "reglages";
   hote.appendChild(bloc);

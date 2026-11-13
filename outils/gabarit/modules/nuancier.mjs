@@ -55,6 +55,26 @@ export function brancheNuancier(){
  * Rend la fonction qui presse, pour qui a une autre raison de conclure.
  */
 export function suitNuancier(input, peint, retient){
+  return suitRepos(input, retient, (/** @type {Event} */ e) =>
+    peint(/** @type {HTMLInputElement} */ (e.target).value), true);
+}
+
+/**
+ * Un champ qui ne s'écrit qu'après un temps de repos — une couleur, un texte
+ * qu'on tape —, inscrit à la même file que les nuanciers : ce qui attend part
+ * quand on quitte le champ, et avant que la page ne s'en aille. Laissé à son
+ * seul minuteur, le texte de la marque perdait sa dernière saisie à la
+ * fermeture de l'onglet.
+ *
+ * Rend la fonction qui presse.
+ *
+ * @param {HTMLInputElement} input
+ * @param {() => void} retient
+ * @param {(e: Event) => void} [chaque] ce qui se fait à chaque événement
+ * @param {boolean} [aussiChange] suivre `change` en plus d'`input`
+ */
+export function suitRepos(input, retient, chaque = () => {}, aussiChange = false){
+  /** @type {ReturnType<typeof setTimeout> | null} */
   let minuteur = null;
   const fixe = () => {
     if (!minuteur) return;
@@ -62,12 +82,14 @@ export function suitNuancier(input, peint, retient){
     NUANCIERS_EN_ATTENTE.delete(fixe);
     retient();
   };
-  input.oninput = input.onchange = e => {
-    peint(e.target.value);
+  const suit = (/** @type {Event} */ e) => {
+    chaque(e);
     if (minuteur) clearTimeout(minuteur);
     minuteur = setTimeout(fixe, REPOS_NUANCIER);
     NUANCIERS_EN_ATTENTE.add(fixe);
   };
+  input.oninput = suit;
+  if (aussiChange) input.onchange = suit;
   input.onblur = fixe;
   return fixe;
 }
