@@ -427,7 +427,11 @@ plans de visite (`src/commun.mjs` `enApercu`, `cacheDe`, `ecritEnProduction`,
 éprouvés par `outils/essais/apercu.js`). **Mais l'administration ouverte en
 prévisualisation écrit toujours dans la base de production** : c'est la page
 qui lui parle, avec la session de l'exploitant. Seul un projet de recette l'en
-séparera — il se branche en remplissant `PROJETS.recette`.
+séparera — il se branche en remplissant `PROJETS.recette`. En attendant, un
+enregistrement fait depuis une prévisualisation **ne vide pas le cache des
+visiteurs** : `src/plan.mjs` `oublie` n'y touche pas, par la même règle. Les
+visiteurs voient l'ancien plan jusqu'à ce que son entrée expire. C'est voulu :
+publiez depuis la production quand ils doivent le voir tout de suite.
 
 ## Secrets
 

@@ -33,8 +33,11 @@ export function pointObjet(o){
 }
 export function pointRepere(f, p){
   const type = pictoForme(f);
+  /* `brut` : le texte que l'exploitant a écrit, avant toute traduction. Le
+     code d'une affiche le porte (`affiche-ici.mjs` `nomCodeIci`), et la page
+     anglaise ne montre que le nom traduit. */
   return { cle: "r:" + f.id, id: f.id, genre: "repere", p: p.i,
-           xy: f.pts[0].slice(), nom: nomRepere(f),
+           xy: f.pts[0].slice(), nom: nomRepere(f), brut: String(f.txt || "").trim(),
            detail: p.libelle + " · " + (type ? nomTypeRepere(type).toLowerCase() : "repère") };
 }
 

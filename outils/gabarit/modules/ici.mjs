@@ -96,7 +96,11 @@ export function lieuExact(v){
      tronquée, la liste pouvait taire le seul lieu exact, ou l'un de deux. */
   const { out, notes } = repondants(v);
   const tous = out.concat(notes.map(x => pointObjet(x.o)));
+  /* Un repère répond aussi à son texte d'origine : une affiche imprimée porte
+     « Sortie », et la page anglaise ne lui donne que « Exit » — le lecteur la
+     refusait, et le visiteur scannait un plan sans position. */
   const justes = tous.filter(x => pourRecherche(x.nom) === n ||
+    (x.genre === "repere" && x.brut && pourRecherche(x.brut) === n) ||
     (x.genre === "objet" && x.obj && pourRecherche(x.obj.code || "") === n));
   return justes.length === 1 ? justes[0] : null;
 }

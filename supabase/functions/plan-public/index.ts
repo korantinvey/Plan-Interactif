@@ -39,6 +39,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionDuPlan, versionFond } from "../_partage/version.ts";
 import { octetsDeVignette, typeDeVignette } from "../_partage/octets.ts";
+import { largeurPng } from "../_partage/png.ts";
 import { identifiantDePavillon, sessionRefusee } from "../_partage/refus.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
@@ -418,8 +419,11 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
  * application.
  */
 const appDuSalon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
+  /* L'icône est lue ici pour sa seule largeur (`largeurPng`) : la console la
+     réduit à 384 ou 256 pixels quand elle pèse trop, et le manifeste doit
+     annoncer la taille qu'elle a. Les octets ne repartent pas. */
   const q = sb.from("evenement")
-    .select("nom, slug, nom_app, icone_app_version").eq("slug", slug);
+    .select("nom, slug, nom_app, icone_app_version, icone_app").eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
 };
 
@@ -428,6 +432,7 @@ const appDuSalon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean)
    cette tête ne sort donc pas d'ici — une colonne qu'on aurait remplie à la
    main ne devient pas une image en étant servie. */
 const PREFIXE_PNG = "data:image/png;base64,";
+
 
 /**
  * L'icône de l'application, en octets.
@@ -763,6 +768,7 @@ Deno.serve(async (req) => {
            des icônes. Nuls, c'est le nom et l'icône du produit. */
         app: nomme.nom_app ?? null,
         icone: nomme.icone_app_version ?? null,
+        taille: largeurPng(nomme.icone_app),
       }, 200, CACHE_APP);
     }
 

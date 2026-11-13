@@ -32,9 +32,47 @@ export const salonRange = (/** @type {any} */ d) =>
 const cleConf = (/** @type {any} */ d) => "plan-conf:" + salonRange(d);
 export let CLE_CONF = cleConf(null);
 
+/* Les réglages que ce poste a changés et que la base n'a pas encore reçus,
+   clé par clé : la valeur en texte, ou `null` pour une clé retirée. Le
+   chargement pose les réglages de la base par-dessus ceux du poste — c'est
+   elle qui fait foi — et un réglage resté ici faute d'envoi réussi
+   disparaissait au rechargement, sans que rien ne le renvoie. Comme la marque
+   d'attente des calques de dessin (`calques-dessin.mjs` `ATTENTE`), cette
+   liste survit au rechargement, et le chargement la repose sur la base.
+   L'administration seule la tient (`enregistrement.mjs`). */
+const cleAttenteConf = (/** @type {any} */ d) => "plan-conf-attente:" + salonRange(d);
+let CLE_ATTENTE_CONF = cleAttenteConf(null);
+/** @type {Record<string, string | null>} */
+export const REGLAGES_EN_ATTENTE = {};
+
+/** Remplace la liste des réglages en attente, et la range sur le poste. */
+export function poseReglagesEnAttente(/** @type {Record<string, string | null>} */ l){
+  Object.keys(REGLAGES_EN_ATTENTE).forEach(k => { delete REGLAGES_EN_ATTENTE[k]; });
+  Object.assign(REGLAGES_EN_ATTENTE, l);
+  try {
+    if (Object.keys(l).length) localStorage.setItem(CLE_ATTENTE_CONF, JSON.stringify(l));
+    else localStorage.removeItem(CLE_ATTENTE_CONF);
+  } catch (e) { /* le poste refuse : la liste tient jusqu'au rechargement */ }
+}
+
+/** Repose sur les réglages ce que ce poste n'a pas encore envoyé. */
+export function reposeReglagesEnAttente(){
+  Object.entries(REGLAGES_EN_ATTENTE).forEach(([k, texte]) => {
+    if (texte === null){ delete CONF[k]; return; }
+    try { CONF[k] = JSON.parse(texte); } catch (e) { /* une valeur abîmée : la base garde la sienne */ }
+  });
+}
+
 /** Ouvre les réglages du salon qu'on vient de charger. */
 export function ouvreConf(/** @type {any} */ d){
   CLE_CONF = cleConf(d);
+  CLE_ATTENTE_CONF = cleAttenteConf(d);
+  Object.keys(REGLAGES_EN_ATTENTE).forEach(k => { delete REGLAGES_EN_ATTENTE[k]; });
+  try {
+    const l = JSON.parse(localStorage.getItem(CLE_ATTENTE_CONF) || "{}");
+    if (l && typeof l === "object" && !Array.isArray(l))
+      Object.entries(l).forEach(([k, v]) => { if (v === null || typeof v === "string") REGLAGES_EN_ATTENTE[k] = v; });
+  } catch (e) {}
   CONF = JSON.parse(JSON.stringify(DEFAUTS));
   try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
   /* L'ancien rangement commun ne peut que rejouer le mélange, et la base fait
