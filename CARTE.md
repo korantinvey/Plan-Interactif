@@ -595,15 +595,15 @@ Importé par :
 
 pile · plan-admin · reglage-suggestion · reglages
 
-### `modules/charge-annoncee.mjs` — 234 l. → plan, plan-admin
+### `modules/charge-annoncee.mjs` — 242 l. → plan, plan-admin
 
 - l.1 · La charge annoncée — ce que les autres journées ont déjà posé
 
 Fonctions :
 
 `seuilConcentration` 24 · `identifiantParcours` 26 · `parcours` 28 · `sejour` 30
-`brancheCharge` 39 · `chargeSuivie` 79 · `etapesDuSejour` 85 · `annoncePlan` 113
-`celluleUtile` 155 · `dilatationDuJour` 172 · `litLaCharge` 209 · `chargeCellule` 229
+`brancheCharge` 39 · `chargeSuivie` 84 · `etapesDuSejour` 90 · `annoncePlan` 118
+`celluleUtile` 163 · `dilatationDuJour` 180 · `litLaCharge` 217 · `chargeCellule` 237
 
 Importe :
 
@@ -962,14 +962,14 @@ Importé par :
 
 ecran-console
 
-### `modules/ecran-console.mjs` — 392 l. → console
+### `modules/ecran-console.mjs` — 395 l. → console
 
 - l.1 · L'écran de la console — la barre du haut, le choix du salon, le démarrage
 
 Fonctions :
 
-`charge` 42 · `selonAdresse` 78 · `majAdresse` 86 · `majBarre` 101 · `dessineChoix` 157
-`majLiens` 197 · `videEcran` 238 · `dessine` 249 · `demarre` 265 · `brancheConsole` 283
+`charge` 43 · `selonAdresse` 81 · `majAdresse` 89 · `majBarre` 104 · `dessineChoix` 160
+`majLiens` 200 · `videEcran` 241 · `dessine` 252 · `demarre` 268 · `brancheConsole` 286
 
 Importe :
 
@@ -993,7 +993,7 @@ Importé par :
 dessin · fiche · gestes · glisse-fenetre · logos-stands · mini-carte · recherche
 tiroir-itineraire · tiroirs · trace-itineraire · tutoriel · vue
 
-### `modules/ecritures-en-file.mjs` — 95 l. → plan-admin, console
+### `modules/ecritures-en-file.mjs` — 95 l. → plan, plan-admin, console
 
 - l.1 · Les écritures en file — l'écran change au clic, la base dit le dernier mot
 
@@ -1003,7 +1003,8 @@ Fonctions :
 
 Importé par :
 
-fiche-detail · fiche-evenement · provenance · reglage-application · reglage-fiche · reglages
+fiche-detail · fiche-evenement · provenance · rappels · reglage-application · reglage-fiche
+reglages
 
 ### `modules/edition-en-cours.mjs` — 43 l. → plan, plan-admin
 
@@ -1162,28 +1163,29 @@ Importé par :
 
 reglage-rappel
 
-### `modules/evenement.mjs` — 46 l. → plan, plan-admin, console
+### `modules/evenement.mjs` — 45 l. → plan, plan-admin, console
 
 - l.1 · Un événement — dire ce qui vient de se passer, sans savoir qui écoute
 
 Fonctions :
 
-`creeEvenement` 38
+`creeEvenement` 37
 
 Importé par :
 
 acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · environs
-fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · rendu · tiroir-itineraire
-trace-itineraire · traduction · vignettes · webgl
+fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · parcours · rendu
+tiroir-itineraire · trace-itineraire · traduction · vignettes · webgl
 
-### `modules/evenements.mjs` — 89 l. → console
+### `modules/evenements.mjs` — 141 l. → console
 
 - l.1 · Les salons de la console, celui qu'on regarde, et leurs pavillons
 
 Fonctions :
 
 `poseEvenements` 42 · `slugifie` 53 · `evenementParId` 59 · `courant` 61 · `poseSurSalon` 73
-`chargePlans` 78 · `majEvenement` 83
+`chargePlans` 78 · `noteEcriture` 102 · `rangDesEcritures` 110 · `gardeEcrits` 119
+`majEvenement` 128
 
 Importe :
 
@@ -1448,7 +1450,7 @@ Importé par :
 
 emplacements · reprise-emplacements
 
-### `modules/fuseau.mjs` — 101 l. → console
+### `modules/fuseau.mjs` — 106 l. → console
 
 - l.1 · Fuseau horaire du salon — le champ de la console
 
@@ -1644,14 +1646,14 @@ Importé par :
 
 fiche-evenement
 
-### `modules/index-salon.mjs` — 499 l. → plan, plan-admin
+### `modules/index-salon.mjs` — 510 l. → plan, plan-admin
 
 - l.1 · 1. L'index du salon — la recherche porte sur tous les pavillons
 
 Fonctions :
 
-`texteProduits` 54 · `indexe` 58 · `chronoConf` 312 · `confsDuPlan` 317
-`indexeConferences` 335 · `rangeConferences` 412 · `poseFavicon` 459 · `poseLogoSalon` 485
+`texteProduits` 54 · `indexe` 58 · `chronoConf` 323 · `confsDuPlan` 328
+`indexeConferences` 346 · `rangeConferences` 423 · `poseFavicon` 470 · `poseLogoSalon` 496
 
 Importe :
 
@@ -1884,7 +1886,7 @@ Importé par :
 
 fiche · recherche · synchronisation · vignettes
 
-### `modules/mesure.mjs` — 687 l. → plan, plan-admin
+### `modules/mesure.mjs` — 714 l. → plan, plan-admin
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -1892,11 +1894,11 @@ Fonctions :
 
 `mesureOuverte` 66 · `jetonMesure` 69 · `jourIso` 108 · `echeanceMesure` 109
 `jetonRetenu` 134 · `supportMesure` 183 · `renouvelleVisiteur` 235 · `fraisEnFile` 302
-`litLaFile` 306 · `ecritLaFile` 319 · `metEnFile` 334 · `retireDeLaFile` 345
-`chargeDe` 356 · `envoiePaquet` 369 · `beaconne` 394 · `pousseLaFile` 415
-`envoieMesures` 436 · `mesure` 473 · `brancheLesEnvois` 488 · `effaceJetonsVisiteur` 543
-`refuseMesure` 561 · `appliqueRefus` 573 · `ouvreConfidentialite` 596
-`brancheLaNotice` 670 · `brancheMesure` 684
+`litLaFile` 306 · `ecritLaFile` 319 · `metEnFile` 334 · `retireDeLaFile` 345 · `enVol` 356
+`marqueEnVol` 357 · `chargeDe` 375 · `envoiePaquet` 388 · `beaconne` 413
+`pousseLaFile` 436 · `envoieMesures` 463 · `mesure` 500 · `brancheLesEnvois` 515
+`effaceJetonsVisiteur` 570 · `refuseMesure` 588 · `appliqueRefus` 600
+`ouvreConfidentialite` 623 · `brancheLaNotice` 697 · `brancheMesure` 711
 
 Importe :
 
@@ -2381,27 +2383,26 @@ Importé par :
 
 demarrage · scan-parcours
 
-### `modules/parcours.mjs` — 598 l. → plan, plan-admin
+### `modules/parcours.mjs` — 600 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
 Fonctions :
 
-`_rafraichit` 26 · `_reprendRappels` 27 · `_synchroniseRappels` 28 · `poseParcours` 89
-`brancheListeParcours` 107 · `cleParcours` 120 · `identifiantParcours` 157
-`casierParcours` 165 · `dansParcours` 166 · `jourParcours` 169
-`attenduDepuisTropLongtemps` 174 · `trieParcours` 185 · `chargeParcours` 195
-`parcoursAEcrire` 230 · `enregistreParcours` 246 · `tientLeStockage` 275
-`plurielParcours` 289 · `contenuParcours` 298 · `signetParcours` 309 · `boutonParcours` 315
-`rafraichitMarque` 320 · `calqueMarques` 353 · `traitTuile` 380 · `dessineMarques` 387
-`marqueParcours` 419 · `instantConf` 437 · `cleTemps` 441 · `nomDeStand` 451
-`groupeParcours` 453 · `fermeParcours` 467 · `apresBascule` 487 · `suitLeParcours` 489
-`basculeParcours` 499 · `brancheParcours` 523 · `verseAuParcours` 546 · `rangParcours` 575
-`refaitParcours` 598
+`_rafraichit` 27 · `_reprendRappels` 28 · `_synchroniseRappels` 29 · `poseParcours` 90
+`brancheListeParcours` 108 · `cleParcours` 121 · `identifiantParcours` 158
+`casierParcours` 166 · `dansParcours` 167 · `jourParcours` 170
+`attenduDepuisTropLongtemps` 175 · `trieParcours` 186 · `chargeParcours` 196
+`parcoursAEcrire` 231 · `enregistreParcours` 247 · `tientLeStockage` 276
+`plurielParcours` 290 · `contenuParcours` 299 · `signetParcours` 310 · `boutonParcours` 316
+`rafraichitMarque` 321 · `calqueMarques` 354 · `traitTuile` 381 · `dessineMarques` 388
+`marqueParcours` 420 · `instantConf` 438 · `cleTemps` 442 · `nomDeStand` 452
+`groupeParcours` 454 · `fermeParcours` 468 · `basculeParcours` 501 · `brancheParcours` 525
+`verseAuParcours` 548 · `rangParcours` 577 · `refaitParcours` 600
 
 Importe :
 
-couleurs · dom · donnees · mesure · salon · temps · texte · tiroirs-exclusifs
+couleurs · dom · donnees · evenement · mesure · salon · temps · texte · tiroirs-exclusifs
 
 Importé par :
 
@@ -2589,23 +2590,24 @@ Importé par :
 
 affiche-ici · partage · plan
 
-### `modules/rappels.mjs` — 549 l. → plan, plan-admin
+### `modules/rappels.mjs` — 591 l. → plan, plan-admin
 
 - l.1 · Le rappel avant une conférence
 
 Fonctions :
 
-`reglageRappel` 87 · `rappelsVoulus` 88 · `minutesRappel` 89 · `cleRappels` 103
-`chargeRappels` 106 · `retientRappels` 110 · `rappelsOfferts` 121 · `instantAbsolu` 151
-`confsARappeler` 159 · `rappelsDuParcours` 176 · `synchroniseRappels` 214
-`eteintRappels` 240 · `allumeRappels` 261 · `aideRappel` 278 · `poseRappels` 294
-`cleInviteRappel` 415 · `inviteRappelFaite` 418 · `retientInviteRappel` 423
-`fenetreRappel` 459 · `proposeRappels` 495 · `reprendRappels` 538
+`reglageRappel` 88 · `rappelsVoulus` 89 · `minutesRappel` 90 · `cleRappels` 104
+`chargeRappels` 107 · `retientRappels` 111 · `cleEffacement` 123 · `effacementDu` 124
+`marqueEffacement` 127 · `rappelsOfferts` 138 · `instantAbsolu` 168 · `confsARappeler` 176
+`rappelsDuParcours` 193 · `envoieListe` 239 · `synchroniseRappels` 247 · `effaceRappels` 268
+`eteintRappels` 285 · `allumeRappels` 295 · `aideRappel` 314 · `poseRappels` 330
+`cleInviteRappel` 454 · `inviteRappelFaite` 457 · `retientInviteRappel` 462
+`fenetreRappel` 498 · `proposeRappels` 534 · `reprendRappels` 577
 
 Importe :
 
-configuration · dom · donnees · fenetre · notifications · parcours · salon · temps
-visite-guidee
+configuration · dom · donnees · ecritures-en-file · fenetre · notifications · parcours
+salon · temps · visite-guidee
 
 Importé par :
 
