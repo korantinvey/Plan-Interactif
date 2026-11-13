@@ -2725,13 +2725,13 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 718 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 724 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
 Fonctions :
 
-`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 84
+`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 85
 
 Importe :
 

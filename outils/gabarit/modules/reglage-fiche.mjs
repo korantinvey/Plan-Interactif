@@ -64,7 +64,8 @@ const presseTitres = () => [...titresEnAttente].forEach(f => f());
    le volet affiché (`voletAffiche`) est le seul à redessiner son écran. */
 /** @type {ReturnType<typeof creeFileEcritures> | null} */
 let fileFiche = null;
-/** Le jeton du dernier volet bâti. */
+/** Le dernier volet bâti, et de quoi le recaler sur la fiche du poste. */
+/** @type {{ recale?: (message: string) => void }} */
 let voletAffiche = {};
 
 /**
@@ -191,7 +192,15 @@ export function voletOrdre(hote){
      récente était en route ; celle de l'ouverture du volet, au départ
      (`ecritures-en-file.mjs`). */
   const file = fileFiche || (fileFiche = creeFileEcritures(DATA.fiche || {}));
-  const ceVolet = voletAffiche = {};
+  /* Recaler ce volet sur la fiche du poste, après un refus — fût-il celui
+     d'un volet d'avant : rouvert pendant l'écriture, celui-ci montrait la
+     valeur refusée, et le geste suivant l'aurait réécrite. */
+  const ceVolet = voletAffiche = { recale: (/** @type {string} */ message) => {
+    for (const k of Object.keys(intitules)) delete intitules[k];
+    Object.assign(intitules, (DATA.fiche || {}).intitules || {});
+    litReglage(); rendu();
+    dit(message, true);
+  } };
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -302,11 +311,8 @@ export function voletOrdre(hote){
         if ((confirme || {})[k] === undefined) delete f[k]; else f[k] = confirme[k];
       });
       DATA.fiche = f;
-      // la fiche du poste revient toujours ; l'écran, seulement le sien
-      if (!affiche) return;
-      for (const k of Object.keys(intitules)) delete intitules[k];
-      Object.assign(intitules, (DATA.fiche || {}).intitules || {});
-      litReglage(); rendu();
+      // la fiche du poste revient toujours, et le volet affiché avec elle
+      if (voletAffiche.recale) voletAffiche.recale("Échec : " + /** @type {Error} */ (erreur).message);
     });
   };
 
