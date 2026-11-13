@@ -49,6 +49,14 @@ import { creeFileEcritures } from "./ecritures-en-file.mjs";
 const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso || [])
   .map(c => PREFIXE_PERSO + c.cle)));
 
+/* Les titres de section tapés et pas encore écrits, d'un volet à l'autre.
+   Un volet fermé gardait son minuteur : rouvert et retouché avant qu'il
+   parte, le réglage voyait l'ancien volet écrire après le nouveau geste, et
+   remettre l'ordre d'avant. Ce qui attend s'écrit donc avant qu'un volet
+   neuf ne se bâtisse — il part alors de l'état à jour. */
+const titresEnAttente = /** @type {Set<() => void>} */ (new Set());
+const presseTitres = () => [...titresEnAttente].forEach(f => f());
+
 /**
  * Le volet de la fiche d'un stand.
  *
@@ -64,6 +72,8 @@ const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso
  * d'actionner reprend le focus, pour que le clic suivant tombe au même endroit.
  */
 export function voletOrdre(hote){
+  // ce qu'un volet précédent tenait encore part avant que celui-ci ne lise
+  presseTitres();
   const p = document.createElement("p");
   p.textContent = "Ce que la fiche d'un stand montre, et dans quel ordre. Les " +
     "champs dont ce salon dispose attendent à gauche : glissez-en un dans la " +
@@ -606,7 +616,14 @@ export function voletOrdre(hote){
     titre.placeholder = s.membres.length
       ? libelleCorps(s.membres[0]) : "Titre de la section";
     titre.setAttribute("aria-label", "Titre de la section");
+    /** @type {ReturnType<typeof setTimeout> | null} */
     let frappe = null;
+    const part = () => {
+      if (frappe) clearTimeout(frappe);
+      frappe = null;
+      titresEnAttente.delete(part);
+      enregistre();
+    };
     titre.oninput = () => {
       s.titre = titre.value;
       majApercu();
@@ -614,7 +631,8 @@ export function voletOrdre(hote){
          écriture par caractère, et s'en remettre au seul « change » perdrait un
          titre tapé puis laissé au clavier quand la fenêtre se referme. */
       if (frappe) clearTimeout(frappe);
-      frappe = setTimeout(enregistre, 700);
+      frappe = setTimeout(part, 700);
+      titresEnAttente.add(part);
     };
     tete.appendChild(titre);
 
