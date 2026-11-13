@@ -486,8 +486,9 @@ function champInstance() {
     await file.vide();
     if (!libre.isConnected) return;
     const choix = choixBase({
-      bases, valeur: file.confirme() || "",
+      bases, valeur: file.confirme() || "", vide: true,
       surChoix: (instance) => {
+        const depuis = choix.geste();
         file.ecrit(async (tenue) => {
           if (instance === tenue) return;
           await majEvenement(e.id, { instance });
@@ -496,8 +497,11 @@ function champInstance() {
         }).then(({ ok, dernier, confirme, erreur }) => {
           if (ok) { if (dernier && confirme === instance) signale("Base Klipso du salon : " + instance + "."); return; }
           signale(/** @type {Error} */ (erreur).message, true);
-          const menu = choix.element.querySelector("select");
-          if (dernier && menu) menu.value = confirme;
+          /* Par le composant, qui recale le formulaire avec le menu — et
+             seulement si rien n'y a été fait depuis : sinon une base neuve
+             en cours de saisie gardait la clé tapée pour elle, sous l'ancienne
+             instance rétablie. */
+          if (dernier) choix.remet(confirme, depuis);
         });
       },
     });

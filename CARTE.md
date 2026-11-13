@@ -409,13 +409,13 @@ Importé par :
 
 cartouche-poi · lancement · recherche · rendu
 
-### `modules/bases-klipso.mjs` — 213 l. → console
+### `modules/bases-klipso.mjs` — 236 l. → console
 
 - l.1 · Bases Klipso — le menu des bases connues, et la saisie d'une base neuve
 
 Fonctions :
 
-`chargeBases` 32 · `enregistreBase` 37 · `date` 44 · `choixBase` 59
+`chargeBases` 32 · `enregistreBase` 37 · `date` 44 · `choixBase` 61
 
 Importe :
 
@@ -1272,7 +1272,7 @@ Importé par :
 
 fiche-evenement
 
-### `modules/fiche-evenement.mjs` — 589 l. → console
+### `modules/fiche-evenement.mjs` — 593 l. → console
 
 - l.1 · Fiche d'un salon dans la console — ses champs, ses pavillons, ses sources
 
@@ -1280,7 +1280,7 @@ Fonctions :
 
 `brancheFiche` 47 · `caseDuPavillon` 58 · `champ` 72 · `champFavicon` 138
 `dessineFiche` 215 · `ligneOutil` 375 · `ligneReglage` 391 · `champCle` 409
-`champInstance` 460 · `ouvreSources` 514 · `majIntegration` 572 · `majMsgSync` 579
+`champInstance` 460 · `ouvreSources` 518 · `majIntegration` 576 · `majMsgSync` 583
 
 Éléments :
 

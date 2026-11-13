@@ -52,11 +52,13 @@ const date = (quand) =>
  *   bases: Base[],
  *   valeur?: string,
  *   surChoix?: (instance: string) => any,
+ *   vide?: boolean,
  * }} reglage  `surChoix` présent, chaque choix s'enregistre aussitôt — c'est
  *   la fenêtre des sources ; absent, la fenêtre appelante lit le choix (`lit`)
- *   et l'enregistre (`enregistre`) quand elle crée le salon.
+ *   et l'enregistre (`enregistre`) quand elle crée le salon. `vide` propose
+ *   « Aucune base Klipso » : un salon déjà créé peut n'en avoir aucune.
  */
-export function choixBase({ bases, valeur = "", surChoix }) {
+export function choixBase({ bases, valeur = "", surChoix, vide = false }) {
   const liste = [...bases];
   const tout = document.createElement("div");
   tout.className = "choix-base";
@@ -86,6 +88,9 @@ export function choixBase({ bases, valeur = "", surChoix }) {
   /* Remplacer la clé d'une base connue ne demande que la clé : l'instance est
      celle du menu. */
   let remplaceCle = false;
+  /* Le rang du dernier geste fait dans le composant, quel qu'il soit : un
+     refus revenu après lui ne doit plus toucher à rien (`remet`). */
+  let geste = 0;
 
   const dit = (/** @type {string} */ txt) => { alerte.textContent = txt; alerte.hidden = !txt; };
 
@@ -97,22 +102,27 @@ export function choixBase({ bases, valeur = "", surChoix }) {
       liste.push({ instance: choisie, cle_modifiee_le: null });
     }
     menu.innerHTML = "";
+    /* Un salon sans base : le dire, plutôt que de montrer la première de la
+       liste comme si elle était la sienne. */
+    if (vide) menu.add(new Option("Aucune base Klipso", ""));
     for (const b of liste) menu.add(new Option(b.instance, b.instance));
     menu.add(new Option("Nouvelle base Klipso…", NOUVELLE));
     // sans base connue, il n'y a rien d'autre à choisir
-    menu.value = choisie || (liste[0] ? liste[0].instance : NOUVELLE);
+    menu.value = choisie || (vide ? "" : liste[0] ? liste[0].instance : NOUVELLE);
   }
 
   function montre() {
     const base = liste.find((b) => b.instance === menu.value);
     const nouvelle = menu.value === NOUVELLE;
-    if (nouvelle) remplaceCle = false;
+    const aucune = menu.value === "";
+    if (nouvelle || aucune) remplaceCle = false;
     aide.textContent = nouvelle ? "Une base que la console ne connaît pas encore."
+      : aucune ? "Le salon n'est raccordé à aucune base Klipso."
       : base?.cle_modifiee_le ? "Sa propre clé, saisie le " + date(base.cle_modifiee_le) + "."
       : "La clé commune du projet (KLIPSO_API_KEY).";
     neuve.hidden = !nouvelle && !remplaceCle;
     champInstance.hidden = !nouvelle;
-    changeCle.hidden = nouvelle || remplaceCle;
+    changeCle.hidden = nouvelle || aucune || remplaceCle;
     changeCle.textContent = base?.cle_modifiee_le ? "Changer la clé…" : "Saisir sa clé…";
     bouton.hidden = !surChoix || neuve.hidden;
     bouton.textContent = nouvelle ? "Enregistrer la base" : "Enregistrer la clé";
@@ -181,6 +191,7 @@ export function choixBase({ bases, valeur = "", surChoix }) {
   }
 
   menu.onchange = () => {
+    geste++;
     // une clé tapée pour une base ne doit pas partir avec la suivante
     cle.value = "";
     remplaceCle = false;
@@ -189,11 +200,12 @@ export function choixBase({ bases, valeur = "", surChoix }) {
     if (surChoix) surChoix(menu.value);
   };
   // l'alerte dit ce qui manquait : elle se tait dès qu'on y répond
-  neuve.oninput = () => dit("");
+  neuve.oninput = () => { geste++; dit(""); };
   // dès qu'on quitte le champ : la clé n'a pas à être tapée pour rien
-  instance.onchange = () => { if (reprend() && surChoix) surChoix(menu.value); };
-  changeCle.onclick = () => { remplaceCle = true; montre(); cle.focus(); };
+  instance.onchange = () => { geste++; if (reprend() && surChoix) surChoix(menu.value); };
+  changeCle.onclick = () => { geste++; remplaceCle = true; montre(); cle.focus(); };
   bouton.onclick = async () => {
+    geste++;
     const choix = lit();
     if (!choix) return;
     bouton.disabled = true;
@@ -207,7 +219,18 @@ export function choixBase({ bases, valeur = "", surChoix }) {
     }
   };
 
+  /** Revenir à la base que le salon tient, menu et formulaire ensemble —
+   *  sauf si un geste est venu depuis `depuis` : il l'emporte. */
+  function remet(/** @type {string} */ v, /** @type {number} */ depuis) {
+    if (depuis !== geste) return;
+    cle.value = "";
+    instance.value = "";
+    remplaceCle = false;
+    remplitMenu(v);
+    montre();
+  }
+
   remplitMenu(valeur);
   montre();
-  return { element: tout, lit, enregistre, dit };
+  return { element: tout, lit, enregistre, dit, remet, geste: () => geste };
 }
