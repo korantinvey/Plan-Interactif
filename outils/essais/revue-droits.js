@@ -145,6 +145,16 @@ async function main() {
     dit(pose.length === 1 && pose[0] === local, "un plan du jour même se pose, fuseau " + fuseau,
       "jour local " + local + ", posé " + pose.join(", "));
   }
+  /* Et la borne haute, comptée du jour local de Kiritimati. Avec Pago Pago
+     pour la borne basse, l'essai n'a pas d'heure aveugle : de minuit à 11 h
+     UTC, Pago Pago est la veille du jour UTC ; de 10 h à minuit, Kiritimati
+     en est le lendemain — une fonction restée en UTC échoue à l'un des deux. */
+  const horizon = (await un("select ((now() at time zone 'Pacific/Kiritimati')::date + 366)::text as j")).j;
+  await db.query("select pose_plan_de_visite('a', 'p4', $1::jsonb)",
+    [JSON.stringify([{ jour: horizon, tranche: "20", cible: "s1" }])]);
+  const loin2 = (await db.query("select jour::text as j from plan_de_visite where plan = 'p4'")).rows.map((r) => r.j);
+  dit(loin2.length === 1 && loin2[0] === horizon, "la borne d'un an se compte du jour local",
+    "borne " + horizon + ", posé " + loin2.join(", "));
 
   // ------------------------------------- les fonctions de la clé de service
   const sous = async (role, sql) => {
