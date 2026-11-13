@@ -87,8 +87,9 @@ export const enregistreDessins = () => {
   rafraichitApercu();
   /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
      dès la première forme tracée, et non au moment où l'on pense à publier. */
-  marqueAttente(P().id, true);
-  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); dessinsTiennent = true; }
+  // les calques et leur marque d'attente : l'un sans l'autre ne tient pas
+  const marqueTient = marqueAttente(P().id, true);
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); dessinsTiennent = marqueTient; }
   catch (e) {
     dessinsTiennent = false;
     // les images sont encodées dans le document : le quota se remplit vite

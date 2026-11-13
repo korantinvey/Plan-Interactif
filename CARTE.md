@@ -507,7 +507,7 @@ Importé par :
 
 gestes-admin · pile · plan-admin · reglages
 
-### `modules/calques-dessin.mjs` — 254 l. → plan, plan-admin
+### `modules/calques-dessin.mjs` — 258 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — ce que le poste en garde
 
@@ -515,8 +515,8 @@ Fonctions :
 
 `enAttente` 63 · `litRange` 90 · `ouvreDessins` 102 · `reprendCommun` 127
 `notePubliees` 153 · `rangeDessins` 171 · `dejaPubliee` 176 · `marqueAttente` 182
-`mesCalques` 193 · `calquesSurs` 206 · `poseCalqueActif` 246 · `poseOutil` 247
-`poseEbauche` 251 · `trouveCalque` 253 · `nouvelId` 254
+`mesCalques` 197 · `calquesSurs` 210 · `poseCalqueActif` 250 · `poseOutil` 251
+`poseEbauche` 255 · `trouveCalque` 257 · `nouvelId` 258
 
 Importe :
 
@@ -1079,20 +1079,20 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 773 l. → plan-admin
+### `modules/enregistrement.mjs` — 774 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.601 · La sauvegarde emportée
+- l.602 · La sauvegarde emportée
 
 Fonctions :
 
-`posteTient` 74 · `enregistreDessins` 76 · `autoDispo` 158 · `enRetard` 161
-`etatCourant` 174 · `majAttente` 185 · `compteRescapes` 199 · `ditAlerte` 212
-`ditEtat` 263 · `programmeEnvoi` 270 · `programmePublication` 284 · `rattrapeRetard` 297
-`envoie` 303 · `apresGeste` 315 · `presse` 325 · `brancheEnregistrement` 333
-`identifiants` 356 · `reglagesSeuls` 371 · `noteReglagesCharges` 382 · `oublieCache` 396
-`pousseConfiguration` 415 · `sauvegardeCourante` 621 · `telechargeSauvegarde` 643
-`appliqueSauvegarde` 677 · `litSauvegarde` 733 · `brancheSauvegarde` 755
+`posteTient` 74 · `enregistreDessins` 76 · `autoDispo` 159 · `enRetard` 162
+`etatCourant` 175 · `majAttente` 186 · `compteRescapes` 200 · `ditAlerte` 213
+`ditEtat` 264 · `programmeEnvoi` 271 · `programmePublication` 285 · `rattrapeRetard` 298
+`envoie` 304 · `apresGeste` 316 · `presse` 326 · `brancheEnregistrement` 334
+`identifiants` 357 · `reglagesSeuls` 372 · `noteReglagesCharges` 383 · `oublieCache` 397
+`pousseConfiguration` 416 · `sauvegardeCourante` 622 · `telechargeSauvegarde` 644
+`appliqueSauvegarde` 678 · `litSauvegarde` 734 · `brancheSauvegarde` 756
 
 Importe :
 
@@ -2725,13 +2725,13 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 709 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 715 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
 Fonctions :
 
-`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 80
+`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 84
 
 Importe :
 

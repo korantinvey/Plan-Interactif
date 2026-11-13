@@ -56,12 +56,16 @@ const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso
    neuf ne se bâtisse — il part alors de l'état à jour. */
 const titresEnAttente = /** @type {Set<() => void>} */ (new Set());
 const presseTitres = () => [...titresEnAttente].forEach(f => f());
-/* La file du dernier volet bâti. Un volet neuf attend que celle de l'ancien
-   soit vide avant d'écrire, et la réponse de l'ancien ne touche plus à rien :
-   arrivée après celles du nouveau, elle remettait sinon la fiche du poste à
-   son état d'avant. */
+/* Une seule file pour tous les volets Fiche de la page, et non une par
+   volet : un volet rouvert écrivait sinon à côté de l'ancien, qu'aucune
+   chaîne d'attente ne tenait sûrement — un volet ouvert sans retouche la
+   rompait —, et la réponse tardive de l'un remettait la fiche à l'état de
+   l'autre. La file ordonne les écritures et dit laquelle est la dernière ;
+   le volet affiché (`voletAffiche`) est le seul à redessiner son écran. */
 /** @type {ReturnType<typeof creeFileEcritures> | null} */
-let fileCourante = null;
+let fileFiche = null;
+/** Le jeton du dernier volet bâti. */
+let voletAffiche = {};
 
 /**
  * Le volet de la fiche d'un stand.
@@ -186,9 +190,8 @@ export function voletOrdre(hote){
      celle dont la réponse n'a pas été affichée, parce qu'une écriture plus
      récente était en route ; celle de l'ouverture du volet, au départ
      (`ecritures-en-file.mjs`). */
-  const file = creeFileEcritures(DATA.fiche || {});
-  const precedente = fileCourante;
-  fileCourante = file;
+  const file = fileFiche || (fileFiche = creeFileEcritures(DATA.fiche || {}));
+  const ceVolet = voletAffiche = {};
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -264,7 +267,7 @@ export function voletOrdre(hote){
        précédente, arrivée entre-temps, remplace la fiche du poste par ce que la
        base relisait — sans ce geste-ci, que l'écriture aurait alors perdu. */
     const voulu = structuredClone(DATA.fiche);
-    file.ecrit(async () => { if (precedente) await precedente.vide(); return ecritColonneEvenement("fiche", voulu, t => {
+    file.ecrit(() => ecritColonneEvenement("fiche", voulu, t => {
       // la colonne relue peut porter un absent que le poste n'avait pas : une
       // autre console a pu créer le champ pendant qu'on rangeait celle-ci
       t.ordre = ordreGarde(voulu.ordre || [], t.ordre || []);
@@ -278,11 +281,12 @@ export function voletOrdre(hote){
       toutes.forEach(c => { t.stand[c] = (voulu.stand || {})[c]; });
       const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
-    }); }).then(({ ok, dernier, confirme, erreur }) => {
-      if (!ok) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
-      // un volet remplacé depuis ne parle plus : le nouveau tient l'écran
-      if (!dernier || file !== fileCourante) return;
-      if (ok){ DATA.fiche = confirme; dit("Enregistré."); return; }
+    })).then(({ ok, dernier, confirme, erreur }) => {
+      // un volet remplacé depuis ne parle plus à l'écran : le nouveau le tient
+      const affiche = ceVolet === voletAffiche;
+      if (!ok && affiche) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
+      if (!dernier) return;
+      if (ok){ DATA.fiche = confirme; if (affiche) dit("Enregistré."); return; }
       /* La dernière demande refusée : le volet et la fiche du poste reviennent
          à ce que la base tient, au lieu de garder le réglage refusé, qu'une
          réouverture aurait encore montré comme acquis. Seul ce que ce volet
@@ -295,6 +299,8 @@ export function voletOrdre(hote){
         if ((confirme || {})[k] === undefined) delete f[k]; else f[k] = confirme[k];
       });
       DATA.fiche = f;
+      // la fiche du poste revient toujours ; l'écran, seulement le sien
+      if (!affiche) return;
       for (const k of Object.keys(intitules)) delete intitules[k];
       Object.assign(intitules, (DATA.fiche || {}).intitules || {});
       litReglage(); rendu();
