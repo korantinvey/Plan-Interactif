@@ -84,7 +84,12 @@ export const PLAN_EN_PANNE = creeEvenement();
  */
 function recadreListePosee(){
   const avant = JSON.stringify(view);
-  let attendu = false;
+  /* Vrai d'emblée : à l'image suivante, un tiroir qui a fini de glisser entre
+     le cadrage et ce rappel — la page était occupée plus longtemps que sa
+     transition — ne laisse plus d'animation à attendre, et le cadrage pris
+     pendant qu'il glissait resterait. `fit` refait donc une fois le cadrage
+     sur le tiroir posé ; s'il n'avait pas bougé, c'est le même. */
+  let attendu = true;
   const attend = () => {
     if (JSON.stringify(view) !== avant) return;
     const tiroir = $("side");

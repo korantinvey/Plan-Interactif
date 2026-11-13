@@ -785,16 +785,16 @@ Importé par :
 edition · fiche-zone · libelles · outil-comptoir · outil-escalier · outil-foodtruck
 reglage-comptoir · reglage-foodtrucks · rendu · webgl
 
-### `modules/demarrage.mjs` — 392 l. → plan, plan-admin
+### `modules/demarrage.mjs` — 397 l. → plan, plan-admin
 
 - l.1 · 12. Démarrage — l'appel du plan, sa version, la panne réseau
 
 Fonctions :
 
-`recadreListePosee` 85 · `demarre` 101 · `annonce` 170 · `panneDuChargement` 205
-`panne` 215 · `echec` 228 · `CLE_VERSION` 240 · `versionRetenue` 241 · `retientVersion` 244
-`demandePlan` 270 · `adresseAdmin` 298 · `demandeAdmin` 299 · `prechargeAdmin` 315
-`planAdmin` 328 · `charge` 337 · `brancheDemarrage` 374
+`recadreListePosee` 85 · `demarre` 106 · `annonce` 175 · `panneDuChargement` 210
+`panne` 220 · `echec` 233 · `CLE_VERSION` 245 · `versionRetenue` 246 · `retientVersion` 249
+`demandePlan` 275 · `adresseAdmin` 303 · `demandeAdmin` 304 · `prechargeAdmin` 320
+`planAdmin` 333 · `charge` 342 · `brancheDemarrage` 379
 
 Importe :
 
