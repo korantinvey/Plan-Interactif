@@ -138,7 +138,10 @@ function pose(/** @type {{ id: string, an: number[][], c: any }} */ z, /** @type
 /** Le réglage en place, ou le placement d'office figé en réglage. */
 function reglageCourant(/** @type {{ id: string, an: number[][], c: any }} */ z){
   const r = reglageDe(z.id);
-  if (r) return { ...r };
+  /* Un réglage que la zone retouchée ne tient plus ne sert pas de départ : la
+     recherche suppose que le départ tient, et restait dessus — la rotation et
+     les flèches ne changeaient plus rien à l'écran. */
+  if (r && z.c.choisi) return { ...r };
   const e = emprise(z.an);
   return { u: (z.c.cx - e.x0) / e.w, v: (z.c.cy - e.y0) / e.h, a: z.c.angle };
 }

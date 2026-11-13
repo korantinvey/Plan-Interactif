@@ -35,6 +35,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { memorise, enregistreDessins } from "./socle-dessin.mjs";
+import { verrouille } from "./outil-dessin.mjs";
 import { redessineForme } from "./dessin.mjs";
 
 /* Le pas de l'angle sous la poignée : un escalier suit les murs, droit ou
@@ -63,7 +64,8 @@ function lis(/** @type {Element} */ g){
   const id = g.getAttribute("data-f") || "";
   const cible = id && formeParId(id);
   const aplat = /** @type {SVGGraphicsElement | null} */ (g.firstElementChild);
-  if (!cible || !aplat || !OBJETS_REPERE.includes(glyphe)) return null;
+  // un calque verrouillé ne s'ouvre pas : ses repères ne se déplacent pas plus
+  if (!cible || !aplat || !OBJETS_REPERE.includes(glyphe) || verrouille(cible.c)) return null;
   let b;
   try { b = aplat.getBBox(); } catch (e) { return null; }
   if (!b || !(b.height > 0)) return null;
@@ -196,12 +198,14 @@ export function escalierClavier(/** @type {KeyboardEvent} */ e){
   if (!choisi || !cameraEnJeu()) return false;
   const cible = formeParId(choisi);
   if (!cible){ choisitEscalier(null); return false; }
+  if (verrouille(cible.c)) return false;
   const f = cible.f;
   if (e.key.indexOf("Arrow") === 0){
     const pas = e.shiftKey ? 1 : .25;
     const dx = e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0;
     const dy = e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0;
-    memorise("fleches-escalier");
+    // une salve par repère : deux escaliers poussés tour à tour s'annulent à part
+    memorise("fleches-escalier:" + choisi);
     f.pts = f.pts.map((/** @type {number[]} */ q) => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
   } else if (e.key === "r" || e.key === "R"){
     memorise();

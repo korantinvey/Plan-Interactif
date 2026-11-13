@@ -133,7 +133,10 @@ function standApercu(cles){
     if (!o.nom) return;
     neuf = neuf || Boolean(o.neuf);
     const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
-    if (n > score){
+    /* Le premier stand nommé tient la place, que d'autres remplacent s'ils
+       remplissent mieux : sans champ retenu, tous valaient zéro, et l'aperçu
+       montrait un stand d'exemple sur un salon qui en a de vrais. */
+    if (n > score || !mieux){
       score = n; mieux = o;
       // le hall tient au stand, pas au pavillon : un plan peut en couvrir deux
       pavillon = pl.libelle || ""; hall = o.hall || "";

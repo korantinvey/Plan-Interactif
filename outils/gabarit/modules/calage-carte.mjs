@@ -285,7 +285,9 @@ async function enregistreCalage(cal, p = P()){
   await base(acces, "plan?id=eq." + planId, {
     method: "PATCH", body: JSON.stringify({ calage: cal }),
   }).catch(e => { throw manqueCalage(e); });
-  p.calage = cal;
+  /* Une copie : le calage en cours de réglage continue de bouger, et le même
+     objet aurait montré comme publiée une position que rien n'a écrite. */
+  p.calage = cal ? Object.assign({}, cal) : cal;
   oublieCache(acces);
 }
 
@@ -356,6 +358,8 @@ let ENV_BATI = 0;
  *  par `changePlan`. */
 export function oublieCalageEnCours(){
   poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
+  // la palette ouverte n'a plus rien à régler : « Enregistrer » y écrirait le vide
+  fermeCalage();
 }
 
 /**
@@ -726,6 +730,8 @@ export function brancheCalageCarte(){
   if ($("calageFerme")) $("calageFerme").onclick = fermeCalage;
   if ($("calageGarde")) $("calageGarde").onclick = async () => {
     const b = $("calageGarde");
+    // le retrait passe par « Retirer la carte » ; enregistrer n'écrit jamais le vide
+    if (!ENV_CAL){ ditCalage("Aucun calage en cours sur ce pavillon.", true); return; }
     b.disabled = true;
     ditCalage("Enregistrement…");
     try {

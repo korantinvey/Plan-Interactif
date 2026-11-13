@@ -20,8 +20,8 @@ import { SLUG, cheminPartageable } from "./salon.mjs";
 import { ouvreModale } from "./fenetre.mjs";
 import { qrTrame, qrChemin, qrSvg } from "./qr.mjs";
 import { calquesDe, pointObjet, pointRepere } from "./itineraire.mjs";
-import { lieuNomme, pointLibre } from "./borne.mjs";
-import { ICI_LIBRE } from "./ici.mjs";
+import { pointLibre } from "./borne.mjs";
+import { ICI_LIBRE, lieuExact } from "./ici.mjs";
 import { visee as viseeIti, poseVisee, bandeauVisee, finVisee, fermeItineraire, injecteVisee }
   from "./tiroir-itineraire.mjs";
 import { fermeParcours } from "./tiroir-parcours.mjs";
@@ -104,7 +104,10 @@ function nomCodeIci(pt){
 function codeIci(pt){
   if (pt.genre === "repere" || pt.genre === "objet"){
     const nom = nomCodeIci(pt);
-    const r = nom && lieuNomme(nom);
+    /* L'aller-retour par la règle du lecteur, et non par le classement de la
+       saisie : deux stands au même code, et `lieuNomme` en choisissait un que
+       le lecteur, lui, refusait — l'affiche n'ouvrait rien. */
+    const r = nom && lieuExact(nom);
     if (r && r.cle === pt.cle) return nom;
   }
   return ICI_LIBRE + prefixePlan(pt.p) + "," + coteIci(pt.xy[0]) + "," + coteIci(pt.xy[1]);
@@ -186,8 +189,15 @@ function armeCodeIci(){
  * inversé se lit encore sur un bon appareil, mal sur les autres, et rien
  * n'oblige à courir ce risque sur un papier collé pour huit jours.
  */
+/* Ce que l'affiche nomme : le lieu dit, ou le numéro du stand et le nom du
+   repère qu'on a désignés. Sans lui, l'affiche ne disait pas où la coller, et
+   toutes celles d'un pavillon portaient le même nom de fichier. */
+const lieuAffiche = (pt) => pt.lieu ||
+  (pt.genre === "objet" || pt.genre === "repere" ? nomCodeIci(pt) || "" : "");
+
 function afficheIci(pt, trame){
   const q = qrChemin(trame);
+  const lieu = lieuAffiche(pt);
   /* Le damier occupe la largeur utile, marges de la feuille retirées. Son
      tracé compte en modules : une seule mise à l'échelle le porte en
      millimètres, et le silence de quatre modules qui l'entoure vient avec. */
@@ -197,8 +207,8 @@ function afficheIci(pt, trame){
     '<rect width="210" height="297" fill="#fff"/>' +
     (DATA.evenement ? ligneAffiche(36, 7.5, 400, "#6b7280", DATA.evenement) : "") +
     ligneAffiche(62, 26, 700, "#111827", traduit("Vous êtes ici")) +
-    (pt.lieu ? ligneAffiche(78, 13, 500, "#111827", pt.lieu) : "") +
-    ligneAffiche(pt.lieu ? 88 : 80, 9.5, 400, "#6b7280", DATA.plans[pt.p].libelle) +
+    (lieu ? ligneAffiche(78, 13, 500, "#111827", lieu) : "") +
+    ligneAffiche(lieu ? 88 : 80, 9.5, 400, "#6b7280", DATA.plans[pt.p].libelle) +
     '<g transform="translate(' + x + ' ' + y + ') scale(' + (cote / q.cote).toFixed(5) +
     ')" shape-rendering="crispEdges">' +
     '<rect width="' + q.cote + '" height="' + q.cote + '" fill="#fff"/>' +
@@ -236,7 +246,7 @@ function ligneAffiche(y, taille, poids, teinte, txt){
 /** Le nom du fichier : l'endroit d'abord, c'est ce qu'on cherche dans un
  *  dossier qui en contiendra trente. */
 function nomFichierIci(pt){
-  const t = (pt.lieu || DATA.plans[pt.p].libelle || "plan")
+  const t = (lieuAffiche(pt) || DATA.plans[pt.p].libelle || "plan")
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
   return "vous-etes-ici-" + (t || "plan") + ".svg";

@@ -16,7 +16,7 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { creeEvenement } from "./evenement.mjs";
-import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe } from "./session.mjs";
+import { CLE_CFG, CLE_SESSION, contenuJeton, initialesDe, echangeSession } from "./session.mjs";
 import { charge, prechargeAdmin, SESSION_REFUSEE } from "./demarrage.mjs";
 
 /** L'accès est accordé : le mode administrateur s'ouvre. La bande de l'outil
@@ -260,7 +260,16 @@ export function brancheAcces(){
     /* La session et le profil ensemble : l'un n'attend rien de l'autre. Sur
        une session refusée, le profil lu ne sert pas — la connexion le relira —
        et ne dit de toute façon rien : l'onglet « Admin » reste caché. */
-    const [valide] = await Promise.all([sessionValide(cfg, session), litProfilA(cfg, session)]);
+    let [valide] = await Promise.all([sessionValide(cfg, session), litProfilA(cfg, session)]);
+    /* Un jeton d'accès périmé ne dit pas une session finie : le jeton de
+       renouvellement, lui, vaut encore des semaines. Refuser d'emblée faisait
+       retaper son mot de passe à qui revenait le lendemain. */
+    if (!valide && session?.refresh_token){
+      const neuve = await echangeSession(cfg, session);
+      if (neuve){
+        [valide] = await Promise.all([sessionValide(cfg, neuve), litProfilA(cfg, neuve)]);
+      }
+    }
     if (valide){
       ACCES_ACCORDE.emet(); poseCompte(); charge();
     }

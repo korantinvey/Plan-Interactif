@@ -198,8 +198,14 @@ export function ouvreBibliotheque(){
   }, [
     { libelle: "Annuler" },
     { libelle: "Placer sur le plan", ferme: false, action: () => {
-        const t = CONF[CLE_CALAGE()];
-        const cale = !!t && t.lieu === lieu.cle;
+        /* Le calage se relit sur un hall posé, quand il y en a un : le réglage
+           enregistré ne suit pas l'annulation, et après un recalage défait il
+           aurait posé le hall suivant de travers, ou déplacé les autres dès la
+           validation. */
+        const enreg = CONF[CLE_CALAGE()];
+        const relu = mesCalques().map(c => lieuDuCalque(c) === lieu ? calageRelu(lieu, c) : null).find(Boolean);
+        const t = relu || enreg;
+        const cale = !!relu || (!!enreg && enreg.lieu === lieu.cle);
         const reprise = cale && recaler;
         /* Reprendre le calage emmène les halls déjà posés : ils partagent le
            repère qu'on rouvre, et les laisser derrière les détacherait des
@@ -324,6 +330,8 @@ function finCalage(){
   CALAGE = null;
   gesteCalage = null;
   racine.classList.remove("cale-plan");
+  // fini en plein glissement, le relâcher ne viendra plus la retirer
+  racine.classList.remove("cale-geste");
   const g = $("calageApercu");
   if (g) g.remove();
   $("couches").querySelectorAll("[data-cale]").forEach(n => delete n.dataset.cale);
