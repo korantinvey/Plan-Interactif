@@ -555,7 +555,10 @@ test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", 
     // les données du salon ne viennent jamais : le plan ne paraît pas
     await page.route("**/api/plan**", () => {});
     await page.goto(PLAN);
-    await attendLaListe(page);
+    /* La liste n'a ici que son message d'attente : le plan ne vient jamais.
+       `attendLaListe` attend une ligne d'exposant, qui ne paraîtra pas — c'est
+       la page posée qu'on attend, non ses données. */
+    await page.locator("#list > *").first().waitFor();
     await page.waitForTimeout(1000);
     expect(await page.evaluate(() => document.documentElement.classList.contains("plan-affiche"))).toBe(false);
     await cache(page);
