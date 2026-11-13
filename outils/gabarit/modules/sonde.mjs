@@ -58,6 +58,10 @@
          dans son script, et ce que l'image a passé hors des scripts ; un
          instant que la page n'a pas atteint, un aller-retour qu'elle ne
          connaît pas, ne valent plus zéro ; `visibleMs` dit la durée vue.
+     3 — 13 novembre 2026. `appareil.systeme` ne vient plus du seul
+         `userAgentData` de Chromium : Safari, Firefox et Chrome sur iPhone
+         le disent aussi (`mesures-page.mjs` `systemeDeRepli`). Avant, un
+         relevé sans système était le plus souvent un appareil d'Apple.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
@@ -72,7 +76,7 @@ import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
 // ce que mesure chaque champ a changé : voir l'en-tête
-const REVISION = 2;
+const REVISION = 3;
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
 const PAGE = PLAN_ADMIN ? "admin" : BORNE ? "borne" : "plan";
 

@@ -72,6 +72,15 @@ export const PLAN_EN_PANNE = creeEvenement();
  * selon l'image où il tombait, et ne valait pour aucun. On le refait quand le
  * tiroir s'est posé — sauf si la vue a bougé entre-temps : un geste, ou une
  * fiche ouverte par un lien reçu, ont alors le dernier mot.
+ *
+ * La première question attend l'image suivante. Posée tout de suite, au milieu
+ * du démarrage, `getAnimations` forçait le calcul des styles de la liste à
+ * peine remplie, que le navigateur refaisait à l'image suivante pour ce que
+ * le démarrage pose encore après : une centaine de millisecondes de plus dans
+ * la tâche qui précède l'affichage, sur un poste lent. À l'image suivante, la
+ * transition du tiroir est lancée, et ce calcul est celui de l'image. La vue
+ * d'avant se relève, elle, dès maintenant : ce qui la bouge entre-temps garde
+ * le dernier mot.
  */
 function recadreListePosee(){
   const avant = JSON.stringify(view);
@@ -86,7 +95,7 @@ function recadreListePosee(){
       Promise.all(glisse.map(a => a.finished.catch(() => {}))).then(attend);
     } else if (attendu) fit();
   };
-  attend();
+  requestAnimationFrame(attend);
 }
 
 function demarre(/** @type {any} */ d){
