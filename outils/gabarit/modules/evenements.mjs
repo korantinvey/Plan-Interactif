@@ -80,10 +80,62 @@ export async function chargePlans(id) {
     "&select=id,id_klipso,libelle,hall,publie,nb_stands,nb_zones&order=libelle.asc");
 }
 
+/* ------------------------------------------------------------------
+   Les écritures et les relectures
+
+   La console relit toute la liste des salons (`ecran-console.mjs` `charge`)
+   après une création, une suppression, un rechargement. Une écriture partie
+   ou confirmée pendant cette lecture n'est pas forcément dans sa réponse, et
+   la réponse remplaçait la liste : la valeur confirmée revenait à l'ancienne,
+   et l'écriture suivante, qui repart de ce que la page tient — la carte des
+   correspondances s'envoie entière —, la réécrivait en base.
+
+   Chaque écriture note donc ses champs, à son départ et à sa réponse, d'un
+   rang qui ne fait que croître ; une relecture note le rang à son départ, et
+   garde, pour les champs écrits depuis, ce que la page tient.
+   ------------------------------------------------------------------ */
+let rangEcritures = 0;
+/** Par salon, le rang de la dernière écriture de chaque champ. */
+const champsEcrits = /** @type {Map<string, Map<string, number>>} */ (new Map());
+
+/** Une écriture de ces champs, à son départ comme à sa réponse. */
+export function noteEcriture(/** @type {string} */ id, /** @type {Record<string, unknown>} */ champs) {
+  rangEcritures++;
+  let m = champsEcrits.get(id);
+  if (!m) champsEcrits.set(id, (m = new Map()));
+  for (const k of Object.keys(champs)) m.set(k, rangEcritures);
+}
+
+/** Le rang à noter au départ d'une relecture (`gardeEcrits`). */
+export const rangDesEcritures = () => rangEcritures;
+
+/**
+ * Une liste relue, où les champs écrits depuis `depuis` gardent la valeur que
+ * la page tient : la réponse ne les connaissait peut-être pas encore.
+ *
+ * @param {any[]} relus
+ * @param {number} depuis
+ */
+export function gardeEcrits(relus, depuis) {
+  for (const e of relus || []) {
+    const m = champsEcrits.get(e.id), tenu = evenementParId(e.id);
+    if (!m || !tenu) continue;
+    for (const [k, rang] of m) if (rang > depuis && k in tenu) e[k] = tenu[k];
+  }
+  return relus;
+}
+
 export async function majEvenement(id, champs) {
-  await rest("evenement?id=eq." + id, {
-    method: "PATCH",
-    headers: { "Prefer": "return=minimal" },
-    body: JSON.stringify({ ...champs, modifie_le: new Date().toISOString() }),
-  });
+  noteEcriture(id, champs);
+  try {
+    await rest("evenement?id=eq." + id, {
+      method: "PATCH",
+      headers: { "Prefer": "return=minimal" },
+      body: JSON.stringify({ ...champs, modifie_le: new Date().toISOString() }),
+    });
+  } finally {
+    // refusée aussi : la page revient à ce que la base tient, et c'est cela
+    // qu'une relecture partie avant doit garder
+    noteEcriture(id, champs);
+  }
 }

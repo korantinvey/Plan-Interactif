@@ -69,6 +69,11 @@ const REPOS_PLAN = 4000;
    mémoire : rouvrir le plan le lendemain rejouerait sinon l'annonce d'un
    séjour que personne n'a retouché. */
 const CLE_POSE = "plan-journee-pose";
+/* Ce que retient la clé après un envoi manqué : on ne sait plus ce que le
+   serveur porte. Ce n'est l'empreinte d'aucun plan — le suivant part donc,
+   quel qu'il soit —, et ce n'est pas le vide de « jamais annoncé » : un plan
+   vidé part aussi, pour effacer ce qu'un envoi d'avant a pu poser. */
+const POSE_INCONNUE = "?";
 
 export let CHARGE = null;          // ce que les autres ont annoncé, par jour et par stand
 let _chargeEnCours = false;
@@ -129,8 +134,11 @@ export function annoncePlan(){
     /* L'empreinte se défait sur tout échec : sans cela un plan qui n'est
        jamais parti passerait pour posé, et ne serait plus jamais réannoncé.
        Un refus du serveur en est un, comme une coupure — `fetch` ne le
-       signale pas de lui-même. */
-    const defais = () => { try { localStorage.removeItem(CLE_POSE + ":" + SLUG); } catch (e) {} };
+       signale pas de lui-même. Défaite en « inconnue », et non effacée :
+       effacée, elle disait « jamais annoncé », et l'effacement d'un plan
+       vidé hors ligne était abandonné au calcul suivant — le serveur gardait
+       les étapes d'avant dans la charge des autres. */
+    const defais = () => { try { localStorage.setItem(CLE_POSE + ":" + SLUG, POSE_INCONNUE); } catch (e) {} };
     fetch(PLAN_API, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug: SLUG, plan: identifiantParcours(), etapes: etapes }),

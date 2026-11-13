@@ -12,7 +12,7 @@
    (`socle-console.mjs`).
    ============================================================ */
 import { esc } from "./texte.mjs";
-import { courant } from "./evenements.mjs";
+import { courant, noteEcriture } from "./evenements.mjs";
 import { rest, signale } from "./socle-console.mjs";
 
 const FUSEAU_DEFAUT = "Europe/Paris";
@@ -75,6 +75,9 @@ export function champFuseau() {
       aide.textContent = "« " + saisi + " » n'est pas un fuseau connu : choisissez-le dans la liste.";
       return;
     }
+    // le relevé des écritures, que la relecture des salons respecte (`evenements.mjs`)
+    const ecrits = { fuseau: 1, fuseau_source: 1, fuseau_choisi: 1 };
+    noteEcriture(e.id, ecrits);
     try {
       const [r] = await rest("evenement?id=eq." + e.id +
         "&select=fuseau,fuseau_source,fuseau_choisi", {
@@ -93,6 +96,8 @@ export function champFuseau() {
     } catch (err) {
       peint();
       signale(err.message, true);
+    } finally {
+      noteEcriture(e.id, ecrits);
     }
   };
 
