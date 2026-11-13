@@ -52,7 +52,7 @@ import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { indexeSecteurs } from "./secteurs.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE } from "./configuration.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE, copieLocaleTient } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { RESCAPES_TROUVES, REGLAGES_RECUS } from "./index-salon.mjs";
@@ -208,7 +208,12 @@ function ditAlerte(etat){
   if (etat === "echec"){
     z.hidden = false;
     z.dataset.genre = "echec";
-    txt.textContent = "Vos calques ne sont enregistrés que sur ce poste : " + souci;
+    /* Le poste n'est un refuge que s'il a pu garder la copie : sinon, rien
+       ne tient le travail, et un rechargement le perd. */
+    txt.textContent = copieLocaleTient()
+      ? "Vos calques ne sont enregistrés que sur ce poste : " + souci
+      : "Vos réglages ne sont enregistrés nulle part — ni en base, ni sur ce poste, " +
+        "qui n'a pas pu les garder. Ne rechargez pas la page : " + souci;
     act.textContent = "Réessayer";
     act.onclick = () => pousseConfiguration();
     return;
@@ -220,7 +225,10 @@ function ditAlerte(etat){
   if (ADMIN && etat === "manuel" && enRetard()){
     z.hidden = false;
     z.dataset.genre = "echec";
-    txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
+    txt.textContent = copieLocaleTient()
+      ? "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste."
+      : "Vous n'êtes plus connecté, et ce poste n'a pas pu garder vos réglages : " +
+        "reconnectez-vous sans recharger la page.";
     act.textContent = "Se reconnecter";
     act.onclick = () => {
       ecranAcces("Reconnectez-vous pour enregistrer votre travail.");

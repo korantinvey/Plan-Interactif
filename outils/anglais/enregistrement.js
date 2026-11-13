@@ -11,6 +11,10 @@ module.exports = {
   "Enregistrer — réessayer": "Save — try again",
   "Enregistrement impossible : {raison}": "Could not save: {raison}",
   "Vos calques ne sont enregistrés que sur ce poste : {raison}": "Your layers are only saved on this computer: {raison}",
+  "Vos réglages ne sont enregistrés nulle part — ni en base, ni sur ce poste, qui n'a pas pu les garder. Ne rechargez pas la page : {raison}":
+    "Your settings are not saved anywhere — neither in the database nor on this computer, which could not keep them. Do not reload the page: {raison}",
+  "Vous n'êtes plus connecté, et ce poste n'a pas pu garder vos réglages : reconnectez-vous sans recharger la page.":
+    "You are no longer signed in, and this computer could not keep your settings: sign in again without reloading the page.",
   "Réessayer": "Try again",
   "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.":
     "You are no longer signed in: your layers are only saved on this computer.",

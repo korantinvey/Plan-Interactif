@@ -88,9 +88,17 @@ export const CONF_ECRITE = creeEvenement();
 /** Les réglages d'apparence se posent sur le poste, puis montent en base
  *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 export const enregistreConf = () => {
-  try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+  try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); copieLocale = true; }
+  catch (e) { copieLocale = false; }
   CONF_ECRITE.emet();
 };
+
+/* La dernière copie sur le poste a-t-elle tenu ? Un stockage plein ou refusé
+   la perdait sans un mot, et l'échec de l'envoi qui suivait annonçait des
+   réglages « enregistrés sur ce poste » qu'un rechargement aurait perdus. */
+let copieLocale = true;
+/** Le poste garde-t-il la dernière configuration écrite ? */
+export const copieLocaleTient = () => copieLocale;
 
 /** @returns {Record<string, any>} */
 export const conf = (/** @type {string} */ c) => (CONF[c] = CONF[c] || {});
