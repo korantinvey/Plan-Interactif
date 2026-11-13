@@ -200,8 +200,12 @@ export function boiteGeo(a){
     lc = [arrondiGeo(p[0]), arrondiGeo(p[1])];
     lb = [arrondiGeo(Math.min(2 * Math.min(g, d), bb[0])), arrondiGeo(Math.min(2 * Math.min(h, b), bb[1]))];
   }
+  /* En deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on
+     renonce. Jugé avant la réduction : réduit, le nom d'un rectangle penché
+     passait sous le seuil, et la forme retombait sur sa boîte englobante —
+     celle-là même qui débordait par les coins. */
+  const fiable = lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5;
   lb = reduitDedansGeo(lc, lb, a);
-  // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
-  return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5
+  return fiable
     ? { c: c, bb: bb, lc: lc, lb: lb } : { c: c, bb: bb };
 }

@@ -82,6 +82,17 @@ const FORMES = {
       "un carré tourné de 45° : le nom tient dans un carré de 5", b.lb ? b.lb.join(" × ") : "rien");
     dit(Boolean(tous), "  ses coins sont dans la forme");
   }
+  /* Un rectangle long et penché : réduit, son nom passe sous le cinquième de
+     la boîte. Il garde pourtant sa place réduite, au lieu de retomber sur la
+     boîte englobante, qui déborde par les coins. */
+  {
+    const a = S.versAnneaux(wkt([[0, 0], [10, 10], [8, 12], [-2, 2]]));
+    const b = S.boite(a);
+    dit(Boolean(b.lb) && b.lb[0] < b.bb[0] / 2, "un rectangle long et penché garde un nom qui tient dedans",
+      b.lb ? b.lb.join(" × ") + " pour une boîte " + b.bb.join(" × ") : "boîte englobante");
+    const page = P.boiteGeo(a);
+    dit(JSON.stringify(page) === JSON.stringify(b), "  la page en dit autant", JSON.stringify(page));
+  }
 
   console.log("\n=== 2. Le tracé, et son retour en anneaux ===");
   const l = S.versAnneaux(FORMES["un L"]);

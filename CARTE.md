@@ -1438,7 +1438,7 @@ Importé par :
 affiche-ici · borne · cartouche-poi · dessin · edition · fiche · gestes-admin · libelles
 outil-dessin · outil-escalier · points-interet · tiroir-itineraire · tutoriel
 
-### `modules/forme.mjs` — 207 l. → plan, plan-admin
+### `modules/forme.mjs` — 211 l. → plan, plan-admin
 
 - l.1 · La forme d'un emplacement — anneaux, tracé, empreinte, ancrage du nom
 
@@ -3753,11 +3753,11 @@ Injections :
 
 `aplatit` 266 · `egal` 300
 
-### `supabase/functions/_partage/geometrie.ts` — 216 l.
+### `supabase/functions/_partage/geometrie.ts` — 219 l.
 
 `r2` 23 · `versAnneaux` 26 · `versTrace` 44 · `distSegment` 55 · `dansForme` 68
 `distBord` 75 · `poleInterieur` 94 · `portee` 115 · `reduitDedans` 131 · `boite` 147
-`emprise` 197 · `dedans` 208
+`emprise` 200 · `dedans` 211
 
 ### `supabase/functions/_partage/octets.ts` — 31 l.
 

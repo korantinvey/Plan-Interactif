@@ -185,10 +185,13 @@ export function boite(a: Anneau[]): Boite {
     lc = [r2(p[0]), r2(p[1])];
     lb = [r2(Math.min(2 * Math.min(g, d), bb[0])), r2(Math.min(2 * Math.min(h, b), bb[1]))];
   }
+  /* En deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on
+     renonce. Jugé avant la réduction : réduit, le nom d'un rectangle penché
+     passait sous le seuil, et la forme retombait sur sa boîte englobante —
+     celle-là même qui débordait par les coins. */
+  const fiable = lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5;
   lb = reduitDedans(lc, lb, a);
-
-  // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
-  return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5 ? { c, bb, lc, lb } : { c, bb };
+  return fiable ? { c, bb, lc, lb } : { c, bb };
 }
 
 export interface Emprise { x0: number; y0: number; x1: number; y1: number }
