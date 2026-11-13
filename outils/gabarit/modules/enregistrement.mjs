@@ -53,7 +53,8 @@ import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { indexeSecteurs } from "./secteurs.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE, copieLocaleTient } from "./configuration.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE, copieLocaleTient,
+  REGLAGES_EN_ATTENTE, poseReglagesEnAttente } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { RESCAPES_TROUVES, REGLAGES_RECUS } from "./index-salon.mjs";
@@ -160,7 +161,9 @@ const autoDispo = () => ADMIN && !!DATA?.plans?.length && !!accesBase();
 
 /** Reste-t-il quelque chose qui ne soit que sur ce poste ? */
 const enRetard = () => revision !== revisionEnvoyee ||
-  (DATA?.plans || []).some(p => enAttente(p.id));
+  (DATA?.plans || []).some(p => enAttente(p.id)) ||
+  // un réglage qu'une session précédente n'a pas réussi à envoyer
+  Object.keys(REGLAGES_EN_ATTENTE).length > 0;
 
 /* Ce que dit le bouton dans chaque état, et son infobulle. */
 const DITS = {
@@ -284,6 +287,7 @@ function programmeEnvoi(delai, etiquette){
  */
 export function programmePublication(){
   revision++;
+  noteAttenteReglages();
   programmeEnvoi(REPOS);
 }
 
@@ -380,11 +384,44 @@ function reglagesSeuls(){
    Retenu tant qu'un envoi n'a pas tout posé : un pavillon laissé en retard
    redemande donc la même clé au geste de réparation. */
 let REGLAGES_CHARGES = {};
+/* Tant que la base n'a rien dit, il n'y a rien à quoi comparer : un réglage
+   écrit avant le chargement passerait pour neuf, et toute la configuration
+   avec lui. */
+let chargesNotes = false;
 export function noteReglagesCharges(enBase){
   REGLAGES_CHARGES = {};
   Object.keys(enBase || {}).forEach(k => {
     REGLAGES_CHARGES[k] = JSON.stringify(enBase[k]);
   });
+  chargesNotes = true;
+  /* Une clé que la base tient déjà telle quelle n'est plus en attente. On ne
+     fait qu'en retirer : un écart que le chargement découvre — un défaut du
+     poste, une vieille copie locale — n'est pas un geste de l'exploitant, et
+     le compter en attente lançait un envoi que rien n'avait demandé. */
+  /** @type {Record<string, string | null>} */
+  const l = {};
+  Object.entries(REGLAGES_EN_ATTENTE).forEach(([k, texte]) => {
+    const tenu = REGLAGES_CHARGES[k];
+    if (texte === null ? tenu !== undefined : texte !== tenu) l[k] = texte;
+  });
+  poseReglagesEnAttente(l);
+}
+
+/* Ce que ce poste a changé et que la base n'a pas encore reçu, rangé sur le
+   poste à chaque écriture (`configuration.mjs` `REGLAGES_EN_ATTENTE`) : un
+   rechargement le repose sur la base au lieu de le perdre. Le même écart que
+   l'envoi calcule, et pour la même raison clé par clé. */
+function noteAttenteReglages(){
+  if (!chargesNotes) return;
+  const reglages = reglagesSeuls();
+  /** @type {Record<string, string | null>} */
+  const l = {};
+  Object.keys(reglages).forEach(k => {
+    const texte = JSON.stringify(reglages[k]);
+    if (texte !== REGLAGES_CHARGES[k]) l[k] = texte;
+  });
+  Object.keys(REGLAGES_CHARGES).forEach(k => { if (!(k in reglages)) l[k] = null; });
+  poseReglagesEnAttente(l);
 }
 
 /**
@@ -484,22 +521,24 @@ export async function pousseConfiguration(auto){
          n'en voit changer que les clés que ce poste a changées.
          `reglagesDuSalon` au passage : un enregistrement d'avant le
          cloisonnement porte des clés d'autres salons, que le plein
-         remplacement retirait au premier envoi. */
-      const bloc = tenus[planId]
-        ? reglagesDuSalon({ ...tenus[planId] })
-        : { ...reglages };
-      retirees.forEach(k => { delete bloc[k]; });
-      Object.keys(posees).forEach(k => { bloc[k] = posees[k]; });
+         remplacement retirait au premier envoi — on les retire nommément.
 
-      await base(acces, "apparence?on_conflict=plan_id", {
+         La fusion se fait en base (`fusionne_apparence`), dans l'écriture
+         même : le bloc lu plus haut ne sert qu'à savoir ce qu'il y a à
+         retirer. Le réécrire en entier, comme avant, écrasait le réglage
+         qu'un autre administrateur avait posé entre la lecture et
+         l'écriture. */
+      const tenu = tenus[planId];
+      const dici = tenu ? reglagesDuSalon(tenu) : null;
+      const etrangeres = tenu ? Object.keys(tenu).filter(k => !(k in /** @type {any} */ (dici))) : [];
+      await base(acces, "rpc/fusionne_apparence", {
         method: "POST",
-        headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify([{
-          plan_id: planId,
-          pile: CONF["_pile:" + p.id] || [],
-          reglages: bloc,
-          modifie_le: new Date().toISOString(),
-        }]),
+        body: JSON.stringify({
+          p_plan_id: planId,
+          p_pile: CONF["_pile:" + p.id] || [],
+          p_posees: tenu ? posees : reglages,
+          p_retirees: tenu ? retirees.concat(etrangeres) : [],
+        }),
       });
 
       /* Les dessins d'un pavillon qui n'a pas bougé sont déjà en base : les
@@ -563,6 +602,9 @@ export async function pousseConfiguration(auto){
     if (!inconnus){
       Object.keys(changees).forEach(k => { REGLAGES_CHARGES[k] = changees[k]; });
       retirees.forEach(k => { delete REGLAGES_CHARGES[k]; });
+      /* Ce qui reste en attente : ce qu'on a retouché pendant l'envoi, et
+         rien d'autre. */
+      noteAttenteReglages();
     }
     /* La base a la configuration ; le relais garde encore l'ancienne version du
        plan public. On le lui dit tout de suite, sans quoi l'administration et le
