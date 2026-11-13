@@ -36,6 +36,7 @@
    base la suit d'ici.
    ============================================================ */
 import { unGesteTenu } from "./geste-tenu.mjs";
+import { creeEvenement } from "./evenement.mjs";
 import { $ } from "./dom.mjs";
 import { DATA, P } from "./donnees.mjs";
 import { API } from "./salon.mjs";
@@ -52,7 +53,7 @@ import { oublieReperes } from "./cartouche-poi.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { indexeSecteurs } from "./secteurs.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE } from "./configuration.mjs";
+import { CONF, reglagesDuSalon, enregistreConf, CONF_ECRITE, copieLocaleTient } from "./configuration.mjs";
 import { appliqueApparence } from "./apparence.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { RESCAPES_TROUVES, REGLAGES_RECUS } from "./index-salon.mjs";
@@ -66,6 +67,12 @@ import { RESCAPES_TROUVES, REGLAGES_RECUS } from "./index-salon.mjs";
    l'envoi : le geste de chaque trait tracé, que l'outil de dessin, l'éditeur
    et la reprise appellent (par `socle-dessin.mjs`), et que la sauvegarde
    restaurée refait ici. */
+/* La dernière copie des calques sur le poste a-t-elle tenu ? Comme celle des
+   réglages (`copieLocaleTient`) : l'alerte d'un échec ne dit le travail gardé
+   ici que si les deux le sont. */
+let dessinsTiennent = true;
+const posteTient = () => dessinsTiennent && copieLocaleTient();
+
 export const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
      la grille de marche qui les ignore n'a plus cours, et l'annuaire des
@@ -80,9 +87,11 @@ export const enregistreDessins = () => {
   rafraichitApercu();
   /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
      dès la première forme tracée, et non au moment où l'on pense à publier. */
-  marqueAttente(P().id, true);
-  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); }
+  // les calques et leur marque d'attente : l'un sans l'autre ne tient pas
+  const marqueTient = marqueAttente(P().id, true);
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); dessinsTiennent = marqueTient; }
   catch (e) {
+    dessinsTiennent = false;
     // les images sont encodées dans le document : le quota se remplit vite
     if ($("outilsAide")) $("outilsAide").textContent =
       "Mémoire du navigateur pleine : allégez ou supprimez une image.";
@@ -208,7 +217,12 @@ function ditAlerte(etat){
   if (etat === "echec"){
     z.hidden = false;
     z.dataset.genre = "echec";
-    txt.textContent = "Vos calques ne sont enregistrés que sur ce poste : " + souci;
+    /* Le poste n'est un refuge que s'il a pu garder la copie : sinon, rien
+       ne tient le travail, et un rechargement le perd. */
+    txt.textContent = posteTient()
+      ? "Vos calques ne sont enregistrés que sur ce poste : " + souci
+      : "Votre travail n'est enregistré nulle part — ni en base, ni sur ce poste, " +
+        "qui n'a pas pu le garder. Ne rechargez pas la page : " + souci;
     act.textContent = "Réessayer";
     act.onclick = () => pousseConfiguration();
     return;
@@ -220,7 +234,10 @@ function ditAlerte(etat){
   if (ADMIN && etat === "manuel" && enRetard()){
     z.hidden = false;
     z.dataset.genre = "echec";
-    txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
+    txt.textContent = posteTient()
+      ? "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste."
+      : "Vous n'êtes plus connecté, et ce poste n'a pas pu garder votre travail : " +
+        "reconnectez-vous sans recharger la page.";
     act.textContent = "Se reconnecter";
     act.onclick = () => {
       ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
@@ -653,6 +670,11 @@ function telechargeSauvegarde(){
  * d'attente, puis envoi automatique — plutôt qu'une écriture directe en base :
  * si l'envoi échoue, le bandeau le dira comme pour n'importe quel autre geste.
  */
+/** Une sauvegarde vient de remplacer les calques. L'historique de l'éditeur
+ *  (`socle-dessin.mjs`, qui importe ce module) y est périmé : l'outil de
+ *  dessin l'écoute et le vide. */
+export const SAUVEGARDE_RESTAUREE = creeEvenement();
+
 function appliqueSauvegarde(s){
   const connus = new Set((DATA?.plans || []).map(p => p.id));
   /* Un fichier qui ne nomme aucun pavillon d'ici ne restaure rien, et ne
@@ -691,6 +713,11 @@ function appliqueSauvegarde(s){
   // range les dessins sur le poste, oublie les relevés qui en dépendent, et
   // programme l'envoi — le même geste que pour un trait tracé à la main
   enregistreDessins();
+  /* Ctrl+Z reprenait un instantané d'avant la restauration — antérieur même à
+     l'édition qui la précédait —, et l'envoi qui suivait republiait cet
+     ancien dessin. La restauration est un point de départ : rien avant elle
+     ne se défait. */
+  SAUVEGARDE_RESTAUREE.emet();
   appliqueApparence();
   dessineDessins();
   construitPanneau();

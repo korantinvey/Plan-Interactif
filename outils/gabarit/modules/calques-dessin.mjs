@@ -184,8 +184,12 @@ export function marqueAttente(id, oui){
      milliseconde posaient la même, et l'envoi du premier effaçait celle du
      second en la croyant inchangée. */
   if (oui) ATTENTE[id] = Math.max(Date.now(), (ATTENTE[id] || 0) + 1); else delete ATTENTE[id];
-  try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
+  /* Rend si la marque a tenu sur le poste : sans elle, un rechargement croit
+     la base à jour et la laisse remplacer le travail d'ici. */
+  let ecrite = true;
+  try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) { ecrite = false; }
   ATTENTE_CHANGEE.emet();
+  return ecrite;
 }
 
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris

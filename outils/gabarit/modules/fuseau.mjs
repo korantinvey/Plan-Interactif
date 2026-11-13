@@ -15,6 +15,9 @@ import { esc } from "./texte.mjs";
 import { courant, confirmeEcriture } from "./evenements.mjs";
 import { rest, signale } from "./socle-console.mjs";
 
+/** Les écritures de fuseau en cours, par salon. */
+const filesParSalon = /** @type {Map<string, Promise<void>>} */ (new Map());
+
 const FUSEAU_DEFAUT = "Europe/Paris";
 
 /**
@@ -66,7 +69,13 @@ export function champFuseau() {
       (mot ? "" : " Il date les jours du rapport et l'heure du plan.");
   };
 
-  i.onchange = async () => {
+  /* Les choix se suivent : deux PATCH partis de front pouvaient répondre dans
+     le désordre, et la confirmation tardive du premier, posée sur le salon
+     courant (`confirmeEcriture`), remplaçait le second — l'écran sur l'un, la
+     base sur l'autre. Chaque choix attend la réponse du précédent — dans le
+     même salon, quel que soit le champ : la fiche le redessine à chaque
+     rendu, et un champ neuf n'attendait pas l'écriture de l'ancien. */
+  i.onchange = () => {
     const saisi = i.value.trim();
     const nom = saisi ? fuseauConnu(saisi, connus) : null;
     if (saisi && !nom) {
@@ -75,6 +84,11 @@ export function champFuseau() {
       aide.textContent = "« " + saisi + " » n'est pas un fuseau connu : choisissez-le dans la liste.";
       return;
     }
+    const suite = (filesParSalon.get(e.id) || Promise.resolve()).then(() => ecrit(nom));
+    filesParSalon.set(e.id, suite);
+  };
+
+  const ecrit = async (/** @type {string | null} */ nom) => {
     try {
       const [r] = await rest("evenement?id=eq." + e.id +
         "&select=fuseau,fuseau_source,fuseau_choisi", {

@@ -49,6 +49,25 @@ import { creeFileEcritures } from "./ecritures-en-file.mjs";
 const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso || [])
   .map(c => PREFIXE_PERSO + c.cle)));
 
+/* Les titres de section tapés et pas encore écrits, d'un volet à l'autre.
+   Un volet fermé gardait son minuteur : rouvert et retouché avant qu'il
+   parte, le réglage voyait l'ancien volet écrire après le nouveau geste, et
+   remettre l'ordre d'avant. Ce qui attend s'écrit donc avant qu'un volet
+   neuf ne se bâtisse — il part alors de l'état à jour. */
+const titresEnAttente = /** @type {Set<() => void>} */ (new Set());
+const presseTitres = () => [...titresEnAttente].forEach(f => f());
+/* Une seule file pour tous les volets Fiche de la page, et non une par
+   volet : un volet rouvert écrivait sinon à côté de l'ancien, qu'aucune
+   chaîne d'attente ne tenait sûrement — un volet ouvert sans retouche la
+   rompait —, et la réponse tardive de l'un remettait la fiche à l'état de
+   l'autre. La file ordonne les écritures et dit laquelle est la dernière ;
+   le volet affiché (`voletAffiche`) est le seul à redessiner son écran. */
+/** @type {ReturnType<typeof creeFileEcritures> | null} */
+let fileFiche = null;
+/** Le dernier volet bâti, et de quoi le recaler sur la fiche du poste. */
+/** @type {{ recale?: (message: string) => void }} */
+let voletAffiche = {};
+
 /**
  * Le volet de la fiche d'un stand.
  *
@@ -64,6 +83,8 @@ const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso
  * d'actionner reprend le focus, pour que le clic suivant tombe au même endroit.
  */
 export function voletOrdre(hote){
+  // ce qu'un volet précédent tenait encore part avant que celui-ci ne lise
+  presseTitres();
   const p = document.createElement("p");
   p.textContent = "Ce que la fiche d'un stand montre, et dans quel ordre. Les " +
     "champs dont ce salon dispose attendent à gauche : glissez-en un dans la " +
@@ -76,10 +97,12 @@ export function voletOrdre(hote){
     "conférences n'en font pas partie : ils ne se déplacent pas.";
   hote.appendChild(p);
 
-  /* Tous les champs du salon, une fois pour toutes : c'est l'ensemble que les
-     deux listes se partagent, et il ne change pas tant que la fenêtre est
-     ouverte — un champ ne se crée que depuis la console. */
-  const toutes = clesFiche();
+  /* Tous les champs du salon, dans l'ordre de la fiche : c'est l'ensemble que
+     les deux listes se partagent. Il ne gagne pas de champ tant que la fenêtre
+     est ouverte — un champ ne se crée que depuis la console —, mais son ordre
+     se relit après un refus (`recale`) : pris à l'ouverture, il aurait remis
+     l'ordre refusé par-dessus celui que la base tient. */
+  let toutes = clesFiche();
 
   /**
    * Ce que la fiche montre, en blocs : un champ seul, ou une section et ses
@@ -170,7 +193,17 @@ export function voletOrdre(hote){
      celle dont la réponse n'a pas été affichée, parce qu'une écriture plus
      récente était en route ; celle de l'ouverture du volet, au départ
      (`ecritures-en-file.mjs`). */
-  const file = creeFileEcritures(DATA.fiche || {});
+  const file = fileFiche || (fileFiche = creeFileEcritures(DATA.fiche || {}));
+  /* Recaler ce volet sur la fiche du poste, après un refus — fût-il celui
+     d'un volet d'avant : rouvert pendant l'écriture, celui-ci montrait la
+     valeur refusée, et le geste suivant l'aurait réécrite. */
+  const ceVolet = voletAffiche = { recale: (/** @type {string} */ message) => {
+    for (const k of Object.keys(intitules)) delete intitules[k];
+    Object.assign(intitules, (DATA.fiche || {}).intitules || {});
+    toutes = clesFiche();
+    litReglage(); rendu();
+    dit(message, true);
+  } };
 
   /**
    * L'ordre à écrire : celui du volet, où reprennent leur place les champs
@@ -261,9 +294,14 @@ export function voletOrdre(hote){
       const i = voulu.intitules || {};
       if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
     })).then(({ ok, dernier, confirme, erreur }) => {
-      if (!ok) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
-      if (!dernier) return;
-      if (ok){ DATA.fiche = confirme; dit("Enregistré."); return; }
+      // un volet remplacé depuis ne parle plus à l'écran : le nouveau le tient
+      const affiche = ceVolet === voletAffiche;
+      if (!ok && affiche) dit("Échec : " + /** @type {Error} */ (erreur).message, true);
+      /* Un titre encore sous son minuteur n'est pas dans la file : cette
+         réponse s'y croit la dernière, et remettait la fiche du poste à l'état
+         d'avant ce titre. Il réécrira la fiche en partant. */
+      if (!dernier || titresEnAttente.size) return;
+      if (ok){ DATA.fiche = confirme; if (affiche) dit("Enregistré."); return; }
       /* La dernière demande refusée : le volet et la fiche du poste reviennent
          à ce que la base tient, au lieu de garder le réglage refusé, qu'une
          réouverture aurait encore montré comme acquis. Seul ce que ce volet
@@ -276,9 +314,8 @@ export function voletOrdre(hote){
         if ((confirme || {})[k] === undefined) delete f[k]; else f[k] = confirme[k];
       });
       DATA.fiche = f;
-      for (const k of Object.keys(intitules)) delete intitules[k];
-      Object.assign(intitules, (DATA.fiche || {}).intitules || {});
-      litReglage(); rendu();
+      // la fiche du poste revient toujours, et le volet affiché avec elle
+      if (voletAffiche.recale) voletAffiche.recale("Échec : " + /** @type {Error} */ (erreur).message);
     });
   };
 
@@ -606,7 +643,14 @@ export function voletOrdre(hote){
     titre.placeholder = s.membres.length
       ? libelleCorps(s.membres[0]) : "Titre de la section";
     titre.setAttribute("aria-label", "Titre de la section");
+    /** @type {ReturnType<typeof setTimeout> | null} */
     let frappe = null;
+    const part = () => {
+      if (frappe) clearTimeout(frappe);
+      frappe = null;
+      titresEnAttente.delete(part);
+      enregistre();
+    };
     titre.oninput = () => {
       s.titre = titre.value;
       majApercu();
@@ -614,7 +658,8 @@ export function voletOrdre(hote){
          écriture par caractère, et s'en remettre au seul « change » perdrait un
          titre tapé puis laissé au clavier quand la fenêtre se referme. */
       if (frappe) clearTimeout(frappe);
-      frappe = setTimeout(enregistre, 700);
+      frappe = setTimeout(part, 700);
+      titresEnAttente.add(part);
     };
     tete.appendChild(titre);
 

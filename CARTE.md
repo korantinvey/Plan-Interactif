@@ -507,7 +507,7 @@ Importé par :
 
 gestes-admin · pile · plan-admin · reglages
 
-### `modules/calques-dessin.mjs` — 254 l. → plan, plan-admin
+### `modules/calques-dessin.mjs` — 258 l. → plan, plan-admin
 
 - l.1 · 11. Calques de dessin — ce que le poste en garde
 
@@ -515,8 +515,8 @@ Fonctions :
 
 `enAttente` 63 · `litRange` 90 · `ouvreDessins` 102 · `reprendCommun` 127
 `notePubliees` 153 · `rangeDessins` 171 · `dejaPubliee` 176 · `marqueAttente` 182
-`mesCalques` 193 · `calquesSurs` 206 · `poseCalqueActif` 246 · `poseOutil` 247
-`poseEbauche` 251 · `trouveCalque` 253 · `nouvelId` 254
+`mesCalques` 197 · `calquesSurs` 210 · `poseCalqueActif` 250 · `poseOutil` 251
+`poseEbauche` 255 · `trouveCalque` 257 · `nouvelId` 258
 
 Importe :
 
@@ -673,15 +673,16 @@ Importé par :
 
 ecran-console · fiche-evenement
 
-### `modules/configuration.mjs` — 139 l. → plan, plan-admin
+### `modules/configuration.mjs` — 147 l. → plan, plan-admin
 
 - l.1 · La configuration du plan — ce que l'exploitant a réglé
 
 Fonctions :
 
 `salonRange` 30 · `cleConf` 32 · `ouvreConf` 36 · `reglagesDuSalon` 57 · `enregistreConf` 90
-`conf` 96 · `jeton` 97 · `sousCle` 99 · `optionActive` 105 · `programmeOffert` 110
-`suggestionOfferte` 111 · `langueOfferte` 131 · `appliqueLangue` 133 · `chercheSorte` 138
+`copieLocaleTient` 101 · `conf` 104 · `jeton` 105 · `sousCle` 107 · `optionActive` 113
+`programmeOffert` 118 · `suggestionOfferte` 119 · `langueOfferte` 139 · `appliqueLangue` 141
+`chercheSorte` 146
 
 Importe :
 
@@ -1078,30 +1079,31 @@ Importé par :
 
 synchronisation
 
-### `modules/enregistrement.mjs` — 747 l. → plan-admin
+### `modules/enregistrement.mjs` — 774 l. → plan-admin
 
 - l.1 · Enregistrer la configuration
-- l.585 · La sauvegarde emportée
+- l.602 · La sauvegarde emportée
 
 Fonctions :
 
-`enregistreDessins` 69 · `autoDispo` 150 · `enRetard` 153 · `etatCourant` 166
-`majAttente` 177 · `compteRescapes` 191 · `ditAlerte` 204 · `ditEtat` 247
-`programmeEnvoi` 254 · `programmePublication` 268 · `rattrapeRetard` 281 · `envoie` 287
-`apresGeste` 299 · `presse` 309 · `brancheEnregistrement` 317 · `identifiants` 340
-`reglagesSeuls` 355 · `noteReglagesCharges` 366 · `oublieCache` 380
-`pousseConfiguration` 399 · `sauvegardeCourante` 605 · `telechargeSauvegarde` 627
-`appliqueSauvegarde` 656 · `litSauvegarde` 707 · `brancheSauvegarde` 729
+`posteTient` 74 · `enregistreDessins` 76 · `autoDispo` 159 · `enRetard` 162
+`etatCourant` 175 · `majAttente` 186 · `compteRescapes` 200 · `ditAlerte` 213
+`ditEtat` 264 · `programmeEnvoi` 271 · `programmePublication` 285 · `rattrapeRetard` 298
+`envoie` 304 · `apresGeste` 316 · `presse` 326 · `brancheEnregistrement` 334
+`identifiants` 357 · `reglagesSeuls` 372 · `noteReglagesCharges` 383 · `oublieCache` 397
+`pousseConfiguration` 416 · `sauvegardeCourante` 622 · `telechargeSauvegarde` 644
+`appliqueSauvegarde` 678 · `litSauvegarde` 734 · `brancheSauvegarde` 756
 
 Importe :
 
 acces-admin · aimants · apparence · calques-dessin · cartouche-poi · configuration
-demarrage · dessin · dom · donnees · fenetre · geste-tenu · index-salon · itineraire
-mode-admin · nappe · ordre-trace · salon · secteurs · session
+demarrage · dessin · dom · donnees · evenement · fenetre · geste-tenu · index-salon
+itineraire · mode-admin · nappe · ordre-trace · salon · secteurs · session
 
 Importé par :
 
-bande-admin · calage-carte · fige-carte · plan-admin · reglage-application · socle-dessin
+bande-admin · calage-carte · fige-carte · outil-dessin · plan-admin · reglage-application
+socle-dessin
 
 ### `modules/environs.mjs` — 1343 l. → plan, plan-admin
 
@@ -1173,9 +1175,9 @@ Fonctions :
 
 Importé par :
 
-acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage · environs
-fenetre · fiche-zone · index-salon · logos-stands · ordre-trace · parcours · rendu
-tiroir-itineraire · trace-itineraire · traduction · vignettes · webgl
+acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage
+enregistrement · environs · fenetre · fiche-zone · index-salon · logos-stands · ordre-trace
+parcours · rendu · tiroir-itineraire · trace-itineraire · traduction · vignettes · webgl
 
 ### `modules/evenements.mjs` — 142 l. → console
 
@@ -1450,13 +1452,13 @@ Importé par :
 
 emplacements · reprise-emplacements
 
-### `modules/fuseau.mjs` — 105 l. → console
+### `modules/fuseau.mjs` — 119 l. → console
 
 - l.1 · Fuseau horaire du salon — le champ de la console
 
 Fonctions :
 
-`fuseauConnu` 28 · `champFuseau` 40
+`fuseauConnu` 31 · `champFuseau` 43
 
 Éléments :
 
@@ -2174,13 +2176,13 @@ Importé par :
 
 essai-rappel · rappels
 
-### `modules/nuancier.mjs` — 73 l. → plan-admin
+### `modules/nuancier.mjs` — 95 l. → plan-admin
 
 - l.1 · La rafale du sélecteur de couleur — l'exploitant seul
 
 Fonctions :
 
-`presseNuanciers` 34 · `brancheNuancier` 40 · `suitNuancier` 57
+`presseNuanciers` 34 · `brancheNuancier` 40 · `suitNuancier` 57 · `suitRepos` 76
 
 Importé par :
 
@@ -2272,28 +2274,28 @@ Importé par :
 
 gestes-admin · outil-foodtruck · reglage-comptoir · reglage-foodtrucks
 
-### `modules/outil-dessin.mjs` — 952 l. → plan-admin
+### `modules/outil-dessin.mjs` — 956 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
 Fonctions :
 
-`restaure` 73 · `annule` 93 · `refais` 106 · `poseTrait` 111 · `aimanteContour` 132
-`rayonContour` 135 · `redresseTrace` 154 · `traceGuide` 188 · `ajouteForme` 195
-`poseChampImage` 212 · `calquePourImage` 227 · `lienImageSaisi` 255 · `formeImage` 267
-`poseImage` 276 · `ditImagePosee` 299 · `importeImage` 307 · `dessinPointerDown` 340
-`dessinPointerMove` 425 · `dessinPointerUp` 463 · `termineTrace` 504 · `aide` 516
-`outilOffert` 546 · `choisitOutil` 560 · `enchaineStand` 591 · `proposeCouleurLigne` 609
-`montreTransport` 620 · `activeCalque` 629 · `cleVerrou` 683 · `verrouille` 684
-`basculeVerrou` 686 · `montreRoleIti` 729 · `creeCalque` 742 · `demandeNom` 755
-`renommeCalque` 780 · `brancheOutilDessin` 796
+`restaure` 74 · `annule` 94 · `refais` 107 · `poseTrait` 112 · `aimanteContour` 133
+`rayonContour` 136 · `redresseTrace` 155 · `traceGuide` 189 · `ajouteForme` 196
+`poseChampImage` 213 · `calquePourImage` 228 · `lienImageSaisi` 256 · `formeImage` 268
+`poseImage` 277 · `ditImagePosee` 300 · `importeImage` 308 · `dessinPointerDown` 341
+`dessinPointerMove` 426 · `dessinPointerUp` 464 · `termineTrace` 505 · `aide` 517
+`outilOffert` 547 · `choisitOutil` 561 · `enchaineStand` 592 · `proposeCouleurLigne` 610
+`montreTransport` 621 · `activeCalque` 630 · `cleVerrou` 684 · `verrouille` 685
+`basculeVerrou` 687 · `montreRoleIti` 730 · `creeCalque` 743 · `demandeNom` 756
+`renommeCalque` 781 · `brancheOutilDessin` 797
 
 Importe :
 
 aimants · calques-dessin · chemin-forme · configuration · dessin · dom · donnees · edition
-emplacements · fenetre · forme-choisie · itineraire · mode-admin · modes-edition · nappe
-nuancier · options · ordre-trace · rendu · reperes · reprise-emplacements · socle-dessin
-texte · tiroir-itineraire · vue
+emplacements · enregistrement · fenetre · forme-choisie · itineraire · mode-admin
+modes-edition · nappe · nuancier · options · ordre-trace · rendu · reperes
+reprise-emplacements · socle-dessin · texte · tiroir-itineraire · vue
 
 Importé par :
 
@@ -2723,13 +2725,13 @@ Importé par :
 
 fiche-zone
 
-### `modules/reglage-fiche.mjs` — 682 l. → plan-admin
+### `modules/reglage-fiche.mjs` — 727 l. → plan-admin
 
 - l.1 · Le volet « Fiche Stand » des réglages — l'exploitant seul
 
 Fonctions :
 
-`clesFiche` 49 · `voletOrdre` 66
+`clesFiche` 49 · `presseTitres` 58 · `voletOrdre` 85
 
 Importe :
 
@@ -2772,13 +2774,13 @@ Importé par :
 
 volets
 
-### `modules/reglage-rappel.mjs` — 161 l. → plan-admin
+### `modules/reglage-rappel.mjs` — 185 l. → plan-admin
 
 - l.1 · Le rappel avant une conférence, dans l'onglet « Admin » des réglages
 
 Fonctions :
 
-`blocRappel` 34 · `ditEssaiRappel` 145
+`blocRappel` 48 · `remplitRappel` 57 · `ditEssaiRappel` 169
 
 Importe :
 
@@ -3579,17 +3581,17 @@ Importé par :
 
 installation · rappels · tutoriel
 
-### `modules/volets.mjs` — 1473 l. → plan-admin
+### `modules/volets.mjs` — 1486 l. → plan-admin
 
 - l.1 · Les volets Admin, Parcours intelligent, PMR, Distinctions et Apparence —
 
 Fonctions :
 
 `secteurs` 61 · `voletAdmin` 72 · `blocOptions` 274 · `blocLangues` 321 · `blocBarre` 395
-`blocHoraires` 453 · `voletParcours` 595 · `sallesSituees` 730 · `voletPmr` 746
-`nomDuTon` 837 · `svgVignette` 846 · `barreVignette` 848 · `vignetteDistPlan` 852
-`vignetteDistListe` 865 · `vignetteDistFiche` 879 · `salonDitSes` 899 · `coinPris` 906
-`voletDist` 929 · `blocDecoupage` 1101 · `voletApparence` 1149
+`blocHoraires` 453 · `voletParcours` 600 · `sallesSituees` 735 · `voletPmr` 751
+`nomDuTon` 842 · `svgVignette` 851 · `barreVignette` 853 · `vignetteDistPlan` 857
+`vignetteDistListe` 870 · `vignetteDistFiche` 884 · `salonDitSes` 904 · `coinPris` 911
+`voletDist` 934 · `blocDecoupage` 1104 · `voletApparence` 1152
 
 Importe :
 

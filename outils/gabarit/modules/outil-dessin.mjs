@@ -60,6 +60,7 @@ import { formeSel, poseFormeSel, formeParId, boite } from "./forme-choisie.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { injecteApresOption } from "./options.mjs";
 import { MONTAGE_COMMENCE } from "./rendu.mjs";
+import { SAUVEGARDE_RESTAUREE } from "./enregistrement.mjs";
 import { enregistreDessins, HIST, REFAIRE, instantane, clotSalve, memorise, toleranceTrace, fermeIci,
   remplitListeSocietes, societeSaisie, optionsModes, pictoVerrou } from "./socle-dessin.mjs";
 
@@ -925,6 +926,9 @@ export function brancheOutilDessin(){
    reprenait n'existe plus, l'historique de l'éditeur valait pour l'autre
    pavillon, et la boîte à outils se replie. Le rendu, que la page publique
    porte aussi, l'annonce ; seul l'éditeur l'écoute. */
+// une sauvegarde restaurée remplace les calques : rien d'avant ne se défait
+SAUVEGARDE_RESTAUREE.ecoute(() => { HIST.length = REFAIRE.length = 0; });
+
 MONTAGE_COMMENCE.ecoute(() => {
   if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
