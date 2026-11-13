@@ -184,6 +184,11 @@ function dessineChoix() {
         signale(err.message, true);
         return;
       }
+      /* Une lecture dépassée ne dessine rien non plus : elle aurait montré
+         la fiche du dernier choix sans ses plans, et pris ce choix pour le
+         salon affiché — qu'un échec du dernier aurait alors « restauré ».
+         Le dernier choix dessine lui-même à sa réussite. */
+      if (ici !== choixEnCours) return;
     }
     dessine();
   };

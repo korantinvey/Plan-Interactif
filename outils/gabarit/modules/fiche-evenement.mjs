@@ -68,6 +68,8 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
 /** L'envoi qu'un champ tient encore sous son minuteur, à faire partir tout de
  *  suite : `champInstance` le demande avant de remplacer le champ libre. */
 const envoisEnAttente = /** @type {WeakMap<Element, () => void>} */ (new WeakMap());
+/** Ce qui a remplacé un champ à l'écran, à recaler sur un refus du champ. */
+const remplacants = /** @type {WeakMap<Element, (v: any) => void>} */ (new WeakMap());
 
 function champ(cle, libelle, aide, attrs, fileDonnee) {
   const e = courant();
@@ -106,7 +108,14 @@ function champ(cle, libelle, aide, attrs, fileDonnee) {
         .then(({ ok, dernier, confirme, erreur }) => {
           if (!ok) signale(/** @type {Error} */ (erreur).message, true);
           if (!dernier || ici !== frappe) return;
-          if (!ok) e[cle] = confirme;
+          if (!ok){
+            e[cle] = confirme;
+            /* Le champ a pu être remplacé entre-temps (le menu Klipso prend
+               la place du champ libre) : c'est lui qui montre la valeur, et
+               il restait sur la saisie refusée. */
+            const r = remplacants.get(l);
+            if (r) r(confirme);
+          }
           if (cle === "slug" || !ok) i.value = e[cle] == null ? "" : e[cle];
           suit();
         });
@@ -491,6 +500,10 @@ function champInstance() {
        dans la file commune : laissée à son minuteur, elle s'écrivait après un
        choix fait entre-temps dans le menu, et la base gardait l'ancienne
        saisie sous le menu qui montrait le choix. */
+    remplacants.set(libre, (v) => {
+      const menu = choix.element.querySelector("select");
+      if (menu) menu.value = v == null ? "" : v;
+    });
     const part = envoisEnAttente.get(libre);
     if (part) part();
     libre.replaceWith(choix.element);
