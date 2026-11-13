@@ -188,7 +188,14 @@ export function choixBase({ bases, valeur = "", surChoix, vide = false }) {
     /* Connue désormais, et proposée au menu ; mais le menu et le formulaire
        restent à ce qu'on y a fait depuis — « Aucune base Klipso » choisi
        pendant l'envoi se voyait sinon remplacé par la base enregistrée. */
-    if (depuis !== geste) return null;
+    if (depuis !== geste) {
+      /* Les options suivent la liste, la sélection reste ce qu'on y a fait :
+         une base connue de la liste sans option au menu se perdait au
+         premier choix qui la nommait (`reprend`), et le menu vidé écrivait
+         une instance vide. */
+      remplitMenu(menu.value);
+      return null;
+    }
     cle.value = "";
     instance.value = "";
     remplaceCle = false;

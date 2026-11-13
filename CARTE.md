@@ -409,7 +409,7 @@ Importé par :
 
 cartouche-poi · lancement · recherche · rendu
 
-### `modules/bases-klipso.mjs` — 243 l. → console
+### `modules/bases-klipso.mjs` — 250 l. → console
 
 - l.1 · Bases Klipso — le menu des bases connues, et la saisie d'une base neuve
 
