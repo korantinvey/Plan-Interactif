@@ -97,10 +97,12 @@ export function voletOrdre(hote){
     "conférences n'en font pas partie : ils ne se déplacent pas.";
   hote.appendChild(p);
 
-  /* Tous les champs du salon, une fois pour toutes : c'est l'ensemble que les
-     deux listes se partagent, et il ne change pas tant que la fenêtre est
-     ouverte — un champ ne se crée que depuis la console. */
-  const toutes = clesFiche();
+  /* Tous les champs du salon, dans l'ordre de la fiche : c'est l'ensemble que
+     les deux listes se partagent. Il ne gagne pas de champ tant que la fenêtre
+     est ouverte — un champ ne se crée que depuis la console —, mais son ordre
+     se relit après un refus (`recale`) : pris à l'ouverture, il aurait remis
+     l'ordre refusé par-dessus celui que la base tient. */
+  let toutes = clesFiche();
 
   /**
    * Ce que la fiche montre, en blocs : un champ seul, ou une section et ses
@@ -198,6 +200,7 @@ export function voletOrdre(hote){
   const ceVolet = voletAffiche = { recale: (/** @type {string} */ message) => {
     for (const k of Object.keys(intitules)) delete intitules[k];
     Object.assign(intitules, (DATA.fiche || {}).intitules || {});
+    toutes = clesFiche();
     litReglage(); rendu();
     dit(message, true);
   } };
