@@ -8,6 +8,7 @@ module.exports = {
 
   // ce qui l'arrête, dit après « Échec : »
   "les tuiles n'arrivent pas": "the tiles are not arriving",
+  "le style ne répond pas": "the map style is not answering",
   "aucun fond retenu": "no base map chosen",
   "ce pavillon n'a pas d'emprise": "this hall has no extent",
   "style refusé": "style rejected",

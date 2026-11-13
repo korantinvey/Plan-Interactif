@@ -153,6 +153,8 @@ function ditEssaiRappel(etat, issue){
     impossible: "Ce navigateur ne sait pas recevoir de notifications. Sur iPhone, " +
       "il faut avoir ajouté le plan à l'écran d'accueil.",
     panne: "Le rappel n'a pas pu être posé. Réessayez dans un instant.",
+    plein: "Ce navigateur suit déjà soixante rappels de conférence : l'essai en " +
+      "remplacerait un. Retirez une conférence du parcours pour essayer.",
   };
   etat.textContent = phrases[issue] || phrases.panne;
   etat.hidden = false;

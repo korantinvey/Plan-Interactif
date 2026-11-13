@@ -25,7 +25,7 @@
    ============================================================ */
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { comptoir, reglageComptoirValide, rapprocheComptoir } from "./decor.mjs";
-import { anneauDe } from "./outil-comptoir.mjs";
+import { anneauDe, emprise } from "./outil-comptoir.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, de biais à
@@ -49,9 +49,8 @@ export function champComptoir(bloc, o){
   const champ = /** @type {HTMLElement} */ (bloc.closest(".champZ") || bloc);
   const an = anneauDe(o.d);
   if (!an){ champ.hidden = true; return () => {}; }
-  const xs = an.map(p => p[0]), ys = an.map(p => p[1]);
-  const x0 = Math.min(...xs), y0 = Math.min(...ys);
-  const w = Math.max(Math.max(...xs) - x0, 1e-6), h = Math.max(Math.max(...ys) - y0, 1e-6);
+  // la même emprise que l'outil du plan : u et v se comptent sur la même base
+  const { x0, y0, w, h } = emprise(an);
   const marge = Math.max(w, h) * .08;
 
   const toile = /** @type {SVGSVGElement} */ (el("svg", { class: "comptoirZ", viewBox: [x0 - marge, y0 - marge, w + 2 * marge, h + 2 * marge].join(" "),

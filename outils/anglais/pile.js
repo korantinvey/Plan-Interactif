@@ -41,4 +41,6 @@ module.exports = {
   "Fond du plan": "Map background",
   "Couleur d'origine": "Original colour",
   "Couleur libre": "Custom colour",
+  // le nom accessible d'un sélecteur de couleur, hors de son étiquette
+  "Couleur : {nom}": "Colour: {nom}",
 };

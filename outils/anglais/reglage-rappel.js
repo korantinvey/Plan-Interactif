@@ -21,4 +21,7 @@ module.exports = {
     "The show is not published: the server refuses to store a reminder.",
   "Ce navigateur ne sait pas recevoir de notifications. Sur iPhone, il faut avoir ajouté le plan à l'écran d'accueil.":
     "This browser cannot receive notifications. On iPhone, the map must have been added to the home screen.",
+  // l'essai refusé sur une liste de rappels déjà pleine
+  "Ce navigateur suit déjà soixante rappels de conférence : l'essai en remplacerait un. Retirez une conférence du parcours pour essayer.":
+    "This browser already follows sixty talk reminders: the test would replace one. Remove a talk from the visit plan to try.",
 };

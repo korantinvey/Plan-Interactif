@@ -32,7 +32,7 @@ import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liens
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
 import { vue, cadrePlan, versPlan, svg, injecteALaVue } from "./vue.mjs";
-import { calqueActif, outil } from "./calques-dessin.mjs";
+import { calqueActif, outil, marqueAttente } from "./calques-dessin.mjs";
 import { estCadre, EPAISSEUR_TRAIT } from "./chemin-forme.mjs";
 import { OBJETS_REPERE } from "./decor.mjs";
 import { TYPES_REPERE, MODES_TRANSPORT, pictoForme, nomTypeRepere, estTransport, modeTransport, couleurRepere,
@@ -326,6 +326,9 @@ function ecritDesDeuxCotes(idAutre, change){
   memorise();
   ecritLiens(cible.f, change(lienEcrits(cible.f), idAutre));
   ecritLiens(autre.f, change(lienEcrits(autre.f), cible.f.id));
+  /* L'envoi automatique n'écrit que les plans marqués : le second côté, dans
+     un autre plan, restait sinon sur le poste jusqu'à un envoi à la main. */
+  if (autre.p && autre.p.id) marqueAttente(autre.p.id, true);
   enregistreDessins();
   majElement();
 }
@@ -655,8 +658,14 @@ export function editionPointerMove(e){
          proportions de l'image, et un aimant qui la tirerait les casserait. */
       acc.axes = "x";
       mx += correction([[mx, my]], acc)[0];
-      const ratio = (b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
-      const l = Math.abs(mx - fixe[0]);
+      /* Une largeur nulle — la poignée amenée sur le coin opposé — rendait
+         une image dégénérée, dont le ratio nul donnait au geste suivant une
+         hauteur infinie. Les deux bornent au centimètre — la hauteur aussi,
+         après le ratio : une image dix fois plus large que haute, ramenée au
+         centimètre de large, s'arrondissait à une hauteur nulle. */
+      const ratio = Math.max(.01, b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
+      const l = Math.max(.01, .01 * ratio, Math.abs(mx - fixe[0]));
+      mx = fixe[0] + Math.sign(mx - fixe[0] || 1) * l;
       my = fixe[1] + Math.sign(my - fixe[1] || 1) * (l / ratio);
     } else {
       const c = correction([[mx, my]], acc);

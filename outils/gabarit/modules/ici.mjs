@@ -90,7 +90,7 @@ let ICI_PERDU = false;
  * venu qui commence par « A1 », et le visiteur se croyait au stand A15. Rien
  * d'exact, ou deux lieux du même nom, et l'on rend la main.
  */
-function lieuExact(v){
+export function lieuExact(v){
   const n = pourRecherche(v);
   /* Dans tout ce qui répond, et non dans les quatorze que propose la saisie :
      tronquée, la liste pouvait taire le seul lieu exact, ou l'un de deux. */
@@ -114,11 +114,18 @@ function litCodeIci(txt){
   const v = String(txt || "").trim();
   if (!v) return null;
   if (v[0] !== ICI_LIBRE) return lieuExact(v);
-  const m = /^.([0-9a-f]+),(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/i.exec(v);
+  /* Le tiret fait partie d'un identifiant : un préfixe allongé au-delà du
+     premier groupe (`affiche-ici.mjs` `prefixePlan`) en porte un, et l'affiche
+     n'ouvrait alors rien. */
+  const m = /^.([0-9a-f-]+),(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/i.exec(v);
   if (!m) return null;
   const d = m[1].toLowerCase();
-  const i = DATA.plans.findIndex(p => String(p.id).slice(0, d.length).toLowerCase() === d);
-  return i < 0 ? null : lieuBorne(i, [parseFloat(m[2]), parseFloat(m[3])], "");
+  /* Un préfixe que deux pavillons partagent ne désigne aucun des deux : le
+     premier venu aurait affirmé une position fausse, et un pavillon ajouté
+     plus tard rendrait ambiguë une affiche déjà collée. */
+  const trouves = DATA.plans.map((p, j) => String(p.id).slice(0, d.length).toLowerCase() === d ? j : -1)
+    .filter(j => j >= 0);
+  return trouves.length !== 1 ? null : lieuBorne(trouves[0], [parseFloat(m[2]), parseFloat(m[3])], "");
 }
 
 /* ------------------------------------------------------------

@@ -14,6 +14,8 @@ module.exports = {
   "Enregistrer la base": "Save the database",
   "Enregistrer la clé": "Save the key",
   "Une base que la console ne connaît pas encore.": "A database the console does not know yet.",
+  "Le salon n'est raccordé à aucune base Klipso.": "The show is not linked to any Klipso database.",
+  "Aucune base Klipso": "No Klipso database",
   "Sa propre clé, saisie le {date}.": "Its own key, entered on {date}.",
   "La clé commune du projet (KLIPSO_API_KEY).": "The project's shared key (KLIPSO_API_KEY).",
   "L'instance ne garde que le sous-domaine : lettres, chiffres et tirets.":

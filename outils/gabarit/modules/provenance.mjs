@@ -28,6 +28,32 @@ import { grille, signale } from "./socle-console.mjs";
    quel changement d'un menu a le dernier mot (`ecritures-en-file.mjs`). */
 const fileSources = creeFileEcritures();
 
+/**
+ * Une écriture de la colonne `sources` d'un salon, dans la file commune.
+ *
+ * `calcule` reçoit une copie des sources telles que la base les a confirmées
+ * quand l'écriture part, et rend celles à écrire : calculées au geste, elles
+ * reposaient l'état d'avant une écriture encore en file. Le menu des
+ * provenances et celui de la source du nom (`fiche-detail.mjs`) passent par
+ * ici : écrits chacun de leur côté, un refus tardif de l'un effaçait un
+ * changement plus récent de l'autre.
+ *
+ * @param {string} id le salon du geste
+ * @param {(sources: Record<string, any>, e: any) => Record<string, any>} calcule
+ * @param {string} cle ce que le geste règle (`ecritures-en-file.mjs`)
+ */
+export function ecritSources(id, calcule, cle) {
+  return fileSources.ecrit(async () => {
+    const e2 = evenementParId(id);
+    if (!e2) throw new Error("Ce salon n'est plus chargé : source non enregistrée.");
+    const sources = calcule({ ...(e2.sources || {}) }, e2);
+    await majEvenement(e2.id, { sources });
+    e2.sources = sources;
+    // la liste a pu être rechargée pendant la requête (`poseSurSalon`)
+    poseSurSalon(e2.id, { sources });
+  }, cle);
+}
+
 /* Par domaine : sa clé, son nom, les sources qui savent le servir, ce qu'il porte. */
 /** @type {[string, string, string[], string][]} */
 
@@ -129,15 +155,7 @@ function ligneSource(dom, libelle, offerts, aide) {
      identifiant quand l'écriture part : la liste a pu être rechargée. */
   l.querySelector("select").onchange = (ev) => {
     const menu = /** @type {HTMLSelectElement} */ (ev.target), voulu = menu.value;
-    fileSources.ecrit(async () => {
-      const e2 = evenementParId(e.id);
-      if (!e2) throw new Error("Ce salon n'est plus chargé : source non enregistrée.");
-      const sources = { ...(e2.sources || {}), [dom]: { fournisseur: voulu } };
-      await majEvenement(e2.id, { sources });
-      e2.sources = sources;
-      // la liste a pu être rechargée pendant la requête (`poseSurSalon`)
-      poseSurSalon(e2.id, { sources });
-    }, dom).then(({ ok, dernier, erreur }) => {
+    ecritSources(e.id, (s) => ({ ...s, [dom]: { fournisseur: voulu } }), dom).then(({ ok, dernier, erreur }) => {
       if (ok) return;
       if (dernier) menu.value = (((evenementParId(e.id) || e).sources || {})[dom] || {}).fournisseur || choisi;
       signale(/** @type {Error} */ (erreur).message, true);

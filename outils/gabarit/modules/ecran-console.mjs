@@ -147,6 +147,13 @@ function majBarre() {
     });
 }
 
+/** Le rang du dernier choix de salon dans le menu : seule sa lecture décide.
+ *  Un changement de compte l'avance aussi (`videEcran`) : une lecture de la
+ *  session d'avant n'a plus rien à rétablir. */
+let choixEnCours = 0;
+/** Le salon dont la fiche est à l'écran, posé par `dessine`. */
+let salonAffiche = /** @type {string | null} */ (null);
+
 function dessineChoix() {
   const sel = $("choixEvt");
   // rien à choisir : la liste vide n'aurait rien à dire que la fiche ne dise
@@ -157,9 +164,32 @@ function dessineChoix() {
   sel.innerHTML = EVTS.map((e) =>
     '<option value="' + e.id + '"' + (e.id === selection ? " selected" : "") + '>' +
     esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
+  /* Les plans du salon choisi se lisent avant de le montrer. Une lecture
+     refusée laissait le nouveau salon choisi et l'ancien à l'écran, sans un
+     mot : le choix revient alors à celui d'avant, et l'erreur se dit. */
   sel.onchange = async () => {
+    const ici = ++choixEnCours;
     poseEvenements({ selection: sel.value });
-    if (!PLANS[selection]) await chargePlans(selection);
+    if (!PLANS[selection]) {
+      try { await chargePlans(selection); }
+      catch (err) {
+        /* Un autre choix est venu pendant la lecture : c'est lui qui vaut.
+           Revenir à « avant » aurait remis le menu sur l'ancien salon sous la
+           fiche du nouveau. */
+        if (ici !== choixEnCours) return;
+        /* Le salon à retrouver est celui dont la fiche est à l'écran, et non
+           le choix d'avant : celui-ci pouvait n'avoir jamais fini de se lire. */
+        poseEvenements({ selection: salonAffiche });
+        sel.value = salonAffiche || "";
+        signale(err.message, true);
+        return;
+      }
+      /* Une lecture dépassée ne dessine rien non plus : elle aurait montré
+         la fiche du dernier choix sans ses plans, et pris ce choix pour le
+         salon affiché — qu'un échec du dernier aurait alors « restauré ».
+         Le dernier choix dessine lui-même à sa réussite. */
+      if (ici !== choixEnCours) return;
+    }
     dessine();
   };
 }
@@ -207,6 +237,8 @@ function majLiens(e) {
 /** Fin de session : la console n'a plus d'événements à montrer. */
 export function videEcran() {
   generation++;
+  choixEnCours++;
+  salonAffiche = null;
   /* Tout ce que la session avait lu part avec elle : les plans aussi, sans
      quoi « Copier les données (JSON) » du compte suivant emportait ceux des
      salons de l'ancien. */
@@ -226,6 +258,7 @@ function dessine() {
   dessineChoix();
   majBarre();
   dessineFiche();
+  salonAffiche = selection;
   majAdresse();
 }
 
@@ -272,7 +305,8 @@ export function brancheConsole() {
     const cree = async (/** @type {string} */ n, /** @type {{ instance: string, cle: string }} */ choix) => {
       signale("Création…");
       try {
-        const instance = await base.enregistre(choix);
+        // la base demandée à la création, même si le menu a bougé pendant l'envoi
+        const instance = (await base.enregistre(choix)) ?? choix.instance;
         const rep = await rest("evenement", {
           method: "POST",
           headers: { "Prefer": "return=representation" },
@@ -282,9 +316,14 @@ export function brancheConsole() {
         });
         const cree = Array.isArray(rep) ? rep[0] : rep;
         if (cree?.id) poseEvenements({ selection: cree.id });
-        await charge();
-        signale("Événement créé.");
-      } catch (err) { signale(err.message, true); }
+      } catch (err) { signale(err.message, true); return; }
+      /* Le salon existe dès que le POST a répondu. Un rechargement qui échoue
+         ensuite ne doit pas le faire croire raté : on le recréerait, comme le
+         dit la duplication (`duplication.mjs`). */
+      try { await charge(); signale("Événement créé."); }
+      catch (err) {
+        signale("L'événement est créé, mais la liste n'a pas pu se recharger : " + err.message, true);
+      }
     };
     ouvreModale("Nouvel événement", (corps) => {
       const l = document.createElement("label");

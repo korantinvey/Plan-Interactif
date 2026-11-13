@@ -87,14 +87,24 @@ export function proposeParcoursRecu(brut){
        pareil : le parcours est déjà là — on a rouvert son propre lien, ou
        cliqué deux fois dessus — ou bien il ne parle pas de ce salon. */
     const connus = tousStands.length + toutesConfs.length;
+    /* Un lien qui ne porte qu'une partie du parcours en place n'ajoute rien,
+       mais peut le remplacer : c'est la seule façon d'en retirer le reste, et
+       « Fermer » seul la refusait. */
+    const plusLong = connus > 0 && PARCOURS.stands.length + PARCOURS.confs.length > connus;
     ouvreModale("Parcours partagé", corps => {
       const p = document.createElement("p");
-      p.textContent = connus
+      p.textContent = plusLong
+        ? "Tout ce que ce lien propose est déjà dans votre parcours, qui contient davantage."
+        : connus
         ? "Tout ce que ce lien propose est déjà dans votre parcours."
         : "Ce lien ne désigne rien de ce salon : il vient sans doute d'une " +
           "autre édition, ou les stands qu'il retenait ont été démontés depuis.";
       corps.appendChild(p);
-    }, [{ libelle: "Fermer" }]);
+    }, plusLong
+      ? [{ libelle: "Fermer" },
+         { libelle: "Remplacer le mien", genre: "danger",
+           action: () => adoptePartage(tousStands, toutesConfs, true) }]
+      : [{ libelle: "Fermer" }]);
     return true;
   }
 

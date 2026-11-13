@@ -154,7 +154,8 @@ function boutonsPartage(lien, compte){
   };
   const boutons = [{ libelle: "Fermer" }, copie];
   if (partageable) boutons.push({
-    libelle: "Partager…", genre: "accent",
+    // la feuille de partage peut être refusée : la fenêtre reste, lien et copie compris
+    libelle: "Partager…", genre: "accent", ferme: false,
     /* Refuser la feuille de partage n'est pas une panne : on la referme, et la
        fenêtre reste ouverte derrière — d'où le silence sur le rejet. Le geste
        est compté avant, parce qu'un envoi abandonné à mi-chemin ne se distingue

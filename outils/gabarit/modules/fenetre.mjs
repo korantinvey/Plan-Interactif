@@ -80,8 +80,14 @@ function suisLaPartVisible(){
  * Sans lui, elle est au milieu, sur fond grisé — ce qu'il faut quand elle
  * demande une réponse avant de rendre la main.
  */
+/* Le nombre de fenêtres ouvertes : une action de bouton qui en ouvre une autre
+   — « Voir sur le plan » d'un stand partagé ouvre le choix des exposants — la
+   voyait refermée dans la même tâche. */
+let ouvertures = 0;
+
 export function ouvreModale(titre, remplitCorps, boutons, genre){
   verseModale();
+  ouvertures++;
   if (genre) $("modale").dataset.genre = genre;
   else delete $("modale").dataset.genre;
   /* L'habillage se pose ici plutôt qu'une fois pour toutes : il dépend du
@@ -95,7 +101,12 @@ export function ouvreModale(titre, remplitCorps, boutons, genre){
     const el = document.createElement("button");
     el.className = "btn" + (b.genre ? " " + b.genre : "");
     el.textContent = b.libelle;
-    el.onclick = () => { if (b.action) b.action(); if (b.ferme !== false) fermeModale(); };
+    el.onclick = () => {
+      const avant = ouvertures;
+      if (b.action) b.action();
+      // l'action a ouvert une autre fenêtre : c'est elle qui est affichée
+      if (b.ferme !== false && ouvertures === avant) fermeModale();
+    };
     $("mPied").appendChild(el);
   });
   suisLaPartVisible();

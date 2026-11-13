@@ -552,7 +552,11 @@ export function brancheGestes(){
     }
   });
   document.addEventListener("keydown", e => {
-    const saisie = /^(INPUT|TEXTAREA)$/.test(/** @type {HTMLElement} */ (e.target).tagName);
+    /* Une liste déroulante et un éditeur de texte riche sont des saisies : sans
+       quoi les flèches déplaçaient le comptoir choisi au lieu de parcourir la
+       liste, et Suppr effaçait la forme sous le curseur du texte. */
+    const cibleTouche = /** @type {HTMLElement} */ (e.target);
+    const saisie = /^(INPUT|TEXTAREA|SELECT)$/.test(cibleTouche.tagName) || !!cibleTouche.isContentEditable;
     /* Les raccourcis et les flèches de l'éditeur passent avant tout le reste
        (`modules/gestes-admin.mjs`). */
     if (admin.clavier(e, saisie)) return;

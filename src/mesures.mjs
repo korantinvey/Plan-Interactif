@@ -91,12 +91,17 @@ export async function mesure(requete) {
     if (e && e.code === "22023") return repond(400, "Paramètres manquants.");
   }
 
-  // le repli : la porte absente, en panne, ou muette
+  /* le repli : la porte absente, en panne, ou muette. Il sert quand quelque
+     chose ne va pas : la fonction peut l'être aussi. Borné dans le temps, et
+     son échec rendu avec les en-têtes CORS — sans eux, une coque ou un cadre
+     d'une autre origine ne lisait qu'une erreur CORS. */
   const reponse = await fetch(MESURE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: corps,
-  });
+    signal: AbortSignal.timeout(10000),
+  }).catch(() => null);
+  if (!reponse) return repond(502, "Mesure indisponible.");
   return new Response(reponse.body, {
     status: reponse.status,
     headers: {

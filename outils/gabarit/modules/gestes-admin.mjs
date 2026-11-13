@@ -30,6 +30,7 @@ import { geoSel, outilGeo, traceAjout, lacheGeo, modeGeometrie, choisitGeo, pous
 import { calagePointerDown, calagePointerMove, calagePointerUp } from "./batiments.mjs";
 import { annule, refais, dessinPointerDown, dessinPointerMove, dessinPointerUp, termineTrace, activeCalque }
   from "./outil-dessin.mjs";
+import { estCadre } from "./chemin-forme.mjs";
 import { choisitForme, supprimeForme } from "./edition.mjs";
 import { dupliqueForme, pousseForme } from "./aimants.mjs";
 import { codeIciAuPoint } from "./affiche-ici.mjs";
@@ -107,10 +108,20 @@ function annuleGeste(){
   lacheComptoir();
   lacheFoodtruck();
   lacheEscalier();
+  /* Un rectangle se trace d'un seul glissement : son pointeur annulé, le
+     relâchement suivant — d'un autre doigt — l'aurait validé tel quel, une
+     forme que l'exploitant n'a pas finie. Un tracé point par point, lui,
+     attend la suite et reste. */
+  if (enCours && estCadre(enCours)) termineTrace(false);
+  if (traceAjout && traceAjout.t === "rect") fermeAjout(false);
 }
 
 /* Les raccourcis et les flèches de l'éditeur, avant tout le reste du clavier. */
 function clavier(/** @type {KeyboardEvent} */ e, /** @type {boolean} */ saisie){
+  /* Un éditeur de texte riche (la description d'une zone, `contentEditable`)
+     est une saisie comme une autre : Ctrl+Z y défait le texte, pas un dessin. */
+  const cible = /** @type {HTMLElement | null} */ (e.target instanceof HTMLElement ? e.target : null);
+  if (cible && cible.isContentEditable) saisie = true;
   if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
     const t = e.key.toLowerCase();
     if (t === "z" && !e.shiftKey){ e.preventDefault(); annule(); return true; }
@@ -181,6 +192,8 @@ function echap(){
    avec la fiche. */
 function apresEchap(){
   if ($("panel")) $("panel").classList.remove("open");
+  // le bouton qui l'ouvre ne doit plus annoncer un panneau ouvert
+  if ($("btnLayers")) $("btnLayers").setAttribute("aria-pressed", "false");
 }
 
 /* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un

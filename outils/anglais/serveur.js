@@ -98,6 +98,8 @@ module.exports = {
     "Return address not allowed: add this origin to ORIGINES_AUTORISEES.",
   "Paramètres manquants.": "Missing parameters.",
   "Événement introuvable ou non publié.": "Event not found or not published.",
+  // le repli de la mesure, injoignable à son tour (`src/mesures.mjs`)
+  "Mesure indisponible.": "Measurement unavailable.",
   "Paramètre slug manquant.": "Missing slug parameter.",
   "Paramètre fond invalide.": "Invalid fond parameter.",
   "Session expirée : reconnectez-vous.": "Session expired: please sign in again.",

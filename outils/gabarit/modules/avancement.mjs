@@ -394,10 +394,14 @@ export function suitAuServeur(id, jeton, applique, vue) {
        premier tronçon passe avant qu'un tampon ne se referme, laisserait
        sinon la fenêtre muette pour tout le reste. */
     if (vivant && Date.now() - dernierSigne >= RELEVE_SILENCE) {
+      const depart = dernierSigne;
       try {
         const r = await rest("evenement?id=eq." + id + "&select=sync_avancement");
         const etat = r?.[0]?.sync_avancement;
-        if (vivant && etat && etat.jeton === jeton) {
+        /* Le flux a pu reprendre pendant la lecture : ce qu'elle rapporte est
+           alors plus vieux que ce qu'il vient de dire, et l'appliquer ferait
+           reculer les compteurs. */
+        if (vivant && dernierSigne === depart && etat && etat.jeton === jeton) {
           const lignes = etat.lignes || [];
           vue.trace({ evt: "releve", lignes: lignes.length });
           vue.avoueReleve();

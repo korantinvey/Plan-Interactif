@@ -24,4 +24,7 @@ module.exports = {
     "{n} logo prepared, {r} unreadable at their source.",
   "Préparation des logos impossible : {e}": "Cannot prepare logos: {e}",
   "Aucun logo à préparer sur ce salon.": "No logos to prepare for this event.",
+  // la synchronisation a réussi, le rechargement de la liste non
+  "Synchronisation faite, mais la liste n'a pas pu se recharger : {raison}":
+    "Synchronisation done, but the list could not reload: {raison}",
 };

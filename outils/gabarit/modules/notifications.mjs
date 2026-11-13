@@ -7,7 +7,7 @@
    l'appareil et au serveur, rien au plan : le choix des conférences, le
    réglage du délai et la fenêtre qui le propose sont dans `rappels.mjs`.
    ============================================================ */
-import { API } from "./salon.mjs";
+import { API, SLUG } from "./salon.mjs";
 import { supportMesure } from "./mesure.mjs";
 
 /* L'adresse du serveur des rappels, voisine de celle du plan. La page à
@@ -31,6 +31,10 @@ export function adresseDuRappel(id){
   const u = new URL(location.href);
   u.hash = "";
   u.searchParams.set("conf", id);
+  /* Le salon aussi, quand l'adresse ne le dit pas : ouverte sur le salon par
+     défaut, la notification aurait mené à un autre si ce défaut avait changé
+     entre-temps (comme `partage.mjs` `lienParcours`). */
+  if (SLUG && !u.searchParams.get("plan")) u.searchParams.set("plan", SLUG);
   return u.href;
 }
 

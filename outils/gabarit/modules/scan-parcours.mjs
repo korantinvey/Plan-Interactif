@@ -179,11 +179,15 @@ export function ouvreScanParcours(){
      cinq fois par seconde, et le message n'a pas à clignoter. */
   let dernierRefus = "";
 
+  /** La caméra rendue, sans fermer la visée : la photo reste un recours. */
+  const rendCamera = () => {
+    if (flux) flux.getTracks().forEach(p => p.stop());
+    flux = null;
+  };
   const arrete = () => {
     fini = true;
     clearTimeout(minuterie);
-    if (flux) flux.getTracks().forEach(p => p.stop());
-    flux = null;
+    rendCamera();
   };
 
   /** @type {HTMLParagraphElement} */
@@ -269,14 +273,17 @@ export function ouvreScanParcours(){
       await video.play();
     } catch (e) {
       /* Refus du visiteur, refus de l'application qui embarque la page, pas
-         de caméra du tout : pour le visiteur, la suite est la même. */
+         de caméra du tout : pour le visiteur, la suite est la même. Une
+         caméra accordée dont la vidéo n'a pas démarré se rend aussi. */
+      rendCamera();
       viseur.hidden = true;
       dit("La caméra n'est pas accessible ici : prenez le code en photo.");
       return;
     }
     const lit = await decodeur();
     if (fini) return;
-    if (!lit){ dit("La lecture des codes n'a pas pu se charger. Vérifiez la connexion.", true); return; }
+    // sans décodeur, la caméra ne lirait rien : elle se rend, la photo reste possible
+    if (!lit){ rendCamera(); dit("La lecture des codes n'a pas pu se charger. Vérifiez la connexion.", true); return; }
     dit("Cherche un code…");
     const tour = async () => {
       if (fini) return;

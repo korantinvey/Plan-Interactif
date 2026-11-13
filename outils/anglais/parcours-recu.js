@@ -11,4 +11,7 @@ module.exports = {
   "Remplacer le mien": "Replace mine",
   "Ajouter au mien": "Add to mine",
   "Charger ce parcours": "Load this visit plan",
+  // un lien qui ne porte qu'une partie du parcours en place
+  "Tout ce que ce lien propose est déjà dans votre parcours, qui contient davantage.":
+    "Everything this link offers is already in your visit plan, which holds more.",
 };

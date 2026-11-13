@@ -83,7 +83,8 @@ export async function rappels(requete, url) {
     headers: {
       ...CORS_RAPPELS,
       "Content-Type": "application/json",
-      "Cache-Control": cle ? "public, max-age=3600" : "no-store",
+      // une panne passagère ne se garde pas une heure dans le navigateur
+      "Cache-Control": cle && reponse.ok ? "public, max-age=3600" : "no-store",
     },
   });
 }

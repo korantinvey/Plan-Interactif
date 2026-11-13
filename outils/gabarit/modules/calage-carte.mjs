@@ -274,7 +274,12 @@ function manqueCalage(e){
 
 /** Le calage, enregistré pour tous. Une ligne, et rien d'autre : le fond n'est
  *  pas un dessin qu'on stocke, ce sont des tuiles qu'on va chercher. */
-async function enregistreCalage(cal, p = P()){
+async function enregistreCalage(enCours, p = P()){
+  /* Une copie, prise avant toute attente : le calage en cours de réglage
+     continue de bouger, et la page aurait montré comme publiée une position
+     que rien n'a écrite. Le corps envoyé et ce que la page retient sont la
+     même copie. */
+  const cal = enCours ? Object.assign({}, enCours) : enCours;
   const acces = accesBase();
   if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
   /* La page ne connaît les pavillons que par leur identifiant Klipso ;
@@ -356,6 +361,8 @@ let ENV_BATI = 0;
  *  par `changePlan`. */
 export function oublieCalageEnCours(){
   poseCalageEnCours(null); ENV_BATIS = []; ENV_BATI = 0;
+  // la palette ouverte n'a plus rien à régler : « Enregistrer » y écrirait le vide
+  fermeCalage();
 }
 
 /**
@@ -726,6 +733,8 @@ export function brancheCalageCarte(){
   if ($("calageFerme")) $("calageFerme").onclick = fermeCalage;
   if ($("calageGarde")) $("calageGarde").onclick = async () => {
     const b = $("calageGarde");
+    // le retrait passe par « Retirer la carte » ; enregistrer n'écrit jamais le vide
+    if (!ENV_CAL){ ditCalage("Aucun calage en cours sur ce pavillon.", true); return; }
     b.disabled = true;
     ditCalage("Enregistrement…");
     try {

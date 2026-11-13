@@ -19,7 +19,7 @@ import { separeValeurs } from "./texte.mjs";
 import { DEFAUT_CHAMP, AUCUN_CHAMP, encode, decode, correspondance, intitule, intituleSuite,
   ACCORDS, aplani, autreFace } from "./correspondance.mjs";
 import { courant, evenementParId, majEvenement, poseSurSalon, slugifie } from "./evenements.mjs";
-import { FOURNISSEURS, SOURCES_NOM, source, sourceNom } from "./provenance.mjs";
+import { FOURNISSEURS, SOURCES_NOM, source, sourceNom, ecritSources } from "./provenance.mjs";
 import { ouvreModale, demande, confirme, gardeLaPlace } from "./fenetre-console.mjs";
 import { signale } from "./socle-console.mjs";
 import { creeFileEcritures } from "./ecritures-en-file.mjs";
@@ -405,11 +405,14 @@ function caseCritere(cle, apres) {
   i.setAttribute("aria-label", "Proposer ce champ dans les critères de recherche");
   i.onchange = async () => {
     const voulu = i.checked;
-    await ecritFiche(e, (s) => {
+    const { dernier } = await ecritFiche(e, (s) => {
       const c = { ...criteres(s) };
       if (voulu) c[cle] = true; else delete c[cle];
       return { criteres: c };
     }, "critere:" + cle);
+    /* Seul le dernier geste recale la case : cochée puis décochée vite, la
+       réponse du premier la recochait pendant que le second attendait. */
+    if (!dernier) return;
     i.checked = criteres(evenementParId(e.id) || e)[cle] === true;
     if (apres) apres(i.checked);
   };
@@ -522,35 +525,36 @@ function retireChampPerso(cle, libelle, redessine) {
       });
       /* Fiche refusée : le champ y reste, sa correspondance aussi — sans
          quoi la fiche garderait un champ que rien n'alimente plus. */
-      const e2 = ecrite && evenementParId(e.id);
-      if (!e2) { redessine(); return; }
+      if (!ecrite) { redessine(); return; }
       /* La correspondance se nettoie de son côté : elle est rangée par
-         fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
-      const corr = { ...(e2.correspondances || {}) };
-      let touche = false;
-      Object.keys(corr).forEach((src) => {
-        const bloc = { ...(corr[src] || {}) };
-        ["champs", "valeurs"].forEach((k) => {
-          // l'origine anglaise part avec la française : c'est le même champ
-          [cible, cibleEn(cle)].forEach((c) => {
-            if (!bloc[k] || bloc[k][c] === undefined) return;
-            bloc[k] = { ...bloc[k] };
-            delete bloc[k][c];
-            touche = true;
+         fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux.
+         Dans la file, comme les catégories — la même colonne, écrite d'un
+         bloc —, et calculée quand la tâche part : calculée avant, elle
+         reposait l'état d'avant une écriture de catégorie encore en file. */
+      const r = await fileFiche.ecrit(async () => {
+        const e2 = evenementParId(e.id);
+        if (!e2) throw new Error("Ce salon n'est plus chargé : correspondance non enregistrée.");
+        const corr = { ...(e2.correspondances || {}) };
+        let touche = false;
+        Object.keys(corr).forEach((src) => {
+          const bloc = { ...(corr[src] || {}) };
+          ["champs", "valeurs"].forEach((k) => {
+            // l'origine anglaise part avec la française : c'est le même champ
+            [cible, cibleEn(cle)].forEach((c) => {
+              if (!bloc[k] || bloc[k][c] === undefined) return;
+              bloc[k] = { ...bloc[k] };
+              delete bloc[k][c];
+              touche = true;
+            });
           });
+          corr[src] = bloc;
         });
-        corr[src] = bloc;
+        if (!touche) return;
+        await majEvenement(e2.id, { correspondances: corr });
+        e2.correspondances = corr;
+        poseSurSalon(e2.id, { correspondances: corr });
       });
-      /* Dans la file, comme les catégories : la même colonne, écrite d'un bloc,
-         et deux écritures croisées perdaient la première. */
-      if (touche) {
-        const r = await fileFiche.ecrit(async () => {
-          await majEvenement(e2.id, { correspondances: corr });
-          e2.correspondances = corr;
-          poseSurSalon(e2.id, { correspondances: corr });
-        });
-        if (!r.ok) signale(/** @type {Error} */ (r.erreur).message, true);
-      }
+      if (!r.ok) signale(/** @type {Error} */ (r.erreur).message, true);
       redessine();
     });
 }
@@ -968,22 +972,25 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
       };
       pose();
 
-      choixSrc.onchange = async () => {
-        const e2 = courant();
-        const avant = e2.sources;
-        e2.sources = { ...(e2.sources || {}) };
-        /* Revenir à la source des exposants efface le réglage plutôt que de
-           l'écrire : le nom la suit alors, même si on la change plus tard. */
-        if (choixSrc.value === source(e2, "stands")) delete e2.sources.nom;
-        else e2.sources.nom = { fournisseur: choixSrc.value };
+      /* Dans la file des sources (`provenance.mjs` `ecritSources`), qui ne
+         change le salon qu'une fois la base d'accord : le menu suit le geste,
+         et seul le refus du dernier le recale sur ce qu'elle tient. */
+      choixSrc.onchange = () => {
+        const voulu = choixSrc.value, id = courant().id;
         pose();
-        try { await majEvenement(e2.id, { sources: e2.sources }); }
-        catch (err) {
-          e2.sources = avant;
-          choixSrc.value = sourceNom(e2);
+        ecritSources(id, (s, e2) => {
+          /* Revenir à la source des exposants efface le réglage plutôt que de
+             l'écrire : le nom la suit alors, même si on la change plus tard. */
+          if (voulu === source(e2, "stands")) delete s.nom;
+          else s.nom = { fournisseur: voulu };
+          return s;
+        }, "nom").then(({ ok, dernier, erreur }) => {
+          if (ok) return;
+          signale(/** @type {Error} */ (erreur).message, true);
+          if (!dernier) return;
+          choixSrc.value = sourceNom(evenementParId(id) || courant());
           pose();
-          signale(err.message, true);
-        }
+        });
       };
     } else if (l.cible) {
       choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; },
@@ -1198,32 +1205,48 @@ function champOrigine(src, cible, apres, ouiNon, sansChamp) {
   /* Dans la file des écritures du salon : les catégories et le retrait d'un
      champ réécrivent la même colonne d'un bloc, et chacune doit partir de ce
      que la précédente a fait confirmer. Le salon est celui du geste, retrouvé
-     par son identifiant quand l'écriture part. */
-  const enregistre = (part) => {
+     par son identifiant quand l'écriture part.
+     `construit` reçoit le bloc de ce fournisseur tel que la base le tient à
+     ce moment-là, et rend le bloc à écrire : figé au geste, il effaçait le
+     réglage d'une autre cible fait entre-temps, ou ramenait des valeurs
+     qu'elle venait de retirer. Refusé, le dernier geste recale la liste et
+     les puces sur ce que la base tient. */
+  const enregistre = (construit) => {
     const id = courant().id;
     return fileFiche.ecrit(async () => {
       const e2 = evenementParId(id);
       if (!e2) throw new Error("Ce salon n'est plus chargé : correspondance non enregistrée.");
       const avant = e2.correspondances;
       const corr = { ...(e2.correspondances || {}) };
-      corr[src] = { ...(corr[src] || {}), ...part };
+      corr[src] = construit({ ...(corr[src] || {}) });
       e2.correspondances = corr;
       try { await majEvenement(e2.id, { correspondances: corr }); }
       catch (err) { e2.correspondances = avant; throw err; }
       poseSurSalon(e2.id, { correspondances: corr });
-    }).then((r) => { if (!r.ok) signale(/** @type {Error} */ (r.erreur).message, true); });
+    }, "correspondance:" + src + ":" + cible).then(({ ok, dernier, erreur }) => {
+      if (ok) return;
+      signale(/** @type {Error} */ (erreur).message, true);
+      if (!dernier) return;
+      const tenu = ((correspondance(evenementParId(id) || courant(), src).champs) || {})[cible];
+      reglee = tenu !== undefined;
+      sel.value = reglee ? encode(tenu) : propose1 !== null ? propose1 : DEFAUT_CHAMP;
+      dis();
+      majValeurs();
+    });
   };
 
   sel.onchange = () => {
-    const champs = { ...(correspondance(courant(), src).champs || {}) };
     const v = decode(sel.value);
     reglee = v !== undefined;
-    if (v === undefined) delete champs[cible]; else champs[cible] = v;
-    /* Les valeurs retenues appartenaient au champ précédent : les garder
-       désignerait des valeurs que le nouveau ne porte pas. */
-    const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
-    delete valeurs[cible];
-    enregistre({ champs, valeurs });
+    enregistre((b) => {
+      const champs = { ...(b.champs || {}) };
+      if (v === undefined) delete champs[cible]; else champs[cible] = v;
+      /* Les valeurs retenues appartenaient au champ précédent : les garder
+         désignerait des valeurs que le nouveau ne porte pas. */
+      const valeurs = { ...(b.valeurs || {}) };
+      delete valeurs[cible];
+      return { ...b, champs, valeurs };
+    });
     dis();
     majValeurs();
   };
@@ -1240,6 +1263,13 @@ function champOrigine(src, cible, apres, ouiNon, sansChamp) {
   const zoneValeurs = document.createElement("div");
   zoneValeurs.className = "valeurs";
   if (ouiNon) hote.appendChild(zoneValeurs);
+
+  /** Le bloc où ces valeurs-ci, figées au geste, remplacent celles de la cible. */
+  const valeursRetenues = (r) => (b) => {
+    const valeurs = { ...(b.valeurs || {}) };
+    if (r.length) valeurs[cible] = r; else delete valeurs[cible];
+    return { ...b, valeurs };
+  };
 
   function majValeurs() {
     if (!ouiNon) return;
@@ -1334,9 +1364,7 @@ function champOrigine(src, cible, apres, ouiNon, sansChamp) {
         const k = retenues.indexOf(v);
         if (i.checked && k < 0) retenues.push(v);
         if (!i.checked && k >= 0) retenues.splice(k, 1);
-        const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
-        if (retenues.length) valeurs[cible] = [...retenues]; else delete valeurs[cible];
-        enregistre({ valeurs });
+        enregistre(valeursRetenues([...retenues]));
         rappel();
       };
       zoneValeurs.appendChild(l);
@@ -1368,9 +1396,7 @@ function champOrigine(src, cible, apres, ouiNon, sansChamp) {
         const l = puce(v, true);
         l.querySelector("input").checked = true;
       });
-      const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
-      valeurs[cible] = [...retenues];
-      enregistre({ valeurs });
+      enregistre(valeursRetenues([...retenues]));
       zoneValeurs.appendChild(ajout);
       rappel();
     };

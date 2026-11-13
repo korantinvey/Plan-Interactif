@@ -14,7 +14,7 @@
    ============================================================ */
 import { DATA, TOUS, CONFERENCES } from "./donnees.mjs";
 import { conf, programmeOffert, chercheSorte, enregistreConf } from "./configuration.mjs";
-import { CLE_SECTEUR, PREFIXE_PERSO, clesCriteres, refaitCriteres, libelleCritere, liste }
+import { CLE_SECTEUR, PREFIXE_PERSO, clesCriteres, refaitCriteres, libelleCritere, appliqueFiltre }
   from "./recherche.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { reperesCherchables } from "./cartouche-poi.mjs";
@@ -117,8 +117,9 @@ export function voletRecherche(hote){
       conf("_rech")[s.cle] = e.target.checked;
       enregistreConf();
       /* La liste affichée derrière la fenêtre est peut-être un résultat de
-         recherche : elle obéit sur-le-champ, c'est le seul retour visible. */
-      liste();
+         recherche : elle obéit sur-le-champ, et le plan avec elle — la liste
+         seule laissait sur le plan l'ancien résultat. */
+      appliqueFiltre();
     };
     bloc.appendChild(l);
 
@@ -302,7 +303,11 @@ function blocOrdreCriteres(hote){
     const el = liste.querySelector('[data-cle="' + CSS.escape(focus.cle) + '"]');
     if (!el) return;
     const b = el.querySelectorAll("button.fleche");
-    if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();
+    /* Arrivé en bout de liste, la flèche demandée s'éteint : l'autre prend le
+       focus, sans quoi le rangement au clavier n'avait plus de point de départ. */
+    const vise = b[focus.sens] && !b[focus.sens].disabled ? b[focus.sens]
+      : [...b].find(x => !x.disabled);
+    if (vise) vise.focus();
   };
 
   rendu();

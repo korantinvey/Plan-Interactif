@@ -33,6 +33,10 @@ import { rappelsDuParcours } from "./rappels.mjs";
  * écarte un rappel déjà dû, ce qui est la bonne règle et vaut aussi ici.
  */
 const ESSAI_RAPPEL_AVANCE = 30000;   // ms : le temps que la tâche de la minute passe
+/* Ce que le serveur garde d'une liste (`supabase/functions/rappels`
+   `RANGS_MAX`) : l'essai en tête d'une liste pleine en chassait le dernier
+   rappel réel, alors que l'essai répondait « posé ». */
+const RAPPELS_GARDES = 60;
 
 export async function essaieRappelReel(){
   if (!RAPPELS_API || !SLUG || !poussePossible()) return "impossible";
@@ -47,6 +51,8 @@ export async function essaieRappelReel(){
   if (!reg) return "sansService";
   let ab;
   try { ab = await abonne(reg); } catch (e) { return "panne"; }
+  const reels = rappelsDuParcours();
+  if (reels.length >= RAPPELS_GARDES) return "plein";
   try {
     const r = await fetch(RAPPELS_API, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -60,7 +66,7 @@ export async function essaieRappelReel(){
           // la page d'où l'on essaie, sans ancre : toucher le message la rouvre
           adresse: location.href.split("#")[0],
           vie: 600,
-        }].concat(rappelsDuParcours()),
+        }].concat(reels),
       }),
     });
     if (r.status === 404) return "nonPublie";

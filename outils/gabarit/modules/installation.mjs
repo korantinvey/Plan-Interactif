@@ -488,12 +488,14 @@ function essaieInvitation(){
   const rappel = faconRappel();
   if (rappel ? rappelEcarte() : invitationEcartee()) return finInvitation();
 
-  if (rappel){
-    // le plan pas encore affiché, ou pas depuis assez longtemps : on repasse
-    if (!installAccueil) return;
-    const reste = installAccueil + RAPPEL_DELAI - performance.now();
-    if (reste > 0) return relanceInvitation(reste);
-  }
+  /* L'échéance se vérifie à chaque relance, et non dans le seul minuteur
+     d'accueil : l'événement de Chromium, arrivé entre les données et le délai
+     prévu, ouvrait sinon l'invitation tout de suite — et la visite guidée de
+     cette visite ne se proposait plus. */
+  // le plan pas encore affiché, ou pas depuis assez longtemps : on repasse
+  if (!installAccueil) return;
+  const reste = installAccueil + (rappel ? RAPPEL_DELAI : TUTO_DELAI + INSTALL_ACCUEIL) - performance.now();
+  if (reste > 0) return relanceInvitation(reste);
   /* Chromium n'a pas encore annoncé le plan installable : son événement
      relancera. Il vient d'ordinaire dès le chargement, mais Chrome peut aussi
      attendre un premier geste et un peu d'usage — la fenêtre attend avec lui,

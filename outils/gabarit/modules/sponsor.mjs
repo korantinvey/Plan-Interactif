@@ -386,8 +386,15 @@ export function accueilleSponsor(){
      l'attente au lieu de la remplir. Le cache, posé à l'instant, fera que la
      prochaine ouverture le montrera dès le premier trait. */
   if (performance.now() > s.secondes * 1000) return;
+  /* Déjà montré depuis le cache, puis fermé par le visiteur avant l'arrivée
+     des données : le rouvrir lui remettait sous les yeux ce qu'il venait de
+     chasser. (Les aperçus et la remise au repos d'une borne passent ailleurs.) */
+  if (montreAuDemarrage) return;
   ouvreSponsor(s);
 }
+
+/** Le générique a paru au premier trait de cette page, depuis le cache. */
+let montreAuDemarrage = false;
 
 /**
  * Le branchement du générique, appelé par `lancement.mjs` `lancePlan` à son
@@ -398,5 +405,9 @@ export function brancheSponsor(){
   /* Le générique, au premier trait de la page : avant les données, avant le plan,
      avant tout ce qu'il est censé couvrir. Il ne peut donc montrer que ce qu'une
      visite précédente a laissé sur l'appareil — voir le cache, plus haut. */
-  if (!PLAN_ADMIN) ouvreSponsor(sponsorEnCache());
+  if (!PLAN_ADMIN){
+    const s = sponsorEnCache();
+    if (s) montreAuDemarrage = true;
+    ouvreSponsor(s);
+  }
 }

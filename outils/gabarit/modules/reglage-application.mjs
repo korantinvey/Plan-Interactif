@@ -122,6 +122,17 @@ const CHOIX_ICONE_APP = [
  * côte à côte. Et jamais vides : faute de logo déposé, elles montrent celle du
  * produit, qui est bien ce que le visiteur aura.
  */
+/* La file du nom vit hors de la fenêtre : refermée puis rouvert pendant
+   qu'une écriture partait, les réglages en ouvraient une seconde, et le nom
+   d'après pouvait arriver en base avant celui d'avant. Une file par salon. */
+/** @type {Map<string, ReturnType<typeof creeFileEcritures>>} */
+const filesNom = new Map();
+const fileNomDuSalon = () => {
+  const cle = String(DATA?.slug || "");
+  if (!filesNom.has(cle)) filesNom.set(cle, creeFileEcritures());
+  return /** @type {ReturnType<typeof creeFileEcritures>} */ (filesNom.get(cle));
+};
+
 export function blocApplication(hote){
   const tete = document.createElement("div");
   tete.className = "titreReg";
@@ -295,7 +306,7 @@ export function blocApplication(hote){
      en route en lançait une seconde, et la plus lente l'emportait — l'ancien
      nom pouvait rester. Seule la dernière dit où l'on en est
      (`ecritures-en-file.mjs`). */
-  const fileNom = creeFileEcritures();
+  const fileNom = fileNomDuSalon();
   nom.oninput = () => {
     clearTimeout(minuteurNom);
     ditNom.dataset.mal = "false";

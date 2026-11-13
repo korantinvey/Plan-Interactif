@@ -86,4 +86,6 @@ module.exports = {
   "Percer le fond de carte : les surfaces de ce calque le laissent vide":
     "Punch through the base map: this layer's areas leave it blank",
   "Ne plus percer le fond de carte": "Stop punching through the base map",
+  // « Enregistrer » sans calage en cours : il n'écrit jamais le vide
+  "Aucun calage en cours sur ce pavillon.": "No positioning in progress on this hall.",
 };

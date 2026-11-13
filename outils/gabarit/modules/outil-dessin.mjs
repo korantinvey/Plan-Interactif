@@ -72,6 +72,10 @@ export { enregistreDessins, memorise, pictoVerrou };
 
 function restaure(source, autre){
   if (!source.length) return false;
+  /* Pendant un glissement, la forme tirée est celle de l'état en place : le
+     remplacer laissait le geste écrire dans un objet que plus rien ne lit. On
+     défait une fois la main levée. */
+  if (geste) return false;
   autre.push(instantane());
   DESSINS[P().id] = source.pop();
   if (calqueActif && !trouveCalque(calqueActif)) activeCalque(null);
@@ -88,7 +92,8 @@ function restaure(source, autre){
 }
 export function annule(){
   // pendant un tracé, on retire le dernier sommet plutôt que l'action entière
-  if (enCours && enCours.pts.length > 1){
+  // (un cadre n'a que deux coins : lui en retirer un le laissait sans second point)
+  if (enCours && !estCadre(enCours) && enCours.pts.length > 1){
     enCours.pts.pop();
     apercu(cheminForme({ t: "ligne", pts: enCours.pts }));
     apercuGuide(null);
@@ -301,10 +306,14 @@ function ditImagePosee(f, sinon){
 
 function importeImage(fichier, centre){
   if (!fichier || fichier.type.indexOf("image/") !== 0) return;
+  /* Le pavillon du dépôt : passé à un autre pendant la lecture, l'image y
+     serait posée aux coordonnées du premier. */
+  const plan = P().id;
   const fr = new FileReader();
   fr.onload = () => {
     const img = new Image();
     img.onload = () => {
+      if (P().id !== plan) return;
       const k = Math.min(1, MAX_PX / Math.max(img.width, img.height));
       const c = document.createElement("canvas");
       c.width = Math.round(img.width * k);

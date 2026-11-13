@@ -31,6 +31,8 @@ export const NOM_VOLET_SUGGESTION = "Suggestion";
    secteur, donc souvent le premier qu'il a retenu. Trois laissent de quoi
    proposer quand même, sans publier un classement. */
 const SUGG_CHAMPIONS = 3;
+/** Le numéro du dernier relevé du classement demandé. */
+let relevesSugg = 0;
 
 /* ------------------------------------------------------------
    Ce que le salon porte, vu du critère
@@ -138,6 +140,15 @@ export function voletSuggestion(hote){
       "critères se désignent dans la console, sur la fiche du salon ; le " +
       "secteur en est un dès que « Montrer les secteurs » est coché.";
     hote.appendChild(a);
+    /* Les secteurs se cochent dans « Admin », la fenêtre ouverte : revenu ici,
+       le volet relit les critères au lieu de garder son alerte jusqu'à la
+       réouverture. */
+    hote.rafraichit = () => {
+      if (!clesCriteres().length) return;
+      delete hote.rafraichit;
+      hote.textContent = "";
+      voletSuggestion(hote);
+    };
     return;
   }
 
@@ -175,7 +186,14 @@ export function voletSuggestion(hote){
        large — le secteur quand il y en a un. Retenu pour de bon, et non le
        temps d'afficher la liste : c'est déjà celui sur lequel les visiteurs
        seront rapprochés. */
-    if (!critereSugg()){ r.critere = cles[0]; enregistreConf(); }
+    /* Les tables de l'ancien critère partent avec lui, comme au changement à
+       la main : deux critères oui/non partagent la clé « Oui », et ses
+       exposants passaient d'un groupe à l'autre. */
+    if (!critereSugg()){
+      r.critere = cles[0];
+      delete r.fixes; delete r.auto; delete r.releve;
+      enregistreConf();
+    }
 
     const crit = champZone(corps, "Critère de rapprochement",
       document.createElement("select"),
@@ -329,7 +347,11 @@ export function voletSuggestion(hote){
     const releve = (dire) => {
       b.disabled = true;
       if (dire){ etat.dataset.mal = "false"; etat.textContent = "Lecture des compteurs…"; }
+      /* Un relevé parti pour un autre critère, ou dépassé par un plus récent,
+         n'écrit rien : il aurait rangé les exposants de A sous le critère B. */
+      const n = ++relevesSugg, pour = cle;
       return relevePalmares(cle).then(auto => {
+        if (n !== relevesSugg || r.critere !== pour){ b.disabled = false; return; }
         /* On n'écrit que si quelque chose a bougé : ce volet se relève à chaque
            ouverture, et republier un relevé identique ferait repartir la
            configuration entière pour rien. */
@@ -388,6 +410,8 @@ export function voletSuggestion(hote){
       rang.innerHTML = '<span class="nV"></span><select></select>' +
         '<span class="cV"></span>';
       rang.querySelector(".nV").textContent = nomValeurSugg(cle, v);
+      // la liste dit la valeur qu'elle règle : son intitulé n'est pas une étiquette
+      rang.querySelector("select").setAttribute("aria-label", nomValeurSugg(cle, v));
       rang.querySelector(".cV").textContent = expos.length + " exposants";
       const s = rang.querySelector("select");
       s.innerHTML = '<option value="">— aucun —</option>' +

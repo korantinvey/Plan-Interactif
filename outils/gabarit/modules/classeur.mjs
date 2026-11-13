@@ -107,8 +107,9 @@ function archiveZip(fichiers){
    ------------------------------------------------------------------ */
 /* Un nom d'exposant vient d'un fournisseur, et rien n'y interdit un caractère
    de commande. XML 1.0 les refuse : Excel n'ouvrirait pas le fichier, et
-   l'erreur ne dirait pas pourquoi. On les retire avant d'échapper le reste. */
-const texteXml = (v) => esc(String(v == null ? "" : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ""));
+   l'erreur ne dirait pas pourquoi. On les retire avant d'échapper le reste —
+   et avec eux U+FFFE et U+FFFF, que XML 1.0 refuse de même. */
+const texteXml = (v) => esc(String(v == null ? "" : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/g, ""));
 
 /** « A », « B », … « AA » : la référence d'une colonne, à partir de 1. */
 function colonneXl(n){

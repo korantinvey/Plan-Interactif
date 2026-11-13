@@ -691,6 +691,38 @@ function marqueType(o){
   if (o.type) g.setAttribute("data-type", o.type); else g.removeAttribute("data-type");
 }
 
+/**
+ * Rattache à la zone `o` les salles cochées, et lui retire les autres. Une
+ * seule règle pour les zones de la source et celles ajoutées à la main :
+ * écrite deux fois, l'une aurait fini par marquer « manuel » autrement que
+ * l'autre, et la synchronisation suivante les aurait traitées différemment.
+ */
+const rattacheSallesA = (o, salles) => (t) => Object.keys(t).forEach(id => {
+  const s = t[id];
+  const ici = salles.indexOf(id) >= 0;
+  // une salle qui est déjà où on la veut n'a pas à être réécrite : le choix
+  // d'une zone ne touche pas au rattachement des salles des autres
+  if (!s || ici === (s.zone === o.id)) return;
+  s.zone = ici ? o.id : null;
+  /* « manuel » protège du prochain rattachement automatique. Retirer d'ici
+     une salle que la synchronisation y avait posée est un choix comme un
+     autre : sans cette marque, elle y reviendrait à la synchronisation
+     suivante. */
+  s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
+});
+
+/** Les champs de la fiche d'une zone, tels qu'ils s'écrivent dans `zones_fiches`. */
+function champsFicheZone(v){
+  return {
+    type: TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "",
+    logo: imageSure(v.logo),
+    description: String(v.description || ""),
+    nom_en: String(v.libelleEn || "").trim(),
+    description_en: String(v.descriptionEn || ""),
+    lien: adresseSure(v.lien),
+  };
+}
+
 async function enregistreZone(o, v, depart){
   if (o.ajout) return enregistreZoneAjoutee(o, v, depart);
   const nom = String(v.libelle || "").trim();
@@ -720,19 +752,9 @@ async function enregistreZone(o, v, depart){
      On n'y touche que si la case a bougé. */
   const traverse = !!v.traversable;
   const ouvre_ = !depart || !!depart.traversable !== traverse;
-  const rattacheSalles = (t) => Object.keys(t).forEach(id => {
-    const s = t[id];
-    const ici = salles.indexOf(id) >= 0;
-    // une salle qui est déjà où on la veut n'a pas à être réécrite : le choix
-    // d'une zone ne touche pas au rattachement des salles des autres
-    if (!s || ici === (s.zone === o.id)) return;
-    s.zone = ici ? o.id : null;
-    /* « manuel » protège du prochain rattachement automatique. Retirer d'ici
-       une salle que la synchronisation y avait posée est un choix comme un
-       autre : sans cette marque, elle y reviendrait à la synchronisation
-       suivante. */
-    s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
-  });
+  const rattacheSalles = rattacheSallesA(o, salles);
+  const voulu = champsFicheZone(v), avant = depart ? champsFicheZone(depart) : null;
+  const touches = Object.keys(voulu).filter(k => !avant || voulu[k] !== avant[k]);
   /* La fiche de la zone suivante s'ouvre avant que la base ait répondu, et le
      plan se redessine dans la foulée : tous deux doivent lire le rattachement
      qu'on vient de choisir, pas celui d'avant. L'écriture dira le dernier mot,
@@ -742,14 +764,14 @@ async function enregistreZone(o, v, depart){
     ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
       } }] : []),
+    /* Partie de l'entrée relue en base, et seuls les champs qui ont changé
+       depuis l'ouverture s'y écrivent : reposer l'entrée entière rendait à
+       une description corrigée entre-temps sur un autre poste la valeur
+       qu'on avait chargée. (Un champ qu'on n'a pas touché ne touche donc pas
+       à sa colonne.) */
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
-        const fiche = {};
-        if (genre) fiche.type = genre;
-        if (blason) fiche.logo = blason;
-        if (description) fiche.description = description;
-        if (nomEn) fiche.nom_en = nomEn;
-        if (descriptionEn) fiche.description_en = descriptionEn;
-        if (adresse) fiche.lien = adresse;
+        const fiche = { ...(t[o.id] || {}) };
+        touches.forEach(k => { if (voulu[k]) fiche[k] = voulu[k]; else delete fiche[k]; });
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
@@ -779,13 +801,23 @@ async function enregistreZone(o, v, depart){
     if (o.origine === undefined) o.origine = o.nom;
     o.nom = nom || o.origine || null;
   }
-  o.description = description;
-  o.nom_en = nomEn || undefined;
-  o.description_en = descriptionEn || undefined;
+  /* Ce qu'on n'a pas touché vaut ce que la base a gardé : un autre poste a
+     pu le changer pendant que la fiche était ouverte, et la fiche fusionnée
+     le tient. Le reprendre du formulaire réaffichait l'ancienne valeur
+     au-dessus d'une base qui avait la nouvelle. La règle est celle du
+     serveur : une entrée de la fiche l'emporte sur la source, une entrée
+     absente la laisse. */
+  const fusion = (DATA.fichesZones || {})[o.id] || {};
+  const tient = (/** @type {string} */ k, /** @type {any} */ mien) =>
+    touches.includes(k) || fusion[k] === undefined ? mien : fusion[k];
+  o.description = tient("description", description);
+  o.nom_en = tient("nom_en", nomEn) || undefined;
+  o.description_en = tient("description_en", descriptionEn) || undefined;
   nomsAnglaisDesZones();
-  o.lien = adresse;
-  o.logo = blason;
-  o.type = genre;
+  // relus comme à la saisie : ce qui vient de la base passe les mêmes filtres
+  o.lien = adresseSure(tient("lien", adresse));
+  o.logo = imageSure(tient("logo", blason));
+  o.type = champsFicheZone({ type: tient("type", genre) }).type;
   marqueType(o);
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
   o.rech = pourRecherche(String(o.nom || "") + " " + String(o.nom_en || ""));
@@ -841,13 +873,7 @@ async function enregistreZoneAjoutee(o, v, depart){
      déjà rangé dans la configuration. */
   const salles = Array.isArray(v.salles) ? v.salles : null;
   if (salles && (!depart || String(depart.salles) !== String(salles))){
-    const rattache = (t) => Object.keys(t).forEach(id => {
-      const s = t[id];
-      const ici = salles.indexOf(id) >= 0;
-      if (!s || ici === (s.zone === o.id)) return;
-      s.zone = ici ? o.id : null;
-      s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
-    });
+    const rattache = rattacheSallesA(o, salles);
     rattache(DATA.salles || {});
     rangeConferences();
     const tables = await ecritColonnesEvenement([

@@ -190,8 +190,12 @@ export async function figeLeFond(/** @type {any} */ cal, /** @type {(txt: string
     });
     carte.setStyle(style, { transformStyle: (/** @type {any} */ _a, /** @type {any} */ apres) =>
       borneLeStyle(apres, bornes) });
+    /* Borné comme l'attente des tuiles : un style qui ne répond jamais
+       laissait le bouton éteint, « préparation… » à l'écran, et la carte hors
+       écran en mémoire — le `finally` ne venait pas. */
     await new Promise((ok, non) => {
-      carte.once("load", ok);
+      const delai = setTimeout(() => non(new Error("le style ne répond pas")), ATTENTE_VUE);
+      carte.once("load", () => { clearTimeout(delai); ok(undefined); });
       /* Seul le style arrête tout : une tuile refusée — hors couverture, une
          panne passagère — laisse un trou dans une image, et le moteur passe
          à la suivante. */

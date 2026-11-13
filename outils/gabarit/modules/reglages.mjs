@@ -36,7 +36,7 @@ import { NOM_VOLET_SUGGESTION, voletSuggestion }
   from "./reglage-suggestion.mjs";
 import { voletEnvirons } from "./calage-carte.mjs";
 import { NOM_VOLET_MESURE, voletMesure } from "./chaleur.mjs";
-import { conf, optionActive, suggestionOfferte, enregistreConf } from "./configuration.mjs";
+import { conf, optionActive, suggestionOfferte, enregistreConf, CONF_ECRITE } from "./configuration.mjs";
 import { VISITE_MIN, VISITE_MAX, minutesVisite } from "./horaires.mjs";
 import { NOM_VOLET_PARCOURS } from "./seuil.mjs";
 import { voletRecherche } from "./reglage-recherche.mjs";
@@ -45,6 +45,18 @@ import { montre } from "./corps-fiche.mjs";
 import { ouvre } from "./fiche.mjs";
 import { DISTINCTIONS } from "./distinctions.mjs";
 import { libelles } from "./libelles.mjs";
+
+/* L'onglet « Suggestion » s'éteint quand l'option n'est pas prise. Il suit
+   l'option tant que la fenêtre est ouverte : cochée depuis « Admin », elle
+   laissait sinon l'onglet gris jusqu'à la réouverture. */
+/** @type {HTMLButtonElement | null} */
+let ongletSuggestion = null;
+CONF_ECRITE.ecoute(() => {
+  if (!ongletSuggestion || !ongletSuggestion.isConnected) return;
+  const eteint = !suggestionOfferte();
+  ongletSuggestion.classList.toggle("eteint", eteint);
+  ongletSuggestion.disabled = eteint;
+});
 
 /* Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
    qui l'a ouvert. Un temps plus tard, et non dans le crochet : la fenêtre
@@ -148,6 +160,7 @@ export function ouvreReglages(ouvrir){
        qu'elle emprunte. Son option se ferme depuis « Admin » ; l'onglet reste
        alors là, grisé, parce qu'une option se voit pour être prise. */
     voletSuggestion(volet(NOM_VOLET_SUGGESTION, !suggestionOfferte()));
+    ongletSuggestion = boutons[boutons.length - 1];
     /* « Fiche Stand » ferme la série de ce que le visiteur obtient : on ne
        range les champs qu'une fois qu'on sait lesquels paraissent, et son
        aperçu emprunte l'habillage que l'onglet suivant choisit. */

@@ -108,7 +108,12 @@ function sansFond(src){
       if (!cc) return tenu({ src, lr: w / h });
       cc.drawImage(c, x0, y0, cw, ch, 0, 0, cw, ch);
       // webp garde la transparence ; un navigateur qui ne sait pas l'écrire répond en png
-      tenu({ src: coupe.toDataURL("image/webp", .85), lr: cw / ch });
+      const net = coupe.toDataURL("image/webp", .85);
+      /* Ce png, au fond transparent, pouvait peser bien plus que ce que
+         `reduitLogo` avait accepté — et chaque camion porte sa copie : la
+         configuration passait le quota du poste sans le dire. Plus lourd que
+         l'original, le recadrage n'est pas gardé. */
+      tenu(net.length <= src.length ? { src: net, lr: cw / ch } : { src, lr: w / h });
     };
     im.src = src;
   });

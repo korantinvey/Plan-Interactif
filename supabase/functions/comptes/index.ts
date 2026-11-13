@@ -130,7 +130,34 @@ Deno.serve(async (req) => {
       const { data: profils, error } = await db
         .from("profil").select("id,email,nom,prenom,role,cree_le").order("cree_le");
       if (error) throw new Error(error.message);
-      const { data: liens } = await db.from("acces").select("profil_id,evenement_id");
+      /* Lus par tranches, et leur échec dit : une lecture refusée donnait à
+         chaque compte une liste vide, une table au-delà du plafond de
+         PostgREST (mille lignes) une liste tronquée, sans un mot. Et la
+         console renvoie cette liste à l'enregistrement suivant :
+         `remplace_acces` effaçait alors les salons manquants.
+
+         Chaque tranche reprend après la dernière ligne lue, et non à un rang :
+         les tranches ne partagent pas d'instantané, et une ligne effacée avant
+         le rang (`remplace_acces` efface puis repose) faisait reculer la
+         suivante d'un cran — jamais lue. Les identifiants sont des uuid : ils
+         se posent tels quels dans le filtre. */
+      const liens: { profil_id: string; evenement_id: string }[] = [];
+      let apres: { profil_id: string; evenement_id: string } | null = null;
+      for (;;) {
+        let requete = db.from("acces")
+          .select("profil_id,evenement_id")
+          .order("profil_id").order("evenement_id")
+          .limit(1000);
+        if (apres) {
+          requete = requete.or(`profil_id.gt.${apres.profil_id},and(profil_id.eq.${apres.profil_id},evenement_id.gt.${apres.evenement_id})`);
+        }
+        const { data: tranche, error: refus } = await requete;
+        if (refus) throw new Error(refus.message);
+        if (!tranche || !tranche.length) break;
+        liens.push(...tranche);
+        if (tranche.length < 1000) break;
+        apres = tranche[tranche.length - 1];
+      }
 
       /* Une invitation partie mais jamais ouverte se voit ici, et nulle part
          ailleurs : c'est ce qui distingue « compte créé » de « compte actif ».

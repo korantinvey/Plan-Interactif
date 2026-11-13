@@ -200,7 +200,8 @@ export function chargeParcours(){
   /* Un identifiant illisible — un stockage à moitié écrit, une version d'avant
      — vaut une absence : le prochain plan en tire un neuf plutôt que d'écrire
      sous un nom qui ne désigne rien. */
-  ID_PARCOURS = FORME_ID_PARCOURS.test(b.id) ? b.id : "";
+  // (un identifiant absent devenait « undefined », que la forme acceptait)
+  ID_PARCOURS = typeof b.id === "string" && FORME_ID_PARCOURS.test(b.id) ? b.id : "";
   PARCOURS = { stands: [], confs: [] };
   MIS_DE_COTE = { stands: [], confs: [] };
   trieParcours("stands", Array.isArray(b.stands) ? b.stands.map(String) : [],

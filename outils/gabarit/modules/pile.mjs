@@ -211,6 +211,8 @@ export function remplitPanneau(){
     /* couleur — peinte à chaque événement, retenue une fois le glissement
        fini : voir « La rafale du sélecteur de couleur » dans `nuancier.mjs`. */
     const cc = d.querySelector(".cc");
+    // le sélecteur est hors de l'étiquette : il dit lui-même ce qu'il colore
+    cc.setAttribute("aria-label", "Couleur : " + x.nom);
     cc.value = (x.t === "dessin" ? x.ref.couleur : c.couleur) || defautCouleur(x);
     suitNuancier(cc,
       v => {
@@ -501,6 +503,7 @@ function ligneCouleur(libelle, valeur, peint){
                 '<span class="opts"><input type="color" class="cc"></span>';
   d.querySelector("label span").textContent = libelle;
   const cc = d.querySelector(".cc");
+  cc.setAttribute("aria-label", "Couleur : " + libelle);
   cc.value = valeur;
   suitNuancier(cc, peint, enregistreConf);
   return d;
@@ -540,6 +543,7 @@ function rangSous(hote, cle, libelle, defaut, applique){
     c.visible = e.target.checked; enregistreConf(); applique();
   };
   const cc = d.querySelector(".cc");
+  cc.setAttribute("aria-label", "Couleur : " + libelle);
   cc.value = c.couleur || defaut();
   suitNuancier(cc, v => { c.couleur = v; applique(); }, enregistreConf);
   const fb = d.querySelector(".fillbtn");
