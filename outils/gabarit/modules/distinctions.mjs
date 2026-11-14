@@ -28,6 +28,7 @@ import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
 import { rayonTuile } from "./ambiance.mjs";
+import { suitLaRacine } from "./jetons-racine.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -288,6 +289,12 @@ export function dessineDists(){
     '<g class="dM d-' + esc(t.cle) + '"' + (dim.has(t.id) ? ' opacity=".22"' : "") + ' data-sur="' + esc(t.id) + '">' +
     t.d + '</g>').join("");
 }
+
+/* Une marque sans teinte propre prend l'accent du salon, écrit en attribut :
+   l'exploitant qui le change doit la voir suivre, comme la feuille la faisait
+   suivre quand elle la peignait. Le relevé se refait quand l'une des teintes a
+   bougé (`modesDuPlan`), et seulement alors (`jetons-racine.mjs`). */
+suitLaRacine(() => DATA ? modesDuPlan() : "", dessineDists);
 
 /**
  * Les marques d'une ligne de la liste, en trois morceaux : ce qui précède le

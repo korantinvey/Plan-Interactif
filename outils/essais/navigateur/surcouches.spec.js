@@ -6,15 +6,16 @@
  * retrait en attributs (`modules/distinctions.mjs` `traceDist`), la zone que
  * désigne la visite guidée son halo et son trait (`modules/tutoriel.mjs`
  * `marqueZoneTuto`), les liserés de la sélection et du parcours leurs couleurs
- * et leurs traits (`modules/parcours.mjs` `dessineMarques`), et la feuille ne
- * les peint plus. On compare, pour chaque réglage, ce que le dessin tire du
+ * et leurs traits (`modules/parcours.mjs` `dessineMarques`), le trajet et ses
+ * pastilles les leurs (`modules/trace-itineraire.mjs` `peintItineraire`), et
+ * la feuille ne les peint plus. On compare, pour chaque réglage, ce que le dessin tire du
  * bloc par la lecture d'avant — le style calculé — et par la sienne — les
  * attributs : un écart dirait qu'une règle de la feuille les peint encore, ou
  * qu'un attribut se lit de travers. Puis on vérifie que les marques portent
  * bien la teinte réglée, et le retrait d'une recherche.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, avecUnProgramme, commenceLaVisite, DONNEES } = require("./aide.js");
+const { prepare, attendLaListe, avecUnProgramme, commenceLaVisite, standAViser, DONNEES } = require("./aide.js");
 
 /** SMCL 2026, des nouveaux venus et des adhérents, et ces deux marques sur le plan. */
 function avecDistinctions(modeNeuf, modeAdherent, couleur) {
@@ -56,6 +57,15 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
       const teintes = await page.evaluate(() => [...document.querySelectorAll("#dists .dM.d-neuf [fill], #dists .dM.d-neuf [stroke]")]
         .map((n) => n.getAttribute(n.getAttribute("fill") === "none" ? "stroke" : "fill")));
       expect(new Set(teintes)).toEqual(new Set([couleur]));
+    }
+
+    /* Sans teinte propre, les marques prennent l'accent du salon : l'exploitant
+       qui le change doit les voir suivre, comme la feuille les faisait suivre. */
+    if (!couleur) {
+      await page.evaluate(() => document.documentElement.style.setProperty("--accent", "#123456"));
+      await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("#dists .dM.d-neuf [fill], #dists .dM.d-neuf [stroke]")]
+        .map((n) => n.getAttribute(n.getAttribute("fill") === "none" ? "stroke" : "fill")).every((t) => t === "#123456")))
+        .toBe(true);
     }
 
     // une recherche retire des stands : leurs marques s'effacent avec eux, en attribut
@@ -170,3 +180,85 @@ for (const ambiance of ["", "&ambiance=tuiles"]) {
     expect(erreurs).toEqual([]);
   });
 }
+
+/** Les attributs des formes du trajet, par sorte. */
+const formesDuTrajet = (page) => page.evaluate(() => [...document.querySelectorAll("#itin > *")].map((n) => ({
+  sorte: n.getAttribute("class"), fill: n.getAttribute("fill"), stroke: n.getAttribute("stroke"),
+  largeur: n.getAttribute("stroke-width"), opacite: n.getAttribute("opacity"),
+})));
+
+test.describe("le trajet se lit dans ses attributs", () => {
+  /* Sans mouvement, le trait paraît entier d'un coup (`REDUIT`) : on compare
+     ce qu'il est une fois arrivé, et non une image de son écriture. */
+  test.beforeEach(async ({ page }) => { await page.emulateMedia({ reducedMotion: "reduce" }); });
+
+  test("d'un stand à un autre", async ({ page }) => {
+    const erreurs = await prepare(page);
+    // en SVG : on compare deux lectures du même bloc, sans attendre le dessin
+    await page.goto("/plan?plan=smcl-2026&rendu=svg");
+    const lignes = await attendLaListe(page);
+    await lignes.nth(0).click();
+    await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
+    await expect(page.locator("#viseur")).toBeVisible();
+    const autre = await standAViser(page, { sauf: await page.inputValue("#iArrivee") });
+    expect(autre, "un autre stand à toucher sur le plan").not.toBeNull();
+    await page.mouse.click(autre.x, autre.y);
+    await expect(page.locator("#iResume")).toContainText("m ·", { timeout: 30_000 });
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll("#itin .iBout").length)).toBe(2);
+
+    const compare = async () => {
+      const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("itin")));
+      expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
+      expect(r.formes).toBeGreaterThan(4);
+    };
+    await compare();
+    const a = await accent(page);
+    const f = await formesDuTrajet(page);
+    expect(f.find((x) => x.sorte === "iLueur l1")).toMatchObject({ fill: "none", stroke: a, largeur: "24", opacite: ".1" });
+    expect(f.find((x) => x.sorte === "iLueur l2")).toMatchObject({ stroke: a, largeur: "12", opacite: ".2" });
+    // le fil va du clair au foncé de la couleur du salon, tronçon par tronçon
+    const traits = f.filter((x) => x.sorte === "iTrait");
+    expect(traits.length).toBeGreaterThan(1);
+    for (const t of traits) expect(t.stroke).toMatch(/^color-mix\(in srgb, #[0-9A-Fa-f]{6} \d+%, #[0-9A-Fa-f]{6}\)$/);
+    expect(new Set(traits.map((t) => t.stroke)).size).toBeGreaterThan(1);
+    // le départ plein, l'arrivée cerclée
+    const surface = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--surface").trim());
+    expect(f.find((x) => x.sorte === "iBout")).toMatchObject({ fill: a, stroke: surface, largeur: "2.5", opacite: null });
+    expect(f.find((x) => x.sorte === "iBout fin")).toMatchObject({ fill: surface, stroke: a, largeur: "2.5", opacite: null });
+
+    // l'accent changé : le trajet se repeint de lui-même
+    await page.evaluate(() => document.documentElement.style.setProperty("--accent", "#123456"));
+    await expect.poll(async () => (await formesDuTrajet(page)).find((x) => x.sorte === "iLueur l1").stroke).toBe("#123456");
+    await compare();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("une journée organisée, ses étapes numérotées", async ({ page }) => {
+    const erreurs = await prepare(page);
+    // quatre stands retenus, comme le plan les aurait gardés
+    const retenus = DONNEES.plans[0].stands.slice(0, 4).map((s) => s.id);
+    await page.addInitScript((ids) => {
+      localStorage.setItem("plan-parcours:smcl-2026", JSON.stringify({ stands: ids, confs: [] }));
+    }, retenus);
+    await page.goto("/plan?plan=smcl-2026&rendu=svg");
+    await attendLaListe(page);
+    await page.click("#btnParcours");
+    await page.click("#btnJournee");
+    await page.locator("#modale.open").getByRole("button", { name: "Organiser", exact: true }).click();
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll("#itin .iNum").length), { timeout: 30_000 })
+      .toBeGreaterThan(1);
+
+    const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("itin")));
+    expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
+    const a = await accent(page);
+    const surface = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--surface").trim());
+    const f = await formesDuTrajet(page);
+    // seule la prochaine étape est pleine, son chiffre en blanc ; les autres cerclées
+    expect(f.filter((x) => x.sorte === "iBout num proche")).toEqual([
+      expect.objectContaining({ fill: a, stroke: surface })]);
+    for (const b of f.filter((x) => x.sorte === "iBout num")) expect(b).toMatchObject({ fill: surface, stroke: a });
+    expect(f.find((x) => x.sorte === "iNum proche")).toMatchObject({ fill: surface });
+    for (const n of f.filter((x) => x.sorte === "iNum")) expect(n).toMatchObject({ fill: a });
+    expect(erreurs).toEqual([]);
+  });
+});

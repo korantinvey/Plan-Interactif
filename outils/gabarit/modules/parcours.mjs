@@ -15,6 +15,7 @@ import { creeEvenement } from "./evenement.mjs";
 import { avive } from "./couleurs.mjs";
 import { inscritTiroirExclusif } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
+import { suitLaRacine } from "./jetons-racine.mjs";
 import { SLUG } from "./salon.mjs";
 import { jetonMesure, mesure } from "./mesure.mjs";
 import { momentLocal } from "./temps.mjs";
@@ -374,7 +375,7 @@ function calqueMarques(){
  * dessin aussi, sans demander au navigateur un style calculé
  * (`style-attributs.mjs`, `docs/migration-webgl.md`, étape 2). Les couleurs
  * sont donc résolues ici, une fois par tracé du calque, et le calque se
- * retrace quand l'une d'elles change sur la racine (`guetteRacine`).
+ * retrace quand l'une d'elles change sur la racine (`jetons-racine.mjs`).
  */
 /**
  * L'encadrement d'une tuile choisie, dans sa propre teinte. En Tuiles, la
@@ -392,12 +393,14 @@ function traitTuile(/** @type {Element} */ p){
   return c ? "rgb(" + c.slice(0, 3).join(",") + ")" : null;
 }
 
-/* Ce dont dépend le style des marques, lu sur la racine : les deux couleurs
-   réglées (`apparence.mjs` `appliqueCouleursData`), l'accent qui les remplace
-   quand elles sont vides, et les classes qui changent ce qu'on trace. La
-   teinte d'une tuile choisie se tire de celle des stands et de la sélection. */
-function jetonsMarques(){
-  const r = document.documentElement, cs = getComputedStyle(r);
+/* Ce dont dépend le style des marques : les deux couleurs réglées
+   (`apparence.mjs` `appliqueCouleursData`), l'accent qui les remplace quand
+   elles sont vides, et les classes de la racine qui changent ce qu'on trace.
+   La teinte d'une tuile choisie se tire de celle des stands et de la
+   sélection. Les couleurs se lisent sur le calque, qui les hérite comme la
+   feuille les lui donnait. */
+function jetonsMarques(/** @type {CSSStyleDeclaration} */ cs){
+  const r = document.documentElement;
   const v = (/** @type {string} */ n) => cs.getPropertyValue(n).trim();
   const accent = v("--accent");
   return {
@@ -413,8 +416,6 @@ function jetonsMarques(){
     teintes: v("--c-stand") + "|" + v("--c-zone") + "|" + v("--c-sel") + "|" + v("--c-survol"),
   };
 }
-const signature = (/** @type {ReturnType<typeof jetonsMarques>} */ j) => JSON.stringify(j);
-let dernierTrace = "";
 
 /* Le trait commun aux deux marques : sans aplat, d'une épaisseur fixe à
    l'écran quel que soit le zoom. */
@@ -427,8 +428,8 @@ export function dessineMarques(){
      sans stands. */
   const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
   const vu = { stands: montree("stands"), zones: montree("zones") };
-  const j = jetonsMarques();
-  dernierTrace = signature(j);
+  const calque = calqueMarques();
+  const j = jetonsMarques(getComputedStyle(calque));
   let parc = "", sel = "";
   document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
     if (!vu[g.parentNode.id]) return;
@@ -450,26 +451,14 @@ export function dessineMarques(){
     }
   });
   // la sélection en dernier : c'est elle qu'on vient de désigner
-  calqueMarques().innerHTML = parc + sel;
+  calque.innerHTML = parc + sel;
 }
 
 /* Une couleur réglée, l'accent, l'ambiance, un cartouche ouvert : autant de
    jetons et de classes posés sur la racine, que la feuille suivait d'elle-même
-   quand elle peignait les marques. Le calque se retrace quand ce qu'il en
-   tire a changé, et seulement alors : la racine change à chaque frappe dans la
-   recherche, et le tracé n'en dépend pas. Rien avant le premier tracé — le
-   plan n'est pas monté. */
-function guetteRacine(){
-  let attente = 0;
-  new MutationObserver(() => {
-    if (attente || !$("marques")) return;
-    attente = requestAnimationFrame(() => {
-      attente = 0;
-      if (signature(jetonsMarques()) !== dernierTrace) dessineMarques();
-    });
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style"] });
-}
-guetteRacine();
+   quand elle peignait les marques (`jetons-racine.mjs`). Rien avant le
+   premier tracé — le plan n'est pas monté. */
+suitLaRacine(cs => JSON.stringify(jetonsMarques(cs)), () => { if ($("marques")) dessineMarques(); });
 
 /**
  * Ce qu'un visiteur a retenu, marqué sur le plan.

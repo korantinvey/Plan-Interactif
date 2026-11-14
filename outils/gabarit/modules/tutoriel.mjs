@@ -59,6 +59,7 @@ import { calqueActif, enCours } from "./calques-dessin.mjs";
 import { formeSel } from "./forme-choisie.mjs";
 import { TUTO, poseTuto } from "./visite-guidee.mjs";
 import { emplacements, groupeEmplacement, poseCibleTuto } from "./etat-emplacements.mjs";
+import { suitLaRacine } from "./jetons-racine.mjs";
 
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
    `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
@@ -986,6 +987,23 @@ function rafaleTuto(){
   TUTO.raf = requestAnimationFrame(image);
 }
 
+/* Le halo et le trait de la zone désignée, de la couleur principale. */
+const traitsZoneTuto = (/** @type {string} */ accent) => ({
+  halo: { fill: accent, "fill-opacity": ".16", stroke: accent, "stroke-width": "10", "stroke-opacity": ".22" },
+  trait: { fill: "none", stroke: accent, "stroke-width": "3" },
+});
+/* L'accent changé pendant la visite : la zone désignée le suit, comme la
+   feuille la faisait suivre quand elle la peignait (`jetons-racine.mjs`). */
+suitLaRacine(cs => cs.getPropertyValue("--accent").trim(), () => {
+  const g = $("tutoZone");
+  if (!g || !g.firstChild) return;
+  const traits = traitsZoneTuto(getComputedStyle(g).getPropertyValue("--accent").trim());
+  g.querySelectorAll("path").forEach(p => {
+    const a = traits[/** @type {"halo" | "trait"} */ (p.getAttribute("class"))];
+    if (a) for (const [k, v] of Object.entries(a)) p.setAttribute(k, v);
+  });
+});
+
 /**
  * La zone à toucher, recopiée au-dessus du plan.
  *
@@ -1033,11 +1051,7 @@ function marqueZoneTuto(z){
      peigne. Un halo pâle et large, puis le trait de la couleur principale,
      d'épaisseur fixe à l'écran. Seul le battement reste à la feuille : le
      dessin ne le rejoue pas. */
-  const accent = getComputedStyle(racine).getPropertyValue("--accent").trim();
-  const traits = {
-    halo: { fill: accent, "fill-opacity": ".16", stroke: accent, "stroke-width": "10", "stroke-opacity": ".22" },
-    trait: { fill: "none", stroke: accent, "stroke-width": "3" },
-  };
+  const traits = traitsZoneTuto(getComputedStyle(g).getPropertyValue("--accent").trim());
   for (const [cls, attrs] of Object.entries(traits)){
     const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
     p.setAttribute("class", cls);

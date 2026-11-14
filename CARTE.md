@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 722 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 659 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1736 l. → demo.html, plan-smcl.html
 
@@ -897,21 +897,21 @@ Importé par :
 
 detourage-travail · logos-stands · marque · reglage-foodtrucks
 
-### `modules/distinctions.mjs` — 464 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 471 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 53 · `texteCourtDist` 58 · `porteDist` 62 · `standPorte` 66 · `calqueDists` 78
-`traceDist` 109 · `coinDuTrace` 173 · `coinDeBoite` 214 · `oublieDists` 225
-`teinteDist` 232 · `modesDuPlan` 234 · `releveDists` 238 · `dessineDists` 267
-`marquesListe` 298 · `poseDistsFiche` 328 · `refaitDistsFiche` 368 · `modeDist` 414
-`couleurDist` 426 · `appliqueDists` 448
+`texteDist` 54 · `texteCourtDist` 59 · `porteDist` 63 · `standPorte` 67 · `calqueDists` 79
+`traceDist` 110 · `coinDuTrace` 174 · `coinDeBoite` 215 · `oublieDists` 226
+`teinteDist` 233 · `modesDuPlan` 235 · `releveDists` 239 · `dessineDists` 268
+`marquesListe` 305 · `poseDistsFiche` 335 · `refaitDistsFiche` 375 · `modeDist` 421
+`couleurDist` 433 · `appliqueDists` 455
 
 Importe :
 
-ambiance · configuration · corps-fiche · couleurs · dom · donnees · texte
+ambiance · configuration · corps-fiche · couleurs · dom · donnees · jetons-racine · texte
 
 Importé par :
 
@@ -1768,6 +1768,18 @@ enregistrement · fiche-zone · index-salon · journee · nappe · outil-dessin 
 points-interet · reprise-emplacements · sejour · seuil · tiroir-itineraire
 trace-itineraire · tutoriel · volets · webgl
 
+### `modules/jetons-racine.mjs` — 55 l. → plan, plan-admin
+
+- l.1 · Les surcouches qui suivent les jetons de la racine
+
+Fonctions :
+
+`relit` 28 · `suitLaRacine` 46 · `jetons` 54
+
+Importé par :
+
+distinctions · parcours · trace-itineraire · tutoriel
+
 ### `modules/journee.mjs` — 1282 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
@@ -2442,27 +2454,27 @@ Importé par :
 
 demarrage · scan-parcours
 
-### `modules/parcours.mjs` — 660 l. → plan, plan-admin
+### `modules/parcours.mjs` — 649 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
 Fonctions :
 
-`_rafraichit` 27 · `_reprendRappels` 28 · `_synchroniseRappels` 29 · `poseParcours` 90
-`brancheListeParcours` 108 · `cleParcours` 121 · `identifiantParcours` 158
-`casierParcours` 166 · `dansParcours` 167 · `jourParcours` 170
-`attenduDepuisTropLongtemps` 175 · `trieParcours` 186 · `chargeParcours` 196
-`parcoursAEcrire` 231 · `enregistreParcours` 247 · `tientLeStockage` 276
-`plurielParcours` 290 · `contenuParcours` 299 · `signetParcours` 310 · `boutonParcours` 316
-`rafraichitMarque` 321 · `calqueMarques` 354 · `traitTuile` 388 · `jetonsMarques` 399
-`signature` 416 · `dessineMarques` 423 · `guetteRacine` 462 · `marqueParcours` 480
-`instantConf` 498 · `cleTemps` 502 · `nomDeStand` 512 · `groupeParcours` 514
-`fermeParcours` 528 · `basculeParcours` 561 · `brancheParcours` 585 · `verseAuParcours` 608
-`rangParcours` 637 · `refaitParcours` 660
+`_rafraichit` 28 · `_reprendRappels` 29 · `_synchroniseRappels` 30 · `poseParcours` 91
+`brancheListeParcours` 109 · `cleParcours` 122 · `identifiantParcours` 159
+`casierParcours` 167 · `dansParcours` 168 · `jourParcours` 171
+`attenduDepuisTropLongtemps` 176 · `trieParcours` 187 · `chargeParcours` 197
+`parcoursAEcrire` 232 · `enregistreParcours` 248 · `tientLeStockage` 277
+`plurielParcours` 291 · `contenuParcours` 300 · `signetParcours` 311 · `boutonParcours` 317
+`rafraichitMarque` 322 · `calqueMarques` 355 · `traitTuile` 389 · `jetonsMarques` 402
+`dessineMarques` 424 · `marqueParcours` 469 · `instantConf` 487 · `cleTemps` 491
+`nomDeStand` 501 · `groupeParcours` 503 · `fermeParcours` 517 · `basculeParcours` 550
+`brancheParcours` 574 · `verseAuParcours` 597 · `rangParcours` 626 · `refaitParcours` 649
 
 Importe :
 
-couleurs · dom · donnees · evenement · mesure · salon · temps · texte · tiroirs-exclusifs
+couleurs · dom · donnees · evenement · jetons-racine · mesure · salon · temps · texte
+tiroirs-exclusifs
 
 Importé par :
 
@@ -3397,7 +3409,7 @@ ecran-console · edition · emplacements · environs · fiche · fiche-detail ·
 filtre · fuseau · gestes · ici · index-salon · libelles · nom-emplacement · outil-dessin
 parcours · pile · points-interet · qr · rapport-utilisation · recherche · reglage-fiche
 reglage-suggestion · rendu · secteurs · socle-dessin · suggestion · sur · texte-plan
-trajet
+trace-itineraire · trajet
 
 ### `modules/tiroir-itineraire.mjs` — 721 l. → plan, plan-admin
 
@@ -3523,20 +3535,20 @@ Importé par :
 
 recherche
 
-### `modules/trace-itineraire.mjs` — 374 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 437 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
-`poseTrace` 40 · `marchesIci` 42 · `rayonBout` 47 · `arreteTracage` 80 · `tronconsDe` 101
-`traceDe` 119 · `peintItineraire` 122 · `lanceEtincelle` 203 · `pointA` 224
-`courtEtincelle` 232 · `placePouls` 260 · `lanceTracage` 275 · `dessineItineraire` 300
-`rafraichitBouts` 326 · `cadreItineraire` 349
+`poseTrace` 42 · `marchesIci` 44 · `rayonBout` 49 · `arreteTracage` 82 · `tronconsDe` 103
+`traceDe` 121 · `couleursItin` 135 · `styleBout` 152 · `peintItineraire` 174
+`lanceEtincelle` 259 · `pointA` 280 · `courtEtincelle` 288 · `placePouls` 316
+`lanceTracage` 331 · `dessineItineraire` 356 · `rafraichitBouts` 382 · `cadreItineraire` 412
 
 Importe :
 
-camera · dom · donnees · ecran · evenement · itineraire · vue
+camera · dom · donnees · ecran · evenement · itineraire · jetons-racine · texte · vue
 
 Importé par :
 
@@ -3626,22 +3638,22 @@ Importé par :
 
 itineraire · trajet
 
-### `modules/tutoriel.mjs` — 1069 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1083 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
-`route` 72 · `attente` 73 · `iti` 74 · `visee` 75 · `eteintVisee` 76 · `journee` 78
-`vueJournee` 79 · `sejour` 80 · `iciActif` 82 · `dessinEnCours` 85 · `glissements` 114
-`reglageTuto` 126 · `tutoPropose` 135 · `cleTuto` 139 · `tutoOuvert` 141 · `tutoModale` 142
-`tutoVisible` 145 · `tutoFicheOuverte` 151 · `tutoFiche` 154 · `tutoParcours` 156
-`tutoItineraire` 160 · `tutoJournee` 164 · `zoneDuTuto` 172 · `insecable` 189
-`phraseTrajetTuto` 195 · `chapitresTuto` 471 · `proposeTutoriel` 491 · `lanceTutoriel` 549
-`quitteTutoriel` 636 · `chapitreTuto` 648 · `battementTuto` 657 · `finTuto` 675
-`afficheTuto` 692 · `attendsTiroirs` 742 · `pxTuto` 767 · `boiteTuto` 780 · `repereTuto` 795
-`rameneTuto` 828 · `placeTuto` 866 · `voileTuto` 960 · `rafaleTuto` 977
-`marqueZoneTuto` 997 · `marqueLibelleTuto` 1052
+`route` 73 · `attente` 74 · `iti` 75 · `visee` 76 · `eteintVisee` 77 · `journee` 79
+`vueJournee` 80 · `sejour` 81 · `iciActif` 83 · `dessinEnCours` 86 · `glissements` 115
+`reglageTuto` 127 · `tutoPropose` 136 · `cleTuto` 140 · `tutoOuvert` 142 · `tutoModale` 143
+`tutoVisible` 146 · `tutoFicheOuverte` 152 · `tutoFiche` 155 · `tutoParcours` 157
+`tutoItineraire` 161 · `tutoJournee` 165 · `zoneDuTuto` 173 · `insecable` 190
+`phraseTrajetTuto` 196 · `chapitresTuto` 472 · `proposeTutoriel` 492 · `lanceTutoriel` 550
+`quitteTutoriel` 637 · `chapitreTuto` 649 · `battementTuto` 658 · `finTuto` 676
+`afficheTuto` 693 · `attendsTiroirs` 743 · `pxTuto` 768 · `boiteTuto` 781 · `repereTuto` 796
+`rameneTuto` 829 · `placeTuto` 867 · `voileTuto` 961 · `rafaleTuto` 978
+`traitsZoneTuto` 991 · `marqueZoneTuto` 1015 · `marqueLibelleTuto` 1066
 
 Éléments :
 
@@ -3651,8 +3663,9 @@ Fonctions :
 Importe :
 
 calques-dessin · configuration · corps-fiche · dom · donnees · ecran · etat-emplacements
-fenetre · fiche · forme-choisie · ici · itineraire · journee · libelle-place · parcours
-rendu · salon · sponsor · tiroir-itineraire · tiroir-parcours · visite-guidee · vue · webgl
+fenetre · fiche · forme-choisie · ici · itineraire · jetons-racine · journee · libelle-place
+parcours · rendu · salon · sponsor · tiroir-itineraire · tiroir-parcours · visite-guidee
+vue · webgl
 
 Importé par :
 

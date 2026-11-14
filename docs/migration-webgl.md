@@ -159,8 +159,19 @@ source, et des règles en moins dans la feuille.
   qu'il en tire change (`guetteRacine`, une signature comparée, pas à chaque
   frappe). L'essai éprouve stand et zone choisis, parcours, Tuiles, une
   couleur changée et les deux retraits.
-- *Reste* : l'itinéraire (`#itin`, 22 règles), les calques dessinés par
-  l'exploitant (`.dcal`, 64).
+- *Fait* : le trajet et ses pastilles (`trace-itineraire.mjs`
+  `peintItineraire`) — quatorze règles retirées, dont onze de la comète du
+  sens, qu'aucun module n'écrivait plus depuis que l'étincelle l'a remplacée.
+  Le fil garde son dégradé par tronçons, écrit en `color-mix` des deux
+  jetons résolus. Reste au dessin la machinerie de la comète (`defile`,
+  `COMETE_*`), morte elle aussi, à retirer à part.
+- *Registre* : une surcouche écrite en attributs garde les couleurs du moment
+  où elle a été tracée, là où la feuille suivait un jeton changé. Chacune
+  s'inscrit donc dans `jetons-racine.mjs` `suitLaRacine` (une signature de ce
+  qu'elle tire de la racine, de quoi se retracer) : marques, distinctions,
+  zone de la visite guidée, trajet. Les distinctions ne suivaient plus
+  l'accent depuis leur passage aux attributs — c'est corrigé, et éprouvé.
+- *Reste* : les calques dessinés par l'exploitant (`.dcal`, 64 règles).
 
 **Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
 les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900
