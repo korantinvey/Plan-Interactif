@@ -1169,15 +1169,15 @@ Importé par :
 
 reglage-rappel
 
-### `modules/etat-emplacements.mjs` — 160 l. → plan, plan-admin
+### `modules/etat-emplacements.mjs` — 164 l. → plan, plan-admin
 
 - l.1 · L'état des stands et des zones, tel que le dessin le lit
 
 Fonctions :
 
-`emplacements` 61 · `groupeEmplacement` 91 · `cleEmplacement` 107 · `poseChoisi` 125
-`poseRetires` 126 · `posePhares` 127 · `poseSecteurs` 128 · `poseChaleurs` 129
-`poseRepris` 130 · `cleDuGroupe` 133 · `etatEmplacement` 147
+`emplacements` 61 · `groupeEmplacement` 91 · `cleEmplacement` 107 · `poseChoisi` 127
+`poseRetires` 128 · `posePhares` 129 · `poseSecteurs` 130 · `poseChaleurs` 131
+`poseRepris` 132 · `poseCibleTuto` 133 · `cleDuGroupe` 136 · `etatEmplacement` 150
 
 Importe :
 
@@ -1186,7 +1186,7 @@ donnees
 Importé par :
 
 cartouche-poi · chaleur · fiche · fiche-zone · plan · points-interet · recherche
-reprise-emplacements · secteurs · webgl
+reprise-emplacements · secteurs · tutoriel · webgl
 
 ### `modules/evenement.mjs` — 45 l. → plan, plan-admin, console
 
@@ -3200,13 +3200,13 @@ Importé par :
 
 borne · demarrage · installation · lancement · reglage-sponsor · tutoriel
 
-### `modules/style-emplacements.mjs` — 117 l. → plan, plan-admin
+### `modules/style-emplacements.mjs` — 123 l. → plan, plan-admin
 
 - l.1 · Le style d'un stand et d'une zone, résolu sans la feuille de style
 
 Fonctions :
 
-`jetonsEmplacements` 39 · `fonce` 56 · `styleEmplacement` 71
+`jetonsEmplacements` 40 · `fonce` 58 · `styleEmplacement` 73
 
 Importe :
 
@@ -3564,22 +3564,22 @@ Importé par :
 
 itineraire · trajet
 
-### `modules/tutoriel.mjs` — 1051 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1057 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
-`route` 71 · `attente` 72 · `iti` 73 · `visee` 74 · `eteintVisee` 75 · `journee` 77
-`vueJournee` 78 · `sejour` 79 · `iciActif` 81 · `dessinEnCours` 84 · `glissements` 113
-`reglageTuto` 125 · `tutoPropose` 134 · `cleTuto` 138 · `tutoOuvert` 140 · `tutoModale` 141
-`tutoVisible` 144 · `tutoFicheOuverte` 150 · `tutoFiche` 153 · `tutoParcours` 155
-`tutoItineraire` 159 · `tutoJournee` 163 · `zoneDuTuto` 171 · `insecable` 188
-`phraseTrajetTuto` 194 · `chapitresTuto` 470 · `proposeTutoriel` 490 · `lanceTutoriel` 548
-`quitteTutoriel` 635 · `chapitreTuto` 646 · `battementTuto` 655 · `finTuto` 673
-`afficheTuto` 690 · `attendsTiroirs` 740 · `pxTuto` 765 · `boiteTuto` 778 · `repereTuto` 793
-`rameneTuto` 826 · `placeTuto` 864 · `voileTuto` 958 · `rafaleTuto` 975
-`marqueZoneTuto` 995 · `marqueLibelleTuto` 1034
+`route` 72 · `attente` 73 · `iti` 74 · `visee` 75 · `eteintVisee` 76 · `journee` 78
+`vueJournee` 79 · `sejour` 80 · `iciActif` 82 · `dessinEnCours` 85 · `glissements` 114
+`reglageTuto` 126 · `tutoPropose` 135 · `cleTuto` 139 · `tutoOuvert` 141 · `tutoModale` 142
+`tutoVisible` 145 · `tutoFicheOuverte` 151 · `tutoFiche` 154 · `tutoParcours` 156
+`tutoItineraire` 160 · `tutoJournee` 164 · `zoneDuTuto` 172 · `insecable` 189
+`phraseTrajetTuto` 195 · `chapitresTuto` 471 · `proposeTutoriel` 491 · `lanceTutoriel` 549
+`quitteTutoriel` 636 · `chapitreTuto` 648 · `battementTuto` 657 · `finTuto` 675
+`afficheTuto` 692 · `attendsTiroirs` 742 · `pxTuto` 767 · `boiteTuto` 780 · `repereTuto` 795
+`rameneTuto` 828 · `placeTuto` 866 · `voileTuto` 960 · `rafaleTuto` 977
+`marqueZoneTuto` 997 · `marqueLibelleTuto` 1040
 
 Éléments :
 
@@ -3588,9 +3588,9 @@ Fonctions :
 
 Importe :
 
-calques-dessin · configuration · corps-fiche · dom · donnees · ecran · fenetre · fiche
-forme-choisie · ici · itineraire · journee · libelle-place · parcours · rendu · salon
-sponsor · tiroir-itineraire · tiroir-parcours · visite-guidee · vue · webgl
+calques-dessin · configuration · corps-fiche · dom · donnees · ecran · etat-emplacements
+fenetre · fiche · forme-choisie · ici · itineraire · journee · libelle-place · parcours
+rendu · salon · sponsor · tiroir-itineraire · tiroir-parcours · visite-guidee · vue · webgl
 
 Importé par :
 

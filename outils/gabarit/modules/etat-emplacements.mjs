@@ -10,7 +10,7 @@
    Ici, ces modules le disent au modèle, par un mutateur, au moment où ils
    l'écrivent sur le groupe : `poseChoisi` (`fiche.mjs`, `points-interet.mjs`),
    `poseRetires` (`recherche.mjs`), `posePhares` (`cartouche-poi.mjs`),
-   `poseSecteurs` (`secteurs.mjs`), `poseChaleurs` (`chaleur.mjs`, en
+   `poseSecteurs` (`secteurs.mjs`), `poseCibleTuto` (`tutoriel.mjs`), `poseChaleurs` (`chaleur.mjs`, en
    administration), `poseRepris` (`reprise-emplacements.mjs`, en
    administration). Le masquage d'une zone se lit dans ses données
    (`z.masquee`). Le dessin lit l'état par `etatEmplacement`, et
@@ -120,6 +120,8 @@ const E = {
   chaleurs: null,
   /** @type {string | null} l'emplacement repris : son identifiant d'ajout, ou le sien */
   repris: null,
+  /** @type {string | null} la clé de la zone que la visite guidée désigne */
+  cibleTuto: null,
 };
 
 export function poseChoisi(/** @type {string | null} */ cle){ E.choisi = cle; }
@@ -128,6 +130,7 @@ export function posePhares(/** @type {Set<string>} */ cles){ E.phares = cles; }
 export function poseSecteurs(/** @type {Map<string, { h: string, c: string | null }>} */ teintes){ E.secteurs = teintes; }
 export function poseChaleurs(/** @type {Map<string, string> | null} */ couleurs){ E.chaleurs = couleurs; }
 export function poseRepris(/** @type {string | null} */ id){ E.repris = id; }
+export function poseCibleTuto(/** @type {string | null} */ cle){ E.cibleTuto = cle; }
 
 /** La clé d'un groupe du plan, s'il est celui d'un stand ou d'une zone. */
 export function cleDuGroupe(/** @type {Element | null} */ g){
@@ -154,6 +157,7 @@ export function etatEmplacement(id, aj, zone, focus){
     phare: zone && E.phares.has(cle),
     masquee: Boolean(o && o.masquee),
     repris: E.repris !== null && (aj || id) === E.repris,
+    tutoCible: zone && E.cibleTuto === cle,
     sect: zone ? null : E.secteurs.get(cle) || null,
     chal: zone || !E.chaleurs ? null : E.chaleurs.get(cle) || null,
   };

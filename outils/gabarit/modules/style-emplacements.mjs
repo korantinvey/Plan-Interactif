@@ -17,7 +17,8 @@
    (`jetonsEmplacements`).
 
    Les règles sont celles de `_styles-plan.css` pour `.stand path` et
-   `.zone path`, dans leur ordre de priorité. Qui en change une change aussi
+   `.zone path`, et celle de la visite guidée dans `_styles-divers.css`
+   (`html.tuto-retrait #zones g`), dans leur ordre de priorité. Qui en change une change aussi
    celle d'ici : l'essai `outils/essais/navigateur/style-emplacements.spec.js`
    compare les deux, combinaison par combinaison, et nomme l'écart.
 
@@ -48,6 +49,7 @@ export function jetonsEmplacements(ref){
     poi: v("--c-poi") || v("--accent"),
     tuiles: r.contains("ambiance-tuiles"), immersif: r.contains("ambiance-immersif"),
     halos: r.contains("chaleur-halos"), poiActif: r.contains("poi-actif"),
+    tutoRetrait: r.contains("tuto-retrait"),
     geoStands: r.contains("mode-geo-stands"), geoZones: r.contains("mode-geo-zones"),
   };
 }
@@ -84,6 +86,10 @@ export function styleEmplacement(e, j){
     if (j.poiActif && phare){ fillOpacity = .92; stroke = j.poi; sw = 3; dash = "none"; }
     // `html.poi-actif #zones g:not(.phare)` l'emporte sur `.dim`
     if (j.poiActif && !phare) opacite = .16;
+    /* La visite guidée pâlit les zones qu'elle ne désigne pas
+       (`_styles-divers.css`, chargée après `_styles-plan.css` : à force égale,
+       elle l'emporte sur le cartouche). */
+    if (j.tutoRetrait && !e.tutoCible) opacite = .22;
   } else {
     const sect = Boolean(e.sect), chal = Boolean(e.chal);
     const teinteSect = e.sect ? (e.sect.c || "hsl(" + e.sect.h + " " + j.sectS + " " + j.sectL + ")") : "";

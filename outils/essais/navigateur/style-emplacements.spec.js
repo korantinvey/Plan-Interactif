@@ -23,7 +23,8 @@ const PLAN = "/plan?plan=smcl-2026";
 function compare() {
   const G = /** @type {any} */ (globalThis).__essais.emplacements;
   const racine = document.documentElement;
-  const RACINE = ["ambiance-tuiles", "ambiance-immersif", "chaleur-halos", "poi-actif", "mode-geo-stands", "mode-geo-zones"];
+  const RACINE = ["ambiance-tuiles", "ambiance-immersif", "chaleur-halos", "poi-actif", "mode-geo-stands", "mode-geo-zones",
+    "tuto-retrait"];
   const ecarts = [];
   let vus = 0, focusVu = false;
 
@@ -53,7 +54,7 @@ function compare() {
     const cl = g.classList, st = g.style;
     return { zone: cl.contains("zone"), focus: g.matches(":focus-visible"),
       sel: cl.contains("sel"), dim: cl.contains("dim"), phare: cl.contains("phare"),
-      masquee: cl.contains("masquee"), repris: cl.contains("geopick"),
+      masquee: cl.contains("masquee"), repris: cl.contains("geopick"), tutoCible: cl.contains("tutoCible"),
       sect: g.hasAttribute("data-sect") ? { h: st.getPropertyValue("--sect-h"), c: st.getPropertyValue("--sect-c") || null } : null,
       chal: g.hasAttribute("data-chaleur") ? st.getPropertyValue("--chal-c") : null };
   };
@@ -97,9 +98,10 @@ function compare() {
           if (focus) stand.focus(); else stand.blur();
           verifie(stand, "stand");
         }
-        for (const [phare, masquee] of [[false, false], [true, false], [false, true], [true, true]]) {
+        for (const [phare, masquee, tuto] of [[false, false, false], [true, false, false], [false, true, false],
+          [true, true, false], [false, false, true], [true, false, true]]) {
           classe(zone, "sel", sel); classe(zone, "dim", dim); classe(zone, "geopick", geo);
-          classe(zone, "phare", phare); classe(zone, "masquee", masquee);
+          classe(zone, "phare", phare); classe(zone, "masquee", masquee); classe(zone, "tutoCible", tuto);
           if (focus) zone.focus(); else zone.blur();
           verifie(zone, "zone");
         }
@@ -119,7 +121,7 @@ test("le style des stands et des zones, résolu sans la feuille, est celui qu'el
   await page.keyboard.press("Shift");
   const r = await page.evaluate(compare);
   expect(r.focusVu, "le focus au clavier a bien été éprouvé").toBe(true);
-  expect(r.vus).toBeGreaterThan(10_000);
+  expect(r.vus).toBeGreaterThan(20_000);
   expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
   expect(erreurs).toEqual([]);
 });

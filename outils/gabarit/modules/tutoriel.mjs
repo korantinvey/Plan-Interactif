@@ -58,6 +58,7 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { calqueActif, enCours } from "./calques-dessin.mjs";
 import { formeSel } from "./forme-choisie.mjs";
 import { TUTO, poseTuto } from "./visite-guidee.mjs";
+import { emplacements, groupeEmplacement, poseCibleTuto } from "./etat-emplacements.mjs";
 
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
    `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
@@ -639,6 +640,7 @@ function quitteTutoriel(){
   TUTO.ecoutes.forEach(([t, f, c]) => removeEventListener(t, f, c));
   ["tuto", "tutoRepere", "tutoZone", "tutoVoile"].forEach(id => { const e = $(id); if (e) e.remove(); });
   racine.classList.remove("tuto-retrait");
+  poseCibleTuto(null);
   if (TUTO.guet) TUTO.guet.disconnect();
   poseTuto(null);
 }
@@ -1002,6 +1004,10 @@ function marqueZoneTuto(z){
      un observateur lui rend sa marque aussitôt. */
   racine.classList.toggle("tuto-retrait", vue);
   marqueLibelleTuto(vue ? z.id : null);
+  /* La zone désignée se dit au modèle, que le dessin lit (`etat-emplacements.mjs`) ;
+     son groupe SVG n'est marqué que s'il existe, pour le rendu de secours. */
+  const cible = vue ? emplacements().find(e => e.zone && e.id === z.id) : null;
+  poseCibleTuto(cible ? cible.cle : null);
   document.querySelectorAll("#zones g.tutoCible").forEach(n => {
     if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
   });
@@ -1011,7 +1017,7 @@ function marqueZoneTuto(z){
      quand même l'attribut, et le guet de la carte graphique y voit un
      changement : tout le plan se redessinait quatre fois par seconde, une
      image toutes les quatre secondes sous un rendu logiciel. */
-  const forme = $("zones").querySelector('g[data-id="' + CSS.escape(z.id) + '"]');
+  const forme = cible ? groupeEmplacement(cible.cle) : null;
   if (forme && !forme.classList.contains("tutoCible")) forme.classList.add("tutoCible");
   if (g && g.dataset.id === z.id) return;
   if (!g){
