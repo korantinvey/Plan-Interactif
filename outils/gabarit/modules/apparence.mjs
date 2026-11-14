@@ -22,6 +22,7 @@ import { dessineDists, appliqueDists } from "./distinctions.mjs";
 import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { appliqueOptions } from "./options.mjs";
 import { appliqueAmbiance } from "./ambiance.mjs";
+import { copieDuCalque } from "./calque-detache.mjs";
 
 const racine = document.documentElement;
 
@@ -89,9 +90,8 @@ export function sousCalques(cle){
   if (!f || !f.svg) return [];
   const lu = sousLus.get(f);
   if (lu && lu.svg === f.svg) return lu.liste;
-  const copie = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  copie.innerHTML = f.svg;
-  const liste = lisSous(copie);
+  // la copie que le dessin lit aussi (`calque-detache.mjs`)
+  const liste = lisSous(/** @type {Element} */ (copieDuCalque(f)));
   sousLus.set(f, { svg: f.svg, liste });
   return liste;
 }

@@ -41,6 +41,8 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
+import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage } from "./style-habillage.mjs";
+import { copieDuCalque } from "./calque-detache.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
@@ -1909,7 +1911,10 @@ function convertitBloc(racine, cle){
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
   JETONS = !RELIT_LA_FEUILLE && (racine.id === "stands" || racine.id === "zones") ? jetonsEmplacements(racine) : null;
-  try { parcoursGl(racine, M_ID, 1, acc); }
+  try {
+    if (!RELIT_LA_FEUILLE && estHabillage(racine)) habillageGl(racine, acc);
+    else parcoursGl(racine, M_ID, 1, acc);
+  }
   finally { JETONS = null; }
   // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
   if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
@@ -2023,15 +2028,100 @@ function parcoursGl(el, m, op, acc){
   }
   if (tag === "text"){ texteGl(el, cs, m, op, acc); return; }
   if (tag === "image"){ imageGl(el, m, op, acc); return; }
-  let traces = null;
-  if (tag === "path") traces = lisTrace(el.getAttribute("d") || "");
-  else if (tag === "polyline") traces = [{ pts: lisPoints(el.getAttribute("points")), ferme: false }];
-  else if (tag === "polygon") traces = [{ pts: lisPoints(el.getAttribute("points")), ferme: true }];
-  else if (tag === "line") traces = [{ pts: [[num(el, "x1"), num(el, "y1")], [num(el, "x2"), num(el, "y2")]], ferme: false }];
-  else if (tag === "rect") traces = [{ pts: rectArrondi(num(el, "x"), num(el, "y"), num(el, "width"), num(el, "height"), num(el, "rx"), num(el, "ry")), ferme: true }];
-  else if (tag === "circle"){ const r = num(el, "r"); traces = [{ pts: anneau(num(el, "cx"), num(el, "cy"), r, r, 32), ferme: true }]; }
-  else if (tag === "ellipse") traces = [{ pts: anneau(num(el, "cx"), num(el, "cy"), num(el, "rx"), num(el, "ry"), 32), ferme: true }];
+  const traces = tracesDeForme(el, tag);
   if (traces) formeGl(el, cs, m, op, traces, acc);
+}
+
+/** Le tracé d'une forme du SVG, en anneaux ou en lignes, dans son repère. */
+function tracesDeForme(/** @type {Element} */ el, /** @type {string} */ tag){
+  if (tag === "path") return lisTrace(el.getAttribute("d") || "");
+  if (tag === "polyline") return [{ pts: lisPoints(el.getAttribute("points")), ferme: false }];
+  if (tag === "polygon") return [{ pts: lisPoints(el.getAttribute("points")), ferme: true }];
+  if (tag === "line") return [{ pts: [[num(el, "x1"), num(el, "y1")], [num(el, "x2"), num(el, "y2")]], ferme: false }];
+  if (tag === "rect") return [{ pts: rectArrondi(num(el, "x"), num(el, "y"), num(el, "width"), num(el, "height"), num(el, "rx"), num(el, "ry")), ferme: true }];
+  if (tag === "circle"){ const r = num(el, "r"); return [{ pts: anneau(num(el, "cx"), num(el, "cy"), r, r, 32), ferme: true }]; }
+  if (tag === "ellipse") return [{ pts: anneau(num(el, "cx"), num(el, "cy"), num(el, "rx"), num(el, "ry"), 32), ferme: true }];
+  return null;
+}
+
+/* ------------------------------------------------------------
+   L'habillage de Klipso, lu dans ses données
+
+   Les calques que Klipso livre en SVG (`P().fond`) font l'essentiel du SVG
+   caché, et chacun de leurs milliers d'éléments se relisait par un
+   `getComputedStyle`. Le calque se lit désormais dans une copie détachée de
+   son balisage, jamais posée dans la page — le navigateur n'en tient ni le
+   style ni la mise en page —, gardée tant que sa donnée vit et partagée avec
+   le panneau des calques (`calque-detache.mjs`) ; son style se
+   résout sans la feuille (`style-habillage.mjs`), sur la configuration de
+   l'exploitant et les attributs de Klipso.
+
+   Seul le groupe du calque dans la page se lit encore : son affichage et son
+   opacité, que le cartouche, la visite guidée ou l'exploitant posent sur lui
+   — un appel par calque. Le pas suivant ne remplira plus ce groupe quand le
+   WebGL peint (`docs/migration-webgl.md`, étape 3).
+   ------------------------------------------------------------ */
+const estHabillage = (/** @type {Element} */ b) =>
+  b.classList.contains("cal") && Boolean(/** @type {SVGElement} */ (b).dataset.cle);
+function habillageGl(/** @type {Element} */ racine, /** @type {any} */ acc){
+  const cs = getComputedStyle(racine);
+  if (cs.display === "none") return;
+  const tr = racine.getAttribute("transform");
+  const m = tr ? mulM(M_ID, lisTransform(tr)) : M_ID;
+  const op = parseFloat(cs.opacity);
+  if (!(op > .003)) return;
+  const cle = /** @type {string} */ (/** @type {SVGElement} */ (racine).dataset.cle);
+  const f = (P().fond || []).find((/** @type {any} */ x) => x.cle === cle);
+  // le fond n'est pas encore arrivé, ou le calque est vide
+  const copie = copieDuCalque(f);
+  if (!copie) return;
+  const j = jetonsHabillage(/** @type {Element} */ (racine.parentNode));
+  const hors = styleSansSousCalque(j);
+  for (const c of copie.children) parcoursHabillage(c, m, op, acc, null, hors, cle, j);
+}
+function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
+    /** @type {Element | null} */ sous, /** @type {any} */ s, /** @type {string} */ cle, /** @type {any} */ j){
+  const tag = el.localName;
+  // le groupe d'un sous-calque prend le réglage de l'exploitant
+  if (tag === "g" && !sous && el.hasAttribute("data-s")){
+    s = styleSousCalque(cle, el, j);
+    if (s.eteint) return;
+    sous = el;
+  }
+  const tr = el.getAttribute("transform");
+  if (tr) m = mulM(m, lisTransform(tr));
+  const o = el.getAttribute("opacity");
+  if (o !== null && Number.isFinite(parseFloat(o))){ op *= parseFloat(o); if (!(op > .003)) return; }
+  if (tag === "g"){ for (const c of el.children) parcoursHabillage(c, m, op, acc, sous, s, cle, j); return; }
+  const st = styleElementHabillage(el, sous, s, j);
+  if (tag === "text"){ texteGl(el, st, m, op, acc); return; }
+  const traces = tracesDeForme(el, tag);
+  if (traces) formeGl(el, st, m, op, traces, acc);
+}
+
+/**
+ * Pour l'essai de l'habillage (`habillage.spec.js`) : ce que le dessin tire
+ * d'un calque par les deux lectures — le groupe dans la page et son style
+ * calculé, la copie détachée et le style résolu —, et ce qui diffère.
+ * @param {Element} racine le groupe `.cal` d'un calque, rempli
+ */
+export function compareHabillage(racine){
+  const ancien = accVide(false), nouveau = accVide(false);
+  parcoursGl(racine, M_ID, 1, ancien);
+  habillageGl(racine, nouveau);
+  const r = (/** @type {number} */ x) => Math.round(x * 1e4) / 1e4;
+  const resume = (/** @type {any} */ a) => [
+    ...a.pleins.map((/** @type {any} */ p) => "plein " + JSON.stringify([p.polygon.map((/** @type {any} */ an) => an.map((/** @type {any} */ q) => q.map(r))), p.couleur])),
+    ...[...a.traitsPx, ...a.traitsM, ...a.traitsZ].map((/** @type {any} */ t) =>
+      "trait " + JSON.stringify([t.path.map((/** @type {any} */ q) => q.map(r)), t.couleur, r(t.largeur), t.dash.map(r)])),
+    ...[...a.textes.entries()].flatMap(([k, v]) => v.items.map((/** @type {any} */ i) =>
+      "texte " + JSON.stringify([k, i.text, i.position.map(r), r(i.taille), r(i.angle), i.ancre, i.couleur]))),
+  ];
+  const A = resume(ancien), N = resume(nouveau);
+  const ecarts = [];
+  for (let i = 0; i < Math.max(A.length, N.length) && ecarts.length < 5; i++)
+    if (A[i] !== N[i]) ecarts.push({ rang: i, feuille: (A[i] || "").slice(0, 300), donnees: (N[i] || "").slice(0, 300) });
+  return { formes: A.length, ecarts };
 }
 
 /* La hauteur d'une forme en vue immersive : celle d'un stand ou d'une zone

@@ -56,6 +56,7 @@ import { fragmentDuCode } from "./scan-parcours.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
 import { couleurGl } from "./trace.mjs";
+import { compareHabillage } from "./webgl.mjs";
 
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
@@ -64,6 +65,7 @@ globalThis.__essais = {
      en accepte (`scan-parcours.mjs`) */
   qr: { qrTrame, qrSvg }, fragmentDuCode,
   emplacements: { jetonsEmplacements, styleEmplacement, etatEmplacement, couleurGl },
+  compareHabillage,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },
