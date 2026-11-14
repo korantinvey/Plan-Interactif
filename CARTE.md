@@ -547,7 +547,7 @@ Importé par :
 ambiance · environs · libelles · logos-stands · outil-comptoir · outil-escalier
 outil-foodtruck · trace-itineraire · vue · vue-etat · webgl
 
-### `modules/cartouche-poi.mjs` — 348 l. → plan, plan-admin
+### `modules/cartouche-poi.mjs` — 349 l. → plan, plan-admin
 
 - l.1 · Les points d'intérêt sur le plan — le cartouche, la mise en avant, le
 
@@ -555,8 +555,8 @@ Fonctions :
 
 `oublieReperes` 52 · `reperesCherchables` 54 · `clePoi` 131 · `cartouchePoi` 133
 `mesureCartouche` 247 · `pharePoi` 263 · `phareRepere` 267 · `phareZone` 269
-`eclairePoi` 275 · `poiActif` 301 · `libellePoiChoisi` 302 · `retenusParPoi` 317
-`oublieChoixPoi` 343
+`eclairePoi` 275 · `poiActif` 302 · `libellePoiChoisi` 303 · `retenusParPoi` 318
+`oublieChoixPoi` 344
 
 Importe :
 
@@ -568,20 +568,20 @@ Importé par :
 dessin · enregistrement · fiche-zone · index-salon · libelles · points-interet · recherche
 reglage-recherche
 
-### `modules/chaleur.mjs` — 804 l. → plan-admin
+### `modules/chaleur.mjs` — 829 l. → plan-admin
 
 - l.2 · Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.551 · Remise à zéro des compteurs
+- l.576 · Remise à zéro des compteurs
 
 Fonctions :
 
-`nbChal` 59 · `tonChaleur` 78 · `niveauChaleur` 100 · `valeurChaleur` 103
-`chargeChaleur` 116 · `coloreChaleur` 162 · `dessineHalos` 229 · `cartoucheChaleur` 269
-`mesureCartoucheChaleur` 346 · `replieChaleur` 352 · `ecritEtatChaleur` 363
-`dessineEchelleChaleur` 371 · `dessineTopChaleur` 391 · `phraseChaleur` 433
-`rafraichitChaleur` 462 · `montreChaleur` 500 · `rangChaleur` 533 · `aplati` 573
-`voletMesure` 582 · `evenementCourant` 608 · `relitRaz` 634 · `ouvreRemiseAZero` 637
-`lanceRemiseAZero` 735 · `brancheChaleur` 794
+`nbChal` 60 · `tonChaleur` 79 · `niveauChaleur` 101 · `valeurChaleur` 104
+`chargeChaleur` 117 · `coloreChaleur` 163 · `dessineHalos` 254 · `cartoucheChaleur` 294
+`mesureCartoucheChaleur` 371 · `replieChaleur` 377 · `ecritEtatChaleur` 388
+`dessineEchelleChaleur` 396 · `dessineTopChaleur` 416 · `phraseChaleur` 458
+`rafraichitChaleur` 487 · `montreChaleur` 525 · `rangChaleur` 558 · `aplati` 598
+`voletMesure` 607 · `evenementCourant` 633 · `relitRaz` 659 · `ouvreRemiseAZero` 662
+`lanceRemiseAZero` 760 · `brancheChaleur` 819
 
 Éléments :
 
@@ -589,7 +589,8 @@ Fonctions :
 
 Importe :
 
-dom · donnees · etat-emplacements · fenetre · fiche · mode-admin · secteurs · session · vue
+dom · donnees · etat-emplacements · fenetre · fiche · mode-admin · secteurs · session
+trace · vue
 
 Importé par :
 
@@ -1168,15 +1169,15 @@ Importé par :
 
 reglage-rappel
 
-### `modules/etat-emplacements.mjs` — 97 l. → plan, plan-admin
+### `modules/etat-emplacements.mjs` — 160 l. → plan, plan-admin
 
 - l.1 · L'état des stands et des zones, tel que le dessin le lit
 
 Fonctions :
 
-`cleEmplacement` 44 · `poseChoisi` 62 · `poseRetires` 63 · `posePhares` 64
-`poseSecteurs` 65 · `poseChaleurs` 66 · `poseRepris` 67 · `cleDuGroupe` 70
-`etatEmplacement` 84
+`emplacements` 61 · `groupeEmplacement` 91 · `cleEmplacement` 107 · `poseChoisi` 125
+`poseRetires` 126 · `posePhares` 127 · `poseSecteurs` 128 · `poseChaleurs` 129
+`poseRepris` 130 · `cleDuGroupe` 133 · `etatEmplacement` 147
 
 Importe :
 
@@ -1184,8 +1185,8 @@ donnees
 
 Importé par :
 
-cartouche-poi · chaleur · fiche · plan · points-interet · recherche · reprise-emplacements
-secteurs · webgl
+cartouche-poi · chaleur · fiche · fiche-zone · plan · points-interet · recherche
+reprise-emplacements · secteurs · webgl
 
 ### `modules/evenement.mjs` — 45 l. → plan, plan-admin, console
 
@@ -1321,27 +1322,27 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 987 l. → plan-admin
+### `modules/fiche-zone.mjs` — 991 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
-- l.51 · La fiche d'une zone organisateur
-- l.887 · Masquer une zone organisateur
+- l.52 · La fiche d'une zone organisateur
+- l.888 · Masquer une zone organisateur
 
 Fonctions :
 
-`champZone` 77 · `champsZone` 102 · `champEstrade` 222 · `champSalles` 264 · `nomDeZone` 316
-`cadreLogo` 342 · `champLogo` 414 · `editeurRiche` 452 · `memeFicheZone` 609
-`suitFicheZone` 616 · `verseFicheZone` 627 · `ficheZone` 659 · `marqueType` 688
-`rattacheSallesA` 700 · `champsFicheZone` 715 · `enregistreZone` 726
-`enregistreZoneAjoutee` 840 · `basculeAffichageZone` 898 · `marqueZonesMasquees` 926
-`ecritColonnesEvenement` 946 · `ecritColonneEvenement` 980
+`champZone` 78 · `champsZone` 103 · `champEstrade` 223 · `champSalles` 265 · `nomDeZone` 317
+`cadreLogo` 343 · `champLogo` 415 · `editeurRiche` 453 · `memeFicheZone` 610
+`suitFicheZone` 617 · `verseFicheZone` 628 · `ficheZone` 660 · `marqueType` 689
+`rattacheSallesA` 701 · `champsFicheZone` 716 · `enregistreZone` 727
+`enregistreZoneAjoutee` 841 · `basculeAffichageZone` 899 · `marqueZonesMasquees` 927
+`ecritColonnesEvenement` 950 · `ecritColonneEvenement` 984
 
 Importe :
 
 cartouche-poi · configuration · decor · demarrage · depot-image · dom · donnees
-emplacements · evenement · fenetre · fiche · index-salon · itineraire · libelles
-noms-zones · recherche · reglage-comptoir · reglage-foodtrucks · reperes · session · sur
-texte
+emplacements · etat-emplacements · evenement · fenetre · fiche · index-salon · itineraire
+libelles · noms-zones · recherche · reglage-comptoir · reglage-foodtrucks · reperes
+session · sur · texte
 
 Importé par :
 
@@ -3037,7 +3038,7 @@ Importé par :
 
 lancement · plan
 
-### `modules/secteurs.mjs` — 228 l. → plan, plan-admin
+### `modules/secteurs.mjs` — 240 l. → plan, plan-admin
 
 - l.1 · Les secteurs du salon, et la teinte de chacun sur le plan
 
@@ -3046,7 +3047,7 @@ Fonctions :
 `coloreChaleur` 30 · `injecteChaleur` 34 · `champDecoupage` 37 · `premiere` 41
 `valeurDecoupage` 52 · `confTeinte` 64 · `champsDecoupables` 85 · `indexeSecteurs` 104
 `secteursMontres` 121 · `couleurConf` 125 · `couleurSecteur` 134 · `pastilleSecteur` 148
-`coloreSecteurs` 167 · `peintSecteur` 217
+`coloreSecteurs` 167 · `peintSecteur` 229
 
 Importe :
 
@@ -3490,7 +3491,7 @@ Fonctions :
 
 Importé par :
 
-outil-comptoir · plan · style-emplacements · webgl
+chaleur · outil-comptoir · plan · style-emplacements · webgl
 
 ### `modules/traduction.mjs` — 150 l. → console
 

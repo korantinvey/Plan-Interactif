@@ -24,7 +24,7 @@ import { DATA, parId, SECTEURS, poseDonnees } from "./donnees.mjs";
 import { conf, jeton } from "./configuration.mjs";
 import { valeursCritere, CLE_SECTEUR } from "./filtre.mjs";
 import { libelleCritere, PREFIXE_PERSO } from "./corps-fiche.mjs";
-import { poseSecteurs, cleDuGroupe } from "./etat-emplacements.mjs";
+import { poseSecteurs, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
 
 /* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
@@ -172,29 +172,41 @@ export function coloreSecteurs(){
      emplacement, et un découpage qui ne prendrait pas sa couleur trouerait le
      secteur d'un blanc que rien n'expliquerait. */
   const on = secteursMontres();
-  // ce que le dessin lit au modèle (`etat-emplacements.mjs`), en même temps que la variable
-  teintesPosees = new Map();
-  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
-    const o = parId.get(g.dataset.id);
+  /** La teinte d'une donnée, ou rien. */
+  const teinte = (/** @type {any} */ o) => {
     const nom = on && o ? valeurDecoupage(o) : null;
     const h = nom ? SECTEURS.get(nom) : undefined;
-    if (h === undefined){
+    return h === undefined ? null : { nom: /** @type {string} */ (nom), h: String(h), c: couleurConf(confTeinte(nom).couleur) };
+  };
+  /** Le groupe SVG marqué pour le rendu de secours. */
+  const marque = (/** @type {Element} */ g, /** @type {{ h: string, c: string | null } | null} */ t) => {
+    const st = /** @type {SVGElement} */ (g).style;
+    if (!t){
       g.removeAttribute("data-sect");
-      g.style.removeProperty("--sect-h");
-      g.style.removeProperty("--sect-c");
+      st.removeProperty("--sect-h");
+      st.removeProperty("--sect-c");
     } else {
       g.setAttribute("data-sect", "");
-      g.style.setProperty("--sect-h", h);
+      st.setProperty("--sect-h", t.h);
       /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
          se pose telle quelle, comme celle des autres couches, et ne se laisse
          donc pas pâlir par la clarté dont le plan tient les secteurs. */
-      const c = couleurConf(confTeinte(nom).couleur);
-      if (c) g.style.setProperty("--sect-c", c);
-      else g.style.removeProperty("--sect-c");
-      const cle = cleDuGroupe(g);
-      if (cle) teintesPosees.set(cle, { h: g.style.getPropertyValue("--sect-h"), c, nom });
+      if (t.c) st.setProperty("--sect-c", t.c);
+      else st.removeProperty("--sect-c");
     }
-  });
+  };
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`) : la teinte de chaque stand, par clé
+  teintesPosees = new Map();
+  for (const e of emplacements()){
+    if (e.zone) continue;
+    const t = teinte(e.o);
+    if (t) teintesPosees.set(e.cle, t);
+    const g = groupeEmplacement(e.cle);
+    if (g) marque(g, t);
+  }
+  // les découpages dessinés vivent dans leur calque, et non parmi les emplacements
+  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g =>
+    marque(g, teinte(parId.get(/** @type {SVGElement} */ (g).dataset.id))));
   poseSecteurs(teintesPosees);
   /* La carte de chaleur se pose sur les mêmes formes et par-dessus la même
      teinte. Elle suit donc ici : c'est le seul point que traversent tous les

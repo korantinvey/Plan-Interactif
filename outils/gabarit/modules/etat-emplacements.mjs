@@ -24,6 +24,11 @@
    vérifie, dans des états réels de la page, que le modèle dit ce que le SVG
    porte.
 
+   Les modules parcourent les emplacements du pavillon dans les données
+   (`emplacements`), et non dans le SVG ; ils ne marquent le groupe d'un
+   emplacement que s'il est construit (`groupeEmplacement`). Le jour où le
+   WebGL ne construira plus ces groupes, ils n'auront rien à changer.
+
    Un emplacement se désigne par sa clé (`cleEmplacement`) : son identifiant
    propre s'il a été ajouté à la main (`data-aj`), celui de l'emplacement
    sinon. Deux groupes portent le même `data-id` quand un ajout matérialise
@@ -38,7 +43,65 @@
    blocs, les referait tous deux à chaque lettre tapée dans la recherche ; il
    viendra quand les stands ne seront plus dans le SVG.
    ============================================================ */
-import { parId } from "./donnees.mjs";
+import { parId, P } from "./donnees.mjs";
+
+/**
+ * Les emplacements du pavillon affiché, dans l'ordre où le plan pose leurs
+ * groupes (`rendu.mjs` `montePlan`) : les zones, puis les stands. Chacun porte
+ * ce que son groupe portait en attributs — `id` (`data-id`, l'emplacement que
+ * matérialise un ajout lié), `aj` (`data-aj`), `soc` (`data-soc`) —, sa clé,
+ * sa donnée propre (`source`) et celle que les modules lisent sous son
+ * identifiant (`o`, de `parId`).
+ *
+ * Recalculé à chaque appel : quelques centaines d'objets, et jamais un index en
+ * retard sur un ajout ou une liaison que l'outil de reprise vient de poser.
+ * @returns {Array<{ cle: string, id: string, aj: string | undefined, soc: number | undefined,
+ *   zone: boolean, source: any, o: any }>}
+ */
+export function emplacements(){
+  const p = P && P();
+  if (!p) return [];
+  const out = [];
+  for (const z of p.zones || []){
+    const aj = z.ajout ? z.id : undefined;
+    out.push({ cle: cleEmplacement(z.id, aj), id: z.id, aj, soc: undefined, zone: true, source: z, o: parId.get(z.id) });
+  }
+  for (const s of p.stands || []){
+    const id = s.lien ? s.lien.stand : s.id, aj = s.ajout ? s.id : undefined;
+    out.push({ cle: cleEmplacement(id, aj), id, aj, soc: s.lien ? Number(s.lien.soc) : undefined, zone: false,
+      source: s, o: parId.get(id) });
+  }
+  return out;
+}
+
+/* Les groupes SVG des emplacements, par clé : relevés une fois par pavillon
+   écrit, et non à chaque recherche — `montePlan` réécrit les deux groupes d'un
+   bloc, et la reprise un groupe à la fois. */
+/** @type {Map<string, Element>} */
+let groupes = new Map();
+/** @type {Element | null} */
+let premier = null;
+let nombre = -1;
+/**
+ * Le groupe SVG d'un emplacement, s'il est construit — rien sinon. Les
+ * modules qui marquent le SVG pour le rendu de secours passent par lui : ils
+ * n'ont alors rien à changer le jour où le WebGL ne construit plus ces groupes.
+ * @param {string} cle
+ */
+export function groupeEmplacement(cle){
+  const st = document.getElementById("stands"), zo = document.getElementById("zones");
+  const n = (st ? st.childElementCount : 0) + (zo ? zo.childElementCount : 0);
+  const p = (zo && zo.firstElementChild) || (st && st.firstElementChild) || null;
+  const g = groupes.get(cle);
+  if (n !== nombre || p !== premier || (g && !g.isConnected)){
+    groupes = new Map(); nombre = n; premier = p;
+    for (const hote of [zo, st]) if (hote) for (const x of hote.children){
+      const c = cleDuGroupe(x);
+      if (c) groupes.set(c, x);
+    }
+  }
+  return groupes.get(cle) || null;
+}
 
 /** La clé d'un emplacement, d'après les attributs de son groupe. */
 export const cleEmplacement = (/** @type {string | undefined} */ id, /** @type {string | undefined} */ aj) =>

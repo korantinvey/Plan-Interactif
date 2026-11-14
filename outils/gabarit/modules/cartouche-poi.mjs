@@ -28,7 +28,7 @@ import { DESSINS, mesCalques } from "./calques-dessin.mjs";
 import { PICTOS, nomTypeRepere, typeZone, pictoForme, glypheRepere, pastillePoi } from "./reperes.mjs";
 import { majFondus } from "./bandes.mjs";
 import { formeParId } from "./forme-choisie.mjs";
-import { posePhares, cleDuGroupe } from "./etat-emplacements.mjs";
+import { posePhares, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -277,14 +277,15 @@ function eclairePoi(){
     const f = formeParId(g.dataset.f);
     g.classList.toggle("phare", phareRepere(f && f.f));
   });
-  // ce que le dessin lit au modèle (`etat-emplacements.mjs`), en même temps que la classe
+  // décidé sur les données et dit au modèle (`etat-emplacements.mjs`) ; le groupe SVG, s'il existe
   const phares = new Set();
-  $("zones").querySelectorAll("g").forEach(g => {
-    const oui = phareZone(parId.get(g.dataset.id));
-    g.classList.toggle("phare", oui);
-    const cle = oui && cleDuGroupe(g);
-    if (cle) phares.add(cle);
-  });
+  for (const e of emplacements()){
+    if (!e.zone) continue;
+    const oui = phareZone(e.o);
+    if (oui) phares.add(e.cle);
+    const g = groupeEmplacement(e.cle);
+    if (g) g.classList.toggle("phare", oui);
+  }
   posePhares(phares);
   /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
      retrait avec le reste du plan aurait effacé la seule chose qui distingue
