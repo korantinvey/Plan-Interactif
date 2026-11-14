@@ -721,13 +721,19 @@ table.comptes tr[data-actif="non"] td:first-child{box-shadow:inset 2px 0 var(--a
 
 /* La courbe des jours, en bâtons : on cherche le pic et le creux, pas la
    valeur au dixième. Un bâton par jour ouvert, l'axe se lit dessous. */
-.jours{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:6px;
-  overflow-x:auto;padding-bottom:2px}
+/* Le haut garde la place du compte écrit sur le plus haut bâton : la
+   défilante horizontale rognerait tout ce qui en déborde. */
+.jours{display:flex;align-items:flex-end;gap:4px;height:138px;margin-top:6px;
+  overflow-x:auto;padding:18px 0 2px}
 .jour-bat{flex:1 1 18px;min-width:14px;display:flex;flex-direction:column;
   justify-content:flex-end;height:100%;gap:5px}
 .jour-bat .b{background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;
   opacity:.85;transition:opacity .15s}
 .jour-bat:hover .b{opacity:1}
+.jour-bat .b{position:relative}
+.jour-bat .n{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  margin-bottom:3px;font-size:10px;font-weight:600;color:var(--ink-2);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
 .jour-bat .d{font-size:10px;color:var(--ink-3);text-align:center;white-space:nowrap;
   font-variant-numeric:tabular-nums}
 /* Les erreurs des pages : le compte à gauche, qui dit laquelle presse ; le

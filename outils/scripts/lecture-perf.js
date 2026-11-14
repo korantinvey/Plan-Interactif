@@ -1,7 +1,16 @@
 /**
  * Lit les relevés de la sonde de performance par HTTPS, pour les analyser — et
  * les erreurs des pages, qui disent ce que les gels ne disent pas : la page
- * qu'une exception a cassée.
+ * qu'une exception a cassée ; et les compteurs d'usage, qui disent ce que la
+ * vitesse ne dit pas : si les visiteurs ont cherché, trouvé, ouvert des fiches.
+ *
+ * Les compteurs (migration `les_compteurs_d_usage_lus_par_jeton`) :
+ *   compteurs        fréquentation à l'heure — genre, canal, porte, nombre
+ *   audience         consultations par stand ou conférence et par jour
+ *   visiteurs        visiteurs uniques par jour et porte ; `support` nul, toutes
+ *                    portes ; `jour` nul, toute la fenêtre — chaque niveau exact
+ *   visiteurs_cible  visiteurs uniques par stand et geste ; `jour` nul, la fenêtre
+ * Les jetons de visiteur ne sortent jamais : seulement des nombres.
  *
  * Pourquoi : le conteneur d'une session Claude Code ne joint Supabase que par
  * HTTPS, avec la clé publiable ; pas de connexion Postgres directe. La fonction
@@ -10,6 +19,7 @@
  *
  *   node outils/scripts/lecture-perf.js releves --de 2026-10-21 --a 2026-10-27 --slug fep27
  *   node outils/scripts/lecture-perf.js bilans|jours|erreurs|salons [--de J] [--a J] [--slug S]
+ *   node outils/scripts/lecture-perf.js compteurs|audience|visiteurs|visiteurs_cible --slug S
  *   ajouter  --sortie fichier.json  pour écrire au lieu d'imprimer.
  *
  * Derrière le relais d'une session Claude Code, le `fetch` de Node ne le
@@ -25,7 +35,8 @@
 const fs = require("fs");
 const { PROJETS } = require("../projet.js");
 
-const QUOI = ["releves", "bilans", "jours", "erreurs", "salons"];
+const QUOI = ["releves", "bilans", "jours", "erreurs", "salons",
+  "compteurs", "audience", "visiteurs", "visiteurs_cible"];
 const PAGE = 1000;
 
 function lisArguments(argv) {

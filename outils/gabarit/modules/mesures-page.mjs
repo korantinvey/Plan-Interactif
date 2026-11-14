@@ -104,6 +104,24 @@ function mobileDeRepli(){
   try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; }
 }
 
+/** Le système, quand le navigateur ne le dit pas lui-même. `userAgentData`
+ *  n'existe que sous Chromium : sans ce repli, chaque Safari, chaque Firefox
+ *  et tout Chrome sur iPhone partaient sans système — 20 visites sur 99 les
+ *  12 et 13 novembre 2026, dont tous les appareils d'Apple. Les noms sont
+ *  ceux que donne `userAgentData.platform`, pour que les deux se comptent
+ *  ensemble ; seule la famille sort de l'agent, rien de sa version. Un iPad
+ *  qui se dit Macintosh se trahit par son écran tactile.
+ *  @returns {string | undefined} */
+export function systemeDeRepli(/** @type {string} */ ua, /** @type {number=} */ pointsTactiles = 0){
+  if (/iPhone|iPad|iPod/.test(ua)) return "iOS";
+  if (/Android/.test(ua)) return "Android";
+  if (/Windows/.test(ua)) return "Windows";
+  if (/CrOS/.test(ua)) return "Chrome OS";
+  if (/Macintosh|Mac OS X/.test(ua)) return pointsTactiles > 1 ? "iOS" : "macOS";
+  if (/Linux|X11/.test(ua)) return "Linux";
+  return undefined;
+}
+
 /**
  * L'appareil. Par défaut avec l'agent utilisateur entier, pour le relevé qu'on
  * partage soi-même ; la sonde, qui part au serveur, demande `agentComplet:
@@ -118,7 +136,7 @@ export function appareil(/** @type {{ agentComplet?: boolean, gl?: any, carte?: 
   return {
     ...(agentComplet
       ? { agent: navigator.userAgent, plateforme }
-      : { mobile: plateforme && typeof plateforme.mobile === "boolean" ? plateforme.mobile : mobileDeRepli(), systeme: plateforme && plateforme.systeme, navigateur: navigateur() }),
+      : { mobile: plateforme && typeof plateforme.mobile === "boolean" ? plateforme.mobile : mobileDeRepli(), systeme: plateforme && plateforme.systeme || systemeDeRepli(navigator.userAgent, navigator.maxTouchPoints), navigateur: navigateur() }),
     densite: devicePixelRatio,
     ecran: [screen.width, screen.height],
     fenetre: [innerWidth, innerHeight],
