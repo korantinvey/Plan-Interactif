@@ -46,10 +46,21 @@ function compare() {
     (a.sw === null ? b.sw === null : Math.abs(a.sw - b.sw) < 1e-3) && a.fixe === b.fixe &&
     JSON.stringify(a.dash) === JSON.stringify(b.dash);
 
+  /* L'état que la feuille lit sur le groupe, dit comme le modèle le tient
+     (`etat-emplacements.mjs`) : c'est la règle qu'on éprouve ici. Que le
+     modèle tienne bien cet état, c'est `etat-emplacements.spec.js` qui le dit. */
+  const etatDuGroupe = (g) => {
+    const cl = g.classList, st = g.style;
+    return { zone: cl.contains("zone"), focus: g.matches(":focus-visible"),
+      sel: cl.contains("sel"), dim: cl.contains("dim"), phare: cl.contains("phare"),
+      masquee: cl.contains("masquee"), repris: cl.contains("geopick"),
+      sect: g.hasAttribute("data-sect") ? { h: st.getPropertyValue("--sect-h"), c: st.getPropertyValue("--sect-c") || null } : null,
+      chal: g.hasAttribute("data-chaleur") ? st.getPropertyValue("--chal-c") : null };
+  };
   const verifie = (g, etiquette) => {
     const path = g.querySelector(":scope > path");
     const calcule = lu(getComputedStyle(g).opacity, getComputedStyle(path));
-    const st = G.styleEmplacement(g, G.jetonsEmplacements(g.parentNode));
+    const st = G.styleEmplacement(etatDuGroupe(g), G.jetonsEmplacements(g.parentNode));
     const resolu = lu(st.opacite, st.trace);
     vus++;
     if (g.matches(":focus-visible")) focusVu = true;

@@ -59,6 +59,7 @@ import { libelles } from "./libelles.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
+import { poseRetires, cleDuGroupe } from "./etat-emplacements.mjs";
 
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
@@ -576,13 +577,18 @@ export { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRet
  */
 export function marqueRetrait(){
   releveHotes();
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`), en même temps que la classe
+  const retires = new Set();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
     // un stand ajouté et lié suit sa société, comme un stand dessiné
     const vu = !o || (g.dataset.soc !== undefined
       ? visibleSociete(o, Number(g.dataset.soc)) : visibleSurPlan(o));
     g.classList.toggle("dim", !vu);
+    const cle = !vu && cleDuGroupe(g);
+    if (cle) retires.add(cle);
   });
+  poseRetires(retires);
   document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));

@@ -77,11 +77,32 @@ garde l'adresse et la durée de chaque repeint. Pendant un choix de stand,
 l'ancienne lecture appelle `getComputedStyle` 481 fois, la nouvelle 4.
 L'interrupteur est provisoire : il part une fois la mesure faite.
 
-**Pas suivant :** les écrivains. Que `fiche.mjs`, `recherche.mjs`,
-`secteurs.mjs`, `cartouche-poi.mjs`, `fiche-zone.mjs`, `chaleur.mjs` et
-`reprise-emplacements.mjs` disent leur état au modèle plutôt qu'au groupe
-SVG — après quoi les stands et les zones n'ont plus besoin d'être construits
-dans le SVG caché quand le WebGL peint.
+**Étape 1, deuxième pas — l'état des emplacements (14 novembre 2026).**
+Le dessin ne lit plus l'état d'un emplacement sur son groupe SVG :
+`modules/etat-emplacements.mjs` le tient, et chaque module qui le décide le
+lui dit par un mutateur, là même où il pose sa classe — `fiche.mjs` et
+`points-interet.mjs` (`poseChoisi`), `recherche.mjs` (`poseRetires`),
+`cartouche-poi.mjs` (`posePhares`), `secteurs.mjs` (`poseSecteurs`), et en
+administration `chaleur.mjs` (`poseChaleurs`) et `reprise-emplacements.mjs`
+(`poseRepris`). Le masquage d'une zone se lit dans ses données. Le modèle
+n'importe que `donnees.mjs` : tous ceux qui l'informent dépendent déjà du
+dessin, et le modèle ne pouvait pas les importer sans boucle.
+
+L'essai `outils/essais/navigateur/etat-emplacements.spec.js` parcourt des
+états réels de la page — recherche, stand choisi, fiche refermée, zones de
+restauration mises en avant, secteurs teints, autre pavillon — et compare,
+groupe par groupe, ce que le modèle dit à ce que le SVG porte ; un écrivain
+qui oublie le modèle le fait échouer. La carte de chaleur et la zone masquée
+ne s'y éprouvent pas : la page publique ne les a pas, et aucun essai de
+l'administration ne les ouvre encore.
+
+**Pas suivant :** ne plus construire les stands et les zones dans le SVG
+caché quand le WebGL peint. Il faudra que les modules qui les cherchent
+encore dans le DOM — la fiche (`noeud`), les gestes, les logos, les
+distinctions, le parcours, la visite guidée, les outils de l'exploitant —
+les trouvent dans le modèle, que la désignation rende une clé et non un
+élément, et qu'une couche accessible remplace leurs boutons. Le modèle
+préviendra alors le dessin lui-même, à la place du guet du SVG.
 
 ## Ce que les modules font au SVG
 

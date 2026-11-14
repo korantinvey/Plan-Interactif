@@ -29,6 +29,7 @@ import { poseDistsFiche } from "./distinctions.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { reperesCherchables, oublieReperes, cartouchePoi, phareRepere, phareZone, oublieChoixPoi }
   from "./cartouche-poi.mjs";
+import { poseChoisi } from "./etat-emplacements.mjs";
 
 
 /**
@@ -76,6 +77,8 @@ export function ouvrePoi(id, depuis, recentrer){
   fermeLesAutresTiroirs("fiche");
 
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  // la fiche d'un repère remplace celle d'un stand : plus aucun emplacement n'est allumé
+  poseChoisi(null);
   const noeudPoi = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
   if (noeudPoi) noeudPoi.classList.add("sel");
 

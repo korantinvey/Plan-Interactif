@@ -40,6 +40,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
+import { etatEmplacement } from "./etat-emplacements.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
@@ -1959,7 +1960,10 @@ const estEmplacement = (/** @type {Element} */ el) => {
     !el.hasAttribute("transform");
 };
 function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
-  const st = styleEmplacement(g, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
+  // l'état vient de ceux qui le décident (`etat-emplacements.mjs`), et non des classes du groupe
+  const d = /** @type {SVGElement} */ (g).dataset;
+  const etat = etatEmplacement(d.id, d.aj, g.classList.contains("zone"), g.matches(":focus-visible"));
+  const st = styleEmplacement(etat, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
   op *= st.opacite;
   if (!(op > .003)) return;
   for (const c of g.children){

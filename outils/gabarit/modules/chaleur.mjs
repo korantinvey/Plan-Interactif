@@ -35,6 +35,7 @@ import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { injecteChaleur } from "./secteurs.mjs";
 import { svg, vue, suitLaVue, versScene, cadrePlan } from "./vue.mjs";
+import { poseChaleurs, cleDuGroupe } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
 
@@ -169,6 +170,9 @@ export function coloreChaleur(){
   racine.classList.toggle("chaleur-halos", halos);
   /** @type {Array<[number, number, number, number, string]>} */
   const releve = [];
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`), en même temps que la variable
+  /** @type {Map<string, string>} */
+  const couleurs = new Map();
   document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const titre = g.querySelector(":scope > title.chal");
     if (!on){
@@ -181,6 +185,8 @@ export function coloreChaleur(){
     g.setAttribute("data-chaleur", "");
     const niv = niveauChaleur(n, CHALEUR.max), ton = tonChaleur(niv);
     g.style.setProperty("--chal-c", ton);
+    const cle = cleDuGroupe(g);
+    if (cle) couleurs.set(cle, g.style.getPropertyValue("--chal-c"));
     /* La boîte se lit ici, une fois par lecture des compteurs, et non à chaque
        image : le halo suit ensuite la vue sans rien remesurer. */
     if (halos && n > 0){
@@ -199,6 +205,7 @@ export function coloreChaleur(){
       (o.nom || "emplacement") + " · " : "") +
       nbChal(n) + (n > 1 ? " consultations" : " consultation");
   });
+  poseChaleurs(on ? couleurs : null);
   // les plus chauds par-dessus : un rouge ne se noie pas sous le bleu d'à côté
   HALOS = releve.sort((a, b) => a[3] - b[3]);
   dessineHalos();

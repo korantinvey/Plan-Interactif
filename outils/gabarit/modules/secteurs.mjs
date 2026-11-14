@@ -24,6 +24,7 @@ import { DATA, parId, SECTEURS, poseDonnees } from "./donnees.mjs";
 import { conf, jeton } from "./configuration.mjs";
 import { valeursCritere, CLE_SECTEUR } from "./filtre.mjs";
 import { libelleCritere, PREFIXE_PERSO } from "./corps-fiche.mjs";
+import { poseSecteurs, cleDuGroupe } from "./etat-emplacements.mjs";
 
 /* La carte de chaleur, quand la page l'a reçue ; rien sinon. */
 let coloreChaleur = () => {};
@@ -157,6 +158,12 @@ export function pastilleSecteur(nom){
  * la feuille de style la lit de là, et garde la main sur le survol et la
  * sélection, qui doivent l'emporter sur elle.
  */
+/* Les teintes posées sur les stands du pavillon, par clé (`etat-emplacements.mjs`
+   `cleEmplacement`) : le dessin les lit là. Le secteur y est gardé, pour qu'une
+   seule couleur change sans relire tout le plan (`peintSecteur`). */
+/** @type {Map<string, { h: string, c: string | null, nom: string }>} */
+let teintesPosees = new Map();
+
 export function coloreSecteurs(){
   /* Le coloriage éteint, le stand perd sa marque de secteur : la feuille de
      style n'a plus de teinte à poser, sans qu'on ait à la lui interdire.
@@ -165,6 +172,8 @@ export function coloreSecteurs(){
      emplacement, et un découpage qui ne prendrait pas sa couleur trouerait le
      secteur d'un blanc que rien n'expliquerait. */
   const on = secteursMontres();
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`), en même temps que la variable
+  teintesPosees = new Map();
   document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     const nom = on && o ? valeurDecoupage(o) : null;
@@ -182,8 +191,11 @@ export function coloreSecteurs(){
       const c = couleurConf(confTeinte(nom).couleur);
       if (c) g.style.setProperty("--sect-c", c);
       else g.style.removeProperty("--sect-c");
+      const cle = cleDuGroupe(g);
+      if (cle) teintesPosees.set(cle, { h: g.style.getPropertyValue("--sect-h"), c, nom });
     }
   });
+  poseSecteurs(teintesPosees);
   /* La carte de chaleur se pose sur les mêmes formes et par-dessus la même
      teinte. Elle suit donc ici : c'est le seul point que traversent tous les
      chemins qui rebâtissent les stands — changement de pavillon, arrivée du
@@ -205,6 +217,7 @@ export function coloreSecteurs(){
 export function peintSecteur(nom){
   if (!secteursMontres()) return;
   const c = couleurConf(confTeinte(nom).couleur);
+  for (const t of teintesPosees.values()) if (t.nom === nom) t.c = c;
   document.querySelectorAll("#stands g[data-sect], #couches .dcal .sdes[data-sect]")
     .forEach(g => {
       const o = parId.get(g.dataset.id);

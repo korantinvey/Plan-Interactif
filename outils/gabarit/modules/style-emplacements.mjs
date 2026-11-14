@@ -8,13 +8,13 @@
    sans le lui demander.
 
    C'est le premier pas de la sortie du SVG (`docs/migration-webgl.md`,
-   étape 1). Il lit ce que la feuille lit elle-même : les classes et les
-   variables posées sur le groupe (`sel`, `dim`, `phare`, `masquee`,
-   `geopick`, `data-sect` et sa teinte, `data-chaleur` et sa couleur), les
-   états posés sur la racine (`ambiance-tuiles`, `ambiance-immersif`,
-   `chaleur-halos`, `poi-actif`, `mode-geo-…`) et les couleurs de la page,
-   lues une fois par conversion (`jetonsEmplacements`). Le pas suivant fera
-   lire ces états dans les données plutôt que sur le groupe.
+   étape 1). Il lit ce que la feuille regarde, mais ailleurs que sur le
+   groupe : l'état de l'emplacement, que tiennent les modules qui le décident
+   (`etat-emplacements.mjs` — choisi, retiré, mis en avant, masqué, repris,
+   teinte du secteur et de la chaleur), les états posés sur la racine
+   (`ambiance-tuiles`, `ambiance-immersif`, `chaleur-halos`, `poi-actif`,
+   `mode-geo-…`) et les couleurs de la page, lues une fois par conversion
+   (`jetonsEmplacements`).
 
    Les règles sont celles de `_styles-plan.css` pour `.stand path` et
    `.zone path`, dans leur ordre de priorité. Qui en change une change aussi
@@ -65,18 +65,14 @@ function fonce(/** @type {string} */ c, /** @type {number} */ part){
  * Le style d'un stand ou d'une zone : l'opacité de son groupe, et ce que son
  * tracé prendrait de la feuille — sous la forme que `webgl.mjs` `formeGl`
  * lit dans un style calculé.
- * @param {Element} g le groupe `.stand` ou `.zone`
+ * @param {ReturnType<typeof import("./etat-emplacements.mjs").etatEmplacement>} e son état
  * @param {ReturnType<typeof jetonsEmplacements>} j
  */
-export function styleEmplacement(g, j){
-  const cl = g.classList, zone = cl.contains("zone");
-  const sel = cl.contains("sel"), dim = cl.contains("dim"), phare = cl.contains("phare");
-  const geopick = cl.contains("geopick"), focus = g.matches(":focus-visible");
-  const st = /** @type {HTMLElement} */ (/** @type {unknown} */ (g)).style;
+export function styleEmplacement(e, j){
+  const { zone, sel, dim, phare, masquee, focus } = e, geopick = e.repris;
   let fill, fillOpacity = 1, stroke, strokeOpacity = 1, sw, dash = "none", opacite = dim ? .22 : 1;
 
   if (zone){
-    const masquee = cl.contains("masquee");
     fill = j.zone; fillOpacity = .5; stroke = j.zone; sw = 1.2; dash = "5 4";
     if (masquee){ fillOpacity = .14; strokeOpacity = .4; }
     if (focus){ stroke = j.accent; sw = 3; }
@@ -89,10 +85,9 @@ export function styleEmplacement(g, j){
     // `html.poi-actif #zones g:not(.phare)` l'emporte sur `.dim`
     if (j.poiActif && !phare) opacite = .16;
   } else {
-    const sect = g.hasAttribute("data-sect"), chal = g.hasAttribute("data-chaleur");
-    const teinteSect = sect ? (st.getPropertyValue("--sect-c").trim() ||
-      "hsl(" + st.getPropertyValue("--sect-h").trim() + " " + j.sectS + " " + j.sectL + ")") : "";
-    const teinteChal = chal ? st.getPropertyValue("--chal-c").trim() : "";
+    const sect = Boolean(e.sect), chal = Boolean(e.chal);
+    const teinteSect = e.sect ? (e.sect.c || "hsl(" + e.sect.h + " " + j.sectS + " " + j.sectL + ")") : "";
+    const teinteChal = e.chal || "";
     fill = j.stand; stroke = j.ligne; sw = 1;
     if (sect) fill = teinteSect;
     if (chal && !j.halos) fill = teinteChal;

@@ -58,6 +58,7 @@ import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
 import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
+import { poseRepris } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
 
@@ -169,6 +170,8 @@ function groupeGeo(o){
 
 export function choisitGeo(id){
   geoSel = id;
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`), en même temps que la classe
+  poseRepris(id || null);
   document.querySelectorAll("#stands > g, #zones > g")
     .forEach(g => g.classList.toggle("geopick",
       Boolean(id) && (g.dataset.aj || g.dataset.id) === id));
