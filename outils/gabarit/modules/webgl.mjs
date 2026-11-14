@@ -1907,7 +1907,7 @@ function convertitBloc(racine, cle){
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
-  JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
+  JETONS = !RELIT_LA_FEUILLE && (racine.id === "stands" || racine.id === "zones") ? jetonsEmplacements(racine) : null;
   try { parcoursGl(racine, M_ID, 1, acc); }
   finally { JETONS = null; }
   // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
@@ -1931,7 +1931,12 @@ function convertitBloc(racine, cle){
    et la sélection, la recherche ou les secteurs ne le changent pas.
 
    Un groupe qui sortirait de la règle — une transformation, un enfant
-   inconnu — repasse par la feuille, comme avant. */
+   inconnu — repasse par la feuille, comme avant.
+
+   `?emplacements=feuille` rend l'ancienne lecture, le temps de comparer les
+   deux sur un même appareil et un même déploiement (relevé `?perf`, qui
+   garde l'adresse). Provisoire : il part une fois la mesure faite. */
+const RELIT_LA_FEUILLE = new URLSearchParams(location.search).get("emplacements") === "feuille";
 /** @type {ReturnType<typeof jetonsEmplacements> | null} */
 let JETONS = null;
 /** @type {Map<string, any[]>} */

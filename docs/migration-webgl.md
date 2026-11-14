@@ -71,6 +71,12 @@ tirages) :
 | recherche, six lettres | 86 ms | 53 ms |
 | ouverture, changement de pavillon | — | pas de gain attendu : chaque tracé est lu une première fois dans les deux versions ; les écarts mesurés (de −52 % à +19 %) suivent le bruit de la machine |
 
+Pour comparer sur un vrai appareil, `?emplacements=feuille` rend l'ancienne
+lecture sur le même déploiement — à ouvrir avec `?perf`, dont le relevé
+garde l'adresse et la durée de chaque repeint. Pendant un choix de stand,
+l'ancienne lecture appelle `getComputedStyle` 481 fois, la nouvelle 4.
+L'interrupteur est provisoire : il part une fois la mesure faite.
+
 **Pas suivant :** les écrivains. Que `fiche.mjs`, `recherche.mjs`,
 `secteurs.mjs`, `cartouche-poi.mjs`, `fiche-zone.mjs`, `chaleur.mjs` et
 `reprise-emplacements.mjs` disent leur état au modèle plutôt qu'au groupe
