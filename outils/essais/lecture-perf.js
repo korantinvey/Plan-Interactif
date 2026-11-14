@@ -5,7 +5,9 @@
  * clé publiable atteint : refus muet sans jeton valable, lecture seule des
  * relevés, bilans, quotas, erreurs et salons avec leur `slug`, filtres, bornes,
  * pagination, et le fait que le jeton ne se retrouve jamais en clair dans la
- * base ni n'est émis par un autre rôle que le propriétaire.
+ * base ni n'est émis par un autre rôle que le propriétaire. Et les compteurs
+ * d'usage : fréquentation, audience, visiteurs uniques exacts à chaque niveau,
+ * sans qu'aucun jeton de visiteur ne sorte.
  *
  *   node outils/essais/lecture-perf.js     (lancé par `npm run essais`)
  */
@@ -106,6 +108,63 @@ async function main() {
   dit(/p_quoi/.test(await refuse(() => lis(jeton, "tout"))), "un autre p_quoi donne une erreur claire");
   dit(await lis("0".repeat(64), "tout") === null, "…mais un faux jeton n'apprend rien : null d'abord");
 
+  // --- compteurs d'usage
+  const heure = "date_trunc('hour', now())";
+  const compte = (evt, decalageJours, genre, canal, support, n) => db.query(
+    `insert into compteur (evenement_id, heure, genre, canal, support, n) values ($1, ${heure} - $2::int * interval '1 day', $3, $4, $5, $6)`,
+    [evt, decalageJours, genre, canal, support, n]);
+  await compte(A, 0, "visite", "", "web", 3); await compte(A, 0, "recherche", "", "integre", 2);
+  await compte(B, 0, "visite", "", "web", 1); await compte(A, 20, "visite", "", "web", 9);
+  const cpt = await lis(jeton, "compteurs");
+  dit(cpt.length === 3 && cpt.every((l) => Object.keys(l).sort().join() === "canal,genre,heure,n,slug,support"),
+    "compteurs des 7 jours : heure, genre, canal, porte, nombre, slug — rien d'autre", JSON.stringify(cpt[0]));
+  dit((await lis(jeton, "compteurs", { slug: "a" })).reduce((t, l) => t + l.n, 0) === 5, "compteurs : p_slug filtre");
+  dit((await lis(jeton, "compteurs", { de: "2000-01-01" })).length === 4, "compteurs : les bornes de dates valent comme ailleurs");
+
+  await db.query("insert into cible (evenement_id, genre, id, code, nom) values ($1, 'fiche_stand', 's1', 'B12', 'Acme')", [A]);
+  const vise = (genre, canal, n) => db.query(
+    "insert into compteur_cible (evenement_id, genre, objet, cible, jour, canal, n) values ($1, $2, 'fiche_stand', 's1', current_date, $3, $4)",
+    [A, genre, canal, n]);
+  await vise("fiche_stand", "liste", 4); await vise("itineraire", "", 1);
+  const aud = await lis(jeton, "audience");
+  dit(aud.length === 2 && aud.every((l) => l.slug === "a" && l.code === "B12" && l.nom === "Acme" && !("evenement_id" in l)),
+    "audience : par stand, avec son numéro et son nom", JSON.stringify(aud[0]));
+  dit(aud.find((l) => l.genre === "fiche_stand").n === 4 && aud.find((l) => l.genre === "fiche_stand").canal === "liste",
+    "audience : le geste, le canal et le nombre suivent");
+
+  const passe = (decalageJours, jetonV, support, parcours, retenu) => db.query(
+    "insert into visiteur_jour (evenement_id, jour, visiteur, support, parcours, retenu) values ($1, current_date - $2::int, $3, $4, $5, $6)",
+    [A, decalageJours, jetonV, support, parcours, retenu]);
+  await passe(0, "jeton-secret-1", "web", false, true); await passe(0, "jeton-secret-1", "integre", false, true);
+  await passe(0, "jeton-secret-2", "web", true, false); await passe(1, "jeton-secret-1", "web", false, true);
+  const vis = await lis(jeton, "visiteurs");
+  const niveau = (jour, support) => vis.find((l) => l.jour === jour && l.support === support);
+  dit(!JSON.stringify(vis).includes("jeton-secret"), "visiteurs : aucun jeton ne sort");
+  dit(niveau(null, null)?.visiteurs === 2, "visiteurs : sur la fenêtre, un visiteur venu deux jours compte une fois", JSON.stringify(niveau(null, null)));
+  dit(niveau(aujourdhui, null)?.visiteurs === 2 && niveau(aujourdhui, null).volatils === 1 && niveau(aujourdhui, null).avec_parcours === 1,
+    "visiteurs : le jour, toutes portes, avec volatils et programmes", JSON.stringify(niveau(aujourdhui, null)));
+  dit(niveau(aujourdhui, "web")?.visiteurs === 2 && niveau(aujourdhui, "integre")?.visiteurs === 1,
+    "visiteurs : le jour, porte par porte");
+  dit(vis.length === 6, "visiteurs : un total, puis chaque jour toutes portes et porte par porte (1 + 1 + 2 + 1 + 1)", vis.length);
+  const v1 = await lis(jeton, "visiteurs", { limite: 2 });
+  const v2 = await lis(jeton, "visiteurs", { limite: 2, decalage: 2 });
+  const v3 = await lis(jeton, "visiteurs", { limite: 2, decalage: 4 });
+  dit(JSON.stringify([...v1, ...v2, ...v3]) === JSON.stringify(vis), "visiteurs : la pagination recolle sans trou ni doublon");
+  dit((await lis(jeton, "visiteurs", { slug: "b" })).length === 0, "visiteurs : p_slug filtre");
+
+  const touche = (decalageJours, canal, jetonV) => db.query(
+    "insert into visiteur_cible (evenement_id, objet, cible, genre, canal, jour, visiteur) values ($1, 'fiche_stand', 's1', 'fiche_stand', $2, current_date - $3::int, $4)",
+    [A, canal, decalageJours, jetonV]);
+  await touche(0, "liste", "jeton-secret-1"); await touche(0, "recherche", "jeton-secret-1");
+  await touche(0, "liste", "jeton-secret-2"); await touche(1, "liste", "jeton-secret-1");
+  const vc = await lis(jeton, "visiteurs_cible");
+  dit(!JSON.stringify(vc).includes("jeton-secret"), "visiteurs par stand : aucun jeton ne sort");
+  dit(vc.find((l) => l.jour === null)?.visiteurs === 2 && vc.find((l) => l.jour === null).code === "B12",
+    "visiteurs par stand : sur la fenêtre, deux canaux et deux jours ne recomptent pas", JSON.stringify(vc.find((l) => l.jour === null)));
+  dit(vc.find((l) => l.jour === aujourdhui)?.visiteurs === 2 && vc.length === 3, "visiteurs par stand : jour par jour", vc.length);
+  dit(await lis("0".repeat(64), "visiteurs") === null && await lis("0".repeat(64), "compteurs") === null,
+    "compteurs : un faux jeton n'apprend rien");
+
   // --- droits
   // base.js ne simule pas les privilèges par défaut de Supabase sur les tables :
   // on les donne, puis on rejoue la migration, qui doit les reprendre.
@@ -179,6 +238,17 @@ async function main() {
   const jeton3 = (await un("select lecteur_perf_nouveau('claude') as j")).j;
   dit((await lis(jeton3, "erreurs")).length === 2 && (await lis(jeton3, "releves")).length > 0,
     "après rejeu, les erreurs comme les relevés se lisent");
+  /* La lecture des compteurs redéfinit à son tour la porte : rejouée, elle
+     rend les branches d'avant et les siennes. */
+  const compteurs = fs.readdirSync(MIGRATIONS).find((f) => f.endsWith("_les_compteurs_d_usage_lus_par_jeton.sql"));
+  let erreurCompteurs = "";
+  try {
+    const sql = fs.readFileSync(path.join(MIGRATIONS, compteurs || "absente.sql"), "utf8");
+    await db.exec(sql); await db.exec(sql);
+  } catch (e) { erreurCompteurs = e.message; }
+  dit(!erreurCompteurs, "la lecture des compteurs rejouée deux fois ne produit aucune erreur", erreurCompteurs);
+  dit((await lis(jeton3, "erreurs")).length === 2 && (await lis(jeton3, "visiteurs")).length === 6,
+    "après rejeu, les erreurs comme les visiteurs se lisent");
 
   await db.close();
   if (ko) { console.log("\n" + ko + " échec(s)"); process.exit(1); }

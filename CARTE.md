@@ -3909,6 +3909,7 @@ Injections :
 - `20261113184112_les_rappels_ne_s_oublient_pas_sur_un_programme_tronque.sql` — evenement, fn oublie_rappels_perimes
 - `20261113184247_le_jour_d_un_plan_de_visite_dans_le_fuseau_du_salon.sql` — fn pose_plan_de_visite
 - `20261113184353_les_mesures_d_avant_une_remise_a_zero_ne_reviennent_pas.sql` — evenement, fn enregistre_mesures, fn reinitialise_compteurs
+- `20261114113307_les_compteurs_d_usage_lus_par_jeton.sql` — fn lecture_perf
 
 ## Le reste
 
