@@ -96,7 +96,46 @@ qui oublie le modèle le fait échouer. La carte de chaleur et la zone masquée
 ne s'y éprouvent pas : la page publique ne les a pas, et aucun essai de
 l'administration ne les ouvre encore.
 
-**Pas suivant :** ne plus construire les stands et les zones dans le SVG
+**Étape 1, pas 3a — les lecteurs passent aux données (en cours).** Avant
+de cesser de construire les stands dans le SVG caché, plus rien ne doit les
+y chercher. `etat-emplacements.mjs` rend les emplacements du pavillon dans
+l'ordre où le plan pose leurs groupes (`emplacements`), et le groupe d'un
+emplacement s'il est construit (`groupeEmplacement`). Fait :
+
+- la recherche, le cartouche, le masquage des zones, les secteurs et la
+  carte de chaleur décident sur les données et ne marquent le groupe que
+  s'il existe ; les halos de la chaleur se mesurent sur le tracé à défaut du
+  groupe ;
+- la visite guidée dit au modèle la zone qu'elle désigne — et le style
+  reprend la règle de `_styles-divers.css` qui pâlit les autres, oubliée au
+  premier pas (régression corrigée, l'essai des règles la couvre) ;
+- les outils du comptoir et des food trucks lisent leurs zones dans les
+  données.
+
+Reste, avant le pas 3b :
+
+- **la désignation et la fiche** : `gestes.mjs` (la cible rendue par
+  `cibleWebgl`, les stands allumés près du doigt), `fiche.mjs` (`noeud`, la
+  géométrie que `ouvre` cadre, `rangSociete`, `canalPlan`), `dessin.mjs`
+  `decoupeStand` (les ajouts liés), `reprise-emplacements.mjs` (sa visée et
+  `.geopick`), le curseur du survol, `rectEcranWebgl` — la désignation devra
+  rendre une clé et non un élément ;
+- **le dessin lui-même** (`webgl.mjs`) : convertir les stands et les zones
+  depuis les données plutôt que depuis leurs groupes, avec ce que `formeGl`
+  lit encore sur l'élément — hauteur des volumes (`hauteurVolume`,
+  `noteHauteur`, que les logos relisent), stand choisi monté (`CHOISI`),
+  `standDeLaMarque`, les tuiles choisies ;
+- **le décor des zones** : type, comptoir, camions, estrade et leur choix,
+  que le dessin relit en attributs du groupe (`meubleZone`) et que
+  `reglage-comptoir.mjs`, `reglage-foodtrucks.mjs` et `fiche-zone.mjs`
+  écrivent — à lire dans la configuration et le modèle ;
+- **les distinctions et le parcours**, qui lisent le tracé et la boîte des
+  stands sur leurs groupes ;
+- **la couche accessible** qui remplace les boutons des stands ;
+- **les essais** qui comptent ou visent les groupes (`plan.spec.js`,
+  `survol.spec.js`, `visite.spec.js`, `aide.js` `standAViser`…).
+
+**Pas 3b :** ne plus construire les stands et les zones dans le SVG
 caché quand le WebGL peint. Il faudra que les modules qui les cherchent
 encore dans le DOM — la fiche (`noeud`), les gestes, les logos, les
 distinctions, le parcours, la visite guidée, les outils de l'exploitant —
