@@ -6,7 +6,7 @@
    l'itinéraire. Un aplat se triangule une fois (earcut) ; en vue immersive il
    monte en volume, dessus et façades éclairés comme ceux de deck.gl. Un trait
    se peint segment par segment, chacun une gélule dont les bouts ronds font
-   les jointures ; ses tirets, son défilement et le filtre de zoom des
+   les jointures ; ses tirets et le filtre de zoom des
    extensions de `webgl.mjs` se décident dans le shader.
 
    Ce que la couche reçoit et quand elle le refait : `moteur-gl-couche.mjs`.
@@ -381,7 +381,6 @@ void main(){
 }`;
 const FS_TRAIT = ENTETE_FRAGMENTS + `
 in vec4 v_c; in vec2 v_q; in float v_lg; in float v_r; in float v_pos; in vec2 v_tiret; in vec2 v_bouts; in vec4 v_coupe;
-uniform vec3 u_defile;
 void main(){
   // les bouts du trait sont droits : seules les jointures s'arrondissent
   if ((v_q.x < 0.0 && v_bouts.x > 0.5) || (v_q.x > v_lg && v_bouts.y > 0.5)) discard;
@@ -389,8 +388,6 @@ void main(){
   if (dot(v_q, v_coupe.xy) < 0.0) discard;
   if (dot(v_q - vec2(v_lg, 0.0), v_coupe.zw) > 0.0) discard;
   if (v_tiret.y > 0.0 && mod(v_pos, v_tiret.x + v_tiret.y) > v_tiret.x) discard;
-  float unite = u_defile.x + u_defile.y;
-  if (unite > 0.0 && mod(v_pos + u_defile.z, unite) > u_defile.x) discard;
   float x = clamp(v_q.x, 0.0, v_lg);
   float d = length(vec2(v_q.x - x, v_q.y));
   // la part du pixel que le trait couvre : un trait d'un demi-pixel n'en couvre que la moitié
@@ -483,8 +480,6 @@ export class PathLayer extends Couche {
       p.widthMaxPixels === undefined ? 1e6 : p.widthMaxPixels);
     gl.uniform1f(prog.u("u_face"), p.billboard ? 1 : 0);
     gl.uniform3fv(prog.u("u_filtre"), reglageFiltre(this));
-    const d = this.moduleProps.defile;
-    gl.uniform3f(prog.u("u_defile"), d ? d.tirets[0] : 0, d ? d.tirets[1] : 0, d ? d.decalage : 0);
     e.a.lie();
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, e.total);
   }

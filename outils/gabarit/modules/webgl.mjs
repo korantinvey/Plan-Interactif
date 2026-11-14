@@ -274,9 +274,8 @@ function chargeWebgl(){
      secours : bibliothèque introuvable, ou dessin trop long à venir. */
   const racine = document.documentElement;
   racine.classList.add("gl-attente");
-  /* Le dessin lit l'habillage dans ses données : le SVG caché n'a pas à le
-     porter, sauf pour l'ancienne lecture qu'on compare (`?emplacements=feuille`). */
-  if (!RELIT_LA_FEUILLE) poseHabillageDansLeSvg(false);
+  // le dessin lit l'habillage dans ses données : le SVG caché n'a pas à le porter
+  poseHabillageDansLeSvg(false);
   /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
      attendait l'affichage n'a plus à attendre. */
   const secours = () => { racine.classList.remove("gl-attente"); poseHabillageDansLeSvg(true); planAffiche(); };
@@ -1038,7 +1037,7 @@ function cleReunion(/** @type {any} */ c){
   if (TEXTE_DE_CALQUE.test(c.id) && !p.passeSousPixel)
     return ["t", c.id.replace(/^.*-/, ""), p.fontFamily, p.fontWeight, p.pickable, p.modeFiltre, p.muetALEcran,
       p.billboard, p.etireAPlat, p.lineHeight, JSON.stringify(p.parameters || {})].join("|");
-  if (TRAIT_DE_CALQUE.test(c.id) && !p.defile && !p.billboard)
+  if (TRAIT_DE_CALQUE.test(c.id) && !p.billboard)
     return ["p", p.pickable, p.widthUnits, p.widthMinPixels, JSON.stringify(p.parameters || {})].join("|");
   return null;
 }
@@ -1446,51 +1445,6 @@ function constTexte(){
       muet: this.props.muetALEcran && !GL.geste ? 1 : 0, etire: this.props.etireAPlat || 1 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
-  /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
-
-     Ils taillent leurs tirets eux-mêmes, au lieu de décaler ceux de la
-     bibliothèque. Décaler les siens paraissait pourtant tenir en une ligne —
-     ajouter au « vDashOffset » qu'elle pose en fin de shader — mais cette
-     ligne n'a jamais rien fait : les deux extensions écrivent au même endroit,
-     et celle de la bibliothèque repasse derrière, quel que soit leur ordre.
-     Rien ne le signalait, le trait se dessinait juste immobile, et le rendu
-     SVG défilait pendant ce temps — c'est-à-dire chez presque personne, le
-     WebGL étant le rendu par défaut.
-
-     Le trajet garde donc sa propre distance parcourue, « vDefilePos », et le
-     fragment décide lui-même de ce qu'il jette. Les longueurs se comptent en
-     demi-épaisseurs de trait, comme celles de la bibliothèque, et le décalage
-     arrive en pixels — comme le « stroke-dashoffset » d'un trait qui ne
-     grossit pas au zoom —, d'où la division au moment de le passer.
-
-     Un trait qui ne défile pas donne des tirets de longueur nulle : le
-     fragment n'en tient alors aucun compte, et la bibliothèque reste seule à
-     pointiller ce qu'elle pointille. */
-  class TiretsQuiDefilent extends deck.LayerExtension {
-    getShaders(){
-      const bloc = "layout(std140) uniform defileUniforms {\n  vec2 tirets;\n  float decalage;\n} defile;\n";
-      return {
-        modules: [{ name: "defile", vs: bloc, fs: bloc,
-                    uniformTypes: { tirets: "vec2<f32>", decalage: "f32" } }],
-        inject: {
-          "vs:#decl": "out float vDefilePos;",
-          "vs:#main-end": "vDefilePos = vPathPosition.y;",
-          "fs:#decl": "in float vDefilePos;",
-          "fs:DECKGL_FILTER_COLOR":
-            "float uniteDefile = defile.tirets.x + defile.tirets.y;\n" +
-            "if (uniteDefile > 0.0 &&\n" +
-            "    mod(vDefilePos + defile.decalage, uniteDefile) > defile.tirets.x) discard;",
-        },
-      };
-    }
-    draw(){
-      const demi = Math.max(this.props.demiEpaisseur || 1, .001);
-      this.setShaderModuleProps({ defile: { tirets: this.props.tirets || [0, 0],
-                                            decalage: (this.props.decalage || 0) / demi } });
-    }
-  }
-  TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
-  TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
   /* Les deux drapeaux du texte sont des réglages de l'extension : la
      bibliothèque les transmet ainsi aux lettres, que lit `filtreCouches`. */
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0,
@@ -1596,8 +1550,8 @@ function constTexte(){
        quoi le liseré serait rogné au bord de la case. */
     grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 10, radius: RAYON_SDF } },
     /* Tous les traits partagent un seul programme : tirets — un trait plein
-       en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
-    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new TiretsQuiDefilent(), new FiltreZoom()],
+       en a de longueur nulle —, filtre de zoom ouvert. */
+    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new FiltreZoom()],
     sansDeclencheur: {},
   });
 }
@@ -1917,10 +1871,10 @@ function convertitBloc(racine, cle){
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
-  JETONS = !RELIT_LA_FEUILLE && (racine.id === "stands" || racine.id === "zones") ? jetonsEmplacements(racine) : null;
+  JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
   try {
-    if (!RELIT_LA_FEUILLE && estHabillage(racine)) habillageGl(racine, acc);
-    else if (!RELIT_LA_FEUILLE && PAR_ATTRIBUTS.has(racine.id)) parcoursAttributs(racine, M_ID, 1, acc, racine);
+    if (estHabillage(racine)) habillageGl(racine, acc);
+    else if (PAR_ATTRIBUTS.has(racine.id)) parcoursAttributs(racine, M_ID, 1, acc, racine);
     else parcoursGl(racine, M_ID, 1, acc);
   }
   finally { JETONS = null; }
@@ -1945,12 +1899,7 @@ function convertitBloc(racine, cle){
    et la sélection, la recherche ou les secteurs ne le changent pas.
 
    Un groupe qui sortirait de la règle — une transformation, un enfant
-   inconnu — repasse par la feuille, comme avant.
-
-   `?emplacements=feuille` rend l'ancienne lecture, le temps de comparer les
-   deux sur un même appareil et un même déploiement (relevé `?perf`, qui
-   garde l'adresse). Provisoire : il part une fois la mesure faite. */
-const RELIT_LA_FEUILLE = new URLSearchParams(location.search).get("emplacements") === "feuille";
+   inconnu — repasse par la feuille, comme avant. */
 /** @type {ReturnType<typeof jetonsEmplacements> | null} */
 let JETONS = null;
 /** @type {Map<string, any[]>} */
@@ -2814,14 +2763,13 @@ function formeGl(el, cs, m, op, traces, acc){
       ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
-    const defile = el.classList.contains("iSens");
     const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
     const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
     for (const t of traces){
       if (t.pts.length < 2) continue;
       const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
       if (t.ferme) path.push(path[0]);
-      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
+      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: cible,
         prise: el.closest(PRISES), sur });
     }
   }
@@ -3249,37 +3197,19 @@ function couchesDeBloc(acc, cle){
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
   partage(tous, acc.prises, repondus).forEach((liste, k) => {
     if (!liste.length) return;
-    // ce qui défile a ses couches : ce sont elles seules qui bougent
     const K = constTexte();
-    /* Les traits qui défilent sont taillés par « TiretsQuiDefilent », et non
-       par la bibliothèque : elle les laisse donc tranquilles. Leur réglage est
-       unique par couche et non porté par la donnée — d'où une couche par
-       longueur, les trois traits de la comète n'ayant pas la même. */
-    const parLongueur = new Map();
-    for (const d of liste) if (d.defile){
-      const c = d.dash.join(" ") + "/" + d.largeur;
-      if (!parLongueur.has(c)) parLongueur.set(c, []);
-      parLongueur.get(c).push(d);
-    }
-    const lots = [[liste.filter(d => !d.defile), ""]];
-    [...parLongueur.values()].forEach((l, n) => lots.push([l, "-defile" + n]));
-    for (const [l, marque] of lots){
-      if (!l.length) continue;
-      const bouge = marque !== "";
-      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + marque, data: l, pickable: k === 0,
-        /* Le trajet se trace face à l'œil en vue immersive : couché sur le sol
-           incliné, il s'amincissait au loin jusqu'à se perdre. Et sans
-           consulter la profondeur : sa lueur, peinte juste avant à la même
-           hauteur, la retenait, et vu de biais le trait tombait d'un rien
-           derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
-           par-dessus, il se lit de bout en bout, comme une signalétique au
-           sol. */
-        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
-        getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
-        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
-        extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
-        tirets: bouge ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
-    }
+    out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k, data: liste, pickable: k === 0,
+      /* Le trajet se trace face à l'œil en vue immersive : couché sur le sol
+         incliné, il s'amincissait au loin jusqu'à se perdre. Et sans
+         consulter la profondeur : sa lueur, peinte juste avant à la même
+         hauteur, la retenait, et vu de biais le trait tombait d'un rien
+         derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
+         par-dessus, il se lit de bout en bout, comme une signalétique au
+         sol. */
+      ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
+      getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
+      jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0,
+      extensions: K.traits, getDashArray: d => d.dash, dashJustified: false }));
   });
   /* Les traits qui s'amincissent : comptés en mètres, à la largeur que le
      SVG leur donnerait à « TRAIT_PLEIN » pixels par mètre, et bornés par
@@ -3963,30 +3893,6 @@ function couchesPhareNoms(){
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
 }
 
-/* La comète du sens, tenue d'accord avec « #itin .iSens » et ses
-   « @keyframes comete » : la période qu'une tête parcourt, et le temps qu'elle
-   y met. Deux nombres écrits deux fois, faute de pouvoir passer une valeur de
-   la feuille de style au shader ; les changer d'un seul côté fait courir la
-   tête à une autre allure sous la carte graphique.
-
-   Elle avance par images de trentième de seconde. Chacune repeint le plan
-   sous le trajet, qui traverse le salon entier — trente par seconde est ce
-   qu'il faut pour qu'une tête qui file à cent trente pixels par seconde ne
-   saute pas, là où les tirets qu'elle remplace se contentaient de quinze : on
-   ne voyait pas sauter un tiret parmi douze. */
-const COMETE_PERIODE = 200, COMETE_DUREE = 1.5, COMETE_HZ = 30;
-const palierDefile = t => Math.floor(t * COMETE_HZ);
-/* La période d'un trait qui défile, en pixels : son tiret et son vide, que la
-   feuille de style donne en demi-épaisseurs. Deux cents pour la comète ;
-   l'étincelle du fil lumineux en prend six cents, pour ne passer qu'une fois
-   là où la comète passait trois. Sa durée suit, à la même allure. */
-const periodeDe = c => (c.props.tirets[0] + c.props.tirets[1]) * c.props.demiEpaisseur || COMETE_PERIODE;
-/* Où en est la tête de sa course, entre 0 et 1, au palier où l'on est. */
-const phaseDe = (c, t) => {
-  const duree = COMETE_DUREE * periodeDe(c) / COMETE_PERIODE;
-  return (palierDefile(t) / COMETE_HZ) % duree / duree;
-};
-
 /** Une couche telle qu'elle doit paraître à cet instant. */
 /* L'instant de l'image : l'heure qu'il est, toujours. Celle de la dernière
    image de la boucle datait dès que le plan travaillait entre deux images —
@@ -4023,11 +3929,6 @@ function animeCouche(c){
     const s = echellePhare(GL.temps), [x, y] = ph.centre;
     return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
   }
-  /* La comète : le décalage part de la longueur du trait et descend d'une
-     période, comme le « stroke-dashoffset » de ses images-clés. Partir de sa
-     propre longueur est ce qui fait tomber les trois têtes au même endroit. */
-  if (c.props.defile && GL.bouge) return c.clone({
-    decalage: c.props.tirets[0] * c.props.demiEpaisseur - periodeDe(c) * phaseDe(c, GL.temps) });
   return c;
 }
 
@@ -4037,7 +3938,7 @@ function majAnimationWebgl(){
   const couches = [...GL.blocs.values()].flat();
   GL.animePhare = GL.bouge && document.documentElement.classList.contains("poi-actif") &&
     (GL.libellesPhare.length > 0 || couches.some(c => c.props.phare));
-  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile)) || hausses.size > 0;
+  GL.anime = GL.animePhare || hausses.size > 0;
   if (GL.anime && !GL.imageAnim) GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
 function animeWebgl(now){
@@ -4053,13 +3954,12 @@ function animeWebgl(now){
     GL.couchesLibelles = null;
     for (const k of [...GL.groupes.keys()]) if (/^labels-hausse\|/.test(k)) GL.groupes.delete(k);
   }
-  if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
+  if (!GL.animePhare && !hausses.size){
     GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
   }
   /* Tout le plan se redessine quand une couche change : le battement se
-     contente donc de trente images par seconde, et le défilement seul ne
-     redessine qu'à chacun de ses paliers. */
-  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
+     contente donc de trente images par seconde. */
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" +
     (hausses.size ? "|" + Math.round(now) : "");
   if (cle !== GL.cleAnim){
     GL.cleAnim = cle;

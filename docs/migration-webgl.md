@@ -71,11 +71,11 @@ tirages) :
 | recherche, six lettres | 86 ms | 53 ms |
 | ouverture, changement de pavillon | — | pas de gain attendu : chaque tracé est lu une première fois dans les deux versions ; les écarts mesurés (de −52 % à +19 %) suivent le bruit de la machine |
 
-Pour comparer sur un vrai appareil, `?emplacements=feuille` rend l'ancienne
-lecture sur le même déploiement — à ouvrir avec `?perf`, dont le relevé
-garde l'adresse et la durée de chaque repeint. Pendant un choix de stand,
-l'ancienne lecture appelle `getComputedStyle` 481 fois, la nouvelle 4.
-L'interrupteur est provisoire : il part une fois la mesure faite.
+Pendant un choix de stand, l'ancienne lecture appelait `getComputedStyle`
+481 fois, la nouvelle 4. L'interrupteur `?emplacements=feuille`, qui rendait
+l'ancienne lecture sur un même déploiement le temps de comparer, est retiré
+depuis la clôture de l'étape 2 : les essais comparent les deux lectures sans
+lui (`webgl.mjs` `compareLectures`).
 
 **Étape 1, deuxième pas — l'état des emplacements (14 novembre 2026).**
 Le dessin ne lit plus l'état d'un emplacement sur son groupe SVG :
@@ -163,15 +163,24 @@ source, et des règles en moins dans la feuille.
   `peintItineraire`) — quatorze règles retirées, dont onze de la comète du
   sens, qu'aucun module n'écrivait plus depuis que l'étincelle l'a remplacée.
   Le fil garde son dégradé par tronçons, écrit en `color-mix` des deux
-  jetons résolus. Reste au dessin la machinerie de la comète (`defile`,
-  `COMETE_*`), morte elle aussi, à retirer à part.
+  jetons résolus. La machinerie de la comète, morte elle aussi, a quitté
+  ensuite le dessin et le moteur : l'extension qui faisait défiler les
+  tirets, son pendant dans le shader des traits, et sa part de la boucle
+  d'animation.
 - *Registre* : une surcouche écrite en attributs garde les couleurs du moment
   où elle a été tracée, là où la feuille suivait un jeton changé. Chacune
   s'inscrit donc dans `jetons-racine.mjs` `suitLaRacine` (une signature de ce
   qu'elle tire de la racine, de quoi se retracer) : marques, distinctions,
   zone de la visite guidée, trajet. Les distinctions ne suivaient plus
   l'accent depuis leur passage aux attributs — c'est corrigé, et éprouvé.
-- *Reste* : les calques dessinés par l'exploitant (`.dcal`, 64 règles).
+- *Décision (14 novembre 2026) : les calques dessinés restent à la feuille.*
+  Ils pèsent peu — vingt-sept formes sur tout FEP 2027, aucune sur SMCL —, et
+  les migrer n'aurait rien gagné en vitesse. Ni en clarté : l'épaisseur d'un
+  trait qui suit le zoom passe par `var(--trait-f)`, qu'un attribut refuse ;
+  les stands dessinés partagent la cascade des stands, leurs noms celle de
+  `#labels`. On aurait remplacé une règle par trois mécanismes. Le dessin les
+  lit donc toujours dans le style calculé (`parcoursGl`), et l'étape 2 est
+  close.
 
 **Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
 les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900

@@ -45,7 +45,9 @@ function relit(){
  */
 export function suitLaRacine(signature, retrace){
   SUIVIES.push({ signature, retrace });
-  if (guet) return;
+  /* Hors d'une page — les essais importent dans Node les modules qui
+     s'inscrivent ici —, il n'y a pas de racine à guetter. */
+  if (guet || typeof MutationObserver === "undefined") return;
   guet = new MutationObserver(() => { if (!attente) attente = requestAnimationFrame(relit); });
   guet.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style"] });
 }
