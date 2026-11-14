@@ -129,6 +129,31 @@ de visée des poignées, le curseur qui change au survol (lu aujourd'hui dans
 la feuille, `webgl.mjs` `getComputedStyle(o.prise).cursor`), les retours
 visuels pendant le geste.
 
+## Le conteneur `#plan` : surface du pointeur et point d'accroche
+
+L'élément `<svg id="plan">` a deux rôles qui ne tiennent pas à son contenu,
+et qu'il garde jusqu'au bout :
+
+- **La surface du pointeur.** Il est posé au-dessus du dessin, et tous les
+  gestes s'y écoutent : `gestes.mjs` l. 364 à 538 (appui, mouvement,
+  relâché, annulation, molette, clavier), `fiche.mjs` l. 103,
+  `outil-dessin.mjs` l. 812 à 815 (sortie du pointeur, dépôt d'une image).
+  Onze modules y capturent le pointeur pendant un geste (`setPointerCapture`
+  : `gestes`, `edition`, `outil-dessin`, `reprise-emplacements`,
+  `outil-comptoir`, `outil-foodtruck`, `outil-escalier`,
+  `placement-libelles`, `batiments`, `calage-carte`), et y posent le curseur
+  (`gestes.mjs` l. 270, `edition.mjs` l. 582 et 593,
+  `reprise-emplacements.mjs` l. 140, 561, 652, 666, 731).
+- **Le point d'accroche des surcouches**, posées juste à côté de lui dans la
+  page : `appels.mjs` l. 68, `mini-carte.mjs` l. 42, `chaleur.mjs` l. 231,
+  `trace-itineraire.mjs` l. 216 et 267, `vous-etes-ici.mjs` l. 104, et la
+  toile du dessin elle-même (`webgl.mjs` l. 460 et 3328).
+
+Il suffit donc de garder `#plan` comme une surface vide et transparente : ce
+sont ses enfants qui partent, pas lui. Vidé, il ne coûte plus rien — le
+curseur qu'on y pose, aujourd'hui hérité par les six mille éléments du
+pavillon, ne restyle plus rien.
+
 ## Étape 5 — retrait du lecteur
 
 Dans `webgl.mjs`, ce qui ne sert qu'à relire le SVG et part à la fin :
@@ -174,7 +199,9 @@ Hors du chantier, parce que ce n'est pas le plan :
   (`reglage-comptoir.mjs`, `reglage-foodtrucks.mjs`) ;
 - les surcouches posées au-dessus du plan, à l'échelle de l'écran : les
   filets des appels (`appels.mjs`), le pouls de la borne et l'étincelle de
-  l'itinéraire, les halos de la chaleur ;
+  l'itinéraire, les halos de la chaleur. Elles lisent les données et la vue,
+  pas le SVG du plan ; elles ne s'accrochent qu'à son conteneur, qui reste
+  (voir « Le conteneur `#plan` ») ;
 - le SVG comme **format d'entrée** : Klipso livre l'habillage et les tracés
   en SVG ; on continue de le lire, une fois.
 
