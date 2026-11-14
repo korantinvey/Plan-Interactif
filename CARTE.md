@@ -3535,16 +3535,16 @@ Importé par :
 
 recherche
 
-### `modules/trace-itineraire.mjs` — 437 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 439 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
 `poseTrace` 42 · `marchesIci` 44 · `rayonBout` 49 · `arreteTracage` 82 · `tronconsDe` 103
-`traceDe` 121 · `couleursItin` 135 · `styleBout` 152 · `peintItineraire` 174
-`lanceEtincelle` 259 · `pointA` 280 · `courtEtincelle` 288 · `placePouls` 316
-`lanceTracage` 331 · `dessineItineraire` 356 · `rafraichitBouts` 382 · `cadreItineraire` 412
+`traceDe` 121 · `couleursItin` 135 · `styleBout` 152 · `peintItineraire` 176
+`lanceEtincelle` 261 · `pointA` 282 · `courtEtincelle` 290 · `placePouls` 318
+`lanceTracage` 333 · `dessineItineraire` 358 · `rafraichitBouts` 384 · `cadreItineraire` 414
 
 Importe :
 

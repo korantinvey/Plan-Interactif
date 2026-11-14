@@ -261,4 +261,37 @@ test.describe("le trajet se lit dans ses attributs", () => {
     for (const n of f.filter((x) => x.sorte === "iNum")) expect(n).toMatchObject({ fill: a });
     expect(erreurs).toEqual([]);
   });
+
+  /* La prochaine étape est pleine de la couleur du salon, et son chiffre s'y
+     écrit en blanc — conférence comprise : la feuille lui gardait la couleur
+     du salon, et le chiffre disparaissait dans sa propre pastille. */
+  test("une conférence pour prochaine étape garde son chiffre lisible", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const corps = avecUnProgramme();
+    await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
+      ? r.fulfill({ json: { v: "essai-conference" } })
+      : r.fulfill({ status: 200, contentType: "application/json", headers: { "X-Version": "essai-conference" }, body: corps }));
+    // le matin de la conférence, avant qu'elle commence : la journée est à venir
+    await page.clock.setFixedTime(new Date("2026-03-14T07:30:00Z"));
+    /* La conférence et un stand ; arrivé cinq minutes avant elle, on n'a le
+       temps de rien d'autre : elle est la première étape, le stand vient après. */
+    await page.addInitScript((stand) => {
+      localStorage.setItem("plan-parcours:smcl-2026", JSON.stringify({ stands: [stand], confs: ["essai-visite"] }));
+      localStorage.setItem("plan-journee-arrivee", "09:55");
+    }, DONNEES.plans[0].stands[0].id);
+    await page.goto("/plan?plan=smcl-2026&rendu=svg");
+    await attendLaListe(page);
+    await page.click("#btnParcours");
+    await page.click("#btnJournee");
+    await page.locator("#modale.open").getByRole("button", { name: "Organiser", exact: true }).click();
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll("#itin .iNum.conf.proche").length), { timeout: 30_000 })
+      .toBe(1);
+    const f = await formesDuTrajet(page);
+    const bout = f.find((x) => x.sorte === "iBout num conf proche"), chiffre = f.find((x) => x.sorte === "iNum conf proche");
+    expect(bout.fill).toBe(await accent(page));
+    expect(chiffre.fill, "le chiffre ne doit pas prendre la couleur de sa pastille").not.toBe(bout.fill);
+    const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("itin")));
+    expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
 });

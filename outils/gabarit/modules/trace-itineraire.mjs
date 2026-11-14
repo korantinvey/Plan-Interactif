@@ -159,10 +159,12 @@ function styleBout(/** @type {ReturnType<typeof couleursItin>} */ c,
     '" vector-effect="non-scaling-stroke"' + (o.attend ? AVENIR : "");
 }
 /* Le chiffre d'une étape, de la couleur du salon ; blanc sur la prochaine,
-   pleine — sauf celle d'une conférence, qui le garde. */
-const styleNum = (/** @type {ReturnType<typeof couleursItin>} */ c, /** @type {boolean} */ conf,
+   pleine de cette couleur. Une conférence n'y fait pas exception : la feuille
+   lui gardait la couleur du salon, et la prochaine étape, quand c'était une
+   conférence, écrivait son chiffre de la couleur de sa propre pastille. */
+const styleNum = (/** @type {ReturnType<typeof couleursItin>} */ c,
   /** @type {boolean} */ proche, /** @type {boolean} */ attend) =>
-  ' fill="' + (proche && !conf ? c.surface : c.accent) + '" text-anchor="middle" dominant-baseline="central"' +
+  ' fill="' + (proche ? c.surface : c.accent) + '" text-anchor="middle" dominant-baseline="central"' +
   ' font-family="&quot;IBM Plex Mono&quot;, monospace" font-weight="600"' + (attend ? AVENIR : "");
 /* Le temps que le trait s'écrive, ce qu'il n'a pas encore atteint attend.
    Écrite dès la première image plutôt qu'ajoutée en chemin, la pastille garde
@@ -219,7 +221,7 @@ function peintItineraire(p){
       out += '<circle class="iBout' + (a.n ? " num" : "") + cls + '"' +
              styleBout(c, { num: !!a.n, conf: !!a.conf, proche, attend }) + ' cx="' + a.xy[0] +
              '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
-      if (a.n) out += '<text class="iNum' + cls + '"' + styleNum(c, !!a.conf, proche, attend) + ' x="' + a.xy[0] +
+      if (a.n) out += '<text class="iNum' + cls + '"' + styleNum(c, proche, attend) + ' x="' + a.xy[0] +
              '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
     });
   } else {
