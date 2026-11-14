@@ -2033,6 +2033,8 @@ function habillageGl(/** @type {Element} */ racine, /** @type {any} */ acc){
   const copie = copieDuCalque(f);
   if (!copie) return;
   const j = jetonsHabillage(/** @type {Element} */ (racine.parentNode));
+  // un `opacity="inherit"` au premier niveau de la copie prend celle du calque posé
+  j.calque = op;
   const hors = styleSansSousCalque(j);
   for (const c of copie.children) parcoursHabillage(c, m, op, acc, null, hors, cle, j);
 }
@@ -2048,7 +2050,7 @@ function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m,
   const tr = el.getAttribute("transform");
   if (tr) m = mulM(m, lisTransform(tr));
   // un pourcentage, `inherit`, une valeur hors de [0, 1] : lus comme le style calculé les lisait
-  if (el.hasAttribute("opacity")){ op *= opaciteElement(el); if (!(op > .003)) return; }
+  if (el.hasAttribute("opacity")){ op *= opaciteElement(el, j.calque); if (!(op > .003)) return; }
   if (tag === "g"){ for (const c of el.children) parcoursHabillage(c, m, op, acc, sous, s, cle, j); return; }
   const st = styleElementHabillage(el, sous, s, j);
   if (tag === "text"){ texteGl(el, st, m, op, acc); return; }

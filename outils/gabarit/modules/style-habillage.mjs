@@ -55,7 +55,9 @@ export function jetonsHabillage(couches){
   const cs = getComputedStyle(couches);
   return { ligne: cs.getPropertyValue("--plan-line").trim(), graisse: cs.fontWeight, famille: famillePlan(),
     // le corps dont héritent les textes du calque, et celui de la racine, pour `rem`
-    corps: parseFloat(cs.fontSize) || 16, racine: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16 };
+    corps: parseFloat(cs.fontSize) || 16, racine: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16,
+    // l'opacité propre du calque dans la page, posée par qui le lit (`webgl.mjs` `habillageGl`)
+    calque: 1 };
 }
 
 /**
@@ -111,15 +113,21 @@ export function opacite(v){
 
 /**
  * L'opacité propre d'un élément — elle ne s'hérite pas, mais `inherit` y
- * prend celle du parent. Un, sans déclaration lisible.
+ * prend celle du parent. Un, sans déclaration lisible. Remontée jusqu'au-delà
+ * de la racine de la copie détachée, elle prend celle du calque posé dans la
+ * page, que la feuille règle (`.16` derrière un cartouche) et que la copie ne
+ * porte pas.
  * @param {Element} el
+ * @param {number} [calque] l'opacité propre du groupe du calque dans la page
  */
-export function opaciteElement(el){
+export function opaciteElement(el, calque = 1){
   for (let n = /** @type {Element | null} */ (el); n; n = /** @type {Element | null} */ (n.parentElement)){
+    // la racine de la copie tient la place du calque posé : c'est son opacité qui vaut
+    if (n !== el && !n.parentElement) return calque;
     const v = n.getAttribute("opacity");
     if (v === null || v.trim() !== "inherit") return opacite(v) ?? 1;
   }
-  return 1;
+  return calque;
 }
 
 /* Le corps d'un texte en pixels, comme le navigateur le calcule : les tailles
@@ -127,12 +135,25 @@ export function opaciteElement(el){
    `12pt`, `120%`) se résolvent de l'ancêtre le plus haut vers le texte, sur
    le corps dont le calque hérite. Un nombre seul reste le chemin courant ; une
    valeur illisible est ignorée, comme le ferait la feuille. */
-const MOTS_CORPS = /** @type {Record<string, number>} */ ({ "xx-small": 9, "x-small": 10, small: 13, medium: 16,
-  large: 18, "x-large": 24, "xx-large": 32, "xxx-large": 48 });
+const MOTS = ["xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large", "xxx-large"];
+/* Ce que valent les mots-clés, mesurés une fois sur la sonde : ils suivent la
+   taille de police que le visiteur a réglée dans son navigateur — `medium`
+   vaut seize pixels d'ordinaire, vingt chez qui agrandit les textes —, et une
+   table fixe la lui aurait reprise. */
+/** @type {Record<string, number> | null} */
+let motsMesures = null;
+function motsCorps(){
+  if (motsMesures) return motsMesures;
+  famillePlan();
+  const m = /** @type {Record<string, number>} */ ({}), sd = /** @type {HTMLElement} */ (sonde);
+  for (const mot of MOTS){ sd.style.fontSize = mot; m[mot] = parseFloat(getComputedStyle(sd).fontSize) || 16; }
+  sd.style.fontSize = "";
+  return (motsMesures = m);
+}
 const UNITES_CORPS = /** @type {Record<string, number>} */ ({ "": 1, px: 1, pt: 4 / 3, pc: 16, in: 96,
   cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6 });
 function corpsDe(/** @type {string} */ v, /** @type {number} */ parent, /** @type {ReturnType<typeof jetonsHabillage>} */ j){
-  if (v in MOTS_CORPS) return MOTS_CORPS[v];
+  if (MOTS.includes(v)) return motsCorps()[v];
   if (v === "larger") return parent * 1.2;
   if (v === "smaller") return parent / 1.2;
   const m = /^(\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?\s*([a-z%]*)$/.exec(v);
@@ -182,7 +203,7 @@ export function styleElementHabillage(el, sous, s, j){
     strokeDasharray: h("stroke-dasharray") || "none",
     fontFamily: j.famille, fontWeight: h("font-weight") || j.graisse,
     fontSize: texte ? corps(el, j) + "px" : "16px", textAnchor: h("text-anchor") || "start",
-    display: "inline", opacity: String(opaciteElement(el)), pointerEvents: "auto",
+    display: "inline", opacity: String(opaciteElement(el, j.calque)), pointerEvents: "auto",
     getPropertyValue: () => "",
   };
 }

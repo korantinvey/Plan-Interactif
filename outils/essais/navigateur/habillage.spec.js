@@ -51,7 +51,10 @@ function reglees() {
    porte ; on les glisse dans le premier calque montré de chaque pavillon. */
 const RARES = '<g font-size="20"><text x="0" y="0" font-size="small">Petit</text>' +
   '<text x="0" y="30" font-size="1.5em">Relatif</text><text x="0" y="60" font-size="12pt">Points</text>' +
-  '<text x="0" y="90" font-size="120%">Pourcent</text><text x="0" y="120" font-size="inherit">Hérité</text></g>' +
+  '<text x="0" y="90" font-size="120%">Pourcent</text><text x="0" y="120" font-size="inherit">Hérité</text>' +
+  '<text x="0" y="150" font-size="medium">Moyen</text><text x="0" y="180" font-size="x-large">Grand</text></g>' +
+  // au premier niveau : `inherit` y prend l'opacité du calque posé, que la copie ne porte pas
+  '<path d="M100 0L110 0L110 10Z" fill="#aa5500" opacity="inherit"/>' +
   '<g fill-opacity=".4"><path d="M0 0L10 0L10 10Z" fill="#aa0000" fill-opacity="inherit" stroke="none"/></g>' +
   '<g opacity="50%"><path d="M20 0L30 0L30 10Z" fill="#336699"/></g>' +
   '<path d="M40 0L50 0L50 10Z" fill="#00aa00" opacity="150%"/>' +
@@ -87,13 +90,21 @@ for (const [nom, donnees] of [["tel quel", () => DONNEES], ["réglé par l'explo
       }
       // chaque calque montré et rempli : les autres ne se dessinent dans aucune des deux lectures
       await expect.poll(() => page.evaluate(() => document.querySelectorAll("#couches .cal > *").length)).toBeGreaterThan(0);
-      const r = await page.evaluate(() => [...document.querySelectorAll("#couches .cal")]
-        .filter((g) => g.childElementCount)
-        .map((g) => ({ cle: g.dataset.cle, ...globalThis.__essais.compareLectures(g) })));
-      for (const c of r) {
-        expect(c.ecarts, "pavillon " + (i + 1) + ", calque " + c.cle + " : " + JSON.stringify(c.ecarts, null, 1)).toEqual([]);
-        formes += c.formes; calques++;
+      /* Et, pour les écritures rares, derrière un cartouche de repère : la
+         feuille y pâlit les calques (`poi-actif`), ce que la copie détachée
+         ne porte pas. */
+      for (const poi of nom === "aux écritures rares" ? [false, true] : [false]) {
+        await page.evaluate((poi) => document.documentElement.classList.toggle("poi-actif", poi), poi);
+        const r = await page.evaluate(() => [...document.querySelectorAll("#couches .cal")]
+          .filter((g) => g.childElementCount)
+          .map((g) => ({ cle: g.dataset.cle, ...globalThis.__essais.compareLectures(g) })));
+        for (const c of r) {
+          expect(c.ecarts, "pavillon " + (i + 1) + (poi ? ", cartouche ouvert" : "") + ", calque " + c.cle + " : " +
+            JSON.stringify(c.ecarts, null, 1)).toEqual([]);
+          formes += c.formes; calques++;
+        }
       }
+      await page.evaluate(() => document.documentElement.classList.remove("poi-actif"));
     }
     expect(calques, "des calques ont été comparés").toBeGreaterThan(3);
     expect(formes, "des formes ont été comparées").toBeGreaterThan(1000);
