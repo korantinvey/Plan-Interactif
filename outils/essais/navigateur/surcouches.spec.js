@@ -3,15 +3,16 @@
  * le dessin les lit sans la feuille, et doit en tirer ce que la feuille dessinait.
  *
  * Les marques des distinctions écrivent leur couleur, leur trait et leur
- * retrait en attributs (`modules/distinctions.mjs` `traceDist`), et la feuille
- * ne les peint plus. On compare, pour chaque réglage, ce que le dessin tire du
+ * retrait en attributs (`modules/distinctions.mjs` `traceDist`), la zone que
+ * désigne la visite guidée son halo et son trait (`modules/tutoriel.mjs`
+ * `marqueZoneTuto`), et la feuille ne les peint plus. On compare, pour chaque réglage, ce que le dessin tire du
  * bloc par la lecture d'avant — le style calculé — et par la sienne — les
  * attributs : un écart dirait qu'une règle de la feuille les peint encore, ou
  * qu'un attribut se lit de travers. Puis on vérifie que les marques portent
  * bien la teinte réglée, et le retrait d'une recherche.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, DONNEES } = require("./aide.js");
+const { prepare, attendLaListe, avecUnProgramme, commenceLaVisite, DONNEES } = require("./aide.js");
 
 /** SMCL 2026, des nouveaux venus et des adhérents, et ces deux marques sur le plan. */
 function avecDistinctions(modeNeuf, modeAdherent, couleur) {
@@ -64,3 +65,21 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
     expect(erreurs).toEqual([]);
   });
 }
+
+test("la zone que désigne la visite guidée se lit dans ses attributs", async ({ page }) => {
+  /* En SVG, la zone bat (`tutoBat`) : son opacité calculée varie d'un instant à
+     l'autre, quand le dessin, qui ne rejoue aucune animation de la feuille, la
+     lit toujours pleine. Sans mouvement, la feuille la tient immobile. */
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  // en SVG : on compare deux lectures du même bloc, sans attendre le dessin
+  const erreurs = await commenceLaVisite(page, { adresse: "/plan?plan=smcl-2026&rendu=svg", donnees: avecUnProgramme() });
+  await page.waitForFunction(() => {
+    const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
+    return TUTO && TUTO.cle === "zones:zone" && document.querySelector("#tutoZone path");
+  }, null, { polling: 250, timeout: 60_000 });
+  const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("tutoZone")));
+  expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
+  // le halo et le trait : deux aplats et deux traits au plus, selon que la zone a un ou plusieurs anneaux
+  expect(r.formes).toBeGreaterThanOrEqual(2);
+  expect(erreurs).toEqual([]);
+});

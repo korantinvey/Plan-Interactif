@@ -116,7 +116,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_styles-divers.css` — 315 l. → demo.html, plan-smcl.html
+### `_styles-divers.css` — 314 l. → demo.html, plan-smcl.html
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
@@ -3625,7 +3625,7 @@ Importé par :
 
 itineraire · trajet
 
-### `modules/tutoriel.mjs` — 1057 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1069 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
@@ -3640,7 +3640,7 @@ Fonctions :
 `quitteTutoriel` 636 · `chapitreTuto` 648 · `battementTuto` 657 · `finTuto` 675
 `afficheTuto` 692 · `attendsTiroirs` 742 · `pxTuto` 767 · `boiteTuto` 780 · `repereTuto` 795
 `rameneTuto` 828 · `placeTuto` 866 · `voileTuto` 960 · `rafaleTuto` 977
-`marqueZoneTuto` 997 · `marqueLibelleTuto` 1040
+`marqueZoneTuto` 997 · `marqueLibelleTuto` 1052
 
 Éléments :
 

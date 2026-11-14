@@ -91,10 +91,9 @@ html.tuto-retrait .dcal .forme{opacity:.22}
    passerait sous les stands voisins. Elle ne prend aucun clic — c'est la zone,
    dessous, qu'on touche. */
 #tutoZone{pointer-events:none;animation:tutoBat 1.5s ease-in-out infinite}
-#tutoZone path{vector-effect:non-scaling-stroke;stroke-linejoin:round}
-#tutoZone .halo{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);
-  stroke-width:10;stroke-opacity:.22}
-#tutoZone .trait{fill:none;stroke:var(--accent);stroke-width:3}
+/* Son halo et son trait portent leur style en attributs (`tutoriel.mjs`
+   `marqueZoneTuto`) : la feuille ne les peint plus, et le dessin les lit sans
+   elle (`style-attributs.mjs`). */
 /* Ce que la visite parcourra, dans la fenêtre qui la propose. */
 .mcorps ul.tutoListe{margin:12px 0 4px;padding:0;list-style:none;display:flex;
   flex-direction:column;gap:9px}

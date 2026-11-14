@@ -1028,12 +1028,24 @@ function marqueZoneTuto(z){
   }
   g.dataset.id = z.id;
   g.innerHTML = "";
-  ["halo", "trait"].forEach(cls => {
+  /* La zone porte son style en attributs : le SVG de secours les lit comme
+     tels, et le dessin aussi (`style-attributs.mjs`), sans que la feuille la
+     peigne. Un halo pâle et large, puis le trait de la couleur principale,
+     d'épaisseur fixe à l'écran. Seul le battement reste à la feuille : le
+     dessin ne le rejoue pas. */
+  const accent = getComputedStyle(racine).getPropertyValue("--accent").trim();
+  const traits = {
+    halo: { fill: accent, "fill-opacity": ".16", stroke: accent, "stroke-width": "10", "stroke-opacity": ".22" },
+    trait: { fill: "none", stroke: accent, "stroke-width": "3" },
+  };
+  for (const [cls, attrs] of Object.entries(traits)){
     const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
     p.setAttribute("class", cls);
     p.setAttribute("d", z.d);
+    for (const [k, v] of Object.entries({ ...attrs, "vector-effect": "non-scaling-stroke", "stroke-linejoin": "round" }))
+      p.setAttribute(k, v);
     g.appendChild(p);
-  });
+  }
 }
 
 /** Le libellé de la zone désignée, gardé clair quand le plan recule. */
