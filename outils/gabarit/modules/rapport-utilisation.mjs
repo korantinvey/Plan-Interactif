@@ -428,13 +428,18 @@ function portes(hote, liste) {
 function jours(hote, liste) {
   if (!liste.length) return;
   const max = Math.max(1, ...liste.map((j) => j.visites));
+  const compact = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
   const box = document.createElement("div");
   box.className = "jours";
   liste.forEach((j) => {
     const d = document.createElement("div");
     d.className = "jour-bat";
-    d.innerHTML = '<span class="b"></span><span class="d"></span>';
+    d.innerHTML = '<span class="b"><span class="n"></span></span><span class="d"></span>';
     d.querySelector(".b").style.height = Math.max(2, j.visites / max * 100) + "%";
+    /* Le compte écrit au-dessus du bâton : sur un écran tactile, l'infobulle
+       ne s'ouvre jamais. Abrégé (« 1,2 k ») pour tenir dans la largeur d'un
+       jour quand la période en compte trente. */
+    d.querySelector(".n").textContent = compact.format(j.visites);
     // « 14/03 » suffit : l'année est celle de la période demandée
     const [an, mois, jour] = String(j.j).split("-");
     d.querySelector(".d").textContent = jour + "/" + mois;

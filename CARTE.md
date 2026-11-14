@@ -29,7 +29,7 @@ l'endroit où l'on corrige quoi que ce soit.
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console.css` — 748 l. → console.css
+### `_console.css` — 754 l. → console.css
 
 - l.673 · Page de rapport
 
@@ -2618,7 +2618,7 @@ Importé par :
 
 essai-rappel · reglage-rappel · tiroir-parcours
 
-### `modules/rapport-utilisation.mjs` — 725 l. → rapport
+### `modules/rapport-utilisation.mjs` — 730 l. → rapport
 
 - l.1 · Rapport d'utilisation
 
@@ -2627,9 +2627,9 @@ Fonctions :
 `courant` 70 · `chargeEvenements` 75 · `joursPeriode` 93 · `chargeRapport` 95
 `secondes` 127 · `fini` 128 · `lentes` 129 · `pese` 140 · `reunit` 150 · `ligne` 164
 `sousTitre` 174 · `jourDuSalon` 184 · `performances` 198 · `erreurs` 295 · `chiffre` 318
-`barres` 337 · `portes` 377 · `jours` 428 · `dessineRapport` 449 · `blocPerformances` 619
-`dessineBarre` 631 · `rafraichit` 658 · `videEcran` 678 · `demarre` 684
-`brancheRapport` 703
+`barres` 337 · `portes` 377 · `jours` 428 · `dessineRapport` 454 · `blocPerformances` 624
+`dessineBarre` 636 · `rafraichit` 663 · `videEcran` 683 · `demarre` 689
+`brancheRapport` 708
 
 Éléments :
 
