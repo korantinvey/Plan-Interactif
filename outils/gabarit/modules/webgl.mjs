@@ -43,6 +43,7 @@ import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
 import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
+import { poseHabillageDansLeSvg } from "./habillage-svg.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
@@ -272,9 +273,12 @@ function chargeWebgl(){
      secours : bibliothèque introuvable, ou dessin trop long à venir. */
   const racine = document.documentElement;
   racine.classList.add("gl-attente");
+  /* Le dessin lit l'habillage dans ses données : le SVG caché n'a pas à le
+     porter, sauf pour l'ancienne lecture qu'on compare (`?emplacements=feuille`). */
+  if (!RELIT_LA_FEUILLE) poseHabillageDansLeSvg(false);
   /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
      attendait l'affichage n'a plus à attendre. */
-  const secours = () => { racine.classList.remove("gl-attente"); planAffiche(); };
+  const secours = () => { racine.classList.remove("gl-attente"); poseHabillageDansLeSvg(true); planAffiche(); };
   /* Le secours n'en est un que s'il montre le même plan. En immersif, le SVG
      n'a que les tuiles à plat : montré le temps que les volumes se préparent
      — et c'est le dessin le plus long à venir —, il faisait croire à une
@@ -716,6 +720,8 @@ function perdContexteWebgl(raison = "contexte perdu"){
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
+  // le SVG reprend le plan : il lui faut son habillage
+  poseHabillageDansLeSvg(true);
   /* Dit tout de suite, et non une fois le dessin jeté : rendre la caméra
      recadre la vue, qui repasse aussitôt par « monteWebgl ». Sans ce drapeau,
      un dessin neuf y naissait, que la suite jetait à la place de l'ancien —
