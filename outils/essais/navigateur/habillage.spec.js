@@ -67,7 +67,7 @@ for (const [nom, donnees] of [["tel quel", () => DONNEES], ["réglé par l'explo
       await expect.poll(() => page.evaluate(() => document.querySelectorAll("#couches .cal > *").length)).toBeGreaterThan(0);
       const r = await page.evaluate(() => [...document.querySelectorAll("#couches .cal")]
         .filter((g) => g.childElementCount)
-        .map((g) => ({ cle: g.dataset.cle, ...globalThis.__essais.compareHabillage(g) })));
+        .map((g) => ({ cle: g.dataset.cle, ...globalThis.__essais.compareLectures(g) })));
       for (const c of r) {
         expect(c.ecarts, "pavillon " + (i + 1) + ", calque " + c.cle + " : " + JSON.stringify(c.ecarts, null, 1)).toEqual([]);
         formes += c.formes; calques++;

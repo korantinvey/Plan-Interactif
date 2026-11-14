@@ -43,6 +43,7 @@ import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
 import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
+import { styleParAttributs } from "./style-attributs.mjs";
 import { poseHabillageDansLeSvg } from "./habillage-svg.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
@@ -1919,6 +1920,7 @@ function convertitBloc(racine, cle){
   JETONS = !RELIT_LA_FEUILLE && (racine.id === "stands" || racine.id === "zones") ? jetonsEmplacements(racine) : null;
   try {
     if (!RELIT_LA_FEUILLE && estHabillage(racine)) habillageGl(racine, acc);
+    else if (!RELIT_LA_FEUILLE && PAR_ATTRIBUTS.has(racine.id)) parcoursAttributs(racine, M_ID, 1, acc, racine);
     else parcoursGl(racine, M_ID, 1, acc);
   }
   finally { JETONS = null; }
@@ -2105,16 +2107,44 @@ function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m,
   if (traces) formeGl(el, st, m, op, traces, acc);
 }
 
+/* ------------------------------------------------------------
+   Les surcouches qui portent leur style en attributs
+
+   Le module qui dessine une surcouche y écrit son style en attributs SVG ; la
+   feuille ne la peint plus (`style-attributs.mjs`). Le dessin les lit donc
+   tels quels, sans style calculé. Les blocs, par leur identifiant : une
+   surcouche n'y entre qu'une fois sa feuille vidée de ses règles.
+   ------------------------------------------------------------ */
+const PAR_ATTRIBUTS = new Set(["dists"]);
+function parcoursAttributs(/** @type {Element} */ el, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
+    /** @type {Element} */ racine){
+  const st = styleParAttributs(el, racine);
+  if (st.display === "none") return;
+  const tr = el.getAttribute("transform");
+  if (tr) m = mulM(m, lisTransform(tr));
+  const o = parseFloat(st.opacity);
+  if (Number.isFinite(o)) op *= o;
+  if (!(op > .003)) return;
+  const tag = el.localName;
+  if (tag === "g"){ for (const c of el.children) parcoursAttributs(c, m, op, acc, racine); return; }
+  if (tag === "text"){ texteGl(el, st, m, op, acc); return; }
+  const traces = tracesDeForme(el, tag);
+  if (traces) formeGl(el, st, m, op, traces, acc);
+}
+
 /**
- * Pour l'essai de l'habillage (`habillage.spec.js`) : ce que le dessin tire
- * d'un calque par les deux lectures — le groupe dans la page et son style
- * calculé, la copie détachée et le style résolu —, et ce qui diffère.
- * @param {Element} racine le groupe `.cal` d'un calque, rempli
+ * Pour les essais des lectures sans la feuille (`habillage.spec.js`,
+ * `surcouches.spec.js`) : ce que le dessin tire d'un bloc par la lecture
+ * d'avant — le groupe dans la page et son style calculé — et par la sienne —
+ * la copie détachée d'un calque, ou les attributs d'une surcouche —, et ce
+ * qui diffère.
+ * @param {Element} racine le groupe du bloc, rempli dans la page
  */
-export function compareHabillage(racine){
+export function compareLectures(racine){
   const ancien = accVide(false), nouveau = accVide(false);
   parcoursGl(racine, M_ID, 1, ancien);
-  habillageGl(racine, nouveau);
+  if (estHabillage(racine)) habillageGl(racine, nouveau);
+  else parcoursAttributs(racine, M_ID, 1, nouveau, racine);
   const r = (/** @type {number} */ x) => Math.round(x * 1e4) / 1e4;
   const resume = (/** @type {any} */ a) => [
     ...a.pleins.map((/** @type {any} */ p) => "plein " + JSON.stringify([p.polygon.map((/** @type {any} */ an) => an.map((/** @type {any} */ q) => q.map(r))), p.couleur])),

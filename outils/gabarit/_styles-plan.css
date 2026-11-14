@@ -489,13 +489,9 @@ html:not(.chaleur-halos) .stand[data-chaleur] path{fill:var(--chal-c)}
   --d-doux:var(--d-adherent-doux,var(--accent-soft));
   --d-ink:var(--d-adherent-ink,var(--accent-ink))}
 #dists{pointer-events:none}
-#dists .dPlein{fill:var(--d,var(--accent));stroke:none}
-/* Le premier des deux liserés s'élargit, et le second se pose dessus : de la
-   même épaisseur, ils se recouvraient et la seconde distinction ne se voyait
-   pas. Seul, un liseré garde l'épaisseur du trait de la sélection. */
-#dists .dLis.large{stroke-width:6}
-#dists .dLis{fill:none;stroke:var(--d,var(--accent));stroke-width:2.4;
-  vector-effect:non-scaling-stroke}
+/* Les marques portent leur couleur et leur trait en attributs, écrits par
+   `distinctions.mjs` `traceDist` : la feuille ne les peint plus, et le dessin
+   les lit sans elle (`style-attributs.mjs`). */
 html.sans-parcours #marques .parc{display:none}
 /* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
    plan ne l'atteignait donc pas, et ses liserés restaient seuls à pleine force

@@ -106,15 +106,22 @@ export const ETOILE_DIST =
  * Elle se pose sur un vrai coin du tracé (`coinDuTrace`), celui qui avance le
  * plus vers le haut droit — ou le haut gauche pour la seconde.
  */
-function traceDist(mode, p, b, rang, deuxLiseres){
+function traceDist(mode, p, b, rang, deuxLiseres, teinte){
+  /* La marque porte son style en attributs : le SVG de secours les lit comme
+     tels, et le dessin aussi (`style-attributs.mjs`), sans que la feuille les
+     peigne. Un aplat de la teinte de la distinction, ou un liseré fixe à
+     l'écran. */
+  const T = esc(teinte);
+  const plein = ' fill="' + T + '" stroke="none"';
   /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
      recouvrait le premier et le stand n'en montrait qu'un. Le premier s'élargit
      donc, et le second se pose dessus — un halo d'une couleur, un trait de
      l'autre. Seul, il garde son épaisseur d'origine : c'est le liseré des
      salons déjà en ligne, et il n'a pas à grossir. */
   if (mode === "lisere")
-    return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" d="' +
-      p.getAttribute("d") + '"/>';
+    return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" fill="none" stroke="' + T +
+      '" stroke-width="' + (deuxLiseres && !rang ? 6 : 2.4) + '" vector-effect="non-scaling-stroke" d="' +
+      esc(p.getAttribute("d") || "") + '"/>';
   if (!b || !(b.width > 0) || !(b.height > 0)) return "";
   const c = Math.min(Math.max(Math.min(b.width, b.height) * .34, .5), 1.6);
   const n = (v) => v.toFixed(2);
@@ -135,17 +142,17 @@ function traceDist(mode, p, b, rang, deuxLiseres){
        d'autant pour rester lisible. */
     if (tuiles){
       const r = rayonTuile(k.lu, k.lv), cc = Math.max(c, r * 1.7);
-      return '<path class="dPlein" d="M' + en(cc, 0) + 'L' + en(r, 0) +
+      return '<path class="dPlein"' + plein + ' d="M' + en(cc, 0) + 'L' + en(r, 0) +
         'Q' + en(0, 0) + ' ' + en(0, r) + 'L' + en(0, cc) + 'Z"/>';
     }
-    return '<path class="dPlein" d="M' + en(c, 0) + 'L' + en(0, 0) + 'L' + en(0, c) + 'Z"/>';
+    return '<path class="dPlein"' + plein + ' d="M' + en(c, 0) + 'L' + en(0, 0) + 'L' + en(0, c) + 'Z"/>';
   }
   /* La pastille et l'étincelle se posent dans l'angle, à égale distance de
      ses deux côtés ; l'étincelle garde l'aplomb de son dessin. */
   const [cx, cy] = pt(c * .58, c * .58);
   if (mode === "point")
-    return '<circle class="dPlein" cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(c * .34) + '"/>';
-  return '<g class="dPlein" transform="translate(' + n(cx - c * .5) + ' ' + n(cy - c * .5) +
+    return '<circle class="dPlein"' + plein + ' cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(c * .34) + '"/>';
+  return '<g class="dPlein"' + plein + ' transform="translate(' + n(cx - c * .5) + ' ' + n(cy - c * .5) +
     ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_DIST + '</g>';
 }
 
@@ -219,14 +226,19 @@ export const oublieDists = () => { DISTS_VUES = { plan: -1, modes: "", traces: [
 
 /** Les modes du plan réunis en une clé : c'est ce qui décide si le relevé garde
  *  sa valeur, et il en faut autant que de distinctions. */
-const modesDuPlan = () => DISTINCTIONS.map(d => modeDist(d, "plan")).join("|") +
+/* La teinte d'une distinction sur le plan : celle que l'exploitant a réglée, ou
+   la couleur principale du salon. Écrite dans la marque même, elle entre dans
+   ce qui fait refaire le relevé. */
+const teinteDist = (/** @type {any} */ d) => couleurDist(d) ||
+  getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+const modesDuPlan = () => DISTINCTIONS.map(d => modeDist(d, "plan") + ":" + teinteDist(d)).join("|") +
   // les tuiles changent la boîte des stands et la forme des cornes
   (document.documentElement.classList.contains("ambiance-tuiles") ? "|tuiles" : "");
 
 function releveDists(){
   const traces = [];
   const actives = DISTINCTIONS
-    .map((d, rang) => ({ d, rang, mode: modeDist(d, "plan") }))
+    .map((d, rang) => ({ d, rang, mode: modeDist(d, "plan"), teinte: teinteDist(d) }))
     .filter(x => x.mode !== "aucun");
   const deuxLiseres = actives.filter(x => x.mode === "lisere").length > 1;
   $("stands").querySelectorAll("g.stand").forEach(g => {
@@ -235,10 +247,10 @@ function releveDists(){
     if (!p) return;
     // une seule mise en page par stand, même quand il porte les deux marques
     let b = null;
-    actives.forEach(({ d, rang, mode }) => {
+    actives.forEach(({ d, rang, mode, teinte }) => {
       if (!standPorte(o, d)) return;
       if (mode !== "lisere" && !b) b = p.getBBox();
-      const t = traceDist(mode, p, b, rang, deuxLiseres);
+      const t = traceDist(mode, p, b, rang, deuxLiseres, teinte);
       if (t) traces.push({ id: g.dataset.id, cle: d.cle, d: t });
     });
   });
@@ -264,14 +276,16 @@ export function dessineDists(){
     releveDists();
   const dim = new Set();
   $("stands").querySelectorAll("g.dim").forEach(x => dim.add(x.dataset.id));
-  /* La classe de la distinction porte sa teinte, qu'un jeton de la racine lui
-     donne : une couleur changée repeint alors les marques sans qu'on les
-     réécrive, sur le plan comme dans les neuf cents lignes de la liste. */
+  /* La marque porte sa teinte en attribut (`traceDist`) ; une couleur changée
+     refait le relevé (`modesDuPlan`). La classe de la distinction ne sert plus
+     qu'à la liste, dont les neuf cents lignes se repeignent par le jeton de la
+     racine sans qu'on les réécrive. */
   /* Chaque marque nomme son stand : la vue immersive (`webgl.mjs`) la pose
      sur le dessus de son volume, qu'elle ne saurait pas trouver sans lui. Pas
      « data-id », qui la ferait désigner au clic à la place du stand. */
+  /* Le retrait se porte en attribut, comme le reste du style de la marque. */
   g.innerHTML = DISTS_VUES.traces.map(t =>
-    '<g class="dM d-' + t.cle + (dim.has(t.id) ? " dim" : "") + '" data-sur="' + esc(t.id) + '">' +
+    '<g class="dM d-' + esc(t.cle) + '"' + (dim.has(t.id) ? ' opacity=".22"' : "") + ' data-sur="' + esc(t.id) + '">' +
     t.d + '</g>').join("");
 }
 

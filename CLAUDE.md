@@ -392,6 +392,12 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   prouver ; l'existant est dans sa référence figée `html-acceptes.json`.
 - **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
   dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
+- **Une surcouche qui porte son style en attributs ne se peint plus par la
+  feuille** — les marques des distinctions d'abord (`modules/distinctions.mjs`
+  `traceDist`). Le dessin la lit dans ses attributs (`modules/style-attributs.mjs`,
+  `webgl.mjs` `PAR_ATTRIBUTS`) : une règle CSS ajoutée pour elle ne se verrait
+  qu'en SVG. Son style s'écrit dans le module qui la dessine ;
+  `outils/essais/navigateur/surcouches.spec.js` échoue si la feuille la peint encore.
 - **Deux moteurs peignent le plan, qui parlent la même langue** : le moteur du
   plan (`modules/moteur-gl.mjs`), par défaut, et deck.gl, le recours
   (`?moteur=deck`). `webgl.mjs` les reçoit sous le même nom, `deck`. Une classe,
