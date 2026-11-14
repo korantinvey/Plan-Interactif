@@ -3756,7 +3756,7 @@ Importé par :
 
 environs · logos-stands · socle-dessin · vue · vue · webgl
 
-### `modules/vue.mjs` — 742 l. → plan, plan-admin
+### `modules/vue.mjs` — 753 l. → plan, plan-admin
 
 - l.1 · La vue du plan — cadrage, zoom, libellés à l'échelle, part du plan que
 - l.85 · 6. Vue

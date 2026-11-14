@@ -726,8 +726,19 @@ export function brancheVue(){
   if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
   mesureBarre();
   addEventListener("resize", mesureBarre);
-  if (window.ResizeObserver && $("bandeau"))
-    new ResizeObserver(mesureBarre).observe($("bandeau"));
+  /* À l'image suivante, et non dans le rappel du guet : la mesure finit la
+     barre sur un pixel entier, et change donc la taille de ce qu'elle guette.
+     Changée pendant que le navigateur livre ses observations, elle en appelait
+     une de plus qu'il ne livre pas — « ResizeObserver loop completed with
+     undelivered notifications », à chaque ouverture et chez chaque visiteur,
+     relevée comme une erreur de la page. L'image suivante la remesure à sa
+     taille finie, qui ne change plus. */
+  if (window.ResizeObserver && $("bandeau")){
+    let attente = 0;
+    new ResizeObserver(() => {
+      if (!attente) attente = requestAnimationFrame(() => { attente = 0; mesureBarre(); });
+    }).observe($("bandeau"));
+  }
 }
 
 /* Le rendu par la carte graphique et le fond de carte, que ce module importe,

@@ -590,3 +590,32 @@ test.describe("le salon que nomme l'adresse", { tag: "@base" }, () => {
     });
   });
 });
+
+/* La barre du salon se finit sur un pixel entier (`modules/vue.mjs`
+   `mesureBarre`), et change donc la taille de ce que son guet observe. Mesurée
+   dans le rappel du guet, elle appelait une observation que le navigateur ne
+   livre pas : « ResizeObserver loop completed with undelivered notifications »,
+   à chaque ouverture sur un téléphone, relevée comme une erreur de la page.
+   Ce n'est pas une exception, et la console ne la montre pas : on l'écoute sur
+   la fenêtre, comme `modules/erreurs.mjs`. */
+test("ouvrir le plan sur un téléphone ne relève aucune boucle de mesure @telephone", async ({ page }) => {
+  const erreurs = await prepare(page);
+  await page.addInitScript(() => {
+    globalThis.__boucles = [];
+    addEventListener("error", (e) => { if (/ResizeObserver/.test(e.message)) globalThis.__boucles.push(e.message); });
+  });
+  for (const adresse of [PLAN, "/plan-smcl.html"]) {
+    await page.goto(adresse);
+    await attendLaListe(page);
+    // la barre finie sur un pixel entier, et ce que la scène en sait
+    await expect.poll(() => page.evaluate(() => {
+      const b = document.getElementById("bandeau");
+      return b.style.minHeight === Math.ceil(b.getBoundingClientRect().height) + "px" &&
+        document.body.style.getPropertyValue("--barre") === b.style.minHeight;
+    })).toBe(true);
+    // le temps que les polices et les premières mesures se posent
+    await page.waitForTimeout(1500);
+    expect(await page.evaluate(() => globalThis.__boucles), adresse).toEqual([]);
+  }
+  expect(erreurs).toEqual([]);
+});
