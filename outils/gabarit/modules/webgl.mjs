@@ -41,7 +41,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
-import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage } from "./style-habillage.mjs";
+import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
 import { styleParAttributs } from "./style-attributs.mjs";
 import { poseHabillageDansLeSvg } from "./habillage-svg.mjs";
@@ -2047,8 +2047,8 @@ function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m,
   }
   const tr = el.getAttribute("transform");
   if (tr) m = mulM(m, lisTransform(tr));
-  const o = el.getAttribute("opacity");
-  if (o !== null && Number.isFinite(parseFloat(o))){ op *= parseFloat(o); if (!(op > .003)) return; }
+  // un pourcentage, `inherit`, une valeur hors de [0, 1] : lus comme le style calculé les lisait
+  if (el.hasAttribute("opacity")){ op *= opaciteElement(el); if (!(op > .003)) return; }
   if (tag === "g"){ for (const c of el.children) parcoursHabillage(c, m, op, acc, sous, s, cle, j); return; }
   const st = styleElementHabillage(el, sous, s, j);
   if (tag === "text"){ texteGl(el, st, m, op, acc); return; }
@@ -2793,6 +2793,11 @@ function corpsDeclare(el){
   for (let n = el; n && n.getAttribute; n = n.parentNode){
     const v = n.getAttribute("font-size");
     if (v && /^\s*[\d.]+\s*(px)?\s*$/.test(v)) return parseFloat(v);
+    /* La déclaration la plus proche décide : un mot-clé ou une unité (`small`,
+       `1.5em`) n'est pas un corps en pixels, et l'ancêtre qui en porte un ne
+       vaut plus pour ce texte. Le style calculé le résout alors — ou, pour
+       l'habillage lu sans la page, `style-habillage.mjs`. */
+    if (v && v.trim() && v.trim() !== "inherit") return 0;
     if (n.tagName === "svg") return 0;
   }
   return 0;

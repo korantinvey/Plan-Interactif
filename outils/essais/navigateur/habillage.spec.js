@@ -45,7 +45,29 @@ function reglees() {
   return d;
 }
 
-for (const [nom, donnees] of [["tel quel", () => DONNEES], ["réglé par l'exploitant", reglees]]) {
+/* Des écritures rares que le nettoyage de Klipso laisse passer (`_partage/svg.ts`),
+   et que le style calculé résolvait : `inherit`, les opacités en pourcentage ou
+   hors de [0, 1], les corps en mots-clés et en unités. Aucun salon d'essai n'en
+   porte ; on les glisse dans le premier calque montré de chaque pavillon. */
+const RARES = '<g font-size="20"><text x="0" y="0" font-size="small">Petit</text>' +
+  '<text x="0" y="30" font-size="1.5em">Relatif</text><text x="0" y="60" font-size="12pt">Points</text>' +
+  '<text x="0" y="90" font-size="120%">Pourcent</text><text x="0" y="120" font-size="inherit">Hérité</text></g>' +
+  '<g fill-opacity=".4"><path d="M0 0L10 0L10 10Z" fill="#aa0000" fill-opacity="inherit" stroke="none"/></g>' +
+  '<g opacity="50%"><path d="M20 0L30 0L30 10Z" fill="#336699"/></g>' +
+  '<path d="M40 0L50 0L50 10Z" fill="#00aa00" opacity="150%"/>' +
+  '<path d="M60 0L70 0L70 10Z" fill="#aa00aa" fill-opacity="30%" stroke="#000000" stroke-opacity="60%"/>' +
+  '<g opacity=".5"><path d="M80 0L90 0L90 10Z" fill="#0000aa" opacity="inherit"/></g>';
+function rares() {
+  const d = JSON.parse(JSON.stringify(DONNEES));
+  for (const p of d.plans) {
+    const f = (p.fond || []).find((x) => x.visible !== false && x.svg);
+    if (f) f.svg += RARES;
+  }
+  return d;
+}
+
+for (const [nom, donnees] of [["tel quel", () => DONNEES], ["réglé par l'exploitant", reglees],
+  ["aux écritures rares", rares]]) {
   test("l'habillage lu dans ses données dessine ce que la feuille dessinait — " + nom, async ({ page }) => {
     test.slow();
     const erreurs = await prepare(page);

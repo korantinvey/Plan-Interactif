@@ -88,6 +88,13 @@ administration `chaleur.mjs` (`poseChaleurs`) et `reprise-emplacements.mjs`
 n'importe que `donnees.mjs` : tous ceux qui l'informent dépendent déjà du
 dessin, et le modèle ne pouvait pas les importer sans boucle.
 
+Trois lectures restent sur le groupe, et `webgl.mjs` `emplacementGl` en
+dépend encore : la classe `zone`, qui dit si l'emplacement est une zone ;
+l'état `:focus-visible`, que seul le navigateur connaît ; et les tracés de
+ses enfants, dont il tire la géométrie. Les retirer demanderait de porter les
+trois dans le modèle et dans les données — c'est le chantier des groupes,
+ci-dessous, et non un nettoyage.
+
 L'essai `outils/essais/navigateur/etat-emplacements.spec.js` parcourt des
 états réels de la page — recherche, stand choisi, fiche refermée, zones de
 restauration mises en avant, secteurs teints, autre pavillon — et compare,
@@ -185,8 +192,10 @@ source, et des règles en moins dans la feuille.
 **Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
 les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900
 éléments par pavillon), contre 89 à 93 % pour l'habillage de Klipso. Depuis
-les pas 1 et 2, leurs groupes ne servent plus au dessin ; ils restent la
-couche de désignation, de clavier et de lecteur d'écran, et le repli SVG.
+les pas 1 et 2, le dessin n'y lit plus ni le style ni l'état décidé par la
+page — seulement la nature de zone, le focus du clavier et les tracés (voir
+le deuxième pas) ; ils restent la couche de désignation, de clavier et de
+lecteur d'écran, et le repli SVG.
 Les retirer — désignation par clé, fiche, décor des zones, distinctions,
 parcours, couche accessible — n'en vaut la peine que si la maintenance le
 demande un jour. On est passé à l'habillage.

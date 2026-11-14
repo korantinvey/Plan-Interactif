@@ -76,8 +76,9 @@ function compare() {
 
   const stand = document.querySelector("#stands > g.stand");
   const zone = document.querySelector("#zones > g.zone");
-  const SECT = [null, { h: "200" }, { h: "35", c: "#3a7d44" }];
-  const CHAL = [null, "rgb(200, 60, 40)", "#c33", "hsl(10 70% 50%)"];
+  // une teinte translucide de chaque sorte : le liseré foncé des Tuiles en garde l'opacité
+  const SECT = [null, { h: "200" }, { h: "35", c: "#3a7d44" }, { h: "35", c: "#3a7d4480" }];
+  const CHAL = [null, "rgb(200, 60, 40)", "#c33", "hsl(10 70% 50%)", "rgb(200 60 40 / 40%)"];
   const COULEURS = [null, { "--c-stand": "#e8f0ff", "--c-zone": "#2a9d8f", "--c-sel": "#ffd166", "--c-poi": "#e63946" }];
   const classe = (g, c, oui) => g.classList.toggle(c, oui);
 

@@ -54,13 +54,20 @@ export function jetonsEmplacements(ref){
   };
 }
 
-/** `color-mix(in srgb, c part, #14181a)` — le liseré foncé des Tuiles. */
+/** `color-mix(in srgb, c part, #14181a)` — le liseré foncé des Tuiles.
+ *  Comme `color-mix`, le mélange se fait sur les composantes prémultipliées
+ *  par l'opacité, et l'opacité se mélange aussi : une teinte de secteur
+ *  translucide (`#rrggbbaa`, que `secteurs.mjs` accepte) donne un liseré
+ *  translucide, et non opaque. */
 function fonce(/** @type {string} */ c, /** @type {number} */ part){
-  const a = c && couleurGl(c, 1), b = /** @type {number[]} */ (couleurGl(SOMBRE, 1));
   // une couleur illisible rend la déclaration invalide : la feuille ne poserait aucun trait
-  if (!a) return "none";
-  const f = (/** @type {number} */ i) => (a[i] * part + b[i] * (1 - part)) / 255;
-  return "color(srgb " + f(0) + " " + f(1) + " " + f(2) + ")";
+  if (!c || !CSS.supports("color", c)) return "none";
+  // une couleur toute transparente se lit comme rien, mais se mélange encore
+  const a = couleurGl(c, 1) || [0, 0, 0, 0], b = /** @type {number[]} */ (couleurGl(SOMBRE, 1));
+  const pa = a[3] / 255 * part, pb = b[3] / 255 * (1 - part), alpha = pa + pb;
+  if (!(alpha > 0)) return "none";
+  const f = (/** @type {number} */ i) => (a[i] * pa + b[i] * pb) / alpha / 255;
+  return "color(srgb " + f(0) + " " + f(1) + " " + f(2) + (alpha < 1 ? " / " + alpha : "") + ")";
 }
 
 /**

@@ -53,7 +53,9 @@ function famillePlan(){
  */
 export function jetonsHabillage(couches){
   const cs = getComputedStyle(couches);
-  return { ligne: cs.getPropertyValue("--plan-line").trim(), graisse: cs.fontWeight, famille: famillePlan() };
+  return { ligne: cs.getPropertyValue("--plan-line").trim(), graisse: cs.fontWeight, famille: famillePlan(),
+    // le corps dont héritent les textes du calque, et celui de la racine, pour `rem`
+    corps: parseFloat(cs.fontSize) || 16, racine: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16 };
 }
 
 /**
@@ -82,13 +84,75 @@ export const styleSansSousCalque = (/** @type {ReturnType<typeof jetonsHabillage
   ({ eteint: false, color: j.ligne, fill: "black", stroke: "none" });
 
 /* La valeur d'un attribut de dessin, héritée jusqu'au groupe du sous-calque
-   (exclu : la sienne vient du réglage), ou rien. */
+   (exclu : la sienne vient du réglage), ou rien. `inherit`, que le nettoyage
+   de Klipso laisse passer, renvoie au parent comme une valeur absente : la
+   rendre telle quelle donnait une opacité illisible, et le tracé disparaissait
+   du dessin seul. */
 function herite(/** @type {Element} */ el, /** @type {Element | null} */ sous, /** @type {string} */ nom){
   for (let n = /** @type {Element | null} */ (el); n && n !== sous; n = /** @type {Element | null} */ (n.parentElement)){
     const v = n.getAttribute(nom);
-    if (v !== null && v.trim() !== "") return v.trim();
+    if (v !== null && v.trim() !== "" && v.trim() !== "inherit") return v.trim();
   }
   return null;
+}
+
+/**
+ * Une opacité SVG en nombre, bornée à [0, 1] : un nombre, ou un pourcentage
+ * (`50%`), que le style calculé convertissait et que `parseFloat` lisait
+ * cent fois trop grand. Rien pour une valeur illisible.
+ * @param {string | null} v
+ */
+export function opacite(v){
+  if (v === null) return null;
+  const t = v.trim(), n = parseFloat(t);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(1, Math.max(0, t.endsWith("%") ? n / 100 : n));
+}
+
+/**
+ * L'opacité propre d'un élément — elle ne s'hérite pas, mais `inherit` y
+ * prend celle du parent. Un, sans déclaration lisible.
+ * @param {Element} el
+ */
+export function opaciteElement(el){
+  for (let n = /** @type {Element | null} */ (el); n; n = /** @type {Element | null} */ (n.parentElement)){
+    const v = n.getAttribute("opacity");
+    if (v === null || v.trim() !== "inherit") return opacite(v) ?? 1;
+  }
+  return 1;
+}
+
+/* Le corps d'un texte en pixels, comme le navigateur le calcule : les tailles
+   en mots-clés et en unités que le nettoyage laisse passer (`small`, `1.5em`,
+   `12pt`, `120%`) se résolvent de l'ancêtre le plus haut vers le texte, sur
+   le corps dont le calque hérite. Un nombre seul reste le chemin courant ; une
+   valeur illisible est ignorée, comme le ferait la feuille. */
+const MOTS_CORPS = /** @type {Record<string, number>} */ ({ "xx-small": 9, "x-small": 10, small: 13, medium: 16,
+  large: 18, "x-large": 24, "xx-large": 32, "xxx-large": 48 });
+const UNITES_CORPS = /** @type {Record<string, number>} */ ({ "": 1, px: 1, pt: 4 / 3, pc: 16, in: 96,
+  cm: 96 / 2.54, mm: 96 / 25.4, q: 96 / 101.6 });
+function corpsDe(/** @type {string} */ v, /** @type {number} */ parent, /** @type {ReturnType<typeof jetonsHabillage>} */ j){
+  if (v in MOTS_CORPS) return MOTS_CORPS[v];
+  if (v === "larger") return parent * 1.2;
+  if (v === "smaller") return parent / 1.2;
+  const m = /^(\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?\s*([a-z%]*)$/.exec(v);
+  if (!m) return parent;
+  const n = parseFloat(v), u = m[2];
+  if (u === "%") return parent * n / 100;
+  if (u === "em") return parent * n;
+  if (u === "rem") return j.racine * n;
+  return u in UNITES_CORPS ? n * UNITES_CORPS[u] : parent;
+}
+function corps(/** @type {Element} */ el, /** @type {ReturnType<typeof jetonsHabillage>} */ j){
+  /** @type {string[]} */
+  const declares = [];
+  for (let n = /** @type {Element | null} */ (el); n; n = /** @type {Element | null} */ (n.parentElement)){
+    const v = (n.getAttribute("font-size") || "").trim().toLowerCase();
+    if (v && v !== "inherit") declares.push(v);
+  }
+  let px = j.corps;
+  for (let i = declares.length - 1; i >= 0; i--) px = corpsDe(declares[i], px, j);
+  return px;
 }
 const couleur = (/** @type {string} */ v, /** @type {{ color: string }} */ s) => v === "currentColor" ? s.color : v;
 
@@ -110,15 +174,15 @@ export function styleElementHabillage(el, sous, s, j){
   return {
     // `#couches .cal text{fill:currentColor;stroke:none}` l'emporte sur les attributs
     fill: texte ? s.color : couleur(h("fill") || s.fill, s),
-    fillOpacity: h("fill-opacity") || "1",
+    fillOpacity: String(opacite(h("fill-opacity")) ?? 1),
     stroke: texte ? "none" : couleur(h("stroke") || s.stroke, s),
-    strokeOpacity: h("stroke-opacity") || "1",
+    strokeOpacity: String(opacite(h("stroke-opacity")) ?? 1),
     strokeWidth: fixe ? ".7" : h("stroke-width") || "1",
     vectorEffect: fixe ? "non-scaling-stroke" : el.getAttribute("vector-effect") || "none",
     strokeDasharray: h("stroke-dasharray") || "none",
     fontFamily: j.famille, fontWeight: h("font-weight") || j.graisse,
-    fontSize: h("font-size") || "16px", textAnchor: h("text-anchor") || "start",
-    display: "inline", opacity: el.getAttribute("opacity") || "1", pointerEvents: "auto",
+    fontSize: texte ? corps(el, j) + "px" : "16px", textAnchor: h("text-anchor") || "start",
+    display: "inline", opacity: String(opaciteElement(el)), pointerEvents: "auto",
     getPropertyValue: () => "",
   };
 }

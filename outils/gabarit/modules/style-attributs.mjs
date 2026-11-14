@@ -23,7 +23,8 @@
 function herite(/** @type {Element} */ el, /** @type {Element} */ racine, /** @type {string} */ nom){
   for (let n = /** @type {Element | null} */ (el); n; n = /** @type {Element | null} */ (n.parentElement)){
     const v = n.getAttribute(nom);
-    if (v !== null && v.trim() !== "") return v.trim();
+    // `inherit` renvoie au parent, comme une valeur absente
+    if (v !== null && v.trim() !== "" && v.trim() !== "inherit") return v.trim();
     if (n === racine) break;
   }
   return null;
