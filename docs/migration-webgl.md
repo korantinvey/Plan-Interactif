@@ -45,6 +45,38 @@ hors du chantier (voir « Ce qui reste en SVG »).
 Les points sont comptés par sorte : une même ligne qui construit et ordonne
 compte deux fois.
 
+## Avancement
+
+**Étape 1, premier pas — le lecteur des stands et des zones (14 novembre
+2026).** Le dessin ne lit plus ni le style calculé ni le tracé des stands et
+des zones : `modules/style-emplacements.mjs` résout leur style en
+JavaScript, sur les mêmes entrées que la feuille (classes et variables du
+groupe, états de la racine, couleurs de la page), et `webgl.mjs` garde
+chaque tracé une fois lu (`tracesDe`). Le SVG est encore construit et
+encore marqué par ses écrivains (`.sel`, `.dim`, secteurs…) : ce pas ne
+change que le lecteur.
+
+L'essai `outils/essais/navigateur/style-emplacements.spec.js` compare le
+style résolu au style calculé sur environ 33 000 combinaisons (classes du
+groupe × états de la racine × couleurs réglées ou non) ; un écart introduit
+exprès le fait échouer en nommant la combinaison.
+
+Mesuré processeur ralenti quatre fois, ancien et nouveau code tour à tour
+dans la même session (un tirage chacun, bruit d'environ ±30 % entre
+tirages) :
+
+| moment | relecture, ancien | nouveau |
+|---|---|---|
+| choisir un stand, cinq fois | 146 ms | 85 ms — plus de relecture du tracé ni du style calculé |
+| recherche, six lettres | 86 ms | 53 ms |
+| ouverture, changement de pavillon | — | pas de gain attendu : chaque tracé est lu une première fois dans les deux versions ; les écarts mesurés (de −52 % à +19 %) suivent le bruit de la machine |
+
+**Pas suivant :** les écrivains. Que `fiche.mjs`, `recherche.mjs`,
+`secteurs.mjs`, `cartouche-poi.mjs`, `fiche-zone.mjs`, `chaleur.mjs` et
+`reprise-emplacements.mjs` disent leur état au modèle plutôt qu'au groupe
+SVG — après quoi les stands et les zones n'ont plus besoin d'être construits
+dans le SVG caché quand le WebGL peint.
+
 ## Ce que les modules font au SVG
 
 Sept sortes de contact, qui ne se remplacent pas de la même façon :

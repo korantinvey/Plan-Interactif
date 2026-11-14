@@ -39,6 +39,7 @@ import { creeEvenement } from "./evenement.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
@@ -1905,7 +1906,10 @@ function convertitBloc(racine, cle){
     racine.id === "calageApercu");
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
-  parcoursGl(racine, M_ID, 1, acc);
+  // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
+  JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
+  try { parcoursGl(racine, M_ID, 1, acc); }
+  finally { JETONS = null; }
   // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
   if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
   const out = couchesDeBloc(acc, cle);
@@ -1914,6 +1918,55 @@ function convertitBloc(racine, cle){
   out.push(...couchesJetons(acc.jetons, cle));
   // les marques des distinctions suivent leur stand qui monte (`marquesSurLesToits`)
   return racine.id === "dists" && GL.camera ? out.map(c => c.clone({ marques: true })) : out;
+}
+
+/* Les stands et les zones ne se relisent pas dans le style calculé.
+
+   Un `getComputedStyle` par groupe et par tracé obligeait le navigateur à
+   tenir à jour le style de tout le SVG caché, et chaque conversion relisait
+   le tracé de chaque emplacement, chiffre par chiffre. Le style se résout
+   donc ici sans la feuille (`style-emplacements.mjs`), sur les couleurs de la
+   page lues une fois pour le bloc (`JETONS`, posées par `convertitBloc`), et
+   le tracé se lit une fois pour toutes : la même chaîne rend le même tracé,
+   et la sélection, la recherche ou les secteurs ne le changent pas.
+
+   Un groupe qui sortirait de la règle — une transformation, un enfant
+   inconnu — repasse par la feuille, comme avant. */
+/** @type {ReturnType<typeof jetonsEmplacements> | null} */
+let JETONS = null;
+/** @type {Map<string, any[]>} */
+const TRACES = new Map();
+/* Au-delà, la mémoire des tracés repart de zéro : quatre pavillons de neuf
+   cents stands, et leurs tracés en Tuiles, y tiennent largement. */
+const TRACES_MAX = 20000;
+function tracesDe(/** @type {string} */ d){
+  let t = TRACES.get(d);
+  if (!t){
+    if (TRACES.size >= TRACES_MAX) TRACES.clear();
+    t = lisTrace(d);
+    TRACES.set(d, t);
+  }
+  return t;
+}
+const estEmplacement = (/** @type {Element} */ el) => {
+  const p = el.parentNode;
+  return el.localName === "g" && !!p && (/** @type {Element} */ (p).id === "stands" || /** @type {Element} */ (p).id === "zones") &&
+    !el.hasAttribute("transform");
+};
+function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
+  const st = styleEmplacement(g, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
+  op *= st.opacite;
+  if (!(op > .003)) return;
+  for (const c of g.children){
+    const tag = c.localName;
+    // une bulle d'aide (la carte de chaleur en pose une) ne se dessine pas
+    if (tag === "title" || tag === "desc") continue;
+    if (tag !== "path" || c.hasAttribute("transform") || c.hasAttribute("class") || c.hasAttribute("style")){
+      parcoursGl(c, m, op, acc);
+      continue;
+    }
+    formeGl(c, st.trace, m, op, tracesDe(c.getAttribute("d") || ""), acc);
+  }
 }
 
 /* Ce que le cartouche met en avant se range à part : il bat, et seules ses
@@ -1936,6 +1989,7 @@ function accDe(el, acc){
 }
 
 function parcoursGl(el, m, op, acc){
+  if (JETONS && estEmplacement(el)){ emplacementGl(el, m, op, acc); return; }
   const cs = getComputedStyle(el);
   if (cs.display === "none") return;
   const tr = el.getAttribute("transform");

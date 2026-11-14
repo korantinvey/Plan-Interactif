@@ -44,7 +44,8 @@ import "./choix-ambiance.mjs";
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,
    les mesures du texte, le rendu par la carte graphique, ce que la planche
    des logos a coûté, les libellés qu'on réécrit sur des mesures neuves, et les
-   codes QR que lit le lecteur du parcours. Seuls les essais lisent `__essais`. La
+   codes QR que lit le lecteur du parcours, et le style des stands résolu sans
+   la feuille, que l'essai compare au style calculé. Seuls les essais lisent `__essais`. La
    graisse et la police des libellés se
    remplacent au choix d'un modèle : elles se lisent donc par un accesseur,
    qui rend celles du moment ; la visite guidée en cours aussi, que le module
@@ -52,6 +53,8 @@ import "./choix-ambiance.mjs";
    gestes remplacent sans cesse. */
 import { qrTrame, qrSvg } from "./qr.mjs";
 import { fragmentDuCode } from "./scan-parcours.mjs";
+import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
+import { couleurGl } from "./trace.mjs";
 
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
@@ -59,6 +62,7 @@ globalThis.__essais = {
   /* de quoi fabriquer un code QR quelconque, et ce que le lecteur du parcours
      en accepte (`scan-parcours.mjs`) */
   qr: { qrTrame, qrSvg }, fragmentDuCode,
+  emplacements: { jetonsEmplacements, styleEmplacement, couleurGl },
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },
