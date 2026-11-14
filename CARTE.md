@@ -273,7 +273,8 @@ camera · configuration · donnees · figurants · logos-stands · salon
 
 Importé par :
 
-apparence · choix-ambiance · dessin · distinctions · rendu · volets
+apparence · choix-ambiance · dessin · distinctions · outil-comptoir · outil-foodtruck
+rendu · volets
 
 ### `modules/apercus.mjs` — 329 l. → plan-admin
 
@@ -1185,8 +1186,8 @@ donnees
 
 Importé par :
 
-cartouche-poi · chaleur · fiche · fiche-zone · plan · points-interet · recherche
-reprise-emplacements · secteurs · tutoriel · webgl
+cartouche-poi · chaleur · fiche · fiche-zone · outil-comptoir · outil-foodtruck · plan
+points-interet · recherche · reprise-emplacements · secteurs · tutoriel · webgl
 
 ### `modules/evenement.mjs` — 45 l. → plan, plan-admin, console
 
@@ -2280,20 +2281,22 @@ Importé par :
 bande-admin · batiments · calage-carte · dessin · enregistrement · ordre-calques
 outil-dessin · pile · rendu · reprise-emplacements · volets · vue
 
-### `modules/outil-comptoir.mjs` — 223 l. → plan-admin
+### `modules/outil-comptoir.mjs` — 230 l. → plan-admin
 
 - l.1 · Le comptoir d'un accueil, attrapé sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
-`aire` 49 · `anneauDe` 53 · `emprise` 59 · `reglageDe` 66 · `zoneDe` 78 · `lis` 82
-`metresParPixel` 91 · `vise` 94 · `choisitComptoir` 115 · `pose` 127 · `reglageCourant` 139
-`comptoirPointerDown` 151 · `comptoirPointerMove` 165 · `comptoirPointerUp` 185
-`lacheComptoir` 195 · `comptoirClavier` 201 · `relacheComptoir` 219
+`aire` 51 · `anneauDe` 55 · `emprise` 61 · `reglageDe` 68 · `accueils` 84 · `zoneDe` 85
+`groupeDe` 86 · `masquee` 87 · `lis` 91 · `metresParPixel` 98 · `vise` 101
+`choisitComptoir` 122 · `pose` 134 · `reglageCourant` 146 · `comptoirPointerDown` 158
+`comptoirPointerMove` 172 · `comptoirPointerUp` 192 · `lacheComptoir` 202
+`comptoirClavier` 208 · `relacheComptoir` 226
 
 Importe :
 
-camera · configuration · decor · geste-tenu · mode-admin · trace · vue
+ambiance · camera · configuration · decor · etat-emplacements · geste-tenu · mode-admin
+trace · vue
 
 Importé par :
 
@@ -2346,21 +2349,21 @@ Importé par :
 
 gestes-admin
 
-### `modules/outil-foodtruck.mjs` — 195 l. → plan-admin
+### `modules/outil-foodtruck.mjs` — 201 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck, attrapés sur le plan — l'outil de l'exploitant
 
 Fonctions :
 
-`zoneDe` 51 · `reglageDe` 55 · `lis` 61 · `metresParPixel` 69 · `vise` 73
-`choisitFoodtruck` 96 · `pose` 107 · `foodtruckPointerDown` 120 · `foodtruckPointerMove` 136
-`foodtruckPointerUp` 157 · `lacheFoodtruck` 167 · `foodtruckClavier` 173
-`relacheFoodtruck` 191
+`foodtrucks` 57 · `zoneDe` 58 · `groupeDe` 59 · `reglageDe` 62 · `lis` 69
+`metresParPixel` 75 · `vise` 79 · `choisitFoodtruck` 102 · `pose` 113
+`foodtruckPointerDown` 126 · `foodtruckPointerMove` 142 · `foodtruckPointerUp` 163
+`lacheFoodtruck` 173 · `foodtruckClavier` 179 · `relacheFoodtruck` 197
 
 Importe :
 
-camera · configuration · decor · geste-tenu · mode-admin · outil-comptoir
-reglage-foodtrucks · vue
+ambiance · camera · configuration · decor · etat-emplacements · geste-tenu · mode-admin
+outil-comptoir · reglage-foodtrucks · vue
 
 Importé par :
 

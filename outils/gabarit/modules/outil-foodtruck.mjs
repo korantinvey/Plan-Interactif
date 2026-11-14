@@ -36,6 +36,8 @@ import { svg, versPlan, vue, cadrePlan } from "./vue.mjs";
 import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
+import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { traceStand } from "./ambiance.mjs";
 
 const PAS_ANGLE = 5;
 /* Ce que la main parcourt, en pixels, avant que le camion la suive : un appui
@@ -48,8 +50,13 @@ let choisi = /** @type {{ id: string, i: number } | null} */ (null);
 let geste = null;
 inscritGesteTenu(() => geste && geste.bouge);
 
-const zoneDe = (/** @type {string} */ id) =>
-  document.querySelector('#zones g.zone[data-id="' + CSS.escape(id) + '"][data-type="foodtruck"]');
+/* Les zones de food trucks du pavillon, prises dans les données
+   (`etat-emplacements.mjs`) et non dans le SVG ; leur groupe ne sert qu'à
+   marquer le rendu de secours. */
+/** @typedef {ReturnType<typeof emplacements>[number]} Emplacement */
+const foodtrucks = () => emplacements().filter(e => e.zone && e.source.type === "foodtruck");
+const zoneDe = (/** @type {string} */ id) => foodtrucks().find(e => e.id === id) || null;
+const groupeDe = (/** @type {string} */ id) => { const e = zoneDe(id); return e ? groupeEmplacement(e.cle) : null; };
 
 /** Le réglage d'une zone tel que la configuration le tient, ou rien. */
 const reglageDe = (/** @type {string} */ id) => {
@@ -57,13 +64,12 @@ const reglageDe = (/** @type {string} */ id) => {
   return reglageCamionsValide(r) ? r : null;
 };
 
-/** Ce qu'on sait des camions d'une zone posée sur le plan. */
-function lis(/** @type {Element} */ g){
-  const path = g.querySelector("path");
-  const an = path && anneauDe(path.getAttribute("d") || "");
+/** Ce qu'on sait des camions d'une zone posée sur le plan. Le contour est
+ *  celui que le plan trace, l'ambiance comprise (`traceStand`). */
+function lis(/** @type {Emplacement} */ e){
+  const an = anneauDe(traceStand(e.source.d || ""));
   if (!an) return null;
-  const id = g.getAttribute("data-id") || "";
-  return { id, an, liste: camions(an, reglageDe(id)) };
+  return { id: e.id, an, liste: camions(an, reglageDe(e.id)) };
 }
 
 const metresParPixel = () => vue().w / Math.max(1, cadrePlan().width);
@@ -73,8 +79,8 @@ const metresParPixel = () => vue().w / Math.max(1, cadrePlan().width);
 function vise(/** @type {number[]} */ p){
   const marge = 10 * metresParPixel(), m = Math.max(1.2, marge);
   const tous = [];
-  for (const g of document.querySelectorAll('#zones g.zone[data-type="foodtruck"]:not(.masquee)')){
-    const z = lis(g);
+  for (const e of foodtrucks().filter(x => !(x.o || x.source).masquee)){
+    const z = lis(e);
     if (z) z.liste.forEach((c, i) => tous.push({ ...z, i, c, tenu: !!choisi && choisi.id === z.id && choisi.i === i }));
   }
   const tenu = tous.find(t => t.tenu);
@@ -95,12 +101,12 @@ function vise(/** @type {number[]} */ p){
 /** Choisir un camion, ou aucun : le dessin le dit par un attribut de sa zone. */
 export function choisitFoodtruck(/** @type {{ id: string, i: number } | null} */ c){
   if (choisi && c && choisi.id === c.id && choisi.i === c.i) return;
-  const avant = choisi && zoneDe(choisi.id);
+  const avant = choisi && groupeDe(choisi.id);
   if (avant) avant.removeAttribute("data-foodtruck-choisi");
   choisi = c;
-  const g = c && zoneDe(c.id);
+  const e = c ? zoneDe(c.id) : null, g = e && groupeEmplacement(e.cle);
   if (g) g.setAttribute("data-foodtruck-choisi", String(/** @type {any} */ (c).i));
-  else choisi = null;
+  if (!e) choisi = null;
 }
 
 /** Poser un réglage sur un camion, sans l'écrire encore sur le poste. */
