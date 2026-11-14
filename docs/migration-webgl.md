@@ -163,8 +163,11 @@ demande un jour. On est passé à l'habillage.
   l'exploitant change une couleur. Sur SMCL, pavillon 1, le SVG caché passe
   de 6 280 éléments à 561.
 
-Reste de l'étape 3 : le fond figé et son masque (`environs.mjs`), et l'ordre
-des calques (`ordre-trace.mjs`), qui ne touche plus qu'à des groupes vides. Il faudra que les modules qui les cherchent
+L'étape 3 est close. Le fond de carte n'était pas dans le SVG caché : ses
+tuiles vivent dans un SVG à part, hors du plan (`#fondTuiles`), le fond figé
+dans un bloc HTML (`#fondFige`), et le dessin ne les lit pas ; seul l'aplat
+qui vide le hall (`#trouDuFond`, un tracé) reste dans le plan. L'ordre des
+calques (`ordre-trace.mjs`) ne touche plus qu'à des groupes vides. Il faudra que les modules qui les cherchent
 encore dans le DOM — la fiche (`noeud`), les gestes, les logos, les
 distinctions, le parcours, la visite guidée, les outils de l'exploitant —
 les trouvent dans le modèle, que la désignation rende une clé et non un
