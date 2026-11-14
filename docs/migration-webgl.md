@@ -135,6 +135,23 @@ Reste, avant le pas 3b :
 - **les essais** qui comptent ou visent les groupes (`plan.spec.js`,
   `survol.spec.js`, `visite.spec.js`, `aide.js` `standAViser`…).
 
+**Étape 2 — les surcouches, autrement que les stands.** Leur gain de
+performance est négligeable : quelques dizaines d'éléments. Reprendre leurs
+règles dans un module de style en ferait une seconde copie, quand le SVG de
+secours a toujours besoin de la première. Une surcouche écrit donc son style
+en attributs SVG, dans le module qui la dessine ; la feuille ne la peint plus,
+et le dessin la lit par un lecteur d'attributs commun
+(`modules/style-attributs.mjs`, `webgl.mjs` `PAR_ATTRIBUTS`). Une seule
+source, et des règles en moins dans la feuille.
+
+- *Fait* : les marques des distinctions (`distinctions.mjs` `traceDist`) — trois
+  règles retirées de la feuille ; `outils/essais/navigateur/surcouches.spec.js`
+  compare les deux lectures sur cinq combinaisons de modes, de teintes et
+  d'ambiances, et échoue si une règle de la feuille les peint encore.
+- *Reste* : la zone de la visite guidée (`#tutoZone`, 5 règles), les marques
+  du choix et du parcours (`#marques`, 12), l'itinéraire (`#itin`, 22), les
+  calques dessinés par l'exploitant (`.dcal`, 64).
+
 **Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
 les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900
 éléments par pavillon), contre 89 à 93 % pour l'habillage de Klipso. Depuis
@@ -162,6 +179,27 @@ demande un jour. On est passé à l'habillage.
   réglage, posée sur le groupe du calque, prévient le dessin quand
   l'exploitant change une couleur. Sur SMCL, pavillon 1, le SVG caché passe
   de 6 280 éléments à 561.
+
+*Mesure* (SMCL 2026, processeur ralenti quatre fois, deux paires de
+tirages, ancienne lecture `?emplacements=feuille` et nouvelle tour à tour sur
+la même construction — moyennes, fil principal : script, style et mise en
+page) :
+
+| moment | avant | après |
+|---|---|---|
+| ouverture | 4 367 ms | 3 278 ms (−25 %) |
+| changement de pavillon (pavillon 2) | 2 355 ms | 1 451 ms (−38 %) |
+| changement de pavillon (pavillon 3) | 1 874 ms | 1 386 ms (−26 %) |
+| recherche, six lettres | 760 ms | 592 ms (−22 %) |
+| cinq stands choisis | 715 ms | 641 ms (−10 %) |
+| restylages au survol, à la souris | 247 à 294 ms | 16 à 25 ms |
+| restylages d'un glissé, à la souris | 385 à 532 ms | 43 à 52 ms |
+| éléments du SVG caché, pavillons 1, 2, 3 | 6 142 / 14 583 / 7 906 | 561 / 884 / 657 |
+| mémoire du processus de rendu | 212 à 215 Mo | 199 à 200 Mo |
+
+Le gain vient du style et de la mise en page du SVG caché (à l'ouverture,
+1 231 ms → 482). La relecture reste autour de 900 ms à l'ouverture : c'est
+le découpage des tracés de l'habillage, qui reste à faire avec ou sans SVG.
 
 L'étape 3 est close. Le fond de carte n'était pas dans le SVG caché : ses
 tuiles vivent dans un SVG à part, hors du plan (`#fondTuiles`), le fond figé
