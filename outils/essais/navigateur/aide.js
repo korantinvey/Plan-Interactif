@@ -77,6 +77,32 @@ async function attendLaListe(page) {
   return page.locator("#list > *");
 }
 
+/**
+ * Un point de l'écran au centre d'un stand du plan, que rien ne recouvre :
+ * là où le visiteur poserait le doigt. Quel que soit le rendu — en WebGL, le
+ * SVG caché garde sa géométrie figée, et c'est la vue du dessin qui dit où le
+ * stand se trouve (`webgl.mjs` `rectEcranWebgl`). Rend `null` si aucun stand
+ * ne convient ; `sauf` écarte celui dont le texte le contient.
+ */
+function standAViser(page, { sauf = "" } = {}) {
+  return page.evaluate((sauf) => {
+    const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
+    const st = document.getElementById("stage").getBoundingClientRect();
+    for (const n of document.querySelectorAll("#stands g[data-id]")) {
+      if (sauf && n.textContent.includes(sauf)) continue;
+      const r = GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect();
+      if (!r || r.width < 10 || r.height < 10) continue;
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (x < st.left + 30 || x > st.right - 30 || y < st.top + 30 || y > st.bottom - 30) continue;
+      const e = document.elementFromPoint(x, y);
+      if (!e || !e.closest("#stage") ||
+          e.closest("#viseur, .tools, .zoombar, #poi, #side, #detail, #parcours, #itineraire, .topbar")) continue;
+      return { x, y };
+    }
+    return null;
+  }, sauf);
+}
+
 /* Les deux empreintes d'intégrité de MapLibre, relues là où la page les tient
    (`modules/environs.mjs` `MAPLIBRE`) : jamais recopiées, elles changent à
    chaque `npm run maplibre`. */
@@ -111,4 +137,4 @@ async function remplaceMapLibre(page, reponse) {
   await page.route("**/bibliotheques/maplibre-gl-*", reponse);
 }
 
-module.exports = { prepare, attendLaListe, remplaceMapLibre, DONNEES, PREMIER };
+module.exports = { prepare, attendLaListe, remplaceMapLibre, standAViser, DONNEES, PREMIER };

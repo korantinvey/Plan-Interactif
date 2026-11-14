@@ -3,7 +3,7 @@
  * une fiche, on change de pavillon, on le lit en anglais.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, DONNEES, PREMIER } = require("./aide.js");
+const { prepare, attendLaListe, standAViser, DONNEES, PREMIER } = require("./aide.js");
 
 const PLAN = "/plan?plan=smcl-2026";
 
@@ -146,55 +146,70 @@ test.describe("le plan public", () => {
      s'efface avec lui (`modules/tiroir-itineraire.mjs` `quitteItineraire`).
      Seul un autre tiroir qui prend la bande laisse le trait sur le plan ; le
      rappel du haut le montre et l'efface (`majRappelRoute`) — sans réarmer la
-     visée, puisque le visiteur en a fini. */
-  test("refermer l'itinéraire l'efface, un autre tiroir le laisse au rappel", async ({ page }) => {
-    const erreurs = await prepare(page);
-    await page.goto(PLAN + "&rendu=svg");
-    const lignes = await attendLaListe(page);
-    const rappel = page.locator("#routeRappel");
-    await expect(rappel).toBeHidden();
+     visée, puisque le visiteur en a fini.
 
-    // une arrivée par la fiche, un départ par la visée sur un autre stand
-    const demandeTrajet = async () => {
-      await lignes.nth(0).click();
-      await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
-      await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
-      await expect(page.locator("#viseur")).toBeVisible();
-      const arrivee = await page.inputValue("#iArrivee");
-      const autre = await page.evaluate((nom) => {
-        const g = [...document.querySelectorAll("svg [data-id]")]
-          .find((e) => e.getAttribute("data-id") && !e.textContent.includes(nom));
-        const r = g.getBoundingClientRect();
-        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
-      }, arrivee);
-      await page.mouse.click(autre.x, autre.y);
-      await expect(page.locator("#iResume")).toContainText("m ·");
-      await expect(rappel).toBeHidden();
-    };
+     Dans les deux rendus. Le départ se choisit d'un toucher sur le plan, que
+     le dessin désigne en WebGL et le SVG lui-même en repli : c'était le seul
+     geste du parcours qui ne s'éprouvait qu'en SVG. En WebGL, le trajet doit
+     aussi être peint — ses couches, `#itin-…` — et partir avec le tiroir. */
+  for (const rendu of ["", "&rendu=svg"]) {
+    test("refermer l'itinéraire l'efface, un autre tiroir le laisse au rappel" + (rendu ? " (SVG)" : ""),
+      async ({ page }) => {
+        // deux ou trois images par seconde sous la carte graphique logicielle
+        if (!rendu) test.slow();
+        const erreurs = await prepare(page);
+        await page.goto(PLAN + rendu);
+        const lignes = await attendLaListe(page);
+        if (!rendu) await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 60_000 });
+        const rappel = page.locator("#routeRappel");
+        await expect(rappel).toBeHidden();
+        // les couches du trajet peintes par la carte graphique ; toujours vrai en SVG, qui n'en a pas
+        const trajetPeint = (oui) => rendu ? Promise.resolve() : expect.poll(() => page.evaluate(() => {
+          const d = window.__essais.GL.deck;
+          return !!d && d.props.layers.some((c) => c && String(c.id).startsWith("#itin-"));
+        }), { timeout: 30_000 }).toBe(oui);
 
-    // refermé par sa croix, le tiroir emporte le trajet
-    await demandeTrajet();
-    await page.click("#closeItineraire");
-    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
-    await expect(rappel).toBeHidden();
-    await expect(page.locator("#viseur")).toBeHidden();
-    expect(await page.inputValue("#iArrivee")).toBe("");
-    expect(await page.inputValue("#iDepart")).toBe("");
+        // une arrivée par la fiche, un départ par la visée sur un autre stand
+        const demandeTrajet = async () => {
+          await lignes.nth(0).click();
+          await page.locator("#dItin, #dItinIco").locator("visible=true").first().click();
+          await expect(page.locator("#itineraire")).toHaveClass(/\bopen\b/);
+          await expect(page.locator("#viseur")).toBeVisible();
+          const autre = await standAViser(page, { sauf: await page.inputValue("#iArrivee") });
+          expect(autre, "un autre stand à toucher sur le plan").not.toBeNull();
+          await page.mouse.click(autre.x, autre.y);
+          await expect(page.locator("#iResume")).toContainText("m ·", { timeout: 30_000 });
+          await expect(rappel).toBeHidden();
+          await trajetPeint(true);
+        };
 
-    // refermé par un autre tiroir, il laisse le trait et son rappel
-    await demandeTrajet();
-    const resume = await page.textContent("#iResume");
-    await page.click("#btnParcours");
-    await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
-    await expect(rappel).toBeVisible();
-    await expect(page.locator("#routeResume")).toHaveText(resume);
+        // refermé par sa croix, le tiroir emporte le trajet
+        await demandeTrajet();
+        await page.click("#closeItineraire");
+        await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+        await expect(rappel).toBeHidden();
+        await expect(page.locator("#viseur")).toBeHidden();
+        expect(await page.inputValue("#iArrivee")).toBe("");
+        expect(await page.inputValue("#iDepart")).toBe("");
+        await trajetPeint(false);
 
-    await page.click("#routeEfface");
-    await expect(rappel).toBeHidden();
-    await expect(page.locator("#viseur")).toBeHidden();
-    expect(await page.inputValue("#iArrivee")).toBe("");
-    expect(erreurs).toEqual([]);
-  });
+        // refermé par un autre tiroir, il laisse le trait et son rappel
+        await demandeTrajet();
+        const resume = await page.textContent("#iResume");
+        await page.click("#btnParcours");
+        await expect(page.locator("#itineraire")).not.toHaveClass(/\bopen\b/);
+        await expect(rappel).toBeVisible();
+        await expect(page.locator("#routeResume")).toHaveText(resume);
+        await trajetPeint(true);
+
+        await page.click("#routeEfface");
+        await expect(rappel).toBeHidden();
+        await expect(page.locator("#viseur")).toBeHidden();
+        expect(await page.inputValue("#iArrivee")).toBe("");
+        await trajetPeint(false);
+        expect(erreurs).toEqual([]);
+      });
+  }
 
   test("les onglets passent d'un pavillon à l'autre", async ({ page }) => {
     test.skip(DONNEES.plans.length < 2, "un seul pavillon dans les données");
