@@ -135,8 +135,36 @@ Reste, avant le pas 3b :
 - **les essais** qui comptent ou visent les groupes (`plan.spec.js`,
   `survol.spec.js`, `visite.spec.js`, `aide.js` `standAViser`…).
 
-**Pas 3b :** ne plus construire les stands et les zones dans le SVG
-caché quand le WebGL peint. Il faudra que les modules qui les cherchent
+**Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
+les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900
+éléments par pavillon), contre 89 à 93 % pour l'habillage de Klipso. Depuis
+les pas 1 et 2, leurs groupes ne servent plus au dessin ; ils restent la
+couche de désignation, de clavier et de lecteur d'écran, et le repli SVG.
+Les retirer — désignation par clé, fiche, décor des zones, distinctions,
+parcours, couche accessible — n'en vaut la peine que si la maintenance le
+demande un jour. On est passé à l'habillage.
+
+**Étape 3 — l'habillage de Klipso (14 novembre 2026).**
+
+- *Premier pas* : le dessin lit chaque calque dans une copie détachée de son
+  balisage (`modules/calque-detache.mjs`, partagée avec le panneau des
+  calques), et en résout le style sans la feuille
+  (`modules/style-habillage.mjs`) : réglage de l'exploitant par calque et
+  sous-calque, attributs de Klipso hérités, et les deux règles de
+  `_styles-plan.css` qui l'emportent sur eux. L'essai
+  `outils/essais/navigateur/habillage.spec.js` compare les deux lectures sur
+  47 920 formes (SMCL tel quel) et 37 703 (avec des réglages d'exploitant) :
+  toutes identiques.
+- *Second pas* : quand le WebGL peint, le SVG caché ne porte plus
+  l'habillage (`modules/habillage-svg.mjs`). Le dessin le lui rend s'il lui
+  rend la main — dessin trop long à venir, carte graphique perdue — et
+  `apparence.mjs` remplit alors les calques montrés. Une signature du
+  réglage, posée sur le groupe du calque, prévient le dessin quand
+  l'exploitant change une couleur. Sur SMCL, pavillon 1, le SVG caché passe
+  de 6 280 éléments à 561.
+
+Reste de l'étape 3 : le fond figé et son masque (`environs.mjs`), et l'ordre
+des calques (`ordre-trace.mjs`), qui ne touche plus qu'à des groupes vides. Il faudra que les modules qui les cherchent
 encore dans le DOM — la fiche (`noeud`), les gestes, les logos, les
 distinctions, le parcours, la visite guidée, les outils de l'exploitant —
 les trouvent dans le modèle, que la désignation rende une clé et non un
