@@ -459,12 +459,9 @@ html:not(.chaleur-halos) .stand[data-chaleur] path{fill:var(--chal-c)}
    retrouver sur le plan sans le relire, sans pour autant se confondre avec ce
    qu'on vient de désigner. Une zone y entre par ses conférences. */
 #marques{pointer-events:none}
-#marques path{fill:none;stroke-dasharray:none;vector-effect:non-scaling-stroke}
-#marques .parc{stroke:var(--c-parc,var(--accent));stroke-width:2}
-#marques .sel{stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
-/* le trait discontinu est ce qui distingue une zone d'un stand : sa sélection
-   le garde */
-#marques .sel.zn{stroke-dasharray:5 4}
+/* Leur couleur, leur épaisseur et le trait discontinu d'une zone choisie sont
+   écrits en attributs par `parcours.mjs` `dessineMarques` : la feuille ne les
+   peint plus, et le dessin les lit sans elle (`style-attributs.mjs`). */
 /* Les marques des nouveaux venus, dans leur calque à part pour la raison qui
    vaut pour les liserés au-dessus : une cloison mitoyenne appartient aux deux
    stands qu'elle sépare, et le second tracé effaçait ce que le premier
@@ -492,13 +489,6 @@ html:not(.chaleur-halos) .stand[data-chaleur] path{fill:var(--chal-c)}
 /* Les marques portent leur couleur et leur trait en attributs, écrits par
    `distinctions.mjs` `traceDist` : la feuille ne les peint plus, et le dessin
    les lit sans elle (`style-attributs.mjs`). */
-html.sans-parcours #marques .parc{display:none}
-/* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
-   plan ne l'atteignait donc pas, et ses liserés restaient seuls à pleine force
-   au milieu d'un hall effacé — on les prenait pour ce que le cartouche venait
-   de désigner. Le temps d'une mise en avant, ils s'effacent tout à fait : ce
-   qu'on a retenu se retrouve en refermant le cartouche. */
-html.poi-actif #marques .parc{display:none}
 /* La teinte du survol se règle à part (« Élément survolé », sous les Repères) ;
    sans réglage, l'aplat doux de la couleur principale. */
 html:not(.ambiance-tuiles) :is(.stand,.zone):hover path{fill:var(--c-survol,var(--accent-soft))}

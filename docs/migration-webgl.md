@@ -148,9 +148,19 @@ source, et des règles en moins dans la feuille.
   règles retirées de la feuille ; `outils/essais/navigateur/surcouches.spec.js`
   compare les deux lectures sur cinq combinaisons de modes, de teintes et
   d'ambiances, et échoue si une règle de la feuille les peint encore.
-- *Reste* : la zone de la visite guidée (`#tutoZone`, 5 règles), les marques
-  du choix et du parcours (`#marques`, 12), l'itinéraire (`#itin`, 22), les
-  calques dessinés par l'exploitant (`.dcal`, 64).
+- *Fait* : la zone que désigne la visite guidée (`tutoriel.mjs`
+  `marqueZoneTuto`) — son halo et son trait, trois règles retirées ; l'essai
+  la compare sans animation, que le dessin ne rejoue pas.
+- *Fait* : les liserés du choix et du parcours (`parcours.mjs`
+  `dessineMarques`) — six règles retirées, dont les deux qui cachaient le
+  parcours (`sans-parcours`, `poi-actif`) : il ne se trace plus du tout tant
+  qu'elles sont sur la racine. Leurs couleurs venaient de jetons de la racine,
+  que la feuille suivait d'elle-même ; le calque se retrace donc quand ce
+  qu'il en tire change (`guetteRacine`, une signature comparée, pas à chaque
+  frappe). L'essai éprouve stand et zone choisis, parcours, Tuiles, une
+  couleur changée et les deux retraits.
+- *Reste* : l'itinéraire (`#itin`, 22 règles), les calques dessinés par
+  l'exploitant (`.dcal`, 64).
 
 **Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
 les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900

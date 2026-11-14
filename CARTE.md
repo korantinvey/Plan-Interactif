@@ -126,7 +126,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-parcours.css` — 722 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1746 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1736 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 199 l. → demo.html, plan-smcl.html
 
@@ -2442,7 +2442,7 @@ Importé par :
 
 demarrage · scan-parcours
 
-### `modules/parcours.mjs` — 600 l. → plan, plan-admin
+### `modules/parcours.mjs` — 660 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
@@ -2454,10 +2454,11 @@ Fonctions :
 `attenduDepuisTropLongtemps` 175 · `trieParcours` 186 · `chargeParcours` 196
 `parcoursAEcrire` 231 · `enregistreParcours` 247 · `tientLeStockage` 276
 `plurielParcours` 290 · `contenuParcours` 299 · `signetParcours` 310 · `boutonParcours` 316
-`rafraichitMarque` 321 · `calqueMarques` 354 · `traitTuile` 381 · `dessineMarques` 388
-`marqueParcours` 420 · `instantConf` 438 · `cleTemps` 442 · `nomDeStand` 452
-`groupeParcours` 454 · `fermeParcours` 468 · `basculeParcours` 501 · `brancheParcours` 525
-`verseAuParcours` 548 · `rangParcours` 577 · `refaitParcours` 600
+`rafraichitMarque` 321 · `calqueMarques` 354 · `traitTuile` 388 · `jetonsMarques` 399
+`signature` 416 · `dessineMarques` 423 · `guetteRacine` 462 · `marqueParcours` 480
+`instantConf` 498 · `cleTemps` 502 · `nomDeStand` 512 · `groupeParcours` 514
+`fermeParcours` 528 · `basculeParcours` 561 · `brancheParcours` 585 · `verseAuParcours` 608
+`rangParcours` 637 · `refaitParcours` 660
 
 Importe :
 

@@ -2115,7 +2115,7 @@ function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m,
    tels quels, sans style calculé. Les blocs, par leur identifiant : une
    surcouche n'y entre qu'une fois sa feuille vidée de ses règles.
    ------------------------------------------------------------ */
-const PAR_ATTRIBUTS = new Set(["dists", "tutoZone"]);
+const PAR_ATTRIBUTS = new Set(["dists", "tutoZone", "marques"]);
 function parcoursAttributs(/** @type {Element} */ el, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
     /** @type {Element} */ racine){
   const st = styleParAttributs(el, racine);
