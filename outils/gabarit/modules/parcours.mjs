@@ -23,7 +23,8 @@ import { DATA, parId, CONFS } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { emplacements, etatEmplacement, estChoisi } from "./etat-emplacements.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
-import { couleurGl } from "./trace.mjs";
+import { couleurGl, lisTrace } from "./trace.mjs";
+import { poseReperes } from "./scene.mjs";
 import { traceStand } from "./tuiles.mjs";
 
 /* Ce que la liste fait faire au reste du plan — le tiroir qui la montre, les
@@ -357,30 +358,17 @@ export function rafraichitMarque(el){
  * couches, que l'exploitant règle. L'aplat de la sélection, lui, reste sur le
  * stand : c'est une couleur de surface, elle n'a rien à gagner à monter.
  */
-function calqueMarques(){
-  let g = $("marques");
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "marques";
-    // au-dessus des couches, sous le trajet et les poignées d'édition ; le
-    // plan est le `svg` de `vue.mjs`, relu par son identifiant
-    const svg = $("plan");
-    svg.insertBefore(g, $("itin"));
-  }
-  return g;
-}
 
 /**
  * Le calque se relit dans le plan plutôt qu'il ne se tient à jour : les deux
  * marques changent par des chemins sans rapport — un signet, un clic, un
  * changement de pavillon — et une seule lecture les remet d'accord.
  *
- * Elles portent leur style en attributs — couleur, épaisseur, tirets —, et
- * la feuille ne les peint plus : le SVG de secours les lit comme tels, et le
- * dessin aussi, sans demander au navigateur un style calculé
- * (`style-attributs.mjs`, `docs/migration-webgl.md`, étape 2). Les couleurs
- * sont donc résolues ici, une fois par tracé du calque, et le calque se
- * retrace quand l'une d'elles change sur la racine (`jetons-racine.mjs`).
+ * Elles se posent dans la scène du plan (`scene.mjs`) — couleur, épaisseur,
+ * tirets —, et la feuille ne les peint plus : le dessin et le SVG de secours
+ * les peignent depuis ces données. Les couleurs sont résolues ici, une fois
+ * par tracé, et les liserés se retracent quand l'une d'elles change sur la
+ * racine (`jetons-racine.mjs`).
  */
 /**
  * L'encadrement d'une tuile choisie, dans sa propre teinte. En Tuiles, la
@@ -426,9 +414,6 @@ function jetonsMarques(/** @type {CSSStyleDeclaration} */ cs){
   };
 }
 
-/* Le trait commun aux deux marques : sans aplat, d'une épaisseur fixe à
-   l'écran quel que soit le zoom. */
-const TRAIT = ' fill="none" vector-effect="non-scaling-stroke"';
 
 /** Ce que le parcours marque sur le plan : les stands retenus, et les zones
  *  où se tiennent les conférences retenues (`marqueParcours`). */
@@ -444,11 +429,13 @@ export function dessineMarques(){
      sans stands. */
   // la couche éteinte dans la pile des calques (`apparence.mjs` `styleDataGroupe`)
   const vu = { stands: conf("data:stands").visible !== false, zones: conf("data:zones").visible !== false };
-  const calque = calqueMarques();
-  const j = jetonsMarques(getComputedStyle(calque));
+  // les jetons de la racine, dont le plan hérite
+  const racine = document.documentElement;
+  const j = jetonsMarques(getComputedStyle(racine));
   /** @type {ReturnType<typeof jetonsEmplacements> | null} */
   let jetons = null;
-  let parc = "", sel = "";
+  /** @type {import("./scene.mjs").Repere[]} */
+  const parc = [], sel = [];
   /* Les emplacements du pavillon dans leurs données, et non leurs groupes
      dans le SVG caché : le tracé tel que l'ambiance le dessine, ce qui est
      retenu (`retenus`, tenu par `marqueParcours`), ce qui est choisi au
@@ -460,26 +447,28 @@ export function dessineMarques(){
     if (!choisi && !retenu) continue;
     /* Une zone garde son trait discontinu jusque dans sa sélection — c'est ce
        qui la distingue d'un stand. Le parcours, lui, se veut continu partout :
-       il dit qu'on a retenu l'endroit, pas ce qu'il est. Le tracé vient des
-       données : il repasse par `esc()`, comme les couleurs relues. */
-    const d = ' d="' + esc(traceStand(e.source.d)) + '"/>';
-    if (retenu) parc += '<path class="parc"' + TRAIT + ' stroke="' + esc(j.parc) + '" stroke-width="2"' + d;
+       il dit qu'on a retenu l'endroit, pas ce qu'il est. Le tracé, celui de
+       l'ambiance, se lit en points — les coins arrondis des Tuiles compris. */
+    const morceaux = lisTrace(traceStand(e.source.d)).filter(t => t.pts.length > 1);
+    const liseres = (/** @type {any} */ style) => morceaux.map(t => ({ sorte: /** @type {"trait"} */ ("trait"),
+      chemin: t.pts, ferme: t.ferme, ...style }));
+    if (retenu) parc.push(...liseres({ trait: j.parc, epaisseur: 2, classe: "parc" }));
     if (choisi){
-      jetons = jetons || jetonsEmplacements(calque);
-      sel += '<path class="sel' + (e.zone ? " zn" : "") + '"' + TRAIT +
-        ' stroke="' + esc(traitTuile(e, jetons) || j.sel) + '" stroke-width="3"' +
-        (e.zone ? ' stroke-dasharray="5 4"' : "") + d;
+      jetons = jetons || jetonsEmplacements(racine);
+      sel.push(...liseres({ trait: traitTuile(e, jetons) || j.sel, epaisseur: 3, classe: "sel" + (e.zone ? " zn" : ""),
+        ...(e.zone ? { tirets: [5, 4] } : {}) }));
     }
   }
-  // la sélection en dernier : c'est elle qu'on vient de désigner
-  calque.innerHTML = parc + sel;
+  /* La sélection en dernier : c'est elle qu'on vient de désigner. Le tout dans
+     la scène du plan (`scene.mjs`), que le dessin et le SVG de secours peignent. */
+  poseReperes("marques", [...parc, ...sel]);
 }
 
 /* Une couleur réglée, l'accent, l'ambiance, un cartouche ouvert : autant de
    jetons et de classes posés sur la racine, que la feuille suivait d'elle-même
    quand elle peignait les marques (`jetons-racine.mjs`). Rien avant le
    premier tracé — le plan n'est pas monté. */
-suitLaRacine(cs => JSON.stringify(jetonsMarques(cs)), () => { if ($("marques")) dessineMarques(); });
+suitLaRacine(cs => JSON.stringify(jetonsMarques(cs)), () => { if (DATA) dessineMarques(); });
 
 /**
  * Ce qu'un visiteur a retenu, marqué sur le plan.

@@ -515,11 +515,8 @@ html:is(.mode-borne,.mode-ici) .iChamp input[readonly]{background:var(--accent-s
    épingle de carte, qu'aucune palette de salon ne donne à ses stands, se
    trouve d'un coup d'œil — et se lit partout comme « ici ». */
 :root{--ici:#E5322D}
-#borneIci{pointer-events:none}
-#borneIci .bOnde{fill:var(--ici);opacity:.2}
-#borneIci .bCerne{fill:#fff;stroke:rgba(21,24,26,.55);stroke-width:1.5;
-  vector-effect:non-scaling-stroke}
-#borneIci .bPoint{fill:var(--ici)}
+/* Le point lui-même se peint depuis la scène du plan (`vous-etes-ici.mjs`
+   `rempliBorne`). */
 /* Le battement, posé dans la scène et non dans le plan (voir
    `vous-etes-ici.mjs`). Deux ondes décalées d'une demi-période : il y en a
    toujours une en vol, et le point ne paraît jamais s'éteindre. La boîte est

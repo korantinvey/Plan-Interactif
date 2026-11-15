@@ -36,7 +36,7 @@
  */
 
 import { $ } from "./dom.mjs";
-import { GL, rectEcranWebgl } from "./webgl.mjs";
+import { GL, rectEcranWebgl, rectEcranBoite } from "./webgl.mjs";
 import { DATA, state, parId } from "./donnees.mjs";
 import { SLUG, BORNE, PLAN_ADMIN } from "./salon.mjs";
 import { PARCOURS, dansParcours } from "./parcours.mjs";
@@ -48,6 +48,8 @@ import { ITI, ROUTE, attente as attenteIti, visee as viseeIti, poseVisee, bandea
   from "./tiroir-itineraire.mjs";
 import { fermeParcours } from "./tiroir-parcours.mjs";
 import { svg } from "./vue.mjs";
+import { poseReperes, boiteDuJeu } from "./scene.mjs";
+import { anneauxGeo } from "./forme.mjs";
 import { REDUIT, ETROIT } from "./ecran.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { centre, ferme } from "./fiche.mjs";
@@ -59,7 +61,6 @@ import { calqueActif, enCours } from "./calques-dessin.mjs";
 import { formeSel } from "./forme-choisie.mjs";
 import { TUTO, poseTuto } from "./visite-guidee.mjs";
 import { emplacements, groupeEmplacement, poseCibleTuto } from "./etat-emplacements.mjs";
-import { suitLaRacine } from "./jetons-racine.mjs";
 
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
    `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
@@ -639,7 +640,8 @@ function quitteTutoriel(){
   clearInterval(TUTO.pouls);
   cancelAnimationFrame(TUTO.raf);
   TUTO.ecoutes.forEach(([t, f, c]) => removeEventListener(t, f, c));
-  ["tuto", "tutoRepere", "tutoZone", "tutoVoile"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  ["tuto", "tutoRepere", "tutoVoile"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  poseReperes("tutoZone", []);
   racine.classList.remove("tuto-retrait");
   poseCibleTuto(null);
   if (TUTO.guet) TUTO.guet.disconnect();
@@ -778,6 +780,12 @@ const pxTuto = (v) => Math.round(v * 100) / 100 + "px";
  * place se calcule donc d'après la vue, comme celle de la forme d'où la fiche
  * s'ouvre (`vue.mjs` `rectVisee`).
  */
+/** La place à l'écran d'un jeu de la scène du plan — la zone désignée, le
+ *  trajet —, tirée de ses données : il n'a pas de nœud quand le WebGL peint. */
+function boiteJeu(/** @type {string} */ nom){
+  const b = boiteDuJeu(nom), r = b && rectEcranBoite(b);
+  return r && r.width > 0 && r.height > 0 ? r : null;
+}
 function boiteTuto(el){
   if (!el || !el.isConnected) return null;
   const r = GL.actif && svg && el !== svg && svg.contains(el)
@@ -873,11 +881,11 @@ function placeTuto(force){
   const evite = [];
   const pese = (r, poids) => { if (r) evite.push({ r: r, poids: poids }); };
   pese(cible, 6);
-  pese(boiteTuto($("tutoZone")), 4);
+  pese(boiteJeu("tutoZone"), 4);
   // le bandeau de la visée dit ce qu'on est en train de désigner
   pese(boiteTuto($("viseur")), 3);
   // et le trajet tracé est ce que deux étapes montrent du doigt
-  pese(boiteTuto($("itin")), .5);
+  pese(boiteJeu("itin"), .5);
   ["detail", "parcours", "itineraire"].forEach(id => {
     if (tutoOuvert(id)) pese(boiteTuto($(id)), TUTO.cible && $(id).contains(TUTO.cible) ? 1 : .15);
   });
@@ -988,21 +996,20 @@ function rafaleTuto(){
 }
 
 /* Le halo et le trait de la zone désignée, de la couleur principale. */
-const traitsZoneTuto = (/** @type {string} */ accent) => ({
-  halo: { fill: accent, "fill-opacity": ".16", stroke: accent, "stroke-width": "10", "stroke-opacity": ".22" },
-  trait: { fill: "none", stroke: accent, "stroke-width": "3" },
-});
-/* L'accent changé pendant la visite : la zone désignée le suit, comme la
-   feuille la faisait suivre quand elle la peignait (`jetons-racine.mjs`). */
-suitLaRacine(cs => cs.getPropertyValue("--accent").trim(), () => {
-  const g = $("tutoZone");
-  if (!g || !g.firstChild) return;
-  const traits = traitsZoneTuto(getComputedStyle(g).getPropertyValue("--accent").trim());
-  g.querySelectorAll("path").forEach(p => {
-    const a = traits[/** @type {"halo" | "trait"} */ (p.getAttribute("class"))];
-    if (a) for (const [k, v] of Object.entries(a)) p.setAttribute(k, v);
-  });
-});
+/* La zone désignée, dans la scène du plan (`scene.mjs`) : un halo pâle et
+   large, puis le trait de la couleur principale, d'épaisseur fixe à l'écran.
+   L'accent est un jeton, que chaque peintre résout : changé pendant la
+   visite, la zone le suit d'elle-même. Seul le battement reste à la feuille
+   (`#tutoZone`), pour le SVG de secours : le dessin ne le rejoue pas. */
+/** @returns {import("./scene.mjs").Repere[]} */
+function reperesZoneTuto(/** @type {any} */ z){
+  const anneaux = anneauxGeo(z.d);
+  if (!anneaux.length) return [];
+  return [
+    { sorte: "aplat", anneaux, plein: "--accent", opacite: .16, trait: "--accent", opaciteTrait: .22, epaisseur: 10 },
+    ...anneaux.map(a => ({ sorte: /** @type {"trait"} */ ("trait"), chemin: a, ferme: true, trait: "--accent", epaisseur: 3 })),
+  ];
+}
 
 /**
  * La zone à toucher, recopiée au-dessus du plan.
@@ -1013,7 +1020,6 @@ suitLaRacine(cs => cs.getPropertyValue("--accent").trim(), () => {
  * dit alors où la trouver.
  */
 function marqueZoneTuto(z){
-  let g = $("tutoZone");
   const vue = !!z && z.p === state.plan;
   /* Le reste du plan recule, comme sous le cartouche des points d'intérêt :
      une zone désignée au milieu de cinq cents stands en pleine couleur ne se
@@ -1029,7 +1035,7 @@ function marqueZoneTuto(z){
   document.querySelectorAll("#zones g.tutoCible").forEach(n => {
     if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
   });
-  if (!vue){ if (g) g.remove(); return; }
+  if (!vue){ poseReperes("tutoZone", []); return; }
   /* La forme se réécrit avec le pavillon : sa marque se repose à chaque pouls —
      mais seulement si elle l'a perdue. Reposer une classe déjà là réécrit
      quand même l'attribut, et le guet de la carte graphique y voit un
@@ -1037,29 +1043,8 @@ function marqueZoneTuto(z){
      image toutes les quatre secondes sous un rendu logiciel. */
   const forme = cible ? groupeEmplacement(cible.cle) : null;
   if (forme && !forme.classList.contains("tutoCible")) forme.classList.add("tutoCible");
-  if (g && g.dataset.id === z.id) return;
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "tutoZone";
-    // au-dessus des couches et des marques, sous le trajet et les poignées
-    svg.insertBefore(g, $("itin"));
-  }
-  g.dataset.id = z.id;
-  g.innerHTML = "";
-  /* La zone porte son style en attributs : le SVG de secours les lit comme
-     tels, et le dessin aussi (`style-attributs.mjs`), sans que la feuille la
-     peigne. Un halo pâle et large, puis le trait de la couleur principale,
-     d'épaisseur fixe à l'écran. Seul le battement reste à la feuille : le
-     dessin ne le rejoue pas. */
-  const traits = traitsZoneTuto(getComputedStyle(g).getPropertyValue("--accent").trim());
-  for (const [cls, attrs] of Object.entries(traits)){
-    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    p.setAttribute("class", cls);
-    p.setAttribute("d", z.d);
-    for (const [k, v] of Object.entries({ ...attrs, "vector-effect": "non-scaling-stroke", "stroke-linejoin": "round" }))
-      p.setAttribute(k, v);
-    g.appendChild(p);
-  }
+  // reposée à chaque pouls : la scène ne prévient personne d'une liste identique
+  poseReperes("tutoZone", reperesZoneTuto(z));
 }
 
 /** Le libellé de la zone désignée, gardé clair quand le plan recule. */

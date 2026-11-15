@@ -26,13 +26,14 @@ const PLAN = "/plan?plan=smcl-2026";
  */
 const auRepos = (page) => page.evaluate(() => new Promise((fini) => {
   const essais = /** @type {any} */ (globalThis).__essais;
-  const { GL, rectEcranWebgl } = essais;
+  const { scene } = essais;
   const boite = (r) => r && { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
   const lis = () => {
-    const z = document.getElementById("tutoZone");
+    // la zone désignée, dans la scène du plan : elle n'a de nœud que dans le SVG de secours
+    const b = scene.boiteDuJeu("tutoZone");
     const TUTO = essais.TUTO;
     return { cle: TUTO && TUTO.cle, pos: TUTO && TUTO.pos,
-      zone: boite(z && (GL.actif ? rectEcranWebgl(z) : z.getBoundingClientRect())),
+      zone: boite(b && scene.rectEcranBoite(b)),
       bulle: boite(document.getElementById("tuto").getBoundingClientRect()) };
   };
   const fin = performance.now() + 20000;

@@ -1,6 +1,10 @@
 /**
- * Les surcouches qui portent leur style en attributs (`modules/style-attributs.mjs`) :
- * le dessin les lit sans la feuille, et doit en tirer ce que la feuille dessinait.
+ * Les surcouches du visiteur, posées en données dans la scène du plan
+ * (`modules/scene.mjs`), ont deux peintres : le dessin, et le SVG de secours
+ * (`modules/scene-svg.mjs`), qui les écrit en attributs — et la feuille ne les
+ * peint plus. Ce qu'on éprouve en rendu SVG : ce que le dessin tirerait du
+ * SVG ainsi peint, style calculé compris, est ce qu'il tire des données
+ * (`webgl.mjs` `compareLectures`).
  *
  * Les marques des distinctions écrivent leur couleur, leur trait et leur
  * retrait en attributs (`modules/distinctions.mjs` `traceDist`), la zone que
@@ -54,7 +58,7 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
 
     // la teinte réglée est celle des marques du nouveau venu
     if (couleur) {
-      const teintes = await page.evaluate(() => [...document.querySelectorAll("#dists .dM.d-neuf [fill], #dists .dM.d-neuf [stroke]")]
+      const teintes = await page.evaluate(() => [...document.querySelectorAll("#dists .dM.d-neuf")]
         .map((n) => n.getAttribute(n.getAttribute("fill") === "none" ? "stroke" : "fill")));
       expect(new Set(teintes)).toEqual(new Set([couleur]));
     }
@@ -63,7 +67,7 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
        qui le change doit les voir suivre, comme la feuille les faisait suivre. */
     if (!couleur) {
       await page.evaluate(() => document.documentElement.style.setProperty("--accent", "#123456"));
-      await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("#dists .dM.d-neuf [fill], #dists .dM.d-neuf [stroke]")]
+      await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("#dists .dM.d-neuf")]
         .map((n) => n.getAttribute(n.getAttribute("fill") === "none" ? "stroke" : "fill")).every((t) => t === "#123456")))
         .toBe(true);
     }
@@ -71,7 +75,7 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
     // une recherche retire des stands : leurs marques s'effacent avec eux, en attribut
     const texte = (await lignes.nth(2).innerText()).trim().split("\n")[0];
     await page.fill("#q", texte);
-    await expect.poll(() => page.evaluate(() => document.querySelectorAll('#dists .dM[opacity=".22"]').length)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => [...document.querySelectorAll("#dists .dM[opacity]")].filter((n) => +(n.getAttribute("opacity") || 1) === .22).length)).toBeGreaterThan(0);
     const r2 = await compare();
     expect(r2.ecarts, JSON.stringify(r2.ecarts, null, 1)).toEqual([]);
     expect(erreurs).toEqual([]);
@@ -184,7 +188,7 @@ for (const ambiance of ["", "&ambiance=tuiles"]) {
 /** Les attributs des formes du trajet, par sorte. */
 const formesDuTrajet = (page) => page.evaluate(() => [...document.querySelectorAll("#itin > *")].map((n) => ({
   sorte: n.getAttribute("class"), fill: n.getAttribute("fill"), stroke: n.getAttribute("stroke"),
-  largeur: n.getAttribute("stroke-width"), opacite: n.getAttribute("opacity"),
+  largeur: n.getAttribute("stroke-width"), opacite: n.hasAttribute("opacity") ? +(n.getAttribute("opacity") || 0) : null,
 })));
 
 test.describe("le trajet se lit dans ses attributs", () => {
@@ -214,8 +218,8 @@ test.describe("le trajet se lit dans ses attributs", () => {
     await compare();
     const a = await accent(page);
     const f = await formesDuTrajet(page);
-    expect(f.find((x) => x.sorte === "iLueur l1")).toMatchObject({ fill: "none", stroke: a, largeur: "24", opacite: ".1" });
-    expect(f.find((x) => x.sorte === "iLueur l2")).toMatchObject({ stroke: a, largeur: "12", opacite: ".2" });
+    expect(f.find((x) => x.sorte === "iLueur l1")).toMatchObject({ fill: "none", stroke: a, largeur: "24", opacite: .1 });
+    expect(f.find((x) => x.sorte === "iLueur l2")).toMatchObject({ stroke: a, largeur: "12", opacite: .2 });
     // le fil va du clair au foncé de la couleur du salon, tronçon par tronçon
     const traits = f.filter((x) => x.sorte === "iTrait");
     expect(traits.length).toBeGreaterThan(1);

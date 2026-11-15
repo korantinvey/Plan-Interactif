@@ -158,7 +158,7 @@ test.describe("un seul mode d'édition à la fois", () => {
 });
 
 /* L'édition exige le WebGL : les poignées et les repères des outils n'ont
-   que le dessin pour peintre (`modules/scene-edition.mjs`). Quand le SVG
+   que le dessin pour peintre (`modules/scene.mjs`). Quand le SVG
    montre le plan, un outil ne s'ouvre pas, et la fenêtre dit pourquoi. */
 test.describe("sans carte graphique", () => {
   test("un calque ne s'ouvre pas, et la fenêtre dit pourquoi", async ({ page }) => {

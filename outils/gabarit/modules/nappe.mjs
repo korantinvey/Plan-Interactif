@@ -9,7 +9,7 @@
    n'écoute chez le visiteur.
 
    La lecture des jetons de couleur (`configuration.mjs`) s'importe ; la
-   nappe se pose dans la scène d'édition (`scene-edition.mjs`), que le dessin
+   nappe se pose dans la scène d'édition (`scene.mjs`), que le dessin
    peint. La case qui la montre (`outil-dessin.mjs`) passe par sa
    porte, `poseNappe`.
    ============================================================ */
@@ -18,7 +18,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { PAS_GRILLE, grille } from "./itineraire.mjs";
 import { ITI, ACCESSIBLE_CHANGE } from "./tiroir-itineraire.mjs";
 import { jeton } from "./configuration.mjs";
-import { poseReperes, tourne } from "./scene-edition.mjs";
+import { poseReperes, tourne } from "./scene.mjs";
 import { PAVILLON_MONTE } from "./rendu.mjs";
 
 /* ------------------------------------------------------------
@@ -65,7 +65,7 @@ export function rafraichitApercu(){
 
   /* La nappe est posée dans les axes de la grille : ses coins se remettent
      d'aplomb, tournés autour de l'origine du plan comme la grille l'est. Une
-     image de la scène d'édition (`scene-edition.mjs`), sous le trajet. */
+     image de la scène d'édition (`scene.mjs`), sous le trajet. */
   const x0 = g.x0, y0 = g.y0, x1 = x0 + g.w * PAS_GRILLE, y1 = y0 + g.h * PAS_GRILLE;
   const coins = tourne([[x0, y1], [x0, y0], [x1, y0], [x1, y1]], Math.atan2(g.si, g.co) * 180 / Math.PI, [0, 0]);
   poseReperes("nappe", [{ sorte: "image", href: cv.toDataURL(), coins, opacite: .55 }]);

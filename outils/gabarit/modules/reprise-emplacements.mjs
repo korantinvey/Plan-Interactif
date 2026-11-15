@@ -37,7 +37,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { confirme } from "./fenetre.mjs";
 import { anneauxGeo, traceGeo, empreinteGeo, boiteAnneaux, arrondiGeo } from "./forme.mjs";
 import { GL, cibleWebgl, repereSousWebgl } from "./webgl.mjs";
-import { poseReperes, poigneeCarree, cadreChoisi } from "./scene-edition.mjs";
+import { poseReperes, poigneeCarree, cadreChoisi } from "./scene.mjs";
 import { designe } from "./designation.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques, estRetenuSurLePlan } from "./parcours.mjs";
@@ -225,7 +225,7 @@ const curseurGeo = (cadre, i) =>
   cadre ? ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i] : "move";
 
 /* Les poignées de l'emplacement repris, dans la scène d'édition
-   (`scene-edition.mjs`) : les mêmes que celles d'une forme dessinée, pour le
+   (`scene.mjs`) : les mêmes que celles d'une forme dessinée, pour le
    même geste. */
 export function dessinePoigneesGeo(){
   const o = SORTE_GEO && geoSel && parId.get(geoSel);

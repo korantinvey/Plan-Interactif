@@ -124,7 +124,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 648 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 645 l. → demo.html, plan-smcl.html
 
 ### `_styles-plan.css` — 1710 l. → demo.html, plan-smcl.html
 
@@ -250,7 +250,7 @@ Fonctions :
 
 Importe :
 
-dom · donnees · itineraire · scene-edition
+dom · donnees · itineraire · scene
 
 Importé par :
 
@@ -442,7 +442,7 @@ Fonctions :
 Importe :
 
 calques-dessin · configuration · dessin · dom · donnees · fenetre · geste-tenu · mode-admin
-modes-edition · ordre-trace · outil-dessin · rendu · scene-edition · vue · webgl
+modes-edition · ordre-trace · outil-dessin · rendu · scene · vue · webgl
 
 Importé par :
 
@@ -883,8 +883,7 @@ Importe :
 
 calques-dessin · cartouche-poi · chemin-forme · configuration · dom · donnees · ecran
 environs · filtre · forme-choisie · itineraire · mode-admin · nom-emplacement · ordre-trace
-polices-plan · reperes · scene-edition · secteurs · texte · texte-plan · trace · tuiles
-vue
+polices-plan · reperes · scene · secteurs · texte · texte-plan · trace · tuiles · vue
 
 Importé par :
 
@@ -912,22 +911,22 @@ Importé par :
 
 detourage-travail · logos-stands · marque · reglage-foodtrucks
 
-### `modules/distinctions.mjs` — 481 l. → plan, plan-admin
+### `modules/distinctions.mjs` — 468 l. → plan, plan-admin
 
 - l.1 · Les distinctions d'un exposant — nouveau venu, adhérent d'un syndicat
 
 Fonctions :
 
-`texteDist` 56 · `texteCourtDist` 61 · `porteDist` 65 · `standPorte` 69 · `calqueDists` 81
-`traceDist` 112 · `coinDuTrace` 176 · `coinDeBoite` 217 · `oublieDists` 228
-`teinteDist` 235 · `modesDuPlan` 237 · `releveDists` 241 · `dessineDists` 276
-`marquesListe` 315 · `poseDistsFiche` 345 · `refaitDistsFiche` 385 · `modeDist` 431
-`couleurDist` 443 · `appliqueDists` 465
+`texteDist` 58 · `texteCourtDist` 63 · `porteDist` 67 · `standPorte` 71 · `traceDist` 103
+`coinDuTrace` 168 · `coinDeBoite` 209 · `oublieDists` 220 · `teinteDist` 227
+`modesDuPlan` 229 · `releveDists` 233 · `dessineDists` 268 · `marquesListe` 302
+`poseDistsFiche` 332 · `refaitDistsFiche` 372 · `modeDist` 418 · `couleurDist` 430
+`appliqueDists` 452
 
 Importe :
 
 configuration · corps-fiche · couleurs · dom · donnees · etat-emplacements · forme
-jetons-racine · texte · tuiles
+jetons-racine · scene · texte · trace · tuiles
 
 Importé par :
 
@@ -954,7 +953,7 @@ ordre-trace · outil-dessin · panneau-criteres · parcours · partage · pile
 placement-libelles · points-interet · rappels · rapport-utilisation · recherche · reglages
 rendu · reprise-emplacements · scan-parcours · socle-console · socle-dessin · sponsor
 suggestion · synchronisation · tiroir-itineraire · tiroir-parcours · tiroirs · ton-barre
-trace-itineraire · tutoriel · vous-etes-ici · vue · vue-etat · webgl
+tutoriel · vous-etes-ici · vue · vue-etat · webgl
 
 ### `modules/donnees.mjs` — 105 l. → plan, plan-admin
 
@@ -1073,8 +1072,8 @@ Fonctions :
 Importe :
 
 aimants · calques-dessin · chemin-forme · decor · dessin · dom · donnees · forme-choisie
-geste-tenu · itineraire · mode-admin · reperes · scene-edition · socle-dessin · temps
-texte · vue · webgl
+geste-tenu · itineraire · mode-admin · reperes · scene · socle-dessin · temps · texte · vue
+webgl
 
 Importé par :
 
@@ -1236,8 +1235,8 @@ Importé par :
 
 acces-admin · calques-dessin · camera · cartouche-poi · configuration · demarrage
 enregistrement · environs · etat-emplacements · fenetre · fiche-zone · index-salon
-logos-stands · ordre-trace · parcours · rendu · scene-edition · style-habillage
-svg-de-secours · tiroir-itineraire · trace-itineraire · traduction · vignettes · webgl
+logos-stands · ordre-trace · parcours · rendu · scene · style-habillage · svg-de-secours
+tiroir-itineraire · trace-itineraire · traduction · vignettes · webgl
 
 ### `modules/evenements.mjs` — 142 l. → console
 
@@ -1512,7 +1511,7 @@ Fonctions :
 
 Importé par :
 
-distinctions · emplacements · etat-emplacements · reprise-emplacements
+distinctions · emplacements · etat-emplacements · reprise-emplacements · tutoriel
 
 ### `modules/fuseau.mjs` — 119 l. → console
 
@@ -1786,7 +1785,7 @@ Fonctions :
 
 Importé par :
 
-distinctions · parcours · trace-itineraire · tutoriel
+distinctions · parcours · trace-itineraire
 
 ### `modules/journee.mjs` — 1282 l. → plan, plan-admin
 
@@ -2196,8 +2195,7 @@ Fonctions :
 
 Importe :
 
-configuration · donnees · itineraire · mode-admin · rendu · scene-edition
-tiroir-itineraire
+configuration · donnees · itineraire · mode-admin · rendu · scene · tiroir-itineraire
 
 Importé par :
 
@@ -2468,28 +2466,28 @@ Importé par :
 
 demarrage · scan-parcours
 
-### `modules/parcours.mjs` — 667 l. → plan, plan-admin
+### `modules/parcours.mjs` — 656 l. → plan, plan-admin
 
 - l.1 · Le parcours de visite : la liste, son stockage, sa marque
 
 Fonctions :
 
-`_rafraichit` 33 · `_reprendRappels` 34 · `_synchroniseRappels` 35 · `poseParcours` 96
-`brancheListeParcours` 114 · `cleParcours` 127 · `identifiantParcours` 164
-`casierParcours` 172 · `dansParcours` 173 · `jourParcours` 176
-`attenduDepuisTropLongtemps` 181 · `trieParcours` 192 · `chargeParcours` 202
-`parcoursAEcrire` 237 · `enregistreParcours` 253 · `tientLeStockage` 282
-`plurielParcours` 296 · `contenuParcours` 305 · `signetParcours` 316 · `boutonParcours` 322
-`rafraichitMarque` 327 · `calqueMarques` 360 · `traitTuile` 394 · `jetonsMarques` 411
-`estRetenuSurLePlan` 438 · `dessineMarques` 440 · `marqueParcours` 490 · `instantConf` 505
-`cleTemps` 509 · `nomDeStand` 519 · `groupeParcours` 521 · `fermeParcours` 535
-`basculeParcours` 568 · `brancheParcours` 592 · `verseAuParcours` 615 · `rangParcours` 644
-`refaitParcours` 667
+`_rafraichit` 34 · `_reprendRappels` 35 · `_synchroniseRappels` 36 · `poseParcours` 97
+`brancheListeParcours` 115 · `cleParcours` 128 · `identifiantParcours` 165
+`casierParcours` 173 · `dansParcours` 174 · `jourParcours` 177
+`attenduDepuisTropLongtemps` 182 · `trieParcours` 193 · `chargeParcours` 203
+`parcoursAEcrire` 238 · `enregistreParcours` 254 · `tientLeStockage` 283
+`plurielParcours` 297 · `contenuParcours` 306 · `signetParcours` 317 · `boutonParcours` 323
+`rafraichitMarque` 328 · `traitTuile` 382 · `jetonsMarques` 399 · `estRetenuSurLePlan` 423
+`dessineMarques` 425 · `marqueParcours` 479 · `instantConf` 494 · `cleTemps` 498
+`nomDeStand` 508 · `groupeParcours` 510 · `fermeParcours` 524 · `basculeParcours` 557
+`brancheParcours` 581 · `verseAuParcours` 604 · `rangParcours` 633 · `refaitParcours` 656
 
 Importe :
 
 configuration · couleurs · dom · donnees · etat-emplacements · evenement · jetons-racine
-mesure · salon · style-emplacements · temps · texte · tiroirs-exclusifs · trace · tuiles
+mesure · salon · scene · style-emplacements · temps · texte · tiroirs-exclusifs · trace
+tuiles
 
 Importé par :
 
@@ -2585,16 +2583,15 @@ acces-admin · affiche-ici · bande-admin · batiments · calage-carte · chaleu
 enregistrement · gestes-admin · lancement · nuancier · outil-dessin · pile
 placement-libelles · plan · reprise-emplacements
 
-### `modules/plan.mjs` — 80 l. → plan, plan-admin
+### `modules/plan.mjs` — 83 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
 Importe :
 
 appels · choix-ambiance · edition-en-cours · etat-emplacements · lancement · libelles
-logos-stands · mini-carte · polices-plan · qr · releve · salon · scan-parcours
-scene-edition · style-emplacements · sur · texte-plan · trace · tutoriel · vue · webgl
-webgl
+logos-stands · mini-carte · polices-plan · qr · releve · salon · scan-parcours · scene
+scene-svg · style-emplacements · sur · texte-plan · trace · tutoriel · vue · webgl · webgl
 
 Importé par :
 
@@ -3034,8 +3031,7 @@ Importe :
 aimants · calques-dessin · chemin-forme · configuration · designation · dessin
 distinctions · dom · donnees · emplacements · etat-emplacements · fenetre · fiche
 fiche-zone · forme · geste-tenu · itineraire · libelles · mode-admin · modes-edition
-noms-zones · ordre-trace · parcours · recherche · rendu · scene-edition · socle-dessin · vue
-webgl
+noms-zones · ordre-trace · parcours · recherche · rendu · scene · socle-dessin · vue · webgl
 
 Importé par :
 
@@ -3101,14 +3097,30 @@ Importé par :
 
 lancement · plan
 
-### `modules/scene-edition.mjs` — 135 l. → plan, plan-admin
+### `modules/scene-svg.mjs` — 118 l. → plan, plan-admin
 
-- l.1 · La scène d'édition — ce que les outils de l'exploitant montrent sur le plan
+- l.1 · La scène du plan, peinte dans le SVG quand c'est lui qui montre le plan
 
 Fonctions :
 
-`reperes` 76 · `poseReperes` 85 · `anneauRect` 98 · `anneauCercle` 102 · `tourne` 109
-`poigneeCarree` 123 · `cadreChoisi` 132
+`traceDe` 29 · `couleur` 34 · `noeud` 40 · `range` 88 · `peint` 99
+
+Importe :
+
+scene · svg-de-secours · vue-etat
+
+Importé par :
+
+plan
+
+### `modules/scene.mjs` — 178 l. → plan, plan-admin
+
+- l.1 · La scène du plan — ce qui se pose par-dessus les emplacements
+
+Fonctions :
+
+`reperes` 109 · `poseReperes` 118 · `boiteDuJeu` 130 · `anneauRect` 141 · `anneauCercle` 145
+`tourne` 152 · `poigneeCarree` 166 · `cadreChoisi` 175
 
 Importe :
 
@@ -3116,7 +3128,8 @@ evenement
 
 Importé par :
 
-aimants · batiments · dessin · edition · nappe · plan · reprise-emplacements · webgl
+aimants · batiments · dessin · distinctions · edition · nappe · parcours · plan
+reprise-emplacements · scene-svg · trace-itineraire · tutoriel · vous-etes-ici · webgl
 
 ### `modules/secteurs.mjs` — 242 l. → plan, plan-admin
 
@@ -3280,18 +3293,6 @@ Importé par :
 
 borne · demarrage · installation · lancement · reglage-sponsor · tutoriel
 
-### `modules/style-attributs.mjs` — 54 l. → plan, plan-admin
-
-- l.1 · Le style d'une surcouche, lu dans ses attributs
-
-Fonctions :
-
-`herite` 23 · `styleParAttributs` 39
-
-Importé par :
-
-webgl
-
 ### `modules/style-emplacements.mjs` — 130 l. → plan, plan-admin
 
 - l.1 · Le style d'un stand et d'une zone, résolu sans la feuille de style
@@ -3377,7 +3378,7 @@ evenement
 
 Importé par :
 
-apparence · modes-edition · rendu · webgl
+apparence · modes-edition · rendu · scene-svg · webgl
 
 ### `modules/synchronisation.mjs` — 324 l. → console
 
@@ -3461,7 +3462,7 @@ ecran-console · edition · emplacements · environs · fiche · fiche-detail ·
 filtre · fuseau · gestes · ici · index-salon · libelles · nom-emplacement · outil-dessin
 parcours · pile · points-interet · qr · rapport-utilisation · recherche · reglage-fiche
 reglage-suggestion · rendu · secteurs · socle-dessin · suggestion · sur · texte-plan
-trace-itineraire · trajet
+trajet
 
 ### `modules/tiroir-itineraire.mjs` — 721 l. → plan, plan-admin
 
@@ -3587,20 +3588,21 @@ Importé par :
 
 recherche
 
-### `modules/trace-itineraire.mjs` — 439 l. → plan, plan-admin
+### `modules/trace-itineraire.mjs` — 430 l. → plan, plan-admin
 
 - l.1 · Le tracé d'un itinéraire sur le plan
 
 Fonctions :
 
-`poseTrace` 42 · `marchesIci` 44 · `rayonBout` 49 · `arreteTracage` 82 · `tronconsDe` 103
-`traceDe` 121 · `couleursItin` 135 · `styleBout` 152 · `peintItineraire` 176
-`lanceEtincelle` 261 · `pointA` 282 · `courtEtincelle` 290 · `placePouls` 318
-`lanceTracage` 333 · `dessineItineraire` 358 · `rafraichitBouts` 384 · `cadreItineraire` 414
+`poseTrace` 41 · `marchesIci` 43 · `rayonBout` 48 · `arreteTracage` 81 · `tronconsDe` 102
+`couleursItin` 133 · `pastille` 151 · `peintItineraire` 182 · `lanceEtincelle` 262
+`pointA` 283 · `courtEtincelle` 291 · `placePouls` 319 · `lanceTracage` 334
+`dessineItineraire` 359 · `rafraichitBouts` 378 · `effaceItineraire` 384
+`cadreItineraire` 405
 
 Importe :
 
-camera · dom · donnees · ecran · evenement · itineraire · jetons-racine · texte · vue
+camera · donnees · ecran · evenement · itineraire · jetons-racine · scene · vue
 
 Importé par :
 
@@ -3617,7 +3619,8 @@ Fonctions :
 
 Importé par :
 
-chaleur · dessin · outil-comptoir · parcours · plan · style-emplacements · webgl
+chaleur · dessin · distinctions · outil-comptoir · parcours · plan · style-emplacements
+webgl
 
 ### `modules/traduction.mjs` — 150 l. → console
 
@@ -3704,22 +3707,22 @@ Importé par :
 ambiance · dessin · distinctions · outil-comptoir · outil-foodtruck · parcours · rendu
 webgl
 
-### `modules/tutoriel.mjs` — 1083 l. → plan, plan-admin
+### `modules/tutoriel.mjs` — 1068 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
 
 Fonctions :
 
-`route` 73 · `attente` 74 · `iti` 75 · `visee` 76 · `eteintVisee` 77 · `journee` 79
-`vueJournee` 80 · `sejour` 81 · `iciActif` 83 · `dessinEnCours` 86 · `glissements` 115
-`reglageTuto` 127 · `tutoPropose` 136 · `cleTuto` 140 · `tutoOuvert` 142 · `tutoModale` 143
-`tutoVisible` 146 · `tutoFicheOuverte` 152 · `tutoFiche` 155 · `tutoParcours` 157
-`tutoItineraire` 161 · `tutoJournee` 165 · `zoneDuTuto` 173 · `insecable` 190
-`phraseTrajetTuto` 196 · `chapitresTuto` 472 · `proposeTutoriel` 492 · `lanceTutoriel` 550
-`quitteTutoriel` 637 · `chapitreTuto` 649 · `battementTuto` 658 · `finTuto` 676
-`afficheTuto` 693 · `attendsTiroirs` 743 · `pxTuto` 768 · `boiteTuto` 781 · `repereTuto` 796
-`rameneTuto` 829 · `placeTuto` 867 · `voileTuto` 961 · `rafaleTuto` 978
-`traitsZoneTuto` 991 · `marqueZoneTuto` 1015 · `marqueLibelleTuto` 1066
+`route` 74 · `attente` 75 · `iti` 76 · `visee` 77 · `eteintVisee` 78 · `journee` 80
+`vueJournee` 81 · `sejour` 82 · `iciActif` 84 · `dessinEnCours` 87 · `glissements` 116
+`reglageTuto` 128 · `tutoPropose` 137 · `cleTuto` 141 · `tutoOuvert` 143 · `tutoModale` 144
+`tutoVisible` 147 · `tutoFicheOuverte` 153 · `tutoFiche` 156 · `tutoParcours` 158
+`tutoItineraire` 162 · `tutoJournee` 166 · `zoneDuTuto` 174 · `insecable` 191
+`phraseTrajetTuto` 197 · `chapitresTuto` 473 · `proposeTutoriel` 493 · `lanceTutoriel` 551
+`quitteTutoriel` 638 · `chapitreTuto` 651 · `battementTuto` 660 · `finTuto` 678
+`afficheTuto` 695 · `attendsTiroirs` 745 · `pxTuto` 770 · `boiteJeu` 785 · `boiteTuto` 789
+`repereTuto` 804 · `rameneTuto` 837 · `placeTuto` 875 · `voileTuto` 969 · `rafaleTuto` 986
+`reperesZoneTuto` 1005 · `marqueZoneTuto` 1022 · `marqueLibelleTuto` 1051
 
 Éléments :
 
@@ -3729,9 +3732,9 @@ Fonctions :
 Importe :
 
 calques-dessin · configuration · corps-fiche · dom · donnees · ecran · etat-emplacements
-fenetre · fiche · forme-choisie · ici · itineraire · jetons-racine · journee · libelle-place
-parcours · rendu · salon · sponsor · tiroir-itineraire · tiroir-parcours · visite-guidee
-vue · webgl
+fenetre · fiche · forme · forme-choisie · ici · itineraire · journee · libelle-place
+parcours · rendu · salon · scene · sponsor · tiroir-itineraire · tiroir-parcours
+visite-guidee · vue · webgl
 
 Importé par :
 
@@ -3789,18 +3792,18 @@ Importé par :
 
 reglages
 
-### `modules/vous-etes-ici.mjs` — 144 l. → plan, plan-admin
+### `modules/vous-etes-ici.mjs` — 139 l. → plan, plan-admin
 
 - l.1 · « Vous êtes ici » — le départ imposé, et son point sur le plan
 
 Fonctions :
 
-`pointBorne` 27 · `poseLieuBorne` 32 · `ecritDepartBorne` 42 · `rayonBorne` 54
-`dessineBorne` 59 · `placePouls` 89 · `rafraichitBorne` 122 · `rempliBorne` 127
+`pointBorne` 28 · `poseLieuBorne` 33 · `ecritDepartBorne` 43 · `rayonBorne` 55
+`dessineBorne` 60 · `placePouls` 84 · `rafraichitBorne` 117 · `rempliBorne` 127
 
 Importe :
 
-dom · donnees · vue
+dom · donnees · scene · vue
 
 Importé par :
 
@@ -3820,7 +3823,7 @@ camera · dom
 
 Importé par :
 
-environs · logos-stands · socle-dessin · vue · vue · webgl
+environs · logos-stands · scene-svg · socle-dessin · vue · vue · webgl
 
 ### `modules/vue.mjs` — 758 l. → plan, plan-admin
 
@@ -3855,68 +3858,67 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 4311 l. → plan, plan-admin
+### `modules/webgl.mjs` — 4309 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`injecteAuWebgl` 95 · `moteurVoulu` 115 · `carteDuWebgl` 145 · `sansCarteGraphique` 167
-`chargeWebgl` 267 · `chargeDeck` 318 · `signaleRate` 331 · `sortesDeChauffe` 373
-`chauffeAvantLesDonnees` 383 · `finisChauffe` 416 · `brancheWebgl` 428 · `monteWebgl` 448
-`poseToileWebgl` 667 · `guetteContexteWebgl` 673 · `contextePerduWebgl` 683
-`verifieContexteWebgl` 690 · `guetteBoucleWebgl` 732 · `perdContexteWebgl` 753
-`remonteWebgl` 789 · `vueDeck` 806 · `enCamera` 826 · `vuesGl` 830 · `effetsGl` 854
-`basculeCamera` 864 · `vueWebgl` 877 · `blocDe` 894 · `majEditionWebgl` 907 · `cleBloc` 919
-`planifieWebgl` 945 · `toutRepeindreWebgl` 949 · `blocsDansLOrdre` 968 · `repeintWebgl` 978
-`pointsParMetre` 1008 · `assembleWebgl` 1034 · `tuilesChoisies` 1040
-`assembleCouches` 1049 · `memesElements` 1092 · `cleReunion` 1100 · `reunisCalques` 1125
-`reunisVolumes` 1180 · `sorteDe` 1215 · `cleChauffe` 1277 · `chauffe` 1285
-`copiesQuiDessinent` 1333 · `guetteChauffe` 1351 · `finisLaChauffe` 1392 · `parEtapes` 1404
-`demandeChauffeLogos` 1428 · `auCreux` 1444 · `largeurLisere` 1476 · `constTexte` 1479
-`jeuDeCaracteres` 1645 · `sousPixelOffert` 1701 · `couchesPetites` 1709
-`filtreCouches` 1744 · `poseGeste` 1756 · `positionTexte` 1776 · `cleChoisi` 1816
-`versEcran` 1819 · `enveloppe` 1826 · `nomsCaches` 1837 · `parametresTexte` 1866
-`nomsAPlat` 1875 · `couchesTexte` 1877 · `accVide` 1929 · `sceneGl` 1938
-`convertitBloc` 1977 · `tracesDe` 2020 · `estEmplacement` 2029 · `emplacementGl` 2042
-`formeEmplacementGl` 2054 · `accDe` 2100 · `parcoursGl` 2117 · `tracesDeForme` 2148
-`estHabillage` 2176 · `habillageGl` 2178 · `parcoursHabillage` 2193
-`parcoursAttributs` 2222 · `compareLectures` 2246 · `resteDebout` 2280 · `dedansAnneau` 2288
-`auDessusDuSol` 2313 · `surSonStand` 2322 · `standDeLaMarque` 2327
-`marquesSurLesToits` 2339 · `hauteurVolume` 2358 · `zoneMeublee` 2390 · `poseJeton` 2442
-`mul4` 2466 · `enColonnes` 2475 · `translation` 2476 · `homothetie` 2478 · `autourDuZ` 2479
-`matriceJeton` 2488 · `corpsDansLeJeton` 2504 · `couchesJeton` 2512 · `couchesJetons` 2560
-`meubleZone` 2602 · `dansLeHall` 2682 · `teinteDesFigurants` 2705 · `coucheFigurants` 2753
-`penchee` 2805 · `couchesFigurants` 2816 · `eclatant` 2866 · `opaque` 2872 · `formeGl` 2879
-`corpsDeclare` 2944 · `texteGl` 2958 · `imageGl` 2982 · `imageDressee` 3024
-`socleImage` 3038 · `partage` 3050 · `designeGl` 3056 · `sortie` 3070 · `noteHauteur` 3076
-`anticipeHausses` 3106 · `monteALAppui` 3133 · `rendLAppui` 3146 · `detacheVolume` 3156
-`hauteurEnCours` 3190 · `hauteurHausse` 3196 · `echelleHausse` 3201 · `haussesParId` 3204
-`memesFormes` 3223 · `memesPoints` 3233 · `signeCouleurs` 3240 · `masqueVolumes` 3248
-`aPlat` 3268 · `ombresAuRepos` 3280 · `couchesDeBloc` 3305 · `modelesLibellesHtml` 3424
-`poseModelesLibelles` 3434 · `lisModelesLibelles` 3440 · `groupesNoms` 3473
-`couchesNoms` 3499 · `couchesPastilles` 3515 · `couchesLibellesWebgl` 3532
-`couchesDessineesWebgl` 3585 · `stage` 3606 · `lectureDifferee` 3639 · `survolTrouve` 3679
-`demandeSurvolWebgl` 3685 · `survoleWebgl` 3691 · `brancheSurvolWebgl` 3719
-`poseSurvolWebgl` 3732 · `enTuiles` 3769 · `hauteurTuile` 3782 · `visePour` 3788
-`suisChoisies` 3798 · `gonfleSurvol` 3806 · `coucheTuileSoulevee` 3829
-`couchesTuiles` 3860 · `poseCurseurWebgl` 3873 · `poseFocusWebgl` 3883 · `aplatsDe` 3890
-`coucheSurvol` 3893 · `coucheSurvolVolume` 3918 · `coucheFocus` 3954 · `couchesPhare` 3984
-`lueurDe` 4001 · `opacitePhare` 4039 · `echellePhare` 4040 · `couchesPhareNoms` 4043
-`instant` 4069 · `aUnInstant` 4071 · `animeCouche` 4076 · `majAnimationWebgl` 4096
-`animeWebgl` 4104 · `reanime` 4140 · `logosSurLesToits` 4149 · `objetSous` 4182
-`sansProfondeurDeDesignation` 4203 · `peutDesigner` 4223 · `objetSousDiffere` 4225
-`viseEnAvance` 4245 · `lisObjet` 4253 · `cibleWebgl` 4260 · `priseWebgl` 4270
-`repereSousWebgl` 4278 · `libelleSousWebgl` 4283 · `rectEcranWebgl` 4291
-`rectEcranBoite` 4304
+`injecteAuWebgl` 94 · `moteurVoulu` 114 · `carteDuWebgl` 144 · `sansCarteGraphique` 166
+`chargeWebgl` 266 · `chargeDeck` 317 · `signaleRate` 330 · `sortesDeChauffe` 372
+`chauffeAvantLesDonnees` 382 · `finisChauffe` 415 · `brancheWebgl` 427 · `monteWebgl` 447
+`poseToileWebgl` 666 · `guetteContexteWebgl` 672 · `contextePerduWebgl` 682
+`verifieContexteWebgl` 689 · `guetteBoucleWebgl` 731 · `perdContexteWebgl` 752
+`remonteWebgl` 788 · `vueDeck` 805 · `enCamera` 825 · `vuesGl` 829 · `effetsGl` 853
+`basculeCamera` 863 · `vueWebgl` 876 · `blocDe` 893 · `majEditionWebgl` 906 · `cleBloc` 918
+`planifieWebgl` 944 · `toutRepeindreWebgl` 948 · `jeuxDuRang` 965 · `blocsDansLOrdre` 969
+`repeintWebgl` 983 · `pointsParMetre` 1013 · `assembleWebgl` 1039 · `tuilesChoisies` 1045
+`assembleCouches` 1054 · `memesElements` 1097 · `cleReunion` 1105 · `reunisCalques` 1130
+`reunisVolumes` 1185 · `sorteDe` 1220 · `cleChauffe` 1282 · `chauffe` 1290
+`copiesQuiDessinent` 1338 · `guetteChauffe` 1356 · `finisLaChauffe` 1397 · `parEtapes` 1409
+`demandeChauffeLogos` 1433 · `auCreux` 1449 · `largeurLisere` 1481 · `constTexte` 1484
+`jeuDeCaracteres` 1650 · `sousPixelOffert` 1706 · `couchesPetites` 1714
+`filtreCouches` 1749 · `poseGeste` 1761 · `positionTexte` 1781 · `cleChoisi` 1821
+`versEcran` 1824 · `enveloppe` 1831 · `nomsCaches` 1842 · `parametresTexte` 1871
+`nomsAPlat` 1880 · `couchesTexte` 1882 · `accVide` 1934 · `sceneGl` 1943
+`convertitBloc` 1994 · `tracesDe` 2040 · `estEmplacement` 2049 · `emplacementGl` 2062
+`formeEmplacementGl` 2074 · `accDe` 2120 · `parcoursGl` 2137 · `tracesDeForme` 2168
+`estHabillage` 2196 · `habillageGl` 2198 · `parcoursHabillage` 2213 · `compareLectures` 2241
+`resteDebout` 2277 · `dedansAnneau` 2285 · `auDessusDuSol` 2310 · `surSonStand` 2319
+`standDeLaMarque` 2324 · `marquesSurLesToits` 2336 · `hauteurVolume` 2355
+`zoneMeublee` 2387 · `poseJeton` 2439 · `mul4` 2463 · `enColonnes` 2472 · `translation` 2473
+`homothetie` 2475 · `autourDuZ` 2476 · `matriceJeton` 2485 · `corpsDansLeJeton` 2501
+`couchesJeton` 2509 · `couchesJetons` 2557 · `meubleZone` 2599 · `dansLeHall` 2679
+`teinteDesFigurants` 2702 · `coucheFigurants` 2750 · `penchee` 2802
+`couchesFigurants` 2813 · `eclatant` 2863 · `opaque` 2869 · `formeGl` 2876
+`corpsDeclare` 2941 · `texteGl` 2955 · `imageGl` 2980 · `imageDressee` 3022
+`socleImage` 3036 · `partage` 3048 · `designeGl` 3054 · `sortie` 3068 · `noteHauteur` 3074
+`anticipeHausses` 3104 · `monteALAppui` 3131 · `rendLAppui` 3144 · `detacheVolume` 3154
+`hauteurEnCours` 3188 · `hauteurHausse` 3194 · `echelleHausse` 3199 · `haussesParId` 3202
+`memesFormes` 3221 · `memesPoints` 3231 · `signeCouleurs` 3238 · `masqueVolumes` 3246
+`aPlat` 3266 · `ombresAuRepos` 3278 · `couchesDeBloc` 3303 · `modelesLibellesHtml` 3422
+`poseModelesLibelles` 3432 · `lisModelesLibelles` 3438 · `groupesNoms` 3471
+`couchesNoms` 3497 · `couchesPastilles` 3513 · `couchesLibellesWebgl` 3530
+`couchesDessineesWebgl` 3583 · `stage` 3604 · `lectureDifferee` 3637 · `survolTrouve` 3677
+`demandeSurvolWebgl` 3683 · `survoleWebgl` 3689 · `brancheSurvolWebgl` 3717
+`poseSurvolWebgl` 3730 · `enTuiles` 3767 · `hauteurTuile` 3780 · `visePour` 3786
+`suisChoisies` 3796 · `gonfleSurvol` 3804 · `coucheTuileSoulevee` 3827
+`couchesTuiles` 3858 · `poseCurseurWebgl` 3871 · `poseFocusWebgl` 3881 · `aplatsDe` 3888
+`coucheSurvol` 3891 · `coucheSurvolVolume` 3916 · `coucheFocus` 3952 · `couchesPhare` 3982
+`lueurDe` 3999 · `opacitePhare` 4037 · `echellePhare` 4038 · `couchesPhareNoms` 4041
+`instant` 4067 · `aUnInstant` 4069 · `animeCouche` 4074 · `majAnimationWebgl` 4094
+`animeWebgl` 4102 · `reanime` 4138 · `logosSurLesToits` 4147 · `objetSous` 4180
+`sansProfondeurDeDesignation` 4201 · `peutDesigner` 4221 · `objetSousDiffere` 4223
+`viseEnAvance` 4243 · `lisObjet` 4251 · `cibleWebgl` 4258 · `priseWebgl` 4268
+`repereSousWebgl` 4276 · `libelleSousWebgl` 4281 · `rectEcranWebgl` 4289
+`rectEcranBoite` 4302
 
 Importe :
 
 affichage · calque-detache · camera · chemin-forme · configuration · couleurs · decor
 densite-rendu · designation · dom · donnees · erreurs · etat-emplacements · evenement
-figurants · itineraire · libelle-place · logos-stands · moteur-gl · reperes · scene-edition
-style-attributs · style-emplacements · style-habillage · sur · svg-de-secours · trace
-tuiles · vue-etat
+figurants · itineraire · libelle-place · logos-stands · moteur-gl · reperes · scene
+style-emplacements · style-habillage · sur · svg-de-secours · trace · tuiles · vue-etat
 
 Importé par :
 

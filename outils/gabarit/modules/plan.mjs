@@ -39,6 +39,9 @@ import "./releve.mjs";
    de nulle part : il se branche en se chargeant, et ne paraît que sur la page
    qui le demande. */
 import "./choix-ambiance.mjs";
+/* Le peintre des surcouches dans le SVG de secours ne s'importe de nulle
+   part : il écoute la scène du plan et ne peint qu'en l'absence du WebGL. */
+import "./scene-svg.mjs";
 
 /* Ce que les essais du navigateur lisent dans la page : les règles de
    `sur.mjs` éprouvées sur des entrées hostiles, le salon que l'adresse nomme,
@@ -57,7 +60,7 @@ import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
 import { couleurGl } from "./trace.mjs";
 import { compareLectures, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
-import { reperes } from "./scene-edition.mjs";
+import { reperes, boiteDuJeu } from "./scene.mjs";
 
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
@@ -68,7 +71,7 @@ globalThis.__essais = {
   emplacements: { jetonsEmplacements, styleEmplacement, etatEmplacement, couleurGl },
   compareLectures,
   // la scène d'édition, telle que les outils l'ont posée et que le dessin la vise
-  scene: { reperes, repereSousWebgl, rectEcranBoite },
+  scene: { reperes, boiteDuJeu, repereSousWebgl, rectEcranBoite },
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },

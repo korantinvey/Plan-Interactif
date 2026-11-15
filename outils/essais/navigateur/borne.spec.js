@@ -30,6 +30,10 @@ const pointLibre = (page) => page.evaluate(() => {
   return null;
 });
 
+/** Le point de la borne, dans la scène du plan (`modules/scene.mjs`) : il
+ *  n'a de nœud que dans le SVG de secours. */
+const pointBorne = (page) => page.evaluate(() => window.__essais.scene.reperes("borneIci").length);
+
 test.describe("la borne", () => {
   test("posée par l'adresse, elle dit d'où l'on part", async ({ page }) => {
     const erreurs = await prepare(page);
@@ -39,7 +43,7 @@ test.describe("la borne", () => {
     await expect(page.locator("#iDepart")).toHaveValue("Vous êtes ici");
     expect(await page.locator("#iDepart").evaluate((c) => /** @type {HTMLInputElement} */ (c).readOnly))
       .toBe(true);
-    await expect(page.locator("#borneIci")).toHaveCount(1);
+    await expect.poll(() => pointBorne(page)).toBeGreaterThan(0);
     await expect(page.locator("#bornePose")).toBeHidden();
     expect(erreurs).toEqual([]);
   });
@@ -55,7 +59,7 @@ test.describe("la borne", () => {
     const pt = await pointLibre(page);
     expect(pt).not.toBeNull();
     await page.mouse.click(pt.x, pt.y);
-    await expect(page.locator("#borneIci")).toHaveCount(1);
+    await expect.poll(() => pointBorne(page)).toBeGreaterThan(0);
     await expect(page.locator("#viseur")).toBeHidden();
     await expect(page.locator("#iDepart")).toHaveValue("Vous êtes ici");
     expect(await page.evaluate(() => localStorage.getItem("plan-borne:smcl-2026"))).toBeTruthy();
@@ -78,7 +82,7 @@ test.describe("la borne", () => {
     await page.clock.fastForward(91_000);
     await expect(page.locator("#detail")).not.toHaveClass(/open/);
     await expect(page.locator("#q")).toHaveValue("");
-    await expect(page.locator("#borneIci")).toHaveCount(1);
+    await expect.poll(() => pointBorne(page)).toBeGreaterThan(0);
     await expect(page.locator("#iDepart")).toHaveValue("Vous êtes ici");
     expect(erreurs).toEqual([]);
   });
@@ -91,10 +95,10 @@ test.describe("le code affiché dans le hall", () => {
     await attendLaListe(page);
     await expect(page.locator("html")).toHaveClass(/mode-ici/);
     await expect(page.locator("#iDepart")).toHaveValue("Vous êtes ici");
-    await expect(page.locator("#borneIci")).toHaveCount(1);
+    await expect.poll(() => pointBorne(page)).toBeGreaterThan(0);
     await expect(page.locator("#iciRappel")).toBeVisible();
     await page.locator("#iciStop").click();
-    await expect(page.locator("#borneIci")).toHaveCount(0);
+    await expect.poll(() => pointBorne(page)).toBe(0);
     await expect(page.locator("#iciRappel")).toBeHidden();
     expect(new URL(page.url()).searchParams.has("ici")).toBe(false);
     expect(await page.locator("#iDepart").evaluate((c) => /** @type {HTMLInputElement} */ (c).readOnly))

@@ -18,6 +18,7 @@
 import { $ } from "./dom.mjs";
 import { DATA, state } from "./donnees.mjs";
 import { vue, svg, cadrePlan, injecteALaVue, suitLaVue, versScene } from "./vue.mjs";
+import { poseReperes, anneauCercle } from "./scene.mjs";
 
 /* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
    elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
@@ -57,19 +58,13 @@ function rayonBorne(){
 }
 
 export function dessineBorne(){
-  let g = $("borneIci");
   if (!LIEU_BORNE || !DATA || !vue() || LIEU_BORNE.p !== state.plan){
-    if (g) g.remove();
+    poseReperes("borneIci", []);
     placePouls();
     return;
   }
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "borneIci";
-    // sous le trait de l'itinéraire, qui part justement d'ici
-    svg.insertBefore(g, $("itin"));
-  }
-  rempliBorne(g);
+  // dans la scène du plan, sous le trait de l'itinéraire, qui part justement d'ici
+  rempliBorne();
   placePouls();
 }
 
@@ -120,23 +115,23 @@ suitLaVue(() => { if (pouls && !pouls.hidden) placePouls(); });
 
 /** Le zoom change : le point garde sa taille à l'écran, pas celle du plan. */
 export function rafraichitBorne(){
-  const g = $("borneIci");
-  if (g && LIEU_BORNE && vue()) rempliBorne(g);
+  if (LIEU_BORNE && DATA && vue() && LIEU_BORNE.p === state.plan) rempliBorne();
 }
 
-function rempliBorne(g){
-  const r = rayonBorne(), x = LIEU_BORNE.xy[0], y = LIEU_BORNE.xy[1];
-  /* Un liseré sombre au-delà du blanc : le blanc seul disparaît sur une allée
-     claire, le sombre seul sur un stand foncé — les deux ensemble détachent le
-     point de n'importe quel fond. Le nom, lui, est porté par la scène
-     (`placePouls`). */
-  g.innerHTML = '<title></title>' +
-    '<circle class="bOnde" cx="' + x + '" cy="' + y + '" r="' + (r * 2.4).toFixed(2) + '"/>' +
-    '<circle class="bCerne" cx="' + x + '" cy="' + y + '" r="' + (r * 1.3).toFixed(2) + '"/>' +
-    '<circle class="bPoint" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(2) + '"/>';
-  /* Le titre passe par « textContent » : le moteur de langue le traduit là où
-     il ne traduirait pas une valeur d'attribut construite. */
-  g.querySelector("title").textContent = LIEU_BORNE.nom;
+/* Le point de la borne, dans la scène du plan (`scene.mjs`), de la couleur
+   d'« ici » (`--ici`) — une épingle de carte, qu'aucune palette de salon ne
+   donne à ses stands. Un liseré sombre au-delà du blanc : le blanc seul
+   disparaît sur une allée claire, le sombre seul sur un stand foncé — les
+   deux ensemble détachent le point de n'importe quel fond. Le nom, lui, est
+   porté par la page (`placePouls`), où la lecture d'écran le trouve. */
+function rempliBorne(){
+  const r = rayonBorne(), c = LIEU_BORNE.xy;
+  poseReperes("borneIci", [
+    { sorte: "aplat", anneaux: [anneauCercle(c, +(r * 2.4).toFixed(2))], plein: "--ici", opacite: .2 },
+    { sorte: "aplat", anneaux: [anneauCercle(c, +(r * 1.3).toFixed(2))], plein: "#fff",
+      trait: "rgba(21,24,26,.55)", opaciteTrait: 1, epaisseur: 1.5 },
+    { sorte: "aplat", anneaux: [anneauCercle(c, +r.toFixed(2))], plein: "--ici" },
+  ]);
 }
 
 /* Le point garde sa taille à l'écran : la vue, que ce module importe, le

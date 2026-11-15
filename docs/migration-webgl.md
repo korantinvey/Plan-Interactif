@@ -187,16 +187,29 @@ ne lit plus le style calculé du groupe : son opacité vient du réglage et des
 deux classes de la racine qui le mettent en retrait (`opaciteCalque`).
 `svg-de-secours.spec.js` éprouve les deux.
 
-Reste du guet : les calques dessinés et les surcouches, qui s'écrivent
-encore dans le SVG caché et que le dessin y relit, et l'ordre des calques
-(l'ordre des nœuds de `#couches`).
+**Étape 5, pour les surcouches du visiteur (15 novembre 2026).** Les
+marques des distinctions, les liserés du parcours et de la sélection, la zone
+de la visite guidée, le point de la borne et le trajet se posent en données
+dans la scène du plan (`modules/scene.mjs`, l'ancien `scene-edition.mjs`, qui
+porte désormais les jeux du visiteur et ceux des outils, chacun à son rang
+dans la pile). Le dessin les peint (`sceneGl` : les marques sur leur toit en
+vue immersive, le trajet au-dessus du sol) ; quand le SVG montre le plan, un
+second peintre les y pose depuis les mêmes données (`modules/scene-svg.mjs`),
+en attributs, ou en style pour un jeton. La lecture par attributs
+(`style-attributs.mjs`, `PAR_ATTRIBUTS`) est retirée, et la feuille ne
+peint plus la borne. `surcouches.spec.js` éprouve que les deux peintres
+s'accordent.
+
+Reste du guet : les calques dessinés, qui s'écrivent encore dans le SVG
+caché et que le dessin y relit, et l'ordre des calques (l'ordre des nœuds de
+`#couches`).
 
 **Étape 4 — les outils de l'exploitant (15 novembre 2026).** Décidé :
 l'administration exige le WebGL (sur les onze jours d'avant, aucune des dix-
 neuf visites de l'administration n'en était privée). Les repères des outils
 n'ont donc qu'un peintre, le dessin, et quittent le SVG caché.
 
-- `modules/scene-edition.mjs` les tient en données, par jeu : aplats,
+- `modules/scene-edition.mjs` (devenu `scene.mjs`) les tient en données, par jeu : aplats,
   traits à l'épaisseur de l'écran, textes, images, chacun avec son style en
   jetons de la racine et, s'il se saisit, sa prise (l'outil, ce qu'elle
   désigne, son curseur). `webgl.mjs` en fait des blocs sans nœud

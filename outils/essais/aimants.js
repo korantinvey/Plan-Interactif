@@ -28,7 +28,7 @@ const proche = (a, b) => a.length === b.length && a.every((v, i) => Math.abs(v -
 
 /* Le document, réduit à ce que le module touche : les champs de la boîte à
    outils. Ce qu'il montre sur le plan — la cote, les aimants — va dans la
-   scène d'édition (`scene-edition.mjs`), qu'on lit telle que le dessin la lit. */
+   scène d'édition (`scene.mjs`), qu'on lit telle que le dessin la lit. */
 const elements = new Map();
 const noeud = (tag) => ({
   tag, id: "", attrs: {}, textContent: "", ecritures: 0, _html: "",
@@ -52,7 +52,7 @@ champ("elemHauteur", { value: "" });
   const dossier = path.join(__dirname, "..", "gabarit", "modules");
   const A = await import(pathToFileURL(path.join(dossier, "aimants.mjs")).href);
   const D = await import(pathToFileURL(path.join(dossier, "donnees.mjs")).href);
-  const S = await import(pathToFileURL(path.join(dossier, "scene-edition.mjs")).href);
+  const S = await import(pathToFileURL(path.join(dossier, "scene.mjs")).href);
   let ecritures = 0;
   S.SCENE_CHANGEE.ecoute((nom) => { if (nom === "aimants") ecritures++; });
 

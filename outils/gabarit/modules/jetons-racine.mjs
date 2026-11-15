@@ -1,11 +1,11 @@
 /* ============================================================
    Les surcouches qui suivent les jetons de la racine
 
-   Une surcouche du plan qui porte son style en attributs (`style-attributs.mjs`,
-   `docs/migration-webgl.md`, étape 2) y écrit des couleurs résolues : l'accent
-   du salon, la couleur de sélection, celle du parcours. Peinte par la feuille,
-   elle suivait d'elle-même un jeton changé sur la racine (`var(--accent)`) ;
-   écrite en attributs, elle garde la couleur du moment où elle a été tracée.
+   Une surcouche du plan posée dans la scène (`scene.mjs`) y écrit parfois des
+   couleurs résolues : l'accent du salon mêlé à une autre teinte, la couleur
+   de sélection, celle du parcours. Peinte par la feuille, elle suivait
+   d'elle-même un jeton changé sur la racine (`var(--accent)`) ; résolue, elle
+   garde la couleur du moment où elle a été tracée.
    L'exploitant qui change l'accent dans les réglages verrait donc les marques
    d'un nouveau venu, le liseré du choix ou le trajet garder l'ancien.
 

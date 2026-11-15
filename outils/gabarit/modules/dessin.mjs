@@ -39,7 +39,7 @@ import { libelleEmplacement } from "./nom-emplacement.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 import { lisTrace } from "./trace.mjs";
-import { poseReperes } from "./scene-edition.mjs";
+import { poseReperes } from "./scene.mjs";
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -242,10 +242,10 @@ export function peintCalque(cal){
 /* La conversion écran → repère du plan, `versPlan` : `modules/vue.mjs`. */
 
 /* L'ébauche d'une forme en cours de tracé et le guide d'alignement vivent
-   dans la scène d'édition (`scene-edition.mjs`), que le dessin peint. Ils
+   dans la scène d'édition (`scene.mjs`), que le dessin peint. Ils
    arrivent en tracé SVG de `chemin-forme.mjs`, lu ici en points, morceau par
    morceau : en pointillés, comme tout ce qui n'est pas encore posé. */
-/** @returns {import("./scene-edition.mjs").Repere[]} */
+/** @returns {import("./scene.mjs").Repere[]} */
 const traitsDe = (/** @type {string | null} */ d, /** @type {any} */ style) => !d ? [] :
   lisTrace(d).filter(t => t.pts.length > 1)
     .map(t => ({ sorte: /** @type {"trait"} */ ("trait"), chemin: t.pts, ferme: t.ferme, ...style }));

@@ -15,7 +15,7 @@
 
    Chaque outil qui s'ouvre demande aussi `editionPossible` : l'édition exige
    que le WebGL peigne le plan. Les poignées, les cotes, les aimants et les
-   contours des outils vivent dans la scène d'édition (`scene-edition.mjs`),
+   contours des outils vivent dans la scène d'édition (`scene.mjs`),
    que seul le dessin peint et vise (décision du 15 novembre 2026,
    `docs/migration-webgl.md`) ; quand le SVG montre le plan — un navigateur
    sans carte graphique, `?rendu=svg` —, un outil ouvert n'aurait ni repère à

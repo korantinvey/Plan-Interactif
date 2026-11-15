@@ -1,30 +1,36 @@
 /* ============================================================
-   La scène d'édition — ce que les outils de l'exploitant montrent sur le plan
+   La scène du plan — ce qui se pose par-dessus les emplacements
 
-   Les poignées et le cadre de la forme choisie, ceux d'un emplacement qu'on
-   reprend, la cote du geste, les aimants repérés, le guide d'alignement,
-   l'ébauche d'un tracé, le contour d'un hall qu'on cale, la grille de
-   marche : autant de repères posés par-dessus le plan, à la taille de
-   l'écran, que l'exploitant regarde ou saisit.
+   Deux familles de repères, posés par-dessus le plan, que le dessin
+   (`webgl.mjs`) peint sans rien relire dans le SVG caché :
+   — les surcouches du visiteur : les marques des distinctions, les liserés
+     du parcours et de la sélection, la zone que désigne la visite guidée, le
+     point « Vous êtes ici » de la borne, le trajet et ses pastilles ;
+   — les repères des outils de l'exploitant : poignées et cadres, cote,
+     aimants, guide d'alignement, ébauche d'un tracé, contour d'un hall qu'on
+     cale, grille de marche — que la main regarde ou saisit.
 
-   Chaque outil les écrivait dans le SVG caché, que le dessin (`webgl.mjs`)
-   relisait par son guet, feuille de style comprise, à chaque mouvement de la
-   main. Il les pose maintenant ici, en données, sous un nom (`poseReperes`) :
-   des aplats, des traits, des textes, une image, chacun avec son style et,
-   s'il se saisit, sa prise. Le dessin les peint directement, et la visée lui
-   rend la prise (`webgl.mjs` `repereSousWebgl`), non un nœud.
+   Chaque module les écrivait dans le SVG caché, que le dessin relisait par
+   son guet, feuille de style ou attributs compris. Il les pose maintenant
+   ici, en données, sous le nom de son jeu (`poseReperes`) : des aplats, des
+   traits, des textes, une image, chacun avec son style et, s'il se saisit,
+   sa prise. Le dessin les peint directement, et la visée lui rend la prise
+   (`webgl.mjs` `repereSousWebgl`), non un nœud.
 
-   L'administration exige le WebGL (`docs/migration-webgl.md`, décision du
-   15 novembre 2026) : ces repères n'ont pas d'autre peintre.
+   Les surcouches du visiteur ont un second peintre : quand le SVG montre le
+   plan — un poste sans carte graphique —, `scene-svg.mjs` les y pose,
+   depuis les mêmes données. Les repères des outils n'en ont pas :
+   l'administration exige le WebGL (`docs/migration-webgl.md`, décision du
+   15 novembre 2026).
 
-   Les couleurs sont des jetons de la racine (`--accent`, `--surface`), que le
-   dessin résout au moment de peindre : un accent changé repeint le plan, et
-   les repères avec. Les tailles sont en mètres, posées par l'outil d'après la
-   vue pour rester constantes à l'écran ; les épaisseurs de trait, en pixels.
+   Les couleurs sont des jetons de la racine (`--accent`, `--surface`), que
+   chaque peintre résout au moment de peindre, ou des couleurs écrites. Les
+   tailles sont en mètres, posées d'après la vue quand elles doivent rester
+   constantes à l'écran ; les épaisseurs de trait, en pixels.
 
    Un module neutre, sans écran ni import qui en touche un — il s'éprouve dans
-   Node avec les aimants (`outils/essais/aimants.js`) : les outils et le dessin
-   l'importent tous.
+   Node avec les aimants (`outils/essais/aimants.js`) : les modules et les
+   deux peintres l'importent tous.
    ============================================================ */
 import { creeEvenement } from "./evenement.mjs";
 
@@ -49,6 +55,14 @@ import { creeEvenement } from "./evenement.mjs";
  * @property {number[]} [bornes] une image droite : [x0, y0, x1, y1], en mètres
  * @property {number[][]} [coins] une image tournée : ses quatre coins, en mètres — bas gauche, haut
  *   gauche, haut droit, bas droit, le haut étant le petit y du plan
+ * @property {"start" | "middle" | "centre"} [ancre] un texte : son point d'ancrage — au début ou au milieu
+ *   de sa ligne de base, ou au centre de ses lettres dans les deux sens (le chiffre d'une pastille)
+ * @property {string} [famille] un texte : sa police, celle du plan sinon
+ * @property {boolean} [rond] un trait aux bouts et aux angles ronds
+ * @property {string} [sur] une marque posée sur le dessus d'un stand : l'identifiant du stand,
+ *   dont elle suit le toit en vue immersive
+ * @property {string} [classe] la classe du nœud que le SVG de secours pose, pour ce que la
+ *   feuille y anime encore
  * @property {Prise | null} [prise] ce que la main saisit en touchant ce repère
  */
 /**
@@ -63,14 +77,33 @@ import { creeEvenement } from "./evenement.mjs";
 export const SCENE_CHANGEE = creeEvenement();
 
 /**
- * L'ordre où les jeux se peignent, du dessous au dessus. La grille de marche
- * reste sous le trajet ; le reste passe au-dessus de tout le plan — le guide
- * et la cote, qui accompagnent le geste, en dernier.
+ * Les jeux, dans l'ordre où ils se peignent, du dessous au dessus, et leur
+ * rang dans la pile du plan :
+ * — « stands » : juste au-dessus des stands, sous leurs noms — les marques
+ *   des distinctions, dont les textes du plan ne doivent pas manger les lettres ;
+ * — « plan » : au-dessus de tous les calques, sous le trajet ;
+ * — « trajet » : le trajet lui-même ;
+ * — « dessus » : par-dessus tout, les repères des outils — le guide et la
+ *   cote, qui accompagnent le geste, en dernier.
+ * `public` : un jeu du visiteur, que le SVG de secours peint aussi. Le nom
+ * d'un jeu public est l'identifiant de son groupe dans ce SVG, où la feuille
+ * retrouve ce qu'elle anime (`#tutoZone`).
+ * @type {{ nom: string, rang: "stands" | "plan" | "trajet" | "dessus", public?: boolean }[]}
  */
-export const JEUX = ["nappe", "calage", "ebauche", "aimants", "poignees", "poigneesGeo", "guide", "cote"];
+export const JEUX = [
+  { nom: "dists", rang: "stands", public: true },
+  { nom: "marques", rang: "plan", public: true },
+  { nom: "tutoZone", rang: "plan", public: true },
+  { nom: "borneIci", rang: "plan", public: true },
+  { nom: "nappe", rang: "plan" },
+  { nom: "itin", rang: "trajet", public: true },
+  { nom: "calage", rang: "dessus" }, { nom: "ebauche", rang: "dessus" }, { nom: "aimants", rang: "dessus" },
+  { nom: "poignees", rang: "dessus" }, { nom: "poigneesGeo", rang: "dessus" },
+  { nom: "guide", rang: "dessus" }, { nom: "cote", rang: "dessus" },
+];
 
 /** @type {Map<string, Repere[]>} */
-const scene = new Map(JEUX.map(n => [n, []]));
+const scene = new Map(JEUX.map(j => [j.nom, []]));
 
 /** Les repères d'un jeu, tels que son outil les a posés. */
 export const reperes = (/** @type {string} */ nom) => scene.get(nom) || [];
@@ -89,6 +122,16 @@ export function poseReperes(nom, liste){
   if (avant.length === liste.length && JSON.stringify(avant) === JSON.stringify(liste)) return;
   scene.set(nom, liste);
   SCENE_CHANGEE.emet(nom);
+}
+
+/** La boîte d'un jeu sur le plan, [x0, y0, x1, y1], tirée de ses repères —
+ *  pour qui doit l'éviter à l'écran (la bulle de la visite guidée) ; rien
+ *  s'il est vide. */
+export function boiteDuJeu(/** @type {string} */ nom){
+  const pts = reperes(nom).flatMap(r => r.anneaux ? r.anneaux.flat() : r.chemin || (r.position ? [r.position] : []));
+  if (!pts.length) return null;
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
 /* ------------------------------------------------------------

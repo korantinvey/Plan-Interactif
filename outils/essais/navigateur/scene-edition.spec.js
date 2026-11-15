@@ -1,6 +1,6 @@
 /**
  * Les repères des outils de l'exploitant, peints et visés par le dessin
- * (`modules/scene-edition.mjs`).
+ * (`modules/scene.mjs`).
  *
  * L'administration exige le WebGL : les poignées et le cadre de la forme
  * choisie ne s'écrivent plus dans le SVG caché, ils se posent en données dans

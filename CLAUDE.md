@@ -318,7 +318,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` |
 | choisir, déplacer, tourner une forme | `modules/edition.mjs` ; forme choisie `modules/forme-choisie.mjs` |
 | cote, aimants, grille, duplication | `modules/aimants.mjs` |
-| repères des outils sur le plan — poignées, cadres, cote, aimants, ébauche, calage, grille de marche ; l'édition exige le WebGL | `modules/scene-edition.mjs` (`poseReperes`), peints et visés par `modules/webgl.mjs` (`repereSousWebgl`) ; la garde `modules/modes-edition.mjs` `editionPossible` |
+| repères des outils sur le plan — poignées, cadres, cote, aimants, ébauche, calage, grille de marche ; l'édition exige le WebGL | `modules/scene.mjs` (`poseReperes`), peints et visés par `modules/webgl.mjs` (`repereSousWebgl`) ; la garde `modules/modes-edition.mjs` `editionPossible` |
 | reprendre ou ajouter un stand, une zone | `modules/emplacements.mjs` (ce que le visiteur reçoit), `modules/reprise-emplacements.mjs` (l'outil) |
 | fiche d'une zone, salles, masquage | `modules/fiche-zone.mjs` ; nom d'une zone `modules/noms-zones.mjs` |
 | repères, transports en commun | `modules/reperes.mjs`, `modules/cartouche-poi.mjs`, `modules/points-interet.mjs` |
@@ -393,12 +393,13 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   prouver ; l'existant est dans sa référence figée `html-acceptes.json`.
 - **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
   dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
-- **Une surcouche qui porte son style en attributs ne se peint plus par la
-  feuille** — les marques des distinctions d'abord (`modules/distinctions.mjs`
-  `traceDist`). Le dessin la lit dans ses attributs (`modules/style-attributs.mjs`,
-  `webgl.mjs` `PAR_ATTRIBUTS`) : une règle CSS ajoutée pour elle ne se verrait
-  qu'en SVG. Son style s'écrit dans le module qui la dessine ;
-  `outils/essais/navigateur/surcouches.spec.js` échoue si la feuille la peint encore.
+- **Une surcouche du visiteur se pose dans la scène du plan, et la feuille ne
+  la peint pas** — marques des distinctions, liserés, zone de la visite,
+  borne, trajet (`modules/scene.mjs` `poseReperes`). Le dessin la peint
+  depuis ses données, le SVG de secours aussi (`modules/scene-svg.mjs`) : une
+  règle CSS ajoutée pour elle ne se verrait qu'en SVG, ou nulle part. Son
+  style s'écrit dans le module qui la pose ;
+  `outils/essais/navigateur/surcouches.spec.js` échoue si les deux peintres divergent.
   Une couleur qu'elle tire de la racine (`--accent`…) est figée au moment du
   tracé : la surcouche s'inscrit donc à `modules/jetons-racine.mjs`
   `suitLaRacine`, sans quoi elle garde l'ancien accent quand l'exploitant le change.
@@ -413,7 +414,7 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   dans `moteur-gl-*.mjs`, sans quoi elle ne fait rien hors de `?moteur=deck`.
 - **Un repère d'outil de l'exploitant ne s'écrit pas dans le SVG** — poignée,
   cadre, cote, contour : il se pose en données dans la scène d'édition
-  (`modules/scene-edition.mjs` `poseReperes`), avec son style et sa prise, et
+  (`modules/scene.mjs` `poseReperes`), avec son style et sa prise, et
   se vise par `modules/webgl.mjs` `repereSousWebgl`. Écrit dans le SVG caché,
   il ne se verrait nulle part : l'administration exige le WebGL, et un outil
   qui s'ouvre passe par `modules/modes-edition.mjs` `editionPossible`.

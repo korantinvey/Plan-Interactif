@@ -22,7 +22,7 @@
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { sommets } from "./itineraire.mjs";
-import { poseReperes, anneauCercle } from "./scene-edition.mjs";
+import { poseReperes, anneauCercle } from "./scene.mjs";
 
 /* Ce que l'outil de dessin confie, et rien avant qu'il l'ait fait. La vue, la
    forme choisie, le calque actif et l'image en attente sont des lecteurs :
@@ -77,7 +77,7 @@ export const coteCadre = (a, b) =>
  * aperçoit une fois le stand posé, ce qui est trop tard. Le texte est
  * dimensionné en mètres, comme les poignées : il garde donc sa taille à
  * l'écran quel que soit le zoom. Il vit dans la scène d'édition
- * (`scene-edition.mjs`), que le dessin peint.
+ * (`scene.mjs`), que le dessin peint.
  */
 export function montreCote(txt, p){
   if (!txt || !p){ poseReperes("cote", []); return; }
@@ -306,7 +306,7 @@ export function montreAimants(coins, opts){
   /* Le plafond n'est qu'un garde-fou. Les crans passent derrière les sommets,
      et plus discrets qu'eux : un coin de stand reste l'accrochage franc, un
      cran n'est qu'une graduation. Des points dans la scène d'édition
-     (`scene-edition.mjs`) : une douzaine de côtés suffit à leur taille. */
+     (`scene.mjs`) : une douzaine de côtés suffit à leur taille. */
   const cran = (/** @type {number[]} */ q) => ({ sorte: /** @type {"aplat"} */ ("aplat"),
     anneaux: [anneauCercle(q, +(rayon * .62).toFixed(3), 12)], plein: "--accent", opacite: .3 });
   const sommet = (/** @type {number[]} */ q) => ({ sorte: /** @type {"aplat"} */ ("aplat"),

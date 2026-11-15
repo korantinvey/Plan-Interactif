@@ -12,7 +12,6 @@
    ne pouvait plus importer le rendu pour passer d'un pavillon à l'autre. Il
    ne dépend que de la vue, des données, de l'écran et du calcul.
    ============================================================ */
-import { $ } from "./dom.mjs";
 import { state } from "./donnees.mjs";
 import { svg, vue, cadrePlan, masque, masqueDroite, masqueHaut, changeVue, poseVue, injecteALaVue,
   suitLaVue, versScene } from "./vue.mjs";
@@ -20,8 +19,8 @@ import { REDUIT } from "./ecran.mjs";
 import { mesureMarches, coupeMarche, distancesDesArrets } from "./itineraire.mjs";
 import { poseTrajet } from "./camera.mjs";
 import { creeEvenement } from "./evenement.mjs";
-import { esc } from "./texte.mjs";
 import { suitLaRacine, jetons } from "./jetons-racine.mjs";
+import { poseReperes, anneauCercle } from "./scene.mjs";
 
 /**
  * Ce que le plan montre en ce moment.
@@ -118,29 +117,28 @@ function tronconsDe(pts, cumuls, total){
   return out;
 }
 
-const traceDe = (pts) => "M" + pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
-
 /* ------------------------------------------------------------
    Son style, en attributs
 
-   Le trajet porte son style en attributs SVG — couleurs, épaisseurs,
-   opacités —, et la feuille ne le peint plus : le SVG de secours les lit
-   comme tels, et le dessin aussi, sans demander au navigateur un style
-   calculé (`style-attributs.mjs`, `docs/migration-webgl.md`, étape 2). Les
-   couleurs sont celles du salon, lues sur le calque, qui les hérite comme la
-   feuille les lui donnait ; le trajet se repeint quand elles changent
+   Le trajet se pose dans la scène du plan (`scene.mjs`) — couleurs,
+   épaisseurs, opacités —, et la feuille ne le peint plus : le dessin et le
+   SVG de secours le peignent depuis ces données. Les couleurs sont celles du
+   salon, lues sur la racine ; le trajet se repeint quand elles changent
    (`jetons-racine.mjs`).
    ------------------------------------------------------------ */
 const JETONS_ITIN = ["--accent", "--surface", "--accent-fort", "--accent-clair"];
-function couleursItin(/** @type {Element} */ g){
-  const cs = getComputedStyle(g), v = (/** @type {string} */ n) => esc(cs.getPropertyValue(n).trim());
+/* Les couleurs du trajet, lues sur la racine : le dégradé du fil se mêle
+   de deux d'entre elles, que ni le dessin ni le SVG ne sauraient mêler d'un
+   jeton à l'autre. */
+function couleursItin(){
+  const cs = getComputedStyle(document.documentElement), v = (/** @type {string} */ n) => cs.getPropertyValue(n).trim();
   return { accent: v("--accent"), surface: v("--surface"), fort: v("--accent-fort"), clair: v("--accent-clair") };
 }
 
 /* Le trait, d'une épaisseur donnée en pixels qui ne suit pas le zoom : un
    trait qui grossit avec le plan finit par masquer les stands qu'il longe, et
    disparaît quand on recule pour voir le trajet entier. */
-const TRAIT_ITIN = ' fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"';
+const TRAIT_ITIN = { sorte: /** @type {"trait"} */ ("trait"), rond: true };
 
 /**
  * Une pastille : pleine de la couleur du salon et cerclée de blanc au départ ;
@@ -149,58 +147,62 @@ const TRAIT_ITIN = ' fill="none" stroke-linecap="round" stroke-linejoin="round" 
  * se distingue de celle d'un stand par un cercle plus épais : l'heure y est
  * imposée, et c'est autour d'elle que le reste de la journée s'est rangé.
  */
-function styleBout(/** @type {ReturnType<typeof couleursItin>} */ c,
+/** @returns {import("./scene.mjs").Repere} */
+function pastille(/** @type {ReturnType<typeof couleursItin>} */ c, /** @type {number[]} */ xy, /** @type {number} */ r,
   /** @type {{ num?: boolean, conf?: boolean, proche?: boolean, fin?: boolean, attend?: boolean }} */ o){
   let fill = c.accent, stroke = c.surface;
   if (o.num || o.fin){ fill = c.surface; stroke = c.accent; }
   if (o.conf) fill = c.surface;
   if (o.num && o.proche){ fill = c.accent; stroke = c.surface; }
-  return ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + (o.conf ? "3.5" : "2.5") +
-    '" vector-effect="non-scaling-stroke"' + (o.attend ? AVENIR : "");
+  return { sorte: "aplat", anneaux: [anneauCercle(xy, +r.toFixed(2))], plein: fill, trait: stroke,
+    epaisseur: o.conf ? 3.5 : 2.5, opacite: o.attend ? AVENIR : 1 };
 }
 /* Le chiffre d'une étape, de la couleur du salon ; blanc sur la prochaine,
    pleine de cette couleur. Une conférence n'y fait pas exception : la feuille
    lui gardait la couleur du salon, et la prochaine étape, quand c'était une
    conférence, écrivait son chiffre de la couleur de sa propre pastille. */
-const styleNum = (/** @type {ReturnType<typeof couleursItin>} */ c,
-  /** @type {boolean} */ proche, /** @type {boolean} */ attend) =>
-  ' fill="' + (proche ? c.surface : c.accent) + '" text-anchor="middle" dominant-baseline="central"' +
-  ' font-family="&quot;IBM Plex Mono&quot;, monospace" font-weight="600"' + (attend ? AVENIR : "");
-/* Le temps que le trait s'écrive, ce qu'il n'a pas encore atteint attend.
-   Écrite dès la première image plutôt qu'ajoutée en chemin, la pastille garde
-   son rang : le zoom relit les pastilles dans l'ordre pour les redimensionner,
-   et l'une qui manquerait décalerait toutes les suivantes. */
-const AVENIR = ' opacity="0"';
+/** @returns {import("./scene.mjs").Repere} */
+const chiffre = (/** @type {ReturnType<typeof couleursItin>} */ c, /** @type {any} */ a, /** @type {number} */ r,
+  /** @type {boolean} */ proche, /** @type {boolean} */ attend) => ({
+  sorte: "texte", texte: String(a.n), position: a.xy, taille: +(r * 1.6).toFixed(2), ancre: "centre",
+  famille: '"IBM Plex Mono", monospace', graisse: 600, plein: proche ? c.surface : c.accent, opacite: attend ? AVENIR : 1 });
+/* Le temps que le trait s'écrive, ce qu'il n'a pas encore atteint attend :
+   ses pastilles sont posées, mais transparentes. */
+const AVENIR = 0;
+
+/* Ce que le dernier tracé a posé : ses traits, gardés tels quels, et de quoi
+   refaire ses pastilles à la taille d'un autre zoom (`rafraichitBouts`) — un
+   trait garde son épaisseur à l'écran de lui-même. */
+/** @type {import("./scene.mjs").Repere[]} */
+let traitsPeints = [];
+/** @type {((r: number) => import("./scene.mjs").Repere[]) | null} */
+let boutsPeints = null;
 
 /** Le trait tel qu'il est à « p » de sa course — 1 : entier. */
 function peintItineraire(p){
-  const g = $("itin");
-  if (!g) return;
   const marches = marchesIci();
-  if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
+  if (!marches.length){ effaceItineraire(); return; }
 
   const mes = mesureMarches(marches);
   const fini = p >= 1;
   const d = fini ? Infinity : p * mes.total;
-  const r = rayonBout();
-  const c = couleursItin(g);
-  let out = "";
-  let traits = "";
+  const c = couleursItin();
+  /** @type {import("./scene.mjs").Repere[]} */
+  const lueurs = [], traits = [];
   marches.forEach((e, j) => {
     const pts = fini ? e.pts : coupeMarche(e.pts, mes.cumuls[j], d);
     if (!pts) return;
-    const chemin = traceDe(pts);
     // la lueur sous tout le trajet, d'une seule pièce : ses deux traits ne se recoupent pas
-    out += '<path class="iLueur l1"' + TRAIT_ITIN + ' stroke="' + c.accent + '" stroke-width="24" opacity=".1" d="' + chemin + '"/>' +
-      '<path class="iLueur l2"' + TRAIT_ITIN + ' stroke="' + c.accent + '" stroke-width="12" opacity=".2" d="' + chemin + '"/>';
+    lueurs.push({ ...TRAIT_ITIN, chemin: pts, trait: c.accent, epaisseur: 24, opacite: .1, classe: "iLueur l1" },
+                { ...TRAIT_ITIN, chemin: pts, trait: c.accent, epaisseur: 12, opacite: .2, classe: "iLueur l2" });
     // coupé en chemin, son dernier point tombe à la distance atteinte, et non sur un sommet
     const cu = mes.cumuls[j].slice(0, pts.length);
     if (!fini) cu[cu.length - 1] = Math.min(cu[cu.length - 1], d);
     for (const t of tronconsDe(pts, cu, mes.total))
-      traits += '<path class="iTrait"' + TRAIT_ITIN + ' stroke="color-mix(in srgb, ' + c.fort + ' ' +
-        Math.round(t.t * 100) + '%, ' + c.clair + ')" stroke-width="5" d="' + traceDe(t.pts) + '"/>';
+      traits.push({ ...TRAIT_ITIN, chemin: t.pts, trait: "color-mix(in srgb, " + c.fort + " " +
+        Math.round(t.t * 100) + "%, " + c.clair + ")", epaisseur: 5, classe: "iTrait" });
   });
-  out += traits;
+  traitsPeints = [...lueurs, ...traits];
   /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
      chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
      d'un point à un autre n'a que deux bouts, et un chiffre y serait du
@@ -210,28 +212,27 @@ function peintItineraire(p){
      les retrouve par leur rang, et un zoom pendant que le trait s'allonge les
      décalerait toutes si elles manquaient. */
   if (arrets.length){
-    const rr = (r * 1.5).toFixed(2);
     const ou = fini ? null : distancesDesArrets(marches, mes, arrets);
-    arrets.forEach((a, i) => {
+    boutsPeints = (r) => arrets.flatMap((a, i) => {
       const attend = !!(ou && ou[i] > d);
       /* Le point de départ n'est pas un arrêt : on n'y visite rien, et lui
          donner un rang décalerait tous les autres d'une unité. */
       const proche = !!a.n && a === arrets.find(x => x.n);
       const cls = (a.conf ? " conf" : "") + (proche ? " proche" : "") + (attend ? " aVenir" : "");
-      out += '<circle class="iBout' + (a.n ? " num" : "") + cls + '"' +
-             styleBout(c, { num: !!a.n, conf: !!a.conf, proche, attend }) + ' cx="' + a.xy[0] +
-             '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
-      if (a.n) out += '<text class="iNum' + cls + '"' + styleNum(c, proche, attend) + ' x="' + a.xy[0] +
-             '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
+      // une pastille numérotée est plus large : elle porte son chiffre
+      const b = { ...pastille(c, a.xy, a.n ? r * 1.5 : r, { num: !!a.n, conf: !!a.conf, proche, attend }),
+        classe: "iBout" + (a.n ? " num" : "") + cls };
+      return a.n ? [b, { ...chiffre(c, a, r, proche, attend), classe: "iNum" + cls }] : [b];
     });
   } else {
     const pd = marches[0].pts[0];
     const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
-    out += '<circle class="iBout"' + styleBout(c, {}) + ' cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
-           '<circle class="iBout fin' + (fini ? "" : " aVenir") + '"' + styleBout(c, { fin: true, attend: !fini }) +
-           ' cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
+    boutsPeints = (r) => [{ ...pastille(c, pd, r, {}), classe: "iBout" },
+      { ...pastille(c, pa, r, { fin: true, attend: !fini }), classe: "iBout fin" + (fini ? "" : " aVenir") }];
   }
-  g.innerHTML = out;
+  /* Dans la scène du plan (`scene.mjs`), que le dessin et le SVG de secours
+     peignent : la lueur, le fil, puis les pastilles par-dessus. */
+  poseReperes("itin", [...traitsPeints, ...boutsPeints(rayonBout())]);
   placePouls(fini ? (arrets.find(a => a.n) || null) : null);
   // l'étincelle attend que le trait soit arrivé : elle court sur ce qui est écrit
   lanceEtincelle(fini ? marches : null);
@@ -356,13 +357,6 @@ export function lanceTracage(){
  * rejouerait sans raison.
  */
 export function dessineItineraire(anime){
-  let g = $("itin");
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "itin";
-    // au-dessus des calques ; la scène d'édition (`scene-edition.mjs`) se peint par-dessus tout
-    svg.appendChild(g);
-  }
   const neuf = TRACE !== vuTrace || state.plan !== vuPlan;
   vuTrace = TRACE; vuPlan = state.plan;
   /* Le calcul remonte le pavillon du départ avant de redemander le trait :
@@ -374,7 +368,7 @@ export function dessineItineraire(anime){
      qui pourraient le cacher, sauf ceux-là (`camera.mjs` `poseTrajet`). */
   poseTrajet(marches.length && TRACE ? (TRACE.bouts || TRACE.arrets || [])
     .filter(b => b.p === state.plan).map(b => ({ p: b.p, xy: b.xy })) : null);
-  if (!marches.length){ g.innerHTML = ""; placePouls(null); lanceEtincelle(null); return; }
+  if (!marches.length){ effaceItineraire(); return; }
   if ((anime === undefined ? neuf : anime) && !REDUIT) lanceTracage();
   else peintItineraire(1);
 }
@@ -382,24 +376,21 @@ export function dessineItineraire(anime){
 /** Le zoom change : seules les pastilles ont besoin d'être reprises, le trait
  *  garde son épaisseur à l'écran par son attribut (`vector-effect`). */
 export function rafraichitBouts(){
-  const g = $("itin");
-  if (!g || !g.firstChild || !vue()) return;
-  const r = rayonBout();
-  /* Les pastilles d'une journée portent un chiffre et sont donc plus larges ;
-     celle du départ, qui n'en porte pas, garde la taille ordinaire. */
-  const numerotees = !!g.querySelector(".iNum");
-  const rr = (numerotees ? r * 1.5 : r).toFixed(2);
-  const arrets = (TRACE && TRACE.arrets || []).filter(a => a.p === state.plan);
-  g.querySelectorAll(".iBout").forEach((c, i) =>
-    c.setAttribute("r", numerotees && arrets[i] && !arrets[i].n ? r.toFixed(2) : rr));
-  g.querySelectorAll(".iNum").forEach(t => t.setAttribute("font-size", (r * 1.6).toFixed(2)));
+  if (!boutsPeints || !vue()) return;
+  poseReperes("itin", [...traitsPeints, ...boutsPeints(rayonBout())]);
+}
+
+/** Plus de trajet sur ce pavillon : la scène s'en vide, l'étincelle et le pouls s'éteignent. */
+function effaceItineraire(){
+  traitsPeints = []; boutsPeints = null;
+  poseReperes("itin", []);
+  placePouls(null); lanceEtincelle(null);
 }
 
 /* L'accent changé pendant qu'un trajet est à l'écran : il se repeint de la
    nouvelle couleur. Un trait qui s'écrit encore la prend à l'image suivante. */
 suitLaRacine(cs => jetons(cs, JETONS_ITIN), () => {
-  const g = $("itin");
-  if (g && g.firstChild && !tracage) peintItineraire(1);
+  if (boutsPeints && !tracage) peintItineraire(1);
 });
 
 /**

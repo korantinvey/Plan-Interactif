@@ -31,6 +31,8 @@ import { rayonTuile, traceStand } from "./tuiles.mjs";
 import { anneauxGeo, boiteAnneaux } from "./forme.mjs";
 import { emplacements, estRetire } from "./etat-emplacements.mjs";
 import { suitLaRacine } from "./jetons-racine.mjs";
+import { poseReperes, anneauCercle } from "./scene.mjs";
+import { lisTrace } from "./trace.mjs";
 
 export const DISTINCTIONS = [
   /* L'étincelle ne vaut que pour les nouveaux venus : seule elle se lit
@@ -74,30 +76,18 @@ export const standPorte = (o, d) => Boolean(o) && o.kind !== "zone" &&
    stand, une marque se faisait recouvrir par la cloison du voisin, tracé
    après lui. Mais elles suivent le calque des stands au lieu de coiffer tout
    le plan : un coin corné posé au sommet passait devant le nom du stand et
-   en mangeait les lettres. Les textes, plus haut dans la pile, passent donc
-   devant elles — en SVG comme en WebGL, qui peint dans l'ordre du DOM.
-   `ordre-trace.mjs` `ordonneDom` l'y ramène quand la pile bouge. Il ne
+   en mangeait les lettres. Leur jeu de la scène du plan (`scene.mjs`, rang
+   « stands ») se peint donc juste au-dessus des stands, sous les textes. Il ne
    reçoit aucun clic — c'est le stand qu'on désigne, pas sa marque. */
-function calqueDists(){
-  let g = $("dists");
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "dists";
-    g.setAttribute("aria-hidden", "true");
-  }
-  const st = $("stands");
-  if (st.nextSibling !== g) st.after(g);
-  return g;
-}
 
 /* L'étincelle de la pastille, redessinée sur le plan. Le même tracé que celui
    de la feuille de style — c'est la même distinction, et deux dessins pour
    elle en feraient deux. */
-export const ETOILE_DIST =
-  '<path d="M9.8 0.2C9.8 5.9 13.9 10 19.6 10C13.9 10 9.8 14.1 9.8 19.8' +
-  'C9.8 14.1 5.7 10 0 10C5.7 10 9.8 5.9 9.8 0.2Z"/>' +
-  '<path d="M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6' +
-  'C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z"/>';
+const ETOILE_TRACES = [
+  "M9.8 0.2C9.8 5.9 13.9 10 19.6 10C13.9 10 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10 0 10C5.7 10 9.8 5.9 9.8 0.2Z",
+  "M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z",
+];
+export const ETOILE_DIST = ETOILE_TRACES.map(t => '<path d="' + t + '"/>').join("");
 
 /**
  * La marque d'un stand, dans le mode retenu et au rang de sa distinction.
@@ -109,25 +99,26 @@ export const ETOILE_DIST =
  * Elle se pose sur un vrai coin du tracé (`coinDuTrace`), celui qui avance le
  * plus vers le haut droit — ou le haut gauche pour la seconde.
  */
-function traceDist(mode, d, b, rang, deuxLiseres, teinte){
-  /* La marque porte son style en attributs : le SVG de secours les lit comme
-     tels, et le dessin aussi (`style-attributs.mjs`), sans que la feuille les
-     peigne. Un aplat de la teinte de la distinction, ou un liseré fixe à
-     l'écran. */
-  const T = esc(teinte);
-  const plein = ' fill="' + T + '" stroke="none"';
+/** @returns {import("./scene.mjs").Repere[]} */
+function traceDist(/** @type {string} */ mode, /** @type {string} */ d, /** @type {any} */ b,
+  /** @type {number} */ rang, /** @type {boolean} */ deuxLiseres, /** @type {string} */ teinte){
+  /* La marque se pose dans la scène du plan (`scene.mjs`), que le dessin et
+     le SVG de secours peignent tous deux : un aplat de la teinte de la
+     distinction, ou un liseré fixe à l'écran. Ses formes s'écrivent en tracé,
+     lu en points (`lisTrace`) — courbes comprises. */
+  const aplat = (/** @type {string} */ trace) => ({ sorte: /** @type {"aplat"} */ ("aplat"),
+    anneaux: lisTrace(trace).map(t => t.pts).filter(p => p.length > 2), plein: teinte });
   /* Deux liserés suivent le même trait : posés de la même épaisseur, le second
      recouvrait le premier et le stand n'en montrait qu'un. Le premier s'élargit
      donc, et le second se pose dessus — un halo d'une couleur, un trait de
      l'autre. Seul, il garde son épaisseur d'origine : c'est le liseré des
      salons déjà en ligne, et il n'a pas à grossir. */
   if (mode === "lisere")
-    return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" fill="none" stroke="' + T +
-      '" stroke-width="' + (deuxLiseres && !rang ? 6 : 2.4) + '" vector-effect="non-scaling-stroke" d="' +
-      esc(d) + '"/>';
-  if (!b || !(b.width > 0) || !(b.height > 0)) return "";
+    return lisTrace(d).filter(t => t.pts.length > 1).map(t => ({ sorte: /** @type {"trait"} */ ("trait"),
+      chemin: t.pts, ferme: t.ferme, trait: teinte, epaisseur: deuxLiseres && !rang ? 6 : 2.4 }));
+  if (!b || !(b.width > 0) || !(b.height > 0)) return [];
   const c = Math.min(Math.max(Math.min(b.width, b.height) * .34, .5), 1.6);
-  const n = (v) => v.toFixed(2);
+  const n = (/** @type {number} */ v) => v.toFixed(2);
   /* La première marque prend le coin haut droit, la suivante le coin haut
      gauche : au même coin, la seconde recouvrait la première et le stand n'en
      montrait plus qu'une. */
@@ -136,8 +127,8 @@ function traceDist(mode, d, b, rang, deuxLiseres, teinte){
   const k = coinDuTrace(d, droite, tuiles) || coinDeBoite(b, droite);
   const [x, y] = k.p, [ux, uy] = k.u, [vx, vy] = k.v;
   // un point de l'angle, à « a » le long d'un côté et « e » le long de l'autre
-  const pt = (a, e) => [x + ux * a + vx * e, y + uy * a + vy * e];
-  const en = (a, e) => pt(a, e).map(n).join(" ");
+  const pt = (/** @type {number} */ a, /** @type {number} */ e) => [x + ux * a + vx * e, y + uy * a + vy * e];
+  const en = (/** @type {number} */ a, /** @type {number} */ e) => pt(a, e).map(n).join(" ");
   if (mode === "corne"){
     /* Sur une tuile, l'angle est arrondi : une corne droite en dépassait d'un
        triangle posé dans le vide. Elle suit donc l'arrondi du coin, du même
@@ -145,18 +136,19 @@ function traceDist(mode, d, b, rang, deuxLiseres, teinte){
        d'autant pour rester lisible. */
     if (tuiles){
       const r = rayonTuile(k.lu, k.lv), cc = Math.max(c, r * 1.7);
-      return '<path class="dPlein"' + plein + ' d="M' + en(cc, 0) + 'L' + en(r, 0) +
-        'Q' + en(0, 0) + ' ' + en(0, r) + 'L' + en(0, cc) + 'Z"/>';
+      return [aplat("M" + en(cc, 0) + "L" + en(r, 0) + "Q" + en(0, 0) + " " + en(0, r) + "L" + en(0, cc) + "Z")];
     }
-    return '<path class="dPlein"' + plein + ' d="M' + en(c, 0) + 'L' + en(0, 0) + 'L' + en(0, c) + 'Z"/>';
+    return [aplat("M" + en(c, 0) + "L" + en(0, 0) + "L" + en(0, c) + "Z")];
   }
   /* La pastille et l'étincelle se posent dans l'angle, à égale distance de
      ses deux côtés ; l'étincelle garde l'aplomb de son dessin. */
   const [cx, cy] = pt(c * .58, c * .58);
   if (mode === "point")
-    return '<circle class="dPlein"' + plein + ' cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(c * .34) + '"/>';
-  return '<g class="dPlein"' + plein + ' transform="translate(' + n(cx - c * .5) + ' ' + n(cy - c * .5) +
-    ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_DIST + '</g>';
+    return [{ sorte: "aplat", anneaux: [anneauCercle([cx, cy], +(c * .34).toFixed(2))], plein: teinte }];
+  // l'étincelle, dessinée sur vingt-quatre unités, mise à l'échelle et posée dans l'angle
+  const s = c / 24, ox = cx - c * .5, oy = cy - c * .5;
+  return ETOILE_TRACES.map(t => ({ sorte: /** @type {"aplat"} */ ("aplat"), plein: teinte,
+    anneaux: lisTrace(t).map(l => l.pts.map(p => [ox + p[0] * s, oy + p[1] * s])).filter(p => p.length > 2) }));
 }
 
 /**
@@ -260,7 +252,7 @@ function releveDists(){
         b = { x: x[0], y: x[1], width: x[2] - x[0], height: x[3] - x[1] };
       }
       const t = traceDist(mode, trace, b, rang, deuxLiseres, teinte);
-      if (t) traces.push({ id: e.id, cle: d.cle, d: t });
+      if (t.length) traces.push({ id: e.id, cle: d.cle, reperes: t });
     });
   }
   DISTS_VUES = { plan: state.plan, modes: modesDuPlan(), traces };
@@ -275,11 +267,10 @@ function releveDists(){
  */
 export function dessineDists(){
   if (!DATA) return;
-  const g = calqueDists();
   // la couche des stands éteinte dans la pile des calques (`apparence.mjs` `styleDataGroupe`)
   const eteint = conf("data:stands").visible === false;
   if (eteint || DISTINCTIONS.every(d => modeDist(d, "plan") === "aucun")){
-    if (g.firstChild) g.textContent = "";
+    poseReperes("dists", []);
     return;
   }
   if (DISTS_VUES.plan !== state.plan || DISTS_VUES.modes !== modesDuPlan())
@@ -287,17 +278,13 @@ export function dessineDists(){
   // les stands que la recherche retire, au modèle (`etat-emplacements.mjs`)
   const dim = new Set();
   for (const e of emplacements()) if (!e.zone && estRetire(e.cle)) dim.add(e.id);
-  /* La marque porte sa teinte en attribut (`traceDist`) ; une couleur changée
-     refait le relevé (`modesDuPlan`). La classe de la distinction ne sert plus
-     qu'à la liste, dont les neuf cents lignes se repeignent par le jeton de la
-     racine sans qu'on les réécrive. */
-  /* Chaque marque nomme son stand : la vue immersive (`webgl.mjs`) la pose
-     sur le dessus de son volume, qu'elle ne saurait pas trouver sans lui. Pas
-     « data-id », qui la ferait désigner au clic à la place du stand. */
-  /* Le retrait se porte en attribut, comme le reste du style de la marque. */
-  g.innerHTML = DISTS_VUES.traces.map(t =>
-    '<g class="dM d-' + esc(t.cle) + '"' + (dim.has(t.id) ? ' opacity=".22"' : "") + ' data-sur="' + esc(t.id) + '">' +
-    t.d + '</g>').join("");
+  /* La marque porte sa teinte (`traceDist`) ; une couleur changée refait le
+     relevé (`modesDuPlan`). Chaque marque nomme son stand (`sur`) : la vue
+     immersive (`webgl.mjs`) la pose sur le dessus de son volume, qu'elle ne
+     saurait pas trouver sans lui. Le retrait de la recherche la pâlit avec lui. */
+  poseReperes("dists", DISTS_VUES.traces.flatMap(t =>
+    t.reperes.map((/** @type {any} */ r) => ({ ...r, sur: t.id, classe: "dM d-" + t.cle,
+      ...(dim.has(t.id) ? { opacite: .22 } : {}) }))));
 }
 
 /* Une marque sans teinte propre prend l'accent du salon, écrit en attribut :

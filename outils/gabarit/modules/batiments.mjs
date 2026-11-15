@@ -38,7 +38,7 @@ import { P } from "./donnees.mjs";
 import { PAVILLON_QUITTE } from "./rendu.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, repereSousWebgl } from "./webgl.mjs";
-import { poseReperes, anneauCercle } from "./scene-edition.mjs";
+import { poseReperes, anneauCercle } from "./scene.mjs";
 import { editionPossible } from "./modes-edition.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
@@ -370,7 +370,7 @@ export function dessineCalage(){
      même doigt, et reste juste au-delà du contour. Le contour, en pointillés
      comme tout ce qui n'est pas encore posé, se saisit pour déplacer ; la
      poignée, pour tourner. Le tout dans la scène d'édition
-     (`scene-edition.mjs`), que le dessin peint et vise. */
+     (`scene.mjs`), que le dessin peint et vise. */
   const r = cadrePlan(), mpp = vue().w / (r.width || 1);
   const centre = poseCalage(c.t, c.centre);
   const poignee = poseCalage(c.t, [c.centre[0], c.centre[1] - c.rayon - 28 * mpp]);

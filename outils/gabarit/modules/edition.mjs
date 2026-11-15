@@ -28,7 +28,7 @@ import { esc, COLLATION } from "./texte.mjs";
 import { ecritMinutes } from "./temps.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { GL, priseWebgl, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
-import { poseReperes, reperes, poigneeCarree, cadreChoisi, anneauRect, anneauCercle, tourne } from "./scene-edition.mjs";
+import { poseReperes, reperes, poigneeCarree, cadreChoisi, anneauRect, anneauCercle, tourne } from "./scene.mjs";
 import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
@@ -70,7 +70,7 @@ function poignees(f){
 }
 
 /* Les poignées et le cadre de la forme choisie vivent dans la scène
-   d'édition (`scene-edition.mjs`), que le dessin peint et vise : chaque
+   d'édition (`scene.mjs`), que le dessin peint et vise : chaque
    poignée y porte son rang et son curseur. Leur taille est en mètres,
    refaite à chaque vue pour rester la même à l'écran. */
 export function dessinePoignees(){
@@ -94,7 +94,7 @@ export function dessinePoignees(){
  * et la tirer autour du point d'ancrage couche le texte dans la direction où
  * on l'emmène.
  */
-/** @returns {import("./scene-edition.mjs").Repere[]} */
+/** @returns {import("./scene.mjs").Repere[]} */
 function cadreTexte(/** @type {any} */ f, /** @type {number} */ t){
   // le texte vit dans son calque, que le SVG porte encore : son étendue s'y mesure
   const n = /** @type {SVGGraphicsElement | null} */ ($("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text'));
