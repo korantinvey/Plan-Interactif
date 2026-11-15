@@ -22,6 +22,7 @@
 import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { sommets } from "./itineraire.mjs";
+import { poseReperes, anneauCercle } from "./scene-edition.mjs";
 
 /* Ce que l'outil de dessin confie, et rien avant qu'il l'ait fait. La vue, la
    forme choisie, le calque actif et l'image en attente sont des lecteurs :
@@ -75,22 +76,15 @@ export const coteCadre = (a, b) =>
  * une taille qu'il faut aller chercher du regard ne corrige rien — on s'en
  * aperçoit une fois le stand posé, ce qui est trop tard. Le texte est
  * dimensionné en mètres, comme les poignées : il garde donc sa taille à
- * l'écran quel que soit le zoom.
+ * l'écran quel que soit le zoom. Il vit dans la scène d'édition
+ * (`scene-edition.mjs`), que le dessin peint.
  */
 export function montreCote(txt, p){
-  let el = $("cote");
-  if (!txt || !p){ if (el) el.remove(); return; }
-  if (!el){
-    el = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    el.id = "cote";
-    dependances.svg.appendChild(el);
-  }
+  if (!txt || !p){ poseReperes("cote", []); return; }
   const r = cadrePlan();
   const u = vue().w / (r.width || 1);          // un pixel d'écran, en mètres
-  el.setAttribute("font-size", +(13 * u).toFixed(3));
-  el.setAttribute("x", +(p[0] + 12 * u).toFixed(2));
-  el.setAttribute("y", +(p[1] - 12 * u).toFixed(2));
-  el.textContent = txt;
+  poseReperes("cote", [{ sorte: "texte", texte: String(txt), plein: "--accent", graisse: 600,
+    taille: +(13 * u).toFixed(3), position: [+(p[0] + 12 * u).toFixed(2), +(p[1] - 12 * u).toFixed(2)] }]);
 }
 
 /* ------------------------------------------------------------
@@ -262,8 +256,7 @@ const PORTEE_VUE = 120;    // en pixels d'écran autour du geste
 let AIMANTS_VUS = "";      // ce qui est déjà à l'écran, pour ne pas le refaire
 export function montreAimants(coins, opts){
   const o = opts || {};
-  let g = $("aimantsVus");
-  const efface = () => { if (g) g.remove(); AIMANTS_VUS = ""; };
+  const efface = () => { poseReperes("aimants", []); AIMANTS_VUS = ""; };
   if (!coins || !coins.length || !aimantsActifs() || o.alt){ efface(); return; }
   const r = cadrePlan();
   const u = vue().w / (r.width || 1);        // un pixel d'écran, en mètres
@@ -308,20 +301,19 @@ export function montreAimants(coins, opts){
   const rayon = +(u * 3).toFixed(3);          // constant à l'écran, lui aussi
   // le zoom entre dans la comparaison : les mêmes points s'y redessinent
   const cle = rayon + "|" + [...vus.keys()].join(";") + "|" + [...grille.keys()].join(";");
-  if (g && cle === AIMANTS_VUS) return;
+  if (cle === AIMANTS_VUS) return;
   AIMANTS_VUS = cle;
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "aimantsVus";
-    dependances.svg.appendChild(g);
-  }
   /* Le plafond n'est qu'un garde-fou. Les crans passent derrière les sommets,
      et plus discrets qu'eux : un coin de stand reste l'accrochage franc, un
-     cran n'est qu'une graduation. */
-  const cercle = (q, cl) => '<circle' + cl + ' cx="' + q[0] + '" cy="' + q[1] +
-                            '" r="' + (cl ? +(rayon * .62).toFixed(3) : rayon) + '"/>';
-  g.innerHTML = [...grille.values()].slice(0, 600).map(q => cercle(q, ' class="cran"')).join("") +
-                [...vus.values()].slice(0, 400).map(q => cercle(q, "")).join("");
+     cran n'est qu'une graduation. Des points dans la scène d'édition
+     (`scene-edition.mjs`) : une douzaine de côtés suffit à leur taille. */
+  const cran = (/** @type {number[]} */ q) => ({ sorte: /** @type {"aplat"} */ ("aplat"),
+    anneaux: [anneauCercle(q, +(rayon * .62).toFixed(3), 12)], plein: "--accent", opacite: .3 });
+  const sommet = (/** @type {number[]} */ q) => ({ sorte: /** @type {"aplat"} */ ("aplat"),
+    anneaux: [anneauCercle(q, rayon, 12)], plein: "--accent", opacite: .6,
+    trait: "--surface", epaisseur: 1, opaciteTrait: 1 });
+  poseReperes("aimants", [...[...grille.values()].slice(0, 600).map(cran),
+                          ...[...vus.values()].slice(0, 400).map(sommet)]);
 }
 
 /** Le meilleur sommet à portée d'un des points du geste. */

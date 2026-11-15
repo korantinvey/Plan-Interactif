@@ -22,7 +22,9 @@
    les repères avec. Les tailles sont en mètres, posées par l'outil d'après la
    vue pour rester constantes à l'écran ; les épaisseurs de trait, en pixels.
 
-   Un module neutre, sans écran : les outils et le dessin l'importent tous.
+   Un module neutre, sans écran ni import qui en touche un — il s'éprouve dans
+   Node avec les aimants (`outils/essais/aimants.js`) : les outils et le dessin
+   l'importent tous.
    ============================================================ */
 import { creeEvenement } from "./evenement.mjs";
 
@@ -34,7 +36,8 @@ import { creeEvenement } from "./evenement.mjs";
  * @property {number[][]} [chemin] un trait : ses points, en mètres
  * @property {boolean} [ferme] un trait qui revient à son départ
  * @property {string} [plein] la couleur d'un aplat ou d'un texte : un jeton de la racine (« --accent ») ou une couleur
- * @property {number} [opacite] celle de l'aplat, du trait, du texte ou de l'image
+ * @property {number} [opacite] celle de l'aplat, du texte ou de l'image — et du trait, sauf `opaciteTrait`
+ * @property {number} [opaciteTrait] celle du contour d'un aplat, quand elle n'est pas la sienne
  * @property {string} [trait] la couleur du contour d'un aplat, ou d'un trait
  * @property {number} [epaisseur] l'épaisseur du trait, en pixels d'écran
  * @property {number[]} [tirets] les tirets du trait, en pixels : [plein, vide]
@@ -43,7 +46,9 @@ import { creeEvenement } from "./evenement.mjs";
  * @property {number} [taille] un texte : son corps, en mètres
  * @property {number} [graisse] un texte : sa graisse
  * @property {string} [href] une image : son adresse
- * @property {number[]} [bornes] une image : [x0, y0, x1, y1], en mètres
+ * @property {number[]} [bornes] une image droite : [x0, y0, x1, y1], en mètres
+ * @property {number[][]} [coins] une image tournée : ses quatre coins, en mètres — bas gauche, haut
+ *   gauche, haut droit, bas droit, le haut étant le petit y du plan
  * @property {Prise | null} [prise] ce que la main saisit en touchant ce repère
  */
 /**
@@ -127,3 +132,4 @@ export const poigneeCarree = (p, t, prise) => ({ sorte: "aplat",
 export const cadreChoisi = (/** @type {number[]} */ b, /** @type {number} */ marge) => ({ sorte: "trait",
   chemin: anneauRect([b[0] - marge, b[1] - marge, b[2] + marge, b[3] + marge]), ferme: true,
   trait: "--accent", epaisseur: 1, tirets: [5, 4], opacite: .8 });
+

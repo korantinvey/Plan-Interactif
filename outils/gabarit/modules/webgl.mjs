@@ -1937,7 +1937,7 @@ function sceneGl(/** @type {string} */ nom){
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = r.tirets ? [2 * r.tirets[0] / sw, 2 * r.tirets[1] / sw] : [0, 0];
     const traitDe = (/** @type {number[][]} */ path) => {
-      const c = teinte(r.trait, op);
+      const c = teinte(r.trait, r.opaciteTrait === undefined ? op : r.opaciteTrait);
       if (c && path.length > 1) acc.traitsPx.push({ path, couleur: c, largeur: sw, dash, el: null, prise, sur: null });
     };
     if (r.sorte === "aplat" && r.anneaux){
@@ -1955,9 +1955,10 @@ function sceneGl(/** @type {string} */ nom){
       // la ligne de base au pied des lettres, comme en SVG : la bibliothèque centre le texte (`texteGl`)
       acc.textes.get(cle).items.push({ text: r.texte, position: [r.position[0], r.position[1] - r.taille * .33],
         taille: r.taille, angle: 0, ancre: "start", couleur: c, el: null, prise });
-    } else if (r.sorte === "image" && r.href && r.bornes){
+    } else if (r.sorte === "image" && r.href && (r.coins || r.bornes)){
+      // une boîte droite comme `imageGl` la pose, ou quatre coins, que la bibliothèque prend aussi
       const b = r.bornes;
-      acc.images.push({ href: r.href, bornes: [b[0], b[3], b[2], b[1]], op, el: null, prise });
+      acc.images.push({ href: r.href, bornes: r.coins || (b && [b[0], b[3], b[2], b[1]]), op, el: null, prise });
     }
   }
   return acc;

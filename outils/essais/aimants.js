@@ -27,8 +27,8 @@ const egal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const proche = (a, b) => a.length === b.length && a.every((v, i) => Math.abs(v - b[i]) < 1e-9);
 
 /* Le document, réduit à ce que le module touche : les champs de la boîte à
-   outils, et les deux éléments qu'il pose sur le plan (la cote, les aimants
-   montrés), qu'on retrouve par leur identifiant comme la page le ferait. */
+   outils. Ce qu'il montre sur le plan — la cote, les aimants — va dans la
+   scène d'édition (`scene-edition.mjs`), qu'on lit telle que le dessin la lit. */
 const elements = new Map();
 const noeud = (tag) => ({
   tag, id: "", attrs: {}, textContent: "", ecritures: 0, _html: "",
@@ -52,6 +52,9 @@ champ("elemHauteur", { value: "" });
   const dossier = path.join(__dirname, "..", "gabarit", "modules");
   const A = await import(pathToFileURL(path.join(dossier, "aimants.mjs")).href);
   const D = await import(pathToFileURL(path.join(dossier, "donnees.mjs")).href);
+  const S = await import(pathToFileURL(path.join(dossier, "scene-edition.mjs")).href);
+  let ecritures = 0;
+  S.SCENE_CHANGEE.ecoute((nom) => { if (nom === "aimants") ecritures++; });
 
   /* Deux pavillons. Le premier : deux stands mitoyens et une zone au loin. */
   D.poseDonnees({ DATA: { plans: [
@@ -75,7 +78,6 @@ champ("elemHauteur", { value: "" });
   let guide = "non posé";
   const journal = [];
   let SEL = null, ACTIF = "c1", IMAGE = null;
-  const svg = { appendChild: (n) => elements.set(n.id, n) };
   const estCadre = (f) => f.t === "rect" || f.t === "image" || f.t === "stand";
   const boite = (f) => {
     const xs = f.pts.map(p => p[0]), ys = f.pts.map(p => p[1]);
@@ -90,7 +92,6 @@ champ("elemHauteur", { value: "" });
     imageEnAttente: () => IMAGE,
     formeSel: () => SEL,
     calqueActif: () => ACTIF,
-    svg,
     cadrePlan: () => ({ width: 1200 }),
     mesCalques: () => DESSINS[D.P().id],
     estCadre, boite,
@@ -186,25 +187,25 @@ champ("elemHauteur", { value: "" });
 
   console.log("\n=== 7. Ce que le plan montre ===");
   A.montreAimants([[6.2, 3.1]]);
-  const vus = elements.get("aimantsVus");
-  const html = vus ? vus.innerHTML : "";
-  const crans = (html.match(/<circle class="cran"/g) || []).length;
-  const sommetsVus = (html.match(/<circle cx/g) || []).length;
+  const vus = S.reperes("aimants");
+  // un cran, à peine teinté, n'a pas de liseré ; un sommet en a un
+  const crans = vus.filter(r => !r.trait).length;
+  const sommetsVus = vus.filter(r => r.trait).length;
   dit(sommetsVus === 6, "les six sommets à cinq mètres (cent vingt pixels) du curseur", sommetsVus + " sommets");
   dit(crans === 106, "les crans des deux stands à huit pas, sans doublon", crans + " crans");
-  dit(/<circle cx="6" cy="3" r="0.125"\/>/.test(html), "un sommet garde trois pixels de rayon à l'écran");
-  const n = vus.ecritures;
+  // le premier point d'un cercle de la scène est à son rayon, à droite du centre
+  dit(vus.some(r => r.trait && proche(r.anneaux[0][0], [6.125, 3])), "un sommet garde trois pixels de rayon à l'écran");
+  const n = ecritures;
   A.montreAimants([[6.21, 3.1]]);
-  dit(vus.ecritures === n, "le même voisinage ne se redessine pas");
+  dit(ecritures === n, "le même voisinage ne se redessine pas");
   A.montreAimants(null);
-  dit(!elements.has("aimantsVus"), "rien à montrer, le groupe s'en va");
+  dit(!S.reperes("aimants").length, "rien à montrer, la scène s'en vide");
   A.montreCote("12 × 6 m", [10, 5]);
-  const cote = elements.get("cote");
-  dit(cote && cote.textContent === "12 × 6 m" && cote.attrs["font-size"] === 0.542 &&
-      cote.attrs.x === 10.5 && cote.attrs.y === 4.5,
-    "la cote s'écrit à douze pixels du point, en treize pixels", cote && JSON.stringify(cote.attrs));
+  const cote = S.reperes("cote")[0];
+  dit(cote && cote.texte === "12 × 6 m" && cote.taille === 0.542 && egal(cote.position, [10.5, 4.5]),
+    "la cote s'écrit à douze pixels du point, en treize pixels", cote && JSON.stringify(cote));
   A.montreCote(null);
-  dit(!elements.has("cote"), "et s'efface");
+  dit(!S.reperes("cote").length, "et s'efface");
 
   console.log("\n=== 8. La même taille, reposée ===");
   A.retientTaille({ t: "rect", pts: [[0, 0], [4.25, 3]] });

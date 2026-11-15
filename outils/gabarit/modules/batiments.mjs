@@ -37,7 +37,8 @@ import { $ } from "./dom.mjs";
 import { P } from "./donnees.mjs";
 import { PAVILLON_QUITTE } from "./rendu.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
-import { GL, priseWebgl } from "./webgl.mjs";
+import { GL, repereSousWebgl } from "./webgl.mjs";
+import { poseReperes, anneauCercle } from "./scene-edition.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
@@ -332,8 +333,7 @@ function finCalage(){
   racine.classList.remove("cale-plan");
   // fini en plein glissement, le relâcher ne viendra plus la retirer
   racine.classList.remove("cale-geste");
-  const g = $("calageApercu");
-  if (g) g.remove();
+  poseReperes("calage", []);
   $("couches").querySelectorAll("[data-cale]").forEach(n => delete n.dataset.cale);
   $("calageBat").hidden = true;
 }
@@ -363,33 +363,35 @@ const degresCalage = (a) => {
 export function dessineCalage(){
   const c = CALAGE;
   if (!c) return;
-  let g = $("calageApercu");
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "calageApercu";
-    svg.appendChild(g);
-  }
   /* La poignée se mesure en pixels d'écran : à tout zoom elle se saisit du
-     même doigt, et reste juste au-delà du contour. */
+     même doigt, et reste juste au-delà du contour. Le contour, en pointillés
+     comme tout ce qui n'est pas encore posé, se saisit pour déplacer ; la
+     poignée, pour tourner. Le tout dans la scène d'édition
+     (`scene-edition.mjs`), que le dessin peint et vise. */
   const r = cadrePlan(), mpp = vue().w / (r.width || 1);
   const centre = poseCalage(c.t, c.centre);
   const poignee = poseCalage(c.t, [c.centre[0], c.centre[1] - c.rayon - 28 * mpp]);
   const rp = 8 * mpp;
-  g.innerHTML = c.halls.map(b => '<path class="contour" d="' +
-      b.contours.map(k => "M" + k.map(p => poseCalage(c.t, p).join(" ")).join("L") + "Z").join("") + '"/>').join("") +
-    '<path class="tige" d="M' + centre.join(" ") + "L" + poignee.join(" ") + '"/>' +
-    '<circle class="poignee" cx="' + poignee[0] + '" cy="' + poignee[1] + '" r="' + rp + '"/>';
+  const tenu = racine.classList.contains("cale-geste");
+  poseReperes("calage", [
+    ...c.halls.map((/** @type {any} */ b) => ({ sorte: /** @type {"aplat"} */ ("aplat"),
+      anneaux: b.contours.map((/** @type {number[][]} */ k) => k.map(p => poseCalage(c.t, p))),
+      plein: "--accent", opacite: .08, trait: "--accent", opaciteTrait: 1, epaisseur: 2, tirets: [6, 4],
+      prise: { outil: "calage", i: "contour", curseur: "move" } })),
+    { sorte: "trait", chemin: [centre, poignee], trait: "--accent", epaisseur: 1.5, tirets: [3, 3] },
+    { sorte: "aplat", anneaux: [anneauCercle(poignee, rp)], plein: "--surface", trait: "--accent", epaisseur: 2,
+      prise: { outil: "calage", i: "poignee", curseur: tenu ? "grabbing" : "grab" } },
+  ]);
   const champ = $("calageAngle");
   if (document.activeElement !== champ) champ.value = degresCalage(c.t.a);
 }
 
 export function calagePointerDown(e){
   if (!CALAGE) return false;
-  // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
-  const cible = GL.actif ? priseWebgl(e.clientX, e.clientY, "#calageApercu .contour, #calageApercu .poignee")
-    : e.target.closest && e.target.closest("#calageApercu .contour, #calageApercu .poignee");
+  // le contour et sa poignée se demandent à la carte graphique : ils n'existent que dans la scène d'édition
+  const cible = GL.actif ? repereSousWebgl(e.clientX, e.clientY, "calage") : null;
   if (!cible) return false;
-  gesteCalage = { mode: cible.classList.contains("poignee") ? "pivote" : "deplace",
+  gesteCalage = { mode: cible.i === "poignee" ? "pivote" : "deplace",
                   p0: versPlan(e.clientX, e.clientY), t0: Object.assign({}, CALAGE.t) };
   try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   racine.classList.add("cale-geste");

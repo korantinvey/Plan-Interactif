@@ -5,9 +5,10 @@
  * L'administration exige le WebGL : les poignées et le cadre de la forme
  * choisie ne s'écrivent plus dans le SVG caché, ils se posent en données dans
  * la scène d'édition, que le dessin peint et vise. L'essai trace un
- * rectangle, le choisit, demande à la carte graphique ce qui est sous une
- * poignée — elle doit rendre la prise de l'éditeur, en données —, puis la
- * tire : la forme s'agrandit, et les poignées la suivent.
+ * rectangle — son ébauche et sa cote passent par la scène —, le choisit,
+ * demande à la carte graphique ce qui est sous une poignée — elle doit rendre
+ * la prise de l'éditeur, en données —, puis la tire : la forme s'agrandit, et
+ * les poignées la suivent.
  *
  * En WebGL logiciel, ce geste prend du temps : l'essai ne vise qu'une
  * poignée, une fois.
@@ -45,7 +46,17 @@ test("les poignées de la forme choisie se peignent et se saisissent par le dess
   await page.mouse.move(scene.x - 60, scene.y - 40);
   await page.mouse.down();
   await page.mouse.move(scene.x + 60, scene.y + 40, { steps: 3 });
+  // en traçant : l'ébauche et la cote du geste, dans la scène et non dans le SVG
+  const enTracant = await page.evaluate(() => {
+    const { reperes } = window.__essais.scene;
+    return { ebauche: reperes("ebauche").length, cote: (reperes("cote")[0] || {}).texte || "",
+             svg: Boolean(document.querySelector("#apercu, #cote")) };
+  });
+  expect(enTracant.ebauche).toBeGreaterThan(0);
+  expect(enTracant.cote).toMatch(/×/);
+  expect(enTracant.svg).toBe(false);
   await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__essais.scene.reperes("ebauche").length)).toBe(0);
 
   // la main : la forme tracée se choisit, ses poignées entrent dans la scène, pas dans le SVG
   await page.locator('#outils .outilsBtns button[data-o="main"]').click();

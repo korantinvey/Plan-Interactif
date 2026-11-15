@@ -958,6 +958,6 @@ brancheAimants({
   imageEnAttente: () => imageEnAttente,
   formeSel: () => formeSel,
   calqueActif: () => calqueActif,
-  svg, cadrePlan, mesCalques, estCadre, boite, toleranceTrace, apercuGuide, formeParId,
+  cadrePlan, mesCalques, estCadre, boite, toleranceTrace, apercuGuide, formeParId,
   ajouteForme, choisitForme, signale, memorise, enregistreDessins, redessineForme, dessinePoignees,
 });

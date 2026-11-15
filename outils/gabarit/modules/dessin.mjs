@@ -20,7 +20,7 @@ import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { DATA, parId, state, P, societes } from "./donnees.mjs";
 import { optionActive } from "./configuration.mjs";
-import { svg, vue, cadrePlan, injecteALaVue } from "./vue.mjs";
+import { vue, cadrePlan, injecteALaVue } from "./vue.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
@@ -38,6 +38,8 @@ import { largeur } from "./texte-plan.mjs";
 import { libelleEmplacement } from "./nom-emplacement.mjs";
 import { formeSel, boite } from "./forme-choisie.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
+import { lisTrace } from "./trace.mjs";
+import { poseReperes } from "./scene-edition.mjs";
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -239,27 +241,23 @@ export function peintCalque(cal){
 
 /* La conversion écran → repère du plan, `versPlan` : `modules/vue.mjs`. */
 
-export function apercu(d){
-  let el = $("apercu");
-  if (!d){ if (el) el.remove(); return; }
-  if (!el){
-    el = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    el.id = "apercu";
-    svg.appendChild(el);
-  }
-  el.setAttribute("d", d);
+/* L'ébauche d'une forme en cours de tracé et le guide d'alignement vivent
+   dans la scène d'édition (`scene-edition.mjs`), que le dessin peint. Ils
+   arrivent en tracé SVG de `chemin-forme.mjs`, lu ici en points, morceau par
+   morceau : en pointillés, comme tout ce qui n'est pas encore posé. */
+/** @returns {import("./scene-edition.mjs").Repere[]} */
+const traitsDe = (/** @type {string | null} */ d, /** @type {any} */ style) => !d ? [] :
+  lisTrace(d).filter(t => t.pts.length > 1)
+    .map(t => ({ sorte: /** @type {"trait"} */ ("trait"), chemin: t.pts, ferme: t.ferme, ...style }));
+
+/** L'ébauche de la forme qu'on trace, ou rien. */
+export function apercu(/** @type {string | null} */ d){
+  poseReperes("ebauche", traitsDe(d, { trait: "--accent", epaisseur: 2, tirets: [6, 4] }));
 }
 
 /** Le trait fin qui montre sur quoi le point vient de s'aligner. */
-export function apercuGuide(d){
-  let el = $("apercuGuide");
-  if (!d){ if (el) el.remove(); return; }
-  if (!el){
-    el = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    el.id = "apercuGuide";
-    svg.appendChild(el);
-  }
-  el.setAttribute("d", d);
+export function apercuGuide(/** @type {string | null} */ d){
+  poseReperes("guide", traitsDe(d, { trait: "--accent", epaisseur: 1, tirets: [2, 5], opacite: .55 }));
 }
 
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
