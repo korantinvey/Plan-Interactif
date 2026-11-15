@@ -30,6 +30,28 @@
    ce que le dessin tire des deux lectures, calque par calque.
    ============================================================ */
 import { CONF, conf, sousCle } from "./configuration.mjs";
+import { creeEvenement } from "./evenement.mjs";
+
+/** Le réglage d'un calque de l'habillage a changé — sa couleur, son
+ *  remplissage, un sous-calque, sa visibilité — : le dessin relit ce calque
+ *  (`webgl.mjs`). `apparence.mjs` `styleFond` l'émet, la clé du calque en main.
+ *  @type {import("./evenement.mjs").Evenement<[string]>} */
+export const CALQUE_CHANGE = creeEvenement();
+
+/**
+ * L'opacité d'un calque de l'habillage, comme la feuille la pose sur son
+ * groupe : nulle s'il est éteint par l'exploitant, en retrait derrière le
+ * cartouche des points d'intérêt (`html.poi-actif #couches .cal`) ou la
+ * visite guidée (`html.tuto-retrait #couches .cal`, dans `_styles-divers.css`,
+ * qui vient après : à force égale, elle l'emporte). Le dessin ne lit plus le
+ * style calculé du groupe ; qui change l'une des deux règles change l'autre.
+ * @param {string} cle
+ */
+export function opaciteCalque(cle){
+  if (conf(cle).visible === false) return 0;
+  const r = document.documentElement.classList;
+  return r.contains("tuto-retrait") ? .22 : r.contains("poi-actif") ? .16 : 1;
+}
 
 /* La police du plan telle que le navigateur l'écrit pour un élément qui la
    déclare (`font-family: var(--sans)`) : guillemets et espaces compris, comme

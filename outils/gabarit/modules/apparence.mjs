@@ -23,6 +23,7 @@ import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { appliqueOptions } from "./options.mjs";
 import { appliqueAmbiance } from "./ambiance.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
+import { CALQUE_CHANGE } from "./style-habillage.mjs";
 import { SVG_REPRIS, svgPeint } from "./svg-de-secours.mjs";
 import { signaleEmplacements } from "./etat-emplacements.mjs";
 
@@ -60,17 +61,21 @@ SVG_REPRIS.ecoute(() => {
   P().fond.forEach(f => styleFond(f.cle));
 });
 
+/** Le dernier réglage dit au dessin, par calque. */
+/** @type {Map<string, string>} */
+const signaturesDites = new Map();
 export function styleFond(cle){
   const c = conf(cle);
   const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
   if (!g) return;
   /* Le dessin lit le réglage du calque dans la configuration, et non sur ses
-     sous-calques, que le SVG caché ne porte plus quand le WebGL peint. Une
-     signature du réglage, posée sur le groupe et réécrite seulement quand il
-     change, prévient son guet (`webgl.mjs`) : il ne refait que ce calque. */
+     sous-calques, que le SVG caché ne porte plus quand le WebGL peint. Il ne
+     guette plus le groupe : une signature du réglage, comparée à la dernière
+     dite, le prévient (`style-habillage.mjs` `CALQUE_CHANGE`) — une couleur
+     qu'on glisse au nuancier en envoie une rafale, et seul ce calque se refait. */
   const signature = JSON.stringify([c.couleur, c.rempli, c.visible,
     ...Object.keys(CONF).filter(k => k.indexOf(cle + "/") === 0).sort().map(k => [k, CONF[k]])]);
-  if (g.getAttribute("data-reglage") !== signature) g.setAttribute("data-reglage", signature);
+  if (signaturesDites.get(cle) !== signature){ signaturesDites.set(cle, signature); CALQUE_CHANGE.emet(cle); }
   if (c.visible !== false) remplitCalque(g, cle);
   g.style.display = c.visible === false ? "none" : "";
   g.querySelectorAll("g[data-s]").forEach(sub => {

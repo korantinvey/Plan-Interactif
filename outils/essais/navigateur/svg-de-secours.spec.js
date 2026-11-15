@@ -13,10 +13,13 @@
  * Les groupes ne disent plus rien au dessin, non plus : il ne les guette plus
  * et suit le modèle (`etat-emplacements.mjs` `EMPLACEMENTS_CHANGES`). Une
  * classe posée sur un groupe à l'insu du modèle ne fait relire aucun bloc ; un
- * choix dit au modèle fait relire celui des stands.
+ * choix dit au modèle fait relire celui des stands. De même pour les calques
+ * de l'habillage, que leur réglage prévient (`style-habillage.mjs`
+ * `CALQUE_CHANGE`) : un attribut posé sur le groupe ne fait rien relire, un
+ * calque éteint dans la pile relit le sien.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe } = require("./aide.js");
+const { prepare, attendLaListe, ouvreAdmin } = require("./aide.js");
 
 /** Les groupes des emplacements, et combien portent un tracé. */
 const comptes = () => {
@@ -76,5 +79,34 @@ test("le dessin suit le modèle, et non les classes des groupes", async ({ page 
   await page.locator("#list .row").first().click();
   await expect.poll(() => page.evaluate(() =>
     window.__essais.GL.blocs.get(document.getElementById("stands")) !== window.__blocAvant)).toBe(true);
+  expect(erreurs).toEqual([]);
+});
+
+test("un calque de l'habillage se relit par son réglage, et non par son groupe", async ({ page }) => {
+  test.setTimeout(120_000);
+  const erreurs = await ouvreAdmin(page);
+  const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 20_000 })
+    .then(() => true, () => false);
+  test.skip(!dessin, "pas de carte graphique : le plan reste en SVG");
+  await page.waitForFunction(() => !window.__essais.GL.image);
+  // les blocs des calques de l'habillage, tels qu'ils sont peints
+  const releve = () => page.evaluate(() => {
+    window.__blocsCal = new Map([...document.querySelectorAll("#couches > .cal")]
+      .map((g) => [g, window.__essais.GL.blocs.get(g)]));
+    return window.__blocsCal.size;
+  });
+  const relus = () => page.evaluate(() =>
+    [...window.__blocsCal].filter(([g, c]) => window.__essais.GL.blocs.get(g) !== c).length);
+  expect(await releve()).toBeGreaterThan(0);
+
+  // un attribut posé sur le groupe, à l'insu du réglage : rien ne se relit
+  await page.evaluate(() => document.querySelector("#couches > .cal").setAttribute("data-essai", "1"));
+  await page.waitForTimeout(500);
+  expect(await relus(), "le guet relit encore les calques de l'habillage").toBe(0);
+
+  // un calque éteint dans la pile : son réglage change, son bloc se relit
+  await page.locator("#btnLayers").click();
+  await page.locator("#pile .calq:not(.perso):has(.fillbtn) input[type=checkbox]").first().click();
+  await expect.poll(relus).toBeGreaterThan(0);
   expect(erreurs).toEqual([]);
 });

@@ -179,8 +179,17 @@ pour le seul rendu de secours. `svg-de-secours.spec.js` éprouve le contrat :
 une classe posée à l'insu du modèle ne fait relire aucun bloc ; un choix dit
 au modèle relit celui des stands.
 
-Reste du guet : les calques de l'habillage, les calques dessinés et les
-surcouches, qui s'écrivent encore dans le SVG caché et que le dessin y relit.
+**Étape 5, pour l'habillage (15 novembre 2026).** Le guet ignore aussi
+les calques de l'habillage. `apparence.mjs` `styleFond` dit le réglage d'un
+calque quand sa signature change (`style-habillage.mjs` `CALQUE_CHANGE`), à
+la place de l'attribut qu'il posait sur le groupe pour le guet ; et le dessin
+ne lit plus le style calculé du groupe : son opacité vient du réglage et des
+deux classes de la racine qui le mettent en retrait (`opaciteCalque`).
+`svg-de-secours.spec.js` éprouve les deux.
+
+Reste du guet : les calques dessinés et les surcouches, qui s'écrivent
+encore dans le SVG caché et que le dessin y relit, et l'ordre des calques
+(l'ordre des nœuds de `#couches`).
 
 **Étape 4 — les outils de l'exploitant (15 novembre 2026).** Décidé :
 l'administration exige le WebGL (sur les onze jours d'avant, aucune des dix-

@@ -45,7 +45,8 @@ import { etatEmplacement, groupeEmplacement, cleDuGroupe, donneeDuGroupe, estCho
   boiteEmplacement, EMPLACEMENTS_CHANGES } from "./etat-emplacements.mjs";
 import { traceStand } from "./tuiles.mjs";
 import { designe } from "./designation.mjs";
-import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
+import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement,
+  opaciteCalque, CALQUE_CHANGE } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
 import { styleParAttributs } from "./style-attributs.mjs";
 import { poseSvgPeint } from "./svg-de-secours.mjs";
@@ -554,6 +555,8 @@ export function monteWebgl(){
            y change (`EMPLACEMENTS_CHANGES`, plus bas). Leurs groupes ne sont
            que la couche du clavier, et du rendu de secours. */
         if (b && b !== "ordre" && (b.id === "stands" || b.id === "zones")) continue;
+        // les calques de l'habillage non plus : leur réglage se dit par `CALQUE_CHANGE`
+        if (b && b !== "ordre" && estHabillage(b)) continue;
         neuf = true;
         if (b === "ordre") GL.ordre = true;
         else if (b) GL.sales.add(b);
@@ -596,6 +599,13 @@ export function monteWebgl(){
        (`etat-emplacements.mjs`) : seul le bloc touché se relit, et le volume
        choisi part tout de suite. Un stand qui monte ou s'abaisse emporte ses
        marques, posées sur son dessus. */
+    // le réglage d'un calque de l'habillage : lui seul se relit
+    CALQUE_CHANGE.ecoute((/** @type {string} */ cle) => {
+      if (!GL.actif) return;
+      const b = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
+      if (b) GL.sales.add(b);
+      planifieWebgl();
+    });
     // un jeu de la scène d'édition reposé par son outil : lui seul se relit
     SCENE_CHANGEE.ecoute((/** @type {string} */ nom) => {
       const b = BLOCS_SCENE.get(nom);
@@ -2166,13 +2176,10 @@ function tracesDeForme(/** @type {Element} */ el, /** @type {string} */ tag){
 const estHabillage = (/** @type {Element} */ b) =>
   b.classList.contains("cal") && Boolean(/** @type {SVGElement} */ (b).dataset.cle);
 function habillageGl(/** @type {Element} */ racine, /** @type {any} */ acc){
-  const cs = getComputedStyle(racine);
-  if (cs.display === "none") return;
-  const tr = racine.getAttribute("transform");
-  const m = tr ? mulM(M_ID, lisTransform(tr)) : M_ID;
-  const op = parseFloat(cs.opacity);
-  if (!(op > .003)) return;
+  // ni le style calculé ni l'attribut du groupe : sa clé, puis le réglage et l'état de la racine
   const cle = /** @type {string} */ (/** @type {SVGElement} */ (racine).dataset.cle);
+  const op = opaciteCalque(cle), m = M_ID;
+  if (!(op > .003)) return;
   const f = (P().fond || []).find((/** @type {any} */ x) => x.cle === cle);
   // le fond n'est pas encore arrivé, ou le calque est vide
   const copie = copieDuCalque(f);
