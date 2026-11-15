@@ -38,20 +38,66 @@
    les événements : tous ceux qui l'informent dépendent déjà du dessin, qui le
    lit.
 
-   Il ne prévient le dessin que d'une forme retouchée (`FORME_CHANGEE`) : le
-   groupe ne porte plus de tracé quand le WebGL peint, et rien n'y bouge.
-   Pour le reste, le guet du SVG (`webgl.mjs`) voit la classe ou l'attribut
-   que l'écrivain pose en même temps sur le groupe, et ne refait que le bloc
-   qui a bougé. Un événement d'ici, branché sur les deux blocs, les referait
-   tous deux à chaque lettre tapée dans la recherche.
+   Il prévient le dessin de ce qui change (`EMPLACEMENTS_CHANGES`) : le
+   dessin ne guette plus les groupes des stands et des zones, qui ne lui
+   disent plus rien. Chaque mutateur compare l'avant et l'après, et ne dit
+   que le bloc qui a bougé — les stands, les zones, ou les deux : sans quoi
+   une lettre tapée dans la recherche referait les deux blocs même quand rien
+   ne s'y éteint. Ce que les données changent hors d'ici — le décor d'une
+   zone, son masquage, une forme reprise, un pavillon monté, un calque
+   éteint — se dit par `signaleEmplacements`.
    ============================================================ */
 import { parId, P } from "./donnees.mjs";
 import { anneauxGeo, boiteAnneaux } from "./forme.mjs";
 import { creeEvenement } from "./evenement.mjs";
 
-/** La forme d'un emplacement vient d'être retouchée (`reprise-emplacements.mjs`) :
- *  le dessin la relit dans ses données. */
-export const FORME_CHANGEE = creeEvenement();
+/**
+ * Ce que le dessin peint des stands ou des zones a changé. `stands` et
+ * `zones` disent les blocs à relire ; `cles`, les emplacements qui viennent
+ * d'être choisis ou de cesser de l'être, dont le volume part sans attendre
+ * que le bloc soit relu (`webgl.mjs` `anticipeHausses`).
+ * @type {ReturnType<typeof creeEvenement>}
+ */
+export const EMPLACEMENTS_CHANGES = creeEvenement();
+
+/** La sorte d'un emplacement d'après sa clé, ou rien s'il n'est pas connu. */
+const sorteDe = (/** @type {string | null} */ cle) => {
+  const o = cle ? parId.get(cle.slice(3)) : null;
+  return o && (o.kind === "stand" || o.kind === "zone") ? o.kind : null;
+};
+/** Dit au dessin les blocs que ces clés touchent — les deux, pour une clé inconnue. */
+function signaleCles(/** @type {Iterable<string | null>} */ cles, /** @type {string[]} */ montent = []){
+  let stands = false, zones = false;
+  for (const c of cles){
+    if (c === null) continue;
+    const s = sorteDe(c);
+    if (s !== "zone") stands = true;
+    if (s !== "stand") zones = true;
+  }
+  if (stands || zones) EMPLACEMENTS_CHANGES.emet({ stands, zones, cles: montent });
+}
+/** Les clés qui sont dans l'un des deux ensembles et pas dans l'autre. */
+const ecart = (/** @type {Set<string>} */ a, /** @type {Set<string>} */ b) =>
+  [...a].filter(x => !b.has(x)).concat([...b].filter(x => !a.has(x)));
+/** Les clés dont la valeur diffère d'une table à l'autre. */
+function ecartTables(/** @type {Map<string, any> | null} */ a, /** @type {Map<string, any> | null} */ b){
+  const out = [];
+  const sig = (/** @type {any} */ v) => JSON.stringify(v);
+  for (const [k, v] of a || []) if (!b || !b.has(k) || sig(b.get(k)) !== sig(v)) out.push(k);
+  for (const k of (b || new Map()).keys()) if (!a || !a.has(k)) out.push(k);
+  return out;
+}
+
+/**
+ * Pour qui change ce que le dessin peint sans passer par un mutateur d'ici :
+ * le décor ou le masquage d'une zone (`fiche-zone.mjs`, `reglage-comptoir.mjs`,
+ * `reglage-foodtrucks.mjs`), un emplacement ajouté, nommé, lié, retiré ou
+ * reformé (`reprise-emplacements.mjs`), un pavillon monté (`rendu.mjs`), un
+ * calque éteint (`apparence.mjs`).
+ */
+export function signaleEmplacements(/** @type {"stands" | "zones" | "tous"} */ quoi){
+  EMPLACEMENTS_CHANGES.emet({ stands: quoi !== "zones", zones: quoi !== "stands", cles: [] });
+}
 
 /**
  * Les emplacements du pavillon affiché, dans l'ordre où le plan pose leurs
@@ -174,15 +220,65 @@ const E = {
   camion: null,
 };
 
-export function poseChoisi(/** @type {string | null} */ cle){ E.choisi = cle; }
-export function poseRetires(/** @type {Set<string>} */ cles){ E.retires = cles; }
-export function posePhares(/** @type {Set<string>} */ cles){ E.phares = cles; }
-export function poseSecteurs(/** @type {Map<string, { h: string, c: string | null }>} */ teintes){ E.secteurs = teintes; }
-export function poseChaleurs(/** @type {Map<string, string> | null} */ couleurs){ E.chaleurs = couleurs; }
-export function poseRepris(/** @type {string | null} */ id){ E.repris = id; }
-export function poseCibleTuto(/** @type {string | null} */ cle){ E.cibleTuto = cle; }
-export function poseComptoirEnMain(/** @type {string | null} */ cle){ E.comptoir = cle; }
-export function poseCamionEnMain(/** @type {{ cle: string, i: number } | null} */ c){ E.camion = c; }
+export function poseChoisi(/** @type {string | null} */ cle){
+  const avant = E.choisi;
+  if (avant === cle) return;
+  E.choisi = cle;
+  const montent = /** @type {string[]} */ ([avant, cle].filter(c => c !== null));
+  signaleCles([avant, cle], montent);
+}
+export function poseRetires(/** @type {Set<string>} */ cles){
+  const avant = E.retires;
+  E.retires = cles;
+  signaleCles(ecart(avant, cles));
+}
+export function posePhares(/** @type {Set<string>} */ cles){
+  const avant = E.phares;
+  E.phares = cles;
+  signaleCles(ecart(avant, cles));
+}
+/* La table des secteurs se compare par sa signature : `secteurs.mjs`
+   `peintSecteur` change une teinte sur place, dans la table qu'il a posée, et
+   la repose. */
+let sigSecteurs = "[]";
+export function poseSecteurs(/** @type {Map<string, { h: string, c: string | null }>} */ teintes){
+  const sig = JSON.stringify([...teintes]);
+  const avant = new Map(JSON.parse(sigSecteurs));
+  E.secteurs = teintes;
+  if (sig === sigSecteurs) return;
+  sigSecteurs = sig;
+  signaleCles(ecartTables(avant, teintes));
+}
+export function poseChaleurs(/** @type {Map<string, string> | null} */ couleurs){
+  const avant = E.chaleurs;
+  E.chaleurs = couleurs;
+  signaleCles(ecartTables(avant, couleurs));
+}
+export function poseRepris(/** @type {string | null} */ id){
+  const avant = E.repris;
+  if (avant === id) return;
+  E.repris = id;
+  // l'identifiant propre d'un ajout, ou celui de l'emplacement : sa sorte se lit pareil
+  signaleCles([avant, id].map(x => x === null ? null : "id:" + x));
+}
+export function poseCibleTuto(/** @type {string | null} */ cle){
+  const avant = E.cibleTuto;
+  if (avant === cle) return;
+  E.cibleTuto = cle;
+  signaleCles([avant, cle]);
+}
+export function poseComptoirEnMain(/** @type {string | null} */ cle){
+  const avant = E.comptoir;
+  if (avant === cle) return;
+  E.comptoir = cle;
+  signaleCles([avant, cle]);
+}
+export function poseCamionEnMain(/** @type {{ cle: string, i: number } | null} */ c){
+  const avant = E.camion;
+  if (JSON.stringify(avant) === JSON.stringify(c)) return;
+  E.camion = c;
+  signaleCles([avant && avant.cle, c && c.cle]);
+}
 /** L'exploitant tient-il le comptoir de cette zone ? */
 export const comptoirEnMain = (/** @type {string} */ cle) => E.comptoir === cle;
 /** Le rang du camion de cette zone que l'exploitant tient, ou rien. */

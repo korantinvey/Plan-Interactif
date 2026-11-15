@@ -9,6 +9,11 @@
  * SVG reprend la main — une carte graphique perdue —, c'est lui qui montre le
  * plan : chaque groupe doit alors retrouver son tracé, sans quoi le visiteur
  * aurait un hall vide.
+ *
+ * Les groupes ne disent plus rien au dessin, non plus : il ne les guette plus
+ * et suit le modèle (`etat-emplacements.mjs` `EMPLACEMENTS_CHANGES`). Une
+ * classe posée sur un groupe à l'insu du modèle ne fait relire aucun bloc ; un
+ * choix dit au modèle fait relire celui des stands.
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe } = require("./aide.js");
@@ -45,5 +50,31 @@ test("les groupes ne portent leur tracé que si le SVG peint le plan", async ({ 
      dans les groupes jusqu'au montage suivant, et ne pressent rien. */
   const apres = await page.evaluate(comptes);
   expect(apres.traces).toBe(apres.groupes);
+  expect(erreurs).toEqual([]);
+});
+
+test("le dessin suit le modèle, et non les classes des groupes", async ({ page }) => {
+  const erreurs = await prepare(page);
+  await page.goto("/plan.html?plan=smcl-2026");
+  await attendLaListe(page);
+  const dessin = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 15_000 })
+    .then(() => true, () => false);
+  test.skip(!dessin, "pas de carte graphique : le plan reste en SVG");
+  // au repos : aucune image du dessin en attente
+  await page.waitForFunction(() => !window.__essais.GL.image);
+  await page.evaluate(() => { window.__blocAvant = window.__essais.GL.blocs.get(document.getElementById("stands")); });
+
+  // une classe que le modèle ignore : le bloc des stands ne se relit pas
+  await page.evaluate(() => document.querySelector("#stands > g").classList.add("dim"));
+  await page.waitForTimeout(500);
+  const relu = await page.evaluate(() =>
+    window.__essais.GL.blocs.get(document.getElementById("stands")) !== window.__blocAvant);
+  expect(relu, "le guet relit encore les groupes").toBe(false);
+  await page.evaluate(() => document.querySelector("#stands > g").classList.remove("dim"));
+
+  // un choix, dit au modèle par la fiche : le bloc se relit
+  await page.locator("#list .row").first().click();
+  await expect.poll(() => page.evaluate(() =>
+    window.__essais.GL.blocs.get(document.getElementById("stands")) !== window.__blocAvant)).toBe(true);
   expect(erreurs).toEqual([]);
 });

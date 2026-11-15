@@ -40,7 +40,7 @@ import { liste } from "./recherche.mjs";
 import { champComptoir } from "./reglage-comptoir.mjs";
 import { champFoodtrucks } from "./reglage-foodtrucks.mjs";
 import { COTES_ESTRADE } from "./decor.mjs";
-import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { emplacements, groupeEmplacement, signaleEmplacements } from "./etat-emplacements.mjs";
 
 /* Les réglages (`CONF`, que le changement de salon remplace), importés, se
    lisent tels qu'ils sont à l'instant. */
@@ -236,11 +236,12 @@ function champEstrade(hote, o){
     else delete t[o.id];
     if (!Object.keys(t).length) delete CONF._estrades;
     enregistreConf();
-    // le plan relit l'attribut et se repeint ; la zone peut être d'un autre pavillon
+    // le dessin lit l'estrade dans la configuration ; le groupe, pour le rendu de secours
     document.querySelectorAll('#zones g[data-id="' + CSS.escape(String(o.id)) + '"]').forEach(g => {
       if (choix.value) g.setAttribute("data-estrade", choix.value);
       else g.removeAttribute("data-estrade");
     });
+    signaleEmplacements("zones");
   });
   const champ = /** @type {HTMLElement} */ (choix.closest(".champZ"));
   return (/** @type {boolean} */ oui) => { champ.hidden = !oui; };
@@ -682,11 +683,12 @@ export function ficheZone(o){
  * l'organisateur garderait ici son ancien nom pour toujours. Un champ qu'on
  * n'a pas touché ne touche donc pas à sa colonne.
  */
-/* Le type se pose aussi sur la zone dessinée : c'est là que le décor le lit
-   (`rendu.mjs` `baliseZone`), et le dessin se repeint de lui-même quand
-   l'attribut change. Sans cela, la zone qu'on vient de dire « Foodtruck »
-   restait un bloc nu jusqu'au rechargement. */
+/* Le type change le décor que le dessin pose sur la zone : il le lit dans
+   ses données, et l'apprend ici. Sans cela, la zone qu'on vient de dire
+   « Foodtruck » restait un bloc nu jusqu'au rechargement. Le groupe le porte
+   encore, pour le rendu de secours (`rendu.mjs` `baliseZone`). */
 function marqueType(o){
+  signaleEmplacements("zones");
   const g = document.querySelector('#zones g.zone[data-id="' + CSS.escape(o.id) + '"]');
   if (!g) return;
   if (o.type) g.setAttribute("data-type", o.type); else g.removeAttribute("data-type");
@@ -932,6 +934,7 @@ function marqueZonesMasquees(){
     const g = groupeEmplacement(e.cle);
     if (g) g.classList.toggle("masquee", !!e.o && !!e.o.masquee);
   }
+  signaleEmplacements("zones");
 }
 
 

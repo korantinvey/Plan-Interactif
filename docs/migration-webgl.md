@@ -160,10 +160,28 @@ d'écran, et la poignée par laquelle le dessin désigne un emplacement et fait
 monter son volume. Une couche à part, en HTML, aurait refait tout cela pour
 le même résultat. Le dessin n'y lit plus que la clé et le focus.
 
-Ce qui reste du SVG pour les stands n'est donc plus que du signal : les
-écrivains de l'état posent encore leur classe ou leur attribut sur le
-groupe, et c'est ainsi que le guet prévient le dessin. Le remplacer par des
-événements du modèle relève du retrait du lecteur (étape 5).
+**Étape 5, pour les stands et les zones — le modèle prévient le dessin
+(15 novembre 2026).** Le guet du SVG (`webgl.mjs`) ne surveille plus
+`#stands` ni `#zones` : leurs groupes ne disent plus rien au dessin. Le
+modèle le prévient (`etat-emplacements.mjs` `EMPLACEMENTS_CHANGES`). Chaque
+mutateur compare l'avant et l'après et ne dit que le bloc touché — une lettre
+tapée qui n'éteint rien ne relit rien — et donne les clés qui viennent d'être
+choisies, dont le volume part sans attendre (`anticipeHausses`). Ce qui
+change hors des mutateurs se dit par `signaleEmplacements` : le décor et le
+masquage d'une zone (`fiche-zone.mjs`, `reglage-comptoir.mjs`,
+`reglage-foodtrucks.mjs`), un emplacement ajouté, nommé, lié, retiré ou
+reformé (`reprise-emplacements.mjs`), un pavillon monté (`rendu.mjs`), une
+couche éteinte (`apparence.mjs`) ; `secteurs.mjs` `peintSecteur` repose sa
+table, que le modèle compare par signature.
+
+Les écrivains marquent encore le groupe — classe, variable, attribut —, mais
+pour le seul rendu de secours. `svg-de-secours.spec.js` éprouve le contrat :
+une classe posée à l'insu du modèle ne fait relire aucun bloc ; un choix dit
+au modèle relit celui des stands.
+
+Reste du guet : les calques de l'habillage, les calques dessinés, les
+surcouches et les outils de l'exploitant, qui s'écrivent encore dans le SVG
+caché et que le dessin y relit.
 
 **Étape 2 — les surcouches, autrement que les stands.** Leur gain de
 performance est négligeable : quelques dizaines d'éléments. Reprendre leurs

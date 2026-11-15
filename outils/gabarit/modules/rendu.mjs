@@ -44,7 +44,7 @@ import { traceStand } from "./tuiles.mjs";
 import { CONF } from "./configuration.mjs";
 import { reglageComptoirValide, reglageCamionsValide, COTES_ESTRADE } from "./decor.mjs";
 import { SVG_REPRIS, svgPeint } from "./svg-de-secours.mjs";
-import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { emplacements, groupeEmplacement, signaleEmplacements } from "./etat-emplacements.mjs";
 
 /* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
@@ -175,6 +175,8 @@ export function montePlan(){
   $("plan").setAttribute("aria-label", "Plan : " + p.libelle);
   $("zones").innerHTML = p.zones.map(baliseZone).join("");
   $("stands").innerHTML = p.stands.map(baliseStand).join("");
+  // un autre pavillon : le dessin, qui ne guette plus les groupes, relit ses emplacements
+  signaleEmplacements("tous");
   poseEmprise(p.emprise);
   // les tracés relevés valaient pour les stands du pavillon qu'on quitte
   oublieDists();

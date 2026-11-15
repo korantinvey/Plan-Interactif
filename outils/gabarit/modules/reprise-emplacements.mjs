@@ -59,7 +59,7 @@ import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
 import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
-import { poseRepris, estChoisi, cleEmplacement, FORME_CHANGEE } from "./etat-emplacements.mjs";
+import { poseRepris, estChoisi, cleEmplacement, signaleEmplacements } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
 
@@ -354,8 +354,8 @@ function retraceGeo(o){
   // le tracé du rendu de secours, s'il est dans le groupe
   const t = g && g.querySelector("path");
   if (t) t.setAttribute("d", o.d);
-  // le dessin lit la forme dans les données : rien ne bouge dans le SVG pour le lui dire
-  FORME_CHANGEE.emet();
+  // le dessin lit la forme dans les données, et ne guette plus les groupes
+  signaleEmplacements(o.kind === "zone" ? "zones" : "stands");
   // les liserés se relèvent dans les données (`parcours.mjs`) : qui en porte un se retrace
   const id = o.lien ? String(o.lien.stand) : String(o.id);
   if (estRetenuSurLePlan(id) || estChoisi(cleEmplacement(id, o.ajout ? o.id : undefined))) dessineMarques();
@@ -424,6 +424,8 @@ function ajouteEmplacement(anneaux){
   parId.set(o.id, o);
   $(sorte).insertAdjacentHTML("beforeend",
     o.kind === "zone" ? baliseZone(o) : baliseStand(o));
+  // un emplacement neuf : le dessin, qui ne guette plus les groupes, l'apprend ici
+  signaleEmplacements(o.kind === "zone" ? "zones" : "stands");
   // la couleur d'un secteur et le retrait d'une recherche se posent sur les
   // groupes : celui-ci vient de naître
   appliqueSecteurs();
@@ -456,6 +458,8 @@ function renommeAjout(champ, valeur){
   const g = groupeGeo(o);
   if (g) g.setAttribute("aria-label", o.kind === "zone" ? (o.nom || "zone")
                                       : (o.nom || ("Stand " + (o.code || ""))));
+  // un stand nommé n'est plus libre : son volume change
+  signaleEmplacements(o.kind === "zone" ? "zones" : "stands");
   enregistreConf();
   libelles();
   $("geoNom").textContent = o.nom || o.code ||
@@ -492,6 +496,8 @@ function lieAjout(texte){
     g.outerHTML = baliseStand(o);
     groupeGeo(o).classList.add("geopick");
   }
+  // lié ou délié, le stand change de clé, d'exposant et de volume
+  signaleEmplacements("stands");
   appliqueSecteurs();
   marqueRetrait();
   libelles(); liste();
@@ -553,6 +559,7 @@ function supprimeAjout(){
       parId.delete(o.id);
       const g = groupeGeo(o);
       if (g) g.remove();
+      signaleEmplacements(sorte);
       if (state.sel === o.id) ferme();
       choisitGeo(null);
       finGesteGeo(o);

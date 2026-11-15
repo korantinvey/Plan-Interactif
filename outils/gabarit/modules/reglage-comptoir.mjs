@@ -26,6 +26,7 @@
 import { CONF, enregistreConf } from "./configuration.mjs";
 import { comptoir, reglageComptoirValide, rapprocheComptoir } from "./decor.mjs";
 import { anneauDe, emprise } from "./outil-comptoir.mjs";
+import { signaleEmplacements } from "./etat-emplacements.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, de biais à
@@ -121,11 +122,12 @@ export function champComptoir(bloc, o){
     else delete t[o.id];
     if (!Object.keys(t).length) delete CONF._comptoirs;
     enregistreConf();
-    // le plan relit l'attribut et se repeint ; la zone peut être d'un autre pavillon
+    // le dessin lit le comptoir dans la configuration ; le groupe, pour le rendu de secours
     document.querySelectorAll('#zones g[data-id="' + CSS.escape(String(o.id)) + '"]').forEach(g => {
       if (r) g.setAttribute("data-comptoir", [t[o.id].u, t[o.id].v, t[o.id].a].join(" "));
       else g.removeAttribute("data-comptoir");
     });
+    signaleEmplacements("zones");
   };
 
   /** Le réglage qu'on modifie : celui en place, ou le placement d'office figé. */

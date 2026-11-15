@@ -41,7 +41,7 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement, groupeEmplacement, cleDuGroupe, donneeDuGroupe, estChoisi, comptoirEnMain, camionEnMain,
-  boiteEmplacement, FORME_CHANGEE } from "./etat-emplacements.mjs";
+  boiteEmplacement, EMPLACEMENTS_CHANGES } from "./etat-emplacements.mjs";
 import { traceStand } from "./tuiles.mjs";
 import { designe } from "./designation.mjs";
 import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
@@ -546,16 +546,20 @@ export function monteWebgl(){
        d'appeler le peintre depuis chaque fonction qui touche au plan. Seule la
        vue n'y passe pas — elle ne s'écrit plus dans la « viewBox ». */
     new MutationObserver(notes => {
+      let neuf = false;
       for (const n of notes){
         const b = blocDe(n.target);
+        /* Les stands et les zones ne se guettent plus : le modèle dit ce qui
+           y change (`EMPLACEMENTS_CHANGES`, plus bas). Leurs groupes ne sont
+           que la couche du clavier, et du rendu de secours. */
+        if (b && b !== "ordre" && (b.id === "stands" || b.id === "zones")) continue;
+        neuf = true;
         if (b === "ordre") GL.ordre = true;
         else if (b) GL.sales.add(b);
-        // un stand qui monte ou s'abaisse emporte ses marques, posées sur son dessus
-        if (b && b !== "ordre" && b.id === "stands" && GL.camera && $("dists")) GL.sales.add($("dists"));
       }
+      if (!neuf) return;
       // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
       majEditionWebgl();
-      anticipeHausses(notes);
       planifieWebgl();
     }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
     // le mode carte de chaleur, un calque de noms éteint, une couleur réglée :
@@ -587,11 +591,18 @@ export function monteWebgl(){
     LOGO_PRET.ecoute(() => {
       if (document.documentElement.classList.contains(CLASSE_LOGOS)) planifieWebgl();
     });
-    /* La forme d'un emplacement retouchée : son groupe ne porte pas de tracé,
-       rien n'y a bougé que le guet verrait. Les deux blocs se relisent. */
-    FORME_CHANGEE.ecoute(() => {
+    /* Ce qui change aux stands et aux zones, dit par le modèle
+       (`etat-emplacements.mjs`) : seul le bloc touché se relit, et le volume
+       choisi part tout de suite. Un stand qui monte ou s'abaisse emporte ses
+       marques, posées sur son dessus. */
+    EMPLACEMENTS_CHANGES.ecoute((/** @type {{ stands: boolean, zones: boolean, cles: string[] }} */ c) => {
       if (!GL.actif) return;
-      for (const id of ["stands", "zones"]){ const b = $(id); if (b) GL.sales.add(b); }
+      if (c.zones && $("zones")) GL.sales.add($("zones"));
+      if (c.stands && $("stands")){
+        GL.sales.add($("stands"));
+        if (GL.camera && $("dists")) GL.sales.add($("dists"));
+      }
+      anticipeHausses(c.cles);
       planifieWebgl();
     });
     let logosPrets = 0;
@@ -3013,20 +3024,17 @@ function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
  *
  * Celle-ci ne vient qu'après que la page a montré la fiche (`planifieWebgl`),
  * et reconvertir neuf cents stands prend son temps : sur un PC, le stand ne
- * se mettait à monter qu'une fois la fiche ouverte. Le guet voit pourtant la
- * sélection à l'instant où elle change. On sort donc le stand des couches
- * déjà peintes pour le poser dans une couche de mouvement, et la boucle
- * démarre ; la reconversion, quand elle vient, retrouve le mouvement noté et
- * le continue.
+ * se mettait à monter qu'une fois la fiche ouverte. Le modèle dit pourtant la
+ * sélection à l'instant où elle change (`EMPLACEMENTS_CHANGES`, ses `cles`).
+ * On sort donc le stand des couches déjà peintes pour le poser dans une
+ * couche de mouvement, et la boucle démarre ; la reconversion, quand elle
+ * vient, retrouve le mouvement noté et le continue.
  */
-function anticipeHausses(notes){
+function anticipeHausses(/** @type {string[]} */ cles){
   if (!GL.camera) return;
-  const vus = new Set();
-  for (const n of notes){
-    const g = n.target;
-    if (n.type !== "attributes" || n.attributeName !== "class" || vus.has(g)) continue;
-    if (!cleDuGroupe(g)) continue;
-    vus.add(g);
+  for (const cle of cles){
+    const g = groupeEmplacement(cle);
+    if (!g) continue;
     const haut = hauteurVolume(g);
     if (!haut || hauteursPeintes.get(g) === haut) continue;
     const h = noteHauteur(g, haut);

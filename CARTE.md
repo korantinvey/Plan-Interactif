@@ -290,20 +290,21 @@ Importé par :
 
 reglage-fiche · volets
 
-### `modules/apparence.mjs` — 260 l. → plan, plan-admin
+### `modules/apparence.mjs` — 263 l. → plan, plan-admin
 
 - l.1 · L'apparence des calques, et les commandes posées sur le plan
 
 Fonctions :
 
-`fondDe` 42 · `remplitCalque` 43 · `styleFond` 62 · `lisSous` 101 · `sousCalques` 103
-`styleDataGroupe` 119 · `appliqueCouleursData` 128 · `styleData` 167
-`appliqueApparence` 173 · `appliqueCommandes` 249
+`fondDe` 43 · `remplitCalque` 44 · `styleFond` 63 · `lisSous` 102 · `sousCalques` 104
+`styleDataGroupe` 120 · `appliqueCouleursData` 131 · `styleData` 170
+`appliqueApparence` 176 · `appliqueCommandes` 252
 
 Importe :
 
 ambiance · calque-detache · configuration · couleurs · distinctions · dom · donnees
-habillage · options · parcours · recherche · svg-de-secours · tiroirs-exclusifs
+etat-emplacements · habillage · options · parcours · recherche · svg-de-secours
+tiroirs-exclusifs
 
 Importé par :
 
@@ -1196,18 +1197,19 @@ Importé par :
 
 reglage-rappel
 
-### `modules/etat-emplacements.mjs` — 244 l. → plan, plan-admin
+### `modules/etat-emplacements.mjs` — 340 l. → plan, plan-admin
 
 - l.1 · L'état des stands et des zones, tel que le dessin le lit
 
 Fonctions :
 
-`emplacements` 69 · `ajoutLie` 93 · `emplacementPour` 106 · `boiteEmplacement` 117
-`groupeEmplacement` 136 · `cleEmplacement` 152 · `poseChoisi` 177 · `poseRetires` 178
-`posePhares` 179 · `poseSecteurs` 180 · `poseChaleurs` 181 · `poseRepris` 182
-`poseCibleTuto` 183 · `poseComptoirEnMain` 184 · `poseCamionEnMain` 185
-`comptoirEnMain` 187 · `camionEnMain` 189 · `estChoisi` 195 · `estRetire` 197
-`estMisEnAvant` 199 · `donneeDuGroupe` 208 · `cleDuGroupe` 216 · `etatEmplacement` 230
+`sorteDe` 64 · `signaleCles` 69 · `ecart` 80 · `ecartTables` 83 · `signaleEmplacements` 98
+`emplacements` 115 · `ajoutLie` 139 · `emplacementPour` 152 · `boiteEmplacement` 163
+`groupeEmplacement` 182 · `cleEmplacement` 198 · `poseChoisi` 223 · `poseRetires` 230
+`posePhares` 235 · `poseSecteurs` 244 · `poseChaleurs` 252 · `poseRepris` 257
+`poseCibleTuto` 264 · `poseComptoirEnMain` 270 · `poseCamionEnMain` 276
+`comptoirEnMain` 283 · `camionEnMain` 285 · `estChoisi` 291 · `estRetire` 293
+`estMisEnAvant` 295 · `donneeDuGroupe` 304 · `cleDuGroupe` 312 · `etatEmplacement` 326
 
 Importe :
 
@@ -1215,9 +1217,10 @@ donnees · evenement · forme
 
 Importé par :
 
-cartouche-poi · chaleur · designation · distinctions · fiche · fiche-zone · libelles
-outil-comptoir · outil-foodtruck · parcours · plan · points-interet · recherche · rendu
-reprise-emplacements · secteurs · tutoriel · webgl
+apparence · cartouche-poi · chaleur · designation · distinctions · fiche · fiche-zone
+libelles · outil-comptoir · outil-foodtruck · parcours · plan · points-interet · recherche
+reglage-comptoir · reglage-foodtrucks · rendu · reprise-emplacements · secteurs · tutoriel
+webgl
 
 ### `modules/evenement.mjs` — 45 l. → plan, plan-admin, console
 
@@ -1354,20 +1357,20 @@ Importé par :
 
 ecran-console
 
-### `modules/fiche-zone.mjs` — 991 l. → plan-admin
+### `modules/fiche-zone.mjs` — 994 l. → plan-admin
 
 - l.1 · La fiche d'une zone organisateur — ce que l'exploitant en écrit
 - l.52 · La fiche d'une zone organisateur
-- l.888 · Masquer une zone organisateur
+- l.890 · Masquer une zone organisateur
 
 Fonctions :
 
-`champZone` 78 · `champsZone` 103 · `champEstrade` 223 · `champSalles` 265 · `nomDeZone` 317
-`cadreLogo` 343 · `champLogo` 415 · `editeurRiche` 453 · `memeFicheZone` 610
-`suitFicheZone` 617 · `verseFicheZone` 628 · `ficheZone` 660 · `marqueType` 689
-`rattacheSallesA` 701 · `champsFicheZone` 716 · `enregistreZone` 727
-`enregistreZoneAjoutee` 841 · `basculeAffichageZone` 899 · `marqueZonesMasquees` 927
-`ecritColonnesEvenement` 950 · `ecritColonneEvenement` 984
+`champZone` 78 · `champsZone` 103 · `champEstrade` 223 · `champSalles` 266 · `nomDeZone` 318
+`cadreLogo` 344 · `champLogo` 416 · `editeurRiche` 454 · `memeFicheZone` 611
+`suitFicheZone` 618 · `verseFicheZone` 629 · `ficheZone` 661 · `marqueType` 690
+`rattacheSallesA` 703 · `champsFicheZone` 718 · `enregistreZone` 729
+`enregistreZoneAjoutee` 843 · `basculeAffichageZone` 901 · `marqueZonesMasquees` 929
+`ecritColonnesEvenement` 953 · `ecritColonneEvenement` 987
 
 Importe :
 
@@ -2784,17 +2787,17 @@ Importé par :
 
 volets
 
-### `modules/reglage-comptoir.mjs` — 195 l. → plan-admin
+### `modules/reglage-comptoir.mjs` — 197 l. → plan-admin
 
 - l.1 · Le comptoir d'un accueil — où l'exploitant le pose, dans quel sens
 
 Fonctions :
 
-`el` 35 · `champComptoir` 47
+`el` 36 · `champComptoir` 48
 
 Importe :
 
-configuration · decor · outil-comptoir
+configuration · decor · etat-emplacements · outil-comptoir
 
 Importé par :
 
@@ -2817,17 +2820,18 @@ Importé par :
 
 reglages
 
-### `modules/reglage-foodtrucks.mjs` — 363 l. → plan-admin
+### `modules/reglage-foodtrucks.mjs` — 365 l. → plan-admin
 
 - l.1 · Les camions d'un foodtruck — combien, où, dans quel sens
 
 Fonctions :
 
-`el` 41 · `bouton` 46 · `ecritCamions` 59 · `sansFond` 84 · `champFoodtrucks` 128
+`el` 42 · `bouton` 47 · `ecritCamions` 60 · `sansFond` 86 · `champFoodtrucks` 130
 
 Importe :
 
-configuration · decor · depot-image · detourage · outil-comptoir · rendu · sur
+configuration · decor · depot-image · detourage · etat-emplacements · outil-comptoir · rendu
+sur
 
 Importé par :
 
@@ -2953,7 +2957,7 @@ Importé par :
 
 plan
 
-### `modules/rendu.mjs` — 285 l. → plan, plan-admin
+### `modules/rendu.mjs` — 287 l. → plan, plan-admin
 
 - l.1 · 3. Rendu du pavillon courant
 
@@ -2961,7 +2965,7 @@ Fonctions :
 
 `monteHabillage` 67 · `attributComptoir` 84 · `texteCamions` 93 · `attributCamions` 96
 `attributEstrade` 102 · `traceSiPeint` 124 · `baliseZone` 125 · `baliseStand` 146
-`montePlan` 170 · `onglets` 206 · `chargeFond` 240 · `changePlan` 272
+`montePlan` 170 · `onglets` 208 · `chargeFond` 242 · `changePlan` 274
 
 Importe :
 
@@ -2998,7 +3002,7 @@ Importé par :
 cartouche-poi · dessin · edition · fiche-zone · itineraire · outil-dessin · points-interet
 socle-dessin · trajet · webgl
 
-### `modules/reprise-emplacements.mjs` — 782 l. → plan-admin
+### `modules/reprise-emplacements.mjs` — 789 l. → plan-admin
 
 - l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
 
@@ -3010,11 +3014,11 @@ Fonctions :
 `dessinePoigneesGeo` 224 · `ecritDimensionsGeo` 252 · `nomSorteGeo` 264
 `majPaletteGeo` 266 · `finGesteGeo` 305 · `enregistreGeo` 323 · `geometrieOrigine` 337
 `retraceGeo` 352 · `pousseGeometrie` 367 · `appliqueDimensionGeo` 384
-`enregistreAjout` 399 · `ajouteEmplacement` 414 · `renommeAjout` 442 · `lieAjout` 474
-`ecritInfosAjout` 505 · `supprimeAjout` 537 · `choisitOutilGeo` 566 · `aideAjout` 573
-`fermeAjout` 583 · `ajoutPointerDown` 592 · `ajoutPointerMove` 608 · `ajoutPointerUp` 630
-`geometriePointerDown` 650 · `accrocheGeo` 681 · `geometriePointerMove` 683
-`geometriePointerUp` 734 · `brancheRepriseEmplacements` 751
+`enregistreAjout` 399 · `ajouteEmplacement` 414 · `renommeAjout` 444 · `lieAjout` 478
+`ecritInfosAjout` 511 · `supprimeAjout` 543 · `choisitOutilGeo` 573 · `aideAjout` 580
+`fermeAjout` 590 · `ajoutPointerDown` 599 · `ajoutPointerMove` 615 · `ajoutPointerUp` 637
+`geometriePointerDown` 657 · `accrocheGeo` 688 · `geometriePointerMove` 690
+`geometriePointerUp` 741 · `brancheRepriseEmplacements` 758
 
 Importe :
 
@@ -3087,7 +3091,7 @@ Importé par :
 
 lancement · plan
 
-### `modules/secteurs.mjs` — 240 l. → plan, plan-admin
+### `modules/secteurs.mjs` — 242 l. → plan, plan-admin
 
 - l.1 · Les secteurs du salon, et la teinte de chacun sur le plan
 
@@ -3824,7 +3828,7 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 4221 l. → plan, plan-admin
+### `modules/webgl.mjs` — 4229 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3833,49 +3837,49 @@ Fonctions :
 `injecteAuWebgl` 93 · `moteurVoulu` 113 · `carteDuWebgl` 143 · `sansCarteGraphique` 165
 `chargeWebgl` 265 · `chargeDeck` 316 · `signaleRate` 329 · `sortesDeChauffe` 371
 `chauffeAvantLesDonnees` 381 · `finisChauffe` 414 · `brancheWebgl` 426 · `monteWebgl` 446
-`poseToileWebgl` 638 · `guetteContexteWebgl` 644 · `contextePerduWebgl` 654
-`verifieContexteWebgl` 661 · `guetteBoucleWebgl` 703 · `perdContexteWebgl` 724
-`remonteWebgl` 760 · `vueDeck` 777 · `enCamera` 797 · `vuesGl` 801 · `effetsGl` 825
-`basculeCamera` 835 · `vueWebgl` 848 · `blocDe` 865 · `majEditionWebgl` 878 · `cleBloc` 890
-`planifieWebgl` 916 · `toutRepeindreWebgl` 920 · `blocsDansLOrdre` 931 · `repeintWebgl` 936
-`pointsParMetre` 966 · `assembleWebgl` 992 · `tuilesChoisies` 998 · `assembleCouches` 1007
-`memesElements` 1050 · `cleReunion` 1058 · `reunisCalques` 1083 · `reunisVolumes` 1138
-`sorteDe` 1173 · `cleChauffe` 1235 · `chauffe` 1243 · `copiesQuiDessinent` 1291
-`guetteChauffe` 1309 · `finisLaChauffe` 1350 · `parEtapes` 1362 · `demandeChauffeLogos` 1386
-`auCreux` 1402 · `largeurLisere` 1434 · `constTexte` 1437 · `jeuDeCaracteres` 1603
-`sousPixelOffert` 1659 · `couchesPetites` 1667 · `filtreCouches` 1702 · `poseGeste` 1714
-`positionTexte` 1734 · `cleChoisi` 1774 · `versEcran` 1777 · `enveloppe` 1784
-`nomsCaches` 1795 · `parametresTexte` 1824 · `nomsAPlat` 1833 · `couchesTexte` 1835
-`accVide` 1885 · `convertitBloc` 1887 · `tracesDe` 1933 · `estEmplacement` 1942
-`emplacementGl` 1955 · `formeEmplacementGl` 1967 · `accDe` 2013 · `parcoursGl` 2030
-`tracesDeForme` 2061 · `estHabillage` 2089 · `habillageGl` 2091 · `parcoursHabillage` 2109
-`parcoursAttributs` 2138 · `compareLectures` 2162 · `resteDebout` 2196 · `dedansAnneau` 2204
-`auDessusDuSol` 2229 · `surSonStand` 2238 · `standDeLaMarque` 2243
-`marquesSurLesToits` 2255 · `hauteurVolume` 2274 · `zoneMeublee` 2306 · `poseJeton` 2358
-`mul4` 2382 · `enColonnes` 2391 · `translation` 2392 · `homothetie` 2394 · `autourDuZ` 2395
-`matriceJeton` 2404 · `corpsDansLeJeton` 2420 · `couchesJeton` 2428 · `couchesJetons` 2476
-`meubleZone` 2518 · `dansLeHall` 2598 · `teinteDesFigurants` 2621 · `coucheFigurants` 2669
-`penchee` 2721 · `couchesFigurants` 2732 · `eclatant` 2782 · `opaque` 2788 · `formeGl` 2795
-`corpsDeclare` 2860 · `texteGl` 2874 · `imageGl` 2898 · `imageDressee` 2940
-`socleImage` 2954 · `partage` 2966 · `designeGl` 2972 · `sortie` 2986 · `noteHauteur` 2992
-`anticipeHausses` 3022 · `monteALAppui` 3052 · `rendLAppui` 3065 · `detacheVolume` 3075
-`hauteurEnCours` 3109 · `hauteurHausse` 3115 · `echelleHausse` 3120 · `haussesParId` 3123
-`memesFormes` 3142 · `memesPoints` 3152 · `signeCouleurs` 3159 · `masqueVolumes` 3167
-`aPlat` 3187 · `ombresAuRepos` 3199 · `couchesDeBloc` 3224 · `modelesLibellesHtml` 3343
-`poseModelesLibelles` 3353 · `lisModelesLibelles` 3359 · `groupesNoms` 3392
-`couchesNoms` 3418 · `couchesPastilles` 3434 · `couchesLibellesWebgl` 3451
-`couchesDessineesWebgl` 3504 · `stage` 3525 · `lectureDifferee` 3558 · `survolTrouve` 3598
-`demandeSurvolWebgl` 3604 · `survoleWebgl` 3610 · `brancheSurvolWebgl` 3638
-`poseSurvolWebgl` 3651 · `enTuiles` 3688 · `hauteurTuile` 3701 · `visePour` 3707
-`suisChoisies` 3717 · `gonfleSurvol` 3725 · `coucheTuileSoulevee` 3748
-`couchesTuiles` 3779 · `poseCurseurWebgl` 3792 · `poseFocusWebgl` 3801 · `aplatsDe` 3808
-`coucheSurvol` 3811 · `coucheSurvolVolume` 3836 · `coucheFocus` 3872 · `couchesPhare` 3902
-`lueurDe` 3919 · `opacitePhare` 3957 · `echellePhare` 3958 · `couchesPhareNoms` 3961
-`instant` 3987 · `aUnInstant` 3989 · `animeCouche` 3994 · `majAnimationWebgl` 4014
-`animeWebgl` 4022 · `reanime` 4058 · `logosSurLesToits` 4067 · `objetSous` 4100
-`sansProfondeurDeDesignation` 4121 · `peutDesigner` 4141 · `objetSousDiffere` 4143
-`viseEnAvance` 4163 · `lisObjet` 4171 · `cibleWebgl` 4178 · `priseWebgl` 4188
-`libelleSousWebgl` 4193 · `rectEcranWebgl` 4201 · `rectEcranBoite` 4214
+`poseToileWebgl` 649 · `guetteContexteWebgl` 655 · `contextePerduWebgl` 665
+`verifieContexteWebgl` 672 · `guetteBoucleWebgl` 714 · `perdContexteWebgl` 735
+`remonteWebgl` 771 · `vueDeck` 788 · `enCamera` 808 · `vuesGl` 812 · `effetsGl` 836
+`basculeCamera` 846 · `vueWebgl` 859 · `blocDe` 876 · `majEditionWebgl` 889 · `cleBloc` 901
+`planifieWebgl` 927 · `toutRepeindreWebgl` 931 · `blocsDansLOrdre` 942 · `repeintWebgl` 947
+`pointsParMetre` 977 · `assembleWebgl` 1003 · `tuilesChoisies` 1009 · `assembleCouches` 1018
+`memesElements` 1061 · `cleReunion` 1069 · `reunisCalques` 1094 · `reunisVolumes` 1149
+`sorteDe` 1184 · `cleChauffe` 1246 · `chauffe` 1254 · `copiesQuiDessinent` 1302
+`guetteChauffe` 1320 · `finisLaChauffe` 1361 · `parEtapes` 1373 · `demandeChauffeLogos` 1397
+`auCreux` 1413 · `largeurLisere` 1445 · `constTexte` 1448 · `jeuDeCaracteres` 1614
+`sousPixelOffert` 1670 · `couchesPetites` 1678 · `filtreCouches` 1713 · `poseGeste` 1725
+`positionTexte` 1745 · `cleChoisi` 1785 · `versEcran` 1788 · `enveloppe` 1795
+`nomsCaches` 1806 · `parametresTexte` 1835 · `nomsAPlat` 1844 · `couchesTexte` 1846
+`accVide` 1896 · `convertitBloc` 1898 · `tracesDe` 1944 · `estEmplacement` 1953
+`emplacementGl` 1966 · `formeEmplacementGl` 1978 · `accDe` 2024 · `parcoursGl` 2041
+`tracesDeForme` 2072 · `estHabillage` 2100 · `habillageGl` 2102 · `parcoursHabillage` 2120
+`parcoursAttributs` 2149 · `compareLectures` 2173 · `resteDebout` 2207 · `dedansAnneau` 2215
+`auDessusDuSol` 2240 · `surSonStand` 2249 · `standDeLaMarque` 2254
+`marquesSurLesToits` 2266 · `hauteurVolume` 2285 · `zoneMeublee` 2317 · `poseJeton` 2369
+`mul4` 2393 · `enColonnes` 2402 · `translation` 2403 · `homothetie` 2405 · `autourDuZ` 2406
+`matriceJeton` 2415 · `corpsDansLeJeton` 2431 · `couchesJeton` 2439 · `couchesJetons` 2487
+`meubleZone` 2529 · `dansLeHall` 2609 · `teinteDesFigurants` 2632 · `coucheFigurants` 2680
+`penchee` 2732 · `couchesFigurants` 2743 · `eclatant` 2793 · `opaque` 2799 · `formeGl` 2806
+`corpsDeclare` 2871 · `texteGl` 2885 · `imageGl` 2909 · `imageDressee` 2951
+`socleImage` 2965 · `partage` 2977 · `designeGl` 2983 · `sortie` 2997 · `noteHauteur` 3003
+`anticipeHausses` 3033 · `monteALAppui` 3060 · `rendLAppui` 3073 · `detacheVolume` 3083
+`hauteurEnCours` 3117 · `hauteurHausse` 3123 · `echelleHausse` 3128 · `haussesParId` 3131
+`memesFormes` 3150 · `memesPoints` 3160 · `signeCouleurs` 3167 · `masqueVolumes` 3175
+`aPlat` 3195 · `ombresAuRepos` 3207 · `couchesDeBloc` 3232 · `modelesLibellesHtml` 3351
+`poseModelesLibelles` 3361 · `lisModelesLibelles` 3367 · `groupesNoms` 3400
+`couchesNoms` 3426 · `couchesPastilles` 3442 · `couchesLibellesWebgl` 3459
+`couchesDessineesWebgl` 3512 · `stage` 3533 · `lectureDifferee` 3566 · `survolTrouve` 3606
+`demandeSurvolWebgl` 3612 · `survoleWebgl` 3618 · `brancheSurvolWebgl` 3646
+`poseSurvolWebgl` 3659 · `enTuiles` 3696 · `hauteurTuile` 3709 · `visePour` 3715
+`suisChoisies` 3725 · `gonfleSurvol` 3733 · `coucheTuileSoulevee` 3756
+`couchesTuiles` 3787 · `poseCurseurWebgl` 3800 · `poseFocusWebgl` 3809 · `aplatsDe` 3816
+`coucheSurvol` 3819 · `coucheSurvolVolume` 3844 · `coucheFocus` 3880 · `couchesPhare` 3910
+`lueurDe` 3927 · `opacitePhare` 3965 · `echellePhare` 3966 · `couchesPhareNoms` 3969
+`instant` 3995 · `aUnInstant` 3997 · `animeCouche` 4002 · `majAnimationWebgl` 4022
+`animeWebgl` 4030 · `reanime` 4066 · `logosSurLesToits` 4075 · `objetSous` 4108
+`sansProfondeurDeDesignation` 4129 · `peutDesigner` 4149 · `objetSousDiffere` 4151
+`viseEnAvance` 4171 · `lisObjet` 4179 · `cibleWebgl` 4186 · `priseWebgl` 4196
+`libelleSousWebgl` 4201 · `rectEcranWebgl` 4209 · `rectEcranBoite` 4222
 
 Importe :
 

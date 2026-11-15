@@ -24,6 +24,7 @@ import { appliqueOptions } from "./options.mjs";
 import { appliqueAmbiance } from "./ambiance.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
 import { SVG_REPRIS, svgPeint } from "./svg-de-secours.mjs";
+import { signaleEmplacements } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
 
@@ -118,6 +119,8 @@ export function sousCalques(cle){
    l'affichage du groupe, leur couleur sur une variable CSS. */
 export function styleDataGroupe(nom, on){
   $(nom).style.display = on ? "" : "none";
+  // le dessin ne guette plus ces deux couches : il apprend ici qu'elles s'allument ou s'éteignent
+  if (nom === "stands" || nom === "zones") signaleEmplacements(nom);
   // le liseré du parcours est tracé hors des couches : il ne suit pas tout seul
   if (nom === "stands" || nom === "zones") marqueParcours();
   /* Les marques des nouveaux venus non plus : la couche éteinte, elles

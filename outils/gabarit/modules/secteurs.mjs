@@ -230,6 +230,8 @@ export function peintSecteur(nom){
   if (!secteursMontres()) return;
   const c = couleurConf(confTeinte(nom).couleur);
   for (const t of teintesPosees.values()) if (t.nom === nom) t.c = c;
+  // reposée telle quelle : le modèle compare sa signature, et prévient le dessin
+  poseSecteurs(teintesPosees);
   document.querySelectorAll("#stands g[data-sect], #couches .dcal .sdes[data-sect]")
     .forEach(g => {
       const o = parId.get(g.dataset.id);

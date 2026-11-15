@@ -32,6 +32,7 @@ import { texteCamions } from "./rendu.mjs";
 import { reduitLogo } from "./depot-image.mjs";
 import { detoure } from "./detourage.mjs";
 import { imageSure } from "./sur.mjs";
+import { signaleEmplacements } from "./etat-emplacements.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 /* Le pas de l'angle sous la poignée : un camion se gare droit, ou de biais à
@@ -62,11 +63,12 @@ export function ecritCamions(id, r){
     ...(c.logo ? { logo: c.logo, lr: +(Number(c.lr) || 1).toFixed(3) } : {}) }));
   else delete t[id];
   if (!Object.keys(t).length) delete CONF._foodtrucks;
-  // la zone peut être d'un autre pavillon : chacune se repeint
+  // le dessin lit les camions dans la configuration ; les groupes, pour le rendu de secours
   document.querySelectorAll('#zones g[data-id="' + CSS.escape(String(id)) + '"]').forEach(g => {
     if (r) g.setAttribute("data-foodtrucks", texteCamions(t[id]));
     else g.removeAttribute("data-foodtrucks");
   });
+  signaleEmplacements("zones");
 }
 
 /**
