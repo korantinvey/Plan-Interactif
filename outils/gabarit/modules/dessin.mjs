@@ -26,7 +26,7 @@ import { roleIti } from "./itineraire.mjs";
 import { poseMasqueCarte } from "./environs.mjs";
 import { P_NOM, injecteAuxPolices } from "./polices-plan.mjs";
 import { mesCalques, calqueActif } from "./calques-dessin.mjs";
-import { traceStand, tuilesPosees } from "./ambiance.mjs";
+import { traceStand, tuilesPosees } from "./tuiles.mjs";
 import { cheminForme, estCadre, styleTrait, EPAISSEUR_TRAIT, facteurTrait, pxTrait } from "./chemin-forme.mjs";
 import { PICTOS, pictoForme, nomTypeRepere, modeDit, estTransport, glypheRepere, ligneAffichee,
   couleurRepere, encreRepere } from "./reperes.mjs";

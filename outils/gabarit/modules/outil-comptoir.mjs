@@ -38,7 +38,7 @@ import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { emplacements, groupeEmplacement, poseComptoirEnMain } from "./etat-emplacements.mjs";
-import { traceStand } from "./ambiance.mjs";
+import { traceStand } from "./tuiles.mjs";
 
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, ou de biais
    à quarante-cinq degrés, rarement entre deux. */

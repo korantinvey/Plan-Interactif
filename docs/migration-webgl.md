@@ -119,38 +119,51 @@ emplacement s'il est construit (`groupeEmplacement`). Fait :
 - les outils du comptoir et des food trucks lisent leurs zones dans les
   données.
 
-Reste, avant le pas 3b :
+**Étape 1, pas 3a et 3b — les stands et les zones sortent du SVG caché
+(15 novembre 2026).** Plus rien ne lit leur forme ni leur décor sur leurs
+groupes, et quand le WebGL peint, les groupes ne portent plus de tracé.
 
-- *Fait (15 novembre 2026)* : **la désignation des gestes**. `cibleWebgl` et
-  `viseEnAvance` rendent une désignation — la sorte, la clé et les
-  identifiants de ce qui est visé (`modules/designation.mjs`) — et non plus
-  le groupe peint. `gestes.mjs` et tous ceux qu'il prévient (recherche,
-  cartouche, borne, code « Vous êtes ici », fiche, reprise d'un
-  emplacement) la reçoivent ; le retrait et la mise en avant se jugent au
-  modèle et aux données (`recherche.mjs` `estRetiree`, `cartouche-poi.mjs`
-  `oublieChoixPoi`), plus sur une classe. Le nœud ne se lit plus qu'à deux
-  frontières : le dessin qui traduit ce qu'il a peint, le rendu de secours
-  et le clavier ce que le navigateur a touché. Aucun gain de vitesse
-  attendu : c'est un préalable au pas 3b ;
-- **la désignation et la fiche** (le reste) : `fiche.mjs` (`noeud`, la
-  géométrie que `ouvre` cadre, `rangSociete`, `canalPlan`), `dessin.mjs`
-  `decoupeStand` (les ajouts liés), `reprise-emplacements.mjs` (sa visée et
-  `.geopick`), le curseur du survol, `rectEcranWebgl` — la désignation devra
-  rendre une clé et non un élément ;
-- **le dessin lui-même** (`webgl.mjs`) : convertir les stands et les zones
-  depuis les données plutôt que depuis leurs groupes, avec ce que `formeGl`
-  lit encore sur l'élément — hauteur des volumes (`hauteurVolume`,
-  `noteHauteur`, que les logos relisent), stand choisi monté (`CHOISI`),
-  `standDeLaMarque`, les tuiles choisies ;
-- **le décor des zones** : type, comptoir, camions, estrade et leur choix,
-  que le dessin relit en attributs du groupe (`meubleZone`) et que
-  `reglage-comptoir.mjs`, `reglage-foodtrucks.mjs` et `fiche-zone.mjs`
-  écrivent — à lire dans la configuration et le modèle ;
-- **les distinctions et le parcours**, qui lisent le tracé et la boîte des
-  stands sur leurs groupes ;
-- **la couche accessible** qui remplace les boutons des stands ;
-- **les essais** qui comptent ou visent les groupes (`plan.spec.js`,
-  `survol.spec.js`, `visite.spec.js`, `aide.js` `standAViser`…).
+- **La désignation des gestes.** `cibleWebgl` et `viseEnAvance` rendent une
+  désignation — la sorte, la clé et les identifiants de ce qui est visé
+  (`modules/designation.mjs`) — et non plus le groupe peint. `gestes.mjs` et
+  tous ceux qu'il prévient (recherche, cartouche, borne, code « Vous êtes
+  ici », fiche, reprise d'un emplacement) la reçoivent ; le retrait et la
+  mise en avant se jugent au modèle et aux données (`recherche.mjs`
+  `estRetiree`, `cartouche-poi.mjs` `oublieChoixPoi`).
+- **La fiche, les distinctions, le parcours.** La fiche trouve l'emplacement
+  qu'elle allume et la boîte d'où elle s'étire dans les données
+  (`etat-emplacements.mjs` `emplacementPour`, `ajoutLie`, `boiteEmplacement`,
+  projetée par `webgl.mjs` `rectEcranBoite`) ; `decoupeStand` ne cherche plus
+  que les stands dessinés. Les distinctions relèvent tracé et boîte sur
+  `traceStand(s.d)` ; le parcours trace ses liserés sur les données — ce qui
+  est retenu remplace la classe `enparcours`, la teinte d'une tuile choisie
+  vient de `styleEmplacement`. Les halos de la chaleur et les logos lisent
+  aussi les données.
+- **Le dessin.** `webgl.mjs` peint chaque emplacement depuis ses données
+  (`donneeDuGroupe`, `emplacementGl`, `formeEmplacementGl`) : tracé de
+  l'ambiance, hauteur du volume (libre, masquée, choisie au modèle), décor
+  dans la configuration (comptoir, camions, estrade), outil que tient
+  l'exploitant au modèle (`poseComptoirEnMain`, `poseCamionEnMain`).
+  `formeGl` ne garde que les formes des calques, à plat. Une forme retouchée
+  prévient le dessin (`FORME_CHANGEE`) : rien ne bouge plus dans le groupe
+  pour que le guet la voie.
+- **Les groupes sans tracé.** `svg-de-secours.mjs` (l'ancien
+  `habillage-svg.mjs`) dit si le SVG peint le plan ; `rendu.mjs` ne pose le
+  tracé d'un groupe qu'alors, et le rend à tous les groupes si le SVG reprend
+  la main. L'essai `svg-de-secours.spec.js` le vérifie, perte de la carte
+  graphique comprise.
+
+*Décision (15 novembre 2026) : les groupes vides restent la couche
+accessible.* Chaque emplacement garde son groupe, sans tracé : nommé,
+focalisable, c'est ce que le clavier parcourt et ce que lit la lecture
+d'écran, et la poignée par laquelle le dessin désigne un emplacement et fait
+monter son volume. Une couche à part, en HTML, aurait refait tout cela pour
+le même résultat. Le dessin n'y lit plus que la clé et le focus.
+
+Ce qui reste du SVG pour les stands n'est donc plus que du signal : les
+écrivains de l'état posent encore leur classe ou leur attribut sur le
+groupe, et c'est ainsi que le guet prévient le dessin. Le remplacer par des
+événements du modèle relève du retrait du lecteur (étape 5).
 
 **Étape 2 — les surcouches, autrement que les stands.** Leur gain de
 performance est négligeable : quelques dizaines d'éléments. Reprendre leurs
@@ -199,7 +212,7 @@ source, et des règles en moins dans la feuille.
   lit donc toujours dans le style calculé (`parcoursGl`), et l'étape 2 est
   close.
 
-**Décision (14 novembre 2026) : les groupes des stands restent.** Mesurés,
+**Décision (14 novembre 2026), revue le 15 : les groupes des stands restent.** Mesurés,
 les stands et les zones ne font que 6 à 8 % du SVG caché de SMCL (500 à 900
 éléments par pavillon), contre 89 à 93 % pour l'habillage de Klipso. Depuis
 les pas 1 et 2, le dessin n'y lit plus ni le style ni l'état décidé par la
@@ -208,7 +221,9 @@ le deuxième pas) ; ils restent la couche de désignation, de clavier et de
 lecteur d'écran, et le repli SVG.
 Les retirer — désignation par clé, fiche, décor des zones, distinctions,
 parcours, couche accessible — n'en vaut la peine que si la maintenance le
-demande un jour. On est passé à l'habillage.
+demande un jour. On est passé à l'habillage. Le 15 novembre, la migration a
+été menée à son terme (voir plus haut, pas 3a et 3b) : les groupes sont
+restés, vidés de leur tracé.
 
 **Étape 3 — l'habillage de Klipso (14 novembre 2026).**
 
@@ -222,7 +237,7 @@ demande un jour. On est passé à l'habillage.
   47 920 formes (SMCL tel quel) et 37 703 (avec des réglages d'exploitant) :
   toutes identiques.
 - *Second pas* : quand le WebGL peint, le SVG caché ne porte plus
-  l'habillage (`modules/habillage-svg.mjs`). Le dessin le lui rend s'il lui
+  l'habillage (`modules/habillage-svg.mjs`, devenu `svg-de-secours.mjs`). Le dessin le lui rend s'il lui
   rend la main — dessin trop long à venir, carte graphique perdue — et
   `apparence.mjs` remplit alors les calques montrés. Une signature du
   réglage, posée sur le groupe du calque, prévient le dessin quand

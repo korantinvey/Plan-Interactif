@@ -24,7 +24,7 @@ import { conf } from "./configuration.mjs";
 import { emplacements, etatEmplacement, estChoisi } from "./etat-emplacements.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { couleurGl } from "./trace.mjs";
-import { traceStand } from "./ambiance.mjs";
+import { traceStand } from "./tuiles.mjs";
 
 /* Ce que la liste fait faire au reste du plan — le tiroir qui la montre, les
    rappels qui en dépendent —, que ce module ne peut importer : tous deux

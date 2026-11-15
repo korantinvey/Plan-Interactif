@@ -40,7 +40,7 @@ import { poseCalqueActif } from "./calques-dessin.mjs";
 import { construitPanneau, ordonneDom } from "./ordre-trace.mjs";
 import { injecteAuxPolices } from "./polices-plan.mjs";
 import { dessineDessins } from "./dessin.mjs";
-import { traceStand } from "./ambiance.mjs";
+import { traceStand } from "./tuiles.mjs";
 import { CONF } from "./configuration.mjs";
 import { reglageComptoirValide, reglageCamionsValide, COTES_ESTRADE } from "./decor.mjs";
 import { SVG_REPRIS, svgPeint } from "./svg-de-secours.mjs";

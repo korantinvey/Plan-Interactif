@@ -27,7 +27,7 @@ import { DATA, state, societes } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
-import { rayonTuile, traceStand } from "./ambiance.mjs";
+import { rayonTuile, traceStand } from "./tuiles.mjs";
 import { anneauxGeo, boiteAnneaux } from "./forme.mjs";
 import { emplacements, estRetire } from "./etat-emplacements.mjs";
 import { suitLaRacine } from "./jetons-racine.mjs";
@@ -141,7 +141,7 @@ function traceDist(mode, d, b, rang, deuxLiseres, teinte){
   if (mode === "corne"){
     /* Sur une tuile, l'angle est arrondi : une corne droite en dépassait d'un
        triangle posé dans le vide. Elle suit donc l'arrondi du coin, du même
-       rayon que la tuile (`ambiance.mjs` `rayonTuile`), et s'allonge
+       rayon que la tuile (`tuiles.mjs` `rayonTuile`), et s'allonge
        d'autant pour rester lisible. */
     if (tuiles){
       const r = rayonTuile(k.lu, k.lv), cc = Math.max(c, r * 1.7);

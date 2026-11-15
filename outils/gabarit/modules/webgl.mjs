@@ -42,7 +42,7 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement, groupeEmplacement, cleDuGroupe, donneeDuGroupe, estChoisi, comptoirEnMain, camionEnMain,
   boiteEmplacement, FORME_CHANGEE } from "./etat-emplacements.mjs";
-import { traceStand } from "./ambiance.mjs";
+import { traceStand } from "./tuiles.mjs";
 import { designe } from "./designation.mjs";
 import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
@@ -1945,7 +1945,7 @@ const estEmplacement = (/** @type {Element} */ el) => {
     !el.hasAttribute("transform");
 };
 /* Un stand ou une zone se peint depuis ses données : son tracé tel que
-   l'ambiance le dessine (`ambiance.mjs` `traceStand`), son état au modèle
+   l'ambiance le dessine (`tuiles.mjs` `traceStand`), son état au modèle
    (`etat-emplacements.mjs`), son style par `style-emplacements.mjs`, son décor
    dans la configuration. Son groupe n'est plus que sa poignée — ce que la
    désignation rend, ce que le clavier focalise, ce par quoi un volume monte

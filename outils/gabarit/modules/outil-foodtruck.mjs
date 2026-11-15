@@ -37,7 +37,7 @@ import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { emplacements, groupeEmplacement, poseCamionEnMain } from "./etat-emplacements.mjs";
-import { traceStand } from "./ambiance.mjs";
+import { traceStand } from "./tuiles.mjs";
 
 const PAS_ANGLE = 5;
 /* Ce que la main parcourt, en pixels, avant que le camion la suive : un appui

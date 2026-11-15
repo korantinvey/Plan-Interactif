@@ -256,25 +256,22 @@ Importé par :
 
 edition · enregistrement · gestes-admin · outil-dessin · reprise-emplacements
 
-### `modules/ambiance.mjs` — 225 l. → plan, plan-admin
+### `modules/ambiance.mjs` — 132 l. → plan, plan-admin
 
 - l.1 · L'ambiance du plan — Classique, Tuiles, Immersif
 
 Fonctions :
 
-`figurantsRetenus` 61 · `nomsAPlatRetenus` 68 · `logosRetenus` 74 · `capRetenu` 79
-`ambianceRetenue` 86 · `anneaux` 92 · `f3` 104 · `rayonTuile` 131 · `retire` 136
-`arrondi` 151 · `traceStand` 178 · `tuilesPosees` 183 · `essaieAmbiance` 188
-`appliqueAmbiance` 193
+`figurantsRetenus` 62 · `nomsAPlatRetenus` 69 · `logosRetenus` 75 · `capRetenu` 80
+`ambianceRetenue` 87 · `essaieAmbiance` 95 · `appliqueAmbiance` 100
 
 Importe :
 
-camera · configuration · donnees · figurants · logos-stands · salon
+camera · configuration · donnees · figurants · logos-stands · salon · tuiles
 
 Importé par :
 
-apparence · choix-ambiance · dessin · distinctions · outil-comptoir · outil-foodtruck
-parcours · rendu · volets · webgl
+apparence · choix-ambiance · volets
 
 ### `modules/apercus.mjs` — 329 l. → plan-admin
 
@@ -883,9 +880,9 @@ Fonctions :
 
 Importe :
 
-ambiance · calques-dessin · cartouche-poi · chemin-forme · configuration · dom · donnees
-ecran · environs · filtre · forme-choisie · itineraire · mode-admin · nom-emplacement
-ordre-trace · polices-plan · reperes · secteurs · texte · texte-plan · vue
+calques-dessin · cartouche-poi · chemin-forme · configuration · dom · donnees · ecran
+environs · filtre · forme-choisie · itineraire · mode-admin · nom-emplacement · ordre-trace
+polices-plan · reperes · secteurs · texte · texte-plan · tuiles · vue
 
 Importé par :
 
@@ -927,8 +924,8 @@ Fonctions :
 
 Importe :
 
-ambiance · configuration · corps-fiche · couleurs · dom · donnees · etat-emplacements
-forme · jetons-racine · texte
+configuration · corps-fiche · couleurs · dom · donnees · etat-emplacements · forme
+jetons-racine · texte · tuiles
 
 Importé par :
 
@@ -2342,8 +2339,8 @@ Fonctions :
 
 Importe :
 
-ambiance · camera · configuration · decor · etat-emplacements · geste-tenu · mode-admin
-trace · vue
+camera · configuration · decor · etat-emplacements · geste-tenu · mode-admin · trace
+tuiles · vue
 
 Importé par :
 
@@ -2409,8 +2406,8 @@ Fonctions :
 
 Importe :
 
-ambiance · camera · configuration · decor · etat-emplacements · geste-tenu · mode-admin
-outil-comptoir · reglage-foodtrucks · vue
+camera · configuration · decor · etat-emplacements · geste-tenu · mode-admin
+outil-comptoir · reglage-foodtrucks · tuiles · vue
 
 Importé par :
 
@@ -2480,9 +2477,8 @@ Fonctions :
 
 Importe :
 
-ambiance · configuration · couleurs · dom · donnees · etat-emplacements · evenement
-jetons-racine · mesure · salon · style-emplacements · temps · texte · tiroirs-exclusifs
-trace
+configuration · couleurs · dom · donnees · etat-emplacements · evenement · jetons-racine
+mesure · salon · style-emplacements · temps · texte · tiroirs-exclusifs · trace · tuiles
 
 Importé par :
 
@@ -2969,10 +2965,10 @@ Fonctions :
 
 Importe :
 
-ambiance · apparence · bandes · calques-dessin · configuration · decor · dessin
-distinctions · dom · donnees · etat-emplacements · evenement · mode-admin · ordre-trace
-parcours · polices-plan · recherche · salon · svg-de-secours · texte · tiroirs-exclusifs
-trace-itineraire · vous-etes-ici · vue
+apparence · bandes · calques-dessin · configuration · decor · dessin · distinctions · dom
+donnees · etat-emplacements · evenement · mode-admin · ordre-trace · parcours · polices-plan
+recherche · salon · svg-de-secours · texte · tiroirs-exclusifs · trace-itineraire · tuiles
+vous-etes-ici · vue
 
 Importé par :
 
@@ -3663,6 +3659,20 @@ Importé par :
 
 itineraire · trajet
 
+### `modules/tuiles.mjs` — 112 l. → plan, plan-admin
+
+- l.1 · Le tracé des tuiles — des stands aux coins arrondis, détachés
+
+Fonctions :
+
+`anneaux` 17 · `f3` 29 · `rayonTuile` 57 · `retire` 62 · `arrondi` 77 · `traceStand` 104
+`tuilesPosees` 109 · `poseTuiles` 112
+
+Importé par :
+
+ambiance · dessin · distinctions · outil-comptoir · outil-foodtruck · parcours · rendu
+webgl
+
 ### `modules/tutoriel.mjs` — 1083 l. → plan, plan-admin
 
 - l.1 · La visite guidée — le tour du plan, geste par geste
@@ -3869,11 +3879,11 @@ Fonctions :
 
 Importe :
 
-affichage · ambiance · calque-detache · camera · chemin-forme · configuration · couleurs
-decor · densite-rendu · designation · dom · donnees · erreurs · etat-emplacements
-evenement · figurants · itineraire · libelle-place · logos-stands · moteur-gl · reperes
+affichage · calque-detache · camera · chemin-forme · configuration · couleurs · decor
+densite-rendu · designation · dom · donnees · erreurs · etat-emplacements · evenement
+figurants · itineraire · libelle-place · logos-stands · moteur-gl · reperes
 style-attributs · style-emplacements · style-habillage · sur · svg-de-secours · trace
-vue-etat
+tuiles · vue-etat
 
 Importé par :
 
