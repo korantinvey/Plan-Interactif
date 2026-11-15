@@ -43,6 +43,8 @@ import { dessineDessins } from "./dessin.mjs";
 import { traceStand } from "./ambiance.mjs";
 import { CONF } from "./configuration.mjs";
 import { reglageComptoirValide, reglageCamionsValide, COTES_ESTRADE } from "./decor.mjs";
+import { SVG_REPRIS, svgPeint } from "./svg-de-secours.mjs";
+import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
 
 /* Ce que le montage annonce, et que seule l'administration écoute — l'éditeur
    remis au repos (`outil-dessin.mjs`), la nappe de la grille (`nappe.mjs`), le
@@ -113,7 +115,13 @@ function attributEstrade(/** @type {string} */ id){
    Une zone ajoutée à la main porte, comme un stand, son identifiant dans
    « data-aj » : c'est le seul attribut par lequel la reprise de forme
    (`groupeGeo`) retrouve un ajout. Sans lui, la forme retouchée
-   s'enregistrait mais le tracé restait à sa taille de naissance. */
+   s'enregistrait mais le tracé restait à sa taille de naissance.
+
+   Le groupe ne porte son tracé que si le SVG peint le plan
+   (`svg-de-secours.mjs`) : quand le WebGL peint, il le lit dans les données,
+   et le groupe n'est plus que ce que le clavier parcourt, que la lecture
+   d'écran nomme, et par quoi le dessin désigne l'emplacement. */
+const traceSiPeint = (/** @type {string} */ d) => svgPeint() ? '<path d="' + traceStand(d) + '"/>' : "";
 export const baliseZone = (z) =>
   '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + esc(z.id) + '"' +
   (z.ajout ? ' data-aj="' + esc(z.id) + '"' : "") +
@@ -129,7 +137,7 @@ export const baliseZone = (z) =>
   // le côté de l'estrade d'une salle de conférence
   attributEstrade(z.id) +
   ' tabindex="0" role="button" aria-label="' +
-  esc(z.nom || "zone") + '"><path d="' + traceStand(z.d) + '"/></g>';
+  esc(z.nom || "zone") + '">' + traceSiPeint(z.d) + '</g>';
 /* Un stand ajouté à la main porte son identifiant propre dans « data-aj » :
    c'est par lui que la reprise de forme le retrouve. Lié à un exposant, il
    prend en « data-id » et « data-soc » l'emplacement et le rang de la société
@@ -143,7 +151,21 @@ export const baliseStand = (s) =>
      quand les stands montent (`webgl.mjs`), et rien d'autre ne le lit. */
   (!s.nom && !s.lien ? ' data-libre=""' : "") +
   ' tabindex="0" role="button" aria-label="' +
-  esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + traceStand(s.d) + '"/></g>';
+  esc(s.nom || ("Stand " + (s.code || ""))) + '">' + traceSiPeint(s.d) + '</g>';
+
+/* Le SVG reprend la main — un dessin trop long à venir, une carte graphique
+   perdue : chaque groupe retrouve son tracé, en premier enfant, là où
+   l'ambiance le retrace (`ambiance.mjs` `appliqueAmbiance`). Les groupes
+   gardent ainsi ce que la page leur a posé depuis le montage. */
+SVG_REPRIS.ecoute(() => {
+  for (const e of emplacements()){
+    const g = groupeEmplacement(e.cle);
+    if (!g || !e.source.d || (g.firstElementChild && g.firstElementChild.localName === "path")) continue;
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    t.setAttribute("d", traceStand(e.source.d));
+    g.prepend(t);
+  }
+});
 
 export function montePlan(){
   const p = P();

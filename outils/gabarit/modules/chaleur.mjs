@@ -195,8 +195,10 @@ export function coloreChaleur(){
       nbChal(n) + (n > 1 ? " consultations" : " consultation");
   };
   /* La boîte se lit une fois par lecture des compteurs, et non à chaque
-     image : le halo suit ensuite la vue sans rien remesurer. Sur le groupe
-     s'il existe ; sinon sur le tracé de l'emplacement. */
+     image : le halo suit ensuite la vue sans rien remesurer. Sur le tracé des
+     données pour un emplacement — son groupe n'en porte plus quand le WebGL
+     peint (`svg-de-secours.mjs`) — ; sur son nœud pour un stand dessiné, qui
+     vit dans son calque. */
   const halo = (/** @type {Element | null} */ g, /** @type {string} */ d, /** @type {number} */ niv, /** @type {string} */ ton) => {
     let b = null;
     if (g) b = /** @type {SVGGraphicsElement} */ (g).getBBox();
@@ -220,7 +222,7 @@ export function coloreChaleur(){
     const niv = on ? niveauChaleur(n, CHALEUR.max) : 0, ton = on ? tonChaleur(niv) : "";
     if (on) couleurs.set(e.cle, ton);
     if (g) marque(g, n, ton, e.id);
-    if (on && halos && n > 0) halo(g, e.source.d, niv, ton);
+    if (on && halos && n > 0) halo(null, e.source.d, niv, ton);
   }
   // les découpages dessinés vivent dans leur calque, et non parmi les emplacements
   document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {

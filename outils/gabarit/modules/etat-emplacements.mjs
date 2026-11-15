@@ -34,17 +34,24 @@
    sinon. Deux groupes portent le même `data-id` quand un ajout matérialise
    l'exposant d'un stand : seule la clé les distingue.
 
-   Ce module n'importe que les données, et la géométrie pure de `forme.mjs` :
-   tous ceux qui l'informent dépendent déjà du dessin, qui le lit.
+   Ce module n'importe que les données, la géométrie pure de `forme.mjs` et
+   les événements : tous ceux qui l'informent dépendent déjà du dessin, qui le
+   lit.
 
-   Il ne prévient encore personne d'un changement : le guet du SVG
-   (`webgl.mjs`) voit la classe que l'écrivain pose en même temps, et ne
-   refait que le bloc qui a bougé. Un événement d'ici, branché sur les deux
-   blocs, les referait tous deux à chaque lettre tapée dans la recherche ; il
-   viendra quand les stands ne seront plus dans le SVG.
+   Il ne prévient le dessin que d'une forme retouchée (`FORME_CHANGEE`) : le
+   groupe ne porte plus de tracé quand le WebGL peint, et rien n'y bouge.
+   Pour le reste, le guet du SVG (`webgl.mjs`) voit la classe ou l'attribut
+   que l'écrivain pose en même temps sur le groupe, et ne refait que le bloc
+   qui a bougé. Un événement d'ici, branché sur les deux blocs, les referait
+   tous deux à chaque lettre tapée dans la recherche.
    ============================================================ */
 import { parId, P } from "./donnees.mjs";
 import { anneauxGeo, boiteAnneaux } from "./forme.mjs";
+import { creeEvenement } from "./evenement.mjs";
+
+/** La forme d'un emplacement vient d'être retouchée (`reprise-emplacements.mjs`) :
+ *  le dessin la relit dans ses données. */
+export const FORME_CHANGEE = creeEvenement();
 
 /**
  * Les emplacements du pavillon affiché, dans l'ordre où le plan pose leurs
@@ -160,6 +167,11 @@ const E = {
   repris: null,
   /** @type {string | null} la clé de la zone que la visite guidée désigne */
   cibleTuto: null,
+  /** @type {string | null} la zone dont l'exploitant tient le comptoir (`outil-comptoir.mjs`) */
+  comptoir: null,
+  /** @type {{ cle: string, i: number } | null} la zone et le rang du camion
+   *  que l'exploitant tient (`outil-foodtruck.mjs`) */
+  camion: null,
 };
 
 export function poseChoisi(/** @type {string | null} */ cle){ E.choisi = cle; }
@@ -169,6 +181,12 @@ export function poseSecteurs(/** @type {Map<string, { h: string, c: string | nul
 export function poseChaleurs(/** @type {Map<string, string> | null} */ couleurs){ E.chaleurs = couleurs; }
 export function poseRepris(/** @type {string | null} */ id){ E.repris = id; }
 export function poseCibleTuto(/** @type {string | null} */ cle){ E.cibleTuto = cle; }
+export function poseComptoirEnMain(/** @type {string | null} */ cle){ E.comptoir = cle; }
+export function poseCamionEnMain(/** @type {{ cle: string, i: number } | null} */ c){ E.camion = c; }
+/** L'exploitant tient-il le comptoir de cette zone ? */
+export const comptoirEnMain = (/** @type {string} */ cle) => E.comptoir === cle;
+/** Le rang du camion de cette zone que l'exploitant tient, ou rien. */
+export const camionEnMain = (/** @type {string} */ cle) => E.camion && E.camion.cle === cle ? E.camion.i : null;
 
 /* Ce que le modèle dit d'une clé, pour qui lisait la classe du groupe : qui
    désigne (`designation.mjs`), la recherche, le cartouche, les marques du
@@ -179,6 +197,20 @@ export const estChoisi = (/** @type {string} */ cle) => E.choisi === cle;
 export const estRetire = (/** @type {string} */ cle) => E.retires.has(cle);
 /** Le cartouche met-il cette zone en avant ? */
 export const estMisEnAvant = (/** @type {string} */ cle) => E.phares.has(cle);
+
+/**
+ * La donnée qu'un groupe du plan désigne — l'ajout lui-même pour un
+ * emplacement ajouté à la main, l'emplacement sinon —, rien s'il n'est pas
+ * celui d'un stand ou d'une zone. C'est par elle que le dessin peint un
+ * emplacement : le groupe ne lui sert que de poignée.
+ * @param {Element} g
+ */
+export function donneeDuGroupe(g){
+  if (!cleDuGroupe(g)) return null;
+  const d = /** @type {SVGElement} */ (g).dataset;
+  const o = parId.get(d.aj || d.id || "");
+  return o && (o.kind === "stand" || o.kind === "zone") ? o : null;
+}
 
 /** La clé d'un groupe du plan, s'il est celui d'un stand ou d'une zone. */
 export function cleDuGroupe(/** @type {Element | null} */ g){

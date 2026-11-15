@@ -10,9 +10,12 @@
  * pour chaque combinaison de ce que la feuille regarde : les classes et les
  * variables du groupe, les états de la racine, les couleurs réglées ou non.
  *
- * Le SVG caché est encore là : c'est lui qui sert de témoin. On n'attend pas
- * la première image du dessin, seulement que la page soit en rendu WebGL — la
- * feuille n'y anime rien (`html.rendu-webgl #plan *`), comme le dessin.
+ * Les groupes du SVG caché servent de témoins. Quand le WebGL peint, ils ne
+ * portent plus de tracé (`svg-de-secours.mjs`) : l'essai leur en pose un, nu,
+ * le temps de lire ce que la feuille lui donnerait — c'est la règle du rendu
+ * de secours qu'on éprouve, et celle-ci ne dépend pas du tracé. On n'attend
+ * pas la première image du dessin, seulement que la page soit en rendu WebGL
+ * — la feuille n'y anime rien (`html.rendu-webgl #plan *`), comme le dessin.
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe } = require("./aide.js");
@@ -59,7 +62,8 @@ function compare() {
       chal: g.hasAttribute("data-chaleur") ? st.getPropertyValue("--chal-c") : null };
   };
   const verifie = (g, etiquette) => {
-    const path = g.querySelector(":scope > path");
+    const path = g.querySelector(":scope > path") ||
+      g.insertBefore(document.createElementNS("http://www.w3.org/2000/svg", "path"), g.firstChild);
     const calcule = lu(getComputedStyle(g).opacity, getComputedStyle(path));
     const st = G.styleEmplacement(etatDuGroupe(g), G.jetonsEmplacements(g.parentNode));
     const resolu = lu(st.opacite, st.trace);

@@ -36,7 +36,7 @@ import { svg, versPlan, vue, cadrePlan } from "./vue.mjs";
 import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
-import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { emplacements, groupeEmplacement, poseCamionEnMain } from "./etat-emplacements.mjs";
 import { traceStand } from "./ambiance.mjs";
 
 const PAS_ANGLE = 5;
@@ -105,6 +105,8 @@ export function choisitFoodtruck(/** @type {{ id: string, i: number } | null} */
   if (avant) avant.removeAttribute("data-foodtruck-choisi");
   choisi = c;
   const e = c ? zoneDe(c.id) : null, g = e && groupeEmplacement(e.cle);
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`) ; l'attribut le lui signale
+  poseCamionEnMain(e && c ? { cle: e.cle, i: c.i } : null);
   if (g) g.setAttribute("data-foodtruck-choisi", String(/** @type {any} */ (c).i));
   if (!e) choisi = null;
 }

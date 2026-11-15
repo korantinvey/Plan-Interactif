@@ -1275,7 +1275,7 @@ export function couchesLogos(...a){
  * La couche des logos : un carré par logo autour de la vue, tous peints
  * d'une planche.
  * @param {any} L la bibliothèque
- * @param {(el: Element) => number} hauteurDe la hauteur du volume d'un tracé de stand
+ * @param {(g: Element) => number} hauteurDe la hauteur du volume d'un stand, par son groupe
  * @param {{ x: number, y: number, w: number, h: number }} v le cadre à plat
  * @param {number} zoom
  * @param {any} [appareil] la carte graphique, telle que la bibliothèque la tient
@@ -1314,8 +1314,9 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
     if (vus.has(s.id)) continue;
     if (!dedans(couvert, s.c)){ grande(s.vignette, true); continue; }
     const [cx, cy] = s.c;
-    const g = groupe(s.id), trace = g && g.firstElementChild;
-    const src = trace && sourceDuToit(s.vignette);
+    // le stand est sur le plan : son groupe, qui ne porte pas de tracé quand le WebGL peint
+    const g = groupe(s.id);
+    const src = g && sourceDuToit(s.vignette);
     if (!src) continue;
     vus.add(s.id);
     voulus.add(src.cle);
@@ -1332,7 +1333,7 @@ function poseLogos(L, hauteurDe, v, zoom, appareil, pointsParMetre = null){
     /* Sur le toit, un rien au-dessus pour ne pas s'y confondre. À plat, au
        sol même : la vue d'en haut tient tout le plan à la hauteur zéro, et
        ce rien suffisait à sortir le logo de ce qu'elle montre. */
-    const z = enVolume ? hauteurDe(trace) + .05 : 0;
+    const z = enVolume ? hauteurDe(g) + .05 : 0;
     /* Mesuré au sol que l'écran montre : un logo des abords prend l'échelle
        du bord le plus proche. Mesuré à sa place, derrière la caméra quand les
        abords y débordent, il rendait une échelle sans fin. */

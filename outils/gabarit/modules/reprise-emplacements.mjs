@@ -59,7 +59,7 @@ import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
 import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
-import { poseRepris, estChoisi, cleEmplacement } from "./etat-emplacements.mjs";
+import { poseRepris, estChoisi, cleEmplacement, FORME_CHANGEE } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
 
@@ -351,9 +351,11 @@ function geometrieOrigine(){
  *  que si l'emplacement en porte un. */
 function retraceGeo(o){
   const g = groupeGeo(o);
-  if (!g) return;
-  const t = g.querySelector("path");
+  // le tracé du rendu de secours, s'il est dans le groupe
+  const t = g && g.querySelector("path");
   if (t) t.setAttribute("d", o.d);
+  // le dessin lit la forme dans les données : rien ne bouge dans le SVG pour le lui dire
+  FORME_CHANGEE.emet();
   // les liserés se relèvent dans les données (`parcours.mjs`) : qui en porte un se retrace
   const id = o.lien ? String(o.lien.stand) : String(o.id);
   if (estRetenuSurLePlan(id) || estChoisi(cleEmplacement(id, o.ajout ? o.id : undefined))) dessineMarques();

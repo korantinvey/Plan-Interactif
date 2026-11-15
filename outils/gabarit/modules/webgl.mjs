@@ -40,16 +40,19 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
-import { etatEmplacement, groupeEmplacement } from "./etat-emplacements.mjs";
+import { etatEmplacement, groupeEmplacement, cleDuGroupe, donneeDuGroupe, estChoisi, comptoirEnMain, camionEnMain,
+  boiteEmplacement, FORME_CHANGEE } from "./etat-emplacements.mjs";
+import { traceStand } from "./ambiance.mjs";
 import { designe } from "./designation.mjs";
 import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
 import { styleParAttributs } from "./style-attributs.mjs";
-import { poseHabillageDansLeSvg } from "./habillage-svg.mjs";
+import { poseSvgPeint } from "./svg-de-secours.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
-import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE } from "./decor.mjs";
+import { meuble, enseignesCamions, TYPES_MEUBLES, objetRepere, OBJETS_REPERE, ECHELLE_PASTILLE,
+  reglageCamionsValide, COTES_ESTRADE } from "./decor.mjs";
 import { placeFigurants, maillagesFigurant, maillageReuni, formesEnTexture, graineDe, TENUES, TEINTS, CHEVEUX, CHAUSSURES, OMBRE, CLASSE_FIGURANTS } from "./figurants.mjs";
 import { grille, PAS_GRILLE, enveloppe as enveloppeDuSalon } from "./itineraire.mjs";
 import { couchesLogos, coucheDeChauffe, logosARevoir, PANNEAU_PRET, LOGO_PRET, CLASSE_LOGOS, geleLogos } from "./logos-stands.mjs";
@@ -275,11 +278,11 @@ function chargeWebgl(){
      secours : bibliothèque introuvable, ou dessin trop long à venir. */
   const racine = document.documentElement;
   racine.classList.add("gl-attente");
-  // le dessin lit l'habillage dans ses données : le SVG caché n'a pas à le porter
-  poseHabillageDansLeSvg(false);
+  // le dessin lit l'habillage et les emplacements dans leurs données : le SVG caché n'a pas à les porter
+  poseSvgPeint(false);
   /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
      attendait l'affichage n'a plus à attendre. */
-  const secours = () => { racine.classList.remove("gl-attente"); poseHabillageDansLeSvg(true); planAffiche(); };
+  const secours = () => { racine.classList.remove("gl-attente"); poseSvgPeint(true); planAffiche(); };
   /* Le secours n'en est un que s'il montre le même plan. En immersif, le SVG
      n'a que les tuiles à plat : montré le temps que les volumes se préparent
      — et c'est le dessin le plus long à venir —, il faisait croire à une
@@ -584,6 +587,13 @@ export function monteWebgl(){
     LOGO_PRET.ecoute(() => {
       if (document.documentElement.classList.contains(CLASSE_LOGOS)) planifieWebgl();
     });
+    /* La forme d'un emplacement retouchée : son groupe ne porte pas de tracé,
+       rien n'y a bougé que le guet verrait. Les deux blocs se relisent. */
+    FORME_CHANGEE.ecoute(() => {
+      if (!GL.actif) return;
+      for (const id of ["stands", "zones"]){ const b = $(id); if (b) GL.sales.add(b); }
+      planifieWebgl();
+    });
     let logosPrets = 0;
     PANNEAU_PRET.ecoute(() => {
       if (logosPrets || !document.documentElement.classList.contains(CLASSE_LOGOS)) return;
@@ -721,8 +731,8 @@ function perdContexteWebgl(raison = "contexte perdu"){
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
-  // le SVG reprend le plan : il lui faut son habillage
-  poseHabillageDansLeSvg(true);
+  // le SVG reprend le plan : il lui faut son habillage et ses tracés
+  poseSvgPeint(true);
   /* Dit tout de suite, et non une fois le dessin jeté : rendre la caméra
      recadre la vue, qui repasse aussitôt par « monteWebgl ». Sans ce drapeau,
      un dessin neuf y naissait, que la suite jetait à la place de l'ancien —
@@ -982,12 +992,24 @@ let posesSurLePlan = null;
 function assembleWebgl(enMouvement = false){
   return aUnInstant(() => assembleCouches(enMouvement));
 }
+/** Les tuiles choisies : l'emplacement que le modèle allume
+ *  (`etat-emplacements.mjs`), et le stand dessiné choisi, qui vit dans son
+ *  calque. */
+function tuilesChoisies(){
+  /** @type {Set<Element>} */
+  const out = new Set(document.querySelectorAll(".dcal .sdes.sel"));
+  for (const hote of [$("stands"), $("zones")]) if (hote) for (const g of hote.children){
+    const cle = cleDuGroupe(g);
+    if (cle && estChoisi(cle)){ out.add(g); return out; }
+  }
+  return out;
+}
 function assembleCouches(/** @type {boolean} */ enMouvement){
   const out = [];
   /* Une seule fois, et non pour chacun des blocs : sur tout le document,
      cette recherche a coûté plus d'une seconde en quinze de survol en vue
      immersive (trace du 13 octobre 2026). */
-  const choisies = enTuiles() ? new Set(document.querySelectorAll("#stands > g.sel, #zones > g.sel, .dcal .sdes.sel")) : new Set();
+  const choisies = enTuiles() ? tuilesChoisies() : new Set();
   suisChoisies(choisies);
   for (const b of blocsDansLOrdre()){
     if (b.id === "labels"){
@@ -1922,22 +1944,67 @@ const estEmplacement = (/** @type {Element} */ el) => {
   return el.localName === "g" && !!p && (/** @type {Element} */ (p).id === "stands" || /** @type {Element} */ (p).id === "zones") &&
     !el.hasAttribute("transform");
 };
+/* Un stand ou une zone se peint depuis ses données : son tracé tel que
+   l'ambiance le dessine (`ambiance.mjs` `traceStand`), son état au modèle
+   (`etat-emplacements.mjs`), son style par `style-emplacements.mjs`, son décor
+   dans la configuration. Son groupe n'est plus que sa poignée — ce que la
+   désignation rend, ce que le clavier focalise, ce par quoi un volume monte
+   (`hausses`) — et ne porte plus de tracé quand le WebGL peint
+   (`svg-de-secours.mjs`). On n'y lit que sa clé et le focus du clavier, que
+   seul le navigateur connaît. */
 function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
-  // l'état vient de ceux qui le décident (`etat-emplacements.mjs`), et non des classes du groupe
+  const o = donneeDuGroupe(g);
+  if (!o || !o.d) return;
   const d = /** @type {SVGElement} */ (g).dataset;
-  const etat = etatEmplacement(d.id, d.aj, g.classList.contains("zone"), g.matches(":focus-visible"));
+  const etat = etatEmplacement(d.id, d.aj, o.kind === "zone", g.matches(":focus-visible"));
   const st = styleEmplacement(etat, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
   op *= st.opacite;
   if (!(op > .003)) return;
-  for (const c of g.children){
-    const tag = c.localName;
-    // une bulle d'aide (la carte de chaleur en pose une) ne se dessine pas
-    if (tag === "title" || tag === "desc") continue;
-    if (tag !== "path" || c.hasAttribute("transform") || c.hasAttribute("class") || c.hasAttribute("style")){
-      parcoursGl(c, m, op, acc);
-      continue;
+  formeEmplacementGl(g, o, etat, st.trace, m, op, tracesDe(traceStand(o.d)), acc);
+}
+
+/** Un stand ou une zone, en aplats, volumes, décor et traits. */
+function formeEmplacementGl(/** @type {Element} */ g, /** @type {any} */ o,
+  /** @type {ReturnType<typeof etatEmplacement>} */ etat, /** @type {any} */ cs, /** @type {number[]} */ m,
+  /** @type {number} */ op, /** @type {any[]} */ traces, /** @type {any} */ acc){
+  // une zone que le cartouche met en avant bat à part (`couchesPhare`)
+  if (etat.phare && acc.phares){
+    if (!acc.phares.has(g)) acc.phares.set(g, accVide(acc.prises));
+    acc = acc.phares.get(g);
+  }
+  const zone = o.kind === "zone";
+  const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
+  if (plein){
+    const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map((/** @type {number[]} */ p) => appM(m, p)));
+    const haut = hauteurVolume(g, anneaux);
+    /* Le volume choisi s'allume : monté devant un stand de même couleur, il
+       s'en détache au lieu de s'y confondre. */
+    const choisi = haut && etat.sel;
+    const base = haut ? opaque(plein) : plein, couleur = choisi ? eclatant(base) : base;
+    const hausse = haut ? noteHauteur(g, haut) : null;
+    if (choisi && !zone) CHOISI = { id: /** @type {SVGElement} */ (g).dataset.id || "", anneaux, haut };
+    for (const polygon of avecTrous(anneaux)){
+      acc.pleins.push({ polygon, couleur, base, el: g, prise: null, haut, hausse, sur: null });
+      // à plat aussi : vu d'aplomb, le mobilier dit encore ce qu'on fait dans la zone
+      if (haut || !cameraEnJeu()) meubleZone(g, o, polygon, couleur, acc);
     }
-    formeGl(c, st.trace, m, op, tracesDe(c.getAttribute("d") || ""), acc);
+  }
+  const trait = couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) * op);
+  const sw = parseFloat(cs.strokeWidth);
+  if (trait && sw > 0){
+    // les deux traits du plan sont d'épaisseur fixe à l'écran (`style-emplacements.mjs`)
+    const fixe = cs.vectorEffect === "non-scaling-stroke";
+    const largeur = fixe ? sw : sw * echelleM(m);
+    const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
+      ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
+    // la bibliothèque mesure les tirets en demi-épaisseurs de trait
+    const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
+    for (const t of traces){
+      if (t.pts.length < 2) continue;
+      const path = t.pts.map((/** @type {number[]} */ p) => appM(m, p));
+      if (t.ferme) path.push(path[0]);
+      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: g, prise: null, sur: null });
+    }
   }
 }
 
@@ -2170,8 +2237,7 @@ const auDessusDuSol = (el) => !GL.camera ? 0 : el.closest("#itin") ? SOL_ITINERA
 const AU_DESSUS_DU_TOIT = .02;
 function surSonStand(/** @type {Element} */ el){
   const g = standDeLaMarque(el);
-  const trace = g && g.firstElementChild;
-  return trace ? hauteurVolume(trace) + AU_DESSUS_DU_TOIT : 0;
+  return g ? hauteurVolume(g) + AU_DESSUS_DU_TOIT : 0;
 }
 /** Le stand qu'une marque de distinction désigne, ou rien. */
 function standDeLaMarque(/** @type {Element} */ el){
@@ -2203,23 +2269,25 @@ function marquesSurLesToits(/** @type {any} */ c){
   return c;
 }
 
-function hauteurVolume(el, anneaux){
-  if (!cameraEnJeu()) return 0;
-  const g = el.parentNode;
-  if (!g || !g.classList || g.firstElementChild !== el) return 0;
-  const stand = g.classList.contains("stand"), zone = g.classList.contains("zone");
-  if (!stand && !zone) return 0;
-  if (stand && g.hasAttribute("data-libre")) return HAUTEUR_LIBRE;
-  if (zone && g.classList.contains("masquee")) return 0;
+/** La hauteur du volume d'un stand ou d'une zone, d'après son groupe — sa
+ *  poignée — et ses données ; rien pour ce qui n'est pas un emplacement. */
+function hauteurVolume(/** @type {Element | null} */ g, /** @type {number[][][] | undefined} */ anneaux){
+  if (!cameraEnJeu() || !g) return 0;
+  const o = donneeDuGroupe(g);
+  if (!o) return 0;
+  const zone = o.kind === "zone";
+  // un emplacement que personne n'occupe (`rendu.mjs` `baliseStand`)
+  if (!zone && !o.nom && !o.lien) return HAUTEUR_LIBRE;
+  if (zone && o.masquee) return 0;
   /* Un trajet tracé : tout s'abaisse, sauf où il part, s'arrête et arrive. */
-  if (boutsDuTrajet() && !zoneMeublee(g) && !resteDebout(g, anneaux)) return HAUTEUR_ABAISSEE;
+  if (boutsDuTrajet() && !zoneMeublee(o) && !resteDebout(g, anneaux)) return HAUTEUR_ABAISSEE;
   /* Ce qu'on a choisi se hausse au-dessus des autres : vu de biais, un liseré
      au pied d'un volume ne se voyait plus, et c'est pourtant lui qu'on cherche
      des yeux en ouvrant sa fiche. */
   /* Une zone que le décor sait meubler n'est plus qu'un sol teinté : c'est
      son mobilier qui monte, et un bloc d'un mètre le cacherait. */
-  const h = stand ? HAUTEUR_STAND : zoneMeublee(g) ? SOL_MEUBLE : HAUTEUR_ZONE;
-  return g.classList.contains("sel") ? h * HAUSSE_CHOIX : h;
+  const h = !zone ? HAUTEUR_STAND : zoneMeublee(o) ? SOL_MEUBLE : HAUTEUR_ZONE;
+  return estChoisi(cleDuGroupe(g) || "") ? h * HAUSSE_CHOIX : h;
 }
 
 /* ------------------------------------------------------------
@@ -2235,8 +2303,8 @@ function hauteurVolume(el, anneaux){
    mobilier peint par-dessus.
    ------------------------------------------------------------ */
 const SOL_MEUBLE = .12;
-const zoneMeublee = (/** @type {Element} */ g) =>
-  g.classList.contains("zone") && TYPES_MEUBLES.includes(g.getAttribute("data-type") || "");
+const zoneMeublee = (/** @type {any} */ o) =>
+  o.kind === "zone" && TYPES_MEUBLES.includes(o.type || "");
 /** @type {Record<string, number[]>} */
 const TONS_DECOR = {
   plateau: [250, 249, 244, 255], comptoir: [250, 249, 244, 255],
@@ -2447,39 +2515,42 @@ function couchesJetons(/** @type {Map<Element, any>} */ jetons, /** @type {strin
     : c.clone({ modelMatrix }));
   return out;
 }
-function meubleZone(el, polygon, couleur, acc){
-  const g = el.parentNode;
-  if (!g || !g.classList || g.firstElementChild !== el || !zoneMeublee(g)
-    || g.classList.contains("masquee") || !polygon || !polygon[0]) return;
+function meubleZone(/** @type {Element} */ g, /** @type {any} */ o, /** @type {number[][][]} */ polygon,
+  /** @type {number[]} */ couleur, /** @type {any} */ acc){
+  if (!zoneMeublee(o) || o.masquee || !polygon || !polygon[0]) return;
   const assise = [0, 1, 2].map(i => Math.round(couleur[i] * .62)).concat(255);
-  const type = g.getAttribute("data-type") || "";
-  /* Le réglage à la main : le comptoir d'un accueil, ou les camions d'un
-     foodtruck (`rendu.mjs` `texteCamions`). L'outil ne se tient qu'en
-     immersif : à plat, ni bleu ni poignée. */
-  let reglage, enMain;
+  const type = o.type || "", cle = cleDuGroupe(g) || "";
+  /* Le réglage à la main, lu dans la configuration : le comptoir d'un
+     accueil, les camions d'un foodtruck, l'estrade d'une salle — chacun copié,
+     le décor s'en servant de brouillon. L'outil qui le tient se lit au modèle
+     (`etat-emplacements.mjs`), et ne se tient qu'en immersif : à plat, ni
+     bleu ni poignée. Les réglages et les outils signalent encore leur
+     changement par un attribut du groupe (`rendu.mjs`), que le guet voit. */
+  /** @type {any} */
+  let reglage = null;
+  /** @type {boolean | number} le comptoir tenu, ou le rang du camion tenu */
+  let enMain = false;
   if (type === "foodtruck"){
-    const t = g.getAttribute("data-foodtrucks");
-    reglage = t === null ? null : t.split(";").filter(Boolean).map(c => {
-      const [u, v, a] = c.split(" ").map(Number);
-      return { u, v, a };
-    });
-    const i = g.getAttribute("data-foodtruck-choisi");
-    enMain = cameraEnJeu() && i !== null ? Number(i) : false;
+    const r = (CONF._foodtrucks || {})[o.id];
+    reglage = reglageCamionsValide(r) ? r.map((/** @type {any} */ c) => ({ u: c.u, v: c.v, a: c.a })) : null;
+    const i = camionEnMain(cle);
+    enMain = cameraEnJeu() && i !== null ? i : false;
   } else if (type === "conferences"){
     // le côté de l'estrade, choisi dans la fiche de la zone (`fiche-zone.mjs`)
-    reglage = g.getAttribute("data-estrade");
+    const c = (CONF._estrades || {})[o.id];
+    reglage = Object.hasOwn(COTES_ESTRADE, c) ? c : null;
   } else {
-    const [u, v, a] = (g.getAttribute("data-comptoir") || "").split(" ").map(Number);
-    reglage = { u, v, a };
-    enMain = cameraEnJeu() && g.hasAttribute("data-comptoir-choisi");
+    // un réglage qui ne tient pas : le comptoir d'office (`decor.mjs` `comptoir`)
+    const r = (CONF._comptoirs || {})[o.id];
+    reglage = r ? { u: r.u, v: r.v, a: r.a } : null;
+    enMain = cameraEnJeu() && comptoirEnMain(cle);
   }
   for (const p of meuble(type, polygon[0], reglage, enMain))
     acc.decor.push({ polygon: p.polygon, haut: p.haut, couleur: TONS_DECOR[p.role] || assise });
-  /* Les logos des camions : trop lourds pour l'attribut, qui n'en porte que
-     la trace pour qu'un logo changé repeigne la zone, ils se lisent dans la
-     configuration — relus, puisqu'elle a voyagé par la base. */
+  /* Les logos des camions, relus : la configuration a voyagé par la base, et
+     ce qui vient d'ailleurs repasse par `imageSure`. */
   if (type === "foodtruck" && reglage){
-    const conf = (CONF._foodtrucks || {})[g.getAttribute("data-id") || ""];
+    const conf = (CONF._foodtrucks || {})[o.id];
     if (Array.isArray(conf)) reglage.forEach((/** @type {any} */ r, /** @type {number} */ i) => {
       const c = conf[i], logo = c && imageSure(c.logo);
       if (logo){ r.logo = logo; r.lr = Number(c.lr); }
@@ -2727,21 +2798,15 @@ function formeGl(el, cs, m, op, traces, acc){
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(PRISES), haut = hauteurVolume(el, anneaux);
-    /* Le volume choisi s'allume : monté devant un stand de même couleur, il
-       s'en détache au lieu de s'y confondre. */
-    const choisi = haut && el.parentNode.classList.contains("sel");
-    const base = haut ? opaque(plein) : plein, couleur = choisi ? eclatant(base) : base;
-    const hausse = haut ? noteHauteur(el.parentNode, haut) : null;
-    if (choisi && el.parentNode.classList.contains("stand"))
-      CHOISI = { id: el.parentNode.getAttribute("data-id") || "", anneaux, haut };
+    /* Les volumes, le choix qui s'allume et le décor sont aux emplacements
+       (`formeEmplacementGl`) : une forme des calques reste à plat. */
+    const prise = el.closest(PRISES), couleur = plein;
     const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
     for (const polygon of avecTrous(anneaux)){
       poseJeton(el, polygon, couleur, acc);
       const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
-      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base, el: cible, prise, haut, hausse, sur });
-      // à plat aussi : vu d'aplomb, le mobilier dit encore ce qu'on fait dans la zone
-      if (haut || !cameraEnJeu()) meubleZone(el, polygon, couleur, acc);
+      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base: couleur, el: cible,
+        prise, haut: 0, hausse: null, sur });
     }
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
@@ -2890,7 +2955,7 @@ function socleImage(/** @type {Element} */ el){
   const lie = el.closest("[data-id]");
   if (!lie) return 0;
   const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(lie.getAttribute("data-id") || "") + '"]');
-  return g && g.firstElementChild ? hauteurVolume(g.firstElementChild) + .02 : 0;
+  return g ? hauteurVolume(g) + .02 : 0;
 }
 
 /* Une forme qui ne désigne rien laisse passer le clic, comme en SVG où les
@@ -2960,9 +3025,9 @@ function anticipeHausses(notes){
   for (const n of notes){
     const g = n.target;
     if (n.type !== "attributes" || n.attributeName !== "class" || vus.has(g)) continue;
-    if (!g.classList || !(g.classList.contains("stand") || g.classList.contains("zone"))) continue;
+    if (!cleDuGroupe(g)) continue;
     vus.add(g);
-    const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+    const haut = hauteurVolume(g);
     if (!haut || hauteursPeintes.get(g) === haut) continue;
     const h = noteHauteur(g, haut);
     if (h) detacheVolume(g, h);
@@ -2987,8 +3052,8 @@ let _monteALAppui = null;
 export function monteALAppui(/** @type {import("./designation.mjs").Designation | null | undefined} */ cible){
   if (!GL.actif || !GL.camera || !cible || (cible.sorte !== "stand" && cible.sorte !== "zone")) return;
   const g = groupeEmplacement(cible.cle);
-  if (!g || g.classList.contains("sel")) return;
-  const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+  if (!g || estChoisi(cible.cle)) return;
+  const haut = hauteurVolume(g);
   // un emplacement libre, ou un stand abaissé sous un trajet, ne monte pas au choix
   if (!haut || haut === HAUTEUR_LIBRE || haut === HAUTEUR_ABAISSEE) return;
   const h = noteHauteur(g, haut * HAUSSE_CHOIX);
@@ -3000,8 +3065,8 @@ export function monteALAppui(/** @type {import("./designation.mjs").Designation 
 export function rendLAppui(){
   const g = _monteALAppui;
   _monteALAppui = null;
-  if (!g || !GL.actif || g.classList.contains("sel")) return;
-  const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
+  if (!g || !GL.actif || estChoisi(cleDuGroupe(g) || "")) return;
+  const haut = hauteurVolume(g);
   const h = noteHauteur(g, haut);
   if (h) detacheVolume(g, h);
 }
@@ -3026,7 +3091,7 @@ function detacheVolume(g, h){
       if (reste.length) out.push(c.clone({ data: reste }));
     }
     // il s'allume au clic, et reprend sa couleur dès qu'on le quitte
-    const choisi = g.classList.contains("sel");
+    const choisi = estChoisi(cleDuGroupe(g) || "");
     const id = c.id.replace(/-tot$/, "") + "-tot";
     const data = siens.map(d => ({ ...d, haut: h.vers, hausse: h,
       couleur: choisi ? eclatant(d.base || d.couleur) : d.base || d.couleur }));
@@ -3037,13 +3102,13 @@ function detacheVolume(g, h){
   majAnimationWebgl();
 }
 
-/** La hauteur d'un tracé de stand à cet instant : en mouvement, où il en
- *  est ; au repos, la sienne. Le logo posé sur son toit (`logos-stands.mjs`)
+/** La hauteur d'un stand à cet instant, par son groupe : en mouvement, où il
+ *  en est ; au repos, la sienne. Le logo posé sur son toit (`logos-stands.mjs`)
  *  la suit image par image — l'assemblage se refait à chacune tant qu'un
  *  volume bouge —, au lieu de sauter d'emblée à la hauteur d'arrivée. */
-function hauteurEnCours(/** @type {Element} */ el){
-  const h = el.parentNode && hausses.get(/** @type {Element} */ (el.parentNode));
-  return h ? hauteurHausse(h, instant()) : hauteurVolume(el);
+function hauteurEnCours(/** @type {Element} */ g){
+  const h = hausses.get(g);
+  return h ? hauteurHausse(h, instant()) : hauteurVolume(g);
 }
 
 /** La hauteur d'un volume en mouvement, à cet instant. */
@@ -4130,8 +4195,13 @@ export function libelleSousWebgl(x, y){
   return o && o.lbl ? o.lbl : null;
 }
 
-/** La place à l'écran d'un nœud du SVG caché, par sa boîte. */
+/** La place à l'écran d'un nœud du SVG caché, par sa boîte — celle de ses
+ *  données pour le groupe d'un stand ou d'une zone, qui ne porte pas de tracé
+ *  quand le WebGL peint. */
 export function rectEcranWebgl(/** @type {any} */ n, /** @type {any} */ v){
+  const o = n && donneeDuGroupe(n);
+  const boite = o ? boiteEmplacement({ source: o }) : null;
+  if (boite) return rectEcranBoite(boite, v);
   let b;
   try { b = n.getBBox(); } catch (e) { return null; }
   return rectEcranBoite([b.x, b.y, b.x + b.width, b.y + b.height], v);

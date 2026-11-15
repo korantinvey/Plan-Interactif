@@ -23,7 +23,7 @@ import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { appliqueOptions } from "./options.mjs";
 import { appliqueAmbiance } from "./ambiance.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
-import { HABILLAGE_REPRIS, habillageDansLeSvg } from "./habillage-svg.mjs";
+import { SVG_REPRIS, svgPeint } from "./svg-de-secours.mjs";
 
 const racine = document.documentElement;
 
@@ -43,7 +43,7 @@ const fondDe = (cle) => P().fond.find(f => f.cle === cle);
 function remplitCalque(g, cle){
   /* Quand le WebGL peint, il lit le calque dans ses données (`calque-detache.mjs`) :
      le SVG caché n'a pas à le porter. Il le reprend si on lui rend la main. */
-  if (remplis.has(g) || !habillageDansLeSvg()) return;
+  if (remplis.has(g) || !svgPeint()) return;
   const f = fondDe(cle);
   // le fond n'est pas encore arrivé : `chargeFond` remontera l'habillage
   if (!f || f.svg === undefined) return;
@@ -54,7 +54,7 @@ function remplitCalque(g, cle){
 /* Le SVG reprend le plan — un dessin trop long à venir, une carte graphique
    perdue : les calques montrés se remplissent et se teignent, comme au
    montage. */
-HABILLAGE_REPRIS.ecoute(() => {
+SVG_REPRIS.ecoute(() => {
   if (!$("couches").querySelector(".cal")) return;
   P().fond.forEach(f => styleFond(f.cle));
 });

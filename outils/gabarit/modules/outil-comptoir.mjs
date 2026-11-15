@@ -37,7 +37,7 @@ import { svg, versPlan, vue, cadrePlan } from "./vue.mjs";
 import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
-import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { emplacements, groupeEmplacement, poseComptoirEnMain } from "./etat-emplacements.mjs";
 import { traceStand } from "./ambiance.mjs";
 
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, ou de biais
@@ -125,6 +125,8 @@ export function choisitComptoir(/** @type {string | null} */ id){
   if (avant) avant.removeAttribute("data-comptoir-choisi");
   choisi = id;
   const e = id ? zoneDe(id) : null, g = e && groupeEmplacement(e.cle);
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`) ; l'attribut le lui signale
+  poseComptoirEnMain(e ? e.cle : null);
   if (g) g.setAttribute("data-comptoir-choisi", "");
   if (!e) choisi = null;
 }
